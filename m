@@ -1,151 +1,426 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 09 Feb 2015 16:02:29 +0000
-Subject: [PATCH v2 01/15] ARM: shmobile: r8a7778: synchronize dts with reference platform
-Message-Id: <1423497763-3450-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 04 Feb 2015 13:52:45 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a73a4 dtsi: Add PM domain support
+Message-Id: <1423057966-23321-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1423057966-23321-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1423057966-23321-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This moves everything to the legacy dts that is missing there to make it
-suitable for use with multiplatform.
+Add a device node for the System Controller, with subnodes that
+represent the hardware power area hierarchy.
+Hook up all devices to their respective PM domains.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Add a minimal device node for the Coresight-ETM hardware block, and
+hook it up to the D4 PM domain, so the R-Mobile System Controller
+driver can keep the domain powered, until the new Coresight code
+handles runtime PM.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 106 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 106 insertions(+)
+ arch/arm/boot/dts/r8a73a4.dtsi | 177 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 177 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 46a884d..7347223 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -16,17 +16,123 @@
- 
- /dts-v1/;
- #include "r8a7778.dtsi"
-+#include <dt-bindings/interrupt-controller/irq.h>
-+#include <dt-bindings/gpio/gpio.h>
- 
- / {
- 	model = "bockw";
- 	compatible = "renesas,bockw", "renesas,r8a7778";
- 
-+	aliases {
-+		serial0 = &scif0;
-+	};
-+
- 	chosen {
- 		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs rw";
-+		stdout-path = &scif0;
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 77bd35cd89113df7..0129a3782e8beba6 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -28,9 +28,15 @@
+ 			compatible = "arm,cortex-a15";
+ 			reg = <0>;
+ 			clock-frequency = <1500000000>;
++			power-domains = <&pd_a2sl>;
+ 		};
  	};
  
- 	memory {
- 		device_type = "memory";
- 		reg = <0x60000000 0x10000000>;
++	ptm {
++		compatible = "arm,coresight-etm3x";
++		power-domains = <&pd_d4>;
++	};
++
+ 	timer {
+ 		compatible = "arm,armv7-timer";
+ 		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+@@ -42,11 +48,13 @@
+ 	dbsc1: memory-controller@e6790000 {
+ 		compatible = "renesas,dbsc-r8a73a4";
+ 		reg = <0 0xe6790000 0 0x10000>;
++		power-domains = <&pd_a3bc>;
+ 	};
+ 
+ 	dbsc2: memory-controller@e67a0000 {
+ 		compatible = "renesas,dbsc-r8a73a4";
+ 		reg = <0 0xe67a0000 0 0x10000>;
++		power-domains = <&pd_a3bc>;
+ 	};
+ 
+ 	dmac: dma-multiplexer {
+@@ -89,6 +97,7 @@
+ 					"ch12", "ch13", "ch14", "ch15",
+ 					"ch16", "ch17", "ch18", "ch19";
+ 			clocks = <&mstp2_clks R8A73A4_CLK_DMAC>;
++			power-domains = <&pd_a3sp>;
+ 		};
+ 	};
+ 
+@@ -113,6 +122,7 @@
+ 			<&irqc1 16 0>, <&irqc1 17 0>, <&irqc1 18 0>, <&irqc1 19 0>,
+ 			<&irqc1 20 0>, <&irqc1 21 0>, <&irqc1 22 0>, <&irqc1 23 0>,
+ 			<&irqc1 24 0>, <&irqc1 25 0>;
++		power-domains = <&pd_c5>;
+ 	};
+ 
+ 	i2c5: i2c@e60b0000 {
+@@ -122,6 +132,7 @@
+ 		reg = <0 0xe60b0000 0 0x428>;
+ 		interrupts = <0 179 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R8A73A4_CLK_IIC5>;
++		power-domains = <&pd_a3sp>;
+ 
+ 		status = "disabled";
+ 	};
+@@ -132,6 +143,7 @@
+ 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A73A4_CLK_CMT1>;
+ 		clock-names = "fck";
++		power-domains = <&pd_c5>;
+ 
+ 		renesas,channels-mask = <0xff>;
+ 
+@@ -175,6 +187,7 @@
+ 			     <0 29 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 30 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 31 IRQ_TYPE_LEVEL_HIGH>;
++		power-domains = <&pd_c4>;
+ 	};
+ 
+ 	irqc1: interrupt-controller@e61c0200 {
+@@ -208,6 +221,7 @@
+ 			     <0 55 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 56 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 57 IRQ_TYPE_LEVEL_HIGH>;
++		power-domains = <&pd_c4>;
+ 	};
+ 
+ 	thermal@e61f0000 {
+@@ -216,6 +230,7 @@
+ 			 <0 0xe61f0200 0 0x38>, <0 0xe61f0300 0 0x38>;
+ 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp5_clks R8A73A4_CLK_THERMAL>;
++		power-domains = <&pd_c5>;
+ 	};
+ 
+ 	i2c0: i2c@e6500000 {
+@@ -225,6 +240,7 @@
+ 		reg = <0 0xe6500000 0 0x428>;
+ 		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A73A4_CLK_IIC0>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -235,6 +251,7 @@
+ 		reg = <0 0xe6510000 0 0x428>;
+ 		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A73A4_CLK_IIC1>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -245,6 +262,7 @@
+ 		reg = <0 0xe6520000 0 0x428>;
+ 		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A73A4_CLK_IIC2>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -255,6 +273,7 @@
+ 		reg = <0 0xe6530000 0 0x428>;
+ 		interrupts = <0 177 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R8A73A4_CLK_IIC3>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -265,6 +284,7 @@
+ 		reg = <0 0xe6540000 0 0x428>;
+ 		interrupts = <0 178 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R8A73A4_CLK_IIC4>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -275,6 +295,7 @@
+ 		reg = <0 0xe6550000 0 0x428>;
+ 		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A73A4_CLK_IIC6>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -285,6 +306,7 @@
+ 		reg = <0 0xe6560000 0 0x428>;
+ 		interrupts = <0 185 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A73A4_CLK_IIC7>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -295,6 +317,7 @@
+ 		reg = <0 0xe6570000 0 0x428>;
+ 		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp5_clks R8A73A4_CLK_IIC8>;
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -304,6 +327,7 @@
+ 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB0>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -313,6 +337,7 @@
+ 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB1>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -322,6 +347,7 @@
+ 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A73A4_CLK_SCIFA0>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -331,6 +357,7 @@
+ 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A73A4_CLK_SCIFA1>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -340,6 +367,7 @@
+ 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB2>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -349,6 +377,7 @@
+ 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A73A4_CLK_SCIFB3>;
+ 		clock-names = "sci_ick";
++		power-domains = <&pd_c4>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -357,6 +386,7 @@
+ 		reg = <0 0xee100000 0 0x100>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A73A4_CLK_SDHI0>;
++		power-domains = <&pd_a3sp>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -366,6 +396,7 @@
+ 		reg = <0 0xee120000 0 0x100>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A73A4_CLK_SDHI1>;
++		power-domains = <&pd_a3sp>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -375,6 +406,7 @@
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A73A4_CLK_SDHI2>;
++		power-domains = <&pd_a3sp>;
+ 		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+@@ -384,6 +416,7 @@
+ 		reg = <0 0xee200000 0 0x80>;
+ 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A73A4_CLK_MMCIF0>;
++		power-domains = <&pd_a3sp>;
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+@@ -393,6 +426,7 @@
+ 		reg = <0 0xee220000 0 0x80>;
+ 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A73A4_CLK_MMCIF1>;
++		power-domains = <&pd_a3sp>;
+ 		reg-io-width = <4>;
+ 		status = "disabled";
+ 	};
+@@ -417,6 +451,7 @@
+ 		ranges = <0 0 0 0x20000000>;
+ 		reg = <0 0xfec10000 0 0x400>;
+ 		clocks = <&zb_clk>;
++		power-domains = <&pd_c4>;
+ 	};
+ 
+ 	clocks {
+@@ -711,4 +746,146 @@
+ 				"thermal", "iic8";
+ 		};
  	};
 +
-+	fixedregulator3v3: fixedregulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
++	sysc: system-controller@e6180000 {
++		compatible = "renesas,sysc-r8a73a4", "renesas,sysc-rmobile";
++		reg = <0 0xe6180000 0 0x8000>, <0 0xe6188000 0 0x8000>;
 +
-+	ethernet@18300000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x18300000 0x1000>;
++		pm-domains {
++			pd_c5: c5 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				#power-domain-cells = <0>;
 +
-+		phy-mode = "mii";
-+		interrupt-parent = <&irqpin>;
-+		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
-+		reg-io-width = <4>;
-+		vddvario-supply = <&fixedregulator3v3>;
-+		vdd33a-supply = <&fixedregulator3v3>;
-+	};
-+};
++				pd_c4: c4@0 {
++					reg = <0>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++					#power-domain-cells = <0>;
 +
-+&mmcif {
-+	pinctrl-0 = <&mmc_pins>;
-+	pinctrl-names = "default";
++					pd_a3sg: a3sg@16 {
++						reg = <16>;
++						#power-domain-cells = <0>;
++					};
 +
-+	vmmc-supply = <&fixedregulator3v3>;
-+	bus-width = <8>;
-+	broken-cd;
-+	status = "okay";
-+};
++					pd_a3ex: a3ex@17 {
++						reg = <17>;
++						#power-domain-cells = <0>;
++					};
 +
-+&irqpin {
-+	status = "okay";
-+};
++					pd_a3sp: a3sp@18 {
++						reg = <18>;
++						#address-cells = <1>;
++						#size-cells = <0>;
++						#power-domain-cells = <0>;
 +
-+&tmu0 {
-+	status = "okay";
-+};
++						pd_a2us: a2us@19 {
++							reg = <19>;
++							#power-domain-cells = <0>;
++						};
++					};
 +
-+&pfc {
-+	scif0_pins: serial0 {
-+		renesas,groups = "scif0_data_a", "scif0_ctrl";
-+		renesas,function = "scif0";
-+	};
++					pd_a3sm: a3sm@20 {
++						reg = <20>;
++						#address-cells = <1>;
++						#size-cells = <0>;
++						#power-domain-cells = <0>;
 +
-+	mmc_pins: mmc {
-+		renesas,groups = "mmc_data8", "mmc_ctrl";
-+		renesas,function = "mmc";
-+	};
++						pd_a2sl: a2sl@21 {
++							reg = <21>;
++							#power-domain-cells = <0>;
++						};
++					};
 +
-+	sdhi0_pins: sd0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
-+				  "sdhi0_cd";
-+		renesas,function = "sdhi0";
-+	};
++					pd_a3km: a3km@22 {
++						reg = <22>;
++						#address-cells = <1>;
++						#size-cells = <0>;
++						#power-domain-cells = <0>;
 +
-+	hspi0_pins: hspi0 {
-+		renesas,groups = "hspi0_a";
-+		renesas,function = "hspi0";
-+	};
-+};
++						pd_a2kl: a2kl@23 {
++							reg = <23>;
++							#power-domain-cells = <0>;
++						};
++					};
++				};
 +
-+&sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
++				pd_c4ma: c4ma@1 {
++					reg = <1>;
++					#power-domain-cells = <0>;
++				};
 +
-+	vmmc-supply = <&fixedregulator3v3>;
-+	bus-width = <4>;
-+	status = "okay";
-+	wp-gpios = <&gpio3 18 GPIO_ACTIVE_HIGH>;
-+};
++				pd_c4cl: c4cl@2 {
++					reg = <2>;
++					#power-domain-cells = <0>;
++				};
 +
-+&hspi0 {
-+	pinctrl-0 = <&hspi0_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
++				pd_d4: d4@3 {
++					reg = <3>;
++					#power-domain-cells = <0>;
++				};
 +
-+	flash: flash@0 {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		compatible = "spansion,s25fl008k";
-+		reg = <0>;
-+		spi-max-frequency = <104000000>;
-+		m25p,fast-read;
++				pd_a4bc: a4bc@4 {
++					reg = <4>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++					#power-domain-cells = <0>;
 +
-+		partition@0 {
-+			label = "data(spi)";
-+			reg = <0x00000000 0x00100000>;
++					pd_a3bc: a3bc@5 {
++						reg = <5>;
++						#power-domain-cells = <0>;
++					};
++				};
++
++				pd_a4l: a4l@6 {
++					reg = <6>;
++					#power-domain-cells = <0>;
++				};
++
++				pd_a4lc: a4lc@7 {
++					reg = <7>;
++					#power-domain-cells = <0>;
++				};
++
++				pd_a4mp: a4mp@8 {
++					reg = <8>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++					#power-domain-cells = <0>;
++
++					pd_a3mp: a3mp@9 {
++						reg = <9>;
++						#power-domain-cells = <0>;
++					};
++
++					pd_a3vc: a3vc@10 {
++						reg = <10>;
++						#power-domain-cells = <0>;
++					};
++				};
++
++				pd_a4sf: a4sf@11 {
++					reg = <11>;
++					#power-domain-cells = <0>;
++				};
++
++				pd_a3r: a3r@12 {
++					reg = <12>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++					#power-domain-cells = <0>;
++
++					pd_a2rv: a2rv@13 {
++						reg = <13>;
++						#power-domain-cells = <0>;
++					};
++
++					pd_a2is: a2is@14 {
++						reg = <14>;
++						#power-domain-cells = <0>;
++					};
++				};
++			};
 +		};
 +	};
-+};
-+
-+&scif0 {
-+	pinctrl-0 = <&scif0_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
  };
 -- 
-2.2.2
+1.9.1
 
