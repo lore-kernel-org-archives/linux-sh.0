@@ -1,50 +1,32 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 04 Feb 2015 14:15:12 +0000
-Subject: [PATCH v2 2/5] ARM: shmobile: r8a7740: Migrate to generic l2c OF initialization
-Message-Id: <1423059315-28519-3-git-send-email-geert+renesas@glider.be>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 04 Feb 2015 14:34:03 +0000
+Subject: Re: [PATCH v2 2/5] ARM: shmobile: r8a7740: Migrate to generic l2c OF initialization
+Message-Id: <7800327.b3sMA1XGtZ@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1423059315-28519-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1423059315-28519-1-git-send-email-geert+renesas@glider.be>
+ <1423059315-28519-3-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1423059315-28519-3-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Migrate the generic r8a7740 platform from calling l2x0_of_init() to the
-generic l2c OF initialization.
+On Wednesday 04 February 2015 15:15:12 Geert Uytterhoeven wrote:
+>  DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
+> +       .l2c_aux_val    = L2C_AUX_CTRL_SHARED_OVERRIDE,
+> +       .l2c_aux_mask   = ~L2C_AUX_CTRL_SHARED_OVERRIDE,
+>         .map_io         = r8a7740_map_io,
+>         .init_early     = shmobile_init_delay,
+>         .init_irq       = r8a7740_init_irq_of,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v2
-  - Keep only {,~}L2C_AUX_CTRL_SHARED_OVERRIDE
----
- arch/arm/mach-shmobile/setup-r8a7740.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
++Russell
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index d191cf4197313482..3ebd4dfc8e853a9b 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -835,10 +835,6 @@ static void __init r8a7740_generic_init(void)
- {
- 	r8a7740_meram_workaround();
- 
--#ifdef CONFIG_CACHE_L2X0
--	/* Shared attribute override enable, 32K*8way */
--	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
--#endif
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
-@@ -855,6 +851,8 @@ static const char *r8a7740_boards_compat_dt[] __initdata = {
- };
- 
- DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
-+	.l2c_aux_val	= L2C_AUX_CTRL_SHARED_OVERRIDE,
-+	.l2c_aux_mask	= ~L2C_AUX_CTRL_SHARED_OVERRIDE,
- 	.map_io		= r8a7740_map_io,
- 	.init_early	= shmobile_init_delay,
- 	.init_irq	= r8a7740_init_irq_of,
--- 
-1.9.1
+I'd hope we could avoid having any overrides in here that are not
+specified in DT. I can never remember what we discussed about particular
+bits in the past though. Is this bit something we could add a binding
+for, or could we make it enabled by default?
 
+I assume you have to add it because the boot loader sets the wrong
+default, right?
+
+	Arnd
