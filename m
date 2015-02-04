@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 04 Feb 2015 18:18:38 +0000
+Date: Wed, 04 Feb 2015 19:37:02 +0000
 Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7794: alt: Enable ethernet controller
-Message-Id: <54D2627E.1010305@cogentembedded.com>
+Message-Id: <54D274DE.2080109@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1422348356-18675-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1422348356-18675-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -12,34 +12,62 @@ To: linux-sh@vger.kernel.org
 
 Hello.
 
-On 02/04/2015 09:12 PM, Geert Uytterhoeven wrote:
+On 02/04/2015 08:38 PM, Sergei Shtylyov wrote:
 
->>> I've double-checked the block
->>> diagram and it mentions "GP1_24(IRQ)"
+>>>> Enable the ethernet controller for the Alt board. Pin muxing entries are
+>>>> currently left out as r8a7794 pin control support isn't available yet.
+>>>> We thus rely on the boot loader to configure ethernet pins for now.
 
->>     GP1_24 is connected to the PHY's RST# pin, according to the hardware
->> manual. Which seems bad to me -- we hardly needed such kind of reset with
+>>>> Signed-off-by: Laurent Pinchart
+>>>> <laurent.pinchart+renesas@ideasonboard.com>
+>>>> ---
 
-> My (I guess the same as Laurent's) diagram says:
->      GP3_22 (RESET)
->      GP1_24 (IRQ)
+>>>>    arch/arm/boot/dts/r8a7794-alt.dts | 13 +++++++++++++
+>>>>    1 file changed, 13 insertions(+)
 
-    It doesn't make much sense, GP1_24 is not muxed to any IRQ pin... unless 
-the GPIO1 controller is used as an interrupt controller, that is.
+>>>> diff --git a/arch/arm/boot/dts/r8a7794-alt.dts
+>>>> b/arch/arm/boot/dts/r8a7794-alt.dts index 0d848e605071..25bf434433b1
+>>>> 100644
+>>>> --- a/arch/arm/boot/dts/r8a7794-alt.dts
+>>>> +++ b/arch/arm/boot/dts/r8a7794-alt.dts
+>>>> @@ -43,6 +43,19 @@
+>>>>        status = "okay";
+>>>>    };
+>>>>
+>>>> +&ether {
+>>>> +    phy-handle = <&phy1>;
+>>>> +    renesas,ether-link-active-low;
+>>>> +    status = "okay";
+>>>> +
+>>>> +    phy1: ethernet-phy@1 {
+>>>> +        reg = <1>;
+>>>> +        interrupt-parent = <&irqc0>;
+>>>> +        interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
 
->> the device tree. :-/ Hopefully, U-Boot leaves it high...
+>>> The hardware manual tells me the PHY uses IRQ8#, not IRQ0#.
 
-> Can we describe that in DT?
+>> I don't have the complete Alt schematics.
 
-    We can try, probably in the PHY node... but we'd have to add the driver 
-support for it.
+>     I don't have *any* Alt schematics, only SILK.
 
-> Not describing everything will bite us one day (cfr. clocks, PM domains, ...)
+    And SILK also has the PHY IRQ connected to IRQ8#.
 
-    Sigh...
+>> I've double-checked the block
+>> diagram and it mentions "GP1_24(IRQ)"
 
-> Gr{oetje,eeting}s,
->                          Geert
+>     GP1_24 is connected to the PHY's RST# pin, according to the hardware
+> manual. Which seems bad to me -- we hardly needed such kind of reset with the
+> device tree. :-/ Hopefully, U-Boot leaves it high...
+
+>> next to the PHY. This patch is thus
+>> incorrect, but where did you find a mention of IRQ8 ?
+
+>     In the Alt hardware manual, rev. 0.04. :-)
+
+    Mentioned in several places there.
+
+    Probably it makes sense to compare the dates of our documents. The 
+aforementioned manual is dated June 4, 2014.
 
 WBR, Sergei
 
