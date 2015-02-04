@@ -1,58 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:00 +0000
-Subject: [PATCH 03/32] ARM: shmobile: kzm9g-reference dts: Sort i2c0 children by unit address
-Message-Id: <5c9e276095a9607f530f94e219daf2996b1360fa.1424849129.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 04 Feb 2015 13:52:46 +0000
+Subject: [PATCH 3/3] drivers: sh: Disable PM runtime for multi-platform r8a73a4 with genpd
+Message-Id: <1423057966-23321-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424849129.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
+References: <1423057966-23321-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1423057966-23321-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+If the default PM domain using PM_CLK is used for PM runtime, the real PM
+domain(s) cannot be registered from DT later.
 
-While at it rename the ak4648 node to "codec" to describe the device's
-function instead of its model, and move its device-specific property
-after its generic properties.
+Hence do not enable it when running a multi-platform kernel with genpd
+support on an r8a73a4. The R-Mobile PM domain driver will take care of
+PM runtime management of the module clocks.
+
+The default PM domain is still needed for:
+  - platforms without genpd support,
+  - the legacy (non-DT) case, where genpd may take over later, except
+    for the C5 "always on" PM domain.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
+ drivers/sh/pm_runtime.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 6d32c87..0134d53 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -188,6 +188,13 @@
- 
- &i2c0 {
- 	status = "okay";
-+
-+	ak4648: codec@12 {
-+		compatible = "asahi-kasei,ak4648";
-+		reg = <0x12>;
-+		#sound-dai-cells = <0>;
-+	};
-+
- 	as3711@40 {
- 		compatible = "ams,as3711";
- 		reg = <0x40>;
-@@ -258,12 +265,6 @@
- 			};
- 		};
- 	};
--
--	ak4648: ak4648@12 {
--		#sound-dai-cells = <0>;
--		compatible = "asahi-kasei,ak4648";
--		reg = <0x12>;
--	};
- };
- 
- &i2c3 {
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index 6b16a67ba618b793..89b7785de1fcf5b7 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -80,8 +80,8 @@ static int __init sh_pm_runtime_init(void)
+ 	if (IS_ENABLED(CONFIG_ARCH_SHMOBILE_MULTI)) {
+ 		if (!of_machine_is_compatible("renesas,emev2") &&
+ 		    !of_machine_is_compatible("renesas,r7s72100") &&
+-		    !of_machine_is_compatible("renesas,r8a73a4") &&
+ #ifndef CONFIG_PM_GENERIC_DOMAINS_OF
++		    !of_machine_is_compatible("renesas,r8a73a4") &&
+ 		    !of_machine_is_compatible("renesas,r8a7740") &&
+ 		    !of_machine_is_compatible("renesas,sh73a0") &&
+ #endif
 -- 
-2.1.4
+1.9.1
 
