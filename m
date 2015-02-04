@@ -1,72 +1,66 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 25 Feb 2015 21:54:57 +0000
-Subject: [PATCH 37/38] drm: rcar-du: Move group locking inside rcar_du_crtc_update_planes()
-Message-Id: <1424901298-6829-38-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 04 Feb 2015 14:15:10 +0000
+Subject: [PATCH v2 0/5] ARM: shmobile: r8a7740/armadillo: Migrate to generic l2c OF
+Message-Id: <1423059315-28519-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Only the planes to CRTCs association control register DPTSR needs to be
-protected by custom locking, don't hold the mutex around the whole code.
+	Hi Simon, Magnus,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c | 10 +++-------
- 1 file changed, 3 insertions(+), 7 deletions(-)
+This patch series migrates the DT-based generic r8a7740 platform and
+the armadillo legacy platform from calling l2x0_of_init() to the
+generic l2c OF initialization.
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index 29bbb44eecc9..8459aaee8add 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -252,8 +252,6 @@ static void rcar_du_crtc_update_planes(struct rcar_du_crtc *rcrtc)
- 	 * with superposition controller 2.
- 	 */
- 	if (rcrtc->index % 2) {
--		u32 value = rcar_du_group_read(rcrtc->group, DPTSR);
--
- 		/* The DPTSR register is updated when the display controller is
- 		 * stopped. We thus need to restart the DU. Once again, sorry
- 		 * for the flicker. One way to mitigate the issue would be to
-@@ -261,11 +259,13 @@ static void rcar_du_crtc_update_planes(struct rcar_du_crtc *rcrtc)
- 		 * split, or through a module parameter). Flicker would then
- 		 * occur only if we need to break the pre-association.
- 		 */
--		if (value != dptsr) {
-+		mutex_lock(&rcrtc->group->planes.lock);
-+		if (rcar_du_group_read(rcrtc->group, DPTSR) != dptsr) {
- 			rcar_du_group_write(rcrtc->group, DPTSR, dptsr);
- 			if (rcrtc->group->used_crtcs)
- 				rcar_du_group_restart(rcrtc->group);
- 		}
-+		mutex_unlock(&rcrtc->group->planes.lock);
- 	}
- 
- 	rcar_du_group_write(rcrtc->group, rcrtc->index % 2 ? DS2PR : DS1PR,
-@@ -435,9 +435,7 @@ void rcar_du_crtc_resume(struct rcar_du_crtc *rcrtc)
- 		rcar_du_plane_setup(plane);
- 	}
- 
--	mutex_lock(&rcrtc->group->planes.lock);
- 	rcar_du_crtc_update_planes(rcrtc);
--	mutex_unlock(&rcrtc->group->planes.lock);
- }
- 
- /* -----------------------------------------------------------------------------
-@@ -501,9 +499,7 @@ static void rcar_du_crtc_atomic_flush(struct drm_crtc *crtc)
- {
- 	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
- 
--	mutex_lock(&rcrtc->group->planes.lock);
- 	rcar_du_crtc_update_planes(rcrtc);
--	mutex_unlock(&rcrtc->group->planes.lock);
- }
- 
- static const struct drm_crtc_helper_funcs crtc_helper_funcs = {
+Changes in v2:
+  - Fix interrupt reference in DT,
+  - Describe L2 better in DT,
+  - Keep only {,~}L2C_AUX_CTRL_SHARED_OVERRIDE in
+    machine_desc.l2c_aux_{val,mask}, as there's no DT property for
+    this.
+  - Add L1 cache to DT.
+
+Dependencies:
+  - The first patch depends on r8a7740 DT PM Domain support (tag
+    renesas-dt2-for-v3.20 in Simon's repository),
+  - Although there are separate patches for dtsi, SoC code, and board code,
+    there are dependencies among the individual patches:
+      - patches 2, 3, and 5 depend on patch 1,
+      - patch 4 depends on patches 2 and 3 (and thus 1).
+
+Note that this conversion should be done on sh73a0, r8a7778, and r8a7779,
+too.
+
+This was tested on armadillo-legacy and armadillo-multiplatform.
+
+Thanks!
+
+Geert Uytterhoeven (5):
+  ARM: shmobile: r8a7740 dtsi: Add cache-controller node
+  ARM: shmobile: r8a7740: Migrate to generic l2c OF initialization
+  ARM: shmobile: armadillo legacy: Migrate to generic l2c OF
+    initialization
+  ARM: shmobile: r8a7740: Remove mapping of L2 cache controller
+    registers
+  ARM: shmobile: r8a7740: Add L1 cache information to CPU node
+
+ arch/arm/boot/dts/r8a7740.dtsi                 | 24 ++++++++++++++++++++++++
+ arch/arm/mach-shmobile/board-armadillo800eva.c |  8 ++------
+ arch/arm/mach-shmobile/setup-r8a7740.c         | 18 ++----------------
+ 3 files changed, 28 insertions(+), 22 deletions(-)
+
 -- 
-2.0.5
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
