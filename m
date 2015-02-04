@@ -1,81 +1,45 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 04 Feb 2015 22:46:59 +0000
-Subject: Re: [PATCH] ARM: shmobile: silk: initial device tree
-Message-Id: <54D2A163.3010207@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 04 Feb 2015 14:50:26 +0000
+Subject: Re: [PATCH 0/2] Add VSP1 devices to DT for r8a7790 and r8a7791
+Message-Id: <2453020.jgrBrSjfDW@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
- <1608366.HtA9yBksdO@wasted.cogentembedded.com>
- <20150131042143.GB7605@verge.net.au> <54CD1E79.6090700@cogentembedded.com>
- <20150202001910.GA29383@verge.net.au>
-In-Reply-To: <20150202001910.GA29383@verge.net.au>
+References: <1410651385-13090-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1410651385-13090-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On 02/02/2015 03:19 AM, Simon Horman wrote:
+Hello,
 
->>>> Add the initial device tree for the R8A7794 SoC based SILK low cost board.
->>>> SCIF2 serial port support is included, so that the serial console can work.
+On Tuesday 03 February 2015 09:41:23 Devendra Talegaonkar wrote:
+> Hi Laurent,
+> 
+> This is altogether a different question & not sure if I am doing sense or
+> not.
+> 
+> I am trying to access drmModeSetCrtc and drmModeSetPlane from 2 different
+> processes. The scenario is:
+> 
+> * Process1 is creating frame buffer for CRTc & for specific plane & by
+> calling drmModeSetPlane, overlaying on CRTc
+> 
+> * Process2 is also creating frame buffer for different plane & trying to
+> overlay it on CRTc
+>
+> In the Process2 drmModeSetPlane is not showing anything on display.
+> 
+> Is it the desired behavior or I am doing something wrong here.
 
->>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+That doesn't sound like the desired behaviour to me. Note that KMS expects a 
+single process to control mode setting. You can get around that by dropping 
+master privileges in the first process after setting the CRTC mode, but you 
+can't get master privileges back once you've dropped them (short of dropping 
+master in the second process and then closing/reopening the device in the 
+first process of course).
 
->>>> ---
->>>> This patch is against the 'renesas-devel-20150129-v3.19-rc6' tag of Simon
->>>> Horman's 'renesas.git' repo.
+-- 
+Regards,
 
->>>>   arch/arm/boot/dts/Makefile         |    1
->>>>   arch/arm/boot/dts/r8a7794-silk.dts |   41 +++++++++++++++++++++++++++++++++++++
->>>>   2 files changed, 42 insertions(+)
-
->> [...]
->>>> Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
->>>> =================================>>>> --- /dev/null
->>>> +++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
->>>> @@ -0,0 +1,41 @@
->>>> +/*
->>>> + * Device Tree Source for the SILK board
->>>> + *
->>>> + * Copyright (C) 2014 Renesas Electronics Corporation
->>>> + * Copyright (C) 2014-2015 Renesas Solutions Corp.
->>>> + * Copyright (C) 2014-2015 Cogent Embedded, Inc.
->>>> + *
->>>> + * This file is licensed under the terms of the GNU General Public License
->>>> + * version 2.  This program is licensed "as is" without any warranty of any
->>>> + * kind, whether express or implied.
->>>> + */
->>>> +
->>>> +/dts-v1/;
->>>> +#include "r8a7794.dtsi"
->>>> +
->>>> +/ {
->>>> +	model = "SILK";
->>>> +	compatible = "renesas,silk", "renesas,r8a7794";
->>>> +
->>>> +	aliases {
->>>> +		serial0 = &scif2;
->>>> +	};
->>>> +
->>>> +	chosen {
->>>> +		bootargs = "console=ttySC0,38400 ignore_loglevel";
-
->>> Please remove console= for consistency with other boards
->>> based on Renesas SoCs.
-
->>     I can't, there will be no console at all.
-
-> Its not clear to me why that should be the case when you also have:
-
-> 		stdout-path = &scif2;
-
-> Is this a baud issue?
-
-    Don't think so, I would have seen at least some garbage on the console.
-There was nothing. I'm still not sure what the problem was...
-
-> If so is it possible to set uboot to 115200 bps?
-
-    Possible with the new board.
-
-WBR, Sergei
+Laurent Pinchart
 
