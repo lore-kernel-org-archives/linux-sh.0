@@ -1,37 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 26 Feb 2015 14:27:49 +0000
-Subject: Re: [PATCH v2 1/2] DT: i2c: Deprecate adi,adxl34x compatible string
-Message-Id: <2747724.u7aGnnSiv7@avalon>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 04 Feb 2015 08:54:15 +0000
+Subject: Re: [PATCH] sh-pfc: emev2 - Fix mangled author name
+Message-Id: <CACRpkdaY+fiYMt4MGQFTdyRAMXnhNj6tJQckst5ECrKREOQ6gw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421333655-31029-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <CAMuHMdUwHde0EvbCD574L2tW6qqxLCtZwAb+0M-4QCjB9V6fmQ@mail.gmail.com> <20150126120947.GC1052@katana>
-In-Reply-To: <20150126120947.GC1052@katana>
+References: <1422526376-12146-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1422526376-12146-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "linux-input@vger.kernel.org" <linux-input@vger.kernel.org>, Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Geert Uytterhoeven <geert+renesas@glider.be>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: =?UTF-8?Q?Niklas_S=C3=B6derlund?= <niso@kth.se>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-Hi Wolfram,
+On Thu, Jan 29, 2015 at 11:12 AM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
 
-On Monday 26 January 2015 13:09:47 Wolfram Sang wrote:
-> > >> If you drop adi,adxl346, checkpatch will start complaining if it
-> > >> encounters
-> > >> it in a .dts.
-> > > 
-> > > Boah, this is annoying. That means we need an 346 entry even if it is
-> > > not different from 345 (which is fine by me).
-> > 
-> > To be clear: you need the entry in the documentation. It can be omitted
-> > from the driver if it's not (yet) used for matching.
-> 
-> Well, I don't really like that behaviour, but I don't like
-> i2c/trivial-devices.txt as well, so I'll just apply the patch and live
-> with it :)
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Fixes: 1e7d5d849cf4f0c5 ("sh-pfc: Add emev2 pinmux support")
+> ---
+> Looks like the original UTF-8 was interpreted as ISO-8859-1, and the
+> resulting characters being converted to UTF-8 again.
+>
+> BTW, the same issue is present in the SoB-lines of both
+> 1e7d5d849cf4f0c5 ("sh-pfc: Add emev2 pinmux support") and
+> 4c9e473541c52453 ("sh-pfc: add macro to define pinmux without function")
+> Perhaps they can still be fixed while squashing this in?
 
-What happened to this patch ?
+This is painful, your patch arrives with this header:
 
--- 
-Regards,
+Content-Type: text/plain; charset=y
+Content-Transfer-Encoding: 8bit
 
-Laurent Pinchart
+When I try to apply it git am says:
 
+$ git am --signoff geert1.patch
+fatal: cannot convert from y to UTF-8
+
+Wut? I never heard of an encoding named "y", and SMTP is
+not my strongest subject anyway.
+
+This UTF-8 business i becoming a subject for this years kernel
+summit as I see the same thing with a few fellow german and
+Swedish contributors appearing using our funny diacritics
+ÅÄÖÆØåäöøæ
+
+Yeah well even ß at some time IIRC...
+
+Yours,
+Linus Walleij
