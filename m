@@ -1,74 +1,40 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 26 Feb 2015 19:26:46 +0000
-Subject: Re: [PATCH] ARM: kexec: Relax SMP validation to improve DT compatibility
-Message-Id: <CAMuHMdW8R4yhYkw1GJeeA6gTRcZRJmPk84b6oQsiCUs-S1rVPQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 04 Feb 2015 12:27:21 +0000
+Subject: [PATCH] clk: shmobile: div6: Avoid division by zero in .round_rate()
+Message-Id: <1423052841-15194-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424947028-7438-1-git-send-email-geert+renesas@glider.be>
- <20150226174206.GL8656@n2100.arm.linux.org.uk>
- <54EF6D4A.6000603@wwwdotorg.org>
-In-Reply-To: <54EF6D4A.6000603@wwwdotorg.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Wolfram Sang <wsa@sang-engineering.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Feb 26, 2015 at 8:00 PM, Stephen Warren <swarren@wwwdotorg.org> wrote:
-> On 02/26/2015 10:42 AM, Russell King - ARM Linux wrote:
->>
->> On Thu, Feb 26, 2015 at 11:37:08AM +0100, Geert Uytterhoeven wrote:
->>>
->>> When trying to kexec into a new kernel on a platform where multiple CPU
->>> cores are present, but no SMP bringup code is available yet, the
->>> kexec_load system call fails with:
->>>
->>>      kexec_load failed: Invalid argument
->>>
->>> The SMP test added to machine_kexec_prepare() in commit 2103f6cba61a8b8b
->>> ("ARM: 7807/1: kexec: validate CPU hotplug support") wants to prohibit
->>> kexec on SMP platforms where it cannot disable secondary CPUs.
->>> However, this test is too strict: if the secondary CPUs couldn't be
->>> enabled in the first place, there's no need to disable them later at
->>> kexec time.  Hence skip the test in the absence of SMP bringup code.
->>
->>
->> Hmm.  I don't think we should relax it in this manner - I think there's
->> an easier solution to this.
->>
->>> diff --git a/arch/arm/kernel/machine_kexec.c
->>> b/arch/arm/kernel/machine_kexec.c
->>> index de2b085ad7535da7..8bf3b7c098881b95 100644
->>> --- a/arch/arm/kernel/machine_kexec.c
->>> +++ b/arch/arm/kernel/machine_kexec.c
->>> @@ -46,7 +46,8 @@ int machine_kexec_prepare(struct kimage *image)
->>>          * and implements CPU hotplug for the current HW. If not, we
->>> won't be
->>>          * able to kexec reliably, so fail the prepare operation.
->>>          */
->>> -       if (num_possible_cpus() > 1 && !platform_can_cpu_hotplug())
->>> +       if (num_possible_cpus() > 1 && platform_can_secondary_boot() &&
->>> +           !platform_can_cpu_hotplug())
->>
->>
->>         if (num_online_cpus() > 1 && !platform_can_cpu_hotplug())
->
-> I can't remember the call stack here. Is num_online_cpus() guaranteed not to
-> change from this point through to when the kexec actually happens?
+Anyone may call clk_round_rate() with a zero rate value, so we have to
+protect against that.
 
-Yeah, I had similar thoughts when I added the new test.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+This was triggered by the bad version of "clk: Add rate constraints to
+clocks", but can happen regardless, cfr.
+https://lkml.org/lkml/2015/1/29/560
 
-include/linux/cpumask.h:
- *     cpu_possible_mask- has bit 'cpu' set iff cpu is populatable
- *     cpu_present_mask - has bit 'cpu' set iff cpu is populated
- *     cpu_online_mask  - has bit 'cpu' set iff cpu available to scheduler
- *     cpu_active_mask  - has bit 'cpu' set iff cpu available to migration
+ drivers/clk/shmobile/clk-div6.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-Gr{oetje,eeting}s,
+diff --git a/drivers/clk/shmobile/clk-div6.c b/drivers/clk/shmobile/clk-div6.c
+index efbaf6c81b7530b8..036a692c72195db9 100644
+--- a/drivers/clk/shmobile/clk-div6.c
++++ b/drivers/clk/shmobile/clk-div6.c
+@@ -90,6 +90,9 @@ static unsigned int cpg_div6_clock_calc_div(unsigned long rate,
+ {
+ 	unsigned int div;
+ 
++	if (!rate)
++		rate = 1;
++
+ 	div = DIV_ROUND_CLOSEST(parent_rate, rate);
+ 	return clamp_t(unsigned int, div, 1, 64);
+ }
+-- 
+1.9.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
