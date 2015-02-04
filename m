@@ -1,31 +1,50 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 10 Feb 2015 11:15:19 +0000
-Subject: Re: [PATCH v2 15/15] ARM: shmobile: bockw dts: set extal clock frequency
-Message-Id: <CAMuHMdXnc1-20C_T=g=UGbeH=iidKaMhHGmkaCK32x0S8ggaZQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 04 Feb 2015 14:15:12 +0000
+Subject: [PATCH v2 2/5] ARM: shmobile: r8a7740: Migrate to generic l2c OF initialization
+Message-Id: <1423059315-28519-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423497763-3450-16-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1423497763-3450-16-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1423059315-28519-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1423059315-28519-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Feb 9, 2015 at 5:02 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> Sets the extal clock to the frequency of the oscillator installed by
-> default (33 MHz).
->
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Migrate the generic r8a7740 platform from calling l2x0_of_init() to the
+generic l2c OF initialization.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2
+  - Keep only {,~}L2C_AUX_CTRL_SHARED_OVERRIDE
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index d191cf4197313482..3ebd4dfc8e853a9b 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -835,10 +835,6 @@ static void __init r8a7740_generic_init(void)
+ {
+ 	r8a7740_meram_workaround();
+ 
+-#ifdef CONFIG_CACHE_L2X0
+-	/* Shared attribute override enable, 32K*8way */
+-	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
+-#endif
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+@@ -855,6 +851,8 @@ static const char *r8a7740_boards_compat_dt[] __initdata = {
+ };
+ 
+ DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
++	.l2c_aux_val	= L2C_AUX_CTRL_SHARED_OVERRIDE,
++	.l2c_aux_mask	= ~L2C_AUX_CTRL_SHARED_OVERRIDE,
+ 	.map_io		= r8a7740_map_io,
+ 	.init_early	= shmobile_init_delay,
+ 	.init_irq	= r8a7740_init_irq_of,
+-- 
+1.9.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
