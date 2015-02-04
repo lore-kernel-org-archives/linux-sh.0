@@ -1,40 +1,26 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 04 Feb 2015 12:27:21 +0000
-Subject: [PATCH] clk: shmobile: div6: Avoid division by zero in .round_rate()
-Message-Id: <1423052841-15194-1-git-send-email-geert+renesas@glider.be>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 04 Feb 2015 13:31:29 +0000
+Subject: Re: [PATCH] clk: shmobile: div6: Avoid division by zero in .round_rate()
+Message-Id: <54D21F31.5080706@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1423052841-15194-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1423052841-15194-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Wolfram Sang <wsa@sang-engineering.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>, Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Wolfram Sang <wsa@sang-engineering.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Anyone may call clk_round_rate() with a zero rate value, so we have to
-protect against that.
+Hello.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-This was triggered by the bad version of "clk: Add rate constraints to
-clocks", but can happen regardless, cfr.
-https://lkml.org/lkml/2015/1/29/560
+On 02/04/2015 03:27 PM, Geert Uytterhoeven wrote:
 
- drivers/clk/shmobile/clk-div6.c | 3 +++
- 1 file changed, 3 insertions(+)
+> Anyone may call clk_round_rate() with a zero rate value, so we have to
+> protect against that.
 
-diff --git a/drivers/clk/shmobile/clk-div6.c b/drivers/clk/shmobile/clk-div6.c
-index efbaf6c81b7530b8..036a692c72195db9 100644
---- a/drivers/clk/shmobile/clk-div6.c
-+++ b/drivers/clk/shmobile/clk-div6.c
-@@ -90,6 +90,9 @@ static unsigned int cpg_div6_clock_calc_div(unsigned long rate,
- {
- 	unsigned int div;
- 
-+	if (!rate)
-+		rate = 1;
-+
- 	div = DIV_ROUND_CLOSEST(parent_rate, rate);
- 	return clamp_t(unsigned int, div, 1, 64);
- }
--- 
-1.9.1
+    Shouldn't this be checked and fixed up in clk_round_rate() then?
+
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+WBR, Sergei
 
