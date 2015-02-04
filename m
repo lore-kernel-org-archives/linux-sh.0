@@ -1,42 +1,73 @@
-From: Alexandre Courbot <gnurou@gmail.com>
-Date: Thu, 26 Feb 2015 09:39:54 +0000
-Subject: Re: [PATCH 0/2] gpio: pcf857x: Use gpiolib irqchip helpers and fix wake-up
-Message-Id: <CAAVeFuKbkwkOSF2nDGzyMH9UdV6c+A7OnsV6RqBwKLK=G_HZwg@mail.gmail.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 04 Feb 2015 08:40:48 +0000
+Subject: Re: [RFC/PATCH] pinctrl: sh-pfc: Accept standard function, pins and groups properties
+Message-Id: <CACRpkda6H7hbgXhmSbgtwOC_8PbHnES5syp-YEp1+V6s5Ym6Cw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423151349-10579-1-git-send-email-geert+renesas@glider.be> <CAMuHMdVsFqB-yyvDA_XZUScdPD7MbdzfPyFG5xgsH2y0csszqw@mail.gmail.com>
-In-Reply-To: <CAMuHMdVsFqB-yyvDA_XZUScdPD7MbdzfPyFG5xgsH2y0csszqw@mail.gmail.com>
+References: <CACRpkda4SBof0EaZVWtEYaeb6j_BGAVj39kje+mBz90eB3qAwQ@mail.gmail.com>
+	<1422390694-12389-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1422390694-12389-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>, Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, George Cherian <george.cherian@ti.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Sascha Hauer <kernel@pengutronix.de>
+Cc: =?UTF-8?Q?Niklas_S=C3=B6derlund?= <niso@kth.se>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-On Tue, Feb 24, 2015 at 7:41 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Thu, Feb 5, 2015 at 4:49 PM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
->> This patch series switches the PCF857x GPIO driver to use the gpiolib
->> irqchip helpers, as requested by Linus Walleij, and fixes wake-up by
->> propagating the wake-up setting to the parent irq controller.
->>
->> Note that the conversion to gpiolib irqchip helpers removes the checks
->> added in commit 21fd3cd1874a2ac8 ("gpio: pcf857x: call the gpio user
->> handler iff gpio_to_irq is done"), as the interrupt mappings are no
->> longer created on-demand by the driver, but by gpiochip_irqchip_add()
->> during initialization.  I marked the first patch "RFC" because of
->> this.  Does the removal of the checks cause problems for anyone?
->>
->> The second patch was sent before, and rebased on top of the
->> conversion to gpiolib irqchip helpers.
->>
->> This was tested on sh73a0/kzm9g, where I don't see the issue addressed
->> by commit 21fd3cd1874a2ac8 ("gpio: pcf857x: call the gpio user handler
->> iff gpio_to_irq is done").
->>
->> Thanks for your comments!
+On Tue, Jan 27, 2015 at 9:31 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
+
+> The "function", "pins" and "groups" pinmux and pinctrl properties have
+> been standardized. Support them in addition to the custom "renesas,*"
+> properties. New-style and old-style properties can't be mixed in DT.
 >
-> No comments?
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+(...)
 
-Apologies - I'd like to review this but am not familar enough with the
-IRQ helpers. Linus seems to be busy, hopefully he will find time to
-check this out...
+>> Would be nice if the PFC driver could be augmented to also accept the
+>> now standard bindings "groups" and "function" simply :) we're adding parse
+>> functions for those to the core.
+>
+> Something like this ?
+
+Yes :)
+
+> Please note two differences between the Renesas PFC bindings and the standard
+> bindings:
+>
+> - The standard bindings state that a pinctrl node must contain either a "pins"
+>   property or a "groups" property, while the Renesas bindings allows for both
+>   to coexist in the same node.
+
+Sascha also says this makes sense for him so I guess I'm getting a bit
+soft on the issue.
+
+> - The standard bindings don't allow a pinmux node to contain a "pins" property,
+>   while the Renesas bindings do.
+
+Does that mean "pins" affect the muxing or that "pins" is about some per-pin
+config shoveled into the same node?
+
+The former is not OK, the latter is.
+
+>                 mmcif_pins: mmcif {
+>                         mux {
+> -                               renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
+> -                               renesas,function = "mmc0";
+> +                               groups = "mmc0_data8_0", "mmc0_ctrl_0";
+> +                               function = "mmc0";
+>                         };
+
+So that looks just very nice.
+
+>                         cfg {
+> -                               renesas,groups = "mmc0_data8_0";
+> -                               renesas,pins = "PORT279";
+> +                               groups = "mmc0_data8_0";
+> +                               pins = "PORT279";
+>                                 bias-pull-up;
+
+And here I can't see the use of "groups" in this node since it
+doesn't match a function. It's a bit ambiguous what "groups"
+mean when you run into it like this.
+
+Yours,
+Linus Walleij
