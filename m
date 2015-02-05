@@ -1,79 +1,62 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 11 Feb 2015 22:41:45 +0000
-Subject: [PATCH] ARM: shmobile: silk: add Ether DT support
-Message-Id: <2276051.p98cm4dRE4@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 05 Feb 2015 10:11:25 +0000
+Subject: [PATCH v5 2/5] drivers: bus: Sort Makefile entries alphabetically
+Message-Id: <1423131088-7835-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+References: <1423131088-7835-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1423131088-7835-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Define the SILK board dependent part of the Ether device node.
-Enable DHCP and NFS root for the kernel booting.
-
-Based on the original patch by Vladimir Barinov
-<vladimir.barinov@cogentembedded.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Reviewed-by: Kevin Hilman <khilman@linaro.org>
 ---
-This patch is against the 'renesas-devel-20150211-v3.19' tag of Simon Horman's
-'renesas.git' repo.  It depends on just posted SILK board initial DT patch in
-order to apply, on just posted R8A7794 PFC DT patch in order to compile, and
-on R8A7794 PFC driver patch in order for  the pins  to be configured.
+v5:
+  - Add Reviewed-by,
 
- arch/arm/boot/dts/r8a7794-silk.dts |   28 +++++++++++++++++++++++++++-
- 1 file changed, 27 insertions(+), 1 deletion(-)
+v4:
+  - No changes,
 
-Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7794-silk.dts
-+++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
-@@ -22,7 +22,7 @@
- 	};
+v3:
+  - Add Tested-by,
+
+v2:
+  - New.
+---
+ drivers/bus/Makefile | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
+index 2973c18cbcc27816..3cfaf2c7f25ac4f0 100644
+--- a/drivers/bus/Makefile
++++ b/drivers/bus/Makefile
+@@ -2,16 +2,16 @@
+ # Makefile for the bus drivers.
+ #
  
- 	chosen {
--		bootargs = "ignore_loglevel";
-+		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
- 		stdout-path = &scif2;
- 	};
++# Interconnect bus drivers for ARM platforms
++obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
++obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
++
+ obj-$(CONFIG_BRCMSTB_GISB_ARB)	+= brcmstb_gisb.o
+-obj-$(CONFIG_IMX_WEIM)	+= imx-weim.o
+-obj-$(CONFIG_MVEBU_MBUS) += mvebu-mbus.o
+-obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
++obj-$(CONFIG_IMX_WEIM)		+= imx-weim.o
++obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
  
-@@ -41,6 +41,16 @@
- 		renesas,groups = "scif2_data";
- 		renesas,function = "scif2";
- 	};
-+
-+	ether_pins: ether {
-+		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
-+		renesas,function = "eth";
-+	};
-+
-+	phy1_pins: phy1 {
-+		renesas,groups = "intc_irq8";
-+		renesas,function = "intc";
-+	};
- };
+ # Interconnect bus driver for OMAP SoCs.
+ obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
  
- &scif2 {
-@@ -49,3 +59,19 @@
- 
- 	status = "okay";
- };
-+
-+&ether {
-+	pinctrl-0 = <&ether_pins &phy1_pins>;
-+	pinctrl-names = "default";
-+
-+	phy-handle = <&phy1>;
-+	renesas,ether-link-active-low;
-+	status = "okay";
-+
-+	phy1: ethernet-phy@1 {
-+		reg = <1>;
-+		interrupt-parent = <&irqc0>;
-+		interrupts = <8 IRQ_TYPE_LEVEL_LOW>;
-+		micrel,led-mode = <1>;
-+	};
-+};
+-# Interconnect bus drivers for ARM platforms
+-obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
+-obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
+-
++obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
+ obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
+-- 
+1.9.1
 
