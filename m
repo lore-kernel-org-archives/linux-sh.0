@@ -1,73 +1,93 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 16 Feb 2015 23:00:34 +0000
-Subject: [PATCH 2/2] ARM: shmobile: silk: add eMMC DT support
-Message-Id: <3003389.IFU7VXDVjL@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 05 Feb 2015 10:11:26 +0000
+Subject: [PATCH v5 3/5] drivers: bus: Add Simple Power-Managed Bus DT Bindings
+Message-Id: <1423131088-7835-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <29687119.ELU9MoH02q@wasted.cogentembedded.com>
-In-Reply-To: <29687119.ELU9MoH02q@wasted.cogentembedded.com>
+References: <1423131088-7835-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1423131088-7835-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Define the SILK board dependent part of the MMCIF device node (the board has
-eMMC chip) along with the  necessary voltage regulator (note that the Vcc/Vccq
-regulator is dummy -- it's required by the MMCIF driver but doesn't actually
-exist on the board).
-
-Based on the original patch by Vladimir Barinov
-<vladimir.barinov@cogentembedded.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Reviewed-by: Kevin Hilman <khilman@linaro.org>
 ---
- arch/arm/boot/dts/r8a7794-silk.dts |   25 +++++++++++++++++++++++++
- 1 file changed, 25 insertions(+)
+v5:
+  - Add Reviewed-by,
+  - "simple-pm-bus" is not an extension of "simple-bus",
+  - "compatible" must not contain "simple-bus",
+  - Add reference to clock/PM domain provider binding docs,
 
-Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7794-silk.dts
-+++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
-@@ -30,6 +30,15 @@
- 		device_type = "memory";
- 		reg = <0 0x40000000 0 0x40000000>;
- 	};
+v4:
+  - Replace "simple-bus" by "simple-pm-bus",
+  - Remove the "renesas,bsc" bindings. They will be specified in a
+    separate document.
+
+v3:
+  - Add Tested-by,
+  - Document required properties inherited from "simple-bus",
+  - Document required "reg" property for "renesas,bsc",
+  - Move "ranges" before "reg" in the example,
+
+v2:
+  - New.
+---
+ .../devicetree/bindings/bus/simple-pm-bus.txt      | 44 ++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+
+diff --git a/Documentation/devicetree/bindings/bus/simple-pm-bus.txt b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+new file mode 100644
+index 0000000000000000..d032237512c271f2
+--- /dev/null
++++ b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+@@ -0,0 +1,44 @@
++Simple Power-Managed Bus
++============
 +
-+	d3_3v: regulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "D3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-boot-on;
-+		regulator-always-on;
++A Simple Power-Managed Bus is a transparent bus that doesn't need a real
++driver, as it's typically initialized by the boot loader.
++
++However, its bus controller is part of a PM domain, or under the control of a
++functional clock.  Hence, the bus controller's PM domain and/or clock must be
++enabled for child devices connected to the bus (either on-SoC or externally)
++to function.
++
++While "simple-pm-bus" follows the "simple-bus" set of properties, as specified
++in ePAPR, it is not an extension of "simple-bus".
++
++
++Required properties:
++  - compatible: Must contain at least "simple-pm-bus".
++		Must not contain "simple-bus".
++		It's recommended to let this be preceded by one or more
++		vendor-specific compatible values.
++  - #address-cells, #size-cells, ranges: Must describe the mapping between
++		parent address and child address spaces.
++
++Optional platform-specific properties for clock or PM domain control (at least
++one of them is required):
++  - clocks: Must contain a reference to the functional clock(s),
++  - power-domains: Must contain a reference to the PM domain.
++Please refer to the binding documentation for the clock and/or PM domain
++providers for more details.
++
++
++Example:
++
++	bsc: bus@fec10000 {
++		compatible = "renesas,bsc-sh73a0", "renesas,bsc",
++			     "simple-pm-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0 0 0x20000000>;
++		reg = <0xfec10000 0x400>;
++		interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&zb_clk>;
++		power-domains = <&pd_a4s>;
 +	};
- };
- 
- &extal_clk {
-@@ -51,6 +60,11 @@
- 		renesas,groups = "intc_irq8";
- 		renesas,function = "intc";
- 	};
-+
-+	mmcif0_pins: mmcif0 {
-+		renesas,groups = "mmc_data8", "mmc_ctrl";
-+		renesas,function = "mmc";
-+	};
- };
- 
- &scif2 {
-@@ -75,3 +89,14 @@
- 		micrel,led-mode = <1>;
- 	};
- };
-+
-+&mmcif0 {
-+	pinctrl-0 = <&mmcif0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&d3_3v>;
-+	vqmmc-supply = <&d3_3v>;
-+	bus-width = <8>;
-+	non-removable;
-+	status = "okay";
-+};
+-- 
+1.9.1
 
