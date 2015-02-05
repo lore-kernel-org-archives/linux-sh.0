@@ -1,41 +1,82 @@
-From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
-Date: Thu, 26 Feb 2015 11:35:14 +0000
-Subject: [PATCHv3 11/17] sh: expose number of page table levels
-Message-Id: <1424950520-90188-12-git-send-email-kirill.shutemov@linux.intel.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 05 Feb 2015 10:11:27 +0000
+Subject: [PATCH v5 4/5] drivers: bus: Add Renesas Bus State Controller (BSC) DT Bindings
+Message-Id: <1423131088-7835-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424950520-90188-1-git-send-email-kirill.shutemov@linux.intel.com>
-In-Reply-To: <1424950520-90188-1-git-send-email-kirill.shutemov@linux.intel.com>
+References: <1423131088-7835-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1423131088-7835-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-mm@kvack.org, linux-kernel@vger.kernel.org, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-We would want to use number of page table level to define mm_struct.
-Let's expose it as CONFIG_PGTABLE_LEVELS.
+The bindings for the BSC extend the bindings for "simple-pm-bus".
 
-Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
-Cc: linux-sh@vger.kernel.org
-Tested-by: Guenter Roeck <linux@roeck-us.net>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Kevin Hilman <khilman@linaro.org>
 ---
- arch/sh/Kconfig | 4 ++++
- 1 file changed, 4 insertions(+)
+v5:
+  - Add Reviewed-by,
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index eb4ef274ae9b..50057fed819d 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -162,6 +162,10 @@ config NEED_DMA_MAP_STATE
- config NEED_SG_DMA_LENGTH
- 	def_bool y
- 
-+config PGTABLE_LEVELS
-+	default 3 if X2TLB
-+	default 2
+v4:
+  - New, extracted from simple-pm-bus.txt in v3.
+---
+ .../devicetree/bindings/bus/renesas,bsc.txt        | 46 ++++++++++++++++++++++
+ 1 file changed, 46 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/bus/renesas,bsc.txt
+
+diff --git a/Documentation/devicetree/bindings/bus/renesas,bsc.txt b/Documentation/devicetree/bindings/bus/renesas,bsc.txt
+new file mode 100644
+index 0000000000000000..90e94726943772c4
+--- /dev/null
++++ b/Documentation/devicetree/bindings/bus/renesas,bsc.txt
+@@ -0,0 +1,46 @@
++Renesas Bus State Controller (BSC)
++=================
 +
- source "init/Kconfig"
- 
- source "kernel/Kconfig.freezer"
++The Renesas Bus State Controller (BSC, sometimes called "LBSC within Bus
++Bridge", or "External Bus Interface") can be found in several Renesas ARM SoCs.
++It provides an external bus for connecting multiple external devices to the
++SoC, driving several chip select lines, for e.g. NOR FLASH, Ethernet and USB.
++
++While the BSC is a fairly simple memory-mapped bus, it may be part of a PM
++domain, and may have a gateable functional clock.
++Before a device connected to the BSC can be accessed, the PM domain
++containing the BSC must be powered on, and the functional clock
++driving the BSC must be enabled.
++
++The bindings for the BSC extend the bindings for "simple-pm-bus".
++
++
++Required properties
++  - compatible: Must contain an SoC-specific value, and "renesas,bsc" and
++		"simple-pm-bus" as fallbacks.
++                SoC-specific values can be:
++		"renesas,bsc-r8a73a4" for R-Mobile APE6 (r8a73a4)
++		"renesas,bsc-sh73a0" for SH-Mobile AG5 (sh73a0)
++  - #address-cells, #size-cells, ranges: Must describe the mapping between
++		parent address and child address spaces.
++  - reg: Must contain the base address and length to access the bus controller.
++
++Optional properties:
++  - interrupts: Must contain a reference to the BSC interrupt, if available.
++  - clocks: Must contain a reference to the functional clock, if available.
++  - power-domains: Must contain a reference to the PM domain, if available.
++
++
++Example:
++
++	bsc: bus@fec10000 {
++		compatible = "renesas,bsc-sh73a0", "renesas,bsc",
++			     "simple-pm-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0 0 0x20000000>;
++		reg = <0xfec10000 0x400>;
++		interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&zb_clk>;
++		power-domains = <&pd_a4s>;
++	};
 -- 
-2.1.4
+1.9.1
 
