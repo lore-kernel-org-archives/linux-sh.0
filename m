@@ -1,192 +1,423 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 25 Feb 2015 21:54:47 +0000
-Subject: [PATCH 27/38] drm: rcar-du: Switch connector DPMS to atomic helpers
-Message-Id: <1424901298-6829-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 05 Feb 2015 07:12:43 +0000
+Subject: [PATCH 6/6] ASoC: sh: discontinue support of dma-sh7760 driver
+Message-Id: <871tm4j0er.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87egq7774l.wl%kuninori.morimoto.gx@renesas.com>
+	<87a90sj0hy.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87a90sj0hy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@linaro.org>, Mark Brown <broonie@kernel.org>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>
 
-The atomic connector DPMS helper implements the connector DPMS operation
-using atomic commit, removing the need for DPMS helper operations on
-CRTCs and encoders.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+In upstream kernel, no one is using SND_SOC_PCM_SH7760 / sh7760-pcm-audio.
+This patch discontinue support of dma-sh7760 driver to reducing
+maintenance cost. Thank you and good bye dma-sh7760 driver.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c    | 11 +----------
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c |  9 ---------
- drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c |  4 ++--
- drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c | 15 ---------------
- drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c |  4 ++--
- drivers/gpu/drm/rcar-du/rcar_du_vgacon.c  |  4 ++--
- 6 files changed, 7 insertions(+), 40 deletions(-)
+ sound/soc/sh/Kconfig      |   11 --
+ sound/soc/sh/Makefile     |    4 -
+ sound/soc/sh/dma-sh7760.c |  352 ---------------------------------------------
+ 3 files changed, 367 deletions(-)
+ delete mode 100644 sound/soc/sh/dma-sh7760.c
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index f82893884a8a..8a44d37f1716 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -360,7 +360,7 @@ static void rcar_du_crtc_start(struct rcar_du_crtc *rcrtc)
- 	rcar_du_group_set_routing(rcrtc->group);
+diff --git a/sound/soc/sh/Kconfig b/sound/soc/sh/Kconfig
+index 0319165b..e9f735f 100644
+--- a/sound/soc/sh/Kconfig
++++ b/sound/soc/sh/Kconfig
+@@ -1,17 +1,6 @@
+ menu "SoC Audio support for SuperH"
+ 	depends on SUPERH || ARCH_SHMOBILE
  
- 	/* FIXME: Commit the planes state. This is required here as the CRTC can
--	 * be started from the DPMS and system resume handler, which don't go
-+	 * be started from the system resume handler, which don't go
- 	 * through .atomic_plane_update() and .atomic_flush() to commit plane
- 	 * state. Additionally, given that the plane state atomic commit occurs
- 	 * between CRTC disable and enable, the hardware state could also be
-@@ -475,14 +475,6 @@ static void rcar_du_crtc_disable(struct drm_crtc *crtc)
- 	rcrtc->outputs = 0;
- }
- 
--static void rcar_du_crtc_dpms(struct drm_crtc *crtc, int mode)
+-config SND_SOC_PCM_SH7760
+-	tristate "SoC Audio support for Renesas SH7760"
+-	depends on CPU_SUBTYPE_SH7760 && SH_DMABRG
+-	help
+-	  Enable this option for SH7760 AC97/I2S audio support.
+-
+-
+-##
+-## Audio unit modules
+-##
+-
+ config SND_SOC_SH4_FSI
+ 	tristate "SH4 FSI support"
+ 	select SND_SIMPLE_CARD
+diff --git a/sound/soc/sh/Makefile b/sound/soc/sh/Makefile
+index 84362aa..fa78ffa 100644
+--- a/sound/soc/sh/Makefile
++++ b/sound/soc/sh/Makefile
+@@ -1,7 +1,3 @@
+-## DMA engines
+-snd-soc-dma-sh7760-objs	:= dma-sh7760.o
+-obj-$(CONFIG_SND_SOC_PCM_SH7760)	+= snd-soc-dma-sh7760.o
+-
+ ## audio units found on some SH-4
+ snd-soc-fsi-objs	:= fsi.o
+ obj-$(CONFIG_SND_SOC_SH4_FSI)	+= snd-soc-fsi.o
+diff --git a/sound/soc/sh/dma-sh7760.c b/sound/soc/sh/dma-sh7760.c
+deleted file mode 100644
+index fd11404..0000000
+--- a/sound/soc/sh/dma-sh7760.c
++++ /dev/null
+@@ -1,352 +0,0 @@
+-/*
+- * SH7760 ("camelot") DMABRG audio DMA unit support
+- *
+- * Copyright (C) 2007 Manuel Lauss <mano@roarinelk.homelinux.net>
+- *  licensed under the terms outlined in the file COPYING at the root
+- *  of the linux kernel sources.
+- *
+- * The SH7760 DMABRG provides 4 dma channels (2x rec, 2x play), which
+- * trigger an interrupt when one half of the programmed transfer size
+- * has been xmitted.
+- *
+- * FIXME: little-endian only for now
+- */
+-
+-#include <linux/module.h>
+-#include <linux/gfp.h>
+-#include <linux/init.h>
+-#include <linux/platform_device.h>
+-#include <linux/dma-mapping.h>
+-#include <sound/core.h>
+-#include <sound/pcm.h>
+-#include <sound/pcm_params.h>
+-#include <sound/soc.h>
+-#include <asm/dmabrg.h>
+-
+-
+-/* registers and bits */
+-#define BRGATXSAR	0x00
+-#define BRGARXDAR	0x04
+-#define BRGATXTCR	0x08
+-#define BRGARXTCR	0x0C
+-#define BRGACR		0x10
+-#define BRGATXTCNT	0x14
+-#define BRGARXTCNT	0x18
+-
+-#define ACR_RAR		(1 << 18)
+-#define ACR_RDS		(1 << 17)
+-#define ACR_RDE		(1 << 16)
+-#define ACR_TAR		(1 << 2)
+-#define ACR_TDS		(1 << 1)
+-#define ACR_TDE		(1 << 0)
+-
+-/* receiver/transmitter data alignment */
+-#define ACR_RAM_NONE	(0 << 24)
+-#define ACR_RAM_4BYTE	(1 << 24)
+-#define ACR_RAM_2WORD	(2 << 24)
+-#define ACR_TAM_NONE	(0 << 8)
+-#define ACR_TAM_4BYTE	(1 << 8)
+-#define ACR_TAM_2WORD	(2 << 8)
+-
+-
+-struct camelot_pcm {
+-	unsigned long mmio;  /* DMABRG audio channel control reg MMIO */
+-	unsigned int txid;    /* ID of first DMABRG IRQ for this unit */
+-
+-	struct snd_pcm_substream *tx_ss;
+-	unsigned long tx_period_size;
+-	unsigned int  tx_period;
+-
+-	struct snd_pcm_substream *rx_ss;
+-	unsigned long rx_period_size;
+-	unsigned int  rx_period;
+-
+-} cam_pcm_data[2] = {
+-	{
+-		.mmio	=	0xFE3C0040,
+-		.txid	=	DMABRGIRQ_A0TXF,
+-	},
+-	{
+-		.mmio	=	0xFE3C0060,
+-		.txid	=	DMABRGIRQ_A1TXF,
+-	},
+-};
+-
+-#define BRGREG(x)	(*(unsigned long *)(cam->mmio + (x)))
+-
+-/*
+- * set a minimum of 16kb per period, to avoid interrupt-"storm" and
+- * resulting skipping. In general, the bigger the minimum size, the
+- * better for overall system performance. (The SH7760 is a puny CPU
+- * with a slow SDRAM interface and poor internal bus bandwidth,
+- * *especially* when the LCDC is active).  The minimum for the DMAC
+- * is 8 bytes; 16kbytes are enough to get skip-free playback of a
+- * 44kHz/16bit/stereo MP3 on a lightly loaded system, and maintain
+- * reasonable responsiveness in MPlayer.
+- */
+-#define DMABRG_PERIOD_MIN		16 * 1024
+-#define DMABRG_PERIOD_MAX		0x03fffffc
+-#define DMABRG_PREALLOC_BUFFER		32 * 1024
+-#define DMABRG_PREALLOC_BUFFER_MAX	32 * 1024
+-
+-static struct snd_pcm_hardware camelot_pcm_hardware = {
+-	.info = (SNDRV_PCM_INFO_MMAP |
+-		SNDRV_PCM_INFO_INTERLEAVED |
+-		SNDRV_PCM_INFO_BLOCK_TRANSFER |
+-		SNDRV_PCM_INFO_MMAP_VALID |
+-		SNDRV_PCM_INFO_BATCH),
+-	.buffer_bytes_max =	DMABRG_PERIOD_MAX,
+-	.period_bytes_min =	DMABRG_PERIOD_MIN,
+-	.period_bytes_max =	DMABRG_PERIOD_MAX / 2,
+-	.periods_min =		2,
+-	.periods_max =		2,
+-	.fifo_size =		128,
+-};
+-
+-static void camelot_txdma(void *data)
 -{
--	if (mode = DRM_MODE_DPMS_ON)
--		rcar_du_crtc_enable(crtc);
--	else
--		rcar_du_crtc_disable(crtc);
+-	struct camelot_pcm *cam = data;
+-	cam->tx_period ^= 1;
+-	snd_pcm_period_elapsed(cam->tx_ss);
 -}
 -
- static bool rcar_du_crtc_mode_fixup(struct drm_crtc *crtc,
- 				    const struct drm_display_mode *mode,
- 				    struct drm_display_mode *adjusted_mode)
-@@ -516,7 +508,6 @@ static void rcar_du_crtc_atomic_flush(struct drm_crtc *crtc)
- }
- 
- static const struct drm_crtc_helper_funcs crtc_helper_funcs = {
--	.dpms = rcar_du_crtc_dpms,
- 	.mode_fixup = rcar_du_crtc_mode_fixup,
- 	.disable = rcar_du_crtc_disable,
- 	.enable = rcar_du_crtc_enable,
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-index 76b201f2f75e..d4a70228ce50 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-@@ -58,14 +58,6 @@ static void rcar_du_encoder_enable(struct drm_encoder *encoder)
- 		rcar_du_lvdsenc_enable(renc->lvds, encoder->crtc, true);
- }
- 
--static void rcar_du_encoder_dpms(struct drm_encoder *encoder, int mode)
+-static void camelot_rxdma(void *data)
 -{
--	if (mode = DRM_MODE_DPMS_ON)
--		rcar_du_encoder_enable(encoder);
--	else
--		rcar_du_encoder_disable(encoder);
+-	struct camelot_pcm *cam = data;
+-	cam->rx_period ^= 1;
+-	snd_pcm_period_elapsed(cam->rx_ss);
 -}
 -
- static bool rcar_du_encoder_mode_fixup(struct drm_encoder *encoder,
- 				       const struct drm_display_mode *mode,
- 				       struct drm_display_mode *adjusted_mode)
-@@ -128,7 +120,6 @@ static void rcar_du_encoder_mode_set(struct drm_encoder *encoder,
- }
- 
- static const struct drm_encoder_helper_funcs encoder_helper_funcs = {
--	.dpms = rcar_du_encoder_dpms,
- 	.mode_fixup = rcar_du_encoder_mode_fixup,
- 	.mode_set = rcar_du_encoder_mode_set,
- 	.disable = rcar_du_encoder_disable,
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-index 9378c283cb58..96f2eb43713c 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-@@ -75,7 +75,7 @@ rcar_du_hdmi_connector_detect(struct drm_connector *connector, bool force)
- }
- 
- static const struct drm_connector_funcs connector_funcs = {
--	.dpms = drm_helper_connector_dpms,
-+	.dpms = drm_atomic_helper_connector_dpms,
- 	.reset = drm_atomic_helper_connector_reset,
- 	.detect = rcar_du_hdmi_connector_detect,
- 	.fill_modes = drm_helper_probe_single_connector_modes,
-@@ -112,7 +112,7 @@ int rcar_du_hdmi_connector_init(struct rcar_du_device *rcdu,
- 	if (ret < 0)
- 		return ret;
- 
--	drm_helper_connector_dpms(connector, DRM_MODE_DPMS_OFF);
-+	connector->dpms = DRM_MODE_DPMS_OFF;
- 	drm_object_property_set_value(&connector->base,
- 		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
- 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c b/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
-index a88ef2d6800e..3c29250c8abd 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
-@@ -62,20 +62,6 @@ static void rcar_du_hdmienc_enable(struct drm_encoder *encoder)
- 	hdmienc->enabled = true;
- }
- 
--static void rcar_du_hdmienc_dpms(struct drm_encoder *encoder, int mode)
+-static int camelot_pcm_open(struct snd_pcm_substream *substream)
 -{
--	struct rcar_du_hdmienc *hdmienc = to_rcar_hdmienc(encoder);
--	bool enable = mode = DRM_MODE_DPMS_ON;
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct camelot_pcm *cam = &cam_pcm_data[rtd->cpu_dai->id];
+-	int recv = substream->stream = SNDRV_PCM_STREAM_PLAYBACK ? 0:1;
+-	int ret, dmairq;
 -
--	if (hdmienc->enabled = enable)
--		return;
+-	snd_soc_set_runtime_hwparams(substream, &camelot_pcm_hardware);
 -
--	if (enable)
--		rcar_du_hdmienc_enable(encoder);
--	else
--		rcar_du_hdmienc_disable(encoder);
+-	/* DMABRG buffer half/full events */
+-	dmairq = (recv) ? cam->txid + 2 : cam->txid;
+-	if (recv) {
+-		cam->rx_ss = substream;
+-		ret = dmabrg_request_irq(dmairq, camelot_rxdma, cam);
+-		if (unlikely(ret)) {
+-			pr_debug("audio unit %d irqs already taken!\n",
+-			     rtd->cpu_dai->id);
+-			return -EBUSY;
+-		}
+-		(void)dmabrg_request_irq(dmairq + 1,camelot_rxdma, cam);
+-	} else {
+-		cam->tx_ss = substream;
+-		ret = dmabrg_request_irq(dmairq, camelot_txdma, cam);
+-		if (unlikely(ret)) {
+-			pr_debug("audio unit %d irqs already taken!\n",
+-			     rtd->cpu_dai->id);
+-			return -EBUSY;
+-		}
+-		(void)dmabrg_request_irq(dmairq + 1, camelot_txdma, cam);
+-	}
+-	return 0;
 -}
 -
- static bool rcar_du_hdmienc_mode_fixup(struct drm_encoder *encoder,
- 				       const struct drm_display_mode *mode,
- 				       struct drm_display_mode *adjusted_mode)
-@@ -110,7 +96,6 @@ static void rcar_du_hdmienc_mode_set(struct drm_encoder *encoder,
- }
- 
- static const struct drm_encoder_helper_funcs encoder_helper_funcs = {
--	.dpms = rcar_du_hdmienc_dpms,
- 	.mode_fixup = rcar_du_hdmienc_mode_fixup,
- 	.mode_set = rcar_du_hdmienc_mode_set,
- 	.disable = rcar_du_hdmienc_disable,
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-index 4bfa3ce34ab3..0c43032fc693 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-@@ -75,7 +75,7 @@ rcar_du_lvds_connector_detect(struct drm_connector *connector, bool force)
- }
- 
- static const struct drm_connector_funcs connector_funcs = {
--	.dpms = drm_helper_connector_dpms,
-+	.dpms = drm_atomic_helper_connector_dpms,
- 	.reset = drm_atomic_helper_connector_reset,
- 	.detect = rcar_du_lvds_connector_detect,
- 	.fill_modes = drm_helper_probe_single_connector_modes,
-@@ -121,7 +121,7 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
- 	if (ret < 0)
- 		return ret;
- 
--	drm_helper_connector_dpms(connector, DRM_MODE_DPMS_OFF);
-+	connector->dpms = DRM_MODE_DPMS_OFF;
- 	drm_object_property_set_value(&connector->base,
- 		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
- 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-index a110cf22f3b0..e0a5d8f93963 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-@@ -44,7 +44,7 @@ rcar_du_vga_connector_detect(struct drm_connector *connector, bool force)
- }
- 
- static const struct drm_connector_funcs connector_funcs = {
--	.dpms = drm_helper_connector_dpms,
-+	.dpms = drm_atomic_helper_connector_dpms,
- 	.reset = drm_atomic_helper_connector_reset,
- 	.detect = rcar_du_vga_connector_detect,
- 	.fill_modes = drm_helper_probe_single_connector_modes,
-@@ -80,7 +80,7 @@ int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
- 	if (ret < 0)
- 		return ret;
- 
--	drm_helper_connector_dpms(connector, DRM_MODE_DPMS_OFF);
-+	connector->dpms = DRM_MODE_DPMS_OFF;
- 	drm_object_property_set_value(&connector->base,
- 		rcdu->ddev->mode_config.dpms_property, DRM_MODE_DPMS_OFF);
- 
+-static int camelot_pcm_close(struct snd_pcm_substream *substream)
+-{
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct camelot_pcm *cam = &cam_pcm_data[rtd->cpu_dai->id];
+-	int recv = substream->stream = SNDRV_PCM_STREAM_PLAYBACK ? 0:1;
+-	int dmairq;
+-
+-	dmairq = (recv) ? cam->txid + 2 : cam->txid;
+-
+-	if (recv)
+-		cam->rx_ss = NULL;
+-	else
+-		cam->tx_ss = NULL;
+-
+-	dmabrg_free_irq(dmairq + 1);
+-	dmabrg_free_irq(dmairq);
+-
+-	return 0;
+-}
+-
+-static int camelot_hw_params(struct snd_pcm_substream *substream,
+-			     struct snd_pcm_hw_params *hw_params)
+-{
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct camelot_pcm *cam = &cam_pcm_data[rtd->cpu_dai->id];
+-	int recv = substream->stream = SNDRV_PCM_STREAM_PLAYBACK ? 0:1;
+-	int ret;
+-
+-	ret = snd_pcm_lib_malloc_pages(substream,
+-				       params_buffer_bytes(hw_params));
+-	if (ret < 0)
+-		return ret;
+-
+-	if (recv) {
+-		cam->rx_period_size = params_period_bytes(hw_params);
+-		cam->rx_period = 0;
+-	} else {
+-		cam->tx_period_size = params_period_bytes(hw_params);
+-		cam->tx_period = 0;
+-	}
+-	return 0;
+-}
+-
+-static int camelot_hw_free(struct snd_pcm_substream *substream)
+-{
+-	return snd_pcm_lib_free_pages(substream);
+-}
+-
+-static int camelot_prepare(struct snd_pcm_substream *substream)
+-{
+-	struct snd_pcm_runtime *runtime = substream->runtime;
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct camelot_pcm *cam = &cam_pcm_data[rtd->cpu_dai->id];
+-
+-	pr_debug("PCM data: addr 0x%08ulx len %d\n",
+-		 (u32)runtime->dma_addr, runtime->dma_bytes);
+- 
+-	if (substream->stream = SNDRV_PCM_STREAM_PLAYBACK) {
+-		BRGREG(BRGATXSAR) = (unsigned long)runtime->dma_area;
+-		BRGREG(BRGATXTCR) = runtime->dma_bytes;
+-	} else {
+-		BRGREG(BRGARXDAR) = (unsigned long)runtime->dma_area;
+-		BRGREG(BRGARXTCR) = runtime->dma_bytes;
+-	}
+-
+-	return 0;
+-}
+-
+-static inline void dmabrg_play_dma_start(struct camelot_pcm *cam)
+-{
+-	unsigned long acr = BRGREG(BRGACR) & ~(ACR_TDS | ACR_RDS);
+-	/* start DMABRG engine: XFER start, auto-addr-reload */
+-	BRGREG(BRGACR) = acr | ACR_TDE | ACR_TAR | ACR_TAM_2WORD;
+-}
+-
+-static inline void dmabrg_play_dma_stop(struct camelot_pcm *cam)
+-{
+-	unsigned long acr = BRGREG(BRGACR) & ~(ACR_TDS | ACR_RDS);
+-	/* forcibly terminate data transmission */
+-	BRGREG(BRGACR) = acr | ACR_TDS;
+-}
+-
+-static inline void dmabrg_rec_dma_start(struct camelot_pcm *cam)
+-{
+-	unsigned long acr = BRGREG(BRGACR) & ~(ACR_TDS | ACR_RDS);
+-	/* start DMABRG engine: recv start, auto-reload */
+-	BRGREG(BRGACR) = acr | ACR_RDE | ACR_RAR | ACR_RAM_2WORD;
+-}
+-
+-static inline void dmabrg_rec_dma_stop(struct camelot_pcm *cam)
+-{
+-	unsigned long acr = BRGREG(BRGACR) & ~(ACR_TDS | ACR_RDS);
+-	/* forcibly terminate data receiver */
+-	BRGREG(BRGACR) = acr | ACR_RDS;
+-}
+-
+-static int camelot_trigger(struct snd_pcm_substream *substream, int cmd)
+-{
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct camelot_pcm *cam = &cam_pcm_data[rtd->cpu_dai->id];
+-	int recv = substream->stream = SNDRV_PCM_STREAM_PLAYBACK ? 0:1;
+-
+-	switch (cmd) {
+-	case SNDRV_PCM_TRIGGER_START:
+-		if (recv)
+-			dmabrg_rec_dma_start(cam);
+-		else
+-			dmabrg_play_dma_start(cam);
+-		break;
+-	case SNDRV_PCM_TRIGGER_STOP:
+-		if (recv)
+-			dmabrg_rec_dma_stop(cam);
+-		else
+-			dmabrg_play_dma_stop(cam);
+-		break;
+-	default:
+-		return -EINVAL;
+-	}
+-
+-	return 0;
+-}
+-
+-static snd_pcm_uframes_t camelot_pos(struct snd_pcm_substream *substream)
+-{
+-	struct snd_pcm_runtime *runtime = substream->runtime;
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct camelot_pcm *cam = &cam_pcm_data[rtd->cpu_dai->id];
+-	int recv = substream->stream = SNDRV_PCM_STREAM_PLAYBACK ? 0:1;
+-	unsigned long pos;
+-
+-	/* cannot use the DMABRG pointer register: under load, by the
+-	 * time ALSA comes around to read the register, it is already
+-	 * far ahead (or worse, already done with the fragment) of the
+-	 * position at the time the IRQ was triggered, which results in
+-	 * fast-playback sound in my test application (ScummVM)
+-	 */
+-	if (recv)
+-		pos = cam->rx_period ? cam->rx_period_size : 0;
+-	else
+-		pos = cam->tx_period ? cam->tx_period_size : 0;
+-
+-	return bytes_to_frames(runtime, pos);
+-}
+-
+-static struct snd_pcm_ops camelot_pcm_ops = {
+-	.open		= camelot_pcm_open,
+-	.close		= camelot_pcm_close,
+-	.ioctl		= snd_pcm_lib_ioctl,
+-	.hw_params	= camelot_hw_params,
+-	.hw_free	= camelot_hw_free,
+-	.prepare	= camelot_prepare,
+-	.trigger	= camelot_trigger,
+-	.pointer	= camelot_pos,
+-};
+-
+-static int camelot_pcm_new(struct snd_soc_pcm_runtime *rtd)
+-{
+-	struct snd_pcm *pcm = rtd->pcm;
+-
+-	/* dont use SNDRV_DMA_TYPE_DEV, since it will oops the SH kernel
+-	 * in MMAP mode (i.e. aplay -M)
+-	 */
+-	snd_pcm_lib_preallocate_pages_for_all(pcm,
+-		SNDRV_DMA_TYPE_CONTINUOUS,
+-		snd_dma_continuous_data(GFP_KERNEL),
+-		DMABRG_PREALLOC_BUFFER,	DMABRG_PREALLOC_BUFFER_MAX);
+-
+-	return 0;
+-}
+-
+-static struct snd_soc_platform_driver sh7760_soc_platform = {
+-	.ops		= &camelot_pcm_ops,
+-	.pcm_new	= camelot_pcm_new,
+-};
+-
+-static int sh7760_soc_platform_probe(struct platform_device *pdev)
+-{
+-	return snd_soc_register_platform(&pdev->dev, &sh7760_soc_platform);
+-}
+-
+-static int sh7760_soc_platform_remove(struct platform_device *pdev)
+-{
+-	snd_soc_unregister_platform(&pdev->dev);
+-	return 0;
+-}
+-
+-static struct platform_driver sh7760_pcm_driver = {
+-	.driver = {
+-			.name = "sh7760-pcm-audio",
+-	},
+-
+-	.probe = sh7760_soc_platform_probe,
+-	.remove = sh7760_soc_platform_remove,
+-};
+-
+-module_platform_driver(sh7760_pcm_driver);
+-
+-MODULE_LICENSE("GPL");
+-MODULE_DESCRIPTION("SH7760 Audio DMA (DMABRG) driver");
+-MODULE_AUTHOR("Manuel Lauss <mano@roarinelk.homelinux.net>");
 -- 
-2.0.5
+1.7.9.5
 
