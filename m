@@ -1,60 +1,129 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 25 Feb 2015 23:31:25 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: r8a7791: Fix HSUSB clock to hp_clk from mp_clk
-Message-Id: <20150225233125.GG23723@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 05 Feb 2015 10:11:23 +0000
+Subject: [PATCH v5 0/5] drivers: bus: Add Simple Power-Managed Bus
+Message-Id: <1423131088-7835-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424360590-6556-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1424360590-6556-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 19, 2015 at 10:43:10AM -0500, Simon Horman wrote:
-> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> 
-> HSUSB uses hp_clk rather than mp_clk for H/W register access.
-> 
-> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> [horms: updated changelog]
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+        Hi all,
 
-I have queued this up.
+The Renesas Bus State Controller (BSC) provides an external bus for
+connecting multiple external devices to an SoC, driving several chip
+select lines, for e.g. NOR FLASH, Ethernet and USB.
+On the kzm9g and ape6evm development boards, an smsc9220 Ethernet
+controller is connnected to the BSC of an SH-Mobile AG5 (sh73a0) resp.
+R-Mobile APE6 (r8a73a4) SoC.
 
-> 
-> ---
-> v2 [Simon Horman]
-> - Updated changelog to remove information about USB-DMAC clock which
->   did not relate to the patch. I will follow up on weather the
->   USB-DMAC clock should be mp_clk as the deleted portion of the
->   changelog stated.
-> ---
->  arch/arm/boot/dts/r8a7791.dtsi | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index afba8af..cb9a9e7 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -1,7 +1,7 @@
->  /*
->   * Device Tree Source for the r8a7791 SoC
->   *
-> - * Copyright (C) 2013-2014 Renesas Electronics Corporation
-> + * Copyright (C) 2013-2015 Renesas Electronics Corporation
->   * Copyright (C) 2013-2014 Renesas Solutions Corp.
->   * Copyright (C) 2014 Cogent Embedded Inc.
->   *
-> @@ -1136,7 +1136,7 @@
->  		mstp7_clks: mstp7_clks@e615014c {
->  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
->  			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
-> -			clocks = <&mp_clk>,  <&mp_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
-> +			clocks = <&mp_clk>,  <&hp_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
->  				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
->  				 <&zx_clk>, <&zx_clk>, <&zx_clk>;
->  			#clock-cells = <1>;
-> -- 
-> 2.1.4
-> 
+The BSC is a fairly simple memory-mapped bus, hence a "simple-bus"
+compatibility seems suitable.  However, the BSC is special in two
+ways:
+  1. It is part of a PM domain (A4S on sh73a0),
+  2. It has a gateable functional clock (ZB).
+Before a device connected to the BSC can be accessed, the PM domain
+containing the BSC must be powered on, and the functional clock
+driving the BSC must be enabled.
+
+Both special properties can be described in DT in a standardized way
+("power-domains = <&pd_a4s>" and "clocks = <&zb_clk>", cfr. the
+example in the DT binding documentation).  Externally connected
+devices are described as children of the BSC node.
+
+Unfortunately this doesn't mean everything will work out-of-the-box.
+There are two problems:
+  1. Without a device driver bound to the bus device, this device is
+     not attached to the PM domain. And although a child device is
+     present and active, the PM domain may be powered down, as it's
+     considered unused by the PM domain core.
+  2. Without a device driver calling pm_runtime_enable(), its
+     functional clock is not enabled. Once runtime PM is enabled, the
+     R-Mobile PM domain platform driver manages the functional clock
+     using runtime PM.
+
+As none of the above is really bus hardware-specific (PM domains and
+functional clocks in clock domains are handled from genpd and platform
+code), this series adds a Simple Power-Managed Bus driver for
+transparent busses, which matches against "simple-pm-bus", enables
+runtime PM for the bus device, and calls of_platform_populate() to
+probe for child devices.
+Due to the child-parent relationship of devices connected to the bus,
+as long as the device drivers for the child devices are runtime PM
+enabled, the bus's PM domain will be powered, and the bus's clock will
+be enabled automatically when needed, for both runtime PM and s2ram.
+
+This was tested on sh73a0/kzm9g-multiplatform (by me), and (v3) on
+r8a73a4/ape6evm-multiplatform (by Ulrich Hecht). Without this,
+Ethernet doesn't work, as the ZB clock is disabled by
+clk_disable_unused().
+
+Felipe: It looks like drivers/usb/musb/musb_am335x.c can be removed, if
+"ti,am33xx-usb" claims compatibility with "simple-pm-bus"?
+
+As drivers/bus doesn't have a maintainer, and this driver is needed to
+move two shmobile platforms away from legacy to multiplatform, I think
+this can go in through Simon's shmobile tree.
+
+Changes compared to v4:
+  - Add Reviewed-by,
+  - "simple-pm-bus" is not an extension of "simple-bus",
+  - "compatible" must not contain "simple-bus",
+  - Add reference to clock/PM domain provider binding docs.
+
+Changes compared to v3:
+  - Replace "simple-bus" by "simple-pm-bus" in the bindings,
+  - Move the "renesas,bsc" bindings to a separate document,
+  - Bind against the generic "simple-pm-bus" instead of "renesas,bsc",
+  - Explicitly call of_platform_populate() after pm_runtime_enable() to
+    enforce ordering, instead of depending on claimed compatibility with
+    "simple-bus".
+
+Changes compared to v2:
+  - Document required properties inherited from "simple-bus",
+  - Document required "reg" property for "renesas,bsc",
+  - Move "ranges" before "reg" in the example,
+  - Add Tested-by,
+  - Split-off sh73a0/kzm9g and r8a73a4/ape6evm DTS updates.
+
+Changes compared to v1 (more detailed change logs in the individual
+patches):
+  - Added sorting of drivers/bus Kconfig and Makefile entries,
+  - Added DT binding documentation,
+  - Rename from "Renesas Bus State Controller Driver" (renesas-bsc) to
+    "Simple Power-Managed Bus Driver" (simple-pm-bus),
+  - Postponed adding power-domains properties to the dtsi,
+  - Added updates for r8a73a4/ape6evm.
+
+Thanks!
+
+Geert Uytterhoeven (5):
+  drivers: bus: Sort Kconfig entries alphabetically
+  drivers: bus: Sort Makefile entries alphabetically
+  drivers: bus: Add Simple Power-Managed Bus DT Bindings
+  drivers: bus: Add Renesas Bus State Controller (BSC) DT Bindings
+  drivers: bus: Add Simple Power-Managed Bus Driver
+
+ .../devicetree/bindings/bus/renesas,bsc.txt        | 46 +++++++++++++++++
+ .../devicetree/bindings/bus/simple-pm-bus.txt      | 44 ++++++++++++++++
+ drivers/bus/Kconfig                                | 53 ++++++++++++--------
+ drivers/bus/Makefile                               | 15 +++---
+ drivers/bus/simple-pm-bus.c                        | 58 ++++++++++++++++++++++
+ 5 files changed, 189 insertions(+), 27 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/bus/renesas,bsc.txt
+ create mode 100644 Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+ create mode 100644 drivers/bus/simple-pm-bus.c
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
