@@ -1,270 +1,478 @@
-From: Yijing Wang <wangyijing@huawei.com>
-Date: Thu, 26 Feb 2015 01:29:19 +0000
-Subject: [PATCH v3 02/30] PCI: Rip out pci_bus_add_devices() from pci_scan_root_bus()
-Message-Id: <1424914187-21027-3-git-send-email-wangyijing@huawei.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 05 Feb 2015 07:12:01 +0000
+Subject: [PATCH 3/6] ASoC: sh: discontinue support of ssi driver
+Message-Id: <8761bgj0fx.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424914187-21027-1-git-send-email-wangyijing@huawei.com>
-In-Reply-To: <1424914187-21027-1-git-send-email-wangyijing@huawei.com>
+References: <87egq7774l.wl%kuninori.morimoto.gx@renesas.com>
+	<87a90sj0hy.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87a90sj0hy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@linaro.org>, Mark Brown <broonie@kernel.org>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>
 
-Just like pci_scan_bus(), we also should rip out
-pci_bus_add_devices() from pci_scan_root_bus().
-Lots platforms first call pci_scan_root_bus(), but
-after that, they call pci_bus_size_bridges() and
-pci_bus_assign_resources(). Place pci_bus_add_devices()
-in pci_scan_root_bus() hurts PCI scan logic.
-For arm hw_pci->scan() functions which call
-pci_scan_root_bus(), it's no need to change anything,
-because pci_bus_add_devices() will be called later
-in pci_common_init_dev().
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Yijing Wang <wangyijing@huawei.com>
-CC: Richard Henderson <rth@twiddle.net>
-CC: Ivan Kokshaysky <ink@jurassic.park.msu.ru>
-CC: Matt Turner <mattst88@gmail.com>
-CC: David Howells <dhowells@redhat.com>
-CC: Tony Luck <tony.luck@intel.com>
-CC: Michal Simek <monstr@monstr.eu>
-CC: Ralf Baechle <ralf@linux-mips.org>
-CC: Koichi Yasutake <yasutake.koichi@jp.panasonic.com>
-CC: Sebastian Ott <sebott@linux.vnet.ibm.com>
-CC: "David S. Miller" <davem@davemloft.net>
-CC: Chris Metcalf <cmetcalf@ezchip.com>
-CC: Chris Zankel <chris@zankel.net>
-CC: Max Filippov <jcmvbkbc@gmail.com>
-CC: Thomas Gleixner <tglx@linutronix.de>
-CC: linux-alpha@vger.kernel.org
-CC: linux-kernel@vger.kernel.org
-CC: linux-mips@linux-mips.org
-CC: linux-am33-list@redhat.com
-CC: linux-s390@vger.kernel.org
-CC: linux-sh@vger.kernel.org
-CC: sparclinux@vger.kernel.org
-CC: linux-xtensa@linux-xtensa.org
+In upstream kernel, no one is using SND_SOC_SH4_SSI / sh4-ssi-dai.
+This patch discontinue support of ssi driver to reducing
+maintenance cost. Thank you and good bye ssi driver.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/alpha/kernel/pci.c          |    2 ++
- arch/frv/mb93090-mb00/pci-vdk.c  |    6 ++++--
- arch/ia64/sn/kernel/io_init.c    |    1 +
- arch/microblaze/pci/pci-common.c |    1 +
- arch/mips/pci/pci.c              |    1 +
- arch/mn10300/unit-asb2305/pci.c  |    5 ++++-
- arch/s390/pci/pci.c              |    2 +-
- arch/sh/drivers/pci/pci.c        |    1 +
- arch/sparc/kernel/leon_pci.c     |    1 +
- arch/tile/kernel/pci.c           |    2 ++
- arch/tile/kernel/pci_gx.c        |    2 ++
- arch/x86/pci/common.c            |    1 +
- arch/xtensa/kernel/pci.c         |    2 ++
- drivers/pci/probe.c              |    1 -
- 14 files changed, 23 insertions(+), 5 deletions(-)
+ sound/soc/sh/Kconfig  |    3 -
+ sound/soc/sh/Makefile |    2 -
+ sound/soc/sh/ssi.c    |  411 -------------------------------------------------
+ 3 files changed, 416 deletions(-)
+ delete mode 100644 sound/soc/sh/ssi.c
 
-diff --git a/arch/alpha/kernel/pci.c b/arch/alpha/kernel/pci.c
-index 98a1525..518b767 100644
---- a/arch/alpha/kernel/pci.c
-+++ b/arch/alpha/kernel/pci.c
-@@ -338,6 +338,8 @@ common_init_pci(void)
+diff --git a/sound/soc/sh/Kconfig b/sound/soc/sh/Kconfig
+index a931c96..e39d78b 100644
+--- a/sound/soc/sh/Kconfig
++++ b/sound/soc/sh/Kconfig
+@@ -17,9 +17,6 @@ config SND_SOC_SH4_HAC
+ 	select AC97_BUS
+ 	select SND_SOC_AC97_BUS
  
- 		bus = pci_scan_root_bus(NULL, next_busno, alpha_mv.pci_ops,
- 					hose, &resources);
-+		if (bus)
-+			pci_bus_add_devices(bus);
- 		hose->bus = bus;
- 		hose->need_domain_info = need_domain_info;
- 		next_busno = bus->busn_res.end + 1;
-diff --git a/arch/frv/mb93090-mb00/pci-vdk.c b/arch/frv/mb93090-mb00/pci-vdk.c
-index b073f4d..4b63781 100644
---- a/arch/frv/mb93090-mb00/pci-vdk.c
-+++ b/arch/frv/mb93090-mb00/pci-vdk.c
-@@ -316,6 +316,7 @@ void pcibios_fixup_bus(struct pci_bus *bus)
- 
- int __init pcibios_init(void)
- {
-+	struct pci_bus *bus;
- 	struct pci_ops *dir = NULL;
- 	LIST_HEAD(resources);
- 
-@@ -383,12 +384,13 @@ int __init pcibios_init(void)
- 	printk("PCI: Probing PCI hardware\n");
- 	pci_add_resource(&resources, &pci_ioport_resource);
- 	pci_add_resource(&resources, &pci_iomem_resource);
--	pci_scan_root_bus(NULL, 0, pci_root_ops, NULL, &resources);
-+	bus = pci_scan_root_bus(NULL, 0, pci_root_ops, NULL, &resources);
- 
- 	pcibios_irq_init();
- 	pcibios_fixup_irqs();
- 	pcibios_resource_survey();
+-config SND_SOC_SH4_SSI
+-	tristate
 -
-+	if (bus)
-+		pci_bus_add_devices(bus);
- 	return 0;
- }
+ config SND_SOC_SH4_FSI
+ 	tristate "SH4 FSI support"
+ 	select SND_SIMPLE_CARD
+diff --git a/sound/soc/sh/Makefile b/sound/soc/sh/Makefile
+index 20f50ea..6c61f1d 100644
+--- a/sound/soc/sh/Makefile
++++ b/sound/soc/sh/Makefile
+@@ -4,11 +4,9 @@ obj-$(CONFIG_SND_SOC_PCM_SH7760)	+= snd-soc-dma-sh7760.o
  
-diff --git a/arch/ia64/sn/kernel/io_init.c b/arch/ia64/sn/kernel/io_init.c
-index 0b5ce82..63b43a6 100644
---- a/arch/ia64/sn/kernel/io_init.c
-+++ b/arch/ia64/sn/kernel/io_init.c
-@@ -272,6 +272,7 @@ sn_pci_controller_fixup(int segment, int busnum, struct pci_bus *bus)
- 		kfree(res);
- 		kfree(controller);
- 	}
-+	pci_bus_add_devices(bus);
- }
+ ## audio units found on some SH-4
+ snd-soc-hac-objs	:= hac.o
+-snd-soc-ssi-objs	:= ssi.o
+ snd-soc-fsi-objs	:= fsi.o
+ snd-soc-siu-objs	:= siu_pcm.o siu_dai.o
+ obj-$(CONFIG_SND_SOC_SH4_HAC)	+= snd-soc-hac.o
+-obj-$(CONFIG_SND_SOC_SH4_SSI)	+= snd-soc-ssi.o
+ obj-$(CONFIG_SND_SOC_SH4_FSI)	+= snd-soc-fsi.o
+ obj-$(CONFIG_SND_SOC_SH4_SIU)	+= snd-soc-siu.o
  
- /*
-diff --git a/arch/microblaze/pci/pci-common.c b/arch/microblaze/pci/pci-common.c
-index 48528fb..d8bbad9 100644
---- a/arch/microblaze/pci/pci-common.c
-+++ b/arch/microblaze/pci/pci-common.c
-@@ -1362,6 +1362,7 @@ static void pcibios_scan_phb(struct pci_controller *hose)
- 	hose->bus = bus;
- 
- 	hose->last_busno = bus->busn_res.end;
-+	pci_bus_add_devices(bus);
- }
- 
- static int __init pcibios_init(void)
-diff --git a/arch/mips/pci/pci.c b/arch/mips/pci/pci.c
-index 1bf60b1..9eb54b5 100644
---- a/arch/mips/pci/pci.c
-+++ b/arch/mips/pci/pci.c
-@@ -114,6 +114,7 @@ static void pcibios_scanbus(struct pci_controller *hose)
- 			pci_bus_size_bridges(bus);
- 			pci_bus_assign_resources(bus);
- 		}
-+		pci_bus_add_devices(bus);
- 	}
- }
- 
-diff --git a/arch/mn10300/unit-asb2305/pci.c b/arch/mn10300/unit-asb2305/pci.c
-index 613ca1e..2a815c1 100644
---- a/arch/mn10300/unit-asb2305/pci.c
-+++ b/arch/mn10300/unit-asb2305/pci.c
-@@ -340,6 +340,7 @@ void pcibios_fixup_bus(struct pci_bus *bus)
-  */
- static int __init pcibios_init(void)
- {
-+	struct pci_bus *bus;
- 	resource_size_t io_offset, mem_offset;
- 	LIST_HEAD(resources);
- 
-@@ -371,11 +372,13 @@ static int __init pcibios_init(void)
- 
- 	pci_add_resource_offset(&resources, &pci_ioport_resource, io_offset);
- 	pci_add_resource_offset(&resources, &pci_iomem_resource, mem_offset);
--	pci_scan_root_bus(NULL, 0, &pci_direct_ampci, NULL, &resources);
-+	bus = pci_scan_root_bus(NULL, 0, &pci_direct_ampci, NULL, &resources);
- 
- 	pcibios_irq_init();
- 	pcibios_fixup_irqs();
- 	pcibios_resource_survey();
-+	if (bus)
-+		pci_bus_add_devices(bus);
- 	return 0;
- }
- 
-diff --git a/arch/s390/pci/pci.c b/arch/s390/pci/pci.c
-index 753a567..1534e5a 100644
---- a/arch/s390/pci/pci.c
-+++ b/arch/s390/pci/pci.c
-@@ -776,7 +776,7 @@ static int zpci_scan_bus(struct zpci_dev *zdev)
- 		zpci_cleanup_bus_resources(zdev);
- 		return -EIO;
- 	}
+diff --git a/sound/soc/sh/ssi.c b/sound/soc/sh/ssi.c
+deleted file mode 100644
+index ab13146..0000000
+--- a/sound/soc/sh/ssi.c
++++ /dev/null
+@@ -1,411 +0,0 @@
+-/*
+- * Serial Sound Interface (I2S) support for SH7760/SH7780
+- *
+- * Copyright (c) 2007 Manuel Lauss <mano@roarinelk.homelinux.net>
+- *
+- *  licensed under the terms outlined in the file COPYING at the root
+- *  of the linux kernel sources.
+- *
+- * dont forget to set IPSEL/OMSEL register bits (in your board code) to
+- * enable SSI output pins!
+- */
 -
-+	pci_bus_add_devices(zdev->bus);
- 	zdev->bus->max_bus_speed = zdev->max_bus_speed;
- 	return 0;
- }
-diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
-index 1bc09ee..efc1051 100644
---- a/arch/sh/drivers/pci/pci.c
-+++ b/arch/sh/drivers/pci/pci.c
-@@ -69,6 +69,7 @@ static void pcibios_scanbus(struct pci_channel *hose)
- 
- 		pci_bus_size_bridges(bus);
- 		pci_bus_assign_resources(bus);
-+		pci_bus_add_devices(bus);
- 	} else {
- 		pci_free_resource_list(&resources);
- 	}
-diff --git a/arch/sparc/kernel/leon_pci.c b/arch/sparc/kernel/leon_pci.c
-index 899b720..2971076 100644
---- a/arch/sparc/kernel/leon_pci.c
-+++ b/arch/sparc/kernel/leon_pci.c
-@@ -40,6 +40,7 @@ void leon_pci_init(struct platform_device *ofdev, struct leon_pci_info *info)
- 
- 		/* Assign devices with resources */
- 		pci_assign_unassigned_resources();
-+		pci_bus_add_devices(root_bus);
- 	} else {
- 		pci_free_resource_list(&resources);
- 	}
-diff --git a/arch/tile/kernel/pci.c b/arch/tile/kernel/pci.c
-index 325df47..9475a74 100644
---- a/arch/tile/kernel/pci.c
-+++ b/arch/tile/kernel/pci.c
-@@ -339,6 +339,8 @@ int __init pcibios_init(void)
- 			struct pci_bus *next_bus;
- 			struct pci_dev *dev;
- 
-+			pci_bus_add_devices(root_bus);
-+
- 			list_for_each_entry(dev, &root_bus->devices, bus_list) {
- 				/*
- 				 * Find the PCI host controller, ie. the 1st
-diff --git a/arch/tile/kernel/pci_gx.c b/arch/tile/kernel/pci_gx.c
-index 2c95f37..d7a0729 100644
---- a/arch/tile/kernel/pci_gx.c
-+++ b/arch/tile/kernel/pci_gx.c
-@@ -916,6 +916,8 @@ int __init pcibios_init(void)
- 		/* Configure the max_payload_size values for this domain. */
- 		fixup_read_and_payload_sizes(controller);
- 
-+		pci_bus_add_devices(root_bus);
-+
- 		/* Alloc a PIO region for PCI memory access for each RC port. */
- 		ret = gxio_trio_alloc_pio_regions(trio_context, 1, 0, 0);
- 		if (ret < 0) {
-diff --git a/arch/x86/pci/common.c b/arch/x86/pci/common.c
-index 3d2612b..0cbc723 100644
---- a/arch/x86/pci/common.c
-+++ b/arch/x86/pci/common.c
-@@ -491,6 +491,7 @@ void pcibios_scan_root(int busnum)
- 		pci_free_resource_list(&resources);
- 		kfree(sd);
- 	}
-+	pci_bus_add_devices(bus);
- }
- 
- void __init pcibios_set_cache_line_size(void)
-diff --git a/arch/xtensa/kernel/pci.c b/arch/xtensa/kernel/pci.c
-index 5b34033..f2ae64e 100644
---- a/arch/xtensa/kernel/pci.c
-+++ b/arch/xtensa/kernel/pci.c
-@@ -185,6 +185,8 @@ static int __init pcibios_init(void)
- 		pci_controller_apertures(pci_ctrl, &resources);
- 		bus = pci_scan_root_bus(NULL, pci_ctrl->first_busno,
- 					pci_ctrl->ops, pci_ctrl, &resources);
-+		if (bus)
-+			pci_bus_add_devices(bus);
- 		pci_ctrl->bus = bus;
- 		pci_ctrl->last_busno = bus->busn_res.end;
- 		if (next_busno <= pci_ctrl->last_busno)
-diff --git a/drivers/pci/probe.c b/drivers/pci/probe.c
-index 88604f2..8ef0375 100644
---- a/drivers/pci/probe.c
-+++ b/drivers/pci/probe.c
-@@ -2087,7 +2087,6 @@ struct pci_bus *pci_scan_root_bus(struct device *parent, int bus,
- 	if (!found)
- 		pci_bus_update_busn_res_end(b, max);
- 
--	pci_bus_add_devices(b);
- 	return b;
- }
- EXPORT_SYMBOL(pci_scan_root_bus);
+-/*
+- * LIMITATIONS:
+- *	The SSI unit has only one physical data line, so full duplex is
+- *	impossible.  This can be remedied  on the  SH7760 by  using the
+- *	other SSI unit for recording; however the SH7780 has only 1 SSI
+- *	unit, and its pins are shared with the AC97 unit,  among others.
+- *
+- * FEATURES:
+- *	The SSI features "compressed mode": in this mode it continuously
+- *	streams PCM data over the I2S lines and uses LRCK as a handshake
+- *	signal.  Can be used to send compressed data (AC3/DTS) to a DSP.
+- *	The number of bits sent over the wire in a frame can be adjusted
+- *	and can be independent from the actual sample bit depth. This is
+- *	useful to support TDM mode codecs like the AD1939 which have a
+- *	fixed TDM slot size, regardless of sample resolution.
+- */
+-
+-#include <linux/init.h>
+-#include <linux/module.h>
+-#include <linux/platform_device.h>
+-#include <sound/core.h>
+-#include <sound/pcm.h>
+-#include <sound/initval.h>
+-#include <sound/soc.h>
+-#include <asm/io.h>
+-
+-#define SSICR	0x00
+-#define SSISR	0x04
+-
+-#define CR_DMAEN	(1 << 28)
+-#define CR_CHNL_SHIFT	22
+-#define CR_CHNL_MASK	(3 << CR_CHNL_SHIFT)
+-#define CR_DWL_SHIFT	19
+-#define CR_DWL_MASK	(7 << CR_DWL_SHIFT)
+-#define CR_SWL_SHIFT	16
+-#define CR_SWL_MASK	(7 << CR_SWL_SHIFT)
+-#define CR_SCK_MASTER	(1 << 15)	/* bitclock master bit */
+-#define CR_SWS_MASTER	(1 << 14)	/* wordselect master bit */
+-#define CR_SCKP		(1 << 13)	/* I2Sclock polarity */
+-#define CR_SWSP		(1 << 12)	/* LRCK polarity */
+-#define CR_SPDP		(1 << 11)
+-#define CR_SDTA		(1 << 10)	/* i2s alignment (msb/lsb) */
+-#define CR_PDTA		(1 << 9)	/* fifo data alignment */
+-#define CR_DEL		(1 << 8)	/* delay data by 1 i2sclk */
+-#define CR_BREN		(1 << 7)	/* clock gating in burst mode */
+-#define CR_CKDIV_SHIFT	4
+-#define CR_CKDIV_MASK	(7 << CR_CKDIV_SHIFT)	/* bitclock divider */
+-#define CR_MUTE		(1 << 3)	/* SSI mute */
+-#define CR_CPEN		(1 << 2)	/* compressed mode */
+-#define CR_TRMD		(1 << 1)	/* transmit/receive select */
+-#define CR_EN		(1 << 0)	/* enable SSI */
+-
+-#define SSIREG(reg)	(*(unsigned long *)(ssi->mmio + (reg)))
+-
+-struct ssi_priv {
+-	unsigned long mmio;
+-	unsigned long sysclk;
+-	int inuse;
+-} ssi_cpu_data[] = {
+-#if defined(CONFIG_CPU_SUBTYPE_SH7760)
+-	{
+-		.mmio	= 0xFE680000,
+-	},
+-	{
+-		.mmio	= 0xFE690000,
+-	},
+-#elif defined(CONFIG_CPU_SUBTYPE_SH7780)
+-	{
+-		.mmio	= 0xFFE70000,
+-	},
+-#else
+-#error "Unsupported SuperH SoC"
+-#endif
+-};
+-
+-/*
+- * track usage of the SSI; it is simplex-only so prevent attempts of
+- * concurrent playback + capture. FIXME: any locking required?
+- */
+-static int ssi_startup(struct snd_pcm_substream *substream,
+-		       struct snd_soc_dai *dai)
+-{
+-	struct ssi_priv *ssi = &ssi_cpu_data[dai->id];
+-	if (ssi->inuse) {
+-		pr_debug("ssi: already in use!\n");
+-		return -EBUSY;
+-	} else
+-		ssi->inuse = 1;
+-	return 0;
+-}
+-
+-static void ssi_shutdown(struct snd_pcm_substream *substream,
+-			 struct snd_soc_dai *dai)
+-{
+-	struct ssi_priv *ssi = &ssi_cpu_data[dai->id];
+-
+-	ssi->inuse = 0;
+-}
+-
+-static int ssi_trigger(struct snd_pcm_substream *substream, int cmd,
+-		       struct snd_soc_dai *dai)
+-{
+-	struct ssi_priv *ssi = &ssi_cpu_data[dai->id];
+-
+-	switch (cmd) {
+-	case SNDRV_PCM_TRIGGER_START:
+-		SSIREG(SSICR) |= CR_DMAEN | CR_EN;
+-		break;
+-	case SNDRV_PCM_TRIGGER_STOP:
+-		SSIREG(SSICR) &= ~(CR_DMAEN | CR_EN);
+-		break;
+-	default:
+-		return -EINVAL;
+-	}
+-
+-	return 0;
+-}
+-
+-static int ssi_hw_params(struct snd_pcm_substream *substream,
+-			 struct snd_pcm_hw_params *params,
+-			 struct snd_soc_dai *dai)
+-{
+-	struct ssi_priv *ssi = &ssi_cpu_data[dai->id];
+-	unsigned long ssicr = SSIREG(SSICR);
+-	unsigned int bits, channels, swl, recv, i;
+-
+-	channels = params_channels(params);
+-	bits = params->msbits;
+-	recv = (substream->stream = SNDRV_PCM_STREAM_PLAYBACK) ? 0 : 1;
+-
+-	pr_debug("ssi_hw_params() enter\nssicr was    %08lx\n", ssicr);
+-	pr_debug("bits: %u channels: %u\n", bits, channels);
+-
+-	ssicr &= ~(CR_TRMD | CR_CHNL_MASK | CR_DWL_MASK | CR_PDTA |
+-		   CR_SWL_MASK);
+-
+-	/* direction (send/receive) */
+-	if (!recv)
+-		ssicr |= CR_TRMD;	/* transmit */
+-
+-	/* channels */
+-	if ((channels < 2) || (channels > 8) || (channels & 1)) {
+-		pr_debug("ssi: invalid number of channels\n");
+-		return -EINVAL;
+-	}
+-	ssicr |= ((channels >> 1) - 1) << CR_CHNL_SHIFT;
+-
+-	/* DATA WORD LENGTH (DWL): databits in audio sample */
+-	i = 0;
+-	switch (bits) {
+-	case 32: ++i;
+-	case 24: ++i;
+-	case 22: ++i;
+-	case 20: ++i;
+-	case 18: ++i;
+-	case 16: ++i;
+-		 ssicr |= i << CR_DWL_SHIFT;
+-	case 8:	 break;
+-	default:
+-		pr_debug("ssi: invalid sample width\n");
+-		return -EINVAL;
+-	}
+-
+-	/*
+-	 * SYSTEM WORD LENGTH: size in bits of half a frame over the I2S
+-	 * wires. This is usually bits_per_sample x channels/2;  i.e. in
+-	 * Stereo mode  the SWL equals DWL.  SWL can  be bigger than the
+-	 * product of (channels_per_slot x samplebits), e.g.  for codecs
+-	 * like the AD1939 which  only accept 32bit wide TDM slots.  For
+-	 * "standard" I2S operation we set SWL = chans / 2 * DWL here.
+-	 * Waiting for ASoC to get TDM support ;-)
+-	 */
+-	if ((bits > 16) && (bits <= 24)) {
+-		bits = 24;	/* these are padded by the SSI */
+-		/*ssicr |= CR_PDTA;*/ /* cpu/data endianness ? */
+-	}
+-	i = 0;
+-	swl = (bits * channels) / 2;
+-	switch (swl) {
+-	case 256: ++i;
+-	case 128: ++i;
+-	case 64:  ++i;
+-	case 48:  ++i;
+-	case 32:  ++i;
+-	case 16:  ++i;
+-		  ssicr |= i << CR_SWL_SHIFT;
+-	case 8:   break;
+-	default:
+-		pr_debug("ssi: invalid system word length computed\n");
+-		return -EINVAL;
+-	}
+-
+-	SSIREG(SSICR) = ssicr;
+-
+-	pr_debug("ssi_hw_params() leave\nssicr is now %08lx\n", ssicr);
+-	return 0;
+-}
+-
+-static int ssi_set_sysclk(struct snd_soc_dai *cpu_dai, int clk_id,
+-			  unsigned int freq, int dir)
+-{
+-	struct ssi_priv *ssi = &ssi_cpu_data[cpu_dai->id];
+-
+-	ssi->sysclk = freq;
+-
+-	return 0;
+-}
+-
+-/*
+- * This divider is used to generate the SSI_SCK (I2S bitclock) from the
+- * clock at the HAC_BIT_CLK ("oversampling clock") pin.
+- */
+-static int ssi_set_clkdiv(struct snd_soc_dai *dai, int did, int div)
+-{
+-	struct ssi_priv *ssi = &ssi_cpu_data[dai->id];
+-	unsigned long ssicr;
+-	int i;
+-
+-	i = 0;
+-	ssicr = SSIREG(SSICR) & ~CR_CKDIV_MASK;
+-	switch (div) {
+-	case 16: ++i;
+-	case 8:  ++i;
+-	case 4:  ++i;
+-	case 2:  ++i;
+-		 SSIREG(SSICR) = ssicr | (i << CR_CKDIV_SHIFT);
+-	case 1:  break;
+-	default:
+-		pr_debug("ssi: invalid sck divider %d\n", div);
+-		return -EINVAL;
+-	}
+-
+-	return 0;
+-}
+-
+-static int ssi_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
+-{
+-	struct ssi_priv *ssi = &ssi_cpu_data[dai->id];
+-	unsigned long ssicr = SSIREG(SSICR);
+-
+-	pr_debug("ssi_set_fmt()\nssicr was    0x%08lx\n", ssicr);
+-
+-	ssicr &= ~(CR_DEL | CR_PDTA | CR_BREN | CR_SWSP | CR_SCKP |
+-		   CR_SWS_MASTER | CR_SCK_MASTER);
+-
+-	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
+-	case SND_SOC_DAIFMT_I2S:
+-		break;
+-	case SND_SOC_DAIFMT_RIGHT_J:
+-		ssicr |= CR_DEL | CR_PDTA;
+-		break;
+-	case SND_SOC_DAIFMT_LEFT_J:
+-		ssicr |= CR_DEL;
+-		break;
+-	default:
+-		pr_debug("ssi: unsupported format\n");
+-		return -EINVAL;
+-	}
+-
+-	switch (fmt & SND_SOC_DAIFMT_CLOCK_MASK) {
+-	case SND_SOC_DAIFMT_CONT:
+-		break;
+-	case SND_SOC_DAIFMT_GATED:
+-		ssicr |= CR_BREN;
+-		break;
+-	}
+-
+-	switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
+-	case SND_SOC_DAIFMT_NB_NF:
+-		ssicr |= CR_SCKP;	/* sample data at low clkedge */
+-		break;
+-	case SND_SOC_DAIFMT_NB_IF:
+-		ssicr |= CR_SCKP | CR_SWSP;
+-		break;
+-	case SND_SOC_DAIFMT_IB_NF:
+-		break;
+-	case SND_SOC_DAIFMT_IB_IF:
+-		ssicr |= CR_SWSP;	/* word select starts low */
+-		break;
+-	default:
+-		pr_debug("ssi: invalid inversion\n");
+-		return -EINVAL;
+-	}
+-
+-	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
+-	case SND_SOC_DAIFMT_CBM_CFM:
+-		break;
+-	case SND_SOC_DAIFMT_CBS_CFM:
+-		ssicr |= CR_SCK_MASTER;
+-		break;
+-	case SND_SOC_DAIFMT_CBM_CFS:
+-		ssicr |= CR_SWS_MASTER;
+-		break;
+-	case SND_SOC_DAIFMT_CBS_CFS:
+-		ssicr |= CR_SWS_MASTER | CR_SCK_MASTER;
+-		break;
+-	default:
+-		pr_debug("ssi: invalid master/slave configuration\n");
+-		return -EINVAL;
+-	}
+-
+-	SSIREG(SSICR) = ssicr;
+-	pr_debug("ssi_set_fmt() leave\nssicr is now 0x%08lx\n", ssicr);
+-
+-	return 0;
+-}
+-
+-/* the SSI depends on an external clocksource (at HAC_BIT_CLK) even in
+- * Master mode,  so really this is board specific;  the SSI can do any
+- * rate with the right bitclk and divider settings.
+- */
+-#define SSI_RATES	\
+-	SNDRV_PCM_RATE_8000_192000
+-
+-/* the SSI can do 8-32 bit samples, with 8 possible channels */
+-#define SSI_FMTS	\
+-	(SNDRV_PCM_FMTBIT_S8      | SNDRV_PCM_FMTBIT_U8      |	\
+-	 SNDRV_PCM_FMTBIT_S16_LE  | SNDRV_PCM_FMTBIT_U16_LE  |	\
+-	 SNDRV_PCM_FMTBIT_S20_3LE | SNDRV_PCM_FMTBIT_U20_3LE |	\
+-	 SNDRV_PCM_FMTBIT_S24_3LE | SNDRV_PCM_FMTBIT_U24_3LE |	\
+-	 SNDRV_PCM_FMTBIT_S32_LE  | SNDRV_PCM_FMTBIT_U32_LE)
+-
+-static const struct snd_soc_dai_ops ssi_dai_ops = {
+-	.startup	= ssi_startup,
+-	.shutdown	= ssi_shutdown,
+-	.trigger	= ssi_trigger,
+-	.hw_params	= ssi_hw_params,
+-	.set_sysclk	= ssi_set_sysclk,
+-	.set_clkdiv	= ssi_set_clkdiv,
+-	.set_fmt	= ssi_set_fmt,
+-};
+-
+-static struct snd_soc_dai_driver sh4_ssi_dai[] = {
+-{
+-	.name			= "ssi-dai.0",
+-	.playback = {
+-		.rates		= SSI_RATES,
+-		.formats	= SSI_FMTS,
+-		.channels_min	= 2,
+-		.channels_max	= 8,
+-	},
+-	.capture = {
+-		.rates		= SSI_RATES,
+-		.formats	= SSI_FMTS,
+-		.channels_min	= 2,
+-		.channels_max	= 8,
+-	},
+-	.ops = &ssi_dai_ops,
+-},
+-#ifdef CONFIG_CPU_SUBTYPE_SH7760
+-{
+-	.name			= "ssi-dai.1",
+-	.playback = {
+-		.rates		= SSI_RATES,
+-		.formats	= SSI_FMTS,
+-		.channels_min	= 2,
+-		.channels_max	= 8,
+-	},
+-	.capture = {
+-		.rates		= SSI_RATES,
+-		.formats	= SSI_FMTS,
+-		.channels_min	= 2,
+-		.channels_max	= 8,
+-	},
+-	.ops = &ssi_dai_ops,
+-},
+-#endif
+-};
+-
+-static const struct snd_soc_component_driver sh4_ssi_component = {
+-	.name		= "sh4-ssi",
+-};
+-
+-static int sh4_soc_dai_probe(struct platform_device *pdev)
+-{
+-	return snd_soc_register_component(&pdev->dev, &sh4_ssi_component,
+-					  sh4_ssi_dai, ARRAY_SIZE(sh4_ssi_dai));
+-}
+-
+-static int sh4_soc_dai_remove(struct platform_device *pdev)
+-{
+-	snd_soc_unregister_component(&pdev->dev);
+-	return 0;
+-}
+-
+-static struct platform_driver sh4_ssi_driver = {
+-	.driver = {
+-			.name = "sh4-ssi-dai",
+-	},
+-
+-	.probe = sh4_soc_dai_probe,
+-	.remove = sh4_soc_dai_remove,
+-};
+-
+-module_platform_driver(sh4_ssi_driver);
+-
+-MODULE_LICENSE("GPL");
+-MODULE_DESCRIPTION("SuperH onchip SSI (I2S) audio driver");
+-MODULE_AUTHOR("Manuel Lauss <mano@roarinelk.homelinux.net>");
 -- 
-1.7.1
+1.7.9.5
 
