@@ -1,60 +1,274 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 26 Feb 2015 09:21:22 +0000
-Subject: [PATCH 2/3] ARM: shmobile: lager: Add DU external pixel clocks to DT
-Message-Id: <1424942483-10910-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 05 Feb 2015 07:11:26 +0000
+Subject: [PATCH 1/6] ASoC: sh: discontinue support of migor driver
+Message-Id: <878ugcj0gw.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87egq7774l.wl%kuninori.morimoto.gx@renesas.com>
+	<87a90sj0hy.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87a90sj0hy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@linaro.org>, Mark Brown <broonie@kernel.org>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>
 
-Declare the fixed 148.5MHz pixel clocks connected to the DU clock
-inputs.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+In upstream kernel, no one is using SND_SIU_MIGOR.
+This patch discontinue support of migor driver to reducing
+maintenance cost. Thank you and good bye migor driver.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+ sound/soc/sh/Kconfig  |    8 --
+ sound/soc/sh/Makefile |    2 -
+ sound/soc/sh/migor.c  |  208 -------------------------------------------------
+ 3 files changed, 218 deletions(-)
+ delete mode 100644 sound/soc/sh/migor.c
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 631b3f5fb7d8..329bb994aac0 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -233,6 +233,18 @@
- 			};
- 		};
- 	};
-+
-+	x2_clk: x2-clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <148500000>;
-+	};
-+
-+	x13_clk: x13-clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <148500000>;
-+	};
- };
+diff --git a/sound/soc/sh/Kconfig b/sound/soc/sh/Kconfig
+index 80245b6..8b8409c 100644
+--- a/sound/soc/sh/Kconfig
++++ b/sound/soc/sh/Kconfig
+@@ -54,12 +54,4 @@ config SND_SH7760_AC97
+ 	  This option enables generic sound support for the first
+ 	  AC97 unit of the SH7760.
  
- &du {
-@@ -240,6 +252,15 @@
- 	pinctrl-names = "default";
- 	status = "okay";
+-config SND_SIU_MIGOR
+-	tristate "SIU sound support on Migo-R"
+-	depends on SH_MIGOR && I2C
+-	select SND_SOC_SH4_SIU
+-	select SND_SOC_WM8978
+-	help
+-	  This option enables sound support for the SH7722 Migo-R board
+-
+ endmenu
+diff --git a/sound/soc/sh/Makefile b/sound/soc/sh/Makefile
+index aaf3dcd..a462960 100644
+--- a/sound/soc/sh/Makefile
++++ b/sound/soc/sh/Makefile
+@@ -17,7 +17,5 @@ obj-$(CONFIG_SND_SOC_RCAR)	+= rcar/
  
-+	clocks = <&mstp7_clks R8A7790_CLK_DU0>,
-+		 <&mstp7_clks R8A7790_CLK_DU1>,
-+		 <&mstp7_clks R8A7790_CLK_DU2>,
-+		 <&mstp7_clks R8A7790_CLK_LVDS0>,
-+		 <&mstp7_clks R8A7790_CLK_LVDS1>,
-+		 <&x13_clk>, <&x2_clk>;
-+	clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1",
-+		      "dclkin.0", "dclkin.1";
-+
- 	ports {
- 		port@0 {
- 			endpoint {
+ ## boards
+ snd-soc-sh7760-ac97-objs	:= sh7760-ac97.o
+-snd-soc-migor-objs		:= migor.o
+ 
+ obj-$(CONFIG_SND_SH7760_AC97)	+= snd-soc-sh7760-ac97.o
+-obj-$(CONFIG_SND_SIU_MIGOR)	+= snd-soc-migor.o
+diff --git a/sound/soc/sh/migor.c b/sound/soc/sh/migor.c
+deleted file mode 100644
+index 82f5823..0000000
+--- a/sound/soc/sh/migor.c
++++ /dev/null
+@@ -1,208 +0,0 @@
+-/*
+- * ALSA SoC driver for Migo-R
+- *
+- * Copyright (C) 2009-2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- */
+-
+-#include <linux/clkdev.h>
+-#include <linux/device.h>
+-#include <linux/firmware.h>
+-#include <linux/module.h>
+-
+-#include <asm/clock.h>
+-
+-#include <cpu/sh7722.h>
+-
+-#include <sound/core.h>
+-#include <sound/pcm.h>
+-#include <sound/soc.h>
+-
+-#include "../codecs/wm8978.h"
+-#include "siu.h"
+-
+-/* Default 8000Hz sampling frequency */
+-static unsigned long codec_freq = 8000 * 512;
+-
+-static unsigned int use_count;
+-
+-/* External clock, sourced from the codec at the SIUMCKB pin */
+-static unsigned long siumckb_recalc(struct clk *clk)
+-{
+-	return codec_freq;
+-}
+-
+-static struct sh_clk_ops siumckb_clk_ops = {
+-	.recalc = siumckb_recalc,
+-};
+-
+-static struct clk siumckb_clk = {
+-	.ops		= &siumckb_clk_ops,
+-	.rate		= 0, /* initialised at run-time */
+-};
+-
+-static struct clk_lookup *siumckb_lookup;
+-
+-static int migor_hw_params(struct snd_pcm_substream *substream,
+-			   struct snd_pcm_hw_params *params)
+-{
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct snd_soc_dai *codec_dai = rtd->codec_dai;
+-	int ret;
+-	unsigned int rate = params_rate(params);
+-
+-	ret = snd_soc_dai_set_sysclk(codec_dai, WM8978_PLL, 13000000,
+-				     SND_SOC_CLOCK_IN);
+-	if (ret < 0)
+-		return ret;
+-
+-	ret = snd_soc_dai_set_clkdiv(codec_dai, WM8978_OPCLKRATE, rate * 512);
+-	if (ret < 0)
+-		return ret;
+-
+-	codec_freq = rate * 512;
+-	/*
+-	 * This propagates the parent frequency change to children and
+-	 * recalculates the frequency table
+-	 */
+-	clk_set_rate(&siumckb_clk, codec_freq);
+-	dev_dbg(codec_dai->dev, "%s: configure %luHz\n", __func__, codec_freq);
+-
+-	ret = snd_soc_dai_set_sysclk(rtd->cpu_dai, SIU_CLKB_EXT,
+-				     codec_freq / 2, SND_SOC_CLOCK_IN);
+-
+-	if (!ret)
+-		use_count++;
+-
+-	return ret;
+-}
+-
+-static int migor_hw_free(struct snd_pcm_substream *substream)
+-{
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct snd_soc_dai *codec_dai = rtd->codec_dai;
+-
+-	if (use_count) {
+-		use_count--;
+-
+-		if (!use_count)
+-			snd_soc_dai_set_sysclk(codec_dai, WM8978_PLL, 0,
+-					       SND_SOC_CLOCK_IN);
+-	} else {
+-		dev_dbg(codec_dai->dev, "Unbalanced hw_free!\n");
+-	}
+-
+-	return 0;
+-}
+-
+-static struct snd_soc_ops migor_dai_ops = {
+-	.hw_params = migor_hw_params,
+-	.hw_free = migor_hw_free,
+-};
+-
+-static const struct snd_soc_dapm_widget migor_dapm_widgets[] = {
+-	SND_SOC_DAPM_HP("Headphone", NULL),
+-	SND_SOC_DAPM_MIC("Onboard Microphone", NULL),
+-	SND_SOC_DAPM_MIC("External Microphone", NULL),
+-};
+-
+-static const struct snd_soc_dapm_route audio_map[] = {
+-	/* Headphone output connected to LHP/RHP, enable OUT4 for VMID */
+-	{ "Headphone", NULL,  "OUT4 VMID" },
+-	{ "OUT4 VMID", NULL,  "LHP" },
+-	{ "OUT4 VMID", NULL,  "RHP" },
+-
+-	/* On-board microphone */
+-	{ "RMICN", NULL, "Mic Bias" },
+-	{ "RMICP", NULL, "Mic Bias" },
+-	{ "Mic Bias", NULL, "Onboard Microphone" },
+-
+-	/* External microphone */
+-	{ "LMICN", NULL, "Mic Bias" },
+-	{ "LMICP", NULL, "Mic Bias" },
+-	{ "Mic Bias", NULL, "External Microphone" },
+-};
+-
+-/* migor digital audio interface glue - connects codec <--> CPU */
+-static struct snd_soc_dai_link migor_dai = {
+-	.name = "wm8978",
+-	.stream_name = "WM8978",
+-	.cpu_dai_name = "siu-pcm-audio",
+-	.codec_dai_name = "wm8978-hifi",
+-	.platform_name = "siu-pcm-audio",
+-	.codec_name = "wm8978.0-001a",
+-	.dai_fmt = SND_SOC_DAIFMT_NB_IF | SND_SOC_DAIFMT_I2S |
+-		   SND_SOC_DAIFMT_CBS_CFS,
+-	.ops = &migor_dai_ops,
+-};
+-
+-/* migor audio machine driver */
+-static struct snd_soc_card snd_soc_migor = {
+-	.name = "Migo-R",
+-	.owner = THIS_MODULE,
+-	.dai_link = &migor_dai,
+-	.num_links = 1,
+-
+-	.dapm_widgets = migor_dapm_widgets,
+-	.num_dapm_widgets = ARRAY_SIZE(migor_dapm_widgets),
+-	.dapm_routes = audio_map,
+-	.num_dapm_routes = ARRAY_SIZE(audio_map),
+-};
+-
+-static struct platform_device *migor_snd_device;
+-
+-static int __init migor_init(void)
+-{
+-	int ret;
+-
+-	ret = clk_register(&siumckb_clk);
+-	if (ret < 0)
+-		return ret;
+-
+-	siumckb_lookup = clkdev_alloc(&siumckb_clk, "siumckb_clk", NULL);
+-	if (!siumckb_lookup) {
+-		ret = -ENOMEM;
+-		goto eclkdevalloc;
+-	}
+-	clkdev_add(siumckb_lookup);
+-
+-	/* Port number used on this machine: port B */
+-	migor_snd_device = platform_device_alloc("soc-audio", 1);
+-	if (!migor_snd_device) {
+-		ret = -ENOMEM;
+-		goto epdevalloc;
+-	}
+-
+-	platform_set_drvdata(migor_snd_device, &snd_soc_migor);
+-
+-	ret = platform_device_add(migor_snd_device);
+-	if (ret)
+-		goto epdevadd;
+-
+-	return 0;
+-
+-epdevadd:
+-	platform_device_put(migor_snd_device);
+-epdevalloc:
+-	clkdev_drop(siumckb_lookup);
+-eclkdevalloc:
+-	clk_unregister(&siumckb_clk);
+-	return ret;
+-}
+-
+-static void __exit migor_exit(void)
+-{
+-	clkdev_drop(siumckb_lookup);
+-	clk_unregister(&siumckb_clk);
+-	platform_device_unregister(migor_snd_device);
+-}
+-
+-module_init(migor_init);
+-module_exit(migor_exit);
+-
+-MODULE_AUTHOR("Guennadi Liakhovetski <g.liakhovetski@gmx.de>");
+-MODULE_DESCRIPTION("ALSA SoC Migor");
+-MODULE_LICENSE("GPL v2");
 -- 
-2.0.5
+1.7.9.5
 
