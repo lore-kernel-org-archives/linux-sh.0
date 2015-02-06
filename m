@@ -1,59 +1,72 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Feb 2015 01:49:23 +0000
-Subject: Re: [PATCH v4 7/9] ARM: shmobile: bockw: add sound to DT
-Message-Id: <20150227014923.GF31738@verge.net.au>
+From: Randy Dunlap <rdunlap@infradead.org>
+Date: Fri, 06 Feb 2015 17:41:29 +0000
+Subject: Re: [PATCH RFC] Update kernel math-emu code from current glibc soft-fp
+Message-Id: <54D4FCC9.80704@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424968934-30577-8-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1424968934-30577-8-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <alpine.DEB.2.10.1502061719210.27832@digraph.polyomino.org.uk>
+In-Reply-To: <alpine.DEB.2.10.1502061719210.27832@digraph.polyomino.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Joseph Myers <joseph@codesourcery.com>, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
 
-On Thu, Feb 26, 2015 at 05:42:12PM +0100, Ulrich Hecht wrote:
-> Adds sound card using the ak4643 codec.
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+On 02/06/15 09:25, Joseph Myers wrote:
+> At this point this patch is an RFC rather than yet being ready for
+> inclusion, because I've only tested it for powerpc (both e500 and
+> emulation of classic hard float); it's quite likely there are bugs in
+> the changes for other architectures, quite possibly breaking the
+> build.  I've also posted it to libc-alpha
+> <https://sourceware.org/ml/libc-alpha/2015-02/msg00107.html> with a
+> call for testing and notes on what testing might be appropriate.
 
-Thanks, I have queued this up.
+Is there a test suite?
 
-> ---
->  arch/arm/boot/dts/r8a7778-bockw.dts | 17 +++++++++++++++++
->  1 file changed, 17 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-> index abf3f06..9b9a5eb 100644
-> --- a/arch/arm/boot/dts/r8a7778-bockw.dts
-> +++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-> @@ -57,6 +57,23 @@
->  		vddvario-supply = <&fixedregulator3v3>;
->  		vdd33a-supply = <&fixedregulator3v3>;
->  	};
-> +
-> +	sound {
-> +		compatible = "simple-audio-card";
-> +
-> +		simple-audio-card,format = "left_j";
-> +		simple-audio-card,bitclock-master = <&sndcodec>;
-> +		simple-audio-card,frame-master = <&sndcodec>;
-> +
-> +		sndcpu: simple-audio-card,cpu {
-> +			sound-dai = <&rcar_sound>;
-> +		};
-> +
-> +		sndcodec: simple-audio-card,codec {
-> +			sound-dai = <&ak4643>;
-> +			system-clock-frequency = <11289600>;
-> +		};
-> +	};
->  };
->  
->  &bsc {
-> -- 
-> 2.2.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+
+and a diffstat is good to see:
+
+ arch/alpha/include/asm/sfp-machine.h    |    3 
+ arch/alpha/math-emu/math.c              |  131 -
+ arch/powerpc/include/asm/sfp-machine.h  |   39 
+ arch/powerpc/math-emu/fadd.c            |    6 
+ arch/powerpc/math-emu/fadds.c           |    6 
+ arch/powerpc/math-emu/fcmpo.c           |    2 
+ arch/powerpc/math-emu/fcmpu.c           |    2 
+ arch/powerpc/math-emu/fctiw.c           |    2 
+ arch/powerpc/math-emu/fctiwz.c          |    2 
+ arch/powerpc/math-emu/fmadd.c           |    8 
+ arch/powerpc/math-emu/fmadds.c          |    8 
+ arch/powerpc/math-emu/fmsub.c           |    8 
+ arch/powerpc/math-emu/fmsubs.c          |    8 
+ arch/powerpc/math-emu/fnmadd.c          |    8 
+ arch/powerpc/math-emu/fnmadds.c         |    8 
+ arch/powerpc/math-emu/fnmsub.c          |    8 
+ arch/powerpc/math-emu/fnmsubs.c         |    8 
+ arch/powerpc/math-emu/fsub.c            |    6 
+ arch/powerpc/math-emu/fsubs.c           |    6 
+ arch/powerpc/math-emu/lfs.c             |   11 
+ arch/powerpc/math-emu/math_efp.c        |  254 +-
+ arch/powerpc/math-emu/stfs.c            |    6 
+ arch/s390/include/asm/sfp-machine.h     |   10 
+ arch/s390/math-emu/math.c               |  278 +--
+ arch/sh/include/asm/sfp-machine.h       |   10 
+ arch/sh/math-emu/math.c                 |   51 
+ arch/sparc/include/asm/sfp-machine_32.h |    3 
+ arch/sparc/include/asm/sfp-machine_64.h |    3 
+ arch/sparc/math-emu/math_32.c           |  144 -
+ arch/sparc/math-emu/math_64.c           |  140 -
+ include/math-emu/double.h               |  391 ++--
+ include/math-emu/op-1.h                 |  546 +++---
+ include/math-emu/op-2.h                 | 1127 ++++++------
+ include/math-emu/op-4.h                 | 1449 ++++++++-------
+ include/math-emu/op-8.h                 |  205 +-
+ include/math-emu/op-common.h            | 2902 ++++++++++++++++++++++----------
+ include/math-emu/quad.h                 |  428 +++-
+ include/math-emu/single.h               |  225 +-
+ include/math-emu/soft-fp.h              |  342 ++-
+ 39 files changed, 5495 insertions(+), 3299 deletions(-)
+
+
+
+
+-- 
+~Randy
