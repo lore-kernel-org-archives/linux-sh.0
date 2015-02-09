@@ -1,49 +1,71 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 17 Feb 2015 15:43:03 +0000
-Subject: [PATCH v2 3/3] drivers: sh: Disable PM runtime for multi-platform r8a73a4 with genpd
-Message-Id: <1424187783-6390-4-git-send-email-geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 09 Feb 2015 16:02:35 +0000
+Subject: [PATCH v2 07/15] ARM: shmobile: bockw: add devices hooked up to i2c0 to DT
+Message-Id: <1423497763-3450-8-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424187783-6390-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424187783-6390-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-If the default PM domain using PM_CLK is used for PM runtime, the real PM
-domain(s) cannot be registered from DT later.
+Cameras, RTC, and ak4643 sound codec.
 
-Hence do not enable it when running a multi-platform kernel with genpd
-support on an r8a73a4. The R-Mobile PM domain driver will take care of
-PM runtime management of the module clocks.
-
-The default PM domain is still needed for:
-  - platforms without genpd support,
-  - the legacy (non-DT) case, where genpd may take over later, except
-    for the C5 "always on" PM domain.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
-v2:
-  - No changes.
----
- drivers/sh/pm_runtime.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ .../devicetree/bindings/i2c/trivial-devices.txt    |  1 +
+ arch/arm/boot/dts/r8a7778-bockw.dts                | 25 ++++++++++++++++++++++
+ 2 files changed, 26 insertions(+)
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 6b16a67ba618b793..89b7785de1fcf5b7 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -80,8 +80,8 @@ static int __init sh_pm_runtime_init(void)
- 	if (IS_ENABLED(CONFIG_ARCH_SHMOBILE_MULTI)) {
- 		if (!of_machine_is_compatible("renesas,emev2") &&
- 		    !of_machine_is_compatible("renesas,r7s72100") &&
--		    !of_machine_is_compatible("renesas,r8a73a4") &&
- #ifndef CONFIG_PM_GENERIC_DOMAINS_OF
-+		    !of_machine_is_compatible("renesas,r8a73a4") &&
- 		    !of_machine_is_compatible("renesas,r8a7740") &&
- 		    !of_machine_is_compatible("renesas,sh73a0") &&
- #endif
+diff --git a/Documentation/devicetree/bindings/i2c/trivial-devices.txt b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
+index 9f4e382..b6fe29e 100644
+--- a/Documentation/devicetree/bindings/i2c/trivial-devices.txt
++++ b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
+@@ -75,6 +75,7 @@ nxp,pca9556		Octal SMBus and I2C registered interface
+ nxp,pca9557		8-bit I2C-bus and SMBus I/O port with reset
+ nxp,pcf8563		Real-time clock/calendar
+ nxp,pcf85063		Tiny Real-Time Clock
++oki,ml86v7667		OKI ML86V7667 video decoder
+ ovti,ov5642		OV5642: Color CMOS QSXGA (5-megapixel) Image Sensor with OmniBSI and Embedded TrueFocus
+ pericom,pt7c4338	Real-time Clock Module
+ plx,pex8648		48-Lane, 12-Port PCI Express Gen 2 (5.0 GT/s) Switch
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 7347223..280a922 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -59,6 +59,31 @@
+ 	};
+ };
+ 
++&i2c0 {
++	status = "okay";
++
++	ak4643: sound-codec@12 {
++		compatible = "asahi-kasei,ak4643";
++		#sound-dai-cells = <0>;
++		reg = <0x12>;
++	};
++
++	camera@41 {
++		compatible = "oki,ml86v7667";
++		reg = <0x41>;
++	};
++
++	camera@43 {
++		compatible = "oki,ml86v7667";
++		reg = <0x43>;
++	};
++
++	rx8581: rtc@51 {
++		compatible = "epson,rx8581";
++		reg = <0x51>;
++	};
++};
++
+ &mmcif {
+ 	pinctrl-0 = <&mmc_pins>;
+ 	pinctrl-names = "default";
 -- 
-1.9.1
+2.2.2
 
