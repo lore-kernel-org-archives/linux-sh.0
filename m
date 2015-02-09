@@ -1,151 +1,91 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 16 Feb 2015 16:58:45 +0000
-Subject: [PATCH v3 01/15] ARM: shmobile: r8a7778: synchronize dts with reference platform
-Message-Id: <1424105939-4910-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 09 Feb 2015 08:16:12 +0000
+Subject: [PATCH 2/4] usb: renesas_usbhs: add the channel number in dma-names
+Message-Id: <1423469774-6532-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1423469774-6532-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1423469774-6532-1-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, balbi-l0cyMroinI0@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org
+Cc: linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-This moves everything to the legacy dts that is missing there to make it
-suitable for use with multiplatform.
+To connect the channel of USB-DMAC to USBHS DnFIFO number, this patch
+adds this channel/FIFO number in dma-names. Otherwise, this driver
+needs to add analysis code for device tree.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 106 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 106 insertions(+)
+ .../devicetree/bindings/usb/renesas_usbhs.txt      |    5 ++++-
+ drivers/usb/renesas_usbhs/fifo.c                   |   20 +++++++++++++-------
+ 2 files changed, 17 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 46a884d..7347223 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -16,17 +16,123 @@
+diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+index 61b045b..dc2a18f 100644
+--- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
++++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+@@ -15,7 +15,10 @@ Optional properties:
+   - phys: phandle + phy specifier pair
+   - phy-names: must be "usb"
+   - dmas: Must contain a list of references to DMA specifiers.
+-  - dma-names : Must contain a list of DMA names, "tx" or "rx".
++  - dma-names : Must contain a list of DMA names:
++   - tx0 ... tx<n>
++   - rx0 ... rx<n>
++    - This <n> means DnFIFO in USBHS module.
  
- /dts-v1/;
- #include "r8a7778.dtsi"
-+#include <dt-bindings/interrupt-controller/irq.h>
-+#include <dt-bindings/gpio/gpio.h>
+ Example:
+ 	usbhs: usb@e6590000 {
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index b1440d0..9fae14a 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -1069,23 +1069,29 @@ static void usbhsf_dma_init_pdev(struct usbhs_fifo *fifo)
+ 					    &fifo->rx_slave);
+ }
  
- / {
- 	model = "bockw";
- 	compatible = "renesas,bockw", "renesas,r8a7778";
+-static void usbhsf_dma_init_dt(struct device *dev, struct usbhs_fifo *fifo)
++static void usbhsf_dma_init_dt(struct device *dev, struct usbhs_fifo *fifo,
++			       int channel)
+ {
+-	fifo->tx_chan = dma_request_slave_channel_reason(dev, "tx");
++	char name[16];
++
++	snprintf(name, sizeof(name), "tx%d", channel);
++	fifo->tx_chan = dma_request_slave_channel_reason(dev, name);
+ 	if (IS_ERR(fifo->tx_chan))
+ 		fifo->tx_chan = NULL;
+-	fifo->rx_chan = dma_request_slave_channel_reason(dev, "rx");
++
++	snprintf(name, sizeof(name), "rx%d", channel);
++	fifo->rx_chan = dma_request_slave_channel_reason(dev, name);
+ 	if (IS_ERR(fifo->rx_chan))
+ 		fifo->rx_chan = NULL;
+ }
  
-+	aliases {
-+		serial0 = &scif0;
-+	};
-+
- 	chosen {
- 		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs rw";
-+		stdout-path = &scif0;
- 	};
+-static void usbhsf_dma_init(struct usbhs_priv *priv,
+-			    struct usbhs_fifo *fifo)
++static void usbhsf_dma_init(struct usbhs_priv *priv, struct usbhs_fifo *fifo,
++			    int channel)
+ {
+ 	struct device *dev = usbhs_priv_to_dev(priv);
  
- 	memory {
- 		device_type = "memory";
- 		reg = <0x60000000 0x10000000>;
- 	};
-+
-+	fixedregulator3v3: fixedregulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
-+
-+	ethernet@18300000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x18300000 0x1000>;
-+
-+		phy-mode = "mii";
-+		interrupt-parent = <&irqpin>;
-+		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
-+		reg-io-width = <4>;
-+		vddvario-supply = <&fixedregulator3v3>;
-+		vdd33a-supply = <&fixedregulator3v3>;
-+	};
-+};
-+
-+&mmcif {
-+	pinctrl-0 = <&mmc_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&fixedregulator3v3>;
-+	bus-width = <8>;
-+	broken-cd;
-+	status = "okay";
-+};
-+
-+&irqpin {
-+	status = "okay";
-+};
-+
-+&tmu0 {
-+	status = "okay";
-+};
-+
-+&pfc {
-+	scif0_pins: serial0 {
-+		renesas,groups = "scif0_data_a", "scif0_ctrl";
-+		renesas,function = "scif0";
-+	};
-+
-+	mmc_pins: mmc {
-+		renesas,groups = "mmc_data8", "mmc_ctrl";
-+		renesas,function = "mmc";
-+	};
-+
-+	sdhi0_pins: sd0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
-+				  "sdhi0_cd";
-+		renesas,function = "sdhi0";
-+	};
-+
-+	hspi0_pins: hspi0 {
-+		renesas,groups = "hspi0_a";
-+		renesas,function = "hspi0";
-+	};
-+};
-+
-+&sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&fixedregulator3v3>;
-+	bus-width = <4>;
-+	status = "okay";
-+	wp-gpios = <&gpio3 18 GPIO_ACTIVE_HIGH>;
-+};
-+
-+&hspi0 {
-+	pinctrl-0 = <&hspi0_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
-+
-+	flash: flash@0 {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		compatible = "spansion,s25fl008k";
-+		reg = <0>;
-+		spi-max-frequency = <104000000>;
-+		m25p,fast-read;
-+
-+		partition@0 {
-+			label = "data(spi)";
-+			reg = <0x00000000 0x00100000>;
-+		};
-+	};
-+};
-+
-+&scif0 {
-+	pinctrl-0 = <&scif0_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
- };
+ 	if (dev->of_node)
+-		usbhsf_dma_init_dt(dev, fifo);
++		usbhsf_dma_init_dt(dev, fifo, channel);
+ 	else
+ 		usbhsf_dma_init_pdev(fifo);
+ 
+@@ -1234,7 +1240,7 @@ do {									\
+ 			usbhs_get_dparam(priv, d##channel##_tx_id);	\
+ 	fifo->rx_slave.shdma_slave.slave_id =				\
+ 			usbhs_get_dparam(priv, d##channel##_rx_id);	\
+-	usbhsf_dma_init(priv, fifo);					\
++	usbhsf_dma_init(priv, fifo, channel);				\
+ } while (0)
+ 
+ #define USBHS_DFIFO_INIT(priv, fifo, channel)				\
 -- 
-2.2.2
+1.7.9.5
 
