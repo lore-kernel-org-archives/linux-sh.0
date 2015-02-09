@@ -1,26 +1,29 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 19 Feb 2015 01:08:15 +0000
-Subject: [PATCH 00/02] ARM: shmobile: 64-bit DU build test prototype
-Message-Id: <20150219010815.1660.27980.sendpatchset@little-apple>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 09 Feb 2015 08:14:03 +0000
+Subject: [PATCH 0/2] dmaengine: usb-dmac: Add Renesas USB DMA Controller
+Message-Id: <1423469645-2976-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: vinod.koul-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org
+Cc: dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-ARM: shmobile: 64-bit DU build test prototype
+This patch set is based on slave-dma.git / next branch.
+(commit id = 6ed0123a70ac7a8e0f0480c3e87b3b89c9b98fa9)
 
-[PATCH 01/02] ARM: shmobile: Drop DU deps to allow 64-bit build
-[PATCH 02/02] ARM: shmobile: Drop DU LVDS deps to allow 64-bit build
+Yoshihiro Shimoda (2):
+  dmaengine: renesas,usb-dmac: Add device tree bindings documentation
+  dmaengine: usb-dmac: Add Renesas USB DMA Controller (USB-DMAC) driver
 
-This series contains prototype code that adjust the Kconfig dependencies
-to allow building the R-Car DU driver on any architecture including 64-bit
-x86_64 and arm64. The DU driver builds just fine without any warnings.
+ .../devicetree/bindings/dma/renesas,usb-dmac.txt   |   37 +
+ drivers/dma/sh/Kconfig                             |    8 +
+ drivers/dma/sh/Makefile                            |    1 +
+ drivers/dma/sh/usb-dmac.c                          | 1274 ++++++++++++++++++++
+ 4 files changed, 1320 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
+ create mode 100644 drivers/dma/sh/usb-dmac.c
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+-- 
+1.7.9.5
 
- Built on top of renesas-devel-20150215-v3.19. Not for upstream merge.
-
- drivers/gpu/drm/rcar-du/Kconfig |    4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
