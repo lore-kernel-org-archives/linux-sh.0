@@ -1,104 +1,65 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 05 Feb 2015 10:11:24 +0000
-Subject: [PATCH v5 1/5] drivers: bus: Sort Kconfig entries alphabetically
-Message-Id: <1423131088-7835-2-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 09 Feb 2015 15:00:05 +0000
+Subject: Re: [PATCH] pinctrl: consumer: use correct retval for placeholder functions
+Message-Id: <20150209150005.GB8024@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="tsOsTdHNUZQcU9Ye"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423131088-7835-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1423131088-7835-1-git-send-email-geert+renesas@glider.be>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+References: <1418723959-10253-1-git-send-email-wsa@the-dreams.de>
+ <CACRpkdZi8+6v02kjZrLt3XGeZMdHtZwDyB_FohNeBtbDC8RpsA@mail.gmail.com>
+In-Reply-To: <CACRpkdZi8+6v02kjZrLt3XGeZMdHtZwDyB_FohNeBtbDC8RpsA@mail.gmail.com>
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Reviewed-by: Kevin Hilman <khilman@linaro.org>
----
-v5:
-  - Add Reviewed-by,
 
-v4:
-  - No changes,
+--tsOsTdHNUZQcU9Ye
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-v3:
-  - Add Tested-by,
+Hi Linus,
 
-v2:
-  - New.
----
- drivers/bus/Kconfig | 44 ++++++++++++++++++++++----------------------
- 1 file changed, 22 insertions(+), 22 deletions(-)
+> > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> >
+> > These functions are supposed to return an error pointer, not NULL.
+> >
+> > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>=20
+> Worried that some driver may depend on this behaviour, but
+> patch applied anyway, let's deal with it.
 
-diff --git a/drivers/bus/Kconfig b/drivers/bus/Kconfig
-index b99729e368608bda..626960819e6df16c 100644
---- a/drivers/bus/Kconfig
-+++ b/drivers/bus/Kconfig
-@@ -4,6 +4,21 @@
- 
- menu "Bus devices"
- 
-+config ARM_CCI
-+	bool "ARM CCI driver support"
-+	depends on ARM && OF && CPU_V7
-+	help
-+	  Driver supporting the CCI cache coherent interconnect for ARM
-+	  platforms.
-+
-+config ARM_CCN
-+	bool "ARM CCN driver support"
-+	depends on ARM || ARM64
-+	depends on PERF_EVENTS
-+	help
-+	  PMU (perf) driver supporting the ARM CCN (Cache Coherent Network)
-+	  interconnect.
-+
- config BRCMSTB_GISB_ARB
- 	bool "Broadcom STB GISB bus arbiter"
- 	depends on ARM || MIPS
-@@ -27,15 +42,6 @@ config MVEBU_MBUS
- 	  Driver needed for the MBus configuration on Marvell EBU SoCs
- 	  (Kirkwood, Dove, Orion5x, MV78XX0 and Armada 370/XP).
- 
--config OMAP_OCP2SCP
--	tristate "OMAP OCP2SCP DRIVER"
--	depends on ARCH_OMAP2PLUS
--	help
--	  Driver to enable ocp2scp module which transforms ocp interface
--	  protocol to scp protocol. In OMAP4, USB PHY is connected via
--	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
--	  OCP2SCP.
--
- config OMAP_INTERCONNECT
- 	tristate "OMAP INTERCONNECT DRIVER"
- 	depends on ARCH_OMAP2PLUS
-@@ -43,20 +49,14 @@ config OMAP_INTERCONNECT
- 	help
- 	  Driver to enable OMAP interconnect error handling driver.
- 
--config ARM_CCI
--	bool "ARM CCI driver support"
--	depends on ARM && OF && CPU_V7
--	help
--	  Driver supporting the CCI cache coherent interconnect for ARM
--	  platforms.
--
--config ARM_CCN
--	bool "ARM CCN driver support"
--	depends on ARM || ARM64
--	depends on PERF_EVENTS
-+config OMAP_OCP2SCP
-+	tristate "OMAP OCP2SCP DRIVER"
-+	depends on ARCH_OMAP2PLUS
- 	help
--	  PMU (perf) driver supporting the ARM CCN (Cache Coherent Network)
--	  interconnect.
-+	  Driver to enable ocp2scp module which transforms ocp interface
-+	  protocol to scp protocol. In OMAP4, USB PHY is connected via
-+	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
-+	  OCP2SCP.
- 
- config VEXPRESS_CONFIG
- 	bool "Versatile Express configuration bus"
--- 
-1.9.1
+I sent a similar patch to Russell for the clk API and he rightfully
+NAKed it. NULL is a valid cookie from clk_get and the whole clk API is
+able to deal with NULL. That ensures that for !HAVE_CLK, clk_get is
+still successful and won't fail driver_probe while the other clk API
+functions don't really do anything. If the gpio API is similar to that,
+we should revert my patch.
 
+Sorry for the nuisance,
+
+   Wolfram
+
+
+--tsOsTdHNUZQcU9Ye
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJU2Mt1AAoJEBQN5MwUoCm2DvkQAIfebrvWlPhVXdA57DcY9jeI
+cBqIMufqllCsUTaDrzlLV7BwJccCdT86NueJZoMfdaFU+wYSQlubCaam689Bd1gS
+2yIxksbVrewRjq7KlX44VAUoU7vxq211VN9Ap8ObRpkW3BRp/U8vZbEG6SgOThr7
+gv5zVmIryS8s8vUNrAxHJ3VEIN7AWMqvvJqsMxzeK91mwaESoh39uKH9oXz9Hcb2
+VmAarB+lt/LNsSlD5MvWS4F5vWnIhB/Nxfcxw5SorPhNXYMRkxnFOegLvwkeqFWJ
+gkImmlRF//Q7PbwXqK0/IKPPCSg14fSqhQmyMCe7pcfvEJAIAH9xQagZWUNNhuGi
+3iJXSvpH3OVxK4B2DpzuNoghZUTbhR+eVRigksprR8hMXZ9gGtciiEhnAj2ZWwmC
+tFptZq4UgKl6IpJbAXYMnSBYzXhi8dtb7MHhVZUMuf4IOv556C/c8pe0aebrYBtv
+Ge21HzYrxteyQtgJccJ/G693NXvLy/rdwwak1DkK3rs2iTTQLvqnCl9ADUK6hvzd
+yZuUOOoysefi9fDDeoANxWxnM/Yllnwbtc4NEOjtmOObENTsAwKUc6er51lpw3D9
+/iJ3etbVZ4oNRRbVm16mzExhcKmysfS9GwNgIgX9xDc/XrP+8qH5RaT4T80qHjgy
+torXAIWMu8nIh93VpMpY
+=5MTe
+-----END PGP SIGNATURE-----
+
+--tsOsTdHNUZQcU9Ye--
