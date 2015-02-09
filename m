@@ -1,35 +1,39 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 26 Feb 2015 13:30:36 +0000
-Subject: Re: [PATCH] dmaengine: shdma: Move DMA stop to (runtime) suspend callbacks
-Message-Id: <CAMuHMdXfrVYicT6mW9igFZ9xt_Pv3BtNve0nSQHDRrkTkt5m=A@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 09 Feb 2015 16:02:41 +0000
+Subject: [PATCH v2 13/15] ARM: shmobile: r8a7778 dtsi: Add Bus State Controller node
+Message-Id: <1423497763-3450-14-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424946394-6784-1-git-send-email-geert+renesas@glider.be>
-	<54EF1DC2.30703@cogentembedded.com>
-In-Reply-To: <54EF1DC2.30703@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>, Ulf Hansson <ulf.hansson@linaro.org>, dmaengine@vger.kernel.org, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Thu, Feb 26, 2015 at 2:21 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
->>   static struct platform_driver sh_dmae_driver = {
->> -       .driver         = {
->> +       .driver         = {
->
->
->    Hm, don't understand what was changed on this line...
+Add a node for the Bus State Controller (BSC) on r8a7778, to which
+multiple external devices can be connected.
 
-One silly space that should have been a TAB.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 8700e2e..ecd1426 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -41,6 +41,13 @@
+ 		spi2 = &hspi2;
+ 	};
+ 
++	bsc: bus@1c000000 {
++		compatible = "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0 0 0x1c000000>;
++	};
++
+ 	ether: ethernet@fde00000 {
+ 		compatible = "renesas,ether-r8a7778";
+ 		reg = <0xfde00000 0x400>;
+-- 
+2.2.2
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
