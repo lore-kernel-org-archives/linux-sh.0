@@ -1,49 +1,237 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 03 Feb 2015 00:42:25 +0000
-Subject: Re: [PATCH v2 12/13] ARM: shmobile: alt dts: Add chosen/stdout-path
-Message-Id: <20150203004225.GC17629@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 09 Feb 2015 16:02:31 +0000
+Subject: [PATCH v2 03/15] ARM: shmobile: r8a7778: Common clock framework DT description
+Message-Id: <1423497763-3450-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412349104-18724-1-git-send-email-geert+renesas@glider.be>
- <1412349104-18724-13-git-send-email-geert+renesas@glider.be>
- <54CC06A4.9040408@cogentembedded.com>
- <CAMuHMdUoc0f0WReqx86Qe35zwnbT3j49q5b+fFHupQa+3QsKag@mail.gmail.com>
- <54CFF678.6070009@cogentembedded.com>
-In-Reply-To: <54CFF678.6070009@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Tue, Feb 03, 2015 at 01:13:12AM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 01/31/2015 01:18 PM, Geert Uytterhoeven wrote:
-> 
-> >>>Add a stdout-path property so that automatic console selection works
-> >>>in the absence of a "console=" parameter on the kernel command line.
-> 
-> >>>Note that we have to keep the "console=ttySC0,38400" parameter in
-> >>>chosen/bootargs, else the console will use the default setting of 115200
-> >>>baud.
-> 
-> >>    I've looked at the code and it appears that one can still specify a baud
-> >>rate after ':' even in the "stdout-path" prop.
-> 
-> >That's correct. I believe that support was added later.
-> >Can you please send a patch?
-> 
->    Looks like Simon wants all boards to work at 115200 which is the default.
+Declares all r8a7778 clocks supported by the legacy clock framework,
+plus tmu2.
 
-To be clear: yes that is what I want.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ arch/arm/boot/dts/r8a7778.dtsi                     | 190 +++++++++++++++++++++
+ 2 files changed, 191 insertions(+)
 
-> >Spaciba!
-> 
->    Heh, actually it's "sbasibo". :-)
-> 
-> >Gr{oetje,eeting}s,
-> 
-> >                         Geert
-> 
-> WBR, Sergei
-> 
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 0a80fa7..e163092 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -13,6 +13,7 @@ Required Properties:
+     - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
+     - "renesas,r8a73a4-mstp-clocks" for R8A73A4 (R-Mobile APE6) MSTP gate clocks
+     - "renesas,r8a7740-mstp-clocks" for R8A7740 (R-Mobile A1) MSTP gate clocks
++    - "renesas,r8a7778-mstp-clocks" for R8A7778 (R-Car M1) MSTP gate clocks
+     - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
+     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index ef85339..98e941b 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -16,6 +16,7 @@
+ 
+ /include/ "skeleton.dtsi"
+ 
++#include <dt-bindings/clock/r8a7778-clock.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+@@ -294,4 +295,193 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	clocks {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		/* External input clock */
++		extal_clk: extal_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "extal";
++		};
++
++		/* Special CPG clocks */
++		cpg_clocks: cpg_clocks@ffc80000 {
++			compatible = "renesas,r8a7778-cpg-clocks";
++			reg = <0xffc80000 0x80>;
++			#clock-cells = <1>;
++			clock-output-names = "plla", "pllb", "b",
++					     "out", "p", "s", "s1";
++		};
++
++		/* Audio clocks; frequencies are set by boards if applicable. */
++		audio_clk_a: audio_clk_a {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-output-names = "audio_clk_a";
++		};
++		audio_clk_b: audio_clk_b {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-output-names = "audio_clk_b";
++		};
++		audio_clk_c: audio_clk_c {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-output-names = "audio_clk_c";
++		};
++
++		/* Fixed ratio clocks */
++		g_clk: g_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <12>;
++			clock-mult = <1>;
++			clock-output-names = "g";
++		};
++		i_clk: i_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <1>;
++			clock-mult = <1>;
++			clock-output-names = "i";
++		};
++		s3_clk: s3_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <4>;
++			clock-mult = <1>;
++			clock-output-names = "s3";
++		};
++		s4_clk: s4_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <8>;
++			clock-mult = <1>;
++			clock-output-names = "s4";
++		};
++		z_clk: z_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLB>;
++			#clock-cells = <0>;
++			clock-div = <1>;
++			clock-mult = <1>;
++			clock-output-names = "z";
++		};
++
++		/* Gate clocks */
++		mstp0_clks: mstp0_clks@ffc80030 {
++			compatible = "renesas,r8a7778-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xffc80030 4>;
++			clocks = <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_S>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7778_CLK_I2C0 R8A7778_CLK_I2C1
++				R8A7778_CLK_I2C2 R8A7778_CLK_I2C3
++				R8A7778_CLK_SCIF0 R8A7778_CLK_SCIF1
++				R8A7778_CLK_SCIF2 R8A7778_CLK_SCIF3
++				R8A7778_CLK_SCIF4 R8A7778_CLK_SCIF5
++				R8A7778_CLK_TMU0 R8A7778_CLK_TMU1
++				R8A7778_CLK_TMU2 R8A7778_CLK_SSI0
++				R8A7778_CLK_SSI1 R8A7778_CLK_SSI2
++				R8A7778_CLK_SSI3 R8A7778_CLK_SRU
++				R8A7778_CLK_HSPI
++			>;
++			clock-output-names +				"i2c0", "i2c1", "i2c2", "i2c3", "scif0",
++				"scif1", "scif2", "scif3", "scif4", "scif5",
++				"tmu0", "tmu1", "tmu2", "ssi0", "ssi1",
++				"ssi2", "ssi3", "sru", "hspi";
++		};
++		mstp1_clks: mstp1_clks@ffc80034 {
++			compatible = "renesas,r8a7778-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xffc80034 4>, <0xffc80044 4>;
++			clocks = <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_S>,
++				 <&cpg_clocks R8A7778_CLK_S>,
++				 <&cpg_clocks R8A7778_CLK_P>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7778_CLK_ETHER R8A7778_CLK_VIN0
++				R8A7778_CLK_VIN1 R8A7778_CLK_USB
++			>;
++			clock-output-names +				"ether", "vin0", "vin1", "usb";
++		};
++		mstp3_clks: mstp3_clks@ffc8003c {
++			compatible = "renesas,r8a7778-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xffc8003c 4>;
++			clocks = <&s4_clk>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7778_CLK_MMC R8A7778_CLK_SDHI0
++				R8A7778_CLK_SDHI1 R8A7778_CLK_SDHI2
++				R8A7778_CLK_SSI4 R8A7778_CLK_SSI5
++				R8A7778_CLK_SSI6 R8A7778_CLK_SSI7
++				R8A7778_CLK_SSI8
++			>;
++			clock-output-names +				"mmc", "sdhi0", "sdhi1", "sdhi2", "ssi4",
++				"ssi5", "ssi6", "ssi7", "ssi8";
++		};
++		mstp5_clks: mstp5_clks@ffc80054 {
++			compatible = "renesas,r8a7778-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xffc80054 4>;
++			clocks = <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7778_CLK_SCU_SRC0 R8A7778_CLK_SCU_SRC1
++				R8A7778_CLK_SCU_SRC2 R8A7778_CLK_SCU_SRC3
++				R8A7778_CLK_SCU_SRC4 R8A7778_CLK_SCU_SRC5
++				R8A7778_CLK_SCU_SRC6 R8A7778_CLK_SCU_SRC7
++				R8A7778_CLK_SCU_SRC8
++			>;
++			clock-output-names +				"scu-src0", "scu-src1", "scu-src2",
++				"scu-src3", "scu-src4", "scu-src5",
++				"scu-src6", "scu-src7", "scu-src8";
++		};
++	};
+ };
+-- 
+2.2.2
+
