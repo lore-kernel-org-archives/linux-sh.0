@@ -1,79 +1,80 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:22:23 +0000
-Subject: [PATCH 4/5] drivers: bus: Add Renesas Bus State Controller (BSC) DT Bindings
-Message-Id: <b1e5bbd61eb7584caa61ab3b89f3a66c3d5b4dd3.1424931637.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 09 Feb 2015 16:02:33 +0000
+Subject: [PATCH v2 05/15] ARM: shmobile: r8a7778: implement SoC and board CCF support
+Message-Id: <1423497763-3450-6-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424931637.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424931637.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Disables the legacy clock framework and passes the mode bits to the CPG
+driver if CCF is enabled.
 
-The bindings for the BSC extend the bindings for "simple-pm-bus".
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Kevin Hilman <khilman@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- .../devicetree/bindings/bus/renesas,bsc.txt        | 46 ++++++++++++++++++++++
- 1 file changed, 46 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/bus/renesas,bsc.txt
+ arch/arm/mach-shmobile/board-bockw-reference.c |  2 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c         | 19 +++++++++++++++++++
+ 2 files changed, 21 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/bus/renesas,bsc.txt b/Documentation/devicetree/bindings/bus/renesas,bsc.txt
-new file mode 100644
-index 0000000..90e9472
---- /dev/null
-+++ b/Documentation/devicetree/bindings/bus/renesas,bsc.txt
-@@ -0,0 +1,46 @@
-+Renesas Bus State Controller (BSC)
-+=================
+diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
+index d649ade..9a74efd 100644
+--- a/arch/arm/mach-shmobile/board-bockw-reference.c
++++ b/arch/arm/mach-shmobile/board-bockw-reference.c
+@@ -36,7 +36,9 @@ static void __init bockw_init(void)
+ 	void __iomem *fpga;
+ 	void __iomem *pfc;
+ 
++#ifndef CONFIG_COMMON_CLK
+ 	r8a7778_clock_init();
++#endif
+ 	r8a7778_init_irq_extpin_dt(1);
+ 	r8a7778_add_dt_devices();
+ 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index cef8895..c49aa09 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -15,6 +15,7 @@
+  * GNU General Public License for more details.
+  */
+ 
++#include <linux/clk/shmobile.h>
+ #include <linux/kernel.h>
+ #include <linux/io.h>
+ #include <linux/irqchip/arm-gic.h>
+@@ -41,6 +42,21 @@
+ #include "irqs.h"
+ #include "r8a7778.h"
+ 
++#define MODEMR 0xffcc0020
 +
-+The Renesas Bus State Controller (BSC, sometimes called "LBSC within Bus
-+Bridge", or "External Bus Interface") can be found in several Renesas ARM SoCs.
-+It provides an external bus for connecting multiple external devices to the
-+SoC, driving several chip select lines, for e.g. NOR FLASH, Ethernet and USB.
++#ifdef CONFIG_COMMON_CLK
++static void __init r8a7778_timer_init(void)
++{
++	u32 mode;
++	void __iomem *modemr = ioremap_nocache(MODEMR, 4);
 +
-+While the BSC is a fairly simple memory-mapped bus, it may be part of a PM
-+domain, and may have a gateable functional clock.
-+Before a device connected to the BSC can be accessed, the PM domain
-+containing the BSC must be powered on, and the functional clock
-+driving the BSC must be enabled.
++	BUG_ON(!modemr);
++	mode = ioread32(modemr);
++	iounmap(modemr);
++	r8a7778_clocks_init(mode);
++}
++#endif
 +
-+The bindings for the BSC extend the bindings for "simple-pm-bus".
-+
-+
-+Required properties
-+  - compatible: Must contain an SoC-specific value, and "renesas,bsc" and
-+		"simple-pm-bus" as fallbacks.
-+                SoC-specific values can be:
-+		"renesas,bsc-r8a73a4" for R-Mobile APE6 (r8a73a4)
-+		"renesas,bsc-sh73a0" for SH-Mobile AG5 (sh73a0)
-+  - #address-cells, #size-cells, ranges: Must describe the mapping between
-+		parent address and child address spaces.
-+  - reg: Must contain the base address and length to access the bus controller.
-+
-+Optional properties:
-+  - interrupts: Must contain a reference to the BSC interrupt, if available.
-+  - clocks: Must contain a reference to the functional clock, if available.
-+  - power-domains: Must contain a reference to the PM domain, if available.
-+
-+
-+Example:
-+
-+	bsc: bus@fec10000 {
-+		compatible = "renesas,bsc-sh73a0", "renesas,bsc",
-+			     "simple-pm-bus";
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		ranges = <0 0 0x20000000>;
-+		reg = <0xfec10000 0x400>;
-+		interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&zb_clk>;
-+		power-domains = <&pd_a4s>;
-+	};
+ /* SCIF */
+ #define R8A7778_SCIF(index, baseaddr, irq)			\
+ static struct plat_sci_port scif##index##_platform_data = {	\
+@@ -608,6 +624,9 @@ DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
+ 	.init_early	= shmobile_init_delay,
+ 	.init_irq	= r8a7778_init_irq_dt,
+ 	.init_late	= shmobile_init_late,
++#ifdef CONFIG_COMMON_CLK
++	.init_time	= r8a7778_timer_init,
++#endif
+ 	.dt_compat	= r8a7778_compat_dt,
+ MACHINE_END
+ 
 -- 
-2.1.4
+2.2.2
 
