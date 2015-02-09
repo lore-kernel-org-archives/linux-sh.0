@@ -1,83 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:27 +0000
-Subject: [PATCH 30/32] ARM: shmobile: r8a7791: add ADSP clocks
-Message-Id: <ae65a8ae4c25c7ea01204c9d033cd47da3000cf8.1424849129.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 09 Feb 2015 08:14:04 +0000
+Subject: [PATCH 1/2] dmaengine: renesas,usb-dmac: Add device tree bindings documentation
+Message-Id: <1423469645-2976-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424849129.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
+References: <1423469645-2976-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1423469645-2976-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: vinod.koul@intel.com, dan.j.williams@intel.com, laurent.pinchart@ideasonboard.com, horms@verge.net.au, kuninori.morimoto.gx@renesas.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Document the device tree bindings for the Renesas USB DMA
+Controller (USB-DMAC).
 
-Add the ADSP clocks to the CPG and MSTP5 nodes of the R8A7791 device tree.
-
-Based on the original patch by Konstantin Kozhevnikov
-<konstantin.kozhevnikov@cogentembedded.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 11 +++++++----
- include/dt-bindings/clock/r8a7791-clock.h |  2 ++
- 2 files changed, 9 insertions(+), 4 deletions(-)
+ .../devicetree/bindings/dma/renesas,usb-dmac.txt   |   37 ++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index ff49b95..1e593a2 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -909,7 +909,7 @@
- 			#clock-cells = <1>;
- 			clock-output-names = "main", "pll0", "pll1", "pll3",
- 					     "lb", "qspi", "sdh", "sd0", "z",
--					     "rcan";
-+					     "rcan", "adsp";
- 		};
- 
- 		/* Variable factor clocks */
-@@ -1164,13 +1164,16 @@
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
--			clocks = <&hp_clk>, <&hp_clk>, <&extal_clk>, <&p_clk>;
-+			clocks = <&hp_clk>, <&hp_clk>, <&cpg_clocks R8A7791_CLK_ADSP>,
-+				 <&extal_clk>, <&p_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
- 				R8A7791_CLK_AUDIO_DMAC0 R8A7791_CLK_AUDIO_DMAC1
--				R8A7791_CLK_THERMAL R8A7791_CLK_PWM
-+				R8A7791_CLK_ADSP_MOD R8A7791_CLK_THERMAL
-+				R8A7791_CLK_PWM
- 			>;
--			clock-output-names = "audmac0", "audmac1", "thermal", "pwm";
-+			clock-output-names = "audmac0", "audmac1", "adsp_mod",
-+					     "thermal", "pwm";
- 		};
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index a45a363..8fc5dc8 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -21,6 +21,7 @@
- #define R8A7791_CLK_SD0			7
- #define R8A7791_CLK_Z			8
- #define R8A7791_CLK_RCAN		9
-+#define R8A7791_CLK_ADSP		10
- 
- /* MSTP0 */
- #define R8A7791_CLK_MSIOF0		0
-@@ -72,6 +73,7 @@
- /* MSTP5 */
- #define R8A7791_CLK_AUDIO_DMAC1		1
- #define R8A7791_CLK_AUDIO_DMAC0		2
-+#define R8A7791_CLK_ADSP_MOD		6
- #define R8A7791_CLK_THERMAL		22
- #define R8A7791_CLK_PWM			23
- 
+diff --git a/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt b/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
+new file mode 100644
+index 0000000..040f365
+--- /dev/null
++++ b/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
+@@ -0,0 +1,37 @@
++* Renesas USB DMA Controller Device Tree bindings
++
++Required Properties:
++- compatible: must contain "renesas,usb-dmac"
++- reg: base address and length of the registers block for the DMAC
++- interrupts: interrupt specifiers for the DMAC, one for each entry in
++  interrupt-names.
++- interrupt-names: one entry per channel, named "ch%u", where %u is the
++  channel number ranging from zero to the number of channels minus one.
++- clocks: a list of phandle + clock-specifier pairs.
++- #dma-cells: must be <1>, the cell specifies the channel number of the DMAC
++  port connected to the DMA client.
++- dma-channels: number of DMA channels
++
++Example: R8A7790 (R-Car H2) USB-DMACs
++
++	usb_dmac0: dma-controller@e65a0000 {
++		compatible = "renesas,usb-dmac";
++		reg = <0 0xe65a0000 0 0x100>;
++		interrupts = <0 109 IRQ_TYPE_LEVEL_HIGH
++			      0 109 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "ch0", "ch1";
++		clocks = <&mstp3_clks R8A7790_CLK_USBDMAC0>;
++		#dma-cells = <1>;
++		dma-channels = <2>;
++	};
++
++	usb_dmac1: dma-controller@e65b0000 {
++		compatible = "renesas,usb-dmac";
++		reg = <0 0xe65b0000 0 0x100>;
++		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH
++			      0 110 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "ch0", "ch1";
++		clocks = <&mstp3_clks R8A7790_CLK_USBDMAC1>;
++		#dma-cells = <1>;
++		dma-channels = <2>;
++	};
 -- 
-2.1.4
+1.7.9.5
 
