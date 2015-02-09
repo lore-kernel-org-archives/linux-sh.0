@@ -1,160 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 24 Feb 2015 02:06:43 +0000
-Subject: [PATCH 1/2] mmc: tmio: mmc: tmio: tmio_mmc_data has .chan_priv_?x
-Message-Id: <877fv812pm.wl%kuninori.morimoto.gx@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 09 Feb 2015 16:02:43 +0000
+Subject: [PATCH v2 15/15] ARM: shmobile: bockw dts: set extal clock frequency
+Message-Id: <1423497763-3450-16-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878ufo12qq.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878ufo12qq.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Vinod Koul <vinod.koul@intel.com>, Simon <horms@verge.net.au>
-Cc: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Sets the extal clock to the frequency of the oscillator installed by
+default (33 MHz).
 
-dma_request_slave_channel_compat() in tmio_mmc_dma
-needs .chan_priv_tx/.chan_priv_rx. But these are copied from
-sh_mobile_sdhi only, and sh_mobile_sdhi_info is now almost
-same as tmio_mmc_data except .chan_priv_?x.
-sh_mobile_sdhi_info can be replaced to tmio_mmc_data, but it is
-used from ${LINUX}/arch/arm/mach-shmobile, ${LINUX}/arch/sh.
-So, this patch adds .chan_priv_?x into tmio_mmc_data as 1st step,
-and sh_mobile_sdhi driver has dummy operation for now.
-It will be replaced/removed together with platform data replace.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |   44 +++++++++++++++++++++++--------------
- drivers/mmc/host/tmio_mmc.h       |    2 --
- drivers/mmc/host/tmio_mmc_dma.c   |    6 ++---
- include/linux/mfd/tmio.h          |    2 ++
- 4 files changed, 32 insertions(+), 22 deletions(-)
+ arch/arm/boot/dts/r8a7778-bockw.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 11991f5..3137e29 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -201,6 +201,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		of_match_device(sh_mobile_sdhi_of_match, &pdev->dev);
- 	struct sh_mobile_sdhi *priv;
- 	struct tmio_mmc_data *mmc_data;
-+	struct tmio_mmc_data *mmd = pdev->dev.platform_data;
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
- 	struct tmio_mmc_host *host;
- 	struct resource *res;
-@@ -245,28 +246,37 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	else
- 		host->bus_shift = 0;
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 2b4b84b..5e4be51 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -84,6 +84,10 @@
+ 	pinctrl-names = "default";
+ };
  
--	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
--	if (p) {
--		mmc_data->flags = p->tmio_flags;
--		mmc_data->ocr_mask = p->tmio_ocr_mask;
--		mmc_data->capabilities |= p->tmio_caps;
--		mmc_data->capabilities2 |= p->tmio_caps2;
--		mmc_data->cd_gpio = p->cd_gpio;
--
--		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
--			/*
--			 * Yes, we have to provide slave IDs twice to TMIO:
--			 * once as a filter parameter and once for channel
--			 * configuration as an explicit slave ID
--			 */
--			dma_priv->chan_priv_tx = (void *)p->dma_slave_tx;
--			dma_priv->chan_priv_rx = (void *)p->dma_slave_rx;
--		}
-+	if (mmd) {
-+		/*
-+		 * FIXME
-+		 *
-+		 * sh_mobile_sdhi_info will be replaced to tmio_mmc_data soon.
-+		 * But, sh_mobile_sdhi_info is used under
-+		 * ${LINUX}/arch/arm/mach-shmobile/
-+		 * ${LINUX}/arch/sh/
-+		 * To separate large patch into "tmio_mmc_data has .chan_priv_?x"
-+		 * and "replace sh_mobile_sdhi_info in tmio_mmc_data",
-+		 * here has dummy method.
-+		 * These should be removed.
-+		 */
-+		struct tmio_mmc_data m;
++&extal_clk {
++	clock-frequency = <33333333>;
++};
 +
-+		mmd = &m;
-+		m.flags		= p->tmio_flags;
-+		m.ocr_mask	= p->tmio_ocr_mask;
-+		m.capabilities	= p->tmio_caps;
-+		m.capabilities2	= p->tmio_caps2;
-+		m.cd_gpio	= p->cd_gpio;
-+		m.chan_priv_tx	= (void *)p->dma_slave_tx;
-+		m.chan_priv_rx	= (void *)p->dma_slave_rx;
-+
-+		*mmc_data = *mmd;
- 	}
- 	dma_priv->filter = shdma_chan_filter;
- 	dma_priv->enable = sh_mobile_sdhi_enable_dma;
+ &i2c0 {
+ 	status = "okay";
  
- 	mmc_data->alignment_shift = 1; /* 2-byte alignment */
-+	mmc_data->capabilities |= MMC_CAP_MMC_HIGHSPEED;
- 
- 	/*
- 	 * All SDHI blocks support 2-byte and larger block sizes in 4-bit
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 1aea5c6..4a597f5a 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -43,8 +43,6 @@ struct tmio_mmc_data;
- struct tmio_mmc_host;
- 
- struct tmio_mmc_dma {
--	void *chan_priv_tx;
--	void *chan_priv_rx;
- 	enum dma_slave_buswidth dma_buswidth;
- 	bool (*filter)(struct dma_chan *chan, void *arg);
- 	void (*enable)(struct tmio_mmc_host *host, bool enable);
-diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
-index 8dbd785..e4b05db 100644
---- a/drivers/mmc/host/tmio_mmc_dma.c
-+++ b/drivers/mmc/host/tmio_mmc_dma.c
-@@ -261,7 +261,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
- {
- 	/* We can only either use DMA for both Tx and Rx or not use it at all */
- 	if (!host->dma || (!host->pdev->dev.of_node &&
--		(!host->dma->chan_priv_tx || !host->dma->chan_priv_rx)))
-+		(!pdata->chan_priv_tx || !pdata->chan_priv_rx)))
- 		return;
- 
- 	if (!host->chan_tx && !host->chan_rx) {
-@@ -278,7 +278,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
- 		dma_cap_set(DMA_SLAVE, mask);
- 
- 		host->chan_tx = dma_request_slave_channel_compat(mask,
--					host->dma->filter, host->dma->chan_priv_tx,
-+					host->dma->filter, pdata->chan_priv_tx,
- 					&host->pdev->dev, "tx");
- 		dev_dbg(&host->pdev->dev, "%s: TX: got channel %p\n", __func__,
- 			host->chan_tx);
-@@ -297,7 +297,7 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
- 			goto ecfgtx;
- 
- 		host->chan_rx = dma_request_slave_channel_compat(mask,
--					host->dma->filter, host->dma->chan_priv_rx,
-+					host->dma->filter, pdata->chan_priv_rx,
- 					&host->pdev->dev, "rx");
- 		dev_dbg(&host->pdev->dev, "%s: RX: got channel %p\n", __func__,
- 			host->chan_rx);
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index 6058128..24b86d5 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -111,6 +111,8 @@ struct dma_chan;
-  * data for the MMC controller
-  */
- struct tmio_mmc_data {
-+	void				*chan_priv_tx;
-+	void				*chan_priv_rx;
- 	unsigned int			hclk;
- 	unsigned long			capabilities;
- 	unsigned long			capabilities2;
 -- 
-1.7.9.5
+2.2.2
 
