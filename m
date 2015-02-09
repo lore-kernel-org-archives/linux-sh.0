@@ -1,54 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:22:33 +0000
-Subject: [PATCH 4/4] ARM: shmobile: r8a7779: Remove redundant cpu_disable implementation
-Message-Id: <fd9454ab51fa92f43ae5b7a71c42f2ee8417c2a2.1424931049.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 09 Feb 2015 08:24:39 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7791: Enable DMA for HSUSB
+Message-Id: <1423470279-6340-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424931049.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424931049.git.horms+renesas@verge.net.au>
+References: <1423470279-6340-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1423470279-6340-1-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-From: Stephen Boyd <sboyd@codeaurora.org>
+Add DMA properties to the HSUSB node.
 
-By default only the non-boot CPUs can be hotplugged if the
-smp_operations structure doesn't have the cpu_disable function
-pointer set. r8a7779_cpu_disable() implements the same logic,
-only non-boot CPUs can be hotplugged, so it's redundant to
-override the default behavior.
-
-Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/mach-shmobile/smp-r8a7779.c | 7 -------
- 1 file changed, 7 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi |    3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
-index 9fc280e..01f792f 100644
---- a/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7779.c
-@@ -124,19 +124,12 @@ static int r8a7779_cpu_kill(unsigned int cpu)
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 9343548..9c6d174 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -723,6 +723,9 @@
+ 		renesas,buswait = <4>;
+ 		phys = <&usb0 1>;
+ 		phy-names = "usb";
++		dmas = <&usb_dmac0 0>, <&usb_dmac0 1>,
++		       <&usb_dmac1 0>, <&usb_dmac1 1>;
++		dma-names = "rx0", "tx1", "rx2", "tx3";
+ 		status = "disabled";
+ 	};
  
- 	return 0;
- }
--
--static int r8a7779_cpu_disable(unsigned int cpu)
--{
--	/* only CPU1->3 have power domains, do not allow hotplug of CPU0 */
--	return cpu = 0 ? -EPERM : 0;
--}
- #endif /* CONFIG_HOTPLUG_CPU */
- 
- struct smp_operations r8a7779_smp_ops  __initdata = {
- 	.smp_prepare_cpus	= r8a7779_smp_prepare_cpus,
- 	.smp_boot_secondary	= r8a7779_boot_secondary,
- #ifdef CONFIG_HOTPLUG_CPU
--	.cpu_disable		= r8a7779_cpu_disable,
- 	.cpu_die		= shmobile_smp_scu_cpu_die,
- 	.cpu_kill		= r8a7779_cpu_kill,
- #endif
 -- 
-2.1.4
+1.7.9.5
 
