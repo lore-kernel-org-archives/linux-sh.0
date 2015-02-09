@@ -1,51 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 25 Feb 2015 23:58:07 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: r8a7791: Fix IPMMU-GP clock to device tree
-Message-Id: <20150225235806.GM23723@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 09 Feb 2015 16:02:40 +0000
+Subject: [PATCH v2 12/15] ARM: shmobile: r8a7778: enable multiplatform target
+Message-Id: <1423497763-3450-13-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424352546-27313-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1424352546-27313-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi,
+Adds config option and enables DTB building.
 
-while I am inclined to take this patch on face value I am wondering
-if anyone is able to confirm this change against the documentation:
-I have drawn a blank there.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/Makefile     | 1 +
+ arch/arm/mach-shmobile/Kconfig | 4 ++++
+ 2 files changed, 5 insertions(+)
 
-On Thu, Feb 19, 2015 at 10:29:06PM +0900, Yoshihiro Kaneko wrote:
-> From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-> 
-> Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
-> 
-> This patch is based on devel branch of Simon Horman's renesas tree.
-> 
->  arch/arm/boot/dts/r8a7791.dtsi | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index afba8af..1e75a5f 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -1154,7 +1154,7 @@
->  		mstp8_clks: mstp8_clks@e6150990 {
->  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
->  			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
-> -			clocks = <&zg_clk>, <&hp_clk>, <&zg_clk>, <&zg_clk>,
-> +			clocks = <&zx_clk>, <&hp_clk>, <&zg_clk>, <&zg_clk>,
->  			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
->  			#clock-cells = <1>;
->  			clock-indices = <
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 8eb4824..c751aed 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -414,6 +414,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai.dtb \
+ 	r8a73a4-ape6evm.dtb \
+ 	r8a7740-armadillo800eva.dtb \
++	r8a7778-bockw.dtb \
+ 	r8a7779-marzen.dtb \
+ 	r8a7790-lager.dtb \
+ 	r8a7791-henninger.dtb \
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 2d0387e..5992e8c 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -62,6 +62,10 @@ config ARCH_R8A7740
+ 	select ARCH_RMOBILE
+ 	select RENESAS_INTC_IRQPIN
+ 
++config ARCH_R8A7778
++	bool "R-Car M1A (R8A77781)"
++	select ARCH_RCAR_GEN1
++
+ config ARCH_R8A7779
+ 	bool "R-Car H1 (R8A77790)"
+ 	select ARCH_RCAR_GEN1
+-- 
+2.2.2
+
