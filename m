@@ -1,53 +1,193 @@
-From: Kees Cook <keescook@chromium.org>
-Date: Sat, 28 Feb 2015 02:01:11 +0000
-Subject: Re: [PATCH] seccomp: switch to using asm-generic for seccomp.h
-Message-Id: <CAGXu5jLgbzzYQkeLmpgSGu7w7DKKTHpFE=F2_a=ayjkU6atBQQ@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 09 Feb 2015 16:02:34 +0000
+Subject: [PATCH v2 06/15] ARM: shmobile: r8a7778: add MSTP clock assignments to DT
+Message-Id: <1423497763-3450-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150228005228.GA23638@www.outflux.net>
- <20150228123656.538301ef@canb.auug.org.au>
-In-Reply-To: <20150228123656.538301ef@canb.auug.org.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Feb 27, 2015 at 5:36 PM, Stephen Rothwell <sfr@canb.auug.org.au> wrote:
-> Hi Kees,
->
-> On Fri, 27 Feb 2015 16:52:29 -0800 Kees Cook <keescook@chromium.org> wrote:
->>
->> diff --git a/arch/arm/include/asm/seccomp.h b/arch/arm/include/asm/seccomp.h
->> index 52b156b341f5..66ca6a30bf5c 100644
->> --- a/arch/arm/include/asm/seccomp.h
->> +++ b/arch/arm/include/asm/seccomp.h
->> @@ -1,11 +1 @@
->> -#ifndef _ASM_ARM_SECCOMP_H
->> -#define _ASM_ARM_SECCOMP_H
->> -
->> -#include <linux/unistd.h>
->> -
->> -#define __NR_seccomp_read __NR_read
->> -#define __NR_seccomp_write __NR_write
->> -#define __NR_seccomp_exit __NR_exit
->> -#define __NR_seccomp_sigreturn __NR_rt_sigreturn
->> -
->> -#endif /* _ASM_ARM_SECCOMP_H */
->> +#include <asm-generic/seccomp.h>
->
-> I think that these cases (where you replace the file by a stub that
-> just include <asm-generic/seccomp.h>) can be replaced by removing the
-> file completely and adding
->
-> generic-y = seccomp.h
->
-> to <ARCH>/include/asm/Kbuild
+Assigns clocks to i2c*, tmu*, scif*, mmcif, sdhi*, and hspi*.
 
-Ah-ha! I thought total removal was possible, but I lacked the Kbuild
-piece. There are a lot of arch/ headers that are just the one line.
-Maybe I should send a another patch to clean up those?
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
 
--Kees
-
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 98e941b..2ddfaa3e 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -133,6 +133,7 @@
+ 		compatible = "renesas,i2c-r8a7778";
+ 		reg = <0xffc70000 0x1000>;
+ 		interrupts = <0 67 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_I2C0>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -142,6 +143,7 @@
+ 		compatible = "renesas,i2c-r8a7778";
+ 		reg = <0xffc71000 0x1000>;
+ 		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_I2C1>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -151,6 +153,7 @@
+ 		compatible = "renesas,i2c-r8a7778";
+ 		reg = <0xffc72000 0x1000>;
+ 		interrupts = <0 76 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_I2C2>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -160,6 +163,7 @@
+ 		compatible = "renesas,i2c-r8a7778";
+ 		reg = <0xffc73000 0x1000>;
+ 		interrupts = <0 77 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_I2C3>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -169,6 +173,8 @@
+ 		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 34 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_TMU0>;
++		clock-names = "fck";
+ 
+ 		#renesas,channels = <3>;
+ 
+@@ -181,6 +187,8 @@
+ 		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_TMU1>;
++		clock-names = "fck";
+ 
+ 		#renesas,channels = <3>;
+ 
+@@ -193,6 +201,8 @@
+ 		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_TMU2>;
++		clock-names = "fck";
+ 
+ 		#renesas,channels = <3>;
+ 
+@@ -203,6 +213,8 @@
+ 		compatible = "renesas,scif-r8a7778", "renesas,scif";
+ 		reg = <0xffe40000 0x100>;
+ 		interrupts = <0 70 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF0>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -210,6 +222,8 @@
+ 		compatible = "renesas,scif-r8a7778", "renesas,scif";
+ 		reg = <0xffe41000 0x100>;
+ 		interrupts = <0 71 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF1>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -217,6 +231,8 @@
+ 		compatible = "renesas,scif-r8a7778", "renesas,scif";
+ 		reg = <0xffe42000 0x100>;
+ 		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF2>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -224,6 +240,8 @@
+ 		compatible = "renesas,scif-r8a7778", "renesas,scif";
+ 		reg = <0xffe43000 0x100>;
+ 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF3>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -231,6 +249,8 @@
+ 		compatible = "renesas,scif-r8a7778", "renesas,scif";
+ 		reg = <0xffe44000 0x100>;
+ 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF4>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -238,6 +258,8 @@
+ 		compatible = "renesas,scif-r8a7778", "renesas,scif";
+ 		reg = <0xffe45000 0x100>;
+ 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF5>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -245,6 +267,7 @@
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0xffe4e000 0x100>;
+ 		interrupts = <0 61 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7778_CLK_MMC>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -252,6 +275,7 @@
+ 		compatible = "renesas,sdhi-r8a7778";
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupts = <0 87 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7778_CLK_SDHI0>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -259,6 +283,7 @@
+ 		compatible = "renesas,sdhi-r8a7778";
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7778_CLK_SDHI1>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -266,6 +291,7 @@
+ 		compatible = "renesas,sdhi-r8a7778";
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupts = <0 86 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7778_CLK_SDHI2>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -273,6 +299,7 @@
+ 		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+ 		reg = <0xfffc7000 0x18>;
+ 		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_HSPI>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+@@ -282,6 +309,7 @@
+ 		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+ 		reg = <0xfffc8000 0x18>;
+ 		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_HSPI>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+@@ -291,6 +319,7 @@
+ 		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+ 		reg = <0xfffc6000 0x18>;
+ 		interrupts = <0 85 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_HSPI>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
 -- 
-Kees Cook
-Chrome OS Security
+2.2.2
+
