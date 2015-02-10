@@ -1,39 +1,31 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 09 Feb 2015 16:02:41 +0000
-Subject: [PATCH v2 13/15] ARM: shmobile: r8a7778 dtsi: Add Bus State Controller node
-Message-Id: <1423497763-3450-14-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 10 Feb 2015 11:11:53 +0000
+Subject: Re: [PATCH v2 13/15] ARM: shmobile: r8a7778 dtsi: Add Bus State Controller node
+Message-Id: <CAMuHMdV5v4h_1nuORgnW_Xd_TM1k+YHr_47MPkvoQnw8Eeac2A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1423497763-3450-14-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1423497763-3450-14-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add a node for the Bus State Controller (BSC) on r8a7778, to which
-multiple external devices can be connected.
+On Mon, Feb 9, 2015 at 5:02 PM, Ulrich Hecht
+<ulrich.hecht+renesas@gmail.com> wrote:
+> Add a node for the Bus State Controller (BSC) on r8a7778, to which
+> multiple external devices can be connected.
+>
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
----
- arch/arm/boot/dts/r8a7778.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 8700e2e..ecd1426 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -41,6 +41,13 @@
- 		spi2 = &hspi2;
- 	};
- 
-+	bsc: bus@1c000000 {
-+		compatible = "simple-bus";
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		ranges = <0 0 0x1c000000>;
-+	};
-+
- 	ether: ethernet@fde00000 {
- 		compatible = "renesas,ether-r8a7778";
- 		reg = <0xfde00000 0x400>;
--- 
-2.2.2
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
