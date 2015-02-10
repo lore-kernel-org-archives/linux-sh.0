@@ -1,62 +1,66 @@
-From: Tony Lindgren <tony@atomide.com>
-Date: Mon, 09 Feb 2015 18:29:19 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 10 Feb 2015 10:19:39 +0000
 Subject: Re: [PATCH] ARM: shmobile: r8a73a4: Move pfc node to work around probe ordering bug
-Message-Id: <20150209182918.GA2531@atomide.com>
+Message-Id: <CAMuHMdUmftjWD=hZVYVOGJWBc6tb1h=ZnMv61_nCROkOC=e_iw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1423254173-31852-1-git-send-email-geert+renesas@glider.be>
  <20150209162428.GG25235@atomide.com>
  <CAMuHMdXsbmcgRacg9CT9N7+KjOrog2F8mmGfORu31P3xyoVviA@mail.gmail.com>
-In-Reply-To: <CAMuHMdXsbmcgRacg9CT9N7+KjOrog2F8mmGfORu31P3xyoVviA@mail.gmail.com>
+ <20150209182918.GA2531@atomide.com>
+In-Reply-To: <20150209182918.GA2531@atomide.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-* Geert Uytterhoeven <geert@linux-m68k.org> [150209 09:17]:
-> On Mon, Feb 9, 2015 at 5:24 PM, Tony Lindgren <tony@atomide.com> wrote:
-> > * Geert Uytterhoeven <geert+renesas@glider.be> [150206 12:26]:
-> >> Notes:
-> >>   - It seems several people tried to solve this in the core OF probing
-> >>     code before, but the final solution never went in?
-> >>   - This can be reproduced on other SoCs (e.g. sh73a0 and r8a7740) by
-> >>     moving their pfc nodes before their interrupt controller nodes.
-> >>   - This patch is against my working tree, so it doesn't apply to
-> >>     Simon's repository, but you get the idea....
-> >
-> > No issues with the patch, but here are few comments on the core
-> > reasons (without looking at the code in this case) that might help
-> > fix similar issues.
-> >
-> > In all the cases I've seen these errors are caused by non-standard
-> > custom initcall levels for drivers like i2c bus. The real solution
-> > is to initialize drivers later with standard module_init, and stop
-> > the race to the bottom with custom initcall levels.
-> >
-> > If there is legacy board specific platofrm init code that needs
-> > i2c gpios early, that code can probably be moved to initialize
-> > later on.
-> 
-> In this case no i2c is involved. The drivers for both pinctrl
-> (renesas,pfc-r8a73a4) and irqchip (renesas,irqc) are registered
-> at the same level:
->   - postcore_initcall(sh_pfc_init);
->   - postcore_initcall(irqc_init);
-> Hence the system uses the "natural" order from within the DTS,
-> and decided to instantiate the pfc before the irqchip.
+On Mon, Feb 9, 2015 at 7:29 PM, Tony Lindgren <tony@atomide.com> wrote:
+> * Geert Uytterhoeven <geert@linux-m68k.org> [150209 09:17]:
+>> On Mon, Feb 9, 2015 at 5:24 PM, Tony Lindgren <tony@atomide.com> wrote:
+>> > * Geert Uytterhoeven <geert+renesas@glider.be> [150206 12:26]:
+>> >> Notes:
+>> >>   - It seems several people tried to solve this in the core OF probing
+>> >>     code before, but the final solution never went in?
+>> >>   - This can be reproduced on other SoCs (e.g. sh73a0 and r8a7740) by
+>> >>     moving their pfc nodes before their interrupt controller nodes.
+>> >>   - This patch is against my working tree, so it doesn't apply to
+>> >>     Simon's repository, but you get the idea....
+>> >
+>> > No issues with the patch, but here are few comments on the core
+>> > reasons (without looking at the code in this case) that might help
+>> > fix similar issues.
+>> >
+>> > In all the cases I've seen these errors are caused by non-standard
+>> > custom initcall levels for drivers like i2c bus. The real solution
+>> > is to initialize drivers later with standard module_init, and stop
+>> > the race to the bottom with custom initcall levels.
+>> >
+>> > If there is legacy board specific platofrm init code that needs
+>> > i2c gpios early, that code can probably be moved to initialize
+>> > later on.
+>>
+>> In this case no i2c is involved. The drivers for both pinctrl
+>> (renesas,pfc-r8a73a4) and irqchip (renesas,irqc) are registered
+>> at the same level:
+>>   - postcore_initcall(sh_pfc_init);
+>>   - postcore_initcall(irqc_init);
+>> Hence the system uses the "natural" order from within the DTS,
+>> and decided to instantiate the pfc before the irqchip.
+>
+> OK
 
-OK
- 
-> > Also, there should not be any need for custom driver initcall
-> > levels from Linux generic framework point of view as for example
-> > irqchip implementing drivers work just fine as a loadable module.
-> 
-> As long as no other device that's instantiated earlier references that
-> irqchip?
+I tried converting the renesas,irqc driver to IRQCHIP_DECLARE().
+This solves the probe ordering problem, but it no longer allows the use of
+a platform device. As I was already adding clock and runtime PM support
+(which use platform devices), IRQCHIP_DECLARE doesn't look like the
+right road to follow...
 
-Right :) And deferred probe won't still remove the warning in
-that case. From what I remember, that's a valid warning from irq
-framework point of view.
+Gr{oetje,eeting}s,
 
-Regards,
+                        Geert
 
-Tony
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
