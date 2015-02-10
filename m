@@ -1,43 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 02 Feb 2015 04:26:38 +0000
-Subject: [PATCH 2/3 v3][RFC] ARM: shmobile: r8a7790: add SSIU/DTCP/MLM/SCU reg for Audio DMAC peri peri
-Message-Id: <87k301ey4i.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 10 Feb 2015 22:32:21 +0000
+Subject: Re: [PATCH] sh-pfc: add R8A7794 PFC support
+Message-Id: <54DA86F5.5050208@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <5105352.KV6seE7I1V@wasted.cogentembedded.com>
+In-Reply-To: <5105352.KV6seE7I1V-gHKXc3Y1Z8zGSmamagVegGFoWSdPRAKMAL8bYrjMMd8@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, linux-gpio-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-New Audio DMAC peri peri driver requests SSIU/DTCP/MLM/SCU
-register address.
+Hello.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v2 -> v3
+On 02/11/2015 01:25 AM, Sergei Shtylyov wrote:
 
- - add reg-names
+> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 
- arch/arm/boot/dts/r8a7790.dtsi |    7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+> Add PFC support for  the  R8A7794 SoC  including pin groups for some on-chip
+> devices such as ETH, I2C, INTC, MSIOF, QSPI, [H]SCIF...
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index a290452..6595980 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -373,7 +373,12 @@
- 		compatible = "renesas,rcar-audmapp-r8a7790", "renesas,rcar-audmapp";
- 		#dma-cells = <1>;
- 
--		reg = <0 0xec740000 0 0x200>;
-+		reg = <0 0xec740000 0 0x200>,
-+			<0 0xec400000 0 0x10000>, /* SSIU */
-+			<0 0xec420000 0 0x4800>,  /* DTCP */
-+			<0 0xec320000 0 0x2000>,  /* MLM */
-+			<0 0xec300000 0 0x8800>;  /* SCU */
-+		reg-names = "audmapp", "ssiu", "dtcp", "mlm", "scu";
- 	};
- 
- 	i2c0: i2c@e6508000 {
--- 
-1.7.9.5
+> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> [Sergei: squashed together several patches, fixed the MLB_CLK typo, added IRQ4..
+> IRQ9 pin groups,  fixed IRQn comments, added ETH B pin group names, removed
+> stray new line and fixed typos in the  comments in the pinmux_config_regs[]
+> initializer, added reasonable and removed unreasonable copyrights, modified
+> the bindings document, renamed, added changelog.]
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+    Oops, forgot to rebase to the 'linux-pinctrl' repo's 'devel' branch 
+(should I use some other?), and the patch doesn't apply there. Please ignore.
+
+WBR, Sergei
 
