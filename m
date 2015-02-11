@@ -1,73 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 25 Feb 2015 09:57:50 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7794: add GPIO clocks
-Message-Id: <4073135.p5DxpngjLk@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 11 Feb 2015 22:06:49 +0000
+Subject: [PATCH] ARM: shmobile: r8a7794: add PFC DT support
+Message-Id: <5570320.hDPc0mxmnU@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6954455.LyoCrfjM8R@wasted.cogentembedded.com>
- <1831753.Dnjo3xKPJv@wasted.cogentembedded.com>
-In-Reply-To: <1831753.Dnjo3xKPJv@wasted.cogentembedded.com>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+Define the generic R8A7794 part of the PFC device node.
 
-Thank you for the patch.
+Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
 
-On Sunday 22 February 2015 01:11:25 Sergei Shtylyov wrote:
-> Describe the GPIO clocks in the R8A7794 device tree.
-> 
-> Based on the original patch by Koji Matsuoka <koji.matsuoka.xm@renesas.com>.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+This patch is against 'renesas-devel-20150211-v3.19' tag of Simon Horman's
+'renesas.git' repo. It needs the R8A7794 PFC driver patch in order to work.
 
-> 
-> ---
->  arch/arm/boot/dts/r8a7794.dtsi |   22 ++++++++++++++--------
->  1 file changed, 14 insertions(+), 8 deletions(-)
-> 
-> Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
-> =================================> --- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
-> +++ renesas/arch/arm/boot/dts/r8a7794.dtsi
-> @@ -651,16 +651,22 @@
->  		mstp9_clks: mstp9_clks@e6150994 {
->  			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-
-clocks";
->  			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
-> -			clocks = <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
-> -				<&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
-> +			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
-> +				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
-> +				 <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
-> +				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
->  			#clock-cells = <1>;
-> -			clock-indices = <
-> -				R8A7794_CLK_QSPI_MOD R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
-> -				R8A7794_CLK_I2C3 R8A7794_CLK_I2C2 R8A7794_CLK_I2C1
-> -				R8A7794_CLK_I2C0
-> -			>;
-> +			clock-indices = <R8A7794_CLK_GPIO6 R8A7794_CLK_GPIO5
-> +					 R8A7794_CLK_GPIO4 R8A7794_CLK_GPIO3
-> +					 R8A7794_CLK_GPIO2 R8A7794_CLK_GPIO1
-> +					 R8A7794_CLK_GPIO0 R8A7794_CLK_QSPI_MOD
-> +					 R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
-> +					 R8A7794_CLK_I2C3 R8A7794_CLK_I2C2
-> +					 R8A7794_CLK_I2C1 R8A7794_CLK_I2C0>;
->  			clock-output-names > -				"qspi_mod", "i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
-> +				"gpio6", "gpio5", "gpio4", "gpio3", "gpio2",
-> +				"gpio1", "gpio0", "qspi_mod",
-> +				"i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
->  		};
->  		mstp11_clks: mstp11_clks@e615099c {
->  			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-
-clocks";
+ arch/arm/boot/dts/r8a7794.dtsi |    6 ++++++
+ 1 file changed, 6 insertions(+)
 
-
--- 
-Regards,
-
-Laurent Pinchart
+Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
++++ renesas/arch/arm/boot/dts/r8a7794.dtsi
+@@ -107,6 +107,12 @@
+ 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
++	pfc: pin-controller@e6060000 {
++		compatible = "renesas,pfc-r8a7794";
++		reg = <0 0xe6060000 0 0x11c>;
++		#gpio-range-cells = <3>;
++	};
++
+ 	dmac0: dma-controller@e6700000 {
+ 		compatible = "renesas,rcar-dmac";
+ 		reg = <0 0xe6700000 0 0x20000>;
 
