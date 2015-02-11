@@ -1,37 +1,79 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 03 Feb 2015 14:57:42 +0000
-Subject: [PATCH 2/2] ARM: shmobile: r8a7791: smp: remap whole apmu region
-Message-Id: <1422975462-6037-2-git-send-email-wsa@the-dreams.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 11 Feb 2015 22:41:45 +0000
+Subject: [PATCH] ARM: shmobile: silk: add Ether DT support
+Message-Id: <2276051.p98cm4dRE4@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Define the SILK board dependent part of the Ether device node.
+Enable DHCP and NFS root for the kernel booting.
 
-Documentation says the last register is at 0x184 (CAxCPUCMCR), so use
-proper length. Current APMU code accesses CAxCPUnCR which is currently
-outside of the remapped area.
+Based on the original patch by Vladimir Barinov
+<vladimir.barinov@cogentembedded.com>.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/mach-shmobile/smp-r8a7791.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+This patch is against the 'renesas-devel-20150211-v3.19' tag of Simon Horman's
+'renesas.git' repo.  It depends on just posted SILK board initial DT patch in
+order to apply, on just posted R8A7794 PFC DT patch in order to compile, and
+on R8A7794 PFC driver patch in order for  the pins  to be configured.
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
-index 7e49e0a52e32..de1d92dc1323 100644
---- a/arch/arm/mach-shmobile/smp-r8a7791.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7791.c
-@@ -27,7 +27,7 @@
+ arch/arm/boot/dts/r8a7794-silk.dts |   28 +++++++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
+
+Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794-silk.dts
++++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -22,7 +22,7 @@
+ 	};
  
- static struct rcar_apmu_config r8a7791_apmu_config[] = {
- 	{
--		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
-+		.iomem = DEFINE_RES_MEM(0xe6152000, 0x188),
- 		.cpus = { 0, 1 },
- 	}
+ 	chosen {
+-		bootargs = "ignore_loglevel";
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 		stdout-path = &scif2;
+ 	};
+ 
+@@ -41,6 +41,16 @@
+ 		renesas,groups = "scif2_data";
+ 		renesas,function = "scif2";
+ 	};
++
++	ether_pins: ether {
++		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
++		renesas,function = "eth";
++	};
++
++	phy1_pins: phy1 {
++		renesas,groups = "intc_irq8";
++		renesas,function = "intc";
++	};
  };
--- 
-2.1.4
+ 
+ &scif2 {
+@@ -49,3 +59,19 @@
+ 
+ 	status = "okay";
+ };
++
++&ether {
++	pinctrl-0 = <&ether_pins &phy1_pins>;
++	pinctrl-names = "default";
++
++	phy-handle = <&phy1>;
++	renesas,ether-link-active-low;
++	status = "okay";
++
++	phy1: ethernet-phy@1 {
++		reg = <1>;
++		interrupt-parent = <&irqc0>;
++		interrupts = <8 IRQ_TYPE_LEVEL_LOW>;
++		micrel,led-mode = <1>;
++	};
++};
 
