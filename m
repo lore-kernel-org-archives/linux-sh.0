@@ -1,49 +1,25 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Feb 2015 01:49:17 +0000
-Subject: Re: [PATCH v4 5/9] ASoC: rsnd: Document r8a7778-specific bindings
-Message-Id: <20150227014916.GD31738@verge.net.au>
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Wed, 11 Feb 2015 01:35:55 +0000
+Subject: Re: [PATCH v2 1/2] shdmac: use SET_RUNTIME_PM_OPS()
+Message-Id: <20150211012355.GG21387@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424968934-30577-6-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1424968934-30577-6-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <9005734.b9UuUHqyUV@wasted.cogentembedded.com>
+In-Reply-To: <9005734.b9UuUHqyUV@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-[Cc Mark Brown]
-
-On Thu, Feb 26, 2015 at 05:42:10PM +0100, Ulrich Hecht wrote:
-> Adds "renesas,rcar_sound-r8a7778".
+On Wed, Jan 21, 2015 at 12:09:46AM +0300, Sergei Shtylyov wrote:
+> Use SET_RUNTIME_PM_OPS() to initialize the runtime PM method pointers in the
+> 'struct dev_pm_ops';  since that macro doesn't  do anything  if CONFIG_PM is
+> not defined, we have  to move #ifdef up to also cover the runtime PM methods
+> in order to avoid compilation warnings.
 > 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
->  Documentation/devicetree/bindings/sound/renesas,rsnd.txt | 1 +
->  1 file changed, 1 insertion(+)
+Applied both, thanks.
 
-Thanks, this looks good to me. I believe it should be handled by
-Mark Brown so please repost it to him and the appropriate ML.
+Btw shdmac is NOT a subsystem name!!
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+-- 
+~Vinod
 
-Alternatively, I am happy to take this if Mark provides an Ack.
-
-> diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-> index 2dd690b..67c9861 100644
-> --- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-> +++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-> @@ -5,6 +5,7 @@ Required properties:
->  				  "renesas,rcar_sound-gen1" if generation1, and
->  				  "renesas,rcar_sound-gen2" if generation2
->  				  Examples with soctypes are:
-> +				    - "renesas,rcar_sound-r8a7778" (R-Car M1)
->  				    - "renesas,rcar_sound-r8a7790" (R-Car H2)
->  				    - "renesas,rcar_sound-r8a7791" (R-Car M2-W)
->  - reg				: Should contain the register physical address.
-> -- 
-> 2.2.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
