@@ -1,108 +1,102 @@
-From: keita kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Fri, 13 Feb 2015 05:55:47 +0000
-Subject: [RFC/PATCH] mmc: tmio: Fix PIO mode with CONFIG_HIGHMEM
-Message-Id: <54DD91E3.3070903@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 11 Feb 2015 22:27:06 +0000
+Subject: [PATCH v2] ARM: shmobile: silk: initial device tree
+Message-Id: <2981242.5l1vvMcV1t@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Current PIO mode occurred kernel panic with CONFIG_HIGHMEM.
-This patch fixes the kernel panic by converting the driver
-to the sg_miter API.
+Add the initial device tree for the R8A7794 SoC based SILK low cost board.
+SCIF2 serial port support is included, so that the serial console can work.
 
-Reported-by: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Based on the original patch by Vladimir Barinov
+<vladimir.barinov@cogentembedded.com>.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
-This patch is based on renesas.git / renesas-devel-20150211-v3.19 tag.
+This patch is against the 'renesas-devel-20150211-v3.19' tag of Simon Horman's
+'renesas.git' repo.  It requires just posted R8A7794 PFC DT  patch in order to
+compile, and R8A7794 PFC driver patch in order for the pins  to be configured.
 
- drivers/mmc/host/tmio_mmc.h     |    1 +
- drivers/mmc/host/tmio_mmc_pio.c |   35 ++++++++++++++++-------------------
- 2 files changed, 17 insertions(+), 19 deletions(-)
+Changes in version 2:
+- removed "console=" parameter from the kernel command line;
+- added PFC node with SCIF2 pins subnode and referred it from the SCIF2 node;
+- rebased the patch
+- mentioned the origin of patch in the changelog.
 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index a34ecbe..3092219 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -56,6 +56,7 @@ struct tmio_mmc_host {
- 	struct scatterlist      *sg_orig;
- 	unsigned int            sg_len;
- 	unsigned int            sg_off;
-+	struct sg_mapping_iter	sg_miter;
+ arch/arm/boot/dts/Makefile         |    1 
+ arch/arm/boot/dts/r8a7794-silk.dts |   51 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 52 insertions(+)
 
- 	struct platform_device *pdev;
- 	struct tmio_mmc_data *pdata;
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 250bf8c..6d8f363 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -70,17 +70,14 @@ static void tmio_mmc_ack_mmc_irqs(struct tmio_mmc_host *host, u32 i)
-
- static void tmio_mmc_init_sg(struct tmio_mmc_host *host, struct mmc_data *data)
- {
--	host->sg_len = data->sg_len;
--	host->sg_ptr = data->sg;
--	host->sg_orig = data->sg;
--	host->sg_off = 0;
--}
-+	unsigned int flags = SG_MITER_ATOMIC;
-
--static int tmio_mmc_next_sg(struct tmio_mmc_host *host)
--{
--	host->sg_ptr = sg_next(host->sg_ptr);
--	host->sg_off = 0;
--	return --host->sg_len;
-+	if (data->flags & MMC_DATA_READ)
-+		flags |= SG_MITER_TO_SG;
-+	else
-+		flags |= SG_MITER_FROM_SG;
+Index: renesas/arch/arm/boot/dts/Makefile
+=================================--- renesas.orig/arch/arm/boot/dts/Makefile
++++ renesas/arch/arm/boot/dts/Makefile
+@@ -421,6 +421,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += eme
+ 	r8a7791-henninger.dtb \
+ 	r8a7791-koelsch.dtb \
+ 	r8a7794-alt.dtb \
++	r8a7794-silk.dtb \
+ 	sh73a0-kzm9g.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_arria5_socdk.dtb \
+ 	socfpga_arria10_socdk.dtb \
+Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
+=================================--- /dev/null
++++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -0,0 +1,51 @@
++/*
++ * Device Tree Source for the SILK board
++ *
++ * Copyright (C) 2014 Renesas Electronics Corporation
++ * Copyright (C) 2014-2015 Renesas Solutions Corp.
++ * Copyright (C) 2014-2015 Cogent Embedded, Inc.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
 +
-+	sg_miter_start(&host->sg_miter, data->sg, data->sg_len, flags);
- }
++/dts-v1/;
++#include "r8a7794.dtsi"
++
++/ {
++	model = "SILK";
++	compatible = "renesas,silk", "renesas,r8a7794";
++
++	aliases {
++		serial0 = &scif2;
++	};
++
++	chosen {
++		bootargs = "ignore_loglevel";
++		stdout-path = &scif2;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0 0x40000000 0 0x40000000>;
++	};
++};
++
++&extal_clk {
++	clock-frequency = <20000000>;
++};
++
++&pfc {
++	scif2_pins: serial2 {
++		renesas,groups = "scif2_data";
++		renesas,function = "scif2";
++	};
++};
++
++&scif2 {
++	pinctrl-0 = <&scif2_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
 
- #ifdef CONFIG_MMC_DEBUG
-@@ -418,7 +415,7 @@ static void tmio_mmc_transfer_data(struct tmio_mmc_host *host,
- static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
- {
- 	struct mmc_data *data = host->data;
--	void *sg_virt;
-+	struct sg_mapping_iter *sg_miter = &host->sg_miter;
- 	unsigned short *buf;
- 	unsigned int count;
- 	unsigned long flags;
-@@ -431,10 +428,12 @@ static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
- 		return;
- 	}
-
--	sg_virt = tmio_mmc_kmap_atomic(host->sg_ptr, &flags);
--	buf = (unsigned short *)(sg_virt + host->sg_off);
-+	local_irq_save(flags);
-
--	count = host->sg_ptr->length - host->sg_off;
-+	if (!sg_miter_next(sg_miter))
-+		return;
-+	buf = sg_miter->addr;
-+	count = sg_miter->length;
- 	if (count > data->blksz)
- 		count = data->blksz;
-
-@@ -444,12 +443,10 @@ static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
- 	/* Transfer the data */
- 	tmio_mmc_transfer_data(host, buf, count);
-
--	host->sg_off += count;
--
--	tmio_mmc_kunmap_atomic(host->sg_ptr, &flags, sg_virt);
-+	sg_miter->consumed = count;
-+	sg_miter_stop(sg_miter);
-
--	if (host->sg_off = host->sg_ptr->length)
--		tmio_mmc_next_sg(host);
-+	local_irq_restore(flags);
-
- 	return;
- }
--- 
-1.7.9.5
