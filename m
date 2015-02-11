@@ -1,37 +1,21 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 14 Feb 2015 18:21:38 +0000
-Subject: Re: [PATCH] ARM: shmobile: Remove redundant cpu_disable implementation
-Message-Id: <20150214182133.GA27815@verge.net.au>
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Wed, 11 Feb 2015 01:39:53 +0000
+Subject: Re: [PATCH] dmaengine: rcar-dmac: Fix uninitialized variable usage
+Message-Id: <20150211012753.GH21387@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423874461-2405-1-git-send-email-sboyd@codeaurora.org>
- <CANqRtoRBpf6gmqUb1avYFWV0sJ5Oo_ZcymRZoDKtm7sgS-zBhA@mail.gmail.com>
-In-Reply-To: <CANqRtoRBpf6gmqUb1avYFWV0sJ5Oo_ZcymRZoDKtm7sgS-zBhA@mail.gmail.com>
+References: <1420734565-23815-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1420734565-23815-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Sat, Feb 14, 2015 at 09:58:42AM +0000, Magnus Damm wrote:
-> Hi Stephen,
-> 
-> On Sat, Feb 14, 2015 at 12:41 AM, Stephen Boyd <sboyd@codeaurora.org> wrote:
-> > By default only the non-boot CPUs can be hotplugged if the
-> > smp_operations structure doesn't have the cpu_disable function
-> > pointer set. r8a7779_cpu_disable() implements the same logic,
-> > only non-boot CPUs can be hotplugged, so it's redundant to
-> > override the default behavior.
-> >
-> > Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
-> > ---
-> >  arch/arm/mach-shmobile/smp-r8a7779.c | 7 -------
-> >  1 file changed, 7 deletions(-)
-> 
-> Thanks for breaking out this change. It looks good to me!
-> 
-> Acked-by: Magnus Damm <damm+renesas@opensource.se>
+On Thu, Jan 08, 2015 at 06:29:25PM +0200, Laurent Pinchart wrote:
+> The desc variable is used uninitialized in the rcar_dmac_desc_get() and
+> rcar_dmac_xfer_chunk_get() functions if descriptors need to be
+> allocated. Fix it.
+Applied, thanks
 
-Thanks,
+-- 
+~Vinod
 
-I have queued this up  with the following slightly updated subject
-
-'ARM: shmobile: r8a7779: Remove redundant cpu_disable implementation'
