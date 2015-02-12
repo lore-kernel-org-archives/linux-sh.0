@@ -1,51 +1,78 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 18 Feb 2015 16:34:59 +0000
-Subject: [PATCH] mmc: tmio: Remove bogus un-initialization in tmio_mmc_host_free()
-Message-Id: <1424277299-24964-1-git-send-email-geert+renesas@glider.be>
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Thu, 12 Feb 2015 09:53:55 +0000
+Subject: Re: [PATCH 0/9 v4] dmaengine: shdma: use normal interface for passing slave id
+Message-Id: <20150212095122.GN21387@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <874mrjmq76.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <874mrjmq76.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>, Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-If CONFIG_DEBUG_SLAB=3Dy:
+On Thu, Jan 29, 2015 at 12:59:56AM +0000, Kuninori Morimoto wrote:
+> 
+> Hi Vinod, Mark
+> 
+> These are v4 of shdma-base fixup patches.
+> Original patch came from Arnd.
+> I added Arnd/Ulf's Acked-by if it got it in pervious patch-set.
+The series looks fine
 
-    sh_mobile_sdhi ee100000.sd: Got CD GPIO
-    sh_mobile_sdhi ee100000.sd: Got WP GPIO
-    platform ee100000.sd: Driver sh_mobile_sdhi requests probe deferral
-    ...
-    Slab corruption (Not tainted): kmalloc-1024 start=ED8b3c00, len=1024
-    2d0: 00 00 00 00 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b  ....kkkkkkkkkkkk
-    Prev obj: start=ED8b3800, len=1024
-    000: 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b  kkkkkkkkkkkkkkkk
-    010: 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b  kkkkkkkkkkkkkkkk
+> 
+> Mark
+> 	Can you please check these patces ?
+>           3) 4)		: for SPI
+>           7) 8) 9)	: for ASoC
+> 
+> Vinod
+> 
+> 5) 6) patches are based on Vinod's next branch + Ulf's
+> 	git.linaro.org/people/ulf.hansson/mmc.git tmio
+> 
+> Easy way to merge these are maybe...
+>  Pattern 1) Vinod merges Ulf's tmio branch, and apply all these pathces
+>  Pattern 2) Vinod apply these patches except 5) 6), and Ulf merge Vinod's branch
+>             and apply 5) 6) patches
+Or pattern 3, apply this after merge window. I am assuming Ulf rmio will be
+queued up.
 
-Struct tmio_mmc_host is embedded inside struct mmc_host, and thus is
-freed by the call to mmc_free_host(). Hence it must not be written to
-afterwards, as that will corrupt freed (and perhaps already reused)
-memory.
+-- 
+~Vinod
 
-Fixes: 94b110aff8679b14 ("mmc: tmio: add tmio_mmc_host_alloc/free()")
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/mmc/host/tmio_mmc_pio.c | 2 --
- 1 file changed, 2 deletions(-)
+> 
+> Arnd Bergmann (4):
+>       1) dmaengine: shdma: use normal interface for passing slave id
+>       2) mtd: sh_flctl: remove slave_id settings for DMAEngine
+>       3) spi: rspi: remove slave_id settings for DMAEngine
+>       4) spi: sh-msiof: remove slave_id settings for DMAEngine
+> 
+> Kuninori Morimoto (5):
+>       5) mmc: sh_mmcif: remove slave_id settings for DMAEngine
+>       6) mmc: tmio_mmc: remove slave_id settings for DMAEngine
+>       7) ASoC: rsnd: remove slave_id settings for DMAEngine
+>       8) ASoC: fsi: remove slave_id settings for DMAEngine
+>       9) ASoC: fsi: Configure DMA slave settings
+> 
+>  drivers/dma/sh/shdma-base.c       |   73 +++++++++++++++++++++++++++----------
+>  drivers/mmc/host/sh_mmcif.c       |   13 +++----
+>  drivers/mmc/host/sh_mobile_sdhi.c |    2 -
+>  drivers/mmc/host/tmio_mmc.h       |    2 -
+>  drivers/mmc/host/tmio_mmc_dma.c   |    4 --
+>  drivers/mtd/nand/sh_flctl.c       |    2 -
+>  drivers/spi/spi-rspi.c            |    1 -
+>  drivers/spi/spi-sh-msiof.c        |    1 -
+>  include/linux/shdma-base.h        |    1 +
+>  sound/soc/sh/fsi.c                |   18 ++++++---
+>  sound/soc/sh/rcar/core.c          |    3 +-
+>  11 files changed, 73 insertions(+), 47 deletions(-)
+> 
+> Best regards
+> ---
+> Kuninori Morimoto
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pi=
-o.c
-index a31c3573d386f8c6..dba7e1c19dd758e7 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -1073,8 +1073,6 @@ EXPORT_SYMBOL(tmio_mmc_host_alloc);
- void tmio_mmc_host_free(struct tmio_mmc_host *host)
- {
- 	mmc_free_host(host->mmc);
--
--	host->mmc =3D NULL;
- }
- EXPORT_SYMBOL(tmio_mmc_host_free);
-=20
---=20
-1.9.1
-
+-- 
