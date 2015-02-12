@@ -1,80 +1,72 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 10 Feb 2015 10:45:56 +0000
-Subject: Re: [PATCH 4/4] usb: renesas_usbhs: add support for USB-DMAC
-Message-Id: <CAMuHMdV0T_5f+nnYoDRcR+Zm8_-ALP9ShJw3GGBnR9iNGUfEGw@mail.gmail.com>
+From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 12 Feb 2015 02:32:13 +0000
+Subject: RE: [PATCH 4/4] usb: renesas_usbhs: add support for USB-DMAC
+Message-Id: <SIXPR06MB33337463D32765B222B210FD8220@SIXPR06MB333.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1423469774-6532-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 	<1423469774-6532-5-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1423469774-6532-5-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <CAMuHMdV0T_5f+nnYoDRcR+Zm8_-ALP9ShJw3GGBnR9iNGUfEGw@mail.gmail.com>
+In-Reply-To: <CAMuHMdV0T_5f+nnYoDRcR+Zm8_-ALP9ShJw3GGBnR9iNGUfEGw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Greg KH <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@ti.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, USB list <linux-usb@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Hi Shimoda-san,
-
-On Mon, Feb 9, 2015 at 9:16 AM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> Some Renesas SoCs have the USB-DMAC. It is able to terminate transfers
-> when a short packet is received, even if less bytes than the transfer
-> counter size have been received. Also, it is able to send a short
-> packet even if the packet size is not multiples of 8bytes.
->
-> Since the previous code has used the interruption of USBHS controller
-> when receiving packets even if this driver has used a dmac, a lot of
-> interruptions has happened. This patch will reduce such interruptions.
->
-> This patch allows to use the USB-DMAC on R-Car H2 and M2.
->
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-
-> --- a/drivers/usb/renesas_usbhs/common.c
-> +++ b/drivers/usb/renesas_usbhs/common.c
-
-> @@ -487,6 +497,15 @@ static struct renesas_usbhs_platform_info *usbhs_parse_dt(struct device *dev)
->         if (gpio > 0)
->                 dparam->enable_gpio = gpio;
->
-> +       switch (dparam->type) {
-> +       case USBHS_TYPE_R8A7790:
-> +       case USBHS_TYPE_R8A7791:
-> +               dparam->has_usb_dmac = 1;
-> +               break;
-> +       default:
-> +               break;
-> +       }
-> +
->         return info;
->  }
-
->  struct usbhs_priv *usbhs_pdev_to_priv(struct platform_device *pdev);
-> diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-> index 3b77a1b..1e7dc6e 100644
-> --- a/drivers/usb/renesas_usbhs/fifo.c
-> +++ b/drivers/usb/renesas_usbhs/fifo.c
-
-> @@ -847,10 +849,13 @@ static int usbhsf_dma_prepare_push(struct usbhs_pkt *pkt, int *is_done)
->             usbhs_pipe_is_dcp(pipe))
->                 goto usbhsf_pio_prepare_push;
->
-> -       if (len & 0x7) /* 8byte alignment */
-> +       /* default: 8byte alignment */
-> +       if (!usbhs_get_dparam(priv, has_usb_dmac) && len & 0x7)
->                 goto usbhsf_pio_prepare_push;
-
-So the has_usb_dmac flags indicates that DMA addresses are not limited to
-8-byte alignment.
-
-Can't this be handled by looking at a dma_mask, as set by the DMAC?
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR2VlcnQtc2FuLA0KDQo+IEhpIFNoaW1vZGEtc2FuLA0KPiANCj4gT24gTW9uLCBGZWIgOSwg
+MjAxNSBhdCA5OjE2IEFNLCBZb3NoaWhpcm8gU2hpbW9kYQ0KPiA8eW9zaGloaXJvLnNoaW1vZGEu
+dWhAcmVuZXNhcy5jb20+IHdyb3RlOg0KPiA+IFNvbWUgUmVuZXNhcyBTb0NzIGhhdmUgdGhlIFVT
+Qi1ETUFDLiBJdCBpcyBhYmxlIHRvIHRlcm1pbmF0ZSB0cmFuc2ZlcnMNCj4gPiB3aGVuIGEgc2hv
+cnQgcGFja2V0IGlzIHJlY2VpdmVkLCBldmVuIGlmIGxlc3MgYnl0ZXMgdGhhbiB0aGUgdHJhbnNm
+ZXINCj4gPiBjb3VudGVyIHNpemUgaGF2ZSBiZWVuIHJlY2VpdmVkLiBBbHNvLCBpdCBpcyBhYmxl
+IHRvIHNlbmQgYSBzaG9ydA0KPiA+IHBhY2tldCBldmVuIGlmIHRoZSBwYWNrZXQgc2l6ZSBpcyBu
+b3QgbXVsdGlwbGVzIG9mIDhieXRlcy4NCj4gPg0KPiA+IFNpbmNlIHRoZSBwcmV2aW91cyBjb2Rl
+IGhhcyB1c2VkIHRoZSBpbnRlcnJ1cHRpb24gb2YgVVNCSFMgY29udHJvbGxlcg0KPiA+IHdoZW4g
+cmVjZWl2aW5nIHBhY2tldHMgZXZlbiBpZiB0aGlzIGRyaXZlciBoYXMgdXNlZCBhIGRtYWMsIGEg
+bG90IG9mDQo+ID4gaW50ZXJydXB0aW9ucyBoYXMgaGFwcGVuZWQuIFRoaXMgcGF0Y2ggd2lsbCBy
+ZWR1Y2Ugc3VjaCBpbnRlcnJ1cHRpb25zLg0KPiA+DQo+ID4gVGhpcyBwYXRjaCBhbGxvd3MgdG8g
+dXNlIHRoZSBVU0ItRE1BQyBvbiBSLUNhciBIMiBhbmQgTTIuDQo+ID4NCj4gPiBTaWduZWQtb2Zm
+LWJ5OiBZb3NoaWhpcm8gU2hpbW9kYSA8eW9zaGloaXJvLnNoaW1vZGEudWhAcmVuZXNhcy5jb20+
+DQo+IA0KPiA+IC0tLSBhL2RyaXZlcnMvdXNiL3JlbmVzYXNfdXNiaHMvY29tbW9uLmMNCj4gPiAr
+KysgYi9kcml2ZXJzL3VzYi9yZW5lc2FzX3VzYmhzL2NvbW1vbi5jDQo+IA0KPiA+IEBAIC00ODcs
+NiArNDk3LDE1IEBAIHN0YXRpYyBzdHJ1Y3QgcmVuZXNhc191c2Joc19wbGF0Zm9ybV9pbmZvICp1
+c2Joc19wYXJzZV9kdChzdHJ1Y3QgZGV2aWNlICpkZXYpDQo+ID4gICAgICAgICBpZiAoZ3BpbyA+
+IDApDQo+ID4gICAgICAgICAgICAgICAgIGRwYXJhbS0+ZW5hYmxlX2dwaW8gPSBncGlvOw0KPiA+
+DQo+ID4gKyAgICAgICBzd2l0Y2ggKGRwYXJhbS0+dHlwZSkgew0KPiA+ICsgICAgICAgY2FzZSBV
+U0JIU19UWVBFX1I4QTc3OTA6DQo+ID4gKyAgICAgICBjYXNlIFVTQkhTX1RZUEVfUjhBNzc5MToN
+Cj4gPiArICAgICAgICAgICAgICAgZHBhcmFtLT5oYXNfdXNiX2RtYWMgPSAxOw0KPiA+ICsgICAg
+ICAgICAgICAgICBicmVhazsNCj4gPiArICAgICAgIGRlZmF1bHQ6DQo+ID4gKyAgICAgICAgICAg
+ICAgIGJyZWFrOw0KPiA+ICsgICAgICAgfQ0KPiA+ICsNCj4gPiAgICAgICAgIHJldHVybiBpbmZv
+Ow0KPiA+ICB9DQo+IA0KPiA+ICBzdHJ1Y3QgdXNiaHNfcHJpdiAqdXNiaHNfcGRldl90b19wcml2
+KHN0cnVjdCBwbGF0Zm9ybV9kZXZpY2UgKnBkZXYpOw0KPiA+IGRpZmYgLS1naXQgYS9kcml2ZXJz
+L3VzYi9yZW5lc2FzX3VzYmhzL2ZpZm8uYyBiL2RyaXZlcnMvdXNiL3JlbmVzYXNfdXNiaHMvZmlm
+by5jDQo+ID4gaW5kZXggM2I3N2ExYi4uMWU3ZGM2ZSAxMDA2NDQNCj4gPiAtLS0gYS9kcml2ZXJz
+L3VzYi9yZW5lc2FzX3VzYmhzL2ZpZm8uYw0KPiA+ICsrKyBiL2RyaXZlcnMvdXNiL3JlbmVzYXNf
+dXNiaHMvZmlmby5jDQo+IA0KPiA+IEBAIC04NDcsMTAgKzg0OSwxMyBAQCBzdGF0aWMgaW50IHVz
+YmhzZl9kbWFfcHJlcGFyZV9wdXNoKHN0cnVjdCB1c2Joc19wa3QgKnBrdCwgaW50ICppc19kb25l
+KQ0KPiA+ICAgICAgICAgICAgIHVzYmhzX3BpcGVfaXNfZGNwKHBpcGUpKQ0KPiA+ICAgICAgICAg
+ICAgICAgICBnb3RvIHVzYmhzZl9waW9fcHJlcGFyZV9wdXNoOw0KPiA+DQo+ID4gLSAgICAgICBp
+ZiAobGVuICYgMHg3KSAvKiA4Ynl0ZSBhbGlnbm1lbnQgKi8NCj4gPiArICAgICAgIC8qIGRlZmF1
+bHQ6IDhieXRlIGFsaWdubWVudCAqLw0KPiA+ICsgICAgICAgaWYgKCF1c2Joc19nZXRfZHBhcmFt
+KHByaXYsIGhhc191c2JfZG1hYykgJiYgbGVuICYgMHg3KQ0KPiA+ICAgICAgICAgICAgICAgICBn
+b3RvIHVzYmhzZl9waW9fcHJlcGFyZV9wdXNoOw0KPiANCj4gU28gdGhlIGhhc191c2JfZG1hYyBm
+bGFncyBpbmRpY2F0ZXMgdGhhdCBETUEgYWRkcmVzc2VzIGFyZSBub3QgbGltaXRlZCB0bw0KPiA4
+LWJ5dGUgYWxpZ25tZW50Lg0KPiANCj4gQ2FuJ3QgdGhpcyBiZSBoYW5kbGVkIGJ5IGxvb2tpbmcg
+YXQgYSBkbWFfbWFzaywgYXMgc2V0IGJ5IHRoZSBETUFDPw0KDQpPcHBzLCB0aGUgY29tbWVudCAi
+OGJ5dGUgYWxpZ25tZW50IiBpcyB3cm9uZy4NCkkgd2lsbCBmaXggdGhlIGNvbW1lbnQuDQoNClRo
+ZSBVU0ItRE1BQyBjYW4gc2VuZCBhIHBhY2tldCB0aGF0IGl0IGlzIG5vdCBtdWx0aXBsZXMgb2Yg
+OC1ieXRlcy4NClRoZSBVU0ItRE1BQyBuZWVkcyAzMi1ieXRlcyBhbGlnbm1lbnQgYnkgdGhlIGZv
+bGxvd2luZyBjb2RlLg0KDQotCWlmICgodWludHB0cl90KShwa3QtPmJ1ZiArIHBrdC0+YWN0dWFs
+KSAmIDB4NykgLyogOGJ5dGUgYWxpZ25tZW50ICovDQorCWFsaWduX21hc2sgPSB1c2Joc19nZXRf
+ZHBhcmFtKHByaXYsIGhhc191c2JfZG1hYykgPw0KKwkJCQkJVVNCSFNfVVNCX0RNQUNfWEZFUl9T
+SVpFIC0gMSA6IDB4NzsNCisJaWYgKCh1aW50cHRyX3QpKHBrdC0+YnVmICsgcGt0LT5hY3R1YWwp
+ICYgYWxpZ25fbWFzaykNCg0KVGhlIHByZXZpb3VzIGNvZGUgd2lsbCB1c2UgYSBkbWFjIGlmIGEg
+cGFja2V0IHNpemUgaXMgbXVsdGlwbGVzIG9mIDgtYnl0ZXMgYW5kDQppdCBpcyA4LWJ5dGVzIGFs
+aWdubWVudC4NCg0KQmVzdCByZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1vZGENCg0KPiBHcntvZXRq
+ZSxlZXRpbmd9cywNCj4gDQo+ICAgICAgICAgICAgICAgICAgICAgICAgIEdlZXJ0DQo+IA0KPiAt
+LQ0KPiBHZWVydCBVeXR0ZXJob2V2ZW4gLS0gVGhlcmUncyBsb3RzIG9mIExpbnV4IGJleW9uZCBp
+YTMyIC0tIGdlZXJ0QGxpbnV4LW02OGsub3JnDQo+IA0KPiBJbiBwZXJzb25hbCBjb252ZXJzYXRp
+b25zIHdpdGggdGVjaG5pY2FsIHBlb3BsZSwgSSBjYWxsIG15c2VsZiBhIGhhY2tlci4gQnV0DQo+
+IHdoZW4gSSdtIHRhbGtpbmcgdG8gam91cm5hbGlzdHMgSSBqdXN0IHNheSAicHJvZ3JhbW1lciIg
+b3Igc29tZXRoaW5nIGxpa2UgdGhhdC4NCj4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAtLSBMaW51cyBUb3J2YWxkcw0K
