@@ -1,73 +1,49 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 27 Feb 2015 00:23:26 +0000
-Subject: Re: [PATCH v2 1/3] ARM: shmobile: armadillo800eva: Properly specify HDMI audio link format
-Message-Id: <87k2z4fbfv.wl%kuninori.morimoto.gx@renesas.com>
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Sat, 14 Feb 2015 00:41:01 +0000
+Subject: [PATCH] ARM: shmobile: Remove redundant cpu_disable implementation
+Message-Id: <1423874461-2405-1-git-send-email-sboyd@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421847492-8857-1-git-send-email-lars@metafoo.de>
-	<87d25wg804.wl%kuninori.morimoto.gx@renesas.com>
-	<20150211002802.GC7826@verge.net.au>
-In-Reply-To: <20150211002802.GC7826@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Lars-Peter Clausen <lars@metafoo.de>, Mark Brown <broonie@kernel.org>
-Cc: Simon Horman <horms@verge.net.au>, Liam Girdwood <lgirdwood@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, alsa-devel@alsa-project.org
+To: linux-arm-kernel@lists.infradead.org
 
+By default only the non-boot CPUs can be hotplugged if the
+smp_operations structure doesn't have the cpu_disable function
+pointer set. r8a7779_cpu_disable() implements the same logic,
+only non-boot CPUs can be hotplugged, so it's redundant to
+override the default behavior.
 
-Hi Lars, Mark
-
-> > > The DAI link format should be specified for the whole link rather than just
-> > > one component on the link. So move the format specification for the HDMI
-> > > audio link from the CPU component to the link itself.
-> > > 
-> > > Since the sh-mobile-hdmi DAI driver doesn't implement the set_fmt() callback
-> > > in this case there is no functional difference between only specifying the
-> > > the format for the CPU side or for the whole link, but the later it will
-> > > allow us to remove support for just specifying the format for one component.
-> > > 
-> > > Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
-> > > ---
-> > 
-> > I tested these 3 patches on armadillo800eva
-> > 
-> > 	[PATCH v2 1/3] ARM: shmobile: armadillo800eva: Properly specify HDMI audio link format
-> > 	[PATCH v2 2/3] ASoC: sh: fsi: Fix clock inversion
-> > 	[PATCH v2 3/3] ASoC: simple-card: Remove support for setting differing DAI formats
-> > 
-> > Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > 
-> > 2/3 patch changed behavior for clock inversion on FSI driver.
-> > FSI + wm8978 on armadillo800eva worked without any issues,
-> > but, I don't know how much effect it has for other board.
-> > We used this inversion flags on each board for historical reasons (copy-paste),
-> > but, almost all these were not needed (except some picky board) on FSI.
-> > Maybe Lars's 2/3 patch is correct, but, it is difficult to check/confirm for all boards.
-> > And unfortunately, Renesas don't use FSI anymore.
-> > So, I think keeping current FSI driver as-is is more safety for old boards.
-> > armadillo800eva works well with below patch (as 2/3 patch)
-> 
-> 
-> Thanks, I am inclined to agree that it is best to leave things unchanged.
-> 
-> > 
-> > --------------
-> > diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-> > index 75de26c..36aaeb1 100644
-> > --- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-> > +++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-> > @@ -1015,7 +1015,6 @@ static struct asoc_simple_card_info fsi_wm8978_info = {
-> >         .platform       = "sh_fsi2",
-> >         .daifmt         = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_CBM_CFM,
-> >         .cpu_dai = {
-> > -               .fmt    = SND_SOC_DAIFMT_IB_NF,
-> >                 .name   = "fsia-dai",
-> >         },
-> >         .codec_dai = {
-> > --------------
-
-As I mentioned above (and, Simon agreed), I think we can
-agree if [2/3] patch was exchanged
-
-Best regards
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 ---
-Kuninori Morimoto
+ arch/arm/mach-shmobile/smp-r8a7779.c | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
+index 3f761f839043..b45206f93ddf 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7779.c
++++ b/arch/arm/mach-shmobile/smp-r8a7779.c
+@@ -124,19 +124,12 @@ static int r8a7779_cpu_kill(unsigned int cpu)
+ 
+ 	return 0;
+ }
+-
+-static int r8a7779_cpu_disable(unsigned int cpu)
+-{
+-	/* only CPU1->3 have power domains, do not allow hotplug of CPU0 */
+-	return cpu = 0 ? -EPERM : 0;
+-}
+ #endif /* CONFIG_HOTPLUG_CPU */
+ 
+ struct smp_operations r8a7779_smp_ops  __initdata = {
+ 	.smp_prepare_cpus	= r8a7779_smp_prepare_cpus,
+ 	.smp_boot_secondary	= r8a7779_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
+-	.cpu_disable		= r8a7779_cpu_disable,
+ 	.cpu_die		= shmobile_smp_scu_cpu_die,
+ 	.cpu_kill		= r8a7779_cpu_kill,
+ #endif
+-- 
+The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum,
+a Linux Foundation Collaborative Project
+
