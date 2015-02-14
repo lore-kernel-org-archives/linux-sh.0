@@ -1,33 +1,37 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sat, 14 Feb 2015 09:58:42 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Sat, 14 Feb 2015 18:21:38 +0000
 Subject: Re: [PATCH] ARM: shmobile: Remove redundant cpu_disable implementation
-Message-Id: <CANqRtoRBpf6gmqUb1avYFWV0sJ5Oo_ZcymRZoDKtm7sgS-zBhA@mail.gmail.com>
+Message-Id: <20150214182133.GA27815@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1423874461-2405-1-git-send-email-sboyd@codeaurora.org>
-In-Reply-To: <1423874461-2405-1-git-send-email-sboyd@codeaurora.org>
+ <CANqRtoRBpf6gmqUb1avYFWV0sJ5Oo_ZcymRZoDKtm7sgS-zBhA@mail.gmail.com>
+In-Reply-To: <CANqRtoRBpf6gmqUb1avYFWV0sJ5Oo_ZcymRZoDKtm7sgS-zBhA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Stephen,
+On Sat, Feb 14, 2015 at 09:58:42AM +0000, Magnus Damm wrote:
+> Hi Stephen,
+> 
+> On Sat, Feb 14, 2015 at 12:41 AM, Stephen Boyd <sboyd@codeaurora.org> wrote:
+> > By default only the non-boot CPUs can be hotplugged if the
+> > smp_operations structure doesn't have the cpu_disable function
+> > pointer set. r8a7779_cpu_disable() implements the same logic,
+> > only non-boot CPUs can be hotplugged, so it's redundant to
+> > override the default behavior.
+> >
+> > Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+> > ---
+> >  arch/arm/mach-shmobile/smp-r8a7779.c | 7 -------
+> >  1 file changed, 7 deletions(-)
+> 
+> Thanks for breaking out this change. It looks good to me!
+> 
+> Acked-by: Magnus Damm <damm+renesas@opensource.se>
 
-On Sat, Feb 14, 2015 at 12:41 AM, Stephen Boyd <sboyd@codeaurora.org> wrote:
-> By default only the non-boot CPUs can be hotplugged if the
-> smp_operations structure doesn't have the cpu_disable function
-> pointer set. r8a7779_cpu_disable() implements the same logic,
-> only non-boot CPUs can be hotplugged, so it's redundant to
-> override the default behavior.
->
-> Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
-> ---
->  arch/arm/mach-shmobile/smp-r8a7779.c | 7 -------
->  1 file changed, 7 deletions(-)
+Thanks,
 
-Thanks for breaking out this change. It looks good to me!
+I have queued this up  with the following slightly updated subject
 
-Acked-by: Magnus Damm <damm+renesas@opensource.se>
-
-Cheers,
-
-/ magnus
+'ARM: shmobile: r8a7779: Remove redundant cpu_disable implementation'
