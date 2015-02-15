@@ -1,68 +1,84 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 19 Feb 2015 09:44:57 +0000
-Subject: Re: [PATCH] [media] soc-camera: Remove bogus devm_kfree() in soc_of_bind()
-Message-Id: <CAMuHMdVQcRD6GNO57gP9FDzZDW0CSMtNAqoSfHcDeHAFeZ6Hwg@mail.gmail.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 15 Feb 2015 14:43:15 +0000
+Subject: [PATCH/RFC] i2c: rcar: Fix order of restart and clear status
+Message-Id: <1424011396-3492-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424277163-24869-1-git-send-email-geert+renesas@glider.be>
-	<54E4D2DB.4050909@cogentembedded.com>
-	<Pine.LNX.4.64.1502182216060.31387@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1502182216060.31387@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Ben Dooks <ben.dooks@codethink.co.uk>, Mauro Carvalho Chehab <m.chehab@samsung.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, stable <stable@vger.kernel.org>
+To: linux-i2c@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Guennadi,
+From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
 
-On Wed, Feb 18, 2015 at 10:16 PM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> On Wed, 18 Feb 2015, Sergei Shtylyov wrote:
->> On 02/18/2015 07:32 PM, Geert Uytterhoeven wrote:
->> > Unlike scan_async_group(), soc_of_bind() doesn't allocate its
->> > soc_camera_async_client structure using devm_kzalloc(), but has it
->> > embedded inside the soc_of_info structure.  Hence on failure, it must
->> > not free it using devm_kfree(), as this will cause a warning, and may
->> > cause slab corruption:
->>
->> [...]
->>
->> > Fixes: 1ddc6a6caa94e1e1 ("[media] soc_camera: add support for dt binding
->> > soc_camera drivers")
->> > Cc: stable@vger.kernel.org
->> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> > ---
->> > Triggered with shmobile-defconfig on r8a7791/koelsch.
->> > ---
->> >   drivers/media/platform/soc_camera/soc_camera.c | 1 -
->> >   1 file changed, 1 deletion(-)
->>
->> > diff --git a/drivers/media/platform/soc_camera/soc_camera.c
->> > b/drivers/media/platform/soc_camera/soc_camera.c
->> > index cee7b56f84049944..d8a072fe46035821 100644
->> > --- a/drivers/media/platform/soc_camera/soc_camera.c
->> > +++ b/drivers/media/platform/soc_camera/soc_camera.c
->> > @@ -1665,7 +1665,6 @@ eclkreg:
->> >   eaddpdev:
->> >     platform_device_put(sasc->pdev);
->> >   eallocpdev:
->> > -   devm_kfree(ici->v4l2_dev.dev, sasc);
->>
->>    Perhaps Ben meant 'info' ISO 'sasc'? This way it would make more sense.
->
-> Agree. Geert, could you double-check and respin?
+In case of repeated START condition, the restart has to be kicked
+before clear status (MSR register). If it is kicked after clear status,
+R-Car I2C may transfer data (TXD register) or receive data (RXD register)
+instead of transferring slave address (MAR register).
 
-Sergei is right. Will update and resend.
+Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-Thanks!
+This patch is based on i2c/for-next branch of Wolfram Sang's linux tree.
 
-Gr{oetje,eeting}s,
+ drivers/i2c/busses/i2c-rcar.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
 
-                        Geert
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 71a6e07..96c349f 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -2,6 +2,7 @@
+  * Driver for the Renesas RCar I2C unit
+  *
+  * Copyright (C) 2014 Wolfram Sang <wsa@sang-engineering.com>
++ * Copyright (C) 2013-2014 Renesas Electronics Corporation
+  *
+  * Copyright (C) 2012-14 Renesas Solutions Corp.
+  * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+@@ -99,6 +100,7 @@
+ #define ID_DONE		(1 << 2)
+ #define ID_ARBLOST	(1 << 3)
+ #define ID_NACK		(1 << 4)
++#define ID_FIRST_MSG	(1 << 5)
+ 
+ enum rcar_i2c_type {
+ 	I2C_RCAR_GEN1,
+@@ -125,6 +127,7 @@ struct rcar_i2c_priv {
+ #define rcar_i2c_is_recv(p)		((p)->msg->flags & I2C_M_RD)
+ 
+ #define rcar_i2c_flags_set(p, f)	((p)->flags |= (f))
++#define rcar_i2c_flags_clr(p, f)	((p)->flags &= ~(f))
+ #define rcar_i2c_flags_has(p, f)	((p)->flags & (f))
+ 
+ #define LOOP_TIMEOUT	1024
+@@ -257,8 +260,14 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
+ 	int read = !!rcar_i2c_is_recv(priv);
+ 
+ 	rcar_i2c_write(priv, ICMAR, (priv->msg->addr << 1) | read);
+-	rcar_i2c_write(priv, ICMSR, 0);
+-	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
++	if (rcar_i2c_flags_has(priv, ID_FIRST_MSG)) {	/* start */
++		rcar_i2c_write(priv, ICMSR, 0);
++		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
++		rcar_i2c_flags_clr(priv, ID_FIRST_MSG);
++	} else {	/* restart */
++		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
++		rcar_i2c_write(priv, ICMSR, 0);
++	}
+ 	rcar_i2c_write(priv, ICMIER, read ? RCAR_IRQ_RECV : RCAR_IRQ_SEND);
+ }
+ 
+@@ -524,6 +533,8 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 		priv->msg	= &msgs[i];
+ 		priv->pos	= 0;
+ 		priv->flags	= 0;
++		if (i = 0)
++			rcar_i2c_flags_set(priv, ID_FIRST_MSG);
+ 		if (i = num - 1)
+ 			rcar_i2c_flags_set(priv, ID_LAST_MSG);
+ 
+-- 
+1.9.1
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
