@@ -1,66 +1,38 @@
-From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 02 Feb 2015 06:03:05 +0000
-Subject: RE: [PATCH] usb: renesas_usbhs: fix NULL pointer dereference in dma_release_channel()
-Message-Id: <HKNPR06MB322F834B103583F4846BEFED83C0@HKNPR06MB322.apcprd06.prod.outlook.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 15 Feb 2015 16:01:41 +0000
+Subject: [PATCH] pinctrl: sh-pfc: Remove r8a7791 platform_device_id entry
+Message-Id: <1424016101-10111-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422601103-1144-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1422601103-1144-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon-san,
+The r8a7791 platform is now DT-only, the driver doesn't need to match
+platform devices by name anymore. Remove the corresponding
+platform_device_id entry.
 
-> 
-> On Fri, Jan 30, 2015 at 03:58:23PM +0900, Yoshihiro Shimoda wrote:
-> > This patch fixes an issue that the following commit causes NULL
-> > pointer dereference in dma_release_channel().
-> >  "usb: renesas_usbhs: add support for requesting DT DMA"
-> >  (commit id abd2dbf6bb1b5f3a03a8c76b1a8879da1dd30caa)
-> >
-> > The usbhsf_dma_init_dt() should set fifo->{t,r}x_chan to NULL if
-> > dma_request_slave_channel_reason() returns IS_ERR value.
-> > Otherwise, usbhsf_dma_quit() will call dma_release_channel(), and then
-> > NULL pointer dereference happens.
-> >
-> > Reported-by: Simon Horman <horms@verge.net.au>
-> > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> 
-> I have tested this on the lager and koelsch boards using
-> shmobile_defconfig and next-20150129 as a base. The environment
-> where I originally observed the problem.
-> 
-> Tested-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/core.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-Thank you for the test!
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index a56280814a3f..e2c442b64a2c 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -597,9 +597,6 @@ static const struct platform_device_id sh_pfc_id_table[] = {
+ #ifdef CONFIG_PINCTRL_PFC_R8A7790
+ 	{ "pfc-r8a7790", (kernel_ulong_t)&r8a7790_pinmux_info },
+ #endif
+-#ifdef CONFIG_PINCTRL_PFC_R8A7791
+-	{ "pfc-r8a7791", (kernel_ulong_t)&r8a7791_pinmux_info },
+-#endif
+ #ifdef CONFIG_PINCTRL_PFC_SH7203
+ 	{ "pfc-sh7203", (kernel_ulong_t)&sh7203_pinmux_info },
+ #endif
+-- 
+Regards,
 
-Best regards,
-Yoshihiro Shimoda
+Laurent Pinchart
 
-> > ---
-> > This patch is based on Felipe's usb.git / testing/next branch.
-> > (commit id }b3990cb707ff91cd6507d53a0a730afe97)
-> >
-> >  drivers/usb/renesas_usbhs/fifo.c |    4 ++++
-> >  1 file changed, 4 insertions(+)
-> >
-> > diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-> > index 4c086b1..d891bff 100644
-> > --- a/drivers/usb/renesas_usbhs/fifo.c
-> > +++ b/drivers/usb/renesas_usbhs/fifo.c
-> > @@ -1072,7 +1072,11 @@ static void usbhsf_dma_init_pdev(struct usbhs_fifo *fifo)
-> >  static void usbhsf_dma_init_dt(struct device *dev, struct usbhs_fifo *fifo)
-> >  {
-> >  	fifo->tx_chan = dma_request_slave_channel_reason(dev, "tx");
-> > +	if (IS_ERR(fifo->tx_chan))
-> > +		fifo->tx_chan = NULL;
-> >  	fifo->rx_chan = dma_request_slave_channel_reason(dev, "rx");
-> > +	if (IS_ERR(fifo->rx_chan))
-> > +		fifo->rx_chan = NULL;
-> >  }
-> >
-> >  static void usbhsf_dma_init(struct usbhs_priv *priv,
-> > --
-> > 1.7.9.5
-> >
