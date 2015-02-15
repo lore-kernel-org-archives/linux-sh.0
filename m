@@ -1,91 +1,122 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 11 Feb 2015 00:36:33 +0000
-Subject: Re: [PATCH v2 00/15] r8a7778 CCF and multiplatform
-Message-Id: <20150211003633.GE7826@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sun, 15 Feb 2015 16:06:42 +0000
+Subject: Re: [PATCH v2] sh-pfc: add R8A7794 PFC support
+Message-Id: <1974835.KMEIIiPVsr@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423497763-3450-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1423497763-3450-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <5262485.fuAdzVmykl@wasted.cogentembedded.com>
+In-Reply-To: <5262485.fuAdzVmykl@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: linus.walleij@linaro.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org
 
-Hi Ulrich,
+Hi Sergei,
 
-thanks for your hard work on this. It will be very nice to
-support multiplatform on the r8a7778.
+Thank you for the patch.
 
-From my point of view the feedback to this series seems
-to consist of either acks or request for non-complex changes.
-Would you be able to address those requests and re-post with
-the acks appended as appropriate?
+On Thursday 12 February 2015 00:01:18 Sergei Shtylyov wrote:
+> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> 
+> Add PFC support for  the  R8A7794 SoC  including pin groups for some on-chip
+> devices such as ETH, I2C, INTC, MSIOF, QSPI, [H]SCIF...
+> 
+> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> [Sergei: squashed together several patches, fixed the MLB_CLK typo, added
+> IRQ4.. IRQ9 pin groups,  fixed IRQn comments, added ETH B pin group names,
+> removed stray new line and fixed typos in the  comments in the
+> pinmux_config_regs[] initializer, added reasonable and removed unreasonable
+> copyrights, modified the bindings document, renamed, added changelog.]
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> 
+> ---
+> The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git'
+> repo.
+> 
+> Changes in version 2:
+> - rebased the patch.
+> 
+>  Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt |    1
+>  drivers/pinctrl/sh-pfc/Kconfig                                    |    5
+>  drivers/pinctrl/sh-pfc/Makefile                                   |    1
+>  drivers/pinctrl/sh-pfc/core.c                                     |    9
+>  drivers/pinctrl/sh-pfc/core.h                                     |    1
+>  drivers/pinctrl/sh-pfc/pfc-r8a7794.c                              | 3989 ++
+>  6 files changed, 4006 insertions(+)
 
-On Mon, Feb 09, 2015 at 05:02:28PM +0100, Ulrich Hecht wrote:
-> Hi!
-> 
-> Here's the CCF/MP support for r8a7778 and Bock-W again.  This revision
-> attempts to incorporate all suggestions made.  Most importantly, it moves
-> the extal clock out of the CPG driver and adds the internal Ethernet
-> controller, to which the Ethernet pins actually belong.  See below for
-> details.
-> 
-> CU
-> Uli
-> 
-> Changes since v1:
-> - added oki,ml86v7667 to trivial-devices.txt
-> - added internal ethernet controller
-> - moved pins from external to internal ethernet controller
-> - added bsc bus, moved external ethernet controller there
-> - removed extal from CPG driver and made it a fixed clock
-> - renamed "scu*" clocks to "scu-src*"
-> - split SoC/board CCF enablement from CPG driver
-> - added "smsc,lan89218" compat string to external net controller
-> - added missing clock-names to tmu nodes
-> - named Kconfig entry properly
-> - added Acks
-> 
-> 
-> Ulrich Hecht (15):
->   ARM: shmobile: r8a7778: synchronize dts with reference platform
->   ARM: shmobile: r8a7778: add CPG register bits header
->   ARM: shmobile: r8a7778: Common clock framework DT description
->   ARM: shmobile: r8a7778: common clock framework CPG driver
->   ARM: shmobile: r8a7778: implement SoC and board CCF support
->   ARM: shmobile: r8a7778: add MSTP clock assignments to DT
->   ARM: shmobile: bockw: add devices hooked up to i2c0 to DT
->   ARM: shmobile: r8a7778, bockw: add internal ethernet controller to DT
->   ARM: shmobile: bockw: add USB, VIN pin descriptions to DT
->   ARM: shmobile: r8a7778: add sound to DT
->   ARM: shmobile: bockw: add sound to DT
->   ARM: shmobile: r8a7778: enable multiplatform target
->   ARM: shmobile: r8a7778 dtsi: Add Bus State Controller node
->   ARM: shmobile: bockw dts: Move Ethernet node to BSC
->   ARM: shmobile: bockw dts: set extal clock frequency
-> 
->  .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
->  .../bindings/clock/renesas,r8a7778-cpg-clocks.txt  |  24 ++
->  .../devicetree/bindings/i2c/trivial-devices.txt    |   1 +
->  arch/arm/boot/dts/Makefile                         |   1 +
->  arch/arm/boot/dts/r8a7778-bockw.dts                | 185 +++++++++++++
->  arch/arm/boot/dts/r8a7778.dtsi                     | 292 +++++++++++++++++++++
->  arch/arm/mach-shmobile/Kconfig                     |   4 +
->  arch/arm/mach-shmobile/board-bockw-reference.c     |   2 +
->  arch/arm/mach-shmobile/setup-r8a7778.c             |  19 ++
->  drivers/clk/shmobile/Makefile                      |   1 +
->  drivers/clk/shmobile/clk-r8a7778.c                 | 142 ++++++++++
->  include/dt-bindings/clock/r8a7778-clock.h          |  71 +++++
->  include/linux/clk/shmobile.h                       |   1 +
->  13 files changed, 744 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
->  create mode 100644 drivers/clk/shmobile/clk-r8a7778.c
->  create mode 100644 include/dt-bindings/clock/r8a7778-clock.h
-> 
-> -- 
-> 2.2.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+[snip]
+
+> Index: linux-pinctrl/drivers/pinctrl/sh-pfc/core.c
+> =================================> --- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/core.c
+> +++ linux-pinctrl/drivers/pinctrl/sh-pfc/core.c
+> @@ -481,6 +481,12 @@ static const struct of_device_id sh_pfc_
+>  		.data = &r8a7791_pinmux_info,
+>  	},
+>  #endif
+> +#ifdef CONFIG_PINCTRL_PFC_R8A7794
+> +	{
+> +		.compatible = "renesas,pfc-r8a7794",
+> +		.data = &r8a7794_pinmux_info,
+> +	},
+> +#endif
+>  #ifdef CONFIG_PINCTRL_PFC_SH73A0
+>  	{
+>  		.compatible = "renesas,pfc-sh73a0",
+> @@ -600,6 +606,9 @@ static const struct platform_device_id s
+>  #ifdef CONFIG_PINCTRL_PFC_R8A7791
+>  	{ "pfc-r8a7791", (kernel_ulong_t)&r8a7791_pinmux_info },
+>  #endif
+> +#ifdef CONFIG_PINCTRL_PFC_R8A7794
+> +	{ "pfc-r8a7794", (kernel_ulong_t)&r8a7794_pinmux_info },
+
+R-Car E2 is DT-only, so there's no need for a platform_device_id entry.
+
+> +#endif
+>  #ifdef CONFIG_PINCTRL_PFC_SH7203
+>  	{ "pfc-sh7203", (kernel_ulong_t)&sh7203_pinmux_info },
+>  #endif
+
+[snip]
+
+> Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+> =================================> --- /dev/null
+> +++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+> @@ -0,0 +1,3989 @@
+> +/*
+> + * r8a7794 processor support - PFC hardware block.
+> + *
+> + * Copyright (C) 2014 Renesas Electronics Corporation
+> + * Copyright (C) 2015 Renesas Solutions Corp.
+> + * Copyright (C) 2015 Cogent  Embedded, Inc., <source@cogentembedded.com>
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License version 2
+> + * as published by the Free Software Foundation.
+> + */
+> +
+> +#include <linux/kernel.h>
+> +#include <linux/platform_data/gpio-rcar.h>
+> +
+> +#include "core.h"
+> +#include "sh_pfc.h"
+> +
+> +#define CPU_ALL_PORT(fn, sfx)						\
+> +	PORT_GP_32(0, fn, sfx),						\
+> +	PORT_GP_32(1, fn, sfx),						\
+> +	PORT_GP_32(2, fn, sfx),						\
+> +	PORT_GP_32(3, fn, sfx),						\
+> +	PORT_GP_32(4, fn, sfx),						\
+> +	PORT_GP_32(5, fn, sfx),						\
+> +	PORT_GP_32(6, fn, sfx)
+
+If I'm not mistaken port GP1 has 26 pins only, GP5 28 pins and GP6 26 pins.
+
+[snip]
+
+I haven't checked all pins in details, but the pin groups look sensible to me.
+
+-- 
+Regards,
+
+Laurent Pinchart
+
