@@ -1,60 +1,77 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Feb 2015 01:49:27 +0000
-Subject: Re: [PATCH v4 8/9] ARM: shmobile: r8a7778: enable multiplatform target
-Message-Id: <20150227014927.GG31738@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 15 Feb 2015 14:44:40 +0000
+Subject: [PATCH/RFC] i2c: rcar: Support ACK by HW auto restart after NACK
+Message-Id: <1424011480-3551-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424968934-30577-9-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1424968934-30577-9-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Thu, Feb 26, 2015 at 05:42:13PM +0100, Ulrich Hecht wrote:
-> Adds config option and enables DTB building.
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
 
-Thanks, I have queued this up.
+Even if R-Car I2C received NACK, after that it might receive ACK
+by HW auto restart. In case of that, driver would continue process.
+If R-Car I2C didn't receive ACK, the driver would detect timeout
+and would report NACK as -ENXIO.
 
-> ---
->  arch/arm/boot/dts/Makefile     | 1 +
->  arch/arm/mach-shmobile/Kconfig | 4 ++++
->  2 files changed, 5 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-> index 65c13eb..7f098c9 100644
-> --- a/arch/arm/boot/dts/Makefile
-> +++ b/arch/arm/boot/dts/Makefile
-> @@ -474,6 +474,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
->  	r7s72100-genmai.dtb \
->  	r8a73a4-ape6evm.dtb \
->  	r8a7740-armadillo800eva.dtb \
-> +	r8a7778-bockw.dtb \
->  	r8a7779-marzen.dtb \
->  	r8a7790-lager.dtb \
->  	r8a7791-henninger.dtb \
-> diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-> index 0cbe84a..a3e7412 100644
-> --- a/arch/arm/mach-shmobile/Kconfig
-> +++ b/arch/arm/mach-shmobile/Kconfig
-> @@ -63,6 +63,10 @@ config ARCH_R8A7740
->  	select ARCH_RMOBILE
->  	select RENESAS_INTC_IRQPIN
->  
-> +config ARCH_R8A7778
-> +	bool "R-Car M1A (R8A77781)"
-> +	select ARCH_RCAR_GEN1
-> +
->  config ARCH_R8A7779
->  	bool "R-Car H1 (R8A77790)"
->  	select ARCH_RCAR_GEN1
-> -- 
-> 2.2.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+
+This patch is based on i2c/for-next branch of Wolfram Sang's linux tree.
+
+ drivers/i2c/busses/i2c-rcar.c | 19 ++++++++++++-------
+ 1 file changed, 12 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 71a6e07..dde8abf 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -455,14 +455,20 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ 	if (msr & MNR) {
+ 		/* go to stop phase */
+ 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
+-		rcar_i2c_write(priv, ICMIER, RCAR_IRQ_STOP);
+ 		rcar_i2c_flags_set(priv, ID_NACK);
+ 		goto out;
+ 	}
+ 
+ 	/* Stop */
+ 	if (msr & MST) {
+-		rcar_i2c_flags_set(priv, ID_DONE);
++		if (rcar_i2c_flags_has(priv, ID_NACK)) {
++			/* don't set ID_DONE for expecting ACK
++					after auto-restart by HW */
++			rcar_i2c_write(priv, ICMSR, ~MST);
++		} else {
++			rcar_i2c_flags_set(priv, ID_DONE);
++			rcar_i2c_write(priv, ICMSR, 0);
++		}
+ 		goto out;
+ 	}
+ 
+@@ -536,15 +542,14 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 					     rcar_i2c_flags_has(priv, ID_DONE),
+ 					     5 * HZ);
+ 		if (!timeout) {
++			if (rcar_i2c_flags_has(priv, ID_NACK)) {
++				ret = -ENXIO;
++				break;
++			}
+ 			ret = -ETIMEDOUT;
+ 			break;
+ 		}
+ 
+-		if (rcar_i2c_flags_has(priv, ID_NACK)) {
+-			ret = -ENXIO;
+-			break;
+-		}
+-
+ 		if (rcar_i2c_flags_has(priv, ID_ARBLOST)) {
+ 			ret = -EAGAIN;
+ 			break;
+-- 
+1.9.1
+
