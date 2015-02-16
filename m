@@ -1,55 +1,49 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 20 Feb 2015 10:22:37 +0000
-Subject: [PATCH 02/24 v2] ASoC: rsnd: remove SH-DMA-BASE specific implementation
-Message-Id: <87d254op8j.wl%kuninori.morimoto.gx@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 16 Feb 2015 16:58:56 +0000
+Subject: [PATCH v3 12/15] ARM: shmobile: r8a7778: enable multiplatform target
+Message-Id: <1424105939-4910-13-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Adds config option and enables DTB building.
 
-Renesas R-Car sound had SH-DMA-BASE specific implementation before,
-but, now, it is no longer needed. Let's remove it.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v1 -> v2
+ arch/arm/boot/dts/Makefile     | 1 +
+ arch/arm/mach-shmobile/Kconfig | 4 ++++
+ 2 files changed, 5 insertions(+)
 
- - no change
-
- sound/soc/sh/rcar/core.c |    1 -
- sound/soc/sh/rcar/rsnd.h |    1 -
- 2 files changed, 2 deletions(-)
-
-diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
-index 1b53605..0b14d37 100644
---- a/sound/soc/sh/rcar/core.c
-+++ b/sound/soc/sh/rcar/core.c
-@@ -94,7 +94,6 @@
-  *
-  */
- #include <linux/pm_runtime.h>
--#include <linux/shdma-base.h>
- #include "rsnd.h"
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 8eb4824..c751aed 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -414,6 +414,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += emev2-kzm9d.dtb \
+ 	r7s72100-genmai.dtb \
+ 	r8a73a4-ape6evm.dtb \
+ 	r8a7740-armadillo800eva.dtb \
++	r8a7778-bockw.dtb \
+ 	r8a7779-marzen.dtb \
+ 	r8a7790-lager.dtb \
+ 	r8a7791-henninger.dtb \
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 2d0387e..5992e8c 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -62,6 +62,10 @@ config ARCH_R8A7740
+ 	select ARCH_RMOBILE
+ 	select RENESAS_INTC_IRQPIN
  
- #define RSND_RATES SNDRV_PCM_RATE_8000_96000
-diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
-index e7914bd..5ffde9b 100644
---- a/sound/soc/sh/rcar/rsnd.h
-+++ b/sound/soc/sh/rcar/rsnd.h
-@@ -171,7 +171,6 @@ u32 rsnd_get_adinr(struct rsnd_mod *mod);
-  *	R-Car DMA
-  */
- struct rsnd_dma {
--	struct sh_dmae_slave	slave;
- 	struct dma_chan		*chan;
- 	enum dma_transfer_direction dir;
- 	dma_addr_t		addr;
++config ARCH_R8A7778
++	bool "R-Car M1A (R8A77781)"
++	select ARCH_RCAR_GEN1
++
+ config ARCH_R8A7779
+ 	bool "R-Car H1 (R8A77790)"
+ 	select ARCH_RCAR_GEN1
 -- 
-1.7.9.5
+2.2.2
 
