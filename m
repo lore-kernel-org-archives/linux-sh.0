@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sat, 14 Feb 2015 10:01:22 +0000
+From: Mark Rutland <mark.rutland@arm.com>
+Date: Mon, 16 Feb 2015 15:29:48 +0000
 Subject: Re: [PATCH v2] ARM: smp: Only expose /sys/.../cpuX/online if hotpluggable
-Message-Id: <CANqRtoTkLLGOOmsTghnXTQYsGne_30iFVBWgUCeDwW1n3goysA@mail.gmail.com>
+Message-Id: <20150216152948.GH8994@leverpostej>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1423850799-4028-1-git-send-email-sboyd@codeaurora.org>
  <20150213202002.GB29727@verge.net.au>
@@ -16,27 +16,29 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Russell,
-
-On Fri, Feb 13, 2015 at 11:01 PM, Russell King - ARM Linux
-<linux@arm.linux.org.uk> wrote:
+On Fri, Feb 13, 2015 at 11:01:37PM +0000, Russell King - ARM Linux wrote:
 > On Fri, Feb 13, 2015 at 09:44:50PM +0000, Magnus Damm wrote:
->> Also, based on the comment in mcpm_cpu_can_disable() it looks like the
->> PSCI hook may be executed once only with your change in place?
->> Hopefully PSCI is OK not being invoked for every CPU shutdown.
->
+> > Also, based on the comment in mcpm_cpu_can_disable() it looks like the
+> > PSCI hook may be executed once only with your change in place?
+> > Hopefully PSCI is OK not being invoked for every CPU shutdown.
+> 
 > This is why I've said (in the parent thread) that I'm not happy to
 > apply this patch.  Mark Rutland has indicated that he has MCPM cases
 > where the CPUs which can be disabled changes dynamically according
 > to the secure firmware requirements, and ripping out todays
 > infrastructure in light of that, only to have to add it back again
 > later makes no sense.
->
-> However, cleaning things up by removing unnecessary cpu_disable
-> methods is a good thing to do irrespective of that.
 
-I completely agree!
+To clarify, PSCI and MCPM are unrelated. It was originally conceived
+that MCPM would use PSCI as a backend, but it turns out that they're
+effectively mutually exclusive, and are handled separately. I still want
+to add support for MIGRATE in the PSCI client code, but this is
+independent of MCPM.
 
-Cheers,
+In some cases it's possible to determine at boot time that a CPU cannot
+be hotplugged (e.g. in PSCI if the TOS is non-migrateable), so having
+separate hooks for determining that static and dynamic ability to
+hotplug a CPU sounds reasonable to me.
 
-/ magnus
+Thanks,
+Mark.
