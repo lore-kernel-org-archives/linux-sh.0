@@ -1,96 +1,238 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 24 Feb 2015 04:28:03 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: silk: add SDHI0/1 DT support
-Message-Id: <CANqRtoQhGOob734kNqNNjMxPcT2Fz=1X6J4M1iobzyiF8Cp8nQ@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 16 Feb 2015 16:58:47 +0000
+Subject: [PATCH v3 03/15] ARM: shmobile: r8a7778: Common clock framework DT description
+Message-Id: <1424105939-4910-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <10037494.4LD4T2QGPX@wasted.cogentembedded.com>
- <2348421.LHyZ4ZOiiG@wasted.cogentembedded.com>
- <CANqRtoRnDzTSvKYcNDHKHbeaN7jp1VvKnk1jTHDvNt1oyBzwKg@mail.gmail.com>
- <54E9ED95.8070702@cogentembedded.com>
-In-Reply-To: <54E9ED95.8070702@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Sergei,
+Declares all r8a7778 clocks supported by the legacy clock framework,
+plus tmu2.
 
-On Sun, Feb 22, 2015 at 6:54 AM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> Hello.
->
-> On 02/22/2015 03:45 AM, Magnus Damm wrote:
->
->>> Define the SILK board dependent parts of the SDHI0  (connected to SDIO
->>> Wi-Fi
->>> chip)  and SDHI1  (connected to micro-SD slot) device nodes along with
->>> the
->>> necessary voltage regulators.
->
->
->>> Based on the original patch by Vladimir Barinov
->>> <vladimir.barinov@cogentembedded.com>.
->
->
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->
->
->> Thanks for your patch. One question - above you write that SDHI1 is
->> micro-SD...
->
->
->    Yes, have double-checked now.
->
->
->>> @@ -100,3 +159,25 @@
->>>          non-removable;
->>>          status = "okay";
->>>   };
->>> +
->>> +&sdhi0 {
->>> +       pinctrl-0 = <&sdhi0_pins>;
->>> +       pinctrl-names = "default";
->>> +
->>> +       vmmc-supply = <&vcc_sdhi0>;
->>> +       vqmmc-supply = <&vccq_sdhi0>;
->>> +       cd-gpios = <&gpio6 6 GPIO_ACTIVE_LOW>;
->>> +       wp-gpios = <&gpio6 7 GPIO_ACTIVE_LOW>;
->>> +       status = "okay";
->>> +};
->>> +
->>> +&sdhi1 {
->>> +       pinctrl-0 = <&sdhi1_pins>;
->>> +       pinctrl-names = "default";
->>> +
->>> +       vmmc-supply = <&vcc_sdhi1>;
->>> +       vqmmc-supply = <&vccq_sdhi1>;
->>> +       cd-gpios = <&gpio6 14 GPIO_ACTIVE_LOW>;
->>> +       wp-gpios = <&gpio6 15 GPIO_ACTIVE_LOW>;
->>> +       status = "okay";
->>> +};
->
->
->> ... however here the WP signal is assigned.
->
->
->> I believe micro-SD doesn't use the WP signal, so either I'm wrong or
->> the patch needs to be updated to reflect reality. =)
->
->
->    Both seem correct: SD1_WP signal is just tied to VCCQ_SD1. Do you think
-> we should still drop it?
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ arch/arm/boot/dts/r8a7778.dtsi                     | 191 +++++++++++++++++++++
+ 2 files changed, 192 insertions(+)
 
-If the signal is not exposed to the card connector then I believe the
-correct approach is to omit it. So yes, please drop it.
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 0a80fa7..e163092 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -13,6 +13,7 @@ Required Properties:
+     - "renesas,r7s72100-mstp-clocks" for R7S72100 (RZ) MSTP gate clocks
+     - "renesas,r8a73a4-mstp-clocks" for R8A73A4 (R-Mobile APE6) MSTP gate clocks
+     - "renesas,r8a7740-mstp-clocks" for R8A7740 (R-Mobile A1) MSTP gate clocks
++    - "renesas,r8a7778-mstp-clocks" for R8A7778 (R-Car M1) MSTP gate clocks
+     - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
+     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index ef85339..822ba90 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -16,6 +16,7 @@
+ 
+ /include/ "skeleton.dtsi"
+ 
++#include <dt-bindings/clock/r8a7778-clock.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+@@ -294,4 +295,194 @@
+ 		#size-cells = <0>;
+ 		status = "disabled";
+ 	};
++
++	clocks {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		/* External input clock */
++		extal_clk: extal_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "extal";
++		};
++
++		/* Special CPG clocks */
++		cpg_clocks: cpg_clocks@ffc80000 {
++			compatible = "renesas,r8a7778-cpg-clocks";
++			reg = <0xffc80000 0x80>;
++			#clock-cells = <1>;
++			clocks = <&extal_clk>;
++			clock-output-names = "plla", "pllb", "b",
++					     "out", "p", "s", "s1";
++		};
++
++		/* Audio clocks; frequencies are set by boards if applicable. */
++		audio_clk_a: audio_clk_a {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-output-names = "audio_clk_a";
++		};
++		audio_clk_b: audio_clk_b {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-output-names = "audio_clk_b";
++		};
++		audio_clk_c: audio_clk_c {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-output-names = "audio_clk_c";
++		};
++
++		/* Fixed ratio clocks */
++		g_clk: g_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <12>;
++			clock-mult = <1>;
++			clock-output-names = "g";
++		};
++		i_clk: i_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <1>;
++			clock-mult = <1>;
++			clock-output-names = "i";
++		};
++		s3_clk: s3_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <4>;
++			clock-mult = <1>;
++			clock-output-names = "s3";
++		};
++		s4_clk: s4_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLA>;
++			#clock-cells = <0>;
++			clock-div = <8>;
++			clock-mult = <1>;
++			clock-output-names = "s4";
++		};
++		z_clk: z_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks R8A7778_CLK_PLLB>;
++			#clock-cells = <0>;
++			clock-div = <1>;
++			clock-mult = <1>;
++			clock-output-names = "z";
++		};
++
++		/* Gate clocks */
++		mstp0_clks: mstp0_clks@ffc80030 {
++			compatible = "renesas,r8a7778-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xffc80030 4>;
++			clocks = <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_S>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7778_CLK_I2C0 R8A7778_CLK_I2C1
++				R8A7778_CLK_I2C2 R8A7778_CLK_I2C3
++				R8A7778_CLK_SCIF0 R8A7778_CLK_SCIF1
++				R8A7778_CLK_SCIF2 R8A7778_CLK_SCIF3
++				R8A7778_CLK_SCIF4 R8A7778_CLK_SCIF5
++				R8A7778_CLK_TMU0 R8A7778_CLK_TMU1
++				R8A7778_CLK_TMU2 R8A7778_CLK_SSI0
++				R8A7778_CLK_SSI1 R8A7778_CLK_SSI2
++				R8A7778_CLK_SSI3 R8A7778_CLK_SRU
++				R8A7778_CLK_HSPI
++			>;
++			clock-output-names +				"i2c0", "i2c1", "i2c2", "i2c3", "scif0",
++				"scif1", "scif2", "scif3", "scif4", "scif5",
++				"tmu0", "tmu1", "tmu2", "ssi0", "ssi1",
++				"ssi2", "ssi3", "sru", "hspi";
++		};
++		mstp1_clks: mstp1_clks@ffc80034 {
++			compatible = "renesas,r8a7778-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xffc80034 4>, <0xffc80044 4>;
++			clocks = <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_S>,
++				 <&cpg_clocks R8A7778_CLK_S>,
++				 <&cpg_clocks R8A7778_CLK_P>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7778_CLK_ETHER R8A7778_CLK_VIN0
++				R8A7778_CLK_VIN1 R8A7778_CLK_USB
++			>;
++			clock-output-names +				"ether", "vin0", "vin1", "usb";
++		};
++		mstp3_clks: mstp3_clks@ffc8003c {
++			compatible = "renesas,r8a7778-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xffc8003c 4>;
++			clocks = <&s4_clk>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7778_CLK_MMC R8A7778_CLK_SDHI0
++				R8A7778_CLK_SDHI1 R8A7778_CLK_SDHI2
++				R8A7778_CLK_SSI4 R8A7778_CLK_SSI5
++				R8A7778_CLK_SSI6 R8A7778_CLK_SSI7
++				R8A7778_CLK_SSI8
++			>;
++			clock-output-names +				"mmc", "sdhi0", "sdhi1", "sdhi2", "ssi4",
++				"ssi5", "ssi6", "ssi7", "ssi8";
++		};
++		mstp5_clks: mstp5_clks@ffc80054 {
++			compatible = "renesas,r8a7778-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xffc80054 4>;
++			clocks = <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>,
++				 <&cpg_clocks R8A7778_CLK_P>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7778_CLK_SRU_SRC0 R8A7778_CLK_SRU_SRC1
++				R8A7778_CLK_SRU_SRC2 R8A7778_CLK_SRU_SRC3
++				R8A7778_CLK_SRU_SRC4 R8A7778_CLK_SRU_SRC5
++				R8A7778_CLK_SRU_SRC6 R8A7778_CLK_SRU_SRC7
++				R8A7778_CLK_SRU_SRC8
++			>;
++			clock-output-names +				"sru-src0", "sru-src1", "sru-src2",
++				"sru-src3", "sru-src4", "sru-src5",
++				"sru-src6", "sru-src7", "sru-src8";
++		};
++	};
+ };
+-- 
+2.2.2
 
->> Also, I doubt that an on-board SDIO module makes use of CD and/or WP
->> signals?
->
->    Those two are tied to VCCQ_SD0 as well. Do you think we should drop them?
-
-Since the on-board SDIO chip does not support hotplug and cannot be
-write-protected I think those should be dropped too.
-
-Thanks,
-
-/ magnus
