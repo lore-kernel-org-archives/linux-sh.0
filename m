@@ -1,57 +1,55 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 19 Feb 2015 10:39:25 +0000
-Subject: Re: [PATCH/RFC 2/2] regulator: da9210: Add optional interrupt support
-Message-Id: <CAMuHMdU+Q7M=2UaCDyUaxq8mzT9x6-tSh+OQJF4MBrFrz_fTuQ@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Feb 2015 19:41:00 +0000
+Subject: [PATCH 1/2] pinctrl: sh-pfc: r8a7790: Remove non existing GPIO pins
+Message-Id: <1424115661-21928-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424175072-14643-1-git-send-email-geert+renesas@glider.be>
-	<1424175072-14643-2-git-send-email-geert+renesas@glider.be>
-	<20150217140110.GV9110@finisterre.sirena.org.uk>
-	<CAMuHMdXOFVZWn+u4wyz4Ro_kS_LaWc4Mwrq-XZU3dPpjmX2E3w@mail.gmail.com>
-	<20150219103346.GE3198@finisterre.sirena.org.uk>
-In-Reply-To: <20150219103346.GE3198-bheZrs9scGb3/WHNxyQH9YN0K6Il/+VY@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Support Opensource <support.opensource-WBD+wuPFNBhBDgjK7y7TUQ@public.gmane.org>, Liam Girdwood <lgirdwood-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Steve Twiss <stwiss.opensource-WBD+wuPFNBhBDgjK7y7TUQ@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-sh@vger.kernel.org
+Cc: linux-gpio@vger.kernel.org, Linus Walleij <linus.walleij@linaro.org>
 
-Hi Mark,
+GPIO banks 1 and 2 are missing pins 30 and 31. Remove them.
 
-On Thu, Feb 19, 2015 at 11:33 AM, Mark Brown <broonie@kernel.org> wrote:
-> On Tue, Feb 17, 2015 at 03:18:40PM +0100, Geert Uytterhoeven wrote:
->> On Tue, Feb 17, 2015 at 3:01 PM, Mark Brown <broonie@kernel.org> wrote:
->> > On Tue, Feb 17, 2015 at 01:11:12PM +0100, Geert Uytterhoeven wrote:
->
->> >>   - Does there exist any regulator notifier event that corresponds to
->> >>     DA9210_E_VMAX?
->
->> > What does that mean, I might be able to tell you?  I guess it might be
->> > an over voltage event...
->
->> Possibly. There's no regulator notifier event for that yet, though.
->> Shall I add one?
->
-> I'm wondering if it may be better to change the first notification to
-> just a general "out of regulation" one, though the consequences of over
-> voltage are usually different to under voltage if that is what's going
-> on here.
->
->> Anyway, let's wait for confirmation from Dialog...
->
-> I guess - is there really no indication in the datasheet?
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
 
--ENOENT
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 80c1843bb6ad..ee8f52c073f5 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -27,10 +27,27 @@
+ #include "core.h"
+ #include "sh_pfc.h"
+ 
++#define PORT_GP_30(bank, fn, sfx)					\
++	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
++	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
++	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
++	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
++	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
++	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
++	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
++	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
++	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
++	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
++	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
++	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
++	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
++	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
++	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx)
++
+ #define CPU_ALL_PORT(fn, sfx)						\
+ 	PORT_GP_32(0, fn, sfx),						\
+-	PORT_GP_32(1, fn, sfx),						\
+-	PORT_GP_32(2, fn, sfx),						\
++	PORT_GP_30(1, fn, sfx),						\
++	PORT_GP_30(2, fn, sfx),						\
+ 	PORT_GP_32(3, fn, sfx),						\
+ 	PORT_GP_32(4, fn, sfx),						\
+ 	PORT_GP_32(5, fn, sfx)
+-- 
+2.0.5
 
-(I hope that's actually -EPROBE_DEFER, as I applied for datasheet access
-last week ;-)
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
