@@ -1,52 +1,41 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 16 Feb 2015 16:58:53 +0000
-Subject: [PATCH v3 09/15] ARM: shmobile: bockw: add USB, VIN pin descriptions to DT
-Message-Id: <1424105939-4910-10-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 16 Feb 2015 01:52:58 +0000
+Subject: [PATCH v2 3/4] usb: renesas_usbhs: fix the sequence in xfer_work()
+Message-Id: <1424051579-5060-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1424051579-5060-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1424051579-5060-1-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, balbi-l0cyMroinI0@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org
+Cc: linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-Adds pin control info for USB host and video-in devices.
+This patch fixes the setup sequence in xfer_work(). Otherwise,
+sometimes a usb transaction will get stuck.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ drivers/usb/renesas_usbhs/fifo.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 280a922..7d9ab9a 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -123,6 +123,26 @@
- 		renesas,groups = "hspi0_a";
- 		renesas,function = "hspi0";
- 	};
-+
-+	usb0_pins: usb0 {
-+		renesas,groups = "usb0";
-+		renesas,function = "usb0";
-+	};
-+
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb1";
-+	};
-+
-+	vin0_pins: vin0 {
-+		renesas,groups = "vin0_data8", "vin0_clk";
-+		renesas,function = "vin0";
-+	};
-+
-+	vin1_pins: vin1 {
-+		renesas,groups = "vin1_data8", "vin1_clk";
-+		renesas,function = "vin1";
-+	};
- };
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index 28d10eb..b737661 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -822,10 +822,10 @@ static void xfer_work(struct work_struct *work)
+ 		fifo->name, usbhs_pipe_number(pipe), pkt->length, pkt->zero);
  
- &sdhi0 {
+ 	usbhs_pipe_running(pipe, 1);
+-	usbhs_pipe_set_trans_count_if_bulk(pipe, pkt->trans);
+-	usbhs_pipe_enable(pipe);
+ 	usbhsf_dma_start(pipe, fifo);
++	usbhs_pipe_set_trans_count_if_bulk(pipe, pkt->trans);
+ 	dma_async_issue_pending(chan);
++	usbhs_pipe_enable(pipe);
+ }
+ 
+ /*
 -- 
-2.2.2
+1.7.9.5
 
