@@ -1,146 +1,48 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 19 Feb 2015 01:42:26 +0000
-Subject: [PATCH 02/03] ARM: shmobile: Adjust x86_64 defconfig to include DU/VSP1
-Message-Id: <20150219014226.1795.37125.sendpatchset@little-apple>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 16 Feb 2015 16:58:55 +0000
+Subject: [PATCH v3 11/15] ARM: shmobile: bockw: add sound to DT
+Message-Id: <1424105939-4910-12-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Adds sound card using the ak4643 codec.
 
-Adjust the x86_64 defconfig to include DU and VSP1.
-Not for upstream merge.
-
-Not-yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
- arch/x86/configs/x86_64_defconfig |   39 ++++++++++++++++++-------------------
- 1 file changed, 20 insertions(+), 19 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 7d9ab9a..80e1465 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -57,6 +57,23 @@
+ 		vddvario-supply = <&fixedregulator3v3>;
+ 		vdd33a-supply = <&fixedregulator3v3>;
+ 	};
++
++	sound {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "left_j";
++		simple-audio-card,bitclock-master = <&sndcodec>;
++		simple-audio-card,frame-master = <&sndcodec>;
++
++		sndcpu: simple-audio-card,cpu {
++			sound-dai = <&rcar_sound>;
++		};
++
++		sndcodec: simple-audio-card,codec {
++			sound-dai = <&ak4643>;
++			system-clock-frequency = <11289600>;
++		};
++	};
+ };
+ 
+ &i2c0 {
+-- 
+2.2.2
 
---- 0001/arch/x86/configs/x86_64_defconfig
-+++ work/arch/x86/configs/x86_64_defconfig	2015-02-19 08:03:20.175506631 +0900
-@@ -1,22 +1,20 @@
--CONFIG_EXPERIMENTAL=y
- # CONFIG_LOCALVERSION_AUTO is not set
- CONFIG_SYSVIPC=y
- CONFIG_POSIX_MQUEUE=y
-+CONFIG_FHANDLE=y
-+CONFIG_AUDIT=y
-+CONFIG_NO_HZ=y
-+CONFIG_HIGH_RES_TIMERS=y
- CONFIG_BSD_PROCESS_ACCT=y
- CONFIG_TASKSTATS=y
- CONFIG_TASK_DELAY_ACCT=y
- CONFIG_TASK_XACCT=y
- CONFIG_TASK_IO_ACCOUNTING=y
--CONFIG_FHANDLE=y
--CONFIG_AUDIT=y
--CONFIG_NO_HZ=y
--CONFIG_HIGH_RES_TIMERS=y
- CONFIG_LOG_BUF_SHIFT
- CONFIG_CGROUPS=y
- CONFIG_CGROUP_FREEZER=y
- CONFIG_CPUSETS=y
- CONFIG_CGROUP_CPUACCT=y
--CONFIG_RESOURCE_COUNTERS=y
- CONFIG_CGROUP_SCHED=y
- CONFIG_BLK_DEV_INITRD=y
- # CONFIG_COMPAT_BRK is not set
-@@ -36,14 +34,12 @@ CONFIG_UNIXWARE_DISKLABEL=y
- CONFIG_SGI_PARTITION=y
- CONFIG_SUN_PARTITION=y
- CONFIG_KARMA_PARTITION=y
--CONFIG_EFI_PARTITION=y
- CONFIG_SMP=y
- CONFIG_CALGARY_IOMMU=y
- CONFIG_NR_CPUSd
- CONFIG_SCHED_SMT=y
- CONFIG_PREEMPT_VOLUNTARY=y
- CONFIG_X86_REROUTE_FOR_BROKEN_BOOT_IRQS=y
--CONFIG_X86_MCE=y
- CONFIG_MICROCODE=y
- CONFIG_MICROCODE_AMD=y
- CONFIG_X86_MSR=y
-@@ -55,7 +51,6 @@ CONFIG_EFI=y
- CONFIG_HZ_1000=y
- CONFIG_KEXEC=y
- CONFIG_CRASH_DUMP=y
--# CONFIG_COMPAT_VDSO is not set
- CONFIG_HIBERNATION=y
- CONFIG_PM_DEBUG=y
- CONFIG_PM_TRACE_RTC=y
-@@ -122,9 +117,6 @@ CONFIG_NF_CONNTRACK_IPV4=y
- CONFIG_IP_NF_IPTABLES=y
- CONFIG_IP_NF_FILTER=y
- CONFIG_IP_NF_TARGET_REJECT=y
--CONFIG_IP_NF_TARGET_ULOG=y
--CONFIG_NF_NAT=y
--CONFIG_IP_NF_TARGET_MASQUERADE=y
- CONFIG_IP_NF_MANGLE=y
- CONFIG_NF_CONNTRACK_IPV6=y
- CONFIG_IP6_NF_IPTABLES=y
-@@ -183,7 +175,6 @@ CONFIG_INPUT_JOYSTICK=y
- CONFIG_INPUT_TABLET=y
- CONFIG_INPUT_TOUCHSCREEN=y
- CONFIG_INPUT_MISC=y
--CONFIG_VT_HW_CONSOLE_BINDING=y
- # CONFIG_LEGACY_PTYS is not set
- CONFIG_SERIAL_NONSTANDARD=y
- CONFIG_SERIAL_8250=y
-@@ -202,12 +193,23 @@ CONFIG_HPET=y
- # CONFIG_HPET_MMAP is not set
- CONFIG_I2C_I801=y
- CONFIG_WATCHDOG=y
-+CONFIG_MEDIA_SUPPORT=y
-+CONFIG_MEDIA_CAMERA_SUPPORT=y
-+CONFIG_MEDIA_ANALOG_TV_SUPPORT=y
-+CONFIG_MEDIA_DIGITAL_TV_SUPPORT=y
-+CONFIG_MEDIA_CONTROLLER=y
-+CONFIG_VIDEO_V4L2_SUBDEV_API=y
-+CONFIG_V4L_PLATFORM_DRIVERS=y
-+CONFIG_V4L_MEM2MEM_DRIVERS=y
-+CONFIG_VIDEO_RENESAS_VSP1=y
- CONFIG_AGP=y
- CONFIG_AGP_AMD64=y
--CONFIG_AGP_INTEL=y
- CONFIG_DRM=y
-+CONFIG_DRM_I2C_ADV7511=y
- CONFIG_DRM_I915=y
--CONFIG_DRM_I915_KMS=y
-+CONFIG_DRM_RCAR_DU=y
-+CONFIG_DRM_RCAR_HDMI=y
-+CONFIG_DRM_RCAR_LVDS=y
- CONFIG_FB_MODE_HELPERS=y
- CONFIG_FB_TILEBLITTING=y
- CONFIG_FB_EFI=y
-@@ -248,7 +250,6 @@ CONFIG_USB_OHCI_HCD=y
- CONFIG_USB_UHCI_HCD=y
- CONFIG_USB_PRINTER=y
- CONFIG_USB_STORAGE=y
--CONFIG_USB_LIBUSUAL=y
- CONFIG_EDAC=y
- CONFIG_RTC_CLASS=y
- # CONFIG_RTC_HCTOSYS is not set
-@@ -286,17 +287,17 @@ CONFIG_NLS_ISO8859_1=y
- CONFIG_NLS_UTF8=y
- CONFIG_PRINTK_TIME=y
- # CONFIG_ENABLE_WARN_DEPRECATED is not set
--CONFIG_MAGIC_SYSRQ=y
- # CONFIG_UNUSED_SYMBOLS is not set
-+CONFIG_MAGIC_SYSRQ=y
- CONFIG_DEBUG_KERNEL=y
-+CONFIG_DEBUG_STACK_USAGE=y
-+CONFIG_DEBUG_STACKOVERFLOW=y
- # CONFIG_SCHED_DEBUG is not set
- CONFIG_SCHEDSTATS=y
- CONFIG_TIMER_STATS=y
--CONFIG_DEBUG_STACK_USAGE=y
- CONFIG_BLK_DEV_IO_TRACE=y
- CONFIG_PROVIDE_OHCI1394_DMA_INIT=y
- CONFIG_EARLY_PRINTK_DBGP=y
--CONFIG_DEBUG_STACKOVERFLOW=y
- # CONFIG_DEBUG_RODATA_TEST is not set
- CONFIG_DEBUG_BOOT_PARAMS=y
- CONFIG_OPTIMIZE_INLINING=y
