@@ -1,35 +1,82 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 25 Feb 2015 23:28:36 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a73a4: Remove legacy code
-Message-Id: <54EE5AA4.30004@cogentembedded.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 16 Feb 2015 16:58:44 +0000
+Subject: [PATCH v3 00/15] r8a7778 CCF and multiplatform
+Message-Id: <1424105939-4910-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1418771008-5676-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1418771008-5676-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 02/26/2015 02:23 AM, Simon Horman wrote:
+Hi!
 
->>>> I saw it, too. But as renesas-devel-20150224-4.0-rc1 predates the email
->>>> from Simon, I assumed he just hasn't pushed out that version yet.
+Here's the CCF/MP support for r8a7778 and Bock-W again.  This revision again
+attempts to incorporate all suggestions made and should be more successful
+in that than the last one.  Thank you for the reviews and acks, the changes
+made are detailed below.
 
->>>     BTW, does this tag work for anybody? I got the kernel hang with the blank
->>> console after the kernel decompression on the SILK board. After I enabled
->>> CONFIG_DEBUG_LL and early printk(), I saw that the PFC driver fails to load,
->>> all drivers dependent on the PFC driver failing the probes, and then the
->>> early console was disabled before I could see any crash report... I will
->>> provide the kernel log a bit later if anybody is interested...
+CU
+Uli
 
->> Sure, my tree is based on that, and works on r8a73a4/ape6evm,
->> r8a7740/armadillo, r8a7791/koelsch, and sh73a0/kzm9g.
 
-> FWIW I also tested the above tag on a range of boards.
+Changes since v2:
+- minor reformatting and code styling
+- renamed *SCU_SRC* -> *SRU_SRC*
+- updated DT bindings to match implementation
+- removed unused Ethernet pins from bockw DT
+- renamed sound node to conform to standards
+- retooled external Ethernet compatible list
+- added more Acks
 
-    Sorry about false alarm, it was all due to implementing Laurent's 
-suggestions in the PFC driver. :-) Looks like we both haven't properly tested 
-them... :-/
+Changes since v1:
+- added oki,ml86v7667 to trivial-devices.txt
+- added internal ethernet controller
+- moved pins from external to internal ethernet controller
+- added bsc bus, moved external ethernet controller there
+- removed extal from CPG driver and made it a fixed clock
+- renamed "scu*" clocks to "scu-src*"
+- split SoC/board CCF enablement from CPG driver
+- added "smsc,lan89218" compat string to external net controller
+- added missing clock-names to tmu nodes
+- named Kconfig entry properly
+- added Acks
 
-WBR, Sergei
+
+Ulrich Hecht (15):
+  ARM: shmobile: r8a7778: synchronize dts with reference platform
+  ARM: shmobile: r8a7778: add CPG register bits header
+  ARM: shmobile: r8a7778: Common clock framework DT description
+  ARM: shmobile: r8a7778: common clock framework CPG driver
+  ARM: shmobile: r8a7778: implement SoC and board CCF support
+  ARM: shmobile: r8a7778: add MSTP clock assignments to DT
+  ARM: shmobile: bockw: add devices hooked up to i2c0 to DT
+  ARM: shmobile: r8a7778: add internal ethernet controller to DT
+  ARM: shmobile: bockw: add USB, VIN pin descriptions to DT
+  ARM: shmobile: r8a7778: add sound to DT
+  ARM: shmobile: bockw: add sound to DT
+  ARM: shmobile: r8a7778: enable multiplatform target
+  ARM: shmobile: r8a7778 dtsi: Add Bus State Controller node
+  ARM: shmobile: bockw dts: Move Ethernet node to BSC
+  ARM: shmobile: bockw dts: set extal clock frequency
+
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ .../bindings/clock/renesas,r8a7778-cpg-clocks.txt  |  25 ++
+ .../devicetree/bindings/i2c/trivial-devices.txt    |   1 +
+ arch/arm/boot/dts/Makefile                         |   1 +
+ arch/arm/boot/dts/r8a7778-bockw.dts                | 175 ++++++++++++
+ arch/arm/boot/dts/r8a7778.dtsi                     | 293 +++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                     |   4 +
+ arch/arm/mach-shmobile/board-bockw-reference.c     |   2 +
+ arch/arm/mach-shmobile/setup-r8a7778.c             |  19 ++
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-r8a7778.c                 | 143 ++++++++++
+ include/dt-bindings/clock/r8a7778-clock.h          |  71 +++++
+ include/linux/clk/shmobile.h                       |   1 +
+ 13 files changed, 737 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-r8a7778.c
+ create mode 100644 include/dt-bindings/clock/r8a7778-clock.h
+
+-- 
+2.2.2
 
