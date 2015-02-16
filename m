@@ -1,59 +1,151 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 19 Feb 2015 03:53:22 +0000
-Subject: [PATCH 16/19] ASoC: rsnd: add sample code of rcar_sound,src irq
-Message-Id: <878ufu1rpb.wl%kuninori.morimoto.gx@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 16 Feb 2015 16:58:45 +0000
+Subject: [PATCH v3 01/15] ARM: shmobile: r8a7778: synchronize dts with reference platform
+Message-Id: <1424105939-4910-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This moves everything to the legacy dts that is missing there to make it
+suitable for use with multiplatform.
 
-cfcefe01265cbaf5ca7209226d043b07bfa8b587
-(ASoC: rsnd: add recovery support for under/over flow error on SRC)
-added SRC recovery support which needs IRQ.
-This patch adds SRC irq sample code on DT bingdings text
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- .../devicetree/bindings/sound/renesas,rsnd.txt     |   20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
+ arch/arm/boot/dts/r8a7778-bockw.dts | 106 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 106 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-index 5d9a52d..a5388cb 100644
---- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-+++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-@@ -53,16 +53,16 @@ rcar_sound: rcar_sound@ec500000 {
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 46a884d..7347223 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -16,17 +16,123 @@
+ 
+ /dts-v1/;
+ #include "r8a7778.dtsi"
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "bockw";
+ 	compatible = "renesas,bockw", "renesas,r8a7778";
+ 
++	aliases {
++		serial0 = &scif0;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs rw";
++		stdout-path = &scif0;
  	};
  
- 	rcar_sound,src {
--		src0: src@0 { };
--		src1: src@1 { };
--		src2: src@2 { };
--		src3: src@3 { };
--		src4: src@4 { };
--		src5: src@5 { };
--		src6: src@6 { };
--		src7: src@7 { };
--		src8: src@8 { };
--		src9: src@9 { };
-+		src0: src@0 { interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>; };
-+		src1: src@1 { interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>; };
-+		src2: src@2 { interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>; };
-+		src3: src@3 { interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>; };
-+		src4: src@4 { interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>; };
-+		src5: src@5 { interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>; };
-+		src6: src@6 { interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>; };
-+		src7: src@7 { interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>; };
-+		src8: src@8 { interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>; };
-+		src9: src@9 { interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>; };
+ 	memory {
+ 		device_type = "memory";
+ 		reg = <0x60000000 0x10000000>;
  	};
- 
- 	rcar_sound,ssi {
++
++	fixedregulator3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	ethernet@18300000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x18300000 0x1000>;
++
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin>;
++		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
++		reg-io-width = <4>;
++		vddvario-supply = <&fixedregulator3v3>;
++		vdd33a-supply = <&fixedregulator3v3>;
++	};
++};
++
++&mmcif {
++	pinctrl-0 = <&mmc_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <8>;
++	broken-cd;
++	status = "okay";
++};
++
++&irqpin {
++	status = "okay";
++};
++
++&tmu0 {
++	status = "okay";
++};
++
++&pfc {
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data_a", "scif0_ctrl";
++		renesas,function = "scif0";
++	};
++
++	mmc_pins: mmc {
++		renesas,groups = "mmc_data8", "mmc_ctrl";
++		renesas,function = "mmc";
++	};
++
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
++				  "sdhi0_cd";
++		renesas,function = "sdhi0";
++	};
++
++	hspi0_pins: hspi0 {
++		renesas,groups = "hspi0_a";
++		renesas,function = "hspi0";
++	};
++};
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <4>;
++	status = "okay";
++	wp-gpios = <&gpio3 18 GPIO_ACTIVE_HIGH>;
++};
++
++&hspi0 {
++	pinctrl-0 = <&hspi0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	flash: flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl008k";
++		reg = <0>;
++		spi-max-frequency = <104000000>;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "data(spi)";
++			reg = <0x00000000 0x00100000>;
++		};
++	};
++};
++
++&scif0 {
++	pinctrl-0 = <&scif0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
+ };
 -- 
-1.7.9.5
+2.2.2
 
