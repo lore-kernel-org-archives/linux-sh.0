@@ -1,55 +1,99 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:22:32 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Cleanup for v4.1
-Message-Id: <cover.1424931049.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 16 Feb 2015 16:58:46 +0000
+Subject: [PATCH v3 02/15] ARM: shmobile: r8a7778: add CPG register bits header
+Message-Id: <1424105939-4910-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216284.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+Enumerates CPG driver custom clocks and MSTP clock enable bits.
 
-Please consider these Renesas ARM based SoC cleanup for v4.1.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ include/dt-bindings/clock/r8a7778-clock.h | 71 +++++++++++++++++++++++++++++++
+ 1 file changed, 71 insertions(+)
+ create mode 100644 include/dt-bindings/clock/r8a7778-clock.h
 
+diff --git a/include/dt-bindings/clock/r8a7778-clock.h b/include/dt-bindings/clock/r8a7778-clock.h
+new file mode 100644
+index 0000000..f6b07c5
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a7778-clock.h
+@@ -0,0 +1,71 @@
++/*
++ * Copyright (C) 2014 Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#ifndef __DT_BINDINGS_CLOCK_R8A7778_H__
++#define __DT_BINDINGS_CLOCK_R8A7778_H__
++
++/* CPG */
++#define R8A7778_CLK_PLLA	0
++#define R8A7778_CLK_PLLB	1
++#define R8A7778_CLK_B		2
++#define R8A7778_CLK_OUT		3
++#define R8A7778_CLK_P		4
++#define R8A7778_CLK_S		5
++#define R8A7778_CLK_S1		6
++
++/* MSTP0 */
++#define R8A7778_CLK_I2C0	30
++#define R8A7778_CLK_I2C1	29
++#define R8A7778_CLK_I2C2	28
++#define R8A7778_CLK_I2C3	27
++#define R8A7778_CLK_SCIF0	26
++#define R8A7778_CLK_SCIF1	25
++#define R8A7778_CLK_SCIF2	24
++#define R8A7778_CLK_SCIF3	23
++#define R8A7778_CLK_SCIF4	22
++#define R8A7778_CLK_SCIF5	21
++#define R8A7778_CLK_TMU0	16
++#define R8A7778_CLK_TMU1	15
++#define R8A7778_CLK_TMU2	14
++#define R8A7778_CLK_SSI0	12
++#define R8A7778_CLK_SSI1	11
++#define R8A7778_CLK_SSI2	10
++#define R8A7778_CLK_SSI3	9
++#define R8A7778_CLK_SRU		8
++#define R8A7778_CLK_HSPI	7
++
++/* MSTP1 */
++#define R8A7778_CLK_ETHER	14
++#define R8A7778_CLK_VIN0	10
++#define R8A7778_CLK_VIN1	9
++#define R8A7778_CLK_USB		0
++
++/* MSTP3 */
++#define R8A7778_CLK_MMC		31
++#define R8A7778_CLK_SDHI0	23
++#define R8A7778_CLK_SDHI1	22
++#define R8A7778_CLK_SDHI2	21
++#define R8A7778_CLK_SSI4	11
++#define R8A7778_CLK_SSI5	10
++#define R8A7778_CLK_SSI6	9
++#define R8A7778_CLK_SSI7	8
++#define R8A7778_CLK_SSI8	7
++
++/* MSTP5 */
++#define R8A7778_CLK_SRU_SRC0	31
++#define R8A7778_CLK_SRU_SRC1	30
++#define R8A7778_CLK_SRU_SRC2	29
++#define R8A7778_CLK_SRU_SRC3	28
++#define R8A7778_CLK_SRU_SRC4	27
++#define R8A7778_CLK_SRU_SRC5	26
++#define R8A7778_CLK_SRU_SRC6	25
++#define R8A7778_CLK_SRU_SRC7	24
++#define R8A7778_CLK_SRU_SRC8	23
++
++#endif /* __DT_BINDINGS_CLOCK_R8A7778_H__ */
+-- 
+2.2.2
 
-The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
-
-  Linux 4.0-rc1 (2015-02-22 18:21:14 -0800)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-cleanup-for-v4.1
-
-for you to fetch changes up to fd9454ab51fa92f43ae5b7a71c42f2ee8417c2a2:
-
-  ARM: shmobile: r8a7779: Remove redundant cpu_disable implementation (2015-02-24 07:12:16 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Cleanup for v4.1
-
-* Remove redundant cpu_disable implementation from r8a7779 SoC
-* Remove mach/{uncompress,clkdev,system}.h
-
-----------------------------------------------------------------
-Magnus Damm (3):
-      ARM: shmobile: Remove mach/system.h
-      ARM: shmobile: Remove mach/clkdev.h
-      ARM: shmobile: Remove mach/uncompress.h
-
-Stephen Boyd (1):
-      ARM: shmobile: r8a7779: Remove redundant cpu_disable implementation
-
- arch/arm/Kconfig                                 |  1 -
- arch/arm/Kconfig.debug                           |  3 ++-
- arch/arm/mach-shmobile/clock.c                   | 11 -----------
- arch/arm/mach-shmobile/include/mach/clkdev.h     |  7 -------
- arch/arm/mach-shmobile/include/mach/system.h     | 11 -----------
- arch/arm/mach-shmobile/include/mach/uncompress.h | 19 -------------------
- arch/arm/mach-shmobile/smp-r8a7779.c             |  7 -------
- 7 files changed, 2 insertions(+), 57 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/include/mach/clkdev.h
- delete mode 100644 arch/arm/mach-shmobile/include/mach/system.h
- delete mode 100644 arch/arm/mach-shmobile/include/mach/uncompress.h
