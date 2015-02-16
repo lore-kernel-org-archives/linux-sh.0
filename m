@@ -1,93 +1,194 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 25 Feb 2015 21:54:42 +0000
-Subject: [PATCH 22/38] drm: rcar-du: Rework encoder enable/disable for atomic updates
-Message-Id: <1424901298-6829-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 16 Feb 2015 16:58:50 +0000
+Subject: [PATCH v3 06/15] ARM: shmobile: r8a7778: add MSTP clock assignments to DT
+Message-Id: <1424105939-4910-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-When using atomic updates the encoder .enable() and .disable() helper
-operations are preferred over the (then legacy) .prepare() and .commit()
-operations. Implement .enable() and .disable() and rework .prepare(),
-.commit() and .dpms() as wrappers around .enable() and .disable(),
-easing their future removal.
+Assigns clocks to i2c*, tmu*, scif*, mmcif, sdhi*, and hspi*.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 33 ++++++++++++++++++++-----------
- 1 file changed, 22 insertions(+), 11 deletions(-)
+ arch/arm/boot/dts/r8a7778.dtsi | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-index 6243af310368..74a744f5dfdb 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-@@ -42,13 +42,28 @@ rcar_du_connector_best_encoder(struct drm_connector *connector)
-  * Encoder
-  */
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 822ba90..5c347e8 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -133,6 +133,7 @@
+ 		compatible = "renesas,i2c-r8a7778";
+ 		reg = <0xffc70000 0x1000>;
+ 		interrupts = <0 67 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_I2C0>;
+ 		status = "disabled";
+ 	};
  
--static void rcar_du_encoder_dpms(struct drm_encoder *encoder, int mode)
-+static void rcar_du_encoder_disable(struct drm_encoder *encoder)
- {
- 	struct rcar_du_encoder *renc = to_rcar_encoder(encoder);
+@@ -142,6 +143,7 @@
+ 		compatible = "renesas,i2c-r8a7778";
+ 		reg = <0xffc71000 0x1000>;
+ 		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_I2C1>;
+ 		status = "disabled";
+ 	};
  
- 	if (renc->lvds)
--		rcar_du_lvdsenc_enable(renc->lvds, encoder->crtc,
--				       mode = DRM_MODE_DPMS_ON);
-+		rcar_du_lvdsenc_enable(renc->lvds, encoder->crtc, false);
-+}
-+
-+static void rcar_du_encoder_enable(struct drm_encoder *encoder)
-+{
-+	struct rcar_du_encoder *renc = to_rcar_encoder(encoder);
-+
-+	if (renc->lvds)
-+		rcar_du_lvdsenc_enable(renc->lvds, encoder->crtc, true);
-+}
-+
-+static void rcar_du_encoder_dpms(struct drm_encoder *encoder, int mode)
-+{
-+	if (mode = DRM_MODE_DPMS_ON)
-+		rcar_du_encoder_enable(encoder);
-+	else
-+		rcar_du_encoder_disable(encoder);
- }
+@@ -151,6 +153,7 @@
+ 		compatible = "renesas,i2c-r8a7778";
+ 		reg = <0xffc72000 0x1000>;
+ 		interrupts = <0 76 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_I2C2>;
+ 		status = "disabled";
+ 	};
  
- static bool rcar_du_encoder_mode_fixup(struct drm_encoder *encoder,
-@@ -105,18 +120,12 @@ static bool rcar_du_encoder_mode_fixup(struct drm_encoder *encoder,
+@@ -160,6 +163,7 @@
+ 		compatible = "renesas,i2c-r8a7778";
+ 		reg = <0xffc73000 0x1000>;
+ 		interrupts = <0 77 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_I2C3>;
+ 		status = "disabled";
+ 	};
  
- static void rcar_du_encoder_mode_prepare(struct drm_encoder *encoder)
- {
--	struct rcar_du_encoder *renc = to_rcar_encoder(encoder);
--
--	if (renc->lvds)
--		rcar_du_lvdsenc_enable(renc->lvds, encoder->crtc, false);
-+	rcar_du_encoder_disable(encoder);
- }
+@@ -169,6 +173,8 @@
+ 		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 33 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 34 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_TMU0>;
++		clock-names = "fck";
  
- static void rcar_du_encoder_mode_commit(struct drm_encoder *encoder)
- {
--	struct rcar_du_encoder *renc = to_rcar_encoder(encoder);
--
--	if (renc->lvds)
--		rcar_du_lvdsenc_enable(renc->lvds, encoder->crtc, true);
-+	rcar_du_encoder_enable(encoder);
- }
+ 		#renesas,channels = <3>;
  
- static void rcar_du_encoder_mode_set(struct drm_encoder *encoder,
-@@ -134,6 +143,8 @@ static const struct drm_encoder_helper_funcs encoder_helper_funcs = {
- 	.prepare = rcar_du_encoder_mode_prepare,
- 	.commit = rcar_du_encoder_mode_commit,
- 	.mode_set = rcar_du_encoder_mode_set,
-+	.disable = rcar_du_encoder_disable,
-+	.enable = rcar_du_encoder_enable,
- };
+@@ -181,6 +187,8 @@
+ 		interrupts = <0 36 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 37 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_TMU1>;
++		clock-names = "fck";
  
- static const struct drm_encoder_funcs encoder_funcs = {
+ 		#renesas,channels = <3>;
+ 
+@@ -193,6 +201,8 @@
+ 		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 41 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_TMU2>;
++		clock-names = "fck";
+ 
+ 		#renesas,channels = <3>;
+ 
+@@ -203,6 +213,8 @@
+ 		compatible = "renesas,scif-r8a7778", "renesas,scif";
+ 		reg = <0xffe40000 0x100>;
+ 		interrupts = <0 70 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF0>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -210,6 +222,8 @@
+ 		compatible = "renesas,scif-r8a7778", "renesas,scif";
+ 		reg = <0xffe41000 0x100>;
+ 		interrupts = <0 71 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF1>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -217,6 +231,8 @@
+ 		compatible = "renesas,scif-r8a7778", "renesas,scif";
+ 		reg = <0xffe42000 0x100>;
+ 		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF2>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -224,6 +240,8 @@
+ 		compatible = "renesas,scif-r8a7778", "renesas,scif";
+ 		reg = <0xffe43000 0x100>;
+ 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF3>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -231,6 +249,8 @@
+ 		compatible = "renesas,scif-r8a7778", "renesas,scif";
+ 		reg = <0xffe44000 0x100>;
+ 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF4>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -238,6 +258,8 @@
+ 		compatible = "renesas,scif-r8a7778", "renesas,scif";
+ 		reg = <0xffe45000 0x100>;
+ 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_SCIF5>;
++		clock-names = "sci_ick";
+ 		status = "disabled";
+ 	};
+ 
+@@ -245,6 +267,7 @@
+ 		compatible = "renesas,sh-mmcif";
+ 		reg = <0xffe4e000 0x100>;
+ 		interrupts = <0 61 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7778_CLK_MMC>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -252,6 +275,7 @@
+ 		compatible = "renesas,sdhi-r8a7778";
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupts = <0 87 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7778_CLK_SDHI0>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -259,6 +283,7 @@
+ 		compatible = "renesas,sdhi-r8a7778";
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7778_CLK_SDHI1>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -266,6 +291,7 @@
+ 		compatible = "renesas,sdhi-r8a7778";
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupts = <0 86 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7778_CLK_SDHI2>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -273,6 +299,7 @@
+ 		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+ 		reg = <0xfffc7000 0x18>;
+ 		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_HSPI>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+@@ -282,6 +309,7 @@
+ 		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+ 		reg = <0xfffc8000 0x18>;
+ 		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_HSPI>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+@@ -291,6 +319,7 @@
+ 		compatible = "renesas,hspi-r8a7778", "renesas,hspi";
+ 		reg = <0xfffc6000 0x18>;
+ 		interrupts = <0 85 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks R8A7778_CLK_HSPI>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
 -- 
-2.0.5
+2.2.2
 
