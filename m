@@ -1,55 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 11 Feb 2015 00:33:19 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7790: smp: remap whole apmu region
-Message-Id: <20150211003319.GD7826@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 16 Feb 2015 16:58:58 +0000
+Subject: [PATCH v3 14/15] ARM: shmobile: bockw dts: Move Ethernet node to BSC
+Message-Id: <1424105939-4910-15-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422975462-6037-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1422975462-6037-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Feb 03, 2015 at 03:57:41PM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> 
-> Documentation says the last register is at 0x184 (CAxCPUCMCR), so use
-> proper length. Current APMU code accesses CAxCPUnCR which is currently
-> outside of the remapped area.
-> 
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Move the Ethernet node to the new BSC node, as its connected to the
+Bus State Controller.
 
-Thanks, and sorry for letting this slip.
-I have queued up this and the subsequent patch for v3.21.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 25 ++++++++++++++-----------
+ 1 file changed, 14 insertions(+), 11 deletions(-)
 
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 80e1465..97a1132 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -46,17 +46,6 @@
+ 		regulator-always-on;
+ 	};
+ 
+-	ethernet@18300000 {
+-		compatible = "smsc,lan9220", "smsc,lan9115";
+-		reg = <0x18300000 0x1000>;
+-
+-		phy-mode = "mii";
+-		interrupt-parent = <&irqpin>;
+-		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
+-		reg-io-width = <4>;
+-		vddvario-supply = <&fixedregulator3v3>;
+-		vdd33a-supply = <&fixedregulator3v3>;
+-	};
+ 
+ 	sound {
+ 		compatible = "simple-audio-card";
+@@ -76,6 +65,20 @@
+ 	};
+ };
+ 
++&bsc {
++	ethernet@18300000 {
++		compatible = "smsc,lan89218", "smsc,lan9115";
++		reg = <0x18300000 0x1000>;
++
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin>;
++		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
++		reg-io-width = <4>;
++		vddvario-supply = <&fixedregulator3v3>;
++		vdd33a-supply = <&fixedregulator3v3>;
++	};
++};
++
+ &i2c0 {
+ 	status = "okay";
+ 
+-- 
+2.2.2
 
-> ---
->  arch/arm/mach-shmobile/smp-r8a7790.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
-> index 9c3da1345b8b..a5bef873d37e 100644
-> --- a/arch/arm/mach-shmobile/smp-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/smp-r8a7790.c
-> @@ -37,11 +37,11 @@ static struct rcar_sysc_ch r8a7790_ca7_scu = {
->  
->  static struct rcar_apmu_config r8a7790_apmu_config[] = {
->  	{
-> -		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
-> +		.iomem = DEFINE_RES_MEM(0xe6152000, 0x188),
->  		.cpus = { 0, 1, 2, 3 },
->  	},
->  	{
-> -		.iomem = DEFINE_RES_MEM(0xe6151000, 0x88),
-> +		.iomem = DEFINE_RES_MEM(0xe6151000, 0x188),
->  		.cpus = { 0x100, 0x0101, 0x102, 0x103 },
->  	}
->  };
-> -- 
-> 2.1.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
