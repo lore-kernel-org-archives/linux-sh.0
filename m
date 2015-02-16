@@ -1,45 +1,104 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 19 Feb 2015 10:46:37 +0000
-Subject: Re: [PATCH] drm/cma: Fix 64-bit size_t build warnings
-Message-Id: <CAMuHMdUAeGAy44LY+28XgOfZyiJUv9XRZHaTGTuLHXm6rSKcow@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 16 Feb 2015 22:33:14 +0000
+Subject: [PATCH] sh-pfc: r8a7794: add MMCIF pin groups
+Message-Id: <2352429.FfRv9a1MoB@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150219010639.1654.35019.sendpatchset@little-apple>
-In-Reply-To: <20150219010639.1654.35019.sendpatchset@little-apple>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: DRI Development <dri-devel@lists.freedesktop.org>, David Airlie <airlied@linux.ie>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linus.walleij@linaro.org, linux-sh@vger.kernel.org, laurent.pinchart@ideasonboard.com, linux-gpio@vger.kernel.org
+Cc: shinobu.uehara.xc@renesas.com
 
-On Thu, Feb 19, 2015 at 2:06 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
->
-> Fix warnings related to size_t when building for 64-bit architectures:
->
-> drivers/gpu/drm/drm_gem_cma_helper.c: In function â€˜drm_gem_cma_createâ€™:
+From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
 
-Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Add MMCIF pin groups to R8A7794 PFC driver.
 
-But the atcual content is UTF8?
+Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+[Sergei: rebased, renamed, added changelog.]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> drivers/gpu/drm/drm_gem_cma_helper.c:114:4: warning: format â€˜%dâ€™ expects argument of type â€˜intâ€™, but argument 3 has type â€˜size_tâ€™ [-Wformat=]
->     size);
->     ^
-> drivers/gpu/drm/drm_gem_cma_helper.c: In function â€˜drm_gem_cma_describeâ€™:
-> drivers/gpu/drm/drm_gem_cma_helper.c:393:4: warning: format â€˜%dâ€™ expects argument of type â€˜intâ€™, but argument 8 has type â€˜size_tâ€™ [-Wformat=]
->     off, &cma_obj->paddr, cma_obj->vaddr, obj->size);
->
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git' repo
+plus the R8A7794 PFC support patch posted last week.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+ drivers/pinctrl/sh-pfc/pfc-r8a7794.c |   46 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 46 insertions(+)
 
-Gr{oetje,eeting}s,
+Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
++++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+@@ -1900,6 +1900,40 @@ static const unsigned int intc_irq9_pins
+ static const unsigned int intc_irq9_mux[] = {
+ 	IRQ9_MARK,
+ };
++/* - MMCIF ------------------------------------------------------------------ */
++static const unsigned int mmc_data1_pins[] = {
++	/* D[0] */
++	RCAR_GP_PIN(6, 18),
++};
++static const unsigned int mmc_data1_mux[] = {
++	MMC_D0_MARK,
++};
++static const unsigned int mmc_data4_pins[] = {
++	/* D[0:3] */
++	RCAR_GP_PIN(6, 18), RCAR_GP_PIN(6, 19),
++	RCAR_GP_PIN(6, 20), RCAR_GP_PIN(6, 21),
++};
++static const unsigned int mmc_data4_mux[] = {
++	MMC_D0_MARK, MMC_D1_MARK, MMC_D2_MARK, MMC_D3_MARK,
++};
++static const unsigned int mmc_data8_pins[] = {
++	/* D[0:7] */
++	RCAR_GP_PIN(6, 18), RCAR_GP_PIN(6, 19),
++	RCAR_GP_PIN(6, 20), RCAR_GP_PIN(6, 21),
++	RCAR_GP_PIN(6, 22), RCAR_GP_PIN(6, 23),
++	RCAR_GP_PIN(6, 24), RCAR_GP_PIN(6, 25),
++};
++static const unsigned int mmc_data8_mux[] = {
++	MMC_D0_MARK, MMC_D1_MARK, MMC_D2_MARK, MMC_D3_MARK,
++	MMC_D4_MARK, MMC_D5_MARK, MMC_D6_MARK, MMC_D7_MARK,
++};
++static const unsigned int mmc_ctrl_pins[] = {
++	/* CLK, CMD */
++	RCAR_GP_PIN(6, 16), RCAR_GP_PIN(6, 17),
++};
++static const unsigned int mmc_ctrl_mux[] = {
++	MMC_CLK_MARK, MMC_CMD_MARK,
++};
+ /* - MSIOF0 ----------------------------------------------------------------- */
+ static const unsigned int msiof0_clk_pins[] = {
+ 	/* SCK */
+@@ -2664,6 +2698,10 @@ static const struct sh_pfc_pin_group pin
+ 	SH_PFC_PIN_GROUP(intc_irq7),
+ 	SH_PFC_PIN_GROUP(intc_irq8),
+ 	SH_PFC_PIN_GROUP(intc_irq9),
++	SH_PFC_PIN_GROUP(mmc_data1),
++	SH_PFC_PIN_GROUP(mmc_data4),
++	SH_PFC_PIN_GROUP(mmc_data8),
++	SH_PFC_PIN_GROUP(mmc_ctrl),
+ 	SH_PFC_PIN_GROUP(msiof0_clk),
+ 	SH_PFC_PIN_GROUP(msiof0_sync),
+ 	SH_PFC_PIN_GROUP(msiof0_ss1),
+@@ -2850,6 +2888,13 @@ static const char * const intc_groups[]
+ 	"intc_irq9",
+ };
+ 
++static const char * const mmc_groups[] = {
++	"mmc_data1",
++	"mmc_data4",
++	"mmc_data8",
++	"mmc_ctrl",
++};
++
+ static const char * const msiof0_groups[] = {
+ 	"msiof0_clk",
+ 	"msiof0_sync",
+@@ -3016,6 +3061,7 @@ static const struct sh_pfc_function pinm
+ 	SH_PFC_FUNCTION(i2c3),
+ 	SH_PFC_FUNCTION(i2c4),
+ 	SH_PFC_FUNCTION(intc),
++	SH_PFC_FUNCTION(mmc),
+ 	SH_PFC_FUNCTION(msiof0),
+ 	SH_PFC_FUNCTION(msiof1),
+ 	SH_PFC_FUNCTION(msiof2),
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
