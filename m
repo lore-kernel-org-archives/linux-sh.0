@@ -1,52 +1,60 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 06 Jan 2015 19:42:07 +0000
-Subject: [PATCH 4/6] ARM: shmobile: kzm9g-reference dts: Add adxl345 accelerometer node
-Message-Id: <1420573329-12762-5-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Feb 2015 19:41:01 +0000
+Subject: [PATCH 2/2] pinctrl: sh-pfc: r8a7791: Remove non existing GPIO pins
+Message-Id: <1424115661-21928-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1424115661-21928-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1424115661-21928-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-gpio@vger.kernel.org, Linus Walleij <linus.walleij@linaro.org>
 
-Add a DT node for the ADXL345 three-axis digital accelerometer sensor,
-which is connected to i2c0.
-
-As trivial i2c devices are matched against the first compatible entry
-only, compatibility is declared with "adi,adxl34x" only for now.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-The device needs an interrupt to operate properly. Specify the two
-interrupts used on the board.
-
-While at it rename the DT node to accelerometer@1d to describe the
-device's function instead of its model.
+GPIO banks 1 and 7 are missing pins 26 to 31. Remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index beabc3fd013b9ff0..6f022c300f447afd 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -202,6 +202,14 @@
- 		#sound-dai-cells = <0>;
- 	};
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index fdd2c8729791..f6bd7628f2c5 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -14,15 +14,30 @@
+ #include "core.h"
+ #include "sh_pfc.h"
  
-+	accelerometer@1d {
-+		compatible = "adi,adxl34x";
-+		reg = <0x1d>;
-+		interrupt-parent = <&irqpin3>;
-+		interrupts = <2 IRQ_TYPE_LEVEL_HIGH>,
-+			     <3 IRQ_TYPE_LEVEL_HIGH>;
-+	};
++#define PORT_GP_26(bank, fn, sfx)					\
++	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
++	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
++	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
++	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
++	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
++	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
++	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
++	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
++	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
++	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
++	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
++	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
++	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx)
 +
- 	as3711@40 {
- 		compatible = "ams,as3711";
- 		reg = <0x40>;
+ #define CPU_ALL_PORT(fn, sfx)						\
+ 	PORT_GP_32(0, fn, sfx),						\
+-	PORT_GP_32(1, fn, sfx),						\
++	PORT_GP_26(1, fn, sfx),						\
+ 	PORT_GP_32(2, fn, sfx),						\
+ 	PORT_GP_32(3, fn, sfx),						\
+ 	PORT_GP_32(4, fn, sfx),						\
+ 	PORT_GP_32(5, fn, sfx),						\
+ 	PORT_GP_32(6, fn, sfx),						\
+-	PORT_GP_32(7, fn, sfx)
++	PORT_GP_26(7, fn, sfx)
+ 
+ enum {
+ 	PINMUX_RESERVED = 0,
 -- 
-1.9.1
+2.0.5
 
