@@ -1,91 +1,73 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 19 Feb 2015 03:53:53 +0000
-Subject: [PATCH 19/19] ASoC: rsnd: add sample code of dma entry
-Message-Id: <874mqi1rof.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 16 Feb 2015 23:00:34 +0000
+Subject: [PATCH 2/2] ARM: shmobile: silk: add eMMC DT support
+Message-Id: <3003389.IFU7VXDVjL@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
+References: <29687119.ELU9MoH02q@wasted.cogentembedded.com>
+In-Reply-To: <29687119.ELU9MoH02q@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Define the SILK board dependent part of the MMCIF device node (the board has
+eMMC chip) along with the  necessary voltage regulator (note that the Vcc/Vccq
+regulator is dummy -- it's required by the MMCIF driver but doesn't actually
+exist on the board).
 
-rsnd driver supports Audio DMAC (via DMAEngine) /
-Audio DMAC peri peri (via rsnd driver) now.
-This patch adds DT binding sample code on DT binging text
+Based on the original patch by Vladimir Barinov
+<vladimir.barinov@cogentembedded.com>.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- .../devicetree/bindings/sound/renesas,rsnd.txt     |   46 ++++++++++++++++++++
- 1 file changed, 46 insertions(+)
+ arch/arm/boot/dts/r8a7794-silk.dts |   25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-index 3502d22..2414e7e 100644
---- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-+++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-@@ -11,6 +11,8 @@ Required properties:
- 				  required register is
- 				   SRU/ADG/SSI      if generation1
- 				   SRU/ADG/SSIU/SSI if generation2
-+- dma				: Should contain Audio DMAC entry
-+				  (Audio DMAC peri peri entry is not needed)
- - rcar_sound,ssi		: Should contain SSI feature.
- 				  The number of SSI subnode should be same as HW.
- 				  see below for detail.
-@@ -70,6 +72,50 @@ rcar_sound: rcar_sound@ec500000 {
- 			"dvc.0", "dvc.1",
- 			"clk_a", "clk_b", "clk_c", "clk_i";
+Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794-silk.dts
++++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -30,6 +30,15 @@
+ 		device_type = "memory";
+ 		reg = <0 0x40000000 0 0x40000000>;
+ 	};
++
++	d3_3v: regulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "D3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
+ };
  
-+	dmas =		<&audma0 0x01>,	<&audma1 0x02>,	<&audma0 0x15>,	<&audma1 0x16>,
-+			<&audma0 0x03>,	<&audma1 0x04>,	<&audma0 0x49>,	<&audma1 0x4a>,
-+			<&audma0 0x05>,	<&audma1 0x06>,	<&audma0 0x63>,	<&audma1 0x64>,
-+			<&audma0 0x07>,	<&audma1 0x08>,	<&audma0 0x6f>,	<&audma1 0x70>,
-+			<&audma0 0x09>,	<&audma1 0x0a>,	<&audma0 0x71>,	<&audma1 0x72>,
-+			<&audma0 0x0b>,	<&audma1 0x0c>,	<&audma0 0x73>,	<&audma1 0x74>,
-+			<&audma0 0x0d>,	<&audma1 0x0e>,	<&audma0 0x75>,	<&audma1 0x76>,
-+			<&audma0 0x0f>,	<&audma1 0x10>,	<&audma0 0x79>,	<&audma1 0x7a>,
-+			<&audma0 0x11>,	<&audma1 0x12>,	<&audma0 0x7b>,	<&audma1 0x7c>,
-+			<&audma0 0x13>,	<&audma1 0x14>,	<&audma0 0x7d>,	<&audma1 0x7e>,
+ &extal_clk {
+@@ -51,6 +60,11 @@
+ 		renesas,groups = "intc_irq8";
+ 		renesas,function = "intc";
+ 	};
 +
-+			<&audma0 0x85>,	<&audma1 0x9a>,	<&audma0 0xbc>,
-+			<&audma0 0x87>,	<&audma1 0x9c>,	<&audma0 0xbe>,
-+			<&audma0 0x89>,	<&audma1 0x9e>,
-+			<&audma0 0x8b>,	<&audma1 0xa0>,
-+			<&audma0 0x8d>,	<&audma1 0xb0>,
-+			<&audma0 0x8f>,	<&audma1 0xb2>,
-+			<&audma0 0x91>,	<&audma1 0xb4>,
-+			<&audma0 0x93>,	<&audma1 0xb6>,
-+			<&audma0 0x95>,	<&audma1 0xb8>,
-+			<&audma0 0x97>,	<&audma1 0xba>;
++	mmcif0_pins: mmcif0 {
++		renesas,groups = "mmc_data8", "mmc_ctrl";
++		renesas,function = "mmc";
++	};
+ };
+ 
+ &scif2 {
+@@ -75,3 +89,14 @@
+ 		micrel,led-mode = <1>;
+ 	};
+ };
 +
-+	dma-names =	"ssi0-rx",	"ssi0-tx",	"ssiu0-rx",	"ssiu0-tx",
-+			"ssi1-rx",	"ssi1-tx",	"ssiu1-rx",	"ssiu1-tx",
-+			"ssi2-rx",	"ssi2-tx",	"ssiu2-rx",	"ssiu2-tx",
-+			"ssi3-rx",	"ssi3-tx",	"ssiu3-rx",	"ssiu3-tx",
-+			"ssi4-rx",	"ssi4-tx",	"ssiu4-rx",	"ssiu4-tx",
-+			"ssi5-rx",	"ssi5-tx",	"ssiu5-rx",	"ssiu5-tx",
-+			"ssi6-rx",	"ssi6-tx",	"ssiu6-rx",	"ssiu6-tx",
-+			"ssi7-rx",	"ssi7-tx",	"ssiu7-rx",	"ssiu7-tx",
-+			"ssi8-rx",	"ssi8-tx",	"ssiu8-rx",	"ssiu8-tx",
-+			"ssi9-rx",	"ssi9-tx",	"ssiu9-rx",	"ssiu9-tx",
++&mmcif0 {
++	pinctrl-0 = <&mmcif0_pins>;
++	pinctrl-names = "default";
 +
-+			"src0-rx",	"src0-tx",	"dvc0-tx",
-+			"src1-rx",	"src1-tx",	"dvc1-tx",
-+			"src2-rx",	"src2-tx",
-+			"src3-rx",	"src3-tx",
-+			"src4-rx",	"src4-tx",
-+			"src5-rx",	"src5-tx",
-+			"src6-rx",	"src6-tx",
-+			"src7-rx",	"src7-tx",
-+			"src8-rx",	"src8-tx",
-+			"src9-rx",	"src9-tx";
-+
- 	rcar_sound,dvc {
- 		dvc0: dvc@0 { };
- 		dvc1: dvc@1 { };
--- 
-1.7.9.5
++	vmmc-supply = <&d3_3v>;
++	vqmmc-supply = <&d3_3v>;
++	bus-width = <8>;
++	non-removable;
++	status = "okay";
++};
 
