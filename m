@@ -1,53 +1,37 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 20 Feb 2015 10:30:22 +0000
-Subject: [PATCH 18/24 v2] ASoC: rsnd: src: add rsnd_src_of_node()
-Message-Id: <87pp94nab6.wl%kuninori.morimoto.gx@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 16 Feb 2015 16:58:59 +0000
+Subject: [PATCH v3 15/15] ARM: shmobile: bockw dts: set extal clock frequency
+Message-Id: <1424105939-4910-16-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Sets the extal clock to the frequency of the oscillator installed by
+default (33 MHz).
 
-This patch adds rsnd_src_of_node() to get SRC subnode from DT.
-This is prepare for new DT bindings for 1st DMAC
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v1 -> v2
+ arch/arm/boot/dts/r8a7778-bockw.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
 
- - new patch
-
- sound/soc/sh/rcar/src.c |    5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/sound/soc/sh/rcar/src.c b/sound/soc/sh/rcar/src.c
-index e279205..5a601be 100644
---- a/sound/soc/sh/rcar/src.c
-+++ b/sound/soc/sh/rcar/src.c
-@@ -28,6 +28,9 @@ struct rsnd_src {
- #define RSND_SRC_NAME_SIZE 16
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 97a1132..cbb206b 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -79,6 +79,10 @@
+ 	};
+ };
  
- #define rsnd_src_convert_rate(p) ((p)->info->convert_rate)
-+#define rsnd_src_of_node(priv) \
-+	of_get_child_by_name(rsnd_priv_to_dev(priv)->of_node, "rcar_sound,src")
++&extal_clk {
++	clock-frequency = <33333333>;
++};
 +
- #define rsnd_mod_to_src(_mod)				\
- 	container_of((_mod), struct rsnd_src, mod)
- 
-@@ -807,7 +810,7 @@ static void rsnd_of_parse_src(struct platform_device *pdev,
- 	if (!of_data)
- 		return;
- 
--	src_node = of_get_child_by_name(dev->of_node, "rcar_sound,src");
-+	src_node = rsnd_src_of_node(priv);
- 	if (!src_node)
- 		return;
+ &i2c0 {
+ 	status = "okay";
  
 -- 
-1.7.9.5
+2.2.2
 
