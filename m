@@ -1,51 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:26 +0000
-Subject: [PATCH 29/32] ARM: shmobile: henninger: add CAN0 DT support
-Message-Id: <457acc4a6ce8fe821aed4f254e72a76c88673712.1424849129.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 17 Feb 2015 14:52:36 +0000
+Subject: [PATCH v4 1/5] ARM: shmobile: sh73a0 dtsi: Add Bus State Controller node
+Message-Id: <1424184760-1671-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424849129.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
+References: <1424184760-1671-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1424184760-1671-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Add a node for the Bus State Controller (BSC) on sh73a0, to which
+multiple external devices can be connected.
 
-Define the Henninger board dependent part of the CAN0 device node.
+The BSC is driven by the ZB clock, and located in PM domain A4S.
+A reference to the latter will be added later.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791-henninger.dts | 11 +++++++++++
+v4:
+  - Claim compatiblity with "simple-pm-bus" instead of "simple-bus",
+
+v3:
+  - Move "ranges" before "reg",
+
+v2:
+  - Postpone power-domains.
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 11 +++++++++++
  1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-index d2ebf11..e33e404 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -141,6 +141,11 @@
- 		renesas,groups = "vin0_data8", "vin0_clk";
- 		renesas,function = "vin0";
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index ab319b73e282d8b6..70b694f09fd5ef9e 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -376,6 +376,17 @@
+ 		status = "disabled";
  	};
-+
-+	can0_pins: can0 {
-+		renesas,groups = "can0_data";
-+		renesas,function = "can0";
-+	};
- };
  
- &scif0 {
-@@ -307,3 +312,9 @@
- 		};
- 	};
- };
++	bsc: bus@fec10000 {
++		compatible = "renesas,bsc-sh73a0", "renesas,bsc",
++			     "simple-pm-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0 0 0x20000000>;
++		reg = <0xfec10000 0x400>;
++		interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&zb_clk>;
++	};
 +
-+&can0 {
-+	pinctrl-0 = <&can0_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
-+};
+ 	clocks {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
 -- 
-2.1.4
+1.9.1
 
