@@ -1,49 +1,39 @@
-From: Mark Rutland <mark.rutland@arm.com>
-Date: Tue, 17 Feb 2015 15:16:08 +0000
-Subject: Re: [PATCH v4 6/6] ARM: shmobile: ape6evm dts: Drop console= bootargs parameter
-Message-Id: <20150217151608.GN8994@leverpostej>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 17 Feb 2015 13:31:53 +0000
+Subject: [PATCH 0/2] ARM: shmobile: emev2 dts: Add pinmux support
+Message-Id: <1424179915-17417-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424185486-3017-1-git-send-email-geert+renesas@glider.be>
- <1424185486-3017-7-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424185486-3017-7-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Feb 17, 2015 at 03:04:46PM +0000, Geert Uytterhoeven wrote:
-> Since ("ARM: shmobile: r8a73a4: ape6evm: Remove legacy platform"),
-> ape6evm is restricted to booting from DT, so chosen/stdout-path is
-> always used, and we can drop the "console=" parameter from
-> chosen/bootargs.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> v4:
->   - New.
-> ---
->  arch/arm/boot/dts/r8a73a4-ape6evm.dts | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> index 44c4cac1820a4dfe..f9e81512201a2ec4 100644
-> --- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> +++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-> @@ -22,7 +22,7 @@
->  	};
->  
->  	chosen {
-> -		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
-> +		bootargs = "ignore_loglevel root=/dev/nfs ip=dhcp rw";
->  		stdout-path = &scifa0;
+	Hi Simon, Magnus,
 
-I'd strongly recommend that you also pass the configuration explicitly
-here, so as to avoid nasty surprises. For that you can either use a path
-or an alias, depending on what the rest of your DT looks like:
+Here are the two remaining patches from Niklas Söderlund to add
+pinmux support for EMMA Mobile EV2. The patches for the actual pinctrl
+driver have already landed in Linus' tree.
 
-	stdout-path = "/path/to/scifa0:115200n8"
+Thanks for applying!
 
-	stdout-path = "serial0:115200n8"
+Niklas Söderlund (2):
+  ARM: shmobile: emev2 dtsi: Add PFC information
+  ARM: shmobile: emev2-kzm9d dts: Add PFC information for uart1
 
-Thanks,
-Mark.
+ arch/arm/boot/dts/emev2-kzm9d.dts | 13 +++++++++++++
+ arch/arm/boot/dts/emev2.dtsi      | 10 ++++++++++
+ 2 files changed, 23 insertions(+)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
