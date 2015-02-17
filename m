@@ -1,7 +1,7 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 17 Feb 2015 14:09:41 +0000
+From: Nicolin Chen <nicoleotsuka@gmail.com>
+Date: Tue, 17 Feb 2015 18:20:36 +0000
 Subject: Re: [PATCH 0/3 v3][RFC] dmaengine: rcar-audmapp: calculate chcr via src/dst addr
-Message-Id: <7327655.BEsKsTMj3g@wuerfel>
+Message-Id: <20150217182035.GA3888@Asurada>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87mw4xey70.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87mw4xey70.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,64 +10,52 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tuesday 17 February 2015 00:10:10 Kuninori Morimoto wrote:
-> Hi Arnd
-> Cc Mark Brown
+On Tue, Feb 17, 2015 at 03:09:41PM +0100, Arnd Bergmann wrote:
+> I've thought some more about what it would really mean to support
+> DMA_DEV_TO_DEV with the existing framework and binding. I believe
+> we can actually do this with the existing DT binding if we really
+> wanted to, but the dmaengine code would have to change. At the
+> moment, we have 
 > 
-> > > http://thread.gmane.org/gmane.linux.ports.sh.devel/41063/focusC372
-> > 
-> > I had the chance to discuss this in more depth with Laurent last
-> > week. What it basically comes down to is that you try to do something
-> > that the existing DT binding and slave API does not support: we
-> > only really do DMA_DEV_TO_MEM or DMA_MEM_TO_DEV, but not DMA_DEV_TO_DEV.
-> > 
-> > To properly support this with the dmaengine API, we would likely first
-> > need to extend the generic DT binding, and then implement the driver
-> > to use that extended binding.
-> > 
-> > The easiest way out however seems to be to move the audmapp
-> > implementation into the rcar audio driver itself. As Laurent pointed
-> > out, it is not really a general-purpose dmaengine anyway and it
-> > only ever gets used by one driver, so we could not find any downsides.
+> struct dma_chan *dma_request_slave_channel_reason(struct device *dev,
+>                                                   const char *name);
 > 
-> Hmm... OK I understand.
+> as the main interface. What I think we would need is a respective
+> interface that takes two separate names for source and sink, like
 > 
-> Mark
+> struct dma_chan *dma_request_dev_to_dev_channel(struct device *dev,
+>                                                 const char *source,
+> 						 const char *sink);
 > 
-> I try to move audmapp from current drivers/dma/sh/rcar-audmapp.c
-> to sound/soc/sh/rcar/
+> Then you'd list all available sources and all sinks separately
+> in the device node for the audio device and combine the ones you
+> need.
 > 
+> Making this particular device specific to the audio driver is
+> still much easier, I just wanted to ensure we document it here
+> in case we need the same functionality later for something else.
+> 
+> There seems to be some weird workaround for a related problem
+> in sound/soc/fsl/fsl_asrc_dma.c, which tries to get two channels
+> individually, and then puts them into a private datas structre
+> and filter function to get a third channel that is actually being
+> used.
 
-Sounds good.
+The fsl_asrc_dma was implemented upon ASoC DPCM -- it's using ASRC
+(it has 3 pairs) as the Front-end and one of possible Back-ends
+(several I2S controllers or a SPDIF controller). So its DMA channel
+of the Front-end is based on which ASRC pair the ASRC driver assigns
+while the Back-end is totally according to which Back-end controller
+the DAI link is using. It means the driver has to dynamically fetch
+them at runtime and overwrite the configurations in order to request
+corresponding DMA channels on the fly.
 
-I've thought some more about what it would really mean to support
-DMA_DEV_TO_DEV with the existing framework and binding. I believe
-we can actually do this with the existing DT binding if we really
-wanted to, but the dmaengine code would have to change. At the
-moment, we have 
+Generic DMA engine looks more perfect to deal with static channel
+assignments: even the dma_request_dev_to_dev_channel() above is also
+seemly a bit tough to apply to ASRC's case unless we list all the
+possible Back-ends in the DT and select one of names of Back-ends
+based on the controller being used at runtime, although listing all
+the Back-ends doesn't sound too much unreasonable.
 
-struct dma_chan *dma_request_slave_channel_reason(struct device *dev,
-                                                  const char *name);
-
-as the main interface. What I think we would need is a respective
-interface that takes two separate names for source and sink, like
-
-struct dma_chan *dma_request_dev_to_dev_channel(struct device *dev,
-                                                const char *source,
-						 const char *sink);
-
-Then you'd list all available sources and all sinks separately
-in the device node for the audio device and combine the ones you
-need.
-
-Making this particular device specific to the audio driver is
-still much easier, I just wanted to ensure we document it here
-in case we need the same functionality later for something else.
-
-There seems to be some weird workaround for a related problem
-in sound/soc/fsl/fsl_asrc_dma.c, which tries to get two channels
-individually, and then puts them into a private datas structre
-and filter function to get a third channel that is actually being
-used.
-
-	Arnd
+Best regards,
+Nicolin
