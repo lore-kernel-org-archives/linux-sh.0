@@ -1,87 +1,53 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 16 Feb 2015 10:15:36 +0000
-Subject: Re: [PATCH v2 1/4] usb: renesas_usbhs: fix spinlock suspected in a gadget complete function
-Message-Id: <CAMuHMdXOkzznW_4KJwqiO5UgYXYN2tZ+2OEYwA+eQJF2S-Z8jQ@mail.gmail.com>
+From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 17 Feb 2015 03:34:53 +0000
+Subject: RE: [PATCH v2 1/4] usb: renesas_usbhs: fix spinlock suspected in a gadget complete function
+Message-Id: <HKNPR06MB3227796F47FE559CEAD573DD82F0@HKNPR06MB322.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1424051579-5060-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 	<1424051579-5060-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1424051579-5060-2-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+ <CAMuHMdXOkzznW_4KJwqiO5UgYXYN2tZ+2OEYwA+eQJF2S-Z8jQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdXOkzznW_4KJwqiO5UgYXYN2tZ+2OEYwA+eQJF2S-Z8jQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Felipe Balbi <balbi-l0cyMroinI0@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, USB list <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Greg KH <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@ti.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, USB list <linux-usb@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Hi Shimoda-san,
-
-On Mon, Feb 16, 2015 at 2:52 AM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> According to the gadget.h, a "complete" function will always be called
-> with interrupts disabled. However, sometimes usbhsg_queue_pop() function
-> is called with interrupts enabled. So, this function should calls
-> local_irq_save() before this calls the usb_gadget_giveback_request().
-> Otherwise, there is possible to cause a spinlock suspected in a gadget
-> complete function.
-
-I still feel uneasy about adding the call to local_irq_save(), as the need for
-this is usually an indicator of another locking problem.
-
-Unfortunately I know next to nothing about the USB gadget subsystem, so some
-help from the USB gadget experts would be appreciated.
-
-I had a look at other drivers, and it seems most drivers actually release
-and reacquire a spinlock around the call to usb_gadget_giveback_request(),
-i.e. they do:
-
-    spin_unlock(...);
-    usb_gadget_giveback_request(...);
-    spin_lock();
-
-This means they had already acquired the spinlock (and disabled interrupts!)
-before, which looks much healthier to me.
-
-There's only one driver that uses local_irq_save() (pxa27x_udc).
-
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
->  drivers/usb/renesas_usbhs/mod_gadget.c |   11 +++++++++++
->  1 file changed, 11 insertions(+)
->
-> diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
-> index e0384af..104bddf 100644
-> --- a/drivers/usb/renesas_usbhs/mod_gadget.c
-> +++ b/drivers/usb/renesas_usbhs/mod_gadget.c
-> @@ -126,11 +126,22 @@ static void usbhsg_queue_pop(struct usbhsg_uep *uep,
->         struct usbhsg_gpriv *gpriv = usbhsg_uep_to_gpriv(uep);
->         struct usbhs_pipe *pipe = usbhsg_uep_to_pipe(uep);
->         struct device *dev = usbhsg_gpriv_to_dev(gpriv);
-> +       unsigned long flags;
->
->         dev_dbg(dev, "pipe %d : queue pop\n", usbhs_pipe_number(pipe));
->
->         ureq->req.status = status;
-> +       /*
-> +        * According to the gadget.h, a "complete" function will always be
-> +        * called with interrupts disabled. However, sometimes this function
-> +        * is called with interrupts enabled. (e.g. complete a DMAC transfer or
-> +        * write data and done is set immediately when PIO.) So, this function
-> +        * should calls local_irq_save() before this calls the
-> +        * usb_gadget_giveback_request().
-> +        */
-> +       local_irq_save(flags);
->         usb_gadget_giveback_request(&uep->ep, &ureq->req);
-> +       local_irq_restore(flags);
->  }
->
->  static void usbhsg_queue_done(struct usbhs_priv *priv, struct usbhs_pkt *pkt)
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR2VlcnQtc2FuLA0KDQpUaGFuayB5b3UgZm9yIHRoZSByZXBseSBhZ2FpbiENCg0KPiBIaSBT
+aGltb2RhLXNhbiwNCj4gDQo+IE9uIE1vbiwgRmViIDE2LCAyMDE1IGF0IDI6NTIgQU0sIFlvc2hp
+aGlybyBTaGltb2RhDQo+IDx5b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2FzLmNvbT4gd3JvdGU6
+DQo+ID4gQWNjb3JkaW5nIHRvIHRoZSBnYWRnZXQuaCwgYSAiY29tcGxldGUiIGZ1bmN0aW9uIHdp
+bGwgYWx3YXlzIGJlIGNhbGxlZA0KPiA+IHdpdGggaW50ZXJydXB0cyBkaXNhYmxlZC4gSG93ZXZl
+ciwgc29tZXRpbWVzIHVzYmhzZ19xdWV1ZV9wb3AoKSBmdW5jdGlvbg0KPiA+IGlzIGNhbGxlZCB3
+aXRoIGludGVycnVwdHMgZW5hYmxlZC4gU28sIHRoaXMgZnVuY3Rpb24gc2hvdWxkIGNhbGxzDQo+
+ID4gbG9jYWxfaXJxX3NhdmUoKSBiZWZvcmUgdGhpcyBjYWxscyB0aGUgdXNiX2dhZGdldF9naXZl
+YmFja19yZXF1ZXN0KCkuDQo+ID4gT3RoZXJ3aXNlLCB0aGVyZSBpcyBwb3NzaWJsZSB0byBjYXVz
+ZSBhIHNwaW5sb2NrIHN1c3BlY3RlZCBpbiBhIGdhZGdldA0KPiA+IGNvbXBsZXRlIGZ1bmN0aW9u
+Lg0KPiANCj4gSSBzdGlsbCBmZWVsIHVuZWFzeSBhYm91dCBhZGRpbmcgdGhlIGNhbGwgdG8gbG9j
+YWxfaXJxX3NhdmUoKSwgYXMgdGhlIG5lZWQgZm9yDQo+IHRoaXMgaXMgdXN1YWxseSBhbiBpbmRp
+Y2F0b3Igb2YgYW5vdGhlciBsb2NraW5nIHByb2JsZW0uDQoNCkkgYWxzbyB0aGluayB0aGF0IEkg
+d291bGQgbGlrZSB0byBhdm9pZCB1c2luZyBsb2NhbF9pcnFfc2F2ZSgpLg0KQnV0LCBJIGhhdmUg
+bm8gaWRlYSB0byByZXNvbHZlIHRoaXMgaXNzdWUgZm9yIG5vdy4NCg0KPiBVbmZvcnR1bmF0ZWx5
+IEkga25vdyBuZXh0IHRvIG5vdGhpbmcgYWJvdXQgdGhlIFVTQiBnYWRnZXQgc3Vic3lzdGVtLCBz
+byBzb21lDQo+IGhlbHAgZnJvbSB0aGUgVVNCIGdhZGdldCBleHBlcnRzIHdvdWxkIGJlIGFwcHJl
+Y2lhdGVkLg0KPiANCj4gSSBoYWQgYSBsb29rIGF0IG90aGVyIGRyaXZlcnMsIGFuZCBpdCBzZWVt
+cyBtb3N0IGRyaXZlcnMgYWN0dWFsbHkgcmVsZWFzZQ0KPiBhbmQgcmVhY3F1aXJlIGEgc3Bpbmxv
+Y2sgYXJvdW5kIHRoZSBjYWxsIHRvIHVzYl9nYWRnZXRfZ2l2ZWJhY2tfcmVxdWVzdCgpLA0KPiBp
+LmUuIHRoZXkgZG86DQo+IA0KPiAgICAgc3Bpbl91bmxvY2soLi4uKTsNCj4gICAgIHVzYl9nYWRn
+ZXRfZ2l2ZWJhY2tfcmVxdWVzdCguLi4pOw0KPiAgICAgc3Bpbl9sb2NrKCk7DQo+IA0KPiBUaGlz
+IG1lYW5zIHRoZXkgaGFkIGFscmVhZHkgYWNxdWlyZWQgdGhlIHNwaW5sb2NrIChhbmQgZGlzYWJs
+ZWQgaW50ZXJydXB0cyEpDQo+IGJlZm9yZSwgd2hpY2ggbG9va3MgbXVjaCBoZWFsdGhpZXIgdG8g
+bWUuDQo+IA0KPiBUaGVyZSdzIG9ubHkgb25lIGRyaXZlciB0aGF0IHVzZXMgbG9jYWxfaXJxX3Nh
+dmUoKSAocHhhMjd4X3VkYykuDQoNCkkgaGFkIGEgbG9vayBhdCB0aGUgbXVzYiBkcml2ZXIuIEl0
+IHVzZXMgYSBkbWFlbmdpbmUgZHJpdmVyLg0KQW5kLCBpbiB0aGUgY2FsbGJhY2sgcm91dGluZSBv
+ZiB0aGUgbXVzYiBkcml2ZXIsIGl0IGNhbGxzIHNwaW5fbG9ja19pcnFzYXZlKCkgYXQgZmlyc3Qu
+DQoNCmNwcGk0MV9kbWFfY2FsbGJhY2sNCi0tPiBzcGluX2xvY2tfaXJxc2F2ZSgmbXVzYi0+bG9j
+aywgZmxhZ3MpOw0KLS0+IGNwcGk0MV90cmFuc19kb25lDQogLS0+IG11c2JfZG1hX2NvbXBsZXRp
+b24NCiAgLS0+IG11c2JfZ190eCBvciBtdXNiX2dfcngNCiAgIC0tPiBtdXNiX2dfZ2l2ZWJhY2sN
+CiAgICAtLT4gc3Bpbl91bmxvY2soJm11c2ItPmxvY2spOyAgICMgVGhpcyBtZWFucyB1bmxvY2tl
+ZCB0aGUgc3BpbiwgYnV0IGRpc2FibGVkIGludGVycnVwdHMuDQogICAgLS0+IHVzYl9nYWRnZXRf
+Z2l2ZWJhY2tfcmVxdWVzdA0KICAgIC0tPiBzcGluX2xvY2soJm11c2ItPmxvY2spOw0KIDwgc25p
+cCA+DQotLT4gc3Bpbl91bmxvY2tfaXJxcmVzdG9yZSgmbXVzYi0+bG9jaywgZmxhZ3MpOw0KDQpT
+bywgYWJvdXQgZGlzYWJsZWQgaW50ZXJydXB0cyBiZWZvcmUgdXNiX2dhZGdldF9naXZlYmFja19y
+ZXF1ZXN0KCksDQppdCBpcyBzaW1pbGFyIHdpdGggdGhpcyBwYXRjaC4NCg0KQmVzdCByZWdhcmRz
+LA0KWW9zaGloaXJvIFNoaW1vZGENCg0K
