@@ -1,36 +1,57 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Mon, 23 Feb 2015 22:15:38 +0000
-Subject: Re: fs: dax: do not build on ARC or SH
-Message-Id: <20150223221538.GA25109@roeck-us.net>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 17 Feb 2015 12:11:11 +0000
+Subject: [PATCH/RFC 1/2] regulator: da9210: Mask all interrupt sources to deassert interrupt line
+Message-Id: <1424175072-14643-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5778538.KJ98x3yxkB@wuerfel>
- <20150223184025.GD2780@wil.cx>
- <20150223215634.GA23928@roeck-us.net>
- <20150223215847.GA29052@infradead.org>
-In-Reply-To: <20150223215847.GA29052@infradead.org>
+In-Reply-To: <CAMuHMdUasUmnHRi5t3GStrt-WKw0Das4noTmZPNtcbqA7nmDvQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Matthew Wilcox <willy@linux.intel.com>, Arnd Bergmann <arnd@arndb.de>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, Vineet Gupta <vgupta@synopsys.com>
+To: Support Opensource <support.opensource@diasemi.com>, Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, Steve Twiss <stwiss.opensource@diasemi.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Mon, Feb 23, 2015 at 01:58:47PM -0800, Christoph Hellwig wrote:
-> On Mon, Feb 23, 2015 at 01:56:34PM -0800, Guenter Roeck wrote:
-> > Guess there a philosophical difference in opinion if the architecture code
-> > should (have to) provide copy_user_page() or not outside the architecture
-> > code itself. After all, fs/dax.c _is_ the only user of this function outside
-> > the architecture code.
-> 
-> Given that copy_user_page just is an optimized version of copy_page
-> all these architectures should just grab the trivial macro defintion
-> from the asm-generic version so that we could avoid this discussion.
-> 
-I tried to do just that, for mips, with little success.
+After boot-up, some events may be set, and cause the da9210 interrupt
+line to be asserted. As the da9210 driver doesn't have interrupt support
+yet, this causes havoc on systems where the interrupt line is shared
+among multiple devices.
 
-https://patchwork.linux-mips.org/patch/9175/
+This is the case on e.g. r8a7791/koelsch, where the interrupt line is
+shared with a da9063 regulator, and the following events are set:
 
-Presumably, if copy_page() followed by a conditional flush_data_cache_page()
-does not work on mips, I would assume that copy_page() without flush does not
-work either.
+    EVENT_A = 0x00000011 (GPI0 | GPI4)
+    EVENT_B = 0x00000002 (NPWRGOOD)
 
-Guenter
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+See discussion thread about da9210/da9063 interrupt storm
+(ARM: shmobile: koelsch: da9210/da9063 interrupt storm (was: Re: [PATCH 3/4]
+ARM: shmobile: koelsch: Add DA9063 PMIC device node for system restart)
+https://lkml.org/lkml/2015/2/17/254
+
+---
+ drivers/regulator/da9210-regulator.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/regulator/da9210-regulator.c b/drivers/regulator/da9210-regulator.c
+index bc6100103f7f476e..f0489cb9018b4e78 100644
+--- a/drivers/regulator/da9210-regulator.c
++++ b/drivers/regulator/da9210-regulator.c
+@@ -152,6 +152,15 @@ static int da9210_i2c_probe(struct i2c_client *i2c,
+ 	config.regmap = chip->regmap;
+ 	config.of_node = dev->of_node;
+ 
++	/* Mask all interrupt sources to deassert interrupt line */
++	error = regmap_write(chip->regmap, DA9210_REG_MASK_A, ~0);
++	if (!error)
++		error = regmap_write(chip->regmap, DA9210_REG_MASK_B, ~0);
++	if (error) {
++		dev_err(&i2c->dev, "Failed to write to mask reg: %d\n", error);
++		return error;
++	}
++
+ 	rdev = devm_regulator_register(&i2c->dev, &da9210_reg, &config);
+ 	if (IS_ERR(rdev)) {
+ 		dev_err(&i2c->dev, "Failed to register DA9210 regulator\n");
+-- 
+1.9.1
+
