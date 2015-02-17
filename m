@@ -1,83 +1,111 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 20 Feb 2015 10:31:55 +0000
-Subject: [PATCH 21/24 v2] ASoC: rsnd: add sample code of rcar_sound,src irq
-Message-Id: <87lhjsna8i.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 17 Feb 2015 15:04:43 +0000
+Subject: [PATCH v4 3/6] ARM: shmobile: r8a73a4: Move pfc node to work around probe ordering bug
+Message-Id: <1424185486-3017-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
+References: <1424185486-3017-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1424185486-3017-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Currently the pin function controller (which is also a GPIO controller)
+is instantiated before the interrupt controllers due to the order in the
+DTS. At that time, the irq domains for the interrupt controllers
+referenced by its interrupts-extended property cannot be found yet:
 
-cfcefe01265cbaf5ca7209226d043b07bfa8b587
-(ASoC: rsnd: add recovery support for under/over flow error on SRC)
-added SRC recovery support which needs IRQ.
-This patch adds SRC irq sample code on DT bingdings text
+    irq: no irq domain found for /interrupt-controller@e61c0000 !
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Nevertheless, the core OF probing code ignores this failure, besides a
+debug message that's not normally printed:
+
+    not all legacy IRQ resources mapped for pfc
+
+and continues initialization of the device. Then, the sh-pfc driver
+cannot find any IRQ resources, and thinks no interrupts are available,
+causing gpio-keys to fail later:
+
+    gpio-keys keyboard: Unable to claim irq 0; error -22
+    gpio-keys: probe of keyboard failed with error -22
+
+Move the pin function controller node after the interrupt controller
+nodes it references to work around the bug in the core OF probing code.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v1 -> v2
+This can be reproduced on other SoCs (e.g. sh73a0 and r8a7740) by moving
+their pfc nodes before their interrupt controller nodes.
 
- - tidyup for subnode dma-engine
+v4:
+  - New, but an RFC version of this patch has been sent before as a
+    separate patch.
+---
+ arch/arm/boot/dts/r8a73a4.dtsi | 46 +++++++++++++++++++++---------------------
+ 1 file changed, 23 insertions(+), 23 deletions(-)
 
- .../devicetree/bindings/sound/renesas,rsnd.txt     |   40 +++++++++++++++-----
- 1 file changed, 30 insertions(+), 10 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-index 2dd690b..87e0fc2 100644
---- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-+++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-@@ -53,16 +53,36 @@ rcar_sound: rcar_sound@ec500000 {
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 77bd35cd89113df7..d41201d258cacb1f 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -92,29 +92,6 @@
+ 		};
  	};
  
- 	rcar_sound,src {
--		src0: src@0 { };
--		src1: src@1 { };
--		src2: src@2 { };
--		src3: src@3 { };
--		src4: src@4 { };
--		src5: src@5 { };
--		src6: src@6 { };
--		src7: src@7 { };
--		src8: src@8 { };
--		src9: src@9 { };
-+		src0: src@0 {
-+			interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+		src1: src@1 {
-+			interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+		src2: src@2 {
-+			interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+		src3: src@3 {
-+			interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+		src4: src@4 {
-+			interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+		src5: src@5 {
-+			interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+		src6: src@6 {
-+			interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+		src7: src@7 {
-+			interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+		src8: src@8 {
-+			interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+		src9: src@9 {
-+			interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>;
-+		};
+-	pfc: pfc@e6050000 {
+-		compatible = "renesas,pfc-r8a73a4";
+-		reg = <0 0xe6050000 0 0x9000>;
+-		gpio-controller;
+-		#gpio-cells = <2>;
+-		interrupts-extended -			<&irqc0  0 0>, <&irqc0  1 0>, <&irqc0  2 0>, <&irqc0  3 0>,
+-			<&irqc0  4 0>, <&irqc0  5 0>, <&irqc0  6 0>, <&irqc0  7 0>,
+-			<&irqc0  8 0>, <&irqc0  9 0>, <&irqc0 10 0>, <&irqc0 11 0>,
+-			<&irqc0 12 0>, <&irqc0 13 0>, <&irqc0 14 0>, <&irqc0 15 0>,
+-			<&irqc0 16 0>, <&irqc0 17 0>, <&irqc0 18 0>, <&irqc0 19 0>,
+-			<&irqc0 20 0>, <&irqc0 21 0>, <&irqc0 22 0>, <&irqc0 23 0>,
+-			<&irqc0 24 0>, <&irqc0 25 0>, <&irqc0 26 0>, <&irqc0 27 0>,
+-			<&irqc0 28 0>, <&irqc0 29 0>, <&irqc0 30 0>, <&irqc0 31 0>,
+-			<&irqc1  0 0>, <&irqc1  1 0>, <&irqc1  2 0>, <&irqc1  3 0>,
+-			<&irqc1  4 0>, <&irqc1  5 0>, <&irqc1  6 0>, <&irqc1  7 0>,
+-			<&irqc1  8 0>, <&irqc1  9 0>, <&irqc1 10 0>, <&irqc1 11 0>,
+-			<&irqc1 12 0>, <&irqc1 13 0>, <&irqc1 14 0>, <&irqc1 15 0>,
+-			<&irqc1 16 0>, <&irqc1 17 0>, <&irqc1 18 0>, <&irqc1 19 0>,
+-			<&irqc1 20 0>, <&irqc1 21 0>, <&irqc1 22 0>, <&irqc1 23 0>,
+-			<&irqc1 24 0>, <&irqc1 25 0>;
+-	};
+-
+ 	i2c5: i2c@e60b0000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -210,6 +187,29 @@
+ 			     <0 57 IRQ_TYPE_LEVEL_HIGH>;
  	};
  
- 	rcar_sound,ssi {
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-r8a73a4";
++		reg = <0 0xe6050000 0 0x9000>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		interrupts-extended +			<&irqc0  0 0>, <&irqc0  1 0>, <&irqc0  2 0>, <&irqc0  3 0>,
++			<&irqc0  4 0>, <&irqc0  5 0>, <&irqc0  6 0>, <&irqc0  7 0>,
++			<&irqc0  8 0>, <&irqc0  9 0>, <&irqc0 10 0>, <&irqc0 11 0>,
++			<&irqc0 12 0>, <&irqc0 13 0>, <&irqc0 14 0>, <&irqc0 15 0>,
++			<&irqc0 16 0>, <&irqc0 17 0>, <&irqc0 18 0>, <&irqc0 19 0>,
++			<&irqc0 20 0>, <&irqc0 21 0>, <&irqc0 22 0>, <&irqc0 23 0>,
++			<&irqc0 24 0>, <&irqc0 25 0>, <&irqc0 26 0>, <&irqc0 27 0>,
++			<&irqc0 28 0>, <&irqc0 29 0>, <&irqc0 30 0>, <&irqc0 31 0>,
++			<&irqc1  0 0>, <&irqc1  1 0>, <&irqc1  2 0>, <&irqc1  3 0>,
++			<&irqc1  4 0>, <&irqc1  5 0>, <&irqc1  6 0>, <&irqc1  7 0>,
++			<&irqc1  8 0>, <&irqc1  9 0>, <&irqc1 10 0>, <&irqc1 11 0>,
++			<&irqc1 12 0>, <&irqc1 13 0>, <&irqc1 14 0>, <&irqc1 15 0>,
++			<&irqc1 16 0>, <&irqc1 17 0>, <&irqc1 18 0>, <&irqc1 19 0>,
++			<&irqc1 20 0>, <&irqc1 21 0>, <&irqc1 22 0>, <&irqc1 23 0>,
++			<&irqc1 24 0>, <&irqc1 25 0>;
++	};
++
+ 	thermal@e61f0000 {
+ 		compatible = "renesas,thermal-r8a73a4", "renesas,rcar-thermal";
+ 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
 -- 
-1.7.9.5
+1.9.1
 
