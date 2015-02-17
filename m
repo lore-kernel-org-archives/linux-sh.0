@@ -1,57 +1,43 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 17 Feb 2015 12:11:11 +0000
-Subject: [PATCH/RFC 1/2] regulator: da9210: Mask all interrupt sources to deassert interrupt line
-Message-Id: <1424175072-14643-1-git-send-email-geert+renesas@glider.be>
+From: Mark Brown <broonie@kernel.org>
+Date: Tue, 17 Feb 2015 14:04:36 +0000
+Subject: Re: [PATCH/RFC 1/2] regulator: da9210: Mask all interrupt sources to deassert interrupt line
+Message-Id: <20150217140436.GW9110@finisterre.sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="sr8SBrQ3fbgntwtR"
 List-Id: <linux-sh.vger.kernel.org>
-In-Reply-To: <CAMuHMdUasUmnHRi5t3GStrt-WKw0Das4noTmZPNtcbqA7nmDvQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Support Opensource <support.opensource@diasemi.com>, Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, Steve Twiss <stwiss.opensource@diasemi.com>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+References: <CAMuHMdUasUmnHRi5t3GStrt-WKw0Das4noTmZPNtcbqA7nmDvQ@mail.gmail.com>
+ <1424175072-14643-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1424175072-14643-1-git-send-email-geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Support Opensource <support.opensource@diasemi.com>, Liam Girdwood <lgirdwood@gmail.com>, Steve Twiss <stwiss.opensource@diasemi.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-After boot-up, some events may be set, and cause the da9210 interrupt
-line to be asserted. As the da9210 driver doesn't have interrupt support
-yet, this causes havoc on systems where the interrupt line is shared
-among multiple devices.
 
-This is the case on e.g. r8a7791/koelsch, where the interrupt line is
-shared with a da9063 regulator, and the following events are set:
+--sr8SBrQ3fbgntwtR
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-    EVENT_A = 0x00000011 (GPI0 | GPI4)
-    EVENT_B = 0x00000002 (NPWRGOOD)
+On Tue, Feb 17, 2015 at 01:11:11PM +0100, Geert Uytterhoeven wrote:
+> After boot-up, some events may be set, and cause the da9210 interrupt
+> line to be asserted. As the da9210 driver doesn't have interrupt support
+> yet, this causes havoc on systems where the interrupt line is shared
+> among multiple devices.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-See discussion thread about da9210/da9063 interrupt storm
-(ARM: shmobile: koelsch: da9210/da9063 interrupt storm (was: Re: [PATCH 3/4]
-ARM: shmobile: koelsch: Add DA9063 PMIC device node for system restart)
-https://lkml.org/lkml/2015/2/17/254
+Applied, thanks.
 
----
- drivers/regulator/da9210-regulator.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
+--sr8SBrQ3fbgntwtR
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-diff --git a/drivers/regulator/da9210-regulator.c b/drivers/regulator/da9210-regulator.c
-index bc6100103f7f476e..f0489cb9018b4e78 100644
---- a/drivers/regulator/da9210-regulator.c
-+++ b/drivers/regulator/da9210-regulator.c
-@@ -152,6 +152,15 @@ static int da9210_i2c_probe(struct i2c_client *i2c,
- 	config.regmap = chip->regmap;
- 	config.of_node = dev->of_node;
- 
-+	/* Mask all interrupt sources to deassert interrupt line */
-+	error = regmap_write(chip->regmap, DA9210_REG_MASK_A, ~0);
-+	if (!error)
-+		error = regmap_write(chip->regmap, DA9210_REG_MASK_B, ~0);
-+	if (error) {
-+		dev_err(&i2c->dev, "Failed to write to mask reg: %d\n", error);
-+		return error;
-+	}
-+
- 	rdev = devm_regulator_register(&i2c->dev, &da9210_reg, &config);
- 	if (IS_ERR(rdev)) {
- 		dev_err(&i2c->dev, "Failed to register DA9210 regulator\n");
--- 
-1.9.1
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
+iQEcBAEBCAAGBQJU40pzAAoJECTWi3JdVIfQJKgH/2JVCVq9HxO5AQ5hTaji9me+
+h09wpXq77hyCrxyH6vPkBg5x0PhQskBVncoMTIJa+8xD5SB8KKTofty6352tVEze
+XvMOkHQ29U1kGfei0YTnCqbDebJ34omFhh1V9CEnXEmSoGmhf7vCmpdtrhS7QU1H
+aHIGoHEpQrhYhOF9Am7Na2PrMKTa2l9s1Pz8FltD8J42y2NoVZ6rnY5ywvFGVaV2
++bKmGiJ39iMriy/beSpgPv7Oz+O1uEpxZ7++3Gv2Av1N4513xBgyjOVOCs0pGG7l
+3uO8hmcBpzEbC6g7pxhIuKdXPmg8zOFoiOXEIhGRpAw6g1VCUR7a+Qe9wUnW6mo=
+=2GZf
+-----END PGP SIGNATURE-----
+
+--sr8SBrQ3fbgntwtR--
