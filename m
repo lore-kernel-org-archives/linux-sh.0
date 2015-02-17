@@ -1,38 +1,79 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:22:08 +0000
-Subject: [PATCH 07/12] ARM: shmobile: mackerel: Remove from MAINTAINERS
-Message-Id: <d1e068fd24c399d26880456eb5e117a188d4ce70.1424931560.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninor
+Date: Tue, 17 Feb 2015 01:47:11 +0000
+Subject: [PATCH 3/8 v5] mmc: tmio_mmc: remove slave_id settings for DMAEngine
+Message-Id: <87y4nxs3yr.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424931560.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424931560.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Remove the mackerel_defconfig from the MAINTAINERS file.
+Current tmio_mmc sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Ulf Hansson <ulf.hansson@linaro.org>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
- MAINTAINERS | 1 -
- 1 file changed, 1 deletion(-)
+v4 -> v5
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index ddc5a8c..db7c0cf 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -1418,7 +1418,6 @@ F:	arch/arm/configs/ape6evm_defconfig
- F:	arch/arm/configs/armadillo800eva_defconfig
- F:	arch/arm/configs/bockw_defconfig
- F:	arch/arm/configs/kzm9g_defconfig
--F:	arch/arm/configs/mackerel_defconfig
- F:	arch/arm/configs/marzen_defconfig
- F:	arch/arm/configs/shmobile_defconfig
- F:	arch/arm/include/debug/renesas-scif.S
+ - no change
+
+ drivers/mmc/host/sh_mobile_sdhi.c |    2 --
+ drivers/mmc/host/tmio_mmc.h       |    2 --
+ drivers/mmc/host/tmio_mmc_dma.c   |    4 ----
+ 3 files changed, 8 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 6906a90..11991f5 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -261,8 +261,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 			 */
+ 			dma_priv->chan_priv_tx = (void *)p->dma_slave_tx;
+ 			dma_priv->chan_priv_rx = (void *)p->dma_slave_rx;
+-			dma_priv->slave_id_tx = p->dma_slave_tx;
+-			dma_priv->slave_id_rx = p->dma_slave_rx;
+ 		}
+ 	}
+ 	dma_priv->filter = shdma_chan_filter;
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index fc3805e..1aea5c6 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -45,8 +45,6 @@ struct tmio_mmc_host;
+ struct tmio_mmc_dma {
+ 	void *chan_priv_tx;
+ 	void *chan_priv_rx;
+-	int slave_id_tx;
+-	int slave_id_rx;
+ 	enum dma_slave_buswidth dma_buswidth;
+ 	bool (*filter)(struct dma_chan *chan, void *arg);
+ 	void (*enable)(struct tmio_mmc_host *host, bool enable);
+diff --git a/drivers/mmc/host/tmio_mmc_dma.c b/drivers/mmc/host/tmio_mmc_dma.c
+index 331bb61..8dbd785 100644
+--- a/drivers/mmc/host/tmio_mmc_dma.c
++++ b/drivers/mmc/host/tmio_mmc_dma.c
+@@ -286,8 +286,6 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (!host->chan_tx)
+ 			return;
+ 
+-		if (host->dma->chan_priv_tx)
+-			cfg.slave_id = host->dma->slave_id_tx;
+ 		cfg.direction = DMA_MEM_TO_DEV;
+ 		cfg.dst_addr = res->start + (CTL_SD_DATA_PORT << host->bus_shift);
+ 		cfg.dst_addr_width = host->dma->dma_buswidth;
+@@ -307,8 +305,6 @@ void tmio_mmc_request_dma(struct tmio_mmc_host *host, struct tmio_mmc_data *pdat
+ 		if (!host->chan_rx)
+ 			goto ereqrx;
+ 
+-		if (host->dma->chan_priv_rx)
+-			cfg.slave_id = host->dma->slave_id_rx;
+ 		cfg.direction = DMA_DEV_TO_MEM;
+ 		cfg.src_addr = cfg.dst_addr + host->pdata->dma_rx_offset;
+ 		cfg.src_addr_width = host->dma->dma_buswidth;
 -- 
-2.1.4
+1.7.9.5
 
