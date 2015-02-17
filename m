@@ -1,36 +1,56 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 26 Feb 2015 14:08:33 +0000
-Subject: [PATCH] ARM: shmobile: r8a7794: alt: Fix ethernet controller PHY IRQ line
-Message-Id: <1424959713-21305-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 17 Feb 2015 14:52:39 +0000
+Subject: [PATCH v4 4/5] ARM: shmobile: sh73a0 dtsi: Add Cortex-A9 TWD node
+Message-Id: <1424184760-1671-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1424184760-1671-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1424184760-1671-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The PHY IRQ line is connected to external IRQ8, not IRQ0. Fix DT
-accordingly.
+Add a node for the Private Timer and Watchdog, as found in the Cortex-A9
+MPCore.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Without this, there's no clocksource available during early kernel
+initialization, before cmt1 is initialized, leading to a lock-up if
+CONFIG_CPU_IDLE=y.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7794-alt.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v4:
+  - New, but this patch has been sent before as a separate patch.
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
-index 25bf434433b1..928cfa641475 100644
---- a/arch/arm/boot/dts/r8a7794-alt.dts
-+++ b/arch/arm/boot/dts/r8a7794-alt.dts
-@@ -51,7 +51,7 @@
- 	phy1: ethernet-phy@1 {
- 		reg = <1>;
- 		interrupt-parent = <&irqc0>;
--		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
-+		interrupts = <8 IRQ_TYPE_LEVEL_LOW>;
- 		micrel,led-mode = <1>;
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 70b694f09fd5ef9e..0b933e254d19faa4 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -11,6 +11,7 @@
+ /include/ "skeleton.dtsi"
+ 
+ #include <dt-bindings/clock/sh73a0-clock.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+@@ -35,6 +36,13 @@
+ 		};
  	};
- };
+ 
++	timer@f0000600 {
++		compatible = "arm,cortex-a9-twd-timer";
++		reg = <0xf0000600 0x20>;
++		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
++		clocks = <&twd_clk>;
++	};
++
+ 	gic: interrupt-controller@f0001000 {
+ 		compatible = "arm,cortex-a9-gic";
+ 		#interrupt-cells = <3>;
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
