@@ -1,92 +1,69 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 20 Feb 2015 10:25:27 +0000
-Subject: [PATCH 08/24 v2] ASoC: rsnd: add rsnd_gen_get_phy_addr() to get physical address
-Message-Id: <874mqgop3q.wl%kuninori.morimoto.gx@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninor
+Date: Tue, 17 Feb 2015 01:47:01 +0000
+Subject: [PATCH 2/8 v5] mmc: sh_mmcif: remove slave_id settings for DMAEngine
+Message-Id: <87zj8ds3z2.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-physical address is required from Audio DMAC peri peri.
+Current sh_mmcif sets dma_slave_config :: slave_id field for DMAEngine,
+but it is no longer needed. Let's remove it.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
-v1 -> v2
+v4 -> v5
 
  - no change
 
- sound/soc/sh/rcar/gen.c  |   16 +++++++++++-----
- sound/soc/sh/rcar/rsnd.h |    1 +
- 2 files changed, 12 insertions(+), 5 deletions(-)
+ drivers/mmc/host/sh_mmcif.c |   13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
 
-diff --git a/sound/soc/sh/rcar/gen.c b/sound/soc/sh/rcar/gen.c
-index d08bcd3..0da04ed 100644
---- a/sound/soc/sh/rcar/gen.c
-+++ b/sound/soc/sh/rcar/gen.c
-@@ -28,6 +28,7 @@ struct rsnd_gen {
- 
- 	struct regmap *regmap[RSND_BASE_MAX];
- 	struct regmap_field *regs[RSND_REG_MAX];
-+	phys_addr_t res[RSND_REG_MAX];
- };
- 
- #define rsnd_priv_to_gen(p)	((struct rsnd_gen *)(p)->gen)
-@@ -118,6 +119,13 @@ void rsnd_bset(struct rsnd_priv *priv, struct rsnd_mod *mod,
- 				  mask, data);
- }
- 
-+phys_addr_t rsnd_gen_get_phy_addr(struct rsnd_priv *priv, int reg_id)
-+{
-+	struct rsnd_gen *gen = rsnd_priv_to_gen(priv);
-+
-+	return	gen->res[reg_id];
-+}
-+
- #define rsnd_gen_regmap_init(priv, id_size, reg_id, name, conf)		\
- 	_rsnd_gen_regmap_init(priv, id_size, reg_id, name, conf, ARRAY_SIZE(conf))
- static int _rsnd_gen_regmap_init(struct rsnd_priv *priv,
-@@ -159,6 +167,7 @@ static int _rsnd_gen_regmap_init(struct rsnd_priv *priv,
- 
- 	gen->base[reg_id] = base;
- 	gen->regmap[reg_id] = regmap;
-+	gen->res[reg_id] = res->start;
- 
- 	for (i = 0; i < conf_size; i++) {
- 
-@@ -216,13 +225,10 @@ rsnd_gen2_dma_addr(struct rsnd_priv *priv,
- 		   struct rsnd_mod *mod,
- 		   int is_play, int is_from)
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 7d9d6a3..26b7889 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -388,7 +388,7 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
  {
--	struct platform_device *pdev = rsnd_priv_to_pdev(priv);
- 	struct device *dev = rsnd_priv_to_dev(priv);
- 	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
--	dma_addr_t ssi_reg = platform_get_resource(pdev,
--				IORESOURCE_MEM, RSND_GEN2_SSI)->start;
--	dma_addr_t src_reg = platform_get_resource(pdev,
--				IORESOURCE_MEM, RSND_GEN2_SCU)->start;
-+	phys_addr_t ssi_reg = rsnd_gen_get_phy_addr(priv, RSND_GEN2_SSI);
-+	phys_addr_t src_reg = rsnd_gen_get_phy_addr(priv, RSND_GEN2_SCU);
- 	int is_ssi = !!(rsnd_io_to_mod_ssi(io) = mod);
- 	int use_src = !!rsnd_io_to_mod_src(io);
- 	int use_dvc = !!rsnd_io_to_mod_dvc(io);
-diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
-index ec77c9f..8a8a4d5 100644
---- a/sound/soc/sh/rcar/rsnd.h
-+++ b/sound/soc/sh/rcar/rsnd.h
-@@ -331,6 +331,7 @@ void __iomem *rsnd_gen_reg_get(struct rsnd_priv *priv,
- dma_addr_t rsnd_gen_dma_addr(struct rsnd_priv *priv,
- 		       struct rsnd_mod *mod,
- 		       int is_play,  int is_from);
-+phys_addr_t rsnd_gen_get_phy_addr(struct rsnd_priv *priv, int reg_id);
+ 	struct dma_slave_config cfg = { 0, };
+ 	struct dma_chan *chan;
+-	unsigned int slave_id;
++	void *slave_data = NULL;
+ 	struct resource *res;
+ 	dma_cap_mask_t mask;
+ 	int ret;
+@@ -397,13 +397,12 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 	dma_cap_set(DMA_SLAVE, mask);
  
- #define rsnd_is_gen1(s)		(((s)->info->flags & RSND_GEN_MASK) = RSND_GEN1)
- #define rsnd_is_gen2(s)		(((s)->info->flags & RSND_GEN_MASK) = RSND_GEN2)
+ 	if (pdata)
+-		slave_id = direction = DMA_MEM_TO_DEV
+-			 ? pdata->slave_id_tx : pdata->slave_id_rx;
+-	else
+-		slave_id = 0;
++		slave_data = direction = DMA_MEM_TO_DEV ?
++			(void *)pdata->slave_id_tx :
++			(void *)pdata->slave_id_rx;
+ 
+ 	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
+-				(void *)(unsigned long)slave_id, &host->pd->dev,
++				slave_data, &host->pd->dev,
+ 				direction = DMA_MEM_TO_DEV ? "tx" : "rx");
+ 
+ 	dev_dbg(&host->pd->dev, "%s: %s: got channel %p\n", __func__,
+@@ -414,8 +413,6 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 
+ 	res = platform_get_resource(host->pd, IORESOURCE_MEM, 0);
+ 
+-	/* In the OF case the driver will get the slave ID from the DT */
+-	cfg.slave_id = slave_id;
+ 	cfg.direction = direction;
+ 
+ 	if (direction = DMA_DEV_TO_MEM) {
 -- 
 1.7.9.5
 
