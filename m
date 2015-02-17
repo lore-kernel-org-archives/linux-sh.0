@@ -1,35 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 20 Feb 2015 20:52:16 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7790: add ADSP clocks
-Message-Id: <20150220205216.GE20237@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 17 Feb 2015 15:04:46 +0000
+Subject: [PATCH v4 6/6] ARM: shmobile: ape6evm dts: Drop console= bootargs parameter
+Message-Id: <1424185486-3017-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1909663.BCLINDXhVH@wasted.cogentembedded.com>
- <54E79337.9090500@cogentembedded.com>
-In-Reply-To: <54E79337.9090500@cogentembedded.com>
+References: <1424185486-3017-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1424185486-3017-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Feb 20, 2015 at 11:04:07PM +0300, Sergei Shtylyov wrote:
-> On 12/30/2014 11:21 PM, Sergei Shtylyov wrote:
-> 
-> >Add the ADSP clocks to the CPG and MSTP5 nodes of the R8A7790 device tree.
-> 
-> >Based on the original patch by Konstantin Kozhevnikov
-> ><konstantin.kozhevnikov@cogentembedded.com>.
-> 
-> >Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >---
-> >The patch is against 'renesas-devel-20141229-v3.19-rc2' tag of Simon Horman's
-> >'renesas.git' repo plus the R8A7790 CAN patches posted earlier. It depends on
-> >the patch adding the ADSP clock support to the 'clk-rcar-gen2' driver in order
-> >to work.
-> 
->    Simon, please consider merging this patch as well.
+Since ("ARM: shmobile: r8a73a4: ape6evm: Remove legacy platform"),
+ape6evm is restricted to booting from DT, so chosen/stdout-path is
+always used, and we can drop the "console=" parameter from
+chosen/bootargs.
 
-Thanks done.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v4:
+  - New.
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I plan to do a push of renesas-devel shortly.
-Please let me know if you have anything else that I should wait for.
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index 44c4cac1820a4dfe..f9e81512201a2ec4 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -22,7 +22,7 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
++		bootargs = "ignore_loglevel root=/dev/nfs ip=dhcp rw";
+ 		stdout-path = &scifa0;
+ 	};
+ 
+-- 
+1.9.1
+
