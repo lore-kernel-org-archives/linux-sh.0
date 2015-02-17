@@ -1,91 +1,60 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 09 Feb 2015 08:16:12 +0000
-Subject: [PATCH 2/4] usb: renesas_usbhs: add the channel number in dma-names
-Message-Id: <1423469774-6532-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 17 Feb 2015 14:52:40 +0000
+Subject: [PATCH v4 5/5] ARM: shmobile: sh73a0: Remove unused sh73a0_add_standard_devices_dt()
+Message-Id: <1424184760-1671-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423469774-6532-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1423469774-6532-1-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <1424184760-1671-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1424184760-1671-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, balbi-l0cyMroinI0@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org
-Cc: linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-To connect the channel of USB-DMAC to USBHS DnFIFO number, this patch
-adds this channel/FIFO number in dma-names. Otherwise, this driver
-needs to add analysis code for device tree.
+"ARM: shmobile: kzm9g-reference: Remove board C code and DT file"
+removed the last user of sh73a0_add_standard_devices_dt(). Hence remove
+this function.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- .../devicetree/bindings/usb/renesas_usbhs.txt      |    5 ++++-
- drivers/usb/renesas_usbhs/fifo.c                   |   20 +++++++++++++-------
- 2 files changed, 17 insertions(+), 8 deletions(-)
+v4:
+  - New.
+---
+ arch/arm/mach-shmobile/setup-sh73a0.c | 9 ---------
+ arch/arm/mach-shmobile/sh73a0.h       | 1 -
+ 2 files changed, 10 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-index 61b045b..dc2a18f 100644
---- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-+++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-@@ -15,7 +15,10 @@ Optional properties:
-   - phys: phandle + phy specifier pair
-   - phy-names: must be "usb"
-   - dmas: Must contain a list of references to DMA specifiers.
--  - dma-names : Must contain a list of DMA names, "tx" or "rx".
-+  - dma-names : Must contain a list of DMA names:
-+   - tx0 ... tx<n>
-+   - rx0 ... rx<n>
-+    - This <n> means DnFIFO in USBHS module.
- 
- Example:
- 	usbhs: usb@e6590000 {
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index b1440d0..9fae14a 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -1069,23 +1069,29 @@ static void usbhsf_dma_init_pdev(struct usbhs_fifo *fifo)
- 					    &fifo->rx_slave);
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 48f2447ab01f6e60..2f68459e78114323 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -783,15 +783,6 @@ void __init sh73a0_add_early_devices(void)
+ 	shmobile_setup_console();
  }
  
--static void usbhsf_dma_init_dt(struct device *dev, struct usbhs_fifo *fifo)
-+static void usbhsf_dma_init_dt(struct device *dev, struct usbhs_fifo *fifo,
-+			       int channel)
+-void __init sh73a0_add_standard_devices_dt(void)
+-{
+-	/* clocks are setup late during boot in the case of DT */
+-#ifndef CONFIG_COMMON_CLK
+-	sh73a0_clock_init();
+-#endif
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-}
+-
+ #define RESCNT2 IOMEM(0xe6188020)
+ static void sh73a0_restart(enum reboot_mode mode, const char *cmd)
  {
--	fifo->tx_chan = dma_request_slave_channel_reason(dev, "tx");
-+	char name[16];
-+
-+	snprintf(name, sizeof(name), "tx%d", channel);
-+	fifo->tx_chan = dma_request_slave_channel_reason(dev, name);
- 	if (IS_ERR(fifo->tx_chan))
- 		fifo->tx_chan = NULL;
--	fifo->rx_chan = dma_request_slave_channel_reason(dev, "rx");
-+
-+	snprintf(name, sizeof(name), "rx%d", channel);
-+	fifo->rx_chan = dma_request_slave_channel_reason(dev, name);
- 	if (IS_ERR(fifo->rx_chan))
- 		fifo->rx_chan = NULL;
- }
- 
--static void usbhsf_dma_init(struct usbhs_priv *priv,
--			    struct usbhs_fifo *fifo)
-+static void usbhsf_dma_init(struct usbhs_priv *priv, struct usbhs_fifo *fifo,
-+			    int channel)
- {
- 	struct device *dev = usbhs_priv_to_dev(priv);
- 
- 	if (dev->of_node)
--		usbhsf_dma_init_dt(dev, fifo);
-+		usbhsf_dma_init_dt(dev, fifo, channel);
- 	else
- 		usbhsf_dma_init_pdev(fifo);
- 
-@@ -1234,7 +1240,7 @@ do {									\
- 			usbhs_get_dparam(priv, d##channel##_tx_id);	\
- 	fifo->rx_slave.shdma_slave.slave_id =				\
- 			usbhs_get_dparam(priv, d##channel##_rx_id);	\
--	usbhsf_dma_init(priv, fifo);					\
-+	usbhsf_dma_init(priv, fifo, channel);				\
- } while (0)
- 
- #define USBHS_DFIFO_INIT(priv, fifo, channel)				\
+diff --git a/arch/arm/mach-shmobile/sh73a0.h b/arch/arm/mach-shmobile/sh73a0.h
+index f037c64b14fc0767..5a80f18b4fa0665f 100644
+--- a/arch/arm/mach-shmobile/sh73a0.h
++++ b/arch/arm/mach-shmobile/sh73a0.h
+@@ -77,7 +77,6 @@ extern void sh73a0_map_io(void);
+ extern void sh73a0_earlytimer_init(void);
+ extern void sh73a0_add_early_devices(void);
+ extern void sh73a0_add_standard_devices(void);
+-extern void sh73a0_add_standard_devices_dt(void);
+ extern void sh73a0_clock_init(void);
+ extern void sh73a0_pinmux_init(void);
+ extern void sh73a0_pm_init(void);
 -- 
-1.7.9.5
+1.9.1
 
