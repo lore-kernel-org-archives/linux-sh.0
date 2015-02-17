@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 16 Feb 2015 17:10:29 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 17 Feb 2015 21:43:06 +0000
 Subject: Re: [PATCH v3 04/15] ARM: shmobile: r8a7778: common clock framework CPG driver
-Message-Id: <1958323.5A1zXdRzCP@avalon>
+Message-Id: <20150217214305.GD25707@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1424105939-4910-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 In-Reply-To: <1424105939-4910-5-git-send-email-ulrich.hecht+renesas@gmail.com>
@@ -10,30 +10,27 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Ulrich,
+Hi Mike,
 
-Thank you for the patch.
+I think it would be best if I took this change through my tree,
+as others in this series which are for my tree depend on it.
 
-On Monday 16 February 2015 17:58:48 Ulrich Hecht wrote:
+Could I get an Ack or otherwise?
+
+On Mon, Feb 16, 2015 at 05:58:48PM +0100, Ulrich Hecht wrote:
 > Driver for the r8a7778's clocks that depend on the mode bits.
 > 
 > Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
 > ---
 >  .../bindings/clock/renesas,r8a7778-cpg-clocks.txt  |  25 ++++
 >  drivers/clk/shmobile/Makefile                      |   1 +
->  drivers/clk/shmobile/clk-r8a7778.c                 | 143 ++++++++++++++++++
+>  drivers/clk/shmobile/clk-r8a7778.c                 | 143 +++++++++++++++++++++
 >  include/linux/clk/shmobile.h                       |   1 +
 >  4 files changed, 170 insertions(+)
->  create mode 100644
-> Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
-> create mode 100644 drivers/clk/shmobile/clk-r8a7778.c
+>  create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
+>  create mode 100644 drivers/clk/shmobile/clk-r8a7778.c
 > 
-> diff --git
-> a/Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
-> b/Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
+> diff --git a/Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
 > new file mode 100644
 > index 0000000..2f3747f
 > --- /dev/null
@@ -76,8 +73,8 @@ Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 >  obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
 >  obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
 >  obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
-> diff --git a/drivers/clk/shmobile/clk-r8a7778.c
-> b/drivers/clk/shmobile/clk-r8a7778.c new file mode 100644
+> diff --git a/drivers/clk/shmobile/clk-r8a7778.c b/drivers/clk/shmobile/clk-r8a7778.c
+> new file mode 100644
 > index 0000000..cb33b57
 > --- /dev/null
 > +++ b/drivers/clk/shmobile/clk-r8a7778.c
@@ -230,15 +227,18 @@ Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 > --- a/include/linux/clk/shmobile.h
 > +++ b/include/linux/clk/shmobile.h
 > @@ -16,6 +16,7 @@
-> 
+>  
 >  #include <linux/types.h>
-> 
+>  
 > +void r8a7778_clocks_init(u32 mode);
 >  void r8a7779_clocks_init(u32 mode);
 >  void rcar_gen2_clocks_init(u32 mode);
-
--- 
-Regards,
-
-Laurent Pinchart
-
+>  
+> -- 
+> 2.2.2
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
