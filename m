@@ -1,85 +1,84 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:12 +0000
-Subject: [PATCH 15/32] ARM: shmobile: r8a7794: Add IPMMU DT nodes
-Message-Id: <1cb2794f608244312515ac41e82378cb2d58d74e.1424849129.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 17 Feb 2015 14:52:37 +0000
+Subject: [PATCH v4 2/5] ARM: shmobile: kzm9g dts: Move Ethernet node to BSC
+Message-Id: <1424184760-1671-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424849129.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
+References: <1424184760-1671-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1424184760-1671-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Move the Ethernet node from the root of the device tree to the BSC node,
+as it's connected to the Bus State Controller.  This allows the system
+to know the right position of the Ethernet node in the clock and PM
+domain hierarchy, and manage the clock and PM domain appropriately.
 
-Add the six IPMMU instances found in the r8a7794 to DT with a disabled
-status.
+Also rename the node's name from "lan9220" to "ethernet", to conform to
+ePAPR generic name recomendations.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7794.dtsi | 50 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 50 insertions(+)
+v4:
+  - No changes,
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 7474535..6f70bc4 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -645,4 +645,54 @@
- 			clock-output-names = "scifa3", "scifa4", "scifa5";
- 		};
+v3:
+  - No changes,
+
+v2:
+  - s/confirm/conform/,
+  - Moved from kzm9g-reference to kzm9g.
+---
+ arch/arm/boot/dts/sh73a0-kzm9g.dts | 28 +++++++++++++++-------------
+ 1 file changed, 15 insertions(+), 13 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 6f00e6b680e8e0fa..022ba505f57339a9 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -84,19 +84,6 @@
+ 		enable-active-high;
  	};
-+
-+	ipmmu_sy0: mmu@e6280000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe6280000 0 0x1000>;
-+		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
+ 
+-	lan9220@10000000 {
+-		compatible = "smsc,lan9220", "smsc,lan9115";
+-		reg = <0x10000000 0x100>;
+-		phy-mode = "mii";
+-		interrupt-parent = <&irqpin0>;
+-		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
+-		reg-io-width = <4>;
+-		smsc,irq-push-pull;
+-		smsc,save-mac-address;
+-		vddvario-supply = <&reg_1p8v>;
+-		vdd33a-supply = <&reg_3p3v>;
+-	};
+-
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led1 {
+@@ -178,6 +165,21 @@
+ 	};
+ };
+ 
++&bsc {
++	ethernet@10000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x10000000 0x100>;
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin0>;
++		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
++		reg-io-width = <4>;
++		smsc,irq-push-pull;
++		smsc,save-mac-address;
++		vddvario-supply = <&reg_1p8v>;
++		vdd33a-supply = <&reg_3p3v>;
 +	};
++};
 +
-+	ipmmu_sy1: mmu@e6290000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe6290000 0 0x1000>;
-+		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_ds: mmu@e6740000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe6740000 0 0x1000>;
-+		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+	};
-+
-+	ipmmu_mp: mmu@ec680000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xec680000 0 0x1000>;
-+		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_mx: mmu@fe951000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xfe951000 0 0x1000>;
-+		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+	};
-+
-+	ipmmu_gp: mmu@e62a0000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe62a0000 0 0x1000>;
-+		interrupts = <0 260 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 261 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
+ &cmt1 {
+ 	status = "okay";
  };
 -- 
-2.1.4
+1.9.1
 
