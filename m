@@ -1,82 +1,41 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 17 Feb 2015 13:31:54 +0000
-Subject: [PATCH 1/2] ARM: shmobile: emev2 dtsi: Add PFC information
-Message-Id: <1424179915-17417-2-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 18 Feb 2015 02:38:12 +0000
+Subject: [PATCH 00/05] ARM: shmobile: r8a7779 IRQ update and Marzen cleanup
+Message-Id: <20150218023812.12588.9023.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424179915-17417-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424179915-17417-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-From: Niklas Söderlund <niso@kth.se>
+ARM: shmobile: r8a7779 IRQ update and Marzen cleanup
 
-With this information all GPIOs can make use of the PFC functionality.
+[PATCH 01/05] ARM: shmobile: r8a7779: Configure IRLM mode via DT
+[PATCH 02/05] ARM: shmobile: r8a7779: Generic SoC CCF and timer support
+[PATCH 03/05] ARM: shmobile: r8a7779: Generic SoC SMP support
+[PATCH 04/05] ARM: shmobile: marzen-reference: Remove C board code
+[PATCH 05/05] ARM: shmobile: r8a7779: Remove unused functions
 
-Signed-off-by: Niklas Söderlund <niso@kth.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Now when "irqchip: renesas-intc-irqpin: r8a7779 IRLM setup support" is
+merged in v3.20-rc we can continue to cleanup r8a7779 and Marzen.
+
+With these patches applied the r8a7779 SoC gets DT-only multiplatform
+support and old C board code for multiplatform gets removed.
+
+The legacy r8a7779 Marzen code is not touched by this series, but
+with these patches applied basic r8a7779 multiplatform SoC support
+is done and only a few I/O devices are legacy-only.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/emev2.dtsi | 10 ++++++++++
- 1 file changed, 10 insertions(+)
 
-diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
-index cc7bfe0ba40af9a9..bb45694d91bc1e6c 100644
---- a/arch/arm/boot/dts/emev2.dtsi
-+++ b/arch/arm/boot/dts/emev2.dtsi
-@@ -169,12 +169,18 @@
- 		clock-names = "sclk";
- 	};
- 
-+	pfc: pfc@e0140200 {
-+		compatible = "renesas,pfc-emev2";
-+		reg = <0xe0140200 0x100>;
-+	};
-+
- 	gpio0: gpio@e0050000 {
- 		compatible = "renesas,em-gio";
- 		reg = <0xe0050000 0x2c>, <0xe0050040 0x20>;
- 		interrupts = <0 67 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 68 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges = <&pfc 0 0 32>;
- 		#gpio-cells = <2>;
- 		ngpios = <32>;
- 		interrupt-controller;
-@@ -186,6 +192,7 @@
- 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 70 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges = <&pfc 0 32 32>;
- 		#gpio-cells = <2>;
- 		ngpios = <32>;
- 		interrupt-controller;
-@@ -197,6 +204,7 @@
- 		interrupts = <0 71 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 72 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges = <&pfc 0 64 32>;
- 		#gpio-cells = <2>;
- 		ngpios = <32>;
- 		interrupt-controller;
-@@ -208,6 +216,7 @@
- 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 74 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges = <&pfc 0 96 32>;
- 		#gpio-cells = <2>;
- 		ngpios = <32>;
- 		interrupt-controller;
-@@ -219,6 +228,7 @@
- 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 76 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges = <&pfc 0 128 31>;
- 		#gpio-cells = <2>;
- 		ngpios = <31>;
- 		interrupt-controller;
--- 
-1.9.1
+ Built on top of renesas-devel-20150215-v3.19, but wants to be
+ merged on top of v3.20-rc due to irqchip dependency.
 
+ arch/arm/boot/dts/r8a7779.dtsi                  |    5 +-
+ arch/arm/mach-shmobile/Kconfig                  |    7 --
+ arch/arm/mach-shmobile/Makefile                 |    2 
+ arch/arm/mach-shmobile/board-marzen-reference.c |   56 -----------------------
+ arch/arm/mach-shmobile/r8a7779.h                |    2 
+ arch/arm/mach-shmobile/setup-r8a7779.c          |   18 ++++---
+ 6 files changed, 15 insertions(+), 75 deletions(-)
