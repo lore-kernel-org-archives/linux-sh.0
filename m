@@ -1,54 +1,71 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 12 Feb 2015 17:09:25 +0000
-Subject: Re: [PATCH v2 08/15] ARM: shmobile: r8a7778, bockw: add internal ethernet controller to DT
-Message-Id: <CAMuHMdWg85dT4Z6-G0DCsKgqLHYgOnZ1CNKYGiWQrNRuqsum3w@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 18 Feb 2015 02:39:03 +0000
+Subject: [PATCH 05/05] ARM: shmobile: r8a7779: Remove unused functions
+Message-Id: <20150218023903.12588.46543.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423497763-3450-9-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1423497763-3450-9-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Laurent,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On Thu, Feb 12, 2015 at 5:00 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Wednesday 11 February 2015 08:48:23 Geert Uytterhoeven wrote:
->> On Wed, Feb 11, 2015 at 4:54 AM, Laurent Pinchart wrote:
->> >> --- a/arch/arm/boot/dts/r8a7778-bockw.dts
->> >> +++ b/arch/arm/boot/dts/r8a7778-bockw.dts
->> >> @@ -59,6 +59,11 @@
->> >>       };
->> >>  };
->> >>
->> >> +&ether {
->> >> +     pinctrl-0 = <&ether_pins>;
->> >> +     pinctrl-names = "default";
->> >
->> > The internal ethernet controller isn't used on the BockW board, its pins
->> > are used for display. I thus wouldn't add it to r8a7778-bockw.dts.
->>
->> Depending on SW62 (and parts of SW84/85)...
->>
->> >> +};
->>
->> There's no 'status = "okay";', so it is still disabled.
->>
->> What about adding a comment about the switches?
->
-> How about a device tree overlay instead ? That would avoid populating DT with
-> needless nodes.
+Now when the Marzen reference board code is gone we can
+remove a few unused function prototypes and funtions.
 
-Even better!
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-Gr{oetje,eeting}s,
+ arch/arm/mach-shmobile/r8a7779.h       |    2 --
+ arch/arm/mach-shmobile/setup-r8a7779.c |    8 ++------
+ 2 files changed, 2 insertions(+), 8 deletions(-)
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--- 0001/arch/arm/mach-shmobile/r8a7779.h
++++ work/arch/arm/mach-shmobile/r8a7779.h	2015-02-17 02:42:26.766196792 +0900
+@@ -11,14 +11,12 @@ enum {
+ };
+ 
+ extern void r8a7779_init_irq_extpin(int irlm);
+-extern void r8a7779_init_irq_extpin_dt(int irlm);
+ extern void r8a7779_init_irq_dt(void);
+ extern void r8a7779_map_io(void);
+ extern void r8a7779_earlytimer_init(void);
+ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_init_late(void);
+-extern u32 r8a7779_read_mode_pins(void);
+ extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+ extern void r8a7779_pm_init(void);
+--- 0004/arch/arm/mach-shmobile/setup-r8a7779.c
++++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2015-02-17 02:42:48.296196715 +0900
+@@ -97,7 +97,7 @@ static struct resource irqpin0_resources
+ 	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ3 */
+ };
+ 
+-void __init r8a7779_init_irq_extpin_dt(int irlm)
++void __init r8a7779_init_irq_extpin(int irlm)
+ {
+ 	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
+ 	u32 tmp;
+@@ -115,11 +115,7 @@ void __init r8a7779_init_irq_extpin_dt(i
+ 	tmp |= (1 << 21); /* LVLMODE = 1 */
+ 	iowrite32(tmp, icr0);
+ 	iounmap(icr0);
+-}
+ 
+-void __init r8a7779_init_irq_extpin(int irlm)
+-{
+-	r8a7779_init_irq_extpin_dt(irlm);
+ 	if (irlm)
+ 		platform_device_register_resndata(
+ 			NULL, "renesas_intc_irqpin", -1,
+@@ -745,7 +741,7 @@ void __init r8a7779_init_irq_dt(void)
+ 
+ #define MODEMR		0xffcc0020
+ 
+-u32 __init r8a7779_read_mode_pins(void)
++static u32 __init r8a7779_read_mode_pins(void)
+ {
+ 	static u32 mode;
+ 	static bool mode_valid;
