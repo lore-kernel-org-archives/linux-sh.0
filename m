@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 18 Feb 2015 00:41:28 +0000
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Wed, 18 Feb 2015 13:43:50 +0000
 Subject: Re: [PATCH 0/3 v3][RFC] dmaengine: rcar-audmapp: calculate chcr via src/dst addr
-Message-Id: <87wq3g9hiz.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <20150218133150.GV21387@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87mw4xey70.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87mw4xey70.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,40 +10,40 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-
-Hi Arnd
-
-Thank you for your feedback
-
-> I've thought some more about what it would really mean to support
-> DMA_DEV_TO_DEV with the existing framework and binding. I believe
-> we can actually do this with the existing DT binding if we really
-> wanted to, but the dmaengine code would have to change. At the
-> moment, we have 
+On Mon, Feb 16, 2015 at 08:47:00PM +0100, Arnd Bergmann wrote:
+> On Monday 09 February 2015 01:37:41 Kuninori Morimoto wrote:
+> > 
+> > Hi Vinod, Arnd
+> > 
+> > Can I have feedback from you about below mail, and this patch ?
+> > 
+> > http://thread.gmane.org/gmane.linux.ports.sh.devel/41063/focusC372
 > 
-> struct dma_chan *dma_request_slave_channel_reason(struct device *dev,
->                                                   const char *name);
-> 
-> as the main interface. What I think we would need is a respective
-> interface that takes two separate names for source and sink, like
-> 
-> struct dma_chan *dma_request_dev_to_dev_channel(struct device *dev,
->                                                 const char *source,
-> 						 const char *sink);
->
-> Then you'd list all available sources and all sinks separately
-> in the device node for the audio device and combine the ones you
-> need.
-> 
-> Making this particular device specific to the audio driver is
-> still much easier, I just wanted to ensure we document it here
-> in case we need the same functionality later for something else.
+> I had the chance to discuss this in more depth with Laurent last
+> week. What it basically comes down to is that you try to do something
+> that the existing DT binding and slave API does not support: we
+> only really do DMA_DEV_TO_MEM or DMA_MEM_TO_DEV, but not DMA_DEV_TO_DEV.
+For the record, device_prep_slave_sg() can do DMA_DEV_TO_DEV. That is the
+sole reason why dma_slave_config has both the directions for every field.
 
-Ahh... Actually I didn't 100% understand about your concern
-of DT bindings. but, now I could.
-Thank you for your explain
+HTH
 
+-- 
+~Vinod
+ 
+> To properly support this with the dmaengine API, we would likely first
+> need to extend the generic DT binding, and then implement the driver
+> to use that extended binding.
+> 
+> The easiest way out however seems to be to move the audmapp
+> implementation into the rcar audio driver itself. As Laurent pointed
+> out, it is not really a general-purpose dmaengine anyway and it
+> only ever gets used by one driver, so we could not find any downsides.
+> 
+> 	Arnd
+> --
+> To unsubscribe from this list: send the line "unsubscribe dmaengine" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Best regards
----
-Kuninori Morimoto
+-- 
