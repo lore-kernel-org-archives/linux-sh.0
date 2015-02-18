@@ -1,27 +1,31 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 24 Feb 2015 01:46:50 +0000
-Subject: Re: [PATCH 0/3] Enable R-Mobile Reset Driver
-Message-Id: <20150224014649.GH29878@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 18 Feb 2015 02:38:42 +0000
+Subject: [PATCH 03/05] ARM: shmobile: r8a7779: Generic SoC SMP support
+Message-Id: <20150218023842.12588.17833.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424707169-23007-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424707169-23007-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Feb 23, 2015 at 04:59:26PM +0100, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> This patch series enables the R-Mobile Reset Driver, which is now in
-> v4.0-rc1. It can be used to restart DT-based R-Mobile APE6 (r8a73a4),
-> R-Mobile A1 (r8a7740), and SH-Mobile AG5 (sh73a0) through the
-> system-controller nodes that have been added for PM Domain support.
-> This series also removes the no longer needed restart callbacks on
-> multiplatform r8a7740 and sh73a0.
->         
-> More detailed depencencies are in the individual patches.
-> 
-> Thanks for applying!
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thanks, done.
+Add a r8a7779-specific SMP operation pointer to support
+all 4 CPU cores through SMP on r8a7779 without C board code.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ arch/arm/mach-shmobile/setup-r8a7779.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- 0003/arch/arm/mach-shmobile/setup-r8a7779.c
++++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2015-02-17 00:46:51.566221714 +0900
+@@ -773,6 +773,7 @@ static const char *r8a7779_compat_dt[] _
+ };
+ 
+ DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
++	.smp		= smp_ops(r8a7779_smp_ops),
+ 	.map_io		= r8a7779_map_io,
+ 	.init_early	= shmobile_init_delay,
+ 	.init_time	= r8a7779_init_time,
