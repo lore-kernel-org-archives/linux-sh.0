@@ -1,111 +1,93 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 17 Feb 2015 15:04:43 +0000
-Subject: [PATCH v4 3/6] ARM: shmobile: r8a73a4: Move pfc node to work around probe ordering bug
-Message-Id: <1424185486-3017-4-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 19 Feb 2015 03:52:41 +0000
+Subject: [PATCH 12/19] ASoC: rsnd: dma-names cares 1st DMAC only
+Message-Id: <87egpm1rqf.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424185486-3017-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424185486-3017-1-git-send-email-geert+renesas@glider.be>
+References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
 
-Currently the pin function controller (which is also a GPIO controller)
-is instantiated before the interrupt controllers due to the order in the
-DTS. At that time, the irq domains for the interrupt controllers
-referenced by its interrupts-extended property cannot be found yet:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-    irq: no irq domain found for /interrupt-controller@e61c0000 !
+Renesas R-Car sound (= rsnd) needs 2 DMAC which are called as
+Audio DMAC (= 1st DMAC) and Audio DMAC peri peri (2nd DMAC).
+And rsnd had assumed that 1st / 2nd DMACs are implemented as DMAEngine.
+But, in result of DMA ML discussion, 2nd DMAC was concluded that it is
+not a general purpose DMAC (2nd DMAC is for Device to Device inside
+sound system). Additionally, current DMAEngine can't support Device to
+Device, and we don't have correct DT bindings for it at this point.
+So the easiest solution for it is that move it from DMAEngine to rsnd
+driver.
 
-Nevertheless, the core OF probing code ignores this failure, besides a
-debug message that's not normally printed:
+dma-names on DT was implemented as no difference between 1st / 2nd
+DMAC's, since rsnd had assumed that both DMACs are implemented as
+DMAEngine. That style was "src_dst". But now, 2nd DMAC was implemented
+as non DMAEngine, and it doesn't need dma-names anymore. So, this
+dma-names rule is no longer needed.
 
-    not all legacy IRQ resources mapped for pfc
+In upstream code, no SoC/platform is supporting DMA for rsnd driver yet.
+This means there is no compatible issue if this patch changes
+dma-names's naming rule of DT.
+This patch assumes dma-names are tx/rx base for 1st DMAC on DT.
+ex)
+	"mem_ssi0" -> "ssi0-rx"
+	"ssi0_mem" -> "ssi0-tx"
 
-and continues initialization of the device. Then, the sh-pfc driver
-cannot find any IRQ resources, and thinks no interrupts are available,
-causing gpio-keys to fail later:
-
-    gpio-keys keyboard: Unable to claim irq 0; error -22
-    gpio-keys: probe of keyboard failed with error -22
-
-Move the pin function controller node after the interrupt controller
-nodes it references to work around the bug in the core OF probing code.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-This can be reproduced on other SoCs (e.g. sh73a0 and r8a7740) by moving
-their pfc nodes before their interrupt controller nodes.
+ sound/soc/sh/rcar/dma.c |   29 ++++++++++++++++-------------
+ 1 file changed, 16 insertions(+), 13 deletions(-)
 
-v4:
-  - New, but an RFC version of this patch has been sent before as a
-    separate patch.
----
- arch/arm/boot/dts/r8a73a4.dtsi | 46 +++++++++++++++++++++---------------------
- 1 file changed, 23 insertions(+), 23 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index 77bd35cd89113df7..d41201d258cacb1f 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -92,29 +92,6 @@
- 		};
- 	};
+diff --git a/sound/soc/sh/rcar/dma.c b/sound/soc/sh/rcar/dma.c
+index 9cb5785..5b0c344 100644
+--- a/sound/soc/sh/rcar/dma.c
++++ b/sound/soc/sh/rcar/dma.c
+@@ -54,25 +54,28 @@ static void rsnd_dmaen_complete(void *data)
  
--	pfc: pfc@e6050000 {
--		compatible = "renesas,pfc-r8a73a4";
--		reg = <0 0xe6050000 0 0x9000>;
--		gpio-controller;
--		#gpio-cells = <2>;
--		interrupts-extended -			<&irqc0  0 0>, <&irqc0  1 0>, <&irqc0  2 0>, <&irqc0  3 0>,
--			<&irqc0  4 0>, <&irqc0  5 0>, <&irqc0  6 0>, <&irqc0  7 0>,
--			<&irqc0  8 0>, <&irqc0  9 0>, <&irqc0 10 0>, <&irqc0 11 0>,
--			<&irqc0 12 0>, <&irqc0 13 0>, <&irqc0 14 0>, <&irqc0 15 0>,
--			<&irqc0 16 0>, <&irqc0 17 0>, <&irqc0 18 0>, <&irqc0 19 0>,
--			<&irqc0 20 0>, <&irqc0 21 0>, <&irqc0 22 0>, <&irqc0 23 0>,
--			<&irqc0 24 0>, <&irqc0 25 0>, <&irqc0 26 0>, <&irqc0 27 0>,
--			<&irqc0 28 0>, <&irqc0 29 0>, <&irqc0 30 0>, <&irqc0 31 0>,
--			<&irqc1  0 0>, <&irqc1  1 0>, <&irqc1  2 0>, <&irqc1  3 0>,
--			<&irqc1  4 0>, <&irqc1  5 0>, <&irqc1  6 0>, <&irqc1  7 0>,
--			<&irqc1  8 0>, <&irqc1  9 0>, <&irqc1 10 0>, <&irqc1 11 0>,
--			<&irqc1 12 0>, <&irqc1 13 0>, <&irqc1 14 0>, <&irqc1 15 0>,
--			<&irqc1 16 0>, <&irqc1 17 0>, <&irqc1 18 0>, <&irqc1 19 0>,
--			<&irqc1 20 0>, <&irqc1 21 0>, <&irqc1 22 0>, <&irqc1 23 0>,
--			<&irqc1 24 0>, <&irqc1 25 0>;
--	};
+ #define DMA_NAME_SIZE 16
+ #define MOD_MAX 4 /* MEM/SSI/SRC/DVC */
+-static int _rsnd_dmaen_of_name(char *dma_name, struct rsnd_mod *mod)
+-{
+-	if (mod)
+-		return snprintf(dma_name, DMA_NAME_SIZE / 2, "%s%d",
+-				rsnd_mod_dma_name(mod), rsnd_mod_id(mod));
+-	else
+-		return snprintf(dma_name, DMA_NAME_SIZE / 2, "mem");
 -
- 	i2c5: i2c@e60b0000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -210,6 +187,29 @@
- 			     <0 57 IRQ_TYPE_LEVEL_HIGH>;
- 	};
+-}
  
-+	pfc: pfc@e6050000 {
-+		compatible = "renesas,pfc-r8a73a4";
-+		reg = <0 0xe6050000 0 0x9000>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+		interrupts-extended +			<&irqc0  0 0>, <&irqc0  1 0>, <&irqc0  2 0>, <&irqc0  3 0>,
-+			<&irqc0  4 0>, <&irqc0  5 0>, <&irqc0  6 0>, <&irqc0  7 0>,
-+			<&irqc0  8 0>, <&irqc0  9 0>, <&irqc0 10 0>, <&irqc0 11 0>,
-+			<&irqc0 12 0>, <&irqc0 13 0>, <&irqc0 14 0>, <&irqc0 15 0>,
-+			<&irqc0 16 0>, <&irqc0 17 0>, <&irqc0 18 0>, <&irqc0 19 0>,
-+			<&irqc0 20 0>, <&irqc0 21 0>, <&irqc0 22 0>, <&irqc0 23 0>,
-+			<&irqc0 24 0>, <&irqc0 25 0>, <&irqc0 26 0>, <&irqc0 27 0>,
-+			<&irqc0 28 0>, <&irqc0 29 0>, <&irqc0 30 0>, <&irqc0 31 0>,
-+			<&irqc1  0 0>, <&irqc1  1 0>, <&irqc1  2 0>, <&irqc1  3 0>,
-+			<&irqc1  4 0>, <&irqc1  5 0>, <&irqc1  6 0>, <&irqc1  7 0>,
-+			<&irqc1  8 0>, <&irqc1  9 0>, <&irqc1 10 0>, <&irqc1 11 0>,
-+			<&irqc1 12 0>, <&irqc1 13 0>, <&irqc1 14 0>, <&irqc1 15 0>,
-+			<&irqc1 16 0>, <&irqc1 17 0>, <&irqc1 18 0>, <&irqc1 19 0>,
-+			<&irqc1 20 0>, <&irqc1 21 0>, <&irqc1 22 0>, <&irqc1 23 0>,
-+			<&irqc1 24 0>, <&irqc1 25 0>;
-+	};
+ static void rsnd_dmaen_of_name(struct rsnd_mod *mod_from,
+ 			     struct rsnd_mod *mod_to,
+ 			     char *dma_name)
+ {
+-	int index = 0;
++	char *fmt;
++	struct rsnd_mod *mod;
 +
- 	thermal@e61f0000 {
- 		compatible = "renesas,thermal-r8a73a4", "renesas,rcar-thermal";
- 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
++	if ((!mod_from && !mod_to) ||
++	    (mod_from && mod_to))
++		return;
++
++	if (mod_from) {
++		fmt = "%s%d-tx";
++		mod = mod_from;
++	} else {
++		fmt = "%s%d-rx";
++		mod = mod_to;
++	}
+ 
+-	index = _rsnd_dmaen_of_name(dma_name + index, mod_from);
+-	*(dma_name + index++) = '_';
+-	index = _rsnd_dmaen_of_name(dma_name + index, mod_to);
++	snprintf(dma_name, DMA_NAME_SIZE, fmt,
++		 rsnd_mod_dma_name(mod), rsnd_mod_id(mod));
+ }
+ 
+ static void rsnd_dmaen_stop(struct rsnd_dma *dma)
 -- 
-1.9.1
+1.7.9.5
 
