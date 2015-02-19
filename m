@@ -1,215 +1,146 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 19 Feb 2015 03:52:19 +0000
-Subject: [PATCH 10/19] ASoC: rsnd: enable to care 1st / 2nd DMAC on rsnd_dma_xxx()
-Message-Id: <87h9ui1rr2.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 19 Feb 2015 01:42:26 +0000
+Subject: [PATCH 02/03] ARM: shmobile: Adjust x86_64 defconfig to include DU/VSP1
+Message-Id: <20150219014226.1795.37125.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-rsnd driver needs to care about Audio DAMC (via DMAEngine),
-Audio DMAC peri peri (via local method) on rsnd driver.
-This patch adds new rsnd_dma_ops and care it.
+Adjust the x86_64 defconfig to include DU and VSP1.
+Not for upstream merge.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Not-yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- sound/soc/sh/rcar/dma.c  |   78 +++++++++++++++++++++++++++++++---------------
- sound/soc/sh/rcar/rsnd.h |   12 +++++++
- 2 files changed, 65 insertions(+), 25 deletions(-)
 
-diff --git a/sound/soc/sh/rcar/dma.c b/sound/soc/sh/rcar/dma.c
-index 9f909f1..61fba17 100644
---- a/sound/soc/sh/rcar/dma.c
-+++ b/sound/soc/sh/rcar/dma.c
-@@ -10,7 +10,7 @@
-  */
- #include "rsnd.h"
- 
--static void rsnd_dma_complete(void *data)
-+static void rsnd_dmaen_complete(void *data)
- {
- 	struct rsnd_dma *dma = (struct rsnd_dma *)data;
- 	struct rsnd_mod *mod = rsnd_dma_to_mod(dma);
-@@ -33,7 +33,7 @@ static void rsnd_dma_complete(void *data)
- 
- #define DMA_NAME_SIZE 16
- #define MOD_MAX 4 /* MEM/SSI/SRC/DVC */
--static int _rsnd_dma_of_name(char *dma_name, struct rsnd_mod *mod)
-+static int _rsnd_dmaen_of_name(char *dma_name, struct rsnd_mod *mod)
- {
- 	if (mod)
- 		return snprintf(dma_name, DMA_NAME_SIZE / 2, "%s%d",
-@@ -43,23 +43,23 @@ static int _rsnd_dma_of_name(char *dma_name, struct rsnd_mod *mod)
- 
- }
- 
--static void rsnd_dma_of_name(struct rsnd_mod *mod_from,
-+static void rsnd_dmaen_of_name(struct rsnd_mod *mod_from,
- 			     struct rsnd_mod *mod_to,
- 			     char *dma_name)
- {
- 	int index = 0;
- 
--	index = _rsnd_dma_of_name(dma_name + index, mod_from);
-+	index = _rsnd_dmaen_of_name(dma_name + index, mod_from);
- 	*(dma_name + index++) = '_';
--	index = _rsnd_dma_of_name(dma_name + index, mod_to);
-+	index = _rsnd_dmaen_of_name(dma_name + index, mod_to);
- }
- 
--void rsnd_dma_stop(struct rsnd_dma *dma)
-+static void rsnd_dmaen_stop(struct rsnd_dma *dma)
- {
- 	dmaengine_terminate_all(dma->chan);
- }
- 
--void rsnd_dma_start(struct rsnd_dma *dma)
-+static void rsnd_dmaen_start(struct rsnd_dma *dma)
- {
- 	struct rsnd_mod *mod = rsnd_dma_to_mod(dma);
- 	struct rsnd_priv *priv = rsnd_mod_to_priv(mod);
-@@ -81,7 +81,7 @@ void rsnd_dma_start(struct rsnd_dma *dma)
- 		return;
- 	}
- 
--	desc->callback		= rsnd_dma_complete;
-+	desc->callback		= rsnd_dmaen_complete;
- 	desc->callback_param	= dma;
- 
- 	if (dmaengine_submit(desc) < 0) {
-@@ -92,22 +92,12 @@ void rsnd_dma_start(struct rsnd_dma *dma)
- 	dma_async_issue_pending(dma->chan);
- }
- 
--static void rsnd_dma_of_path(struct rsnd_dma *dma,
--			     int is_play,
--			     struct rsnd_mod **mod_from,
--			     struct rsnd_mod **mod_to);
--
--static dma_addr_t rsnd_dma_addr(struct rsnd_priv *priv,
--				struct rsnd_mod *mod,
--				int is_play, int is_from);
--
--int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id)
-+static int rsnd_dmaen_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id,
-+			   struct rsnd_mod *mod_from, struct rsnd_mod *mod_to)
- {
- 	struct device *dev = rsnd_priv_to_dev(priv);
- 	struct dma_slave_config cfg = {};
- 	struct rsnd_mod *mod = rsnd_dma_to_mod(dma);
--	struct rsnd_mod *mod_from;
--	struct rsnd_mod *mod_to;
- 	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
- 	int is_play = rsnd_io_is_play(io);
- 	char dma_name[DMA_NAME_SIZE];
-@@ -122,12 +112,11 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id)
- 	dma_cap_zero(mask);
- 	dma_cap_set(DMA_SLAVE, mask);
- 
--	rsnd_dma_of_path(dma, is_play, &mod_from, &mod_to);
--	rsnd_dma_of_name(mod_from, mod_to, dma_name);
-+	rsnd_dmaen_of_name(mod_from, mod_to, dma_name);
- 
- 	cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
--	cfg.src_addr	= rsnd_dma_addr(priv, mod_from, is_play, 1);
--	cfg.dst_addr	= rsnd_dma_addr(priv, mod_to,   is_play, 0);
-+	cfg.src_addr	= dma->src_addr;
-+	cfg.dst_addr	= dma->dst_addr;
- 	cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
- 	cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
- 
-@@ -164,7 +153,7 @@ rsnd_dma_channel_err:
- 	return -EAGAIN;
- }
- 
--void rsnd_dma_quit(struct rsnd_dma *dma)
-+static void rsnd_dmaen_quit(struct rsnd_dma *dma)
- {
- 	if (dma->chan)
- 		dma_release_channel(dma->chan);
-@@ -172,6 +161,13 @@ void rsnd_dma_quit(struct rsnd_dma *dma)
- 	dma->chan = NULL;
- }
- 
-+static struct rsnd_dma_ops rsnd_dmaen_ops = {
-+	.start	= rsnd_dmaen_start,
-+	.stop	= rsnd_dmaen_stop,
-+	.init	= rsnd_dmaen_init,
-+	.quit	= rsnd_dmaen_quit,
-+};
-+
- /*
-  *	DMA read/write register offset
-  *
-@@ -343,3 +339,35 @@ static void rsnd_dma_of_path(struct rsnd_dma *dma,
- 	}
- }
- 
-+void rsnd_dma_stop(struct rsnd_dma *dma)
-+{
-+	dma->ops->stop(dma);
-+}
-+
-+void rsnd_dma_start(struct rsnd_dma *dma)
-+{
-+	dma->ops->start(dma);
-+}
-+
-+void rsnd_dma_quit(struct rsnd_dma *dma)
-+{
-+	dma->ops->quit(dma);
-+}
-+
-+int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id)
-+{
-+	struct rsnd_mod *mod = rsnd_dma_to_mod(dma);
-+	struct rsnd_mod *mod_from;
-+	struct rsnd_mod *mod_to;
-+	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
-+	int is_play = rsnd_io_is_play(io);
-+
-+	rsnd_dma_of_path(dma, is_play, &mod_from, &mod_to);
-+
-+	dma->src_addr = rsnd_dma_addr(priv, mod_from, is_play, 1);
-+	dma->dst_addr = rsnd_dma_addr(priv, mod_to,   is_play, 0);
-+
-+	dma->ops = &rsnd_dmaen_ops;
-+
-+	return dma->ops->init(priv, dma, id, mod_from, mod_to);
-+}
-diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
-index a73e94c..c7299f7 100644
---- a/sound/soc/sh/rcar/rsnd.h
-+++ b/sound/soc/sh/rcar/rsnd.h
-@@ -170,10 +170,22 @@ u32 rsnd_get_adinr(struct rsnd_mod *mod);
- /*
-  *	R-Car DMA
-  */
-+struct rsnd_dma;
-+struct rsnd_dma_ops {
-+	void (*start)(struct rsnd_dma *dma);
-+	void (*stop)(struct rsnd_dma *dma);
-+	int (*init)(struct rsnd_priv *priv, struct rsnd_dma *dma, int id,
-+		    struct rsnd_mod *mod_from, struct rsnd_mod *mod_to);
-+	void  (*quit)(struct rsnd_dma *dma);
-+};
-+
- struct rsnd_dma {
- 	struct dma_chan		*chan;
-+	struct rsnd_dma_ops	*ops;
- 	enum dma_transfer_direction dir;
- 	dma_addr_t		addr;
-+	dma_addr_t		src_addr;
-+	dma_addr_t		dst_addr;
- };
- 
- void rsnd_dma_start(struct rsnd_dma *dma);
--- 
-1.7.9.5
+ arch/x86/configs/x86_64_defconfig |   39 ++++++++++++++++++-------------------
+ 1 file changed, 20 insertions(+), 19 deletions(-)
 
+--- 0001/arch/x86/configs/x86_64_defconfig
++++ work/arch/x86/configs/x86_64_defconfig	2015-02-19 08:03:20.175506631 +0900
+@@ -1,22 +1,20 @@
+-CONFIG_EXPERIMENTAL=y
+ # CONFIG_LOCALVERSION_AUTO is not set
+ CONFIG_SYSVIPC=y
+ CONFIG_POSIX_MQUEUE=y
++CONFIG_FHANDLE=y
++CONFIG_AUDIT=y
++CONFIG_NO_HZ=y
++CONFIG_HIGH_RES_TIMERS=y
+ CONFIG_BSD_PROCESS_ACCT=y
+ CONFIG_TASKSTATS=y
+ CONFIG_TASK_DELAY_ACCT=y
+ CONFIG_TASK_XACCT=y
+ CONFIG_TASK_IO_ACCOUNTING=y
+-CONFIG_FHANDLE=y
+-CONFIG_AUDIT=y
+-CONFIG_NO_HZ=y
+-CONFIG_HIGH_RES_TIMERS=y
+ CONFIG_LOG_BUF_SHIFT
+ CONFIG_CGROUPS=y
+ CONFIG_CGROUP_FREEZER=y
+ CONFIG_CPUSETS=y
+ CONFIG_CGROUP_CPUACCT=y
+-CONFIG_RESOURCE_COUNTERS=y
+ CONFIG_CGROUP_SCHED=y
+ CONFIG_BLK_DEV_INITRD=y
+ # CONFIG_COMPAT_BRK is not set
+@@ -36,14 +34,12 @@ CONFIG_UNIXWARE_DISKLABEL=y
+ CONFIG_SGI_PARTITION=y
+ CONFIG_SUN_PARTITION=y
+ CONFIG_KARMA_PARTITION=y
+-CONFIG_EFI_PARTITION=y
+ CONFIG_SMP=y
+ CONFIG_CALGARY_IOMMU=y
+ CONFIG_NR_CPUSd
+ CONFIG_SCHED_SMT=y
+ CONFIG_PREEMPT_VOLUNTARY=y
+ CONFIG_X86_REROUTE_FOR_BROKEN_BOOT_IRQS=y
+-CONFIG_X86_MCE=y
+ CONFIG_MICROCODE=y
+ CONFIG_MICROCODE_AMD=y
+ CONFIG_X86_MSR=y
+@@ -55,7 +51,6 @@ CONFIG_EFI=y
+ CONFIG_HZ_1000=y
+ CONFIG_KEXEC=y
+ CONFIG_CRASH_DUMP=y
+-# CONFIG_COMPAT_VDSO is not set
+ CONFIG_HIBERNATION=y
+ CONFIG_PM_DEBUG=y
+ CONFIG_PM_TRACE_RTC=y
+@@ -122,9 +117,6 @@ CONFIG_NF_CONNTRACK_IPV4=y
+ CONFIG_IP_NF_IPTABLES=y
+ CONFIG_IP_NF_FILTER=y
+ CONFIG_IP_NF_TARGET_REJECT=y
+-CONFIG_IP_NF_TARGET_ULOG=y
+-CONFIG_NF_NAT=y
+-CONFIG_IP_NF_TARGET_MASQUERADE=y
+ CONFIG_IP_NF_MANGLE=y
+ CONFIG_NF_CONNTRACK_IPV6=y
+ CONFIG_IP6_NF_IPTABLES=y
+@@ -183,7 +175,6 @@ CONFIG_INPUT_JOYSTICK=y
+ CONFIG_INPUT_TABLET=y
+ CONFIG_INPUT_TOUCHSCREEN=y
+ CONFIG_INPUT_MISC=y
+-CONFIG_VT_HW_CONSOLE_BINDING=y
+ # CONFIG_LEGACY_PTYS is not set
+ CONFIG_SERIAL_NONSTANDARD=y
+ CONFIG_SERIAL_8250=y
+@@ -202,12 +193,23 @@ CONFIG_HPET=y
+ # CONFIG_HPET_MMAP is not set
+ CONFIG_I2C_I801=y
+ CONFIG_WATCHDOG=y
++CONFIG_MEDIA_SUPPORT=y
++CONFIG_MEDIA_CAMERA_SUPPORT=y
++CONFIG_MEDIA_ANALOG_TV_SUPPORT=y
++CONFIG_MEDIA_DIGITAL_TV_SUPPORT=y
++CONFIG_MEDIA_CONTROLLER=y
++CONFIG_VIDEO_V4L2_SUBDEV_API=y
++CONFIG_V4L_PLATFORM_DRIVERS=y
++CONFIG_V4L_MEM2MEM_DRIVERS=y
++CONFIG_VIDEO_RENESAS_VSP1=y
+ CONFIG_AGP=y
+ CONFIG_AGP_AMD64=y
+-CONFIG_AGP_INTEL=y
+ CONFIG_DRM=y
++CONFIG_DRM_I2C_ADV7511=y
+ CONFIG_DRM_I915=y
+-CONFIG_DRM_I915_KMS=y
++CONFIG_DRM_RCAR_DU=y
++CONFIG_DRM_RCAR_HDMI=y
++CONFIG_DRM_RCAR_LVDS=y
+ CONFIG_FB_MODE_HELPERS=y
+ CONFIG_FB_TILEBLITTING=y
+ CONFIG_FB_EFI=y
+@@ -248,7 +250,6 @@ CONFIG_USB_OHCI_HCD=y
+ CONFIG_USB_UHCI_HCD=y
+ CONFIG_USB_PRINTER=y
+ CONFIG_USB_STORAGE=y
+-CONFIG_USB_LIBUSUAL=y
+ CONFIG_EDAC=y
+ CONFIG_RTC_CLASS=y
+ # CONFIG_RTC_HCTOSYS is not set
+@@ -286,17 +287,17 @@ CONFIG_NLS_ISO8859_1=y
+ CONFIG_NLS_UTF8=y
+ CONFIG_PRINTK_TIME=y
+ # CONFIG_ENABLE_WARN_DEPRECATED is not set
+-CONFIG_MAGIC_SYSRQ=y
+ # CONFIG_UNUSED_SYMBOLS is not set
++CONFIG_MAGIC_SYSRQ=y
+ CONFIG_DEBUG_KERNEL=y
++CONFIG_DEBUG_STACK_USAGE=y
++CONFIG_DEBUG_STACKOVERFLOW=y
+ # CONFIG_SCHED_DEBUG is not set
+ CONFIG_SCHEDSTATS=y
+ CONFIG_TIMER_STATS=y
+-CONFIG_DEBUG_STACK_USAGE=y
+ CONFIG_BLK_DEV_IO_TRACE=y
+ CONFIG_PROVIDE_OHCI1394_DMA_INIT=y
+ CONFIG_EARLY_PRINTK_DBGP=y
+-CONFIG_DEBUG_STACKOVERFLOW=y
+ # CONFIG_DEBUG_RODATA_TEST is not set
+ CONFIG_DEBUG_BOOT_PARAMS=y
+ CONFIG_OPTIMIZE_INLINING=y
