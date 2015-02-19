@@ -1,80 +1,27 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 18 Feb 2015 21:21:11 +0000
-Subject: Re: [PATCH v2 0/3] ARM: shmobile: r8a73a4: DT PM domain support
-Message-Id: <20150218212110.GG12754@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 19 Feb 2015 21:43:33 +0000
+Subject: Re: [PATCH v2 0/2] Add R8A7790 CAN DT support
+Message-Id: <54E65905.7090009@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424187783-6390-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424187783-6390-1-git-send-email-geert+renesas@glider.be>
+References: <28994794.h3WeokSSG3@wasted.cogentembedded.com>
+In-Reply-To: <28994794.h3WeokSSG3@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Feb 17, 2015 at 04:43:00PM +0100, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> This patch series enables DT support for PM domains on the Renesas
-> R-Mobile APE6 (r8a73a4) SoC.  As a bonus, it also allows the use of the
-> R-Mobile Reset driver to restart the system.
-> 
-> This series builds further upon the DT PM Domain support for R-Mobile
-> A1 (r8a7740) and SH-Mobile AG5 (sh73a0).  Due to the similarity of the
-> SYSC System-Controller on the various SH-Mobile/R-Mobile SoCs, and the
-> abstraction of PM domains in DT, the same driver can handle r8a73a4,
-> without any additional modifications, and without changing the DT
-> bindings.
-> 
-> root@ape6evm:~# cat /sys/kernel/debug/pm_genpd/pm_genpd_summary
->     domain                      status         slaves
->            /device                                      runtime status
-> ----------------------------------------------------------------------
-> a2is                            off
-> a2rv                            off
-> a3r                             off              a2rv, a2is
-> a4sf                            off
-> a3vc                            off
-> a3mp                            off
-> a4mp                            off              a3mp, a3vc
-> a4lc                            off
-> a4l                             off
-> a3bc                            on
-> a4bc                            on               a3bc
-> d4                              on
-> c4cl                            off
-> c4ma                            off
-> a2kl                            off
-> a3km                            off              a2kl
-> a2sl                            on
-> a3sm                            on               a2sl
-> a2us                            off
-> a3sp                            on               a2us
->     /devices/platform/e60b0000.i2c                      suspended
->     /devices/platform/dma-multiplexer/e6700020.dma-controller  suspended
->     /devices/platform/e6c40000.serial                   active
->     /devices/platform/ee100000.sd                       active
->     /devices/platform/ee120000.sd                       active
->     /devices/platform/ee200000.mmc                      active
-> a3ex                            off
-> a3sg                            off
-> c4                              on               a3sg, a3ex, a3sp, a3sm, a3km
->     /devices/platform/e61c0000.interrupt-controller     unsupported
->     /devices/platform/e61c0200.interrupt-controller     unsupported
->     /devices/platform/fec10000.bus                      active
-> c5                              on               c4, c4ma, c4cl, d4, a4bc, a4l, a4lc, a4mp, a4sf, a3r
->     /devices/platform/e6050000.pfc                      unsupported
->     /devices/platform/e6130000.timer                    suspended
->     /devices/platform/e61f0000.thermal                  active
-> root@ape6evm:~#
-> 
-> Dependencies:
->   - Patch 1 (DT binding doc) depends on Simon's tag renesas-dt2-for-v3.20,
->     which should be upstream tonight,
->   - Patch 2 (dtsi) depends on the series "[PATCH v4 0/6] ARM: shmobile:
->     r8a73a4/ape6evm: Complete multiplatform support",
->   - Patch 3 (drivers/sh) depends functionally on patch 2, and literally on
->     the series "[PATCH v3 0/2] ARM: shmobile: sh73a0: Enable DT PM domain
->     support".
-> 
-> Thanks for applying!
+On 01/06/2015 12:31 AM, Sergei Shtylyov wrote:
 
-Thanks, done.
+>     Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
+> 'renesas-devel-20141231-v3.19-rc2' tag. Here we add the CAN device tree support
+> for the R8A7790 SoC (unfortunately, it's impossible to test CAN on the Lager
+> board). It depends on the clk driver RCAN clock patch reposted today in order
+> to work.
+
+    Simon, now that this patch has been merged, could you merge this patchset too?
+
+> [1/2] ARM: shmobile: r8a7790: add CAN clocks
+> [2/2] ARM: shmobile: r8a7790: add CAN DT support
+
+WBR, Sergei
+
