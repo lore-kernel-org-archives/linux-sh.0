@@ -1,53 +1,84 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:22:21 +0000
-Subject: [PATCH 2/5] drivers: bus: Sort Makefile entries alphabetically
-Message-Id: <6320c41198c76f799e3e34da48a1f2a88ef4cc68.1424931637.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 19 Feb 2015 03:51:41 +0000
+Subject: [PATCH 06/19] ASoC: rsnd: enable to get resource by name
+Message-Id: <87mw4a1rs6.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424931637.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424931637.git.horms+renesas@verge.net.au>
+References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Reviewed-by: Kevin Hilman <khilman@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+rsnd driver needs to support Audio DMAC peri peri inside sound driver.
+getting resource by name is useful for it
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/bus/Makefile | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+ sound/soc/sh/rcar/gen.c |   23 +++++++++++++----------
+ 1 file changed, 13 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
-index 2973c18..3cfaf2c 100644
---- a/drivers/bus/Makefile
-+++ b/drivers/bus/Makefile
-@@ -2,16 +2,16 @@
- # Makefile for the bus drivers.
- #
+diff --git a/sound/soc/sh/rcar/gen.c b/sound/soc/sh/rcar/gen.c
+index de0685f..d08bcd3 100644
+--- a/sound/soc/sh/rcar/gen.c
++++ b/sound/soc/sh/rcar/gen.c
+@@ -118,11 +118,12 @@ void rsnd_bset(struct rsnd_priv *priv, struct rsnd_mod *mod,
+ 				  mask, data);
+ }
  
-+# Interconnect bus drivers for ARM platforms
-+obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
-+obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
-+
- obj-$(CONFIG_BRCMSTB_GISB_ARB)	+= brcmstb_gisb.o
--obj-$(CONFIG_IMX_WEIM)	+= imx-weim.o
--obj-$(CONFIG_MVEBU_MBUS) += mvebu-mbus.o
--obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
-+obj-$(CONFIG_IMX_WEIM)		+= imx-weim.o
-+obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
+-#define rsnd_gen_regmap_init(priv, id_size, reg_id, conf)		\
+-	_rsnd_gen_regmap_init(priv, id_size, reg_id, conf, ARRAY_SIZE(conf))
++#define rsnd_gen_regmap_init(priv, id_size, reg_id, name, conf)		\
++	_rsnd_gen_regmap_init(priv, id_size, reg_id, name, conf, ARRAY_SIZE(conf))
+ static int _rsnd_gen_regmap_init(struct rsnd_priv *priv,
+ 				 int id_size,
+ 				 int reg_id,
++				 const char *name,
+ 				 struct rsnd_regmap_field_conf *conf,
+ 				 int conf_size)
+ {
+@@ -142,7 +143,9 @@ static int _rsnd_gen_regmap_init(struct rsnd_priv *priv,
+ 	regc.val_bits = 32;
+ 	regc.reg_stride = 4;
  
- # Interconnect bus driver for OMAP SoCs.
- obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
+-	res = platform_get_resource(pdev, IORESOURCE_MEM, reg_id);
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, name);
++	if (!res)
++		res = platform_get_resource(pdev, IORESOURCE_MEM, reg_id);
+ 	if (!res)
+ 		return -ENODEV;
  
--# Interconnect bus drivers for ARM platforms
--obj-$(CONFIG_ARM_CCI)		+= arm-cci.o
--obj-$(CONFIG_ARM_CCN)		+= arm-ccn.o
--
-+obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
- obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
+@@ -368,10 +371,10 @@ static int rsnd_gen2_probe(struct platform_device *pdev,
+ 	int ret_adg;
+ 	int ret_ssi;
+ 
+-	ret_ssiu = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_SSIU, conf_ssiu);
+-	ret_scu  = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_SCU,  conf_scu);
+-	ret_adg  = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_ADG,  conf_adg);
+-	ret_ssi  = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_SSI,  conf_ssi);
++	ret_ssiu = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_SSIU, "ssiu", conf_ssiu);
++	ret_scu  = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_SCU,  "scu",  conf_scu);
++	ret_adg  = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_ADG,  "adg",  conf_adg);
++	ret_ssi  = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_SSI,  "ssi",  conf_ssi);
+ 	if (ret_ssiu < 0 ||
+ 	    ret_scu  < 0 ||
+ 	    ret_adg  < 0 ||
+@@ -440,9 +443,9 @@ static int rsnd_gen1_probe(struct platform_device *pdev,
+ 	int ret_adg;
+ 	int ret_ssi;
+ 
+-	ret_sru  = rsnd_gen_regmap_init(priv, 9, RSND_GEN1_SRU,  conf_sru);
+-	ret_adg  = rsnd_gen_regmap_init(priv, 9, RSND_GEN1_ADG,  conf_adg);
+-	ret_ssi  = rsnd_gen_regmap_init(priv, 9, RSND_GEN1_SSI,  conf_ssi);
++	ret_sru  = rsnd_gen_regmap_init(priv, 9, RSND_GEN1_SRU, "sru", conf_sru);
++	ret_adg  = rsnd_gen_regmap_init(priv, 9, RSND_GEN1_ADG, "adg", conf_adg);
++	ret_ssi  = rsnd_gen_regmap_init(priv, 9, RSND_GEN1_SSI, "ssi", conf_ssi);
+ 	if (ret_sru  < 0 ||
+ 	    ret_adg  < 0 ||
+ 	    ret_ssi  < 0)
 -- 
-2.1.4
+1.7.9.5
 
