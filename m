@@ -1,49 +1,109 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:22:23 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Simple PM Bus Updates for v4.1
-Message-Id: <cover.1424931637.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 19 Feb 2015 03:50:59 +0000
+Subject: [PATCH 02/19] ASoC: rsnd: remove un-needed parameter from rsnd_dma_init()
+Message-Id: <87sie21rt9.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
 
-Hi Olof, Hi Kevin, Hi Arnd,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Please consider these Renesas ARM based SoC simple PM bus updates for v4.1.
+It can get DMA direction via rsnd_dai_stream.
+Remove un-needed is_play from rsnd_dma_init().
 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ sound/soc/sh/rcar/core.c |    6 ++++--
+ sound/soc/sh/rcar/rsnd.h |   16 +---------------
+ sound/soc/sh/rcar/src.c  |    1 -
+ sound/soc/sh/rcar/ssi.c  |    1 -
+ 4 files changed, 5 insertions(+), 19 deletions(-)
 
-The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
+diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
+index 0b14d37..1edf4dc 100644
+--- a/sound/soc/sh/rcar/core.c
++++ b/sound/soc/sh/rcar/core.c
+@@ -311,13 +311,15 @@ static void rsnd_dma_of_path(struct rsnd_dma *dma,
+ 	}
+ }
+ 
+-int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
+-		  int is_play, int id)
++int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id)
+ {
+ 	struct device *dev = rsnd_priv_to_dev(priv);
+ 	struct dma_slave_config cfg;
++	struct rsnd_mod *mod = rsnd_dma_to_mod(dma);
+ 	struct rsnd_mod *mod_from;
+ 	struct rsnd_mod *mod_to;
++	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
++	int is_play = rsnd_io_is_play(io);
+ 	char dma_name[DMA_NAME_SIZE];
+ 	dma_cap_mask_t mask;
+ 	int ret;
+diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
+index 5ffde9b..93a1a25 100644
+--- a/sound/soc/sh/rcar/rsnd.h
++++ b/sound/soc/sh/rcar/rsnd.h
+@@ -179,8 +179,7 @@ struct rsnd_dma {
+ void rsnd_dma_start(struct rsnd_dma *dma);
+ void rsnd_dma_stop(struct rsnd_dma *dma);
+ int rsnd_dma_available(struct rsnd_dma *dma);
+-int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma,
+-	int is_play, int id);
++int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id);
+ void  rsnd_dma_quit(struct rsnd_priv *priv,
+ 		    struct rsnd_dma *dma);
+ 
+@@ -413,19 +412,6 @@ struct rsnd_priv {
+ #define rsnd_lock(priv, flags) spin_lock_irqsave(&priv->lock, flags)
+ #define rsnd_unlock(priv, flags) spin_unlock_irqrestore(&priv->lock, flags)
+ 
+-#define rsnd_info_is_playback(priv, type)				\
+-({									\
+-	struct rcar_snd_info *info = rsnd_priv_to_info(priv);		\
+-	int i, is_play = 0;						\
+-	for (i = 0; i < info->dai_info_nr; i++) {			\
+-		if (info->dai_info[i].playback.type = (type)->info) {	\
+-			is_play = 1;					\
+-			break;						\
+-		}							\
+-	}								\
+-	is_play;							\
+-})
+-
+ /*
+  *	rsnd_kctrl
+  */
+diff --git a/sound/soc/sh/rcar/src.c b/sound/soc/sh/rcar/src.c
+index 81c182b..7fb8798 100644
+--- a/sound/soc/sh/rcar/src.c
++++ b/sound/soc/sh/rcar/src.c
+@@ -713,7 +713,6 @@ static int rsnd_src_probe_gen2(struct rsnd_mod *mod,
+ 
+ 	ret = rsnd_dma_init(priv,
+ 			    rsnd_mod_to_dma(mod),
+-			    rsnd_info_is_playback(priv, src),
+ 			    src->info->dma_id);
+ 	if (ret)
+ 		goto rsnd_src_probe_gen2_fail;
+diff --git a/sound/soc/sh/rcar/ssi.c b/sound/soc/sh/rcar/ssi.c
+index 9e7b627..57e737c 100644
+--- a/sound/soc/sh/rcar/ssi.c
++++ b/sound/soc/sh/rcar/ssi.c
+@@ -478,7 +478,6 @@ static int rsnd_ssi_dma_probe(struct rsnd_mod *mod,
+ 
+ 	ret = rsnd_dma_init(
+ 		priv, rsnd_mod_to_dma(mod),
+-		rsnd_info_is_playback(priv, ssi),
+ 		dma_id);
+ 	if (ret)
+ 		goto rsnd_ssi_dma_probe_fail;
+-- 
+1.7.9.5
 
-  Linux 4.0-rc1 (2015-02-22 18:21:14 -0800)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-simple-pm-bus-for-v4.1
-
-for you to fetch changes up to 89d463ea106dba530786a2815fd174f9e6eab71f:
-
-  drivers: bus: Add Simple Power-Managed Bus Driver (2015-02-24 06:36:18 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Simple PM Bus Updates for v4.1
-
-* Add Simple Power-Managed Bus Driver
-
-----------------------------------------------------------------
-Geert Uytterhoeven (5):
-      drivers: bus: Sort Kconfig entries alphabetically
-      drivers: bus: Sort Makefile entries alphabetically
-      drivers: bus: Add Simple Power-Managed Bus DT Bindings
-      drivers: bus: Add Renesas Bus State Controller (BSC) DT Bindings
-      drivers: bus: Add Simple Power-Managed Bus Driver
-
- .../devicetree/bindings/bus/renesas,bsc.txt        | 46 +++++++++++++++++
- .../devicetree/bindings/bus/simple-pm-bus.txt      | 44 ++++++++++++++++
- drivers/bus/Kconfig                                | 53 ++++++++++++--------
- drivers/bus/Makefile                               | 15 +++---
- drivers/bus/simple-pm-bus.c                        | 58 ++++++++++++++++++++++
- 5 files changed, 189 insertions(+), 27 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/bus/renesas,bsc.txt
- create mode 100644 Documentation/devicetree/bindings/bus/simple-pm-bus.txt
- create mode 100644 drivers/bus/simple-pm-bus.c
