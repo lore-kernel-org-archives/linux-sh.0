@@ -1,17 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Feb 2015 01:49:37 +0000
-Subject: Re: [PATCH] ARM: shmobile: Remove stray closing parenthesis in debug description
-Message-Id: <20150227014936.GI31738@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 19 Feb 2015 15:43:10 +0000
+Subject: [PATCH v2] ARM: shmobile: r8a7791: Fix HSUSB clock to hp_clk from mp_clk
+Message-Id: <1424360590-6556-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424946575-7030-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424946575-7030-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 26, 2015 at 11:29:35AM +0100, Geert Uytterhoeven wrote:
-> Remove the stray closing parenthesis in the config description for the
-> DEBUG_RCAR_GEN2_SCIF0 option.
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Thanks, I have queued this up.
+HSUSB uses hp_clk rather than mp_clk for H/W register access.
+
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+[horms: updated changelog]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+v2 [Simon Horman]
+- Updated changelog to remove information about USB-DMAC clock which
+  did not relate to the patch. I will follow up on weather the
+  USB-DMAC clock should be mp_clk as the deleted portion of the
+  changelog stated.
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index afba8af..cb9a9e7 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1,7 +1,7 @@
+ /*
+  * Device Tree Source for the r8a7791 SoC
+  *
+- * Copyright (C) 2013-2014 Renesas Electronics Corporation
++ * Copyright (C) 2013-2015 Renesas Electronics Corporation
+  * Copyright (C) 2013-2014 Renesas Solutions Corp.
+  * Copyright (C) 2014 Cogent Embedded Inc.
+  *
+@@ -1136,7 +1136,7 @@
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
+-			clocks = <&mp_clk>,  <&mp_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
++			clocks = <&mp_clk>,  <&hp_clk>, <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
+ 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
+ 				 <&zx_clk>, <&zx_clk>, <&zx_clk>;
+ 			#clock-cells = <1>;
+-- 
+2.1.4
+
