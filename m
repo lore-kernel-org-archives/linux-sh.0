@@ -1,36 +1,44 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 24 Feb 2015 02:20:52 +0000
-Subject: [PATCH 4/4][resend] ARM: shmobile: r8a7791: tidyup SDHI register size on DTSI
-Message-Id: <87wq38yroq.wl%kuninori.morimoto.gx@renesas.com>
+Date: Thu, 19 Feb 2015 03:51:28 +0000
+Subject: [PATCH 05/19] ASoC: rsnd: tidyup rsnd_dma_to_mod() macro declaration position
+Message-Id: <87oaoq1rsi.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-r8a7791 SDHI ch0/ch1 has SD_DMACR which is located in 0x324.
-This patch updates register size
-
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ sound/soc/sh/rcar/rsnd.h |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 32f0506..fbb33bb 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -482,7 +482,7 @@
+diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
+index 6ee97e7..ec77c9f 100644
+--- a/sound/soc/sh/rcar/rsnd.h
++++ b/sound/soc/sh/rcar/rsnd.h
+@@ -182,6 +182,8 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id);
+ void  rsnd_dma_quit(struct rsnd_dma *dma);
  
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-r8a7791";
--		reg = <0 0xee100000 0 0x200>;
-+		reg = <0 0xee100000 0 0x328>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
- 		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
+ 
++#define rsnd_dma_to_mod(_dma) container_of((_dma), struct rsnd_mod, dma)
++
+ /*
+  *	R-Car sound mod
+  */
+@@ -253,7 +255,6 @@ struct rsnd_mod {
+ 
+ #define rsnd_mod_to_priv(mod) (rsnd_io_to_priv(rsnd_mod_to_io(mod)))
+ #define rsnd_mod_to_dma(mod) (&(mod)->dma)
+-#define rsnd_dma_to_mod(_dma) container_of((_dma), struct rsnd_mod, dma)
+ #define rsnd_mod_to_io(mod) ((mod)->io)
+ #define rsnd_mod_id(mod) ((mod)->id)
+ #define rsnd_mod_hw_start(mod)	clk_prepare_enable((mod)->clk)
 -- 
 1.7.9.5
 
