@@ -1,56 +1,91 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:20:59 +0000
-Subject: [PATCH 02/32] ARM: shmobile: sh73a0 dtsi: Set control-parent for all irqpin nodes
-Message-Id: <48bdf06dd975fb01e54e0b0406de720ebeeb55c7.1424849129.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 19 Feb 2015 03:51:17 +0000
+Subject: [PATCH 04/19] ASoC: rsnd: remove un-needed parameter from rsnd_dma_quit()
+Message-Id: <87pp961rsr.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424849129.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
+References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The sh73a0 INTC can't mask interrupts properly most likely due to a
-hardware bug. Set the control-parent property to delegate masking to the
-parent interrupt controller.
+priv is not used on rsnd_dma_quit()
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 3 +++
- 1 file changed, 3 insertions(+)
+ sound/soc/sh/rcar/core.c |    5 ++---
+ sound/soc/sh/rcar/rsnd.h |    3 +--
+ sound/soc/sh/rcar/src.c  |    2 +-
+ sound/soc/sh/rcar/ssi.c  |    2 +-
+ 4 files changed, 5 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 2dfd5b4..0767087 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -94,6 +94,7 @@
- 			      0 6 IRQ_TYPE_LEVEL_HIGH
- 			      0 7 IRQ_TYPE_LEVEL_HIGH
- 			      0 8 IRQ_TYPE_LEVEL_HIGH>;
-+		control-parent;
- 	};
+diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
+index 1da94bf..7db686d 100644
+--- a/sound/soc/sh/rcar/core.c
++++ b/sound/soc/sh/rcar/core.c
+@@ -358,7 +358,7 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id)
+ 	return 0;
  
- 	irqpin1: irqpin@e6900004 {
-@@ -133,6 +134,7 @@
- 			      0 22 IRQ_TYPE_LEVEL_HIGH
- 			      0 23 IRQ_TYPE_LEVEL_HIGH
- 			      0 24 IRQ_TYPE_LEVEL_HIGH>;
-+		control-parent;
- 	};
+ rsnd_dma_init_err:
+-	rsnd_dma_quit(priv, dma);
++	rsnd_dma_quit(dma);
+ rsnd_dma_channel_err:
  
- 	irqpin3: irqpin@e690000c {
-@@ -152,6 +154,7 @@
- 			      0 30 IRQ_TYPE_LEVEL_HIGH
- 			      0 31 IRQ_TYPE_LEVEL_HIGH
- 			      0 32 IRQ_TYPE_LEVEL_HIGH>;
-+		control-parent;
- 	};
+ 	/*
+@@ -370,8 +370,7 @@ rsnd_dma_channel_err:
+ 	return -EAGAIN;
+ }
  
- 	i2c0: i2c@e6820000 {
+-void  rsnd_dma_quit(struct rsnd_priv *priv,
+-		    struct rsnd_dma *dma)
++void  rsnd_dma_quit(struct rsnd_dma *dma)
+ {
+ 	if (dma->chan)
+ 		dma_release_channel(dma->chan);
+diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
+index cb12861a..6ee97e7 100644
+--- a/sound/soc/sh/rcar/rsnd.h
++++ b/sound/soc/sh/rcar/rsnd.h
+@@ -179,8 +179,7 @@ struct rsnd_dma {
+ void rsnd_dma_start(struct rsnd_dma *dma);
+ void rsnd_dma_stop(struct rsnd_dma *dma);
+ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id);
+-void  rsnd_dma_quit(struct rsnd_priv *priv,
+-		    struct rsnd_dma *dma);
++void  rsnd_dma_quit(struct rsnd_dma *dma);
+ 
+ 
+ /*
+diff --git a/sound/soc/sh/rcar/src.c b/sound/soc/sh/rcar/src.c
+index f12c8b3..e279205 100644
+--- a/sound/soc/sh/rcar/src.c
++++ b/sound/soc/sh/rcar/src.c
+@@ -730,7 +730,7 @@ rsnd_src_probe_gen2_fail:
+ static int rsnd_src_remove_gen2(struct rsnd_mod *mod,
+ 				struct rsnd_priv *priv)
+ {
+-	rsnd_dma_quit(priv, rsnd_mod_to_dma(mod));
++	rsnd_dma_quit(rsnd_mod_to_dma(mod));
+ 
+ 	return 0;
+ }
+diff --git a/sound/soc/sh/rcar/ssi.c b/sound/soc/sh/rcar/ssi.c
+index fcc77ea..a0d902a 100644
+--- a/sound/soc/sh/rcar/ssi.c
++++ b/sound/soc/sh/rcar/ssi.c
+@@ -499,7 +499,7 @@ static int rsnd_ssi_dma_remove(struct rsnd_mod *mod,
+ 	struct device *dev = rsnd_priv_to_dev(priv);
+ 	int irq = ssi->info->irq;
+ 
+-	rsnd_dma_quit(priv, rsnd_mod_to_dma(mod));
++	rsnd_dma_quit(rsnd_mod_to_dma(mod));
+ 
+ 	/* PIO will request IRQ again */
+ 	devm_free_irq(dev, irq, ssi);
 -- 
-2.1.4
+1.7.9.5
 
