@@ -1,59 +1,46 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 19 Feb 2015 08:51:46 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 19 Feb 2015 09:11:01 +0000
 Subject: Re: [PATCH 0/19] ASoC: rsnd: move 2nd DMAC from DMAEngine to rsnd driver
-Message-Id: <6087418.KkNNyy5Y2y@wuerfel>
+Message-Id: <87twyiz2mj.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com> <7023820.M4yQMnvTuN@wuerfel> <87wq3ez3us.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87wq3ez3us.wl%kuninori.morimoto.gx@renesas.com>
+References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
+	<7023820.M4yQMnvTuN@wuerfel>
+	<87wq3ez3us.wl%kuninori.morimoto.gx@renesas.com>
+	<6087418.KkNNyy5Y2y@wuerfel>
+In-Reply-To: <6087418.KkNNyy5Y2y@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: Arnd Bergmann <arnd@arndb.de>
 Cc: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
 
-On Thursday 19 February 2015 08:44:30 Kuninori Morimoto wrote:
-> I tried this idea before, but I got issues on DT.
-> I forgot detail, but if my memory was correct, it was
-> dev->of_node.
-> 
->         sound {
->                 ...
->                 ssi3: ssi@3 {
->                         interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
->                         dmas = <&audma0 0x07>, <&audma1 0x08>, <&audma0 0x6f>, <&audma1 0x70>;
->                         dma-names = "rx", "tx", "rxu", "txu";
->                 };
->         }
-> 
-> dma_request_slave_channel_compat() requests "dev",
-> and this dev means sound here.
-> 
-> This "dev" will be used in dma_request_slave_channel_reason()
-> and, it uses "dev->of_node".
-> But, here, "dev->of_node" means "sound" here.
-> 
-> If I use your style, I need to do like below,
-> or I need new compat function which can select of_node.
-> 
->         tmp_node = dev->of_node;
->         dev->of_node = subnode;
->         dma_request_slave_channel_compat(... dev ...);
->         dev->of_node = tmp_node;
 
-Ah, I see. I think the best way around this then would be to use
-of_dma_request_slave_channel(), which takes a device node pointer
-and a name argument as you need here.
+Hi Arnd
+Cc Magnus, Simon
 
-Doing this will require marking that function as EXPORT_SYMBOL_GPL(),
-but I see no problem with that.
+> Doing this will require marking that function as EXPORT_SYMBOL_GPL(),
+> but I see no problem with that.
+> 
+> I see you use dma_request_slave_channel_compat here. Does that mean
+> you have to support boards with this sound device that do not use DT?
+> If so, you will also have to split the request function like
+> 
+> 	if (of_node)
+> 		chan = of_dma_request_slave_channel(of_node, "rx");
+> 	else
+> 		chan = dma_request_channel(mask, filter, arg);
 
-I see you use dma_request_slave_channel_compat here. Does that mean
-you have to support boards with this sound device that do not use DT?
-If so, you will also have to split the request function like
+Hmm... I can do this.
+Current sound driver is used for Gen1 / Gen2 board.
+Today, all Gen2 boards are boot from DT.
+My last concern is Gen1 which boot from non-DT. But today,
+Gen1 board (= bockw) can boot from DT (?)
 
-	if (of_node)
-		chan = of_dma_request_slave_channel(of_node, "rx");
-	else
-		chan = dma_request_channel(mask, filter, arg);
+Simon, Magnus
 
-	Arnd
+I think bockw can boot from DT today, and legacy bockw
+(= non-DT) code will be removed from upstream ?
+If so, sound driver can care only DT.
+anyway, sound driver doesn't need
+dma_request_slave_channel_compat() anymore ?
+
