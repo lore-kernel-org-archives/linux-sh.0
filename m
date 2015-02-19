@@ -1,63 +1,41 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 25 Feb 2015 21:54:29 +0000
-Subject: [PATCH 09/38] drm: rcar-du: Don't set connector->encoder at init time
-Message-Id: <1424901298-6829-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 19 Feb 2015 03:53:32 +0000
+Subject: [PATCH 17/19] ASoC: rsnd: add sample code of reg-names
+Message-Id: <877fve1rp1.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
 
-The drm_connector encoder field points to the encoder driving the
-connector. No such association exists at init time, as all pipelines are
-disabled. Don't set the field.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Current rsnd driver supports reg-names, and Audio DMAC peri peri.
+This patch adds sample code for it.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c | 1 -
- drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c | 1 -
- drivers/gpu/drm/rcar-du/rcar_du_vgacon.c  | 1 -
- 3 files changed, 3 deletions(-)
+ .../devicetree/bindings/sound/renesas,rsnd.txt     |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-index ca94b029ac80..3896cb20ad51 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-@@ -116,7 +116,6 @@ int rcar_du_hdmi_connector_init(struct rcar_du_device *rcdu,
- 	if (ret < 0)
- 		return ret;
+diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+index a5388cb..5e0e107 100644
+--- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
++++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+@@ -45,7 +45,9 @@ rcar_sound: rcar_sound@ec500000 {
+ 	reg =	<0 0xec500000 0 0x1000>, /* SCU */
+ 		<0 0xec5a0000 0 0x100>,  /* ADG */
+ 		<0 0xec540000 0 0x1000>, /* SSIU */
+-		<0 0xec541000 0 0x1280>; /* SSI */
++		<0 0xec541000 0 0x1280>, /* SSI */
++		<0 0xec740000 0 0x200>;  /* Audio DMAC peri peri*/
++	reg-names = "scu", "adg", "ssiu", "ssi", "audmapp";
  
--	connector->encoder = encoder;
- 	rcon->encoder = renc;
- 
- 	return 0;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-index 6d9811c052c4..7c0b08fe0774 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-@@ -125,7 +125,6 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
- 	if (ret < 0)
- 		return ret;
- 
--	connector->encoder = encoder;
- 	lvdscon->connector.encoder = renc;
- 
- 	return 0;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-index 9d4879921cc7..ae8b304e6fea 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-@@ -84,7 +84,6 @@ int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
- 	if (ret < 0)
- 		return ret;
- 
--	connector->encoder = encoder;
- 	rcon->encoder = renc;
- 
- 	return 0;
+ 	rcar_sound,dvc {
+ 		dvc0: dvc@0 { };
 -- 
-2.0.5
+1.7.9.5
 
