@@ -1,44 +1,27 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 03 Feb 2015 13:47:44 +0000
-Subject: Re: [RFC 4/5] ARM: shmobile: r8a7790: let rst module allow watchdog resets if desired
-Message-Id: <26850628.qusLeioCVX@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 19 Feb 2015 21:44:26 +0000
+Subject: Re: [PATCH v5 0/3] Add R8A7791/Henninger board CAN DT support
+Message-Id: <54E6593A.500@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422802074-1921-5-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1422802074-1921-5-git-send-email-wsa@the-dreams.de>
+References: <1652479.NHBlqJ9OaR@wasted.cogentembedded.com>
+In-Reply-To: <1652479.NHBlqJ9OaR@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 03 February 2015 13:12:31 Geert Uytterhoeven wrote:
-> Hi Wolfram,
-> 
-> On Mon, Feb 2, 2015 at 12:13 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> >> It's slightly more complicated there, as we already have a driver for the
-> >> SYSC on R-Mobile (rmobile-reset), and a device node can't be bound
-> >> by both the syscon and the rmobile-reset driver.
-> > 
-> > Is it just complicated or is it an open issue how to handle that?
-> 
-> If the syscon drivers binds against the device, rmobile-reset can no
-> longer bind against it. One solution is to convert rmobile-reset to use
-> syscon, so both the rwdt and the rmobile-reset drivers would access it
-> through syscon.
-> But currently syscon provides access to the first register bank of a device
-> only, while the RESCNT register is part of the second bank.
+On 01/06/2015 01:22 AM, Sergei Shtylyov wrote:
 
-Shouldn't syscon be split into an API that individual drivers can implement 
-and a default driver for syscon devices that just need to expose one register 
-bank ?
+>     Here's the set of 3 patches against Simon Horman's 'renesas.git' repo,
+> 'renesas-devel-20141231-v3.19-rc2' tag. Here we add the CAN device tree support
+> for the R8A7791-based Henninger board. It depends on the clk driver RCAN clock
+> patch reposted today in order to work.
 
-> >> Do you have a better idea?
-> > 
-> > Nope. I also thought that something like syscon must be used if the
-> > initialization in arch-code won't work. Still, I tried first with the
-> > least intrusive version :)
+    Simon, now that this patch has been merged, could you merge the patchset too?
 
--- 
-Regards,
+> [1/3] ARM: shmobile: r8a7791: add CAN clocks
+> [2/3] ARM: shmobile: r8a7791: add CAN DT support
+> [3/3] ARM: shmobile: henninger: add CAN0 DT support
 
-Laurent Pinchart
+WBR, Sergei
 
