@@ -1,61 +1,58 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 16 Feb 2015 14:04:16 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: r8a7790: Fix HSUSB clock to hp_clk from mp_clk
-Message-Id: <CAMuHMdUHMA+cJTGWS-0Prt6-BT5=UkGQ4OWZ+bz-g2G7DSwLzw@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Feb 2015 17:31:01 +0000
+Subject: [PATCH] Mismerge in "Merge branch 'heads/sh-drivers-for-v3.21' into devel"
+Message-Id: <1424367061-11669-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424011746-3787-2-git-send-email-ykaneko0929@gmail.com>
- <CAMuHMdX=cdHaiHCnYsJvZFc2RNv=Pk8cLXuvkezg4Ht4U4mXsg@mail.gmail.com>
- <20150216135754.GA5479@verge.net.au>
-In-Reply-To: <20150216135754.GA5479@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
+	Hi Simon,
 
-On Mon, Feb 16, 2015 at 2:57 PM, Simon Horman <horms@verge.net.au> wrote:
-> On Mon, Feb 16, 2015 at 10:20:10AM +0100, Geert Uytterhoeven wrote:
->> Hi Kaneko-san, Mizuguchi-san,
->>
->> On Sun, Feb 15, 2015 at 3:49 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
->> > From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->> >
->> > HSUSB uses hp_clk for H/W register access.
->>
->> That indeed seems to be true, and that's what this patch is changing.
->>
->> > HSUSB uses mp_clk for USB-DMAC access.
->>
->> However, page 64-2 doesn't mention the MP clock for USB-DMAC:
->>    "AXI bus clock (ZSφ: 260 MHz), HPB bus clock (HPφ: 130 MHz).
->>     USB local bus clock (48 MHz)"
->> So your statement doesn't seem to be true?
->
-> Thanks, I see that too.
->
->> Note that mstp3_clks in dtsi has hp_clk as the parent for both usbdmac0 and
->> usbdmac1, so if your statement would be true, that has to changed, too?
->>
->> The same is true for other members of the R-Car Gen2 family, e.g. your patch
->> for r8a7791.
->
-> It seems to me that we could:
->
-> 1. Apply this patch with the changelog updated and;
-> 2. Follow up on the DMAC clocks
->
-> Does that sound reasonable to you?
+Commit fc41739c30435c50 ("Merge branch 'heads/sh-drivers-for-v3.21'
+into devel"), the top of renesas-devel-20150218-v3.19, did a mismerge
+in two files, resurrecting two chunks that had just been removed in
+commit 62cbd0a23ad0fbe1 ("ARM: shmobile: r8a73a4: ape6evm: Remove
+legacy platform").
 
-Yes, that sounds fine to me.
+Below is the fix to squash into the merge commit.
 
-Gr{oetje,eeting}s,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/Kconfig  | 6 ------
+ arch/arm/mach-shmobile/Makefile | 1 -
+ 2 files changed, 7 deletions(-)
 
-                        Geert
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index c637fb4db3fe427b..0cbe84a7cd68c45f 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -128,12 +128,6 @@ config ARCH_R8A7779
+ 
+ comment "Renesas ARM SoCs Board Type"
+ 
+-config MACH_APE6EVM
+-	bool "APE6EVM board"
+-	depends on ARCH_R8A73A4
+-	select SMSC_PHY if SMSC911X
+-	select USE_OF
+-
+ config MACH_ARMADILLO800EVA
+ 	bool "Armadillo-800 EVA board"
+ 	depends on ARCH_R8A7740
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 8ceeac59cfbb5774..94890b62ab8cc514 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -53,7 +53,6 @@ obj-$(CONFIG_PM_RMOBILE)	+= pm-rmobile.o
+ ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
+ else
+-obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+-- 
+1.9.1
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
