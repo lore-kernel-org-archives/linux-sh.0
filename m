@@ -1,57 +1,31 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:23 +0000
-Subject: [PATCH 26/32] ARM: shmobile: r8a7790: add CAN DT support
-Message-Id: <6a7742b4eea5de4af68bb62c20ca56e38b8e5b8b.1424849129.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 19 Feb 2015 01:08:34 +0000
+Subject: [PATCH 02/02] ARM: shmobile: Drop DU LVDS deps to allow 64-bit build
+Message-Id: <20150219010834.1660.21912.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424849129.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Define the generic R8A7790 parts of the CAN0/1 device nodes.
+Allow building the LVDS components of the DU driver on any architecture.
+Not for upstream merge.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Not-yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index e872854..cd7fc05 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -792,6 +792,26 @@
- 		};
- 	};
- 
-+	can0: can@e6e80000 {
-+		compatible = "renesas,can-r8a7790";
-+		reg = <0 0xe6e80000 0 0x1000>;
-+		interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7790_CLK_RCAN0>,
-+			 <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
-+		clock-names = "clkp1", "clkp2", "can_clk";
-+		status = "disabled";
-+	};
-+
-+	can1: can@e6e88000 {
-+		compatible = "renesas,can-r8a7790";
-+		reg = <0 0xe6e88000 0 0x1000>;
-+		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7790_CLK_RCAN1>,
-+			 <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
-+		clock-names = "clkp1", "clkp2", "can_clk";
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
--- 
-2.1.4
+ drivers/gpu/drm/rcar-du/Kconfig |    1 -
+ 1 file changed, 1 deletion(-)
 
+--- 0002/drivers/gpu/drm/rcar-du/Kconfig
++++ work/drivers/gpu/drm/rcar-du/Kconfig	2015-02-19 06:02:32.285532677 +0900
+@@ -20,7 +20,6 @@ config DRM_RCAR_HDMI
+ config DRM_RCAR_LVDS
+ 	bool "R-Car DU LVDS Encoder Support"
+ 	depends on DRM_RCAR_DU
+-	depends on ARCH_R8A7790 || ARCH_R8A7791 || COMPILE_TEST
+ 	help
+ 	  Enable support for the R-Car Display Unit embedded LVDS encoders
+ 	  (currently only on R8A7790 and R8A7791).
