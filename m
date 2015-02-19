@@ -1,77 +1,47 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 17 Feb 2015 01:48:19 +0000
-Subject: [PATCH 8/8 v5] ASoC: fsi: Configure DMA slave settings
-Message-Id: <87r3tps3ww.wl%kuninori.morimoto.gx@renesas.com>
+Date: Thu, 19 Feb 2015 03:52:51 +0000
+Subject: [PATCH 13/19] ASoC: rsnd: remove rsnd_dma::addr
+Message-Id: <87d2561rq6.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Current FSI driver is assuming that dst_addr/src_addr of DMAEngine
-will be set by platform data. But it should be set via
-dmaengine_slave_config(). Special thanks to Arnd
+DMAEngine for Renesas R-Car driver is used only for Audio DMAC now.
+rsnd_dma::addr was added to support Audio DMAC peri peri,
+but it is no longer needed. Let's remove it
 
-Reported-by: Arnd Bergmann <arnd@arndb.de>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Mark Brown <broonie@kernel.org>
 ---
-v4 -> v5
+ sound/soc/sh/rcar/dma.c |    2 --
+ 1 file changed, 2 deletions(-)
 
- - no change
-
- sound/soc/sh/fsi.c |   15 ++++++++++++---
- 1 file changed, 12 insertions(+), 3 deletions(-)
-
-diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
-index dc28b03..bb20550 100644
---- a/sound/soc/sh/fsi.c
-+++ b/sound/soc/sh/fsi.c
-@@ -250,6 +250,7 @@ struct fsi_clk {
+diff --git a/sound/soc/sh/rcar/dma.c b/sound/soc/sh/rcar/dma.c
+index 5b0c344..2ab00e8 100644
+--- a/sound/soc/sh/rcar/dma.c
++++ b/sound/soc/sh/rcar/dma.c
+@@ -93,7 +93,6 @@ static void rsnd_dmaen_start(struct rsnd_dma *dma)
+ 	struct dma_async_tx_descriptor *desc;
  
- struct fsi_priv {
- 	void __iomem *base;
-+	phys_addr_t phys;
- 	struct fsi_master *master;
+ 	desc = dmaengine_prep_dma_cyclic(dma->chan,
+-					 (dma->addr) ? dma->addr :
+ 					 substream->runtime->dma_addr,
+ 					 snd_pcm_lib_buffer_bytes(substream),
+ 					 snd_pcm_lib_period_bytes(substream),
+@@ -161,7 +160,6 @@ static int rsnd_dmaen_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id,
+ 	if (ret < 0)
+ 		goto rsnd_dma_init_err;
  
- 	struct fsi_stream playback;
-@@ -1374,9 +1375,15 @@ static int fsi_dma_probe(struct fsi_priv *fsi, struct fsi_stream *io, struct dev
- 		struct dma_slave_config cfg = {};
- 		int ret;
+-	dma->addr = is_play ? cfg.src_addr : cfg.dst_addr;
+ 	dma->dir = is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
  
--		cfg.dst_addr	= 0; /* use default addr */
--		cfg.src_addr	= 0; /* use default addr */
--		cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
-+		if (is_play) {
-+			cfg.dst_addr		= fsi->phys + REG_DODT;
-+			cfg.dst_addr_width	= DMA_SLAVE_BUSWIDTH_4_BYTES;
-+			cfg.direction		= DMA_MEM_TO_DEV;
-+		} else {
-+			cfg.src_addr		= fsi->phys + REG_DIDT;
-+			cfg.src_addr_width	= DMA_SLAVE_BUSWIDTH_4_BYTES;
-+			cfg.direction		= DMA_DEV_TO_MEM;
-+		}
- 
- 		ret = dmaengine_slave_config(io->chan, &cfg);
- 		if (ret < 0) {
-@@ -1940,6 +1947,7 @@ static int fsi_probe(struct platform_device *pdev)
- 	/* FSI A setting */
- 	fsi		= &master->fsia;
- 	fsi->base	= master->base;
-+	fsi->phys	= res->start;
- 	fsi->master	= master;
- 	fsi_port_info_init(fsi, &info.port_a);
- 	fsi_handler_init(fsi, &info.port_a);
-@@ -1952,6 +1960,7 @@ static int fsi_probe(struct platform_device *pdev)
- 	/* FSI B setting */
- 	fsi		= &master->fsib;
- 	fsi->base	= master->base + 0x40;
-+	fsi->phys	= res->start + 0x40;
- 	fsi->master	= master;
- 	fsi_port_info_init(fsi, &info.port_b);
- 	fsi_handler_init(fsi, &info.port_b);
+ 	return 0;
 -- 
 1.7.9.5
 
