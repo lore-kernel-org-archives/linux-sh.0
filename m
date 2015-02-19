@@ -1,45 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 27 Feb 2015 10:44:16 +0000
-Subject: Re: [PATCH 0/3] [RESEND] Add DU external pixel clocks to DT
-Message-Id: <1757153.ttd1kk0EQE@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 19 Feb 2015 01:06:39 +0000
+Subject: [PATCH] drm/cma: Fix 64-bit size_t build warnings
+Message-Id: <20150219010639.1654.35019.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424942483-10910-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1424942483-10910-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: dri-devel@lists.freedesktop.org
+Cc: airlied@linux.ie, Magnus Damm <magnus.damm@gmail.com>, laurent.pinchart+renesas@ideasonboard.com, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi Simon,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On Friday 27 February 2015 10:49:47 Simon Horman wrote:
-> On Thu, Feb 26, 2015 at 11:21:20AM +0200, Laurent Pinchart wrote:
-> > Hello,
-> > 
-> > These three patches add the DU external pixel clocks to DT for the Marzen,
-> > Lager and Koelsch boards. They have been posted previously, and now that
-> > the corresponding DT bindings have been accepted and appeared in
-> > v4.0-rc1, they can be merged.
-> > 
-> > Laurent Pinchart (3):
-> >   ARM: shmobile: marzen: Add DU external pixel clock to DT
-> >   ARM: shmobile: lager: Add DU external pixel clocks to DT
-> >   ARM: shmobile: koelsch: Add DU external pixel clocks to DT
-> >  
-> >  arch/arm/boot/dts/r8a7779-marzen.dts  |  9 +++++++++
-> >  arch/arm/boot/dts/r8a7790-lager.dts   | 21 +++++++++++++++++++++
-> >  arch/arm/boot/dts/r8a7791-koelsch.dts | 19 +++++++++++++++++++
-> >  3 files changed, 49 insertions(+)
-> 
-> Thanks, I have queued these up.
-> 
-> BTW, if you could CC me on patches that are for me to pick up
-> then my life would be just ever so slightly easier.
+Fix warnings related to size_t when building for 64-bit architectures:
 
-Sure, I will.
+drivers/gpu/drm/drm_gem_cma_helper.c: In function ‘drm_gem_cma_create’:
+drivers/gpu/drm/drm_gem_cma_helper.c:114:4: warning: format ‘%d’ expects argument of type ‘int’, but argument 3 has type ‘size_t’ [-Wformat=]
+    size);
+    ^
+drivers/gpu/drm/drm_gem_cma_helper.c: In function ‘drm_gem_cma_describe’:
+drivers/gpu/drm/drm_gem_cma_helper.c:393:4: warning: format ‘%d’ expects argument of type ‘int’, but argument 8 has type ‘size_t’ [-Wformat=]
+    off, &cma_obj->paddr, cma_obj->vaddr, obj->size);
 
--- 
-Regards,
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-Laurent Pinchart
+ drivers/gpu/drm/drm_gem_cma_helper.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
+--- 0001/drivers/gpu/drm/drm_gem_cma_helper.c
++++ work/drivers/gpu/drm/drm_gem_cma_helper.c	2015-02-19 06:29:39.155526831 +0900
+@@ -110,7 +110,7 @@ struct drm_gem_cma_object *drm_gem_cma_c
+ 	cma_obj->vaddr = dma_alloc_writecombine(drm->dev, size,
+ 			&cma_obj->paddr, GFP_KERNEL | __GFP_NOWARN);
+ 	if (!cma_obj->vaddr) {
+-		dev_err(drm->dev, "failed to allocate buffer with size %d\n",
++		dev_err(drm->dev, "failed to allocate buffer with size %zu\n",
+ 			size);
+ 		ret = -ENOMEM;
+ 		goto error;
+@@ -388,7 +388,7 @@ void drm_gem_cma_describe(struct drm_gem
+ 
+ 	off = drm_vma_node_start(&obj->vma_node);
+ 
+-	seq_printf(m, "%2d (%2d) %08llx %pad %p %d",
++	seq_printf(m, "%2d (%2d) %08llx %pad %p %zu",
+ 			obj->name, obj->refcount.refcount.counter,
+ 			off, &cma_obj->paddr, cma_obj->vaddr, obj->size);
+ 
