@@ -1,60 +1,51 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 17 Feb 2015 14:52:40 +0000
-Subject: [PATCH v4 5/5] ARM: shmobile: sh73a0: Remove unused sh73a0_add_standard_devices_dt()
-Message-Id: <1424184760-1671-6-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 19 Feb 2015 03:50:48 +0000
+Subject: [PATCH 01/19] ASoC: rsnd: remove SH-DMA-BASE specific implementation
+Message-Id: <87twyi1rtk.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424184760-1671-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424184760-1671-1-git-send-email-geert+renesas@glider.be>
+References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
 
-"ARM: shmobile: kzm9g-reference: Remove board C code and DT file"
-removed the last user of sh73a0_add_standard_devices_dt(). Hence remove
-this function.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Renesas R-Car sound had SH-DMA-BASE specific implementation before,
+but, now, it is no longer needed. Let's remove it.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v4:
-  - New.
----
- arch/arm/mach-shmobile/setup-sh73a0.c | 9 ---------
- arch/arm/mach-shmobile/sh73a0.h       | 1 -
- 2 files changed, 10 deletions(-)
+ sound/soc/sh/rcar/core.c |    1 -
+ sound/soc/sh/rcar/rsnd.h |    1 -
+ 2 files changed, 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 48f2447ab01f6e60..2f68459e78114323 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -783,15 +783,6 @@ void __init sh73a0_add_early_devices(void)
- 	shmobile_setup_console();
- }
+diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
+index 1b53605..0b14d37 100644
+--- a/sound/soc/sh/rcar/core.c
++++ b/sound/soc/sh/rcar/core.c
+@@ -94,7 +94,6 @@
+  *
+  */
+ #include <linux/pm_runtime.h>
+-#include <linux/shdma-base.h>
+ #include "rsnd.h"
  
--void __init sh73a0_add_standard_devices_dt(void)
--{
--	/* clocks are setup late during boot in the case of DT */
--#ifndef CONFIG_COMMON_CLK
--	sh73a0_clock_init();
--#endif
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--}
--
- #define RESCNT2 IOMEM(0xe6188020)
- static void sh73a0_restart(enum reboot_mode mode, const char *cmd)
- {
-diff --git a/arch/arm/mach-shmobile/sh73a0.h b/arch/arm/mach-shmobile/sh73a0.h
-index f037c64b14fc0767..5a80f18b4fa0665f 100644
---- a/arch/arm/mach-shmobile/sh73a0.h
-+++ b/arch/arm/mach-shmobile/sh73a0.h
-@@ -77,7 +77,6 @@ extern void sh73a0_map_io(void);
- extern void sh73a0_earlytimer_init(void);
- extern void sh73a0_add_early_devices(void);
- extern void sh73a0_add_standard_devices(void);
--extern void sh73a0_add_standard_devices_dt(void);
- extern void sh73a0_clock_init(void);
- extern void sh73a0_pinmux_init(void);
- extern void sh73a0_pm_init(void);
+ #define RSND_RATES SNDRV_PCM_RATE_8000_96000
+diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
+index e7914bd..5ffde9b 100644
+--- a/sound/soc/sh/rcar/rsnd.h
++++ b/sound/soc/sh/rcar/rsnd.h
+@@ -171,7 +171,6 @@ u32 rsnd_get_adinr(struct rsnd_mod *mod);
+  *	R-Car DMA
+  */
+ struct rsnd_dma {
+-	struct sh_dmae_slave	slave;
+ 	struct dma_chan		*chan;
+ 	enum dma_transfer_direction dir;
+ 	dma_addr_t		addr;
 -- 
-1.9.1
+1.7.9.5
 
