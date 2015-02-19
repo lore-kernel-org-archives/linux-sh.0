@@ -1,37 +1,31 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 15 Feb 2015 17:02:29 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7794: add PFC DT support
-Message-Id: <54E0D125.7010202@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 19 Feb 2015 01:08:25 +0000
+Subject: [PATCH 01/02] ARM: shmobile: Drop DU deps to allow 64-bit build
+Message-Id: <20150219010825.1660.31402.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
- <5570320.hDPc0mxmnU@wasted.cogentembedded.com>
- <CAMuHMdWvoFxjc586Xpmva678ZA85FEXbWbREYK6RmGTsC+5RZQ@mail.gmail.com>
- <20150215165740.GG25065@verge.net.au> <20150215170024.GH25065@verge.net.au>
-In-Reply-To: <20150215170024.GH25065@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On 02/15/2015 08:00 PM, Simon Horman wrote:
+Allow building the DU driver on any architecture. Not for upstream merge.
 
->>>> Define the generic R8A7794 part of the PFC device node.
+Not-yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
->>>> Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
+ drivers/gpu/drm/rcar-du/Kconfig |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
->>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->>> Acked-by: by: Geert Uytterhoeven <geert+renesas@glider.be>
-
->> Thanks, I have queued this up.
-
-> Sorry, I was a bit hasty here.
-
-> Could you repost this once the driver has been accepted?
-
-    I don't expect it to change, but OK.
-
-WBR, Sergei
-
+--- 0001/drivers/gpu/drm/rcar-du/Kconfig
++++ work/drivers/gpu/drm/rcar-du/Kconfig	2015-02-19 05:59:44.585533280 +0900
+@@ -1,7 +1,6 @@
+ config DRM_RCAR_DU
+ 	tristate "DRM Support for R-Car Display Unit"
+-	depends on DRM && ARM
+-	depends on ARCH_SHMOBILE || COMPILE_TEST
++	depends on DRM
+ 	select DRM_KMS_HELPER
+ 	select DRM_KMS_CMA_HELPER
+ 	select DRM_GEM_CMA_HELPER
