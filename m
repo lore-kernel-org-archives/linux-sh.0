@@ -1,35 +1,39 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 24 Feb 2015 10:00:10 +0000
-Subject: Re: [PATCH 3/4][resend] ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
-Message-Id: <CAMuHMdVjRf+LesPuhjxYVj+9hwMTPKTH_thEDjiH28iq0Rghpw@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 19 Feb 2015 02:13:11 +0000
+Subject: [PATCH] x86/vdso: Remove all generated files during clean
+Message-Id: <20150219021311.24366.75477.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87y4noyrp4.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y4noyrp4.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: luto@amacapital.net
+Cc: linux-sh@vger.kernel.org, x86@kernel.org, linux-kernel@vger.kernel.org, mingo@redhat.com, hpa@zytor.com, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-On Tue, Feb 24, 2015 at 3:20 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> r8a7790 SDHI ch0/ch1 has SD_DMACR which is located in 0x324.
-> This patch updates register size
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Before Simon reverted it again, this one (and patch 4) had:
+Make sure the following files are removed as expected during "make clean":
+ + arch/x86/vdso/vdso-image-32-int80.c
+ + arch/x86/vdso/vdso-image-32-syscall.c
+ + arch/x86/vdso/vdso-image-32-sysenter.c
+ + arch/x86/vdso/vdso-image-64.c
 
-    Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-Gr{oetje,eeting}s,
+ arch/x86/vdso/Makefile |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--- 0001/arch/x86/vdso/Makefile
++++ work/arch/x86/vdso/Makefile	2015-02-19 10:50:15.975470639 +0900
+@@ -1,3 +1,4 @@
++
+ #
+ # Building vDSO images for x86.
+ #
+@@ -206,4 +207,5 @@ $(vdso_img_insttargets): install_%: $(ob
+ PHONY += vdso_install $(vdso_img_insttargets)
+ vdso_install: $(vdso_img_insttargets) FORCE
+ 
+-clean-files := vdso32-syscall* vdso32-sysenter* vdso32-int80* vdso64*
++clean-files := vdso32-syscall* vdso32-sysenter* vdso32-int80* vdso64* \
++               vdso-image-32* vdso-image-64*
