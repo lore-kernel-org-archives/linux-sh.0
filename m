@@ -1,220 +1,319 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninor
-Date: Tue, 17 Feb 2015 01:46:49 +0000
-Subject: [PATCH 1/8 v5] dmaengine: shdma: use normal interface for passing slave id
-Message-Id: <871tlptiju.wl%kuninori.morimoto.gx@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 20 Feb 2015 10:26:29 +0000
+Subject: [PATCH 10/24 v2] ASoC: rsnd: move rsnd_gen_dma_addr() from gen.c to dma.c
+Message-Id: <871tlkop20.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-in dma_slave_config, which is incompatible with the way that the
-dmaengine API normally works.
+Now, we have dma.c for Audio DMAC / Audio DMAC peri peri.
+rsnd_gen_dma_addr() should go there.
 
-I've had a closer look at the existing code now and found that all
-slave drivers that pass a slave_id in dma_slave_config for SH do that
-right after passing the same ID into shdma_chan_filter, so we can just
-rely on that. However, the various shdma drivers currently do not
-remember the slave ID that was passed into the filter function when
-used in non-DT mode and only check the value to find a matching channel,
-unlike all other drivers.
-
-There might still be drivers that are not part of the kernel that rely
-on setting the slave_id to some other value, so to be on the safe side,
-this adds another 'real_slave_id' field to shdma_chan that remembers
-the ID and uses it when a driver passes a zero slave_id in dma_slave_config,
-like most drivers do.
-
-Eventually, the real_slave_id and slave_id fields should just get merged
-into one field, but that requires other changes.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v4 -> v5
+v1 -> v2
 
  - no change
 
- drivers/dma/sh/shdma-base.c |   73 +++++++++++++++++++++++++++++++------------
- include/linux/shdma-base.h  |    1 +
- 2 files changed, 54 insertions(+), 20 deletions(-)
+ sound/soc/sh/rcar/dma.c  |  120 ++++++++++++++++++++++++++++++++++++++++++++--
+ sound/soc/sh/rcar/gen.c  |  110 ------------------------------------------
+ sound/soc/sh/rcar/rsnd.h |    3 --
+ 3 files changed, 117 insertions(+), 116 deletions(-)
 
-diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-index 8ee383d..10fcaba 100644
---- a/drivers/dma/sh/shdma-base.c
-+++ b/drivers/dma/sh/shdma-base.c
-@@ -171,8 +171,7 @@ static struct shdma_desc *shdma_get_desc(struct shdma_chan *schan)
- 	return NULL;
+diff --git a/sound/soc/sh/rcar/dma.c b/sound/soc/sh/rcar/dma.c
+index 37acd40..188b463 100644
+--- a/sound/soc/sh/rcar/dma.c
++++ b/sound/soc/sh/rcar/dma.c
+@@ -32,7 +32,6 @@ static void rsnd_dma_complete(void *data)
  }
  
--static int shdma_setup_slave(struct shdma_chan *schan, int slave_id,
--			     dma_addr_t slave_addr)
-+static int shdma_setup_slave(struct shdma_chan *schan, dma_addr_t slave_addr)
+ #define DMA_NAME_SIZE 16
+-#define MOD_MAX 4 /* MEM/SSI/SRC/DVC */
+ static int _rsnd_dma_of_name(char *dma_name, struct rsnd_mod *mod)
  {
- 	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
- 	const struct shdma_ops *ops = sdev->ops;
-@@ -183,25 +182,23 @@ static int shdma_setup_slave(struct shdma_chan *schan, int slave_id,
- 		ret = ops->set_slave(schan, match, slave_addr, true);
- 		if (ret < 0)
- 			return ret;
--
--		slave_id = schan->slave_id;
- 	} else {
--		match = slave_id;
-+		match = schan->real_slave_id;
- 	}
+ 	if (mod)
+@@ -97,6 +96,10 @@ static void rsnd_dma_of_path(struct rsnd_dma *dma,
+ 			     struct rsnd_mod **mod_from,
+ 			     struct rsnd_mod **mod_to);
  
--	if (slave_id < 0 || slave_id >= slave_num)
-+	if (schan->real_slave_id < 0 || schan->real_slave_id >= slave_num)
- 		return -EINVAL;
++static dma_addr_t rsnd_dma_addr(struct rsnd_priv *priv,
++				struct rsnd_mod *mod,
++				int is_play, int is_from);
++
+ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id)
+ {
+ 	struct device *dev = rsnd_priv_to_dev(priv);
+@@ -122,8 +125,8 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id)
+ 	rsnd_dma_of_name(mod_from, mod_to, dma_name);
  
--	if (test_and_set_bit(slave_id, shdma_slave_used))
-+	if (test_and_set_bit(schan->real_slave_id, shdma_slave_used))
- 		return -EBUSY;
+ 	cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
+-	cfg.src_addr	= rsnd_gen_dma_addr(priv, mod_from, is_play, 1);
+-	cfg.dst_addr	= rsnd_gen_dma_addr(priv, mod_to,   is_play, 0);
++	cfg.src_addr	= rsnd_dma_addr(priv, mod_from, is_play, 1);
++	cfg.dst_addr	= rsnd_dma_addr(priv, mod_to,   is_play, 0);
+ 	cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+ 	cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
  
- 	ret = ops->set_slave(schan, match, slave_addr, false);
- 	if (ret < 0) {
--		clear_bit(slave_id, shdma_slave_used);
-+		clear_bit(schan->real_slave_id, shdma_slave_used);
- 		return ret;
- 	}
- 
--	schan->slave_id = slave_id;
-+	schan->slave_id = schan->real_slave_id;
- 
- 	return 0;
+@@ -168,6 +171,117 @@ void rsnd_dma_quit(struct rsnd_dma *dma)
+ 	dma->chan = NULL;
  }
-@@ -221,10 +218,12 @@ static int shdma_alloc_chan_resources(struct dma_chan *chan)
- 	 */
- 	if (slave) {
- 		/* Legacy mode: .private is set in filter */
--		ret = shdma_setup_slave(schan, slave->slave_id, 0);
-+		schan->real_slave_id = slave->slave_id;
-+		ret = shdma_setup_slave(schan, 0);
- 		if (ret < 0)
- 			goto esetslave;
- 	} else {
-+		/* Normal mode: real_slave_id was set by filter */
- 		schan->slave_id = -EINVAL;
- 	}
  
-@@ -258,11 +257,14 @@ esetslave:
++/*
++ *	DMA read/write register offset
++ *
++ *	RSND_xxx_I_N	for Audio DMAC input
++ *	RSND_xxx_O_N	for Audio DMAC output
++ *	RSND_xxx_I_P	for Audio DMAC peri peri input
++ *	RSND_xxx_O_P	for Audio DMAC peri peri output
++ *
++ *	ex) R-Car H2 case
++ *	      mod        / DMAC in    / DMAC out   / DMAC PP in / DMAC pp out
++ *	SSI : 0xec541000 / 0xec241008 / 0xec24100c
++ *	SSIU: 0xec541000 / 0xec100000 / 0xec100000 / 0xec400000 / 0xec400000
++ *	SCU : 0xec500000 / 0xec000000 / 0xec004000 / 0xec300000 / 0xec304000
++ *	CMD : 0xec500000 /            / 0xec008000                0xec308000
++ */
++#define RDMA_SSI_I_N(addr, i)	(addr ##_reg - 0x00300000 + (0x40 * i) + 0x8)
++#define RDMA_SSI_O_N(addr, i)	(addr ##_reg - 0x00300000 + (0x40 * i) + 0xc)
++
++#define RDMA_SSIU_I_N(addr, i)	(addr ##_reg - 0x00441000 + (0x1000 * i))
++#define RDMA_SSIU_O_N(addr, i)	(addr ##_reg - 0x00441000 + (0x1000 * i))
++
++#define RDMA_SSIU_I_P(addr, i)	(addr ##_reg - 0x00141000 + (0x1000 * i))
++#define RDMA_SSIU_O_P(addr, i)	(addr ##_reg - 0x00141000 + (0x1000 * i))
++
++#define RDMA_SRC_I_N(addr, i)	(addr ##_reg - 0x00500000 + (0x400 * i))
++#define RDMA_SRC_O_N(addr, i)	(addr ##_reg - 0x004fc000 + (0x400 * i))
++
++#define RDMA_SRC_I_P(addr, i)	(addr ##_reg - 0x00200000 + (0x400 * i))
++#define RDMA_SRC_O_P(addr, i)	(addr ##_reg - 0x001fc000 + (0x400 * i))
++
++#define RDMA_CMD_O_N(addr, i)	(addr ##_reg - 0x004f8000 + (0x400 * i))
++#define RDMA_CMD_O_P(addr, i)	(addr ##_reg - 0x001f8000 + (0x400 * i))
++
++static dma_addr_t
++rsnd_gen2_dma_addr(struct rsnd_priv *priv,
++		   struct rsnd_mod *mod,
++		   int is_play, int is_from)
++{
++	struct device *dev = rsnd_priv_to_dev(priv);
++	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
++	phys_addr_t ssi_reg = rsnd_gen_get_phy_addr(priv, RSND_GEN2_SSI);
++	phys_addr_t src_reg = rsnd_gen_get_phy_addr(priv, RSND_GEN2_SCU);
++	int is_ssi = !!(rsnd_io_to_mod_ssi(io) = mod);
++	int use_src = !!rsnd_io_to_mod_src(io);
++	int use_dvc = !!rsnd_io_to_mod_dvc(io);
++	int id = rsnd_mod_id(mod);
++	struct dma_addr {
++		dma_addr_t out_addr;
++		dma_addr_t in_addr;
++	} dma_addrs[3][2][3] = {
++		/* SRC */
++		{{{ 0,				0 },
++		  /* Capture */
++		  { RDMA_SRC_O_N(src, id),	RDMA_SRC_I_P(src, id) },
++		  { RDMA_CMD_O_N(src, id),	RDMA_SRC_I_P(src, id) } },
++		 /* Playback */
++		 {{ 0,				0, },
++		  { RDMA_SRC_O_P(src, id),	RDMA_SRC_I_N(src, id) },
++		  { RDMA_CMD_O_P(src, id),	RDMA_SRC_I_N(src, id) } }
++		},
++		/* SSI */
++		/* Capture */
++		{{{ RDMA_SSI_O_N(ssi, id),	0 },
++		  { RDMA_SSIU_O_P(ssi, id),	0 },
++		  { RDMA_SSIU_O_P(ssi, id),	0 } },
++		 /* Playback */
++		 {{ 0,				RDMA_SSI_I_N(ssi, id) },
++		  { 0,				RDMA_SSIU_I_P(ssi, id) },
++		  { 0,				RDMA_SSIU_I_P(ssi, id) } }
++		},
++		/* SSIU */
++		/* Capture */
++		{{{ RDMA_SSIU_O_N(ssi, id),	0 },
++		  { RDMA_SSIU_O_P(ssi, id),	0 },
++		  { RDMA_SSIU_O_P(ssi, id),	0 } },
++		 /* Playback */
++		 {{ 0,				RDMA_SSIU_I_N(ssi, id) },
++		  { 0,				RDMA_SSIU_I_P(ssi, id) },
++		  { 0,				RDMA_SSIU_I_P(ssi, id) } } },
++	};
++
++	/* it shouldn't happen */
++	if (use_dvc && !use_src)
++		dev_err(dev, "DVC is selected without SRC\n");
++
++	/* use SSIU or SSI ? */
++	if (is_ssi && (0 = strcmp(rsnd_mod_dma_name(mod), "ssiu")))
++		is_ssi++;
++
++	return (is_from) ?
++		dma_addrs[is_ssi][is_play][use_src + use_dvc].out_addr :
++		dma_addrs[is_ssi][is_play][use_src + use_dvc].in_addr;
++}
++
++static dma_addr_t rsnd_dma_addr(struct rsnd_priv *priv,
++				struct rsnd_mod *mod,
++				int is_play, int is_from)
++{
++	/*
++	 * gen1 uses default DMA addr
++	 */
++	if (rsnd_is_gen1(priv))
++		return 0;
++
++	if (!mod)
++		return 0;
++
++	return rsnd_gen2_dma_addr(priv, mod, is_play, is_from);
++}
++
++#define MOD_MAX 4 /* MEM/SSI/SRC/DVC */
+ static void rsnd_dma_of_path(struct rsnd_dma *dma,
+ 			     int is_play,
+ 			     struct rsnd_mod **mod_from,
+diff --git a/sound/soc/sh/rcar/gen.c b/sound/soc/sh/rcar/gen.c
+index 0da04ed..0273724 100644
+--- a/sound/soc/sh/rcar/gen.c
++++ b/sound/soc/sh/rcar/gen.c
+@@ -188,116 +188,6 @@ static int _rsnd_gen_regmap_init(struct rsnd_priv *priv,
+ }
  
  /*
-  * This is the standard shdma filter function to be used as a replacement to the
-- * "old" method, using the .private pointer. If for some reason you allocate a
-- * channel without slave data, use something like ERR_PTR(-EINVAL) as a filter
-+ * "old" method, using the .private pointer.
-+ * You always have to pass a valid slave id as the argument, old drivers that
-+ * pass ERR_PTR(-EINVAL) as a filter parameter and set it up in dma_slave_config
-+ * need to be updated so we can remove the slave_id field from dma_slave_config.
-  * parameter. If this filter is used, the slave driver, after calling
-  * dma_request_channel(), will also have to call dmaengine_slave_config() with
-- * .slave_id, .direction, and either .src_addr or .dst_addr set.
-+ * .direction, and either .src_addr or .dst_addr set.
-+ *
-  * NOTE: this filter doesn't support multiple DMAC drivers with the DMA_SLAVE
-  * capability! If this becomes a requirement, hardware glue drivers, using this
-  * services would have to provide their own filters, which first would check
-@@ -276,7 +278,7 @@ bool shdma_chan_filter(struct dma_chan *chan, void *arg)
- {
- 	struct shdma_chan *schan;
- 	struct shdma_dev *sdev;
--	int match = (long)arg;
-+	int slave_id = (long)arg;
- 	int ret;
+- *	DMA read/write register offset
+- *
+- *	RSND_xxx_I_N	for Audio DMAC input
+- *	RSND_xxx_O_N	for Audio DMAC output
+- *	RSND_xxx_I_P	for Audio DMAC peri peri input
+- *	RSND_xxx_O_P	for Audio DMAC peri peri output
+- *
+- *	ex) R-Car H2 case
+- *	      mod        / DMAC in    / DMAC out   / DMAC PP in / DMAC pp out
+- *	SSI : 0xec541000 / 0xec241008 / 0xec24100c
+- *	SSIU: 0xec541000 / 0xec100000 / 0xec100000 / 0xec400000 / 0xec400000
+- *	SCU : 0xec500000 / 0xec000000 / 0xec004000 / 0xec300000 / 0xec304000
+- *	CMD : 0xec500000 /            / 0xec008000                0xec308000
+- */
+-#define RDMA_SSI_I_N(addr, i)	(addr ##_reg - 0x00300000 + (0x40 * i) + 0x8)
+-#define RDMA_SSI_O_N(addr, i)	(addr ##_reg - 0x00300000 + (0x40 * i) + 0xc)
+-
+-#define RDMA_SSIU_I_N(addr, i)	(addr ##_reg - 0x00441000 + (0x1000 * i))
+-#define RDMA_SSIU_O_N(addr, i)	(addr ##_reg - 0x00441000 + (0x1000 * i))
+-
+-#define RDMA_SSIU_I_P(addr, i)	(addr ##_reg - 0x00141000 + (0x1000 * i))
+-#define RDMA_SSIU_O_P(addr, i)	(addr ##_reg - 0x00141000 + (0x1000 * i))
+-
+-#define RDMA_SRC_I_N(addr, i)	(addr ##_reg - 0x00500000 + (0x400 * i))
+-#define RDMA_SRC_O_N(addr, i)	(addr ##_reg - 0x004fc000 + (0x400 * i))
+-
+-#define RDMA_SRC_I_P(addr, i)	(addr ##_reg - 0x00200000 + (0x400 * i))
+-#define RDMA_SRC_O_P(addr, i)	(addr ##_reg - 0x001fc000 + (0x400 * i))
+-
+-#define RDMA_CMD_O_N(addr, i)	(addr ##_reg - 0x004f8000 + (0x400 * i))
+-#define RDMA_CMD_O_P(addr, i)	(addr ##_reg - 0x001f8000 + (0x400 * i))
+-
+-static dma_addr_t
+-rsnd_gen2_dma_addr(struct rsnd_priv *priv,
+-		   struct rsnd_mod *mod,
+-		   int is_play, int is_from)
+-{
+-	struct device *dev = rsnd_priv_to_dev(priv);
+-	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
+-	phys_addr_t ssi_reg = rsnd_gen_get_phy_addr(priv, RSND_GEN2_SSI);
+-	phys_addr_t src_reg = rsnd_gen_get_phy_addr(priv, RSND_GEN2_SCU);
+-	int is_ssi = !!(rsnd_io_to_mod_ssi(io) = mod);
+-	int use_src = !!rsnd_io_to_mod_src(io);
+-	int use_dvc = !!rsnd_io_to_mod_dvc(io);
+-	int id = rsnd_mod_id(mod);
+-	struct dma_addr {
+-		dma_addr_t out_addr;
+-		dma_addr_t in_addr;
+-	} dma_addrs[3][2][3] = {
+-		/* SRC */
+-		{{{ 0,				0 },
+-		/* Capture */
+-		  { RDMA_SRC_O_N(src, id),	RDMA_SRC_I_P(src, id) },
+-		  { RDMA_CMD_O_N(src, id),	RDMA_SRC_I_P(src, id) } },
+-		 /* Playback */
+-		 {{ 0,				0, },
+-		  { RDMA_SRC_O_P(src, id),	RDMA_SRC_I_N(src, id) },
+-		  { RDMA_CMD_O_P(src, id),	RDMA_SRC_I_N(src, id) } }
+-		},
+-		/* SSI */
+-		/* Capture */
+-		{{{ RDMA_SSI_O_N(ssi, id),	0 },
+-		  { RDMA_SSIU_O_P(ssi, id),	0 },
+-		  { RDMA_SSIU_O_P(ssi, id),	0 } },
+-		 /* Playback */
+-		 {{ 0,				RDMA_SSI_I_N(ssi, id) },
+-		  { 0,				RDMA_SSIU_I_P(ssi, id) },
+-		  { 0,				RDMA_SSIU_I_P(ssi, id) } }
+-		},
+-		/* SSIU */
+-		/* Capture */
+-		{{{ RDMA_SSIU_O_N(ssi, id),	0 },
+-		  { RDMA_SSIU_O_P(ssi, id),	0 },
+-		  { RDMA_SSIU_O_P(ssi, id),	0 } },
+-		 /* Playback */
+-		 {{ 0,				RDMA_SSIU_I_N(ssi, id) },
+-		  { 0,				RDMA_SSIU_I_P(ssi, id) },
+-		  { 0,				RDMA_SSIU_I_P(ssi, id) } } },
+-	};
+-
+-	/* it shouldn't happen */
+-	if (use_dvc && !use_src)
+-		dev_err(dev, "DVC is selected without SRC\n");
+-
+-	/* use SSIU or SSI ? */
+-	if (is_ssi && (0 = strcmp(rsnd_mod_dma_name(mod), "ssiu")))
+-		is_ssi++;
+-
+-	return (is_from) ?
+-		dma_addrs[is_ssi][is_play][use_src + use_dvc].out_addr :
+-		dma_addrs[is_ssi][is_play][use_src + use_dvc].in_addr;
+-}
+-
+-dma_addr_t rsnd_gen_dma_addr(struct rsnd_priv *priv,
+-			     struct rsnd_mod *mod,
+-			     int is_play, int is_from)
+-{
+-	/*
+-	 * gen1 uses default DMA addr
+-	 */
+-	if (rsnd_is_gen1(priv))
+-		return 0;
+-
+-	if (!mod)
+-		return 0;
+-
+-	return rsnd_gen2_dma_addr(priv, mod, is_play, is_from);
+-}
+-
+-/*
+  *		Gen2
+  */
+ static int rsnd_gen2_probe(struct platform_device *pdev,
+diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
+index 8a8a4d5..a73e94c 100644
+--- a/sound/soc/sh/rcar/rsnd.h
++++ b/sound/soc/sh/rcar/rsnd.h
+@@ -328,9 +328,6 @@ int rsnd_gen_probe(struct platform_device *pdev,
+ void __iomem *rsnd_gen_reg_get(struct rsnd_priv *priv,
+ 			       struct rsnd_mod *mod,
+ 			       enum rsnd_reg reg);
+-dma_addr_t rsnd_gen_dma_addr(struct rsnd_priv *priv,
+-		       struct rsnd_mod *mod,
+-		       int is_play,  int is_from);
+ phys_addr_t rsnd_gen_get_phy_addr(struct rsnd_priv *priv, int reg_id);
  
- 	/* Only support channels handled by this driver. */
-@@ -284,19 +286,39 @@ bool shdma_chan_filter(struct dma_chan *chan, void *arg)
- 	    shdma_alloc_chan_resources)
- 		return false;
- 
--	if (match < 0)
-+	schan = to_shdma_chan(chan);
-+	sdev = to_shdma_dev(chan->device);
-+
-+	/*
-+	 * For DT, the schan->slave_id field is generated by the
-+	 * set_slave function from the slave ID that is passed in
-+	 * from xlate. For the non-DT case, the slave ID is
-+	 * directly passed into the filter function by the driver
-+	 */
-+	if (schan->dev->of_node) {
-+		ret = sdev->ops->set_slave(schan, slave_id, 0, true);
-+		if (ret < 0)
-+			return false;
-+
-+		schan->real_slave_id = schan->slave_id;
-+		return true;
-+	}
-+
-+	if (slave_id < 0) {
- 		/* No slave requested - arbitrary channel */
-+		dev_warn(sdev->dma_dev.dev, "invalid slave ID passed to dma_request_slave\n");
- 		return true;
-+	}
- 
--	schan = to_shdma_chan(chan);
--	if (!schan->dev->of_node && match >= slave_num)
-+	if (slave_id >= slave_num)
- 		return false;
- 
--	sdev = to_shdma_dev(schan->dma_chan.device);
--	ret = sdev->ops->set_slave(schan, match, 0, true);
-+	ret = sdev->ops->set_slave(schan, slave_id, 0, true);
- 	if (ret < 0)
- 		return false;
- 
-+	schan->real_slave_id = slave_id;
-+
- 	return true;
- }
- EXPORT_SYMBOL(shdma_chan_filter);
-@@ -452,6 +474,8 @@ static void shdma_free_chan_resources(struct dma_chan *chan)
- 		chan->private = NULL;
- 	}
- 
-+	schan->real_slave_id = 0;
-+
- 	spin_lock_irq(&schan->chan_lock);
- 
- 	list_splice_init(&schan->ld_free, &list);
-@@ -764,11 +788,20 @@ static int shdma_config(struct dma_chan *chan,
- 	 */
- 	if (!config)
- 		return -EINVAL;
-+
-+	/*
-+	 * overriding the slave_id through dma_slave_config is deprecated,
-+	 * but possibly some out-of-tree drivers still do it.
-+	 */
-+	if (WARN_ON_ONCE(config->slave_id &&
-+			 config->slave_id != schan->real_slave_id))
-+		schan->real_slave_id = config->slave_id;
-+
- 	/*
- 	 * We could lock this, but you shouldn't be configuring the
- 	 * channel, while using it...
- 	 */
--	return shdma_setup_slave(schan, config->slave_id,
-+	return shdma_setup_slave(schan,
- 				 config->direction = DMA_DEV_TO_MEM ?
- 				 config->src_addr : config->dst_addr);
- }
-diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
-index abdf1f2..dd0ba50 100644
---- a/include/linux/shdma-base.h
-+++ b/include/linux/shdma-base.h
-@@ -69,6 +69,7 @@ struct shdma_chan {
- 	int id;				/* Raw id of this channel */
- 	int irq;			/* Channel IRQ */
- 	int slave_id;			/* Client ID for slave DMA */
-+	int real_slave_id;		/* argument passed to filter function */
- 	int hw_req;			/* DMA request line for slave DMA - same
- 					 * as MID/RID, used with DT */
- 	enum shdma_pm_state pm_state;
+ #define rsnd_is_gen1(s)		(((s)->info->flags & RSND_GEN_MASK) = RSND_GEN1)
 -- 
 1.7.9.5
 
