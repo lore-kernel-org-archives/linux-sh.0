@@ -1,98 +1,35 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:11 +0000
-Subject: [PATCH 14/32] ARM: shmobile: r8a7791: Add IPMMU DT nodes
-Message-Id: <f1951852ed17684f6033e96a9faf3dbe67c163ae.1424849129.git.horms+renesas@verge.net.au>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 20 Feb 2015 10:04:55 +0000
+Subject: Re: [PATCH] pinctrl: mediatek: Fix build error in Mediatek pinctrl driver.
+Message-Id: <CACRpkdYNTT=qojYs8+vaXPFCSbHcUXJhzpWsM6Fga2erMKzPeQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424849129.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
+References: <1423727771-24112-1-git-send-email-hongzhou.yang@mediatek.com>
+In-Reply-To: <1423727771-24112-1-git-send-email-hongzhou.yang@mediatek.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On Thu, Feb 12, 2015 at 8:56 AM, Hongzhou Yang
+<hongzhou.yang@mediatek.com> wrote:
 
-Add the seven IPMMU instances found in the r8a7791 to DT with a disabled
-status.
+> Since pinconf relate API changes in pinctrl devel branch, a build error happened.
+> Send this small patch to fix it.
+>
+> ---
+> Due to pinconf_generic_parse_dt_config() API changes in pinctrl devel branch,
+> add one parameter to fix build error.
+>
+> Also fix warning:
+> drivers/pinctrl/mediatek/pinctrl-mtk-common.c:718:3: warning: too many arguments for format [-Wformat-extra-args]
+>       dev_err(&pdev->dev, "only support pins-are-numbered format\n", ret);
+>       ^
+>
+> by removing extra parameter when calling dev_err in mtk_pctrl_init.
+>
+> Signed-off-by: Hongzhou Yang <hongzhou.yang@mediatek.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 60 insertions(+)
+Patch applied.
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index e35812a..43fb58a 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1384,6 +1384,66 @@
- 		status = "disabled";
- 	};
- 
-+	ipmmu_sy0: mmu@e6280000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe6280000 0 0x1000>;
-+		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_sy1: mmu@e6290000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe6290000 0 0x1000>;
-+		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_ds: mmu@e6740000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe6740000 0 0x1000>;
-+		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_mp: mmu@ec680000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xec680000 0 0x1000>;
-+		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_mx: mmu@fe951000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xfe951000 0 0x1000>;
-+		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_rt: mmu@ffc80000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xffc80000 0 0x1000>;
-+		interrupts = <0 307 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_gp: mmu@e62a0000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe62a0000 0 0x1000>;
-+		interrupts = <0 260 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 261 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
- 	rcar_sound: rcar_sound@ec500000 {
- 		/*
- 		 * #sound-dai-cells is required
--- 
-2.1.4
-
+Yours,
+Linus Walleij
