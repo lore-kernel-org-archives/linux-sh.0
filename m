@@ -1,60 +1,76 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 26 Feb 2015 09:21:23 +0000
-Subject: [PATCH 3/3] ARM: shmobile: koelsch: Add DU external pixel clocks to DT
-Message-Id: <1424942483-10910-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 20 Feb 2015 10:22:11 +0000
+Subject: [PATCH 01/24 v2] dmaengine: export symbol of of_dma_request_slave_channel()
+Message-Id: <87egpkop98.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1387998730-6012-4-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1387998730-6012-4-git-send-email-valentine.barshak@cogentembedded.com>
+References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
 
-Declare the fixed 148.5MHz pixel clocks connected to the DU clock
-inputs.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Current DMAEngine implementation of DT bindings can't support
+DT subnode. This patch export symbols of of_dma_request_slave_channel()
+for subnode DMA DT bingings.
+
+ex)
+
+rcar_sound: rcar_sound@ec500000 {
+	...
+	rcar_sound,dvc {
+		dvc0: dvc@0 {
+			dmas = <&audma0 0xbc>;
+			dma-names = "tx";
+		};
+		dvc1: dvc@1 {
+			dmas = <&audma0 0xbe>;
+			dma-names = "tx";
+		};
+	};
+	...
+};
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
+v1 -> v2
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 624bb2c30513..75fa9852e235 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -269,6 +269,18 @@
- 			};
- 		};
- 	};
-+
-+	x2_clk: x2-clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <148500000>;
-+	};
-+
-+	x13_clk: x13-clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <148500000>;
-+	};
- };
+ - new patch
+
+ drivers/dma/of-dma.c   |    1 +
+ include/linux/of_dma.h |    4 ++--
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/dma/of-dma.c b/drivers/dma/of-dma.c
+index ca31f1b..cbd4a8a 100644
+--- a/drivers/dma/of-dma.c
++++ b/drivers/dma/of-dma.c
+@@ -194,6 +194,7 @@ struct dma_chan *of_dma_request_slave_channel(struct device_node *np,
  
- &du {
-@@ -276,6 +288,13 @@
- 	pinctrl-names = "default";
- 	status = "okay";
+ 	return ERR_PTR(ret_no_channel);
+ }
++EXPORT_SYMBOL_GPL(of_dma_request_slave_channel);
  
-+	clocks = <&mstp7_clks R8A7791_CLK_DU0>,
-+		 <&mstp7_clks R8A7791_CLK_DU1>,
-+		 <&mstp7_clks R8A7791_CLK_LVDS0>,
-+		 <&x13_clk>, <&x2_clk>;
-+	clock-names = "du.0", "du.1", "lvds.0",
-+		      "dclkin.0", "dclkin.1";
-+
- 	ports {
- 		port@0 {
- 			endpoint {
+ /**
+  * of_dma_simple_xlate - Simple DMA engine translation function
+diff --git a/include/linux/of_dma.h b/include/linux/of_dma.h
+index 56bc026..687a0ac 100644
+--- a/include/linux/of_dma.h
++++ b/include/linux/of_dma.h
+@@ -37,8 +37,8 @@ extern int of_dma_controller_register(struct device_node *np,
+ 		(struct of_phandle_args *, struct of_dma *),
+ 		void *data);
+ extern void of_dma_controller_free(struct device_node *np);
+-extern struct dma_chan *of_dma_request_slave_channel(struct device_node *np,
+-						     const char *name);
++struct dma_chan *of_dma_request_slave_channel(struct device_node *np,
++					      const char *name);
+ extern struct dma_chan *of_dma_simple_xlate(struct of_phandle_args *dma_spec,
+ 		struct of_dma *ofdma);
+ extern struct dma_chan *of_dma_xlate_by_chan_id(struct of_phandle_args *dma_spec,
 -- 
-2.0.5
+1.7.9.5
 
