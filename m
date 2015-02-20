@@ -1,35 +1,64 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 10 Feb 2015 22:32:21 +0000
-Subject: Re: [PATCH] sh-pfc: add R8A7794 PFC support
-Message-Id: <54DA86F5.5050208@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 20 Feb 2015 10:28:07 +0000
+Subject: [PATCH 13/24 v2] ASoC: rsnd: remove rsnd_dma::addr
+Message-Id: <87wq3cnaev.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5105352.KV6seE7I1V@wasted.cogentembedded.com>
-In-Reply-To: <5105352.KV6seE7I1V-gHKXc3Y1Z8zGSmamagVegGFoWSdPRAKMAL8bYrjMMd8@public.gmane.org>
+References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, linux-gpio-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
 
-Hello.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On 02/11/2015 01:25 AM, Sergei Shtylyov wrote:
+DMAEngine for Renesas R-Car driver is used only for Audio DMAC now.
+rsnd_dma::addr was added to support Audio DMAC peri peri,
+but it is no longer needed. Let's remove it
 
-> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-> Add PFC support for  the  R8A7794 SoC  including pin groups for some on-chip
-> devices such as ETH, I2C, INTC, MSIOF, QSPI, [H]SCIF...
+ - no change
 
-> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> [Sergei: squashed together several patches, fixed the MLB_CLK typo, added IRQ4..
-> IRQ9 pin groups,  fixed IRQn comments, added ETH B pin group names, removed
-> stray new line and fixed typos in the  comments in the pinmux_config_regs[]
-> initializer, added reasonable and removed unreasonable copyrights, modified
-> the bindings document, renamed, added changelog.]
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+ sound/soc/sh/rcar/dma.c  |    2 --
+ sound/soc/sh/rcar/rsnd.h |    1 -
+ 2 files changed, 3 deletions(-)
 
-    Oops, forgot to rebase to the 'linux-pinctrl' repo's 'devel' branch 
-(should I use some other?), and the patch doesn't apply there. Please ignore.
-
-WBR, Sergei
+diff --git a/sound/soc/sh/rcar/dma.c b/sound/soc/sh/rcar/dma.c
+index a01bb8c..c407fd2 100644
+--- a/sound/soc/sh/rcar/dma.c
++++ b/sound/soc/sh/rcar/dma.c
+@@ -89,7 +89,6 @@ static void rsnd_dmaen_start(struct rsnd_dma *dma)
+ 	struct dma_async_tx_descriptor *desc;
+ 
+ 	desc = dmaengine_prep_dma_cyclic(dma->chan,
+-					 (dma->addr) ? dma->addr :
+ 					 substream->runtime->dma_addr,
+ 					 snd_pcm_lib_buffer_bytes(substream),
+ 					 snd_pcm_lib_period_bytes(substream),
+@@ -157,7 +156,6 @@ static int rsnd_dmaen_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id,
+ 	if (ret < 0)
+ 		goto rsnd_dma_init_err;
+ 
+-	dma->addr = is_play ? cfg.src_addr : cfg.dst_addr;
+ 	dma->dir = is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
+ 
+ 	return 0;
+diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
+index 9e67142..a295491 100644
+--- a/sound/soc/sh/rcar/rsnd.h
++++ b/sound/soc/sh/rcar/rsnd.h
+@@ -183,7 +183,6 @@ struct rsnd_dma {
+ 	struct dma_chan		*chan;
+ 	struct rsnd_dma_ops	*ops;
+ 	enum dma_transfer_direction dir;
+-	dma_addr_t		addr;
+ 	int			dmapp_id;
+ 	u32			chcr;
+ 	dma_addr_t		src_addr;
+-- 
+1.7.9.5
 
