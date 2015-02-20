@@ -1,47 +1,83 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 26 Feb 2015 09:21:21 +0000
-Subject: [PATCH 1/3] ARM: shmobile: marzen: Add DU external pixel clock to DT
-Message-Id: <1424942483-10910-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 20 Feb 2015 10:31:55 +0000
+Subject: [PATCH 21/24 v2] ASoC: rsnd: add sample code of rcar_sound,src irq
+Message-Id: <87lhjsna8i.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
 
-Declare the fixed 65MHz pixel clock connected to the DU clock input.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+cfcefe01265cbaf5ca7209226d043b07bfa8b587
+(ASoC: rsnd: add recovery support for under/over flow error on SRC)
+added SRC recovery support which needs IRQ.
+This patch adds SRC irq sample code on DT bingdings text
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7779-marzen.dts | 9 +++++++++
- 1 file changed, 9 insertions(+)
+v1 -> v2
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index e83d40e24bcd..540756cdf391 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -122,6 +122,12 @@
- 			};
- 		};
+ - tidyup for subnode dma-engine
+
+ .../devicetree/bindings/sound/renesas,rsnd.txt     |   40 +++++++++++++++-----
+ 1 file changed, 30 insertions(+), 10 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+index 2dd690b..87e0fc2 100644
+--- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
++++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+@@ -53,16 +53,36 @@ rcar_sound: rcar_sound@ec500000 {
  	};
-+
-+	x3_clk: x3-clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <65000000>;
-+	};
- };
  
- &du {
-@@ -129,6 +135,9 @@
- 	pinctrl-names = "default";
- 	status = "okay";
+ 	rcar_sound,src {
+-		src0: src@0 { };
+-		src1: src@1 { };
+-		src2: src@2 { };
+-		src3: src@3 { };
+-		src4: src@4 { };
+-		src5: src@5 { };
+-		src6: src@6 { };
+-		src7: src@7 { };
+-		src8: src@8 { };
+-		src9: src@9 { };
++		src0: src@0 {
++			interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
++		};
++		src1: src@1 {
++			interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>;
++		};
++		src2: src@2 {
++			interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>;
++		};
++		src3: src@3 {
++			interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>;
++		};
++		src4: src@4 {
++			interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>;
++		};
++		src5: src@5 {
++			interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>;
++		};
++		src6: src@6 {
++			interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>;
++		};
++		src7: src@7 {
++			interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>;
++		};
++		src8: src@8 {
++			interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>;
++		};
++		src9: src@9 {
++			interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>;
++		};
+ 	};
  
-+	clocks = <&mstp1_clks R8A7779_CLK_DU>, <&x3_clk>;
-+	clock-names = "du", "dclkin.0";
-+
- 	ports {
- 		port@0 {
- 			endpoint {
+ 	rcar_sound,ssi {
 -- 
-2.0.5
+1.7.9.5
 
