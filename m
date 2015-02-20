@@ -1,46 +1,92 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:22:30 +0000
-Subject: [PATCH 1/4] ARM: shmobile: Remove mach/system.h
-Message-Id: <4fa9c6e24b2dbb1bdc62280834c07c34d7d9c1f0.1424931049.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 20 Feb 2015 10:25:27 +0000
+Subject: [PATCH 08/24 v2] ASoC: rsnd: add rsnd_gen_get_phy_addr() to get physical address
+Message-Id: <874mqgop3q.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424931049.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424931049.git.horms+renesas@verge.net.au>
+References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The file <mach/system.h> is no longer included from anywhere so
-clean up the code by removing mach-shmobile/include/mach/system.h
+physical address is required from Audio DMAC peri peri.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/include/mach/system.h | 11 -----------
- 1 file changed, 11 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/include/mach/system.h
+v1 -> v2
 
-diff --git a/arch/arm/mach-shmobile/include/mach/system.h b/arch/arm/mach-shmobile/include/mach/system.h
-deleted file mode 100644
-index 540eaff..0000000
---- a/arch/arm/mach-shmobile/include/mach/system.h
-+++ /dev/null
-@@ -1,11 +0,0 @@
--#ifndef __ASM_ARCH_SYSTEM_H
--#define __ASM_ARCH_SYSTEM_H
--
--#include <asm/system_misc.h>
--
--static inline void arch_reset(char mode, const char *cmd)
--{
--	soft_restart(0);
--}
--
--#endif
+ - no change
+
+ sound/soc/sh/rcar/gen.c  |   16 +++++++++++-----
+ sound/soc/sh/rcar/rsnd.h |    1 +
+ 2 files changed, 12 insertions(+), 5 deletions(-)
+
+diff --git a/sound/soc/sh/rcar/gen.c b/sound/soc/sh/rcar/gen.c
+index d08bcd3..0da04ed 100644
+--- a/sound/soc/sh/rcar/gen.c
++++ b/sound/soc/sh/rcar/gen.c
+@@ -28,6 +28,7 @@ struct rsnd_gen {
+ 
+ 	struct regmap *regmap[RSND_BASE_MAX];
+ 	struct regmap_field *regs[RSND_REG_MAX];
++	phys_addr_t res[RSND_REG_MAX];
+ };
+ 
+ #define rsnd_priv_to_gen(p)	((struct rsnd_gen *)(p)->gen)
+@@ -118,6 +119,13 @@ void rsnd_bset(struct rsnd_priv *priv, struct rsnd_mod *mod,
+ 				  mask, data);
+ }
+ 
++phys_addr_t rsnd_gen_get_phy_addr(struct rsnd_priv *priv, int reg_id)
++{
++	struct rsnd_gen *gen = rsnd_priv_to_gen(priv);
++
++	return	gen->res[reg_id];
++}
++
+ #define rsnd_gen_regmap_init(priv, id_size, reg_id, name, conf)		\
+ 	_rsnd_gen_regmap_init(priv, id_size, reg_id, name, conf, ARRAY_SIZE(conf))
+ static int _rsnd_gen_regmap_init(struct rsnd_priv *priv,
+@@ -159,6 +167,7 @@ static int _rsnd_gen_regmap_init(struct rsnd_priv *priv,
+ 
+ 	gen->base[reg_id] = base;
+ 	gen->regmap[reg_id] = regmap;
++	gen->res[reg_id] = res->start;
+ 
+ 	for (i = 0; i < conf_size; i++) {
+ 
+@@ -216,13 +225,10 @@ rsnd_gen2_dma_addr(struct rsnd_priv *priv,
+ 		   struct rsnd_mod *mod,
+ 		   int is_play, int is_from)
+ {
+-	struct platform_device *pdev = rsnd_priv_to_pdev(priv);
+ 	struct device *dev = rsnd_priv_to_dev(priv);
+ 	struct rsnd_dai_stream *io = rsnd_mod_to_io(mod);
+-	dma_addr_t ssi_reg = platform_get_resource(pdev,
+-				IORESOURCE_MEM, RSND_GEN2_SSI)->start;
+-	dma_addr_t src_reg = platform_get_resource(pdev,
+-				IORESOURCE_MEM, RSND_GEN2_SCU)->start;
++	phys_addr_t ssi_reg = rsnd_gen_get_phy_addr(priv, RSND_GEN2_SSI);
++	phys_addr_t src_reg = rsnd_gen_get_phy_addr(priv, RSND_GEN2_SCU);
+ 	int is_ssi = !!(rsnd_io_to_mod_ssi(io) = mod);
+ 	int use_src = !!rsnd_io_to_mod_src(io);
+ 	int use_dvc = !!rsnd_io_to_mod_dvc(io);
+diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
+index ec77c9f..8a8a4d5 100644
+--- a/sound/soc/sh/rcar/rsnd.h
++++ b/sound/soc/sh/rcar/rsnd.h
+@@ -331,6 +331,7 @@ void __iomem *rsnd_gen_reg_get(struct rsnd_priv *priv,
+ dma_addr_t rsnd_gen_dma_addr(struct rsnd_priv *priv,
+ 		       struct rsnd_mod *mod,
+ 		       int is_play,  int is_from);
++phys_addr_t rsnd_gen_get_phy_addr(struct rsnd_priv *priv, int reg_id);
+ 
+ #define rsnd_is_gen1(s)		(((s)->info->flags & RSND_GEN_MASK) = RSND_GEN1)
+ #define rsnd_is_gen2(s)		(((s)->info->flags & RSND_GEN_MASK) = RSND_GEN2)
 -- 
-2.1.4
+1.7.9.5
 
