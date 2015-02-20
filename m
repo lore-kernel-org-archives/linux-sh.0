@@ -1,91 +1,52 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 16 Feb 2015 01:52:57 +0000
-Subject: [PATCH v2 2/4] usb: renesas_usbhs: add the channel number in dma-names
-Message-Id: <1424051579-5060-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 20 Feb 2015 10:30:02 +0000
+Subject: [PATCH 17/24 v2] ASoC: rsnd: ssi: add rsnd_ssi_of_node()
+Message-Id: <87r3tknabn.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424051579-5060-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1424051579-5060-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: gregkh@linuxfoundation.org, balbi@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
 
-To connect the channel of USB-DMAC to USBHS DnFIFO number, this patch
-adds this channel/FIFO number in dma-names. Otherwise, this driver
-needs to add analysis code for device tree.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+This patch adds rsnd_ssi_of_node() to get SSI subnode from DT.
+This is prepare for new DT bindings for 1st DMAC
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- .../devicetree/bindings/usb/renesas_usbhs.txt      |    5 ++++-
- drivers/usb/renesas_usbhs/fifo.c                   |   20 +++++++++++++-------
- 2 files changed, 17 insertions(+), 8 deletions(-)
+v1 -> v2
 
-diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-index 61b045b..dc2a18f 100644
---- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-+++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-@@ -15,7 +15,10 @@ Optional properties:
-   - phys: phandle + phy specifier pair
-   - phy-names: must be "usb"
-   - dmas: Must contain a list of references to DMA specifiers.
--  - dma-names : Must contain a list of DMA names, "tx" or "rx".
-+  - dma-names : Must contain a list of DMA names:
-+   - tx0 ... tx<n>
-+   - rx0 ... rx<n>
-+    - This <n> means DnFIFO in USBHS module.
+ - new patch
+
+ sound/soc/sh/rcar/ssi.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/sound/soc/sh/rcar/ssi.c b/sound/soc/sh/rcar/ssi.c
+index 7e48d56..2133eb3 100644
+--- a/sound/soc/sh/rcar/ssi.c
++++ b/sound/soc/sh/rcar/ssi.c
+@@ -83,6 +83,8 @@ struct rsnd_ssi {
+ #define rsnd_ssi_clk_from_parent(ssi) ((ssi)->parent)
+ #define rsnd_ssi_mode_flags(p) ((p)->info->flags)
+ #define rsnd_ssi_dai_id(ssi) ((ssi)->info->dai_id)
++#define rsnd_ssi_of_node(priv) \
++	of_get_child_by_name(rsnd_priv_to_dev(priv)->of_node, "rcar_sound,ssi")
  
- Example:
- 	usbhs: usb@e6590000 {
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index d891bff..28d10eb 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -1069,23 +1069,29 @@ static void usbhsf_dma_init_pdev(struct usbhs_fifo *fifo)
- 					    &fifo->rx_slave);
- }
- 
--static void usbhsf_dma_init_dt(struct device *dev, struct usbhs_fifo *fifo)
-+static void usbhsf_dma_init_dt(struct device *dev, struct usbhs_fifo *fifo,
-+			       int channel)
+ int rsnd_ssi_use_busif(struct rsnd_mod *mod)
  {
--	fifo->tx_chan = dma_request_slave_channel_reason(dev, "tx");
-+	char name[16];
-+
-+	snprintf(name, sizeof(name), "tx%d", channel);
-+	fifo->tx_chan = dma_request_slave_channel_reason(dev, name);
- 	if (IS_ERR(fifo->tx_chan))
- 		fifo->tx_chan = NULL;
--	fifo->rx_chan = dma_request_slave_channel_reason(dev, "rx");
-+
-+	snprintf(name, sizeof(name), "rx%d", channel);
-+	fifo->rx_chan = dma_request_slave_channel_reason(dev, name);
- 	if (IS_ERR(fifo->rx_chan))
- 		fifo->rx_chan = NULL;
- }
+@@ -633,7 +635,7 @@ static void rsnd_of_parse_ssi(struct platform_device *pdev,
+ 	if (!of_data)
+ 		return;
  
--static void usbhsf_dma_init(struct usbhs_priv *priv,
--			    struct usbhs_fifo *fifo)
-+static void usbhsf_dma_init(struct usbhs_priv *priv, struct usbhs_fifo *fifo,
-+			    int channel)
- {
- 	struct device *dev = usbhs_priv_to_dev(priv);
+-	node = of_get_child_by_name(dev->of_node, "rcar_sound,ssi");
++	node = rsnd_ssi_of_node(priv);
+ 	if (!node)
+ 		return;
  
- 	if (dev->of_node)
--		usbhsf_dma_init_dt(dev, fifo);
-+		usbhsf_dma_init_dt(dev, fifo, channel);
- 	else
- 		usbhsf_dma_init_pdev(fifo);
- 
-@@ -1231,7 +1237,7 @@ do {									\
- 			usbhs_get_dparam(priv, d##channel##_tx_id);	\
- 	fifo->rx_slave.shdma_slave.slave_id =				\
- 			usbhs_get_dparam(priv, d##channel##_rx_id);	\
--	usbhsf_dma_init(priv, fifo);					\
-+	usbhsf_dma_init(priv, fifo, channel);				\
- } while (0)
- 
- #define USBHS_DFIFO_INIT(priv, fifo, channel)				\
 -- 
 1.7.9.5
 
