@@ -1,83 +1,48 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 26 Feb 2015 16:42:05 +0000
-Subject: [PATCH v4 0/9] r8a7778 CCF and multiplatform
-Message-Id: <1424968934-30577-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 20 Feb 2015 10:24:27 +0000
+Subject: [PATCH 06/24 v2] ASoC: rsnd: tidyup rsnd_dma_to_mod() macro declaration position
+Message-Id: <877fvcop5f.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
 
-Hi!
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-As requested by Simon here are the remaining parts of CCF/MP support for
-r8a7778 and Bock-W, with the DT bindings broken out, and the missing
-sound bindings.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-The last patch in this series is a fix-up for the already-merged "ARM:
-shmobile: bockw dts: Move Ethernet node to BSC", where the removal of
-the old entry somehow got left out.
+ - no change
 
-CU
-Uli
+ sound/soc/sh/rcar/rsnd.h |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-
-Changes since v3:
-- dropped everything that has already been merged
-- split off DT bindings
-- added rcar_sound bindings
-- added Acks
-
-Changes since v2:
-- minor reformatting and code styling
-- renamed *SCU_SRC* -> *SRU_SRC*
-- updated DT bindings to match implementation
-- removed unused Ethernet pins from bockw DT
-- renamed sound node to conform to standards
-- retooled external Ethernet compatible list
-- added more Acks
-
-
-Changes since v1:
-- added oki,ml86v7667 to trivial-devices.txt
-- added internal ethernet controller
-- moved pins from external to internal ethernet controller
-- added bsc bus, moved external ethernet controller there
-- removed extal from CPG driver and made it a fixed clock
-- renamed "scu*" clocks to "scu-src*"
-- split SoC/board CCF enablement from CPG driver
-- added "smsc,lan89218" compat string to external net controller
-- added missing clock-names to tmu nodes
-- named Kconfig entry properly
-- added Acks
-
-
-Ulrich Hecht (9):
-  clk: shmobile: Add r8a7778 SoC to MSTP bindings
-  ARM: shmobile: r8a7778: common clock framework CPG driver
-  DT: i2c: add trivial binding for OKI ML86V7667 video decoder
-  ARM: shmobile: bockw: add devices hooked up to i2c0 to DT
-  ASoC: rsnd: Document r8a7778-specific bindings
-  ARM: shmobile: r8a7778: add sound to DT
-  ARM: shmobile: bockw: add sound to DT
-  ARM: shmobile: r8a7778: enable multiplatform target
-  ARM: shmobile: bockw dts: Remove leftover Ethernet node
-
- .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
- .../bindings/clock/renesas,r8a7778-cpg-clocks.txt  |  25 ++++
- .../devicetree/bindings/i2c/trivial-devices.txt    |   1 +
- .../devicetree/bindings/sound/renesas,rsnd.txt     |   1 +
- arch/arm/boot/dts/Makefile                         |   1 +
- arch/arm/boot/dts/r8a7778-bockw.dts                |  49 +++++--
- arch/arm/boot/dts/r8a7778.dtsi                     |  55 ++++++++
- arch/arm/mach-shmobile/Kconfig                     |   4 +
- drivers/clk/shmobile/Makefile                      |   1 +
- drivers/clk/shmobile/clk-r8a7778.c                 | 143 +++++++++++++++++++++
- include/linux/clk/shmobile.h                       |   1 +
- 11 files changed, 273 insertions(+), 9 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
- create mode 100644 drivers/clk/shmobile/clk-r8a7778.c
-
+diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
+index 6ee97e7..ec77c9f 100644
+--- a/sound/soc/sh/rcar/rsnd.h
++++ b/sound/soc/sh/rcar/rsnd.h
+@@ -182,6 +182,8 @@ int rsnd_dma_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id);
+ void  rsnd_dma_quit(struct rsnd_dma *dma);
+ 
+ 
++#define rsnd_dma_to_mod(_dma) container_of((_dma), struct rsnd_mod, dma)
++
+ /*
+  *	R-Car sound mod
+  */
+@@ -253,7 +255,6 @@ struct rsnd_mod {
+ 
+ #define rsnd_mod_to_priv(mod) (rsnd_io_to_priv(rsnd_mod_to_io(mod)))
+ #define rsnd_mod_to_dma(mod) (&(mod)->dma)
+-#define rsnd_dma_to_mod(_dma) container_of((_dma), struct rsnd_mod, dma)
+ #define rsnd_mod_to_io(mod) ((mod)->io)
+ #define rsnd_mod_id(mod) ((mod)->id)
+ #define rsnd_mod_hw_start(mod)	clk_prepare_enable((mod)->clk)
 -- 
-2.2.2
+1.7.9.5
 
