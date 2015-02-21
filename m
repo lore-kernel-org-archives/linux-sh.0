@@ -1,48 +1,135 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 27 Feb 2015 17:48:37 +0000
-Subject: [PATCH 0/2] ARM: shmobile: ape6evm: Fix GPIO keys and wake-up
-Message-Id: <1425059319-13403-1-git-send-email-geert+renesas@glider.be>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 21 Feb 2015 22:27:42 +0000
+Subject: [PATCH 2/2] ARM: shmobile: silk: add SDHI0/1 DT support
+Message-Id: <2348421.LHyZ4ZOiiG@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <10037494.4LD4T2QGPX@wasted.cogentembedded.com>
+In-Reply-To: <10037494.4LD4T2QGPX@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Ulrich Hecht <ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-gpio-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-	Hi Simon, Magnus,
+Define the SILK board dependent parts of the SDHI0  (connected to SDIO Wi-Fi
+chip)  and SDHI1  (connected to micro-SD slot) device nodes along with the
+necessary voltage regulators.
 
-This patch series adds the missing pull-up bias configuration for the
-switches on the r8a73a4/ape6evm development board, and configures the
-custom switch as a wake-up source.
+Based on the original patch by Vladimir Barinov
+<vladimir.barinov@cogentembedded.com>.
 
-After this, the keys actually work, and the system can be resumed from
-s2ram by pressing the custom switch.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-This depends functionally on "[PATCH 1/4] pinctrl: sh-pfc: Do not
-overwrite bias configuration" in the series "[PATCH 0/4] pinctrl:
-sh-pfc: Fix pin bias and cleanups" which I've just sent. But as this is
-DTS, it can be applied independently.
+---
+ arch/arm/boot/dts/r8a7794-silk.dts |   81 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 81 insertions(+)
 
-Thanks for your comments!
+Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794-silk.dts
++++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -12,6 +12,7 @@
+ 
+ /dts-v1/;
+ #include "r8a7794.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "SILK";
+@@ -39,6 +40,54 @@
+ 		regulator-boot-on;
+ 		regulator-always-on;
+ 	};
++
++	vcc_sdhi0: regulator@1 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&gpio2 26 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vccq_sdhi0: regulator@2 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI0 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio2 29 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
++
++	vcc_sdhi1: regulator@3 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI1 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&gpio4 26 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vccq_sdhi1: regulator@4 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI1 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
+ };
+ 
+ &extal_clk {
+@@ -65,6 +114,16 @@
+ 		renesas,groups = "mmc_data8", "mmc_ctrl";
+ 		renesas,function = "mmc";
+ 	};
++
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
++		renesas,function = "sdhi0";
++	};
++
++	sdhi1_pins: sd1 {
++		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
++		renesas,function = "sdhi1";
++	};
+ };
+ 
+ &scif2 {
+@@ -100,3 +159,25 @@
+ 	non-removable;
+ 	status = "okay";
+ };
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi0>;
++	vqmmc-supply = <&vccq_sdhi0>;
++	cd-gpios = <&gpio6 6 GPIO_ACTIVE_LOW>;
++	wp-gpios = <&gpio6 7 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
++
++&sdhi1 {
++	pinctrl-0 = <&sdhi1_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi1>;
++	vqmmc-supply = <&vccq_sdhi1>;
++	cd-gpios = <&gpio6 14 GPIO_ACTIVE_LOW>;
++	wp-gpios = <&gpio6 15 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
 
-Geert Uytterhoeven (2):
-  ARM: shmobile: ape6evm dts: Enable pull-up for GPIO switches
-  ARM: shmobile: ape6evm dts: Configure the custom switch as wake-up
-    source
-
- arch/arm/boot/dts/r8a73a4-ape6evm.dts | 10 ++++++++++
- 1 file changed, 10 insertions(+)
-
--- 
-1.9.1
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
