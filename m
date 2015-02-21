@@ -1,71 +1,56 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 19 Feb 2015 19:13:42 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7794: add MMCIF DT support
-Message-Id: <54E635E6.1010409@cogentembedded.com>
+Date: Sat, 21 Feb 2015 22:11:25 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7794: add GPIO clocks
+Message-Id: <1831753.Dnjo3xKPJv@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <29687119.ELU9MoH02q@wasted.cogentembedded.com>
- <4040756.88Rqm1nt32@wasted.cogentembedded.com>
- <20150219161012.GA3864@verge.net.au> <54E61740.8030708@cogentembedded.com>
- <20150219175458.GA18262@verge.net.au>
-In-Reply-To: <20150219175458.GA18262@verge.net.au>
+References: <6954455.LyoCrfjM8R@wasted.cogentembedded.com>
+In-Reply-To: <6954455.LyoCrfjM8R@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 02/19/2015 08:55 PM, Simon Horman wrote:
+Describe the GPIO clocks in the R8A7794 device tree.
 
->>>> Define the generic R8A7794 part of the MMCIF0 device node.
+Based on the original patch by Koji Matsuoka <koji.matsuoka.xm@renesas.com>.
 
->>>> Based on the orginal patch by Shinobu Uehara <shinobu.uehara.xc@renesas.com>.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
->>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+---
+ arch/arm/boot/dts/r8a7794.dtsi |   22 ++++++++++++++--------
+ 1 file changed, 14 insertions(+), 8 deletions(-)
 
->>>> ---
->>>>   arch/arm/boot/dts/r8a7794.dtsi |   11 +++++++++++
->>>>   1 file changed, 11 insertions(+)
-
->>>> Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
->>>> =================================>>>> --- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
->>>> +++ renesas/arch/arm/boot/dts/r8a7794.dtsi
->>>> @@ -346,6 +346,17 @@
->>>>   		status = "disabled";
->>>>   	};
->>>>
->>>> +	mmcif0: mmc@ee200000 {
->>>> +		compatible = "renesas,mmcif-r8a7794", "renesas,sh-mmcif";
-
->>> Please submit a patch to add "renesas,mmcif-r8a7794" to
->>> Documentation/devicetree/bindings/mmc/renesas,mmcif.txt.
->>> I looked and I couldn't find such a change in-tree or in-flight.
-
->>     That file doesn't match the reality at all. It says:
-
->> <<
->> - compatible: must contain one of the following
->>          - "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
->>          - "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
->>          - "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
->>          - "renesas,sh-mmcif" for the generic MMCIF
->>>>
-
->> while in reality, the driver only matches on the latter string and doesn't
->> care for the SoC specific strings.
-
-> By documenting the binding in that file it exists and may be used in DT
-> nodes. It may or may not be used by the driver now or in the future.
-
-    What's the use of binding the driver doesn't understand?
-
-> For better or worse this one way that bindings may be handled.
-
-> Strictly speaking it shouldn't be used in DT before it exists,
-> even only in the documentation. But in this case its just a minor
-> update to an existing scheme so it seems unlikely to be rejected.
-
-    I don't think the minor update will be rejected, I just wanted to say that 
-the binding should be edited to better reflect the reality as well. And it 
-falls on my shoulders, unfortunately. :-)
-
-WBR, Sergei
+Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
++++ renesas/arch/arm/boot/dts/r8a7794.dtsi
+@@ -651,16 +651,22 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
+-				<&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
++			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
++				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+-			clock-indices = <
+-				R8A7794_CLK_QSPI_MOD R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
+-				R8A7794_CLK_I2C3 R8A7794_CLK_I2C2 R8A7794_CLK_I2C1
+-				R8A7794_CLK_I2C0
+-			>;
++			clock-indices = <R8A7794_CLK_GPIO6 R8A7794_CLK_GPIO5
++					 R8A7794_CLK_GPIO4 R8A7794_CLK_GPIO3
++					 R8A7794_CLK_GPIO2 R8A7794_CLK_GPIO1
++					 R8A7794_CLK_GPIO0 R8A7794_CLK_QSPI_MOD
++					 R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
++					 R8A7794_CLK_I2C3 R8A7794_CLK_I2C2
++					 R8A7794_CLK_I2C1 R8A7794_CLK_I2C0>;
+ 			clock-output-names -				"qspi_mod", "i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
++				"gpio6", "gpio5", "gpio4", "gpio3", "gpio2",
++				"gpio1", "gpio0", "qspi_mod",
++				"i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
+ 		mstp11_clks: mstp11_clks@e615099c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
 
