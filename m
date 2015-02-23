@@ -1,93 +1,47 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 05 Feb 2015 10:11:26 +0000
-Subject: [PATCH v5 3/5] drivers: bus: Add Simple Power-Managed Bus DT Bindings
-Message-Id: <1423131088-7835-4-git-send-email-geert+renesas@glider.be>
+Date: Mon, 23 Feb 2015 15:37:23 +0000
+Subject: [PATCH v2 0/2] thermal: rcar: Fix crash and restore symmetry
+Message-Id: <1424705845-17726-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423131088-7835-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1423131088-7835-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Reviewed-by: Kevin Hilman <khilman@linaro.org>
----
-v5:
-  - Add Reviewed-by,
-  - "simple-pm-bus" is not an extension of "simple-bus",
-  - "compatible" must not contain "simple-bus",
-  - Add reference to clock/PM domain provider binding docs,
+	Hi,
 
-v4:
-  - Replace "simple-bus" by "simple-pm-bus",
-  - Remove the "renesas,bsc" bindings. They will be specified in a
-    separate document.
+This series fixes an intermittent crash (NULL pointer dereference) in
+the rcar-thermal driver due to a race condition, and restores symmetry
+in the error and remove paths.
 
-v3:
-  - Add Tested-by,
-  - Document required properties inherited from "simple-bus",
-  - Document required "reg" property for "renesas,bsc",
-  - Move "ranges" before "reg" in the example,
+So far I could trigger the race condition only on r8a73a4, after a soft
+power-on reset using either the rmobile-reset driver, or the RESETA_N
+button on the ape6evm board.  I could not trigger it on r8a7791.
+I haven't tested this on any other r8a779x, or on r8a7779.
 
-v2:
-  - New.
----
- .../devicetree/bindings/bus/simple-pm-bus.txt      | 44 ++++++++++++++++++++++
- 1 file changed, 44 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+This was tested on r8a73a4/ape6evm (fixes the crash) and
+r8a7791/koelsch (crash never seen).
 
-diff --git a/Documentation/devicetree/bindings/bus/simple-pm-bus.txt b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
-new file mode 100644
-index 0000000000000000..d032237512c271f2
---- /dev/null
-+++ b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
-@@ -0,0 +1,44 @@
-+Simple Power-Managed Bus
-+============
-+
-+A Simple Power-Managed Bus is a transparent bus that doesn't need a real
-+driver, as it's typically initialized by the boot loader.
-+
-+However, its bus controller is part of a PM domain, or under the control of a
-+functional clock.  Hence, the bus controller's PM domain and/or clock must be
-+enabled for child devices connected to the bus (either on-SoC or externally)
-+to function.
-+
-+While "simple-pm-bus" follows the "simple-bus" set of properties, as specified
-+in ePAPR, it is not an extension of "simple-bus".
-+
-+
-+Required properties:
-+  - compatible: Must contain at least "simple-pm-bus".
-+		Must not contain "simple-bus".
-+		It's recommended to let this be preceded by one or more
-+		vendor-specific compatible values.
-+  - #address-cells, #size-cells, ranges: Must describe the mapping between
-+		parent address and child address spaces.
-+
-+Optional platform-specific properties for clock or PM domain control (at least
-+one of them is required):
-+  - clocks: Must contain a reference to the functional clock(s),
-+  - power-domains: Must contain a reference to the PM domain.
-+Please refer to the binding documentation for the clock and/or PM domain
-+providers for more details.
-+
-+
-+Example:
-+
-+	bsc: bus@fec10000 {
-+		compatible = "renesas,bsc-sh73a0", "renesas,bsc",
-+			     "simple-pm-bus";
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		ranges = <0 0 0x20000000>;
-+		reg = <0xfec10000 0x400>;
-+		interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&zb_clk>;
-+		power-domains = <&pd_a4s>;
-+	};
+Thanks for applying!
+
+Geert Uytterhoeven (2):
+  thermal: rcar: Fix race condition between init and interrupt
+  thermal: rcar: Make error and remove paths symmetrical with init
+
+ drivers/thermal/rcar_thermal.c | 26 +++++++++++---------------
+ 1 file changed, 11 insertions(+), 15 deletions(-)
+
 -- 
 1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
