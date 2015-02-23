@@ -1,21 +1,21 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 23 Feb 2015 11:08:16 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7794: add GPIO clocks
-Message-Id: <CAMuHMdXG0KzgjR65uAS-tDd+L_E+eRPj2SHR+58T9Pgk0G1tVw@mail.gmail.com>
+Date: Mon, 23 Feb 2015 11:16:47 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7794: add SDHI DT support
+Message-Id: <CAMuHMdU9PS07hhvi1rLoE3q7J_Q2wmOJm=CGyN67w8p4PvW5Yw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6954455.LyoCrfjM8R@wasted.cogentembedded.com>
- <1831753.Dnjo3xKPJv@wasted.cogentembedded.com>
-In-Reply-To: <1831753.Dnjo3xKPJv@wasted.cogentembedded.com>
+References: <10037494.4LD4T2QGPX@wasted.cogentembedded.com>
+ <4571288.SFHfW35Ob9@wasted.cogentembedded.com>
+In-Reply-To: <4571288.SFHfW35Ob9@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Feb 21, 2015 at 11:11 PM, Sergei Shtylyov
+On Sat, Feb 21, 2015 at 11:26 PM, Sergei Shtylyov
 <sergei.shtylyov@cogentembedded.com> wrote:
-> Describe the GPIO clocks in the R8A7794 device tree.
+> Define the generic R8A7794 parts of the SDHI[012] device nodes.
 >
-> Based on the original patch by Koji Matsuoka <koji.matsuoka.xm@renesas.com>.
+> Based on the orginal patch by Shinobu Uehara <shinobu.uehara.xc@renesas.com>.
 >
 > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
