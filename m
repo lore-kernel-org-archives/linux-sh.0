@@ -1,49 +1,63 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:21 +0000
-Subject: [PATCH 24/32] ARM: shmobile: emev2-kzm9d dts: Add PFC information for uart1
-Message-Id: <4a5fcc685a84751bbec5653e942fb3d61470a66c.1424849129.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 23 Feb 2015 15:59:28 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a7740: Remove restart callback
+Message-Id: <1424707169-23007-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424849129.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
+References: <1424707169-23007-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1424707169-23007-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Niklas Söderlund <niso@kth.se>
+Remove the restart handling hack from the r8a7740 generic multiplatform
+case.
 
-Configure the pinmux on kzm9d to use the serial connector for uart1.
+Restart on DT-based r8a7740 platforms is now handled through the
+R-Mobile reset driver.
 
-Signed-off-by: Niklas Söderlund <niso@kth.se>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+This reverts commit 1174c712afa2779f ("ARM: shmobile: r8a7740: Add
+restart callback").
+
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/emev2-kzm9d.dts | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+To avoid losing functionality, this depends on:
+  - commit fa0f8d6700857457 ("power: reset: Add reset driver for
+    R-Mobile platforms"), which is in v4.0-rc1,
+  - commit aba07789d811b6cf ("ARM: shmobile: r8a7740 dtsi: Add PM domain
+    support"), which is in v4.0-rc1,
+  - "ARM: shmobile: Enable R-Mobile reset driver in multiplatform
+    defconfig", which is the first patch of this series.
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c | 8 --------
+ 1 file changed, 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
-index 667d323..1944627 100644
---- a/arch/arm/boot/dts/emev2-kzm9d.dts
-+++ b/arch/arm/boot/dts/emev2-kzm9d.dts
-@@ -94,3 +94,16 @@
- 		vdd33a-supply = <&reg_3p3v>;
- 	};
- };
-+
-+&pfc {
-+	uart1_pins: uart@e1030000 {
-+		renesas,groups = "uart1_ctrl", "uart1_data";
-+		renesas,function = "uart1";
-+	};
-+};
-+
-+&uart1 {
-+	pinctrl-0 = <&uart1_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
-+};
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index dd64caf792160198..9832e48396a40a92 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -842,13 +842,6 @@ static void __init r8a7740_generic_init(void)
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+-#define RESCNT2 IOMEM(0xe6188020)
+-static void r8a7740_restart(enum reboot_mode mode, const char *cmd)
+-{
+-	/* Do soft power on reset */
+-	writel(1 << 31, RESCNT2);
+-}
+-
+ static const char *r8a7740_boards_compat_dt[] __initdata = {
+ 	"renesas,r8a7740",
+ 	NULL,
+@@ -861,7 +854,6 @@ DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
+ 	.init_machine	= r8a7740_generic_init,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= r8a7740_boards_compat_dt,
+-	.restart	= r8a7740_restart,
+ MACHINE_END
+ 
+ #endif /* CONFIG_USE_OF */
 -- 
-2.1.4
+1.9.1
 
