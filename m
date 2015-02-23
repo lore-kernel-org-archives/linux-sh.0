@@ -1,58 +1,33 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 23 Feb 2015 00:28:42 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7794: add SDHI DT support
-Message-Id: <87oaolpj0c.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 23 Feb 2015 11:08:16 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7794: add GPIO clocks
+Message-Id: <CAMuHMdXG0KzgjR65uAS-tDd+L_E+eRPj2SHR+58T9Pgk0G1tVw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <10037494.4LD4T2QGPX@wasted.cogentembedded.com>
- <4571288.SFHfW35Ob9@wasted.cogentembedded.com>
-In-Reply-To: <4571288.SFHfW35Ob9@wasted.cogentembedded.com>
+References: <6954455.LyoCrfjM8R@wasted.cogentembedded.com>
+ <1831753.Dnjo3xKPJv@wasted.cogentembedded.com>
+In-Reply-To: <1831753.Dnjo3xKPJv@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-
-Hi Sergei, Magnus, Simon
-
-> Define the generic R8A7794 parts of the SDHI[012] device nodes.
-> 
-> Based on the orginal patch by Shinobu Uehara <shinobu.uehara.xc@renesas.com>.
-> 
+On Sat, Feb 21, 2015 at 11:11 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> Describe the GPIO clocks in the R8A7794 device tree.
+>
+> Based on the original patch by Koji Matsuoka <koji.matsuoka.xm@renesas.com>.
+>
 > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> ---
-(snip)
-> +	sdhi0: sd@ee100000 {
-> +		compatible = "renesas,sdhi-r8a7794";
-> +		reg = <0 0xee100000 0 0x200>;
-> +		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp3_clks R8A7794_CLK_SDHI0>;
-> +		status = "disabled";
-> +	};
-> +
-> +	sdhi1: sd@ee140000 {
-> +		compatible = "renesas,sdhi-r8a7794";
-> +		reg = <0 0xee140000 0 0x100>;
-> +		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp3_clks R8A7794_CLK_SDHI1>;
-> +		status = "disabled";
-> +	};
-> +
-> +	sdhi2: sd@ee160000 {
-> +		compatible = "renesas,sdhi-r8a7794";
-> +		reg = <0 0xee160000 0 0x100>;
-> +		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp3_clks R8A7794_CLK_SDHI2>;
-> +		status = "disabled";
-> +	};
 
-This patch and r8a7791.dtsi have sdhi0/1/2.
-But, according to datasheet, it is sdhi0/2/3.
-(Only R-Car H2 have sdhi1)
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-I don't care so match about this, but
-I think following datasheet is no-confusion if possible.
+Gr{oetje,eeting}s,
 
-Best regards
----
-Kuninori Morimoto
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
