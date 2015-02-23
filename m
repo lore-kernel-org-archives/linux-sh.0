@@ -1,77 +1,33 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 15 Feb 2015 14:44:40 +0000
-Subject: [PATCH/RFC] i2c: rcar: Support ACK by HW auto restart after NACK
-Message-Id: <1424011480-3551-1-git-send-email-ykaneko0929@gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 23 Feb 2015 13:08:42 +0000
+Subject: Re: [PATCH/RFC] i2c: rcar: Support ACK by HW auto restart after NACK
+Message-Id: <2775fbb6b2e2b333ef2457133f419d4d@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1424011480-3551-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1424011480-3551-1-git-send-email-ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+Hi,
 
-Even if R-Car I2C received NACK, after that it might receive ACK
-by HW auto restart. In case of that, driver would continue process.
-If R-Car I2C didn't receive ACK, the driver would detect timeout
-and would report NACK as -ENXIO.
+On 2015-02-15 15:44, Yoshihiro Kaneko wrote:
+> From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+>
+> Even if R-Car I2C received NACK, after that it might receive ACK
+> by HW auto restart. In case of that, driver would continue process.
+> If R-Car I2C didn't receive ACK, the driver would detect timeout
+> and would report NACK as -ENXIO.
+>
+> Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 
-Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
----
+Excuse me, but what exactly is HW auto restart in this case? Is it a 
+feature of the I2C slave?
 
-This patch is based on i2c/for-next branch of Wolfram Sang's linux tree.
+Thanks,
 
- drivers/i2c/busses/i2c-rcar.c | 19 ++++++++++++-------
- 1 file changed, 12 insertions(+), 7 deletions(-)
-
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 71a6e07..dde8abf 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -455,14 +455,20 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
- 	if (msr & MNR) {
- 		/* go to stop phase */
- 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
--		rcar_i2c_write(priv, ICMIER, RCAR_IRQ_STOP);
- 		rcar_i2c_flags_set(priv, ID_NACK);
- 		goto out;
- 	}
- 
- 	/* Stop */
- 	if (msr & MST) {
--		rcar_i2c_flags_set(priv, ID_DONE);
-+		if (rcar_i2c_flags_has(priv, ID_NACK)) {
-+			/* don't set ID_DONE for expecting ACK
-+					after auto-restart by HW */
-+			rcar_i2c_write(priv, ICMSR, ~MST);
-+		} else {
-+			rcar_i2c_flags_set(priv, ID_DONE);
-+			rcar_i2c_write(priv, ICMSR, 0);
-+		}
- 		goto out;
- 	}
- 
-@@ -536,15 +542,14 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 					     rcar_i2c_flags_has(priv, ID_DONE),
- 					     5 * HZ);
- 		if (!timeout) {
-+			if (rcar_i2c_flags_has(priv, ID_NACK)) {
-+				ret = -ENXIO;
-+				break;
-+			}
- 			ret = -ETIMEDOUT;
- 			break;
- 		}
- 
--		if (rcar_i2c_flags_has(priv, ID_NACK)) {
--			ret = -ENXIO;
--			break;
--		}
--
- 		if (rcar_i2c_flags_has(priv, ID_ARBLOST)) {
- 			ret = -EAGAIN;
- 			break;
--- 
-1.9.1
+    Wolfram
 
