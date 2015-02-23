@@ -1,52 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:22:42 +0000
-Subject: [PATCH 2/5] ARM: shmobile: R-Car Gen2: CONFIG_COMMON_CLK is always set
-Message-Id: <c5b0a373f3e1e40073b94179c9eefc20b8a7ef3d.1424931398.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 23 Feb 2015 15:37:25 +0000
+Subject: [PATCH v2 2/2] thermal: rcar: Make error and remove paths symmetrical with init
+Message-Id: <1424705845-17726-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424931398.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424931398.git.horms+renesas@verge.net.au>
+References: <1424705845-17726-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1424705845-17726-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Since commit e042681894b62d60 ("ARM: shmobile: r8a7790: Remove legacy
-code"), all R-Car Gen2 SoCs are supported by multiplatform kernels only.
-As CONFIG_COMMON_CLK is always set for multiplatform kernels, we can
-remove related #ifdefs in code specific to R-Car Gen2 SoCs.
+Swap interrupt disable and thermal zone unregistration in the error and
+remove paths, to make them more symmetrical with the initialization
+path.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 4 ----
- 1 file changed, 4 deletions(-)
+v2:
+  - Add Acked-by.
+---
+ drivers/thermal/rcar_thermal.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index 8c7ec93..5d13595 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -51,9 +51,7 @@ u32 rcar_gen2_read_mode_pins(void)
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 3c2c1720ba4a4a72..fe4e767018c4cf73 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -463,9 +463,9 @@ static int rcar_thermal_probe(struct platform_device *pdev)
  
- void __init rcar_gen2_timer_init(void)
- {
--#if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
- 	u32 mode = rcar_gen2_read_mode_pins();
--#endif
- #ifdef CONFIG_ARM_ARCH_TIMER
- 	void __iomem *base;
- 	int extal_mhz = 0;
-@@ -129,9 +127,7 @@ void __init rcar_gen2_timer_init(void)
- 	iounmap(base);
- #endif /* CONFIG_ARM_ARCH_TIMER */
+ error_unregister:
+ 	rcar_thermal_for_each_priv(priv, common) {
+-		thermal_zone_device_unregister(priv->zone);
+ 		if (rcar_has_irq_support(priv))
+ 			rcar_thermal_irq_disable(priv);
++		thermal_zone_device_unregister(priv->zone);
+ 	}
  
--#ifdef CONFIG_COMMON_CLK
- 	rcar_gen2_clocks_init(mode);
--#endif
- #ifdef CONFIG_ARCH_SHMOBILE_MULTI
- 	clocksource_of_init();
- #endif
+ 	pm_runtime_put(dev);
+@@ -481,9 +481,9 @@ static int rcar_thermal_remove(struct platform_device *pdev)
+ 	struct rcar_thermal_priv *priv;
+ 
+ 	rcar_thermal_for_each_priv(priv, common) {
+-		thermal_zone_device_unregister(priv->zone);
+ 		if (rcar_has_irq_support(priv))
+ 			rcar_thermal_irq_disable(priv);
++		thermal_zone_device_unregister(priv->zone);
+ 	}
+ 
+ 	pm_runtime_put(dev);
 -- 
-2.1.4
+1.9.1
 
