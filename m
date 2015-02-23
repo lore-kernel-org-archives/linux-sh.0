@@ -1,83 +1,63 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:20 +0000
-Subject: [PATCH 23/32] ARM: shmobile: emev2 dtsi: Add PFC information
-Message-Id: <e7cdf791dbc456329703424822e85eeb31fc1a54.1424849129.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 23 Feb 2015 15:59:29 +0000
+Subject: [PATCH 3/3] ARM: shmobile: sh73a0: Remove restart callback
+Message-Id: <1424707169-23007-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424849129.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
+References: <1424707169-23007-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1424707169-23007-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Niklas Söderlund <niso@kth.se>
+Remove the restart handling hack from the sh73a0 generic multiplatform
+case.
 
-With this information all GPIOs can make use of the PFC functionality.
+Restart on DT-based sh73a0 platforms is now handled through the
+R-Mobile reset driver.
 
-Signed-off-by: Niklas Söderlund <niso@kth.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+This basically reverts commit cad900819fba0176 ("ARM: shmobile: sh73a0:
+Add restart callback").
+
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/emev2.dtsi | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+To avoid losing functionality, this depends on:
+  - commit fa0f8d6700857457 ("power: reset: Add reset driver for
+    R-Mobile platforms"), which is in v4.0-rc1,
+  - commit 126693a80f451ecd ("ARM: shmobile: sh73a0 dtsi: Add PM domain
+    support"), which is in sh73a0-multiplatform-for-v3.21,
+  - "ARM: shmobile: Enable R-Mobile reset driver in multiplatform
+    defconfig", which is the first patch of this series.
+---
+ arch/arm/mach-shmobile/setup-sh73a0.c | 8 --------
+ 1 file changed, 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
-index cc7bfe0..bb45694 100644
---- a/arch/arm/boot/dts/emev2.dtsi
-+++ b/arch/arm/boot/dts/emev2.dtsi
-@@ -169,12 +169,18 @@
- 		clock-names = "sclk";
- 	};
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index d17d2682dfa8bd0c..e63c2c2558171498 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -814,13 +814,6 @@ void __init sh73a0_add_early_devices(void)
+ 	shmobile_setup_console();
+ }
  
-+	pfc: pfc@e0140200 {
-+		compatible = "renesas,pfc-emev2";
-+		reg = <0xe0140200 0x100>;
-+	};
-+
- 	gpio0: gpio@e0050000 {
- 		compatible = "renesas,em-gio";
- 		reg = <0xe0050000 0x2c>, <0xe0050040 0x20>;
- 		interrupts = <0 67 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 68 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges = <&pfc 0 0 32>;
- 		#gpio-cells = <2>;
- 		ngpios = <32>;
- 		interrupt-controller;
-@@ -186,6 +192,7 @@
- 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 70 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges = <&pfc 0 32 32>;
- 		#gpio-cells = <2>;
- 		ngpios = <32>;
- 		interrupt-controller;
-@@ -197,6 +204,7 @@
- 		interrupts = <0 71 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 72 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges = <&pfc 0 64 32>;
- 		#gpio-cells = <2>;
- 		ngpios = <32>;
- 		interrupt-controller;
-@@ -208,6 +216,7 @@
- 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 74 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges = <&pfc 0 96 32>;
- 		#gpio-cells = <2>;
- 		ngpios = <32>;
- 		interrupt-controller;
-@@ -219,6 +228,7 @@
- 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 76 IRQ_TYPE_LEVEL_HIGH>;
- 		gpio-controller;
-+		gpio-ranges = <&pfc 0 128 31>;
- 		#gpio-cells = <2>;
- 		ngpios = <31>;
- 		interrupt-controller;
+-#define RESCNT2 IOMEM(0xe6188020)
+-static void sh73a0_restart(enum reboot_mode mode, const char *cmd)
+-{
+-	/* Do soft power on reset */
+-	writel((1 << 31), RESCNT2);
+-}
+-
+ #ifdef CONFIG_USE_OF
+ 
+ static void __init sh73a0_generic_init(void)
+@@ -843,7 +836,6 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.init_early	= shmobile_init_delay,
+ 	.init_machine	= sh73a0_generic_init,
+ 	.init_late	= shmobile_init_late,
+-	.restart	= sh73a0_restart,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
+ MACHINE_END
+ #endif /* CONFIG_USE_OF */
 -- 
-2.1.4
+1.9.1
 
