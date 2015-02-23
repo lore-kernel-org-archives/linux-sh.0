@@ -1,64 +1,48 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 20 Feb 2015 10:28:07 +0000
-Subject: [PATCH 13/24 v2] ASoC: rsnd: remove rsnd_dma::addr
-Message-Id: <87wq3cnaev.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 23 Feb 2015 15:59:27 +0000
+Subject: [PATCH 1/3] ARM: shmobile: Enable R-Mobile reset driver in multiplatform defconfig
+Message-Id: <1424707169-23007-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
+References: <1424707169-23007-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1424707169-23007-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This is used on R-Mobile APE6 (r8a73a4), R-Mobile A1 (r8a7740), and
+SH-Mobile AG5 (sh73a0).
 
-DMAEngine for Renesas R-Car driver is used only for Audio DMAC now.
-rsnd_dma::addr was added to support Audio DMAC peri peri,
-but it is no longer needed. Let's remove it
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v1 -> v2
+To actually work, this depends on:
+  - commit fa0f8d6700857457 ("power: reset: Add reset driver for
+    R-Mobile platforms"), which is in v4.0-rc1,
+  - the system-controller node in the SoC's .dtsi, which was added for
+    PM domain support in:
+      - r8a73a4-multiplatform-for-v3.21 (r8a73a4),
+      - v4.0-rc1 (r8a7740),
+      - sh73a0-multiplatform-for-v3.21 (sh73a0).
 
- - no change
+Irrespectively of that, it's safe to apply anyway.
+---
+ arch/arm/configs/shmobile_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
- sound/soc/sh/rcar/dma.c  |    2 --
- sound/soc/sh/rcar/rsnd.h |    1 -
- 2 files changed, 3 deletions(-)
-
-diff --git a/sound/soc/sh/rcar/dma.c b/sound/soc/sh/rcar/dma.c
-index a01bb8c..c407fd2 100644
---- a/sound/soc/sh/rcar/dma.c
-+++ b/sound/soc/sh/rcar/dma.c
-@@ -89,7 +89,6 @@ static void rsnd_dmaen_start(struct rsnd_dma *dma)
- 	struct dma_async_tx_descriptor *desc;
- 
- 	desc = dmaengine_prep_dma_cyclic(dma->chan,
--					 (dma->addr) ? dma->addr :
- 					 substream->runtime->dma_addr,
- 					 snd_pcm_lib_buffer_bytes(substream),
- 					 snd_pcm_lib_period_bytes(substream),
-@@ -157,7 +156,6 @@ static int rsnd_dmaen_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id,
- 	if (ret < 0)
- 		goto rsnd_dma_init_err;
- 
--	dma->addr = is_play ? cfg.src_addr : cfg.dst_addr;
- 	dma->dir = is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
- 
- 	return 0;
-diff --git a/sound/soc/sh/rcar/rsnd.h b/sound/soc/sh/rcar/rsnd.h
-index 9e67142..a295491 100644
---- a/sound/soc/sh/rcar/rsnd.h
-+++ b/sound/soc/sh/rcar/rsnd.h
-@@ -183,7 +183,6 @@ struct rsnd_dma {
- 	struct dma_chan		*chan;
- 	struct rsnd_dma_ops	*ops;
- 	enum dma_transfer_direction dir;
--	dma_addr_t		addr;
- 	int			dmapp_id;
- 	u32			chcr;
- 	dma_addr_t		src_addr;
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index fb7aa02125c4e695..a904c90f957931d8 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -109,6 +109,9 @@ CONFIG_SPI_SH_HSPI=y
+ CONFIG_GPIO_EM=y
+ CONFIG_GPIO_RCAR=y
+ CONFIG_GPIO_PCF857X=y
++CONFIG_POWER_SUPPLY=y
++CONFIG_POWER_RESET=y
++CONFIG_POWER_RESET_RMOBILE=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+ CONFIG_CPU_THERMAL=y
 -- 
-1.7.9.5
+1.9.1
 
