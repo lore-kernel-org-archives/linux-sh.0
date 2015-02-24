@@ -1,45 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 24 Feb 2015 02:20:37 +0000
-Subject: [PATCH 3/4][resend] ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
-Message-Id: <87y4noyrp4.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 24 Feb 2015 10:00:10 +0000
+Subject: Re: [PATCH 3/4][resend] ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
+Message-Id: <CAMuHMdVjRf+LesPuhjxYVj+9hwMTPKTH_thEDjiH28iq0Rghpw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87y4noyrp4.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87y4noyrp4.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Tue, Feb 24, 2015 at 3:20 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> r8a7790 SDHI ch0/ch1 has SD_DMACR which is located in 0x324.
+> This patch updates register size
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-r8a7790 SDHI ch0/ch1 has SD_DMACR which is located in 0x324.
-This patch updates register size
+Before Simon reverted it again, this one (and patch 4) had:
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/boot/dts/r8a7790.dtsi |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+    Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 007fd33..14d23f8 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -486,7 +486,7 @@
- 
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-r8a7790";
--		reg = <0 0xee100000 0 0x200>;
-+		reg = <0 0xee100000 0 0x328>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
- 		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
-@@ -496,7 +496,7 @@
- 
- 	sdhi1: sd@ee120000 {
- 		compatible = "renesas,sdhi-r8a7790";
--		reg = <0 0xee120000 0 0x200>;
-+		reg = <0 0xee120000 0 0x328>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
- 		dmas = <&dmac1 0xc9>, <&dmac1 0xca>;
--- 
-1.7.9.5
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
