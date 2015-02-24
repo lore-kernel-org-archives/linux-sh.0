@@ -1,226 +1,441 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 25 Feb 2015 21:54:35 +0000
-Subject: [PATCH 15/38] drm: rcar-du: Implement universal plane support
-Message-Id: <1424901298-6829-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 24 Feb 2015 02:07:07 +0000
+Subject: [PATCH 2/2] mmc: sh_mobile_sdhi: remove sh_mobile_sdhi_info
+Message-Id: <8761as12ox.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <878ufo12qq.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <878ufo12qq.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Vinod Koul <vinod.koul@intel.com>, Simon <horms@verge.net.au>
+Cc: Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-Explicitly create the CRTC primary plane instead of relying on the core
-helpers to do so. This simplifies the plane logic by merging the KMS and
-software planes.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Reject plane API operations on the primary planes for now, as that code
-will anyway be refactored when implementing support for atomic updates.
+Current sh_mobile_sdhi's platform data is set via sh_mobile_sdhi_info
+and it is just copied to tmio_mmc_data.
+Now, tmio mmc platform data is specified via tmio_mmc_data.
+This patch replace sh_mobile_sdhi_info to tmio_mmc_data
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+struct sh_mobile_sdhi_info {      -> struct tmio_mmc_data {
+        int dma_slave_tx;         ->    void            *chan_priv_tx;
+        int dma_slave_rx;         ->    void            *chan_priv_rx;
+        unsigned long tmio_flags; ->    unsigned long   flags;
+        unsigned long tmio_caps;  ->    unsigned long   capabilities;
+        unsigned long tmio_caps2; ->    unsigned long   capabilities2;
+        u32 tmio_ocr_mask;        ->    u32             ocr_mask;
+        unsigned int cd_gpio;     ->    unsigned int    cd_gpio;
+};                                      unsigned int    hclk;
+                                        void (*set_pwr)(...);
+                                        void (*set_clk_div)(...);
+                                      };
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c  |  3 +-
- drivers/gpu/drm/rcar-du/rcar_du_kms.c   |  7 ----
- drivers/gpu/drm/rcar-du/rcar_du_plane.c | 65 +++++++++++++++------------------
- drivers/gpu/drm/rcar-du/rcar_du_plane.h | 17 ++++-----
- 4 files changed, 40 insertions(+), 52 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   20 ++++++++---------
+ arch/arm/mach-shmobile/board-bockw.c           |   14 ++++++------
+ arch/arm/mach-shmobile/board-kzm9g.c           |   20 ++++++++---------
+ arch/arm/mach-shmobile/board-marzen.c          |   10 ++++-----
+ arch/sh/boards/board-sh7757lcr.c               |    9 ++++----
+ arch/sh/boards/mach-ap325rxa/setup.c           |    9 ++++----
+ arch/sh/boards/mach-ecovec24/setup.c           |   20 ++++++++---------
+ arch/sh/boards/mach-kfr2r09/setup.c            |   10 ++++-----
+ arch/sh/boards/mach-migor/setup.c              |    9 ++++----
+ arch/sh/boards/mach-se/7724/setup.c            |   17 +++++++-------
+ drivers/mmc/host/sh_mobile_sdhi.c              |   28 ++----------------------
+ include/linux/mmc/sh_mobile_sdhi.h             |   10 ---------
+ 12 files changed, 73 insertions(+), 103 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index 5cf2cac75146..c2ca2a302f44 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -692,7 +692,8 @@ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int index)
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 6d949f1..7eac846 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -754,12 +754,12 @@ static struct platform_device vcc_sdhi1 = {
+ };
  
- 	rcrtc->plane->crtc = crtc;
+ /* SDHI0 */
+-static struct sh_mobile_sdhi_info sdhi0_info = {
+-	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+-	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++static struct tmio_mmc_data sdhi0_info = {
++	.chan_priv_tx	= (void *)SHDMA_SLAVE_SDHI0_TX,
++	.chan_priv_rx	= (void *)SHDMA_SLAVE_SDHI0_RX,
++	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
++	.flags		= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
+ 	.cd_gpio	= 167,
+ };
  
--	ret = drm_crtc_init(rcdu->ddev, crtc, &crtc_funcs);
-+	ret = drm_crtc_init_with_planes(rcdu->ddev, crtc, &rcrtc->plane->plane,
-+					NULL, &crtc_funcs);
- 	if (ret < 0)
- 		return ret;
+@@ -796,12 +796,12 @@ static struct platform_device sdhi0_device = {
+ };
  
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 888df404932e..413145de3db3 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -439,13 +439,6 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 		encoder->possible_clones = (1 << num_encoders) - 1;
+ /* SDHI1 */
+-static struct sh_mobile_sdhi_info sdhi1_info = {
+-	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+-	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+-	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++static struct tmio_mmc_data sdhi1_info = {
++	.chan_priv_tx	= (void *)SHDMA_SLAVE_SDHI1_TX,
++	.chan_priv_rx	= (void *)SHDMA_SLAVE_SDHI1_RX,
++	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+-	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
++	.flags		= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
+ 	/* Port72 cannot generate IRQs, will be used in polling mode. */
+ 	.cd_gpio	= 72,
+ };
+diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+index f27b5a8..25558d1 100644
+--- a/arch/arm/mach-shmobile/board-bockw.c
++++ b/arch/arm/mach-shmobile/board-bockw.c
+@@ -201,12 +201,12 @@ static struct rcar_phy_platform_data usb_phy_platform_data __initdata  
+ 
+ /* SDHI */
+-static struct sh_mobile_sdhi_info sdhi0_info __initdata = {
+-	.dma_slave_tx	= HPBDMA_SLAVE_SDHI0_TX,
+-	.dma_slave_rx	= HPBDMA_SLAVE_SDHI0_RX,
+-	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+-	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
+-	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
++static struct tmio_mmc_data sdhi0_info __initdata = {
++	.chan_priv_tx	= (void *)HPBDMA_SLAVE_SDHI0_TX,
++	.chan_priv_rx	= (void *)HPBDMA_SLAVE_SDHI0_RX,
++	.capabilities	= MMC_CAP_SD_HIGHSPEED,
++	.ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
++	.flags		= TMIO_MMC_HAS_IDLE_WAIT,
+ };
+ 
+ static struct resource sdhi0_resources[] __initdata = {
+@@ -683,7 +683,7 @@ static void __init bockw_init(void)
+ 		platform_device_register_resndata(
+ 			NULL, "sh_mobile_sdhi", 0,
+ 			sdhi0_resources, ARRAY_SIZE(sdhi0_resources),
+-			&sdhi0_info, sizeof(struct sh_mobile_sdhi_info));
++			&sdhi0_info, sizeof(struct tmio_mmc_data));
  	}
  
--	/* Now that the CRTCs have been initialized register the planes. */
--	for (i = 0; i < num_groups; ++i) {
--		ret = rcar_du_planes_register(&rcdu->groups[i]);
--		if (ret < 0)
--			return ret;
--	}
+ 	/* for Audio */
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 7c9b63b..260d831 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -442,11 +442,11 @@ static struct platform_device vcc_sdhi2 = {
+ };
+ 
+ /* SDHI */
+-static struct sh_mobile_sdhi_info sdhi0_info = {
+-	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+-	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+-	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++static struct tmio_mmc_data sdhi0_info = {
++	.chan_priv_tx	= (void *)SHDMA_SLAVE_SDHI0_TX,
++	.chan_priv_rx	= (void *)SHDMA_SLAVE_SDHI0_RX,
++	.flags		= TMIO_MMC_HAS_IDLE_WAIT,
++	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_POWER_OFF_CARD,
+ };
+ 
+@@ -484,13 +484,13 @@ static struct platform_device sdhi0_device = {
+ };
+ 
+ /* Micro SD */
+-static struct sh_mobile_sdhi_info sdhi2_info = {
+-	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
+-	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
+-	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
++static struct tmio_mmc_data sdhi2_info = {
++	.chan_priv_tx	= (void *)SHDMA_SLAVE_SDHI2_TX,
++	.chan_priv_rx	= (void *)SHDMA_SLAVE_SDHI2_RX,
++	.flags		= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_USE_GPIO_CD |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+-	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_POWER_OFF_CARD,
++	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_POWER_OFF_CARD,
+ 	.cd_gpio	= 13,
+ };
+ 
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 598f704..51db288 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -122,11 +122,11 @@ static struct resource sdhi0_resources[] = {
+ 	},
+ };
+ 
+-static struct sh_mobile_sdhi_info sdhi0_platform_data = {
+-	.dma_slave_tx = HPBDMA_SLAVE_SDHI0_TX,
+-	.dma_slave_rx = HPBDMA_SLAVE_SDHI0_RX,
+-	.tmio_flags = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
+-	.tmio_caps = MMC_CAP_SD_HIGHSPEED,
++static struct tmio_mmc_data sdhi0_platform_data = {
++	.chan_priv_tx = (void *)HPBDMA_SLAVE_SDHI0_TX,
++	.chan_priv_rx = (void *)HPBDMA_SLAVE_SDHI0_RX,
++	.flags        = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
++	.capabilities = MMC_CAP_SD_HIGHSPEED,
+ };
+ 
+ static struct platform_device sdhi0_device = {
+diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
+index 669df51..324599b 100644
+--- a/arch/sh/boards/board-sh7757lcr.c
++++ b/arch/sh/boards/board-sh7757lcr.c
+@@ -17,6 +17,7 @@
+ #include <linux/spi/spi.h>
+ #include <linux/spi/flash.h>
+ #include <linux/io.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+@@ -243,10 +244,10 @@ static struct platform_device sh_mmcif_device = {
+ };
+ 
+ /* SDHI0 */
+-static struct sh_mobile_sdhi_info sdhi_info = {
+-	.dma_slave_tx	= SHDMA_SLAVE_SDHI_TX,
+-	.dma_slave_rx	= SHDMA_SLAVE_SDHI_RX,
+-	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
++static struct tmio_mmc_data sdhi_info = {
++	.chan_priv_tx	= (void *)SHDMA_SLAVE_SDHI_TX,
++	.chan_priv_rx	= (void *)SHDMA_SLAVE_SDHI_RX,
++	.capabilities	= MMC_CAP_SD_HIGHSPEED,
+ };
+ 
+ static struct resource sdhi_resources[] = {
+diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
+index d4b01d4c..cbd2a9f 100644
+--- a/arch/sh/boards/mach-ap325rxa/setup.c
++++ b/arch/sh/boards/mach-ap325rxa/setup.c
+@@ -18,6 +18,7 @@
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/sh_flctl.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/delay.h>
+ #include <linux/i2c.h>
+ #include <linux/regulator/fixed.h>
+@@ -447,8 +448,8 @@ static struct resource sdhi0_cn3_resources[] = {
+ 	},
+ };
+ 
+-static struct sh_mobile_sdhi_info sdhi0_cn3_data = {
+-	.tmio_caps      = MMC_CAP_SDIO_IRQ,
++static struct tmio_mmc_data sdhi0_cn3_data = {
++	.capabilities	= MMC_CAP_SDIO_IRQ,
+ };
+ 
+ static struct platform_device sdhi0_cn3_device = {
+@@ -474,8 +475,8 @@ static struct resource sdhi1_cn7_resources[] = {
+ 	},
+ };
+ 
+-static struct sh_mobile_sdhi_info sdhi1_cn7_data = {
+-	.tmio_caps      = MMC_CAP_SDIO_IRQ,
++static struct tmio_mmc_data sdhi1_cn7_data = {
++	.capabilities	= MMC_CAP_SDIO_IRQ,
+ };
+ 
+ static struct platform_device sdhi1_cn7_device = {
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 0d30492..d531791 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -601,12 +601,12 @@ static struct platform_device sdhi0_power = {
+ 	},
+ };
+ 
+-static struct sh_mobile_sdhi_info sdhi0_info = {
+-	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+-	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
++static struct tmio_mmc_data sdhi0_info = {
++	.chan_priv_tx	= (void *)SHDMA_SLAVE_SDHI0_TX,
++	.chan_priv_rx	= (void *)SHDMA_SLAVE_SDHI0_RX,
++	.capabilities	= MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
+ 			  MMC_CAP_NEEDS_POLL,
+-	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
++	.flags		= TMIO_MMC_USE_GPIO_CD,
+ 	.cd_gpio	= GPIO_PTY7,
+ };
+ 
+@@ -635,12 +635,12 @@ static struct platform_device sdhi0_device = {
+ 
+ #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ /* SDHI1 */
+-static struct sh_mobile_sdhi_info sdhi1_info = {
+-	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+-	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+-	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
++static struct tmio_mmc_data sdhi1_info = {
++	.chan_priv_tx	= (void *)SHDMA_SLAVE_SDHI1_TX,
++	.chan_priv_rx	= (void *)SHDMA_SLAVE_SDHI1_RX,
++	.capabilities	= MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
+ 			  MMC_CAP_NEEDS_POLL,
+-	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
++	.flags		= TMIO_MMC_USE_GPIO_CD,
+ 	.cd_gpio	= GPIO_PTW7,
+ };
+ 
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 1df4398..7d997ce 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -373,11 +373,11 @@ static struct resource kfr2r09_sh_sdhi0_resources[] = {
+ 	},
+ };
+ 
+-static struct sh_mobile_sdhi_info sh7724_sdhi0_data = {
+-	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+-	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
+-	.tmio_caps      = MMC_CAP_SDIO_IRQ,
++static struct tmio_mmc_data sh7724_sdhi0_data = {
++	.chan_priv_tx	= (void *)SHDMA_SLAVE_SDHI0_TX,
++	.chan_priv_rx	= (void *)SHDMA_SLAVE_SDHI0_RX,
++	.flags		= TMIO_MMC_WRPROTECT_DISABLE,
++	.capabilities	= MMC_CAP_SDIO_IRQ,
+ };
+ 
+ static struct platform_device kfr2r09_sh_sdhi0_device = {
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 8b73194..29b7c0d 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -15,6 +15,7 @@
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mtd/physmap.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mtd/nand.h>
+ #include <linux/i2c.h>
+ #include <linux/regulator/fixed.h>
+@@ -408,10 +409,10 @@ static struct resource sdhi_cn9_resources[] = {
+ 	},
+ };
+ 
+-static struct sh_mobile_sdhi_info sh7724_sdhi_data = {
+-	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+-	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	.tmio_caps      = MMC_CAP_SDIO_IRQ,
++static struct tmio_mmc_data sh7724_sdhi_data = {
++	.chan_priv_tx	= (void *)SHDMA_SLAVE_SDHI0_TX,
++	.chan_priv_rx	= (void *)SHDMA_SLAVE_SDHI0_RX,
++	.capabilities	= MMC_CAP_SDIO_IRQ,
+ };
+ 
+ static struct platform_device sdhi_cn9_device = {
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index 1162bc6..4f6635a 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -16,6 +16,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
++#include <linux/mfd/tmio.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/delay.h>
+ #include <linux/regulator/fixed.h>
+@@ -468,10 +469,10 @@ static struct resource sdhi0_cn7_resources[] = {
+ 	},
+ };
+ 
+-static struct sh_mobile_sdhi_info sh7724_sdhi0_data = {
+-	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+-	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	.tmio_caps      = MMC_CAP_SDIO_IRQ,
++static struct tmio_mmc_data sh7724_sdhi0_data = {
++	.chan_priv_tx	= (void *)SHDMA_SLAVE_SDHI0_TX,
++	.chan_priv_rx	= (void *)SHDMA_SLAVE_SDHI0_RX,
++	.capabilities	= MMC_CAP_SDIO_IRQ,
+ };
+ 
+ static struct platform_device sdhi0_cn7_device = {
+@@ -497,10 +498,10 @@ static struct resource sdhi1_cn8_resources[] = {
+ 	},
+ };
+ 
+-static struct sh_mobile_sdhi_info sh7724_sdhi1_data = {
+-	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+-	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+-	.tmio_caps      = MMC_CAP_SDIO_IRQ,
++static struct tmio_mmc_data sh7724_sdhi1_data = {
++	.chan_priv_tx	= (void *)SHDMA_SLAVE_SDHI1_TX,
++	.chan_priv_rx	= (void *)SHDMA_SLAVE_SDHI1_RX,
++	.capabilities	= MMC_CAP_SDIO_IRQ,
+ };
+ 
+ static struct platform_device sdhi1_cn8_device = {
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 3137e29..354f4f3 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -202,7 +202,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	struct sh_mobile_sdhi *priv;
+ 	struct tmio_mmc_data *mmc_data;
+ 	struct tmio_mmc_data *mmd = pdev->dev.platform_data;
+-	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+ 	struct tmio_mmc_host *host;
+ 	struct resource *res;
+ 	int irq, ret, i = 0;
+@@ -246,32 +245,9 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	else
+ 		host->bus_shift = 0;
+ 
+-	if (mmd) {
+-		/*
+-		 * FIXME
+-		 *
+-		 * sh_mobile_sdhi_info will be replaced to tmio_mmc_data soon.
+-		 * But, sh_mobile_sdhi_info is used under
+-		 * ${LINUX}/arch/arm/mach-shmobile/
+-		 * ${LINUX}/arch/sh/
+-		 * To separate large patch into "tmio_mmc_data has .chan_priv_?x"
+-		 * and "replace sh_mobile_sdhi_info in tmio_mmc_data",
+-		 * here has dummy method.
+-		 * These should be removed.
+-		 */
+-		struct tmio_mmc_data m;
 -
- 	drm_kms_helper_poll_init(dev);
+-		mmd = &m;
+-		m.flags		= p->tmio_flags;
+-		m.ocr_mask	= p->tmio_ocr_mask;
+-		m.capabilities	= p->tmio_caps;
+-		m.capabilities2	= p->tmio_caps2;
+-		m.cd_gpio	= p->cd_gpio;
+-		m.chan_priv_tx	= (void *)p->dma_slave_tx;
+-		m.chan_priv_rx	= (void *)p->dma_slave_rx;
+-
++	if (mmd)
+ 		*mmc_data = *mmd;
+-	}
++
+ 	dma_priv->filter = shdma_chan_filter;
+ 	dma_priv->enable = sh_mobile_sdhi_enable_dma;
  
- 	if (dev->mode_config.num_connector) {
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index 50f2f2b20d39..242db1e1a1e4 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -26,14 +26,9 @@
- #define RCAR_DU_COLORKEY_SOURCE		(1 << 24)
- #define RCAR_DU_COLORKEY_MASK		(1 << 24)
+diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
+index da77e5e20..95d6f03 100644
+--- a/include/linux/mmc/sh_mobile_sdhi.h
++++ b/include/linux/mmc/sh_mobile_sdhi.h
+@@ -7,14 +7,4 @@
+ #define SH_MOBILE_SDHI_IRQ_SDCARD	"sdcard"
+ #define SH_MOBILE_SDHI_IRQ_SDIO		"sdio"
  
--struct rcar_du_kms_plane {
--	struct drm_plane plane;
--	struct rcar_du_plane *hwplane;
+-struct sh_mobile_sdhi_info {
+-	int dma_slave_tx;
+-	int dma_slave_rx;
+-	unsigned long tmio_flags;
+-	unsigned long tmio_caps;
+-	unsigned long tmio_caps2;
+-	u32 tmio_ocr_mask;	/* available MMC voltages */
+-	unsigned int cd_gpio;
 -};
 -
- static inline struct rcar_du_plane *to_rcar_plane(struct drm_plane *plane)
- {
--	return container_of(plane, struct rcar_du_kms_plane, plane)->hwplane;
-+	return container_of(plane, struct rcar_du_plane, plane);
- }
- 
- static u32 rcar_du_plane_read(struct rcar_du_group *rgrp,
-@@ -299,6 +294,9 @@ rcar_du_plane_update(struct drm_plane *plane, struct drm_crtc *crtc,
- 	unsigned int nplanes;
- 	int ret;
- 
-+	if (plane->type != DRM_PLANE_TYPE_OVERLAY)
-+		return -EINVAL;
-+
- 	format = rcar_du_format_info(fb->pixel_format);
- 	if (format = NULL) {
- 		dev_dbg(rcdu->dev, "%s: unsupported format %08x\n", __func__,
-@@ -348,6 +346,9 @@ static int rcar_du_plane_disable(struct drm_plane *plane)
- {
- 	struct rcar_du_plane *rplane = to_rcar_plane(plane);
- 
-+	if (plane->type != DRM_PLANE_TYPE_OVERLAY)
-+		return -EINVAL;
-+
- 	if (!rplane->enabled)
- 		return 0;
- 
-@@ -453,7 +454,11 @@ int rcar_du_planes_init(struct rcar_du_group *rgrp)
- {
- 	struct rcar_du_planes *planes = &rgrp->planes;
- 	struct rcar_du_device *rcdu = rgrp->dev;
-+	unsigned int num_planes;
-+	unsigned int num_crtcs;
-+	unsigned int crtcs;
- 	unsigned int i;
-+	int ret;
- 
- 	mutex_init(&planes->lock);
- 	planes->free = 0xff;
-@@ -478,45 +483,35 @@ int rcar_du_planes_init(struct rcar_du_group *rgrp)
- 	if (planes->zpos = NULL)
- 		return -ENOMEM;
- 
--	for (i = 0; i < ARRAY_SIZE(planes->planes); ++i) {
-+	 /* Create one primary plane per in this group CRTC and seven overlay
-+	  * planes.
-+	  */
-+	num_crtcs = min(rcdu->num_crtcs - 2 * rgrp->index, 2U);
-+	num_planes = num_crtcs + 7;
-+
-+	crtcs = ((1 << rcdu->num_crtcs) - 1) & (3 << (2 * rgrp->index));
-+
-+	for (i = 0; i < num_planes; ++i) {
-+		enum drm_plane_type type = i < num_crtcs
-+					 ? DRM_PLANE_TYPE_PRIMARY
-+					 : DRM_PLANE_TYPE_OVERLAY;
- 		struct rcar_du_plane *plane = &planes->planes[i];
- 
- 		plane->group = rgrp;
- 		plane->hwindex = -1;
- 		plane->alpha = 255;
- 		plane->colorkey = RCAR_DU_COLORKEY_NONE;
--		plane->zpos = 0;
--	}
--
--	return 0;
--}
-+		plane->zpos = type = DRM_PLANE_TYPE_PRIMARY ? 0 : 1;
- 
--int rcar_du_planes_register(struct rcar_du_group *rgrp)
--{
--	struct rcar_du_planes *planes = &rgrp->planes;
--	struct rcar_du_device *rcdu = rgrp->dev;
--	unsigned int crtcs;
--	unsigned int i;
--	int ret;
--
--	crtcs = ((1 << rcdu->num_crtcs) - 1) & (3 << (2 * rgrp->index));
--
--	for (i = 0; i < RCAR_DU_NUM_KMS_PLANES; ++i) {
--		struct rcar_du_kms_plane *plane;
--
--		plane = devm_kzalloc(rcdu->dev, sizeof(*plane), GFP_KERNEL);
--		if (plane = NULL)
--			return -ENOMEM;
--
--		plane->hwplane = &planes->planes[i + 2];
--		plane->hwplane->zpos = 1;
--
--		ret = drm_plane_init(rcdu->ddev, &plane->plane, crtcs,
--				     &rcar_du_plane_funcs, formats,
--				     ARRAY_SIZE(formats), false);
-+		ret = drm_universal_plane_init(rcdu->ddev, &plane->plane, crtcs,
-+					       &rcar_du_plane_funcs, formats,
-+					       ARRAY_SIZE(formats), type);
- 		if (ret < 0)
- 			return ret;
- 
-+		if (type = DRM_PLANE_TYPE_PRIMARY)
-+			continue;
-+
- 		drm_object_attach_property(&plane->plane.base,
- 					   planes->alpha, 255);
- 		drm_object_attach_property(&plane->plane.base,
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.h b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
-index 3021288b1a89..813b3212392a 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
-@@ -22,17 +22,17 @@
- struct rcar_du_format_info;
- struct rcar_du_group;
- 
--/* The RCAR DU has 8 hardware planes, shared between KMS planes and CRTCs. As
-- * using KMS planes requires at least one of the CRTCs being enabled, no more
-- * than 7 KMS planes can be available. We thus create 7 KMS planes and
-- * 9 software planes (one for each KMS planes and one for each CRTC).
-+/* The RCAR DU has 8 hardware planes, shared between primary and overlay planes.
-+ * As using overlay planes requires at least one of the CRTCs being enabled, no
-+ * more than 7 overlay planes can be available. We thus create 1 primary plane
-+ * per CRTC and 7 overlay planes, for a total of up to 9 KMS planes.
-  */
--
--#define RCAR_DU_NUM_KMS_PLANES		7
-+#define RCAR_DU_NUM_KMS_PLANES		9
- #define RCAR_DU_NUM_HW_PLANES		8
--#define RCAR_DU_NUM_SW_PLANES		9
- 
- struct rcar_du_plane {
-+	struct drm_plane plane;
-+
- 	struct rcar_du_group *group;
- 	struct drm_crtc *crtc;
- 
-@@ -58,7 +58,7 @@ struct rcar_du_plane {
- };
- 
- struct rcar_du_planes {
--	struct rcar_du_plane planes[RCAR_DU_NUM_SW_PLANES];
-+	struct rcar_du_plane planes[RCAR_DU_NUM_KMS_PLANES];
- 	unsigned int free;
- 	struct mutex lock;
- 
-@@ -68,7 +68,6 @@ struct rcar_du_planes {
- };
- 
- int rcar_du_planes_init(struct rcar_du_group *rgrp);
--int rcar_du_planes_register(struct rcar_du_group *rgrp);
- 
- void rcar_du_plane_setup(struct rcar_du_plane *plane);
- void rcar_du_plane_update_base(struct rcar_du_plane *plane);
+ #endif /* LINUX_MMC_SH_MOBILE_SDHI_H */
 -- 
-2.0.5
+1.7.9.5
 
