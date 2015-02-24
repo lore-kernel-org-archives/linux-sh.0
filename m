@@ -1,53 +1,35 @@
-From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 17 Feb 2015 03:34:53 +0000
-Subject: RE: [PATCH v2 1/4] usb: renesas_usbhs: fix spinlock suspected in a gadget complete function
-Message-Id: <HKNPR06MB3227796F47FE559CEAD573DD82F0@HKNPR06MB322.apcprd06.prod.outlook.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 24 Feb 2015 02:17:58 +0000
+Subject: [PATCH 0/4][resend] ARM: shmobile: r8a779x: add SDHI DMA support
+Message-Id: <874mqc126w.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424051579-5060-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-	<1424051579-5060-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <CAMuHMdXOkzznW_4KJwqiO5UgYXYN2tZ+2OEYwA+eQJF2S-Z8jQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdXOkzznW_4KJwqiO5UgYXYN2tZ+2OEYwA+eQJF2S-Z8jQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Greg KH <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@ti.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, USB list <linux-usb@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-SGkgR2VlcnQtc2FuLA0KDQpUaGFuayB5b3UgZm9yIHRoZSByZXBseSBhZ2FpbiENCg0KPiBIaSBT
-aGltb2RhLXNhbiwNCj4gDQo+IE9uIE1vbiwgRmViIDE2LCAyMDE1IGF0IDI6NTIgQU0sIFlvc2hp
-aGlybyBTaGltb2RhDQo+IDx5b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2FzLmNvbT4gd3JvdGU6
-DQo+ID4gQWNjb3JkaW5nIHRvIHRoZSBnYWRnZXQuaCwgYSAiY29tcGxldGUiIGZ1bmN0aW9uIHdp
-bGwgYWx3YXlzIGJlIGNhbGxlZA0KPiA+IHdpdGggaW50ZXJydXB0cyBkaXNhYmxlZC4gSG93ZXZl
-ciwgc29tZXRpbWVzIHVzYmhzZ19xdWV1ZV9wb3AoKSBmdW5jdGlvbg0KPiA+IGlzIGNhbGxlZCB3
-aXRoIGludGVycnVwdHMgZW5hYmxlZC4gU28sIHRoaXMgZnVuY3Rpb24gc2hvdWxkIGNhbGxzDQo+
-ID4gbG9jYWxfaXJxX3NhdmUoKSBiZWZvcmUgdGhpcyBjYWxscyB0aGUgdXNiX2dhZGdldF9naXZl
-YmFja19yZXF1ZXN0KCkuDQo+ID4gT3RoZXJ3aXNlLCB0aGVyZSBpcyBwb3NzaWJsZSB0byBjYXVz
-ZSBhIHNwaW5sb2NrIHN1c3BlY3RlZCBpbiBhIGdhZGdldA0KPiA+IGNvbXBsZXRlIGZ1bmN0aW9u
-Lg0KPiANCj4gSSBzdGlsbCBmZWVsIHVuZWFzeSBhYm91dCBhZGRpbmcgdGhlIGNhbGwgdG8gbG9j
-YWxfaXJxX3NhdmUoKSwgYXMgdGhlIG5lZWQgZm9yDQo+IHRoaXMgaXMgdXN1YWxseSBhbiBpbmRp
-Y2F0b3Igb2YgYW5vdGhlciBsb2NraW5nIHByb2JsZW0uDQoNCkkgYWxzbyB0aGluayB0aGF0IEkg
-d291bGQgbGlrZSB0byBhdm9pZCB1c2luZyBsb2NhbF9pcnFfc2F2ZSgpLg0KQnV0LCBJIGhhdmUg
-bm8gaWRlYSB0byByZXNvbHZlIHRoaXMgaXNzdWUgZm9yIG5vdy4NCg0KPiBVbmZvcnR1bmF0ZWx5
-IEkga25vdyBuZXh0IHRvIG5vdGhpbmcgYWJvdXQgdGhlIFVTQiBnYWRnZXQgc3Vic3lzdGVtLCBz
-byBzb21lDQo+IGhlbHAgZnJvbSB0aGUgVVNCIGdhZGdldCBleHBlcnRzIHdvdWxkIGJlIGFwcHJl
-Y2lhdGVkLg0KPiANCj4gSSBoYWQgYSBsb29rIGF0IG90aGVyIGRyaXZlcnMsIGFuZCBpdCBzZWVt
-cyBtb3N0IGRyaXZlcnMgYWN0dWFsbHkgcmVsZWFzZQ0KPiBhbmQgcmVhY3F1aXJlIGEgc3Bpbmxv
-Y2sgYXJvdW5kIHRoZSBjYWxsIHRvIHVzYl9nYWRnZXRfZ2l2ZWJhY2tfcmVxdWVzdCgpLA0KPiBp
-LmUuIHRoZXkgZG86DQo+IA0KPiAgICAgc3Bpbl91bmxvY2soLi4uKTsNCj4gICAgIHVzYl9nYWRn
-ZXRfZ2l2ZWJhY2tfcmVxdWVzdCguLi4pOw0KPiAgICAgc3Bpbl9sb2NrKCk7DQo+IA0KPiBUaGlz
-IG1lYW5zIHRoZXkgaGFkIGFscmVhZHkgYWNxdWlyZWQgdGhlIHNwaW5sb2NrIChhbmQgZGlzYWJs
-ZWQgaW50ZXJydXB0cyEpDQo+IGJlZm9yZSwgd2hpY2ggbG9va3MgbXVjaCBoZWFsdGhpZXIgdG8g
-bWUuDQo+IA0KPiBUaGVyZSdzIG9ubHkgb25lIGRyaXZlciB0aGF0IHVzZXMgbG9jYWxfaXJxX3Nh
-dmUoKSAocHhhMjd4X3VkYykuDQoNCkkgaGFkIGEgbG9vayBhdCB0aGUgbXVzYiBkcml2ZXIuIEl0
-IHVzZXMgYSBkbWFlbmdpbmUgZHJpdmVyLg0KQW5kLCBpbiB0aGUgY2FsbGJhY2sgcm91dGluZSBv
-ZiB0aGUgbXVzYiBkcml2ZXIsIGl0IGNhbGxzIHNwaW5fbG9ja19pcnFzYXZlKCkgYXQgZmlyc3Qu
-DQoNCmNwcGk0MV9kbWFfY2FsbGJhY2sNCi0tPiBzcGluX2xvY2tfaXJxc2F2ZSgmbXVzYi0+bG9j
-aywgZmxhZ3MpOw0KLS0+IGNwcGk0MV90cmFuc19kb25lDQogLS0+IG11c2JfZG1hX2NvbXBsZXRp
-b24NCiAgLS0+IG11c2JfZ190eCBvciBtdXNiX2dfcngNCiAgIC0tPiBtdXNiX2dfZ2l2ZWJhY2sN
-CiAgICAtLT4gc3Bpbl91bmxvY2soJm11c2ItPmxvY2spOyAgICMgVGhpcyBtZWFucyB1bmxvY2tl
-ZCB0aGUgc3BpbiwgYnV0IGRpc2FibGVkIGludGVycnVwdHMuDQogICAgLS0+IHVzYl9nYWRnZXRf
-Z2l2ZWJhY2tfcmVxdWVzdA0KICAgIC0tPiBzcGluX2xvY2soJm11c2ItPmxvY2spOw0KIDwgc25p
-cCA+DQotLT4gc3Bpbl91bmxvY2tfaXJxcmVzdG9yZSgmbXVzYi0+bG9jaywgZmxhZ3MpOw0KDQpT
-bywgYWJvdXQgZGlzYWJsZWQgaW50ZXJydXB0cyBiZWZvcmUgdXNiX2dhZGdldF9naXZlYmFja19y
-ZXF1ZXN0KCksDQppdCBpcyBzaW1pbGFyIHdpdGggdGhpcyBwYXRjaC4NCg0KQmVzdCByZWdhcmRz
-LA0KWW9zaGloaXJvIFNoaW1vZGENCg0K
+
+Hi Simon
+
+As I mentioned in
+http://news.gmane.org/gmane.linux.ports.sh.devel
+these are resend of SDHI DMA support
+
+These are based on v4.0-rc1
+
+Kuninori Morimoto (2):
+      ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
+      ARM: shmobile: r8a7791: tidyup SDHI register size on DTSI
+
+Laurent Pinchart (2):
+      ARM: shmobile: r8a7790: Reference DMA channels in SDHI DT nodes
+      ARM: shmobile: r8a7791: Reference DMA channels in SDHI DT nodes
+
+ arch/arm/boot/dts/r8a7790.dtsi |   12 ++++++++++--
+ arch/arm/boot/dts/r8a7791.dtsi |    8 +++++++-
+ 2 files changed, 17 insertions(+), 3 deletions(-)
+
+
+Best regards
+---
+Kuninori Morimoto
