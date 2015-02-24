@@ -1,7 +1,7 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 24 Feb 2015 08:17:26 +0000
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Tue, 24 Feb 2015 16:35:12 +0000
 Subject: Re: [PATCH 0/2] tmio: mmc: replace sh_mobile_sdhi_info to tmio_mmc_data
-Message-Id: <6625730.KGa6x2BHnT@wuerfel>
+Message-Id: <20150224162312.GG5208@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <878ufo12qq.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <878ufo12qq.wl%kuninori.morimoto.gx@renesas.com>
@@ -9,9 +9,10 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, Vinod Koul <vinod.koul@intel.com>, Simon <horms@verge.net.au>, Chris Ball <cjb@laptop.org>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+Cc: Ulf Hansson <ulf.hansson@linaro.org>, Simon <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-On Tuesday 24 February 2015 11:07:25 Kuninori Morimoto wrote:
+On Tue, Feb 24, 2015 at 11:07:25AM +0900, Kuninori Morimoto wrote:
+> 
 > Hi Ulf, Vinod, Simon
 > 
 > DMAEngine cleanup patches are accepted in v4.0-rc1
@@ -27,7 +28,44 @@ On Tuesday 24 February 2015 11:07:25 Kuninori Morimoto wrote:
 >  - linus's v4.0-rc1
 >  - Vinod's dma/next (git://git.infradead.org/users/vkoul/slave-dma.git :: next)
 > 
+> Vinod
+> 
+> please let us know if it has stable tag or branch
+Please use topic/sh. I will not rebase that, my next would be rebased
+frequently...
 
-Both patches
+-- 
+~Vinod
 
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+> 
+> Simon
+> 
+> can you check arch/arm/mach-shmobile parts ?
+> 
+> Kuninori Morimoto (2):
+>       mmc: tmio: mmc: tmio: tmio_mmc_data has .chan_priv_?x
+>       mmc: sh_mobile_sdhi: remove sh_mobile_sdhi_info
+> 
+>  arch/arm/mach-shmobile/board-armadillo800eva.c |   20 ++++++++++----------
+>  arch/arm/mach-shmobile/board-bockw.c           |   14 +++++++-------
+>  arch/arm/mach-shmobile/board-kzm9g.c           |   20 ++++++++++----------
+>  arch/arm/mach-shmobile/board-marzen.c          |   10 +++++-----
+>  arch/sh/boards/board-sh7757lcr.c               |    9 +++++----
+>  arch/sh/boards/mach-ap325rxa/setup.c           |    9 +++++----
+>  arch/sh/boards/mach-ecovec24/setup.c           |   20 ++++++++++----------
+>  arch/sh/boards/mach-kfr2r09/setup.c            |   10 +++++-----
+>  arch/sh/boards/mach-migor/setup.c              |    9 +++++----
+>  arch/sh/boards/mach-se/7724/setup.c            |   17 +++++++++--------
+>  drivers/mmc/host/sh_mobile_sdhi.c              |   24 +++++-------------------
+>  drivers/mmc/host/tmio_mmc.h                    |    2 --
+>  drivers/mmc/host/tmio_mmc_dma.c                |    6 +++---
+>  include/linux/mfd/tmio.h                       |    2 ++
+>  include/linux/mmc/sh_mobile_sdhi.h             |   10 ----------
+>  15 files changed, 81 insertions(+), 101 deletions(-)
+> 
+> 
+> Best regards
+> ---
+> Kuninori Morimoto
+
+-- 
