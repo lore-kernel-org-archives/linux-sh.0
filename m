@@ -1,69 +1,65 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Kuninori Morimoto <kuninor
-Date: Tue, 17 Feb 2015 01:47:01 +0000
-Subject: [PATCH 2/8 v5] mmc: sh_mmcif: remove slave_id settings for DMAEngine
-Message-Id: <87zj8ds3z2.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 24 Feb 2015 15:19:32 +0000
+Subject: renesas-drivers-2015-02-24-v4.0-rc1
+Message-Id: <1424791172-11121-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+I've pushed renesas-drivers-2015-02-24-v4.0-rc1 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
+branches of various subsystem trees and (b) branches with driver code
+submitted or planned for submission to maintainers into the development
+branch of Simon Horman's renesas.git tree.
 
-Current sh_mmcif sets dma_slave_config :: slave_id field for DMAEngine,
-but it is no longer needed. Let's remove it.
+Today's version is based on renesas-devel-20150224-4.0-rc1.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
-Acked-by: Ulf Hansson <ulf.hansson@linaro.org>
----
-v4 -> v5
+Included subsystem trees:
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+  - git://git.linaro.org/people/mturquette/linux.git#clk-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+  - git://people.freedesktop.org/~airlied/linux#drm-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+  - git://linuxtv.org/mchehab/media-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+  - git://git.infradead.org/users/vkoul/slave-dma.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
+  - git://git.infradead.org/battery-2.6.git#master
+  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
 
- - no change
+Gr{oetje,eeting}s,
 
- drivers/mmc/host/sh_mmcif.c |   13 +++++--------
- 1 file changed, 5 insertions(+), 8 deletions(-)
+						Geert
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 7d9d6a3..26b7889 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -388,7 +388,7 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
- {
- 	struct dma_slave_config cfg = { 0, };
- 	struct dma_chan *chan;
--	unsigned int slave_id;
-+	void *slave_data = NULL;
- 	struct resource *res;
- 	dma_cap_mask_t mask;
- 	int ret;
-@@ -397,13 +397,12 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
- 	dma_cap_set(DMA_SLAVE, mask);
- 
- 	if (pdata)
--		slave_id = direction = DMA_MEM_TO_DEV
--			 ? pdata->slave_id_tx : pdata->slave_id_rx;
--	else
--		slave_id = 0;
-+		slave_data = direction = DMA_MEM_TO_DEV ?
-+			(void *)pdata->slave_id_tx :
-+			(void *)pdata->slave_id_rx;
- 
- 	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
--				(void *)(unsigned long)slave_id, &host->pd->dev,
-+				slave_data, &host->pd->dev,
- 				direction = DMA_MEM_TO_DEV ? "tx" : "rx");
- 
- 	dev_dbg(&host->pd->dev, "%s: %s: got channel %p\n", __func__,
-@@ -414,8 +413,6 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
- 
- 	res = platform_get_resource(host->pd, IORESOURCE_MEM, 0);
- 
--	/* In the OF case the driver will get the slave ID from the DT */
--	cfg.slave_id = slave_id;
- 	cfg.direction = direction;
- 
- 	if (direction = DMA_DEV_TO_MEM) {
--- 
-1.7.9.5
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
