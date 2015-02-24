@@ -1,13 +1,65 @@
-From: "Eijzenga MMEM, Esmee" <m.m.e.m.eijzenga@st.hanze.nl>
-Date: Mon, 16 Feb 2015 05:42:24 +0000
-Subject: work with
-Message-Id: <EE1AE3F2A6E85B4EBB73748C09C6CE6F58461D7F@HPEMB08W28.hanze.nl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 24 Feb 2015 02:20:03 +0000
+Subject: [PATCH 1/4][resend] ARM: shmobile: r8a7790: Reference DMA channels in SDHI DT nodes
+Message-Id: <871tlg123e.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
+Add references to the transmit and receive DMA channels in the four
+SDHI nodes.
 
-My name is Gatan Magsino, I work with Mediterranean Bank in Malta. Can i trust you with a business worth 8.3 million USD? Please reply ONLY to my private email: mgatan@rogers.com for more information.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index e30937e..007fd33 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -489,6 +489,8 @@
+ 		reg = <0 0xee100000 0 0x200>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
++		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -497,6 +499,8 @@
+ 		reg = <0 0xee120000 0 0x200>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
++		dmas = <&dmac1 0xc9>, <&dmac1 0xca>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -505,6 +509,8 @@
+ 		reg = <0 0xee140000 0 0x100>;
+ 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
++		dmas = <&dmac1 0xc1>, <&dmac1 0xc2>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -513,6 +519,8 @@
+ 		reg = <0 0xee160000 0 0x100>;
+ 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
++		dmas = <&dmac1 0xd3>, <&dmac1 0xd4>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+-- 
+1.7.9.5
+
