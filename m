@@ -1,48 +1,45 @@
-From: Chen Gang S <gang.chen@sunrus.com.cn>
-Date: Wed, 25 Feb 2015 01:51:53 +0000
-Subject: Re: [PATCH] drm: Kconfig: Let all DRM_GEM_CMA_HELPER related macros depend on HAVE_DMA_ATTRS
-Message-Id: <54ED2AB9.5070908@sunrus.com.cn>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 24 Feb 2015 02:20:37 +0000
+Subject: [PATCH 3/4][resend] ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
+Message-Id: <87y4noyrp4.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <54CE3361.9090107@sunrus.com.cn> <54CFEBA2.9070801@sunrus.com.cn> <54E99DD4.6010602@sunrus.com.cn>
-In-Reply-To: <54E99DD4.6010602@sunrus.com.cn>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: airlied@linux.ie, p.zabel@pengutronix.de, laurent.pinchart@ideasonboard.com
-Cc: robdclark@gmail.com, boris.brezillon@free-electrons.com, nicolas.ferre@atmel.com, benjamin.gaignard@linaro.org, jg1.han@samsung.com, dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, chris@zankel.net, jcmvbkbc@gmail.com
+To: linux-sh@vger.kernel.org
 
-> On 2/3/15 05:26, Chen Gang S wrote:
-> 
-> [...]
->  
->>
->>  - Xtensa gcc5 cross compiler has issues:
->>
->>    it causes more than 10 broken areas with allmodconfig (but no issues
->>    with defconfig). I guess, in fact, it is only 1 real issue (which can
->>    cause all breaks), and I shall try to fix it within this month.
->>
-> 
-> I finish analysing for it, it is really only one issue for gcc5, and I
-> guess, this issue is also not only for xtensa. I send related fix patch
-> to gcc patch mailing list, hope it can pass checking.
-> 
-> The cause is "the variables are not initialized before using them", the
-> bug information is "https://gcc.gnu.org/bugzilla/show_bug.cgi?ide117".
-> 
-> After fix this issue, it can build xtensa Linux kernel with allmodconfig
-> successfully.
-> 
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Oh, sorry, my fix is incorrect, but gcc related members will fix it. I
-guess, it will be fixed soon.
+r8a7790 SDHI ch0/ch1 has SD_DMACR which is located in 0x324.
+This patch updates register size
 
-But because of this issue, I can send another patch for gcc (it can not
-fix this issue, but it is related with this issue) :-).
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-
-Thanks.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 007fd33..14d23f8 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -486,7 +486,7 @@
+ 
+ 	sdhi0: sd@ee100000 {
+ 		compatible = "renesas,sdhi-r8a7790";
+-		reg = <0 0xee100000 0 0x200>;
++		reg = <0 0xee100000 0 0x328>;
+ 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
+ 		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
+@@ -496,7 +496,7 @@
+ 
+ 	sdhi1: sd@ee120000 {
+ 		compatible = "renesas,sdhi-r8a7790";
+-		reg = <0 0xee120000 0 0x200>;
++		reg = <0 0xee120000 0 0x328>;
+ 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
+ 		dmas = <&dmac1 0xc9>, <&dmac1 0xca>;
 -- 
-Chen Gang
+1.7.9.5
 
-Open, share, and attitude like air, water, and life which God blessed
