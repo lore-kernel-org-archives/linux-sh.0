@@ -1,76 +1,62 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 19 Feb 2015 03:53:11 +0000
-Subject: [PATCH 15/19] ASoC: rsnd: tidyup rcar_sound,ssi sample code
-Message-Id: <87a90a1rpm.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 25 Feb 2015 21:54:45 +0000
+Subject: [PATCH 25/38] drm: rcar-du: Switch plane update to atomic helpers
+Message-Id: <1424901298-6829-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
+References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This removes the legacy plane update code. Wire up the default atomic
+check and atomic commit mode config helpers as needed by the plane
+update atomic helpers.
 
-It was un-readable
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- .../devicetree/bindings/sound/renesas,rsnd.txt     |   40 +++++---------------
- 1 file changed, 10 insertions(+), 30 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c   | 3 +++
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 4 ++--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-index 2dd690b..5d9a52d 100644
---- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-+++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-@@ -66,36 +66,16 @@ rcar_sound: rcar_sound@ec500000 {
- 	};
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 94ff8fcc7268..2b36f4f2980f 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -12,6 +12,7 @@
+  */
  
- 	rcar_sound,ssi {
--		ssi0: ssi@0 {
--			interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
--		};
--		ssi1: ssi@1 {
--			interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
--		};
--		ssi2: ssi@2 {
--			interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
--		};
--		ssi3: ssi@3 {
--			interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
--		};
--		ssi4: ssi@4 {
--			interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
--		};
--		ssi5: ssi@5 {
--			interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
--		};
--		ssi6: ssi@6 {
--			interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
--		};
--		ssi7: ssi@7 {
--			interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
--		};
--		ssi8: ssi@8 {
--			interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
--		};
--		ssi9: ssi@9 {
--			interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
--		};
-+		ssi0: ssi@0 { interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>; };
-+		ssi1: ssi@1 { interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>; };
-+		ssi2: ssi@2 { interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>; };
-+		ssi3: ssi@3 { interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>; };
-+		ssi4: ssi@4 { interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>; };
-+		ssi5: ssi@5 { interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>; };
-+		ssi6: ssi@6 { interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>; };
-+		ssi7: ssi@7 { interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>; };
-+		ssi8: ssi@8 { interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>; };
-+		ssi9: ssi@9 { interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>; };
- 	};
+ #include <drm/drmP.h>
++#include <drm/drm_atomic_helper.h>
+ #include <drm/drm_crtc.h>
+ #include <drm/drm_crtc_helper.h>
+ #include <drm/drm_fb_cma_helper.h>
+@@ -188,6 +189,8 @@ static void rcar_du_output_poll_changed(struct drm_device *dev)
+ static const struct drm_mode_config_funcs rcar_du_mode_config_funcs = {
+ 	.fb_create = rcar_du_fb_create,
+ 	.output_poll_changed = rcar_du_output_poll_changed,
++	.atomic_check = drm_atomic_helper_check,
++	.atomic_commit = drm_atomic_helper_commit,
+ };
  
- 	rcar_sound,dai {
+ static int rcar_du_encoders_init_one(struct rcar_du_device *rcdu,
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index f247b1fcf791..ff087f7de88e 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -480,8 +480,8 @@ static int rcar_du_plane_set_property(struct drm_plane *plane,
+ }
+ 
+ static const struct drm_plane_funcs rcar_du_plane_funcs = {
+-	.update_plane = drm_plane_helper_update,
+-	.disable_plane = drm_plane_helper_disable,
++	.update_plane = drm_atomic_helper_update_plane,
++	.disable_plane = drm_atomic_helper_disable_plane,
+ 	.reset = drm_atomic_helper_plane_reset,
+ 	.set_property = rcar_du_plane_set_property,
+ 	.destroy = drm_plane_cleanup,
 -- 
-1.7.9.5
+2.0.5
 
