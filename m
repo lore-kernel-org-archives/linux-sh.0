@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 25 Feb 2015 21:54:22 +0000
-Subject: [PATCH 02/38] drm/atomic-helper: Rename commmit_post/pre_planes
-Message-Id: <1424901298-6829-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 25 Feb 2015 21:54:41 +0000
+Subject: [PATCH 21/38] drm: rcar-du: Replace LVDS encoder DPMS by enable/disable
+Message-Id: <1424901298-6829-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -11,160 +11,167 @@ Content-Transfer-Encoding: 7bit
 To: dri-devel@lists.freedesktop.org
 Cc: linux-sh@vger.kernel.org
 
-From: Daniel Vetter <daniel.vetter@ffwll.ch>
+The LVDS encoder doesn't support DPMS states, replace the DPMS operation
+by enable/disable to avoid propagating DPMS states down to the encoder
+code.
 
-These names only make sense because of backwards compatability with
-the order used by the crtc helper library. There's not really any real
-requirement in the ordering here.
-
-So rename them to something more descriptive and update the kerneldoc
-a bit. Motivated in a discussion with Laurent about how to restore
-plane state for dpms for drivers with runtime pm.
-
-Signed-off-by: Daniel Vetter <daniel.vetter@intel.com>
-Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/gpu/drm/drm_atomic_helper.c | 40 +++++++++++++++++++++++--------------
- drivers/gpu/drm/i915/intel_atomic.c |  4 ++--
- drivers/gpu/drm/msm/msm_atomic.c    |  4 ++--
- include/drm/drm_atomic_helper.h     |  6 +++---
- 4 files changed, 32 insertions(+), 22 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 12 ++++--------
+ drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c |  6 ++++--
+ drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c | 18 +++++++++---------
+ drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h |  8 ++++----
+ 4 files changed, 21 insertions(+), 23 deletions(-)
 
-diff --git a/drivers/gpu/drm/drm_atomic_helper.c b/drivers/gpu/drm/drm_atomic_helper.c
-index 6c5bfa2bd18a..0a203a7a9a17 100644
---- a/drivers/gpu/drm/drm_atomic_helper.c
-+++ b/drivers/gpu/drm/drm_atomic_helper.c
-@@ -768,34 +768,44 @@ crtc_set_mode(struct drm_device *dev, struct drm_atomic_state *old_state)
- }
- 
- /**
-- * drm_atomic_helper_commit_pre_planes - modeset commit before plane updates
-+ * drm_atomic_helper_commit_modeset_disables - modeset commit to disable outputs
-  * @dev: DRM device
-  * @old_state: atomic state object with old state structures
-  *
-- * This function commits the modeset changes that need to be committed before
-- * updating planes. It shuts down all the outputs that need to be shut down and
-+ * This function shuts down all the outputs that need to be shut down and
-  * prepares them (if required) with the new mode.
-+ *
-+ * For compatability with legacy crtc helpers this should be called before
-+ * drm_atomic_helper_commit_planes(), which is what the default commit function
-+ * does. But drivers with different needs can group the modeset commits together
-+ * and do the plane commits at the end. This is useful for drivers doing runtime
-+ * PM since planes updates then only happen when the CRTC is actually enabled.
-  */
--void drm_atomic_helper_commit_pre_planes(struct drm_device *dev,
--					 struct drm_atomic_state *old_state)
-+void drm_atomic_helper_commit_modeset_disables(struct drm_device *dev,
-+					       struct drm_atomic_state *old_state)
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+index 279167f783f6..6243af310368 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
+@@ -46,11 +46,9 @@ static void rcar_du_encoder_dpms(struct drm_encoder *encoder, int mode)
  {
- 	disable_outputs(dev, old_state);
- 	set_routing_links(dev, old_state);
- 	crtc_set_mode(dev, old_state);
- }
--EXPORT_SYMBOL(drm_atomic_helper_commit_pre_planes);
-+EXPORT_SYMBOL(drm_atomic_helper_commit_modeset_disables);
+ 	struct rcar_du_encoder *renc = to_rcar_encoder(encoder);
  
- /**
-- * drm_atomic_helper_commit_post_planes - modeset commit after plane updates
-+ * drm_atomic_helper_commit_modeset_enables - modeset commit to enable outputs
-  * @dev: DRM device
-  * @old_state: atomic state object with old state structures
-  *
-- * This function commits the modeset changes that need to be committed after
-- * updating planes: It enables all the outputs with the new configuration which
-- * had to be turned off for the update.
-+ * This function enables all the outputs with the new configuration which had to
-+ * be turned off for the update.
-+ *
-+ * For compatability with legacy crtc helpers this should be called after
-+ * drm_atomic_helper_commit_planes(), which is what the default commit function
-+ * does. But drivers with different needs can group the modeset commits together
-+ * and do the plane commits at the end. This is useful for drivers doing runtime
-+ * PM since planes updates then only happen when the CRTC is actually enabled.
-  */
--void drm_atomic_helper_commit_post_planes(struct drm_device *dev,
--					  struct drm_atomic_state *old_state)
-+void drm_atomic_helper_commit_modeset_enables(struct drm_device *dev,
-+					      struct drm_atomic_state *old_state)
+-	if (mode != DRM_MODE_DPMS_ON)
+-		mode = DRM_MODE_DPMS_OFF;
+-
+ 	if (renc->lvds)
+-		rcar_du_lvdsenc_dpms(renc->lvds, encoder->crtc, mode);
++		rcar_du_lvdsenc_enable(renc->lvds, encoder->crtc,
++				       mode = DRM_MODE_DPMS_ON);
+ }
+ 
+ static bool rcar_du_encoder_mode_fixup(struct drm_encoder *encoder,
+@@ -110,8 +108,7 @@ static void rcar_du_encoder_mode_prepare(struct drm_encoder *encoder)
+ 	struct rcar_du_encoder *renc = to_rcar_encoder(encoder);
+ 
+ 	if (renc->lvds)
+-		rcar_du_lvdsenc_dpms(renc->lvds, encoder->crtc,
+-				     DRM_MODE_DPMS_OFF);
++		rcar_du_lvdsenc_enable(renc->lvds, encoder->crtc, false);
+ }
+ 
+ static void rcar_du_encoder_mode_commit(struct drm_encoder *encoder)
+@@ -119,8 +116,7 @@ static void rcar_du_encoder_mode_commit(struct drm_encoder *encoder)
+ 	struct rcar_du_encoder *renc = to_rcar_encoder(encoder);
+ 
+ 	if (renc->lvds)
+-		rcar_du_lvdsenc_dpms(renc->lvds, encoder->crtc,
+-				     DRM_MODE_DPMS_ON);
++		rcar_du_lvdsenc_enable(renc->lvds, encoder->crtc, true);
+ }
+ 
+ static void rcar_du_encoder_mode_set(struct drm_encoder *encoder,
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c b/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
+index 221f0a17fd6a..89a7c0ecc935 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
+@@ -44,13 +44,15 @@ static void rcar_du_hdmienc_dpms(struct drm_encoder *encoder, int mode)
+ 		return;
+ 
+ 	if (mode = DRM_MODE_DPMS_ON && hdmienc->renc->lvds)
+-		rcar_du_lvdsenc_dpms(hdmienc->renc->lvds, encoder->crtc, mode);
++		rcar_du_lvdsenc_enable(hdmienc->renc->lvds, encoder->crtc,
++				       true);
+ 
+ 	if (sfuncs->dpms)
+ 		sfuncs->dpms(encoder, mode);
+ 
+ 	if (mode != DRM_MODE_DPMS_ON && hdmienc->renc->lvds)
+-		rcar_du_lvdsenc_dpms(hdmienc->renc->lvds, encoder->crtc, mode);
++		rcar_du_lvdsenc_enable(hdmienc->renc->lvds, encoder->crtc,
++				       false);
+ 
+ 	hdmienc->dpms = mode;
+ }
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
+index 7cfb48ce1791..85043c5bad03 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
+@@ -28,7 +28,7 @@ struct rcar_du_lvdsenc {
+ 	unsigned int index;
+ 	void __iomem *mmio;
+ 	struct clk *clock;
+-	int dpms;
++	bool enabled;
+ 
+ 	enum rcar_lvds_input input;
+ };
+@@ -48,7 +48,7 @@ static int rcar_du_lvdsenc_start(struct rcar_du_lvdsenc *lvds,
+ 	u32 pllcr;
+ 	int ret;
+ 
+-	if (lvds->dpms = DRM_MODE_DPMS_ON)
++	if (lvds->enabled)
+ 		return 0;
+ 
+ 	ret = clk_prepare_enable(lvds->clock);
+@@ -110,13 +110,13 @@ static int rcar_du_lvdsenc_start(struct rcar_du_lvdsenc *lvds,
+ 	lvdcr0 |= LVDCR0_LVRES;
+ 	rcar_lvds_write(lvds, LVDCR0, lvdcr0);
+ 
+-	lvds->dpms = DRM_MODE_DPMS_ON;
++	lvds->enabled = true;
+ 	return 0;
+ }
+ 
+ static void rcar_du_lvdsenc_stop(struct rcar_du_lvdsenc *lvds)
  {
- 	int ncrtcs = old_state->dev->mode_config.num_crtc;
- 	int i;
-@@ -861,7 +871,7 @@ void drm_atomic_helper_commit_post_planes(struct drm_device *dev,
- 			encoder->bridge->funcs->enable(encoder->bridge);
- 	}
+-	if (lvds->dpms = DRM_MODE_DPMS_OFF)
++	if (!lvds->enabled)
+ 		return;
+ 
+ 	rcar_lvds_write(lvds, LVDCR0, 0);
+@@ -124,13 +124,13 @@ static void rcar_du_lvdsenc_stop(struct rcar_du_lvdsenc *lvds)
+ 
+ 	clk_disable_unprepare(lvds->clock);
+ 
+-	lvds->dpms = DRM_MODE_DPMS_OFF;
++	lvds->enabled = false;
  }
--EXPORT_SYMBOL(drm_atomic_helper_commit_post_planes);
-+EXPORT_SYMBOL(drm_atomic_helper_commit_modeset_enables);
  
- static void wait_for_fences(struct drm_device *dev,
- 			    struct drm_atomic_state *state)
-@@ -1030,11 +1040,11 @@ int drm_atomic_helper_commit(struct drm_device *dev,
+-int rcar_du_lvdsenc_dpms(struct rcar_du_lvdsenc *lvds,
+-			 struct drm_crtc *crtc, int mode)
++int rcar_du_lvdsenc_enable(struct rcar_du_lvdsenc *lvds, struct drm_crtc *crtc,
++			   bool enable)
+ {
+-	if (mode = DRM_MODE_DPMS_OFF) {
++	if (!enable) {
+ 		rcar_du_lvdsenc_stop(lvds);
+ 		return 0;
+ 	} else if (crtc) {
+@@ -179,7 +179,7 @@ int rcar_du_lvdsenc_init(struct rcar_du_device *rcdu)
+ 		lvds->dev = rcdu;
+ 		lvds->index = i;
+ 		lvds->input = i ? RCAR_LVDS_INPUT_DU1 : RCAR_LVDS_INPUT_DU0;
+-		lvds->dpms = DRM_MODE_DPMS_OFF;
++		lvds->enabled = false;
  
- 	wait_for_fences(dev, state);
+ 		ret = rcar_du_lvdsenc_get_resources(lvds, pdev);
+ 		if (ret < 0)
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h
+index f65aabda0796..9a6001c07303 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h
+@@ -28,15 +28,15 @@ enum rcar_lvds_input {
  
--	drm_atomic_helper_commit_pre_planes(dev, state);
-+	drm_atomic_helper_commit_modeset_disables(dev, state);
- 
- 	drm_atomic_helper_commit_planes(dev, state);
- 
--	drm_atomic_helper_commit_post_planes(dev, state);
-+	drm_atomic_helper_commit_modeset_enables(dev, state);
- 
- 	drm_atomic_helper_wait_for_vblanks(dev, state);
- 
-diff --git a/drivers/gpu/drm/i915/intel_atomic.c b/drivers/gpu/drm/i915/intel_atomic.c
-index 19a9dd5408f3..011b8960fd75 100644
---- a/drivers/gpu/drm/i915/intel_atomic.c
-+++ b/drivers/gpu/drm/i915/intel_atomic.c
-@@ -134,9 +134,9 @@ int intel_atomic_commit(struct drm_device *dev,
- 	 * FIXME:  The proper sequence here will eventually be:
- 	 *
- 	 * drm_atomic_helper_swap_state(dev, state)
--	 * drm_atomic_helper_commit_pre_planes(dev, state);
-+	 * drm_atomic_helper_commit_modeset_disables(dev, state);
- 	 * drm_atomic_helper_commit_planes(dev, state);
--	 * drm_atomic_helper_commit_post_planes(dev, state);
-+	 * drm_atomic_helper_commit_modeset_enables(dev, state);
- 	 * drm_atomic_helper_wait_for_vblanks(dev, state);
- 	 * drm_atomic_helper_cleanup_planes(dev, state);
- 	 * drm_atomic_state_free(state);
-diff --git a/drivers/gpu/drm/msm/msm_atomic.c b/drivers/gpu/drm/msm/msm_atomic.c
-index 871aa2108dc6..7c412292a0ff 100644
---- a/drivers/gpu/drm/msm/msm_atomic.c
-+++ b/drivers/gpu/drm/msm/msm_atomic.c
-@@ -96,11 +96,11 @@ static void complete_commit(struct msm_commit *c)
- 
- 	kms->funcs->prepare_commit(kms, state);
- 
--	drm_atomic_helper_commit_pre_planes(dev, state);
-+	drm_atomic_helper_commit_modeset_disables(dev, state);
- 
- 	drm_atomic_helper_commit_planes(dev, state);
- 
--	drm_atomic_helper_commit_post_planes(dev, state);
-+	drm_atomic_helper_commit_modeset_enables(dev, state);
- 
- 	/* NOTE: _wait_for_vblanks() only waits for vblank on
- 	 * enabled CRTCs.  So we end up faulting when disabling
-diff --git a/include/drm/drm_atomic_helper.h b/include/drm/drm_atomic_helper.h
-index 8039d54a7441..829280b56874 100644
---- a/include/drm/drm_atomic_helper.h
-+++ b/include/drm/drm_atomic_helper.h
-@@ -43,9 +43,9 @@ int drm_atomic_helper_commit(struct drm_device *dev,
- void drm_atomic_helper_wait_for_vblanks(struct drm_device *dev,
- 					struct drm_atomic_state *old_state);
- 
--void drm_atomic_helper_commit_pre_planes(struct drm_device *dev,
--					 struct drm_atomic_state *state);
--void drm_atomic_helper_commit_post_planes(struct drm_device *dev,
-+void drm_atomic_helper_commit_modeset_disables(struct drm_device *dev,
-+					       struct drm_atomic_state *state);
-+void drm_atomic_helper_commit_modeset_enables(struct drm_device *dev,
- 					  struct drm_atomic_state *old_state);
- 
- int drm_atomic_helper_prepare_planes(struct drm_device *dev,
+ #if IS_ENABLED(CONFIG_DRM_RCAR_LVDS)
+ int rcar_du_lvdsenc_init(struct rcar_du_device *rcdu);
+-int rcar_du_lvdsenc_dpms(struct rcar_du_lvdsenc *lvds,
+-			 struct drm_crtc *crtc, int mode);
++int rcar_du_lvdsenc_enable(struct rcar_du_lvdsenc *lvds,
++			   struct drm_crtc *crtc, bool enable);
+ #else
+ static inline int rcar_du_lvdsenc_init(struct rcar_du_device *rcdu)
+ {
+ 	return 0;
+ }
+-static inline int rcar_du_lvdsenc_dpms(struct rcar_du_lvdsenc *lvds,
+-				       struct drm_crtc *crtc, int mode)
++static inline int rcar_du_lvdsenc_enable(struct rcar_du_lvdsenc *lvds,
++					 struct drm_crtc *crtc, bool enable)
+ {
+ 	return 0;
+ }
 -- 
 2.0.5
 
