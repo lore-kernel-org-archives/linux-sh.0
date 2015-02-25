@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 17 Feb 2015 21:43:06 +0000
+From: Mike Turquette <mturquette@linaro.org>
+Date: Wed, 25 Feb 2015 18:48:17 +0000
 Subject: Re: [PATCH v3 04/15] ARM: shmobile: r8a7778: common clock framework CPG driver
-Message-Id: <20150217214305.GD25707@verge.net.au>
+Message-Id: <20150225184817.421.15039@quantum>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1424105939-4910-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 In-Reply-To: <1424105939-4910-5-git-send-email-ulrich.hecht+renesas@gmail.com>
@@ -10,17 +10,13 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Mike,
-
-I think it would be best if I took this change through my tree,
-as others in this series which are for my tree depend on it.
-
-Could I get an Ack or otherwise?
-
-On Mon, Feb 16, 2015 at 05:58:48PM +0100, Ulrich Hecht wrote:
+Quoting Ulrich Hecht (2015-02-16 08:58:48)
 > Driver for the r8a7778's clocks that depend on the mode bits.
 > 
 > Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+
+Acked-by: Michael Turquette <mturquette@linaro.org>
+
 > ---
 >  .../bindings/clock/renesas,r8a7778-cpg-clocks.txt  |  25 ++++
 >  drivers/clk/shmobile/Makefile                      |   1 +
@@ -53,26 +49,26 @@ On Mon, Feb 16, 2015 at 05:58:48PM +0100, Ulrich Hecht wrote:
 > +Example
 > +-------
 > +
-> +	cpg_clocks: cpg_clocks@ffc80000 {
-> +		compatible = "renesas,r8a7778-cpg-clocks";
-> +		reg = <0xffc80000 0x80>;
-> +		#clock-cells = <1>;
-> +		clocks = <&extal_clk>;
-> +		clock-output-names = "plla", "pllb", "b",
-> +				     "out", "p", "s", "s1";
-> +	};
+> +       cpg_clocks: cpg_clocks@ffc80000 {
+> +               compatible = "renesas,r8a7778-cpg-clocks";
+> +               reg = <0xffc80000 0x80>;
+> +               #clock-cells = <1>;
+> +               clocks = <&extal_clk>;
+> +               clock-output-names = "plla", "pllb", "b",
+> +                                    "out", "p", "s", "s1";
+> +       };
 > diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
 > index 0689d7f..97c71c8 100644
 > --- a/drivers/clk/shmobile/Makefile
 > +++ b/drivers/clk/shmobile/Makefile
-> @@ -2,6 +2,7 @@ obj-$(CONFIG_ARCH_EMEV2)		+= clk-emev2.o
->  obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o
->  obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o
->  obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o
-> +obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o
->  obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
->  obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
->  obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
+> @@ -2,6 +2,7 @@ obj-$(CONFIG_ARCH_EMEV2)                += clk-emev2.o
+>  obj-$(CONFIG_ARCH_R7S72100)            += clk-rz.o
+>  obj-$(CONFIG_ARCH_R8A73A4)             += clk-r8a73a4.o
+>  obj-$(CONFIG_ARCH_R8A7740)             += clk-r8a7740.o
+> +obj-$(CONFIG_ARCH_R8A7778)             += clk-r8a7778.o
+>  obj-$(CONFIG_ARCH_R8A7779)             += clk-r8a7779.o
+>  obj-$(CONFIG_ARCH_R8A7790)             += clk-rcar-gen2.o
+>  obj-$(CONFIG_ARCH_R8A7791)             += clk-rcar-gen2.o
 > diff --git a/drivers/clk/shmobile/clk-r8a7778.c b/drivers/clk/shmobile/clk-r8a7778.c
 > new file mode 100644
 > index 0000000..cb33b57
@@ -95,35 +91,35 @@ On Mon, Feb 16, 2015 at 05:58:48PM +0100, Ulrich Hecht wrote:
 > +#include <linux/of_address.h>
 > +
 > +struct r8a7778_cpg {
-> +	struct clk_onecell_data data;
-> +	spinlock_t lock;
-> +	void __iomem *reg;
+> +       struct clk_onecell_data data;
+> +       spinlock_t lock;
+> +       void __iomem *reg;
 > +};
 > +
 > +/* PLL multipliers per bits 11, 12, and 18 of MODEMR */
 > +struct {
-> +	unsigned long plla_mult;
-> +	unsigned long pllb_mult;
+> +       unsigned long plla_mult;
+> +       unsigned long pllb_mult;
 > +} r8a7778_rates[] __initdata = {
-> +	[0] = { 21, 21 },
-> +	[1] = { 24, 24 },
-> +	[2] = { 28, 28 },
-> +	[3] = { 32, 32 },
-> +	[5] = { 24, 21 },
-> +	[6] = { 28, 21 },
-> +	[7] = { 32, 24 },
+> +       [0] = { 21, 21 },
+> +       [1] = { 24, 24 },
+> +       [2] = { 28, 28 },
+> +       [3] = { 32, 32 },
+> +       [5] = { 24, 21 },
+> +       [6] = { 28, 21 },
+> +       [7] = { 32, 24 },
 > +};
 > +
 > +/* Clock dividers per bits 1 and 2 of MODEMR */
 > +struct {
-> +	const char *name;
-> +	unsigned int div[4];
+> +       const char *name;
+> +       unsigned int div[4];
 > +} r8a7778_divs[6] __initdata = {
-> +	{ "b",   { 12, 12, 16, 18 } },
-> +	{ "out", { 12, 12, 16, 18 } },
-> +	{ "p",   { 16, 12, 16, 12 } },
-> +	{ "s",   { 4,  3,  4,  3  } },
-> +	{ "s1",  { 8,  6,  8,  6  } },
+> +       { "b",   { 12, 12, 16, 18 } },
+> +       { "out", { 12, 12, 16, 18 } },
+> +       { "p",   { 16, 12, 16, 12 } },
+> +       { "s",   { 4,  3,  4,  3  } },
+> +       { "s1",  { 8,  6,  8,  6  } },
 > +};
 > +
 > +static u32 cpg_mode_rates __initdata;
@@ -131,96 +127,96 @@ On Mon, Feb 16, 2015 at 05:58:48PM +0100, Ulrich Hecht wrote:
 > +
 > +static struct clk * __init
 > +r8a7778_cpg_register_clock(struct device_node *np, struct r8a7778_cpg *cpg,
-> +			     const char *name)
+> +                            const char *name)
 > +{
-> +	if (!strcmp(name, "plla")) {
-> +		return clk_register_fixed_factor(NULL, "plla",
-> +			of_clk_get_parent_name(np, 0), 0,
-> +			r8a7778_rates[cpg_mode_rates].plla_mult, 1);
-> +	} else if (!strcmp(name, "pllb")) {
-> +		return clk_register_fixed_factor(NULL, "pllb",
-> +			of_clk_get_parent_name(np, 0), 0,
-> +			r8a7778_rates[cpg_mode_rates].pllb_mult, 1);
-> +	} else {
-> +		unsigned int i;
+> +       if (!strcmp(name, "plla")) {
+> +               return clk_register_fixed_factor(NULL, "plla",
+> +                       of_clk_get_parent_name(np, 0), 0,
+> +                       r8a7778_rates[cpg_mode_rates].plla_mult, 1);
+> +       } else if (!strcmp(name, "pllb")) {
+> +               return clk_register_fixed_factor(NULL, "pllb",
+> +                       of_clk_get_parent_name(np, 0), 0,
+> +                       r8a7778_rates[cpg_mode_rates].pllb_mult, 1);
+> +       } else {
+> +               unsigned int i;
 > +
-> +		for (i = 0; i < ARRAY_SIZE(r8a7778_divs); i++) {
-> +			if (!strcmp(name, r8a7778_divs[i].name)) {
-> +				return clk_register_fixed_factor(NULL,
-> +					r8a7778_divs[i].name,
-> +					"plla", 0, 1,
-> +					r8a7778_divs[i].div[cpg_mode_divs]);
-> +			}
-> +		}
-> +	}
+> +               for (i = 0; i < ARRAY_SIZE(r8a7778_divs); i++) {
+> +                       if (!strcmp(name, r8a7778_divs[i].name)) {
+> +                               return clk_register_fixed_factor(NULL,
+> +                                       r8a7778_divs[i].name,
+> +                                       "plla", 0, 1,
+> +                                       r8a7778_divs[i].div[cpg_mode_divs]);
+> +                       }
+> +               }
+> +       }
 > +
-> +	return ERR_PTR(-EINVAL);
+> +       return ERR_PTR(-EINVAL);
 > +}
 > +
 > +
 > +static void __init r8a7778_cpg_clocks_init(struct device_node *np)
 > +{
-> +	struct r8a7778_cpg *cpg;
-> +	struct clk **clks;
-> +	unsigned int i;
-> +	int num_clks;
+> +       struct r8a7778_cpg *cpg;
+> +       struct clk **clks;
+> +       unsigned int i;
+> +       int num_clks;
 > +
-> +	num_clks = of_property_count_strings(np, "clock-output-names");
-> +	if (num_clks < 0) {
-> +		pr_err("%s: failed to count clocks\n", __func__);
-> +		return;
-> +	}
+> +       num_clks = of_property_count_strings(np, "clock-output-names");
+> +       if (num_clks < 0) {
+> +               pr_err("%s: failed to count clocks\n", __func__);
+> +               return;
+> +       }
 > +
-> +	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
-> +	clks = kcalloc(num_clks, sizeof(*clks), GFP_KERNEL);
-> +	if (cpg = NULL || clks = NULL) {
-> +		/* We're leaking memory on purpose, there's no point in cleaning
-> +		 * up as the system won't boot anyway.
-> +		 */
-> +		return;
-> +	}
+> +       cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
+> +       clks = kcalloc(num_clks, sizeof(*clks), GFP_KERNEL);
+> +       if (cpg = NULL || clks = NULL) {
+> +               /* We're leaking memory on purpose, there's no point in cleaning
+> +                * up as the system won't boot anyway.
+> +                */
+> +               return;
+> +       }
 > +
-> +	spin_lock_init(&cpg->lock);
+> +       spin_lock_init(&cpg->lock);
 > +
-> +	cpg->data.clks = clks;
-> +	cpg->data.clk_num = num_clks;
+> +       cpg->data.clks = clks;
+> +       cpg->data.clk_num = num_clks;
 > +
-> +	cpg->reg = of_iomap(np, 0);
-> +	if (WARN_ON(cpg->reg = NULL))
-> +		return;
+> +       cpg->reg = of_iomap(np, 0);
+> +       if (WARN_ON(cpg->reg = NULL))
+> +               return;
 > +
-> +	for (i = 0; i < num_clks; ++i) {
-> +		const char *name;
-> +		struct clk *clk;
+> +       for (i = 0; i < num_clks; ++i) {
+> +               const char *name;
+> +               struct clk *clk;
 > +
-> +		of_property_read_string_index(np, "clock-output-names", i,
-> +					      &name);
+> +               of_property_read_string_index(np, "clock-output-names", i,
+> +                                             &name);
 > +
-> +		clk = r8a7778_cpg_register_clock(np, cpg, name);
-> +		if (IS_ERR(clk))
-> +			pr_err("%s: failed to register %s %s clock (%ld)\n",
-> +			       __func__, np->name, name, PTR_ERR(clk));
-> +		else
-> +			cpg->data.clks[i] = clk;
-> +	}
+> +               clk = r8a7778_cpg_register_clock(np, cpg, name);
+> +               if (IS_ERR(clk))
+> +                       pr_err("%s: failed to register %s %s clock (%ld)\n",
+> +                              __func__, np->name, name, PTR_ERR(clk));
+> +               else
+> +                       cpg->data.clks[i] = clk;
+> +       }
 > +
-> +	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
+> +       of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
 > +}
 > +
 > +CLK_OF_DECLARE(r8a7778_cpg_clks, "renesas,r8a7778-cpg-clocks",
-> +	       r8a7778_cpg_clocks_init);
+> +              r8a7778_cpg_clocks_init);
 > +
 > +void __init r8a7778_clocks_init(u32 mode)
 > +{
-> +	BUG_ON(!(mode & BIT(19)));
+> +       BUG_ON(!(mode & BIT(19)));
 > +
-> +	cpg_mode_rates = (!!(mode & BIT(18)) << 2) |
-> +			 (!!(mode & BIT(12)) << 1) |
-> +			 (!!(mode & BIT(11)));
-> +	cpg_mode_divs = (!!(mode & BIT(2)) << 1) |
-> +			(!!(mode & BIT(1)));
+> +       cpg_mode_rates = (!!(mode & BIT(18)) << 2) |
+> +                        (!!(mode & BIT(12)) << 1) |
+> +                        (!!(mode & BIT(11)));
+> +       cpg_mode_divs = (!!(mode & BIT(2)) << 1) |
+> +                       (!!(mode & BIT(1)));
 > +
-> +	of_clk_init(NULL);
+> +       of_clk_init(NULL);
 > +}
 > diff --git a/include/linux/clk/shmobile.h b/include/linux/clk/shmobile.h
 > index 9f8a140..63a8159 100644
@@ -236,9 +232,4 @@ On Mon, Feb 16, 2015 at 05:58:48PM +0100, Ulrich Hecht wrote:
 >  
 > -- 
 > 2.2.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
