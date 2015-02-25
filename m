@@ -1,82 +1,116 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:22:41 +0000
-Subject: [PATCH 1/5] ARM: shmobile: No R-Car Gen2 CMA reservation when HIGHMEM=n
-Message-Id: <744cadba1ae6b80b413aea87835855dcccad86fd.1424931398.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 25 Feb 2015 21:54:43 +0000
+Subject: [PATCH 23/38] drm: rcar-du: Rework HDMI encoder enable/disable for atomic updates
+Message-Id: <1424901298-6829-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424931398.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424931398.git.horms+renesas@verge.net.au>
+References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+When using atomic updates the encoder .enable() and .disable() helper
+operations are preferred over the (then legacy) .prepare() and .commit()
+operations. Implement .enable() and .disable() and rework .prepare(),
+.commit() and .dpms() as wrappers around .enable() and .disable(),
+easing their future removal.
 
-Allow R-Car Gen2 platforms to boot with CMA enabled
-and HIGHMEM disabled. This patch adds code to check
-if the R-Car Gen2 specific memory reservation window
-is included in the kernel memory range or not. When
-HIGHMEM is disabled the R-Car Gen2 reservation area is
-outside the kernel memory range and in such case the
-memory reservation is simply skipped over.
-
-Without this patch the kernel boot hangs when CMA is
-enabled and HIGHMEM is disabled on the r8a7791 Koelsch
-hardware platform:
-
-    WARNING: CPU: 1 PID: 1 at mm/cma.c:113 cma_init_reserved_areas+0x88/0x1=
-d4()
-    ...
-    WARNING: CPU: 1 PID: 1 at mm/cma.c:121 cma_init_reserved_areas+0xf8/0x1=
-d4()
-    ...
-    Unable to handle kernel NULL pointer dereference at virtual address 000=
-00160
-    pgd =3D c0003000
-    [00000160] *pgd=80000040004003, *pmd=00000000
-    Internal error: Oops: 206 [#1] SMP ARM
-    Modules linked in:
-    CPU: 1 PID: 1 Comm: swapper/0 Tainted: G        W
-3.19.0-rc4-koelsch-01450-g7f9b6075ce12c3ea-dirty #735
-    Hardware name: Generic R8A7791 (Flattened Device Tree)
-    task: edc553c0 ti: edc56000 task.ti: edc56000
-    PC is at set_pfnblock_flags_mask+0x54/0xa0
-    LR is at 0x440
-
-In the current shmobile_defconfig HIGHMEM is enabled
-while CMA is disabled, so to trigger this the kernel
-configuration for both CMA and HIGHMEM needs to be
-adjusted.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c | 48 ++++++++++++++++++++++---------
+ 1 file changed, 35 insertions(+), 13 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmob=
-ile/setup-rcar-gen2.c
-index d1fa625..8c7ec93 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -21,6 +21,7 @@
- #include <linux/dma-contiguous.h>
- #include <linux/io.h>
- #include <linux/kernel.h>
-+#include <linux/memblock.h>
- #include <linux/of.h>
- #include <linux/of_fdt.h>
- #include <asm/mach/arch.h>
-@@ -199,7 +200,7 @@ void __init rcar_gen2_reserve(void)
-=20
- 	of_scan_flat_dt(rcar_gen2_scan_mem, &mrc);
- #ifdef CONFIG_DMA_CMA
--	if (mrc.size)
-+	if (mrc.size && memblock_is_region_memory(mrc.base, mrc.size))
- 		dma_contiguous_reserve_area(mrc.size, mrc.base, 0,
- 					    &rcar_gen2_dma_contiguous, true);
- #endif
---=20
-2.1.4
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c b/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
+index 89a7c0ecc935..04e21b5f96d4 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
+@@ -26,35 +26,54 @@
+ struct rcar_du_hdmienc {
+ 	struct rcar_du_encoder *renc;
+ 	struct device *dev;
+-	int dpms;
++	bool enabled;
+ };
+ 
+ #define to_rcar_hdmienc(e)	(to_rcar_encoder(e)->hdmi)
+ #define to_slave_funcs(e)	(to_rcar_encoder(e)->slave.slave_funcs)
+ 
+-static void rcar_du_hdmienc_dpms(struct drm_encoder *encoder, int mode)
++static void rcar_du_hdmienc_disable(struct drm_encoder *encoder)
+ {
+ 	struct rcar_du_hdmienc *hdmienc = to_rcar_hdmienc(encoder);
+ 	struct drm_encoder_slave_funcs *sfuncs = to_slave_funcs(encoder);
+ 
+-	if (mode != DRM_MODE_DPMS_ON)
+-		mode = DRM_MODE_DPMS_OFF;
++	if (sfuncs->dpms)
++		sfuncs->dpms(encoder, DRM_MODE_DPMS_OFF);
+ 
+-	if (hdmienc->dpms = mode)
+-		return;
++	if (hdmienc->renc->lvds)
++		rcar_du_lvdsenc_enable(hdmienc->renc->lvds, encoder->crtc,
++				       false);
++
++	hdmienc->enabled = false;
++}
++
++static void rcar_du_hdmienc_enable(struct drm_encoder *encoder)
++{
++	struct rcar_du_hdmienc *hdmienc = to_rcar_hdmienc(encoder);
++	struct drm_encoder_slave_funcs *sfuncs = to_slave_funcs(encoder);
+ 
+-	if (mode = DRM_MODE_DPMS_ON && hdmienc->renc->lvds)
++	if (hdmienc->renc->lvds)
+ 		rcar_du_lvdsenc_enable(hdmienc->renc->lvds, encoder->crtc,
+ 				       true);
+ 
+ 	if (sfuncs->dpms)
+-		sfuncs->dpms(encoder, mode);
++		sfuncs->dpms(encoder, DRM_MODE_DPMS_ON);
+ 
+-	if (mode != DRM_MODE_DPMS_ON && hdmienc->renc->lvds)
+-		rcar_du_lvdsenc_enable(hdmienc->renc->lvds, encoder->crtc,
+-				       false);
++	hdmienc->enabled = true;
++}
+ 
+-	hdmienc->dpms = mode;
++static void rcar_du_hdmienc_dpms(struct drm_encoder *encoder, int mode)
++{
++	struct rcar_du_hdmienc *hdmienc = to_rcar_hdmienc(encoder);
++	bool enable = mode = DRM_MODE_DPMS_ON;
++
++	if (hdmienc->enabled = enable)
++		return;
++
++	if (enable)
++		rcar_du_hdmienc_enable(encoder);
++	else
++		rcar_du_hdmienc_disable(encoder);
+ }
+ 
+ static bool rcar_du_hdmienc_mode_fixup(struct drm_encoder *encoder,
+@@ -106,13 +125,16 @@ static const struct drm_encoder_helper_funcs encoder_helper_funcs = {
+ 	.prepare = rcar_du_hdmienc_mode_prepare,
+ 	.commit = rcar_du_hdmienc_mode_commit,
+ 	.mode_set = rcar_du_hdmienc_mode_set,
++	.disable = rcar_du_hdmienc_disable,
++	.enable = rcar_du_hdmienc_enable,
+ };
+ 
+ static void rcar_du_hdmienc_cleanup(struct drm_encoder *encoder)
+ {
+ 	struct rcar_du_hdmienc *hdmienc = to_rcar_hdmienc(encoder);
+ 
+-	rcar_du_hdmienc_dpms(encoder, DRM_MODE_DPMS_OFF);
++	if (hdmienc->enabled)
++		rcar_du_hdmienc_disable(encoder);
+ 
+ 	drm_encoder_cleanup(encoder);
+ 	put_device(hdmienc->dev);
+-- 
+2.0.5
 
