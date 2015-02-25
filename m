@@ -1,44 +1,63 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 16 Feb 2015 01:52:55 +0000
-Subject: [PATCH v2 0/4] usb: renesas_usbhs: add support for USB-DMAC
-Message-Id: <1424051579-5060-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 25 Feb 2015 21:54:29 +0000
+Subject: [PATCH 09/38] drm: rcar-du: Don't set connector->encoder at init time
+Message-Id: <1424901298-6829-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, balbi-l0cyMroinI0@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org
-Cc: linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-This patch set is based on Felipe's usb.git / testing/next branch.
-(commit id = 6461d69d12508fe166be5c6c31d5a9da02a4dfb5)
+The drm_connector encoder field points to the encoder driving the
+connector. No such association exists at init time, as all pipelines are
+disabled. Don't set the field.
 
-To use the USB-DMAC, we have to add some device nodes for USB-DMAC
-in dts file. If we don't have such device nodes, this driver will
-use PIO.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c | 1 -
+ drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c | 1 -
+ drivers/gpu/drm/rcar-du/rcar_du_vgacon.c  | 1 -
+ 3 files changed, 3 deletions(-)
 
-Changes from v1:
- - Change local_irq_save/restore() area in patch 1.
- - Modify the commit log in patch 1.
- - fix some comments in patch 4.
-
-Yoshihiro Shimoda (4):
-  usb: renesas_usbhs: fix spinlock suspected in a gadget complete
-    function
-  usb: renesas_usbhs: add the channel number in dma-names
-  usb: renesas_usbhs: fix the sequence in xfer_work()
-  usb: renesas_usbhs: add support for USB-DMAC
-
- .../devicetree/bindings/usb/renesas_usbhs.txt      |    5 +-
- drivers/usb/renesas_usbhs/common.c                 |   19 ++
- drivers/usb/renesas_usbhs/common.h                 |    7 +
- drivers/usb/renesas_usbhs/fifo.c                   |  189 ++++++++++++++++++--
- drivers/usb/renesas_usbhs/fifo.h                   |    1 +
- drivers/usb/renesas_usbhs/mod_gadget.c             |   11 ++
- drivers/usb/renesas_usbhs/pipe.c                   |   39 ++++
- drivers/usb/renesas_usbhs/pipe.h                   |    1 +
- include/linux/usb/renesas_usbhs.h                  |    2 +
- 9 files changed, 258 insertions(+), 16 deletions(-)
-
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
+index ca94b029ac80..3896cb20ad51 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
+@@ -116,7 +116,6 @@ int rcar_du_hdmi_connector_init(struct rcar_du_device *rcdu,
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	connector->encoder = encoder;
+ 	rcon->encoder = renc;
+ 
+ 	return 0;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
+index 6d9811c052c4..7c0b08fe0774 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
+@@ -125,7 +125,6 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	connector->encoder = encoder;
+ 	lvdscon->connector.encoder = renc;
+ 
+ 	return 0;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
+index 9d4879921cc7..ae8b304e6fea 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
+@@ -84,7 +84,6 @@ int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	connector->encoder = encoder;
+ 	rcon->encoder = renc;
+ 
+ 	return 0;
 -- 
-1.7.9.5
+2.0.5
 
