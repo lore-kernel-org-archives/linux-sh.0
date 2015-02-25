@@ -1,45 +1,70 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 20 Feb 2015 10:33:09 +0000
-Subject: [PATCH 24/24 v2] ASoC: rsnd: add sample code of reg-names
-Message-Id: <87h9ugna6h.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 25 Feb 2015 21:54:25 +0000
+Subject: [PATCH 05/38] drm: adv7511: Fix DDC error interrupt handling
+Message-Id: <1424901298-6829-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
+References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The DDC error interrupt bit is located in REG_INT1, not REG_INT0. Update
+both the interrupt wait code and the interrupt sources reset code
+accordingly.
 
-Current rsnd driver supports reg-names, and Audio DMAC peri peri.
-This patch adds sample code for it.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v1 -> v2
+ drivers/gpu/drm/i2c/adv7511.c | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
 
- - no change
-
- .../devicetree/bindings/sound/renesas,rsnd.txt     |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-index 6e660d4..f316ce1 100644
---- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-+++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-@@ -53,7 +53,9 @@ rcar_sound: rcar_sound@ec500000 {
- 	reg =	<0 0xec500000 0 0x1000>, /* SCU */
- 		<0 0xec5a0000 0 0x100>,  /* ADG */
- 		<0 0xec540000 0 0x1000>, /* SSIU */
--		<0 0xec541000 0 0x1280>; /* SSI */
-+		<0 0xec541000 0 0x1280>, /* SSI */
-+		<0 0xec740000 0 0x200>;  /* Audio DMAC peri peri*/
-+	reg-names = "scu", "adg", "ssiu", "ssi", "audmapp";
+diff --git a/drivers/gpu/drm/i2c/adv7511.c b/drivers/gpu/drm/i2c/adv7511.c
+index fa140e04d5fa..5109c215018e 100644
+--- a/drivers/gpu/drm/i2c/adv7511.c
++++ b/drivers/gpu/drm/i2c/adv7511.c
+@@ -467,14 +467,16 @@ static int adv7511_get_edid_block(void *data, u8 *buf, unsigned int block,
+ 				     block);
+ 			ret = adv7511_wait_for_interrupt(adv7511,
+ 					ADV7511_INT0_EDID_READY |
+-					ADV7511_INT1_DDC_ERROR, 200);
++					(ADV7511_INT1_DDC_ERROR << 8), 200);
  
- 	clocks = <&mstp10_clks R8A7790_CLK_SSI_ALL>,
- 		<&mstp10_clks R8A7790_CLK_SSI9>, <&mstp10_clks R8A7790_CLK_SSI8>,
+ 			if (!(ret & ADV7511_INT0_EDID_READY))
+ 				return -EIO;
+ 		}
+ 
+ 		regmap_write(adv7511->regmap, ADV7511_REG_INT(0),
+-			     ADV7511_INT0_EDID_READY | ADV7511_INT1_DDC_ERROR);
++			     ADV7511_INT0_EDID_READY);
++		regmap_write(adv7511->regmap, ADV7511_REG_INT(1),
++			     ADV7511_INT1_DDC_ERROR);
+ 
+ 		/* Break this apart, hopefully more I2C controllers will
+ 		 * support 64 byte transfers than 256 byte transfers
+@@ -528,7 +530,9 @@ static int adv7511_get_modes(struct drm_encoder *encoder,
+ 	/* Reading the EDID only works if the device is powered */
+ 	if (adv7511->dpms_mode != DRM_MODE_DPMS_ON) {
+ 		regmap_write(adv7511->regmap, ADV7511_REG_INT(0),
+-			     ADV7511_INT0_EDID_READY | ADV7511_INT1_DDC_ERROR);
++			     ADV7511_INT0_EDID_READY);
++		regmap_write(adv7511->regmap, ADV7511_REG_INT(1),
++			     ADV7511_INT1_DDC_ERROR);
+ 		regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER,
+ 				   ADV7511_POWER_POWER_DOWN, 0);
+ 		adv7511->current_edid_segment = -1;
+@@ -563,7 +567,9 @@ static void adv7511_encoder_dpms(struct drm_encoder *encoder, int mode)
+ 		adv7511->current_edid_segment = -1;
+ 
+ 		regmap_write(adv7511->regmap, ADV7511_REG_INT(0),
+-			     ADV7511_INT0_EDID_READY | ADV7511_INT1_DDC_ERROR);
++			     ADV7511_INT0_EDID_READY);
++		regmap_write(adv7511->regmap, ADV7511_REG_INT(1),
++			     ADV7511_INT1_DDC_ERROR);
+ 		regmap_update_bits(adv7511->regmap, ADV7511_REG_POWER,
+ 				   ADV7511_POWER_POWER_DOWN, 0);
+ 		/*
 -- 
-1.7.9.5
+2.0.5
 
