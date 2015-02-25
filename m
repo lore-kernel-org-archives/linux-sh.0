@@ -1,84 +1,131 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 19 Feb 2015 03:51:41 +0000
-Subject: [PATCH 06/19] ASoC: rsnd: enable to get resource by name
-Message-Id: <87mw4a1rs6.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 25 Feb 2015 21:54:32 +0000
+Subject: [PATCH 12/38] drm: rcar-du: Turn vblank on/off when enabling/disabling CRTC
+Message-Id: <1424901298-6829-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbiy1rul.wl%kuninori.morimoto.gx@renesas.com>
+References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The DRM core vblank handling mechanism requires drivers to forcefully
+turn vblank reporting off when disabling the CRTC, and to restore the
+vblank reporting status when enabling the CRTC.
 
-rsnd driver needs to support Audio DMAC peri peri inside sound driver.
-getting resource by name is useful for it
+Implement this using the drm_crtc_vblank_on/off helpers. When disabling
+vblank we must first wait for page flips to complete, so implement page
+flip completion wait as well.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Finally, drm_crtc_vblank_off() must be called at startup to synchronize
+the state of the vblank core code with the hardware, which is initially
+disabled. This is performed at CRTC creation time, requiring vertical
+blanking to be initialized before creating CRTCs.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- sound/soc/sh/rcar/gen.c |   23 +++++++++++++----------
- 1 file changed, 13 insertions(+), 10 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c | 18 +++++++++++++-----
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c  | 14 ++++++++------
+ 2 files changed, 21 insertions(+), 11 deletions(-)
 
-diff --git a/sound/soc/sh/rcar/gen.c b/sound/soc/sh/rcar/gen.c
-index de0685f..d08bcd3 100644
---- a/sound/soc/sh/rcar/gen.c
-+++ b/sound/soc/sh/rcar/gen.c
-@@ -118,11 +118,12 @@ void rsnd_bset(struct rsnd_priv *priv, struct rsnd_mod *mod,
- 				  mask, data);
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index 7f5ae0269a61..5cf2cac75146 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -279,7 +279,7 @@ void rcar_du_crtc_cancel_page_flip(struct rcar_du_crtc *rcrtc,
+ 	if (event && event->base.file_priv = file) {
+ 		rcrtc->event = NULL;
+ 		event->base.destroy(&event->base);
+-		drm_vblank_put(dev, rcrtc->index);
++		drm_crtc_vblank_put(&rcrtc->crtc);
+ 	}
+ 	spin_unlock_irqrestore(&dev->event_lock, flags);
+ }
+@@ -303,7 +303,7 @@ static void rcar_du_crtc_finish_page_flip(struct rcar_du_crtc *rcrtc)
+ 	wake_up(&rcrtc->flip_wait);
+ 	spin_unlock_irqrestore(&dev->event_lock, flags);
+ 
+-	drm_vblank_put(dev, rcrtc->index);
++	drm_crtc_vblank_put(&rcrtc->crtc);
  }
  
--#define rsnd_gen_regmap_init(priv, id_size, reg_id, conf)		\
--	_rsnd_gen_regmap_init(priv, id_size, reg_id, conf, ARRAY_SIZE(conf))
-+#define rsnd_gen_regmap_init(priv, id_size, reg_id, name, conf)		\
-+	_rsnd_gen_regmap_init(priv, id_size, reg_id, name, conf, ARRAY_SIZE(conf))
- static int _rsnd_gen_regmap_init(struct rsnd_priv *priv,
- 				 int id_size,
- 				 int reg_id,
-+				 const char *name,
- 				 struct rsnd_regmap_field_conf *conf,
- 				 int conf_size)
- {
-@@ -142,7 +143,9 @@ static int _rsnd_gen_regmap_init(struct rsnd_priv *priv,
- 	regc.val_bits = 32;
- 	regc.reg_stride = 4;
+ static bool rcar_du_crtc_page_flip_pending(struct rcar_du_crtc *rcrtc)
+@@ -383,6 +383,9 @@ static void rcar_du_crtc_start(struct rcar_du_crtc *rcrtc)
  
--	res = platform_get_resource(pdev, IORESOURCE_MEM, reg_id);
-+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, name);
-+	if (!res)
-+		res = platform_get_resource(pdev, IORESOURCE_MEM, reg_id);
- 	if (!res)
- 		return -ENODEV;
+ 	rcar_du_group_start_stop(rcrtc->group, true);
  
-@@ -368,10 +371,10 @@ static int rsnd_gen2_probe(struct platform_device *pdev,
- 	int ret_adg;
- 	int ret_ssi;
++	/* Turn vertical blanking interrupt reporting back on. */
++	drm_crtc_vblank_on(crtc);
++
+ 	rcrtc->started = true;
+ }
  
--	ret_ssiu = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_SSIU, conf_ssiu);
--	ret_scu  = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_SCU,  conf_scu);
--	ret_adg  = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_ADG,  conf_adg);
--	ret_ssi  = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_SSI,  conf_ssi);
-+	ret_ssiu = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_SSIU, "ssiu", conf_ssiu);
-+	ret_scu  = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_SCU,  "scu",  conf_scu);
-+	ret_adg  = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_ADG,  "adg",  conf_adg);
-+	ret_ssi  = rsnd_gen_regmap_init(priv, 10, RSND_GEN2_SSI,  "ssi",  conf_ssi);
- 	if (ret_ssiu < 0 ||
- 	    ret_scu  < 0 ||
- 	    ret_adg  < 0 ||
-@@ -440,9 +443,9 @@ static int rsnd_gen1_probe(struct platform_device *pdev,
- 	int ret_adg;
- 	int ret_ssi;
+@@ -393,10 +396,12 @@ static void rcar_du_crtc_stop(struct rcar_du_crtc *rcrtc)
+ 	if (!rcrtc->started)
+ 		return;
  
--	ret_sru  = rsnd_gen_regmap_init(priv, 9, RSND_GEN1_SRU,  conf_sru);
--	ret_adg  = rsnd_gen_regmap_init(priv, 9, RSND_GEN1_ADG,  conf_adg);
--	ret_ssi  = rsnd_gen_regmap_init(priv, 9, RSND_GEN1_SSI,  conf_ssi);
-+	ret_sru  = rsnd_gen_regmap_init(priv, 9, RSND_GEN1_SRU, "sru", conf_sru);
-+	ret_adg  = rsnd_gen_regmap_init(priv, 9, RSND_GEN1_ADG, "adg", conf_adg);
-+	ret_ssi  = rsnd_gen_regmap_init(priv, 9, RSND_GEN1_SSI, "ssi", conf_ssi);
- 	if (ret_sru  < 0 ||
- 	    ret_adg  < 0 ||
- 	    ret_ssi  < 0)
+-	/* Wait for page flip completion before stopping the CRTC as userspace
+-	 * excepts page flips to eventually complete.
++	/* Disable vertical blanking interrupt reporting. We first need to wait
++	 * for page flip completion before stopping the CRTC as userspace
++	 * expects page flips to eventually complete.
+ 	 */
+ 	rcar_du_crtc_wait_page_flip(rcrtc);
++	drm_crtc_vblank_off(crtc);
+ 
+ 	mutex_lock(&rcrtc->group->planes.lock);
+ 	rcrtc->plane->enabled = false;
+@@ -596,7 +601,7 @@ static int rcar_du_crtc_page_flip(struct drm_crtc *crtc,
+ 
+ 	if (event) {
+ 		event->pipe = rcrtc->index;
+-		drm_vblank_get(dev, rcrtc->index);
++		drm_crtc_vblank_get(crtc);
+ 		spin_lock_irqsave(&dev->event_lock, flags);
+ 		rcrtc->event = event;
+ 		spin_unlock_irqrestore(&dev->event_lock, flags);
+@@ -693,6 +698,9 @@ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int index)
+ 
+ 	drm_crtc_helper_add(crtc, &crtc_helper_funcs);
+ 
++	/* Start with vertical blanking interrupt reporting disabled. */
++	drm_crtc_vblank_off(crtc);
++
+ 	/* Register the interrupt handler. */
+ 	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_CRTC_IRQ_CLOCK)) {
+ 		irq = platform_get_irq(pdev, index);
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index e0d74f821416..8ab4c69c599b 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -175,17 +175,19 @@ static int rcar_du_load(struct drm_device *dev, unsigned long flags)
+ 	if (IS_ERR(rcdu->mmio))
+ 		return PTR_ERR(rcdu->mmio);
+ 
+-	/* DRM/KMS objects */
+-	ret = rcar_du_modeset_init(rcdu);
++	/* Initialize vertical blanking interrupts handling. Start with vblank
++	 * disabled for all CRTCs.
++	 */
++	ret = drm_vblank_init(dev, (1 << rcdu->info->num_crtcs) - 1);
+ 	if (ret < 0) {
+-		dev_err(&pdev->dev, "failed to initialize DRM/KMS\n");
++		dev_err(&pdev->dev, "failed to initialize vblank\n");
+ 		goto done;
+ 	}
+ 
+-	/* vblank handling */
+-	ret = drm_vblank_init(dev, (1 << rcdu->num_crtcs) - 1);
++	/* DRM/KMS objects */
++	ret = rcar_du_modeset_init(rcdu);
+ 	if (ret < 0) {
+-		dev_err(&pdev->dev, "failed to initialize vblank\n");
++		dev_err(&pdev->dev, "failed to initialize DRM/KMS\n");
+ 		goto done;
+ 	}
+ 
 -- 
-1.7.9.5
+2.0.5
 
