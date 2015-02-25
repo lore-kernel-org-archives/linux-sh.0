@@ -1,35 +1,24 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 16 Feb 2015 19:59:11 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 25 Feb 2015 20:58:42 +0000
 Subject: Re: [PATCH 2/2] pinctrl: sh-pfc: r8a7791: Remove non existing GPIO pins
-Message-Id: <CAMuHMdVEK7SaiqXQfv6fn0gJ5UExob9Ee3RZwQVEUbM=cVvjdg@mail.gmail.com>
+Message-Id: <54EE3782.5040108@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424115661-21928-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<1424115661-21928-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1424115661-21928-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1424115661-21928-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1424115661-21928-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Linus Walleij <linus.walleij@linaro.org>
+To: linux-sh@vger.kernel.org, Linus Walleij <linus.walleij@linaro.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-gpio@vger.kernel.org
 
-Hi Laurent,
+On 02/16/2015 10:41 PM, Laurent Pinchart wrote:
 
-On Mon, Feb 16, 2015 at 8:41 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
 > GPIO banks 1 and 7 are missing pins 26 to 31. Remove them.
 
-BTW, one intriguing thing is that the description for GPSR7 seems to suggest
-that GP-7-26 to GP-7-31 do exist, but cannot be configured for a peripheral
-function. But I cannot find an actual pin on the chip's package these GPIOs
-are connected to.
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Gr{oetje,eeting}s,
+    This patch breaks the boot as well, please don't apply it yet. The same 
+about R8A7790 patch. We're thinking about a proper fix...
 
-                        Geert
+WBR, Sergei
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
