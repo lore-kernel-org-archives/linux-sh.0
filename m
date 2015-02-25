@@ -1,89 +1,71 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 17 Feb 2015 15:04:42 +0000
-Subject: [PATCH v4 2/6] ARM: shmobile: ape6evm dts: Move Ethernet node to BSC
-Message-Id: <1424185486-3017-3-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 25 Feb 2015 21:54:54 +0000
+Subject: [PATCH 34/38] drm: rcar-du: Remove unneeded rcar_du_crtc plane field
+Message-Id: <1424901298-6829-35-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424185486-3017-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424185486-3017-1-git-send-email-geert+renesas@glider.be>
+References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Move the Ethernet node from the ad-hoc lbsc node to the BSC node,
-as its connected to the Bus State Controller.  This allows the system to
-know the right position of the Ethernet node in the clock and PM domain
-hierarchy, and manage the clock and PM domain appropriately.
+The rcar_du_crtc plane field is only used to check for an error that
+can't occur. Remove it.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v4:
-  - Add Acked-by,
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c | 7 ++-----
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.h | 2 --
+ 2 files changed, 2 insertions(+), 7 deletions(-)
 
-v3:
-  - Add Tested-by,
-
-v2:
-  - New.
----
- arch/arm/boot/dts/r8a73a4-ape6evm.dts | 35 +++++++++++++++--------------------
- 1 file changed, 15 insertions(+), 20 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index 0d50bef0123449f5..44c4cac1820a4dfe 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -72,26 +72,6 @@
- 		regulator-always-on;
- 	};
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index 3f64707412e6..c70f73036056 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -353,9 +353,6 @@ static void rcar_du_crtc_start(struct rcar_du_crtc *rcrtc)
+ 	if (rcrtc->started)
+ 		return;
  
--	lbsc {
--		compatible = "simple-bus";
--		#address-cells = <1>;
--		#size-cells = <1>;
--		ranges = <0 0 0 0x20000000>;
+-	if (WARN_ON(rcrtc->plane->format = NULL))
+-		return;
 -
--		ethernet@8000000 {
--			compatible = "smsc,lan9220", "smsc,lan9115";
--			reg = <0x08000000 0x1000>;
--			interrupt-parent = <&irqc1>;
--			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
--			phy-mode = "mii";
--			reg-io-width = <4>;
--			smsc,irq-active-high;
--			smsc,irq-push-pull;
--			vdd33a-supply = <&ape6evm_fixed_3v3>;
--			vddvario-supply = <&ape6evm_fixed_1v8>;
--		};
--	};
--
- 	leds {
- 		compatible = "gpio-leds";
- 		led1 {
-@@ -184,6 +164,21 @@
- 	voltage-tolerance = <1>; /* 1% */
+ 	/* Set display off and background to black */
+ 	rcar_du_crtc_write(rcrtc, DOOR, DOOR_RGB(0, 0, 0));
+ 	rcar_du_crtc_write(rcrtc, BPOR, BPOR_RGB(0, 0, 0));
+@@ -606,9 +603,9 @@ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int index)
+ 	rcrtc->mmio_offset = mmio_offsets[index];
+ 	rcrtc->index = index;
+ 	rcrtc->enabled = false;
+-	rcrtc->plane = &rgrp->planes.planes[index % 2];
+ 
+-	ret = drm_crtc_init_with_planes(rcdu->ddev, crtc, &rcrtc->plane->plane,
++	ret = drm_crtc_init_with_planes(rcdu->ddev, crtc,
++					&rgrp->planes.planes[index % 2].plane,
+ 					NULL, &crtc_funcs);
+ 	if (ret < 0)
+ 		return ret;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
+index 0a3dcca58fd7..5d9aa9b33769 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
+@@ -21,7 +21,6 @@
+ #include <drm/drm_crtc.h>
+ 
+ struct rcar_du_group;
+-struct rcar_du_plane;
+ 
+ struct rcar_du_crtc {
+ 	struct drm_crtc crtc;
+@@ -39,7 +38,6 @@ struct rcar_du_crtc {
+ 	bool enabled;
+ 
+ 	struct rcar_du_group *group;
+-	struct rcar_du_plane *plane;
  };
  
-+&bsc {
-+	ethernet@8000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x08000000 0x1000>;
-+		interrupt-parent = <&irqc1>;
-+		interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
-+		phy-mode = "mii";
-+		reg-io-width = <4>;
-+		smsc,irq-active-high;
-+		smsc,irq-push-pull;
-+		vdd33a-supply = <&ape6evm_fixed_3v3>;
-+		vddvario-supply = <&ape6evm_fixed_1v8>;
-+	};
-+};
-+
- &cmt1 {
- 	status = "okay";
- };
+ #define to_rcar_crtc(c)	container_of(c, struct rcar_du_crtc, crtc)
 -- 
-1.9.1
+2.0.5
 
