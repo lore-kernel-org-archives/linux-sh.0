@@ -1,26 +1,73 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 23 Feb 2015 22:00:50 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7794: add SDHI DT support
-Message-Id: <20150223220049.GB29878@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 25 Feb 2015 09:57:50 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7794: add GPIO clocks
+Message-Id: <4073135.p5DxpngjLk@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <10037494.4LD4T2QGPX@wasted.cogentembedded.com>
- <4571288.SFHfW35Ob9@wasted.cogentembedded.com>
- <CAMuHMdU9PS07hhvi1rLoE3q7J_Q2wmOJm=CGyN67w8p4PvW5Yw@mail.gmail.com>
-In-Reply-To: <CAMuHMdU9PS07hhvi1rLoE3q7J_Q2wmOJm=CGyN67w8p4PvW5Yw@mail.gmail.com>
+References: <6954455.LyoCrfjM8R@wasted.cogentembedded.com>
+ <1831753.Dnjo3xKPJv@wasted.cogentembedded.com>
+In-Reply-To: <1831753.Dnjo3xKPJv@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Feb 23, 2015 at 12:16:47PM +0100, Geert Uytterhoeven wrote:
-> On Sat, Feb 21, 2015 at 11:26 PM, Sergei Shtylyov
-> <sergei.shtylyov@cogentembedded.com> wrote:
-> > Define the generic R8A7794 parts of the SDHI[012] device nodes.
-> >
-> > Based on the orginal patch by Shinobu Uehara <shinobu.uehara.xc@renesas.com>.
-> >
-> > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi Sergei,
 
-Thanks, I have queued this up.
+Thank you for the patch.
+
+On Sunday 22 February 2015 01:11:25 Sergei Shtylyov wrote:
+> Describe the GPIO clocks in the R8A7794 device tree.
+> 
+> Based on the original patch by Koji Matsuoka <koji.matsuoka.xm@renesas.com>.
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+> 
+> ---
+>  arch/arm/boot/dts/r8a7794.dtsi |   22 ++++++++++++++--------
+>  1 file changed, 14 insertions(+), 8 deletions(-)
+> 
+> Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
+> =================================> --- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
+> +++ renesas/arch/arm/boot/dts/r8a7794.dtsi
+> @@ -651,16 +651,22 @@
+>  		mstp9_clks: mstp9_clks@e6150994 {
+>  			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-
+clocks";
+>  			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+> -			clocks = <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
+> -				<&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
+> +			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
+> +				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
+> +				 <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
+> +				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
+>  			#clock-cells = <1>;
+> -			clock-indices = <
+> -				R8A7794_CLK_QSPI_MOD R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
+> -				R8A7794_CLK_I2C3 R8A7794_CLK_I2C2 R8A7794_CLK_I2C1
+> -				R8A7794_CLK_I2C0
+> -			>;
+> +			clock-indices = <R8A7794_CLK_GPIO6 R8A7794_CLK_GPIO5
+> +					 R8A7794_CLK_GPIO4 R8A7794_CLK_GPIO3
+> +					 R8A7794_CLK_GPIO2 R8A7794_CLK_GPIO1
+> +					 R8A7794_CLK_GPIO0 R8A7794_CLK_QSPI_MOD
+> +					 R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
+> +					 R8A7794_CLK_I2C3 R8A7794_CLK_I2C2
+> +					 R8A7794_CLK_I2C1 R8A7794_CLK_I2C0>;
+>  			clock-output-names > -				"qspi_mod", "i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
+> +				"gpio6", "gpio5", "gpio4", "gpio3", "gpio2",
+> +				"gpio1", "gpio0", "qspi_mod",
+> +				"i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
+>  		};
+>  		mstp11_clks: mstp11_clks@e615099c {
+>  			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-
+clocks";
+
+
+-- 
+Regards,
+
+Laurent Pinchart
+
