@@ -1,423 +1,887 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 05 Feb 2015 07:12:43 +0000
-Subject: [PATCH 6/6] ASoC: sh: discontinue support of dma-sh7760 driver
-Message-Id: <871tm4j0er.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:22:09 +0000
+Subject: [PATCH 08/12] ARM: shmobile: sh7372: Remove ZBOOT MMC/SDHI support
+Message-Id: <10c7fcbd0f00a0d7e6039fcfcb04dca80c0ff362.1424931560.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87egq7774l.wl%kuninori.morimoto.gx@renesas.com>
-	<87a90sj0hy.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87a90sj0hy.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1424931560.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424931560.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@linaro.org>, Mark Brown <broonie@kernel.org>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-In upstream kernel, no one is using SND_SOC_PCM_SH7760 / sh7760-pcm-audio.
-This patch discontinue support of dma-sh7760 driver to reducing
-maintenance cost. Thank you and good bye dma-sh7760 driver.
+Remove the sh7372 implementation and the shared ZBOOT MMC
+and SDHI support code from the compressed ARM boot loader.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+With this in place it is no longer possible to boot any
+self-contained kernel for sh7372 directly from Mask ROM
+via SDHI and MMCIF hardware.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- sound/soc/sh/Kconfig      |   11 --
- sound/soc/sh/Makefile     |    4 -
- sound/soc/sh/dma-sh7760.c |  352 ---------------------------------------------
- 3 files changed, 367 deletions(-)
- delete mode 100644 sound/soc/sh/dma-sh7760.c
+ arch/arm/Kconfig                                  |  29 --
+ arch/arm/boot/compressed/Makefile                 |  15 -
+ arch/arm/boot/compressed/head-shmobile.S          |  30 --
+ arch/arm/boot/compressed/mmcif-sh7372.c           |  88 -----
+ arch/arm/boot/compressed/sdhi-sh7372.c            |  95 -----
+ arch/arm/boot/compressed/sdhi-shmobile.c          | 449 ----------------------
+ arch/arm/boot/compressed/sdhi-shmobile.h          |  11 -
+ arch/arm/mach-shmobile/include/mach/mmc.h         |  11 -
+ arch/arm/mach-shmobile/include/mach/sdhi-sh7372.h |  21 -
+ arch/arm/mach-shmobile/include/mach/sdhi.h        |  16 -
+ 10 files changed, 765 deletions(-)
+ delete mode 100644 arch/arm/boot/compressed/mmcif-sh7372.c
+ delete mode 100644 arch/arm/boot/compressed/sdhi-sh7372.c
+ delete mode 100644 arch/arm/boot/compressed/sdhi-shmobile.c
+ delete mode 100644 arch/arm/boot/compressed/sdhi-shmobile.h
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/mmc.h
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/sdhi-sh7372.h
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/sdhi.h
 
-diff --git a/sound/soc/sh/Kconfig b/sound/soc/sh/Kconfig
-index 0319165b..e9f735f 100644
---- a/sound/soc/sh/Kconfig
-+++ b/sound/soc/sh/Kconfig
-@@ -1,17 +1,6 @@
- menu "SoC Audio support for SuperH"
- 	depends on SUPERH || ARCH_SHMOBILE
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 9f1f09a..5c915e5 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1848,35 +1848,6 @@ config ZBOOT_ROM
+ 	  Say Y here if you intend to execute your compressed kernel image
+ 	  (zImage) directly from ROM or flash.  If unsure, say N.
  
--config SND_SOC_PCM_SH7760
--	tristate "SoC Audio support for Renesas SH7760"
--	depends on CPU_SUBTYPE_SH7760 && SH_DMABRG
+-choice
+-	prompt "Include SD/MMC loader in zImage (EXPERIMENTAL)"
+-	depends on ZBOOT_ROM && ARCH_SH7372
+-	default ZBOOT_ROM_NONE
 -	help
--	  Enable this option for SH7760 AC97/I2S audio support.
+-	  Include experimental SD/MMC loading code in the ROM-able zImage.
+-	  With this enabled it is possible to write the ROM-able zImage
+-	  kernel image to an MMC or SD card and boot the kernel straight
+-	  from the reset vector. At reset the processor Mask ROM will load
+-	  the first part of the ROM-able zImage which in turn loads the
+-	  rest the kernel image to RAM.
 -
+-config ZBOOT_ROM_NONE
+-	bool "No SD/MMC loader in zImage (EXPERIMENTAL)"
+-	help
+-	  Do not load image from SD or MMC
 -
--##
--## Audio unit modules
--##
+-config ZBOOT_ROM_MMCIF
+-	bool "Include MMCIF loader in zImage (EXPERIMENTAL)"
+-	help
+-	  Load image from MMCIF hardware block.
 -
- config SND_SOC_SH4_FSI
- 	tristate "SH4 FSI support"
- 	select SND_SIMPLE_CARD
-diff --git a/sound/soc/sh/Makefile b/sound/soc/sh/Makefile
-index 84362aa..fa78ffa 100644
---- a/sound/soc/sh/Makefile
-+++ b/sound/soc/sh/Makefile
-@@ -1,7 +1,3 @@
--## DMA engines
--snd-soc-dma-sh7760-objs	:= dma-sh7760.o
--obj-$(CONFIG_SND_SOC_PCM_SH7760)	+= snd-soc-dma-sh7760.o
+-config ZBOOT_ROM_SH_MOBILE_SDHI
+-	bool "Include SuperH Mobile SDHI loader in zImage (EXPERIMENTAL)"
+-	help
+-	  Load image from SDHI hardware block
 -
- ## audio units found on some SH-4
- snd-soc-fsi-objs	:= fsi.o
- obj-$(CONFIG_SND_SOC_SH4_FSI)	+= snd-soc-fsi.o
-diff --git a/sound/soc/sh/dma-sh7760.c b/sound/soc/sh/dma-sh7760.c
+-endchoice
+-
+ config ARM_APPENDED_DTB
+ 	bool "Use appended device tree blob to zImage (EXPERIMENTAL)"
+ 	depends on OF
+diff --git a/arch/arm/boot/compressed/Makefile b/arch/arm/boot/compressed/Makefile
+index 3ea230a..6e1fb2b 100644
+--- a/arch/arm/boot/compressed/Makefile
++++ b/arch/arm/boot/compressed/Makefile
+@@ -6,21 +6,6 @@
+ 
+ OBJS		 
+-# Ensure that MMCIF loader code appears early in the image
+-# to minimise that number of bocks that have to be read in
+-# order to load it.
+-ifeq ($(CONFIG_ZBOOT_ROM_MMCIF),y)
+-OBJS		+= mmcif-sh7372.o
+-endif
+-
+-# Ensure that SDHI loader code appears early in the image
+-# to minimise that number of bocks that have to be read in
+-# order to load it.
+-ifeq ($(CONFIG_ZBOOT_ROM_SH_MOBILE_SDHI),y)
+-OBJS		+= sdhi-shmobile.o
+-OBJS		+= sdhi-sh7372.o
+-endif
+-
+ AFLAGS_head.o += -DTEXT_OFFSET=$(TEXT_OFFSET)
+ HEAD	= head.o
+ OBJS	+= misc.o decompress.o
+diff --git a/arch/arm/boot/compressed/head-shmobile.S b/arch/arm/boot/compressed/head-shmobile.S
+index e7f8092..22a7525 100644
+--- a/arch/arm/boot/compressed/head-shmobile.S
++++ b/arch/arm/boot/compressed/head-shmobile.S
+@@ -25,36 +25,6 @@
+ 	/* load board-specific initialization code */
+ #include <mach/zboot.h>
+ 
+-#if defined(CONFIG_ZBOOT_ROM_MMCIF) || defined(CONFIG_ZBOOT_ROM_SH_MOBILE_SDHI)
+-	/* Load image from MMC/SD */
+-	adr	sp, __tmp_stack + 256
+-	ldr	r0, __image_start
+-	ldr	r1, __image_end
+-	subs	r1, r1, r0
+-	ldr	r0, __load_base
+-	bl	mmc_loader
+-
+-	/* Jump to loaded code */
+-	ldr	r0, __loaded
+-	ldr	r1, __image_start
+-	sub	r0, r0, r1
+-	ldr	r1, __load_base
+-	add	pc, r0, r1
+-
+-__image_start:
+-	.long	_start
+-__image_end:
+-	.long	_got_end
+-__load_base:
+-	.long	MEMORY_START + 0x02000000 @ Load at 32Mb into SDRAM
+-__loaded:
+-	.long	__continue
+-	.align
+-__tmp_stack:
+-	.space	256
+-__continue:
+-#endif /* CONFIG_ZBOOT_ROM_MMC || CONFIG_ZBOOT_ROM_SH_MOBILE_SDHI */
+-
+ 	adr	r0, dtb_info
+ 	ldmia	r0, {r1, r3, r4, r5, r7}
+ 
+diff --git a/arch/arm/boot/compressed/mmcif-sh7372.c b/arch/arm/boot/compressed/mmcif-sh7372.c
 deleted file mode 100644
-index fd11404..0000000
---- a/sound/soc/sh/dma-sh7760.c
+index 672ae95..0000000
+--- a/arch/arm/boot/compressed/mmcif-sh7372.c
 +++ /dev/null
-@@ -1,352 +0,0 @@
+@@ -1,88 +0,0 @@
 -/*
-- * SH7760 ("camelot") DMABRG audio DMA unit support
+- * sh7372 MMCIF loader
 - *
-- * Copyright (C) 2007 Manuel Lauss <mano@roarinelk.homelinux.net>
-- *  licensed under the terms outlined in the file COPYING at the root
-- *  of the linux kernel sources.
+- * Copyright (C) 2010 Magnus Damm
+- * Copyright (C) 2010 Simon Horman
 - *
-- * The SH7760 DMABRG provides 4 dma channels (2x rec, 2x play), which
-- * trigger an interrupt when one half of the programmed transfer size
-- * has been xmitted.
-- *
-- * FIXME: little-endian only for now
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
 - */
 -
--#include <linux/module.h>
--#include <linux/gfp.h>
--#include <linux/init.h>
--#include <linux/platform_device.h>
--#include <linux/dma-mapping.h>
--#include <sound/core.h>
--#include <sound/pcm.h>
--#include <sound/pcm_params.h>
--#include <sound/soc.h>
--#include <asm/dmabrg.h>
+-#include <linux/mmc/sh_mmcif.h>
+-#include <linux/mmc/boot.h>
+-#include <mach/mmc.h>
 -
+-#define MMCIF_BASE      (void __iomem *)0xe6bd0000
 -
--/* registers and bits */
--#define BRGATXSAR	0x00
--#define BRGARXDAR	0x04
--#define BRGATXTCR	0x08
--#define BRGARXTCR	0x0C
--#define BRGACR		0x10
--#define BRGATXTCNT	0x14
--#define BRGARXTCNT	0x18
+-#define PORT84CR	(void __iomem *)0xe6050054
+-#define PORT85CR	(void __iomem *)0xe6050055
+-#define PORT86CR	(void __iomem *)0xe6050056
+-#define PORT87CR	(void __iomem *)0xe6050057
+-#define PORT88CR	(void __iomem *)0xe6050058
+-#define PORT89CR	(void __iomem *)0xe6050059
+-#define PORT90CR	(void __iomem *)0xe605005a
+-#define PORT91CR	(void __iomem *)0xe605005b
+-#define PORT92CR	(void __iomem *)0xe605005c
+-#define PORT99CR	(void __iomem *)0xe6050063
 -
--#define ACR_RAR		(1 << 18)
--#define ACR_RDS		(1 << 17)
--#define ACR_RDE		(1 << 16)
--#define ACR_TAR		(1 << 2)
--#define ACR_TDS		(1 << 1)
--#define ACR_TDE		(1 << 0)
+-#define SMSTPCR3	(void __iomem *)0xe615013c
 -
--/* receiver/transmitter data alignment */
--#define ACR_RAM_NONE	(0 << 24)
--#define ACR_RAM_4BYTE	(1 << 24)
--#define ACR_RAM_2WORD	(2 << 24)
--#define ACR_TAM_NONE	(0 << 8)
--#define ACR_TAM_4BYTE	(1 << 8)
--#define ACR_TAM_2WORD	(2 << 8)
--
--
--struct camelot_pcm {
--	unsigned long mmio;  /* DMABRG audio channel control reg MMIO */
--	unsigned int txid;    /* ID of first DMABRG IRQ for this unit */
--
--	struct snd_pcm_substream *tx_ss;
--	unsigned long tx_period_size;
--	unsigned int  tx_period;
--
--	struct snd_pcm_substream *rx_ss;
--	unsigned long rx_period_size;
--	unsigned int  rx_period;
--
--} cam_pcm_data[2] = {
--	{
--		.mmio	=	0xFE3C0040,
--		.txid	=	DMABRGIRQ_A0TXF,
--	},
--	{
--		.mmio	=	0xFE3C0060,
--		.txid	=	DMABRGIRQ_A1TXF,
--	},
--};
--
--#define BRGREG(x)	(*(unsigned long *)(cam->mmio + (x)))
--
--/*
-- * set a minimum of 16kb per period, to avoid interrupt-"storm" and
-- * resulting skipping. In general, the bigger the minimum size, the
-- * better for overall system performance. (The SH7760 is a puny CPU
-- * with a slow SDRAM interface and poor internal bus bandwidth,
-- * *especially* when the LCDC is active).  The minimum for the DMAC
-- * is 8 bytes; 16kbytes are enough to get skip-free playback of a
-- * 44kHz/16bit/stereo MP3 on a lightly loaded system, and maintain
-- * reasonable responsiveness in MPlayer.
+-/* SH7372 specific MMCIF loader
+- *
+- * loads the zImage from an MMC card starting from block 1.
+- *
+- * The image must be start with a vrl4 header and
+- * the zImage must start at offset 512 of the image. That is,
+- * at block 2 (=byte 1024) on the media
+- *
+- * Use the following line to write the vrl4 formated zImage
+- * to an MMC card
+- * # dd if=vrl4.out of=/dev/sdx bsQ2 seek=1
 - */
--#define DMABRG_PERIOD_MIN		16 * 1024
--#define DMABRG_PERIOD_MAX		0x03fffffc
--#define DMABRG_PREALLOC_BUFFER		32 * 1024
--#define DMABRG_PREALLOC_BUFFER_MAX	32 * 1024
--
--static struct snd_pcm_hardware camelot_pcm_hardware = {
--	.info = (SNDRV_PCM_INFO_MMAP |
--		SNDRV_PCM_INFO_INTERLEAVED |
--		SNDRV_PCM_INFO_BLOCK_TRANSFER |
--		SNDRV_PCM_INFO_MMAP_VALID |
--		SNDRV_PCM_INFO_BATCH),
--	.buffer_bytes_max =	DMABRG_PERIOD_MAX,
--	.period_bytes_min =	DMABRG_PERIOD_MIN,
--	.period_bytes_max =	DMABRG_PERIOD_MAX / 2,
--	.periods_min =		2,
--	.periods_max =		2,
--	.fifo_size =		128,
--};
--
--static void camelot_txdma(void *data)
+-asmlinkage void mmc_loader(unsigned char *buf, unsigned long len)
 -{
--	struct camelot_pcm *cam = data;
--	cam->tx_period ^= 1;
--	snd_pcm_period_elapsed(cam->tx_ss);
+-	mmc_init_progress();
+-	mmc_update_progress(MMC_PROGRESS_ENTER);
+-
+-	/* Initialise MMC
+-	 * registers: PORT84CR-PORT92CR
+-	 *            (MMCD0_0-MMCD0_7,MMCCMD0 Control)
+-	 * value: 0x04 - select function 4
+-	 */
+-	 __raw_writeb(0x04, PORT84CR);
+-	 __raw_writeb(0x04, PORT85CR);
+-	 __raw_writeb(0x04, PORT86CR);
+-	 __raw_writeb(0x04, PORT87CR);
+-	 __raw_writeb(0x04, PORT88CR);
+-	 __raw_writeb(0x04, PORT89CR);
+-	 __raw_writeb(0x04, PORT90CR);
+-	 __raw_writeb(0x04, PORT91CR);
+-	 __raw_writeb(0x04, PORT92CR);
+-
+-	/* Initialise MMC
+-	 * registers: PORT99CR (MMCCLK0 Control)
+-	 * value: 0x10 | 0x04 - enable output | select function 4
+-	 */
+-	__raw_writeb(0x14, PORT99CR);
+-
+-	/* Enable clock to MMC hardware block */
+-	__raw_writel(__raw_readl(SMSTPCR3) & ~(1 << 12), SMSTPCR3);
+-
+-	mmc_update_progress(MMC_PROGRESS_INIT);
+-
+-	/* setup MMCIF hardware */
+-	sh_mmcif_boot_init(MMCIF_BASE);
+-
+-	mmc_update_progress(MMC_PROGRESS_LOAD);
+-
+-	/* load kernel via MMCIF interface */
+-	sh_mmcif_boot_do_read(MMCIF_BASE, 2, /* Kernel is at block 2 */
+-			      (len + SH_MMCIF_BBS - 1) / SH_MMCIF_BBS, buf);
+-
+-
+-	/* Disable clock to MMC hardware block */
+-	__raw_writel(__raw_readl(SMSTPCR3) | (1 << 12), SMSTPCR3);
+-
+-	mmc_update_progress(MMC_PROGRESS_DONE);
+-}
+diff --git a/arch/arm/boot/compressed/sdhi-sh7372.c b/arch/arm/boot/compressed/sdhi-sh7372.c
+deleted file mode 100644
+index d279294..0000000
+--- a/arch/arm/boot/compressed/sdhi-sh7372.c
++++ /dev/null
+@@ -1,95 +0,0 @@
+-/*
+- * SuperH Mobile SDHI
+- *
+- * Copyright (C) 2010 Magnus Damm
+- * Copyright (C) 2010 Kuninori Morimoto
+- * Copyright (C) 2010 Simon Horman
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- *
+- * Parts inspired by u-boot
+- */
+-
+-#include <linux/io.h>
+-#include <mach/mmc.h>
+-#include <linux/mmc/boot.h>
+-#include <linux/mmc/tmio.h>
+-
+-#include "sdhi-shmobile.h"
+-
+-#define PORT179CR       0xe60520b3
+-#define PORT180CR       0xe60520b4
+-#define PORT181CR       0xe60520b5
+-#define PORT182CR       0xe60520b6
+-#define PORT183CR       0xe60520b7
+-#define PORT184CR       0xe60520b8
+-
+-#define SMSTPCR3        0xe615013c
+-
+-#define CR_INPUT_ENABLE 0x10
+-#define CR_FUNCTION1    0x01
+-
+-#define SDHI1_BASE	(void __iomem *)0xe6860000
+-#define SDHI_BASE	SDHI1_BASE
+-
+-/*  SuperH Mobile SDHI loader
+- *
+- * loads the zImage from an SD card starting from block 0
+- * on physical partition 1
+- *
+- * The image must be start with a vrl4 header and
+- * the zImage must start at offset 512 of the image. That is,
+- * at block 1 (=byte 512) of physical partition 1
+- *
+- * Use the following line to write the vrl4 formated zImage
+- * to an SD card
+- * # dd if=vrl4.out of=/dev/sdx bsQ2
+- */
+-asmlinkage void mmc_loader(unsigned short *buf, unsigned long len)
+-{
+-	int high_capacity;
+-
+-	mmc_init_progress();
+-
+-	mmc_update_progress(MMC_PROGRESS_ENTER);
+-        /* Initialise SDHI1 */
+-        /* PORT184CR: GPIO_FN_SDHICMD1 Control */
+-        __raw_writeb(CR_FUNCTION1, PORT184CR);
+-        /* PORT179CR: GPIO_FN_SDHICLK1 Control */
+-        __raw_writeb(CR_INPUT_ENABLE|CR_FUNCTION1, PORT179CR);
+-        /* PORT181CR: GPIO_FN_SDHID1_3 Control */
+-        __raw_writeb(CR_FUNCTION1, PORT183CR);
+-        /* PORT182CR: GPIO_FN_SDHID1_2 Control */
+-        __raw_writeb(CR_FUNCTION1, PORT182CR);
+-        /* PORT183CR: GPIO_FN_SDHID1_1 Control */
+-        __raw_writeb(CR_FUNCTION1, PORT181CR);
+-        /* PORT180CR: GPIO_FN_SDHID1_0 Control */
+-        __raw_writeb(CR_FUNCTION1, PORT180CR);
+-
+-        /* Enable clock to SDHI1 hardware block */
+-        __raw_writel(__raw_readl(SMSTPCR3) & ~(1 << 13), SMSTPCR3);
+-
+-	/* setup SDHI hardware */
+-	mmc_update_progress(MMC_PROGRESS_INIT);
+-	high_capacity = sdhi_boot_init(SDHI_BASE);
+-	if (high_capacity < 0)
+-		goto err;
+-
+-	mmc_update_progress(MMC_PROGRESS_LOAD);
+-	/* load kernel */
+-	if (sdhi_boot_do_read(SDHI_BASE, high_capacity,
+-			      0, /* Kernel is at block 1 */
+-			      (len + TMIO_BBS - 1) / TMIO_BBS, buf))
+-		goto err;
+-
+-        /* Disable clock to SDHI1 hardware block */
+-        __raw_writel(__raw_readl(SMSTPCR3) | (1 << 13), SMSTPCR3);
+-
+-	mmc_update_progress(MMC_PROGRESS_DONE);
+-
+-	return;
+-err:
+-	for(;;);
+-}
+diff --git a/arch/arm/boot/compressed/sdhi-shmobile.c b/arch/arm/boot/compressed/sdhi-shmobile.c
+deleted file mode 100644
+index bd3d469..0000000
+--- a/arch/arm/boot/compressed/sdhi-shmobile.c
++++ /dev/null
+@@ -1,449 +0,0 @@
+-/*
+- * SuperH Mobile SDHI
+- *
+- * Copyright (C) 2010 Magnus Damm
+- * Copyright (C) 2010 Kuninori Morimoto
+- * Copyright (C) 2010 Simon Horman
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- *
+- * Parts inspired by u-boot
+- */
+-
+-#include <linux/io.h>
+-#include <linux/mmc/host.h>
+-#include <linux/mmc/core.h>
+-#include <linux/mmc/mmc.h>
+-#include <linux/mmc/sd.h>
+-#include <linux/mmc/tmio.h>
+-#include <mach/sdhi.h>
+-
+-#define OCR_FASTBOOT		(1<<29)
+-#define OCR_HCS			(1<<30)
+-#define OCR_BUSY		(1<<31)
+-
+-#define RESP_CMD12		0x00000030
+-
+-static inline u16 sd_ctrl_read16(void __iomem *base, int addr)
+-{
+-        return __raw_readw(base + addr);
 -}
 -
--static void camelot_rxdma(void *data)
+-static inline u32 sd_ctrl_read32(void __iomem *base, int addr)
 -{
--	struct camelot_pcm *cam = data;
--	cam->rx_period ^= 1;
--	snd_pcm_period_elapsed(cam->rx_ss);
+-	return __raw_readw(base + addr) |
+-	       __raw_readw(base + addr + 2) << 16;
 -}
 -
--static int camelot_pcm_open(struct snd_pcm_substream *substream)
+-static inline void sd_ctrl_write16(void __iomem *base, int addr, u16 val)
 -{
--	struct snd_soc_pcm_runtime *rtd = substream->private_data;
--	struct camelot_pcm *cam = &cam_pcm_data[rtd->cpu_dai->id];
--	int recv = substream->stream = SNDRV_PCM_STREAM_PLAYBACK ? 0:1;
--	int ret, dmairq;
+-	__raw_writew(val, base + addr);
+-}
 -
--	snd_soc_set_runtime_hwparams(substream, &camelot_pcm_hardware);
+-static inline void sd_ctrl_write32(void __iomem *base, int addr, u32 val)
+-{
+-	__raw_writew(val, base + addr);
+-	__raw_writew(val >> 16, base + addr + 2);
+-}
 -
--	/* DMABRG buffer half/full events */
--	dmairq = (recv) ? cam->txid + 2 : cam->txid;
--	if (recv) {
--		cam->rx_ss = substream;
--		ret = dmabrg_request_irq(dmairq, camelot_rxdma, cam);
--		if (unlikely(ret)) {
--			pr_debug("audio unit %d irqs already taken!\n",
--			     rtd->cpu_dai->id);
--			return -EBUSY;
--		}
--		(void)dmabrg_request_irq(dmairq + 1,camelot_rxdma, cam);
--	} else {
--		cam->tx_ss = substream;
--		ret = dmabrg_request_irq(dmairq, camelot_txdma, cam);
--		if (unlikely(ret)) {
--			pr_debug("audio unit %d irqs already taken!\n",
--			     rtd->cpu_dai->id);
--			return -EBUSY;
--		}
--		(void)dmabrg_request_irq(dmairq + 1, camelot_txdma, cam);
+-#define ALL_ERROR (TMIO_STAT_CMD_IDX_ERR | TMIO_STAT_CRCFAIL |		\
+-		   TMIO_STAT_STOPBIT_ERR | TMIO_STAT_DATATIMEOUT |	\
+-		   TMIO_STAT_RXOVERFLOW | TMIO_STAT_TXUNDERRUN |	\
+-		   TMIO_STAT_CMDTIMEOUT | TMIO_STAT_ILL_ACCESS |	\
+-		   TMIO_STAT_ILL_FUNC)
+-
+-static int sdhi_intr(void __iomem *base)
+-{
+-	unsigned long state = sd_ctrl_read32(base, CTL_STATUS);
+-
+-	if (state & ALL_ERROR) {
+-		sd_ctrl_write32(base, CTL_STATUS, ~ALL_ERROR);
+-		sd_ctrl_write32(base, CTL_IRQ_MASK,
+-				ALL_ERROR |
+-				sd_ctrl_read32(base, CTL_IRQ_MASK));
+-		return -EINVAL;
 -	}
--	return 0;
--}
--
--static int camelot_pcm_close(struct snd_pcm_substream *substream)
--{
--	struct snd_soc_pcm_runtime *rtd = substream->private_data;
--	struct camelot_pcm *cam = &cam_pcm_data[rtd->cpu_dai->id];
--	int recv = substream->stream = SNDRV_PCM_STREAM_PLAYBACK ? 0:1;
--	int dmairq;
--
--	dmairq = (recv) ? cam->txid + 2 : cam->txid;
--
--	if (recv)
--		cam->rx_ss = NULL;
--	else
--		cam->tx_ss = NULL;
--
--	dmabrg_free_irq(dmairq + 1);
--	dmabrg_free_irq(dmairq);
--
--	return 0;
--}
--
--static int camelot_hw_params(struct snd_pcm_substream *substream,
--			     struct snd_pcm_hw_params *hw_params)
--{
--	struct snd_soc_pcm_runtime *rtd = substream->private_data;
--	struct camelot_pcm *cam = &cam_pcm_data[rtd->cpu_dai->id];
--	int recv = substream->stream = SNDRV_PCM_STREAM_PLAYBACK ? 0:1;
--	int ret;
--
--	ret = snd_pcm_lib_malloc_pages(substream,
--				       params_buffer_bytes(hw_params));
--	if (ret < 0)
--		return ret;
--
--	if (recv) {
--		cam->rx_period_size = params_period_bytes(hw_params);
--		cam->rx_period = 0;
--	} else {
--		cam->tx_period_size = params_period_bytes(hw_params);
--		cam->tx_period = 0;
+-	if (state & TMIO_STAT_CMDRESPEND) {
+-		sd_ctrl_write32(base, CTL_STATUS, ~TMIO_STAT_CMDRESPEND);
+-		sd_ctrl_write32(base, CTL_IRQ_MASK,
+-				TMIO_STAT_CMDRESPEND |
+-				sd_ctrl_read32(base, CTL_IRQ_MASK));
+-		return 0;
 -	}
--	return 0;
--}
--
--static int camelot_hw_free(struct snd_pcm_substream *substream)
--{
--	return snd_pcm_lib_free_pages(substream);
--}
--
--static int camelot_prepare(struct snd_pcm_substream *substream)
--{
--	struct snd_pcm_runtime *runtime = substream->runtime;
--	struct snd_soc_pcm_runtime *rtd = substream->private_data;
--	struct camelot_pcm *cam = &cam_pcm_data[rtd->cpu_dai->id];
--
--	pr_debug("PCM data: addr 0x%08ulx len %d\n",
--		 (u32)runtime->dma_addr, runtime->dma_bytes);
-- 
--	if (substream->stream = SNDRV_PCM_STREAM_PLAYBACK) {
--		BRGREG(BRGATXSAR) = (unsigned long)runtime->dma_area;
--		BRGREG(BRGATXTCR) = runtime->dma_bytes;
--	} else {
--		BRGREG(BRGARXDAR) = (unsigned long)runtime->dma_area;
--		BRGREG(BRGARXTCR) = runtime->dma_bytes;
+-	if (state & TMIO_STAT_RXRDY) {
+-		sd_ctrl_write32(base, CTL_STATUS, ~TMIO_STAT_RXRDY);
+-		sd_ctrl_write32(base, CTL_IRQ_MASK,
+-				TMIO_STAT_RXRDY | TMIO_STAT_TXUNDERRUN |
+-				sd_ctrl_read32(base, CTL_IRQ_MASK));
+-		return 0;
+-	}
+-	if (state & TMIO_STAT_DATAEND) {
+-		sd_ctrl_write32(base, CTL_STATUS, ~TMIO_STAT_DATAEND);
+-		sd_ctrl_write32(base, CTL_IRQ_MASK,
+-				TMIO_STAT_DATAEND |
+-				sd_ctrl_read32(base, CTL_IRQ_MASK));
+-		return 0;
 -	}
 -
--	return 0;
+-	return -EAGAIN;
 -}
 -
--static inline void dmabrg_play_dma_start(struct camelot_pcm *cam)
+-static int sdhi_boot_wait_resp_end(void __iomem *base)
 -{
--	unsigned long acr = BRGREG(BRGACR) & ~(ACR_TDS | ACR_RDS);
--	/* start DMABRG engine: XFER start, auto-addr-reload */
--	BRGREG(BRGACR) = acr | ACR_TDE | ACR_TAR | ACR_TAM_2WORD;
+-	int err = -EAGAIN, timeout = 10000000;
+-
+-	while (timeout--) {
+-		err = sdhi_intr(base);
+-		if (err != -EAGAIN)
+-			break;
+-		udelay(1);
+-	}
+-
+-	return err;
 -}
 -
--static inline void dmabrg_play_dma_stop(struct camelot_pcm *cam)
+-/* SDHI_CLK_CTRL */
+-#define CLK_MMC_ENABLE                 (1 << 8)
+-#define CLK_MMC_INIT                   (1 << 6)        /* clk / 256 */
+-
+-static void sdhi_boot_mmc_clk_stop(void __iomem *base)
 -{
--	unsigned long acr = BRGREG(BRGACR) & ~(ACR_TDS | ACR_RDS);
--	/* forcibly terminate data transmission */
--	BRGREG(BRGACR) = acr | ACR_TDS;
+-	sd_ctrl_write16(base, CTL_CLK_AND_WAIT_CTL, 0x0000);
+-	msleep(10);
+-	sd_ctrl_write16(base, CTL_SD_CARD_CLK_CTL, ~CLK_MMC_ENABLE &
+-		sd_ctrl_read16(base, CTL_SD_CARD_CLK_CTL));
+-	msleep(10);
 -}
 -
--static inline void dmabrg_rec_dma_start(struct camelot_pcm *cam)
+-static void sdhi_boot_mmc_clk_start(void __iomem *base)
 -{
--	unsigned long acr = BRGREG(BRGACR) & ~(ACR_TDS | ACR_RDS);
--	/* start DMABRG engine: recv start, auto-reload */
--	BRGREG(BRGACR) = acr | ACR_RDE | ACR_RAR | ACR_RAM_2WORD;
+-	sd_ctrl_write16(base, CTL_SD_CARD_CLK_CTL, CLK_MMC_ENABLE |
+-		sd_ctrl_read16(base, CTL_SD_CARD_CLK_CTL));
+-	msleep(10);
+-	sd_ctrl_write16(base, CTL_CLK_AND_WAIT_CTL, CLK_MMC_ENABLE);
+-	msleep(10);
 -}
 -
--static inline void dmabrg_rec_dma_stop(struct camelot_pcm *cam)
+-static void sdhi_boot_reset(void __iomem *base)
 -{
--	unsigned long acr = BRGREG(BRGACR) & ~(ACR_TDS | ACR_RDS);
--	/* forcibly terminate data receiver */
--	BRGREG(BRGACR) = acr | ACR_RDS;
+-	sd_ctrl_write16(base, CTL_RESET_SD, 0x0000);
+-	msleep(10);
+-	sd_ctrl_write16(base, CTL_RESET_SD, 0x0001);
+-	msleep(10);
 -}
 -
--static int camelot_trigger(struct snd_pcm_substream *substream, int cmd)
+-/* Set MMC clock / power.
+- * Note: This controller uses a simple divider scheme therefore it cannot
+- * run a MMC card at full speed (20MHz). The max clock is 24MHz on SD, but as
+- * MMC wont run that fast, it has to be clocked at 12MHz which is the next
+- * slowest setting.
+- */
+-static int sdhi_boot_mmc_set_ios(void __iomem *base, struct mmc_ios *ios)
 -{
--	struct snd_soc_pcm_runtime *rtd = substream->private_data;
--	struct camelot_pcm *cam = &cam_pcm_data[rtd->cpu_dai->id];
--	int recv = substream->stream = SNDRV_PCM_STREAM_PLAYBACK ? 0:1;
+-	if (sd_ctrl_read32(base, CTL_STATUS) & TMIO_STAT_CMD_BUSY)
+-		return -EBUSY;
 -
--	switch (cmd) {
--	case SNDRV_PCM_TRIGGER_START:
--		if (recv)
--			dmabrg_rec_dma_start(cam);
--		else
--			dmabrg_play_dma_start(cam);
+-	if (ios->clock)
+-		sd_ctrl_write16(base, CTL_SD_CARD_CLK_CTL,
+-				ios->clock | CLK_MMC_ENABLE);
+-
+-	/* Power sequence - OFF -> ON -> UP */
+-	switch (ios->power_mode) {
+-	case MMC_POWER_OFF: /* power down SD bus */
+-		sdhi_boot_mmc_clk_stop(base);
 -		break;
--	case SNDRV_PCM_TRIGGER_STOP:
--		if (recv)
--			dmabrg_rec_dma_stop(cam);
--		else
--			dmabrg_play_dma_stop(cam);
+-	case MMC_POWER_ON: /* power up SD bus */
 -		break;
+-	case MMC_POWER_UP: /* start bus clock */
+-		sdhi_boot_mmc_clk_start(base);
+-		break;
+-	}
+-
+-	switch (ios->bus_width) {
+-	case MMC_BUS_WIDTH_1:
+-		sd_ctrl_write16(base, CTL_SD_MEM_CARD_OPT, 0x80e0);
+-	break;
+-	case MMC_BUS_WIDTH_4:
+-		sd_ctrl_write16(base, CTL_SD_MEM_CARD_OPT, 0x00e0);
+-	break;
+-	}
+-
+-	/* Let things settle. delay taken from winCE driver */
+-	udelay(140);
+-
+-	return 0;
+-}
+-
+-/* These are the bitmasks the tmio chip requires to implement the MMC response
+- * types. Note that R1 and R6 are the same in this scheme. */
+-#define RESP_NONE      0x0300
+-#define RESP_R1        0x0400
+-#define RESP_R1B       0x0500
+-#define RESP_R2        0x0600
+-#define RESP_R3        0x0700
+-#define DATA_PRESENT   0x0800
+-#define TRANSFER_READ  0x1000
+-
+-static int sdhi_boot_request(void __iomem *base, struct mmc_command *cmd)
+-{
+-	int err, c = cmd->opcode;
+-
+-	switch (mmc_resp_type(cmd)) {
+-	case MMC_RSP_NONE: c |= RESP_NONE; break;
+-	case MMC_RSP_R1:   c |= RESP_R1;   break;
+-	case MMC_RSP_R1B:  c |= RESP_R1B;  break;
+-	case MMC_RSP_R2:   c |= RESP_R2;   break;
+-	case MMC_RSP_R3:   c |= RESP_R3;   break;
 -	default:
 -		return -EINVAL;
 -	}
 -
+-	/* No interrupts so this may not be cleared */
+-	sd_ctrl_write32(base, CTL_STATUS, ~TMIO_STAT_CMDRESPEND);
+-
+-	sd_ctrl_write32(base, CTL_IRQ_MASK, TMIO_STAT_CMDRESPEND |
+-			sd_ctrl_read32(base, CTL_IRQ_MASK));
+-	sd_ctrl_write32(base, CTL_ARG_REG, cmd->arg);
+-	sd_ctrl_write16(base, CTL_SD_CMD, c);
+-
+-
+-	sd_ctrl_write32(base, CTL_IRQ_MASK,
+-			~(TMIO_STAT_CMDRESPEND | ALL_ERROR) &
+-			sd_ctrl_read32(base, CTL_IRQ_MASK));
+-
+-	err = sdhi_boot_wait_resp_end(base);
+-	if (err)
+-		return err;
+-
+-	cmd->resp[0] = sd_ctrl_read32(base, CTL_RESPONSE);
+-
 -	return 0;
 -}
 -
--static snd_pcm_uframes_t camelot_pos(struct snd_pcm_substream *substream)
+-static int sdhi_boot_do_read_single(void __iomem *base, int high_capacity,
+-				    unsigned long block, unsigned short *buf)
 -{
--	struct snd_pcm_runtime *runtime = substream->runtime;
--	struct snd_soc_pcm_runtime *rtd = substream->private_data;
--	struct camelot_pcm *cam = &cam_pcm_data[rtd->cpu_dai->id];
--	int recv = substream->stream = SNDRV_PCM_STREAM_PLAYBACK ? 0:1;
--	unsigned long pos;
+-	int err, i;
 -
--	/* cannot use the DMABRG pointer register: under load, by the
--	 * time ALSA comes around to read the register, it is already
--	 * far ahead (or worse, already done with the fragment) of the
--	 * position at the time the IRQ was triggered, which results in
--	 * fast-playback sound in my test application (ScummVM)
+-	/* CMD17 - Read */
+-	{
+-		struct mmc_command cmd;
+-
+-		cmd.opcode = MMC_READ_SINGLE_BLOCK | \
+-			     TRANSFER_READ | DATA_PRESENT;
+-		if (high_capacity)
+-			cmd.arg = block;
+-		else
+-			cmd.arg = block * TMIO_BBS;
+-		cmd.flags = MMC_RSP_R1;
+-		err = sdhi_boot_request(base, &cmd);
+-		if (err)
+-			return err;
+-	}
+-
+-	sd_ctrl_write32(base, CTL_IRQ_MASK,
+-			~(TMIO_STAT_DATAEND | TMIO_STAT_RXRDY |
+-			  TMIO_STAT_TXUNDERRUN) &
+-			sd_ctrl_read32(base, CTL_IRQ_MASK));
+-	err = sdhi_boot_wait_resp_end(base);
+-	if (err)
+-		return err;
+-
+-	sd_ctrl_write16(base, CTL_SD_XFER_LEN, TMIO_BBS);
+-	for (i = 0; i < TMIO_BBS / sizeof(*buf); i++)
+-		*buf++ = sd_ctrl_read16(base, RESP_CMD12);
+-
+-	err = sdhi_boot_wait_resp_end(base);
+-	if (err)
+-		return err;
+-
+-	return 0;
+-}
+-
+-int sdhi_boot_do_read(void __iomem *base, int high_capacity,
+-		      unsigned long offset, unsigned short count,
+-		      unsigned short *buf)
+-{
+-	unsigned long i;
+-	int err = 0;
+-
+-	for (i = 0; i < count; i++) {
+-		err = sdhi_boot_do_read_single(base, high_capacity, offset + i,
+-					       buf + (i * TMIO_BBS /
+-						      sizeof(*buf)));
+-		if (err)
+-			return err;
+-	}
+-
+-	return 0;
+-}
+-
+-#define VOLTAGES (MMC_VDD_32_33 | MMC_VDD_33_34)
+-
+-int sdhi_boot_init(void __iomem *base)
+-{
+-	bool sd_v2 = false, sd_v1_0 = false;
+-	unsigned short cid;
+-	int err, high_capacity = 0;
+-
+-	sdhi_boot_mmc_clk_stop(base);
+-	sdhi_boot_reset(base);
+-
+-	/* mmc0: clock 400000Hz busmode 1 powermode 2 cs 0 Vdd 21 width 0 timing 0 */
+-	{
+-		struct mmc_ios ios;
+-		ios.power_mode = MMC_POWER_ON;
+-		ios.bus_width = MMC_BUS_WIDTH_1;
+-		ios.clock = CLK_MMC_INIT;
+-		err = sdhi_boot_mmc_set_ios(base, &ios);
+-		if (err)
+-			return err;
+-	}
+-
+-	/* CMD0 */
+-	{
+-		struct mmc_command cmd;
+-		msleep(1);
+-		cmd.opcode = MMC_GO_IDLE_STATE;
+-		cmd.arg = 0;
+-		cmd.flags = MMC_RSP_NONE;
+-		err = sdhi_boot_request(base, &cmd);
+-		if (err)
+-			return err;
+-		msleep(2);
+-	}
+-
+-	/* CMD8 - Test for SD version 2 */
+-	{
+-		struct mmc_command cmd;
+-		cmd.opcode = SD_SEND_IF_COND;
+-		cmd.arg = (VOLTAGES != 0) << 8 | 0xaa;
+-		cmd.flags = MMC_RSP_R1;
+-		err = sdhi_boot_request(base, &cmd); /* Ignore error */
+-		if ((cmd.resp[0] & 0xff) = 0xaa)
+-			sd_v2 = true;
+-	}
+-
+-	/* CMD55 - Get OCR (SD) */
+-	{
+-		int timeout = 1000;
+-		struct mmc_command cmd;
+-
+-		cmd.arg = 0;
+-
+-		do {
+-			cmd.opcode = MMC_APP_CMD;
+-			cmd.flags = MMC_RSP_R1;
+-			cmd.arg = 0;
+-			err = sdhi_boot_request(base, &cmd);
+-			if (err)
+-				break;
+-
+-			cmd.opcode = SD_APP_OP_COND;
+-			cmd.flags = MMC_RSP_R3;
+-			cmd.arg = (VOLTAGES & 0xff8000);
+-			if (sd_v2)
+-				cmd.arg |= OCR_HCS;
+-			cmd.arg |= OCR_FASTBOOT;
+-			err = sdhi_boot_request(base, &cmd);
+-			if (err)
+-				break;
+-
+-			msleep(1);
+-		} while((!(cmd.resp[0] & OCR_BUSY)) && --timeout);
+-
+-		if (!err && timeout) {
+-			if (!sd_v2)
+-				sd_v1_0 = true;
+-			high_capacity = (cmd.resp[0] & OCR_HCS) = OCR_HCS;
+-		}
+-	}
+-
+-	/* CMD1 - Get OCR (MMC) */
+-	if (!sd_v2 && !sd_v1_0) {
+-		int timeout = 1000;
+-		struct mmc_command cmd;
+-
+-		do {
+-			cmd.opcode = MMC_SEND_OP_COND;
+-			cmd.arg = VOLTAGES | OCR_HCS;
+-			cmd.flags = MMC_RSP_R3;
+-			err = sdhi_boot_request(base, &cmd);
+-			if (err)
+-				return err;
+-
+-			msleep(1);
+-		} while((!(cmd.resp[0] & OCR_BUSY)) && --timeout);
+-
+-		if (!timeout)
+-			return -EAGAIN;
+-
+-		high_capacity = (cmd.resp[0] & OCR_HCS) = OCR_HCS;
+-	}
+-
+-	/* CMD2 - Get CID */
+-	{
+-		struct mmc_command cmd;
+-		cmd.opcode = MMC_ALL_SEND_CID;
+-		cmd.arg = 0;
+-		cmd.flags = MMC_RSP_R2;
+-		err = sdhi_boot_request(base, &cmd);
+-		if (err)
+-			return err;
+-	}
+-
+-	/* CMD3
+-	 * MMC: Set the relative address
+-	 * SD:  Get the relative address
+-	 * Also puts the card into the standby state
 -	 */
--	if (recv)
--		pos = cam->rx_period ? cam->rx_period_size : 0;
--	else
--		pos = cam->tx_period ? cam->tx_period_size : 0;
+-	{
+-		struct mmc_command cmd;
+-		cmd.opcode = MMC_SET_RELATIVE_ADDR;
+-		cmd.arg = 0;
+-		cmd.flags = MMC_RSP_R1;
+-		err = sdhi_boot_request(base, &cmd);
+-		if (err)
+-			return err;
+-		cid = cmd.resp[0] >> 16;
+-	}
 -
--	return bytes_to_frames(runtime, pos);
+-	/* CMD9 - Get CSD */
+-	{
+-		struct mmc_command cmd;
+-		cmd.opcode = MMC_SEND_CSD;
+-		cmd.arg = cid << 16;
+-		cmd.flags = MMC_RSP_R2;
+-		err = sdhi_boot_request(base, &cmd);
+-		if (err)
+-			return err;
+-	}
+-
+-	/* CMD7 - Select the card */
+-	{
+-		struct mmc_command cmd;
+-		cmd.opcode = MMC_SELECT_CARD;
+-		//cmd.arg = rca << 16;
+-		cmd.arg = cid << 16;
+-		//cmd.flags = MMC_RSP_R1B;
+-		cmd.flags = MMC_RSP_R1;
+-		err = sdhi_boot_request(base, &cmd);
+-		if (err)
+-			return err;
+-	}
+-
+-	/* CMD16 - Set the block size */
+-	{
+-		struct mmc_command cmd;
+-		cmd.opcode = MMC_SET_BLOCKLEN;
+-		cmd.arg = TMIO_BBS;
+-		cmd.flags = MMC_RSP_R1;
+-		err = sdhi_boot_request(base, &cmd);
+-		if (err)
+-			return err;
+-	}
+-
+-	return high_capacity;
 -}
+diff --git a/arch/arm/boot/compressed/sdhi-shmobile.h b/arch/arm/boot/compressed/sdhi-shmobile.h
+deleted file mode 100644
+index 92eaa09..0000000
+--- a/arch/arm/boot/compressed/sdhi-shmobile.h
++++ /dev/null
+@@ -1,11 +0,0 @@
+-#ifndef SDHI_MOBILE_H
+-#define SDHI_MOBILE_H
 -
--static struct snd_pcm_ops camelot_pcm_ops = {
--	.open		= camelot_pcm_open,
--	.close		= camelot_pcm_close,
--	.ioctl		= snd_pcm_lib_ioctl,
--	.hw_params	= camelot_hw_params,
--	.hw_free	= camelot_hw_free,
--	.prepare	= camelot_prepare,
--	.trigger	= camelot_trigger,
--	.pointer	= camelot_pos,
--};
+-#include <linux/compiler.h>
 -
--static int camelot_pcm_new(struct snd_soc_pcm_runtime *rtd)
+-int sdhi_boot_do_read(void __iomem *base, int high_capacity,
+-		      unsigned long offset, unsigned short count,
+-		      unsigned short *buf);
+-int sdhi_boot_init(void __iomem *base);
+-
+-#endif
+diff --git a/arch/arm/mach-shmobile/include/mach/mmc.h b/arch/arm/mach-shmobile/include/mach/mmc.h
+deleted file mode 100644
+index b7d68e4..0000000
+--- a/arch/arm/mach-shmobile/include/mach/mmc.h
++++ /dev/null
+@@ -1,11 +0,0 @@
+-#ifndef MMC_H
+-#define MMC_H
+-
+-/**************************************************
+- *
+- *		board specific settings
+- *
+- **************************************************/
+-
+-#error "unsupported board."
+-#endif /* MMC_H */
+diff --git a/arch/arm/mach-shmobile/include/mach/sdhi-sh7372.h b/arch/arm/mach-shmobile/include/mach/sdhi-sh7372.h
+deleted file mode 100644
+index 4a81b01..0000000
+--- a/arch/arm/mach-shmobile/include/mach/sdhi-sh7372.h
++++ /dev/null
+@@ -1,21 +0,0 @@
+-#ifndef SDHI_SH7372_H
+-#define SDHI_SH7372_H
+-
+-#define SDGENCNTA       0xfe40009c
+-
+-/* The countdown of SDGENCNTA is controlled by
+- * ZB3D2CLK which runs at 149.5MHz.
+- * That is 149.5ticks/us. Approximate this as 150ticks/us.
+- */
+-static void udelay(int us)
 -{
--	struct snd_pcm *pcm = rtd->pcm;
--
--	/* dont use SNDRV_DMA_TYPE_DEV, since it will oops the SH kernel
--	 * in MMAP mode (i.e. aplay -M)
--	 */
--	snd_pcm_lib_preallocate_pages_for_all(pcm,
--		SNDRV_DMA_TYPE_CONTINUOUS,
--		snd_dma_continuous_data(GFP_KERNEL),
--		DMABRG_PREALLOC_BUFFER,	DMABRG_PREALLOC_BUFFER_MAX);
--
--	return 0;
+-	__raw_writel(us * 150, SDGENCNTA);
+-	while(__raw_readl(SDGENCNTA)) ;
 -}
 -
--static struct snd_soc_platform_driver sh7760_soc_platform = {
--	.ops		= &camelot_pcm_ops,
--	.pcm_new	= camelot_pcm_new,
--};
--
--static int sh7760_soc_platform_probe(struct platform_device *pdev)
+-static void msleep(int ms)
 -{
--	return snd_soc_register_platform(&pdev->dev, &sh7760_soc_platform);
+-	udelay(ms * 1000);
 -}
 -
--static int sh7760_soc_platform_remove(struct platform_device *pdev)
--{
--	snd_soc_unregister_platform(&pdev->dev);
--	return 0;
--}
+-#endif
+diff --git a/arch/arm/mach-shmobile/include/mach/sdhi.h b/arch/arm/mach-shmobile/include/mach/sdhi.h
+deleted file mode 100644
+index 0ec9e69..0000000
+--- a/arch/arm/mach-shmobile/include/mach/sdhi.h
++++ /dev/null
+@@ -1,16 +0,0 @@
+-#ifndef SDHI_H
+-#define SDHI_H
 -
--static struct platform_driver sh7760_pcm_driver = {
--	.driver = {
--			.name = "sh7760-pcm-audio",
--	},
+-/**************************************************
+- *
+- *		CPU specific settings
+- *
+- **************************************************/
 -
--	.probe = sh7760_soc_platform_probe,
--	.remove = sh7760_soc_platform_remove,
--};
+-#ifdef CONFIG_ARCH_SH7372
+-#include "mach/sdhi-sh7372.h"
+-#else
+-#error "unsupported CPU."
+-#endif
 -
--module_platform_driver(sh7760_pcm_driver);
--
--MODULE_LICENSE("GPL");
--MODULE_DESCRIPTION("SH7760 Audio DMA (DMABRG) driver");
--MODULE_AUTHOR("Manuel Lauss <mano@roarinelk.homelinux.net>");
+-#endif /* SDHI_H */
 -- 
-1.7.9.5
+2.1.4
 
