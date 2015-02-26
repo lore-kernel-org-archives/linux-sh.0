@@ -1,39 +1,59 @@
-From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 10 Feb 2015 02:11:22 +0000
-Subject: RE: [PATCH 0/2] ARM: shmobile: r8a7790: add for USB-DMAC
-Message-Id: <HKNPR06MB322BD375AA62B56D905EF3AD8240@HKNPR06MB322.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 26 Feb 2015 10:46:29 +0000
+Subject: [PATCH] ARM: shmobile: ape6evm dts: Fix polarity of LEDs
+Message-Id: <1424947589-8303-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423470279-6340-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <HKNPR06MB3220948E3FFE862FA05A180D8270@HKNPR06MB322.apcprd06.prod.outlook.com>
- <20150210001221.GA32167@verge.net.au>
-In-Reply-To: <20150210001221.GA32167-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
-Cc: "magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org" <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org" <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "pawel.moll-5wv7dgnIgG8@public.gmane.org" <pawel.moll-5wv7dgnIgG8@public.gmane.org>, "mark.rutland-5wv7dgnIgG8@public.gmane.org" <mark.rutland-5wv7dgnIgG8@public.gmane.org>, "ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org" <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, "galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org" <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org" <linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-Hi Simon-san,
+While the LEDs on r8a73a4/ape6evm are tied to VSUPPLY, they're driven by
+an N-channel MOSFET. Hence the GPIO signal should be active high.
 
-> 
-> On Mon, Feb 09, 2015 at 08:41:18AM +0000, yoshihiro shimoda wrote:
-> > > Subject: [PATCH 0/2] ARM: shmobile: r8a7790: add for USB-DMAC
-> >
-> > Oops, I mistook this subject of cover-letter.
-> > However, actual patches are correct.
-> 
-> Thanks,
-> 
-> I think it would be best if you resubmitted this series, which is for the
-> r8a7791, and the other similar series for the r8a7790 once the relevant
-> driver changes have been accepted by their subsystem maintainer.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-Thank you for the reply. I got it.
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index f9e81512201a2ec4..b355fafc32f188dc 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -75,27 +75,27 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led1 {
+-			gpios = <&pfc 28 GPIO_ACTIVE_LOW>;
++			gpios = <&pfc 28 GPIO_ACTIVE_HIGH>;
+ 			label = "GNSS_EN";
+ 		};
+ 		led2 {
+-			gpios = <&pfc 126 GPIO_ACTIVE_LOW>;
++			gpios = <&pfc 126 GPIO_ACTIVE_HIGH>;
+ 			label = "NFC_NRST";
+ 		};
+ 		led3 {
+-			gpios = <&pfc 132 GPIO_ACTIVE_LOW>;
++			gpios = <&pfc 132 GPIO_ACTIVE_HIGH>;
+ 			label = "GNSS_NRST";
+ 		};
+ 		led4 {
+-			gpios = <&pfc 232 GPIO_ACTIVE_LOW>;
++			gpios = <&pfc 232 GPIO_ACTIVE_HIGH>;
+ 			label = "BT_WAKEUP";
+ 		};
+ 		led5 {
+-			gpios = <&pfc 250 GPIO_ACTIVE_LOW>;
++			gpios = <&pfc 250 GPIO_ACTIVE_HIGH>;
+ 			label = "STROBE";
+ 		};
+ 		led6 {
+-			gpios = <&pfc 288 GPIO_ACTIVE_LOW>;
++			gpios = <&pfc 288 GPIO_ACTIVE_HIGH>;
+ 			label = "BBRESETOUT";
+ 		};
+ 	};
+-- 
+1.9.1
 
-Best regards,
-Yoshihiro Shimoda
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe devicetree" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
