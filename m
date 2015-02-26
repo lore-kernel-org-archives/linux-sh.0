@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:22:24 +0000
-Subject: [PATCH 5/5] drivers: bus: Add Simple Power-Managed Bus Driver
-Message-Id: <89d463ea106dba530786a2815fd174f9e6eab71f.1424931637.git.horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:21:07 +0000
+Subject: [PATCH 10/32] ARM: shmobile: kzm9g dts: Declare the full 512 MiB of RAM
+Message-Id: <89ebd5459c3c43536f3dbec19216e97179647673.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424931637.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424931637.git.horms+renesas@verge.net.au>
+References: <cover.1424849129.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,128 +12,37 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add a driver for transparent busses that don't need a real driver, but
-where the bus controller is part of a PM domain, or under the control of
-a functional clock.  Typically, the bus controller's PM domain and/or
-clock must be enabled for child devices connected to the bus (either
-on-SoC or externally) to function.
+Traditionally, the first 16 MiB of RAM was reserved for the RT
+processor.  However, this is incompatible with CONFIG_AUTO_ZRELADDR=y,
+which requires that the start address of physical memory is a multiple
+of 128 MiB.
 
-Hence the sole purpose of this driver is to enable its clock and PM
-domain (if exist(s)), which are specified in the DT and managed from
-platform and PM domain code, and to probe for child devices.
+As CONFIG_AUTO_ZRELADDR=y is enabled for multi-platform kernels, declare
+RAM to start at 0x40000000.
 
-Due to the child-parent relationship with devices connected to the bus,
-PM domain and clock state transitions are handled in the correct order.
+While at it, reclaim the last 8 MiB of RAM, too, so the full 512 MiB is
+available. Note that kzm9g_defconfig still has
+CONFIG_MEMORY_START=0x41000000 and CONFIG_MEMORY_SIZE=0x1f000000, so
+before the advent of DT we scribbled over the last 8 MiB, too.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Reviewed-by: Kevin Hilman <khilman@linaro.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/bus/Kconfig         | 13 ++++++++++
- drivers/bus/Makefile        |  1 +
- drivers/bus/simple-pm-bus.c | 58 +++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 72 insertions(+)
- create mode 100644 drivers/bus/simple-pm-bus.c
+ arch/arm/boot/dts/sh73a0-kzm9g.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/bus/Kconfig b/drivers/bus/Kconfig
-index 6269608..7e9c267 100644
---- a/drivers/bus/Kconfig
-+++ b/drivers/bus/Kconfig
-@@ -58,6 +58,19 @@ config OMAP_OCP2SCP
- 	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
- 	  OCP2SCP.
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 27c5f42..e7dae01 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -21,6 +21,6 @@
  
-+config SIMPLE_PM_BUS
-+	bool "Simple Power-Managed Bus Driver"
-+	depends on OF && PM
-+	depends on ARCH_SHMOBILE || COMPILE_TEST
-+	help
-+	  Driver for transparent busses that don't need a real driver, but
-+	  where the bus controller is part of a PM domain, or under the control
-+	  of a functional clock, and thus relies on runtime PM for managing
-+	  this PM domain and/or clock.
-+	  An example of such a bus controller is the Renesas Bus State
-+	  Controller (BSC, sometimes called "LBSC within Bus Bridge", or
-+	  "External Bus Interface") as found on several Renesas ARM SoCs.
-+
- config VEXPRESS_CONFIG
- 	bool "Versatile Express configuration bus"
- 	default y if ARCH_VEXPRESS
-diff --git a/drivers/bus/Makefile b/drivers/bus/Makefile
-index 3cfaf2c..e023a2b 100644
---- a/drivers/bus/Makefile
-+++ b/drivers/bus/Makefile
-@@ -14,4 +14,5 @@ obj-$(CONFIG_MVEBU_MBUS) 	+= mvebu-mbus.o
- obj-$(CONFIG_OMAP_INTERCONNECT)	+= omap_l3_smx.o omap_l3_noc.o
- 
- obj-$(CONFIG_OMAP_OCP2SCP)	+= omap-ocp2scp.o
-+obj-$(CONFIG_SIMPLE_PM_BUS)	+= simple-pm-bus.o
- obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o
-diff --git a/drivers/bus/simple-pm-bus.c b/drivers/bus/simple-pm-bus.c
-new file mode 100644
-index 0000000..c5eb46c
---- /dev/null
-+++ b/drivers/bus/simple-pm-bus.c
-@@ -0,0 +1,58 @@
-+/*
-+ * Simple Power-Managed Bus Driver
-+ *
-+ * Copyright (C) 2014-2015 Glider bvba
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+
-+#include <linux/module.h>
-+#include <linux/of_platform.h>
-+#include <linux/platform_device.h>
-+#include <linux/pm_runtime.h>
-+
-+
-+static int simple_pm_bus_probe(struct platform_device *pdev)
-+{
-+	struct device_node *np = pdev->dev.of_node;
-+
-+	dev_dbg(&pdev->dev, "%s\n", __func__);
-+
-+	pm_runtime_enable(&pdev->dev);
-+
-+	if (np)
-+		of_platform_populate(np, NULL, NULL, &pdev->dev);
-+
-+	return 0;
-+}
-+
-+static int simple_pm_bus_remove(struct platform_device *pdev)
-+{
-+	dev_dbg(&pdev->dev, "%s\n", __func__);
-+
-+	pm_runtime_disable(&pdev->dev);
-+	return 0;
-+}
-+
-+static const struct of_device_id simple_pm_bus_of_match[] = {
-+	{ .compatible = "simple-pm-bus", },
-+	{ /* sentinel */ }
-+};
-+MODULE_DEVICE_TABLE(of, simple_pm_bus_of_match);
-+
-+static struct platform_driver simple_pm_bus_driver = {
-+	.probe = simple_pm_bus_probe,
-+	.remove = simple_pm_bus_remove,
-+	.driver = {
-+		.name = "simple-pm-bus",
-+		.of_match_table = simple_pm_bus_of_match,
-+	},
-+};
-+
-+module_platform_driver(simple_pm_bus_driver);
-+
-+MODULE_DESCRIPTION("Simple Power-Managed Bus Driver");
-+MODULE_AUTHOR("Geert Uytterhoeven <geert+renesas@glider.be>");
-+MODULE_LICENSE("GPL v2");
+ 	memory {
+ 		device_type = "memory";
+-		reg = <0x41000000 0x1e800000>;
++		reg = <0x40000000 0x20000000>;
+ 	};
+ };
 -- 
 2.1.4
 
