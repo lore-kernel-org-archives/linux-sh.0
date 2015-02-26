@@ -1,57 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 25 Feb 2015 21:54:33 +0000
-Subject: [PATCH 13/38] drm: rcar-du: Disable fbdev emulation when no connector is present
-Message-Id: <1424901298-6829-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 26 Feb 2015 10:40:24 +0000
+Subject: [PATCH] ARM: Enable CONFIG_GENERIC_IRQ_SHOW_LEVEL
+Message-Id: <1424947224-7797-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-fbdev emulation requires at least one connector, and will fail to
-initialize if no connector has been successfully instantiated. Disable
-it in that case and print an informational message instead of failing
-probe with a confusing fbdev emulation error message.
+Several interrupt controllers support both edge and level interrupts, so
+it's useful to provide that information in /proc/interrupts.
 
-It could be argued that probe should fail when no connector is present,
-but the DU could still be useful in that case with the to-be-implemented
-memory write-back support.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_kms.c | 15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
+ arch/arm/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index aebbcde82ddf..888df404932e 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -448,12 +448,17 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 
- 	drm_kms_helper_poll_init(dev);
- 
--	fbdev = drm_fbdev_cma_init(dev, 32, dev->mode_config.num_crtc,
--				   dev->mode_config.num_connector);
--	if (IS_ERR(fbdev))
--		return PTR_ERR(fbdev);
-+	if (dev->mode_config.num_connector) {
-+		fbdev = drm_fbdev_cma_init(dev, 32, dev->mode_config.num_crtc,
-+					   dev->mode_config.num_connector);
-+		if (IS_ERR(fbdev))
-+			return PTR_ERR(fbdev);
- 
--	rcdu->fbdev = fbdev;
-+		rcdu->fbdev = fbdev;
-+	} else {
-+		dev_info(rcdu->dev,
-+			 "no connector found, disabling fbdev emulation\n");
-+	}
- 
- 	return 0;
- }
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 55f1d9ba4b204a36..d86b56521feabcda 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -21,6 +21,7 @@ config ARM
+ 	select GENERIC_IDLE_POLL_SETUP
+ 	select GENERIC_IRQ_PROBE
+ 	select GENERIC_IRQ_SHOW
++	select GENERIC_IRQ_SHOW_LEVEL
+ 	select GENERIC_PCI_IOMAP
+ 	select GENERIC_SCHED_CLOCK
+ 	select GENERIC_SMP_IDLE_THREAD
 -- 
-2.0.5
+1.9.1
 
