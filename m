@@ -1,66 +1,64 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 04 Feb 2015 14:15:10 +0000
-Subject: [PATCH v2 0/5] ARM: shmobile: r8a7740/armadillo: Migrate to generic l2c OF
-Message-Id: <1423059315-28519-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:21:16 +0000
+Subject: [PATCH 19/32] ARM: shmobile: r8a7791: Correct SDHI clock labels and output-names
+Message-Id: <2ea0d4ec39ac837e34c07b4783a7c900940e6eaf.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1424849129.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-	Hi Simon, Magnus,
+There appears to have been some inconsistency and confusion here as on
+the r8a7790 these clocks are referred to as SD(HI)1 and SD(HI)2 while on
+the r8a7791 and r8a7794 they are referred to as SD(HI)2 and SD(HI)3.
 
-This patch series migrates the DT-based generic r8a7740 platform and
-the armadillo legacy platform from calling l2x0_of_init() to the
-generic l2c OF initialization.
+Fixes: 59e79895b95892863 ("ARM: shmobile: r8a7791: Add clocks")
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-Changes in v2:
-  - Fix interrupt reference in DT,
-  - Describe L2 better in DT,
-  - Keep only {,~}L2C_AUX_CTRL_SHARED_OVERRIDE in
-    machine_desc.l2c_aux_{val,mask}, as there's no DT property for
-    this.
-  - Add L1 cache to DT.
-
-Dependencies:
-  - The first patch depends on r8a7740 DT PM Domain support (tag
-    renesas-dt2-for-v3.20 in Simon's repository),
-  - Although there are separate patches for dtsi, SoC code, and board code,
-    there are dependencies among the individual patches:
-      - patches 2, 3, and 5 depend on patch 1,
-      - patch 4 depends on patches 2 and 3 (and thus 1).
-
-Note that this conversion should be done on sh73a0, r8a7778, and r8a7779,
-too.
-
-This was tested on armadillo-legacy and armadillo-multiplatform.
-
-Thanks!
-
-Geert Uytterhoeven (5):
-  ARM: shmobile: r8a7740 dtsi: Add cache-controller node
-  ARM: shmobile: r8a7740: Migrate to generic l2c OF initialization
-  ARM: shmobile: armadillo legacy: Migrate to generic l2c OF
-    initialization
-  ARM: shmobile: r8a7740: Remove mapping of L2 cache controller
-    registers
-  ARM: shmobile: r8a7740: Add L1 cache information to CPU node
-
- arch/arm/boot/dts/r8a7740.dtsi                 | 24 ++++++++++++++++++++++++
- arch/arm/mach-shmobile/board-armadillo800eva.c |  8 ++------
- arch/arm/mach-shmobile/setup-r8a7740.c         | 18 ++----------------
- 3 files changed, 28 insertions(+), 22 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 43fb58a..afba8af 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -874,19 +874,19 @@
+ 		};
+ 
+ 		/* Variable factor clocks */
+-		sd1_clk: sd2_clk@e6150078 {
++		sd2_clk: sd2_clk@e6150078 {
+ 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0 0xe6150078 0 4>;
+ 			clocks = <&pll1_div2_clk>;
+ 			#clock-cells = <0>;
+-			clock-output-names = "sd1";
++			clock-output-names = "sd2";
+ 		};
+-		sd2_clk: sd3_clk@e615026c {
++		sd3_clk: sd3_clk@e615026c {
+ 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0 0xe615026c 0 4>;
+ 			clocks = <&pll1_div2_clk>;
+ 			#clock-cells = <0>;
+-			clock-output-names = "sd2";
++			clock-output-names = "sd3";
+ 		};
+ 		mmc0_clk: mmc0_clk@e6150240 {
+ 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
+@@ -1107,7 +1107,7 @@
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
+-			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
++			clocks = <&cp_clk>, <&sd3_clk>, <&sd2_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
+ 				 <&mmc0_clk>, <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>,
+ 				 <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
 -- 
-1.9.1
+2.1.4
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
