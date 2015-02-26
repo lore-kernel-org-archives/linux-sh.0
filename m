@@ -1,30 +1,130 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 19 Feb 2015 01:42:07 +0000
-Subject: [PATCH 00/03] ARM: shmobile: 64-bit DU/VSP build prototype
-Message-Id: <20150219014207.1795.54467.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:20:58 +0000
+Subject: [PATCH 01/32] ARM: shmobile: r8a7740 dtsi: add remaining DIV6 clocks
+Message-Id: <fe7c20fa689d3b9230be0b552f667c043d11ed75.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1424849129.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: 64-bit DU/VSP build prototype
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-[PATCH 01/03] ARM: shmobile: Hack x86_64 to enable OF by default
-[PATCH 02/03] ARM: shmobile: Adjust x86_64 defconfig to include DU/VSP1
-[PATCH 03/03] ARM: shmobile: Adjust arm64 defconfig to include DU/VSP1
+This adds the remaining DIV6 clocks and all possible parents for the SUB
+clock.
 
-This series contains prototype code and defconfig changes that allow
-the DU and VSP drivers to be built on x86_64 and arm64.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7740.dtsi | 79 +++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 78 insertions(+), 1 deletion(-)
 
- Built on top of renesas-devel-20150215-v3.19. Not for upstream merge.
-
- arch/arm64/configs/defconfig      |   15 ++++++++++++--
- arch/x86/Kconfig                  |    1 
- arch/x86/configs/x86_64_defconfig |   39 ++++++++++++++++++-------------------
- arch/x86/kernel/devicetree.c      |    2 +
- 4 files changed, 36 insertions(+), 21 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 8a09260..83c1c3c 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -431,6 +431,18 @@
+ 			clock-frequency = <27000000>;
+ 			clock-output-names = "dv";
+ 		};
++		fmsick_clk: fmsick_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "fmsick";
++		};
++		fmsock_clk: fmsock_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "fmsock";
++		};
+ 		fsiack_clk: fsiack_clk {
+ 			compatible = "fixed-clock";
+ 			#clock-cells = <0>;
+@@ -459,13 +471,78 @@
+ 		};
  
+ 		/* Variable factor clocks (DIV6) */
++		vclk1_clk: vclk1_clk@e6150008 {
++			compatible = "renesas,r8a7740-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150008 4>;
++			clocks = <&pllc1_div2_clk>, <0>, <&dv_clk>,
++				 <&cpg_clocks R8A7740_CLK_USB24S>,
++				 <&extal1_div2_clk>, <&extalr_clk>, <0>,
++				 <0>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk1";
++		};
++		vclk2_clk: vclk2_clk@e615000c {
++			compatible = "renesas,r8a7740-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe615000c 4>;
++			clocks = <&pllc1_div2_clk>, <0>, <&dv_clk>,
++				 <&cpg_clocks R8A7740_CLK_USB24S>,
++				 <&extal1_div2_clk>, <&extalr_clk>, <0>,
++				 <0>;
++			#clock-cells = <0>;
++			clock-output-names = "vclk2";
++		};
++		fmsi_clk: fmsi_clk@e6150010 {
++			compatible = "renesas,r8a7740-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150010 4>;
++			clocks = <&pllc1_div2_clk>, <&fmsick_clk>, <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "fmsi";
++		};
++		fmso_clk: fmso_clk@e6150014 {
++			compatible = "renesas,r8a7740-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150014 4>;
++			clocks = <&pllc1_div2_clk>, <&fmsock_clk>, <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "fmso";
++		};
++		fsia_clk: fsia_clk@e6150018 {
++			compatible = "renesas,r8a7740-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150018 4>;
++			clocks = <&pllc1_div2_clk>, <&fsiack_clk>, <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "fsia";
++		};
+ 		sub_clk: sub_clk@e6150080 {
+ 			compatible = "renesas,r8a7740-div6-clock", "renesas,cpg-div6-clock";
+ 			reg = <0xe6150080 4>;
+-			clocks = <&pllc1_div2_clk>;
++			clocks = <&pllc1_div2_clk>,
++				 <&cpg_clocks R8A7740_CLK_USB24S>, <0>, <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "sub";
+ 		};
++		spu_clk: spu_clk@e6150084 {
++			compatible = "renesas,r8a7740-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150084 4>;
++			clocks = <&pllc1_div2_clk>,
++				 <&cpg_clocks R8A7740_CLK_USB24S>, <0>, <0>;
++			#clock-cells = <0>;
++			clock-output-names = "spu";
++		};
++		vou_clk: vou_clk@e6150088 {
++			compatible = "renesas,r8a7740-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe6150088 4>;
++			clocks = <&pllc1_div2_clk>, <&extal1_clk>, <&dv_clk>,
++				 <0>;
++			#clock-cells = <0>;
++			clock-output-names = "vou";
++		};
++		stpro_clk: stpro_clk@e615009c {
++			compatible = "renesas,r8a7740-div6-clock", "renesas,cpg-div6-clock";
++			reg = <0xe615009c 4>;
++			clocks = <&cpg_clocks R8A7740_CLK_PLLC0>;
++			#clock-cells = <0>;
++			clock-output-names = "stpro";
++		};
+ 
+ 		/* Fixed factor clocks */
+ 		pllc1_div2_clk: pllc1_div2_clk {
+-- 
+2.1.4
+
