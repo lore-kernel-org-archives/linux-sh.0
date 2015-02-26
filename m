@@ -1,43 +1,43 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Mon, 02 Feb 2015 20:03:56 +0000
-Subject: Re: [PATCH] spi: sh-msiof: Update calculation of frequency dividing
-Message-Id: <20150202200356.GE21293@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="F99ASOl9IwBV9fq7"
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 26 Feb 2015 16:42:14 +0000
+Subject: [PATCH v4 9/9] ARM: shmobile: bockw dts: Remove leftover Ethernet node
+Message-Id: <1424968934-30577-10-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1422598314-6889-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1422598314-6889-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-To: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, sergei.shtylyov@cogentembedded.com, geert@glider.be
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+The previous commit "ARM: shmobile: bockw dts: Move Ethernet node to BSC"
+neglected to remove the old entry.
 
---F99ASOl9IwBV9fq7
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 11 -----------
+ 1 file changed, 11 deletions(-)
 
-On Fri, Jan 30, 2015 at 03:11:54PM +0900, Nobuhiro Iwamatsu wrote:
-> sh-msiof of frequency dividing does not perform the calculation, driver have
-> to manage setting value in the table. It is not possible to set frequency
-> dividing value close to the actual data in this way. This changes from
-> frequency dividing of table management to setting by calculation.
-> This driver is able to set a value close to the actual data.
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 9b9a5eb..cbb206b 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -46,17 +46,6 @@
+ 		regulator-always-on;
+ 	};
+ 
+-	ethernet@18300000 {
+-		compatible = "smsc,lan9220", "smsc,lan9115";
+-		reg = <0x18300000 0x1000>;
+-
+-		phy-mode = "mii";
+-		interrupt-parent = <&irqpin>;
+-		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
+-		reg-io-width = <4>;
+-		vddvario-supply = <&fixedregulator3v3>;
+-		vdd33a-supply = <&fixedregulator3v3>;
+-	};
+ 
+ 	sound {
+ 		compatible = "simple-audio-card";
+-- 
+2.2.2
 
-Applied, thanks.
-
---F99ASOl9IwBV9fq7
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBCAAGBQJUz9gsAAoJECTWi3JdVIfQkdcH/A64aprG4ZaToI39iLV13qca
-JD2vffAlCV+ZpJQ8Xb1//0CYVRkE6c+OBO8iZIAN52blESZAVPLHrafnz9feLozI
-dNVF6XnF6vt1Lgo3QBy+lfUZ3M7LUBOgBqq1DXfCaurG8pO8RFvDo/QoAo1rdYum
-FspSHeHBasWYB7veZHJTgM/sd8bDnMmAjBmYh30i0k8Pv7zl8VicerpW+Ai8KpiG
-uScNgwerVJ/XHarZX0WRe/tfy8Gx0SLMCZdGPpd/X9i/HBBJKZbfGZVgBoWzOE6b
-CFSliVXn/XfZNGxJAmIOCAwJTg37Tme3SybsaxFF4tpzzTWmoHhnZV5OJRAZk68=
-=nQN0
------END PGP SIGNATURE-----
-
---F99ASOl9IwBV9fq7--
