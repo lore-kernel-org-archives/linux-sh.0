@@ -1,43 +1,37 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 19 Feb 2015 11:03:45 +0000
-Subject: Re: [PATCH 01/02] ARM: shmobile: Drop DU deps to allow 64-bit build
-Message-Id: <CAMuHMdWbhtn6JRQUYQBnAGRHgYSpuNGRUb5F=Mf=eFKxbDesZg@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 26 Feb 2015 14:27:49 +0000
+Subject: Re: [PATCH v2 1/2] DT: i2c: Deprecate adi,adxl34x compatible string
+Message-Id: <2747724.u7aGnnSiv7@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150219010825.1660.31402.sendpatchset@little-apple>
-In-Reply-To: <20150219010825.1660.31402.sendpatchset@little-apple>
+References: <1421333655-31029-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <CAMuHMdUwHde0EvbCD574L2tW6qqxLCtZwAb+0M-4QCjB9V6fmQ@mail.gmail.com> <20150126120947.GC1052@katana>
+In-Reply-To: <20150126120947.GC1052@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Wolfram Sang <wsa@the-dreams.de>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "linux-input@vger.kernel.org" <linux-input@vger.kernel.org>, Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Magnus,
+Hi Wolfram,
 
-On Thu, Feb 19, 2015 at 2:08 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> --- 0001/drivers/gpu/drm/rcar-du/Kconfig
-> +++ work/drivers/gpu/drm/rcar-du/Kconfig        2015-02-19 05:59:44.585533280 +0900
-> @@ -1,7 +1,6 @@
->  config DRM_RCAR_DU
->         tristate "DRM Support for R-Car Display Unit"
-> -       depends on DRM && ARM
+On Monday 26 January 2015 13:09:47 Wolfram Sang wrote:
+> > >> If you drop adi,adxl346, checkpatch will start complaining if it
+> > >> encounters
+> > >> it in a .dts.
+> > > 
+> > > Boah, this is annoying. That means we need an 346 entry even if it is
+> > > not different from 345 (which is fine by me).
+> > 
+> > To be clear: you need the entry in the documentation. It can be omitted
+> > from the driver if it's not (yet) used for matching.
+> 
+> Well, I don't really like that behaviour, but I don't like
+> i2c/trivial-devices.txt as well, so I'll just apply the patch and live
+> with it :)
 
-If it already builds fine on other architectures, you can just drop
-the dependency
-on ARM above? After that, people can enable COMPILE_TEST to get access to
-this driver.
+What happened to this patch ?
 
-> -       depends on ARCH_SHMOBILE || COMPILE_TEST
-> +       depends on DRM
->         select DRM_KMS_HELPER
->         select DRM_KMS_CMA_HELPER
->         select DRM_GEM_CMA_HELPER
+-- 
+Regards,
 
-Gr{oetje,eeting}s,
+Laurent Pinchart
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
