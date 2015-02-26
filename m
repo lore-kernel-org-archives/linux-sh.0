@@ -1,87 +1,58 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:10 +0000
-Subject: [PATCH 13/32] ARM: shmobile: r8a7790: Add IPMMU DT nodes
-Message-Id: <70496727c08262c69cbeac10dfefada745b46869.1424849129.git.horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:22:45 +0000
+Subject: [PATCH 5/5] ARM: shmobile: r8a7740: Remove restart callback
+Message-Id: <72016d009e6bcf6cb6a289382bfc21185122b22e.1424931398.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424849129.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
+References: <cover.1424931398.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424931398.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add the six IPMMU instances found in the r8a7790 to DT with a disabled
-status.
+Remove the restart handling hack from the r8a7740 generic multiplatform
+case.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Restart on DT-based r8a7740 platforms is now handled through the
+R-Mobile reset driver.
+
+This reverts commit 1174c712afa2779f ("ARM: shmobile: r8a7740: Add
+restart callback").
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 51 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 51 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7740.c | 8 --------
+ 1 file changed, 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 4b38fc9..24de994 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1465,4 +1465,55 @@
- 			ssi9: ssi@9 { interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>; };
- 		};
- 	};
-+
-+	ipmmu_sy0: mmu@e6280000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe6280000 0 0x1000>;
-+		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_sy1: mmu@e6290000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe6290000 0 0x1000>;
-+		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_ds: mmu@e6740000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xe6740000 0 0x1000>;
-+		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_mp: mmu@ec680000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xec680000 0 0x1000>;
-+		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_mx: mmu@fe951000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xfe951000 0 0x1000>;
-+		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
-+
-+	ipmmu_rt: mmu@ffc80000 {
-+		compatible = "renesas,ipmmu-vmsa";
-+		reg = <0 0xffc80000 0 0x1000>;
-+		interrupts = <0 307 IRQ_TYPE_LEVEL_HIGH>;
-+		#iommu-cells = <1>;
-+		status = "disabled";
-+	};
- };
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index dd64caf..9832e48 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -842,13 +842,6 @@ static void __init r8a7740_generic_init(void)
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+-#define RESCNT2 IOMEM(0xe6188020)
+-static void r8a7740_restart(enum reboot_mode mode, const char *cmd)
+-{
+-	/* Do soft power on reset */
+-	writel(1 << 31, RESCNT2);
+-}
+-
+ static const char *r8a7740_boards_compat_dt[] __initdata = {
+ 	"renesas,r8a7740",
+ 	NULL,
+@@ -861,7 +854,6 @@ DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
+ 	.init_machine	= r8a7740_generic_init,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= r8a7740_boards_compat_dt,
+-	.restart	= r8a7740_restart,
+ MACHINE_END
+ 
+ #endif /* CONFIG_USE_OF */
 -- 
 2.1.4
 
