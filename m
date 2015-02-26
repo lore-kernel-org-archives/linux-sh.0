@@ -1,68 +1,51 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 09 Feb 2015 08:14:04 +0000
-Subject: [PATCH 1/2] dmaengine: renesas,usb-dmac: Add device tree bindings documentation
-Message-Id: <1423469645-2976-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:21:26 +0000
+Subject: [PATCH 29/32] ARM: shmobile: henninger: add CAN0 DT support
+Message-Id: <457acc4a6ce8fe821aed4f254e72a76c88673712.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423469645-2976-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1423469645-2976-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <cover.1424849129.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: vinod.koul@intel.com, dan.j.williams@intel.com, laurent.pinchart@ideasonboard.com, horms@verge.net.au, kuninori.morimoto.gx@renesas.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Document the device tree bindings for the Renesas USB DMA
-Controller (USB-DMAC).
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Define the Henninger board dependent part of the CAN0 device node.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../devicetree/bindings/dma/renesas,usb-dmac.txt   |   37 ++++++++++++++++++++
- 1 file changed, 37 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
+ arch/arm/boot/dts/r8a7791-henninger.dts | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt b/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
-new file mode 100644
-index 0000000..040f365
---- /dev/null
-+++ b/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
-@@ -0,0 +1,37 @@
-+* Renesas USB DMA Controller Device Tree bindings
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
+index d2ebf11..e33e404 100644
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ b/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -141,6 +141,11 @@
+ 		renesas,groups = "vin0_data8", "vin0_clk";
+ 		renesas,function = "vin0";
+ 	};
 +
-+Required Properties:
-+- compatible: must contain "renesas,usb-dmac"
-+- reg: base address and length of the registers block for the DMAC
-+- interrupts: interrupt specifiers for the DMAC, one for each entry in
-+  interrupt-names.
-+- interrupt-names: one entry per channel, named "ch%u", where %u is the
-+  channel number ranging from zero to the number of channels minus one.
-+- clocks: a list of phandle + clock-specifier pairs.
-+- #dma-cells: must be <1>, the cell specifies the channel number of the DMAC
-+  port connected to the DMA client.
-+- dma-channels: number of DMA channels
-+
-+Example: R8A7790 (R-Car H2) USB-DMACs
-+
-+	usb_dmac0: dma-controller@e65a0000 {
-+		compatible = "renesas,usb-dmac";
-+		reg = <0 0xe65a0000 0 0x100>;
-+		interrupts = <0 109 IRQ_TYPE_LEVEL_HIGH
-+			      0 109 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "ch0", "ch1";
-+		clocks = <&mstp3_clks R8A7790_CLK_USBDMAC0>;
-+		#dma-cells = <1>;
-+		dma-channels = <2>;
++	can0_pins: can0 {
++		renesas,groups = "can0_data";
++		renesas,function = "can0";
 +	};
+ };
+ 
+ &scif0 {
+@@ -307,3 +312,9 @@
+ 		};
+ 	};
+ };
 +
-+	usb_dmac1: dma-controller@e65b0000 {
-+		compatible = "renesas,usb-dmac";
-+		reg = <0 0xe65b0000 0 0x100>;
-+		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH
-+			      0 110 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "ch0", "ch1";
-+		clocks = <&mstp3_clks R8A7790_CLK_USBDMAC1>;
-+		#dma-cells = <1>;
-+		dma-channels = <2>;
-+	};
++&can0 {
++	pinctrl-0 = <&can0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
 -- 
-1.7.9.5
+2.1.4
 
