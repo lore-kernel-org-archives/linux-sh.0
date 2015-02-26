@@ -1,95 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:22:20 +0000
-Subject: [PATCH 1/5] drivers: bus: Sort Kconfig entries alphabetically
-Message-Id: <13fbf3c8d0f750a52b9ddb9be7a8251789fb62b6.1424931637.git.horms+renesas@verge.net.au>
+From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
+Date: Thu, 26 Feb 2015 11:35:14 +0000
+Subject: [PATCHv3 11/17] sh: expose number of page table levels
+Message-Id: <1424950520-90188-12-git-send-email-kirill.shutemov@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424931637.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424931637.git.horms+renesas@verge.net.au>
+References: <1424950520-90188-1-git-send-email-kirill.shutemov@linux.intel.com>
+In-Reply-To: <1424950520-90188-1-git-send-email-kirill.shutemov@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-mm@kvack.org, linux-kernel@vger.kernel.org, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+We would want to use number of page table level to define mm_struct.
+Let's expose it as CONFIG_PGTABLE_LEVELS.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Reviewed-by: Kevin Hilman <khilman@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
+Cc: linux-sh@vger.kernel.org
+Tested-by: Guenter Roeck <linux@roeck-us.net>
 ---
- drivers/bus/Kconfig | 44 ++++++++++++++++++++++----------------------
- 1 file changed, 22 insertions(+), 22 deletions(-)
+ arch/sh/Kconfig | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/drivers/bus/Kconfig b/drivers/bus/Kconfig
-index b99729e..6269608 100644
---- a/drivers/bus/Kconfig
-+++ b/drivers/bus/Kconfig
-@@ -4,6 +4,21 @@
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index eb4ef274ae9b..50057fed819d 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -162,6 +162,10 @@ config NEED_DMA_MAP_STATE
+ config NEED_SG_DMA_LENGTH
+ 	def_bool y
  
- menu "Bus devices"
- 
-+config ARM_CCI
-+	bool "ARM CCI driver support"
-+	depends on ARM && OF && CPU_V7
-+	help
-+	  Driver supporting the CCI cache coherent interconnect for ARM
-+	  platforms.
++config PGTABLE_LEVELS
++	default 3 if X2TLB
++	default 2
 +
-+config ARM_CCN
-+	bool "ARM CCN driver support"
-+	depends on ARM || ARM64
-+	depends on PERF_EVENTS
-+	help
-+	  PMU (perf) driver supporting the ARM CCN (Cache Coherent Network)
-+	  interconnect.
-+
- config BRCMSTB_GISB_ARB
- 	bool "Broadcom STB GISB bus arbiter"
- 	depends on ARM || MIPS
-@@ -27,15 +42,6 @@ config MVEBU_MBUS
- 	  Driver needed for the MBus configuration on Marvell EBU SoCs
- 	  (Kirkwood, Dove, Orion5x, MV78XX0 and Armada 370/XP).
+ source "init/Kconfig"
  
--config OMAP_OCP2SCP
--	tristate "OMAP OCP2SCP DRIVER"
--	depends on ARCH_OMAP2PLUS
--	help
--	  Driver to enable ocp2scp module which transforms ocp interface
--	  protocol to scp protocol. In OMAP4, USB PHY is connected via
--	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
--	  OCP2SCP.
--
- config OMAP_INTERCONNECT
- 	tristate "OMAP INTERCONNECT DRIVER"
- 	depends on ARCH_OMAP2PLUS
-@@ -43,20 +49,14 @@ config OMAP_INTERCONNECT
- 	help
- 	  Driver to enable OMAP interconnect error handling driver.
- 
--config ARM_CCI
--	bool "ARM CCI driver support"
--	depends on ARM && OF && CPU_V7
--	help
--	  Driver supporting the CCI cache coherent interconnect for ARM
--	  platforms.
--
--config ARM_CCN
--	bool "ARM CCN driver support"
--	depends on ARM || ARM64
--	depends on PERF_EVENTS
-+config OMAP_OCP2SCP
-+	tristate "OMAP OCP2SCP DRIVER"
-+	depends on ARCH_OMAP2PLUS
- 	help
--	  PMU (perf) driver supporting the ARM CCN (Cache Coherent Network)
--	  interconnect.
-+	  Driver to enable ocp2scp module which transforms ocp interface
-+	  protocol to scp protocol. In OMAP4, USB PHY is connected via
-+	  OCP2SCP and in OMAP5, both USB PHY and SATA PHY is connected via
-+	  OCP2SCP.
- 
- config VEXPRESS_CONFIG
- 	bool "Versatile Express configuration bus"
+ source "kernel/Kconfig.freezer"
 -- 
 2.1.4
 
