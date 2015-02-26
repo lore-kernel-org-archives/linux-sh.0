@@ -1,30 +1,34 @@
-From: Kaz Kojima <kkojima@rr.iij4u.or.jp>
-Date: Fri, 20 Feb 2015 02:52:57 +0000
-Subject: Re: [PATCH RFC] Update kernel math-emu code from current glibc soft-fp
-Message-Id: <20150220.115257.256613837.kkojima@rr.iij4u.or.jp>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 26 Feb 2015 10:29:35 +0000
+Subject: [PATCH] ARM: shmobile: Remove stray closing parenthesis in debug description
+Message-Id: <1424946575-7030-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.10.1502061719210.27832@digraph.polyomino.org.uk>
- <20150219.132122.204795202277130266.davem@davemloft.net>
- <alpine.DEB.2.10.1502191835490.22905@digraph.polyomino.org.uk>
-In-Reply-To: <alpine.DEB.2.10.1502191835490.22905@digraph.polyomino.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: joseph@codesourcery.com
-Cc: linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linuxppc-dev@lists.ozlabs.org
+To: linux-arm-kernel@lists.infradead.org
 
-Joseph Myers <joseph@codesourcery.com> wrote:
-> Please try this patch on top of the previous one.  The way abort is 
-> redefined in the kernel code doesn't work for one place using it in an 
-> expression; this patch changes a comma expression to a statement 
-> expression.  This didn't appear in my powerpc testing because the powerpc 
-> emulation never uses FP_FROM_INT; I'm not sure how Kaz's sh testing 
-> avoided the problem appearing there.
+Remove the stray closing parenthesis in the config description for the
+DEBUG_RCAR_GEN2_SCIF0 option.
 
-My bad.  It turned out that I've configured the kernel wrongly and
-CONFIG_SH_FPU_EMU isn't enabled.  With the proper configuration,
-the build got the similar error with sparc64 during compiling
-arch/sh/math.c and your patch for op-common.h fixes it.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/Kconfig.debug | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Regards,
-	kaz
+diff --git a/arch/arm/Kconfig.debug b/arch/arm/Kconfig.debug
+index 6e55ed915332e8b6..b8e719476402560a 100644
+--- a/arch/arm/Kconfig.debug
++++ b/arch/arm/Kconfig.debug
+@@ -806,7 +806,7 @@ choice
+ 		  via SCIF2 on Renesas R-Car H1 (R8A7779).
+ 
+ 	config DEBUG_RCAR_GEN2_SCIF0
+-		bool "Kernel low-level debugging messages via SCIF0 on R8A7790/R8A7791/R8A7793)"
++		bool "Kernel low-level debugging messages via SCIF0 on R8A7790/R8A7791/R8A7793"
+ 		depends on ARCH_R8A7790 || ARCH_R8A7791 || ARCH_R8A7793
+ 		help
+ 		  Say Y here if you want kernel low-level debugging support
+-- 
+1.9.1
+
