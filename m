@@ -1,35 +1,57 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 20 Feb 2015 10:04:55 +0000
-Subject: Re: [PATCH] pinctrl: mediatek: Fix build error in Mediatek pinctrl driver.
-Message-Id: <CACRpkdYNTT=qojYs8+vaXPFCSbHcUXJhzpWsM6Fga2erMKzPeQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:21:02 +0000
+Subject: [PATCH 05/32] ARM: shmobile: kzm9g-reference dts: Add adxl345 accelerometer node
+Message-Id: <4bd1dd503aa2a6cfeb18a48d1da01662dd5124e1.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423727771-24112-1-git-send-email-hongzhou.yang@mediatek.com>
-In-Reply-To: <1423727771-24112-1-git-send-email-hongzhou.yang@mediatek.com>
+References: <cover.1424849129.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 12, 2015 at 8:56 AM, Hongzhou Yang
-<hongzhou.yang@mediatek.com> wrote:
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-> Since pinconf relate API changes in pinctrl devel branch, a build error happened.
-> Send this small patch to fix it.
->
-> ---
-> Due to pinconf_generic_parse_dt_config() API changes in pinctrl devel branch,
-> add one parameter to fix build error.
->
-> Also fix warning:
-> drivers/pinctrl/mediatek/pinctrl-mtk-common.c:718:3: warning: too many arguments for format [-Wformat-extra-args]
->       dev_err(&pdev->dev, "only support pins-are-numbered format\n", ret);
->       ^
->
-> by removing extra parameter when calling dev_err in mtk_pctrl_init.
->
-> Signed-off-by: Hongzhou Yang <hongzhou.yang@mediatek.com>
+Add a DT node for the ADXL345 three-axis digital accelerometer sensor,
+which is connected to i2c0.
 
-Patch applied.
+As trivial i2c devices are matched against the first compatible entry
+only, compatibility is declared with "adi,adxl34x" only for now.
 
-Yours,
-Linus Walleij
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+The device needs an interrupt to operate properly. Specify the two
+interrupts used on the board.
+
+While at it rename the DT node to accelerometer@1d to describe the
+device's function instead of its model.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 873b415..fd16998 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -202,6 +202,14 @@
+ 		#sound-dai-cells = <0>;
+ 	};
+ 
++	accelerometer@1d {
++		compatible = "adi,adxl34x";
++		reg = <0x1d>;
++		interrupt-parent = <&irqpin3>;
++		interrupts = <2 IRQ_TYPE_LEVEL_HIGH>,
++			     <3 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
+ 	as3711@40 {
+ 		compatible = "ams,as3711";
+ 		reg = <0x40>;
+-- 
+2.1.4
+
