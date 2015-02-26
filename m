@@ -1,49 +1,32 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Wed, 18 Feb 2015 13:43:50 +0000
-Subject: Re: [PATCH 0/3 v3][RFC] dmaengine: rcar-audmapp: calculate chcr via src/dst addr
-Message-Id: <20150218133150.GV21387@intel.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 26 Feb 2015 16:42:10 +0000
+Subject: [PATCH v4 5/9] ASoC: rsnd: Document r8a7778-specific bindings
+Message-Id: <1424968934-30577-6-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mw4xey70.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87mw4xey70.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Feb 16, 2015 at 08:47:00PM +0100, Arnd Bergmann wrote:
-> On Monday 09 February 2015 01:37:41 Kuninori Morimoto wrote:
-> > 
-> > Hi Vinod, Arnd
-> > 
-> > Can I have feedback from you about below mail, and this patch ?
-> > 
-> > http://thread.gmane.org/gmane.linux.ports.sh.devel/41063/focusC372
-> 
-> I had the chance to discuss this in more depth with Laurent last
-> week. What it basically comes down to is that you try to do something
-> that the existing DT binding and slave API does not support: we
-> only really do DMA_DEV_TO_MEM or DMA_MEM_TO_DEV, but not DMA_DEV_TO_DEV.
-For the record, device_prep_slave_sg() can do DMA_DEV_TO_DEV. That is the
-sole reason why dma_slave_config has both the directions for every field.
+Adds "renesas,rcar_sound-r8a7778".
 
-HTH
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ Documentation/devicetree/bindings/sound/renesas,rsnd.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
+diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+index 2dd690b..67c9861 100644
+--- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
++++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+@@ -5,6 +5,7 @@ Required properties:
+ 				  "renesas,rcar_sound-gen1" if generation1, and
+ 				  "renesas,rcar_sound-gen2" if generation2
+ 				  Examples with soctypes are:
++				    - "renesas,rcar_sound-r8a7778" (R-Car M1)
+ 				    - "renesas,rcar_sound-r8a7790" (R-Car H2)
+ 				    - "renesas,rcar_sound-r8a7791" (R-Car M2-W)
+ - reg				: Should contain the register physical address.
 -- 
-~Vinod
- 
-> To properly support this with the dmaengine API, we would likely first
-> need to extend the generic DT binding, and then implement the driver
-> to use that extended binding.
-> 
-> The easiest way out however seems to be to move the audmapp
-> implementation into the rcar audio driver itself. As Laurent pointed
-> out, it is not really a general-purpose dmaengine anyway and it
-> only ever gets used by one driver, so we could not find any downsides.
-> 
-> 	Arnd
-> --
-> To unsubscribe from this list: send the line "unsubscribe dmaengine" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+2.2.2
 
--- 
