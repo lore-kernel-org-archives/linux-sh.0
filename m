@@ -1,182 +1,121 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 25 Feb 2015 21:54:26 +0000
-Subject: [PATCH 06/38] drm: adv7511: Fix nested sleep when reading EDID
-Message-Id: <1424901298-6829-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:22:43 +0000
+Subject: [PATCH 3/5] ARM: shmobile: Add function to get SoCs revision data for R-Car Gen2
+Message-Id: <df45cf72f967785df18cb1a2ab2d6e0b7f5112b3.1424931398.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1424931398.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424931398.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The EDID read code waits for the read completion interrupt to occur
-using wait_event_interruptible(). The condition passed to the macro
-reads I2C registers. This results in sleeping with the task state set
-to TASK_INTERRUPTIBLE, triggering a WARN_ON() introduced in commit
-8eb23b9f35aae ("sched: Debug nested sleeps").
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Fix this by reworking the EDID read code. Instead of checking whether
-the read is complete through I2C reads, handle the interrupt registers
-in the interrupt handler and update a new edid_read flag accordingly. As
-a side effect both the IRQ and polling code paths now process the
-interrupt sources through the same code path, simplifying the code.
+SoCs of R-Car Gen2 have some revision. This adds function to get SoCs revision
+data, and change so that user can confirm from /proc/cpuinfo.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/i2c/adv7511.c | 96 +++++++++++++++++++++----------------------
- 1 file changed, 46 insertions(+), 50 deletions(-)
+ arch/arm/mach-shmobile/rcar-gen2.h       |  1 +
+ arch/arm/mach-shmobile/setup-r8a7790.c   |  1 +
+ arch/arm/mach-shmobile/setup-r8a7791.c   |  1 +
+ arch/arm/mach-shmobile/setup-r8a7794.c   |  1 +
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 21 +++++++++++++++++++++
+ 5 files changed, 25 insertions(+)
 
-diff --git a/drivers/gpu/drm/i2c/adv7511.c b/drivers/gpu/drm/i2c/adv7511.c
-index 5109c215018e..60ab1f75d58e 100644
---- a/drivers/gpu/drm/i2c/adv7511.c
-+++ b/drivers/gpu/drm/i2c/adv7511.c
-@@ -33,6 +33,7 @@ struct adv7511 {
+diff --git a/arch/arm/mach-shmobile/rcar-gen2.h b/arch/arm/mach-shmobile/rcar-gen2.h
+index ce53cb5..b232956 100644
+--- a/arch/arm/mach-shmobile/rcar-gen2.h
++++ b/arch/arm/mach-shmobile/rcar-gen2.h
+@@ -5,5 +5,6 @@ void rcar_gen2_timer_init(void);
+ #define MD(nr) BIT(nr)
+ u32 rcar_gen2_read_mode_pins(void);
+ void rcar_gen2_reserve(void);
++void __init rcar_gen2_init_machine(void);
  
- 	unsigned int current_edid_segment;
- 	uint8_t edid_buf[256];
-+	bool edid_read;
- 
- 	wait_queue_head_t wq;
- 	struct drm_encoder *encoder;
-@@ -379,69 +380,71 @@ static bool adv7511_hpd(struct adv7511 *adv7511)
- 	return false;
+ #endif /* __ASM_RCAR_GEN2_H__ */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7790.c b/arch/arm/mach-shmobile/setup-r8a7790.c
+index 3a18af4..8d26ab0 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7790.c
++++ b/arch/arm/mach-shmobile/setup-r8a7790.c
+@@ -30,6 +30,7 @@ static const char * const r8a7790_boards_compat_dt[] __initconst = {
+ DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
+ 	.smp		= smp_ops(r8a7790_smp_ops),
+ 	.init_early	= shmobile_init_delay,
++	.init_machine	= rcar_gen2_init_machine,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_late	= shmobile_init_late,
+ 	.reserve	= rcar_gen2_reserve,
+diff --git a/arch/arm/mach-shmobile/setup-r8a7791.c b/arch/arm/mach-shmobile/setup-r8a7791.c
+index ef8eb3a..c528b0f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7791.c
++++ b/arch/arm/mach-shmobile/setup-r8a7791.c
+@@ -33,6 +33,7 @@ DT_MACHINE_START(R8A7791_DT, "Generic R8A7791 (Flattened Device Tree)")
+ 	.init_early	= shmobile_init_delay,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.init_late	= shmobile_init_late,
++	.init_machine   = rcar_gen2_init_machine,
+ 	.reserve	= rcar_gen2_reserve,
+ 	.dt_compat	= r8a7791_boards_compat_dt,
+ MACHINE_END
+diff --git a/arch/arm/mach-shmobile/setup-r8a7794.c b/arch/arm/mach-shmobile/setup-r8a7794.c
+index d2b0930..eb86656 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7794.c
++++ b/arch/arm/mach-shmobile/setup-r8a7794.c
+@@ -27,6 +27,7 @@ static const char * const r8a7794_boards_compat_dt[] __initconst = {
+ DT_MACHINE_START(R8A7794_DT, "Generic R8A7794 (Flattened Device Tree)")
+ 	.init_early	= shmobile_init_delay,
+ 	.init_late	= shmobile_init_late,
++	.init_machine	= rcar_gen2_init_machine,
+ 	.init_time	= rcar_gen2_timer_init,
+ 	.reserve	= rcar_gen2_reserve,
+ 	.dt_compat	= r8a7794_boards_compat_dt,
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 5d13595..6f290a8 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -4,6 +4,7 @@
+  * Copyright (C) 2013  Renesas Solutions Corp.
+  * Copyright (C) 2013  Magnus Damm
+  * Copyright (C) 2014  Ulrich Hecht
++ * Copyright (C) 2015  Nobuhiro Iwamatsu
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -24,6 +25,8 @@
+ #include <linux/memblock.h>
+ #include <linux/of.h>
+ #include <linux/of_fdt.h>
++#include <linux/of_platform.h>
++#include <asm/system_info.h>
+ #include <asm/mach/arch.h>
+ #include "common.h"
+ #include "rcar-gen2.h"
+@@ -201,3 +204,21 @@ void __init rcar_gen2_reserve(void)
+ 					    &rcar_gen2_dma_contiguous, true);
+ #endif
  }
- 
--static irqreturn_t adv7511_irq_handler(int irq, void *devid)
--{
--	struct adv7511 *adv7511 = devid;
--
--	if (adv7511_hpd(adv7511))
--		drm_helper_hpd_irq_event(adv7511->encoder->dev);
--
--	wake_up_all(&adv7511->wq);
--
--	return IRQ_HANDLED;
--}
--
--static unsigned int adv7511_is_interrupt_pending(struct adv7511 *adv7511,
--						 unsigned int irq)
-+static int adv7511_irq_process(struct adv7511 *adv7511)
- {
- 	unsigned int irq0, irq1;
--	unsigned int pending;
- 	int ret;
- 
- 	ret = regmap_read(adv7511->regmap, ADV7511_REG_INT(0), &irq0);
- 	if (ret < 0)
--		return 0;
-+		return ret;
 +
- 	ret = regmap_read(adv7511->regmap, ADV7511_REG_INT(1), &irq1);
- 	if (ret < 0)
--		return 0;
-+		return ret;
-+
-+	regmap_write(adv7511->regmap, ADV7511_REG_INT(0), irq0);
-+	regmap_write(adv7511->regmap, ADV7511_REG_INT(1), irq1);
-+
-+	if (irq0 & ADV7511_INT0_HDP)
-+		drm_helper_hpd_irq_event(adv7511->encoder->dev);
-+
-+	if (irq0 & ADV7511_INT0_EDID_READY || irq1 & ADV7511_INT1_DDC_ERROR) {
-+		adv7511->edid_read = true;
- 
--	pending = (irq1 << 8) | irq0;
-+		if (adv7511->i2c_main->irq)
-+			wake_up_all(&adv7511->wq);
-+	}
- 
--	return pending & irq;
-+	return 0;
- }
- 
--static int adv7511_wait_for_interrupt(struct adv7511 *adv7511, int irq,
--				      int timeout)
-+static irqreturn_t adv7511_irq_handler(int irq, void *devid)
++#define PRR 0xFF000044
++static unsigned int __init rcar_gen2_get_cut(void)
 +{
-+	struct adv7511 *adv7511 = devid;
-+	int ret;
++	void __iomem *addr = ioremap_nocache(PRR, 4);
++	u32 data = ioread32(addr);
 +
-+	ret = adv7511_irq_process(adv7511);
-+	return ret < 0 ? IRQ_NONE : IRQ_HANDLED;
++	iounmap(addr);
++
++	return (data & 0xFF) + 0x10;
 +}
 +
-+/* -----------------------------------------------------------------------------
-+ * EDID retrieval
-+ */
++void __init rcar_gen2_init_machine(void)
++{
++	system_rev = rcar_gen2_get_cut();
 +
-+static int adv7511_wait_for_edid(struct adv7511 *adv7511, int timeout)
- {
--	unsigned int pending;
- 	int ret;
- 
- 	if (adv7511->i2c_main->irq) {
- 		ret = wait_event_interruptible_timeout(adv7511->wq,
--				adv7511_is_interrupt_pending(adv7511, irq),
--				msecs_to_jiffies(timeout));
--		if (ret <= 0)
--			return 0;
--		pending = adv7511_is_interrupt_pending(adv7511, irq);
-+				adv7511->edid_read, msecs_to_jiffies(timeout));
- 	} else {
--		if (timeout < 25)
--			timeout = 25;
--		do {
--			pending = adv7511_is_interrupt_pending(adv7511, irq);
--			if (pending)
-+		for (; timeout > 0; timeout -= 25) {
-+			ret = adv7511_irq_process(adv7511);
-+			if (ret < 0)
-+				break;
-+
-+			if (adv7511->edid_read)
- 				break;
-+
- 			msleep(25);
--			timeout -= 25;
--		} while (timeout >= 25);
-+		}
- 	}
- 
--	return pending;
-+	return adv7511->edid_read ? 0 : -EIO;
- }
- 
--/* -----------------------------------------------------------------------------
-- * EDID retrieval
-- */
--
- static int adv7511_get_edid_block(void *data, u8 *buf, unsigned int block,
- 				  size_t len)
- {
-@@ -463,21 +466,14 @@ static int adv7511_get_edid_block(void *data, u8 *buf, unsigned int block,
- 			return ret;
- 
- 		if (status != 2) {
-+			adv7511->edid_read = false;
- 			regmap_write(adv7511->regmap, ADV7511_REG_EDID_SEGMENT,
- 				     block);
--			ret = adv7511_wait_for_interrupt(adv7511,
--					ADV7511_INT0_EDID_READY |
--					(ADV7511_INT1_DDC_ERROR << 8), 200);
--
--			if (!(ret & ADV7511_INT0_EDID_READY))
--				return -EIO;
-+			ret = adv7511_wait_for_edid(adv7511, 200);
-+			if (ret < 0)
-+				return ret;
- 		}
- 
--		regmap_write(adv7511->regmap, ADV7511_REG_INT(0),
--			     ADV7511_INT0_EDID_READY);
--		regmap_write(adv7511->regmap, ADV7511_REG_INT(1),
--			     ADV7511_INT1_DDC_ERROR);
--
- 		/* Break this apart, hopefully more I2C controllers will
- 		 * support 64 byte transfers than 256 byte transfers
- 		 */
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++}
 -- 
-2.0.5
+2.1.4
 
