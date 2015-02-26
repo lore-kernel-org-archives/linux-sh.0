@@ -1,77 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:22:31 +0000
-Subject: [PATCH 2/4] ARM: shmobile: Remove mach/clkdev.h
-Message-Id: <814979eb8494c2269f4907ef0494f199d6d06ec2.1424931049.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 26 Feb 2015 10:43:32 +0000
+Subject: [PATCH] irqchip: renesas-irqc: Use u32 to store 32-bit register values
+Message-Id: <1424947412-8061-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424931049.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424931049.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Magnus Damm <damm+renesas@opensource.se>
-
-Move over ARCH_SHMOBILE_LEGACY to use the default legacy ARM
-implementations of __clk_get() and __clk_put() in <asm/clkdev.h>
-by deselecting HAVE_MACH_CLKDEV. This has the nice side effect
-that <mach/clkdev.h> is no longer used and can be removed.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/Kconfig                             |  1 -
- arch/arm/mach-shmobile/clock.c               | 11 -----------
- arch/arm/mach-shmobile/include/mach/clkdev.h |  7 -------
- 3 files changed, 19 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/include/mach/clkdev.h
+ drivers/irqchip/irq-renesas-irqc.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 9f1f09a..495fb7a 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -646,7 +646,6 @@ config ARCH_SHMOBILE_LEGACY
- 	select GENERIC_CLOCKEVENTS
- 	select HAVE_ARM_SCU if SMP
- 	select HAVE_ARM_TWD if SMP
--	select HAVE_MACH_CLKDEV
- 	select HAVE_SMP
- 	select MIGHT_HAVE_CACHE_L2X0
- 	select MULTI_IRQ_HANDLER
-diff --git a/arch/arm/mach-shmobile/clock.c b/arch/arm/mach-shmobile/clock.c
-index 34f056f..68c2d06 100644
---- a/arch/arm/mach-shmobile/clock.c
-+++ b/arch/arm/mach-shmobile/clock.c
-@@ -45,14 +45,3 @@ int __init shmobile_clk_init(void)
+diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
+index 384e6ed61d7c5e94..2ea3412fdf8cc668 100644
+--- a/drivers/irqchip/irq-renesas-irqc.c
++++ b/drivers/irqchip/irq-renesas-irqc.c
+@@ -94,7 +94,7 @@ static int irqc_irq_set_type(struct irq_data *d, unsigned int type)
+ 	struct irqc_priv *p = irq_data_get_irq_chip_data(d);
+ 	int hw_irq = irqd_to_hwirq(d);
+ 	unsigned char value = irqc_sense[type & IRQ_TYPE_SENSE_MASK];
+-	unsigned long tmp;
++	u32 tmp;
  
- 	return 0;
- }
--
--int __clk_get(struct clk *clk)
--{
--	return 1;
--}
--EXPORT_SYMBOL(__clk_get);
--
--void __clk_put(struct clk *clk)
--{
--}
--EXPORT_SYMBOL(__clk_put);
-diff --git a/arch/arm/mach-shmobile/include/mach/clkdev.h b/arch/arm/mach-shmobile/include/mach/clkdev.h
-deleted file mode 100644
-index 36d0163..0000000
---- a/arch/arm/mach-shmobile/include/mach/clkdev.h
-+++ /dev/null
-@@ -1,7 +0,0 @@
--#ifndef __ASM_MACH_CLKDEV_H
--#define __ASM_MACH_CLKDEV_H
--
--int __clk_get(struct clk *clk);
--void __clk_put(struct clk *clk);
--
--#endif /* __ASM_MACH_CLKDEV_H */
+ 	irqc_dbg(&p->irq[hw_irq], "sense");
+ 
+@@ -112,7 +112,7 @@ static irqreturn_t irqc_irq_handler(int irq, void *dev_id)
+ {
+ 	struct irqc_irq *i = dev_id;
+ 	struct irqc_priv *p = i->p;
+-	unsigned long bit = BIT(i->hw_irq);
++	u32 bit = BIT(i->hw_irq);
+ 
+ 	irqc_dbg(i, "demux1");
+ 
 -- 
-2.1.4
+1.9.1
 
