@@ -1,37 +1,83 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 16 Feb 2015 16:58:59 +0000
-Subject: [PATCH v3 15/15] ARM: shmobile: bockw dts: set extal clock frequency
-Message-Id: <1424105939-4910-16-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:21:22 +0000
+Subject: [PATCH 25/32] ARM: shmobile: r8a7790: add CAN clocks
+Message-Id: <41650f406cdc4a420d5c08e1b407f6420323a04b.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1424849129.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Sets the extal clock to the frequency of the oscillator installed by
-default (33 MHz).
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+The R-Car CAN controllers can derive the CAN bus clock not only from their
+peripheral clock input (clkp1) but also from the other internal clock (clkp2)
+and external clock fed on CAN_CLK pin.  Describe those clocks in the device
+tree,  along with  the USB_EXTAL clock  from which clkp2 is derived.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi            | 22 ++++++++++++++++++++--
+ include/dt-bindings/clock/r8a7790-clock.h |  1 +
+ 2 files changed, 21 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 97a1132..cbb206b 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -79,6 +79,10 @@
- 	};
- };
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 24de994..e872854 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -838,16 +838,34 @@
+ 			clock-output-names = "audio_clk_c";
+ 		};
  
-+&extal_clk {
-+	clock-frequency = <33333333>;
-+};
++		/* External USB clock - can be overridden by the board */
++		usb_extal_clk: usb_extal_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <48000000>;
++			clock-output-names = "usb_extal";
++		};
 +
- &i2c0 {
- 	status = "okay";
++		/* External CAN clock */
++		can_clk: can_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			/* This value must be overridden by the board. */
++			clock-frequency = <0>;
++			clock-output-names = "can_clk";
++			status = "disabled";
++		};
++
+ 		/* Special CPG clocks */
+ 		cpg_clocks: cpg_clocks@e6150000 {
+ 			compatible = "renesas,r8a7790-cpg-clocks",
+ 				     "renesas,rcar-gen2-cpg-clocks";
+ 			reg = <0 0xe6150000 0 0x1000>;
+-			clocks = <&extal_clk>;
++			clocks = <&extal_clk &usb_extal_clk>;
+ 			#clock-cells = <1>;
+ 			clock-output-names = "main", "pll0", "pll1", "pll3",
+ 					     "lb", "qspi", "sdh", "sd0", "sd1",
+-					     "z";
++					     "z", "rcan";
+ 		};
  
+ 		/* Variable factor clocks */
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 9194027..ffa8c11 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -21,6 +21,7 @@
+ #define R8A7790_CLK_SD0			7
+ #define R8A7790_CLK_SD1			8
+ #define R8A7790_CLK_Z			9
++#define R8A7790_CLK_RCAN		10
+ 
+ /* MSTP0 */
+ #define R8A7790_CLK_MSIOF0		0
 -- 
-2.2.2
+2.1.4
 
