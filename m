@@ -1,44 +1,52 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 17 Feb 2015 01:48:08 +0000
-Subject: [PATCH 7/8 v5] ASoC: fsi: remove slave_id settings for DMAEngine
-Message-Id: <87sie5s3xa.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:22:42 +0000
+Subject: [PATCH 2/5] ARM: shmobile: R-Car Gen2: CONFIG_COMMON_CLK is always set
+Message-Id: <c5b0a373f3e1e40073b94179c9eefc20b8a7ef3d.1424931398.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1424931398.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424931398.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Current fsi sets dma_slave_config :: slave_id field for DMAEngine,
-but it is no longer needed. Let's remove it.
+Since commit e042681894b62d60 ("ARM: shmobile: r8a7790: Remove legacy
+code"), all R-Car Gen2 SoCs are supported by multiplatform kernels only.
+As CONFIG_COMMON_CLK is always set for multiplatform kernels, we can
+remove related #ifdefs in code specific to R-Car Gen2 SoCs.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Mark Brown <broonie@kernel.org>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v4 -> v5
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
- - no change
-
- sound/soc/sh/fsi.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
-diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
-index b87b22e..dc28b03 100644
---- a/sound/soc/sh/fsi.c
-+++ b/sound/soc/sh/fsi.c
-@@ -1371,10 +1371,9 @@ static int fsi_dma_probe(struct fsi_priv *fsi, struct fsi_stream *io, struct dev
- 				shdma_chan_filter, (void *)io->dma_id,
- 				dev, is_play ? "tx" : "rx");
- 	if (io->chan) {
--		struct dma_slave_config cfg;
-+		struct dma_slave_config cfg = {};
- 		int ret;
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 8c7ec93..5d13595 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -51,9 +51,7 @@ u32 rcar_gen2_read_mode_pins(void)
  
--		cfg.slave_id	= io->dma_id;
- 		cfg.dst_addr	= 0; /* use default addr */
- 		cfg.src_addr	= 0; /* use default addr */
- 		cfg.direction	= is_play ? DMA_MEM_TO_DEV : DMA_DEV_TO_MEM;
+ void __init rcar_gen2_timer_init(void)
+ {
+-#if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
+ 	u32 mode = rcar_gen2_read_mode_pins();
+-#endif
+ #ifdef CONFIG_ARM_ARCH_TIMER
+ 	void __iomem *base;
+ 	int extal_mhz = 0;
+@@ -129,9 +127,7 @@ void __init rcar_gen2_timer_init(void)
+ 	iounmap(base);
+ #endif /* CONFIG_ARM_ARCH_TIMER */
+ 
+-#ifdef CONFIG_COMMON_CLK
+ 	rcar_gen2_clocks_init(mode);
+-#endif
+ #ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ 	clocksource_of_init();
+ #endif
 -- 
-1.7.9.5
+2.1.4
 
