@@ -1,39 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 19 Feb 2015 18:05:19 +0000
-Subject: Re: [PATCH v4 0/6] ARM: shmobile: r8a73a4/ape6evm: Complete multiplatform support
-Message-Id: <20150219180519.GE18262@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:22:32 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Cleanup for v4.1
+Message-Id: <cover.1424931049.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424185486-3017-1-git-send-email-geert+renesas@glider.be>
- <20150218212044.GD12754@verge.net.au>
- <CAMuHMdWsjWC4k_qp=8nZQj_rAJdUpZMcJjV7uJUePy9G5ij3CA@mail.gmail.com>
- <CAMuHMdW_nzRWjuiEXZDNrQf_ws_msxLqt6yX7Z6QZuAsyLDgGw@mail.gmail.com>
-In-Reply-To: <CAMuHMdW_nzRWjuiEXZDNrQf_ws_msxLqt6yX7Z6QZuAsyLDgGw@mail.gmail.com>
+References: <cover.1398216284.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 19, 2015 at 06:59:56PM +0100, Geert Uytterhoeven wrote:
-> On Thu, Feb 19, 2015 at 6:44 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
-> > On Wed, Feb 18, 2015 at 10:20 PM, Simon Horman <horms@verge.net.au> wrote:
-> >> With this patch applied I am able to NFS boot the ape6evm using
-> >> multiplatform using the shmobile_defconfig with CONFIG_MMC disabled.
-> >>
-> >> For reference the boot log for shmobile_defconfig (without CONFIG_MMC
-> >> disabled) is as follows:
-> >
-> >> sh_mmcif ee200000.mmc: Timeout waiting for 1 on CMD0
-> >
-> > I hadn't really planned to do a renesas-drivers release today, but as I can
-> > reproduce the hang with renesas-devel-20150218-v3.19, but not with my local
-> > tree, I made a release.
-> >
-> > Shmobile-defconfig from renesas-drivers-2015-02-19-v3.19 boots fine on my
-> > ape6evm. It seems there are still +100 mmc commits in -next that are not yet
-> > in upstream.
-> 
-> Correction: they are upstream. They're just not yet in renesas-devel.
-> Better luck on Monday, after -rc1 ;-)
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Nice :)
+Please consider these Renesas ARM based SoC cleanup for v4.1.
+
+
+The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
+
+  Linux 4.0-rc1 (2015-02-22 18:21:14 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-cleanup-for-v4.1
+
+for you to fetch changes up to fd9454ab51fa92f43ae5b7a71c42f2ee8417c2a2:
+
+  ARM: shmobile: r8a7779: Remove redundant cpu_disable implementation (2015-02-24 07:12:16 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Cleanup for v4.1
+
+* Remove redundant cpu_disable implementation from r8a7779 SoC
+* Remove mach/{uncompress,clkdev,system}.h
+
+----------------------------------------------------------------
+Magnus Damm (3):
+      ARM: shmobile: Remove mach/system.h
+      ARM: shmobile: Remove mach/clkdev.h
+      ARM: shmobile: Remove mach/uncompress.h
+
+Stephen Boyd (1):
+      ARM: shmobile: r8a7779: Remove redundant cpu_disable implementation
+
+ arch/arm/Kconfig                                 |  1 -
+ arch/arm/Kconfig.debug                           |  3 ++-
+ arch/arm/mach-shmobile/clock.c                   | 11 -----------
+ arch/arm/mach-shmobile/include/mach/clkdev.h     |  7 -------
+ arch/arm/mach-shmobile/include/mach/system.h     | 11 -----------
+ arch/arm/mach-shmobile/include/mach/uncompress.h | 19 -------------------
+ arch/arm/mach-shmobile/smp-r8a7779.c             |  7 -------
+ 7 files changed, 2 insertions(+), 57 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/clkdev.h
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/system.h
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/uncompress.h
