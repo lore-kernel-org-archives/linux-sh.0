@@ -1,52 +1,49 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 09 Feb 2015 16:02:37 +0000
-Subject: [PATCH v2 09/15] ARM: shmobile: bockw: add USB, VIN pin descriptions to DT
-Message-Id: <1423497763-3450-10-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:22:23 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Simple PM Bus Updates for v4.1
+Message-Id: <cover.1424931637.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Adds pin control info for USB host and video-in devices.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
- arch/arm/boot/dts/r8a7778-bockw.dts | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+Please consider these Renesas ARM based SoC simple PM bus updates for v4.1.
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index f28ccbc..40eb186 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -133,6 +133,26 @@
- 		renesas,groups = "hspi0_a";
- 		renesas,function = "hspi0";
- 	};
-+
-+	usb0_pins: usb0 {
-+		renesas,groups = "usb0";
-+		renesas,function = "usb0";
-+	};
-+
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb1";
-+	};
-+
-+	vin0_pins: vin0 {
-+		renesas,groups = "vin0_data8", "vin0_clk";
-+		renesas,function = "vin0";
-+	};
-+
-+	vin1_pins: vin1 {
-+		renesas,groups = "vin1_data8", "vin1_clk";
-+		renesas,function = "vin1";
-+	};
- };
- 
- &sdhi0 {
--- 
-2.2.2
 
+The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
+
+  Linux 4.0-rc1 (2015-02-22 18:21:14 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-simple-pm-bus-for-v4.1
+
+for you to fetch changes up to 89d463ea106dba530786a2815fd174f9e6eab71f:
+
+  drivers: bus: Add Simple Power-Managed Bus Driver (2015-02-24 06:36:18 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Simple PM Bus Updates for v4.1
+
+* Add Simple Power-Managed Bus Driver
+
+----------------------------------------------------------------
+Geert Uytterhoeven (5):
+      drivers: bus: Sort Kconfig entries alphabetically
+      drivers: bus: Sort Makefile entries alphabetically
+      drivers: bus: Add Simple Power-Managed Bus DT Bindings
+      drivers: bus: Add Renesas Bus State Controller (BSC) DT Bindings
+      drivers: bus: Add Simple Power-Managed Bus Driver
+
+ .../devicetree/bindings/bus/renesas,bsc.txt        | 46 +++++++++++++++++
+ .../devicetree/bindings/bus/simple-pm-bus.txt      | 44 ++++++++++++++++
+ drivers/bus/Kconfig                                | 53 ++++++++++++--------
+ drivers/bus/Makefile                               | 15 +++---
+ drivers/bus/simple-pm-bus.c                        | 58 ++++++++++++++++++++++
+ 5 files changed, 189 insertions(+), 27 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/bus/renesas,bsc.txt
+ create mode 100644 Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+ create mode 100644 drivers/bus/simple-pm-bus.c
