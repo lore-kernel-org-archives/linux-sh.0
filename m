@@ -1,18 +1,22 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:25 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC DT Updates for v4.1
-Message-Id: <cover.1424849129.git.horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:22:41 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Updates for v4.1
+Message-Id: <cover.1424931398.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
+References: <cover.1397627619.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these Renesas ARM based SoC DT updates for v4.1.
+Please consider these Renesas ARM based SoC updates for v4.1.
+
+Some of these changes are arguably cleanups and could have
+been queued up in the soc-cleanups-for-v4.1 branch. However,
+I am reluctant to reshuffle things between branches at this point.
 
 
 The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
@@ -21,88 +25,38 @@ The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/rene=
-sas-dt-for-v4.1
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v4.1
 
-for you to fetch changes up to b8e8ea127d00f1b0c18d8c1ae1b8388e190d5052:
+for you to fetch changes up to 72016d009e6bcf6cb6a289382bfc21185122b22e:
 
-  ARM: shmobile: r8a7794: add SDHI DT support (2015-02-24 08:18:47 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC DT Updates for v4.1
-
-* Increase hardware coverage of DT for various SoCs
-* Add PFC information for emev2 SoC
-* Remap entire APMU region for r8a7791 and r8a7790 SoCs
-* Declare the full 512 MiB of RAM for kzm9g board
-* Add selectable sources to DIV6 clocks to sh73a0 SoC
-* Add missing INTCA0 clock for irqpin module on sh73a0 SoC
-* Set control-parent for all irqpin node on sh73a0 SoC
+  ARM: shmobile: r8a7740: Remove restart callback (2015-02-24 08:02:49 +0900)
 
 ----------------------------------------------------------------
-Geert Uytterhoeven (7):
-      ARM: shmobile: kzm9g-reference dts: Sort i2c0 children by unit address
-      ARM: shmobile: kzm9g-reference dts: Add ak8975 magnetometer node
-      ARM: shmobile: kzm9g-reference dts: Add adxl345 accelerometer node
-      ARM: shmobile: kzm9g-reference dts: Add r2025sd rtc node
-      ARM: shmobile: sh73a0 dtsi: Add missing INTCA0 clock for irqpin module
-      ARM: shmobile: kzm9g dts: Declare the full 512 MiB of RAM
-      ARM: shmobile: kzm9g-reference dts: Declare the full 512 MiB of RAM
+Renesas ARM Based SoC Updates for v4.1
 
-Laurent Pinchart (9):
-      ARM: shmobile: sh73a0 dtsi: Set control-parent for all irqpin nodes
-      ARM: shmobile: kzm9g-reference dts: Add st1232 touchscreen node
-      ARM: shmobile: r8a7794: Add DMAC devices to DT
-      ARM: shmobile: r8a7790: Add IPMMU DT nodes
-      ARM: shmobile: r8a7791: Add IPMMU DT nodes
-      ARM: shmobile: r8a7794: Add IPMMU DT nodes
-      ARM: shmobile: r8a7794: Add ethernet controller to device tree
-      ARM: shmobile: r8a7794: alt: Enable ethernet controller
-      ARM: shmobile: koelsch: Add DU HDMI output support
+* Remove restart callback from r8a7740 SoC
+* Add support SOC_BUS to R-Car Gen2
+* Expose SoCs revision data for R-Car Gen2
+* Remove check for CONFIG_COMMON_CLK from R-Car Gen2 code as it is always set
+* Allow R-Car Gen2 platforms to boot with CMA enabled and HIGHMEM disabled
 
-Niklas S=C3=B6derlund (2):
-      ARM: shmobile: emev2 dtsi: Add PFC information
-      ARM: shmobile: emev2-kzm9d dts: Add PFC information for uart1
+----------------------------------------------------------------
+Geert Uytterhoeven (2):
+      ARM: shmobile: R-Car Gen2: CONFIG_COMMON_CLK is always set
+      ARM: shmobile: r8a7740: Remove restart callback
 
-Sergei Shtylyov (8):
-      ARM: shmobile: r8a7790: add CAN clocks
-      ARM: shmobile: r8a7790: add CAN DT support
-      ARM: shmobile: r8a7791: add CAN clocks
-      ARM: shmobile: r8a7791: add CAN DT support
-      ARM: shmobile: henninger: add CAN0 DT support
-      ARM: shmobile: r8a7791: add ADSP clocks
-      ARM: shmobile: r8a7790: add ADSP clocks
-      ARM: shmobile: r8a7794: add SDHI DT support
+Magnus Damm (1):
+      ARM: shmobile: No R-Car Gen2 CMA reservation when HIGHMEM=n
 
-Simon Horman (2):
-      ARM: shmobile: r8a7794: Correct SDHI clock base address, labels and o=
-utput-names
-      ARM: shmobile: r8a7791: Correct SDHI clock labels and output-names
+Nobuhiro Iwamatsu (2):
+      ARM: shmobile: Add function to get SoCs revision data for R-Car Gen2
+      ARM: shmobile: Add support SOC_BUS to R-Car Gen2
 
-Ulrich Hecht (2):
-      ARM: shmobile: r8a7740 dtsi: add remaining DIV6 clocks
-      ARM: shmobile: sh73a0 dtsi: Add selectable sources to DIV6 clocks
-
-Wolfram Sang (2):
-      ARM: shmobile: r8a7790: smp: remap whole apmu region
-      ARM: shmobile: r8a7791: smp: remap whole apmu region
-
- arch/arm/boot/dts/emev2-kzm9d.dts            |  13 +++
- arch/arm/boot/dts/emev2.dtsi                 |  10 ++
- arch/arm/boot/dts/r8a7740.dtsi               |  79 +++++++++++++-
- arch/arm/boot/dts/r8a7790.dtsi               | 102 ++++++++++++++++-
- arch/arm/boot/dts/r8a7791-henninger.dts      |  11 ++
- arch/arm/boot/dts/r8a7791-koelsch.dts        |  50 ++++++++-
- arch/arm/boot/dts/r8a7791.dtsi               | 122 +++++++++++++++++++--
- arch/arm/boot/dts/r8a7794-alt.dts            |  13 +++
- arch/arm/boot/dts/r8a7794.dtsi               | 157 +++++++++++++++++++++++=
-+++-
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |  42 ++++++-
- arch/arm/boot/dts/sh73a0-kzm9g.dts           |   2 +-
- arch/arm/boot/dts/sh73a0.dtsi                |  82 ++++++++++----
- arch/arm/mach-shmobile/smp-r8a7790.c         |   4 +-
- arch/arm/mach-shmobile/smp-r8a7791.c         |   2 +-
- include/dt-bindings/clock/r8a7790-clock.h    |   3 +
- include/dt-bindings/clock/r8a7791-clock.h    |   3 +
- include/dt-bindings/clock/sh73a0-clock.h     |   3 +
- 17 files changed, 647 insertions(+), 51 deletions(-)
+ arch/arm/mach-shmobile/Kconfig           |  1 +
+ arch/arm/mach-shmobile/rcar-gen2.h       |  1 +
+ arch/arm/mach-shmobile/setup-r8a7740.c   |  8 -----
+ arch/arm/mach-shmobile/setup-r8a7790.c   |  1 +
+ arch/arm/mach-shmobile/setup-r8a7791.c   |  1 +
+ arch/arm/mach-shmobile/setup-r8a7794.c   |  1 +
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 58 +++++++++++++++++++++++++++++---
+ 7 files changed, 58 insertions(+), 13 deletions(-)
