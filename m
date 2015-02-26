@@ -1,80 +1,77 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 09 Feb 2015 16:02:33 +0000
-Subject: [PATCH v2 05/15] ARM: shmobile: r8a7778: implement SoC and board CCF support
-Message-Id: <1423497763-3450-6-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:22:31 +0000
+Subject: [PATCH 2/4] ARM: shmobile: Remove mach/clkdev.h
+Message-Id: <814979eb8494c2269f4907ef0494f199d6d06ec2.1424931049.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1424931049.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424931049.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Disables the legacy clock framework and passes the mode bits to the CPG
-driver if CCF is enabled.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Move over ARCH_SHMOBILE_LEGACY to use the default legacy ARM
+implementations of __clk_get() and __clk_put() in <asm/clkdev.h>
+by deselecting HAVE_MACH_CLKDEV. This has the nice side effect
+that <mach/clkdev.h> is no longer used and can be removed.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-bockw-reference.c |  2 ++
- arch/arm/mach-shmobile/setup-r8a7778.c         | 19 +++++++++++++++++++
- 2 files changed, 21 insertions(+)
+ arch/arm/Kconfig                             |  1 -
+ arch/arm/mach-shmobile/clock.c               | 11 -----------
+ arch/arm/mach-shmobile/include/mach/clkdev.h |  7 -------
+ 3 files changed, 19 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/clkdev.h
 
-diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
-index d649ade..9a74efd 100644
---- a/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ b/arch/arm/mach-shmobile/board-bockw-reference.c
-@@ -36,7 +36,9 @@ static void __init bockw_init(void)
- 	void __iomem *fpga;
- 	void __iomem *pfc;
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 9f1f09a..495fb7a 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -646,7 +646,6 @@ config ARCH_SHMOBILE_LEGACY
+ 	select GENERIC_CLOCKEVENTS
+ 	select HAVE_ARM_SCU if SMP
+ 	select HAVE_ARM_TWD if SMP
+-	select HAVE_MACH_CLKDEV
+ 	select HAVE_SMP
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	select MULTI_IRQ_HANDLER
+diff --git a/arch/arm/mach-shmobile/clock.c b/arch/arm/mach-shmobile/clock.c
+index 34f056f..68c2d06 100644
+--- a/arch/arm/mach-shmobile/clock.c
++++ b/arch/arm/mach-shmobile/clock.c
+@@ -45,14 +45,3 @@ int __init shmobile_clk_init(void)
  
-+#ifndef CONFIG_COMMON_CLK
- 	r8a7778_clock_init();
-+#endif
- 	r8a7778_init_irq_extpin_dt(1);
- 	r8a7778_add_dt_devices();
- 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index cef8895..c49aa09 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -15,6 +15,7 @@
-  * GNU General Public License for more details.
-  */
- 
-+#include <linux/clk/shmobile.h>
- #include <linux/kernel.h>
- #include <linux/io.h>
- #include <linux/irqchip/arm-gic.h>
-@@ -41,6 +42,21 @@
- #include "irqs.h"
- #include "r8a7778.h"
- 
-+#define MODEMR 0xffcc0020
-+
-+#ifdef CONFIG_COMMON_CLK
-+static void __init r8a7778_timer_init(void)
-+{
-+	u32 mode;
-+	void __iomem *modemr = ioremap_nocache(MODEMR, 4);
-+
-+	BUG_ON(!modemr);
-+	mode = ioread32(modemr);
-+	iounmap(modemr);
-+	r8a7778_clocks_init(mode);
-+}
-+#endif
-+
- /* SCIF */
- #define R8A7778_SCIF(index, baseaddr, irq)			\
- static struct plat_sci_port scif##index##_platform_data = {	\
-@@ -608,6 +624,9 @@ DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
- 	.init_early	= shmobile_init_delay,
- 	.init_irq	= r8a7778_init_irq_dt,
- 	.init_late	= shmobile_init_late,
-+#ifdef CONFIG_COMMON_CLK
-+	.init_time	= r8a7778_timer_init,
-+#endif
- 	.dt_compat	= r8a7778_compat_dt,
- MACHINE_END
- 
+ 	return 0;
+ }
+-
+-int __clk_get(struct clk *clk)
+-{
+-	return 1;
+-}
+-EXPORT_SYMBOL(__clk_get);
+-
+-void __clk_put(struct clk *clk)
+-{
+-}
+-EXPORT_SYMBOL(__clk_put);
+diff --git a/arch/arm/mach-shmobile/include/mach/clkdev.h b/arch/arm/mach-shmobile/include/mach/clkdev.h
+deleted file mode 100644
+index 36d0163..0000000
+--- a/arch/arm/mach-shmobile/include/mach/clkdev.h
++++ /dev/null
+@@ -1,7 +0,0 @@
+-#ifndef __ASM_MACH_CLKDEV_H
+-#define __ASM_MACH_CLKDEV_H
+-
+-int __clk_get(struct clk *clk);
+-void __clk_put(struct clk *clk);
+-
+-#endif /* __ASM_MACH_CLKDEV_H */
 -- 
-2.2.2
+2.1.4
 
