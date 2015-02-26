@@ -1,58 +1,60 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Thu, 12 Feb 2015 07:11:17 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: Add function to get SoCs revision data for R-Car Gen2
-Message-Id: <54DC5215.1010500@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 26 Feb 2015 09:21:23 +0000
+Subject: [PATCH 3/3] ARM: shmobile: koelsch: Add DU external pixel clocks to DT
+Message-Id: <1424942483-10910-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130107023101.GM2935@verge.net.au>
-In-Reply-To: <20130107023101.GM2935@verge.net.au>
+References: <1387998730-6012-4-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1387998730-6012-4-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi,
+Declare the fixed 148.5MHz pixel clocks connected to the DU clock
+inputs.
 
-Thanks for your review.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
 
-(2015/02/10 17:41), Geert Uytterhoeven wrote:
-> Hi Iwamatsu-san,
->
-> On Fri, Feb 6, 2015 at 2:33 AM, Nobuhiro Iwamatsu
-> <nobuhiro.iwamatsu.yj@renesas.com>  wrote:
->> SoCs of R-Car Gen2 have some revision. This adds function to get SoCs revision
->> data, and change so that user can confirm from /proc/cpuinfo.
->
-> Thanks for your patch.
->
->> --- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
->> +++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
->
->> +#define PRR 0xFF000044
->> +static unsigned int __init rcar_gen2_get_revision(void)
->> +{
->> +       void __iomem *addr = ioremap_nocache(PRR, 4);
->> +       u32 data = ioread32(addr);
->> +
->> +       iounmap(addr);
->> +
->> +       return ((data&  0xF0)>>  4) + 1;
->
-> Is there any specific reason why you're not returning the fractional part
-> (lowest 4 bits) of the ESx.y revision number?
-> I.e. why not return "(data&  0xf0) + 0x10"?
->
->> +}
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 624bb2c30513..75fa9852e235 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -269,6 +269,18 @@
+ 			};
+ 		};
+ 	};
++
++	x2_clk: x2-clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <148500000>;
++	};
++
++	x13_clk: x13-clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <148500000>;
++	};
+ };
+ 
+ &du {
+@@ -276,6 +288,13 @@
+ 	pinctrl-names = "default";
+ 	status = "okay";
+ 
++	clocks = <&mstp7_clks R8A7791_CLK_DU0>,
++		 <&mstp7_clks R8A7791_CLK_DU1>,
++		 <&mstp7_clks R8A7791_CLK_LVDS0>,
++		 <&x13_clk>, <&x2_clk>;
++	clock-names = "du.0", "du.1", "lvds.0",
++		      "dclkin.0", "dclkin.1";
++
+ 	ports {
+ 		port@0 {
+ 			endpoint {
+-- 
+2.0.5
 
-Because this version notation accommodate to the U-Boot.
-However, if the notation that does not shift is preferred, I will change it.
-
-I will update this patch.
-
->
-> Gr{oetje,eeting}s,
->
->                          Geert
->
-
-Best regards,
-   Nobuhiro
