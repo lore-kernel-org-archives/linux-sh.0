@@ -1,50 +1,69 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 25 Feb 2015 21:54:36 +0000
-Subject: [PATCH 16/38] drm: rcar-du: Fix hardware plane allocation
-Message-Id: <1424901298-6829-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:22:32 +0000
+Subject: [PATCH 3/4] ARM: shmobile: Remove mach/uncompress.h
+Message-Id: <bb04883b2519b23bb4d3f4f7dac51cdda9a5e61d.1424931049.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1424931049.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424931049.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The hardware plane allocator loops over all planes to find free
-candidates. However, instead of looping over the number of hardware
-planes, it loops over the number of software planes, which happens to be
-larger by one unit. This has no effect in practise as the extra plane is
-always cleared in the mask of free planes, but it should still be fixed
-for correctness.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Convert ARCH_SHMOBILE_LEGACY to make use of <debug/uncompress.h>
+and remove the now unused <mach/uncompress.h>.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_plane.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/Kconfig.debug                           |  3 ++-
+ arch/arm/mach-shmobile/include/mach/uncompress.h | 19 -------------------
+ 2 files changed, 2 insertions(+), 20 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/uncompress.h
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index 242db1e1a1e4..4a0669fd8176 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -54,7 +54,7 @@ int rcar_du_plane_reserve(struct rcar_du_plane *plane,
+diff --git a/arch/arm/Kconfig.debug b/arch/arm/Kconfig.debug
+index 970de75..1ca8dc7 100644
+--- a/arch/arm/Kconfig.debug
++++ b/arch/arm/Kconfig.debug
+@@ -1573,7 +1573,8 @@ config DEBUG_UNCOMPRESS
+ config UNCOMPRESS_INCLUDE
+ 	string
+ 	default "debug/uncompress.h" if ARCH_MULTIPLATFORM || ARCH_MSM || \
+-					PLAT_SAMSUNG || ARCH_EFM32
++					PLAT_SAMSUNG || ARCH_EFM32 || \
++					ARCH_SHMOBILE_LEGACY
+ 	default "mach/uncompress.h"
  
- 	mutex_lock(&rgrp->planes.lock);
- 
--	for (i = 0; i < ARRAY_SIZE(rgrp->planes.planes); ++i) {
-+	for (i = 0; i < RCAR_DU_NUM_HW_PLANES; ++i) {
- 		if (!(rgrp->planes.free & (1 << i)))
- 			continue;
- 
-@@ -63,7 +63,7 @@ int rcar_du_plane_reserve(struct rcar_du_plane *plane,
- 			break;
- 	}
- 
--	if (i = ARRAY_SIZE(rgrp->planes.planes))
-+	if (i = RCAR_DU_NUM_HW_PLANES)
- 		goto done;
- 
- 	rgrp->planes.free &= ~(1 << i);
+ config EARLY_PRINTK
+diff --git a/arch/arm/mach-shmobile/include/mach/uncompress.h b/arch/arm/mach-shmobile/include/mach/uncompress.h
+deleted file mode 100644
+index f1aee567..0000000
+--- a/arch/arm/mach-shmobile/include/mach/uncompress.h
++++ /dev/null
+@@ -1,19 +0,0 @@
+-#ifndef __ASM_MACH_UNCOMPRESS_H
+-#define __ASM_MACH_UNCOMPRESS_H
+-
+-/*
+- * This does not append a newline
+- */
+-static void putc(int c)
+-{
+-}
+-
+-static inline void flush(void)
+-{
+-}
+-
+-static void arch_decomp_setup(void)
+-{
+-}
+-
+-#endif /* __ASM_MACH_UNCOMPRESS_H */
 -- 
-2.0.5
+2.1.4
 
