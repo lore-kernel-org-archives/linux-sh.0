@@ -1,62 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 25 Feb 2015 21:54:45 +0000
-Subject: [PATCH 25/38] drm: rcar-du: Switch plane update to atomic helpers
-Message-Id: <1424901298-6829-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:21:23 +0000
+Subject: [PATCH 26/32] ARM: shmobile: r8a7790: add CAN DT support
+Message-Id: <6a7742b4eea5de4af68bb62c20ca56e38b8e5b8b.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1424849129.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This removes the legacy plane update code. Wire up the default atomic
-check and atomic commit mode config helpers as needed by the plane
-update atomic helpers.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Define the generic R8A7790 parts of the CAN0/1 device nodes.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_kms.c   | 3 +++
- drivers/gpu/drm/rcar-du/rcar_du_plane.c | 4 ++--
- 2 files changed, 5 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 94ff8fcc7268..2b36f4f2980f 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -12,6 +12,7 @@
-  */
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index e872854..cd7fc05 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -792,6 +792,26 @@
+ 		};
+ 	};
  
- #include <drm/drmP.h>
-+#include <drm/drm_atomic_helper.h>
- #include <drm/drm_crtc.h>
- #include <drm/drm_crtc_helper.h>
- #include <drm/drm_fb_cma_helper.h>
-@@ -188,6 +189,8 @@ static void rcar_du_output_poll_changed(struct drm_device *dev)
- static const struct drm_mode_config_funcs rcar_du_mode_config_funcs = {
- 	.fb_create = rcar_du_fb_create,
- 	.output_poll_changed = rcar_du_output_poll_changed,
-+	.atomic_check = drm_atomic_helper_check,
-+	.atomic_commit = drm_atomic_helper_commit,
- };
- 
- static int rcar_du_encoders_init_one(struct rcar_du_device *rcdu,
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index f247b1fcf791..ff087f7de88e 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -480,8 +480,8 @@ static int rcar_du_plane_set_property(struct drm_plane *plane,
- }
- 
- static const struct drm_plane_funcs rcar_du_plane_funcs = {
--	.update_plane = drm_plane_helper_update,
--	.disable_plane = drm_plane_helper_disable,
-+	.update_plane = drm_atomic_helper_update_plane,
-+	.disable_plane = drm_atomic_helper_disable_plane,
- 	.reset = drm_atomic_helper_plane_reset,
- 	.set_property = rcar_du_plane_set_property,
- 	.destroy = drm_plane_cleanup,
++	can0: can@e6e80000 {
++		compatible = "renesas,can-r8a7790";
++		reg = <0 0xe6e80000 0 0x1000>;
++		interrupts = <0 186 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7790_CLK_RCAN0>,
++			 <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
++		clock-names = "clkp1", "clkp2", "can_clk";
++		status = "disabled";
++	};
++
++	can1: can@e6e88000 {
++		compatible = "renesas,can-r8a7790";
++		reg = <0 0xe6e88000 0 0x1000>;
++		interrupts = <0 187 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7790_CLK_RCAN1>,
++			 <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
++		clock-names = "clkp1", "clkp2", "can_clk";
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-2.0.5
+2.1.4
 
