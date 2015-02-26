@@ -1,41 +1,83 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 18 Feb 2015 02:38:12 +0000
-Subject: [PATCH 00/05] ARM: shmobile: r8a7779 IRQ update and Marzen cleanup
-Message-Id: <20150218023812.12588.9023.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:21:28 +0000
+Subject: [PATCH 31/32] ARM: shmobile: r8a7790: add ADSP clocks
+Message-Id: <3453ca9e4f51a0e6865d303f4e428cb6f630594f.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1424849129.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: r8a7779 IRQ update and Marzen cleanup
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-[PATCH 01/05] ARM: shmobile: r8a7779: Configure IRLM mode via DT
-[PATCH 02/05] ARM: shmobile: r8a7779: Generic SoC CCF and timer support
-[PATCH 03/05] ARM: shmobile: r8a7779: Generic SoC SMP support
-[PATCH 04/05] ARM: shmobile: marzen-reference: Remove C board code
-[PATCH 05/05] ARM: shmobile: r8a7779: Remove unused functions
+Add the ADSP clocks to the CPG and MSTP5 nodes of the R8A7790 device tree.
 
-Now when "irqchip: renesas-intc-irqpin: r8a7779 IRLM setup support" is
-merged in v3.20-rc we can continue to cleanup r8a7779 and Marzen.
+Based on the original patch by Konstantin Kozhevnikov
+<konstantin.kozhevnikov@cogentembedded.com>.
 
-With these patches applied the r8a7779 SoC gets DT-only multiplatform
-support and old C board code for multiplatform gets removed.
-
-The legacy r8a7779 Marzen code is not touched by this series, but
-with these patches applied basic r8a7779 multiplatform SoC support
-is done and only a few I/O devices are legacy-only.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7790.dtsi            | 11 +++++++----
+ include/dt-bindings/clock/r8a7790-clock.h |  2 ++
+ 2 files changed, 9 insertions(+), 4 deletions(-)
 
- Built on top of renesas-devel-20150215-v3.19, but wants to be
- merged on top of v3.20-rc due to irqchip dependency.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index cd7fc05..c6c0a0c 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -885,7 +885,7 @@
+ 			#clock-cells = <1>;
+ 			clock-output-names = "main", "pll0", "pll1", "pll3",
+ 					     "lb", "qspi", "sdh", "sd0", "sd1",
+-					     "z", "rcan";
++					     "z", "rcan", "adsp";
+ 		};
+ 
+ 		/* Variable factor clocks */
+@@ -1159,13 +1159,16 @@
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
+-			clocks = <&hp_clk>, <&hp_clk>, <&extal_clk>, <&p_clk>;
++			clocks = <&hp_clk>, <&hp_clk>, <&cpg_clocks R8A7790_CLK_ADSP>,
++				 <&extal_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+ 				R8A7790_CLK_AUDIO_DMAC0 R8A7790_CLK_AUDIO_DMAC1
+-				R8A7790_CLK_THERMAL R8A7790_CLK_PWM
++				R8A7790_CLK_ADSP_MOD R8A7790_CLK_THERMAL
++				R8A7790_CLK_PWM
+ 			>;
+-			clock-output-names = "audmac0", "audmac1", "thermal", "pwm";
++			clock-output-names = "audmac0", "audmac1", "adsp_mod",
++					     "thermal", "pwm";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index ffa8c11..3f2c6b1 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -22,6 +22,7 @@
+ #define R8A7790_CLK_SD1			8
+ #define R8A7790_CLK_Z			9
+ #define R8A7790_CLK_RCAN		10
++#define R8A7790_CLK_ADSP		11
+ 
+ /* MSTP0 */
+ #define R8A7790_CLK_MSIOF0		0
+@@ -81,6 +82,7 @@
+ /* MSTP5 */
+ #define R8A7790_CLK_AUDIO_DMAC1		1
+ #define R8A7790_CLK_AUDIO_DMAC0		2
++#define R8A7790_CLK_ADSP_MOD		6
+ #define R8A7790_CLK_THERMAL		22
+ #define R8A7790_CLK_PWM			23
+ 
+-- 
+2.1.4
 
- arch/arm/boot/dts/r8a7779.dtsi                  |    5 +-
- arch/arm/mach-shmobile/Kconfig                  |    7 --
- arch/arm/mach-shmobile/Makefile                 |    2 
- arch/arm/mach-shmobile/board-marzen-reference.c |   56 -----------------------
- arch/arm/mach-shmobile/r8a7779.h                |    2 
- arch/arm/mach-shmobile/setup-r8a7779.c          |   18 ++++---
- 6 files changed, 15 insertions(+), 75 deletions(-)
