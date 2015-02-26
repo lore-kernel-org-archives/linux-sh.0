@@ -1,45 +1,83 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:18 +0000
-Subject: [PATCH 21/32] ARM: shmobile: r8a7790: smp: remap whole apmu region
-Message-Id: <1d66f72d2c79b76b7353ea4e42f33521fa839f81.1424849129.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 26 Feb 2015 16:42:05 +0000
+Subject: [PATCH v4 0/9] r8a7778 CCF and multiplatform
+Message-Id: <1424968934-30577-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424849129.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Hi!
 
-Documentation says the last register is at 0x184 (CAxCPUCMCR), so use
-proper length. Current APMU code accesses CAxCPUnCR which is currently
-outside of the remapped area.
+As requested by Simon here are the remaining parts of CCF/MP support for
+r8a7778 and Bock-W, with the DT bindings broken out, and the missing
+sound bindings.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/smp-r8a7790.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+The last patch in this series is a fix-up for the already-merged "ARM:
+shmobile: bockw dts: Move Ethernet node to BSC", where the removal of
+the old entry somehow got left out.
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
-index 9c3da13..a5bef87 100644
---- a/arch/arm/mach-shmobile/smp-r8a7790.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7790.c
-@@ -37,11 +37,11 @@ static struct rcar_sysc_ch r8a7790_ca7_scu = {
- 
- static struct rcar_apmu_config r8a7790_apmu_config[] = {
- 	{
--		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
-+		.iomem = DEFINE_RES_MEM(0xe6152000, 0x188),
- 		.cpus = { 0, 1, 2, 3 },
- 	},
- 	{
--		.iomem = DEFINE_RES_MEM(0xe6151000, 0x88),
-+		.iomem = DEFINE_RES_MEM(0xe6151000, 0x188),
- 		.cpus = { 0x100, 0x0101, 0x102, 0x103 },
- 	}
- };
+CU
+Uli
+
+
+Changes since v3:
+- dropped everything that has already been merged
+- split off DT bindings
+- added rcar_sound bindings
+- added Acks
+
+Changes since v2:
+- minor reformatting and code styling
+- renamed *SCU_SRC* -> *SRU_SRC*
+- updated DT bindings to match implementation
+- removed unused Ethernet pins from bockw DT
+- renamed sound node to conform to standards
+- retooled external Ethernet compatible list
+- added more Acks
+
+
+Changes since v1:
+- added oki,ml86v7667 to trivial-devices.txt
+- added internal ethernet controller
+- moved pins from external to internal ethernet controller
+- added bsc bus, moved external ethernet controller there
+- removed extal from CPG driver and made it a fixed clock
+- renamed "scu*" clocks to "scu-src*"
+- split SoC/board CCF enablement from CPG driver
+- added "smsc,lan89218" compat string to external net controller
+- added missing clock-names to tmu nodes
+- named Kconfig entry properly
+- added Acks
+
+
+Ulrich Hecht (9):
+  clk: shmobile: Add r8a7778 SoC to MSTP bindings
+  ARM: shmobile: r8a7778: common clock framework CPG driver
+  DT: i2c: add trivial binding for OKI ML86V7667 video decoder
+  ARM: shmobile: bockw: add devices hooked up to i2c0 to DT
+  ASoC: rsnd: Document r8a7778-specific bindings
+  ARM: shmobile: r8a7778: add sound to DT
+  ARM: shmobile: bockw: add sound to DT
+  ARM: shmobile: r8a7778: enable multiplatform target
+  ARM: shmobile: bockw dts: Remove leftover Ethernet node
+
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |   1 +
+ .../bindings/clock/renesas,r8a7778-cpg-clocks.txt  |  25 ++++
+ .../devicetree/bindings/i2c/trivial-devices.txt    |   1 +
+ .../devicetree/bindings/sound/renesas,rsnd.txt     |   1 +
+ arch/arm/boot/dts/Makefile                         |   1 +
+ arch/arm/boot/dts/r8a7778-bockw.dts                |  49 +++++--
+ arch/arm/boot/dts/r8a7778.dtsi                     |  55 ++++++++
+ arch/arm/mach-shmobile/Kconfig                     |   4 +
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-r8a7778.c                 | 143 +++++++++++++++++++++
+ include/linux/clk/shmobile.h                       |   1 +
+ 11 files changed, 273 insertions(+), 9 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-r8a7778.c
+
 -- 
-2.1.4
+2.2.2
 
