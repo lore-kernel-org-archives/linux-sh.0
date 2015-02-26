@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:19 +0000
-Subject: [PATCH 22/32] ARM: shmobile: r8a7791: smp: remap whole apmu region
-Message-Id: <98f60f8600694ce05c0cba34acce4d77acaea4f9.1424849129.git.horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:21:14 +0000
+Subject: [PATCH 17/32] ARM: shmobile: r8a7794: alt: Enable ethernet controller
+Message-Id: <a895b7cda38cd2fa155be22b531d164f17ec84ec.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1424849129.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
@@ -10,30 +10,42 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Documentation says the last register is at 0x184 (CAxCPUCMCR), so use
-proper length. Current APMU code accesses CAxCPUnCR which is currently
-outside of the remapped area.
+Enable the ethernet controller for the Alt board. Pin muxing entries are
+currently left out as r8a7794 pin control support isn't available yet.
+We thus rely on the boot loader to configure ethernet pins for now.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/smp-r8a7791.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7794-alt.dts | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
-index 7e49e0a..de1d92d 100644
---- a/arch/arm/mach-shmobile/smp-r8a7791.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7791.c
-@@ -27,7 +27,7 @@
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index 0d848e6..25bf434 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -43,6 +43,19 @@
+ 	status = "okay";
+ };
  
- static struct rcar_apmu_config r8a7791_apmu_config[] = {
- 	{
--		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
-+		.iomem = DEFINE_RES_MEM(0xe6152000, 0x188),
- 		.cpus = { 0, 1 },
- 	}
++&ether {
++	phy-handle = <&phy1>;
++	renesas,ether-link-active-low;
++	status = "okay";
++
++	phy1: ethernet-phy@1 {
++		reg = <1>;
++		interrupt-parent = <&irqc0>;
++		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
++		micrel,led-mode = <1>;
++	};
++};
++
+ &scif2 {
+ 	status = "okay";
  };
 -- 
 2.1.4
