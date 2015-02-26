@@ -1,68 +1,35 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 26 Feb 2015 13:21:06 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 26 Feb 2015 13:30:36 +0000
 Subject: Re: [PATCH] dmaengine: shdma: Move DMA stop to (runtime) suspend callbacks
-Message-Id: <54EF1DC2.30703@cogentembedded.com>
+Message-Id: <CAMuHMdXfrVYicT6mW9igFZ9xt_Pv3BtNve0nSQHDRrkTkt5m=A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1424946394-6784-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424946394-6784-1-git-send-email-geert+renesas@glider.be>
+	<54EF1DC2.30703@cogentembedded.com>
+In-Reply-To: <54EF1DC2.30703@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>, Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, dmaengine@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>, Ulf Hansson <ulf.hansson@linaro.org>, dmaengine@vger.kernel.org, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hello.
-
-On 02/26/2015 01:26 PM, Geert Uytterhoeven wrote:
-
-> During system reboot, the sh-dma-engine device may be runtime-suspended,
-> causing a crash:
-
->      Unhandled fault: imprecise external abort (0x1406) at 0x0002c02c
->      Internal error: : 1406 [#1] SMP ARM
->      ...
->      PC is at sh_dmae_ctl_stop+0x28/0x64
->      LR is at sh_dmae_ctl_stop+0x24/0x64
-
-> If the sh-dma-engine is runtime-suspended, its module clock is turned
-> off, and its registers cannot be accessed.
-
-> To fix this, move the call to sh_dmae_ctl_stop(), which touches the
-> DMAOR register, to the sh_dmae_suspend() and sh_dmae_runtime_suspend()
-> callbacks.  This makes PM operations more symmetric, as both
-> sh_dmae_resume() and sh_dmae_runtime_resume() already call sh_dmae_rst()
-> to re-initialize the DMAOR register.
-
-> Remove sh_dmae_shutdown(), as it became empty.
-
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> This is v3 of "dmaengine: shdma: Runtime-resume device in .shutdown()"
-
-> v3:
->    - Move the call to sh_dmae_ctl_stop() to sh_dmae_suspend() and
->      sh_dmae_runtime_suspend() instead of runtime-resuming the device in
->      .shutdown(),
-
-> v2:
->    - Do nothing if we're runtime suspended.
-> ---
->   drivers/dma/sh/shdmac.c | 15 +++++++--------
->   1 file changed, 7 insertions(+), 8 deletions(-)
+On Thu, Feb 26, 2015 at 2:21 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+>>   static struct platform_driver sh_dmae_driver = {
+>> -       .driver         = {
+>> +       .driver         = {
 >
-> diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-> index b2431aa300331270..9f1d4c7dbab83890 100644
-> --- a/drivers/dma/sh/shdmac.c
-> +++ b/drivers/dma/sh/shdmac.c
-[...]
-> @@ -929,13 +929,12 @@ static int sh_dmae_remove(struct platform_device *pdev)
->   }
 >
->   static struct platform_driver sh_dmae_driver = {
-> -	.driver 	= {
-> +	.driver		= {
+>    Hm, don't understand what was changed on this line...
 
-    Hm, don't understand what was changed on this line...
+One silly space that should have been a TAB.
 
-WBR, Sergei
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
