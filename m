@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:16 +0000
-Subject: [PATCH 19/32] ARM: shmobile: r8a7791: Correct SDHI clock labels and output-names
-Message-Id: <2ea0d4ec39ac837e34c07b4783a7c900940e6eaf.1424849129.git.horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:21:13 +0000
+Subject: [PATCH 16/32] ARM: shmobile: r8a7794: Add ethernet controller to device tree
+Message-Id: <82818d3482badfa88f66b3abbac838daf7e35b97.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1424849129.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
@@ -10,55 +10,39 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-There appears to have been some inconsistency and confusion here as on
-the r8a7790 these clocks are referred to as SD(HI)1 and SD(HI)2 while on
-the r8a7791 and r8a7794 they are referred to as SD(HI)2 and SD(HI)3.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Fixes: 59e79895b95892863 ("ARM: shmobile: r8a7791: Add clocks")
-Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Add a DT node for the on-SoC ethernet controller device.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ arch/arm/boot/dts/r8a7794.dtsi | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 43fb58a..afba8af 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -874,19 +874,19 @@
- 		};
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 6f70bc4..63b918b 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -329,6 +329,17 @@
+ 		status = "disabled";
+ 	};
  
- 		/* Variable factor clocks */
--		sd1_clk: sd2_clk@e6150078 {
-+		sd2_clk: sd2_clk@e6150078 {
- 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0 0xe6150078 0 4>;
- 			clocks = <&pll1_div2_clk>;
- 			#clock-cells = <0>;
--			clock-output-names = "sd1";
-+			clock-output-names = "sd2";
- 		};
--		sd2_clk: sd3_clk@e615026c {
-+		sd3_clk: sd3_clk@e615026c {
- 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
- 			reg = <0 0xe615026c 0 4>;
- 			clocks = <&pll1_div2_clk>;
- 			#clock-cells = <0>;
--			clock-output-names = "sd2";
-+			clock-output-names = "sd3";
- 		};
- 		mmc0_clk: mmc0_clk@e6150240 {
- 			compatible = "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock";
-@@ -1107,7 +1107,7 @@
- 		mstp3_clks: mstp3_clks@e615013c {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
--			clocks = <&cp_clk>, <&sd2_clk>, <&sd1_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
-+			clocks = <&cp_clk>, <&sd3_clk>, <&sd2_clk>, <&cpg_clocks R8A7791_CLK_SD0>,
- 				 <&mmc0_clk>, <&hp_clk>, <&mp_clk>, <&hp_clk>, <&mp_clk>, <&rclk_clk>,
- 				 <&hp_clk>, <&hp_clk>;
- 			#clock-cells = <1>;
++	ether: ethernet@ee700000 {
++		compatible = "renesas,ether-r8a7794";
++		reg = <0 0xee700000 0 0x400>;
++		interrupts = <0 162 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp8_clks R8A7794_CLK_ETHER>;
++		phy-mode = "rmii";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
 2.1.4
 
