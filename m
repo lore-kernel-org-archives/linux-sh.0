@@ -1,34 +1,42 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 04 Feb 2015 13:52:44 +0000
-Subject: [PATCH 1/3] PM / Domains: R-Mobile SYSC: Document R-Mobile APE6 (r8a73a4) binding
-Message-Id: <1423057966-23321-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:21:03 +0000
+Subject: [PATCH 06/32] ARM: shmobile: kzm9g-reference dts: Add r2025sd rtc node
+Message-Id: <070048dc8879499533f587b8ebdb990f5a29d08b.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423057966-23321-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1423057966-23321-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1424849129.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-R-Mobile APE6 (r8a73a4) is handled fine by the same driver and bindings.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Add a DT node for the R2025D real-time clock, which is connected to
+i2c0.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-index cc3b1f0a9b1a2b75..beda7d2efc304350 100644
---- a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-+++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-@@ -11,6 +11,7 @@ Required properties:
- - compatible: Should be "renesas,sysc-<soctype>", "renesas,sysc-rmobile" as
- 	      fallback.
- 	      Examples with soctypes are:
-+		- "renesas,sysc-r8a73a4" (R-Mobile APE6)
- 		- "renesas,sysc-r8a7740" (R-Mobile A1)
- 		- "renesas,sysc-sh73a0" (SH-Mobile AG5)
- - reg: Two address start and address range blocks for the device:
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index fd16998..e3723be 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -210,6 +210,11 @@
+ 			     <3 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
++	rtc@32 {
++		compatible = "ricoh,r2025sd";
++		reg = <0x32>;
++	};
++
+ 	as3711@40 {
+ 		compatible = "ams,as3711";
+ 		reg = <0x40>;
 -- 
-1.9.1
+2.1.4
 
