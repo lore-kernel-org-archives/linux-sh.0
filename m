@@ -1,45 +1,40 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Feb 2015 01:25:48 +0000
-Subject: [GIT PULL] SH Drivers Updates for v4.0
-Message-Id: <cover.1425000135.git.horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:21:19 +0000
+Subject: [PATCH 22/32] ARM: shmobile: r8a7791: smp: remap whole apmu region
+Message-Id: <98f60f8600694ce05c0cba34acce4d77acaea4f9.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1424849129.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Linus,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Please consider these SH drivers updates for v4.0.
+Documentation says the last register is at 0x184 (CAxCPUCMCR), so use
+proper length. Current APMU code accesses CAxCPUnCR which is currently
+outside of the remapped area.
 
-I am sending this change after v4.0-rc1 has been released
-as it depends on r8a7740 SoC changes which are present in that rc release.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/smp-r8a7791.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I expect some more minor updates to the same file during the v4.1 release cycle
-to reflect changes to other SoCs.
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+index 7e49e0a..de1d92d 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7791.c
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -27,7 +27,7 @@
+ 
+ static struct rcar_apmu_config r8a7791_apmu_config[] = {
+ 	{
+-		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
++		.iomem = DEFINE_RES_MEM(0xe6152000, 0x188),
+ 		.cpus = { 0, 1 },
+ 	}
+ };
+-- 
+2.1.4
 
-
-The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
-
-  Linux 4.0-rc1 (2015-02-22 18:21:14 -0800)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-drivers-for-v4.0
-
-for you to fetch changes up to a5cb514f1f689a48595370a368b568e2f551ddfd:
-
-  drivers: sh: Disable PM runtime for multi-platform r8a7740 with genpd (2015-02-24 07:26:12 +0900)
-
-----------------------------------------------------------------
-SH Drivers Updates for v4.0
-
-* Disable PM runtime for multi-platform r8a7740 with genpd
-
-----------------------------------------------------------------
-Geert Uytterhoeven (1):
-      drivers: sh: Disable PM runtime for multi-platform r8a7740 with genpd
-
- drivers/sh/pm_runtime.c | 2 ++
- 1 file changed, 2 insertions(+)
