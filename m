@@ -1,54 +1,86 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Thu, 05 Feb 2015 20:17:08 +0000
-Subject: Re: [PATCH v2] dmaengine: shdma: Runtime-resume device in .shutdown()
-Message-Id: <20150205201708.GC16547@intel.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 26 Feb 2015 16:42:11 +0000
+Subject: [PATCH v4 6/9] ARM: shmobile: r8a7778: add sound to DT
+Message-Id: <1424968934-30577-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1420454789-11547-1-git-send-email-geert+renesas@glider.be>
- <CAPDyKFoxfJa2Wq=mA0Khx7B3E6MbY99BYyHtCAoff_7V+9rSaw@mail.gmail.com>
- <20150204020835.GI4489@intel.com>
- <CAPDyKFoRnHjjGVn1zsOipnd7+BJU6xRTV8pgDKiC6+Nmh37SUQ@mail.gmail.com>
- <CAMuHMdWYSSajAijZZ=VHAf3NjcgoW6t2X1XH8oMZ=mcDH742BQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdWYSSajAijZZ=VHAf3NjcgoW6t2X1XH8oMZ=mcDH742BQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Dan Williams <dan.j.williams@intel.com>, dmaengine@vger.kernel.org, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-sh@vger.kernel.org
 
-On Wed, Feb 04, 2015 at 10:56:00AM +0100, Geert Uytterhoeven wrote:
-> >>> I can't find that sh_dmae_ctl_stop() is invoked from the runtime PM
-> >>> suspend callback. That means the device will be "removed" differently,
-> >>> depending on it's runtime PM status (due to the upper check for
-> >>> pm_runtime_suspended() ) . Is that really what you want?
-> >> I think the patch description is the key. "During system reboot, the
-> >> sh-dma-engine device may be runtime-suspended, causing a crash"
-> >>
-> >> The runtime-suspended device is already idle and has removed its clock.
-> >
-> > That's not my point. The device will be shutdown differently,
-> > depending if it's runtime PM suspended or not.
-> 
-> You're right.
-> 
-> > So, if it's only about gating clocks then why do even bother invoking
-> > sh_dmae_ctl_stop() in this path.
-> 
-> sh_dmae_ctl_stop() stops the DMA controller.  But this is the "master stop".
-> At this time, the individual channels should have been stopped by dmae_halt().
-> 
-> So you prefer my V1 patch instead, which unconditionally runtime-resumed
-> the device, so sh_dmae_ctl_stop() can be called?
-> http://www.spinics.net/lists/dmaengine/msg02954.html
-That forces device to resume when we are doinga  shutdown...
-> 
-> Alternatively...
-> 
-> Both sh_dmae_resume() and sh_dmae_runtime_resume() call sh_dmae_rst(),
-> which re-initializes the DMAOR register.
-> To make it symmetric, we can move the call to sh_dmae_ctl_stop() to
-> sh_dmae_suspend() and sh_dmae_runtime_suspend() instead?
-I think thats a btter idea..
+Adds an entry for an R-Car Gen. 1 sound controller.
 
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 55 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 5d486b9..e5c7518 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -227,6 +227,61 @@
+ 		status = "disabled";
+ 	};
+ 
++	rcar_sound: sound@ffd90000 {
++		#sound-dai-cells = <1>;
++		compatible = "renesas,rcar_sound-r8a7778", "renesas,rcar_sound-gen1", "renesas,rcar_sound";
++		reg =	<0xffd90000 0x1000>,	/* SRU */
++			<0xffd91000 0x1240>,	/* SSI */
++			<0xfffe0000 0x24>;	/* ADG */
++		clocks = <&mstp3_clks R8A7778_CLK_SSI8>,
++			<&mstp3_clks R8A7778_CLK_SSI7>,
++			<&mstp3_clks R8A7778_CLK_SSI6>,
++			<&mstp3_clks R8A7778_CLK_SSI5>,
++			<&mstp3_clks R8A7778_CLK_SSI4>,
++			<&mstp0_clks R8A7778_CLK_SSI3>,
++			<&mstp0_clks R8A7778_CLK_SSI2>,
++			<&mstp0_clks R8A7778_CLK_SSI1>,
++			<&mstp0_clks R8A7778_CLK_SSI0>,
++			<&mstp5_clks R8A7778_CLK_SRU_SRC8>,
++			<&mstp5_clks R8A7778_CLK_SRU_SRC7>,
++			<&mstp5_clks R8A7778_CLK_SRU_SRC6>,
++			<&mstp5_clks R8A7778_CLK_SRU_SRC5>,
++			<&mstp5_clks R8A7778_CLK_SRU_SRC4>,
++			<&mstp5_clks R8A7778_CLK_SRU_SRC3>,
++			<&mstp5_clks R8A7778_CLK_SRU_SRC2>,
++			<&mstp5_clks R8A7778_CLK_SRU_SRC1>,
++			<&mstp5_clks R8A7778_CLK_SRU_SRC0>,
++			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>,
++			<&cpg_clocks R8A7778_CLK_S1>;
++		clock-names = "ssi.8", "ssi.7", "ssi.6", "ssi.5", "ssi.4",
++			"ssi.3", "ssi.2", "ssi.1", "ssi.0",
++			"src.8", "src.7", "src.6", "src.5", "src.4",
++			"src.3", "src.2", "src.1", "src.0",
++			"clk_a", "clk_b", "clk_c", "clk_i";
++
++		status = "disabled";
++
++		rcar_sound,src {
++			src3: src@3 { };
++			src4: src@4 { };
++			src5: src@5 { };
++			src6: src@6 { };
++			src7: src@7 { };
++			src8: src@8 { };
++			src9: src@9 { };
++		};
++
++		rcar_sound,ssi {
++			ssi3: ssi@3 { interrupts = <0 0x85 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi4: ssi@4 { interrupts = <0 0x85 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi5: ssi@5 { interrupts = <0 0x86 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi6: ssi@6 { interrupts = <0 0x86 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi7: ssi@7 { interrupts = <0 0x86 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi8: ssi@8 { interrupts = <0 0x86 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi9: ssi@9 { interrupts = <0 0x86 IRQ_TYPE_LEVEL_HIGH>; };
++		};
++	};
++
+ 	scif0: serial@ffe40000 {
+ 		compatible = "renesas,scif-r8a7778", "renesas,scif";
+ 		reg = <0xffe40000 0x100>;
 -- 
-~Vinod
+2.2.2
 
