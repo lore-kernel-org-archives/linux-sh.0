@@ -1,71 +1,92 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 25 Feb 2015 21:54:54 +0000
-Subject: [PATCH 34/38] drm: rcar-du: Remove unneeded rcar_du_crtc plane field
-Message-Id: <1424901298-6829-35-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:21:05 +0000
+Subject: [PATCH 08/32] ARM: shmobile: sh73a0 dtsi: Add missing INTCA0 clock for irqpin module
+Message-Id: <56a215d66b1eee870a6b90a8c245dfc3e503a137.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1424849129.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The rcar_du_crtc plane field is only used to check for an error that
-can't occur. Remove it.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This clock drives the irqpin controller modules.
+Before, it was assumed enabled by the bootloader or reset state.
+By making it available to the driver, we make sure it gets enabled when
+needed, and allow it to be managed by system or runtime PM.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c | 7 ++-----
- drivers/gpu/drm/rcar-du/rcar_du_crtc.h | 2 --
- 2 files changed, 2 insertions(+), 7 deletions(-)
+ arch/arm/boot/dts/sh73a0.dtsi            | 15 +++++++++++++++
+ include/dt-bindings/clock/sh73a0-clock.h |  3 +++
+ 2 files changed, 18 insertions(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index 3f64707412e6..c70f73036056 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -353,9 +353,6 @@ static void rcar_du_crtc_start(struct rcar_du_crtc *rcrtc)
- 	if (rcrtc->started)
- 		return;
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 0767087..08f736d 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -94,6 +94,7 @@
+ 			      0 6 IRQ_TYPE_LEVEL_HIGH
+ 			      0 7 IRQ_TYPE_LEVEL_HIGH
+ 			      0 8 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
+ 		control-parent;
+ 	};
  
--	if (WARN_ON(rcrtc->plane->format = NULL))
--		return;
--
- 	/* Set display off and background to black */
- 	rcar_du_crtc_write(rcrtc, DOOR, DOOR_RGB(0, 0, 0));
- 	rcar_du_crtc_write(rcrtc, BPOR, BPOR_RGB(0, 0, 0));
-@@ -606,9 +603,9 @@ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int index)
- 	rcrtc->mmio_offset = mmio_offsets[index];
- 	rcrtc->index = index;
- 	rcrtc->enabled = false;
--	rcrtc->plane = &rgrp->planes.planes[index % 2];
+@@ -114,6 +115,7 @@
+ 			      0 14 IRQ_TYPE_LEVEL_HIGH
+ 			      0 15 IRQ_TYPE_LEVEL_HIGH
+ 			      0 16 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
+ 		control-parent;
+ 	};
  
--	ret = drm_crtc_init_with_planes(rcdu->ddev, crtc, &rcrtc->plane->plane,
-+	ret = drm_crtc_init_with_planes(rcdu->ddev, crtc,
-+					&rgrp->planes.planes[index % 2].plane,
- 					NULL, &crtc_funcs);
- 	if (ret < 0)
- 		return ret;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
-index 0a3dcca58fd7..5d9aa9b33769 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
-@@ -21,7 +21,6 @@
- #include <drm/drm_crtc.h>
+@@ -134,6 +136,7 @@
+ 			      0 22 IRQ_TYPE_LEVEL_HIGH
+ 			      0 23 IRQ_TYPE_LEVEL_HIGH
+ 			      0 24 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
+ 		control-parent;
+ 	};
  
- struct rcar_du_group;
--struct rcar_du_plane;
+@@ -154,6 +157,7 @@
+ 			      0 30 IRQ_TYPE_LEVEL_HIGH
+ 			      0 31 IRQ_TYPE_LEVEL_HIGH
+ 			      0 32 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks SH73A0_CLK_INTCA0>;
+ 		control-parent;
+ 	};
  
- struct rcar_du_crtc {
- 	struct drm_crtc crtc;
-@@ -39,7 +38,6 @@ struct rcar_du_crtc {
- 	bool enabled;
- 
- 	struct rcar_du_group *group;
--	struct rcar_du_plane *plane;
+@@ -698,5 +702,16 @@
+ 			clock-output-names  				"iic3", "iic4", "keysc";
+ 		};
++		mstp5_clks: mstp5_clks@e6150144 {
++			compatible = "renesas,sh73a0-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0xe6150144 4>, <0xe615003c 4>;
++			clocks = <&cpg_clocks SH73A0_CLK_HP>;
++			#clock-cells = <1>;
++			clock-indices = <
++				SH73A0_CLK_INTCA0
++			>;
++			clock-output-names +				"intca0";
++		};
+ 	};
  };
+diff --git a/include/dt-bindings/clock/sh73a0-clock.h b/include/dt-bindings/clock/sh73a0-clock.h
+index 1dd3eb2..5336956 100644
+--- a/include/dt-bindings/clock/sh73a0-clock.h
++++ b/include/dt-bindings/clock/sh73a0-clock.h
+@@ -76,4 +76,7 @@
+ #define SH73A0_CLK_IIC4		10
+ #define SH73A0_CLK_KEYSC	3
  
- #define to_rcar_crtc(c)	container_of(c, struct rcar_du_crtc, crtc)
++/* MSTP5 */
++#define SH73A0_CLK_INTCA0	8
++
+ #endif
 -- 
-2.0.5
+2.1.4
 
