@@ -1,64 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 02 Feb 2015 04:27:07 +0000
-Subject: [PATCH 3/3 v2][RFC] ARM: shmobile: r8a7790: enables Audio DMAC peri peri entry on DTSI
-Message-Id: <87iofley3p.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:22:06 +0000
+Subject: [PATCH 05/12] ARM: shmobile: mackerel: Remove mach-type entry
+Message-Id: <34dc938f4ddd39851ecd2f1d21c431e6c3e3baa2.1424931560.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1424931560.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424931560.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
+
+Remove the mackerel entry from the mach-types file.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2 -> v3
+ arch/arm/tools/mach-types | 1 -
+ 1 file changed, 1 deletion(-)
 
- - no change
-
- arch/arm/boot/dts/r8a7790.dtsi |   20 ++++++++++++++++++--
- 1 file changed, 18 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 9f05f19..a501867 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1464,7 +1464,15 @@
- 				<&audma0 0x91>,	<&audma1 0xb4>,
- 				<&audma0 0x93>,	<&audma1 0xb6>,
- 				<&audma0 0x95>,	<&audma1 0xb8>,
--				<&audma0 0x97>,	<&audma1 0xba>;
-+				<&audma0 0x97>,	<&audma1 0xba>,
-+
-+				<&audmapp 0>,	<&audmapp 1>,	<&audmapp 2>,	<&audmapp 3>,	<&audmapp 4>,
-+				<&audmapp 5>,	<&audmapp 6>,	<&audmapp 7>,	<&audmapp 8>,	<&audmapp 9>,
-+
-+				<&audmapp 10>,	<&audmapp 11>,	<&audmapp 12>,	<&audmapp 13>,	<&audmapp 14>,
-+				<&audmapp 15>,	<&audmapp 16>,	<&audmapp 17>,	<&audmapp 18>,	<&audmapp 19>,
-+
-+				<&audmapp 20>,	<&audmapp 21>;
- 
- 		dma-names =	"mem_ssi0",	"ssi0_mem",	"mem_ssiu0",	"ssiu0_mem",
- 				"mem_ssi1",	"ssi1_mem",	"mem_ssiu1",	"ssiu1_mem",
-@@ -1486,7 +1494,15 @@
- 				"mem_src6",	"src6_mem",
- 				"mem_src7",	"src7_mem",
- 				"mem_src8",	"src8_mem",
--				"mem_src9",	"src9_mem";
-+				"mem_src9",	"src9_mem",
-+
-+				"src0",		"src1",		"src2",		"src3",		"src4",
-+				"src5",		"src6",		"src7",		"src8",		"src9",
-+
-+				"ssiu0",	"ssiu1",	"ssiu2",	"ssiu3",	"ssiu4",
-+				"ssiu5",	"ssiu6",	"ssiu7",	"ssiu8",	"ssiu9",
-+
-+				"dvc0",		"dvc1";
- 
- 		status = "disabled";
- 
+diff --git a/arch/arm/tools/mach-types b/arch/arm/tools/mach-types
+index a10297d..2ed1b8a 100644
+--- a/arch/arm/tools/mach-types
++++ b/arch/arm/tools/mach-types
+@@ -526,7 +526,6 @@ ag5evm			MACH_AG5EVM		AG5EVM			3189
+ ics_if_voip		MACH_ICS_IF_VOIP	ICS_IF_VOIP		3206
+ wlf_cragg_6410		MACH_WLF_CRAGG_6410	WLF_CRAGG_6410		3207
+ trimslice		MACH_TRIMSLICE		TRIMSLICE		3209
+-mackerel		MACH_MACKEREL		MACKEREL		3211
+ kaen			MACH_KAEN		KAEN			3217
+ nokia_rm680		MACH_NOKIA_RM680	NOKIA_RM680		3220
+ msm8960_sim		MACH_MSM8960_SIM	MSM8960_SIM		3230
 -- 
-1.7.9.5
+2.1.4
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
