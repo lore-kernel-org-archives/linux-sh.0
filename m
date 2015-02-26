@@ -1,57 +1,82 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 25 Feb 2015 21:54:34 +0000
-Subject: [PATCH 14/38] drm: rcar-du: Define macros for the max number of groups, CRTCs and LVDS
-Message-Id: <1424901298-6829-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:22:41 +0000
+Subject: [PATCH 1/5] ARM: shmobile: No R-Car Gen2 CMA reservation when HIGHMEM=n
+Message-Id: <744cadba1ae6b80b413aea87835855dcccad86fd.1424931398.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1424901298-6829-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1424931398.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424931398.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: linux-arm-kernel@lists.infradead.org
 
-Let's avoid magic constants. Beside increasing code readability, it will
-also ensure that no location will be forgotten when raising the maximum
-number of groups, CRTCs or LVDS encoders
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Allow R-Car Gen2 platforms to boot with CMA enabled
+and HIGHMEM disabled. This patch adds code to check
+if the R-Car Gen2 specific memory reservation window
+is included in the kernel memory range or not. When
+HIGHMEM is disabled the R-Car Gen2 reservation area is
+outside the kernel memory range and in such case the
+memory reservation is simply skipped over.
+
+Without this patch the kernel boot hangs when CMA is
+enabled and HIGHMEM is disabled on the r8a7791 Koelsch
+hardware platform:
+
+    WARNING: CPU: 1 PID: 1 at mm/cma.c:113 cma_init_reserved_areas+0x88/0x1=
+d4()
+    ...
+    WARNING: CPU: 1 PID: 1 at mm/cma.c:121 cma_init_reserved_areas+0xf8/0x1=
+d4()
+    ...
+    Unable to handle kernel NULL pointer dereference at virtual address 000=
+00160
+    pgd =3D c0003000
+    [00000160] *pgd=80000040004003, *pmd=00000000
+    Internal error: Oops: 206 [#1] SMP ARM
+    Modules linked in:
+    CPU: 1 PID: 1 Comm: swapper/0 Tainted: G        W
+3.19.0-rc4-koelsch-01450-g7f9b6075ce12c3ea-dirty #735
+    Hardware name: Generic R8A7791 (Flattened Device Tree)
+    task: edc553c0 ti: edc56000 task.ti: edc56000
+    PC is at set_pfnblock_flags_mask+0x54/0xa0
+    LR is at 0x440
+
+In the current shmobile_defconfig HIGHMEM is enabled
+while CMA is disabled, so to trigger this the kernel
+configuration for both CMA and HIGHMEM needs to be
+adjusted.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_drv.h | 10 +++++++---
- 1 file changed, 7 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-index c5b9ea6a7eaa..d1ede13cb1d5 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-@@ -64,6 +64,10 @@ struct rcar_du_device_info {
- 	unsigned int num_lvds;
- };
- 
-+#define RCAR_DU_MAX_CRTCS		3
-+#define RCAR_DU_MAX_GROUPS		DIV_ROUND_UP(RCAR_DU_MAX_CRTCS, 2)
-+#define RCAR_DU_MAX_LVDS		2
-+
- struct rcar_du_device {
- 	struct device *dev;
- 	const struct rcar_du_device_info *info;
-@@ -73,13 +77,13 @@ struct rcar_du_device {
- 	struct drm_device *ddev;
- 	struct drm_fbdev_cma *fbdev;
- 
--	struct rcar_du_crtc crtcs[3];
-+	struct rcar_du_crtc crtcs[RCAR_DU_MAX_CRTCS];
- 	unsigned int num_crtcs;
- 
--	struct rcar_du_group groups[2];
-+	struct rcar_du_group groups[RCAR_DU_MAX_GROUPS];
- 
- 	unsigned int dpad0_source;
--	struct rcar_du_lvdsenc *lvds[2];
-+	struct rcar_du_lvdsenc *lvds[RCAR_DU_MAX_LVDS];
- };
- 
- static inline bool rcar_du_has(struct rcar_du_device *rcdu,
--- 
-2.0.5
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmob=
+ile/setup-rcar-gen2.c
+index d1fa625..8c7ec93 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -21,6 +21,7 @@
+ #include <linux/dma-contiguous.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
++#include <linux/memblock.h>
+ #include <linux/of.h>
+ #include <linux/of_fdt.h>
+ #include <asm/mach/arch.h>
+@@ -199,7 +200,7 @@ void __init rcar_gen2_reserve(void)
+=20
+ 	of_scan_flat_dt(rcar_gen2_scan_mem, &mrc);
+ #ifdef CONFIG_DMA_CMA
+-	if (mrc.size)
++	if (mrc.size && memblock_is_region_memory(mrc.base, mrc.size))
+ 		dma_contiguous_reserve_area(mrc.size, mrc.base, 0,
+ 					    &rcar_gen2_dma_contiguous, true);
+ #endif
+--=20
+2.1.4
 
