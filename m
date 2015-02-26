@@ -1,110 +1,76 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:21:17 +0000
-Subject: [PATCH 20/32] ARM: shmobile: koelsch: Add DU HDMI output support
-Message-Id: <83a0731b39f3bc2421960e6169f8440ca673a20f.1424849129.git.horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:22:22 +0000
+Subject: [PATCH 3/5] drivers: bus: Add Simple Power-Managed Bus DT Bindings
+Message-Id: <7e7c17f10484d3bad38ea4dddc98485a8a40e4aa.1424931637.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424849129.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
+References: <cover.1424931637.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424931637.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add DT nodes for the ADV7511 HDMI encoder and its HDMI output connector
-and configure the DISP pin group that drives the HDMI transmitter DE
-pin.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Reviewed-by: Kevin Hilman <khilman@linaro.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 50 ++++++++++++++++++++++++++++++++++-
- 1 file changed, 49 insertions(+), 1 deletion(-)
+ .../devicetree/bindings/bus/simple-pm-bus.txt      | 44 ++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/bus/simple-pm-bus.txt
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index a3c2780..624bb2c 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -258,6 +258,17 @@
- 			system-clock-frequency = <11289600>;
- 		};
- 	};
+diff --git a/Documentation/devicetree/bindings/bus/simple-pm-bus.txt b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+new file mode 100644
+index 0000000..d032237
+--- /dev/null
++++ b/Documentation/devicetree/bindings/bus/simple-pm-bus.txt
+@@ -0,0 +1,44 @@
++Simple Power-Managed Bus
++============
 +
-+	hdmi-out {
-+		compatible = "hdmi-connector";
-+		type = "a";
++A Simple Power-Managed Bus is a transparent bus that doesn't need a real
++driver, as it's typically initialized by the boot loader.
 +
-+		port {
-+			hdmi_con: endpoint {
-+				remote-endpoint = <&adv7511_out>;
-+			};
-+		};
++However, its bus controller is part of a PM domain, or under the control of a
++functional clock.  Hence, the bus controller's PM domain and/or clock must be
++enabled for child devices connected to the bus (either on-SoC or externally)
++to function.
++
++While "simple-pm-bus" follows the "simple-bus" set of properties, as specified
++in ePAPR, it is not an extension of "simple-bus".
++
++
++Required properties:
++  - compatible: Must contain at least "simple-pm-bus".
++		Must not contain "simple-bus".
++		It's recommended to let this be preceded by one or more
++		vendor-specific compatible values.
++  - #address-cells, #size-cells, ranges: Must describe the mapping between
++		parent address and child address spaces.
++
++Optional platform-specific properties for clock or PM domain control (at least
++one of them is required):
++  - clocks: Must contain a reference to the functional clock(s),
++  - power-domains: Must contain a reference to the PM domain.
++Please refer to the binding documentation for the clock and/or PM domain
++providers for more details.
++
++
++Example:
++
++	bsc: bus@fec10000 {
++		compatible = "renesas,bsc-sh73a0", "renesas,bsc",
++			     "simple-pm-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0 0 0x20000000>;
++		reg = <0xfec10000 0x400>;
++		interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&zb_clk>;
++		power-domains = <&pd_a4s>;
 +	};
- };
- 
- &du {
-@@ -266,6 +277,11 @@
- 	status = "okay";
- 
- 	ports {
-+		port@0 {
-+			endpoint {
-+				remote-endpoint = <&adv7511_in>;
-+			};
-+		};
- 		port@1 {
- 			lvds_connector: endpoint {
- 			};
-@@ -284,7 +300,7 @@
- 	};
- 
- 	du_pins: du {
--		renesas,groups = "du_rgb666", "du_sync", "du_clk_out_0";
-+		renesas,groups = "du_rgb666", "du_sync", "du_disp", "du_clk_out_0";
- 		renesas,function = "du";
- 	};
- 
-@@ -506,6 +522,38 @@
- 		};
- 	};
- 
-+	hdmi@39 {
-+		compatible = "adi,adv7511w";
-+		reg = <0x39>;
-+		interrupt-parent = <&gpio3>;
-+		interrupts = <29 IRQ_TYPE_EDGE_FALLING>;
-+
-+		adi,input-depth = <8>;
-+		adi,input-colorspace = "rgb";
-+		adi,input-clock = "1x";
-+		adi,input-style = <1>;
-+		adi,input-justification = "evenly";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				adv7511_in: endpoint {
-+					remote-endpoint = <&du_out_rgb>;
-+				};
-+			};
-+
-+			port@1 {
-+				reg = <1>;
-+				adv7511_out: endpoint {
-+					remote-endpoint = <&hdmi_con>;
-+				};
-+			};
-+		};
-+	};
-+
- 	eeprom@50 {
- 		compatible = "renesas,24c02";
- 		reg = <0x50>;
 -- 
 2.1.4
 
