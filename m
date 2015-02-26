@@ -1,124 +1,78 @@
-From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 12 Feb 2015 06:28:26 +0000
-Subject: RE: [PATCH 1/4] usb: renesas_usbhs: fix spinlock recursion by usbhsf_dma_complete()
-Message-Id: <SIXPR06MB33397BFE4B922A18092288BD8220@SIXPR06MB333.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 26 Feb 2015 10:37:08 +0000
+Subject: [PATCH] ARM: kexec: Relax SMP validation to improve DT compatibility
+Message-Id: <1424947028-7438-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423469774-6532-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-	<1423469774-6532-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <CAMuHMdXkPciXDbEp97FbD8Q3S6KxvoZexAO3EYYg3-KsL7dg2g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Greg KH <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@ti.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, USB list <linux-usb@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-SGkgR2VlcnQtc2FuLA0KDQo+ID4gU3RpbGwsIHRoYXQgd291bGQgbmVlZCBzb21lIGJldHRlciBw
-cm90ZWN0aW9uLCBhcyBsb2NhbF9pcnFfc2F2ZSgpIGRpc2FibGVzDQo+ID4gaW50ZXJydXB0cyBv
-bmx5IG9uIHRoZSBDUFUgaXQncyBydW5uaW5nIG9uLCBub3Qgb24gb3RoZXIgQ1BVcyBpbiBhDQo+
-ID4gbXVsdGlwcm9jZXNzb3Igc3lzdGVtLg0KPiANCj4gSSBzZWUuIEkgd2lsbCBpbnZlc3RpZ2F0
-ZSB0aGlzIGlzc3VlIG1vcmUuDQoNCkkgdHJpZWQgdGhpcyBpc3N1ZSBvbiB2My4xOSB3aXRoIGRt
-YWMgZW5hYmxlZCwgaXQgYWxzbyBjYXVzZWQgYW4gb29wcy4NCkhvd2V2ZXIsIHRoZSBsb2cgaXMg
-dXNlZnVsIHRvIGludmVzdGlnYXRlIHRoaXMgaXNzdWUuDQpUaGlzIGlzc3VlIGlzIGNhdXNlZCBi
-eSB0eF9jb21wbGV0ZSgpIGFuZCBuY21fdHhfdGFza2xldCgpIGJlY2F1c2UNCnRoZSByZW5lc2Fz
-X3VzYmhzIGRyaXZlciBjYWxsZWQgdXNiX2dhZGdldF9naXZlYmFja19yZXF1ZXN0IHdpdGgNCmlu
-dGVycnVwdHMgZW5hYmxlZC4gU28sIHNwaW5fbG9ja19pcnFzYXZlKCZkZXYtPnJlcV9sb2NrLCBm
-bGFncykgaW4NCnVfZXRoZXIuYyBpcyBoZWxkLg0KDQpTbywgSSB3aWxsIHN1Ym1pdCBhIHBhdGNo
-IHYyIGFzIHRoZSBmb2xsb3dpbmdzLiBXaGF0IGRvIHlvdSB0aGluaz8NCg0KLS0NClN1YmplY3Q6
-IFtQQVRDSF0gdXNiOiByZW5lc2FzX3VzYmhzOiBmaXggc3BpbmxvY2sgc3VzcGVjdGVkIGluIGEg
-Z2FkZ2V0IGNvbXBsZXRlIGZ1bmN0aW9uDQoNCkFjY29yZGluZyB0byB0aGUgZ2FkZ2V0LmgsIGEg
-ImNvbXBsZXRlIiBmdW5jdGlvbiB3aWxsIGFsd2F5cyBiZSBjYWxsZWQNCndpdGggaW50ZXJydXB0
-cyBkaXNhYmxlZC4gSG93ZXZlciwgc29tZXRpbWVzIHVzYmhzZ19xdWV1ZV9wb3AoKSBmdW5jdGlv
-bg0KaXMgY2FsbGVkIHdpdGggaW50ZXJydXB0cyBlbmFibGVkLiBTbywgdGhpcyBmdW5jdGlvbiBz
-aG91bGQgY2FsbHMNCmxvY2FsX2lycV9zYXZlKCkgYmVmb3JlIHRoaXMgY2FsbHMgdGhlIHVzYl9n
-YWRnZXRfZ2l2ZWJhY2tfcmVxdWVzdCgpLg0KT3RoZXJ3aXNlLCB0aGVyZSBpcyBwb3NzaWJsZSB0
-byBjYXVzZSBhIHNwaW5sb2NrIHN1c3BlY3RlZCBpbiBhIGdhZGdldA0KY29tcGxldGUgZnVuY3Rp
-b24uDQoNClNpZ25lZC1vZmYtYnk6IFlvc2hpaGlybyBTaGltb2RhIDx5b3NoaWhpcm8uc2hpbW9k
-YS51aEByZW5lc2FzLmNvbT4NCi0tLQ0KIGRyaXZlcnMvdXNiL3JlbmVzYXNfdXNiaHMvbW9kX2dh
-ZGdldC5jIHwgICAxMSArKysrKysrKysrKw0KIDEgZmlsZSBjaGFuZ2VkLCAxMSBpbnNlcnRpb25z
-KCspDQoNCmRpZmYgLS1naXQgYS9kcml2ZXJzL3VzYi9yZW5lc2FzX3VzYmhzL21vZF9nYWRnZXQu
-YyBiL2RyaXZlcnMvdXNiL3JlbmVzYXNfdXNiaHMvbW9kX2dhZGdldC5jDQppbmRleCBlMDM4NGFm
-Li4xMDRiZGRmIDEwMDY0NA0KLS0tIGEvZHJpdmVycy91c2IvcmVuZXNhc191c2Jocy9tb2RfZ2Fk
-Z2V0LmMNCisrKyBiL2RyaXZlcnMvdXNiL3JlbmVzYXNfdXNiaHMvbW9kX2dhZGdldC5jDQpAQCAt
-MTI2LDExICsxMjYsMjIgQEAgc3RhdGljIHZvaWQgdXNiaHNnX3F1ZXVlX3BvcChzdHJ1Y3QgdXNi
-aHNnX3VlcCAqdWVwLA0KIAlzdHJ1Y3QgdXNiaHNnX2dwcml2ICpncHJpdiA9IHVzYmhzZ191ZXBf
-dG9fZ3ByaXYodWVwKTsNCiAJc3RydWN0IHVzYmhzX3BpcGUgKnBpcGUgPSB1c2Joc2dfdWVwX3Rv
-X3BpcGUodWVwKTsNCiAJc3RydWN0IGRldmljZSAqZGV2ID0gdXNiaHNnX2dwcml2X3RvX2Rldihn
-cHJpdik7DQorCXVuc2lnbmVkIGxvbmcgZmxhZ3M7DQogDQogCWRldl9kYmcoZGV2LCAicGlwZSAl
-ZCA6IHF1ZXVlIHBvcFxuIiwgdXNiaHNfcGlwZV9udW1iZXIocGlwZSkpOw0KIA0KIAl1cmVxLT5y
-ZXEuc3RhdHVzID0gc3RhdHVzOw0KKwkvKg0KKwkgKiBBY2NvcmRpbmcgdG8gdGhlIGdhZGdldC5o
-LCBhICJjb21wbGV0ZSIgZnVuY3Rpb24gd2lsbCBhbHdheXMgYmUNCisJICogY2FsbGVkIHdpdGgg
-aW50ZXJydXB0cyBkaXNhYmxlZC4gSG93ZXZlciwgc29tZXRpbWVzIHRoaXMgZnVuY3Rpb24NCisJ
-ICogaXMgY2FsbGVkIHdpdGggaW50ZXJydXB0cyBlbmFibGVkLiAoZS5nLiBjb21wbGV0ZSBhIERN
-QUMgdHJhbnNmZXIgb3INCisJICogd3JpdGUgZGF0YSBhbmQgZG9uZSBpcyBzZXQgaW1tZWRpYXRl
-bHkgd2hlbiBQSU8uKSBTbywgdGhpcyBmdW5jdGlvbg0KKwkgKiBzaG91bGQgY2FsbHMgbG9jYWxf
-aXJxX3NhdmUoKSBiZWZvcmUgdGhpcyBjYWxscyB0aGUNCisJICogdXNiX2dhZGdldF9naXZlYmFj
-a19yZXF1ZXN0KCkuDQorCSAqLw0KKwlsb2NhbF9pcnFfc2F2ZShmbGFncyk7DQogCXVzYl9nYWRn
-ZXRfZ2l2ZWJhY2tfcmVxdWVzdCgmdWVwLT5lcCwgJnVyZXEtPnJlcSk7DQorCWxvY2FsX2lycV9y
-ZXN0b3JlKGZsYWdzKTsNCiB9DQogDQogc3RhdGljIHZvaWQgdXNiaHNnX3F1ZXVlX2RvbmUoc3Ry
-dWN0IHVzYmhzX3ByaXYgKnByaXYsIHN0cnVjdCB1c2Joc19wa3QgKnBrdCkNCg0KPT09PT09PSBv
-b3BzIGxvZyBvbiB2My4xOSArIGRtYWMgPT09PT09PQ0KQlVHOiBzcGlubG9jayBsb2NrdXAgc3Vz
-cGVjdGVkIG9uIENQVSMwLCBpcnEvMTAyLWU2NWEwMDAvNTQ3DQogbG9jazogMHhlZWEyZGQ1Yywg
-Lm1hZ2ljOiBkZWFkNGVhZCwgLm93bmVyOiA8bm9uZT4vLTEsIC5vd25lcl9jcHU6IC0xDQpDUFU6
-IDAgUElEOiA1NDcgQ29tbTogaXJxLzEwMi1lNjVhMDAwIFRhaW50ZWQ6IEcgICAgICAgIFcgICAg
-ICAzLjE5LjAtMDU2MzQtZzExMzcxZDctZGlydHkgIzU1DQpIYXJkd2FyZSBuYW1lOiBHZW5lcmlj
-IFI4QTc3OTEgKEZsYXR0ZW5lZCBEZXZpY2UgVHJlZSkNCkJhY2t0cmFjZToNCls8YzAwMTFlNzg+
-XSAoZHVtcF9iYWNrdHJhY2UpIGZyb20gWzxjMDAxMjA4ND5dIChzaG93X3N0YWNrKzB4MTgvMHgx
-YykNCiByNjowMDk4OTY4MCByNTplZWEyZGQ1YyByNDowMDAwMDAwMCByMzowMDIwODA0MA0KWzxj
-MDAxMjA2Yz5dIChzaG93X3N0YWNrKSBmcm9tIFs8YzA0NzEzMzg+XSAoZHVtcF9zdGFjaysweDdj
-LzB4OTgpDQpbPGMwNDcxMmJjPl0gKGR1bXBfc3RhY2spIGZyb20gWzxjMDQ3MDYzMD5dIChzcGlu
-X2R1bXArMHg4MC8weDk0KQ0KIHI0OjAwMDAwMDAwIHIzOmMwNjcxMzM0DQpbPGMwNDcwNWIwPl0g
-KHNwaW5fZHVtcCkgZnJvbSBbPGMwMDU1OTEwPl0gKGRvX3Jhd19zcGluX2xvY2srMHgxM2MvMHgx
-OTApDQogcjU6MDAwMDAwMDAgcjQ6MDA5ODk2ODANCls8YzAwNTU3ZDQ+XSAoZG9fcmF3X3NwaW5f
-bG9jaykgZnJvbSBbPGMwNDc1MWMwPl0gKF9yYXdfc3Bpbl9sb2NrX2lycXNhdmUrMHgxOC8weDIw
-KQ0KIHI5OmVlYTJkZDVjIHI4OmVlYTJkZDQwIHI3OmVlYmFhMDM0IHI2OjAwMDAwMDAwIHI1OjAw
-MDAwMDBmIHI0OjYwMDAwMTEzDQpbPGMwNDc1MWE4Pl0gKF9yYXdfc3Bpbl9sb2NrX2lycXNhdmUp
-IGZyb20gWzxiZjAwMDZiYz5dIChldGhfc3RhcnRfeG1pdCsweGQwLzB4MzdjIFt1X2V0aGVyXSkN
-CiByNDplZWEyZDgwMCByMzowMDAwMDAwMA0KWzxiZjAwMDVlYz5dIChldGhfc3RhcnRfeG1pdCBb
-dV9ldGhlcl0pIGZyb20gWzxiZjAxYjBlOD5dIChuY21fdHhfdGFza2xldCsweDQ0LzB4NGMgW3Vz
-Yl9mX25jbV0pDQogcjEwOmVlYjg3ZDAwIHI5OmMwNmI2YjAwIHI4OjAwMDAwMDAwIHI3OjAwMDAw
-MDAwIHI2OmMwNjcxMjc0IHI1OjAwMDAwMDAwDQogcjQ6ZWUwZjhlMDANCls8YmYwMWIwYTQ+XSAo
-bmNtX3R4X3Rhc2tsZXQgW3VzYl9mX25jbV0pIGZyb20gWzxjMDAyOTg1ND5dICh0YXNrbGV0X2Fj
-dGlvbisweDk0LzB4ZjQpDQogcjU6ZWUwZjhlZTAgcjQ6ZWUwZjhlZGMNCls8YzAwMjk3YzA+XSAo
-dGFza2xldF9hY3Rpb24pIGZyb20gWzxjMDAyOGYyOD5dIChfX2RvX3NvZnRpcnErMHhlYy8weDIy
-MCkNCiByODpjMDY3NjA5OCByNzowMDAwMDEwMCByNjpjMDY3NjA4OCByNTowMDAwMDAzMCByNDpl
-ZWI4NjAwMCByMzo0MDAwMDAwNA0KWzxjMDAyOGUzYz5dIChfX2RvX3NvZnRpcnEpIGZyb20gWzxj
-MDAyOTJkOD5dIChpcnFfZXhpdCsweDhjLzB4ZmMpDQogcjEwOjAwMDAwMDAyIHI5OjYwMDAwMDEz
-IHI4OjAwMDAwMDAxIHI3OmVlODA2MDAwIHI2OjAwMDAwMDAwIHI1OmMwNjcxYWM4DQogcjQ6MDAw
-MDAwMDANCls8YzAwMjkyNGM+XSAoaXJxX2V4aXQpIGZyb20gWzxjMDA1YjI3MD5dIChfX2hhbmRs
-ZV9kb21haW5faXJxKzB4OTQvMHhiOCkNCiByNDowMDAwMDAwMCByMzowMDAwMDE4ZQ0KWzxjMDA1
-YjFkYz5dIChfX2hhbmRsZV9kb21haW5faXJxKSBmcm9tIFs8YzAwMDkzOTQ+XSAoZ2ljX2hhbmRs
-ZV9pcnErMHg0MC8weDY0KQ0KIHI4OmVlYTJkZDVjIHI3OmVlYjg3ZGU0IHI2OmMwNjdjOTY0IHI1
-OmVlYjg3ZGIwIHI0OmYwMDAyMDAwIHIzOmVlYjg3ZGIwDQpbPGMwMDA5MzU0Pl0gKGdpY19oYW5k
-bGVfaXJxKSBmcm9tIFs8YzAwMTJiYzA+XSAoX19pcnFfc3ZjKzB4NDAvMHg1NCkNCkV4Y2VwdGlv
-biBzdGFjaygweGVlYjg3ZGIwIHRvIDB4ZWViODdkZjgpDQo3ZGEwOiAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICBlZWEyZGQ1YyBhYTA1YWEwNCAwMDAwMDAwMCAwMDAwMDAwMA0K
-N2RjMDogZWVhMmRkNDAgZWUwYmUxYzAgZWUxODBlODAgZWVhMmRkNWMgZWVhMmRkNWMgNjAwMDAw
-MTMgMDAwMDAwMDIgZWViODdlMWMNCjdkZTA6IGVlYjg3ZTIwIGVlYjg3ZGY4IGMwNDc1MWE0IGMw
-MDU1ODZjIDYwMDAwMDEzIGZmZmZmZmZmDQogcjY6ZmZmZmZmZmYgcjU6NjAwMDAwMTMgcjQ6YzAw
-NTU4NmMgcjM6YzA0NzUxYTQNCls8YzAwNTU3ZDQ+XSAoZG9fcmF3X3NwaW5fbG9jaykgZnJvbSBb
-PGMwNDc1MWE0Pl0gKF9yYXdfc3Bpbl9sb2NrKzB4MTAvMHgxNCkNCiByOTo2MDAwMDAxMyByODpl
-ZTFkM2FiNCByNzplZWEyZGQ1YyByNjplZTE4MGU4MCByNTplZTBiZTFjMCByNDplZWEyZGQ0MA0K
-WzxjMDQ3NTE5ND5dIChfcmF3X3NwaW5fbG9jaykgZnJvbSBbPGJmMDAwNTg0Pl0gKHR4X2NvbXBs
-ZXRlKzB4NzAvMHhkOCBbdV9ldGhlcl0pDQpbPGJmMDAwNTE0Pl0gKHR4X2NvbXBsZXRlIFt1X2V0
-aGVyXSkgZnJvbSBbPGMwMmQ5NmM4Pl0gKHVzYl9nYWRnZXRfZ2l2ZWJhY2tfcmVxdWVzdCsweDE0
-LzB4MTgpDQogcjc6ZWUxZDNhMTAgcjY6ZWViYWE4NmMgcjU6MDAwMDAwMDAgcjQ6ZWUwYmUxZjQN
-Cls8YzAyZDk2YjQ+XSAodXNiX2dhZGdldF9naXZlYmFja19yZXF1ZXN0KSBmcm9tIFs8YzAyZDg5
-ZDg+XSAodXNiaHNnX3F1ZXVlX2RvbmUrMHgyYy8weDMwKQ0KWzxjMDJkODlhYz5dICh1c2Joc2df
-cXVldWVfZG9uZSkgZnJvbSBbPGMwMmQ4MmJjPl0gKHVzYmhzZl9wa3RfaGFuZGxlcisweGZjLzB4
-MTE0KQ0KWzxjMDJkODFjMD5dICh1c2Joc2ZfcGt0X2hhbmRsZXIpIGZyb20gWzxjMDJkODJmND5d
-ICh1c2Joc2ZfZG1hX2NvbXBsZXRlKzB4MjAvMHg1OCkNCiByMTA6MDAwMDAwMDAgcjk6MDAwMDAw
-MDEgcjg6MDAyMDAyMDAgcjc6MDAxMDAxMDAgcjY6ZWViYzZjYzggcjU6ZWU5YTZhMDANCiByNDpl
-ZWJhYTg2Yw0KWzxjMDJkODJkND5dICh1c2Joc2ZfZG1hX2NvbXBsZXRlKSBmcm9tIFs8YzAxZjJl
-ZmM+XSAodXNiX2RtYWNfaXNyX2NoYW5uZWxfdGhyZWFkKzB4OGMvMHhjYykNCiByNTplZWJjNmM5
-NCByNDplZTI4OTU2Yw0KWzxjMDFmMmU3MD5dICh1c2JfZG1hY19pc3JfY2hhbm5lbF90aHJlYWQp
-IGZyb20gWzxjMDA1YzM4ND5dIChpcnFfdGhyZWFkX2ZuKzB4MjQvMHgzYykNCiByODpjMDA1YzM2
-MCByNzplZThmNjY2MCByNjplZTk5OTY0MCByNTplZWI4NjAwMCByNDplZThmNjY0MCByMzpjMDFm
-MmU3MA0KWzxjMDA1YzM2MD5dIChpcnFfdGhyZWFkX2ZuKSBmcm9tIFs8YzAwNWM2NTg+XSAoaXJx
-X3RocmVhZCsweGY0LzB4MTZjKQ0KIHI2OmVlOGY2NjQwIHI1OmVlYjg2MDAwIHI0OmVlOTk5NjQw
-IHIzOjAwMDAwMDA0DQpbPGMwMDVjNTY0Pl0gKGlycV90aHJlYWQpIGZyb20gWzxjMDAzZDgzND5d
-IChrdGhyZWFkKzB4ZjAvMHgxMDQpDQogcjEwOjAwMDAwMDAwIHI5OjAwMDAwMDAwIHI4OjAwMDAw
-MDAwIHI3OmMwMDVjNTY0IHI2OmVlOGY2NjQwIHI1OjAwMDAwMDAwDQogcjQ6ZWU4ZjY2MDANCls8
-YzAwM2Q3NDQ+XSAoa3RocmVhZCkgZnJvbSBbPGMwMDBlYmUwPl0gKHJldF9mcm9tX2ZvcmsrMHgx
-NC8weDM0KQ0KIHI3OjAwMDAwMDAwIHI2OjAwMDAwMDAwIHI1OmMwMDNkNzQ0IHI0OmVlOGY2NjAw
-DQo9PT09PT09PT09PT09PT09PT09PT0NCg0KQmVzdCByZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1v
-ZGENCg0K
+When trying to kexec into a new kernel on a platform where multiple CPU
+cores are present, but no SMP bringup code is available yet, the
+kexec_load system call fails with:
+
+    kexec_load failed: Invalid argument
+
+The SMP test added to machine_kexec_prepare() in commit 2103f6cba61a8b8b
+("ARM: 7807/1: kexec: validate CPU hotplug support") wants to prohibit
+kexec on SMP platforms where it cannot disable secondary CPUs.
+However, this test is too strict: if the secondary CPUs couldn't be
+enabled in the first place, there's no need to disable them later at
+kexec time.  Hence skip the test in the absence of SMP bringup code.
+
+This allows to add all CPU cores to the DTS from the beginning, without
+having to implement SMP bringup first, improving DT compatibility.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/include/asm/smp_plat.h | 1 +
+ arch/arm/kernel/machine_kexec.c | 3 ++-
+ arch/arm/kernel/smp.c           | 5 +++++
+ 3 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/smp_plat.h b/arch/arm/include/asm/smp_plat.h
+index 0ad7d490ee6f2657..993e5224d8f7eeeb 100644
+--- a/arch/arm/include/asm/smp_plat.h
++++ b/arch/arm/include/asm/smp_plat.h
+@@ -104,6 +104,7 @@ static inline u32 mpidr_hash_size(void)
+ 	return 1 << mpidr_hash.bits;
+ }
+ 
++extern int platform_can_secondary_boot(void);
+ extern int platform_can_cpu_hotplug(void);
+ 
+ #endif
+diff --git a/arch/arm/kernel/machine_kexec.c b/arch/arm/kernel/machine_kexec.c
+index de2b085ad7535da7..8bf3b7c098881b95 100644
+--- a/arch/arm/kernel/machine_kexec.c
++++ b/arch/arm/kernel/machine_kexec.c
+@@ -46,7 +46,8 @@ int machine_kexec_prepare(struct kimage *image)
+ 	 * and implements CPU hotplug for the current HW. If not, we won't be
+ 	 * able to kexec reliably, so fail the prepare operation.
+ 	 */
+-	if (num_possible_cpus() > 1 && !platform_can_cpu_hotplug())
++	if (num_possible_cpus() > 1 && platform_can_secondary_boot() &&
++	    !platform_can_cpu_hotplug())
+ 		return -EINVAL;
+ 
+ 	/*
+diff --git a/arch/arm/kernel/smp.c b/arch/arm/kernel/smp.c
+index 86ef244c5a24b4fa..cca5b87581855244 100644
+--- a/arch/arm/kernel/smp.c
++++ b/arch/arm/kernel/smp.c
+@@ -145,6 +145,11 @@ void __init smp_init_cpus(void)
+ 		smp_ops.smp_init_cpus();
+ }
+ 
++int platform_can_secondary_boot(void)
++{
++	return !!smp_ops.smp_boot_secondary;
++}
++
+ int platform_can_cpu_hotplug(void)
+ {
+ #ifdef CONFIG_HOTPLUG_CPU
+-- 
+1.9.1
+
