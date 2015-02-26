@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 26 Feb 2015 06:22:12 +0000
-Subject: [PATCH 11/12] ARM: shmobile: sh7372 dtsi: Remove Legacy DTSI file
-Message-Id: <edf41009060442258ed3090fc782835c4f9f831f.1424931560.git.horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:22:04 +0000
+Subject: [PATCH 03/12] ARM: shmobile: mackerel dts: Remove Legacy DTS file
+Message-Id: <c1b7506b52f9a112c64a44d449fb9e2a55f2060d.1424931560.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1424931560.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1424931560.git.horms+renesas@verge.net.au>
@@ -12,25 +12,38 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm+renesas@opensource.se>
 
-Remove the sh7372 DTSI file for the now unsupported sh7372 SoC.
+Remove the DTS file for the no longer supported Mackerel board.
 
 Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh7372.dtsi | 35 -----------------------------------
- 1 file changed, 35 deletions(-)
- delete mode 100644 arch/arm/boot/dts/sh7372.dtsi
+ arch/arm/boot/dts/Makefile            |  1 -
+ arch/arm/boot/dts/sh7372-mackerel.dts | 26 --------------------------
+ 2 files changed, 27 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/sh7372-mackerel.dts
 
-diff --git a/arch/arm/boot/dts/sh7372.dtsi b/arch/arm/boot/dts/sh7372.dtsi
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index a1c776b..0d467b8 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -470,7 +470,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
+ 	r8a7778-bockw.dtb \
+ 	r8a7778-bockw-reference.dtb \
+ 	r8a7779-marzen.dtb \
+-	sh7372-mackerel.dtb \
+ 	sh73a0-kzm9g.dtb \
+ 	sh73a0-kzm9g-reference.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+diff --git a/arch/arm/boot/dts/sh7372-mackerel.dts b/arch/arm/boot/dts/sh7372-mackerel.dts
 deleted file mode 100644
-index f863a10..0000000
---- a/arch/arm/boot/dts/sh7372.dtsi
+index a759a27..0000000
+--- a/arch/arm/boot/dts/sh7372-mackerel.dts
 +++ /dev/null
-@@ -1,35 +0,0 @@
+@@ -1,26 +0,0 @@
 -/*
-- * Device Tree Source for the sh7372 SoC
+- * Device Tree Source for the mackerel board
 - *
 - * Copyright (C) 2012 Renesas Solutions Corp.
 - *
@@ -39,29 +52,20 @@ index f863a10..0000000
 - * kind, whether express or implied.
 - */
 -
--/include/ "skeleton.dtsi"
+-/dts-v1/;
+-#include "sh7372.dtsi"
 -
 -/ {
--	compatible = "renesas,sh7372";
+-	model = "Mackerel (AP4 EVM 2nd)";
+-	compatible = "renesas,mackerel";
 -
--	cpus {
--		#address-cells = <1>;
--		#size-cells = <0>;
--
--		cpu@0 {
--			compatible = "arm,cortex-a8";
--			device_type = "cpu";
--			reg = <0x0>;
--			clock-frequency = <800000000>;
--		};
+-	chosen {
+-		bootargs = "console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp mem$0m rw";
 -	};
 -
--	pfc: pfc@e6050000 {
--		compatible = "renesas,pfc-sh7372";
--		reg = <0xe6050000 0x8000>,
--		      <0xe605801c 0x1c>;
--		gpio-controller;
--		#gpio-cells = <2>;
+-	memory {
+-		device_type = "memory";
+-		reg = <0x40000000 0x10000000>;
 -	};
 -};
 -- 
