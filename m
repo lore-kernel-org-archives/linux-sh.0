@@ -1,60 +1,49 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 17 Feb 2015 15:04:41 +0000
-Subject: [PATCH v4 1/6] ARM: shmobile: r8a73a4 dtsi: Add Bus State Controller node
-Message-Id: <1424185486-3017-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:21:08 +0000
+Subject: [PATCH 11/32] ARM: shmobile: kzm9g-reference dts: Declare the full 512 MiB of RAM
+Message-Id: <3ce1bc08efdd1c1dfba123e802604c0e853ae5db.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424185486-3017-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424185486-3017-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1424849129.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add a node for the Bus State Controller (BSC) on r8a73a4, to which
-multiple external devices can be connected.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-The BSC is driven by the ZB clock, and located in PM domain C4.
-A reference to the latter will be added later.
+Traditionally, the first 16 MiB of RAM was reserved for the RT
+processor.  However, this is incompatible with CONFIG_AUTO_ZRELADDR=y,
+which requires that the start address of physical memory is a multiple
+of 128 MiB.
+
+As CONFIG_AUTO_ZRELADDR=y is enabled for multi-platform kernels, declare
+RAM to start at 0x40000000.
+
+While at it, reclaim the last 8 MiB of RAM, too, so the full 512 MiB is
+available. Note that kzm9g_defconfig still has
+CONFIG_MEMORY_START=0x41000000 and CONFIG_MEMORY_SIZE=0x1f000000, so
+before the advent of DT we scribbled over the last 8 MiB, too.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v4:
-  - Add Acked-by,
-  - Claim compatiblity with "simple-pm-bus" instead of "simple-bus",
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-v3:
-  - Add Tested-by,
-  - Move "ranges" before "reg",
-
-v2:
-  - New.
----
- arch/arm/boot/dts/r8a73a4.dtsi | 10 ++++++++++
- 1 file changed, 10 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index fdcca5d0fb61f0bc..77bd35cd89113df7 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -409,6 +409,16 @@
- 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 0156fc8..bf365f7 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -45,7 +45,7 @@
+ 
+ 	memory {
+ 		device_type = "memory";
+-		reg = <0x41000000 0x1e800000>;
++		reg = <0x40000000 0x20000000>;
  	};
  
-+	bsc: bus@fec10000 {
-+		compatible = "renesas,bsc-r8a73a4", "renesas,bsc",
-+			     "simple-pm-bus";
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		ranges = <0 0 0 0x20000000>;
-+		reg = <0 0xfec10000 0 0x400>;
-+		clocks = <&zb_clk>;
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+ 	reg_1p8v: regulator@0 {
 -- 
-1.9.1
+2.1.4
 
