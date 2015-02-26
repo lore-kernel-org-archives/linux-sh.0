@@ -1,71 +1,83 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 09 Feb 2015 16:02:35 +0000
-Subject: [PATCH v2 07/15] ARM: shmobile: bockw: add devices hooked up to i2c0 to DT
-Message-Id: <1423497763-3450-8-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 26 Feb 2015 06:21:27 +0000
+Subject: [PATCH 30/32] ARM: shmobile: r8a7791: add ADSP clocks
+Message-Id: <ae65a8ae4c25c7ea01204c9d033cd47da3000cf8.1424849129.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1424849129.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424849129.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Cameras, RTC, and ak4643 sound codec.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Add the ADSP clocks to the CPG and MSTP5 nodes of the R8A7791 device tree.
+
+Based on the original patch by Konstantin Kozhevnikov
+<konstantin.kozhevnikov@cogentembedded.com>.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../devicetree/bindings/i2c/trivial-devices.txt    |  1 +
- arch/arm/boot/dts/r8a7778-bockw.dts                | 25 ++++++++++++++++++++++
- 2 files changed, 26 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi            | 11 +++++++----
+ include/dt-bindings/clock/r8a7791-clock.h |  2 ++
+ 2 files changed, 9 insertions(+), 4 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/i2c/trivial-devices.txt b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-index 9f4e382..b6fe29e 100644
---- a/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-+++ b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-@@ -75,6 +75,7 @@ nxp,pca9556		Octal SMBus and I2C registered interface
- nxp,pca9557		8-bit I2C-bus and SMBus I/O port with reset
- nxp,pcf8563		Real-time clock/calendar
- nxp,pcf85063		Tiny Real-Time Clock
-+oki,ml86v7667		OKI ML86V7667 video decoder
- ovti,ov5642		OV5642: Color CMOS QSXGA (5-megapixel) Image Sensor with OmniBSI and Embedded TrueFocus
- pericom,pt7c4338	Real-time Clock Module
- plx,pex8648		48-Lane, 12-Port PCI Express Gen 2 (5.0 GT/s) Switch
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 7347223..280a922 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -59,6 +59,31 @@
- 	};
- };
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index ff49b95..1e593a2 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -909,7 +909,7 @@
+ 			#clock-cells = <1>;
+ 			clock-output-names = "main", "pll0", "pll1", "pll3",
+ 					     "lb", "qspi", "sdh", "sd0", "z",
+-					     "rcan";
++					     "rcan", "adsp";
+ 		};
  
-+&i2c0 {
-+	status = "okay";
-+
-+	ak4643: sound-codec@12 {
-+		compatible = "asahi-kasei,ak4643";
-+		#sound-dai-cells = <0>;
-+		reg = <0x12>;
-+	};
-+
-+	camera@41 {
-+		compatible = "oki,ml86v7667";
-+		reg = <0x41>;
-+	};
-+
-+	camera@43 {
-+		compatible = "oki,ml86v7667";
-+		reg = <0x43>;
-+	};
-+
-+	rx8581: rtc@51 {
-+		compatible = "epson,rx8581";
-+		reg = <0x51>;
-+	};
-+};
-+
- &mmcif {
- 	pinctrl-0 = <&mmc_pins>;
- 	pinctrl-names = "default";
+ 		/* Variable factor clocks */
+@@ -1164,13 +1164,16 @@
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
+-			clocks = <&hp_clk>, <&hp_clk>, <&extal_clk>, <&p_clk>;
++			clocks = <&hp_clk>, <&hp_clk>, <&cpg_clocks R8A7791_CLK_ADSP>,
++				 <&extal_clk>, <&p_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+ 				R8A7791_CLK_AUDIO_DMAC0 R8A7791_CLK_AUDIO_DMAC1
+-				R8A7791_CLK_THERMAL R8A7791_CLK_PWM
++				R8A7791_CLK_ADSP_MOD R8A7791_CLK_THERMAL
++				R8A7791_CLK_PWM
+ 			>;
+-			clock-output-names = "audmac0", "audmac1", "thermal", "pwm";
++			clock-output-names = "audmac0", "audmac1", "adsp_mod",
++					     "thermal", "pwm";
+ 		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index a45a363..8fc5dc8 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -21,6 +21,7 @@
+ #define R8A7791_CLK_SD0			7
+ #define R8A7791_CLK_Z			8
+ #define R8A7791_CLK_RCAN		9
++#define R8A7791_CLK_ADSP		10
+ 
+ /* MSTP0 */
+ #define R8A7791_CLK_MSIOF0		0
+@@ -72,6 +73,7 @@
+ /* MSTP5 */
+ #define R8A7791_CLK_AUDIO_DMAC1		1
+ #define R8A7791_CLK_AUDIO_DMAC0		2
++#define R8A7791_CLK_ADSP_MOD		6
+ #define R8A7791_CLK_THERMAL		22
+ #define R8A7791_CLK_PWM			23
+ 
 -- 
-2.2.2
+2.1.4
 
