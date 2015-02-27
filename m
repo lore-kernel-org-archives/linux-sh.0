@@ -1,87 +1,80 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 20 Feb 2015 10:21:10 +0000
-Subject: [PATCH 0/24 v2] ASoC: rsnd: move 2nd DMAC in rsnd driver and subnode dma-name support
-Message-Id: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 27 Feb 2015 17:38:02 +0000
+Subject: [PATCH 1/4] pinctrl: sh-pfc: Do not overwrite bias configuration
+Message-Id: <1425058685-12956-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1425058685-12956-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1425058685-12956-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, dmaengine@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
+After the last user of the in_pd/in_pu bias parameters of the _PCRH()
+macro was removed in commit 80da8e02d22caaef ("sh-pfc: r8a7740: Add bias
+(pull-up/down) pinconf support"), bias parameters are supposed to be
+configured using the generic pinctl mechanism, which calls the
+.set_bias() method.
 
-Hi Mark, Arnd, Vinod
-Cc: Laurent, SH-ML
+However, the PORTCR() macro still represents the control register as
+consisting of two 4-bit fields. Hence the bias configuration in the
+uppermost 2 bits is always overwritten with zeroes when a pin is
+configured for GPIO, disabling any previously configured bias.
 
-These patches add Audio DMAC peri peri implementation in rsnd driver.
-I will remove current DMAEngine side Audio DMAC peri peri implement
-if these are accepted.
-http://thread.gmane.org/gmane.linux.ports.sh.devel/41063/focusC829
+Use the variable config register macro instead, to represent the
+register as having 4 fields, and to make sure only the input/output
+control and function fields are touched.
 
-Arnd, Vinod
+This affects R-Mobile APE6 (r8a73a4), R-Mobile A1 (r8a7740), SH-Mobile
+AP4 (sh7372), and SH-Mobile AG5 (sh73a0).
 
-This series adds subnode DT support for 1st DMAC, and it is based
-on 1) patch. can you please check it ?
-
-Mark
-
-Actually, 1) patch has no relationship until 20).
-I guess this patch-set has merge issue.
-Can you check 2) - 19) as 1st step ?
-
-  1)       : export of_dma_request_slave_channel() for 20)
-  2) -  6) : cleanup / tidyup
-  7) - 12) : Audio DMAC peri peri implementation
- 13) - 14) : cleanup. these are no longer needed now
- 15) - 19) : prepare for 1st DMAC dma-names subnode support
- 20)       : 1st DMAC dma-names subnode subnode
- 21) - 24) : DT bindings text update
-
-
-Kuninori Morimoto (24):
-       1) dmaengine: export symbol of of_dma_request_slave_channel()
-       2) ASoC: rsnd: remove SH-DMA-BASE specific implementation
-       3) ASoC: rsnd: remove un-needed parameter from rsnd_dma_init()
-       4) ASoC: rsnd: remove unused rsnd_dma_available()
-       5) ASoC: rsnd: remove un-needed parameter from rsnd_dma_quit()
-       6) ASoC: rsnd: tidyup rsnd_dma_to_mod() macro declaration position
-       7) ASoC: rsnd: enable to get resource by name
-       8) ASoC: rsnd: add rsnd_gen_get_phy_addr() to get physical address
-       9) ASoC: rsnd: add dma.c for Audio DMAC / Audio DMAC peri peri
-      10) ASoC: rsnd: move rsnd_gen_dma_addr() from gen.c to dma.c
-      11) ASoC: rsnd: enable to care 1st / 2nd DMAC on rsnd_dma_xxx()
-      12) ASoC: rsnd: add Audio DMAC peri peri support rework
-      13) ASoC: rsnd: remove rsnd_dma::addr
-      14) ASoC: rsnd: remove rsnd_dma::dir
-      15) ASoC: rsnd: use union with rsnd_dmaen / rsnd_dmapp
-      16) ASoC: rsnd: enable rsnd_ssi_use_busif() for DMA
-      17) ASoC: rsnd: ssi: add rsnd_ssi_of_node()
-      18) ASoC: rsnd: src: add rsnd_src_of_node()
-      19) ASoC: rsnd: dvc: add rsnd_dvc_of_node()
-      20) ASoC: rsnd: 1st DMAC dma-names cares subnode
-      21) ASoC: rsnd: add sample code of rcar_sound,src irq
-      22) ASoC: rsnd: add sample code of missing clocks
-      23) ASoC: rsnd: add sample code of dma entry
-      24) ASoC: rsnd: add sample code of reg-names
-
- .../devicetree/bindings/sound/renesas,rsnd.txt     |  125 +++-
- drivers/dma/of-dma.c                               |    1 +
- include/linux/of_dma.h                             |    4 +-
- sound/soc/sh/rcar/Makefile                         |    2 +-
- sound/soc/sh/rcar/core.c                           |  235 +-------
- sound/soc/sh/rcar/dma.c                            |  603 ++++++++++++++++++++
- sound/soc/sh/rcar/dvc.c                            |   12 +
- sound/soc/sh/rcar/gen.c                            |  145 +----
- sound/soc/sh/rcar/rsnd.h                           |   72 ++-
- sound/soc/sh/rcar/src.c                            |   23 +-
- sound/soc/sh/rcar/ssi.c                            |   28 +-
- 11 files changed, 838 insertions(+), 412 deletions(-)
-
-
-Best regards
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Kuninori Morimoto
-_______________________________________________
-Alsa-devel mailing list
-Alsa-devel@alsa-project.org
-http://mailman.alsa-project.org/mailman/listinfo/alsa-devel
+Tested on r8a73a4/ape6evm, which requires a pull-up bias for the
+GPIO switches.
+---
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 25 +++++++++++++------------
+ 1 file changed, 13 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index c83728626906c16c..ed5cf4192fa1a2d0 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -302,20 +302,21 @@ struct sh_pfc_soc_info {
+ /*
+  * PORTnCR macro
+  */
+-#define _PCRH(in, in_pd, in_pu, out)	\
+-	0, (out), (in), 0,		\
+-	0, 0, 0, 0,			\
+-	0, 0, (in_pd), 0,		\
+-	0, 0, (in_pu), 0
+-
+ #define PORTCR(nr, reg)							\
+ 	{								\
+-		PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {		\
+-			_PCRH(PORT##nr##_IN, 0, 0, PORT##nr##_OUT),	\
+-				PORT##nr##_FN0, PORT##nr##_FN1,		\
+-				PORT##nr##_FN2, PORT##nr##_FN3,		\
+-				PORT##nr##_FN4, PORT##nr##_FN5,		\
+-				PORT##nr##_FN6, PORT##nr##_FN7 }	\
++		PINMUX_CFG_REG_VAR("PORT" nr "CR", reg, 8, 2, 2, 1, 3) {\
++			/* PULMD[1:0], handled by .set_bias() */	\
++			0, 0, 0, 0,					\
++			/* IE and OE */					\
++			0, PORT##nr##_OUT, PORT##nr##_IN, 0,		\
++			/* SEC, not supported */			\
++			0, 0,						\
++			/* PTMD[2:0] */					\
++			PORT##nr##_FN0, PORT##nr##_FN1,			\
++			PORT##nr##_FN2, PORT##nr##_FN3,			\
++			PORT##nr##_FN4, PORT##nr##_FN5,			\
++			PORT##nr##_FN6, PORT##nr##_FN7			\
++		}							\
+ 	}
+ 
+ #endif /* __SH_PFC_H */
+-- 
+1.9.1
+
