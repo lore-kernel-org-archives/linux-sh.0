@@ -1,35 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 20 Feb 2015 20:51:20 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: r8a7791: add ADSP clocks
-Message-Id: <20150220205117.GD20237@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 27 Feb 2015 16:16:26 +0000
+Subject: [PATCH] sh_eth: Fix lost MAC address on kexec
+Message-Id: <1425053786-24223-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4692589.Khlcz7yVTN@wasted.cogentembedded.com>
- <54E792EC.4090807@cogentembedded.com>
-In-Reply-To: <54E792EC.4090807@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "David S. Miller" <davem@davemloft.net>, Ben Hutchings <ben.hutchings@codethink.co.uk>
+Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kevin Hilman <khilman@kernel.org>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Fri, Feb 20, 2015 at 11:02:52PM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 12/30/2014 11:20 PM, Sergei Shtylyov wrote:
-> 
-> >Add the ADSP clocks to the CPG and MSTP5 nodes of the R8A7791 device tree.
-> 
-> >Based on the original patch by Konstantin Kozhevnikov
-> ><konstantin.kozhevnikov@cogentembedded.com>.
-> 
-> >Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >---
-> >The patch is against 'renesas-devel-20141229-v3.19-rc2' tag of Simon Horman's
-> >'renesas.git' repo plus the R8A7791 CAN patches posted last week. It depends on
-> >the patch adding the ADSP clock support to  the 'clk-rcar-gen2' driver in order
-> >to work.
-> 
->    That patch now sits in Mike's tree and should soon be merged by Linus.
-> Simon, please consider merging this patch.
+Commit 740c7f31c094703c ("sh_eth: Ensure DMA engines are stopped before
+freeing buffers") added a call to sh_eth_reset() to the
+sh_eth_set_ringparam() and sh_eth_close() paths.
 
-Thanks, done.
+However, setting the software reset bit(s) in the EDMR register resets
+the MAC Address Registers to zero. Hence after kexec, the new kernel
+doesn't detect a valid MAC address and assigns a random MAC address,
+breaking DHCP.
+
+Set the MAC address again after the reset in sh_eth_dev_exit() to fix
+this.
+
+Tested on r8a7740/armadillo (GETHER) and r8a7791/koelsch (FAST_RCAR).
+
+Fixes: 740c7f31c094703c ("sh_eth: Ensure DMA engines are stopped before freeing buffers")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 4da8bd263997a17b..654b48d1e61a3124 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1392,6 +1392,9 @@ static void sh_eth_dev_exit(struct net_device *ndev)
+ 	msleep(2); /* max frame time at 10 Mbps < 1250 us */
+ 	sh_eth_get_stats(ndev);
+ 	sh_eth_reset(ndev);
++
++	/* Set MAC address again */
++	update_mac_address(ndev);
+ }
+ 
+ /* free Tx skb function */
+-- 
+1.9.1
+
