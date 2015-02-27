@@ -1,138 +1,48 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Thu, 12 Feb 2015 07:36:08 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: Add support SOC_BUS to R-Car Gen2
-Message-Id: <54DC57E8.4040507@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 27 Feb 2015 17:48:37 +0000
+Subject: [PATCH 0/2] ARM: shmobile: ape6evm: Fix GPIO keys and wake-up
+Message-Id: <1425059319-13403-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423186389-12861-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1423186389-12861-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Ulrich Hecht <ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-gpio-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-Hi,
+	Hi Simon, Magnus,
 
-Thanks for your review.
+This patch series adds the missing pull-up bias configuration for the
+switches on the r8a73a4/ape6evm development board, and configures the
+custom switch as a wake-up source.
 
-(2015/02/10 17:53), Geert Uytterhoeven wrote:
-> Hi Iwamatsu-san,
->
-> On Fri, Feb 6, 2015 at 2:33 AM, Nobuhiro Iwamatsu
-> <nobuhiro.iwamatsu.yj@renesas.com>  wrote:
->> This provides information through SOC_BUS to sysfs.
->
-> Thanks for your patch!
->
->> diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
->> index 2230948..0fa3ef8 100644
->> --- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
->> +++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
->
->> @@ -204,19 +206,53 @@ void __init rcar_gen2_reserve(void)
->>   }
->>
->>   #define PRR 0xFF000044
->> -static unsigned int __init rcar_gen2_get_revision(void)
->> +static unsigned int __init rcar_gen2_get_prr(void)
->>   {
->>          void __iomem *addr = ioremap_nocache(PRR, 4);
->>          u32 data = ioread32(addr);
->>
->>          iounmap(addr);
->>
->> -       return ((data&  0xF0)>>  4) + 1;
->> +       return data;
->> +}
->> +
->> +static unsigned int __init rcar_gen2_get_revision(void)
->> +{
->> +       return ((rcar_gen2_get_prr()&  0xF0)>>  4) + 1;
->
-> As the PRR register value doesn't change, and it's only 32-bit, I would
-> read it once and store it for later use, to avoid the overhead of repeated
-> ioremap() calls.
->
->> +}
->> +
->> +static u32 __init rcar_gen2_get_cpuid(void)
->> +{
->> +       return (rcar_gen2_get_prr()&  0x7F00)>>  8;
->
-> Likewise.
->
+After this, the keys actually work, and the system can be resumed from
+s2ram by pressing the custom switch.
 
-I see. I will fix.
+This depends functionally on "[PATCH 1/4] pinctrl: sh-pfc: Do not
+overwrite bias configuration" in the series "[PATCH 0/4] pinctrl:
+sh-pfc: Fix pin bias and cleanups" which I've just sent. But as this is
+DTS, it can be applied independently.
 
->>   }
->>
->>   void __init rcar_gen2_init_machine(void)
->>   {
->> +       struct soc_device_attribute *soc_dev_attr;
->> +       struct soc_device *soc_dev;
->> +       struct device *parent = NULL;
->> +
->> +       soc_dev_attr = kzalloc(sizeof(*soc_dev_attr), GFP_KERNEL);
->> +       if (!soc_dev_attr)
->> +               goto out;
->> +
->>          system_rev = rcar_gen2_get_revision();
->
-> The above shows up (in hex) in /proc/cpuinfo as (for ES1.0)
->
->          Revision: 0001
->
-> As per the comment on your previous patch, I think it would be better to
-> have "0010" for ES1.0.
->
->> -       of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
->> +       soc_dev_attr->family = kasprintf(GFP_KERNEL, "Renesas R-Car Gen2");
->> +       soc_dev_attr->revision = kasprintf(GFP_KERNEL, "%d", system_rev);
->
-> Likewise:
->
->          soc_dev_attr->revision = kasprintf(GFP_KERNEL, "%u.%u",
-> system_rev>>  4, system_rev&  0xf);
->
->> +       soc_dev_attr->soc_id = kasprintf(GFP_KERNEL, "%04x",
->> +                                        rcar_gen2_get_cpuid());
->
+Thanks for your comments!
 
-Ok, I will fix.
+Geert Uytterhoeven (2):
+  ARM: shmobile: ape6evm dts: Enable pull-up for GPIO switches
+  ARM: shmobile: ape6evm dts: Configure the custom switch as wake-up
+    source
 
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-> On my Koelsch with R-Car M2-W ES1.0, this gives:
->          /sys/devices/soc0/family : Renesas R-Car Gen2
->          /sys/devices/soc0/revision : 1
->          /sys/devices/soc0/soc_id : 0047
->
-> Should we fill in the soc_device_attribute.machine field, too?
->
+-- 
+1.9.1
 
-I see. I will add machine field.
+Gr{oetje,eeting}s,
 
->> +
->> +       soc_dev = soc_device_register(soc_dev_attr);
->> +       if (IS_ERR(soc_dev)) {
->> +               kfree(soc_dev_attr->family);
->> +               kfree(soc_dev_attr->revision);
->> +               kfree(soc_dev_attr->soc_id);
->> +               kfree(soc_dev_attr);
->> +               goto out;
->> +       }
->> +
->> +       parent = soc_device_to_device(soc_dev);
->> +out:
->> +       of_platform_populate(NULL, of_default_bus_match_table, NULL, parent);
->
-> The above change moves all on-SoC devices from /sys/devices/platform/
-> to /sys/devices/soc0/. I think it's worth adding that to the patch description.
+						Geert
 
-I see. I will add more descriptin.
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
->
-> Gr{oetje,eeting}s,
->
->                          Geert
-
-Best regards,
-   Nobuhiro
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
