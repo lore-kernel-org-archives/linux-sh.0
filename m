@@ -1,37 +1,45 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 09 Feb 2015 08:23:34 +0000
-Subject: [PATCH 2/2] ARM: shmobile: r8a7790: Enable DMA for HSUSB
-Message-Id: <1423470214-7140-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Feb 2015 01:25:48 +0000
+Subject: [GIT PULL] SH Drivers Updates for v4.0
+Message-Id: <cover.1425000135.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423470214-7140-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1423470214-7140-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
-Cc: devicetree@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms+renesas@verge.net.au>
 
-Add DMA properties to the HSUSB node.
+Hi Linus,
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- arch/arm/boot/dts/r8a7790.dtsi |    3 +++
- 1 file changed, 3 insertions(+)
+Please consider these SH drivers updates for v4.0.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 737b578..8dd62fb 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -670,6 +670,9 @@
- 		renesas,buswait = <4>;
- 		phys = <&usb0 1>;
- 		phy-names = "usb";
-+		dmas = <&usb_dmac0 0>, <&usb_dmac0 1>,
-+		       <&usb_dmac1 0>, <&usb_dmac1 1>;
-+		dma-names = "rx0", "tx1", "rx2", "tx3";
- 		status = "disabled";
- 	};
- 
--- 
-1.7.9.5
+I am sending this change after v4.0-rc1 has been released
+as it depends on r8a7740 SoC changes which are present in that rc release.
 
+I expect some more minor updates to the same file during the v4.1 release cycle
+to reflect changes to other SoCs.
+
+
+The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
+
+  Linux 4.0-rc1 (2015-02-22 18:21:14 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-drivers-for-v4.0
+
+for you to fetch changes up to a5cb514f1f689a48595370a368b568e2f551ddfd:
+
+  drivers: sh: Disable PM runtime for multi-platform r8a7740 with genpd (2015-02-24 07:26:12 +0900)
+
+----------------------------------------------------------------
+SH Drivers Updates for v4.0
+
+* Disable PM runtime for multi-platform r8a7740 with genpd
+
+----------------------------------------------------------------
+Geert Uytterhoeven (1):
+      drivers: sh: Disable PM runtime for multi-platform r8a7740 with genpd
+
+ drivers/sh/pm_runtime.c | 2 ++
+ 1 file changed, 2 insertions(+)
