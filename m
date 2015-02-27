@@ -1,31 +1,57 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 19 Feb 2015 01:28:03 +0000
-Subject: [PATCH 01/01] ARM: shmobile: Drop VSP1 deps to allow 64-bit build
-Message-Id: <20150219012803.1740.86640.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 27 Feb 2015 17:38:01 +0000
+Subject: [PATCH 0/4] pinctrl: sh-pfc: Fix pin bias and cleanups
+Message-Id: <1425058685-12956-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+	Hi,
 
-Drop dependencies to allow building the VSP1 driver on any architecture
-including 64-bit ones such as x86_64 and arm64. Not for upstream merge.
+This patch series fixes bias (pull up/down) for Renesas R-Mobile and
+SH-Mobile SoCs, and does some code (type) cleanups.
 
-Not-Yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+  - Patch 1 fixes the overwriting of the bias field in the port control
+    register when configuring a pin for GPIO,
+  - Patch 2 changes the types used for storing register and field widths
+    in the pinctrl data tables, shrinking them by an average of ca. 4
+    KiB per SoC,
+  - Patches 3 and 4 do some more cleanups w.r.t. the choice of types.
 
- drivers/media/platform/Kconfig |    1 -
- 1 file changed, 1 deletion(-)
+Bias pull up/down was tested on r8a73a4/ape6evm, which requires a
+pull-up bias for the GPIO switches.
 
---- 0001/drivers/media/platform/Kconfig
-+++ work/drivers/media/platform/Kconfig	2015-02-19 06:44:38.525523599 +0900
-@@ -223,7 +223,6 @@ config VIDEO_SH_VEU
- config VIDEO_RENESAS_VSP1
- 	tristate "Renesas VSP1 Video Processing Engine"
- 	depends on VIDEO_V4L2 && VIDEO_V4L2_SUBDEV_API && HAS_DMA
--	depends on ARCH_SHMOBILE || COMPILE_TEST
- 	select VIDEOBUF2_DMA_CONTIG
- 	---help---
- 	  This is a V4L2 driver for the Renesas VSP1 video processing engine.
+Boot-tested on r8a7740/armadillo, r8a7791/koelsch, and sh73a0/kzm9g.
+
+Thanks for your comments!
+
+Geert Uytterhoeven (4):
+  pinctrl: sh-pfc: Do not overwrite bias configuration
+  pinctrl: sh-pfc: Store register/field widths in u8 instead of unsigned
+    long
+  pinctrl: sh-pfc: Use u32 to store register data
+  pinctrl: sh-pfc: Use unsigned int for register/field widths and
+    offsets
+
+ drivers/pinctrl/sh-pfc/core.c   | 36 ++++++++++++++++++------------------
+ drivers/pinctrl/sh-pfc/core.h   |  7 +++----
+ drivers/pinctrl/sh-pfc/gpio.c   | 19 ++++++++-----------
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 35 +++++++++++++++++++----------------
+ 4 files changed, 48 insertions(+), 49 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
