@@ -1,80 +1,96 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 27 Feb 2015 17:38:02 +0000
-Subject: [PATCH 1/4] pinctrl: sh-pfc: Do not overwrite bias configuration
-Message-Id: <1425058685-12956-2-git-send-email-geert+renesas@glider.be>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 27 Feb 2015 23:39:19 +0000
+Subject: [PATCH] sh-pfc: handle pin array holes in sh_pfc_map_pins()
+Message-Id: <1528110.Mb5xiNU0rc@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425058685-12956-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1425058685-12956-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linus.walleij@linaro.org, linux-sh@vger.kernel.org, laurent.pinchart@ideasonboard.com, linux-gpio@vger.kernel.org
 
-After the last user of the in_pd/in_pu bias parameters of the _PCRH()
-macro was removed in commit 80da8e02d22caaef ("sh-pfc: r8a7740: Add bias
-(pull-up/down) pinconf support"), bias parameters are supposed to be
-configured using the generic pinctl mechanism, which calls the
-.set_bias() method.
+The  pin array handled by sh_pfc_map_pins() may contain holes representing non-
+existing pins. We have to first count the valid pins in order to calculate the
+size  of the memory to be allocated, then to skip over the non-existing pins
+when  initializing the allocated arrays, and then to return the number of valid
+pins  from sh_pfc_map_pins() instead of 0 on success.
 
-However, the PORTCR() macro still represents the control register as
-consisting of two 4-bit fields. Hence the bias configuration in the
-uppermost 2 bits is always overwritten with zeroes when a pin is
-configured for GPIO, disabling any previously configured bias.
+As we have to touch devm_kzalloc() calls anyway, use more fitting devm_kcalloc()
+instead which additionally checks the array size. And since PINMUX_TYPE_NONE is
+#define'd as 0, stop re-initializing already zeroed out 'pmx->configs' array.
 
-Use the variable config register macro instead, to represent the
-register as having 4 fields, and to make sure only the input/output
-control and function fields are touched.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-This affects R-Mobile APE6 (r8a73a4), R-Mobile A1 (r8a7740), SH-Mobile
-AP4 (sh7372), and SH-Mobile AG5 (sh73a0).
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Tested on r8a73a4/ape6evm, which requires a pull-up bias for the
-GPIO switches.
----
- drivers/pinctrl/sh-pfc/sh_pfc.h | 25 +++++++++++++------------
- 1 file changed, 13 insertions(+), 12 deletions(-)
+The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git' repo.
+This patch should be applied before my R8A7794 PFC support patch and before
+Laurent's patches removing non-existent GPIOs for R8A779[01], otherwise they
+would cause the kernel  to hang while booting!
 
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index c83728626906c16c..ed5cf4192fa1a2d0 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -302,20 +302,21 @@ struct sh_pfc_soc_info {
- /*
-  * PORTnCR macro
-  */
--#define _PCRH(in, in_pd, in_pu, out)	\
--	0, (out), (in), 0,		\
--	0, 0, 0, 0,			\
--	0, 0, (in_pd), 0,		\
--	0, 0, (in_pu), 0
--
- #define PORTCR(nr, reg)							\
- 	{								\
--		PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {		\
--			_PCRH(PORT##nr##_IN, 0, 0, PORT##nr##_OUT),	\
--				PORT##nr##_FN0, PORT##nr##_FN1,		\
--				PORT##nr##_FN2, PORT##nr##_FN3,		\
--				PORT##nr##_FN4, PORT##nr##_FN5,		\
--				PORT##nr##_FN6, PORT##nr##_FN7 }	\
-+		PINMUX_CFG_REG_VAR("PORT" nr "CR", reg, 8, 2, 2, 1, 3) {\
-+			/* PULMD[1:0], handled by .set_bias() */	\
-+			0, 0, 0, 0,					\
-+			/* IE and OE */					\
-+			0, PORT##nr##_OUT, PORT##nr##_IN, 0,		\
-+			/* SEC, not supported */			\
-+			0, 0,						\
-+			/* PTMD[2:0] */					\
-+			PORT##nr##_FN0, PORT##nr##_FN1,			\
-+			PORT##nr##_FN2, PORT##nr##_FN3,			\
-+			PORT##nr##_FN4, PORT##nr##_FN5,			\
-+			PORT##nr##_FN6, PORT##nr##_FN7			\
-+		}							\
+ drivers/pinctrl/sh-pfc/pinctrl.c |   32 +++++++++++++++++++-------------
+ 1 file changed, 19 insertions(+), 13 deletions(-)
+
+Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pinctrl.c
+=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pinctrl.c
++++ linux-pinctrl/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -571,33 +571,39 @@ static const struct pinconf_ops sh_pfc_p
+ /* PFC ranges -> pinctrl pin descs */
+ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ {
+-	unsigned int i;
++	const struct sh_pfc_pin *info;
++	struct pinctrl_pin_desc *pin;
++	unsigned int i, n;
++
++	/* Count the valid pins. */
++	for (i = 0, info = pfc->info->pins, n = 0;
++	     i < pfc->info->nr_pins; i++, info++) {
++		if (info->enum_id || info->configs)
++			n++;
++	}
+ 
+ 	/* Allocate and initialize the pins and configs arrays. */
+-	pmx->pins = devm_kzalloc(pfc->dev,
+-				 sizeof(*pmx->pins) * pfc->info->nr_pins,
+-				 GFP_KERNEL);
++	pmx->pins = devm_kcalloc(pfc->dev, n, sizeof(*pmx->pins), GFP_KERNEL);
+ 	if (unlikely(!pmx->pins))
+ 		return -ENOMEM;
+ 
+-	pmx->configs = devm_kzalloc(pfc->dev,
+-				    sizeof(*pmx->configs) * pfc->info->nr_pins,
++	pmx->configs = devm_kcalloc(pfc->dev, n, sizeof(*pmx->configs),
+ 				    GFP_KERNEL);
+ 	if (unlikely(!pmx->configs))
+ 		return -ENOMEM;
+ 
+-	for (i = 0; i < pfc->info->nr_pins; ++i) {
+-		const struct sh_pfc_pin *info = &pfc->info->pins[i];
+-		struct sh_pfc_pin_config *cfg = &pmx->configs[i];
+-		struct pinctrl_pin_desc *pin = &pmx->pins[i];
++	for (i = 0, info = pfc->info->pins, pin = pmx->pins;
++	     i < pfc->info->nr_pins; i++, info++) {
++		if (!info->enum_id && !info->configs)
++			continue;
+ 
+ 		/* If the pin number is equal to -1 all pins are considered */
+ 		pin->number = info->pin != (u16)-1 ? info->pin : i;
+ 		pin->name = info->name;
+-		cfg->type = PINMUX_TYPE_NONE;
++		pin++;
  	}
  
- #endif /* __SH_PFC_H */
--- 
-1.9.1
+-	return 0;
++	return n;
+ }
+ 
+ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+@@ -622,7 +628,7 @@ int sh_pfc_register_pinctrl(struct sh_pf
+ 	pmx->pctl_desc.pmxops = &sh_pfc_pinmux_ops;
+ 	pmx->pctl_desc.confops = &sh_pfc_pinconf_ops;
+ 	pmx->pctl_desc.pins = pmx->pins;
+-	pmx->pctl_desc.npins = pfc->info->nr_pins;
++	pmx->pctl_desc.npins = ret;
+ 
+ 	pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
+ 	if (pmx->pctl = NULL)
 
