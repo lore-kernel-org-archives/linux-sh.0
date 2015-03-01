@@ -1,46 +1,29 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 06 Mar 2015 11:27:23 +0000
-Subject: Re: [PATCH 1/5] ARM: shmobile: r8a7794 SYSC setup code
-Message-Id: <20150306112723.GA27105@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 01 Mar 2015 17:15:54 +0000
+Subject: Re: [PATCH 2/2] pinctrl: sh-pfc: r8a7791: Remove non existing GPIO pins
+Message-Id: <54F3494A.1050604@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <54F50C56.5030605@bp.renesas.com>
-In-Reply-To: <54F50C56.5030605@bp.renesas.com>
+References: <1424115661-21928-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1424115661-21928-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <54EE3782.5040108@cogentembedded.com>
+In-Reply-To: <54EE3782.5040108@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, Linus Walleij <linus.walleij@linaro.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-gpio@vger.kernel.org
 
-On Thu, Mar 05, 2015 at 01:23:15PM +0900, Gaku Inami wrote:
-> Hi Geert-san,
-> 
-> On 2015/03/04 17:41, Geert Uytterhoeven wrote:
-> > Hi Inami-san,
-> >
-> > On Wed, Mar 4, 2015 at 5:46 AM, Gaku Inami <gaku.inami.xw@bp.renesas.com> wrote:
-> >>>> +static void __init r8a7794_sysc_init(void)
-> >>>> +{
-> >>>> +    void __iomem *base = rcar_sysc_init(0xe6180000);
-> >>>> +
-> >>>> +    /* enable all interrupt sources, but do not use interrupt handler */
-> >>>> +    iowrite32(0x00310060, base + SYSCIER);
-> >>> Is it intentional that 0x00310060 differs from
-> >>> the value of 0x0131000e used on the r8a7790 and r8a7791?
-> >> Yes. According to R-CAR Gen2 HW manual, interrupt bits are
-> >> different in each SoC. Therefore, I think the setting value
-> >> of SYSCIER should be set to a different value in each SoC.
-> >>
-> >> *Setting value of SYSCIER
-> >>  r8a7790 : 0x013111EF
-> >>  r8a7791 : 0x00111003
-> >>  r8a7794 : 0x00310060
-> >>
-> >> I don't know why the value of 0x0131000e is used on the r8a7790
-> >> and the r8a7791. (maybe wrong value)
-> > This value was most probably just copied from pm-r8a7779.c
-> > R-Car H1 has 4 four ARM cores, but there's no interrupt bit for ARM0,
-> > hence the 0xe value for the lowest nibble.
-> >
-> Thank you for your comment. That make sense.
+Hello.
 
-Lets get this fixed. I'm happy to create some patches if no one
-else wants to take it.
+On 2/25/2015 11:58 PM, Sergei Shtylyov wrote:
+
+>> GPIO banks 1 and 7 are missing pins 26 to 31. Remove them.
+
+>> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+>     This patch breaks the boot as well, please don't apply it yet. The same
+> about R8A7790 patch. We're thinking about a proper fix...
+
+    Hopefully, such fix has been found and posted. You can now apply this 
+series *after* that fix.
+
+WBR, Sergei
+
