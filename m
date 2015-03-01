@@ -1,88 +1,34 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 08 Mar 2015 10:04:00 +0000
-Subject: Re: [PATCH 04/11] ARM: shmobile: r8a7793: add Gose board device tree
-Message-Id: <CAMuHMdXr_wDvsRMWiBs2ykHcXByHvg79-1f9jZ3cwF7XCvf8-g@mail.gmail.com>
+From: David Miller <davem@davemloft.net>
+Date: Sun, 01 Mar 2015 05:28:47 +0000
+Subject: Re: [PATCH] sh_eth: Fix lost MAC address on kexec
+Message-Id: <20150301.002847.261300841277182822.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425661798-10487-5-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1425661798-10487-5-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1425053786-24223-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1425053786-24223-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: geert+renesas@glider.be
+Cc: ben.hutchings@codethink.co.uk, nobuhiro.iwamatsu.yj@renesas.com, horms@verge.net.au, magnus.damm@gmail.com, khilman@kernel.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Fri, Mar 6, 2015 at 6:09 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> DT description and Makefile entry for the Gose eval board.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 27 Feb 2015 17:16:26 +0100
 
-Thanks!
+> Commit 740c7f31c094703c ("sh_eth: Ensure DMA engines are stopped before
+> freeing buffers") added a call to sh_eth_reset() to the
+> sh_eth_set_ringparam() and sh_eth_close() paths.
+> 
+> However, setting the software reset bit(s) in the EDMR register resets
+> the MAC Address Registers to zero. Hence after kexec, the new kernel
+> doesn't detect a valid MAC address and assigns a random MAC address,
+> breaking DHCP.
+> 
+> Set the MAC address again after the reset in sh_eth_dev_exit() to fix
+> this.
+> 
+> Tested on r8a7740/armadillo (GETHER) and r8a7791/koelsch (FAST_RCAR).
+> 
+> Fixes: 740c7f31c094703c ("sh_eth: Ensure DMA engines are stopped before freeing buffers")
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Same comment here as for r8a7791.dtsi.
-Please start from current r8a7791-koelsch.dts. You'll find more small
-things that
-need to fixed.
-
-> diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
-> new file mode 100644
-> index 0000000..27d8b5b
-> --- /dev/null
-> +++ b/arch/arm/boot/dts/r8a7793-gose.dts
-
-> +/ {
-> +       model = "Gose";
-> +       compatible = "renesas,gose", "renesas,r8a7793";
-> +
-> +       aliases {
-> +               serial6 = &scif0;
-> +               serial7 = &scif1;
-
-serial0 and serial 1
-
-> +       };
-> +
-> +       chosen {
-> +               bootargs = "console=ttySC6,115200 ignore_loglevel rw root=/dev/nfs ip=dhcp";
-
-As we support new boards through DT only, please drop the "console=...",
-and add "stdout-path = &scif0;".
-
-> +       };
-> +
-> +       memory@40000000 {
-> +               device_type = "memory";
-> +               reg = <0 0x40000000 0 0x40000000>;
-> +       };
-> +
-> +       gpio-keys {
-
-keyboard
-
-> +               compatible = "gpio-keys";
-
-> +&i2c6 {
-> +       status = "okay";
-> +       clock-frequency = <100000>;
-> +
-> +       vdd_dvfs: regulator@68 {
-> +               compatible = "dlg,da9210";
-
-Yeah, a da9210 ;-)
-
-> +               reg = <0x68>;
-> +
-> +               regulator-min-microvolt = <1000000>;
-> +               regulator-max-microvolt = <1000000>;
-> +               regulator-boot-on;
-> +               regulator-always-on;
-> +       };
-> +};
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Applied.
