@@ -1,61 +1,94 @@
-From: Peter Hurley <peter@hurleysoftware.com>
-Date: Wed, 11 Mar 2015 13:42:41 +0000
-Subject: Re: chosen/stdout-path and userland (Re: Can't boot kernel v4.0-rc2 on Koelsch)
-Message-Id: <55004651.2000205@hurleysoftware.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sun, 01 Mar 2015 12:19:59 +0000
+Subject: Re: [RFC/PATCH] pinctrl: sh-pfc: Accept standard function, pins and groups properties
+Message-Id: <7128182.C0nStVbsie@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdVSbYYGQyOjce87Q_dMHvh9du1EkgOgC+CBgrMys++mkA@mail.gmail.com>	<55003D82.1080601@hurleysoftware.com> <CAMuHMdWjHnX4NS2Z7MMg9FBjDpo41h517U3t+ndSCzhGKDLCvA@mail.gmail.com>
-In-Reply-To: <CAMuHMdWjHnX4NS2Z7MMg9FBjDpo41h517U3t+ndSCzhGKDLCvA@mail.gmail.com>
+References: <CACRpkda4SBof0EaZVWtEYaeb6j_BGAVj39kje+mBz90eB3qAwQ@mail.gmail.com> <CACRpkda6H7hbgXhmSbgtwOC_8PbHnES5syp-YEp1+V6s5Ym6Cw@mail.gmail.com> <12938873.nmb8Ng8mNb@avalon>
+In-Reply-To: <12938873.nmb8Ng8mNb@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Grant Likely <grant.likely@linaro.org>, Mark Rutland <mark.rutland@arm.com>, Rob Herring <robh+dt@kernel.org>, Cao Minh Hiep <cm-hiep@jinso.co.jp>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Sakato Ryusuke <ryusuke.sakato.bx@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Sascha Hauer <kernel@pengutronix.de>, Niklas =?ISO-8859-1?Q?S=F6derlund?= <niso@kth.se>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Hi Geert,
+Hi Linus,
 
-On 03/11/2015 09:23 AM, Geert Uytterhoeven wrote:
-> Hi Peter,
-> 
-> On Wed, Mar 11, 2015 at 2:05 PM, Peter Hurley <peter@hurleysoftware.com> wrote:
->> The first console listed is the primary console.
->> tty0 is not resolved to its underlying tty device name.
-> 
-> Are you sure about that? Isn't the last one the primary console?
-> 
-> root@koelsch:~# cat  /sys/class/tty/console/active
-> tty0 ttySC0
-> 
-> If tty0 would be the primary console, getty on /dev/console wouldn't work for
-> my serial console, as only input on the primary console can be read through
-> /dev/console if my memory serves me well (or perhaps this has changed?).
-> 
-> Ah, Documentation/ABI/testing/sysfs-tty agrees with me:
-> 
-> What:           /sys/class/tty/console/active
-> Date:           Nov 2010
-> Contact:        Kay Sievers <kay.sievers@vrfy.org>
-> Description:
->                  Shows the list of currently configured
->                  console devices, like 'tty1 ttyS0'.
->                  The last entry in the file is the active
->                  device connected to /dev/console.
+I'd like to move forward with this patch, could you please comment on my reply 
+?
 
-Did I write 'first'?  <blushes>
-Yeah, it is 'last', as the documentation states.
-
->> That said, is the original reporter of this problem even interested in
->> upgrading their userspace, even if this is fixed in Linaro eventually?
->> What about other Linaro users?
+On Wednesday 04 February 2015 11:53:34 Laurent Pinchart wrote:
+> On Wednesday 04 February 2015 09:40:48 Linus Walleij wrote:
+> > On Tue, Jan 27, 2015 at 9:31 PM, Laurent Pinchart wrote:
+> >> The "function", "pins" and "groups" pinmux and pinctrl properties have
+> >> been standardized. Support them in addition to the custom "renesas,*"
+> >> properties. New-style and old-style properties can't be mixed in DT.
+> >> 
+> >> Signed-off-by: Laurent Pinchart
+> >> <laurent.pinchart+renesas@ideasonboard.com>
+> > 
+> > (...)
+> > 
+> >>> Would be nice if the PFC driver could be augmented to also accept the
+> >>> now standard bindings "groups" and "function" simply :) we're adding
+> >>> parse functions for those to the core.
+> >> 
+> >> Something like this ?
+> > 
+> > Yes :)
+> > 
+> >> Please note two differences between the Renesas PFC bindings and the
+> >> standard bindings:
+> >> 
+> >> - The standard bindings state that a pinctrl node must contain either a
+> >>   "pins" property or a "groups" property, while the Renesas bindings
+> >>   allows for both to coexist in the same node.
+> > 
+> > Sascha also says this makes sense for him so I guess I'm getting a bit
+> > soft on the issue.
+> > 
+> >> - The standard bindings don't allow a pinmux node to contain a "pins"
+> >>   property, while the Renesas bindings do.
+> > 
+> > Does that mean "pins" affect the muxing or that "pins" is about some
+> > per-pin config shoveled into the same node?
+> > 
+> > The former is not OK, the latter is.
 > 
-> We'll see...
+> It means "pins" affect the muxing. The sh-pfc driver supports both muxing
+> groups and muxing individual pins.
 > 
->> I think the only reasonable course here is to continue to support
->> "console=" in /chosen/bootargs.
+> >>                 mmcif_pins: mmcif {
+> >>                 
+> >>                         mux {
+> >> 
+> >> -                               renesas,groups = "mmc0_data8_0",
+> >> "mmc0_ctrl_0";
+> >> -                               renesas,function = "mmc0";
+> >> +                               groups = "mmc0_data8_0", "mmc0_ctrl_0";
+> >> +                               function = "mmc0";
+> >> 
+> >>                         };
+> > 
+> > So that looks just very nice.
+> > 
+> >>                         cfg {
+> >> 
+> >> -                               renesas,groups = "mmc0_data8_0";
+> >> -                               renesas,pins = "PORT279";
+> >> +                               groups = "mmc0_data8_0";
+> >> +                               pins = "PORT279";
+> >> 
+> >>                                 bias-pull-up;
+> > 
+> > And here I can't see the use of "groups" in this node since it
+> > doesn't match a function. It's a bit ambiguous what "groups"
+> > mean when you run into it like this.
 > 
-> Hmm...
-> If you really need it, you can always add it to the U-Boot bootargs variable.
+> It means that the bias-pull-up configuration is applied to all pins of the
+> "mmc0_data8_0" group, as well as to pin 279.
 
-Is u-boot a given?
-
+-- 
 Regards,
-Peter Hurley
+
+Laurent Pinchart
+
