@@ -1,39 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 30 Mar 2015 23:30:34 +0000
-Subject: Re: [PATCH] sh-pfc: r8a7790: add EtherAVB pin groups
-Message-Id: <2196302.WfVLpRgOe8@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Sun, 01 Mar 2015 02:07:30 +0000
+Subject: Re: [PATCH v4 6/9] ARM: shmobile: r8a7778: add sound to DT
+Message-Id: <20150301020730.GA31918@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5670474.zOZjp8RhU1@wasted.cogentembedded.com>
-In-Reply-To: <5670474.zOZjp8RhU1@wasted.cogentembedded.com>
+References: <1424968934-30577-7-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1424968934-30577-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: linus.walleij@linaro.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Sergei,
-
-Thank you for the patch.
-
-On Tuesday 31 March 2015 00:30:02 Sergei Shtylyov wrote:
-> Add EtherAVB pin groups to R8A7790 PFC driver.
+On Fri, Feb 27, 2015 at 09:08:22AM +0100, Geert Uytterhoeven wrote:
+> On Thu, Feb 26, 2015 at 5:42 PM, Ulrich Hecht
+> <ulrich.hecht+renesas@gmail.com> wrote:
+> > --- a/arch/arm/boot/dts/r8a7778.dtsi
+> > +++ b/arch/arm/boot/dts/r8a7778.dtsi
+> > @@ -227,6 +227,61 @@
+> >                 status = "disabled";
+> >         };
+> >
+> > +       rcar_sound: sound@ffd90000 {
+> > +               #sound-dai-cells = <1>;
+> > +               compatible = "renesas,rcar_sound-r8a7778", "renesas,rcar_sound-gen1", "renesas,rcar_sound";
 > 
-> Based on original patch by Mitsuhiro Kimura
-> <mitsuhiro.kimura.kc@renesas.com>.
+> Please drop the "renesas,rcar_sound" compatible value, as it was never
+> processed nor documented.
 > 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
-> The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git'
-> repo.
+> Cfr. e.g. commit f49cd2b3d2caf075d7 ("ARM: shmobile: r8a7791 dtsi:
+> Drop "renesas,rcar_sound" compatible value").
 > 
->  drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   91 +++++++++++++++++++++++++++++++
->  1 file changed, 91 insertions(+)
+> Sorry for not noticing before.
 
--- 
-Regards,
+Thanks for pointing this out.
 
-Laurent Pinchart
-
+I have taken the unusual step (for me) of updating the patch which
+is already queued up.
