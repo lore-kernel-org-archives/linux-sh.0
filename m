@@ -1,83 +1,104 @@
-From: Stephen Boyd <sboyd@codeaurora.org>
-Date: Mon, 02 Mar 2015 21:54:55 +0000
-Subject: Re: [PATCH 05/10] clkdev: add clkdev_create() helper
-Message-Id: <54F4DC2F.1030904@codeaurora.org>
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Mon, 02 Mar 2015 17:06:11 +0000
+Subject: [PATCH 02/10] SH: use clkdev_add_table()
+Message-Id: <E1YSTnH-0001JY-GT@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150302170538.GQ8656@n2100.arm.linux.org.uk> <E1YSTnW-0001Jk-Tm@rmk-PC.arm.linux.org.uk> <54F4B50E.4070104@codeaurora.org> <20150302210121.GE29584@n2100.arm.linux.org.uk>
-In-Reply-To: <20150302210121.GE29584@n2100.arm.linux.org.uk>
+References: <20150302170538.GQ8656@n2100.arm.linux.org.uk>
+In-Reply-To: <20150302170538.GQ8656@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Cc: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
 
-On 03/02/15 13:01, Russell King - ARM Linux wrote:
-> On Mon, Mar 02, 2015 at 11:07:58AM -0800, Stephen Boyd wrote:
->> On 03/02/15 09:06, Russell King wrote:
->>> Add a helper to allocate and add a clk_lookup structure.  This can not
->>> only be used in several places in clkdev.c to simplify the code, but
->>> more importantly, can be used by callers of the clkdev code to simplify
->>> their clkdev creation and registration.
->>>
->>> Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
->>> ---
->>>  drivers/clk/clkdev.c   | 52 ++++++++++++++++++++++++++++++++++++++------------
->>>  include/linux/clkdev.h |  3 +++
->>>  2 files changed, 43 insertions(+), 12 deletions(-)
->>>
->>> diff --git a/drivers/clk/clkdev.c b/drivers/clk/clkdev.c
->>> index 043fd3633373..611b9acbad78 100644
->>> --- a/drivers/clk/clkdev.c
->>> +++ b/drivers/clk/clkdev.c
->>> @@ -294,6 +294,19 @@ vclkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt,
->>>  	return &cla->cl;
->>>  }
->>>  
->>> +static struct clk_lookup *
->>> +vclkdev_create((struct clk *clk, const char *con_id, const char *dev_fmt,
->>> +	va_list ap)
->>> +{
->>> +	struct clk_lookup *cl;
->>> +
->>> +	cl = vclkdev_alloc(clk, con_id, dev_fmt, ap);
->>> +	if (cl)
->>> +		clkdev_add(cl);
->>> +
->>> +	return cl;
->>> +}
->>> +
->>>  struct clk_lookup * __init_refok
->>>  clkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt, ...)
->>>  {
->>> @@ -308,6 +321,28 @@ clkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt, ...)
->>>  }
->>>  EXPORT_SYMBOL(clkdev_alloc);
->>>  
->>> +/**
->>> + * clkdev_create - allocate and add a clkdev lookup structure
->>> + * @clk: struct clk to associate with all clk_lookups
->>> + * @con_id: connection ID string on device
->>> + * @dev_fmt: format string describing device name
->>> + *
->>> + * Returns a clk_lookup structure, which can be later unregistered and
->>> + * freed.
->> And returns NULL on failure? Any reason why we don't return an error
->> pointer on failure?
-> Why should it when it's only error is "no memory" ?  It follows the
-> clkdev_alloc() and memory allocator pattern.
->
-> It'd also make the error handling in places like clk_add_alias() more
-> difficult (how that happened, I don't know...) though that could probably
-> be fixed as no one seems to bother checking the return value... maybe
-> that's a reason to make it return void ;)
->
+We have always had an efficient way of registering a table of clock
+lookups - it's called clkdev_add_table().  However, some people seem
+to really love writing inefficient and unnecessary code.
 
-Ok, fair enough. Right now clk_add_alias() leaks if a driver decides to
-add an alias and then fail probe for something like probe deferral. We
-should probably make that return the clk_lookup structure too so that
-drivers can clean up.
+Convert SH to use the correct interface.
 
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+ arch/sh/kernel/cpu/sh4a/clock-sh7734.c | 3 +--
+ arch/sh/kernel/cpu/sh4a/clock-sh7757.c | 4 ++--
+ arch/sh/kernel/cpu/sh4a/clock-sh7785.c | 4 ++--
+ arch/sh/kernel/cpu/sh4a/clock-sh7786.c | 4 ++--
+ arch/sh/kernel/cpu/sh4a/clock-shx3.c   | 4 ++--
+ 5 files changed, 9 insertions(+), 10 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7734.c b/arch/sh/kernel/cpu/sh4a/clock-sh7734.c
+index 1fdf1ee672de..7f54bf2f453d 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7734.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7734.c
+@@ -246,8 +246,7 @@ int __init arch_clk_init(void)
+ 	for (i = 0; i < ARRAY_SIZE(main_clks); i++)
+ 		ret |= clk_register(main_clks[i]);
+ 
+-	for (i = 0; i < ARRAY_SIZE(lookups); i++)
+-		clkdev_add(&lookups[i]);
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+ 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+index 9a28fdb36387..e40ec2c97ad1 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+@@ -141,8 +141,8 @@ int __init arch_clk_init(void)
+ 
+ 	for (i = 0; i < ARRAY_SIZE(clks); i++)
+ 		ret |= clk_register(clks[i]);
+-	for (i = 0; i < ARRAY_SIZE(lookups); i++)
+-		clkdev_add(&lookups[i]);
++
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+ 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7785.c b/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
+index 17d0ea55a5a2..8eb6e62340c9 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
+@@ -164,8 +164,8 @@ int __init arch_clk_init(void)
+ 
+ 	for (i = 0; i < ARRAY_SIZE(clks); i++)
+ 		ret |= clk_register(clks[i]);
+-	for (i = 0; i < ARRAY_SIZE(lookups); i++)
+-		clkdev_add(&lookups[i]);
++
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+ 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7786.c b/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
+index bec2a83f1ba5..5e50e7ebeff0 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
+@@ -179,8 +179,8 @@ int __init arch_clk_init(void)
+ 
+ 	for (i = 0; i < ARRAY_SIZE(clks); i++)
+ 		ret |= clk_register(clks[i]);
+-	for (i = 0; i < ARRAY_SIZE(lookups); i++)
+-		clkdev_add(&lookups[i]);
++
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+ 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-shx3.c b/arch/sh/kernel/cpu/sh4a/clock-shx3.c
+index 9a49a44f6f94..605221d1448a 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-shx3.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-shx3.c
+@@ -138,8 +138,8 @@ int __init arch_clk_init(void)
+ 
+ 	for (i = 0; i < ARRAY_SIZE(clks); i++)
+ 		ret |= clk_register(clks[i]);
+-	for (i = 0; i < ARRAY_SIZE(lookups); i++)
+-		clkdev_add(&lookups[i]);
++
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+ 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
 -- 
-Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
-a Linux Foundation Collaborative Project
+1.8.3.1
 
