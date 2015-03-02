@@ -1,44 +1,61 @@
-From: David Rientjes <rientjes@google.com>
-Date: Sat, 07 Mar 2015 23:53:48 +0000
-Subject: [patch 1/2] sh, dwarf: destroy mempools on cleanup
-Message-Id: <alpine.DEB.2.10.1503071553110.24048@chino.kir.corp.google.com>
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Mon, 02 Mar 2015 17:06:47 +0000
+Subject: [PATCH 09/10] ARM: omap2: use clkdev_create()
+Message-Id: <E1YSTnr-0001K1-Do@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150302170538.GQ8656@n2100.arm.linux.org.uk>
+In-Reply-To: <20150302170538.GQ8656@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Paul Mundt <lethal@linux-sh.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Tony Lindgren <tony@atomide.com>
 
-dwarf_reg_pool and dwarf_frame_pool are not properly destroyed when
-cleaning up the dwarf unwinder.  Destroy them with mempool_destroy().
+Rather than open coding the clkdev allocation, initialisation and
+addition, use the clkdev_create() helper.
 
-Also mark dwarf_unwinder_cleanup() as __init.
-
-Signed-off-by: David Rientjes <rientjes@google.com>
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 ---
- arch/sh/kernel/dwarf.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c | 12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
 
-diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
---- a/arch/sh/kernel/dwarf.c
-+++ b/arch/sh/kernel/dwarf.c
-@@ -993,7 +993,7 @@ static struct unwinder dwarf_unwinder = {
- 	.rating = 150,
- };
+diff --git a/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c b/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
+index 85e0b0c06718..b64d717bfab6 100644
+--- a/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
++++ b/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
+@@ -232,14 +232,12 @@ void omap2xxx_clkt_vps_init(void)
+ 	struct clk_hw_omap *hw = NULL;
+ 	struct clk *clk;
+ 	const char *parent_name = "mpu_ck";
+-	struct clk_lookup *lookup = NULL;
  
--static void dwarf_unwinder_cleanup(void)
-+static void __init dwarf_unwinder_cleanup(void)
- {
- 	struct dwarf_fde *fde, *next_fde;
- 	struct dwarf_cie *cie, *next_cie;
-@@ -1009,6 +1009,10 @@ static void dwarf_unwinder_cleanup(void)
- 	rbtree_postorder_for_each_entry_safe(cie, next_cie, &cie_root, node)
- 		kfree(cie);
+ 	omap2xxx_clkt_vps_late_init();
+ 	omap2xxx_clkt_vps_check_bootloader_rates();
  
-+	if (dwarf_reg_pool)
-+		mempool_destroy(dwarf_reg_pool);
-+	if (dwarf_frame_pool)
-+		mempool_destroy(dwarf_frame_pool);
- 	kmem_cache_destroy(dwarf_reg_cachep);
- 	kmem_cache_destroy(dwarf_frame_cachep);
+ 	hw = kzalloc(sizeof(*hw), GFP_KERNEL);
+-	lookup = kzalloc(sizeof(*lookup), GFP_KERNEL);
+-	if (!hw || !lookup)
++	if (!hw)
+ 		goto cleanup;
+ 	init.name = "virt_prcm_set";
+ 	init.ops = &virt_prcm_set_ops;
+@@ -249,15 +247,9 @@ void omap2xxx_clkt_vps_init(void)
+ 	hw->hw.init = &init;
+ 
+ 	clk = clk_register(NULL, &hw->hw);
+-
+-	lookup->dev_id = NULL;
+-	lookup->con_id = "cpufreq_ck";
+-	lookup->clk = clk;
+-
+-	clkdev_add(lookup);
++	clkdev_create(clk, "cpufreq_ck", NULL);
+ 	return;
+ cleanup:
+ 	kfree(hw);
+-	kfree(lookup);
  }
+ #endif
+-- 
+1.8.3.1
+
