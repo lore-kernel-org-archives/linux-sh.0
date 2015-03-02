@@ -1,52 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 01 Mar 2015 01:52:31 +0000
-Subject: Re: [PATCH 4/5] ARM: shmobile: Add support SOC_BUS to R-Car Gen2
-Message-Id: <20150301015227.GA21781@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 02 Mar 2015 00:03:04 +0000
+Subject: Re: [PATCH 7/9 v4] ASoC: rsnd: remove slave_id settings for DMAEngine
+Message-Id: <877fv0b6yd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1424931398.git.horms+renesas@verge.net.au>
- <8723510.YP2sm4Z5UY@wuerfel> <20150227005223.GA24717@verge.net.au>
- <2088679.zVJXCDlFW0@wuerfel>
-In-Reply-To: <2088679.zVJXCDlFW0@wuerfel>
+References: <87twzjlbiv.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87twzjlbiv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Feb 27, 2015 at 10:00:04AM +0100, Arnd Bergmann wrote:
-> On Friday 27 February 2015 09:52:23 Simon Horman wrote:
-> > 
-> > On Thu, Feb 26, 2015 at 04:53:39PM +0100, Arnd Bergmann wrote:
-> > > On Thursday 26 February 2015 15:22:44 Simon Horman wrote:
-> > > > From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> > > > 
-> > > > This provides information through SOC_BUS to sysfs.
-> > > > And this moves all on-SoC devices from /sys/devices/platform to
-> > > > /sys/devices/socX/.
-> > > > 
-> > > > Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> > > > Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > > > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > > > ---
-> > > >  arch/arm/mach-shmobile/Kconfig           |  1 +
-> > > >  arch/arm/mach-shmobile/setup-rcar-gen2.c | 38 ++++++++++++++++++++++++++++----
-> > > >  2 files changed, 35 insertions(+), 4 deletions(-)
-> > > 
-> > > I think this would be better done as a standalone driver in drivers/soc,
-> > > to avoid having to add the init_machine callbacks in patch 3.
-> > 
-> > Could we handle this as follow-up work?
-> 
-> That was my first idea when I looked at patch 3, but then I had the other
-> comment below:
-> 
-> > I would not duplicate that information here. Can you find out the SoC
-> > name from registers and put it here?
-> 
-> We must not introduce the user interface in one kernel and then change
-> it in the next one, so I'm cautious about taking the pull request in
-> the current form. Once we have agreed on what the contents of the sysfs
-> files should be, I can take the patches, and then we are free to move
-> the implementation later.
 
-Thanks for the clarification. Accordingly I'd like to withdraw this pull
-request: I will drop these patches.
+Hi Geert
+
+> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> >
+> > Current rsnd sets dma_slave_config :: slave_id field for DMAEngine,
+> > but it is no longer needed. Let's remove it.
+> >
+> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > Acked-by: Arnd Bergmann <arnd@arndb.de>
+> > ---
+> > v3 -> v4
+> >
+> >  - no change
+> 
+> i noticed this patch was dropped in v5, and thus not applied by Vinod?
+> Did I miss a discussion about that?
+> 
+> https://patchwork.kernel.org/patch/5732671/
+
+Thank you for pointing it, and sorry I didn't explain about this patch.
+Yes, I dropped this patch, because, Renesas sound card can't use
+Audio DMA peri peri via DMAEngine anymore.
+Sound card is now customized not to use DMAEngine.
+Above change (= remove slave_id from sound driver) is done in sound driver
+side customize patch-set.
+Otherwise, we will have conflict between DMAEngine <-> Sound branch
+
+Best regards
+---
+Kuninori Morimoto
