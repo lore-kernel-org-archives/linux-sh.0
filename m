@@ -1,98 +1,127 @@
-From: Kevin Hilman <khilman@kernel.org>
-Date: Tue, 31 Mar 2015 22:10:33 +0000
-Subject: Re: Possible regression in next-20150323 due to "ARM, arm64: kvm: get rid of the bounce page"
-Message-Id: <7h8uec95t2.fsf@deeprootsystems.com>
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Mon, 02 Mar 2015 17:06:26 +0000
+Subject: [PATCH 05/10] clkdev: add clkdev_create() helper
+Message-Id: <E1YSTnW-0001Jk-Tm@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150324004537.GA24816@verge.net.au>
- <CAKv+Gu-0jPk=KQ4gY32ELc+BVbe=1QdcrwQ+Pb=RkdwO9K3Vkw@mail.gmail.com>
- <20150324161358.GA694@kahuna> <20150326003939.GA25368@verge.net.au>
- <20150326133631.GB2805@arm.com>
- <CANMBJr68dsbYvvHUzy6U4m4fEM6nq8dVHBH4kLQ=0c4QNOhLPQ@mail.gmail.com>
- <20150327002554.GA5527@verge.net.au> <20150327100612.GB1562@arm.com>
- <7hbnj99epe.fsf@deeprootsystems.com>
- <CAKv+Gu_ZHZFm-1eXn+r7fkEHOxqSmj+Q+Mmy7k6LK531vSfAjQ@mail.gmail.com>
-In-Reply-To: <CAKv+Gu_ZHZFm-1eXn+r7fkEHOxqSmj+Q+Mmy7k6LK531vSfAjQ@mail.gmail.com>
- (Ard Biesheuvel's message of "Tue, 31 Mar 2015 23:39:47 +0200")
+References: <20150302170538.GQ8656@n2100.arm.linux.org.uk>
+In-Reply-To: <20150302170538.GQ8656@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi Ard,
+Add a helper to allocate and add a clk_lookup structure.  This can not
+only be used in several places in clkdev.c to simplify the code, but
+more importantly, can be used by callers of the clkdev code to simplify
+their clkdev creation and registration.
 
-Ard Biesheuvel <ard.biesheuvel@linaro.org> writes:
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+ drivers/clk/clkdev.c   | 52 ++++++++++++++++++++++++++++++++++++++------------
+ include/linux/clkdev.h |  3 +++
+ 2 files changed, 43 insertions(+), 12 deletions(-)
 
-[...]
+diff --git a/drivers/clk/clkdev.c b/drivers/clk/clkdev.c
+index 043fd3633373..611b9acbad78 100644
+--- a/drivers/clk/clkdev.c
++++ b/drivers/clk/clkdev.c
+@@ -294,6 +294,19 @@ vclkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt,
+ 	return &cla->cl;
+ }
+ 
++static struct clk_lookup *
++vclkdev_create((struct clk *clk, const char *con_id, const char *dev_fmt,
++	va_list ap)
++{
++	struct clk_lookup *cl;
++
++	cl = vclkdev_alloc(clk, con_id, dev_fmt, ap);
++	if (cl)
++		clkdev_add(cl);
++
++	return cl;
++}
++
+ struct clk_lookup * __init_refok
+ clkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt, ...)
+ {
+@@ -308,6 +321,28 @@ clkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt, ...)
+ }
+ EXPORT_SYMBOL(clkdev_alloc);
+ 
++/**
++ * clkdev_create - allocate and add a clkdev lookup structure
++ * @clk: struct clk to associate with all clk_lookups
++ * @con_id: connection ID string on device
++ * @dev_fmt: format string describing device name
++ *
++ * Returns a clk_lookup structure, which can be later unregistered and
++ * freed.
++ */
++struct clk_lookup *clkdev_create(struct clk *clk, const char *con_id,
++	const char *dev_fmt, ...)
++{
++	struct clk_lookup *cl;
++	va_list ap;
++
++	va_start(ap, dev_fmt);
++	cl = vclkdev_create(clk, con_id, dev_fmt, ap);
++	va_end(ap);
++
++	return cl;
++}
++
+ int clk_add_alias(const char *alias, const char *alias_dev_name, char *id,
+ 	struct device *dev)
+ {
+@@ -317,12 +352,10 @@ int clk_add_alias(const char *alias, const char *alias_dev_name, char *id,
+ 	if (IS_ERR(r))
+ 		return PTR_ERR(r);
+ 
+-	l = clkdev_alloc(r, alias, alias_dev_name);
++	l = vclkdev_create(r, alias, "%s", alias_dev_name);
+ 	clk_put(r);
+-	if (!l)
+-		return -ENODEV;
+-	clkdev_add(l);
+-	return 0;
++
++	return l ? 0 : -ENODEV;
+ }
+ EXPORT_SYMBOL(clk_add_alias);
+ 
+@@ -362,15 +395,10 @@ int clk_register_clkdev(struct clk *clk, const char *con_id,
+ 		return PTR_ERR(clk);
+ 
+ 	va_start(ap, dev_fmt);
+-	cl = vclkdev_alloc(clk, con_id, dev_fmt, ap);
++	cl = vclkdev_create(clk, con_id, dev_fmt, ap);
+ 	va_end(ap);
+ 
+-	if (!cl)
+-		return -ENOMEM;
+-
+-	clkdev_add(cl);
+-
+-	return 0;
++	return cl ? 0 : -ENOMEM;
+ }
+ EXPORT_SYMBOL(clk_register_clkdev);
+ 
+diff --git a/include/linux/clkdev.h b/include/linux/clkdev.h
+index 94bad77eeb4a..6f32f6d8b6ee 100644
+--- a/include/linux/clkdev.h
++++ b/include/linux/clkdev.h
+@@ -37,6 +37,9 @@ struct clk_lookup *clkdev_alloc(struct clk *clk, const char *con_id,
+ void clkdev_add(struct clk_lookup *cl);
+ void clkdev_drop(struct clk_lookup *cl);
+ 
++struct clk_lookup *clkdev_create(struct clk *clk, const char *con_id,
++	const char *dev_fmt, ...);
++
+ void clkdev_add_table(struct clk_lookup *, size_t);
+ int clk_add_alias(const char *, const char *, char *, struct device *);
+ 
+-- 
+1.8.3.1
 
-> I think Will and I were both under the impression that this patch
->
-> https://git.kernel.org/cgit/linux/kernel/git/arm64/linux.git/log/?h=kvm-bounce-page
->
-> fixed the issue conclusively.
-
-Nope, that branch is already part of linux-next, and linux-next still
-fails to compile for 20+ defconfigs[1]
-
-> Could you elaborate on the issue please? What is the error you are
-> getting, and can you confirm that is is caused by ld choking on the
-> linker script? If not, this is another error than the one we have been
-> trying to fix
-
-It's definitely not linker script related.
-
-Using "arm-linux-gnueabi-gcc (Ubuntu/Linaro 4.7.3-12ubuntu1) 4.7.3",
-here's the error when building for multi_v7_defconfig (full log
-available[2]):
-
-../mm/migrate.c: In function 'migrate_pages':
-../mm/migrate.c:1148:1: internal compiler error: in push_minipool_fix, at config/arm/arm.c:13101
-Please submit a full bug report,
-with preprocessed source if appropriate.
-See <file:///usr/share/doc/gcc-4.7/README.Bugs> for instructions.
-Preprocessed source stored into /tmp/ccO1Nz1m.out file, please attach
-this to your bugreport.
-make[2]: *** [mm/migrate.o] Error 1
-make[2]: Target `__build' not remade because of errors.
-make[1]: *** [mm] Error 2
-
-build bisect points to commit 21f992084aeb[3], but that doesn't revert
-cleanly so I haven't got any further than that yet.
-
-Kevin
-
-[1] http://kernelci.org/build/next/kernel/next-20150331/
-[2] http://storage.kernelci.org/next/next-20150331/arm-multi_v7_defconfig/build.log
-[3] 21f992084aeb777675ba5f9c2dc6663e8a06e467 is the first bad commit
-
-Author: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
-Date:   Wed Mar 25 13:02:28 2015 +1100
-
-    page-flags: define behavior of FS/IO-related flags on compound pages
-
-    It seems we don't have compound page on FS/IO path currently.  Use
-    NO_COMPOUND to catch if we have.
-
-    The odd exception is PG_dirty: sound uses compound pages and maps
-    them
-    with PTEs.  NO_COMPOUND triggers VM_BUG_ON() in set_page_dirty() on
-    handling shared fault.  Let's use HEAD for PG_dirty.
-
-    Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
-    Cc: Andrea Arcangeli <aarcange@redhat.com>
-    Cc: Hugh Dickins <hughd@google.com>
-    Cc: Dave Hansen <dave.hansen@intel.com>
-    Cc: Mel Gorman <mgorman@suse.de>
-    Cc: Rik van Riel <riel@redhat.com>
-    Cc: Vlastimil Babka <vbabka@suse.cz>
-    Cc: Christoph Lameter <cl@linux.com> 
-    Cc: Naoya Horiguchi <n-horiguchi@ah.jp.nec.com>
-    Cc: Steve Capper <steve.capper@linaro.org>
-    Cc: "Aneesh Kumar K.V" <aneesh.kumar@linux.vnet.ibm.com>
-    Cc: Johannes Weiner <hannes@cmpxchg.org>
-    Cc: Michal Hocko <mhocko@suse.cz>
-    Cc: Jerome Marchand <jmarchan@redhat.com>
-    Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
-
-:040000 040000 0d621460af1123de8fc33c881ae314c914725afc
-b843f45fb2a1c2537e8c17946d3f8af512cab84d M      include
-bisect run success
