@@ -1,104 +1,38 @@
-From: Russell King <rmk+kernel@arm.linux.org.uk>
-Date: Mon, 02 Mar 2015 17:06:11 +0000
-Subject: [PATCH 02/10] SH: use clkdev_add_table()
-Message-Id: <E1YSTnH-0001JY-GT@rmk-PC.arm.linux.org.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 02 Mar 2015 17:18:20 +0000
+Subject: Re: [PATCH 02/10] SH: use clkdev_add_table()
+Message-Id: <CAMuHMdWJbLhVgWTqM8mC9AkqUKYYEh2Zv85mWizbHqoZNTxUMg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150302170538.GQ8656@n2100.arm.linux.org.uk>
-In-Reply-To: <20150302170538.GQ8656@n2100.arm.linux.org.uk>
+	<E1YSTnH-0001JY-GT@rmk-PC.arm.linux.org.uk>
+In-Reply-To: <E1YSTnH-0001JY-GT@rmk-PC.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+To: Russell King <rmk+kernel@arm.linux.org.uk>
+Cc: ALSA Development Mailing List <alsa-devel@alsa-project.org>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, Linux Media Mailing List <linux-media@vger.kernel.org>, "linux-omap@vger.kernel.org" <linux-omap@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-We have always had an efficient way of registering a table of clock
-lookups - it's called clkdev_add_table().  However, some people seem
-to really love writing inefficient and unnecessary code.
+On Mon, Mar 2, 2015 at 6:06 PM, Russell King
+<rmk+kernel@arm.linux.org.uk> wrote:
+> We have always had an efficient way of registering a table of clock
+> lookups - it's called clkdev_add_table().  However, some people seem
+> to really love writing inefficient and unnecessary code.
+>
+> Convert SH to use the correct interface.
+>
+> Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 
-Convert SH to use the correct interface.
+Thanks, looks good.
 
-Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
----
- arch/sh/kernel/cpu/sh4a/clock-sh7734.c | 3 +--
- arch/sh/kernel/cpu/sh4a/clock-sh7757.c | 4 ++--
- arch/sh/kernel/cpu/sh4a/clock-sh7785.c | 4 ++--
- arch/sh/kernel/cpu/sh4a/clock-sh7786.c | 4 ++--
- arch/sh/kernel/cpu/sh4a/clock-shx3.c   | 4 ++--
- 5 files changed, 9 insertions(+), 10 deletions(-)
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7734.c b/arch/sh/kernel/cpu/sh4a/clock-sh7734.c
-index 1fdf1ee672de..7f54bf2f453d 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7734.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7734.c
-@@ -246,8 +246,7 @@ int __init arch_clk_init(void)
- 	for (i = 0; i < ARRAY_SIZE(main_clks); i++)
- 		ret |= clk_register(main_clks[i]);
- 
--	for (i = 0; i < ARRAY_SIZE(lookups); i++)
--		clkdev_add(&lookups[i]);
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
- 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
-index 9a28fdb36387..e40ec2c97ad1 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
-@@ -141,8 +141,8 @@ int __init arch_clk_init(void)
- 
- 	for (i = 0; i < ARRAY_SIZE(clks); i++)
- 		ret |= clk_register(clks[i]);
--	for (i = 0; i < ARRAY_SIZE(lookups); i++)
--		clkdev_add(&lookups[i]);
-+
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
- 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7785.c b/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
-index 17d0ea55a5a2..8eb6e62340c9 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
-@@ -164,8 +164,8 @@ int __init arch_clk_init(void)
- 
- 	for (i = 0; i < ARRAY_SIZE(clks); i++)
- 		ret |= clk_register(clks[i]);
--	for (i = 0; i < ARRAY_SIZE(lookups); i++)
--		clkdev_add(&lookups[i]);
-+
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
- 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7786.c b/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
-index bec2a83f1ba5..5e50e7ebeff0 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
-@@ -179,8 +179,8 @@ int __init arch_clk_init(void)
- 
- 	for (i = 0; i < ARRAY_SIZE(clks); i++)
- 		ret |= clk_register(clks[i]);
--	for (i = 0; i < ARRAY_SIZE(lookups); i++)
--		clkdev_add(&lookups[i]);
-+
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
- 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-shx3.c b/arch/sh/kernel/cpu/sh4a/clock-shx3.c
-index 9a49a44f6f94..605221d1448a 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-shx3.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-shx3.c
-@@ -138,8 +138,8 @@ int __init arch_clk_init(void)
- 
- 	for (i = 0; i < ARRAY_SIZE(clks); i++)
- 		ret |= clk_register(clks[i]);
--	for (i = 0; i < ARRAY_SIZE(lookups); i++)
--		clkdev_add(&lookups[i]);
-+
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
- 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
--- 
-1.8.3.1
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
