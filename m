@@ -1,53 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 05 Mar 2015 01:58:15 +0000
-Subject: [PATCH 15/16] ARM: shmobile: bockw: add sound to DT
-Message-Id: <ba32449535c57b7cc4da788326c6ae4908b70268.1425518338.git.horms+renesas@verge.net.au>
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Mon, 02 Mar 2015 17:06:21 +0000
+Subject: [PATCH 04/10] ARM: lpc32xx: convert to use clkdev_add_table()
+Message-Id: <E1YSTnR-0001Jg-Pn@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425518337.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425518337.git.horms+renesas@verge.net.au>
+References: <20150302170538.GQ8656@n2100.arm.linux.org.uk>
+In-Reply-To: <20150302170538.GQ8656@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Roland Stigge <stigge@antcom.de>
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+We have always had an efficient way of registering a table of clock
+lookups - it's called clkdev_add_table().  However, some people seem
+to really love writing inefficient and unnecessary code.
 
-Adds sound card using the ak4643 codec.
+Convert LPC32xx to use the correct interface.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+ arch/arm/mach-lpc32xx/clock.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 646383a..787fa6f 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -45,6 +45,23 @@
- 		regulator-boot-on;
- 		regulator-always-on;
- 	};
-+
-+	sound {
-+		compatible = "simple-audio-card";
-+
-+		simple-audio-card,format = "left_j";
-+		simple-audio-card,bitclock-master = <&sndcodec>;
-+		simple-audio-card,frame-master = <&sndcodec>;
-+
-+		sndcpu: simple-audio-card,cpu {
-+			sound-dai = <&rcar_sound>;
-+		};
-+
-+		sndcodec: simple-audio-card,codec {
-+			sound-dai = <&ak4643>;
-+			system-clock-frequency = <11289600>;
-+		};
-+	};
- };
+diff --git a/arch/arm/mach-lpc32xx/clock.c b/arch/arm/mach-lpc32xx/clock.c
+index dd5d6f532e8c..661c8f4b2310 100644
+--- a/arch/arm/mach-lpc32xx/clock.c
++++ b/arch/arm/mach-lpc32xx/clock.c
+@@ -1238,10 +1238,7 @@ static struct clk_lookup lookups[] = {
  
- &bsc {
+ static int __init clk_init(void)
+ {
+-	int i;
+-
+-	for (i = 0; i < ARRAY_SIZE(lookups); i++)
+-		clkdev_add(&lookups[i]);
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	/*
+ 	 * Setup muxed SYSCLK for HCLK PLL base -this selects the
 -- 
-2.1.4
+1.8.3.1
 
