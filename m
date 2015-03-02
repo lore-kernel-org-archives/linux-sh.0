@@ -1,72 +1,41 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 08 Mar 2015 10:07:02 +0000
-Subject: Re: [PATCH 05/11] ARM: shmobile: r8a7793: add power management support
-Message-Id: <CAMuHMdU9-DjXbkVCkbh-WvTFUvtza439hgDPf-MPvv=9qH6ZQQ@mail.gmail.com>
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Mon, 02 Mar 2015 17:06:42 +0000
+Subject: [PATCH 08/10] ARM: orion: use clkdev_create()
+Message-Id: <E1YSTnm-0001Jx-AM@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425661798-10487-6-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1425661798-10487-6-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <20150302170538.GQ8656@n2100.arm.linux.org.uk>
+In-Reply-To: <20150302170538.GQ8656@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Jason Cooper <jason@lakedaemon.net>, Andrew Lunn <andrew@lunn.ch>, Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
 
-On Fri, Mar 6, 2015 at 6:09 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> +#ifdef CONFIG_PM
-> +
-> +#define CPG_BASE 0xe6150000
-> +#define CPG_LEN 0x1000
+clkdev_create() is a shorter way to write clkdev_alloc() followed by
+clkdev_add().  Use this instead.
 
-[...]
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+ arch/arm/plat-orion/common.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
 
-> +static void r8a7793_init_pm_domain(struct r8a7793_pm_domain *r8a7793_pd)
-> +{
-> +       struct generic_pm_domain *genpd = &r8a7793_pd->genpd;
-> +
-> +       pm_genpd_init(genpd, NULL, true);
-> +       genpd->dev_ops.stop = pm_clk_suspend;
-> +       genpd->dev_ops.start = pm_clk_resume;
-> +       genpd->dev_ops.active_wakeup = pd_active_wakeup;
-> +       genpd->power_off = pd_power_down;
-> +       genpd->power_on = pd_power_up;
-> +
-> +       bus_register_notifier(&platform_bus_type, &platform_nb);
-> +}
-> +
-> +static struct r8a7793_pm_domain r8a7793_pm_domains[] = {
-> +       {
-> +               .genpd.name = "pvrsrvkm",
-> +               .ch = {
-> +                       .chan_offs = 0xc0,      /* PWRSR2 .. PWRER2 */
-> +                       .isr_bit = 20,          /* SGX */
-> +               },
-> +       },
-> +};
-> +
-> +void __init r8a7793_init_pm_domains(void)
-> +{
-> +       int j;
-> +
-> +       for (j = 0; j < ARRAY_SIZE(r8a7793_pm_domains); j++)
-> +               r8a7793_init_pm_domain(&r8a7793_pm_domains[j]);
-> +}
+diff --git a/arch/arm/plat-orion/common.c b/arch/arm/plat-orion/common.c
+index f5b00f41c4f6..2235081a04ee 100644
+--- a/arch/arm/plat-orion/common.c
++++ b/arch/arm/plat-orion/common.c
+@@ -28,11 +28,7 @@
+ void __init orion_clkdev_add(const char *con_id, const char *dev_id,
+ 			     struct clk *clk)
+ {
+-	struct clk_lookup *cl;
+-
+-	cl = clkdev_alloc(clk, con_id, dev_id);
+-	if (cl)
+-		clkdev_add(cl);
++	clkdev_create(clk, con_id, "%s", dev_id);
+ }
+ 
+ /* Create clkdev entries for all orion platforms except kirkwood.
+-- 
+1.8.3.1
 
-[...]
-
-> +static struct notifier_block platform_nb = {
-> +       .notifier_call = r8a7793_pm_notifier_call,
-> +};
-
-This PM domain implementation definitely needs to be converted to DT before
-it can be accepted upstream.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
