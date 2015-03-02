@@ -1,123 +1,107 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 20 Mar 2015 08:22:39 +0000
-Subject: Re: [PATCH 2/3] Documentation: i2c: describe the new slave mode
-Message-Id: <20150320082238.GB2071@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="R3G7APHDIzY6R/pk"
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 02 Mar 2015 11:56:47 +0000
+Subject: Re: [PATCH] dmaengine: shdma: Move DMA stop to (runtime) suspend callbacks
+Message-Id: <CAPDyKFrNNOYgif0k=EGK0hCNe0sd3RFeZJxytrR9qS8uH+1XBA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426164123-8853-1-git-send-email-wsa@the-dreams.de>
- <1426164123-8853-3-git-send-email-wsa@the-dreams.de>
- <20150319201137.GY10068@pengutronix.de>
- <20150320073012.GB906@katana>
- <20150320074214.GD10068@pengutronix.de>
-In-Reply-To: <20150320074214.GD10068@pengutronix.de>
-To: Uwe =?utf-8?Q?Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Andrey Danin <danindrey@mail.ru>, Marc Dietrich <marvin24@gmx.de>, Debora Grosse <debora@mds.com>, linux-kernel@vger.kernel.org
+References: <1424946394-6784-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1424946394-6784-1-git-send-email-geert+renesas@glider.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Vinod Koul <vinod.koul@intel.com>, Dan Williams <dan.j.williams@intel.com>, dmaengine@vger.kernel.org, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
+On 26 February 2015 at 11:26, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
+> During system reboot, the sh-dma-engine device may be runtime-suspended,
+> causing a crash:
+>
+>     Unhandled fault: imprecise external abort (0x1406) at 0x0002c02c
+>     Internal error: : 1406 [#1] SMP ARM
+>     ...
+>     PC is at sh_dmae_ctl_stop+0x28/0x64
+>     LR is at sh_dmae_ctl_stop+0x24/0x64
+>
+> If the sh-dma-engine is runtime-suspended, its module clock is turned
+> off, and its registers cannot be accessed.
+>
+> To fix this, move the call to sh_dmae_ctl_stop(), which touches the
+> DMAOR register, to the sh_dmae_suspend() and sh_dmae_runtime_suspend()
+> callbacks.  This makes PM operations more symmetric, as both
+> sh_dmae_resume() and sh_dmae_runtime_resume() already call sh_dmae_rst()
+> to re-initialize the DMAOR register.
+>
+> Remove sh_dmae_shutdown(), as it became empty.
+>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
---R3G7APHDIzY6R/pk
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
 
-On Fri, Mar 20, 2015 at 08:42:14AM +0100, Uwe Kleine-K=C3=B6nig wrote:
-> Hello Wolfram,
->=20
-> On Fri, Mar 20, 2015 at 08:30:13AM +0100, Wolfram Sang wrote:
-> >=20
-> > > > +Finally, Linux can also be an I2C slave in case I2C controllers ha=
-ve slave
-> > > > +support. Besides this HW requirement, one also needs a software ba=
-ckend
-> > > I wouldn't have written "Finally, ...". While it's great that we have
-> > > slave support now, being enthusiastic here looks strange if someone
-> > > reads it while slave support has become "normal".
-> >=20
-> > OK.
-> >=20
-> > > > +providing the actual functionality. An example for this is the sla=
-ve-eeprom
-> > > > +driver, which acts as a dual memory driver. While another I2C mast=
-er on the bus
-> > > > +can access it like a regular eeprom, the Linux I2C slave can acces=
-s the content
-> > > > +via sysfs and retrieve/provide information as needed. The software=
- backend
-> > > > +driver and the I2C bus driver communicate via events. Here is a sm=
-all graph
-> > > > +visualizing the data flow and the means by which data is transport=
-ed. The
-> > > > +dotted line marks only one example. The backend could also use e.g=
-=2E a character
-> > > > +device, or use in-kernel mechanisms only, or something completely =
-different:
-> > > Or something self contained, so the userspace part is actually option=
-al
-> > > (but probably present most of the time).
-> >=20
-> > With "in-kernel mechanisms" I meant self-contained. Maybe "be in-kernel
-> > only"?
-> I'm sure "in-kernel mechanisms" wasn't in the mail I replied to. (Hmm,
-> or I must have missed that while reading.)
+Kind regards
+Uffe
 
-:) Still, I like "be in-kernel only" better, so I'll rephrase.
-
-> > > Does that mean that I have to pass a valid address, or can I use NULL,
-> > > too?
-> >=20
-> > Is NULL a valid pointer to val?
-> NULL is a pointer and you didn't wrote about "valid" above. I just
-
-But NULL is not a pointer to val.
-
-> wondered if the necessity just comes from the fact that the function
-> takes 3 parameters and so you have to give it 3 (this wouldn't needed to
-> be pointed out IMHO) or if the value must be valid (then the wording
-> isn't optimal).
-
-I'll try to rephrase.
-
-> Is there a technical reason to require val to be valid?
-
-Better be safe than sorry in case for future needs of 'val' I can't see
-now.
-
-> > You need to assume that if the next byte is requested, the previous byte
-> > made it to the bus. So, you should do pre-increment in
-> > I2C_SLAVE_READ_PROCESSED, not post-increment. I didn't want to write
-> This might be a correctness problem, right? If we cannot fix it (with
-> the current slave abstraction) should this be pointed out somewhere; at
-> least in the eeprom driver as this will probably be the reference for
-> the next backend?
-
-Adding some more info to the eeprom driver sounds good. Updating this
-paragraph with some infos from this discussion, too.
-
-Thanks,
-
-   Wolfram
-
-
---R3G7APHDIzY6R/pk
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJVC9jOAAoJEBQN5MwUoCm28b0QAKzCs2yMijgPB6CMWLJn/0Tg
-ol0ECikYMw4pa7+mPvo6maqmOS7q9jpVQ9ilvUPwtBjAPM/Z4w5LIyzw4Nr6xBFi
-snZWrfKtCQhafY0JcVn/gV9KYOxz0D+b3rekr9BFY2QMXTgFcG9q4X73e1xKhy3M
-e4rpvo/biKpwiTbSnTN49ttMthmb6n3H/By9Zluf6284UsVykpntrLuOo1hE6p/u
-FuMfDdE8+ZCNv8zo39JTkey5wz2iYik3Gk00kWlnbsMmVQ2/m62DKEAGdUmQakyg
-WlWaE8pXUeIG0fuYCKhCuwBd4iLkMfjii7s9avRYZxZX48xvvO6vPtnXMCnIAkKi
-tHA82DojmVgAoyMrCXviaiTj3Kxv1qOFKT6fETjAejknEcgaQWIVvlJ2Y1x6/Ijz
-JG/4NyQWuisYyM2HcByaeB+yKQUR6POn7dOaDG5MEdtvxAVTv/LlTGuSm+N+oabO
-nQUPXS2SQwj5yQG4XJ2D55MobD1g9xJar3CB11mA59FAaJTX5PgWeWnLsQEJAvs2
-bGSRBgkivwunYgHahxvz7TQSxI9JWrwhs7CMCgPVRjkRYGMWQdfOi9x2juy14j+7
-0CqsTkdd66kdbX2s9XRfpV7E8jnaaRzPO+ESFBBFR4iHMv+KBTU/LwWVfqkqzQFn
-AjhrN8g+5fsX8ljDxU/P
-=UQCh
------END PGP SIGNATURE-----
-
---R3G7APHDIzY6R/pk--
+> ---
+> This is v3 of "dmaengine: shdma: Runtime-resume device in .shutdown()"
+>
+> v3:
+>   - Move the call to sh_dmae_ctl_stop() to sh_dmae_suspend() and
+>     sh_dmae_runtime_suspend() instead of runtime-resuming the device in
+>     .shutdown(),
+>
+> v2:
+>   - Do nothing if we're runtime suspended.
+> ---
+>  drivers/dma/sh/shdmac.c | 15 +++++++--------
+>  1 file changed, 7 insertions(+), 8 deletions(-)
+>
+> diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+> index b2431aa300331270..9f1d4c7dbab83890 100644
+> --- a/drivers/dma/sh/shdmac.c
+> +++ b/drivers/dma/sh/shdmac.c
+> @@ -582,15 +582,12 @@ static void sh_dmae_chan_remove(struct sh_dmae_device *shdev)
+>         }
+>  }
+>
+> -static void sh_dmae_shutdown(struct platform_device *pdev)
+> -{
+> -       struct sh_dmae_device *shdev = platform_get_drvdata(pdev);
+> -       sh_dmae_ctl_stop(shdev);
+> -}
+> -
+>  #ifdef CONFIG_PM
+>  static int sh_dmae_runtime_suspend(struct device *dev)
+>  {
+> +       struct sh_dmae_device *shdev = dev_get_drvdata(dev);
+> +
+> +       sh_dmae_ctl_stop(shdev);
+>         return 0;
+>  }
+>
+> @@ -605,6 +602,9 @@ static int sh_dmae_runtime_resume(struct device *dev)
+>  #ifdef CONFIG_PM_SLEEP
+>  static int sh_dmae_suspend(struct device *dev)
+>  {
+> +       struct sh_dmae_device *shdev = dev_get_drvdata(dev);
+> +
+> +       sh_dmae_ctl_stop(shdev);
+>         return 0;
+>  }
+>
+> @@ -929,13 +929,12 @@ static int sh_dmae_remove(struct platform_device *pdev)
+>  }
+>
+>  static struct platform_driver sh_dmae_driver = {
+> -       .driver         = {
+> +       .driver         = {
+>                 .pm     = &sh_dmae_pm,
+>                 .name   = SH_DMAE_DRV_NAME,
+>                 .of_match_table = sh_dmae_of_match,
+>         },
+>         .remove         = sh_dmae_remove,
+> -       .shutdown       = sh_dmae_shutdown,
+>  };
+>
+>  static int __init sh_dmae_init(void)
+> --
+> 1.9.1
+>
