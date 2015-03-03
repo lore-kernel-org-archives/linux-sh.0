@@ -1,56 +1,72 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 19 Mar 2015 02:15:22 +0000
-Subject: [PATCH 4/6] ARM: shmobile: r8a7791: enable Audio DMAC peri peri via sound driver
-Message-Id: <d73a5013ed61bc605374f72ce879a358feba7f3e.1426731062.git.horms+renesas@verge.net.au>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Date: Tue, 03 Mar 2015 01:20:54 +0000
+Subject: [PATCH 2/5] ARM: shmobile: Add r8a7794 reset code for SMP
+Message-Id: <54F50C76.2060803@bp.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1426731062.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1426731062.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Since reset vector settings is controlled by SYSC
+register, this code is added to pm-r8a7794.c.
 
-Audio DMAC peri peri is no longer DMAEngine. it is supported by
-sound driver. this patch enable it.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 12 +++---------
- 1 file changed, 3 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/pm-r8a7794.c |   26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 8631e02..a697b94 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -357,13 +357,6 @@
- 		dma-channels = <13>;
- 	};
+diff --git a/arch/arm/mach-shmobile/pm-r8a7794.c b/arch/arm/mach-shmobile/pm-r8a7794.c
+index a8a94cf..b990839 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7794.c
++++ b/arch/arm/mach-shmobile/pm-r8a7794.c
+@@ -9,9 +9,17 @@
+  */
  
--	audmapp: dma-controller@ec740000 {
--		compatible = "renesas,rcar-audmapp";
--		#dma-cells = <1>;
--
--		reg = <0 0xec740000 0 0x200>;
--	};
--
- 	/* The memory map in the User's Manual maps the cores to bus numbers */
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
-@@ -1503,8 +1496,9 @@
- 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
- 			<0 0xec5a0000 0 0x100>,  /* ADG */
- 			<0 0xec540000 0 0x1000>, /* SSIU */
--			<0 0xec541000 0 0x1280>; /* SSI */
--		reg-names = "scu", "adg", "ssiu", "ssi";
-+			<0 0xec541000 0 0x1280>, /* SSI */
-+			<0 0xec740000 0 0x200>;  /* Audio DMAC peri peri*/
-+		reg-names = "scu", "adg", "ssiu", "ssi", "audmapp";
+ #include <asm/io.h>
++#include "common.h"
+ #include "pm-rcar.h"
+ #include "r8a7794.h"
  
- 		clocks = <&mstp10_clks R8A7791_CLK_SSI_ALL>,
- 			<&mstp10_clks R8A7791_CLK_SSI9>, <&mstp10_clks R8A7791_CLK_SSI8>,
++/* RST */
++#define RST		0xe6160000
++#define CA7BAR		0x0030
++#define CA7RESCNT	0x0044
++
++#define RAM		0xe63c0000
++
+ /* SYSC */
+ #define SYSCIER 0x0c
+ #define SYSCIMR 0x10
+@@ -35,10 +43,28 @@ static inline void r8a7794_sysc_init(void) {}
+ 
+ void __init r8a7794_pm_init(void)
+ {
++	void __iomem *p;
++	u32 bar;
+ 	static int once;
+ 
+ 	if (once++)
+ 		return;
+ 
++	/* RAM for jump stub, because BAR requires 256KB aligned address */
++	p = ioremap_nocache(RAM, shmobile_boot_size);
++	memcpy_toio(p, shmobile_boot_vector, shmobile_boot_size);
++	iounmap(p);
++
++	/* setup reset vectors */
++	p = ioremap_nocache(RST, 0x63);
++	bar = (RAM >> 8) & 0xfffffc00;
++	writel_relaxed(bar, p + CA7BAR);
++	writel_relaxed(bar | 0x10, p + CA7BAR);
++
++	/* de-assert reset for all CPUs */
++	writel_relaxed((readl_relaxed(p + CA7RESCNT) & ~0x0f) | 0x5a5a0000,
++		       p + CA7RESCNT);
++	iounmap(p);
++
+ 	r8a7794_sysc_init();
+ }
 -- 
-2.1.4
+1.7.9.5
 
