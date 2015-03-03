@@ -1,69 +1,42 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 03 Mar 2015 09:37:52 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Tue, 03 Mar 2015 09:44:06 +0000
 Subject: Re: [PATCH] [RFC] ARM: shmobile: R-Car Gen2: Add da9063/da9210 regulator quirk
-Message-Id: <CAMuHMdUhk+5_1SghtmP=Gb_Qr+Ojgd93Ke0jLSJBk6yvWgA1ug@mail.gmail.com>
+Message-Id: <20150303094406.GI21293@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="9Lxh293ZELbusAxJ"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1425317323-5898-1-git-send-email-geert+renesas@glider.be>
- <20150302183246.GA25839@katana>
- <CAMuHMdUa6H_GYf9p8OS+ne3YvLWzi=CNi44NGmjaWjQ080B7Yw@mail.gmail.com>
- <20150302224415.GB25163@verge.net.au>
-In-Reply-To: <20150302224415.GB25163@verge.net.au>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+In-Reply-To: <1425317323-5898-1-git-send-email-geert+renesas@glider.be>
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
 
-On Mon, Mar 2, 2015 at 11:44 PM, Simon Horman <horms@verge.net.au> wrote:
-> On Mon, Mar 02, 2015 at 09:49:11PM +0100, Geert Uytterhoeven wrote:
->> On Mon, Mar 2, 2015 at 7:32 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
->> > On Mon, Mar 02, 2015 at 06:28:43PM +0100, Geert Uytterhoeven wrote:
->> >> The r8a7791/koelsch development board has da9063 and da9210 regulators.
->> >> Both regulators have their interrupt request lines tied to the same
->> >> interrupt pin (IRQ2) on the SoC.
->> >>
->> >> After boot-up, both the da9063 and da9210 seem to assert their interrupt
->> >> request lines.  Hence as soon as one driver requests this irq, it gets
->> >> stuck in an interrupt storm, as it only manages to deassert its own
->> >> interrupt request line, and the other driver hasn't installed an
->> >> interrupt handler yet.
->> >>
->> >> To handle this, install a quirk that masks the interrupts in both the
->> >> da9063 and da9210.  This quirk has to run after the i2c master driver
->> >> has been initialized, but before the i2c slave drivers are initialized.
+--9Lxh293ZELbusAxJ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
->> >> +#ifdef CONFIG_I2C
->> >
->> > Is it a realistic scenario that I2C and slave drivers are modules?
->>
->> Yes.
->>
->> Unfortunately that's more difficult to support, as the code references
->> i2c_bus_type and i2c_adapter_type.
->>
->> i2c_bus_type is needed to register the notifier.
->> i2c_adapter_type is needed to distinguish between i2c adapters and clients,
->> as the notifier is called for both with action BUS_NOTIFY_ADD_DEVICE.
+On Mon, Mar 02, 2015 at 06:28:43PM +0100, Geert Uytterhoeven wrote:
+> The r8a7791/koelsch development board has da9063 and da9210 regulators.
+> Both regulators have their interrupt request lines tied to the same
+> interrupt pin (IRQ2) on the SoC.
 
-Given we already have a few "select I2C" under arch/arm, I guess it won't
-hurt much to let ARCH_R8A7790 and ARCH_R8A7791 select I2C, too.
+Reviewed-by: Mark Brown <broonie@kernel.org>
 
-> this seems reasonable enough to me, however, I'd like to let it hang out
-> for a bit longer to see if there is any further review. To that end could
-> you consider posting a non-RFC version for review if you wish to pursue
-> this approach further?
+This is all rather fun isn't it?
 
-Sure, will do after a bit of more cooking, and updating with the findings of
-more test results, if needed.
+--9Lxh293ZELbusAxJ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Gr{oetje,eeting}s,
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
-                        Geert
+iQEcBAEBCAAGBQJU9YJlAAoJECTWi3JdVIfQD3IH/RlFanJL0hKC3ikeLS/rYDSA
+1onMFxdzGI+EDnAKYsYKkaPXKMG/GAoc2FqBXixPQrBcw9L9eIFmJC2B78wBZMzb
+7n60jFTgtLunpv9KXRaAAEYv1YjzHzgjOCLd5tnKPoaunEu2O+lIqFJLi71WX1RW
+d7mCY/wCZOzS79+8VSihMdgUqRft5+KKEca2pKN1+u9915pc5m6Ija1So/ub9DRs
+4RAo4HKOcvXqnCGg2mLFF5u5/zhaa29Nh/z3KSqT9CIqgT1OmWIF5lId7wElhRnN
+I/M/n4+UBOZKKoE0IJTmjd0eCsUM2I9hvczdidxYLEKpemj0wXYDgIUKdhiV+HY=
+=4blo
+-----END PGP SIGNATURE-----
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--9Lxh293ZELbusAxJ--
