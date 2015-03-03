@@ -1,121 +1,82 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Thu, 05 Mar 2015 18:13:56 +0000
-Subject: Re: [RFC/PATCH 5/6] ARM: shmobile: r8a7790: Add Core-Standby CPUIdle support for r8a7790
-Message-Id: <54F89CE4.7020607@linaro.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 03 Mar 2015 00:24:53 +0000
+Subject: [PATCH] ARM: shmobile: No R-Car Gen2 CMA reservation when HIGHMEM=n
+Message-Id: <744cadba1ae6b80b413aea87835855dcccad86fd.1425341961.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425444946-3084-1-git-send-email-keita.kobayashi.ym@renesas.com> <1425444946-3084-6-git-send-email-keita.kobayashi.ym@renesas.com>
-In-Reply-To: <1425444946-3084-6-git-send-email-keita.kobayashi.ym@renesas.com>
+References: <cover.1425341961.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425341961.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
-To: Keita Kobayashi <keita.kobayashi.ym@renesas.com>, horms@verge.net.au, rjw@rjwysocki.net
-Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com
+To: linux-arm-kernel@lists.infradead.org
 
-On 03/04/2015 05:55 AM, Keita Kobayashi wrote:
-> Add the CPUIdle support power state support for the r8a7790 SoC.
-> This patch add the wfi and Core-Standby for CPUIdle power states
-> support for the Cortex-A15 and add the wfi power state support for
-> the Cortex-A7.
->
-> Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-> ---
->   arch/arm/mach-shmobile/pm-r8a7790.c | 55 ++++++++++++++++++++++++++++++=
-+++++++
->   1 file changed, 55 insertions(+)
->
-> diff --git a/arch/arm/mach-shmobile/pm-r8a7790.c b/arch/arm/mach-shmobile=
-/pm-r8a7790.c
-> index 80e8d95..6a3751f 100644
-> --- a/arch/arm/mach-shmobile/pm-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/pm-r8a7790.c
-> @@ -10,8 +10,13 @@
->    * for more details.
->    */
->
-> +#include <linux/cpuidle.h>
->   #include <linux/kernel.h>
->   #include <linux/smp.h>
-> +#include <linux/platform_data/renesas-cpuidle.h>
-> +#include <linux/pm.h>
-> +#include <asm/cpuidle.h>
-> +#include <asm/cputype.h>
->   #include <asm/io.h>
->   #include "common.h"
->   #include "pm-rcar.h"
-> @@ -48,6 +53,55 @@ static inline void r8a7790_sysc_init(void) {}
->
->   #endif /* CONFIG_SMP */
->
-> +#ifdef CONFIG_ARM_RENESAS_CPUIDLE
-> +static struct cpuidle_driver r8a7790_ca15_cpuidle_driver =3D {
-> +	.name =3D "rcar_r8a7790_ca15_cpuidle",
-> +	.owner =3D THIS_MODULE,
-> +	.states =3D {
-> +		[0] =3D ARM_CPUIDLE_WFI_STATE,
-> +		[1] =3D {
-> +			.name =3D "Core-Standby",
-> +			.desc =3D "Core Standby Mode",
-> +			.exit_latency =3D 3000,
-> +			.target_residency =3D 3000,
-> +			.enter =3D shmobile_smp_apmu_enter_cpuidle,
-> +		},
-> +	},
-> +	.state_count =3D 2,
-> +};
-> +
-> +static struct cpuidle_driver r8a7790_ca7_cpuidle_driver =3D {
-> +	.name			=3D "rcar_r8a7790_ca7_cpuidle",
-> +	.owner			=3D THIS_MODULE,
-> +	.states[0]		=3D ARM_CPUIDLE_WFI_STATE,
-> +	.safe_state_index	=3D 0, /* C1 */
-> +	.state_count		=3D 1,
-> +};
-> +
-> +static struct renesas_cpuidle_driver r8a7790_cpuidle[] =3D {
-> +	[0] =3D {
-> +		.target_cpu	=3D ARM_CPU_PART_CORTEX_A15,
-> +		.renesas_drv	=3D &r8a7790_ca15_cpuidle_driver,
-> +	},
-> +	[1] =3D {
-> +		.target_cpu	=3D ARM_CPU_PART_CORTEX_A7,
-> +		.renesas_drv	=3D &r8a7790_ca7_cpuidle_driver,
-> +	},
-> +};
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Did you look if you can add your driver into=20
-drivers/cpuidle/cpuidle-big-little.c ? I think you have all the=20
-infrastructure already there.
+Allow R-Car Gen2 platforms to boot with CMA enabled
+and HIGHMEM disabled. This patch adds code to check
+if the R-Car Gen2 specific memory reservation window
+is included in the kernel memory range or not. When
+HIGHMEM is disabled the R-Car Gen2 reservation area is
+outside the kernel memory range and in such case the
+memory reservation is simply skipped over.
 
-> +static struct renesas_cpuidle r8a7790_data =3D {
-> +	.num_drvs	=3D ARRAY_SIZE(r8a7790_cpuidle),
-> +	.rcd		=3D r8a7790_cpuidle,
-> +};
-> +
-> +static void __init r8a7790_cpuidle_init(void)
-> +{
-> +	shmobile_cpuidle_set_driver(&r8a7790_data);
-> +}
-> +#else
-> +static void __init r8a7790_cpuidle_init(void) {}
-> +#endif
-> +
->   void __init r8a7790_pm_init(void)
->   {
->   	void __iomem *p;
-> @@ -79,4 +133,5 @@ void __init r8a7790_pm_init(void)
->
->   	r8a7790_sysc_init();
->   	shmobile_smp_apmu_suspend_init();
-> +	r8a7790_cpuidle_init();
->   }
->
+Without this patch the kernel boot hangs when CMA is
+enabled and HIGHMEM is disabled on the r8a7791 Koelsch
+hardware platform:
 
+    WARNING: CPU: 1 PID: 1 at mm/cma.c:113 cma_init_reserved_areas+0x88/0x1=
+d4()
+    ...
+    WARNING: CPU: 1 PID: 1 at mm/cma.c:121 cma_init_reserved_areas+0xf8/0x1=
+d4()
+    ...
+    Unable to handle kernel NULL pointer dereference at virtual address 000=
+00160
+    pgd =3D c0003000
+    [00000160] *pgd=80000040004003, *pmd=00000000
+    Internal error: Oops: 206 [#1] SMP ARM
+    Modules linked in:
+    CPU: 1 PID: 1 Comm: swapper/0 Tainted: G        W
+3.19.0-rc4-koelsch-01450-g7f9b6075ce12c3ea-dirty #735
+    Hardware name: Generic R8A7791 (Flattened Device Tree)
+    task: edc553c0 ti: edc56000 task.ti: edc56000
+    PC is at set_pfnblock_flags_mask+0x54/0xa0
+    LR is at 0x440
 
+In the current shmobile_defconfig HIGHMEM is enabled
+while CMA is disabled, so to trigger this the kernel
+configuration for both CMA and HIGHMEM needs to be
+adjusted.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmob=
+ile/setup-rcar-gen2.c
+index d1fa625..8c7ec93 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -21,6 +21,7 @@
+ #include <linux/dma-contiguous.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
++#include <linux/memblock.h>
+ #include <linux/of.h>
+ #include <linux/of_fdt.h>
+ #include <asm/mach/arch.h>
+@@ -199,7 +200,7 @@ void __init rcar_gen2_reserve(void)
+=20
+ 	of_scan_flat_dt(rcar_gen2_scan_mem, &mrc);
+ #ifdef CONFIG_DMA_CMA
+-	if (mrc.size)
++	if (mrc.size && memblock_is_region_memory(mrc.base, mrc.size))
+ 		dma_contiguous_reserve_area(mrc.size, mrc.base, 0,
+ 					    &rcar_gen2_dma_contiguous, true);
+ #endif
 --=20
-  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
-M SoCs
-
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
+2.1.4
 
