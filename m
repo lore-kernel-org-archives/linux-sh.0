@@ -1,34 +1,47 @@
 From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Date: Tue, 03 Mar 2015 01:21:14 +0000
-Subject: [PATCH 3/5] ARM: shmobile: r8a7794 dtsi: Add "timer" label to the timer node
-Message-Id: <54F50C8A.90203@bp.renesas.com>
+Date: Tue, 03 Mar 2015 01:19:28 +0000
+Subject: [PATCH 0/5] ARM: shmobile: SMP support for r8a7794.
+Message-Id: <54F50C20.8070608@bp.renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add "timer" label to the timer node on r8a7794.dtsi, since
-the timer node is referenced from r8a7794-alt.dts.
+This patch series is initial SMP support for r8a7794.
 
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
----
- arch/arm/boot/dts/r8a7794.dtsi |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Based on : renesas-devel-20150301-v4.0-rc1
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 7a3ffa5..937ab9e 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -82,7 +82,7 @@
- 		status = "disabled";
- 	};
- 
--	timer {
-+	timer: timer {
- 		compatible = "arm,armv7-timer";
- 		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
- 			     <1 14 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
+Note that these patches do not support HYP mode. As workaround of
+uninitialized CNTVOFF, fourth patch modifies to use physical arch
+timer. This modification does not care HYP mode. Please find more
+information following commit.
+
+ commit : 65b5732d241b8b39e07653794eefffd0d8028cbb
+
+Test results with these patches are below.
+- secondary boot : OK
+- cpu-hotplug    : OK
+
+Gaku Inami (5):
+  ARM: shmobile: r8a7794 SYSC setup code
+  ARM: shmobile: Add r8a7794 reset code for SMP
+  ARM: shmobile: r8a7794 dtsi: Add "timer" label to the timer node
+  ARM: shmobile: alt dts: Add arm,cpu-registers-not-fw-configured
+  ARM: shmobile: r8a7794 SMP support
+
+ arch/arm/boot/dts/r8a7794-alt.dts      |    4 ++
+ arch/arm/boot/dts/r8a7794.dtsi         |    2 +-
+ arch/arm/mach-shmobile/Makefile        |    3 +-
+ arch/arm/mach-shmobile/pm-r8a7794.c    |   70 ++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/r8a7794.h       |    8 ++++
+ arch/arm/mach-shmobile/setup-r8a7794.c |    2 +
+ arch/arm/mach-shmobile/smp-r8a7794.c   |   49 ++++++++++++++++++++++
+ 7 files changed, 136 insertions(+), 2 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/pm-r8a7794.c
+ create mode 100644 arch/arm/mach-shmobile/r8a7794.h
+ create mode 100644 arch/arm/mach-shmobile/smp-r8a7794.c
+
 -- 
 1.7.9.5
 
