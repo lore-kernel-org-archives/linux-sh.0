@@ -1,23 +1,50 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 26 Mar 2015 09:19:34 +0000
-Subject: Re: [PATCH 2/3] gpio: rcar: Add more register documentation
-Message-Id: <CACRpkdZioANMsst9WdUu-NwhTTb=ygYpi4E_i=V81sY=OP2jnA@mail.gmail.com>
+From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Wed, 04 Mar 2015 04:55:40 +0000
+Subject: [RFC/PATCH 0/6] Add CPUIdle support for Renesas SoCs
+Message-Id: <1425444946-3084-1-git-send-email-keita.kobayashi.ym@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426704069-26389-1-git-send-email-geert+renesas@glider.be>
-	<1426704069-26389-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1426704069-26389-3-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Alexandre Courbot <gnurou@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: horms@verge.net.au, rjw@rjwysocki.net
+Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-On Wed, Mar 18, 2015 at 7:41 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+Hello
 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+These patches add CPUIdle support for Renesas SoCs. 
+These patches have been tested on Renesas Gen2 series with
+following cases on renesas-devel-20150301-v4.0-rc1 tag.
 
-Patch applied.
+[Test case]
+   a. Lager board(CA15 * 4)
+   b. Lager board(CA7 * 4)
+   c. Lager board(CA15 * 4 + CA7 *4)
+   d. Koelsch board(CA15 * 2)
 
-Yours,
-Linus Walleij
+These cases work fine.
+
+Keita Kobayashi (6):
+  cpuidle: renesas: Add CPUIdle Driver for Renesas SoCs
+  ARM: shmobile: Change CPUIdle InterFace
+  ARM: shmobile: APMU: Add Core-Standby function for CPUIdle
+  ARM: shmobile: r8a7791: Add Core-Standby CPUIdle support for r8a7791
+  ARM: shmobile: r8a7790: Add Core-Standby CPUIdle support for r8a7790
+  ARM: shmobile: Enable Renesas CPUIdle for shmobile_defconfig
+
+ arch/arm/configs/shmobile_defconfig           |   2 +
+ arch/arm/mach-shmobile/common.h               |   8 +-
+ arch/arm/mach-shmobile/cpuidle.c              |  31 ++++---
+ arch/arm/mach-shmobile/platsmp-apmu.c         |  20 ++++-
+ arch/arm/mach-shmobile/pm-r8a7790.c           |  55 ++++++++++++
+ arch/arm/mach-shmobile/pm-r8a7791.c           |  41 +++++++++
+ drivers/cpuidle/Kconfig.arm                   |   8 ++
+ drivers/cpuidle/Makefile                      |   1 +
+ drivers/cpuidle/cpuidle-renesas.c             | 118 ++++++++++++++++++++++++++
+ include/linux/platform_data/renesas-cpuidle.h |  24 ++++++
+ 10 files changed, 294 insertions(+), 14 deletions(-)
+ create mode 100644 drivers/cpuidle/cpuidle-renesas.c
+ create mode 100644 include/linux/platform_data/renesas-cpuidle.h
+
+-- 
+1.9.1
+
