@@ -1,70 +1,90 @@
-From: Marc Zyngier <marc.zyngier@arm.com>
-Date: Thu, 26 Mar 2015 10:39:52 +0000
-Subject: Re: [PATCH/RFC 1/5] clk: shmobile: mstp: Never disable INTC-SYS
-Message-Id: <5513E1F8.9020104@arm.com>
+From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Wed, 04 Mar 2015 04:55:44 +0000
+Subject: [RFC/PATCH 4/6] ARM: shmobile: r8a7791: Add Core-Standby CPUIdle support for r8a7791
+Message-Id: <1425444946-3084-5-git-send-email-keita.kobayashi.ym@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426706164-28309-1-git-send-email-geert+renesas@glider.be>	<1426706164-28309-2-git-send-email-geert+renesas@glider.be>	<20150324232508.7930.89483@quantum>	<CAMuHMdVRhaZY_y2=1+9sZ-kteiguYGeS62Ka-V1WYnNCq_rgQA@mail.gmail.com>	<55127E2A.1040300@arm.com>
- <CAMuHMdWY7orzt0ONTzmyG8nSagCM1r1HK=zQHzfttfr6cK7eqA@mail.gmail.com>
-In-Reply-To: <CAMuHMdWY7orzt0ONTzmyG8nSagCM1r1HK=zQHzfttfr6cK7eqA@mail.gmail.com>
+References: <1425444946-3084-1-git-send-email-keita.kobayashi.ym@renesas.com>
+In-Reply-To: <1425444946-3084-1-git-send-email-keita.kobayashi.ym@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, rjw@rjwysocki.net
+Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-Hi Geert,
+This patch Add the wfi and Core-Standby for CPUIdle power states
+support for the r8a7791 SoC.
 
-On 25/03/15 21:19, Geert Uytterhoeven wrote:
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
+ arch/arm/mach-shmobile/pm-r8a7791.c | 41 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
 
-[...]
-
->> adverse to it. My only gripe is with the undocumented clock property in
->> the binding, and that leads to two questions:
->> This doesn't touch the GIC code at all, so I don't feel completely
-> 
-> The reason no GIC code is touched (for now), is that it's non-trivial to
-> fix the GIC driver to handle this.
-
-Indeed.  The interrupt controller is basically the first device to be
-activated in the life of the system, and I can see a nasty chicken and
-egg problem creeping up if you're trying to do clock management in a
-generic way at that level.
-
->> adverse to it. My only gripe is with the undocumented clock property in
->> the binding, and that leads to two questions:
->> - the GIC architecture doesn't mention a clock at all, so that's a
->> Renesas special. Do we want to have a vendor-specific property for this?
->> Or does it belong elsewhere?
-> 
-> Apart from being implemented using synchronous logic and thus using a
-> clock signal internally, the GIC and its driver don't care about this clock.
-> 
-> When an existing IP module that doesn't care about clocks becomes reused
-> on a new SoC, and it now ends up being part of a "PM Domain" (e.g. a Power
-> Domain or Clock Domain, or both), this "PM Domain" is a feature of the
-> platform, not of the IP module itself (cfr. "(Existing) Device Driver" in [1];
-> GIC falls in the same category as the Thermal Module example).
-> Hence I don't think it's necessary to mention this in the ARM GIC binding.
-> 
->> - alternatively, do we want the core GIC code to deal with this? In
->> which case, how do we express the policy?
-> 
-> The proper way to handle this automatically is to add Runtime PM support
-> to the driver. However, this requires using a platform device.
-> 
-> I would like to add the clock and GIC dependency on the clock in the DTS now,
-> for reasons of DTS stability. But that means I need a temporary workaround
-> to avoid the clock from being disabled, until the GIC driver handles this.
-> 
-> I don't expect a fix for the GIC code to just show up magically. I just wanted
-> you to be aware of the problem. GIC is not the only problematic module here,
-> there are others, cfr. the last slide of [2].
-
-As long as there is an agreement from the DT people on the presence of
-that extra property in the GIC node, I'm happy with that. I'd like it to
-be documented though.
-
-Thanks,
-
-	M.
+diff --git a/arch/arm/mach-shmobile/pm-r8a7791.c b/arch/arm/mach-shmobile/pm-r8a7791.c
+index 25f107b..6c00d37 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7791.c
++++ b/arch/arm/mach-shmobile/pm-r8a7791.c
+@@ -10,8 +10,13 @@
+  * for more details.
+  */
+ 
++#include <linux/cpuidle.h>
+ #include <linux/kernel.h>
+ #include <linux/smp.h>
++#include <linux/platform_data/renesas-cpuidle.h>
++#include <linux/pm.h>
++#include <asm/cpuidle.h>
++#include <asm/cputype.h>
+ #include <asm/io.h>
+ #include "common.h"
+ #include "pm-rcar.h"
+@@ -43,6 +48,41 @@ static inline void r8a7791_sysc_init(void) {}
+ 
+ #endif /* CONFIG_SMP */
+ 
++#ifdef CONFIG_ARM_RENESAS_CPUIDLE
++static struct cpuidle_driver r8a7791_cpuidle_driver = {
++	.name = "rcar_r8a7791_cpuidle",
++	.owner = THIS_MODULE,
++	.states = {
++		[0] = ARM_CPUIDLE_WFI_STATE,
++		[1] = {
++			.name = "Core-Standby",
++			.desc = "Core Standby Mode",
++			.exit_latency = 2800,
++			.target_residency = 2800,
++			.enter = shmobile_smp_apmu_enter_cpuidle,
++		},
++	},
++	.state_count = 2,
++};
++
++static struct renesas_cpuidle_driver r8a7791_cpuidle = {
++	.target_cpu	= ARM_CPU_PART_CORTEX_A15,
++	.renesas_drv	= &r8a7791_cpuidle_driver,
++};
++
++static struct renesas_cpuidle r8a7791_data = {
++	.num_drvs	= 1,
++	.rcd		= &r8a7791_cpuidle,
++};
++
++static void __init r8a7791_cpuidle_init(void)
++{
++	shmobile_cpuidle_set_driver(&r8a7791_data);
++}
++#else
++static void __init r8a7791_cpuidle_init(void) {}
++#endif
++
+ void __init r8a7791_pm_init(void)
+ {
+ 	void __iomem *p;
+@@ -70,4 +110,5 @@ void __init r8a7791_pm_init(void)
+ 
+ 	r8a7791_sysc_init();
+ 	shmobile_smp_apmu_suspend_init();
++	r8a7791_cpuidle_init();
+ }
 -- 
-Jazz is not dead. It just smells funny...
+1.9.1
+
