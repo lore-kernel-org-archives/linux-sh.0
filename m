@@ -1,58 +1,49 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 18 Mar 2015 19:46:57 +0000
-Subject: [PATCH/RFC 5/5] drivers: sh: Disable PM runtime for multi-platform R-Car Gen2 with genpd
-Message-Id: <1426708017-28885-6-git-send-email-geert+renesas@glider.be>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 04 Mar 2015 12:51:21 +0000
+Subject: Re: [PATCH 2/2] gpio: pcf857x: Propagate wake-up setting to parent irq controller
+Message-Id: <CACRpkdbv_Z=VBNniS=5oqzQnRg85e7g19AZ3wm5vzyuk=2WqHw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426708017-28885-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1426708017-28885-1-git-send-email-geert+renesas@glider.be>
+References: <1423151349-10579-1-git-send-email-geert+renesas@glider.be>
+	<1423151349-10579-3-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1423151349-10579-3-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Alexandre Courbot <gnurou@gmail.com>, George Cherian <george.cherian@ti.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-Now we have an R-Car Gen2 CPG Clock Domain driver using the generic PM
-domain to take care of PM runtime management of the module clocks, we no
-longer need the legacy default PM domain hack, which also prevents
-registering the real PM domain.
+On Thu, Feb 5, 2015 at 4:49 PM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
 
-Hence do not enable it when running a multi-platform kernel with genpd
-support on an R-Car Gen2 SoC.
+> The pcf857x GPIO and interrupt controller uses dummy_irq_chip, which
+> does not implement irq_chip.irq_set_wake() and does not set
+> IRQCHIP_SKIP_SET_WAKE.
+>
+> This causes two s2ram issues if wake-up is enabled for the pcf857x GPIO
+> pins:
+>   1. During resume from s2ram, the following warning is printed:
+>
+>      WARNING: CPU: 0 PID: 1046 at kernel/irq/manage.c:537 irq_set_irq_wake+0x9c/0xf8()
+>      Unbalanced IRQ 113 wake disable
+>
+>   2. Wake-up through the pcf857x GPIO pins may fail, as the parent
+>      interrupt controller may be suspended.
+>
+> Migrate the pcf857x GPIO and interrupt controller from dummy_irq_chip to
+> its own irq_chip. This irq chip implements irq_chip.irq_set_wake() to
+> propagate its wake-up setting to the parent interrupt controller.
+>
+> This fixes wake-up through gpio-keys on sh73a0/kzm9g, where the pcf857x
+> interrupt is cascaded to irq-renesas-intc-irqpin, and the latter must
+> not be suspended when wake-up is enabled.
+>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+> v2:
+>   - Rebased on top of "gpio: pcf857x: Switch to use gpiolib irqchip
+>     helpers".
 
-The default PM domain is still needed:
-  - for platforms without genpd support,
-  - for the legacy (non-DT) case, where genpd may take over later,
-  - if genpd is not enabled.
+Patch applied.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/sh/pm_runtime.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
-
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index fe8875f0d7be1155..97d5738f21ae8f04 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -83,15 +83,15 @@ static int __init sh_pm_runtime_init(void)
- #ifndef CONFIG_PM_GENERIC_DOMAINS_OF
- 		    !of_machine_is_compatible("renesas,r8a73a4") &&
- 		    !of_machine_is_compatible("renesas,r8a7740") &&
--		    !of_machine_is_compatible("renesas,sh73a0") &&
--#endif
--		    !of_machine_is_compatible("renesas,r8a7778") &&
--		    !of_machine_is_compatible("renesas,r8a7779") &&
- 		    !of_machine_is_compatible("renesas,r8a7790") &&
- 		    !of_machine_is_compatible("renesas,r8a7791") &&
- 		    !of_machine_is_compatible("renesas,r8a7792") &&
- 		    !of_machine_is_compatible("renesas,r8a7793") &&
--		    !of_machine_is_compatible("renesas,r8a7794"))
-+		    !of_machine_is_compatible("renesas,r8a7794") &&
-+		    !of_machine_is_compatible("renesas,sh73a0") &&
-+#endif
-+		    !of_machine_is_compatible("renesas,r8a7778") &&
-+		    !of_machine_is_compatible("renesas,r8a7779"))
- 			return 0;
- 	}
- 
--- 
-1.9.1
-
+Yours,
+Linus Walleij
