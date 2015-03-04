@@ -1,93 +1,106 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 06 Mar 2015 10:39:30 +0000
-Subject: Re: [RFC/PATCH] pinctrl: sh-pfc: Accept standard function, pins and groups properties
-Message-Id: <CACRpkdbepTKxMFVpTo7ZmjYE1beF5XOMOQarszaDGojerNQqMg@mail.gmail.com>
+From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Wed, 04 Mar 2015 04:55:45 +0000
+Subject: [RFC/PATCH 5/6] ARM: shmobile: r8a7790: Add Core-Standby CPUIdle support for r8a7790
+Message-Id: <1425444946-3084-6-git-send-email-keita.kobayashi.ym@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CACRpkda4SBof0EaZVWtEYaeb6j_BGAVj39kje+mBz90eB3qAwQ@mail.gmail.com>
-	<1422390694-12389-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<CACRpkda6H7hbgXhmSbgtwOC_8PbHnES5syp-YEp1+V6s5Ym6Cw@mail.gmail.com>
-	<12938873.nmb8Ng8mNb@avalon>
-In-Reply-To: <12938873.nmb8Ng8mNb@avalon>
+References: <1425444946-3084-1-git-send-email-keita.kobayashi.ym@renesas.com>
+In-Reply-To: <1425444946-3084-1-git-send-email-keita.kobayashi.ym@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Sascha Hauer <kernel@pengutronix.de>, =?UTF-8?Q?Niklas_S=C3=B6derlund?= <niso@kth.se>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: horms@verge.net.au, rjw@rjwysocki.net
+Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-On Wed, Feb 4, 2015 at 10:53 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Wednesday 04 February 2015 09:40:48 Linus Walleij wrote:
->> On Tue, Jan 27, 2015 at 9:31 PM, Laurent Pinchart wrote:
->> > The "function", "pins" and "groups" pinmux and pinctrl properties have
->> > been standardized. Support them in addition to the custom "renesas,*"
->> > properties. New-style and old-style properties can't be mixed in DT.
->> >
->> > Signed-off-by: Laurent Pinchart
->> > <laurent.pinchart+renesas@ideasonboard.com>
->>
->> (...)
->>
->> >> Would be nice if the PFC driver could be augmented to also accept the
->> >> now standard bindings "groups" and "function" simply :) we're adding
->> >> parse functions for those to the core.
->> >
->> > Something like this ?
->>
->> Yes :)
->>
->> > Please note two differences between the Renesas PFC bindings and the
->> > standard bindings:
->> >
->> > - The standard bindings state that a pinctrl node must contain either a
->> >   "pins" property or a "groups" property, while the Renesas bindings
->> >   allows for both to coexist in the same node.
->>
->> Sascha also says this makes sense for him so I guess I'm getting a bit
->> soft on the issue.
->>
->> > - The standard bindings don't allow a pinmux node to contain a "pins"
->> >   property, while the Renesas bindings do.
->>
->> Does that mean "pins" affect the muxing or that "pins" is about some per-pin
->> config shoveled into the same node?
->>
->> The former is not OK, the latter is.
->
-> It means "pins" affect the muxing. The sh-pfc driver supports both muxing
-> groups and muxing individual pins.
+Add the CPUIdle support power state support for the r8a7790 SoC.
+This patch add the wfi and Core-Standby for CPUIdle power states
+support for the Cortex-A15 and add the wfi power state support for
+the Cortex-A7.
 
-OK.
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
+ arch/arm/mach-shmobile/pm-r8a7790.c | 55 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
 
->> >                 mmcif_pins: mmcif {
->> >
->> >                         mux {
->> > -                               renesas,groups = "mmc0_data8_0",
->> > "mmc0_ctrl_0";
->> > -                               renesas,function = "mmc0";
->> > +                               groups = "mmc0_data8_0", "mmc0_ctrl_0";
->> > +                               function = "mmc0";
->> >                         };
->>
->> So that looks just very nice.
->>
->> >                         cfg {
->> > -                               renesas,groups = "mmc0_data8_0";
->> > -                               renesas,pins = "PORT279";
->> > +                               groups = "mmc0_data8_0";
->> > +                               pins = "PORT279";
->> >                                 bias-pull-up;
->>
->> And here I can't see the use of "groups" in this node since it
->> doesn't match a function. It's a bit ambiguous what "groups"
->> mean when you run into it like this.
->
-> It means that the bias-pull-up configuration is applied to all pins of the
-> "mmc0_data8_0" group, as well as to pin 279.
+diff --git a/arch/arm/mach-shmobile/pm-r8a7790.c b/arch/arm/mach-shmobile/pm-r8a7790.c
+index 80e8d95..6a3751f 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7790.c
++++ b/arch/arm/mach-shmobile/pm-r8a7790.c
+@@ -10,8 +10,13 @@
+  * for more details.
+  */
+ 
++#include <linux/cpuidle.h>
+ #include <linux/kernel.h>
+ #include <linux/smp.h>
++#include <linux/platform_data/renesas-cpuidle.h>
++#include <linux/pm.h>
++#include <asm/cpuidle.h>
++#include <asm/cputype.h>
+ #include <asm/io.h>
+ #include "common.h"
+ #include "pm-rcar.h"
+@@ -48,6 +53,55 @@ static inline void r8a7790_sysc_init(void) {}
+ 
+ #endif /* CONFIG_SMP */
+ 
++#ifdef CONFIG_ARM_RENESAS_CPUIDLE
++static struct cpuidle_driver r8a7790_ca15_cpuidle_driver = {
++	.name = "rcar_r8a7790_ca15_cpuidle",
++	.owner = THIS_MODULE,
++	.states = {
++		[0] = ARM_CPUIDLE_WFI_STATE,
++		[1] = {
++			.name = "Core-Standby",
++			.desc = "Core Standby Mode",
++			.exit_latency = 3000,
++			.target_residency = 3000,
++			.enter = shmobile_smp_apmu_enter_cpuidle,
++		},
++	},
++	.state_count = 2,
++};
++
++static struct cpuidle_driver r8a7790_ca7_cpuidle_driver = {
++	.name			= "rcar_r8a7790_ca7_cpuidle",
++	.owner			= THIS_MODULE,
++	.states[0]		= ARM_CPUIDLE_WFI_STATE,
++	.safe_state_index	= 0, /* C1 */
++	.state_count		= 1,
++};
++
++static struct renesas_cpuidle_driver r8a7790_cpuidle[] = {
++	[0] = {
++		.target_cpu	= ARM_CPU_PART_CORTEX_A15,
++		.renesas_drv	= &r8a7790_ca15_cpuidle_driver,
++	},
++	[1] = {
++		.target_cpu	= ARM_CPU_PART_CORTEX_A7,
++		.renesas_drv	= &r8a7790_ca7_cpuidle_driver,
++	},
++};
++
++static struct renesas_cpuidle r8a7790_data = {
++	.num_drvs	= ARRAY_SIZE(r8a7790_cpuidle),
++	.rcd		= r8a7790_cpuidle,
++};
++
++static void __init r8a7790_cpuidle_init(void)
++{
++	shmobile_cpuidle_set_driver(&r8a7790_data);
++}
++#else
++static void __init r8a7790_cpuidle_init(void) {}
++#endif
++
+ void __init r8a7790_pm_init(void)
+ {
+ 	void __iomem *p;
+@@ -79,4 +133,5 @@ void __init r8a7790_pm_init(void)
+ 
+ 	r8a7790_sysc_init();
+ 	shmobile_smp_apmu_suspend_init();
++	r8a7790_cpuidle_init();
+ }
+-- 
+1.9.1
 
-OK.
-
-This looks good to me, is the patch applicable as it is, or will you rebase
-it and send out a non-RFC version?
-
-Yours,
-Linus Walleij
