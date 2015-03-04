@@ -1,36 +1,26 @@
-From: David Miller <davem@davemloft.net>
-Date: Tue, 31 Mar 2015 17:48:42 +0000
-Subject: Re: [PATCH resend] Renesas Ethernet AVB driver
-Message-Id: <20150331.134842.499356389024178984.davem@davemloft.net>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 04 Mar 2015 21:54:09 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Cleanup for v4.1
+Message-Id: <9266543.XzoOMM56Nv@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150331064349.GB4605@localhost.localdomain>
-	<20150331.113832.2042398685489897677.davem@davemloft.net>
-	<551ADC12.5050603@cogentembedded.com>
-In-Reply-To: <551ADC12.5050603@cogentembedded.com>
+References: <cover.1424931049.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424931049.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: richardcochran@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org, mitsuhiro.kimura.kc@renesas.com, masaru.nagai.vx@renesas.com
+To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 31 Mar 2015 20:40:34 +0300
-
->    We (Cogent Embedded) are authorized to do this, isn't this enough?
-
-Maybe, maybe not, but I think my request is absolutely legitimate.
-
->>> [adding davem on CC]
+On Thursday 26 February 2015 15:22:32 Simon Horman wrote:
+> ----------------------------------------------------------------
+> Renesas ARM Based SoC Cleanup for v4.1
 > 
->>> Dave, is that correct?
+> * Remove redundant cpu_disable implementation from r8a7779 SoC
+> * Remove mach/{uncompress,clkdev,system}.h
 > 
->> I refuse to apply any patch without an appropriate signoff.
-> 
->    But what do you mean by "appropriate signoff"? I have provided mine
->    but Richard insists there should be sign-offs from the primary driver
->    authors -- it's the first time I'm encountering such a requirement.
 
-Is there a serious problem getting the original authors to signoff on
-this driver submission?  If so, why?  This should be very
-straightforward, and if for some reason these authors are unwilling to
-then I have every reason to be concerned about this.
+We have a lot of work for multiplatform this time, with your changes,
+at91 and the patches I send over the last week. I've decided to
+create a next/multiplatform branch for this, and merge your patches
+into that one.
+
+	Arnd
