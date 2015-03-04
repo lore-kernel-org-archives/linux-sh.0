@@ -1,62 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 05 Mar 2015 00:27:20 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: Enable bockw board in multiplatform defconfig
-Message-Id: <20150305002717.GA4558@verge.net.au>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 04 Mar 2015 20:31:52 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC sh7372 SoC Removal Updates for v4.1
+Message-Id: <3043216.AuL1ank19q@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425471261-25110-1-git-send-email-geert+renesas@glider.be>
- <1425471261-25110-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1425471261-25110-2-git-send-email-geert+renesas@glider.be>
+References: <cover.1424931560.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1424931560.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 04, 2015 at 01:14:20PM +0100, Geert Uytterhoeven wrote:
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->   - Derived from r8a7778-bockw.dtb using
->     https://github.com/geertu/linux-scripts/blob/master/linux-config-from-dt
->   - Not tested on bockw due to lack of hardware
-> ---
->  arch/arm/configs/shmobile_defconfig | 3 +++
->  1 file changed, 3 insertions(+)
+On Thursday 26 February 2015 15:22:11 Simon Horman wrote:
+> Renesas ARM Based SoC sh7372 SoC Removal Updates for v4.1
+> 
+> * Remove the sh7372 SoC and its mackerel board
+> 
 
-Thanks, I have queued this up.
+Pulled into next/cleanup.
 
-> 
-> diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-> index 11554158fa96ca9c..b58618e2d13c51c8 100644
-> --- a/arch/arm/configs/shmobile_defconfig
-> +++ b/arch/arm/configs/shmobile_defconfig
-> @@ -14,6 +14,7 @@ CONFIG_ARCH_EMEV2=y
->  CONFIG_ARCH_R7S72100=y
->  CONFIG_ARCH_R8A73A4=y
->  CONFIG_ARCH_R8A7740=y
-> +CONFIG_ARCH_R8A7778=y
->  CONFIG_ARCH_R8A7779=y
->  CONFIG_ARCH_R8A7790=y
->  CONFIG_ARCH_R8A7791=y
-> @@ -137,6 +138,7 @@ CONFIG_V4L_MEM2MEM_DRIVERS=y
->  CONFIG_VIDEO_RENESAS_VSP1=y
->  # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
->  CONFIG_VIDEO_ADV7180=y
-> +CONFIG_VIDEO_ML86V7667=y
->  CONFIG_DRM=y
->  CONFIG_DRM_RCAR_DU=y
->  CONFIG_FB_SH_MOBILE_LCDC=y
-> @@ -171,6 +173,7 @@ CONFIG_LEDS_GPIO=y
->  CONFIG_RTC_CLASS=y
->  CONFIG_RTC_DRV_RS5C372=y
->  CONFIG_RTC_DRV_S35390A=y
-> +CONFIG_RTC_DRV_RX8581=y
->  CONFIG_DMADEVICES=y
->  CONFIG_SH_DMAE=y
->  CONFIG_RCAR_DMAC=y
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+I found the text a little short to justify a removal, but since I know
+the story, I've extended the narrative a bit, I hope this text is
+ok with you:
+
+    [arnd: The sh7372 platform is rather dated and is believed to
+     have no active users. It stands in the way of converting all
+     of mach-shmobile to be multiplatform capable, as adding
+     pinctrl and clock support for it would be more work than it's
+     worth. As always, should any legitimate upstream users show up
+     in the future, we will revert this removal]
+
+It would be nice to have more text in the tag description for cases that
+are not obvious to the reader, like this one.
+
+	Arnd
