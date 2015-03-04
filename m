@@ -1,60 +1,32 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 09 Mar 2015 20:06:55 +0000
-Subject: [PATCH 2/4] ARM: shmobile: koelsch: Add da9063 PMIC device node for system restart
-Message-Id: <1425931617-5479-3-git-send-email-geert+renesas@glider.be>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 04 Mar 2015 12:49:44 +0000
+Subject: Re: [PATCH 1/2] [RFC] gpio: pcf857x: Switch to use gpiolib irqchip helpers
+Message-Id: <CACRpkdZ6T5bj3ftuMxFKYJxuAVnLofAO9W6q6qf94S-trB49Eg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425931617-5479-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1425931617-5479-1-git-send-email-geert+renesas@glider.be>
+References: <1423151349-10579-1-git-send-email-geert+renesas@glider.be>
+	<1423151349-10579-2-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1423151349-10579-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Alexandre Courbot <gnurou@gmail.com>, George Cherian <george.cherian@ti.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-Add a device node for the da9063 PMIC, with subnodes for rtc and wdt.
-Regulator support is not yet included.
+On Thu, Feb 5, 2015 at 4:49 PM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
 
-This allows the system to be restarted when the watchdog timer times
-out, or when a system restart is requested.
+> Switch the PCF857x GPIO driver to use the gpiolib irqchip helpers.
+> This driver uses a nested threaded interrupt, hence handle_nested_irq()
+> and gpiochip_set_chained_irqchip() must be used.
+>
+> Note that this removes the checks added in commit 21fd3cd1874a2ac8
+> ("gpio: pcf857x: call the gpio user handler iff gpio_to_irq is done"),
+> as the interrupt mappings are no longer created on-demand by the driver,
+> but by gpiochip_irqchip_add() during initialization.
+>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-An earlier version of this patch has been posted as "[PATCH 3/4] ARM:
-shmobile: koelsch: Add DA9063 PMIC device node for system restart".
+Patch applied.
 
-Changes:
-  - Add missing interrupt-controller property,
-  - Add rtc and wdt subnodes.
----
- arch/arm/boot/dts/r8a7791-koelsch.dts | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 25ce4c71939febd0..74c3212f1f11e47e 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -584,6 +584,22 @@
- 	status = "okay";
- 	clock-frequency = <100000>;
- 
-+	pmic@58 {
-+		compatible = "dlg,da9063";
-+		reg = <0x58>;
-+		interrupt-parent = <&irqc0>;
-+		interrupts = <2 IRQ_TYPE_LEVEL_LOW>;
-+		interrupt-controller;
-+
-+		rtc {
-+			compatible = "dlg,da9063-rtc";
-+		};
-+
-+		wdt {
-+			compatible = "dlg,da9063-watchdog";
-+		};
-+	};
-+
- 	vdd_dvfs: regulator@68 {
- 		compatible = "dlg,da9210";
- 		reg = <0x68>;
--- 
-1.9.1
-
+Yours,
+Linus Walleij
