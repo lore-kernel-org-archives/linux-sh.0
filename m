@@ -1,263 +1,98 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 18 Mar 2015 19:46:56 +0000
-Subject: [PATCH/RFC 4/5] ARM: shmobile: r8a7794 dtsi: Add CPG Clock Domain
-Message-Id: <1426708017-28885-5-git-send-email-geert+renesas@glider.be>
+From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Wed, 04 Mar 2015 04:55:43 +0000
+Subject: [RFC/PATCH 3/6] ARM: shmobile: APMU: Add Core-Standby function for CPUIdle
+Message-Id: <1425444946-3084-4-git-send-email-keita.kobayashi.ym@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426708017-28885-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1426708017-28885-1-git-send-email-geert+renesas@glider.be>
+References: <1425444946-3084-1-git-send-email-keita.kobayashi.ym@renesas.com>
+In-Reply-To: <1425444946-3084-1-git-send-email-keita.kobayashi.ym@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, rjw@rjwysocki.net
+Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-Add an appropriate "#power-domain-cells" property to the cpg_clocks
-device node, to create the CPG Clock Domain.
+This patch add CPUIdle process in platsmp-apmu code.
+The shmobile_smp_apmu_enter_cpuidle function will be
+used by R-Car SoC series.
 
-Add "power-domains" properties to all device nodes for devices that are
-part of the CPG Clock Domain and can be power-managed through their
-primary clock. This includes most present on-SoC devices.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 ---
- arch/arm/boot/dts/r8a7794.dtsi | 29 +++++++++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+ arch/arm/mach-shmobile/common.h       |  4 ++++
+ arch/arm/mach-shmobile/platsmp-apmu.c | 20 ++++++++++++++++++--
+ 2 files changed, 22 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 5667d284a3f0af92..2d0d5b20f98c16fa 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -49,6 +49,7 @@
- 			<0 0xf1006000 0 0x2000>;
- 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
- 		clocks = <&mstp4_clks R8A7794_CLK_INTC_SYS>;
-+		power-domains = <&cpg_clocks>;
- 	};
+diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+index 4adecd4..ea34893 100644
+--- a/arch/arm/mach-shmobile/common.h
++++ b/arch/arm/mach-shmobile/common.h
+@@ -24,6 +24,7 @@ extern int shmobile_smp_scu_cpu_kill(unsigned int cpu);
+ struct clk;
+ extern int shmobile_clk_init(void);
+ extern struct platform_suspend_ops shmobile_suspend_ops;
++struct cpuidle_device;
+ struct cpuidle_driver;
  
- 	cmt0: timer@ffca0000 {
-@@ -58,6 +59,7 @@
- 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7794_CLK_CMT0>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
+ #ifdef CONFIG_SUSPEND
+@@ -37,6 +38,9 @@ static inline void shmobile_smp_apmu_suspend_init(void) { }
+ #ifdef CONFIG_CPU_IDLE
+ int shmobile_cpuidle_init(void);
+ extern void shmobile_cpuidle_set_driver(struct renesas_cpuidle *drv);
++extern int shmobile_smp_apmu_enter_cpuidle(struct cpuidle_device *dev,
++					   struct cpuidle_driver *drv,
++					   int index);
+ #else
+ static inline int shmobile_cpuidle_init(void) { return 0; }
+ #endif
+diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
+index f483b56..f5c8044 100644
+--- a/arch/arm/mach-shmobile/platsmp-apmu.c
++++ b/arch/arm/mach-shmobile/platsmp-apmu.c
+@@ -139,7 +139,8 @@ int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ }
+ #endif
  
- 		renesas,channels-mask = <0x60>;
+-#if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND)
++#if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND) || \
++defined(CONFIG_ARM_RENESAS_CPUIDLE)
+ /* nicked from arch/arm/mach-exynos/hotplug.c */
+ static inline void cpu_enter_lowpower_a15(void)
+ {
+@@ -215,7 +216,7 @@ int shmobile_smp_apmu_cpu_kill(unsigned int cpu)
+ }
+ #endif
  
-@@ -77,6 +79,7 @@
- 			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7794_CLK_CMT1>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
+-#if defined(CONFIG_SUSPEND)
++#if defined(CONFIG_SUSPEND) || defined(CONFIG_ARM_RENESAS_CPUIDLE)
+ static int shmobile_smp_apmu_do_suspend(unsigned long cpu)
+ {
+ 	shmobile_smp_hook(cpu, virt_to_phys(cpu_resume), 0);
+@@ -223,7 +224,9 @@ static int shmobile_smp_apmu_do_suspend(unsigned long cpu)
+ 	cpu_do_idle(); /* WFI selects Core Standby */
+ 	return 1;
+ }
++#endif
  
- 		renesas,channels-mask = <0xff>;
- 
-@@ -107,6 +110,7 @@
- 			     <0 16 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R8A7794_CLK_IRQC>;
-+		power-domains = <&cpg_clocks>;
- 	};
- 
- 	dmac0: dma-controller@e6700000 {
-@@ -135,6 +139,7 @@
- 				"ch12", "ch13", "ch14";
- 		clocks = <&mstp2_clks R8A7794_CLK_SYS_DMAC0>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
- 		#dma-cells = <1>;
- 		dma-channels = <15>;
- 	};
-@@ -165,6 +170,7 @@
- 				"ch12", "ch13", "ch14";
- 		clocks = <&mstp2_clks R8A7794_CLK_SYS_DMAC1>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
- 		#dma-cells = <1>;
- 		dma-channels = <15>;
- 	};
-@@ -175,6 +181,7 @@
- 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7794_CLK_SCIFA0>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -184,6 +191,7 @@
- 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7794_CLK_SCIFA1>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -193,6 +201,7 @@
- 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7794_CLK_SCIFA2>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -202,6 +211,7 @@
- 		interrupts = <0 29 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7794_CLK_SCIFA3>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -211,6 +221,7 @@
- 		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7794_CLK_SCIFA4>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -220,6 +231,7 @@
- 		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7794_CLK_SCIFA5>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -229,6 +241,7 @@
- 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7794_CLK_SCIFB0>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -238,6 +251,7 @@
- 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7794_CLK_SCIFB1>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -247,6 +261,7 @@
- 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7794_CLK_SCIFB2>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -256,6 +271,7 @@
- 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_SCIF0>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -265,6 +281,7 @@
- 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_SCIF1>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -274,6 +291,7 @@
- 		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_SCIF2>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -283,6 +301,7 @@
- 		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_SCIF3>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -292,6 +311,7 @@
- 		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_SCIF4>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -301,6 +321,7 @@
- 		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_SCIF5>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -310,6 +331,7 @@
- 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_HSCIF0>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -319,6 +341,7 @@
- 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_HSCIF1>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -328,6 +351,7 @@
- 		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_HSCIF2>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -336,6 +360,7 @@
- 		reg = <0 0xee700000 0 0x400>;
- 		interrupts = <0 162 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp8_clks R8A7794_CLK_ETHER>;
-+		power-domains = <&cpg_clocks>;
- 		phy-mode = "rmii";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -347,6 +372,7 @@
- 		reg = <0 0xee100000 0 0x200>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7794_CLK_SDHI0>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -355,6 +381,7 @@
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7794_CLK_SDHI1>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -363,6 +390,7 @@
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7794_CLK_SDHI2>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -389,6 +417,7 @@
- 			#clock-cells = <1>;
- 			clock-output-names = "main", "pll0", "pll1", "pll3",
- 					     "lb", "qspi", "sdh", "sd0", "z";
-+			#power-domain-cells = <0>;
- 		};
- 		/* Variable factor clocks */
- 		sd2_clk: sd2_clk@e6150078 {
++#if defined(CONFIG_SUSPEND)
+ static int shmobile_smp_apmu_enter_suspend(suspend_state_t state)
+ {
+ 	cpu_suspend(smp_processor_id(), shmobile_smp_apmu_do_suspend);
+@@ -236,3 +239,16 @@ void __init shmobile_smp_apmu_suspend_init(void)
+ 	shmobile_suspend_ops.enter = shmobile_smp_apmu_enter_suspend;
+ }
+ #endif
++
++#if defined(CONFIG_ARM_RENESAS_CPUIDLE)
++int shmobile_smp_apmu_enter_cpuidle(struct cpuidle_device *dev,
++				    struct cpuidle_driver *drv, int index)
++{
++	cpu_pm_enter();
++	cpu_suspend(smp_processor_id(), shmobile_smp_apmu_do_suspend);
++	cpu_leave_lowpower();
++	cpu_pm_exit();
++
++	return index;
++}
++#endif
 -- 
 1.9.1
 
