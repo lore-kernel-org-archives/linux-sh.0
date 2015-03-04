@@ -1,54 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Mar 2015 01:07:15 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC PM Updates for v4.1
-Message-Id: <cover.1426812951.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 04 Mar 2015 12:14:19 +0000
+Subject: [PATCH 0/2] ARM: shmobile: Enable bockw board in defconfigs
+Message-Id: <1425471261-25110-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+	Hi,
 
-Please consider these Renesas ARM based SoC PM updates for v4.1.
+Now r8a7778 has gained multi-platform support in Simon's branch
+r8a7778-ccf-and-multiplatform-for-v4.1, support for r8a7778/bockw can be
+enabled in shmobile_defconfig and multi_v7_defconfig.
 
+The options to enable were deduced from r8a7778-bockw.dtb using
+https://github.com/geertu/linux-scripts/blob/master/linux-config-from-dt.
+This was not tested on bockw due to lack of hardware.
 
-The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
+Thanks!
 
-  Linux 4.0-rc1 (2015-02-22 18:21:14 -0800)
+Geert Uytterhoeven (2):
+  ARM: shmobile: Enable bockw board in multiplatform defconfig
+  ARM: multi_v7_defconfig: Enable shmobile r8a7778/bockw platform
 
-are available in the git repository at:
+ arch/arm/configs/multi_v7_defconfig | 3 +++
+ arch/arm/configs/shmobile_defconfig | 3 +++
+ 2 files changed, 6 insertions(+)
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pm-for-v4.1
+-- 
+1.9.1
 
-for you to fetch changes up to a8caad66904a7923c05fc4a137110085533ef00c:
+Gr{oetje,eeting}s,
 
-  ARM: shmobile: Consolidate the pm code for R-Car Gen2 (2015-03-17 08:05:13 +0900)
+						Geert
 
-----------------------------------------------------------------
-Renesas ARM Based SoC PM Updates for v4.1
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-* Consolidate the pm code for R-Car Gen2
-* Correct SYSCIER value for r8a7790 and r8a7791 SoCs
-
-----------------------------------------------------------------
-Gaku Inami (1):
-      ARM: shmobile: Consolidate the pm code for R-Car Gen2
-
-Simon Horman (2):
-      ARM: shmobile: r8a7790: Correct SYSCIER value
-      ARM: shmobile: r8a7791: Correct SYSCIER value
-
- arch/arm/mach-shmobile/Makefile       |   5 +-
- arch/arm/mach-shmobile/pm-r8a7790.c   |  82 ------------------------
- arch/arm/mach-shmobile/pm-r8a7791.c   |  73 ---------------------
- arch/arm/mach-shmobile/pm-rcar-gen2.c | 115 ++++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/r8a7790.h      |   1 -
- arch/arm/mach-shmobile/r8a7791.h      |   1 -
- arch/arm/mach-shmobile/rcar-gen2.h    |   1 +
- arch/arm/mach-shmobile/smp-r8a7790.c  |   3 +-
- arch/arm/mach-shmobile/smp-r8a7791.c  |   2 +-
- 9 files changed, 122 insertions(+), 161 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/pm-r8a7790.c
- delete mode 100644 arch/arm/mach-shmobile/pm-r8a7791.c
- create mode 100644 arch/arm/mach-shmobile/pm-rcar-gen2.c
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
