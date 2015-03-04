@@ -1,57 +1,64 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 31 Mar 2015 01:36:19 +0000
-Subject: Re: [PATCH 1/1] ARM: configs: remove all CONFIG_RCAR_AUDMAC_PP from ARM defconfigs
-Message-Id: <87k2xy6ja0.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 04 Mar 2015 07:02:59 +0000
+Subject: Re: [PATCH/RFC] ARM: shmobile: r8a7790: Fix HSUSB clock to hp_clk from mp_clk
+Message-Id: <20150304070258.GA16597@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <871tkleesi.wl%kuninori.morimoto.gx@renesas.com>
- <87zj79d06x.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zj79d06x.wl%kuninori.morimoto.gx@renesas.com>
+References: <1424011746-3787-2-git-send-email-ykaneko0929@gmail.com>
+ <CAMuHMdX=cdHaiHCnYsJvZFc2RNv=Pk8cLXuvkezg4Ht4U4mXsg@mail.gmail.com>
+ <20150216135754.GA5479@verge.net.au>
+ <CAMuHMdUHMA+cJTGWS-0Prt6-BT5=UkGQ4OWZ+bz-g2G7DSwLzw@mail.gmail.com>
+In-Reply-To: <CAMuHMdUHMA+cJTGWS-0Prt6-BT5=UkGQ4OWZ+bz-g2G7DSwLzw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hi Geert,
 
-Hi Olof, Kevin, Arnd, Simon
+On Mon, Feb 16, 2015 at 03:04:16PM +0100, Geert Uytterhoeven wrote:
+> Hi Simon,
+> 
+> On Mon, Feb 16, 2015 at 2:57 PM, Simon Horman <horms@verge.net.au> wrote:
+> > On Mon, Feb 16, 2015 at 10:20:10AM +0100, Geert Uytterhoeven wrote:
+> >> Hi Kaneko-san, Mizuguchi-san,
+> >>
+> >> On Sun, Feb 15, 2015 at 3:49 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+> >> > From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+> >> >
+> >> > HSUSB uses hp_clk for H/W register access.
+> >>
+> >> That indeed seems to be true, and that's what this patch is changing.
+> >>
+> >> > HSUSB uses mp_clk for USB-DMAC access.
+> >>
+> >> However, page 64-2 doesn't mention the MP clock for USB-DMAC:
+> >>    "AXI bus clock (ZSφ: 260 MHz), HPB bus clock (HPφ: 130 MHz).
+> >>     USB local bus clock (48 MHz)"
+> >> So your statement doesn't seem to be true?
+> >
+> > Thanks, I see that too.
+> >
+> >> Note that mstp3_clks in dtsi has hp_clk as the parent for both usbdmac0 and
+> >> usbdmac1, so if your statement would be true, that has to changed, too?
+> >>
+> >> The same is true for other members of the R-Car Gen2 family, e.g. your patch
+> >> for r8a7791.
+> >
+> > It seems to me that we could:
+> >
+> > 1. Apply this patch with the changelog updated and;
+> > 2. Follow up on the DMAC clocks
+> >
+> > Does that sound reasonable to you?
+> 
+> Yes, that sounds fine to me.
 
-ping ?
+The purpose of this email is to offer a quick status update which
+I hope will bring this matter to a close.
 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Renesas R-Car sound (= rsnd) needs 2 DMAC which are called as
-> Audio DMAC (= 1st DMAC) and Audio DMAC peri peri (2nd DMAC).
-> And rsnd had assumed that 1st / 2nd DMACs are implemented as DMAEngine.
-> But, in result of DMA ML discussion, 2nd DMAC was concluded that it is
-> not a general purpose DMAC (2nd DMAC is for Device to Device inside
-> sound system). Additionally, current DMAEngine can't support Device to
-> Device, and we don't have correct DT bindings for it at this point.
-> So the easiest solution for it is that move it from DMAEngine to rsnd
-> driver.
-> Audio DMAC peri peri DMAEngine is no longer needed.
-> Remove all CONFIG_RCAR_AUDMAC_PP from ARM defconfigs
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  arch/arm/configs/multi_v7_defconfig | 1 -
->  1 file changed, 1 deletion(-)
-> 
-> diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
-> index 06075b6..e805984 100644
-> --- a/arch/arm/configs/multi_v7_defconfig
-> +++ b/arch/arm/configs/multi_v7_defconfig
-> @@ -505,7 +505,6 @@ CONFIG_DW_DMAC=y
->  CONFIG_MV_XOR=y
->  CONFIG_TEGRA20_APB_DMA=y
->  CONFIG_SH_DMAE=y
-> -CONFIG_RCAR_AUDMAC_PP=m
->  CONFIG_RCAR_DMAC=y
->  CONFIG_STE_DMA40=y
->  CONFIG_SIRF_DMA=y
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I have submitted and queued up a patch as per 1. above.
+
+With regards to item 2. above: I have also followed up on the "HSUSB uses
+mp_clk for USB-DMAC access" comment in the original changelog (above).
+Mizuguchi-san has confirmed that statement is not correct and its presence
+in the changelog was an error.
