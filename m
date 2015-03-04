@@ -1,58 +1,60 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 19 Mar 2015 01:41:44 +0000
-Subject: Re: [PATCH 3/7] irqchip: renesas-irqc: Add functional clock to bindings
-Message-Id: <20150319014143.GI14051@verge.net.au>
+Date: Wed, 04 Mar 2015 04:08:19 +0000
+Subject: Re: [PATCH/RFC] i2c: rcar: Fix order of restart and clear status
+Message-Id: <20150304040819.GB12776@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
- <1426704961-27322-4-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1426704961-27322-4-git-send-email-geert+renesas@glider.be>
+References: <1424011396-3492-1-git-send-email-ykaneko0929@gmail.com>
+ <b0a6dd2b593f2f891946ef910c876b48@the-dreams.de>
+In-Reply-To: <b0a6dd2b593f2f891946ef910c876b48@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Wolfram Sang <wsa@the-dreams.de>
+Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, linux-i2c@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Wed, Mar 18, 2015 at 07:55:57PM +0100, Geert Uytterhoeven wrote:
-> The external IRQ controller has a functional clock, which is used for
-> power management. Document it.
-> 
-> Fix a typo in the r8a73a4 SoC name while we're at it.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi Wolfram,
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+On Mon, Feb 23, 2015 at 02:07:18PM +0100, Wolfram Sang wrote:
+> Hi,
+> 
+> On 2015-02-15 15:43, Yoshihiro Kaneko wrote:
+> >From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+> >
+> >In case of repeated START condition, the restart has to be kicked
+> >before clear status (MSR register). If it is kicked after clear status,
+> >R-Car I2C may transfer data (TXD register) or receive data (RXD register)
+> >instead of transferring slave address (MAR register).
+> >
+> >Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+> >Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> 
+> Thanks for the patch!
+> 
+> I wondered if we couldn't always kick the start/restart before clearing
+> the status register?
 
-> ---
->  .../devicetree/bindings/interrupt-controller/renesas,irqc.txt         | 4 +++-
->  1 file changed, 3 insertions(+), 1 deletion(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
-> index 1a88e62228e59631..4f85aeb658e4c833 100644
-> --- a/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
-> +++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
-> @@ -4,7 +4,7 @@ Required properties:
->  
->  - compatible: has to be "renesas,irqc-<soctype>", "renesas,irqc" as fallback.
->    Examples with soctypes are:
-> -    - "renesas,irqc-r8a73a4" (R-Mobile AP6)
-> +    - "renesas,irqc-r8a73a4" (R-Mobile APE6)
->      - "renesas,irqc-r8a7790" (R-Car H2)
->      - "renesas,irqc-r8a7791" (R-Car M2-W)
->      - "renesas,irqc-r8a7792" (R-Car V2H)
-> @@ -12,6 +12,7 @@ Required properties:
->      - "renesas,irqc-r8a7794" (R-Car E2)
->  - #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
->    interrupts.txt in this directory
-> +- clocks: Must contain a reference to the functional clock.
->  
->  Optional properties:
->  
-> @@ -29,4 +30,5 @@ Example:
->  			     <0 1 IRQ_TYPE_LEVEL_HIGH>,
->  			     <0 2 IRQ_TYPE_LEVEL_HIGH>,
->  			     <0 3 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp4_clks R8A7790_CLK_IRQC>;
->  	};
-> -- 
-> 1.9.1
-> 
+I asked Kataoka-san about this and his response was as follows:
+
+If system(CPU) is busy, the driver can't clear the status register soon
+after kicking start.
+
+If sequence of first start is as follows, there is a problem.
+Because H/W starts by 1.
+But sequence of re-start is as follows, there is no problem.
+Because H/W starts by 2.
+
+  1. Issue START condition by ESG bit of ICMCR register.
+                  <--- If there is too much time, H/W finish transmitting
+                       and set status in status register.
+  2. Clear interrupt status (ICMSR).
+  3. Open interrupt mask.
+  4. Wait interrupt.
+                  <--- If status is cleared, interrupt does not occur.
+
+> I am not sure if this simulates the flaw accurately, but I inserted a
+> udelay(500) in the original code after clearing the status register.
+> Then, I couldn't access the audio codec on my Lager board anymore. By
+> always first "kicking" and then clearing, access was possible again. But
+> as said, I am not sure if my scenario matches yours. Have you considered
+> to treat start and repeated start the same and always kick the condition
+> before clearing the status?
