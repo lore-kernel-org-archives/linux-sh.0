@@ -1,66 +1,35 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Thu, 05 Mar 2015 10:03:52 +0000
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Thu, 05 Mar 2015 16:37:08 +0000
 Subject: Re: [PATCH 0/2] tmio: mmc: replace sh_mobile_sdhi_info to tmio_mmc_data
-Message-Id: <CAPDyKFrww8=HKYwyD4EQSS-=J=c=5HRA=g9YCiSC=L0+_uCMOQ@mail.gmail.com>
+Message-Id: <20150305162508.GL2613@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <878ufo12qq.wl%kuninori.morimoto.gx@renesas.com>
-	<20150224162312.GG5208@intel.com>
-	<87wq2vc40g.wl%kuninori.morimoto.gx@renesas.com>
-	<CAPDyKFqJ7bbfaQgYnhHerFbre9mPzj7i6QGPQZo54ukuHaD32g@mail.gmail.com>
-	<20150305083630.GZ2613@intel.com>
-In-Reply-To: <20150305083630.GZ2613@intel.com>
+In-Reply-To: <878ufo12qq.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Simon <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Ulf Hansson <ulf.hansson@linaro.org>, Simon <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Chris Ball <cjb@laptop.org>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-On 5 March 2015 at 09:36, Vinod Koul <vinod.koul@intel.com> wrote:
-> On Thu, Mar 05, 2015 at 09:33:10AM +0100, Ulf Hansson wrote:
->> On 5 March 2015 at 08:11, Kuninori Morimoto
->> <kuninori.morimoto.gx@renesas.com> wrote:
->> >
->> > Hi Ulf
->> >
->> >> > Hi Ulf, Vinod, Simon
->> >> >
->> >> > DMAEngine cleanup patches are accepted in v4.0-rc1
->> >> >
->> >> > As I mentioned in
->> >> > http://thread.gmane.org/gmane.linux.ports.sh.devel/42669
->> >> > these are last of sh_mobile_sdhi DMA patches.
->> >> >
->> >> > These patches uses tmio_mmc_data on platform,
->> >> > and remove sh_mobile_sdhi
->> >> >
->> >> > These are based on
->> >> >  - linus's v4.0-rc1
->> >> >  - Vinod's dma/next (git://git.infradead.org/users/vkoul/slave-dma.git :: next)
->> >> >
->> >> > Vinod
->> >> >
->> >> > please let us know if it has stable tag or branch
-> No my next is not stable, I will rebase that.
-> I think you want to pick topic/sh, that is an immutable branch
-> Can you check that has all the patches you need for this?
->
->> >> Please use topic/sh. I will not rebase that, my next would be rebased
->> >> frequently...
->> >
->> > Please let me know if you want me to re-send these patches
->>
->> I have no issues with the patches as such. Though, I wonder about the
->> dependency here.
->>
->> Does these patches depend on an immutable branch hosted from Vinod's tree?
->>
->>
->> Do you want me to take the patches through my mmc tree or just request
->> an ack so Vinod can carry this?
-> Either ways is okay with me..
+On Tue, Feb 24, 2015 at 11:07:25AM +0900, Kuninori Morimoto wrote:
+> 
+> Hi Ulf, Vinod, Simon
+> 
+> DMAEngine cleanup patches are accepted in v4.0-rc1
+> 
+> As I mentioned in
+> http://thread.gmane.org/gmane.linux.ports.sh.devel/42669
+> these are last of sh_mobile_sdhi DMA patches.
+> 
+> These patches uses tmio_mmc_data on platform,
+> and remove sh_mobile_sdhi
+> 
+> These are based on
+>  - linus's v4.0-rc1
+>  - Vinod's dma/next (git://git.infradead.org/users/vkoul/slave-dma.git :: next)
+Applied both to topic/sh
 
-I just provided my ack for both patches, so please go ahead and take
-them through your tree.
+Thanks
+-- 
+~Vinod
 
-Kind regards
-Uffe
