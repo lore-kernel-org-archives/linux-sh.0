@@ -1,432 +1,87 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 05 Mar 2015 01:58:19 +0000
-Subject: [PATCH 03/11] ARM: shmobile: kzm9g dts: Sync with kzm9g-reference dts
-Message-Id: <682d2dfb1d54b3b8d4409cc80c0a73e965c943a3.1425518682.git.horms+renesas@verge.net.au>
+Date: Thu, 05 Mar 2015 01:58:04 +0000
+Subject: [PATCH 04/16] ARM: shmobile: r8a7778: implement SoC and board CCF support
+Message-Id: <43cbec8577cfd66713416c3ad33a9856edcaffb9.1425518337.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425518682.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425518682.git.horms+renesas@verge.net.au>
+References: <cover.1425518337.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425518337.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Sync the two DTS for the KZM9G board. The target is the file
-"sh73a0-kzm9g.dts" and it is made identical to the DT reference
-case with the exception of the compatbile string. In the future
-the DT reference file will go away.
+Disables the legacy clock framework and passes the mode bits to the CPG
+driver if CCF is enabled.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-[geert: Update for recent changes to sh73a0-kzm9g-reference.dts]
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g.dts | 374 ++++++++++++++++++++++++++++++++++++-
- 1 file changed, 373 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-bockw-reference.c |  2 ++
+ arch/arm/mach-shmobile/setup-r8a7778.c         | 19 +++++++++++++++++++
+ 2 files changed, 21 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index e7dae01..6f00e6b 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -1,6 +1,9 @@
- /*
-  * Device Tree Source for the KZM-A9-GT board
-  *
-+ * Copyright (C) 2012 Horms Solutions Ltd.
-+ *
-+ * Based on sh73a0-kzm9g.dts
-  * Copyright (C) 2012 Renesas Solutions Corp.
-  *
-  * This file is licensed under the terms of the GNU General Public License
-@@ -10,17 +13,386 @@
+diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
+index d649ade..9a74efd 100644
+--- a/arch/arm/mach-shmobile/board-bockw-reference.c
++++ b/arch/arm/mach-shmobile/board-bockw-reference.c
+@@ -36,7 +36,9 @@ static void __init bockw_init(void)
+ 	void __iomem *fpga;
+ 	void __iomem *pfc;
  
- /dts-v1/;
- #include "sh73a0.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/input.h>
-+#include <dt-bindings/interrupt-controller/irq.h>
++#ifndef CONFIG_COMMON_CLK
+ 	r8a7778_clock_init();
++#endif
+ 	r8a7778_init_irq_extpin_dt(1);
+ 	r8a7778_add_dt_devices();
  
- / {
- 	model = "KZM-A9-GT";
- 	compatible = "renesas,kzm9g", "renesas,sh73a0";
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index cef8895..c49aa09 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -15,6 +15,7 @@
+  * GNU General Public License for more details.
+  */
  
-+	aliases {
-+		serial4 = &scifa4;
-+	};
-+
-+	cpus {
-+		cpu@0 {
-+			cpu0-supply = <&vdd_dvfs>;
-+			operating-points = <
-+				/* kHz  uV */
-+				1196000 1315000
-+				 598000 1175000
-+				 398667 1065000
-+			>;
-+			voltage-tolerance = <1>; /* 1% */
-+		};
-+	};
-+
- 	chosen {
--		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200 rw";
-+		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel rw";
-+		stdout-path = &scifa4;
- 	};
++#include <linux/clk/shmobile.h>
+ #include <linux/kernel.h>
+ #include <linux/io.h>
+ #include <linux/irqchip/arm-gic.h>
+@@ -41,6 +42,21 @@
+ #include "irqs.h"
+ #include "r8a7778.h"
  
- 	memory {
- 		device_type = "memory";
- 		reg = <0x40000000 0x20000000>;
- 	};
++#define MODEMR 0xffcc0020
 +
-+	reg_1p8v: regulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-1.8V";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <1800000>;
-+		regulator-always-on;
-+		regulator-boot-on;
-+	};
++#ifdef CONFIG_COMMON_CLK
++static void __init r8a7778_timer_init(void)
++{
++	u32 mode;
++	void __iomem *modemr = ioremap_nocache(MODEMR, 4);
 +
-+	reg_3p3v: regulator@1 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-always-on;
-+		regulator-boot-on;
-+	};
++	BUG_ON(!modemr);
++	mode = ioread32(modemr);
++	iounmap(modemr);
++	r8a7778_clocks_init(mode);
++}
++#endif
 +
-+	vmmc_sdhi0: regulator@2 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "SDHI0 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		gpio = <&pfc 15 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	vmmc_sdhi2: regulator@3 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "SDHI2 Vcc";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		gpio = <&pfc 14 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
-+	};
-+
-+	lan9220@10000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x10000000 0x100>;
-+		phy-mode = "mii";
-+		interrupt-parent = <&irqpin0>;
-+		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
-+		reg-io-width = <4>;
-+		smsc,irq-push-pull;
-+		smsc,save-mac-address;
-+		vddvario-supply = <&reg_1p8v>;
-+		vdd33a-supply = <&reg_3p3v>;
-+	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led1 {
-+			gpios = <&pfc 20 GPIO_ACTIVE_LOW>;
-+			label = "LED1";
-+		};
-+		led2 {
-+			gpios = <&pfc 21 GPIO_ACTIVE_LOW>;
-+			label = "LED2";
-+		};
-+		led3 {
-+			gpios = <&pfc 22 GPIO_ACTIVE_LOW>;
-+			label = "LED3";
-+		};
-+		led4 {
-+			gpios = <&pfc 23 GPIO_ACTIVE_LOW>;
-+			label = "LED4";
-+		};
-+	};
-+
-+	keyboard {
-+		compatible = "gpio-keys";
-+
-+		back-key {
-+			gpios = <&pcf8575 8 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_BACK>;
-+			label = "SW3";
-+		};
-+
-+		right-key {
-+			gpios = <&pcf8575 9 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_RIGHT>;
-+			label = "SW2-R";
-+		};
-+
-+		left-key {
-+			gpios = <&pcf8575 10 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_LEFT>;
-+			label = "SW2-L";
-+		};
-+
-+		enter-key {
-+			gpios = <&pcf8575 11 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_ENTER>;
-+			label = "SW2-P";
-+		};
-+
-+		up-key {
-+			gpios = <&pcf8575 12 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_UP>;
-+			label = "SW2-U";
-+		};
-+
-+		down-key {
-+			gpios = <&pcf8575 13 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_DOWN>;
-+			label = "SW2-D";
-+		};
-+
-+		home-key {
-+			gpios = <&pcf8575 14 GPIO_ACTIVE_LOW>;
-+			linux,code = <KEY_HOME>;
-+			label = "SW1";
-+		};
-+	};
-+
-+	sound {
-+		compatible = "simple-audio-card";
-+		simple-audio-card,format = "left_j";
-+		simple-audio-card,cpu {
-+			sound-dai = <&sh_fsi2 0>;
-+		};
-+		simple-audio-card,codec {
-+			sound-dai = <&ak4648>;
-+			bitclock-master;
-+			frame-master;
-+			system-clock-frequency = <11289600>;
-+		};
-+	};
-+};
-+
-+&cmt1 {
-+	status = "okay";
-+};
-+
-+&extal2_clk {
-+	clock-frequency = <48000000>;
-+};
-+
-+&i2c0 {
-+	status = "okay";
-+
-+	compass@c {
-+		compatible = "asahi-kasei,ak8975";
-+		reg = <0x0c>;
-+		interrupt-parent = <&irqpin3>;
-+		interrupts = <4 IRQ_TYPE_EDGE_FALLING>;
-+	};
-+
-+	ak4648: codec@12 {
-+		compatible = "asahi-kasei,ak4648";
-+		reg = <0x12>;
-+		#sound-dai-cells = <0>;
-+	};
-+
-+	accelerometer@1d {
-+		compatible = "adi,adxl34x";
-+		reg = <0x1d>;
-+		interrupt-parent = <&irqpin3>;
-+		interrupts = <2 IRQ_TYPE_LEVEL_HIGH>,
-+			     <3 IRQ_TYPE_LEVEL_HIGH>;
-+	};
-+
-+	rtc@32 {
-+		compatible = "ricoh,r2025sd";
-+		reg = <0x32>;
-+	};
-+
-+	as3711@40 {
-+		compatible = "ams,as3711";
-+		reg = <0x40>;
-+
-+		regulators {
-+			vdd_dvfs: sd1 {
-+				regulator-name = "1.315V CPU";
-+				regulator-min-microvolt = <1050000>;
-+				regulator-max-microvolt = <1350000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			sd2 {
-+				regulator-name = "1.8V";
-+				regulator-min-microvolt = <1800000>;
-+				regulator-max-microvolt = <1800000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			sd4 {
-+				regulator-name = "1.215V";
-+				regulator-min-microvolt = <1215000>;
-+				regulator-max-microvolt = <1235000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo2 {
-+				regulator-name = "2.8V CPU";
-+				regulator-min-microvolt = <2800000>;
-+				regulator-max-microvolt = <2800000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo3 {
-+				regulator-name = "3.0V CPU";
-+				regulator-min-microvolt = <3000000>;
-+				regulator-max-microvolt = <3000000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo4 {
-+				regulator-name = "2.8V";
-+				regulator-min-microvolt = <2800000>;
-+				regulator-max-microvolt = <2800000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo5 {
-+				regulator-name = "2.8V #2";
-+				regulator-min-microvolt = <2800000>;
-+				regulator-max-microvolt = <2800000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo7 {
-+				regulator-name = "1.15V CPU";
-+				regulator-min-microvolt = <1150000>;
-+				regulator-max-microvolt = <1150000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+			ldo8 {
-+				regulator-name = "1.15V CPU #2";
-+				regulator-min-microvolt = <1150000>;
-+				regulator-max-microvolt = <1150000>;
-+				regulator-always-on;
-+				regulator-boot-on;
-+			};
-+		};
-+	};
-+};
-+
-+&i2c1 {
-+	status = "okay";
-+
-+	touchscreen@55 {
-+		compatible = "sitronix,st1232";
-+		reg = <0x55>;
-+		interrupt-parent = <&irqpin1>;
-+		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
-+	};
-+};
-+
-+&i2c3 {
-+	pinctrl-0 = <&i2c3_pins>;
-+	pinctrl-names = "default";
-+	status = "okay";
-+
-+	pcf8575: gpio@20 {
-+		compatible = "nxp,pcf8575";
-+		reg = <0x20>;
-+		interrupt-parent = <&irqpin2>;
-+		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+		interrupt-controller;
-+		#interrupt-cells = <2>;
-+	};
-+};
-+
-+&mmcif {
-+	pinctrl-0 = <&mmcif_pins>;
-+	pinctrl-names = "default";
-+
-+	bus-width = <8>;
-+	vmmc-supply = <&reg_1p8v>;
-+	status = "okay";
-+};
-+
-+&pfc {
-+	i2c3_pins: i2c3 {
-+		renesas,groups = "i2c3_1";
-+		renesas,function = "i2c3";
-+	};
-+
-+	mmcif_pins: mmc {
-+		mux {
-+			renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
-+			renesas,function = "mmc0";
-+		};
-+		cfg {
-+			renesas,groups = "mmc0_data8_0";
-+			renesas,pins = "PORT279";
-+			bias-pull-up;
-+		};
-+	};
-+
-+	scifa4_pins: serial4 {
-+		renesas,groups = "scifa4_data", "scifa4_ctrl";
-+		renesas,function = "scifa4";
-+	};
-+
-+	sdhi0_pins: sd0 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_cd", "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+	};
-+
-+	sdhi2_pins: sd2 {
-+		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
-+		renesas,function = "sdhi2";
-+	};
-+
-+	fsia_pins: sounda {
-+		renesas,groups = "fsia_mclk_in", "fsia_sclk_in",
-+				 "fsia_data_in", "fsia_data_out";
-+		renesas,function = "fsia";
-+	};
-+};
-+
-+&scifa4 {
-+	pinctrl-0 = <&scifa4_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
-+
-+&sdhi0 {
-+	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vmmc_sdhi0>;
-+	bus-width = <4>;
-+	status = "okay";
-+};
-+
-+&sdhi2 {
-+	pinctrl-0 = <&sdhi2_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&vmmc_sdhi2>;
-+	bus-width = <4>;
-+	broken-cd;
-+	status = "okay";
-+};
-+
-+&sh_fsi2 {
-+	pinctrl-0 = <&fsia_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
- };
+ /* SCIF */
+ #define R8A7778_SCIF(index, baseaddr, irq)			\
+ static struct plat_sci_port scif##index##_platform_data = {	\
+@@ -608,6 +624,9 @@ DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
+ 	.init_early	= shmobile_init_delay,
+ 	.init_irq	= r8a7778_init_irq_dt,
+ 	.init_late	= shmobile_init_late,
++#ifdef CONFIG_COMMON_CLK
++	.init_time	= r8a7778_timer_init,
++#endif
+ 	.dt_compat	= r8a7778_compat_dt,
+ MACHINE_END
+ 
 -- 
 2.1.4
 
