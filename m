@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sun, 15 Mar 2015 23:03:08 +0000
-Subject: [PATCH 4/5] ARM: shmobile: lager dts: Add da9210 regulator interrupt
-Message-Id: <ceb7747993adcc40581629e4abb0d9ea7853e857.1426456462.git.horms+renesas@verge.net.au>
+Date: Thu, 05 Mar 2015 01:58:03 +0000
+Subject: [PATCH 11/13] PM / Domains: R-Mobile SYSC: Document R-Mobile APE6 (r8a73a4) binding
+Message-Id: <12920b02c0e438f2b8f636c26755a0361f9966f0.1425517246.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1426456462.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1426456462.git.horms+renesas@verge.net.au>
+References: <cover.1425517246.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425517246.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,28 +12,26 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-The da9210 regulator is connected to IRQ2. Reflect this in its device
-node, so the driver can use it when it gains interrupt support.
+R-Mobile APE6 (r8a73a4) is handled fine by the same driver and bindings.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 2 ++
- 1 file changed, 2 insertions(+)
+ Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 0c3b678..e2f4746 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -516,6 +516,8 @@
- 	vdd_dvfs: regulator@68 {
- 		compatible = "dlg,da9210";
- 		reg = <0x68>;
-+		interrupt-parent = <&irqc0>;
-+		interrupts = <2 IRQ_TYPE_LEVEL_LOW>;
- 
- 		regulator-min-microvolt = <1000000>;
- 		regulator-max-microvolt = <1000000>;
+diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+index cc3b1f0..beda7d2 100644
+--- a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
++++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
+@@ -11,6 +11,7 @@ Required properties:
+ - compatible: Should be "renesas,sysc-<soctype>", "renesas,sysc-rmobile" as
+ 	      fallback.
+ 	      Examples with soctypes are:
++		- "renesas,sysc-r8a73a4" (R-Mobile APE6)
+ 		- "renesas,sysc-r8a7740" (R-Mobile A1)
+ 		- "renesas,sysc-sh73a0" (SH-Mobile AG5)
+ - reg: Two address start and address range blocks for the device:
 -- 
 2.1.4
 
