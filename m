@@ -1,36 +1,123 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 05 Mar 2015 01:58:12 +0000
-Subject: [PATCH 12/16] DT: i2c: add trivial binding for OKI ML86V7667 video decoder
-Message-Id: <6f82fae2f4a3fc4bee26a3a1e9db74e18ee67b52.1425518338.git.horms+renesas@verge.net.au>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Thu, 05 Mar 2015 14:57:52 +0000
+Subject: Re: [RFC/PATCH] mmc: tmio: Fix PIO mode with CONFIG_HIGHMEM
+Message-Id: <CAPDyKFp4+g0aOC=O6bGmRcfBY69fY16+aoN+upLNcEAkhYMrUw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425518337.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425518337.git.horms+renesas@verge.net.au>
+References: <54DD91E3.3070903@renesas.com>
+In-Reply-To: <54DD91E3.3070903@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: keita kobayashi <keita.kobayashi.ym@renesas.com>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+On 13 February 2015 at 06:55, keita kobayashi
+<keita.kobayashi.ym@renesas.com> wrote:
+> Current PIO mode occurred kernel panic with CONFIG_HIGHMEM.
+> This patch fixes the kernel panic by converting the driver
+> to the sg_miter API.
+>
+> Reported-by: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+> Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Wolfram Sang <wsa@the-dreams.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- Documentation/devicetree/bindings/i2c/trivial-devices.txt | 1 +
- 1 file changed, 1 insertion(+)
+Applied, thanks!
 
-diff --git a/Documentation/devicetree/bindings/i2c/trivial-devices.txt b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-index aaa8325..7cbd62b 100644
---- a/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-+++ b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-@@ -77,6 +77,7 @@ nxp,pca9556		Octal SMBus and I2C registered interface
- nxp,pca9557		8-bit I2C-bus and SMBus I/O port with reset
- nxp,pcf8563		Real-time clock/calendar
- nxp,pcf85063		Tiny Real-Time Clock
-+oki,ml86v7667		OKI ML86V7667 video decoder
- ovti,ov5642		OV5642: Color CMOS QSXGA (5-megapixel) Image Sensor with OmniBSI and Embedded TrueFocus
- pericom,pt7c4338	Real-time Clock Module
- plx,pex8648		48-Lane, 12-Port PCI Express Gen 2 (5.0 GT/s) Switch
--- 
-2.1.4
+Kind regards
+Uffe
 
+
+> ---
+> This patch is based on renesas.git / renesas-devel-20150211-v3.19 tag.
+>
+>  drivers/mmc/host/tmio_mmc.h     |    1 +
+>  drivers/mmc/host/tmio_mmc_pio.c |   35 ++++++++++++++++-------------------
+>  2 files changed, 17 insertions(+), 19 deletions(-)
+>
+> diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+> index a34ecbe..3092219 100644
+> --- a/drivers/mmc/host/tmio_mmc.h
+> +++ b/drivers/mmc/host/tmio_mmc.h
+> @@ -56,6 +56,7 @@ struct tmio_mmc_host {
+>         struct scatterlist      *sg_orig;
+>         unsigned int            sg_len;
+>         unsigned int            sg_off;
+> +       struct sg_mapping_iter  sg_miter;
+>
+>         struct platform_device *pdev;
+>         struct tmio_mmc_data *pdata;
+> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+> index 250bf8c..6d8f363 100644
+> --- a/drivers/mmc/host/tmio_mmc_pio.c
+> +++ b/drivers/mmc/host/tmio_mmc_pio.c
+> @@ -70,17 +70,14 @@ static void tmio_mmc_ack_mmc_irqs(struct tmio_mmc_host *host, u32 i)
+>
+>  static void tmio_mmc_init_sg(struct tmio_mmc_host *host, struct mmc_data *data)
+>  {
+> -       host->sg_len = data->sg_len;
+> -       host->sg_ptr = data->sg;
+> -       host->sg_orig = data->sg;
+> -       host->sg_off = 0;
+> -}
+> +       unsigned int flags = SG_MITER_ATOMIC;
+>
+> -static int tmio_mmc_next_sg(struct tmio_mmc_host *host)
+> -{
+> -       host->sg_ptr = sg_next(host->sg_ptr);
+> -       host->sg_off = 0;
+> -       return --host->sg_len;
+> +       if (data->flags & MMC_DATA_READ)
+> +               flags |= SG_MITER_TO_SG;
+> +       else
+> +               flags |= SG_MITER_FROM_SG;
+> +
+> +       sg_miter_start(&host->sg_miter, data->sg, data->sg_len, flags);
+>  }
+>
+>  #ifdef CONFIG_MMC_DEBUG
+> @@ -418,7 +415,7 @@ static void tmio_mmc_transfer_data(struct tmio_mmc_host *host,
+>  static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
+>  {
+>         struct mmc_data *data = host->data;
+> -       void *sg_virt;
+> +       struct sg_mapping_iter *sg_miter = &host->sg_miter;
+>         unsigned short *buf;
+>         unsigned int count;
+>         unsigned long flags;
+> @@ -431,10 +428,12 @@ static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
+>                 return;
+>         }
+>
+> -       sg_virt = tmio_mmc_kmap_atomic(host->sg_ptr, &flags);
+> -       buf = (unsigned short *)(sg_virt + host->sg_off);
+> +       local_irq_save(flags);
+>
+> -       count = host->sg_ptr->length - host->sg_off;
+> +       if (!sg_miter_next(sg_miter))
+> +               return;
+> +       buf = sg_miter->addr;
+> +       count = sg_miter->length;
+>         if (count > data->blksz)
+>                 count = data->blksz;
+>
+> @@ -444,12 +443,10 @@ static void tmio_mmc_pio_irq(struct tmio_mmc_host *host)
+>         /* Transfer the data */
+>         tmio_mmc_transfer_data(host, buf, count);
+>
+> -       host->sg_off += count;
+> -
+> -       tmio_mmc_kunmap_atomic(host->sg_ptr, &flags, sg_virt);
+> +       sg_miter->consumed = count;
+> +       sg_miter_stop(sg_miter);
+>
+> -       if (host->sg_off = host->sg_ptr->length)
+> -               tmio_mmc_next_sg(host);
+> +       local_irq_restore(flags);
+>
+>         return;
+>  }
+> --
+> 1.7.9.5
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
