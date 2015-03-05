@@ -1,53 +1,63 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 09 Mar 2015 20:06:57 +0000
-Subject: [PATCH 4/4] ARM: shmobile: lager: Add da9063 PMIC device node for system restart
-Message-Id: <1425931617-5479-5-git-send-email-geert+renesas@glider.be>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Thu, 05 Mar 2015 14:57:21 +0000
+Subject: Re: [PATCH/RFC] mmc: sh_mmcif: Move dev_err() of mmcif_timeout_work()
+Message-Id: <CAPDyKFo2hNP==FCLONp5qaYTQQd7=LxdAVD45wxddTkP4CV+nA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425931617-5479-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1425931617-5479-1-git-send-email-geert+renesas@glider.be>
+References: <1424011607-3682-2-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1424011607-3682-2-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Chris Ball <chris@printf.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Add a device node for the da9063 PMIC, with subnodes for rtc and wdt.
-Regulator support is not yet included.
+On 15 February 2015 at 15:46, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+> From: Kouichi Tomita <kouichi.tomita.yn@renesas.com>
+>
+> If interruption of command already occurred, mrq pointer in dev_err()
+> would refer to NULL, because the host-state is changed to STATE_IDLE
+> and mrq pointer is changed to NULL by interrupt handler.
+> Therefore dev_err is moved after checking STATE_IDLE.
+>
+> Signed-off-by: Kouichi Tomita <kouichi.tomita.yn@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 
-This allows the system to be restarted when the watchdog timer times
-out, or when a system restart is requested.
+Applied, thanks!
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+Kind regards
+Uffe
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 6fa8681a431fceb8..aaa4f258e279ccfa 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -582,6 +582,22 @@
- 	pinctrl-0 = <&iic3_pins>;
- 	status = "okay";
- 
-+	pmic@58 {
-+		compatible = "dlg,da9063";
-+		reg = <0x58>;
-+		interrupt-parent = <&irqc0>;
-+		interrupts = <2 IRQ_TYPE_LEVEL_LOW>;
-+		interrupt-controller;
-+
-+		rtc {
-+			compatible = "dlg,da9063-rtc";
-+		};
-+
-+		wdt {
-+			compatible = "dlg,da9063-watchdog";
-+		};
-+	};
-+
- 	vdd_dvfs: regulator@68 {
- 		compatible = "dlg,da9210";
- 		reg = <0x68>;
--- 
-1.9.1
 
+> ---
+>
+> This patch is based on next branch of Chris Ball's mmc tree.
+>
+>  drivers/mmc/host/sh_mmcif.c | 6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
+>
+> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+> index 7d9d6a3..e075804 100644
+> --- a/drivers/mmc/host/sh_mmcif.c
+> +++ b/drivers/mmc/host/sh_mmcif.c
+> @@ -1312,15 +1312,15 @@ static void mmcif_timeout_work(struct work_struct *work)
+>                 /* Don't run after mmc_remove_host() */
+>                 return;
+>
+> -       dev_err(&host->pd->dev, "Timeout waiting for %u on CMD%u\n",
+> -               host->wait_for, mrq->cmd->opcode);
+> -
+>         spin_lock_irqsave(&host->lock, flags);
+>         if (host->state = STATE_IDLE) {
+>                 spin_unlock_irqrestore(&host->lock, flags);
+>                 return;
+>         }
+>
+> +       dev_err(&host->pd->dev, "Timeout waiting for %u on CMD%u\n",
+> +               host->wait_for, mrq->cmd->opcode);
+> +
+>         host->state = STATE_TIMEOUT;
+>         spin_unlock_irqrestore(&host->lock, flags);
+>
+> --
+> 1.9.1
+>
