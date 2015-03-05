@@ -1,107 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 05 Mar 2015 01:57:59 +0000
-Subject: [PATCH 07/13] ARM: shmobile: r8a73a4: Move pfc node to work around probe ordering bug
-Message-Id: <e4ba0a9bddff3ba52cec100414d2f178440efc91.1425517246.git.horms+renesas@verge.net.au>
+From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Thu, 05 Mar 2015 08:58:57 +0000
+Subject: [RFC/PATCH v2 0/6] Add CPUIdle support for Renesas SoCs
+Message-Id: <1425545943-1440-1-git-send-email-keita.kobayashi.ym@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425517246.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425517246.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, rjw@rjwysocki.net
+Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, badarkhe.manish@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Hello
 
-Currently the pin function controller (which is also a GPIO controller)
-is instantiated before the interrupt controllers due to the order in the
-DTS. At that time, the irq domains for the interrupt controllers
-referenced by its interrupts-extended property cannot be found yet:
+These patches add CPUIdle support for Renesas SoCs. 
+These patches have been tested on Renesas Gen2 series with
+following cases on renesas-devel-20150301-v4.0-rc1 tag.
 
-    irq: no irq domain found for /interrupt-controller@e61c0000 !
+[Test case]
+   a. Lager board(CA15 * 4)
+   b. Lager board(CA7 * 4)
+   c. Lager board(CA15 * 4 + CA7 *4)
+   d. Koelsch board(CA15 * 2)
 
-Nevertheless, the core OF probing code ignores this failure, besides a
-debug message that's not normally printed:
+These cases work fine.
 
-    not all legacy IRQ resources mapped for pfc
+Changes since v1
+- use 'IS_ENABLED' instead of '#ifdef'
 
-and continues initialization of the device. Then, the sh-pfc driver
-cannot find any IRQ resources, and thinks no interrupts are available,
-causing gpio-keys to fail later:
+Keita Kobayashi (6):
+  cpuidle: renesas: Add CPUIdle Driver for Renesas SoCs
+  ARM: shmobile: Change CPUIdle InterFace
+  ARM: shmobile: APMU: Add Core-Standby function for CPUIdle
+  ARM: shmobile: r8a7791: Add Core-Standby CPUIdle support for r8a7791
+  ARM: shmobile: r8a7790: Add Core-Standby CPUIdle support for r8a7790
+  ARM: shmobile: Enable Renesas CPUIdle for shmobile_defconfig
 
-    gpio-keys keyboard: Unable to claim irq 0; error -22
-    gpio-keys: probe of keyboard failed with error -22
+ arch/arm/configs/shmobile_defconfig           |   2 +
+ arch/arm/mach-shmobile/common.h               |  12 ++-
+ arch/arm/mach-shmobile/cpuidle.c              |  31 ++++---
+ arch/arm/mach-shmobile/platsmp-apmu.c         |  20 ++++-
+ arch/arm/mach-shmobile/pm-r8a7790.c           |  47 ++++++++++
+ arch/arm/mach-shmobile/pm-r8a7791.c           |  34 ++++++++
+ drivers/cpuidle/Kconfig.arm                   |   8 ++
+ drivers/cpuidle/Makefile                      |   1 +
+ drivers/cpuidle/cpuidle-renesas.c             | 118 ++++++++++++++++++++++++++
+ include/linux/platform_data/renesas-cpuidle.h |  24 ++++++
+ 10 files changed, 283 insertions(+), 14 deletions(-)
+ create mode 100644 drivers/cpuidle/cpuidle-renesas.c
+ create mode 100644 include/linux/platform_data/renesas-cpuidle.h
 
-Move the pin function controller node after the interrupt controller
-nodes it references to work around the bug in the core OF probing code.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a73a4.dtsi | 46 +++++++++++++++++++++---------------------
- 1 file changed, 23 insertions(+), 23 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index 77bd35c..d41201d 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -92,29 +92,6 @@
- 		};
- 	};
- 
--	pfc: pfc@e6050000 {
--		compatible = "renesas,pfc-r8a73a4";
--		reg = <0 0xe6050000 0 0x9000>;
--		gpio-controller;
--		#gpio-cells = <2>;
--		interrupts-extended -			<&irqc0  0 0>, <&irqc0  1 0>, <&irqc0  2 0>, <&irqc0  3 0>,
--			<&irqc0  4 0>, <&irqc0  5 0>, <&irqc0  6 0>, <&irqc0  7 0>,
--			<&irqc0  8 0>, <&irqc0  9 0>, <&irqc0 10 0>, <&irqc0 11 0>,
--			<&irqc0 12 0>, <&irqc0 13 0>, <&irqc0 14 0>, <&irqc0 15 0>,
--			<&irqc0 16 0>, <&irqc0 17 0>, <&irqc0 18 0>, <&irqc0 19 0>,
--			<&irqc0 20 0>, <&irqc0 21 0>, <&irqc0 22 0>, <&irqc0 23 0>,
--			<&irqc0 24 0>, <&irqc0 25 0>, <&irqc0 26 0>, <&irqc0 27 0>,
--			<&irqc0 28 0>, <&irqc0 29 0>, <&irqc0 30 0>, <&irqc0 31 0>,
--			<&irqc1  0 0>, <&irqc1  1 0>, <&irqc1  2 0>, <&irqc1  3 0>,
--			<&irqc1  4 0>, <&irqc1  5 0>, <&irqc1  6 0>, <&irqc1  7 0>,
--			<&irqc1  8 0>, <&irqc1  9 0>, <&irqc1 10 0>, <&irqc1 11 0>,
--			<&irqc1 12 0>, <&irqc1 13 0>, <&irqc1 14 0>, <&irqc1 15 0>,
--			<&irqc1 16 0>, <&irqc1 17 0>, <&irqc1 18 0>, <&irqc1 19 0>,
--			<&irqc1 20 0>, <&irqc1 21 0>, <&irqc1 22 0>, <&irqc1 23 0>,
--			<&irqc1 24 0>, <&irqc1 25 0>;
--	};
--
- 	i2c5: i2c@e60b0000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -210,6 +187,29 @@
- 			     <0 57 IRQ_TYPE_LEVEL_HIGH>;
- 	};
- 
-+	pfc: pfc@e6050000 {
-+		compatible = "renesas,pfc-r8a73a4";
-+		reg = <0 0xe6050000 0 0x9000>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+		interrupts-extended +			<&irqc0  0 0>, <&irqc0  1 0>, <&irqc0  2 0>, <&irqc0  3 0>,
-+			<&irqc0  4 0>, <&irqc0  5 0>, <&irqc0  6 0>, <&irqc0  7 0>,
-+			<&irqc0  8 0>, <&irqc0  9 0>, <&irqc0 10 0>, <&irqc0 11 0>,
-+			<&irqc0 12 0>, <&irqc0 13 0>, <&irqc0 14 0>, <&irqc0 15 0>,
-+			<&irqc0 16 0>, <&irqc0 17 0>, <&irqc0 18 0>, <&irqc0 19 0>,
-+			<&irqc0 20 0>, <&irqc0 21 0>, <&irqc0 22 0>, <&irqc0 23 0>,
-+			<&irqc0 24 0>, <&irqc0 25 0>, <&irqc0 26 0>, <&irqc0 27 0>,
-+			<&irqc0 28 0>, <&irqc0 29 0>, <&irqc0 30 0>, <&irqc0 31 0>,
-+			<&irqc1  0 0>, <&irqc1  1 0>, <&irqc1  2 0>, <&irqc1  3 0>,
-+			<&irqc1  4 0>, <&irqc1  5 0>, <&irqc1  6 0>, <&irqc1  7 0>,
-+			<&irqc1  8 0>, <&irqc1  9 0>, <&irqc1 10 0>, <&irqc1 11 0>,
-+			<&irqc1 12 0>, <&irqc1 13 0>, <&irqc1 14 0>, <&irqc1 15 0>,
-+			<&irqc1 16 0>, <&irqc1 17 0>, <&irqc1 18 0>, <&irqc1 19 0>,
-+			<&irqc1 20 0>, <&irqc1 21 0>, <&irqc1 22 0>, <&irqc1 23 0>,
-+			<&irqc1 24 0>, <&irqc1 25 0>;
-+	};
-+
- 	thermal@e61f0000 {
- 		compatible = "renesas,thermal-r8a73a4", "renesas,rcar-thermal";
- 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
 -- 
-2.1.4
+1.9.1
 
