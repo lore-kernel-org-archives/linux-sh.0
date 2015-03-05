@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 05 Mar 2015 10:08:58 +0000
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Thu, 05 Mar 2015 13:41:13 +0000
 Subject: Re: [PATCH] mmc: tmio: Remove bogus un-initialization in tmio_mmc_host_free()
-Message-Id: <CAMuHMdVwiS1J_a4oV1F_VQGSF4gH+ZCwsVLPisn7+bJEksE=0A@mail.gmail.com>
+Message-Id: <CAPDyKFpEOo3Wx3nKiiULNy0aX-zX-UJw0h3uDihtmDkQmUQMOg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1424277299-24964-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1424277299-24964-1-git-send-email-geert+renesas@glider.be>
@@ -9,11 +9,9 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>, Ulf Hansson <ulf.hansson@linaro.org>, Linux MMC List <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>, linux-mmc <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-Ping?
-
-On Wed, Feb 18, 2015 at 5:34 PM, Geert Uytterhoeven
+On 18 February 2015 at 17:34, Geert Uytterhoeven
 <geert+renesas@glider.be> wrote:
 > If CONFIG_DEBUG_SLAB=3Dy:
 >
@@ -34,6 +32,12 @@ On Wed, Feb 18, 2015 at 5:34 PM, Geert Uytterhoeven
 >
 > Fixes: 94b110aff8679b14 ("mmc: tmio: add tmio_mmc_host_alloc/free()")
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Applied, thanks!
+
+Kind regards
+Uffe
+
 > ---
 >  drivers/mmc/host/tmio_mmc_pio.c | 2 --
 >  1 file changed, 2 deletions(-)
@@ -54,3 +58,4 @@ pio.c
 >
 > --
 > 1.9.1
+>
