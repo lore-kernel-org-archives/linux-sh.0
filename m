@@ -1,54 +1,83 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 05 Mar 2015 01:58:16 +0000
-Subject: [PATCH 16/16] ARM: shmobile: r8a7778: enable multiplatform target
-Message-Id: <3915d36fabf143dffdf91c5372d3b0a23722af52.1425518338.git.horms+renesas@verge.net.au>
+Date: Thu, 05 Mar 2015 01:57:58 +0000
+Subject: [PATCH 06/13] ARM: shmobile: ape6evm dts: Move Ethernet node to BSC
+Message-Id: <a656c603889c256e3d05e79e57714aa88d179903.1425517246.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425518337.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425518337.git.horms+renesas@verge.net.au>
+References: <cover.1425517246.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425517246.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Adds config option and enables DTB building.
+Move the Ethernet node from the ad-hoc lbsc node to the BSC node,
+as its connected to the Bus State Controller.  This allows the system to
+know the right position of the Ethernet node in the clock and PM domain
+hierarchy, and manage the clock and PM domain appropriately.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/Makefile     | 1 +
- arch/arm/mach-shmobile/Kconfig | 4 ++++
- 2 files changed, 5 insertions(+)
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 35 +++++++++++++++--------------------
+ 1 file changed, 15 insertions(+), 20 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index a1c776b..c467731 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -478,6 +478,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
- 	r7s72100-genmai.dtb \
- 	r8a73a4-ape6evm.dtb \
- 	r8a7740-armadillo800eva.dtb \
-+	r8a7778-bockw.dtb \
- 	r8a7779-marzen.dtb \
- 	r8a7790-lager.dtb \
- 	r8a7791-henninger.dtb \
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 2f36c85..2fb072e 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -62,6 +62,10 @@ config ARCH_R8A7740
- 	select ARCH_RMOBILE
- 	select RENESAS_INTC_IRQPIN
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index 0d50bef..44c4cac 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -72,26 +72,6 @@
+ 		regulator-always-on;
+ 	};
  
-+config ARCH_R8A7778
-+	bool "R-Car M1A (R8A77781)"
-+	select ARCH_RCAR_GEN1
+-	lbsc {
+-		compatible = "simple-bus";
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-		ranges = <0 0 0 0x20000000>;
+-
+-		ethernet@8000000 {
+-			compatible = "smsc,lan9220", "smsc,lan9115";
+-			reg = <0x08000000 0x1000>;
+-			interrupt-parent = <&irqc1>;
+-			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+-			phy-mode = "mii";
+-			reg-io-width = <4>;
+-			smsc,irq-active-high;
+-			smsc,irq-push-pull;
+-			vdd33a-supply = <&ape6evm_fixed_3v3>;
+-			vddvario-supply = <&ape6evm_fixed_1v8>;
+-		};
+-	};
+-
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led1 {
+@@ -184,6 +164,21 @@
+ 	voltage-tolerance = <1>; /* 1% */
+ };
+ 
++&bsc {
++	ethernet@8000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x08000000 0x1000>;
++		interrupt-parent = <&irqc1>;
++		interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
++		phy-mode = "mii";
++		reg-io-width = <4>;
++		smsc,irq-active-high;
++		smsc,irq-push-pull;
++		vdd33a-supply = <&ape6evm_fixed_3v3>;
++		vddvario-supply = <&ape6evm_fixed_1v8>;
++	};
++};
 +
- config ARCH_R8A7779
- 	bool "R-Car H1 (R8A77790)"
- 	select ARCH_RCAR_GEN1
+ &cmt1 {
+ 	status = "okay";
+ };
 -- 
 2.1.4
 
