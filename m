@@ -1,34 +1,36 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 11 Mar 2015 00:55:25 +0000
-Subject: Re: [PATCH 0/4] ARM: shmobile: koelsch / lager regulator updates
-Message-Id: <20150311005524.GC11701@verge.net.au>
+Date: Thu, 05 Mar 2015 00:34:33 +0000
+Subject: Re: [PATCH 0/2] ARM: shmobile: ape6evm: Fix GPIO keys and wake-up
+Message-Id: <20150305003432.GA3011@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425931617-5479-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1425931617-5479-1-git-send-email-geert+renesas@glider.be>
+References: <1425059319-13403-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1425059319-13403-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, devicetree@vger.kernel.org
 
-On Mon, Mar 09, 2015 at 09:06:53PM +0100, Geert Uytterhoeven wrote:
+On Fri, Feb 27, 2015 at 06:48:37PM +0100, Geert Uytterhoeven wrote:
 > 	Hi Simon, Magnus,
 > 
-> This patch series contains two DTS updates each for r8a7791/koelsch and
-> r8a7790/lager:
->   - add the missing interrupt for the da9210 regulators,
->   - add device nodes for the da9063 pmics.
+> This patch series adds the missing pull-up bias configuration for the
+> switches on the r8a73a4/ape6evm development board, and configures the
+> custom switch as a wake-up source.
 > 
-> The da9063 pmic allows the system to be restarted when the watchdog
-> timer times out ("cat > dev/watchdog0", and wait 8 s), or when a system
-> restart is requested ("reboot").
+> After this, the keys actually work, and the system can be resumed from
+> s2ram by pressing the custom switch.
 > 
-> This series depends on "[PATCH] ARM: shmobile: R-Car Gen2: Add
-> da9063/da9210 regulator quirk".
+> This depends functionally on "[PATCH 1/4] pinctrl: sh-pfc: Do not
+> overwrite bias configuration" in the series "[PATCH 0/4] pinctrl:
+> sh-pfc: Fix pin bias and cleanups" which I've just sent. But as this is
+> DTS, it can be applied independently.
 > 
-> An earlier version of patch [2/4] has been posted before as "[PATCH 3/4]
-> ARM: shmobile: koelsch: Add DA9063 PMIC device node for system
-> restart", but it caused havoc without the quirk.
-> 
-> This has been tested on r8a7791/koelsch.
+> Thanks for your comments!
 
-Thanks, I have queued this up for v4.1 on top of the above mentioned patch.
+Hi Geert,
+
+this seems fine to me. But I am reluctant to queue it up before the PFC
+changes are accepted, lest there be some change in direction.
+
+Please repost once the PFC changes have been accepted.
