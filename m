@@ -1,115 +1,107 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 16 Mar 2015 16:19:19 +0000
-Subject: [PATCH v2] serial: sh-sci: Add overrun handling of SCIFA and SCIFB
-Message-Id: <1426522759-25802-1-git-send-email-ykaneko0929@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 05 Mar 2015 01:57:59 +0000
+Subject: [PATCH 07/13] ARM: shmobile: r8a73a4: Move pfc node to work around probe ordering bug
+Message-Id: <e4ba0a9bddff3ba52cec100414d2f178440efc91.1425517246.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1425517246.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425517246.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-serial@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-SCIFA and SCIFB can detect the overrun, but it does not support.
-This adds overrun handling of SCIFA and SCIFB.
+Currently the pin function controller (which is also a GPIO controller)
+is instantiated before the interrupt controllers due to the order in the
+DTS. At that time, the irq domains for the interrupt controllers
+referenced by its interrupts-extended property cannot be found yet:
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+    irq: no irq domain found for /interrupt-controller@e61c0000 !
+
+Nevertheless, the core OF probing code ignores this failure, besides a
+debug message that's not normally printed:
+
+    not all legacy IRQ resources mapped for pfc
+
+and continues initialization of the device. Then, the sh-pfc driver
+cannot find any IRQ resources, and thinks no interrupts are available,
+causing gpio-keys to fail later:
+
+    gpio-keys keyboard: Unable to claim irq 0; error -22
+    gpio-keys: probe of keyboard failed with error -22
+
+Move the pin function controller node after the interrupt controller
+nodes it references to work around the bug in the core OF probing code.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a73a4.dtsi | 46 +++++++++++++++++++++---------------------
+ 1 file changed, 23 insertions(+), 23 deletions(-)
 
-This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
-tree.
-
-v2 [Yoshihiro Kaneko]
-* use the switch statement instead of a verbose if statement.
-
- drivers/tty/serial/sh-sci.c | 48 +++++++++++++++++++++++++++++++++------------
- 1 file changed, 36 insertions(+), 12 deletions(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 5b50c79..5bf9972 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -844,14 +844,32 @@ static int sci_handle_fifo_overrun(struct uart_port *port)
- 	struct tty_port *tport = &port->state->port;
- 	struct sci_port *s = to_sci_port(port);
- 	struct plat_sci_reg *reg;
--	int copied = 0;
-+	int copied = 0, offset;
-+	u16 status, bit;
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 77bd35c..d41201d 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -92,29 +92,6 @@
+ 		};
+ 	};
  
--	reg = sci_getreg(port, SCLSR);
-+	switch (port->type) {
-+	case PORT_SCIF:
-+	case PORT_HSCIF:
-+		offset = SCLSR;
-+		break;
-+	case PORT_SCIFA:
-+	case PORT_SCIFB:
-+		offset = SCxSR;
-+		break;
-+	default:
-+		return 0;
-+	}
+-	pfc: pfc@e6050000 {
+-		compatible = "renesas,pfc-r8a73a4";
+-		reg = <0 0xe6050000 0 0x9000>;
+-		gpio-controller;
+-		#gpio-cells = <2>;
+-		interrupts-extended -			<&irqc0  0 0>, <&irqc0  1 0>, <&irqc0  2 0>, <&irqc0  3 0>,
+-			<&irqc0  4 0>, <&irqc0  5 0>, <&irqc0  6 0>, <&irqc0  7 0>,
+-			<&irqc0  8 0>, <&irqc0  9 0>, <&irqc0 10 0>, <&irqc0 11 0>,
+-			<&irqc0 12 0>, <&irqc0 13 0>, <&irqc0 14 0>, <&irqc0 15 0>,
+-			<&irqc0 16 0>, <&irqc0 17 0>, <&irqc0 18 0>, <&irqc0 19 0>,
+-			<&irqc0 20 0>, <&irqc0 21 0>, <&irqc0 22 0>, <&irqc0 23 0>,
+-			<&irqc0 24 0>, <&irqc0 25 0>, <&irqc0 26 0>, <&irqc0 27 0>,
+-			<&irqc0 28 0>, <&irqc0 29 0>, <&irqc0 30 0>, <&irqc0 31 0>,
+-			<&irqc1  0 0>, <&irqc1  1 0>, <&irqc1  2 0>, <&irqc1  3 0>,
+-			<&irqc1  4 0>, <&irqc1  5 0>, <&irqc1  6 0>, <&irqc1  7 0>,
+-			<&irqc1  8 0>, <&irqc1  9 0>, <&irqc1 10 0>, <&irqc1 11 0>,
+-			<&irqc1 12 0>, <&irqc1 13 0>, <&irqc1 14 0>, <&irqc1 15 0>,
+-			<&irqc1 16 0>, <&irqc1 17 0>, <&irqc1 18 0>, <&irqc1 19 0>,
+-			<&irqc1 20 0>, <&irqc1 21 0>, <&irqc1 22 0>, <&irqc1 23 0>,
+-			<&irqc1 24 0>, <&irqc1 25 0>;
+-	};
+-
+ 	i2c5: i2c@e60b0000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -210,6 +187,29 @@
+ 			     <0 57 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
++	pfc: pfc@e6050000 {
++		compatible = "renesas,pfc-r8a73a4";
++		reg = <0 0xe6050000 0 0x9000>;
++		gpio-controller;
++		#gpio-cells = <2>;
++		interrupts-extended +			<&irqc0  0 0>, <&irqc0  1 0>, <&irqc0  2 0>, <&irqc0  3 0>,
++			<&irqc0  4 0>, <&irqc0  5 0>, <&irqc0  6 0>, <&irqc0  7 0>,
++			<&irqc0  8 0>, <&irqc0  9 0>, <&irqc0 10 0>, <&irqc0 11 0>,
++			<&irqc0 12 0>, <&irqc0 13 0>, <&irqc0 14 0>, <&irqc0 15 0>,
++			<&irqc0 16 0>, <&irqc0 17 0>, <&irqc0 18 0>, <&irqc0 19 0>,
++			<&irqc0 20 0>, <&irqc0 21 0>, <&irqc0 22 0>, <&irqc0 23 0>,
++			<&irqc0 24 0>, <&irqc0 25 0>, <&irqc0 26 0>, <&irqc0 27 0>,
++			<&irqc0 28 0>, <&irqc0 29 0>, <&irqc0 30 0>, <&irqc0 31 0>,
++			<&irqc1  0 0>, <&irqc1  1 0>, <&irqc1  2 0>, <&irqc1  3 0>,
++			<&irqc1  4 0>, <&irqc1  5 0>, <&irqc1  6 0>, <&irqc1  7 0>,
++			<&irqc1  8 0>, <&irqc1  9 0>, <&irqc1 10 0>, <&irqc1 11 0>,
++			<&irqc1 12 0>, <&irqc1 13 0>, <&irqc1 14 0>, <&irqc1 15 0>,
++			<&irqc1 16 0>, <&irqc1 17 0>, <&irqc1 18 0>, <&irqc1 19 0>,
++			<&irqc1 20 0>, <&irqc1 21 0>, <&irqc1 22 0>, <&irqc1 23 0>,
++			<&irqc1 24 0>, <&irqc1 25 0>;
++	};
 +
-+	reg = sci_getreg(port, offset);
- 	if (!reg->size)
- 		return 0;
- 
--	if ((serial_port_in(port, SCLSR) & (1 << s->overrun_bit))) {
--		serial_port_out(port, SCLSR, 0);
-+	status = serial_port_in(port, offset);
-+	bit = 1 << s->overrun_bit;
-+
-+	if (status & bit) {
-+		status &= ~bit;
-+		serial_port_out(port, offset, status);
- 
- 		port->icount.overrun++;
- 
-@@ -996,16 +1014,24 @@ static inline unsigned long port_rx_irq_mask(struct uart_port *port)
- 
- static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
- {
--	unsigned short ssr_status, scr_status, err_enabled;
--	unsigned short slr_status = 0;
-+	unsigned short ssr_status, scr_status, err_enabled, orer_status = 0;
- 	struct uart_port *port = ptr;
- 	struct sci_port *s = to_sci_port(port);
- 	irqreturn_t ret = IRQ_NONE;
- 
- 	ssr_status = serial_port_in(port, SCxSR);
- 	scr_status = serial_port_in(port, SCSCR);
--	if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
--		slr_status = serial_port_in(port, SCLSR);
-+	switch (port->type) {
-+	case PORT_SCIF:
-+	case PORT_HSCIF:
-+		orer_status = serial_port_in(port, SCLSR);
-+		break;
-+	case PORT_SCIFA:
-+	case PORT_SCIFB:
-+		orer_status = ssr_status;
-+		break;
-+	}
-+
- 	err_enabled = scr_status & port_rx_irq_mask(port);
- 
- 	/* Tx Interrupt */
-@@ -1033,10 +1059,8 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
- 		ret = sci_br_interrupt(irq, ptr);
- 
- 	/* Overrun Interrupt */
--	if (port->type = PORT_SCIF || port->type = PORT_HSCIF) {
--		if (slr_status & 0x01)
--			sci_handle_fifo_overrun(port);
--	}
-+	if (orer_status & (1 << s->overrun_bit))
-+		sci_handle_fifo_overrun(port);
- 
- 	return ret;
- }
+ 	thermal@e61f0000 {
+ 		compatible = "renesas,thermal-r8a73a4", "renesas,rcar-thermal";
+ 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>,
 -- 
-1.9.1
+2.1.4
 
