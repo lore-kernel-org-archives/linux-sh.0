@@ -1,57 +1,60 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 05 Mar 2015 01:58:07 +0000
-Subject: [PATCH 07/16] ARM: shmobile: bockw: add USB, VIN pin descriptions to DT
-Message-Id: <1898fe1952c2aeb847c4aa5b897605373f0498cf.1425518337.git.horms+renesas@verge.net.au>
+Date: Thu, 05 Mar 2015 01:58:25 +0000
+Subject: [PATCH 09/11] ARM: shmobile: sh73a0: Remove unused sh73a0_add_standard_devices_dt()
+Message-Id: <05813a8112cd0e38f14b53ecc2b381824cb2aeb4.1425518682.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425518337.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425518337.git.horms+renesas@verge.net.au>
+References: <cover.1425518682.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425518682.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Adds pin control info for USB host and video-in devices.
+"ARM: shmobile: kzm9g-reference: Remove board C code and DT file"
+removed the last user of sh73a0_add_standard_devices_dt(). Hence remove
+this function.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 9 ---------
+ arch/arm/mach-shmobile/sh73a0.h       | 1 -
+ 2 files changed, 10 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 7347223..96cfcdc 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -98,6 +98,26 @@
- 		renesas,groups = "hspi0_a";
- 		renesas,function = "hspi0";
- 	};
-+
-+	usb0_pins: usb0 {
-+		renesas,groups = "usb0";
-+		renesas,function = "usb0";
-+	};
-+
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb1";
-+	};
-+
-+	vin0_pins: vin0 {
-+		renesas,groups = "vin0_data8", "vin0_clk";
-+		renesas,function = "vin0";
-+	};
-+
-+	vin1_pins: vin1 {
-+		renesas,groups = "vin1_data8", "vin1_clk";
-+		renesas,function = "vin1";
-+	};
- };
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 48f2447..2f68459e 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -783,15 +783,6 @@ void __init sh73a0_add_early_devices(void)
+ 	shmobile_setup_console();
+ }
  
- &sdhi0 {
+-void __init sh73a0_add_standard_devices_dt(void)
+-{
+-	/* clocks are setup late during boot in the case of DT */
+-#ifndef CONFIG_COMMON_CLK
+-	sh73a0_clock_init();
+-#endif
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-}
+-
+ #define RESCNT2 IOMEM(0xe6188020)
+ static void sh73a0_restart(enum reboot_mode mode, const char *cmd)
+ {
+diff --git a/arch/arm/mach-shmobile/sh73a0.h b/arch/arm/mach-shmobile/sh73a0.h
+index f037c64..5a80f18 100644
+--- a/arch/arm/mach-shmobile/sh73a0.h
++++ b/arch/arm/mach-shmobile/sh73a0.h
+@@ -77,7 +77,6 @@ extern void sh73a0_map_io(void);
+ extern void sh73a0_earlytimer_init(void);
+ extern void sh73a0_add_early_devices(void);
+ extern void sh73a0_add_standard_devices(void);
+-extern void sh73a0_add_standard_devices_dt(void);
+ extern void sh73a0_clock_init(void);
+ extern void sh73a0_pinmux_init(void);
+ extern void sh73a0_pm_init(void);
 -- 
 2.1.4
 
