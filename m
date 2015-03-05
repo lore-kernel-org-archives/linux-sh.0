@@ -1,32 +1,56 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 06 Mar 2015 10:35:54 +0000
-Subject: Re: [PATCH] sh-pfc: r8a7794: add MMCIF pin groups
-Message-Id: <CACRpkdZzncWhfyCBR7HDShjkWzj66rwWUTHGa9Bw2FigGFL9_A@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 05 Mar 2015 10:08:58 +0000
+Subject: Re: [PATCH] mmc: tmio: Remove bogus un-initialization in tmio_mmc_host_free()
+Message-Id: <CAMuHMdVwiS1J_a4oV1F_VQGSF4gH+ZCwsVLPisn7+bJEksE=0A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2352429.FfRv9a1MoB@wasted.cogentembedded.com>
-In-Reply-To: <2352429.FfRv9a1MoB@wasted.cogentembedded.com>
+References: <1424277299-24964-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1424277299-24964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, shinobu.uehara.xc@renesas.com
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>, Ulf Hansson <ulf.hansson@linaro.org>, Linux MMC List <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-On Mon, Feb 16, 2015 at 11:33 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
+Ping?
 
-> From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+On Wed, Feb 18, 2015 at 5:34 PM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
+> If CONFIG_DEBUG_SLAB=3Dy:
 >
-> Add MMCIF pin groups to R8A7794 PFC driver.
+>     sh_mobile_sdhi ee100000.sd: Got CD GPIO
+>     sh_mobile_sdhi ee100000.sd: Got WP GPIO
+>     platform ee100000.sd: Driver sh_mobile_sdhi requests probe deferral
+>     ...
+>     Slab corruption (Not tainted): kmalloc-1024 start=ED8b3c00, len=1024
+>     2d0: 00 00 00 00 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b  ....kkkkkkkkkkkk
+>     Prev obj: start=ED8b3800, len=1024
+>     000: 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b  kkkkkkkkkkkkkkkk
+>     010: 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b  kkkkkkkkkkkkkkkk
 >
-> Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> [Sergei: rebased, renamed, added changelog.]
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Struct tmio_mmc_host is embedded inside struct mmc_host, and thus is
+> freed by the call to mmc_free_host(). Hence it must not be written to
+> afterwards, as that will corrupt freed (and perhaps already reused)
+> memory.
 >
+> Fixes: 94b110aff8679b14 ("mmc: tmio: add tmio_mmc_host_alloc/free()")
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > ---
-> The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git' repo
-> plus the R8A7794 PFC support patch posted last week.
-
-Patch applied with Laurent's ACK.
-
-Yours,
-Linus Walleij
+>  drivers/mmc/host/tmio_mmc_pio.c | 2 --
+>  1 file changed, 2 deletions(-)
+>
+> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_=
+pio.c
+> index a31c3573d386f8c6..dba7e1c19dd758e7 100644
+> --- a/drivers/mmc/host/tmio_mmc_pio.c
+> +++ b/drivers/mmc/host/tmio_mmc_pio.c
+> @@ -1073,8 +1073,6 @@ EXPORT_SYMBOL(tmio_mmc_host_alloc);
+>  void tmio_mmc_host_free(struct tmio_mmc_host *host)
+>  {
+>         mmc_free_host(host->mmc);
+> -
+> -       host->mmc =3D NULL;
+>  }
+>  EXPORT_SYMBOL(tmio_mmc_host_free);
+>
+> --
+> 1.9.1
