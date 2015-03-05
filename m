@@ -1,94 +1,53 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 19 Mar 2015 01:49:43 +0000
-Subject: [PATCH v2 01/05] serial: sh-sci: Break out default CTS/RTS pin setup
-Message-Id: <20150319014943.14235.12896.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 05 Mar 2015 01:58:15 +0000
+Subject: [PATCH 15/16] ARM: shmobile: bockw: add sound to DT
+Message-Id: <ba32449535c57b7cc4da788326c6ae4908b70268.1425518338.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150319014933.14235.44835.sendpatchset@little-apple>
-In-Reply-To: <20150319014933.14235.44835.sendpatchset@little-apple>
+References: <cover.1425518337.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425518337.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: gregkh@linuxfoundation.org, geert@glider.be, laurent.pinchart@ideasonboard.com, linux-serial@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, jslaby@suse.cz
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Break out CTS/RTS pin setup for the default case. We only
-care about those pins in case SCIx_HAVE_RTSCTS is set.
+Adds sound card using the ak4643 codec.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
- Changes since V1:
- - Function name change, thanks Laurent!
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 646383a..787fa6f 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -45,6 +45,23 @@
+ 		regulator-boot-on;
+ 		regulator-always-on;
+ 	};
++
++	sound {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "left_j";
++		simple-audio-card,bitclock-master = <&sndcodec>;
++		simple-audio-card,frame-master = <&sndcodec>;
++
++		sndcpu: simple-audio-card,cpu {
++			sound-dai = <&rcar_sound>;
++		};
++
++		sndcodec: simple-audio-card,codec {
++			sound-dai = <&ak4643>;
++			system-clock-frequency = <11289600>;
++		};
++	};
+ };
+ 
+ &bsc {
+-- 
+2.1.4
 
- drivers/tty/serial/sh-sci.c |   45 +++++++++++++++++++++++++++++--------------
- 1 file changed, 31 insertions(+), 14 deletions(-)
-
---- 0001/drivers/tty/serial/sh-sci.c
-+++ work/drivers/tty/serial/sh-sci.c	2015-03-19 09:07:40.616799151 +0900
-@@ -509,10 +509,29 @@ static void sci_poll_put_char(struct uar
- }
- #endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
- 
--static void sci_init_pins(struct uart_port *port, unsigned int cflag)
-+static void sci_init_ctsrts_default(struct uart_port *port, bool hwflow_enabled)
- {
- 	struct sci_port *s = to_sci_port(port);
- 	struct plat_sci_reg *reg = sci_regmap[s->cfg->regtype] + SCSPTR;
-+	unsigned short status;
-+
-+	/* If no SCSPTR register exists then skip. Same if hardware flow
-+	 * control has been enabled, in such case SCFCR.MCE will be set
-+	 * and the SCSPTR configuration is assumed to be overridden.
-+	 */
-+	if (!reg->size || hwflow_enabled)
-+		return;
-+
-+	status = serial_port_in(port, SCSPTR);
-+	status &= ~SCSPTR_CTSIO;
-+	status |= SCSPTR_RTSIO;
-+	serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
-+}
-+
-+static void sci_init_pins(struct uart_port *port, unsigned int cflag)
-+{
-+	struct sci_port *s = to_sci_port(port);
-+	bool hwflow_enabled = cflag & CRTSCTS;
- 
- 	/*
- 	 * Use port-specific handler if provided.
-@@ -522,22 +541,20 @@ static void sci_init_pins(struct uart_po
- 		return;
- 	}
- 
--	/*
--	 * For the generic path SCSPTR is necessary. Bail out if that's
--	 * unavailable, too.
-+	/* SCIF hardware with RTS/CTS support needs special setup below.
-+	 *
-+	 * Please note that if RTS/CTS is available for the hardware
-+	 * platform depends on the particular SCIF channel on a certain
-+	 * SoC, and how this channel has been hooked up on the actual board.
-+	 *
-+	 * If the RTS/CTS signals will be used or not depends on what user
-+	 * space requests. In case RTS/CTS is available but not requested
-+	 * by user space we still need to configure the pins somehow.
- 	 */
--	if (!reg->size)
-+	if (!(s->cfg->capabilities & SCIx_HAVE_RTSCTS))
- 		return;
- 
--	if ((s->cfg->capabilities & SCIx_HAVE_RTSCTS) &&
--	    ((!(cflag & CRTSCTS)))) {
--		unsigned short status;
--
--		status = serial_port_in(port, SCSPTR);
--		status &= ~SCSPTR_CTSIO;
--		status |= SCSPTR_RTSIO;
--		serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
--	}
-+	sci_init_ctsrts_default(port, hwflow_enabled);
- }
- 
- static int sci_txfill(struct uart_port *port)
