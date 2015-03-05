@@ -1,51 +1,95 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Mar 2015 01:07:29 +0000
-Subject: [PATCH 4/4] ARM: shmobile: Enable bockw board in multiplatform defconfig
-Message-Id: <bb3ab878a29a3879669bb922bebce87b9a9af755.1426813316.git.horms+renesas@verge.net.au>
+Date: Thu, 05 Mar 2015 01:57:53 +0000
+Subject: [PATCH 01/13] ARM: shmobile: r8a73a4: Add CPG register bits header
+Message-Id: <bdba0101c7e90e60481018005654227bdfd67aec.1425517246.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1426813316.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1426813316.git.horms+renesas@verge.net.au>
+References: <cover.1425517246.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425517246.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/shmobile_defconfig | 3 +++
- 1 file changed, 3 insertions(+)
+ include/dt-bindings/clock/r8a73a4-clock.h | 62 +++++++++++++++++++++++++++++++
+ 1 file changed, 62 insertions(+)
+ create mode 100644 include/dt-bindings/clock/r8a73a4-clock.h
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 1155415..b58618e 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -14,6 +14,7 @@ CONFIG_ARCH_EMEV2=y
- CONFIG_ARCH_R7S72100=y
- CONFIG_ARCH_R8A73A4=y
- CONFIG_ARCH_R8A7740=y
-+CONFIG_ARCH_R8A7778=y
- CONFIG_ARCH_R8A7779=y
- CONFIG_ARCH_R8A7790=y
- CONFIG_ARCH_R8A7791=y
-@@ -137,6 +138,7 @@ CONFIG_V4L_MEM2MEM_DRIVERS=y
- CONFIG_VIDEO_RENESAS_VSP1=y
- # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
- CONFIG_VIDEO_ADV7180=y
-+CONFIG_VIDEO_ML86V7667=y
- CONFIG_DRM=y
- CONFIG_DRM_RCAR_DU=y
- CONFIG_FB_SH_MOBILE_LCDC=y
-@@ -171,6 +173,7 @@ CONFIG_LEDS_GPIO=y
- CONFIG_RTC_CLASS=y
- CONFIG_RTC_DRV_RS5C372=y
- CONFIG_RTC_DRV_S35390A=y
-+CONFIG_RTC_DRV_RX8581=y
- CONFIG_DMADEVICES=y
- CONFIG_SH_DMAE=y
- CONFIG_RCAR_DMAC=y
+diff --git a/include/dt-bindings/clock/r8a73a4-clock.h b/include/dt-bindings/clock/r8a73a4-clock.h
+new file mode 100644
+index 0000000..9a4b4c9
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a73a4-clock.h
+@@ -0,0 +1,62 @@
++/*
++ * Copyright 2014 Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#ifndef __DT_BINDINGS_CLOCK_R8A73A4_H__
++#define __DT_BINDINGS_CLOCK_R8A73A4_H__
++
++/* CPG */
++#define R8A73A4_CLK_MAIN	0
++#define R8A73A4_CLK_PLL0	1
++#define R8A73A4_CLK_PLL1	2
++#define R8A73A4_CLK_PLL2	3
++#define R8A73A4_CLK_PLL2S	4
++#define R8A73A4_CLK_PLL2H	5
++#define R8A73A4_CLK_Z		6
++#define R8A73A4_CLK_Z2		7
++#define R8A73A4_CLK_I		8
++#define R8A73A4_CLK_M3		9
++#define R8A73A4_CLK_B		10
++#define R8A73A4_CLK_M1		11
++#define R8A73A4_CLK_M2		12
++#define R8A73A4_CLK_ZX		13
++#define R8A73A4_CLK_ZS		14
++#define R8A73A4_CLK_HP		15
++
++/* MSTP2 */
++#define R8A73A4_CLK_DMAC	18
++#define R8A73A4_CLK_SCIFB3	17
++#define R8A73A4_CLK_SCIFB2	16
++#define R8A73A4_CLK_SCIFB1	7
++#define R8A73A4_CLK_SCIFB0	6
++#define R8A73A4_CLK_SCIFA0	4
++#define R8A73A4_CLK_SCIFA1	3
++
++/* MSTP3 */
++#define R8A73A4_CLK_CMT1	29
++#define R8A73A4_CLK_IIC1	23
++#define R8A73A4_CLK_IIC0	18
++#define R8A73A4_CLK_IIC7	17
++#define R8A73A4_CLK_IIC6	16
++#define R8A73A4_CLK_MMCIF0	15
++#define R8A73A4_CLK_SDHI0	14
++#define R8A73A4_CLK_SDHI1	13
++#define R8A73A4_CLK_SDHI2	12
++#define R8A73A4_CLK_MMCIF1	5
++#define R8A73A4_CLK_IIC2	0
++
++/* MSTP4 */
++#define R8A73A4_CLK_IIC3	11
++#define R8A73A4_CLK_IIC4	10
++#define R8A73A4_CLK_IIC5	9
++
++/* MSTP5 */
++#define R8A73A4_CLK_THERMAL	22
++#define R8A73A4_CLK_IIC8	15
++
++#endif /* __DT_BINDINGS_CLOCK_R8A73A4_H__ */
 -- 
 2.1.4
 
