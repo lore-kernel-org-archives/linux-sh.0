@@ -1,90 +1,73 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Mar 2015 22:04:55 +0000
-Subject: Re: [PATCH/RFC] i2c: rcar: Support ACK by HW auto restart after NACK
-Message-Id: <20150327220451.GA25459@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 05 Mar 2015 01:58:14 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC r8a7778 CCF and Multiplatform Updates for v4.1
+Message-Id: <cover.1425518337.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424011480-3551-1-git-send-email-ykaneko0929@gmail.com>
- <2775fbb6b2e2b333ef2457133f419d4d@the-dreams.de>
- <20150304040635.GA12776@verge.net.au>
- <20150306221809.GB6572@katana>
- <20150327131104.GC19151@katana>
-In-Reply-To: <20150327131104.GC19151@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Wolfram,
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On Fri, Mar 27, 2015 at 02:11:04PM +0100, Wolfram Sang wrote:
-> On Fri, Mar 06, 2015 at 11:18:09PM +0100, Wolfram Sang wrote:
-> > 
-> > > > >Even if R-Car I2C received NACK, after that it might receive ACK
-> > > > >by HW auto restart. In case of that, driver would continue process.
-> > > > >If R-Car I2C didn't receive ACK, the driver would detect timeout
-> > > > >and would report NACK as -ENXIO.
-> > > > >
-> > > > >Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-> > > > >Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> > > > 
-> > > > Excuse me, but what exactly is HW auto restart in this case? Is it a feature
-> > > > of the I2C slave?
-> > > 
-> > > I asked Kataoka-san about this and his response was as follows:
-> > > 
-> > >     It is a feature of the i2c-rcar(H/W) master.
-> > > 
-> > >     If system(CPU) is busy, NACK procedure may have interrupt latency.
-> > >     Since the clear of ICMCR.ESG bit is delayed, i2c-rcar(H/W) may auto-restart
-> > >     after NACK. Please refer to ESG bit of H/W UM section 55.3.5.
-> > > 
-> > >     For example, this is I2C write transmitting.
-> > >     1.Start / 2.SlaveAddr,ACK / 3.RegAddr,ACK / 4.RegData,ACK / 5.Stop
-> > > 
-> > >     If No.2 has NACK and interruption has delay, this transmitting is as follows.
-> > >     1.Start / 2.SlaveAddr,NACK/ 1x.auto-restart / 2x.SlaveAddr,ACK
-> > >                                     / 3.RegAddr,ACK / 4.RegData,ACK / 5.Stop
-> > > 
-> > >     NACK of No.2 is invalidated by ACK of No.2x. It means recover.
-> > 
-> > Does this make some I2C device work which did not work before?
-> > 
-> > Most I2C devices always ack their address, so NACK very often means
-> > "nothing is there". I think it makes sense that the rcar driver returns
-> > ENXIO in this case which is documented to be used for NACK after address
-> > phase. Then, the i2c client driver should know if this means "not there"
-> > or "currently busy". And it should know when is a good time for another
-> > try. As I read the patch, the driver would use the auto-restart feature
-> > until the timeout is reached. That would make bus scanning pretty slow,
-> > too.
-> 
-> Hi,
-> 
-> any news on this one?
+Please consider these Renesas ARM based SoC r8a7778 CCF and multiplatform
+updates for v4.1.
 
-Sorry for not responding earlier. I have the following information from
-Kataoka-san.
+This pull request is based on "Renesas ARM Based SoC Simple PM Bus Updates
+for v4.1", tagged as renesas-simple-pm-bus-for-v4.1, which you have already
+pulled. That pull request provides run-time dependencies for this one.
 
-* There are now several patches in the BSP that address this issue;
-  this patch and two follow up fix patches. Its probably best if these
-  patches were all squashed into a single patch for your consideration.
 
-  For reference I am referring to the following patches in the BSP:
+The following changes since commit 89d463ea106dba530786a2815fd174f9e6eab71f:
 
-  i2c: rcar: Support ACK by HW auto restart after NACK
-  i2c: rcar: Fix status clear after NACK
-  i2c: rcar: Fix flag clear for recovering by HW auto restart
+  drivers: bus: Add Simple Power-Managed Bus Driver (2015-02-24 06:36:18 +0900)
 
-* In answer to your questions above:
+are available in the git repository at:
 
-  "When NACK interruption occurs, the i2c rcar driver sets ICMCR register
-   from (MDBS|MIE|ESG) to (MDBS|MIE|FSB) in rcar_i2c_bus_phase().  It means
-   clearing of ESG bit. If this procedure is late, H/W auto-restarts.  After
-   that, if NACK occurs again, H/W doesn't auto-restart because ESG bit was
-   already cleared.
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-r8a7778-ccf-and-multiplatform-for-v4.1
 
-   S/W doesn't know whether H/W did auto-restart or did not auto-restart.
-   So, S/W needs to wait. The return of ENXIO is pretty slow.
+for you to fetch changes up to 3915d36fabf143dffdf91c5372d3b0a23722af52:
 
-   It takes long time but I think it's ok because NACK is unjust case."
+  ARM: shmobile: r8a7778: enable multiplatform target (2015-03-01 11:04:44 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC r8a7778 CCF and Multiplatform Updates for v4.1
+
+* Add CCF and them multiplatform support to r8a7778 SoC and its
+  bockw board.
+
+----------------------------------------------------------------
+Ulrich Hecht (16):
+      ARM: shmobile: r8a7778: synchronize dts with reference platform
+      ARM: shmobile: r8a7778: add CPG register bits header
+      ARM: shmobile: r8a7778: Common clock framework DT description
+      ARM: shmobile: r8a7778: implement SoC and board CCF support
+      ARM: shmobile: r8a7778: add MSTP clock assignments to DT
+      ARM: shmobile: r8a7778: add internal ethernet controller to DT
+      ARM: shmobile: bockw: add USB, VIN pin descriptions to DT
+      ARM: shmobile: r8a7778 dtsi: Add Bus State Controller node
+      ARM: shmobile: bockw dts: Move Ethernet node to BSC
+      ARM: shmobile: bockw dts: set extal clock frequency
+      ARM: shmobile: r8a7778: common clock framework CPG driver
+      DT: i2c: add trivial binding for OKI ML86V7667 video decoder
+      ARM: shmobile: bockw: add devices hooked up to i2c0 to DT
+      ARM: shmobile: r8a7778: add sound to DT
+      ARM: shmobile: bockw: add sound to DT
+      ARM: shmobile: r8a7778: enable multiplatform target
+
+ .../bindings/clock/renesas,r8a7778-cpg-clocks.txt  |  25 ++
+ .../devicetree/bindings/i2c/trivial-devices.txt    |   1 +
+ arch/arm/boot/dts/Makefile                         |   1 +
+ arch/arm/boot/dts/r8a7778-bockw.dts                | 174 ++++++++++++
+ arch/arm/boot/dts/r8a7778.dtsi                     | 293 +++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                     |   4 +
+ arch/arm/mach-shmobile/board-bockw-reference.c     |   2 +
+ arch/arm/mach-shmobile/setup-r8a7778.c             |  19 ++
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-r8a7778.c                 | 143 ++++++++++
+ include/dt-bindings/clock/r8a7778-clock.h          |  71 +++++
+ include/linux/clk/shmobile.h                       |   1 +
+ 12 files changed, 735 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-r8a7778.c
+ create mode 100644 include/dt-bindings/clock/r8a7778-clock.h
