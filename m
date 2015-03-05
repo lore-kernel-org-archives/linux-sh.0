@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 05 Mar 2015 01:58:24 +0000
-Subject: [PATCH 08/11] ARM: shmobile: sh73a0 dtsi: Add Cortex-A9 TWD node
-Message-Id: <30225743852ed5c3e732d7debe6c1f473c807d62.1425518682.git.horms+renesas@verge.net.au>
+Date: Thu, 05 Mar 2015 01:58:22 +0000
+Subject: [PATCH 06/11] ARM: shmobile: kzm9g dts: Move Ethernet node to BSC
+Message-Id: <17f0f738e51408d879ae3331a8a59f59cc00b57b.1425518682.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1425518682.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1425518682.git.horms+renesas@verge.net.au>
@@ -12,45 +12,66 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add a node for the Private Timer and Watchdog, as found in the Cortex-A9
-MPCore.
+Move the Ethernet node from the root of the device tree to the BSC node,
+as it's connected to the Bus State Controller.  This allows the system
+to know the right position of the Ethernet node in the clock and PM
+domain hierarchy, and manage the clock and PM domain appropriately.
 
-Without this, there's no clocksource available during early kernel
-initialization, before cmt1 is initialized, leading to a lock-up if
-CONFIG_CPU_IDLE=y.
+Also rename the node's name from "lan9220" to "ethernet", to conform to
+ePAPR generic name recomendations.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/arm/boot/dts/sh73a0-kzm9g.dts | 28 +++++++++++++++-------------
+ 1 file changed, 15 insertions(+), 13 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 70b694f..0b933e2 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -11,6 +11,7 @@
- /include/ "skeleton.dtsi"
- 
- #include <dt-bindings/clock/sh73a0-clock.h>
-+#include <dt-bindings/interrupt-controller/arm-gic.h>
- #include <dt-bindings/interrupt-controller/irq.h>
- 
- / {
-@@ -35,6 +36,13 @@
- 		};
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 6f00e6b..022ba50 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -84,19 +84,6 @@
+ 		enable-active-high;
  	};
  
-+	timer@f0000600 {
-+		compatible = "arm,cortex-a9-twd-timer";
-+		reg = <0xf0000600 0x20>;
-+		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
-+		clocks = <&twd_clk>;
+-	lan9220@10000000 {
+-		compatible = "smsc,lan9220", "smsc,lan9115";
+-		reg = <0x10000000 0x100>;
+-		phy-mode = "mii";
+-		interrupt-parent = <&irqpin0>;
+-		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
+-		reg-io-width = <4>;
+-		smsc,irq-push-pull;
+-		smsc,save-mac-address;
+-		vddvario-supply = <&reg_1p8v>;
+-		vdd33a-supply = <&reg_3p3v>;
+-	};
+-
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led1 {
+@@ -178,6 +165,21 @@
+ 	};
+ };
+ 
++&bsc {
++	ethernet@10000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x10000000 0x100>;
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin0>;
++		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
++		reg-io-width = <4>;
++		smsc,irq-push-pull;
++		smsc,save-mac-address;
++		vddvario-supply = <&reg_1p8v>;
++		vdd33a-supply = <&reg_3p3v>;
 +	};
++};
 +
- 	gic: interrupt-controller@f0001000 {
- 		compatible = "arm,cortex-a9-gic";
- 		#interrupt-cells = <3>;
+ &cmt1 {
+ 	status = "okay";
+ };
 -- 
 2.1.4
 
