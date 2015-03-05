@@ -1,55 +1,156 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Mar 2015 01:07:28 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Defconfig Updates for v4.1
-Message-Id: <cover.1426813316.git.horms+renesas@verge.net.au>
+Date: Thu, 05 Mar 2015 01:58:01 +0000
+Subject: [PATCH 01/16] ARM: shmobile: r8a7778: synchronize dts with reference platform
+Message-Id: <8c4892a633f08edbc54b6b59a673f76bd1cd7e94.1425518337.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1425518337.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425518337.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Please consider these Renesas ARM based SoC defconfig updates for v4.1.
+This moves everything to the legacy dts that is missing there to make it
+suitable for use with multiplatform.
 
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 106 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 106 insertions(+)
 
-I have been holding off on this for a while as the patches to
-enable multiplatform builds for the bockw and ape6evm boards only
-really make sense with the following two pull requests applied.
-Please consider those pull requests first.
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 46a884d..7347223 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -16,17 +16,123 @@
+ 
+ /dts-v1/;
+ #include "r8a7778.dtsi"
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "bockw";
+ 	compatible = "renesas,bockw", "renesas,r8a7778";
+ 
++	aliases {
++		serial0 = &scif0;
++	};
++
+ 	chosen {
+ 		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs rw";
++		stdout-path = &scif0;
+ 	};
+ 
+ 	memory {
+ 		device_type = "memory";
+ 		reg = <0x60000000 0x10000000>;
+ 	};
++
++	fixedregulator3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	ethernet@18300000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x18300000 0x1000>;
++
++		phy-mode = "mii";
++		interrupt-parent = <&irqpin>;
++		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
++		reg-io-width = <4>;
++		vddvario-supply = <&fixedregulator3v3>;
++		vdd33a-supply = <&fixedregulator3v3>;
++	};
++};
++
++&mmcif {
++	pinctrl-0 = <&mmc_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <8>;
++	broken-cd;
++	status = "okay";
++};
++
++&irqpin {
++	status = "okay";
++};
++
++&tmu0 {
++	status = "okay";
++};
++
++&pfc {
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data_a", "scif0_ctrl";
++		renesas,function = "scif0";
++	};
++
++	mmc_pins: mmc {
++		renesas,groups = "mmc_data8", "mmc_ctrl";
++		renesas,function = "mmc";
++	};
++
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
++				  "sdhi0_cd";
++		renesas,function = "sdhi0";
++	};
++
++	hspi0_pins: hspi0 {
++		renesas,groups = "hspi0_a";
++		renesas,function = "hspi0";
++	};
++};
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&fixedregulator3v3>;
++	bus-width = <4>;
++	status = "okay";
++	wp-gpios = <&gpio3 18 GPIO_ACTIVE_HIGH>;
++};
++
++&hspi0 {
++	pinctrl-0 = <&hspi0_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	flash: flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl008k";
++		reg = <0>;
++		spi-max-frequency = <104000000>;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "data(spi)";
++			reg = <0x00000000 0x00100000>;
++		};
++	};
++};
++
++&scif0 {
++	pinctrl-0 = <&scif0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
+ };
+-- 
+2.1.4
 
-* Renesas ARM Based SoC r8a73a4 CCF and Multiplatform Updates for v4.1
-* Renesas ARM Based SoC sh73a0 Multiplatform Updates for v4.1
-
-
-The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
-
-  Linux 4.0-rc1 (2015-02-22 18:21:14 -0800)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v4.1
-
-for you to fetch changes up to bb3ab878a29a3879669bb922bebce87b9a9af755:
-
-  ARM: shmobile: Enable bockw board in multiplatform defconfig (2015-03-05 09:20:26 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Defconfig Updates for v4.1
-
-Multiplatform defconfig updates
-* Enable bockw and ape6evm boards
-* Drop useless SERIAL_8250_EXTENDED=y
-* Enable R-Mobile reset
-
-----------------------------------------------------------------
-Geert Uytterhoeven (4):
-      ARM: shmobile: Enable ape6evm board in multiplatform defconfig
-      ARM: shmobile: Enable R-Mobile reset driver in multiplatform defconfig
-      ARM: shmobile: defconfig: Drop useless SERIAL_8250_EXTENDED=y
-      ARM: shmobile: Enable bockw board in multiplatform defconfig
-
- arch/arm/configs/shmobile_defconfig | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
