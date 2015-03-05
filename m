@@ -1,43 +1,76 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 04 Mar 2015 12:14:19 +0000
-Subject: [PATCH 0/2] ARM: shmobile: Enable bockw board in defconfigs
-Message-Id: <1425471261-25110-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 05 Mar 2015 01:58:17 +0000
+Subject: [PATCH 01/11] ARM: shmobile: sh73a0: Introduce generic setup callback
+Message-Id: <0b52b2508b1e410c2e80408a580412d85401ecd3.1425518682.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1425518682.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425518682.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-	Hi,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Now r8a7778 has gained multi-platform support in Simon's branch
-r8a7778-ccf-and-multiplatform-for-v4.1, support for r8a7778/bockw can be
-enabled in shmobile_defconfig and multi_v7_defconfig.
+Add a generic sh73a0 machine setup callback for the upcoming
+sh73a0 multiplatform case. Cache needs to be configured, and
+legacy clocks must be omitted.
 
-The options to enable were deduced from r8a7778-bockw.dtb using
-https://github.com/geertu/linux-scripts/blob/master/linux-config-from-dt.
-This was not tested on bockw due to lack of hardware.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-sh73a0.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
 
-Thanks!
-
-Geert Uytterhoeven (2):
-  ARM: shmobile: Enable bockw board in multiplatform defconfig
-  ARM: multi_v7_defconfig: Enable shmobile r8a7778/bockw platform
-
- arch/arm/configs/multi_v7_defconfig | 3 +++
- arch/arm/configs/shmobile_defconfig | 3 +++
- 2 files changed, 6 insertions(+)
-
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index faea74a..48f2447 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -30,6 +30,7 @@
+ #include <linux/platform_data/sh_ipmmu.h>
+ #include <linux/platform_data/irq-renesas-intc-irqpin.h>
+ 
++#include <asm/hardware/cache-l2x0.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+@@ -782,8 +783,6 @@ void __init sh73a0_add_early_devices(void)
+ 	shmobile_setup_console();
+ }
+ 
+-#ifdef CONFIG_USE_OF
+-
+ void __init sh73a0_add_standard_devices_dt(void)
+ {
+ 	/* clocks are setup late during boot in the case of DT */
+@@ -800,6 +799,17 @@ static void sh73a0_restart(enum reboot_mode mode, const char *cmd)
+ 	writel((1 << 31), RESCNT2);
+ }
+ 
++#ifdef CONFIG_USE_OF
++
++static void __init sh73a0_generic_init(void)
++{
++#ifdef CONFIG_CACHE_L2X0
++	/* Shared attribute override enable, 64K*8way */
++	l2x0_init(IOMEM(0xf0100000), 0x00400000, 0xc20f0fff);
++#endif
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++}
++
+ static const char *sh73a0_boards_compat_dt[] __initdata = {
+ 	"renesas,sh73a0",
+ 	NULL,
+@@ -809,7 +819,7 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.smp		= smp_ops(sh73a0_smp_ops),
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= shmobile_init_delay,
+-	.init_machine	= sh73a0_add_standard_devices_dt,
++	.init_machine	= sh73a0_generic_init,
+ 	.init_late	= shmobile_init_late,
+ 	.restart	= sh73a0_restart,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
 -- 
-1.9.1
+2.1.4
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
