@@ -1,39 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 15 Mar 2015 12:55:27 +0000
-Subject: [PATCH 1/3] drm: rcar-du: Fix framebuffer reference leak through plane state
-Message-Id: <1426424129-20746-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 05 Mar 2015 01:57:55 +0000
+Subject: [PATCH 03/13] ARM: shmobile: ape6evm: Disable legacy clock initialization
+Message-Id: <ccc83dce9d4ebdfc5a74045c5a00518f08884313.1425517246.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426424129-20746-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1426424129-20746-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1425517246.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425517246.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Plane state duplication takes a reference to the framebuffer stored in
-the state, but state destroy doesn't release it. This causes a reference
-leak. Fix it.
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Disables r8a73a4_clock_init() if CCF is enabled.
+
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_plane.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/mach-shmobile/board-ape6evm-reference.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index 35a2f04ab799..210e5c3fd982 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -316,6 +316,9 @@ rcar_du_plane_atomic_duplicate_state(struct drm_plane *plane)
- static void rcar_du_plane_atomic_destroy_state(struct drm_plane *plane,
- 					       struct drm_plane_state *state)
- {
-+	if (state->fb)
-+		drm_framebuffer_unreference(state->fb);
-+
- 	kfree(to_rcar_du_plane_state(state));
- }
+diff --git a/arch/arm/mach-shmobile/board-ape6evm-reference.c b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+index 3b68370..dd5bc63 100644
+--- a/arch/arm/mach-shmobile/board-ape6evm-reference.c
++++ b/arch/arm/mach-shmobile/board-ape6evm-reference.c
+@@ -29,7 +29,7 @@
  
+ static void __init ape6evm_add_standard_devices(void)
+ {
+-
++#ifndef CONFIG_COMMON_CLK
+ 	struct clk *parent;
+ 	struct clk *mp;
+ 
+@@ -43,6 +43,7 @@ static void __init ape6evm_add_standard_devices(void)
+ 	clk_set_parent(mp, parent);
+ 	clk_put(parent);
+ 	clk_put(mp);
++#endif
+ 
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
 -- 
-2.0.5
+2.1.4
 
