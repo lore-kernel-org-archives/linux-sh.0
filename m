@@ -1,49 +1,81 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 10 Mar 2015 00:44:40 +0000
-Subject: [PATCH 03/15] ARM: shmobile: r8a7790: tidyup SDHI register size on DTSI
-Message-Id: <66f47ed0e86d823b57ff9ab39ab18640fa053155.1425947992.git.horms+renesas@verge.net.au>
+Date: Thu, 05 Mar 2015 01:58:18 +0000
+Subject: [PATCH 02/11] ARM: shmobile: sh73a0: Add Multiplatform support
+Message-Id: <8e8bffffdaf6b75fb1380bfbb80481d3073086c5.1425518682.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425947992.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425947992.git.horms+renesas@verge.net.au>
+References: <cover.1425518682.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425518682.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-r8a7790 SDHI ch0/ch1 has SD_DMACR which is located in 0x324.
-This patch updates register size
+Enable sh73a0 Multiplatform support for the generic sh73a0
+machine vector. No board support is enabled, and the board
+code for KZM9G DT Reference is left by itself.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/Kconfig      | 5 +++++
+ arch/arm/mach-shmobile/Makefile     | 4 ++--
+ arch/arm/mach-shmobile/smp-sh73a0.c | 2 +-
+ 3 files changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 5ce3564..31569ac 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -493,7 +493,7 @@
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 2f36c85..8ee2f28 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -78,6 +78,11 @@ config ARCH_R8A7794
+ 	bool "R-Car E2 (R8A77940)"
+ 	select ARCH_RCAR_GEN2
  
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-r8a7790";
--		reg = <0 0xee100000 0 0x200>;
-+		reg = <0 0xee100000 0 0x328>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
- 		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
-@@ -503,7 +503,7 @@
++config ARCH_SH73A0
++	bool "SH-Mobile AG5 (R8A73A00)"
++	select ARCH_RMOBILE
++	select RENESAS_INTC_IRQPIN
++
+ comment "Renesas ARM SoCs Board Type"
  
- 	sdhi1: sd@ee120000 {
- 		compatible = "renesas,sdhi-r8a7790";
--		reg = <0 0xee120000 0 0x200>;
-+		reg = <0 0xee120000 0 0x328>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
- 		dmas = <&dmac1 0xc9>, <&dmac1 0xca>;
+ config MACH_MARZEN
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index d53996e..b400f5f 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -7,7 +7,7 @@ obj-y				:= timer.o console.o
+ 
+ # CPU objects
+ obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o intc-sh7372.o pm-sh7372.o
+-obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o intc-sh73a0.o pm-sh73a0.o
++obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o pm-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o pm-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+@@ -65,7 +65,7 @@ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
+-obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
++obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o intc-sh73a0.o
+ obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
+ endif
+ 
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index c16dbfe..2106d6b 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -33,7 +33,7 @@
+ 
+ #define SH73A0_SCU_BASE 0xf0000000
+ 
+-#ifdef CONFIG_HAVE_ARM_TWD
++#if defined(CONFIG_HAVE_ARM_TWD) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+ static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, SH73A0_SCU_BASE + 0x600, 29);
+ void __init sh73a0_register_twd(void)
+ {
 -- 
 2.1.4
 
