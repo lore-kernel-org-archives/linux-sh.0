@@ -1,66 +1,104 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 18 Mar 2015 18:56:01 +0000
-Subject: [PATCH 7/7] ARM: shmobile: r8a7794: Add IRQC clock to device tree
-Message-Id: <1426704961-27322-8-git-send-email-geert+renesas@glider.be>
+From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Thu, 05 Mar 2015 08:58:59 +0000
+Subject: [RFC/PATCH v2 2/6] ARM: shmobile: Change CPUIdle InterFace
+Message-Id: <1425545943-1440-3-git-send-email-keita.kobayashi.ym@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
+References: <1425545943-1440-1-git-send-email-keita.kobayashi.ym@renesas.com>
+In-Reply-To: <1425545943-1440-1-git-send-email-keita.kobayashi.ym@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: horms@verge.net.au, rjw@rjwysocki.net
+Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, badarkhe.manish@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-Link the external IRQ controller irqc0 to the IRQC module clock, so it
-can be power managed using that clock.
+This patch change the shmobile_cpuidle_init process
+to use Renesas CPUIdle driver.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 ---
- arch/arm/boot/dts/r8a7794.dtsi            | 9 +++++++++
- include/dt-bindings/clock/r8a7794-clock.h | 3 +++
- 2 files changed, 12 insertions(+)
+ arch/arm/mach-shmobile/common.h  |  5 ++++-
+ arch/arm/mach-shmobile/cpuidle.c | 31 ++++++++++++++++++++-----------
+ 2 files changed, 24 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 7a3ffa51a8bf2c8b..01cf54f70501e8c2 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -105,6 +105,7 @@
- 			     <0 15 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 16 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R8A7794_CLK_IRQC>;
- 	};
- 
- 	dmac0: dma-controller@e6700000 {
-@@ -625,6 +626,14 @@
- 			        "sdhi2", "sdhi1", "sdhi0",
- 				"mmcif0", "cmt1", "usbdmac0", "usbdmac1";
- 		};
-+		mstp4_clks: mstp4_clks@e6150140 {
-+			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
-+			clocks = <&cp_clk>;
-+			#clock-cells = <1>;
-+			clock-indices = <R8A7794_CLK_IRQC>;
-+			clock-output-names = "irqc";
-+		};
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
-diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-index d63323032d6ef80e..09da38a58776b403 100644
---- a/include/dt-bindings/clock/r8a7794-clock.h
-+++ b/include/dt-bindings/clock/r8a7794-clock.h
-@@ -60,6 +60,9 @@
- #define R8A7794_CLK_USBDMAC0		30
- #define R8A7794_CLK_USBDMAC1		31
- 
-+/* MSTP4 */
-+#define R8A7794_CLK_IRQC		7
+diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+index 8faf6e0..1ba3886 100644
+--- a/arch/arm/mach-shmobile/common.h
++++ b/arch/arm/mach-shmobile/common.h
+@@ -1,3 +1,5 @@
++#include <linux/platform_data/renesas-cpuidle.h>
 +
- /* MSTP5 */
- #define R8A7794_CLK_THERMAL		22
- #define R8A7794_CLK_PWM			23
+ #ifndef __ARCH_MACH_COMMON_H
+ #define __ARCH_MACH_COMMON_H
+ 
+@@ -23,7 +25,6 @@ struct clk;
+ extern int shmobile_clk_init(void);
+ extern struct platform_suspend_ops shmobile_suspend_ops;
+ struct cpuidle_driver;
+-extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
+ 
+ #ifdef CONFIG_SUSPEND
+ int shmobile_suspend_init(void);
+@@ -35,8 +36,10 @@ static inline void shmobile_smp_apmu_suspend_init(void) { }
+ 
+ #ifdef CONFIG_CPU_IDLE
+ int shmobile_cpuidle_init(void);
++extern void shmobile_cpuidle_set_driver(struct renesas_cpuidle *drv);
+ #else
+ static inline int shmobile_cpuidle_init(void) { return 0; }
++static inline void shmobile_cpuidle_set_driver(struct renesas_cpuidle *drv) {}
+ #endif
+ 
+ #ifdef CONFIG_CPU_FREQ
+diff --git a/arch/arm/mach-shmobile/cpuidle.c b/arch/arm/mach-shmobile/cpuidle.c
+index 0afeb5c..cb81ad6 100644
+--- a/arch/arm/mach-shmobile/cpuidle.c
++++ b/arch/arm/mach-shmobile/cpuidle.c
+@@ -13,25 +13,34 @@
+ #include <linux/suspend.h>
+ #include <linux/module.h>
+ #include <linux/err.h>
++#include <linux/device.h>
++#include <linux/platform_data/renesas-cpuidle.h>
++#include <linux/platform_device.h>
+ #include <asm/cpuidle.h>
+ #include <asm/io.h>
++#include "common.h"
+ 
+-static struct cpuidle_driver shmobile_cpuidle_default_driver = {
+-	.name			= "shmobile_cpuidle",
+-	.owner			= THIS_MODULE,
+-	.states[0]		= ARM_CPUIDLE_WFI_STATE,
+-	.safe_state_index	= 0, /* C1 */
+-	.state_count		= 1,
++/* default */
++static struct renesas_cpuidle cpuidle_data = {
++	.num_drvs	= 0,
++	.rcd		= NULL,
+ };
+ 
+-static struct cpuidle_driver *cpuidle_drv = &shmobile_cpuidle_default_driver;
+-
+-void __init shmobile_cpuidle_set_driver(struct cpuidle_driver *drv)
++void __init shmobile_cpuidle_set_driver(struct renesas_cpuidle *pd)
+ {
+-	cpuidle_drv = drv;
++	cpuidle_data = *pd;
+ }
+ 
++static struct platform_device renesas_cpuidle = {
++	.name	= "cpuidle-renesas",
++	.id	= -1,
++	.dev	= {
++		   .platform_data = &cpuidle_data,
++	},
++};
++
+ int __init shmobile_cpuidle_init(void)
+ {
+-	return cpuidle_register(cpuidle_drv, NULL);
++	platform_device_register(&renesas_cpuidle);
++	return 0;
+ }
 -- 
 1.9.1
 
