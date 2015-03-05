@@ -1,53 +1,64 @@
-From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Thu, 05 Mar 2015 08:58:57 +0000
-Subject: [RFC/PATCH v2 0/6] Add CPUIdle support for Renesas SoCs
-Message-Id: <1425545943-1440-1-git-send-email-keita.kobayashi.ym@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 05 Mar 2015 01:58:13 +0000
+Subject: [PATCH 13/16] ARM: shmobile: bockw: add devices hooked up to i2c0 to DT
+Message-Id: <95e7381b1a6dec04b17aea3fd839c4ada8c96f28.1425518338.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1425518337.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425518337.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, rjw@rjwysocki.net
-Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, badarkhe.manish@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-These patches add CPUIdle support for Renesas SoCs. 
-These patches have been tested on Renesas Gen2 series with
-following cases on renesas-devel-20150301-v4.0-rc1 tag.
+Cameras, RTC, and ak4643 sound codec.
 
-[Test case]
-   a. Lager board(CA15 * 4)
-   b. Lager board(CA7 * 4)
-   c. Lager board(CA15 * 4 + CA7 *4)
-   d. Koelsch board(CA15 * 2)
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Wolfram Sang <wsa@the-dreams.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
 
-These cases work fine.
-
-Changes since v1
-- use 'IS_ENABLED' instead of '#ifdef'
-
-Keita Kobayashi (6):
-  cpuidle: renesas: Add CPUIdle Driver for Renesas SoCs
-  ARM: shmobile: Change CPUIdle InterFace
-  ARM: shmobile: APMU: Add Core-Standby function for CPUIdle
-  ARM: shmobile: r8a7791: Add Core-Standby CPUIdle support for r8a7791
-  ARM: shmobile: r8a7790: Add Core-Standby CPUIdle support for r8a7790
-  ARM: shmobile: Enable Renesas CPUIdle for shmobile_defconfig
-
- arch/arm/configs/shmobile_defconfig           |   2 +
- arch/arm/mach-shmobile/common.h               |  12 ++-
- arch/arm/mach-shmobile/cpuidle.c              |  31 ++++---
- arch/arm/mach-shmobile/platsmp-apmu.c         |  20 ++++-
- arch/arm/mach-shmobile/pm-r8a7790.c           |  47 ++++++++++
- arch/arm/mach-shmobile/pm-r8a7791.c           |  34 ++++++++
- drivers/cpuidle/Kconfig.arm                   |   8 ++
- drivers/cpuidle/Makefile                      |   1 +
- drivers/cpuidle/cpuidle-renesas.c             | 118 ++++++++++++++++++++++++++
- include/linux/platform_data/renesas-cpuidle.h |  24 ++++++
- 10 files changed, 283 insertions(+), 14 deletions(-)
- create mode 100644 drivers/cpuidle/cpuidle-renesas.c
- create mode 100644 include/linux/platform_data/renesas-cpuidle.h
-
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 0011975..646383a 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -65,6 +65,31 @@
+ 	clock-frequency = <33333333>;
+ };
+ 
++&i2c0 {
++	status = "okay";
++
++	ak4643: sound-codec@12 {
++		compatible = "asahi-kasei,ak4643";
++		#sound-dai-cells = <0>;
++		reg = <0x12>;
++	};
++
++	camera@41 {
++		compatible = "oki,ml86v7667";
++		reg = <0x41>;
++	};
++
++	camera@43 {
++		compatible = "oki,ml86v7667";
++		reg = <0x43>;
++	};
++
++	rx8581: rtc@51 {
++		compatible = "epson,rx8581";
++		reg = <0x51>;
++	};
++};
++
+ &mmcif {
+ 	pinctrl-0 = <&mmc_pins>;
+ 	pinctrl-names = "default";
 -- 
-1.9.1
+2.1.4
 
