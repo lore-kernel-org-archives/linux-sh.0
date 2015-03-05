@@ -1,65 +1,34 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 10 Mar 2015 00:44:48 +0000
-Subject: [PATCH 11/15] ARM: shmobile: lager: Add DU external pixel clocks to DT
-Message-Id: <26c00ab4aae2d29b6c724a9c23d5f6cba2b20e41.1425947992.git.horms+renesas@verge.net.au>
+From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Thu, 05 Mar 2015 08:59:03 +0000
+Subject: [RFC/PATCH v2 6/6] ARM: shmobile: Enable Renesas CPUIdle for shmobile_defconfig
+Message-Id: <1425545943-1440-7-git-send-email-keita.kobayashi.ym@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425947992.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425947992.git.horms+renesas@verge.net.au>
+References: <1425545943-1440-1-git-send-email-keita.kobayashi.ym@renesas.com>
+In-Reply-To: <1425545943-1440-1-git-send-email-keita.kobayashi.ym@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, rjw@rjwysocki.net
+Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, badarkhe.manish@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Declare the fixed 148.5MHz pixel clocks connected to the DU clock
-inputs.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+ arch/arm/configs/shmobile_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 631b3f5..329bb99 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -233,6 +233,18 @@
- 			};
- 		};
- 	};
-+
-+	x2_clk: x2-clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <148500000>;
-+	};
-+
-+	x13_clk: x13-clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <148500000>;
-+	};
- };
- 
- &du {
-@@ -240,6 +252,15 @@
- 	pinctrl-names = "default";
- 	status = "okay";
- 
-+	clocks = <&mstp7_clks R8A7790_CLK_DU0>,
-+		 <&mstp7_clks R8A7790_CLK_DU1>,
-+		 <&mstp7_clks R8A7790_CLK_DU2>,
-+		 <&mstp7_clks R8A7790_CLK_LVDS0>,
-+		 <&mstp7_clks R8A7790_CLK_LVDS1>,
-+		 <&x13_clk>, <&x2_clk>;
-+	clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1",
-+		      "dclkin.0", "dclkin.1";
-+
- 	ports {
- 		port@0 {
- 			endpoint {
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index b58618e..1769fe3 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -44,6 +44,8 @@ CONFIG_CPU_FREQ_GOV_USERSPACE=y
+ CONFIG_CPU_FREQ_GOV_ONDEMAND=y
+ CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
+ CONFIG_CPUFREQ_DT=y
++CONFIG_CPU_IDLE=y
++CONFIG_ARM_RENESAS_CPUIDLE=y
+ CONFIG_VFP=y
+ CONFIG_NEON=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
 -- 
-2.1.4
+1.9.1
 
