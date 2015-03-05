@@ -1,75 +1,164 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 19 Mar 2015 08:54:06 +0000
-Subject: Re: [PATCH] PM / Domains: Skip latency measurements if timekeeping is suspended
-Message-Id: <CAMuHMdXc7kbvbT5-ahYi1Yex4iyYzH44WUnFT26RObxWL_3UXA@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 05 Mar 2015 09:20:55 +0000
+Subject: Re: [PATCH 4/4] pinctrl: sh-pfc: Use unsigned int for register/field widths and offsets
+Message-Id: <9833485.4LcIhc9qJb@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426695946-21705-1-git-send-email-geert+renesas@glider.be>
-	<19573969.Pdd3px1nTO@vostro.rjw.lan>
-In-Reply-To: <19573969.Pdd3px1nTO@vostro.rjw.lan>
+References: <1425058685-12956-1-git-send-email-geert+renesas@glider.be> <1425058685-12956-5-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1425058685-12956-5-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@rjwysocki.net>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Kevin Hilman <khilman@kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Linus Walleij <linus.walleij@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi Rafael,
+Hi Geert,
 
-On Wed, Mar 18, 2015 at 11:30 PM, Rafael J. Wysocki <rjw@rjwysocki.net> wrote:
-> On Wednesday, March 18, 2015 05:25:46 PM Geert Uytterhoeven wrote:
->> The PM Domain code uses ktime_get() to perform various latency
->> measurements.  However, if ktime_get() is called while timekeeping is
->> suspended, the following warning is printed:
->>
->>     WARNING: CPU: 0 PID: 1340 at kernel/time/timekeeping.c:576 ktime_get+0x30/0xf4()
->>
->> This happens when resuming the PM Domain that contains the clock events
->> source. Chain of operations is:
->>
->>     timekeeping_resume()
->>     {
->>         clockevents_resume()
->>             sh_cmt_clock_event_resume()
->>                 pm_genpd_syscore_poweron()
->>                     pm_genpd_sync_poweron()
->>                         genpd_power_on()
->>                             ktime_get(), but timekeeping_suspended = 1
->>         ...
->>         timekeeping_suspended = 0;
->>     }
->>
->> Skip all latency measurements if timekeeping is suspended to fix this.
->
-> I don't think that this is where we should fix it.  At least using
-> timekeeping_suspended outside of the timekeeping core would not be
-> welcome by its maintainers.
+Thank you for the patch.
 
-It's a public symbol, declared in a header file ;-)
+On Friday 27 February 2015 18:38:05 Geert Uytterhoeven wrote:
+> As register and field widths and offsets are in the range 0..32, use
+> unsigned int (mostly replacing unsigned long) to store them in local
+> variables and for passing them around.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+>  drivers/pinctrl/sh-pfc/core.c | 25 ++++++++++++-------------
+>  drivers/pinctrl/sh-pfc/core.h |  4 ++--
+>  drivers/pinctrl/sh-pfc/gpio.c |  6 ++----
+>  3 files changed, 16 insertions(+), 19 deletions(-)
+> 
+> diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+> index 1758043cfcec253b..0350c64229ea0734 100644
+> --- a/drivers/pinctrl/sh-pfc/core.c
+> +++ b/drivers/pinctrl/sh-pfc/core.c
+> @@ -144,7 +144,7 @@ static int sh_pfc_enum_in_range(u16 enum_id, const
+> struct pinmux_range *r) return 1;
+>  }
+> 
+> -u32 sh_pfc_read_raw_reg(void __iomem *mapped_reg, unsigned long reg_width)
+> +u32 sh_pfc_read_raw_reg(void __iomem *mapped_reg, unsigned int reg_width)
+>  {
+>  	switch (reg_width) {
+>  	case 8:
+> @@ -159,7 +159,7 @@ u32 sh_pfc_read_raw_reg(void __iomem *mapped_reg,
+> unsigned long reg_width) return 0;
+>  }
+> 
+> -void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned long
+> reg_width,
+> +void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned
+> int reg_width, u32 data)
+>  {
+>  	switch (reg_width) {
+> @@ -179,9 +179,9 @@ void sh_pfc_write_raw_reg(void __iomem *mapped_reg,
+> unsigned long reg_width,
+> 
+>  static void sh_pfc_config_reg_helper(struct sh_pfc *pfc,
+>  				     const struct pinmux_cfg_reg *crp,
+> -				     unsigned long in_pos,
+> +				     unsigned int in_pos,
+>  				     void __iomem **mapped_regp, u32 *maskp,
+> -				     unsigned long *posp)
+> +				     unsigned int *posp)
+>  {
+>  	unsigned int k;
+> 
+> @@ -200,15 +200,15 @@ static void sh_pfc_config_reg_helper(struct sh_pfc
+> *pfc,
+> 
+>  static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
+>  				    const struct pinmux_cfg_reg *crp,
+> -				    unsigned long field, u32 value)
+> +				    unsigned int field, u32 value)
+>  {
+>  	void __iomem *mapped_reg;
+> -	unsigned long pos;
+> +	unsigned int pos;
+>  	u32 mask, data;
+> 
+>  	sh_pfc_config_reg_helper(pfc, crp, field, &mapped_reg, &mask, &pos);
+> 
+> -	dev_dbg(pfc->dev, "write_reg addr = %lx, value = 0x%x, field = %ld, "
+> +	dev_dbg(pfc->dev, "write_reg addr = %lx, value = 0x%x, field = %u, "
+>  		"r_width = %u, f_width = %u\n",
+>  		crp->reg, value, field, crp->reg_width, crp->field_width);
+> 
+> @@ -228,12 +228,11 @@ static void sh_pfc_write_config_reg(struct sh_pfc
+> *pfc, }
+> 
+>  static int sh_pfc_get_config_reg(struct sh_pfc *pfc, u16 enum_id,
+> -				 const struct pinmux_cfg_reg **crp, int *fieldp,
+> -				 u32 *valuep)
+> +				 const struct pinmux_cfg_reg **crp,
+> +				 unsigned int *fieldp, u32 *valuep)
+>  {
+>  	const struct pinmux_cfg_reg *config_reg;
+> -	unsigned long r_width, f_width, curr_width;
+> -	unsigned int k, m, pos, bit_pos;
+> +	unsigned int r_width, f_width, curr_width, k, m, pos, bit_pos;
 
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> ---
->> I'm not sure if this is needed for all latency measurements.
->> So far I only encountered it while powering-on a clock domain during
->> resume from s2ram.
->
-> The problem seems to be that the clock domain is powered on in a
-> syscore resume routine which happens to be called before timekeeping_resume().
+I find declaring multiple variables per line quite difficult to read. I know 
+it's the current coding style in this driver, but I'd like to fix it at some 
+point. I would move to one variable per line as part of this patch for the 
+code that it touches. Alternatively could you at least not make it worse (here 
+and below) ? :-)
 
-The clock domain is powered on from _within_ timekeeping_resume().
+>  	u32 ncomb, n;
+> 
+>  	k = 0;
+> @@ -300,9 +299,9 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark,
+> int pinmux_type) const struct pinmux_cfg_reg *cr = NULL;
+>  	u16 enum_id;
+>  	const struct pinmux_range *range;
+> -	int in_range, pos, field;
+> +	int in_range, pos, ret;
+> +	unsigned int field;
+>  	u32 value;
+> -	int ret;
+> 
+>  	switch (pinmux_type) {
+>  	case PINMUX_TYPE_GPIO:
+> diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+> index 8a10dd50ccdd2e0c..6dc8a6fc27468b39 100644
+> --- a/drivers/pinctrl/sh-pfc/core.h
+> +++ b/drivers/pinctrl/sh-pfc/core.h
+> @@ -57,8 +57,8 @@ int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
+>  int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
+>  int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc);
+> 
+> -u32 sh_pfc_read_raw_reg(void __iomem *mapped_reg, unsigned long reg_width);
+> -void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned long
+> reg_width, +u32 sh_pfc_read_raw_reg(void __iomem *mapped_reg, unsigned int
+> reg_width); +void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned
+> int reg_width, u32 data);
+> 
+>  int sh_pfc_get_pin_index(struct sh_pfc *pfc, unsigned int pin);
+> diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+> index f2bb7d7398cdfc24..b68d24099593d3b8 100644
+> --- a/drivers/pinctrl/sh-pfc/gpio.c
+> +++ b/drivers/pinctrl/sh-pfc/gpio.c
+> @@ -153,8 +153,7 @@ static void gpio_pin_set_value(struct sh_pfc_chip *chip,
+> unsigned offset, int value)
+>  {
+>  	struct sh_pfc_gpio_data_reg *reg;
+> -	unsigned long pos;
+> -	unsigned int bit;
+> +	unsigned int pos, bit;
+> 
+>  	gpio_get_data_reg(chip, offset, &reg, &bit);
+> 
+> @@ -185,8 +184,7 @@ static int gpio_pin_get(struct gpio_chip *gc, unsigned
+> offset) {
+>  	struct sh_pfc_chip *chip = gpio_to_pfc_chip(gc);
+>  	struct sh_pfc_gpio_data_reg *reg;
+> -	unsigned long pos;
+> -	unsigned int bit;
+> +	unsigned int pos, bit;
+> 
+>  	gpio_get_data_reg(chip, offset, &reg, &bit);
 
-> It looks like we either need to force the right ordering somehow or have a
-> special variant of GENPD_DEV_TIMED_CALLBACK() for syscore suspend/resume that
-> won't do the latency measurement at all (which doesn't make much sense at
-> this point, because time is effectively "frozen" then).
+-- 
+Regards,
 
-That's an option.
+Laurent Pinchart
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
