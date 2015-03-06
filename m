@@ -1,51 +1,53 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 06 Mar 2015 11:26:57 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 06 Mar 2015 11:31:59 +0000
 Subject: Re: [PATCH 2/4] pinctrl: sh-pfc: Store register/field widths in u8 instead of unsigned long
-Message-Id: <CAMuHMdVhD2e2Q9bTwu_r30AUCq4=-GzH=RWp2TFL7tXXz3prJA@mail.gmail.com>
+Message-Id: <1757841.Fx0bRccTKy@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425058685-12956-1-git-send-email-geert+renesas@glider.be>
-	<1425058685-12956-3-git-send-email-geert+renesas@glider.be>
-	<CACRpkdbv8V2DY6DniY5fOaSQNkNZtZQ6G_hrm-vcG9cjFTSAEA@mail.gmail.com>
-In-Reply-To: <CACRpkdbv8V2DY6DniY5fOaSQNkNZtZQ6G_hrm-vcG9cjFTSAEA@mail.gmail.com>
+References: <1425058685-12956-1-git-send-email-geert+renesas@glider.be> <2354666.zjhAAbqIil@avalon> <CAMuHMdWyKYMav=duATEvyuuh32WMvJQj8F51BO2CrzJFmZ8Q_w@mail.gmail.com>
+In-Reply-To: <CAMuHMdWyKYMav=duATEvyuuh32WMvJQj8F51BO2CrzJFmZ8Q_w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Magnus Damm <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Linus, Laurent,
+Hi Geert,
 
-On Fri, Mar 6, 2015 at 11:48 AM, Linus Walleij <linus.walleij@linaro.org> wrote:
-> On Fri, Feb 27, 2015 at 6:38 PM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
->
->> Register and field widths are in the range 1..32. Storing them in the
->> pinctrl data in (arrays of) unsigned long wastes space.
->>
->> This decreases the size of a (32-bit) shmobile_defconfig kernel
->> supporting 7 SoCs by 26460 bytes.
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> This 2/4 is not ACKed so pausing application after 1/4.
->
-> Is 3,4/4 independent of this patch?
+On Friday 06 March 2015 12:21:29 Geert Uytterhoeven wrote:
+> On Fri, Mar 6, 2015 at 12:05 PM, Laurent Pinchart wrote:
+> > On Thursday 05 March 2015 10:19:33 Geert Uytterhoeven wrote:
+> >> On Thu, Mar 5, 2015 at 10:03 AM, Laurent Pinchart wrote:
+> >> >> --- a/drivers/pinctrl/sh-pfc/sh_pfc.h
+> >> >> +++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+> >> >> @@ -69,9 +69,10 @@ struct pinmux_func {
+> >> >> 
+> >> >>  };
+> >> >>  
+> >> >>  struct pinmux_cfg_reg {
+> >> >> 
+> >> >> -     unsigned long reg, reg_width, field_width;
+> >> >> +     unsigned long reg;
+> >> > 
+> >> > How about making reg a u32 ? It won't make a difference in practice on
+> >> > 32-bit systems, but it would be more explicit.
+> > 
+> > You might have missed this comment.
+> 
+> I intended to, with "reg is used here to store a physical register address",
+> but probably didn't make it sufficiently clear. Before the advent of PAE
+> and phys_addr_t, unsigned long was used to store physical addresses.
+> 
+> We could indeed use u32, as the PFC regs are (currently) inside the 32-bit
+> part of the address space.
 
-Unfortunately not, as there are contextual dependencies.
+Sounds good with me. If you want to make that change as a separate patch,
 
-Laurent: Is 2/4 OK for you as-is? Your comments about the size of reg are
-not related to "Store register/field widths in u8 instead of unsigned long",
-and thus an area for future improvement.
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Thanks!
+for this patch. Otherwise I'll ack v2.
 
-Gr{oetje,eeting}s,
+-- 
+Regards,
 
-                        Geert
+Laurent Pinchart
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
