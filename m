@@ -1,41 +1,37 @@
-From: keita kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Thu, 12 Mar 2015 00:41:17 +0000
-Subject: Re: Possible regression in next-20150306 due to "mmc: tmio: Fix PIO mode with CONFIG_HIGHMEM"
-Message-Id: <5500E0AD.2000008@renesas.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 06 Mar 2015 10:34:23 +0000
+Subject: Re: [PATCH v3] sh-pfc: add R8A7794 PFC support
+Message-Id: <CACRpkdbjhyhci_O8ecCTM3du+k8NRTyw026mie5OTorXJO1P+Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150307060915.GA24323@verge.net.au> <CAPDyKFqb9__nFZ9i0qDP5j0J67MCh2CFeo7p-X=i57Lqx+LBng@mail.gmail.com> <20150311003454.GD6958@verge.net.au>
-In-Reply-To: <20150311003454.GD6958@verge.net.au>
+References: <2084538.pWCX8EzoLe@wasted.cogentembedded.com>
+In-Reply-To: <2084538.pWCX8EzoLe@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Cao Minh Hiep <cm-hiep@jinso.co.jp>, Magnus Damm <magnus.damm@gmail.com>
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Rob Herring <robh+dt@kernel.org>, =?UTF-8?Q?Pawe=C5=82_Moll?= <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Hi Ulf, Simon
+On Sun, Feb 22, 2015 at 10:33 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
 
-Sorry for my late reply.
+> From: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+>
+> Add PFC support for  the  R8A7794 SoC  including pin groups for some on-chip
+> devices such as ETH, I2C, INTC, MSIOF, QSPI, [H]SCIF...
+>
+> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> [Sergei: squashed together several patches, fixed the MLB_CLK typo, added IRQ4..
+> IRQ9 pin groups,  fixed IRQn comments, added ETH B pin group names, removed
+> stray new line and fixed typos in the  comments in the pinmux_config_regs[]
+> initializer, removed the platform device ID, took into account limited number of
+> signals in the GPIO1/5/6 controllers, added reasonable and removed unreasonable
+> copyrights, modified the bindings document, renamed, added changelog.]
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>
+> ---
+> Changes in version 3:
 
-(2015/03/11 9:34), Simon Horman wrote:
+This v3 applied with Laurent's ACK.
 
-> On Tue, Mar 10, 2015 at 11:13:38AM +0100, Ulf Hansson wrote:
->> On 7 March 2015 at 07:09, Simon Horman <horms@verge.net.au> wrote:
->>> Hi Kobayashi-san, Hi All,
->>>
->>> I have noticed what appears to be a regression in next-20150306.  Using
->>> shmobile_defconfig I am unable to boot the koelsch or lager boards to
->>> user-space. However, if I revert be7de0b8a90a0b06d ("mmc: tmio: Fix PIO
->>> mode with CONFIG_HIGHMEM") then all seems well.
->>
->> Simon, thanks for testing and reporting!
->>
->> I decided to drop the above commit from my next branch. Let's see if
->> Kobayashi-san comes back with an updated patch, later on.
-> 
-> Thanks, I appreciate it.
-
-
-Sorry for the lack of confirmation.
-I'll have a think about it.
-
-Regards.
-Keita Kobayashi
+Yours,
+Linus Walleij
