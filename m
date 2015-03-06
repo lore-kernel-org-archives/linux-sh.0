@@ -1,50 +1,45 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 06 Mar 2015 11:31:59 +0000
+Date: Fri, 06 Mar 2015 11:34:59 +0000
 Subject: Re: [PATCH 2/4] pinctrl: sh-pfc: Store register/field widths in u8 instead of unsigned long
-Message-Id: <1757841.Fx0bRccTKy@avalon>
+Message-Id: <5341607.ysC4Tafd3h@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425058685-12956-1-git-send-email-geert+renesas@glider.be> <2354666.zjhAAbqIil@avalon> <CAMuHMdWyKYMav=duATEvyuuh32WMvJQj8F51BO2CrzJFmZ8Q_w@mail.gmail.com>
-In-Reply-To: <CAMuHMdWyKYMav=duATEvyuuh32WMvJQj8F51BO2CrzJFmZ8Q_w@mail.gmail.com>
+References: <1425058685-12956-1-git-send-email-geert+renesas@glider.be> <CACRpkdbv8V2DY6DniY5fOaSQNkNZtZQ6G_hrm-vcG9cjFTSAEA@mail.gmail.com> <CAMuHMdVhD2e2Q9bTwu_r30AUCq4=-GzH=RWp2TFL7tXXz3prJA@mail.gmail.com>
+In-Reply-To: <CAMuHMdVhD2e2Q9bTwu_r30AUCq4=-GzH=RWp2TFL7tXXz3prJA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Magnus Damm <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
 Hi Geert,
 
-On Friday 06 March 2015 12:21:29 Geert Uytterhoeven wrote:
-> On Fri, Mar 6, 2015 at 12:05 PM, Laurent Pinchart wrote:
-> > On Thursday 05 March 2015 10:19:33 Geert Uytterhoeven wrote:
-> >> On Thu, Mar 5, 2015 at 10:03 AM, Laurent Pinchart wrote:
-> >> >> --- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-> >> >> +++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-> >> >> @@ -69,9 +69,10 @@ struct pinmux_func {
-> >> >> 
-> >> >>  };
-> >> >>  
-> >> >>  struct pinmux_cfg_reg {
-> >> >> 
-> >> >> -     unsigned long reg, reg_width, field_width;
-> >> >> +     unsigned long reg;
-> >> > 
-> >> > How about making reg a u32 ? It won't make a difference in practice on
-> >> > 32-bit systems, but it would be more explicit.
+On Friday 06 March 2015 12:26:57 Geert Uytterhoeven wrote:
+> On Fri, Mar 6, 2015 at 11:48 AM, Linus Walleij wrote:
+> > On Fri, Feb 27, 2015 at 6:38 PM, Geert Uytterhoeven wrote:
+> >> Register and field widths are in the range 1..32. Storing them in the
+> >> pinctrl data in (arrays of) unsigned long wastes space.
+> >> 
+> >> This decreases the size of a (32-bit) shmobile_defconfig kernel
+> >> supporting 7 SoCs by 26460 bytes.
+> >> 
+> >> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > > 
-> > You might have missed this comment.
+> > This 2/4 is not ACKed so pausing application after 1/4.
+> > 
+> > Is 3,4/4 independent of this patch?
 > 
-> I intended to, with "reg is used here to store a physical register address",
-> but probably didn't make it sufficiently clear. Before the advent of PAE
-> and phys_addr_t, unsigned long was used to store physical addresses.
+> Unfortunately not, as there are contextual dependencies.
 > 
-> We could indeed use u32, as the PFC regs are (currently) inside the 32-bit
-> part of the address space.
+> Laurent: Is 2/4 OK for you as-is? Your comments about the size of reg are
+> not related to "Store register/field widths in u8 instead of unsigned long",
+> and thus an area for future improvement.
 
-Sounds good with me. If you want to make that change as a separate patch,
+As just stated in a different reply to this patch, if you change reg to a u32 
+in a separate patch (maybe as a v2 of 3/4 ?),
 
 Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-for this patch. Otherwise I'll ack v2.
+for this patch.
 
 -- 
 Regards,
