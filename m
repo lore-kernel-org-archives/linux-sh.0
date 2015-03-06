@@ -1,96 +1,80 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 16 Mar 2015 13:58:26 +0000
-Subject: Re: [PATCH/RFC] serial: sh-sci: Update calculation of timeout for DMA
-Message-Id: <CAH1o70Ku+8W04oNyBABLSF5qMO2KPyn4VEWdC2OH61XHmD=-qA@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 06 Mar 2015 17:09:47 +0000
+Subject: [PATCH 00/11] r8a7793 SoC, Gose board support
+Message-Id: <1425661798-10487-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426429742-3041-1-git-send-email-ykaneko0929@gmail.com>
-	<5505A5B2.2020600@cogentembedded.com>
-In-Reply-To: <5505A5B2.2020600@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hello,
+Hi!
 
-2015-03-16 0:30 GMT+09:00 Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>:
-> On 3/15/2015 5:29 PM, Yoshihiro Kaneko wrote:
->
->> From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
->
->
->> The current calculation method in the case of 9600bps, rounding error
->> occurs
->> has become setting that occur timeout faster than the required time. When
->> we
->> use 9600bps, 32byte buffer, 10 bit (CS8) and 100 HZ, it becomes 3 jiffies
->> (30msec). In fact it is necessary 33msec. This updates to the calculation
->> that are not actually less than the value set by the rounding error.
->> Also, this is nothing will be calculated value when there is no load. If
->> there
->> are a lot of case load, overrun error will occur immediately.
->> This is by the buffer size to be calculated twice the DMA buffer, and add
->> the
->> change of setting a sufficient time-out value.
->
->
->> Signedroff-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
->
->
->> This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
->> tree.
->
->
->>   drivers/tty/serial/sh-sci.c | 38 ++++++++++++++++++++++++++++++--------
->>   1 file changed, 30 insertions(+), 8 deletions(-)
->
->
->> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
->> index 5b50c79..891116c 100644
->> --- a/drivers/tty/serial/sh-sci.c
->> +++ b/drivers/tty/serial/sh-sci.c
->> @@ -1967,18 +1967,40 @@ static void sci_set_termios(struct uart_port
->> *port, struct ktermios *termios,
->
-> [...]
->>
->>         if (s->chan_rx) {
->> -               s->rx_timeout = (port->timeout - HZ / 50) * s->buf_len_rx
->> * 3 /
->> -                       port->fifosize / 2;
->> +               unsigned int bits;
->> +
->> +               /* byte size and parity */
->> +               switch (termios->c_cflag & CSIZE) {
->> +                       case CS5:
->
->
->    *case* should at the same indentation level as *switch*. I guess you
-> haven't run the patch thru scripts/checkpatch.pl?
+This is a port from the R-Car2 BSP, including pin control, SMP, and power
+management.
 
-Sorry, I forgot to run the script.
+I shuffled things around a bit to accomodate the current mainline
+infrastructure and dumped the platform devices and with them the Gose board
+file.
 
-Thanks,
-Kaneko
+Known problems include missing bindings for PCIE, sound, and an I2C part.
 
->
->> +                               bits = 7;
->> +                               break;
->> +                       case CS6:
->> +                               bits = 8;
->> +                               break;
->> +                       case CS7:
->> +                               bits = 9;
->> +                               break;
->> +                       default:
->> +                               bits = 10;
->> +                               break;
->> +               }
->
-> [...]
->
-> WBR, Sergei
->
+It might we worth considering whether the r8a7791 and r8a7793 SMP
+implementations could be merged; the only functional difference between the
+two is that the r8a7791 implementation chickens out when hardware debug mode
+(MD21) is enabled, whereas the r8a7793 code does some magic that, I presume,
+is supposed to make it work properly.
+
+CU
+Uli
+
+
+Hisashi Nakamura (1):
+  pinctrl: sh-pfc: Add r8a7793 PFC support
+
+Ulrich Hecht (10):
+  ARM: shmobile: Basic r8a7793 SoC support
+  ARM: shmobile: add r8a7793 SoC device tree
+  ARM: shmobile: r8a7793: add Gose board device tree
+  ARM: shmobile: r8a7793: add power management support
+  ARM: shmobile: r8a7793: add SMP support
+  clk: shmobile: r8a7793: document DIV6 clock bindings
+  mmc: sh_mmcif: Document r8a7793 DT bindings
+  serial: sh-sci: Add device tree bindings for r8a7793
+  clk: shmobile: Add r8a7793 SoC to MSTP bindings
+  PCI: rcar: document r8a7793 DT bindings
+
+ .../bindings/clock/renesas,cpg-div6-clocks.txt     |    1 +
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |    1 +
+ .../devicetree/bindings/mmc/renesas,mmcif.txt      |    1 +
+ .../devicetree/bindings/pci/pci-rcar-gen2.txt      |    1 +
+ .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |    1 +
+ .../bindings/serial/renesas,sci-serial.txt         |    4 +
+ arch/arm/boot/dts/Makefile                         |    1 +
+ arch/arm/boot/dts/r8a7793-gose.dts                 |  555 ++
+ arch/arm/boot/dts/r8a7793.dtsi                     | 1402 +++++
+ arch/arm/mach-shmobile/Kconfig                     |    4 +
+ arch/arm/mach-shmobile/Makefile                    |    2 +
+ arch/arm/mach-shmobile/pm-r8a7793.c                |  273 +
+ arch/arm/mach-shmobile/r8a7793.h                   |    7 +
+ arch/arm/mach-shmobile/setup-r8a7793.c             |   35 +
+ arch/arm/mach-shmobile/smp-r8a7793.c               |   69 +
+ drivers/pinctrl/sh-pfc/Kconfig                     |    5 +
+ drivers/pinctrl/sh-pfc/Makefile                    |    1 +
+ drivers/pinctrl/sh-pfc/core.c                      |    9 +
+ drivers/pinctrl/sh-pfc/core.h                      |    1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7793.c               | 6033 ++++++++++++++++++++
+ include/dt-bindings/clock/r8a7793-clock.h          |  158 +
+ 21 files changed, 8564 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a7793-gose.dts
+ create mode 100644 arch/arm/boot/dts/r8a7793.dtsi
+ create mode 100644 arch/arm/mach-shmobile/pm-r8a7793.c
+ create mode 100644 arch/arm/mach-shmobile/r8a7793.h
+ create mode 100644 arch/arm/mach-shmobile/setup-r8a7793.c
+ create mode 100644 arch/arm/mach-shmobile/smp-r8a7793.c
+ create mode 100644 drivers/pinctrl/sh-pfc/pfc-r8a7793.c
+ create mode 100644 include/dt-bindings/clock/r8a7793-clock.h
+
+-- 
+2.2.2
+
