@@ -1,53 +1,89 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Mon, 09 Mar 2015 17:11:35 +0000
-Subject: Re: [PATCH] sh-pfc: handle pin array holes in sh_pfc_map_pins()
-Message-Id: <CACRpkdZ_VHAnOqJV4Kpn1n_YZyVLKXEn4=tN=Ta=xrsMxq7Leg@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 06 Mar 2015 17:09:49 +0000
+Subject: [PATCH 02/11] ARM: shmobile: Basic r8a7793 SoC support
+Message-Id: <1425661798-10487-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1528110.Mb5xiNU0rc@wasted.cogentembedded.com>
-	<CACRpkdbMzGXeK6fX-h09-3F+jzxNLNsJwzLSeQrLT0MmJDRnWg@mail.gmail.com>
-	<1498074.6jEVhizFNe@avalon>
-In-Reply-To: <1498074.6jEVhizFNe@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Fri, Mar 6, 2015 at 11:58 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Linus,
->
-> On Friday 06 March 2015 11:43:45 Linus Walleij wrote:
->> On Sat, Feb 28, 2015 at 12:39 AM, Sergei Shtylyov wrote:
->> > The  pin array handled by sh_pfc_map_pins() may contain holes representing
->> > non- existing pins. We have to first count the valid pins in order to
->> > calculate the size  of the memory to be allocated, then to skip over the
->> > non-existing pins when  initializing the allocated arrays, and then to
->> > return the number of valid pins  from sh_pfc_map_pins() instead of 0 on
->> > success.
->> >
->> > As we have to touch devm_kzalloc() calls anyway, use more fitting
->> > devm_kcalloc() instead which additionally checks the array size. And
->> > since PINMUX_TYPE_NONE is #define'd as 0, stop re-initializing already
->> > zeroed out 'pmx->configs' array.
->> >
->> > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->> >
->> > ---
->> > The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git'
->> > repo. This patch should be applied before my R8A7794 PFC support patch
->> > and before Laurent's patches removing non-existent GPIOs for R8A779[01],
->> > otherwise they would cause the kernel  to hang while booting!
->>
->> OK not applying this until ACKed by Laurent,
->> and in the meantime I'm taking the three applied R8A7794 patches
->> out of my tree again.
->
-> Could you also drop "pinctrl: sh-pfc: r8a7790: Remove non existing GPIO pins"
-> and "pinctrl: sh-pfc: r8a7791: Remove non existing GPIO pins" for the same
-> reason ? Sorry for the trouble.
+Minimal support without power management or SMP.
 
-OK dropped them (rebased .... argh hope noone will kick my ass)
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/Kconfig         |  4 ++++
+ arch/arm/mach-shmobile/Makefile        |  1 +
+ arch/arm/mach-shmobile/setup-r8a7793.c | 33 +++++++++++++++++++++++++++++++++
+ 3 files changed, 38 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/setup-r8a7793.c
 
-Yours,
-Linus Walleij
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 0cbe84a..e76063e 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -75,6 +75,10 @@ config ARCH_R8A7791
+ 	bool "R-Car M2-W (R8A77910)"
+ 	select ARCH_RCAR_GEN2
+ 
++config ARCH_R8A7793
++	bool "R-Car M2N (R8A77940)"
++	select ARCH_RCAR_GEN2
++
+ config ARCH_R8A7794
+ 	bool "R-Car E2 (R8A77940)"
+ 	select ARCH_RCAR_GEN2
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index d3aca07..399342e 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -13,6 +13,7 @@ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o pm-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o pm-r8a7790.o
+ obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o pm-r8a7791.o
++obj-$(CONFIG_ARCH_R8A7793)	+= setup-r8a7793.o
+ obj-$(CONFIG_ARCH_R8A7794)	+= setup-r8a7794.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
+ obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
+diff --git a/arch/arm/mach-shmobile/setup-r8a7793.c b/arch/arm/mach-shmobile/setup-r8a7793.c
+new file mode 100644
+index 0000000..1d2825c
+--- /dev/null
++++ b/arch/arm/mach-shmobile/setup-r8a7793.c
+@@ -0,0 +1,33 @@
++/*
++ * r8a7793 processor support
++ *
++ * Copyright (C) 2015  Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/init.h>
++#include <asm/mach/arch.h>
++
++#include "common.h"
++#include "rcar-gen2.h"
++
++static const char *r8a7793_boards_compat_dt[] __initconst = {
++	"renesas,r8a7793",
++	NULL,
++};
++
++DT_MACHINE_START(R8A7793_DT, "Generic R8A7793 (Flattened Device Tree)")
++	.init_early	= shmobile_init_delay,
++	.init_time	= rcar_gen2_timer_init,
++	.init_late	= shmobile_init_late,
++	.reserve	= rcar_gen2_reserve,
++	.dt_compat	= r8a7793_boards_compat_dt,
++MACHINE_END
+-- 
+2.2.2
+
