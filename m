@@ -1,61 +1,30 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Thu, 05 Mar 2015 13:41:13 +0000
-Subject: Re: [PATCH] mmc: tmio: Remove bogus un-initialization in tmio_mmc_host_free()
-Message-Id: <CAPDyKFpEOo3Wx3nKiiULNy0aX-zX-UJw0h3uDihtmDkQmUQMOg@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 06 Mar 2015 17:09:58 +0000
+Subject: [PATCH 11/11] PCI: rcar: document r8a7793 DT bindings
+Message-Id: <1425661798-10487-12-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424277299-24964-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424277299-24964-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ian Molton <ian.molton@codethink.co.uk>, Chris Ball <chris@printf.net>, linux-mmc <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On 18 February 2015 at 17:34, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> If CONFIG_DEBUG_SLAB=3Dy:
->
->     sh_mobile_sdhi ee100000.sd: Got CD GPIO
->     sh_mobile_sdhi ee100000.sd: Got WP GPIO
->     platform ee100000.sd: Driver sh_mobile_sdhi requests probe deferral
->     ...
->     Slab corruption (Not tainted): kmalloc-1024 start=ED8b3c00, len=1024
->     2d0: 00 00 00 00 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b  ....kkkkkkkkkkkk
->     Prev obj: start=ED8b3800, len=1024
->     000: 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b  kkkkkkkkkkkkkkkk
->     010: 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b  kkkkkkkkkkkkkkkk
->
-> Struct tmio_mmc_host is embedded inside struct mmc_host, and thus is
-> freed by the call to mmc_free_host(). Hence it must not be written to
-> afterwards, as that will corrupt freed (and perhaps already reused)
-> memory.
->
-> Fixes: 94b110aff8679b14 ("mmc: tmio: add tmio_mmc_host_alloc/free()")
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-Applied, thanks!
+diff --git a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
+index d8ef5bf..8b156fe 100644
+--- a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
++++ b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
+@@ -8,6 +8,7 @@ OHCI and EHCI controllers.
+ Required properties:
+ - compatible: "renesas,pci-r8a7790" for the R8A7790 SoC;
+ 	      "renesas,pci-r8a7791" for the R8A7791 SoC.
++	      "renesas,pci-r8a7793" for the R8A7793 SoC.
+ - reg:	A list of physical regions to access the device: the first is
+ 	the operational registers for the OHCI/EHCI controllers and the
+ 	second is for the bridge configuration and control registers.
+-- 
+2.2.2
 
-Kind regards
-Uffe
-
-> ---
->  drivers/mmc/host/tmio_mmc_pio.c | 2 --
->  1 file changed, 2 deletions(-)
->
-> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_=
-pio.c
-> index a31c3573d386f8c6..dba7e1c19dd758e7 100644
-> --- a/drivers/mmc/host/tmio_mmc_pio.c
-> +++ b/drivers/mmc/host/tmio_mmc_pio.c
-> @@ -1073,8 +1073,6 @@ EXPORT_SYMBOL(tmio_mmc_host_alloc);
->  void tmio_mmc_host_free(struct tmio_mmc_host *host)
->  {
->         mmc_free_host(host->mmc);
-> -
-> -       host->mmc =3D NULL;
->  }
->  EXPORT_SYMBOL(tmio_mmc_host_free);
->
-> --
-> 1.9.1
->
