@@ -1,32 +1,30 @@
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Date: Wed, 04 Mar 2015 04:46:05 +0000
-Subject: Re: [PATCH 2/5] ARM: shmobile: Add r8a7794 reset code for SMP
-Message-Id: <54F68E0D.2090709@bp.renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 06 Mar 2015 17:09:54 +0000
+Subject: [PATCH 07/11] clk: shmobile: r8a7793: document DIV6 clock bindings
+Message-Id: <1425661798-10487-8-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <54F50C76.2060803@bp.renesas.com>
-In-Reply-To: <54F50C76.2060803@bp.renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon-san,
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-Thank you for your feedback.
-
-On 2015/03/04 10:36, Simon Horman wrote:
-
-> Hi Inami-san,
->
-> On Tue, Mar 03, 2015 at 10:20:54AM +0900, Gaku Inami wrote:
->> Since reset vector settings is controlled by SYSC
->> register, this code is added to pm-r8a7794.c.
-> As both this and the previous patch, which appears to create a stub
-> pm-r8a7794.c, are quite small I think it would make sense to squash these
-> two patches into one.
-
-I will fix it with V2 patch.
-
-Regards,
-Inami
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+index 054f65f..6bada02 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+@@ -11,6 +11,7 @@ Required Properties:
+     - "renesas,r8a7740-div6-clock" for R8A7740 (R-Mobile A1) DIV6 clocks
+     - "renesas,r8a7790-div6-clock" for R8A7790 (R-Car H2) DIV6 clocks
+     - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2) DIV6 clocks
++    - "renesas,r8a7793-div6-clock" for R8A7793 (R-Car M2N) DIV6 clocks
+     - "renesas,sh73a0-div6-clock" for SH73A0 (SH-Mobile AG5) DIV6 clocks
+     - "renesas,cpg-div6-clock" for generic DIV6 clocks
+   - reg: Base address and length of the memory resource used by the DIV6 clock
+-- 
+2.2.2
 
