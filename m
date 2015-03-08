@@ -1,64 +1,26 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 05 Mar 2015 01:58:13 +0000
-Subject: [PATCH 13/16] ARM: shmobile: bockw: add devices hooked up to i2c0 to DT
-Message-Id: <95e7381b1a6dec04b17aea3fd839c4ada8c96f28.1425518338.git.horms+renesas@verge.net.au>
+From: Jason Cooper <jason@lakedaemon.net>
+Date: Sun, 08 Mar 2015 04:05:20 +0000
+Subject: Re: [PATCH] irqchip: renesas-irqc: Use u32 to store 32-bit register values
+Message-Id: <20150308040519.GD21207@io.lakedaemon.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425518337.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425518337.git.horms+renesas@verge.net.au>
+References: <1424947412-8061-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1424947412-8061-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Thomas Gleixner <tglx@linutronix.de>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Geert,
 
-Cameras, RTC, and ak4643 sound codec.
+On Thu, Feb 26, 2015 at 11:43:32AM +0100, Geert Uytterhoeven wrote:
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+>  drivers/irqchip/irq-renesas-irqc.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Wolfram Sang <wsa@the-dreams.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7778-bockw.dts | 25 +++++++++++++++++++++++++
- 1 file changed, 25 insertions(+)
+Applied to irqchip/core several days ago (my mailserver was down).
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 0011975..646383a 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -65,6 +65,31 @@
- 	clock-frequency = <33333333>;
- };
- 
-+&i2c0 {
-+	status = "okay";
-+
-+	ak4643: sound-codec@12 {
-+		compatible = "asahi-kasei,ak4643";
-+		#sound-dai-cells = <0>;
-+		reg = <0x12>;
-+	};
-+
-+	camera@41 {
-+		compatible = "oki,ml86v7667";
-+		reg = <0x41>;
-+	};
-+
-+	camera@43 {
-+		compatible = "oki,ml86v7667";
-+		reg = <0x43>;
-+	};
-+
-+	rx8581: rtc@51 {
-+		compatible = "epson,rx8581";
-+		reg = <0x51>;
-+	};
-+};
-+
- &mmcif {
- 	pinctrl-0 = <&mmc_pins>;
- 	pinctrl-names = "default";
--- 
-2.1.4
+thx,
 
+Jason.
