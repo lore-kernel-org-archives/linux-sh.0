@@ -1,95 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 05 Mar 2015 01:57:53 +0000
-Subject: [PATCH 01/13] ARM: shmobile: r8a73a4: Add CPG register bits header
-Message-Id: <bdba0101c7e90e60481018005654227bdfd67aec.1425517246.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 09 Mar 2015 20:06:56 +0000
+Subject: [PATCH 3/4] ARM: shmobile: lager dts: Add da9210 regulator interrupt
+Message-Id: <1425931617-5479-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425517246.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425517246.git.horms+renesas@verge.net.au>
+References: <1425931617-5479-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1425931617-5479-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+The da9210 regulator is connected to IRQ2. Reflect this in its device
+node, so the driver can use it when it gains interrupt support.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- include/dt-bindings/clock/r8a73a4-clock.h | 62 +++++++++++++++++++++++++++++++
- 1 file changed, 62 insertions(+)
- create mode 100644 include/dt-bindings/clock/r8a73a4-clock.h
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/include/dt-bindings/clock/r8a73a4-clock.h b/include/dt-bindings/clock/r8a73a4-clock.h
-new file mode 100644
-index 0000000..9a4b4c9
---- /dev/null
-+++ b/include/dt-bindings/clock/r8a73a4-clock.h
-@@ -0,0 +1,62 @@
-+/*
-+ * Copyright 2014 Ulrich Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#ifndef __DT_BINDINGS_CLOCK_R8A73A4_H__
-+#define __DT_BINDINGS_CLOCK_R8A73A4_H__
-+
-+/* CPG */
-+#define R8A73A4_CLK_MAIN	0
-+#define R8A73A4_CLK_PLL0	1
-+#define R8A73A4_CLK_PLL1	2
-+#define R8A73A4_CLK_PLL2	3
-+#define R8A73A4_CLK_PLL2S	4
-+#define R8A73A4_CLK_PLL2H	5
-+#define R8A73A4_CLK_Z		6
-+#define R8A73A4_CLK_Z2		7
-+#define R8A73A4_CLK_I		8
-+#define R8A73A4_CLK_M3		9
-+#define R8A73A4_CLK_B		10
-+#define R8A73A4_CLK_M1		11
-+#define R8A73A4_CLK_M2		12
-+#define R8A73A4_CLK_ZX		13
-+#define R8A73A4_CLK_ZS		14
-+#define R8A73A4_CLK_HP		15
-+
-+/* MSTP2 */
-+#define R8A73A4_CLK_DMAC	18
-+#define R8A73A4_CLK_SCIFB3	17
-+#define R8A73A4_CLK_SCIFB2	16
-+#define R8A73A4_CLK_SCIFB1	7
-+#define R8A73A4_CLK_SCIFB0	6
-+#define R8A73A4_CLK_SCIFA0	4
-+#define R8A73A4_CLK_SCIFA1	3
-+
-+/* MSTP3 */
-+#define R8A73A4_CLK_CMT1	29
-+#define R8A73A4_CLK_IIC1	23
-+#define R8A73A4_CLK_IIC0	18
-+#define R8A73A4_CLK_IIC7	17
-+#define R8A73A4_CLK_IIC6	16
-+#define R8A73A4_CLK_MMCIF0	15
-+#define R8A73A4_CLK_SDHI0	14
-+#define R8A73A4_CLK_SDHI1	13
-+#define R8A73A4_CLK_SDHI2	12
-+#define R8A73A4_CLK_MMCIF1	5
-+#define R8A73A4_CLK_IIC2	0
-+
-+/* MSTP4 */
-+#define R8A73A4_CLK_IIC3	11
-+#define R8A73A4_CLK_IIC4	10
-+#define R8A73A4_CLK_IIC5	9
-+
-+/* MSTP5 */
-+#define R8A73A4_CLK_THERMAL	22
-+#define R8A73A4_CLK_IIC8	15
-+
-+#endif /* __DT_BINDINGS_CLOCK_R8A73A4_H__ */
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 329bb994aac04084..6fa8681a431fceb8 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -585,6 +585,8 @@
+ 	vdd_dvfs: regulator@68 {
+ 		compatible = "dlg,da9210";
+ 		reg = <0x68>;
++		interrupt-parent = <&irqc0>;
++		interrupts = <2 IRQ_TYPE_LEVEL_LOW>;
+ 
+ 		regulator-min-microvolt = <1000000>;
+ 		regulator-max-microvolt = <1000000>;
 -- 
-2.1.4
+1.9.1
 
