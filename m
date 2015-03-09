@@ -1,50 +1,60 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 25 Mar 2015 13:04:25 +0000
-Subject: [PATCH v3 0/2] dmaengine: usb-dmac: Add Renesas USB DMA Controller
-Message-Id: <1427288667-5820-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 09 Mar 2015 20:06:55 +0000
+Subject: [PATCH 2/4] ARM: shmobile: koelsch: Add da9063 PMIC device node for system restart
+Message-Id: <1425931617-5479-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1425931617-5479-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1425931617-5479-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: vinod.koul@intel.com, dan.j.williams@intel.com, laurent.pinchart@ideasonboard.com, horms@verge.net.au, kuninori.morimoto.gx@renesas.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-This patch set is based on slave-dma.git / next branch.
-(commit id = ebb3abd4042e2ab5f97c43a6f71b206947255fd6)
+Add a device node for the da9063 PMIC, with subnodes for rtc and wdt.
+Regulator support is not yet included.
 
-Changes from v2:
- - Change descriptor management to store the residue in descriptor instead
-   of the channel.
- - Change acceptable any sg_len.
- - Modify usb_dmac_tx_status() to calculate the residue for flight
-   descriptors.
- - Remove a local tasklet.
- - Remove #ifdef CONFIG_PM.
- Remarks: No change in patch [1/2].
+This allows the system to be restarted when the watchdog timer times
+out, or when a system restart is requested.
 
-Changes from v1:
- - Use virt-dma infrastructure instead of local descriptor management.
- - Change acceptable sg_len to 1.
-   (because a client driver will use dmaengine_prep_slave_single().)
- - Remove usb_dmac_sleep_{suspend,resume} functions.
- - Add usb_dmac_chan_halt() in usb_dmac_runtime_suspend().
- - Use a tasklet instead of a kernel thread.
- - Add tasklet_kill() in usb_dmac_remove().
- - Fix MODULE_AUTHOR string.
- Remarks: No change in patch [1/2].
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+An earlier version of this patch has been posted as "[PATCH 3/4] ARM:
+shmobile: koelsch: Add DA9063 PMIC device node for system restart".
 
-Yoshihiro Shimoda (2):
-  dmaengine: renesas,usb-dmac: Add device tree bindings documentation
-  dmaengine: usb-dmac: Add Renesas USB DMA Controller (USB-DMAC) driver
+Changes:
+  - Add missing interrupt-controller property,
+  - Add rtc and wdt subnodes.
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
- .../devicetree/bindings/dma/renesas,usb-dmac.txt   |  37 +
- drivers/dma/sh/Kconfig                             |   9 +
- drivers/dma/sh/Makefile                            |   1 +
- drivers/dma/sh/usb-dmac.c                          | 906 +++++++++++++++++++++
- 4 files changed, 953 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
- create mode 100644 drivers/dma/sh/usb-dmac.c
-
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 25ce4c71939febd0..74c3212f1f11e47e 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -584,6 +584,22 @@
+ 	status = "okay";
+ 	clock-frequency = <100000>;
+ 
++	pmic@58 {
++		compatible = "dlg,da9063";
++		reg = <0x58>;
++		interrupt-parent = <&irqc0>;
++		interrupts = <2 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-controller;
++
++		rtc {
++			compatible = "dlg,da9063-rtc";
++		};
++
++		wdt {
++			compatible = "dlg,da9063-watchdog";
++		};
++	};
++
+ 	vdd_dvfs: regulator@68 {
+ 		compatible = "dlg,da9210";
+ 		reg = <0x68>;
 -- 
 1.9.1
 
