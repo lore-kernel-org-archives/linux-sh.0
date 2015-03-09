@@ -1,42 +1,36 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Tue, 17 Mar 2015 05:29:32 +0000
-Subject: Re: [PATCH] mmc: sh_mobile_sdhi: remove sh_mobile_sdhi_info v2
-Message-Id: <20150317051732.GY32683@intel.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 09 Mar 2015 07:06:59 +0000
+Subject: Re: Can't boot kernel v4.0-rc2 on Koelsch
+Message-Id: <2263226.JPOqZgiCRj@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201503141650.GfUoPRK3%fengguang.wu@intel.com>
- <87ioe1kcp8.wl%kuninori.morimoto.gx@renesas.com>
- <20150316075105.GA21372@verge.net.au>
- <87lhixiat4.wl%kuninori.morimoto.gx@renesas.com>
- <87k2yhiaro.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87k2yhiaro.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, arm@kernel.org, kbuild-all@01.org, Ulf Hansson <ulf.hansson@linaro.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Mon, Mar 16, 2015 at 08:53:40AM +0000, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> 84f11d5b1f2abc0e22895b7e12e037f0ec03caeb
-> (mmc: sh_mobile_sdhi: remove sh_mobile_sdhi_info)
-> replaced sh_mobile_sdhi_info to tmio_mmc_data, but it was missing
-> to replace board-ape6evm / board-mackerel.
-> Kernel build will be failed without this patch.
-> 
-> 	>> arch/arm/mach-shmobile/board-ape6evm.c:176:21: error: \
-> 		variable 'sdhi0_pdata' has initializer but incomplete type
-> 	static const struct sh_mobile_sdhi_info sdhi0_pdata __initconst = {
-> 	                    ^
-> 	>> arch/arm/mach-shmobile/board-ape6evm.c:177:2: error: \
-> 		unknown field 'tmio_flags' specified in initializer
-> 	.tmio_flags = TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-> 	^
-> 	...
->
-Applied, to topic/sh. So feel free to merge in your trees if you need this.
+Hello Hiep-san,
 
-Thanks
+On Monday 09 March 2015 10:07:04 Cao Minh Hiep wrote:
+> Hi Laurent-san
+> 
+> I am Hiep from Jinzai Solution.
+> I'm sorry to bother you again!
+
+No worries.
+
+> We are testing the linux ver v4.0-rc2 on Koelsch, We can not boot the
+> kernel v4.0-rc2 on Koelsch,
+> Then we found a patch has changed as below:
+> "1f75cda ARM: shmobile: koelsch: Rename SCIF[01] serial ports to ttySC[01]"
+> 
+> Please see it when you have time!
+
+Could you please detail your boot failure ? You might need to change your 
+/etc/inittab to adjust to the serial port new name, but apart from that there 
+shouldn't be any issue. I can boot my Koelsch board on 4.0-v2.
+
 -- 
-~Vinod
- 
+Regards,
+
+Laurent Pinchart
+
