@@ -1,83 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 05 Mar 2015 01:57:58 +0000
-Subject: [PATCH 06/13] ARM: shmobile: ape6evm dts: Move Ethernet node to BSC
-Message-Id: <a656c603889c256e3d05e79e57714aa88d179903.1425517246.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 09 Mar 2015 20:06:54 +0000
+Subject: [PATCH 1/4] ARM: shmobile: koelsch dts: Add da9210 regulator interrupt
+Message-Id: <1425931617-5479-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425517246.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425517246.git.horms+renesas@verge.net.au>
+References: <1425931617-5479-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1425931617-5479-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Move the Ethernet node from the ad-hoc lbsc node to the BSC node,
-as its connected to the Bus State Controller.  This allows the system to
-know the right position of the Ethernet node in the clock and PM domain
-hierarchy, and manage the clock and PM domain appropriately.
+The da9210 regulator is connected to IRQ2. Reflect this in its device
+node, so the driver can use it when it gains interrupt support.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a73a4-ape6evm.dts | 35 +++++++++++++++--------------------
- 1 file changed, 15 insertions(+), 20 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index 0d50bef..44c4cac 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -72,26 +72,6 @@
- 		regulator-always-on;
- 	};
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 75fa9852e235455c..25ce4c71939febd0 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -587,6 +587,8 @@
+ 	vdd_dvfs: regulator@68 {
+ 		compatible = "dlg,da9210";
+ 		reg = <0x68>;
++		interrupt-parent = <&irqc0>;
++		interrupts = <2 IRQ_TYPE_LEVEL_LOW>;
  
--	lbsc {
--		compatible = "simple-bus";
--		#address-cells = <1>;
--		#size-cells = <1>;
--		ranges = <0 0 0 0x20000000>;
--
--		ethernet@8000000 {
--			compatible = "smsc,lan9220", "smsc,lan9115";
--			reg = <0x08000000 0x1000>;
--			interrupt-parent = <&irqc1>;
--			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
--			phy-mode = "mii";
--			reg-io-width = <4>;
--			smsc,irq-active-high;
--			smsc,irq-push-pull;
--			vdd33a-supply = <&ape6evm_fixed_3v3>;
--			vddvario-supply = <&ape6evm_fixed_1v8>;
--		};
--	};
--
- 	leds {
- 		compatible = "gpio-leds";
- 		led1 {
-@@ -184,6 +164,21 @@
- 	voltage-tolerance = <1>; /* 1% */
- };
- 
-+&bsc {
-+	ethernet@8000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x08000000 0x1000>;
-+		interrupt-parent = <&irqc1>;
-+		interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
-+		phy-mode = "mii";
-+		reg-io-width = <4>;
-+		smsc,irq-active-high;
-+		smsc,irq-push-pull;
-+		vdd33a-supply = <&ape6evm_fixed_3v3>;
-+		vddvario-supply = <&ape6evm_fixed_1v8>;
-+	};
-+};
-+
- &cmt1 {
- 	status = "okay";
- };
+ 		regulator-min-microvolt = <1000000>;
+ 		regulator-max-microvolt = <1000000>;
 -- 
-2.1.4
+1.9.1
 
