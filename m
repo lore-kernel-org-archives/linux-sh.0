@@ -1,7 +1,7 @@
-From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
-Date: Tue, 10 Mar 2015 08:05:36 +0000
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Tue, 10 Mar 2015 08:38:50 +0000
 Subject: Re: Can't boot kernel v4.0-rc2 on Koelsch
-Message-Id: <CABMQnV+st1kHUJwtpmr-H5PQv=ka1iGmcRudn48-dNfzuvxKmA@mail.gmail.com>
+Message-Id: <54FEAD9A.3010806@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <2263226.JPOqZgiCRj@avalon>
 In-Reply-To: <2263226.JPOqZgiCRj@avalon>
@@ -10,105 +10,27 @@ Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
 To: linux-sh@vger.kernel.org
 
-Hi, all.
+Hi Simon-san,
 
-This is user land issue.
-Hiep, if you have not changed ttySCX in inittab, you will need to change.
-Could you check your inittab?
-
---- a/inittab    2015-03-10 15:01:58.986609389 +0900
-+++ b/inittab    2015-03-10 15:00:32.132094877 +0900
-@@ -28,7 +28,7 @@
- l6:6:wait:/etc/init.d/rc 6
- # Normally not reached, but fallthrough in case of emergency.
- z6:6:respawn:/sbin/sulogin
--SC6:12345:respawn:/sbin/getty -L 38400 ttySC6
-+SC0:12345:respawn:/sbin/getty -L 38400 ttySC0
- # /sbin/getty invocations for the runlevels.
- #
- # The "id" field MUST be the same as the last
-
-Best regards,
-  Nobuhiro
-
-2015-03-10 8:49 GMT+09:00 Laurent Pinchart <laurent.pinchart@ideasonboard.com>:
-> Hello Hiep-san,
->
-> (CC'ing Geert)
->
-> On Monday 09 March 2015 18:43:54 Cao Minh Hiep wrote:
->> On 2015年03月09日 16:06, Laurent Pinchart wrote:
->> > On Monday 09 March 2015 10:07:04 Cao Minh Hiep wrote:
->> >> Hi Laurent-san
->> >>
->> >> I am Hiep from Jinzai Solution.
->> >> I'm sorry to bother you again!
->> >
->> > No worries.
->> >
->> >> We are testing the linux ver v4.0-rc2 on Koelsch, We can not boot the
->> >> kernel v4.0-rc2 on Koelsch,
->> >> Then we found a patch has changed as below:
->> >> "1f75cda ARM: shmobile: koelsch: Rename SCIF[01] serial ports to
->> >> ttySC[01]"
->> >>
->> >> Please see it when you have time!
->> >
->> > Could you please detail your boot failure ? You might need to change your
->> > /etc/inittab to adjust to the serial port new name, but apart from that
->> > there shouldn't be any issue. I can boot my Koelsch board on 4.0-v2.
+On 2015年03月10日 13:14, Simon Horman wrote:
+> On Tue, Mar 10, 2015 at 10:53:45AM +0900, Cao Minh Hiep wrote:
+>> Hi Simon-san,
+>> Cc: Laurent-san,
 >>
->> Sure, I use the rootfs of Linaro-nano 2014.09 to test v4.0-rc2.
->> When booting kernel with default config, bootlogs showed until these
->> messages appearing.
->> "init: auto-serial-console main process ended, respawning
->> init: auto-serial-console main process ended, respawning
->> init: auto-serial-console main process ended, respawning
->> init: tty1 main process (1449) killed by TERM signal
->> init: auto-serial-console respawning too fast, stopped"
+>> Thank for your comments,
 >>
->> Then, my Koelsch board stoped here.(my Lager board is the same)
->> (I attached the bootlogs_file)
->>
->> So, When I tried to add "console=ttySC0," into bootargs (at .dts file),
->> i can boot my Koelsch board without any problems.
->> And these are the same on Lager board.
->
-> Thank you for the information.
->
-> Geert, it looks like the console= kernel command line argument is used by
-> userspace to figure out the console device on which to spawn a terminal. What
-> would you think about adding it back ?
->
->> Thank you!
->> Jinso/Hiep
->> ====>> information:
->> Actually, on v4.0-rc2, we have two patches related each other as below:
->> 79e69d1 ARM: shmobile: koelsch dts:Drop console= bootargs parameter BAD.
->> 1f75cda ARM: shmobile: koelsch: Rename SCIF01 serial ports to ttySC01
->>
->> And for Lager:
->> 569dd56 ARM: shmobile: lager dts: Drop console= bootargs parameter
->> 78c11ec ARM: shmobile: lager: Rename SCIFA[01] serial ports to ttySC[01]
->>
->> There is only 79e69d1 patch on v3.19-rcX, I also had a problem with
->> bootting Koelsch on v3.19-rcX
->> (using linaro-nano 2014.09). But it was good on Yocto and
->> linaro-nano-2013.02
->
-> --
-> Regards,
->
-> Laurent Pinchart
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> On 2015年03月10日 10:14, Simon Horman wrote:
+>>> Hi Hiep-san,
+>>>
+>>> I'd like to agree with Laurent's observation that this appears
+>>> to mean that your userspace is broken / needs updating. The boards
+>>> in question boot to userspace in my environment.
+>> Thanks, I will re-check and update my userspace.
+>> By the way, could you please tell me your type of userspace and version that
+>> you are using?
+> I am using a Debian sid ARMHF userspace, though it is rather old.
+> I believe it was created in February 2011.
+Thank you!
 
+Jinso/Hiep.
 
-
--- 
-Nobuhiro Iwamatsu
-   iwamatsu at {nigauri.org / debian.org}
-   GPG ID: 40AD1FA6
