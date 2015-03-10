@@ -1,85 +1,169 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Thu, 05 Mar 2015 16:33:20 +0000
-Subject: Re: [PATCH 2/2] dmaengine: usb-dmac: Add Renesas USB DMA Controller (USB-DMAC) driver
-Message-Id: <20150305162120.GK2613@intel.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 10 Mar 2015 01:40:13 +0000
+Subject: [PATCH 5/6] ARM: shmobile: r8a7790: sound enables Audio DMAC entry on DTSI
+Message-Id: <87r3sxsk9f.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423469645-2976-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <1423469645-2976-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <20150305100917.GD2613@intel.com>
- <HKNPR06MB32227E774659BA1179C9C5AD81F0@HKNPR06MB322.apcprd06.prod.outlook.com>
-In-Reply-To: <HKNPR06MB32227E774659BA1179C9C5AD81F0-xIjp3w5QIjwsJtb0Mgt7d79PrO6axcR4XA4E9RH9d+qIuWR1G4zioA@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: yoshihiro shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: "dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org" <dan.j.williams-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, "laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org" <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, "horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org" <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, kuninori morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, "robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org" <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "pawel.moll-5wv7dgnIgG8@public.gmane.org" <pawel.moll-5wv7dgnIgG8@public.gmane.org>, "mark.rutland-5wv7dgnIgG8@public.gmane.org" <mark.rutland-5wv7dgnIgG8@public.gmane.org>, "ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org" <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, "galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org" <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-On Thu, Mar 05, 2015 at 12:35:49PM +0000, yoshihiro shimoda wrote:
-> Hi Vinod,
-> 
-> Thank you for your review!
-> 
-> > On Mon, Feb 09, 2015 at 05:14:05PM +0900, Yoshihiro Shimoda wrote:
-> > > +struct usb_dmac_chan {
-> > > +	struct dma_chan chan;
-> > > +	void __iomem *iomem;
-> > > +	unsigned int index;
-> > > +
-> > > +	spinlock_t lock;
-> > > +
-> > > +	struct {
-> > > +		struct list_head free;
-> > > +		struct list_head pending;
-> > > +		struct list_head active;
-> > > +		struct list_head done;
-> > > +		struct list_head wait;
-> > > +		struct usb_dmac_desc *running;
-> > > +		struct usb_dmac_desc *last_done;
-> > > +
-> > > +		struct list_head chunks_free;
-> > > +
-> > > +		struct list_head pages;
-> > Thats too many lists, do we need so many? Shouldn't free and done be same
-> > thing. Similarly whats meant by wait here?
-> > Do you submit multiple descriptors to HW?
-> 
-> No, I don't submit multiple descriptors to HW.
-> So, as you say in the end of this email, I am thinking that I should use virt-dma infrastructure.
-That will be good and greatly simplify..
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> > > +static enum dma_status usb_dmac_tx_status(struct dma_chan *chan,
-> > > +					  dma_cookie_t cookie,
-> > > +					  struct dma_tx_state *txstate)
-> > > +{
-> > > +	struct usb_dmac_chan *uchan = to_usb_dmac_chan(chan);
-> > > +	enum dma_status status;
-> > > +	unsigned long flags;
-> > > +	unsigned int residue;
-> > > +
-> > > +	status = dma_cookie_status(chan, cookie, txstate);
-> > > +	/* a client driver will get residue after DMA_COMPLETE */
-> > > +	if (!txstate)
-> > > +		return status;
-> > > +
-> > > +	spin_lock_irqsave(&uchan->lock, flags);
-> > > +	if (status = DMA_COMPLETE)
-> > > +		residue = usb_dmac_chan_get_residue_if_complete(uchan);
-> > if it is completed then residue should be zero, so why are we computing this
-> 
-> This USB-DMAC has a function to detect a USB specific packet (called short-length-packet).
-> If the USB-DMAC detects it, the USB-DMAC assumes the USB-DMAC completes the transfer.
-> 
-> For example:
->  - A client driver submits 2048 bytes as RX.
->  - When a USB controller received 512 + 488 bytes totally,
->    the USB-DMAC detected it and completed the transfer.
->   - However, a USB controller just knows the bytes of last packet (In this case, 488byte.)
->         So, the USB controller driver cannot know that it got how many bytes.
->     Therefore, this USB-DMAC driver is computing this bytes.
-> 
-> I'm not sure about the detail, but cppi41.c seems to compute the residue even if it is completed.
-I suspected this to be case, so you are confirming my hunch, thanks :)
+This patch adds Audio DMAC (= rcar-dmac) entry for sound
 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 130 ++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 108 insertions(+), 22 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 48d11e0e..4bb2f4c 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1481,34 +1481,120 @@
+ 		status = "disabled";
+ 
+ 		rcar_sound,dvc {
+-			dvc0: dvc@0 { };
+-			dvc1: dvc@1 { };
++			dvc0: dvc@0 {
++				dmas = <&audma0 0xbc>;
++				dma-names = "tx";
++			};
++			dvc1: dvc@1 {
++				dmas = <&audma0 0xbe>;
++				dma-names = "tx";
++			};
+ 		};
+ 
+ 		rcar_sound,src {
+-			src0: src@0 { interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>; };
+-			src1: src@1 { interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>; };
+-			src2: src@2 { interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>; };
+-			src3: src@3 { interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>; };
+-			src4: src@4 { interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>; };
+-			src5: src@5 { interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>; };
+-			src6: src@6 { interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>; };
+-			src7: src@7 { interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>; };
+-			src8: src@8 { interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>; };
+-			src9: src@9 { interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>; };
++			src0: src@0 {
++				interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x85>, <&audma1 0x9a>;
++				dma-names = "rx", "tx";
++			};
++			src1: src@1 {
++				interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x87>, <&audma1 0x9c>;
++				dma-names = "rx", "tx";
++			};
++			src2: src@2 {
++				interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x89>, <&audma1 0x9e>;
++				dma-names = "rx", "tx";
++			};
++			src3: src@3 {
++				interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x8b>, <&audma1 0xa0>;
++				dma-names = "rx", "tx";
++			};
++			src4: src@4 {
++				interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x8d>, <&audma1 0xb0>;
++				dma-names = "rx", "tx";
++			};
++			src5: src@5 {
++				interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x8f>, <&audma1 0xb2>;
++				dma-names = "rx", "tx";
++			};
++			src6: src@6 {
++				interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x91>, <&audma1 0xb4>;
++				dma-names = "rx", "tx";
++			};
++			src7: src@7 {
++				interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x93>, <&audma1 0xb6>;
++				dma-names = "rx", "tx";
++			};
++			src8: src@8 {
++				interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x95>, <&audma1 0xb8>;
++				dma-names = "rx", "tx";
++			};
++			src9: src@9 {
++				interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x97>, <&audma1 0xba>;
++				dma-names = "rx", "tx";
++			};
+ 		};
+ 
+ 		rcar_sound,ssi {
+-			ssi0: ssi@0 { interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>; };
+-			ssi1: ssi@1 { interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>; };
+-			ssi2: ssi@2 { interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>; };
+-			ssi3: ssi@3 { interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>; };
+-			ssi4: ssi@4 { interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>; };
+-			ssi5: ssi@5 { interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>; };
+-			ssi6: ssi@6 { interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>; };
+-			ssi7: ssi@7 { interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>; };
+-			ssi8: ssi@8 { interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>; };
+-			ssi9: ssi@9 { interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>; };
++			ssi0: ssi@0 {
++				interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x01>, <&audma1 0x02>, <&audma0 0x15>, <&audma1 0x16>;
++				dma-names = "rx", "tx", "rxu", "txu";
++			};
++			ssi1: ssi@1 {
++				 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x03>, <&audma1 0x04>, <&audma0 0x49>, <&audma1 0x4a>;
++				dma-names = "rx", "tx", "rxu", "txu";
++			};
++			ssi2: ssi@2 {
++				interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x05>, <&audma1 0x06>, <&audma0 0x63>, <&audma1 0x64>;
++				dma-names = "rx", "tx", "rxu", "txu";
++			};
++			ssi3: ssi@3 {
++				interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x07>, <&audma1 0x08>, <&audma0 0x6f>, <&audma1 0x70>;
++				dma-names = "rx", "tx", "rxu", "txu";
++			};
++			ssi4: ssi@4 {
++				interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x09>, <&audma1 0x0a>, <&audma0 0x71>, <&audma1 0x72>;
++				dma-names = "rx", "tx", "rxu", "txu";
++			};
++			ssi5: ssi@5 {
++				interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x0b>, <&audma1 0x0c>, <&audma0 0x73>, <&audma1 0x74>;
++				dma-names = "rx", "tx", "rxu", "txu";
++			};
++			ssi6: ssi@6 {
++				interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x0d>, <&audma1 0x0e>, <&audma0 0x75>, <&audma1 0x76>;
++				dma-names = "rx", "tx", "rxu", "txu";
++			};
++			ssi7: ssi@7 {
++				interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x0f>, <&audma1 0x10>, <&audma0 0x79>, <&audma1 0x7a>;
++				dma-names = "rx", "tx", "rxu", "txu";
++			};
++			ssi8: ssi@8 {
++				interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x11>, <&audma1 0x12>, <&audma0 0x7b>, <&audma1 0x7c>;
++				dma-names = "rx", "tx", "rxu", "txu";
++			};
++			ssi9: ssi@9 {
++				interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
++				dmas = <&audma0 0x13>, <&audma1 0x14>, <&audma0 0x7d>, <&audma1 0x7e>;
++				dma-names = "rx", "tx", "rxu", "txu";
++			};
+ 		};
+ 	};
+ 
 -- 
-~Vinod
+1.9.1
 
