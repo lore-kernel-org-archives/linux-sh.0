@@ -1,28 +1,53 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 18 Mar 2015 01:17:35 +0000
-Subject: Re: [PATCH 1/2] pinctrl: sh-pfc: Remove emev2 platform_device_id entry
-Message-Id: <CACRpkdYQu_kwc_t46X_gHp+aHbpwbc5dgqgvG=FCo4tZW1CqZQ@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 10 Mar 2015 01:39:39 +0000
+Subject: [PATCH 3/6] ARM: shmobile: r8a7790: enable Audio DMAC peri peri via sound driver
+Message-Id: <87twxtskad.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425986080-26648-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1425986080-26648-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Tue, Mar 10, 2015 at 12:14 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> The emev2 platform is now DT-only, the driver doesn't need to match
-> platform devices by name anymore. Remove the corresponding
-> platform_device_id entry.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> The emev2 platform never had pinctrl support for non-DT.
+Audio DMAC peri peri is no longer DMAEngine. it is supported by
+sound driver. this patch enable it.
 
-Patch applied with Laurent's ACK.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 12 +++---------
+ 1 file changed, 3 insertions(+), 9 deletions(-)
 
-Yours,
-Linus Walleij
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 2041ec7..48d11e0e 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -370,13 +370,6 @@
+ 		dma-channels = <13>;
+ 	};
+ 
+-	audmapp: dma-controller@ec740000 {
+-		compatible = "renesas,rcar-audmapp";
+-		#dma-cells = <1>;
+-
+-		reg = <0 0xec740000 0 0x200>;
+-	};
+-
+ 	i2c0: i2c@e6508000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -1460,8 +1453,9 @@
+ 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
+ 			<0 0xec5a0000 0 0x100>,  /* ADG */
+ 			<0 0xec540000 0 0x1000>, /* SSIU */
+-			<0 0xec541000 0 0x1280>; /* SSI */
+-		reg-names = "scu", "adg", "ssiu", "ssi";
++			<0 0xec541000 0 0x1280>, /* SSI */
++			<0 0xec740000 0 0x200>;  /* Audio DMAC peri peri*/
++		reg-names = "scu", "adg", "ssiu", "ssi", "audmapp";
+ 
+ 		clocks = <&mstp10_clks R8A7790_CLK_SSI_ALL>,
+ 			<&mstp10_clks R8A7790_CLK_SSI9>, <&mstp10_clks R8A7790_CLK_SSI8>,
+-- 
+1.9.1
+
