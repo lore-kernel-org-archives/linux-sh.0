@@ -1,49 +1,52 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 31 Mar 2015 15:04:43 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7790: add EtherAVB DT support
-Message-Id: <551AB78B.4000506@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 10 Mar 2015 00:42:09 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Cleanup for v4.1
+Message-Id: <cover.1425947508.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1625400.M0MxPQybIy@wasted.cogentembedded.com>
- <8163383.0UU0Q5gsLE@wasted.cogentembedded.com>
- <20150331002113.GB16289@verge.net.au>
-In-Reply-To: <20150331002113.GB16289@verge.net.au>
+References: <cover.1381222967.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On 03/31/2015 03:21 AM, Simon Horman wrote:
+Please consider these second round of Renesas ARM based SoC cleanup for v4.1.
 
->> Define the generic R8A7790 part of the EtherAVB device node.
+This pull request is based on the previous round of
+such requests, tagged as renesas-soc-cleanup-for-v4.1,
+which you have already pulled.
 
-> Please repost once this binding (and associated driver) has been accepted.
 
-    OK, but will you merge patch #1?
+The following changes since commit fd9454ab51fa92f43ae5b7a71c42f2ee8417c2a2:
 
->> Based on original patch by Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>.
+  ARM: shmobile: r8a7779: Remove redundant cpu_disable implementation (2015-02-24 07:12:16 +0900)
 
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>
->> ---
->>   arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
->>   1 file changed, 10 insertions(+)
->>
->> Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
->> =================================>> --- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
->> +++ renesas/arch/arm/boot/dts/r8a7790.dtsi
->> @@ -626,6 +626,16 @@
->>   		status = "disabled";
->>   	};
->>
->> +	avb: ethernet@e6800000 {
->> +		compatible = "renesas,ravb-r8a7790";
+are available in the git repository at:
 
-    I went the usual way here but I suspect that SoC part of the prop should 
-be "-rcar-gen2" as we now have this IP core (as well as most of the others, 
-except PFC) described in a common manual for the R-Car generation 2 SoCs.
-What do you think?
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-cleanup2-for-v4.1
 
-WBR, Sergei
+for you to fetch changes up to 82fbf29f26733dd38bd2ab17db04e0aa46ef3857:
 
+  ARM: shmobile: r8a7740: Remove restart callback (2015-03-01 10:59:16 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM Based SoC Cleanup for v4.1
+
+* Remove restart callback from r8a7740 SoC
+* Remove unecessary check on always set CONFIG_COMMON_CLK from
+  shared R-Car Gen2 SoC code
+* Remove stray closing parenthesis in SCIF debug description
+  for R-Car Gen2 SoCa
+
+----------------------------------------------------------------
+Geert Uytterhoeven (3):
+      ARM: shmobile: Remove stray closing parenthesis in debug description
+      ARM: shmobile: R-Car Gen2: CONFIG_COMMON_CLK is always set
+      ARM: shmobile: r8a7740: Remove restart callback
+
+ arch/arm/Kconfig.debug                   | 2 +-
+ arch/arm/mach-shmobile/setup-r8a7740.c   | 8 --------
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 4 ----
+ 3 files changed, 1 insertion(+), 13 deletions(-)
