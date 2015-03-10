@@ -1,51 +1,37 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 19 Mar 2015 02:18:50 +0000
-Subject: Re: [PATCH 05/05] serial: sh-sci: Expose SCIFA/SCIFB CTS pin
-Message-Id: <CANqRtoSo_AKkE5D20DtdyiDCHQ+2rhsoWGGgsr8ZMP_7bRrbgA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 10 Mar 2015 00:44:50 +0000
+Subject: [PATCH 13/15] ARM: shmobile: r8a7791: Fix IPMMU-GP clock to device tree
+Message-Id: <75a499a651bb5838320a7e2542ed6f8181e60976.1425947992.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141217125236.14480.78833.sendpatchset@w520>
-	<20141217125325.14480.79285.sendpatchset@w520>
-	<6657739.eAlEu9S4Iu@avalon>
-In-Reply-To: <6657739.eAlEu9S4Iu@avalon>
+References: <cover.1425947992.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425947992.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Greg KH <gregkh@linuxfoundation.org>, jslaby@suse.cz, linux-serial@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
 
-On Sun, Jan 4, 2015 at 11:53 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Magnus,
->
-> Thank you for the patch.
->
-> On Wednesday 17 December 2014 21:53:25 Magnus Damm wrote:
->> From: Magnus Damm <damm+renesas@opensource.se>
->>
->> Expose CTS pin to serial core for the SCIFA/SCIFB case.
->>
->> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
->> ---
->>
->>  drivers/tty/serial/sh-sci.c |   17 +++++++++++++++--
->>  1 file changed, 15 insertions(+), 2 deletions(-)
->>
->> --- 0023/drivers/tty/serial/sh-sci.c
->> +++ work/drivers/tty/serial/sh-sci.c  2014-12-17 18:46:44.000000000 +0900
->> @@ -564,6 +564,11 @@ static void sci_init_pins_default(struct
->>       serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
->>  }
->>
->> +static bool sci_cts_asserted_scifab(struct uart_port *port)
->> +{
->> +     return !(serial_port_in(port, SCPDR) & BIT(3));
->
-> Could you please define SCPDR_CTSD to replace BIT(3) ?
+Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Done in V2!
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index de42fc5..e899f79 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1202,7 +1202,7 @@
+ 		mstp8_clks: mstp8_clks@e6150990 {
+ 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+-			clocks = <&zg_clk>, <&hp_clk>, <&zg_clk>, <&zg_clk>,
++			clocks = <&zx_clk>, <&hp_clk>, <&zg_clk>, <&zg_clk>,
+ 			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+-- 
+2.1.4
 
-Thanks,
-
-/ magnus
