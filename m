@@ -1,34 +1,52 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 19 Mar 2015 02:05:26 +0000
-Subject: Re: [PATCH V2] ARM: shmobile: cpuidle: Remove the pointless default driver
-Message-Id: <20150319020526.GL14051@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 10 Mar 2015 00:43:03 +0000
+Subject: [PATCH 2/3] ARM: shmobile: R-Car Gen2: CONFIG_COMMON_CLK is always set
+Message-Id: <c77e9e7327218244d181a297f0742cf15d370fd1.1425947508.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426605912-28032-1-git-send-email-daniel.lezcano@linaro.org>
- <550847BA.8050503@linaro.org>
-In-Reply-To: <550847BA.8050503@linaro.org>
+References: <cover.1425947508.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425947508.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Mar 17, 2015 at 04:26:50PM +0100, Daniel Lezcano wrote:
-> 
-> Sorry Geert, I forget to Cc you.
-> 
-> On 03/17/2015 04:25 PM, Daniel Lezcano wrote:
-> >The default idle driver uses one state with the WFI instruction.
-> >The default idle routine invokes WFI when no cpuidle driver is present.
-> >
-> >The default cpuidle driver is pointless and does not give more than the
-> >default idle routine and moreover it pulls all the mathematics tied with
-> >the cpuidle governor for nothing, hence consuming more energy.
-> >
-> >Remove the default driver, the related code and register the driver directly.
-> >
-> >[compiled only - no board - no test]
-> >
-> >Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Thanks Daniel,
+Since commit e042681894b62d60 ("ARM: shmobile: r8a7790: Remove legacy
+code"), all R-Car Gen2 SoCs are supported by multiplatform kernels only.
+As CONFIG_COMMON_CLK is always set for multiplatform kernels, we can
+remove related #ifdefs in code specific to R-Car Gen2 SoCs.
 
-I have queued this up for v4.1.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index d1fa625..51464cc 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -50,9 +50,7 @@ u32 rcar_gen2_read_mode_pins(void)
+ 
+ void __init rcar_gen2_timer_init(void)
+ {
+-#if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
+ 	u32 mode = rcar_gen2_read_mode_pins();
+-#endif
+ #ifdef CONFIG_ARM_ARCH_TIMER
+ 	void __iomem *base;
+ 	int extal_mhz = 0;
+@@ -128,9 +126,7 @@ void __init rcar_gen2_timer_init(void)
+ 	iounmap(base);
+ #endif /* CONFIG_ARM_ARCH_TIMER */
+ 
+-#ifdef CONFIG_COMMON_CLK
+ 	rcar_gen2_clocks_init(mode);
+-#endif
+ #ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ 	clocksource_of_init();
+ #endif
+-- 
+2.1.4
+
