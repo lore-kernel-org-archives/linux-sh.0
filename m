@@ -1,56 +1,98 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 10 Mar 2015 11:06:19 +0000
-Subject: [PATCH v2 0/4] pinctrl: sh-pfc: cleanups
-Message-Id: <1425985583-26279-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 10 Mar 2015 00:44:44 +0000
+Subject: [PATCH 07/15] ARM: shmobile: lager: Add DU HDMI output support
+Message-Id: <fd25cdd15b7f9d1dbddb03e44b82c48d69f24200.1425947992.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1425947992.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425947992.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-	Hi Linus, Laurent,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This patch series does some code (type) cleanups.
+Add DT nodes for the ADV7511 HDMI encoder and its HDMI output connector.
 
-  - Patch 1 changes the types used for storing register and field widths
-    in the pinctrl data tables, shrinking them by an average of ca. 4
-    KiB per SoC,
-  - Patches 3, 4, and 5 do some more cleanups w.r.t. the choice of types.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 48 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
 
-The first two patches have been sent before as part of the series
-"[PATCH 0/4] pinctrl: sh-pfc: Fix pin bias and cleanups", and received
-some rework according to review comments. The last two are new.
-
-This series is against pinctrl/for-next.
-
-Boot-tested on r8a73a4/ape6evm, r8a7740/armadillo, r8a7791/koelsch, and
-sh73a0/kzm9g.
-
-Geert Uytterhoeven (4):
-  pinctrl: sh-pfc: Store register/field widths in u8 instead of unsigned
-    long
-  pinctrl: sh-pfc: Use unsigned int for register/field widths and
-    offsets
-  pinctrl: sh-pfc: Use reg_width instead of reg as sentinel
-  pinctrl: sh-pfc: Use u32 to store register addresses
-
- drivers/pinctrl/sh-pfc/core.c   | 65 ++++++++++++++++++++---------------------
- drivers/pinctrl/sh-pfc/core.h   |  4 +--
- drivers/pinctrl/sh-pfc/gpio.c   | 18 +++++++-----
- drivers/pinctrl/sh-pfc/sh_pfc.h | 12 ++++----
- 4 files changed, 52 insertions(+), 47 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 0c3b678..631b3f5 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -222,6 +222,17 @@
+ 			};
+ 		};
+ 	};
++
++	hdmi-out {
++		compatible = "hdmi-connector";
++		type = "a";
++
++		port {
++			hdmi_con: endpoint {
++				remote-endpoint = <&adv7511_out>;
++			};
++		};
++	};
+ };
+ 
+ &du {
+@@ -235,6 +246,11 @@
+ 				remote-endpoint = <&adv7123_in>;
+ 			};
+ 		};
++		port@1 {
++			endpoint {
++				remote-endpoint = <&adv7511_in>;
++			};
++		};
+ 		port@2 {
+ 			lvds_connector: endpoint {
+ 			};
+@@ -506,6 +522,38 @@
+ 			};
+ 		};
+ 	};
++
++	hdmi@39 {
++		compatible = "adi,adv7511w";
++		reg = <0x39>;
++		interrupt-parent = <&gpio1>;
++		interrupts = <15 IRQ_TYPE_EDGE_FALLING>;
++
++		adi,input-depth = <8>;
++		adi,input-colorspace = "rgb";
++		adi,input-clock = "1x";
++		adi,input-style = <1>;
++		adi,input-justification = "evenly";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				adv7511_in: endpoint {
++					remote-endpoint = <&du_out_lvds0>;
++				};
++			};
++
++			port@1 {
++				reg = <1>;
++				adv7511_out: endpoint {
++					remote-endpoint = <&hdmi_con>;
++				};
++			};
++		};
++	};
+ };
+ 
+ &iic3 {
 -- 
-1.9.1
+2.1.4
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
