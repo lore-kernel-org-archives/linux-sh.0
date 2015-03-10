@@ -1,39 +1,58 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 08 Mar 2015 09:32:13 +0000
-Subject: Re: [PATCH 02/11] ARM: shmobile: Basic r8a7793 SoC support
-Message-Id: <CAMuHMdVMtT_FJq7GkxhzotMUn1SE_aqkO9sTXX4teXzqDp34Tw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 10 Mar 2015 00:43:04 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7740: Remove restart callback
+Message-Id: <82fbf29f26733dd38bd2ab17db04e0aa46ef3857.1425947508.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425661798-10487-3-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1425661798-10487-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <cover.1425947508.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425947508.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Mar 6, 2015 at 6:09 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> --- a/arch/arm/mach-shmobile/Kconfig
-> +++ b/arch/arm/mach-shmobile/Kconfig
-> @@ -75,6 +75,10 @@ config ARCH_R8A7791
->         bool "R-Car M2-W (R8A77910)"
->         select ARCH_RCAR_GEN2
->
-> +config ARCH_R8A7793
-> +       bool "R-Car M2N (R8A77940)"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-The datasheet calls the SoC "M2-N" (with dash).
-The part number should probably be "R8A77930" (not sure about
-the trailing zero).
+Remove the restart handling hack from the r8a7740 generic multiplatform
+case.
 
-> +       select ARCH_RCAR_GEN2
+Restart on DT-based r8a7740 platforms is now handled through the
+R-Mobile reset driver.
 
-Gr{oetje,eeting}s,
+This reverts commit 1174c712afa2779f ("ARM: shmobile: r8a7740: Add
+restart callback").
 
-                        Geert
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c | 8 --------
+ 1 file changed, 8 deletions(-)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index dd64caf..9832e48 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -842,13 +842,6 @@ static void __init r8a7740_generic_init(void)
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+-#define RESCNT2 IOMEM(0xe6188020)
+-static void r8a7740_restart(enum reboot_mode mode, const char *cmd)
+-{
+-	/* Do soft power on reset */
+-	writel(1 << 31, RESCNT2);
+-}
+-
+ static const char *r8a7740_boards_compat_dt[] __initdata = {
+ 	"renesas,r8a7740",
+ 	NULL,
+@@ -861,7 +854,6 @@ DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
+ 	.init_machine	= r8a7740_generic_init,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= r8a7740_boards_compat_dt,
+-	.restart	= r8a7740_restart,
+ MACHINE_END
+ 
+ #endif /* CONFIG_USE_OF */
+-- 
+2.1.4
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
