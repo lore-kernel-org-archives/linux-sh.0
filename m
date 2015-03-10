@@ -1,67 +1,48 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 15 Mar 2015 14:43:38 +0000
-Subject: [PATCH/RFC] ARM: shmobile: r8a7790: Remove MSIOF address from device tree
-Message-Id: <1426430618-3818-1-git-send-email-ykaneko0929@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 10 Mar 2015 00:44:42 +0000
+Subject: [PATCH 05/15] ARM: shmobile: r8a7790: Fix HSUSB clock to hp_clk from mp_clk
+Message-Id: <b621f6d458e9d6315205d5667b9eb5592ef0433c.1425947992.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1425947992.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425947992.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
-MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
+HSUSB uses hp_clk rather than mp_clk for H/W register access.
 
-Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+[horms: updated changelog]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-
-This patch is based on devel branch of Simon Horman's renesas tree.
-
- arch/arm/boot/dts/r8a7790.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 4bb2f4c..f3b8430 100644
+index 31569ac..b320252 100644
 --- a/arch/arm/boot/dts/r8a7790.dtsi
 +++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1273,7 +1273,7 @@
- 
- 	msiof0: spi@e6e20000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
-+		reg = <0 0xe6e20000 0 0x0064>;
- 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7790_CLK_MSIOF0>;
- 		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
-@@ -1285,7 +1285,7 @@
- 
- 	msiof1: spi@e6e10000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6e10000 0 0x0064>, <0 0xe7e10000 0 0x0064>;
-+		reg = <0 0xe6e10000 0 0x0064>;
- 		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF1>;
- 		dmas = <&dmac0 0x55>, <&dmac0 0x56>;
-@@ -1297,7 +1297,7 @@
- 
- 	msiof2: spi@e6e00000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6e00000 0 0x0064>, <0 0xe7e00000 0 0x0064>;
-+		reg = <0 0xe6e00000 0 0x0064>;
- 		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF2>;
- 		dmas = <&dmac0 0x41>, <&dmac0 0x42>;
-@@ -1309,7 +1309,7 @@
- 
- 	msiof3: spi@e6c90000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6c90000 0 0x0064>, <0 0xe7c90000 0 0x0064>;
-+		reg = <0 0xe6c90000 0 0x0064>;
- 		interrupts = <0 159 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF3>;
- 		dmas = <&dmac0 0x45>, <&dmac0 0x46>;
+@@ -1,6 +1,7 @@
+ /*
+  * Device Tree Source for the r8a7790 SoC
+  *
++ * Copyright (C) 2015 Renesas Electronics Corporation
+  * Copyright (C) 2013-2014 Renesas Solutions Corp.
+  * Copyright (C) 2014 Cogent Embedded Inc.
+  *
+@@ -1181,7 +1182,7 @@
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
+-			clocks = <&mp_clk>, <&mp_clk>, <&zs_clk>, <&zs_clk>, <&p_clk>,
++			clocks = <&mp_clk>, <&hp_clk>, <&zs_clk>, <&zs_clk>, <&p_clk>,
+ 				 <&p_clk>, <&zx_clk>, <&zx_clk>, <&zx_clk>, <&zx_clk>,
+ 				 <&zx_clk>;
+ 			#clock-cells = <1>;
 -- 
-1.9.1
+2.1.4
 
