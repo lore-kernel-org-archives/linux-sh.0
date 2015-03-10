@@ -1,74 +1,139 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 12 Mar 2015 08:21:56 +0000
-Subject: Re: [PATCH 0/2] ARM: shmobile: Correct SYSCIER values
-Message-Id: <CAMuHMdUh=FE4_ZrKKg03aEKCWNhWWdNVHN361v39aA2JZKyFHQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 10 Mar 2015 11:06:23 +0000
+Subject: [PATCH v2 4/4] pinctrl: sh-pfc: Use u32 to store register addresses
+Message-Id: <1425985583-26279-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426132537-31606-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdUuv6YrEUsCpbuZwHUy_a-+sK8O=q8k-OZLZRytKv7gyA@mail.gmail.com>
- <20150312081442.GA4295@verge.net.au>
-In-Reply-To: <20150312081442.GA4295@verge.net.au>
+References: <1425985583-26279-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1425985583-26279-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Simon,
+Currently all PFC registers lie in low 32-bit address space. Hence use
+u32 instead of unsigned long to store PFC register addresses in pinctrl
+tables.  All calculations of virtual addresses use a phys_addr_t
+intermediate, so we know where to add an offset if the 32-bit assumption
+ever becomes false.
 
-On Thu, Mar 12, 2015 at 9:14 AM, Simon Horman <horms@verge.net.au> wrote:
-> FWIW the values in these patches are the ones that
-> you supplied in another email thread. However, I did
-> verify them against (my reading of) the documentation.
+While this doesn't impact 32-bit builds, it would save ca. 7 KiB on a
+64-bit shmobile_defconfig kernel.
 
-We could introduce symbols for them. I don't think it's worth doing that at
-this point, as ideally these values should come from DT.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - New.
+---
+ drivers/pinctrl/sh-pfc/core.c   |  6 +++---
+ drivers/pinctrl/sh-pfc/gpio.c   | 12 ++++++++----
+ drivers/pinctrl/sh-pfc/sh_pfc.h |  6 +++---
+ 3 files changed, 14 insertions(+), 10 deletions(-)
 
-If you disagree, feel free to use what I was carrying in my local tree
-to get a better understanding (needs some consolidation):
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index aaf9c7fa742cc9c1..656745f545442d58 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -92,10 +92,10 @@ static int sh_pfc_map_resources(struct sh_pfc *pfc,
+ 	return 0;
+ }
+ 
+-static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
+-					 unsigned long address)
++static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc, u32 reg)
+ {
+ 	struct sh_pfc_window *window;
++	phys_addr_t address = reg;
+ 	unsigned int i;
+ 
+ 	/* scan through physical windows and convert address */
+@@ -208,7 +208,7 @@ static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
+ 
+ 	sh_pfc_config_reg_helper(pfc, crp, field, &mapped_reg, &mask, &pos);
+ 
+-	dev_dbg(pfc->dev, "write_reg addr = %lx, value = 0x%x, field = %u, "
++	dev_dbg(pfc->dev, "write_reg addr = %x, value = 0x%x, field = %u, "
+ 		"r_width = %u, f_width = %u\n",
+ 		crp->reg, value, field, crp->reg_width, crp->field_width);
+ 
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 5d3a35ce09125a45..ba353735ecf2be9a 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -62,7 +62,8 @@ static void gpio_get_data_reg(struct sh_pfc_chip *chip, unsigned int offset,
+ static u32 gpio_read_data_reg(struct sh_pfc_chip *chip,
+ 			      const struct pinmux_data_reg *dreg)
+ {
+-	void __iomem *mem = dreg->reg - chip->mem->phys + chip->mem->virt;
++	phys_addr_t address = dreg->reg;
++	void __iomem *mem = address - chip->mem->phys + chip->mem->virt;
+ 
+ 	return sh_pfc_read_raw_reg(mem, dreg->reg_width);
+ }
+@@ -70,7 +71,8 @@ static u32 gpio_read_data_reg(struct sh_pfc_chip *chip,
+ static void gpio_write_data_reg(struct sh_pfc_chip *chip,
+ 				const struct pinmux_data_reg *dreg, u32 value)
+ {
+-	void __iomem *mem = dreg->reg - chip->mem->phys + chip->mem->virt;
++	phys_addr_t address = dreg->reg;
++	void __iomem *mem = address - chip->mem->phys + chip->mem->virt;
+ 
+ 	sh_pfc_write_raw_reg(mem, dreg->reg_width, value);
+ }
+@@ -340,6 +342,7 @@ sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *),
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ {
+ 	struct sh_pfc_chip *chip;
++	phys_addr_t address;
+ 	unsigned int i;
+ 	int ret;
+ 
+@@ -351,11 +354,12 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	 * that covers the data registers. In that case don't try to handle
+ 	 * GPIOs.
+ 	 */
++	address = pfc->info->data_regs[0].reg;
+ 	for (i = 0; i < pfc->num_windows; ++i) {
+ 		struct sh_pfc_window *window = &pfc->windows[i];
+ 
+-		if (pfc->info->data_regs[0].reg >= window->phys &&
+-		    pfc->info->data_regs[0].reg < window->phys + window->size)
++		if (address >= window->phys &&
++		    address < window->phys + window->size)
+ 			break;
+ 	}
+ 
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 6aeec8152ea674cf..c7508d5f688613b2 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -69,7 +69,7 @@ struct pinmux_func {
+ };
+ 
+ struct pinmux_cfg_reg {
+-	unsigned long reg;
++	u32 reg;
+ 	u8 reg_width, field_width;
+ 	const u16 *enum_ids;
+ 	const u8 *var_field_width;
+@@ -86,7 +86,7 @@ struct pinmux_cfg_reg {
+ 	.enum_ids = (const u16 [])
+ 
+ struct pinmux_data_reg {
+-	unsigned long reg;
++	u32 reg;
+ 	u8 reg_width;
+ 	const u16 *enum_ids;
+ };
+@@ -150,7 +150,7 @@ struct sh_pfc_soc_info {
+ 	const struct pinmux_irq *gpio_irq;
+ 	unsigned int gpio_irq_size;
+ 
+-	unsigned long unlock_reg;
++	u32 unlock_reg;
+ };
+ 
+ /* -----------------------------------------------------------------------------
+-- 
+1.9.1
 
-/* SYSC Interrupt Status/Status Clear/Enable/Mask Register */
-/* R-Car H1 */
-#define SYSCI_IMP               BIT(24) /* IMP-X3 */
-#define SYSCI_VDP               BIT(21) /* VDP1 */
-#define SYSCI_SGX               BIT(20) /* SGX543 MP2 */
-#define SYSCI_SH4A              BIT(16) /* SH-4A (Not documented on H1) */
-#define SYSCI_ARM3              BIT(3)  /* ARM3 */
-#define SYSCI_ARM2              BIT(2)  /* ARM2 */
-#define SYSCI_ARM1              BIT(1)  /* ARM1 */
-
-/* R-Car H2 */
-#define SYSCI_IMP               BIT(24) /* IMP-X4 */
-#define SYSCI_CA7_SCU           BIT(21) /* CA7-SCU */
-#define SYSCI_RGX               BIT(20) /* RGX */
-#define SYSCI_SH4A              BIT(16) /* SH-4A */
-#define SYSCI_CA15_SCU          BIT(12) /* CA15-SCU */
-#define SYSCI_CA7_CPU(i)        BIT(5 + (i))    /* CA7-CPUi */
-#define SYSCI_CA15_CPU(i)       BIT(i)  /* CA15-CPUi */
-
-/* R-Car M2-W/M2-N */
-#define SYSCI_SGX               BIT(20) /* SGX */
-#define SYSCI_SH4A              BIT(16) /* SH-4A */
-#define SYSCI_CA15_SCU          BIT(12) /* CA15-SCU */
-#define SYSCI_CA15_CPU(i)       BIT(i)  /* CA15-CPUi */
-
-/* R-Car V2H */
-#define SYSCI_IMP               BIT(24) /* IMP-X4 */
-#define SYSCI_SGX               BIT(20) /* SGX */
-#define SYSCI_CA15_SCU          BIT(12) /* CA15-SCU */
-#define SYSCI_CA15_CPU(i)       BIT(i)  /* CA15-CPUi */
-
-/* R-Car E2 */
-#define SYSCI_CA7_SCU           BIT(21) /* CA7-SCU */
-#define SYSCI_SGX               BIT(20) /* SGX */
-#define SYSCI_SH4A              BIT(16) /* SH-4A */
-#define SYSCI_CA7_CPU(i)        BIT(5 + (i))    /* CA7-CPUi */
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
