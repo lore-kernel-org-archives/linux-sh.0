@@ -1,30 +1,39 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Wed, 18 Mar 2015 11:32:27 +0000
-Subject: Re: [PATCH 1/2 v2] dmaengine: remove Renesas Audio DMAC peri peri
-Message-Id: <20150318112027.GK32683@intel.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 10 Mar 2015 00:43:02 +0000
+Subject: [PATCH 1/3] ARM: shmobile: Remove stray closing parenthesis in debug description
+Message-Id: <6b9d3306b335c9643ee9d09e67be50d6f7e90b42.1425947508.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87pp8ff3sb.wl%kuninori.morimoto.gx@renesas.com>
- <87oanzf3r1.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87oanzf3r1.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1425947508.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425947508.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 12, 2015 at 12:39:49AM +0000, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Renesas R-Car sound (= rsnd) needs 2 DMAC which are called as
-> Audio DMAC (= 1st DMAC) and Audio DMAC peri peri (2nd DMAC).
-> And rsnd had assumed that 1st / 2nd DMACs are implemented as DMAEngine.
-> But, in result of DMA ML discussion, 2nd DMAC was concluded that it is
-> not a general purpose DMAC (2nd DMAC is for Device to Device inside
-> sound system). Additionally, current DMAEngine can't support Device to
-> Device, and we don't have correct DT bindings for it at this point.
-> So the easiest solution for it is that move it from DMAEngine to rsnd
-> driver.
-> Audio DMAC peri peri on DMAEngine is no longer needed. remove it.
-Applied, thanks
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
+Remove the stray closing parenthesis in the config description for the
+DEBUG_RCAR_GEN2_SCIF0 option.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/Kconfig.debug | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/Kconfig.debug b/arch/arm/Kconfig.debug
+index 1ca8dc7..3809ac9 100644
+--- a/arch/arm/Kconfig.debug
++++ b/arch/arm/Kconfig.debug
+@@ -806,7 +806,7 @@ choice
+ 		  via SCIF2 on Renesas R-Car H1 (R8A7779).
+ 
+ 	config DEBUG_RCAR_GEN2_SCIF0
+-		bool "Kernel low-level debugging messages via SCIF0 on R8A7790/R8A7791/R8A7793)"
++		bool "Kernel low-level debugging messages via SCIF0 on R8A7790/R8A7791/R8A7793"
+ 		depends on ARCH_R8A7790 || ARCH_R8A7791 || ARCH_R8A7793
+ 		help
+ 		  Say Y here if you want kernel low-level debugging support
 -- 
-~Vinod
+2.1.4
+
