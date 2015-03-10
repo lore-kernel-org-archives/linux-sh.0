@@ -1,41 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 10 Mar 2015 07:55:39 +0000
-Subject: Possible regression in next-20150310 due to pinctrl: sh-pfc: r8a7790: Remove non existing GPIO pins
-Message-Id: <20150310075538.GA20709@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 10 Mar 2015 09:30:54 +0000
+Subject: Re: Possible regression in next-20150310 due to pinctrl: sh-pfc: r8a7790: Remove non existing GPIO p
+Message-Id: <CAMuHMdUOScAQCBG1GM=d8mZj1PDDkZd9Pfxps=-814=rFAyAfQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150310075538.GA20709@verge.net.au>
+In-Reply-To: <20150310075538.GA20709@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>
+To: Simon Horman <horms@verge.net.au>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>
 
-Hi,
+Hi Simon,
 
-I have observed what appears to be a regression in next-20150310.  Using
-the shmobile_defconfig the lager board does not produce console output
-whatsoever. If I revert bfb6698fad74e7ba2 ("pinctrl: sh-pfc: r8a7790:
-Remove non existing GPIO pins") then the problem seems to be resolved.
+On Tue, Mar 10, 2015 at 8:55 AM, Simon Horman <horms@verge.net.au> wrote:
+> I have observed what appears to be a regression in next-20150310.  Using
+> the shmobile_defconfig the lager board does not produce console output
+> whatsoever. If I revert bfb6698fad74e7ba2 ("pinctrl: sh-pfc: r8a7790:
+> Remove non existing GPIO pins") then the problem seems to be resolved.
+>
+> Likewise for the koelsh board and 896498d439cec6ff0 ("pinctrl: sh-pfc:
+> r8a7791: Remove non existing GPIO pins").
 
-Likewise for the koelsh board and 896498d439cec6ff0 ("pinctrl: sh-pfc:
-r8a7791: Remove non existing GPIO pins").
+That's correct. I reverted these in renesas-drivers-2015-03-09-v4.0-rc3.
 
+In the mean time, they have been dropped from pinctrl/for-next, as
+requested by Laurent last week.
 
-N.B.: In order to boot all the way to user-space I also need to revert
-5da0e63e268dc5120 ("mmc: tmio: Fix PIO mode with CONFIG_HIGHMEM"), a
-problem that I have reported separately[1].
+Sorry for the issues.
 
-[1] Possible regression in next-20150306 due to "mmc: tmio: Fix PIO mode
-with CONFIG_HIGHMEM"
-    http://www.spinics.net/lists/linux-sh/msg40804.html
+Gr{oetje,eeting}s,
 
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> Patch applied with Geert's ACK.
-> 
-> Yours,
-> Linus Walleij
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
