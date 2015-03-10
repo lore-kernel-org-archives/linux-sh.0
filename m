@@ -1,34 +1,38 @@
-From: David Miller <davem@davemloft.net>
-Date: Sun, 01 Mar 2015 05:28:47 +0000
-Subject: Re: [PATCH] sh_eth: Fix lost MAC address on kexec
-Message-Id: <20150301.002847.261300841277182822.davem@davemloft.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 10 Mar 2015 01:39:18 +0000
+Subject: [PATCH 2/6] ARM: shmobile: r8a7791: add reg-names for sound
+Message-Id: <87vbi9skax.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425053786-24223-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1425053786-24223-1-git-send-email-geert+renesas@glider.be>
+References: <1387468266-13625-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1387468266-13625-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert+renesas@glider.be
-Cc: ben.hutchings@codethink.co.uk, nobuhiro.iwamatsu.yj@renesas.com, horms@verge.net.au, magnus.damm@gmail.com, khilman@kernel.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 27 Feb 2015 17:16:26 +0100
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> Commit 740c7f31c094703c ("sh_eth: Ensure DMA engines are stopped before
-> freeing buffers") added a call to sh_eth_reset() to the
-> sh_eth_set_ringparam() and sh_eth_close() paths.
-> 
-> However, setting the software reset bit(s) in the EDMR register resets
-> the MAC Address Registers to zero. Hence after kexec, the new kernel
-> doesn't detect a valid MAC address and assigns a random MAC address,
-> breaking DHCP.
-> 
-> Set the MAC address again after the reset in sh_eth_dev_exit() to fix
-> this.
-> 
-> Tested on r8a7740/armadillo (GETHER) and r8a7791/koelsch (FAST_RCAR).
-> 
-> Fixes: 740c7f31c094703c ("sh_eth: Ensure DMA engines are stopped before freeing buffers")
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Rensas R-Car sound driver supports reg-names.
+Let's use it.
 
-Applied.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index e899f79..8631e02 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1504,6 +1504,8 @@
+ 			<0 0xec5a0000 0 0x100>,  /* ADG */
+ 			<0 0xec540000 0 0x1000>, /* SSIU */
+ 			<0 0xec541000 0 0x1280>; /* SSI */
++		reg-names = "scu", "adg", "ssiu", "ssi";
++
+ 		clocks = <&mstp10_clks R8A7791_CLK_SSI_ALL>,
+ 			<&mstp10_clks R8A7791_CLK_SSI9>, <&mstp10_clks R8A7791_CLK_SSI8>,
+ 			<&mstp10_clks R8A7791_CLK_SSI7>, <&mstp10_clks R8A7791_CLK_SSI6>,
+-- 
+1.9.1
+
