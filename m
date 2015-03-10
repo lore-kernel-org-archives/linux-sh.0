@@ -1,79 +1,64 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 19 Mar 2015 01:50:03 +0000
-Subject: [PATCH v2 03/05] serial: sh-sci: Expose default CTS pin
-Message-Id: <20150319015003.14235.67489.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 10 Mar 2015 00:44:45 +0000
+Subject: [PATCH 08/15] ARM: shmobile: ape6evm dts: Fix polarity of LEDs
+Message-Id: <ca50ee8f6f7c25d3de7d5da4e7a164e21f08c828.1425947992.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150319014933.14235.44835.sendpatchset@little-apple>
-In-Reply-To: <20150319014933.14235.44835.sendpatchset@little-apple>
+References: <cover.1425947992.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425947992.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: gregkh@linuxfoundation.org, geert@glider.be, laurent.pinchart@ideasonboard.com, linux-serial@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, jslaby@suse.cz
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Expose the CTS pin to the ->get_mctrl() callback for the
-default case. Without this patch the serial core can not
-retrieve the CTS pin state from the SCIF driver.
+While the LEDs on r8a73a4/ape6evm are tied to VSUPPLY, they're driven by
+an N-channel MOSFET. Hence the GPIO signal should be active high.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
- Changes since V1:
- - Return true to default to asserted state in case modem signals exist
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index 0d50bef..e8f3f38 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -95,27 +95,27 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		led1 {
+-			gpios = <&pfc 28 GPIO_ACTIVE_LOW>;
++			gpios = <&pfc 28 GPIO_ACTIVE_HIGH>;
+ 			label = "GNSS_EN";
+ 		};
+ 		led2 {
+-			gpios = <&pfc 126 GPIO_ACTIVE_LOW>;
++			gpios = <&pfc 126 GPIO_ACTIVE_HIGH>;
+ 			label = "NFC_NRST";
+ 		};
+ 		led3 {
+-			gpios = <&pfc 132 GPIO_ACTIVE_LOW>;
++			gpios = <&pfc 132 GPIO_ACTIVE_HIGH>;
+ 			label = "GNSS_NRST";
+ 		};
+ 		led4 {
+-			gpios = <&pfc 232 GPIO_ACTIVE_LOW>;
++			gpios = <&pfc 232 GPIO_ACTIVE_HIGH>;
+ 			label = "BT_WAKEUP";
+ 		};
+ 		led5 {
+-			gpios = <&pfc 250 GPIO_ACTIVE_LOW>;
++			gpios = <&pfc 250 GPIO_ACTIVE_HIGH>;
+ 			label = "STROBE";
+ 		};
+ 		led6 {
+-			gpios = <&pfc 288 GPIO_ACTIVE_LOW>;
++			gpios = <&pfc 288 GPIO_ACTIVE_HIGH>;
+ 			label = "BBRESETOUT";
+ 		};
+ 	};
+-- 
+2.1.4
 
- drivers/tty/serial/sh-sci.c |   20 +++++++++++++++++++-
- include/linux/serial_sci.h  |    1 +
- 2 files changed, 20 insertions(+), 1 deletion(-)
-
---- 0003/drivers/tty/serial/sh-sci.c
-+++ work/drivers/tty/serial/sh-sci.c	2015-03-19 09:17:37.856797004 +0900
-@@ -509,6 +509,17 @@ static void sci_poll_put_char(struct uar
- }
- #endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
- 
-+static bool sci_cts_asserted_default(struct uart_port *port)
-+{
-+	struct sci_port *s = to_sci_port(port);
-+	struct plat_sci_reg *reg = sci_regmap[s->cfg->regtype] + SCSPTR;
-+
-+	if (reg->size)
-+		return !(serial_port_in(port, SCSPTR) & SCSPTR_CTSDT);
-+
-+	return true;
-+}
-+
- static void sci_init_ctsrts_default(struct uart_port *port, bool hwflow_enabled)
- {
- 	struct sci_port *s = to_sci_port(port);
-@@ -1239,11 +1250,18 @@ static void sci_set_mctrl(struct uart_po
- 
- static unsigned int sci_get_mctrl(struct uart_port *port)
- {
-+	struct sci_port *s = to_sci_port(port);
-+	bool cts_asserted = false;
-+
- 	/*
- 	 * CTS/RTS is handled in hardware when supported, while nothing
- 	 * else is wired up. Keep it simple and simply assert DSR/CAR.
- 	 */
--	return TIOCM_DSR | TIOCM_CAR;
-+
-+	if (s->cfg->capabilities & SCIx_HAVE_RTSCTS)
-+		cts_asserted = sci_cts_asserted_default(port);
-+
-+	return TIOCM_DSR | TIOCM_CAR | (cts_asserted ? TIOCM_CTS : 0);
- }
- 
- #ifdef CONFIG_SERIAL_SH_SCI_DMA
---- 0003/include/linux/serial_sci.h
-+++ work/include/linux/serial_sci.h	2015-03-19 09:15:59.446797358 +0900
-@@ -59,6 +59,7 @@
- #define SCSPTR_RTSIO	(1 << 7)	/* Serial Port RTS Pin Input/Output */
- #define SCSPTR_RTSDT	(1 << 6)	/* Serial Port RTS Pin Data */
- #define SCSPTR_CTSIO	(1 << 5)	/* Serial Port CTS Pin Input/Output */
-+#define SCSPTR_CTSDT	(1 << 4)	/* Serial Port CTS Pin Data */
- #define SCSPTR_SPB2IO	(1 << 1)	/* Serial Port Break Input/Output */
- #define SCSPTR_SPB2DT	(1 << 0)	/* Serial Port Break Data */
- 
