@@ -1,60 +1,43 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Mon, 16 Mar 2015 16:40:46 +0000
-Subject: Re: [next:master 2655/4763] arch/arm/mach-shmobile/board-ape6evm.c:177:2: error: unknown field
-Message-Id: <20150316162846.GP32683@intel.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 10 Mar 2015 10:48:05 +0000
+Subject: [PATCH] ASoC: rsnd: Use %pad to print dma_addr_t in rsnd_dmapp_init()
+Message-Id: <1425984485-28421-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201503141650.GfUoPRK3%fengguang.wu@intel.com>
- <87ioe1kcp8.wl%kuninori.morimoto.gx@renesas.com>
- <20150316075105.GA21372@verge.net.au>
- <87lhixiat4.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87lhixiat4.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, arm@kernel.org, kbuild-all@01.org, Ulf Hansson <ulf.hansson@linaro.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Mon, Mar 16, 2015 at 05:52:23PM +0900, Kuninori Morimoto wrote:
-> 
-> Hi Vinod
-> 
-> Kuninori Morimoto (1):
->       mmc: sh_mobile_sdhi: remove sh_mobile_sdhi_info v2
-> 
->  arch/arm/mach-shmobile/board-ape6evm.c  | 12 ++++++------
->  arch/arm/mach-shmobile/board-mackerel.c | 30 +++++++++++++++---------------
->  2 files changed, 21 insertions(+), 21 deletions(-)
-> 
-> This patch is related to SH-ARM and MMC, but is based on DMAEngine.
-> So, you accepted my previous patch in
-> 
-> 	http://thread.gmane.org/gmane.linux.ports.sh.devel/44068
-> 
-> But,
-> 
-> arch/arm/mach-shmobile/board-ape6evm.c
-> arch/arm/mach-shmobile/board-mackerel.c
-> 
-> will be removed if it includes Simon's/next branch, but your branch
-> doesn't include it, and my previous patch didn't care about thesse.
-> So compile error happen in your branch.
-> And I got error report from kbuild system.
-> 
-> 	git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git :: next
-> 
-> > > > commit: 84f11d5b1f2abc0e22895b7e12e037f0ec03caeb [2655/4763] mmc: sh_mobile_sdhi: remove sh_mobile_sdhi_info
-> > > > config: arm-ape6evm_defconfig (attached as .config)
-> > > > reproduce:
-> > > >   wget https://git.kernel.org/cgit/linux/kernel/git/wfg/lkp-tests.git/plain/sbin/make.cross -O ~/bin/make.cross
-> > > >   chmod +x ~/bin/make.cross
-> > > >   git checkout 84f11d5b1f2abc0e22895b7e12e037f0ec03caeb
-> > > >   # save the attached .config to linux build tree
-> > > >   make.cross ARCH=arm 
-> 
-> This issue can be solved my next fixup patch, but conflict will happen
-> when merge timing.
-Looks okay, I will wait a day for any acks and apply it
+sound/soc/sh/rcar/dma.c: In function 'rsnd_dmapp_init':
+sound/soc/sh/rcar/dma.c:341:2: warning: format '%x' expects argument of type 'unsigned int', but argument 5 has type 'dma_addr_t' [-Wformat=]
+  dev_dbg(dev, "id/src/dst/chcr = %d/%x/%x/%08x\n",
+  ^
+sound/soc/sh/rcar/dma.c:341:2: warning: format '%x' expects argument of type 'unsigned int', but argument 6 has type 'dma_addr_t' [-Wformat=]
 
+Fixes: 288f392e729dd4d3 ("ASoC: rsnd: add Audio DMAC peri peri support rework")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Perhaps this can still be folded in the original commit?
+
+ sound/soc/sh/rcar/dma.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sound/soc/sh/rcar/dma.c b/sound/soc/sh/rcar/dma.c
+index 92fd55044ee6b494..2b73df84a76904dc 100644
+--- a/sound/soc/sh/rcar/dma.c
++++ b/sound/soc/sh/rcar/dma.c
+@@ -338,8 +338,8 @@ static int rsnd_dmapp_init(struct rsnd_priv *priv, struct rsnd_dma *dma, int id,
+ 
+ 	rsnd_dmapp_stop(dma);
+ 
+-	dev_dbg(dev, "id/src/dst/chcr = %d/%x/%x/%08x\n",
+-		dmapp->dmapp_id, dma->src_addr, dma->dst_addr, dmapp->chcr);
++	dev_dbg(dev, "id/src/dst/chcr = %d/%pad/%pad/%08x\n",
++		dmapp->dmapp_id, &dma->src_addr, &dma->dst_addr, dmapp->chcr);
+ 
+ 	return 0;
+ }
 -- 
-~Vinod
+1.9.1
 
