@@ -1,56 +1,38 @@
-From: Tony Lindgren <tony@atomide.com>
-Date: Tue, 03 Mar 2015 00:13:42 +0000
-Subject: Re: [PATCH 10/10] ARM: omap2: use clkdev_add_alias()
-Message-Id: <20150303001341.GD3756@atomide.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 10 Mar 2015 01:39:01 +0000
+Subject: [PATCH 1/6] ARM: shmobile: r8a7790: add reg-names for sound
+Message-Id: <87wq2pskbf.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150302170538.GQ8656@n2100.arm.linux.org.uk>
- <E1YSTnw-0001K5-IQ@rmk-PC.arm.linux.org.uk>
-In-Reply-To: <E1YSTnw-0001K5-IQ@rmk-PC.arm.linux.org.uk>
+References: <1380652251-8143-2-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1380652251-8143-2-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Russell King <rmk+kernel@arm.linux.org.uk>
-Cc: linux-sh@vger.kernel.org, alsa-devel@alsa-project.org, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-* Russell King <rmk+kernel@arm.linux.org.uk> [150302 09:10]:
-> When creating aliases of existing clkdev clocks, use clkdev_add_alias()
-> isntead of open coding the lookup and clk_lookup creation.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Gave this series a quick try but I get these build errors:
+Rensas R-Car sound driver supports reg-names.
+Let's use it.
 
-arch/arm/mach-omap2/omap_device.c: In function ‘_add_clkdev’:
-arch/arm/mach-omap2/omap_device.c:65:58: warning: passing argument 3 of ‘clk_add_alias’ discards ‘const’ qualifier from pointer target type
-  rc = clk_add_alias(clk_alias, dev_name(&od->pdev->dev), clk_name, NULL);
-                                                          ^
-In file included from arch/arm/mach-omap2/omap_device.c:34:0:
-include/linux/clkdev.h:44:5: note: expected ‘char *’ but argument is of type ‘const char *’
- int clk_add_alias(const char *, const char *, char *, struct device *);
-     ^
-drivers/clk/clkdev.c:298:16: error: expected declaration specifiers or ‘...’ before ‘(’ token
- vclkdev_create((struct clk *clk, const char *con_id, const char *dev_fmt,
-                ^
-drivers/clk/clkdev.c:322:92: error: storage class specified for parameter ‘__crc_clkdev_alloc’
- EXPORT_SYMBOL(clkdev_alloc);
-                                                                                            ^
-drivers/clk/clkdev.c:322:1: warning: ‘weak’ attribute ignored [-Wattributes]
- EXPORT_SYMBOL(clkdev_alloc);
- ^
-drivers/clk/clkdev.c:322:1: warning: ‘externally_visible’ attribute ignored [-Wattributes]
-drivers/clk/clkdev.c:322:161: error: storage class specified for parameter ‘__kcrctab_clkdev_alloc’
- EXPORT_SYMBOL(clkdev_alloc);
-                                                                                                                                                                 ^
-drivers/clk/clkdev.c:322:1: warning: ‘__used__’ attribute ignored [-Wattributes]
- EXPORT_SYMBOL(clkdev_alloc);
- ^
-drivers/clk/clkdev.c:322:161: error: section attribute not allowed for ‘__kcrctab_clkdev_alloc’
- EXPORT_SYMBOL(clkdev_alloc);
-                                                                                                                                                                 ^
-drivers/clk/clkdev.c:322:279: error: expected ‘;’, ‘,’ or ‘)’ before ‘=’ token
- EXPORT_SYMBOL(clkdev_alloc);
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
 
-drivers/clk/clkdev.c:274:1: warning: ‘vclkdev_alloc’ defined but not used [-Wunused-function]
- vclkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt,
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index b320252..2041ec7 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1461,6 +1461,8 @@
+ 			<0 0xec5a0000 0 0x100>,  /* ADG */
+ 			<0 0xec540000 0 0x1000>, /* SSIU */
+ 			<0 0xec541000 0 0x1280>; /* SSI */
++		reg-names = "scu", "adg", "ssiu", "ssi";
++
+ 		clocks = <&mstp10_clks R8A7790_CLK_SSI_ALL>,
+ 			<&mstp10_clks R8A7790_CLK_SSI9>, <&mstp10_clks R8A7790_CLK_SSI8>,
+ 			<&mstp10_clks R8A7790_CLK_SSI7>, <&mstp10_clks R8A7790_CLK_SSI6>,
+-- 
+1.9.1
 
-Regards,
-
-Tony
