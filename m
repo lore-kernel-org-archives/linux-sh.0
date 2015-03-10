@@ -1,61 +1,63 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 18 Mar 2015 16:37:24 +0000
-Subject: [PATCH] irqchip: renesas-intc-irqpin: Add optional functional clock to bindings
-Message-Id: <1426696644-25636-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 10 Mar 2015 00:44:47 +0000
+Subject: [PATCH 10/15] ARM: shmobile: koelsch: Add DU external pixel clocks to DT
+Message-Id: <cd21cb46e14aae3a5d4f044c07f2c1f9d89fcd1a.1425947992.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1425947992.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425947992.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-This clock is managed since commit 705bc96c2c15313c ("irqchip:
-renesas-intc-irqpin: Add minimal runtime PM support").
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Also add an example while we're at.
+Declare the fixed 148.5MHz pixel clocks connected to the DU clock
+inputs.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../interrupt-controller/renesas,intc-irqpin.txt   | 29 ++++++++++++++++++++++
- 1 file changed, 29 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-index 4f7946ae8adcdc04..e7cfcec056159b93 100644
---- a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-+++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-@@ -25,3 +25,32 @@ Optional properties:
-   if different from the default 4 bits
- - control-parent: disable and enable interrupts on the parent interrupt
-   controller, needed for some broken implementations
-+- clocks: Must contain a reference to the functional clock.  The property is
-+  mandatory if the hardware implements a controllable functional clock for
-+  the irqpin controller instance.
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 624bb2c..75fa985 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -269,6 +269,18 @@
+ 			};
+ 		};
+ 	};
 +
-+
-+Example
-+-------
-+
-+	irqpin1: irqpin@e6900004 {
-+		compatible = "renesas,intc-irqpin-r8a7740",
-+			     "renesas,intc-irqpin";
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		reg = <0xe6900004 4>,
-+			<0xe6900014 4>,
-+			<0xe6900024 1>,
-+			<0xe6900044 1>,
-+			<0xe6900064 1>;
-+		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH
-+			      0 149 IRQ_TYPE_LEVEL_HIGH
-+			      0 149 IRQ_TYPE_LEVEL_HIGH
-+			      0 149 IRQ_TYPE_LEVEL_HIGH
-+			      0 149 IRQ_TYPE_LEVEL_HIGH
-+			      0 149 IRQ_TYPE_LEVEL_HIGH
-+			      0 149 IRQ_TYPE_LEVEL_HIGH
-+			      0 149 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
-+		power-domains = <&pd_a4s>;
++	x2_clk: x2-clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <148500000>;
 +	};
++
++	x13_clk: x13-clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <148500000>;
++	};
+ };
+ 
+ &du {
+@@ -276,6 +288,13 @@
+ 	pinctrl-names = "default";
+ 	status = "okay";
+ 
++	clocks = <&mstp7_clks R8A7791_CLK_DU0>,
++		 <&mstp7_clks R8A7791_CLK_DU1>,
++		 <&mstp7_clks R8A7791_CLK_LVDS0>,
++		 <&x13_clk>, <&x2_clk>;
++	clock-names = "du.0", "du.1", "lvds.0",
++		      "dclkin.0", "dclkin.1";
++
+ 	ports {
+ 		port@0 {
+ 			endpoint {
 -- 
-1.9.1
+2.1.4
 
