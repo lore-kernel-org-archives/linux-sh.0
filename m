@@ -1,42 +1,65 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 18 Mar 2015 18:41:06 +0000
-Subject: [PATCH 0/3] gpio: rcar: Fix wake up using gpio-keys with PM domain
-Message-Id: <1426704069-26389-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 10 Mar 2015 00:44:48 +0000
+Subject: [PATCH 11/15] ARM: shmobile: lager: Add DU external pixel clocks to DT
+Message-Id: <26c00ab4aae2d29b6c724a9c23d5f6cba2b20e41.1425947992.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1425947992.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425947992.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>
-Cc: linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-	Hi,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This patch series contains a few cleanups and updates for the Renesas
-R-Car GPIO driver, and fixes wake-up from s2ram using gpio-keys when
-using a PM Domain to manage the module clock.
+Declare the fixed 148.5MHz pixel clocks connected to the DU clock
+inputs.
 
-It was tested on r8a7791/koelsch.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
 
-Thanks!
-
-Geert Uytterhoeven (3):
-  gpio: rcar: Use local variable gpio_chip in gpio_rcar_probe()
-  gpio: rcar: Add more register documentation
-  gpio: rcar: Prevent module clock disable when wake-up is enabled
-
- drivers/gpio/gpio-rcar.c | 63 +++++++++++++++++++++++++++++++++++-------------
- 1 file changed, 46 insertions(+), 17 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 631b3f5..329bb99 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -233,6 +233,18 @@
+ 			};
+ 		};
+ 	};
++
++	x2_clk: x2-clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <148500000>;
++	};
++
++	x13_clk: x13-clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <148500000>;
++	};
+ };
+ 
+ &du {
+@@ -240,6 +252,15 @@
+ 	pinctrl-names = "default";
+ 	status = "okay";
+ 
++	clocks = <&mstp7_clks R8A7790_CLK_DU0>,
++		 <&mstp7_clks R8A7790_CLK_DU1>,
++		 <&mstp7_clks R8A7790_CLK_DU2>,
++		 <&mstp7_clks R8A7790_CLK_LVDS0>,
++		 <&mstp7_clks R8A7790_CLK_LVDS1>,
++		 <&x13_clk>, <&x2_clk>;
++	clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1",
++		      "dclkin.0", "dclkin.1";
++
+ 	ports {
+ 		port@0 {
+ 			endpoint {
 -- 
-1.9.1
+2.1.4
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
