@@ -1,64 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 04 Mar 2015 07:02:59 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: r8a7790: Fix HSUSB clock to hp_clk from mp_clk
-Message-Id: <20150304070258.GA16597@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 11 Mar 2015 10:26:02 +0000
+Subject: [PATCH] kernfs: remove outdated and confusing comment
+Message-Id: <1426069565-7933-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424011746-3787-2-git-send-email-ykaneko0929@gmail.com>
- <CAMuHMdX=cdHaiHCnYsJvZFc2RNv=Pk8cLXuvkezg4Ht4U4mXsg@mail.gmail.com>
- <20150216135754.GA5479@verge.net.au>
- <CAMuHMdUHMA+cJTGWS-0Prt6-BT5=UkGQ4OWZ+bz-g2G7DSwLzw@mail.gmail.com>
-In-Reply-To: <CAMuHMdUHMA+cJTGWS-0Prt6-BT5=UkGQ4OWZ+bz-g2G7DSwLzw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, Tejun Heo <tj@kernel.org>
 
-Hi Geert,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Mon, Feb 16, 2015 at 03:04:16PM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Mon, Feb 16, 2015 at 2:57 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Mon, Feb 16, 2015 at 10:20:10AM +0100, Geert Uytterhoeven wrote:
-> >> Hi Kaneko-san, Mizuguchi-san,
-> >>
-> >> On Sun, Feb 15, 2015 at 3:49 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
-> >> > From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> >> >
-> >> > HSUSB uses hp_clk for H/W register access.
-> >>
-> >> That indeed seems to be true, and that's what this patch is changing.
-> >>
-> >> > HSUSB uses mp_clk for USB-DMAC access.
-> >>
-> >> However, page 64-2 doesn't mention the MP clock for USB-DMAC:
-> >>    "AXI bus clock (ZSφ: 260 MHz), HPB bus clock (HPφ: 130 MHz).
-> >>     USB local bus clock (48 MHz)"
-> >> So your statement doesn't seem to be true?
-> >
-> > Thanks, I see that too.
-> >
-> >> Note that mstp3_clks in dtsi has hp_clk as the parent for both usbdmac0 and
-> >> usbdmac1, so if your statement would be true, that has to changed, too?
-> >>
-> >> The same is true for other members of the R-Car Gen2 family, e.g. your patch
-> >> for r8a7791.
-> >
-> > It seems to me that we could:
-> >
-> > 1. Apply this patch with the changelog updated and;
-> > 2. Follow up on the DMAC clocks
-> >
-> > Does that sound reasonable to you?
-> 
-> Yes, that sounds fine to me.
+Grabbing the parent is not happening anymore since 2010 (e72ceb8ccac5f7
+"sysfs: Remove sysfs_get/put_active_two"). Remove this confusing
+comment.
 
-The purpose of this email is to offer a quick status update which
-I hope will bring this matter to a close.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
 
-I have submitted and queued up a patch as per 1. above.
+Found while trying to find out why my sysfs-bin file always returns POLLPRI
+after opening, reading, polling. Any pointers while I am here? :)
 
-With regards to item 2. above: I have also followed up on the "HSUSB uses
-mp_clk for USB-DMAC access" comment in the original changelog (above).
-Mizuguchi-san has confirmed that statement is not correct and its presence
-in the changelog was an error.
+ fs/kernfs/file.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/fs/kernfs/file.c b/fs/kernfs/file.c
+index b684e8a132e625..a893c634cd9c0b 100644
+--- a/fs/kernfs/file.c
++++ b/fs/kernfs/file.c
+@@ -784,7 +784,6 @@ static unsigned int kernfs_fop_poll(struct file *filp, poll_table *wait)
+ 	struct kernfs_node *kn = filp->f_path.dentry->d_fsdata;
+ 	struct kernfs_open_node *on = kn->attr.open;
+ 
+-	/* need parent for the kobj, grab both */
+ 	if (!kernfs_get_active(kn))
+ 		goto trigger;
+ 
+-- 
+2.1.4
+
