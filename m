@@ -1,139 +1,90 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 24 Mar 2015 01:07:08 +0000
-Subject: [PATCH 3/3] ASoC: simple-card: Remove support for setting differing DAI formats
-Message-Id: <87bnjj431h.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 11 Mar 2015 10:08:16 +0000
+Subject: chosen/stdout-path and userland (Re: Can't boot kernel v4.0-rc2 on Koelsch)
+Message-Id: <CAMuHMdVSbYYGQyOjce87Q_dMHvh9du1EkgOgC+CBgrMys++mkA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fv8v4353.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fv8v4353.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>, Lars-Peter Clausen <lars@metafoo.de>, Simon <horms@verge.net.au>
-Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Grant Likely <grant.likely@linaro.org>, Mark Rutland <mark.rutland@arm.com>, Rob Herring <robh+dt@kernel.org>
+Cc: Cao Minh Hiep <cm-hiep@jinso.co.jp>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Sakato Ryusuke <ryusuke.sakato.bx@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-From: Lars-Peter Clausen <lars@metafoo.de>
+TL;DR
 
-Having to set different formats on the CPU side and the CODEC side of a DAI
-link is usually indication that something is terribly wrong and in most
-cases is a result of a broken driver that implements a set_fmt() callback
-which does not follow the specification. In the past this feature has been
-used to work around broken drivers, rather than fixing them. We don't really
-want to encourage this, so remove support for setting different formats on
-both ends of the link.
+After removing the "console=" parameter from chosen/bootargs, and relying
+solely on chosen/stdout-path, Hiep-san's Linaro userland cannot find the
+console device anymore.
 
-Along the way switch to static DAI format setup by setting the the dai_fmt
-field of the snd_soc_dai_link rather than calling snd_soc_dai_fmt().
+On Wed, Mar 11, 2015 at 7:45 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Tuesday 10 March 2015 12:32:59 Geert Uytterhoeven wrote:
+>> On Tue, Mar 10, 2015 at 10:03 AM, Cao Minh Hiep <cm-hiep@jinso.co.jp> wrote:
+>> > On 2015年03月10日 17:05, Nobuhiro Iwamatsu wrote:
+>> >> This is user land issue.
+>> >> Hiep, if you have not changed ttySCX in inittab, you will need to change.
+>> >> Could you check your inittab?
+>> >>
+>> >> --- a/inittab    2015-03-10 15:01:58.986609389 +0900
+>> >> +++ b/inittab    2015-03-10 15:00:32.132094877 +0900
+>> >> @@ -28,7 +28,7 @@
+>> >>
+>> >>   l6:6:wait:/etc/init.d/rc 6
+>> >>   # Normally not reached, but fallthrough in case of emergency.
+>> >>   z6:6:respawn:/sbin/sulogin
+>> >>
+>> >> -SC6:12345:respawn:/sbin/getty -L 38400 ttySC6
+>> >> +SC0:12345:respawn:/sbin/getty -L 38400 ttySC0
+>> >>
+>> >>   # /sbin/getty invocations for the runlevels.
+>> >>   #
+>> >>   # The "id" field MUST be the same as the last
+>> >
+>> > There is no inittab file in Linaro userland that I am using.
+>>
+>> I'm not familiar with the Linaro userland.
+>>
+>> Is there any other configuration file that contains the string "ttySC6"?
+>> Or does the Linaro userland derive it from the kernel command line?
+>> If yes, perhaps there's a newer version that does look at stdout-path
+>> instead?
+>>
+>> The goal of the stdout-path support was to have a better description in DT
+>> and automate things. So I don't think reverting the change is the proper way
+>> forward.
+>>
+>> If you can't get it to work, I think we should bring it up with the DT
+>> people first, some of which work for Linaro.
+>
+> I quite agree with that, but how should userspace know which device node in
+> /dev corresponds to the console specified in stdout-path ?
 
-Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-same as original patch
+root@koelsch:~# hd /sys/firmware/devicetree/base/chosen/stdout-path
+00000000  2f 73 65 72 69 61 6c 40  65 36 65 36 30 30 30 30  |/serial@e6e60000|
+00000010  00                                                |.|
+00000011
+root@koelsch:~# ls -l /sys/devices/platform/e6e60000.serial/tty
+total 0
+drwxr-xr-x 3 root root 0 Mar 11 10:50 ttySC0
+root@koelsch:~# cat /sys/devices/platform/e6e60000.serial/tty/ttySC0/dev
+204:8
+root@koelsch:~# ls -l /dev/ttySC0
+crw------- 1 root tty 204, 8 Mar 11 10:46 /dev/ttySC0
 
- include/sound/simple_card.h     |  1 -
- sound/soc/generic/simple-card.c | 30 ++++++++----------------------
- 2 files changed, 8 insertions(+), 23 deletions(-)
+Hence all pieces of the puzzle are available to userspace...
+Is there another way?
 
-diff --git a/include/sound/simple_card.h b/include/sound/simple_card.h
-index 1255ddb..b9b4f28 100644
---- a/include/sound/simple_card.h
-+++ b/include/sound/simple_card.h
-@@ -16,7 +16,6 @@
- 
- struct asoc_simple_dai {
- 	const char *name;
--	unsigned int fmt;
- 	unsigned int sysclk;
- 	int slots;
- 	int slot_width;
-diff --git a/sound/soc/generic/simple-card.c b/sound/soc/generic/simple-card.c
-index c49a408..33feee9 100644
---- a/sound/soc/generic/simple-card.c
-+++ b/sound/soc/generic/simple-card.c
-@@ -125,14 +125,6 @@ static int __asoc_simple_card_dai_init(struct snd_soc_dai *dai,
- {
- 	int ret;
- 
--	if (set->fmt) {
--		ret = snd_soc_dai_set_fmt(dai, set->fmt);
--		if (ret && ret != -ENOTSUPP) {
--			dev_err(dai->dev, "simple-card: set_fmt error\n");
--			goto err;
--		}
--	}
--
- 	if (set->sysclk) {
- 		ret = snd_soc_dai_set_sysclk(dai, 0, set->sysclk, 0);
- 		if (ret && ret != -ENOTSUPP) {
-@@ -269,12 +261,10 @@ static int asoc_simple_card_parse_daifmt(struct device_node *node,
- 					 struct device_node *codec,
- 					 char *prefix, int idx)
- {
-+	struct snd_soc_dai_link *dai_link = simple_priv_to_link(priv, idx);
- 	struct device *dev = simple_priv_to_dev(priv);
- 	struct device_node *bitclkmaster = NULL;
- 	struct device_node *framemaster = NULL;
--	struct simple_dai_props *dai_props = simple_priv_to_props(priv, idx);
--	struct asoc_simple_dai *cpu_dai = &dai_props->cpu_dai;
--	struct asoc_simple_dai *codec_dai = &dai_props->codec_dai;
- 	unsigned int daifmt;
- 
- 	daifmt = snd_soc_of_parse_daifmt(node, prefix,
-@@ -289,8 +279,7 @@ static int asoc_simple_card_parse_daifmt(struct device_node *node,
- 		 */
- 		dev_dbg(dev, "Revert to legacy daifmt parsing\n");
- 
--		cpu_dai->fmt = codec_dai->fmt -			snd_soc_of_parse_daifmt(codec, NULL, NULL, NULL) |
-+		daifmt = snd_soc_of_parse_daifmt(codec, NULL, NULL, NULL) |
- 			(daifmt & ~SND_SOC_DAIFMT_CLOCK_MASK);
- 	} else {
- 		if (codec = bitclkmaster)
-@@ -299,11 +288,10 @@ static int asoc_simple_card_parse_daifmt(struct device_node *node,
- 		else
- 			daifmt |= (codec = framemaster) ?
- 				SND_SOC_DAIFMT_CBS_CFM : SND_SOC_DAIFMT_CBS_CFS;
--
--		cpu_dai->fmt	= daifmt;
--		codec_dai->fmt	= daifmt;
- 	}
- 
-+	dai_link->dai_fmt = daifmt;
-+
- 	of_node_put(bitclkmaster);
- 	of_node_put(framemaster);
- 
-@@ -384,13 +372,12 @@ static int asoc_simple_card_dai_link_of(struct device_node *node,
- 	dai_link->init = asoc_simple_card_dai_init;
- 
- 	dev_dbg(dev, "\tname : %s\n", dai_link->stream_name);
--	dev_dbg(dev, "\tcpu : %s / %04x / %d\n",
-+	dev_dbg(dev, "\tformat : %04x\n", dai_link->dai_fmt);
-+	dev_dbg(dev, "\tcpu : %s / %d\n",
- 		dai_link->cpu_dai_name,
--		dai_props->cpu_dai.fmt,
- 		dai_props->cpu_dai.sysclk);
--	dev_dbg(dev, "\tcodec : %s / %04x / %d\n",
-+	dev_dbg(dev, "\tcodec : %s / %d\n",
- 		dai_link->codec_dai_name,
--		dai_props->codec_dai.fmt,
- 		dai_props->codec_dai.sysclk);
- 
- 	/*
-@@ -577,14 +564,13 @@ static int asoc_simple_card_probe(struct platform_device *pdev)
- 		dai_link->codec_name	= cinfo->codec;
- 		dai_link->cpu_dai_name	= cinfo->cpu_dai.name;
- 		dai_link->codec_dai_name = cinfo->codec_dai.name;
-+		dai_link->dai_fmt	= cinfo->daifmt;
- 		dai_link->init		= asoc_simple_card_dai_init;
- 		memcpy(&priv->dai_props->cpu_dai, &cinfo->cpu_dai,
- 					sizeof(priv->dai_props->cpu_dai));
- 		memcpy(&priv->dai_props->codec_dai, &cinfo->codec_dai,
- 					sizeof(priv->dai_props->codec_dai));
- 
--		priv->dai_props->cpu_dai.fmt	|= cinfo->daifmt;
--		priv->dai_props->codec_dai.fmt	|= cinfo->daifmt;
- 	}
- 
- 	snd_soc_card_set_drvdata(&priv->snd_card, priv);
--- 
-1.9.1
+BTW, we also had the "/dev/console" abstraction for quite a while.
+I've just replaced "ttySC0" by "console" in my /etc/inittab, and everything
+still works fine. That's Debian (without systemd) though, so it doesn't help
+for the Linaro userland.
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
