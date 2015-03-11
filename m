@@ -1,33 +1,28 @@
 From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 11 Mar 2015 21:56:19 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC DT Updates for v4.1
-Message-Id: <2696940.hV68LRaW1W@wuerfel>
+Date: Wed, 11 Mar 2015 22:08:18 +0000
+Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Cleanup for v4.1
+Message-Id: <2060391.06thMe3uM7@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425947992.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425947992.git.horms+renesas@verge.net.au>
+References: <cover.1425947508.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425947508.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 10 March 2015 09:44:46 Simon Horman wrote:
-> * ape6evm board
->   - Configure GPIO keys as wake-up source
->   - Enable pull-up for GPIO switches
->   - Correct polarity of LEDs
-> * r8a7791 SoC
->   - Correct IPMMU-GP clock to device tree
-> * r8a7794 SoC
->   - Correct ethernet controller PHY IRQ
-> * lager, koelsch and marzen boards
->   - Add DU external pixel clock to DT
-> * lager board
->   - Add HDMI output support to DT
-> * r8a7791 and r8a7790 SoCs
->   - Tidy up SDHI register size in DT
->   - Reference DMA channels for SDHI in DT
+On Tuesday 10 March 2015 09:42:09 Simon Horman wrote:
+> Please consider these second round of Renesas ARM based SoC cleanup for v4.1.
+> 
+> This pull request is based on the previous round of
+> such requests, tagged as renesas-soc-cleanup-for-v4.1,
+> which you have already pulled.
 > 
 
-Pulled into next/dt, thanks!
+I had grouped the renesas-soc-cleanup-for-v4.1 into next/multiplatform
+rather than next/cleanup, and would like to keep the two separate
+unless there is a good reason not to.
+
+If you haven't already based other work on top of renesas-soc-cleanup2-for-v4.1
+and there are no other conflicts, could you rebase it to -rc1?
 
 	Arnd
