@@ -1,48 +1,129 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 18 Mar 2015 10:51:16 +0000
-Subject: Re: [PATCH] spi: sh-msiof: Fix limit maximum word transfer size of FIFO size
-Message-Id: <20150318105116.GA2869@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="T4sUOijqQbZv57TR"
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 12 Mar 2015 12:42:01 +0000
+Subject: [PATCH 1/3] i2c: slave: rework the slave API
+Message-Id: <1426164123-8853-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426127476-18456-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
- <CAMuHMdXmr7QH8jSkyH2q6xCise7ew5YzyAFc6Zb0psHZt3mGrg@mail.gmail.com>
- <CABMQnVK=-okU4L8vCnY15Vpwy9uCoOLzmnOPkpxj4=U6JXzSOg@mail.gmail.com>
- <CAMuHMdWVRCpF72tS7pQc-cwSMTU-mbqJWtjPtjDSe8YNo-dpqw@mail.gmail.com>
- <5508F607.7010104@renesas.com>
-In-Reply-To: <5508F607.7010104-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-To: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <1426164123-8853-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1426164123-8853-1-git-send-email-wsa@the-dreams.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>, Andrey Danin <danindrey@mail.ru>, Marc Dietrich <marvin24@gmx.de>, Debora Grosse <debora@mds.com>, linux-kernel@vger.kernel.org
 
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
---T4sUOijqQbZv57TR
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+After more discussion, brave users, and additional datasheet evaluation,
+some API updates for the new I2C slave framework became imminent. The
+slave events now get some easier to understand naming. Also, the event
+handling has been simplified to only send one event per interrupt.
 
-On Wed, Mar 18, 2015 at 12:50:31PM +0900, Nobuhiro Iwamatsu wrote:
-> (2015/03/16 16:50), Geert Uytterhoeven wrote:
+Reported-by: Uwe Kleine-K=C3=B6nig <u.kleine-koenig@pengutronix.de>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-rcar.c  | 10 ++++------
+ drivers/i2c/i2c-slave-eeprom.c | 12 ++++++------
+ include/linux/i2c.h            |  8 ++++----
+ 3 files changed, 14 insertions(+), 16 deletions(-)
 
-> I see. I understood about this.
-> Sorry, my bad.
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 71a6e07eb7ab7c..5a84bea5b84514 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -382,11 +382,11 @@ static bool rcar_i2c_slave_irq(struct rcar_i2c_priv *=
+priv)
+ 	if (ssr_filtered & SAR) {
+ 		/* read or write request */
+ 		if (ssr_raw & STM) {
+-			i2c_slave_event(priv->slave, I2C_SLAVE_REQ_READ_START, &value);
++			i2c_slave_event(priv->slave, I2C_SLAVE_READ_REQUESTED, &value);
+ 			rcar_i2c_write(priv, ICRXTX, value);
+ 			rcar_i2c_write(priv, ICSIER, SDE | SSR | SAR);
+ 		} else {
+-			i2c_slave_event(priv->slave, I2C_SLAVE_REQ_WRITE_START, &value);
++			i2c_slave_event(priv->slave, I2C_SLAVE_WRITE_REQUESTED, &value);
+ 			rcar_i2c_read(priv, ICRXTX);	/* dummy read */
+ 			rcar_i2c_write(priv, ICSIER, SDR | SSR | SAR);
+ 		}
+@@ -406,17 +406,15 @@ static bool rcar_i2c_slave_irq(struct rcar_i2c_priv *=
+priv)
+ 		int ret;
+=20
+ 		value =3D rcar_i2c_read(priv, ICRXTX);
+-		ret =3D i2c_slave_event(priv->slave, I2C_SLAVE_REQ_WRITE_END, &value);
++		ret =3D i2c_slave_event(priv->slave, I2C_SLAVE_WRITE_RECEIVED, &value);
+ 		/* Send NACK in case of error */
+ 		rcar_i2c_write(priv, ICSCR, SIE | SDBS | (ret < 0 ? FNA : 0));
+-		i2c_slave_event(priv->slave, I2C_SLAVE_REQ_WRITE_START, &value);
+ 		rcar_i2c_write(priv, ICSSR, ~SDR & 0xff);
+ 	}
+=20
+ 	/* master wants to read from us */
+ 	if (ssr_filtered & SDE) {
+-		i2c_slave_event(priv->slave, I2C_SLAVE_REQ_READ_END, &value);
+-		i2c_slave_event(priv->slave, I2C_SLAVE_REQ_READ_START, &value);
++		i2c_slave_event(priv->slave, I2C_SLAVE_READ_PROCESSED, &value);
+ 		rcar_i2c_write(priv, ICRXTX, value);
+ 		rcar_i2c_write(priv, ICSSR, ~SDE & 0xff);
+ 	}
+diff --git a/drivers/i2c/i2c-slave-eeprom.c b/drivers/i2c/i2c-slave-eeprom.c
+index cf9b09db092f4e..3fb45d894d8072 100644
+--- a/drivers/i2c/i2c-slave-eeprom.c
++++ b/drivers/i2c/i2c-slave-eeprom.c
+@@ -36,7 +36,7 @@ static int i2c_slave_eeprom_slave_cb(struct i2c_client *c=
+lient,
+ 	struct eeprom_data *eeprom =3D i2c_get_clientdata(client);
+=20
+ 	switch (event) {
+-	case I2C_SLAVE_REQ_WRITE_END:
++	case I2C_SLAVE_WRITE_RECEIVED:
+ 		if (eeprom->first_write) {
+ 			eeprom->buffer_idx =3D *val;
+ 			eeprom->first_write =3D false;
+@@ -47,17 +47,17 @@ static int i2c_slave_eeprom_slave_cb(struct i2c_client =
+*client,
+ 		}
+ 		break;
+=20
+-	case I2C_SLAVE_REQ_READ_START:
++	case I2C_SLAVE_READ_PROCESSED:
++		eeprom->buffer_idx++;
++		/* fallthrough */
++	case I2C_SLAVE_READ_REQUESTED:
+ 		spin_lock(&eeprom->buffer_lock);
+ 		*val =3D eeprom->buffer[eeprom->buffer_idx];
+ 		spin_unlock(&eeprom->buffer_lock);
+ 		break;
+=20
+-	case I2C_SLAVE_REQ_READ_END:
+-		eeprom->buffer_idx++;
+-		break;
+-
+ 	case I2C_SLAVE_STOP:
++	case I2C_SLAVE_WRITE_REQUESTED:
+ 		eeprom->first_write =3D true;
+ 		break;
+=20
+diff --git a/include/linux/i2c.h b/include/linux/i2c.h
+index f17da50402a4da..f76031608cb723 100644
+--- a/include/linux/i2c.h
++++ b/include/linux/i2c.h
+@@ -253,10 +253,10 @@ static inline void i2c_set_clientdata(struct i2c_clie=
+nt *dev, void *data)
+=20
+ #if IS_ENABLED(CONFIG_I2C_SLAVE)
+ enum i2c_slave_event {
+-	I2C_SLAVE_REQ_READ_START,
+-	I2C_SLAVE_REQ_READ_END,
+-	I2C_SLAVE_REQ_WRITE_START,
+-	I2C_SLAVE_REQ_WRITE_END,
++	I2C_SLAVE_READ_REQUESTED,
++	I2C_SLAVE_WRITE_REQUESTED,
++	I2C_SLAVE_READ_PROCESSED,
++	I2C_SLAVE_WRITE_RECEIVED,
+ 	I2C_SLAVE_STOP,
+ };
+=20
+--=20
+2.1.4
 
-> Mark, if you do not apply this patch to your repository, could you ignore this?
-
-OK, I'll drop it.
-
---T4sUOijqQbZv57TR
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBCAAGBQJVCVidAAoJECTWi3JdVIfQFXIH/jQGjPPZS1MRk9Qk81DG5FlI
-XDVxq+dVWMNSeq7JiGQ/xEYocZEYJiIz9lvjU6u4/JgK1nH/FWP6NT/iUp0zX3uc
-fcJRmdU3XD9fJaMnfmK6+8Ofh7yf57AbQan5vv831ZDCqcRkg4aQA92K2pSaRL4p
-KU6Kf4dn+PV0OGDSvicXsWmGc+ULUoeDFHFUHtgbBx1qT6mk4xS/hFZQy07vCN6x
-GmCqlAwPgHrgX8H/Jhc+05AOv9NX2AOLsZH+8cTOh5ymMSZswRveTM8w5ztqTDQE
-cxE5PL97gYxm2JGmQnth1zkNFqeOjnjrhZDjCp5NYtkUAvVJH6L8xSTd3TvavwA=
-=4gm/
------END PGP SIGNATURE-----
-
---T4sUOijqQbZv57TR--
