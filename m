@@ -1,46 +1,139 @@
-From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 12 Mar 2015 04:33:41 +0000
-Subject: RE: [PATCH v2 1/4] usb: renesas_usbhs: fix spinlock suspected in a gadget complete function
-Message-Id: <HKNPR06MB3229E4509ECB25B3620B449D8060@HKNPR06MB322.apcprd06.prod.outlook.com>
+From: Felipe Balbi <balbi@TI.COM>
+Date: Thu, 12 Mar 2015 04:44:49 +0000
+Subject: Re: [PATCH v2 1/4] usb: renesas_usbhs: fix spinlock suspected in a gadget complete function
+Message-Id: <20150312044449.GA29718@saruman.tx.rr.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="ew6BAiZeqk4r7MaW"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1424051579-5060-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-	<1424051579-5060-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <1424051579-5060-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
  <CAMuHMdXOkzznW_4KJwqiO5UgYXYN2tZ+2OEYwA+eQJF2S-Z8jQ@mail.gmail.com>
  <HKNPR06MB3227796F47FE559CEAD573DD82F0@HKNPR06MB322.apcprd06.prod.outlook.com>
-In-Reply-To: <HKNPR06MB3227796F47FE559CEAD573DD82F0@HKNPR06MB322.apcprd06.prod.outlook.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Greg KH <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@ti.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, USB list <linux-usb@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+ <HKNPR06MB3229E4509ECB25B3620B449D8060@HKNPR06MB322.apcprd06.prod.outlook.com>
+In-Reply-To: <HKNPR06MB3229E4509ECB25B3620B449D8060@HKNPR06MB322.apcprd06.prod.outlook.com>
+To: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Greg KH <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@TI.COM>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, USB list <linux-usb@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-SGkgR2VlcnQtc2FuIGFnYWluLA0KDQo+IEhpIEdlZXJ0LXNhbiwNCj4gDQo+IFRoYW5rIHlvdSBm
-b3IgdGhlIHJlcGx5IGFnYWluIQ0KPiANCj4gPiBIaSBTaGltb2RhLXNhbiwNCj4gPg0KPiA+IE9u
-IE1vbiwgRmViIDE2LCAyMDE1IGF0IDI6NTIgQU0sIFlvc2hpaGlybyBTaGltb2RhDQo+ID4gPHlv
-c2hpaGlyby5zaGltb2RhLnVoQHJlbmVzYXMuY29tPiB3cm90ZToNCj4gPiA+IEFjY29yZGluZyB0
-byB0aGUgZ2FkZ2V0LmgsIGEgImNvbXBsZXRlIiBmdW5jdGlvbiB3aWxsIGFsd2F5cyBiZSBjYWxs
-ZWQNCj4gPiA+IHdpdGggaW50ZXJydXB0cyBkaXNhYmxlZC4gSG93ZXZlciwgc29tZXRpbWVzIHVz
-YmhzZ19xdWV1ZV9wb3AoKSBmdW5jdGlvbg0KPiA+ID4gaXMgY2FsbGVkIHdpdGggaW50ZXJydXB0
-cyBlbmFibGVkLiBTbywgdGhpcyBmdW5jdGlvbiBzaG91bGQgY2FsbHMNCj4gPiA+IGxvY2FsX2ly
-cV9zYXZlKCkgYmVmb3JlIHRoaXMgY2FsbHMgdGhlIHVzYl9nYWRnZXRfZ2l2ZWJhY2tfcmVxdWVz
-dCgpLg0KPiA+ID4gT3RoZXJ3aXNlLCB0aGVyZSBpcyBwb3NzaWJsZSB0byBjYXVzZSBhIHNwaW5s
-b2NrIHN1c3BlY3RlZCBpbiBhIGdhZGdldA0KPiA+ID4gY29tcGxldGUgZnVuY3Rpb24uDQo+ID4N
-Cj4gPiBJIHN0aWxsIGZlZWwgdW5lYXN5IGFib3V0IGFkZGluZyB0aGUgY2FsbCB0byBsb2NhbF9p
-cnFfc2F2ZSgpLCBhcyB0aGUgbmVlZCBmb3INCj4gPiB0aGlzIGlzIHVzdWFsbHkgYW4gaW5kaWNh
-dG9yIG9mIGFub3RoZXIgbG9ja2luZyBwcm9ibGVtLg0KPiANCj4gSSBhbHNvIHRoaW5rIHRoYXQg
-SSB3b3VsZCBsaWtlIHRvIGF2b2lkIHVzaW5nIGxvY2FsX2lycV9zYXZlKCkuDQo+IEJ1dCwgSSBo
-YXZlIG5vIGlkZWEgdG8gcmVzb2x2ZSB0aGlzIGlzc3VlIGZvciBub3cuDQoNCkFmdGVyIEkgbW9k
-aWZpZWQgdXNiLWRtYWMgZHJpdmVyIHRvIHVzZSBhIHRhc2tsZXQgaW5zdGVhZCBvZiBhIGt0aHJl
-YWQsDQp0aGlzIGlzc3VlIGRpc2FwcGVhcmVkLg0KDQpNeSB1bmRlcnN0YW5kaW5nIGlzIHRoZSBm
-b2xsb3dpbmdzOg0KLSBBY2NvcmRpbmcgdG8gdGhlIGJhY2t0cmFjZSBiZWxvdywgZHVyaW5nIHVz
-YmhzZl9kbWFfY29tcGxldGUoKSB3YXMgcnVubmluZywNCiBhIHNvZnRpcnEgaGFwcGVuZWQuIEFm
-dGVyIG5jbV90eF90YXNrbGV0KCkgd2FzIGNhbGxlZCwgdGhlIGlzc3VlIGhhcHBlbmVkLg0KaHR0
-cDovL3RocmVhZC5nbWFuZS5vcmcvZ21hbmUubGludXgudXNiLmdlbmVyYWwvMTIyMDIzL2ZvY3Vz
-PTQzNzI5DQoNCi0gVGhpcyBtZWFucyB0aGF0IHVzYmhzZl9kbWFfY29tcGxldGUoKSByYW4gb24g
-YSBrdGhyZWFkLiBTbywgbmNtIGRyaXZlciBpcyBhYmxlDQogIHRvIGRvIHRoZSBuY21fdHhfdGFz
-a2xldCgpLg0KDQotIEFmdGVyIHRoZSBjdXJyZW50IHVzYi1kbWFjIGRyaXZlciwgc2luY2UgdXNi
-aHNmX2RtYV9jb21wbGV0ZSgpIHJ1bnMgb24gYSB0YXNrbGV0LA0KICBuY20gZHJpdmVyIGlzIG5v
-dCBhYmxlIHRvIGRvIHRoZSBuY21fdHhfdGFza2xldCBkdXJpbmcgdXNiaHNmX2RtYV9jb21wbGV0
-ZSgpIHdhcyBydW5uaW5nLg0KDQoNClNvLCBJIHdvdWxkIGxpa2UgdG8gcmVjYWxsIHRoaXMgcGF0
-Y2ggYW5kIEkgd2lsbCByZXN1Ym1pdCB0aGlzIHBhdGNoIHNlcmllcyBhcyB2My4NCg0KQmVzdCBy
-ZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1vZGENCg0K
+--ew6BAiZeqk4r7MaW
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+Hi,
+
+On Thu, Mar 12, 2015 at 04:33:41AM +0000, yoshihiro shimoda wrote:
+> Hi Geert-san again,
+>=20
+> > Hi Geert-san,
+> >=20
+> > Thank you for the reply again!
+> >=20
+> > > Hi Shimoda-san,
+> > >
+> > > On Mon, Feb 16, 2015 at 2:52 AM, Yoshihiro Shimoda
+> > > <yoshihiro.shimoda.uh@renesas.com> wrote:
+> > > > According to the gadget.h, a "complete" function will always be cal=
+led
+> > > > with interrupts disabled. However, sometimes usbhsg_queue_pop() fun=
+ction
+> > > > is called with interrupts enabled. So, this function should calls
+> > > > local_irq_save() before this calls the usb_gadget_giveback_request(=
+).
+> > > > Otherwise, there is possible to cause a spinlock suspected in a gad=
+get
+> > > > complete function.
+> > >
+> > > I still feel uneasy about adding the call to local_irq_save(), as the=
+ need for
+> > > this is usually an indicator of another locking problem.
+> >=20
+> > I also think that I would like to avoid using local_irq_save().
+> > But, I have no idea to resolve this issue for now.
+>=20
+> After I modified usb-dmac driver to use a tasklet instead of a kthread,
+> this issue disappeared.
+>=20
+> My understanding is the followings:
+> - According to the backtrace below, during usbhsf_dma_complete() was runn=
+ing,
+>  a softirq happened. After ncm_tx_tasklet() was called, the issue happene=
+d.
+> http://thread.gmane.org/gmane.linux.usb.general/122023/focus=3D43729
+>=20
+> - This means that usbhsf_dma_complete() ran on a kthread. So, ncm driver =
+is able
+>   to do the ncm_tx_tasklet().
+>=20
+> - After the current usb-dmac driver, since usbhsf_dma_complete() runs on =
+a tasklet,
+>   ncm driver is not able to do the ncm_tx_tasklet during usbhsf_dma_compl=
+ete() was running.
+>=20
+>=20
+> So, I would like to recall this patch and I will resubmit this patch seri=
+es as v3.
+
+try something like below:
+
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_u=
+sbhs/mod_gadget.c
+index e0384af77e56..e9d75d85be59 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -119,7 +119,7 @@ struct usbhsg_recip_handle {
+ /*
+  *		queue push/pop
+  */
+-static void usbhsg_queue_pop(struct usbhsg_uep *uep,
++static void __usbhsg_queue_pop(struct usbhsg_uep *uep,
+ 			     struct usbhsg_request *ureq,
+ 			     int status)
+ {
+@@ -133,6 +133,15 @@ static void usbhsg_queue_pop(struct usbhsg_uep *uep,
+ 	usb_gadget_giveback_request(&uep->ep, &ureq->req);
+ }
+=20
++static void usbhsg_queue_pop(struct usbhsg_uep *uep,
++			     struct usbhsg_request *ureq,
++			     int status)
++{
++	usbhs_lock(priv, flags);
++	__usbhsg_queue_pop(uep, ureq, status);
++	usbhs_unlock(priv, flags);
++}
++
+ static void usbhsg_queue_done(struct usbhs_priv *priv, struct usbhs_pkt *p=
+kt)
+ {
+ 	struct usbhs_pipe *pipe =3D pkt->pipe;
+
+
+then, for cases where lock is already held you call __usbhsg_queue_pop()
+and for all other cases, call usbhsg_queue_pop().
+
+--=20
+balbi
+
+--ew6BAiZeqk4r7MaW
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJVARnBAAoJEIaOsuA1yqREQHQP+wXT1n1oDAUAqGTkhGGdrPQh
+y6VcjXvFGmYnRu3RJVxQfo0Z6viD+A3GL+zXnOYYjnC7hNEAvFI3ROfzXQUGz3x5
+4B1U7U4e3DTeuobYK9P82ugeW7biJjhgQOCsVFtGRald95CwefXA3footqMRiDm4
+t4iTwtG3UlfBQUd0Jy0MchhpEupnrtYv08qXa/YbUmPE/KqJ7gP9FUEs1VT6B4iD
+gb0cgQilSItSlakbO9EOVdPt8kD5BWvSZ3R1Qpp3ywuCHyIB5Ipz8Onob+E5Na2Y
+FyvcJlk187UWN3SRmLP+l801FV/ABkFLcUtaYgXV/vImsQRI+ODOuzB5F3fQP/jm
+WX/2BcXx+kK1WjYQdrsHIAgQgAH0s3XY5X4xoF7xKxJ2NlIPwW8R7QfRwg50ohDZ
+2qIWB2V8DCO9xIf//7ZuvNBbAUFjpmaeTm8RfncB5QCxnu4LSOViGbN6haTj/vf3
+u9V7FCeyOnSChLCSHwGgPxI+7Pc9DeAk+1w+wkxFucufWywYrTGtIi1ZOKw82t8x
+dc+SPcRhS8swvmrsuzSQZY9afCbsmPrEtmHrfKHD98cw5vdPYUVQN/+izJNXB3gN
+7K1+psl4WppwmjmTTgFFo8W/Bq64CU0+PzQTeCrbVoLe77+eI4iopk/H0RU0jmT6
+wMS5z8hRX3HIxJHyxZ72
+=YU68
+-----END PGP SIGNATURE-----
+
+--ew6BAiZeqk4r7MaW--
