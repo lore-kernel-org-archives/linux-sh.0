@@ -1,69 +1,91 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 09 Mar 2015 12:16:46 +0000
-Subject: renesas-drivers-2015-03-09-v4.0-rc3
-Message-Id: <1425903406-21502-1-git-send-email-geert+renesas@glider.be>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 12 Mar 2015 06:35:18 +0000
+Subject: [PATCH v3 1/3] usb: renesas_usbhs: add the channel number in dma-names
+Message-Id: <1426142120-5072-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1426142120-5072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1426142120-5072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: gregkh@linuxfoundation.org, balbi@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-I've pushed renesas-drivers-2015-03-09-v4.0-rc3 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+To connect the channel of USB-DMAC to USBHS DnFIFO number, this patch
+adds this channel/FIFO number in dma-names. Otherwise, this driver
+needs to add analysis code for device tree.
 
-Today's version is based on renesas-devel-20150309-v4.0-rc3.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ .../devicetree/bindings/usb/renesas_usbhs.txt        |  5 ++++-
+ drivers/usb/renesas_usbhs/fifo.c                     | 20 +++++++++++++-------
+ 2 files changed, 17 insertions(+), 8 deletions(-)
 
-Included fixes:
-  - Revert "pinctrl: sh-pfc: r8a7790: Remove non existing GPIO pins"
-  - Revert "pinctrl: sh-pfc: r8a7791: Remove non existing GPIO pins"
+diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+index 61b045b..dc2a18f 100644
+--- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
++++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+@@ -15,7 +15,10 @@ Optional properties:
+   - phys: phandle + phy specifier pair
+   - phy-names: must be "usb"
+   - dmas: Must contain a list of references to DMA specifiers.
+-  - dma-names : Must contain a list of DMA names, "tx" or "rx".
++  - dma-names : Must contain a list of DMA names:
++   - tx0 ... tx<n>
++   - rx0 ... rx<n>
++    - This <n> means DnFIFO in USBHS module.
+ 
+ Example:
+ 	usbhs: usb@e6590000 {
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index d891bff..28d10eb 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -1069,23 +1069,29 @@ static void usbhsf_dma_init_pdev(struct usbhs_fifo *fifo)
+ 					    &fifo->rx_slave);
+ }
+ 
+-static void usbhsf_dma_init_dt(struct device *dev, struct usbhs_fifo *fifo)
++static void usbhsf_dma_init_dt(struct device *dev, struct usbhs_fifo *fifo,
++			       int channel)
+ {
+-	fifo->tx_chan = dma_request_slave_channel_reason(dev, "tx");
++	char name[16];
++
++	snprintf(name, sizeof(name), "tx%d", channel);
++	fifo->tx_chan = dma_request_slave_channel_reason(dev, name);
+ 	if (IS_ERR(fifo->tx_chan))
+ 		fifo->tx_chan = NULL;
+-	fifo->rx_chan = dma_request_slave_channel_reason(dev, "rx");
++
++	snprintf(name, sizeof(name), "rx%d", channel);
++	fifo->rx_chan = dma_request_slave_channel_reason(dev, name);
+ 	if (IS_ERR(fifo->rx_chan))
+ 		fifo->rx_chan = NULL;
+ }
+ 
+-static void usbhsf_dma_init(struct usbhs_priv *priv,
+-			    struct usbhs_fifo *fifo)
++static void usbhsf_dma_init(struct usbhs_priv *priv, struct usbhs_fifo *fifo,
++			    int channel)
+ {
+ 	struct device *dev = usbhs_priv_to_dev(priv);
+ 
+ 	if (dev->of_node)
+-		usbhsf_dma_init_dt(dev, fifo);
++		usbhsf_dma_init_dt(dev, fifo, channel);
+ 	else
+ 		usbhsf_dma_init_pdev(fifo);
+ 
+@@ -1231,7 +1237,7 @@ do {									\
+ 			usbhs_get_dparam(priv, d##channel##_tx_id);	\
+ 	fifo->rx_slave.shdma_slave.slave_id =				\
+ 			usbhs_get_dparam(priv, d##channel##_rx_id);	\
+-	usbhsf_dma_init(priv, fifo);					\
++	usbhsf_dma_init(priv, fifo, channel);				\
+ } while (0)
+ 
+ #define USBHS_DFIFO_INIT(priv, fifo, channel)				\
+-- 
+1.9.1
 
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.linaro.org/people/mturquette/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
