@@ -1,30 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 12 Mar 2015 03:55:35 +0000
-Subject: [PATCH 0/2] ARM: shmobile: Correct SYSCIER values
-Message-Id: <1426132537-31606-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 12 Mar 2015 08:03:04 +0000
+Subject: Re: [PATCH 0/2] ARM: shmobile: Correct SYSCIER values
+Message-Id: <CAMuHMdUuv6YrEUsCpbuZwHUy_a-+sK8O=q8k-OZLZRytKv7gyA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1426132537-31606-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1426132537-31606-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Hi Simon,
 
-this short series corrects the SYSCIER value used on the r9a7790 and
-r8a7791 SoCs.
+On Thu, Mar 12, 2015 at 4:55 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> this short series corrects the SYSCIER value used on the r9a7790 and
+> r8a7791 SoCs.
 
-I am not aware of any run-time effect of these changes.
+Thanks!
 
-This series is based on renesas-devel-20150312-v4.0-rc3
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Simon Horman (2):
-  ARM: shmobile: r8a7790: Correct SYSCIER value
-  ARM: shmobile: r8a7791: Correct SYSCIER value
+> I am not aware of any run-time effect of these changes.
 
- arch/arm/mach-shmobile/pm-r8a7790.c | 2 +-
- arch/arm/mach-shmobile/pm-r8a7791.c | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+They only matter when powering up/down SYSC PM Domains, which is not
+yet implemented for R-Car Gen2.
 
--- 
-2.1.4
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
