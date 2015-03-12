@@ -1,39 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 19 Mar 2015 02:15:19 +0000
-Subject: [PATCH 1/6] ARM: shmobile: r8a7790: add reg-names for sound
-Message-Id: <46a158f2ce965940f68ccb07ac8127e1091bebe8.1426731062.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 12 Mar 2015 10:09:15 +0000
+Subject: [PATCH v3 3/4] pinctrl: sh-pfc: Use reg_width instead of reg as sentinel
+Message-Id: <1426154956-26583-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1426731062.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1426731062.git.horms+renesas@verge.net.au>
+References: <1426154956-26583-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1426154956-26583-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+All other loops over sh_pfc_soc_info.data_regs[] use
+pinmux_data_reg.regwidth as the sentinel, which is safer as zero is
+never a valid regwidth value (reg could be zero if we start using it to
+store an offset).
 
-Rensas R-Car sound driver supports reg-names.
-Let's use it.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 2 ++
- 1 file changed, 2 insertions(+)
+v3:
+  - Add Acked-by,
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index b320252..2041ec7 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1461,6 +1461,8 @@
- 			<0 0xec5a0000 0 0x100>,  /* ADG */
- 			<0 0xec540000 0 0x1000>, /* SSIU */
- 			<0 0xec541000 0 0x1280>; /* SSI */
-+		reg-names = "scu", "adg", "ssiu", "ssi";
-+
- 		clocks = <&mstp10_clks R8A7790_CLK_SSI_ALL>,
- 			<&mstp10_clks R8A7790_CLK_SSI9>, <&mstp10_clks R8A7790_CLK_SSI8>,
- 			<&mstp10_clks R8A7790_CLK_SSI7>, <&mstp10_clks R8A7790_CLK_SSI6>,
+v2:
+  - New.
+---
+ drivers/pinctrl/sh-pfc/gpio.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index aa2fc77a1925e839..5d3a35ce09125a45 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -84,7 +84,7 @@ static void gpio_setup_data_reg(struct sh_pfc_chip *chip, unsigned idx)
+ 	unsigned int bit;
+ 	unsigned int i;
+ 
+-	for (i = 0, dreg = pfc->info->data_regs; dreg->reg; ++i, ++dreg) {
++	for (i = 0, dreg = pfc->info->data_regs; dreg->reg_width; ++i, ++dreg) {
+ 		for (bit = 0; bit < dreg->reg_width; bit++) {
+ 			if (dreg->enum_ids[bit] = pin->enum_id) {
+ 				gpio_pin->dreg = i;
 -- 
-2.1.4
+1.9.1
 
