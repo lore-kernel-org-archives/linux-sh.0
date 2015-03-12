@@ -1,38 +1,35 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 12 Mar 2015 08:03:04 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 12 Mar 2015 08:14:45 +0000
 Subject: Re: [PATCH 0/2] ARM: shmobile: Correct SYSCIER values
-Message-Id: <CAMuHMdUuv6YrEUsCpbuZwHUy_a-+sK8O=q8k-OZLZRytKv7gyA@mail.gmail.com>
+Message-Id: <20150312081442.GA4295@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1426132537-31606-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1426132537-31606-1-git-send-email-horms+renesas@verge.net.au>
+ <CAMuHMdUuv6YrEUsCpbuZwHUy_a-+sK8O=q8k-OZLZRytKv7gyA@mail.gmail.com>
+In-Reply-To: <CAMuHMdUuv6YrEUsCpbuZwHUy_a-+sK8O=q8k-OZLZRytKv7gyA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+On Thu, Mar 12, 2015 at 09:03:04AM +0100, Geert Uytterhoeven wrote:
+> Hi Simon,
+> 
+> On Thu, Mar 12, 2015 at 4:55 AM, Simon Horman
+> <horms+renesas@verge.net.au> wrote:
+> > this short series corrects the SYSCIER value used on the r9a7790 and
+> > r8a7791 SoCs.
+> 
+> Thanks!
+> 
+> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> 
+> > I am not aware of any run-time effect of these changes.
+> 
+> They only matter when powering up/down SYSC PM Domains, which is not
+> yet implemented for R-Car Gen2.
 
-On Thu, Mar 12, 2015 at 4:55 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> this short series corrects the SYSCIER value used on the r9a7790 and
-> r8a7791 SoCs.
+Thanks, good to know.
 
-Thanks!
-
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-> I am not aware of any run-time effect of these changes.
-
-They only matter when powering up/down SYSC PM Domains, which is not
-yet implemented for R-Car Gen2.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+FWIW the values in these patches are the ones that
+you supplied in another email thread. However, I did
+verify them against (my reading of) the documentation.
