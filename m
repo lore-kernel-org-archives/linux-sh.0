@@ -1,52 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 10 Mar 2015 00:44:46 +0000
-Subject: [PATCH 09/15] ARM: shmobile: marzen: Add DU external pixel clock to DT
-Message-Id: <665d79aa47cb3983b1fd14cd7c42eead5324c24e.1425947992.git.horms+renesas@verge.net.au>
+Date: Thu, 12 Mar 2015 03:55:37 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7791: Correct SYSCIER value
+Message-Id: <1426132537-31606-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425947992.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425947992.git.horms+renesas@verge.net.au>
+References: <1426132537-31606-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1426132537-31606-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Set the SYSCIER as per the values indicated in the documentation.
+The value previously used appears to been copied from the r8a7779
+implementation but on closer inspection is not correct for the r8a7791.
 
-Declare the fixed 65MHz pixel clock connected to the DU clock input.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Fixes: 5f6108bb9643 ("ARM: shmobile: r8a7791 SYSC setup code")
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779-marzen.dts | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ arch/arm/mach-shmobile/pm-r8a7791.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index e83d40e..540756c 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -122,6 +122,12 @@
- 			};
- 		};
- 	};
-+
-+	x3_clk: x3-clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <65000000>;
-+	};
- };
+diff --git a/arch/arm/mach-shmobile/pm-r8a7791.c b/arch/arm/mach-shmobile/pm-r8a7791.c
+index 25f107b..f7cfb3b 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7791.c
++++ b/arch/arm/mach-shmobile/pm-r8a7791.c
+@@ -33,7 +33,7 @@ static void __init r8a7791_sysc_init(void)
+ 	void __iomem *base = rcar_sysc_init(0xe6180000);
  
- &du {
-@@ -129,6 +135,9 @@
- 	pinctrl-names = "default";
- 	status = "okay";
+ 	/* enable all interrupt sources, but do not use interrupt handler */
+-	iowrite32(0x0131000e, base + SYSCIER);
++	iowrite32(0x00111003, base + SYSCIER);
+ 	iowrite32(0, base + SYSCIMR);
+ }
  
-+	clocks = <&mstp1_clks R8A7779_CLK_DU>, <&x3_clk>;
-+	clock-names = "du", "dclkin.0";
-+
- 	ports {
- 		port@0 {
- 			endpoint {
 -- 
 2.1.4
 
