@@ -1,323 +1,429 @@
-From: Yijing Wang <wangyijing@huawei.com>
-Date: Fri, 06 Mar 2015 09:33:19 +0000
-Subject: [PATCH v5 02/29] PCI: Rip out pci_bus_add_devices() from pci_scan_root_bus()
-Message-Id: <1425634426-437-3-git-send-email-wangyijing@huawei.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 12 Mar 2015 06:35:20 +0000
+Subject: [PATCH v3 3/3] usb: renesas_usbhs: add support for USB-DMAC
+Message-Id: <1426142120-5072-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425634426-437-1-git-send-email-wangyijing@huawei.com>
-In-Reply-To: <1425634426-437-1-git-send-email-wangyijing@huawei.com>
+References: <1426142120-5072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1426142120-5072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: gregkh@linuxfoundation.org, balbi@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Just like pci_scan_bus(), we also should rip out
-pci_bus_add_devices() from pci_scan_root_bus().
-Lots platforms first call pci_scan_root_bus(), but
-after that, they call pci_bus_size_bridges() and
-pci_bus_assign_resources(). Place pci_bus_add_devices()
-in pci_scan_root_bus() hurts PCI scan logic.
-For arm hw_pci->scan() functions which call
-pci_scan_root_bus(), it's no need to change anything,
-because pci_bus_add_devices() will be called later
-in pci_common_init_dev().
+Some Renesas SoCs have the USB-DMAC. It is able to terminate transfers
+when a short packet is received, even if less bytes than the transfer
+counter size have been received. Also, it is able to send a short
+packet even if the packet size is not multiples of 8bytes.
 
-Signed-off-by: Yijing Wang <wangyijing@huawei.com>
-CC: Richard Henderson <rth@twiddle.net>
-CC: Ivan Kokshaysky <ink@jurassic.park.msu.ru>
-CC: Matt Turner <mattst88@gmail.com>
-CC: David Howells <dhowells@redhat.com>
-CC: Tony Luck <tony.luck@intel.com>
-CC: Michal Simek <monstr@monstr.eu>
-CC: Ralf Baechle <ralf@linux-mips.org>
-CC: Koichi Yasutake <yasutake.koichi@jp.panasonic.com>
-CC: Sebastian Ott <sebott@linux.vnet.ibm.com>
-CC: "David S. Miller" <davem@davemloft.net>
-CC: Chris Metcalf <cmetcalf@ezchip.com>
-CC: Chris Zankel <chris@zankel.net>
-CC: Max Filippov <jcmvbkbc@gmail.com>
-CC: Thomas Gleixner <tglx@linutronix.de>
-CC: linux-alpha@vger.kernel.org
-CC: linux-kernel@vger.kernel.org
-CC: linux-mips@linux-mips.org
-CC: linux-am33-list@redhat.com
-CC: linux-s390@vger.kernel.org
-CC: linux-sh@vger.kernel.org
-CC: sparclinux@vger.kernel.org
-CC: linux-xtensa@linux-xtensa.org
-Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+Since the previous code has used the interruption of USBHS controller
+when receiving packets even if this driver has used a dmac, a lot of
+interruptions has happened. This patch will reduce such interruptions.
+
+This patch allows to use the USB-DMAC on R-Car H2 and M2.
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/alpha/kernel/pci.c          |    9 ++++++++-
- arch/frv/mb93090-mb00/pci-vdk.c  |    6 +++++-
- arch/ia64/sn/kernel/io_init.c    |    2 ++
- arch/microblaze/pci/pci-common.c |    3 +++
- arch/mips/pci/pci.c              |    1 +
- arch/mn10300/unit-asb2305/pci.c  |    7 ++++++-
- arch/s390/pci/pci.c              |    2 +-
- arch/sh/drivers/pci/pci.c        |    1 +
- arch/sparc/kernel/leon_pci.c     |    1 +
- arch/tile/kernel/pci.c           |    2 ++
- arch/tile/kernel/pci_gx.c        |    2 ++
- arch/x86/pci/common.c            |    1 +
- arch/xtensa/kernel/pci.c         |   11 +++++++++--
- drivers/pci/probe.c              |    1 -
- 14 files changed, 42 insertions(+), 7 deletions(-)
+ drivers/usb/renesas_usbhs/common.c |  19 +++++
+ drivers/usb/renesas_usbhs/common.h |   7 ++
+ drivers/usb/renesas_usbhs/fifo.c   | 165 +++++++++++++++++++++++++++++++++++--
+ drivers/usb/renesas_usbhs/fifo.h   |   1 +
+ drivers/usb/renesas_usbhs/pipe.c   |  39 +++++++++
+ drivers/usb/renesas_usbhs/pipe.h   |   1 +
+ include/linux/usb/renesas_usbhs.h  |   2 +
+ 7 files changed, 228 insertions(+), 6 deletions(-)
 
-diff --git a/arch/alpha/kernel/pci.c b/arch/alpha/kernel/pci.c
-index 98a1525..5c845ad 100644
---- a/arch/alpha/kernel/pci.c
-+++ b/arch/alpha/kernel/pci.c
-@@ -312,7 +312,7 @@ common_init_pci(void)
- {
- 	struct pci_controller *hose;
- 	struct list_head resources;
--	struct pci_bus *bus;
-+	struct pci_bus *bus, *root_bus;
- 	int next_busno;
- 	int need_domain_info = 0;
- 	u32 pci_mem_end;
-@@ -338,6 +338,8 @@ common_init_pci(void)
- 
- 		bus = pci_scan_root_bus(NULL, next_busno, alpha_mv.pci_ops,
- 					hose, &resources);
-+		if (!bus)
-+			continue;
- 		hose->bus = bus;
- 		hose->need_domain_info = need_domain_info;
- 		next_busno = bus->busn_res.end + 1;
-@@ -353,6 +355,11 @@ common_init_pci(void)
- 
- 	pci_assign_unassigned_resources();
- 	pci_fixup_irqs(alpha_mv.pci_swizzle, alpha_mv.pci_map_irq);
-+	for (hose = hose_head; hose; hose = hose->next) {
-+		root_bus = hose->bus;
-+		if (root_bus)
-+			pci_bus_add_devices(root_bus);
-+	}
- }
- 
- 
-diff --git a/arch/frv/mb93090-mb00/pci-vdk.c b/arch/frv/mb93090-mb00/pci-vdk.c
-index b073f4d..f211839 100644
---- a/arch/frv/mb93090-mb00/pci-vdk.c
-+++ b/arch/frv/mb93090-mb00/pci-vdk.c
-@@ -316,6 +316,7 @@ void pcibios_fixup_bus(struct pci_bus *bus)
- 
- int __init pcibios_init(void)
- {
-+	struct pci_bus *bus;
- 	struct pci_ops *dir = NULL;
- 	LIST_HEAD(resources);
- 
-@@ -383,12 +384,15 @@ int __init pcibios_init(void)
- 	printk("PCI: Probing PCI hardware\n");
- 	pci_add_resource(&resources, &pci_ioport_resource);
- 	pci_add_resource(&resources, &pci_iomem_resource);
--	pci_scan_root_bus(NULL, 0, pci_root_ops, NULL, &resources);
-+	bus = pci_scan_root_bus(NULL, 0, pci_root_ops, NULL, &resources);
- 
- 	pcibios_irq_init();
- 	pcibios_fixup_irqs();
- 	pcibios_resource_survey();
-+	if (!bus)
-+		return 0;
- 
-+	pci_bus_add_devices(bus);
- 	return 0;
- }
- 
-diff --git a/arch/ia64/sn/kernel/io_init.c b/arch/ia64/sn/kernel/io_init.c
-index 0b5ce82..1be65eb 100644
---- a/arch/ia64/sn/kernel/io_init.c
-+++ b/arch/ia64/sn/kernel/io_init.c
-@@ -271,7 +271,9 @@ sn_pci_controller_fixup(int segment, int busnum, struct pci_bus *bus)
-  	if (bus = NULL) {
- 		kfree(res);
- 		kfree(controller);
-+		return;
- 	}
-+	pci_bus_add_devices(bus);
+diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
+index 4cf77d3..0f7e850 100644
+--- a/drivers/usb/renesas_usbhs/common.c
++++ b/drivers/usb/renesas_usbhs/common.c
+@@ -276,6 +276,16 @@ int usbhs_set_device_config(struct usbhs_priv *priv, int devnum,
  }
  
  /*
-diff --git a/arch/microblaze/pci/pci-common.c b/arch/microblaze/pci/pci-common.c
-index 48528fb..6d8d173 100644
---- a/arch/microblaze/pci/pci-common.c
-+++ b/arch/microblaze/pci/pci-common.c
-@@ -1382,6 +1382,9 @@ static int __init pcibios_init(void)
- 
- 	/* Call common code to handle resource allocation */
- 	pcibios_resource_survey();
-+	list_for_each_entry_safe(hose, tmp, &hose_list, list_node)
-+		if (hose->bus)
-+			pci_bus_add_devices(hose->bus);
- 
- 	return 0;
- }
-diff --git a/arch/mips/pci/pci.c b/arch/mips/pci/pci.c
-index 1bf60b1..9eb54b5 100644
---- a/arch/mips/pci/pci.c
-+++ b/arch/mips/pci/pci.c
-@@ -114,6 +114,7 @@ static void pcibios_scanbus(struct pci_controller *hose)
- 			pci_bus_size_bridges(bus);
- 			pci_bus_assign_resources(bus);
- 		}
-+		pci_bus_add_devices(bus);
- 	}
- }
- 
-diff --git a/arch/mn10300/unit-asb2305/pci.c b/arch/mn10300/unit-asb2305/pci.c
-index 613ca1e..cde5e05 100644
---- a/arch/mn10300/unit-asb2305/pci.c
-+++ b/arch/mn10300/unit-asb2305/pci.c
-@@ -340,6 +340,7 @@ void pcibios_fixup_bus(struct pci_bus *bus)
++ *		interrupt functions
++ */
++void usbhs_xxxsts_clear(struct usbhs_priv *priv, u16 sts_reg, u16 bit)
++{
++	u16 pipe_mask = (u16)GENMASK(usbhs_get_dparam(priv, pipe_size), 0);
++
++	usbhs_write(priv, sts_reg, ~(1 << bit) & pipe_mask);
++}
++
++/*
+  *		local functions
   */
- static int __init pcibios_init(void)
- {
-+	struct pci_bus *bus;
- 	resource_size_t io_offset, mem_offset;
- 	LIST_HEAD(resources);
+ static void usbhsc_set_buswait(struct usbhs_priv *priv)
+@@ -487,6 +497,15 @@ static struct renesas_usbhs_platform_info *usbhs_parse_dt(struct device *dev)
+ 	if (gpio > 0)
+ 		dparam->enable_gpio = gpio;
  
-@@ -371,11 +372,15 @@ static int __init pcibios_init(void)
++	switch (dparam->type) {
++	case USBHS_TYPE_R8A7790:
++	case USBHS_TYPE_R8A7791:
++		dparam->has_usb_dmac = 1;
++		break;
++	default:
++		break;
++	}
++
+ 	return info;
+ }
  
- 	pci_add_resource_offset(&resources, &pci_ioport_resource, io_offset);
- 	pci_add_resource_offset(&resources, &pci_iomem_resource, mem_offset);
--	pci_scan_root_bus(NULL, 0, &pci_direct_ampci, NULL, &resources);
-+	bus = pci_scan_root_bus(NULL, 0, &pci_direct_ampci, NULL, &resources);
+diff --git a/drivers/usb/renesas_usbhs/common.h b/drivers/usb/renesas_usbhs/common.h
+index fc96e92..8c5fc12 100644
+--- a/drivers/usb/renesas_usbhs/common.h
++++ b/drivers/usb/renesas_usbhs/common.h
+@@ -193,6 +193,7 @@ struct usbhs_priv;
+ #define TYPE_BULK	(1 << 14)
+ #define TYPE_INT	(2 << 14)
+ #define TYPE_ISO	(3 << 14)
++#define BFRE		(1 << 10)	/* BRDY Interrupt Operation Spec. */
+ #define DBLB		(1 << 9)	/* Double Buffer Mode */
+ #define SHTNAK		(1 << 7)	/* Pipe Disable in Transfer End */
+ #define DIR_OUT		(1 << 4)	/* Transfer Direction */
+@@ -216,6 +217,7 @@ struct usbhs_priv;
+ #define	ACLRM		(1 << 9)	/* Buffer Auto-Clear Mode */
+ #define SQCLR		(1 << 8)	/* Toggle Bit Clear */
+ #define SQSET		(1 << 7)	/* Toggle Bit Set */
++#define SQMON		(1 << 6)	/* Toggle Bit Check */
+ #define PBUSY		(1 << 5)	/* Pipe Busy */
+ #define PID_MASK	(0x3)		/* Response PID */
+ #define  PID_NAK	0
+@@ -324,6 +326,11 @@ int usbhs_set_device_config(struct usbhs_priv *priv, int devnum, u16 upphub,
+ 			   u16 hubport, u16 speed);
  
- 	pcibios_irq_init();
- 	pcibios_fixup_irqs();
- 	pcibios_resource_survey();
-+	if (!bus)
+ /*
++ * interrupt functions
++ */
++void usbhs_xxxsts_clear(struct usbhs_priv *priv, u16 sts_reg, u16 bit);
++
++/*
+  * data
+  */
+ struct usbhs_priv *usbhs_pdev_to_priv(struct platform_device *pdev);
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index b737661..8597cf9 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -813,7 +813,8 @@ static void xfer_work(struct work_struct *work)
+ 	desc->callback		= usbhsf_dma_complete;
+ 	desc->callback_param	= pipe;
+ 
+-	if (dmaengine_submit(desc) < 0) {
++	pkt->cookie = dmaengine_submit(desc);
++	if (pkt->cookie < 0) {
+ 		dev_err(dev, "Failed to submit dma descriptor\n");
+ 		return;
+ 	}
+@@ -838,6 +839,7 @@ static int usbhsf_dma_prepare_push(struct usbhs_pkt *pkt, int *is_done)
+ 	struct usbhs_fifo *fifo;
+ 	int len = pkt->length - pkt->actual;
+ 	int ret;
++	uintptr_t align_mask;
+ 
+ 	if (usbhs_pipe_is_busy(pipe))
+ 		return 0;
+@@ -847,10 +849,14 @@ static int usbhsf_dma_prepare_push(struct usbhs_pkt *pkt, int *is_done)
+ 	    usbhs_pipe_is_dcp(pipe))
+ 		goto usbhsf_pio_prepare_push;
+ 
+-	if (len & 0x7) /* 8byte alignment */
++	/* check data length if this driver don't use USB-DMAC */
++	if (!usbhs_get_dparam(priv, has_usb_dmac) && len & 0x7)
+ 		goto usbhsf_pio_prepare_push;
+ 
+-	if ((uintptr_t)(pkt->buf + pkt->actual) & 0x7) /* 8byte alignment */
++	/* check buffer alignment */
++	align_mask = usbhs_get_dparam(priv, has_usb_dmac) ?
++					USBHS_USB_DMAC_XFER_SIZE - 1 : 0x7;
++	if ((uintptr_t)(pkt->buf + pkt->actual) & align_mask)
+ 		goto usbhsf_pio_prepare_push;
+ 
+ 	/* return at this time if the pipe is running */
+@@ -924,7 +930,85 @@ struct usbhs_pkt_handle usbhs_fifo_dma_push_handler = {
+ /*
+  *		DMA pop handler
+  */
+-static int usbhsf_dma_try_pop(struct usbhs_pkt *pkt, int *is_done)
++
++static int usbhsf_dma_prepare_pop_with_rx_irq(struct usbhs_pkt *pkt,
++					      int *is_done)
++{
++	return usbhsf_prepare_pop(pkt, is_done);
++}
++
++static int usbhsf_dma_prepare_pop_with_usb_dmac(struct usbhs_pkt *pkt,
++						int *is_done)
++{
++	struct usbhs_pipe *pipe = pkt->pipe;
++	struct usbhs_priv *priv = usbhs_pipe_to_priv(pipe);
++	struct usbhs_fifo *fifo;
++	int ret;
++
++	if (usbhs_pipe_is_busy(pipe))
 +		return 0;
 +
-+	pci_bus_add_devices(bus);
++	/* use PIO if packet is less than pio_dma_border or pipe is DCP */
++	if ((pkt->length < usbhs_get_dparam(priv, pio_dma_border)) ||
++	    usbhs_pipe_is_dcp(pipe))
++		goto usbhsf_pio_prepare_pop;
++
++	fifo = usbhsf_get_dma_fifo(priv, pkt);
++	if (!fifo)
++		goto usbhsf_pio_prepare_pop;
++
++	if ((uintptr_t)pkt->buf & (USBHS_USB_DMAC_XFER_SIZE - 1))
++		goto usbhsf_pio_prepare_pop;
++
++	usbhs_pipe_config_change_bfre(pipe, 1);
++
++	ret = usbhsf_fifo_select(pipe, fifo, 0);
++	if (ret < 0)
++		goto usbhsf_pio_prepare_pop;
++
++	if (usbhsf_dma_map(pkt) < 0)
++		goto usbhsf_pio_prepare_pop_unselect;
++
++	/* DMA */
++
++	/*
++	 * usbhs_fifo_dma_pop_handler :: prepare
++	 * enabled irq to come here.
++	 * but it is no longer needed for DMA. disable it.
++	 */
++	usbhsf_rx_irq_ctrl(pipe, 0);
++
++	pkt->trans = pkt->length;
++
++	INIT_WORK(&pkt->work, xfer_work);
++	schedule_work(&pkt->work);
++
++	return 0;
++
++usbhsf_pio_prepare_pop_unselect:
++	usbhsf_fifo_unselect(pipe, fifo);
++usbhsf_pio_prepare_pop:
++
++	/*
++	 * change handler to PIO
++	 */
++	pkt->handler = &usbhs_fifo_pio_pop_handler;
++	usbhs_pipe_config_change_bfre(pipe, 0);
++
++	return pkt->handler->prepare(pkt, is_done);
++}
++
++static int usbhsf_dma_prepare_pop(struct usbhs_pkt *pkt, int *is_done)
++{
++	struct usbhs_priv *priv = usbhs_pipe_to_priv(pkt->pipe);
++
++	if (usbhs_get_dparam(priv, has_usb_dmac))
++		return usbhsf_dma_prepare_pop_with_usb_dmac(pkt, is_done);
++	else
++		return usbhsf_dma_prepare_pop_with_rx_irq(pkt, is_done);
++}
++
++static int usbhsf_dma_try_pop_with_rx_irq(struct usbhs_pkt *pkt, int *is_done)
+ {
+ 	struct usbhs_pipe *pipe = pkt->pipe;
+ 	struct usbhs_priv *priv = usbhs_pipe_to_priv(pipe);
+@@ -993,7 +1077,16 @@ usbhsf_pio_prepare_pop:
+ 	return pkt->handler->try_run(pkt, is_done);
+ }
+ 
+-static int usbhsf_dma_pop_done(struct usbhs_pkt *pkt, int *is_done)
++static int usbhsf_dma_try_pop(struct usbhs_pkt *pkt, int *is_done)
++{
++	struct usbhs_priv *priv = usbhs_pipe_to_priv(pkt->pipe);
++
++	BUG_ON(usbhs_get_dparam(priv, has_usb_dmac));
++
++	return usbhsf_dma_try_pop_with_rx_irq(pkt, is_done);
++}
++
++static int usbhsf_dma_pop_done_with_rx_irq(struct usbhs_pkt *pkt, int *is_done)
+ {
+ 	struct usbhs_pipe *pipe = pkt->pipe;
+ 	int maxp = usbhs_pipe_get_maxpacket(pipe);
+@@ -1017,8 +1110,68 @@ static int usbhsf_dma_pop_done(struct usbhs_pkt *pkt, int *is_done)
  	return 0;
  }
  
-diff --git a/arch/s390/pci/pci.c b/arch/s390/pci/pci.c
-index 753a567..a2a7391 100644
---- a/arch/s390/pci/pci.c
-+++ b/arch/s390/pci/pci.c
-@@ -776,8 +776,8 @@ static int zpci_scan_bus(struct zpci_dev *zdev)
- 		zpci_cleanup_bus_resources(zdev);
- 		return -EIO;
- 	}
--
- 	zdev->bus->max_bus_speed = zdev->max_bus_speed;
-+	pci_bus_add_devices(zdev->bus);
- 	return 0;
- }
- 
-diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
-index 1bc09ee..efc1051 100644
---- a/arch/sh/drivers/pci/pci.c
-+++ b/arch/sh/drivers/pci/pci.c
-@@ -69,6 +69,7 @@ static void pcibios_scanbus(struct pci_channel *hose)
- 
- 		pci_bus_size_bridges(bus);
- 		pci_bus_assign_resources(bus);
-+		pci_bus_add_devices(bus);
- 	} else {
- 		pci_free_resource_list(&resources);
- 	}
-diff --git a/arch/sparc/kernel/leon_pci.c b/arch/sparc/kernel/leon_pci.c
-index 899b720..2971076 100644
---- a/arch/sparc/kernel/leon_pci.c
-+++ b/arch/sparc/kernel/leon_pci.c
-@@ -40,6 +40,7 @@ void leon_pci_init(struct platform_device *ofdev, struct leon_pci_info *info)
- 
- 		/* Assign devices with resources */
- 		pci_assign_unassigned_resources();
-+		pci_bus_add_devices(root_bus);
- 	} else {
- 		pci_free_resource_list(&resources);
- 	}
-diff --git a/arch/tile/kernel/pci.c b/arch/tile/kernel/pci.c
-index 325df47..9475a74 100644
---- a/arch/tile/kernel/pci.c
-+++ b/arch/tile/kernel/pci.c
-@@ -339,6 +339,8 @@ int __init pcibios_init(void)
- 			struct pci_bus *next_bus;
- 			struct pci_dev *dev;
- 
-+			pci_bus_add_devices(root_bus);
++static size_t usbhs_dma_calc_received_size(struct usbhs_pkt *pkt,
++					   struct dma_chan *chan, int dtln)
++{
++	struct usbhs_pipe *pipe = pkt->pipe;
++	struct dma_tx_state state;
++	size_t received_size;
++	int maxp = usbhs_pipe_get_maxpacket(pipe);
 +
- 			list_for_each_entry(dev, &root_bus->devices, bus_list) {
- 				/*
- 				 * Find the PCI host controller, ie. the 1st
-diff --git a/arch/tile/kernel/pci_gx.c b/arch/tile/kernel/pci_gx.c
-index 2c95f37..b1df847 100644
---- a/arch/tile/kernel/pci_gx.c
-+++ b/arch/tile/kernel/pci_gx.c
-@@ -1030,6 +1030,8 @@ int __init pcibios_init(void)
- alloc_mem_map_failed:
- 			break;
- 		}
++	dmaengine_tx_status(chan, pkt->cookie, &state);
++	received_size = pkt->length - state.residue;
 +
-+		pci_bus_add_devices(root_bus);
- 	}
- 
- 	return 0;
-diff --git a/arch/x86/pci/common.c b/arch/x86/pci/common.c
-index 3d2612b..0cbc723 100644
---- a/arch/x86/pci/common.c
-+++ b/arch/x86/pci/common.c
-@@ -491,6 +491,7 @@ void pcibios_scan_root(int busnum)
- 		pci_free_resource_list(&resources);
- 		kfree(sd);
- 	}
-+	pci_bus_add_devices(bus);
- }
- 
- void __init pcibios_set_cache_line_size(void)
-diff --git a/arch/xtensa/kernel/pci.c b/arch/xtensa/kernel/pci.c
-index 5b34033..140e2fd 100644
---- a/arch/xtensa/kernel/pci.c
-+++ b/arch/xtensa/kernel/pci.c
-@@ -174,7 +174,7 @@ static int __init pcibios_init(void)
- 	struct pci_controller *pci_ctrl;
- 	struct list_head resources;
- 	struct pci_bus *bus;
--	int next_busno = 0;
-+	int ret, next_busno = 0;
- 
- 	printk("PCI: Probing PCI hardware\n");
- 
-@@ -185,14 +185,21 @@ static int __init pcibios_init(void)
- 		pci_controller_apertures(pci_ctrl, &resources);
- 		bus = pci_scan_root_bus(NULL, pci_ctrl->first_busno,
- 					pci_ctrl->ops, pci_ctrl, &resources);
-+		if (!bus)
-+			continue;
++	if (dtln) {
++		received_size -= USBHS_USB_DMAC_XFER_SIZE;
++		received_size &= ~(maxp - 1);
++		received_size += dtln;
++	}
 +
- 		pci_ctrl->bus = bus;
- 		pci_ctrl->last_busno = bus->busn_res.end;
- 		if (next_busno <= pci_ctrl->last_busno)
- 			next_busno = pci_ctrl->last_busno+1;
++	return received_size;
++}
++
++static int usbhsf_dma_pop_done_with_usb_dmac(struct usbhs_pkt *pkt,
++					     int *is_done)
++{
++	struct usbhs_pipe *pipe = pkt->pipe;
++	struct usbhs_priv *priv = usbhs_pipe_to_priv(pipe);
++	struct usbhs_fifo *fifo = usbhs_pipe_to_fifo(pipe);
++	struct dma_chan *chan = usbhsf_dma_chan_get(fifo, pkt);
++	int rcv_len;
++
++	/*
++	 * Since the driver disables rx_irq in DMA mode, the interrupt handler
++	 * cannot the BRDYSTS. So, the function clears it here because the
++	 * driver may use PIO mode next time.
++	 */
++	usbhs_xxxsts_clear(priv, BRDYSTS, usbhs_pipe_number(pipe));
++
++	rcv_len = usbhsf_fifo_rcv_len(priv, fifo);
++	usbhsf_fifo_clear(pipe, fifo);
++	pkt->actual = usbhs_dma_calc_received_size(pkt, chan, rcv_len);
++
++	usbhsf_dma_stop(pipe, fifo);
++	usbhsf_dma_unmap(pkt);
++	usbhsf_fifo_unselect(pipe, pipe->fifo);
++
++	/* The driver can assume the rx transaction is always "done" */
++	*is_done = 1;
++
++	return 0;
++}
++
++static int usbhsf_dma_pop_done(struct usbhs_pkt *pkt, int *is_done)
++{
++	struct usbhs_priv *priv = usbhs_pipe_to_priv(pkt->pipe);
++
++	if (usbhs_get_dparam(priv, has_usb_dmac))
++		return usbhsf_dma_pop_done_with_usb_dmac(pkt, is_done);
++	else
++		return usbhsf_dma_pop_done_with_rx_irq(pkt, is_done);
++}
++
+ struct usbhs_pkt_handle usbhs_fifo_dma_pop_handler = {
+-	.prepare	= usbhsf_prepare_pop,
++	.prepare	= usbhsf_dma_prepare_pop,
+ 	.try_run	= usbhsf_dma_try_pop,
+ 	.dma_done	= usbhsf_dma_pop_done
+ };
+diff --git a/drivers/usb/renesas_usbhs/fifo.h b/drivers/usb/renesas_usbhs/fifo.h
+index f07037c1..04d3f8a 100644
+--- a/drivers/usb/renesas_usbhs/fifo.h
++++ b/drivers/usb/renesas_usbhs/fifo.h
+@@ -58,6 +58,7 @@ struct usbhs_pkt {
+ 		     struct usbhs_pkt *pkt);
+ 	struct work_struct work;
+ 	dma_addr_t dma;
++	dma_cookie_t cookie;
+ 	void *buf;
+ 	int length;
+ 	int trans;
+diff --git a/drivers/usb/renesas_usbhs/pipe.c b/drivers/usb/renesas_usbhs/pipe.c
+index 007f45a..4f9c335 100644
+--- a/drivers/usb/renesas_usbhs/pipe.c
++++ b/drivers/usb/renesas_usbhs/pipe.c
+@@ -84,6 +84,17 @@ static void __usbhsp_pipe_xxx_set(struct usbhs_pipe *pipe,
+ 		usbhs_bset(priv, pipe_reg, mask, val);
+ }
+ 
++static u16 __usbhsp_pipe_xxx_get(struct usbhs_pipe *pipe,
++				 u16 dcp_reg, u16 pipe_reg)
++{
++	struct usbhs_priv *priv = usbhs_pipe_to_priv(pipe);
++
++	if (usbhs_pipe_is_dcp(pipe))
++		return usbhs_read(priv, dcp_reg);
++	else
++		return usbhs_read(priv, pipe_reg);
++}
++
+ /*
+  *		DCPCFG/PIPECFG functions
+  */
+@@ -92,6 +103,11 @@ static void usbhsp_pipe_cfg_set(struct usbhs_pipe *pipe, u16 mask, u16 val)
+ 	__usbhsp_pipe_xxx_set(pipe, DCPCFG, PIPECFG, mask, val);
+ }
+ 
++static u16 usbhsp_pipe_cfg_get(struct usbhs_pipe *pipe)
++{
++	return __usbhsp_pipe_xxx_get(pipe, DCPCFG, PIPECFG);
++}
++
+ /*
+  *		PIPEnTRN/PIPEnTRE functions
+  */
+@@ -616,6 +632,11 @@ void usbhs_pipe_data_sequence(struct usbhs_pipe *pipe, int sequence)
+ 	usbhsp_pipectrl_set(pipe, mask, val);
+ }
+ 
++static int usbhs_pipe_get_data_sequence(struct usbhs_pipe *pipe)
++{
++	return !!(usbhsp_pipectrl_get(pipe) & SQMON);
++}
++
+ void usbhs_pipe_clear(struct usbhs_pipe *pipe)
+ {
+ 	if (usbhs_pipe_is_dcp(pipe)) {
+@@ -626,6 +647,24 @@ void usbhs_pipe_clear(struct usbhs_pipe *pipe)
  	}
- 	pci_bus_count = next_busno;
-+	ret = platform_pcibios_fixup();
-+	for (pci_ctrl = pci_ctrl_head; pci_ctrl; pci_ctrl = pci_ctrl->next)
-+		if (pci_ctrl->bus)
-+			pci_bus_add_devices(pci_ctrl->bus);
- 
--	return platform_pcibios_fixup();
-+	return ret;
  }
  
- subsys_initcall(pcibios_init);
-diff --git a/drivers/pci/probe.c b/drivers/pci/probe.c
-index 88604f2..8ef0375 100644
---- a/drivers/pci/probe.c
-+++ b/drivers/pci/probe.c
-@@ -2087,7 +2087,6 @@ struct pci_bus *pci_scan_root_bus(struct device *parent, int bus,
- 	if (!found)
- 		pci_bus_update_busn_res_end(b, max);
++void usbhs_pipe_config_change_bfre(struct usbhs_pipe *pipe, int enable)
++{
++	int sequence;
++
++	if (usbhs_pipe_is_dcp(pipe))
++		return;
++
++	usbhsp_pipe_select(pipe);
++	/* check if the driver needs to change the BFRE value */
++	if (!(enable ^ !!(usbhsp_pipe_cfg_get(pipe) & BFRE)))
++		return;
++
++	sequence = usbhs_pipe_get_data_sequence(pipe);
++	usbhsp_pipe_cfg_set(pipe, BFRE, enable ? BFRE : 0);
++	usbhs_pipe_clear(pipe);
++	usbhs_pipe_data_sequence(pipe, sequence);
++}
++
+ static struct usbhs_pipe *usbhsp_get_pipe(struct usbhs_priv *priv, u32 type)
+ {
+ 	struct usbhs_pipe *pos, *pipe;
+diff --git a/drivers/usb/renesas_usbhs/pipe.h b/drivers/usb/renesas_usbhs/pipe.h
+index d24a059..b0bc7b6 100644
+--- a/drivers/usb/renesas_usbhs/pipe.h
++++ b/drivers/usb/renesas_usbhs/pipe.h
+@@ -97,6 +97,7 @@ void usbhs_pipe_set_trans_count_if_bulk(struct usbhs_pipe *pipe, int len);
+ void usbhs_pipe_select_fifo(struct usbhs_pipe *pipe, struct usbhs_fifo *fifo);
+ void usbhs_pipe_config_update(struct usbhs_pipe *pipe, u16 devsel,
+ 			      u16 epnum, u16 maxp);
++void usbhs_pipe_config_change_bfre(struct usbhs_pipe *pipe, int enable);
  
--	pci_bus_add_devices(b);
- 	return b;
- }
- EXPORT_SYMBOL(pci_scan_root_bus);
+ #define usbhs_pipe_sequence_data0(pipe)	usbhs_pipe_data_sequence(pipe, 0)
+ #define usbhs_pipe_sequence_data1(pipe)	usbhs_pipe_data_sequence(pipe, 1)
+diff --git a/include/linux/usb/renesas_usbhs.h b/include/linux/usb/renesas_usbhs.h
+index 9fd9e48..f06529c 100644
+--- a/include/linux/usb/renesas_usbhs.h
++++ b/include/linux/usb/renesas_usbhs.h
+@@ -165,6 +165,8 @@ struct renesas_usbhs_driver_param {
+ 	 */
+ 	u32 has_otg:1; /* for controlling PWEN/EXTLP */
+ 	u32 has_sudmac:1; /* for SUDMAC */
++	u32 has_usb_dmac:1; /* for USB-DMAC */
++#define USBHS_USB_DMAC_XFER_SIZE	32	/* hardcode the xfer size */
+ };
+ 
+ #define USBHS_TYPE_R8A7790 1
 -- 
-1.7.1
+1.9.1
 
