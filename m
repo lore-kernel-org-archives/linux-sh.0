@@ -1,37 +1,46 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 18 Mar 2015 01:11:45 +0000
-Subject: Re: [PATCH v2 1/4] pinctrl: sh-pfc: Store register/field widths in u8 instead of unsigned long
-Message-Id: <CACRpkdZav+8L3AziXSN_Yfqdz304B8hun4D3m3==d+5WU_7bMg@mail.gmail.com>
+From: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 12 Mar 2015 04:33:41 +0000
+Subject: RE: [PATCH v2 1/4] usb: renesas_usbhs: fix spinlock suspected in a gadget complete function
+Message-Id: <HKNPR06MB3229E4509ECB25B3620B449D8060@HKNPR06MB322.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425985583-26279-1-git-send-email-geert+renesas@glider.be>
-	<1425985583-26279-2-git-send-email-geert+renesas@glider.be>
-	<CACRpkdbSNeHcf5H-0ovLYkpoQyPRO2ys_eksKHJhs10x-QVJKQ@mail.gmail.com>
-In-Reply-To: <CACRpkdbSNeHcf5H-0ovLYkpoQyPRO2ys_eksKHJhs10x-QVJKQ@mail.gmail.com>
+References: <1424051579-5060-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+	<1424051579-5060-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <CAMuHMdXOkzznW_4KJwqiO5UgYXYN2tZ+2OEYwA+eQJF2S-Z8jQ@mail.gmail.com>
+ <HKNPR06MB3227796F47FE559CEAD573DD82F0@HKNPR06MB322.apcprd06.prod.outlook.com>
+In-Reply-To: <HKNPR06MB3227796F47FE559CEAD573DD82F0@HKNPR06MB322.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Greg KH <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@ti.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, USB list <linux-usb@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-On Wed, Mar 18, 2015 at 2:10 AM, Linus Walleij <linus.walleij@linaro.org> wrote:
-> On Tue, Mar 10, 2015 at 12:06 PM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
->
->> Register and field widths are in the range 1..32. Storing them in the
->> pinctrl data in (arrays of) unsigned long wastes space.
->>
->> This decreases the size of a (32-bit) shmobile_defconfig kernel
->> supporting 7 SoCs by 26460 bytes.
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
->> ---
->> v2:
->>   - Add Acked-by.
->
-> Patch applied.
-
-Oh newer version exists, sigh, back out try the newer one...
-
-Yours,
-Linus Walleij
+SGkgR2VlcnQtc2FuIGFnYWluLA0KDQo+IEhpIEdlZXJ0LXNhbiwNCj4gDQo+IFRoYW5rIHlvdSBm
+b3IgdGhlIHJlcGx5IGFnYWluIQ0KPiANCj4gPiBIaSBTaGltb2RhLXNhbiwNCj4gPg0KPiA+IE9u
+IE1vbiwgRmViIDE2LCAyMDE1IGF0IDI6NTIgQU0sIFlvc2hpaGlybyBTaGltb2RhDQo+ID4gPHlv
+c2hpaGlyby5zaGltb2RhLnVoQHJlbmVzYXMuY29tPiB3cm90ZToNCj4gPiA+IEFjY29yZGluZyB0
+byB0aGUgZ2FkZ2V0LmgsIGEgImNvbXBsZXRlIiBmdW5jdGlvbiB3aWxsIGFsd2F5cyBiZSBjYWxs
+ZWQNCj4gPiA+IHdpdGggaW50ZXJydXB0cyBkaXNhYmxlZC4gSG93ZXZlciwgc29tZXRpbWVzIHVz
+YmhzZ19xdWV1ZV9wb3AoKSBmdW5jdGlvbg0KPiA+ID4gaXMgY2FsbGVkIHdpdGggaW50ZXJydXB0
+cyBlbmFibGVkLiBTbywgdGhpcyBmdW5jdGlvbiBzaG91bGQgY2FsbHMNCj4gPiA+IGxvY2FsX2ly
+cV9zYXZlKCkgYmVmb3JlIHRoaXMgY2FsbHMgdGhlIHVzYl9nYWRnZXRfZ2l2ZWJhY2tfcmVxdWVz
+dCgpLg0KPiA+ID4gT3RoZXJ3aXNlLCB0aGVyZSBpcyBwb3NzaWJsZSB0byBjYXVzZSBhIHNwaW5s
+b2NrIHN1c3BlY3RlZCBpbiBhIGdhZGdldA0KPiA+ID4gY29tcGxldGUgZnVuY3Rpb24uDQo+ID4N
+Cj4gPiBJIHN0aWxsIGZlZWwgdW5lYXN5IGFib3V0IGFkZGluZyB0aGUgY2FsbCB0byBsb2NhbF9p
+cnFfc2F2ZSgpLCBhcyB0aGUgbmVlZCBmb3INCj4gPiB0aGlzIGlzIHVzdWFsbHkgYW4gaW5kaWNh
+dG9yIG9mIGFub3RoZXIgbG9ja2luZyBwcm9ibGVtLg0KPiANCj4gSSBhbHNvIHRoaW5rIHRoYXQg
+SSB3b3VsZCBsaWtlIHRvIGF2b2lkIHVzaW5nIGxvY2FsX2lycV9zYXZlKCkuDQo+IEJ1dCwgSSBo
+YXZlIG5vIGlkZWEgdG8gcmVzb2x2ZSB0aGlzIGlzc3VlIGZvciBub3cuDQoNCkFmdGVyIEkgbW9k
+aWZpZWQgdXNiLWRtYWMgZHJpdmVyIHRvIHVzZSBhIHRhc2tsZXQgaW5zdGVhZCBvZiBhIGt0aHJl
+YWQsDQp0aGlzIGlzc3VlIGRpc2FwcGVhcmVkLg0KDQpNeSB1bmRlcnN0YW5kaW5nIGlzIHRoZSBm
+b2xsb3dpbmdzOg0KLSBBY2NvcmRpbmcgdG8gdGhlIGJhY2t0cmFjZSBiZWxvdywgZHVyaW5nIHVz
+YmhzZl9kbWFfY29tcGxldGUoKSB3YXMgcnVubmluZywNCiBhIHNvZnRpcnEgaGFwcGVuZWQuIEFm
+dGVyIG5jbV90eF90YXNrbGV0KCkgd2FzIGNhbGxlZCwgdGhlIGlzc3VlIGhhcHBlbmVkLg0KaHR0
+cDovL3RocmVhZC5nbWFuZS5vcmcvZ21hbmUubGludXgudXNiLmdlbmVyYWwvMTIyMDIzL2ZvY3Vz
+PTQzNzI5DQoNCi0gVGhpcyBtZWFucyB0aGF0IHVzYmhzZl9kbWFfY29tcGxldGUoKSByYW4gb24g
+YSBrdGhyZWFkLiBTbywgbmNtIGRyaXZlciBpcyBhYmxlDQogIHRvIGRvIHRoZSBuY21fdHhfdGFz
+a2xldCgpLg0KDQotIEFmdGVyIHRoZSBjdXJyZW50IHVzYi1kbWFjIGRyaXZlciwgc2luY2UgdXNi
+aHNmX2RtYV9jb21wbGV0ZSgpIHJ1bnMgb24gYSB0YXNrbGV0LA0KICBuY20gZHJpdmVyIGlzIG5v
+dCBhYmxlIHRvIGRvIHRoZSBuY21fdHhfdGFza2xldCBkdXJpbmcgdXNiaHNmX2RtYV9jb21wbGV0
+ZSgpIHdhcyBydW5uaW5nLg0KDQoNClNvLCBJIHdvdWxkIGxpa2UgdG8gcmVjYWxsIHRoaXMgcGF0
+Y2ggYW5kIEkgd2lsbCByZXN1Ym1pdCB0aGlzIHBhdGNoIHNlcmllcyBhcyB2My4NCg0KQmVzdCBy
+ZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1vZGENCg0K
