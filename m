@@ -1,46 +1,54 @@
-From: David Rientjes <rientjes@google.com>
-Date: Sat, 07 Mar 2015 23:54:16 +0000
-Subject: [patch 2/2] sh, dwarf: use mempool_create_slab_pool()
-Message-Id: <alpine.DEB.2.10.1503071554010.24048@chino.kir.corp.google.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 12 Mar 2015 10:09:12 +0000
+Subject: [PATCH v3 0/4] pinctrl: sh-pfc: cleanups
+Message-Id: <1426154956-26583-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.10.1503071553110.24048@chino.kir.corp.google.com>
-In-Reply-To: <alpine.DEB.2.10.1503071553110.24048@chino.kir.corp.google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Paul Mundt <lethal@linux-sh.org>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Mempools created for slab caches should use
-mempool_create_slab_pool().
+	Hi Linus,
 
-Signed-off-by: David Rientjes <rientjes@google.com>
----
- arch/sh/kernel/dwarf.c | 12 ++++--------
- 1 file changed, 4 insertions(+), 8 deletions(-)
+This patch series does some code (type) cleanups.
 
-diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
---- a/arch/sh/kernel/dwarf.c
-+++ b/arch/sh/kernel/dwarf.c
-@@ -1180,17 +1180,13 @@ static int __init dwarf_unwinder_init(void)
- 			sizeof(struct dwarf_reg), 0,
- 			SLAB_PANIC | SLAB_HWCACHE_ALIGN | SLAB_NOTRACK, NULL);
- 
--	dwarf_frame_pool = mempool_create(DWARF_FRAME_MIN_REQ,
--					  mempool_alloc_slab,
--					  mempool_free_slab,
--					  dwarf_frame_cachep);
-+	dwarf_frame_pool = mempool_create_slab_pool(DWARF_FRAME_MIN_REQ,
-+						    dwarf_frame_cachep);
- 	if (!dwarf_frame_pool)
- 		goto out;
- 
--	dwarf_reg_pool = mempool_create(DWARF_REG_MIN_REQ,
--					 mempool_alloc_slab,
--					 mempool_free_slab,
--					 dwarf_reg_cachep);
-+	dwarf_reg_pool = mempool_create_slab_pool(DWARF_REG_MIN_REQ,
-+						  dwarf_reg_cachep);
- 	if (!dwarf_reg_pool)
- 		goto out;
- 
+  - Patch 1 changes the types used for storing register and field widths
+    in the pinctrl data tables, shrinking them by an average of ca. 4
+    KiB per SoC,
+  - Patches 3, 4, and 5 do some more cleanups w.r.t. the choice of types.
+
+This series is against pinctrl/for-next.
+
+Boot-tested on r8a73a4/ape6evm, r8a7740/armadillo, r8a7791/koelsch, and
+sh73a0/kzm9g.
+
+Thanks for applying!
+
+Geert Uytterhoeven (4):
+  pinctrl: sh-pfc: Store register/field widths in u8 instead of unsigned
+    long
+  pinctrl: sh-pfc: Use unsigned int for register/field widths and
+    offsets
+  pinctrl: sh-pfc: Use reg_width instead of reg as sentinel
+  pinctrl: sh-pfc: Use u32 to store register addresses
+
+ drivers/pinctrl/sh-pfc/core.c   | 65 ++++++++++++++++++++---------------------
+ drivers/pinctrl/sh-pfc/core.h   |  4 +--
+ drivers/pinctrl/sh-pfc/gpio.c   | 18 +++++++-----
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 12 ++++----
+ 4 files changed, 52 insertions(+), 47 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
