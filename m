@@ -1,32 +1,51 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 18 Mar 2015 01:15:12 +0000
-Subject: Re: [PATCH v3 3/4] pinctrl: sh-pfc: Use reg_width instead of reg as sentinel
-Message-Id: <CACRpkdZ6kG0hJ7dno=ecFXEAPzpCUF3kDtS55rBkNo7+R1wu-A@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 12 Mar 2015 00:40:11 +0000
+Subject: [PATCH 2/2 v2] ARM: configs: remove all CONFIG_RCAR_AUDMAC_PP from ARM defconfigs
+Message-Id: <87mw3jf3qe.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426154956-26583-1-git-send-email-geert+renesas@glider.be>
-	<1426154956-26583-4-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1426154956-26583-4-git-send-email-geert+renesas@glider.be>
+References: <87pp8ff3sb.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87pp8ff3sb.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 12, 2015 at 11:09 AM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> All other loops over sh_pfc_soc_info.data_regs[] use
-> pinmux_data_reg.regwidth as the sentinel, which is safer as zero is
-> never a valid regwidth value (reg could be zero if we start using it to
-> store an offset).
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> ---
-> v3:
->   - Add Acked-by,
+Renesas R-Car sound (= rsnd) needs 2 DMAC which are called as
+Audio DMAC (= 1st DMAC) and Audio DMAC peri peri (2nd DMAC).
+And rsnd had assumed that 1st / 2nd DMACs are implemented as DMAEngine.
+But, in result of DMA ML discussion, 2nd DMAC was concluded that it is
+not a general purpose DMAC (2nd DMAC is for Device to Device inside
+sound system). Additionally, current DMAEngine can't support Device to
+Device, and we don't have correct DT bindings for it at this point.
+So the easiest solution for it is that move it from DMAEngine to rsnd
+driver.
+Audio DMAC peri peri DMAEngine is no longer needed.
+Remove all CONFIG_RCAR_AUDMAC_PP from ARM defconfigs
 
-Patch applied.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v1 -> v2
 
-Yours,
-Linus Walleij
+ - new patch
+
+ arch/arm/configs/multi_v7_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index 06075b6..e805984 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -505,7 +505,6 @@ CONFIG_DW_DMAC=y
+ CONFIG_MV_XOR=y
+ CONFIG_TEGRA20_APB_DMA=y
+ CONFIG_SH_DMAE=y
+-CONFIG_RCAR_AUDMAC_PP=m
+ CONFIG_RCAR_DMAC=y
+ CONFIG_STE_DMA40=y
+ CONFIG_SIRF_DMA=y
+-- 
+1.9.1
+
