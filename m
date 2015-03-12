@@ -1,41 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 05 Mar 2015 01:58:02 +0000
-Subject: [PATCH 10/13] ARM: shmobile: ape6evm dts: Drop console= bootargs parameter
-Message-Id: <d1e21e3f57513c5ac09d722590f5ad6eee7ae1df.1425517246.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 12 Mar 2015 06:35:17 +0000
+Subject: [PATCH v3 0/3] usb: renesas_usbhs: add support for USB-DMAC
+Message-Id: <1426142120-5072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425517246.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425517246.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: gregkh@linuxfoundation.org, balbi@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+This patch set is based on Felipe's usb.git / testing/next branch.
+(commit id = 9024c495f35be735a917571406fab30a789c27d1)
 
-Since ("ARM: shmobile: r8a73a4: ape6evm: Remove legacy platform"),
-ape6evm is restricted to booting from DT, so chosen/stdout-path is
-always used, and we can drop the "console=" parameter from
-chosen/bootargs.
+To use the USB-DMAC, we have to add some device nodes for USB-DMAC
+in dts file. If we don't have such device nodes, this driver will
+use PIO.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a73a4-ape6evm.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Changes from v2:
+ - Remove patch 1 because this spinlock suspected issue disappears
+   if I use a new usb-dmac dmaengine driver.
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index 44c4cac..f9e8151 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -22,7 +22,7 @@
- 	};
- 
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp rw";
-+		bootargs = "ignore_loglevel root=/dev/nfs ip=dhcp rw";
- 		stdout-path = &scifa0;
- 	};
- 
+Changes from v1:
+ - Change local_irq_save/restore() area in patch 1.
+ - Modify the commit log in patch 1.
+ - fix some comments in patch 4.
+
+Yoshihiro Shimoda (3):
+  usb: renesas_usbhs: add the channel number in dma-names
+  usb: renesas_usbhs: fix the sequence in xfer_work()
+  usb: renesas_usbhs: add support for USB-DMAC
+
+ .../devicetree/bindings/usb/renesas_usbhs.txt      |   5 +-
+ drivers/usb/renesas_usbhs/common.c                 |  19 +++
+ drivers/usb/renesas_usbhs/common.h                 |   7 +
+ drivers/usb/renesas_usbhs/fifo.c                   | 189 +++++++++++++++++++--
+ drivers/usb/renesas_usbhs/fifo.h                   |   1 +
+ drivers/usb/renesas_usbhs/pipe.c                   |  39 +++++
+ drivers/usb/renesas_usbhs/pipe.h                   |   1 +
+ include/linux/usb/renesas_usbhs.h                  |   2 +
+ 8 files changed, 247 insertions(+), 16 deletions(-)
+
 -- 
-2.1.4
+1.9.1
 
