@@ -1,59 +1,62 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Mon, 09 Mar 2015 15:32:26 +0000
+From: keita kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Fri, 13 Mar 2015 05:01:39 +0000
 Subject: Re: [RFC/PATCH 0/6] Add CPUIdle support for Renesas SoCs
-Message-Id: <54FDBD0A.5060001@linaro.org>
+Message-Id: <55026F33.4020000@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425444946-3084-1-git-send-email-keita.kobayashi.ym@renesas.com> <54F89A23.1060008@linaro.org> <54F97599.7050904@renesas.com> <20150309152155.GC456@linaro.org>
-In-Reply-To: <20150309152155.GC456@linaro.org>
+References: <1425444946-3084-1-git-send-email-keita.kobayashi.ym@renesas.com> <54F89A23.1060008@linaro.org> <54F97599.7050904@renesas.com> <20150309152155.GC456@linaro.org> <54FDBD0A.5060001@linaro.org>
+In-Reply-To: <54FDBD0A.5060001@linaro.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: keita kobayashi <keita.kobayashi.ym@renesas.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Daniel Lezcano <daniel.lezcano@linaro.org>
 Cc: Lina Iyer <lina.iyer@linaro.org>, horms@verge.net.au, rjw@rjwysocki.net, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com
 
-On 03/09/2015 04:21 PM, Lina Iyer wrote:
-> On Fri, Mar 06 2015 at 02:38 -0700, keita kobayashi wrote:
->> Hi Daniel
+Hi Daniel, Lina
 
-[ ... ]
+Sorry for late reply.
 
+(2015/03/10 0:32), Daniel Lezcano wrote:
+
+> On 03/09/2015 04:21 PM, Lina Iyer wrote:
+>> On Fri, Mar 06 2015 at 02:38 -0700, keita kobayashi wrote:
+>>> Hi Daniel
+> 
+> [ ... ]
+> 
+>>>>
+>>>> Hi Keita,
+>>>>
+>>>> the platform approach to pass private data from the arch specific to
+>>>> the cpuidle driver no longer accepted. Unfortunately, there is no
+>>>> alternate solution upstream.
+>>>>
+>>>> But hopefully, there is a patchset [1] submitted for upstreaming
+>>>> which unify arm32/64 into a single generic cpuidle driver and use the
+>>>> DT to define the idle functions to be used.
+>>>>
+>>>> I suggest you have a look at this patchset if it can fit your need.
+>>>>
+>>>>   -- Daniel
+>>>>
+>>>> [1] https://lkml.org/lkml/2015/3/3/271
 >>>
->>> Hi Keita,
->>>
->>> the platform approach to pass private data from the arch specific to
->>> the cpuidle driver no longer accepted. Unfortunately, there is no
->>> alternate solution upstream.
->>>
->>> But hopefully, there is a patchset [1] submitted for upstreaming
->>> which unify arm32/64 into a single generic cpuidle driver and use the
->>> DT to define the idle functions to be used.
->>>
->>> I suggest you have a look at this patchset if it can fit your need.
->>>
->>>   -- Daniel
->>>
->>> [1] https://lkml.org/lkml/2015/3/3/271
+>>> Thank you for information.
+>>> I will take a look at the patch series.
 >>
->> Thank you for information.
->> I will take a look at the patch series.
->
-> Hi Kieta,
->
-> Please also have a look at the v15 of the cpuidle support for QCOM SoC.
-> Sent just now.  It is based on [1].
+>> Hi Kieta,
+>>
+>> Please also have a look at the v15 of the cpuidle support for QCOM SoC.
+>> Sent just now.  It is based on [1].
+> > Lina's patchset is available at:
+> 
+> https://www.mail-archive.com/devicetree@vger.kernel.org/msg64700.html
+> 
+> Thanks
+>   -- Daniel
+> 
 
-Lina's patchset is available at:
+Thank you for information.
+I will confirm it.
 
-https://www.mail-archive.com/devicetree@vger.kernel.org/msg64700.html
-
-Thanks
-   -- Daniel
-
---=20
-  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
-M SoCs
-
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
-
+Regards.
+Keita Kobayashi
