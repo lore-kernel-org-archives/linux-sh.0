@@ -1,45 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 06 Mar 2015 11:31:28 +0000
-Subject: Re: [PATCH 01/16] ARM: shmobile: r8a7778: synchronize dts with reference platform
-Message-Id: <20150306113128.GC27105@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 14 Mar 2015 15:38:39 +0000
+Subject: [PATCH] video: fbdev: sh_mobile_lcdcfb: Fix ROP3 sysfs attribute parsing
+Message-Id: <1426347519-2541-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425518337.git.horms+renesas@verge.net.au>
- <8c4892a633f08edbc54b6b59a673f76bd1cd7e94.1425518337.git.horms+renesas@verge.net.au>
- <54F85467.2010700@cogentembedded.com>
-In-Reply-To: <54F85467.2010700@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-On Thu, Mar 05, 2015 at 04:04:39PM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 3/5/2015 4:58 AM, Simon Horman wrote:
-> 
-> >From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> 
-> >This moves everything to the legacy dts that is missing there to make it
-> >suitable for use with multiplatform.
-> 
-> >Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> >Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >---
-> >  arch/arm/boot/dts/r8a7778-bockw.dts | 106 ++++++++++++++++++++++++++++++++++++
-> >  1 file changed, 106 insertions(+)
-> 
-> >diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-> >index 46a884d..7347223 100644
-> >--- a/arch/arm/boot/dts/r8a7778-bockw.dts
-> >+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-> >@@ -16,17 +16,123 @@
-> [...]
-> >+
-> >+	fixedregulator3v3: fixedregulator@0 {
-> 
->    Ugh, this node should be named just "regulator@0". The label also doesn't
-> appeal to me -- I'd rather prefer a name derived from the schematics. :-/
+The ROP3 attribute is expressed as an integer in the 0-255 range. Remove
+the wrong conversion to boolean when parsing it.
 
-Please feel free to supply an incremental cleanup patch.
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/video/fbdev/sh_mobile_lcdcfb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/fbdev/sh_mobile_lcdcfb.c b/drivers/video/fbdev/sh_mobile_lcdcfb.c
+index d3013cd9f976..23421ec1c4e4 100644
+--- a/drivers/video/fbdev/sh_mobile_lcdcfb.c
++++ b/drivers/video/fbdev/sh_mobile_lcdcfb.c
+@@ -1461,7 +1461,7 @@ overlay_rop3_store(struct device *dev, struct device_attribute *attr,
+ 	unsigned int rop3;
+ 	char *endp;
+ 
+-	rop3 = !!simple_strtoul(buf, &endp, 10);
++	rop3 = simple_strtoul(buf, &endp, 10);
+ 	if (isspace(*endp))
+ 		endp++;
+ 
+-- 
+Regards,
+
+Laurent Pinchart
+
