@@ -1,41 +1,62 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 06 Mar 2015 10:45:56 +0000
-Subject: Re: [PATCH 1/4] pinctrl: sh-pfc: Do not overwrite bias configuration
-Message-Id: <CACRpkdaCk26hq9ZjTbzn3dqPCnhALmN=96aQ30Cigk4nqGTJdg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sun, 15 Mar 2015 23:03:07 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC da9063/da9210 Regulator Quirk for v4.1
+Message-Id: <cover.1426456462.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425058685-12956-1-git-send-email-geert+renesas@glider.be>
-	<1425058685-12956-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1425058685-12956-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Feb 27, 2015 at 6:38 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+Hi Olof, Hi Kevin, Hi Arnd,
 
-> After the last user of the in_pd/in_pu bias parameters of the _PCRH()
-> macro was removed in commit 80da8e02d22caaef ("sh-pfc: r8a7740: Add bias
-> (pull-up/down) pinconf support"), bias parameters are supposed to be
-> configured using the generic pinctl mechanism, which calls the
-> .set_bias() method.
->
-> However, the PORTCR() macro still represents the control register as
-> consisting of two 4-bit fields. Hence the bias configuration in the
-> uppermost 2 bits is always overwritten with zeroes when a pin is
-> configured for GPIO, disabling any previously configured bias.
->
-> Use the variable config register macro instead, to represent the
-> register as having 4 fields, and to make sure only the input/output
-> control and function fields are touched.
->
-> This affects R-Mobile APE6 (r8a73a4), R-Mobile A1 (r8a7740), SH-Mobile
-> AP4 (sh7372), and SH-Mobile AG5 (sh73a0).
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Please consider these Renesas ARM based SoC da9063/da9210 regulator quirk
+for v4.1.
 
-Patch applied with Laurent's ACK.
 
-Yours,
-Linus Walleij
+The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
+
+  Linux 4.0-rc1 (2015-02-22 18:21:14 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-da9063-da9210-quirk-for-v4.1
+
+for you to fetch changes up to 46dd8a809effdc7ebe6ec760e3e421d5ac2a40f1:
+
+  ARM: shmobile: lager: Add da9063 PMIC device node for system restart (2015-03-11 09:52:21 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC da9063/da9210 Regulator Quirk for v4.1
+
+The r8a7790/lager and r8a7791/koelsch development boards have da9063 and
+da9210 regulators.  Both regulators have their interrupt request lines
+tied to the same interrupt pin (IRQ2) on the SoC.
+
+After cold boot or da9063-induced restart, both the da9063 and da9210
+seem to assert their interrupt request lines.  Hence as soon as one
+driver requests this irq, it gets stuck in an interrupt storm, as it
+only manages to deassert its own interrupt request line, and the other
+driver hasn't installed an interrupt handler yet.
+
+To handle this, install a quirk that masks the interrupts in both the
+da9063 and da9210.  This quirk has to run after the i2c master driver
+has been initialized, but before the i2c slave drivers are initialized.
+As it depends on i2c, select I2C if one of the affected platforms is
+enabled in the kernel config.
+
+----------------------------------------------------------------
+Geert Uytterhoeven (5):
+      ARM: shmobile: R-Car Gen2: Add da9063/da9210 regulator quirk
+      ARM: shmobile: koelsch dts: Add da9210 regulator interrupt
+      ARM: shmobile: koelsch: Add da9063 PMIC device node for system restart
+      ARM: shmobile: lager dts: Add da9210 regulator interrupt
+      ARM: shmobile: lager: Add da9063 PMIC device node for system restart
+
+ arch/arm/boot/dts/r8a7790-lager.dts                |  18 +++
+ arch/arm/boot/dts/r8a7791-koelsch.dts              |  18 +++
+ arch/arm/mach-shmobile/Kconfig                     |   2 +
+ arch/arm/mach-shmobile/Makefile                    |   2 +
+ arch/arm/mach-shmobile/regulator-quirk-rcar-gen2.c | 147 +++++++++++++++++++++
+ 5 files changed, 187 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/regulator-quirk-rcar-gen2.c
