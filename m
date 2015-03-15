@@ -1,91 +1,135 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 12 Mar 2015 06:35:18 +0000
-Subject: [PATCH v3 1/3] usb: renesas_usbhs: add the channel number in dma-names
-Message-Id: <1426142120-5072-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 15 Mar 2015 21:55:38 +0000
+Subject: [RFC/PATCH 3/5] drm/rcar-du: Add VSP1 support to the planes allocator
+Message-Id: <1426456540-21006-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426142120-5072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1426142120-5072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1426456540-21006-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1426456540-21006-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: gregkh@linuxfoundation.org, balbi@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-api@vger.kernel.org, Daniel Vetter <daniel.vetter@intel.com>, Rob Clark <robdclark@gmail.com>, Thierry Reding <thierry.reding@gmail.com>, Magnus Damm <magnus.damm@gmail.com>
 
-To connect the channel of USB-DMAC to USBHS DnFIFO number, this patch
-adds this channel/FIFO number in dma-names. Otherwise, this driver
-needs to add analysis code for device tree.
+The R8A7790 DU can source frames directly from the VSP1 devices VSPD0
+and VSPD1. VSPD0 feeds DU0/1 plane 0, and VSPD1 feeds either DU2 plane 0
+or DU0/1 plane 1.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Allocate the correct fixed plane when sourcing frames from VSPD0 or
+VSPD1, and allocate planes in reverse index order otherwise to ensure
+maximum availability of planes 0 and 1.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- .../devicetree/bindings/usb/renesas_usbhs.txt        |  5 ++++-
- drivers/usb/renesas_usbhs/fifo.c                     | 20 +++++++++++++-------
- 2 files changed, 17 insertions(+), 8 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c   | 40 ++++++++++++++++++++++++++++-----
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c |  1 +
+ drivers/gpu/drm/rcar-du/rcar_du_plane.h |  7 ++++++
+ 3 files changed, 43 insertions(+), 5 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-index 61b045b..dc2a18f 100644
---- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-+++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-@@ -15,7 +15,10 @@ Optional properties:
-   - phys: phandle + phy specifier pair
-   - phy-names: must be "usb"
-   - dmas: Must contain a list of references to DMA specifiers.
--  - dma-names : Must contain a list of DMA names, "tx" or "rx".
-+  - dma-names : Must contain a list of DMA names:
-+   - tx0 ... tx<n>
-+   - rx0 ... rx<n>
-+    - This <n> means DnFIFO in USBHS module.
- 
- Example:
- 	usbhs: usb@e6590000 {
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index d891bff..28d10eb 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -1069,23 +1069,29 @@ static void usbhsf_dma_init_pdev(struct usbhs_fifo *fifo)
- 					    &fifo->rx_slave);
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index fb052bca574f..17f89bfca8f8 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -244,11 +244,41 @@ static unsigned int rcar_du_plane_hwmask(struct rcar_du_plane_state *state)
+ 	return mask;
  }
  
--static void usbhsf_dma_init_dt(struct device *dev, struct usbhs_fifo *fifo)
-+static void usbhsf_dma_init_dt(struct device *dev, struct usbhs_fifo *fifo,
-+			       int channel)
+-static int rcar_du_plane_hwalloc(unsigned int num_planes, unsigned int free)
++/*
++ * The R8A7790 DU can source frames directly from the VSP1 devices VSPD0 and
++ * VSPD1. VSPD0 feeds DU0/1 plane 0, and VSPD1 feeds either DU2 plane 0 or
++ * DU0/1 plane 1.
++ *
++ * Allocate the correct fixed plane when sourcing frames from VSPD0 or VSPD1,
++ * and allocate planes in reverse index order otherwise to ensure maximum
++ * availability of planes 0 and 1.
++ *
++ * The caller is responsible for ensuring that the requested source is
++ * compatible with the DU revision.
++ */
++static int rcar_du_plane_hwalloc(struct rcar_du_plane *plane,
++				 struct rcar_du_plane_state *state,
++				 unsigned int free)
  {
--	fifo->tx_chan = dma_request_slave_channel_reason(dev, "tx");
-+	char name[16];
+-	unsigned int i;
++	unsigned int num_planes = state->format->planes;
++	int fixed = -1;
++	int i;
 +
-+	snprintf(name, sizeof(name), "tx%d", channel);
-+	fifo->tx_chan = dma_request_slave_channel_reason(dev, name);
- 	if (IS_ERR(fifo->tx_chan))
- 		fifo->tx_chan = NULL;
--	fifo->rx_chan = dma_request_slave_channel_reason(dev, "rx");
++	if (state->source = RCAR_DU_PLANE_VSPD0) {
++		/* VSPD0 feeds plane 0 on DU0/1. */
++		if (plane->group->index != 0)
++			return -EINVAL;
 +
-+	snprintf(name, sizeof(name), "rx%d", channel);
-+	fifo->rx_chan = dma_request_slave_channel_reason(dev, name);
- 	if (IS_ERR(fifo->rx_chan))
- 		fifo->rx_chan = NULL;
++		fixed = 0;
++	} else if (state->source = RCAR_DU_PLANE_VSPD1) {
++		/* VSPD1 feeds plane 1 on DU0/1 or plane 0 on DU2. */
++		fixed = plane->group->index = 0 ? 1 : 0;
++	}
++
++	if (fixed >= 0)
++		return free & (1 << fixed) ? fixed : -EBUSY;
+ 
+-	for (i = 0; i < RCAR_DU_NUM_HW_PLANES; ++i) {
++	for (i = RCAR_DU_NUM_HW_PLANES - 1; i >= 0; --i) {
+ 		if (!(free & (1 << i)))
+ 			continue;
+ 
+@@ -256,7 +286,7 @@ static int rcar_du_plane_hwalloc(unsigned int num_planes, unsigned int free)
+ 			break;
+ 	}
+ 
+-	return i = RCAR_DU_NUM_HW_PLANES ? -EBUSY : i;
++	return i < 0 ? -EBUSY : i;
  }
  
--static void usbhsf_dma_init(struct usbhs_priv *priv,
--			    struct usbhs_fifo *fifo)
-+static void usbhsf_dma_init(struct usbhs_priv *priv, struct usbhs_fifo *fifo,
-+			    int channel)
- {
- 	struct device *dev = usbhs_priv_to_dev(priv);
+ static int rcar_du_atomic_check(struct drm_device *dev,
+@@ -372,7 +402,7 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 		    !rcar_du_plane_needs_realloc(plane, plane_state))
+ 			continue;
  
- 	if (dev->of_node)
--		usbhsf_dma_init_dt(dev, fifo);
-+		usbhsf_dma_init_dt(dev, fifo, channel);
- 	else
- 		usbhsf_dma_init_pdev(fifo);
+-		idx = rcar_du_plane_hwalloc(plane_state->format->planes,
++		idx = rcar_du_plane_hwalloc(plane, plane_state,
+ 					group_free_planes[plane->group->index]);
+ 		if (idx < 0) {
+ 			dev_dbg(rcdu->dev, "%s: no available hardware plane\n",
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index 210e5c3fd982..80e4dba78aef 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -288,6 +288,7 @@ static void rcar_du_plane_reset(struct drm_plane *plane)
+ 		return;
  
-@@ -1231,7 +1237,7 @@ do {									\
- 			usbhs_get_dparam(priv, d##channel##_tx_id);	\
- 	fifo->rx_slave.shdma_slave.slave_id =				\
- 			usbhs_get_dparam(priv, d##channel##_rx_id);	\
--	usbhsf_dma_init(priv, fifo);					\
-+	usbhsf_dma_init(priv, fifo, channel);				\
- } while (0)
+ 	state->hwindex = -1;
++	state->source = RCAR_DU_PLANE_MEMORY;
+ 	state->alpha = 255;
+ 	state->colorkey = RCAR_DU_COLORKEY_NONE;
+ 	state->zpos = plane->type = DRM_PLANE_TYPE_PRIMARY ? 0 : 1;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.h b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+index abff0ebeb195..81c2d361a94f 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+@@ -28,6 +28,12 @@ struct rcar_du_group;
+ #define RCAR_DU_NUM_KMS_PLANES		9
+ #define RCAR_DU_NUM_HW_PLANES		8
  
- #define USBHS_DFIFO_INIT(priv, fifo, channel)				\
++enum rcar_du_plane_source {
++	RCAR_DU_PLANE_MEMORY,
++	RCAR_DU_PLANE_VSPD0,
++	RCAR_DU_PLANE_VSPD1,
++};
++
+ struct rcar_du_plane {
+ 	struct drm_plane plane;
+ 	struct rcar_du_group *group;
+@@ -51,6 +57,7 @@ struct rcar_du_plane_state {
+ 
+ 	const struct rcar_du_format_info *format;
+ 	int hwindex;		/* 0-based, -1 means unused */
++	enum rcar_du_plane_source source;
+ 
+ 	unsigned int alpha;
+ 	unsigned int colorkey;
 -- 
-1.9.1
+2.0.5
 
