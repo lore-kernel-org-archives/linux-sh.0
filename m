@@ -1,28 +1,58 @@
-From: Kevin Hilman <khilman@kernel.org>
-Date: Tue, 31 Mar 2015 22:25:46 +0000
-Subject: Re: [PATCH/RFC 1/5] clk: shmobile: rcar-gen2: Add CPG Clock Domain support
-Message-Id: <7h4mp0953p.fsf@deeprootsystems.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 15 Mar 2015 14:43:53 +0000
+Subject: [PATCH/RFC] ARM: shmobile: r8a7791: Remove MSIOF address from device tree
+Message-Id: <1426430633-3867-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426708017-28885-1-git-send-email-geert+renesas@glider.be>
- <1426708017-28885-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1426708017-28885-2-git-send-email-geert+renesas@glider.be>
- (Geert Uytterhoeven's message of "Wed, 18 Mar 2015 20:46:53 +0100")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Geert Uytterhoeven <geert+renesas@glider.be> writes:
+From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
 
-> Add Clock Domain support to the R-Car Gen2 Clock Pulse Generator (CPG)
-> driver using the generic PM Domain.  This allows to power-manage the
-> module clocks of SoC devices that are part of the CPG Clock Domain using
-> Runtime PM, or for system suspend/resume.
->
-> SoC devices that are part of the CPG Clock Domain and can be
-> power-managed through their primary clock should be tagged in DT with a
-> proper "power-domains" property.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
+MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
 
-Reviewed-by: Kevin Hilman <khilman@linaro.org>
+Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+
+This patch is based on devel branch of Simon Horman's renesas tree.
+
+ arch/arm/boot/dts/r8a7791.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 4696062..3e9f824 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1288,7 +1288,7 @@
+ 
+ 	msiof0: spi@e6e20000 {
+ 		compatible = "renesas,msiof-r8a7791";
+-		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
++		reg = <0 0xe6e20000 0 0x0064>;
+ 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7791_CLK_MSIOF0>;
+ 		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
+@@ -1300,7 +1300,7 @@
+ 
+ 	msiof1: spi@e6e10000 {
+ 		compatible = "renesas,msiof-r8a7791";
+-		reg = <0 0xe6e10000 0 0x0064>, <0 0xe7e10000 0 0x0064>;
++		reg = <0 0xe6e10000 0 0x0064>;
+ 		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7791_CLK_MSIOF1>;
+ 		dmas = <&dmac0 0x55>, <&dmac0 0x56>;
+@@ -1312,7 +1312,7 @@
+ 
+ 	msiof2: spi@e6e00000 {
+ 		compatible = "renesas,msiof-r8a7791";
+-		reg = <0 0xe6e00000 0 0x0064>, <0 0xe7e00000 0 0x0064>;
++		reg = <0 0xe6e00000 0 0x0064>;
+ 		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7791_CLK_MSIOF2>;
+ 		dmas = <&dmac0 0x41>, <&dmac0 0x42>;
+-- 
+1.9.1
+
