@@ -1,34 +1,99 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 24 Mar 2015 17:14:57 +0000
-Subject: Re: [PATCH 0/3] bockw SD pull-ups
-Message-Id: <CAMuHMdWdTkSnVAoQ=m8yH3U7F8BqfovjYPJcoJ1S+pz_N3eusg@mail.gmail.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 15 Mar 2015 14:28:15 +0000
+Subject: [PATCH/RFC] serial: sh-sci: Add overrun handling of SCIFA and SCIFB
+Message-Id: <1426429695-2993-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426854638-9187-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1426854638-9187-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-serial@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Ulrich,
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-On Fri, Mar 20, 2015 at 1:30 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> This series implements pull-up configuration in the r8a7778 PFC driver
-> and sets the SD0_WP and SD0_CD pull-ups on the Bock-W board correctly,
-> replacing the hack that is used in the legacy platforms.
+SCIFA and SCIFB can detect the overrun, but it does not support.
+This adds overrun handling of SCIFA and SCIFB.
 
-Thanks for your series. This is very useful.
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-We can do a similar thing on the variious R-Car Gen2 SoCs.
+This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+tree.
 
-Gr{oetje,eeting}s,
+ drivers/tty/serial/sh-sci.c | 34 +++++++++++++++++++++++-----------
+ 1 file changed, 23 insertions(+), 11 deletions(-)
 
-                        Geert
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 5b50c79..d165b21 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -844,14 +844,26 @@ static int sci_handle_fifo_overrun(struct uart_port *port)
+ 	struct tty_port *tport = &port->state->port;
+ 	struct sci_port *s = to_sci_port(port);
+ 	struct plat_sci_reg *reg;
+-	int copied = 0;
++	int copied = 0, offset;
++	u16 status, bit;
++
++	if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
++		offset = SCLSR;
++	else if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
++		offset = SCxSR;
++	else
++		return 0;
+ 
+-	reg = sci_getreg(port, SCLSR);
++	reg = sci_getreg(port, offset);
+ 	if (!reg->size)
+ 		return 0;
+ 
+-	if ((serial_port_in(port, SCLSR) & (1 << s->overrun_bit))) {
+-		serial_port_out(port, SCLSR, 0);
++	status = serial_port_in(port, offset);
++	bit = 1 << s->overrun_bit;
++
++	if (status & bit) {
++		status &= ~bit;
++		serial_port_out(port, offset, status);
+ 
+ 		port->icount.overrun++;
+ 
+@@ -996,8 +1008,7 @@ static inline unsigned long port_rx_irq_mask(struct uart_port *port)
+ 
+ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ {
+-	unsigned short ssr_status, scr_status, err_enabled;
+-	unsigned short slr_status = 0;
++	unsigned short ssr_status, scr_status, err_enabled, orer_status = 0;
+ 	struct uart_port *port = ptr;
+ 	struct sci_port *s = to_sci_port(port);
+ 	irqreturn_t ret = IRQ_NONE;
+@@ -1005,7 +1016,10 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ 	ssr_status = serial_port_in(port, SCxSR);
+ 	scr_status = serial_port_in(port, SCSCR);
+ 	if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
+-		slr_status = serial_port_in(port, SCLSR);
++		orer_status = serial_port_in(port, SCLSR);
++	else if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
++		orer_status = ssr_status;
++
+ 	err_enabled = scr_status & port_rx_irq_mask(port);
+ 
+ 	/* Tx Interrupt */
+@@ -1033,10 +1047,8 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ 		ret = sci_br_interrupt(irq, ptr);
+ 
+ 	/* Overrun Interrupt */
+-	if (port->type = PORT_SCIF || port->type = PORT_HSCIF) {
+-		if (slr_status & 0x01)
+-			sci_handle_fifo_overrun(port);
+-	}
++	if (orer_status & (1 << s->overrun_bit))
++		sci_handle_fifo_overrun(port);
+ 
+ 	return ret;
+ }
+-- 
+1.9.1
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
