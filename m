@@ -1,46 +1,56 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 30 Mar 2015 11:38:56 +0000
-Subject: Fwd: [PATCH 2/3] pinctrl: sh-pfc: r8a7778: Add bias (pull-up) pinconf support
-Message-Id: <CAO3366wrMFNc0YrBMqKFdy6uh6WBdkn47j86PSv91s67na8sGg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sun, 15 Mar 2015 23:03:09 +0000
+Subject: [PATCH 5/5] ARM: shmobile: lager: Add da9063 PMIC device node for system restart
+Message-Id: <46dd8a809effdc7ebe6ec760e3e421d5ac2a40f1.1426456462.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1426456462.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1426456462.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Mar 30, 2015 at 12:04 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
->
-> On Fri, Mar 20, 2015 at 1:30 PM, Ulrich Hecht
-> <ulrich.hecht+renesas@gmail.com> wrote:
-> > --- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> > +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-[...]
->
-> > +static unsigned int r8a7778_pinmux_get_bias(struct sh_pfc *pfc,
-> > +                                           unsigned int pin)
-> > +{
-> > +       void __iomem *addr;
-> > +
-> > +       BUG_ON(!pullups[pin].reg);
->
-> This looks a bit strong to me.
->
-> As pinconf_ops.pin_config_[gs]et() do return error codes, perhaps
-> sh_pfc_soc_operations.[gs]et_bias() should be changed to allow the
-> return of error codes, too, so you can return -ENOTSUPP here?
->
-> If you really feel the need to scream, I'd use WARN_ON_ONCE() instead.
+Add a device node for the da9063 PMIC, with subnodes for rtc and wdt.
+Regulator support is not yet included.
 
+This allows the system to be restarted when the watchdog timer times
+out, or when a system restart is requested.
 
-I don't know... These methods are only supposed to be called for pins
-that are configured as biasable (with an SH_PFC_PIN_CFG_PULL_UP flag,
-for instance). If a pin isn't, sh_pfc_pinconf_get() returns -ENOTSUPP.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-So if we encounter a pin we don't know how to handle, either the flag
-is set incorrectly, or the table is missing an entry. I'd call either
-of these cases a bug.
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index e2f4746..2a0f895 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -513,6 +513,22 @@
+ 	pinctrl-0 = <&iic3_pins>;
+ 	status = "okay";
+ 
++	pmic@58 {
++		compatible = "dlg,da9063";
++		reg = <0x58>;
++		interrupt-parent = <&irqc0>;
++		interrupts = <2 IRQ_TYPE_LEVEL_LOW>;
++		interrupt-controller;
++
++		rtc {
++			compatible = "dlg,da9063-rtc";
++		};
++
++		wdt {
++			compatible = "dlg,da9063-watchdog";
++		};
++	};
++
+ 	vdd_dvfs: regulator@68 {
+ 		compatible = "dlg,da9210";
+ 		reg = <0x68>;
+-- 
+2.1.4
 
-CU
-Uli
