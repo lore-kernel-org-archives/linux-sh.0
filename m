@@ -1,80 +1,123 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 18 Mar 2015 19:15:59 +0000
-Subject: [PATCH/RFC 0/5] ARM: shmobile: Add INTC-SYS clock to device tree
-Message-Id: <1426706164-28309-1-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 15 Mar 2015 21:55:40 +0000
+Subject: [RFC/PATCH 5/5] drm/rcar-du: Restart the DU group when a plane source changes
+Message-Id: <1426456540-21006-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1426456540-21006-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1426456540-21006-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org, linux-api@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Daniel Vetter <daniel.vetter@intel.com>, linux-media@vger.kernel.org
 
-	Hi,
+Plane sources are configured by the VSPS bit in the PnDDCR4 register.
+Although the datasheet states that the bit is updated during vertical
+blanking, it seems that updates only occur when the DU group is held in
+reset through the DSYSR.DRES bit. Restart the group if the source
+changes.
 
-This RFC patch series adds the INTC-SYS clock to the device tree on SoCs
-that have such a clock (r8a73a4 and r8a779x). This clock is the module
-clock for the GIC, and thus must not be disabled, as that would cause a
-lock-up.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c  | 10 ++++++++--
+ drivers/gpu/drm/rcar-du/rcar_du_group.c |  2 ++
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 22 ++++++++++++++++++++--
+ drivers/gpu/drm/rcar-du/rcar_du_plane.h |  1 +
+ 4 files changed, 31 insertions(+), 4 deletions(-)
 
-Currently, the GIC driver cannot enable the module clock for several
-reasons:
-  - It does not use a platform device, so Runtime PM is not an option,
-  - gic_of_init() runs before any clocks are registered, so it cannot
-    explicitly enable the clock,
-  - gic_of_init() cannot return -EPROBE_DEFER, as IRQCHIP_DECLARE()
-    doesn't support deferred probing.
-
-Hence we have to keep on relying on the boot loader for enabling the
-module clock.
-
-To prevent the module clock from being disabled when the CCF core thinks
-it is unused, and thus causing a system lock-up, add a quirk to the MSTP
-clock driver to make sure the module clock is never disabled.
-
-I'm not sure about the parent clock of INTC-SYS, as this doesn't seem to
-be documented in the SoC's user manuals. However, on r8a7740 it is
-documented to be the ZSA (AXI) clock, so I used the ZS clock. The actual
-clock and rate don't matter much, as the parent clock can't be
-disabled.
-
-As usual when involving clocks, the DTS changes depend stricly on the
-driver change. Else the clock will be disabled as assumed unused,
-breaking the boot.
-
-The DTS changes depend on the series "[PATCH 0/7] ARM: shmobile: Add
-IRQC clock to device tree" I've just sent.
-
-This was tested on r8a73a4/ape6evm and r8a7791/koelsch.
-
-Thanks for your comments!
-
-Geert Uytterhoeven (5):
-  [RFC] clk: shmobile: mstp: Never disable INTC-SYS
-  [RFC] ARM: shmobile: r8a73a4: Add INTC-SYS clock to device tree
-  [RFC] ARM: shmobile: r8a7790: Add INTC-SYS clock to device tree
-  [RFC] ARM: shmobile: r8a7791: Add INTC-SYS clock to device tree
-  [RFC] ARM: shmobile: r8a7794: Add INTC-SYS clock to device tree
-
- arch/arm/boot/dts/r8a73a4.dtsi            | 11 +++++++----
- arch/arm/boot/dts/r8a7790.dtsi            |  7 ++++---
- arch/arm/boot/dts/r8a7791.dtsi            |  7 ++++---
- arch/arm/boot/dts/r8a7794.dtsi            |  7 ++++---
- drivers/clk/shmobile/clk-mstp.c           |  6 ++++++
- include/dt-bindings/clock/r8a73a4-clock.h |  1 +
- include/dt-bindings/clock/r8a7790-clock.h |  1 +
- include/dt-bindings/clock/r8a7791-clock.h |  1 +
- include/dt-bindings/clock/r8a7794-clock.h |  1 +
- 9 files changed, 29 insertions(+), 13 deletions(-)
-
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index 7d0b8ef9bea2..969d49ab0d09 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -249,6 +249,8 @@ static void rcar_du_crtc_update_planes(struct rcar_du_crtc *rcrtc)
+ 		}
+ 	}
+ 
++	mutex_lock(&rcrtc->group->lock);
++
+ 	/* Select display timing and dot clock generator 2 for planes associated
+ 	 * with superposition controller 2.
+ 	 */
+@@ -260,15 +262,19 @@ static void rcar_du_crtc_update_planes(struct rcar_du_crtc *rcrtc)
+ 		 * split, or through a module parameter). Flicker would then
+ 		 * occur only if we need to break the pre-association.
+ 		 */
+-		mutex_lock(&rcrtc->group->lock);
+ 		if (rcar_du_group_read(rcrtc->group, DPTSR) != dptsr) {
+ 			rcar_du_group_write(rcrtc->group, DPTSR, dptsr);
+ 			if (rcrtc->group->used_crtcs)
+ 				rcar_du_group_restart(rcrtc->group);
+ 		}
+-		mutex_unlock(&rcrtc->group->lock);
+ 	}
+ 
++	/* Restart the group if plane sources have changed. */
++	if (rcrtc->group->planes.need_restart)
++		rcar_du_group_restart(rcrtc->group);
++
++	mutex_unlock(&rcrtc->group->lock);
++
+ 	rcar_du_group_write(rcrtc->group, rcrtc->index % 2 ? DS2PR : DS1PR,
+ 			    dspr);
+ }
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+index 71f50bf45581..101997e6e531 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+@@ -154,6 +154,8 @@ void rcar_du_group_start_stop(struct rcar_du_group *rgrp, bool start)
+ 
+ void rcar_du_group_restart(struct rcar_du_group *rgrp)
+ {
++	rgrp->planes.need_restart = false;
++
+ 	__rcar_du_group_start_stop(rgrp, false);
+ 	__rcar_du_group_start_stop(rgrp, true);
+ }
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index e77f9d93c1c5..51a9f9d5fa46 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -360,9 +360,27 @@ static void rcar_du_plane_atomic_update(struct drm_plane *plane,
+ 					struct drm_plane_state *old_state)
+ {
+ 	struct rcar_du_plane *rplane = to_rcar_plane(plane);
++	struct rcar_du_plane_state *old_rstate;
++	struct rcar_du_plane_state *new_rstate;
+ 
+-	if (plane->state->crtc)
+-		rcar_du_plane_setup(rplane);
++	if (!plane->state->crtc)
++		return;
++
++	rcar_du_plane_setup(rplane);
++
++	/* Check whether the source has changed from memory to live source or
++	 * from live source to memory. The source has been configured by the
++	 * VSPS bit in the PnDDCR4 register. Although the datasheet states that
++	 * the bit is updated during vertical blanking, it seems that updates
++	 * only occur when the DU group is held in reset through the DSYSR.DRES
++	 * bit. We thus need to restart the group if the source changes.
++	 */
++	old_rstate = to_rcar_du_plane_state(old_state);
++	new_rstate = to_rcar_du_plane_state(plane->state);
++
++	if ((old_rstate->source = RCAR_DU_PLANE_MEMORY) !+	    (new_rstate->source = RCAR_DU_PLANE_MEMORY))
++		rplane->group->planes.need_restart = true;
+ }
+ 
+ static const struct drm_plane_helper_funcs rcar_du_plane_helper_funcs = {
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.h b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+index 9a6132899d59..694b44c151b6 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+@@ -47,6 +47,7 @@ static inline struct rcar_du_plane *to_rcar_plane(struct drm_plane *plane)
+ 
+ struct rcar_du_planes {
+ 	struct rcar_du_plane planes[RCAR_DU_NUM_KMS_PLANES];
++	bool need_restart;
+ 
+ 	struct drm_property *alpha;
+ 	struct drm_property *colorkey;
 -- 
-1.9.1
+2.0.5
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
