@@ -1,32 +1,37 @@
-From: Kevin Hilman <khilman@kernel.org>
-Date: Mon, 09 Mar 2015 21:00:27 +0000
-Subject: Re: [PATCH v5 1/8] PM / Domains: Add DT bindings for power-on/off latencies
-Message-Id: <CAMAWPa-PROLJVGU2w8FSJYt4YJehc2DAnaT047fukSTAM9Eddw@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 15 Mar 2015 12:55:28 +0000
+Subject: [PATCH 2/3] drm: rcar-du: Don't initialize event->pipe field
+Message-Id: <1426424129-20746-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416231044-1903-1-git-send-email-geert+renesas@glider.be>
- <1416231044-1903-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1416231044-1903-2-git-send-email-geert+renesas@glider.be>
+References: <1426424129-20746-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1426424129-20746-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Hi Geert,
+The field is set by drm_send_vblank_event(), there's no need to
+preinitialize it.
 
-On Mon, Nov 17, 2014 at 5:30 AM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> PM domain power on/off-latencies are properties of the hardware.
-> In legacy code, they're specified from platform code.
-> On DT platforms, their values should come from DT.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-Any plans to refresh/resend this patch now that the rest of the series
-has gone in?
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index 9e72133bb64b..7d0b8ef9bea2 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -486,8 +486,6 @@ static void rcar_du_crtc_atomic_begin(struct drm_crtc *crtc)
+ 	unsigned long flags;
+ 
+ 	if (event) {
+-		event->pipe = rcrtc->index;
+-
+ 		WARN_ON(drm_crtc_vblank_get(crtc) != 0);
+ 
+ 		spin_lock_irqsave(&dev->event_lock, flags);
+-- 
+2.0.5
 
-I'm seeing some other PM domain series coming in for review[1] that
-could use this feature.
-
-Thanks,
-
-Kevin
-
-[1] http://lists.infradead.org/pipermail/linux-arm-kernel/2015-March/328905.html
