@@ -1,94 +1,67 @@
 From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 16 Mar 2015 16:19:54 +0000
-Subject: [PATCH v2] serial: sh-sci: Update calculation of timeout for DMA
-Message-Id: <1426522794-25845-1-git-send-email-ykaneko0929@gmail.com>
+Date: Sun, 15 Mar 2015 14:43:38 +0000
+Subject: [PATCH/RFC] ARM: shmobile: r8a7790: Remove MSIOF address from device tree
+Message-Id: <1426430618-3818-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-serial@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
 
-The current calculation method in the case of 9600bps, rounding error occurs
-has become setting that occur timeout faster than the required time. When we
-use 9600bps, 32byte buffer, 10 bit (CS8) and 100 HZ, it becomes 3 jiffies
-(30msec). In fact it is necessary 33msec. This updates to the calculation
-that are not actually less than the value set by the rounding error.
-Also, this is nothing will be calculated value when there is no load. If there
-are a lot of case load, overrun error will occur immediately.
-This is by the buffer size to be calculated twice the DMA buffer, and add the
-change of setting a sufficient time-out value.
+MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
+MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
 Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
 
-This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
-tree.
+This patch is based on devel branch of Simon Horman's renesas tree.
 
-v2 [Yoshihiro Kaneko]
-* fix indentation of a case statement.
-* wrap a too long line in the block comment.
+ arch/arm/boot/dts/r8a7790.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
- drivers/tty/serial/sh-sci.c | 40 +++++++++++++++++++++++++++++++---------
- 1 file changed, 31 insertions(+), 9 deletions(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 5b50c79..bc6daf8 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1967,18 +1967,40 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 4bb2f4c..f3b8430 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1273,7 +1273,7 @@
  
- #ifdef CONFIG_SERIAL_SH_SCI_DMA
- 	/*
--	 * Calculate delay for 1.5 DMA buffers: see
--	 * drivers/serial/serial_core.c::uart_update_timeout(). With 10 bits
--	 * (CS8), 250Hz, 115200 baud and 64 bytes FIFO, the above function
-+	 * Calculate delay for 2 DMA buffers (4 FIFO).
-+	 * See drivers/serial/serial_core.c::uart_update_timeout(). With 10
-+	 * bits (CS8), 250Hz, 115200 baud and 64 bytes FIFO, the above function
- 	 * calculates 1 jiffie for the data plus 5 jiffies for the "slop(e)."
--	 * Then below we calculate 3 jiffies (12ms) for 1.5 DMA buffers (3 FIFO
--	 * sizes), but it has been found out experimentally, that this is not
--	 * enough: the driver too often needlessly runs on a DMA timeout. 20ms
--	 * as a minimum seem to work perfectly.
-+	 * Then below we calculate 5 jiffies (20ms) for 2 DMA buffers (4 FIFO
-+	 * sizes), but when performing a faster transfer, value obtained by
-+	 * this formula is may not enough. Therefore, if value is smaller than
-+	 * 20msec, this sets 20msec as timeout of DMA.
- 	 */
- 	if (s->chan_rx) {
--		s->rx_timeout = (port->timeout - HZ / 50) * s->buf_len_rx * 3 /
--			port->fifosize / 2;
-+		unsigned int bits;
-+
-+		/* byte size and parity */
-+		switch (termios->c_cflag & CSIZE) {
-+		case CS5:
-+			bits = 7;
-+			break;
-+		case CS6:
-+			bits = 8;
-+			break;
-+		case CS7:
-+			bits = 9;
-+			break;
-+		default:
-+			bits = 10;
-+			break;
-+		}
-+
-+		if (termios->c_cflag & CSTOPB)
-+			bits++;
-+		if (termios->c_cflag & PARENB)
-+			bits++;
-+		s->rx_timeout = DIV_ROUND_UP((s->buf_len_rx * 2 * bits * HZ) /
-+					     (baud / 10), 10);
- 		dev_dbg(port->dev, "DMA Rx t-out %ums, tty t-out %u jiffies\n",
- 			s->rx_timeout * 1000 / HZ, port->timeout);
- 		if (s->rx_timeout < msecs_to_jiffies(20))
+ 	msiof0: spi@e6e20000 {
+ 		compatible = "renesas,msiof-r8a7790";
+-		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
++		reg = <0 0xe6e20000 0 0x0064>;
+ 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7790_CLK_MSIOF0>;
+ 		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
+@@ -1285,7 +1285,7 @@
+ 
+ 	msiof1: spi@e6e10000 {
+ 		compatible = "renesas,msiof-r8a7790";
+-		reg = <0 0xe6e10000 0 0x0064>, <0 0xe7e10000 0 0x0064>;
++		reg = <0 0xe6e10000 0 0x0064>;
+ 		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF1>;
+ 		dmas = <&dmac0 0x55>, <&dmac0 0x56>;
+@@ -1297,7 +1297,7 @@
+ 
+ 	msiof2: spi@e6e00000 {
+ 		compatible = "renesas,msiof-r8a7790";
+-		reg = <0 0xe6e00000 0 0x0064>, <0 0xe7e00000 0 0x0064>;
++		reg = <0 0xe6e00000 0 0x0064>;
+ 		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF2>;
+ 		dmas = <&dmac0 0x41>, <&dmac0 0x42>;
+@@ -1309,7 +1309,7 @@
+ 
+ 	msiof3: spi@e6c90000 {
+ 		compatible = "renesas,msiof-r8a7790";
+-		reg = <0 0xe6c90000 0 0x0064>, <0 0xe7c90000 0 0x0064>;
++		reg = <0 0xe6c90000 0 0x0064>;
+ 		interrupts = <0 159 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF3>;
+ 		dmas = <&dmac0 0x45>, <&dmac0 0x46>;
 -- 
 1.9.1
 
