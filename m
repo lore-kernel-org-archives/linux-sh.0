@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 10 Mar 2015 00:43:04 +0000
+Date: Sun, 15 Mar 2015 23:03:17 +0000
 Subject: [PATCH 3/3] ARM: shmobile: r8a7740: Remove restart callback
-Message-Id: <82fbf29f26733dd38bd2ab17db04e0aa46ef3857.1425947508.git.horms+renesas@verge.net.au>
+Message-Id: <6e5e9c6835e05ccc2be67486bc998b6f62663621.1426456752.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425947508.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425947508.git.horms+renesas@verge.net.au>
+References: <cover.1426456752.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1426456752.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
