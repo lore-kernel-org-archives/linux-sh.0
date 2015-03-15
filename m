@@ -1,52 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 05 Mar 2015 01:57:57 +0000
-Subject: [PATCH 05/13] ARM: shmobile: r8a73a4 dtsi: Add Bus State Controller node
-Message-Id: <271b3ad26187fc7b47a74510b01193b506c60dbf.1425517246.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 15 Mar 2015 12:55:27 +0000
+Subject: [PATCH 1/3] drm: rcar-du: Fix framebuffer reference leak through plane state
+Message-Id: <1426424129-20746-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425517246.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425517246.git.horms+renesas@verge.net.au>
+References: <1426424129-20746-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1426424129-20746-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Plane state duplication takes a reference to the framebuffer stored in
+the state, but state destroy doesn't release it. This causes a reference
+leak. Fix it.
 
-Add a node for the Bus State Controller (BSC) on r8a73a4, to which
-multiple external devices can be connected.
-
-The BSC is driven by the ZB clock, and located in PM domain C4.
-A reference to the latter will be added later.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a73a4.dtsi | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index fdcca5d..77bd35c 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -409,6 +409,16 @@
- 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
- 	};
- 
-+	bsc: bus@fec10000 {
-+		compatible = "renesas,bsc-r8a73a4", "renesas,bsc",
-+			     "simple-pm-bus";
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		ranges = <0 0 0 0x20000000>;
-+		reg = <0 0xfec10000 0 0x400>;
-+		clocks = <&zb_clk>;
-+	};
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index 35a2f04ab799..210e5c3fd982 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -316,6 +316,9 @@ rcar_du_plane_atomic_duplicate_state(struct drm_plane *plane)
+ static void rcar_du_plane_atomic_destroy_state(struct drm_plane *plane,
+ 					       struct drm_plane_state *state)
+ {
++	if (state->fb)
++		drm_framebuffer_unreference(state->fb);
 +
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+ 	kfree(to_rcar_du_plane_state(state));
+ }
+ 
 -- 
-2.1.4
+2.0.5
 
