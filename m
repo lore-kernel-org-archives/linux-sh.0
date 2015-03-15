@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 10 Mar 2015 00:43:03 +0000
+Date: Sun, 15 Mar 2015 23:03:16 +0000
 Subject: [PATCH 2/3] ARM: shmobile: R-Car Gen2: CONFIG_COMMON_CLK is always set
-Message-Id: <c77e9e7327218244d181a297f0742cf15d370fd1.1425947508.git.horms+renesas@verge.net.au>
+Message-Id: <8883e72da3a0859e910f96c0372baf08ab47f7ae.1426456752.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425947508.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425947508.git.horms+renesas@verge.net.au>
+References: <cover.1426456752.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1426456752.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
