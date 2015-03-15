@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 10 Mar 2015 00:43:02 +0000
+Date: Sun, 15 Mar 2015 23:03:15 +0000
 Subject: [PATCH 1/3] ARM: shmobile: Remove stray closing parenthesis in debug description
-Message-Id: <6b9d3306b335c9643ee9d09e67be50d6f7e90b42.1425947508.git.horms+renesas@verge.net.au>
+Message-Id: <e2fd51b7e1742b82529a39107ed59ac0da69321d.1426456752.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425947508.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425947508.git.horms+renesas@verge.net.au>
+References: <cover.1426456752.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1426456752.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,7 +22,7 @@ Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/arch/arm/Kconfig.debug b/arch/arm/Kconfig.debug
-index 1ca8dc7..3809ac9 100644
+index 970de75..f2aa6c7 100644
 --- a/arch/arm/Kconfig.debug
 +++ b/arch/arm/Kconfig.debug
 @@ -806,7 +806,7 @@ choice
