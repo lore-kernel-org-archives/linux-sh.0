@@ -1,128 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 16 Mar 2015 08:53:40 +0000
-Subject: [PATCH] mmc: sh_mobile_sdhi: remove sh_mobile_sdhi_info v2
-Message-Id: <87k2yhiaro.wl%kuninori.morimoto.gx@renesas.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 16 Mar 2015 16:34:50 +0000
+Subject: Re: [PATCH] mmc: sh_mobile_sdhi: remove sh_mobile_sdhi_info v2
+Message-Id: <45205978.mSO6RfbDSy@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201503141650.GfUoPRK3%fengguang.wu@intel.com>
-	<87ioe1kcp8.wl%kuninori.morimoto.gx@renesas.com>
-	<20150316075105.GA21372@verge.net.au>
-	<87lhixiat4.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87lhixiat4.wl%kuninori.morimoto.gx@renesas.com>
+References: <201503141650.GfUoPRK3%fengguang.wu@intel.com> <87lhixiat4.wl%kuninori.morimoto.gx@renesas.com> <87k2yhiaro.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87k2yhiaro.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, arm@kernel.org, kbuild-all@01.org, Ulf Hansson <ulf.hansson@linaro.org>, linux-mmc <linux-mmc@vger.kernel.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Vinod Koul <vinod.koul@intel.com>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, arm@kernel.org, kbuild-all@01.org, Ulf Hansson <ulf.hansson@linaro.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Monday 16 March 2015 08:53:40 Kuninori Morimoto wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> 
+> 84f11d5b1f2abc0e22895b7e12e037f0ec03caeb
+> (mmc: sh_mobile_sdhi: remove sh_mobile_sdhi_info)
+> replaced sh_mobile_sdhi_info to tmio_mmc_data, but it was missing
+> to replace board-ape6evm / board-mackerel.
+> Kernel build will be failed without this patch.
+> 
+>         >> arch/arm/mach-shmobile/board-ape6evm.c:176:21: error: \
+>                 variable 'sdhi0_pdata' has initializer but incomplete type
+>         static const struct sh_mobile_sdhi_info sdhi0_pdata __initconst = {
+>                             ^
+>         >> arch/arm/mach-shmobile/board-ape6evm.c:177:2: error: \
+>                 unknown field 'tmio_flags' specified in initializer
+>         .tmio_flags = TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
+>         ^
+>         ...
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> 
 
-84f11d5b1f2abc0e22895b7e12e037f0ec03caeb
-(mmc: sh_mobile_sdhi: remove sh_mobile_sdhi_info)
-replaced sh_mobile_sdhi_info to tmio_mmc_data, but it was missing
-to replace board-ape6evm / board-mackerel.
-Kernel build will be failed without this patch.
-
-	>> arch/arm/mach-shmobile/board-ape6evm.c:176:21: error: \
-		variable 'sdhi0_pdata' has initializer but incomplete type
-	static const struct sh_mobile_sdhi_info sdhi0_pdata __initconst = {
-	                    ^
-	>> arch/arm/mach-shmobile/board-ape6evm.c:177:2: error: \
-		unknown field 'tmio_flags' specified in initializer
-	.tmio_flags = TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-	^
-	...
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/board-ape6evm.c  | 12 ++++++------
- arch/arm/mach-shmobile/board-mackerel.c | 30 +++++++++++++++---------------
- 2 files changed, 21 insertions(+), 21 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ape6evm.c b/arch/arm/mach-shmobile/board-ape6evm.c
-index 444f22d..52c9605 100644
---- a/arch/arm/mach-shmobile/board-ape6evm.c
-+++ b/arch/arm/mach-shmobile/board-ape6evm.c
-@@ -173,9 +173,9 @@ static const struct resource mmcif0_resources[] __initconst = {
- };
- 
- /* SDHI0 */
--static const struct sh_mobile_sdhi_info sdhi0_pdata __initconst = {
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-+static const struct tmio_mmc_data sdhi0_pdata __initconst = {
-+	.flags		= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- };
- 
- static const struct resource sdhi0_resources[] __initconst = {
-@@ -184,9 +184,9 @@ static const struct resource sdhi0_resources[] __initconst = {
- };
- 
- /* SDHI1 */
--static const struct sh_mobile_sdhi_info sdhi1_pdata __initconst = {
--	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+static const struct tmio_mmc_data sdhi1_pdata __initconst = {
-+	.flags		= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_WRPROTECT_DISABLE,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_NEEDS_POLL,
- };
- 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index a1c1dfb..88e4f45 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -972,11 +972,11 @@ static struct platform_device nand_flash_device = {
- };
- 
- /* SDHI0 */
--static struct sh_mobile_sdhi_info sdhi0_info = {
--	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
--	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-+static struct tmio_mmc_data sdhi0_info = {
-+	.chan_priv_tx	= (void *)SHDMA_SLAVE_SDHI0_TX,
-+	.chan_priv_rx	= (void *)SHDMA_SLAVE_SDHI0_RX,
-+	.flags		= TMIO_MMC_USE_GPIO_CD,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
- 	.cd_gpio	= 172,
- };
- 
-@@ -1011,11 +1011,11 @@ static struct platform_device sdhi0_device = {
- /* SDHI1 */
- 
- /* GPIO 41 can trigger IRQ8, but it is used by USBHS1, we have to poll */
--static struct sh_mobile_sdhi_info sdhi1_info = {
--	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
--	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
--	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+static struct tmio_mmc_data sdhi1_info = {
-+	.chan_priv_tx	= (void *)SHDMA_SLAVE_SDHI1_TX,
-+	.chan_priv_rx	= (void *)SHDMA_SLAVE_SDHI1_RX,
-+	.flags		= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_NEEDS_POLL,
- 	.cd_gpio	= 41,
- };
-@@ -1054,11 +1054,11 @@ static struct platform_device sdhi1_device = {
-  * The card detect pin of the top SD/MMC slot (CN23) is active low and is
-  * connected to GPIO SCIFB_SCK of SH7372 (GPIO 162).
-  */
--static struct sh_mobile_sdhi_info sdhi2_info = {
--	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
--	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
--	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+static struct tmio_mmc_data sdhi2_info = {
-+	.chan_priv_tx	= (void *)SHDMA_SLAVE_SDHI2_TX,
-+	.chan_priv_rx	= (void *)SHDMA_SLAVE_SDHI2_RX,
-+	.flags		= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
-+	.capabilities	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_NEEDS_POLL,
- 	.cd_gpio	= 162,
- };
--- 
-1.9.1
-
+Acked-by: Arnd Bergmann <arnd@arndb.de>
