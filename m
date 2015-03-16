@@ -1,66 +1,94 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 23 Mar 2015 18:32:53 +0000
-Subject: renesas-drivers-2015-03-23-v4.0-rc5
-Message-Id: <1427135573-12589-1-git-send-email-geert+renesas@glider.be>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Mon, 16 Mar 2015 16:19:54 +0000
+Subject: [PATCH v2] serial: sh-sci: Update calculation of timeout for DMA
+Message-Id: <1426522794-25845-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-serial@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-I've pushed renesas-drivers-2015-03-23-v4.0-rc5 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Today's version is based on renesas-devel-20150319-v4.0-rc4.
-As I'm at ELC2015, this version has received compile testing only.
+The current calculation method in the case of 9600bps, rounding error occurs
+has become setting that occur timeout faster than the required time. When we
+use 9600bps, 32byte buffer, 10 bit (CS8) and 100 HZ, it becomes 3 jiffies
+(30msec). In fact it is necessary 33msec. This updates to the calculation
+that are not actually less than the value set by the rounding error.
+Also, this is nothing will be calculated value when there is no load. If there
+are a lot of case load, overrun error will occur immediately.
+This is by the buffer size to be calculated twice the DMA buffer, and add the
+change of setting a sufficient time-out value.
 
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.linaro.org/people/mturquette/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-Gr{oetje,eeting}s,
+This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+tree.
 
-						Geert
+v2 [Yoshihiro Kaneko]
+* fix indentation of a case statement.
+* wrap a too long line in the block comment.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+ drivers/tty/serial/sh-sci.c | 40 +++++++++++++++++++++++++++++++---------
+ 1 file changed, 31 insertions(+), 9 deletions(-)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 5b50c79..bc6daf8 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1967,18 +1967,40 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 
+ #ifdef CONFIG_SERIAL_SH_SCI_DMA
+ 	/*
+-	 * Calculate delay for 1.5 DMA buffers: see
+-	 * drivers/serial/serial_core.c::uart_update_timeout(). With 10 bits
+-	 * (CS8), 250Hz, 115200 baud and 64 bytes FIFO, the above function
++	 * Calculate delay for 2 DMA buffers (4 FIFO).
++	 * See drivers/serial/serial_core.c::uart_update_timeout(). With 10
++	 * bits (CS8), 250Hz, 115200 baud and 64 bytes FIFO, the above function
+ 	 * calculates 1 jiffie for the data plus 5 jiffies for the "slop(e)."
+-	 * Then below we calculate 3 jiffies (12ms) for 1.5 DMA buffers (3 FIFO
+-	 * sizes), but it has been found out experimentally, that this is not
+-	 * enough: the driver too often needlessly runs on a DMA timeout. 20ms
+-	 * as a minimum seem to work perfectly.
++	 * Then below we calculate 5 jiffies (20ms) for 2 DMA buffers (4 FIFO
++	 * sizes), but when performing a faster transfer, value obtained by
++	 * this formula is may not enough. Therefore, if value is smaller than
++	 * 20msec, this sets 20msec as timeout of DMA.
+ 	 */
+ 	if (s->chan_rx) {
+-		s->rx_timeout = (port->timeout - HZ / 50) * s->buf_len_rx * 3 /
+-			port->fifosize / 2;
++		unsigned int bits;
++
++		/* byte size and parity */
++		switch (termios->c_cflag & CSIZE) {
++		case CS5:
++			bits = 7;
++			break;
++		case CS6:
++			bits = 8;
++			break;
++		case CS7:
++			bits = 9;
++			break;
++		default:
++			bits = 10;
++			break;
++		}
++
++		if (termios->c_cflag & CSTOPB)
++			bits++;
++		if (termios->c_cflag & PARENB)
++			bits++;
++		s->rx_timeout = DIV_ROUND_UP((s->buf_len_rx * 2 * bits * HZ) /
++					     (baud / 10), 10);
+ 		dev_dbg(port->dev, "DMA Rx t-out %ums, tty t-out %u jiffies\n",
+ 			s->rx_timeout * 1000 / HZ, port->timeout);
+ 		if (s->rx_timeout < msecs_to_jiffies(20))
+-- 
+1.9.1
+
