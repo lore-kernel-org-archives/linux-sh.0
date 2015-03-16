@@ -1,68 +1,115 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 11 Mar 2015 05:39:53 +0000
-Subject: [PATCH v2 1/2] dmaengine: renesas,usb-dmac: Add device tree bindings documentation
-Message-Id: <1426052394-5556-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Mon, 16 Mar 2015 16:19:19 +0000
+Subject: [PATCH v2] serial: sh-sci: Add overrun handling of SCIFA and SCIFB
+Message-Id: <1426522759-25802-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426052394-5556-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1426052394-5556-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: vinod.koul@intel.com, dan.j.williams@intel.com, laurent.pinchart@ideasonboard.com, horms@verge.net.au, kuninori.morimoto.gx@renesas.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-serial@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Document the device tree bindings for the Renesas USB DMA
-Controller (USB-DMAC).
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+SCIFA and SCIFB can detect the overrun, but it does not support.
+This adds overrun handling of SCIFA and SCIFB.
+
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
- .../devicetree/bindings/dma/renesas,usb-dmac.txt   | 37 ++++++++++++++++++++++
- 1 file changed, 37 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
 
-diff --git a/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt b/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
-new file mode 100644
-index 0000000..040f365
---- /dev/null
-+++ b/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
-@@ -0,0 +1,37 @@
-+* Renesas USB DMA Controller Device Tree bindings
+This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+tree.
+
+v2 [Yoshihiro Kaneko]
+* use the switch statement instead of a verbose if statement.
+
+ drivers/tty/serial/sh-sci.c | 48 +++++++++++++++++++++++++++++++++------------
+ 1 file changed, 36 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 5b50c79..5bf9972 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -844,14 +844,32 @@ static int sci_handle_fifo_overrun(struct uart_port *port)
+ 	struct tty_port *tport = &port->state->port;
+ 	struct sci_port *s = to_sci_port(port);
+ 	struct plat_sci_reg *reg;
+-	int copied = 0;
++	int copied = 0, offset;
++	u16 status, bit;
+ 
+-	reg = sci_getreg(port, SCLSR);
++	switch (port->type) {
++	case PORT_SCIF:
++	case PORT_HSCIF:
++		offset = SCLSR;
++		break;
++	case PORT_SCIFA:
++	case PORT_SCIFB:
++		offset = SCxSR;
++		break;
++	default:
++		return 0;
++	}
 +
-+Required Properties:
-+- compatible: must contain "renesas,usb-dmac"
-+- reg: base address and length of the registers block for the DMAC
-+- interrupts: interrupt specifiers for the DMAC, one for each entry in
-+  interrupt-names.
-+- interrupt-names: one entry per channel, named "ch%u", where %u is the
-+  channel number ranging from zero to the number of channels minus one.
-+- clocks: a list of phandle + clock-specifier pairs.
-+- #dma-cells: must be <1>, the cell specifies the channel number of the DMAC
-+  port connected to the DMA client.
-+- dma-channels: number of DMA channels
++	reg = sci_getreg(port, offset);
+ 	if (!reg->size)
+ 		return 0;
+ 
+-	if ((serial_port_in(port, SCLSR) & (1 << s->overrun_bit))) {
+-		serial_port_out(port, SCLSR, 0);
++	status = serial_port_in(port, offset);
++	bit = 1 << s->overrun_bit;
 +
-+Example: R8A7790 (R-Car H2) USB-DMACs
++	if (status & bit) {
++		status &= ~bit;
++		serial_port_out(port, offset, status);
+ 
+ 		port->icount.overrun++;
+ 
+@@ -996,16 +1014,24 @@ static inline unsigned long port_rx_irq_mask(struct uart_port *port)
+ 
+ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ {
+-	unsigned short ssr_status, scr_status, err_enabled;
+-	unsigned short slr_status = 0;
++	unsigned short ssr_status, scr_status, err_enabled, orer_status = 0;
+ 	struct uart_port *port = ptr;
+ 	struct sci_port *s = to_sci_port(port);
+ 	irqreturn_t ret = IRQ_NONE;
+ 
+ 	ssr_status = serial_port_in(port, SCxSR);
+ 	scr_status = serial_port_in(port, SCSCR);
+-	if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
+-		slr_status = serial_port_in(port, SCLSR);
++	switch (port->type) {
++	case PORT_SCIF:
++	case PORT_HSCIF:
++		orer_status = serial_port_in(port, SCLSR);
++		break;
++	case PORT_SCIFA:
++	case PORT_SCIFB:
++		orer_status = ssr_status;
++		break;
++	}
 +
-+	usb_dmac0: dma-controller@e65a0000 {
-+		compatible = "renesas,usb-dmac";
-+		reg = <0 0xe65a0000 0 0x100>;
-+		interrupts = <0 109 IRQ_TYPE_LEVEL_HIGH
-+			      0 109 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "ch0", "ch1";
-+		clocks = <&mstp3_clks R8A7790_CLK_USBDMAC0>;
-+		#dma-cells = <1>;
-+		dma-channels = <2>;
-+	};
-+
-+	usb_dmac1: dma-controller@e65b0000 {
-+		compatible = "renesas,usb-dmac";
-+		reg = <0 0xe65b0000 0 0x100>;
-+		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH
-+			      0 110 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "ch0", "ch1";
-+		clocks = <&mstp3_clks R8A7790_CLK_USBDMAC1>;
-+		#dma-cells = <1>;
-+		dma-channels = <2>;
-+	};
+ 	err_enabled = scr_status & port_rx_irq_mask(port);
+ 
+ 	/* Tx Interrupt */
+@@ -1033,10 +1059,8 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ 		ret = sci_br_interrupt(irq, ptr);
+ 
+ 	/* Overrun Interrupt */
+-	if (port->type = PORT_SCIF || port->type = PORT_HSCIF) {
+-		if (slr_status & 0x01)
+-			sci_handle_fifo_overrun(port);
+-	}
++	if (orer_status & (1 << s->overrun_bit))
++		sci_handle_fifo_overrun(port);
+ 
+ 	return ret;
+ }
 -- 
 1.9.1
 
