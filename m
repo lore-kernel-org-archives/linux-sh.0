@@ -1,52 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sun, 15 Mar 2015 23:03:16 +0000
-Subject: [PATCH 2/3] ARM: shmobile: R-Car Gen2: CONFIG_COMMON_CLK is always set
-Message-Id: <8883e72da3a0859e910f96c0372baf08ab47f7ae.1426456752.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 16 Mar 2015 08:52:23 +0000
+Subject: Re: [next:master 2655/4763] arch/arm/mach-shmobile/board-ape6evm.c:177:2: error: unknown field 'tmio
+Message-Id: <87lhixiat4.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1426456752.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1426456752.git.horms+renesas@verge.net.au>
+References: <201503141650.GfUoPRK3%fengguang.wu@intel.com>
+	<87ioe1kcp8.wl%kuninori.morimoto.gx@renesas.com>
+	<20150316075105.GA21372@verge.net.au>
+In-Reply-To: <20150316075105.GA21372@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Vinod Koul <vinod.koul@intel.com>, Simon <horms@verge.net.au>
+Cc: arm@kernel.org, kbuild-all@01.org, Ulf Hansson <ulf.hansson@linaro.org>, Linux-SH <linux-sh@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Since commit e042681894b62d60 ("ARM: shmobile: r8a7790: Remove legacy
-code"), all R-Car Gen2 SoCs are supported by multiplatform kernels only.
-As CONFIG_COMMON_CLK is always set for multiplatform kernels, we can
-remove related #ifdefs in code specific to R-Car Gen2 SoCs.
+Hi Vinod
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Kuninori Morimoto (1):
+      mmc: sh_mobile_sdhi: remove sh_mobile_sdhi_info v2
+
+ arch/arm/mach-shmobile/board-ape6evm.c  | 12 ++++++------
+ arch/arm/mach-shmobile/board-mackerel.c | 30 +++++++++++++++---------------
+ 2 files changed, 21 insertions(+), 21 deletions(-)
+
+This patch is related to SH-ARM and MMC, but is based on DMAEngine.
+So, you accepted my previous patch in
+
+	http://thread.gmane.org/gmane.linux.ports.sh.devel/44068
+
+But,
+
+arch/arm/mach-shmobile/board-ape6evm.c
+arch/arm/mach-shmobile/board-mackerel.c
+
+will be removed if it includes Simon's/next branch, but your branch
+doesn't include it, and my previous patch didn't care about thesse.
+So compile error happen in your branch.
+And I got error report from kbuild system.
+
+	git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git :: next
+
+> > > commit: 84f11d5b1f2abc0e22895b7e12e037f0ec03caeb [2655/4763] mmc: sh_mobile_sdhi: remove sh_mobile_sdhi_info
+> > > config: arm-ape6evm_defconfig (attached as .config)
+> > > reproduce:
+> > >   wget https://git.kernel.org/cgit/linux/kernel/git/wfg/lkp-tests.git/plain/sbin/make.cross -O ~/bin/make.cross
+> > >   chmod +x ~/bin/make.cross
+> > >   git checkout 84f11d5b1f2abc0e22895b7e12e037f0ec03caeb
+> > >   # save the attached .config to linux build tree
+> > >   make.cross ARCH=arm 
+
+This issue can be solved my next fixup patch, but conflict will happen
+when merge timing.
+
+Best regards
 ---
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 4 ----
- 1 file changed, 4 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index d1fa625..51464cc 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -50,9 +50,7 @@ u32 rcar_gen2_read_mode_pins(void)
- 
- void __init rcar_gen2_timer_init(void)
- {
--#if defined(CONFIG_ARM_ARCH_TIMER) || defined(CONFIG_COMMON_CLK)
- 	u32 mode = rcar_gen2_read_mode_pins();
--#endif
- #ifdef CONFIG_ARM_ARCH_TIMER
- 	void __iomem *base;
- 	int extal_mhz = 0;
-@@ -128,9 +126,7 @@ void __init rcar_gen2_timer_init(void)
- 	iounmap(base);
- #endif /* CONFIG_ARM_ARCH_TIMER */
- 
--#ifdef CONFIG_COMMON_CLK
- 	rcar_gen2_clocks_init(mode);
--#endif
- #ifdef CONFIG_ARCH_SHMOBILE_MULTI
- 	clocksource_of_init();
- #endif
--- 
-2.1.4
-
+Kuninori Morimoto
