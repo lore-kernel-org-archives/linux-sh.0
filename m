@@ -1,67 +1,60 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 15 Mar 2015 14:33:38 +0000
-Subject: [PATCH/RFC] v4l: vsp1: Change VSP1 LIF linebuffer FIFO
-Message-Id: <1426430018-3172-1-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 16 Mar 2015 08:06:22 +0000
+Subject: Re: [PATCH/RFC] v4l: vsp1: Change VSP1 LIF linebuffer FIFO
+Message-Id: <CAMuHMdVKmWgcSqLxfgOUFXd2mu-dacvQxLJr7xLaQ=S8Mt0gnw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1426430018-3172-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1426430018-3172-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Mauro Carvalho Chehab <m.chehab@samsung.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+Hi Kaneko-san, Hosoya-san,
 
-Change to VSPD hardware recommended value.
-Purpose is highest pixel clock without underruns.
-In the default R-Car Linux BSP config this value is
-wrong and therefore there are many underruns.
+On Sun, Mar 15, 2015 at 3:33 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+> From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+>
+> Change to VSPD hardware recommended value.
+> Purpose is highest pixel clock without underruns.
+> In the default R-Car Linux BSP config this value is
+> wrong and therefore there are many underruns.
+>
+> Here are the original settings:
+> HBTH = 1300 (VSPD stops when 1300 pixels are buffered)
+> LBTH = 200 (VSPD resumes when buffer level has decreased
+>             below 200 pixels)
+>
+> The display underruns can be eliminated
+> by applying the following settings:
+> HBTH = 1504
+> LBTH = 1248
 
-Here are the original settings:
-HBTH = 1300 (VSPD stops when 1300 pixels are buffered)
-LBTH = 200 (VSPD resumes when buffer level has decreased
-            below 200 pixels)
+> --- a/drivers/media/platform/vsp1/vsp1_lif.c
+> +++ b/drivers/media/platform/vsp1/vsp1_lif.c
+> @@ -44,9 +44,9 @@ static int lif_s_stream(struct v4l2_subdev *subdev, int enable)
+>  {
+>         const struct v4l2_mbus_framefmt *format;
+>         struct vsp1_lif *lif = to_lif(subdev);
+> -       unsigned int hbth = 1300;
+> -       unsigned int obth = 400;
+> -       unsigned int lbth = 200;
+> +       unsigned int hbth = 1536;
+> +       unsigned int obth = 128;
+> +       unsigned int lbth = 1520;
 
-The display underruns can be eliminated
-by applying the following settings:
-HBTH = 1504
-LBTH = 1248
+These values don't match the patch description?
 
-Reported-by: Peter Fiedler <peter.fiedler@renesas.com>
-Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
----
+BTW, what's the significance of changing obth?
 
-This patch is based on the master branch of linuxtv.org/media_tree.git.
+Gr{oetje,eeting}s,
 
- drivers/media/platform/vsp1/vsp1_lif.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+                        Geert
 
-diff --git a/drivers/media/platform/vsp1/vsp1_lif.c b/drivers/media/platform/vsp1/vsp1_lif.c
-index 17a6ca7..7d0f7eb 100644
---- a/drivers/media/platform/vsp1/vsp1_lif.c
-+++ b/drivers/media/platform/vsp1/vsp1_lif.c
-@@ -1,7 +1,7 @@
- /*
-  * vsp1_lif.c  --  R-Car VSP1 LCD Controller Interface
-  *
-- * Copyright (C) 2013-2014 Renesas Electronics Corporation
-+ * Copyright (C) 2013-2015 Renesas Electronics Corporation
-  *
-  * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
-  *
-@@ -44,9 +44,9 @@ static int lif_s_stream(struct v4l2_subdev *subdev, int enable)
- {
- 	const struct v4l2_mbus_framefmt *format;
- 	struct vsp1_lif *lif = to_lif(subdev);
--	unsigned int hbth = 1300;
--	unsigned int obth = 400;
--	unsigned int lbth = 200;
-+	unsigned int hbth = 1536;
-+	unsigned int obth = 128;
-+	unsigned int lbth = 1520;
- 
- 	if (!enable) {
- 		vsp1_lif_write(lif, VI6_LIF_CTRL, 0);
--- 
-1.9.1
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
