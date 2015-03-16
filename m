@@ -1,27 +1,60 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=  <u.kleine-koenig@pengutronix.de>
-Date: Mon, 23 Mar 2015 08:32:57 +0000
-Subject: Re: [PATCH v2 4/4] i2c: slave-eeprom: add more info when to increase the pointer
-Message-Id: <20150323083257.GK5664@pengutronix.de>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Mon, 16 Mar 2015 16:11:33 +0000
+Subject: [PATCH v2] media: soc_camera: rcar_vin: Fix wait_for_completion
+Message-Id: <1426522293-25700-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1427099199-3628-1-git-send-email-wsa@the-dreams.de>
- <1427099199-3628-5-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1427099199-3628-5-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+References: <1388071909-12207-1-git-send-email-valentine.barshak@cogentembedded.com>
+In-Reply-To: <1388071909-12207-1-git-send-email-valentine.barshak@cogentembedded.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Mon, Mar 23, 2015 at 09:26:39AM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
-> It is a bit subtle when to correctly increase the buffer index when
-> reading. Make this clearer by adding some more comments and pointers to
-> the docs.
->=20
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Acked-by: Uwe Kleine-K=F6nig <u.kleine-koenig@pengutronix.de>
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+When stopping abnormally, a driver can't return from wait_for_completion.
+This patch resolved this problem by changing wait_for_completion_timeout
+from wait_for_completion.
+
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+
+This patch is against master branch of linuxtv.org/media_tree.git.
+
+v2 [Yoshihiro Kaneko]
+* remove the original line that I forgot.
+* fix an indent to make it easy to read.
+
+ drivers/media/platform/soc_camera/rcar_vin.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 279ab9f..e55d7ba 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -135,6 +135,8 @@
+ #define VIN_MAX_WIDTH		2048
+ #define VIN_MAX_HEIGHT		2048
+ 
++#define TIMEOUT_MS		100
++
+ enum chip_id {
+ 	RCAR_GEN2,
+ 	RCAR_H1,
+@@ -820,7 +822,10 @@ static void rcar_vin_wait_stop_streaming(struct rcar_vin_priv *priv)
+ 		if (priv->state = STOPPING) {
+ 			priv->request_to_stop = true;
+ 			spin_unlock_irq(&priv->lock);
+-			wait_for_completion(&priv->capture_stop);
++			if (!wait_for_completion_timeout(
++					&priv->capture_stop,
++					msecs_to_jiffies(TIMEOUT_MS)))
++				priv->state = STOPPED;
+ 			spin_lock_irq(&priv->lock);
+ 		}
+ 	}
+-- 
+1.9.1
+
