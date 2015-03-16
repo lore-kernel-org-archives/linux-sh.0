@@ -1,73 +1,129 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Thu, 12 Mar 2015 16:00:47 +0000
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Mon, 16 Mar 2015 01:18:40 +0000
 Subject: Re: [PATCH] spi: sh-msiof: Fix limit maximum word transfer size of FIFO size
-Message-Id: <20150312160047.GQ28806@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="9BaxaTZrvsRxcpDQ"
+Message-Id: <CABMQnVK=-okU4L8vCnY15Vpwy9uCoOLzmnOPkpxj4=U6JXzSOg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1426127476-18456-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
  <CAMuHMdXmr7QH8jSkyH2q6xCise7ew5YzyAFc6Zb0psHZt3mGrg@mail.gmail.com>
-In-Reply-To: <CAMuHMdXmr7QH8jSkyH2q6xCise7ew5YzyAFc6Zb0psHZt3mGrg@mail.gmail.com>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>, linux-spi <linux-spi@vger.kernel.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <CAMuHMdXmr7QH8jSkyH2q6xCise7ew5YzyAFc6Zb0psHZt3mGrg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
+Hi,
 
---9BaxaTZrvsRxcpDQ
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Thanks for your comment.
 
-On Thu, Mar 12, 2015 at 01:35:10PM +0100, Geert Uytterhoeven wrote:
+2015-03-12 21:35 GMT+09:00 Geert Uytterhoeven <geert@linux-m68k.org>:
+> Hi Iwamatsu-san,
+>
 > On Thu, Mar 12, 2015 at 3:31 AM, Nobuhiro Iwamatsu
-
-> > This driver is the case of tx_buf was set or SPI_MASTER_MUST_TX is set to
-> > master_flags, will be transmit mode. However, the current code, when
-> > transmit mode and buffer is NULL, will be set to value of receive mode
-> > size.
-
+> <nobuhiro.iwamatsu.yj@renesas.com> wrote:
+>> This driver is the case of tx_buf was set or SPI_MASTER_MUST_TX is set to
+>> master_flags, will be transmit mode. However, the current code, when
+>> transmit mode and buffer is NULL, will be set to value of receive mode
+>> size.
+>
 > If SPI_MASTER_MUST_TX is set, tx_buf will never be NULL.
 > If an SPI slave driver submits a receive-only request, the SPI core will
 > provide a dummy buffer (spi_master.dummy_tx).
 
-Right, my reading of the changelog was that this was a red herring.
-
-> > +       int rx_words = min_t(int, words, p->rx_fifo_size);
-> > +       int tx_words = min_t(int, words, p->tx_fifo_size);
-
+I see.
+>
+>> This is when the SPI_MASTER_MUST_TX is set to master_flags, sets to
+>> transmit and receive either small size of FIFO, so as not to set the
+>> actual size larger than value of FIFO.
+>>
+>> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+>> ---
+>>  drivers/spi/spi-sh-msiof.c | 24 +++++++++++++++++++-----
+>>  1 file changed, 19 insertions(+), 5 deletions(-)
+>>
+>> diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+>> index e57eec0..260f433 100644
+>> --- a/drivers/spi/spi-sh-msiof.c
+>> +++ b/drivers/spi/spi-sh-msiof.c
+>> @@ -606,12 +606,26 @@ static int sh_msiof_spi_txrx_once(struct sh_msiof_spi_priv *p,
+>>  {
+>>         int fifo_shift;
+>>         int ret;
+>> +       int rx_words = min_t(int, words, p->rx_fifo_size);
+>> +       int tx_words = min_t(int, words, p->tx_fifo_size);
+>>
+>> -       /* limit maximum word transfer to rx/tx fifo size */
+>> -       if (tx_buf)
+>> -               words = min_t(int, words, p->tx_fifo_size);
+>> -       if (rx_buf)
+>> -               words = min_t(int, words, p->rx_fifo_size);
+>> +       /*
+>> +        * limit maximum word transfer to rx/tx fifo size.
+>> +        *
+>> +        * If SPI_MASTER_MUST_TX was enabled in master_flags, words was
+>> +        * set to small value of FIFO.
+>> +        */
+>> +       if (p->chipdata->master_flags & SPI_MASTER_MUST_TX) {
+>> +               if (rx_words > tx_words)
+>> +                       words = tx_words;
+>> +               else
+>> +                       words = rx_words;
+>> +       } else {
+>> +               if (tx_buf)
+>> +                       words = tx_words;
+>> +               if (rx_buf)
+>> +                       words = rx_words;
+>> +       }
+>>
+>>         /* the fifo contents need shifting */
+>>         fifo_shift = 32 - bits;
+>
 > Sorry, I fail to see what exactly this is fixing.
-
+>
 > If SPI_MASTER_MUST_TX is set, all hardware SPI transfers are either
 >   a) transmit-only.
 >   b) bidirectional (transmit buffer may be a dummy, provided by the SPI core).
-
+>
 > For case a, only the TX FIFO size matters.
->   - The original code ignored the RX FIFO size (rx_buf == NULL),
+>   - The original code ignored the RX FIFO size (rx_buf = NULL),
 >   - After your change, it always uses the minimum of the TX and RX FIFO sizes
 >     (granted, the RX FIFO size is larger, so this doesn't make a difference on
 >     current hardware).
 
-...
+Yes.
 
+>
+> For case b, both FIFO sizes matter, and the original code handled that fine
+> (tx_buf != NULL, rx_buf != NULL).
+>
 > What am I missing?
 > Are you using a backport with broken SPI_MASTER_MUST_TX handling in the SPI
 > core?
 
-My understanding was that it was just about making sure that the driver
-picked the minimum of the two FIFO sizes.
+When tx_buf != NULL and rx_buf != NULL, current code uses FIFO size of
+rx_buffer.
+Since TX FIFO size is smaller than RX FIFO  size, corrent code set the
+wrong value to SITMDR2 register.
+Therefore, this patch selects a smaller FIFO size, adds the function to set.
 
---9BaxaTZrvsRxcpDQ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Does this has become a description?
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+>
+> I've just verified that with today's tree (renesas-drivers-2015-03-12-v4.0-rc3),
+> SPI_MASTER_MUST_TX works fine, and a dummy tx_buf is passed when needed.
 
-iQEcBAEBCAAGBQJVAbguAAoJECTWi3JdVIfQ9dwH/3FQtIEPeg0iKwW6m73LTnwb
-aP9JKAIwO2Xhh1VAuDdgvceFMkZVTzGpRPggt++Yt0kYR2fr4cKaUjH9nRBaCkYK
-OahANCvKD/SgrOSkbT2YRyfDsgiYyXfQFbWrQ5f5Hfm57JCaBG/MFZnkQIs3MhsG
-nqxbMxX2WoSqNhKZQa3hmQ0KFPyKjzhzJNAgx5ykPoQ2vkwl0zhytxhlHOViW3OB
-0CobXAM9ICuzzCDvbOBpeW+2cR9PMhUBjnAW4mPlcKVR5qfZVxo+2LoLRORNDfur
-tmN6hXV1hswcXjkcGPHwqrA3jd1LCdiI8ltkp/dC0hjdyTWNb71yqve015JYCNU=
-=ncb+
------END PGP SIGNATURE-----
+I think correctly work on hardware. However, driver has been set to
+the correct register value?
 
---9BaxaTZrvsRxcpDQ--
+>
+> Thanks!
+>
+> Gr{oetje,eeting}s,
+>
+>                         Geert
+
+Best regards,
+  Nobuhiro
+
+-- 
+Nobuhiro Iwamatsu
