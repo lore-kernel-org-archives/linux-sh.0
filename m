@@ -1,60 +1,121 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 01 Mar 2015 02:17:38 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: r8a7791: Fix IPMMU-GP clock to device tree
-Message-Id: <20150301021737.GC31918@verge.net.au>
+From: Fabian Frederick <fabf@skynet.be>
+Date: Mon, 16 Mar 2015 19:54:35 +0000
+Subject: [PATCH 25/35 linux-next] PCI: constify of_device_id array
+Message-Id: <1426535685-25996-4-git-send-email-fabf@skynet.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424352546-27313-1-git-send-email-ykaneko0929@gmail.com>
- <20150225235806.GM23723@verge.net.au>
-In-Reply-To: <20150225235806.GM23723@verge.net.au>
+References: <1426533469-25458-1-git-send-email-fabf@skynet.be>
+ <1426535685-25996-1-git-send-email-fabf@skynet.be>
+In-Reply-To: <1426535685-25996-1-git-send-email-fabf@skynet.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 26, 2015 at 08:58:07AM +0900, Simon Horman wrote:
-> On Thu, Feb 19, 2015 at 10:29:06PM +0900, Yoshihiro Kaneko wrote:
-> > From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-> > 
-> > Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-> > Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> > ---
-> > 
-> > This patch is based on devel branch of Simon Horman's renesas tree.
->
-> Hi,
-> 
-> while I am inclined to take this patch on face value I am wondering
-> if anyone is able to confirm this change against the documentation:
-> I have drawn a blank there.
+of_device_id is always used as const.
+(See driver.of_match_table and open firmware functions)
 
-I have decided to queue this up rather than let it fester any longer.
+Signed-off-by: Fabian Frederick <fabf@skynet.be>
+---
+ drivers/gpio/gpio-mpc8xxx.c      | 2 +-
+ drivers/gpio/gpio-octeon.c       | 2 +-
+ drivers/gpio/gpio-tz1090-pdc.c   | 2 +-
+ drivers/gpio/gpio-tz1090.c       | 2 +-
+ drivers/gpio/gpio-zynq.c         | 2 +-
+ drivers/pci/host/pci-rcar-gen2.c | 2 +-
+ drivers/pci/host/pcie-xilinx.c   | 2 +-
+ 7 files changed, 7 insertions(+), 7 deletions(-)
 
-> >  arch/arm/boot/dts/r8a7791.dtsi | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> > index afba8af..1e75a5f 100644
-> > --- a/arch/arm/boot/dts/r8a7791.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> > @@ -1154,7 +1154,7 @@
-> >  		mstp8_clks: mstp8_clks@e6150990 {
-> >  			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-> >  			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
-> > -			clocks = <&zg_clk>, <&hp_clk>, <&zg_clk>, <&zg_clk>,
-> > +			clocks = <&zx_clk>, <&hp_clk>, <&zg_clk>, <&zg_clk>,
-> >  			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
-> >  			#clock-cells = <1>;
-> >  			clock-indices = <
-> > -- 
-> > 1.9.1
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/drivers/gpio/gpio-mpc8xxx.c b/drivers/gpio/gpio-mpc8xxx.c
+index a65b751..59c4c11 100644
+--- a/drivers/gpio/gpio-mpc8xxx.c
++++ b/drivers/gpio/gpio-mpc8xxx.c
+@@ -334,7 +334,7 @@ static struct irq_domain_ops mpc8xxx_gpio_irq_ops = {
+ 	.xlate	= irq_domain_xlate_twocell,
+ };
+ 
+-static struct of_device_id mpc8xxx_gpio_ids[] = {
++static const struct of_device_id mpc8xxx_gpio_ids[] = {
+ 	{ .compatible = "fsl,mpc8349-gpio", },
+ 	{ .compatible = "fsl,mpc8572-gpio", },
+ 	{ .compatible = "fsl,mpc8610-gpio", },
+diff --git a/drivers/gpio/gpio-octeon.c b/drivers/gpio/gpio-octeon.c
+index 62ae251..41b5a4f 100644
+--- a/drivers/gpio/gpio-octeon.c
++++ b/drivers/gpio/gpio-octeon.c
+@@ -133,7 +133,7 @@ static int octeon_gpio_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static struct of_device_id octeon_gpio_match[] = {
++static const struct of_device_id octeon_gpio_match[] = {
+ 	{
+ 		.compatible = "cavium,octeon-3860-gpio",
+ 	},
+diff --git a/drivers/gpio/gpio-tz1090-pdc.c b/drivers/gpio/gpio-tz1090-pdc.c
+index ede7e40..d04d814 100644
+--- a/drivers/gpio/gpio-tz1090-pdc.c
++++ b/drivers/gpio/gpio-tz1090-pdc.c
+@@ -222,7 +222,7 @@ static int tz1090_pdc_gpio_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static struct of_device_id tz1090_pdc_gpio_of_match[] = {
++static const struct of_device_id tz1090_pdc_gpio_of_match[] = {
+ 	{ .compatible = "img,tz1090-pdc-gpio" },
+ 	{ },
+ };
+diff --git a/drivers/gpio/gpio-tz1090.c b/drivers/gpio/gpio-tz1090.c
+index 445660a..44f9dc7 100644
+--- a/drivers/gpio/gpio-tz1090.c
++++ b/drivers/gpio/gpio-tz1090.c
+@@ -585,7 +585,7 @@ static int tz1090_gpio_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static struct of_device_id tz1090_gpio_of_match[] = {
++static const struct of_device_id tz1090_gpio_of_match[] = {
+ 	{ .compatible = "img,tz1090-gpio" },
+ 	{ },
+ };
+diff --git a/drivers/gpio/gpio-zynq.c b/drivers/gpio/gpio-zynq.c
+index 184c4b1..8ff311a 100644
+--- a/drivers/gpio/gpio-zynq.c
++++ b/drivers/gpio/gpio-zynq.c
+@@ -695,7 +695,7 @@ static int zynq_gpio_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static struct of_device_id zynq_gpio_of_match[] = {
++static const struct of_device_id zynq_gpio_of_match[] = {
+ 	{ .compatible = "xlnx,zynq-gpio-1.0", },
+ 	{ /* end of table */ }
+ };
+diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
+index dd6b84e..db52c6a 100644
+--- a/drivers/pci/host/pci-rcar-gen2.c
++++ b/drivers/pci/host/pci-rcar-gen2.c
+@@ -356,7 +356,7 @@ static int rcar_pci_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static struct of_device_id rcar_pci_of_match[] = {
++static const struct of_device_id rcar_pci_of_match[] = {
+ 	{ .compatible = "renesas,pci-r8a7790", },
+ 	{ .compatible = "renesas,pci-r8a7791", },
+ 	{ },
+diff --git a/drivers/pci/host/pcie-xilinx.c b/drivers/pci/host/pcie-xilinx.c
+index f1a06a0..caae2e4 100644
+--- a/drivers/pci/host/pcie-xilinx.c
++++ b/drivers/pci/host/pcie-xilinx.c
+@@ -869,7 +869,7 @@ static int xilinx_pcie_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static struct of_device_id xilinx_pcie_of_match[] = {
++static const struct of_device_id xilinx_pcie_of_match[] = {
+ 	{ .compatible = "xlnx,axi-pcie-host-1.00.a", },
+ 	{}
+ };
+-- 
+2.1.0
+
