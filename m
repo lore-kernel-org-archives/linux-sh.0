@@ -1,133 +1,107 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Fri, 20 Mar 2015 08:54:33 +0000
-Subject: Re: [PATCH/RFC 0/5] ARM: shmobile: rcar-gen2: Add CPG Clock Domain
-Message-Id: <CAPDyKFox=MoUX5tzxyVjLh+d61AFNsPR+LY0sP-VF+68Gs_rKw@mail.gmail.com>
+From: Daniel Lezcano <daniel.lezcano@linaro.org>
+Date: Tue, 17 Mar 2015 14:34:52 +0000
+Subject: [PATCH] ARM: shmobile: cpuidle: Remove the pointless default driver
+Message-Id: <1426602892-17208-1-git-send-email-daniel.lezcano@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426708017-28885-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1426708017-28885-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 18 March 2015 at 20:46, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
->         Hi,
->
-> This RFC patch series adds Clock Domain support to the R-Car Gen2 Clock
-> Pulse Generator (CPG) driver using the generic PM Domain.  This allows
-> to power-manage the module clocks of SoC devices that are part of the
-> CPG Clock Domain using Runtime PM, or for system suspend/resume.
->
-> SoC devices that are part of the CPG Clock Domain and can be
-> power-managed through their primary clock are tagged in DT with a proper
-> "power-domains" property. Drivers for devices with multiple clocks
-> (notably du and rcar-sound) still have to manage their (multiple module)
-> clocks themselves.
->
-> Finally, the legacy default PM domain hack in drivers/sh/pm_runtime.c is
-> disabled when running on an R-Car Gen2 SoC with genpd support.
->
-> Compared to the legacy default PM domain hack, the CPG Clock Domain has
-> several advantages:
->   - It only affects on-SoC devices, not all platform devices,
->   - It only affects the on-SoC devices we want, as specified in DT,
->   - Allmost all module clocks of all on-SoC devices (barring devices
->     needed for wake-up[*]) are now gated during s2ram, saving more
->     power.
->
-> Here's a list of all devices in the CPG Clock Domain on r8a7791:
->
-> root@koelsch:~# cat /sys/kernel/debug/pm_genpd/pm_genpd_summary
->     domain                      status         slaves
->            /device                                      runtime status
-> ----------------------------------------------------------------------
-> cpg_clocks                      on
->     /devices/platform/e61c0000.interrupt-controller     active
->     /devices/platform/e60b0000.i2c                      suspended
->     /devices/platform/ffca0000.timer                    suspended
->     /devices/platform/e6050000.gpio                     active
->     /devices/platform/e6051000.gpio                     active
->     /devices/platform/e6052000.gpio                     active
->     /devices/platform/e6053000.gpio                     active
->     /devices/platform/e6054000.gpio                     active
->     /devices/platform/e6055000.gpio                     active
->     /devices/platform/e6055400.gpio                     active
->     /devices/platform/e6055800.gpio                     active
->     /devices/platform/ee090000.pci                      active
->     /devices/platform/ee0d0000.pci                      active
->     /devices/platform/fe000000.pcie                     unsupported
->     /devices/platform/e6700000.dma-controller           active
->     /devices/platform/e6720000.dma-controller           active
->     /devices/platform/ec700000.dma-controller           active
->     /devices/platform/ec720000.dma-controller           suspended
->     /devices/platform/e6e60000.serial                   active
->     /devices/platform/e6e68000.serial                   active
->     /devices/platform/ee300000.sata                     unsupported
->     /devices/platform/e6b10000.spi                      suspended
->     /devices/platform/e6e20000.spi                      suspended
->     /devices/platform/ee700000.ethernet                 active
->     /devices/platform/e6530000.i2c                      suspended
->     /devices/platform/e6ef1000.video                    suspended
->     /devices/platform/e61f0000.thermal                  active
->     /devices/platform/ee100000.sd                       active
->     /devices/platform/ee140000.sd                       active
->     /devices/platform/ee160000.sd                       active
-> root@koelsch:~#
->
-> Logically, the CPG Clock Domain operates on the SoC CPG/MSTP block.
-> As there's no single device node in DT representing this block (there
-> are separate device nodes for the CPG and for the individual MSTP
-> clocks), I bound the logic to the CPG device node.
-> Perhaps this is something we should change for future SoCs?
->
-> As usual when involving clocks and/or PM Domains, the DTS changes depend
-> stricly on the driver change. The final patch must be applied last.
->
-> The DTS changes also depend on the series "[PATCH 0/5] ARM: shmobile:
-> Add INTC-SYS clock to device tree" I've just sent.
->
-> This was tested on r8a7791/koelsch.
->
-> Thanks for your comments!
->
-> [*] GPIO wake-up requires "[PATCH 0/3] gpio: rcar: Fix wake up using
-> gpio-keys with PM domain").
->
-> Geert Uytterhoeven (5):
->   [RFC] clk: shmobile: rcar-gen2: Add CPG Clock Domain support
->   [RFC] ARM: shmobile: r8a7790 dtsi: Add CPG Clock Domain
->   [RFC] ARM: shmobile: r8a7791 dtsi: Add CPG Clock Domain
->   [RFC] ARM: shmobile: r8a7794 dtsi: Add CPG Clock Domain
->   drivers: sh: Disable PM runtime for multi-platform R-Car Gen2 with
->     genpd
->
->  .../clock/renesas,rcar-gen2-cpg-clocks.txt         | 26 ++++++-
->  arch/arm/boot/dts/r8a7790.dtsi                     | 77 +++++++++++++++++++--
->  arch/arm/boot/dts/r8a7791.dtsi                     | 80 ++++++++++++++++++++--
->  arch/arm/boot/dts/r8a7794.dtsi                     | 29 ++++++++
->  arch/arm/mach-shmobile/Kconfig                     |  1 +
->  drivers/clk/shmobile/clk-rcar-gen2.c               | 63 +++++++++++++++++
->  drivers/sh/pm_runtime.c                            | 10 +--
->  7 files changed, 268 insertions(+), 18 deletions(-)
+The default idle driver uses one state with the WFI instruction.
+The default idle routine invokes WFI when no cpuidle driver is present.
 
-For the complete patchset.
+The default cpuidle driver is pointless and does not give more than the
+default idle routine and moreover it pulls all the mathematics tied with
+the cpuidle governor for nothing, hence consuming more energy.
 
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Remove the default driver, the related code and register the driver directly.
 
-Kind regards
-Uffe
+[compiled only - no board - no test]
 
->
-> --
-> 1.9.1
->
-> Gr{oetje,eeting}s,
->
->                                                 Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                                             -- Linus Torvalds
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+---
+ arch/arm/mach-shmobile/common.h    |  3 ---
+ arch/arm/mach-shmobile/cpuidle.c   | 37 -------------------------------------
+ arch/arm/mach-shmobile/pm-sh7372.c |  2 +-
+ 3 files changed, 1 insertion(+), 41 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+index 309025e..29b3088 100644
+--- a/arch/arm/mach-shmobile/common.h
++++ b/arch/arm/mach-shmobile/common.h
+@@ -23,8 +23,6 @@ struct clk;
+ extern int shmobile_clk_init(void);
+ extern void shmobile_handle_irq_intc(struct pt_regs *);
+ extern struct platform_suspend_ops shmobile_suspend_ops;
+-struct cpuidle_driver;
+-extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
+ 
+ #ifdef CONFIG_SUSPEND
+ int shmobile_suspend_init(void);
+@@ -51,7 +49,6 @@ extern void __iomem *shmobile_scu_base;
+ static inline void __init shmobile_init_late(void)
+ {
+ 	shmobile_suspend_init();
+-	shmobile_cpuidle_init();
+ 	shmobile_cpufreq_init();
+ }
+ 
+diff --git a/arch/arm/mach-shmobile/cpuidle.c b/arch/arm/mach-shmobile/cpuidle.c
+index 0afeb5c..e69de29 100644
+--- a/arch/arm/mach-shmobile/cpuidle.c
++++ b/arch/arm/mach-shmobile/cpuidle.c
+@@ -1,37 +0,0 @@
+-/*
+- * CPUIdle support code for SH-Mobile ARM
+- *
+- *  Copyright (C) 2011 Magnus Damm
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- */
+-
+-#include <linux/pm.h>
+-#include <linux/cpuidle.h>
+-#include <linux/suspend.h>
+-#include <linux/module.h>
+-#include <linux/err.h>
+-#include <asm/cpuidle.h>
+-#include <asm/io.h>
+-
+-static struct cpuidle_driver shmobile_cpuidle_default_driver = {
+-	.name			= "shmobile_cpuidle",
+-	.owner			= THIS_MODULE,
+-	.states[0]		= ARM_CPUIDLE_WFI_STATE,
+-	.safe_state_index	= 0, /* C1 */
+-	.state_count		= 1,
+-};
+-
+-static struct cpuidle_driver *cpuidle_drv = &shmobile_cpuidle_default_driver;
+-
+-void __init shmobile_cpuidle_set_driver(struct cpuidle_driver *drv)
+-{
+-	cpuidle_drv = drv;
+-}
+-
+-int __init shmobile_cpuidle_init(void)
+-{
+-	return cpuidle_register(cpuidle_drv, NULL);
+-}
+diff --git a/arch/arm/mach-shmobile/pm-sh7372.c b/arch/arm/mach-shmobile/pm-sh7372.c
+index c0293ae..9f19052 100644
+--- a/arch/arm/mach-shmobile/pm-sh7372.c
++++ b/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -462,7 +462,7 @@ static struct cpuidle_driver sh7372_cpuidle_driver = {
+ 
+ static void __init sh7372_cpuidle_init(void)
+ {
+-	shmobile_cpuidle_set_driver(&sh7372_cpuidle_driver);
++	return cpuidle_register(cpuidle_drv, NULL);
+ }
+ #else
+ static void __init sh7372_cpuidle_init(void) {}
+-- 
+1.9.1
+
