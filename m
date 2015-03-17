@@ -1,39 +1,53 @@
-From: Chris Brandt <Chris.Brandt@renesas.com>
-Date: Tue, 17 Mar 2015 13:46:29 +0000
-Subject: RE: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <HK2PR06MB05613B2FBF8466204FA98A9D8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 17 Mar 2015 13:57:15 +0000
+Subject: Re: XIP_KERNEL and !ARCH_MULTIPLATFORM
+Message-Id: <CAMuHMdU3J1uzD5VAgHgF5NNzw_E7Njf7wU7kJ7oPuCKm7N_Arg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
-In-Reply-To: <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
+ <HK2PR06MB05613B2FBF8466204FA98A9D8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
+In-Reply-To: <HK2PR06MB05613B2FBF8466204FA98A9D8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-SGkgR2VlcnQsDQoNCj4gQmVzaWRlcywgSSB0aGluayBhIG11bHRpLXBsYXRmb3JtIFhJUCAob3Ig
-bm9tbXUpIGtlcm5lbCBpcyBwb3NzaWJsZSwgYXMgbG9uZyBhcyBYSVBfUEhZU19BRERSIChvciBQ
-SFlTX09GRlNFVCkgaXMgc3VpdGFibGUgZm9yIGFsbCBwbGF0Zm9ybXMgaW5jbHVkZWQNCg0KUG9z
-c2libGUuLi5idXQuLi5tYXliZSBwb2ludGxlc3MuIElmIHlvdSdyZSBkb2luZyBYSVAsIHRoZW4g
-bW9zdCBsaWtlbHkgeW91J3ZlIGdvdCBhIHNwZWNpZmljIHBsYXRmb3JtIHRoYXQgeW91IGFyZSB0
-cnlpbmcgdG8gZG8gYXMgbXVjaCBhcyB5b3UgY2FuIGluIGFzIGxpdHRsZSAoUkFNKSBhcyBwb3Nz
-aWJsZS4NCg0KV2FzIEFSQ0hfTVVMVElQTEFURk9STSByZWFsbHkgdHJ5aW5nIHRvIGZpeCBzb21l
-IGh1Z2UgZXhpc3RpbmcgcHJvYmxlbT8gT3Igd2FzIGl0IG1vcmUgb2YgYSAnaGVyZSdzIGEgY3V0
-ZSB0aGluZyB3ZSBjb3VsZCBkbyc/DQpJbiBteSBtaW5kLCBhbiBTb0MgYnkgbmF0dXJlIGlzIHVz
-ZWQgZm9yIHNwZWNpZmljIGVtYmVkZGVkIHByb2R1Y3QgYW5kIHlvdSBjb3VsZCBjYXJlIGxlc3Mg
-aWYgdGhlIGJpbmFyeSBydW5zIG9uIGFueXRoaW5nIGVsc2UuIE9mIGNvdXJzZSB0aGUgcmFuZ2Ug
-b2YgU29DcyB0aGF0IGNhbiBydW4gTGludXggbm93IGEgZGF5cyB2YXJpZXMgZ3JlYXRseSwgc28g
-SSBkb24ndCB0aGluayB5b3UgY2FuIHB1dCB0aGVtIGFsbCBpbiB0aGUgc2FtZSBjYXRlZ29yeSBs
-aWtlIEFSQ0hfTVVMVElQTEFURk9STSB3YXMgdHJ5aW5nIHRvIGRvLg0KDQoNCj4gUGVyaGFwcyBB
-UkNIX01VTFRJUExBVEZPUk0gc2hvdWxkIGJlIHJlcGxhY2VkIGJ5IEFSQ0hfQVJNX05FV1dPUkxE
-IGFsbW9zdCBldmVyeXdoZXJlLCBhbmQgKG5ldykgQVJDSF9NVUxUSVBMQVRGT1JNIHNob3VsZCBi
-ZSByZXNlcnZlZCAoaWYgbmVlZGVkIGF0IGFsbCkgdG8gcHJvdGVjdCBmZWF0dXJlcyB0aGF0IGFy
-ZSBub3QgY29tcGF0aWJsZSB3aXRoIHJ1bm5pbmcgb24gbXVsdGlwbGUgbWFjaGluZXM/DQoNClRo
-YXQncyBub3QgYmFkLiBJIHRoaW5rIGl0IHN0aWxsIGNvbWVzIGRvd24gdG8gaWYgeW91IHdhbnQg
-dG8gYnVpbGQgWElQLCB5b3UgZG9uJ3QgY2FyZSBhYm91dCBBUkNIX01VTFRJUExBVEZPUk0gc3Vw
-cG9ydCwgYW5kIHRoZSBYSVBfUEhZU19BRERSIChhbmQgUEhZU19PRkZTRVQpIHlvdSBuZWVkIHRv
-IHVzZSBpcyBkZXZpY2Ugc3BlY2lmaWMgYW55d2F5Lg0KDQpJdCBhbHNvIGxvb2tzIGxpa2UgYSBj
-b3VwbGUgbW9udGggYWdvIHNvbWVvbmUgYWxzbyBwb2ludGVkIG91dCB0aGF0IGp1c3QgYmVjYXVz
-ZSB0aGUgYmFzZSBjb3JlIGlzIHRoZSBzYW1lLCB0aGF0IGRvZXNuJ3QgbWVhbiBhbGwgdGhlIGVy
-cmF0YXMgYXJlIHRoZSBzYW1lLCBhbmQgQVJDSF9NVUxUSVBMQVRGT1JNIGRvZXNuJ3QgZml0IHRo
-ZXJlIGFzIHdlbGwuDQoNCkNocmlzDQoNCg=
+Hi Chris,
+
+On Tue, Mar 17, 2015 at 2:46 PM, Chris Brandt <Chris.Brandt@renesas.com> wrote:
+>> Besides, I think a multi-platform XIP (or nommu) kernel is possible, as long as XIP_PHYS_ADDR (or PHYS_OFFSET) is suitable for all platforms included
+>
+> Possible...but...maybe pointless. If you're doing XIP, then most likely you've got a specific platform that you are trying to do as much as you can in as little (RAM) as possible.
+
+Sure. For your real embedded device, you want a small kernel, without any cruft.
+
+> Was ARCH_MULTIPLATFORM really trying to fix some huge existing problem? Or was it more of a 'here's a cute thing we could do'?
+> In my mind, an SoC by nature is used for specific embedded product and you could care less if the binary runs on anything else. Of course the range of SoCs that can run Linux now a days varies greatly, so I don't think you can put them all in the same category like ARCH_MULTIPLATFORM was trying to do.
+
+ARCH_MULTIPLATFORM (the multi-platform part) was also introduced to reduce the
+number of kernels you have to built. This matters not only for testing
+(increasing build coverage while reducing the number of kernels vs. the number
+of machines), but also for Linux distributions, who typically ship only a few
+kernels, but want to support as many machine types as possible.
+
+>> Perhaps ARCH_MULTIPLATFORM should be replaced by ARCH_ARM_NEWWORLD almost everywhere, and (new) ARCH_MULTIPLATFORM should be reserved (if needed at all) to protect features that are not compatible with running on multiple machines?
+>
+> That's not bad. I think it still comes down to if you want to build XIP, you don't care about ARCH_MULTIPLATFORM support, and the XIP_PHYS_ADDR (and PHYS_OFFSET) you need to use is device specific anyway.
+
+Now, to solve your problem: can you get it to work by dropping XIP_KERNEL's
+dependency on !ARCH_MULTIPLATFORM in arch/arm/Kconfig?
+
+> It also looks like a couple month ago someone also pointed out that just because the base core is the same, that doesn't mean all the erratas are the same, and ARCH_MULTIPLATFORM doesn't fit there as well.
+
+Possibly.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
