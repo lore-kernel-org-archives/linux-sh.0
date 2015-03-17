@@ -1,92 +1,69 @@
-From: Chris Brandt <Chris.Brandt@renesas.com>
-Date: Tue, 17 Mar 2015 16:08:04 +0000
-Subject: RE: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <HK2PR06MB0561FE47407CA32AA8DDEFCF8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 17 Mar 2015 16:20:01 +0000
+Subject: Re: XIP_KERNEL and !ARCH_MULTIPLATFORM
+Message-Id: <CAMuHMdUS84s=uLYVk8BtRoKFmBzw7aT1eQCfGF1nx22hTqf15A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
  <HK2PR06MB05613B2FBF8466204FA98A9D8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdU3J1uzD5VAgHgF5NNzw_E7Njf7wU7kJ7oPuCKm7N_Arg@mail.gmail.com>
-In-Reply-To: <CAMuHMdU3J1uzD5VAgHgF5NNzw_E7Njf7wU7kJ7oPuCKm7N_Arg@mail.gmail.com>
+ <HK2PR06MB0561FE47407CA32AA8DDEFCF8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
+In-Reply-To: <HK2PR06MB0561FE47407CA32AA8DDEFCF8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-SGkgR2VlcnQsDQoNCj4gVGhpcyBtYXR0ZXJzIG5vdCBvbmx5IGZvciB0ZXN0aW5nIChpbmNyZWFz
-aW5nIGJ1aWxkIGNvdmVyYWdlIHdoaWxlIHJlZHVjaW5nIHRoZSBudW1iZXIgb2Yga2VybmVscyB2
-cy4gdGhlIG51bWJlciBvZiBtYWNoaW5lcyksIGJ1dCBhbHNvIGZvciBMaW51eCBkaXN0cmlidXRp
-b25zLCB3aG8gdHlwaWNhbGx5IHNoaXAgb25seSBhIGZldyBrZXJuZWxzLCBidXQgd2FudCB0byBz
-dXBwb3J0IGFzIG1hbnkgbWFjaGluZSB0eXBlcyBhcyBwb3NzaWJsZS4NCg0KT0ssIEkgY2FuIHNl
-ZSB0aGUgZGVzaXJlIG5vdy4gQnV0LCB0aGVyZSBtdXN0IGJlIGEgaGFwcHkgbWVkaXVtIHNvbWV3
-aGVyZS4NCg0KDQo+IE5vdywgdG8gc29sdmUgeW91ciBwcm9ibGVtOiBjYW4geW91IGdldCBpdCB0
-byB3b3JrIGJ5IGRyb3BwaW5nIFhJUF9LRVJORUwncyBkZXBlbmRlbmN5IG9uICFBUkNIX01VTFRJ
-UExBVEZPUk0gaW4gYXJjaC9hcm0vS2NvbmZpZz8NCg0KTm9wZSwgYmVjYXVzZSBDT05GSUdfUEhZ
-U19PRkZTRVQgZG9lc24ndCBnZXQgZGVmaW5lZDoNCiAgICAgICAgIiAoLmhlYWQudGV4dCsweDY4
-KTogdW5kZWZpbmVkIHJlZmVyZW5jZSB0byBgQ09ORklHX1BIWVNfT0ZGU0VUJyINCg0KY29uZmln
-IFBIWVNfT0ZGU0VUDQoJaGV4ICJQaHlzaWNhbCBhZGRyZXNzIG9mIG1haW4gbWVtb3J5IiBpZiBN
-TVUNCglkZXBlbmRzIG9uICFBUk1fUEFUQ0hfUEhZU19WSVJUDQoNClRoYXQgd2FzIHBhdGNoICMx
-IHRvIGdldCBYSVAgd29ya2luZyBpbiB0aGUgMy4xNCBrZXJuZWwuDQoNClNvLCBwdXR0aW5nIHRo
-YXQgcGF0Y2ggaW4gZm9yIEFSQ0hfTVVMVElQTEFURk9STToNCmNvbmZpZyBBUkNIX01VTFRJUExB
-VEZPUk0NCglib29sICJBbGxvdyBtdWx0aXBsZSBwbGF0Zm9ybXMgdG8gYmUgc2VsZWN0ZWQiDQoJ
-ZGVwZW5kcyBvbiBNTVUNCglzZWxlY3QgQVJDSF9XQU5UX09QVElPTkFMX0dQSU9MSUINCglzZWxl
-Y3QgQVJNX0hBU19TR19DSEFJTg0KLQlzZWxlY3QgQVJNX1BBVENIX1BIWVNfVklSVA0KKwlzZWxl
-Y3QgQVJNX1BBVENIX1BIWVNfVklSVCBpZiAhWElQX0tFUk5FTA0KDQpUaGF0IHdpbGwgZ2V0IHlv
-dSB0byBiZSBhYmxlIHRvIHNldCBQSFlTX09GRlNFVCBhbmQgdGhlbiBidWlsZCwgYnV0IHN0aWxs
-IG5vdCBhY3R1YWxseSB3b3JrLg0KDQpGb3IgY29kZSwgaXQgbG9va3MgbGlrZSBJIHN0aWxsIG5l
-ZWQgdG8gYXBwbHkgbXkgMy4xNCBwYXRjaGVzIHRvOg0KICAgIGFyY2gvYXJtL21tL21tdS5jDQog
-ICAgYXJjaC9hcm0vbW0vcHJvYy12Ny5TDQogICAgc2NyaXB0cy9saW5rLXZtbGludXguc2gNCg0K
-VW5mb3J0dW5hdGVseSwgSSdtIHN0aWxsIG1pc3Npbmcgc29tZXRoaW5nIHRvIGJvb3QgYWxsIHRo
-ZSB3YXkgdXAuIExvb2tpbmcgYXQgIF9fbG9nX2J1ZiBJIGNhbiBzZWUgaXQgd2FzIHN0YXJ0aW5n
-IHRvIGJvb3QgKDQuMC4wLXJjNCksIGJ1dCBkaWVzIGVhcmx5IG9uLg0KU28sIEknbSBhc3N1bWlu
-ZyBzb21ldGhpbmcgaW4gdGhlIGtlcm5lbCBoYXMgY2hhbmdlZCBzaW5jZSAzLjE0IGFuZCBJIGhh
-dmUgdG8gdHJhY2sgaXQgZG93bi4NCg0KQ2hyaXMNCg0KDQotLS0tLU9yaWdpbmFsIE1lc3NhZ2Ut
-LS0tLQ0KRnJvbTogZ2VlcnQudXl0dGVyaG9ldmVuQGdtYWlsLmNvbSBbbWFpbHRvOmdlZXJ0LnV5
-dHRlcmhvZXZlbkBnbWFpbC5jb21dIE9uIEJlaGFsZiBPZiBHZWVydCBVeXR0ZXJob2V2ZW4NClNl
-bnQ6IFR1ZXNkYXksIE1hcmNoIDE3LCAyMDE1IDk6NTcgQU0NClRvOiBDaHJpcyBCcmFuZHQNCkNj
-OiBsaW51eC1hcm0ta2VybmVsQGxpc3RzLmluZnJhZGVhZC5vcmc7IGxpbnV4LXNoQHZnZXIua2Vy
-bmVsLm9yZw0KU3ViamVjdDogUmU6IFhJUF9LRVJORUwgYW5kICFBUkNIX01VTFRJUExBVEZPUk0N
-Cg0KSGkgQ2hyaXMsDQoNCk9uIFR1ZSwgTWFyIDE3LCAyMDE1IGF0IDI6NDYgUE0sIENocmlzIEJy
-YW5kdCA8Q2hyaXMuQnJhbmR0QHJlbmVzYXMuY29tPiB3cm90ZToNCj4+IEJlc2lkZXMsIEkgdGhp
-bmsgYSBtdWx0aS1wbGF0Zm9ybSBYSVAgKG9yIG5vbW11KSBrZXJuZWwgaXMgcG9zc2libGUsIA0K
-Pj4gYXMgbG9uZyBhcyBYSVBfUEhZU19BRERSIChvciBQSFlTX09GRlNFVCkgaXMgc3VpdGFibGUg
-Zm9yIGFsbCANCj4+IHBsYXRmb3JtcyBpbmNsdWRlZA0KPg0KPiBQb3NzaWJsZS4uLmJ1dC4uLm1h
-eWJlIHBvaW50bGVzcy4gSWYgeW91J3JlIGRvaW5nIFhJUCwgdGhlbiBtb3N0IGxpa2VseSB5b3Un
-dmUgZ290IGEgc3BlY2lmaWMgcGxhdGZvcm0gdGhhdCB5b3UgYXJlIHRyeWluZyB0byBkbyBhcyBt
-dWNoIGFzIHlvdSBjYW4gaW4gYXMgbGl0dGxlIChSQU0pIGFzIHBvc3NpYmxlLg0KDQpTdXJlLiBG
-b3IgeW91ciByZWFsIGVtYmVkZGVkIGRldmljZSwgeW91IHdhbnQgYSBzbWFsbCBrZXJuZWwsIHdp
-dGhvdXQgYW55IGNydWZ0Lg0KDQo+IFdhcyBBUkNIX01VTFRJUExBVEZPUk0gcmVhbGx5IHRyeWlu
-ZyB0byBmaXggc29tZSBodWdlIGV4aXN0aW5nIHByb2JsZW0/IE9yIHdhcyBpdCBtb3JlIG9mIGEg
-J2hlcmUncyBhIGN1dGUgdGhpbmcgd2UgY291bGQgZG8nPw0KPiBJbiBteSBtaW5kLCBhbiBTb0Mg
-YnkgbmF0dXJlIGlzIHVzZWQgZm9yIHNwZWNpZmljIGVtYmVkZGVkIHByb2R1Y3QgYW5kIHlvdSBj
-b3VsZCBjYXJlIGxlc3MgaWYgdGhlIGJpbmFyeSBydW5zIG9uIGFueXRoaW5nIGVsc2UuIE9mIGNv
-dXJzZSB0aGUgcmFuZ2Ugb2YgU29DcyB0aGF0IGNhbiBydW4gTGludXggbm93IGEgZGF5cyB2YXJp
-ZXMgZ3JlYXRseSwgc28gSSBkb24ndCB0aGluayB5b3UgY2FuIHB1dCB0aGVtIGFsbCBpbiB0aGUg
-c2FtZSBjYXRlZ29yeSBsaWtlIEFSQ0hfTVVMVElQTEFURk9STSB3YXMgdHJ5aW5nIHRvIGRvLg0K
-DQpBUkNIX01VTFRJUExBVEZPUk0gKHRoZSBtdWx0aS1wbGF0Zm9ybSBwYXJ0KSB3YXMgYWxzbyBp
-bnRyb2R1Y2VkIHRvIHJlZHVjZSB0aGUgbnVtYmVyIG9mIGtlcm5lbHMgeW91IGhhdmUgdG8gYnVp
-bHQuIFRoaXMgbWF0dGVycyBub3Qgb25seSBmb3IgdGVzdGluZyAoaW5jcmVhc2luZyBidWlsZCBj
-b3ZlcmFnZSB3aGlsZSByZWR1Y2luZyB0aGUgbnVtYmVyIG9mIGtlcm5lbHMgdnMuIHRoZSBudW1i
-ZXIgb2YgbWFjaGluZXMpLCBidXQgYWxzbyBmb3IgTGludXggZGlzdHJpYnV0aW9ucywgd2hvIHR5
-cGljYWxseSBzaGlwIG9ubHkgYSBmZXcga2VybmVscywgYnV0IHdhbnQgdG8gc3VwcG9ydCBhcyBt
-YW55IG1hY2hpbmUgdHlwZXMgYXMgcG9zc2libGUuDQoNCj4+IFBlcmhhcHMgQVJDSF9NVUxUSVBM
-QVRGT1JNIHNob3VsZCBiZSByZXBsYWNlZCBieSBBUkNIX0FSTV9ORVdXT1JMRCBhbG1vc3QgZXZl
-cnl3aGVyZSwgYW5kIChuZXcpIEFSQ0hfTVVMVElQTEFURk9STSBzaG91bGQgYmUgcmVzZXJ2ZWQg
-KGlmIG5lZWRlZCBhdCBhbGwpIHRvIHByb3RlY3QgZmVhdHVyZXMgdGhhdCBhcmUgbm90IGNvbXBh
-dGlibGUgd2l0aCBydW5uaW5nIG9uIG11bHRpcGxlIG1hY2hpbmVzPw0KPg0KPiBUaGF0J3Mgbm90
-IGJhZC4gSSB0aGluayBpdCBzdGlsbCBjb21lcyBkb3duIHRvIGlmIHlvdSB3YW50IHRvIGJ1aWxk
-IFhJUCwgeW91IGRvbid0IGNhcmUgYWJvdXQgQVJDSF9NVUxUSVBMQVRGT1JNIHN1cHBvcnQsIGFu
-ZCB0aGUgWElQX1BIWVNfQUREUiAoYW5kIFBIWVNfT0ZGU0VUKSB5b3UgbmVlZCB0byB1c2UgaXMg
-ZGV2aWNlIHNwZWNpZmljIGFueXdheS4NCg0KTm93LCB0byBzb2x2ZSB5b3VyIHByb2JsZW06IGNh
-biB5b3UgZ2V0IGl0IHRvIHdvcmsgYnkgZHJvcHBpbmcgWElQX0tFUk5FTCdzIGRlcGVuZGVuY3kg
-b24gIUFSQ0hfTVVMVElQTEFURk9STSBpbiBhcmNoL2FybS9LY29uZmlnPw0KDQo+IEl0IGFsc28g
-bG9va3MgbGlrZSBhIGNvdXBsZSBtb250aCBhZ28gc29tZW9uZSBhbHNvIHBvaW50ZWQgb3V0IHRo
-YXQganVzdCBiZWNhdXNlIHRoZSBiYXNlIGNvcmUgaXMgdGhlIHNhbWUsIHRoYXQgZG9lc24ndCBt
-ZWFuIGFsbCB0aGUgZXJyYXRhcyBhcmUgdGhlIHNhbWUsIGFuZCBBUkNIX01VTFRJUExBVEZPUk0g
-ZG9lc24ndCBmaXQgdGhlcmUgYXMgd2VsbC4NCg0KUG9zc2libHkuDQoNCkdye29ldGplLGVldGlu
-Z31zLA0KDQogICAgICAgICAgICAgICAgICAgICAgICBHZWVydA0KDQotLQ0KR2VlcnQgVXl0dGVy
-aG9ldmVuIC0tIFRoZXJlJ3MgbG90cyBvZiBMaW51eCBiZXlvbmQgaWEzMiAtLSBnZWVydEBsaW51
-eC1tNjhrLm9yZw0KDQpJbiBwZXJzb25hbCBjb252ZXJzYXRpb25zIHdpdGggdGVjaG5pY2FsIHBl
-b3BsZSwgSSBjYWxsIG15c2VsZiBhIGhhY2tlci4gQnV0IHdoZW4gSSdtIHRhbGtpbmcgdG8gam91
-cm5hbGlzdHMgSSBqdXN0IHNheSAicHJvZ3JhbW1lciIgb3Igc29tZXRoaW5nIGxpa2UgdGhhdC4N
-CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLS0gTGludXMgVG9ydmFsZHMNCg=
+Hi Chris,
+
+On Tue, Mar 17, 2015 at 5:08 PM, Chris Brandt <Chris.Brandt@renesas.com> wrote:
+>> Now, to solve your problem: can you get it to work by dropping XIP_KERNEL's dependency on !ARCH_MULTIPLATFORM in arch/arm/Kconfig?
+>
+> Nope, because CONFIG_PHYS_OFFSET doesn't get defined:
+>         " (.head.text+0x68): undefined reference to `CONFIG_PHYS_OFFSET'"
+>
+> config PHYS_OFFSET
+>         hex "Physical address of main memory" if MMU
+>         depends on !ARM_PATCH_PHYS_VIRT
+>
+> That was patch #1 to get XIP working in the 3.14 kernel.
+>
+> So, putting that patch in for ARCH_MULTIPLATFORM:
+> config ARCH_MULTIPLATFORM
+>         bool "Allow multiple platforms to be selected"
+>         depends on MMU
+>         select ARCH_WANT_OPTIONAL_GPIOLIB
+>         select ARM_HAS_SG_CHAIN
+> -       select ARM_PATCH_PHYS_VIRT
+> +       select ARM_PATCH_PHYS_VIRT if !XIP_KERNEL
+>
+> That will get you to be able to set PHYS_OFFSET and then build, but still not actually work.
+>
+> For code, it looks like I still need to apply my 3.14 patches to:
+>     arch/arm/mm/mmu.c
+>     arch/arm/mm/proc-v7.S
+>     scripts/link-vmlinux.sh
+>
+> Unfortunately, I'm still missing something to boot all the way up. Looking at  __log_buf I can see it was starting to boot (4.0.0-rc4), but dies early on.
+
+DEBUG_LL=y may help you here. It's easier than doing a post-mortem analysis
+on __log_buf from U-Boot.
+As we still have anti-social platforms, you best remove all non-SCIF default
+addresses from the DEBUG_UART_PHYS section in arch/arm/Kconfig.debug though.
+
+> So, I'm assuming something in the kernel has changed since 3.14 and I have to track it down.
+
+3.14 has (limited) RZ/A1H multi-platform support. Perhaps you can try getting
+XIP to work with a multi-platform v3.14 kernel first, and find out what broke
+in newer versions later?
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
