@@ -1,50 +1,36 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 17 Mar 2015 10:50:42 +0000
-Subject: Re: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
+From: Chris Brandt <Chris.Brandt@renesas.com>
+Date: Tue, 17 Mar 2015 13:29:01 +0000
+Subject: RE: XIP_KERNEL and !ARCH_MULTIPLATFORM
+Message-Id: <HK2PR06MB056127B8977A6F0FC1EF61E58A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
-In-Reply-To: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <20150317102623.GS8656@n2100.arm.linux.org.uk>
+In-Reply-To: <20150317102623.GS8656@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Chris,
+>  While I can see that reasoning, in part in this instance that was due to XIP not seeming to have many users (and its only users were old platforms...
 
-On Tue, Mar 17, 2015 at 4:48 AM, Chris Brandt <Chris.Brandt@renesas.com> wrote:
-> I've been running XIP_KERNEL with linux-3.14 on a Renesas RZ/A1 (ARCH_R7S72100) for a while now (with some bug fixes of course) so I thought I'd see if my fixes should be pushed back upstream.
->
-> However, I see that all the Renesas parts are being moved to ARCH_MULTIPLATFORM, which by means of arch/arm/Kconfig disallows XIP_KERNEL.
->
-> Looking back through the mailing list archives I see that there was some discussion on this, but never really a conclusion.
->
-> So my question is basically: What is the correct configuration to use XIP_KERNEL with a Renesas SoC? Is the idea that I need to go carve up my own config and do everything outside the normal tree from here on out?
+I would say XIP has just been waiting for the right part to come alone. The ARCH_R7S72100 has 10MB of internal RAM and can execute directly from external Quad-SPI flash (no DDR, no NOR).
+I also dusted off the Advanced XIP File System (AXFS) so now userland uses as little RAM as possible as well.
 
-The issue you're facing is that ARCH_MULTIPLATFORM actually means two things:
-  1. Use modern infrastructure (e.g. DT, CCF, GPIOLIB, ...) instead of board
-     files with platform devices,
-  2. Allow to build a single kernel that supports multiple SoC families and/or
-     boards.
+> We've run into the need a few times now to allow a SoC family converted to multiplatform to also be chosen using the previous non-multiplatform behaviour.
 
-The first thing is not incompatible with XIP_KERNEL (AFAIK), the second is
-(or rather, may be?).
+If Linux only ran on PCs, then maybe this wouldn't be such an issue. But with Linux on an SoC, you can (and should) get creative with what you are making. ARCH_MULTIPLATFORM seems to suppress that.
 
-Perhaps ARCH_MULTIPLATFORM should be replaced by ARCH_ARM_NEWWORLD
-almost everywhere, and (new) ARCH_MULTIPLATFORM should be reserved
-(if needed at all) to protect features that are not compatible with running on
-multiple machines?
+> What I believe is that rather than ripping out the old platform choices, we should have augmented them with the multiplatform support instead
 
-Besides, I think a multi-platform XIP (or nommu) kernel is possible, as long
-as XIP_PHYS_ADDR (or PHYS_OFFSET) is suitable for all platforms included.
+Agreed.
 
-Gr{oetje,eeting}s,
+> One thing which the whole multiplatform/DT project has taught me though is that the above approach is virtually always wrong
 
-                        Geert
+The one nice thing DT does is clean up and consolidate the mundane stuff in the board file, but that didn't mean I wanted you to take the board file completely away from me.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> That can be worked around with a progressive approach to converting this stuff in a way that ensures we gain the new symbols in people's defconfigs before we switch things around.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Since either way this sounds like a long process, and I still want to see if I can get XIP working with the latest kernel, will you accept patches on something that can't be built with the current architecture?
+ 
+Chris
+
