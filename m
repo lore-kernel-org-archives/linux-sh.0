@@ -1,7 +1,7 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Tue, 17 Mar 2015 16:28:31 +0000
-Subject: Re: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <20150317162831.GB8656@n2100.arm.linux.org.uk>
+From: Chris Brandt <Chris.Brandt@renesas.com>
+Date: Tue, 17 Mar 2015 16:34:33 +0000
+Subject: RE: XIP_KERNEL and !ARCH_MULTIPLATFORM
+Message-Id: <HK2PR06MB0561E2FEA01A94ED8DF4079E8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
@@ -15,16 +15,14 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Mar 17, 2015 at 05:20:01PM +0100, Geert Uytterhoeven wrote:
-> DEBUG_LL=y may help you here. It's easier than doing a post-mortem analysis
-> on __log_buf from U-Boot.
-> As we still have anti-social platforms, you best remove all non-SCIF default
-> addresses from the DEBUG_UART_PHYS section in arch/arm/Kconfig.debug though.
-
-Or enter the appropriate address directly, which is what's intended in
-the long term.  Having zillions of defaults in Kconfig is not that much
-better from what we had before...
-
--- 
-FTTC broadband for 0.8mile line: currently at 10.5Mbps down 400kbps up
-according to speedtest.net.
+SGkgR2VlcnQsDQoNCj4gREVCVUdfTEw9eSBtYXkgaGVscCB5b3UgaGVyZS4gSXQncyBlYXNpZXIg
+dGhhbiBkb2luZyBhIHBvc3QtbW9ydGVtIGFuYWx5c2lzIG9uIF9fbG9nX2J1ZiBmcm9tIFUtQm9v
+dC4NCg0KVGhhdCBkaWRuJ3QgZXhpc3QgZm9yIG1lIGluIDMuMTQgZm9yIFJaL0ExLiBJIHRob3Vn
+aHQgSSBzYXcgc29tZW9uZSBhZGQgaXQgKEkgc3RhcnRlZCB0byB3b3JrIG9uIGl0Li4uYnV0IGRp
+ZG4ndCBmaW5pc2gpLg0KDQo+IDMuMTQgaGFzIChsaW1pdGVkKSBSWi9BMUggbXVsdGktcGxhdGZv
+cm0gc3VwcG9ydC4gUGVyaGFwcyB5b3UgY2FuIHRyeSBnZXR0aW5nIFhJUCB0byB3b3JrIHdpdGgg
+YSBtdWx0aS1wbGF0Zm9ybSB2My4xNCBrZXJuZWwgZmlyc3QsIGFuZCBmaW5kIG91dCB3aGF0IGJy
+b2tlIGluIG5ld2VyIHZlcnNpb25zIGxhdGVyPw0KDQpJIHRoaW5rIGZpcnN0IEknbGwganVzdCBn
+byBiYWNrIHRvIGhvdyBJIGRlYnVnZ2VkIFhJUCBpbiAzLjE0Li4uLi5KVEFHIGFuZCBhIGRpc2Fz
+c2VtYmx5IHdpbmRvdy4gSXQncyBub3QgcHJldHR5LCBidXQgaXQncyB3aGF0IEkgaGF2ZSBhdmFp
+bGFibGUgdG8gd29yayB3aXRoLg0KDQpDaHJpcw0KDQo
