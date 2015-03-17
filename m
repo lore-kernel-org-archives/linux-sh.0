@@ -1,53 +1,92 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 17 Mar 2015 13:57:15 +0000
-Subject: Re: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <CAMuHMdU3J1uzD5VAgHgF5NNzw_E7Njf7wU7kJ7oPuCKm7N_Arg@mail.gmail.com>
+From: Chris Brandt <Chris.Brandt@renesas.com>
+Date: Tue, 17 Mar 2015 16:08:04 +0000
+Subject: RE: XIP_KERNEL and !ARCH_MULTIPLATFORM
+Message-Id: <HK2PR06MB0561FE47407CA32AA8DDEFCF8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
  <HK2PR06MB05613B2FBF8466204FA98A9D8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
-In-Reply-To: <HK2PR06MB05613B2FBF8466204FA98A9D8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <CAMuHMdU3J1uzD5VAgHgF5NNzw_E7Njf7wU7kJ7oPuCKm7N_Arg@mail.gmail.com>
+In-Reply-To: <CAMuHMdU3J1uzD5VAgHgF5NNzw_E7Njf7wU7kJ7oPuCKm7N_Arg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Chris,
-
-On Tue, Mar 17, 2015 at 2:46 PM, Chris Brandt <Chris.Brandt@renesas.com> wrote:
->> Besides, I think a multi-platform XIP (or nommu) kernel is possible, as long as XIP_PHYS_ADDR (or PHYS_OFFSET) is suitable for all platforms included
->
-> Possible...but...maybe pointless. If you're doing XIP, then most likely you've got a specific platform that you are trying to do as much as you can in as little (RAM) as possible.
-
-Sure. For your real embedded device, you want a small kernel, without any cruft.
-
-> Was ARCH_MULTIPLATFORM really trying to fix some huge existing problem? Or was it more of a 'here's a cute thing we could do'?
-> In my mind, an SoC by nature is used for specific embedded product and you could care less if the binary runs on anything else. Of course the range of SoCs that can run Linux now a days varies greatly, so I don't think you can put them all in the same category like ARCH_MULTIPLATFORM was trying to do.
-
-ARCH_MULTIPLATFORM (the multi-platform part) was also introduced to reduce the
-number of kernels you have to built. This matters not only for testing
-(increasing build coverage while reducing the number of kernels vs. the number
-of machines), but also for Linux distributions, who typically ship only a few
-kernels, but want to support as many machine types as possible.
-
->> Perhaps ARCH_MULTIPLATFORM should be replaced by ARCH_ARM_NEWWORLD almost everywhere, and (new) ARCH_MULTIPLATFORM should be reserved (if needed at all) to protect features that are not compatible with running on multiple machines?
->
-> That's not bad. I think it still comes down to if you want to build XIP, you don't care about ARCH_MULTIPLATFORM support, and the XIP_PHYS_ADDR (and PHYS_OFFSET) you need to use is device specific anyway.
-
-Now, to solve your problem: can you get it to work by dropping XIP_KERNEL's
-dependency on !ARCH_MULTIPLATFORM in arch/arm/Kconfig?
-
-> It also looks like a couple month ago someone also pointed out that just because the base core is the same, that doesn't mean all the erratas are the same, and ARCH_MULTIPLATFORM doesn't fit there as well.
-
-Possibly.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR2VlcnQsDQoNCj4gVGhpcyBtYXR0ZXJzIG5vdCBvbmx5IGZvciB0ZXN0aW5nIChpbmNyZWFz
+aW5nIGJ1aWxkIGNvdmVyYWdlIHdoaWxlIHJlZHVjaW5nIHRoZSBudW1iZXIgb2Yga2VybmVscyB2
+cy4gdGhlIG51bWJlciBvZiBtYWNoaW5lcyksIGJ1dCBhbHNvIGZvciBMaW51eCBkaXN0cmlidXRp
+b25zLCB3aG8gdHlwaWNhbGx5IHNoaXAgb25seSBhIGZldyBrZXJuZWxzLCBidXQgd2FudCB0byBz
+dXBwb3J0IGFzIG1hbnkgbWFjaGluZSB0eXBlcyBhcyBwb3NzaWJsZS4NCg0KT0ssIEkgY2FuIHNl
+ZSB0aGUgZGVzaXJlIG5vdy4gQnV0LCB0aGVyZSBtdXN0IGJlIGEgaGFwcHkgbWVkaXVtIHNvbWV3
+aGVyZS4NCg0KDQo+IE5vdywgdG8gc29sdmUgeW91ciBwcm9ibGVtOiBjYW4geW91IGdldCBpdCB0
+byB3b3JrIGJ5IGRyb3BwaW5nIFhJUF9LRVJORUwncyBkZXBlbmRlbmN5IG9uICFBUkNIX01VTFRJ
+UExBVEZPUk0gaW4gYXJjaC9hcm0vS2NvbmZpZz8NCg0KTm9wZSwgYmVjYXVzZSBDT05GSUdfUEhZ
+U19PRkZTRVQgZG9lc24ndCBnZXQgZGVmaW5lZDoNCiAgICAgICAgIiAoLmhlYWQudGV4dCsweDY4
+KTogdW5kZWZpbmVkIHJlZmVyZW5jZSB0byBgQ09ORklHX1BIWVNfT0ZGU0VUJyINCg0KY29uZmln
+IFBIWVNfT0ZGU0VUDQoJaGV4ICJQaHlzaWNhbCBhZGRyZXNzIG9mIG1haW4gbWVtb3J5IiBpZiBN
+TVUNCglkZXBlbmRzIG9uICFBUk1fUEFUQ0hfUEhZU19WSVJUDQoNClRoYXQgd2FzIHBhdGNoICMx
+IHRvIGdldCBYSVAgd29ya2luZyBpbiB0aGUgMy4xNCBrZXJuZWwuDQoNClNvLCBwdXR0aW5nIHRo
+YXQgcGF0Y2ggaW4gZm9yIEFSQ0hfTVVMVElQTEFURk9STToNCmNvbmZpZyBBUkNIX01VTFRJUExB
+VEZPUk0NCglib29sICJBbGxvdyBtdWx0aXBsZSBwbGF0Zm9ybXMgdG8gYmUgc2VsZWN0ZWQiDQoJ
+ZGVwZW5kcyBvbiBNTVUNCglzZWxlY3QgQVJDSF9XQU5UX09QVElPTkFMX0dQSU9MSUINCglzZWxl
+Y3QgQVJNX0hBU19TR19DSEFJTg0KLQlzZWxlY3QgQVJNX1BBVENIX1BIWVNfVklSVA0KKwlzZWxl
+Y3QgQVJNX1BBVENIX1BIWVNfVklSVCBpZiAhWElQX0tFUk5FTA0KDQpUaGF0IHdpbGwgZ2V0IHlv
+dSB0byBiZSBhYmxlIHRvIHNldCBQSFlTX09GRlNFVCBhbmQgdGhlbiBidWlsZCwgYnV0IHN0aWxs
+IG5vdCBhY3R1YWxseSB3b3JrLg0KDQpGb3IgY29kZSwgaXQgbG9va3MgbGlrZSBJIHN0aWxsIG5l
+ZWQgdG8gYXBwbHkgbXkgMy4xNCBwYXRjaGVzIHRvOg0KICAgIGFyY2gvYXJtL21tL21tdS5jDQog
+ICAgYXJjaC9hcm0vbW0vcHJvYy12Ny5TDQogICAgc2NyaXB0cy9saW5rLXZtbGludXguc2gNCg0K
+VW5mb3J0dW5hdGVseSwgSSdtIHN0aWxsIG1pc3Npbmcgc29tZXRoaW5nIHRvIGJvb3QgYWxsIHRo
+ZSB3YXkgdXAuIExvb2tpbmcgYXQgIF9fbG9nX2J1ZiBJIGNhbiBzZWUgaXQgd2FzIHN0YXJ0aW5n
+IHRvIGJvb3QgKDQuMC4wLXJjNCksIGJ1dCBkaWVzIGVhcmx5IG9uLg0KU28sIEknbSBhc3N1bWlu
+ZyBzb21ldGhpbmcgaW4gdGhlIGtlcm5lbCBoYXMgY2hhbmdlZCBzaW5jZSAzLjE0IGFuZCBJIGhh
+dmUgdG8gdHJhY2sgaXQgZG93bi4NCg0KQ2hyaXMNCg0KDQotLS0tLU9yaWdpbmFsIE1lc3NhZ2Ut
+LS0tLQ0KRnJvbTogZ2VlcnQudXl0dGVyaG9ldmVuQGdtYWlsLmNvbSBbbWFpbHRvOmdlZXJ0LnV5
+dHRlcmhvZXZlbkBnbWFpbC5jb21dIE9uIEJlaGFsZiBPZiBHZWVydCBVeXR0ZXJob2V2ZW4NClNl
+bnQ6IFR1ZXNkYXksIE1hcmNoIDE3LCAyMDE1IDk6NTcgQU0NClRvOiBDaHJpcyBCcmFuZHQNCkNj
+OiBsaW51eC1hcm0ta2VybmVsQGxpc3RzLmluZnJhZGVhZC5vcmc7IGxpbnV4LXNoQHZnZXIua2Vy
+bmVsLm9yZw0KU3ViamVjdDogUmU6IFhJUF9LRVJORUwgYW5kICFBUkNIX01VTFRJUExBVEZPUk0N
+Cg0KSGkgQ2hyaXMsDQoNCk9uIFR1ZSwgTWFyIDE3LCAyMDE1IGF0IDI6NDYgUE0sIENocmlzIEJy
+YW5kdCA8Q2hyaXMuQnJhbmR0QHJlbmVzYXMuY29tPiB3cm90ZToNCj4+IEJlc2lkZXMsIEkgdGhp
+bmsgYSBtdWx0aS1wbGF0Zm9ybSBYSVAgKG9yIG5vbW11KSBrZXJuZWwgaXMgcG9zc2libGUsIA0K
+Pj4gYXMgbG9uZyBhcyBYSVBfUEhZU19BRERSIChvciBQSFlTX09GRlNFVCkgaXMgc3VpdGFibGUg
+Zm9yIGFsbCANCj4+IHBsYXRmb3JtcyBpbmNsdWRlZA0KPg0KPiBQb3NzaWJsZS4uLmJ1dC4uLm1h
+eWJlIHBvaW50bGVzcy4gSWYgeW91J3JlIGRvaW5nIFhJUCwgdGhlbiBtb3N0IGxpa2VseSB5b3Un
+dmUgZ290IGEgc3BlY2lmaWMgcGxhdGZvcm0gdGhhdCB5b3UgYXJlIHRyeWluZyB0byBkbyBhcyBt
+dWNoIGFzIHlvdSBjYW4gaW4gYXMgbGl0dGxlIChSQU0pIGFzIHBvc3NpYmxlLg0KDQpTdXJlLiBG
+b3IgeW91ciByZWFsIGVtYmVkZGVkIGRldmljZSwgeW91IHdhbnQgYSBzbWFsbCBrZXJuZWwsIHdp
+dGhvdXQgYW55IGNydWZ0Lg0KDQo+IFdhcyBBUkNIX01VTFRJUExBVEZPUk0gcmVhbGx5IHRyeWlu
+ZyB0byBmaXggc29tZSBodWdlIGV4aXN0aW5nIHByb2JsZW0/IE9yIHdhcyBpdCBtb3JlIG9mIGEg
+J2hlcmUncyBhIGN1dGUgdGhpbmcgd2UgY291bGQgZG8nPw0KPiBJbiBteSBtaW5kLCBhbiBTb0Mg
+YnkgbmF0dXJlIGlzIHVzZWQgZm9yIHNwZWNpZmljIGVtYmVkZGVkIHByb2R1Y3QgYW5kIHlvdSBj
+b3VsZCBjYXJlIGxlc3MgaWYgdGhlIGJpbmFyeSBydW5zIG9uIGFueXRoaW5nIGVsc2UuIE9mIGNv
+dXJzZSB0aGUgcmFuZ2Ugb2YgU29DcyB0aGF0IGNhbiBydW4gTGludXggbm93IGEgZGF5cyB2YXJp
+ZXMgZ3JlYXRseSwgc28gSSBkb24ndCB0aGluayB5b3UgY2FuIHB1dCB0aGVtIGFsbCBpbiB0aGUg
+c2FtZSBjYXRlZ29yeSBsaWtlIEFSQ0hfTVVMVElQTEFURk9STSB3YXMgdHJ5aW5nIHRvIGRvLg0K
+DQpBUkNIX01VTFRJUExBVEZPUk0gKHRoZSBtdWx0aS1wbGF0Zm9ybSBwYXJ0KSB3YXMgYWxzbyBp
+bnRyb2R1Y2VkIHRvIHJlZHVjZSB0aGUgbnVtYmVyIG9mIGtlcm5lbHMgeW91IGhhdmUgdG8gYnVp
+bHQuIFRoaXMgbWF0dGVycyBub3Qgb25seSBmb3IgdGVzdGluZyAoaW5jcmVhc2luZyBidWlsZCBj
+b3ZlcmFnZSB3aGlsZSByZWR1Y2luZyB0aGUgbnVtYmVyIG9mIGtlcm5lbHMgdnMuIHRoZSBudW1i
+ZXIgb2YgbWFjaGluZXMpLCBidXQgYWxzbyBmb3IgTGludXggZGlzdHJpYnV0aW9ucywgd2hvIHR5
+cGljYWxseSBzaGlwIG9ubHkgYSBmZXcga2VybmVscywgYnV0IHdhbnQgdG8gc3VwcG9ydCBhcyBt
+YW55IG1hY2hpbmUgdHlwZXMgYXMgcG9zc2libGUuDQoNCj4+IFBlcmhhcHMgQVJDSF9NVUxUSVBM
+QVRGT1JNIHNob3VsZCBiZSByZXBsYWNlZCBieSBBUkNIX0FSTV9ORVdXT1JMRCBhbG1vc3QgZXZl
+cnl3aGVyZSwgYW5kIChuZXcpIEFSQ0hfTVVMVElQTEFURk9STSBzaG91bGQgYmUgcmVzZXJ2ZWQg
+KGlmIG5lZWRlZCBhdCBhbGwpIHRvIHByb3RlY3QgZmVhdHVyZXMgdGhhdCBhcmUgbm90IGNvbXBh
+dGlibGUgd2l0aCBydW5uaW5nIG9uIG11bHRpcGxlIG1hY2hpbmVzPw0KPg0KPiBUaGF0J3Mgbm90
+IGJhZC4gSSB0aGluayBpdCBzdGlsbCBjb21lcyBkb3duIHRvIGlmIHlvdSB3YW50IHRvIGJ1aWxk
+IFhJUCwgeW91IGRvbid0IGNhcmUgYWJvdXQgQVJDSF9NVUxUSVBMQVRGT1JNIHN1cHBvcnQsIGFu
+ZCB0aGUgWElQX1BIWVNfQUREUiAoYW5kIFBIWVNfT0ZGU0VUKSB5b3UgbmVlZCB0byB1c2UgaXMg
+ZGV2aWNlIHNwZWNpZmljIGFueXdheS4NCg0KTm93LCB0byBzb2x2ZSB5b3VyIHByb2JsZW06IGNh
+biB5b3UgZ2V0IGl0IHRvIHdvcmsgYnkgZHJvcHBpbmcgWElQX0tFUk5FTCdzIGRlcGVuZGVuY3kg
+b24gIUFSQ0hfTVVMVElQTEFURk9STSBpbiBhcmNoL2FybS9LY29uZmlnPw0KDQo+IEl0IGFsc28g
+bG9va3MgbGlrZSBhIGNvdXBsZSBtb250aCBhZ28gc29tZW9uZSBhbHNvIHBvaW50ZWQgb3V0IHRo
+YXQganVzdCBiZWNhdXNlIHRoZSBiYXNlIGNvcmUgaXMgdGhlIHNhbWUsIHRoYXQgZG9lc24ndCBt
+ZWFuIGFsbCB0aGUgZXJyYXRhcyBhcmUgdGhlIHNhbWUsIGFuZCBBUkNIX01VTFRJUExBVEZPUk0g
+ZG9lc24ndCBmaXQgdGhlcmUgYXMgd2VsbC4NCg0KUG9zc2libHkuDQoNCkdye29ldGplLGVldGlu
+Z31zLA0KDQogICAgICAgICAgICAgICAgICAgICAgICBHZWVydA0KDQotLQ0KR2VlcnQgVXl0dGVy
+aG9ldmVuIC0tIFRoZXJlJ3MgbG90cyBvZiBMaW51eCBiZXlvbmQgaWEzMiAtLSBnZWVydEBsaW51
+eC1tNjhrLm9yZw0KDQpJbiBwZXJzb25hbCBjb252ZXJzYXRpb25zIHdpdGggdGVjaG5pY2FsIHBl
+b3BsZSwgSSBjYWxsIG15c2VsZiBhIGhhY2tlci4gQnV0IHdoZW4gSSdtIHRhbGtpbmcgdG8gam91
+cm5hbGlzdHMgSSBqdXN0IHNheSAicHJvZ3JhbW1lciIgb3Igc29tZXRoaW5nIGxpa2UgdGhhdC4N
+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLS0gTGludXMgVG9ydmFsZHMNCg=
