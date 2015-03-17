@@ -1,59 +1,59 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 15 Mar 2015 14:36:32 +0000
-Subject: [PATCH/RFC] spi: sh-msiof: Fix MSIOF address for DMAC
-Message-Id: <1426430192-3271-1-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 17 Mar 2015 09:28:22 +0000
+Subject: Re: [PATCH/RFC] spi: sh-msiof: Fix MSIOF address for DMAC
+Message-Id: <CAMuHMdX_PrPLh1vyzpd+P=ehCNCPmfqkFVjt4RjjBjT9gOiqFg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1426430192-3271-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1426430192-3271-1-git-send-email-ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-spi@vger.kernel.org
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Mark Brown <broonie@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Ryo Kataoka <ryo.kataoka.wt-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+Cc: linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+Hi Kaneko-san, Kataoka-san,
 
-MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
-MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
+On Sun, Mar 15, 2015 at 3:36 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+> From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+>
+> MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
+> MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
 
-Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
----
+"Address 0xE7xx can be accesses only from DMA." was indeed removed.
+However, "Note: Address H'E6xx can be accessed only by CPU." is still
+there in the latest version of the R-Car Gen2 manual I have (v1.01).
+Presumably all of this was copied from another SoC (see below)?
 
-Hi Geert-san,
+MSIOF DMA seems to work fine on my Koelsch (R-Car M2-W ES1.0) with this patch
+(and the DTS changes) applied, though.
 
-I have also found patches to address this problem in DTS files
-which seems to be a good way to handle this problem. I plan to send
-them separately. I'm unsure if this driver change is also appropriate.
+> Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> ---
+>
+> Hi Geert-san,
+>
+> I have also found patches to address this problem in DTS files
+> which seems to be a good way to handle this problem. I plan to send
+> them separately. I'm unsure if this driver change is also appropriate.
 
+If there really exist no SoCs where the DMA engine has to access a different
+register set than the CPU, then it can be removed from the driver, and from
+the binding docs in Documentation/devicetree/bindings/spi/sh-msiof.txt.
 
-This patch is based on the for-next branch of Mark Brown's spi tree.
+However, according to the manuals, SH-Mobile AG5 (sh73a0), R-Mobile APE6
+(r8a73a4), and R-Mobile A1 (r8a7740) also have MSIOF blocks with two register
+banks?
 
- drivers/spi/spi-sh-msiof.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+Thanks!
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index e57eec0..88ec049 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -1,6 +1,7 @@
- /*
-  * SuperH MSIOF SPI Master Interface
-  *
-+ * Copyright (C) 2014-2015 Renesas Electronics Corporation
-  * Copyright (c) 2009 Magnus Damm
-  * Copyright (C) 2014 Glider bvba
-  *
-@@ -1072,10 +1073,7 @@ static int sh_msiof_request_dma(struct sh_msiof_spi_priv *p)
- 		return 0;
- 	}
- 
--	/* The DMA engine uses the second register set, if present */
--	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
--	if (!res)
--		res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 
- 	master = p->master;
- 	master->dma_tx = sh_msiof_request_dma_chan(dev, DMA_MEM_TO_DEV,
--- 
-1.9.1
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
