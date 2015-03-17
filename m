@@ -1,46 +1,58 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Sat, 07 Mar 2015 15:03:24 +0000
-Subject: Re: [PATCH 01/28 v3] dmaengine: export symbol of of_dma_request_slave_channel()
-Message-Id: <20150307150323.GO28806@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="NT59pYSnj1ZLVgEN"
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 17 Mar 2015 07:15:22 +0000
+Subject: [RFC V2 2/4] i2c: mux: add function to reparent a mux
+Message-Id: <1426576524-22315-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fva0opax.wl%kuninori.morimoto.gx@renesas.com>
- <87egpkop98.wl%kuninori.morimoto.gx@renesas.com>
- <87bnkk162d.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87bnkk162d.wl%kuninori.morimoto.gx@renesas.com>
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Vinod Koul <vinod.koul@intel.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>, Arnd Bergmann <arnd@arndb.de>, dmaengine@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
---NT59pYSnj1ZLVgEN
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Used for n-to-1 demuxes. Needs discussion.
 
-On Tue, Feb 24, 2015 at 12:54:16AM +0000, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->=20
-> Current DMAEngine implementation of DT bindings can't support
-> DT subnode. This patch export symbols of of_dma_request_slave_channel()
-> for subnode DMA DT bingings.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
 
-Applied, thanks.
+Changes since RFC V1: none, only rebased
 
---NT59pYSnj1ZLVgEN
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+ drivers/i2c/i2c-mux.c   | 8 ++++++++
+ include/linux/i2c-mux.h | 2 ++
+ 2 files changed, 10 insertions(+)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+diff --git a/drivers/i2c/i2c-mux.c b/drivers/i2c/i2c-mux.c
+index 593f7ca9adc783..c64f3fc9bb3750 100644
+--- a/drivers/i2c/i2c-mux.c
++++ b/drivers/i2c/i2c-mux.c
+@@ -100,6 +100,14 @@ static unsigned int i2c_mux_parent_classes(struct i2c_adapter *parent)
+ 	return class;
+ }
+ 
++void i2c_mux_reparent(struct i2c_adapter *adap, struct i2c_adapter *new_parent)
++{
++	struct i2c_mux_priv *priv = adap->algo_data;
++
++	priv->parent = new_parent;
++}
++EXPORT_SYMBOL_GPL(i2c_mux_reparent);
++
+ struct i2c_adapter *i2c_add_mux_adapter(struct i2c_adapter *parent,
+ 				struct device *mux_dev,
+ 				void *mux_priv, u32 force_nr, u32 chan_id,
+diff --git a/include/linux/i2c-mux.h b/include/linux/i2c-mux.h
+index b5f9a007a3abdd..488a7744732853 100644
+--- a/include/linux/i2c-mux.h
++++ b/include/linux/i2c-mux.h
+@@ -44,6 +44,8 @@ struct i2c_adapter *i2c_add_mux_adapter(struct i2c_adapter *parent,
+ 
+ void i2c_del_mux_adapter(struct i2c_adapter *adap);
+ 
++void i2c_mux_reparent(struct i2c_adapter *adap, struct i2c_adapter *new_parent);
++
+ #endif /* __KERNEL__ */
+ 
+ #endif /* _LINUX_I2C_MUX_H */
+-- 
+2.1.4
 
-iQEcBAEBCAAGBQJU+xM7AAoJECTWi3JdVIfQI+oH/0FehomP6o9831IwE17iyf9l
-vyk61Oj6oEISGDe9T9yV+od4aVn3SOgxmJ7jBHioUXkLWgiCs08ku6+PhTg89Ss9
-HxveAP4ijCKEXLXvywaat6eNjnJU+XvKuhTvkZh6ogf4ArLWcw4RuQQhDjFnW4sS
-VD41wH4vvlIjWQXz/h72tfFxU7rfvN9sGeH+5P939VjSy2ptfDZnqlJdy36ostkj
-X978pL0HaF5mSO7klThpMQlLRjXdnL9hDVL2n8hCN5QO8J3avJ4fstW6NxaNn0YB
-/URF4Ex+OcLyxFTq5o9AgxFxyW+CvGJY94fiTd9ZYB1hOKwe35oVKyTvwxIXPrs=
-=uTLY
------END PGP SIGNATURE-----
-
---NT59pYSnj1ZLVgEN--
