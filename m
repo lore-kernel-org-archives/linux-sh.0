@@ -1,36 +1,39 @@
 From: Chris Brandt <Chris.Brandt@renesas.com>
-Date: Tue, 17 Mar 2015 13:29:01 +0000
+Date: Tue, 17 Mar 2015 13:46:29 +0000
 Subject: RE: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <HK2PR06MB056127B8977A6F0FC1EF61E58A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
+Message-Id: <HK2PR06MB05613B2FBF8466204FA98A9D8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <20150317102623.GS8656@n2100.arm.linux.org.uk>
-In-Reply-To: <20150317102623.GS8656@n2100.arm.linux.org.uk>
+ <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
+In-Reply-To: <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
->  While I can see that reasoning, in part in this instance that was due to XIP not seeming to have many users (and its only users were old platforms...
-
-I would say XIP has just been waiting for the right part to come alone. The ARCH_R7S72100 has 10MB of internal RAM and can execute directly from external Quad-SPI flash (no DDR, no NOR).
-I also dusted off the Advanced XIP File System (AXFS) so now userland uses as little RAM as possible as well.
-
-> We've run into the need a few times now to allow a SoC family converted to multiplatform to also be chosen using the previous non-multiplatform behaviour.
-
-If Linux only ran on PCs, then maybe this wouldn't be such an issue. But with Linux on an SoC, you can (and should) get creative with what you are making. ARCH_MULTIPLATFORM seems to suppress that.
-
-> What I believe is that rather than ripping out the old platform choices, we should have augmented them with the multiplatform support instead
-
-Agreed.
-
-> One thing which the whole multiplatform/DT project has taught me though is that the above approach is virtually always wrong
-
-The one nice thing DT does is clean up and consolidate the mundane stuff in the board file, but that didn't mean I wanted you to take the board file completely away from me.
-
-> That can be worked around with a progressive approach to converting this stuff in a way that ensures we gain the new symbols in people's defconfigs before we switch things around.
-
-Since either way this sounds like a long process, and I still want to see if I can get XIP working with the latest kernel, will you accept patches on something that can't be built with the current architecture?
- 
-Chris
-
+SGkgR2VlcnQsDQoNCj4gQmVzaWRlcywgSSB0aGluayBhIG11bHRpLXBsYXRmb3JtIFhJUCAob3Ig
+bm9tbXUpIGtlcm5lbCBpcyBwb3NzaWJsZSwgYXMgbG9uZyBhcyBYSVBfUEhZU19BRERSIChvciBQ
+SFlTX09GRlNFVCkgaXMgc3VpdGFibGUgZm9yIGFsbCBwbGF0Zm9ybXMgaW5jbHVkZWQNCg0KUG9z
+c2libGUuLi5idXQuLi5tYXliZSBwb2ludGxlc3MuIElmIHlvdSdyZSBkb2luZyBYSVAsIHRoZW4g
+bW9zdCBsaWtlbHkgeW91J3ZlIGdvdCBhIHNwZWNpZmljIHBsYXRmb3JtIHRoYXQgeW91IGFyZSB0
+cnlpbmcgdG8gZG8gYXMgbXVjaCBhcyB5b3UgY2FuIGluIGFzIGxpdHRsZSAoUkFNKSBhcyBwb3Nz
+aWJsZS4NCg0KV2FzIEFSQ0hfTVVMVElQTEFURk9STSByZWFsbHkgdHJ5aW5nIHRvIGZpeCBzb21l
+IGh1Z2UgZXhpc3RpbmcgcHJvYmxlbT8gT3Igd2FzIGl0IG1vcmUgb2YgYSAnaGVyZSdzIGEgY3V0
+ZSB0aGluZyB3ZSBjb3VsZCBkbyc/DQpJbiBteSBtaW5kLCBhbiBTb0MgYnkgbmF0dXJlIGlzIHVz
+ZWQgZm9yIHNwZWNpZmljIGVtYmVkZGVkIHByb2R1Y3QgYW5kIHlvdSBjb3VsZCBjYXJlIGxlc3Mg
+aWYgdGhlIGJpbmFyeSBydW5zIG9uIGFueXRoaW5nIGVsc2UuIE9mIGNvdXJzZSB0aGUgcmFuZ2Ug
+b2YgU29DcyB0aGF0IGNhbiBydW4gTGludXggbm93IGEgZGF5cyB2YXJpZXMgZ3JlYXRseSwgc28g
+SSBkb24ndCB0aGluayB5b3UgY2FuIHB1dCB0aGVtIGFsbCBpbiB0aGUgc2FtZSBjYXRlZ29yeSBs
+aWtlIEFSQ0hfTVVMVElQTEFURk9STSB3YXMgdHJ5aW5nIHRvIGRvLg0KDQoNCj4gUGVyaGFwcyBB
+UkNIX01VTFRJUExBVEZPUk0gc2hvdWxkIGJlIHJlcGxhY2VkIGJ5IEFSQ0hfQVJNX05FV1dPUkxE
+IGFsbW9zdCBldmVyeXdoZXJlLCBhbmQgKG5ldykgQVJDSF9NVUxUSVBMQVRGT1JNIHNob3VsZCBi
+ZSByZXNlcnZlZCAoaWYgbmVlZGVkIGF0IGFsbCkgdG8gcHJvdGVjdCBmZWF0dXJlcyB0aGF0IGFy
+ZSBub3QgY29tcGF0aWJsZSB3aXRoIHJ1bm5pbmcgb24gbXVsdGlwbGUgbWFjaGluZXM/DQoNClRo
+YXQncyBub3QgYmFkLiBJIHRoaW5rIGl0IHN0aWxsIGNvbWVzIGRvd24gdG8gaWYgeW91IHdhbnQg
+dG8gYnVpbGQgWElQLCB5b3UgZG9uJ3QgY2FyZSBhYm91dCBBUkNIX01VTFRJUExBVEZPUk0gc3Vw
+cG9ydCwgYW5kIHRoZSBYSVBfUEhZU19BRERSIChhbmQgUEhZU19PRkZTRVQpIHlvdSBuZWVkIHRv
+IHVzZSBpcyBkZXZpY2Ugc3BlY2lmaWMgYW55d2F5Lg0KDQpJdCBhbHNvIGxvb2tzIGxpa2UgYSBj
+b3VwbGUgbW9udGggYWdvIHNvbWVvbmUgYWxzbyBwb2ludGVkIG91dCB0aGF0IGp1c3QgYmVjYXVz
+ZSB0aGUgYmFzZSBjb3JlIGlzIHRoZSBzYW1lLCB0aGF0IGRvZXNuJ3QgbWVhbiBhbGwgdGhlIGVy
+cmF0YXMgYXJlIHRoZSBzYW1lLCBhbmQgQVJDSF9NVUxUSVBMQVRGT1JNIGRvZXNuJ3QgZml0IHRo
+ZXJlIGFzIHdlbGwuDQoNCkNocmlzDQoNCg=
