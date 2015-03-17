@@ -1,134 +1,81 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 17 Mar 2015 09:13:02 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 17 Mar 2015 10:45:13 +0000
 Subject: Re: [RFC V2 3/4] ARM: shmobile: r8a7790: lager: add i2c-demuxer to dts
-Message-Id: <1452186.xZUSqiyjm5@avalon>
+Message-Id: <20150317104512.GA907@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="CE+1k2dSO48ffgeK"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1426576524-22315-4-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1426576524-22315-4-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Wolfram,
 
-Thank you for the patch.
+--CE+1k2dSO48ffgeK
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Tuesday 17 March 2015 08:15:23 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> 
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> ---
-> 
-> Changes since RFC V1: rebased, added the sound-codec entry, fixed a typo
-> 
->  arch/arm/boot/dts/r8a7790-lager.dts | 66 ++++++++++++++++++++++++----------
->  1 file changed, 46 insertions(+), 20 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts
-> b/arch/arm/boot/dts/r8a7790-lager.dts index 0c3b6783b72add..bf0065d676428d
-> 100644
-> --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> @@ -222,6 +222,40 @@
->  			};
->  		};
->  	};
-> +
-> +	i2c-demux {
-> +
-> +		compatible = "i2c-demux-pinctrl";
-> +		i2c-parent = <&iic2>, <&i2c2>;
+On Tue, Mar 17, 2015 at 11:13:02AM +0200, Laurent Pinchart wrote:
+> Hi Wolfram,
+>=20
+> Thank you for the patch.
+>=20
+> On Tuesday 17 March 2015 08:15:23 Wolfram Sang wrote:
+> > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> >=20
+> > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> > ---
+> >=20
+> > Changes since RFC V1: rebased, added the sound-codec entry, fixed a typo
+> >=20
+> >  arch/arm/boot/dts/r8a7790-lager.dts | 66 ++++++++++++++++++++++++-----=
+-----
+> >  1 file changed, 46 insertions(+), 20 deletions(-)
+> >=20
+> > diff --git a/arch/arm/boot/dts/r8a7790-lager.dts
+> > b/arch/arm/boot/dts/r8a7790-lager.dts index 0c3b6783b72add..bf0065d6764=
+28d
+> > 100644
+> > --- a/arch/arm/boot/dts/r8a7790-lager.dts
+> > +++ b/arch/arm/boot/dts/r8a7790-lager.dts
+> > @@ -222,6 +222,40 @@
+> >  			};
+> >  		};
+> >  	};
+> > +
+> > +	i2c-demux {
+> > +
+> > +		compatible =3D "i2c-demux-pinctrl";
+> > +		i2c-parent =3D <&iic2>, <&i2c2>;
+>=20
+> Purely from a DT point of view, wouldn't it make sense to call the node i=
+2c-
+> bus and rename the i2c-parent property to i2c-masters ?
 
-Purely from a DT point of view, wouldn't it make sense to call the node i2c-
-bus and rename the i2c-parent property to i2c-masters ?
+I'd think so. I chose "i2c-parent" to be consistent with the existing
+i2c-pinctrl-mux driver. But I don't think we need to uphold this.
 
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +
-> +		i2c@0 {
-> +			reg = <0>;
-> +			#address-cells = <1>;
-> +			#size-cells = <0>;
-> +
-> +
-> +			ak4643: sound-codec@12 {
-> +				compatible = "asahi-kasei,ak4643";
-> +				#sound-dai-cells = <0>;
-> +				reg = <0x12>;
-> +			};
-> +
-> +			composite-in@20 {
-> +				compatible = "adi,adv7180";
-> +				reg = <0x20>;
-> +				remote = <&vin1>;
-> +
-> +				port {
-> +					adv7180: endpoint {
-> +						bus-width = <8>;
-> +						remote-endpoint = <&vin1ep0>;
-> +					};
-> +				};
-> +			};
-> +		};
-> +	};
->  };
-> 
->  &du {
-> @@ -303,6 +337,11 @@
->  		renesas,function = "iic1";
->  	};
-> 
-> +	i2c2_pins: i2c2 {
-> +		renesas,groups = "i2c2";
-> +		renesas,function = "i2c2";
-> +	};
-> +
->  	iic2_pins: iic2 {
->  		renesas,groups = "iic2";
->  		renesas,function = "iic2";
-> @@ -481,31 +520,18 @@
->  	pinctrl-names = "default";
->  };
-> 
-> +&i2c2	{
-> +	status = "ok";
-> +	pinctrl-0 = <&i2c2_pins>;
-> +	pinctrl-names = "active";
-> +};
-> +
->  &iic2	{
->  	status = "okay";
->  	pinctrl-0 = <&iic2_pins>;
-> -	pinctrl-names = "default";
-> +	pinctrl-names = "active";
-> 
->  	clock-frequency = <100000>;
-> -
-> -	ak4643: sound-codec@12 {
-> -		compatible = "asahi-kasei,ak4643";
-> -		#sound-dai-cells = <0>;
-> -		reg = <0x12>;
-> -	};
-> -
-> -	composite-in@20 {
-> -		compatible = "adi,adv7180";
-> -		reg = <0x20>;
-> -		remote = <&vin1>;
-> -
-> -		port {
-> -			adv7180: endpoint {
-> -				bus-width = <8>;
-> -				remote-endpoint = <&vin1ep0>;
-> -			};
-> -		};
-> -	};
->  };
-> 
->  &iic3 {
 
--- 
-Regards,
+--CE+1k2dSO48ffgeK
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Laurent Pinchart
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
+iQIcBAEBAgAGBQJVCAW4AAoJEBQN5MwUoCm2lgQP+QHd7N77JwVpPXwP8RT5jnoo
+qRdkddQJeegaFhP+AgnAKpVIRJDZZn7DGVUFuSchFolGJEAgCpVsnNaMSysS/X4D
+7L4cRaXzgs3FliLsQYqjhijytp1R6jZ0CQHt+Xaqouu6Gobf6+fycQnpkASKLovJ
+I1XkG9L0wAZz/Hr8K5DvPlByvEH3MJHjYYl76IxdH05M3nObRGQAw5loV6i87+ia
+Q51maPT4ij98cMBKf5oCc6jsu9v9/LBxJFMxJ87hUXZxv6URbYjJNDG8JDrmmfhk
+akOYF4rH3z8C9rsA/sSbmfT2BuJn3UuFf9RDmn8p37Gsr3ssY20bAatNnMKBE89+
+Mf/djtbJz90/286GkPg4bg73qu/1Ha3L+85dcLQN4IH5DriTSOeInP81snbCah66
+awcVvuJRGCzgCpwBdY8EmLGQXFZbVSTr+TBuxfV2zTsI/nW5fstXheskFC/yhX3l
+FKKSjWEczjjkuRJmfQw8VbTkETqIiqoHs8SSQ2Uto0xjla2E7Q0ofzQcyDqVx4Fv
+/Rixitj+duY8e22IxbmmWTH9sJ/Z16hp8XcV35IJVcctGPJqVNND4t6XGYq7gv84
+t16QkCT0pp2LzPyUFYsGgbH7CcpvsEgTRDWHlOkyJYb8j6EetP+tRJjAu2Fw+/aH
+vxUgNjrHTGhXgjOs9J1U
+=uT0z
+-----END PGP SIGNATURE-----
+
+--CE+1k2dSO48ffgeK--
