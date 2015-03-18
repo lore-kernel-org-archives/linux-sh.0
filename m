@@ -1,63 +1,77 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 10 Mar 2015 00:44:47 +0000
-Subject: [PATCH 10/15] ARM: shmobile: koelsch: Add DU external pixel clocks to DT
-Message-Id: <cd21cb46e14aae3a5d4f044c07f2c1f9d89fcd1a.1425947992.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 18 Mar 2015 18:55:58 +0000
+Subject: [PATCH 4/7] ARM: shmobile: r8a7734: Add IRQC clock to device tree
+Message-Id: <1426704961-27322-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425947992.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425947992.git.horms+renesas@verge.net.au>
+References: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Link the external IRQ controllers irqc0 and irqc1 to the IRQC module
+clock, so they can be power managed using that clock.
 
-Declare the fixed 148.5MHz pixel clocks connected to the DU clock
-inputs.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
+ arch/arm/boot/dts/r8a73a4.dtsi            | 11 +++++++----
+ include/dt-bindings/clock/r8a73a4-clock.h |  1 +
+ 2 files changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 624bb2c..75fa985 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -269,6 +269,18 @@
- 			};
- 		};
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 0fd889f88109de17..7ee22a41c6c97488 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -163,6 +163,7 @@
+ 			     <0 29 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 30 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 31 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R8A73A4_CLK_IRQC>;
+ 		power-domains = <&pd_c4>;
  	};
-+
-+	x2_clk: x2-clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <148500000>;
-+	};
-+
-+	x13_clk: x13-clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <148500000>;
-+	};
- };
  
- &du {
-@@ -276,6 +288,13 @@
- 	pinctrl-names = "default";
- 	status = "okay";
+@@ -197,6 +198,7 @@
+ 			     <0 55 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 56 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 57 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R8A73A4_CLK_IRQC>;
+ 		power-domains = <&pd_c4>;
+ 	};
  
-+	clocks = <&mstp7_clks R8A7791_CLK_DU0>,
-+		 <&mstp7_clks R8A7791_CLK_DU1>,
-+		 <&mstp7_clks R8A7791_CLK_LVDS0>,
-+		 <&x13_clk>, <&x2_clk>;
-+	clock-names = "du.0", "du.1", "lvds.0",
-+		      "dclkin.0", "dclkin.1";
-+
- 	ports {
- 		port@0 {
- 			endpoint {
+@@ -724,15 +726,16 @@
+ 		mstp4_clks: mstp4_clks@e6150140 {
+ 			compatible = "renesas,r8a73a4-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
+-			clocks = <&main_div2_clk>, <&cpg_clocks R8A73A4_CLK_HP>,
++			clocks = <&main_div2_clk>, <&main_div2_clk>,
++				 <&cpg_clocks R8A73A4_CLK_HP>,
+ 				 <&cpg_clocks R8A73A4_CLK_HP>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+-				R8A73A4_CLK_IIC5 R8A73A4_CLK_IIC4
+-				R8A73A4_CLK_IIC3
++				R8A73A4_CLK_IRQC R8A73A4_CLK_IIC5
++				R8A73A4_CLK_IIC4 R8A73A4_CLK_IIC3
+ 			>;
+ 			clock-output-names -				"iic5", "iic4", "iic3";
++				"irqc", "iic5", "iic4", "iic3";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a73a4-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a73a4-clock.h b/include/dt-bindings/clock/r8a73a4-clock.h
+index 9a4b4c9ca44aba70..dd11ecdf837e8e65 100644
+--- a/include/dt-bindings/clock/r8a73a4-clock.h
++++ b/include/dt-bindings/clock/r8a73a4-clock.h
+@@ -54,6 +54,7 @@
+ #define R8A73A4_CLK_IIC3	11
+ #define R8A73A4_CLK_IIC4	10
+ #define R8A73A4_CLK_IIC5	9
++#define R8A73A4_CLK_IRQC	7
+ 
+ /* MSTP5 */
+ #define R8A73A4_CLK_THERMAL	22
 -- 
-2.1.4
+1.9.1
 
