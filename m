@@ -1,70 +1,122 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 19 Mar 2015 01:37:48 +0000
-Subject: Re: [PATCH 2/7] irqchip: renesas-irqc: Add minimal runtime PM support
-Message-Id: <20150319013748.GH14051@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 18 Mar 2015 19:46:52 +0000
+Subject: [PATCH/RFC 0/5] ARM: shmobile: rcar-gen2: Add CPG Clock Domain
+Message-Id: <1426708017-28885-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
- <1426704961-27322-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1426704961-27322-3-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-Cc: Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Jason Cooper <jason-NLaQJdtUoK4Be96aLqz0jA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 18, 2015 at 07:55:56PM +0100, Geert Uytterhoeven wrote:
-> This is just enough to let pm_clk_*() enable the functional clock, and
-> manage it for suspend/resume, if present.
-> Before, it was assumed enabled by the bootloader or reset state.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+	Hi,
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+This RFC patch series adds Clock Domain support to the R-Car Gen2 Clock
+Pulse Generator (CPG) driver using the generic PM Domain.  This allows
+to power-manage the module clocks of SoC devices that are part of the
+CPG Clock Domain using Runtime PM, or for system suspend/resume.
 
-> ---
->  drivers/irqchip/irq-renesas-irqc.c | 8 ++++++++
->  1 file changed, 8 insertions(+)
-> 
-> diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
-> index 2ce2edf8ec8ec182..718f01cd1aea19f6 100644
-> --- a/drivers/irqchip/irq-renesas-irqc.c
-> +++ b/drivers/irqchip/irq-renesas-irqc.c
-> @@ -29,6 +29,7 @@
->  #include <linux/slab.h>
->  #include <linux/module.h>
->  #include <linux/platform_data/irq-renesas-irqc.h>
-> +#include <linux/pm_runtime.h>
->  
->  #define IRQC_IRQ_MAX	32	/* maximum 32 interrupts per driver instance */
->  
-> @@ -180,6 +181,9 @@ static int irqc_probe(struct platform_device *pdev)
->  	p->pdev = pdev;
->  	platform_set_drvdata(pdev, p);
->  
-> +	pm_runtime_enable(&pdev->dev);
-> +	pm_runtime_get_sync(&pdev->dev);
-> +
->  	/* get hold of manadatory IOMEM */
->  	io = platform_get_resource(pdev, IORESOURCE_MEM, 0);
->  	if (!io) {
-> @@ -260,6 +264,8 @@ err3:
->  err2:
->  	iounmap(p->iomem);
->  err1:
-> +	pm_runtime_put(&pdev->dev);
-> +	pm_runtime_disable(&pdev->dev);
->  	kfree(p);
->  err0:
->  	return ret;
-> @@ -275,6 +281,8 @@ static int irqc_remove(struct platform_device *pdev)
->  
->  	irq_domain_remove(p->irq_domain);
->  	iounmap(p->iomem);
-> +	pm_runtime_put(&pdev->dev);
-> +	pm_runtime_disable(&pdev->dev);
->  	kfree(p);
->  	return 0;
->  }
-> -- 
-> 1.9.1
-> 
+SoC devices that are part of the CPG Clock Domain and can be
+power-managed through their primary clock are tagged in DT with a proper
+"power-domains" property. Drivers for devices with multiple clocks
+(notably du and rcar-sound) still have to manage their (multiple module)
+clocks themselves.
+
+Finally, the legacy default PM domain hack in drivers/sh/pm_runtime.c is
+disabled when running on an R-Car Gen2 SoC with genpd support.
+
+Compared to the legacy default PM domain hack, the CPG Clock Domain has
+several advantages:
+  - It only affects on-SoC devices, not all platform devices,
+  - It only affects the on-SoC devices we want, as specified in DT,
+  - Allmost all module clocks of all on-SoC devices (barring devices
+    needed for wake-up[*]) are now gated during s2ram, saving more
+    power.
+
+Here's a list of all devices in the CPG Clock Domain on r8a7791:
+
+root@koelsch:~# cat /sys/kernel/debug/pm_genpd/pm_genpd_summary
+    domain                      status         slaves
+           /device                                      runtime status
+----------------------------------------------------------------------
+cpg_clocks                      on
+    /devices/platform/e61c0000.interrupt-controller     active
+    /devices/platform/e60b0000.i2c                      suspended
+    /devices/platform/ffca0000.timer                    suspended
+    /devices/platform/e6050000.gpio                     active
+    /devices/platform/e6051000.gpio                     active
+    /devices/platform/e6052000.gpio                     active
+    /devices/platform/e6053000.gpio                     active
+    /devices/platform/e6054000.gpio                     active
+    /devices/platform/e6055000.gpio                     active
+    /devices/platform/e6055400.gpio                     active
+    /devices/platform/e6055800.gpio                     active
+    /devices/platform/ee090000.pci                      active
+    /devices/platform/ee0d0000.pci                      active
+    /devices/platform/fe000000.pcie                     unsupported
+    /devices/platform/e6700000.dma-controller           active
+    /devices/platform/e6720000.dma-controller           active
+    /devices/platform/ec700000.dma-controller           active
+    /devices/platform/ec720000.dma-controller           suspended
+    /devices/platform/e6e60000.serial                   active
+    /devices/platform/e6e68000.serial                   active
+    /devices/platform/ee300000.sata                     unsupported
+    /devices/platform/e6b10000.spi                      suspended
+    /devices/platform/e6e20000.spi                      suspended
+    /devices/platform/ee700000.ethernet                 active
+    /devices/platform/e6530000.i2c                      suspended
+    /devices/platform/e6ef1000.video                    suspended
+    /devices/platform/e61f0000.thermal                  active
+    /devices/platform/ee100000.sd                       active
+    /devices/platform/ee140000.sd                       active
+    /devices/platform/ee160000.sd                       active
+root@koelsch:~#
+
+Logically, the CPG Clock Domain operates on the SoC CPG/MSTP block.
+As there's no single device node in DT representing this block (there
+are separate device nodes for the CPG and for the individual MSTP
+clocks), I bound the logic to the CPG device node.
+Perhaps this is something we should change for future SoCs?
+
+As usual when involving clocks and/or PM Domains, the DTS changes depend
+stricly on the driver change. The final patch must be applied last.
+
+The DTS changes also depend on the series "[PATCH 0/5] ARM: shmobile:
+Add INTC-SYS clock to device tree" I've just sent.
+
+This was tested on r8a7791/koelsch.
+
+Thanks for your comments!
+
+[*] GPIO wake-up requires "[PATCH 0/3] gpio: rcar: Fix wake up using
+gpio-keys with PM domain").
+
+Geert Uytterhoeven (5):
+  [RFC] clk: shmobile: rcar-gen2: Add CPG Clock Domain support
+  [RFC] ARM: shmobile: r8a7790 dtsi: Add CPG Clock Domain
+  [RFC] ARM: shmobile: r8a7791 dtsi: Add CPG Clock Domain
+  [RFC] ARM: shmobile: r8a7794 dtsi: Add CPG Clock Domain
+  drivers: sh: Disable PM runtime for multi-platform R-Car Gen2 with
+    genpd
+
+ .../clock/renesas,rcar-gen2-cpg-clocks.txt         | 26 ++++++-
+ arch/arm/boot/dts/r8a7790.dtsi                     | 77 +++++++++++++++++++--
+ arch/arm/boot/dts/r8a7791.dtsi                     | 80 ++++++++++++++++++++--
+ arch/arm/boot/dts/r8a7794.dtsi                     | 29 ++++++++
+ arch/arm/mach-shmobile/Kconfig                     |  1 +
+ drivers/clk/shmobile/clk-rcar-gen2.c               | 63 +++++++++++++++++
+ drivers/sh/pm_runtime.c                            | 10 +--
+ 7 files changed, 268 insertions(+), 18 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
