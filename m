@@ -1,28 +1,55 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 16 Mar 2015 14:21:45 +0000
-Subject: Re: [GIT PULL v2] Second Round of Renesas ARM Based SoC Cleanup for v4.1
-Message-Id: <57687741.xrEbQ8vakN@wuerfel>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 18 Mar 2015 18:41:07 +0000
+Subject: [PATCH 1/3] gpio: rcar: Use local variable gpio_chip in gpio_rcar_probe()
+Message-Id: <1426704069-26389-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1426456752.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1426456752.git.horms+renesas@verge.net.au>
+References: <1426704069-26389-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1426704069-26389-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>
+Cc: linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Monday 16 March 2015 08:03:16 Simon Horman wrote:
-> 
-> Please consider these second round of Renesas ARM based SoC cleanup for v4.1.
-> 
-> 
-> As requested by Arnd v2 of this pull request is based on v4.0-rc1.  The
-> previous version of this pull request was based on "Renesas ARM Based SoC
-> Cleanup for v4.1", tagged as renesas-soc-cleanup2-for-v4.1.  There are no
-> other changes between v1 and v2 of this pull request.
-> 
-> 
-> 
+The existing variable gpio_chip already points to the gpiochip instance,
+hence use it everywhere.
 
-Merged into next/cleanup, thanks a lot for the rebase!
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/gpio/gpio-rcar.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-	Arnd
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index c49522efa7b3bce4..e67d578ac07c45d5 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -413,7 +413,7 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 		goto err0;
+ 	}
+ 
+-	ret = gpiochip_irqchip_add(&p->gpio_chip, irq_chip, p->config.irq_base,
++	ret = gpiochip_irqchip_add(gpio_chip, irq_chip, p->config.irq_base,
+ 				   handle_level_irq, IRQ_TYPE_NONE);
+ 	if (ret) {
+ 		dev_err(dev, "cannot add irqchip\n");
+@@ -431,7 +431,7 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 
+ 	/* warn in case of mismatch if irq base is specified */
+ 	if (p->config.irq_base) {
+-		ret = irq_find_mapping(p->gpio_chip.irqdomain, 0);
++		ret = irq_find_mapping(gpio_chip->irqdomain, 0);
+ 		if (p->config.irq_base != ret)
+ 			dev_warn(dev, "irq base mismatch (%u/%u)\n",
+ 				 p->config.irq_base, ret);
+@@ -447,7 +447,7 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 	return 0;
+ 
+ err1:
+-	gpiochip_remove(&p->gpio_chip);
++	gpiochip_remove(gpio_chip);
+ err0:
+ 	pm_runtime_put(dev);
+ 	pm_runtime_disable(dev);
+-- 
+1.9.1
+
