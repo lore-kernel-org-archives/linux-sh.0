@@ -1,43 +1,31 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 12 Mar 2015 10:09:12 +0000
-Subject: [PATCH v3 0/4] pinctrl: sh-pfc: cleanups
-Message-Id: <1426154956-26583-1-git-send-email-geert+renesas@glider.be>
+Date: Wed, 18 Mar 2015 18:41:06 +0000
+Subject: [PATCH 0/3] gpio: rcar: Fix wake up using gpio-keys with PM domain
+Message-Id: <1426704069-26389-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>
+Cc: linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-	Hi Linus,
+	Hi,
 
-This patch series does some code (type) cleanups.
+This patch series contains a few cleanups and updates for the Renesas
+R-Car GPIO driver, and fixes wake-up from s2ram using gpio-keys when
+using a PM Domain to manage the module clock.
 
-  - Patch 1 changes the types used for storing register and field widths
-    in the pinctrl data tables, shrinking them by an average of ca. 4
-    KiB per SoC,
-  - Patches 3, 4, and 5 do some more cleanups w.r.t. the choice of types.
+It was tested on r8a7791/koelsch.
 
-This series is against pinctrl/for-next.
+Thanks!
 
-Boot-tested on r8a73a4/ape6evm, r8a7740/armadillo, r8a7791/koelsch, and
-sh73a0/kzm9g.
+Geert Uytterhoeven (3):
+  gpio: rcar: Use local variable gpio_chip in gpio_rcar_probe()
+  gpio: rcar: Add more register documentation
+  gpio: rcar: Prevent module clock disable when wake-up is enabled
 
-Thanks for applying!
-
-Geert Uytterhoeven (4):
-  pinctrl: sh-pfc: Store register/field widths in u8 instead of unsigned
-    long
-  pinctrl: sh-pfc: Use unsigned int for register/field widths and
-    offsets
-  pinctrl: sh-pfc: Use reg_width instead of reg as sentinel
-  pinctrl: sh-pfc: Use u32 to store register addresses
-
- drivers/pinctrl/sh-pfc/core.c   | 65 ++++++++++++++++++++---------------------
- drivers/pinctrl/sh-pfc/core.h   |  4 +--
- drivers/pinctrl/sh-pfc/gpio.c   | 18 +++++++-----
- drivers/pinctrl/sh-pfc/sh_pfc.h | 12 ++++----
- 4 files changed, 52 insertions(+), 47 deletions(-)
+ drivers/gpio/gpio-rcar.c | 63 +++++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 46 insertions(+), 17 deletions(-)
 
 -- 
 1.9.1
