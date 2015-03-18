@@ -1,7 +1,7 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 12 Mar 2015 08:54:05 +0000
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Wed, 18 Mar 2015 11:32:27 +0000
 Subject: Re: [PATCH 1/2 v2] dmaengine: remove Renesas Audio DMAC peri peri
-Message-Id: <2564817.a7ILq7Cdmi@wuerfel>
+Message-Id: <20150318112027.GK32683@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87pp8ff3sb.wl%kuninori.morimoto.gx@renesas.com>
  <87oanzf3r1.wl%kuninori.morimoto.gx@renesas.com>
@@ -11,7 +11,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thursday 12 March 2015 00:39:49 Kuninori Morimoto wrote:
+On Thu, Mar 12, 2015 at 12:39:49AM +0000, Kuninori Morimoto wrote:
 > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 > 
 > Renesas R-Car sound (= rsnd) needs 2 DMAC which are called as
@@ -24,8 +24,7 @@ On Thursday 12 March 2015 00:39:49 Kuninori Morimoto wrote:
 > So the easiest solution for it is that move it from DMAEngine to rsnd
 > driver.
 > Audio DMAC peri peri on DMAEngine is no longer needed. remove it.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Applied, thanks
 
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+-- 
+~Vinod
