@@ -1,74 +1,61 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 19 Mar 2015 02:05:12 +0000
-Subject: [PATCH] sh73a0 KZM9G CTS/RTS prototype
-Message-Id: <20150319020512.14288.13653.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 18 Mar 2015 16:37:24 +0000
+Subject: [PATCH] irqchip: renesas-intc-irqpin: Add optional functional clock to bindings
+Message-Id: <1426696644-25636-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+This clock is managed since commit 705bc96c2c15313c ("irqchip:
+renesas-intc-irqpin: Add minimal runtime PM support").
 
-This is a hack that enables console serial port hardware
-flow control for the KZM9G board. Not for upstream merge.
+Also add an example while we're at.
 
-Not-Yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ .../interrupt-controller/renesas,intc-irqpin.txt   | 29 ++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
 
- arch/arm/boot/dts/sh73a0-kzm9g.dts |    1 +
- drivers/tty/serial/sh-sci.c        |   12 ++++++++++++
- 2 files changed, 13 insertions(+)
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+index 4f7946ae8adcdc04..e7cfcec056159b93 100644
+--- a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
++++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+@@ -25,3 +25,32 @@ Optional properties:
+   if different from the default 4 bits
+ - control-parent: disable and enable interrupts on the parent interrupt
+   controller, needed for some broken implementations
++- clocks: Must contain a reference to the functional clock.  The property is
++  mandatory if the hardware implements a controllable functional clock for
++  the irqpin controller instance.
++
++
++Example
++-------
++
++	irqpin1: irqpin@e6900004 {
++		compatible = "renesas,intc-irqpin-r8a7740",
++			     "renesas,intc-irqpin";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		reg = <0xe6900004 4>,
++			<0xe6900014 4>,
++			<0xe6900024 1>,
++			<0xe6900044 1>,
++			<0xe6900064 1>;
++		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH
++			      0 149 IRQ_TYPE_LEVEL_HIGH
++			      0 149 IRQ_TYPE_LEVEL_HIGH
++			      0 149 IRQ_TYPE_LEVEL_HIGH
++			      0 149 IRQ_TYPE_LEVEL_HIGH
++			      0 149 IRQ_TYPE_LEVEL_HIGH
++			      0 149 IRQ_TYPE_LEVEL_HIGH
++			      0 149 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
++		power-domains = <&pd_a4s>;
++	};
+-- 
+1.9.1
 
---- 0001/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ work/arch/arm/boot/dts/sh73a0-kzm9g.dts	2015-03-19 10:05:46.586786623 +0900
-@@ -370,6 +370,7 @@
- 	pinctrl-0 = <&scifa4_pins>;
- 	pinctrl-names = "default";
- 
-+	ctsrts;
- 	status = "okay";
- };
- 
---- 0006/drivers/tty/serial/sh-sci.c
-+++ work/drivers/tty/serial/sh-sci.c	2015-03-19 10:09:14.726785875 +0900
-@@ -573,6 +573,9 @@ static void sci_init_ctsrts_scifab(struc
- {
- 	unsigned short control, data;
- 
-+	printk("xxx SCIFAB hw flow control: %s\n",
-+	       hwflow_enabled ? "on" : "off");
-+
- 	/* SCIFA/SCIFB CTS/RTS pin configuration depends on user space.
- 	 *
- 	 * In case of CTS - (SCPDR.CTSD is always accessible):
-@@ -2048,6 +2051,9 @@ static void sci_set_termios(struct uart_
- 	} else
- 		serial_port_out(port, SCSMR, smr_val);
- 
-+	/* hard code modem control enablement for now */
-+	termios->c_cflag |= CRTSCTS;
-+
- 	sci_init_pins(port, termios->c_cflag);
- 
- 	reg = sci_getreg(port, SCFCR);
-@@ -2055,6 +2061,10 @@ static void sci_set_termios(struct uart_
- 		unsigned short ctrl = serial_port_in(port, SCFCR);
- 
- 		if (s->cfg->capabilities & SCIx_HAVE_RTSCTS) {
-+
-+		  printk("xxx enabling hw flow control: %s\n",
-+			 (termios->c_cflag & CRTSCTS) ? "on" : "off");
-+
- 			if (termios->c_cflag & CRTSCTS)
- 				ctrl |= SCFCR_MCE;
- 			else
-@@ -2640,6 +2650,8 @@ sci_parse_dt(struct platform_device *pde
- 	p->type = info->type;
- 	p->regtype = info->regtype;
- 	p->scscr = SCSCR_RE | SCSCR_TE;
-+	if (of_property_read_bool(np, "ctsrts"))
-+		p->capabilities = SCIx_HAVE_RTSCTS;
- 
- 	return p;
- }
