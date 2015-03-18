@@ -1,65 +1,66 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 18 Mar 2015 19:16:04 +0000
-Subject: [PATCH/RFC 5/5] ARM: shmobile: r8a7794: Add INTC-SYS clock to device tree
-Message-Id: <1426706164-28309-6-git-send-email-geert+renesas@glider.be>
+Date: Wed, 18 Mar 2015 18:55:59 +0000
+Subject: [PATCH 5/7] ARM: shmobile: r8a7790: Add IRQC clock to device tree
+Message-Id: <1426704961-27322-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426706164-28309-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1426706164-28309-1-git-send-email-geert+renesas@glider.be>
+References: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Link the ARM GIC to the INTC-SYS module clock, so it can be power
-managed using that clock in the future.
-
-Note that currently the GIC driver doesn't support module clocks nor
-Runtime PM.
+Link the external IRQ controller irqc0 to the IRQC module clock, so it
+can be power managed using that clock.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7794.dtsi            | 7 ++++---
- include/dt-bindings/clock/r8a7794-clock.h | 1 +
- 2 files changed, 5 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi            | 9 +++++++++
+ include/dt-bindings/clock/r8a7790-clock.h | 3 +++
+ 2 files changed, 12 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 01cf54f70501e8c2..5667d284a3f0af92 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -48,6 +48,7 @@
- 			<0 0xf1004000 0 0x2000>,
- 			<0 0xf1006000 0 0x2000>;
- 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
-+		clocks = <&mstp4_clks R8A7794_CLK_INTC_SYS>;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 4bb2f4c17321bd55..a81cfda0872fc30a 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -252,6 +252,7 @@
+ 			     <0 1 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 2 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 3 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R8A7790_CLK_IRQC>;
  	};
  
- 	cmt0: timer@ffca0000 {
-@@ -629,10 +630,10 @@
- 		mstp4_clks: mstp4_clks@e6150140 {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
--			clocks = <&cp_clk>;
-+			clocks = <&cp_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
--			clock-indices = <R8A7794_CLK_IRQC>;
--			clock-output-names = "irqc";
-+			clock-indices = <R8A7794_CLK_IRQC R8A7794_CLK_INTC_SYS>;
-+			clock-output-names = "irqc", "intc-sys";
+ 	dmac0: dma-controller@e6700000 {
+@@ -1158,6 +1159,14 @@
+ 				"iic0", "pciec", "iic1", "ssusb", "cmt1",
+ 				"usbdmac0", "usbdmac1";
  		};
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-index 09da38a58776b403..3ea8cea7d3e79d87 100644
---- a/include/dt-bindings/clock/r8a7794-clock.h
-+++ b/include/dt-bindings/clock/r8a7794-clock.h
-@@ -62,6 +62,7 @@
++		mstp4_clks: mstp4_clks@e6150140 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
++			clocks = <&cp_clk>;
++			#clock-cells = <1>;
++			clock-indices = <R8A7790_CLK_IRQC>;
++			clock-output-names = "irqc";
++		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 3f2c6b198d4ac289..ff7ca3584e169589 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -79,6 +79,9 @@
+ #define R8A7790_CLK_USBDMAC0		30
+ #define R8A7790_CLK_USBDMAC1		31
  
- /* MSTP4 */
- #define R8A7794_CLK_IRQC		7
-+#define R8A7794_CLK_INTC_SYS		8
- 
++/* MSTP4 */
++#define R8A7790_CLK_IRQC		7
++
  /* MSTP5 */
- #define R8A7794_CLK_THERMAL		22
+ #define R8A7790_CLK_AUDIO_DMAC1		1
+ #define R8A7790_CLK_AUDIO_DMAC0		2
 -- 
 1.9.1
 
