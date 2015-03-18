@@ -1,60 +1,61 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 16 Mar 2015 08:06:22 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 18 Mar 2015 13:23:50 +0000
 Subject: Re: [PATCH/RFC] v4l: vsp1: Change VSP1 LIF linebuffer FIFO
-Message-Id: <CAMuHMdVKmWgcSqLxfgOUFXd2mu-dacvQxLJr7xLaQ=S8Mt0gnw@mail.gmail.com>
+Message-Id: <35670369.0N4n9OXz2m@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426430018-3172-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1426430018-3172-1-git-send-email-ykaneko0929@gmail.com>
+References: <1426430018-3172-1-git-send-email-ykaneko0929@gmail.com> <CAMuHMdVKmWgcSqLxfgOUFXd2mu-dacvQxLJr7xLaQ=S8Mt0gnw@mail.gmail.com>
+In-Reply-To: <CAMuHMdVKmWgcSqLxfgOUFXd2mu-dacvQxLJr7xLaQ=S8Mt0gnw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Mauro Carvalho Chehab <m.chehab@samsung.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, Mauro Carvalho Chehab <m.chehab@samsung.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Kaneko-san, Hosoya-san,
+Hello,
 
-On Sun, Mar 15, 2015 at 3:33 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
-> From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
->
-> Change to VSPD hardware recommended value.
-> Purpose is highest pixel clock without underruns.
-> In the default R-Car Linux BSP config this value is
-> wrong and therefore there are many underruns.
->
-> Here are the original settings:
-> HBTH = 1300 (VSPD stops when 1300 pixels are buffered)
-> LBTH = 200 (VSPD resumes when buffer level has decreased
->             below 200 pixels)
->
-> The display underruns can be eliminated
-> by applying the following settings:
-> HBTH = 1504
-> LBTH = 1248
+On Monday 16 March 2015 09:06:22 Geert Uytterhoeven wrote:
+> On Sun, Mar 15, 2015 at 3:33 PM, Yoshihiro Kaneko wrote:
+> > From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+> > 
+> > Change to VSPD hardware recommended value.
+> > Purpose is highest pixel clock without underruns.
+> > In the default R-Car Linux BSP config this value is
+> > wrong and therefore there are many underruns.
+> > 
+> > Here are the original settings:
+> > HBTH = 1300 (VSPD stops when 1300 pixels are buffered)
+> > LBTH = 200 (VSPD resumes when buffer level has decreased
+> >             below 200 pixels)
+> > 
+> > The display underruns can be eliminated
+> > by applying the following settings:
+> > HBTH = 1504
+> > LBTH = 1248
+> > 
+> > --- a/drivers/media/platform/vsp1/vsp1_lif.c
+> > +++ b/drivers/media/platform/vsp1/vsp1_lif.c
+> > @@ -44,9 +44,9 @@ static int lif_s_stream(struct v4l2_subdev *subdev, int
+> > enable)
+> >  {
+> >         const struct v4l2_mbus_framefmt *format;
+> >         struct vsp1_lif *lif = to_lif(subdev);
+> > -       unsigned int hbth = 1300;
+> > -       unsigned int obth = 400;
+> > -       unsigned int lbth = 200;
+> > +       unsigned int hbth = 1536;
+> > +       unsigned int obth = 128;
+> > +       unsigned int lbth = 1520;
+> 
+> These values don't match the patch description?
 
-> --- a/drivers/media/platform/vsp1/vsp1_lif.c
-> +++ b/drivers/media/platform/vsp1/vsp1_lif.c
-> @@ -44,9 +44,9 @@ static int lif_s_stream(struct v4l2_subdev *subdev, int enable)
->  {
->         const struct v4l2_mbus_framefmt *format;
->         struct vsp1_lif *lif = to_lif(subdev);
-> -       unsigned int hbth = 1300;
-> -       unsigned int obth = 400;
-> -       unsigned int lbth = 200;
-> +       unsigned int hbth = 1536;
-> +       unsigned int obth = 128;
-> +       unsigned int lbth = 1520;
+Indeed. And where do these values come from ? A 16 bytes hysteresis is very 
+small, the VSP1 will constantly start and stop. Isn't that bad from a power 
+consumption point of view ?
 
-These values don't match the patch description?
+> BTW, what's the significance of changing obth?
 
-BTW, what's the significance of changing obth?
+-- 
+Regards,
 
-Gr{oetje,eeting}s,
+Laurent Pinchart
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
