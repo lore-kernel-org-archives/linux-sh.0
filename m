@@ -1,60 +1,53 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 16 Mar 2015 16:11:33 +0000
-Subject: [PATCH v2] media: soc_camera: rcar_vin: Fix wait_for_completion
-Message-Id: <1426522293-25700-1-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 18 Mar 2015 18:55:57 +0000
+Subject: [PATCH 3/7] irqchip: renesas-irqc: Add functional clock to bindings
+Message-Id: <1426704961-27322-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1388071909-12207-1-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1388071909-12207-1-git-send-email-valentine.barshak@cogentembedded.com>
+References: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1426704961-27322-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Jason Cooper <jason-NLaQJdtUoK4Be96aLqz0jA@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+The external IRQ controller has a functional clock, which is used for
+power management. Document it.
 
-When stopping abnormally, a driver can't return from wait_for_completion.
-This patch resolved this problem by changing wait_for_completion_timeout
-from wait_for_completion.
+Fix a typo in the r8a73a4 SoC name while we're at it.
 
-Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ .../devicetree/bindings/interrupt-controller/renesas,irqc.txt         | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-This patch is against master branch of linuxtv.org/media_tree.git.
-
-v2 [Yoshihiro Kaneko]
-* remove the original line that I forgot.
-* fix an indent to make it easy to read.
-
- drivers/media/platform/soc_camera/rcar_vin.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
-
-diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index 279ab9f..e55d7ba 100644
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -135,6 +135,8 @@
- #define VIN_MAX_WIDTH		2048
- #define VIN_MAX_HEIGHT		2048
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
+index 1a88e62228e59631..4f85aeb658e4c833 100644
+--- a/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
++++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
+@@ -4,7 +4,7 @@ Required properties:
  
-+#define TIMEOUT_MS		100
-+
- enum chip_id {
- 	RCAR_GEN2,
- 	RCAR_H1,
-@@ -820,7 +822,10 @@ static void rcar_vin_wait_stop_streaming(struct rcar_vin_priv *priv)
- 		if (priv->state = STOPPING) {
- 			priv->request_to_stop = true;
- 			spin_unlock_irq(&priv->lock);
--			wait_for_completion(&priv->capture_stop);
-+			if (!wait_for_completion_timeout(
-+					&priv->capture_stop,
-+					msecs_to_jiffies(TIMEOUT_MS)))
-+				priv->state = STOPPED;
- 			spin_lock_irq(&priv->lock);
- 		}
- 	}
+ - compatible: has to be "renesas,irqc-<soctype>", "renesas,irqc" as fallback.
+   Examples with soctypes are:
+-    - "renesas,irqc-r8a73a4" (R-Mobile AP6)
++    - "renesas,irqc-r8a73a4" (R-Mobile APE6)
+     - "renesas,irqc-r8a7790" (R-Car H2)
+     - "renesas,irqc-r8a7791" (R-Car M2-W)
+     - "renesas,irqc-r8a7792" (R-Car V2H)
+@@ -12,6 +12,7 @@ Required properties:
+     - "renesas,irqc-r8a7794" (R-Car E2)
+ - #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
+   interrupts.txt in this directory
++- clocks: Must contain a reference to the functional clock.
+ 
+ Optional properties:
+ 
+@@ -29,4 +30,5 @@ Example:
+ 			     <0 1 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 2 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 3 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R8A7790_CLK_IRQC>;
+ 	};
 -- 
 1.9.1
 
