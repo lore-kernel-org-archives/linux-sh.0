@@ -1,51 +1,65 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 25 Mar 2015 11:57:25 +0000
-Subject: Re: [PATCH] serial: sh-sci: Add overrun handling of SCIFA and SCIFB
-Message-Id: <5512A2A5.7040406@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 18 Mar 2015 18:55:56 +0000
+Subject: [PATCH 2/7] irqchip: renesas-irqc: Add minimal runtime PM support
+Message-Id: <1426704961-27322-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1427266818-10985-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1427266818-10985-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+References: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, gregkh@linuxfoundation.org
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org
+To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hello.
+This is just enough to let pm_clk_*() enable the functional clock, and
+manage it for suspend/resume, if present.
+Before, it was assumed enabled by the bootloader or reset state.
 
-On 3/25/2015 10:00 AM, Nobuhiro Iwamatsu wrote:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/irqchip/irq-renesas-irqc.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-> SCIFA and SCIFB can detect the overrun, but it does not support.
-
-    s/it/the driver/.
-
-> This adds overrun handling of SCIFA and SCIFB.
-
-    s/of/for/.
-
-> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> ---
->   drivers/tty/serial/sh-sci.c | 33 +++++++++++++++++++++++----------
->   1 file changed, 23 insertions(+), 10 deletions(-)
-
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index 5b50c79..0a78e1d 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-[...]
-> @@ -1005,7 +1017,10 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
->   	ssr_status = serial_port_in(port, SCxSR);
->   	scr_status = serial_port_in(port, SCSCR);
->   	if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
-> -		slr_status = serial_port_in(port, SCLSR);
-> +		orer_status = serial_port_in(port, SCLSR);
-> +	else if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
-> +		orer_status = ssr_status;
-> +
-
-    I think the above *if*'s are asking to be *switch* statement instead.
-
-[...]
-
-WBR, Sergei
+diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
+index 2ce2edf8ec8ec182..718f01cd1aea19f6 100644
+--- a/drivers/irqchip/irq-renesas-irqc.c
++++ b/drivers/irqchip/irq-renesas-irqc.c
+@@ -29,6 +29,7 @@
+ #include <linux/slab.h>
+ #include <linux/module.h>
+ #include <linux/platform_data/irq-renesas-irqc.h>
++#include <linux/pm_runtime.h>
+ 
+ #define IRQC_IRQ_MAX	32	/* maximum 32 interrupts per driver instance */
+ 
+@@ -180,6 +181,9 @@ static int irqc_probe(struct platform_device *pdev)
+ 	p->pdev = pdev;
+ 	platform_set_drvdata(pdev, p);
+ 
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
++
+ 	/* get hold of manadatory IOMEM */
+ 	io = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!io) {
+@@ -260,6 +264,8 @@ err3:
+ err2:
+ 	iounmap(p->iomem);
+ err1:
++	pm_runtime_put(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
+ 	kfree(p);
+ err0:
+ 	return ret;
+@@ -275,6 +281,8 @@ static int irqc_remove(struct platform_device *pdev)
+ 
+ 	irq_domain_remove(p->irq_domain);
+ 	iounmap(p->iomem);
++	pm_runtime_put(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
+ 	kfree(p);
+ 	return 0;
+ }
+-- 
+1.9.1
 
