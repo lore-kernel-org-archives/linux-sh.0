@@ -1,32 +1,65 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 04 Mar 2015 12:49:44 +0000
-Subject: Re: [PATCH 1/2] [RFC] gpio: pcf857x: Switch to use gpiolib irqchip helpers
-Message-Id: <CACRpkdZ6T5bj3ftuMxFKYJxuAVnLofAO9W6q6qf94S-trB49Eg@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 18 Mar 2015 19:16:02 +0000
+Subject: [PATCH/RFC 3/5] ARM: shmobile: r8a7790: Add INTC-SYS clock to device tree
+Message-Id: <1426706164-28309-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423151349-10579-1-git-send-email-geert+renesas@glider.be>
-	<1423151349-10579-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1423151349-10579-2-git-send-email-geert+renesas@glider.be>
+References: <1426706164-28309-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1426706164-28309-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Alexandre Courbot <gnurou@gmail.com>, George Cherian <george.cherian@ti.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 5, 2015 at 4:49 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+Link the ARM GIC to the INTC-SYS module clock, so it can be power
+managed using that clock in the future.
 
-> Switch the PCF857x GPIO driver to use the gpiolib irqchip helpers.
-> This driver uses a nested threaded interrupt, hence handle_nested_irq()
-> and gpiochip_set_chained_irqchip() must be used.
->
-> Note that this removes the checks added in commit 21fd3cd1874a2ac8
-> ("gpio: pcf857x: call the gpio user handler iff gpio_to_irq is done"),
-> as the interrupt mappings are no longer created on-demand by the driver,
-> but by gpiochip_irqchip_add() during initialization.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Note that currently the GIC driver doesn't support module clocks nor
+Runtime PM.
 
-Patch applied.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7790.dtsi            | 7 ++++---
+ include/dt-bindings/clock/r8a7790-clock.h | 1 +
+ 2 files changed, 5 insertions(+), 3 deletions(-)
 
-Yours,
-Linus Walleij
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a81cfda0872fc30a..d4210f5b692a42b5 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -122,6 +122,7 @@
+ 			<0 0xf1004000 0 0x2000>,
+ 			<0 0xf1006000 0 0x2000>;
+ 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
++		clocks = <&mstp4_clks R8A7790_CLK_INTC_SYS>;
+ 	};
+ 
+ 	gpio0: gpio@e6050000 {
+@@ -1162,10 +1163,10 @@
+ 		mstp4_clks: mstp4_clks@e6150140 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
+-			clocks = <&cp_clk>;
++			clocks = <&cp_clk>, <&zs_clk>;
+ 			#clock-cells = <1>;
+-			clock-indices = <R8A7790_CLK_IRQC>;
+-			clock-output-names = "irqc";
++			clock-indices = <R8A7790_CLK_IRQC R8A7790_CLK_INTC_SYS>;
++			clock-output-names = "irqc", "intc-sys";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index ff7ca3584e169589..49419ee93aed825e 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -81,6 +81,7 @@
+ 
+ /* MSTP4 */
+ #define R8A7790_CLK_IRQC		7
++#define R8A7790_CLK_INTC_SYS		8
+ 
+ /* MSTP5 */
+ #define R8A7790_CLK_AUDIO_DMAC1		1
+-- 
+1.9.1
+
