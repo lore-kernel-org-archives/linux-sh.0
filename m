@@ -1,210 +1,58 @@
-From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Thu, 05 Mar 2015 08:58:58 +0000
-Subject: [RFC/PATCH v2 1/6] cpuidle: renesas: Add CPUIdle Driver for Renesas SoCs
-Message-Id: <1425545943-1440-2-git-send-email-keita.kobayashi.ym@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 18 Mar 2015 19:46:57 +0000
+Subject: [PATCH/RFC 5/5] drivers: sh: Disable PM runtime for multi-platform R-Car Gen2 with genpd
+Message-Id: <1426708017-28885-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425545943-1440-1-git-send-email-keita.kobayashi.ym@renesas.com>
-In-Reply-To: <1425545943-1440-1-git-send-email-keita.kobayashi.ym@renesas.com>
+References: <1426708017-28885-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1426708017-28885-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, rjw@rjwysocki.net
-Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, badarkhe.manish@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds a cpuidle driver for Renesas SoCs.
+Now we have an R-Car Gen2 CPG Clock Domain driver using the generic PM
+domain to take care of PM runtime management of the module clocks, we no
+longer need the legacy default PM domain hack, which also prevents
+registering the real PM domain.
 
-Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Hence do not enable it when running a multi-platform kernel with genpd
+support on an R-Car Gen2 SoC.
+
+The default PM domain is still needed:
+  - for platforms without genpd support,
+  - for the legacy (non-DT) case, where genpd may take over later,
+  - if genpd is not enabled.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/cpuidle/Kconfig.arm                   |   8 ++
- drivers/cpuidle/Makefile                      |   1 +
- drivers/cpuidle/cpuidle-renesas.c             | 118 ++++++++++++++++++++++++++
- include/linux/platform_data/renesas-cpuidle.h |  24 ++++++
- 4 files changed, 151 insertions(+)
- create mode 100644 drivers/cpuidle/cpuidle-renesas.c
- create mode 100644 include/linux/platform_data/renesas-cpuidle.h
+ drivers/sh/pm_runtime.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/cpuidle/Kconfig.arm b/drivers/cpuidle/Kconfig.arm
-index 8e07c94..01cb8cc 100644
---- a/drivers/cpuidle/Kconfig.arm
-+++ b/drivers/cpuidle/Kconfig.arm
-@@ -64,3 +64,11 @@ config ARM_MVEBU_V7_CPUIDLE
- 	depends on ARCH_MVEBU
- 	help
- 	  Select this to enable cpuidle on Armada 370, 38x and XP processors.
-+
-+config ARM_RENESAS_CPUIDLE
-+	bool "CPU Idle Driver for the renesas SoCs"
-+	depends on ARCH_SHMOBILE_MULTI
-+	select ARM_CPU_SUSPEND
-+	select CPU_IDLE_MULTIPLE_DRIVERS
-+	help
-+	  Select this to enable cpuidle for renesas SoCs
-diff --git a/drivers/cpuidle/Makefile b/drivers/cpuidle/Makefile
-index 4d177b9..c718906 100644
---- a/drivers/cpuidle/Makefile
-+++ b/drivers/cpuidle/Makefile
-@@ -17,6 +17,7 @@ obj-$(CONFIG_ARM_ZYNQ_CPUIDLE)		+= cpuidle-zynq.o
- obj-$(CONFIG_ARM_U8500_CPUIDLE)         += cpuidle-ux500.o
- obj-$(CONFIG_ARM_AT91_CPUIDLE)          += cpuidle-at91.o
- obj-$(CONFIG_ARM_EXYNOS_CPUIDLE)        += cpuidle-exynos.o
-+obj-$(CONFIG_ARM_RENESAS_CPUIDLE)	+= cpuidle-renesas.o
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index fe8875f0d7be1155..97d5738f21ae8f04 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -83,15 +83,15 @@ static int __init sh_pm_runtime_init(void)
+ #ifndef CONFIG_PM_GENERIC_DOMAINS_OF
+ 		    !of_machine_is_compatible("renesas,r8a73a4") &&
+ 		    !of_machine_is_compatible("renesas,r8a7740") &&
+-		    !of_machine_is_compatible("renesas,sh73a0") &&
+-#endif
+-		    !of_machine_is_compatible("renesas,r8a7778") &&
+-		    !of_machine_is_compatible("renesas,r8a7779") &&
+ 		    !of_machine_is_compatible("renesas,r8a7790") &&
+ 		    !of_machine_is_compatible("renesas,r8a7791") &&
+ 		    !of_machine_is_compatible("renesas,r8a7792") &&
+ 		    !of_machine_is_compatible("renesas,r8a7793") &&
+-		    !of_machine_is_compatible("renesas,r8a7794"))
++		    !of_machine_is_compatible("renesas,r8a7794") &&
++		    !of_machine_is_compatible("renesas,sh73a0") &&
++#endif
++		    !of_machine_is_compatible("renesas,r8a7778") &&
++		    !of_machine_is_compatible("renesas,r8a7779"))
+ 			return 0;
+ 	}
  
- ###############################################################################
- # MIPS drivers
-diff --git a/drivers/cpuidle/cpuidle-renesas.c b/drivers/cpuidle/cpuidle-renesas.c
-new file mode 100644
-index 0000000..b469e95
---- /dev/null
-+++ b/drivers/cpuidle/cpuidle-renesas.c
-@@ -0,0 +1,118 @@
-+/*
-+ * CPUIdle support code for Renesas ARM
-+ *
-+ *  Copyright (C) 2014 Renesas Electronics Corporation
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+
-+#include <linux/cpuidle.h>
-+#include <linux/device.h>
-+#include <linux/io.h>
-+#include <linux/module.h>
-+#include <linux/of.h>
-+#include <linux/slab.h>
-+#include <linux/platform_data/renesas-cpuidle.h>
-+#include <linux/platform_device.h>
-+#include <linux/pm.h>
-+#include <linux/suspend.h>
-+#include <asm/cpuidle.h>
-+#include <asm/proc-fns.h>
-+#include <asm/smp_plat.h>
-+
-+static struct cpuidle_driver renesas_cpuidle_default_driver = {
-+	.name			= "renesas_default_cpuidle",
-+	.owner			= THIS_MODULE,
-+	.states[0]		= ARM_CPUIDLE_WFI_STATE,
-+	.safe_state_index	= 0, /* C1 */
-+	.state_count		= 1,
-+};
-+
-+static struct renesas_cpuidle_driver default_driver = {
-+	.target_cpu	= -1, /* default */
-+	.renesas_drv	= &renesas_cpuidle_default_driver,
-+};
-+
-+static struct renesas_cpuidle cpuidle_data = {
-+	.num_drvs	= 1,
-+	.rcd		= &default_driver,
-+};
-+
-+static int __init renesas_idle_driver_init(struct device *dev,
-+				struct renesas_cpuidle_driver *rcd)
-+{
-+	struct cpumask *cpumask = NULL;
-+	int cpu;
-+
-+	for_each_online_cpu(cpu) {
-+		if (smp_cpuid_part(cpu) = rcd->target_cpu ||
-+		    rcd->target_cpu = -1) { /* default */
-+			if (!cpumask) {
-+				cpumask = devm_kzalloc(dev,
-+					  cpumask_size(), GFP_KERNEL);
-+				if (!cpumask)
-+					return -ENOMEM;
-+			}
-+			cpumask_set_cpu(cpu, cpumask);
-+			rcd->renesas_drv->cpumask = cpumask;
-+		}
-+	}
-+
-+	return 0;
-+}
-+
-+static int renesas_cpuidle_probe(struct platform_device *pdev)
-+{
-+	struct renesas_cpuidle *pd = pdev->dev.platform_data;
-+	struct renesas_cpuidle_driver *rcd;
-+	int i, j, ret;
-+
-+	if (!pd->num_drvs || !pd->rcd)
-+		pd = &cpuidle_data;
-+
-+	for (i = 0; i < pd->num_drvs; i++) {
-+		rcd = pd->rcd + i;
-+		ret = renesas_idle_driver_init(&pdev->dev, rcd);
-+		if (ret)
-+			goto out_uninit_driver;
-+
-+		if (!rcd->renesas_drv->cpumask)
-+			continue;
-+
-+		ret = cpuidle_register(rcd->renesas_drv, NULL);
-+		if (ret) {
-+			dev_err(&pdev->dev,
-+				"failed to register cpuidle driver\n");
-+			goto out_uninit_driver;
-+		}
-+	}
-+
-+	return 0;
-+
-+out_uninit_driver:
-+	for (j = 0; j < i; j++) {
-+		rcd = pd->rcd + j;
-+
-+		if (!rcd->renesas_drv->cpumask)
-+			continue;
-+
-+		cpuidle_unregister(rcd->renesas_drv);
-+	}
-+
-+	return ret;
-+}
-+
-+static struct platform_driver renesas_cpuidle_driver = {
-+	.probe	= renesas_cpuidle_probe,
-+	.driver	= {
-+		.name = "cpuidle-renesas",
-+		.owner = THIS_MODULE,
-+	},
-+};
-+
-+module_platform_driver(renesas_cpuidle_driver);
-+
-+MODULE_DESCRIPTION("Renesas cpuidle driver");
-+MODULE_LICENSE("GPL v2");
-diff --git a/include/linux/platform_data/renesas-cpuidle.h b/include/linux/platform_data/renesas-cpuidle.h
-new file mode 100644
-index 0000000..9446215
---- /dev/null
-+++ b/include/linux/platform_data/renesas-cpuidle.h
-@@ -0,0 +1,24 @@
-+/*
-+ * renesas-cpuidle.h -- CPUIdle support code for Renesas ARM
-+ *
-+ *  Copyright (C) 2014 Renesas Electronics Corporation
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+
-+#ifndef __RENESAS_CPUIDLE_H__
-+#define __RENESAS_CPUIDLE_H__
-+
-+struct renesas_cpuidle_driver {
-+	unsigned int		target_cpu;
-+	struct cpuidle_driver	*renesas_drv;
-+};
-+
-+struct renesas_cpuidle {
-+	unsigned int		num_drvs;
-+	struct renesas_cpuidle_driver *rcd;
-+};
-+
-+#endif /* __RENESAS_CPUIDLE_H__ */
 -- 
 1.9.1
 
