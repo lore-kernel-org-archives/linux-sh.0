@@ -1,28 +1,67 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Tue, 31 Mar 2015 05:24:38 +0000
-Subject: Re: [PATCH v3 1/1] spi: Using Trigger number to transmit/receive data
-Message-Id: <551A2F96.2050000@jinso.co.jp>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 18 Mar 2015 15:30:31 +0000
+Subject: Re: [PATCH v6 0/4] irqchip: move away from gic_arch_extn.irq_set_wake
+Message-Id: <CAMuHMdXQZGSE7JdBsy=-ERp7wjTpkN63RNcDcRkYriyn+O4pyw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1414034053-14750-1-git-send-email-cm-hiep@jinso.co.jp> <1414034053-14750-2-git-send-email-cm-hiep@jinso.co.jp> <20150330043049.GE1568@sirena.org.uk>
-In-Reply-To: <20150330043049.GE1568@sirena.org.uk>
+References: <1426088737-15817-1-git-send-email-marc.zyngier@arm.com>
+In-Reply-To: <1426088737-15817-1-git-send-email-marc.zyngier@arm.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Mark Brown <broonie@kernel.org>
-Cc: geert+renesas@glider.be, linux-spi@vger.kernel.org, kuninori.morimoto.gx@renesas.com, yoshihiro.shimoda.uh@renesas.com, ryusuke.sakato.bx@renesas.com, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Mark-san
+Hi Marc,
 
-On 2015年03月30日 13:30, Mark Brown wrote:
-> On Thu, Oct 23, 2014 at 12:14:13PM +0900, Cao Minh Hiep wrote:
->> From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
->>
->> In order to transmit and receive data when have 32 bytes of data that
->> ready has prepared on Transmit/Receive Buffer to transmit or receive.
->> Instead transmits/receives a byte data using Transmit/Receive Buffer
->> Data Triggering Number will improve the speed of transfer data.
-> Applied, thanks.  It'd have helped to be more explicit about what a
-> "trigger number" is here - it's not a commonly used term.  "Trigger
-> level" is more normal.
-Thank you very much!
-Hiep.
+On Wed, Mar 11, 2015 at 4:45 PM, Marc Zyngier <marc.zyngier@arm.com> wrote:
+> This series is extracted from [4], which is trying to remove all
+> traces of gic_arch_extn from the tree. As some maintainers are more
+> responsive than others (understatement of the year...), I've decided
+> to split it per sub-arch, and get it moving, at least partially.
+>
+> This small set of patches slightly modifies some of the least
+> offending platforms, by providing a much limited hook into the GIC
+> driver.
+
+> Marc Zyngier (4):
+>   irqchip: gic: add an entry point to set up irqchip flags
+>   ARM: shmobile: remove use of gic_arch_extn.irq_set_wake
+>   ARM: ux500: switch from gic_arch_extn to gic_set_irqchip_flags
+>   ARM: zynq: switch from gic_arch_extn to gic_set_irqchip_flags
+
+As I'm feeling the need to add gic_set_irqchip_flags(IRQCHIP_SKIP_SET_WAKE)
+for more shmobile SoCs (which implies populating mach_desc.init_irq()
+again, and also calling irqchip_init() explicitly), I'm wondering if it
+wouldn't be better to just initialize "gic_chip.flags = IRQCHIP_SKIP_SET_WAKE"
+unconditionally?
+Currently the GIC driver doesn't have to do anything special to support
+wake-up, but support for that may be added one day.
+
+Every driver that wants to implements wake-up properly should call
+irq_set_irq_wake() or {en,dis}able_irq_wake() to inform the upstream interrupt
+controller. However, with GIC, that gives (except on sh73a0, r8a7779,
+ux500, and zynq) annoying warning messages during resume:
+
+    WARNING: CPU: 1 PID: 1341 at kernel/irq/manage.c:540
+irq_set_irq_wake+0x9c/0xf8()
+    Unbalanced IRQ 26 wake disable
+
+I guess I could just leave out the call to irq_set_irq_wake() in my GPIO driver,
+as it works fine without, but that doesn't look correct to me.
+
+What do you think?
+
+Thanks!
+
+See also "[PATCH resend 2/2] [RFC] genirq: Set IRQCHIP_SKIP_SET_WAKE for
+no_irq_chip and dummy_irq_chip" (https://lkml.org/lkml/2015/1/12/506).
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
