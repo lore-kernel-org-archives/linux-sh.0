@@ -1,189 +1,117 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 29 Mar 2015 13:17:52 +0000
-Subject: Re: [PATCH/RFC] v4l: vsp1: Fix Suspend-to-RAM
-Message-Id: <CAH1o70+42cX_XvHZZdOaQQnjoyXWXH6pK_bwDWBXZmcyaH42Nw@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 18 Mar 2015 16:25:46 +0000
+Subject: [PATCH] PM / Domains: Skip latency measurements if timekeeping is suspended
+Message-Id: <1426695946-21705-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426429987-3134-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1426429987-3134-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux Media Mailing List <linux-media@vger.kernel.org>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Mauro Carvalho Chehab <m.chehab@samsung.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Kevin Hilman <khilman@kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>
+Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Laurent,
+The PM Domain code uses ktime_get() to perform various latency
+measurements.  However, if ktime_get() is called while timekeeping is
+suspended, the following warning is printed:
 
-I'm wondering if you could find a moment to look over this patch.
+    WARNING: CPU: 0 PID: 1340 at kernel/time/timekeeping.c:576 ktime_get+0x30/0xf4()
 
-Regards,
-Kaneko
+This happens when resuming the PM Domain that contains the clock events
+source. Chain of operations is:
 
-2015-03-15 23:33 GMT+09:00 Yoshihiro Kaneko <ykaneko0929@gmail.com>:
-> From: Sei Fumizono <sei.fumizono.jw@hitachi-solutions.com>
->
-> Fix Suspend-to-RAM
-> so that VSP1 driver continues to work after resuming.
->
-> In detail,
->   - Fix the judgment of ref count in resuming.
->   - Add stopping VSP1 during suspend.
->
-> Signed-off-by: Sei Fumizono <sei.fumizono.jw@hitachi-solutions.com>
-> Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
->
-> This patch is based on the master branch of linuxtv.org/media_tree.git.
->
->  drivers/media/platform/vsp1/vsp1_drv.c   | 39 ++++++++++++++++++++++++++++----
->  drivers/media/platform/vsp1/vsp1_video.c | 31 ++++++++++++++++++++++++-
->  drivers/media/platform/vsp1/vsp1_video.h |  5 +++-
->  3 files changed, 69 insertions(+), 6 deletions(-)
->
-> diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-> index 913485a..b6e9cbc 100644
-> --- a/drivers/media/platform/vsp1/vsp1_drv.c
-> +++ b/drivers/media/platform/vsp1/vsp1_drv.c
-> @@ -1,7 +1,7 @@
->  /*
->   * vsp1_drv.c  --  R-Car VSP1 Driver
->   *
-> - * Copyright (C) 2013-2014 Renesas Electronics Corporation
-> + * Copyright (C) 2013-2015 Renesas Electronics Corporation
->   *
->   * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
->   *
-> @@ -397,26 +397,57 @@ void vsp1_device_put(struct vsp1_device *vsp1)
->  static int vsp1_pm_suspend(struct device *dev)
->  {
->         struct vsp1_device *vsp1 = dev_get_drvdata(dev);
-> +       unsigned int i = 0;
-> +       int ret = 0;
->
->         WARN_ON(mutex_is_locked(&vsp1->lock));
->
->         if (vsp1->ref_count = 0)
->                 return 0;
->
-> +       /* Suspend pipeline */
-> +       for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
-> +               struct vsp1_rwpf *wpf = vsp1->wpf[i];
-> +               struct vsp1_pipeline *pipe;
-> +
-> +               if (wpf = NULL)
-> +                       continue;
-> +
-> +               pipe = to_vsp1_pipeline(&wpf->entity.subdev.entity);
-> +               ret = vsp1_pipeline_suspend(pipe);
-> +               if (ret < 0)
-> +                       break;
-> +       }
-> +
->         clk_disable_unprepare(vsp1->clock);
-> -       return 0;
-> +       return ret;
->  }
->
->  static int vsp1_pm_resume(struct device *dev)
->  {
->         struct vsp1_device *vsp1 = dev_get_drvdata(dev);
-> +       unsigned int i = 0;
->
->         WARN_ON(mutex_is_locked(&vsp1->lock));
->
-> -       if (vsp1->ref_count)
-> +       if (vsp1->ref_count = 0)
->                 return 0;
->
-> -       return clk_prepare_enable(vsp1->clock);
-> +       clk_prepare_enable(vsp1->clock);
-> +
-> +       /* Resume pipeline */
-> +       for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
-> +               struct vsp1_rwpf *wpf = vsp1->wpf[i];
-> +               struct vsp1_pipeline *pipe;
-> +
-> +               if (wpf = NULL)
-> +                       continue;
-> +
-> +               pipe = to_vsp1_pipeline(&wpf->entity.subdev.entity);
-> +               vsp1_pipeline_resume(pipe);
-> +       }
-> +
-> +       return 0;
->  }
->  #endif
->
-> diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-> index d91f19a..c744608 100644
-> --- a/drivers/media/platform/vsp1/vsp1_video.c
-> +++ b/drivers/media/platform/vsp1/vsp1_video.c
-> @@ -1,7 +1,7 @@
->  /*
->   * vsp1_video.c  --  R-Car VSP1 Video Node
->   *
-> - * Copyright (C) 2013-2014 Renesas Electronics Corporation
-> + * Copyright (C) 2013-2015 Renesas Electronics Corporation
->   *
->   * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
->   *
-> @@ -662,6 +662,35 @@ done:
->         spin_unlock_irqrestore(&pipe->irqlock, flags);
->  }
->
-> +int vsp1_pipeline_suspend(struct vsp1_pipeline *pipe)
-> +{
-> +       unsigned long flags;
-> +       int ret;
-> +
-> +       if (pipe = NULL)
-> +               return 0;
-> +
-> +       spin_lock_irqsave(&pipe->irqlock, flags);
-> +       if (pipe->state = VSP1_PIPELINE_RUNNING)
-> +               pipe->state = VSP1_PIPELINE_STOPPING;
-> +       spin_unlock_irqrestore(&pipe->irqlock, flags);
-> +
-> +       ret = wait_event_timeout(pipe->wq, pipe->state = VSP1_PIPELINE_STOPPED,
-> +                                msecs_to_jiffies(500));
-> +       ret = ret = 0 ? -ETIMEDOUT : 0;
-> +
-> +       return ret;
-> +}
-> +
-> +void vsp1_pipeline_resume(struct vsp1_pipeline *pipe)
-> +{
-> +       if (pipe = NULL)
-> +               return;
-> +
-> +       if (vsp1_pipeline_ready(pipe))
-> +               vsp1_pipeline_run(pipe);
-> +}
-> +
->  /*
->   * Propagate the alpha value through the pipeline.
->   *
-> diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
-> index fd2851a..958a166 100644
-> --- a/drivers/media/platform/vsp1/vsp1_video.h
-> +++ b/drivers/media/platform/vsp1/vsp1_video.h
-> @@ -1,7 +1,7 @@
->  /*
->   * vsp1_video.h  --  R-Car VSP1 Video Node
->   *
-> - * Copyright (C) 2013-2014 Renesas Electronics Corporation
-> + * Copyright (C) 2013-2015 Renesas Electronics Corporation
->   *
->   * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
->   *
-> @@ -149,4 +149,7 @@ void vsp1_pipeline_propagate_alpha(struct vsp1_pipeline *pipe,
->                                    struct vsp1_entity *input,
->                                    unsigned int alpha);
->
-> +int vsp1_pipeline_suspend(struct vsp1_pipeline *pipe);
-> +void vsp1_pipeline_resume(struct vsp1_pipeline *pipe);
-> +
->  #endif /* __VSP1_VIDEO_H__ */
-> --
-> 1.9.1
->
+    timekeeping_resume()
+    {
+        clockevents_resume()
+            sh_cmt_clock_event_resume()
+                pm_genpd_syscore_poweron()
+                    pm_genpd_sync_poweron()
+                        genpd_power_on()
+                            ktime_get(), but timekeeping_suspended = 1
+        ...
+        timekeeping_suspended = 0;
+    }
+
+Skip all latency measurements if timekeeping is suspended to fix this.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+I'm not sure if this is needed for all latency measurements.
+So far I only encountered it while powering-on a clock domain during
+resume from s2ram.
+---
+ drivers/base/power/domain.c | 39 +++++++++++++++++++++++++++++----------
+ 1 file changed, 29 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+index 45937f88e77c8889..ab2398cfcebb7732 100644
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -18,6 +18,7 @@
+ #include <linux/sched.h>
+ #include <linux/suspend.h>
+ #include <linux/export.h>
++#include <linux/timekeeping.h>
+ 
+ #define GENPD_DEV_CALLBACK(genpd, type, callback, dev)		\
+ ({								\
+@@ -33,16 +34,24 @@
+ 
+ #define GENPD_DEV_TIMED_CALLBACK(genpd, type, callback, dev, field, name)	\
+ ({										\
+-	ktime_t __start = ktime_get();						\
+-	type __retval = GENPD_DEV_CALLBACK(genpd, type, callback, dev);		\
+-	s64 __elapsed = ktime_to_ns(ktime_sub(ktime_get(), __start));		\
+-	struct gpd_timing_data *__td = &dev_gpd_data(dev)->td;			\
+-	if (!__retval && __elapsed > __td->field) {				\
+-		__td->field = __elapsed;					\
+-		dev_dbg(dev, name " latency exceeded, new value %lld ns\n",	\
+-			__elapsed);						\
+-		genpd->max_off_time_changed = true;				\
+-		__td->constraint_changed = true;				\
++	type __retval;								\
++	if (unlikely(timekeeping_suspended)) {					\
++		dev_dbg(dev, "Skipping %s timings\n", #callback);		\
++		__retval = GENPD_DEV_CALLBACK(genpd, type, callback, dev);	\
++	} else {								\
++		ktime_t __start = ktime_get();					\
++		type __ret = GENPD_DEV_CALLBACK(genpd, type, callback, dev);	\
++		s64 __elapsed = ktime_to_ns(ktime_sub(ktime_get(), __start));	\
++		struct gpd_timing_data *__td = &dev_gpd_data(dev)->td;		\
++		if (!__ret && __elapsed > __td->field) {			\
++			__td->field = __elapsed;				\
++			dev_dbg(dev,						\
++				name " latency exceeded, new value %lld ns\n",	\
++				__elapsed);					\
++			genpd->max_off_time_changed = true;			\
++			__td->constraint_changed = true;			\
++		}								\
++		__retval = __ret;						\
+ 	}									\
+ 	__retval;								\
+ })
+@@ -161,6 +170,11 @@ static int genpd_power_on(struct generic_pm_domain *genpd)
+ 	if (!genpd->power_on)
+ 		return 0;
+ 
++	if (unlikely(timekeeping_suspended)) {
++		pr_debug("%s: Skipping %s timings\n", genpd->name, "power_on");
++		return genpd->power_on(genpd);
++	}
++
+ 	time_start = ktime_get();
+ 	ret = genpd->power_on(genpd);
+ 	if (ret)
+@@ -188,6 +202,11 @@ static int genpd_power_off(struct generic_pm_domain *genpd)
+ 	if (!genpd->power_off)
+ 		return 0;
+ 
++	if (unlikely(timekeeping_suspended)) {
++		pr_debug("%s: Skipping %s timings\n", genpd->name, "power_off");
++		return genpd->power_off(genpd);
++	}
++
+ 	time_start = ktime_get();
+ 	ret = genpd->power_off(genpd);
+ 	if (ret = -EBUSY)
+-- 
+1.9.1
+
