@@ -1,40 +1,73 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Mon, 02 Mar 2015 16:53:23 +0000
-Subject: Re: [PATCH] dmaengine: shdma: Move DMA stop to (runtime) suspend callbacks
-Message-Id: <20150302164123.GB2613@intel.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 18 Mar 2015 17:55:42 +0000
+Subject: Re: [PATCH] irqchip: renesas-intc-irqpin: Add optional functional clock to bindings
+Message-Id: <5509BC1E.8050802@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424946394-6784-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1424946394-6784-1-git-send-email-geert+renesas@glider.be>
+References: <1426696644-25636-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1426696644-25636-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Dan Williams <dan.j.williams@intel.com>, Ulf Hansson <ulf.hansson@linaro.org>, dmaengine@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>, Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Thu, Feb 26, 2015 at 11:26:34AM +0100, Geert Uytterhoeven wrote:
-> During system reboot, the sh-dma-engine device may be runtime-suspended,
-> causing a crash:
-> 
->     Unhandled fault: imprecise external abort (0x1406) at 0x0002c02c
->     Internal error: : 1406 [#1] SMP ARM
->     ...
->     PC is at sh_dmae_ctl_stop+0x28/0x64
->     LR is at sh_dmae_ctl_stop+0x24/0x64
-> 
-> If the sh-dma-engine is runtime-suspended, its module clock is turned
-> off, and its registers cannot be accessed.
-> 
-> To fix this, move the call to sh_dmae_ctl_stop(), which touches the
-> DMAOR register, to the sh_dmae_suspend() and sh_dmae_runtime_suspend()
-> callbacks.  This makes PM operations more symmetric, as both
-> sh_dmae_resume() and sh_dmae_runtime_resume() already call sh_dmae_rst()
-> to re-initialize the DMAOR register.
-> 
-> Remove sh_dmae_shutdown(), as it became empty.
-> 
+Hello.
+
+On 03/18/2015 07:37 PM, Geert Uytterhoeven wrote:
+
+> This clock is managed since commit 705bc96c2c15313c ("irqchip:
+> renesas-intc-irqpin: Add minimal runtime PM support").
+
+> Also add an example while we're at.
+
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Applied, thanks
+> ---
+>   .../interrupt-controller/renesas,intc-irqpin.txt   | 29 ++++++++++++++++++++++
+>   1 file changed, 29 insertions(+)
 
--- 
-~Vinod
+> diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+> index 4f7946ae8adcdc04..e7cfcec056159b93 100644
+> --- a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+> +++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+> @@ -25,3 +25,32 @@ Optional properties:
+>     if different from the default 4 bits
+>   - control-parent: disable and enable interrupts on the parent interrupt
+>     controller, needed for some broken implementations
+> +- clocks: Must contain a reference to the functional clock.  The property is
+> +  mandatory if the hardware implements a controllable functional clock for
+> +  the irqpin controller instance.
+> +
+> +
+> +Example
+> +-------
+> +
+> +	irqpin1: irqpin@e6900004 {
+
+    The node name should be "interrupt-controller@e6900004".
+
+> +		compatible = "renesas,intc-irqpin-r8a7740",
+> +			     "renesas,intc-irqpin";
+> +		#interrupt-cells = <2>;
+> +		interrupt-controller;
+> +		reg = <0xe6900004 4>,
+> +			<0xe6900014 4>,
+> +			<0xe6900024 1>,
+> +			<0xe6900044 1>,
+> +			<0xe6900064 1>;
+> +		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH
+> +			      0 149 IRQ_TYPE_LEVEL_HIGH
+> +			      0 149 IRQ_TYPE_LEVEL_HIGH
+> +			      0 149 IRQ_TYPE_LEVEL_HIGH
+> +			      0 149 IRQ_TYPE_LEVEL_HIGH
+> +			      0 149 IRQ_TYPE_LEVEL_HIGH
+> +			      0 149 IRQ_TYPE_LEVEL_HIGH
+> +			      0 149 IRQ_TYPE_LEVEL_HIGH>;
+
+    Hm, 8 similar interrupts?
+
+> +		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
+> +		power-domains = <&pd_a4s>;
+> +	};
+
+WBR, Sergei
 
