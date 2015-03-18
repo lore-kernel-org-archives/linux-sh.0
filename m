@@ -1,67 +1,100 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 18 Mar 2015 15:30:31 +0000
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Wed, 18 Mar 2015 16:55:06 +0000
 Subject: Re: [PATCH v6 0/4] irqchip: move away from gic_arch_extn.irq_set_wake
-Message-Id: <CAMuHMdXQZGSE7JdBsy=-ERp7wjTpkN63RNcDcRkYriyn+O4pyw@mail.gmail.com>
+Message-Id: <5509ADEA.1090604@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1426088737-15817-1-git-send-email-marc.zyngier@arm.com>
-In-Reply-To: <1426088737-15817-1-git-send-email-marc.zyngier@arm.com>
+ <CAMuHMdXQZGSE7JdBsy=-ERp7wjTpkN63RNcDcRkYriyn+O4pyw@mail.gmail.com>
+In-Reply-To: <CAMuHMdXQZGSE7JdBsy=-ERp7wjTpkN63RNcDcRkYriyn+O4pyw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Marc,
+On 18/03/15 15:30, Geert Uytterhoeven wrote:
+> Hi Marc,
+> 
+> On Wed, Mar 11, 2015 at 4:45 PM, Marc Zyngier <marc.zyngier@arm.com> wrote:
+>> This series is extracted from [4], which is trying to remove all
+>> traces of gic_arch_extn from the tree. As some maintainers are more
+>> responsive than others (understatement of the year...), I've decided
+>> to split it per sub-arch, and get it moving, at least partially.
+>>
+>> This small set of patches slightly modifies some of the least
+>> offending platforms, by providing a much limited hook into the GIC
+>> driver.
+> 
+>> Marc Zyngier (4):
+>>   irqchip: gic: add an entry point to set up irqchip flags
+>>   ARM: shmobile: remove use of gic_arch_extn.irq_set_wake
+>>   ARM: ux500: switch from gic_arch_extn to gic_set_irqchip_flags
+>>   ARM: zynq: switch from gic_arch_extn to gic_set_irqchip_flags
+> 
+> As I'm feeling the need to add gic_set_irqchip_flags(IRQCHIP_SKIP_SET_WAKE)
+> for more shmobile SoCs (which implies populating mach_desc.init_irq()
+> again, and also calling irqchip_init() explicitly), I'm wondering if it
+> wouldn't be better to just initialize "gic_chip.flags = IRQCHIP_SKIP_SET_WAKE"
+> unconditionally?
+> Currently the GIC driver doesn't have to do anything special to support
+> wake-up, but support for that may be added one day.
 
-On Wed, Mar 11, 2015 at 4:45 PM, Marc Zyngier <marc.zyngier@arm.com> wrote:
-> This series is extracted from [4], which is trying to remove all
-> traces of gic_arch_extn from the tree. As some maintainers are more
-> responsive than others (understatement of the year...), I've decided
-> to split it per sub-arch, and get it moving, at least partially.
->
-> This small set of patches slightly modifies some of the least
-> offending platforms, by providing a much limited hook into the GIC
-> driver.
+It is unlikely we'll ever add this support, because the GIC doesn't not
+have that capability in HW (wake-up is not even part of the
+architecture). This is why wake up is always left to some other
+interrupt controller.
 
-> Marc Zyngier (4):
->   irqchip: gic: add an entry point to set up irqchip flags
->   ARM: shmobile: remove use of gic_arch_extn.irq_set_wake
->   ARM: ux500: switch from gic_arch_extn to gic_set_irqchip_flags
->   ARM: zynq: switch from gic_arch_extn to gic_set_irqchip_flags
+> Every driver that wants to implements wake-up properly should call
+> irq_set_irq_wake() or {en,dis}able_irq_wake() to inform the upstream interrupt
+> controller. However, with GIC, that gives (except on sh73a0, r8a7779,
+> ux500, and zynq) annoying warning messages during resume:
+> 
+>     WARNING: CPU: 1 PID: 1341 at kernel/irq/manage.c:540
+> irq_set_irq_wake+0x9c/0xf8()
+>     Unbalanced IRQ 26 wake disable
+> 
+> I guess I could just leave out the call to irq_set_irq_wake() in my GPIO driver,
+> as it works fine without, but that doesn't look correct to me.
+> 
+> What do you think?
 
-As I'm feeling the need to add gic_set_irqchip_flags(IRQCHIP_SKIP_SET_WAKE)
-for more shmobile SoCs (which implies populating mach_desc.init_irq()
-again, and also calling irqchip_init() explicitly), I'm wondering if it
-wouldn't be better to just initialize "gic_chip.flags = IRQCHIP_SKIP_SET_WAKE"
-unconditionally?
-Currently the GIC driver doesn't have to do anything special to support
-wake-up, but support for that may be added one day.
+At the moment, your approach will work, but only because we have another
+bug, as described here:
 
-Every driver that wants to implements wake-up properly should call
-irq_set_irq_wake() or {en,dis}able_irq_wake() to inform the upstream interrupt
-controller. However, with GIC, that gives (except on sh73a0, r8a7779,
-ux500, and zynq) annoying warning messages during resume:
+http://lkml.iu.edu/hypermail/linux/kernel/1501.1/04757.html
 
-    WARNING: CPU: 1 PID: 1341 at kernel/irq/manage.c:540
-irq_set_irq_wake+0x9c/0xf8()
-    Unbalanced IRQ 26 wake disable
+Fixing this bug means we will propagate the flag to be visible at the
+top level of the controller hierarchy, which will cause any
+irq_set_irq_wake() request to be ignored. Probably not what people have
+mind.
 
-I guess I could just leave out the call to irq_set_irq_wake() in my GPIO driver,
-as it works fine without, but that doesn't look correct to me.
+Only the platform code knows the topology of the system, unfortunately.
 
-What do you think?
+When it comes to the message you describe above, I'd blame the driver:
+irq_set_irq_wake() does return -ENXIO when there is no irq_set_wake
+method. The driver should definitely test this, avoid doing a wake
+disable if the enable has failed.
 
-Thanks!
+Thanks,
 
-See also "[PATCH resend 2/2] [RFC] genirq: Set IRQCHIP_SKIP_SET_WAKE for
-no_irq_chip and dummy_irq_chip" (https://lkml.org/lkml/2015/1/12/506).
+	M.
 
-Gr{oetje,eeting}s,
+> Thanks!
+> 
+> See also "[PATCH resend 2/2] [RFC] genirq: Set IRQCHIP_SKIP_SET_WAKE for
+> no_irq_chip and dummy_irq_chip" (https://lkml.org/lkml/2015/1/12/506).
+> 
+> Gr{oetje,eeting}s,
+> 
+>                         Geert
+> 
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                 -- Linus Torvalds
+> 
 
-                        Geert
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+Jazz is not dead. It just smells funny...
