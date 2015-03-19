@@ -1,14 +1,14 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 10 Mar 2015 01:39:01 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 19 Mar 2015 02:15:19 +0000
 Subject: [PATCH 1/6] ARM: shmobile: r8a7790: add reg-names for sound
-Message-Id: <87wq2pskbf.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <46a158f2ce965940f68ccb07ac8127e1091bebe8.1426731062.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1380652251-8143-2-git-send-email-valentine.barshak@cogentembedded.com>
-In-Reply-To: <1380652251-8143-2-git-send-email-valentine.barshak@cogentembedded.com>
+References: <cover.1426731062.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1426731062.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
@@ -16,6 +16,7 @@ Rensas R-Car sound driver supports reg-names.
 Let's use it.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/boot/dts/r8a7790.dtsi | 2 ++
  1 file changed, 2 insertions(+)
@@ -34,5 +35,5 @@ index b320252..2041ec7 100644
  			<&mstp10_clks R8A7790_CLK_SSI9>, <&mstp10_clks R8A7790_CLK_SSI8>,
  			<&mstp10_clks R8A7790_CLK_SSI7>, <&mstp10_clks R8A7790_CLK_SSI6>,
 -- 
-1.9.1
+2.1.4
 
