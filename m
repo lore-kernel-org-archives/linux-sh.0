@@ -1,65 +1,50 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 30 Mar 2015 09:23:02 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: r8a7791: Remove MSIOF address from device tree
-Message-Id: <CAMuHMdV201bh8-QrJgsO4KNSMW-d9aVyMczHdyQO0Y_pg4sukw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 19 Mar 2015 02:15:21 +0000
+Subject: [GIT PULL] Third Round of Renesas ARM Based SoC DT Updates for v4.1
+Message-Id: <cover.1426731062.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426430633-3867-1-git-send-email-ykaneko0929@gmail.com>
- <CAH1o70JyBbmQ9vDrpamtL=09nq64B9RM1asWOWRXEL0LdgrxMQ@mail.gmail.com>
-In-Reply-To: <CAH1o70JyBbmQ9vDrpamtL=09nq64B9RM1asWOWRXEL0LdgrxMQ@mail.gmail.com>
+References: <cover.1378362045.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Kaneko-san,
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On Sun, Mar 29, 2015 at 3:22 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
-> I'm wondering if you could find a moment to look over this patch.
+Please consider these third round of Renesas ARM based SoC DT updates for v4.1.
 
-In light of the discussion thread w.r.t. to the driver changes (I
-don't recall you
-replying, did I miss that?), I think the DTS changes for r8a779[01] are fine.
-However, please also update the example (for r8a7791) in
-Documentation/devicetree/bindings/spi/sh-msiof.txt.
+This pull request is based on the previous round of
+such requests, tagged as renesas-dt2-for-v4.1,
+which you have already pulled.
 
-Thanks!
 
-> 2015-03-15 23:43 GMT+09:00 Yoshihiro Kaneko <ykaneko0929@gmail.com>:
->> From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
->>
->> MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
->> MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
->>
->> Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
->>
->> This patch is based on devel branch of Simon Horman's renesas tree.
->>
->>  arch/arm/boot/dts/r8a7791.dtsi | 6 +++---
->>  1 file changed, 3 insertions(+), 3 deletions(-)
->>
->> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
->> index 4696062..3e9f824 100644
->> --- a/arch/arm/boot/dts/r8a7791.dtsi
->> +++ b/arch/arm/boot/dts/r8a7791.dtsi
->> @@ -1288,7 +1288,7 @@
->>
->>         msiof0: spi@e6e20000 {
->>                 compatible = "renesas,msiof-r8a7791";
->> -               reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
->> +               reg = <0 0xe6e20000 0 0x0064>;
->>                 interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
->>                 clocks = <&mstp0_clks R8A7791_CLK_MSIOF0>;
->>                 dmas = <&dmac0 0x51>, <&dmac0 0x52>;
+The following changes since commit 90ca409a1e6b9b72d1b6ae716cd7a63335fd0e87:
 
-Gr{oetje,eeting}s,
+  ARM: shmobile: ape6evm dts: Configure the custom switch as wake-up source (2015-03-07 10:07:30 +0900)
 
-                        Geert
+are available in the git repository at:
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt3-for-v4.1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+for you to fetch changes up to 63573339e7698503bfeaef3bb0c444ffc98e45a0:
+
+  ARM: shmobile: r8a7791: sound enables Audio DMAC entry on DTSI (2015-03-11 09:40:30 +0900)
+
+----------------------------------------------------------------
+Third Round of Renesas ARM Based SoC DT Updates for v4.1
+
+* Add DMA sound support to r8a7791 and r8a7790 SoCs
+
+----------------------------------------------------------------
+Kuninori Morimoto (6):
+      ARM: shmobile: r8a7790: add reg-names for sound
+      ARM: shmobile: r8a7791: add reg-names for sound
+      ARM: shmobile: r8a7790: enable Audio DMAC peri peri via sound driver
+      ARM: shmobile: r8a7791: enable Audio DMAC peri peri via sound driver
+      ARM: shmobile: r8a7790: sound enables Audio DMAC entry on DTSI
+      ARM: shmobile: r8a7791: sound enables Audio DMAC entry on DTSI
+
+ arch/arm/boot/dts/r8a7790.dtsi | 142 ++++++++++++++++++++++++++++++++---------
+ arch/arm/boot/dts/r8a7791.dtsi | 142 ++++++++++++++++++++++++++++++++---------
+ 2 files changed, 224 insertions(+), 60 deletions(-)
