@@ -1,73 +1,47 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 18 Mar 2015 17:55:42 +0000
-Subject: Re: [PATCH] irqchip: renesas-intc-irqpin: Add optional functional clock to bindings
-Message-Id: <5509BC1E.8050802@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 19 Mar 2015 05:30:09 +0000
+Subject: [PATCH 1/1] ARM: configs: remove all CONFIG_RCAR_AUDMAC_PP from ARM defconfigs
+Message-Id: <87zj79d06x.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426696644-25636-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1426696644-25636-1-git-send-email-geert+renesas@glider.be>
+References: <871tkleesi.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <871tkleesi.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>, Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On 03/18/2015 07:37 PM, Geert Uytterhoeven wrote:
+Renesas R-Car sound (= rsnd) needs 2 DMAC which are called as
+Audio DMAC (= 1st DMAC) and Audio DMAC peri peri (2nd DMAC).
+And rsnd had assumed that 1st / 2nd DMACs are implemented as DMAEngine.
+But, in result of DMA ML discussion, 2nd DMAC was concluded that it is
+not a general purpose DMAC (2nd DMAC is for Device to Device inside
+sound system). Additionally, current DMAEngine can't support Device to
+Device, and we don't have correct DT bindings for it at this point.
+So the easiest solution for it is that move it from DMAEngine to rsnd
+driver.
+Audio DMAC peri peri DMAEngine is no longer needed.
+Remove all CONFIG_RCAR_AUDMAC_PP from ARM defconfigs
 
-> This clock is managed since commit 705bc96c2c15313c ("irqchip:
-> renesas-intc-irqpin: Add minimal runtime PM support").
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/configs/multi_v7_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
-> Also add an example while we're at.
-
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->   .../interrupt-controller/renesas,intc-irqpin.txt   | 29 ++++++++++++++++++++++
->   1 file changed, 29 insertions(+)
-
-> diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-> index 4f7946ae8adcdc04..e7cfcec056159b93 100644
-> --- a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-> +++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-> @@ -25,3 +25,32 @@ Optional properties:
->     if different from the default 4 bits
->   - control-parent: disable and enable interrupts on the parent interrupt
->     controller, needed for some broken implementations
-> +- clocks: Must contain a reference to the functional clock.  The property is
-> +  mandatory if the hardware implements a controllable functional clock for
-> +  the irqpin controller instance.
-> +
-> +
-> +Example
-> +-------
-> +
-> +	irqpin1: irqpin@e6900004 {
-
-    The node name should be "interrupt-controller@e6900004".
-
-> +		compatible = "renesas,intc-irqpin-r8a7740",
-> +			     "renesas,intc-irqpin";
-> +		#interrupt-cells = <2>;
-> +		interrupt-controller;
-> +		reg = <0xe6900004 4>,
-> +			<0xe6900014 4>,
-> +			<0xe6900024 1>,
-> +			<0xe6900044 1>,
-> +			<0xe6900064 1>;
-> +		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH
-> +			      0 149 IRQ_TYPE_LEVEL_HIGH
-> +			      0 149 IRQ_TYPE_LEVEL_HIGH
-> +			      0 149 IRQ_TYPE_LEVEL_HIGH
-> +			      0 149 IRQ_TYPE_LEVEL_HIGH
-> +			      0 149 IRQ_TYPE_LEVEL_HIGH
-> +			      0 149 IRQ_TYPE_LEVEL_HIGH
-> +			      0 149 IRQ_TYPE_LEVEL_HIGH>;
-
-    Hm, 8 similar interrupts?
-
-> +		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
-> +		power-domains = <&pd_a4s>;
-> +	};
-
-WBR, Sergei
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index 06075b6..e805984 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -505,7 +505,6 @@ CONFIG_DW_DMAC=y
+ CONFIG_MV_XOR=y
+ CONFIG_TEGRA20_APB_DMA=y
+ CONFIG_SH_DMAE=y
+-CONFIG_RCAR_AUDMAC_PP=m
+ CONFIG_RCAR_DMAC=y
+ CONFIG_STE_DMA40=y
+ CONFIG_SIRF_DMA=y
+-- 
+1.9.1
 
