@@ -1,7 +1,7 @@
 From: Chris Brandt <Chris.Brandt@renesas.com>
-Date: Tue, 17 Mar 2015 16:37:49 +0000
+Date: Thu, 19 Mar 2015 20:57:21 +0000
 Subject: RE: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <HK2PR06MB0561681457FA1AE36384052B8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
+Message-Id: <HK2PR06MB05611C6D6CED1E32F4617D158A010@HK2PR06MB0561.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
@@ -9,20 +9,28 @@ References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.
  <CAMuHMdU3J1uzD5VAgHgF5NNzw_E7Njf7wU7kJ7oPuCKm7N_Arg@mail.gmail.com>
  <HK2PR06MB0561FE47407CA32AA8DDEFCF8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdUS84s=uLYVk8BtRoKFmBzw7aT1eQCfGF1nx22hTqf15A@mail.gmail.com>
- <20150317162831.GB8656@n2100.arm.linux.org.uk>
-In-Reply-To: <20150317162831.GB8656@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-> > DEBUG_LL=y may help you here. It's easier than doing a post-mortem 
-> > analysis on __log_buf from U-Boot.
-> > As we still have anti-social platforms, you best remove all non-SCIF 
-> > default addresses from the DEBUG_UART_PHYS section in arch/arm/Kconfig.debug though.
-> 
-> Or enter the appropriate address directly, which is what's intended in the long term.  Having zillions of defaults in Kconfig is not that much better from what we had before...
-
-I would say having to manually enter an address is acceptable for debugging (in my opinion)
-
-Chris
+RXZlbnR1YWxseS4uLi5JIGdvdCBpdCB0byBib290Lg0KDQpJIGhhZCB0byByZW1vdmUgYm90aCBD
+T05GSUdfSElHSE1FTSBhbmQgQ09ORklHX1NNUCBhbmQgdGhlbiBJIGNvdWxkIGJvb3QgY29tcGxl
+dGVseSBmcm9tIFJPTSAod2hpY2ggZm9yIG1lIGlzIGV4dGVybmFsIFFTUEkgZmxhc2ggdGhhdCBp
+cyBtZW1vcnkgbWFwcGluZyBpbnRvIGxpbmVhciBDUFUgc3BhY2UgYXQgYWRkcmVzcyAweDE4MDAw
+MDAwKQ0KDQpTbywgdGhlIHRvdGFsIGNoYW5nZXMgd2FzOg0KDQoxLiBzdGFydCB3aXRoIHNobW9i
+aWxlX2RlZmNvbmZpZw0KMi4gcmVtb3ZlIGFsbCBhcmNoaXRlY3R1cmVzIGJ1dCBSWi9BMSAoQVJD
+SF9SN1M3MjEwMCkNCjMuIHJlbW92ZSAhQVJDSF9NVUxUSVBMQVRGT1JNIGZyb20gWElQX0tFUk5F
+TCdzIGRlcGVuZGVuY2llcw0KNC4gbW9kaWZ5ICAnc2VsZWN0IEFSTV9QQVRDSF9QSFlTX1ZJUlQg
+aWYgIVhJUF9LRVJORUwnICBpbiBQSFlTX09GRlNFVCAoYmVjYXVzZSBJIG5lZWQgdG8gYmUgYWJs
+ZSB0byBzZXQgUEhZU19PRkZTRVQpDQo1LiBwYXRjaCB1cCBtbXUuYywgcHJvYy12Ny5TIGFuZCBs
+aW5rLXZtbGludXguc2gNCjYuIHJlbW92ZSBDT05GSUdfSElHSE1FTSBhbmQgQ09ORklHX1NNUA0K
+DQpJIGFsc28gbW9kaWZpZWQgdGhlIERUIHRvIHVzZSBpbnRlcm5hbCBSQU0gaW5zdGVhZCBleHRl
+cm5hbCBTRFJBTS4NCg0KT2YgY291cnNlIHRvIGFjdHVhbGx5IGJvb3QgYW4gWElQIGtlcm5lbCwg
+eW91IGhhdmUgdG8gbWFrZSBhIGN1c3RvbSBjb21tYW5kIGluIHUtYm9vdCAodXNpbmcgYm9vdG0g
+b3IgZ28gaXMgbm90IGdvaW5nIHRvIHdvcmspLg0KDQoNCkdlbmVyYWxseSB0aGlzIGV4ZXJjaXNl
+IGhhcyB0YXVnaHQgbWUgdGhhdCAgWElQIGFuZCBBUkNIX01VTFRJUExBVEZPUk0gZG8gbm90IHBs
+YXkgd2VsbCB0b2dldGhlci4NCg0KU28gd2hpbGUgSSB0aGluayBsaW51eC00LjAgd2lsbCBoYXZl
+IHRoZSBhYmlsaXR5IHRvIHJ1biBYSVAgd2l0aCBhbmQgQVJNdjcgKHdpdGggYSBoYW5kZnVsIG9m
+IHBhdGNoZXMpLCB5b3UnbGwgZGVmaW5pdGVseSBuZWVkIHRvIHN0YXJ0IHdpdGggYW4gb3V0IG9m
+IHRyZWUgY29uZmlnLg0KDQpDaHJpcw0KDQo
