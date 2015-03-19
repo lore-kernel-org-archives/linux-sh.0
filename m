@@ -1,65 +1,57 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Mar 2015 01:21:56 +0000
-Subject: [PATCH] drm/rcar-du: Avoid restarting when shutting down
-Message-Id: <20150317012156.3466.18403.sendpatchset@little-apple>
+Date: Thu, 19 Mar 2015 01:49:53 +0000
+Subject: [PATCH v2 02/05] serial: sh-sci: Fix default RTS handling
+Message-Id: <20150319014953.14235.86134.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150319014933.14235.44835.sendpatchset@little-apple>
+In-Reply-To: <20150319014933.14235.44835.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: gregkh@linuxfoundation.org, geert@glider.be, laurent.pinchart@ideasonboard.com, linux-serial@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, jslaby@suse.cz
 
 From: Magnus Damm <damm+renesas@opensource.se>
 
-This is a prototype patch that removes one DU restart operation
-from the shutdown sequence. With this in place both the required
-time for mode switching is reduced and so is the amount of flicker.
+Fix the default SCIF handling in case CTS/RTS is available
+on the target board but disabled by user space. Without
+this patch the RTS output value is not set.
 
-Needs to be reworked to fit on top of atomic update support.
-
-Not-Yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
 
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c |   11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+ Changes since V1:
+ - When modem control is disabled, set RTS to zero to keep it asserted.
 
---- 0001/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ work/drivers/gpu/drm/rcar-du/rcar_du_crtc.c	2015-03-16 12:43:00.127684181 +0900
-@@ -187,7 +187,7 @@ void rcar_du_crtc_route_output(struct dr
- 		rcdu->dpad0_source = rcrtc->index;
+ drivers/tty/serial/sh-sci.c |    7 +++++--
+ include/linux/serial_sci.h  |    1 +
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+--- 0002/drivers/tty/serial/sh-sci.c
++++ work/drivers/tty/serial/sh-sci.c	2015-03-19 09:13:03.186797991 +0900
+@@ -522,10 +522,13 @@ static void sci_init_ctsrts_default(stru
+ 	if (!reg->size || hwflow_enabled)
+ 		return;
+ 
++	/* Setup CTS/RTS in the case hardware flow is disabled by user space.
++	 * The CTS signal is setup as input and RTS as output with value 0.
++	 */
+ 	status = serial_port_in(port, SCSPTR);
+-	status &= ~SCSPTR_CTSIO;
++	status &= ~(SCSPTR_CTSIO | SCSPTR_RTSDT);
+ 	status |= SCSPTR_RTSIO;
+-	serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
++	serial_port_out(port, SCSPTR, status); /* Set RTS = 0 */
  }
  
--void rcar_du_crtc_update_planes(struct drm_crtc *crtc)
-+static void __rcar_du_crtc_update_planes(struct drm_crtc *crtc, bool restart)
- {
- 	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
- 	struct rcar_du_plane *planes[RCAR_DU_NUM_HW_PLANES];
-@@ -247,7 +247,7 @@ void rcar_du_crtc_update_planes(struct d
- 		 */
- 		if (value != dptsr) {
- 			rcar_du_group_write(rcrtc->group, DPTSR, dptsr);
--			if (rcrtc->group->used_crtcs)
-+			if (restart && rcrtc->group->used_crtcs)
- 				rcar_du_group_restart(rcrtc->group);
- 		}
- 	}
-@@ -256,6 +256,11 @@ void rcar_du_crtc_update_planes(struct d
- 			    dspr);
- }
+ static void sci_init_pins(struct uart_port *port, unsigned int cflag)
+--- 0001/include/linux/serial_sci.h
++++ work/include/linux/serial_sci.h	2015-03-19 09:11:14.936798380 +0900
+@@ -57,6 +57,7 @@
  
-+void rcar_du_crtc_update_planes(struct drm_crtc *crtc)
-+{
-+	__rcar_du_crtc_update_planes(crtc, true);
-+}
-+
- static void rcar_du_crtc_start(struct rcar_du_crtc *rcrtc)
- {
- 	struct drm_crtc *crtc = &rcrtc->crtc;
-@@ -314,7 +319,7 @@ static void rcar_du_crtc_stop(struct rca
- 
- 	mutex_lock(&rcrtc->group->planes.lock);
- 	rcrtc->plane->enabled = false;
--	rcar_du_crtc_update_planes(crtc);
-+	__rcar_du_crtc_update_planes(crtc, false);
- 	mutex_unlock(&rcrtc->group->planes.lock);
- 
- 	/* Select switch sync mode. This stops display operation and configures
+ /* SCSPTR (Serial Port Register), optional */
+ #define SCSPTR_RTSIO	(1 << 7)	/* Serial Port RTS Pin Input/Output */
++#define SCSPTR_RTSDT	(1 << 6)	/* Serial Port RTS Pin Data */
+ #define SCSPTR_CTSIO	(1 << 5)	/* Serial Port CTS Pin Input/Output */
+ #define SCSPTR_SPB2IO	(1 << 1)	/* Serial Port Break Input/Output */
+ #define SCSPTR_SPB2DT	(1 << 0)	/* Serial Port Break Data */
