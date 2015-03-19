@@ -1,18 +1,21 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 10 Mar 2015 01:40:13 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 19 Mar 2015 02:15:23 +0000
 Subject: [PATCH 5/6] ARM: shmobile: r8a7790: sound enables Audio DMAC entry on DTSI
-Message-Id: <87r3sxsk9f.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <118a509374f7791feee309946abccf2ce5609f16.1426731062.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1426731062.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1426731062.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
 This patch adds Audio DMAC (= rcar-dmac) entry for sound
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/boot/dts/r8a7790.dtsi | 130 ++++++++++++++++++++++++++++++++++-------
  1 file changed, 108 insertions(+), 22 deletions(-)
@@ -165,5 +168,5 @@ index 48d11e0e..4bb2f4c 100644
  	};
  
 -- 
-1.9.1
+2.1.4
 
