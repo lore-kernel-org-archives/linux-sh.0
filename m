@@ -1,12 +1,14 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 10 Mar 2015 01:39:55 +0000
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 19 Mar 2015 02:15:22 +0000
 Subject: [PATCH 4/6] ARM: shmobile: r8a7791: enable Audio DMAC peri peri via sound driver
-Message-Id: <87siddsk9w.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <d73a5013ed61bc605374f72ce879a358feba7f3e.1426731062.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1426731062.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1426731062.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
@@ -14,6 +16,7 @@ Audio DMAC peri peri is no longer DMAEngine. it is supported by
 sound driver. this patch enable it.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
  arch/arm/boot/dts/r8a7791.dtsi | 12 +++---------
  1 file changed, 3 insertions(+), 9 deletions(-)
@@ -49,5 +52,5 @@ index 8631e02..a697b94 100644
  		clocks = <&mstp10_clks R8A7791_CLK_SSI_ALL>,
  			<&mstp10_clks R8A7791_CLK_SSI9>, <&mstp10_clks R8A7791_CLK_SSI8>,
 -- 
-1.9.1
+2.1.4
 
