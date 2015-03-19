@@ -1,120 +1,58 @@
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Date: Tue, 03 Mar 2015 01:21:45 +0000
-Subject: [PATCH 5/5] ARM: shmobile: r8a7794 SMP support
-Message-Id: <54F50CA9.5080900@bp.renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 19 Mar 2015 02:20:04 +0000
+Subject: Re: [PATCH 04/05] serial: sh-sci: Add SCIFA/SCIFB CTS/RTS pin setup
+Message-Id: <CANqRtoT9DYTFa9mnm=oiP+1f=4FqKqX3VmKCmXNQngpUb3Br3g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20141217125236.14480.78833.sendpatchset@w520>
+	<20141217125315.14480.15475.sendpatchset@w520>
+	<1784675.cFO7ikSQzd@avalon>
+In-Reply-To: <1784675.cFO7ikSQzd@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Greg KH <gregkh@linuxfoundation.org>, jslaby@suse.cz, linux-serial@vger.kernel.org
 
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
----
- arch/arm/mach-shmobile/Makefile        |    1 +
- arch/arm/mach-shmobile/r8a7794.h       |    2 ++
- arch/arm/mach-shmobile/setup-r8a7794.c |    2 ++
- arch/arm/mach-shmobile/smp-r8a7794.c   |   49 ++++++++++++++++++++++++++++++++
- 4 files changed, 54 insertions(+)
- create mode 100644 arch/arm/mach-shmobile/smp-r8a7794.c
+Hi Laurent,
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index cde95f8..50ed8c4 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -39,6 +39,7 @@ smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o platsmp-scu.o
- smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o platsmp-scu.o
- smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o
- smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o
-+smp-$(CONFIG_ARCH_R8A7794)	+= smp-r8a7794.o
- smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
- 
- # PM objects
-diff --git a/arch/arm/mach-shmobile/r8a7794.h b/arch/arm/mach-shmobile/r8a7794.h
-index b83d387..a1d71e6 100644
---- a/arch/arm/mach-shmobile/r8a7794.h
-+++ b/arch/arm/mach-shmobile/r8a7794.h
-@@ -3,4 +3,6 @@
- 
- void r8a7794_pm_init(void);
- 
-+extern struct smp_operations r8a7794_smp_ops;
-+
- #endif /* __ASM_R8A7794_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7794.c b/arch/arm/mach-shmobile/setup-r8a7794.c
-index d2b0930..c6d5a23 100644
---- a/arch/arm/mach-shmobile/setup-r8a7794.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7794.c
-@@ -17,6 +17,7 @@
- #include <linux/of_platform.h>
- #include "common.h"
- #include "rcar-gen2.h"
-+#include "r8a7794.h"
- #include <asm/mach/arch.h>
- 
- static const char * const r8a7794_boards_compat_dt[] __initconst = {
-@@ -25,6 +26,7 @@ static const char * const r8a7794_boards_compat_dt[] __initconst = {
- };
- 
- DT_MACHINE_START(R8A7794_DT, "Generic R8A7794 (Flattened Device Tree)")
-+	.smp		= smp_ops(r8a7794_smp_ops),
- 	.init_early	= shmobile_init_delay,
- 	.init_late	= shmobile_init_late,
- 	.init_time	= rcar_gen2_timer_init,
-diff --git a/arch/arm/mach-shmobile/smp-r8a7794.c b/arch/arm/mach-shmobile/smp-r8a7794.c
-new file mode 100644
-index 0000000..eda4d57
---- /dev/null
-+++ b/arch/arm/mach-shmobile/smp-r8a7794.c
-@@ -0,0 +1,49 @@
-+/*
-+ * SMP support for r8a7794
-+ *
-+ * Copyright (C) 2015 Renesas Electronics Corporation
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+#include <linux/smp.h>
-+#include <linux/io.h>
-+
-+#include <asm/smp_plat.h>
-+
-+#include "common.h"
-+#include "platsmp-apmu.h"
-+#include "r8a7794.h"
-+
-+static struct rcar_apmu_config r8a7794_apmu_config[] = {
-+	{
-+		.iomem = DEFINE_RES_MEM(0xe6151000, 0x188),
-+		.cpus = { 0, 1 },
-+	}
-+};
-+
-+static void __init r8a7794_smp_prepare_cpus(unsigned int max_cpus)
-+{
-+	/* let APMU code install data related to shmobile_boot_vector */
-+	shmobile_smp_apmu_prepare_cpus(max_cpus,
-+				       r8a7794_apmu_config,
-+				       ARRAY_SIZE(r8a7794_apmu_config));
-+
-+	r8a7794_pm_init();
-+}
-+
-+struct smp_operations r8a7794_smp_ops __initdata = {
-+	.smp_prepare_cpus	= r8a7794_smp_prepare_cpus,
-+	.smp_boot_secondary	= shmobile_smp_apmu_boot_secondary,
-+#ifdef CONFIG_HOTPLUG_CPU
-+	.cpu_disable		= shmobile_smp_cpu_disable,
-+	.cpu_die		= shmobile_smp_apmu_cpu_die,
-+	.cpu_kill		= shmobile_smp_apmu_cpu_kill,
-+#endif
-+};
--- 
-1.7.9.5
+On Sun, Jan 4, 2015 at 11:46 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Magnus,
+>
+> Thank you for the patch.
+>
+> On Wednesday 17 December 2014 21:53:15 Magnus Damm wrote:
+>> From: Magnus Damm <damm+renesas@opensource.se>
+>>
+>> Add SCIFA/SCIFB pin setup code for CTS/RTS pins to handle
+>> both cases of hardware flow control enabled or disabled.
+>>
+>> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+>> ---
+>>
+>>  drivers/tty/serial/sh-sci.c |   60 +++++++++++++++++++++++++++++++++++++++-
+>>  include/linux/serial_sci.h  |    2 +
+>>  2 files changed, 61 insertions(+), 1 deletion(-)
+>>
+>> --- 0006/drivers/tty/serial/sh-sci.c
+>> +++ work/drivers/tty/serial/sh-sci.c  2014-12-16 16:10:18.000000000 +0900
 
+>> +     control = serial_port_in(port, SCPCR);
+>> +     data = serial_port_in(port, SCPDR);
+>> +
+>> +     if (hwflow_enabled) {
+>> +             control &= ~(BIT(4) | BIT(3));
+>> +     } else {
+>> +             control |= BIT(4) | BIT(3);
+>
+> Could you please define SCPCR_RTSC and SCPCR_CTSC macros to replace BIT(3) and
+> BIT(4) ?
+>
+>> +             data |= BIT(4);
+>
+> And SCPDR_RTSD here ?
+
+Sure, that makes sense. I've included this update in V2. Sorry for
+being a bit lazy in V1. =)
+
+/ magnus
