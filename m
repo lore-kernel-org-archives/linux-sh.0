@@ -1,104 +1,79 @@
-From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Thu, 05 Mar 2015 08:58:59 +0000
-Subject: [RFC/PATCH v2 2/6] ARM: shmobile: Change CPUIdle InterFace
-Message-Id: <1425545943-1440-3-git-send-email-keita.kobayashi.ym@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 19 Mar 2015 01:50:03 +0000
+Subject: [PATCH v2 03/05] serial: sh-sci: Expose default CTS pin
+Message-Id: <20150319015003.14235.67489.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425545943-1440-1-git-send-email-keita.kobayashi.ym@renesas.com>
-In-Reply-To: <1425545943-1440-1-git-send-email-keita.kobayashi.ym@renesas.com>
+References: <20150319014933.14235.44835.sendpatchset@little-apple>
+In-Reply-To: <20150319014933.14235.44835.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, rjw@rjwysocki.net
-Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, badarkhe.manish@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+To: linux-sh@vger.kernel.org
+Cc: gregkh@linuxfoundation.org, geert@glider.be, laurent.pinchart@ideasonboard.com, linux-serial@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, jslaby@suse.cz
 
-This patch change the shmobile_cpuidle_init process
-to use Renesas CPUIdle driver.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Expose the CTS pin to the ->get_mctrl() callback for the
+default case. Without this patch the serial core can not
+retrieve the CTS pin state from the SCIF driver.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/mach-shmobile/common.h  |  5 ++++-
- arch/arm/mach-shmobile/cpuidle.c | 31 ++++++++++++++++++++-----------
- 2 files changed, 24 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
-index 8faf6e0..1ba3886 100644
---- a/arch/arm/mach-shmobile/common.h
-+++ b/arch/arm/mach-shmobile/common.h
-@@ -1,3 +1,5 @@
-+#include <linux/platform_data/renesas-cpuidle.h>
+ Changes since V1:
+ - Return true to default to asserted state in case modem signals exist
+
+ drivers/tty/serial/sh-sci.c |   20 +++++++++++++++++++-
+ include/linux/serial_sci.h  |    1 +
+ 2 files changed, 20 insertions(+), 1 deletion(-)
+
+--- 0003/drivers/tty/serial/sh-sci.c
++++ work/drivers/tty/serial/sh-sci.c	2015-03-19 09:17:37.856797004 +0900
+@@ -509,6 +509,17 @@ static void sci_poll_put_char(struct uar
+ }
+ #endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
+ 
++static bool sci_cts_asserted_default(struct uart_port *port)
++{
++	struct sci_port *s = to_sci_port(port);
++	struct plat_sci_reg *reg = sci_regmap[s->cfg->regtype] + SCSPTR;
 +
- #ifndef __ARCH_MACH_COMMON_H
- #define __ARCH_MACH_COMMON_H
- 
-@@ -23,7 +25,6 @@ struct clk;
- extern int shmobile_clk_init(void);
- extern struct platform_suspend_ops shmobile_suspend_ops;
- struct cpuidle_driver;
--extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
- 
- #ifdef CONFIG_SUSPEND
- int shmobile_suspend_init(void);
-@@ -35,8 +36,10 @@ static inline void shmobile_smp_apmu_suspend_init(void) { }
- 
- #ifdef CONFIG_CPU_IDLE
- int shmobile_cpuidle_init(void);
-+extern void shmobile_cpuidle_set_driver(struct renesas_cpuidle *drv);
- #else
- static inline int shmobile_cpuidle_init(void) { return 0; }
-+static inline void shmobile_cpuidle_set_driver(struct renesas_cpuidle *drv) {}
- #endif
- 
- #ifdef CONFIG_CPU_FREQ
-diff --git a/arch/arm/mach-shmobile/cpuidle.c b/arch/arm/mach-shmobile/cpuidle.c
-index 0afeb5c..cb81ad6 100644
---- a/arch/arm/mach-shmobile/cpuidle.c
-+++ b/arch/arm/mach-shmobile/cpuidle.c
-@@ -13,25 +13,34 @@
- #include <linux/suspend.h>
- #include <linux/module.h>
- #include <linux/err.h>
-+#include <linux/device.h>
-+#include <linux/platform_data/renesas-cpuidle.h>
-+#include <linux/platform_device.h>
- #include <asm/cpuidle.h>
- #include <asm/io.h>
-+#include "common.h"
- 
--static struct cpuidle_driver shmobile_cpuidle_default_driver = {
--	.name			= "shmobile_cpuidle",
--	.owner			= THIS_MODULE,
--	.states[0]		= ARM_CPUIDLE_WFI_STATE,
--	.safe_state_index	= 0, /* C1 */
--	.state_count		= 1,
-+/* default */
-+static struct renesas_cpuidle cpuidle_data = {
-+	.num_drvs	= 0,
-+	.rcd		= NULL,
- };
- 
--static struct cpuidle_driver *cpuidle_drv = &shmobile_cpuidle_default_driver;
--
--void __init shmobile_cpuidle_set_driver(struct cpuidle_driver *drv)
-+void __init shmobile_cpuidle_set_driver(struct renesas_cpuidle *pd)
++	if (reg->size)
++		return !(serial_port_in(port, SCSPTR) & SCSPTR_CTSDT);
++
++	return true;
++}
++
+ static void sci_init_ctsrts_default(struct uart_port *port, bool hwflow_enabled)
  {
--	cpuidle_drv = drv;
-+	cpuidle_data = *pd;
+ 	struct sci_port *s = to_sci_port(port);
+@@ -1239,11 +1250,18 @@ static void sci_set_mctrl(struct uart_po
+ 
+ static unsigned int sci_get_mctrl(struct uart_port *port)
+ {
++	struct sci_port *s = to_sci_port(port);
++	bool cts_asserted = false;
++
+ 	/*
+ 	 * CTS/RTS is handled in hardware when supported, while nothing
+ 	 * else is wired up. Keep it simple and simply assert DSR/CAR.
+ 	 */
+-	return TIOCM_DSR | TIOCM_CAR;
++
++	if (s->cfg->capabilities & SCIx_HAVE_RTSCTS)
++		cts_asserted = sci_cts_asserted_default(port);
++
++	return TIOCM_DSR | TIOCM_CAR | (cts_asserted ? TIOCM_CTS : 0);
  }
  
-+static struct platform_device renesas_cpuidle = {
-+	.name	= "cpuidle-renesas",
-+	.id	= -1,
-+	.dev	= {
-+		   .platform_data = &cpuidle_data,
-+	},
-+};
-+
- int __init shmobile_cpuidle_init(void)
- {
--	return cpuidle_register(cpuidle_drv, NULL);
-+	platform_device_register(&renesas_cpuidle);
-+	return 0;
- }
--- 
-1.9.1
-
+ #ifdef CONFIG_SERIAL_SH_SCI_DMA
+--- 0003/include/linux/serial_sci.h
++++ work/include/linux/serial_sci.h	2015-03-19 09:15:59.446797358 +0900
+@@ -59,6 +59,7 @@
+ #define SCSPTR_RTSIO	(1 << 7)	/* Serial Port RTS Pin Input/Output */
+ #define SCSPTR_RTSDT	(1 << 6)	/* Serial Port RTS Pin Data */
+ #define SCSPTR_CTSIO	(1 << 5)	/* Serial Port CTS Pin Input/Output */
++#define SCSPTR_CTSDT	(1 << 4)	/* Serial Port CTS Pin Data */
+ #define SCSPTR_SPB2IO	(1 << 1)	/* Serial Port Break Input/Output */
+ #define SCSPTR_SPB2DT	(1 << 0)	/* Serial Port Break Data */
+ 
