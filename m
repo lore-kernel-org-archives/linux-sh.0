@@ -1,66 +1,74 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 18 Mar 2015 18:56:00 +0000
-Subject: [PATCH 6/7] ARM: shmobile: r8a7791: Add IRQC clock to device tree
-Message-Id: <1426704961-27322-7-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 19 Mar 2015 02:05:12 +0000
+Subject: [PATCH] sh73a0 KZM9G CTS/RTS prototype
+Message-Id: <20150319020512.14288.13653.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Link the external IRQ controller irqc0 to the IRQC module clock, so it
-can be power managed using that clock.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This is a hack that enables console serial port hardware
+flow control for the KZM9G board. Not for upstream merge.
+
+Not-Yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 9 +++++++++
- include/dt-bindings/clock/r8a7791-clock.h | 3 +++
- 2 files changed, 12 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 4696062f6ddeaaeb..20ab7668088493b9 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -239,6 +239,7 @@
- 			     <0 15 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 16 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R8A7791_CLK_IRQC>;
- 	};
+ arch/arm/boot/dts/sh73a0-kzm9g.dts |    1 +
+ drivers/tty/serial/sh-sci.c        |   12 ++++++++++++
+ 2 files changed, 13 insertions(+)
+
+--- 0001/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ work/arch/arm/boot/dts/sh73a0-kzm9g.dts	2015-03-19 10:05:46.586786623 +0900
+@@ -370,6 +370,7 @@
+ 	pinctrl-0 = <&scifa4_pins>;
+ 	pinctrl-names = "default";
  
- 	dmac0: dma-controller@e6700000 {
-@@ -1160,6 +1161,14 @@
- 				"mmcif0", "i2c7", "pciec", "i2c8", "ssusb", "cmt1",
- 				"usbdmac0", "usbdmac1";
- 		};
-+		mstp4_clks: mstp4_clks@e6150140 {
-+			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
-+			clocks = <&cp_clk>;
-+			#clock-cells = <1>;
-+			clock-indices = <R8A7791_CLK_IRQC>;
-+			clock-output-names = "irqc";
-+		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 8fc5dc8faeea4051..402268384b99093c 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -70,6 +70,9 @@
- #define R8A7791_CLK_USBDMAC0		30
- #define R8A7791_CLK_USBDMAC1		31
++	ctsrts;
+ 	status = "okay";
+ };
  
-+/* MSTP4 */
-+#define R8A7791_CLK_IRQC		7
+--- 0006/drivers/tty/serial/sh-sci.c
++++ work/drivers/tty/serial/sh-sci.c	2015-03-19 10:09:14.726785875 +0900
+@@ -573,6 +573,9 @@ static void sci_init_ctsrts_scifab(struc
+ {
+ 	unsigned short control, data;
+ 
++	printk("xxx SCIFAB hw flow control: %s\n",
++	       hwflow_enabled ? "on" : "off");
 +
- /* MSTP5 */
- #define R8A7791_CLK_AUDIO_DMAC1		1
- #define R8A7791_CLK_AUDIO_DMAC0		2
--- 
-1.9.1
-
+ 	/* SCIFA/SCIFB CTS/RTS pin configuration depends on user space.
+ 	 *
+ 	 * In case of CTS - (SCPDR.CTSD is always accessible):
+@@ -2048,6 +2051,9 @@ static void sci_set_termios(struct uart_
+ 	} else
+ 		serial_port_out(port, SCSMR, smr_val);
+ 
++	/* hard code modem control enablement for now */
++	termios->c_cflag |= CRTSCTS;
++
+ 	sci_init_pins(port, termios->c_cflag);
+ 
+ 	reg = sci_getreg(port, SCFCR);
+@@ -2055,6 +2061,10 @@ static void sci_set_termios(struct uart_
+ 		unsigned short ctrl = serial_port_in(port, SCFCR);
+ 
+ 		if (s->cfg->capabilities & SCIx_HAVE_RTSCTS) {
++
++		  printk("xxx enabling hw flow control: %s\n",
++			 (termios->c_cflag & CRTSCTS) ? "on" : "off");
++
+ 			if (termios->c_cflag & CRTSCTS)
+ 				ctrl |= SCFCR_MCE;
+ 			else
+@@ -2640,6 +2650,8 @@ sci_parse_dt(struct platform_device *pde
+ 	p->type = info->type;
+ 	p->regtype = info->regtype;
+ 	p->scscr = SCSCR_RE | SCSCR_TE;
++	if (of_property_read_bool(np, "ctsrts"))
++		p->capabilities = SCIx_HAVE_RTSCTS;
+ 
+ 	return p;
+ }
