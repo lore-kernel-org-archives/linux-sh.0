@@ -1,46 +1,51 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 30 Mar 2015 09:57:04 +0000
-Subject: Re: [PATCH 1/5 v2] ASoC: rsrc-card: add Renesas sampling rate convert sound card support
-Message-Id: <CAMuHMdVa=KZRT294AjDZ7QZy5PFU=aKh55ookWYruf6cJhbdbg@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 19 Mar 2015 02:18:50 +0000
+Subject: Re: [PATCH 05/05] serial: sh-sci: Expose SCIFA/SCIFB CTS pin
+Message-Id: <CANqRtoSo_AKkE5D20DtdyiDCHQ+2rhsoWGGgsr8ZMP_7bRrbgA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87h9t85ry1.wl%kuninori.morimoto.gx@renesas.com>
-	<87fv8s5rwt.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fv8s5rwt.wl%kuninori.morimoto.gx@renesas.com>
+References: <20141217125236.14480.78833.sendpatchset@w520>
+	<20141217125325.14480.79285.sendpatchset@w520>
+	<6657739.eAlEu9S4Iu@avalon>
+In-Reply-To: <6657739.eAlEu9S4Iu@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Mark Brown <broonie@kernel.org>, Linux-DT <devicetree@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Liam Girdwood <lgirdwood@gmail.com>, Das Biju <biju.das@bp.renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: SH-Linux <linux-sh@vger.kernel.org>, Greg KH <gregkh@linuxfoundation.org>, jslaby@suse.cz, linux-serial@vger.kernel.org
 
-On Thu, Mar 26, 2015 at 5:01 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> diff --git a/Documentation/devicetree/bindings/sound/renesas,rsrc-card.txt b/Documentation/devicetree/bindings/sound/renesas,rsrc-card.txt
-> new file mode 100644
-> index 0000000..12e287e
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/sound/renesas,rsrc-card.txt
-> @@ -0,0 +1,66 @@
-> +Renesas Sampling Rate Convert Sound Card:
-> +
-> +Renesas Sampling Rate Convert Sound Card specifies audio DAI connections of SoC <-> codec.
-> +
-> +Required properties:
-> +
-> +- compatible                           : "renesas,rsrc-card,<board>"
-> +                                         Examples with soctypes are:
+Hi Laurent,
 
-board types
+On Sun, Jan 4, 2015 at 11:53 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Magnus,
+>
+> Thank you for the patch.
+>
+> On Wednesday 17 December 2014 21:53:25 Magnus Damm wrote:
+>> From: Magnus Damm <damm+renesas@opensource.se>
+>>
+>> Expose CTS pin to serial core for the SCIFA/SCIFB case.
+>>
+>> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+>> ---
+>>
+>>  drivers/tty/serial/sh-sci.c |   17 +++++++++++++++--
+>>  1 file changed, 15 insertions(+), 2 deletions(-)
+>>
+>> --- 0023/drivers/tty/serial/sh-sci.c
+>> +++ work/drivers/tty/serial/sh-sci.c  2014-12-17 18:46:44.000000000 +0900
+>> @@ -564,6 +564,11 @@ static void sci_init_pins_default(struct
+>>       serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
+>>  }
+>>
+>> +static bool sci_cts_asserted_scifab(struct uart_port *port)
+>> +{
+>> +     return !(serial_port_in(port, SCPDR) & BIT(3));
+>
+> Could you please define SCPDR_CTSD to replace BIT(3) ?
 
-> +                                           - "renesas,rsrc-card,lager"
-> +                                           - "renesas,rsrc-card,koelsch"
+Done in V2!
 
-Gr{oetje,eeting}s,
+Thanks,
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+/ magnus
