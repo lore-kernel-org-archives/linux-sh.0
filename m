@@ -1,98 +1,94 @@
-From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Thu, 05 Mar 2015 08:59:02 +0000
-Subject: [RFC/PATCH v2 5/6] ARM: shmobile: r8a7790: Add Core-Standby CPUIdle support for r8a7790
-Message-Id: <1425545943-1440-6-git-send-email-keita.kobayashi.ym@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 19 Mar 2015 01:49:43 +0000
+Subject: [PATCH v2 01/05] serial: sh-sci: Break out default CTS/RTS pin setup
+Message-Id: <20150319014943.14235.12896.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425545943-1440-1-git-send-email-keita.kobayashi.ym@renesas.com>
-In-Reply-To: <1425545943-1440-1-git-send-email-keita.kobayashi.ym@renesas.com>
+References: <20150319014933.14235.44835.sendpatchset@little-apple>
+In-Reply-To: <20150319014933.14235.44835.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, rjw@rjwysocki.net
-Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, badarkhe.manish@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+To: linux-sh@vger.kernel.org
+Cc: gregkh@linuxfoundation.org, geert@glider.be, laurent.pinchart@ideasonboard.com, linux-serial@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, jslaby@suse.cz
 
-Add the CPUIdle support power state support for the r8a7790 SoC.
-This patch add the wfi and Core-Standby for CPUIdle power states
-support for the Cortex-A15 and add the wfi power state support for
-the Cortex-A7.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Break out CTS/RTS pin setup for the default case. We only
+care about those pins in case SCIx_HAVE_RTSCTS is set.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/mach-shmobile/pm-r8a7790.c | 47 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 47 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/pm-r8a7790.c b/arch/arm/mach-shmobile/pm-r8a7790.c
-index 80e8d95..70b2334 100644
---- a/arch/arm/mach-shmobile/pm-r8a7790.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7790.c
-@@ -10,8 +10,13 @@
-  * for more details.
-  */
- 
-+#include <linux/cpuidle.h>
- #include <linux/kernel.h>
- #include <linux/smp.h>
-+#include <linux/platform_data/renesas-cpuidle.h>
-+#include <linux/pm.h>
-+#include <asm/cpuidle.h>
-+#include <asm/cputype.h>
- #include <asm/io.h>
- #include "common.h"
- #include "pm-rcar.h"
-@@ -48,6 +53,46 @@ static inline void r8a7790_sysc_init(void) {}
- 
- #endif /* CONFIG_SMP */
- 
-+static struct cpuidle_driver r8a7790_ca15_cpuidle_driver = {
-+	.name = "rcar_r8a7790_ca15_cpuidle",
-+	.owner = THIS_MODULE,
-+	.states = {
-+		[0] = ARM_CPUIDLE_WFI_STATE,
-+		[1] = {
-+			.name = "Core-Standby",
-+			.desc = "Core Standby Mode",
-+			.exit_latency = 3000,
-+			.target_residency = 3000,
-+			.enter = shmobile_smp_apmu_enter_cpuidle,
-+		},
-+	},
-+	.state_count = 2,
-+};
-+
-+static struct cpuidle_driver r8a7790_ca7_cpuidle_driver = {
-+	.name			= "rcar_r8a7790_ca7_cpuidle",
-+	.owner			= THIS_MODULE,
-+	.states[0]		= ARM_CPUIDLE_WFI_STATE,
-+	.safe_state_index	= 0, /* C1 */
-+	.state_count		= 1,
-+};
-+
-+static struct renesas_cpuidle_driver r8a7790_cpuidle[] = {
-+	[0] = {
-+		.target_cpu	= ARM_CPU_PART_CORTEX_A15,
-+		.renesas_drv	= &r8a7790_ca15_cpuidle_driver,
-+	},
-+	[1] = {
-+		.target_cpu	= ARM_CPU_PART_CORTEX_A7,
-+		.renesas_drv	= &r8a7790_ca7_cpuidle_driver,
-+	},
-+};
-+
-+static struct renesas_cpuidle r8a7790_data = {
-+	.num_drvs	= ARRAY_SIZE(r8a7790_cpuidle),
-+	.rcd		= r8a7790_cpuidle,
-+};
-+
- void __init r8a7790_pm_init(void)
- {
- 	void __iomem *p;
-@@ -79,4 +124,6 @@ void __init r8a7790_pm_init(void)
- 
- 	r8a7790_sysc_init();
- 	shmobile_smp_apmu_suspend_init();
-+	if (IS_ENABLED(CONFIG_ARM_RENESAS_CPUIDLE))
-+		shmobile_cpuidle_set_driver(&r8a7790_data);
+ Changes since V1:
+ - Function name change, thanks Laurent!
+
+ drivers/tty/serial/sh-sci.c |   45 +++++++++++++++++++++++++++++--------------
+ 1 file changed, 31 insertions(+), 14 deletions(-)
+
+--- 0001/drivers/tty/serial/sh-sci.c
++++ work/drivers/tty/serial/sh-sci.c	2015-03-19 09:07:40.616799151 +0900
+@@ -509,10 +509,29 @@ static void sci_poll_put_char(struct uar
  }
--- 
-1.9.1
-
+ #endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
+ 
+-static void sci_init_pins(struct uart_port *port, unsigned int cflag)
++static void sci_init_ctsrts_default(struct uart_port *port, bool hwflow_enabled)
+ {
+ 	struct sci_port *s = to_sci_port(port);
+ 	struct plat_sci_reg *reg = sci_regmap[s->cfg->regtype] + SCSPTR;
++	unsigned short status;
++
++	/* If no SCSPTR register exists then skip. Same if hardware flow
++	 * control has been enabled, in such case SCFCR.MCE will be set
++	 * and the SCSPTR configuration is assumed to be overridden.
++	 */
++	if (!reg->size || hwflow_enabled)
++		return;
++
++	status = serial_port_in(port, SCSPTR);
++	status &= ~SCSPTR_CTSIO;
++	status |= SCSPTR_RTSIO;
++	serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
++}
++
++static void sci_init_pins(struct uart_port *port, unsigned int cflag)
++{
++	struct sci_port *s = to_sci_port(port);
++	bool hwflow_enabled = cflag & CRTSCTS;
+ 
+ 	/*
+ 	 * Use port-specific handler if provided.
+@@ -522,22 +541,20 @@ static void sci_init_pins(struct uart_po
+ 		return;
+ 	}
+ 
+-	/*
+-	 * For the generic path SCSPTR is necessary. Bail out if that's
+-	 * unavailable, too.
++	/* SCIF hardware with RTS/CTS support needs special setup below.
++	 *
++	 * Please note that if RTS/CTS is available for the hardware
++	 * platform depends on the particular SCIF channel on a certain
++	 * SoC, and how this channel has been hooked up on the actual board.
++	 *
++	 * If the RTS/CTS signals will be used or not depends on what user
++	 * space requests. In case RTS/CTS is available but not requested
++	 * by user space we still need to configure the pins somehow.
+ 	 */
+-	if (!reg->size)
++	if (!(s->cfg->capabilities & SCIx_HAVE_RTSCTS))
+ 		return;
+ 
+-	if ((s->cfg->capabilities & SCIx_HAVE_RTSCTS) &&
+-	    ((!(cflag & CRTSCTS)))) {
+-		unsigned short status;
+-
+-		status = serial_port_in(port, SCSPTR);
+-		status &= ~SCSPTR_CTSIO;
+-		status |= SCSPTR_RTSIO;
+-		serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
+-	}
++	sci_init_ctsrts_default(port, hwflow_enabled);
+ }
+ 
+ static int sci_txfill(struct uart_port *port)
