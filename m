@@ -1,39 +1,40 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 10 Mar 2015 00:44:41 +0000
-Subject: [PATCH 04/15] ARM: shmobile: r8a7791: tidyup SDHI register size on DTSI
-Message-Id: <e849b0650d4375996bfb7df70a641e2ad45a425f.1425947992.git.horms+renesas@verge.net.au>
+Date: Fri, 20 Mar 2015 01:07:21 +0000
+Subject: [PATCH 2/3] ARM: shmobile: r8a7791: Correct SYSCIER value
+Message-Id: <78420b5dca18f2034f18925f5608cda2c960c3f3.1426812951.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425947992.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425947992.git.horms+renesas@verge.net.au>
+References: <cover.1426812951.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1426812951.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Set the SYSCIER as per the values indicated in the documentation.
+The value previously used appears to been copied from the r8a7779
+implementation but on closer inspection is not correct for the r8a7791.
 
-r8a7791 SDHI ch0/ch1 has SD_DMACR which is located in 0x324.
-This patch updates register size
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Fixes: 5f6108bb9643 ("ARM: shmobile: r8a7791 SYSC setup code")
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 2 +-
+ arch/arm/mach-shmobile/pm-r8a7791.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 32f0506..fbb33bb 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -482,7 +482,7 @@
+diff --git a/arch/arm/mach-shmobile/pm-r8a7791.c b/arch/arm/mach-shmobile/pm-r8a7791.c
+index 25f107b..f7cfb3b 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7791.c
++++ b/arch/arm/mach-shmobile/pm-r8a7791.c
+@@ -33,7 +33,7 @@ static void __init r8a7791_sysc_init(void)
+ 	void __iomem *base = rcar_sysc_init(0xe6180000);
  
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-r8a7791";
--		reg = <0 0xee100000 0 0x200>;
-+		reg = <0 0xee100000 0 0x328>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7791_CLK_SDHI0>;
- 		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
+ 	/* enable all interrupt sources, but do not use interrupt handler */
+-	iowrite32(0x0131000e, base + SYSCIER);
++	iowrite32(0x00111003, base + SYSCIER);
+ 	iowrite32(0, base + SYSCIMR);
+ }
+ 
 -- 
 2.1.4
 
