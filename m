@@ -1,34 +1,53 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 19 Mar 2015 05:29:01 +0000
-Subject: [PATCH 0/1] ARM: configs: remove all CONFIG_RCAR_AUDMAC_PP from ARM defconfigs
-Message-Id: <871tkleesi.wl%kuninori.morimoto.gx@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 20 Mar 2015 12:30:38 +0000
+Subject: [PATCH 3/3] ARM: shmobile: bockw dts: define sdhi0 pins with pull-ups
+Message-Id: <1426854638-9187-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
+Ensures that the pull-ups for pins SD0_CD and SD0_WP are enabled.
 
-Hi Olof, Kevin, Arnd
+This is one of two features from the DT reference platform that are
+still missing in MP.
 
-This patch removes CONFIG_RCAR_AUDMAC_PP from arch/arm/configs,
-because rcar_audmac_periperi is no longer DMAEngine driver.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
-DMAEngine maintainer Vinod accepted about rcar_audmac_periperi removal patch on
-
-	git://git.infradead.org/users/vkoul/slave-dma.git :: topic/sh
-
-	3cd44dcd35a6618df88c51561290dc02fb35b8e2
-	(dmaengine: remove Renesas Audio DMAC peri peri)
-
-And, this patch was posted to him in v1/v2 patch-set.
-But, he couldn't apply it, because of base branch (?)
-According to Simon (= SH-ARM maintainer) this patch should be taken
-ARM maintainer.
-http://thread.gmane.org/gmane.linux.ports.sh.devel/44657/focusD857
-
-I can say that this removal CONFIG_RCAR_AUDMAC_PP patch has no relationship
-to DMAEngine branch, because no SoC/platform is using it.
-(more detail, defconfig has it, but, there is no DT settings in upstream)
-So, I think you don't need to care about Vinod's branch
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index a23d41c..d71260a 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -154,10 +154,14 @@
+ 	};
+ 
+ 	sdhi0_pins: sd0 {
+-		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
+-				  "sdhi0_cd";
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
+ 		renesas,function = "sdhi0";
+ 	};
++	sdhi0_pup_pins: sd0_pup {
++		renesas,groups = "sdhi0_cd", "sdhi0_wp";
++		renesas,function = "sdhi0";
++		bias-pull-up;
++	};
+ 
+ 	hspi0_pins: hspi0 {
+ 		renesas,groups = "hspi0_a";
+@@ -186,7 +190,7 @@
+ };
+ 
+ &sdhi0 {
+-	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-0 = <&sdhi0_pins>, <&sdhi0_pup_pins>;
+ 	pinctrl-names = "default";
+ 
+ 	vmmc-supply = <&fixedregulator3v3>;
+-- 
+2.2.2
 
