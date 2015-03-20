@@ -1,49 +1,40 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 04 Mar 2015 12:51:21 +0000
-Subject: Re: [PATCH 2/2] gpio: pcf857x: Propagate wake-up setting to parent irq controller
-Message-Id: <CACRpkdbv_Z=VBNniS=5oqzQnRg85e7g19AZ3wm5vzyuk=2WqHw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Mar 2015 01:07:27 +0000
+Subject: [PATCH 2/4] ARM: shmobile: Enable R-Mobile reset driver in multiplatform defconfig
+Message-Id: <d4a269373ddb33bf7a07d9b9b5e8294b76768cb1.1426813316.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423151349-10579-1-git-send-email-geert+renesas@glider.be>
-	<1423151349-10579-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1423151349-10579-3-git-send-email-geert+renesas@glider.be>
+References: <cover.1426813316.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1426813316.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Alexandre Courbot <gnurou@gmail.com>, George Cherian <george.cherian@ti.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 5, 2015 at 4:49 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-> The pcf857x GPIO and interrupt controller uses dummy_irq_chip, which
-> does not implement irq_chip.irq_set_wake() and does not set
-> IRQCHIP_SKIP_SET_WAKE.
->
-> This causes two s2ram issues if wake-up is enabled for the pcf857x GPIO
-> pins:
->   1. During resume from s2ram, the following warning is printed:
->
->      WARNING: CPU: 0 PID: 1046 at kernel/irq/manage.c:537 irq_set_irq_wake+0x9c/0xf8()
->      Unbalanced IRQ 113 wake disable
->
->   2. Wake-up through the pcf857x GPIO pins may fail, as the parent
->      interrupt controller may be suspended.
->
-> Migrate the pcf857x GPIO and interrupt controller from dummy_irq_chip to
-> its own irq_chip. This irq chip implements irq_chip.irq_set_wake() to
-> propagate its wake-up setting to the parent interrupt controller.
->
-> This fixes wake-up through gpio-keys on sh73a0/kzm9g, where the pcf857x
-> interrupt is cascaded to irq-renesas-intc-irqpin, and the latter must
-> not be suspended when wake-up is enabled.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> v2:
->   - Rebased on top of "gpio: pcf857x: Switch to use gpiolib irqchip
->     helpers".
+This is used on R-Mobile APE6 (r8a73a4), R-Mobile A1 (r8a7740), and
+SH-Mobile AG5 (sh73a0).
 
-Patch applied.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/shmobile_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
-Yours,
-Linus Walleij
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 21851f8..d206041 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -110,6 +110,9 @@ CONFIG_SPI_SH_HSPI=y
+ CONFIG_GPIO_EM=y
+ CONFIG_GPIO_RCAR=y
+ CONFIG_GPIO_PCF857X=y
++CONFIG_POWER_SUPPLY=y
++CONFIG_POWER_RESET=y
++CONFIG_POWER_RESET_RMOBILE=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+ CONFIG_CPU_THERMAL=y
+-- 
+2.1.4
+
