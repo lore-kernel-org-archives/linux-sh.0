@@ -1,7 +1,7 @@
-From: Chris Brandt <Chris.Brandt@renesas.com>
-Date: Fri, 20 Mar 2015 20:18:10 +0000
-Subject: RE: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <HK2PR06MB0561AA9DE7988D33159117138A0E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Fri, 20 Mar 2015 22:23:20 +0000
+Subject: Re: XIP_KERNEL and !ARCH_MULTIPLATFORM
+Message-Id: <20150320222320.GL8656@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
@@ -10,17 +10,52 @@ References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.
  <HK2PR06MB0561FE47407CA32AA8DDEFCF8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdUS84s=uLYVk8BtRoKFmBzw7aT1eQCfGF1nx22hTqf15A@mail.gmail.com>
  <HK2PR06MB05611C6D6CED1E32F4617D158A010@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <20150320081910.GF10068@pengutronix.de>
-In-Reply-To: <20150320081910.GF10068@pengutronix.de>
+In-Reply-To: <HK2PR06MB05611C6D6CED1E32F4617D158A010@HK2PR06MB0561.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-> > Of course to actually boot an XIP kernel, you have to make a custom command in u-boot (using bootm or go is not going to work).
-> It should. I remember that you need to pass something unintuitive to mkimage (to not say buggy). See http://lists.denx.de/pipermail/u-boot/2007-March/020171.html for my try to fix that back when I still cared about U-Boot.
+On Thu, Mar 19, 2015 at 08:57:21PM +0000, Chris Brandt wrote:
+> Eventually....I got it to boot.
+> 
+> I had to remove both CONFIG_HIGHMEM and CONFIG_SMP and then I could
+> boot completely from ROM (which for me is external QSPI flash that
+> is memory mapping into linear CPU space at address 0x18000000)
 
-I originally started down that path...but it was so screwed up and really only worked for the power PC architecture. It was more work to hack it than just making a very simple function that loaded the R0,R1,R2 registers and jumped to the start of the kernel.
+At first glance, HIGHMEM shouldn't be affected by XIP_KERNEL at all.
 
-Chris
+However, SMP_ON_UP is incompatible with XIP_KERNEL (as already listed
+in its dependencies) and building with SMP=y without SMP_ON_UP, and
+trying to run on UP hardware will definitely fail.
 
+To put that another way:
+1. SMP_ON_UP relies on being able to change the kernel text, which it
+   can't do with an XIP kernel.
+2. UP hardware requires either a SMP=n kernel _or_ SMP=SMP_ON_UP=y
+   kernel.
+
+> So, the total changes was:
+> 
+> 1. start with shmobile_defconfig
+> 2. remove all architectures but RZ/A1 (ARCH_R7S72100)
+> 3. remove !ARCH_MULTIPLATFORM from XIP_KERNEL's dependencies
+> 4. modify  'select ARM_PATCH_PHYS_VIRT if !XIP_KERNEL'  in PHYS_OFFSET
+>    (because I need to be able to set PHYS_OFFSET)
+
+I'm not sure what you mean by this.  We have:
+
+config PHYS_OFFSET
+        hex "Physical address of main memory" if MMU
+        depends on !ARM_PATCH_PHYS_VIRT
+
+which is quite correct - PHYS_OFFSET depends on not having the phys
+offset patching code enabled.  However, for an XIP kernel, you don't
+want to have the phys offset patching code enabled, so you want
+ARM_PATCH_PHYS_VIRT to be off.
+
+Maybe you mean the "select ARM_PATCH_PHYS_VIRT" under ARCH_MULTIPLATFORM?
+
+-- 
+FTTC broadband for 0.8mile line: currently at 10.5Mbps down 400kbps up
+according to speedtest.net.
