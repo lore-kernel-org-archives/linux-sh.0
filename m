@@ -1,7 +1,7 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Fri, 20 Mar 2015 22:23:20 +0000
-Subject: Re: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <20150320222320.GL8656@n2100.arm.linux.org.uk>
+From: Chris Brandt <Chris.Brandt@renesas.com>
+Date: Sat, 21 Mar 2015 15:39:30 +0000
+Subject: RE: XIP_KERNEL and !ARCH_MULTIPLATFORM
+Message-Id: <HK2PR06MB05611E6828E494FB938179658A0F0@HK2PR06MB0561.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
@@ -10,52 +10,50 @@ References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.
  <HK2PR06MB0561FE47407CA32AA8DDEFCF8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdUS84s=uLYVk8BtRoKFmBzw7aT1eQCfGF1nx22hTqf15A@mail.gmail.com>
  <HK2PR06MB05611C6D6CED1E32F4617D158A010@HK2PR06MB0561.apcprd06.prod.outlook.com>
-In-Reply-To: <HK2PR06MB05611C6D6CED1E32F4617D158A010@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <20150320222320.GL8656@n2100.arm.linux.org.uk>
+In-Reply-To: <20150320222320.GL8656@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 19, 2015 at 08:57:21PM +0000, Chris Brandt wrote:
-> Eventually....I got it to boot.
-> 
-> I had to remove both CONFIG_HIGHMEM and CONFIG_SMP and then I could
-> boot completely from ROM (which for me is external QSPI flash that
-> is memory mapping into linear CPU space at address 0x18000000)
+> At first glance, HIGHMEM shouldn't be affected by XIP_KERNEL at all.
 
-At first glance, HIGHMEM shouldn't be affected by XIP_KERNEL at all.
+I really didn't find the root cause of this. I just remember looking at the crashed log and it seemed like removing HIGHMEM would fix it....and it did (can't remember the details).
 
-However, SMP_ON_UP is incompatible with XIP_KERNEL (as already listed
-in its dependencies) and building with SMP=y without SMP_ON_UP, and
-trying to run on UP hardware will definitely fail.
+> However, SMP_ON_UP is incompatible with XIP_KERNEL (as already listed in its dependencies) and building with SMP=y without SMP_ON_UP, and trying to run on UP hardware will definitely fail.
 
-To put that another way:
-1. SMP_ON_UP relies on being able to change the kernel text, which it
-   can't do with an XIP kernel.
-2. UP hardware requires either a SMP=n kernel _or_ SMP=SMP_ON_UP=y
-   kernel.
+So, it sounds like you are saying XIP_KERNEL and SMP is not going to happen.
 
-> So, the total changes was:
-> 
-> 1. start with shmobile_defconfig
-> 2. remove all architectures but RZ/A1 (ARCH_R7S72100)
-> 3. remove !ARCH_MULTIPLATFORM from XIP_KERNEL's dependencies
-> 4. modify  'select ARM_PATCH_PHYS_VIRT if !XIP_KERNEL'  in PHYS_OFFSET
->    (because I need to be able to set PHYS_OFFSET)
+However, you said:
+> To put that another way:
+> 1. SMP_ON_UP relies on being able to change the kernel text, which it
+>    can't do with an XIP kernel.
 
-I'm not sure what you mean by this.  We have:
+But, what kernel text are we talking about? All of it, or just certain parts?
+What if I changed the linker to put all those files in a specific area and then remap that one area to RAM (of course and copy the binary too). Yes, sounds pretty hack-ish, but if XIP can't go past single core, it might not have a long term future anyway.
 
-config PHYS_OFFSET
-        hex "Physical address of main memory" if MMU
-        depends on !ARM_PATCH_PHYS_VIRT
 
-which is quite correct - PHYS_OFFSET depends on not having the phys
-offset patching code enabled.  However, for an XIP kernel, you don't
-want to have the phys offset patching code enabled, so you want
-ARM_PATCH_PHYS_VIRT to be off.
+> I'm not sure what you mean by this.  We have:
+>
+> config PHYS_OFFSET
+>         hex "Physical address of main memory" if MMU
+>         depends on !ARM_PATCH_PHYS_VIRT
+>
+> which is quite correct - PHYS_OFFSET depends on not having the phys offset patching code enabled.  However, for
+> an XIP kernel, you don't want to have the phys offset patching code enabled, so you want ARM_PATCH_PHYS_VIRT to be off.
 
-Maybe you mean the "select ARM_PATCH_PHYS_VIRT" under ARCH_MULTIPLATFORM?
+You are correct...maybe my wording was confusing. This is what I meant:
 
--- 
-FTTC broadband for 0.8mile line: currently at 10.5Mbps down 400kbps up
-according to speedtest.net.
+config ARCH_MULTIPLATFORM
+	bool "Allow multiple platforms to be selected"
+	depends on MMU
+	select ARCH_WANT_OPTIONAL_GPIOLIB
+	select ARM_HAS_SG_CHAIN
+-	select ARM_PATCH_PHYS_VIRT
++	select ARM_PATCH_PHYS_VIRT if !XIP_KERNEL
+	select AUTO_ZRELADDR
+
+
+Chris
+
