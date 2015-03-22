@@ -1,7 +1,7 @@
-From: Chris Brandt <Chris.Brandt@renesas.com>
-Date: Sat, 21 Mar 2015 15:39:30 +0000
-Subject: RE: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <HK2PR06MB05611E6828E494FB938179658A0F0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=  <u.kleine-koenig@pengutronix.de>
+Date: Sun, 22 Mar 2015 09:13:17 +0000
+Subject: Re: XIP_KERNEL and !ARCH_MULTIPLATFORM
+Message-Id: <20150322091317.GF5664@pengutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
@@ -10,50 +10,33 @@ References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.
  <HK2PR06MB0561FE47407CA32AA8DDEFCF8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdUS84s=uLYVk8BtRoKFmBzw7aT1eQCfGF1nx22hTqf15A@mail.gmail.com>
  <HK2PR06MB05611C6D6CED1E32F4617D158A010@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <20150320222320.GL8656@n2100.arm.linux.org.uk>
-In-Reply-To: <20150320222320.GL8656@n2100.arm.linux.org.uk>
+ <20150320081910.GF10068@pengutronix.de>
+ <HK2PR06MB0561AA9DE7988D33159117138A0E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+In-Reply-To: <HK2PR06MB0561AA9DE7988D33159117138A0E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-> At first glance, HIGHMEM shouldn't be affected by XIP_KERNEL at all.
+Hello Chris,
 
-I really didn't find the root cause of this. I just remember looking at the crashed log and it seemed like removing HIGHMEM would fix it....and it did (can't remember the details).
+On Fri, Mar 20, 2015 at 08:18:10PM +0000, Chris Brandt wrote:
+> > > Of course to actually boot an XIP kernel, you have to make a custom c=
+ommand in u-boot (using bootm or go is not going to work).
+> > It should. I remember that you need to pass something unintuitive to
+> > mkimage (to not say buggy). See
+> > http://lists.denx.de/pipermail/u-boot/2007-March/020171.html for my
+> > try to fix that back when I still cared about U-Boot.
+>=20
+> I originally started down that path...but it was so screwed up and
+> really only worked for the power PC architecture. It was more work to
+> hack it than just making a very simple function that loaded the
+> R0,R1,R2 registers and jumped to the start of the kernel.
+Back then it worked for me on ARM, too.
 
-> However, SMP_ON_UP is incompatible with XIP_KERNEL (as already listed in its dependencies) and building with SMP=y without SMP_ON_UP, and trying to run on UP hardware will definitely fail.
+Best regards
+Uwe
 
-So, it sounds like you are saying XIP_KERNEL and SMP is not going to happen.
-
-However, you said:
-> To put that another way:
-> 1. SMP_ON_UP relies on being able to change the kernel text, which it
->    can't do with an XIP kernel.
-
-But, what kernel text are we talking about? All of it, or just certain parts?
-What if I changed the linker to put all those files in a specific area and then remap that one area to RAM (of course and copy the binary too). Yes, sounds pretty hack-ish, but if XIP can't go past single core, it might not have a long term future anyway.
-
-
-> I'm not sure what you mean by this.  We have:
->
-> config PHYS_OFFSET
->         hex "Physical address of main memory" if MMU
->         depends on !ARM_PATCH_PHYS_VIRT
->
-> which is quite correct - PHYS_OFFSET depends on not having the phys offset patching code enabled.  However, for
-> an XIP kernel, you don't want to have the phys offset patching code enabled, so you want ARM_PATCH_PHYS_VIRT to be off.
-
-You are correct...maybe my wording was confusing. This is what I meant:
-
-config ARCH_MULTIPLATFORM
-	bool "Allow multiple platforms to be selected"
-	depends on MMU
-	select ARCH_WANT_OPTIONAL_GPIOLIB
-	select ARM_HAS_SG_CHAIN
--	select ARM_PATCH_PHYS_VIRT
-+	select ARM_PATCH_PHYS_VIRT if !XIP_KERNEL
-	select AUTO_ZRELADDR
-
-
-Chris
-
+--=20
+Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
+Industrial Linux Solutions                 | http://www.pengutronix.de/  |
