@@ -1,81 +1,46 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 30 Mar 2015 10:04:39 +0000
-Subject: Re: [PATCH 2/3] pinctrl: sh-pfc: r8a7778: Add bias (pull-up) pinconf support
-Message-Id: <CAMuHMdXUHzZ3uWjQpW7VseJTrOmQoAvp9v=JtTW0sisGQoW8GA@mail.gmail.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Sun, 22 Mar 2015 18:52:37 +0000
+Subject: Re: [PATCH v2 1/3] ARM: shmobile: armadillo800eva: Properly specify HDMI audio link format
+Message-Id: <20150322185237.GH6643@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="ZDIREgaZHBBvWU9r"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426854638-9187-3-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1426854638-9187-3-git-send-email-ulrich.hecht+renesas@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+References: <1421847492-8857-1-git-send-email-lars@metafoo.de>
+ <87d25wg804.wl%kuninori.morimoto.gx@renesas.com>
+ <20150211002802.GC7826@verge.net.au>
+ <87k2z4fbfv.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87k2z4fbfv.wl%kuninori.morimoto.gx@renesas.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Lars-Peter Clausen <lars@metafoo.de>, Simon Horman <horms@verge.net.au>, Liam Girdwood <lgirdwood@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, alsa-devel@alsa-project.org
 
-On Fri, Mar 20, 2015 at 1:30 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
 
-> +static const struct {
-> +       u16 reg;
-> +       u16 bit;
-> +} pullups[] = {
-> +       [RCAR_GP_PIN(0,  6)] = { PUPR0,  0 },   /* A0 */
-> +       [RCAR_GP_PIN(0,  7)] = { PUPR0,  1 },   /* A1 */
+--ZDIREgaZHBBvWU9r
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-...
+On Fri, Feb 27, 2015 at 12:23:26AM +0000, Kuninori Morimoto wrote:
 
-> +};
-> +
-> +static unsigned int r8a7778_pinmux_get_bias(struct sh_pfc *pfc,
-> +                                           unsigned int pin)
-> +{
-> +       void __iomem *addr;
-> +
-> +       BUG_ON(!pullups[pin].reg);
+> As I mentioned above (and, Simon agreed), I think we can
+> agree if [2/3] patch was exchanged
 
-This looks a bit strong to me.
+Do you mean that patch 2/3 should be replaced with soemthing else - if
+so what should it be replaced by?  I've not seen an updated version of
+this series...
 
-As pinconf_ops.pin_config_[gs]et() do return error codes, perhaps
-sh_pfc_soc_operations.[gs]et_bias() should be changed to allow the
-return of error codes, too, so you can return -ENOTSUPP here?
+--ZDIREgaZHBBvWU9r
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-If you really feel the need to scream, I'd use WARN_ON_ONCE() instead.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
-> +       addr = pfc->windows->virt + pullups[pin].reg;
-> +
-> +       if (ioread32(addr) & BIT(pullups[pin].bit))
-> +               return PIN_CONFIG_BIAS_PULL_UP;
-> +       else
-> +               return PIN_CONFIG_BIAS_DISABLE;
-> +}
-> +
-> +static void r8a7778_pinmux_set_bias(struct sh_pfc *pfc, unsigned int pin,
-> +                                  unsigned int bias)
-> +{
-> +       void __iomem *addr;
-> +       u32 value;
-> +       u32 bit;
-> +
-> +       BUG_ON(!pullups[pin].reg);
+iQEcBAEBCAAGBQJVDw91AAoJECTWi3JdVIfQA/MH/0P/q+CGqYAg3GMuwely8zll
+Dggqzsc1PGIfT7tQ7WEKSwIE6yvpG/QrT7qaC0VxZyBtAOiFRxBNzCinjrN3LKPJ
+ogMuxgmK4wt9d9gEvjRG7Dtjrla8LVnNSDspMKgHj28KTcYJyHUMicgvNwbrxLqk
+cjy0KFA1+gkArHDIMpx/uA/oacA30c/H9V8IoTNVf0Co6ueivD2svF6boIYGmlSz
++6Y/5wIItPXLGkrkVtOuNkuPwCMXNc7s561W7nsVGPxNQBhSZgdNMwmQh4Mz8xNj
+OTV450IyqbKPFgbsDnnSeb/n3Z6U86/N/j14gijMfNWeWFnc7CFVxa1NYlNte0o=
+=VC4a
+-----END PGP SIGNATURE-----
 
-Same here.
-
-> +       addr = pfc->windows->virt + pullups[pin].reg;
-> +       bit = BIT(pullups[pin].bit);
-> +
-> +       value = ioread32(addr) & ~bit;
-> +       if (bias = PIN_CONFIG_BIAS_PULL_UP)
-> +               value |= bit;
-> +       iowrite32(value, addr);
-> +}
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--ZDIREgaZHBBvWU9r--
