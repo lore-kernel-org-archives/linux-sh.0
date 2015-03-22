@@ -1,7 +1,7 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=  <u.kleine-koenig@pengutronix.de>
-Date: Sun, 22 Mar 2015 09:13:17 +0000
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Sun, 22 Mar 2015 16:57:11 +0000
 Subject: Re: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <20150322091317.GF5664@pengutronix.de>
+Message-Id: <20150322165710.GO8656@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
@@ -10,33 +10,75 @@ References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.
  <HK2PR06MB0561FE47407CA32AA8DDEFCF8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <CAMuHMdUS84s=uLYVk8BtRoKFmBzw7aT1eQCfGF1nx22hTqf15A@mail.gmail.com>
  <HK2PR06MB05611C6D6CED1E32F4617D158A010@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <20150320081910.GF10068@pengutronix.de>
- <HK2PR06MB0561AA9DE7988D33159117138A0E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
-In-Reply-To: <HK2PR06MB0561AA9DE7988D33159117138A0E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <20150320222320.GL8656@n2100.arm.linux.org.uk>
+ <HK2PR06MB05611E6828E494FB938179658A0F0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+In-Reply-To: <HK2PR06MB05611E6828E494FB938179658A0F0@HK2PR06MB0561.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello Chris,
+On Sat, Mar 21, 2015 at 03:39:30PM +0000, Chris Brandt wrote:
+> > At first glance, HIGHMEM shouldn't be affected by XIP_KERNEL at all.
+> 
+> I really didn't find the root cause of this. I just remember looking at the crashed log and it seemed like removing HIGHMEM would fix it....and it did (can't remember the details).
+> 
+> > However, SMP_ON_UP is incompatible with XIP_KERNEL (as already listed in its dependencies) and building with SMP=y without SMP_ON_UP, and trying to run on UP hardware will definitely fail.
+> 
+> So, it sounds like you are saying XIP_KERNEL and SMP is not going to happen.
 
-On Fri, Mar 20, 2015 at 08:18:10PM +0000, Chris Brandt wrote:
-> > > Of course to actually boot an XIP kernel, you have to make a custom c=
-ommand in u-boot (using bootm or go is not going to work).
-> > It should. I remember that you need to pass something unintuitive to
-> > mkimage (to not say buggy). See
-> > http://lists.denx.de/pipermail/u-boot/2007-March/020171.html for my
-> > try to fix that back when I still cared about U-Boot.
->=20
-> I originally started down that path...but it was so screwed up and
-> really only worked for the power PC architecture. It was more work to
-> hack it than just making a very simple function that loaded the
-> R0,R1,R2 registers and jumped to the start of the kernel.
-Back then it worked for me on ARM, too.
+XIP_KERNEL=y and SMP=y can happen if the CPU you're booting on has the SMP
+extensions.  In other words, it's a single CPU which was implemented with
+the SMP extensions enabled, or it's part of a SMP set.
 
-Best regards
-Uwe
+So, allowing both XIP_KERNEL=y and SMP=y is quite correct: however, folk
+need to understand that the SMP option _must_ match the hardware they're
+booting on.
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+> However, you said:
+> > To put that another way:
+> > 1. SMP_ON_UP relies on being able to change the kernel text, which it
+> >    can't do with an XIP kernel.
+> 
+> But, what kernel text are we talking about? All of it, or just certain
+> parts?
+
+I'm afraid quite a lot of it.  If you consider that the SMP alternatives
+table is 0x5ee0 bytes long for my iMX6 kernel, and that each entry is
+8 bytes, that's 3036 locations throughout the kernel text which need to
+be fixed up for a SMP_ON_UP kernel.  They start at 0xc0012460, and
+continue up to 0xc09ef31c.  That covers much of the kernel .text and
+the .text.init sections.
+
+In an XIP kernel, the .text locations will most likely be in read-only
+memory, and so can't be fixed up.
+
+> You are correct...maybe my wording was confusing. This is what I meant:
+> 
+> config ARCH_MULTIPLATFORM
+> 	bool "Allow multiple platforms to be selected"
+> 	depends on MMU
+> 	select ARCH_WANT_OPTIONAL_GPIOLIB
+> 	select ARM_HAS_SG_CHAIN
+> -	select ARM_PATCH_PHYS_VIRT
+> +	select ARM_PATCH_PHYS_VIRT if !XIP_KERNEL
+
+Yes, that makes sense if we agree that we want to have multi-platform
+XIP kernels.
+
+The problem is going to be expressing what a set of valid configurations
+are - soo many of them just won't boot.  For example, if any of the
+multiplatforms select SMP, but you want a non-SMP XIP kernel, you have
+to devine which platforms are forcibly selecting SMP and turn them off.
+In some of the kernel configurators, that's almost impossible to find
+out.
+
+I guess the other problem is going to be that people will want to add a
+set of reasonable defaults for CONFIG_PHYS_OFFSET based upon the
+platform selected - and we know that we have problems with that kind of
+thing when it comes to the DEBUG_LL stuff interacting with a multiplatform
+kernel.
+
+-- 
+FTTC broadband for 0.8mile line: currently at 10.5Mbps down 400kbps up
+according to speedtest.net.
