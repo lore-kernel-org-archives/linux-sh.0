@@ -1,73 +1,246 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 23 Mar 2015 01:59:06 +0000
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Mon, 23 Mar 2015 10:02:18 +0000
 Subject: Re: Can't mount QSPI-FLASH to userland on Lager
-Message-Id: <CAMuHMdVMdFxkv7aLHOOq3fE=XP7JV-tgwyjLrLtnTqogFZw6dA@mail.gmail.com>
+Message-Id: <550FE4AA.2090200@jinso.co.jp>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="------------070405090109050905060301"
 List-Id: <linux-sh.vger.kernel.org>
 References: <550F6E10.8010907@jinso.co.jp>
 In-Reply-To: <550F6E10.8010907@jinso.co.jp>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-Hi Hiep-san,
+This is a multi-part message in MIME format.
+--------------070405090109050905060301
+Content-Type: text/plain; charset="utf-8"; format="flowed"
+Content-Transfer-Encoding: 8bit
 
-On Mon, Mar 23, 2015 at 2:36 AM, Cao Minh Hiep <cm-hiep@jinso.co.jp> wrote:
-> Hi Rob Herring-san.
-> I'm sorry to bother you!
+Hi Geert-san, Rob Herring-san.
+
+Thank you for pointing it out.
+
+>> Hi Rob Herring-san.
+>> I'm sorry to bother you!
+>>
+>> I'm Hiep from Jinzai Solution (a Japanese Company).
+>> We are testing Linux kernel v4.0-rc2 on Lager and Koelsch Board ( Renesas's
+>> boards).
+>> When we tried to test QSPI-FLASH, we can't mount the device file of
+>> QSPI-FLASH on Lager.
+>> (Koelsch has no problems)
+> This is strange: Koelsch and Lager are very similar w.r.t. SPI.
+> Are you booting the same kernel image?
+> Do the qspi device nodes in both r8a7790.dtsi and r8a7791.dtsi have dma
+> properties?
+> Is there any significant difference in the kernel logs of koelsch and lager?
+(snip)
+> Which kernel version are you using?
+
+We tested both of boards on linux v4.0-rc2. And DMA is available on two 
+boards.
+I attached the image building history and test logs files of Lager and 
+Koelsch.
+File1: qspi_v4.0-rc2_test_logs_on_koelsch.txt
+File2: qspi_v4.0-rc2_test_logs_on_lager.txt
+
+>> The logs is showed as below:
+>> #mount /dev/mtdblock2 /mnt/
+>> "EXT3-fs (mtdblock2): error: can't find ext3 filesystem on dev mtdblock2.
+>> EXT4-fs (mtdblock2): VFS: Can't find ext4 filesystem
+>> EXT4-fs (mtdblock2): VFS: Can't find ext4 filesystem
+>> FAT-fs (mtdblock2): bogus number of reserved sectors
+>> FAT-fs (mtdblock2): Can't find a valid FAT filesystem
+>> FAT-fs (mtdblock2): bogus number of reserved sectors
+>> FAT-fs (mtdblock2): Can't find a valid FAT filesystem
+>> mount: you must specify the filesystem type"
+>>
+>> We found that, after removing this patch(as below),
+>> QSPI-FLASH can mount on Lager very well without any problems.
+>> "9064bf3　spi: spi-pxa2xx: only include mach/dma.h for legacy DMA"
+>> I'd like to report it to you and please review it when you have time.
+> That commit looks like a fairly innocent change to me, but you never know
+> when mach/*.h is involved...
 >
-> I'm Hiep from Jinzai Solution (a Japanese Company).
-> We are testing Linux kernel v4.0-rc2 on Lager and Koelsch Board ( Renesas=
-'s
-> boards).
-> When we tried to test QSPI-FLASH, we can't mount the device file of
-> QSPI-FLASH on Lager.
-> (Koelsch has no problems)
+> Which kernel config are you using? shmobile_defconfig?
+> Do you have CONFIG_SPI_PXA2XX enabled in your .config?
+> It seems CONFIG_SPI_PXA2XX can be enabled if !ARCH_PXA, while
+> CONFIG_SPI_PXA2XX_DMA can't. And ARCH_PXA doesn't support
+> multi-platform.
+I'm sorry. This is my mistake. I was wrong about this patch.
+Besides that, we found an other series of patches that added between 
+v3.19..v4.0-rc1 as below:
 
-This is strange: Koelsch and Lager are very similar w.r.t. SPI.
-Are you booting the same kernel image?
-Do the qspi device nodes in both r8a7790.dtsi and r8a7791.dtsi have dma
-properties?
-Is there any significant difference in the kernel logs of koelsch and lager?
+"fc9e0f7 spi: Only idle the message pump in the worker kthread
+0461a41 spi: Pump transfers inside calling context for spi_sync()
+983aee5 spi: Check to see if the device is processing a message before 
+we idle
+5424d43 spi: Move queue data structure initialisation to main master init"
 
-> The logs is showed as below:
-> #mount /dev/mtdblock2 /mnt/
-> "EXT3-fs (mtdblock2): error: can't find ext3 filesystem on dev mtdblock2.
-> EXT4-fs (mtdblock2): VFS: Can't find ext4 filesystem
-> EXT4-fs (mtdblock2): VFS: Can't find ext4 filesystem
-> FAT-fs (mtdblock2): bogus number of reserved sectors
-> FAT-fs (mtdblock2): Can't find a valid FAT filesystem
-> FAT-fs (mtdblock2): bogus number of reserved sectors
-> FAT-fs (mtdblock2): Can't find a valid FAT filesystem
-> mount: you must specify the filesystem type"
->
-> We found that, after removing this patch(as below),
-> QSPI-FLASH can mount on Lager very well without any problems.
-> "9064bf3=E3=80=80spi: spi-pxa2xx: only include mach/dma.h for legacy DMA"
-> I'd like to report it to you and please review it when you have time.
+when we tried to revert fc9e0f7 and 0461a41 then re-build image for Lager,
+This problem has disappeared on Lager.
+I attached the image building history and test logs files.
+File: qspi_v4.0-rc2_after_reverting_patches_test_logs_on_lager.txt
 
-That commit looks like a fairly innocent change to me, but you never know
-when mach/*.h is involved...
+Best Regards,
+Cao Minh Hiep.
 
-Which kernel config are you using? shmobile_defconfig?
-Do you have CONFIG_SPI_PXA2XX enabled in your .config?
-It seems CONFIG_SPI_PXA2XX can be enabled if !ARCH_PXA, while
-CONFIG_SPI_PXA2XX_DMA can't. And ARCH_PXA doesn't support
-multi-platform.
 
-Which kernel version are you using?
 
-Thanks!
+--------------070405090109050905060301
+Content-Type: text/plain; charset=UTF-8;
+ name="qspi_v4.0-rc2_test_logs_on_lager.txt"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="qspi_v4.0-rc2_test_logs_on_lager.txt"
 
-Gr{oetje,eeting}s,
+SW1hZ2UgQnVpbGRpbmcgSGlzdG9yeToKCmppbnNvMDJAamluc28wMjp+L1dPUksvbGludXgk
+IGdpdCBsb2cgLS1vbmVsaW5lIC0zCjEzYTdhNmEgTGludXggNC4wLXJjMgo5MTI4YjA0IGRy
+bS9pOTE1OiBGaXggbW9kZXNldCBzdGF0ZSBjb25mdXNpb24gaW4gdGhlIGxvYWQgZGV0ZWN0
+IGNvZGUKMDIzYTYwMCBNZXJnZSB0YWcgJ2dwaW8tdjQuMC0yJyBvZiBnaXQ6Ly9naXQua2Vy
+bmVsLm9yZy9wdWIvc2NtL2xpbnV4L2tlcm5lbC9naXQvbGludXN3L2xpbnV4LWdwaW8KIDIy
+MzMgIG1ha2Ugc2htb2JpbGVfZGVmY29uZmlnCiAyMjM0ICBtYWtlIG1lbnVjb25maWcJCShF
+bmFibGVkIGV4dDMgYW5kIGV4dDQpCiAyMjM1ICBtYWtlIC1qMTYgdUltYWdlIExPQURBRERS
+PTB4NDAwMDgwMDAKIDIyMzYgIG1ha2UgcjhhNzc5MC1sYWdlci5kdGIKIDIyMzcgIHZpbSBh
+cmNoL2FybS9ib290L2R0cy9yOGE3NzkwLWxhZ2VyLmR0cwogMjIzOCAgbWFrZSByOGE3Nzkw
+LWxhZ2VyLmR0YgogMjIzOSAgY2F0IGFyY2gvYXJtL2Jvb3QvekltYWdlIGFyY2gvYXJtL2Jv
+b3QvZHRzL3I4YTc3OTAtbGFnZXIuZHRiID4gekltYWdlLmR0YiAKIDIyNDAgIG1raW1hZ2Ug
+LUEgYXJtIC1PIGxpbnV4IC1DIG5vbmUgIC1UIGtlcm5lbCAtYSAweDQwMDA4MDAwIC1lIDB4
+NDAwMDgwMDAgLW4gJ0xpbnV4LTQuMC4wLXJjMicgLWQgekltYWdlLmR0YiB1SW1hZ2UuZHRi
+CiAyMjQxICBzdWRvIGNwIHVJbWFnZS5kdGIgL3Zhci9saWIvdGZ0cGJvb3QvTGFnZXIvCgoK
+Cktlcm5lbDoKCnJlbmVzYXNfc3BpIGU2YjEwMDAwLnNwaTogRE1BIGF2YWlsYWJsZQptMjVw
+ODAgc3BpMC4wOiBzMjVmbDUxMnMgKDY1NTM2IEtieXRlcykKMyBvZnBhcnQgcGFydGl0aW9u
+cyBmb3VuZCBvbiBNVEQgZGV2aWNlIHNwaTAuMApDcmVhdGluZyAzIE1URCBwYXJ0aXRpb25z
+IG9uICJzcGkwLjAiOgoweDAwMDAwMDAwMDAwMC0weDAwMDAwMDA0MDAwMCA6ICJsb2FkZXIi
+CjB4MDAwMDAwMDQwMDAwLTB4MDAwMDAwNDQwMDAwIDogInVzZXIiCjB4MDAwMDAwNDQwMDAw
+LTB4MDAwMDA0MDAwMDAwIDogImZsYXNoIgpyZW5lc2FzX3NwaSBlNmIxMDAwMC5zcGk6IHBy
+b2JlZAoKCnJvb3RAbG9jYWxob3N0On4jIHVuYW1lIC1hCkxpbnV4IGxvY2FsaG9zdC5sb2Nh
+bGRvbWFpbiA0LjAuMC1yYzIgIzIgU01QIE1vbiBNYXIgMjMgMTc6NTQ6MTUgSlNUIDIwMTUg
+YXJtdjdsIGFybXY3bCBhcm12N2wgR05VL0x4CnJvb3RAbG9jYWxob3N0On4jIAoKcm9vdEBs
+b2NhbGhvc3Q6fiMgbWtmcy5leHQzIC9kZXYvbXRkYmxvY2syIApta2UyZnMgMS40Mi41ICgy
+OS1KdWwtMjAxMikKRmlsZXN5c3RlbSBsYWJlbD0KT1MgdHlwZTogTGludXgKQmxvY2sgc2l6
+ZT0xMDI0IChsb2c9MCkKRnJhZ21lbnQgc2l6ZT0xMDI0IChsb2c9MCkKU3RyaWRlPTAgYmxv
+Y2tzLCBTdHJpcGUgd2lkdGg9MCBibG9ja3MKMTUyOTYgaW5vZGVzLCA2MTE4NCBibG9ja3MK
+MzA1OSBibG9ja3MgKDUuMDAlKSByZXNlcnZlZCBmb3IgdGhlIHN1cGVyIHVzZXIKRmlyc3Qg
+ZGF0YSBibG9jaz0xCk1heGltdW0gZmlsZXN5c3RlbSBibG9ja3M9NjI2NTI0MTYKOCBibG9j
+ayBncm91cHMKODE5MiBibG9ja3MgcGVyIGdyb3VwLCA4MTkyIGZyYWdtZW50cyBwZXIgZ3Jv
+dXAKMTkxMiBpbm9kZXMgcGVyIGdyb3VwClN1cGVyYmxvY2sgYmFja3VwcyBzdG9yZWQgb24g
+YmxvY2tzOiAKICAgICAgICA4MTkzLCAyNDU3NywgNDA5NjEsIDU3MzQ1CgpBbGxvY2F0aW5n
+IGdyb3VwIHRhYmxlczogZG9uZSAgICAgICAgICAgICAgICAgICAgICAgICAgICAKV3JpdGlu
+ZyBpbm9kZSB0YWJsZXM6IGRvbmUgICAgICAgICAgICAgICAgICAgICAgICAgICAgCkNyZWF0
+aW5nIGpvdXJuYWwgKDQwOTYgYmxvY2tzKTogZG9uZQpXcml0aW5nIHN1cGVyYmxvY2tzIGFu
+ZCBmaWxlc3lzdGVtIGFjY291bnRpbmcgaW5mb3JtYXRpb246IGRvbmUKCnJvb3RAbG9jYWxo
+b3N0On4jIApyb290QGxvY2FsaG9zdDp+IyBtb3VudCAvZGV2L210ZGJsb2NrMiAvbW50LwpF
+WFQzLWZzIChtdGRibG9jazIpOiBlcnJvcjogY2FuJ3QgZmluZCBleHQzIGZpbGVzeXN0ZW0g
+b24gZGV2IG10ZGJsb2NrMi4KRVhUNC1mcyAobXRkYmxvY2syKTogVkZTOiBDYW4ndCBmaW5k
+IGV4dDQgZmlsZXN5c3RlbQpFWFQ0LWZzIChtdGRibG9jazIpOiBWRlM6IENhbid0IGZpbmQg
+ZXh0NCBmaWxlc3lzdGVtCkZBVC1mcyAobXRkYmxvY2syKTogYm9ndXMgbnVtYmVyIG9mIHJl
+c2VydmVkIHNlY3RvcnMKRkFULWZzIChtdGRibG9jazIpOiBDYW4ndCBmaW5kIGEgdmFsaWQg
+RkFUIGZpbGVzeXN0ZW0KRkFULWZzIChtdGRibG9jazIpOiBib2d1cyBudW1iZXIgb2YgcmVz
+ZXJ2ZWQgc2VjdG9ycwpGQVQtZnMgKG10ZGJsb2NrMik6IENhbid0IGZpbmQgYSB2YWxpZCBG
+QVQgZmlsZXN5c3RlbQptb3VudDogeW91IG11c3Qgc3BlY2lmeSB0aGUgZmlsZXN5c3RlbSB0
+eXBlCnJvb3RAbG9jYWxob3N0On4jIAoK
+--------------070405090109050905060301
+Content-Type: text/plain; charset=UTF-8;
+ name="qspi_v4.0-rc2_test_logs_on_koelsch.txt"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="qspi_v4.0-rc2_test_logs_on_koelsch.txt"
 
-                        Geert
+CktvZWxzY2g6IEltYWdlIEJ1aWxkaW5nIEhpc3Rvcnk6CgpqaW5zbzAyQGppbnNvMDI6fi9X
+T1JLL2xpbnV4JCBnaXQgbG9nIC0tb25lbGluZSAtMwoxM2E3YTZhIExpbnV4IDQuMC1yYzIK
+OTEyOGIwNCBkcm0vaTkxNTogRml4IG1vZGVzZXQgc3RhdGUgY29uZnVzaW9uIGluIHRoZSBs
+b2FkIGRldGVjdCBjb2RlCjAyM2E2MDAgTWVyZ2UgdGFnICdncGlvLXY0LjAtMicgb2YgZ2l0
+Oi8vZ2l0Lmtlcm5lbC5vcmcvcHViL3NjbS9saW51eC9rZXJuZWwvZ2l0L2xpbnVzdy9saW51
+eC1ncGlvCgogMjI2OSAgbWFrZSBzaG1vYmlsZV9kZWZjb25maWcKIDIyNzAgIG1ha2UgbWVu
+dWNvbmZpZwogMjI3MSAgbWFrZSAtajE2IHVJbWFnZSBMT0FEQUREUj0weDQwMDA4MDAwCiAy
+MjcyICBtYWtlIHI4YTc3OTEta29lbHNjaC5kdGIKIDIyNzMgIHZpbSBhcmNoL2FybS9ib290
+L2R0cy9yOGE3NzkxLWtvZWxzY2guZHRzCiAyMjc0ICBtYWtlIHI4YTc3OTEta29lbHNjaC5k
+dGIKIDIyNzUgIGNhdCBhcmNoL2FybS9ib290L3pJbWFnZSBhcmNoL2FybS9ib290L2R0cy9y
+OGE3NzkxLWtvZWxzY2guZHRiID4gekltYWdlLmR0YiAKIDIyNzYgIG1raW1hZ2UgLUEgYXJt
+IC1PIGxpbnV4IC1DIG5vbmUgIC1UIGtlcm5lbCAtYSAweDQwMDA4MDAwIC1lIDB4NDAwMDgw
+MDAgLW4gJ0xpbnV4LTQuMC4wLXJjMicgLWQgekltYWdlLmR0YiB1SW1hZ2UuZHRiCiAyMjc3
+ICBzdWRvIGNwIHVJbWFnZS5kdGIgL3Zhci9saWIvdGZ0cGJvb3QvS29lbHNjaC8KCgoKS2Vy
+bmVsIHRlc3QgbG9nczoKCnJlbmVzYXNfc3BpIGU2YjEwMDAwLnNwaTogRE1BIGF2YWlsYWJs
+ZQptMjVwODAgc3BpMC4wOiBzMjVmbDUxMnMgKDY1NTM2IEtieXRlcykKMyBvZnBhcnQgcGFy
+dGl0aW9ucyBmb3VuZCBvbiBNVEQgZGV2aWNlIHNwaTAuMApDcmVhdGluZyAzIE1URCBwYXJ0
+aXRpb25zIG9uICJzcGkwLjAiOgoweDAwMDAwMDAwMDAwMC0weDAwMDAwMDA4MDAwMCA6ICJs
+b2FkZXIiCjB4MDAwMDAwMDgwMDAwLTB4MDAwMDAwNjAwMDAwIDogInVzZXIiCjB4MDAwMDAw
+NjAwMDAwLTB4MDAwMDA0MDAwMDAwIDogImZsYXNoIgpyZW5lc2FzX3NwaSBlNmIxMDAwMC5z
+cGk6IHByb2JlZAoKcm9vdEBsb2NhbGhvc3Q6fiMgCnJvb3RAbG9jYWxob3N0On4jIHVuYW1l
+IC1hCkxpbnV4IGxvY2FsaG9zdC5sb2NhbGRvbWFpbiA0LjAuMC1yYzIgIzEgU01QIE1vbiBN
+YXIgMjMgMTg6MzE6MDEgSlNUIDIwMTUgYXJtdjdsIGFybXY3bCBhcm12N2wgR05VL0x4CnJv
+b3RAbG9jYWxob3N0On4jIApyb290QGxvY2FsaG9zdDp+IyBta2ZzLmV4dDMgL2Rldi9tdGRi
+bG9jazIgCm1rZTJmcyAxLjQyLjUgKDI5LUp1bC0yMDEyKQpGaWxlc3lzdGVtIGxhYmVsPQpP
+UyB0eXBlOiBMaW51eApCbG9jayBzaXplPTEwMjQgKGxvZz0wKQpGcmFnbWVudCBzaXplPTEw
+MjQgKGxvZz0wKQpTdHJpZGU9MCBibG9ja3MsIFN0cmlwZSB3aWR0aD0wIGJsb2NrcwoxNDg0
+OCBpbm9kZXMsIDU5MzkyIGJsb2NrcwoyOTY5IGJsb2NrcyAoNS4wMCUpIHJlc2VydmVkIGZv
+ciB0aGUgc3VwZXIgdXNlcgpGaXJzdCBkYXRhIGJsb2NrPTEKTWF4aW11bSBmaWxlc3lzdGVt
+IGJsb2Nrcz02MDgxNzQwOAo4IGJsb2NrIGdyb3Vwcwo4MTkyIGJsb2NrcyBwZXIgZ3JvdXAs
+IDgxOTIgZnJhZ21lbnRzIHBlciBncm91cAoxODU2IGlub2RlcyBwZXIgZ3JvdXAKU3VwZXJi
+bG9jayBiYWNrdXBzIHN0b3JlZCBvbiBibG9ja3M6IAogICAgICAgIDgxOTMsIDI0NTc3LCA0
+MDk2MSwgNTczNDUKCkFsbG9jYXRpbmcgZ3JvdXAgdGFibGVzOiBkb25lICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgIApXcml0aW5nIGlub2RlIHRhYmxlczogZG9uZSAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAKQ3JlYXRpbmcgam91cm5hbCAoNDA5NiBibG9ja3MpOiBkb25l
+CldyaXRpbmcgc3VwZXJibG9ja3MgYW5kIGZpbGVzeXN0ZW0gYWNjb3VudGluZyBpbmZvcm1h
+dGlvbjogICAgCmRvbmUKCnJvb3RAbG9jYWxob3N0On4jIApyb290QGxvY2FsaG9zdDp+IyBt
+b3VudCAvZGV2L210ZGJsb2NrMiAvbW50Lwpram91cm5hbGQgc3RhcnRpbmcuICBDb21taXQg
+aW50ZXJ2YWwgNSBzZWNvbmRzCkVYVDMtZnMgKG10ZGJsb2NrMik6IHVzaW5nIGludGVybmFs
+IGpvdXJuYWwKRVhUMy1mcyAobXRkYmxvY2syKTogbW91bnRlZCBmaWxlc3lzdGVtIHdpdGgg
+b3JkZXJlZCBkYXRhIG1vZGUKcm9vdEBsb2NhbGhvc3Q6fiMgCgo=
+--------------070405090109050905060301
+Content-Type: text/plain; charset=UTF-8;
+ name="qspi_v4.0-rc2_after_reverting_patches_test_logs_on_lager.txt"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename*0="qspi_v4.0-rc2_after_reverting_patches_test_logs_on_lager.txt"
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+VjQuMC1yYzIgYWZ0ZXIgcmV2ZXJ0aW5nIHBhdGNoZXMgaW1hZ2UgYnVpbGRpbmcgaGlzdG9y
+eToKCmppbnNvMDJAamluc28wMjp+L1dPUksvbGludXgkIGdpdCByZXZlcnQgZmM5ZTBmNwpb
+bGludXgtdjQuMC1yYzIgOTQ1MmViYl0gUmV2ZXJ0ICJzcGk6IE9ubHkgaWRsZSB0aGUgbWVz
+c2FnZSBwdW1wIGluIHRoZSB3b3JrZXIga3RocmVhZCIKIDEgZmlsZSBjaGFuZ2VkLCA2IGlu
+c2VydGlvbnMoKyksIDI2IGRlbGV0aW9ucygtKQpqaW5zbzAyQGppbnNvMDI6fi9XT1JLL2xp
+bnV4JCBnaXQgcmV2ZXJ0IDA0NjFhNDEKW2xpbnV4LXY0LjAtcmMyIDNiNTMyN2JdIFJldmVy
+dCAic3BpOiBQdW1wIHRyYW5zZmVycyBpbnNpZGUgY2FsbGluZyBjb250ZXh0IGZvciBzcGlf
+c3luYygpIgogMiBmaWxlcyBjaGFuZ2VkLCA4IGluc2VydGlvbnMoKyksIDYwIGRlbGV0aW9u
+cygtKQpqaW5zbzAyQGppbnNvMDI6fi9XT1JLL2xpbnV4JCAKamluc28wMkBqaW5zbzAyOn4v
+V09SSy9saW51eCQgZ2l0IGxvZyAtLW9uZWxpbmUgLTMKM2I1MzI3YiBSZXZlcnQgInNwaTog
+UHVtcCB0cmFuc2ZlcnMgaW5zaWRlIGNhbGxpbmcgY29udGV4dCBmb3Igc3BpX3N5bmMoKSIK
+OTQ1MmViYiBSZXZlcnQgInNwaTogT25seSBpZGxlIHRoZSBtZXNzYWdlIHB1bXAgaW4gdGhl
+IHdvcmtlciBrdGhyZWFkIgoxM2E3YTZhIExpbnV4IDQuMC1yYzIKamluc28wMkBqaW5zbzAy
+On4vV09SSy9saW51eCQuLi4Kamluc28wMkBqaW5zbzAyOn4vV09SSy9saW51eCRoaXN0b3J5
+CgogMjI0OCAgbWFrZSBkaXN0Y2xlYW4KIDIyNDkgIHJtIHpJbWFnZS5kdGIgdUltYWdlLmR0
+YiAKIDIyNTAgIGxzCiAyMjUxICBtYWtlIHNobW9iaWxlX2RlZmNvbmZpZwogMjI1MiAgbWFr
+ZSBtZW51Y29uZmlnCQkJCShFbmFibGVkIGV4dDMgYW5kIGV4dDQpCiAyMjUzICBtYWtlIC1q
+MTYgdUltYWdlIExPQURBRERSPTB4NDAwMDgwMDAKIDIyNTQgIG1ha2UgcjhhNzc5MC1sYWdl
+ci5kdGIKIDIyNTUgIGNhdCBhcmNoL2FybS9ib290L3pJbWFnZSBhcmNoL2FybS9ib290L2R0
+cy9yOGE3NzkwLWxhZ2VyLmR0YiA+IHpJbWFnZS5kdGIgCiAyMjU2ICBta2ltYWdlIC1BIGFy
+bSAtTyBsaW51eCAtQyBub25lICAtVCBrZXJuZWwgLWEgMHg0MDAwODAwMCAtZSAweDQwMDA4
+MDAwIC1uICdMaW51eC00LjAuMC1yYzItMDAwMDItZzNiNTMyN2ItZCcgLWQgekltYWdlLmR0
+YiB1SW1hZ2UuZHRiCiAyMjU3ICBzdWRvIGNwIHVJbWFnZS5kdGIgL3Zhci9saWIvdGZ0cGJv
+b3QvTGFnZXIvCgoKS2VybmVsIHRlc3QgbG9nczoKCnJlbmVzYXNfc3BpIGU2YjEwMDAwLnNw
+aTogRE1BIGF2YWlsYWJsZQptMjVwODAgc3BpMC4wOiBzMjVmbDUxMnMgKDY1NTM2IEtieXRl
+cykKMyBvZnBhcnQgcGFydGl0aW9ucyBmb3VuZCBvbiBNVEQgZGV2aWNlIHNwaTAuMApDcmVh
+dGluZyAzIE1URCBwYXJ0aXRpb25zIG9uICJzcGkwLjAiOgoweDAwMDAwMDAwMDAwMC0weDAw
+MDAwMDA0MDAwMCA6ICJsb2FkZXIiCjB4MDAwMDAwMDQwMDAwLTB4MDAwMDAwNDQwMDAwIDog
+InVzZXIiCjB4MDAwMDAwNDQwMDAwLTB4MDAwMDA0MDAwMDAwIDogImZsYXNoIgpyZW5lc2Fz
+X3NwaSBlNmIxMDAwMC5zcGk6IHByb2JlZAoKCnJvb3RAbG9jYWxob3N0On4jIHVuYW1lIC1h
+CkxpbnV4IGxvY2FsaG9zdC5sb2NhbGRvbWFpbiA0LjAuMC1yYzItMDAwMDItZzNiNTMyN2It
+ZGlydHkgIzEgU01QIE1vbiBNYXIgMjMgMTg6MTI6MTUgSlNUIDIwMTUgYXJtdjd4CnJvb3RA
+bG9jYWxob3N0On4jIApyb290QGxvY2FsaG9zdDp+IyBta2ZzLmV4dDMgL2Rldi9tdGRibG9j
+azIgCm1rZTJmcyAxLjQyLjUgKDI5LUp1bC0yMDEyKQpGaWxlc3lzdGVtIGxhYmVsPQpPUyB0
+eXBlOiBMaW51eApCbG9jayBzaXplPTEwMjQgKGxvZz0wKQpGcmFnbWVudCBzaXplPTEwMjQg
+KGxvZz0wKQpTdHJpZGU9MCBibG9ja3MsIFN0cmlwZSB3aWR0aD0wIGJsb2NrcwoxNTI5NiBp
+bm9kZXMsIDYxMTg0IGJsb2NrcwozMDU5IGJsb2NrcyAoNS4wMCUpIHJlc2VydmVkIGZvciB0
+aGUgc3VwZXIgdXNlcgpGaXJzdCBkYXRhIGJsb2NrPTEKTWF4aW11bSBmaWxlc3lzdGVtIGJs
+b2Nrcz02MjY1MjQxNgo4IGJsb2NrIGdyb3Vwcwo4MTkyIGJsb2NrcyBwZXIgZ3JvdXAsIDgx
+OTIgZnJhZ21lbnRzIHBlciBncm91cAoxOTEyIGlub2RlcyBwZXIgZ3JvdXAKU3VwZXJibG9j
+ayBiYWNrdXBzIHN0b3JlZCBvbiBibG9ja3M6IAogICAgICAgIDgxOTMsIDI0NTc3LCA0MDk2
+MSwgNTczNDUKCkFsbG9jYXRpbmcgZ3JvdXAgdGFibGVzOiBkb25lICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgIApXcml0aW5nIGlub2RlIHRhYmxlczogZG9uZSAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAKQ3JlYXRpbmcgam91cm5hbCAoNDA5NiBibG9ja3MpOiBkb25lCldy
+aXRpbmcgc3VwZXJibG9ja3MgYW5kIGZpbGVzeXN0ZW0gYWNjb3VudGluZyBpbmZvcm1hdGlv
+bjogZG9uZQoKcm9vdEBsb2NhbGhvc3Q6fiMgbW91bnQgL2Rldi9tdGRibG9jazIgL21udC8K
+a2pvdXJuYWxkIHN0YXJ0aW5nLiAgQ29tbWl0IGludGVydmFsIDUgc2Vjb25kcwpFWFQzLWZz
+IChtdGRibG9jazIpOiB1c2luZyBpbnRlcm5hbCBqb3VybmFsCkVYVDMtZnMgKG10ZGJsb2Nr
+Mik6IG1vdW50ZWQgZmlsZXN5c3RlbSB3aXRoIG9yZGVyZWQgZGF0YSBtb2RlCnJvb3RAbG9j
+YWxob3N0On4jIAoK
+--------------070405090109050905060301--
