@@ -1,50 +1,29 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 23 Mar 2015 05:54:40 +0000
-Subject: Re: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <201503230654.40287.arnd@arndb.de>
+From: Chris Brandt <Chris.Brandt@renesas.com>
+Date: Mon, 23 Mar 2015 13:54:40 +0000
+Subject: RE: XIP_KERNEL and !ARCH_MULTIPLATFORM
+Message-Id: <HK2PR06MB0561E40AF1275259EA364BEF8A0D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <20150322165710.GO8656@n2100.arm.linux.org.uk>
  <HK2PR06MB056105B026481446243452FC8A0D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
-In-Reply-To: <HK2PR06MB056105B026481446243452FC8A0D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <201503230654.40287.arnd@arndb.de>
+In-Reply-To: <201503230654.40287.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Monday 23 March 2015, Chris Brandt wrote:
-> > Yes, that makes sense if we agree that we want to have multi-platform XIP kernels.
+> There are two different scenarios to consider here:
 > 
-> My initial ambition was to simply understand what the minimum Kconfig changes were
-> needed to build XIP on the current upstream kernel.
+> a) building a kernel for a single machine while CONFIG_ARCH_MULTIPLATFORM is
+>    enabled
+> b) actually enabling all sorts of machines
+>
+> This means that I would definitely want to see XIP_KERNEL being possible on your
+> machine with a), but I agree that there is not much use for b) here.
 
-I think it should be enough to change the dependency from !ARCH_MULTIPLATFORM
-to !SMP_ON_UP as a start, and drop the reverse dependency in SMP_ON_UP.
+Given that XIP_KERNEL on ARMv7 is not a very common build configuration, this seems reasonable.
 
-Try running 'make randconfig' a few hundred times (without building the kernel)
-and see if any obvious Kconfig warnings come up after doing that.
 
-> I'm not convinced XIP and multi-platform really make sense together (unless ARM
-> comes up with a new supper speedy configurable cache system just for DDR reads,
-> but DDR writes have to be done from different address location).
+Chris
 
-There are two different scenarios to consider here:
-
-a) building a kernel for a single machine while CONFIG_ARCH_MULTIPLATFORM is
-   enabled
-b) actually enabling all sorts of machines
-
-I have patches to make ARCH_MULTIPLATFORM always enabled on all ARMv6/v7
-targets and would like to get them into the next kernel. The main reasons
-for this are to get rid of the special cases for non-multiplatform targets,
-and to allow 'make allmodconfig' to include all known v6/v7 targets. This
-means that I would definitely want to see XIP_KERNEL being possible on your
-machine with a), but I agree that there is not much use for b) here.
- 
-> I guess my first goal is to make sure the existing XIP_KERNEL code doesn't
-> get yanked out because no one thought it was being used.
- 
-Don't worry about that. We definitely rely on XIP_KERNEL for some of the
-NOMMU targets, and it's not going away.
-
-	Arnd
