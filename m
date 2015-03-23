@@ -1,79 +1,41 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 06 Mar 2015 10:57:29 +0000
-Subject: Re: [PATCH 4/4] pinctrl: sh-pfc: Use unsigned int for register/field widths and offsets
-Message-Id: <1895404.raPFfQG332@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 23 Mar 2015 08:26:35 +0000
+Subject: [PATCH v2 0/4] i2c: slave: API updates
+Message-Id: <1427099199-3628-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425058685-12956-1-git-send-email-geert+renesas@glider.be> <9833485.4LcIhc9qJb@avalon> <CAMuHMdWk-XWJz9PswNfkyG6yKctH0Jnf7uPLZ8i1X_umhbO+sA@mail.gmail.com>
-In-Reply-To: <CAMuHMdWk-XWJz9PswNfkyG6yKctH0Jnf7uPLZ8i1X_umhbO+sA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Linus Walleij <linus.walleij@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>
 
-Hi Geert,
+So, after some more thoughts and people using the slave framework, some API
+updates seemed in place. Also, the documentation is now here. Please read the
+patch description for details. Thanks to all people joining the discussion,
+especially Uwe and Geert!
 
-On Thursday 05 March 2015 10:34:18 Geert Uytterhoeven wrote:
-> On Thu, Mar 5, 2015 at 10:20 AM, Laurent Pinchart wrote:
-> >> @@ -228,12 +228,11 @@ static void sh_pfc_write_config_reg(struct sh_pfc
-> >> *pfc,
-> >>  }
-> >> 
-> >>  static int sh_pfc_get_config_reg(struct sh_pfc *pfc, u16 enum_id,
-> >> -                              const struct pinmux_cfg_reg **crp, int
-> >> *fieldp,
-> >> -                              u32 *valuep)
-> >> +                              const struct pinmux_cfg_reg **crp,
-> >> +                              unsigned int *fieldp, u32 *valuep)
-> >>  {
-> >>       const struct pinmux_cfg_reg *config_reg;
-> >> -     unsigned long r_width, f_width, curr_width;
-> >> -     unsigned int k, m, pos, bit_pos;
-> >> +     unsigned int r_width, f_width, curr_width, k, m, pos, bit_pos;
-> > 
-> > I find declaring multiple variables per line quite difficult to read. I
-> > know it's the current coding style in this driver, but I'd like to fix it
-> > at some point. I would move to one variable per line as part of this
-> > patch for the code that it touches. Alternatively could you at least not
-> > make it worse (here and below) ? :-)
-> 
-> There are just too many variables ;-)
+Changes since V1:
 
-Well, if we need them, we need them :-)
+* added acks, except for patch 2 which has too many changes to keep them IMO
+* reworded/updated the issues found in patch 2
+* added patch 4
 
-> I usually declare variables in the order of appearance, but try to
-> keep variables of the same type together.
-> 
-> Some declarations could move inside the while, e.g.
-> 
->         while (1) {
->                 const struct pinmux_cfg_reg *config_reg > pfc->info->cfg_regs + k;
->                 unsigned int r_width = config_reg->reg_width;
->                 unsigned int f_width = config_reg->field_width;
->                 unsigned int pos = 0, m= 0;
-> 
->                 if (!r_width)
->                         break;
-> 
-> Would you like that?
+Wolfram Sang (4):
+  i2c: slave: rework the slave API
+  Documentation: i2c: describe the new slave mode
+  i2c: slave: add documentation for i2c-slave-eeprom
+  i2c: slave-eeprom: add more info when to increase the pointer
 
-Yes, but please split pos and m on two different lines :-)
-
-> >>       u32 ncomb, n;
-> >>       
-> >>       k = 0;
-> >> @@ -300,9 +299,9 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned
-> >> mark, int pinmux_type) const struct pinmux_cfg_reg *cr = NULL;
-> >>       u16 enum_id;
-> >>       const struct pinmux_range *range;
-> >> -     int in_range, pos, field;
-> >> +     int in_range, pos, ret;
-> >> +     unsigned int field;
-> >>       u32 value;
-> >> -     int ret;
+ Documentation/i2c/slave-eeprom-backend |  14 +++
+ Documentation/i2c/slave-interface      | 179 +++++++++++++++++++++++++++++++++
+ Documentation/i2c/summary              |   4 -
+ drivers/i2c/busses/i2c-rcar.c          |  10 +-
+ drivers/i2c/i2c-slave-eeprom.c         |  18 ++--
+ include/linux/i2c.h                    |   8 +-
+ 6 files changed, 213 insertions(+), 20 deletions(-)
+ create mode 100644 Documentation/i2c/slave-eeprom-backend
+ create mode 100644 Documentation/i2c/slave-interface
 
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.4
 
