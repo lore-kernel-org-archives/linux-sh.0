@@ -1,35 +1,39 @@
-From: Peter Hurley <peter@hurleysoftware.com>
-Date: Thu, 19 Mar 2015 15:57:19 +0000
-Subject: Re: [PATCH v2 00/05] serial: sh-sci: Hardware flow control update V2
-Message-Id: <550AF1DF.4070509@hurleysoftware.com>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Mon, 23 Mar 2015 01:36:16 +0000
+Subject: Can't mount QSPI-FLASH to userland on Lager
+Message-Id: <550F6E10.8010907@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150319014933.14235.44835.sendpatchset@little-apple>
-In-Reply-To: <20150319014933.14235.44835.sendpatchset@little-apple>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, geert@glider.be, laurent.pinchart@ideasonboard.com, linux-serial@vger.kernel.org, jslaby@suse.cz
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+Hi Rob Herring-san.
+I'm sorry to bother you!
 
-On 03/18/2015 09:49 PM, Magnus Damm wrote:
-> serial: sh-sci: Hardware flow control update V2
-> 
-> [PATCH v2 01/05] serial: sh-sci: Break out default CTS/RTS pin setup
-> [PATCH v2 02/05] serial: sh-sci: Fix default RTS handling
-> [PATCH v2 03/05] serial: sh-sci: Expose default CTS pin
-> [PATCH v2 04/05] serial: sh-sci: Add SCIFA/SCIFB CTS/RTS pin setup
-> [PATCH v2 05/05] serial: sh-sci: Expose SCIFA/SCIFB CTS pin
-> 
-> These patches are my latest take at improving CTS/RTS pin handling in
-> the SCIF driver. The goal for these patches is to improve the default
-> hardware flow control handling and also add CTS/RTS support for SCIFA/SCIFB.
+I'm Hiep from Jinzai Solution (a Japanese Company).
+We are testing Linux kernel v4.0-rc2 on Lager and Koelsch Board (=20
+Renesas's boards).
+When we tried to test QSPI-FLASH, we can't mount the device file of=20
+QSPI-FLASH on Lager.
+(Koelsch has no problems)
+The logs is showed as below:
+#mount /dev/mtdblock2 /mnt/
+"EXT3-fs (mtdblock2): error: can't find ext3 filesystem on dev mtdblock2.
+EXT4-fs (mtdblock2): VFS: Can't find ext4 filesystem
+EXT4-fs (mtdblock2): VFS: Can't find ext4 filesystem
+FAT-fs (mtdblock2): bogus number of reserved sectors
+FAT-fs (mtdblock2): Can't find a valid FAT filesystem
+FAT-fs (mtdblock2): bogus number of reserved sectors
+FAT-fs (mtdblock2): Can't find a valid FAT filesystem
+mount: you must specify the filesystem type"
 
-The serial core expects RTS pin control to be implemented via the driver's
-set_mctrl() method, and will take care of raising and lowering it when
-necessary.
+We found that, after removing this patch(as below),
+QSPI-FLASH can mount on Lager very well without any problems.
+"9064bf3=E3=80=80spi: spi-pxa2xx: only include mach/dma.h for legacy DMA"
+I'd like to report it to you and please review it when you have time.
 
-Regards,
-Peter Hurley
+
+Best Regards,
+Jinso/Cao Minh Hiep.
 
