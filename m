@@ -1,27 +1,50 @@
-From: Chris Brandt <Chris.Brandt@renesas.com>
-Date: Mon, 23 Mar 2015 01:49:57 +0000
-Subject: RE: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <HK2PR06MB05614A6A877BCD6A2B7EA9418A0D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 23 Mar 2015 05:54:40 +0000
+Subject: Re: XIP_KERNEL and !ARCH_MULTIPLATFORM
+Message-Id: <201503230654.40287.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
- <HK2PR06MB05613B2FBF8466204FA98A9D8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <CAMuHMdU3J1uzD5VAgHgF5NNzw_E7Njf7wU7kJ7oPuCKm7N_Arg@mail.gmail.com>
- <HK2PR06MB0561FE47407CA32AA8DDEFCF8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <CAMuHMdUS84s=uLYVk8BtRoKFmBzw7aT1eQCfGF1nx22hTqf15A@mail.gmail.com>
- <HK2PR06MB05611C6D6CED1E32F4617D158A010@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <20150320222320.GL8656@n2100.arm.linux.org.uk>
- <HK2PR06MB05611E6828E494FB938179658A0F0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <CAMuHMdVLWffQW3d_4z9RAQOg8BCUCSU6ny3yG0poZ_7v=ozNbw@mail.gmail.com>
-In-Reply-To: <CAMuHMdVLWffQW3d_4z9RAQOg8BCUCSU6ny3yG0poZ_7v=ozNbw@mail.gmail.com>
+ <20150322165710.GO8656@n2100.arm.linux.org.uk>
+ <HK2PR06MB056105B026481446243452FC8A0D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+In-Reply-To: <HK2PR06MB056105B026481446243452FC8A0D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-SGkgR2VlcnQsDQoNClllcywgaXQncyBtYWtpbmcgbW9yZSBzZW5zZSB0byBtZSBub3cuDQoNCj4g
-QlRXLCBzaW5jZSB5b3UncmUgYXNraW5nIGFib3V0IFNNUD15LCBJIGd1ZXNzIHlvdSdyZSBub3Qg
-anVzdCBpbnRlcmVzdGVkIGluIHJ1bm5pbmcgWElQX0tFUk5FTD15IG9uIHI3czcyMTAwLCB3aGlj
-aCBpcyBVUD8NCg0KWWVzLiBXaGlsZSB0aGUgcjdzNzIxMDAgaXRzZWxmIGhhcyBzb21lIG5pY2Ug
-Y2FwYWJpbGl0aWVzIHN1aXRlZCBmb3IgWElQLCBJJ20gdGhpbmtpbmcgd2hhdCBlbHNlIHRoaXMg
-Y291bGQgYmUgZXhwYW5kZWQgdG8uDQoNCkNocmlzDQoNCg=
+On Monday 23 March 2015, Chris Brandt wrote:
+> > Yes, that makes sense if we agree that we want to have multi-platform XIP kernels.
+> 
+> My initial ambition was to simply understand what the minimum Kconfig changes were
+> needed to build XIP on the current upstream kernel.
+
+I think it should be enough to change the dependency from !ARCH_MULTIPLATFORM
+to !SMP_ON_UP as a start, and drop the reverse dependency in SMP_ON_UP.
+
+Try running 'make randconfig' a few hundred times (without building the kernel)
+and see if any obvious Kconfig warnings come up after doing that.
+
+> I'm not convinced XIP and multi-platform really make sense together (unless ARM
+> comes up with a new supper speedy configurable cache system just for DDR reads,
+> but DDR writes have to be done from different address location).
+
+There are two different scenarios to consider here:
+
+a) building a kernel for a single machine while CONFIG_ARCH_MULTIPLATFORM is
+   enabled
+b) actually enabling all sorts of machines
+
+I have patches to make ARCH_MULTIPLATFORM always enabled on all ARMv6/v7
+targets and would like to get them into the next kernel. The main reasons
+for this are to get rid of the special cases for non-multiplatform targets,
+and to allow 'make allmodconfig' to include all known v6/v7 targets. This
+means that I would definitely want to see XIP_KERNEL being possible on your
+machine with a), but I agree that there is not much use for b) here.
+ 
+> I guess my first goal is to make sure the existing XIP_KERNEL code doesn't
+> get yanked out because no one thought it was being used.
+ 
+Don't worry about that. We definitely rely on XIP_KERNEL for some of the
+NOMMU targets, and it's not going away.
+
+	Arnd
