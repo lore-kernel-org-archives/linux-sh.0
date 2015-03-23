@@ -1,9 +1,16 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Sun, 22 Mar 2015 19:48:47 +0000
-Subject: Re: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <201503222048.47779.arnd@arndb.de>
+From: Chris Brandt <Chris.Brandt@renesas.com>
+Date: Mon, 23 Mar 2015 01:24:51 +0000
+Subject: RE: XIP_KERNEL and !ARCH_MULTIPLATFORM
+Message-Id: <HK2PR06MB056105B026481446243452FC8A0D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <CAMuHMdUR3oLp3RMcdEkMiqX92bosYE=f8tOKA1L_y59KMPuEJw@mail.gmail.com>
+ <HK2PR06MB05613B2FBF8466204FA98A9D8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <CAMuHMdU3J1uzD5VAgHgF5NNzw_E7Njf7wU7kJ7oPuCKm7N_Arg@mail.gmail.com>
+ <HK2PR06MB0561FE47407CA32AA8DDEFCF8A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <CAMuHMdUS84s=uLYVk8BtRoKFmBzw7aT1eQCfGF1nx22hTqf15A@mail.gmail.com>
+ <HK2PR06MB05611C6D6CED1E32F4617D158A010@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <20150320222320.GL8656@n2100.arm.linux.org.uk>
  <HK2PR06MB05611E6828E494FB938179658A0F0@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <20150322165710.GO8656@n2100.arm.linux.org.uk>
 In-Reply-To: <20150322165710.GO8656@n2100.arm.linux.org.uk>
@@ -12,53 +19,23 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sunday 22 March 2015, Russell King - ARM Linux wrote:
-> > You are correct...maybe my wording was confusing. This is what I meant:
-> > 
-> > config ARCH_MULTIPLATFORM
-> >       bool "Allow multiple platforms to be selected"
-> >       depends on MMU
-> >       select ARCH_WANT_OPTIONAL_GPIOLIB
-> >       select ARM_HAS_SG_CHAIN
-> > -     select ARM_PATCH_PHYS_VIRT
-> > +     select ARM_PATCH_PHYS_VIRT if !XIP_KERNEL
-> 
-> Yes, that makes sense if we agree that we want to have multi-platform
-> XIP kernels.
+> So, allowing both XIP_KERNEL=y and SMP=y is quite correct: however, folk need to understand that the SMP option _must_ match the hardware they're booting on.
 
-I'd rather see this possibility enabled than have separate multiplatform
-and non-multiplatform Kconfig entries for each machine that may
-want XIP_KERNEL. The same thing applies to no-MMU support: we now
-have platforms (i.MX for now, other likely to follow) that are already
-multiplatform and that are gaining support for no-MMU implementations.
+OK. I think I have some studying to do before I try to attempt XIP on another platform. Or at least, give some guidance to the chip designers if XIP Linux will be a desired operational mode.
 
-For those too, we need to set the physical address, which means
-we can not run on othe rmachines that may be configured at the
-same time.
 
-> The problem is going to be expressing what a set of valid configurations
-> are - soo many of them just won't boot.  For example, if any of the
-> multiplatforms select SMP, but you want a non-SMP XIP kernel, you have
-> to devine which platforms are forcibly selecting SMP and turn them off.
-> In some of the kernel configurators, that's almost impossible to find
-> out.
+> If you consider that the SMP alternatives table is 0x5ee0 bytes long for my iMX6 kernel, and that each entry is 8 bytes, -snip-
 
-For a XIP kernel, I'd normally expect the user to turn off all machines
-other than the one that the kernel is meant to run on, except for build
-testing.
+Well there goes that idea.
 
-> I guess the other problem is going to be that people will want to add a
-> set of reasonable defaults for CONFIG_PHYS_OFFSET based upon the
-> platform selected - and we know that we have problems with that kind of
-> thing when it comes to the DEBUG_LL stuff interacting with a multiplatform
-> kernel.
 
-I think a number of people have expressed that they'd rather get rid of the
-DEBUG_LL list in the long run, now that we have earlycon working. If we
-can treat XIP_KERNEL as a special case that would only be used for special
-embedded systems, I don't think we need a preconfigured list of defaults,
-but rather hide XIP_KERNEL under CONFIG_EXPERT and expect the few users
-that need it to know the address or start with a working defconfig file
-that has it configured.
+> Yes, that makes sense if we agree that we want to have multi-platform XIP kernels.
 
-	Arnd
+My initial ambition was to simply understand what the minimum Kconfig changes were needed to build XIP on the current upstream kernel.
+I'm not convinced XIP and multi-platform really make sense together (unless ARM comes up with a new supper speedy configurable cache system just for DDR reads, but DDR writes have to be done from different address location).
+
+
+I guess my first goal is to make sure the existing XIP_KERNEL code doesn't get yanked out because no one thought it was being used.
+
+Chris
+
