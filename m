@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 19 Mar 2015 01:43:29 +0000
+From: Jason Cooper <jason@lakedaemon.net>
+Date: Mon, 23 Mar 2015 10:09:41 +0000
 Subject: Re: [PATCH 0/7] ARM: shmobile: Add IRQC clock to device tree
-Message-Id: <20150319014328.GJ14051@verge.net.au>
+Message-Id: <20150323100941.GM15137@io.lakedaemon.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1426704961-27322-1-git-send-email-geert+renesas@glider.be>
@@ -9,9 +9,9 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Thanks Geert,
+Geert,
 
 On Wed, Mar 18, 2015 at 07:55:54PM +0100, Geert Uytterhoeven wrote:
 > 	Hi,
@@ -27,10 +27,6 @@ On Wed, Mar 18, 2015 at 07:55:54PM +0100, Geert Uytterhoeven wrote:
 > breaking the boot.
 > 
 > This was tested on r8a73a4/ape6evm and r8a7791/koelsch.
-
-I will defer the DTS changes until the irqchip changes, which I
-have reviewed, are accepted.
-
 > 
 > Thanks!
 > 
@@ -54,18 +50,12 @@ have reviewed, are accepted.
 >  include/dt-bindings/clock/r8a7791-clock.h          |  3 +++
 >  include/dt-bindings/clock/r8a7794-clock.h          |  3 +++
 >  10 files changed, 70 insertions(+), 10 deletions(-)
-> 
-> -- 
-> 1.9.1
-> 
-> Gr{oetje,eeting}s,
-> 
-> 						Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
-> 							    -- Linus Torvalds
-> 
+
+Patches 1 - 3 applied to irqchip/renesas with Simon's Reviewed-by.
+
+I'll give it a few days in -next, then merge it into irqchip/core.  I'll leave
+the branch up for you to base the rest of the series against.
+
+thx,
+
+Jason.
