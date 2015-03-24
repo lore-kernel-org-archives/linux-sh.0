@@ -1,59 +1,50 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 30 Mar 2015 21:58:23 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7790: add EtherAVB clock
-Message-Id: <2142150.nOzfK74FZR@wasted.cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 24 Mar 2015 01:06:01 +0000
+Subject: [PATCH 1/3] ARM: shmobile: armadillo800eva: Properly specify HDMI audio link format
+Message-Id: <87egof433b.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1625400.M0MxPQybIy@wasted.cogentembedded.com>
-In-Reply-To: <1625400.M0MxPQybIy@wasted.cogentembedded.com>
+References: <87fv8v4353.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fv8v4353.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>, Lars-Peter Clausen <lars@metafoo.de>, Simon <horms@verge.net.au>
+Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>
 
-Add the EtherAVB clock to the R8A7790 device tree.
+From: Lars-Peter Clausen <lars@metafoo.de>
 
-Based on original patch by Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>.
+The DAI link format should be specified for the whole link rather than just
+one component on the link. So move the format specification for the HDMI
+audio link from the CPU component to the link itself.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Since the sh-mobile-hdmi DAI driver doesn't implement the set_fmt() callback
+in this case there is no functional difference between only specifying the
+the format for the CPU side or for the whole link, but the later it will
+allow us to remove support for just specifying the format for one component.
 
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            |    8 +++++---
- include/dt-bindings/clock/r8a7790-clock.h |    1 +
- 2 files changed, 6 insertions(+), 3 deletions(-)
+same as original patch
 
-Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1193,16 +1193,18 @@
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
- 			clocks = <&hp_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>,
--			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
-+			         <&zg_clk>, <&p_clk>, <&hp_clk>, <&zs_clk>,
-+				 <&zs_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
- 				R8A7790_CLK_MLB R8A7790_CLK_VIN3 R8A7790_CLK_VIN2
--				R8A7790_CLK_VIN1 R8A7790_CLK_VIN0 R8A7790_CLK_ETHER
-+				R8A7790_CLK_VIN1 R8A7790_CLK_VIN0
-+				R8A7790_CLK_ETHER R8A7790_CLK_ETHERAVB
- 				R8A7790_CLK_SATA1 R8A7790_CLK_SATA0
- 			>;
- 			clock-output-names  				"mlb", "vin3", "vin2", "vin1", "vin0", "ether",
--				"sata1", "sata0";
-+				"etheravb", "sata1", "sata0";
- 		};
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-Index: renesas/include/dt-bindings/clock/r8a7790-clock.h
-=================================--- renesas.orig/include/dt-bindings/clock/r8a7790-clock.h
-+++ renesas/include/dt-bindings/clock/r8a7790-clock.h
-@@ -105,6 +105,7 @@
- #define R8A7790_CLK_VIN2		9
- #define R8A7790_CLK_VIN1		10
- #define R8A7790_CLK_VIN0		11
-+#define R8A7790_CLK_ETHERAVB		12
- #define R8A7790_CLK_ETHER		13
- #define R8A7790_CLK_SATA1		14
- #define R8A7790_CLK_SATA0		15
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 7eac846..ac8e91d 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1040,9 +1040,9 @@ static struct asoc_simple_card_info fsi2_hdmi_info = {
+ 	.card		= "FSI2B-HDMI",
+ 	.codec		= "sh-mobile-hdmi",
+ 	.platform	= "sh_fsi2",
++	.daifmt		= SND_SOC_DAIFMT_CBS_CFS,
+ 	.cpu_dai = {
+ 		.name	= "fsib-dai",
+-		.fmt	= SND_SOC_DAIFMT_CBS_CFS,
+ 	},
+ 	.codec_dai = {
+ 		.name = "sh_mobile_hdmi-hifi",
+-- 
+1.9.1
 
