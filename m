@@ -1,55 +1,39 @@
 From: Mark Brown <broonie@kernel.org>
-Date: Tue, 24 Mar 2015 16:24:03 +0000
+Date: Tue, 24 Mar 2015 16:27:10 +0000
 Subject: Re: Can't mount QSPI-FLASH to userland on Lager
-Message-Id: <20150324162402.GI17265@sirena.org.uk>
+Message-Id: <20150324162710.GJ17265@sirena.org.uk>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="e5GLnnZ8mDMEwH4V"
+Content-Type: multipart/mixed; boundary="4vpci17Ql0Nrbul2"
 List-Id: <linux-sh.vger.kernel.org>
 References: <550F6E10.8010907@jinso.co.jp>
 In-Reply-To: <550F6E10.8010907@jinso.co.jp>
 To: linux-sh@vger.kernel.org
 
 
---e5GLnnZ8mDMEwH4V
-Content-Type: text/plain; charset=utf-8
+--4vpci17Ql0Nrbul2
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Tue, Mar 24, 2015 at 04:17:32PM +0900, Cao Minh Hiep wrote:
-> On 2015=E5=B9=B403=E6=9C=8824=E6=97=A5 01:27, Mark Brown wrote:
+On Tue, Mar 24, 2015 at 04:42:44PM +0100, Geert Uytterhoeven wrote:
 
-> >Interesting...  nobody else has reported any problems.  Can you collect
-> >traces from the failing and successful systems with ftrace (turn on
-> >/sys/kernel/debug/tracing/events/spi/enable to get all the SPI logging)
-> >please?
+> This seems to trigger a bug in the SPI trace code:
 
-> I attached the traces logs file of failing and successful systems:
-> file1: qspi_v4.0-rc2_added_tracer_test_logs_lager.txt
-> file2: qspi_v4.0-rc2_added_tracer_and_reverting_patches_test_logs_lager.t=
-xt
+There was a use after free bug which should be fixed in current code.
 
-> And also attached the logs file of 10times for testing in before/after
-> reverting patches without tracer.
-> file3: qspi_v4.0-rc2_test_logs_for_10times_lager.txt
-> file4: qspi_v4.0-rc2_after_reverting_patches_test_logs_for_10times_lager.=
-txt
-
-These all look like console logs, not ftrace logs?
-
---e5GLnnZ8mDMEwH4V
+--4vpci17Ql0Nrbul2
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2
 
-iQEcBAEBCAAGBQJVEY+iAAoJECTWi3JdVIfQVc0H/1kF8dUxXRkoNbAtDbAdvMUN
-5IDUdEwz4SVpwyn1gUbF5vDxwzPRFrHyfuMO0CHleVmECeAG0/TvQwt7c9vy8HK/
-WVZ6MLiAUBxj07WbiezIOhKCbBgHsOqNPgh8HGUYpjNCAst/mMlNlyB2tqhols/r
-BMvIOX3KXm6MM2aKL/8yp4KsTHOY/wnnfJ3Qu/Ua0sn0LemvzJA+mj12d/iYvVT4
-wAHhSRWmlX6gcuqayTM6XsibNaPcEPQloRIIP3gCrh5FVrr4DHPaMakVur89Om3p
-JjQgOM/u1GZuT9VUQuFnbz+Ht29k2JZvTfCcP8SRR1g1ukg0P/WGZEWbU+80dbI=
-=iVV7
+iQEcBAEBCAAGBQJVEZBdAAoJECTWi3JdVIfQfFUH/1DwDFIQcDfFle+dRqaOC4yO
+YvUDUMEAZ50gSWSms//mZJiNe94nn/w5B3vbgk7J8oR5irMhumsAF8FxrcKjF46f
+EnXjumsnm4q9tnKskKyZ+OGgzXPCoJIYyh/U7fPJx2hwHwVqgSt5gVQguzXdVmvg
+Bmykjb6GTg2B3G8et0PZ9J8Jj03l+KUrV59WGfQfk50JNrQyEYhaylOH0X3WAlK+
+nDXO9K+XJjQDJAlnUXV2OOTCV27EaG/wvltaxFa0J6Uj5em329z5xpQdR0HhB9s7
+zUMu16Hj6RXxu4Es3HePzB6TWSpg8XTYhiZUmBjbAZ4J7JQZJxXEP2K//xvDXwg=
+=e7qO
 -----END PGP SIGNATURE-----
 
---e5GLnnZ8mDMEwH4V--
+--4vpci17Ql0Nrbul2--
