@@ -1,37 +1,44 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 08 Mar 2015 10:12:00 +0000
-Subject: Re: [PATCH 07/11] clk: shmobile: r8a7793: document DIV6 clock bindings
-Message-Id: <CAMuHMdVhdFJQYWxDTO=z7ynk5M5p=s2AbUnGKPQSQyEzhayFXg@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 24 Mar 2015 01:06:40 +0000
+Subject: [PATCH 2/3] ARM: shmobile: armadillo800eva: fix clock inversion
+Message-Id: <87d23z4329.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425661798-10487-8-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1425661798-10487-8-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <87fv8v4353.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fv8v4353.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>, Lars-Peter Clausen <lars@metafoo.de>, Simon <horms@verge.net.au>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>
 
-On Fri, Mar 6, 2015 at 6:09 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> --- a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-> +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-> @@ -11,6 +11,7 @@ Required Properties:
->      - "renesas,r8a7740-div6-clock" for R8A7740 (R-Mobile A1) DIV6 clocks
->      - "renesas,r8a7790-div6-clock" for R8A7790 (R-Car H2) DIV6 clocks
->      - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2) DIV6 clocks
+From: Lars-Peter Clausen <lars@metafoo.de>
 
-Please rename "M2" to "M2-W".
+When operating in left-justfied mode both the frame-clock and the
+bit-clock need to be inverted to be standards compliant.
 
-> +    - "renesas,r8a7793-div6-clock" for R8A7793 (R-Car M2N) DIV6 clocks
+This means that the exta clock inversion setting in the armadillo800eva
+machine driver for CPU component should now be removed.
 
-"M2-N"
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+removed FSI driver fixup parts
 
-Gr{oetje,eeting}s,
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-                        Geert
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index ac8e91d..bf37e3c 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1015,7 +1015,6 @@ static struct asoc_simple_card_info fsi_wm8978_info = {
+ 	.platform	= "sh_fsi2",
+ 	.daifmt		= SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_CBM_CFM,
+ 	.cpu_dai = {
+-		.fmt	= SND_SOC_DAIFMT_IB_NF,
+ 		.name	= "fsia-dai",
+ 	},
+ 	.codec_dai = {
+-- 
+1.9.1
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
