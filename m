@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 19 Mar 2015 02:15:21 +0000
-Subject: [GIT PULL] Third Round of Renesas ARM Based SoC DT Updates for v4.1
-Message-Id: <cover.1426731062.git.horms+renesas@verge.net.au>
+Date: Wed, 25 Mar 2015 00:43:26 +0000
+Subject: [GIT PULL] Third Round of Renesas ARM Based SoC Cleanup for v4.1
+Message-Id: <cover.1427243965.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1378362045.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1378362045.git.horms+renesas@verge.net.au>
@@ -12,39 +12,40 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these third round of Renesas ARM based SoC DT updates for v4.1.
-
-This pull request is based on the previous round of
-such requests, tagged as renesas-dt2-for-v4.1,
-which you have already pulled.
+Please consider these third round of Renesas ARM based SoC cleanup for v4.1.
 
 
-The following changes since commit 90ca409a1e6b9b72d1b6ae716cd7a63335fd0e87:
+This pull requests has minor conflict with "Renesas ARM Based SoC sh7372
+SoC Removal Updates for v4.1", tagged as
+renesas-sh7372-soc-removal-for-v4.1, which you have already pulled.
 
-  ARM: shmobile: ape6evm dts: Configure the custom switch as wake-up source (2015-03-07 10:07:30 +0900)
+The solution is to remove arch/arm/mach-shmobile/pm-sh7372.c.
+
+
+The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
+
+  Linux 4.0-rc1 (2015-02-22 18:21:14 -0800)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt3-for-v4.1
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-cleanup3-for-v4.1
 
-for you to fetch changes up to 63573339e7698503bfeaef3bb0c444ffc98e45a0:
+for you to fetch changes up to df67a2b72eb6fa205c0954e3f4f416e282e7412b:
 
-  ARM: shmobile: r8a7791: sound enables Audio DMAC entry on DTSI (2015-03-11 09:40:30 +0900)
-
-----------------------------------------------------------------
-Third Round of Renesas ARM Based SoC DT Updates for v4.1
-
-* Add DMA sound support to r8a7791 and r8a7790 SoCs
+  ARM: shmobile: cpuidle: Remove the pointless default driver (2015-03-19 11:02:07 +0900)
 
 ----------------------------------------------------------------
-Kuninori Morimoto (6):
-      ARM: shmobile: r8a7790: add reg-names for sound
-      ARM: shmobile: r8a7791: add reg-names for sound
-      ARM: shmobile: r8a7790: enable Audio DMAC peri peri via sound driver
-      ARM: shmobile: r8a7791: enable Audio DMAC peri peri via sound driver
-      ARM: shmobile: r8a7790: sound enables Audio DMAC entry on DTSI
-      ARM: shmobile: r8a7791: sound enables Audio DMAC entry on DTSI
+Third Round of Renesas ARM Based SoC Cleanup for v4.1
 
- arch/arm/boot/dts/r8a7790.dtsi | 142 ++++++++++++++++++++++++++++++++---------
- arch/arm/boot/dts/r8a7791.dtsi | 142 ++++++++++++++++++++++++++++++++---------
- 2 files changed, 224 insertions(+), 60 deletions(-)
+* Remove default cpuidle driver, it does not appear to serve any purpose
+
+----------------------------------------------------------------
+Daniel Lezcano (1):
+      ARM: shmobile: cpuidle: Remove the pointless default driver
+
+ arch/arm/mach-shmobile/Makefile    |  1 -
+ arch/arm/mach-shmobile/common.h    |  9 ---------
+ arch/arm/mach-shmobile/cpuidle.c   | 37 -------------------------------------
+ arch/arm/mach-shmobile/pm-sh7372.c |  2 +-
+ 4 files changed, 1 insertion(+), 48 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/cpuidle.c
