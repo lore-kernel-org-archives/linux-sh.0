@@ -1,106 +1,50 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 19 Mar 2015 02:16:59 +0000
-Subject: Re: [PATCH 01/05] serial: sh-sci: Break out default CTS/RTS pin setup
-Message-Id: <CANqRtoRhwGRR-+Fa8x4LZ5KRJh27nnAkvJjtsPyZKYaJs=yKXg@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 25 Mar 2015 13:04:25 +0000
+Subject: [PATCH v3 0/2] dmaengine: usb-dmac: Add Renesas USB DMA Controller
+Message-Id: <1427288667-5820-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20141217125236.14480.78833.sendpatchset@w520>
-	<20141217125246.14480.41876.sendpatchset@w520>
-	<2156158.vJVakP2u8e@avalon>
-In-Reply-To: <2156158.vJVakP2u8e@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Greg KH <gregkh@linuxfoundation.org>, jslaby@suse.cz, linux-serial@vger.kernel.org
+To: vinod.koul@intel.com, dan.j.williams@intel.com, laurent.pinchart@ideasonboard.com, horms@verge.net.au, kuninori.morimoto.gx@renesas.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Hi Laurent,
+This patch set is based on slave-dma.git / next branch.
+(commit id = ebb3abd4042e2ab5f97c43a6f71b206947255fd6)
 
-On Mon, Jan 5, 2015 at 12:25 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Magnus,
->
-> Thank you for the patch.
->
-> On Wednesday 17 December 2014 21:52:46 Magnus Damm wrote:
->> From: Magnus Damm <damm+renesas@opensource.se>
->>
->> Break out CTS/RTS pin setup for the default case. We only
->> care about those pins in case SCIx_HAVE_RTSCTS is set.
->>
->> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
->> ---
->>
->>  drivers/tty/serial/sh-sci.c |   45 +++++++++++++++++++++++++++-------------
->>  1 file changed, 31 insertions(+), 14 deletions(-)
->>
->> --- 0001/drivers/tty/serial/sh-sci.c
->> +++ work/drivers/tty/serial/sh-sci.c  2014-12-16 14:40:31.000000000 +0900
->> @@ -509,10 +509,29 @@ static void sci_poll_put_char(struct uar
->>  }
->>  #endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
->>
->> -static void sci_init_pins(struct uart_port *port, unsigned int cflag)
->> +static void sci_init_pins_default(struct uart_port *port, bool
->> hwflow_enabled) {
->
-> What would you think about renaming the function to sci_init_ctsrts_default ?
-> I find having both sci_init_pins and sci_init_pins_default a bit confusing.
+Changes from v2:
+ - Change descriptor management to store the residue in descriptor instead
+   of the channel.
+ - Change acceptable any sg_len.
+ - Modify usb_dmac_tx_status() to calculate the residue for flight
+   descriptors.
+ - Remove a local tasklet.
+ - Remove #ifdef CONFIG_PM.
+ Remarks: No change in patch [1/2].
 
-Thanks for your comments. I agree with you and I've changed the name
-in V2 that I just posted.
+Changes from v1:
+ - Use virt-dma infrastructure instead of local descriptor management.
+ - Change acceptable sg_len to 1.
+   (because a client driver will use dmaengine_prep_slave_single().)
+ - Remove usb_dmac_sleep_{suspend,resume} functions.
+ - Add usb_dmac_chan_halt() in usb_dmac_runtime_suspend().
+ - Use a tasklet instead of a kernel thread.
+ - Add tasklet_kill() in usb_dmac_remove().
+ - Fix MODULE_AUTHOR string.
+ Remarks: No change in patch [1/2].
 
->>       struct sci_port *s = to_sci_port(port);
->>       struct plat_sci_reg *reg = sci_regmap[s->cfg->regtype] + SCSPTR;
->> +     unsigned short status;
->> +
->> +     /* If no SCSPTR register exists then skip. Same if hardware flow
->> +      * control has been enabled, in such case SCFCR.MCE will be set
->> +      * and the SCSPTR configuration is assumed to be overridden.
->> +      */
->> +     if (!reg->size || hwflow_enabled)
->> +             return;
->> +
->> +     status = serial_port_in(port, SCSPTR);
->> +     status &= ~SCSPTR_CTSIO;
->> +     status |= SCSPTR_RTSIO;
->> +     serial_port_out(port, SCSPTR, status); /* Set RTS = 1 */
->> +}
->> +
->> +static void sci_init_pins(struct uart_port *port, unsigned int cflag)
->> +{
->> +     struct sci_port *s = to_sci_port(port);
->> +     bool hwflow_enabled = cflag & CRTSCTS;
->>
->>       /*
->>        * Use port-specific handler if provided.
->> @@ -522,22 +541,20 @@ static void sci_init_pins(struct uart_po
->>               return;
->>       }
->>
->> -     /*
->> -      * For the generic path SCSPTR is necessary. Bail out if that's
->> -      * unavailable, too.
->> +     /* SCIF hardware with RTS/CTS support needs special setup below.
->> +      *
->> +      * Please note that if RTS/CTS is available for the hardware
->> +      * platform depends on the particular SCIF channel on a certain
->> +      * SoC, and how this channel has been hooked up on the actual board.
->
-> How do you plan to convey that information to the driver in the DT case ? If
-> I'm not mistaken the SCIx_HAVE_RTSCTS flag is only set through platform data
-> at the moment. Do you have a list of which SCIF channels support RTS/CTS on
-> which SoC ?
+Yoshihiro Shimoda (2):
+  dmaengine: renesas,usb-dmac: Add device tree bindings documentation
+  dmaengine: usb-dmac: Add Renesas USB DMA Controller (USB-DMAC) driver
 
-Good question. It seems that other drivers use the DT "ctsrts"
-property to flag just this, and maybe it makes sense to simply use
-such a property in the board DTS file to opt-in on modem control on a
-board-basis.
+ .../devicetree/bindings/dma/renesas,usb-dmac.txt   |  37 +
+ drivers/dma/sh/Kconfig                             |   9 +
+ drivers/dma/sh/Makefile                            |   1 +
+ drivers/dma/sh/usb-dmac.c                          | 906 +++++++++++++++++++++
+ 4 files changed, 953 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
+ create mode 100644 drivers/dma/sh/usb-dmac.c
 
-Something similar is included in my prototype hack that I just posted:
-[PATCH] sh73a0 KZM9G CTS/RTS prototype
+-- 
+1.9.1
 
-Thanks for your help!
-
-Cheers,
-
-/ magnus
