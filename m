@@ -1,98 +1,90 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 27 Mar 2015 13:11:04 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 27 Mar 2015 22:04:55 +0000
 Subject: Re: [PATCH/RFC] i2c: rcar: Support ACK by HW auto restart after NACK
-Message-Id: <20150327131104.GC19151@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="WfZ7S8PLGjBY9Voh"
+Message-Id: <20150327220451.GA25459@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1424011480-3551-1-git-send-email-ykaneko0929@gmail.com>
  <2775fbb6b2e2b333ef2457133f419d4d@the-dreams.de>
  <20150304040635.GA12776@verge.net.au>
  <20150306221809.GB6572@katana>
-In-Reply-To: <20150306221809.GB6572@katana>
-To: Simon Horman <horms@verge.net.au>
-Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, linux-i2c@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+ <20150327131104.GC19151@katana>
+In-Reply-To: <20150327131104.GC19151@katana>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+Cc: Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+Hi Wolfram,
 
---WfZ7S8PLGjBY9Voh
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On Fri, Mar 27, 2015 at 02:11:04PM +0100, Wolfram Sang wrote:
+> On Fri, Mar 06, 2015 at 11:18:09PM +0100, Wolfram Sang wrote:
+> > 
+> > > > >Even if R-Car I2C received NACK, after that it might receive ACK
+> > > > >by HW auto restart. In case of that, driver would continue process.
+> > > > >If R-Car I2C didn't receive ACK, the driver would detect timeout
+> > > > >and would report NACK as -ENXIO.
+> > > > >
+> > > > >Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+> > > > >Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> > > > 
+> > > > Excuse me, but what exactly is HW auto restart in this case? Is it a feature
+> > > > of the I2C slave?
+> > > 
+> > > I asked Kataoka-san about this and his response was as follows:
+> > > 
+> > >     It is a feature of the i2c-rcar(H/W) master.
+> > > 
+> > >     If system(CPU) is busy, NACK procedure may have interrupt latency.
+> > >     Since the clear of ICMCR.ESG bit is delayed, i2c-rcar(H/W) may auto-restart
+> > >     after NACK. Please refer to ESG bit of H/W UM section 55.3.5.
+> > > 
+> > >     For example, this is I2C write transmitting.
+> > >     1.Start / 2.SlaveAddr,ACK / 3.RegAddr,ACK / 4.RegData,ACK / 5.Stop
+> > > 
+> > >     If No.2 has NACK and interruption has delay, this transmitting is as follows.
+> > >     1.Start / 2.SlaveAddr,NACK/ 1x.auto-restart / 2x.SlaveAddr,ACK
+> > >                                     / 3.RegAddr,ACK / 4.RegData,ACK / 5.Stop
+> > > 
+> > >     NACK of No.2 is invalidated by ACK of No.2x. It means recover.
+> > 
+> > Does this make some I2C device work which did not work before?
+> > 
+> > Most I2C devices always ack their address, so NACK very often means
+> > "nothing is there". I think it makes sense that the rcar driver returns
+> > ENXIO in this case which is documented to be used for NACK after address
+> > phase. Then, the i2c client driver should know if this means "not there"
+> > or "currently busy". And it should know when is a good time for another
+> > try. As I read the patch, the driver would use the auto-restart feature
+> > until the timeout is reached. That would make bus scanning pretty slow,
+> > too.
+> 
+> Hi,
+> 
+> any news on this one?
 
-On Fri, Mar 06, 2015 at 11:18:09PM +0100, Wolfram Sang wrote:
->=20
-> > > >Even if R-Car I2C received NACK, after that it might receive ACK
-> > > >by HW auto restart. In case of that, driver would continue process.
-> > > >If R-Car I2C didn't receive ACK, the driver would detect timeout
-> > > >and would report NACK as -ENXIO.
-> > > >
-> > > >Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-> > > >Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> > >=20
-> > > Excuse me, but what exactly is HW auto restart in this case? Is it a =
-feature
-> > > of the I2C slave?
-> >=20
-> > I asked Kataoka-san about this and his response was as follows:
-> >=20
-> >     It is a feature of the i2c-rcar(H/W) master.
-> >=20
-> >     If system(CPU) is busy, NACK procedure may have interrupt latency.
-> >     Since the clear of ICMCR.ESG bit is delayed, i2c-rcar(H/W) may auto=
--restart
-> >     after NACK. Please refer to ESG bit of H/W UM section 55.3.5.
-> >=20
-> >     For example, this is I2C write transmitting.
-> >     1.Start / 2.SlaveAddr,ACK / 3.RegAddr,ACK / 4.RegData,ACK / 5.Stop
-> >=20
-> >     If No.2 has NACK and interruption has delay, this transmitting is a=
-s follows.
-> >     1.Start / 2.SlaveAddr,NACK/ 1x.auto-restart / 2x.SlaveAddr,ACK
-> >                                     / 3.RegAddr,ACK / 4.RegData,ACK / 5=
-=2EStop
-> >=20
-> >     NACK of No.2 is invalidated by ACK of No.2x. It means recover.
->=20
-> Does this make some I2C device work which did not work before?
->=20
-> Most I2C devices always ack their address, so NACK very often means
-> "nothing is there". I think it makes sense that the rcar driver returns
-> ENXIO in this case which is documented to be used for NACK after address
-> phase. Then, the i2c client driver should know if this means "not there"
-> or "currently busy". And it should know when is a good time for another
-> try. As I read the patch, the driver would use the auto-restart feature
-> until the timeout is reached. That would make bus scanning pretty slow,
-> too.
+Sorry for not responding earlier. I have the following information from
+Kataoka-san.
 
-Hi,
+* There are now several patches in the BSP that address this issue;
+  this patch and two follow up fix patches. Its probably best if these
+  patches were all squashed into a single patch for your consideration.
 
-any news on this one?
+  For reference I am referring to the following patches in the BSP:
 
-Kind regards,
+  i2c: rcar: Support ACK by HW auto restart after NACK
+  i2c: rcar: Fix status clear after NACK
+  i2c: rcar: Fix flag clear for recovering by HW auto restart
 
-   Wolfram
+* In answer to your questions above:
 
+  "When NACK interruption occurs, the i2c rcar driver sets ICMCR register
+   from (MDBS|MIE|ESG) to (MDBS|MIE|FSB) in rcar_i2c_bus_phase().  It means
+   clearing of ESG bit. If this procedure is late, H/W auto-restarts.  After
+   that, if NACK occurs again, H/W doesn't auto-restart because ESG bit was
+   already cleared.
 
---WfZ7S8PLGjBY9Voh
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+   S/W doesn't know whether H/W did auto-restart or did not auto-restart.
+   So, S/W needs to wait. The return of ENXIO is pretty slow.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJVFVboAAoJEBQN5MwUoCm2CdYP/RnIHbgdXtM+4HZz8ANuE/pM
-sUU83iZ52v9Us3yXjiCfwQ48S17KCp3uU5f8ayQxakuf+Iey2PFi0dh1hkdIwgC/
-HsVokSw1uhzKMKwW6TX7cr66LTVV1l+F/HMJyAlBKiVYtthaL91x0g8HxUQlrSWS
-VYVfcPQgea0eLTL5ai5r0zLs2IJdS6N9S+fp+hUtsqLYZvZdV3uwYkcyqLWCbBMo
-G/BqvENQAAO7g3KalCLujrr4sEEMESP7e5HWIdzfby0Xe0My6/TxhnvX8MMEuaI4
-UozP44LQTy6fEXfdESKKLb/Ncb91s8r+2dOBBHkfripUNh39ywTmZC8nRptZiAm3
-QPs87+EdwuhMrLliDDYXcoDPNvM0IgQfj3mof4zC8tCd9d6rkGGkubkqwHTHNA5e
-DlNa+KSpLOcH2sdMDl+CXtk/G5chGx89VY0OgnyllPyjXpIzZUtGuaZK23rTswIJ
-VKt+6vPWG4v8/MiHCLIIicwTYXes6z3zZUCez3CgkN5n3D0bqQpA4mKucoyNIWly
-1VLBRqGUuPLhGPkFpxwIVwDEaPJj0fYmfkTkoC0aKyy74z4IxIAqeetKGv9NemxA
-j+/+epC52PhIX03ixFM0uAwOKmN12fwPgJFwbnicrtTS40pc7mppg9cN0Pw5eSQ/
-WHYUaEckVsfTr3qKAMxJ
-=+1iX
------END PGP SIGNATURE-----
-
---WfZ7S8PLGjBY9Voh--
+   It takes long time but I think it's ok because NACK is unjust case."
