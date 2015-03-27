@@ -1,31 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Mar 2015 00:55:43 +0000
+From: Mark Brown <broonie@kernel.org>
+Date: Fri, 27 Mar 2015 01:35:15 +0000
 Subject: Re: [PATCH 0/3] ARM: shmobile: armadillo: fixup CPU settings
-Message-Id: <20150327005542.GA27069@verge.net.au>
+Message-Id: <20150327013515.GC1743@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="7qSK/uQB79J36Y4o"
 List-Id: <linux-sh.vger.kernel.org>
 References: <87fv8v4353.wl%kuninori.morimoto.gx@renesas.com>
- <20150326173628.GX3572@sirena.org.uk>
-In-Reply-To: <20150326173628.GX3572@sirena.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Lars-Peter Clausen <lars@metafoo.de>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>
-
-Hi Mark,
-
-On Thu, Mar 26, 2015 at 10:36:28AM -0700, Mark Brown wrote:
-> On Tue, Mar 24, 2015 at 01:05:02AM +0000, Kuninori Morimoto wrote:
-> 
-> > So, I think keeping current FSI driver as-is is more safety for old boards.
-> > I tested these patches on latest Mark's branch 
-> 
-> Simon, are these OK for me to apply or do you want to apply them?
-
-These changes do not appear to conflict with anything I have queued up for
-v4.1 so assuming that you are targeting that release please feel free to
-take them. (My only worry here is about conflicts.)
-
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+In-Reply-To: <87fv8v4353.wl%kuninori.morimoto.gx@renesas.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Lars-Peter Clausen <lars@metafoo.de>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>
 
 
+--7qSK/uQB79J36Y4o
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Tue, Mar 24, 2015 at 01:05:02AM +0000, Kuninori Morimoto wrote:
+>=20
+> Hi Mark, Lars
+> Cc Simon
+
+Applied all, thanks.
+
+--7qSK/uQB79J36Y4o
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBCAAGBQJVFLPTAAoJECTWi3JdVIfQ3hUH+QF6g4jg9ewWPdtjwrheB1XO
+dteHfoWgKZnZS3saBTK3gyCFwueBbUZDCl0UTOPmxSamGfq6j1Z7AoDomwItsKqZ
+KYE/BOh/DzSGiFYMjOLw5VQa4gddJa4tB4MFvEnMeqk8txVL0XXJW6kRP3pFlt8t
+qALNv8YbkwnX/M/mwVNVzoYha6X/fSMoxB8AZPg63pyDPnXCeYsAWuoe2jixCmfL
+OcTm68xaoqobmoQMMC7Zj9ACVEt3phM8nHO/I5MI5NAiDN8mrM7yxQ3KL2cE3mPt
+7IA9mij1EmgJjWbqWktpsPPf8iTQSfZWl+vv3ZWI7sp0+SlQNrR5jG6Cp2BA7LM=
+=vsXD
+-----END PGP SIGNATURE-----
+
+--7qSK/uQB79J36Y4o--
