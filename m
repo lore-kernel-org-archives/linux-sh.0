@@ -1,28 +1,22 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 28 Mar 2015 13:55:36 +0000
+From: David Miller <davem@davemloft.net>
+Date: Sat, 28 Mar 2015 18:26:39 +0000
 Subject: Re: [PATCH resend] Renesas Ethernet AVB driver
-Message-Id: <5516B2D8.6010006@cogentembedded.com>
+Message-Id: <20150328.112639.431815898069042579.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2926619.fiYHPz1IBk@wasted.cogentembedded.com> <55163959.8080101@gmx.de>
-In-Reply-To: <55163959.8080101@gmx.de>
+References: <2926619.fiYHPz1IBk@wasted.cogentembedded.com>
+	<20150328082853.GA4255@localhost.localdomain>
+In-Reply-To: <20150328082853.GA4255@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Lino Sanfilippo <LinoSanfilippo@gmx.de>, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: richardcochran@gmail.com
+Cc: sergei.shtylyov@cogentembedded.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hello.
 
-On 3/28/2015 8:17 AM, Lino Sanfilippo wrote:
+There is never any legitimate reason to fully quote an entire HUGE
+patch.
 
->> +	spinlock_t lock;		/* Register access lock */
+Please do not do this, having to send this huge patch to every
+recipient on the lists once is painful enough.
 
-> Do you really need one huge lock for all register accesses? Maybe you
-
-    AFAIK, this is the usual practice.
-
-> Regards,
-> Lino
-
-WBR, Sergei
-
+Thanks.
