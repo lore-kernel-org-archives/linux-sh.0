@@ -1,49 +1,58 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 05 Mar 2015 01:58:06 +0000
-Subject: [PATCH 06/16] ARM: shmobile: r8a7778: add internal ethernet controller to DT
-Message-Id: <05cabb839e87a69f94d1e97fd2300b70f688122b.1425518337.git.horms+renesas@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 29 Mar 2015 13:04:56 +0000
+Subject: [PATCH v2 repost] media: soc_camera: rcar_vin: Fix wait_for_completion
+Message-Id: <1427634296-3778-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1425518337.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1425518337.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-Internal Ethernet controller DT entry with clock information.
+When stopping abnormally, a driver can't return from wait_for_completion.
+This patch resolved this problem by changing wait_for_completion_timeout
+from wait_for_completion.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 11 +++++++++++
- 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 5c347e8..c802e72 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -41,6 +41,17 @@
- 		spi2 = &hspi2;
- 	};
+This patch is against master branch of linuxtv.org/media_tree.git.
+
+v2 [Yoshihiro Kaneko]
+* remove the original line that I forgot.
+* fix an indent to make it easy to read.
+
+ drivers/media/platform/soc_camera/rcar_vin.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 279ab9f..e55d7ba 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -135,6 +135,8 @@
+ #define VIN_MAX_WIDTH		2048
+ #define VIN_MAX_HEIGHT		2048
  
-+	ether: ethernet@fde00000 {
-+		compatible = "renesas,ether-r8a7778";
-+		reg = <0xfde00000 0x400>;
-+		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7778_CLK_ETHER>;
-+		phy-mode = "rmii";
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
++#define TIMEOUT_MS		100
 +
- 	gic: interrupt-controller@fe438000 {
- 		compatible = "arm,cortex-a9-gic";
- 		#interrupt-cells = <3>;
+ enum chip_id {
+ 	RCAR_GEN2,
+ 	RCAR_H1,
+@@ -820,7 +822,10 @@ static void rcar_vin_wait_stop_streaming(struct rcar_vin_priv *priv)
+ 		if (priv->state = STOPPING) {
+ 			priv->request_to_stop = true;
+ 			spin_unlock_irq(&priv->lock);
+-			wait_for_completion(&priv->capture_stop);
++			if (!wait_for_completion_timeout(
++					&priv->capture_stop,
++					msecs_to_jiffies(TIMEOUT_MS)))
++				priv->state = STOPPED;
+ 			spin_lock_irq(&priv->lock);
+ 		}
+ 	}
 -- 
-2.1.4
+1.9.1
 
