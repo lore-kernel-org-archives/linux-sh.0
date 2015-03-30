@@ -1,61 +1,43 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Wed, 11 Mar 2015 15:56:46 +0000
-Subject: Re: Can't boot kernel v4.0-rc2 on Koelsch
-Message-Id: <1426089406.4443.234.camel@xylophone.i.decadent.org.uk>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 30 Mar 2015 21:59:41 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7790: add EtherAVB DT support
+Message-Id: <8163383.0UU0Q5gsLE@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2263226.JPOqZgiCRj@avalon>
-In-Reply-To: <2263226.JPOqZgiCRj@avalon>
+References: <1625400.M0MxPQybIy@wasted.cogentembedded.com>
+In-Reply-To: <1625400.M0MxPQybIy@wasted.cogentembedded.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, 2015-03-11 at 08:45 +0200, Laurent Pinchart wrote:
-> Hi Geert,
-> 
-> On Tuesday 10 March 2015 12:32:59 Geert Uytterhoeven wrote:
-> > On Tue, Mar 10, 2015 at 10:03 AM, Cao Minh Hiep <cm-hiep@jinso.co.jp> wrote:
-> > > On 2015年03月10日 17:05, Nobuhiro Iwamatsu wrote:
-> > >> This is user land issue.
-> > >> Hiep, if you have not changed ttySCX in inittab, you will need to change.
-> > >> Could you check your inittab?
-> > >> 
-> > >> --- a/inittab    2015-03-10 15:01:58.986609389 +0900
-> > >> +++ b/inittab    2015-03-10 15:00:32.132094877 +0900
-> > >> @@ -28,7 +28,7 @@
-> > >> 
-> > >>   l6:6:wait:/etc/init.d/rc 6
-> > >>   # Normally not reached, but fallthrough in case of emergency.
-> > >>   z6:6:respawn:/sbin/sulogin
-> > >> 
-> > >> -SC6:12345:respawn:/sbin/getty -L 38400 ttySC6
-> > >> +SC0:12345:respawn:/sbin/getty -L 38400 ttySC0
-> > >> 
-> > >>   # /sbin/getty invocations for the runlevels.
-> > >>   #
-> > >>   # The "id" field MUST be the same as the last
-> > > 
-> > > There is no inittab file in Linaro userland that I am using.
-> > 
-> > I'm not familiar with the Linaro userland.
-> > 
-> > Is there any other configuration file that contains the string "ttySC6"?
-> > Or does the Linaro userland derive it from the kernel command line?
-> > If yes, perhaps there's a newer version that does look at stdout-path
-> > instead?
-> > 
-> > The goal of the stdout-path support was to have a better description in DT
-> > and automate things. So I don't think reverting the change is the proper way
-> > forward.
-> > 
-> > If you can't get it to work, I think we should bring it up with the DT
-> > people first, some of which work for Linaro.
-> 
-> I quite agree with that, but how should userspace know which device node in 
-> /dev corresponds to the console specified in stdout-path ?
+Define the generic R8A7790 part of the EtherAVB device node. 
 
-By reading the /proc/consoles file.
+Based on original patch by Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>.
 
-Ben.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
+---
+ arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -626,6 +626,16 @@
+ 		status = "disabled";
+ 	};
+ 
++	avb: ethernet@e6800000 {
++		compatible = "renesas,ravb-r8a7790";
++		reg = <0 0xe6800000 0 0x800>, <0 0xee0e8000 0 0x4000>;
++		interrupts = <0 163 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp8_clks R8A7790_CLK_ETHERAVB>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	sata0: sata@ee300000 {
+ 		compatible = "renesas,sata-r8a7790";
+ 		reg = <0 0xee300000 0 0x2000>;
 
