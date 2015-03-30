@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 24 Mar 2015 17:13:53 +0000
+Date: Mon, 30 Mar 2015 10:04:39 +0000
 Subject: Re: [PATCH 2/3] pinctrl: sh-pfc: r8a7778: Add bias (pull-up) pinconf support
-Message-Id: <CAMuHMdVYp0Df4z4T-bK6ocg47Zrpncza-yMWXCozWAAHWbwncA@mail.gmail.com>
+Message-Id: <CAMuHMdXUHzZ3uWjQpW7VseJTrOmQoAvp9v=JtTW0sisGQoW8GA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1426854638-9187-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 In-Reply-To: <1426854638-9187-3-git-send-email-ulrich.hecht+renesas@gmail.com>
@@ -10,46 +10,64 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Ulrich,
-
-
 On Fri, Mar 20, 2015 at 1:30 PM, Ulrich Hecht
 <ulrich.hecht+renesas@gmail.com> wrote:
 > --- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
 > +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
 
-> @@ -2905,8 +2912,218 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
->         { },
->  };
->
-> +#define PUPR0  0x100
-> +#define PUPR1  0x104
-> +#define PUPR2  0x108
-> +#define PUPR3  0x10c
-> +#define PUPR4  0x110
-> +#define PUPR5  0x114
-> +
 > +static const struct {
 > +       u16 reg;
-
-This value is in the range 0x100..0x114.
-
 > +       u16 bit;
-
-This value is in the range 0..31, so you need only 5 bits.
-
-To save memory, what about using bit fields instead?
-
-        u16 reg : 11;
-        u16 bit : 5;
-
-By switching to PUPRx indices instead of register offsets, it can even
-fit in a u8, as we have only 6 PUPRx registers.
-R-Car V2H has more than 8 PUPRx registers, we there we're stuck with
-at least 16 bits per pin.
-
 > +} pullups[] = {
 > +       [RCAR_GP_PIN(0,  6)] = { PUPR0,  0 },   /* A0 */
+> +       [RCAR_GP_PIN(0,  7)] = { PUPR0,  1 },   /* A1 */
+
+...
+
+> +};
+> +
+> +static unsigned int r8a7778_pinmux_get_bias(struct sh_pfc *pfc,
+> +                                           unsigned int pin)
+> +{
+> +       void __iomem *addr;
+> +
+> +       BUG_ON(!pullups[pin].reg);
+
+This looks a bit strong to me.
+
+As pinconf_ops.pin_config_[gs]et() do return error codes, perhaps
+sh_pfc_soc_operations.[gs]et_bias() should be changed to allow the
+return of error codes, too, so you can return -ENOTSUPP here?
+
+If you really feel the need to scream, I'd use WARN_ON_ONCE() instead.
+
+> +       addr = pfc->windows->virt + pullups[pin].reg;
+> +
+> +       if (ioread32(addr) & BIT(pullups[pin].bit))
+> +               return PIN_CONFIG_BIAS_PULL_UP;
+> +       else
+> +               return PIN_CONFIG_BIAS_DISABLE;
+> +}
+> +
+> +static void r8a7778_pinmux_set_bias(struct sh_pfc *pfc, unsigned int pin,
+> +                                  unsigned int bias)
+> +{
+> +       void __iomem *addr;
+> +       u32 value;
+> +       u32 bit;
+> +
+> +       BUG_ON(!pullups[pin].reg);
+
+Same here.
+
+> +       addr = pfc->windows->virt + pullups[pin].reg;
+> +       bit = BIT(pullups[pin].bit);
+> +
+> +       value = ioread32(addr) & ~bit;
+> +       if (bias = PIN_CONFIG_BIAS_PULL_UP)
+> +               value |= bit;
+> +       iowrite32(value, addr);
+> +}
 
 Gr{oetje,eeting}s,
 
