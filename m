@@ -1,104 +1,46 @@
-From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Thu, 05 Mar 2015 08:59:00 +0000
-Subject: [RFC/PATCH v2 3/6] ARM: shmobile: APMU: Add Core-Standby function for CPUIdle
-Message-Id: <1425545943-1440-4-git-send-email-keita.kobayashi.ym@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 30 Mar 2015 09:57:04 +0000
+Subject: Re: [PATCH 1/5 v2] ASoC: rsrc-card: add Renesas sampling rate convert sound card support
+Message-Id: <CAMuHMdVa=KZRT294AjDZ7QZy5PFU=aKh55ookWYruf6cJhbdbg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425545943-1440-1-git-send-email-keita.kobayashi.ym@renesas.com>
-In-Reply-To: <1425545943-1440-1-git-send-email-keita.kobayashi.ym@renesas.com>
+References: <87h9t85ry1.wl%kuninori.morimoto.gx@renesas.com>
+	<87fv8s5rwt.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fv8s5rwt.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, rjw@rjwysocki.net
-Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, badarkhe.manish@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Mark Brown <broonie@kernel.org>, Linux-DT <devicetree@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Simon <horms@verge.net.au>, Liam Girdwood <lgirdwood@gmail.com>, Das Biju <biju.das@bp.renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-This patch add CPUIdle process in platsmp-apmu code.
-The shmobile_smp_apmu_enter_cpuidle function will be
-used by R-Car SoC series.
+On Thu, Mar 26, 2015 at 5:01 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> diff --git a/Documentation/devicetree/bindings/sound/renesas,rsrc-card.txt b/Documentation/devicetree/bindings/sound/renesas,rsrc-card.txt
+> new file mode 100644
+> index 0000000..12e287e
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/sound/renesas,rsrc-card.txt
+> @@ -0,0 +1,66 @@
+> +Renesas Sampling Rate Convert Sound Card:
+> +
+> +Renesas Sampling Rate Convert Sound Card specifies audio DAI connections of SoC <-> codec.
+> +
+> +Required properties:
+> +
+> +- compatible                           : "renesas,rsrc-card,<board>"
+> +                                         Examples with soctypes are:
 
-Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
----
- arch/arm/mach-shmobile/common.h       |  7 +++++++
- arch/arm/mach-shmobile/platsmp-apmu.c | 20 ++++++++++++++++++--
- 2 files changed, 25 insertions(+), 2 deletions(-)
+board types
 
-diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
-index 1ba3886..cecb0af 100644
---- a/arch/arm/mach-shmobile/common.h
-+++ b/arch/arm/mach-shmobile/common.h
-@@ -24,6 +24,7 @@ extern int shmobile_smp_scu_cpu_kill(unsigned int cpu);
- struct clk;
- extern int shmobile_clk_init(void);
- extern struct platform_suspend_ops shmobile_suspend_ops;
-+struct cpuidle_device;
- struct cpuidle_driver;
- 
- #ifdef CONFIG_SUSPEND
-@@ -37,9 +38,15 @@ static inline void shmobile_smp_apmu_suspend_init(void) { }
- #ifdef CONFIG_CPU_IDLE
- int shmobile_cpuidle_init(void);
- extern void shmobile_cpuidle_set_driver(struct renesas_cpuidle *drv);
-+extern int shmobile_smp_apmu_enter_cpuidle(struct cpuidle_device *dev,
-+					   struct cpuidle_driver *drv,
-+					   int index);
- #else
- static inline int shmobile_cpuidle_init(void) { return 0; }
- static inline void shmobile_cpuidle_set_driver(struct renesas_cpuidle *drv) {}
-+static inline int shmobile_smp_apmu_enter_cpuidle(struct cpuidle_device *dev,
-+						  struct cpuidle_driver *drv,
-+						  int index) { return 0; }
- #endif
- 
- #ifdef CONFIG_CPU_FREQ
-diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
-index f483b56..31d3e46 100644
---- a/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ b/arch/arm/mach-shmobile/platsmp-apmu.c
-@@ -139,7 +139,8 @@ int shmobile_smp_apmu_boot_secondary(unsigned int cpu, struct task_struct *idle)
- }
- #endif
- 
--#if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND)
-+#if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_SUSPEND) || \
-+defined(CONFIG_CPU_IDLE)
- /* nicked from arch/arm/mach-exynos/hotplug.c */
- static inline void cpu_enter_lowpower_a15(void)
- {
-@@ -215,7 +216,7 @@ int shmobile_smp_apmu_cpu_kill(unsigned int cpu)
- }
- #endif
- 
--#if defined(CONFIG_SUSPEND)
-+#if defined(CONFIG_SUSPEND) || defined(CONFIG_CPU_IDLE)
- static int shmobile_smp_apmu_do_suspend(unsigned long cpu)
- {
- 	shmobile_smp_hook(cpu, virt_to_phys(cpu_resume), 0);
-@@ -223,7 +224,9 @@ static int shmobile_smp_apmu_do_suspend(unsigned long cpu)
- 	cpu_do_idle(); /* WFI selects Core Standby */
- 	return 1;
- }
-+#endif
- 
-+#if defined(CONFIG_SUSPEND)
- static int shmobile_smp_apmu_enter_suspend(suspend_state_t state)
- {
- 	cpu_suspend(smp_processor_id(), shmobile_smp_apmu_do_suspend);
-@@ -236,3 +239,16 @@ void __init shmobile_smp_apmu_suspend_init(void)
- 	shmobile_suspend_ops.enter = shmobile_smp_apmu_enter_suspend;
- }
- #endif
-+
-+#if defined(CONFIG_CPU_IDLE)
-+int shmobile_smp_apmu_enter_cpuidle(struct cpuidle_device *dev,
-+				    struct cpuidle_driver *drv, int index)
-+{
-+	cpu_pm_enter();
-+	cpu_suspend(smp_processor_id(), shmobile_smp_apmu_do_suspend);
-+	cpu_leave_lowpower();
-+	cpu_pm_exit();
-+
-+	return index;
-+}
-+#endif
--- 
-1.9.1
+> +                                           - "renesas,rsrc-card,lager"
+> +                                           - "renesas,rsrc-card,koelsch"
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
