@@ -1,68 +1,65 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 29 Mar 2015 13:22:13 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 30 Mar 2015 09:23:02 +0000
 Subject: Re: [PATCH/RFC] ARM: shmobile: r8a7791: Remove MSIOF address from device tree
-Message-Id: <CAH1o70JyBbmQ9vDrpamtL=09nq64B9RM1asWOWRXEL0LdgrxMQ@mail.gmail.com>
+Message-Id: <CAMuHMdV201bh8-QrJgsO4KNSMW-d9aVyMczHdyQO0Y_pg4sukw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1426430633-3867-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1426430633-3867-1-git-send-email-ykaneko0929@gmail.com>
+ <CAH1o70JyBbmQ9vDrpamtL=09nq64B9RM1asWOWRXEL0LdgrxMQ@mail.gmail.com>
+In-Reply-To: <CAH1o70JyBbmQ9vDrpamtL=09nq64B9RM1asWOWRXEL0LdgrxMQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert-san,
+Hi Kaneko-san,
 
-I'm wondering if you could find a moment to look over this patch.
+On Sun, Mar 29, 2015 at 3:22 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+> I'm wondering if you could find a moment to look over this patch.
 
-Regards,
-Kaneko
+In light of the discussion thread w.r.t. to the driver changes (I
+don't recall you
+replying, did I miss that?), I think the DTS changes for r8a779[01] are fine.
+However, please also update the example (for r8a7791) in
+Documentation/devicetree/bindings/spi/sh-msiof.txt.
 
-2015-03-15 23:43 GMT+09:00 Yoshihiro Kaneko <ykaneko0929@gmail.com>:
-> From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
->
-> MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
-> MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
->
-> Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
->
-> This patch is based on devel branch of Simon Horman's renesas tree.
->
->  arch/arm/boot/dts/r8a7791.dtsi | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
->
-> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-> index 4696062..3e9f824 100644
-> --- a/arch/arm/boot/dts/r8a7791.dtsi
-> +++ b/arch/arm/boot/dts/r8a7791.dtsi
-> @@ -1288,7 +1288,7 @@
->
->         msiof0: spi@e6e20000 {
->                 compatible = "renesas,msiof-r8a7791";
-> -               reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
-> +               reg = <0 0xe6e20000 0 0x0064>;
->                 interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp0_clks R8A7791_CLK_MSIOF0>;
->                 dmas = <&dmac0 0x51>, <&dmac0 0x52>;
-> @@ -1300,7 +1300,7 @@
->
->         msiof1: spi@e6e10000 {
->                 compatible = "renesas,msiof-r8a7791";
-> -               reg = <0 0xe6e10000 0 0x0064>, <0 0xe7e10000 0 0x0064>;
-> +               reg = <0 0xe6e10000 0 0x0064>;
->                 interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7791_CLK_MSIOF1>;
->                 dmas = <&dmac0 0x55>, <&dmac0 0x56>;
-> @@ -1312,7 +1312,7 @@
->
->         msiof2: spi@e6e00000 {
->                 compatible = "renesas,msiof-r8a7791";
-> -               reg = <0 0xe6e00000 0 0x0064>, <0 0xe7e00000 0 0x0064>;
-> +               reg = <0 0xe6e00000 0 0x0064>;
->                 interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
->                 clocks = <&mstp2_clks R8A7791_CLK_MSIOF2>;
->                 dmas = <&dmac0 0x41>, <&dmac0 0x42>;
-> --
-> 1.9.1
->
+Thanks!
+
+> 2015-03-15 23:43 GMT+09:00 Yoshihiro Kaneko <ykaneko0929@gmail.com>:
+>> From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+>>
+>> MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
+>> MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
+>>
+>> Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+>> ---
+>>
+>> This patch is based on devel branch of Simon Horman's renesas tree.
+>>
+>>  arch/arm/boot/dts/r8a7791.dtsi | 6 +++---
+>>  1 file changed, 3 insertions(+), 3 deletions(-)
+>>
+>> diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+>> index 4696062..3e9f824 100644
+>> --- a/arch/arm/boot/dts/r8a7791.dtsi
+>> +++ b/arch/arm/boot/dts/r8a7791.dtsi
+>> @@ -1288,7 +1288,7 @@
+>>
+>>         msiof0: spi@e6e20000 {
+>>                 compatible = "renesas,msiof-r8a7791";
+>> -               reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
+>> +               reg = <0 0xe6e20000 0 0x0064>;
+>>                 interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
+>>                 clocks = <&mstp0_clks R8A7791_CLK_MSIOF0>;
+>>                 dmas = <&dmac0 0x51>, <&dmac0 0x52>;
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
