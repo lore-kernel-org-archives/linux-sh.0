@@ -1,47 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 31 Mar 2015 00:21:13 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 31 Mar 2015 15:04:43 +0000
 Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7790: add EtherAVB DT support
-Message-Id: <20150331002113.GB16289@verge.net.au>
+Message-Id: <551AB78B.4000506@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1625400.M0MxPQybIy@wasted.cogentembedded.com>
  <8163383.0UU0Q5gsLE@wasted.cogentembedded.com>
-In-Reply-To: <8163383.0UU0Q5gsLE@wasted.cogentembedded.com>
+ <20150331002113.GB16289@verge.net.au>
+In-Reply-To: <20150331002113.GB16289@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Mar 31, 2015 at 12:59:41AM +0300, Sergei Shtylyov wrote:
-> Define the generic R8A7790 part of the EtherAVB device node. 
+Hello.
 
-Please repost once this binding (and associated driver) has been accepted.
+On 03/31/2015 03:21 AM, Simon Horman wrote:
 
-> Based on original patch by Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> ---
->  arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
->  1 file changed, 10 insertions(+)
-> 
-> Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
-> =================================> --- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
-> +++ renesas/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -626,6 +626,16 @@
->  		status = "disabled";
->  	};
->  
-> +	avb: ethernet@e6800000 {
-> +		compatible = "renesas,ravb-r8a7790";
-> +		reg = <0 0xe6800000 0 0x800>, <0 0xee0e8000 0 0x4000>;
-> +		interrupts = <0 163 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp8_clks R8A7790_CLK_ETHERAVB>;
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		status = "disabled";
-> +	};
-> +
->  	sata0: sata@ee300000 {
->  		compatible = "renesas,sata-r8a7790";
->  		reg = <0 0xee300000 0 0x2000>;
-> 
+>> Define the generic R8A7790 part of the EtherAVB device node.
+
+> Please repost once this binding (and associated driver) has been accepted.
+
+    OK, but will you merge patch #1?
+
+>> Based on original patch by Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>.
+
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>>
+>> ---
+>>   arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
+>>   1 file changed, 10 insertions(+)
+>>
+>> Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+>> =================================>> --- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
+>> +++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+>> @@ -626,6 +626,16 @@
+>>   		status = "disabled";
+>>   	};
+>>
+>> +	avb: ethernet@e6800000 {
+>> +		compatible = "renesas,ravb-r8a7790";
+
+    I went the usual way here but I suspect that SoC part of the prop should 
+be "-rcar-gen2" as we now have this IP core (as well as most of the others, 
+except PFC) described in a common manual for the R-Car generation 2 SoCs.
+What do you think?
+
+WBR, Sergei
+
