@@ -1,38 +1,58 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 30 Apr 2015 14:18:55 +0000
-Subject: [PATCH v2 06/15] pinctrl: sh-pfc: Add renesas,pfc-r8a7793 to binding documentation
-Message-Id: <1430403544-26742-7-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Wed, 01 Apr 2015 23:32:11 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC r8a73a4 CCF and Multiplatform Updates for v4.1
+Message-Id: <20150401233211.GB8137@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+References: <cover.1425517246.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425517246.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org, horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, Ulrich Hecht <ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Also renames "R-Car M2" to "R-Car M2-W" to avoid confusion.
+On Thu, Mar 05, 2015 at 10:57:57AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC r8a73a4 CCF and multiplatform
+> updates for v4.1.
+> 
+> 
+> This pull request is based on "Renesas ARM Based SoC Simple PM Bus Updates
+> for v4.1", tagged as renesas-simple-pm-bus-for-v4.1, which you have already
+> pulled. That pull request provides run-time dependencies for this one.
+> 
+> 
+> This pull requests has minor conflicts with "Renesas ARM Based SoC sh7372
+> SoC Removal Updates for v4.1", tagged as
+> renesas-sh7372-soc-removal-for-v4.1, which you have already pulled.
+> 
+> The conflicts are in the following files:
+> 	arch/arm/mach-shmobile/Kconfig
+> 	arch/arm/mach-shmobile/Makefile
+> 
+> The solution is to delete both.
+> 
+> This solution can be found in the renesas-next-20150305v2-v4.0-rc1 tag of
+> the renesas tree.
+> 
+> 
+> The following changes since commit 89d463ea106dba530786a2815fd174f9e6eab71f:
+> 
+>   drivers: bus: Add Simple Power-Managed Bus Driver (2015-02-24 06:36:18 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-r8a73a4-ccf-and-multiplatform-for-v4.1
+> 
+> for you to fetch changes up to 914d7d148411997c2f76f689338d27c362300b7a:
+> 
+>   ARM: shmobile: r8a73a4: Remove legacy code (2015-02-25 16:14:02 +0900)
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: devicetree@vger.kernel.org
----
- Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Thanks, merged.
 
-diff --git a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
-index bfe72ec..6bcf851 100644
---- a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
-+++ b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
-@@ -16,7 +16,8 @@ Required Properties:
-     - "renesas,pfc-r8a7778": for R8A7778 (R-Mobile M1) compatible pin-controller.
-     - "renesas,pfc-r8a7779": for R8A7779 (R-Car H1) compatible pin-controller.
-     - "renesas,pfc-r8a7790": for R8A7790 (R-Car H2) compatible pin-controller.
--    - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2) compatible pin-controller.
-+    - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2-W) compatible pin-controller.
-+    - "renesas,pfc-r8a7793": for R8A7793 (R-Car M2-N) compatible pin-controller.
-     - "renesas,pfc-sh73a0": for SH73A0 (SH-Mobile AG5) compatible pin-controller.
- 
-   - reg: Base address and length of each memory resource used by the pin
--- 
-2.3.5
+I don't see a reason for you to split your branches per SoC like this
+though -- you already had another multiplatform branch for another SoC,
+you can combine the two.
 
+
+-Olof
