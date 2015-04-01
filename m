@@ -1,61 +1,40 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 28 Apr 2015 16:53:15 +0000
-Subject: Re: ARM: shmobile: ARCH_R8A7793?
-Message-Id: <CAMuHMdXcAoZCKvUO1egt+6=CmJs6cAEeoyXPKHT3rOB_K1jYvw@mail.gmail.com>
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Wed, 01 Apr 2015 03:55:08 +0000
+Subject: Re: [PATCH v2 2/2] dmaengine: usb-dmac: Add Renesas USB DMA Controller (USB-DMAC) driver
+Message-Id: <20150401034308.GU7192@intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416302641.7024.7.camel@x220>
- <CAMuHMdUFZo+r-N0Ofa1d6PHDtB6dqZfChpLgOz_XtruWD3_a3g@mail.gmail.com>
- <CAD3Xx4LHqD44LzfHmhDQh59S_YBV1kRkowo9JWDE7EzoRUySKA@mail.gmail.com>
-In-Reply-To: <CAD3Xx4LHqD44LzfHmhDQh59S_YBV1kRkowo9JWDE7EzoRUySKA@mail.gmail.com>
+References: <1426052394-5556-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <1426052394-5556-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <20150318082215.GF32683@intel.com>
+ <SIXPR06MB33355F6F0532539A23ED8A9D8010@SIXPR06MB333.apcprd06.prod.outlook.com>
+ <20150319095927.GX32683@intel.com>
+ <HKNPR06MB32208DCB73732603FF61234D80D0@HKNPR06MB322.apcprd06.prod.outlook.com>
+In-Reply-To: <HKNPR06MB32208DCB73732603FF61234D80D0@HKNPR06MB322.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: yoshihiro shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: "dan.j.williams@intel.com" <dan.j.williams@intel.com>, "laurent.pinchart@ideasonboard.com" <laurent.pinchart@ideasonboard.com>, "horms@verge.net.au" <horms@verge.net.au>, kuninori morimoto <kuninori.morimoto.gx@renesas.com>, "robh+dt@kernel.org" <robh+dt@kernel.org>, "pawel.moll@arm.com" <pawel.moll@arm.com>, "mark.rutland@arm.com" <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, "galak@codeaurora.org" <galak@codeaurora.org>, "dmaengine@vger.kernel.org" <dmaengine@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Hi Valentin,
+On Mon, Mar 23, 2015 at 02:32:07AM +0000, yoshihiro shimoda wrote:
 
-On Tue, Apr 28, 2015 at 5:52 PM, Valentin Rothberg
-<valentinrothberg@gmail.com> wrote:
-> I am cleaning up some Kconfig issues in ARM
-> (./scripts/checkkconfgisymbols.py) at the moment and came across
-> CONFIG_ARCH_R8A7793:
->
-> arch/arm/Kconfig.debug:         depends on ARCH_R8A7790 ||
-> ARCH_R8A7791 || ARCH_R8A7793
-> drivers/clk/shmobile/Makefile:obj-$(CONFIG_ARCH_R8A7793)
->  += clk-rcar-gen2.o
->
-> Do you know when this option will be added to Kconfig (see email below)?
+> > > > > +static void usb_dmac_chan_remove(struct usb_dmac_chan *uchan)
+> > > > > +{
+> > > > > +	tasklet_kill(&uchan->task);
+> > > > that part is good, but how about disabling irq? you can still get insterrupt
+> > >
+> > > Thank you for the point! I will add calling usb_dmac_chan_halt() to disable the interrupt.
+> > On top of that you should free/disable the irq as well
+> 
+> Does this mean I should call free_irq() or something in this remove function?
+Yes, that way irq can be be invoked
 
-A first patch series was sent last month, cfr. ("[PATCH 00/11] r8a7793 SoC,
-Gose board support", http://www.spinics.net/lists/linux-sh/msg40781.html).
+> Since this driver uses devm_request_irq(), I don't think the driver call such a function.
+> (After this driver was removed, free_irq() was called by devm_irq_release())
+Yes FW will call, but the issue is that isr can get triggered after you ahve
+freed up stuff. So to prevent thsi it is recomendded that driver invoked
+free_irq() explictly or disable the irq line
 
-I assume an update, taking account review comments, will be posted shortly.
+-- 
+~Vinod
 
-> On Tue, Nov 18, 2014 at 10:36 AM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
->> Hi Paul,
->>
->> On Tue, Nov 18, 2014 at 10:24 AM, Paul Bolle <pebolle@tiscali.nl> wrote:
->>> Your commit 7a2071c58f36 ("ARM: shmobile: Add early debugging support
->>> using SCIF(A)") is included in today's linux-next (ie, next-20141118).
->>> It adds an (optional) dependency on the Kconfig symbol ARCH_R8A7793. But
->>> that symbol isn't part of next-20141118.
->>>
->>> Is a patch that adds this symbol queued somewhere?
->>
->> Not yet. I was just a bit pro-active ;-)
->>
->> However, there are already references to r8a7793 in DT binding documentation,
->> and in of_device_id arrays in drivers.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
