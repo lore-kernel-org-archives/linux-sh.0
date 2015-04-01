@@ -1,48 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 05 Apr 2015 20:06:20 +0000
-Subject: Re: [PATCH/RFC 5/6] staging: board: Add support for devices with complex dependencies
-Message-Id: <2722685.XFRaAHH9GQ@avalon>
+From: Olof Johansson <olof@lixom.net>
+Date: Wed, 01 Apr 2015 23:38:59 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC sh73a0 Multiplatform Updates for v4.1
+Message-Id: <20150401233859.GC8137@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
- <34835209.cQQp4PEGGk@avalon>
- <CAMuHMdWsc=2QvKfpYmN=M6As_KWENW2nhSqa8ajkZrQFe+dCPw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWsc=2QvKfpYmN=M6As_KWENW2nhSqa8ajkZrQFe+dCPw@mail.gmail.com>
+References: <cover.1425518682.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1425518682.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
-
-On Sunday 05 April 2015 11:00:56 Geert Uytterhoeven wrote:
-> On Sat, Apr 4, 2015 at 2:46 PM, Laurent Pinchart wrote:
-> >> +     for (i = 0; i < dev->ngpios; i++)
-> >> +             gpio_request_one(dev->gpios[i].gpio, dev->gpios[i].flags,
-> >> +                              pdev->name);
-> > 
-> > Aren't GPIO numbers dynamic too in DT-based systems ? Beside, shouldn't it
-> > be
->
-> Apparently not, as the old legacy number still works, and it doesn't work
-> without.
-
-I think we're just lucky there that the SoC main GPIO controller gets 
-registered first and starts counting GPIOs with a zero offset.
- 
-> > the responsibility of the drievr to request the GPIOs it needs ?
+On Thu, Mar 05, 2015 at 10:58:26AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> As far as I understand it, on Armadillo this is used more for platform
-> configuration than for device configuration, as it affects multiple devices
-> (the comment says DBGMD/LCDC0/FSIA MUX).
+> Please consider these Renesas ARM based SoC sh73a0 multiplatform updates for v4.1.
 > 
-> I guess I could use a "gpio-hog" subnode in DT instead, but then we're
-> already implementing the conversion to DT ;-)
+> This pull request is based on the previous round of
+> such requests, tagged as sh73a0-multiplatform-for-v4.1.base,
+> which I have already sent a pull-request for.
+> 
+> 
+> This pull request is based on a merge of the following pull requests
+> which you have already pulled:
+> 
+> * "Renesas ARM Based SoC Simple PM Bus Updates for v4.1",
+>   tagged as renesas-simple-pm-bus-for-v4.1.
+> 
+> * "Renesas ARM Based SoC DT Updates for v4.1", tagged as renesas-dt-for-v4.1.
+> 
+> 
+> This pull requests has a number of minor conflicts with "Renesas ARM Based
+> SoC sh7372 SoC Removal Updates for v4.1", tagged as
+> renesas-sh7372-soc-removal-for-v4.1, which you have already pulled.
+> 
+> The conflicts are in the following files:
+>         arch/arm/boot/dts/Makefile
+>         arch/arm/mach-shmobile/Makefile
+>         arch/arm/mach-shmobile/Makefile.boot
+>         arch/arm/mach-shmobile/include/mach/zboot.h
 
-But that's the goal :-) I'd rather move GPIO and pinctrl to DT directly as we 
-already have the infrastructure to do so.
+It'd be nice to keep the dts changes in your DT branch, so there's less risk
+for add/remove conflicts. I don't think there will be any this release so it's
+not a big deal, but keep it in mind in the future.
 
--- 
-Regards,
+Also, as already mentioned, some of this could have gone in one larger joined
+branch (and based on the cleanups to avoid conflicts).
 
-Laurent Pinchart
 
+-Olof
