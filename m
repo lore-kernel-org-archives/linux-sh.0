@@ -1,26 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Apr 2015 00:24:16 +0000
-Subject: Re: [PATCH repost] ARM: shmobile: r8a7790: Remove MSIOF address from device tree
-Message-Id: <20150406002411.GC1841@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 01 Apr 2015 06:02:13 +0000
+Subject: [PATCH] clk: shmobile: r8a7779: check return of of_property_read_string_index()
+Message-Id: <87pp7o2xqg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428166471-2897-1-git-send-email-ykaneko0929@gmail.com>
- <CAMuHMdW40S4rU-wkrJDHDw_ThFdChEa+HEyXYHJ3AAH1TwUiVw@mail.gmail.com>
-In-Reply-To: <CAMuHMdW40S4rU-wkrJDHDw_ThFdChEa+HEyXYHJ3AAH1TwUiVw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Stephen Boyd <sboyd@codeaurora.org>, Mike Turquette <mturquette@linaro.org>
+Cc: Simon Horman <horms+renesas@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>
 
-On Sun, Apr 05, 2015 at 10:46:33AM +0200, Geert Uytterhoeven wrote:
-> On Sat, Apr 4, 2015 at 6:54 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
-> > From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-> >
-> > MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
-> > MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
-> >
-> > Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-> > Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I have queued this up for v4.2.
+This patch indicates error message if return value of
+of_property_read_string_index() was not zero.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/clk/shmobile/clk-r8a7779.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/clk/shmobile/clk-r8a7779.c b/drivers/clk/shmobile/clk-r8a7779.c
+index 652ecac..af439b2 100644
+--- a/drivers/clk/shmobile/clk-r8a7779.c
++++ b/drivers/clk/shmobile/clk-r8a7779.c
+@@ -155,8 +155,10 @@ static void __init r8a7779_cpg_clocks_init(struct device_node *np)
+ 		const char *name;
+ 		struct clk *clk;
+ 
+-		of_property_read_string_index(np, "clock-output-names", i,
+-					      &name);
++		if (of_property_read_string_index(np, "clock-output-names", i,
++						  &name))
++			pr_err("%s: can't get clock-output-names (%d)\n",
++			       __func__, i);
+ 
+ 		clk = r8a7779_cpg_register_clock(np, cpg, config,
+ 						 plla_mult, name);
+-- 
+1.9.1
+
