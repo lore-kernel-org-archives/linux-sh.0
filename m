@@ -1,68 +1,82 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 30 Apr 2015 00:19:04 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: defconfig: Replace USB_RCAR_GEN2_PHY by PHY_RCAR_GEN2
-Message-Id: <20150430001903.GG17758@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 01 Apr 2015 12:30:47 +0000
+Subject: [PATCH v2] ARM: kexec: Relax SMP validation to improve DT compatibility
+Message-Id: <1427891447-30695-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430222884-2095-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430222884-2095-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 28, 2015 at 02:08:03PM +0200, Geert Uytterhoeven wrote:
-> The legacy-only USB_RCAR_GEN2_PHY driver was replaced by the DT-only
-> PHY_RCAR_GEN2 driver.
-> 
-> Refresh the defconfig using "make savedefconfig" while we're at it.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Oops, CONFIG_USB_RCAR_GEN2_PHY shouldn't have been in a multiplatform
-> defconfig, as it supports legacy platform data only.
+When trying to kexec into a new kernel on a platform where multiple CPU
+cores are present, but no SMP bringup code is available yet, the
+kexec_load system call fails with:
 
-Thanks for cleaning this up.
+    kexec_load failed: Invalid argument
 
-I have queued this up for v4.2.
+The SMP test added to machine_kexec_prepare() in commit 2103f6cba61a8b8b
+("ARM: 7807/1: kexec: validate CPU hotplug support") wants to prohibit
+kexec on SMP platforms where it cannot disable secondary CPUs.
+However, this test is too strict: if the secondary CPUs couldn't be
+enabled in the first place, there's no need to disable them later at
+kexec time.  Hence skip the test in the absence of SMP bringup code.
 
-> 
->  arch/arm/configs/shmobile_defconfig | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-> index b58618e2d13c51c8..9961fbd633f8d165 100644
-> --- a/arch/arm/configs/shmobile_defconfig
-> +++ b/arch/arm/configs/shmobile_defconfig
-> @@ -121,7 +121,6 @@ CONFIG_WATCHDOG=y
->  CONFIG_DA9063_WATCHDOG=y
->  CONFIG_MFD_AS3711=y
->  CONFIG_MFD_DA9063=y
-> -CONFIG_REGULATOR=y
->  CONFIG_REGULATOR_AS3711=y
->  CONFIG_REGULATOR_DA9210=y
->  CONFIG_REGULATOR_GPIO=y
-> @@ -160,7 +159,6 @@ CONFIG_USB_OHCI_HCD=y
->  CONFIG_USB_R8A66597_HCD=y
->  CONFIG_USB_RENESAS_USBHS=y
->  CONFIG_USB_RCAR_PHY=y
-> -CONFIG_USB_RCAR_GEN2_PHY=y
->  CONFIG_USB_GADGET=y
->  CONFIG_USB_RENESAS_USBHS_UDC=y
->  CONFIG_USB_ETH=y
-> @@ -182,6 +180,8 @@ CONFIG_IIO=y
->  CONFIG_AK8975=y
->  CONFIG_PWM=y
->  CONFIG_PWM_RENESAS_TPU=y
-> +CONFIG_GENERIC_PHY=y
-> +CONFIG_PHY_RCAR_GEN2=y
->  # CONFIG_DNOTIFY is not set
->  CONFIG_MSDOS_FS=y
->  CONFIG_VFAT_FS=y
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+This allows to add all CPU cores to the DTS from the beginning, without
+having to implement SMP bringup first, improving DT compatibility.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Stephen Warren <swarren@nvidia.com>
+---
+v2:
+  - Add Acked-by.
+---
+ arch/arm/include/asm/smp_plat.h | 1 +
+ arch/arm/kernel/machine_kexec.c | 3 ++-
+ arch/arm/kernel/smp.c           | 5 +++++
+ 3 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/smp_plat.h b/arch/arm/include/asm/smp_plat.h
+index 0ad7d490ee6f2657..993e5224d8f7eeeb 100644
+--- a/arch/arm/include/asm/smp_plat.h
++++ b/arch/arm/include/asm/smp_plat.h
+@@ -104,6 +104,7 @@ static inline u32 mpidr_hash_size(void)
+ 	return 1 << mpidr_hash.bits;
+ }
+ 
++extern int platform_can_secondary_boot(void);
+ extern int platform_can_cpu_hotplug(void);
+ 
+ #endif
+diff --git a/arch/arm/kernel/machine_kexec.c b/arch/arm/kernel/machine_kexec.c
+index de2b085ad7535da7..8bf3b7c098881b95 100644
+--- a/arch/arm/kernel/machine_kexec.c
++++ b/arch/arm/kernel/machine_kexec.c
+@@ -46,7 +46,8 @@ int machine_kexec_prepare(struct kimage *image)
+ 	 * and implements CPU hotplug for the current HW. If not, we won't be
+ 	 * able to kexec reliably, so fail the prepare operation.
+ 	 */
+-	if (num_possible_cpus() > 1 && !platform_can_cpu_hotplug())
++	if (num_possible_cpus() > 1 && platform_can_secondary_boot() &&
++	    !platform_can_cpu_hotplug())
+ 		return -EINVAL;
+ 
+ 	/*
+diff --git a/arch/arm/kernel/smp.c b/arch/arm/kernel/smp.c
+index 86ef244c5a24b4fa..cca5b87581855244 100644
+--- a/arch/arm/kernel/smp.c
++++ b/arch/arm/kernel/smp.c
+@@ -145,6 +145,11 @@ void __init smp_init_cpus(void)
+ 		smp_ops.smp_init_cpus();
+ }
+ 
++int platform_can_secondary_boot(void)
++{
++	return !!smp_ops.smp_boot_secondary;
++}
++
+ int platform_can_cpu_hotplug(void)
+ {
+ #ifdef CONFIG_HOTPLUG_CPU
+-- 
+1.9.1
+
