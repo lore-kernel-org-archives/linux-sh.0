@@ -1,55 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 17 Apr 2015 08:19:37 +0000
-Subject: Re: [RFC/PATCH v2 0/5] Add cpuidle support for r8a7791
-Message-Id: <20150417081937.GB28811@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 01 Apr 2015 06:22:43 +0000
+Subject: [PATCH v4 0/2] dmaengine: usb-dmac: Add Renesas USB DMA Controller
+Message-Id: <1427869365-2068-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1429180540-5692-1-git-send-email-keita.kobayashi.ym@renesas.com>
-In-Reply-To: <1429180540-5692-1-git-send-email-keita.kobayashi.ym@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-Cc: rjw@rjwysocki.net, daniel.lezcano@linaro.org, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, devicetree@vger.kernel.org, magnus.damm@gmail.com
+To: vinod.koul@intel.com, dan.j.williams@intel.com, laurent.pinchart@ideasonboard.com, horms@verge.net.au, kuninori.morimoto.gx@renesas.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Hi Kobayashi-san,
+This patch set is based on slave-dma.git / next branch.
+(commit id = 739e9c81155e74ca7acfa152eea4e8c055fe35b8)
 
-from my point of view this looks reasonable.
-Is it marked as an RFC because you see some problems with it.
-If not perhaps it would be best to proceed to a more formal
-stage of the review process by dropping the RFC designation?
+Changes from v3:
+ - Call devm_free_irq() in usb_dmac_chan_remove() to prevent the isr gets
+   triggered after this driver have freed up stuff.
 
-On Thu, Apr 16, 2015 at 07:35:35PM +0900, Keita Kobayashi wrote:
-> Hello
-> 
-> These patches add cpuidle support for Renesas r8a7791 SoC.
-> The r8a7791 cpuidle supports WFI and the cpu power state(Core-Standby)
-> using Generic ARM CPU idle driver(cpuidle-arm).
-> Generic ARM CPU idle driver have been merged in linux-pm.git / pm+acpi-4.1-rc1 tag.
-> 
-> Based on : renesas.git / renesas-devel-20150413-v4.0 tag
-> Tested on : koelsch board
-> 
-> Changes from v1:
->  - Change "select" to "depend on"
->  - Document a new enable method of Renesas cpuidle
-> 
-> Keita Kobayashi (5):
->   ARM: cpuidle: Add cpuidle support for R-Car Gen2 series
->   ARM: shmobile: Add cpuidle_ops for R-Car cpuidle
->   devicetree: bindings: Add new cpuidle enable method for Renesas R-car
->     SoCs
->   ARM: shmobile: dtsi: Add cpuidle parameters into each cpu for r8a7791
->   ARM: shmobile: Enable Renesas R-Car cpuidle for shmobile_defconfig
-> 
->  Documentation/devicetree/bindings/arm/cpus.txt |  1 +
->  arch/arm/boot/dts/r8a7791.dtsi                 | 13 +++++++++++++
->  arch/arm/configs/shmobile_defconfig            |  3 +++
->  arch/arm/mach-shmobile/platsmp-apmu.c          | 14 +++++++++++---
->  arch/arm/mach-shmobile/platsmp-apmu.h          |  1 +
->  arch/arm/mach-shmobile/pm-rcar-gen2.c          | 17 +++++++++++++++++
->  drivers/cpuidle/Kconfig.arm                    |  8 ++++++++
->  7 files changed, 54 insertions(+), 3 deletions(-)
-> 
-> -- 
-> 1.9.1
-> 
+Changes from v2:
+ - Change descriptor management to store the residue in descriptor instead
+   of the channel.
+ - Change acceptable any sg_len.
+ - Modify usb_dmac_tx_status() to calculate the residue for flight
+   descriptors.
+ - Remove a local tasklet.
+ - Remove #ifdef CONFIG_PM.
+ Remarks: No change in patch [1/2].
+
+Changes from v1:
+ - Use virt-dma infrastructure instead of local descriptor management.
+ - Change acceptable sg_len to 1.
+   (because a client driver will use dmaengine_prep_slave_single().)
+ - Remove usb_dmac_sleep_{suspend,resume} functions.
+ - Add usb_dmac_chan_halt() in usb_dmac_runtime_suspend().
+ - Use a tasklet instead of a kernel thread.
+ - Add tasklet_kill() in usb_dmac_remove().
+ - Fix MODULE_AUTHOR string.
+ Remarks: No change in patch [1/2].
+
+Yoshihiro Shimoda (2):
+  dmaengine: renesas,usb-dmac: Add device tree bindings documentation
+  dmaengine: usb-dmac: Add Renesas USB DMA Controller (USB-DMAC) driver
+
+ .../devicetree/bindings/dma/renesas,usb-dmac.txt   |  37 +
+ drivers/dma/sh/Kconfig                             |   9 +
+ drivers/dma/sh/Makefile                            |   1 +
+ drivers/dma/sh/usb-dmac.c                          | 910 +++++++++++++++++++++
+ 4 files changed, 957 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
+ create mode 100644 drivers/dma/sh/usb-dmac.c
+
+-- 
+1.9.1
+
