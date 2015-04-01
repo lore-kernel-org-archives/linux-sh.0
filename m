@@ -1,70 +1,95 @@
-From: Chris Brandt <Chris.Brandt@renesas.com>
-Date: Tue, 07 Apr 2015 03:31:03 +0000
-Subject: RE: XIP_KERNEL and !ARCH_MULTIPLATFORM
-Message-Id: <HK2PR06MB05619EB06ED9EA52495B06038AFD0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 01 Apr 2015 12:17:47 +0000
+Subject: Re: [PATCH v2 2/4] Documentation: i2c: describe the new slave mode
+Message-Id: <CAMuHMdVVLVXmbtan1rKtDrSrJ_nKO_K5Xx4jAjcb5ow_ChDVhg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <HK2PR06MB0561CC16649A9C1F341CC6648A030@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <20150405160203.GF13898@n2100.arm.linux.org.uk>
-In-Reply-To: <20150405160203.GF13898@n2100.arm.linux.org.uk>
+References: <1427099199-3628-1-git-send-email-wsa@the-dreams.de>
+	<1427099199-3628-3-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1427099199-3628-3-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+Cc: Linux I2C <linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, =?UTF-8?Q?Uwe_Kleine=2DK=C3=B6nig?= <u.kleine-koenig-bIcnvbaLZ9MEGnE8C9+IrQ@public.gmane.org>
 
-> We have had something that worked very well for this kind of stuff for many many years - that
-> is the top level choice statement where the multi-platform option can be found.
+Hi Wolfram,
 
+On Mon, Mar 23, 2015 at 9:26 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
+> --- /dev/null
+> +++ b/Documentation/i2c/slave-interface
 
-In arch/arm/Kconfig, there is already a
-config ARCH_SHMOBILE_LEGACY
-	bool "Renesas ARM SoCs (non-multiplatform)"
-	select ARCH_SHMOBILE
+> +I2C slave events
+> +----------------
+> +
+> +The bus driver sends an event to the backend using the following function:
+> +
+> +       ret = i2c_slave_event(client, event, &val)
+> +
+> +'client' describes the i2c slave device. 'event' is one of the special event
+> +types described hereafter. 'val' holds an u8 value for the data byte to be
+> +read/written and is thus bidirectional. The pointer to val must always be
+> +provided even if val is not used for an event, i.e. don't use NULL here. 'ret'
+> +is the return value from the backend. Mandatory events must be provided by the
+> +bus drivers and must be checked for by backend drivers.
+> +
+> +Event types:
+> +
+> +* I2C_SLAVE_WRITE_REQUESTED (mandatory)
+> +
+> +'val': unused
+> +'ret': always 0
+> +
+> +Another I2C master wants to write data to us. This event should be sent once
+> +our own address and the write bit was detected. The data did not arrive yet, so
+> +there is nothing to process or return. Wakeup or initialization probably needs
+> +to be done, though.
+> +
+> +* I2C_SLAVE_READ_REQUESTED (mandatory)
 
-But, that will only get you to a limited number of systems to choose from.
+I'm wondering whether these should be called I2C_SLAVE_READ_FIRST...
 
+> +'val': backend returns first byte to be sent
+> +'ret': always 0
+> +
+> +Another I2C master wants to read data from us. This event should be sent once
+> +our own address and the read bit was detected. After returning, the bus driver
+> +should transmit the first byte.
+> +
+> +* I2C_SLAVE_WRITE_RECEIVED (mandatory)
+> +
+> +'val': bus driver delivers received byte
+> +'ret': 0 if the byte should be acked, some errno if the byte should be nacked
+> +
+> +Another I2C master has sent a byte to us which needs to be set in 'val'. If 'ret'
+> +is zero, the bus driver should ack this byte. If 'ret' is an errno, then the byte
+> +should be nacked.
+> +
+> +* I2C_SLAVE_READ_PROCESSED (mandatory)
 
-The system I want (ARCH_R7S72100), in arch/arm/mach-shmobile/Kconfig is buried inside
-if ARCH_SHMOBILE_MULTI
-. . .
-. . .
-config ARCH_R7S72100
-	bool "RZ/A1H (R7S72100)"
-	select SYS_SUPPORTS_SH_MTU2
-. . .
-. . .
-endif
+... and I2C_SLAVE_READ_NEXT?
 
+I don't have good alternative names for the write operation, as it's not
+symmetric.
 
-Hence, I can't select ARCH_R7S72100 without first selecting multi-platform.
+> +'val': backend returns next byte to be sent
+> +'ret': always 0
+> +
+> +The bus driver requests the next byte to be sent to another I2C master in
+> +'val'. Important: This does not mean that the previous byte has been acked, it
+> +only means that the previous byte is shifted out to the bus! To ensure seamless
+> +transmission, most hardware requests the next byte when the previous one is
+> +still shifted out. If the master sends NACK and stops reading after the byte
+> +currently shifted out, this byte requested here is never used. It very likely
+> +needs to be sent again on the next I2C_SLAVE_READ_REQUEST, depending a bit on
+> +your backend, though.
 
-So, to not break multi-platform, but still allow single builds (and not
-break anyone's existing config files), we'd have to go back to the way
-it was, which was having duplicate ARCH entries in:
+Gr{oetje,eeting}s,
 
-if ARCH_SHMOBILE_MULTI
-. . .
-. . .
-endif
+                        Geert
 
- and
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-if ARCH_SHMOBILE_LEGACY
-. . .
-. . .
-endif
-
-However, this idea conflicts with Arnd's statement:
-
-> a) building a kernel for a single machine while CONFIG_ARCH_MULTIPLATFORM is
->    enabled
->
-> I have patches to make ARCH_MULTIPLATFORM always enabled on all ARMv6/v7 (snip)
->
-> This means that I would definitely want to see XIP_KERNEL being possible on your machine with a)
-
-
-I must be missing something, but the only way to have it show up in the menu under multi-platform and single-platform is to duplicate the ARCH_xxx entry.
-
-
-Chris
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
