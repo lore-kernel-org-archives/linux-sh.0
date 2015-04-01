@@ -1,168 +1,69 @@
-From: Marc Zyngier <marc.zyngier@arm.com>
-Date: Mon, 06 Apr 2015 10:45:44 +0000
-Subject: Re: [PATCH/RFC 3/6] staging: board: Add support for translating  hwirq to virq numbers
-Message-Id: <7a82f5d435aaaf8d121233769a77943c@www.loen.fr>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 01 Apr 2015 12:13:12 +0000
+Subject: Re: [PATCH/RFC 1/5] clk: shmobile: rcar-gen2: Add CPG Clock Domain support
+Message-Id: <CAMuHMdWuVdOgk6RAzoUtskC3pzz3xs6HmGf5RyrAa3Rs-y56uQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
- <1428064923-24950-4-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1428064923-24950-4-git-send-email-geert+renesas@glider.be>
+References: <1426708017-28885-1-git-send-email-geert+renesas@glider.be>
+ <1426708017-28885-2-git-send-email-geert+renesas@glider.be>
+ <3861934.bVCAbQmBJW@avalon>
+In-Reply-To: <3861934.bVCAbQmBJW@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 2015-04-03 13:42, Geert Uytterhoeven wrote:
-> As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
-> domain."), GIC IRQ numbers are virtual, breaking hardcoded hardware 
-> IRQ
-> numbers in platform device resources.
->
-> Add support for translating hardware IRQ numbers to virtual IRQ 
-> numbers,
-> and fixing up platform device resources with hardcoded IRQ numbers.
->
-> Add a copyright header, including the original author.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  drivers/staging/board/board.c | 66
-> +++++++++++++++++++++++++++++++++++++++++++
->  drivers/staging/board/board.h |  5 ++++
->  2 files changed, 71 insertions(+)
->
-> diff --git a/drivers/staging/board/board.c 
-> b/drivers/staging/board/board.c
-> index d5a6abc845191c93..b84ac2837a20bf06 100644
-> --- a/drivers/staging/board/board.c
-> +++ b/drivers/staging/board/board.c
-> @@ -1,10 +1,27 @@
-> +/*
-> + * Copyright (C) 2014 Magnus Damm
-> + * Copyright (C) 2015 Glider bvba
-> + *
-> + * This file is subject to the terms and conditions of the GNU
-> General Public
-> + * License.  See the file "COPYING" in the main directory of this 
-> archive
-> + * for more details.
-> + */
-> +
-> +#define pr_fmt(fmt)	"board_staging: "  fmt
-> +
->  #include <linux/init.h>
-> +#include <linux/irq.h>
->  #include <linux/device.h>
->  #include <linux/kernel.h>
->  #include <linux/of.h>
->  #include <linux/of_address.h>
-> +#include <linux/of_irq.h>
-> +
->  #include "board.h"
->
-> +static struct device_node *irqc_node __initdata;
-> +static unsigned int irqc_base __initdata;
-> +
->  static bool find_by_address(u64 base_address)
->  {
->  	struct device_node *dn = of_find_all_nodes(NULL);
-> @@ -38,3 +55,52 @@ bool __init board_staging_dt_node_available(const
-> struct resource *resource,
->
->  	return false; /* Nothing found */
->  }
-> +
-> +int __init board_staging_setup_hwirq_xlate(const char *irqc_match,
-> +					   unsigned int base)
-> +{
-> +	irqc_node = of_find_compatible_node(NULL, NULL, irqc_match);
-> +
-> +	WARN_ON(!irqc_node);
-> +	if (!irqc_node)
-> +		return -ENOENT;
-> +
-> +	irqc_base = base;
-> +	return 0;
-> +}
+Hi Laurent,
 
-And what happens when you have multiple (cascaded) interrupt 
-controllers, each wanting to register with this translation service? You 
-should at least check that nobody has been here before.
-
-> +static unsigned int __init xlate_hwirq(unsigned int hwirq)
-> +{
-> +	struct of_phandle_args irq_data;
-> +	unsigned int irq;
-> +
-> +	if (!irqc_node)
-> +		return hwirq;
-> +
-> +	irq_data.np = irqc_node;
-> +	irq_data.args_count = 3;
-> +	irq_data.args[0] = 0;
-> +	irq_data.args[1] = hwirq - irqc_base;
-> +	irq_data.args[2] = IRQ_TYPE_LEVEL_HIGH;
-
-And what happens for edge interrupts? Or LEVEL_LOW? This is very much 
-GIC specific (3 args...). How does it work with non-GIC interrupt 
-controllers?
-
-> +
-> +	irq = irq_create_of_mapping(&irq_data);
-> +	if (WARN_ON(!irq))
-> +		irq = hwirq;
-> +
-> +	return irq;
-> +}
-> +
-> +void __init board_staging_fixup_irq_resources(struct resource *res,
-> +					      unsigned int nres)
-> +{
-> +	unsigned int i;
-> +
-> +	for (i = 0; i < nres; i++)
-> +		if (res[i].flags = IORESOURCE_IRQ) {
-> +			unsigned int hwirq = res[i].start;
-> +			unsigned int virq = xlate_hwirq(hwirq);
-> +
-> +			pr_debug("hwirq %u -> virq %u\n", hwirq, virq);
-> +			res[i].start = virq;
-> +		}
-> +}
-> diff --git a/drivers/staging/board/board.h 
-> b/drivers/staging/board/board.h
-> index e9c914985d4acb36..4cedc3c46e287eb7 100644
-> --- a/drivers/staging/board/board.h
-> +++ b/drivers/staging/board/board.h
-> @@ -1,10 +1,15 @@
->  #ifndef __BOARD_H__
->  #define __BOARD_H__
-> +
->  #include <linux/init.h>
->  #include <linux/of.h>
+On Tue, Mar 31, 2015 at 1:53 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Wednesday 18 March 2015 20:46:53 Geert Uytterhoeven wrote:
+>> Add Clock Domain support to the R-Car Gen2 Clock Pulse Generator (CPG)
+>> driver using the generic PM Domain.  This allows to power-manage the
+>> module clocks of SoC devices that are part of the CPG Clock Domain using
+>> Runtime PM, or for system suspend/resume.
+>>
+>> SoC devices that are part of the CPG Clock Domain and can be
+>> power-managed through their primary clock should be tagged in DT with a
+>> proper "power-domains" property.
+>>
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 >
-> +struct resource;
-> +
->  bool board_staging_dt_node_available(const struct resource 
-> *resource,
->  				     unsigned int num_resources);
-> +int board_staging_setup_hwirq_xlate(const char *irqc_match, unsigned
-> int base);
-> +void board_staging_fixup_irq_resources(struct resource *res,
-> unsigned int nres);
+> There's one thing that bothers me: the implementation is tied to the CPG
+> driver, but the code is quite generic. That feels a bit wrong, it would be
+> nice to come up with a generic implementation. On the other hand, the
+> platform-dependent part is the list of clocks to manage, specified implicitly
+> through the "pm_clk_add(dev, NULL)" call. That list needs to be specified
+> somewhere, and adding it to the CPG driver is likely the best solution we can
+> have at the moment.
+
+This clock management code is identical to the one in pm-rmobile.c.
+We may consolidate in the future, if we have more PM Domain support (e.g.
+for R-Car Gen2 SYSC). Let's see...
+
+> I'm slightly worried that adding the power-domains property to the DT node
+> will introduce backward compatibility issues if we later switch to a different
+> way to specify the clocks to manage automatically. I have no specific example
+> though.
+
+Specifying the clocks is indeed the hard part. I use the primary clocks, as
+that is compatible with what we did in the past in drivers/sh/pm_runtime.c.
+I thought about using a special clock name instead, but that may conflict
+with an existing driver-specific DT binding for clk-names, and may cause
+problems if you have to specify the same clock twice with different clk-names.
+
+> For those reasons,
 >
->  #define board_staging(str, fn)			\
->  static int __init runtime_board_check(void)	\
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-It won't surprise you that I don't really like this approach. It is 
-controller-specific, restrictive, and allows platform code to continue 
-doing something that is essentially wrong. Should this code ever move 
-out of staging, it should depend on CONFIG_BROKEN, because this is 
-essentially what it is - support code for broken systems. I'd also 
-welcome moving parts of the OMAP4/5 code to such CONFIG_BROKEN 
-dependency.
+Thanks!
 
-Thanks,
+Gr{oetje,eeting}s,
 
-         M.
--- 
-Fast, cheap, reliable. Pick two.
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
