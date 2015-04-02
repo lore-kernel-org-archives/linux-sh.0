@@ -1,37 +1,35 @@
-From: David Miller <davem@davemloft.net>
-Date: Tue, 07 Apr 2015 19:33:37 +0000
-Subject: Re: [PATCH] sh_eth: move inline functions to the header file
-Message-Id: <20150407.153337.1789757717574323514.davem@davemloft.net>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 02 Apr 2015 11:22:34 +0000
+Subject: [PATCH] usb: phy: rcar-gen2-usb: Fix USBHS_UGSTS_LOCK value
+Message-Id: <1427973754-4868-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4254119.qJUdUQCUqs@wasted.cogentembedded.com>
-	<20150407.152249.360575010614186977.davem@davemloft.net>
-	<55242F5F.2060409@cogentembedded.com>
-In-Reply-To: <55242F5F.2060409@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 07 Apr 2015 22:26:23 +0300
+According to the technical update (No. TN-RCS-B011A/E), the UGSTS LOCK
+bit location is bit 8, not bits 9 and 8. So, this patch fixes the
+USBHS_UGSTS_LOCK value.
 
-> Hello.
-> 
-> On 04/07/2015 10:22 PM, David Miller wrote:
-> 
->>> The explicitly inline functions belong to the header files, so move
->>> cpu_to_edmac() and edmac_to_cpu() into the driver header.
-> 
->>> While at it, make these functions return 'u32' instead of '__u32'.
-> 
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
->> Then... ummm... remove the inline keyword?
-> 
->> If it's not used anywhere else, that's the thing to do.
-> 
->    Results in more code, as I noted in the patch posting that you skipped
->    when replying. At least with gcc 4.7.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/usb/phy/phy-rcar-gen2-usb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-That's a compiler bug.
+diff --git a/drivers/usb/phy/phy-rcar-gen2-usb.c b/drivers/usb/phy/phy-rcar-gen2-usb.c
+index f838084..f81800b 100644
+--- a/drivers/usb/phy/phy-rcar-gen2-usb.c
++++ b/drivers/usb/phy/phy-rcar-gen2-usb.c
+@@ -47,7 +47,7 @@ struct rcar_gen2_usb_phy_priv {
+ 
+ /* USB General status register */
+ #define USBHS_UGSTS_REG			0x88
+-#define USBHS_UGSTS_LOCK		(3 << 8)
++#define USBHS_UGSTS_LOCK		(1 << 8)
+ 
+ /* Enable USBHS internal phy */
+ static int __rcar_gen2_usbhs_phy_enable(void __iomem *base)
+-- 
+1.9.1
+
