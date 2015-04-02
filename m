@@ -1,35 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Apr 2015 00:48:56 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: r8a7791: Remove MSIOF address from device tree
-Message-Id: <20150406004855.GA23396@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Thu, 02 Apr 2015 00:54:49 +0000
+Subject: Re: [GIT PULL] Third Round of Renesas ARM Based SoC DT Updates for v4.1
+Message-Id: <20150402005449.GK8137@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426430633-3867-1-git-send-email-ykaneko0929@gmail.com>
- <CAH1o70JyBbmQ9vDrpamtL=09nq64B9RM1asWOWRXEL0LdgrxMQ@mail.gmail.com>
- <CAMuHMdV201bh8-QrJgsO4KNSMW-d9aVyMczHdyQO0Y_pg4sukw@mail.gmail.com>
- <CAH1o70LKe5acCgKd6QwfGAnhLOm9X8iKyX9f6jN=3ZOjGb9aMA@mail.gmail.com>
-In-Reply-To: <CAH1o70LKe5acCgKd6QwfGAnhLOm9X8iKyX9f6jN=3ZOjGb9aMA@mail.gmail.com>
+References: <cover.1426731062.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1426731062.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Kaneko-san,
+On Thu, Mar 19, 2015 at 11:15:21AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these third round of Renesas ARM based SoC DT updates for v4.1.
+> 
+> This pull request is based on the previous round of
+> such requests, tagged as renesas-dt2-for-v4.1,
+> which you have already pulled.
+> 
+> 
+> The following changes since commit 90ca409a1e6b9b72d1b6ae716cd7a63335fd0e87:
+> 
+>   ARM: shmobile: ape6evm dts: Configure the custom switch as wake-up source (2015-03-07 10:07:30 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt3-for-v4.1
+> 
+> for you to fetch changes up to 63573339e7698503bfeaef3bb0c444ffc98e45a0:
+> 
+>   ARM: shmobile: r8a7791: sound enables Audio DMAC entry on DTSI (2015-03-11 09:40:30 +0900)
 
-On Fri, Apr 03, 2015 at 01:35:23AM +0900, Yoshihiro Kaneko wrote:
-> Hi Geert-san,
-> 
-> Thanks for your reply.
-> 
-> It seems that you and Simon concluded that the driver change wasn't
-> necessary. As I don't have access to the relevant documentation I'm happy
-> to defer to you two on that matter.
-> 
-> With that in mind I'll refresh this patch as you request.
-> 
-> I'm assuming that the r8a7790 version of this patch is fine as-is.
-> I'll re-post that one unchanged other than dropping the RFC tag.
+Merged, thanks.
 
-Thanks for your attention to this matter. As noted elsewhere I have
-queued up your reposted/updated DT patches. And I believe we should
-not pursue the driver patch any further at this time. So for now I think
-this case is closed.
+
+-Olof
