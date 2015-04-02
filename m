@@ -1,58 +1,66 @@
-From: keita kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Tue, 07 Apr 2015 05:48:04 +0000
-Subject: Re: [RFC/PATCH 1/4] ARM: cpuidle: Add cpuidle support for R-Car Gen2 series
-Message-Id: <55236F94.40909@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 02 Apr 2015 07:59:47 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7790: add EtherAVB clock
+Message-Id: <CAMuHMdVYtsEg8H+=bBD3TBRVSAwOBaM8pcmgOUyh=qpwYOuDvA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428292244-2160-1-git-send-email-keita.kobayashi.ym@renesas.com> <1428292244-2160-2-git-send-email-keita.kobayashi.ym@renesas.com> <20150407014407.GC27486@verge.net.au>
-In-Reply-To: <20150407014407.GC27486@verge.net.au>
+References: <1625400.M0MxPQybIy@wasted.cogentembedded.com>
+ <2142150.nOzfK74FZR@wasted.cogentembedded.com>
+In-Reply-To: <2142150.nOzfK74FZR@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: rjw@rjwysocki.net, daniel.lezcano@linaro.org, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon
+Hi Sergei,
 
-Thank you for your feedback.
+On Mon, Mar 30, 2015 at 11:58 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> --- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
+> +++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+> @@ -1193,16 +1193,18 @@
+>                         compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+>                         reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+>                         clocks = <&hp_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>,
+> -                                <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
+> +                                <&zg_clk>, <&p_clk>, <&hp_clk>, <&zs_clk>,
+> +                                <&zs_clk>;
 
-(2015/04/07 10:44), Simon Horman wrote:
+For consistency, please insert the new etheravb entry between vin0 and ether,
+cfr. the order in r8a7790-clock.h.
 
-> On Mon, Apr 06, 2015 at 12:50:41PM +0900, Keita Kobayashi wrote:
->> Define ARM_RCAR_CPUIDLE config item to enable cpuidle
->> support for Renesas R-Car Gen2 SoCs.
->>
->> Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
->> ---
->>  drivers/cpuidle/Kconfig.arm | 8 ++++++++
->>  1 file changed, 8 insertions(+)
->>
->> diff --git a/drivers/cpuidle/Kconfig.arm b/drivers/cpuidle/Kconfig.arm
->> index 21340e0..ea9d61e 100644
->> --- a/drivers/cpuidle/Kconfig.arm
->> +++ b/drivers/cpuidle/Kconfig.arm
->> @@ -74,3 +74,11 @@ config ARM_MVEBU_V7_CPUIDLE
->>  	depends on ARCH_MVEBU && !ARM64
->>  	help
->>  	  Select this to enable cpuidle on Armada 370, 38x and XP processors.
->> +
->> +config ARM_RCAR_CPUIDLE
->> +	bool "CPU Idle Driver for the R-Car SoCs"
->> +	depends on ARCH_RCAR_GEN2
->> +	select ARM_CPUIDLE
->> +	select ARM_CPU_SUSPEND
->> +	help
->> +	  Select this to enable cpuidle for R-Car SoCs
-> 
-> I hate to be the harbinger of bad news but I don't believe this will
-> reliably work because ARM_CPUIDLE selects DT_IDLE_STATES and I believe that
-> Kconfig does not support recursive selection[1].
-> 
-> [1] http://lkml.iu.edu/hypermail/linux/kernel/1412.0/04004.html
-> 
-> I suggest changing select ARM_CPUIDLE to depends on ARM_CPUIDLE.
-> I would be tempted to make the same change for ARM_CPU_SUSPEND too.
+>                         #clock-cells = <1>;
+>                         clock-indices = <
+>                                 R8A7790_CLK_MLB R8A7790_CLK_VIN3 R8A7790_CLK_VIN2
+> -                               R8A7790_CLK_VIN1 R8A7790_CLK_VIN0 R8A7790_CLK_ETHER
+> +                               R8A7790_CLK_VIN1 R8A7790_CLK_VIN0
+> +                               R8A7790_CLK_ETHER R8A7790_CLK_ETHERAVB
+>                                 R8A7790_CLK_SATA1 R8A7790_CLK_SATA0
+>                         >;
+>                         clock-output-names >                                 "mlb", "vin3", "vin2", "vin1", "vin0", "ether",
+> -                               "sata1", "sata0";
+> +                               "etheravb", "sata1", "sata0";
+>                 };
+>                 mstp9_clks: mstp9_clks@e6150994 {
+>                         compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+> Index: renesas/include/dt-bindings/clock/r8a7790-clock.h
+> =================================> --- renesas.orig/include/dt-bindings/clock/r8a7790-clock.h
+> +++ renesas/include/dt-bindings/clock/r8a7790-clock.h
+> @@ -105,6 +105,7 @@
+>  #define R8A7790_CLK_VIN2               9
+>  #define R8A7790_CLK_VIN1               10
+>  #define R8A7790_CLK_VIN0               11
+> +#define R8A7790_CLK_ETHERAVB           12
+>  #define R8A7790_CLK_ETHER              13
+>  #define R8A7790_CLK_SATA1              14
+>  #define R8A7790_CLK_SATA0              15
 
-I will fix it with V2 patch.
+Gr{oetje,eeting}s,
 
-Regards.
-Keita Kobayashi
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
