@@ -1,61 +1,45 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 30 Apr 2015 16:21:24 +0000
-Subject: [PATCH/RFC 00/13] serial: sh-sci: Cleanups and bug fixes
-Message-Id: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 02 Apr 2015 02:09:59 +0000
+Subject: Re: hardcoding of plane ID's to hardware planes
+Message-Id: <1702225.SiyoLnNE83@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-	Hi,
+Hello Devendra,
 
-This patches series performs some cleanups, documentation updates, and
-bug fixes for the Renesas (H)SCI(F(A/B)) serial driver, used on ARM and
-SH (and H8300).
+On Wednesday 01 April 2015 10:48:57 Devendra Talegaonkar wrote:
+> Hi Laurent,
+> 
+> On R-car platform, is there any way to map plane ID to hardware plane number
+> at the time of initialization. It seems DRM/KMS driver maps user plane ID to
+> first available hardware plane.
+> 
+> If suppose, plane ID's are from 10 to 15 (for 6 planes) and there are total
+> 6 hardware planes then is it possible to achieve following scenario:
+> 
+> Plane ID 10 <-> hardware plane 1
+> Plane ID 11 <-> hardware plane 2
+> Plane ID 12 <-> hardware plane 3
+> Plane ID 13 <-> hardware plane 4
+> Plane ID 14 <-> hardware plane 5
+> Plane ID 15 <-> hardware plane 6
+> 
+> We are not using any layer manager or X11 as a server.
 
-It should be safe to apply the first 10 patches.
+First of all, please note that the KMS plane ID is dynamic and isn't 
+guaranteed to be stable with kernel upgrades, or possibly even across reboots.
 
-The remaining patches are marked RFC, as they're make more invasive
-changes, or depend on other patches doing that.
-
-This received light testing on r8a7791/koelsch (SCIF) and
-r8a7740/armadillo (SCIFA/SCIFB), i.e. all on ARM.
-
-Thanks!
-
-Geert Uytterhoeven (13):
-  serial: sh-sci: Move private definitions to private header file
-  serial: sh-sci: Add (H)SCIF RTS/CTS pin data register bit definitions
-  serial: sh-sci: Add SCIFA/B SCPCR register definitions
-  serial: sh-sci: Document remaining FIFO Control Register bits
-  serial: sh-sci: Standardize on using the BIT() macro to define
-    register bits
-  serial: sh-sci: Replace hardcoded values in SCxSR_*_CLEAR macros
-  serial: sh-sci: Replace hardcoded overrun bit values
-  serial: sh-sci: Use the correct register for overrun checks
-  serial: sh-sci: Don't set SCLSR bits in the SCxSR error mask
-  serial: sh-sci: Remove obsolete comment about overrun detection
-  [RFC] serial: sh-sci: Replace buggy big #ifdef by runtime logic
-  [RFC] serial: sh-sci: Correct SCIF_ERROR_CLEAR for plain SCIF
-  [RFC] serial: sh-sci: Correct FIFO stages on sh7705/sh7720/sh7721
-
- drivers/tty/serial/sh-sci.c | 147 +++++++++++++++++++++++++++-----------------
- drivers/tty/serial/sh-sci.h | 140 +++++++++++++++++++++++++++++++++--------
- include/linux/serial_sci.h  |  86 ++++----------------------
- 3 files changed, 216 insertions(+), 157 deletions(-)
+The reason for dynamic allocation of hardware planes is that planar YUV 
+formats (NV12, NV21 and NV16) require two hardware planes, while all other 
+formats use a single hardware plane. It's thus not possible to map KMS planes 
+to hardware planes at initialization time as the driver can't know what 
+formats to expect for the planes.
 
 -- 
-1.9.1
+Regards,
 
-Gr{oetje,eeting}s,
+Laurent Pinchart
 
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
