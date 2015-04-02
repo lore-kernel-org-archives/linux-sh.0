@@ -1,30 +1,50 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 07 Apr 2015 13:25:03 +0000
-Subject: Re: [PATCH v2 1/2] ARM: shmobile: r8a7791: add USB-DMAC device nodes
-Message-Id: <CAMuHMdULsLM8OzziVeqMtpy3xm1H_vJ7ihbntyx4_qXXeCT7kQ@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 02 Apr 2015 01:33:59 +0000
+Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7790: add EtherAVB DT support
+Message-Id: <20150402013359.GB25445@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428393231-5272-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-	<1428393231-5272-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1428393231-5272-2-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <1625400.M0MxPQybIy@wasted.cogentembedded.com>
+ <8163383.0UU0Q5gsLE@wasted.cogentembedded.com>
+ <20150331002113.GB16289@verge.net.au>
+ <551AB78B.4000506@cogentembedded.com>
+In-Reply-To: <551AB78B.4000506@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, Russell King <linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-arm-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 7, 2015 at 9:53 AM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+On Tue, Mar 31, 2015 at 06:04:43PM +0300, Sergei Shtylyov wrote:
+> Hello.
+> 
+> On 03/31/2015 03:21 AM, Simon Horman wrote:
+> 
+> >>Define the generic R8A7790 part of the EtherAVB device node.
+> 
+> >Please repost once this binding (and associated driver) has been accepted.
+> 
+>    OK, but will you merge patch #1?
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+I would prefer to wait until we can exercise it with a driver.
 
-Gr{oetje,eeting}s,
+> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> >>
+> >>---
+> >>  arch/arm/boot/dts/r8a7790.dtsi |   10 ++++++++++
+> >>  1 file changed, 10 insertions(+)
+> >>
+> >>Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+> >>=================================> >>--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
+> >>+++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+> >>@@ -626,6 +626,16 @@
+> >>  		status = "disabled";
+> >>  	};
+> >>
+> >>+	avb: ethernet@e6800000 {
+> >>+		compatible = "renesas,ravb-r8a7790";
+> 
+>    I went the usual way here but I suspect that SoC part of the prop should
+> be "-rcar-gen2" as we now have this IP core (as well as most of the others,
+> except PFC) described in a common manual for the R-Car generation 2 SoCs.
+> What do you think?
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+I like -r8a7790.
