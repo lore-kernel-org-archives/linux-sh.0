@@ -1,7 +1,7 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Wed, 01 Apr 2015 21:59:50 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 02 Apr 2015 07:17:56 +0000
 Subject: Re: [PATCH] mm/migrate: Mark unmap_and_move() "noinline" to avoid ICE in gcc 4.7.3
-Message-Id: <20150401215950.GC4027@n2100.arm.linux.org.uk>
+Message-Id: <CAMuHMdX95QxqUk7XNnZLWWqZT+0HeL9HzcEkuhevGAp7h6XcQQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <CANMBJr68dsbYvvHUzy6U4m4fEM6nq8dVHBH4kLQ=0c4QNOhLPQ@mail.gmail.com>
  <20150327002554.GA5527@verge.net.au>
@@ -13,31 +13,52 @@ References: <CANMBJr68dsbYvvHUzy6U4m4fEM6nq8dVHBH4kLQ=0c4QNOhLPQ@mail.gmail.com>
  <551BBEC5.7070801@arm.com>
  <20150401124007.20c440cc43a482f698f461b8@linux-foundation.org>
  <7hwq1v4iq4.fsf@deeprootsystems.com>
-In-Reply-To: <7hwq1v4iq4.fsf@deeprootsystems.com>
+ <20150401215950.GC4027@n2100.arm.linux.org.uk>
+In-Reply-To: <20150401215950.GC4027@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Apr 01, 2015 at 02:54:59PM -0700, Kevin Hilman wrote:
-> Your patch on top of Geert's still compiles fine for me with gcc-4.7.3.
-> However, I'm not sure how specific we can be on the versions.  
-> 
-> /me goes to test a few more compilers...   OK...
-> 
-> ICE: 4.7.1, 4.7.3, 4.8.3
-> OK: 4.6.3, 4.9.2, 4.9.3
-> 
-> The diff below[2] on top of yours compiles fine here and at least covers
-> the compilers I *know* to trigger the ICE.
+Hi Russell,
 
-Interesting.  I'm using stock gcc 4.7.4 here, though I'm not building
--next (only mainline + my tree + arm-soc) and it hasn't shown a problem
-yet.
+On Wed, Apr 1, 2015 at 11:59 PM, Russell King - ARM Linux
+<linux@arm.linux.org.uk> wrote:
+> On Wed, Apr 01, 2015 at 02:54:59PM -0700, Kevin Hilman wrote:
+>> Your patch on top of Geert's still compiles fine for me with gcc-4.7.3.
+>> However, I'm not sure how specific we can be on the versions.
+>>
+>> /me goes to test a few more compilers...   OK...
+>>
+>> ICE: 4.7.1, 4.7.3, 4.8.3
+>> OK: 4.6.3, 4.9.2, 4.9.3
+>>
+>> The diff below[2] on top of yours compiles fine here and at least covers
+>> the compilers I *know* to trigger the ICE.
+>
+> Interesting.  I'm using stock gcc 4.7.4 here, though I'm not building
+> -next (only mainline + my tree + arm-soc) and it hasn't shown a problem
+> yet.
 
-I think we need to ask the question: is the bug in stock GCC or Linaro
-GCC?  If it's not in stock GCC, then it's a GCC vendor problem :)
+Mainline doesn't fail.
 
--- 
-FTTC broadband for 0.8mile line: currently at 10.5Mbps down 400kbps up
-according to speedtest.net.
+> I think we need to ask the question: is the bug in stock GCC or Linaro
+> GCC?  If it's not in stock GCC, then it's a GCC vendor problem :)
+
+Can you please try -next (e.g. next-20150320)?
+
+make bockw_defconfig
+make mm/migrate.o
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
