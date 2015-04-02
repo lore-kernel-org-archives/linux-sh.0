@@ -1,49 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 23 Apr 2015 08:18:04 +0000
-Subject: [PATCH 6/7 v4] ARM: shmobile: r8a7790: add MMCIF parent clock range
-Message-Id: <87383rgsy1.wl%kuninori.morimoto.gx@renesas.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Thu, 02 Apr 2015 00:56:00 +0000
+Subject: Re: [PATCH 1/1] ARM: configs: remove all CONFIG_RCAR_AUDMAC_PP from ARM defconfigs
+Message-Id: <20150402005600.GL8137@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
-	<87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
+References: <871tkleesi.wl%kuninori.morimoto.gx@renesas.com>
+ <87zj79d06x.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87zj79d06x.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Simon <horms@verge.net.au>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Thu, Mar 19, 2015 at 05:30:09AM +0000, Kuninori Morimoto wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> 
+> Renesas R-Car sound (= rsnd) needs 2 DMAC which are called as
+> Audio DMAC (= 1st DMAC) and Audio DMAC peri peri (2nd DMAC).
+> And rsnd had assumed that 1st / 2nd DMACs are implemented as DMAEngine.
+> But, in result of DMA ML discussion, 2nd DMAC was concluded that it is
+> not a general purpose DMAC (2nd DMAC is for Device to Device inside
+> sound system). Additionally, current DMAEngine can't support Device to
+> Device, and we don't have correct DT bindings for it at this point.
+> So the easiest solution for it is that move it from DMAEngine to rsnd
+> driver.
+> Audio DMAC peri peri DMAEngine is no longer needed.
+> Remove all CONFIG_RCAR_AUDMAC_PP from ARM defconfigs
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
----
-v3 -> v4
+Applied, thanks.
 
- - new patch
 
- arch/arm/boot/dts/r8a7790.dtsi | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index f3b8430..ac61636 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -467,6 +467,7 @@
- 		dma-names = "tx", "rx";
- 		reg-io-width = <4>;
- 		status = "disabled";
-+		clk-range = <12187500 97500000>;
- 	};
- 
- 	mmcif1: mmc@ee220000 {
-@@ -478,6 +479,7 @@
- 		dma-names = "tx", "rx";
- 		reg-io-width = <4>;
- 		status = "disabled";
-+		clk-range = <12187500 97500000>;
- 	};
- 
- 	pfc: pfc@e6060000 {
--- 
-1.9.1
-
+-Olof
