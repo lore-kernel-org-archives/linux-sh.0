@@ -1,144 +1,175 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 29 Apr 2015 00:37:58 +0000
-Subject: [PATCH 04/10] drm: rcar-du: Embed rcar_du_planes structure into rcar_du_group
-Message-Id: <1430267884-20560-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 03 Apr 2015 12:42:03 +0000
+Subject: [PATCH/RFC 6/6] staging: board: armadillo800eva: Board staging for sh_mobile_lcdc_fb
+Message-Id: <1428064923-24950-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The rcar_du_planes structure contains a single field and is only
-instantiated in the rcar_du_group structure. Embed it directly and
-remove the rcar_du_planes structure.
+Add staging board support for the r8a7740-based armadillo800eva board
+and add platform devices to allow in-tree continuous development of the
+drivers on the armadillo800eva board.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+When DT bindings are ready for theses drivers then the platform devices
+in the armadillo800eva staging board code can easily be removed. Until
+then we use platform devices to continuously improve the driver and
+integrate code.
+
+Added platform devices:
+  - sh_mobile_lcdc_fb for the on-board LCD.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c  | 10 +++++-----
- drivers/gpu/drm/rcar-du/rcar_du_group.h |  2 +-
- drivers/gpu/drm/rcar-du/rcar_du_kms.c   |  6 +++---
- drivers/gpu/drm/rcar-du/rcar_du_plane.c |  3 +--
- drivers/gpu/drm/rcar-du/rcar_du_plane.h |  4 ----
- 5 files changed, 10 insertions(+), 15 deletions(-)
+What other devices do we want to add?
+---
+ drivers/staging/board/Makefile          |   3 +-
+ drivers/staging/board/armadillo800eva.c | 124 ++++++++++++++++++++++++++++++++
+ 2 files changed, 126 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/staging/board/armadillo800eva.c
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index 7d0b8ef9bea2..b5f66b78cbb2 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -213,8 +213,8 @@ static void rcar_du_crtc_update_planes(struct rcar_du_crtc *rcrtc)
- 	u32 dptsr = 0;
- 	u32 dspr = 0;
- 
--	for (i = 0; i < ARRAY_SIZE(rcrtc->group->planes.planes); ++i) {
--		struct rcar_du_plane *plane = &rcrtc->group->planes.planes[i];
-+	for (i = 0; i < ARRAY_SIZE(rcrtc->group->planes); ++i) {
-+		struct rcar_du_plane *plane = &rcrtc->group->planes[i];
- 		unsigned int j;
- 
- 		if (plane->plane.state->crtc != &rcrtc->crtc)
-@@ -427,8 +427,8 @@ void rcar_du_crtc_resume(struct rcar_du_crtc *rcrtc)
- 	rcar_du_crtc_start(rcrtc);
- 
- 	/* Commit the planes state. */
--	for (i = 0; i < ARRAY_SIZE(rcrtc->group->planes.planes); ++i) {
--		struct rcar_du_plane *plane = &rcrtc->group->planes.planes[i];
-+	for (i = 0; i < ARRAY_SIZE(rcrtc->group->planes); ++i) {
-+		struct rcar_du_plane *plane = &rcrtc->group->planes[i];
- 
- 		if (plane->plane.state->crtc != &rcrtc->crtc)
- 			continue;
-@@ -592,7 +592,7 @@ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int index)
- 	rcrtc->enabled = false;
- 
- 	ret = drm_crtc_init_with_planes(rcdu->ddev, crtc,
--					&rgrp->planes.planes[index % 2].plane,
-+					&rgrp->planes[index % 2].plane,
- 					NULL, &crtc_funcs);
- 	if (ret < 0)
- 		return ret;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.h b/drivers/gpu/drm/rcar-du/rcar_du_group.h
-index ed36433fbe84..ea02bb02f3e1 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_group.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_group.h
-@@ -40,7 +40,7 @@ struct rcar_du_group {
- 
- 	struct mutex lock;
- 
--	struct rcar_du_planes planes;
-+	struct rcar_du_plane planes[RCAR_DU_NUM_KMS_PLANES];
- };
- 
- u32 rcar_du_group_read(struct rcar_du_group *rgrp, u32 reg);
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 5fd6f8c07ec2..4012afacab5f 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -291,7 +291,7 @@ static int rcar_du_atomic_check(struct drm_device *dev,
- 		 * plane(s) as freed.
- 		 */
- 		if (!plane_state->format) {
--			index = plane - plane->group->planes.planes;
-+			index = plane - plane->group->planes;
- 			group_freed_planes[plane->group->index] |= 1 << index;
- 			plane_state->hwindex = -1;
- 			continue;
-@@ -304,7 +304,7 @@ static int rcar_du_atomic_check(struct drm_device *dev,
- 			groups |= 1 << plane->group->index;
- 			needs_realloc = true;
- 
--			index = plane - plane->group->planes.planes;
-+			index = plane - plane->group->planes;
- 			group_freed_planes[plane->group->index] |= 1 << index;
- 			plane_state->hwindex = -1;
- 		}
-@@ -327,7 +327,7 @@ static int rcar_du_atomic_check(struct drm_device *dev,
- 		unsigned int used_planes = 0;
- 
- 		for (i = 0; i < RCAR_DU_NUM_KMS_PLANES; ++i) {
--			struct rcar_du_plane *plane = &group->planes.planes[i];
-+			struct rcar_du_plane *plane = &group->planes[i];
- 			struct rcar_du_plane_state *plane_state;
- 			struct drm_plane_state *s;
- 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index b5565417f673..99fefcaf6597 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -389,7 +389,6 @@ static const uint32_t formats[] = {
- 
- int rcar_du_planes_init(struct rcar_du_group *rgrp)
- {
--	struct rcar_du_planes *planes = &rgrp->planes;
- 	struct rcar_du_device *rcdu = rgrp->dev;
- 	unsigned int num_planes;
- 	unsigned int num_crtcs;
-@@ -409,7 +408,7 @@ int rcar_du_planes_init(struct rcar_du_group *rgrp)
- 		enum drm_plane_type type = i < num_crtcs
- 					 ? DRM_PLANE_TYPE_PRIMARY
- 					 : DRM_PLANE_TYPE_OVERLAY;
--		struct rcar_du_plane *plane = &planes->planes[i];
-+		struct rcar_du_plane *plane = &rgrp->planes[i];
- 
- 		plane->group = rgrp;
- 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.h b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
-index 9e8d13a27fc0..86716c856791 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
-@@ -38,10 +38,6 @@ static inline struct rcar_du_plane *to_rcar_plane(struct drm_plane *plane)
- 	return container_of(plane, struct rcar_du_plane, plane);
- }
- 
--struct rcar_du_planes {
--	struct rcar_du_plane planes[RCAR_DU_NUM_KMS_PLANES];
--};
--
- /*
-  * rcar_du_plane_state - Driver-specific plane state
-  * @state: base DRM plane state
+diff --git a/drivers/staging/board/Makefile b/drivers/staging/board/Makefile
+index 65d39ecfad63bbf4..6842745feb9404f8 100644
+--- a/drivers/staging/board/Makefile
++++ b/drivers/staging/board/Makefile
+@@ -1,2 +1,3 @@
+ obj-y	:= board.o
+-obj-$(CONFIG_ARCH_EMEV2)      += kzm9d.o
++obj-$(CONFIG_ARCH_EMEV2)	+= kzm9d.o
++obj-$(CONFIG_ARCH_R8A7740)	+= armadillo800eva.o
+diff --git a/drivers/staging/board/armadillo800eva.c b/drivers/staging/board/armadillo800eva.c
+new file mode 100644
+index 0000000000000000..f9cb645877f52c52
+--- /dev/null
++++ b/drivers/staging/board/armadillo800eva.c
+@@ -0,0 +1,124 @@
++/*
++ * Staging board support for Armadillo 800 eva.
++ * Enable not-yet-DT-capable devices here.
++ *
++ * Based on board-armadillo800eva.c
++ *
++ * Copyright (C) 2012 Renesas Solutions Corp.
++ * Copyright (C) 2012 Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/dma-mapping.h>
++#include <linux/fb.h>
++#include <linux/gpio.h>
++#include <linux/kernel.h>
++#include <linux/pinctrl/machine.h>
++#include <linux/platform_device.h>
++#include <linux/videodev2.h>
++
++#include <video/sh_mobile_lcdc.h>
++
++#include "board.h"
++
++
++static struct fb_videomode lcdc0_mode = {
++	.name		= "AMPIER/AM-800480",
++	.xres		= 800,
++	.yres		= 480,
++	.left_margin	= 88,
++	.right_margin	= 40,
++	.hsync_len	= 128,
++	.upper_margin	= 20,
++	.lower_margin	= 5,
++	.vsync_len	= 5,
++	.sync		= 0,
++};
++
++static struct sh_mobile_lcdc_info lcdc0_info = {
++	.clock_source	= LCDC_CLK_BUS,
++	.ch[0] = {
++		.chan		= LCDC_CHAN_MAINLCD,
++		.fourcc		= V4L2_PIX_FMT_RGB565,
++		.interface_type	= RGB24,
++		.clock_divider	= 5,
++		.flags		= 0,
++		.lcd_modes	= &lcdc0_mode,
++		.num_modes	= 1,
++		.panel_cfg = {
++			.width	= 111,
++			.height = 68,
++		},
++	},
++};
++
++static struct resource lcdc0_resources[] = {
++	[0] = {
++		.name	= "LCD0",
++		.start	= 0xfe940000,
++		.end	= 0xfe943fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 177 + 32,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device lcdc0_device = {
++	.name		= "sh_mobile_lcdc_fb",
++	.num_resources	= ARRAY_SIZE(lcdc0_resources),
++	.resource	= lcdc0_resources,
++	.id		= 0,
++	.dev	= {
++		.platform_data	= &lcdc0_info,
++		.coherent_dma_mask = DMA_BIT_MASK(32),
++	},
++};
++
++static const struct board_staging_clk lcdc0_clocks[] __initconst = {
++	{ "lcdc0", NULL, "sh_mobile_lcdc_fb.0" },
++};
++
++static const struct pinctrl_map lcdc0_pinmaps[] __initconst = {
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "e6050000.pfc",
++				  "lcd0_data24_0", "lcd0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "e6050000.pfc",
++				  "lcd0_lclk_1", "lcd0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "e6050000.pfc",
++				  "lcd0_sync", "lcd0"),
++};
++
++static const struct board_staging_gpio lcdc0_gpios[] __initconst = {
++	{ 176, GPIOF_OUT_INIT_HIGH },	/* DBGMD/LCDC0/FSIA MUX */
++};
++
++static const struct board_staging_dev armadillo800eva_devices[] __initconst = {
++	{
++		.pdev		= &lcdc0_device,
++		.clocks		= lcdc0_clocks,
++		.nclocks	= ARRAY_SIZE(lcdc0_clocks),
++		.pinmaps	= lcdc0_pinmaps,
++		.npinmaps	= ARRAY_SIZE(lcdc0_pinmaps),
++		.gpios		= lcdc0_gpios,
++		.ngpios		= ARRAY_SIZE(lcdc0_gpios),
++		.domain		= "a4lc",
++	},
++};
++
++static void __init armadillo800eva_init(void)
++{
++	board_staging_setup_hwirq_xlate("arm,cortex-a9-gic", 32);
++	board_staging_register_devices(armadillo800eva_devices,
++				       ARRAY_SIZE(armadillo800eva_devices));
++}
++
++board_staging("renesas,armadillo800eva", armadillo800eva_init);
 -- 
-2.0.5
+1.9.1
 
