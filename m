@@ -1,35 +1,43 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 27 Apr 2015 12:55:26 +0000
-Subject: [PATCH 02/10] ARM: shmobile: r8a7778 dtsi: Use generic names for device nodes
-Message-Id: <1430139334-15272-3-git-send-email-geert+renesas@glider.be>
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Fri, 03 Apr 2015 17:13:29 +0000
+Subject: [PATCH 13/14] ASoC: migor: use clkdev_create()
+Message-Id: <E1Ye59t-0001Bl-8o@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
+References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
+In-Reply-To: <20150403171149.GC13898@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, Jaroslav Kysela <perex@perex.cz>, Takashi Iwai <tiwai@suse.de>
 
-irqpin -> interrupt-controller
+clkdev_create() is a shorter way to write clkdev_alloc() followed by
+clkdev_add().  Use this instead.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Mark Brown <broonie@kernel.org>
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ sound/soc/sh/migor.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 868f9730953350e9..7ce9f5fd586504f2 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -68,7 +68,7 @@
- 	};
+diff --git a/sound/soc/sh/migor.c b/sound/soc/sh/migor.c
+index 82f582344fe7..672bcd4c252b 100644
+--- a/sound/soc/sh/migor.c
++++ b/sound/soc/sh/migor.c
+@@ -162,12 +162,11 @@ static int __init migor_init(void)
+ 	if (ret < 0)
+ 		return ret;
  
- 	/* irqpin: IRQ0 - IRQ3 */
--	irqpin: irqpin@fe78001c {
-+	irqpin: interrupt-controller@fe78001c {
- 		compatible = "renesas,intc-irqpin-r8a7778", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
+-	siumckb_lookup = clkdev_alloc(&siumckb_clk, "siumckb_clk", NULL);
++	siumckb_lookup = clkdev_create(&siumckb_clk, "siumckb_clk", NULL);
+ 	if (!siumckb_lookup) {
+ 		ret = -ENOMEM;
+ 		goto eclkdevalloc;
+ 	}
+-	clkdev_add(siumckb_lookup);
+ 
+ 	/* Port number used on this machine: port B */
+ 	migor_snd_device = platform_device_alloc("soc-audio", 1);
 -- 
-1.9.1
+1.8.3.1
 
