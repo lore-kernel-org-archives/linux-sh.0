@@ -1,53 +1,135 @@
-From: Kevin Hilman <khilman@kernel.org>
-Date: Wed, 08 Apr 2015 00:15:58 +0000
-Subject: Re: [PATCH] mm/migrate: Mark unmap_and_move() "noinline" to avoid ICE in gcc 4.7.3
-Message-Id: <7hsicbmq4h.fsf@deeprootsystems.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 03 Apr 2015 12:42:00 +0000
+Subject: [PATCH/RFC 3/6] staging: board: Add support for translating hwirq to virq numbers
+Message-Id: <1428064923-24950-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150324004537.GA24816@verge.net.au>
- <CAKv+Gu-0jPk=KQ4gY32ELc+BVbe=1QdcrwQ+Pb=RkdwO9K3Vkw@mail.gmail.com>
- <20150324161358.GA694@kahuna> <20150326003939.GA25368@verge.net.au>
- <20150326133631.GB2805@arm.com>
- <CANMBJr68dsbYvvHUzy6U4m4fEM6nq8dVHBH4kLQ=0c4QNOhLPQ@mail.gmail.com>
- <20150327002554.GA5527@verge.net.au> <20150327100612.GB1562@arm.com>
- <7hbnj99epe.fsf@deeprootsystems.com>
- <CAKv+Gu_ZHZFm-1eXn+r7fkEHOxqSmj+Q+Mmy7k6LK531vSfAjQ@mail.gmail.com>
- <7h8uec95t2.fsf@deeprootsystems.com>
- <alpine.DEB.2.10.1504011130030.14762@ayla.of.borg>
- <551BBEC5.7070801@arm.com>
- <20150401124007.20c440cc43a482f698f461b8@linux-foundation.org>
- <7hwq1v4iq4.fsf@deeprootsystems.com>
- <CAMAWPa_YEJDQc=_60_sPqzwLYN8Yefzcko_rydxrt8oOCq20gw@mail.gmail.com>
- <20150407131740.ac8a856537fecb1b5d142f5f@linux-foundation.org>
- <7hpp7fo92b.fsf@deeprootsystems.com>
- <20150407155310.a3e9dfb6d929a968c4bfc286@linux-foundation.org>
- <7hiod7o6xb.fsf@deeprootsystems.com>
- <20150407163614.1f0ec880cecd681dcd271295@linux-foundation.org>
-In-Reply-To: <20150407163614.1f0ec880cecd681dcd271295@linux-foundation.org>
- (Andrew Morton's message of "Tue, 7 Apr 2015 16:36:14 -0700")
+References: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Andrew Morton <akpm@linux-foundation.org> writes:
+As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
+domain."), GIC IRQ numbers are virtual, breaking hardcoded hardware IRQ
+numbers in platform device resources.
 
-> On Tue, 07 Apr 2015 16:27:44 -0700 Kevin Hilman <khilman@kernel.org> wrote:
->
->> >> > It should all be there today?
->> >> 
->> >> Nope.  
->> >
->> > huh, I swear I did an mmotm yesterday.
->> 
->> Well, based on the timestamp of the mmotm dir on ozlabs, it appears you
->> did.  That's why I was confused why the gcc-473 patches from mmots aren't
->> there.
->
-> Things look a bit better now.
+Add support for translating hardware IRQ numbers to virtual IRQ numbers,
+and fixing up platform device resources with hardcoded IRQ numbers.
 
-Yup, I can confirm all 4 patches are there now.  Things should be in
-good shape for the next -next.
+Add a copyright header, including the original author.
 
-Thanks,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/staging/board/board.c | 66 +++++++++++++++++++++++++++++++++++++++++++
+ drivers/staging/board/board.h |  5 ++++
+ 2 files changed, 71 insertions(+)
 
-Kevin
+diff --git a/drivers/staging/board/board.c b/drivers/staging/board/board.c
+index d5a6abc845191c93..b84ac2837a20bf06 100644
+--- a/drivers/staging/board/board.c
++++ b/drivers/staging/board/board.c
+@@ -1,10 +1,27 @@
++/*
++ * Copyright (C) 2014 Magnus Damm
++ * Copyright (C) 2015 Glider bvba
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#define pr_fmt(fmt)	"board_staging: "  fmt
++
+ #include <linux/init.h>
++#include <linux/irq.h>
+ #include <linux/device.h>
+ #include <linux/kernel.h>
+ #include <linux/of.h>
+ #include <linux/of_address.h>
++#include <linux/of_irq.h>
++
+ #include "board.h"
+ 
++static struct device_node *irqc_node __initdata;
++static unsigned int irqc_base __initdata;
++
+ static bool find_by_address(u64 base_address)
+ {
+ 	struct device_node *dn = of_find_all_nodes(NULL);
+@@ -38,3 +55,52 @@ bool __init board_staging_dt_node_available(const struct resource *resource,
+ 
+ 	return false; /* Nothing found */
+ }
++
++int __init board_staging_setup_hwirq_xlate(const char *irqc_match,
++					   unsigned int base)
++{
++	irqc_node = of_find_compatible_node(NULL, NULL, irqc_match);
++
++	WARN_ON(!irqc_node);
++	if (!irqc_node)
++		return -ENOENT;
++
++	irqc_base = base;
++	return 0;
++}
++
++static unsigned int __init xlate_hwirq(unsigned int hwirq)
++{
++	struct of_phandle_args irq_data;
++	unsigned int irq;
++
++	if (!irqc_node)
++		return hwirq;
++
++	irq_data.np = irqc_node;
++	irq_data.args_count = 3;
++	irq_data.args[0] = 0;
++	irq_data.args[1] = hwirq - irqc_base;
++	irq_data.args[2] = IRQ_TYPE_LEVEL_HIGH;
++
++	irq = irq_create_of_mapping(&irq_data);
++	if (WARN_ON(!irq))
++		irq = hwirq;
++
++	return irq;
++}
++
++void __init board_staging_fixup_irq_resources(struct resource *res,
++					      unsigned int nres)
++{
++	unsigned int i;
++
++	for (i = 0; i < nres; i++)
++		if (res[i].flags = IORESOURCE_IRQ) {
++			unsigned int hwirq = res[i].start;
++			unsigned int virq = xlate_hwirq(hwirq);
++
++			pr_debug("hwirq %u -> virq %u\n", hwirq, virq);
++			res[i].start = virq;
++		}
++}
+diff --git a/drivers/staging/board/board.h b/drivers/staging/board/board.h
+index e9c914985d4acb36..4cedc3c46e287eb7 100644
+--- a/drivers/staging/board/board.h
++++ b/drivers/staging/board/board.h
+@@ -1,10 +1,15 @@
+ #ifndef __BOARD_H__
+ #define __BOARD_H__
++
+ #include <linux/init.h>
+ #include <linux/of.h>
+ 
++struct resource;
++
+ bool board_staging_dt_node_available(const struct resource *resource,
+ 				     unsigned int num_resources);
++int board_staging_setup_hwirq_xlate(const char *irqc_match, unsigned int base);
++void board_staging_fixup_irq_resources(struct resource *res, unsigned int nres);
+ 
+ #define board_staging(str, fn)			\
+ static int __init runtime_board_check(void)	\
+-- 
+1.9.1
+
