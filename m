@@ -1,63 +1,166 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 27 Apr 2015 12:43:37 +0000
-Subject: [PATCH/RFC v6 2/7] PM / Domains: R-Mobile SYSC: Add PM domain power-on/off latencies
-Message-Id: <1430138622-14029-3-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 03 Apr 2015 01:37:35 +0000
+Subject: [LOCAL PATCH] test: ARM: shmobile: SRC sampling rate convert
+Message-Id: <877ftuxaa6.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Kevin Hilman <khilman@kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>, Axel Haslam <ahaslam@baylibre.com>
-Cc: linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Add optional generic PM domain power-on/off latencies to the bindings
-and example.
+Hi all
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Latest ALSA SoC branch is including Synchronous SRC mode on
+43cb6954f8c8a68fdc354226fa045ff43c7e4d39
+(ASoC: rsnd: add Synchronous SRC mode)
+
+ALSA SoC git repository
+ git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git :: topic/rcar
+
+You can try Synchronous/Asynchronous sampling rate convert.
+
+ - git checkout Geert's renesas-drivers-2015-03-30-v4.0-rc6 or similar
+ - git merge ASoC branch asoc/topic/rcar
+ - apply this patch
+
+Asynchronous SRC mode:
+	Use normal playback. it will exchange sampling rate convert
+	to 48kHz. The image is...
+
+	48kHz   ->
+	44.1kHz ->  [SRC] -> 48kHz -> [SSI] -> ak4642
+	22050Hz ->
+	...
+
+	But unfortunately, Lager board only has 1 system clock which
+	is needed for sampling rate convert. Because of this reason,
+	this patch try to exchange to 48kHz from 12288000 Hz.
+	So, 44.1kHz base sound will be strange sound.
+	Because 44.1kHz base needs 11289600 Hz, but Lager doesn't have it.
+	It needs both 11289600/12288000 system clock if you want to use
+	all sampling rate.
+	But, don't worry about this. Asynchronous SRC mode is not needed
+	on Lager anyway. this is just for test/debug.
+
+Synchronous SRC mode:
+	You can try this command.
+		amixer set "SRC Out Rate" on
+		aplay xxx.wav &
+		amixer set "SRC Out Rate" 96000	// convert rate to 96000Hz
+		amixer set "SRC Out Rate" 22050 // convert rate to 22050Hz
+	You can exchange sampling rate on runtime. But ak4642 is keeping
+	48kHz on this patch. So, the sound will be fast/slow.
+	Sampling rate will be reset when you stop aplay. I don't know detail
+	of use case of this feature...
+
+I'm happy if I could have feedback from you.
+
+>> Simon
+
+This is just test/debug patch. don't apply it to your branch :P
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v6:
-  - Rebased on top of v4.1-rc1 for new RFC.
----
- Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts | 40 +++++++++++++++++++++++++++++++++----
+ arch/arm/configs/shmobile_defconfig |  1 +
+ 2 files changed, 37 insertions(+), 4 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-index beda7d2efc304350..0a6f03a136792e84 100644
---- a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-+++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-@@ -45,6 +45,8 @@ Optional properties:
- 	 - #address-cells: Must be 1,
- 	 - #size-cells: Must be 0.
-        If the PM domain is always-on, this property must be omitted.
-+- power-on-latency: Power-on latency of the PM domain, in ns,
-+- power-off-latency: Power-off latency of the PM domain, in ns.
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index aaa4f25..5360067 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -18,7 +18,7 @@
+  *
+  * This command is required when Playback/Capture
+  *
+- *	amixer set "LINEOUT Mixer DACL" on
++ *	amixer set "ak4642 LINEOUT Mixer DACL" on
+  *	amixer set "DVC Out" 100%
+  *	amixer set "DVC In" 100%
+  *
+@@ -35,6 +35,13 @@
+  *	aplay xxx.wav &
+  *	amixer set "DVC Out"  80%  // Volume Down
+  *	amixer set "DVC Out" 100%  // Volume Up
++ *
++ * You can use Synchronous Sampling Rate Convert (if no DVC)
++ *
++ *	amixer set "SRC Out Rate" on
++ *	aplay xxx.wav &
++ *	amixer set "SRC Out Rate" 96000	// convert rate to 96000Hz
++ *	amixer set "SRC Out Rate" 22050 // convert rate to 22050Hz
+  */
  
+ /dts-v1/;
+@@ -174,8 +181,9 @@
+ 			  1800000 0>;
+ 	};
  
- Example:
-@@ -68,16 +70,22 @@ which is a subdomain of A4S.
- 					#address-cells = <1>;
- 					#size-cells = <0>;
- 					#power-domain-cells = <0>;
-+					power-on-latency = <250000>;
-+					power-off-latency = <250000>;
+-	sound {
++	sound@1 {
+ 		compatible = "simple-audio-card";
++		status = "disabled";
  
- 					pd_a3sp: a3sp@11 {
- 						reg = <11>;
- 						#power-domain-cells = <0>;
-+						power-on-latency = <250000>;
-+						power-off-latency = <250000>;
- 					};
- 				};
- 
- 				pd_a4su: a4su@20 {
- 					reg = <20>;
- 					#power-domain-cells = <0>;
-+					power-on-latency = <250000>;
-+					power-off-latency = <250000>;
- 				};
- 			};
+ 		simple-audio-card,format = "left_j";
+ 		simple-audio-card,bitclock-master = <&sndcodec>;
+@@ -191,6 +199,26 @@
  		};
+ 	};
+ 
++	sound@2 {
++		compatible = "renesas,rsrc-card,lager";
++
++		card-name = "rsnd-ak4643";
++		format = "left_j";
++		bitclock-master = <&dpcmcpu>;
++		frame-master = <&dpcmcpu>;
++
++		convert-rate = <48000>; /* see audio_clk_a */
++
++		dpcmcpu: cpu {
++			sound-dai = <&rcar_sound>;
++		};
++
++		dpcmcodec: codec {
++			sound-dai = <&ak4643>;
++			system-clock-frequency = <11289600>;
++		};
++	};
++
+ 	vga-encoder {
+ 		compatible = "adi,adv7123";
+ 
+@@ -675,8 +703,8 @@
+ 
+ 	rcar_sound,dai {
+ 		dai0 {
+-			playback = <&ssi0 &src2 &dvc0>;
+-			capture  = <&ssi1 &src3 &dvc1>;
++			playback = <&ssi0 &src2>;
++			capture  = <&ssi1 &src3>;
+ 		};
+ 	};
+ };
+@@ -684,3 +712,7 @@
+ &ssi1 {
+ 	shared-pin;
+ };
++
++&audio_clk_a {
++       clock-frequency = <12288000>; /* 48000 base clock */
++};
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index b58618e..d2f807d 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -152,6 +152,7 @@ CONFIG_SND=y
+ CONFIG_SND_SOC=y
+ CONFIG_SND_SOC_SH4_FSI=y
+ CONFIG_SND_SOC_RCAR=y
++CONFIG_SND_SOC_RSRC_CARD=y
+ CONFIG_SND_SOC_AK4642=y
+ CONFIG_SND_SOC_WM8978=y
+ CONFIG_USB=y
 -- 
 1.9.1
 
