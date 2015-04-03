@@ -1,75 +1,55 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 27 Apr 2015 12:43:36 +0000
-Subject: [PATCH/RFC v6 1/7] PM / Domains: Add DT bindings for power-on/off latencies
-Message-Id: <1430138622-14029-2-git-send-email-geert+renesas@glider.be>
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Fri, 03 Apr 2015 17:12:43 +0000
+Subject: [PATCH 04/14] clkdev: const-ify connection id to clk_add_alias()
+Message-Id: <E1Ye599-0001B5-4B@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
+References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
+In-Reply-To: <20150403171149.GC13898@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Kevin Hilman <khilman@kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>, Axel Haslam <ahaslam@baylibre.com>
-Cc: linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
 
-PM domain power-on/off latencies are properties of the hardware.
-In legacy code, they're specified from platform code.
-On DT platforms, their values should come from DT.
+The connection id is only passed to clk_get() which is already const.
+Const-ify this argument too.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Kevin Hilman <khilman@linaro.org>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 ---
-v6:
-  - Rebased on top of v4.1-rc1 for new RFC,
+ drivers/clk/clkdev.c   | 6 +++---
+ include/linux/clkdev.h | 2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-v5:
-  - No changes,
-
-v4:
-  - Add Reviewed-by,
-  - Replace single latency value by list of latencies,
-
-v3:
-  - No changes,
-
-v2:
-  - Add Acked-by.
----
- Documentation/devicetree/bindings/power/power_domain.txt | 12 ++++++++++--
- 1 file changed, 10 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/power/power_domain.txt b/Documentation/devicetree/bindings/power/power_domain.txt
-index 025b5e7df61c630c..d659e5cb39be6057 100644
---- a/Documentation/devicetree/bindings/power/power_domain.txt
-+++ b/Documentation/devicetree/bindings/power/power_domain.txt
-@@ -28,6 +28,12 @@ Optional properties:
-    created by the given provider should be subdomains of the domain
-    specified by this binding. More details about power domain specifier are
-    available in the next section.
-+ - power-on-latency: List of power-on latencies (in ns), one for each PM
-+   domain. If all power-on latencies are identical, the list may be shortened
-+   to a single value.
-+ - power-off-latency: List of power-off latencies (in ns), one for each PM
-+   domain. If all power-off latencies are identical, the list may be shortened
-+   to a single value.
+diff --git a/drivers/clk/clkdev.c b/drivers/clk/clkdev.c
+index 156f2e2f972c..5d7746d19445 100644
+--- a/drivers/clk/clkdev.c
++++ b/drivers/clk/clkdev.c
+@@ -308,10 +308,10 @@ clkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt, ...)
+ }
+ EXPORT_SYMBOL(clkdev_alloc);
  
- Example:
+-int clk_add_alias(const char *alias, const char *alias_dev_name, char *id,
+-	struct device *dev)
++int clk_add_alias(const char *alias, const char *alias_dev_name,
++	const char *con_id, struct device *dev)
+ {
+-	struct clk *r = clk_get(dev, id);
++	struct clk *r = clk_get(dev, con_id);
+ 	struct clk_lookup *l;
  
-@@ -35,10 +41,12 @@ Example:
- 		compatible = "foo,power-controller";
- 		reg = <0x12340000 0x1000>;
- 		#power-domain-cells = <1>;
-+		power-on-latency = <250000 400000 180000>;
-+		power-off-latency = <250000 400000 300000>;
- 	};
+ 	if (IS_ERR(r))
+diff --git a/include/linux/clkdev.h b/include/linux/clkdev.h
+index 94bad77eeb4a..eb9b38a79b43 100644
+--- a/include/linux/clkdev.h
++++ b/include/linux/clkdev.h
+@@ -38,7 +38,7 @@ void clkdev_add(struct clk_lookup *cl);
+ void clkdev_drop(struct clk_lookup *cl);
  
--The node above defines a power controller that is a PM domain provider and
--expects one cell as its phandle argument.
-+The node above defines a power controller that is a PM domain provider for
-+3 PM domains, and expects one cell as its phandle argument.
+ void clkdev_add_table(struct clk_lookup *, size_t);
+-int clk_add_alias(const char *, const char *, char *, struct device *);
++int clk_add_alias(const char *, const char *, const char *, struct device *);
  
- Example 2:
- 
+ int clk_register_clkdev(struct clk *, const char *, const char *, ...);
+ int clk_register_clkdevs(struct clk *, struct clk_lookup *, size_t);
 -- 
-1.9.1
+1.8.3.1
 
