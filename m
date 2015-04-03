@@ -1,37 +1,57 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 27 Apr 2015 13:55:24 +0000
-Subject: [PATCH 2/2] ARM: shmobile: sh73a0 dtsi: Fix SCIFB naming
-Message-Id: <1430142924-15777-2-git-send-email-geert+renesas@glider.be>
+Date: Fri, 03 Apr 2015 12:42:01 +0000
+Subject: [PATCH/RFC 4/6] staging: board: kzm9d: Translate hwirq numbers to virq numbers
+Message-Id: <1428064923-24950-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430142924-15777-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430142924-15777-1-git-send-email-geert+renesas@glider.be>
+References: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The single SCIFB on SH-Mobile AG5 is called "scifb", not "scifb8".
+As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
+domain."), GIC IRQ numbers are virtual, breaking hardcoded hardware IRQ
+numbers in platform device resources.
+
+Translate the hardware IRQ numbers to virtual IRQ numbers to fix this.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Cfr. commit 0b3a0ef613538cae ("ARM: shmobile: r8a73a4: fix scifb* naming")
+Untested due to lack of hardware
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/staging/board/kzm9d.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 0bdb1da60487b431..11e17c5f26e2cae2 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -376,7 +376,7 @@
- 		status = "disabled";
- 	};
+diff --git a/drivers/staging/board/kzm9d.c b/drivers/staging/board/kzm9d.c
+index 533f3026e17aa723..8ea7a1a9bd777dc7 100644
+--- a/drivers/staging/board/kzm9d.c
++++ b/drivers/staging/board/kzm9d.c
+@@ -4,16 +4,22 @@
+ #include <linux/platform_device.h>
+ #include "board.h"
  
--	scifb8: serial@e6c30000 {
-+	scifb: serial@e6c30000 {
- 		compatible = "renesas,scifb-sh73a0", "renesas,scifb";
- 		reg = <0xe6c30000 0x100>;
- 		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
+-static const struct resource usbs1_res[] __initconst = {
++static struct resource usbs1_res[] __initdata = {
+ 	DEFINE_RES_MEM(0xe2800000, 0x2000),
+ 	DEFINE_RES_IRQ(159),
+ };
+ 
+ static void __init kzm9d_init(void)
+ {
+-	if (!board_staging_dt_node_available(usbs1_res, ARRAY_SIZE(usbs1_res)))
++	board_staging_setup_hwirq_xlate("arm,cortex-a9-gic", 32);
++
++	if (!board_staging_dt_node_available(usbs1_res,
++					     ARRAY_SIZE(usbs1_res))) {
++		board_staging_fixup_irq_resources(usbs1_res,
++						  ARRAY_SIZE(usbs1_res));
+ 		platform_device_register_simple("emxx_udc", -1, usbs1_res,
+ 						ARRAY_SIZE(usbs1_res));
++	}
+ }
+ 
+ board_staging("renesas,kzm9d", kzm9d_init);
 -- 
 1.9.1
 
