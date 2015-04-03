@@ -1,43 +1,34 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Thu, 02 Apr 2015 13:56:39 +0000
+From: <masaru.nagai.vx@renesas.com>
+Date: Fri, 03 Apr 2015 06:27:46 +0000
 Subject: Re: [PATCH resend] Renesas Ethernet AVB driver
-Message-Id: <1427982999.18722.35.camel@xylophone.i.decadent.org.uk>
+Message-Id: <551E32E2.3020102@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2926619.fiYHPz1IBk@wasted.cogentembedded.com>
-In-Reply-To: <2926619.fiYHPz1IBk@wasted.cogentembedded.com>
+References: <20150331064349.GB4605@localhost.localdomain>	<20150331.113832.2042398685489897677.davem@davemloft.net>	<551ADC12.5050603@cogentembedded.com> <20150331.134842.499356389024178984.davem@davemloft.net>
+In-Reply-To: <20150331.134842.499356389024178984.davem@davemloft.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: davem@davemloft.net, sergei.shtylyov@cogentembedded.com
+Cc: richardcochran@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org, mitsuhiro.kimura.kc@renesas.com
 
-This driver looks somewhat similar to sh-eth, but lacks some of the
-recent bug fixes made to that.  At least commit 283e38db65e7 ("sh_eth:
-Fix serialisation of interrupt disable with interrupt & NAPI handler")
-appears to be applicable, but there are probably others.
+Hello Richard, David, Sergei
 
-One feature request:
+On 2015年04月01日 02:48, David Miller wrote:
+> From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> Date: Tue, 31 Mar 2015 20:40:34 +0300
+...
+> Is there a serious problem getting the original authors to signoff on
+> this driver submission?  If so, why?  This should be very
+> straightforward, and if for some reason these authors are unwilling to
+> then I have every reason to be concerned about this.
 
-On Sat, 2015-03-28 at 02:13 +0300, Sergei Shtylyov wrote:
-[...]
-> +/* ioctl to device function */
-> +static int ravb_do_ioctl(struct net_device *ndev, struct ifreq *req, int cmd)
-> +{
-> +	struct ravb_private *priv = netdev_priv(ndev);
-> +	struct phy_device *phydev = priv->phydev;
-> +
-> +	if (!netif_running(ndev))
-> +		return -EINVAL;
-> +
-> +	if (!phydev)
-> +		return -ENODEV;
-> +
-> +	if (cmd = SIOCSHWTSTAMP)
-> +		return ravb_hwtstamp_ioctl(ndev, req, cmd);
-[...]
+We are already agree on the work by sergei.
+So, this patch does not have problem.
 
-The driver should also handle SIOCGHWTSTAMP.
+Sergei, please append SOB of us to this patch.
 
-Ben.
+Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
 
-
+Best Regards,
+Masaru Nagai
