@@ -1,36 +1,105 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Fri, 24 Apr 2015 06:40:55 +0000
-Subject: [PATCH 0/1] spi: Re-do correctly function name and 'ret' return value
-Message-Id: <1429857656-8348-1-git-send-email-cm-hiep@jinso.co.jp>
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Fri, 03 Apr 2015 17:13:03 +0000
+Subject: [PATCH 08/14] SH: use clkdev_add_table()
+Message-Id: <E1Ye59T-0001BR-KY@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
+In-Reply-To: <20150403171149.GC13898@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org
-Cc: broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, ryusuke.sakato.bx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
 
-From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+We have always had an efficient way of registering a table of clock
+lookups - it's called clkdev_add_table().  However, some people seem
+to really love writing inefficient and unnecessary code.
 
-Hi Mark
-Hi Geert
+Convert SH to use the correct interface.
 
-This is patch to re-do correctly function name and 'ret' return value.
-qspi_trigger_transfer_out_int function should be qspi_trigger_transfer_out_in
-without "t". "ret" value in rspi_dma_check_then_transfer should be returned
-insteeds of returning zero. It just returns qspi_trigger_transfer_out_in() value
-in qspi_transfer_out_in().
-This patch has been tested at linux Upstream v4.0.0-10712-g27cf3a1 on Lager.
-Please consider the following patches for the Rcar-Gen2.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+ arch/sh/kernel/cpu/sh4a/clock-sh7734.c | 3 +--
+ arch/sh/kernel/cpu/sh4a/clock-sh7757.c | 4 ++--
+ arch/sh/kernel/cpu/sh4a/clock-sh7785.c | 4 ++--
+ arch/sh/kernel/cpu/sh4a/clock-sh7786.c | 4 ++--
+ arch/sh/kernel/cpu/sh4a/clock-shx3.c   | 4 ++--
+ 5 files changed, 9 insertions(+), 10 deletions(-)
 
-Best Regards,
-Cao Minh Hiep
-
-Hiep Cao Minh (1):
-  spi: Re-do correctly function name and 'ret' return value
-
- drivers/spi/spi-rspi.c | 10 +++-------
- 1 file changed, 3 insertions(+), 7 deletions(-)
-
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7734.c b/arch/sh/kernel/cpu/sh4a/clock-sh7734.c
+index 1fdf1ee672de..7f54bf2f453d 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7734.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7734.c
+@@ -246,8 +246,7 @@ int __init arch_clk_init(void)
+ 	for (i = 0; i < ARRAY_SIZE(main_clks); i++)
+ 		ret |= clk_register(main_clks[i]);
+ 
+-	for (i = 0; i < ARRAY_SIZE(lookups); i++)
+-		clkdev_add(&lookups[i]);
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+ 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+index 9a28fdb36387..e40ec2c97ad1 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+@@ -141,8 +141,8 @@ int __init arch_clk_init(void)
+ 
+ 	for (i = 0; i < ARRAY_SIZE(clks); i++)
+ 		ret |= clk_register(clks[i]);
+-	for (i = 0; i < ARRAY_SIZE(lookups); i++)
+-		clkdev_add(&lookups[i]);
++
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+ 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7785.c b/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
+index 17d0ea55a5a2..8eb6e62340c9 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
+@@ -164,8 +164,8 @@ int __init arch_clk_init(void)
+ 
+ 	for (i = 0; i < ARRAY_SIZE(clks); i++)
+ 		ret |= clk_register(clks[i]);
+-	for (i = 0; i < ARRAY_SIZE(lookups); i++)
+-		clkdev_add(&lookups[i]);
++
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+ 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7786.c b/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
+index bec2a83f1ba5..5e50e7ebeff0 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
+@@ -179,8 +179,8 @@ int __init arch_clk_init(void)
+ 
+ 	for (i = 0; i < ARRAY_SIZE(clks); i++)
+ 		ret |= clk_register(clks[i]);
+-	for (i = 0; i < ARRAY_SIZE(lookups); i++)
+-		clkdev_add(&lookups[i]);
++
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+ 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-shx3.c b/arch/sh/kernel/cpu/sh4a/clock-shx3.c
+index 9a49a44f6f94..605221d1448a 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-shx3.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-shx3.c
+@@ -138,8 +138,8 @@ int __init arch_clk_init(void)
+ 
+ 	for (i = 0; i < ARRAY_SIZE(clks); i++)
+ 		ret |= clk_register(clks[i]);
+-	for (i = 0; i < ARRAY_SIZE(lookups); i++)
+-		clkdev_add(&lookups[i]);
++
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
+ 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
 -- 
-1.9.1
+1.8.3.1
 
