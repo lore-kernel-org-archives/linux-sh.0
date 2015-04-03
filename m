@@ -1,93 +1,106 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 03 Apr 2015 12:41:57 +0000
-Subject: [PATCH/RFC 0/6] staging: board: armadillo800eva: Board staging for sh_mobile_lcdc_fb
-Message-Id: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 03 Apr 2015 16:24:45 +0000
+Subject: Re: [PATCH/RFC 0/6] staging: board: armadillo800eva: Board staging for sh_mobile_lcdc_fb
+Message-Id: <3984477.UtBUTfcozK@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-	Hi all,
+Hello Geert,
 
-This RFC patch series adds board staging support for r8a7740/armadillo.
-For now this supports only the frame buffer device for the on-board LCD.
-The goal is to complete the move to ARM multiplatform kernels for all
-shmobile platforms, and drop the existing board files
-(arch/arm/mach-shmobile/board-*).
+Thank you for the patches.
 
-The board staging area was introduced last year to allow continuous
-upstream in-tree development and integration of platform devices. It
-helps developers integrate devices as platform devices for device
-drivers that only provide platform device bindings.  This in turn allows
-for incremental development of both hardware feature support and DT
-binding work in parallel.
+On Friday 03 April 2015 14:41:57 Geert Uytterhoeven wrote:
+> 	Hi all,
+> 
+> This RFC patch series adds board staging support for r8a7740/armadillo.
+> For now this supports only the frame buffer device for the on-board LCD.
 
-This series consists of 4 parts:
-  - Patch 1 re-enables compilation of the board staging area, which was
-    disabled after a compile breakage, but has been fixed in the mean
-    time,
-  - Path 2 moves initialization of staging board code to an earlier
-    moment, as currently it happens after unused PM domains are powered
-    down,
-  - Patches 3 and 4 (hopefully) fix the existing kzm9d board staging
-    code, which was presumably broken by commit 9a1091ef0017c40a
-    ("irqchip: gic: Support hierarchy irq domain."),
-  - Patches 5 and 6 add support for registering platform devices with
-    complex dependencies (clocks, pinctrl, gpios, PM domains), and add
-    armadillo board staging code for enabling a frame buffer on the
-    on-board LCD.
+I've started adding DT support to the shmob-lcdc driver, but I have no board 
+to test it on. My Armadillo is gone, and KZM9G is unusable with DT + LCDC at 
+the moment as the LCDC interrupt is connected to the legacy interrupt 
+controller only, not the GIC. Would you be able to test a patch set ? And if 
+you want to implement support for the KZM9G legacy interrupt controller in DT, 
+please go for it :-)
 
-Questions:
-  - Are there other devices from board-armadillo.c that work fine in
-    armadillo-legacy, and that we want to add?
-    I think this is the list of devices lacking DT support and/or
-    missing in DTS:
-      - renesas_usbhs (does this work? the platform device is
-	instantiated conditionally, but the condition (gpio state) is
-	never true?)
-      - sh-mobile-hdmi/sh_mobile_lcdc_fb.1 (this seems to be broken in
-	-legacy?)
-      - sdhi1 (we do have sdhi0)
-      - mmcif
-      - soc-camera-pdrv/sh_mobile_ceu
-      - ipmmu
-      - sh-dma-engine (this will probably never get DT support)
+> The goal is to complete the move to ARM multiplatform kernels for all
+> shmobile platforms, and drop the existing board files
+> (arch/arm/mach-shmobile/board-*).
+> 
+> The board staging area was introduced last year to allow continuous
+> upstream in-tree development and integration of platform devices. It
+> helps developers integrate devices as platform devices for device
+> drivers that only provide platform device bindings.  This in turn allows
+> for incremental development of both hardware feature support and DT
+> binding work in parallel.
+> 
+> This series consists of 4 parts:
+>   - Patch 1 re-enables compilation of the board staging area, which was
+>     disabled after a compile breakage, but has been fixed in the mean
+>     time,
+>   - Path 2 moves initialization of staging board code to an earlier
+>     moment, as currently it happens after unused PM domains are powered
+>     down,
+>   - Patches 3 and 4 (hopefully) fix the existing kzm9d board staging
+>     code, which was presumably broken by commit 9a1091ef0017c40a
+>     ("irqchip: gic: Support hierarchy irq domain."),
+>   - Patches 5 and 6 add support for registering platform devices with
+>     complex dependencies (clocks, pinctrl, gpios, PM domains), and add
+>     armadillo board staging code for enabling a frame buffer on the
+>     on-board LCD.
+> 
+> Questions:
+>   - Are there other devices from board-armadillo.c that work fine in
+>     armadillo-legacy, and that we want to add?
+>     I think this is the list of devices lacking DT support and/or
+>     missing in DTS:
+>       - renesas_usbhs (does this work? the platform device is
+> 	instantiated conditionally, but the condition (gpio state) is
+> 	never true?)
+>       - sh-mobile-hdmi/sh_mobile_lcdc_fb.1 (this seems to be broken in
+> 	-legacy?)
 
-  - What about support for other boards (kzm9g, bockw, marzen)?
+HDMI is broken in legacy, we can thus drop it.
 
-This was tested on r8a7740/armadillo.
-This was not tested on emev2/kzm9d, due to lack of hardware.
+>       - sdhi1 (we do have sdhi0)
+>       - mmcif
+>       - soc-camera-pdrv/sh_mobile_ceu
+>       - ipmmu
+>       - sh-dma-engine (this will probably never get DT support)
+> 
+>   - What about support for other boards (kzm9g, bockw, marzen)?
 
-Thanks for your comments!
+At this point it becomes a budget question, we can certainly port them to DT, 
+but it might not make sense to spend time on that. I'll let Magnus chime in.
 
-Geert Uytterhoeven (6):
-  Revert "staging: board: disable as it breaks the build"
-  [RFC] staging: board: Initialize staging board code earlier
-  [RFC] staging: board: Add support for translating hwirq to virq numbers
-  [RFC] staging: board: kzm9d: Translate hwirq numbers to virq numbers
-  [RFC] staging: board: Add support for devices with complex dependencies
-  [RFC] staging: board: armadillo800eva: Board staging for sh_mobile_lcdc_fb
-
- drivers/staging/board/Kconfig           |   1 -
- drivers/staging/board/Makefile          |   3 +-
- drivers/staging/board/armadillo800eva.c | 124 ++++++++++++++++++++++++++++
- drivers/staging/board/board.c           | 142 ++++++++++++++++++++++++++++++++
- drivers/staging/board/board.h           |  38 ++++++++-
- drivers/staging/board/kzm9d.c           |  10 ++-
- 6 files changed, 313 insertions(+), 5 deletions(-)
- create mode 100644 drivers/staging/board/armadillo800eva.c
+> This was tested on r8a7740/armadillo.
+> This was not tested on emev2/kzm9d, due to lack of hardware.
+> 
+> Thanks for your comments!
+> 
+> Geert Uytterhoeven (6):
+>   Revert "staging: board: disable as it breaks the build"
+>   [RFC] staging: board: Initialize staging board code earlier
+>   [RFC] staging: board: Add support for translating hwirq to virq numbers
+>   [RFC] staging: board: kzm9d: Translate hwirq numbers to virq numbers
+>   [RFC] staging: board: Add support for devices with complex dependencies
+>   [RFC] staging: board: armadillo800eva: Board staging for sh_mobile_lcdc_fb
+> 
+>  drivers/staging/board/Kconfig           |   1 -
+>  drivers/staging/board/Makefile          |   3 +-
+>  drivers/staging/board/armadillo800eva.c | 124 ++++++++++++++++++++++++++++
+>  drivers/staging/board/board.c           | 142 +++++++++++++++++++++++++++++
+>  drivers/staging/board/board.h           |  38 ++++++++-
+>  drivers/staging/board/kzm9d.c           |  10 ++-
+>  6 files changed, 313 insertions(+), 5 deletions(-)
+>  create mode 100644 drivers/staging/board/armadillo800eva.c
 
 -- 
-1.9.1
+Regards,
 
-Gr{oetje,eeting}s,
+Laurent Pinchart
 
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
