@@ -1,74 +1,128 @@
-From: keita kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Mon, 20 Apr 2015 06:54:14 +0000
-Subject: Re: [RFC/PATCH v2 1/5] ARM: cpuidle: Add cpuidle support for R-Car Gen2 series
-Message-Id: <5534A296.5070006@renesas.com>
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Fri, 03 Apr 2015 17:12:53 +0000
+Subject: [PATCH 06/14] clkdev: add clkdev_create() helper
+Message-Id: <E1Ye59J-0001BF-CZ@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1429180540-5692-1-git-send-email-keita.kobayashi.ym@renesas.com> <1429180540-5692-2-git-send-email-keita.kobayashi.ym@renesas.com> <CANqRtoQ_tQB326cnxzKaM-Ts6QwSa8y+sn+jM95XuCfsa00hNw@mail.gmail.com>
-In-Reply-To: <CANqRtoQ_tQB326cnxzKaM-Ts6QwSa8y+sn+jM95XuCfsa00hNw@mail.gmail.com>
+References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
+In-Reply-To: <20150403171149.GC13898@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: "Simon Horman [Horms]" <horms@verge.net.au>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Daniel Lezcano <daniel.lezcano@linaro.org>, SH-Linux <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi Magnus
+Add a helper to allocate and add a clk_lookup structure.  This can not
+only be used in several places in clkdev.c to simplify the code, but
+more importantly, can be used by callers of the clkdev code to simplify
+their clkdev creation and registration.
 
-(2015/04/17 21:14), Magnus Damm wrote:
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+ drivers/clk/clkdev.c   | 53 ++++++++++++++++++++++++++++++++++++++------------
+ include/linux/clkdev.h |  3 +++
+ 2 files changed, 44 insertions(+), 12 deletions(-)
 
-> Hi Kobayashi-san,
-> 
-> On Thu, Apr 16, 2015 at 7:35 PM, Keita Kobayashi
-> <keita.kobayashi.ym@renesas.com> wrote:
->> Define ARM_RCAR_CPUIDLE config item to enable cpuidle
->> support for Renesas R-Car Gen2 SoCs.
->>
->> Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
->> ---
->>  drivers/cpuidle/Kconfig.arm | 8 ++++++++
->>  1 file changed, 8 insertions(+)
->>
->> diff --git a/drivers/cpuidle/Kconfig.arm b/drivers/cpuidle/Kconfig.arm
->> index 21340e0..1bff62e 100644
->> --- a/drivers/cpuidle/Kconfig.arm
->> +++ b/drivers/cpuidle/Kconfig.arm
->> @@ -74,3 +74,11 @@ config ARM_MVEBU_V7_CPUIDLE
->>         depends on ARCH_MVEBU && !ARM64
->>         help
->>           Select this to enable cpuidle on Armada 370, 38x and XP processors.
->> +
->> +config ARM_RCAR_CPUIDLE
->> +       bool "CPU Idle Driver for the R-Car SoCs"
->> +       depends on ARCH_RCAR_GEN2
->> +       depends on ARM_CPUIDLE
->> +       select ARM_CPU_SUSPEND
->> +       help
->> +         Select this to enable cpuidle for R-Car SoCs
-> 
-> Thanks for your efforts. May I ask why we need a separate Kconfig
-> entry for this portion? It looks a bit overkill to me.
-> 
-> I have not tried this myself, but it seems to me that you could simply
-> modify arch/arm/mach-shmobile/Kconfig something like this:
-> 
-> config ARCH_RCAR_GEN2
->  bool
->  select PM_RCAR if PM || SMP
-> + select ARM_CPU_SUSPEND if ARM_CPUIDLE
->  select RENESAS_IRQC
-> 
-> and then in patch 2/5 use ARM_CPUIDLE for the #ifdefs instead of
-> ARM_RCAR_CPUIDLE.
-> 
-> I think that would simplify things if possible.
+diff --git a/drivers/clk/clkdev.c b/drivers/clk/clkdev.c
+index 8e676eafc823..6d992d8b7c47 100644
+--- a/drivers/clk/clkdev.c
++++ b/drivers/clk/clkdev.c
+@@ -302,6 +302,19 @@ vclkdev_alloc(struct clk_hw *hw, const char *con_id, const char *dev_fmt,
+ 	return &cla->cl;
+ }
+ 
++static struct clk_lookup *
++vclkdev_create(struct clk_hw *hw, const char *con_id, const char *dev_fmt,
++	va_list ap)
++{
++	struct clk_lookup *cl;
++
++	cl = vclkdev_alloc(hw, con_id, dev_fmt, ap);
++	if (cl)
++		__clkdev_add(cl);
++
++	return cl;
++}
++
+ struct clk_lookup * __init_refok
+ clkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt, ...)
+ {
+@@ -316,6 +329,29 @@ clkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt, ...)
+ }
+ EXPORT_SYMBOL(clkdev_alloc);
+ 
++/**
++ * clkdev_create - allocate and add a clkdev lookup structure
++ * @clk: struct clk to associate with all clk_lookups
++ * @con_id: connection ID string on device
++ * @dev_fmt: format string describing device name
++ *
++ * Returns a clk_lookup structure, which can be later unregistered and
++ * freed.
++ */
++struct clk_lookup *clkdev_create(struct clk *clk, const char *con_id,
++	const char *dev_fmt, ...)
++{
++	struct clk_lookup *cl;
++	va_list ap;
++
++	va_start(ap, dev_fmt);
++	cl = vclkdev_create(__clk_get_hw(clk), con_id, dev_fmt, ap);
++	va_end(ap);
++
++	return cl;
++}
++EXPORT_SYMBOL_GPL(clkdev_create);
++
+ int clk_add_alias(const char *alias, const char *alias_dev_name,
+ 	const char *con_id, struct device *dev)
+ {
+@@ -325,12 +361,10 @@ int clk_add_alias(const char *alias, const char *alias_dev_name,
+ 	if (IS_ERR(r))
+ 		return PTR_ERR(r);
+ 
+-	l = clkdev_alloc(r, alias, alias_dev_name);
++	l = clkdev_create(r, alias, "%s", alias_dev_name);
+ 	clk_put(r);
+-	if (!l)
+-		return -ENODEV;
+-	clkdev_add(l);
+-	return 0;
++
++	return l ? 0 : -ENODEV;
+ }
+ EXPORT_SYMBOL(clk_add_alias);
+ 
+@@ -370,15 +404,10 @@ int clk_register_clkdev(struct clk *clk, const char *con_id,
+ 		return PTR_ERR(clk);
+ 
+ 	va_start(ap, dev_fmt);
+-	cl = vclkdev_alloc(__clk_get_hw(clk), con_id, dev_fmt, ap);
++	cl = vclkdev_create(__clk_get_hw(clk), con_id, dev_fmt, ap);
+ 	va_end(ap);
+ 
+-	if (!cl)
+-		return -ENOMEM;
+-
+-	clkdev_add(cl);
+-
+-	return 0;
++	return cl ? 0 : -ENOMEM;
+ }
+ EXPORT_SYMBOL(clk_register_clkdev);
+ 
+diff --git a/include/linux/clkdev.h b/include/linux/clkdev.h
+index cd93b215e3af..a240b18e86fa 100644
+--- a/include/linux/clkdev.h
++++ b/include/linux/clkdev.h
+@@ -38,6 +38,9 @@ struct clk_lookup *clkdev_alloc(struct clk *clk, const char *con_id,
+ void clkdev_add(struct clk_lookup *cl);
+ void clkdev_drop(struct clk_lookup *cl);
+ 
++struct clk_lookup *clkdev_create(struct clk *clk, const char *con_id,
++	const char *dev_fmt, ...);
++
+ void clkdev_add_table(struct clk_lookup *, size_t);
+ int clk_add_alias(const char *, const char *, const char *, struct device *);
+ 
+-- 
+1.8.3.1
 
-Thank you for your proposal.
-I will try it.
-
-> 
-> Thanks,
-> 
-> / magnus
-
-Regards.
-
-Keita Kobayashi
