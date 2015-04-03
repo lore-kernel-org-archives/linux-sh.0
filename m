@@ -1,43 +1,52 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Fri, 03 Apr 2015 17:53:34 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Defconfig Updates for v4.1
-Message-Id: <20150403175334.GG23023@localhost>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Fri, 03 Apr 2015 17:11:49 +0000
+Subject: [PATCH 00/14] Fix fallout from per-user struct clk patches
+Message-Id: <20150403171149.GC13898@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1426813316.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1426813316.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Andrew Lunn <andrew@lunn.ch>, Daniel Mack <daniel@zonque.org>, Gregory Clement <gregory.clement@free-electrons.com>, Haojian Zhuang <haojian.zhuang@gmail.com>, Jaroslav Kysela <perex@perex.cz>, Jason Cooper <jason@lakedaemon.net>, Kevin Hilman <khilman@deeprootsystems.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, Mauro Carvalho Chehab <mchehab@osg.samsung.com>, Mike Turquette <mturquette@linaro.org>, Robert Jarzmik <robert.jarzmik@free.fr>, Roland Stigge <stigge@antcom.de>, Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>, Sekhar Nori <nsekhar@ti.com>, Stephen Boyd <sboyd@codeaurora.org>, Takashi Iwai <tiwai@suse.de>, Tony Lindgren <tony@atomide.com>
 
-On Fri, Mar 20, 2015 at 10:07:28AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC defconfig updates for v4.1.
-> 
-> 
-> I have been holding off on this for a while as the patches to
-> enable multiplatform builds for the bockw and ape6evm boards only
-> really make sense with the following two pull requests applied.
-> Please consider those pull requests first.
-> 
-> * Renesas ARM Based SoC r8a73a4 CCF and Multiplatform Updates for v4.1
-> * Renesas ARM Based SoC sh73a0 Multiplatform Updates for v4.1
-> 
-> 
-> The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
-> 
->   Linux 4.0-rc1 (2015-02-22 18:21:14 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v4.1
-> 
-> for you to fetch changes up to bb3ab878a29a3879669bb922bebce87b9a9af755:
-> 
->   ARM: shmobile: Enable bockw board in multiplatform defconfig (2015-03-05 09:20:26 +0900)
+Sorry for posting this soo close to the 4.1 merge window, I had
+completely forgotten about this chunk of work I did earlier this
+month.
 
-Merged, thanks.
+The per-user struct clk patches rather badly broke clkdev and
+various other places.  This was reported, but was forgotten about.
+Really, the per-user clk stuff should've been reverted, but we've
+lived with it far too long for that.
 
+So, our only other option is to now rush these patches into 4.1
+and hope for the best.
 
--Olof
+The series cleans up quite a number of places too...
+
+ arch/arm/mach-davinci/da850.c                |  1 +
+ arch/arm/mach-lpc32xx/clock.c                |  5 +-
+ arch/arm/mach-omap1/board-nokia770.c         |  2 +-
+ arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c | 12 +---
+ arch/arm/mach-omap2/omap_device.c            | 24 +++-----
+ arch/arm/mach-pxa/eseries.c                  |  1 +
+ arch/arm/mach-pxa/lubbock.c                  |  1 +
+ arch/arm/mach-pxa/tosa.c                     |  1 +
+ arch/arm/plat-orion/common.c                 |  6 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7734.c       |  3 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7757.c       |  4 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7785.c       |  4 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7786.c       |  4 +-
+ arch/sh/kernel/cpu/sh4a/clock-shx3.c         |  4 +-
+ drivers/clk/clk-s2mps11.c                    |  4 +-
+ drivers/clk/clkdev.c                         | 83 ++++++++++++++++++++--------
+ drivers/media/platform/omap3isp/isp.c        | 18 ------
+ drivers/media/platform/omap3isp/isp.h        |  1 -
+ include/linux/clk.h                          | 27 ++++-----
+ include/linux/clkdev.h                       |  6 +-
+ include/media/omap3isp.h                     |  6 --
+ sound/soc/sh/migor.c                         |  3 +-
+ 22 files changed, 108 insertions(+), 112 deletions(-)
+
+-- 
+FTTC broadband for 0.8mile line: currently at 10.5Mbps down 400kbps up
+according to speedtest.net.
