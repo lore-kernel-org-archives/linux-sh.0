@@ -1,69 +1,100 @@
-From: Lars-Peter Clausen <lars@metafoo.de>
-Date: Fri, 10 Apr 2015 09:25:58 +0000
-Subject: Re: [alsa-devel] [PATCH 3/3] ASoC: simple-card: Remove support for setting differing DAI formats
-Message-Id: <55279726.7090208@metafoo.de>
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Fri, 03 Apr 2015 17:12:58 +0000
+Subject: [PATCH 07/14] media: omap3isp: remove unused clkdev
+Message-Id: <E1Ye59O-0001BJ-Gq@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fv8v4353.wl%kuninori.morimoto.gx@renesas.com>
- <87bnjj431h.wl%kuninori.morimoto.gx@renesas.com>
- <878ue08ngb.wl%kuninori.morimoto.gx@renesas.com>
- <55278F58.6030909@metafoo.de>
- <87vbh4730i.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbh4730i.wl%kuninori.morimoto.gx@renesas.com>
+References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
+In-Reply-To: <20150403171149.GC13898@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Linux-ALSA <alsa-devel@alsa-project.org>, Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>, Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>
+To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Mauro Carvalho Chehab <mchehab@osg.samsung.com>
 
-On 04/10/2015 11:21 AM, Kuninori Morimoto wrote:
-> This means we can put it under soc_probe_link_dais()
-> I can send formal patch if this is OK.
+No merged platform supplies xclks via platform data.  As we want to
+slightly change the clkdev interface, rather than fixing this unused
+code, remove it instead.
 
-Looks perfect.
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+ drivers/media/platform/omap3isp/isp.c | 18 ------------------
+ drivers/media/platform/omap3isp/isp.h |  1 -
+ include/media/omap3isp.h              |  6 ------
+ 3 files changed, 25 deletions(-)
 
->
-> # But, I wonder what is good explain about this patch ...
-> # indeed I noticed this issue from
-> # 1efb53a220b78fdfdbb97b726a2156713e75bdab
-> # (ASoC: simple-card: Remove support for setting differing DAI formats)
-> # but, it is simple-card user only...
->
-> --------
-> diff --git a/sound/soc/soc-core.c b/sound/soc/soc-core.c
-> index 76bfff2..9777e78 100644
-> --- a/sound/soc/soc-core.c
-> +++ b/sound/soc/soc-core.c
-> @@ -1324,6 +1324,9 @@ static int soc_probe_link_dais(struct snd_soc_card *card, int num, int order)
->   		}
->   	}
->
-> +	if (dai_link->dai_fmt)
-> +		snd_soc_runtime_set_dai_fmt(rtd, dai_link->dai_fmt);
-> +
->   	ret = soc_post_component_init(rtd, dai_link->name);
->   	if (ret)
->   		return ret;
-> @@ -1642,12 +1645,6 @@ static int snd_soc_instantiate_card(struct snd_soc_card *card)
->   		snd_soc_dapm_add_routes(&card->dapm, card->of_dapm_routes,
->   					card->num_of_dapm_routes);
->
-> -	for (i = 0; i < card->num_links; i++) {
-> -		if (card->dai_link[i].dai_fmt)
-> -			snd_soc_runtime_set_dai_fmt(&card->rtd[i],
-> -				card->dai_link[i].dai_fmt);
-> -	}
-> -
->   	snprintf(card->snd_card->shortname, sizeof(card->snd_card->shortname),
->   		 "%s", card->name);
->   	snprintf(card->snd_card->longname, sizeof(card->snd_card->longname),
-> ---------
->
-> Best regards
-> ---
-> Kuninori Morimoto
-> _______________________________________________
-> Alsa-devel mailing list
-> Alsa-devel@alsa-project.org
-> http://mailman.alsa-project.org/mailman/listinfo/alsa-devel
->
+diff --git a/drivers/media/platform/omap3isp/isp.c b/drivers/media/platform/omap3isp/isp.c
+index deca80903c3a..4d8078b9d010 100644
+--- a/drivers/media/platform/omap3isp/isp.c
++++ b/drivers/media/platform/omap3isp/isp.c
+@@ -281,7 +281,6 @@ static const struct clk_init_data isp_xclk_init_data = {
+ 
+ static int isp_xclk_init(struct isp_device *isp)
+ {
+-	struct isp_platform_data *pdata = isp->pdata;
+ 	struct clk_init_data init;
+ 	unsigned int i;
+ 
+@@ -311,20 +310,6 @@ static int isp_xclk_init(struct isp_device *isp)
+ 		xclk->clk = clk_register(NULL, &xclk->hw);
+ 		if (IS_ERR(xclk->clk))
+ 			return PTR_ERR(xclk->clk);
+-
+-		if (pdata->xclks[i].con_id = NULL &&
+-		    pdata->xclks[i].dev_id = NULL)
+-			continue;
+-
+-		xclk->lookup = kzalloc(sizeof(*xclk->lookup), GFP_KERNEL);
+-		if (xclk->lookup = NULL)
+-			return -ENOMEM;
+-
+-		xclk->lookup->con_id = pdata->xclks[i].con_id;
+-		xclk->lookup->dev_id = pdata->xclks[i].dev_id;
+-		xclk->lookup->clk = xclk->clk;
+-
+-		clkdev_add(xclk->lookup);
+ 	}
+ 
+ 	return 0;
+@@ -339,9 +324,6 @@ static void isp_xclk_cleanup(struct isp_device *isp)
+ 
+ 		if (!IS_ERR(xclk->clk))
+ 			clk_unregister(xclk->clk);
+-
+-		if (xclk->lookup)
+-			clkdev_drop(xclk->lookup);
+ 	}
+ }
+ 
+diff --git a/drivers/media/platform/omap3isp/isp.h b/drivers/media/platform/omap3isp/isp.h
+index cfdfc8714b6b..d41c98bbdfe7 100644
+--- a/drivers/media/platform/omap3isp/isp.h
++++ b/drivers/media/platform/omap3isp/isp.h
+@@ -122,7 +122,6 @@ enum isp_xclk_id {
+ struct isp_xclk {
+ 	struct isp_device *isp;
+ 	struct clk_hw hw;
+-	struct clk_lookup *lookup;
+ 	struct clk *clk;
+ 	enum isp_xclk_id id;
+ 
+diff --git a/include/media/omap3isp.h b/include/media/omap3isp.h
+index 398279dd1922..a9798525d01e 100644
+--- a/include/media/omap3isp.h
++++ b/include/media/omap3isp.h
+@@ -152,13 +152,7 @@ struct isp_v4l2_subdevs_group {
+ 	} bus; /* gcc < 4.6.0 chokes on anonymous union initializers */
+ };
+ 
+-struct isp_platform_xclk {
+-	const char *dev_id;
+-	const char *con_id;
+-};
+-
+ struct isp_platform_data {
+-	struct isp_platform_xclk xclks[2];
+ 	struct isp_v4l2_subdevs_group *subdevs;
+ 	void (*set_constraints)(struct isp_device *isp, bool enable);
+ };
+-- 
+1.8.3.1
 
