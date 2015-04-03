@@ -1,37 +1,34 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 07 Apr 2015 07:53:14 +0000
-Subject: [PATCH v2 2/2] ARM: shmobile: r8a7790: Enable DMA for HSUSB
-Message-Id: <1428393194-2132-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Fri, 03 Apr 2015 17:52:52 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC PM Updates for v4.1
+Message-Id: <20150403175252.GF23023@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428393194-2132-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1428393194-2132-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <cover.1426812951.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1426812951.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
-Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds DMA properties to the HSUSB node.
+On Fri, Mar 20, 2015 at 10:07:15AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC PM updates for v4.1.
+> 
+> 
+> The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
+> 
+>   Linux 4.0-rc1 (2015-02-22 18:21:14 -0800)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pm-for-v4.1
+> 
+> for you to fetch changes up to a8caad66904a7923c05fc4a137110085533ef00c:
+> 
+>   ARM: shmobile: Consolidate the pm code for R-Car Gen2 (2015-03-17 08:05:13 +0900)
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- arch/arm/boot/dts/r8a7790.dtsi | 3 +++
- 1 file changed, 3 insertions(+)
+Merged into next/cleanup. Thanks.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 8c7924a..0264b0a 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -672,6 +672,9 @@
- 		renesas,buswait = <4>;
- 		phys = <&usb0 1>;
- 		phy-names = "usb";
-+		dmas = <&usb_dmac0 0>, <&usb_dmac0 1>,
-+		       <&usb_dmac1 0>, <&usb_dmac1 1>;
-+		dma-names = "rx0", "tx1", "rx2", "tx3";
- 		status = "disabled";
- 	};
- 
--- 
-1.9.1
 
+-Olof
