@@ -1,88 +1,61 @@
-From: Tony Lindgren <tony@atomide.com>
-Date: Fri, 24 Apr 2015 15:31:57 +0000
-Subject: Re: [PATCH 3/5] arm: omap1: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
-Message-Id: <20150424153156.GS18048@atomide.com>
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Fri, 03 Apr 2015 17:13:19 +0000
+Subject: [PATCH 11/14] ARM: omap2: use clkdev_create()
+Message-Id: <E1Ye59j-0001Bd-0T@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
- <1429777993-11702-4-git-send-email-rnayak@codeaurora.org>
-In-Reply-To: <1429777993-11702-4-git-send-email-rnayak@codeaurora.org>
+References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
+In-Reply-To: <20150403171149.GC13898@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Tony Lindgren <tony@atomide.com>
 
-* Rajendra Nayak <rnayak@codeaurora.org> [150423 01:34]:
-> USE_PM_CLK_RUNTIME_OPS is introduced so we don't repeat the same code
-> to do runtime_suspend and runtime_resume across users of PM clocks.
-> Use it to remove the boilerplate code.
-> 
-> Signed-off-by: Rajendra Nayak <rnayak@codeaurora.org>
-> Reviewed-by: Kevin Hilman <khilman@linaro.org>
-> Acked-by: Santosh Shilimkar <ssantosh@kernel.org>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Rather than open coding the clkdev allocation, initialisation and
+addition, use the clkdev_create() helper.
 
-Acked-by: Tony Lindgren <tony@atomide.com>
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+ arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c | 12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
 
-> ---
->  arch/arm/mach-omap1/pm_bus.c | 37 ++-----------------------------------
->  1 file changed, 2 insertions(+), 35 deletions(-)
-> 
-> diff --git a/arch/arm/mach-omap1/pm_bus.c b/arch/arm/mach-omap1/pm_bus.c
-> index c40e209..667c163 100644
-> --- a/arch/arm/mach-omap1/pm_bus.c
-> +++ b/arch/arm/mach-omap1/pm_bus.c
-> @@ -21,48 +21,15 @@
->  
->  #include "soc.h"
->  
-> -#ifdef CONFIG_PM
-> -static int omap1_pm_runtime_suspend(struct device *dev)
-> -{
-> -	int ret;
-> -
-> -	dev_dbg(dev, "%s\n", __func__);
-> -
-> -	ret = pm_generic_runtime_suspend(dev);
-> -	if (ret)
-> -		return ret;
-> -
-> -	ret = pm_clk_suspend(dev);
-> -	if (ret) {
-> -		pm_generic_runtime_resume(dev);
-> -		return ret;
-> -	}
-> -
-> -	return 0;
-> -}
-> -
-> -static int omap1_pm_runtime_resume(struct device *dev)
-> -{
-> -	dev_dbg(dev, "%s\n", __func__);
-> -
-> -	pm_clk_resume(dev);
-> -	return pm_generic_runtime_resume(dev);
-> -}
-> -
->  static struct dev_pm_domain default_pm_domain = {
->  	.ops = {
-> -		.runtime_suspend = omap1_pm_runtime_suspend,
-> -		.runtime_resume = omap1_pm_runtime_resume,
-> +		USE_PM_CLK_RUNTIME_OPS
->  		USE_PLATFORM_PM_SLEEP_OPS
->  	},
->  };
-> -#define OMAP1_PM_DOMAIN (&default_pm_domain)
-> -#else
-> -#define OMAP1_PM_DOMAIN NULL
-> -#endif /* CONFIG_PM */
->  
->  static struct pm_clk_notifier_block platform_bus_notifier = {
-> -	.pm_domain = OMAP1_PM_DOMAIN,
-> +	.pm_domain = &default_pm_domain,
->  	.con_ids = { "ick", "fck", NULL, },
->  };
->  
-> -- 
-> QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a member
-> of Code Aurora Forum, hosted by The Linux Foundation
-> 
+diff --git a/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c b/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
+index 85e0b0c06718..b64d717bfab6 100644
+--- a/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
++++ b/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
+@@ -232,14 +232,12 @@ void omap2xxx_clkt_vps_init(void)
+ 	struct clk_hw_omap *hw = NULL;
+ 	struct clk *clk;
+ 	const char *parent_name = "mpu_ck";
+-	struct clk_lookup *lookup = NULL;
+ 
+ 	omap2xxx_clkt_vps_late_init();
+ 	omap2xxx_clkt_vps_check_bootloader_rates();
+ 
+ 	hw = kzalloc(sizeof(*hw), GFP_KERNEL);
+-	lookup = kzalloc(sizeof(*lookup), GFP_KERNEL);
+-	if (!hw || !lookup)
++	if (!hw)
+ 		goto cleanup;
+ 	init.name = "virt_prcm_set";
+ 	init.ops = &virt_prcm_set_ops;
+@@ -249,15 +247,9 @@ void omap2xxx_clkt_vps_init(void)
+ 	hw->hw.init = &init;
+ 
+ 	clk = clk_register(NULL, &hw->hw);
+-
+-	lookup->dev_id = NULL;
+-	lookup->con_id = "cpufreq_ck";
+-	lookup->clk = clk;
+-
+-	clkdev_add(lookup);
++	clkdev_create(clk, "cpufreq_ck", NULL);
+ 	return;
+ cleanup:
+ 	kfree(hw);
+-	kfree(lookup);
+ }
+ #endif
+-- 
+1.8.3.1
+
