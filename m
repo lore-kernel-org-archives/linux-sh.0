@@ -1,37 +1,123 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 21 Apr 2015 09:04:57 +0000
-Subject: Re: [RFC 0/5] PM / clock_ops: provide default runtime ops and cleanup users
-Message-Id: <CAMuHMdXEe4pPDVAimKH3ThJYee_JF35pyOfKzjMamPkJDfTj6w@mail.gmail.com>
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Fri, 03 Apr 2015 17:12:37 +0000
+Subject: [PATCH 03/14] clkdev: get rid of redundant clk_add_alias() prototype in linux/clk.h
+Message-Id: <E1Ye593-0001B1-W4@rmk-PC.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1429018473-21865-1-git-send-email-rnayak@codeaurora.org>
-	<7hfv7ue68c.fsf@deeprootsystems.com>
-	<55358AE5.1070900@oracle.com>
-	<CAMuHMdX3-Ces57VcpyXEJBSUB07ZtpcCiN8ZpiStGcQnDEHt4A@mail.gmail.com>
-	<775b18eaf35d4319ae4762098e558d1b.squirrel@www.codeaurora.org>
-In-Reply-To: <775b18eaf35d4319ae4762098e558d1b.squirrel@www.codeaurora.org>
+References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
+In-Reply-To: <20150403171149.GC13898@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rajendra Nayak <rnayak@codeaurora.org>
-Cc: santosh shilimkar <santosh.shilimkar@oracle.com>, Kevin Hilman <khilman@kernel.org>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Santosh Shilimkar <ssantosh@kernel.org>, Tony Lindgren <tony@atomide.com>, Sekhar Nori <nsekhar@ti.com>, Magnus Damm <magnus.damm@gmail.com>, "linux-arm-msm@vger.kernel.org" <linux-arm-msm@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, "linux-omap@vger.kernel.org" <linux-omap@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Sekhar Nori <nsekhar@ti.com>, Kevin Hilman <khilman@deeprootsystems.com>, Tony Lindgren <tony@atomide.com>, Daniel Mack <daniel@zonque.org>, Haojian Zhuang <haojian.zhuang@gmail.com>, Robert Jarzmik <robert.jarzmik@free.fr>
 
-On Tue, Apr 21, 2015 at 10:56 AM, Rajendra Nayak <rnayak@codeaurora.org> wrote:
->> Note that the new code always has a dev_pm_domain, while the old code had
->> it
->> conditionally on CONFIG_PM.
->
-> Right, but since USE_PM_CLK_RUNTIME_OPS is actually a nop with
-> !CONFIG_PM, we don't really need the checks anymore.
+clk_add_alias() is provided by clkdev, and is not part of the clk API.
+Howver, it is prototyped in two locations: linux/clkdev.h and
+linux/clk.h.  This is a mess.  Get rid of the redundant and unnecessary
+version in linux/clk.h.
 
-What I mean is that it uses more memory, to store the dev_pm_domain struct.
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+ arch/arm/mach-davinci/da850.c        |  1 +
+ arch/arm/mach-omap1/board-nokia770.c |  2 +-
+ arch/arm/mach-pxa/eseries.c          |  1 +
+ arch/arm/mach-pxa/lubbock.c          |  1 +
+ arch/arm/mach-pxa/tosa.c             |  1 +
+ include/linux/clk.h                  | 13 -------------
+ 6 files changed, 5 insertions(+), 14 deletions(-)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm/mach-davinci/da850.c b/arch/arm/mach-davinci/da850.c
+index 45ce065e7170..3b8740c083c4 100644
+--- a/arch/arm/mach-davinci/da850.c
++++ b/arch/arm/mach-davinci/da850.c
+@@ -11,6 +11,7 @@
+  * is licensed "as is" without any warranty of any kind, whether express
+  * or implied.
+  */
++#include <linux/clkdev.h>
+ #include <linux/gpio.h>
+ #include <linux/init.h>
+ #include <linux/clk.h>
+diff --git a/arch/arm/mach-omap1/board-nokia770.c b/arch/arm/mach-omap1/board-nokia770.c
+index 85089d821982..3bc59390a943 100644
+--- a/arch/arm/mach-omap1/board-nokia770.c
++++ b/arch/arm/mach-omap1/board-nokia770.c
+@@ -7,6 +7,7 @@
+  * it under the terms of the GNU General Public License version 2 as
+  * published by the Free Software Foundation.
+  */
++#include <linux/clkdev.h>
+ #include <linux/irq.h>
+ #include <linux/gpio.h>
+ #include <linux/kernel.h>
+@@ -14,7 +15,6 @@
+ #include <linux/mutex.h>
+ #include <linux/platform_device.h>
+ #include <linux/input.h>
+-#include <linux/clk.h>
+ #include <linux/omapfb.h>
+ 
+ #include <linux/spi/spi.h>
+diff --git a/arch/arm/mach-pxa/eseries.c b/arch/arm/mach-pxa/eseries.c
+index cfb864173ce3..4427bf26ea47 100644
+--- a/arch/arm/mach-pxa/eseries.c
++++ b/arch/arm/mach-pxa/eseries.c
+@@ -10,6 +10,7 @@
+  *
+  */
+ 
++#include <linux/clkdev.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/gpio.h>
+diff --git a/arch/arm/mach-pxa/lubbock.c b/arch/arm/mach-pxa/lubbock.c
+index d8a1be619f21..235f2d9318c1 100644
+--- a/arch/arm/mach-pxa/lubbock.c
++++ b/arch/arm/mach-pxa/lubbock.c
+@@ -11,6 +11,7 @@
+  *  it under the terms of the GNU General Public License version 2 as
+  *  published by the Free Software Foundation.
+  */
++#include <linux/clkdev.h>
+ #include <linux/gpio.h>
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+diff --git a/arch/arm/mach-pxa/tosa.c b/arch/arm/mach-pxa/tosa.c
+index 7780d1faa06f..92e56d8a24d8 100644
+--- a/arch/arm/mach-pxa/tosa.c
++++ b/arch/arm/mach-pxa/tosa.c
+@@ -12,6 +12,7 @@
+  *
+  */
+ 
++#include <linux/clkdev.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/platform_device.h>
+diff --git a/include/linux/clk.h b/include/linux/clk.h
+index d1ac9f3ab24b..c94a34a8a1b3 100644
+--- a/include/linux/clk.h
++++ b/include/linux/clk.h
+@@ -467,19 +467,6 @@ static inline void clk_disable_unprepare(struct clk *clk)
+ 	clk_unprepare(clk);
+ }
+ 
+-/**
+- * clk_add_alias - add a new clock alias
+- * @alias: name for clock alias
+- * @alias_dev_name: device name
+- * @id: platform specific clock name
+- * @dev: device
+- *
+- * Allows using generic clock names for drivers by adding a new alias.
+- * Assumes clkdev, see clkdev.h for more info.
+- */
+-int clk_add_alias(const char *alias, const char *alias_dev_name, char *id,
+-			struct device *dev);
+-
+ struct device_node;
+ struct of_phandle_args;
+ 
+-- 
+1.8.3.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
