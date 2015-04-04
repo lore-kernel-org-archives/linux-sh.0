@@ -1,93 +1,70 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Thu, 30 Apr 2015 12:30:51 +0000
-Subject: [RFC PATCH 1/7] mmc: tmio: Add UHS-I mode support
-Message-Id: <1430397051.5802.40.camel@xylophone.i.decadent.org.uk>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sat, 04 Apr 2015 16:54:31 +0000
+Subject: [PATCH repost] ARM: shmobile: r8a7790: Remove MSIOF address from device tree
+Message-Id: <1428166471-2897-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430396995.5802.39.camel@xylophone.i.decadent.org.uk>
-In-Reply-To: <1430396995.5802.39.camel-2NU49sBE5Aze9VDwLV8dzJPsBRI6B4nW9dF7HbQ/qKg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian-zdned+2MO1+9FHfhHBbuYA@public.gmane.org>, linux-mmc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-81qHHgoATdFT9dQujB1mzip2UmYkHbXO@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Based on work by Shinobu Uehara and Ben Dooks.  This adds the
-voltage switch operation needed for all UHS-I modes, but not
-the tuning needed for SDR-104 which will come later.
+From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
 
-XXX The card_busy implementation is a bit of a guess.
+MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
+MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
 
-Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
- drivers/mmc/host/tmio_mmc.h     |    3 +++
- drivers/mmc/host/tmio_mmc_pio.c |   31 +++++++++++++++++++++++++++++++
- 2 files changed, 34 insertions(+)
 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index fc3805ed69d1..a60380b94105 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -103,6 +103,9 @@ struct tmio_mmc_host {
- 	void (*clk_disable)(struct platform_device *pdev);
- 	int (*multi_io_quirk)(struct mmc_card *card,
- 			      unsigned int direction, int blk_size);
-+
-+	int (*start_signal_voltage_switch)(struct tmio_mmc_host *host,
-+					   unsigned char signal_voltage);
- };
+This patch is based on devel branch of Simon Horman's renesas tree.
+
+v1 repost [Yoshihiro Kaneko]
+* Dropped RFC designation
+
+ arch/arm/boot/dts/r8a7790.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 4bb2f4c..f3b8430 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1273,7 +1273,7 @@
  
- struct tmio_mmc_host *tmio_mmc_host_alloc(struct platform_device *pdev);
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index e3dcf31a8bd6..3c1e0e53c0b1 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -1011,12 +1011,43 @@ static int tmio_multi_io_quirk(struct mmc_card *card,
- 	return blk_size;
- }
+ 	msiof0: spi@e6e20000 {
+ 		compatible = "renesas,msiof-r8a7790";
+-		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
++		reg = <0 0xe6e20000 0 0x0064>;
+ 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7790_CLK_MSIOF0>;
+ 		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
+@@ -1285,7 +1285,7 @@
  
-+static int tmio_mmc_start_signal_voltage_switch(struct mmc_host *mmc,
-+	struct mmc_ios *ios)
-+{
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+
-+	if (!host->start_signal_voltage_switch)
-+		return 0;
-+
-+	return host->start_signal_voltage_switch(host, ios->signal_voltage);
-+}
-+
-+static int tmio_mmc_card_busy(struct mmc_host *mmc)
-+{
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	u32 status;
-+
-+	pm_runtime_get_sync(mmc_dev(mmc));
-+	status = sd_ctrl_read32(host, CTL_STATUS);
-+	pm_runtime_mark_last_busy(mmc_dev(mmc));
-+	pm_runtime_put_autosuspend(mmc_dev(mmc));
-+
-+	/*
-+	 * Card signals busy by pulling down all of DAT[3:0].  This status
-+	 * flag appears to reflect DAT3.
-+	 */
-+	return !(status & TMIO_STAT_SIGSTATE_A);
-+}
-+
- static const struct mmc_host_ops tmio_mmc_ops = {
- 	.request	= tmio_mmc_request,
- 	.set_ios	= tmio_mmc_set_ios,
- 	.get_ro         = tmio_mmc_get_ro,
- 	.get_cd		= mmc_gpio_get_cd,
- 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
-+	.start_signal_voltage_switch
-+			= tmio_mmc_start_signal_voltage_switch,
-+	.card_busy	= tmio_mmc_card_busy,
- 	.multi_io_quirk	= tmio_multi_io_quirk,
- };
+ 	msiof1: spi@e6e10000 {
+ 		compatible = "renesas,msiof-r8a7790";
+-		reg = <0 0xe6e10000 0 0x0064>, <0 0xe7e10000 0 0x0064>;
++		reg = <0 0xe6e10000 0 0x0064>;
+ 		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF1>;
+ 		dmas = <&dmac0 0x55>, <&dmac0 0x56>;
+@@ -1297,7 +1297,7 @@
  
+ 	msiof2: spi@e6e00000 {
+ 		compatible = "renesas,msiof-r8a7790";
+-		reg = <0 0xe6e00000 0 0x0064>, <0 0xe7e00000 0 0x0064>;
++		reg = <0 0xe6e00000 0 0x0064>;
+ 		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF2>;
+ 		dmas = <&dmac0 0x41>, <&dmac0 0x42>;
+@@ -1309,7 +1309,7 @@
+ 
+ 	msiof3: spi@e6c90000 {
+ 		compatible = "renesas,msiof-r8a7790";
+-		reg = <0 0xe6c90000 0 0x0064>, <0 0xe7c90000 0 0x0064>;
++		reg = <0 0xe6c90000 0 0x0064>;
+ 		interrupts = <0 159 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF3>;
+ 		dmas = <&dmac0 0x45>, <&dmac0 0x46>;
 -- 
-1.7.10.4
-
-
-
+1.9.1
 
