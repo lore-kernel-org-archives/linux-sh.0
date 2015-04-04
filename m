@@ -1,66 +1,75 @@
-From: Tony Lindgren <tony@atomide.com>
-Date: Fri, 03 Apr 2015 23:49:37 +0000
-Subject: Re: [PATCH 11/14] ARM: omap2: use clkdev_create()
-Message-Id: <20150403234937.GE18048@atomide.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sat, 04 Apr 2015 16:55:12 +0000
+Subject: [PATCH v2] ARM: shmobile: r8a7791: Remove MSIOF address from device tree
+Message-Id: <1428166512-2936-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
- <E1Ye59j-0001Bd-0T@rmk-PC.arm.linux.org.uk>
-In-Reply-To: <E1Ye59j-0001Bd-0T@rmk-PC.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Russell King <rmk+kernel@arm.linux.org.uk>
-Cc: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-* Russell King <rmk+kernel@arm.linux.org.uk> [150403 10:14]:
-> Rather than open coding the clkdev allocation, initialisation and
-> addition, use the clkdev_create() helper.
-> 
-> Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
 
-Acked-by: Tony Lindgren <tony@atomide.com>
+MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
+MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
 
-> ---
->  arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c | 12 ++----------
->  1 file changed, 2 insertions(+), 10 deletions(-)
-> 
-> diff --git a/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c b/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
-> index 85e0b0c06718..b64d717bfab6 100644
-> --- a/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
-> +++ b/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
-> @@ -232,14 +232,12 @@ void omap2xxx_clkt_vps_init(void)
->  	struct clk_hw_omap *hw = NULL;
->  	struct clk *clk;
->  	const char *parent_name = "mpu_ck";
-> -	struct clk_lookup *lookup = NULL;
->  
->  	omap2xxx_clkt_vps_late_init();
->  	omap2xxx_clkt_vps_check_bootloader_rates();
->  
->  	hw = kzalloc(sizeof(*hw), GFP_KERNEL);
-> -	lookup = kzalloc(sizeof(*lookup), GFP_KERNEL);
-> -	if (!hw || !lookup)
-> +	if (!hw)
->  		goto cleanup;
->  	init.name = "virt_prcm_set";
->  	init.ops = &virt_prcm_set_ops;
-> @@ -249,15 +247,9 @@ void omap2xxx_clkt_vps_init(void)
->  	hw->hw.init = &init;
->  
->  	clk = clk_register(NULL, &hw->hw);
-> -
-> -	lookup->dev_id = NULL;
-> -	lookup->con_id = "cpufreq_ck";
-> -	lookup->clk = clk;
-> -
-> -	clkdev_add(lookup);
-> +	clkdev_create(clk, "cpufreq_ck", NULL);
->  	return;
->  cleanup:
->  	kfree(hw);
-> -	kfree(lookup);
->  }
->  #endif
-> -- 
-> 1.8.3.1
-> 
+Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
+
+This patch is based on devel branch of Simon Horman's renesas tree.
+
+v2 [Yoshihiro Kaneko]
+* Update the binding documentation
+
+ Documentation/devicetree/bindings/spi/sh-msiof.txt | 2 +-
+ arch/arm/boot/dts/r8a7791.dtsi                     | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+index 4c388bb..8f77144 100644
+--- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
++++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+@@ -60,7 +60,7 @@ Example:
+ 
+ 	msiof0: spi@e6e20000 {
+ 		compatible = "renesas,msiof-r8a7791";
+-		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
++		reg = <0 0xe6e20000 0 0x0064>;
+ 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7791_CLK_MSIOF0>;
+ 		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 4696062..3e9f824 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1288,7 +1288,7 @@
+ 
+ 	msiof0: spi@e6e20000 {
+ 		compatible = "renesas,msiof-r8a7791";
+-		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
++		reg = <0 0xe6e20000 0 0x0064>;
+ 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7791_CLK_MSIOF0>;
+ 		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
+@@ -1300,7 +1300,7 @@
+ 
+ 	msiof1: spi@e6e10000 {
+ 		compatible = "renesas,msiof-r8a7791";
+-		reg = <0 0xe6e10000 0 0x0064>, <0 0xe7e10000 0 0x0064>;
++		reg = <0 0xe6e10000 0 0x0064>;
+ 		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7791_CLK_MSIOF1>;
+ 		dmas = <&dmac0 0x55>, <&dmac0 0x56>;
+@@ -1312,7 +1312,7 @@
+ 
+ 	msiof2: spi@e6e00000 {
+ 		compatible = "renesas,msiof-r8a7791";
+-		reg = <0 0xe6e00000 0 0x0064>, <0 0xe7e00000 0 0x0064>;
++		reg = <0 0xe6e00000 0 0x0064>;
+ 		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7791_CLK_MSIOF2>;
+ 		dmas = <&dmac0 0x41>, <&dmac0 0x42>;
+-- 
+1.9.1
+
