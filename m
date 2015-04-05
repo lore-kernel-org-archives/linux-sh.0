@@ -1,75 +1,33 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sat, 04 Apr 2015 16:55:12 +0000
-Subject: [PATCH v2] ARM: shmobile: r8a7791: Remove MSIOF address from device tree
-Message-Id: <1428166512-2936-1-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 05 Apr 2015 08:47:01 +0000
+Subject: Re: [PATCH v2] ARM: shmobile: r8a7791: Remove MSIOF address from device tree
+Message-Id: <CAMuHMdVH19ZncC0dMbO8-rCzN6MkOVWfiSKLDAnsqW6_Z_pw1Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1428166512-2936-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1428166512-2936-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+On Sat, Apr 4, 2015 at 6:55 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+> From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+>
+> MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
+> MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
+>
+> Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 
-MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
-MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
----
+Gr{oetje,eeting}s,
 
-This patch is based on devel branch of Simon Horman's renesas tree.
+                        Geert
 
-v2 [Yoshihiro Kaneko]
-* Update the binding documentation
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
- Documentation/devicetree/bindings/spi/sh-msiof.txt | 2 +-
- arch/arm/boot/dts/r8a7791.dtsi                     | 6 +++---
- 2 files changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
-index 4c388bb..8f77144 100644
---- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
-+++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
-@@ -60,7 +60,7 @@ Example:
- 
- 	msiof0: spi@e6e20000 {
- 		compatible = "renesas,msiof-r8a7791";
--		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
-+		reg = <0 0xe6e20000 0 0x0064>;
- 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7791_CLK_MSIOF0>;
- 		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 4696062..3e9f824 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1288,7 +1288,7 @@
- 
- 	msiof0: spi@e6e20000 {
- 		compatible = "renesas,msiof-r8a7791";
--		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
-+		reg = <0 0xe6e20000 0 0x0064>;
- 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7791_CLK_MSIOF0>;
- 		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
-@@ -1300,7 +1300,7 @@
- 
- 	msiof1: spi@e6e10000 {
- 		compatible = "renesas,msiof-r8a7791";
--		reg = <0 0xe6e10000 0 0x0064>, <0 0xe7e10000 0 0x0064>;
-+		reg = <0 0xe6e10000 0 0x0064>;
- 		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_MSIOF1>;
- 		dmas = <&dmac0 0x55>, <&dmac0 0x56>;
-@@ -1312,7 +1312,7 @@
- 
- 	msiof2: spi@e6e00000 {
- 		compatible = "renesas,msiof-r8a7791";
--		reg = <0 0xe6e00000 0 0x0064>, <0 0xe7e00000 0 0x0064>;
-+		reg = <0 0xe6e00000 0 0x0064>;
- 		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_MSIOF2>;
- 		dmas = <&dmac0 0x41>, <&dmac0 0x42>;
--- 
-1.9.1
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
