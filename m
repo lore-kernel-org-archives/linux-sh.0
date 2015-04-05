@@ -1,50 +1,95 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Mon, 13 Apr 2015 13:42:46 +0000
-Subject: Re: [PATCH v5] ARM: smp: Only expose /sys/.../cpuX/online if hotpluggable
-Message-Id: <20150413134246.GS12732@n2100.arm.linux.org.uk>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 05 Apr 2015 21:13:46 +0000
+Subject: [PATCH] sh_eth: move inline functions to the header file
+Message-Id: <4254119.qJUdUQCUqs@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428705191-15670-1-git-send-email-sboyd@codeaurora.org>
-In-Reply-To: <1428705191-15670-1-git-send-email-sboyd@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Fri, Apr 10, 2015 at 03:33:11PM -0700, Stephen Boyd wrote:
-> Writes to /sys/.../cpuX/online fail if we determine the platform
-> doesn't support hotplug for that CPU. Furthermore, if the cpu_die
-> op isn't specified the system hangs when we try to offline a CPU
-> and it comes right back online unexpectedly. Let's figure this
-> stuff out before we make the sysfs nodes so that the online file
-> doesn't even exist if it isn't (at least sometimes) possible to
-> hotplug the CPU.
-> 
-> Add a new 'cpu_can_disable' op and repoint all 'cpu_disable'
-> implementations at it because all implementers use the op to
-> indicate if a CPU can be hotplugged or not in a static fashion.
-> With PSCI we may need to add a 'cpu_disable' op so that the
-> secure OS can be migrated off the CPU we're trying to hotplug.
-> In this case, the 'cpu_can_disable' op will indicate that all
-> CPUs are hotpluggable by returning true, but the 'cpu_disable' op
-> will make a PSCI migration call and occasionally fail, denying
-> the hotplug of a CPU. This shouldn't be any worse than x86 where
-> we may indicate that all CPUs are hotpluggable but occasionally
-> we can't offline a CPU due to check_irq_vectors_for_cpu_disable()
-> failing to find a CPU to move vectors to.
-> 
-> Cc: Mark Rutland <mark.rutland@arm.com>
-> Cc: Nicolas Pitre <nico@linaro.org>
-> Cc: Dave Martin <Dave.Martin@arm.com>
-> Acked-by: Simon Horman <horms@verge.net.au> [shmobile portion]
-> Tested-by: Simon Horman <horms@verge.net.au>
-> Cc: Magnus Damm <magnus.damm@gmail.com>
-> Cc: <linux-sh@vger.kernel.org>
-> Cc: Tyler Baker <tyler.baker@linaro.org>
-> Cc: Geert Uytterhoeven <geert@linux-m68k.org>
-> Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+The explicitly inline functions belong to the header files, so move
+cpu_to_edmac() and edmac_to_cpu() into the driver header.
 
-Let's see some more acks for this...
+While at it, make these functions return 'u32' instead of '__u32'.
 
--- 
-FTTC broadband for 0.8mile line: currently at 10.5Mbps down 400kbps up
-according to speedtest.net.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+The patch is against the David Miller's 'net-next.git' repo.
+I was going to let gcc figure out whether inlining was needed but it turned
+out that with *inline* keywords removed gcc generated even more code...
+
+ drivers/net/ethernet/renesas/sh_eth.c |   24 ------------------------
+ drivers/net/ethernet/renesas/sh_eth.h |   23 +++++++++++++++++++++++
+ 2 files changed, 23 insertions(+), 24 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -941,30 +941,6 @@ static void sh_eth_set_receive_align(str
+ 		skb_reserve(skb, SH_ETH_RX_ALIGN - reserve);
+ }
+ 
+-
+-/* CPU <-> EDMAC endian convert */
+-static inline __u32 cpu_to_edmac(struct sh_eth_private *mdp, u32 x)
+-{
+-	switch (mdp->edmac_endian) {
+-	case EDMAC_LITTLE_ENDIAN:
+-		return cpu_to_le32(x);
+-	case EDMAC_BIG_ENDIAN:
+-		return cpu_to_be32(x);
+-	}
+-	return x;
+-}
+-
+-static inline __u32 edmac_to_cpu(struct sh_eth_private *mdp, u32 x)
+-{
+-	switch (mdp->edmac_endian) {
+-	case EDMAC_LITTLE_ENDIAN:
+-		return le32_to_cpu(x);
+-	case EDMAC_BIG_ENDIAN:
+-		return be32_to_cpu(x);
+-	}
+-	return x;
+-}
+-
+ /* Program the hardware MAC address from dev->dev_addr. */
+ static void update_mac_address(struct net_device *ndev)
+ {
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
++++ net-next/drivers/net/ethernet/renesas/sh_eth.h
+@@ -546,6 +546,29 @@ static inline void sh_eth_soft_swap(char
+ #endif
+ }
+ 
++/* CPU <-> EDMAC endian convert */
++static inline u32 cpu_to_edmac(struct sh_eth_private *mdp, u32 x)
++{
++	switch (mdp->edmac_endian) {
++	case EDMAC_LITTLE_ENDIAN:
++		return cpu_to_le32(x);
++	case EDMAC_BIG_ENDIAN:
++		return cpu_to_be32(x);
++	}
++	return x;
++}
++
++static inline u32 edmac_to_cpu(struct sh_eth_private *mdp, u32 x)
++{
++	switch (mdp->edmac_endian) {
++	case EDMAC_LITTLE_ENDIAN:
++		return le32_to_cpu(x);
++	case EDMAC_BIG_ENDIAN:
++		return be32_to_cpu(x);
++	}
++	return x;
++}
++
+ #define SH_ETH_OFFSET_INVALID	((u16) ~0)
+ 
+ static inline void sh_eth_write(struct net_device *ndev, u32 data,
+
