@@ -1,43 +1,86 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 02 Apr 2015 00:12:03 +0000
-Subject: Re: [PATCH] clk: shmobile: r8a7779: check return of of_property_read_string_index()
-Message-Id: <87lhib75js.wl%kuninori.morimoto.gx@renesas.com>
+From: Tyler Baker <tyler.baker@linaro.org>
+Date: Mon, 06 Apr 2015 17:19:45 +0000
+Subject: Re: [PATCH v3] ARM: smp: Only expose /sys/.../cpuX/online if hotpluggable
+Message-Id: <CANMBJr5-0dnVJ_gSBhOuyqmm7MnYLTKbTetezZnzucdxjNEVEA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87pp7o2xqg.wl%kuninori.morimoto.gx@renesas.com>
-	<CAMuHMdWV3oNTPTq0RwMugLGoz62T=1Acn1LWbJb4WobfiCcG+g@mail.gmail.com>
-In-Reply-To: <CAMuHMdWV3oNTPTq0RwMugLGoz62T=1Acn1LWbJb4WobfiCcG+g@mail.gmail.com>
+References: <1423874574-3494-1-git-send-email-sboyd@codeaurora.org>
+ <20150218222731.GC24177@verge.net.au>
+ <54E51FFD.7080506@codeaurora.org>
+ <20150219221456.GC617@verge.net.au>
+In-Reply-To: <20150219221456.GC617@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Stephen Boyd <sboyd@codeaurora.org>, Mike Turquette <mturquette@linaro.org>, Simon Horman <horms+renesas@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
+On 19 February 2015 at 14:14, Simon Horman <horms@verge.net.au> wrote:
+> On Wed, Feb 18, 2015 at 03:27:57PM -0800, Stephen Boyd wrote:
+>> On 02/18/15 14:27, Simon Horman wrote:
+>> > On Fri, Feb 13, 2015 at 04:42:54PM -0800, Stephen Boyd wrote:
+>> >> Writes to /sys/.../cpuX/online fail if we determine the platform
+>> >> doesn't support hotplug for that CPU. Furthermore, if the cpu_die
+>> >> op isn't specified the system hangs when we try to offline a CPU
+>> >> and it comes right back online unexpectedly. Let's figure this
+>> >> stuff out before we make the sysfs nodes so that the online file
+>> >> doesn't even exist if it isn't (at least sometimes) possible to
+>> >> hotplug the CPU.
+>> >>
+>> >> Add a new cpu_can_disable op and repoint all cpu_disable
+>> >> implementations at it because all current users use the op to
+>> >> indicate if a CPU can be hotplugged or not in a static fashion.
+>> >> With PSCI we may need to introduce a cpu_disable op so that the
+>> >> secure OS can be migrated off the CPU we're trying to hotplug.
+>> >> In this case, the cpu_can_disable op will indicate that all CPUs
+>> >> are hotpluggable by returning 1, but the cpu_disable op will make
+>> >> a PSCI migration call and occasionally fail, denying the hotplug
+>> >> of a CPU. This shouldn't be any worse than x86 where we may
+>> >> indicate that all CPUs are hotpluggable but occasionally we can't
+>> >> offline a CPU due to check_irq_vectors_for_cpu_disable() failing
+>> >> to find a CPU to move vectors to.
+>> >>
+>> >> Cc: Mark Rutland <mark.rutland@arm.com>
+>> >> Cc: Nicolas Pitre <nico@linaro.org>
+>> >> Cc: Dave Martin <Dave.Martin@arm.com>
+>> >> Cc: Simon Horman <horms@verge.net.au>
+>> >> Cc: Magnus Damm <magnus.damm@gmail.com>
+>> >> Cc: <linux-sh@vger.kernel.org>
+>> >> Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+>> >> ---
+>> >>
+>> >> Changes since v2:
+>> >>  * Left cpu_disable op in place
+>> >>  * Split out shmobile function deletion
+>> >>
+>> >>  arch/arm/common/mcpm_platsmp.c       | 12 ++++--------
+>> >>  arch/arm/include/asm/smp.h           | 10 ++++++++++
+>> >>  arch/arm/kernel/setup.c              |  2 +-
+>> >>  arch/arm/kernel/smp.c                | 15 ++++++++++++++-
+>> >>  arch/arm/mach-shmobile/common.h      |  2 +-
+>> >>  arch/arm/mach-shmobile/platsmp.c     |  4 ++--
+>> >>  arch/arm/mach-shmobile/smp-r8a7790.c |  2 +-
+>> >>  arch/arm/mach-shmobile/smp-r8a7791.c |  2 +-
+>> >>  arch/arm/mach-shmobile/smp-sh73a0.c  |  2 +-
+>> >>  9 files changed, 35 insertions(+), 16 deletions(-)
+>> > I think it would make sense to separate the ARM-core changes
+>> > from the mach-shmobile integration changes.
+>>
+>> Are you saying two (three?) patches to add the op, and then move over
+>> each struct smp_operations? It's all going through rmk's tree so I'll
+>> leave that up to him.
+>
+> I'm also happy to let RMK to decide what he thinks is best.
 
-Hi Geert
+Apologies for bringing up an older thread, but was this change ever
+picked up? I recently hit this issue when I was running the kselftest
+suite (specifically the cpu-hotplug test case) on the ARM boards from
+kernelci.org. I don't see it in -next so I've tested the core changes
+and confirmed it the fixes the cpu-hotplug behavior on platforms that
+do not support it.
 
-> > diff --git a/drivers/clk/shmobile/clk-r8a7779.c b/drivers/clk/shmobile/clk-r8a7779.c
-> > index 652ecac..af439b2 100644
-> > --- a/drivers/clk/shmobile/clk-r8a7779.c
-> > +++ b/drivers/clk/shmobile/clk-r8a7779.c
-> > @@ -155,8 +155,10 @@ static void __init r8a7779_cpg_clocks_init(struct device_node *np)
-> >                 const char *name;
-> >                 struct clk *clk;
-> >
-> > -               of_property_read_string_index(np, "clock-output-names", i,
-> > -                                             &name);
-> > +               if (of_property_read_string_index(np, "clock-output-names", i,
-> > +                                                 &name))
-> > +                       pr_err("%s: can't get clock-output-names (%d)\n",
-> > +                              __func__, i);
-> 
-> Shouldn't you add a "continue;" here, too?
-> 
-> Anyway, I don't think this can fail, as
-> i < of_property_count_strings(np, "clock-output-names");
+>
+> _______________________________________________
+> linux-arm-kernel mailing list
+> linux-arm-kernel@lists.infradead.org
+> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
 
-Hmm.. indeed.
-Thank you for your review, please drop this patch.
-
-Best regards
----
-Kuninori Morimoto
+- Tyler
