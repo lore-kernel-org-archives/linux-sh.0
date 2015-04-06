@@ -1,55 +1,34 @@
-From: Russell King <rmk+kernel@arm.linux.org.uk>
-Date: Fri, 03 Apr 2015 17:12:43 +0000
-Subject: [PATCH 04/14] clkdev: const-ify connection id to clk_add_alias()
-Message-Id: <E1Ye599-0001B5-4B@rmk-PC.arm.linux.org.uk>
+From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Mon, 06 Apr 2015 03:50:44 +0000
+Subject: [RFC/PATCH 4/4] ARM: shmobile: Enable Renesas R-Car cpuidle for shmobile_defconfig
+Message-Id: <1428292244-2160-5-git-send-email-keita.kobayashi.ym@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
-In-Reply-To: <20150403171149.GC13898@n2100.arm.linux.org.uk>
+References: <1428292244-2160-1-git-send-email-keita.kobayashi.ym@renesas.com>
+In-Reply-To: <1428292244-2160-1-git-send-email-keita.kobayashi.ym@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+To: horms@verge.net.au, rjw@rjwysocki.net, daniel.lezcano@linaro.org
+Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-The connection id is only passed to clk_get() which is already const.
-Const-ify this argument too.
-
-Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 ---
- drivers/clk/clkdev.c   | 6 +++---
- include/linux/clkdev.h | 2 +-
- 2 files changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/configs/shmobile_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/drivers/clk/clkdev.c b/drivers/clk/clkdev.c
-index 156f2e2f972c..5d7746d19445 100644
---- a/drivers/clk/clkdev.c
-+++ b/drivers/clk/clkdev.c
-@@ -308,10 +308,10 @@ clkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt, ...)
- }
- EXPORT_SYMBOL(clkdev_alloc);
- 
--int clk_add_alias(const char *alias, const char *alias_dev_name, char *id,
--	struct device *dev)
-+int clk_add_alias(const char *alias, const char *alias_dev_name,
-+	const char *con_id, struct device *dev)
- {
--	struct clk *r = clk_get(dev, id);
-+	struct clk *r = clk_get(dev, con_id);
- 	struct clk_lookup *l;
- 
- 	if (IS_ERR(r))
-diff --git a/include/linux/clkdev.h b/include/linux/clkdev.h
-index 94bad77eeb4a..eb9b38a79b43 100644
---- a/include/linux/clkdev.h
-+++ b/include/linux/clkdev.h
-@@ -38,7 +38,7 @@ void clkdev_add(struct clk_lookup *cl);
- void clkdev_drop(struct clk_lookup *cl);
- 
- void clkdev_add_table(struct clk_lookup *, size_t);
--int clk_add_alias(const char *, const char *, char *, struct device *);
-+int clk_add_alias(const char *, const char *, const char *, struct device *);
- 
- int clk_register_clkdev(struct clk *, const char *, const char *, ...);
- int clk_register_clkdevs(struct clk *, struct clk_lookup *, size_t);
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index b58618e..e487045 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -44,6 +44,8 @@ CONFIG_CPU_FREQ_GOV_USERSPACE=y
+ CONFIG_CPU_FREQ_GOV_ONDEMAND=y
+ CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
+ CONFIG_CPUFREQ_DT=y
++CONFIG_CPU_IDLE=y
++CONFIG_ARM_RCAR_CPUIDLE=y
+ CONFIG_VFP=y
+ CONFIG_NEON=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
 -- 
-1.8.3.1
+1.9.1
 
