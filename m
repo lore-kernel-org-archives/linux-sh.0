@@ -1,26 +1,40 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 06 Apr 2015 00:23:54 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: r8a7791: Remove MSIOF address from device tree
-Message-Id: <20150406002353.GB1841@verge.net.au>
+From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Mon, 06 Apr 2015 03:50:41 +0000
+Subject: [RFC/PATCH 1/4] ARM: cpuidle: Add cpuidle support for R-Car Gen2 series
+Message-Id: <1428292244-2160-2-git-send-email-keita.kobayashi.ym@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428166512-2936-1-git-send-email-ykaneko0929@gmail.com>
- <CAMuHMdVH19ZncC0dMbO8-rCzN6MkOVWfiSKLDAnsqW6_Z_pw1Q@mail.gmail.com>
-In-Reply-To: <CAMuHMdVH19ZncC0dMbO8-rCzN6MkOVWfiSKLDAnsqW6_Z_pw1Q@mail.gmail.com>
+References: <1428292244-2160-1-git-send-email-keita.kobayashi.ym@renesas.com>
+In-Reply-To: <1428292244-2160-1-git-send-email-keita.kobayashi.ym@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, rjw@rjwysocki.net, daniel.lezcano@linaro.org
+Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-On Sun, Apr 05, 2015 at 10:47:01AM +0200, Geert Uytterhoeven wrote:
-> On Sat, Apr 4, 2015 at 6:55 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
-> > From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-> >
-> > MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
-> > MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
-> >
-> > Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-> > Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Define ARM_RCAR_CPUIDLE config item to enable cpuidle
+support for Renesas R-Car Gen2 SoCs.
 
-Thanks, I have queued this up for v4.2.
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
+ drivers/cpuidle/Kconfig.arm | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/cpuidle/Kconfig.arm b/drivers/cpuidle/Kconfig.arm
+index 21340e0..ea9d61e 100644
+--- a/drivers/cpuidle/Kconfig.arm
++++ b/drivers/cpuidle/Kconfig.arm
+@@ -74,3 +74,11 @@ config ARM_MVEBU_V7_CPUIDLE
+ 	depends on ARCH_MVEBU && !ARM64
+ 	help
+ 	  Select this to enable cpuidle on Armada 370, 38x and XP processors.
++
++config ARM_RCAR_CPUIDLE
++	bool "CPU Idle Driver for the R-Car SoCs"
++	depends on ARCH_RCAR_GEN2
++	select ARM_CPUIDLE
++	select ARM_CPU_SUSPEND
++	help
++	  Select this to enable cpuidle for R-Car SoCs
+-- 
+1.9.1
+
