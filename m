@@ -1,114 +1,233 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 28 Apr 2015 01:33:36 +0000
-Subject: RE: [PATCH] [RFC] usb: xhci: Add to check CRR bit in xhci_suspend()
-Message-Id: <SG2PR06MB0919E3D8692FC6F18F1BC2A5D8E80@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Mon, 06 Apr 2015 20:24:13 +0000
+Subject: [PATCH v4] ARM: smp: Only expose /sys/.../cpuX/online if hotpluggable
+Message-Id: <1428351853-5844-1-git-send-email-sboyd@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430124956-7960-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1430124956-7960-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Writes to /sys/.../cpuX/online fail if we determine the platform
+doesn't support hotplug for that CPU. Furthermore, if the cpu_die
+op isn't specified the system hangs when we try to offline a CPU
+and it comes right back online unexpectedly. Let's figure this
+stuff out before we make the sysfs nodes so that the online file
+doesn't even exist if it isn't (at least sometimes) possible to
+hotplug the CPU.
 
-Thank you for the comments!
+Add a new 'cpu_can_disable' op and repoint all 'cpu_disable'
+implementations at it because all implementers use the op to
+indicate if a CPU can be hotplugged or not in a static fashion.
+With PSCI we may need to add a 'cpu_disable' op so that the
+secure OS can be migrated off the CPU we're trying to hotplug.
+In this case, the 'cpu_can_disable' op will indicate that all
+CPUs are hotpluggable by returning true, but the 'cpu_disable' op
+will make a PSCI migration call and occasionally fail, denying
+the hotplug of a CPU. This shouldn't be any worse than x86 where
+we may indicate that all CPUs are hotpluggable but occasionally
+we can't offline a CPU due to check_irq_vectors_for_cpu_disable()
+failing to find a CPU to move vectors to.
 
-> Sent: Monday, April 27, 2015 10:15 PM
-> 
-> On 27.04.2015 11:55, Yoshihiro Shimoda wrote:
-> Hi
-> 
-> > According to the xHCI spec "4.23.2 xHCI Power Management", the CRR bit
-> > of CRCR register should be zero before setting Run/Stop (R/S) = '0'.
-> > Otherwise, the STS_HALT is not set until the CRR is cleared on specific
-> > xHCI controllers. In case of R-Car SoCs, it spent about 90 ms to clear
-> > the CRR. So, to avoid the quirks XHCI_SLOW_SUSPEND, the driver calls
-> > the aborting function if the CRR is set to 1.
-> >
-> > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> > ---
-> >  drivers/usb/host/xhci-ring.c |  2 +-
-> >  drivers/usb/host/xhci.c      | 21 ++++++++++++++++++++-
-> >  drivers/usb/host/xhci.h      |  1 +
-> >  3 files changed, 22 insertions(+), 2 deletions(-)
-> >
-> > diff --git a/drivers/usb/host/xhci-ring.c b/drivers/usb/host/xhci-ring.c
-> > index f5397a5..21f3932 100644
-> > --- a/drivers/usb/host/xhci-ring.c
-> > +++ b/drivers/usb/host/xhci-ring.c
-< snip >
-> > diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
-> > index ec8ac16..d2d81a0 100644
-> > --- a/drivers/usb/host/xhci.c
-> > +++ b/drivers/usb/host/xhci.c
-> > @@ -892,7 +892,7 @@ static void xhci_disable_port_wake_on_bits(struct xhci_hcd *xhci)
-> >   */
-> >  int xhci_suspend(struct xhci_hcd *xhci, bool do_wakeup)
-> >  {
-> > -	int			rc = 0;
-> > +	int			rc = 0, ret;
-> >  	unsigned int		delay = XHCI_MAX_HALT_USEC;
-> >  	struct usb_hcd		*hcd = xhci_to_hcd(xhci);
-> >  	u32			command;
-> > @@ -918,6 +918,25 @@ int xhci_suspend(struct xhci_hcd *xhci, bool do_wakeup)
-> >  	/* step 1: stop endpoint */
-> >  	/* skipped assuming that port suspend has done */
-> >
-> > +	/*
-> > +	 * According to the xHCI spec "4.23.2 xHCI Power Management", the CRR
-> > +	 * bit of CRCR register should be zero before setting Run/Stop (R/S) > > +	 * '0', the driver calls the aborting function if the CRR is set to 1.
-> > +	 */
-> > +	if (xhci_read_64(xhci, &xhci->op_regs->cmd_ring) & CMD_RING_RUNNING) {
-> > +		/* unlock here because this may wait about 5 seconds */
-> > +		spin_unlock_irq(&xhci->lock);
-> > +		ret = xhci_abort_cmd_ring(xhci);
-> 
-> Would it work for R-Car if we instead of unlocking and and aborting the command just wait for
-> the CRR bit to turn 0 before setting Run/stop = 0?
+Cc: Mark Rutland <mark.rutland@arm.com>
+Cc: Nicolas Pitre <nico@linaro.org>
+Cc: Dave Martin <Dave.Martin@arm.com>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: <linux-sh@vger.kernel.org>
+Cc: Tyler Baker <tyler.baker@linaro.org>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+---
 
-Unfortunately, it didn't work correctly. However, after setting Run/stop = 0, it worked correctly.
-(According to the Table 36 of xHCI spec, the CRR bit will be cleared if the R/S but us cleared to 0.)
+Changes since v3:
+ * Return bool instead of int from 'cpu_can_disable' op
 
-> Aborting the command ring by setting CA bit in CRCR will generate a command abort/stop completion event,
-> which will point to the stopped/aborted event on the command ring. We are however clearing the command
-> ring completely in xhci_suspend() right after this, and setting the dequeue pointer to the beginning of
-> the ring. This will likely mess with the handling of the abort/stop event.
+Changes since v2:
+ * Left cpu_disable op in place
+ * Split out shmobile function deletion
 
-Thank you for the comment. I understood that this driver should not call aborting function here.
+ arch/arm/common/mcpm_platsmp.c       | 12 ++++--------
+ arch/arm/include/asm/smp.h           | 10 ++++++++++
+ arch/arm/kernel/setup.c              |  2 +-
+ arch/arm/kernel/smp.c                | 15 ++++++++++++++-
+ arch/arm/mach-shmobile/common.h      |  2 +-
+ arch/arm/mach-shmobile/platsmp.c     |  4 ++--
+ arch/arm/mach-shmobile/smp-r8a7790.c |  2 +-
+ arch/arm/mach-shmobile/smp-r8a7791.c |  2 +-
+ arch/arm/mach-shmobile/smp-sh73a0.c  |  2 +-
+ 9 files changed, 35 insertions(+), 16 deletions(-)
 
-> Waiting for the CRR to clear could be done using:
-> xhci_handshake(&xhci->op_regs->cmd_ring, CMD_RING_RUNNING, timeout)
-
-Thank you for the suggestion.
-
-As I tested above, after I applied the following patch, R-Car SoCs environment worked correctly.
-However, I don't know that it is a reasonable solution for all xHCI controllers.
-Should I add a new quirks? Or, should it use a XHCI_SLOW_SUSPEND instead of the below patch?
-(If R-Car SoCs with XHCI_SLOW_SUSPEND, it also worked correctly.)
-
-======================================
---- a/drivers/usb/host/xhci.c
-+++ b/drivers/usb/host/xhci.c
-@@ -923,6 +923,15 @@ int xhci_suspend(struct xhci_hcd *xhci, bool do_wakeup)
- 	command &= ~CMD_RUN;
- 	writel(command, &xhci->op_regs->command);
+diff --git a/arch/arm/common/mcpm_platsmp.c b/arch/arm/common/mcpm_platsmp.c
+index 92e54d7c6f46..2b25b6038f66 100644
+--- a/arch/arm/common/mcpm_platsmp.c
++++ b/arch/arm/common/mcpm_platsmp.c
+@@ -65,14 +65,10 @@ static int mcpm_cpu_kill(unsigned int cpu)
+ 	return !mcpm_wait_for_cpu_powerdown(pcpu, pcluster);
+ }
  
-+	/*
-+	 * The STS_HALT is not set until the CRR is cleared on specific
-+	 * xHCI controllers (e.g. R-Car SoCs) after this driver set the R/S
-+	 * to 0. So, to avoid using a quirks XHCI_SLOW_SUSPEND, this driver
-+	 * waits for the CRR to clear using xhci_handshake().
-+	 */
-+	xhci_handshake(&xhci->op_regs->cmd_ring, CMD_RING_RUNNING, 0,
-+		       5 * 1000 * 1000);
+-static int mcpm_cpu_disable(unsigned int cpu)
++static bool mcpm_cpu_can_disable(unsigned int cpu)
+ {
+-	/*
+-	 * We assume all CPUs may be shut down.
+-	 * This would be the hook to use for eventual Secure
+-	 * OS migration requests as described in the PSCI spec.
+-	 */
+-	return 0;
++	/* We assume all CPUs may be shut down. */
++	return true;
+ }
+ 
+ static void mcpm_cpu_die(unsigned int cpu)
+@@ -92,7 +88,7 @@ static struct smp_operations __initdata mcpm_smp_ops = {
+ 	.smp_secondary_init	= mcpm_secondary_init,
+ #ifdef CONFIG_HOTPLUG_CPU
+ 	.cpu_kill		= mcpm_cpu_kill,
+-	.cpu_disable		= mcpm_cpu_disable,
++	.cpu_can_disable	= mcpm_cpu_can_disable,
+ 	.cpu_die		= mcpm_cpu_die,
+ #endif
+ };
+diff --git a/arch/arm/include/asm/smp.h b/arch/arm/include/asm/smp.h
+index 18f5a554134f..e15856a1a380 100644
+--- a/arch/arm/include/asm/smp.h
++++ b/arch/arm/include/asm/smp.h
+@@ -104,6 +104,7 @@ struct smp_operations {
+ #ifdef CONFIG_HOTPLUG_CPU
+ 	int  (*cpu_kill)(unsigned int cpu);
+ 	void (*cpu_die)(unsigned int cpu);
++	bool  (*cpu_can_disable)(unsigned int cpu);
+ 	int  (*cpu_disable)(unsigned int cpu);
+ #endif
+ #endif
+@@ -123,4 +124,13 @@ struct of_cpu_method {
+  */
+ extern void smp_set_ops(struct smp_operations *);
+ 
++#ifdef CONFIG_HOTPLUG_CPU
++extern int platform_can_hotplug_cpu(unsigned int cpu);
++#else
++static inline int platform_can_hotplug_cpu(unsigned int cpu)
++{
++	return 0;
++}
++#endif
 +
- 	/* Some chips from Fresco Logic need an extraordinary delay */
- 	delay *= (xhci->quirks & XHCI_SLOW_SUSPEND) ? 10 : 1;
-======================================
-
-Best regards,
-Yoshihiro Shimoda
-
-> -Mathias
+ #endif /* ifndef __ASM_ARM_SMP_H */
+diff --git a/arch/arm/kernel/setup.c b/arch/arm/kernel/setup.c
+index 6c777e908a24..955d45d0f70c 100644
+--- a/arch/arm/kernel/setup.c
++++ b/arch/arm/kernel/setup.c
+@@ -992,7 +992,7 @@ static int __init topology_init(void)
+ 
+ 	for_each_possible_cpu(cpu) {
+ 		struct cpuinfo_arm *cpuinfo = &per_cpu(cpu_data, cpu);
+-		cpuinfo->cpu.hotpluggable = 1;
++		cpuinfo->cpu.hotpluggable = platform_can_hotplug_cpu(cpu);
+ 		register_cpu(&cpuinfo->cpu, cpu);
+ 	}
+ 
+diff --git a/arch/arm/kernel/smp.c b/arch/arm/kernel/smp.c
+index 86ef244c5a24..f747fdf1cc91 100644
+--- a/arch/arm/kernel/smp.c
++++ b/arch/arm/kernel/smp.c
+@@ -168,13 +168,26 @@ static int platform_cpu_disable(unsigned int cpu)
+ 	if (smp_ops.cpu_disable)
+ 		return smp_ops.cpu_disable(cpu);
+ 
++	return 0;
++}
++
++int platform_can_hotplug_cpu(unsigned int cpu)
++{
++	/* cpu_die must be specified to support hotplug */
++	if (!smp_ops.cpu_die)
++		return 0;
++
++	if (smp_ops.cpu_can_disable)
++		return smp_ops.cpu_can_disable(cpu);
++
+ 	/*
+ 	 * By default, allow disabling all CPUs except the first one,
+ 	 * since this is special on a lot of platforms, e.g. because
+ 	 * of clock tick interrupts.
+ 	 */
+-	return cpu = 0 ? -EPERM : 0;
++	return cpu != 0;
+ }
++
+ /*
+  * __cpu_disable runs on the processor to be shutdown.
+  */
+diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+index afc60bad6fd6..f2c4bf437ea7 100644
+--- a/arch/arm/mach-shmobile/common.h
++++ b/arch/arm/mach-shmobile/common.h
+@@ -13,7 +13,7 @@ extern void shmobile_smp_boot(void);
+ extern void shmobile_smp_sleep(void);
+ extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
+ 			      unsigned long arg);
+-extern int shmobile_smp_cpu_disable(unsigned int cpu);
++extern bool shmobile_smp_cpu_can_disable(unsigned int cpu);
+ extern void shmobile_invalidate_start(void);
+ extern void shmobile_boot_scu(void);
+ extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
+diff --git a/arch/arm/mach-shmobile/platsmp.c b/arch/arm/mach-shmobile/platsmp.c
+index 3923e09e966d..b23378f3d7e1 100644
+--- a/arch/arm/mach-shmobile/platsmp.c
++++ b/arch/arm/mach-shmobile/platsmp.c
+@@ -31,8 +31,8 @@ void shmobile_smp_hook(unsigned int cpu, unsigned long fn, unsigned long arg)
+ }
+ 
+ #ifdef CONFIG_HOTPLUG_CPU
+-int shmobile_smp_cpu_disable(unsigned int cpu)
++bool shmobile_smp_cpu_can_disable(unsigned int cpu)
+ {
+-	return 0; /* Hotplug of any CPU is supported */
++	return true; /* Hotplug of any CPU is supported */
+ }
+ #endif
+diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
+index 930f45cbc08a..947e437cab68 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7790.c
++++ b/arch/arm/mach-shmobile/smp-r8a7790.c
+@@ -64,7 +64,7 @@ struct smp_operations r8a7790_smp_ops __initdata = {
+ 	.smp_prepare_cpus	= r8a7790_smp_prepare_cpus,
+ 	.smp_boot_secondary	= shmobile_smp_apmu_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
+-	.cpu_disable		= shmobile_smp_cpu_disable,
++	.cpu_can_disable	= shmobile_smp_cpu_can_disable,
+ 	.cpu_die		= shmobile_smp_apmu_cpu_die,
+ 	.cpu_kill		= shmobile_smp_apmu_cpu_kill,
+ #endif
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+index 5e2d1db79afa..b2508c0d276b 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7791.c
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -58,7 +58,7 @@ struct smp_operations r8a7791_smp_ops __initdata = {
+ 	.smp_prepare_cpus	= r8a7791_smp_prepare_cpus,
+ 	.smp_boot_secondary	= r8a7791_smp_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
+-	.cpu_disable		= shmobile_smp_cpu_disable,
++	.cpu_can_disable	= shmobile_smp_cpu_can_disable,
+ 	.cpu_die		= shmobile_smp_apmu_cpu_die,
+ 	.cpu_kill		= shmobile_smp_apmu_cpu_kill,
+ #endif
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index 2106d6b76a06..ae7c764fd6b4 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -68,7 +68,7 @@ struct smp_operations sh73a0_smp_ops __initdata = {
+ 	.smp_prepare_cpus	= sh73a0_smp_prepare_cpus,
+ 	.smp_boot_secondary	= sh73a0_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
+-	.cpu_disable		= shmobile_smp_cpu_disable,
++	.cpu_can_disable	= shmobile_smp_cpu_can_disable,
+ 	.cpu_die		= shmobile_smp_scu_cpu_die,
+ 	.cpu_kill		= shmobile_smp_scu_cpu_kill,
+ #endif
+-- 
+The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum,
+a Linux Foundation Collaborative Project
 
