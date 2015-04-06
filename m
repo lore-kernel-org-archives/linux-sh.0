@@ -1,174 +1,37 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 30 Apr 2015 16:21:29 +0000
-Subject: [PATCH 05/13] serial: sh-sci: Standardize on using the BIT() macro to define register bits
-Message-Id: <1430410897-12770-6-git-send-email-geert+renesas@glider.be>
+From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Mon, 06 Apr 2015 03:50:40 +0000
+Subject: [RFC/PATCH 0/4] Add cpuidle support for r8a7791
+Message-Id: <1428292244-2160-1-git-send-email-keita.kobayashi.ym@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: horms@verge.net.au, rjw@rjwysocki.net, daniel.lezcano@linaro.org
+Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/tty/serial/sh-sci.h | 73 +++++++++++++++++++++++----------------------
- include/linux/serial_sci.h  | 19 ++++++------
- 2 files changed, 47 insertions(+), 45 deletions(-)
+Hello
 
-diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
-index 1586d68470b6f0a2..5282738375ae309d 100644
---- a/drivers/tty/serial/sh-sci.h
-+++ b/drivers/tty/serial/sh-sci.h
-@@ -1,3 +1,4 @@
-+#include <linux/bitops.h>
- #include <linux/serial_core.h>
- #include <linux/io.h>
- #include <linux/gpio.h>
-@@ -32,62 +33,62 @@ enum {
- 
- 
- /* SCSMR (Serial Mode Register) */
--#define SCSMR_CHR	(1 << 6)	/* 7-bit Character Length */
--#define SCSMR_PE	(1 << 5)	/* Parity Enable */
--#define SCSMR_ODD	(1 << 4)	/* Odd Parity */
--#define SCSMR_STOP	(1 << 3)	/* Stop Bit Length */
--#define SCSMR_CKS	0x0003		/* Clock Select */
-+#define SCSMR_CHR	BIT(6)	/* 7-bit Character Length */
-+#define SCSMR_PE	BIT(5)	/* Parity Enable */
-+#define SCSMR_ODD	BIT(4)	/* Odd Parity */
-+#define SCSMR_STOP	BIT(3)	/* Stop Bit Length */
-+#define SCSMR_CKS	0x0003	/* Clock Select */
- 
- /* Serial Control Register, SCIFA/SCIFB only bits */
--#define SCSCR_TDRQE	(1 << 15)	/* Tx Data Transfer Request Enable */
--#define SCSCR_RDRQE	(1 << 14)	/* Rx Data Transfer Request Enable */
-+#define SCSCR_TDRQE	BIT(15)	/* Tx Data Transfer Request Enable */
-+#define SCSCR_RDRQE	BIT(14)	/* Rx Data Transfer Request Enable */
- 
- /* SCxSR (Serial Status Register) on SCI */
--#define SCI_TDRE  0x80			/* Transmit Data Register Empty */
--#define SCI_RDRF  0x40			/* Receive Data Register Full */
--#define SCI_ORER  0x20			/* Overrun Error */
--#define SCI_FER   0x10			/* Framing Error */
--#define SCI_PER   0x08			/* Parity Error */
--#define SCI_TEND  0x04			/* Transmit End */
-+#define SCI_TDRE	BIT(7)	/* Transmit Data Register Empty */
-+#define SCI_RDRF	BIT(6)	/* Receive Data Register Full */
-+#define SCI_ORER	BIT(5)	/* Overrun Error */
-+#define SCI_FER		BIT(4)	/* Framing Error */
-+#define SCI_PER		BIT(3)	/* Parity Error */
-+#define SCI_TEND	BIT(2)	/* Transmit End */
- 
- #define SCI_DEFAULT_ERROR_MASK (SCI_PER | SCI_FER)
- 
- /* SCxSR (Serial Status Register) on SCIF, HSCIF */
--#define SCIF_ER    0x0080		/* Receive Error */
--#define SCIF_TEND  0x0040		/* Transmission End */
--#define SCIF_TDFE  0x0020		/* Transmit FIFO Data Empty */
--#define SCIF_BRK   0x0010		/* Break Detect */
--#define SCIF_FER   0x0008		/* Framing Error */
--#define SCIF_PER   0x0004		/* Parity Error */
--#define SCIF_RDF   0x0002		/* Receive FIFO Data Full */
--#define SCIF_DR    0x0001		/* Receive Data Ready */
-+#define SCIF_ER		BIT(7)	/* Receive Error */
-+#define SCIF_TEND	BIT(6)	/* Transmission End */
-+#define SCIF_TDFE	BIT(5)	/* Transmit FIFO Data Empty */
-+#define SCIF_BRK	BIT(4)	/* Break Detect */
-+#define SCIF_FER	BIT(3)	/* Framing Error */
-+#define SCIF_PER	BIT(2)	/* Parity Error */
-+#define SCIF_RDF	BIT(1)	/* Receive FIFO Data Full */
-+#define SCIF_DR		BIT(0)	/* Receive Data Ready */
- 
- #define SCIF_DEFAULT_ERROR_MASK (SCIF_PER | SCIF_FER | SCIF_ER | SCIF_BRK)
- 
- /* SCFCR (FIFO Control Register) */
--#define SCFCR_MCE	0x0008		/* Modem Control Enable */
--#define SCFCR_TFRST	0x0004		/* Transmit FIFO Data Register Reset */
--#define SCFCR_RFRST	0x0002		/* Receive FIFO Data Register Reset */
--#define SCFCR_LOOP	(1 << 0)	/* Loopback Test */
-+#define SCFCR_MCE	BIT(3)	/* Modem Control Enable */
-+#define SCFCR_TFRST	BIT(2)	/* Transmit FIFO Data Register Reset */
-+#define SCFCR_RFRST	BIT(1)	/* Receive FIFO Data Register Reset */
-+#define SCFCR_LOOP	BIT(0)	/* Loopback Test */
- 
- /* SCSPTR (Serial Port Register), optional */
--#define SCSPTR_RTSIO	(1 << 7)	/* Serial Port RTS Pin Input/Output */
--#define SCSPTR_RTSDT	(1 << 6)	/* Serial Port RTS Pin Data */
--#define SCSPTR_CTSIO	(1 << 5)	/* Serial Port CTS Pin Input/Output */
--#define SCSPTR_CTSDT	(1 << 4)	/* Serial Port CTS Pin Data */
--#define SCSPTR_SPB2IO	(1 << 1)	/* Serial Port Break Input/Output */
--#define SCSPTR_SPB2DT	(1 << 0)	/* Serial Port Break Data */
-+#define SCSPTR_RTSIO	BIT(7)	/* Serial Port RTS Pin Input/Output */
-+#define SCSPTR_RTSDT	BIT(6)	/* Serial Port RTS Pin Data */
-+#define SCSPTR_CTSIO	BIT(5)	/* Serial Port CTS Pin Input/Output */
-+#define SCSPTR_CTSDT	BIT(4)	/* Serial Port CTS Pin Data */
-+#define SCSPTR_SPB2IO	BIT(1)	/* Serial Port Break Input/Output */
-+#define SCSPTR_SPB2DT	BIT(0)	/* Serial Port Break Data */
- 
- /* HSSRR HSCIF */
--#define HSCIF_SRE	0x8000		/* Sampling Rate Register Enable */
-+#define HSCIF_SRE	BIT(15)	/* Sampling Rate Register Enable */
- 
- /* SCPCR (Serial Port Control Register), SCIFA/SCIFB only */
--#define SCPCR_RTSC	(1 << 4)	/* Serial Port RTS Pin / Output Pin */
--#define SCPCR_CTSC	(1 << 3)	/* Serial Port CTS Pin / Input Pin */
-+#define SCPCR_RTSC	BIT(4)	/* Serial Port RTS Pin / Output Pin */
-+#define SCPCR_CTSC	BIT(3)	/* Serial Port CTS Pin / Input Pin */
- 
- /* SCPDR (Serial Port Data Register), SCIFA/SCIFB only */
--#define SCPDR_RTSD	(1 << 4)	/* Serial Port RTS Output Pin Data */
--#define SCPDR_CTSD	(1 << 3)	/* Serial Port CTS Input Pin Data */
-+#define SCPDR_RTSD	BIT(4)	/* Serial Port RTS Output Pin Data */
-+#define SCPDR_CTSD	BIT(3)	/* Serial Port CTS Input Pin Data */
- 
- 
- #define SCxSR_TEND(port)	(((port)->type = PORT_SCI) ? SCI_TEND   : SCIF_TEND)
-diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-index 395fceb8c0600988..7c536ac5be05d3aa 100644
---- a/include/linux/serial_sci.h
-+++ b/include/linux/serial_sci.h
-@@ -1,6 +1,7 @@
- #ifndef __LINUX_SERIAL_SCI_H
- #define __LINUX_SERIAL_SCI_H
- 
-+#include <linux/bitops.h>
- #include <linux/serial_core.h>
- #include <linux/sh_dma.h>
- 
-@@ -11,14 +12,14 @@
- #define SCIx_NOT_SUPPORTED	(-1)
- 
- /* Serial Control Register (@ = not supported by all parts) */
--#define SCSCR_TIE	(1 << 7)	/* Transmit Interrupt Enable */
--#define SCSCR_RIE	(1 << 6)	/* Receive Interrupt Enable */
--#define SCSCR_TE	(1 << 5)	/* Transmit Enable */
--#define SCSCR_RE	(1 << 4)	/* Receive Enable */
--#define SCSCR_REIE	(1 << 3)	/* Receive Error Interrupt Enable @ */
--#define SCSCR_TOIE	(1 << 2)	/* Timeout Interrupt Enable @ */
--#define SCSCR_CKE1	(1 << 1)	/* Clock Enable 1 */
--#define SCSCR_CKE0	(1 << 0)	/* Clock Enable 0 */
-+#define SCSCR_TIE	BIT(7)	/* Transmit Interrupt Enable */
-+#define SCSCR_RIE	BIT(6)	/* Receive Interrupt Enable */
-+#define SCSCR_TE	BIT(5)	/* Transmit Enable */
-+#define SCSCR_RE	BIT(4)	/* Receive Enable */
-+#define SCSCR_REIE	BIT(3)	/* Receive Error Interrupt Enable @ */
-+#define SCSCR_TOIE	BIT(2)	/* Timeout Interrupt Enable @ */
-+#define SCSCR_CKE1	BIT(1)	/* Clock Enable 1 */
-+#define SCSCR_CKE0	BIT(0)	/* Clock Enable 0 */
- 
- 
- enum {
-@@ -48,7 +49,7 @@ struct plat_sci_port_ops {
- /*
-  * Port-specific capabilities
-  */
--#define SCIx_HAVE_RTSCTS	(1 << 0)
-+#define SCIx_HAVE_RTSCTS	BIT(0)
- 
- /*
-  * Platform device specific platform_data struct
+These patches add cpuidle support for Renesas r8a7791 SoC.
+The r8a7791 cpuidle supports WFI and the cpu power state(Core-Standby)
+using Generic ARM CPU idle driver(cpuidle-arm).
+
+Based on : next-20150402
+Tested on : koelsch board
+
+Keita Kobayashi (4):
+  ARM: cpuidle: Add cpuidle support for R-Car Gen2 series
+  ARM: shmobile: Add cpuidle_ops for R-Car cpuidle
+  ARM: shmobile: dtsi: Add cpuidle parameters into each cpu for r8a7791
+  ARM: shmobile: Enable Renesas R-Car cpuidle for shmobile_defconfig
+
+ arch/arm/boot/dts/r8a7791.dtsi        | 13 +++++++++++++
+ arch/arm/configs/shmobile_defconfig   |  2 ++
+ arch/arm/mach-shmobile/platsmp-apmu.c | 11 +++++++++--
+ arch/arm/mach-shmobile/platsmp-apmu.h |  1 +
+ arch/arm/mach-shmobile/pm-rcar-gen2.c | 17 +++++++++++++++++
+ drivers/cpuidle/Kconfig.arm           |  8 ++++++++
+ 6 files changed, 50 insertions(+), 2 deletions(-)
+
 -- 
 1.9.1
 
