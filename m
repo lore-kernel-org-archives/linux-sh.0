@@ -1,74 +1,44 @@
-From: Rajendra Nayak <rnayak@codeaurora.org>
-Date: Thu, 23 Apr 2015 08:45:10 +0000
-Subject: [PATCH 2/5] arm: keystone: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
-Message-Id: <1429777993-11702-3-git-send-email-rnayak@codeaurora.org>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 07 Apr 2015 07:53:49 +0000
+Subject: [PATCH v2 0/2] ARM: shmobile: r8a7791: add for USB-DMAC
+Message-Id: <1428393231-5272-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
-In-Reply-To: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-USE_PM_CLK_RUNTIME_OPS is introduced so we don't repeat the same code
-to do runtime_suspend and runtime_resume across users of PM clocks.
-Use it to remove the boilerplate code.
+This patch set is based on renesas.git / renesas-devel-20150406-v4.0-rc6
+tag. (commit id =3D 8acf8f0880b6a142e6291b9a7d81f2f38c9425ac)
 
-Signed-off-by: Rajendra Nayak <rnayak@codeaurora.org>
-Reviewed-by: Kevin Hilman <khilman@linaro.org>
-Acked-by: Santosh Shilimkar <ssantosh@kernel.org>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/mach-keystone/pm_domain.c | 33 +--------------------------------
- 1 file changed, 1 insertion(+), 32 deletions(-)
+This patch set is related to the usb-dmac driver and renesas_usbhs driver.
+And these drivers have been merged in each subsystem:
 
-diff --git a/arch/arm/mach-keystone/pm_domain.c b/arch/arm/mach-keystone/pm_domain.c
-index 41bebfd..edea697 100644
---- a/arch/arm/mach-keystone/pm_domain.c
-+++ b/arch/arm/mach-keystone/pm_domain.c
-@@ -19,40 +19,9 @@
- #include <linux/clk-provider.h>
- #include <linux/of.h>
- 
--#ifdef CONFIG_PM
--static int keystone_pm_runtime_suspend(struct device *dev)
--{
--	int ret;
--
--	dev_dbg(dev, "%s\n", __func__);
--
--	ret = pm_generic_runtime_suspend(dev);
--	if (ret)
--		return ret;
--
--	ret = pm_clk_suspend(dev);
--	if (ret) {
--		pm_generic_runtime_resume(dev);
--		return ret;
--	}
--
--	return 0;
--}
--
--static int keystone_pm_runtime_resume(struct device *dev)
--{
--	dev_dbg(dev, "%s\n", __func__);
--
--	pm_clk_resume(dev);
--
--	return pm_generic_runtime_resume(dev);
--}
--#endif
--
- static struct dev_pm_domain keystone_pm_domain = {
- 	.ops = {
--		SET_RUNTIME_PM_OPS(keystone_pm_runtime_suspend,
--				   keystone_pm_runtime_resume, NULL)
-+		USE_PM_CLK_RUNTIME_OPS
- 		USE_PLATFORM_PM_SLEEP_OPS
- 	},
- };
--- 
-QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a member
-of Code Aurora Forum, hosted by The Linux Foundation
+[ slave-dma repository ]
+https://git.kernel.org/cgit/linux/kernel/git/vkoul/slave-dma.git/commit/?h=
+=3Dfor-linus&id=A7267831565030ab94dab76eb1afe5d4b63a1009
+https://git.kernel.org/cgit/linux/kernel/git/vkoul/slave-dma.git/commit/?h=
+=3Dfor-linus&id=0C1c8ff32fa29e425b4938934c21afdb81104431
+
+[ usb repository ]
+https://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?h=3Dtest=
+ing/next&idz96b78464bd8ba72c1c3095c543c1402db59e35
+https://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?h=3Dtest=
+ing/next&id=9B53d9af7aac09cf249d72bfbf15f08e47c4f7fe
+https://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?h=3Dtest=
+ing/next&id=AB330cf3888d8e0779fa05a243d53ba9f53a7ba9
+
+Changes from v1:
+ - Rebase the latest renesas-devel tag.
+
+Yoshihiro Shimoda (2):
+  ARM: shmobile: r8a7791: add USB-DMAC device nodes
+  ARM: shmobile: r8a7791: Enable DMA for HSUSB
+
+ arch/arm/boot/dts/r8a7791.dtsi | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+--=20
+1.9.1
 
