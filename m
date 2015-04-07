@@ -1,7 +1,7 @@
-From: Kevin Hilman <khilman@kernel.org>
-Date: Tue, 07 Apr 2015 17:57:52 +0000
+From: Andrew Morton <akpm@linux-foundation.org>
+Date: Tue, 07 Apr 2015 20:17:40 +0000
 Subject: Re: [PATCH] mm/migrate: Mark unmap_and_move() "noinline" to avoid ICE in gcc 4.7.3
-Message-Id: <CAMAWPa_YEJDQc=_60_sPqzwLYN8Yefzcko_rydxrt8oOCq20gw@mail.gmail.com>
+Message-Id: <20150407131740.ac8a856537fecb1b5d142f5f@linux-foundation.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150324004537.GA24816@verge.net.au>
  <CAKv+Gu-0jPk=KQ4gY32ELc+BVbe=1QdcrwQ+Pb=RkdwO9K3Vkw@mail.gmail.com>
@@ -17,61 +17,21 @@ References: <20150324004537.GA24816@verge.net.au>
  <551BBEC5.7070801@arm.com>
  <20150401124007.20c440cc43a482f698f461b8@linux-foundation.org>
  <7hwq1v4iq4.fsf@deeprootsystems.com>
-In-Reply-To: <7hwq1v4iq4.fsf@deeprootsystems.com>
+ <CAMAWPa_YEJDQc=_60_sPqzwLYN8Yefzcko_rydxrt8oOCq20gw@mail.gmail.com>
+In-Reply-To: <CAMAWPa_YEJDQc=_60_sPqzwLYN8Yefzcko_rydxrt8oOCq20gw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Andrew,
+On Tue, 7 Apr 2015 10:57:52 -0700 Kevin Hilman <khilman@kernel.org> wrote:
 
-On Wed, Apr 1, 2015 at 2:54 PM, Kevin Hilman <khilman@kernel.org> wrote:
-> Andrew Morton <akpm@linux-foundation.org> writes:
->
->> On Wed, 01 Apr 2015 10:47:49 +0100 Marc Zyngier <marc.zyngier@arm.com> wrote:
->>
->>> > -static int unmap_and_move(new_page_t get_new_page, free_page_t put_new_page,
->>> > -                  unsigned long private, struct page *page, int force,
->>> > -                  enum migrate_mode mode)
->>> > +static noinline int unmap_and_move(new_page_t get_new_page,
->>> > +                             free_page_t put_new_page,
->>> > +                             unsigned long private, struct page *page,
->>> > +                             int force, enum migrate_mode mode)
->>> >  {
->>> >    int rc = 0;
->>> >    int *result = NULL;
->>> >
->>>
->>> Ouch. That's really ugly. And on 32bit ARM, we end-up spilling half of
->>> the parameters on the stack, which is not going to help performance
->>> either (not that this would be useful on 32bit ARM anyway...).
->>>
->>> Any chance you could make this dependent on some compiler detection
->>> mechanism?
->>
->> With my arm compiler (gcc-4.4.4) the patch makes no difference -
->> unmap_and_move() isn't being inlined anyway.
->>
->> How does this look?
->>
->> Kevin, could you please retest?  I might have fat-fingered something...
->
-> Your patch on top of Geert's still compiles fine for me with gcc-4.7.3.
-> However, I'm not sure how specific we can be on the versions.
->
-> /me goes to test a few more compilers...   OK...
->
-> ICE: 4.7.1, 4.7.3, 4.8.3
-> OK: 4.6.3, 4.9.2, 4.9.3
->
-> The diff below[2] on top of yours compiles fine here and at least covers
-> the compilers I *know* to trigger the ICE.
+> > The diff below[2] on top of yours compiles fine here and at least covers
+> > the compilers I *know* to trigger the ICE.
+> 
+> I see my fix in your mmots since last Thurs (4/2), but it's not in
+> mmotm (last updated today) so today's linux-next still has the ICE for
+> anything other than gcc-4.7.3.   Just checking to see when you plan to
+> update mmotm.
 
-I see my fix in your mmots since last Thurs (4/2), but it's not in
-mmotm (last updated today) so today's linux-next still has the ICE for
-anything other than gcc-4.7.3.   Just checking to see when you plan to
-update mmotm.
-
-Thanks,
-
-Kevin
+It should all be there today?
