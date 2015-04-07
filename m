@@ -1,95 +1,42 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 05 Apr 2015 21:13:46 +0000
-Subject: [PATCH] sh_eth: move inline functions to the header file
-Message-Id: <4254119.qJUdUQCUqs@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 07 Apr 2015 13:21:00 +0000
+Subject: Re: [PATCH] sh_eth: move inline functions to the header file
+Message-Id: <CAMuHMdWS05eOT11prYaVddGwUjGCEDHfd=kn7JYv73HKw0s2BQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <4254119.qJUdUQCUqs@wasted.cogentembedded.com>
+In-Reply-To: <4254119.qJUdUQCUqs@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-The explicitly inline functions belong to the header files, so move
-cpu_to_edmac() and edmac_to_cpu() into the driver header.
+Hi Sergei,
 
-While at it, make these functions return 'u32' instead of '__u32'.
+On Sun, Apr 5, 2015 at 11:13 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> The explicitly inline functions belong to the header files, so move
+> cpu_to_edmac() and edmac_to_cpu() into the driver header.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Why do they belong in the header file? Are they (planned to be) used by
+another source file (EtherAVB?)?
 
----
-The patch is against the David Miller's 'net-next.git' repo.
-I was going to let gcc figure out whether inlining was needed but it turned
-out that with *inline* keywords removed gcc generated even more code...
+Currently no other source file besides sh_eth.c includes sh_eth.h, so
+IMHO sh_eth.h could just be absorbed by sh_eth.c.
 
- drivers/net/ethernet/renesas/sh_eth.c |   24 ------------------------
- drivers/net/ethernet/renesas/sh_eth.h |   23 +++++++++++++++++++++++
- 2 files changed, 23 insertions(+), 24 deletions(-)
+> While at it, make these functions return 'u32' instead of '__u32'.
 
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.c
-@@ -941,30 +941,6 @@ static void sh_eth_set_receive_align(str
- 		skb_reserve(skb, SH_ETH_RX_ALIGN - reserve);
- }
- 
--
--/* CPU <-> EDMAC endian convert */
--static inline __u32 cpu_to_edmac(struct sh_eth_private *mdp, u32 x)
--{
--	switch (mdp->edmac_endian) {
--	case EDMAC_LITTLE_ENDIAN:
--		return cpu_to_le32(x);
--	case EDMAC_BIG_ENDIAN:
--		return cpu_to_be32(x);
--	}
--	return x;
--}
--
--static inline __u32 edmac_to_cpu(struct sh_eth_private *mdp, u32 x)
--{
--	switch (mdp->edmac_endian) {
--	case EDMAC_LITTLE_ENDIAN:
--		return le32_to_cpu(x);
--	case EDMAC_BIG_ENDIAN:
--		return be32_to_cpu(x);
--	}
--	return x;
--}
--
- /* Program the hardware MAC address from dev->dev_addr. */
- static void update_mac_address(struct net_device *ndev)
- {
-Index: net-next/drivers/net/ethernet/renesas/sh_eth.h
-=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.h
-+++ net-next/drivers/net/ethernet/renesas/sh_eth.h
-@@ -546,6 +546,29 @@ static inline void sh_eth_soft_swap(char
- #endif
- }
- 
-+/* CPU <-> EDMAC endian convert */
-+static inline u32 cpu_to_edmac(struct sh_eth_private *mdp, u32 x)
-+{
-+	switch (mdp->edmac_endian) {
-+	case EDMAC_LITTLE_ENDIAN:
-+		return cpu_to_le32(x);
-+	case EDMAC_BIG_ENDIAN:
-+		return cpu_to_be32(x);
-+	}
-+	return x;
-+}
-+
-+static inline u32 edmac_to_cpu(struct sh_eth_private *mdp, u32 x)
-+{
-+	switch (mdp->edmac_endian) {
-+	case EDMAC_LITTLE_ENDIAN:
-+		return le32_to_cpu(x);
-+	case EDMAC_BIG_ENDIAN:
-+		return be32_to_cpu(x);
-+	}
-+	return x;
-+}
-+
- #define SH_ETH_OFFSET_INVALID	((u16) ~0)
- 
- static inline void sh_eth_write(struct net_device *ndev, u32 data,
+That change is fine for me.
 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
