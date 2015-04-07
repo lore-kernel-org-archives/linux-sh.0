@@ -1,105 +1,37 @@
-From: Russell King <rmk+kernel@arm.linux.org.uk>
-Date: Fri, 03 Apr 2015 17:13:03 +0000
-Subject: [PATCH 08/14] SH: use clkdev_add_table()
-Message-Id: <E1Ye59T-0001BR-KY@rmk-PC.arm.linux.org.uk>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 07 Apr 2015 07:53:14 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: r8a7790: Enable DMA for HSUSB
+Message-Id: <1428393194-2132-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
-In-Reply-To: <20150403171149.GC13898@n2100.arm.linux.org.uk>
+References: <1428393194-2132-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1428393194-2132-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-We have always had an efficient way of registering a table of clock
-lookups - it's called clkdev_add_table().  However, some people seem
-to really love writing inefficient and unnecessary code.
+This patch adds DMA properties to the HSUSB node.
 
-Convert SH to use the correct interface.
-
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/sh/kernel/cpu/sh4a/clock-sh7734.c | 3 +--
- arch/sh/kernel/cpu/sh4a/clock-sh7757.c | 4 ++--
- arch/sh/kernel/cpu/sh4a/clock-sh7785.c | 4 ++--
- arch/sh/kernel/cpu/sh4a/clock-sh7786.c | 4 ++--
- arch/sh/kernel/cpu/sh4a/clock-shx3.c   | 4 ++--
- 5 files changed, 9 insertions(+), 10 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7734.c b/arch/sh/kernel/cpu/sh4a/clock-sh7734.c
-index 1fdf1ee672de..7f54bf2f453d 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7734.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7734.c
-@@ -246,8 +246,7 @@ int __init arch_clk_init(void)
- 	for (i = 0; i < ARRAY_SIZE(main_clks); i++)
- 		ret |= clk_register(main_clks[i]);
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 8c7924a..0264b0a 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -672,6 +672,9 @@
+ 		renesas,buswait = <4>;
+ 		phys = <&usb0 1>;
+ 		phy-names = "usb";
++		dmas = <&usb_dmac0 0>, <&usb_dmac0 1>,
++		       <&usb_dmac1 0>, <&usb_dmac1 1>;
++		dma-names = "rx0", "tx1", "rx2", "tx3";
+ 		status = "disabled";
+ 	};
  
--	for (i = 0; i < ARRAY_SIZE(lookups); i++)
--		clkdev_add(&lookups[i]);
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
- 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
-index 9a28fdb36387..e40ec2c97ad1 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
-@@ -141,8 +141,8 @@ int __init arch_clk_init(void)
- 
- 	for (i = 0; i < ARRAY_SIZE(clks); i++)
- 		ret |= clk_register(clks[i]);
--	for (i = 0; i < ARRAY_SIZE(lookups); i++)
--		clkdev_add(&lookups[i]);
-+
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
- 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7785.c b/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
-index 17d0ea55a5a2..8eb6e62340c9 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7785.c
-@@ -164,8 +164,8 @@ int __init arch_clk_init(void)
- 
- 	for (i = 0; i < ARRAY_SIZE(clks); i++)
- 		ret |= clk_register(clks[i]);
--	for (i = 0; i < ARRAY_SIZE(lookups); i++)
--		clkdev_add(&lookups[i]);
-+
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
- 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7786.c b/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
-index bec2a83f1ba5..5e50e7ebeff0 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7786.c
-@@ -179,8 +179,8 @@ int __init arch_clk_init(void)
- 
- 	for (i = 0; i < ARRAY_SIZE(clks); i++)
- 		ret |= clk_register(clks[i]);
--	for (i = 0; i < ARRAY_SIZE(lookups); i++)
--		clkdev_add(&lookups[i]);
-+
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
- 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-shx3.c b/arch/sh/kernel/cpu/sh4a/clock-shx3.c
-index 9a49a44f6f94..605221d1448a 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-shx3.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-shx3.c
-@@ -138,8 +138,8 @@ int __init arch_clk_init(void)
- 
- 	for (i = 0; i < ARRAY_SIZE(clks); i++)
- 		ret |= clk_register(clks[i]);
--	for (i = 0; i < ARRAY_SIZE(lookups); i++)
--		clkdev_add(&lookups[i]);
-+
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
- 		ret = sh_clk_div4_register(div4_clks, ARRAY_SIZE(div4_clks),
 -- 
-1.8.3.1
+1.9.1
 
