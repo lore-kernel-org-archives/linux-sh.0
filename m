@@ -1,38 +1,48 @@
-From: Stephen Boyd <sboyd@codeaurora.org>
-Date: Mon, 06 Apr 2015 19:04:21 +0000
+From: Robert Jarzmik <robert.jarzmik@free.fr>
+Date: Tue, 07 Apr 2015 10:05:19 +0000
 Subject: Re: [PATCH 03/14] clkdev: get rid of redundant clk_add_alias() prototype in linux/clk.h
-Message-Id: <5522D8B5.7050205@codeaurora.org>
+Message-Id: <871tjws17k.fsf@free.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150403171149.GC13898@n2100.arm.linux.org.uk> <E1Ye593-0001B1-W4@rmk-PC.arm.linux.org.uk> <87lhi8rrmd.fsf@free.fr>
-In-Reply-To: <87lhi8rrmd.fsf@free.fr>
+References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
+	<E1Ye593-0001B1-W4@rmk-PC.arm.linux.org.uk> <87lhi8rrmd.fsf@free.fr>
+	<5522D8B5.7050205@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Robert Jarzmik <robert.jarzmik@free.fr>, Russell King <rmk+kernel@arm.linux.org.uk>
-Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, Kevin Hilman <khilman@deeprootsystems.com>, Sekhar Nori <nsekhar@ti.com>, Haojian Zhuang <haojian.zhuang@gmail.com>, Tony Lindgren <tony@atomide.com>, Daniel Mack <daniel@zonque.org>, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org
+To: Stephen Boyd <sboyd@codeaurora.org>
+Cc: Russell King <rmk+kernel@arm.linux.org.uk>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, Kevin Hilman <khilman@deeprootsystems.com>, Sekhar Nori <nsekhar@ti.com>, Haojian Zhuang <haojian.zhuang@gmail.com>, Tony Lindgren <tony@atomide.com>, Daniel Mack <daniel@zonque.org>, linux-omap@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org
 
-On 04/04/15 05:43, Robert Jarzmik wrote:
-> Russell King <rmk+kernel@arm.linux.org.uk> writes:
->
->> clk_add_alias() is provided by clkdev, and is not part of the clk API.
->> Howver, it is prototyped in two locations: linux/clkdev.h and
->> linux/clk.h.  This is a mess.  Get rid of the redundant and unnecessary
->> version in linux/clk.h.
+Stephen Boyd <sboyd@codeaurora.org> writes:
+
+> On 04/04/15 05:43, Robert Jarzmik wrote:
+>> Russell King <rmk+kernel@arm.linux.org.uk> writes:
 >>
->> Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
-> Tested-by: Robert Jarzmik <robert.jarzmik@free.fr>
+>>> clk_add_alias() is provided by clkdev, and is not part of the clk API.
+>>> Howver, it is prototyped in two locations: linux/clkdev.h and
+>>> linux/clk.h.  This is a mess.  Get rid of the redundant and unnecessary
+>>> version in linux/clk.h.
+>>>
+>>> Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+>> Tested-by: Robert Jarzmik <robert.jarzmik@free.fr>
+>>
+>> Actually, this serie fixes a regression I've seen in linux-next, and which was
+>> triggering the Oops in [1] on lubbock. With your serie, the kernel boots fine.
+>>
+>>
 >
-> Actually, this serie fixes a regression I've seen in linux-next, and which was
-> triggering the Oops in [1] on lubbock. With your serie, the kernel boots fine.
->
->
+> Is this with the lubbock_defconfig? Is it a regression in 4.0-rc series
+> or is it due to some pending -next patches interacting with the per-user
+> clock patches? It looks like the latter because __clk_get_hw() should be
+> inlined on lubbock_defconfig where CONFIG_COMMON_CLK=n.
 
-Is this with the lubbock_defconfig? Is it a regression in 4.0-rc series
-or is it due to some pending -next patches interacting with the per-user
-clock patches? It looks like the latter because __clk_get_hw() should be
-inlined on lubbock_defconfig where CONFIG_COMMON_CLK=n.
+It's upon linux-next and the "not yet pulled" pxa tree merged :
+ - http://lists.infradead.org/pipermail/linux-arm-kernel/2015-March/331119.html
+I think it will appear once arm-soc has been prepared for linux-next and pulled.
+
+This specific merge window will shift pxa architecture to common clock
+framework, that's why I saw the regression.
+
+Cheers.
 
 -- 
-Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
-a Linux Foundation Collaborative Project
-
+Robert
