@@ -1,60 +1,44 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 23 Apr 2015 08:13:25 +0000
-Subject: [PATCH 1/7 v4] mmc: sh_mmcif: move mmcif_of_match to upside
-Message-Id: <87a8xzgt5t.wl%kuninori.morimoto.gx@renesas.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 07 Apr 2015 07:53:12 +0000
+Subject: [PATCH v2 0/2] ARM: shmobile: r8a7790: add for USB-DMAC
+Message-Id: <1428393194-2132-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
-	<87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>, Simon <horms@verge.net.au>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This patch set is based on renesas.git / renesas-devel-20150406-v4.0-rc6
+tag. (commit id =3D 8acf8f0880b6a142e6291b9a7d81f2f38c9425ac)
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v3 -> v4
+This patch set is related to the usb-dmac driver and renesas_usbhs driver.
+And these drivers have been merged in each subsystem:
 
- - no change
+[ slave-dma repository ]
+https://git.kernel.org/cgit/linux/kernel/git/vkoul/slave-dma.git/commit/?h=
+=3Dfor-linus&id=A7267831565030ab94dab76eb1afe5d4b63a1009
+https://git.kernel.org/cgit/linux/kernel/git/vkoul/slave-dma.git/commit/?h=
+=3Dfor-linus&id=0C1c8ff32fa29e425b4938934c21afdb81104431
 
- drivers/mmc/host/sh_mmcif.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+[ usb repository ]
+https://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?h=3Dtest=
+ing/next&idz96b78464bd8ba72c1c3095c543c1402db59e35
+https://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?h=3Dtest=
+ing/next&id=9B53d9af7aac09cf249d72bfbf15f08e47c4f7fe
+https://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?h=3Dtest=
+ing/next&id=AB330cf3888d8e0779fa05a243d53ba9f53a7ba9
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 2b6ef6b..4e81278 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -257,6 +257,12 @@ struct sh_mmcif_host {
- 	bool			dma_active;
- };
- 
-+static const struct of_device_id mmcif_of_match[] = {
-+	{ .compatible = "renesas,sh-mmcif" },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(of, mmcif_of_match);
-+
- static inline void sh_mmcif_bitset(struct sh_mmcif_host *host,
- 					unsigned int reg, u32 val)
- {
-@@ -1543,12 +1549,6 @@ static int sh_mmcif_resume(struct device *dev)
- }
- #endif
- 
--static const struct of_device_id mmcif_of_match[] = {
--	{ .compatible = "renesas,sh-mmcif" },
--	{ }
--};
--MODULE_DEVICE_TABLE(of, mmcif_of_match);
--
- static const struct dev_pm_ops sh_mmcif_dev_pm_ops = {
- 	SET_SYSTEM_SLEEP_PM_OPS(sh_mmcif_suspend, sh_mmcif_resume)
- };
--- 
+Changes from v1:
+ - Rebase the latest renesas-devel tag.
+
+Yoshihiro Shimoda (2):
+  ARM: shmobile: r8a7790: add USB-DMAC device nodes
+  ARM: shmobile: r8a7790: Enable DMA for HSUSB
+
+ arch/arm/boot/dts/r8a7790.dtsi | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+--=20
 1.9.1
 
