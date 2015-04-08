@@ -1,67 +1,99 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 08 Apr 2015 02:20:07 +0000
-Subject: RE: [PATCH v2 2/2] ARM: shmobile: r8a7791: Enable DMA for HSUSB
-Message-Id: <HKNPR06MB32242AD4C51E1F939E780ACD8FC0@HKNPR06MB322.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 08 Apr 2015 07:43:22 +0000
+Subject: Re: [PATCH v2 2/2] ARM: shmobile: r8a7791: Enable DMA for HSUSB
+Message-Id: <CAMuHMdUvkt4LrSkJhCT1k-YF-FUS4f2QByTJeCsVGqmjSXYB-A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1428393231-5272-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 	<1428393231-5272-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <CAMuHMdXu46NK37gcweCz_XTABUJw6kN0fnyxmmGeL9cGRWdJdg@mail.gmail.com>
-In-Reply-To: <CAMuHMdXu46NK37gcweCz_XTABUJw6kN0fnyxmmGeL9cGRWdJdg@mail.gmail.com>
+	<CAMuHMdXu46NK37gcweCz_XTABUJw6kN0fnyxmmGeL9cGRWdJdg@mail.gmail.com>
+	<HKNPR06MB32242AD4C51E1F939E780ACD8FC0@HKNPR06MB322.apcprd06.prod.outlook.com>
+In-Reply-To: <HKNPR06MB32242AD4C51E1F939E780ACD8FC0@HKNPR06MB322.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Russell King <linux@arm.linux.org.uk>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-arm-kernel@vger.kernel.org" <linux-arm-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-SGkgR2VlcnQtc2FuLA0KDQo+IEhpIFNoaW1vZGEtc2FuLA0KPiANCj4gT24gVHVlLCBBcHIgNywg
-MjAxNSBhdCA5OjUzIEFNLCBZb3NoaWhpcm8gU2hpbW9kYQ0KPiA8eW9zaGloaXJvLnNoaW1vZGEu
-dWhAcmVuZXNhcy5jb20+IHdyb3RlOg0KPiA+IFRoaXMgcGF0Y2ggYWRkcyBETUEgcHJvcGVydGll
-cyB0byB0aGUgSFNVU0Igbm9kZS4NCj4gDQo+IFRoYW5rIHlvdSBmb3IgeW91ciBwYXRjaCENCg0K
-VGhhbmsgeW91IGZvciB5b3VyIHJldmlldyENCg0KPiA+IFNpZ25lZC1vZmYtYnk6IFlvc2hpaGly
-byBTaGltb2RhIDx5b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2FzLmNvbT4NCj4gPiAtLS0NCj4g
-PiAgYXJjaC9hcm0vYm9vdC9kdHMvcjhhNzc5MS5kdHNpIHwgMyArKysNCj4gPiAgMSBmaWxlIGNo
-YW5nZWQsIDMgaW5zZXJ0aW9ucygrKQ0KPiA+DQo+ID4gZGlmZiAtLWdpdCBhL2FyY2gvYXJtL2Jv
-b3QvZHRzL3I4YTc3OTEuZHRzaSBiL2FyY2gvYXJtL2Jvb3QvZHRzL3I4YTc3OTEuZHRzaQ0KPiA+
-IGluZGV4IGRiMzc3MmUuLjVmMjBhZDQgMTAwNjQ0DQo+ID4gLS0tIGEvYXJjaC9hcm0vYm9vdC9k
-dHMvcjhhNzc5MS5kdHNpDQo+ID4gKysrIGIvYXJjaC9hcm0vYm9vdC9kdHMvcjhhNzc5MS5kdHNp
-DQo+ID4gQEAgLTcyMiw2ICs3MjIsOSBAQA0KPiA+ICAgICAgICAgICAgICAgICByZW5lc2FzLGJ1
-c3dhaXQgPSA8ND47DQo+ID4gICAgICAgICAgICAgICAgIHBoeXMgPSA8JnVzYjAgMT47DQo+ID4g
-ICAgICAgICAgICAgICAgIHBoeS1uYW1lcyA9ICJ1c2IiOw0KPiA+ICsgICAgICAgICAgICAgICBk
-bWFzID0gPCZ1c2JfZG1hYzAgMD4sIDwmdXNiX2RtYWMwIDE+LA0KPiA+ICsgICAgICAgICAgICAg
-ICAgICAgICAgPCZ1c2JfZG1hYzEgMD4sIDwmdXNiX2RtYWMxIDE+Ow0KPiA+ICsgICAgICAgICAg
-ICAgICBkbWEtbmFtZXMgPSAicngwIiwgInR4MSIsICJyeDIiLCAidHgzIjsNCj4gDQo+IFRoZSBu
-dW1iZXJpbmcgbG9va3MgYSBiaXQgc3RyYW5nZSwgZ2l2ZW4gdGhlIGNvZGUgbG9va3MgdXAgYm90
-aCB0eCBhbmQgcngNCj4gRE1BIGNoYW5uZWxzIGZvciBlYWNoIGNoYW5uZWwgaW5kZXguIElzIGl0
-IGNvcnJlY3Q/DQo+IA0KPiBUaGUgYmluZGluZyBkb2N1bWVudGF0aW9uICh3aGljaCBsYWNrcyBv
-biBleGFtcGxlKSBzdGF0ZXM6DQo+IA0KPiAgIC0gZG1hLW5hbWVzIDogTXVzdCBjb250YWluIGEg
-bGlzdCBvZiBETUEgbmFtZXM6DQo+ICAgIC0gdHgwIC4uLiB0eDxuPg0KPiAgICAtIHJ4MCAuLi4g
-cng8bj4NCj4gICAgIC0gVGhpcyA8bj4gbWVhbnMgRG5GSUZPIGluIFVTQkhTIG1vZHVsZS4NCj4g
-DQo+IEFzIHRoZXJlIGFyZSA0IERuRklGT3MsIEknZCBleHBlY3QgdHgwLi50eDMgYW5kIHJ4MC4u
-cngzLg0KPiANCj4gQ2FuIHlvdSBwbGVhc2UgY2xhcmlmeT8NCg0KSSB3cm90ZSBzb21lIGluZm9y
-bWF0aW9uIGJlbG93Lg0KQnV0LCBzaW5jZSBpdCBpcyBjb21wbGV4IGhhcmR3YXJlLCBJIGRvbid0
-IGtub3cgSSBjYW4gZXhwbGFpbiB0aGlzIGFzIHdlbGwuLi4NCg0KQXQgZmlyc3QsIFItQ2FyIEdl
-bjIgaGFzIDIgVVNCLURNQUNzIGFuZCA0IGNoYW5uZWxzOg0KIFVTQi1ETUFDIDA6IGNoMA0KIFVT
-Qi1ETUFDIDA6IGNoMQ0KIFVTQi1ETUFDIDE6IGNoMA0KIFVTQi1ETUFDIDE6IGNoMQ0KUmVtYXJr
-czogSSBkb24ndCBrbm93IHdoeSBidXQgcGVyZm9ybWFuY2Ugb2YgVVNCLURNQUMgMCBpcyBnb29k
-IHRoYW4gVVNCLURNQUMgMS4NCiAgICAgICAgICAoUGxlYXNlIHJlZmVyIHRvIHRoZSBUYWJsZSA2
-NC4xIG9mIHRoZSBkYXRhc2hlZXQuKQ0KDQpTbywgSSB3cm90ZSBkbWFzIHBhcmFtZXRlciBpbiBo
-c3VzYiBhcyB0aGUgZm9sbG93aW5nOg0KDQo+ID4gKyAgICAgICAgICAgICAgIGRtYXMgPSA8JnVz
-Yl9kbWFjMCAwPiwgPCZ1c2JfZG1hYzAgMT4sDQo+ID4gKyAgICAgICAgICAgICAgICAgICAgICA8
-JnVzYl9kbWFjMSAwPiwgPCZ1c2JfZG1hYzEgMT47DQoNCg0KQW5kLCBSLUNhciBHZW4yIGhhcyA0
-IERuRklGT3MgaW4gSFNVU0IuIHRvIGF2b2lkIGNvbXBsZXggaGFuZGxpbmcgZm9yIERuRklGT3Ms
-DQp0aGUgcmVuZXNhc191c2JocyBkcml2ZXIgdXNlcyBlYWNoIERuRklGTyBhcyBUWCBvciBSWCBk
-aXJlY3Rpb24gKG5vdCBiaS1kaXJlY3Rpb24pLg0KU28sIEkgd3JvdGUgZG1hLW5hbWVzIHBhcmFt
-ZXRlciBhcyB0aGUgZm9sbG93aW5nOg0KDQo+ID4gKyAgICAgICAgICAgICAgIGRtYS1uYW1lcyA9
-ICJyeDAiLCAidHgxIiwgInJ4MiIsICJ0eDMiOw0KDQotIEQwRklGTyBhcyBSWCAoQWxzbyBpdCBp
-cyBjb25uZWN0ZWQgdG8gVVNCLURNQUMgMDogY2gwKQ0KLSBEMUZJRk8gYXMgVFggKEFsc28gaXQg
-aXMgY29ubmVjdGVkIHRvIFVTQi1ETUFDIDA6IGNoMSkNCi0gRDJGSUZPIGFzIFJYIChBbHNvIGl0
-IGlzIGNvbm5lY3RlZCB0byBVU0ItRE1BQyAxOiBjaDApDQotIEQzRklGTyBhcyBUWCAoQWxzbyBp
-dCBpcyBjb25uZWN0ZWQgdG8gVVNCLURNQUMgMTogY2gxKQ0KDQpCZXN0IHJlZ2FyZHMsDQpZb3No
-aWhpcm8gU2hpbW9kYQ0KDQo+IFRoYW5rcyENCj4gDQo+IEdye29ldGplLGVldGluZ31zLA0KPiAN
-Cj4gICAgICAgICAgICAgICAgICAgICAgICAgR2VlcnQNCj4gDQo+IC0tDQo+IEdlZXJ0IFV5dHRl
-cmhvZXZlbiAtLSBUaGVyZSdzIGxvdHMgb2YgTGludXggYmV5b25kIGlhMzIgLS0gZ2VlcnRAbGlu
-dXgtbTY4ay5vcmcNCj4gDQo+IEluIHBlcnNvbmFsIGNvbnZlcnNhdGlvbnMgd2l0aCB0ZWNobmlj
-YWwgcGVvcGxlLCBJIGNhbGwgbXlzZWxmIGEgaGFja2VyLiBCdXQNCj4gd2hlbiBJJ20gdGFsa2lu
-ZyB0byBqb3VybmFsaXN0cyBJIGp1c3Qgc2F5ICJwcm9ncmFtbWVyIiBvciBzb21ldGhpbmcgbGlr
-ZSB0aGF0Lg0KPiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC0tIExpbnVzIFRvcnZh
-bGRzDQo
+Hi Shimoda-san,
+
+On Wed, Apr 8, 2015 at 4:20 AM, Yoshihiro Shimoda
+<yoshihiro.shimoda.uh@renesas.com> wrote:
+>> On Tue, Apr 7, 2015 at 9:53 AM, Yoshihiro Shimoda
+>> <yoshihiro.shimoda.uh@renesas.com> wrote:
+>> > diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+>> > index db3772e..5f20ad4 100644
+>> > --- a/arch/arm/boot/dts/r8a7791.dtsi
+>> > +++ b/arch/arm/boot/dts/r8a7791.dtsi
+>> > @@ -722,6 +722,9 @@
+>> >                 renesas,buswait = <4>;
+>> >                 phys = <&usb0 1>;
+>> >                 phy-names = "usb";
+>> > +               dmas = <&usb_dmac0 0>, <&usb_dmac0 1>,
+>> > +                      <&usb_dmac1 0>, <&usb_dmac1 1>;
+>> > +               dma-names = "rx0", "tx1", "rx2", "tx3";
+>>
+>> The numbering looks a bit strange, given the code looks up both tx and rx
+>> DMA channels for each channel index. Is it correct?
+>>
+>> The binding documentation (which lacks on example) states:
+>>
+>>   - dma-names : Must contain a list of DMA names:
+>>    - tx0 ... tx<n>
+>>    - rx0 ... rx<n>
+>>     - This <n> means DnFIFO in USBHS module.
+>>
+>> As there are 4 DnFIFOs, I'd expect tx0..tx3 and rx0..rx3.
+>>
+>> Can you please clarify?
+>
+> I wrote some information below.
+> But, since it is complex hardware, I don't know I can explain this as well...
+>
+> At first, R-Car Gen2 has 2 USB-DMACs and 4 channels:
+>  USB-DMAC 0: ch0
+>  USB-DMAC 0: ch1
+>  USB-DMAC 1: ch0
+>  USB-DMAC 1: ch1
+> Remarks: I don't know why but performance of USB-DMAC 0 is good than USB-DMAC 1.
+>           (Please refer to the Table 64.1 of the datasheet.)
+>
+> So, I wrote dmas parameter in hsusb as the following:
+>
+>> > +               dmas = <&usb_dmac0 0>, <&usb_dmac0 1>,
+>> > +                      <&usb_dmac1 0>, <&usb_dmac1 1>;
+>
+> And, R-Car Gen2 has 4 DnFIFOs in HSUSB. to avoid complex handling for DnFIFOs,
+> the renesas_usbhs driver uses each DnFIFO as TX or RX direction (not bi-direction).
+> So, I wrote dma-names parameter as the following:
+>
+>> > +               dma-names = "rx0", "tx1", "rx2", "tx3";
+>
+> - D0FIFO as RX (Also it is connected to USB-DMAC 0: ch0)
+> - D1FIFO as TX (Also it is connected to USB-DMAC 0: ch1)
+> - D2FIFO as RX (Also it is connected to USB-DMAC 1: ch0)
+> - D3FIFO as TX (Also it is connected to USB-DMAC 1: ch1)
+
+Thanks for the explanation!
+
+Hence the "strange" numbering is a limitation of the driver, not of the
+hardware?
+
+In that case I think the DT should describe the hardware, not the driver
+limitation. As the FIFOs are bidirectional, there's just a one-to-one mapping
+of 4 DnFIFOs to 4 (2 channels x 2 DMACs) DMA channels.
+Which DnFIFO/channel is used for TX and which is used for RX is to be chosen
+by the driver, and can be fixed (e.g. use even channels for RX, odd for
+TX, like the current situation).
+
+What do you (and other people) think?
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
