@@ -1,64 +1,85 @@
-From: Kevin Hilman <khilman@kernel.org>
-Date: Wed, 01 Apr 2015 18:12:10 +0000
-Subject: Re: Possible regression in next-20150323 due to "ARM, arm64: kvm: get rid of the bounce page"
-Message-Id: <7hmw2r67lx.fsf@deeprootsystems.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 08 Apr 2015 10:42:24 +0000
+Subject: [PATCH] usb: renesas_usbhs: Revise the binding document about the dma-names
+Message-Id: <1428489744-4872-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150324004537.GA24816@verge.net.au>
- <CAKv+Gu-0jPk=KQ4gY32ELc+BVbe=1QdcrwQ+Pb=RkdwO9K3Vkw@mail.gmail.com>
- <20150324161358.GA694@kahuna> <20150326003939.GA25368@verge.net.au>
- <20150326133631.GB2805@arm.com>
- <CANMBJr68dsbYvvHUzy6U4m4fEM6nq8dVHBH4kLQ=0c4QNOhLPQ@mail.gmail.com>
- <20150327002554.GA5527@verge.net.au> <20150327100612.GB1562@arm.com>
- <7hbnj99epe.fsf@deeprootsystems.com> <20150401085832.GA1552@arm.com>
-In-Reply-To: <20150401085832.GA1552@arm.com> (Will Deacon's message of "Wed, 1
- Apr 2015 09:58:32 +0100")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: gregkh@linuxfoundation.org, balbi@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: geert@linux-m68k.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Hi Will,
+Since the DT should describe the hardware (not the driver limitation),
+This patch revises the binding document about the dma-names to change
+simple numbering as "ch%d" instead of "tx<n>" and "rx<n>".
 
-Will Deacon <will.deacon@arm.com> writes:
+Also this patch fixes the actual code of renesas_usbhs driver to handle
+the new dma-names.
 
-[...]
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ This patch is based on Felipe's usb.bit / testing/next branch.
+ (commit id = bbc78c07a51f6fd29c227b1220a9016e585358ba)
 
->> >
->> > Thanks for testing this and sorry for the continued breakage. Which
->> > toolchain did you say you were using? Ard has some more patches trying to
->> > fix this, but none of our toolchains seem to tickle the issue.
->> 
->> I've also tested on the default ARM toolchains available with ubuntu[1]
->> 
->> Are there any updates on this issue?
->
-> It's been fixed since the end of last week!
->
-> (see ARM: kvm: round HYP section to page size instead of log2 upper bound)
->
-> This was confirmed by both my testing and also Simon Horman, who reported
-> the initial breakage.
->
->> It ha broken most of the ARM defconfigs in linux-next[2], and since it's
->> been broken for a week now, it is masking other types of issues that we
->> can normally find via automated boot testing.
->
-> If you're referring to failures such as:
->
->   http://storage.kernelci.org/next/next-20150331/arm-axm55xx_defconfig/build.log
+ Geert is pointed out about this issue:
+ https://www.mail-archive.com/devicetree@vger.kernel.org/msg68401.html
 
-Yes, that's the one I'm trying to track down.
+ .../devicetree/bindings/usb/renesas_usbhs.txt      |  6 ++----
+ drivers/usb/renesas_usbhs/fifo.c                   | 24 ++++++++++++++--------
+ 2 files changed, 17 insertions(+), 13 deletions(-)
 
-> Then that's not coming from the arm64 tree, and is a completely separate
-> issue from the one originally reported in this thread.
-
-Ugh, womehow I got wires crossed and thought they were related problems.
-Looks like Geert now has a proposed fix for the issue I'm tracking.
-
-Sorry for the noise,
-
-Kevin
-
-
-
+diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+index dc2a18f..ddbe304 100644
+--- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
++++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+@@ -15,10 +15,8 @@ Optional properties:
+   - phys: phandle + phy specifier pair
+   - phy-names: must be "usb"
+   - dmas: Must contain a list of references to DMA specifiers.
+-  - dma-names : Must contain a list of DMA names:
+-   - tx0 ... tx<n>
+-   - rx0 ... rx<n>
+-    - This <n> means DnFIFO in USBHS module.
++  - dma-names : named "ch%d", where %d is the channel number ranging from zero
++                to the number of channels (DnFIFOs) minus one.
+ 
+ Example:
+ 	usbhs: usb@e6590000 {
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index 8597cf9..bc23b4a 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -1227,15 +1227,21 @@ static void usbhsf_dma_init_dt(struct device *dev, struct usbhs_fifo *fifo,
+ {
+ 	char name[16];
+ 
+-	snprintf(name, sizeof(name), "tx%d", channel);
+-	fifo->tx_chan = dma_request_slave_channel_reason(dev, name);
+-	if (IS_ERR(fifo->tx_chan))
+-		fifo->tx_chan = NULL;
+-
+-	snprintf(name, sizeof(name), "rx%d", channel);
+-	fifo->rx_chan = dma_request_slave_channel_reason(dev, name);
+-	if (IS_ERR(fifo->rx_chan))
+-		fifo->rx_chan = NULL;
++	/*
++	 * To avoid complex handing for DnFIFOs, the driver uses each
++	 * DnFIFO as TX or RX direction (not bi-direction).
++	 * So, the driver uses odd channels for TX, even channels for RX.
++	 */
++	snprintf(name, sizeof(name), "ch%d", channel);
++	if (channel & 1) {
++		fifo->tx_chan = dma_request_slave_channel_reason(dev, name);
++		if (IS_ERR(fifo->tx_chan))
++			fifo->tx_chan = NULL;
++	} else {
++		fifo->rx_chan = dma_request_slave_channel_reason(dev, name);
++		if (IS_ERR(fifo->rx_chan))
++			fifo->rx_chan = NULL;
++	}
+ }
+ 
+ static void usbhsf_dma_init(struct usbhs_priv *priv, struct usbhs_fifo *fifo,
+-- 
+1.9.1
 
