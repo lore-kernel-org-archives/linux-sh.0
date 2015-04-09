@@ -1,34 +1,40 @@
-From: <masaru.nagai.vx@renesas.com>
-Date: Fri, 03 Apr 2015 06:27:46 +0000
+From: =?utf-8?Q?Bj=C3=B8rn_Mork?= <bjorn@mork.no>
+Date: Thu, 09 Apr 2015 13:11:58 +0000
 Subject: Re: [PATCH resend] Renesas Ethernet AVB driver
-Message-Id: <551E32E2.3020102@renesas.com>
+Message-Id: <873849cuox.fsf@nemi.mork.no>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150331064349.GB4605@localhost.localdomain>	<20150331.113832.2042398685489897677.davem@davemloft.net>	<551ADC12.5050603@cogentembedded.com> <20150331.134842.499356389024178984.davem@davemloft.net>
-In-Reply-To: <20150331.134842.499356389024178984.davem@davemloft.net>
+References: <2926619.fiYHPz1IBk@wasted.cogentembedded.com>
+	<20150328082853.GA4255@localhost.localdomain>
+	<5519D380.6070200@cogentembedded.com>
+	<20150331064349.GB4605@localhost.localdomain>
+In-Reply-To: <20150331064349.GB4605@localhost.localdomain> (Richard Cochran's
+	message of "Tue, 31 Mar 2015 08:43:49 +0200")
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: davem@davemloft.net, sergei.shtylyov@cogentembedded.com
-Cc: richardcochran@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org, mitsuhiro.kimura.kc@renesas.com
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Richard Cochran <richardcochran@gmail.com>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>, masaru.nagai.vx@renesas.com, David Miller <davem@davemloft.net>
 
-Hello Richard, David, Sergei
+Richard Cochran <richardcochran@gmail.com> writes:
 
-On 2015年04月01日 02:48, David Miller wrote:
-> From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Date: Tue, 31 Mar 2015 20:40:34 +0300
-...
-> Is there a serious problem getting the original authors to signoff on
-> this driver submission?  If so, why?  This should be very
-> straightforward, and if for some reason these authors are unwilling to
-> then I have every reason to be concerned about this.
+> The reason for the author's SOB is to make sure that he or she is
+> really authorized (like from the employer) to contribute the driver.
 
-We are already agree on the work by sergei.
-So, this patch does not have problem.
+I believe it is wise to stick to the definition of "Developer's
+Certificate of Origin 1.1" from SubmittingPatches. Which most definitely
+allow you to sign off on any GPL licensed code, whether the original
+author(s) included a SOB tag or not:
 
-Sergei, please append SOB of us to this patch.
+..
+        (b) The contribution is based upon previous work that, to the best
+            of my knowledge, is covered under an appropriate open source
+            license and I have the right under that license to submit that
+            work with modifications, whether created in whole or in part
+            by me, under the same open source license (unless I am
+            permitted to submit under a different license), as indicated
+            in the file; or
+..
 
-Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
-Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
 
-Best Regards,
-Masaru Nagai
+
+Bj=C3=B8rn
