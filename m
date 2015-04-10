@@ -1,71 +1,23 @@
-From: Rajendra Nayak <rnayak@codeaurora.org>
-Date: Tue, 14 Apr 2015 13:46:32 +0000
-Subject: [RFC 4/5] arm: davinci: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
-Message-Id: <1429018473-21865-5-git-send-email-rnayak@codeaurora.org>
+From: "Mrs. Zhang Xiao" <egonzalez@reacciun.ve>
+Date: Fri, 10 Apr 2015 07:24:10 +0000
+Subject: Re.
+Message-Id: <20150410072426.D02BA223388@smtpa.reacciun.ve>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1429018473-21865-1-git-send-email-rnayak@codeaurora.org>
-In-Reply-To: <1429018473-21865-1-git-send-email-rnayak@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: rjw@rjwysocki.net, ssantosh@kernel.org, tony@atomide.com, khilman@deeprootsystems.com, nsekhar@ti.com, magnus.damm@gmail.com
-Cc: linux-arm-msm@vger.kernel.org, inux-arm-kernel@lists.infradead.org, linux-pm@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org, Rajendra Nayak <rnayak@codeaurora.org>
+To: linux-sh@vger.kernel.org
 
-USE_PM_CLK_RUNTIME_OPS is introduced so we don't repeat the same code
-to do runtime_suspend and runtime_resume across users of PM clocks.
-Use it to remove the boilerplate code.
+Dear,
 
-Signed-off-by: Rajendra Nayak <rnayak@codeaurora.org>
+I seek for your sincerity and trust in a deal which involved a total sum of 60,000,000.00 United states dollars. I need to know you and know your location. This really matter to the success of this deal.If interested respond to me for more details. 
+
+Yours Sincerely.
+Mrs. Zhang Xiao (Accounts book Keeper)
+Angang Steel Company Limited
+396 Nan Zhong Hua Lu, Tie Dong District Anshan, Liaoning 114021, China.
+
 ---
- arch/arm/mach-davinci/pm_domain.c | 32 +-------------------------------
- 1 file changed, 1 insertion(+), 31 deletions(-)
-
-diff --git a/arch/arm/mach-davinci/pm_domain.c b/arch/arm/mach-davinci/pm_domain.c
-index 641edc3..78eac2c 100644
---- a/arch/arm/mach-davinci/pm_domain.c
-+++ b/arch/arm/mach-davinci/pm_domain.c
-@@ -14,39 +14,9 @@
- #include <linux/pm_clock.h>
- #include <linux/platform_device.h>
- 
--#ifdef CONFIG_PM
--static int davinci_pm_runtime_suspend(struct device *dev)
--{
--	int ret;
--
--	dev_dbg(dev, "%s\n", __func__);
--
--	ret = pm_generic_runtime_suspend(dev);
--	if (ret)
--		return ret;
--
--	ret = pm_clk_suspend(dev);
--	if (ret) {
--		pm_generic_runtime_resume(dev);
--		return ret;
--	}
--
--	return 0;
--}
--
--static int davinci_pm_runtime_resume(struct device *dev)
--{
--	dev_dbg(dev, "%s\n", __func__);
--
--	pm_clk_resume(dev);
--	return pm_generic_runtime_resume(dev);
--}
--#endif
--
- static struct dev_pm_domain davinci_pm_domain = {
- 	.ops = {
--		SET_RUNTIME_PM_OPS(davinci_pm_runtime_suspend,
--				   davinci_pm_runtime_resume, NULL)
-+		USE_PM_CLK_RUNTIME_OPS
- 		USE_PLATFORM_PM_SLEEP_OPS
- 	},
- };
--- 
-QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a member
-of Code Aurora Forum, hosted by The Linux Foundation
+This email is free from viruses and malware because avast! Antivirus protection is active.
+http://www.avast.com
 
