@@ -1,30 +1,42 @@
-From: David Miller <davem@davemloft.net>
-Date: Thu, 09 Apr 2015 17:57:33 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 12 Apr 2015 22:03:16 +0000
 Subject: Re: [PATCH resend] Renesas Ethernet AVB driver
-Message-Id: <20150409.135733.759772959057279248.davem@davemloft.net>
+Message-Id: <552AEBA4.405@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5519D380.6070200@cogentembedded.com>
-	<20150331064349.GB4605@localhost.localdomain>
-	<873849cuox.fsf@nemi.mork.no>
-In-Reply-To: <873849cuox.fsf@nemi.mork.no>
+References: <20150331064349.GB4605@localhost.localdomain>	<20150331.113832.2042398685489897677.davem@davemloft.net>	<551ADC12.5050603@cogentembedded.com> <20150331.134842.499356389024178984.davem@davemloft.net> <551E32E2.3020102@renesas.com>
+In-Reply-To: <551E32E2.3020102@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: bjorn@mork.no
-Cc: richardcochran@gmail.com, sergei.shtylyov@cogentembedded.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org, mitsuhiro.kimura.kc@renesas.com, masaru.nagai.vx@renesas.com
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: masaru.nagai.vx@renesas.com, davem@davemloft.net
+Cc: richardcochran@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org, mitsuhiro.kimura.kc@renesas.com
 
-From: Bj=F8rn Mork <bjorn@mork.no>
-Date: Thu, 09 Apr 2015 15:11:58 +0200
+Hello.
 
-> Richard Cochran <richardcochran@gmail.com> writes:
->=20
->> The reason for the author's SOB is to make sure that he or she is
->> really authorized (like from the employer) to contribute the driver.
->=20
-> I believe it is wise to stick to the definition of "Developer's
-> Certificate of Origin 1.1" from SubmittingPatches.
+On 04/03/2015 09:27 AM, masaru.nagai.vx@renesas.com wrote:
 
-I believe that, if the original author is not willing to sign off on
-code they wrote which is on it's way upstream, it's a good reason to
-be concerned.
+>> From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>> Date: Tue, 31 Mar 2015 20:40:34 +0300
+> ...
+>> Is there a serious problem getting the original authors to signoff on
+>> this driver submission?  If so, why?  This should be very
+>> straightforward, and if for some reason these authors are unwilling to
+>> then I have every reason to be concerned about this.
+
+> We are already agree on the work by sergei.
+> So, this patch does not have problem.
+
+    Actually, it does, and not even a single one. :-)
+
+> Sergei, please append SOB of us to this patch.
+
+    Thank you, will add to the new version.
+
+> Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+> Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
+
+> Best Regards,
+> Masaru Nagai
+
+WBR, Sergei
 
