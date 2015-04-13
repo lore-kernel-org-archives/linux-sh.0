@@ -1,116 +1,54 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 13 Apr 2015 20:23:26 +0000
+Date: Mon, 13 Apr 2015 20:34:17 +0000
 Subject: Re: [PATCH resend] Renesas Ethernet AVB driver
-Message-Id: <552C25BE.3070606@cogentembedded.com>
+Message-Id: <552C2849.2080503@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2926619.fiYHPz1IBk@wasted.cogentembedded.com> <20150328082853.GA4255@localhost.localdomain> <5519D380.6070200@cogentembedded.com>
-In-Reply-To: <5519D380.6070200@cogentembedded.com>
+References: <2926619.fiYHPz1IBk@wasted.cogentembedded.com> <1427982999.18722.35.camel@xylophone.i.decadent.org.uk>
+In-Reply-To: <1427982999.18722.35.camel@xylophone.i.decadent.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Richard Cochran <richardcochran@gmail.com>
-Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>, masaru.nagai.vx@renesas.com
+To: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
 Hello.
 
-On 03/31/2015 01:51 AM, Sergei Shtylyov wrote:
+On 04/02/2015 04:56 PM, Ben Hutchings wrote:
 
->>> Ethernet AVB includes an Gigabit Ethernet controller (E-MAC) that is basically
->>> compatible with SuperH Gigabit Ethernet E-MAC). Ethernet AVB  has a dedicated
->>> direct memory access controller (AVB-DMAC) that is a new design compared to
->>> the
->>> SuperH E-DMAC. The AVB-DMAC is compliant with 3 standards formulated for IEEE
->>> 802.1BA: IEEE 802.1AS timing and synchronization protocol, IEEE 802.1Qav real-
->>> time transfer, and the IEEE 802.1Qat stream reservation protocol.
+> This driver looks somewhat similar to sh-eth, but lacks some of the
+> recent bug fixes made to that.  At least commit 283e38db65e7 ("sh_eth:
+> Fix serialisation of interrupt disable with interrupt & NAPI handler")
+> appears to be applicable, but there are probably others.
 
->>> The driver only supports device tree probing, so the binding document is
->>> included in this patch.
+    I suspect this issue applies to many drivers...
+    I couldn't reproduce the bug that patch was fixing, so left this fix out 
+for the time being. Others cases were fixed (if applicable).
 
->>> Based on the patches by Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com> and
->>> Masaru Nagai <masaru.nagai.vx@renesas.com>.
+> One feature request:
 
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> On Sat, 2015-03-28 at 02:13 +0300, Sergei Shtylyov wrote:
+> [...]
+>> +/* ioctl to device function */
+>> +static int ravb_do_ioctl(struct net_device *ndev, struct ifreq *req, int cmd)
+>> +{
+>> +	struct ravb_private *priv = netdev_priv(ndev);
+>> +	struct phy_device *phydev = priv->phydev;
+>> +
+>> +	if (!netif_running(ndev))
+>> +		return -EINVAL;
+>> +
+>> +	if (!phydev)
+>> +		return -ENODEV;
+>> +
+>> +	if (cmd = SIOCSHWTSTAMP)
+>> +		return ravb_hwtstamp_ioctl(ndev, req, cmd);
+> [...]
 
-[...]
-
->>> Index: net-next/drivers/net/ethernet/renesas/ravb.c
->>> =================================>>> --- /dev/null
->>> +++ net-next/drivers/net/ethernet/renesas/ravb.c
->>> @@ -0,0 +1,3071 @@
-[...]
-
->>> +/* There is CPU dependent code */
->>> +static int ravb_wait_clear(struct net_device *ndev, u16 reg, u32 bits)
->>> +{
->>> +    int i;
->>> +
->>> +    for (i = 0; i < 100; i++) {
->>> +        if (!(ravb_read(ndev, reg) & bits))
->>> +            break;
->>> +        mdelay(1);
->>> +    }
->>> +    if (i >= 100)
->>> +        return -ETIMEDOUT;
->>> +
->>> +    return 0;
->>> +}
->>> +
->>> +static int ravb_wait_setting(struct net_device *ndev, u16 reg, u32 bits)
->>> +{
-
->> This function is identical to the previous one.
-
->     It is not, the *break* condition is different. I'll look into merging them
-> though...
+> The driver should also handle SIOCGHWTSTAMP.
 
     Done.
 
-[...]
-
->>> +/* Caller must hold the lock */
->>> +static void ravb_ptp_update_compare(struct ravb_private *priv, u32 ns)
->>> +{
->>> +    struct net_device *ndev = priv->ndev;
->>> +    /* When the comparison value (GPTC.PTCV) is in range of
->>> +     * [x-1 to x+1] (x is the configured increment value in
->>> +     * GTI.TIV), it may happen that a comparison match is
->>> +     * not detected when the timer wraps around.
->>> +     */
-
->> What does this funtion do, exactly?
-
-    Loads the new timer comparator value, apparenlty.
-
->  This looks very fishy to me.
-
->     Perhaps a workaround for an errata I don't know about.
-
-    Or perhaps it's to keep the comparison value between x and 2**32 - x 
-(where x is increment in ns) as required by the manual?
-
-> Nagai-san, could you maybe elaborate?
-
-[...]
-
->>> +static bool ravb_ptp_is_config(struct ravb_private *priv)
->>> +{
-
->> This is a bit hacky.  Can't your driver make sure that the HW is ready?
-
->     Will look into this. Perhaps it's a remainder from when the PTP driver was
-> separate...
-
-    No, we enter this mode upon closing the Ethernet device and when the ring 
-DMA sizes are changed. Seems unavoidable...
-
->>> +    if (ravb_read(priv->ndev, CSR) & CSR_OPS_CONFIG)
->>> +        return true;
->>> +    else
->>> +        return false;
->>> +}
->>> +
-
-[...]
+> Ben.
 
 WBR, Sergei
 
