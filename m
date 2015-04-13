@@ -1,7 +1,7 @@
-From: Tyler Baker <tyler.baker@linaro.org>
-Date: Sat, 11 Apr 2015 17:23:04 +0000
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Mon, 13 Apr 2015 13:42:46 +0000
 Subject: Re: [PATCH v5] ARM: smp: Only expose /sys/.../cpuX/online if hotpluggable
-Message-Id: <CANMBJr6UoH-dHKP32QEABXYx+hPoU81SJRH+KoUzMpXDU+P29g@mail.gmail.com>
+Message-Id: <20150413134246.GS12732@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1428705191-15670-1-git-send-email-sboyd@codeaurora.org>
 In-Reply-To: <1428705191-15670-1-git-send-email-sboyd@codeaurora.org>
@@ -10,7 +10,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 10 April 2015 at 15:33, Stephen Boyd <sboyd@codeaurora.org> wrote:
+On Fri, Apr 10, 2015 at 03:33:11PM -0700, Stephen Boyd wrote:
 > Writes to /sys/.../cpuX/online fail if we determine the platform
 > doesn't support hotplug for that CPU. Furthermore, if the cpu_die
 > op isn't specified the system hangs when we try to offline a CPU
@@ -18,7 +18,7 @@ On 10 April 2015 at 15:33, Stephen Boyd <sboyd@codeaurora.org> wrote:
 > stuff out before we make the sysfs nodes so that the online file
 > doesn't even exist if it isn't (at least sometimes) possible to
 > hotplug the CPU.
->
+> 
 > Add a new 'cpu_can_disable' op and repoint all 'cpu_disable'
 > implementations at it because all implementers use the op to
 > indicate if a CPU can be hotplugged or not in a static fashion.
@@ -31,7 +31,7 @@ On 10 April 2015 at 15:33, Stephen Boyd <sboyd@codeaurora.org> wrote:
 > we may indicate that all CPUs are hotpluggable but occasionally
 > we can't offline a CPU due to check_irq_vectors_for_cpu_disable()
 > failing to find a CPU to move vectors to.
->
+> 
 > Cc: Mark Rutland <mark.rutland@arm.com>
 > Cc: Nicolas Pitre <nico@linaro.org>
 > Cc: Dave Martin <Dave.Martin@arm.com>
@@ -42,282 +42,9 @@ On 10 April 2015 at 15:33, Stephen Boyd <sboyd@codeaurora.org> wrote:
 > Cc: Tyler Baker <tyler.baker@linaro.org>
 > Cc: Geert Uytterhoeven <geert@linux-m68k.org>
 > Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
-> ---
 
-Tested-by: Tyler Baker <tyler.baker@linaro.org>
+Let's see some more acks for this...
 
-I have tested v5 on top of next-20150410[0] and can confirm the build
-regression reported in v4 is resolved[1]. Additionally, 314 boot tests
-were performed[2] on arm, arm64 and x86 plaforms, no new regressions
-detected.
-
-I have executed the cpu-hotplug kselftest test case using the
-multi_v7_defconfig on an array of arm platforms. Platforms which do
-not support cpu hotplug show the behavior you would expect. The below
-result was executed on a sun9i-a80-optimus.
-
-Running tests in cpu-hotplug
-====================
-CPU online/offline summary:
-Cpus in online state: 0
-Cpus in offline state: 1-7
-Limited scope test: one hotplug cpu
-(leaves cpu in the original state):
-online to offline to online: cpu 0
-./cpu-on-off-test.sh: line 186: can't create
-/sys/devices/system/cpu/cpu0/online: Permission denied
-0: unexpected fail
-./cpu-on-off-test.sh: line 186: can't create
-/sys/devices/system/cpu/cpu0/online: Permission denied
-0: unexpected fail
-selftests: cpu-on-off-test.sh [XFAIL]
-
-Comparing this result to a tegra124-jetson-tk1 which supports cpu-hotplug.
-
-Running tests in cpu-hotplug
-====================
-CPU online/offline summary:
-Cpus in online state: 0-3
-Cpus in offline state: 0
-Limited scope test: one hotplug cpu
-(leaves cpu in the original state):
-online to offline to online: cpu 3
-[ 14.478074] CPU3: shutdown
-selftests: cpu-on-off-test.sh [PASS]
-
-Full list of kselftest cpu-hotplug results:
-
-sun9i-a80-optimus [XFAIL]
-sun9i-a80-cubieboard4 [XFAIL]
-sun7i-a20-cubietruck [PASS]
-tegra124-jetson-tk1 [PASS]
-exynos5800-peach-pi [PASS]
-exynos5422-odroidxu3 [XFAIL]
-exynos5250-arndale [PASS]
-exynos5250-snow [PASS]
-exynos5420-arndale-octa [PASS]
-exynos4412-odroidu3 [PASS]
-imx6q-cm-fx6 [PASS]
-imx6q-wandboard [PASS]
-imx6q-sabrelite [PASS]
-qcom-apq8084-ifc6540 [PASS]
-qcom-apq8064-ifc6410 [PASS]
-hip04-d01 [PASS]
-omap4-panda-es [PASS]
-am335x-boneblack [XFAIL]
-omap3-beagle-xm [XFAIL]
-ste-snowball [PASS
-zynq-parallella [PASS]
-(qemu) vexpress-v2p-ca15-tc1 [XFAIL]
-(qemu) vexpress-v2p-ca15_a7 [PASS]
-(qemu) vexpress-v2p-ca9 [XFAIL]
-
->
-> Changes since v4:
->  * Fix build error on !SMP (Tyler Baker)
->  * Picked up Simon's ack/tested-by
->
-> Changes since v3:
->  * Return bool instead of int from 'cpu_can_disable' op
->
-> Changes since v2:
->  * Left cpu_disable op in place
->  * Split out shmobile function deletion
->
->  arch/arm/common/mcpm_platsmp.c       | 12 ++++--------
->  arch/arm/include/asm/smp.h           |  1 +
->  arch/arm/include/asm/smp_plat.h      |  9 +++++++++
->  arch/arm/kernel/setup.c              |  2 +-
->  arch/arm/kernel/smp.c                | 15 ++++++++++++++-
->  arch/arm/mach-shmobile/common.h      |  2 +-
->  arch/arm/mach-shmobile/platsmp.c     |  4 ++--
->  arch/arm/mach-shmobile/smp-r8a7790.c |  2 +-
->  arch/arm/mach-shmobile/smp-r8a7791.c |  2 +-
->  arch/arm/mach-shmobile/smp-sh73a0.c  |  2 +-
->  10 files changed, 35 insertions(+), 16 deletions(-)
->
-> diff --git a/arch/arm/common/mcpm_platsmp.c b/arch/arm/common/mcpm_platsmp.c
-> index 92e54d7c6f46..2b25b6038f66 100644
-> --- a/arch/arm/common/mcpm_platsmp.c
-> +++ b/arch/arm/common/mcpm_platsmp.c
-> @@ -65,14 +65,10 @@ static int mcpm_cpu_kill(unsigned int cpu)
->         return !mcpm_wait_for_cpu_powerdown(pcpu, pcluster);
->  }
->
-> -static int mcpm_cpu_disable(unsigned int cpu)
-> +static bool mcpm_cpu_can_disable(unsigned int cpu)
->  {
-> -       /*
-> -        * We assume all CPUs may be shut down.
-> -        * This would be the hook to use for eventual Secure
-> -        * OS migration requests as described in the PSCI spec.
-> -        */
-> -       return 0;
-> +       /* We assume all CPUs may be shut down. */
-> +       return true;
->  }
->
->  static void mcpm_cpu_die(unsigned int cpu)
-> @@ -92,7 +88,7 @@ static struct smp_operations __initdata mcpm_smp_ops = {
->         .smp_secondary_init     = mcpm_secondary_init,
->  #ifdef CONFIG_HOTPLUG_CPU
->         .cpu_kill               = mcpm_cpu_kill,
-> -       .cpu_disable            = mcpm_cpu_disable,
-> +       .cpu_can_disable        = mcpm_cpu_can_disable,
->         .cpu_die                = mcpm_cpu_die,
->  #endif
->  };
-> diff --git a/arch/arm/include/asm/smp.h b/arch/arm/include/asm/smp.h
-> index 18f5a554134f..2563453d7b37 100644
-> --- a/arch/arm/include/asm/smp.h
-> +++ b/arch/arm/include/asm/smp.h
-> @@ -104,6 +104,7 @@ struct smp_operations {
->  #ifdef CONFIG_HOTPLUG_CPU
->         int  (*cpu_kill)(unsigned int cpu);
->         void (*cpu_die)(unsigned int cpu);
-> +       bool  (*cpu_can_disable)(unsigned int cpu);
->         int  (*cpu_disable)(unsigned int cpu);
->  #endif
->  #endif
-> diff --git a/arch/arm/include/asm/smp_plat.h b/arch/arm/include/asm/smp_plat.h
-> index 993e5224d8f7..f9080717fc88 100644
-> --- a/arch/arm/include/asm/smp_plat.h
-> +++ b/arch/arm/include/asm/smp_plat.h
-> @@ -107,4 +107,13 @@ static inline u32 mpidr_hash_size(void)
->  extern int platform_can_secondary_boot(void);
->  extern int platform_can_cpu_hotplug(void);
->
-> +#ifdef CONFIG_HOTPLUG_CPU
-> +extern int platform_can_hotplug_cpu(unsigned int cpu);
-> +#else
-> +static inline int platform_can_hotplug_cpu(unsigned int cpu)
-> +{
-> +       return 0;
-> +}
-> +#endif
-> +
->  #endif
-> diff --git a/arch/arm/kernel/setup.c b/arch/arm/kernel/setup.c
-> index 6c777e908a24..955d45d0f70c 100644
-> --- a/arch/arm/kernel/setup.c
-> +++ b/arch/arm/kernel/setup.c
-> @@ -992,7 +992,7 @@ static int __init topology_init(void)
->
->         for_each_possible_cpu(cpu) {
->                 struct cpuinfo_arm *cpuinfo = &per_cpu(cpu_data, cpu);
-> -               cpuinfo->cpu.hotpluggable = 1;
-> +               cpuinfo->cpu.hotpluggable = platform_can_hotplug_cpu(cpu);
->                 register_cpu(&cpuinfo->cpu, cpu);
->         }
->
-> diff --git a/arch/arm/kernel/smp.c b/arch/arm/kernel/smp.c
-> index cca5b8758185..8c834ecc09db 100644
-> --- a/arch/arm/kernel/smp.c
-> +++ b/arch/arm/kernel/smp.c
-> @@ -173,13 +173,26 @@ static int platform_cpu_disable(unsigned int cpu)
->         if (smp_ops.cpu_disable)
->                 return smp_ops.cpu_disable(cpu);
->
-> +       return 0;
-> +}
-> +
-> +int platform_can_hotplug_cpu(unsigned int cpu)
-> +{
-> +       /* cpu_die must be specified to support hotplug */
-> +       if (!smp_ops.cpu_die)
-> +               return 0;
-> +
-> +       if (smp_ops.cpu_can_disable)
-> +               return smp_ops.cpu_can_disable(cpu);
-> +
->         /*
->          * By default, allow disabling all CPUs except the first one,
->          * since this is special on a lot of platforms, e.g. because
->          * of clock tick interrupts.
->          */
-> -       return cpu = 0 ? -EPERM : 0;
-> +       return cpu != 0;
->  }
-> +
->  /*
->   * __cpu_disable runs on the processor to be shutdown.
->   */
-> diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
-> index afc60bad6fd6..f2c4bf437ea7 100644
-> --- a/arch/arm/mach-shmobile/common.h
-> +++ b/arch/arm/mach-shmobile/common.h
-> @@ -13,7 +13,7 @@ extern void shmobile_smp_boot(void);
->  extern void shmobile_smp_sleep(void);
->  extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
->                               unsigned long arg);
-> -extern int shmobile_smp_cpu_disable(unsigned int cpu);
-> +extern bool shmobile_smp_cpu_can_disable(unsigned int cpu);
->  extern void shmobile_invalidate_start(void);
->  extern void shmobile_boot_scu(void);
->  extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
-> diff --git a/arch/arm/mach-shmobile/platsmp.c b/arch/arm/mach-shmobile/platsmp.c
-> index 3923e09e966d..b23378f3d7e1 100644
-> --- a/arch/arm/mach-shmobile/platsmp.c
-> +++ b/arch/arm/mach-shmobile/platsmp.c
-> @@ -31,8 +31,8 @@ void shmobile_smp_hook(unsigned int cpu, unsigned long fn, unsigned long arg)
->  }
->
->  #ifdef CONFIG_HOTPLUG_CPU
-> -int shmobile_smp_cpu_disable(unsigned int cpu)
-> +bool shmobile_smp_cpu_can_disable(unsigned int cpu)
->  {
-> -       return 0; /* Hotplug of any CPU is supported */
-> +       return true; /* Hotplug of any CPU is supported */
->  }
->  #endif
-> diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
-> index 930f45cbc08a..947e437cab68 100644
-> --- a/arch/arm/mach-shmobile/smp-r8a7790.c
-> +++ b/arch/arm/mach-shmobile/smp-r8a7790.c
-> @@ -64,7 +64,7 @@ struct smp_operations r8a7790_smp_ops __initdata = {
->         .smp_prepare_cpus       = r8a7790_smp_prepare_cpus,
->         .smp_boot_secondary     = shmobile_smp_apmu_boot_secondary,
->  #ifdef CONFIG_HOTPLUG_CPU
-> -       .cpu_disable            = shmobile_smp_cpu_disable,
-> +       .cpu_can_disable        = shmobile_smp_cpu_can_disable,
->         .cpu_die                = shmobile_smp_apmu_cpu_die,
->         .cpu_kill               = shmobile_smp_apmu_cpu_kill,
->  #endif
-> diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
-> index 5e2d1db79afa..b2508c0d276b 100644
-> --- a/arch/arm/mach-shmobile/smp-r8a7791.c
-> +++ b/arch/arm/mach-shmobile/smp-r8a7791.c
-> @@ -58,7 +58,7 @@ struct smp_operations r8a7791_smp_ops __initdata = {
->         .smp_prepare_cpus       = r8a7791_smp_prepare_cpus,
->         .smp_boot_secondary     = r8a7791_smp_boot_secondary,
->  #ifdef CONFIG_HOTPLUG_CPU
-> -       .cpu_disable            = shmobile_smp_cpu_disable,
-> +       .cpu_can_disable        = shmobile_smp_cpu_can_disable,
->         .cpu_die                = shmobile_smp_apmu_cpu_die,
->         .cpu_kill               = shmobile_smp_apmu_cpu_kill,
->  #endif
-> diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-> index 2106d6b76a06..ae7c764fd6b4 100644
-> --- a/arch/arm/mach-shmobile/smp-sh73a0.c
-> +++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-> @@ -68,7 +68,7 @@ struct smp_operations sh73a0_smp_ops __initdata = {
->         .smp_prepare_cpus       = sh73a0_smp_prepare_cpus,
->         .smp_boot_secondary     = sh73a0_boot_secondary,
->  #ifdef CONFIG_HOTPLUG_CPU
-> -       .cpu_disable            = shmobile_smp_cpu_disable,
-> +       .cpu_can_disable        = shmobile_smp_cpu_can_disable,
->         .cpu_die                = shmobile_smp_scu_cpu_die,
->         .cpu_kill               = shmobile_smp_scu_cpu_kill,
->  #endif
-> --
-> The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum,
-> a Linux Foundation Collaborative Project
->
-
-Cheers,
-
-Tyler
-
-[0] https://git.linaro.org/people/tyler.baker/linux.git/shortlog/refs/heads/to-build
-[1] http://kernelci.org/build/tbaker/kernel/v4.0-rc7-10845-g43b069424ab4/
-[2] http://kernelci.org/boot/all/job/tbaker/kernel/v4.0-rc7-10845-g43b069424ab4/
+-- 
+FTTC broadband for 0.8mile line: currently at 10.5Mbps down 400kbps up
+according to speedtest.net.
