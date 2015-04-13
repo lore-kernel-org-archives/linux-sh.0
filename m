@@ -1,72 +1,123 @@
-From: Rajendra Nayak <rnayak@codeaurora.org>
-Date: Tue, 14 Apr 2015 13:46:30 +0000
-Subject: [RFC 2/5] arm: keystone: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
-Message-Id: <1429018473-21865-3-git-send-email-rnayak@codeaurora.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 13 Apr 2015 18:39:47 +0000
+Subject: [RFC/PATCH v2 5/5] drm/rcar-du: Restart the DU group when a plane source changes
+Message-Id: <1428950387-6913-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1429018473-21865-1-git-send-email-rnayak@codeaurora.org>
-In-Reply-To: <1429018473-21865-1-git-send-email-rnayak@codeaurora.org>
+References: <1428950387-6913-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1428950387-6913-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: rjw@rjwysocki.net, ssantosh@kernel.org, tony@atomide.com, khilman@deeprootsystems.com, nsekhar@ti.com, magnus.damm@gmail.com
-Cc: linux-arm-msm@vger.kernel.org, inux-arm-kernel@lists.infradead.org, linux-pm@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org, Rajendra Nayak <rnayak@codeaurora.org>
+To: dri-devel@lists.freedesktop.org
+Cc: Daniel Vetter <daniel.vetter@intel.com>, linux-api@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-media@vger.kernel.org
 
-USE_PM_CLK_RUNTIME_OPS is introduced so we don't repeat the same code
-to do runtime_suspend and runtime_resume across users of PM clocks.
-Use it to remove the boilerplate code.
+Plane sources are configured by the VSPS bit in the PnDDCR4 register.
+Although the datasheet states that the bit is updated during vertical
+blanking, it seems that updates only occur when the DU group is held in
+reset through the DSYSR.DRES bit. Restart the group if the source
+changes.
 
-Signed-off-by: Rajendra Nayak <rnayak@codeaurora.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-keystone/pm_domain.c | 33 +--------------------------------
- 1 file changed, 1 insertion(+), 32 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c  | 10 ++++++++--
+ drivers/gpu/drm/rcar-du/rcar_du_group.c |  2 ++
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 22 ++++++++++++++++++++--
+ drivers/gpu/drm/rcar-du/rcar_du_plane.h |  1 +
+ 4 files changed, 31 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-keystone/pm_domain.c b/arch/arm/mach-keystone/pm_domain.c
-index 41bebfd..edea697 100644
---- a/arch/arm/mach-keystone/pm_domain.c
-+++ b/arch/arm/mach-keystone/pm_domain.c
-@@ -19,40 +19,9 @@
- #include <linux/clk-provider.h>
- #include <linux/of.h>
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index 7d0b8ef9bea2..969d49ab0d09 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -249,6 +249,8 @@ static void rcar_du_crtc_update_planes(struct rcar_du_crtc *rcrtc)
+ 		}
+ 	}
  
--#ifdef CONFIG_PM
--static int keystone_pm_runtime_suspend(struct device *dev)
--{
--	int ret;
--
--	dev_dbg(dev, "%s\n", __func__);
--
--	ret = pm_generic_runtime_suspend(dev);
--	if (ret)
--		return ret;
--
--	ret = pm_clk_suspend(dev);
--	if (ret) {
--		pm_generic_runtime_resume(dev);
--		return ret;
--	}
--
--	return 0;
--}
--
--static int keystone_pm_runtime_resume(struct device *dev)
--{
--	dev_dbg(dev, "%s\n", __func__);
--
--	pm_clk_resume(dev);
--
--	return pm_generic_runtime_resume(dev);
--}
--#endif
--
- static struct dev_pm_domain keystone_pm_domain = {
- 	.ops = {
--		SET_RUNTIME_PM_OPS(keystone_pm_runtime_suspend,
--				   keystone_pm_runtime_resume, NULL)
-+		USE_PM_CLK_RUNTIME_OPS
- 		USE_PLATFORM_PM_SLEEP_OPS
- 	},
- };
++	mutex_lock(&rcrtc->group->lock);
++
+ 	/* Select display timing and dot clock generator 2 for planes associated
+ 	 * with superposition controller 2.
+ 	 */
+@@ -260,15 +262,19 @@ static void rcar_du_crtc_update_planes(struct rcar_du_crtc *rcrtc)
+ 		 * split, or through a module parameter). Flicker would then
+ 		 * occur only if we need to break the pre-association.
+ 		 */
+-		mutex_lock(&rcrtc->group->lock);
+ 		if (rcar_du_group_read(rcrtc->group, DPTSR) != dptsr) {
+ 			rcar_du_group_write(rcrtc->group, DPTSR, dptsr);
+ 			if (rcrtc->group->used_crtcs)
+ 				rcar_du_group_restart(rcrtc->group);
+ 		}
+-		mutex_unlock(&rcrtc->group->lock);
+ 	}
+ 
++	/* Restart the group if plane sources have changed. */
++	if (rcrtc->group->planes.need_restart)
++		rcar_du_group_restart(rcrtc->group);
++
++	mutex_unlock(&rcrtc->group->lock);
++
+ 	rcar_du_group_write(rcrtc->group, rcrtc->index % 2 ? DS2PR : DS1PR,
+ 			    dspr);
+ }
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+index 71f50bf45581..101997e6e531 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+@@ -154,6 +154,8 @@ void rcar_du_group_start_stop(struct rcar_du_group *rgrp, bool start)
+ 
+ void rcar_du_group_restart(struct rcar_du_group *rgrp)
+ {
++	rgrp->planes.need_restart = false;
++
+ 	__rcar_du_group_start_stop(rgrp, false);
+ 	__rcar_du_group_start_stop(rgrp, true);
+ }
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index 07802639ac99..0bf2aaaf91e6 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -357,9 +357,27 @@ static void rcar_du_plane_atomic_update(struct drm_plane *plane,
+ 					struct drm_plane_state *old_state)
+ {
+ 	struct rcar_du_plane *rplane = to_rcar_plane(plane);
++	struct rcar_du_plane_state *old_rstate;
++	struct rcar_du_plane_state *new_rstate;
+ 
+-	if (plane->state->crtc)
+-		rcar_du_plane_setup(rplane);
++	if (!plane->state->crtc)
++		return;
++
++	rcar_du_plane_setup(rplane);
++
++	/* Check whether the source has changed from memory to live source or
++	 * from live source to memory. The source has been configured by the
++	 * VSPS bit in the PnDDCR4 register. Although the datasheet states that
++	 * the bit is updated during vertical blanking, it seems that updates
++	 * only occur when the DU group is held in reset through the DSYSR.DRES
++	 * bit. We thus need to restart the group if the source changes.
++	 */
++	old_rstate = to_rcar_du_plane_state(old_state);
++	new_rstate = to_rcar_du_plane_state(plane->state);
++
++	if ((old_rstate->source = RCAR_DU_PLANE_MEMORY) !+	    (new_rstate->source = RCAR_DU_PLANE_MEMORY))
++		rplane->group->planes.need_restart = true;
+ }
+ 
+ static const struct drm_plane_helper_funcs rcar_du_plane_helper_funcs = {
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.h b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+index 9a6132899d59..694b44c151b6 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+@@ -47,6 +47,7 @@ static inline struct rcar_du_plane *to_rcar_plane(struct drm_plane *plane)
+ 
+ struct rcar_du_planes {
+ 	struct rcar_du_plane planes[RCAR_DU_NUM_KMS_PLANES];
++	bool need_restart;
+ 
+ 	struct drm_property *alpha;
+ 	struct drm_property *colorkey;
 -- 
-QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a member
-of Code Aurora Forum, hosted by The Linux Foundation
+2.0.5
 
