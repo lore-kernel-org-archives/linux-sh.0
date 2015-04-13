@@ -1,44 +1,36 @@
-From: Russell King <rmk+kernel@arm.linux.org.uk>
-Date: Fri, 03 Apr 2015 17:13:34 +0000
-Subject: [PATCH 14/14] clk: s2mps11: use clkdev_create()
-Message-Id: <E1Ye59y-0001Bq-DQ@rmk-PC.arm.linux.org.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 13 Apr 2015 10:59:46 +0000
+Subject: Re: renesas-drivers-2015-03-16-v3.19-rc4
+Message-Id: <CAMuHMdWp3QstiDkQAiAjbHY=Gvqp2DHuzKtHF5duCSQKznwKuQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
-In-Reply-To: <20150403171149.GC13898@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>
+To: linux-sh@vger.kernel.org
 
-clkdev_create() is a shorter way to write clkdev_alloc() followed by
-clkdev_add().  Use this instead.
+On Mon, Mar 16, 2015 at 11:22 AM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
+> I've pushed renesas-drivers-2015-03-16-v3.19-rc4 to
 
-Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
----
- drivers/clk/clk-s2mps11.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+Looks like no one noticed this was supposed to be
+renesas-drivers-2015-03-16-v4.0-rc4? I've fixed the tag.
 
-diff --git a/drivers/clk/clk-s2mps11.c b/drivers/clk/clk-s2mps11.c
-index bfa1e64e267d..9b13a303d3f8 100644
---- a/drivers/clk/clk-s2mps11.c
-+++ b/drivers/clk/clk-s2mps11.c
-@@ -242,14 +242,12 @@ static int s2mps11_clk_probe(struct platform_device *pdev)
- 			goto err_reg;
- 		}
- 
--		s2mps11_clk->lookup = clkdev_alloc(s2mps11_clk->clk,
-+		s2mps11_clk->lookup = clkdev_create(s2mps11_clk->clk,
- 					s2mps11_name(s2mps11_clk), NULL);
- 		if (!s2mps11_clk->lookup) {
- 			ret = -ENOMEM;
- 			goto err_lup;
- 		}
--
--		clkdev_add(s2mps11_clk->lookup);
- 	}
- 
- 	for (i = 0; i < S2MPS11_CLKS_NUM; i++) {
--- 
-1.8.3.1
+> https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+> This tree is meant to ease development of platform support and drivers for
+> Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next
+> branches of various subsystem trees and (b) branches with driver code
+> submitted or planned for submission to maintainers into the development
+> branch of Simon Horman's renesas.git tree.
+>
+> Today's version is based on renesas-devel-20150316-v4.0-rc4.
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
