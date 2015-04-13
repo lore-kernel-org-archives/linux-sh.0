@@ -1,47 +1,74 @@
-From: David Miller <davem@davemloft.net>
-Date: Mon, 13 Apr 2015 20:32:59 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 13 Apr 2015 20:49:40 +0000
 Subject: Re: [PATCH v2] Renesas Ethernet AVB driver
-Message-Id: <20150413.163259.2190743529898270341.davem@davemloft.net>
+Message-Id: <552C2BE4.7010804@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1453213.DoV6WFn45r@wasted.cogentembedded.com>
-In-Reply-To: <1453213.DoV6WFn45r@wasted.cogentembedded.com>
+References: <1453213.DoV6WFn45r@wasted.cogentembedded.com> <20150413.163259.2190743529898270341.davem@davemloft.net>
+In-Reply-To: <20150413.163259.2190743529898270341.davem@davemloft.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: David Miller <davem@davemloft.net>
 Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, richardcochran@gmail.com, linux-sh@vger.kernel.org
 
-RnJvbTogU2VyZ2VpIFNodHlseW92IDxzZXJnZWkuc2h0eWx5b3ZAY29nZW50ZW1iZWRkZWQuY29t
-Pg0KRGF0ZTogTW9uLCAxMyBBcHIgMjAxNSAwMTozNjo1NiArMDMwMA0KDQo+IEV0aGVybmV0IEFW
-QiBpbmNsdWRlcyBhbiBHaWdhYml0IEV0aGVybmV0IGNvbnRyb2xsZXIgKEUtTUFDKSB0aGF0IGlz
-IGJhc2ljYWxseQ0KPiBjb21wYXRpYmxlIHdpdGggU3VwZXJIIEdpZ2FiaXQgRXRoZXJuZXQgRS1N
-QUMpLiBFdGhlcm5ldCBBVkIgIGhhcyBhIGRlZGljYXRlZA0KPiBkaXJlY3QgbWVtb3J5IGFjY2Vz
-cyBjb250cm9sbGVyIChBVkItRE1BQykgdGhhdCBpcyBhIG5ldyBkZXNpZ24gY29tcGFyZWQgdG8g
-dGhlDQo+IFN1cGVySCBFLURNQUMuIFRoZSBBVkItRE1BQyBpcyBjb21wbGlhbnQgd2l0aCAzIHN0
-YW5kYXJkcyBmb3JtdWxhdGVkIGZvciBJRUVFDQo+IDgwMi4xQkE6IElFRUUgODAyLjFBUyB0aW1p
-bmcgYW5kIHN5bmNocm9uaXphdGlvbiBwcm90b2NvbCwgSUVFRSA4MDIuMVFhdiByZWFsLQ0KPiB0
-aW1lIHRyYW5zZmVyLCBhbmQgdGhlIElFRUUgODAyLjFRYXQgc3RyZWFtIHJlc2VydmF0aW9uIHBy
-b3RvY29sLg0KPiANCj4gTm90IG9ubHkgdGhlIEV0aGVybmV0IGRyaXZlciBpcyBlbmNsb3NlZCwg
-dGhlcmUgaXMgYWxzbyB0aGUgUFRQIGRyaXZlciBpbg0KPiB0aGUgc2FtZSBmaWxlLiAgVGhlc2Ug
-ZHJpdmVycyBvbmx5IHN1cHBvcnQgZGV2aWNlIHRyZWUgcHJvYmluZywgc28gdGhlIGJpbmRpbmcN
-Cj4gZG9jdW1lbnQgaXMgaW5jbHVkZWQgaW4gdGhpcyBwYXRjaC4NCj4gDQo+IEJhc2VkIG9uIHRo
-ZSBvcmlnaW5hbCBwYXRjaGVzIGJ5IE1pdHN1aGlybyBLaW11cmEgKEV0aGVybmV0IGRyaXZlcikg
-YW5kIE1hc2FydQ0KPiBOYWdhaSAoUFRQIGRyaXZlcikuDQo+IA0KPiBTaWduZWQtb2ZmLWJ5OiBN
-aXRzdWhpcm8gS2ltdXJhIDxtaXRzdWhpcm8ua2ltdXJhLmtjQHJlbmVzYXMuY29tPg0KPiBTaWdu
-ZWQtb2ZmLWJ5OiBNYXNhcnUgTmFnYWkgPG1hc2FydS5uYWdhaS52eEByZW5lc2FzLmNvbT4NCj4g
-U2lnbmVkLW9mZi1ieTogU2VyZ2VpIFNodHlseW92IDxzZXJnZWkuc2h0eWx5b3ZAY29nZW50ZW1i
-ZWRkZWQuY29tPg0KDQpEb2Vzbid0IGJ1aWxkIHByb3Blcmx5IG9uIHg4Ni02NDoNCg0KICBDQyBb
-TV0gIGRyaXZlcnMvbmV0L2V0aGVybmV0L3JlbmVzYXMvcmF2Yi5vDQpkcml2ZXJzL25ldC9ldGhl
-cm5ldC9yZW5lc2FzL3JhdmIuYzogSW4gZnVuY3Rpb24goXJhdmJfc2V0X2J1ZmZlcl9hbGlnbqI6
-DQpkcml2ZXJzL25ldC9ldGhlcm5ldC9yZW5lc2FzL3JhdmIuYzo5NTU6MTY6IHdhcm5pbmc6IGNh
-c3QgZnJvbSBwb2ludGVyIHRvIGludGVnZXIgb2YgZGlmZmVyZW50IHNpemUgWy1XcG9pbnRlci10
-by1pbnQtY2FzdF0NCiAgdTMyIHJlc2VydmUgPSAodTMyKXNrYi0+ZGF0YSAmIChSQVZCX0FMSUdO
-IC0gMSk7DQogICAgICAgICAgICAgICAgXg0KZHJpdmVycy9uZXQvZXRoZXJuZXQvcmVuZXNhcy9y
-YXZiLmM6IEF0IHRvcCBsZXZlbDoNCmRyaXZlcnMvbmV0L2V0aGVybmV0L3JlbmVzYXMvcmF2Yi5j
-OjI3NzE6MjogZXJyb3I6IHVua25vd24gZmllbGQgoWdldHRpbWWiIHNwZWNpZmllZCBpbiBpbml0
-aWFsaXplcg0KICAuZ2V0dGltZSA9IHJhdmJfcHRwX2dldHRpbWUsDQogIF4NCmRyaXZlcnMvbmV0
-L2V0aGVybmV0L3JlbmVzYXMvcmF2Yi5jOjI3NzI6MjogZXJyb3I6IHVua25vd24gZmllbGQgoXNl
-dHRpbWWiIHNwZWNpZmllZCBpbiBpbml0aWFsaXplcg0KICAuc2V0dGltZSA9IHJhdmJfcHRwX3Nl
-dHRpbWUsDQogIF4NCg0KSXQgaXMgbm90IGFjY2VwdGFibGUgdG8gZml4IHRoaXMgYnkgcmVtb3Zp
-bmcgQ09NUElMRV9URVNUIGZyb20gdGhlIEtjb25maWcNCmRlcGVuZGVuY2llcyBvciBzb21ldGhp
-bmcgbGlrZSB0aGF0Lg0KDQpUaGFua3MuDQo
+Hello.
+
+On 04/13/2015 11:32 PM, David Miller wrote:
+
+>> Ethernet AVB includes an Gigabit Ethernet controller (E-MAC) that is bas=
+ically
+>> compatible with SuperH Gigabit Ethernet E-MAC). Ethernet AVB  has a dedi=
+cated
+>> direct memory access controller (AVB-DMAC) that is a new design compared=
+ to the
+>> SuperH E-DMAC. The AVB-DMAC is compliant with 3 standards formulated for=
+ IEEE
+>> 802.1BA: IEEE 802.1AS timing and synchronization protocol, IEEE 802.1Qav=
+ real-
+>> time transfer, and the IEEE 802.1Qat stream reservation protocol.
+
+>> Not only the Ethernet driver is enclosed, there is also the PTP driver in
+>> the same file.  These drivers only support device tree probing, so the b=
+inding
+>> document is included in this patch.
+
+>> Based on the original patches by Mitsuhiro Kimura (Ethernet driver) and =
+Masaru
+>> Nagai (PTP driver).
+
+>> Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+>> Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+> Doesn't build properly on x86-64:
+
+>    CC [M]  drivers/net/ethernet/renesas/ravb.o
+> drivers/net/ethernet/renesas/ravb.c: In function =A1ravb_set_buffer_align=
+=A2:
+> drivers/net/ethernet/renesas/ravb.c:955:16: warning: cast from pointer to=
+ integer of different size [-Wpointer-to-int-cast]
+>    u32 reserve =3D (u32)skb->data & (RAVB_ALIGN - 1);
+>                  ^
+> drivers/net/ethernet/renesas/ravb.c: At top level:
+> drivers/net/ethernet/renesas/ravb.c:2771:2: error: unknown field =A1getti=
+me=A2 specified in initializer
+>    .gettime =3D ravb_ptp_gettime,
+>    ^
+> drivers/net/ethernet/renesas/ravb.c:2772:2: error: unknown field =A1setti=
+me=A2 specified in initializer
+>    .settime =3D ravb_ptp_settime,
+>    ^
+
+    So, timespec64 patches have been merged to net-next... In my haste I ju=
+st=20
+forgot to compile-test the driver in net-next, sorry about that. :-<
+
+> It is not acceptable to fix this by removing COMPILE_TEST from the Kconfig
+> dependencies or something like that.
+
+    It's also impossible as the errors themselves don't depend on ARCH. :-)
+
+> Thanks.
+
+WBR, Sergei
+
