@@ -1,50 +1,43 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Mon, 13 Apr 2015 22:31:08 +0000
+From: Lino Sanfilippo <LinoSanfilippo@gmx.de>
+Date: Mon, 13 Apr 2015 22:53:43 +0000
 Subject: Re: [PATCH resend] Renesas Ethernet AVB driver
-Message-Id: <1428964268.8341.46.camel@xylophone.i.decadent.org.uk>
+Message-Id: <552C48F7.5030901@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2926619.fiYHPz1IBk@wasted.cogentembedded.com>
-	 <1427982999.18722.35.camel@xylophone.i.decadent.org.uk>
-	 <552C2849.2080503@cogentembedded.com> <552C3F9C.5070200@gmx.de>
-In-Reply-To: <552C3F9C.5070200@gmx.de>
+References: <2926619.fiYHPz1IBk@wasted.cogentembedded.com>	 <1427982999.18722.35.camel@xylophone.i.decadent.org.uk>	 <552C2849.2080503@cogentembedded.com> <552C3F9C.5070200@gmx.de> <1428964268.8341.46.camel@xylophone.i.decadent.org.uk>
+In-Reply-To: <1428964268.8341.46.camel@xylophone.i.decadent.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Lino Sanfilippo <LinoSanfilippo@gmx.de>
+To: Ben Hutchings <ben.hutchings@codethink.co.uk>
 Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Tue, 2015-04-14 at 00:13 +0200, Lino Sanfilippo wrote:
-> Hi,
+On 14.04.2015 00:31, Ben Hutchings wrote:
+
+>> >> This driver looks somewhat similar to sh-eth, but lacks some of the
+>> >> recent bug fixes made to that.  At least commit 283e38db65e7 ("sh_eth:
+>> >> Fix serialisation of interrupt disable with interrupt & NAPI handler")
+>> >> appears to be applicable, but there are probably others.
+>> > 
+>> >     I suspect this issue applies to many drivers...
+>> >     I couldn't reproduce the bug that patch was fixing, so left this fix out 
+>> > for the time being. Others cases were fixed (if applicable).
+>> 
+>> Maybe its just harder to trigger but it indeed looks similar to what Ben
+>> has fixed for sh-eth. I wonder if that shutdown flag in the fix is
+>> really needed though. IMHO it should be save if we simply call
+>> napi_disable first, then disable irqs on hardware and finally
+>> synchronize_irq...
 > 
-> On 13.04.2015 22:34, Sergei Shtylyov wrote:
-> > Hello.
-> > 
-> > On 04/02/2015 04:56 PM, Ben Hutchings wrote:
-> > 
-> >> This driver looks somewhat similar to sh-eth, but lacks some of the
-> >> recent bug fixes made to that.  At least commit 283e38db65e7 ("sh_eth:
-> >> Fix serialisation of interrupt disable with interrupt & NAPI handler")
-> >> appears to be applicable, but there are probably others.
-> > 
-> >     I suspect this issue applies to many drivers...
-> >     I couldn't reproduce the bug that patch was fixing, so left this fix out 
-> > for the time being. Others cases were fixed (if applicable).
+> In sh_eth: if we call napi_disable() first, EESR_RX_CHECK can still be
+> set and nothing will clear it.  If only one CPU is online this can hard
+> hang the system.  Please trust that I did consider and rule out the
+> simpler approaches first.
 > 
-> Maybe its just harder to trigger but it indeed looks similar to what Ben
-> has fixed for sh-eth. I wonder if that shutdown flag in the fix is
-> really needed though. IMHO it should be save if we simply call
-> napi_disable first, then disable irqs on hardware and finally
-> synchronize_irq...
 
-In sh_eth: if we call napi_disable() first, EESR_RX_CHECK can still be
-set and nothing will clear it.  If only one CPU is online this can hard
-hang the system.  Please trust that I did consider and rule out the
-simpler approaches first.
+The idea was to check the return value from napi_schedule_prep() and in
+case it returns "false" use this as an indication for a shutdown. In
+case of sh_eth this would be sh_eth_write(ndev, 0, EESIPR) for example.
 
-I don't have the full documentation for the EtherAVB block, so I don't
-know how its programming model differs from the other Ethernet DMA
-engines.  It's possible that a simpler approach will work in ravb.
-
-Ben.
+Lino
 
 
