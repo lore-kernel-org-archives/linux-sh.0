@@ -1,149 +1,71 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 30 Apr 2015 16:21:32 +0000
-Subject: [PATCH 08/13] serial: sh-sci: Use the correct register for overrun checks
-Message-Id: <1430410897-12770-9-git-send-email-geert+renesas@glider.be>
+From: Rajendra Nayak <rnayak@codeaurora.org>
+Date: Tue, 14 Apr 2015 13:46:32 +0000
+Subject: [RFC 4/5] arm: davinci: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
+Message-Id: <1429018473-21865-5-git-send-email-rnayak@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
+References: <1429018473-21865-1-git-send-email-rnayak@codeaurora.org>
+In-Reply-To: <1429018473-21865-1-git-send-email-rnayak@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: rjw@rjwysocki.net, ssantosh@kernel.org, tony@atomide.com, khilman@deeprootsystems.com, nsekhar@ti.com, magnus.damm@gmail.com
+Cc: linux-arm-msm@vger.kernel.org, inux-arm-kernel@lists.infradead.org, linux-pm@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org, Rajendra Nayak <rnayak@codeaurora.org>
 
-The various SCI implementations use 3 different methods to signal
-overrun errors:
-  - Bit SCI_ORER in register SCxSR on SCI,
-  - Bit SCIFA_ORER in register SCxSR on SCIFA and SCIFB, and SCIF on
-    SH7705/SH7720/SH7721,
-  - Bit SCLSR_ORER in (optional!) register SCLSR on (H)SCIF.
+USE_PM_CLK_RUNTIME_OPS is introduced so we don't repeat the same code
+to do runtime_suspend and runtime_resume across users of PM clocks.
+Use it to remove the boilerplate code.
 
-However:
-  1. sci_handle_fifo_overrun()
-       a. handles (H)SCIF and SCIFA/SCIFB only,
-       b. treats SCIF on SH7705/SH7720/SH7721 incorrectly,
-  2. sci_mpxed_interrupt()
-       a. treats SCIF on SH7705/SH7720/SH7721 incorrectly,
-       b. ignores that not all SCIFs have the SCLSR register, causing
-	  "Invalid register access" WARN()ings.
-
-To fix the above:
-  1. Determine and store the correct register enum during
-     initialization,
-  2. Replace the duplicated buggy switch statements by using the stored
-     register enum,
-  3. Add the missing existence check to  sci_mpxed_interrupt().
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Rajendra Nayak <rnayak@codeaurora.org>
 ---
- drivers/tty/serial/sh-sci.c | 40 +++++++++++++++-------------------------
- 1 file changed, 15 insertions(+), 25 deletions(-)
+ arch/arm/mach-davinci/pm_domain.c | 32 +-------------------------------
+ 1 file changed, 1 insertion(+), 31 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 83c46e1581590401..b636c53a1e5b3866 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -81,6 +81,7 @@ struct sci_port {
+diff --git a/arch/arm/mach-davinci/pm_domain.c b/arch/arm/mach-davinci/pm_domain.c
+index 641edc3..78eac2c 100644
+--- a/arch/arm/mach-davinci/pm_domain.c
++++ b/arch/arm/mach-davinci/pm_domain.c
+@@ -14,39 +14,9 @@
+ #include <linux/pm_clock.h>
+ #include <linux/platform_device.h>
  
- 	/* Platform configuration */
- 	struct plat_sci_port	*cfg;
-+	unsigned int		overrun_reg;
- 	unsigned int		overrun_mask;
- 	unsigned int		error_mask;
- 	unsigned int		sampling_rate;
-@@ -866,30 +867,17 @@ static int sci_handle_fifo_overrun(struct uart_port *port)
- 	struct tty_port *tport = &port->state->port;
- 	struct sci_port *s = to_sci_port(port);
- 	struct plat_sci_reg *reg;
--	int copied = 0, offset;
-+	int copied = 0;
- 	u16 status;
- 
--	switch (port->type) {
--	case PORT_SCIF:
--	case PORT_HSCIF:
--		offset = SCLSR;
--		break;
--	case PORT_SCIFA:
--	case PORT_SCIFB:
--		offset = SCxSR;
--		break;
--	default:
--		return 0;
+-#ifdef CONFIG_PM
+-static int davinci_pm_runtime_suspend(struct device *dev)
+-{
+-	int ret;
+-
+-	dev_dbg(dev, "%s\n", __func__);
+-
+-	ret = pm_generic_runtime_suspend(dev);
+-	if (ret)
+-		return ret;
+-
+-	ret = pm_clk_suspend(dev);
+-	if (ret) {
+-		pm_generic_runtime_resume(dev);
+-		return ret;
 -	}
 -
--	reg = sci_getreg(port, offset);
-+	reg = sci_getreg(port, s->overrun_reg);
- 	if (!reg->size)
- 		return 0;
- 
--	status = serial_port_in(port, offset);
-+	status = serial_port_in(port, s->overrun_reg);
- 	if (status & s->overrun_mask) {
- 		status &= ~s->overrun_mask;
--		serial_port_out(port, offset, status);
-+		serial_port_out(port, s->overrun_reg, status);
- 
- 		port->icount.overrun++;
- 
-@@ -1041,15 +1029,11 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
- 
- 	ssr_status = serial_port_in(port, SCxSR);
- 	scr_status = serial_port_in(port, SCSCR);
--	switch (port->type) {
--	case PORT_SCIF:
--	case PORT_HSCIF:
--		orer_status = serial_port_in(port, SCLSR);
--		break;
--	case PORT_SCIFA:
--	case PORT_SCIFB:
-+	if (s->overrun_reg = SCxSR)
- 		orer_status = ssr_status;
--		break;
-+	else {
-+		if (sci_getreg(port, s->overrun_reg)->size)
-+			orer_status = serial_port_in(port, s->overrun_reg);
- 	}
- 
- 	err_enabled = scr_status & port_rx_irq_mask(port);
-@@ -2254,31 +2238,37 @@ static int sci_init_single(struct platform_device *dev,
- 	switch (p->type) {
- 	case PORT_SCIFB:
- 		port->fifosize = 256;
-+		sci_port->overrun_reg = SCxSR;
- 		sci_port->overrun_mask = SCIFA_ORER;
- 		sampling_rate = 16;
- 		break;
- 	case PORT_HSCIF:
- 		port->fifosize = 128;
- 		sampling_rate = 0;
-+		sci_port->overrun_reg = SCLSR;
- 		sci_port->overrun_mask = SCLSR_ORER;
- 		break;
- 	case PORT_SCIFA:
- 		port->fifosize = 64;
-+		sci_port->overrun_reg = SCxSR;
- 		sci_port->overrun_mask = SCIFA_ORER;
- 		sampling_rate = 16;
- 		break;
- 	case PORT_SCIF:
- 		port->fifosize = 16;
- 		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE) {
-+			sci_port->overrun_reg = SCxSR;
- 			sci_port->overrun_mask = SCIFA_ORER;
- 			sampling_rate = 16;
- 		} else {
-+			sci_port->overrun_reg = SCLSR;
- 			sci_port->overrun_mask = SCLSR_ORER;
- 			sampling_rate = 32;
- 		}
- 		break;
- 	default:
- 		port->fifosize = 1;
-+		sci_port->overrun_reg = SCxSR;
- 		sci_port->overrun_mask = SCI_ORER;
- 		sampling_rate = 32;
- 		break;
+-	return 0;
+-}
+-
+-static int davinci_pm_runtime_resume(struct device *dev)
+-{
+-	dev_dbg(dev, "%s\n", __func__);
+-
+-	pm_clk_resume(dev);
+-	return pm_generic_runtime_resume(dev);
+-}
+-#endif
+-
+ static struct dev_pm_domain davinci_pm_domain = {
+ 	.ops = {
+-		SET_RUNTIME_PM_OPS(davinci_pm_runtime_suspend,
+-				   davinci_pm_runtime_resume, NULL)
++		USE_PM_CLK_RUNTIME_OPS
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
+ };
 -- 
-1.9.1
+QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a member
+of Code Aurora Forum, hosted by The Linux Foundation
 
