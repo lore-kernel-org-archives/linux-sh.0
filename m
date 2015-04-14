@@ -1,22 +1,33 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Fri, 17 Apr 2015 18:11:18 +0000
-Subject: Re: [PATCH] dmaengine: usb-dmac: Fix dereferencing freed memory 'desc'
-Message-Id: <20150417175917.GG30624@intel.com>
+From: Rajendra Nayak <rnayak@codeaurora.org>
+Date: Tue, 14 Apr 2015 13:46:28 +0000
+Subject: [RFC 0/5] PM / clock_ops: provide default runtime ops and cleanup users
+Message-Id: <1429018473-21865-1-git-send-email-rnayak@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428060015-2896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1428060015-2896-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: rjw@rjwysocki.net, ssantosh@kernel.org, tony@atomide.com, khilman@deeprootsystems.com, nsekhar@ti.com, magnus.damm@gmail.com
+Cc: linux-arm-msm@vger.kernel.org, inux-arm-kernel@lists.infradead.org, linux-pm@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org, Rajendra Nayak <rnayak@codeaurora.org>
 
-On Fri, Apr 03, 2015 at 08:20:15PM +0900, Yoshihiro Shimoda wrote:
-> This patch fixes an issue that the usb_dmac_desc_free() is
-> dereferencing freed memory 'desc' because it uses list_for_each_entry().
-> This function should use list_for_each_entry_safe().
-> 
-Applied, thanks
+Most users of PM clocks do the exact same thing in runtime callbacks.
+Provide default callbacks and cleanup the existing users (keystone/davinci/omap1/sh)
+
+Rajendra Nayak (5):
+  PM / clock_ops: Provide default runtime ops to users
+  arm: keystone: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
+  arm: omap1: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
+  arm: davinci: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
+  drivers: sh: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
+
+ arch/arm/mach-davinci/pm_domain.c  | 32 +-------------------------
+ arch/arm/mach-keystone/pm_domain.c | 33 +-------------------------
+ arch/arm/mach-omap1/pm_bus.c       | 37 ++----------------------------
+ drivers/base/power/clock_ops.c     | 38 ++++++++++++++++++++++++++++++
+ drivers/sh/pm_runtime.c            | 47 ++------------------------------------
+ include/linux/pm_clock.h           | 10 ++++++++
+ 6 files changed, 54 insertions(+), 143 deletions(-)
 
 -- 
-~Vinod
+QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a member
+of Code Aurora Forum, hosted by The Linux Foundation
 
