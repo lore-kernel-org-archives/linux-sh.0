@@ -1,47 +1,72 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 30 Apr 2015 14:18:54 +0000
-Subject: [PATCH v2 05/15] pinctrl: sh-pfc: Enable building of r8a7793 PFC support
-Message-Id: <1430403544-26742-6-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Rajendra Nayak <rnayak@codeaurora.org>
+Date: Tue, 14 Apr 2015 13:46:30 +0000
+Subject: [RFC 2/5] arm: keystone: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
+Message-Id: <1429018473-21865-3-git-send-email-rnayak@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1429018473-21865-1-git-send-email-rnayak@codeaurora.org>
+In-Reply-To: <1429018473-21865-1-git-send-email-rnayak@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: rjw@rjwysocki.net, ssantosh@kernel.org, tony@atomide.com, khilman@deeprootsystems.com, nsekhar@ti.com, magnus.damm@gmail.com
+Cc: linux-arm-msm@vger.kernel.org, inux-arm-kernel@lists.infradead.org, linux-pm@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org, Rajendra Nayak <rnayak@codeaurora.org>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+USE_PM_CLK_RUNTIME_OPS is introduced so we don't repeat the same code
+to do runtime_suspend and runtime_resume across users of PM clocks.
+Use it to remove the boilerplate code.
+
+Signed-off-by: Rajendra Nayak <rnayak@codeaurora.org>
 ---
- drivers/pinctrl/sh-pfc/Kconfig  | 5 +++++
- drivers/pinctrl/sh-pfc/Makefile | 1 +
- 2 files changed, 6 insertions(+)
+ arch/arm/mach-keystone/pm_domain.c | 33 +--------------------------------
+ 1 file changed, 1 insertion(+), 32 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
-index 8c4b3d3..5d570fd 100644
---- a/drivers/pinctrl/sh-pfc/Kconfig
-+++ b/drivers/pinctrl/sh-pfc/Kconfig
-@@ -55,6 +55,11 @@ config PINCTRL_PFC_R8A7791
- 	depends on ARCH_R8A7791
- 	select PINCTRL_SH_PFC
+diff --git a/arch/arm/mach-keystone/pm_domain.c b/arch/arm/mach-keystone/pm_domain.c
+index 41bebfd..edea697 100644
+--- a/arch/arm/mach-keystone/pm_domain.c
++++ b/arch/arm/mach-keystone/pm_domain.c
+@@ -19,40 +19,9 @@
+ #include <linux/clk-provider.h>
+ #include <linux/of.h>
  
-+config PINCTRL_PFC_R8A7793
-+	def_bool y
-+	depends on ARCH_R8A7793
-+	select PINCTRL_SH_PFC
-+
- config PINCTRL_PFC_SH7203
- 	def_bool y
- 	depends on CPU_SUBTYPE_SH7203
-diff --git a/drivers/pinctrl/sh-pfc/Makefile b/drivers/pinctrl/sh-pfc/Makefile
-index f4074e1..e65ff9a 100644
---- a/drivers/pinctrl/sh-pfc/Makefile
-+++ b/drivers/pinctrl/sh-pfc/Makefile
-@@ -10,6 +10,7 @@ obj-$(CONFIG_PINCTRL_PFC_R8A7778)	+= pfc-r8a7778.o
- obj-$(CONFIG_PINCTRL_PFC_R8A7779)	+= pfc-r8a7779.o
- obj-$(CONFIG_PINCTRL_PFC_R8A7790)	+= pfc-r8a7790.o
- obj-$(CONFIG_PINCTRL_PFC_R8A7791)	+= pfc-r8a7791.o
-+obj-$(CONFIG_PINCTRL_PFC_R8A7793)	+= pfc-r8a7793.o
- obj-$(CONFIG_PINCTRL_PFC_SH7203)	+= pfc-sh7203.o
- obj-$(CONFIG_PINCTRL_PFC_SH7264)	+= pfc-sh7264.o
- obj-$(CONFIG_PINCTRL_PFC_SH7269)	+= pfc-sh7269.o
+-#ifdef CONFIG_PM
+-static int keystone_pm_runtime_suspend(struct device *dev)
+-{
+-	int ret;
+-
+-	dev_dbg(dev, "%s\n", __func__);
+-
+-	ret = pm_generic_runtime_suspend(dev);
+-	if (ret)
+-		return ret;
+-
+-	ret = pm_clk_suspend(dev);
+-	if (ret) {
+-		pm_generic_runtime_resume(dev);
+-		return ret;
+-	}
+-
+-	return 0;
+-}
+-
+-static int keystone_pm_runtime_resume(struct device *dev)
+-{
+-	dev_dbg(dev, "%s\n", __func__);
+-
+-	pm_clk_resume(dev);
+-
+-	return pm_generic_runtime_resume(dev);
+-}
+-#endif
+-
+ static struct dev_pm_domain keystone_pm_domain = {
+ 	.ops = {
+-		SET_RUNTIME_PM_OPS(keystone_pm_runtime_suspend,
+-				   keystone_pm_runtime_resume, NULL)
++		USE_PM_CLK_RUNTIME_OPS
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
+ };
 -- 
-2.3.5
+QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a member
+of Code Aurora Forum, hosted by The Linux Foundation
 
