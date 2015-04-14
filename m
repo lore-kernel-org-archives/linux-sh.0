@@ -1,50 +1,35 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Mon, 13 Apr 2015 23:08:04 +0000
+From: Richard Cochran <richardcochran@gmail.com>
+Date: Tue, 14 Apr 2015 05:27:29 +0000
 Subject: Re: [PATCH resend] Renesas Ethernet AVB driver
-Message-Id: <1428966484.8341.52.camel@xylophone.i.decadent.org.uk>
+Message-Id: <20150414052729.GA5179@netboy>
 List-Id: <linux-sh.vger.kernel.org>
 References: <2926619.fiYHPz1IBk@wasted.cogentembedded.com>
-		 <1427982999.18722.35.camel@xylophone.i.decadent.org.uk>
-		 <552C2849.2080503@cogentembedded.com> <552C3F9C.5070200@gmx.de>
-	 <1428964268.8341.46.camel@xylophone.i.decadent.org.uk>
-	 <552C48F7.5030901@gmx.de>
-In-Reply-To: <552C48F7.5030901@gmx.de>
+ <20150328082853.GA4255@localhost.localdomain>
+ <5519D380.6070200@cogentembedded.com>
+ <552C25BE.3070606@cogentembedded.com>
+In-Reply-To: <552C25BE.3070606@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Lino Sanfilippo <LinoSanfilippo@gmx.de>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>, masaru.nagai.vx@renesas.com
 
-On Tue, 2015-04-14 at 00:53 +0200, Lino Sanfilippo wrote:
-> On 14.04.2015 00:31, Ben Hutchings wrote:
+On Mon, Apr 13, 2015 at 11:23:26PM +0300, Sergei Shtylyov wrote:
+> >>This is a bit hacky.  Can't your driver make sure that the HW is ready?
 > 
-> >> >> This driver looks somewhat similar to sh-eth, but lacks some of the
-> >> >> recent bug fixes made to that.  At least commit 283e38db65e7 ("sh_eth:
-> >> >> Fix serialisation of interrupt disable with interrupt & NAPI handler")
-> >> >> appears to be applicable, but there are probably others.
-> >> > 
-> >> >     I suspect this issue applies to many drivers...
-> >> >     I couldn't reproduce the bug that patch was fixing, so left this fix out 
-> >> > for the time being. Others cases were fixed (if applicable).
-> >> 
-> >> Maybe its just harder to trigger but it indeed looks similar to what Ben
-> >> has fixed for sh-eth. I wonder if that shutdown flag in the fix is
-> >> really needed though. IMHO it should be save if we simply call
-> >> napi_disable first, then disable irqs on hardware and finally
-> >> synchronize_irq...
-> > 
-> > In sh_eth: if we call napi_disable() first, EESR_RX_CHECK can still be
-> > set and nothing will clear it.  If only one CPU is online this can hard
-> > hang the system.  Please trust that I did consider and rule out the
-> > simpler approaches first.
-> > 
+> >    Will look into this. Perhaps it's a remainder from when the PTP driver was
+> >separate...
 > 
-> The idea was to check the return value from napi_schedule_prep() and in
-> case it returns "false" use this as an indication for a shutdown. In
-> case of sh_eth this would be sh_eth_write(ndev, 0, EESIPR) for example.
+>    No, we enter this mode upon closing the Ethernet device and when
+> the ring DMA sizes are changed. Seems unavoidable...
+> 
+> >>>+    if (ravb_read(priv->ndev, CSR) & CSR_OPS_CONFIG)
+> >>>+        return true;
+> >>>+    else
+> >>>+        return false;
 
-Might work - but please give it a thorough test.
+It is surely avoidable.  The driver knows (or should know) whether or
+not the hardware has been configured or not.
 
-Ben.
-
-
+Thanks,
+Richard
