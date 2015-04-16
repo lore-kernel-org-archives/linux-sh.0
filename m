@@ -1,57 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 30 Apr 2015 07:30:48 +0000
-Subject: Re: [PATCH] ARM: shmobile: koelsch: Fix adv7511 IRQ sensing
-Message-Id: <3267953.EtXjKtbbY7@avalon>
+From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Thu, 16 Apr 2015 10:35:40 +0000
+Subject: [RFC/PATCH v2 5/5] ARM: shmobile: Enable Renesas R-Car cpuidle for shmobile_defconfig
+Message-Id: <1429180540-5692-6-git-send-email-keita.kobayashi.ym@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430315743-8521-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1430315743-8521-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1429180540-5692-1-git-send-email-keita.kobayashi.ym@renesas.com>
+In-Reply-To: <1429180540-5692-1-git-send-email-keita.kobayashi.ym@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: horms@verge.net.au, rjw@rjwysocki.net, daniel.lezcano@linaro.org
+Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, devicetree@vger.kernel.org, magnus.damm@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-Hi Simon,
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
+ arch/arm/configs/shmobile_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
-On Thursday 30 April 2015 13:56:40 Simon Horman wrote:
-> Hi Laurent,
-> 
-> On Wed, Apr 29, 2015 at 04:55:43PM +0300, Laurent Pinchart wrote:
-> > The adv7511 IRQ is low level triggered, not falling edge triggered. The
-> > wrong sense configuration results in no interrupt being triggered at
-> > all, breaking hotplug detection. Fix it.
-> 
-> Would I be correct in adding the following and queuing it up
-> as a fix for v4.1 and v4.0-stable?
-> 
-> Fixes: 83a0731b39f3 ("ARM: shmobile: koelsch: Add DU HDMI output support")
-
-I think that would be fine. It's not a regression fix in the traditional 
-sense, but it fixes a shortcoming of the original commit.
-
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >  arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts
-> > b/arch/arm/boot/dts/r8a7791-koelsch.dts index 74c3212f1f11..824ddab9c3ad
-> > 100644
-> > --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-> > +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-> > @@ -545,7 +545,7 @@
-> >  		compatible = "adi,adv7511w";
-> >  		reg = <0x39>;
-> >  		interrupt-parent = <&gpio3>;
-> > -		interrupts = <29 IRQ_TYPE_EDGE_FALLING>;
-> > +		interrupts = <29 IRQ_TYPE_LEVEL_LOW>;
-> > 
-> >  		adi,input-depth = <8>;
-> >  		adi,input-colorspace = "rgb";
-
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index b58618e..c3a2f6a 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -44,6 +44,9 @@ CONFIG_CPU_FREQ_GOV_USERSPACE=y
+ CONFIG_CPU_FREQ_GOV_ONDEMAND=y
+ CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
+ CONFIG_CPUFREQ_DT=y
++CONFIG_CPU_IDLE=y
++CONFIG_ARM_CPUIDLE=y
++CONFIG_ARM_RCAR_CPUIDLE=y
+ CONFIG_VFP=y
+ CONFIG_NEON=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
