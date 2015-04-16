@@ -1,41 +1,61 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 28 Apr 2015 10:15:07 +0000
-Subject: [PATCH 2/2] pinctrl: sh-pfc: Remove r8a73a4 platform_device_id entry
-Message-Id: <1430216107-31501-2-git-send-email-geert+renesas@glider.be>
+From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Date: Thu, 16 Apr 2015 10:35:39 +0000
+Subject: [RFC/PATCH v2 4/5] ARM: shmobile: dtsi: Add cpuidle parameters into each cpu for r8a7791
+Message-Id: <1429180540-5692-5-git-send-email-keita.kobayashi.ym@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430216107-31501-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430216107-31501-1-git-send-email-geert+renesas@glider.be>
+References: <1429180540-5692-1-git-send-email-keita.kobayashi.ym@renesas.com>
+In-Reply-To: <1429180540-5692-1-git-send-email-keita.kobayashi.ym@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: horms@verge.net.au, rjw@rjwysocki.net, daniel.lezcano@linaro.org
+Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, devicetree@vger.kernel.org, magnus.damm@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-As of commit 9d07d414d4c33d86 ("ARM: shmobile: r8a73a4: ape6evm: Remove
-legacy platform"), r8a73a4 is only supported in generic DT-only ARM
-multi-platform builds.  The driver doesn't need to match platform
-devices by name anymore, hence remove the corresponding
-platform_device_id entry.
+This patch add enable-method node and idle-states node for r8a7791.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 ---
- drivers/pinctrl/sh-pfc/core.c | 3 ---
- 1 file changed, 3 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 7b2c9495c3832410..287a3d048a5e1cf9 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -579,9 +579,6 @@ static int sh_pfc_remove(struct platform_device *pdev)
- }
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 3e9f824..0063615 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -46,11 +46,13 @@
+ 		cpu0: cpu@0 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a15";
++			enable-method = "renesas,rcar-idle";
+ 			reg = <0>;
+ 			clock-frequency = <1500000000>;
+ 			voltage-tolerance = <1>; /* 1% */
+ 			clocks = <&cpg_clocks R8A7791_CLK_Z>;
+ 			clock-latency = <300000>; /* 300 us */
++			cpu-idle-states = <&CORE_STANDBY>;
  
- static const struct platform_device_id sh_pfc_id_table[] = {
--#ifdef CONFIG_PINCTRL_PFC_R8A73A4
--	{ "pfc-r8a73a4", (kernel_ulong_t)&r8a73a4_pinmux_info },
--#endif
- #ifdef CONFIG_PINCTRL_PFC_R8A7740
- 	{ "pfc-r8a7740", (kernel_ulong_t)&r8a7740_pinmux_info },
- #endif
+ 			/* kHz - uV - OPPs unknown yet */
+ 			operating-points = <1500000 1000000>,
+@@ -64,8 +66,19 @@
+ 		cpu1: cpu@1 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a15";
++			enable-method = "renesas,rcar-idle";
+ 			reg = <1>;
+ 			clock-frequency = <1500000000>;
++			cpu-idle-states = <&CORE_STANDBY>;
++		};
++
++		idle-states {
++			CORE_STANDBY: CoreStandby {
++				compatible = "arm,idle-state";
++				entry-latency-us = <500>;
++				exit-latency-us = <2300>;
++				min-residency-us = <2800>;
++			};
+ 		};
+ 	};
+ 
 -- 
 1.9.1
 
