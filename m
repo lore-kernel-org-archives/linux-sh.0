@@ -1,52 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 28 Apr 2015 00:57:29 +0000
-Subject: Re: [PATCH 00/10] ARM: shmobile: Use generic names for device nodes
-Message-Id: <20150428005728.GC557@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 16 Apr 2015 15:08:17 +0000
+Subject: [PATCH] ARM: multi_v7_defconfig: Enable shmobile r8a7778 (M1A)
+Message-Id: <1429196897-18822-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Apr 27, 2015 at 02:55:24PM +0200, Geert Uytterhoeven wrote:
-> 	Hi Magnus, Simon,
-> 
-> This patch series gets rid of the last non-generic device nodes names in
-> the shmobile DTS files, and replaces them by generic names, cfr. ePAPR.
-> 
-> Thanks for applying!
+Also enables RTC (RX8581) and camera (ML86V7667) drivers as modules.
 
-Thanks!
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/configs/multi_v7_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
-I have queued up the patches except for 08/10 which Sergei raised
-a concern about for which I am unsure of the resolution of.
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index 06075b6..212199a 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -67,6 +67,7 @@ CONFIG_ARCH_EMEV2=y
+ CONFIG_ARCH_R7S72100=y
+ CONFIG_ARCH_R8A73A4=y
+ CONFIG_ARCH_R8A7740=y
++CONFIG_ARCH_R8A7778=y
+ CONFIG_ARCH_R8A7779=y
+ CONFIG_ARCH_R8A7790=y
+ CONFIG_ARCH_R8A7791=y
+@@ -377,6 +378,7 @@ CONFIG_V4L_MEM2MEM_DRIVERS=y
+ CONFIG_VIDEO_RENESAS_VSP1=m
+ # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
+ CONFIG_VIDEO_ADV7180=m
++CONFIG_VIDEO_ML86V7667=m
+ CONFIG_DRM=y
+ CONFIG_DRM_RCAR_DU=m
+ CONFIG_DRM_TEGRA=y
+@@ -500,6 +502,7 @@ CONFIG_RTC_DRV_SUN6I=y
+ CONFIG_RTC_DRV_SUNXI=y
+ CONFIG_RTC_DRV_MV=y
+ CONFIG_RTC_DRV_TEGRA=y
++CONFIG_RTC_DRV_RX8581=m
+ CONFIG_DMADEVICES=y
+ CONFIG_DW_DMAC=y
+ CONFIG_MV_XOR=y
+-- 
+2.3.5
 
-> 
-> Geert Uytterhoeven (10):
->   ARM: shmobile: r8a7740 dtsi: Use generic names for device nodes
->   ARM: shmobile: r8a7778 dtsi: Use generic names for device nodes
->   ARM: shmobile: r8a7779 dtsi: Use generic names for device nodes
->   ARM: shmobile: r8a7790 dtsi: Use generic names for device nodes
->   ARM: shmobile: r8a7791 dtsi: Use generic names for device nodes
->   ARM: shmobile: sh73a0 dtsi: Use generic names for device nodes
->   ARM: shmobile: ape6evm dts: Use generic names for device nodes
->   ARM: shmobile: armadillo800eva dts: Use generic names for device nodes
-
-The above armadillo800eva patch is 08/10; the one I have not queued up (yet).
-
->   ARM: shmobile: kzm9d dts: Use generic names for device nodes
->   ARM: shmobile: marzen dts: Use generic names for device nodes
-> 
->  arch/arm/boot/dts/emev2-kzm9d.dts             | 4 ++--
->  arch/arm/boot/dts/r8a73a4-ape6evm.dts         | 2 +-
->  arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 2 +-
->  arch/arm/boot/dts/r8a7740.dtsi                | 8 ++++----
->  arch/arm/boot/dts/r8a7778.dtsi                | 2 +-
->  arch/arm/boot/dts/r8a7779-marzen.dts          | 6 +++---
->  arch/arm/boot/dts/r8a7779.dtsi                | 2 +-
->  arch/arm/boot/dts/r8a7790.dtsi                | 2 +-
->  arch/arm/boot/dts/r8a7791.dtsi                | 2 +-
->  arch/arm/boot/dts/sh73a0.dtsi                 | 8 ++++----
->  10 files changed, 19 insertions(+), 19 deletions(-)
