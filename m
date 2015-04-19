@@ -1,314 +1,216 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 14 Apr 2015 21:37:28 +0000
+From: Richard Cochran <richardcochran@gmail.com>
+Date: Sun, 19 Apr 2015 09:19:25 +0000
 Subject: Re: [PATCH v3] Renesas Ethernet AVB driver
-Message-Id: <552D8898.3060905@cogentembedded.com>
+Message-Id: <20150419091923.GA5714@netboy>
 List-Id: <linux-sh.vger.kernel.org>
-References: <32501816.HtkLenWQpn@wasted.cogentembedded.com> <552C4554.2070608@gmail.com>
-In-Reply-To: <552C4554.2070608@gmail.com>
+References: <32501816.HtkLenWQpn@wasted.cogentembedded.com>
+In-Reply-To: <32501816.HtkLenWQpn@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Florian Fainelli <f.fainelli@gmail.com>, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, richardcochran@gmail.com
-Cc: linux-sh@vger.kernel.org, Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
-
-Hello.
-
-On 04/14/2015 01:38 AM, Florian Fainelli wrote:
-
-> [snip]
-
->> +struct ravb_private {
->> +	struct net_device *ndev;
->> +	struct platform_device *pdev;
->> +	void __iomem *addr;
->> +	struct mdiobb_ctrl mdiobb;
->> +	u32 num_rx_ring[NUM_RX_QUEUE];
->> +	u32 num_tx_ring[NUM_TX_QUEUE];
->> +	u32 desc_bat_size;
->> +	dma_addr_t desc_bat_dma;
->> +	struct ravb_desc *desc_bat;
->> +	dma_addr_t rx_desc_dma[NUM_RX_QUEUE];
->> +	dma_addr_t tx_desc_dma[NUM_TX_QUEUE];
-
-> As a future optimization, you could try to group the variables by
-> direction: RX and TX such that you have better cache locality.
-
-    Thanks for the idea.
-
-> [snip]
-
->> +static void ravb_set_duplex(struct net_device *ndev)
->> +{
->> +	struct ravb_private *priv = netdev_priv(ndev);
->> +
->> +	if (priv->duplex)	/* Full */
->> +		ravb_write(ndev, ravb_read(ndev, ECMR) | ECMR_DM, ECMR);
->> +	else			/* Half */
->> +		ravb_write(ndev, ravb_read(ndev, ECMR) & ~ECMR_DM, ECMR);
-
-> 	reg = ravb_read(ndev, ECMR);
-> 	if (priv->duplex)
-> 		reg |= ECMR_DM;
-> 	else
-> 		reg &= ~ECMR_DM;
-> 	ravb_writel(ndev, reg, ECMR);
-
-    OK, missed this.
-
->> +}
->> +
->> +static void ravb_set_rate(struct net_device *ndev)
->> +{
->> +	struct ravb_private *priv = netdev_priv(ndev);
->> +
->> +	switch (priv->speed) {
->> +	case 100:		/* 100BASE */
->> +		ravb_write(ndev, GECMR_SPEED_100, GECMR);
->> +		break;
->> +	case 1000:		/* 1000BASE */
->> +		ravb_write(ndev, GECMR_SPEED_1000, GECMR);
->> +		break;
->> +	default:
->> +		break;
->> +	}
-
-> That still won't quite work with 10Mbits/sec will it? Or is this
-> controller 100/1000 only (which would be extremely surprising).
-
-    Yes, only 100/1000, at least so says the manual.
-
-> [snip]
-
->> +		if (desc_status & (MSC_CRC | MSC_RFE | MSC_RTSF | MSC_RTLF |
->> +				   MSC_CEEF)) {
->> +			stats->rx_errors++;
->> +			if (desc_status & MSC_CRC)
->> +				stats->rx_crc_errors++;
->> +			if (desc_status & MSC_RFE)
->> +				stats->rx_frame_errors++;
->> +			if (desc_status & (MSC_RTLF | MSC_RTSF))
->> +				stats->rx_length_errors++;
->> +			if (desc_status & MSC_CEEF)
->> +				stats->rx_missed_errors++;
-
-> The flow after the else condition, while refiling might deserve some
-> explanation.
-
->> +		} else {
->> +			u32 get_ts = priv->tstamp_rx_ctrl & RAVB_RXTSTAMP_TYPE;
->> +
->> +			skb = priv->rx_skb[q][entry];
-
-> Based on the refill logic below, it seems to me like you could leave
-> holes in your ring where rx_skb[q][entry] is NULL, should not that be
-> checked here?
-
-    We don't set the descriptor type to FEMPTY for such cases, so the AVB-DMAC 
-shouldn't handle such descriptors.
-
-[...]
->> +			skb_put(skb, pkt_len);
->> +			skb->protocol = eth_type_trans(skb, ndev);
->> +			if (q = RAVB_NC)
->> +				netif_rx(skb);
->> +			else
->> +				netif_receive_skb(skb);
-
-> Can't you always invoke netif_receive_skb() here? Why is there a special
-> queue?
-
-    The comments in ravb_interrupt() say that the network control queue should 
-be handled ASAP, due to timestamping.
-
->> +			stats->rx_packets++;
->> +			stats->rx_bytes += pkt_len;
->> +		}
->> +
->> +		entry = (++priv->cur_rx[q]) % priv->num_rx_ring[q];
->> +		desc = &priv->rx_ring[q][entry];
->> +	}
->> +
->> +	/* Refill the RX ring buffers. */
->> +	for (; priv->cur_rx[q] - priv->dirty_rx[q] > 0; priv->dirty_rx[q]++) {
->> +		entry = priv->dirty_rx[q] % priv->num_rx_ring[q];
->> +		desc = &priv->rx_ring[q][entry];
->> +		/* The size of the buffer should be on 16-byte boundary. */
->> +		desc->ds = ALIGN(priv->rx_buffer_size, 16);
->> +
->> +		if (!priv->rx_skb[q][entry]) {
->> +			skb = netdev_alloc_skb(ndev, skb_size);
->> +			if (!skb)
->> +				break;	/* Better luck next round. */
-
-> Should this really be a break or a continue?
-
-    We don't expect the allocation to succeed after it failed, so the *break* 
-is appropriate, I think.
-
-> [snip]
-
->> +/* function for waiting dma process finished */
->> +static void ravb_wait_stop_dma(struct net_device *ndev)
->> +{
-
-> Should not you stop the MAC TX here as well for consistency?
-
-    Perhaps, though the manual doesn't say so...
-
->> +	/* Wait for stopping the hardware TX process */
->> +	ravb_wait(ndev, TCCR, TCCR_TSRQ0 | TCCR_TSRQ1 | TCCR_TSRQ2 | TCCR_TSRQ3,
->> +		  0);
->> +
->> +	ravb_wait(ndev, CSR, CSR_TPO0 | CSR_TPO1 | CSR_TPO2 | CSR_TPO3, 0);
->> +
->> +	/* Stop the E-MAC's RX processes. */
->> +	ravb_write(ndev, ravb_read(ndev, ECMR) & ~ECMR_RE, ECMR);
-
-> [snip]
-
->> +		/* Transmited network control queue */
->> +		if (tis & TIS_FTF1) {
->> +			ravb_tx_free(ndev, RAVB_NC);
->> +			netif_wake_queue(ndev);
-
-> This would be better moved to the NAPI handler.
-
-    Maybe, not sure...
-
->> +			result = IRQ_HANDLED;
->> +		}
-
-> [snip]
-
->> +	if (ecmd->duplex = DUPLEX_FULL)
->> +		priv->duplex = 1;
->> +	else
->> +		priv->duplex = 0;
-
-> Why not use what priv->phydev->duplex has cached for you?
-
-    Because we compare 'priv->duplex' with 'priv->phydev->duplex' in 
-ravb_adjust_link(). Or what did you mean?
-
-[...]
-
->> +static int ravb_nway_reset(struct net_device *ndev)
->> +{
->> +	struct ravb_private *priv = netdev_priv(ndev);
->> +	int error = -ENODEV;
->> +	unsigned long flags;
->> +
->> +	if (priv->phydev) {
-
-> Is checking against priv->phydev really necessary, it does not look like
-> the driver will work or accept an invalid PHY device at all anyway?
-
-    You still can run 'ethtool' on a closed network device.
-
-[...]
-
->> +/* Network device open function for Ethernet AVB */
->> +static int ravb_open(struct net_device *ndev)
->> +{
->> +	struct ravb_private *priv = netdev_priv(ndev);
->> +	int error;
->> +
->> +	napi_enable(&priv->napi);
->> +
->> +	error = request_irq(ndev->irq, ravb_interrupt, IRQF_SHARED, ndev->name,
->> +			    ndev);
->> +	if (error) {
->> +		netdev_err(ndev, "cannot request IRQ\n");
->> +		goto out_napi_off;
->> +	}
->> +
->> +	/* Descriptor set */
->> +	/* +26 gets the maximum ethernet encapsulation, +7 & ~7 because the
->> +	 * card needs room to do 8 byte alignment, +2 so we can reserve
->> +	 * the first 2 bytes, and +16 gets room for the status word from the
->> +	 * card.
->> +	 */
->> +	priv->rx_buffer_size = (ndev->mtu <= 1492 ? PKT_BUF_SZ :
->> +				(((ndev->mtu + 26 + 7) & ~7) + 2 + 16));
-
-> Is not that something that should be moved to a local ndo_change_mtu()
-
-    That was copied from sh_eth.c verbatim, I even doubt that the formula is 
-correct for EtherAVB...
-
-> function? What happens if I change the MTU of an interface running, does
-> not that completely break this RX buffer estimation?
-
-    Well, not completely, I think. eth_change_mtu() doesn't allow MTU > 1500 
-bytes, so it looks like we just need to change 1492 to 1500 here.
-
-[...]
-
->> +static int ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
->> +{
->> +	struct ravb_private *priv = netdev_priv(ndev);
->> +	struct ravb_tstamp_skb *ts_skb = NULL;
->> +	struct ravb_tx_desc *desc;
->> +	unsigned long flags;
->> +	void *buffer;
->> +	u32 entry;
->> +	u32 tccr;
->> +	int q;
->> +
->> +	/* If skb needs TX timestamp, it is handled in network control queue */
->> +	q = (skb_shinfo(skb)->tx_flags & SKBTX_HW_TSTAMP) ? RAVB_NC : RAVB_BE;
->> +
->> +	spin_lock_irqsave(&priv->lock, flags);
->> +	if (priv->cur_tx[q] - priv->dirty_tx[q] >= priv->num_tx_ring[q] - 4) {
-
-> What's so special about 4 here, you don't seem to be using 4 descriptors
-
-    Not sure, this was clearly copied from sh_eth.c. Perhaps it's just a 
-threshold for calling ravb_tx_free()...
-
->> +		if (!ravb_tx_free(ndev, q)) {
->> +			netif_warn(priv, tx_queued, ndev, "TX FD exhausted.\n");
->> +			netif_stop_queue(ndev);
->> +			spin_unlock_irqrestore(&priv->lock, flags);
->> +			return NETDEV_TX_BUSY;
->> +		}
->> +	}
->> +	entry = priv->cur_tx[q] % priv->num_tx_ring[q];
->> +	priv->cur_tx[q]++;
->> +	spin_unlock_irqrestore(&priv->lock, flags);
->> +
->> +	if (skb_put_padto(skb, ETH_ZLEN))
->> +		return NETDEV_TX_OK;
->> +
->> +	priv->tx_skb[q][entry] = skb;
->> +	buffer = PTR_ALIGN(priv->tx_buffers[q][entry], RAVB_ALIGN);
->> +	memcpy(buffer, skb->data, skb->len);
-
-> ~1500 bytes memcpy(), not good...
-
-    I'm looking in the manual and not finding the hard requirement to have the 
-buffer address aligned to 128 bytes (RAVB_ALIGN), sigh... Kimura-san?
-
->> +	desc = &priv->tx_ring[q][entry];
-
-> Since we have released the spinlock few lines above, is there something
-> protecting ravb_tx_free() from concurrently running with this xmit()
-> call and trashing this entry?
-
-    Probably nothing... :-)
-
->> +	desc->ds = skb->len;
->> +	desc->dptr = dma_map_single(&ndev->dev, buffer, skb->len,
->> +				    DMA_TO_DEVICE);
->> +	if (dma_mapping_error(&ndev->dev, desc->dptr)) {
->> +		dev_kfree_skb_any(skb);
->> +		priv->tx_skb[q][entry] = NULL;
-
-> Don't you need to make sure this NULL is properly seen by ravb_tx_free()?
-
-    You mean doing this before releasing the spinlock? Or what?
-
-[...]
-
-WBR, Sergei
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+
+On Tue, Apr 14, 2015 at 01:07:38AM +0300, Sergei Shtylyov wrote:
+
+> +static int ravb_wait(struct net_device *ndev, u16 reg, u32 mask, u32 value)
+> +{
+> +	int i;
+> +
+> +	for (i = 0; i < 10000; i++) {
+> +		if ((ravb_read(ndev, reg) & mask) = value)
+> +			return 0;
+> +		udelay(10);
+> +	}
+> +	return -ETIMEDOUT;
+> +}
+
+This function performs a busy wait of up to 100 milliseconds.
+
+It also has a return value.
+
+> +/* function for waiting dma process finished */
+> +static void ravb_wait_stop_dma(struct net_device *ndev)
+> +{
+> +	/* Wait for stopping the hardware TX process */
+> +	ravb_wait(ndev, TCCR, TCCR_TSRQ0 | TCCR_TSRQ1 | TCCR_TSRQ2 | TCCR_TSRQ3,
+> +		  0);
+> +
+> +	ravb_wait(ndev, CSR, CSR_TPO0 | CSR_TPO1 | CSR_TPO2 | CSR_TPO3, 0);
+
+Ignores return value.
+
+> +	/* Stop the E-MAC's RX processes. */
+> +	ravb_write(ndev, ravb_read(ndev, ECMR) & ~ECMR_RE, ECMR);
+> +
+> +	/* Wait for stopping the RX DMA process */
+> +	ravb_wait(ndev, CSR, CSR_RPO, 0);
+> +}
+> +
+> +/* Caller must hold the lock */
+> +static void ravb_ptp_update_compare(struct ravb_private *priv, u32 ns)
+> +{
+> +	struct net_device *ndev = priv->ndev;
+> +	/* When the comparison value (GPTC.PTCV) is in range of
+> +	 * [x-1 to x+1] (x is the configured increment value in
+> +	 * GTI.TIV), it may happen that a comparison match is
+> +	 * not detected when the timer wraps around.
+> +	 */
+> +	u32 gti_ns_plus_1 = (priv->ptp.current_addend >> 20) + 1;
+> +
+> +	if (ns < gti_ns_plus_1)
+> +		ns = gti_ns_plus_1;
+> +	else if (ns > 0 - gti_ns_plus_1)
+> +		ns = 0 - gti_ns_plus_1;
+> +
+> +	ravb_write(ndev, ns, GPTC);
+> +	ravb_write(ndev, ravb_read(ndev, GCCR) | GCCR_LPTC, GCCR);
+> +	if (ravb_read(ndev, CSR) & CSR_OPS_OPERATION)
+> +		ravb_wait(ndev, GCCR, GCCR_LPTC, 0);
+
+Ignores return value.
+
+> +}
+
+> +static void ravb_ptp_tcr_request(struct ravb_private *priv, int request)
+> +{
+> +	struct net_device *ndev = priv->ndev;
+> +
+> +	if (ravb_read(ndev, CSR) & CSR_OPS_OPERATION) {
+> +		ravb_wait(ndev, GCCR, GCCR_TCR, GCCR_TCR_NOREQ);
+> +		ravb_write(ndev, ravb_read(ndev, GCCR) | request, GCCR);
+> +		ravb_wait(ndev, GCCR, GCCR_TCR, GCCR_TCR_NOREQ);
+
+Ignores return value.
+
+> +	}
+> +}
+
+> +/* Caller must hold lock */
+> +static void ravb_ptp_time_write(struct ravb_private *priv,
+> +				const struct timespec64 *ts)
+> +{
+> +	struct net_device *ndev = priv->ndev;
+> +
+> +	ravb_ptp_tcr_request(priv, GCCR_TCR_RESET);
+> +
+> +	ravb_write(ndev, ts->tv_nsec, GTO0);
+> +	ravb_write(ndev, ts->tv_sec,  GTO1);
+> +	ravb_write(ndev, (ts->tv_sec >> 32) & 0xffff, GTO2);
+> +	ravb_write(ndev, ravb_read(ndev, GCCR) | GCCR_LTO, GCCR);
+> +	if (ravb_read(ndev, CSR) & CSR_OPS_OPERATION)
+> +		ravb_wait(ndev, GCCR, GCCR_LTO, 0);
+
+Ignores return value.
+
+> +}
+> +
+> +/* Caller must hold lock */
+> +static u64 ravb_ptp_cnt_read(struct ravb_private *priv)
+> +{
+> +	struct timespec64 ts;
+> +	ktime_t kt;
+> +
+> +	ravb_ptp_time_read(priv, &ts);
+> +	kt = timespec64_to_ktime(ts);
+> +
+> +	return ktime_to_ns(kt);
+> +}
+> +
+> +/* Caller must hold lock */
+> +static void ravb_ptp_cnt_write(struct ravb_private *priv, u64 ns)
+> +{
+> +	struct timespec64 ts = ns_to_timespec64(ns);
+> +
+> +	ravb_ptp_time_write(priv, &ts);
+> +}
+> +
+
+> +/* Caller must hold lock */
+> +static void ravb_ptp_select_counter(struct ravb_private *priv, u16 sel)
+> +{
+> +	struct net_device *ndev = priv->ndev;
+> +	u32 val;
+> +
+> +	ravb_wait(ndev, GCCR, GCCR_TCR, GCCR_TCR_NOREQ);
+
+Ignores return value.
+
+> +	val = ravb_read(ndev, GCCR) & ~GCCR_TCSS;
+> +	ravb_write(ndev, val | (sel << 8), GCCR);
+> +}
+> +
+> +/* Caller must hold lock */
+> +static void ravb_ptp_update_addend(struct ravb_private *priv, u32 addend)
+> +{
+> +	struct net_device *ndev = priv->ndev;
+> +
+> +	priv->ptp.current_addend = addend;
+> +
+> +	ravb_write(ndev, addend & GTI_TIV, GTI);
+> +	ravb_write(ndev, ravb_read(ndev, GCCR) | GCCR_LTI, GCCR);
+> +	if (ravb_read(ndev, CSR) & CSR_OPS_OPERATION)
+> +		ravb_wait(ndev, GCCR, GCCR_LTI, 0);
+
+Ignores return value.
+
+> +}
+> +
+> +/* PTP clock operations */
+> +static int ravb_ptp_adjfreq(struct ptp_clock_info *ptp, s32 ppb)
+> +{
+> +	struct ravb_private *priv = container_of(ptp, struct ravb_private,
+> +						 ptp.info);
+> +	unsigned long flags;
+> +	u32 diff, addend;
+> +	int neg_adj = 0;
+> +	u64 adj;
+> +
+> +	if (ppb < 0) {
+> +		neg_adj = 1;
+> +		ppb = -ppb;
+> +	}
+> +	addend = priv->ptp.default_addend;
+> +	adj = addend;
+> +	adj *= ppb;
+> +	diff = div_u64(adj, NSEC_PER_SEC);
+> +
+> +	addend = neg_adj ? addend - diff : addend + diff;
+> +
+> +	spin_lock_irqsave(&priv->lock, flags);
+> +	ravb_ptp_update_addend(priv, addend);
+
+This is one example of many where you make a call to ravb_wait() while:
+
+- holding a spinlock with interrupts disabled (for up to 100 milliseconds)
+- ignoring the return value
+
+> +	spin_unlock_irqrestore(&priv->lock, flags);
+> +
+> +	return 0;
+> +}
+
+The ravb_wait() callers follow this pattern.
+
+   1. set a HW bit
+   2. wait for HW bit to clear before continuing
+
+I suggest using a another pattern instead.
+
+   1. check HW bit is clear (from previous operation)
+   2. if (!clear) return timeout error
+   3. set a HW bit
+
+   Step #1 should include a limited retry.
+
+Your way blocks the CPU for a multiple of 10 usec every single time.
+The way I suggested allows the CPU to go to other work while the bit
+clears in parallel.
+
+Thanks,
+Richard
+
+
+
+
 
