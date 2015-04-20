@@ -1,33 +1,29 @@
-From: Rajendra Nayak <rnayak@codeaurora.org>
-Date: Tue, 14 Apr 2015 13:46:28 +0000
-Subject: [RFC 0/5] PM / clock_ops: provide default runtime ops and cleanup users
-Message-Id: <1429018473-21865-1-git-send-email-rnayak@codeaurora.org>
+From: Kevin Hilman <khilman@kernel.org>
+Date: Mon, 20 Apr 2015 23:21:23 +0000
+Subject: Re: [RFC 0/5] PM / clock_ops: provide default runtime ops and cleanup users
+Message-Id: <7hfv7ue68c.fsf@deeprootsystems.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1429018473-21865-1-git-send-email-rnayak@codeaurora.org>
+In-Reply-To: <1429018473-21865-1-git-send-email-rnayak@codeaurora.org>
+	(Rajendra Nayak's message of "Tue, 14 Apr 2015 19:04:28 +0530")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: rjw@rjwysocki.net, ssantosh@kernel.org, tony@atomide.com, khilman@deeprootsystems.com, nsekhar@ti.com, magnus.damm@gmail.com
-Cc: linux-arm-msm@vger.kernel.org, inux-arm-kernel@lists.infradead.org, linux-pm@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org, Rajendra Nayak <rnayak@codeaurora.org>
+To: Rajendra Nayak <rnayak@codeaurora.org>
+Cc: rjw@rjwysocki.net, ssantosh@kernel.org, tony@atomide.com, nsekhar@ti.com, magnus.damm@gmail.com, linux-arm-msm@vger.kernel.org, inux-arm-kernel@lists.infradead.org, linux-pm@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
 
-Most users of PM clocks do the exact same thing in runtime callbacks.
-Provide default callbacks and cleanup the existing users (keystone/davinci/omap1/sh)
+Rajendra Nayak <rnayak@codeaurora.org> writes:
 
-Rajendra Nayak (5):
-  PM / clock_ops: Provide default runtime ops to users
-  arm: keystone: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
-  arm: omap1: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
-  arm: davinci: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
-  drivers: sh: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
+> Most users of PM clocks do the exact same thing in runtime callbacks.
 
- arch/arm/mach-davinci/pm_domain.c  | 32 +-------------------------
- arch/arm/mach-keystone/pm_domain.c | 33 +-------------------------
- arch/arm/mach-omap1/pm_bus.c       | 37 ++----------------------------
- drivers/base/power/clock_ops.c     | 38 ++++++++++++++++++++++++++++++
- drivers/sh/pm_runtime.c            | 47 ++------------------------------------
- include/linux/pm_clock.h           | 10 ++++++++
- 6 files changed, 54 insertions(+), 143 deletions(-)
+Probably because they were all copied from mach-davinci. ;)
 
--- 
-QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a member
-of Code Aurora Forum, hosted by The Linux Foundation
+> Provide default callbacks and cleanup the existing users (keystone/davinci/omap1/sh)
 
+Very nice cleanup, Thanks!
+
+For the series:
+
+Reviewed-by: Kevin Hilman <khilman@linaro.org>
+
+Kevin
