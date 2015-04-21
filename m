@@ -1,134 +1,192 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 30 Apr 2015 05:51:41 +0000
-Subject: Re: [PATCH] irqchip: irqc: Remove platform data support
-Message-Id: <20150430055140.GP15511@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 21 Apr 2015 08:31:28 +0000
+Subject: [PATCH 3/3 v3] mmc: sh_mmcif: calculate best clock with parent clock
+Message-Id: <87r3rdubmv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430216270-31929-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430216270-31929-1-git-send-email-geert+renesas@glider.be>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+	<87vbgpubvr.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vbgpubvr.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-On Tue, Apr 28, 2015 at 12:17:50PM +0200, Geert Uytterhoeven wrote:
-> As of commit 914d7d148411997c ("ARM: shmobile: r8a73a4: Remove legacy
-> code"), the Renesas R-Mobile/R-Car interrupt controller is used with DT
-> only, and interrupt numbers are thus always assigned automatically.
-> 
-> Drop the platform data declaration and all related support code.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+MMCIF IP on R-Car series has parent clock which can be set
+several rate, and it was not implemented on old SH-Mobile series
+(= SH-Mobile series parent clock was fixed rate)
+R-Car series MMCIF can use more high speed access if it setup
+parent clock. This patch adds parent clock setup method,
+and r8a7790/r8a7791 can use it.
 
-> ---
->  drivers/irqchip/irq-renesas-irqc.c             | 17 +---------------
->  include/linux/platform_data/irq-renesas-irqc.h | 27 --------------------------
->  2 files changed, 1 insertion(+), 43 deletions(-)
->  delete mode 100644 include/linux/platform_data/irq-renesas-irqc.h
-> 
-> diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
-> index cdf80b7794cd738e..c8b15d1cd7c99d3e 100644
-> --- a/drivers/irqchip/irq-renesas-irqc.c
-> +++ b/drivers/irqchip/irq-renesas-irqc.c
-> @@ -29,7 +29,6 @@
->  #include <linux/err.h>
->  #include <linux/slab.h>
->  #include <linux/module.h>
-> -#include <linux/platform_data/irq-renesas-irqc.h>
->  #include <linux/pm_runtime.h>
->  
->  #define IRQC_IRQ_MAX	32	/* maximum 32 interrupts per driver instance */
-> @@ -62,7 +61,6 @@ struct irqc_priv {
->  	void __iomem *iomem;
->  	void __iomem *cpu_int_base;
->  	struct irqc_irq irq[IRQC_IRQ_MAX];
-> -	struct renesas_irqc_config config;
->  	unsigned int number_of_irqs;
->  	struct platform_device *pdev;
->  	struct irq_chip irq_chip;
-> @@ -175,7 +173,6 @@ static struct irq_domain_ops irqc_irq_domain_ops = {
->  
->  static int irqc_probe(struct platform_device *pdev)
->  {
-> -	struct renesas_irqc_config *pdata = pdev->dev.platform_data;
->  	struct irqc_priv *p;
->  	struct resource *io;
->  	struct resource *irq;
-> @@ -191,10 +188,6 @@ static int irqc_probe(struct platform_device *pdev)
->  		goto err0;
->  	}
->  
-> -	/* deal with driver instance configuration */
-> -	if (pdata)
-> -		memcpy(&p->config, pdata, sizeof(*pdata));
-> -
->  	p->pdev = pdev;
->  	platform_set_drvdata(pdev, p);
->  
-> @@ -251,8 +244,7 @@ static int irqc_probe(struct platform_device *pdev)
->  	irq_chip->flags	= IRQCHIP_MASK_ON_SUSPEND;
->  
->  	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
-> -					      p->number_of_irqs,
-> -					      p->config.irq_base,
-> +					      p->number_of_irqs, 0,
->  					      &irqc_irq_domain_ops, p);
->  	if (!p->irq_domain) {
->  		ret = -ENXIO;
-> @@ -272,13 +264,6 @@ static int irqc_probe(struct platform_device *pdev)
->  
->  	dev_info(&pdev->dev, "driving %d irqs\n", p->number_of_irqs);
->  
-> -	/* warn in case of mismatch if irq base is specified */
-> -	if (p->config.irq_base) {
-> -		if (p->config.irq_base != p->irq[0].domain_irq)
-> -			dev_warn(&pdev->dev, "irq base mismatch (%d/%d)\n",
-> -				 p->config.irq_base, p->irq[0].domain_irq);
-> -	}
-> -
->  	return 0;
->  err3:
->  	while (--k >= 0)
-> diff --git a/include/linux/platform_data/irq-renesas-irqc.h b/include/linux/platform_data/irq-renesas-irqc.h
-> deleted file mode 100644
-> index 3ae17b3e00ed653c..0000000000000000
-> --- a/include/linux/platform_data/irq-renesas-irqc.h
-> +++ /dev/null
-> @@ -1,27 +0,0 @@
-> -/*
-> - * Renesas IRQC Driver
-> - *
-> - *  Copyright (C) 2013 Magnus Damm
-> - *
-> - * This program is free software; you can redistribute it and/or modify
-> - * it under the terms of the GNU General Public License as published by
-> - * the Free Software Foundation; either version 2 of the License
-> - *
-> - * This program is distributed in the hope that it will be useful,
-> - * but WITHOUT ANY WARRANTY; without even the implied warranty of
-> - * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> - * GNU General Public License for more details.
-> - *
-> - * You should have received a copy of the GNU General Public License
-> - * along with this program; if not, write to the Free Software
-> - * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-> - */
-> -
-> -#ifndef __IRQ_RENESAS_IRQC_H__
-> -#define __IRQ_RENESAS_IRQC_H__
-> -
-> -struct renesas_irqc_config {
-> -	unsigned int irq_base;
-> -};
-> -
-> -#endif /* __IRQ_RENESAS_IRQC_H__ */
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+renesas,mmcif already contain renesas,mmcif-r8a7790/r8a7791 on
+compatible string. So there is no update for binding Document.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
+v1 -> v2
+
+ - tidyup log explain.
+   (use "parent clock" instead of "PLL")
+
+v2 -> v3
+
+ - add SH-ML
+
+ drivers/mmc/host/sh_mmcif.c | 79 +++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 76 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 5282c5b..6ae836b 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -57,6 +57,7 @@
+ #include <linux/mmc/slot-gpio.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/mutex.h>
++#include <linux/of_device.h>
+ #include <linux/pagemap.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_qos.h>
+@@ -224,6 +225,12 @@ enum mmcif_wait_for {
+ 	MMCIF_WAIT_FOR_STOP,
+ };
+ 
++struct sh_mmcif_parent_clk {
++	unsigned int max; /* if exist: R-Car has MMC CKCR on CPG */
++	unsigned int min; /* if exist: R-Car has MMC CKCR on CPG */
++	u32 clkdiv_map;	 /* see CE_CLK_CTRL::CLKDIV */
++};
++
+ struct sh_mmcif_host {
+ 	struct mmc_host *mmc;
+ 	struct mmc_request *mrq;
+@@ -249,6 +256,7 @@ struct sh_mmcif_host {
+ 	bool ccs_enable;		/* Command Completion Signal support */
+ 	bool clk_ctrl2_enable;
+ 	struct mutex thread_lock;
++	const struct sh_mmcif_parent_clk *parent_clk;
+ 
+ 	/* DMA support */
+ 	struct dma_chan		*chan_rx;
+@@ -257,8 +265,16 @@ struct sh_mmcif_host {
+ 	bool			dma_active;
+ };
+ 
++static const struct sh_mmcif_parent_clk mmcif_gen2_parent_clk = {
++	.max = 97500000,
++	.min = 12187500,
++	.clkdiv_map = 0x3ff,
++};
++
+ static const struct of_device_id mmcif_of_match[] = {
+ 	{ .compatible = "renesas,sh-mmcif" },
++	{ .compatible = "renesas,mmcif-r8a7790", .data = &mmcif_gen2_parent_clk},
++	{ .compatible = "renesas,mmcif-r8a7791", .data = &mmcif_gen2_parent_clk},
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, mmcif_of_match);
+@@ -490,12 +506,51 @@ static void sh_mmcif_clock_control(struct sh_mmcif_host *host, unsigned int clk)
+ 
+ 	if (!clk)
+ 		return;
+-	if (sup_pclk && clk = host->clk)
++
++	if (host->parent_clk) {
++		const struct sh_mmcif_parent_clk *pclk = host->parent_clk;
++		unsigned int parent_freq, clkdiv, myclk, diff_min, diff;
++		int i, j;
++
++		/* FIXME */
++		if (pclk->max != pclk->min * (pclk->max / pclk->min)) {
++			dev_err(&host->pd->dev, "not assumed parent clk\n");
++			return;
++		}
++
++		parent_freq = 0;
++		clkdiv = 0;
++		diff_min = ~0;
++		for (i = pclk->max / pclk->min; i > 0; i--) {
++			for (j = fls(pclk->clkdiv_map); j >= 0; j--) {
++				if (!((1 << j) & pclk->clkdiv_map))
++					continue;
++
++				myclk = ((pclk->min * i) / (1 << (j + 1)));
++				diff = (myclk > clk) ? myclk - clk : clk - myclk;
++
++				if (diff <= diff_min) {
++					parent_freq = pclk->min * i;
++					clkdiv = j;
++					diff_min = diff;
++				}
++			}
++		}
++
++		dev_dbg(&host->pd->dev, "clk %d/%d (%d, %x)\n",
++			(parent_freq / (1 << (clkdiv + 1))), clk,
++			parent_freq, clkdiv);
++
++		clk_set_rate(host->hclk, parent_freq);
++		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL,
++				CLK_CLEAR & (clkdiv << 16));
++	} else if (sup_pclk && clk = host->clk) {
+ 		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_SUP_PCLK);
+-	else
++	} else {
+ 		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_CLEAR &
+ 				((fls(DIV_ROUND_UP(host->clk,
+ 						   clk) - 1) - 1) << 16));
++	}
+ 
+ 	sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_ENABLE);
+ }
+@@ -982,10 +1037,23 @@ static int sh_mmcif_clk_update(struct sh_mmcif_host *host)
+ {
+ 	int ret = clk_prepare_enable(host->hclk);
+ 
+-	if (!ret) {
++	if (ret)
++		return ret;
++
++	if (!host->parent_clk) {
+ 		host->clk = clk_get_rate(host->hclk);
+ 		host->mmc->f_max = host->clk / 2;
+ 		host->mmc->f_min = host->clk / 512;
++	} else {
++		const struct sh_mmcif_parent_clk *pclk = host->parent_clk;
++
++		host->clk = clk_get_rate(host->hclk);
++		host->mmc->f_max = pclk->max / (1 << ffs(pclk->clkdiv_map));
++		host->mmc->f_min = pclk->min / (1 << fls(pclk->clkdiv_map));
++
++		dev_dbg(&host->pd->dev, "parent clk %d/%d, %d/%d\n",
++			pclk->max, pclk->min,
++			host->mmc->f_max, host->mmc->f_min);
+ 	}
+ 
+ 	return ret;
+@@ -1389,6 +1457,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	struct device *dev = &pdev->dev;
+ 	struct sh_mmcif_plat_data *pd = dev->platform_data;
+ 	struct resource *res;
++	const struct of_device_id *of_id = of_match_device(mmcif_of_match, dev);
+ 	void __iomem *reg;
+ 	const char *name;
+ 
+@@ -1421,6 +1490,10 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 
+ 	host->pd = pdev;
+ 
++	host->parent_clk = NULL;
++	if (of_id)
++		host->parent_clk = of_id->data;
++
+ 	spin_lock_init(&host->lock);
+ 
+ 	mmc->ops = &sh_mmcif_ops;
+-- 
+1.9.1
+
