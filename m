@@ -1,53 +1,75 @@
-From: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
-Date: Tue, 21 Apr 2015 10:55:39 +0000
-Subject: Re: [RFC/PATCH v2 3/5] devicetree: bindings: Add new cpuidle enable method for Renesas R-car SoCs
-Message-Id: <20150421105539.GA26706@red-moon>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 21 Apr 2015 17:55:18 +0000
+Subject: Re: [RFC V2 4/4] i2c: mux: demux-pinctrl: add driver
+Message-Id: <2330603.85ZELctJ45@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1429180540-5692-1-git-send-email-keita.kobayashi.ym@renesas.com>
- <1429180540-5692-4-git-send-email-keita.kobayashi.ym@renesas.com>
- <20150417124624.GD21904@leverpostej>
- <CANqRtoTaGc7QCJAVj8Jhpo5HgbwyfiRQZz5j0zBkE1cBkDZAzQ@mail.gmail.com>
- <20150417143723.GC2347@red-moon>
- <5534AD37.20705@renesas.com>
-In-Reply-To: <5534AD37.20705@renesas.com>
+References: <1426576524-22315-5-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1426576524-22315-5-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: keita kobayashi <keita.kobayashi.ym@renesas.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Mark Rutland <Mark.Rutland@arm.com>, "horms@verge.net.au" <horms@verge.net.au>, "rjw@rjwysocki.net" <rjw@rjwysocki.net>, "daniel.lezcano@linaro.org" <daniel.lezcano@linaro.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Mon, Apr 20, 2015 at 08:39:35AM +0100, keita kobayashi wrote:
+Hi Wolfram,
 
-[...]
-
-> > It is related, but Mark's remark is correct. We have to keep in mind
-> > that an enable-method defines how a CPU is powered {up/down} and
-> > also suspended (quiesced through idle).
+On Thursday 19 March 2015 16:53:18 Wolfram Sang wrote:
+> >> + * Switching a master currently needs some access to either i2c-2 or
+> >> i2c-3.
+> >> + * Switching could also be done via sysfs or any other config mechanism.
+> >> + * For this proof-of-concept, extra busses have been used since it
+> >> simplifies
+> >> + * locking a little.
 > > 
-> > It has to be defined through proper bindings and related code, adding a
-> > random compatible string for the sake of matching does not cut it,
-> > that is not acceptable and I stated it from the beginning.
-> > 
-> > So, to make it clear, an enable-method defines CPU operations as a
-> > whole, cpu init, power{up/down} and suspend.
-> > 
-> > It must be documented with proper bindings that defines compatible string and
-> > related properties.
-> > 
-> > The sooner we incorporate the CPUidle ops into SMP ops the better to
-> > prevent this abuse from happening, an enable-method encompasses SMP
-> > ops and CPUidle ops, actually they must be merged because they represent
-> > the enable-method implementation as a whole.
-> > 
-> > I hope this helps.
-> > 
-> > Lorenzo
+> > I have mixed feelings to be honest. When using n internal masters muxed on
+> > the same pins, with pin muxing used as a selector, I could agree that we
+> > are dealing with n+1 busses, with n busses between the masters and the
+> > demux, and one external bus. The two extra virtual busses in your example
+> > above bother me.
 > 
+> That was chosen so the access to the "virtual" bus would automatically
+> do the pinctrl change. As I said somewhere, this could be handled
+> differently.
 > 
-> I will rename "renesas,rcar-idle" in the next patch.
+> > This being said, I see this as an attempt to keep the traditional model of
+> > I2C slaves being children of an I2C master while still departing from it
+> > at the hardware level. Wouldn't it be better to depart from it from a
+> > software point of view as well ? This would allow supporting real
+> > multi-master configurations, but would come with a high refactoring cost
+> > in kernel code.
+> 
+> You mean the slaves belong to an i2c-bus and this bus can be connected
+> to masters? Yeah, that would be quite a change.
 
-It is not just about renaming a compatible string, it is about defining
-a DT binding and related enable-method as a whole.
+Yes, that's what I meant. I believe it would describe the hardware topology 
+better for multi-master systems.
 
-Thanks,
-Lorenzo
+> And I am still not convinced if that would solve the issue that the driver
+> model does not support re-parenting but rather suggests to delete and
+> recreate the device. From device_add():
+> 
+>  * Do not call this routine or device_register() more than once for
+>  * any device structure.  The driver model core is not designed to work
+>  * with devices that get unregistered and then spring back to life.
+>  * (Among other things, it's very hard to guarantee that all references
+>  * to the previous incarnation of @dev have been dropped.)  Allocate
+>  * and register a fresh new struct device instead.
+
+Maybe it's time to implement proper reparenting in the driver core code then ? 
+:-) That's opening Pandora's box though...
+
+> > I'm also worried about power management, how do you envision its
+> > implementation ?
+> 
+> Haven't thought about it so far. That is another reason not to break the
+> driver model, I guess.
+> 
+> Thanks for your input!
+
+You're welcome. I'm afraid it has mostly been destructive input, I don't have 
+any good solution to the problem for now :-(
+
+-- 
+Regards,
+
+Laurent Pinchart
+
