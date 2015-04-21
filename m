@@ -1,26 +1,134 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Thu, 30 Apr 2015 00:28:05 +0000
-Subject: Re: [PATCH 3/3] spi: Re-do the returning value of qspi_transfer_out_in
-Message-Id: <55417715.7020005@jinso.co.jp>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 21 Apr 2015 08:27:26 +0000
+Subject: [PATCH 2/3 v3] mmc: sh_mmcif: cleanup to use dev instead of &pdev->dev
+Message-Id: <87sibtubtg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430200551-20708-1-git-send-email-cm-hiep@jinso.co.jp>	<1430200551-20708-4-git-send-email-cm-hiep@jinso.co.jp> <CAMuHMdVYnEiGaHzXFgH_pWmFRwWH91RQfm7RyS-XG9FvUTb_Mg@mail.gmail.com>
-In-Reply-To: <CAMuHMdVYnEiGaHzXFgH_pWmFRwWH91RQfm7RyS-XG9FvUTb_Mg@mail.gmail.com>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+	<87vbgpubvr.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vbgpubvr.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Mark Brown <broonie@kernel.org>, linux-spi <linux-spi@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Ryusuke Sakato <ryusuke.sakato.bx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
 
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On 2015年04月28日 20:07, Geert Uytterhoeven wrote:
-> On Tue, Apr 28, 2015 at 7:55 AM, Cao Minh Hiep <cm-hiep@jinso.co.jp> wrote:
->> From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
->>
->> To reduce complex of code, drop "ret" then qspi_transfer_out_in function
->> should be returned the value of "qspi_trigger_transfer_out_in" directly.
->>
->> Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Thanks,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
+v2 -> v3
 
+ - add SH-ML
+
+ drivers/mmc/host/sh_mmcif.c | 33 +++++++++++++++++----------------
+ 1 file changed, 17 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 4e81278..5282c5b 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1386,7 +1386,8 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	int ret = 0, irq[2];
+ 	struct mmc_host *mmc;
+ 	struct sh_mmcif_host *host;
+-	struct sh_mmcif_plat_data *pd = pdev->dev.platform_data;
++	struct device *dev = &pdev->dev;
++	struct sh_mmcif_plat_data *pd = dev->platform_data;
+ 	struct resource *res;
+ 	void __iomem *reg;
+ 	const char *name;
+@@ -1394,16 +1395,16 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	irq[0] = platform_get_irq(pdev, 0);
+ 	irq[1] = platform_get_irq(pdev, 1);
+ 	if (irq[0] < 0) {
+-		dev_err(&pdev->dev, "Get irq error\n");
++		dev_err(dev, "Get irq error\n");
+ 		return -ENXIO;
+ 	}
+ 
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	reg = devm_ioremap_resource(&pdev->dev, res);
++	reg = devm_ioremap_resource(dev, res);
+ 	if (IS_ERR(reg))
+ 		return PTR_ERR(reg);
+ 
+-	mmc = mmc_alloc_host(sizeof(struct sh_mmcif_host), &pdev->dev);
++	mmc = mmc_alloc_host(sizeof(struct sh_mmcif_host), dev);
+ 	if (!mmc)
+ 		return -ENOMEM;
+ 
+@@ -1436,20 +1437,20 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 
+ 	platform_set_drvdata(pdev, host);
+ 
+-	pm_runtime_enable(&pdev->dev);
++	pm_runtime_enable(dev);
+ 	host->power = false;
+ 
+-	host->hclk = devm_clk_get(&pdev->dev, NULL);
++	host->hclk = devm_clk_get(dev, NULL);
+ 	if (IS_ERR(host->hclk)) {
+ 		ret = PTR_ERR(host->hclk);
+-		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
++		dev_err(dev, "cannot get clock: %d\n", ret);
+ 		goto err_pm;
+ 	}
+ 	ret = sh_mmcif_clk_update(host);
+ 	if (ret < 0)
+ 		goto err_pm;
+ 
+-	ret = pm_runtime_resume(&pdev->dev);
++	ret = pm_runtime_resume(dev);
+ 	if (ret < 0)
+ 		goto err_clk;
+ 
+@@ -1458,19 +1459,19 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	sh_mmcif_sync_reset(host);
+ 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
+ 
+-	name = irq[1] < 0 ? dev_name(&pdev->dev) : "sh_mmc:error";
+-	ret = devm_request_threaded_irq(&pdev->dev, irq[0], sh_mmcif_intr,
++	name = irq[1] < 0 ? dev_name(dev) : "sh_mmc:error";
++	ret = devm_request_threaded_irq(dev, irq[0], sh_mmcif_intr,
+ 					sh_mmcif_irqt, 0, name, host);
+ 	if (ret) {
+-		dev_err(&pdev->dev, "request_irq error (%s)\n", name);
++		dev_err(dev, "request_irq error (%s)\n", name);
+ 		goto err_clk;
+ 	}
+ 	if (irq[1] >= 0) {
+-		ret = devm_request_threaded_irq(&pdev->dev, irq[1],
++		ret = devm_request_threaded_irq(dev, irq[1],
+ 						sh_mmcif_intr, sh_mmcif_irqt,
+ 						0, "sh_mmc:int", host);
+ 		if (ret) {
+-			dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
++			dev_err(dev, "request_irq error (sh_mmc:int)\n");
+ 			goto err_clk;
+ 		}
+ 	}
+@@ -1487,9 +1488,9 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	if (ret < 0)
+ 		goto err_clk;
+ 
+-	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
++	dev_pm_qos_expose_latency_limit(dev, 100);
+ 
+-	dev_info(&pdev->dev, "Chip version 0x%04x, clock rate %luMHz\n",
++	dev_info(dev, "Chip version 0x%04x, clock rate %luMHz\n",
+ 		 sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0xffff,
+ 		 clk_get_rate(host->hclk) / 1000000UL);
+ 
+@@ -1499,7 +1500,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ err_clk:
+ 	clk_disable_unprepare(host->hclk);
+ err_pm:
+-	pm_runtime_disable(&pdev->dev);
++	pm_runtime_disable(dev);
+ err_host:
+ 	mmc_free_host(mmc);
+ 	return ret;
+-- 
+1.9.1
 
