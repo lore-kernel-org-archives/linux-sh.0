@@ -1,73 +1,82 @@
-From: Rajendra Nayak <rnayak@codeaurora.org>
-Date: Thu, 23 Apr 2015 08:45:12 +0000
-Subject: [PATCH 4/5] arm: davinci: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
-Message-Id: <1429777993-11702-5-git-send-email-rnayak@codeaurora.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 21 Apr 2015 15:01:37 +0000
+Subject: [PATCH/RFC 02/03] irqchip: renesas-irqc: Add fine grained Runtime PM code
+Message-Id: <20150421150137.14288.45064.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
-In-Reply-To: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
+References: <20150421150115.14288.88519.sendpatchset@little-apple>
+In-Reply-To: <20150421150115.14288.88519.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: jason@lakedaemon.net, geert+renesas@glider.be, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-USE_PM_CLK_RUNTIME_OPS is introduced so we don't repeat the same code
-to do runtime_suspend and runtime_resume across users of PM clocks.
-Use it to remove the boilerplate code.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Rajendra Nayak <rnayak@codeaurora.org>
-Reviewed-by: Kevin Hilman <khilman@linaro.org>
-Acked-by: Santosh Shilimkar <ssantosh@kernel.org>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Convert Runtime PM support from coarse grained "always enabled"
+into more fine grained per-interrupt optional enablement.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/mach-davinci/pm_domain.c | 32 +-------------------------------
- 1 file changed, 1 insertion(+), 31 deletions(-)
 
-diff --git a/arch/arm/mach-davinci/pm_domain.c b/arch/arm/mach-davinci/pm_domain.c
-index 641edc3..78eac2c 100644
---- a/arch/arm/mach-davinci/pm_domain.c
-+++ b/arch/arm/mach-davinci/pm_domain.c
-@@ -14,39 +14,9 @@
- #include <linux/pm_clock.h>
- #include <linux/platform_device.h>
+ drivers/irqchip/irq-renesas-irqc.c |   11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+--- 0002/drivers/irqchip/irq-renesas-irqc.c
++++ work/drivers/irqchip/irq-renesas-irqc.c	2015-04-21 23:16:17.686370138 +0900
+@@ -96,12 +96,18 @@ static void irqc_irq_mask(struct irq_dat
  
--#ifdef CONFIG_PM
--static int davinci_pm_runtime_suspend(struct device *dev)
--{
--	int ret;
--
--	dev_dbg(dev, "%s\n", __func__);
--
--	ret = pm_generic_runtime_suspend(dev);
--	if (ret)
--		return ret;
--
--	ret = pm_clk_suspend(dev);
--	if (ret) {
--		pm_generic_runtime_resume(dev);
--		return ret;
--	}
--
--	return 0;
--}
--
--static int davinci_pm_runtime_resume(struct device *dev)
--{
--	dev_dbg(dev, "%s\n", __func__);
--
--	pm_clk_resume(dev);
--	return pm_generic_runtime_resume(dev);
--}
--#endif
--
- static struct dev_pm_domain davinci_pm_domain = {
- 	.ops = {
--		SET_RUNTIME_PM_OPS(davinci_pm_runtime_suspend,
--				   davinci_pm_runtime_resume, NULL)
-+		USE_PM_CLK_RUNTIME_OPS
- 		USE_PLATFORM_PM_SLEEP_OPS
- 	},
- };
--- 
-QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a member
-of Code Aurora Forum, hosted by The Linux Foundation
-
+ static void irqc_irq_enable(struct irq_data *d)
+ {
++	struct irqc_priv *p = irq_data_get_irq_chip_data(d);
++
++	pm_runtime_get_sync(&p->pdev->dev);
+ 	irqc_irq_unmask(d);
+ }
+ 
+ static void irqc_irq_disable(struct irq_data *d)
+ {
++	struct irqc_priv *p = irq_data_get_irq_chip_data(d);
++
+ 	irqc_irq_mask(d);
++	pm_runtime_put(&p->pdev->dev);
+ }
+ 
+ static unsigned char irqc_sense[IRQ_TYPE_SENSE_MASK + 1] = {
+@@ -124,10 +130,12 @@ static int irqc_irq_set_type(struct irq_
+ 	if (!value)
+ 		return -EINVAL;
+ 
++	pm_runtime_get_sync(&p->pdev->dev);
+ 	tmp = ioread32(p->iomem + IRQC_CONFIG(hw_irq));
+ 	tmp &= ~0x3f;
+ 	tmp |= value;
+ 	iowrite32(tmp, p->iomem + IRQC_CONFIG(hw_irq));
++	pm_runtime_put(&p->pdev->dev);
+ 	return 0;
+ }
+ 
+@@ -215,7 +223,6 @@ static int irqc_probe(struct platform_de
+ 	}
+ 
+ 	pm_runtime_enable(&pdev->dev);
+-	pm_runtime_get_sync(&pdev->dev);
+ 
+ 	/* get hold of manadatory IOMEM */
+ 	io = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+@@ -300,7 +307,6 @@ err3:
+ err2:
+ 	iounmap(p->iomem);
+ err1:
+-	pm_runtime_put(&pdev->dev);
+ 	pm_runtime_disable(&pdev->dev);
+ 	kfree(p);
+ err0:
+@@ -317,7 +323,6 @@ static int irqc_remove(struct platform_d
+ 
+ 	irq_domain_remove(p->irq_domain);
+ 	iounmap(p->iomem);
+-	pm_runtime_put(&pdev->dev);
+ 	pm_runtime_disable(&pdev->dev);
+ 	kfree(p);
+ 	return 0;
