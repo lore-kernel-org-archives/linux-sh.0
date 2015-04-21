@@ -1,75 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 21 Apr 2015 17:55:18 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 21 Apr 2015 18:47:01 +0000
 Subject: Re: [RFC V2 4/4] i2c: mux: demux-pinctrl: add driver
-Message-Id: <2330603.85ZELctJ45@avalon>
+Message-Id: <20150421184701.GA9573@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="/9DWx/yDrRhgMJTb"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1426576524-22315-5-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1426576524-22315-5-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Wolfram,
 
-On Thursday 19 March 2015 16:53:18 Wolfram Sang wrote:
-> >> + * Switching a master currently needs some access to either i2c-2 or
-> >> i2c-3.
-> >> + * Switching could also be done via sysfs or any other config mechanism.
-> >> + * For this proof-of-concept, extra busses have been used since it
-> >> simplifies
-> >> + * locking a little.
-> > 
-> > I have mixed feelings to be honest. When using n internal masters muxed on
-> > the same pins, with pin muxing used as a selector, I could agree that we
-> > are dealing with n+1 busses, with n busses between the masters and the
-> > demux, and one external bus. The two extra virtual busses in your example
-> > above bother me.
-> 
-> That was chosen so the access to the "virtual" bus would automatically
-> do the pinctrl change. As I said somewhere, this could be handled
-> differently.
-> 
-> > This being said, I see this as an attempt to keep the traditional model of
-> > I2C slaves being children of an I2C master while still departing from it
-> > at the hardware level. Wouldn't it be better to depart from it from a
-> > software point of view as well ? This would allow supporting real
-> > multi-master configurations, but would come with a high refactoring cost
-> > in kernel code.
-> 
-> You mean the slaves belong to an i2c-bus and this bus can be connected
-> to masters? Yeah, that would be quite a change.
+--/9DWx/yDrRhgMJTb
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Yes, that's what I meant. I believe it would describe the hardware topology 
-better for multi-master systems.
+> > Thanks for your input!
+>=20
+> You're welcome. I'm afraid it has mostly been destructive input, I don't =
+have=20
+> any good solution to the problem for now :-(
 
-> And I am still not convinced if that would solve the issue that the driver
-> model does not support re-parenting but rather suggests to delete and
-> recreate the device. From device_add():
-> 
->  * Do not call this routine or device_register() more than once for
->  * any device structure.  The driver model core is not designed to work
->  * with devices that get unregistered and then spring back to life.
->  * (Among other things, it's very hard to guarantee that all references
->  * to the previous incarnation of @dev have been dropped.)  Allocate
->  * and register a fresh new struct device instead.
+Well, actually, I have another version based on OF_DYNAMIC mostly ready.
+It is not capable of keeping the I2C clients between an IP core switch,
+but it is MUCH closer to the driver model. Could be good enough for our
+use-case. Tests so far have been promising, but I get an OOPS when the
+platform_devices should get destroyed. This looks like an OF_DYNAMIC
+problem to me and I haven't got feedback from Pantelis yet.
 
-Maybe it's time to implement proper reparenting in the driver core code then ? 
-:-) That's opening Pandora's box though...
 
-> > I'm also worried about power management, how do you envision its
-> > implementation ?
-> 
-> Haven't thought about it so far. That is another reason not to break the
-> driver model, I guess.
-> 
-> Thanks for your input!
+--/9DWx/yDrRhgMJTb
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-You're welcome. I'm afraid it has mostly been destructive input, I don't have 
-any good solution to the problem for now :-(
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
--- 
-Regards,
+iQIcBAEBAgAGBQJVNpslAAoJEBQN5MwUoCm2G7wQALUeneeS1ofy4oRij56iotb0
+CcQuFmN1Fvqke2wg+RjE5z51D5A//u8UffMPxabDr3Q4YsHP8RqgZhU/yKpjJG3S
+U4AlC7m/WAQr2HYwCwyrakrO8Ngj1HexRGSRgty0SUyHa4kNQA05Gu9h2E8O+6+1
+uxjvuaNjiFB23lNGQB0CI2YtMFiXw4GK6c8qavLKbSO4Exzxy6dkCP2pv9sxn7ka
+LcT757U3Rdw/MoHiqCcbZZzsiFyl1Yq7ddObsvlr6sKAzFKvut7gcRnDX/cSWuwU
+pt/8SZSmLVqNdkC/pTw32l7/QBZr1fBBjRzd6eb0Fl3KxiluQTHJvsy9FMLBHbFq
+V+WcIBlA5KcirKClDcThSUr2zHSyAqbuMcRrsCbK8X6+A9ihMbA56cgM9I+9mxB7
+SPeDOH+1KN+wPNPQHZjbkkPHZCI48WfaT9G6L/0/hBrTK+kN1NAeTYq11Y1O8tBq
+sm831gSdrZ58lFnDzO+6n923p2GyV1ikdNaYEx2SnW6tTaHQ3N0/X/tv9aQCpxwi
+K1teqEJfsbUK/H40Wrwz7pUyHQoK2MPuu2e7wXePSkCl5tObEdMK0gdW/9hbcKw0
+1YZYYMxpSYPoac5Sie9zIjSlbIusKmn3P6IanT66LEo+iSr0hdrBxJ0mO1x93ain
+AOEsGLvXJaloJLniPnVv
+=FfmV
+-----END PGP SIGNATURE-----
 
-Laurent Pinchart
-
+--/9DWx/yDrRhgMJTb--
