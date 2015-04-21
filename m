@@ -1,59 +1,34 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 21 Apr 2015 08:26:57 +0000
-Subject: [PATCH 1/3 v3] mmc: sh_mmcif: move mmcif_of_match to upside
-Message-Id: <87tww9ubua.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 21 Apr 2015 10:07:41 +0000
+Subject: Re: [PATCH 1/3 v3] mmc: sh_mmcif: move mmcif_of_match to upside
+Message-Id: <CAMuHMdV58374vtQOwg6adhGtHR=ZTq16gXj_2-tJ3QFEoRsuVQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
 	<87vbgpubvr.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbgpubvr.wl%kuninori.morimoto.gx@renesas.com>
+	<87tww9ubua.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87tww9ubua.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Ulf Hansson <ulf.hansson@linaro.org>, linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Tue, Apr 21, 2015 at 10:26 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
----
-v2 -> v3
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
- - add SH-ML
+Gr{oetje,eeting}s,
 
- drivers/mmc/host/sh_mmcif.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+                        Geert
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 2b6ef6b..4e81278 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -257,6 +257,12 @@ struct sh_mmcif_host {
- 	bool			dma_active;
- };
- 
-+static const struct of_device_id mmcif_of_match[] = {
-+	{ .compatible = "renesas,sh-mmcif" },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(of, mmcif_of_match);
-+
- static inline void sh_mmcif_bitset(struct sh_mmcif_host *host,
- 					unsigned int reg, u32 val)
- {
-@@ -1543,12 +1549,6 @@ static int sh_mmcif_resume(struct device *dev)
- }
- #endif
- 
--static const struct of_device_id mmcif_of_match[] = {
--	{ .compatible = "renesas,sh-mmcif" },
--	{ }
--};
--MODULE_DEVICE_TABLE(of, mmcif_of_match);
--
- static const struct dev_pm_ops sh_mmcif_dev_pm_ops = {
- 	SET_SYSTEM_SLEEP_PM_OPS(sh_mmcif_suspend, sh_mmcif_resume)
- };
--- 
-1.9.1
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
