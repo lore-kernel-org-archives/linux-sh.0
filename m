@@ -1,189 +1,94 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 21 Apr 2015 10:31:21 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 21 Apr 2015 13:07:37 +0000
 Subject: Re: [PATCH 3/3 v3] mmc: sh_mmcif: calculate best clock with parent clock
-Message-Id: <CAMuHMdUM4Cizij6q+6o9mADF_UjkzpZSvsUCdG+Y=PHo=A_qLw@mail.gmail.com>
+Message-Id: <1433253.xXE7ok9ACb@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
-	<87vbgpubvr.wl%kuninori.morimoto.gx@renesas.com>
-	<87r3rdubmv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87r3rdubmv.wl%kuninori.morimoto.gx@renesas.com>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com> <87r3rdubmv.wl%kuninori.morimoto.gx@renesas.com> <CAMuHMdUM4Cizij6q+6o9mADF_UjkzpZSvsUCdG+Y=PHo=A_qLw@mail.gmail.com>
+In-Reply-To: <CAMuHMdUM4Cizij6q+6o9mADF_UjkzpZSvsUCdG+Y=PHo=A_qLw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ulf Hansson <ulf.hansson@linaro.org>, linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-Hi Morimoto-san,
+Hello,
 
-On Tue, Apr 21, 2015 at 10:31 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> MMCIF IP on R-Car series has parent clock which can be set
-> several rate, and it was not implemented on old SH-Mobile series
-> (= SH-Mobile series parent clock was fixed rate)
-> R-Car series MMCIF can use more high speed access if it setup
-> parent clock. This patch adds parent clock setup method,
-> and r8a7790/r8a7791 can use it.
->
-> renesas,mmcif already contain renesas,mmcif-r8a7790/r8a7791 on
-> compatible string. So there is no update for binding Document.
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+On Tuesday 21 April 2015 12:31:21 Geert Uytterhoeven wrote:
+> On Tue, Apr 21, 2015 at 10:31 AM, Kuninori Morimoto wrote:
+> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > 
+> > MMCIF IP on R-Car series has parent clock which can be set
+> > several rate, and it was not implemented on old SH-Mobile series
+> > (= SH-Mobile series parent clock was fixed rate)
+> > R-Car series MMCIF can use more high speed access if it setup
+> > parent clock. This patch adds parent clock setup method,
+> > and r8a7790/r8a7791 can use it.
+> > 
+> > renesas,mmcif already contain renesas,mmcif-r8a7790/r8a7791 on
+> > compatible string. So there is no update for binding Document.
+> > 
+> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+> > 
+> > diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+> > index 5282c5b..6ae836b 100644
+> > --- a/drivers/mmc/host/sh_mmcif.c
+> > +++ b/drivers/mmc/host/sh_mmcif.c
+> > @@ -224,6 +225,12 @@ enum mmcif_wait_for {
+> >         MMCIF_WAIT_FOR_STOP,
+> >  };
+> > 
+> > +struct sh_mmcif_parent_clk {
 
-> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-> index 5282c5b..6ae836b 100644
-> --- a/drivers/mmc/host/sh_mmcif.c
-> +++ b/drivers/mmc/host/sh_mmcif.c
+I'm not sure I would call this parent clock. It refers to the frequency of the 
+functional clock provided to the MMCIF, there's no concept of parent there. 
+True, the clock referenced by the MMCIF DT node is an MSTP gate clock, and 
+frequency control is implemented in the MSTP clock parent, but that hardware 
+architecture is internal to the CPG and shouldn't be considered by the MMCIF.
 
-> @@ -224,6 +225,12 @@ enum mmcif_wait_for {
->         MMCIF_WAIT_FOR_STOP,
->  };
->
-> +struct sh_mmcif_parent_clk {
-> +       unsigned int max; /* if exist: R-Car has MMC CKCR on CPG */
-> +       unsigned int min; /* if exist: R-Car has MMC CKCR on CPG */
-> +       u32 clkdiv_map;  /* see CE_CLK_CTRL::CLKDIV */
-> +};
-> +
->  struct sh_mmcif_host {
->         struct mmc_host *mmc;
->         struct mmc_request *mrq;
-> @@ -249,6 +256,7 @@ struct sh_mmcif_host {
->         bool ccs_enable;                /* Command Completion Signal support */
->         bool clk_ctrl2_enable;
->         struct mutex thread_lock;
-> +       const struct sh_mmcif_parent_clk *parent_clk;
->
->         /* DMA support */
->         struct dma_chan         *chan_rx;
-> @@ -257,8 +265,16 @@ struct sh_mmcif_host {
->         bool                    dma_active;
->  };
->
-> +static const struct sh_mmcif_parent_clk mmcif_gen2_parent_clk = {
-> +       .max = 97500000,
-> +       .min = 12187500,
-> +       .clkdiv_map = 0x3ff,
+> > +       unsigned int max; /* if exist: R-Car has MMC CKCR on CPG */
+> > +       unsigned int min; /* if exist: R-Car has MMC CKCR on CPG */
+> > +       u32 clkdiv_map;  /* see CE_CLK_CTRL::CLKDIV */
+> > +};
+> > +
+> >  struct sh_mmcif_host {
+> >         struct mmc_host *mmc;
+> >         struct mmc_request *mrq;
+> > @@ -249,6 +256,7 @@ struct sh_mmcif_host {
+> >         bool ccs_enable;                /* Command Completion Signal
+> >         support */
+> >         bool clk_ctrl2_enable;
+> >         struct mutex thread_lock;
+> > +       const struct sh_mmcif_parent_clk *parent_clk;
+> > 
+> >         /* DMA support */
+> >         struct dma_chan         *chan_rx;
+> > @@ -257,8 +265,16 @@ struct sh_mmcif_host {
+> >         bool                    dma_active;
+> >  };
+> > 
+> > +static const struct sh_mmcif_parent_clk mmcif_gen2_parent_clk = {
+> > +       .max = 97500000,
+> > +       .min = 12187500,
+> > +       .clkdiv_map = 0x3ff,
+> 
+> Shouldn't this come from private data in the CPG clock driver, which
+> supplies the parent clock? Then the mmcif driver will be independent from
+> the parent clock.
 
-Shouldn't this come from private data in the CPG clock driver, which supplies
-the parent clock? Then the mmcif driver will be independent from the parent
-clock.
+The real question is where the constraint comes from. The Gen2 datasheet 
+documents the MMC clocks maximum frequency as 97.5 MHz in the CPG section. 
+However, I have a feeling the constraint doesn't come from the DIV6 which 
+should be able to output higher frequencies, but from the MMCIF, the clock 
+distribution tree, or both.
 
-> +};
-> +
->  static const struct of_device_id mmcif_of_match[] = {
->         { .compatible = "renesas,sh-mmcif" },
-> +       { .compatible = "renesas,mmcif-r8a7790", .data = &mmcif_gen2_parent_clk},
-> +       { .compatible = "renesas,mmcif-r8a7791", .data = &mmcif_gen2_parent_clk},
->         { }
->  };
->  MODULE_DEVICE_TABLE(of, mmcif_of_match);
-> @@ -490,12 +506,51 @@ static void sh_mmcif_clock_control(struct sh_mmcif_host *host, unsigned int clk)
->
->         if (!clk)
->                 return;
-> -       if (sup_pclk && clk = host->clk)
-> +
-> +       if (host->parent_clk) {
-> +               const struct sh_mmcif_parent_clk *pclk = host->parent_clk;
-> +               unsigned int parent_freq, clkdiv, myclk, diff_min, diff;
-> +               int i, j;
-> +
-> +               /* FIXME */
-> +               if (pclk->max != pclk->min * (pclk->max / pclk->min)) {
-> +                       dev_err(&host->pd->dev, "not assumed parent clk\n");
-> +                       return;
-> +               }
+There's also the option of specifying the admissible clock range in DT, either 
+in the CPG node or the MMCIF node.
 
-Why?
+> > +};
 
-> +               parent_freq = 0;
-> +               clkdiv = 0;
-> +               diff_min = ~0;
-> +               for (i = pclk->max / pclk->min; i > 0; i--) {
-> +                       for (j = fls(pclk->clkdiv_map); j >= 0; j--) {
-> +                               if (!((1 << j) & pclk->clkdiv_map))
-> +                                       continue;
-> +
-> +                               myclk = ((pclk->min * i) / (1 << (j + 1)));
-> +                               diff = (myclk > clk) ? myclk - clk : clk - myclk;
-> +
-> +                               if (diff <= diff_min) {
-> +                                       parent_freq = pclk->min * i;
-> +                                       clkdiv = j;
-> +                                       diff_min = diff;
-> +                               }
-> +                       }
-> +               }
+-- 
+Regards,
 
-Shouldn't the above be handled by the CPG clock driver, through a clk API?
+Laurent Pinchart
 
-> +               dev_dbg(&host->pd->dev, "clk %d/%d (%d, %x)\n",
-
-"%u" (all four)
-
-> +                       (parent_freq / (1 << (clkdiv + 1))), clk,
-> +                       parent_freq, clkdiv);
-> +
-> +               clk_set_rate(host->hclk, parent_freq);
-
-Note that the last parameter of clk_set_rate() is "unsigned long", while
-parent_freq is "unsigned int".
-
-> +               sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL,
-> +                               CLK_CLEAR & (clkdiv << 16));
-> +       } else if (sup_pclk && clk = host->clk) {
->                 sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_SUP_PCLK);
-> -       else
-> +       } else {
->                 sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_CLEAR &
->                                 ((fls(DIV_ROUND_UP(host->clk,
->                                                    clk) - 1) - 1) << 16));
-> +       }
->
->         sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_ENABLE);
->  }
-> @@ -982,10 +1037,23 @@ static int sh_mmcif_clk_update(struct sh_mmcif_host *host)
->  {
->         int ret = clk_prepare_enable(host->hclk);
->
-> -       if (!ret) {
-> +       if (ret)
-> +               return ret;
-> +
-> +       if (!host->parent_clk) {
->                 host->clk = clk_get_rate(host->hclk);
->                 host->mmc->f_max = host->clk / 2;
->                 host->mmc->f_min = host->clk / 512;
-> +       } else {
-> +               const struct sh_mmcif_parent_clk *pclk = host->parent_clk;
-> +
-> +               host->clk = clk_get_rate(host->hclk);
-
-clk_get_rate() returns "unsigned long", while "host->clk" is "unsigned int".
-
-> +               host->mmc->f_max = pclk->max / (1 << ffs(pclk->clkdiv_map));
-> +               host->mmc->f_min = pclk->min / (1 << fls(pclk->clkdiv_map));
-> +
-> +               dev_dbg(&host->pd->dev, "parent clk %d/%d, %d/%d\n",
-
-"%u" (all four)
-
-> +                       pclk->max, pclk->min,
-> +                       host->mmc->f_max, host->mmc->f_min);
->         }
->
->         return ret;
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
