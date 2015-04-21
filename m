@@ -1,134 +1,34 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 21 Apr 2015 08:27:26 +0000
-Subject: [PATCH 2/3 v3] mmc: sh_mmcif: cleanup to use dev instead of &pdev->dev
-Message-Id: <87sibtubtg.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 21 Apr 2015 10:07:58 +0000
+Subject: Re: [PATCH 2/3 v3] mmc: sh_mmcif: cleanup to use dev instead of &pdev->dev
+Message-Id: <CAMuHMdXike0vh5bTmyALN08hDOU7M4kfN3oSPJgX4n_42QZQ6w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
 	<87vbgpubvr.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbgpubvr.wl%kuninori.morimoto.gx@renesas.com>
+	<87sibtubtg.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87sibtubtg.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Ulf Hansson <ulf.hansson@linaro.org>, linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Tue, Apr 21, 2015 at 10:27 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
----
-v2 -> v3
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
- - add SH-ML
+Gr{oetje,eeting}s,
 
- drivers/mmc/host/sh_mmcif.c | 33 +++++++++++++++++----------------
- 1 file changed, 17 insertions(+), 16 deletions(-)
+                        Geert
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 4e81278..5282c5b 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -1386,7 +1386,8 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	int ret = 0, irq[2];
- 	struct mmc_host *mmc;
- 	struct sh_mmcif_host *host;
--	struct sh_mmcif_plat_data *pd = pdev->dev.platform_data;
-+	struct device *dev = &pdev->dev;
-+	struct sh_mmcif_plat_data *pd = dev->platform_data;
- 	struct resource *res;
- 	void __iomem *reg;
- 	const char *name;
-@@ -1394,16 +1395,16 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	irq[0] = platform_get_irq(pdev, 0);
- 	irq[1] = platform_get_irq(pdev, 1);
- 	if (irq[0] < 0) {
--		dev_err(&pdev->dev, "Get irq error\n");
-+		dev_err(dev, "Get irq error\n");
- 		return -ENXIO;
- 	}
- 
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	reg = devm_ioremap_resource(&pdev->dev, res);
-+	reg = devm_ioremap_resource(dev, res);
- 	if (IS_ERR(reg))
- 		return PTR_ERR(reg);
- 
--	mmc = mmc_alloc_host(sizeof(struct sh_mmcif_host), &pdev->dev);
-+	mmc = mmc_alloc_host(sizeof(struct sh_mmcif_host), dev);
- 	if (!mmc)
- 		return -ENOMEM;
- 
-@@ -1436,20 +1437,20 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 
- 	platform_set_drvdata(pdev, host);
- 
--	pm_runtime_enable(&pdev->dev);
-+	pm_runtime_enable(dev);
- 	host->power = false;
- 
--	host->hclk = devm_clk_get(&pdev->dev, NULL);
-+	host->hclk = devm_clk_get(dev, NULL);
- 	if (IS_ERR(host->hclk)) {
- 		ret = PTR_ERR(host->hclk);
--		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
-+		dev_err(dev, "cannot get clock: %d\n", ret);
- 		goto err_pm;
- 	}
- 	ret = sh_mmcif_clk_update(host);
- 	if (ret < 0)
- 		goto err_pm;
- 
--	ret = pm_runtime_resume(&pdev->dev);
-+	ret = pm_runtime_resume(dev);
- 	if (ret < 0)
- 		goto err_clk;
- 
-@@ -1458,19 +1459,19 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	sh_mmcif_sync_reset(host);
- 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
- 
--	name = irq[1] < 0 ? dev_name(&pdev->dev) : "sh_mmc:error";
--	ret = devm_request_threaded_irq(&pdev->dev, irq[0], sh_mmcif_intr,
-+	name = irq[1] < 0 ? dev_name(dev) : "sh_mmc:error";
-+	ret = devm_request_threaded_irq(dev, irq[0], sh_mmcif_intr,
- 					sh_mmcif_irqt, 0, name, host);
- 	if (ret) {
--		dev_err(&pdev->dev, "request_irq error (%s)\n", name);
-+		dev_err(dev, "request_irq error (%s)\n", name);
- 		goto err_clk;
- 	}
- 	if (irq[1] >= 0) {
--		ret = devm_request_threaded_irq(&pdev->dev, irq[1],
-+		ret = devm_request_threaded_irq(dev, irq[1],
- 						sh_mmcif_intr, sh_mmcif_irqt,
- 						0, "sh_mmc:int", host);
- 		if (ret) {
--			dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
-+			dev_err(dev, "request_irq error (sh_mmc:int)\n");
- 			goto err_clk;
- 		}
- 	}
-@@ -1487,9 +1488,9 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	if (ret < 0)
- 		goto err_clk;
- 
--	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
-+	dev_pm_qos_expose_latency_limit(dev, 100);
- 
--	dev_info(&pdev->dev, "Chip version 0x%04x, clock rate %luMHz\n",
-+	dev_info(dev, "Chip version 0x%04x, clock rate %luMHz\n",
- 		 sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0xffff,
- 		 clk_get_rate(host->hclk) / 1000000UL);
- 
-@@ -1499,7 +1500,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- err_clk:
- 	clk_disable_unprepare(host->hclk);
- err_pm:
--	pm_runtime_disable(&pdev->dev);
-+	pm_runtime_disable(dev);
- err_host:
- 	mmc_free_host(mmc);
- 	return ret;
--- 
-1.9.1
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
