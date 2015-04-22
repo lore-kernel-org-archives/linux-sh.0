@@ -1,41 +1,49 @@
-From: David Miller <davem@davemloft.net>
-Date: Wed, 22 Apr 2015 22:41:33 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 22 Apr 2015 22:50:40 +0000
 Subject: Re: [PATCH v3] Renesas Ethernet AVB driver
-Message-Id: <20150422.184133.132510003688162502.davem@davemloft.net>
+Message-Id: <553825C0.2040600@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <553814F0.40405@cogentembedded.com>
-	<20150422.181813.1931455043058560592.davem@davemloft.net>
-	<553821F8.8050300@cogentembedded.com>
-In-Reply-To: <553821F8.8050300@cogentembedded.com>
+References: <553814F0.40405@cogentembedded.com>	<20150422.181813.1931455043058560592.davem@davemloft.net>	<553821F8.8050300@cogentembedded.com> <20150422.184133.132510003688162502.davem@davemloft.net>
+In-Reply-To: <20150422.184133.132510003688162502.davem@davemloft.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
+To: David Miller <davem@davemloft.net>
 Cc: mitsuhiro.kimura.kc@renesas.com, f.fainelli@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, richardcochran@gmail.com, linux-sh@vger.kernel.org, masaru.nagai.vx@renesas.com
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 23 Apr 2015 01:34:32 +0300
+On 04/23/2015 01:41 AM, David Miller wrote:
 
->    Sigh... I'm seeing no way out of that then, only copying. :-(
 
-What exactly is the device's restriction?
+>>     Sigh... I'm seeing no way out of that then, only copying. :-(
 
-Any reasonable modern chip allows one of two things.
+> What exactly is the device's restriction?
 
-Either it allows arbitrary alignment of the start of the TX
-frame when DMA'ing.
+    The frame data must be aligned on 32-bit boundary.
 
-_or_
+> Any reasonable modern chip allows one of two things.
 
-It allows a variable number of pad bytes to be inserted by the
-driver before giving it to the card, which do not go onto the
-wire, in order to meet the device's DMA restrictions.
+> Either it allows arbitrary alignment of the start of the TX
+> frame when DMA'ing.
 
-For example, if the packet is only 2 byte aligned, you set the "ignore
-offset" to 2 and push two zero bytes in front of the ethernet frame
-before giving it to the card.
+> _or_
 
-If a chip made in this day and era cannot do one of those two things,
-this is beyond disappointing and is a massive engineering failure.
-Whoever designed this chip made no investigation into how their
-hardware is going to be actually used.
+> It allows a variable number of pad bytes to be inserted by the
+> driver before giving it to the card, which do not go onto the
+> wire, in order to meet the device's DMA restrictions.
+
+> For example, if the packet is only 2 byte aligned, you set the "ignore
+> offset" to 2 and push two zero bytes in front of the ethernet frame
+> before giving it to the card.
+
+    I'm not seeing any padding logic on the TX path, only on the RX path (but 
+it counts in 4-byte words, so seems quite useless).
+
+> If a chip made in this day and era cannot do one of those two things,
+> this is beyond disappointing and is a massive engineering failure.
+> Whoever designed this chip made no investigation into how their
+> hardware is going to be actually used.
+
+    Too nad the Renesas SoC designers are not reading that. :-)
+
+WBR, Sergei
+
