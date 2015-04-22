@@ -1,32 +1,41 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 22 Apr 2015 22:34:32 +0000
+From: David Miller <davem@davemloft.net>
+Date: Wed, 22 Apr 2015 22:41:33 +0000
 Subject: Re: [PATCH v3] Renesas Ethernet AVB driver
-Message-Id: <553821F8.8050300@cogentembedded.com>
+Message-Id: <20150422.184133.132510003688162502.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <553804CA.1030605@cogentembedded.com>	<20150422.164242.2185477513394713122.davem@davemloft.net>	<553814F0.40405@cogentembedded.com> <20150422.181813.1931455043058560592.davem@davemloft.net>
-In-Reply-To: <20150422.181813.1931455043058560592.davem@davemloft.net>
+References: <553814F0.40405@cogentembedded.com>
+	<20150422.181813.1931455043058560592.davem@davemloft.net>
+	<553821F8.8050300@cogentembedded.com>
+In-Reply-To: <553821F8.8050300@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
+To: sergei.shtylyov@cogentembedded.com
 Cc: mitsuhiro.kimura.kc@renesas.com, f.fainelli@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, richardcochran@gmail.com, linux-sh@vger.kernel.org, masaru.nagai.vx@renesas.com
 
-On 04/23/2015 01:18 AM, David Miller wrote:
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 23 Apr 2015 01:34:32 +0300
 
->>>>      Hmm, I've been digging in the net core, and was unable to see where TX
->>>>      skb's get their NET_IP_ALIGN bytes reserved. Have I missed something?
->>>>      Probably need to print out skb's fields...
+>    Sigh... I'm seeing no way out of that then, only copying. :-(
 
->>> NET_IP_ALIGN is for receive, not transmit.
+What exactly is the device's restriction?
 
->>     But when I print 'skb->data' from the ndo_start_xmit() method (in the
->>     'sh_eth' driver), all addresses end with 2, so it looks like
->>     NET_IP_ALIGN gets added somewhere...
+Any reasonable modern chip allows one of two things.
 
-> It's the IPV4 header which is 4 byte aligned, then the ethernet header
-> is pushed which is 14 bytes.
+Either it allows arbitrary alignment of the start of the TX
+frame when DMA'ing.
 
-    Sigh... I'm seeing no way out of that then, only copying. :-(
+_or_
 
-WBR, Sergei
+It allows a variable number of pad bytes to be inserted by the
+driver before giving it to the card, which do not go onto the
+wire, in order to meet the device's DMA restrictions.
 
+For example, if the packet is only 2 byte aligned, you set the "ignore
+offset" to 2 and push two zero bytes in front of the ethernet frame
+before giving it to the card.
+
+If a chip made in this day and era cannot do one of those two things,
+this is beyond disappointing and is a massive engineering failure.
+Whoever designed this chip made no investigation into how their
+hardware is going to be actually used.
