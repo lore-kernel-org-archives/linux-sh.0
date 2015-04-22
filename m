@@ -1,42 +1,61 @@
-From: MITSUHIRO KIMURA <mitsuhiro.kimura.kc@renesas.com>
-Date: Wed, 22 Apr 2015 05:04:13 +0000
+From: David Miller <davem@davemloft.net>
+Date: Wed, 22 Apr 2015 15:36:54 +0000
 Subject: Re: [PATCH v3] Renesas Ethernet AVB driver
-Message-Id: <SIXPR06MB03142A49C392C39922DC2BDA3EE0@SIXPR06MB031.apcprd06.prod.outlook.com>
+Message-Id: <20150422.113654.1169277303695917496.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <32501816.HtkLenWQpn@wasted.cogentembedded.com>
- <552C4554.2070608@gmail.com> <552D8898.3060905@cogentembedded.com>
-In-Reply-To: <552D8898.3060905@cogentembedded.com>
+References: <552C4554.2070608@gmail.com>
+	<552D8898.3060905@cogentembedded.com>
+	<SIXPR06MB03142A49C392C39922DC2BDA3EE0@SIXPR06MB031.apcprd06.prod.outlook.com>
+In-Reply-To: <SIXPR06MB03142A49C392C39922DC2BDA3EE0@SIXPR06MB031.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Florian Fainelli <f.fainelli@gmail.com>, "robh+dt@kernel.org" <robh+dt@kernel.org>, "pawel.moll@arm.com" <pawel.moll@arm.com>, "mark.rutland@arm.com" <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "galak@codeaurora.org" <galak@codeaurora.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, "richardcochran@gmail.com" <richardcochran@gmail.com>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, MASARU NAGAI <masaru.nagai.vx@renesas.com>
+To: mitsuhiro.kimura.kc@renesas.com
+Cc: sergei.shtylyov@cogentembedded.com, f.fainelli@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, richardcochran@gmail.com, linux-sh@vger.kernel.org, masaru.nagai.vx@renesas.com
 
-SGVsbG8gU2VyZ2VpLg0KDQogKDIwMTUvMDQvMTUgNjozNzoyOCksIFNlcmdlaSBTaHR5bHlvdiB3
-cm90ZToNCj4gPj4gKwkJaWYgKCFyYXZiX3R4X2ZyZWUobmRldiwgcSkpIHsNCj4gPj4gKwkJCW5l
-dGlmX3dhcm4ocHJpdiwgdHhfcXVldWVkLCBuZGV2LCAiVFggRkQgZXhoYXVzdGVkLlxuIik7DQo+
-ID4+ICsJCQluZXRpZl9zdG9wX3F1ZXVlKG5kZXYpOw0KPiA+PiArCQkJc3Bpbl91bmxvY2tfaXJx
-cmVzdG9yZSgmcHJpdi0+bG9jaywgZmxhZ3MpOw0KPiA+PiArCQkJcmV0dXJuIE5FVERFVl9UWF9C
-VVNZOw0KPiA+PiArCQl9DQo+ID4+ICsJfQ0KPiA+PiArCWVudHJ5ID0gcHJpdi0+Y3VyX3R4W3Fd
-ICUgcHJpdi0+bnVtX3R4X3JpbmdbcV07DQo+ID4+ICsJcHJpdi0+Y3VyX3R4W3FdKys7DQo+ID4+
-ICsJc3Bpbl91bmxvY2tfaXJxcmVzdG9yZSgmcHJpdi0+bG9jaywgZmxhZ3MpOw0KPiA+PiArDQo+
-ID4+ICsJaWYgKHNrYl9wdXRfcGFkdG8oc2tiLCBFVEhfWkxFTikpDQo+ID4+ICsJCXJldHVybiBO
-RVRERVZfVFhfT0s7DQo+ID4+ICsNCj4gPj4gKwlwcml2LT50eF9za2JbcV1bZW50cnldID0gc2ti
-Ow0KPiA+PiArCWJ1ZmZlciA9IFBUUl9BTElHTihwcml2LT50eF9idWZmZXJzW3FdW2VudHJ5XSwg
-UkFWQl9BTElHTik7DQo+ID4+ICsJbWVtY3B5KGJ1ZmZlciwgc2tiLT5kYXRhLCBza2ItPmxlbik7
-DQo+IA0KPiA+IH4xNTAwIGJ5dGVzIG1lbWNweSgpLCBub3QgZ29vZC4uLg0KPiANCj4gICAgIEkn
-bSBsb29raW5nIGluIHRoZSBtYW51YWwgYW5kIG5vdCBmaW5kaW5nIHRoZSBoYXJkIHJlcXVpcmVt
-ZW50IHRvIGhhdmUgdGhlDQo+IGJ1ZmZlciBhZGRyZXNzIGFsaWduZWQgdG8gMTI4IGJ5dGVzIChS
-QVZCX0FMSUdOKSwgc2lnaC4uLiBLaW11cmEtc2FuPw0KDQpUaGVyZSBhcmUgdGhlIGhhcmR3YXJl
-IHJlcXVpcmVtZW50IHRoYXQgdGhlIGZyYW1lIGRhdGEgbXVzdCBiZSBhbGlnbmVkIHdpdGgNCmEg
-MzItYml0IGJvdW5kYXJ5IGluIHRoZSBVUkFNLCBzZWUgc2VjdGlvbiA0NUEuMy4zLjEgRGF0YSBS
-ZXByZXNlbnRhdGlvbg0KaW4gdGhlIG1hbnVhbC4NCkkgdGhpbmsgdGhhdCB0aGUgb3JpZ2luYWwg
-c2tiLT5kYXRhIGlzIGFsbW9zdCBhbGlnbmVkIHdpdGggMiBieXRlcyBib3VuZGFyeQ0KYnkgTkVU
-X0lQX0FMSU5HLCBzbyB3ZSBjb3BpZWQgb3JpZ2luYWwgc2tiLT5kYXRhIHRvIHRoZSBsb2NhbCBh
-bGlnbmVkIGJ1ZmZlci4NCg0KSW4gYWRkaXRpb24sIHNlZSBzZWN0aW9uIDQ1QS4zLjMuMTIgVGlw
-cyBmb3IgT3B0aW1pemluZyBQZXJmb3JtYW5jZSBpbiBIYW5kbGluZw0KRGVzY3JpcHRvcnMsIGl0
-IG1lbnRpb25lZCB0aGF0IGZyYW1lIGRhdGEgaXMgYWNjZXNzZWQgaW4gYmxvY2tzIHVwIHRvIDEy
-OCBieXRlcw0KYW5kIHRoZSBudW1iZXIgb2YgMTI4IGJ5dGUgYm9yZGVycyAoYWRkcmVzc2VzIEgn
-eHh4MDAgYW5kIEgneHh4ODApIGFuZCBmcmFtZSBkYXRhDQppbnNpZGUgc2hvdWxkIGJlIG1pbmlt
-aXplZC4NClNvIHdlIHNldCBSQVZCX0FMSUdOIHRvIDEyOCBieXRlcy4NCg0KQmVzdCBSZWdhcmRz
-LA0KTWl0c3VoaXJvIEtpbXVyYQ0KDQo
+From: MITSUHIRO KIMURA <mitsuhiro.kimura.kc@renesas.com>
+Date: Wed, 22 Apr 2015 05:04:13 +0000
+
+> Hello Sergei.
+> 
+>  (2015/04/15 6:37:28), Sergei Shtylyov wrote:
+>> >> +		if (!ravb_tx_free(ndev, q)) {
+>> >> +			netif_warn(priv, tx_queued, ndev, "TX FD exhausted.\n");
+>> >> +			netif_stop_queue(ndev);
+>> >> +			spin_unlock_irqrestore(&priv->lock, flags);
+>> >> +			return NETDEV_TX_BUSY;
+>> >> +		}
+>> >> +	}
+>> >> +	entry = priv->cur_tx[q] % priv->num_tx_ring[q];
+>> >> +	priv->cur_tx[q]++;
+>> >> +	spin_unlock_irqrestore(&priv->lock, flags);
+>> >> +
+>> >> +	if (skb_put_padto(skb, ETH_ZLEN))
+>> >> +		return NETDEV_TX_OK;
+>> >> +
+>> >> +	priv->tx_skb[q][entry] = skb;
+>> >> +	buffer = PTR_ALIGN(priv->tx_buffers[q][entry], RAVB_ALIGN);
+>> >> +	memcpy(buffer, skb->data, skb->len);
+>> 
+>> > ~1500 bytes memcpy(), not good...
+>> 
+>>     I'm looking in the manual and not finding the hard requirement to have the
+>> buffer address aligned to 128 bytes (RAVB_ALIGN), sigh... Kimura-san?
+> 
+> There are the hardware requirement that the frame data must be aligned with
+> a 32-bit boundary in the URAM, see section 45A.3.3.1 Data Representation
+> in the manual.
+> I think that the original skb->data is almost aligned with 2 bytes boundary
+> by NET_IP_ALING, so we copied original skb->data to the local aligned buffer.
+> 
+> In addition, see section 45A.3.3.12 Tips for Optimizing Performance in Handling
+> Descriptors, it mentioned that frame data is accessed in blocks up to 128 bytes
+> and the number of 128 byte borders (addresses H'xxx00 and H'xxx80) and frame data
+> inside should be minimized.
+> So we set RAVB_ALIGN to 128 bytes.
+
+There is no way that copying is going to be faster than finding an adequate way
+to transmit directly out of the SKB memory.
+
+In this day and age there is simply no excuse for something like this, you will
+have to find a way.
