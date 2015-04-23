@@ -1,36 +1,74 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 13 Apr 2015 10:59:46 +0000
-Subject: Re: renesas-drivers-2015-03-16-v3.19-rc4
-Message-Id: <CAMuHMdWp3QstiDkQAiAjbHY=Gvqp2DHuzKtHF5duCSQKznwKuQ@mail.gmail.com>
+From: Rajendra Nayak <rnayak@codeaurora.org>
+Date: Thu, 23 Apr 2015 08:45:10 +0000
+Subject: [PATCH 2/5] arm: keystone: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
+Message-Id: <1429777993-11702-3-git-send-email-rnayak@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
+In-Reply-To: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Mar 16, 2015 at 11:22 AM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> I've pushed renesas-drivers-2015-03-16-v3.19-rc4 to
+USE_PM_CLK_RUNTIME_OPS is introduced so we don't repeat the same code
+to do runtime_suspend and runtime_resume across users of PM clocks.
+Use it to remove the boilerplate code.
 
-Looks like no one noticed this was supposed to be
-renesas-drivers-2015-03-16-v4.0-rc4? I've fixed the tag.
+Signed-off-by: Rajendra Nayak <rnayak@codeaurora.org>
+Reviewed-by: Kevin Hilman <khilman@linaro.org>
+Acked-by: Santosh Shilimkar <ssantosh@kernel.org>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-keystone/pm_domain.c | 33 +--------------------------------
+ 1 file changed, 1 insertion(+), 32 deletions(-)
 
-> https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-> This tree is meant to ease development of platform support and drivers for
-> Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next
-> branches of various subsystem trees and (b) branches with driver code
-> submitted or planned for submission to maintainers into the development
-> branch of Simon Horman's renesas.git tree.
->
-> Today's version is based on renesas-devel-20150316-v4.0-rc4.
+diff --git a/arch/arm/mach-keystone/pm_domain.c b/arch/arm/mach-keystone/pm_domain.c
+index 41bebfd..edea697 100644
+--- a/arch/arm/mach-keystone/pm_domain.c
++++ b/arch/arm/mach-keystone/pm_domain.c
+@@ -19,40 +19,9 @@
+ #include <linux/clk-provider.h>
+ #include <linux/of.h>
+ 
+-#ifdef CONFIG_PM
+-static int keystone_pm_runtime_suspend(struct device *dev)
+-{
+-	int ret;
+-
+-	dev_dbg(dev, "%s\n", __func__);
+-
+-	ret = pm_generic_runtime_suspend(dev);
+-	if (ret)
+-		return ret;
+-
+-	ret = pm_clk_suspend(dev);
+-	if (ret) {
+-		pm_generic_runtime_resume(dev);
+-		return ret;
+-	}
+-
+-	return 0;
+-}
+-
+-static int keystone_pm_runtime_resume(struct device *dev)
+-{
+-	dev_dbg(dev, "%s\n", __func__);
+-
+-	pm_clk_resume(dev);
+-
+-	return pm_generic_runtime_resume(dev);
+-}
+-#endif
+-
+ static struct dev_pm_domain keystone_pm_domain = {
+ 	.ops = {
+-		SET_RUNTIME_PM_OPS(keystone_pm_runtime_suspend,
+-				   keystone_pm_runtime_resume, NULL)
++		USE_PM_CLK_RUNTIME_OPS
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
+ };
+-- 
+QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a member
+of Code Aurora Forum, hosted by The Linux Foundation
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
