@@ -1,135 +1,60 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 13 Apr 2015 18:39:45 +0000
-Subject: [RFC/PATCH v2 3/5] drm/rcar-du: Add VSP1 support to the planes allocator
-Message-Id: <1428950387-6913-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 23 Apr 2015 08:13:25 +0000
+Subject: [PATCH 1/7 v4] mmc: sh_mmcif: move mmcif_of_match to upside
+Message-Id: <87a8xzgt5t.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428950387-6913-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1428950387-6913-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+	<87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: Daniel Vetter <daniel.vetter@intel.com>, linux-api@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-media@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Simon <horms@verge.net.au>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-The R8A7790 DU can source frames directly from the VSP1 devices VSPD0
-and VSPD1. VSPD0 feeds DU0/1 plane 0, and VSPD1 feeds either DU2 plane 0
-or DU0/1 plane 1.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Allocate the correct fixed plane when sourcing frames from VSPD0 or
-VSPD1, and allocate planes in reverse index order otherwise to ensure
-maximum availability of planes 0 and 1.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_kms.c   | 40 ++++++++++++++++++++++++++++-----
- drivers/gpu/drm/rcar-du/rcar_du_plane.c |  1 +
- drivers/gpu/drm/rcar-du/rcar_du_plane.h |  7 ++++++
- 3 files changed, 43 insertions(+), 5 deletions(-)
+v3 -> v4
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index fb052bca574f..17f89bfca8f8 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -244,11 +244,41 @@ static unsigned int rcar_du_plane_hwmask(struct rcar_du_plane_state *state)
- 	return mask;
- }
+ - no change
+
+ drivers/mmc/host/sh_mmcif.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 2b6ef6b..4e81278 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -257,6 +257,12 @@ struct sh_mmcif_host {
+ 	bool			dma_active;
+ };
  
--static int rcar_du_plane_hwalloc(unsigned int num_planes, unsigned int free)
-+/*
-+ * The R8A7790 DU can source frames directly from the VSP1 devices VSPD0 and
-+ * VSPD1. VSPD0 feeds DU0/1 plane 0, and VSPD1 feeds either DU2 plane 0 or
-+ * DU0/1 plane 1.
-+ *
-+ * Allocate the correct fixed plane when sourcing frames from VSPD0 or VSPD1,
-+ * and allocate planes in reverse index order otherwise to ensure maximum
-+ * availability of planes 0 and 1.
-+ *
-+ * The caller is responsible for ensuring that the requested source is
-+ * compatible with the DU revision.
-+ */
-+static int rcar_du_plane_hwalloc(struct rcar_du_plane *plane,
-+				 struct rcar_du_plane_state *state,
-+				 unsigned int free)
- {
--	unsigned int i;
-+	unsigned int num_planes = state->format->planes;
-+	int fixed = -1;
-+	int i;
-+
-+	if (state->source = RCAR_DU_PLANE_VSPD0) {
-+		/* VSPD0 feeds plane 0 on DU0/1. */
-+		if (plane->group->index != 0)
-+			return -EINVAL;
-+
-+		fixed = 0;
-+	} else if (state->source = RCAR_DU_PLANE_VSPD1) {
-+		/* VSPD1 feeds plane 1 on DU0/1 or plane 0 on DU2. */
-+		fixed = plane->group->index = 0 ? 1 : 0;
-+	}
-+
-+	if (fixed >= 0)
-+		return free & (1 << fixed) ? fixed : -EBUSY;
- 
--	for (i = 0; i < RCAR_DU_NUM_HW_PLANES; ++i) {
-+	for (i = RCAR_DU_NUM_HW_PLANES - 1; i >= 0; --i) {
- 		if (!(free & (1 << i)))
- 			continue;
- 
-@@ -256,7 +286,7 @@ static int rcar_du_plane_hwalloc(unsigned int num_planes, unsigned int free)
- 			break;
- 	}
- 
--	return i = RCAR_DU_NUM_HW_PLANES ? -EBUSY : i;
-+	return i < 0 ? -EBUSY : i;
- }
- 
- static int rcar_du_atomic_check(struct drm_device *dev,
-@@ -372,7 +402,7 @@ static int rcar_du_atomic_check(struct drm_device *dev,
- 		    !rcar_du_plane_needs_realloc(plane, plane_state))
- 			continue;
- 
--		idx = rcar_du_plane_hwalloc(plane_state->format->planes,
-+		idx = rcar_du_plane_hwalloc(plane, plane_state,
- 					group_free_planes[plane->group->index]);
- 		if (idx < 0) {
- 			dev_dbg(rcdu->dev, "%s: no available hardware plane\n",
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index 210e5c3fd982..80e4dba78aef 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -288,6 +288,7 @@ static void rcar_du_plane_reset(struct drm_plane *plane)
- 		return;
- 
- 	state->hwindex = -1;
-+	state->source = RCAR_DU_PLANE_MEMORY;
- 	state->alpha = 255;
- 	state->colorkey = RCAR_DU_COLORKEY_NONE;
- 	state->zpos = plane->type = DRM_PLANE_TYPE_PRIMARY ? 0 : 1;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.h b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
-index abff0ebeb195..81c2d361a94f 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
-@@ -28,6 +28,12 @@ struct rcar_du_group;
- #define RCAR_DU_NUM_KMS_PLANES		9
- #define RCAR_DU_NUM_HW_PLANES		8
- 
-+enum rcar_du_plane_source {
-+	RCAR_DU_PLANE_MEMORY,
-+	RCAR_DU_PLANE_VSPD0,
-+	RCAR_DU_PLANE_VSPD1,
++static const struct of_device_id mmcif_of_match[] = {
++	{ .compatible = "renesas,sh-mmcif" },
++	{ }
 +};
++MODULE_DEVICE_TABLE(of, mmcif_of_match);
 +
- struct rcar_du_plane {
- 	struct drm_plane plane;
- 	struct rcar_du_group *group;
-@@ -51,6 +57,7 @@ struct rcar_du_plane_state {
+ static inline void sh_mmcif_bitset(struct sh_mmcif_host *host,
+ 					unsigned int reg, u32 val)
+ {
+@@ -1543,12 +1549,6 @@ static int sh_mmcif_resume(struct device *dev)
+ }
+ #endif
  
- 	const struct rcar_du_format_info *format;
- 	int hwindex;		/* 0-based, -1 means unused */
-+	enum rcar_du_plane_source source;
- 
- 	unsigned int alpha;
- 	unsigned int colorkey;
+-static const struct of_device_id mmcif_of_match[] = {
+-	{ .compatible = "renesas,sh-mmcif" },
+-	{ }
+-};
+-MODULE_DEVICE_TABLE(of, mmcif_of_match);
+-
+ static const struct dev_pm_ops sh_mmcif_dev_pm_ops = {
+ 	SET_SYSTEM_SLEEP_PM_OPS(sh_mmcif_suspend, sh_mmcif_resume)
+ };
 -- 
-2.0.5
+1.9.1
 
