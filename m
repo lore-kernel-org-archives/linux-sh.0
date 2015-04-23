@@ -1,57 +1,73 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 13 Apr 2015 12:18:16 +0000
-Subject: PM / Domains: Infinite loop during reboot
-Message-Id: <CAMuHMdVAnZ5mH7EwJKVeKWSDqCxn+TSH1VOHoK3B2=b8oByoHg@mail.gmail.com>
+From: Rajendra Nayak <rnayak@codeaurora.org>
+Date: Thu, 23 Apr 2015 08:45:12 +0000
+Subject: [PATCH 4/5] arm: davinci: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
+Message-Id: <1429777993-11702-5-git-send-email-rnayak@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
+In-Reply-To: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Sometimes reboot doesn't work on r8a7791/koelsch with the CPG clock domain.
-With additional debug messages, you can see it hangs in an infinite loop:
+USE_PM_CLK_RUNTIME_OPS is introduced so we don't repeat the same code
+to do runtime_suspend and runtime_resume across users of PM clocks.
+Use it to remove the boilerplate code.
 
-rcar-dmac ec720000.dma-controller: removing from PM domain cpg_clocks
-pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
-pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
-pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
-pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
-pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
-pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
-pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
-pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
-pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
-[...]
+Signed-off-by: Rajendra Nayak <rnayak@codeaurora.org>
+Reviewed-by: Kevin Hilman <khilman@linaro.org>
+Acked-by: Santosh Shilimkar <ssantosh@kernel.org>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-davinci/pm_domain.c | 32 +-------------------------------
+ 1 file changed, 1 insertion(+), 31 deletions(-)
 
-Presumably this is this loop in genpd_dev_pm_detach():
+diff --git a/arch/arm/mach-davinci/pm_domain.c b/arch/arm/mach-davinci/pm_domain.c
+index 641edc3..78eac2c 100644
+--- a/arch/arm/mach-davinci/pm_domain.c
++++ b/arch/arm/mach-davinci/pm_domain.c
+@@ -14,39 +14,9 @@
+ #include <linux/pm_clock.h>
+ #include <linux/platform_device.h>
+ 
+-#ifdef CONFIG_PM
+-static int davinci_pm_runtime_suspend(struct device *dev)
+-{
+-	int ret;
+-
+-	dev_dbg(dev, "%s\n", __func__);
+-
+-	ret = pm_generic_runtime_suspend(dev);
+-	if (ret)
+-		return ret;
+-
+-	ret = pm_clk_suspend(dev);
+-	if (ret) {
+-		pm_generic_runtime_resume(dev);
+-		return ret;
+-	}
+-
+-	return 0;
+-}
+-
+-static int davinci_pm_runtime_resume(struct device *dev)
+-{
+-	dev_dbg(dev, "%s\n", __func__);
+-
+-	pm_clk_resume(dev);
+-	return pm_generic_runtime_resume(dev);
+-}
+-#endif
+-
+ static struct dev_pm_domain davinci_pm_domain = {
+ 	.ops = {
+-		SET_RUNTIME_PM_OPS(davinci_pm_runtime_suspend,
+-				   davinci_pm_runtime_resume, NULL)
++		USE_PM_CLK_RUNTIME_OPS
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
+ };
+-- 
+QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a member
+of Code Aurora Forum, hosted by The Linux Foundation
 
-        while (1) {
-                ret = pm_genpd_remove_device(pd, dev);
-                if (ret != -EAGAIN)
-                        break;
-                cond_resched();
-        }
-
-which is retried because genpd->prepared_count > 0 in pm_genpd_remove_device().
-This looks a bit strange, as no suspend is in progress, so prepared_count
-should be zero?
-
-I'm adding more debugging code to verify this, but it's not 100% reproducable.
-
-[...]
-
-Confirmed: prepared_count turns out to be 1 at reboot time if at least one
-s2ram cycle happened before. Additional s2ram cycles don't seem to increase
-prepared_count any further.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
