@@ -1,39 +1,144 @@
-From: Stephen Boyd <sboyd@codeaurora.org>
-Date: Tue, 07 Apr 2015 23:09:39 +0000
-Subject: Re: [PATCH 06/14] clkdev: add clkdev_create() helper
-Message-Id: <552463B3.4040804@codeaurora.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 23 Apr 2015 08:15:08 +0000
+Subject: [PATCH 3/7 v4] mmc: sh_mmcif: remove unnecessary int clk from struct sh_mmcif_host
+Message-Id: <877ft3gt2y.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150403171149.GC13898@n2100.arm.linux.org.uk> <E1Ye59J-0001BF-CZ@rmk-PC.arm.linux.org.uk> <5522EA55.5080804@codeaurora.org> <20150407124342.GJ4027@n2100.arm.linux.org.uk>
-In-Reply-To: <20150407124342.GJ4027@n2100.arm.linux.org.uk>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+	<87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Cc: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Simon <horms@verge.net.au>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-On 04/07/15 05:43, Russell King - ARM Linux wrote:
-> On Mon, Apr 06, 2015 at 01:19:33PM -0700, Stephen Boyd wrote:
->> On 04/03/15 10:12, Russell King wrote:
->>> @@ -316,6 +329,29 @@ clkdev_alloc(struct clk *clk, const char *con_id, const char *dev_fmt, ...)
->>>  }
->>>  EXPORT_SYMBOL(clkdev_alloc);
->>>  
->>> +/**
->>> + * clkdev_create - allocate and add a clkdev lookup structure
->>> + * @clk: struct clk to associate with all clk_lookups
->>> + * @con_id: connection ID string on device
->>> + * @dev_fmt: format string describing device name
->>> + *
->>> + * Returns a clk_lookup structure, which can be later unregistered and
->>> + * freed.
->> Please add that this returns NULL on failure.
-> Will do, but please remember that _I'm_ taking the clkdev patches through
-> my tree, as I'm the maintainer for clkdev.  Thanks.
->
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Sounds good to me. Thanks.
+struct sh_mmcif_host has 1) int clk, 2) struct clock *hclk,
+and host->clk = clk_get_rate(host->hclk).
+This int clk is not necessary. Let's remove it.
+And, current hclk is confusable naming. Let's rename it to clk.
 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
+v3 -> v4
+
+ - new patch, this is cleanup patch
+
+ drivers/mmc/host/sh_mmcif.c | 35 ++++++++++++++++++-----------------
+ 1 file changed, 18 insertions(+), 17 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 5282c5b..ff4f8c0 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -228,8 +228,7 @@ struct sh_mmcif_host {
+ 	struct mmc_host *mmc;
+ 	struct mmc_request *mrq;
+ 	struct platform_device *pd;
+-	struct clk *hclk;
+-	unsigned int clk;
++	struct clk *clk;
+ 	int bus_width;
+ 	unsigned char timing;
+ 	bool sd_error;
+@@ -484,17 +483,18 @@ static void sh_mmcif_clock_control(struct sh_mmcif_host *host, unsigned int clk)
+ {
+ 	struct sh_mmcif_plat_data *p = host->pd->dev.platform_data;
+ 	bool sup_pclk = p ? p->sup_pclk : false;
++	unsigned int current_clk = clk_get_rate(host->clk);
+ 
+ 	sh_mmcif_bitclr(host, MMCIF_CE_CLK_CTRL, CLK_ENABLE);
+ 	sh_mmcif_bitclr(host, MMCIF_CE_CLK_CTRL, CLK_CLEAR);
+ 
+ 	if (!clk)
+ 		return;
+-	if (sup_pclk && clk = host->clk)
++	if (sup_pclk && clk = current_clk)
+ 		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_SUP_PCLK);
+ 	else
+ 		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_CLEAR &
+-				((fls(DIV_ROUND_UP(host->clk,
++				((fls(DIV_ROUND_UP(current_clk,
+ 						   clk) - 1) - 1) << 16));
+ 
+ 	sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_ENABLE);
+@@ -980,12 +980,13 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 
+ static int sh_mmcif_clk_update(struct sh_mmcif_host *host)
+ {
+-	int ret = clk_prepare_enable(host->hclk);
++	int ret = clk_prepare_enable(host->clk);
+ 
+ 	if (!ret) {
+-		host->clk = clk_get_rate(host->hclk);
+-		host->mmc->f_max = host->clk / 2;
+-		host->mmc->f_min = host->clk / 512;
++		unsigned int clk = clk_get_rate(host->clk);
++
++		host->mmc->f_max = clk / 2;
++		host->mmc->f_min = clk / 512;
+ 	}
+ 
+ 	return ret;
+@@ -1034,7 +1035,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		}
+ 		if (host->power) {
+ 			pm_runtime_put_sync(&host->pd->dev);
+-			clk_disable_unprepare(host->hclk);
++			clk_disable_unprepare(host->clk);
+ 			host->power = false;
+ 			if (ios->power_mode = MMC_POWER_OFF)
+ 				sh_mmcif_set_power(host, ios);
+@@ -1440,9 +1441,9 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	pm_runtime_enable(dev);
+ 	host->power = false;
+ 
+-	host->hclk = devm_clk_get(dev, NULL);
+-	if (IS_ERR(host->hclk)) {
+-		ret = PTR_ERR(host->hclk);
++	host->clk = devm_clk_get(dev, NULL);
++	if (IS_ERR(host->clk)) {
++		ret = PTR_ERR(host->clk);
+ 		dev_err(dev, "cannot get clock: %d\n", ret);
+ 		goto err_pm;
+ 	}
+@@ -1492,13 +1493,13 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 
+ 	dev_info(dev, "Chip version 0x%04x, clock rate %luMHz\n",
+ 		 sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0xffff,
+-		 clk_get_rate(host->hclk) / 1000000UL);
++		 clk_get_rate(host->clk) / 1000000UL);
+ 
+-	clk_disable_unprepare(host->hclk);
++	clk_disable_unprepare(host->clk);
+ 	return ret;
+ 
+ err_clk:
+-	clk_disable_unprepare(host->hclk);
++	clk_disable_unprepare(host->clk);
+ err_pm:
+ 	pm_runtime_disable(dev);
+ err_host:
+@@ -1511,7 +1512,7 @@ static int sh_mmcif_remove(struct platform_device *pdev)
+ 	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
+ 
+ 	host->dying = true;
+-	clk_prepare_enable(host->hclk);
++	clk_prepare_enable(host->clk);
+ 	pm_runtime_get_sync(&pdev->dev);
+ 
+ 	dev_pm_qos_hide_latency_limit(&pdev->dev);
+@@ -1526,7 +1527,7 @@ static int sh_mmcif_remove(struct platform_device *pdev)
+ 	 */
+ 	cancel_delayed_work_sync(&host->timeout_work);
+ 
+-	clk_disable_unprepare(host->hclk);
++	clk_disable_unprepare(host->clk);
+ 	mmc_free_host(host->mmc);
+ 	pm_runtime_put_sync(&pdev->dev);
+ 	pm_runtime_disable(&pdev->dev);
 -- 
-Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
-a Linux Foundation Collaborative Project
+1.9.1
 
