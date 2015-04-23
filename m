@@ -1,63 +1,61 @@
-From: Marc Zyngier <marc.zyngier@arm.com>
-Date: Mon, 06 Apr 2015 10:23:14 +0000
-Subject: Re: [PATCH/RFC 0/6] staging: board: armadillo800eva: Board staging  for =?UTF-8?Q?sh=5Fmobile=5Flcdc
-Message-Id: <9cb05c4e687de35ada0b83fe816393c8@www.loen.fr>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 23 Apr 2015 12:51:26 +0000
+Subject: Re: [PATCH] kernfs: remove outdated and confusing comment
+Message-Id: <20150423125125.GB19918@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="oLBj+sq0vYjzfsbl"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+References: <1426069565-7933-1-git-send-email-wsa@the-dreams.de>
+ <20150311114531.GB25944@htj.duckdns.org>
+In-Reply-To: <20150311114531.GB25944@htj.duckdns.org>
+To: Tejun Heo <tj@kernel.org>
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi Geert,
 
-On 2015-04-03 13:41, Geert Uytterhoeven wrote:
-> Hi all,
->
-> This RFC patch series adds board staging support for 
-> r8a7740/armadillo.
-> For now this supports only the frame buffer device for the on-board 
-> LCD.
-> The goal is to complete the move to ARM multiplatform kernels for all
-> shmobile platforms, and drop the existing board files
-> (arch/arm/mach-shmobile/board-*).
->
-> The board staging area was introduced last year to allow continuous
-> upstream in-tree development and integration of platform devices. It
-> helps developers integrate devices as platform devices for device
-> drivers that only provide platform device bindings.  This in turn 
-> allows
-> for incremental development of both hardware feature support and DT
-> binding work in parallel.
->
-> This series consists of 4 parts:
->   - Patch 1 re-enables compilation of the board staging area, which 
-> was
->     disabled after a compile breakage, but has been fixed in the mean
->     time,
->   - Path 2 moves initialization of staging board code to an earlier
->     moment, as currently it happens after unused PM domains are 
-> powered
->     down,
->   - Patches 3 and 4 (hopefully) fix the existing kzm9d board staging
->     code, which was presumably broken by commit 9a1091ef0017c40a
->     ("irqchip: gic: Support hierarchy irq domain."),
+--oLBj+sq0vYjzfsbl
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Please allow me a semantic correction here: this commit never broke 
-anything. It merely revealed how platform code (OMAP, iMX6, shmobile) 
-abused the irq_domain subsystem, hoping to get away with only a partial 
-conversion to DT. The platform code itself was broken from the moment it 
-used DT to discover its interrupt controller.
+On Wed, Mar 11, 2015 at 07:45:31AM -0400, Tejun Heo wrote:
+> On Wed, Mar 11, 2015 at 11:26:02AM +0100, Wolfram Sang wrote:
+> > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> >=20
+> > Grabbing the parent is not happening anymore since 2010 (e72ceb8ccac5f7
+> > "sysfs: Remove sysfs_get/put_active_two"). Remove this confusing
+> > comment.
+> >=20
+> > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>=20
+> Acked-by: Tejun Heo <tj@kernel.org>
 
-The truth is, it is not possible to sanely convert bits of a platform 
-to DT. The changes creep into all the subsystems, and doing it in stages 
-requires tons of ugly hacks (and I've written my share of them).
-
-That being said, I'm off reviewing these two matches.
+So, how does it go in? gkh? akpm?
 
 Thanks,
 
-         M.
--- 
-Fast, cheap, reliable. Pick two.
+   Wolfram
+
+
+--oLBj+sq0vYjzfsbl
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJVOOrNAAoJEBQN5MwUoCm2EhgP/3+yv9/0aaysex9XQ/yYkfP2
+VMz8wOYK3AXsP4PHo4AXd/RbrwLtqyM29/N/hgidgz0dJJdlzFOpd7l1KIj3ZGem
+QVYJ5LXoqoCOE3REy3V+WTUVO7y1ju/EbU+p6VJsAf4Q1Q2W84sruD2FC6/3DBxV
+wxXejZnPxViZjrvPGy66Os+SvTJD8p/D2ltgZIohit25KbrcVALalHL4RK0R16rW
+mCcHVcyBgV6wYv1V3GfRdYn94z5nEp2/rAN9Iu3pLmIZ+V/MA/EW+OzTxOSA5xhk
+8zLfiUXEf0gah4Wzho/TuUliuYRwoe9KSs88jIte6S8bhT5k1DrZy6u01g9AS8u1
+S4O1660ZMVTOGSpl3qnxOHXEY+CktyIoJdNCIjaI+I9WpSVKR2Z522i2blK/cWXG
+WLFD0383hw9/nFxPDB4jh+nYw35NauqDaAXDTFiHqEkhvIKrsGmKdU4OMjnCVy3/
+2sDOz+lvk/NKhiOFDZ5JRbq25RuY+Elr4LE32iYT08uhQmwBNsNWPgvKU3wrnN3G
+hmiNgMAlX8sr91czY1CsqmTe4KwwSyPvanvd739RL86ibEvRSNzs8V4KUfmuz4zv
+BTjSdFJdqGAXteQg8bctFkJh/1ZtX1ALjjcootGyOb1DC4FHfP1I7pPhHqSSiL1/
+lvPB++9Rfl8PWPZrZvUJ
+=Fogf
+-----END PGP SIGNATURE-----
+
+--oLBj+sq0vYjzfsbl--
