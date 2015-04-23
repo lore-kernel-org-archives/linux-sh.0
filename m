@@ -1,158 +1,135 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 30 Apr 2015 16:21:27 +0000
-Subject: [PATCH 03/13] serial: sh-sci: Add SCIFA/B SCPCR register definitions
-Message-Id: <1430410897-12770-4-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 23 Apr 2015 08:14:12 +0000
+Subject: [PATCH 2/7 v4] mmc: sh_mmcif: cleanup to use dev instead of &pdev->dev
+Message-Id: <878udjgt4i.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+	<87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Ulf Hansson <ulf.hansson@linaro.org>, Simon <horms@verge.net.au>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-Add the register definitions for the Serial Port Control and Data
-Registers on SCIFA/SCIFB, which are needed for RTS/CTS pin control.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Extracted from patches by Magnus Damm <damm+renesas@opensource.se>.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/tty/serial/sh-sci.c | 22 ++++++++++++++++++++++
- drivers/tty/serial/sh-sci.h | 10 ++++++++++
- 2 files changed, 32 insertions(+)
+v3 -> v4
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index e7d6566fafaf3da5..7ee0f686bdf1b216 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -168,6 +168,8 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 		[SCSPTR]	= sci_reg_invalid,
- 		[SCLSR]		= sci_reg_invalid,
- 		[HSSRR]		= sci_reg_invalid,
-+		[SCPCR]		= sci_reg_invalid,
-+		[SCPDR]		= sci_reg_invalid,
- 	},
+ - no change
+
+ drivers/mmc/host/sh_mmcif.c | 33 +++++++++++++++++----------------
+ 1 file changed, 17 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 4e81278..5282c5b 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1386,7 +1386,8 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	int ret = 0, irq[2];
+ 	struct mmc_host *mmc;
+ 	struct sh_mmcif_host *host;
+-	struct sh_mmcif_plat_data *pd = pdev->dev.platform_data;
++	struct device *dev = &pdev->dev;
++	struct sh_mmcif_plat_data *pd = dev->platform_data;
+ 	struct resource *res;
+ 	void __iomem *reg;
+ 	const char *name;
+@@ -1394,16 +1395,16 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	irq[0] = platform_get_irq(pdev, 0);
+ 	irq[1] = platform_get_irq(pdev, 1);
+ 	if (irq[0] < 0) {
+-		dev_err(&pdev->dev, "Get irq error\n");
++		dev_err(dev, "Get irq error\n");
+ 		return -ENXIO;
+ 	}
  
- 	/*
-@@ -188,6 +190,8 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 		[SCSPTR]	= sci_reg_invalid,
- 		[SCLSR]		= sci_reg_invalid,
- 		[HSSRR]		= sci_reg_invalid,
-+		[SCPCR]		= sci_reg_invalid,
-+		[SCPDR]		= sci_reg_invalid,
- 	},
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	reg = devm_ioremap_resource(&pdev->dev, res);
++	reg = devm_ioremap_resource(dev, res);
+ 	if (IS_ERR(reg))
+ 		return PTR_ERR(reg);
  
- 	/*
-@@ -207,6 +211,8 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 		[SCSPTR]	= sci_reg_invalid,
- 		[SCLSR]		= sci_reg_invalid,
- 		[HSSRR]		= sci_reg_invalid,
-+		[SCPCR]		= { 0x30, 16 },
-+		[SCPDR]		= { 0x34, 16 },
- 	},
+-	mmc = mmc_alloc_host(sizeof(struct sh_mmcif_host), &pdev->dev);
++	mmc = mmc_alloc_host(sizeof(struct sh_mmcif_host), dev);
+ 	if (!mmc)
+ 		return -ENOMEM;
  
- 	/*
-@@ -226,6 +232,8 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 		[SCSPTR]	= sci_reg_invalid,
- 		[SCLSR]		= sci_reg_invalid,
- 		[HSSRR]		= sci_reg_invalid,
-+		[SCPCR]		= { 0x30, 16 },
-+		[SCPDR]		= { 0x34, 16 },
- 	},
+@@ -1436,20 +1437,20 @@ static int sh_mmcif_probe(struct platform_device *pdev)
  
- 	/*
-@@ -246,6 +254,8 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 		[SCSPTR]	= { 0x20, 16 },
- 		[SCLSR]		= { 0x24, 16 },
- 		[HSSRR]		= sci_reg_invalid,
-+		[SCPCR]		= sci_reg_invalid,
-+		[SCPDR]		= sci_reg_invalid,
- 	},
+ 	platform_set_drvdata(pdev, host);
  
- 	/*
-@@ -265,6 +275,8 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 		[SCSPTR]	= sci_reg_invalid,
- 		[SCLSR]		= sci_reg_invalid,
- 		[HSSRR]		= sci_reg_invalid,
-+		[SCPCR]		= sci_reg_invalid,
-+		[SCPDR]		= sci_reg_invalid,
- 	},
+-	pm_runtime_enable(&pdev->dev);
++	pm_runtime_enable(dev);
+ 	host->power = false;
  
- 	/*
-@@ -284,6 +296,8 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 		[SCSPTR]	= { 0x20, 16 },
- 		[SCLSR]		= { 0x24, 16 },
- 		[HSSRR]		= sci_reg_invalid,
-+		[SCPCR]		= sci_reg_invalid,
-+		[SCPDR]		= sci_reg_invalid,
- 	},
+-	host->hclk = devm_clk_get(&pdev->dev, NULL);
++	host->hclk = devm_clk_get(dev, NULL);
+ 	if (IS_ERR(host->hclk)) {
+ 		ret = PTR_ERR(host->hclk);
+-		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
++		dev_err(dev, "cannot get clock: %d\n", ret);
+ 		goto err_pm;
+ 	}
+ 	ret = sh_mmcif_clk_update(host);
+ 	if (ret < 0)
+ 		goto err_pm;
  
- 	/*
-@@ -303,6 +317,8 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 		[SCSPTR]	= { 0x20, 16 },
- 		[SCLSR]		= { 0x24, 16 },
- 		[HSSRR]		= { 0x40, 16 },
-+		[SCPCR]		= sci_reg_invalid,
-+		[SCPDR]		= sci_reg_invalid,
- 	},
+-	ret = pm_runtime_resume(&pdev->dev);
++	ret = pm_runtime_resume(dev);
+ 	if (ret < 0)
+ 		goto err_clk;
  
- 	/*
-@@ -323,6 +339,8 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 		[SCSPTR]	= sci_reg_invalid,
- 		[SCLSR]		= { 0x24, 16 },
- 		[HSSRR]		= sci_reg_invalid,
-+		[SCPCR]		= sci_reg_invalid,
-+		[SCPDR]		= sci_reg_invalid,
- 	},
+@@ -1458,19 +1459,19 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	sh_mmcif_sync_reset(host);
+ 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
  
- 	/*
-@@ -343,6 +361,8 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 		[SCSPTR]	= { 0x24, 16 },
- 		[SCLSR]		= { 0x28, 16 },
- 		[HSSRR]		= sci_reg_invalid,
-+		[SCPCR]		= sci_reg_invalid,
-+		[SCPDR]		= sci_reg_invalid,
- 	},
+-	name = irq[1] < 0 ? dev_name(&pdev->dev) : "sh_mmc:error";
+-	ret = devm_request_threaded_irq(&pdev->dev, irq[0], sh_mmcif_intr,
++	name = irq[1] < 0 ? dev_name(dev) : "sh_mmc:error";
++	ret = devm_request_threaded_irq(dev, irq[0], sh_mmcif_intr,
+ 					sh_mmcif_irqt, 0, name, host);
+ 	if (ret) {
+-		dev_err(&pdev->dev, "request_irq error (%s)\n", name);
++		dev_err(dev, "request_irq error (%s)\n", name);
+ 		goto err_clk;
+ 	}
+ 	if (irq[1] >= 0) {
+-		ret = devm_request_threaded_irq(&pdev->dev, irq[1],
++		ret = devm_request_threaded_irq(dev, irq[1],
+ 						sh_mmcif_intr, sh_mmcif_irqt,
+ 						0, "sh_mmc:int", host);
+ 		if (ret) {
+-			dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
++			dev_err(dev, "request_irq error (sh_mmc:int)\n");
+ 			goto err_clk;
+ 		}
+ 	}
+@@ -1487,9 +1488,9 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	if (ret < 0)
+ 		goto err_clk;
  
- 	/*
-@@ -363,6 +383,8 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 		[SCSPTR]	= sci_reg_invalid,
- 		[SCLSR]		= sci_reg_invalid,
- 		[HSSRR]		= sci_reg_invalid,
-+		[SCPCR]		= sci_reg_invalid,
-+		[SCPDR]		= sci_reg_invalid,
- 	},
- };
+-	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
++	dev_pm_qos_expose_latency_limit(dev, 100);
  
-diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
-index 8b4447e66708aea5..2bae842fb0fc0ae6 100644
---- a/drivers/tty/serial/sh-sci.h
-+++ b/drivers/tty/serial/sh-sci.h
-@@ -24,6 +24,8 @@ enum {
- 	SCRFDR,				/* Receive FIFO Data Count Register */
- 	SCSPTR,				/* Serial Port Register */
- 	HSSRR,				/* Sampling Rate Register */
-+	SCPCR,				/* Serial Port Control Register */
-+	SCPDR,				/* Serial Port Data Register */
+-	dev_info(&pdev->dev, "Chip version 0x%04x, clock rate %luMHz\n",
++	dev_info(dev, "Chip version 0x%04x, clock rate %luMHz\n",
+ 		 sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0xffff,
+ 		 clk_get_rate(host->hclk) / 1000000UL);
  
- 	SCIx_NR_REGS,
- };
-@@ -79,6 +81,14 @@ enum {
- /* HSSRR HSCIF */
- #define HSCIF_SRE	0x8000		/* Sampling Rate Register Enable */
- 
-+/* SCPCR (Serial Port Control Register), SCIFA/SCIFB only */
-+#define SCPCR_RTSC	(1 << 4)	/* Serial Port RTS Pin / Output Pin */
-+#define SCPCR_CTSC	(1 << 3)	/* Serial Port CTS Pin / Input Pin */
-+
-+/* SCPDR (Serial Port Data Register), SCIFA/SCIFB only */
-+#define SCPDR_RTSD	(1 << 4)	/* Serial Port RTS Output Pin Data */
-+#define SCPDR_CTSD	(1 << 3)	/* Serial Port CTS Input Pin Data */
-+
- 
- #define SCxSR_TEND(port)	(((port)->type = PORT_SCI) ? SCI_TEND   : SCIF_TEND)
- #define SCxSR_RDxF(port)	(((port)->type = PORT_SCI) ? SCI_RDRF   : SCIF_RDF)
+@@ -1499,7 +1500,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ err_clk:
+ 	clk_disable_unprepare(host->hclk);
+ err_pm:
+-	pm_runtime_disable(&pdev->dev);
++	pm_runtime_disable(dev);
+ err_host:
+ 	mmc_free_host(mmc);
+ 	return ret;
 -- 
 1.9.1
 
