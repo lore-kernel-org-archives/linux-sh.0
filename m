@@ -1,68 +1,106 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 01 Apr 2015 06:22:44 +0000
-Subject: [PATCH v4 1/2] dmaengine: renesas,usb-dmac: Add device tree bindings documentation
-Message-Id: <1427869365-2068-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Rajendra Nayak <rnayak@codeaurora.org>
+Date: Thu, 23 Apr 2015 08:45:09 +0000
+Subject: [PATCH 1/5] PM / clock_ops: Provide default runtime ops to users
+Message-Id: <1429777993-11702-2-git-send-email-rnayak@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1427869365-2068-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1427869365-2068-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
+In-Reply-To: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: vinod.koul@intel.com, dan.j.williams@intel.com, laurent.pinchart@ideasonboard.com, horms@verge.net.au, kuninori.morimoto.gx@renesas.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Document the device tree bindings for the Renesas USB DMA
-Controller (USB-DMAC).
+Most users of PM clocks do the extact same things in the runtime
+suspend/resume callbacks. Provide them USE_PM_CLK_RUNTIME_OPS so
+as to avoid/remove boilerplate code.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Rajendra Nayak <rnayak@codeaurora.org>
+Reviewed-by: Kevin Hilman <khilman@linaro.org>
+Acked-by: Santosh Shilimkar <ssantosh@kernel.org>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- .../devicetree/bindings/dma/renesas,usb-dmac.txt   | 37 ++++++++++++++++++++++
- 1 file changed, 37 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
+ drivers/base/power/clock_ops.c | 38 ++++++++++++++++++++++++++++++++++++++
+ include/linux/pm_clock.h       | 10 ++++++++++
+ 2 files changed, 48 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt b/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
-new file mode 100644
-index 0000000..040f365
---- /dev/null
-+++ b/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
-@@ -0,0 +1,37 @@
-+* Renesas USB DMA Controller Device Tree bindings
+diff --git a/drivers/base/power/clock_ops.c b/drivers/base/power/clock_ops.c
+index 7fdd017..8abea66 100644
+--- a/drivers/base/power/clock_ops.c
++++ b/drivers/base/power/clock_ops.c
+@@ -15,6 +15,7 @@
+ #include <linux/clkdev.h>
+ #include <linux/slab.h>
+ #include <linux/err.h>
++#include <linux/pm_runtime.h>
+ 
+ #ifdef CONFIG_PM
+ 
+@@ -367,6 +368,43 @@ static int pm_clk_notify(struct notifier_block *nb,
+ 	return 0;
+ }
+ 
++int pm_clk_runtime_suspend(struct device *dev)
++{
++	int ret;
 +
-+Required Properties:
-+- compatible: must contain "renesas,usb-dmac"
-+- reg: base address and length of the registers block for the DMAC
-+- interrupts: interrupt specifiers for the DMAC, one for each entry in
-+  interrupt-names.
-+- interrupt-names: one entry per channel, named "ch%u", where %u is the
-+  channel number ranging from zero to the number of channels minus one.
-+- clocks: a list of phandle + clock-specifier pairs.
-+- #dma-cells: must be <1>, the cell specifies the channel number of the DMAC
-+  port connected to the DMA client.
-+- dma-channels: number of DMA channels
++	dev_dbg(dev, "%s\n", __func__);
 +
-+Example: R8A7790 (R-Car H2) USB-DMACs
++	ret = pm_generic_runtime_suspend(dev);
++	if (ret) {
++		dev_err(dev, "failed to suspend device\n");
++		return ret;
++	}
 +
-+	usb_dmac0: dma-controller@e65a0000 {
-+		compatible = "renesas,usb-dmac";
-+		reg = <0 0xe65a0000 0 0x100>;
-+		interrupts = <0 109 IRQ_TYPE_LEVEL_HIGH
-+			      0 109 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "ch0", "ch1";
-+		clocks = <&mstp3_clks R8A7790_CLK_USBDMAC0>;
-+		#dma-cells = <1>;
-+		dma-channels = <2>;
-+	};
++	ret = pm_clk_suspend(dev);
++	if (ret) {
++		dev_err(dev, "failed to suspend clock\n");
++		pm_generic_runtime_resume(dev);
++		return ret;
++	}
 +
-+	usb_dmac1: dma-controller@e65b0000 {
-+		compatible = "renesas,usb-dmac";
-+		reg = <0 0xe65b0000 0 0x100>;
-+		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH
-+			      0 110 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "ch0", "ch1";
-+		clocks = <&mstp3_clks R8A7790_CLK_USBDMAC1>;
-+		#dma-cells = <1>;
-+		dma-channels = <2>;
-+	};
++	return 0;
++}
++
++int pm_clk_runtime_resume(struct device *dev)
++{
++	int ret;
++
++	dev_dbg(dev, "%s\n", __func__);
++
++	ret = pm_clk_resume(dev);
++	if (ret) {
++		dev_err(dev, "failed to resume clock\n");
++		return ret;
++	}
++
++	return pm_generic_runtime_resume(dev);
++}
++
+ #else /* !CONFIG_PM */
+ 
+ /**
+diff --git a/include/linux/pm_clock.h b/include/linux/pm_clock.h
+index 0b00396..25266c6 100644
+--- a/include/linux/pm_clock.h
++++ b/include/linux/pm_clock.h
+@@ -20,6 +20,16 @@ struct pm_clk_notifier_block {
+ 
+ struct clk;
+ 
++#ifdef CONFIG_PM
++extern int pm_clk_runtime_suspend(struct device *dev);
++extern int pm_clk_runtime_resume(struct device *dev);
++#define USE_PM_CLK_RUNTIME_OPS \
++	.runtime_suspend = pm_clk_runtime_suspend, \
++	.runtime_resume = pm_clk_runtime_resume,
++#else
++#define USE_PM_CLK_RUNTIME_OPS
++#endif
++
+ #ifdef CONFIG_PM_CLK
+ static inline bool pm_clk_no_clocks(struct device *dev)
+ {
 -- 
-1.9.1
+QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a member
+of Code Aurora Forum, hosted by The Linux Foundation
 
