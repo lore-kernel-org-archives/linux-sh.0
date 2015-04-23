@@ -1,56 +1,93 @@
-From: Valentin Rothberg <valentinrothberg@gmail.com>
-Date: Tue, 28 Apr 2015 15:52:48 +0000
-Subject: Re: ARM: shmobile: ARCH_R8A7793?
-Message-Id: <CAD3Xx4LHqD44LzfHmhDQh59S_YBV1kRkowo9JWDE7EzoRUySKA@mail.gmail.com>
+From: Rajendra Nayak <rnayak@codeaurora.org>
+Date: Thu, 23 Apr 2015 08:45:13 +0000
+Subject: [PATCH 5/5] drivers: sh: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
+Message-Id: <1429777993-11702-6-git-send-email-rnayak@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1416302641.7024.7.camel@x220>
- <CAMuHMdUFZo+r-N0Ofa1d6PHDtB6dqZfChpLgOz_XtruWD3_a3g@mail.gmail.com>
-In-Reply-To: <CAMuHMdUFZo+r-N0Ofa1d6PHDtB6dqZfChpLgOz_XtruWD3_a3g@mail.gmail.com>
+References: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
+In-Reply-To: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+USE_PM_CLK_RUNTIME_OPS is introduced so we don't repeat the same code
+to do runtime_suspend and runtime_resume across users of PM clocks.
+Use it to remove the boilerplate code.
 
-I am cleaning up some Kconfig issues in ARM
-(./scripts/checkkconfgisymbols.py) at the moment and came across
-CONFIG_ARCH_R8A7793:
+Signed-off-by: Rajendra Nayak <rnayak@codeaurora.org>
+Reviewed-by: Kevin Hilman <khilman@linaro.org>
+Acked-by: Santosh Shilimkar <ssantosh@kernel.org>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/sh/pm_runtime.c | 47 ++---------------------------------------------
+ 1 file changed, 2 insertions(+), 45 deletions(-)
 
-arch/arm/Kconfig.debug:         depends on ARCH_R8A7790 ||
-ARCH_R8A7791 || ARCH_R8A7793
-drivers/clk/shmobile/Makefile:obj-$(CONFIG_ARCH_R8A7793)
- += clk-rcar-gen2.o
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index cd4c293..e0fd1e0 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -20,58 +20,15 @@
+ #include <linux/bitmap.h>
+ #include <linux/slab.h>
+ 
+-#ifdef CONFIG_PM
+-static int sh_pm_runtime_suspend(struct device *dev)
+-{
+-	int ret;
+-
+-	ret = pm_generic_runtime_suspend(dev);
+-	if (ret) {
+-		dev_err(dev, "failed to suspend device\n");
+-		return ret;
+-	}
+-
+-	ret = pm_clk_suspend(dev);
+-	if (ret) {
+-		dev_err(dev, "failed to suspend clock\n");
+-		pm_generic_runtime_resume(dev);
+-		return ret;
+-	}
+-
+-	return 0;
+-}
+-
+-static int sh_pm_runtime_resume(struct device *dev)
+-{
+-	int ret;
+-
+-	ret = pm_clk_resume(dev);
+-	if (ret) {
+-		dev_err(dev, "failed to resume clock\n");
+-		return ret;
+-	}
+-
+-	return pm_generic_runtime_resume(dev);
+-}
+-
+ static struct dev_pm_domain default_pm_domain = {
+ 	.ops = {
+-		.runtime_suspend = sh_pm_runtime_suspend,
+-		.runtime_resume = sh_pm_runtime_resume,
++		USE_PM_CLK_RUNTIME_OPS
+ 		USE_PLATFORM_PM_SLEEP_OPS
+ 	},
+ };
+ 
+-#define DEFAULT_PM_DOMAIN_PTR	(&default_pm_domain)
+-
+-#else
+-
+-#define DEFAULT_PM_DOMAIN_PTR	NULL
+-
+-#endif /* CONFIG_PM */
+-
+ static struct pm_clk_notifier_block platform_bus_notifier = {
+-	.pm_domain = DEFAULT_PM_DOMAIN_PTR,
++	.pm_domain = &default_pm_domain,
+ 	.con_ids = { NULL, },
+ };
+ 
+-- 
+QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a member
+of Code Aurora Forum, hosted by The Linux Foundation
 
-Do you know when this option will be added to Kconfig (see email below)?
-
-Kind regards,
- Valentin
-
-On Tue, Nov 18, 2014 at 10:36 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> Hi Paul,
->
-> On Tue, Nov 18, 2014 at 10:24 AM, Paul Bolle <pebolle@tiscali.nl> wrote:
->> Your commit 7a2071c58f36 ("ARM: shmobile: Add early debugging support
->> using SCIF(A)") is included in today's linux-next (ie, next-20141118).
->> It adds an (optional) dependency on the Kconfig symbol ARCH_R8A7793. But
->> that symbol isn't part of next-20141118.
->>
->> Is a patch that adds this symbol queued somewhere?
->
-> Not yet. I was just a bit pro-active ;-)
->
-> However, there are already references to r8a7793 in DT binding documentation,
-> and in of_device_id arrays in drivers.
->
-> Gr{oetje,eeting}s,
->
->                         Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
