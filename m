@@ -1,34 +1,87 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 30 Apr 2015 14:18:04 +0000
-Subject: Re: [PATCH 03/11] ARM: shmobile: add r8a7793 SoC device tree
-Message-Id: <CAO3366zNMZgguxWKqs8uHJT3RhKC8Jz9Dei_q1_kbHGU7yhrRA@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 23 Apr 2015 08:16:04 +0000
+Subject: [PATCH 4/7 v4] mmc: sh_mmcif: separate sh_mmcif_clk_update() into setup and prepare
+Message-Id: <87618ngt1d.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425661798-10487-4-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1425661798-10487-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+	<87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Simon <horms@verge.net.au>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-On Sun, Mar 8, 2015 at 10:59 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Fri, Mar 6, 2015 at 6:09 PM, Ulrich Hecht
-> <ulrich.hecht+renesas@gmail.com> wrote:
->> r8a7793 device tree including clock descriptions.
->
-> Thanks for your patch!
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-And thanks for your review.
+Current sh_mmcif_clk_update() is called from probe() and set_ios(),
+but, the purpose of later one is just clk_prepare_enable().
+No need to setup mmc->f_max/f_min in many times.
+This patch separe sh_mmcif_clk_update() into clk_prepare_enable()
+and mmc->f_max/f_min setup.
 
-> I gave a few comments below, mostly by comparing with r8a7791.dtsi.
-> As r8a7793 is very similar to r8a7791 (does anyone compiled a list of the
-> differences?), perhaps it's best to just start from a copy of upstream
-> r8a7791.dtsi and r8a7791-clock.h?
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
+v3 -> v4
 
-At least for the dtsi file, the result would be largely identical to
-what we already have here, even if that was not intended from the
-outset.  The diff gets a bit larger around the clocks section because
-I reformatted some excessively long lines.
+ - new patch, this is tidyup patch
 
-CU
-Uli
+ drivers/mmc/host/sh_mmcif.c | 22 ++++++++++------------
+ 1 file changed, 10 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index ff4f8c0..d2f1158 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -978,18 +978,12 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 	sh_mmcif_start_cmd(host, mrq);
+ }
+ 
+-static int sh_mmcif_clk_update(struct sh_mmcif_host *host)
++static void sh_mmcif_clk_setup(struct sh_mmcif_host *host)
+ {
+-	int ret = clk_prepare_enable(host->clk);
++	unsigned int clk = clk_get_rate(host->clk);
+ 
+-	if (!ret) {
+-		unsigned int clk = clk_get_rate(host->clk);
+-
+-		host->mmc->f_max = clk / 2;
+-		host->mmc->f_min = clk / 512;
+-	}
+-
+-	return ret;
++	host->mmc->f_max = clk / 2;
++	host->mmc->f_min = clk / 512;
+ }
+ 
+ static void sh_mmcif_set_power(struct sh_mmcif_host *host, struct mmc_ios *ios)
+@@ -1046,7 +1040,8 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 
+ 	if (ios->clock) {
+ 		if (!host->power) {
+-			sh_mmcif_clk_update(host);
++			clk_prepare_enable(host->clk);
++
+ 			pm_runtime_get_sync(&host->pd->dev);
+ 			host->power = true;
+ 			sh_mmcif_sync_reset(host);
+@@ -1447,10 +1442,13 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 		dev_err(dev, "cannot get clock: %d\n", ret);
+ 		goto err_pm;
+ 	}
+-	ret = sh_mmcif_clk_update(host);
++
++	ret = clk_prepare_enable(host->clk);
+ 	if (ret < 0)
+ 		goto err_pm;
+ 
++	sh_mmcif_clk_setup(host);
++
+ 	ret = pm_runtime_resume(dev);
+ 	if (ret < 0)
+ 		goto err_clk;
+-- 
+1.9.1
+
