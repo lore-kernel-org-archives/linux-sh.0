@@ -1,330 +1,203 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 17 Apr 2015 15:30:06 +0000
-Subject: Re: [PATCH 2/3] pinctrl: sh-pfc: r8a7778: Add bias (pull-up) pinconf support
-Message-Id: <3907338.3D0tydpf07@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 23 Apr 2015 08:17:23 +0000
+Subject: [PATCH 5/7 v4] mmc: sh_mmcif: calculate best clock with parent clock
+Message-Id: <874mo7gsza.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1426854638-9187-3-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1426854638-9187-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+	<87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>, Simon <horms@verge.net.au>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-Hi Ulrich,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thank you for the patch.
+MMCIF IP on R-Car series has parent clock which can be set
+several rate, and it was not implemented on old SH-Mobile series
+(= SH-Mobile series parent clock was fixed rate)
+R-Car series MMCIF can use more high speed access if it setup
+parent clock. This patch adds parent clock setup method,
+and r8a7790/r8a7791 can use it.
 
-On Friday 20 March 2015 13:30:37 Ulrich Hecht wrote:
-> On this SoC there is no simple mapping of GP pins to pull-up register
-> bits, so we need a table.
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
->  drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 259 +++++++++++++++++++++++++++++---
->  1 file changed, 238 insertions(+), 21 deletions(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c index c7d610d..7aad968 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-> @@ -4,6 +4,7 @@
->   * Copyright (C) 2013  Renesas Solutions Corp.
->   * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->   * Copyright (C) 2013  Cogent Embedded, Inc.
-> + * Copyright (C) 2015  Ulrich Hecht
->   *
->   * based on
->   * Copyright (C) 2011  Renesas Solutions Corp.
-> @@ -19,32 +20,38 @@
->   * GNU General Public License for more details.
->   */
-> 
-> -#include <linux/platform_data/gpio-rcar.h>
-> +#include <linux/io.h>
->  #include <linux/kernel.h>
-> +#include <linux/pinctrl/pinconf-generic.h>
-> +#include <linux/platform_data/gpio-rcar.h>
-> +#include "core.h"
->  #include "sh_pfc.h"
-> 
-> -#define PORT_GP_27(bank, fn, sfx)					\
-> -	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
-> -	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
-> -	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
-> -	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
-> -	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
-> -	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
-> -	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
-> -	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
-> -	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
-> -	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
-> -	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
-> -	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
-> -	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
-> -	PORT_GP_1(bank, 26, fn, sfx)
-> +#define PORT_GP_PUP_1(bank, pin, fn, sfx)	\
-> +	PORT_GP_CFG_1(bank, pin, fn, sfx, SH_PFC_PIN_CFG_PULL_UP)
-> +
-> +#define PORT_GP_PUP_27(bank, fn, sfx)					\
-> +	PORT_GP_PUP_1(bank, 0,  fn, sfx), PORT_GP_PUP_1(bank, 1,  fn, sfx),	\
-> +	PORT_GP_PUP_1(bank, 2,  fn, sfx), PORT_GP_PUP_1(bank, 3,  fn, sfx),	\
-> +	PORT_GP_PUP_1(bank, 4,  fn, sfx), PORT_GP_PUP_1(bank, 5,  fn, sfx),	\
-> +	PORT_GP_PUP_1(bank, 6,  fn, sfx), PORT_GP_PUP_1(bank, 7,  fn, sfx),	\
-> +	PORT_GP_PUP_1(bank, 8,  fn, sfx), PORT_GP_PUP_1(bank, 9,  fn, sfx),	\
-> +	PORT_GP_PUP_1(bank, 10, fn, sfx), PORT_GP_PUP_1(bank, 11, fn, sfx),	\
-> +	PORT_GP_PUP_1(bank, 12, fn, sfx), PORT_GP_PUP_1(bank, 13, fn, sfx),	\
-> +	PORT_GP_PUP_1(bank, 14, fn, sfx), PORT_GP_PUP_1(bank, 15, fn, sfx),	\
-> +	PORT_GP_PUP_1(bank, 16, fn, sfx), PORT_GP_PUP_1(bank, 17, fn, sfx),	\
-> +	PORT_GP_PUP_1(bank, 18, fn, sfx), PORT_GP_PUP_1(bank, 19, fn, sfx),	\
-> +	PORT_GP_PUP_1(bank, 20, fn, sfx), PORT_GP_PUP_1(bank, 21, fn, sfx),	\
-> +	PORT_GP_PUP_1(bank, 22, fn, sfx), PORT_GP_PUP_1(bank, 23, fn, sfx),	\
-> +	PORT_GP_PUP_1(bank, 24, fn, sfx), PORT_GP_PUP_1(bank, 25, fn, sfx),	\
-> +	PORT_GP_PUP_1(bank, 26, fn, sfx)
-> 
->  #define CPU_ALL_PORT(fn, sfx)		\
-> -	PORT_GP_32(0, fn, sfx),		\
-> -	PORT_GP_32(1, fn, sfx),		\
-> -	PORT_GP_32(2, fn, sfx),		\
-> -	PORT_GP_32(3, fn, sfx),		\
-> -	PORT_GP_27(4, fn, sfx)
-> +	PORT_GP_CFG_32(0, fn, sfx, SH_PFC_PIN_CFG_PULL_UP),		\
-> +	PORT_GP_CFG_32(1, fn, sfx, SH_PFC_PIN_CFG_PULL_UP),		\
-> +	PORT_GP_CFG_32(2, fn, sfx, SH_PFC_PIN_CFG_PULL_UP),		\
-> +	PORT_GP_CFG_32(3, fn, sfx, SH_PFC_PIN_CFG_PULL_UP),		\
-> +	PORT_GP_PUP_27(4, fn, sfx)
-> 
->  enum {
->  	PINMUX_RESERVED = 0,
-> @@ -2905,8 +2912,218 @@ static const struct pinmux_cfg_reg
-> pinmux_config_regs[] = { { },
->  };
-> 
-> +#define PUPR0	0x100
-> +#define PUPR1	0x104
-> +#define PUPR2	0x108
-> +#define PUPR3	0x10c
-> +#define PUPR4	0x110
-> +#define PUPR5	0x114
-> +
-> +static const struct {
-> +	u16 reg;
-> +	u16 bit;
-> +} pullups[] = {
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
+v3 -> v4
 
-This will create a large sparsely-populated table. The sh-pfc data tables are 
-starting to take quite some space, I have a feeling we'll need to reconsider 
-our current approach. It can't really scale with multiplatform kernels :-/
+ - add new clk-range on DT
+ - use clk_round_rate() for parent_clk
+ - struct sh_mmcif_ver instead of sh_mmcif_parent_clk
 
-> +	[RCAR_GP_PIN(0,  6)] = { PUPR0,  0 },	/* A0 */
-> +	[RCAR_GP_PIN(0,  7)] = { PUPR0,  1 },	/* A1 */
-> +	[RCAR_GP_PIN(0,  8)] = { PUPR0,  2 },	/* A2 */
-> +	[RCAR_GP_PIN(0,  9)] = { PUPR0,  3 },	/* A3 */
-> +	[RCAR_GP_PIN(0, 10)] = { PUPR0,  4 },	/* A4 */
-> +	[RCAR_GP_PIN(0, 11)] = { PUPR0,  5 },	/* A5 */
-> +	[RCAR_GP_PIN(0, 12)] = { PUPR0,  6 },	/* A6 */
-> +	[RCAR_GP_PIN(0, 13)] = { PUPR0,  7 },	/* A7 */
-> +	[RCAR_GP_PIN(0, 14)] = { PUPR0,  8 },	/* A8 */
-> +	[RCAR_GP_PIN(0, 15)] = { PUPR0,  9 },	/* A9 */
-> +	[RCAR_GP_PIN(0, 16)] = { PUPR0, 10 },	/* A10 */
-> +	[RCAR_GP_PIN(0, 17)] = { PUPR0, 11 },	/* A11 */
-> +	[RCAR_GP_PIN(0, 18)] = { PUPR0, 12 },	/* A12 */
-> +	[RCAR_GP_PIN(0, 19)] = { PUPR0, 13 },	/* A13 */
-> +	[RCAR_GP_PIN(0, 20)] = { PUPR0, 14 },	/* A14 */
-> +	[RCAR_GP_PIN(0, 21)] = { PUPR0, 15 },	/* A15 */
-> +	[RCAR_GP_PIN(0, 22)] = { PUPR0, 16 },	/* A16 */
-> +	[RCAR_GP_PIN(0, 23)] = { PUPR0, 17 },	/* A17 */
-> +	[RCAR_GP_PIN(0, 24)] = { PUPR0, 18 },	/* A18 */
-> +	[RCAR_GP_PIN(0, 25)] = { PUPR0, 19 },	/* A19 */
-> +	[RCAR_GP_PIN(0, 26)] = { PUPR0, 20 },	/* A20 */
-> +	[RCAR_GP_PIN(0, 27)] = { PUPR0, 21 },	/* A21 */
-> +	[RCAR_GP_PIN(0, 28)] = { PUPR0, 22 },	/* A22 */
-> +	[RCAR_GP_PIN(0, 29)] = { PUPR0, 23 },	/* A23 */
-> +	[RCAR_GP_PIN(0, 30)] = { PUPR0, 24 },	/* A24 */
-> +	[RCAR_GP_PIN(0, 31)] = { PUPR0, 25 },	/* A25 */
-> +	[RCAR_GP_PIN(1,  3)] = { PUPR0, 26 },	/* /EX_CS0 */
-> +	[RCAR_GP_PIN(1,  4)] = { PUPR0, 27 },	/* /EX_CS1 */
-> +	[RCAR_GP_PIN(1,  5)] = { PUPR0, 28 },	/* /EX_CS2 */
-> +	[RCAR_GP_PIN(1,  6)] = { PUPR0, 29 },	/* /EX_CS3 */
-> +	[RCAR_GP_PIN(1,  7)] = { PUPR0, 30 },	/* /EX_CS4 */
-> +	[RCAR_GP_PIN(1,  8)] = { PUPR0, 31 },	/* /EX_CS5 */
-> +
-> +	[RCAR_GP_PIN(0,  0)] = { PUPR1,  0 },	/* /PRESETOUT	*/
-> +	[RCAR_GP_PIN(0,  5)] = { PUPR1,  1 },	/* /BS		*/
-> +	[RCAR_GP_PIN(1,  0)] = { PUPR1,  2 },	/* RD//WR	*/
-> +	[RCAR_GP_PIN(1,  1)] = { PUPR1,  3 },	/* /WE0		*/
-> +	[RCAR_GP_PIN(1,  2)] = { PUPR1,  4 },	/* /WE1		*/
-> +	[RCAR_GP_PIN(1, 11)] = { PUPR1,  5 },	/* EX_WAIT0	*/
-> +	[RCAR_GP_PIN(1,  9)] = { PUPR1,  6 },	/* DREQ0	*/
-> +	[RCAR_GP_PIN(1, 10)] = { PUPR1,  7 },	/* DACK0	*/
-> +	[RCAR_GP_PIN(1, 12)] = { PUPR1,  8 },	/* IRQ0		*/
-> +	[RCAR_GP_PIN(1, 13)] = { PUPR1,  9 },	/* IRQ1		*/
-> +
-> +	[RCAR_GP_PIN(1, 22)] = { PUPR2,  0 },	/* DU0_DR0	*/
-> +	[RCAR_GP_PIN(1, 23)] = { PUPR2,  1 },	/* DU0_DR1	*/
-> +	[RCAR_GP_PIN(1, 24)] = { PUPR2,  2 },	/* DU0_DR2	*/
-> +	[RCAR_GP_PIN(1, 25)] = { PUPR2,  3 },	/* DU0_DR3	*/
-> +	[RCAR_GP_PIN(1, 26)] = { PUPR2,  4 },	/* DU0_DR4	*/
-> +	[RCAR_GP_PIN(1, 27)] = { PUPR2,  5 },	/* DU0_DR5	*/
-> +	[RCAR_GP_PIN(1, 28)] = { PUPR2,  6 },	/* DU0_DR6	*/
-> +	[RCAR_GP_PIN(1, 29)] = { PUPR2,  7 },	/* DU0_DR7	*/
-> +	[RCAR_GP_PIN(1, 30)] = { PUPR2,  8 },	/* DU0_DG0	*/
-> +	[RCAR_GP_PIN(1, 31)] = { PUPR2,  9 },	/* DU0_DG1	*/
-> +	[RCAR_GP_PIN(2,  0)] = { PUPR2, 10 },	/* DU0_DG2	*/
-> +	[RCAR_GP_PIN(2,  1)] = { PUPR2, 11 },	/* DU0_DG3	*/
-> +	[RCAR_GP_PIN(2,  2)] = { PUPR2, 12 },	/* DU0_DG4	*/
-> +	[RCAR_GP_PIN(2,  3)] = { PUPR2, 13 },	/* DU0_DG5	*/
-> +	[RCAR_GP_PIN(2,  4)] = { PUPR2, 14 },	/* DU0_DG6	*/
-> +	[RCAR_GP_PIN(2,  5)] = { PUPR2, 15 },	/* DU0_DG7	*/
-> +	[RCAR_GP_PIN(2,  6)] = { PUPR2, 16 },	/* DU0_DB0	*/
-> +	[RCAR_GP_PIN(2,  7)] = { PUPR2, 17 },	/* DU0_DB1	*/
-> +	[RCAR_GP_PIN(2,  8)] = { PUPR2, 18 },	/* DU0_DB2	*/
-> +	[RCAR_GP_PIN(2,  9)] = { PUPR2, 19 },	/* DU0_DB3	*/
-> +	[RCAR_GP_PIN(2, 10)] = { PUPR2, 20 },	/* DU0_DB4	*/
-> +	[RCAR_GP_PIN(2, 11)] = { PUPR2, 21 },	/* DU0_DB5	*/
-> +	[RCAR_GP_PIN(2, 12)] = { PUPR2, 22 },	/* DU0_DB6	*/
-> +	[RCAR_GP_PIN(2, 13)] = { PUPR2, 23 },	/* DU0_DB7	*/
-> +	[RCAR_GP_PIN(2, 14)] = { PUPR2, 24 },	/* DU0_DOTCLKIN	*/
-> +	[RCAR_GP_PIN(2, 15)] = { PUPR2, 25 },	/* DU0_DOTCLKOUT0 */
-> +	[RCAR_GP_PIN(2, 17)] = { PUPR2, 26 },	/* DU0_HSYNC	*/
-> +	[RCAR_GP_PIN(2, 18)] = { PUPR2, 27 },	/* DU0_VSYNC	*/
-> +	[RCAR_GP_PIN(2, 19)] = { PUPR2, 28 },	/* DU0_EXODDF	*/
-> +	[RCAR_GP_PIN(2, 20)] = { PUPR2, 29 },	/* DU0_DISP	*/
-> +	[RCAR_GP_PIN(2, 21)] = { PUPR2, 30 },	/* DU0_CDE	*/
-> +	[RCAR_GP_PIN(2, 16)] = { PUPR2, 31 },	/* DU0_DOTCLKOUT1 */
-> +
-> +	[RCAR_GP_PIN(3, 24)] = { PUPR3,  0 },	/* VI0_CLK	*/
-> +	[RCAR_GP_PIN(3, 25)] = { PUPR3,  1 },	/* VI0_CLKENB	*/
-> +	[RCAR_GP_PIN(3, 26)] = { PUPR3,  2 },	/* VI0_FIELD	*/
-> +	[RCAR_GP_PIN(3, 27)] = { PUPR3,  3 },	/* /VI0_HSYNC	*/
-> +	[RCAR_GP_PIN(3, 28)] = { PUPR3,  4 },	/* /VI0_VSYNC	*/
-> +	[RCAR_GP_PIN(3, 29)] = { PUPR3,  5 },	/* VI0_DATA0	*/
-> +	[RCAR_GP_PIN(3, 30)] = { PUPR3,  6 },	/* VI0_DATA1	*/
-> +	[RCAR_GP_PIN(3, 31)] = { PUPR3,  7 },	/* VI0_DATA2	*/
-> +	[RCAR_GP_PIN(4,  0)] = { PUPR3,  8 },	/* VI0_DATA3	*/
-> +	[RCAR_GP_PIN(4,  1)] = { PUPR3,  9 },	/* VI0_DATA4	*/
-> +	[RCAR_GP_PIN(4,  2)] = { PUPR3, 10 },	/* VI0_DATA5	*/
-> +	[RCAR_GP_PIN(4,  3)] = { PUPR3, 11 },	/* VI0_DATA6	*/
-> +	[RCAR_GP_PIN(4,  4)] = { PUPR3, 12 },	/* VI0_DATA7	*/
-> +	[RCAR_GP_PIN(4,  5)] = { PUPR3, 13 },	/* VI0_G2	*/
-> +	[RCAR_GP_PIN(4,  6)] = { PUPR3, 14 },	/* VI0_G3	*/
-> +	[RCAR_GP_PIN(4,  7)] = { PUPR3, 15 },	/* VI0_G4	*/
-> +	[RCAR_GP_PIN(4,  8)] = { PUPR3, 16 },	/* VI0_G5	*/
-> +	[RCAR_GP_PIN(4, 21)] = { PUPR3, 17 },	/* VI1_DATA12	*/
-> +	[RCAR_GP_PIN(4, 22)] = { PUPR3, 18 },	/* VI1_DATA13	*/
-> +	[RCAR_GP_PIN(4, 23)] = { PUPR3, 19 },	/* VI1_DATA14	*/
-> +	[RCAR_GP_PIN(4, 24)] = { PUPR3, 20 },	/* VI1_DATA15	*/
-> +	[RCAR_GP_PIN(4,  9)] = { PUPR3, 21 },	/* ETH_REF_CLK	*/
-> +	[RCAR_GP_PIN(4, 10)] = { PUPR3, 22 },	/* ETH_TXD0	*/
-> +	[RCAR_GP_PIN(4, 11)] = { PUPR3, 23 },	/* ETH_TXD1	*/
-> +	[RCAR_GP_PIN(4, 12)] = { PUPR3, 24 },	/* ETH_CRS_DV	*/
-> +	[RCAR_GP_PIN(4, 13)] = { PUPR3, 25 },	/* ETH_TX_EN	*/
-> +	[RCAR_GP_PIN(4, 14)] = { PUPR3, 26 },	/* ETH_RX_ER	*/
-> +	[RCAR_GP_PIN(4, 15)] = { PUPR3, 27 },	/* ETH_RXD0	*/
-> +	[RCAR_GP_PIN(4, 16)] = { PUPR3, 28 },	/* ETH_RXD1	*/
-> +	[RCAR_GP_PIN(4, 17)] = { PUPR3, 29 },	/* ETH_MDC	*/
-> +	[RCAR_GP_PIN(4, 18)] = { PUPR3, 30 },	/* ETH_MDIO	*/
-> +	[RCAR_GP_PIN(4, 19)] = { PUPR3, 31 },	/* ETH_LINK	*/
-> +
-> +	[RCAR_GP_PIN(3,  6)] = { PUPR4,  0 },	/* SSI_SCK012	*/
-> +	[RCAR_GP_PIN(3,  7)] = { PUPR4,  1 },	/* SSI_WS012	*/
-> +	[RCAR_GP_PIN(3, 10)] = { PUPR4,  2 },	/* SSI_SDATA0	*/
-> +	[RCAR_GP_PIN(3,  9)] = { PUPR4,  3 },	/* SSI_SDATA1	*/
-> +	[RCAR_GP_PIN(3,  8)] = { PUPR4,  4 },	/* SSI_SDATA2	*/
-> +	[RCAR_GP_PIN(3,  2)] = { PUPR4,  5 },	/* SSI_SCK34	*/
-> +	[RCAR_GP_PIN(3,  3)] = { PUPR4,  6 },	/* SSI_WS34	*/
-> +	[RCAR_GP_PIN(3,  5)] = { PUPR4,  7 },	/* SSI_SDATA3	*/
-> +	[RCAR_GP_PIN(3,  4)] = { PUPR4,  8 },	/* SSI_SDATA4	*/
-> +	[RCAR_GP_PIN(2, 31)] = { PUPR4,  9 },	/* SSI_SCK5	*/
-> +	[RCAR_GP_PIN(3,  0)] = { PUPR4, 10 },	/* SSI_WS5	*/
-> +	[RCAR_GP_PIN(3,  1)] = { PUPR4, 11 },	/* SSI_SDATA5	*/
-> +	[RCAR_GP_PIN(2, 28)] = { PUPR4, 12 },	/* SSI_SCK6	*/
-> +	[RCAR_GP_PIN(2, 29)] = { PUPR4, 13 },	/* SSI_WS6	*/
-> +	[RCAR_GP_PIN(2, 30)] = { PUPR4, 14 },	/* SSI_SDATA6	*/
-> +	[RCAR_GP_PIN(2, 24)] = { PUPR4, 15 },	/* SSI_SCK78	*/
-> +	[RCAR_GP_PIN(2, 25)] = { PUPR4, 16 },	/* SSI_WS78	*/
-> +	[RCAR_GP_PIN(2, 27)] = { PUPR4, 17 },	/* SSI_SDATA7	*/
-> +	[RCAR_GP_PIN(2, 26)] = { PUPR4, 18 },	/* SSI_SDATA8	*/
-> +	[RCAR_GP_PIN(3, 23)] = { PUPR4, 19 },	/* TCLK0	*/
-> +	[RCAR_GP_PIN(3, 11)] = { PUPR4, 20 },	/* SD0_CLK	*/
-> +	[RCAR_GP_PIN(3, 12)] = { PUPR4, 21 },	/* SD0_CMD	*/
-> +	[RCAR_GP_PIN(3, 13)] = { PUPR4, 22 },	/* SD0_DAT0	*/
-> +	[RCAR_GP_PIN(3, 14)] = { PUPR4, 23 },	/* SD0_DAT1	*/
-> +	[RCAR_GP_PIN(3, 15)] = { PUPR4, 24 },	/* SD0_DAT2	*/
-> +	[RCAR_GP_PIN(3, 16)] = { PUPR4, 25 },	/* SD0_DAT3	*/
-> +	[RCAR_GP_PIN(3, 17)] = { PUPR4, 26 },	/* SD0_CD	*/
-> +	[RCAR_GP_PIN(3, 18)] = { PUPR4, 27 },	/* SD0_WP	*/
-> +	[RCAR_GP_PIN(2, 22)] = { PUPR4, 28 },	/* AUDIO_CLKA	*/
-> +	[RCAR_GP_PIN(2, 23)] = { PUPR4, 29 },	/* AUDIO_CLKB	*/
-> +	[RCAR_GP_PIN(1, 14)] = { PUPR4, 30 },	/* IRQ2		*/
-> +	[RCAR_GP_PIN(1, 15)] = { PUPR4, 31 },	/* IRQ3		*/
-> +
-> +	[RCAR_GP_PIN(0,  1)] = { PUPR5,  0 },	/* PENC0	*/
-> +	[RCAR_GP_PIN(0,  2)] = { PUPR5,  1 },	/* PENC1	*/
-> +	[RCAR_GP_PIN(0,  3)] = { PUPR5,  2 },	/* USB_OVC0	*/
-> +	[RCAR_GP_PIN(0,  4)] = { PUPR5,  3 },	/* USB_OVC1	*/
-> +	[RCAR_GP_PIN(1, 16)] = { PUPR5,  4 },	/* SCIF_CLK	*/
-> +	[RCAR_GP_PIN(1, 17)] = { PUPR5,  5 },	/* TX0		*/
-> +	[RCAR_GP_PIN(1, 18)] = { PUPR5,  6 },	/* RX0		*/
-> +	[RCAR_GP_PIN(1, 19)] = { PUPR5,  7 },	/* SCK0		*/
-> +	[RCAR_GP_PIN(1, 20)] = { PUPR5,  8 },	/* /CTS0	*/
-> +	[RCAR_GP_PIN(1, 21)] = { PUPR5,  9 },	/* /RTS0	*/
-> +	[RCAR_GP_PIN(3, 19)] = { PUPR5, 10 },	/* HSPI_CLK0	*/
-> +	[RCAR_GP_PIN(3, 20)] = { PUPR5, 11 },	/* /HSPI_CS0	*/
-> +	[RCAR_GP_PIN(3, 21)] = { PUPR5, 12 },	/* HSPI_RX0	*/
-> +	[RCAR_GP_PIN(3, 22)] = { PUPR5, 13 },	/* HSPI_TX0	*/
-> +	[RCAR_GP_PIN(4, 20)] = { PUPR5, 14 },	/* ETH_MAGIC	*/
-> +	[RCAR_GP_PIN(4, 25)] = { PUPR5, 15 },	/* AVS1		*/
-> +	[RCAR_GP_PIN(4, 26)] = { PUPR5, 16 },	/* AVS2		*/
-> +};
-> +
-> +static unsigned int r8a7778_pinmux_get_bias(struct sh_pfc *pfc,
-> +					    unsigned int pin)
-> +{
-> +	void __iomem *addr;
-> +
-> +	BUG_ON(!pullups[pin].reg);
+ .../devicetree/bindings/mmc/renesas,mmcif.txt      |  3 +
+ drivers/mmc/host/sh_mmcif.c                        | 89 +++++++++++++++++++++-
+ 2 files changed, 90 insertions(+), 2 deletions(-)
 
-As Geert mentioned, a WARN_ON should be enough. Sure, this is a bug, but it 
-doesn't call for a kernel panic.
-
-> +	addr = pfc->windows->virt + pullups[pin].reg;
-> +
-> +	if (ioread32(addr) & BIT(pullups[pin].bit))
-> +		return PIN_CONFIG_BIAS_PULL_UP;
-> +	else
-> +		return PIN_CONFIG_BIAS_DISABLE;
-> +}
-> +
-> +static void r8a7778_pinmux_set_bias(struct sh_pfc *pfc, unsigned int pin,
-> +				   unsigned int bias)
-> +{
-> +	void __iomem *addr;
-> +	u32 value;
-> +	u32 bit;
-> +
-> +	BUG_ON(!pullups[pin].reg);
-> +	addr = pfc->windows->virt + pullups[pin].reg;
-> +	bit = BIT(pullups[pin].bit);
-> +
-> +	value = ioread32(addr) & ~bit;
-> +	if (bias = PIN_CONFIG_BIAS_PULL_UP)
-> +		value |= bit;
-> +	iowrite32(value, addr);
-> +}
-> +
-> +static const struct sh_pfc_soc_operations r8a7778_pfc_ops = {
-> +	.get_bias = r8a7778_pinmux_get_bias,
-> +	.set_bias = r8a7778_pinmux_set_bias,
-> +};
-> +
->  const struct sh_pfc_soc_info r8a7778_pinmux_info = {
->  	.name = "r8a7778_pfc",
-> +	.ops  = &r8a7778_pfc_ops,
-> 
->  	.unlock_reg = 0xfffc0000, /* PMMR */
-
+diff --git a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+index 299081f..eb50f4e 100644
+--- a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
++++ b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+@@ -14,6 +14,8 @@ Required properties:
+ 
+ - clocks: reference to the functional clock
+ 
++- clk-range: parent clock range
++
+ - dmas: reference to the DMA channels, one per channel name listed in the
+   dma-names property.
+ - dma-names: must contain "tx" for the transmit DMA channel and "rx" for the
+@@ -29,4 +31,5 @@ Example: R8A7790 (R-Car H2) MMCIF0
+ 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
+ 		dmas = <&dmac0 0xd1>, <&dmac0 0xd2>;
+ 		dma-names = "tx", "rx";
++		clk-range = <12187500 97500000>;
+ 	};
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index d2f1158..437aa3c 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -57,6 +57,7 @@
+ #include <linux/mmc/slot-gpio.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/mutex.h>
++#include <linux/of_device.h>
+ #include <linux/pagemap.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_qos.h>
+@@ -224,6 +225,13 @@ enum mmcif_wait_for {
+ 	MMCIF_WAIT_FOR_STOP,
+ };
+ 
++/*
++ * difference for each SoC
++ */
++struct sh_mmcif_ver {
++	u32 clkdiv_map;	 /* see CE_CLK_CTRL::CLKDIV */
++};
++
+ struct sh_mmcif_host {
+ 	struct mmc_host *mmc;
+ 	struct mmc_request *mrq;
+@@ -248,6 +256,7 @@ struct sh_mmcif_host {
+ 	bool ccs_enable;		/* Command Completion Signal support */
+ 	bool clk_ctrl2_enable;
+ 	struct mutex thread_lock;
++	const struct sh_mmcif_ver *ver;
+ 
+ 	/* DMA support */
+ 	struct dma_chan		*chan_rx;
+@@ -256,8 +265,14 @@ struct sh_mmcif_host {
+ 	bool			dma_active;
+ };
+ 
++static const struct sh_mmcif_ver sh_mmcif_gen2 = {
++	.clkdiv_map = 0x3ff,
++};
++
+ static const struct of_device_id mmcif_of_match[] = {
+ 	{ .compatible = "renesas,sh-mmcif" },
++	{ .compatible = "renesas,mmcif-r8a7790", .data = &sh_mmcif_gen2},
++	{ .compatible = "renesas,mmcif-r8a7791", .data = &sh_mmcif_gen2},
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, mmcif_of_match);
+@@ -490,12 +505,50 @@ static void sh_mmcif_clock_control(struct sh_mmcif_host *host, unsigned int clk)
+ 
+ 	if (!clk)
+ 		return;
+-	if (sup_pclk && clk = current_clk)
++
++	if (host->ver) {
++		const struct sh_mmcif_ver *ver = host->ver;
++		unsigned int freq, best_freq, myclk, clkdiv, div, diff_min, diff;
++		int i;
++
++		clkdiv = 0;
++		diff_min = ~0;
++		best_freq = 0;
++		for (i = fls(ver->clkdiv_map); i >= 0; i--) {
++			if (!((1 << i) & ver->clkdiv_map))
++				continue;
++
++			/*
++			 * clk = parent_freq / div
++			 * -> parent_freq = clk x div
++			 */
++
++			div = 1 << (i + 1);
++			freq = clk_round_rate(host->clk, clk * div);
++			myclk = freq / div;
++			diff = (myclk > clk) ? myclk - clk : clk - myclk;
++
++			if (diff <= diff_min) {
++				best_freq = freq;
++				clkdiv = i;
++				diff_min = diff;
++			}
++		}
++
++		dev_dbg(&host->pd->dev, "clk %u/%u (%u, 0x%x)\n",
++			(best_freq / (1 << (clkdiv + 1))), clk,
++			best_freq, clkdiv);
++
++		clk_set_rate(host->clk, best_freq);
++		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL,
++				CLK_CLEAR & (clkdiv << 16));
++	} else if (sup_pclk && clk = current_clk) {
+ 		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_SUP_PCLK);
+-	else
++	} else {
+ 		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_CLEAR &
+ 				((fls(DIV_ROUND_UP(current_clk,
+ 						   clk) - 1) - 1) << 16));
++	}
+ 
+ 	sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_ENABLE);
+ }
+@@ -980,10 +1033,42 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 
+ static void sh_mmcif_clk_setup(struct sh_mmcif_host *host)
+ {
++	struct device *dev = &host->pd->dev;
++	const struct of_device_id *of_id = of_match_device(mmcif_of_match, dev);
+ 	unsigned int clk = clk_get_rate(host->clk);
+ 
++	if (of_id) {
++		struct device_node *np = dev->of_node;
++		const struct sh_mmcif_ver *ver = of_id->data;
++		u32 range[2]; /* min/max */
++
++		if (!ver)
++			goto sh_mmcif_clk_setup_default;
++
++		if (0 != of_property_read_u32_array(np, "clk-range",
++						    range, ARRAY_SIZE(range)))
++			goto sh_mmcif_clk_setup_default;
++
++		if (range[0] > range[1])
++			goto sh_mmcif_clk_setup_default;
++
++		host->mmc->f_min = range[0] / (1 << fls(ver->clkdiv_map));
++		host->mmc->f_max = range[1] / (1 << ffs(ver->clkdiv_map));
++
++		dev_dbg(dev, "parent clk <%d - %d> (%d/%d)\n",
++			range[0], range[1],
++			host->mmc->f_max, host->mmc->f_min);
++
++		host->ver = ver;
++		return;
++	}
++
++sh_mmcif_clk_setup_default:
+ 	host->mmc->f_max = clk / 2;
+ 	host->mmc->f_min = clk / 512;
++
++	dev_dbg(dev, "clk max/min = %d/%d\n",
++		host->mmc->f_max, host->mmc->f_min);
+ }
+ 
+ static void sh_mmcif_set_power(struct sh_mmcif_host *host, struct mmc_ios *ios)
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
