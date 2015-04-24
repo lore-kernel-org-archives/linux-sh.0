@@ -1,7 +1,7 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Fri, 24 Apr 2015 07:57:17 +0000
+From: "Rafael J. Wysocki" <rjw@rjwysocki.net>
+Date: Fri, 24 Apr 2015 14:41:49 +0000
 Subject: Re: [PATCH 0/5] PM / clock_ops: provide default runtime ops and cleanup users
-Message-Id: <CAPDyKFpAm+DK4SUK_Oc7Fb+jEEQvO3355qWp52nmkJs2YX5T4A@mail.gmail.com>
+Message-Id: <2234398.3O5UMXvvlN@vostro.rjw.lan>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
 In-Reply-To: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
@@ -10,18 +10,18 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 23 April 2015 at 10:33, Rajendra Nayak <rnayak@codeaurora.org> wrote:
+On Thursday, April 23, 2015 02:03:08 PM Rajendra Nayak wrote:
 > Most users of PM clocks do the exact same thing in runtime callbacks.
 > Provide default callbacks and cleanup the existing users (keystone/davinci
 > /omap1/sh)
->
+> 
 > Rajendra Nayak (5):
 >   PM / clock_ops: Provide default runtime ops to users
 >   arm: keystone: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
 >   arm: omap1: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
 >   arm: davinci: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
 >   drivers: sh: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
->
+> 
 >  arch/arm/mach-davinci/pm_domain.c  | 32 +-------------------------
 >  arch/arm/mach-keystone/pm_domain.c | 33 +-------------------------
 >  arch/arm/mach-omap1/pm_bus.c       | 37 ++----------------------------
@@ -30,10 +30,10 @@ On 23 April 2015 at 10:33, Rajendra Nayak <rnayak@codeaurora.org> wrote:
 >  include/linux/pm_clock.h           | 10 ++++++++
 >  6 files changed, 54 insertions(+), 143 deletions(-)
 
-I guess you don't need more acks/reviewed by for this patchset. Still,
-and also for my own reference.
+It is not particularly clear to me who is supposed to apply this series, but
+I can do that if people don't have problems with that.
 
-Acked-by: Ulf Hansson <ulf.hansson@linaro.org>
 
-Kind regards
-Uffe
+-- 
+I speak only for myself.
+Rafael J. Wysocki, Intel Open Source Technology Center.
