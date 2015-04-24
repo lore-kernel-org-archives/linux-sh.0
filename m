@@ -1,38 +1,65 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 28 Apr 2015 10:12:55 +0000
-Subject: [PATCH 2/5] ARM: shmobile: lager dts: Add "nor-jedec" compatible value
-Message-Id: <1430215978-31087-3-git-send-email-geert+renesas@glider.be>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 24 Apr 2015 08:54:11 +0000
+Subject: Re: [PATCH 1/2] drivers/tty/serial/sh-sci.h: remove dead reference on ARCH_SH7372
+Message-Id: <CAMuHMdWK0Nf7-pk=H1nt_WyARcDv=ZHXrOVi9WgUMorTd+YF+g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
+References: <1428747979-20455-1-git-send-email-valentinrothberg@gmail.com>
+In-Reply-To: <1428747979-20455-1-git-send-email-valentinrothberg@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Valentin Rothberg <valentinrothberg@gmail.com>
+Cc: Greg KH <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Paul Bolle <pebolle@tiscali.nl>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Spansion s25fl512s is compatible with "nor-jedec". Hence add the
-"nor-jedec" compatible value, so the driver can bind against the generic
-name, cfr. commit 8ff16cf77ce314c2 ("Documentation: devicetree: m25p80:
-add "nor-jedec" binding").
+Hi Valentin,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+On Sat, Apr 11, 2015 at 12:26 PM, Valentin Rothberg
+<valentinrothberg@gmail.com> wrote:
+> The Kconfig option ARCH_SH7372 has been removed by commit 59b89af1d555
+> ("ARM: shmobile: sh7372: Remove Legacy C SoC code").  This patch removes
+> the last reference on this Kconfig option.
+>
+> Signed-off-by: Valentin Rothberg <valentinrothberg@gmail.com>
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index aaa4f258e279ccfa..a6c793de8d809bd4 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -429,7 +429,7 @@
- 	flash: flash@0 {
- 		#address-cells = <1>;
- 		#size-cells = <1>;
--		compatible = "spansion,s25fl512s";
-+		compatible = "spansion,s25fl512s", "nor-jedec";
- 		reg = <0>;
- 		spi-max-frequency = <30000000>;
- 		spi-tx-bus-width = <4>;
--- 
-1.9.1
+Thanks for your patch!
 
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+> ---
+> I found this issue with ./scripts/checkkconfigsymbols.py
+> ---
+>  drivers/tty/serial/sh-sci.h | 1 -
+>  1 file changed, 1 deletion(-)
+>
+> diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
+> index d5db81a0a430..350717404507 100644
+> --- a/drivers/tty/serial/sh-sci.h
+> +++ b/drivers/tty/serial/sh-sci.h
+> @@ -15,7 +15,6 @@
+>      defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+>      defined(CONFIG_CPU_SUBTYPE_SH7721) || \
+>      defined(CONFIG_ARCH_SH73A0) || \
+> -    defined(CONFIG_ARCH_SH7372) || \
+>      defined(CONFIG_ARCH_R8A7740)
+>  # define SCxSR_RDxF_CLEAR(port)         (serial_port_in(port, SCxSR) & 0xfffc)
+
+There are more things wrong with the above:
+  1. It's not multi-platform safe: any ARM kernel with sh73a0 or r8a7740
+     support will treat all SCIFs and HSCIFs as SCIFA/Bs.
+  2. It wasn't updated for newer SoCs, e.g.
+       - r8a73a4 has SCIFA/B, too,
+       - R-Car Gen2 has all of SCIF, HSCIF, SCIFA, SCIFB, which isn't
+         supported by the current logic at all.
+
+Looking into it...
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
