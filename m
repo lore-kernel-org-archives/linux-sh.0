@@ -1,84 +1,64 @@
-From: Stephen Boyd <sboyd@codeaurora.org>
-Date: Mon, 06 Apr 2015 17:47:50 +0000
-Subject: Re: [PATCH v3] ARM: smp: Only expose /sys/.../cpuX/online if hotpluggable
-Message-Id: <5522C6C6.7050106@codeaurora.org>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Fri, 24 Apr 2015 06:40:56 +0000
+Subject: [PATCH 1/1] spi: Re-do correctly function name and 'ret' return value
+Message-Id: <1429857656-8348-2-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1423874574-3494-1-git-send-email-sboyd@codeaurora.org>	<20150218222731.GC24177@verge.net.au>	<54E51FFD.7080506@codeaurora.org>	<20150219221456.GC617@verge.net.au>
- <CANMBJr5-0dnVJ_gSBhOuyqmm7MnYLTKbTetezZnzucdxjNEVEA@mail.gmail.com>
-In-Reply-To: <CANMBJr5-0dnVJ_gSBhOuyqmm7MnYLTKbTetezZnzucdxjNEVEA@mail.gmail.com>
+References: <1429857656-8348-1-git-send-email-cm-hiep@jinso.co.jp>
+In-Reply-To: <1429857656-8348-1-git-send-email-cm-hiep-HEF513clHfp3+QwDJ9on6Q@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org
+Cc: broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, ryusuke.sakato.bx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 04/06/15 10:19, Tyler Baker wrote:
-> On 19 February 2015 at 14:14, Simon Horman <horms@verge.net.au> wrote:
->> On Wed, Feb 18, 2015 at 03:27:57PM -0800, Stephen Boyd wrote:
->>> On 02/18/15 14:27, Simon Horman wrote:
->>>> On Fri, Feb 13, 2015 at 04:42:54PM -0800, Stephen Boyd wrote:
->>>>> Writes to /sys/.../cpuX/online fail if we determine the platform
->>>>> doesn't support hotplug for that CPU. Furthermore, if the cpu_die
->>>>> op isn't specified the system hangs when we try to offline a CPU
->>>>> and it comes right back online unexpectedly. Let's figure this
->>>>> stuff out before we make the sysfs nodes so that the online file
->>>>> doesn't even exist if it isn't (at least sometimes) possible to
->>>>> hotplug the CPU.
->>>>>
->>>>> Add a new cpu_can_disable op and repoint all cpu_disable
->>>>> implementations at it because all current users use the op to
->>>>> indicate if a CPU can be hotplugged or not in a static fashion.
->>>>> With PSCI we may need to introduce a cpu_disable op so that the
->>>>> secure OS can be migrated off the CPU we're trying to hotplug.
->>>>> In this case, the cpu_can_disable op will indicate that all CPUs
->>>>> are hotpluggable by returning 1, but the cpu_disable op will make
->>>>> a PSCI migration call and occasionally fail, denying the hotplug
->>>>> of a CPU. This shouldn't be any worse than x86 where we may
->>>>> indicate that all CPUs are hotpluggable but occasionally we can't
->>>>> offline a CPU due to check_irq_vectors_for_cpu_disable() failing
->>>>> to find a CPU to move vectors to.
->>>>>
->>>>> Cc: Mark Rutland <mark.rutland@arm.com>
->>>>> Cc: Nicolas Pitre <nico@linaro.org>
->>>>> Cc: Dave Martin <Dave.Martin@arm.com>
->>>>> Cc: Simon Horman <horms@verge.net.au>
->>>>> Cc: Magnus Damm <magnus.damm@gmail.com>
->>>>> Cc: <linux-sh@vger.kernel.org>
->>>>> Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
->>>>> ---
->>>>>
->>>>> Changes since v2:
->>>>>  * Left cpu_disable op in place
->>>>>  * Split out shmobile function deletion
->>>>>
->>>>>  arch/arm/common/mcpm_platsmp.c       | 12 ++++--------
->>>>>  arch/arm/include/asm/smp.h           | 10 ++++++++++
->>>>>  arch/arm/kernel/setup.c              |  2 +-
->>>>>  arch/arm/kernel/smp.c                | 15 ++++++++++++++-
->>>>>  arch/arm/mach-shmobile/common.h      |  2 +-
->>>>>  arch/arm/mach-shmobile/platsmp.c     |  4 ++--
->>>>>  arch/arm/mach-shmobile/smp-r8a7790.c |  2 +-
->>>>>  arch/arm/mach-shmobile/smp-r8a7791.c |  2 +-
->>>>>  arch/arm/mach-shmobile/smp-sh73a0.c  |  2 +-
->>>>>  9 files changed, 35 insertions(+), 16 deletions(-)
->>>> I think it would make sense to separate the ARM-core changes
->>>> from the mach-shmobile integration changes.
->>> Are you saying two (three?) patches to add the op, and then move over
->>> each struct smp_operations? It's all going through rmk's tree so I'll
->>> leave that up to him.
->> I'm also happy to let RMK to decide what he thinks is best.
-> Apologies for bringing up an older thread, but was this change ever
-> picked up? I recently hit this issue when I was running the kselftest
-> suite (specifically the cpu-hotplug test case) on the ARM boards from
-> kernelci.org. I don't see it in -next so I've tested the core changes
-> and confirmed it the fixes the cpu-hotplug behavior on platforms that
-> do not support it.
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-No it hasn't gone anywhere. It would be good if Mark Rutland could ack
-the patch, which I hope would give enough confidence to Russell that the
-patch is good. Your tested-by would also be welcome. I'll go make the
-bool change that Geert suggested and resend.
+qspi_trigger_transfer_out_int function should be qspi_trigger_transfer_out_in
+without "t". "ret" value in rspi_dma_check_then_transfer should be returned
+insteeds of returning zero. It just returns qspi_trigger_transfer_out_in() value
+in qspi_transfer_out_in().
 
+Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+---
+ drivers/spi/spi-rspi.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 186924a..9304a6d 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -670,7 +670,7 @@ static int rspi_dma_check_then_transfer(struct rspi_data *rspi,
+ 		int ret = rspi_dma_transfer(rspi, &xfer->tx_sg,
+ 					xfer->rx_buf ? &xfer->rx_sg : NULL);
+ 		if (ret != -EAGAIN)
+-			return 0;
++			return ret;
+ 	}
+ 
+ 	return -EAGAIN;
+@@ -724,7 +724,7 @@ static int rspi_rz_transfer_one(struct spi_master *master,
+ 	return rspi_common_transfer(rspi, xfer);
+ }
+ 
+-static int qspi_trigger_transfer_out_int(struct rspi_data *rspi, const u8 *tx,
++static int qspi_trigger_transfer_out_in(struct rspi_data *rspi, const u8 *tx,
+ 					u8 *rx, unsigned int len)
+ {
+ 	int i, n, ret;
+@@ -771,12 +771,8 @@ static int qspi_transfer_out_in(struct rspi_data *rspi,
+ 	if (ret != -EAGAIN)
+ 		return ret;
+ 
+-	ret = qspi_trigger_transfer_out_int(rspi, xfer->tx_buf,
++	return qspi_trigger_transfer_out_in(rspi, xfer->tx_buf,
+ 					    xfer->rx_buf, xfer->len);
+-	if (ret < 0)
+-		return ret;
+-
+-	return 0;
+ }
+ 
+ static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
 -- 
-Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
-a Linux Foundation Collaborative Project
+1.9.1
 
