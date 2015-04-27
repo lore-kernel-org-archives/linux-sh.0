@@ -1,35 +1,63 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 08 Apr 2015 00:44:05 +0000
-Subject: Re: [PATCH 1/6] Revert "staging: board: disable as it breaks the build"
-Message-Id: <20150408004400.GA3456@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 27 Apr 2015 15:00:11 +0000
+Subject: [PATCH] ARM: gic: Document Power and Clock Domain optional properties
+Message-Id: <1430146811-29862-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
- <1428064923-24950-2-git-send-email-geert+renesas@glider.be>
- <20150406004031.GD1841@verge.net.au>
- <CAMuHMdX1uHq23h_qsq2csTSYbAhN9ZDdMviDi=KtbLuWucYWXA@mail.gmail.com>
-In-Reply-To: <CAMuHMdX1uHq23h_qsq2csTSYbAhN9ZDdMviDi=KtbLuWucYWXA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 07, 2015 at 03:16:54PM +0200, Geert Uytterhoeven wrote:
-> On Mon, Apr 6, 2015 at 2:40 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Fri, Apr 03, 2015 at 02:41:58PM +0200, Geert Uytterhoeven wrote:
-> >> This reverts commit d13778d537a0ed6115d2a79a942af999cfb8eec6.
-> >>
-> >> Commit 13c11072536f2613 ("staging:board: remove unnecessary function")
-> >> fixed the build of drivers/staging/board/board.c.
-> >>
-> >> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Acked-by? Reviewed-by? Tested-by? Rejected-by?
+On some SoCs, the GIC may be part of a PM Domain (hardware Power and/or
+Clock Domain).  Document the related optional DT properties.
 
-To be honest I was flipping between Signed-off-by and Acked-by.
-But it seems you don't think either of those would be appropriate.
-So how about:
+Note: As the current GIC driver doesn't support Runtime PM yet, PM
+Domain constraints must be handled elsewhere in e.g. platform code.
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+To preserve DT stability, we would like to add these properties to the
+affected shmobile dtsi files.
+
+On Thu, Mar 26, 2015 at 11:39 AM, Marc Zyngier <marc.zyngier@arm.com> wrote:
+> On 25/03/15 21:19, Geert Uytterhoeven wrote:
+>> I would like to add the clock and GIC dependency on the clock in the DTS now,
+>> for reasons of DTS stability. But that means I need a temporary workaround
+>> to avoid the clock from being disabled, until the GIC driver handles this.
+>>
+>> I don't expect a fix for the GIC code to just show up magically. I just wanted
+>> you to be aware of the problem. GIC is not the only problematic module here,
+>> there are others, cfr. the last slide of [2].
+>
+> As long as there is an agreement from the DT people on the presence of
+> that extra property in the GIC node, I'm happy with that. I'd like it to
+> be documented though.
+
+Full thread at
+http://lists.infradead.org/pipermail/linux-arm-kernel/2015-March/331876.html
+
+ Documentation/devicetree/bindings/arm/gic.txt | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/gic.txt b/Documentation/devicetree/bindings/arm/gic.txt
+index 2da059a4790cb3c6..b21113b35f085f27 100644
+--- a/Documentation/devicetree/bindings/arm/gic.txt
++++ b/Documentation/devicetree/bindings/arm/gic.txt
+@@ -58,6 +58,14 @@ Optional
+   regions, used when the GIC doesn't have banked registers. The offset is
+   cpu-offset * cpu-nr.
+ 
++- power-domains : A phandle and PM domain specifier as defined by bindings of
++		  the power controller specified by phandle, used when the GIC
++		  is part of a Power or Clock Domain.
++
++- clocks        : A phandle and clock specifier as defined by bindings of
++		  the clock controller specified by phandle, used when the GIC
++		  is part of a Clock Domain.
++
+ Example:
+ 
+ 	intc: interrupt-controller@fff11000 {
+-- 
+1.9.1
 
