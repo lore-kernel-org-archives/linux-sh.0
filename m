@@ -1,36 +1,62 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 30 Apr 2015 14:19:04 +0000
-Subject: [PATCH v2 15/15] PCI: rcar: document r8a7793 DT bindings
-Message-Id: <1430403544-26742-16-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 27 Apr 2015 12:55:25 +0000
+Subject: [PATCH 01/10] ARM: shmobile: r8a7740 dtsi: Use generic names for device nodes
+Message-Id: <1430139334-15272-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+References: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org, horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, Ulrich Hecht <ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: devicetree@vger.kernel.org
+irqpin -> interrupt-controller
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7740.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-index d8ef5bf..8b156fe 100644
---- a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-+++ b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-@@ -8,6 +8,7 @@ OHCI and EHCI controllers.
- Required properties:
- - compatible: "renesas,pci-r8a7790" for the R8A7790 SoC;
- 	      "renesas,pci-r8a7791" for the R8A7791 SoC.
-+	      "renesas,pci-r8a7793" for the R8A7793 SoC.
- - reg:	A list of physical regions to access the device: the first is
- 	the operational registers for the OHCI/EHCI controllers and the
- 	second is for the bridge configuration and control registers.
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 83c1c3ca1b8f1400..f265b6b194e9774d 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -67,7 +67,7 @@
+ 	};
+ 
+ 	/* irqpin0: IRQ0 - IRQ7 */
+-	irqpin0: irqpin@e6900000 {
++	irqpin0: interrupt-controller@e6900000 {
+ 		compatible = "renesas,intc-irqpin-r8a7740", "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+@@ -89,7 +89,7 @@
+ 	};
+ 
+ 	/* irqpin1: IRQ8 - IRQ15 */
+-	irqpin1: irqpin@e6900004 {
++	irqpin1: interrupt-controller@e6900004 {
+ 		compatible = "renesas,intc-irqpin-r8a7740", "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+@@ -111,7 +111,7 @@
+ 	};
+ 
+ 	/* irqpin2: IRQ16 - IRQ23 */
+-	irqpin2: irqpin@e6900008 {
++	irqpin2: interrupt-controller@e6900008 {
+ 		compatible = "renesas,intc-irqpin-r8a7740", "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+@@ -133,7 +133,7 @@
+ 	};
+ 
+ 	/* irqpin3: IRQ24 - IRQ31 */
+-	irqpin3: irqpin@e690000c {
++	irqpin3: interrupt-controller@e690000c {
+ 		compatible = "renesas,intc-irqpin-r8a7740", "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
 -- 
-2.3.5
+1.9.1
 
