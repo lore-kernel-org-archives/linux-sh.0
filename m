@@ -1,46 +1,34 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 02 Apr 2015 08:01:11 +0000
-Subject: [PATCH] phy: phy-rcar-gen2: Fix USBHS_UGSTS_LOCK value
-Message-Id: <1427961671-8064-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 27 Apr 2015 12:49:09 +0000
+Subject: [PATCH] ASoC: rsnd: Use generic names for device nodes
+Message-Id: <1430138949-14563-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: kishon@ti.com
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, alsa-devel@alsa-project.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-According to the technical update (No. TN-RCS-B011A/E), the UGSTS LOCK
-bit location is bit 8, not bits 1 and 0. It also says that the register
-address offset of UGSTS is 0x88, not 0x90.
-So, this patch fixes the USBHS_UGSTS_LOCK value and some comments.
+rcar_sound -> sound
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/phy/phy-rcar-gen2.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ Documentation/devicetree/bindings/sound/renesas,rsnd.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/phy/phy-rcar-gen2.c b/drivers/phy/phy-rcar-gen2.c
-index 778276a..97d45f4 100644
---- a/drivers/phy/phy-rcar-gen2.c
-+++ b/drivers/phy/phy-rcar-gen2.c
-@@ -23,7 +23,7 @@
- #define USBHS_LPSTS			0x02
- #define USBHS_UGCTRL			0x80
- #define USBHS_UGCTRL2			0x84
--#define USBHS_UGSTS			0x88	/* The manuals have 0x90 */
-+#define USBHS_UGSTS			0x88	/* From technical update */
+diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+index f316ce1f214a03e3..62ece4c59da759a4 100644
+--- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
++++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+@@ -47,7 +47,7 @@ DAI subnode properties:
  
- /* Low Power Status register (LPSTS) */
- #define USBHS_LPSTS_SUSPM		0x4000
-@@ -41,7 +41,7 @@
- #define USBHS_UGCTRL2_USB0SEL_HS_USB	0x00000030
+ Example:
  
- /* USB General status register (UGSTS) */
--#define USBHS_UGSTS_LOCK		0x00000300 /* The manuals have 0x3 */
-+#define USBHS_UGSTS_LOCK		0x00000100 /* From technical update */
- 
- #define PHYS_PER_CHANNEL	2
- 
+-rcar_sound: rcar_sound@ec500000 {
++rcar_sound: sound@ec500000 {
+ 	#sound-dai-cells = <1>;
+ 	compatible = "renesas,rcar_sound-r8a7791", "renesas,rcar_sound-gen2";
+ 	reg =	<0 0xec500000 0 0x1000>, /* SCU */
 -- 
 1.9.1
 
