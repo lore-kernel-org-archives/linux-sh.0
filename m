@@ -1,62 +1,61 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 27 Apr 2015 12:55:25 +0000
-Subject: [PATCH 01/10] ARM: shmobile: r8a7740 dtsi: Use generic names for device nodes
-Message-Id: <1430139334-15272-2-git-send-email-geert+renesas@glider.be>
+Date: Mon, 27 Apr 2015 12:43:39 +0000
+Subject: [PATCH/RFC v6 4/7] PM / Domains: Add DT bindings for PM QoS device latencies
+Message-Id: <1430138622-14029-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
+References: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Kevin Hilman <khilman@kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>, Axel Haslam <ahaslam@baylibre.com>
+Cc: linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-irqpin -> interrupt-controller
+PM QoS device start/stop are properties of the hardware.
+In legacy code, they're specified from platform code.
+On DT platforms, their values should come from DT.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+v6:
+  - Rebased on top of v4.1-rc1 for new RFC,
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 83c1c3ca1b8f1400..f265b6b194e9774d 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -67,7 +67,7 @@
+v4:
+  - Drop save/restore state latencies, as they're Linux driver-specific,
+  - Change state to RFC, as this is put on hold,
+
+v3:
+  - No changes,
+
+v2:
+  - New.
+---
+ Documentation/devicetree/bindings/power/power_domain.txt | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/power/power_domain.txt b/Documentation/devicetree/bindings/power/power_domain.txt
+index d659e5cb39be6057..32d1d3a399fe2a48 100644
+--- a/Documentation/devicetree/bindings/power/power_domain.txt
++++ b/Documentation/devicetree/bindings/power/power_domain.txt
+@@ -73,12 +73,18 @@ Required properties:
+  - power-domains : A phandle and PM domain specifier as defined by bindings of
+                    the power controller specified by phandle.
+ 
++Optional properties:
++ - stop-latency: Stop latency of the device, in ns,
++ - start-latency: Start latency of the device, in ns,
++
+ Example:
+ 
+ 	leaky-device@12350000 {
+ 		compatible = "foo,i-leak-current";
+ 		reg = <0x12350000 0x1000>;
+ 		power-domains = <&power 0>;
++		stop-latency = <250000>;
++		start-latency = <250000>;
  	};
  
- 	/* irqpin0: IRQ0 - IRQ7 */
--	irqpin0: irqpin@e6900000 {
-+	irqpin0: interrupt-controller@e6900000 {
- 		compatible = "renesas,intc-irqpin-r8a7740", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-@@ -89,7 +89,7 @@
- 	};
- 
- 	/* irqpin1: IRQ8 - IRQ15 */
--	irqpin1: irqpin@e6900004 {
-+	irqpin1: interrupt-controller@e6900004 {
- 		compatible = "renesas,intc-irqpin-r8a7740", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-@@ -111,7 +111,7 @@
- 	};
- 
- 	/* irqpin2: IRQ16 - IRQ23 */
--	irqpin2: irqpin@e6900008 {
-+	irqpin2: interrupt-controller@e6900008 {
- 		compatible = "renesas,intc-irqpin-r8a7740", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-@@ -133,7 +133,7 @@
- 	};
- 
- 	/* irqpin3: IRQ24 - IRQ31 */
--	irqpin3: irqpin@e690000c {
-+	irqpin3: interrupt-controller@e690000c {
- 		compatible = "renesas,intc-irqpin-r8a7740", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
+ The node above defines a typical PM domain consumer device, which is located
 -- 
 1.9.1
 
