@@ -1,38 +1,35 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 28 Apr 2015 10:12:57 +0000
-Subject: [PATCH 4/5] ARM: shmobile: bockw-reference dts: Add "nor-jedec" compatible value
-Message-Id: <1430215978-31087-5-git-send-email-geert+renesas@glider.be>
+Date: Mon, 27 Apr 2015 12:55:28 +0000
+Subject: [PATCH 04/10] ARM: shmobile: r8a7790 dtsi: Use generic names for device nodes
+Message-Id: <1430139334-15272-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
+References: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Spansion s25fl008k is compatible with "nor-jedec". Hence add the
-"nor-jedec" compatible value, so the driver can bind against the generic
-name, cfr. commit 8ff16cf77ce314c2 ("Documentation: devicetree: m25p80:
-add "nor-jedec" binding").
+rcar_sound -> sound
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7778-bockw-reference.dts | 2 +-
+ arch/arm/boot/dts/r8a7790.dtsi | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index 04c0c37bb7843997..f9422d887b4441c3 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -119,7 +119,7 @@
- 	flash: flash@0 {
- 		#address-cells = <1>;
- 		#size-cells = <1>;
--		compatible = "spansion,s25fl008k";
-+		compatible = "spansion,s25fl008k", "nor-jedec";
- 		reg = <0>;
- 		spi-max-frequency = <104000000>;
- 		m25p,fast-read;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index f3b8430070b6e4b9..943d2e29bc57133f 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1442,7 +1442,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	rcar_sound: rcar_sound@ec500000 {
++	rcar_sound: sound@ec500000 {
+ 		/*
+ 		 * #sound-dai-cells is required
+ 		 *
 -- 
 1.9.1
 
