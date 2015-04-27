@@ -1,124 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 29 Apr 2015 00:38:00 +0000
-Subject: [PATCH 06/10] drm: rcar-du: Add plane allocation debugging
-Message-Id: <1430267884-20560-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 27 Apr 2015 12:43:38 +0000
+Subject: [PATCH/RFC v6 3/7] ARM: shmobile: R-Mobile: Add support for PM domain power-on/off latencies
+Message-Id: <1430138622-14029-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Kevin Hilman <khilman@kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>, Axel Haslam <ahaslam@baylibre.com>
+Cc: linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Plane allocation is a complex process, add debugging statements to help
-finding out what could might wrong.
+Parse the optional PM domain power-on/off latencies, as specified from
+DT.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_kms.c | 38 ++++++++++++++++++++++++++++++++++-
- 1 file changed, 37 insertions(+), 1 deletion(-)
+v6:
+  - Rebased on top of v4.1-rc1 for new RFC.
+---
+ arch/arm/mach-shmobile/pm-rmobile.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 14d457047c40..ade135008e98 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -286,11 +286,16 @@ static int rcar_du_atomic_check(struct drm_device *dev,
- 		plane = to_rcar_plane(state->planes[i]);
- 		plane_state = to_rcar_plane_state(state->plane_states[i]);
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 95018209ff0b37cc..747d557b7016ec6d 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -367,6 +367,7 @@ static int __init rmobile_add_pm_domains(void __iomem *base,
+ 	for_each_child_of_node(parent, np) {
+ 		struct rmobile_pm_domain *pd;
+ 		u32 idx = ~0;
++		u32 latency;
  
-+		dev_dbg(rcdu->dev, "%s: checking plane (%u,%u)\n", __func__,
-+			plane->group->index, plane - plane->group->planes);
-+
- 		/* If the plane is being disabled we don't need to go through
- 		 * the full reallocation procedure. Just mark the hardware
- 		 * plane(s) as freed.
- 		 */
- 		if (!plane_state->format) {
-+			dev_dbg(rcdu->dev, "%s: plane is being disabled\n",
-+				__func__);
- 			index = plane - plane->group->planes;
- 			group_freed_planes[plane->group->index] |= 1 << index;
- 			plane_state->hwindex = -1;
-@@ -301,6 +306,8 @@ static int rcar_du_atomic_check(struct drm_device *dev,
- 		 * mark the hardware plane(s) as free.
- 		 */
- 		if (rcar_du_plane_needs_realloc(plane, plane_state)) {
-+			dev_dbg(rcdu->dev, "%s: plane needs reallocation\n",
-+				__func__);
- 			groups |= 1 << plane->group->index;
- 			needs_realloc = true;
+ 		if (of_property_read_u32(np, "reg", &idx)) {
+ 			/* always-on domain */
+@@ -377,6 +378,10 @@ static int __init rmobile_add_pm_domains(void __iomem *base,
+ 			return -ENOMEM;
  
-@@ -326,6 +333,9 @@ static int rcar_du_atomic_check(struct drm_device *dev,
- 		struct rcar_du_group *group = &rcdu->groups[index];
- 		unsigned int used_planes = 0;
+ 		pd->genpd.name = np->name;
++		if (!of_property_read_u32(np, "power-on-latency", &latency))
++			pd->genpd.power_on_latency_ns = latency;
++		if (!of_property_read_u32(np, "power-off-latency", &latency))
++			pd->genpd.power_off_latency_ns = latency;
+ 		pd->base = base;
+ 		pd->bit_shift = idx;
  
-+		dev_dbg(rcdu->dev, "%s: finding free planes for group %u\n",
-+			__func__, index);
-+
- 		for (i = 0; i < RCAR_DU_NUM_KMS_PLANES; ++i) {
- 			struct rcar_du_plane *plane = &group->planes[i];
- 			struct rcar_du_plane_state *plane_state;
-@@ -342,15 +352,31 @@ static int rcar_du_atomic_check(struct drm_device *dev,
- 			 * above. Use the local freed planes list to check for
- 			 * that condition instead.
- 			 */
--			if (group_freed_planes[index] & (1 << i))
-+			if (group_freed_planes[index] & (1 << i)) {
-+				dev_dbg(rcdu->dev,
-+					"%s: plane (%u,%u) has been freed, skipping\n",
-+					__func__, plane->group->index,
-+					plane - plane->group->planes);
- 				continue;
-+			}
- 
- 			plane_state = to_rcar_plane_state(plane->plane.state);
- 			used_planes |= rcar_du_plane_hwmask(plane_state);
-+
-+			dev_dbg(rcdu->dev,
-+				"%s: plane (%u,%u) uses %u hwplanes (index %d)\n",
-+				__func__, plane->group->index,
-+				plane - plane->group->planes,
-+				plane_state->format ?
-+				plane_state->format->planes : 0,
-+				plane_state->hwindex);
- 		}
- 
- 		group_free_planes[index] = 0xff & ~used_planes;
- 		groups &= ~(1 << index);
-+
-+		dev_dbg(rcdu->dev, "%s: group %u free planes mask 0x%02x\n",
-+			__func__, index, group_free_planes[index]);
- 	}
- 
- 	/* Reallocate hardware planes for each plane that needs it. */
-@@ -365,6 +391,9 @@ static int rcar_du_atomic_check(struct drm_device *dev,
- 		plane = to_rcar_plane(state->planes[i]);
- 		plane_state = to_rcar_plane_state(state->plane_states[i]);
- 
-+		dev_dbg(rcdu->dev, "%s: allocating plane (%u,%u)\n", __func__,
-+			plane->group->index, plane - plane->group->planes);
-+
- 		/* Skip planes that are being disabled or don't need to be
- 		 * reallocated.
- 		 */
-@@ -380,10 +409,17 @@ static int rcar_du_atomic_check(struct drm_device *dev,
- 			return idx;
- 		}
- 
-+		dev_dbg(rcdu->dev, "%s: allocated %u hwplanes (index %u)\n",
-+			__func__, plane_state->format->planes, idx);
-+
- 		plane_state->hwindex = idx;
- 
- 		group_free_planes[plane->group->index] & 			~rcar_du_plane_hwmask(plane_state);
-+
-+		dev_dbg(rcdu->dev, "%s: group %u free planes mask 0x%02x\n",
-+			__func__, plane->group->index,
-+			group_free_planes[plane->group->index]);
- 	}
- 
- 	return 0;
 -- 
-2.0.5
+1.9.1
 
