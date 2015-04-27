@@ -1,37 +1,35 @@
-From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Mon, 06 Apr 2015 03:50:40 +0000
-Subject: [RFC/PATCH 0/4] Add cpuidle support for r8a7791
-Message-Id: <1428292244-2160-1-git-send-email-keita.kobayashi.ym@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 27 Apr 2015 12:55:26 +0000
+Subject: [PATCH 02/10] ARM: shmobile: r8a7778 dtsi: Use generic names for device nodes
+Message-Id: <1430139334-15272-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, rjw@rjwysocki.net, daniel.lezcano@linaro.org
-Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, magnus.damm@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello
+irqpin -> interrupt-controller
 
-These patches add cpuidle support for Renesas r8a7791 SoC.
-The r8a7791 cpuidle supports WFI and the cpu power state(Core-Standby)
-using Generic ARM CPU idle driver(cpuidle-arm).
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Based on : next-20150402
-Tested on : koelsch board
-
-Keita Kobayashi (4):
-  ARM: cpuidle: Add cpuidle support for R-Car Gen2 series
-  ARM: shmobile: Add cpuidle_ops for R-Car cpuidle
-  ARM: shmobile: dtsi: Add cpuidle parameters into each cpu for r8a7791
-  ARM: shmobile: Enable Renesas R-Car cpuidle for shmobile_defconfig
-
- arch/arm/boot/dts/r8a7791.dtsi        | 13 +++++++++++++
- arch/arm/configs/shmobile_defconfig   |  2 ++
- arch/arm/mach-shmobile/platsmp-apmu.c | 11 +++++++++--
- arch/arm/mach-shmobile/platsmp-apmu.h |  1 +
- arch/arm/mach-shmobile/pm-rcar-gen2.c | 17 +++++++++++++++++
- drivers/cpuidle/Kconfig.arm           |  8 ++++++++
- 6 files changed, 50 insertions(+), 2 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 868f9730953350e9..7ce9f5fd586504f2 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -68,7 +68,7 @@
+ 	};
+ 
+ 	/* irqpin: IRQ0 - IRQ3 */
+-	irqpin: irqpin@fe78001c {
++	irqpin: interrupt-controller@fe78001c {
+ 		compatible = "renesas,intc-irqpin-r8a7778", "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
 -- 
 1.9.1
 
