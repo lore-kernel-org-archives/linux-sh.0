@@ -1,32 +1,35 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 30 Apr 2015 14:18:30 +0000
-Subject: Re: [PATCH 04/11] ARM: shmobile: r8a7793: add Gose board device tree
-Message-Id: <CAO3366wCcVnsosw3PkY5ZSRgP_GV_XPwb21CQoTMYUyOh19e8w@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 27 Apr 2015 13:55:23 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7740 dtsi: Fix SCIFB naming
+Message-Id: <1430142924-15777-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425661798-10487-5-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1425661798-10487-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Mar 8, 2015 at 11:04 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Fri, Mar 6, 2015 at 6:09 PM, Ulrich Hecht
-> <ulrich.hecht+renesas@gmail.com> wrote:
->> DT description and Makefile entry for the Gose eval board.
->
-> Thanks!
->
-> Same comment here as for r8a7791.dtsi.
-> Please start from current r8a7791-koelsch.dts. You'll find more small
-> things that
-> need to fixed.
+The single SCIFB on R-Mobile A1 is called "scifb", not "scifb8".
 
-Yes, this one was a bit dodgier than the dtsi file...
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Cfr. commit 0b3a0ef613538cae ("ARM: shmobile: r8a73a4: fix scifb* naming")
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I dropped adv7511 because Gose board docs are secret and I don't want
-to guess the address.
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index f265b6b194e9774d..d84714468cce18df 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -275,7 +275,7 @@
+ 		status = "disabled";
+ 	};
+ 
+-	scifb8: serial@e6c30000 {
++	scifb: serial@e6c30000 {
+ 		compatible = "renesas,scifb-r8a7740", "renesas,scifb";
+ 		reg = <0xe6c30000 0x100>;
+ 		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
+-- 
+1.9.1
 
-CU
-Uli
