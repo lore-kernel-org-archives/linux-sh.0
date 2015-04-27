@@ -1,34 +1,90 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Fri, 03 Apr 2015 17:52:52 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC PM Updates for v4.1
-Message-Id: <20150403175252.GF23023@localhost>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 27 Apr 2015 12:43:40 +0000
+Subject: [PATCH/RFC v6 5/7] PM / Domains: Add helper variable np = dev->of_node
+Message-Id: <1430138622-14029-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1426812951.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1426812951.git.horms+renesas@verge.net.au>
+References: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Kevin Hilman <khilman@kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>, Axel Haslam <ahaslam@baylibre.com>
+Cc: linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Fri, Mar 20, 2015 at 10:07:15AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC PM updates for v4.1.
-> 
-> 
-> The following changes since commit c517d838eb7d07bbe9507871fab3931deccff539:
-> 
->   Linux 4.0-rc1 (2015-02-22 18:21:14 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pm-for-v4.1
-> 
-> for you to fetch changes up to a8caad66904a7923c05fc4a137110085533ef00c:
-> 
->   ARM: shmobile: Consolidate the pm code for R-Car Gen2 (2015-03-17 08:05:13 +0900)
+Just a cleanup, no functional changes.
 
-Merged into next/cleanup. Thanks.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Kevin Hilman <khilman@linaro.org>
+---
+v6:
+  - Rebased on top of v4.1-rc1 for new RFC,
 
+v4:
+  - Add more explanations,
+  - Add Acked-by,
 
--Olof
+v3:
+  - No changes,
+
+v2:
+  - New.
+---
+ drivers/base/power/domain.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+index d1531602ae64528d..d20caa2c92b57edf 100644
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -2190,17 +2190,18 @@ static void genpd_dev_pm_sync(struct device *dev)
+  */
+ int genpd_dev_pm_attach(struct device *dev)
+ {
++	struct device_node *np = dev->of_node;
+ 	struct of_phandle_args pd_args;
+ 	struct generic_pm_domain *pd;
+ 	int ret;
+ 
+-	if (!dev->of_node)
++	if (!np)
+ 		return -ENODEV;
+ 
+ 	if (dev->pm_domain)
+ 		return -EEXIST;
+ 
+-	ret = of_parse_phandle_with_args(dev->of_node, "power-domains",
++	ret = of_parse_phandle_with_args(np, "power-domains",
+ 					"#power-domain-cells", 0, &pd_args);
+ 	if (ret < 0) {
+ 		if (ret != -ENOENT)
+@@ -2211,8 +2212,7 @@ int genpd_dev_pm_attach(struct device *dev)
+ 		 * (for backwards compatibility of DT ABI)
+ 		 */
+ 		pd_args.args_count = 0;
+-		pd_args.np = of_parse_phandle(dev->of_node,
+-						"samsung,power-domain", 0);
++		pd_args.np = of_parse_phandle(np, "samsung,power-domain", 0);
+ 		if (!pd_args.np)
+ 			return -ENOENT;
+ 	}
+@@ -2221,7 +2221,7 @@ int genpd_dev_pm_attach(struct device *dev)
+ 	if (IS_ERR(pd)) {
+ 		dev_dbg(dev, "%s() failed to find PM domain: %ld\n",
+ 			__func__, PTR_ERR(pd));
+-		of_node_put(dev->of_node);
++		of_node_put(np);
+ 		return PTR_ERR(pd);
+ 	}
+ 
+@@ -2237,7 +2237,7 @@ int genpd_dev_pm_attach(struct device *dev)
+ 	if (ret < 0) {
+ 		dev_err(dev, "failed to add to PM domain %s: %d",
+ 			pd->name, ret);
+-		of_node_put(dev->of_node);
++		of_node_put(np);
+ 		return ret;
+ 	}
+ 
+-- 
+1.9.1
+
