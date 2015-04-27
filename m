@@ -1,74 +1,35 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 13 Apr 2015 20:49:40 +0000
-Subject: Re: [PATCH v2] Renesas Ethernet AVB driver
-Message-Id: <552C2BE4.7010804@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 27 Apr 2015 12:55:32 +0000
+Subject: [PATCH 08/10] ARM: shmobile: armadillo800eva dts: Use generic names for device nodes
+Message-Id: <1430139334-15272-9-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1453213.DoV6WFn45r@wasted.cogentembedded.com> <20150413.163259.2190743529898270341.davem@davemloft.net>
-In-Reply-To: <20150413.163259.2190743529898270341.davem@davemloft.net>
+References: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: David Miller <davem@davemloft.net>
-Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, richardcochran@gmail.com, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+wm8978 -> codec
 
-On 04/13/2015 11:32 PM, David Miller wrote:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->> Ethernet AVB includes an Gigabit Ethernet controller (E-MAC) that is bas=
-ically
->> compatible with SuperH Gigabit Ethernet E-MAC). Ethernet AVB  has a dedi=
-cated
->> direct memory access controller (AVB-DMAC) that is a new design compared=
- to the
->> SuperH E-DMAC. The AVB-DMAC is compliant with 3 standards formulated for=
- IEEE
->> 802.1BA: IEEE 802.1AS timing and synchronization protocol, IEEE 802.1Qav=
- real-
->> time transfer, and the IEEE 802.1Qat stream reservation protocol.
-
->> Not only the Ethernet driver is enclosed, there is also the PTP driver in
->> the same file.  These drivers only support device tree probing, so the b=
-inding
->> document is included in this patch.
-
->> Based on the original patches by Mitsuhiro Kimura (Ethernet driver) and =
-Masaru
->> Nagai (PTP driver).
-
->> Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
->> Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-> Doesn't build properly on x86-64:
-
->    CC [M]  drivers/net/ethernet/renesas/ravb.o
-> drivers/net/ethernet/renesas/ravb.c: In function =A1ravb_set_buffer_align=
-=A2:
-> drivers/net/ethernet/renesas/ravb.c:955:16: warning: cast from pointer to=
- integer of different size [-Wpointer-to-int-cast]
->    u32 reserve =3D (u32)skb->data & (RAVB_ALIGN - 1);
->                  ^
-> drivers/net/ethernet/renesas/ravb.c: At top level:
-> drivers/net/ethernet/renesas/ravb.c:2771:2: error: unknown field =A1getti=
-me=A2 specified in initializer
->    .gettime =3D ravb_ptp_gettime,
->    ^
-> drivers/net/ethernet/renesas/ravb.c:2772:2: error: unknown field =A1setti=
-me=A2 specified in initializer
->    .settime =3D ravb_ptp_settime,
->    ^
-
-    So, timespec64 patches have been merged to net-next... In my haste I ju=
-st=20
-forgot to compile-test the driver in net-next, sorry about that. :-<
-
-> It is not acceptable to fix this by removing COMPILE_TEST from the Kconfig
-> dependencies or something like that.
-
-    It's also impossible as the errors themselves don't depend on ARCH. :-)
-
-> Thanks.
-
-WBR, Sergei
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+index 9bd0cb439f448d03..2e31d8c01cbf6a74 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+@@ -208,7 +208,7 @@
+ 		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
+ 	};
+ 
+-	wm8978: wm8978@1a {
++	wm8978: codec@1a {
+ 		#sound-dai-cells = <0>;
+ 		compatible = "wlf,wm8978";
+ 		reg = <0x1a>;
+-- 
+1.9.1
 
