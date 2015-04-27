@@ -1,27 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 30 Apr 2015 00:14:51 +0000
-Subject: Re: [PATCH 0/5] ARM: shmobile: dts: Add "nor-jedec" compatible value
-Message-Id: <20150430001450.GD17758@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 27 Apr 2015 12:51:33 +0000
+Subject: [PATCH] clk: emev2: Use generic names for device nodes
+Message-Id: <1430139093-14769-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Tue, Apr 28, 2015 at 12:12:53PM +0200, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> This patch series adds the "nor-jedec" compatible value to all device
-> nodes for JEDEC-compliant SPI FLASHes on Renesas shmobile boards,
-> It allows the driver to bind against the generic name, cfr. commit
-> 8ff16cf77ce314c2 ("Documentation: devicetree: m25p80: add "nor-jedec"
-> binding").
-> 	        
-> This was tested on r8a7791/koelsch. I verified that it also works with
-> "nor-jedec" only, without the specific compatible value.
-> 
-> Thanks for applying!
+uart -> serial
 
-Thanks, I have queued these up for v4.2.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ Documentation/devicetree/bindings/clock/emev2-clock.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/clock/emev2-clock.txt b/Documentation/devicetree/bindings/clock/emev2-clock.txt
+index 60bbb1a8c69a3852..268ca615459e7549 100644
+--- a/Documentation/devicetree/bindings/clock/emev2-clock.txt
++++ b/Documentation/devicetree/bindings/clock/emev2-clock.txt
+@@ -52,7 +52,7 @@ usia_u0_sclk: usia_u0_sclk {
+ 
+ Example of consumer:
+ 
+-uart@e1020000 {
++serial@e1020000 {
+ 	compatible = "renesas,em-uart";
+ 	reg = <0xe1020000 0x38>;
+ 	interrupts = <0 8 0>;
+-- 
+1.9.1
+
