@@ -1,38 +1,45 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Tue, 28 Apr 2015 05:55:48 +0000
-Subject: [PATCH 0/3 v2] spi: Re-do correctly function name and 'ret' return value
-Message-Id: <1430200551-20708-1-git-send-email-cm-hiep@jinso.co.jp>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 27 Apr 2015 12:55:33 +0000
+Subject: [PATCH 09/10] ARM: shmobile: kzm9d dts: Use generic names for device nodes
+Message-Id: <1430139334-15272-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert+renesas@glider.be
-Cc: broonie@kernel.org, linux-spi@vger.kernel.org, kuninori.morimoto.gx@renesas.com, yoshihiro.shimoda.uh@renesas.com, ryusuke.sakato.bx@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+lan9220 -> ethernet
+uart -> serial
 
-Hi Mark
-Hi Geert
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/emev2-kzm9d.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-I have splitted the patch that I sent you last week in 3 separate patches.
-To re-do correctly function name and returning value.
-qspi_trigger_transfer_out_int function should be qspi_trigger_transfer_out_in
-without "t". 
-To reduce indentation and complex of code, drop "ret" then function 
-rspi_dma_check_then_transfer should be returned rspi_dma_transfer directly
-after checking error.
-And It just returns the value of qspi_trigger_transfer_out_in() in qspi_transfer_out_in().
-These patches has been tested at linux Upstream v4.0.0-10712-g27cf3a1 on Lager.
-Please consider the following patches for the Rcar-Gen2.
-
-Hiep Cao Minh (3):
-  spi: Re-do the returning value of rspi_dma_check_then_transfer
-  spi: modify the name of qspi_trigger_transfer_out_int function
-  spi: Re-do the returning value of qspi_transfer_out_in
-
- drivers/spi/spi-rspi.c | 21 +++++++--------------
- 1 file changed, 7 insertions(+), 14 deletions(-)
-
+diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
+index 19446273e4a7f832..1dee0aa4f40cc351 100644
+--- a/arch/arm/boot/dts/emev2-kzm9d.dts
++++ b/arch/arm/boot/dts/emev2-kzm9d.dts
+@@ -81,7 +81,7 @@
+ 		regulator-boot-on;
+ 	};
+ 
+-	lan9220@20000000 {
++	ethernet@20000000 {
+ 		compatible = "smsc,lan9220", "smsc,lan9115";
+ 		reg = <0x20000000 0x10000>;
+ 		phy-mode = "mii";
+@@ -96,7 +96,7 @@
+ };
+ 
+ &pfc {
+-	uart1_pins: uart@e1030000 {
++	uart1_pins: serial@e1030000 {
+ 		renesas,groups = "uart1_ctrl", "uart1_data";
+ 		renesas,function = "uart1";
+ 	};
 -- 
 1.9.1
 
