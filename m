@@ -1,35 +1,56 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 28 Apr 2015 10:29:21 +0000
-Subject: [PATCH 1/3] ARM: shmobile: bockw dts: Use generic names for device nodes
-Message-Id: <1430216963-8161-2-git-send-email-geert+renesas@glider.be>
+From: Valentin Rothberg <valentinrothberg@gmail.com>
+Date: Tue, 28 Apr 2015 15:52:48 +0000
+Subject: Re: ARM: shmobile: ARCH_R8A7793?
+Message-Id: <CAD3Xx4LHqD44LzfHmhDQh59S_YBV1kRkowo9JWDE7EzoRUySKA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430216963-8161-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430216963-8161-1-git-send-email-geert+renesas@glider.be>
+References: <1416302641.7024.7.camel@x220>
+ <CAMuHMdUFZo+r-N0Ofa1d6PHDtB6dqZfChpLgOz_XtruWD3_a3g@mail.gmail.com>
+In-Reply-To: <CAMuHMdUFZo+r-N0Ofa1d6PHDtB6dqZfChpLgOz_XtruWD3_a3g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-sound-codec -> codec
+Hi Geert,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/r8a7778-bockw.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+I am cleaning up some Kconfig issues in ARM
+(./scripts/checkkconfgisymbols.py) at the moment and came across
+CONFIG_ARCH_R8A7793:
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 787fa6f9f46ddf4d..a46afa852bcd2a0b 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -85,7 +85,7 @@
- &i2c0 {
- 	status = "okay";
- 
--	ak4643: sound-codec@12 {
-+	ak4643: codec@12 {
- 		compatible = "asahi-kasei,ak4643";
- 		#sound-dai-cells = <0>;
- 		reg = <0x12>;
--- 
-1.9.1
+arch/arm/Kconfig.debug:         depends on ARCH_R8A7790 ||
+ARCH_R8A7791 || ARCH_R8A7793
+drivers/clk/shmobile/Makefile:obj-$(CONFIG_ARCH_R8A7793)
+ += clk-rcar-gen2.o
 
+Do you know when this option will be added to Kconfig (see email below)?
+
+Kind regards,
+ Valentin
+
+On Tue, Nov 18, 2014 at 10:36 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> Hi Paul,
+>
+> On Tue, Nov 18, 2014 at 10:24 AM, Paul Bolle <pebolle@tiscali.nl> wrote:
+>> Your commit 7a2071c58f36 ("ARM: shmobile: Add early debugging support
+>> using SCIF(A)") is included in today's linux-next (ie, next-20141118).
+>> It adds an (optional) dependency on the Kconfig symbol ARCH_R8A7793. But
+>> that symbol isn't part of next-20141118.
+>>
+>> Is a patch that adds this symbol queued somewhere?
+>
+> Not yet. I was just a bit pro-active ;-)
+>
+> However, there are already references to r8a7793 in DT binding documentation,
+> and in of_device_id arrays in drivers.
+>
+> Gr{oetje,eeting}s,
+>
+>                         Geert
+>
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+>
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                 -- Linus Torvalds
