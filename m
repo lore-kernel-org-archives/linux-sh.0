@@ -1,90 +1,64 @@
-From: Paul Walmsley <pwalmsley@nvidia.com>
-Date: Wed, 01 Apr 2015 17:48:42 +0000
-Subject: Re: "ARM: multi_v7_defconfig: Enable shmobile platforms" breaks Tegra20 multi_v7_defconfig boot
-Message-Id: <551C2F7A.7040107@nvidia.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 28 Apr 2015 10:21:40 +0000
+Subject: [PATCH] dmaengine: Remove Renesas Audio DMAC peri peri platform data
+Message-Id: <1430216500-32173-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.02.1503251740130.13341@utopia.booyaka.com>
- <CANMBJr7ibVCxQRUG47OT0meNntMjEoVqL7kiEK9DtCfp5NXPgg@mail.gmail.com>
- <alpine.DEB.2.02.1503252157240.7173@utopia.booyaka.com>
- <55137098.4030903@wwwdotorg.org>
- <alpine.DEB.2.02.1503261826210.18294@utopia.booyaka.com>
- <5514569E.2030406@wwwdotorg.org> <551C2768.6060209@wwwdotorg.org>
-In-Reply-To: <551C2768.6060209@wwwdotorg.org>
+References: <87oao1sjzp.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87oao1sjzp.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On 04/01/2015 11:14 AM, Stephen Warren wrote:
-> On 03/26/2015 12:57 PM, Stephen Warren wrote:
->> On 03/26/2015 12:35 PM, Paul Walmsley wrote:
->>> On Wed, 25 Mar 2015, Stephen Warren wrote:
->>>
->>>> On 03/25/2015 04:00 PM, Paul Walmsley wrote:
->>>>> On Wed, 25 Mar 2015, Tyler Baker wrote:
->>>>>> On 25 March 2015 at 11:03, Paul Walmsley <paul@pwsan.com> wrote:
->>>>>>> Looks like commit 4a3a6f86693922b29cf829c63f652b057f14619e ("ARM:
->>>>>>> multi_v7_defconfig: Enable shmobile platforms") breaks Tegra20
->>>>>>> multi_v7_defconfig boot.
-> ...
->>>>>> Can you try to shift your kernel load address around a bit? From
->>>>>> experience with the boards from kernelci.org we find that as the 
->>>>>> multi
->>>>>> v7 kernel size increases they can clobber memory when they get
->>>>>> decompressed.
->>>>>
->>>>> Thanks, that was it:
->>>>>
->>>>> http://nvt.pwsan.com/pub/pwalmsley-tester/testlogs/test_20150325144058_6af714b069dc278d5d8e1b7afc13568f71d9aba8/20150325144058/boot/tegra20-trimslice/tegra20-trimslice/multi_v7_defconfig_log.txt 
->>>>>
-> ...
->>>> Interesting. Do the values in U-Boot's default environment work
->>>> correctly
->>>
->>> No idea, I haven't tried.  (The load addresses I used are observable in
->>> the boot logs above.)
->>
->> Sure. I was hoping you'd try it out since you already had the setup to
->> repro the issue.
->>
->> It'd be good if your test-bed used the built-in U-Boot variables too, so
->> we're testing them.
->
-> I've reproduced the original problem, and then validated that using 
-> the addresses from U-Boot's default environment (at least with a ToT 
-> U-Boot that I just built) does indeed solve it.
->
-> I'd like to re-iterate that the test bed should be using the values 
-> from U-Boot's environment rather than making up its own. That way:
->
-> * The value the test bed uses for the kernel load address likely 
-> overlaps where the kernel decompressor writes to for even slightly 
-> large kernels. This means the decompressor must move itself before 
-> decompressing. IIUC, there's zero guarantee that moving the 
-> decompressor won't overwrite the DTB, since IIUC the decompressor uses 
-> zero knowledge of the DTB location. In other words, if the compressed 
-> kernel is loaded somewhere that's likely to require it to move itself, 
-> there's a real risk of the exact same problem cropping up again in the 
-> future if the kernel happens to overwrite the DTB during relocation.
->
-> * The values are part of every Tegra U-Boot port (and hopefully for 
-> other SoCs too given any distro using boot.scr with 
-> config_distro_bootcmd.h will expect the variables to exist), so for 
-> future (Tegra) chips you won't have to adjust the test bed if RAM 
-> layout changes.
->
-> * Those values get testing, so we'll find out if the ever don't work. 
-> We get more test coverage.
+Commit 3cd44dcd35a6 ("dmaengine: remove Renesas Audio DMAC peri peri")
+forgot to remove the header file with the platform data definitions.
 
-Sounds reasonable, I'll try to get to this at some point soon.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ include/linux/platform_data/dma-rcar-audmapp.h | 34 --------------------------
+ 1 file changed, 34 deletions(-)
+ delete mode 100644 include/linux/platform_data/dma-rcar-audmapp.h
 
-BTW, it might be worth changing U-boot CONFIG_LOADADDR to point to the 
-value you define for kernel_addr_r.  That would reinforce to folks who 
-aren't using the U-boot scripts that they should use that address for 
-loading their kernel.
+diff --git a/include/linux/platform_data/dma-rcar-audmapp.h b/include/linux/platform_data/dma-rcar-audmapp.h
+deleted file mode 100644
+index 471fffebbeb4cdbe..0000000000000000
+--- a/include/linux/platform_data/dma-rcar-audmapp.h
++++ /dev/null
+@@ -1,34 +0,0 @@
+-/*
+- * This is for Renesas R-Car Audio-DMAC-peri-peri.
+- *
+- * Copyright (C) 2014 Renesas Electronics Corporation
+- * Copyright (C) 2014 Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+- *
+- * This file is based on the include/linux/sh_dma.h
+- *
+- * Header for the new SH dmaengine driver
+- *
+- * Copyright (C) 2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- */
+-#ifndef SH_AUDMAPP_H
+-#define SH_AUDMAPP_H
+-
+-#include <linux/dmaengine.h>
+-
+-struct audmapp_slave_config {
+-	int		slave_id;
+-	dma_addr_t	src;
+-	dma_addr_t	dst;
+-	u32		chcr;
+-};
+-
+-struct audmapp_pdata {
+-	struct audmapp_slave_config *slave;
+-	int slave_num;
+-};
+-
+-#endif /* SH_AUDMAPP_H */
+-- 
+1.9.1
 
-
-- Paul
-
-
-- Paul
