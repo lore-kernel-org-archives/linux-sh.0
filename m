@@ -1,83 +1,52 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 30 Apr 2015 14:18:49 +0000
-Subject: [PATCH v2 00/15] r8a7793 SoC, Gose board support
-Message-Id: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Tue, 28 Apr 2015 05:55:49 +0000
+Subject: [PATCH 1/3] spi: Re-do the returning value of rspi_dma_check_then_transfer
+Message-Id: <1430200551-20708-2-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430200551-20708-1-git-send-email-cm-hiep@jinso.co.jp>
+In-Reply-To: <1430200551-20708-1-git-send-email-cm-hiep-HEF513clHfp3+QwDJ9on6Q@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org
+Cc: broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, ryusuke.sakato.bx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi!
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-Here is a revised set of patches adding R8A7793 (M2-N) support.
-The major changes are that I dropped power management for now,
-and that the PFC monster patch has been broken down for ease
-of review.  Also a lot of small errors, most spotted by Geert,
-have been fixed.
+To reduce indentation and complex of code, insteeds of returning zero,
+the function rspi_dma_check_then_transfer should be returned
+rspi_dma_transfer directly after checking error.
 
-CU
-Uli
+Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+---
+ drivers/spi/spi-rspi.c | 13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
 
-
-Changes since v1:
-- pfc: split patch in six
-- pfc: fixed typos
-- dts: named clock bits correctly
-- dts: made more consistent with the very similar r8a7791 dts
-- dts: removed adv7511, don't know the address
-- pm: dropped for now, needs to be fixed up first
-- everywhere: renamed M2N -> M2-N (and M2 to M2-W, while at it)
-- everywhere: added Acks
-
-
-Ulrich Hecht (15):
-  pinctrl: sh-pfc: Add r8a7793 PFC support part 1: pinmux data
-  pinctrl: sh-pfc: Add r8a7793 PFC support part 2: pin groups
-  pinctrl: sh-pfc: Add r8a7793 PFC support part 3: pinmux config
-    registers
-  pinctrl: sh-pfc: Add r8a7793 pinmux info
-  pinctrl: sh-pfc: Enable building of r8a7793 PFC support
-  pinctrl: sh-pfc: Add renesas,pfc-r8a7793 to binding documentation
-  ARM: shmobile: Basic r8a7793 SoC support
-  ARM: shmobile: add r8a7793 SoC device tree
-  ARM: shmobile: r8a7793: add Gose board device tree
-  ARM: shmobile: r8a7793: add SMP support
-  clk: shmobile: r8a7793: document DIV6 clock bindings
-  mmc: sh_mmcif: Document r8a7793 DT bindings
-  serial: sh-sci: Add device tree bindings for r8a7793
-  clk: shmobile: Add r8a7793 SoC to MSTP bindings
-  PCI: rcar: document r8a7793 DT bindings
-
- .../bindings/clock/renesas,cpg-div6-clocks.txt     |    3 +-
- .../bindings/clock/renesas,cpg-mstp-clocks.txt     |    3 +-
- .../devicetree/bindings/mmc/renesas,mmcif.txt      |    1 +
- .../devicetree/bindings/pci/pci-rcar-gen2.txt      |    1 +
- .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |    3 +-
- .../bindings/serial/renesas,sci-serial.txt         |   12 +-
- arch/arm/boot/dts/Makefile                         |    1 +
- arch/arm/boot/dts/r8a7793-gose.dts                 |  534 ++
- arch/arm/boot/dts/r8a7793.dtsi                     | 1376 +++++
- arch/arm/mach-shmobile/Kconfig                     |    4 +
- arch/arm/mach-shmobile/Makefile                    |    2 +
- arch/arm/mach-shmobile/r8a7793.h                   |    6 +
- arch/arm/mach-shmobile/setup-r8a7793.c             |   35 +
- arch/arm/mach-shmobile/smp-r8a7793.c               |   67 +
- drivers/pinctrl/sh-pfc/Kconfig                     |    5 +
- drivers/pinctrl/sh-pfc/Makefile                    |    1 +
- drivers/pinctrl/sh-pfc/core.c                      |    6 +
- drivers/pinctrl/sh-pfc/core.h                      |    1 +
- drivers/pinctrl/sh-pfc/pfc-r8a7793.c               | 6033 ++++++++++++++++++++
- include/dt-bindings/clock/r8a7793-clock.h          |  158 +
- 20 files changed, 8245 insertions(+), 7 deletions(-)
- create mode 100644 arch/arm/boot/dts/r8a7793-gose.dts
- create mode 100644 arch/arm/boot/dts/r8a7793.dtsi
- create mode 100644 arch/arm/mach-shmobile/r8a7793.h
- create mode 100644 arch/arm/mach-shmobile/setup-r8a7793.c
- create mode 100644 arch/arm/mach-shmobile/smp-r8a7793.c
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-r8a7793.c
- create mode 100644 include/dt-bindings/clock/r8a7793-clock.h
-
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 186924a..a17564a 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -665,15 +665,12 @@ static bool rspi_can_dma(struct spi_master *master, struct spi_device *spi,
+ static int rspi_dma_check_then_transfer(struct rspi_data *rspi,
+ 					 struct spi_transfer *xfer)
+ {
+-	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer)) {
+-		/* rx_buf can be NULL on RSPI on SH in TX-only Mode */
+-		int ret = rspi_dma_transfer(rspi, &xfer->tx_sg,
+-					xfer->rx_buf ? &xfer->rx_sg : NULL);
+-		if (ret != -EAGAIN)
+-			return 0;
+-	}
++	if (!rspi->master->can_dma || !__rspi_can_dma(rspi, xfer)) {
++		return -EAGAIN;
+ 
+-	return -EAGAIN;
++	/* rx_buf can be NULL on RSPI on SH in TX-only Mode */
++	return rspi_dma_transfer(rspi, &xfer->tx_sg,
++					xfer->rx_buf ? &xfer->rx_sg : NULL);
+ }
+ 
+ static int rspi_common_transfer(struct rspi_data *rspi,
 -- 
-2.3.5
+1.9.1
 
