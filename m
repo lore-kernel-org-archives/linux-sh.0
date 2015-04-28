@@ -1,39 +1,38 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 03 Apr 2015 12:41:59 +0000
-Subject: [PATCH/RFC 2/6] staging: board: Initialize staging board code earlier
-Message-Id: <1428064923-24950-3-git-send-email-geert+renesas@glider.be>
+Date: Tue, 28 Apr 2015 10:12:56 +0000
+Subject: [PATCH 3/5] ARM: shmobile: henninger dts: Add "nor-jedec" compatible value
+Message-Id: <1430215978-31087-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
+References: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Currently the staging board code is initialized from a late_initcall().
-However, unused PM domains are also disabled from a late_initcall(),
-which happens before due to link order.
-
-Change the initialization of staging board code from using
-late_initcall() to device_initcall() to fix this.
+Spansion s25fl512s is compatible with "nor-jedec". Hence add the
+"nor-jedec" compatible value, so the driver can bind against the generic
+name, cfr. commit 8ff16cf77ce314c2 ("Documentation: devicetree: m25p80:
+add "nor-jedec" binding").
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/staging/board/board.h | 2 +-
+ arch/arm/boot/dts/r8a7791-henninger.dts | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/staging/board/board.h b/drivers/staging/board/board.h
-index 2390ed6c31a42f2f..e9c914985d4acb36 100644
---- a/drivers/staging/board/board.h
-+++ b/drivers/staging/board/board.h
-@@ -15,6 +15,6 @@ static int __init runtime_board_check(void)	\
- 	return 0;				\
- }						\
- 						\
--late_initcall(runtime_board_check)
-+device_initcall(runtime_board_check)
- 
- #endif /* __BOARD_H__ */
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
+index e33e4047b0b0c920..bb80122b4113bd8a 100644
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ b/arch/arm/boot/dts/r8a7791-henninger.dts
+@@ -226,7 +226,7 @@
+ 	flash@0 {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		compatible = "spansion,s25fl512s";
++		compatible = "spansion,s25fl512s", "nor-jedec";
+ 		reg = <0>;
+ 		spi-max-frequency = <30000000>;
+ 		spi-tx-bus-width = <4>;
 -- 
 1.9.1
 
