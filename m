@@ -1,61 +1,38 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 27 Apr 2015 12:43:39 +0000
-Subject: [PATCH/RFC v6 4/7] PM / Domains: Add DT bindings for PM QoS device latencies
-Message-Id: <1430138622-14029-5-git-send-email-geert+renesas@glider.be>
+Date: Tue, 28 Apr 2015 10:12:57 +0000
+Subject: [PATCH 4/5] ARM: shmobile: bockw-reference dts: Add "nor-jedec" compatible value
+Message-Id: <1430215978-31087-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
+References: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Kevin Hilman <khilman@kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>, Axel Haslam <ahaslam@baylibre.com>
-Cc: linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-PM QoS device start/stop are properties of the hardware.
-In legacy code, they're specified from platform code.
-On DT platforms, their values should come from DT.
+Spansion s25fl008k is compatible with "nor-jedec". Hence add the
+"nor-jedec" compatible value, so the driver can bind against the generic
+name, cfr. commit 8ff16cf77ce314c2 ("Documentation: devicetree: m25p80:
+add "nor-jedec" binding").
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v6:
-  - Rebased on top of v4.1-rc1 for new RFC,
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-v4:
-  - Drop save/restore state latencies, as they're Linux driver-specific,
-  - Change state to RFC, as this is put on hold,
-
-v3:
-  - No changes,
-
-v2:
-  - New.
----
- Documentation/devicetree/bindings/power/power_domain.txt | 6 ++++++
- 1 file changed, 6 insertions(+)
-
-diff --git a/Documentation/devicetree/bindings/power/power_domain.txt b/Documentation/devicetree/bindings/power/power_domain.txt
-index d659e5cb39be6057..32d1d3a399fe2a48 100644
---- a/Documentation/devicetree/bindings/power/power_domain.txt
-+++ b/Documentation/devicetree/bindings/power/power_domain.txt
-@@ -73,12 +73,18 @@ Required properties:
-  - power-domains : A phandle and PM domain specifier as defined by bindings of
-                    the power controller specified by phandle.
- 
-+Optional properties:
-+ - stop-latency: Stop latency of the device, in ns,
-+ - start-latency: Start latency of the device, in ns,
-+
- Example:
- 
- 	leaky-device@12350000 {
- 		compatible = "foo,i-leak-current";
- 		reg = <0x12350000 0x1000>;
- 		power-domains = <&power 0>;
-+		stop-latency = <250000>;
-+		start-latency = <250000>;
- 	};
- 
- The node above defines a typical PM domain consumer device, which is located
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 04c0c37bb7843997..f9422d887b4441c3 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -119,7 +119,7 @@
+ 	flash: flash@0 {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		compatible = "spansion,s25fl008k";
++		compatible = "spansion,s25fl008k", "nor-jedec";
+ 		reg = <0>;
+ 		spi-max-frequency = <104000000>;
+ 		m25p,fast-read;
 -- 
 1.9.1
 
