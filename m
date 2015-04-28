@@ -1,82 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 21 Apr 2015 15:01:37 +0000
-Subject: [PATCH/RFC 02/03] irqchip: renesas-irqc: Add fine grained Runtime PM code
-Message-Id: <20150421150137.14288.45064.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 28 Apr 2015 10:15:07 +0000
+Subject: [PATCH 2/2] pinctrl: sh-pfc: Remove r8a73a4 platform_device_id entry
+Message-Id: <1430216107-31501-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150421150115.14288.88519.sendpatchset@little-apple>
-In-Reply-To: <20150421150115.14288.88519.sendpatchset@little-apple>
+References: <1430216107-31501-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430216107-31501-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: jason@lakedaemon.net, geert+renesas@glider.be, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+As of commit 9d07d414d4c33d86 ("ARM: shmobile: r8a73a4: ape6evm: Remove
+legacy platform"), r8a73a4 is only supported in generic DT-only ARM
+multi-platform builds.  The driver doesn't need to match platform
+devices by name anymore, hence remove the corresponding
+platform_device_id entry.
 
-Convert Runtime PM support from coarse grained "always enabled"
-into more fine grained per-interrupt optional enablement.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ drivers/pinctrl/sh-pfc/core.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
- drivers/irqchip/irq-renesas-irqc.c |   11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 7b2c9495c3832410..287a3d048a5e1cf9 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -579,9 +579,6 @@ static int sh_pfc_remove(struct platform_device *pdev)
+ }
+ 
+ static const struct platform_device_id sh_pfc_id_table[] = {
+-#ifdef CONFIG_PINCTRL_PFC_R8A73A4
+-	{ "pfc-r8a73a4", (kernel_ulong_t)&r8a73a4_pinmux_info },
+-#endif
+ #ifdef CONFIG_PINCTRL_PFC_R8A7740
+ 	{ "pfc-r8a7740", (kernel_ulong_t)&r8a7740_pinmux_info },
+ #endif
+-- 
+1.9.1
 
---- 0002/drivers/irqchip/irq-renesas-irqc.c
-+++ work/drivers/irqchip/irq-renesas-irqc.c	2015-04-21 23:16:17.686370138 +0900
-@@ -96,12 +96,18 @@ static void irqc_irq_mask(struct irq_dat
- 
- static void irqc_irq_enable(struct irq_data *d)
- {
-+	struct irqc_priv *p = irq_data_get_irq_chip_data(d);
-+
-+	pm_runtime_get_sync(&p->pdev->dev);
- 	irqc_irq_unmask(d);
- }
- 
- static void irqc_irq_disable(struct irq_data *d)
- {
-+	struct irqc_priv *p = irq_data_get_irq_chip_data(d);
-+
- 	irqc_irq_mask(d);
-+	pm_runtime_put(&p->pdev->dev);
- }
- 
- static unsigned char irqc_sense[IRQ_TYPE_SENSE_MASK + 1] = {
-@@ -124,10 +130,12 @@ static int irqc_irq_set_type(struct irq_
- 	if (!value)
- 		return -EINVAL;
- 
-+	pm_runtime_get_sync(&p->pdev->dev);
- 	tmp = ioread32(p->iomem + IRQC_CONFIG(hw_irq));
- 	tmp &= ~0x3f;
- 	tmp |= value;
- 	iowrite32(tmp, p->iomem + IRQC_CONFIG(hw_irq));
-+	pm_runtime_put(&p->pdev->dev);
- 	return 0;
- }
- 
-@@ -215,7 +223,6 @@ static int irqc_probe(struct platform_de
- 	}
- 
- 	pm_runtime_enable(&pdev->dev);
--	pm_runtime_get_sync(&pdev->dev);
- 
- 	/* get hold of manadatory IOMEM */
- 	io = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-@@ -300,7 +307,6 @@ err3:
- err2:
- 	iounmap(p->iomem);
- err1:
--	pm_runtime_put(&pdev->dev);
- 	pm_runtime_disable(&pdev->dev);
- 	kfree(p);
- err0:
-@@ -317,7 +323,6 @@ static int irqc_remove(struct platform_d
- 
- 	irq_domain_remove(p->irq_domain);
- 	iounmap(p->iomem);
--	pm_runtime_put(&pdev->dev);
- 	pm_runtime_disable(&pdev->dev);
- 	kfree(p);
- 	return 0;
