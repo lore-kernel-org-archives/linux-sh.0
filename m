@@ -1,7 +1,7 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 28 Apr 2015 10:25:22 +0000
-Subject: RE: [PATCH] usb: phy: rcar-gen2-usb: Fix USBHS_UGSTS_LOCK value
-Message-Id: <SG2PR06MB0919B6137EE79B6488485854D8E80@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 28 Apr 2015 11:21:03 +0000
+Subject: Re: [PATCH] usb: phy: rcar-gen2-usb: Fix USBHS_UGSTS_LOCK value
+Message-Id: <CAMuHMdXpyjJbrcgiJzDSHJpY=KfPzZBZytwZyJsL8pFWZjuBzg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1427973754-4868-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 In-Reply-To: <1427973754-4868-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
@@ -10,41 +10,60 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-SGkgR2VlcnQtc2FuLA0KDQpUaGFuayB5b3UgZm9yIHlvdXIgY29tbWVudCENCg0KPiBTZW50OiBU
-dWVzZGF5LCBBcHJpbCAyOCwgMjAxNSA2OjU1IFBNDQo+IA0KPiBIaSBTaGltb2RhLXNhbiwNCj4g
-DQo+IE9uIFR1ZSwgQXByIDI4LCAyMDE1IGF0IDM6MzYgQU0sIFlvc2hpaGlybyBTaGltb2RhDQo+
-IDx5b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2FzLmNvbT4gd3JvdGU6DQo+ID4+IFNlbnQ6IFR1
-ZXNkYXksIEFwcmlsIDI4LCAyMDE1IDQ6NDUgQU0NCj4gPj4gT24gVGh1LCBBcHIgMDIsIDIwMTUg
-YXQgMDg6MjI6MzRQTSArMDkwMCwgWW9zaGloaXJvIFNoaW1vZGEgd3JvdGU6DQo+ID4+ID4gQWNj
-b3JkaW5nIHRvIHRoZSB0ZWNobmljYWwgdXBkYXRlIChOby4gVE4tUkNTLUIwMTFBL0UpLCB0aGUg
-VUdTVFMgTE9DSw0KPiA+PiA+IGJpdCBsb2NhdGlvbiBpcyBiaXQgOCwgbm90IGJpdHMgOSBhbmQg
-OC4gU28sIHRoaXMgcGF0Y2ggZml4ZXMgdGhlDQo+ID4+ID4gVVNCSFNfVUdTVFNfTE9DSyB2YWx1
-ZS4NCj4gPj4gPg0KPiA+PiA+IFNpZ25lZC1vZmYtYnk6IFlvc2hpaGlybyBTaGltb2RhIDx5b3No
-aWhpcm8uc2hpbW9kYS51aEByZW5lc2FzLmNvbT4NCj4gPj4NCj4gPj4gdGhpcyBkb2Vzbid0IGFw
-cGx5IHRvIHY0LjEtcmMxLCBpZiBpdCdzIHN0aWxsIG5lZWRlZCwgcGxlYXNlIHJlYmFzZS4NCj4g
-Pg0KPiA+IFRoYW5rIHlvdSBmb3IgdGhlIG5vdGljZS4gSSBmb3VuZCB0aGF0IHRoaXMgcGF0Y2gg
-aGFzIGJlZW4gYWxyZWFkeSBtZXJnZWQgaW4gdjQuMS1yYzEgYnkgR3JlZy4NCj4gDQo+IGRyaXZl
-cnMvdXNiL3BoeS9waHktcmNhci1nZW4yLXVzYi5jICh3aGljaCBzdXBwb3J0cyBsZWdhY3kgcGxh
-dGZvcm0gZGF0YSBvbmx5KQ0KPiBpcyB1bnVzZWQgc2luY2UgY29tbWl0IGE0ODNkY2JmYTIxZjkx
-OWMgKCJBUk06IHNobW9iaWxlOiBsYWdlcjogUmVtb3ZlDQo+IGxlZ2FjeSBib2FyZCBzdXBwb3J0
-IikuDQo+IA0KPiBJdCdzIG15IHVuZGVyc3RhbmRpbmcgdGhpcyBkcml2ZXIgaGFzIGJlZW4gcmVw
-bGFjZWQgYnkgYSBuZXcgZHJpdmVyLCB3aGljaA0KPiBzdXBwb3J0cyBEVCBvbmx5IChkcml2ZXJz
-L3BoeS9waHktcmNhci1nZW4yLmMpLg0KDQpZZXMuIFlvdSBhcmUgY29ycmVjdC4NCg0KPiBUaGF0
-IGRyaXZlciBzdGlsbCBoYXMgdGhlIHdyb25nIHZhbHVlOg0KPiAjZGVmaW5lIFVTQkhTX1VHU1RT
-X0xPQ0sgICAgICAgICAgICAgICAgMHgwMDAwMDMwMCAvKiBUaGUgbWFudWFscyBoYXZlIDB4MyAq
-Lw0KPiANCj4gU286DQo+ICAgMSkgU2hvdWxkbid0IGRyaXZlcnMvcGh5L3BoeS1yY2FyLWdlbjIu
-YyBiZSBmaXhlZD8NCg0KSSBhbHJlYWR5IHN1Ym1pdHRlZCBzdWNoIGEgcGF0Y2guIEhvd2V2ZXIs
-IHRoZSBwYXRjaCBpcyBub3QgbWVyZ2VkIHlldC4NCihJIHNob3VsZCBoYXZlIHNlbnQgYSBwaW5n
-IG9yIHNvbWV0aGluZyBhYm91dCB0aGlzIHBhdGNoLikNCmh0dHA6Ly90aHJlYWQuZ21hbmUub3Jn
-L2dtYW5lLmxpbnV4LnBvcnRzLnNoLmRldmVsLzQ1MDg5DQoNCj4gICAyKSBTaG91bGRuJ3QgZHJp
-dmVycy91c2IvcGh5L3BoeS1yY2FyLWdlbjItdXNiLmMgZXQgYWwgYmUgcmVtb3ZlZD8NCg0KV2Ug
-c2hvdWxkIHJlbW92ZSB0aGlzIGNvZGUgYmVjYXVzZSBsZWdhY3kgYm9hcmQgY29kZXMgd2VyZSBh
-bHJlYWR5IHJlbW92ZWQuDQooSW4gb3RoZXIgd29yZHMsIG5vYm9keSB1c2VzIHRoaXMgY29kZSBu
-b3cuKQ0KDQpCZXN0IHJlZ2FyZHMsDQpZb3NoaWhpcm8gU2hpbW9kYQ0KDQo+IFRoYW5rcyENCj4g
-DQo+IEdye29ldGplLGVldGluZ31zLA0KPiANCj4gICAgICAgICAgICAgICAgICAgICAgICAgR2Vl
-cnQNCj4gDQo+IC0tDQo+IEdlZXJ0IFV5dHRlcmhvZXZlbiAtLSBUaGVyZSdzIGxvdHMgb2YgTGlu
-dXggYmV5b25kIGlhMzIgLS0gZ2VlcnRAbGludXgtbTY4ay5vcmcNCj4gDQo+IEluIHBlcnNvbmFs
-IGNvbnZlcnNhdGlvbnMgd2l0aCB0ZWNobmljYWwgcGVvcGxlLCBJIGNhbGwgbXlzZWxmIGEgaGFj
-a2VyLiBCdXQNCj4gd2hlbiBJJ20gdGFsa2luZyB0byBqb3VybmFsaXN0cyBJIGp1c3Qgc2F5ICJw
-cm9ncmFtbWVyIiBvciBzb21ldGhpbmcgbGlrZSB0aGF0Lg0KPiAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgIC0tIExpbnVzIFRvcnZhbGRzDQo
+Hi Shimoda-san,
+
+On Tue, Apr 28, 2015 at 12:25 PM, Yoshihiro Shimoda
+<yoshihiro.shimoda.uh@renesas.com> wrote:
+>> Sent: Tuesday, April 28, 2015 6:55 PM
+>> On Tue, Apr 28, 2015 at 3:36 AM, Yoshihiro Shimoda
+>> <yoshihiro.shimoda.uh@renesas.com> wrote:
+>> >> Sent: Tuesday, April 28, 2015 4:45 AM
+>> >> On Thu, Apr 02, 2015 at 08:22:34PM +0900, Yoshihiro Shimoda wrote:
+>> >> > According to the technical update (No. TN-RCS-B011A/E), the UGSTS LOCK
+>> >> > bit location is bit 8, not bits 9 and 8. So, this patch fixes the
+>> >> > USBHS_UGSTS_LOCK value.
+>> >> >
+>> >> > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+>> >>
+>> >> this doesn't apply to v4.1-rc1, if it's still needed, please rebase.
+>> >
+>> > Thank you for the notice. I found that this patch has been already merged in v4.1-rc1 by Greg.
+>>
+>> drivers/usb/phy/phy-rcar-gen2-usb.c (which supports legacy platform data only)
+>> is unused since commit a483dcbfa21f919c ("ARM: shmobile: lager: Remove
+>> legacy board support").
+>>
+>> It's my understanding this driver has been replaced by a new driver, which
+>> supports DT only (drivers/phy/phy-rcar-gen2.c).
+>
+> Yes. You are correct.
+>
+>> That driver still has the wrong value:
+>> #define USBHS_UGSTS_LOCK                0x00000300 /* The manuals have 0x3 */
+>>
+>> So:
+>>   1) Shouldn't drivers/phy/phy-rcar-gen2.c be fixed?
+>
+> I already submitted such a patch. However, the patch is not merged yet.
+> (I should have sent a ping or something about this patch.)
+> http://thread.gmane.org/gmane.linux.ports.sh.devel/45089
+
+Right. Sorry, I forgot about that patch.
+
+>>   2) Shouldn't drivers/usb/phy/phy-rcar-gen2-usb.c et al be removed?
+>
+> We should remove this code because legacy board codes were already removed.
+> (In other words, nobody uses this code now.)
+
+I'll remove it, while you can enjoy Golden Week...
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
