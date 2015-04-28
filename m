@@ -1,29 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 30 Apr 2015 00:17:44 +0000
-Subject: Re: [PATCH 2/2] ARM: multi_v7_defconfig: Replace USB_RCAR_GEN2_PHY by PHY_RCAR_GEN2
-Message-Id: <20150430001743.GF17758@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 28 Apr 2015 10:29:23 +0000
+Subject: [PATCH 3/3] ARM: shmobile: koelsch dts: Use generic names for device nodes
+Message-Id: <1430216963-8161-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430222884-2095-1-git-send-email-geert+renesas@glider.be>
- <1430222884-2095-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430222884-2095-2-git-send-email-geert+renesas@glider.be>
+References: <1430216963-8161-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430216963-8161-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Apr 28, 2015 at 02:08:04PM +0200, Geert Uytterhoeven wrote:
-> The legacy-only USB_RCAR_GEN2_PHY driver was replaced by the DT-only
-> PHY_RCAR_GEN2 driver.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Oops, CONFIG_USB_RCAR_GEN2_PHY shouldn't have been in a multiplatform
-> defconfig, as it supports legacy platform data only.
+sound-codec -> codec
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Olof, Arnd, Kevin,
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 74c3212f1f11e47e..f790c2466939c5ee 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -522,7 +522,7 @@
+ 	status = "okay";
+ 	clock-frequency = <100000>;
+ 
+-	ak4643: sound-codec@12 {
++	ak4643: codec@12 {
+ 		compatible = "asahi-kasei,ak4643";
+ 		#sound-dai-cells = <0>;
+ 		reg = <0x12>;
+-- 
+1.9.1
 
-I'm assuming that you want to take this directly (or not!).
-However, if you would like me to queue up these kind of changes
-in my defconfig branch please just let me know.
