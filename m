@@ -1,61 +1,38 @@
-From: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Thu, 16 Apr 2015 10:35:39 +0000
-Subject: [RFC/PATCH v2 4/5] ARM: shmobile: dtsi: Add cpuidle parameters into each cpu for r8a7791
-Message-Id: <1429180540-5692-5-git-send-email-keita.kobayashi.ym@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 28 Apr 2015 10:12:54 +0000
+Subject: [PATCH 1/5] ARM: shmobile: koelsch dts: Add "nor-jedec" compatible value
+Message-Id: <1430215978-31087-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1429180540-5692-1-git-send-email-keita.kobayashi.ym@renesas.com>
-In-Reply-To: <1429180540-5692-1-git-send-email-keita.kobayashi.ym@renesas.com>
+References: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, rjw@rjwysocki.net, daniel.lezcano@linaro.org
-Cc: linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, devicetree@vger.kernel.org, magnus.damm@gmail.com, Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-This patch add enable-method node and idle-states node for r8a7791.
+Spansion s25fl512s is compatible with "nor-jedec". Hence add the
+"nor-jedec" compatible value, so the driver can bind against the generic
+name, cfr. commit 8ff16cf77ce314c2 ("Documentation: devicetree: m25p80:
+add "nor-jedec" binding").
 
-Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 3e9f824..0063615 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -46,11 +46,13 @@
- 		cpu0: cpu@0 {
- 			device_type = "cpu";
- 			compatible = "arm,cortex-a15";
-+			enable-method = "renesas,rcar-idle";
- 			reg = <0>;
- 			clock-frequency = <1500000000>;
- 			voltage-tolerance = <1>; /* 1% */
- 			clocks = <&cpg_clocks R8A7791_CLK_Z>;
- 			clock-latency = <300000>; /* 300 us */
-+			cpu-idle-states = <&CORE_STANDBY>;
- 
- 			/* kHz - uV - OPPs unknown yet */
- 			operating-points = <1500000 1000000>,
-@@ -64,8 +66,19 @@
- 		cpu1: cpu@1 {
- 			device_type = "cpu";
- 			compatible = "arm,cortex-a15";
-+			enable-method = "renesas,rcar-idle";
- 			reg = <1>;
- 			clock-frequency = <1500000000>;
-+			cpu-idle-states = <&CORE_STANDBY>;
-+		};
-+
-+		idle-states {
-+			CORE_STANDBY: CoreStandby {
-+				compatible = "arm,idle-state";
-+				entry-latency-us = <500>;
-+				exit-latency-us = <2300>;
-+				min-residency-us = <2800>;
-+			};
- 		};
- 	};
- 
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 74c3212f1f11e47e..70e9d5e9afddc546 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -474,7 +474,7 @@
+ 	flash: flash@0 {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		compatible = "spansion,s25fl512s";
++		compatible = "spansion,s25fl512s", "nor-jedec";
+ 		reg = <0>;
+ 		spi-max-frequency = <30000000>;
+ 		spi-tx-bus-width = <4>;
 -- 
 1.9.1
 
