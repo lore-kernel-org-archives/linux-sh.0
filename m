@@ -1,106 +1,38 @@
-From: Rajendra Nayak <rnayak@codeaurora.org>
-Date: Thu, 23 Apr 2015 08:45:09 +0000
-Subject: [PATCH 1/5] PM / clock_ops: Provide default runtime ops to users
-Message-Id: <1429777993-11702-2-git-send-email-rnayak@codeaurora.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 28 Apr 2015 10:12:58 +0000
+Subject: [PATCH 5/5] ARM: shmobile: bockw dts: Add "nor-jedec" compatible value
+Message-Id: <1430215978-31087-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
-In-Reply-To: <1429777993-11702-1-git-send-email-rnayak@codeaurora.org>
+References: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Most users of PM clocks do the extact same things in the runtime
-suspend/resume callbacks. Provide them USE_PM_CLK_RUNTIME_OPS so
-as to avoid/remove boilerplate code.
+Spansion s25fl008k is compatible with "nor-jedec". Hence add the
+"nor-jedec" compatible value, so the driver can bind against the generic
+name, cfr. commit 8ff16cf77ce314c2 ("Documentation: devicetree: m25p80:
+add "nor-jedec" binding").
 
-Signed-off-by: Rajendra Nayak <rnayak@codeaurora.org>
-Reviewed-by: Kevin Hilman <khilman@linaro.org>
-Acked-by: Santosh Shilimkar <ssantosh@kernel.org>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/base/power/clock_ops.c | 38 ++++++++++++++++++++++++++++++++++++++
- include/linux/pm_clock.h       | 10 ++++++++++
- 2 files changed, 48 insertions(+)
+ arch/arm/boot/dts/r8a7778-bockw.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/base/power/clock_ops.c b/drivers/base/power/clock_ops.c
-index 7fdd017..8abea66 100644
---- a/drivers/base/power/clock_ops.c
-+++ b/drivers/base/power/clock_ops.c
-@@ -15,6 +15,7 @@
- #include <linux/clkdev.h>
- #include <linux/slab.h>
- #include <linux/err.h>
-+#include <linux/pm_runtime.h>
- 
- #ifdef CONFIG_PM
- 
-@@ -367,6 +368,43 @@ static int pm_clk_notify(struct notifier_block *nb,
- 	return 0;
- }
- 
-+int pm_clk_runtime_suspend(struct device *dev)
-+{
-+	int ret;
-+
-+	dev_dbg(dev, "%s\n", __func__);
-+
-+	ret = pm_generic_runtime_suspend(dev);
-+	if (ret) {
-+		dev_err(dev, "failed to suspend device\n");
-+		return ret;
-+	}
-+
-+	ret = pm_clk_suspend(dev);
-+	if (ret) {
-+		dev_err(dev, "failed to suspend clock\n");
-+		pm_generic_runtime_resume(dev);
-+		return ret;
-+	}
-+
-+	return 0;
-+}
-+
-+int pm_clk_runtime_resume(struct device *dev)
-+{
-+	int ret;
-+
-+	dev_dbg(dev, "%s\n", __func__);
-+
-+	ret = pm_clk_resume(dev);
-+	if (ret) {
-+		dev_err(dev, "failed to resume clock\n");
-+		return ret;
-+	}
-+
-+	return pm_generic_runtime_resume(dev);
-+}
-+
- #else /* !CONFIG_PM */
- 
- /**
-diff --git a/include/linux/pm_clock.h b/include/linux/pm_clock.h
-index 0b00396..25266c6 100644
---- a/include/linux/pm_clock.h
-+++ b/include/linux/pm_clock.h
-@@ -20,6 +20,16 @@ struct pm_clk_notifier_block {
- 
- struct clk;
- 
-+#ifdef CONFIG_PM
-+extern int pm_clk_runtime_suspend(struct device *dev);
-+extern int pm_clk_runtime_resume(struct device *dev);
-+#define USE_PM_CLK_RUNTIME_OPS \
-+	.runtime_suspend = pm_clk_runtime_suspend, \
-+	.runtime_resume = pm_clk_runtime_resume,
-+#else
-+#define USE_PM_CLK_RUNTIME_OPS
-+#endif
-+
- #ifdef CONFIG_PM_CLK
- static inline bool pm_clk_no_clocks(struct device *dev)
- {
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 787fa6f9f46ddf4d..7ebc4a4f4608f0af 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -186,7 +186,7 @@
+ 	flash: flash@0 {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		compatible = "spansion,s25fl008k";
++		compatible = "spansion,s25fl008k", "nor-jedec";
+ 		reg = <0>;
+ 		spi-max-frequency = <104000000>;
+ 		m25p,fast-read;
 -- 
-QUALCOMM INDIA, on behalf of Qualcomm Innovation Center, Inc. is a member
-of Code Aurora Forum, hosted by The Linux Foundation
+1.9.1
 
