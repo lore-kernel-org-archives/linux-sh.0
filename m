@@ -1,43 +1,38 @@
-From: Russell King <rmk+kernel@arm.linux.org.uk>
-Date: Fri, 03 Apr 2015 17:13:08 +0000
-Subject: [PATCH 09/14] ARM: lpc32xx: convert to use clkdev_add_table()
-Message-Id: <E1Ye59Y-0001BV-NY@rmk-PC.arm.linux.org.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 28 Apr 2015 10:12:55 +0000
+Subject: [PATCH 2/5] ARM: shmobile: lager dts: Add "nor-jedec" compatible value
+Message-Id: <1430215978-31087-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
-In-Reply-To: <20150403171149.GC13898@n2100.arm.linux.org.uk>
+References: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Roland Stigge <stigge@antcom.de>
+To: linux-arm-kernel@lists.infradead.org
 
-We have always had an efficient way of registering a table of clock
-lookups - it's called clkdev_add_table().  However, some people seem
-to really love writing inefficient and unnecessary code.
+Spansion s25fl512s is compatible with "nor-jedec". Hence add the
+"nor-jedec" compatible value, so the driver can bind against the generic
+name, cfr. commit 8ff16cf77ce314c2 ("Documentation: devicetree: m25p80:
+add "nor-jedec" binding").
 
-Convert LPC32xx to use the correct interface.
-
-Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-lpc32xx/clock.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-lpc32xx/clock.c b/arch/arm/mach-lpc32xx/clock.c
-index dd5d6f532e8c..661c8f4b2310 100644
---- a/arch/arm/mach-lpc32xx/clock.c
-+++ b/arch/arm/mach-lpc32xx/clock.c
-@@ -1238,10 +1238,7 @@ static struct clk_lookup lookups[] = {
- 
- static int __init clk_init(void)
- {
--	int i;
--
--	for (i = 0; i < ARRAY_SIZE(lookups); i++)
--		clkdev_add(&lookups[i]);
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	/*
- 	 * Setup muxed SYSCLK for HCLK PLL base -this selects the
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index aaa4f258e279ccfa..a6c793de8d809bd4 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -429,7 +429,7 @@
+ 	flash: flash@0 {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		compatible = "spansion,s25fl512s";
++		compatible = "spansion,s25fl512s", "nor-jedec";
+ 		reg = <0>;
+ 		spi-max-frequency = <30000000>;
+ 		spi-tx-bus-width = <4>;
 -- 
-1.8.3.1
+1.9.1
 
