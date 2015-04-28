@@ -1,52 +1,35 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 27 Apr 2015 12:43:42 +0000
-Subject: [PATCH/RFC v6 7/7] PM / Domains: R-Mobile SYSC: Add PM QoS device latencies
-Message-Id: <1430138622-14029-8-git-send-email-geert+renesas@glider.be>
+Date: Tue, 28 Apr 2015 10:29:21 +0000
+Subject: [PATCH 1/3] ARM: shmobile: bockw dts: Use generic names for device nodes
+Message-Id: <1430216963-8161-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430138622-14029-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <1430216963-8161-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430216963-8161-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw-LthD3rsA81gm4RdzfppkhA@public.gmane.org>, Kevin Hilman <khilman-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Ulf Hansson <ulf.hansson-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Axel Haslam <ahaslam-rdvid1DuHRBWk0Htik3J/w@public.gmane.org>
-Cc: linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Add optional generic PM QoS device latency properties to the bindings
-and example.
+sound-codec -> codec
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v6:
-  - Rebased on top of v4.1-rc1 for new RFC,
+ arch/arm/boot/dts/r8a7778-bockw.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-v4:
-  - New.
----
- Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-index 0a6f03a136792e84..e54ee193c9f8e263 100644
---- a/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-+++ b/Documentation/devicetree/bindings/power/renesas,sysc-rmobile.txt
-@@ -95,7 +95,8 @@ which is a subdomain of A4S.
- = PM Domain Consumers =
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 787fa6f9f46ddf4d..a46afa852bcd2a0b 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -85,7 +85,7 @@
+ &i2c0 {
+ 	status = "okay";
  
- Hardware blocks belonging to a PM domain should contain a "power-domains"
--property that is a phandle pointing to the corresponding PM domain node.
-+property that is a phandle pointing to the corresponding PM domain node,
-+and optional PM QoS device latencies:
- 
- Example:
- 
-@@ -104,5 +105,7 @@ Example:
- 		reg = <0xe6600000 0x100>;
- 		clocks = <&mstp3_clks R8A7740_CLK_TPU0>;
- 		power-domains = <&pd_a3sp>;
-+		stop-latency = <250000>;
-+		start-latency = <250000>;
- 		#pwm-cells = <3>;
- 	};
+-	ak4643: sound-codec@12 {
++	ak4643: codec@12 {
+ 		compatible = "asahi-kasei,ak4643";
+ 		#sound-dai-cells = <0>;
+ 		reg = <0x12>;
 -- 
 1.9.1
 
