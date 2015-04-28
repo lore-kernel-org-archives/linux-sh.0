@@ -1,8 +1,10 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 28 Apr 2015 10:14:31 +0000
+Date: Tue, 28 Apr 2015 10:15:06 +0000
 Subject: [PATCH 1/2] pinctrl: sh-pfc: r8a73a4: Remove obsolete multi-platform check
-Message-Id: <1430216072-31412-1-git-send-email-geert+renesas@glider.be>
+Message-Id: <1430216107-31501-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430216072-31412-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430216072-31412-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,8 +17,6 @@ multi-platform builds.  Hence CONFIG_ARCH_MULTIPLATFORM is always set,
 and the check can be removed.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-This depends on Simon's branch r8a73a4-ccf-and-multiplatform-for-v4.1
 ---
  drivers/pinctrl/sh-pfc/pfc-r8a73a4.c | 4 ----
  1 file changed, 4 deletions(-)
