@@ -1,61 +1,50 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 23 Apr 2015 16:29:59 +0000
-Subject: Re: [PATCH] i2c: mux: use proper dev when removing "channel-X" symlinks
-Message-Id: <20150423162959.GA4689@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="vkogqOf2sHV7VnPd"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 28 Apr 2015 10:12:53 +0000
+Subject: [PATCH 0/5] ARM: shmobile: dts: Add "nor-jedec" compatible value
+Message-Id: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1429777749-15278-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1429777749-15278-1-git-send-email-wsa@the-dreams.de>
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Wolfram Sang <wsa+renesas@sang-engineering.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+	Hi Simon, Magnus,
 
---vkogqOf2sHV7VnPd
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+This patch series adds the "nor-jedec" compatible value to all device
+nodes for JEDEC-compliant SPI FLASHes on Renesas shmobile boards,
+It allows the driver to bind against the generic name, cfr. commit
+8ff16cf77ce314c2 ("Documentation: devicetree: m25p80: add "nor-jedec"
+binding").
+	        
+This was tested on r8a7791/koelsch. I verified that it also works with
+"nor-jedec" only, without the specific compatible value.
 
-On Thu, Apr 23, 2015 at 10:29:09AM +0200, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
-> Those symlinks are created for the mux_dev, so we need to remove it from
-> there. Currently, it breaks for muxes where the mux_dev is not the device
-> of the parent adapter like this:
->=20
-> [   78.234644] WARNING: CPU: 0 PID: 365 at fs/sysfs/dir.c:31 sysfs_warn_d=
-up+0x5c/0x78()
-> [   78.242438] sysfs: cannot create duplicate filename '/devices/platform=
-/i2cbus@8/channel-0'
->=20
-> Remove confusing comments while we are here.
->=20
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> Fixes: c9449affad2ae0
+Thanks for applying!
 
-Applied to for-current, thanks!
+Geert Uytterhoeven (5):
+  ARM: shmobile: koelsch dts: Add "nor-jedec" compatible value
+  ARM: shmobile: lager dts: Add "nor-jedec" compatible value
+  ARM: shmobile: henninger dts: Add "nor-jedec" compatible value
+  ARM: shmobile: bockw-reference dts: Add "nor-jedec" compatible value
+  ARM: shmobile: bockw dts: Add "nor-jedec" compatible value
 
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 2 +-
+ arch/arm/boot/dts/r8a7778-bockw.dts           | 2 +-
+ arch/arm/boot/dts/r8a7790-lager.dts           | 2 +-
+ arch/arm/boot/dts/r8a7791-henninger.dts       | 2 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts         | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
 
---vkogqOf2sHV7VnPd
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+-- 
+1.9.1
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Gr{oetje,eeting}s,
 
-iQIcBAEBAgAGBQJVOR4HAAoJEBQN5MwUoCm25MgQAIzVnJYNbwIPJdwMAko6DnEG
-TG6lsuukKc1lMTVftt+IKznaJ6GsC3WEUt3sexxPSKwIK7Ie99p+8wwVImJpZLYK
-mx1Ne9MADLcKdgMGw4EnIpkRsW0WXMG4Ww/D1PWRoryfvBhcaAxyPgPgfLgKlUiU
-NTB6sdUdsB+ADQ3WeLQembYSysNxsU5Hq3wiPllbNkkYekU8H3QgaLxlT3n4SY+B
-oqzl99Nga4eYyqq7Brmwc2Nh0jWuAWB11mFuZQMFOXeNbD/+6Ia3k8xs82cbtamd
-+n+rfbuVrWFQ7nt7+oNZrLOKfnHaQMM2VPrI2fKWtbgb1llQBTSWiZxgkqzZ9yZy
-+f0nSOdfs1FXeQlP6jYBOzxLSmWZLLPWjAA3nx3iKD8QLdg7nG8/zKrLofJg+D0c
-7FurUs7lFHSDDfrfR16lMggQKEobN5M10sJeP9MFo5D2FanAEAIXnN+e1LVema2L
-uTG+E/Jn5of4CH3ox1zjauTXCeEZXej+KNwKw2o6Ea+cTzcOMl5DgakOqbGQdzNv
-Rjk+xnrGEc5pTxXSkFy2B4zT94pW/vg1tiMalKfqcDYR74En5BqRharKfo16QlrO
-1VHtw7/ZeSHhgsrKlCTQUj92s1fykxexh9ap+JwQZIlJR+Ahh1exQiMrtAyTQl4X
-7qcIFDH37P+jaxgjzf7W
-=dlmQ
------END PGP SIGNATURE-----
+						Geert
 
---vkogqOf2sHV7VnPd--
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
