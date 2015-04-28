@@ -1,49 +1,44 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 23 Apr 2015 17:49:59 +0000
-Subject: Re: [PATCH/RFC 00/03] irqchip: renesas-irqc: Fine grained Runtime PM support
-Message-Id: <CAMuHMdWtUYoFWWfijFbQCv6Z-phZW2XN+F5n1zfqbZMFGjM+Bg@mail.gmail.com>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Tue, 28 Apr 2015 05:55:51 +0000
+Subject: [PATCH 3/3] spi: Re-do the returning value of qspi_transfer_out_in
+Message-Id: <1430200551-20708-4-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdWN5E35e8CEzOKYRo4PXkzjMpxErg6akCOHKGtAf=D8tQ@mail.gmail.com>
-	<Pine.LNX.4.44L0.1504231040560.1529-100000@iolanthe.rowland.org>
-In-Reply-To: <Pine.LNX.4.44L0.1504231040560.1529-100000@iolanthe.rowland.org>
+References: <1430200551-20708-1-git-send-email-cm-hiep@jinso.co.jp>
+In-Reply-To: <1430200551-20708-1-git-send-email-cm-hiep-HEF513clHfp3+QwDJ9on6Q@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alan Stern <stern@rowland.harvard.edu>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, Jason Cooper <jason@lakedaemon.net>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux PM list <linux-pm@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
+To: geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org
+Cc: broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, ryusuke.sakato.bx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Thu, Apr 23, 2015 at 4:44 PM, Alan Stern <stern@rowland.harvard.edu> wrote:
-> On Thu, 23 Apr 2015, Geert Uytterhoeven wrote:
->> >> I'm afraid you can't call pm_runtime_get_sync() from these methods, as
->> >> they may be called from interrupt context.
->> >
->> > Ouch. I know the clock framework has prepare/enable separated with
->> > context, but with the irqchip callbacks I suppose no such separation
->>
->> It's not the clock operations, but the pm_runtime operations that cannot be
->> called from interrupt context.
->
-> In fact the pm_runtime operations _can_ be called from interrupt
-> context, provided the driver has first invoked pm_runtime_irq_safe().
-> Of course, this requires that none of the runtime-PM callback routines
-> ever sleep or perform a blocking operation.
->
-> This is all explained in Documentation/power/runtime_pm.txt (search for
-> "irq_safe").
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-Perhaps that can help. We'll have to give it a try...
+To reduce complex of code, drop "ret" then qspi_transfer_out_in function
+should be returned the value of "qspi_trigger_transfer_out_in" directly.
 
-I've always found this a bit strange when PM Domains are involved:
-pm_runtime_irq_safe(dev) applies to device dev, while the actual callbacks
-belong to the PM Domain code (the device's driver doesn't have any).
+Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+---
+ drivers/spi/spi-rspi.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
 
-Gr{oetje,eeting}s,
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 3f65508..4a2cdac 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -768,12 +768,8 @@ static int qspi_transfer_out_in(struct rspi_data *rspi,
+ 	if (ret != -EAGAIN)
+ 		return ret;
+ 
+-	ret = qspi_trigger_transfer_out_in(rspi, xfer->tx_buf,
++	return qspi_trigger_transfer_out_in(rspi, xfer->tx_buf,
+ 					    xfer->rx_buf, xfer->len);
+-	if (ret < 0)
+-		return ret;
+-
+-	return 0;
+ }
+ 
+ static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
+-- 
+1.9.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
