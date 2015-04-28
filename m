@@ -1,41 +1,42 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 27 Apr 2015 13:05:08 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 28 Apr 2015 08:52:37 +0000
 Subject: Re: [PATCH 08/10] ARM: shmobile: armadillo800eva dts: Use generic names for device nodes
-Message-Id: <553E3404.6020601@cogentembedded.com>
+Message-Id: <CAMuHMdVBCS66UCjZwRSdcWjgukoVK-JMq2ZFHX0WKkh=Jh+yBQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
  <1430139334-15272-9-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430139334-15272-9-git-send-email-geert+renesas@glider.be>
+ <553E3404.6020601@cogentembedded.com>
+In-Reply-To: <553E3404.6020601@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
-
-On 04/27/2015 03:55 PM, Geert Uytterhoeven wrote:
-
-> wm8978 -> codec
-
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->   arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
-
-> diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-> index 9bd0cb439f448d03..2e31d8c01cbf6a74 100644
-> --- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-> +++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-> @@ -208,7 +208,7 @@
->   		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
->   	};
+On Mon, Apr 27, 2015 at 3:05 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+>> -       wm8978: wm8978@1a {
+>> +       wm8978: codec@1a {
 >
-> -	wm8978: wm8978@1a {
-> +	wm8978: codec@1a {
+>     Perhaps sound-codec?
 
-     Perhaps sound-codec?
+Given there's no single instance of "sound-codec" under
+Documentation/devicetree/, and only four occurrences in DTS files (whoops,
+I should fix up 3 of them ;-):
 
-[...]
+    arch/arm/boot/dts/r8a7778-bockw.dts: ak4643: sound-codec@12 {
+    arch/arm/boot/dts/r8a7790-lager.dts: ak4643: sound-codec@12 {
+    arch/arm/boot/dts/r8a7791-koelsch.dts: ak4643: sound-codec@12 {
+    arch/xtensa/boot/dts/xtfpga.dtsi: tlv320aic23: sound-codec@0 {
 
-WBR, Sergei
+I'm strongly leaning towards "codec".
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
