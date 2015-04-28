@@ -1,39 +1,41 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 30 Apr 2015 14:19:03 +0000
-Subject: [PATCH v2 14/15] clk: shmobile: Add r8a7793 SoC to MSTP bindings
-Message-Id: <1430403544-26742-15-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 28 Apr 2015 10:29:20 +0000
+Subject: [PATCH 0/3] ARM: shmobile: Use generic names for sound device nodes
+Message-Id: <1430216963-8161-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert@linux-m68k.org, horms@verge.net.au, linux-sh@vger.kernel.org
-Cc: magnus.damm@gmail.com, laurent.pinchart+renesas@ideasonboard.com, kuninori.morimoto.gx@renesas.com, linus.walleij@linaro.org, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Michael Turquette <mturquette@linaro.org>, devicetree@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Also replaces "R-Car M2" with "R-Car M2-W" to avoid confusion.
+	Hi Magnus, Simon,
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: Michael Turquette <mturquette@linaro.org>
-Cc: devicetree@vger.kernel.org
----
- Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+This patch series gets rid of the "sound-codec" device nodes names in
+the shmobile DTS files, and replaces them by "codec", as the former
+doesn't appear in any binding document.
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-index 0a80fa7..923ee0f 100644
---- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-@@ -15,7 +15,8 @@ Required Properties:
-     - "renesas,r8a7740-mstp-clocks" for R8A7740 (R-Mobile A1) MSTP gate clocks
-     - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
-     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
--    - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
-+    - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2-W) MSTP gate clocks
-+    - "renesas,r8a7793-mstp-clocks" for R8A7793 (R-Car M2-N) MSTP gate clocks
-     - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
-     - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
-     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
+Thanks for applying!
+
+Geert Uytterhoeven (3):
+  ARM: shmobile: bockw dts: Use generic names for device nodes
+  ARM: shmobile: lager dts: Use generic names for device nodes
+  ARM: shmobile: koelsch dts: Use generic names for device nodes
+
+ arch/arm/boot/dts/r8a7778-bockw.dts   | 2 +-
+ arch/arm/boot/dts/r8a7790-lager.dts   | 2 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
 -- 
-2.3.5
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
