@@ -1,45 +1,55 @@
-From: keita kobayashi <keita.kobayashi.ym@renesas.com>
-Date: Tue, 07 Apr 2015 05:56:42 +0000
-Subject: Re: [RFC/PATCH 2/4] ARM: shmobile: Add cpuidle_ops for R-Car cpuidle
-Message-Id: <5523719A.7060301@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 28 Apr 2015 12:08:03 +0000
+Subject: [PATCH 1/2] ARM: shmobile: defconfig: Replace USB_RCAR_GEN2_PHY by PHY_RCAR_GEN2
+Message-Id: <1430222884-2095-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428292244-2160-3-git-send-email-keita.kobayashi.ym@renesas.com>
-In-Reply-To: <1428292244-2160-3-git-send-email-keita.kobayashi.ym@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon
+The legacy-only USB_RCAR_GEN2_PHY driver was replaced by the DT-only
+PHY_RCAR_GEN2 driver.
 
-Thank you for your feedback.
+Refresh the defconfig using "make savedefconfig" while we're at it.
 
-(2015/04/07 10:50), Simon Horman wrote:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Oops, CONFIG_USB_RCAR_GEN2_PHY shouldn't have been in a multiplatform
+defconfig, as it supports legacy platform data only.
 
-> On Mon, Apr 06, 2015 at 12:50:42PM +0900, Keita Kobayashi wrote:
->> This patch add Core-Standby support for R-Car cpuidle.
->>
->> Signed-off-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
-> 
-> [snip]
-> 
->> diff --git a/arch/arm/mach-shmobile/pm-rcar-gen2.c b/arch/arm/mach-shmobile/pm-rcar-gen2.c
->> index 6815781..846b8ae 100644
-> 
-> [snip]
-> 
->> +struct cpuidle_ops rcar_cpuidle_ops __initdata = {
->> +	.suspend = rcar_cpuidle_enter,
->> +};
->> +CPUIDLE_METHOD_OF_DECLARE(rcar, "renesas,rcar-idle", &rcar_cpuidle_ops);
->> +#endif
-> 
-> It seems to me that that renesas,rcar-idle should be documented
-> as an enable-method in Documentation/devicetree/bindings/arm/cpus.txt.
-> 
-> That change could be a separate patch for device tree.
+ arch/arm/configs/shmobile_defconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-I understand. I will document it.
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index b58618e2d13c51c8..9961fbd633f8d165 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -121,7 +121,6 @@ CONFIG_WATCHDOG=y
+ CONFIG_DA9063_WATCHDOG=y
+ CONFIG_MFD_AS3711=y
+ CONFIG_MFD_DA9063=y
+-CONFIG_REGULATOR=y
+ CONFIG_REGULATOR_AS3711=y
+ CONFIG_REGULATOR_DA9210=y
+ CONFIG_REGULATOR_GPIO=y
+@@ -160,7 +159,6 @@ CONFIG_USB_OHCI_HCD=y
+ CONFIG_USB_R8A66597_HCD=y
+ CONFIG_USB_RENESAS_USBHS=y
+ CONFIG_USB_RCAR_PHY=y
+-CONFIG_USB_RCAR_GEN2_PHY=y
+ CONFIG_USB_GADGET=y
+ CONFIG_USB_RENESAS_USBHS_UDC=y
+ CONFIG_USB_ETH=y
+@@ -182,6 +180,8 @@ CONFIG_IIO=y
+ CONFIG_AK8975=y
+ CONFIG_PWM=y
+ CONFIG_PWM_RENESAS_TPU=y
++CONFIG_GENERIC_PHY=y
++CONFIG_PHY_RCAR_GEN2=y
+ # CONFIG_DNOTIFY is not set
+ CONFIG_MSDOS_FS=y
+ CONFIG_VFAT_FS=y
+-- 
+1.9.1
 
-Regards.
-Keita Kobayashi
