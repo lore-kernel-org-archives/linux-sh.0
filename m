@@ -1,38 +1,67 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 30 Apr 2015 05:17:37 +0000
-Subject: [PATCH 3/3] drivers: sh: Remove test for now unsupported sh7372
-Message-Id: <00170528f0486c08a18475af7fefa0a7679e042d.1430370969.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 29 Apr 2015 20:46:39 +0000
+Subject: [PATCH v3 0/3] prototype: switch I2C IP cores at runtime (new approach)
+Message-Id: <1430340402-21586-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1430370969.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1430370969.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+So, guys, since 4.1-rc1 is out and Pantelis managed to send me a patch fixing
+the problem when destroying platform devices, here is the proto-prototype of an
+IP core switcher using OF_DYNAMIC which enables/disables device nodes when the
+IP core is switched. The drawback is:
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/sh/pm_runtime.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+- I2C slave devices need to be reinitialized, so no hot-switching.
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 89b7785de1fc..fe8875f0d7be 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -91,8 +91,7 @@ static int __init sh_pm_runtime_init(void)
- 		    !of_machine_is_compatible("renesas,r8a7791") &&
- 		    !of_machine_is_compatible("renesas,r8a7792") &&
- 		    !of_machine_is_compatible("renesas,r8a7793") &&
--		    !of_machine_is_compatible("renesas,r8a7794") &&
--		    !of_machine_is_compatible("renesas,sh7372"))
-+		    !of_machine_is_compatible("renesas,r8a7794"))
- 			return 0;
- 	}
- 
+However, IMO the advantages do outweigh this drawback a lot:
+
++ We are now much closer to the driver model, no reparenting hacks.
+
++ Parent<->child relations are proper, so things like PM should work as
+  they do for ever other I2C mux.
+
++ Better upstream likeliness. No questionable patches for other subsystems.
+  (There is one patch for of-base, but this is more an interface fixup IMO)
+
++ I think this approach is easier to migrate to other subsystems. It uses
+  less I2C subsystem specific mux behaviour
+
++ The bus numbering is saner. No more n+1 new busses. Just the muxed one.
+  The active parent keeps its usual number, passive parents are disabled
+  and have no numbers at all.
+
+There are still some TODOs and FIXMEs left. Especially the current switching
+via sysfs is really proof-of-concept for now. But so far, it worked nice here.
+
+Have fun with it,
+
+   Wolfram
+
+PS: Since these patches depend on a few others, I pushed out a branch here:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/ip-core-switch-v2-on-4.1-experimental
+
+Again, these patches go to sh-devel only, because of the very early status.
+
+
+Wolfram Sang (3):
+  of: WIP: make of_mutex public
+  ARM: shmobile: r8a7790: lager: add i2c-demuxer to dts
+  i2c: mux: demux-pinctrl: add driver
+
+ .../devicetree/bindings/i2c/i2c-demux-pinctrl.txt  |  39 ++++
+ arch/arm/boot/dts/r8a7790-lager.dts                | 129 ++++--------
+ drivers/i2c/muxes/Kconfig                          |   7 +
+ drivers/i2c/muxes/Makefile                         |   2 +
+ drivers/i2c/muxes/i2c-demux-pinctrl.c              | 224 +++++++++++++++++++++
+ drivers/of/of_private.h                            |   1 -
+ include/linux/of.h                                 |   2 +
+ 7 files changed, 313 insertions(+), 91 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
+ create mode 100644 drivers/i2c/muxes/i2c-demux-pinctrl.c
+
 -- 
 2.1.4
 
