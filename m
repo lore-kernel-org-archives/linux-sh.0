@@ -1,70 +1,88 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 20 Apr 2015 12:29:11 +0000
-Subject: renesas-drivers-2015-04-20-v4.0
-Message-Id: <1429532951-21107-1-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 29 Apr 2015 00:38:03 +0000
+Subject: [PATCH 09/10] drm: rcar-du: Store the number of CRTCs per group in the group structure
+Message-Id: <1430267884-20560-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-I've pushed renesas-drivers-2015-04-20-v4.0 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+The number of CRTCs in a group is only used to implement plane
+initialization for now, but is also needed to implement pre-association
+of planes to CRTCs. Store it in the group structure instead of computing
+it on demand.
 
-Today's version is based on renesas-devel-20150413-v4.0.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_group.h | 2 ++
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c   | 1 +
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 6 ++----
+ 3 files changed, 5 insertions(+), 4 deletions(-)
 
-Included fixes (by merging latest linus/master):
-  - smp: Fix error case handling in smp_call_function_*()
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.h b/drivers/gpu/drm/rcar-du/rcar_du_group.h
+index 4f6c37c8d336..7b414b31c3be 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.h
+@@ -25,6 +25,7 @@ struct rcar_du_device;
+  * @dev: the DU device
+  * @mmio_offset: registers offset in the device memory map
+  * @index: group index
++ * @num_crtcs: number of CRTCs in this group (1 or 2)
+  * @use_count: number of users of the group (rcar_du_group_(get|put))
+  * @used_crtcs: number of CRTCs currently in use
+  * @lock: protects the dptsr_planes field and the DPTSR register
+@@ -36,6 +37,7 @@ struct rcar_du_group {
+ 	unsigned int mmio_offset;
+ 	unsigned int index;
+ 
++	unsigned int num_crtcs;
+ 	unsigned int use_count;
+ 	unsigned int used_crtcs;
+ 
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 2c6cf691d163..fec5f4d794da 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -763,6 +763,7 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ 		rgrp->dev = rcdu;
+ 		rgrp->mmio_offset = mmio_offsets[i];
+ 		rgrp->index = i;
++		rgrp->num_crtcs = min(rcdu->num_crtcs - 2 * i, 2U);
+ 
+ 		/* Pre-associate all hardware planes with the first CRTC in the
+ 		 * group.
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index d3ed528fa56d..3e30d84b798f 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -391,7 +391,6 @@ int rcar_du_planes_init(struct rcar_du_group *rgrp)
+ {
+ 	struct rcar_du_device *rcdu = rgrp->dev;
+ 	unsigned int num_planes;
+-	unsigned int num_crtcs;
+ 	unsigned int crtcs;
+ 	unsigned int i;
+ 	int ret;
+@@ -399,13 +398,12 @@ int rcar_du_planes_init(struct rcar_du_group *rgrp)
+ 	 /* Create one primary plane per CRTC in this group and seven overlay
+ 	  * planes.
+ 	  */
+-	num_crtcs = min(rcdu->num_crtcs - 2 * rgrp->index, 2U);
+-	num_planes = num_crtcs + 7;
++	num_planes = rgrp->num_crtcs + 7;
+ 
+ 	crtcs = ((1 << rcdu->num_crtcs) - 1) & (3 << (2 * rgrp->index));
+ 
+ 	for (i = 0; i < num_planes; ++i) {
+-		enum drm_plane_type type = i < num_crtcs
++		enum drm_plane_type type = i < rgrp->num_crtcs
+ 					 ? DRM_PLANE_TYPE_PRIMARY
+ 					 : DRM_PLANE_TYPE_OVERLAY;
+ 		struct rcar_du_plane *plane = &rgrp->planes[i];
+-- 
+2.0.5
 
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.linaro.org/people/mturquette/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
