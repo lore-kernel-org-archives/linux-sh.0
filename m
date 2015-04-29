@@ -1,70 +1,52 @@
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Date: Thu, 02 Apr 2015 08:18:12 +0000
-Subject: Re: [RFC/PATCH] ARM: shmobile: Consolidate the smp code for R-Car Gen2
-Message-Id: <551CFB44.6000407@bp.renesas.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Wed, 29 Apr 2015 17:07:36 +0000
+Subject: [PATCH/RFC] serial: sh-sci: Remove schedule_work in sci_dma_rx_complete
+Message-Id: <1430327256-8545-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5502A268.2030304@bp.renesas.com>
-In-Reply-To: <5502A268.2030304@bp.renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-serial@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Geert-san,
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Thank you for your feedback.
+This patch calls work_fn_rx() directly so that the driver can avoid
+executing of next sci_dma_rx_complete() before work_fn_rx() completes.
 
-On 2015/04/01 22:31, Geert Uytterhoeven wrote:
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-<snip>
+This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+tree.
 
-> I wonder whether we should replace the "compatible" matching by reading
-> the Product Register (PRR, iomem 0xff000044), looking at bits 22-25 and 27-30
-> to check for the presence of CA7 and CA15 CPU cores, and fill in the
-> rcar_apmu_config tables based on that. That way it'll work automatically for
-> all members of the R-Car Gen2 family.
+ drivers/tty/serial/sh-sci.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-I will try to implement in this way.
-
->> +       /* let APMU code install data related to shmobile_boot_vector */
->> +       shmobile_smp_apmu_prepare_cpus(max_cpus,
->> +                                      rcar_gen2_apmu_config,
->> +                                      rcar_apmu_config_size);
->> +
->> +       rcar_gen2_pm_init();
->> +
->> +       /* turn on power to SCU of second cluster */
->> +       if (has_a15 && has_a7) {
->> +               this_cluster = MPIDR_AFFINITY_LEVEL(read_cpuid_mpidr(), 1);
->> +               if (this_cluster = 0)
->> +                       rcar_sysc_power_up(&rcar_gen2_ca7_scu);
->> +               else
->> +                       rcar_sysc_power_up(&rcar_gen2_ca15_scu);
-> This is a change in behavior compared to the old r8a7790 implementation, which
-> powered on both clusters. Please mention this in the patch description.
-
-I will add this description with v2 patch.
-
-The SCU of boot cpu side is already powered on. Therefore, it is not 
-necessary to power on the SCU of both clusters in here. In case of 
-multi-cluster, the SCU of secondary cluster should be powered on.
-
->> +       }
->> +}
->> +
->> +static int rcar_gen2_smp_boot_secondary(unsigned int cpu,
->> +                                     struct task_struct *idle)
->> +{
->> +       /* Error out when hardware debug mode is enabled */
->> +       if (of_machine_is_compatible("renesas,r8a7791") &&
->> +           rcar_gen2_read_mode_pins() & BIT(21)) {
-> While we indeed had this check on r8a7791 only, I think it also applies
-> to r8a7790, cfr. the Lager board documentation.
-> According to the R-Car Gen2 datasheet, this is the case on all family
-> members but R-Car V2H.
-
-I will fix it with v2 patch.
-
-Regards,
-Inami
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index e7d6566..664ae78 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -126,6 +126,9 @@ struct sci_port {
+ static void sci_start_tx(struct uart_port *port);
+ static void sci_stop_tx(struct uart_port *port);
+ static void sci_start_rx(struct uart_port *port);
++#ifdef CONFIG_SERIAL_SH_SCI_DMA
++static void work_fn_rx(struct work_struct *work);
++#endif
+ 
+ #define SCI_NPORTS CONFIG_SERIAL_SH_SCI_NR_UARTS
+ 
+@@ -1341,7 +1344,7 @@ static void sci_dma_rx_complete(void *arg)
+ 	if (count)
+ 		tty_flip_buffer_push(&port->state->port);
+ 
+-	schedule_work(&s->work_rx);
++	work_fn_rx(&s->work_rx);
+ }
+ 
+ static void sci_rx_dma_release(struct sci_port *s, bool enable_pio)
+-- 
+1.9.1
 
