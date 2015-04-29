@@ -1,59 +1,52 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Fri, 24 Apr 2015 07:34:07 +0000
-Subject: Re: [PATCH 1/1] spi: Re-do correctly function name and 'ret' return value
-Message-Id: <5539F1EF.5020103@jinso.co.jp>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 29 Apr 2015 11:53:22 +0000
+Subject: Re: [PATCH 2/2] pinctrl: sh-pfc: Remove r8a73a4 platform_device_id entry
+Message-Id: <21370155.oZX1erNtOU@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1429857656-8348-1-git-send-email-cm-hiep@jinso.co.jp>	<1429857656-8348-2-git-send-email-cm-hiep@jinso.co.jp> <CAMuHMdWm2i-48mOUFCcFuXEAyFimkW+Yw7wdzgOa8rOgpfbMWw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWm2i-48mOUFCcFuXEAyFimkW+Yw7wdzgOa8rOgpfbMWw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+References: <1430216107-31501-1-git-send-email-geert+renesas@glider.be> <1430216107-31501-2-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430216107-31501-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Ryusuke Sakato <ryusuke.sakato.bx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
 
-Hi Geert-san
+Hi Geert,
 
-Thanks for your comments,
+Thank you for the patch.
 
-On 2015年04月24日 16:25, Geert Uytterhoeven wrote:
-> Hi Hiep-san,
->
-> On Fri, Apr 24, 2015 at 8:40 AM, Cao Minh Hiep <cm-hiep@jinso.co.jp> wrote:
->> From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
->>
->> qspi_trigger_transfer_out_int function should be qspi_trigger_transfer_out_in
->> without "t". "ret" value in rspi_dma_check_then_transfer should be returned
->> insteeds of returning zero. It just returns qspi_trigger_transfer_out_in() value
->> in qspi_transfer_out_in().
-> Thanks for your patch!
->
-> I guess Mark will want you to split this in 3 separate patches, as it does 3
-> different things...
-Thanks, I will split this patch in 3 separate patches.
->> Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
->> ---
->>   drivers/spi/spi-rspi.c | 10 +++-------
->>   1 file changed, 3 insertions(+), 7 deletions(-)
->>
->> diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
->> index 186924a..9304a6d 100644
->> --- a/drivers/spi/spi-rspi.c
->> +++ b/drivers/spi/spi-rspi.c
->> @@ -670,7 +670,7 @@ static int rspi_dma_check_then_transfer(struct rspi_data *rspi,
->>                  int ret = rspi_dma_transfer(rspi, &xfer->tx_sg,
->>                                          xfer->rx_buf ? &xfer->rx_sg : NULL);
->>                  if (ret != -EAGAIN)
->> -                       return 0;
->> +                       return ret;
->>          }
->>
->>          return -EAGAIN;
-> Upon closer look, you can just drop the "if" check, and return "ret"
-> unconditionally. Or better, drop "ret", and just use
->
->          return rspi_dma_transfer(...);
-Thanks, I will do it as you pointed out.
+On Tuesday 28 April 2015 12:15:07 Geert Uytterhoeven wrote:
+> As of commit 9d07d414d4c33d86 ("ARM: shmobile: r8a73a4: ape6evm: Remove
+> legacy platform"), r8a73a4 is only supported in generic DT-only ARM
+> multi-platform builds.  The driver doesn't need to match platform
+> devices by name anymore, hence remove the corresponding
+> platform_device_id entry.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Hiep.
+> ---
+>  drivers/pinctrl/sh-pfc/core.c | 3 ---
+>  1 file changed, 3 deletions(-)
+> 
+> diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+> index 7b2c9495c3832410..287a3d048a5e1cf9 100644
+> --- a/drivers/pinctrl/sh-pfc/core.c
+> +++ b/drivers/pinctrl/sh-pfc/core.c
+> @@ -579,9 +579,6 @@ static int sh_pfc_remove(struct platform_device *pdev)
+>  }
+> 
+>  static const struct platform_device_id sh_pfc_id_table[] = {
+> -#ifdef CONFIG_PINCTRL_PFC_R8A73A4
+> -	{ "pfc-r8a73a4", (kernel_ulong_t)&r8a73a4_pinmux_info },
+> -#endif
+>  #ifdef CONFIG_PINCTRL_PFC_R8A7740
+>  	{ "pfc-r8a7740", (kernel_ulong_t)&r8a7740_pinmux_info },
+>  #endif
+
+-- 
+Regards,
+
+Laurent Pinchart
 
