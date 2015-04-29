@@ -1,51 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 30 Apr 2015 05:50:04 +0000
-Subject: Re: [PATCH 2/2] pinctrl: sh-pfc: Remove r8a73a4 platform_device_id entry
-Message-Id: <20150430055003.GO15511@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 29 Apr 2015 00:37:56 +0000
+Subject: [PATCH 02/10] drm: rcar-du: Document the rcar_du_plane_state structure
+Message-Id: <1430267884-20560-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430216107-31501-1-git-send-email-geert+renesas@glider.be>
- <1430216107-31501-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430216107-31501-2-git-send-email-geert+renesas@glider.be>
+References: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-On Tue, Apr 28, 2015 at 12:15:07PM +0200, Geert Uytterhoeven wrote:
-> As of commit 9d07d414d4c33d86 ("ARM: shmobile: r8a73a4: ape6evm: Remove
-> legacy platform"), r8a73a4 is only supported in generic DT-only ARM
-> multi-platform builds.  The driver doesn't need to match platform
-> devices by name anymore, hence remove the corresponding
-> platform_device_id entry.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Document the structure fields using kerneldoc.
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_plane.h | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-> ---
->  drivers/pinctrl/sh-pfc/core.c | 3 ---
->  1 file changed, 3 deletions(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-> index 7b2c9495c3832410..287a3d048a5e1cf9 100644
-> --- a/drivers/pinctrl/sh-pfc/core.c
-> +++ b/drivers/pinctrl/sh-pfc/core.c
-> @@ -579,9 +579,6 @@ static int sh_pfc_remove(struct platform_device *pdev)
->  }
->  
->  static const struct platform_device_id sh_pfc_id_table[] = {
-> -#ifdef CONFIG_PINCTRL_PFC_R8A73A4
-> -	{ "pfc-r8a73a4", (kernel_ulong_t)&r8a73a4_pinmux_info },
-> -#endif
->  #ifdef CONFIG_PINCTRL_PFC_R8A7740
->  	{ "pfc-r8a7740", (kernel_ulong_t)&r8a7740_pinmux_info },
->  #endif
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.h b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+index abff0ebeb195..5d2b764919d8 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+@@ -46,11 +46,20 @@ struct rcar_du_planes {
+ 	struct drm_property *zpos;
+ };
+ 
++/*
++ * rcar_du_plane_state - Driver-specific plane state
++ * @state: base DRM plane state
++ * @format: information about the pixel format used by the plane
++ * @hwindex: 0-based hardware plane index, -1 means unused
++ * @alpha: value of the plane alpha property
++ * @colorkey: value of the plane colorkey property
++ * @zpos: value of the plane zpos property
++ */
+ struct rcar_du_plane_state {
+ 	struct drm_plane_state state;
+ 
+ 	const struct rcar_du_format_info *format;
+-	int hwindex;		/* 0-based, -1 means unused */
++	int hwindex;
+ 
+ 	unsigned int alpha;
+ 	unsigned int colorkey;
+-- 
+2.0.5
+
