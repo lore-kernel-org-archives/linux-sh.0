@@ -1,67 +1,144 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 13 Apr 2015 10:17:41 +0000
-Subject: renesas-drivers-2015-04-13-v4.0
-Message-Id: <1428920261-8740-1-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 29 Apr 2015 00:37:58 +0000
+Subject: [PATCH 04/10] drm: rcar-du: Embed rcar_du_planes structure into rcar_du_group
+Message-Id: <1430267884-20560-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-I've pushed renesas-drivers-2015-04-13-v4.0 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+The rcar_du_planes structure contains a single field and is only
+instantiated in the rcar_du_group structure. Embed it directly and
+remove the rcar_du_planes structure.
 
-Today's version is based on renesas-devel-20150413-v4.0.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c  | 10 +++++-----
+ drivers/gpu/drm/rcar-du/rcar_du_group.h |  2 +-
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c   |  6 +++---
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c |  3 +--
+ drivers/gpu/drm/rcar-du/rcar_du_plane.h |  4 ----
+ 5 files changed, 10 insertions(+), 15 deletions(-)
 
-Included subsystem trees (the last one is new):
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.linaro.org/people/mturquette/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index 7d0b8ef9bea2..b5f66b78cbb2 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -213,8 +213,8 @@ static void rcar_du_crtc_update_planes(struct rcar_du_crtc *rcrtc)
+ 	u32 dptsr = 0;
+ 	u32 dspr = 0;
+ 
+-	for (i = 0; i < ARRAY_SIZE(rcrtc->group->planes.planes); ++i) {
+-		struct rcar_du_plane *plane = &rcrtc->group->planes.planes[i];
++	for (i = 0; i < ARRAY_SIZE(rcrtc->group->planes); ++i) {
++		struct rcar_du_plane *plane = &rcrtc->group->planes[i];
+ 		unsigned int j;
+ 
+ 		if (plane->plane.state->crtc != &rcrtc->crtc)
+@@ -427,8 +427,8 @@ void rcar_du_crtc_resume(struct rcar_du_crtc *rcrtc)
+ 	rcar_du_crtc_start(rcrtc);
+ 
+ 	/* Commit the planes state. */
+-	for (i = 0; i < ARRAY_SIZE(rcrtc->group->planes.planes); ++i) {
+-		struct rcar_du_plane *plane = &rcrtc->group->planes.planes[i];
++	for (i = 0; i < ARRAY_SIZE(rcrtc->group->planes); ++i) {
++		struct rcar_du_plane *plane = &rcrtc->group->planes[i];
+ 
+ 		if (plane->plane.state->crtc != &rcrtc->crtc)
+ 			continue;
+@@ -592,7 +592,7 @@ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int index)
+ 	rcrtc->enabled = false;
+ 
+ 	ret = drm_crtc_init_with_planes(rcdu->ddev, crtc,
+-					&rgrp->planes.planes[index % 2].plane,
++					&rgrp->planes[index % 2].plane,
+ 					NULL, &crtc_funcs);
+ 	if (ret < 0)
+ 		return ret;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.h b/drivers/gpu/drm/rcar-du/rcar_du_group.h
+index ed36433fbe84..ea02bb02f3e1 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.h
+@@ -40,7 +40,7 @@ struct rcar_du_group {
+ 
+ 	struct mutex lock;
+ 
+-	struct rcar_du_planes planes;
++	struct rcar_du_plane planes[RCAR_DU_NUM_KMS_PLANES];
+ };
+ 
+ u32 rcar_du_group_read(struct rcar_du_group *rgrp, u32 reg);
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 5fd6f8c07ec2..4012afacab5f 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -291,7 +291,7 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 		 * plane(s) as freed.
+ 		 */
+ 		if (!plane_state->format) {
+-			index = plane - plane->group->planes.planes;
++			index = plane - plane->group->planes;
+ 			group_freed_planes[plane->group->index] |= 1 << index;
+ 			plane_state->hwindex = -1;
+ 			continue;
+@@ -304,7 +304,7 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 			groups |= 1 << plane->group->index;
+ 			needs_realloc = true;
+ 
+-			index = plane - plane->group->planes.planes;
++			index = plane - plane->group->planes;
+ 			group_freed_planes[plane->group->index] |= 1 << index;
+ 			plane_state->hwindex = -1;
+ 		}
+@@ -327,7 +327,7 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 		unsigned int used_planes = 0;
+ 
+ 		for (i = 0; i < RCAR_DU_NUM_KMS_PLANES; ++i) {
+-			struct rcar_du_plane *plane = &group->planes.planes[i];
++			struct rcar_du_plane *plane = &group->planes[i];
+ 			struct rcar_du_plane_state *plane_state;
+ 			struct drm_plane_state *s;
+ 
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index b5565417f673..99fefcaf6597 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -389,7 +389,6 @@ static const uint32_t formats[] = {
+ 
+ int rcar_du_planes_init(struct rcar_du_group *rgrp)
+ {
+-	struct rcar_du_planes *planes = &rgrp->planes;
+ 	struct rcar_du_device *rcdu = rgrp->dev;
+ 	unsigned int num_planes;
+ 	unsigned int num_crtcs;
+@@ -409,7 +408,7 @@ int rcar_du_planes_init(struct rcar_du_group *rgrp)
+ 		enum drm_plane_type type = i < num_crtcs
+ 					 ? DRM_PLANE_TYPE_PRIMARY
+ 					 : DRM_PLANE_TYPE_OVERLAY;
+-		struct rcar_du_plane *plane = &planes->planes[i];
++		struct rcar_du_plane *plane = &rgrp->planes[i];
+ 
+ 		plane->group = rgrp;
+ 
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.h b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+index 9e8d13a27fc0..86716c856791 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+@@ -38,10 +38,6 @@ static inline struct rcar_du_plane *to_rcar_plane(struct drm_plane *plane)
+ 	return container_of(plane, struct rcar_du_plane, plane);
+ }
+ 
+-struct rcar_du_planes {
+-	struct rcar_du_plane planes[RCAR_DU_NUM_KMS_PLANES];
+-};
+-
+ /*
+  * rcar_du_plane_state - Driver-specific plane state
+  * @state: base DRM plane state
+-- 
+2.0.5
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
