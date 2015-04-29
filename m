@@ -1,28 +1,48 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 30 Apr 2015 14:19:25 +0000
-Subject: Re: [PATCH 06/11] ARM: shmobile: r8a7793: add SMP support
-Message-Id: <CAO3366y1Sxf7SV9DTJ8HFqZGyt4RYqf8v_4syDgtEL63dCc2GA@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 29 Apr 2015 00:37:55 +0000
+Subject: [PATCH 01/10] drm: rcar-du: Document the rcar_du_crtc structure
+Message-Id: <1430267884-20560-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1425661798-10487-7-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1425661798-10487-7-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-On Sat, Mar 7, 2015 at 1:08 AM, Simon Horman <horms@verge.net.au> wrote:
->> --- /dev/null
->> +++ b/arch/arm/mach-shmobile/smp-r8a7793.c
->> @@ -0,0 +1,69 @@
-[...]
->> +static struct rcar_apmu_config r8a7793_apmu_config[] = {
->> +     {
->> +             .iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
->
-> The above seems inconsistent with the r8a7791 where
-> 0x188 is used as the size of the resource.
+Document the structure fields using kerneldoc.
 
-The resource is larger on the r8a7791 because it has more cores.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.h | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-CU
-Uli
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
+index 5d9aa9b33769..e72f15c8c706 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.h
+@@ -22,6 +22,20 @@
+ 
+ struct rcar_du_group;
+ 
++/*
++ * rcar_du_crtc - the CRTC, representing a DU superposition processor
++ * @crtc: base DRM CRTC
++ * @clock: the CRTC functional clock
++ * @extclock: external pixel dot clock (optional)
++ * @mmio_offset: offset of the CRTC registers in the DU MMIO block
++ * @index: CRTC software and hardware index
++ * @started: whether the CRTC has been started and is running
++ * @event: event to post when the pending page flip completes
++ * @flip_wait: wait queue used to signal page flip completion
++ * @outputs: bitmask of the outputs (enum rcar_du_output) driven by this CRTC
++ * @enabled: whether the CRTC is enabled, used to control system resume
++ * @group: CRTC group this CRTC belongs to
++ */
+ struct rcar_du_crtc {
+ 	struct drm_crtc crtc;
+ 
+-- 
+2.0.5
+
