@@ -1,37 +1,77 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 30 Apr 2015 14:19:01 +0000
-Subject: [PATCH v2 12/15] mmc: sh_mmcif: Document r8a7793 DT bindings
-Message-Id: <1430403544-26742-13-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 29 Apr 2015 00:38:02 +0000
+Subject: [PATCH 08/10] drm: rcar-du: Consider plane to CRTC associations in the plane allocator
+Message-Id: <1430267884-20560-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+References: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org, horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, Ulrich Hecht <ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Ulf Hansson <ulf.hansson-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: devicetree@vger.kernel.org
+Hardware planes are driven by the timing generator of the CRTC they are
+associated to. Changing the association requires restarting the CRTC
+group that the plane belongs to, resulting in flicker on the other CRTC.
+
+To avoid flicker as much as possible, try to allocate planes first from
+the free planes already associated with the target CRTC. If allocation
+fails then fall back to allocation from all free planes.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- Documentation/devicetree/bindings/mmc/renesas,mmcif.txt | 1 +
- 1 file changed, 1 insertion(+)
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c | 22 +++++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-index 299081f..3b9422b 100644
---- a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-+++ b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-@@ -10,6 +10,7 @@ Required properties:
- 	- "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
- 	- "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
- 	- "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
-+	- "renesas,mmcif-r8a7793" for the MMCIF found in r8a7793 SoCs
- 	- "renesas,sh-mmcif" for the generic MMCIF
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index ade135008e98..2c6cf691d163 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -383,6 +383,8 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 	for (i = 0; i < dev->mode_config.num_total_plane; ++i) {
+ 		struct rcar_du_plane_state *plane_state;
+ 		struct rcar_du_plane *plane;
++		unsigned int crtc_planes;
++		unsigned int free;
+ 		int idx;
  
- - clocks: reference to the functional clock
+ 		if (!state->planes[i])
+@@ -401,8 +403,21 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 		    !rcar_du_plane_needs_realloc(plane, plane_state))
+ 			continue;
+ 
++		/* Try to allocate the plane from the free planes currently
++		 * associated with the target CRTC to avoid restarting the CRTC
++		 * group and thus minimize flicker. If it fails fall back to
++		 * allocating from all free planes.
++		 */
++		crtc_planes = to_rcar_crtc(plane_state->state.crtc)->index % 2
++			    ? plane->group->dptsr_planes
++			    : ~plane->group->dptsr_planes;
++		free = group_free_planes[plane->group->index];
++
+ 		idx = rcar_du_plane_hwalloc(plane_state->format->planes,
+-					group_free_planes[plane->group->index]);
++					    free & crtc_planes);
++		if (idx < 0)
++			idx = rcar_du_plane_hwalloc(plane_state->format->planes,
++						    free);
+ 		if (idx < 0) {
+ 			dev_dbg(rcdu->dev, "%s: no available hardware plane\n",
+ 				__func__);
+@@ -749,6 +764,11 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
+ 		rgrp->mmio_offset = mmio_offsets[i];
+ 		rgrp->index = i;
+ 
++		/* Pre-associate all hardware planes with the first CRTC in the
++		 * group.
++		 */
++		rgrp->dptsr_planes = 0;
++
+ 		ret = rcar_du_planes_init(rgrp);
+ 		if (ret < 0)
+ 			return ret;
 -- 
-2.3.5
+2.0.5
 
