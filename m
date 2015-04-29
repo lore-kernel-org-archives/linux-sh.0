@@ -1,86 +1,262 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 08 Apr 2015 08:22:01 +0000
-Subject: RE: [PATCH v2 2/2] ARM: shmobile: r8a7791: Enable DMA for HSUSB
-Message-Id: <HKNPR06MB3224A777FF63989453C3844D8FC0@HKNPR06MB322.apcprd06.prod.outlook.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 29 Apr 2015 19:10:38 +0000
+Subject: Re: [PATCH/RFC] v4l: vsp1: Fix Suspend-to-RAM
+Message-Id: <1823698.5Nvuu0NHzD@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428393231-5272-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-	<1428393231-5272-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-	<CAMuHMdXu46NK37gcweCz_XTABUJw6kN0fnyxmmGeL9cGRWdJdg@mail.gmail.com>
-	<HKNPR06MB32242AD4C51E1F939E780ACD8FC0@HKNPR06MB322.apcprd06.prod.outlook.com>
- <CAMuHMdUvkt4LrSkJhCT1k-YF-FUS4f2QByTJeCsVGqmjSXYB-A@mail.gmail.com>
-In-Reply-To: <CAMuHMdUvkt4LrSkJhCT1k-YF-FUS4f2QByTJeCsVGqmjSXYB-A@mail.gmail.com>
+References: <1426429987-3134-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1426429987-3134-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Russell King <linux@arm.linux.org.uk>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-arm-kernel@vger.kernel.org" <linux-arm-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, Simon Horman <horms@verge.net.au>
+Cc: linux-media@vger.kernel.org, Mauro Carvalho Chehab <m.chehab@samsung.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-SGkgR2VlcnQtc2FuLA0KDQo+IEhpIFNoaW1vZGEtc2FuLA0KPiANCj4gT24gV2VkLCBBcHIgOCwg
-MjAxNSBhdCA0OjIwIEFNLCBZb3NoaWhpcm8gU2hpbW9kYQ0KPiA8eW9zaGloaXJvLnNoaW1vZGEu
-dWhAcmVuZXNhcy5jb20+IHdyb3RlOg0KPiA+PiBPbiBUdWUsIEFwciA3LCAyMDE1IGF0IDk6NTMg
-QU0sIFlvc2hpaGlybyBTaGltb2RhDQo+ID4+IDx5b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2Fz
-LmNvbT4gd3JvdGU6DQo+ID4+ID4gZGlmZiAtLWdpdCBhL2FyY2gvYXJtL2Jvb3QvZHRzL3I4YTc3
-OTEuZHRzaSBiL2FyY2gvYXJtL2Jvb3QvZHRzL3I4YTc3OTEuZHRzaQ0KPiA+PiA+IGluZGV4IGRi
-Mzc3MmUuLjVmMjBhZDQgMTAwNjQ0DQo+ID4+ID4gLS0tIGEvYXJjaC9hcm0vYm9vdC9kdHMvcjhh
-Nzc5MS5kdHNpDQo+ID4+ID4gKysrIGIvYXJjaC9hcm0vYm9vdC9kdHMvcjhhNzc5MS5kdHNpDQo+
-ID4+ID4gQEAgLTcyMiw2ICs3MjIsOSBAQA0KPiA+PiA+ICAgICAgICAgICAgICAgICByZW5lc2Fz
-LGJ1c3dhaXQgPSA8ND47DQo+ID4+ID4gICAgICAgICAgICAgICAgIHBoeXMgPSA8JnVzYjAgMT47
-DQo+ID4+ID4gICAgICAgICAgICAgICAgIHBoeS1uYW1lcyA9ICJ1c2IiOw0KPiA+PiA+ICsgICAg
-ICAgICAgICAgICBkbWFzID0gPCZ1c2JfZG1hYzAgMD4sIDwmdXNiX2RtYWMwIDE+LA0KPiA+PiA+
-ICsgICAgICAgICAgICAgICAgICAgICAgPCZ1c2JfZG1hYzEgMD4sIDwmdXNiX2RtYWMxIDE+Ow0K
-PiA+PiA+ICsgICAgICAgICAgICAgICBkbWEtbmFtZXMgPSAicngwIiwgInR4MSIsICJyeDIiLCAi
-dHgzIjsNCj4gPj4NCj4gPj4gVGhlIG51bWJlcmluZyBsb29rcyBhIGJpdCBzdHJhbmdlLCBnaXZl
-biB0aGUgY29kZSBsb29rcyB1cCBib3RoIHR4IGFuZCByeA0KPiA+PiBETUEgY2hhbm5lbHMgZm9y
-IGVhY2ggY2hhbm5lbCBpbmRleC4gSXMgaXQgY29ycmVjdD8NCj4gPj4NCj4gPj4gVGhlIGJpbmRp
-bmcgZG9jdW1lbnRhdGlvbiAod2hpY2ggbGFja3Mgb24gZXhhbXBsZSkgc3RhdGVzOg0KPiA+Pg0K
-PiA+PiAgIC0gZG1hLW5hbWVzIDogTXVzdCBjb250YWluIGEgbGlzdCBvZiBETUEgbmFtZXM6DQo+
-ID4+ICAgIC0gdHgwIC4uLiB0eDxuPg0KPiA+PiAgICAtIHJ4MCAuLi4gcng8bj4NCj4gPj4gICAg
-IC0gVGhpcyA8bj4gbWVhbnMgRG5GSUZPIGluIFVTQkhTIG1vZHVsZS4NCj4gPj4NCj4gPj4gQXMg
-dGhlcmUgYXJlIDQgRG5GSUZPcywgSSdkIGV4cGVjdCB0eDAuLnR4MyBhbmQgcngwLi5yeDMuDQo+
-ID4+DQo+ID4+IENhbiB5b3UgcGxlYXNlIGNsYXJpZnk/DQo+ID4NCj4gPiBJIHdyb3RlIHNvbWUg
-aW5mb3JtYXRpb24gYmVsb3cuDQo+ID4gQnV0LCBzaW5jZSBpdCBpcyBjb21wbGV4IGhhcmR3YXJl
-LCBJIGRvbid0IGtub3cgSSBjYW4gZXhwbGFpbiB0aGlzIGFzIHdlbGwuLi4NCj4gPg0KPiA+IEF0
-IGZpcnN0LCBSLUNhciBHZW4yIGhhcyAyIFVTQi1ETUFDcyBhbmQgNCBjaGFubmVsczoNCj4gPiAg
-VVNCLURNQUMgMDogY2gwDQo+ID4gIFVTQi1ETUFDIDA6IGNoMQ0KPiA+ICBVU0ItRE1BQyAxOiBj
-aDANCj4gPiAgVVNCLURNQUMgMTogY2gxDQo+ID4gUmVtYXJrczogSSBkb24ndCBrbm93IHdoeSBi
-dXQgcGVyZm9ybWFuY2Ugb2YgVVNCLURNQUMgMCBpcyBnb29kIHRoYW4gVVNCLURNQUMgMS4NCj4g
-PiAgICAgICAgICAgKFBsZWFzZSByZWZlciB0byB0aGUgVGFibGUgNjQuMSBvZiB0aGUgZGF0YXNo
-ZWV0LikNCj4gPg0KPiA+IFNvLCBJIHdyb3RlIGRtYXMgcGFyYW1ldGVyIGluIGhzdXNiIGFzIHRo
-ZSBmb2xsb3dpbmc6DQo+ID4NCj4gPj4gPiArICAgICAgICAgICAgICAgZG1hcyA9IDwmdXNiX2Rt
-YWMwIDA+LCA8JnVzYl9kbWFjMCAxPiwNCj4gPj4gPiArICAgICAgICAgICAgICAgICAgICAgIDwm
-dXNiX2RtYWMxIDA+LCA8JnVzYl9kbWFjMSAxPjsNCj4gPg0KPiA+IEFuZCwgUi1DYXIgR2VuMiBo
-YXMgNCBEbkZJRk9zIGluIEhTVVNCLiB0byBhdm9pZCBjb21wbGV4IGhhbmRsaW5nIGZvciBEbkZJ
-Rk9zLA0KPiA+IHRoZSByZW5lc2FzX3VzYmhzIGRyaXZlciB1c2VzIGVhY2ggRG5GSUZPIGFzIFRY
-IG9yIFJYIGRpcmVjdGlvbiAobm90IGJpLWRpcmVjdGlvbikuDQo+ID4gU28sIEkgd3JvdGUgZG1h
-LW5hbWVzIHBhcmFtZXRlciBhcyB0aGUgZm9sbG93aW5nOg0KPiA+DQo+ID4+ID4gKyAgICAgICAg
-ICAgICAgIGRtYS1uYW1lcyA9ICJyeDAiLCAidHgxIiwgInJ4MiIsICJ0eDMiOw0KPiA+DQo+ID4g
-LSBEMEZJRk8gYXMgUlggKEFsc28gaXQgaXMgY29ubmVjdGVkIHRvIFVTQi1ETUFDIDA6IGNoMCkN
-Cj4gPiAtIEQxRklGTyBhcyBUWCAoQWxzbyBpdCBpcyBjb25uZWN0ZWQgdG8gVVNCLURNQUMgMDog
-Y2gxKQ0KPiA+IC0gRDJGSUZPIGFzIFJYIChBbHNvIGl0IGlzIGNvbm5lY3RlZCB0byBVU0ItRE1B
-QyAxOiBjaDApDQo+ID4gLSBEM0ZJRk8gYXMgVFggKEFsc28gaXQgaXMgY29ubmVjdGVkIHRvIFVT
-Qi1ETUFDIDE6IGNoMSkNCj4gDQo+IFRoYW5rcyBmb3IgdGhlIGV4cGxhbmF0aW9uIQ0KPiANCj4g
-SGVuY2UgdGhlICJzdHJhbmdlIiBudW1iZXJpbmcgaXMgYSBsaW1pdGF0aW9uIG9mIHRoZSBkcml2
-ZXIsIG5vdCBvZiB0aGUNCj4gaGFyZHdhcmU/DQoNClRoYW5rIHlvdSBmb3IgdGhlIHBvaW50ISBU
-aGF0J3MgY29ycmVjdC4NCg0KPiBJbiB0aGF0IGNhc2UgSSB0aGluayB0aGUgRFQgc2hvdWxkIGRl
-c2NyaWJlIHRoZSBoYXJkd2FyZSwgbm90IHRoZSBkcml2ZXINCj4gbGltaXRhdGlvbi4gQXMgdGhl
-IEZJRk9zIGFyZSBiaWRpcmVjdGlvbmFsLCB0aGVyZSdzIGp1c3QgYSBvbmUtdG8tb25lIG1hcHBp
-bmcNCj4gb2YgNCBEbkZJRk9zIHRvIDQgKDIgY2hhbm5lbHMgeCAyIERNQUNzKSBETUEgY2hhbm5l
-bHMuDQoNCkkgdW5kZXJzdG9vZCBpdC4NCihTb21ldGltZXMgSSBmb3JnZXQgdGhhdCB0aGUgRFQg
-c2hvdWxkIGRlc2NyaWJlIHRoZSBoYXJkd2FyZS4uLikNCg0KPiBXaGljaCBEbkZJRk8vY2hhbm5l
-bCBpcyB1c2VkIGZvciBUWCBhbmQgd2hpY2ggaXMgdXNlZCBmb3IgUlggaXMgdG8gYmUgY2hvc2Vu
-DQo+IGJ5IHRoZSBkcml2ZXIsIGFuZCBjYW4gYmUgZml4ZWQgKGUuZy4gdXNlIGV2ZW4gY2hhbm5l
-bHMgZm9yIFJYLCBvZGQgZm9yDQo+IFRYLCBsaWtlIHRoZSBjdXJyZW50IHNpdHVhdGlvbikuDQo+
-IA0KPiBXaGF0IGRvIHlvdSAoYW5kIG90aGVyIHBlb3BsZSkgdGhpbms/DQoNClRoYW5rIHlvdSBm
-b3IgdGhlIHN1Z2dlc3Rpb24hDQpJIHdpbGwgbW9kaWZ5IHRoZSByZW5lc2FzX3VzYmhzIGRyaXZl
-ci4NCkFsc28gSSB3b3VsZCBsaWtlIHRvIHJldmlzZSB0aGUgYmluZGluZyBkb2N1bWVudGF0aW9u
-IGFzIHRoZSBmb2xsb3dpbmc6DQoNCi0gZG1hLW5hbWVzIDogbmFtZWQgImNoJXUiLCB3aGVyZSAl
-dSBpcyB0aGUgY2hhbm5lbCBudW1iZXIgcmFuZ2luZyBmcm9tIHplcm8NCiAgICAgICAgICAgICAg
-dG8gdGhlIG51bWJlciBvZiBjaGFubmVscyAoRG5GSUZPcykgbWludXMgb25lLg0KDQpCZXN0IHJl
-Z2FyZHMsDQpZb3NoaWhpcm8gU2hpbW9kYQ0KDQo+IEdye29ldGplLGVldGluZ31zLA0KPiANCj4g
-ICAgICAgICAgICAgICAgICAgICAgICAgR2VlcnQNCj4gDQo+IC0tDQo+IEdlZXJ0IFV5dHRlcmhv
-ZXZlbiAtLSBUaGVyZSdzIGxvdHMgb2YgTGludXggYmV5b25kIGlhMzIgLS0gZ2VlcnRAbGludXgt
-bTY4ay5vcmcNCj4gDQo+IEluIHBlcnNvbmFsIGNvbnZlcnNhdGlvbnMgd2l0aCB0ZWNobmljYWwg
-cGVvcGxlLCBJIGNhbGwgbXlzZWxmIGEgaGFja2VyLiBCdXQNCj4gd2hlbiBJJ20gdGFsa2luZyB0
-byBqb3VybmFsaXN0cyBJIGp1c3Qgc2F5ICJwcm9ncmFtbWVyIiBvciBzb21ldGhpbmcgbGlrZSB0
-aGF0Lg0KPiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC0tIExpbnVzIFRvcnZhbGRz
-DQo
+Hello Kaneko-san,
+
+I'm so sorry for the very late reply, I had missed your patch :-/
+
+First of all, thank you for the patch. Please see below for a few comments.
+
+On Sunday 15 March 2015 23:33:07 Yoshihiro Kaneko wrote:
+> From: Sei Fumizono <sei.fumizono.jw@hitachi-solutions.com>
+> 
+> Fix Suspend-to-RAM
+> so that VSP1 driver continues to work after resuming.
+> 
+> In detail,
+>   - Fix the judgment of ref count in resuming.
+>   - Add stopping VSP1 during suspend.
+
+That's two fixes, I believe they should be split in two patches, one to fix 
+the ref_count bug at resume time, and the other one to stop/restart the video 
+stream.
+
+> Signed-off-by: Sei Fumizono <sei.fumizono.jw@hitachi-solutions.com>
+> Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> ---
+> 
+> This patch is based on the master branch of linuxtv.org/media_tree.git.
+> 
+>  drivers/media/platform/vsp1/vsp1_drv.c   | 39 +++++++++++++++++++++++++----
+>  drivers/media/platform/vsp1/vsp1_video.c | 31 ++++++++++++++++++++++++-
+>  drivers/media/platform/vsp1/vsp1_video.h |  5 +++-
+>  3 files changed, 69 insertions(+), 6 deletions(-)
+> 
+> diff --git a/drivers/media/platform/vsp1/vsp1_drv.c
+> b/drivers/media/platform/vsp1/vsp1_drv.c index 913485a..b6e9cbc 100644
+> --- a/drivers/media/platform/vsp1/vsp1_drv.c
+> +++ b/drivers/media/platform/vsp1/vsp1_drv.c
+> @@ -1,7 +1,7 @@
+>  /*
+>   * vsp1_drv.c  --  R-Car VSP1 Driver
+>   *
+> - * Copyright (C) 2013-2014 Renesas Electronics Corporation
+> + * Copyright (C) 2013-2015 Renesas Electronics Corporation
+>   *
+>   * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
+>   *
+> @@ -397,26 +397,57 @@ void vsp1_device_put(struct vsp1_device *vsp1)
+>  static int vsp1_pm_suspend(struct device *dev)
+>  {
+>  	struct vsp1_device *vsp1 = dev_get_drvdata(dev);
+> +	unsigned int i = 0;
+
+There's no need to initialize i to 0 here, the for loop takes care of it.
+
+> +	int ret = 0;
+> 
+>  	WARN_ON(mutex_is_locked(&vsp1->lock));
+> 
+>  	if (vsp1->ref_count = 0)
+>  		return 0;
+> 
+> +	/* Suspend pipeline */
+> +	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
+> +		struct vsp1_rwpf *wpf = vsp1->wpf[i];
+> +		struct vsp1_pipeline *pipe;
+> +
+> +		if (wpf = NULL)
+> +			continue;
+> +
+> +		pipe = to_vsp1_pipeline(&wpf->entity.subdev.entity);
+> +		ret = vsp1_pipeline_suspend(pipe);
+> +		if (ret < 0)
+> +			break;
+> +	}
+
+This will stop all running pipelines sequentially, which would increase the 
+system suspend time quite a bit if all pipelines are running. I would instead 
+first set the state of all pipelines to VSP1_PIPELINE_STOPPING in one loop, 
+and then loop over all pipelines again to wait for them to finish. Something 
+like
+
+	/* To avoid increasing the system suspend time needlessly, loop over the
+	 * pipelines twice, first to set them all to the stopping state, and then
+	 * to wait for the stop to complete.
+	 */
+	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
+		struct vsp1_rwpf *wpf = vsp1->wpf[i];
+		struct vsp1_pipeline *pipe;
+
+		if (wpf = NULL)
+			continue;
+
+		pipe = to_vsp1_pipeline(&wpf->entity.subdev.entity);
+		if (pipe = NULL)
+			continue;
+
+		spin_lock_irqsave(&pipe->irqlock, flags);
+		if (pipe->state = VSP1_PIPELINE_RUNNING)
+			pipe->state = VSP1_PIPELINE_STOPPING;
+		spin_unlock_irqrestore(&pipe->irqlock, flags);
+	}
+
+	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
+		struct vsp1_rwpf *wpf = vsp1->wpf[i];
+		struct vsp1_pipeline *pipe;
+
+		if (wpf = NULL)
+			continue;
+
+		pipe = to_vsp1_pipeline(&wpf->entity.subdev.entity);
+		if (pipe = NULL)
+			continue;
+
+		ret = wait_event_timeout(pipe->wq,
+				pipe->state = VSP1_PIPELINE_STOPPED,
+                  msecs_to_jiffies(500));
+		if (ret = 0)
+			dev_warn(vsp1->dev, "pipeline stop timeout\n");
+	}
+
+You could move all that code to a vsp1_pipelines_suspend() function in 
+vsp1_video.c.
+
+I've only printed a warning message instead of returning an error in case the 
+pipeline fails to stop, as I believe it shouldn't prevent the system from 
+entering suspend.
+
+> +
+>  	clk_disable_unprepare(vsp1->clock);
+> -	return 0;
+> +	return ret;
+>  }
+> 
+>  static int vsp1_pm_resume(struct device *dev)
+>  {
+>  	struct vsp1_device *vsp1 = dev_get_drvdata(dev);
+> +	unsigned int i = 0;
+
+There's no need to initialize i to 0 here either.
+
+>  	WARN_ON(mutex_is_locked(&vsp1->lock));
+> 
+> -	if (vsp1->ref_count)
+> +	if (vsp1->ref_count = 0)
+>  		return 0;
+> 
+> -	return clk_prepare_enable(vsp1->clock);
+> +	clk_prepare_enable(vsp1->clock);
+> +
+> +	/* Resume pipeline */
+> +	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
+> +		struct vsp1_rwpf *wpf = vsp1->wpf[i];
+> +		struct vsp1_pipeline *pipe;
+> +
+> +		if (wpf = NULL)
+> +			continue;
+> +
+> +		pipe = to_vsp1_pipeline(&wpf->entity.subdev.entity);
+> +		vsp1_pipeline_resume(pipe);
+> +	}
+
+If you move the suspend code to a vsp1_pipelines_suspend() function, I believe 
+it would make sense to move that loop to a vsp1_pipelines_resume() function as 
+well. I would then just move to code from vsp1_pipeline_resume() inside the 
+loop.
+
+Would you like to submit a new version of this patch (split in two) ? I can 
+also perform the modifications myself if you prefer.
+
+> +
+> +	return 0;
+>  }
+>  #endif
+> 
+> diff --git a/drivers/media/platform/vsp1/vsp1_video.c
+> b/drivers/media/platform/vsp1/vsp1_video.c index d91f19a..c744608 100644
+> --- a/drivers/media/platform/vsp1/vsp1_video.c
+> +++ b/drivers/media/platform/vsp1/vsp1_video.c
+> @@ -1,7 +1,7 @@
+>  /*
+>   * vsp1_video.c  --  R-Car VSP1 Video Node
+>   *
+> - * Copyright (C) 2013-2014 Renesas Electronics Corporation
+> + * Copyright (C) 2013-2015 Renesas Electronics Corporation
+>   *
+>   * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
+>   *
+> @@ -662,6 +662,35 @@ done:
+>  	spin_unlock_irqrestore(&pipe->irqlock, flags);
+>  }
+> 
+> +int vsp1_pipeline_suspend(struct vsp1_pipeline *pipe)
+> +{
+> +	unsigned long flags;
+> +	int ret;
+> +
+> +	if (pipe = NULL)
+> +		return 0;
+> +
+> +	spin_lock_irqsave(&pipe->irqlock, flags);
+> +	if (pipe->state = VSP1_PIPELINE_RUNNING)
+> +		pipe->state = VSP1_PIPELINE_STOPPING;
+> +	spin_unlock_irqrestore(&pipe->irqlock, flags);
+> +
+> +	ret = wait_event_timeout(pipe->wq, pipe->state = VSP1_PIPELINE_STOPPED,
+> +				 msecs_to_jiffies(500));
+> +	ret = ret = 0 ? -ETIMEDOUT : 0;
+> +
+> +	return ret;
+> +}
+> +
+> +void vsp1_pipeline_resume(struct vsp1_pipeline *pipe)
+> +{
+> +	if (pipe = NULL)
+> +		return;
+> +
+> +	if (vsp1_pipeline_ready(pipe))
+> +		vsp1_pipeline_run(pipe);
+> +}
+> +
+>  /*
+>   * Propagate the alpha value through the pipeline.
+>   *
+> diff --git a/drivers/media/platform/vsp1/vsp1_video.h
+> b/drivers/media/platform/vsp1/vsp1_video.h index fd2851a..958a166 100644
+> --- a/drivers/media/platform/vsp1/vsp1_video.h
+> +++ b/drivers/media/platform/vsp1/vsp1_video.h
+> @@ -1,7 +1,7 @@
+>  /*
+>   * vsp1_video.h  --  R-Car VSP1 Video Node
+>   *
+> - * Copyright (C) 2013-2014 Renesas Electronics Corporation
+> + * Copyright (C) 2013-2015 Renesas Electronics Corporation
+>   *
+>   * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
+>   *
+> @@ -149,4 +149,7 @@ void vsp1_pipeline_propagate_alpha(struct vsp1_pipeline
+> *pipe, struct vsp1_entity *input,
+>  				   unsigned int alpha);
+> 
+> +int vsp1_pipeline_suspend(struct vsp1_pipeline *pipe);
+> +void vsp1_pipeline_resume(struct vsp1_pipeline *pipe);
+> +
+>  #endif /* __VSP1_VIDEO_H__ */
+
+-- 
+Regards,
+
+Laurent Pinchart
+
