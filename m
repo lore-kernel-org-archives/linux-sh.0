@@ -1,93 +1,124 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 27 Apr 2015 12:43:35 +0000
-Subject: [PATCH/RFC v6 0/7] PM / Domains: DT power-on/off and QoS device latencies
-Message-Id: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 29 Apr 2015 00:38:00 +0000
+Subject: [PATCH 06/10] drm: rcar-du: Add plane allocation debugging
+Message-Id: <1430267884-20560-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Kevin Hilman <khilman@kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>, Axel Haslam <ahaslam@baylibre.com>
-Cc: linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-	Hi all,
+Plane allocation is a complex process, add debugging statements to help
+finding out what could might wrong.
 
-This patch series is an RFC to add (1) PM Domain power-on/off latencies
-and (2) QoS device latencies to DT.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c | 38 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 37 insertions(+), 1 deletion(-)
 
-To provide a good quality of service, the PM subsystem suspends PM
-Domains and devices only if this doesn't break QoS constraints.  While
-the PM subsystem performs measurements of the various latencies
-involved, and adapts automatically according to these measurements, it's
-still beneficial to provide initial values for these latencies.
-Currently these initial values, which are properties of the hardware,
-can only be specified from C code. This RFC adds DT support for
-specifying them.
-
-All of these patches have been sent before (change logs are available in
-the individual patches). I'm resending them upon request from Kevin
-Hilman, and synced them all to the same version number (v6).
-
-  - Patch 1 adds DT bindings for PM Domain power-on/off latencies,
-  - Patches 2 and 3 update the DT bindings and support code for the
-    Renesas R-Mobile system controller, providing a sample
-    implementation,
-  - Patch 4 adds DT bindings for QoS device latencies,
-  - Patches 5 and 6 implement retrieving the QoS device latencies in the
-    genpd code,
-  - Patch 7 updates the DT bindings for the Renesas R-Mobile system
-    controller, adding an example.
-
-Compared to previous submissions, I've left out the (preliminary)
-patches adding the actual latency values to the .dtsi files, as they
-just used a single default value taken from the legacy code[*].
-
-In the mean time, support for PM Domains with multiple states has been
-proposed, cfr. "[RFC v5 0/8]  genpd multiple states v5"
-(http://marc.info/?l=linux-pm&m2989694214237&w=2).
-If this is accepted, I think we have to rethink how to specify PM Domain
-latencies (and be happy we didn't have the DT part cast in stone yet
-;-), as they won't be limited to power-on/off latencies anymore.
-
-Perhaps we should switch to a mechanism similar to what's used for idle
-states (cfr. Documentation/devicetree/bindings/arm/idle-states.txt)?
-I.e. a single "idle-states" node, with subnodes for each state, being
-pointed to by phandles in the actual PM domain provider nodes.
-
-What do you think?  Thanks for your comments!
-
-Geert Uytterhoeven (7):
-  [RFC] PM / Domains: Add DT bindings for power-on/off latencies
-  [RFC] PM / Domains: R-Mobile SYSC: Add PM domain power-on/off
-    latencies
-  [RFC] ARM: shmobile: R-Mobile: Add support for PM domain power-on/off
-    latencies
-  [RFC] PM / Domains: Add DT bindings for PM QoS device latencies
-  [RFC] PM / Domains: Add helper variable np = dev->of_node
-  [RFC] PM / Domains: Retrieve PM QoS device latencies from DT
-  [RFC] PM / Domains: R-Mobile SYSC: Add PM QoS device latencies
-
- .../devicetree/bindings/power/power_domain.txt     | 18 ++++++++++++++++--
- .../bindings/power/renesas,sysc-rmobile.txt        | 13 ++++++++++++-
- arch/arm/mach-shmobile/pm-rmobile.c                |  5 +++++
- drivers/base/power/domain.c                        | 22 +++++++++++++++-------
- 4 files changed, 48 insertions(+), 10 deletions(-)
-
-[*] I did perform some real latency measurements a while ago, which was
-    complicated by two things:
-      1. The ktime_get() based timing were not sufficiently accurate, so
-	 I hacked up measurement code using the ARM cycle timer,
-      2. The latency values fluctuate a lot, and are impacted by other
-	 system activity.
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 14d457047c40..ade135008e98 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -286,11 +286,16 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 		plane = to_rcar_plane(state->planes[i]);
+ 		plane_state = to_rcar_plane_state(state->plane_states[i]);
+ 
++		dev_dbg(rcdu->dev, "%s: checking plane (%u,%u)\n", __func__,
++			plane->group->index, plane - plane->group->planes);
++
+ 		/* If the plane is being disabled we don't need to go through
+ 		 * the full reallocation procedure. Just mark the hardware
+ 		 * plane(s) as freed.
+ 		 */
+ 		if (!plane_state->format) {
++			dev_dbg(rcdu->dev, "%s: plane is being disabled\n",
++				__func__);
+ 			index = plane - plane->group->planes;
+ 			group_freed_planes[plane->group->index] |= 1 << index;
+ 			plane_state->hwindex = -1;
+@@ -301,6 +306,8 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 		 * mark the hardware plane(s) as free.
+ 		 */
+ 		if (rcar_du_plane_needs_realloc(plane, plane_state)) {
++			dev_dbg(rcdu->dev, "%s: plane needs reallocation\n",
++				__func__);
+ 			groups |= 1 << plane->group->index;
+ 			needs_realloc = true;
+ 
+@@ -326,6 +333,9 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 		struct rcar_du_group *group = &rcdu->groups[index];
+ 		unsigned int used_planes = 0;
+ 
++		dev_dbg(rcdu->dev, "%s: finding free planes for group %u\n",
++			__func__, index);
++
+ 		for (i = 0; i < RCAR_DU_NUM_KMS_PLANES; ++i) {
+ 			struct rcar_du_plane *plane = &group->planes[i];
+ 			struct rcar_du_plane_state *plane_state;
+@@ -342,15 +352,31 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 			 * above. Use the local freed planes list to check for
+ 			 * that condition instead.
+ 			 */
+-			if (group_freed_planes[index] & (1 << i))
++			if (group_freed_planes[index] & (1 << i)) {
++				dev_dbg(rcdu->dev,
++					"%s: plane (%u,%u) has been freed, skipping\n",
++					__func__, plane->group->index,
++					plane - plane->group->planes);
+ 				continue;
++			}
+ 
+ 			plane_state = to_rcar_plane_state(plane->plane.state);
+ 			used_planes |= rcar_du_plane_hwmask(plane_state);
++
++			dev_dbg(rcdu->dev,
++				"%s: plane (%u,%u) uses %u hwplanes (index %d)\n",
++				__func__, plane->group->index,
++				plane - plane->group->planes,
++				plane_state->format ?
++				plane_state->format->planes : 0,
++				plane_state->hwindex);
+ 		}
+ 
+ 		group_free_planes[index] = 0xff & ~used_planes;
+ 		groups &= ~(1 << index);
++
++		dev_dbg(rcdu->dev, "%s: group %u free planes mask 0x%02x\n",
++			__func__, index, group_free_planes[index]);
+ 	}
+ 
+ 	/* Reallocate hardware planes for each plane that needs it. */
+@@ -365,6 +391,9 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 		plane = to_rcar_plane(state->planes[i]);
+ 		plane_state = to_rcar_plane_state(state->plane_states[i]);
+ 
++		dev_dbg(rcdu->dev, "%s: allocating plane (%u,%u)\n", __func__,
++			plane->group->index, plane - plane->group->planes);
++
+ 		/* Skip planes that are being disabled or don't need to be
+ 		 * reallocated.
+ 		 */
+@@ -380,10 +409,17 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 			return idx;
+ 		}
+ 
++		dev_dbg(rcdu->dev, "%s: allocated %u hwplanes (index %u)\n",
++			__func__, plane_state->format->planes, idx);
++
+ 		plane_state->hwindex = idx;
+ 
+ 		group_free_planes[plane->group->index] & 			~rcar_du_plane_hwmask(plane_state);
++
++		dev_dbg(rcdu->dev, "%s: group %u free planes mask 0x%02x\n",
++			__func__, plane->group->index,
++			group_free_planes[plane->group->index]);
+ 	}
+ 
+ 	return 0;
 -- 
-1.9.1
+2.0.5
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
