@@ -1,43 +1,49 @@
-From: Russell King <rmk+kernel@arm.linux.org.uk>
-Date: Fri, 03 Apr 2015 17:13:29 +0000
-Subject: [PATCH 13/14] ASoC: migor: use clkdev_create()
-Message-Id: <E1Ye59t-0001Bl-8o@rmk-PC.arm.linux.org.uk>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 29 Apr 2015 20:46:40 +0000
+Subject: [PATCH v3 1/3] of: WIP: make of_mutex public
+Message-Id: <1430340402-21586-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
-In-Reply-To: <20150403171149.GC13898@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, Jaroslav Kysela <perex@perex.cz>, Takashi Iwai <tiwai@suse.de>
+To: linux-sh@vger.kernel.org
 
-clkdev_create() is a shorter way to write clkdev_alloc() followed by
-clkdev_add().  Use this instead.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Acked-by: Mark Brown <broonie@kernel.org>
-Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+If OF maintainers don't like it, we maybe can create accessor functions
+we can use.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- sound/soc/sh/migor.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ drivers/of/of_private.h | 1 -
+ include/linux/of.h      | 2 ++
+ 2 files changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/sound/soc/sh/migor.c b/sound/soc/sh/migor.c
-index 82f582344fe7..672bcd4c252b 100644
---- a/sound/soc/sh/migor.c
-+++ b/sound/soc/sh/migor.c
-@@ -162,12 +162,11 @@ static int __init migor_init(void)
- 	if (ret < 0)
- 		return ret;
+diff --git a/drivers/of/of_private.h b/drivers/of/of_private.h
+index 8e882e706cd8c6..f92ec41efb5dfd 100644
+--- a/drivers/of/of_private.h
++++ b/drivers/of/of_private.h
+@@ -31,7 +31,6 @@ struct alias_prop {
+ 	char stem[0];
+ };
  
--	siumckb_lookup = clkdev_alloc(&siumckb_clk, "siumckb_clk", NULL);
-+	siumckb_lookup = clkdev_create(&siumckb_clk, "siumckb_clk", NULL);
- 	if (!siumckb_lookup) {
- 		ret = -ENOMEM;
- 		goto eclkdevalloc;
- 	}
--	clkdev_add(siumckb_lookup);
+-extern struct mutex of_mutex;
+ extern struct list_head aliases_lookup;
+ extern struct kset *of_kset;
  
- 	/* Port number used on this machine: port B */
- 	migor_snd_device = platform_device_alloc("soc-audio", 1);
+diff --git a/include/linux/of.h b/include/linux/of.h
+index ddeaae6d2083b2..13fd9b91d2ad6e 100644
+--- a/include/linux/of.h
++++ b/include/linux/of.h
+@@ -32,6 +32,8 @@
+ typedef u32 phandle;
+ typedef u32 ihandle;
+ 
++extern struct mutex of_mutex;
++
+ struct property {
+ 	char	*name;
+ 	int	length;
 -- 
-1.8.3.1
+2.1.4
 
