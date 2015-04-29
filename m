@@ -1,45 +1,197 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 30 Apr 2015 05:17:34 +0000
-Subject: [GIT PULL] SH Drivers Updates for v4.1
-Message-Id: <cover.1430370969.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 29 Apr 2015 20:46:41 +0000
+Subject: [PATCH v3 2/3] ARM: shmobile: r8a7790: lager: add i2c-demuxer to dts
+Message-Id: <1430340402-21586-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-sh@vger.kernel.org
 
-Hi Linus,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Please consider these SH drivers updates for v4.1.
+WIP/HACK! Not for upstream!
 
-I am sending this change after v4.1-rc1 has been released
-as it depends on SoC changes which are present in that rc release.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 129 +++++++++++-------------------------
+ 1 file changed, 39 insertions(+), 90 deletions(-)
 
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index aaa4f258e279cc..53aa867653e9fa 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -49,6 +49,7 @@
+ 	aliases {
+ 		serial0 = &scifa0;
+ 		serial1 = &scifa1;
++		i2c8 = &i2cbus8;
+ 	};
+ 
+ 	chosen {
+@@ -223,17 +224,6 @@
+ 		};
+ 	};
+ 
+-	hdmi-out {
+-		compatible = "hdmi-connector";
+-		type = "a";
+-
+-		port {
+-			hdmi_con: endpoint {
+-				remote-endpoint = <&adv7511_out>;
+-			};
+-		};
+-	};
+-
+ 	x2_clk: x2-clock {
+ 		compatible = "fixed-clock";
+ 		#clock-cells = <0>;
+@@ -245,35 +235,36 @@
+ 		#clock-cells = <0>;
+ 		clock-frequency = <148500000>;
+ 	};
+-};
+ 
+-&du {
+-	pinctrl-0 = <&du_pins>;
+-	pinctrl-names = "default";
+-	status = "okay";
++	i2cbus@8 {
+ 
+-	clocks = <&mstp7_clks R8A7790_CLK_DU0>,
+-		 <&mstp7_clks R8A7790_CLK_DU1>,
+-		 <&mstp7_clks R8A7790_CLK_DU2>,
+-		 <&mstp7_clks R8A7790_CLK_LVDS0>,
+-		 <&mstp7_clks R8A7790_CLK_LVDS1>,
+-		 <&x13_clk>, <&x2_clk>;
+-	clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1",
+-		      "dclkin.0", "dclkin.1";
+-
+-	ports {
+-		port@0 {
+-			endpoint {
+-				remote-endpoint = <&adv7123_in>;
+-			};
+-		};
+-		port@1 {
+-			endpoint {
+-				remote-endpoint = <&adv7511_in>;
++		compatible = "i2c-demux-pinctrl";
++		i2c-parent = <&iic2>, <&i2c2>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		i2cbus8: i2c8@0 {
++			reg = <0>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			ak4643: sound-codec@12 {
++				compatible = "asahi-kasei,ak4643";
++				#sound-dai-cells = <0>;
++				reg = <0x12>;
+ 			};
+-		};
+-		port@2 {
+-			lvds_connector: endpoint {
++
++			composite-in@20 {
++				compatible = "adi,adv7180";
++				reg = <0x20>;
++				remote = <&vin1>;
++
++				port {
++					adv7180: endpoint {
++						bus-width = <8>;
++						remote-endpoint = <&vin1ep0>;
++					};
++				};
+ 			};
+ 		};
+ 	};
+@@ -340,6 +331,11 @@
+ 		renesas,function = "iic1";
+ 	};
+ 
++	i2c2_pins: i2c2 {
++		renesas,groups = "i2c2";
++		renesas,function = "i2c2";
++	};
++
+ 	iic2_pins: iic2 {
+ 		renesas,groups = "iic2";
+ 		renesas,function = "iic2";
+@@ -518,63 +514,16 @@
+ 	pinctrl-names = "default";
+ };
+ 
++&i2c2	{
++	pinctrl-0 = <&i2c2_pins>;
++	pinctrl-names = "active";
++};
++
+ &iic2	{
+-	status = "okay";
+ 	pinctrl-0 = <&iic2_pins>;
+-	pinctrl-names = "default";
++	pinctrl-names = "active";
+ 
+ 	clock-frequency = <100000>;
+-
+-	ak4643: sound-codec@12 {
+-		compatible = "asahi-kasei,ak4643";
+-		#sound-dai-cells = <0>;
+-		reg = <0x12>;
+-	};
+-
+-	composite-in@20 {
+-		compatible = "adi,adv7180";
+-		reg = <0x20>;
+-		remote = <&vin1>;
+-
+-		port {
+-			adv7180: endpoint {
+-				bus-width = <8>;
+-				remote-endpoint = <&vin1ep0>;
+-			};
+-		};
+-	};
+-
+-	hdmi@39 {
+-		compatible = "adi,adv7511w";
+-		reg = <0x39>;
+-		interrupt-parent = <&gpio1>;
+-		interrupts = <15 IRQ_TYPE_EDGE_FALLING>;
+-
+-		adi,input-depth = <8>;
+-		adi,input-colorspace = "rgb";
+-		adi,input-clock = "1x";
+-		adi,input-style = <1>;
+-		adi,input-justification = "evenly";
+-
+-		ports {
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-
+-			port@0 {
+-				reg = <0>;
+-				adv7511_in: endpoint {
+-					remote-endpoint = <&du_out_lvds0>;
+-				};
+-			};
+-
+-			port@1 {
+-				reg = <1>;
+-				adv7511_out: endpoint {
+-					remote-endpoint = <&hdmi_con>;
+-				};
+-			};
+-		};
+-	};
+ };
+ 
+ &iic3 {
+-- 
+2.1.4
 
-The following changes since commit b787f68c36d49bb1d9236f403813641efa74a031:
-
-  Linux 4.1-rc1 (2015-04-26 17:59:10 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-drivers-for-v4.1
-
-for you to fetch changes up to 00170528f0486c08a18475af7fefa0a7679e042d:
-
-  drivers: sh: Remove test for now unsupported sh7372 (2015-04-27 13:08:14 +0900)
-
-----------------------------------------------------------------
-SH Drivers Updates for v4.1
-
-* Remove test for now unsupported sh7372 SoC
-* Disable PM runtime for multi-platform r8a73a4 and sh73a0 SoCs with genpd
-
-----------------------------------------------------------------
-Geert Uytterhoeven (3):
-      drivers: sh: Disable PM runtime for multi-platform sh73a0 with genpd
-      drivers: sh: Disable PM runtime for multi-platform r8a73a4 with genpd
-      drivers: sh: Remove test for now unsupported sh7372
-
- drivers/sh/pm_runtime.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
