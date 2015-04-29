@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 29 Apr 2015 00:38:04 +0000
-Subject: [PATCH 10/10] drm: rcar-du: Split planes pre-association 4/4 between CRTCs
-Message-Id: <1430267884-20560-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 29 Apr 2015 00:37:59 +0000
+Subject: [PATCH 05/10] drm: rcar-du: Rename to_rcar_du_plane_state to to_rcar_plane_state
+Message-Id: <1430267884-20560-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -11,50 +11,171 @@ Content-Transfer-Encoding: 7bit
 To: dri-devel@lists.freedesktop.org
 Cc: linux-sh@vger.kernel.org
 
-If we have more than one CRTCs in a group pre-associate planes 0-3 with
-CRTC 0 and planes 4-7 with CRTC 1 to minimize flicker occurring when the
-association is changed. The pre-association could be controlled by a
-module parameter if needed.
+All other cast functions are named without using "du", make the plane
+state cast consistent with them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c | 3 ---
- drivers/gpu/drm/rcar-du/rcar_du_kms.c  | 7 ++++---
- 2 files changed, 4 insertions(+), 6 deletions(-)
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c  |  6 +++---
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c   |  8 ++++----
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 16 ++++++++--------
+ drivers/gpu/drm/rcar-du/rcar_du_plane.h |  2 +-
+ 4 files changed, 16 insertions(+), 16 deletions(-)
 
 diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index 620a2c51185c..e6a32c4e4040 100644
+index b5f66b78cbb2..15f8d145a133 100644
 --- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
 +++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -257,9 +257,6 @@ static void rcar_du_crtc_update_planes(struct rcar_du_crtc *rcrtc)
- 	 * resulting in visible flicker. To mitigate the issue only update the
- 	 * association if needed by enabled planes. Planes being disabled will
- 	 * keep their current association.
--	 *
--	 * To mitigate the issue further we could pre-associate planes with
--	 * CRTCs, either with a fixed 4/4 split, or through a module parameter.
- 	 */
- 	mutex_lock(&rcrtc->group->lock);
+@@ -195,13 +195,13 @@ void rcar_du_crtc_route_output(struct drm_crtc *crtc,
  
+ static unsigned int plane_zpos(struct rcar_du_plane *plane)
+ {
+-	return to_rcar_du_plane_state(plane->plane.state)->zpos;
++	return to_rcar_plane_state(plane->plane.state)->zpos;
+ }
+ 
+ static const struct rcar_du_format_info *
+ plane_format(struct rcar_du_plane *plane)
+ {
+-	return to_rcar_du_plane_state(plane->plane.state)->format;
++	return to_rcar_plane_state(plane->plane.state)->format;
+ }
+ 
+ static void rcar_du_crtc_update_planes(struct rcar_du_crtc *rcrtc)
+@@ -234,7 +234,7 @@ static void rcar_du_crtc_update_planes(struct rcar_du_crtc *rcrtc)
+ 	for (i = 0; i < num_planes; ++i) {
+ 		struct rcar_du_plane *plane = planes[i];
+ 		struct drm_plane_state *state = plane->plane.state;
+-		unsigned int index = to_rcar_du_plane_state(state)->hwindex;
++		unsigned int index = to_rcar_plane_state(state)->hwindex;
+ 
+ 		prio -= 4;
+ 		dspr |= (index + 1) << prio;
 diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index fec5f4d794da..20859aae882e 100644
+index 4012afacab5f..14d457047c40 100644
 --- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
 +++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -765,10 +765,11 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 		rgrp->index = i;
- 		rgrp->num_crtcs = min(rcdu->num_crtcs - 2 * i, 2U);
+@@ -221,7 +221,7 @@ static bool rcar_du_plane_needs_realloc(struct rcar_du_plane *plane,
+ {
+ 	const struct rcar_du_format_info *cur_format;
  
--		/* Pre-associate all hardware planes with the first CRTC in the
--		 * group.
-+		/* If we have more than one CRTCs in this group pre-associate
-+		 * planes 0-3 with CRTC 0 and planes 4-7 with CRTC 1 to minimize
-+		 * flicker occurring when the association is changed.
- 		 */
--		rgrp->dptsr_planes = 0;
-+		rgrp->dptsr_planes = rgrp->num_crtcs > 1 ? 0xf0 : 0;
+-	cur_format = to_rcar_du_plane_state(plane->plane.state)->format;
++	cur_format = to_rcar_plane_state(plane->plane.state)->format;
  
- 		ret = rcar_du_planes_init(rgrp);
- 		if (ret < 0)
+ 	/* Lowering the number of planes doesn't strictly require reallocation
+ 	 * as the extra hardware plane will be freed when committing, but doing
+@@ -284,7 +284,7 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 			continue;
+ 
+ 		plane = to_rcar_plane(state->planes[i]);
+-		plane_state = to_rcar_du_plane_state(state->plane_states[i]);
++		plane_state = to_rcar_plane_state(state->plane_states[i]);
+ 
+ 		/* If the plane is being disabled we don't need to go through
+ 		 * the full reallocation procedure. Just mark the hardware
+@@ -345,7 +345,7 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 			if (group_freed_planes[index] & (1 << i))
+ 				continue;
+ 
+-			plane_state = to_rcar_du_plane_state(plane->plane.state);
++			plane_state = to_rcar_plane_state(plane->plane.state);
+ 			used_planes |= rcar_du_plane_hwmask(plane_state);
+ 		}
+ 
+@@ -363,7 +363,7 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 			continue;
+ 
+ 		plane = to_rcar_plane(state->planes[i]);
+-		plane_state = to_rcar_du_plane_state(state->plane_states[i]);
++		plane_state = to_rcar_plane_state(state->plane_states[i]);
+ 
+ 		/* Skip planes that are being disabled or don't need to be
+ 		 * reallocated.
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index 99fefcaf6597..d3ed528fa56d 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -45,7 +45,7 @@ static void rcar_du_plane_write(struct rcar_du_group *rgrp,
+ static void rcar_du_plane_setup_fb(struct rcar_du_plane *plane)
+ {
+ 	struct rcar_du_plane_state *state -		to_rcar_du_plane_state(plane->plane.state);
++		to_rcar_plane_state(plane->plane.state);
+ 	struct drm_framebuffer *fb = plane->plane.state->fb;
+ 	struct rcar_du_group *rgrp = plane->group;
+ 	unsigned int src_x = state->state.src_x >> 16;
+@@ -109,7 +109,7 @@ static void rcar_du_plane_setup_mode(struct rcar_du_plane *plane,
+ 				     unsigned int index)
+ {
+ 	struct rcar_du_plane_state *state -		to_rcar_du_plane_state(plane->plane.state);
++		to_rcar_plane_state(plane->plane.state);
+ 	struct rcar_du_group *rgrp = plane->group;
+ 	u32 colorkey;
+ 	u32 pnmr;
+@@ -172,7 +172,7 @@ static void __rcar_du_plane_setup(struct rcar_du_plane *plane,
+ 				  unsigned int index)
+ {
+ 	struct rcar_du_plane_state *state -		to_rcar_du_plane_state(plane->plane.state);
++		to_rcar_plane_state(plane->plane.state);
+ 	struct rcar_du_group *rgrp = plane->group;
+ 	u32 ddcr2 = PnDDCR2_CODE;
+ 	u32 ddcr4;
+@@ -222,7 +222,7 @@ static void __rcar_du_plane_setup(struct rcar_du_plane *plane,
+ void rcar_du_plane_setup(struct rcar_du_plane *plane)
+ {
+ 	struct rcar_du_plane_state *state -		to_rcar_du_plane_state(plane->plane.state);
++		to_rcar_plane_state(plane->plane.state);
+ 
+ 	__rcar_du_plane_setup(plane, state->hwindex);
+ 	if (state->format->planes = 2)
+@@ -234,7 +234,7 @@ void rcar_du_plane_setup(struct rcar_du_plane *plane)
+ static int rcar_du_plane_atomic_check(struct drm_plane *plane,
+ 				      struct drm_plane_state *state)
+ {
+-	struct rcar_du_plane_state *rstate = to_rcar_du_plane_state(state);
++	struct rcar_du_plane_state *rstate = to_rcar_plane_state(state);
+ 	struct rcar_du_plane *rplane = to_rcar_plane(plane);
+ 	struct rcar_du_device *rcdu = rplane->group->dev;
+ 
+@@ -302,7 +302,7 @@ rcar_du_plane_atomic_duplicate_state(struct drm_plane *plane)
+ 	struct rcar_du_plane_state *state;
+ 	struct rcar_du_plane_state *copy;
+ 
+-	state = to_rcar_du_plane_state(plane->state);
++	state = to_rcar_plane_state(plane->state);
+ 	copy = kmemdup(state, sizeof(*state), GFP_KERNEL);
+ 	if (copy = NULL)
+ 		return NULL;
+@@ -319,7 +319,7 @@ static void rcar_du_plane_atomic_destroy_state(struct drm_plane *plane,
+ 	if (state->fb)
+ 		drm_framebuffer_unreference(state->fb);
+ 
+-	kfree(to_rcar_du_plane_state(state));
++	kfree(to_rcar_plane_state(state));
+ }
+ 
+ static int rcar_du_plane_atomic_set_property(struct drm_plane *plane,
+@@ -327,7 +327,7 @@ static int rcar_du_plane_atomic_set_property(struct drm_plane *plane,
+ 					     struct drm_property *property,
+ 					     uint64_t val)
+ {
+-	struct rcar_du_plane_state *rstate = to_rcar_du_plane_state(state);
++	struct rcar_du_plane_state *rstate = to_rcar_plane_state(state);
+ 	struct rcar_du_device *rcdu = to_rcar_plane(plane)->group->dev;
+ 
+ 	if (property = rcdu->props.alpha)
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.h b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+index 86716c856791..665c32e29694 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+@@ -59,7 +59,7 @@ struct rcar_du_plane_state {
+ };
+ 
+ static inline struct rcar_du_plane_state *
+-to_rcar_du_plane_state(struct drm_plane_state *state)
++to_rcar_plane_state(struct drm_plane_state *state)
+ {
+ 	return container_of(state, struct rcar_du_plane_state, state);
+ }
 -- 
 2.0.5
 
