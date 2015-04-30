@@ -1,333 +1,585 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 29 Apr 2015 20:46:42 +0000
-Subject: [PATCH v3 3/3] i2c: mux: demux-pinctrl: add driver
-Message-Id: <1430340402-21586-4-git-send-email-wsa@the-dreams.de>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 30 Apr 2015 14:18:58 +0000
+Subject: [PATCH v2 09/15] ARM: shmobile: r8a7793: add Gose board device tree
+Message-Id: <1430403544-26742-10-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: geert@linux-m68k.org, horms@verge.net.au, linux-sh@vger.kernel.org
+Cc: magnus.damm@gmail.com, laurent.pinchart+renesas@ideasonboard.com, kuninori.morimoto.gx@renesas.com, linus.walleij@linaro.org, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Biju Das <biju.das@bp.renesas.com>, Hiroyuki Yokoyama <hiroyuki.yokoyama.vx@renesas.com>, Kouichi Tomita <kouichi.tomita.yn@renesas.com>, devicetree@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+DT description and Makefile entry for the Gose eval board.
 
-This is the second approach of a driver which maps n different I2C IP
-cores to the same bus. Very experimental, mainly a proof of concept for
-now. Not for upstream!
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Biju Das <biju.das@bp.renesas.com>
+Signed-off-by: Hiroyuki Yokoyama <hiroyuki.yokoyama.vx@renesas.com>
+Signed-off-by: Kouichi Tomita <kouichi.tomita.yn@renesas.com>
+[uli: collapsed BSP revisions into a single commit]
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Cc: devicetree@vger.kernel.org
 ---
- .../devicetree/bindings/i2c/i2c-demux-pinctrl.txt  |  39 ++++
- drivers/i2c/muxes/Kconfig                          |   7 +
- drivers/i2c/muxes/Makefile                         |   2 +
- drivers/i2c/muxes/i2c-demux-pinctrl.c              | 224 +++++++++++++++++++++
- 4 files changed, 272 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
- create mode 100644 drivers/i2c/muxes/i2c-demux-pinctrl.c
+ arch/arm/boot/dts/Makefile         |   1 +
+ arch/arm/boot/dts/r8a7793-gose.dts | 534 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 535 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a7793-gose.dts
 
-diff --git a/Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt b/Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 86217db..03d876f 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -492,6 +492,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	r8a7790-lager.dtb \
+ 	r8a7791-henninger.dtb \
+ 	r8a7791-koelsch.dtb \
++	r8a7793-gose.dtb \
+ 	r8a7794-alt.dtb \
+ 	sh73a0-kzm9g.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += \
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
 new file mode 100644
-index 00000000000000..65f2f73a6aee50
+index 0000000..713ed03
 --- /dev/null
-+++ b/Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
-@@ -0,0 +1,39 @@
-+Pinctrl-based I2C Bus DeMux
-+
-+This binding describes an I2C bus demultiplexer that uses pin multiplexing to
-+route the I2C signals, and represents the pin multiplexing configuration using
-+the pinctrl device tree bindings. This may be used to select one I2C IP core at
-+runtime which may have a better feature set for a given task than another I2C
-+IP core on the SoC.
-+
-+    +------------------------------+
-+    | SoC                          |
-+    |                              |   +-----+  +-----+
-+    |   +------------+             |   | dev |  | dev |
-+    |   |I2C IP Core1|--\          |   +-----+  +-----+
-+    |   +------------+   \------+  |      |        |
-+    |                    |Pinmux|--|------+--------+
-+    |   +------------+   +------+  |
-+    |   |I2C IP Core2|--/          |
-+    |   +------------+             |
-+    |                              |
-+    +------------------------------+
-+
-+Required properties:
-+- compatible: "i2c-demux-pinctrl"
-+- i2c-parent: List of phandles of I2C cores to be selected
-+
-+Also I2C mux properties and child nodes. See mux.txt in this directory.
-+
-+Also required:
-+
-+FIXME (do we keep it like this?):
-+- pinctrl properties for the parent I2C controllers need their pinctrl state
-+  for actually driving the bus named "active", not "default"!
-+
-+FIXME: add example
-+
-+HACK: Currently, the created mux-device will have a file "cur_master" in its
-+sysfs-entry. Write 0 there for the first master listed in the "i2c-parent"
-+property, 1 for the second etc... This interface is merely for
-+proof-of-concept.
-diff --git a/drivers/i2c/muxes/Kconfig b/drivers/i2c/muxes/Kconfig
-index f6d313e528de34..93885537c24ec6 100644
---- a/drivers/i2c/muxes/Kconfig
-+++ b/drivers/i2c/muxes/Kconfig
-@@ -60,4 +60,11 @@ config I2C_MUX_PINCTRL
- 	  This driver can also be built as a module. If so, the module will be
- 	  called pinctrl-i2cmux.
- 
-+config I2C_DEMUX_PINCTRL
-+	tristate "pinctrl-based I2C demultiplexer"
-+	depends on PINCTRL
-+	select OF_DYNAMIC
-+	help
-+	  PROTOYPE! Understand the docs!
-+
- endmenu
-diff --git a/drivers/i2c/muxes/Makefile b/drivers/i2c/muxes/Makefile
-index 465778b5d5dc86..4d14cb88d83438 100644
---- a/drivers/i2c/muxes/Makefile
-+++ b/drivers/i2c/muxes/Makefile
-@@ -3,6 +3,8 @@
- 
- obj-$(CONFIG_I2C_ARB_GPIO_CHALLENGE)	+= i2c-arb-gpio-challenge.o
- 
-+obj-$(CONFIG_I2C_DEMUX_PINCTRL)		+= i2c-demux-pinctrl.o
-+
- obj-$(CONFIG_I2C_MUX_GPIO)	+= i2c-mux-gpio.o
- obj-$(CONFIG_I2C_MUX_PCA9541)	+= i2c-mux-pca9541.o
- obj-$(CONFIG_I2C_MUX_PCA954x)	+= i2c-mux-pca954x.o
-diff --git a/drivers/i2c/muxes/i2c-demux-pinctrl.c b/drivers/i2c/muxes/i2c-demux-pinctrl.c
-new file mode 100644
-index 00000000000000..58e3c90762d567
---- /dev/null
-+++ b/drivers/i2c/muxes/i2c-demux-pinctrl.c
-@@ -0,0 +1,224 @@
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -0,0 +1,534 @@
 +/*
-+ * Pinctrl based I2C DeMultiplexer V2 PROTOTYPE!
++ * Device Tree Source for the Gose board
 + *
-+ * Copyright (C) 2015 by Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
-+ * Copyright (C) 2015 by Renesas Electronics Corporation
++ * Copyright (C) 2014-2015 Renesas Electronics Corporation
 + *
-+ * This program is free software; you can redistribute it and/or modify it
-+ * under the terms of the GNU General Public License as published by the
-+ * Free Software Foundation; version 2 of the License.
-+ *
-+ * See the bindings doc for DTS setup.
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
 + */
 +
-+#include <linux/i2c.h>
-+#include <linux/i2c-mux.h>
-+#include <linux/init.h>
-+#include <linux/module.h>
-+#include <linux/mutex.h>
-+#include <linux/of.h>
-+#include <linux/pinctrl/consumer.h>
-+#include <linux/platform_device.h>
-+#include <linux/slab.h>
-+#include <linux/sysfs.h>
++/*
++ * SSI-AK4643
++ *
++ * SW1: 1: AK4643
++ *      2: CN22
++ *      3: ADV7511
++ *
++ * This command is required when Playback/Capture
++ *
++ *	amixer set "LINEOUT Mixer DACL" on
++ *	amixer set "DVC Out" 100%
++ *	amixer set "DVC In" 100%
++ *
++ * You can use Mute
++ *
++ *	amixer set "DVC Out Mute" on
++ *	amixer set "DVC In Mute" on
++ */
 +
-+struct i2c_demux_pinctrl_chan {
-+	struct device_node *parent_np;
-+	struct i2c_adapter *parent_adap;
-+	struct of_changeset chgset;
++/dts-v1/;
++#include "r8a7793.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++
++/ {
++	model = "Gose";
++	compatible = "renesas,gose", "renesas,r8a7793";
++
++	aliases {
++		serial0 = &scif0;
++		serial1 = &scif1;
++	};
++
++	chosen {
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		stdout-path = &scif0;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0 0x40000000 0 0x40000000>;
++	};
++
++	keyboard {
++		compatible = "gpio-keys";
++
++		key-1 {
++			gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_1>;
++			label = "SW2-1";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-2 {
++			gpios = <&gpio5 1 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_2>;
++			label = "SW2-2";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-3 {
++			gpios = <&gpio5 2 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_3>;
++			label = "SW2-3";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-4 {
++			gpios = <&gpio5 3 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_4>;
++			label = "SW2-4";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-a {
++			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_A>;
++			label = "SW30";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-b {
++			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_B>;
++			label = "SW31";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-c {
++			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_C>;
++			label = "SW32";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-d {
++			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_D>;
++			label = "SW33";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-e {
++			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_E>;
++			label = "SW34";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-f {
++			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_F>;
++			label = "SW35";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++		key-g {
++			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_G>;
++			label = "SW36";
++			gpio-key,wakeup;
++			debounce-interval = <20>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++		led6 {
++			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
++			label = "LED6";
++		};
++		led7 {
++			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
++			label = "LED7";
++		};
++		led8 {
++			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
++			label = "LED8";
++		};
++	};
++
++	vcc_sdhi0: regulator@0 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&gpio7 17 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vccq_sdhi0: regulator@1 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI0 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio2 12 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
++
++	vcc_sdhi1: regulator@2 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI1 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&gpio7 18 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vccq_sdhi1: regulator@3 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI1 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio2 13 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
++
++	vcc_sdhi2: regulator@4 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI2 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&gpio7 19 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vccq_sdhi2: regulator@5 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI2 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio2 26 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
++
++	sound {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "i2s";
++
++		sndcpu: simple-audio-card,cpu {
++			sound-dai = <&rcar_sound>;
++		};
++
++		sndcodec: simple-audio-card,codec {
++			sound-dai = <&ak4643>;
++			system-clock-frequency = <11289600>;
++		};
++	};
 +};
 +
-+struct i2c_demux_pinctrl_priv {
-+	u32 cur_chan;
-+	int num_chan;
-+	struct device *dev;
-+	const char *node_name;
-+	struct i2c_adapter *cur_adap;
-+	struct i2c_demux_pinctrl_chan chan[];
++&extal_clk {
++	clock-frequency = <20000000>;
 +};
 +
-+static struct property status_okay = { .name = "status", .length = 3, .value = "ok" };
++&pfc {
++	pinctrl-0 = <&du_pins &usb0_pins &usb1_pins &vin0_pins &vin1_pins>;
++	pinctrl-names = "default";
 +
-+static int i2c_demux_dummy(struct i2c_adapter *adap, void *data, u32 new_chan)
-+{
-+	return 0;
-+}
++	i2c2_pins: i2c2 {
++		renesas,groups = "i2c2";
++		renesas,function = "i2c2";
++	};
 +
-+static int i2c_demux_activate_master(struct i2c_demux_pinctrl_priv *priv, u32 new_chan)
-+{
-+	struct i2c_adapter *adap;
-+	struct pinctrl *p;
-+	int ret;
++	du_pins: du {
++		renesas,groups = "du_rgb666", "du_sync", "du_clk_out_0";
++		renesas,function = "du";
++	};
 +
-+	mutex_lock(&of_mutex);
-+	ret = of_changeset_apply(&priv->chan[new_chan].chgset);
-+	mutex_unlock(&of_mutex);
-+	if (ret)
-+		return ret;
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data_d";
++		renesas,function = "scif0";
++	};
 +
-+	adap = of_find_i2c_adapter_by_node(priv->chan[new_chan].parent_np);
-+	if (!adap)
-+		return -EPROBE_DEFER;
++	scif1_pins: serial1 {
++		renesas,groups = "scif1_data_d";
++		renesas,function = "scif1";
++	};
 +
-+	p = devm_pinctrl_get_select(adap->dev.parent, priv->node_name);
-+	if (IS_ERR(p)) {
-+		put_device(&adap->dev);
-+		return PTR_ERR(p);
-+	}
++	ether_pins: ether {
++		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
++		renesas,function = "eth";
++	};
 +
-+	priv->chan[new_chan].parent_adap = adap;
-+	priv->cur_adap = i2c_add_mux_adapter(adap, priv->dev, priv,
-+					0, 0, 0, i2c_demux_dummy, NULL);
-+	if (!priv->cur_adap) {
-+		put_device(&adap->dev);
-+		dev_err(priv->dev, "cannot create mux bus\n");
-+		return -ENXIO;
-+	}
++	phy1_pins: phy1 {
++		renesas,groups = "intc_irq0";
++		renesas,function = "intc";
++	};
 +
-+	priv->cur_chan = new_chan;
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
++		renesas,function = "sdhi0";
++	};
 +
-+	return 0;
-+}
++	sdhi1_pins: sd1 {
++		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
++		renesas,function = "sdhi1";
++	};
 +
-+static int i2c_demux_deactivate_master(struct i2c_demux_pinctrl_priv *priv)
-+{
-+	int ret;
++	sdhi2_pins: sd2 {
++		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
++		renesas,function = "sdhi2";
++	};
 +
-+	i2c_del_mux_adapter(priv->cur_adap);
-+	put_device(&priv->chan[priv->cur_chan].parent_adap->dev);
++	qspi_pins: spi0 {
++		renesas,groups = "qspi_ctrl", "qspi_data4";
++		renesas,function = "qspi";
++	};
 +
-+	mutex_lock(&of_mutex);
-+	ret = of_changeset_revert(&priv->chan[priv->cur_chan].chgset);
-+	mutex_unlock(&of_mutex);
++	msiof0_pins: spi1 {
++		renesas,groups = "msiof0_clk", "msiof0_sync", "msiof0_rx",
++				 "msiof0_tx";
++		renesas,function = "msiof0";
++	};
 +
-+	return ret;
-+}
++	msiof1_pins: spi2 {
++		renesas,groups = "msiof1_clk_c", "msiof1_sync_c", "msiof1_rx_c",
++				 "msiof1_tx_c";
++		renesas,function = "msiof1";
++	};
 +
-+static int i2c_demux_change_master(struct i2c_demux_pinctrl_priv *priv, u32 new_chan)
-+{
-+	int ret;
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb0";
++	};
 +
-+	if (new_chan = priv->cur_chan)
-+		return 0;
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
 +
-+	ret = i2c_demux_deactivate_master(priv);
-+	if (ret)
-+		return ret;
++	vin0_pins: vin0 {
++		renesas,groups = "vin0_data24", "vin0_sync", "vin0_field",
++				 "vin0_clkenb", "vin0_clk";
++		renesas,function = "vin0";
++	};
 +
-+	ret = i2c_demux_activate_master(priv, new_chan);
-+	return ret;
-+}
++	vin1_pins: vin1 {
++		renesas,groups = "vin1_data8", "vin1_clk";
++		renesas,function = "vin1";
++	};
 +
-+static ssize_t cur_master_show(struct device *dev, struct device_attribute *attr,
-+			   char *buf)
-+{
-+	struct i2c_demux_pinctrl_priv *priv = dev_get_drvdata(dev);
++	sound_pins: sound {
++		renesas,groups = "ssi0129_ctrl", "ssi0_data", "ssi1_data";
++		renesas,function = "ssi";
++	};
 +
-+	return sprintf(buf, "%u\n", priv->cur_chan);
-+}
-+
-+static ssize_t cur_master_store(struct device *dev, struct device_attribute *attr,
-+			    const char *buf, size_t count)
-+{
-+	struct i2c_demux_pinctrl_priv *priv = dev_get_drvdata(dev);
-+	unsigned long val;
-+	int ret;
-+
-+	ret = kstrtoul(buf, 0, &val);
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = i2c_demux_change_master(priv, val);
-+
-+	return ret < 0 ? ret : count;
-+}
-+static DEVICE_ATTR_RW(cur_master);
-+
-+static int i2c_demux_pinctrl_probe(struct platform_device *pdev)
-+{
-+	struct device_node *np = pdev->dev.of_node;
-+	struct i2c_demux_pinctrl_priv *priv;
-+	int num_chan, i, j, err;
-+
-+	num_chan = of_count_phandle_with_args(np, "i2c-parent", NULL);
-+	if (num_chan < 2) {
-+		dev_err(&pdev->dev, "Need at least two I2C masters to switch\n");
-+		return -EINVAL;
-+	}
-+
-+	priv = devm_kzalloc(&pdev->dev, sizeof(*priv)
-+			   + num_chan * sizeof(struct i2c_demux_pinctrl_chan), GFP_KERNEL);
-+	if (!priv)
-+		return -ENOMEM;
-+
-+	for (i = 0; i < num_chan; i++) {
-+		struct device_node *adap_np;
-+
-+		adap_np = of_parse_phandle(np, "i2c-parent", i);
-+		if (!adap_np) {
-+			dev_err(&pdev->dev, "can't get phandle for parent %d\n", i);
-+			err = -ENOENT;
-+			goto err_rollback;
-+		}
-+		priv->chan[i].parent_np = adap_np;
-+
-+		of_changeset_init(&priv->chan[i].chgset);
-+		of_changeset_update_property(&priv->chan[i].chgset, adap_np, &status_okay);
-+	}
-+
-+	priv->num_chan = num_chan;
-+	priv->dev = &pdev->dev;
-+	priv->node_name = "active"; //FIXME: something like of_node_full_name(np)?
-+
-+	platform_set_drvdata(pdev, priv);
-+
-+	/* switch to first parent as active master */
-+	i2c_demux_activate_master(priv, 0);
-+
-+	//FIXME: error check & rollback
-+	device_create_file(&pdev->dev, &dev_attr_cur_master);
-+
-+	return 0;
-+
-+err_rollback:
-+	for (j = 1; j < i; j++) {
-+		of_node_put(priv->chan[j].parent_np);
-+		of_changeset_destroy(&priv->chan[j].chgset);
-+	}
-+
-+	return err;
-+}
-+
-+static int i2c_demux_pinctrl_remove(struct platform_device *pdev)
-+{
-+	struct i2c_demux_pinctrl_priv *priv = platform_get_drvdata(pdev);
-+	int i;
-+
-+	for (i = 0; i < priv->num_chan; i++) {
-+		of_node_put(priv->chan[i].parent_np);
-+		of_changeset_destroy(&priv->chan[i].chgset);
-+	}
-+
-+	return 0;
-+}
-+
-+static const struct of_device_id i2c_demux_pinctrl_of_match[] = {
-+	{ .compatible = "i2c-demux-pinctrl", },
-+	{},
++	sound_clk_pins: sound_clk {
++		renesas,groups = "audio_clk_a";
++		renesas,function = "audio_clk";
++	};
 +};
-+MODULE_DEVICE_TABLE(of, i2c_demux_pinctrl_of_match);
 +
-+static struct platform_driver i2c_demux_pinctrl_driver = {
-+	.driver	= {
-+		.name = "i2c-demux-pinctrl",
-+		.of_match_table = i2c_demux_pinctrl_of_match,
-+	},
-+	.probe	= i2c_demux_pinctrl_probe,
-+	.remove	= i2c_demux_pinctrl_remove,
++&ether {
++	pinctrl-0 = <&ether_pins &phy1_pins>;
++	pinctrl-names = "default";
++
++	phy-handle = <&phy1>;
++	renesas,ether-link-active-low;
++	status = "okay";
++
++	phy1: ethernet-phy@1 {
++		reg = <1>;
++		interrupt-parent = <&irqc0>;
++		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
++		micrel,led-mode = <1>;
++	};
 +};
-+module_platform_driver(i2c_demux_pinctrl_driver);
 +
-+MODULE_DESCRIPTION("pinctrl-based I2C demux driver");
-+MODULE_AUTHOR("Wolfram Sang <wsa@sang-engineering.com>");
-+MODULE_LICENSE("GPL v2");
-+MODULE_ALIAS("platform:i2c-demux-pinctrl");
++&sata0 {
++	status = "okay";
++};
++
++&scif0 {
++	pinctrl-0 = <&scif0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&scif1 {
++	pinctrl-0 = <&scif1_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi0>;
++	vqmmc-supply = <&vccq_sdhi0>;
++	cd-gpios = <&gpio6 6 GPIO_ACTIVE_LOW>;
++	wp-gpios = <&gpio6 7 GPIO_ACTIVE_HIGH>;
++	status = "okay";
++};
++
++&sdhi1 {
++	pinctrl-0 = <&sdhi1_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi1>;
++	vqmmc-supply = <&vccq_sdhi1>;
++	cd-gpios = <&gpio6 14 GPIO_ACTIVE_LOW>;
++	wp-gpios = <&gpio6 15 GPIO_ACTIVE_HIGH>;
++	status = "okay";
++};
++
++&sdhi2 {
++	pinctrl-0 = <&sdhi2_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi2>;
++	vqmmc-supply = <&vccq_sdhi2>;
++	cd-gpios = <&gpio6 22 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
++
++&qspi {
++	pinctrl-0 = <&qspi_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	flash: flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl512s";
++		reg = <0>;
++		spi-max-frequency = <30000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
++		spi-cpha;
++		spi-cpol;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "loader";
++			reg = <0x00000000 0x00080000>;
++			read-only;
++		};
++		partition@40000 {
++			label = "user";
++			reg = <0x00080000 0x00580000>;
++			read-only;
++		};
++		partition@440000 {
++			label = "flash";
++			reg = <0x00600000 0x03a00000>;
++		};
++	};
++};
++
++&msiof0 {
++	pinctrl-0 = <&msiof0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&msiof1 {
++	pinctrl-0 = <&msiof1_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&i2c2 {
++	pinctrl-0 = <&i2c2_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++	clock-frequency = <400000>;
++
++	ak4643: sound-codec@12 {
++		compatible = "asahi-kasei,ak4643";
++		#sound-dai-cells = <0>;
++		reg = <0x12>;
++	};
++
++	eeprom@50 {
++		compatible = "renesas,24c02";
++		reg = <0x50>;
++		pagesize = <16>;
++	};
++};
++
++&i2c6 {
++	status = "okay";
++	clock-frequency = <100000>;
++
++	vdd_dvfs: regulator@68 {
++		compatible = "dlg,da9210";
++		reg = <0x68>;
++
++		regulator-min-microvolt = <1000000>;
++		regulator-max-microvolt = <1000000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++};
++
++&pci0 {
++	status = "okay";
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++};
++
++&pci1 {
++	status = "okay";
++	pinctrl-0 = <&usb1_pins>;
++	pinctrl-names = "default";
++};
++
++&pcie_bus_clk {
++	status = "okay";
++};
++
++&pciec {
++	status = "okay";
++};
++
++&cpu0 {
++	cpu0-supply = <&vdd_dvfs>;
++};
++
++&rcar_sound {
++	pinctrl-0 = <&sound_pins &sound_clk_pins>;
++	pinctrl-names = "default";
++
++	#sound-dai-cells = <0>;
++
++	status = "okay";
++
++	rcar_sound,dai {
++		dai0 {
++			playback = <&ssi0 &src0 &dvc0>;
++			capture  = <&ssi1 &src1 &dvc1>;
++		};
++	};
++};
++
++&ssi1 {
++	shared-pin;
++};
 -- 
-2.1.4
+2.3.5
 
