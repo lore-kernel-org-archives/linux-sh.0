@@ -1,81 +1,174 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 29 Apr 2015 12:03:12 +0000
-Subject: Re: [PATCH] drm/rcar-du: Avoid restarting when shutting down
-Message-Id: <3065479.Am6tg3cxnR@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 30 Apr 2015 16:21:29 +0000
+Subject: [PATCH 05/13] serial: sh-sci: Standardize on using the BIT() macro to define register bits
+Message-Id: <1430410897-12770-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Magnus,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/tty/serial/sh-sci.h | 73 +++++++++++++++++++++++----------------------
+ include/linux/serial_sci.h  | 19 ++++++------
+ 2 files changed, 47 insertions(+), 45 deletions(-)
 
-Thank you for the patch.
-
-On Tuesday 17 March 2015 10:21:56 Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> This is a prototype patch that removes one DU restart operation
-> from the shutdown sequence. With this in place both the required
-> time for mode switching is reduced and so is the amount of flicker.
-> 
-> Needs to be reworked to fit on top of atomic update support.
-> 
-> Not-Yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-
-I believe this issue has been addressed by the "[PATCH 00/10] R-Car DU: Fix 
-flicker due to hardware plane reassociations" I've posted yesterday.
-
-> ---
-> 
->  drivers/gpu/drm/rcar-du/rcar_du_crtc.c |   11 ++++++++---
->  1 file changed, 8 insertions(+), 3 deletions(-)
-> 
-> --- 0001/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-> +++ work/drivers/gpu/drm/rcar-du/rcar_du_crtc.c	2015-03-16
-> 12:43:00.127684181 +0900 @@ -187,7 +187,7 @@ void
-> rcar_du_crtc_route_output(struct dr
->  		rcdu->dpad0_source = rcrtc->index;
->  }
-> 
-> -void rcar_du_crtc_update_planes(struct drm_crtc *crtc)
-> +static void __rcar_du_crtc_update_planes(struct drm_crtc *crtc, bool
-> restart) {
->  	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
->  	struct rcar_du_plane *planes[RCAR_DU_NUM_HW_PLANES];
-> @@ -247,7 +247,7 @@ void rcar_du_crtc_update_planes(struct d
->  		 */
->  		if (value != dptsr) {
->  			rcar_du_group_write(rcrtc->group, DPTSR, dptsr);
-> -			if (rcrtc->group->used_crtcs)
-> +			if (restart && rcrtc->group->used_crtcs)
->  				rcar_du_group_restart(rcrtc->group);
->  		}
->  	}
-> @@ -256,6 +256,11 @@ void rcar_du_crtc_update_planes(struct d
->  			    dspr);
->  }
-> 
-> +void rcar_du_crtc_update_planes(struct drm_crtc *crtc)
-> +{
-> +	__rcar_du_crtc_update_planes(crtc, true);
-> +}
-> +
->  static void rcar_du_crtc_start(struct rcar_du_crtc *rcrtc)
->  {
->  	struct drm_crtc *crtc = &rcrtc->crtc;
-> @@ -314,7 +319,7 @@ static void rcar_du_crtc_stop(struct rca
-> 
->  	mutex_lock(&rcrtc->group->planes.lock);
->  	rcrtc->plane->enabled = false;
-> -	rcar_du_crtc_update_planes(crtc);
-> +	__rcar_du_crtc_update_planes(crtc, false);
->  	mutex_unlock(&rcrtc->group->planes.lock);
-> 
->  	/* Select switch sync mode. This stops display operation and configures
-
+diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
+index 1586d68470b6f0a2..5282738375ae309d 100644
+--- a/drivers/tty/serial/sh-sci.h
++++ b/drivers/tty/serial/sh-sci.h
+@@ -1,3 +1,4 @@
++#include <linux/bitops.h>
+ #include <linux/serial_core.h>
+ #include <linux/io.h>
+ #include <linux/gpio.h>
+@@ -32,62 +33,62 @@ enum {
+ 
+ 
+ /* SCSMR (Serial Mode Register) */
+-#define SCSMR_CHR	(1 << 6)	/* 7-bit Character Length */
+-#define SCSMR_PE	(1 << 5)	/* Parity Enable */
+-#define SCSMR_ODD	(1 << 4)	/* Odd Parity */
+-#define SCSMR_STOP	(1 << 3)	/* Stop Bit Length */
+-#define SCSMR_CKS	0x0003		/* Clock Select */
++#define SCSMR_CHR	BIT(6)	/* 7-bit Character Length */
++#define SCSMR_PE	BIT(5)	/* Parity Enable */
++#define SCSMR_ODD	BIT(4)	/* Odd Parity */
++#define SCSMR_STOP	BIT(3)	/* Stop Bit Length */
++#define SCSMR_CKS	0x0003	/* Clock Select */
+ 
+ /* Serial Control Register, SCIFA/SCIFB only bits */
+-#define SCSCR_TDRQE	(1 << 15)	/* Tx Data Transfer Request Enable */
+-#define SCSCR_RDRQE	(1 << 14)	/* Rx Data Transfer Request Enable */
++#define SCSCR_TDRQE	BIT(15)	/* Tx Data Transfer Request Enable */
++#define SCSCR_RDRQE	BIT(14)	/* Rx Data Transfer Request Enable */
+ 
+ /* SCxSR (Serial Status Register) on SCI */
+-#define SCI_TDRE  0x80			/* Transmit Data Register Empty */
+-#define SCI_RDRF  0x40			/* Receive Data Register Full */
+-#define SCI_ORER  0x20			/* Overrun Error */
+-#define SCI_FER   0x10			/* Framing Error */
+-#define SCI_PER   0x08			/* Parity Error */
+-#define SCI_TEND  0x04			/* Transmit End */
++#define SCI_TDRE	BIT(7)	/* Transmit Data Register Empty */
++#define SCI_RDRF	BIT(6)	/* Receive Data Register Full */
++#define SCI_ORER	BIT(5)	/* Overrun Error */
++#define SCI_FER		BIT(4)	/* Framing Error */
++#define SCI_PER		BIT(3)	/* Parity Error */
++#define SCI_TEND	BIT(2)	/* Transmit End */
+ 
+ #define SCI_DEFAULT_ERROR_MASK (SCI_PER | SCI_FER)
+ 
+ /* SCxSR (Serial Status Register) on SCIF, HSCIF */
+-#define SCIF_ER    0x0080		/* Receive Error */
+-#define SCIF_TEND  0x0040		/* Transmission End */
+-#define SCIF_TDFE  0x0020		/* Transmit FIFO Data Empty */
+-#define SCIF_BRK   0x0010		/* Break Detect */
+-#define SCIF_FER   0x0008		/* Framing Error */
+-#define SCIF_PER   0x0004		/* Parity Error */
+-#define SCIF_RDF   0x0002		/* Receive FIFO Data Full */
+-#define SCIF_DR    0x0001		/* Receive Data Ready */
++#define SCIF_ER		BIT(7)	/* Receive Error */
++#define SCIF_TEND	BIT(6)	/* Transmission End */
++#define SCIF_TDFE	BIT(5)	/* Transmit FIFO Data Empty */
++#define SCIF_BRK	BIT(4)	/* Break Detect */
++#define SCIF_FER	BIT(3)	/* Framing Error */
++#define SCIF_PER	BIT(2)	/* Parity Error */
++#define SCIF_RDF	BIT(1)	/* Receive FIFO Data Full */
++#define SCIF_DR		BIT(0)	/* Receive Data Ready */
+ 
+ #define SCIF_DEFAULT_ERROR_MASK (SCIF_PER | SCIF_FER | SCIF_ER | SCIF_BRK)
+ 
+ /* SCFCR (FIFO Control Register) */
+-#define SCFCR_MCE	0x0008		/* Modem Control Enable */
+-#define SCFCR_TFRST	0x0004		/* Transmit FIFO Data Register Reset */
+-#define SCFCR_RFRST	0x0002		/* Receive FIFO Data Register Reset */
+-#define SCFCR_LOOP	(1 << 0)	/* Loopback Test */
++#define SCFCR_MCE	BIT(3)	/* Modem Control Enable */
++#define SCFCR_TFRST	BIT(2)	/* Transmit FIFO Data Register Reset */
++#define SCFCR_RFRST	BIT(1)	/* Receive FIFO Data Register Reset */
++#define SCFCR_LOOP	BIT(0)	/* Loopback Test */
+ 
+ /* SCSPTR (Serial Port Register), optional */
+-#define SCSPTR_RTSIO	(1 << 7)	/* Serial Port RTS Pin Input/Output */
+-#define SCSPTR_RTSDT	(1 << 6)	/* Serial Port RTS Pin Data */
+-#define SCSPTR_CTSIO	(1 << 5)	/* Serial Port CTS Pin Input/Output */
+-#define SCSPTR_CTSDT	(1 << 4)	/* Serial Port CTS Pin Data */
+-#define SCSPTR_SPB2IO	(1 << 1)	/* Serial Port Break Input/Output */
+-#define SCSPTR_SPB2DT	(1 << 0)	/* Serial Port Break Data */
++#define SCSPTR_RTSIO	BIT(7)	/* Serial Port RTS Pin Input/Output */
++#define SCSPTR_RTSDT	BIT(6)	/* Serial Port RTS Pin Data */
++#define SCSPTR_CTSIO	BIT(5)	/* Serial Port CTS Pin Input/Output */
++#define SCSPTR_CTSDT	BIT(4)	/* Serial Port CTS Pin Data */
++#define SCSPTR_SPB2IO	BIT(1)	/* Serial Port Break Input/Output */
++#define SCSPTR_SPB2DT	BIT(0)	/* Serial Port Break Data */
+ 
+ /* HSSRR HSCIF */
+-#define HSCIF_SRE	0x8000		/* Sampling Rate Register Enable */
++#define HSCIF_SRE	BIT(15)	/* Sampling Rate Register Enable */
+ 
+ /* SCPCR (Serial Port Control Register), SCIFA/SCIFB only */
+-#define SCPCR_RTSC	(1 << 4)	/* Serial Port RTS Pin / Output Pin */
+-#define SCPCR_CTSC	(1 << 3)	/* Serial Port CTS Pin / Input Pin */
++#define SCPCR_RTSC	BIT(4)	/* Serial Port RTS Pin / Output Pin */
++#define SCPCR_CTSC	BIT(3)	/* Serial Port CTS Pin / Input Pin */
+ 
+ /* SCPDR (Serial Port Data Register), SCIFA/SCIFB only */
+-#define SCPDR_RTSD	(1 << 4)	/* Serial Port RTS Output Pin Data */
+-#define SCPDR_CTSD	(1 << 3)	/* Serial Port CTS Input Pin Data */
++#define SCPDR_RTSD	BIT(4)	/* Serial Port RTS Output Pin Data */
++#define SCPDR_CTSD	BIT(3)	/* Serial Port CTS Input Pin Data */
+ 
+ 
+ #define SCxSR_TEND(port)	(((port)->type = PORT_SCI) ? SCI_TEND   : SCIF_TEND)
+diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
+index 395fceb8c0600988..7c536ac5be05d3aa 100644
+--- a/include/linux/serial_sci.h
++++ b/include/linux/serial_sci.h
+@@ -1,6 +1,7 @@
+ #ifndef __LINUX_SERIAL_SCI_H
+ #define __LINUX_SERIAL_SCI_H
+ 
++#include <linux/bitops.h>
+ #include <linux/serial_core.h>
+ #include <linux/sh_dma.h>
+ 
+@@ -11,14 +12,14 @@
+ #define SCIx_NOT_SUPPORTED	(-1)
+ 
+ /* Serial Control Register (@ = not supported by all parts) */
+-#define SCSCR_TIE	(1 << 7)	/* Transmit Interrupt Enable */
+-#define SCSCR_RIE	(1 << 6)	/* Receive Interrupt Enable */
+-#define SCSCR_TE	(1 << 5)	/* Transmit Enable */
+-#define SCSCR_RE	(1 << 4)	/* Receive Enable */
+-#define SCSCR_REIE	(1 << 3)	/* Receive Error Interrupt Enable @ */
+-#define SCSCR_TOIE	(1 << 2)	/* Timeout Interrupt Enable @ */
+-#define SCSCR_CKE1	(1 << 1)	/* Clock Enable 1 */
+-#define SCSCR_CKE0	(1 << 0)	/* Clock Enable 0 */
++#define SCSCR_TIE	BIT(7)	/* Transmit Interrupt Enable */
++#define SCSCR_RIE	BIT(6)	/* Receive Interrupt Enable */
++#define SCSCR_TE	BIT(5)	/* Transmit Enable */
++#define SCSCR_RE	BIT(4)	/* Receive Enable */
++#define SCSCR_REIE	BIT(3)	/* Receive Error Interrupt Enable @ */
++#define SCSCR_TOIE	BIT(2)	/* Timeout Interrupt Enable @ */
++#define SCSCR_CKE1	BIT(1)	/* Clock Enable 1 */
++#define SCSCR_CKE0	BIT(0)	/* Clock Enable 0 */
+ 
+ 
+ enum {
+@@ -48,7 +49,7 @@ struct plat_sci_port_ops {
+ /*
+  * Port-specific capabilities
+  */
+-#define SCIx_HAVE_RTSCTS	(1 << 0)
++#define SCIx_HAVE_RTSCTS	BIT(0)
+ 
+ /*
+  * Platform device specific platform_data struct
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
