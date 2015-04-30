@@ -1,80 +1,42 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 30 Apr 2015 14:18:53 +0000
-Subject: [PATCH v2 04/15] pinctrl: sh-pfc: Add r8a7793 pinmux info
-Message-Id: <1430403544-26742-5-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 30 Apr 2015 16:21:33 +0000
+Subject: [PATCH 09/13] serial: sh-sci: Don't set SCLSR bits in the SCxSR error mask
+Message-Id: <1430410897-12770-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Adds the r8a7793 pinmux info to the PFC driver.
+error_mask is the union of all error indicating bits in the SCxSR
+register, while overrun_mask may apply to a different register (SCLSR),
+depending on the SCI variant.
 
-Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-[uli: minor reformat to fit mainline, fixed typos, split]
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Hence overrun_mask should only be ORed into error_mask if it applies to
+the SCxSR register.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/pinctrl/sh-pfc/core.c        |  6 ++++++
- drivers/pinctrl/sh-pfc/core.h        |  1 +
- drivers/pinctrl/sh-pfc/pfc-r8a7793.c | 19 +++++++++++++++++++
- 3 files changed, 26 insertions(+)
+ drivers/tty/serial/sh-sci.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 7b2c949..21326de 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -481,6 +481,12 @@ static const struct of_device_id sh_pfc_of_table[] = {
- 		.data = &r8a7791_pinmux_info,
- 	},
- #endif
-+#ifdef CONFIG_PINCTRL_PFC_R8A7793
-+	{
-+		.compatible = "renesas,pfc-r8a7793",
-+		.data = &r8a7793_pinmux_info,
-+	},
-+#endif
- #ifdef CONFIG_PINCTRL_PFC_SH73A0
- 	{
- 		.compatible = "renesas,pfc-sh73a0",
-diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-index 6dc8a6f..b151b77 100644
---- a/drivers/pinctrl/sh-pfc/core.h
-+++ b/drivers/pinctrl/sh-pfc/core.h
-@@ -71,6 +71,7 @@ extern const struct sh_pfc_soc_info r8a7778_pinmux_info;
- extern const struct sh_pfc_soc_info r8a7779_pinmux_info;
- extern const struct sh_pfc_soc_info r8a7790_pinmux_info;
- extern const struct sh_pfc_soc_info r8a7791_pinmux_info;
-+extern const struct sh_pfc_soc_info r8a7793_pinmux_info;
- extern const struct sh_pfc_soc_info sh7203_pinmux_info;
- extern const struct sh_pfc_soc_info sh7264_pinmux_info;
- extern const struct sh_pfc_soc_info sh7269_pinmux_info;
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7793.c b/drivers/pinctrl/sh-pfc/pfc-r8a7793.c
-index 0b23346..5037432 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7793.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7793.c
-@@ -6012,3 +6012,22 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	},
- 	{ },
- };
-+
-+const struct sh_pfc_soc_info r8a7793_pinmux_info = {
-+	.name = "r8a77930_pfc",
-+	.unlock_reg = 0xe6060000, /* PMMR */
-+
-+	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
-+
-+	.pins = pinmux_pins,
-+	.nr_pins = ARRAY_SIZE(pinmux_pins),
-+	.groups = pinmux_groups,
-+	.nr_groups = ARRAY_SIZE(pinmux_groups),
-+	.functions = pinmux_functions,
-+	.nr_functions = ARRAY_SIZE(pinmux_functions),
-+
-+	.cfg_regs = pinmux_config_regs,
-+
-+	.gpio_data = pinmux_data,
-+	.gpio_data_size = ARRAY_SIZE(pinmux_data),
-+};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index b636c53a1e5b3866..c3e884dd925f43a4 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2323,7 +2323,8 @@ static int sci_init_single(struct platform_device *dev,
+ 	 * Make the error mask inclusive of overrun detection, if
+ 	 * supported.
+ 	 */
+-	sci_port->error_mask |= sci_port->overrun_mask;
++	if (sci_port->overrun_reg = SCxSR)
++		sci_port->error_mask |= sci_port->overrun_mask;
+ 
+ 	port->type		= p->type;
+ 	port->flags		= UPF_FIXED_PORT | p->flags;
 -- 
-2.3.5
+1.9.1
 
