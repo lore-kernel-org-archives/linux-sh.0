@@ -1,60 +1,52 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 30 Apr 2015 16:04:49 +0000
-Subject: Re: [RFC PATCH 5/7] mmc: sh_mobile_sdhi: Add UHS-I mode support
-Message-Id: <554252A1.6070302@cogentembedded.com>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Thu, 30 Apr 2015 02:12:12 +0000
+Subject: [PATCH 1/1 v2] spi: Re-do the returning value of rspi_dma_check_then_transfer
+Message-Id: <1430359932-13245-2-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430396995.5802.39.camel@xylophone.i.decadent.org.uk> <1430397136.5802.44.camel@xylophone.i.decadent.org.uk>
-In-Reply-To: <1430397136.5802.44.camel@xylophone.i.decadent.org.uk>
+References: <1430359932-13245-1-git-send-email-cm-hiep@jinso.co.jp>
+In-Reply-To: <1430359932-13245-1-git-send-email-cm-hiep@jinso.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Hutchings <ben.hutchings@codethink.co.uk>, Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@lists.codethink.co.uk
+To: geert+renesas@glider.be
+Cc: broonie@kernel.org, linux-spi@vger.kernel.org, kuninori.morimoto.gx@renesas.com, yoshihiro.shimoda.uh@renesas.com, ryusuke.sakato.bx@renesas.com, linux-sh@vger.kernel.org
 
-Hello.
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-On 04/30/2015 03:32 PM, Ben Hutchings wrote:
+To reduce indentation and complexity of code, insteeds of returning zero
+the function rspi_dma_check_then_transfer should return rspi_dma_transfer
+directly after checking error.
 
-> Implement voltage switch, supporting modes up to SDR-50.
+Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+---
+ drivers/spi/spi-rspi.c | 13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
 
-> Based on work by Shinobu Uehara, Rob Taylor, William Towle and Ian Molton.
-
-> This uses two voltage regulators, one external and one on the pfc.
-
-> Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
-> ---
->   drivers/mmc/host/sh_mobile_sdhi.c |   48 +++++++++++++++++++++++++++++++++++++
->   1 file changed, 48 insertions(+)
-
-> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> index 92a58c6007fe..c8538a256e22 100644
-> --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-[...]
-> @@ -148,6 +150,41 @@ static void sh_mobile_sdhi_set_clk_div(struct platform_device *pdev, int clk)
->   	}
->   }
->
-> +static int sh_mobile_sdhi_start_signal_voltage_switch(
-> +	struct tmio_mmc_host *host, unsigned char signal_voltage)
-> +{
-> +	struct sh_mobile_sdhi *priv = host_to_priv(host);
-> +	int min_uV, max_uV;
-> +	int ret;
-> +
-> +	if (signal_voltage = MMC_SIGNAL_VOLTAGE_330) {
-> +		min_uV = 2700000;
-> +		max_uV = 3600000;
-> +	} else if (signal_voltage = MMC_SIGNAL_VOLTAGE_180) {
-> +		min_uV = 1700000;
-> +		max_uV = 1950000;
-> +	} else {
-> +		return -EINVAL;
-> +	}
-
-    The above is asking to be a *switch* statement.
-
-[...]
-
-WBR, Sergei
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 186924a..0061e28 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -665,15 +665,12 @@ static bool rspi_can_dma(struct spi_master *master, struct spi_device *spi,
+ static int rspi_dma_check_then_transfer(struct rspi_data *rspi,
+ 					 struct spi_transfer *xfer)
+ {
+-	if (rspi->master->can_dma && __rspi_can_dma(rspi, xfer)) {
+-		/* rx_buf can be NULL on RSPI on SH in TX-only Mode */
+-		int ret = rspi_dma_transfer(rspi, &xfer->tx_sg,
+-					xfer->rx_buf ? &xfer->rx_sg : NULL);
+-		if (ret != -EAGAIN)
+-			return 0;
+-	}
++	if (!rspi->master->can_dma || !__rspi_can_dma(rspi, xfer))
++		return -EAGAIN;
+ 
+-	return -EAGAIN;
++	/* rx_buf can be NULL on RSPI on SH in TX-only Mode */
++	return rspi_dma_transfer(rspi, &xfer->tx_sg,
++				xfer->rx_buf ? &xfer->rx_sg : NULL);
+ }
+ 
+ static int rspi_common_transfer(struct rspi_data *rspi,
+-- 
+1.9.1
 
