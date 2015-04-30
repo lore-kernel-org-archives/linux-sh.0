@@ -1,37 +1,201 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 30 Apr 2015 14:19:00 +0000
-Subject: [PATCH v2 11/15] clk: shmobile: r8a7793: document DIV6 clock bindings
-Message-Id: <1430403544-26742-12-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 30 Apr 2015 16:21:35 +0000
+Subject: [PATCH/RFC 11/13] serial: sh-sci: Replace buggy big #ifdef by runtime logic
+Message-Id: <1430410897-12770-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert@linux-m68k.org, horms@verge.net.au, linux-sh@vger.kernel.org
-Cc: magnus.damm@gmail.com, laurent.pinchart+renesas@ideasonboard.com, kuninori.morimoto.gx@renesas.com, linus.walleij@linaro.org, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, devicetree@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Cc: devicetree@vger.kernel.org
+The #ifdef logic to clear SCxSR bits using RMW on SCIFA/SCIFB and SCIF
+variants with some SCIFA features (sh7705/SH7720/sh7721) has several
+drawbacks:
+  - It wasn't updated for newer R-Mobile variants (APE6),
+  - It doesn't correctly handle SoCs with both SCIF and SCIFA/B (e.g.
+    R-Car Gen2, but also legacy sh7723/sh7724),
+  - It doesn't play well with ARM multi-platform kernels: on R-Car Gen2,
+    SCIF/SCIFA/SCIFB/HSCIF were handled differently, depending on
+    whether r8a7740 or sh73a0 support was enabled or not,
+
+Replace the #ifdef logic by runtime logic to fix this.
+
+SCIFA/SCIFB and SCIF on sh7705/sh7720/sh7721 use RMW to clear error
+bits, other variants use plain stores, as before.
+
+Note that this changes behavior for SCIFA on sh7723/sh7724 (these SoCs
+have both SCIF and SCIFA), which didn't use RMW before.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Question: Can we simplify the logic and use RMW everywhere?
+We seem to have been using it fine with (H)SCIF on R-Car Gen2 running
+multi-platform kernels.
+---
+ drivers/tty/serial/sh-sci.c | 36 ++++++++++++++++++++++++++----------
+ drivers/tty/serial/sh-sci.h | 33 ++++++++-------------------------
+ 2 files changed, 34 insertions(+), 35 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-index 054f65f..b0a3a11 100644
---- a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-@@ -10,7 +10,8 @@ Required Properties:
-     - "renesas,r8a73a4-div6-clock" for R8A73A4 (R-Mobile APE6) DIV6 clocks
-     - "renesas,r8a7740-div6-clock" for R8A7740 (R-Mobile A1) DIV6 clocks
-     - "renesas,r8a7790-div6-clock" for R8A7790 (R-Car H2) DIV6 clocks
--    - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2) DIV6 clocks
-+    - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2-W) DIV6 clocks
-+    - "renesas,r8a7793-div6-clock" for R8A7793 (R-Car M2-N) DIV6 clocks
-     - "renesas,sh73a0-div6-clock" for SH73A0 (SH-Mobile AG5) DIV6 clocks
-     - "renesas,cpg-div6-clock" for generic DIV6 clocks
-   - reg: Base address and length of the memory resource used by the DIV6 clock
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index b74a644e4b044b8b..67f796b3f4d51a97 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -489,6 +489,22 @@ static void sci_port_disable(struct sci_port *sci_port)
+ 	pm_runtime_put_sync(sci_port->port.dev);
+ }
+ 
++static void sci_clear_SCxSR(struct uart_port *port, unsigned int mask)
++{
++	if (port->type = PORT_SCI) {
++		/* Just store the mask */
++		serial_port_out(port, SCxSR, mask);
++	} else if (to_sci_port(port)->overrun_mask = SCIFA_ORER) {
++		/* SCIFA/SCIFB and SCIF on SH7705/SH7720/SH7721 */
++		/* Only clear the status bits we want to clear */
++		serial_port_out(port, SCxSR,
++				serial_port_in(port, SCxSR) & mask);
++	} else {
++		/* Store the mask, clear parity/framing errors */
++		serial_port_out(port, SCxSR, mask & ~(SCIF_FERC | SCIF_PERC));
++	}
++}
++
+ #if defined(CONFIG_CONSOLE_POLL) || defined(CONFIG_SERIAL_SH_SCI_CONSOLE)
+ 
+ #ifdef CONFIG_CONSOLE_POLL
+@@ -500,7 +516,7 @@ static int sci_poll_get_char(struct uart_port *port)
+ 	do {
+ 		status = serial_port_in(port, SCxSR);
+ 		if (status & SCxSR_ERRORS(port)) {
+-			serial_port_out(port, SCxSR, SCxSR_ERROR_CLEAR(port));
++			sci_clear_SCxSR(port, SCxSR_ERROR_CLEAR(port));
+ 			continue;
+ 		}
+ 		break;
+@@ -513,7 +529,7 @@ static int sci_poll_get_char(struct uart_port *port)
+ 
+ 	/* Dummy read */
+ 	serial_port_in(port, SCxSR);
+-	serial_port_out(port, SCxSR, SCxSR_RDxF_CLEAR(port));
++	sci_clear_SCxSR(port, SCxSR_RDxF_CLEAR(port));
+ 
+ 	return c;
+ }
+@@ -528,7 +544,7 @@ static void sci_poll_put_char(struct uart_port *port, unsigned char c)
+ 	} while (!(status & SCxSR_TDxE(port)));
+ 
+ 	serial_port_out(port, SCxTDR, c);
+-	serial_port_out(port, SCxSR, SCxSR_TDxE_CLEAR(port) & ~SCxSR_TEND(port));
++	sci_clear_SCxSR(port, SCxSR_TDxE_CLEAR(port) & ~SCxSR_TEND(port));
+ }
+ #endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
+ 
+@@ -655,7 +671,7 @@ static void sci_transmit_chars(struct uart_port *port)
+ 		port->icount.tx++;
+ 	} while (--count > 0);
+ 
+-	serial_port_out(port, SCxSR, SCxSR_TDxE_CLEAR(port));
++	sci_clear_SCxSR(port, SCxSR_TDxE_CLEAR(port));
+ 
+ 	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
+ 		uart_write_wakeup(port);
+@@ -666,7 +682,7 @@ static void sci_transmit_chars(struct uart_port *port)
+ 
+ 		if (port->type != PORT_SCI) {
+ 			serial_port_in(port, SCxSR); /* Dummy read */
+-			serial_port_out(port, SCxSR, SCxSR_TDxE_CLEAR(port));
++			sci_clear_SCxSR(port, SCxSR_TDxE_CLEAR(port));
+ 		}
+ 
+ 		ctrl |= SCSCR_TIE;
+@@ -750,7 +766,7 @@ static void sci_receive_chars(struct uart_port *port)
+ 		}
+ 
+ 		serial_port_in(port, SCxSR); /* dummy read */
+-		serial_port_out(port, SCxSR, SCxSR_RDxF_CLEAR(port));
++		sci_clear_SCxSR(port, SCxSR_RDxF_CLEAR(port));
+ 
+ 		copied += count;
+ 		port->icount.rx += count;
+@@ -761,7 +777,7 @@ static void sci_receive_chars(struct uart_port *port)
+ 		tty_flip_buffer_push(tport);
+ 	} else {
+ 		serial_port_in(port, SCxSR); /* dummy read */
+-		serial_port_out(port, SCxSR, SCxSR_RDxF_CLEAR(port));
++		sci_clear_SCxSR(port, SCxSR_RDxF_CLEAR(port));
+ 	}
+ }
+ 
+@@ -982,14 +998,14 @@ static irqreturn_t sci_er_interrupt(int irq, void *ptr)
+ 		if (sci_handle_errors(port)) {
+ 			/* discard character in rx buffer */
+ 			serial_port_in(port, SCxSR);
+-			serial_port_out(port, SCxSR, SCxSR_RDxF_CLEAR(port));
++			sci_clear_SCxSR(port, SCxSR_RDxF_CLEAR(port));
+ 		}
+ 	} else {
+ 		sci_handle_fifo_overrun(port);
+ 		sci_rx_interrupt(irq, ptr);
+ 	}
+ 
+-	serial_port_out(port, SCxSR, SCxSR_ERROR_CLEAR(port));
++	sci_clear_SCxSR(port, SCxSR_ERROR_CLEAR(port));
+ 
+ 	/* Kick the transmission */
+ 	sci_tx_interrupt(irq, ptr);
+@@ -1003,7 +1019,7 @@ static irqreturn_t sci_br_interrupt(int irq, void *ptr)
+ 
+ 	/* Handle BREAKs */
+ 	sci_handle_breaks(port);
+-	serial_port_out(port, SCxSR, SCxSR_BREAK_CLEAR(port));
++	sci_clear_SCxSR(port, SCxSR_BREAK_CLEAR(port));
+ 
+ 	return IRQ_HANDLED;
+ }
+diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
+index 3393f67b4e843578..1e1edbd152673e8f 100644
+--- a/drivers/tty/serial/sh-sci.h
++++ b/drivers/tty/serial/sh-sci.h
+@@ -119,28 +119,11 @@ enum {
+ 
+ #define SCxSR_ERRORS(port)	(to_sci_port(port)->error_mask)
+ 
+-#if defined(CONFIG_CPU_SUBTYPE_SH7705) || \
+-    defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+-    defined(CONFIG_CPU_SUBTYPE_SH7721) || \
+-    defined(CONFIG_ARCH_SH73A0) || \
+-    defined(CONFIG_ARCH_R8A7740)
+-
+-# define SCxSR_RDxF_CLEAR(port) \
+-	(serial_port_in(port, SCxSR) & SCIF_RDxF_CLEAR)
+-# define SCxSR_ERROR_CLEAR(port) \
+-	(serial_port_in(port, SCxSR) & SCIF_ERROR_CLEAR)
+-# define SCxSR_TDxE_CLEAR(port) \
+-	(serial_port_in(port, SCxSR) & SCIF_TDxE_CLEAR)
+-# define SCxSR_BREAK_CLEAR(port) \
+-	(serial_port_in(port, SCxSR) & SCIF_BREAK_CLEAR)
+-#else
+-# define SCxSR_RDxF_CLEAR(port) \
+-	((((port)->type = PORT_SCI) ? SCI_RDxF_CLEAR : SCIF_RDxF_CLEAR) & 0xff)
+-# define SCxSR_ERROR_CLEAR(port) \
+-	((((port)->type = PORT_SCI) ? SCI_ERROR_CLEAR : SCIF_ERROR_CLEAR) & 0xff)
+-# define SCxSR_TDxE_CLEAR(port) \
+-	((((port)->type = PORT_SCI) ? SCI_TDxE_CLEAR : SCIF_TDxE_CLEAR) & 0xff)
+-# define SCxSR_BREAK_CLEAR(port) \
+-	((((port)->type = PORT_SCI) ? SCI_BREAK_CLEAR : SCIF_BREAK_CLEAR) & 0xff)
+-#endif
+-
++#define SCxSR_RDxF_CLEAR(port) \
++	(((port)->type = PORT_SCI) ? SCI_RDxF_CLEAR : SCIF_RDxF_CLEAR)
++#define SCxSR_ERROR_CLEAR(port) \
++	(((port)->type = PORT_SCI) ? SCI_ERROR_CLEAR : SCIF_ERROR_CLEAR)
++#define SCxSR_TDxE_CLEAR(port) \
++	(((port)->type = PORT_SCI) ? SCI_TDxE_CLEAR : SCIF_TDxE_CLEAR)
++#define SCxSR_BREAK_CLEAR(port) \
++	(((port)->type = PORT_SCI) ? SCI_BREAK_CLEAR : SCIF_BREAK_CLEAR)
 -- 
-2.3.5
+1.9.1
 
