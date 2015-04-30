@@ -1,34 +1,34 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 21 Apr 2015 10:07:58 +0000
-Subject: Re: [PATCH 2/3 v3] mmc: sh_mmcif: cleanup to use dev instead of &pdev->dev
-Message-Id: <CAMuHMdXike0vh5bTmyALN08hDOU7M4kfN3oSPJgX4n_42QZQ6w@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 30 Apr 2015 14:18:42 +0000
+Subject: Re: [PATCH 06/11] ARM: shmobile: r8a7793: add SMP support
+Message-Id: <CAO3366zY2Fjap1f+H7Fd7VHQo0gVHDJEWvzj-cq28DwXn3GqvA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
-	<87vbgpubvr.wl%kuninori.morimoto.gx@renesas.com>
-	<87sibtubtg.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87sibtubtg.wl%kuninori.morimoto.gx@renesas.com>
+References: <1425661798-10487-7-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1425661798-10487-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
+To: linux-sh@vger.kernel.org
 
-On Tue, Apr 21, 2015 at 10:27 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Sun, Mar 8, 2015 at 11:10 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> On Sat, Mar 7, 2015 at 1:08 AM, Simon Horman <horms@verge.net.au> wrote:
+>>> +     /* setup for debug mode */
+>>> +     if (rcar_gen2_read_mode_pins() & MD(21)) {
+>>> +             p = ioremap_nocache(APMU, 0x2000);
+>>> +             val = readl_relaxed(p + CA15DBGRCR);
+>>> +             writel_relaxed((val | 0x01f80000), p + CA15DBGRCR);
+>>> +             iounmap(p);
+>>
+>> As you noted elsewhere, the above is inconsistent with the r8a7791 where an
+>> error returned if debug mode is enabled: that is if the if condition is
+>> true.
 >
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+> The above may actually be what is needed on r8a7791, too :-)
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+If I correctly remember the conversation I had with Magnus on this
+issue, it would be more correct to say "something like the above", as
+the hoop we have to jump through there is SoC-specific.
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+CU
+Uli
