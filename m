@@ -1,46 +1,29 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 28 Apr 2015 12:08:04 +0000
-Subject: [PATCH 2/2] ARM: multi_v7_defconfig: Replace USB_RCAR_GEN2_PHY by PHY_RCAR_GEN2
-Message-Id: <1430222884-2095-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 30 Apr 2015 00:17:44 +0000
+Subject: Re: [PATCH 2/2] ARM: multi_v7_defconfig: Replace USB_RCAR_GEN2_PHY by PHY_RCAR_GEN2
+Message-Id: <20150430001743.GF17758@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1430222884-2095-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430222884-2095-1-git-send-email-geert+renesas@glider.be>
+ <1430222884-2095-2-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430222884-2095-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The legacy-only USB_RCAR_GEN2_PHY driver was replaced by the DT-only
-PHY_RCAR_GEN2 driver.
+On Tue, Apr 28, 2015 at 02:08:04PM +0200, Geert Uytterhoeven wrote:
+> The legacy-only USB_RCAR_GEN2_PHY driver was replaced by the DT-only
+> PHY_RCAR_GEN2 driver.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+> Oops, CONFIG_USB_RCAR_GEN2_PHY shouldn't have been in a multiplatform
+> defconfig, as it supports legacy platform data only.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-Oops, CONFIG_USB_RCAR_GEN2_PHY shouldn't have been in a multiplatform
-defconfig, as it supports legacy platform data only.
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
- arch/arm/configs/multi_v7_defconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Olof, Arnd, Kevin,
 
-diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
-index 06e7e887fea550b3..2835ffda3bfed8ed 100644
---- a/arch/arm/configs/multi_v7_defconfig
-+++ b/arch/arm/configs/multi_v7_defconfig
-@@ -447,7 +447,6 @@ CONFIG_USB_GPIO_VBUS=y
- CONFIG_USB_ISP1301=y
- CONFIG_USB_MXS_PHY=y
- CONFIG_USB_RCAR_PHY=m
--CONFIG_USB_RCAR_GEN2_PHY=m
- CONFIG_USB_GADGET=y
- CONFIG_USB_RENESAS_USBHS_UDC=m
- CONFIG_MMC=y
-@@ -561,6 +560,7 @@ CONFIG_OMAP_USB2=y
- CONFIG_TI_PIPE3=y
- CONFIG_PHY_MIPHY28LP=y
- CONFIG_PHY_MIPHY365X=y
-+CONFIG_PHY_RCAR_GEN2=m
- CONFIG_PHY_STIH41X_USB=y
- CONFIG_PHY_STIH407_USB=y
- CONFIG_PHY_SUN4I_USB=y
--- 
-1.9.1
-
+I'm assuming that you want to take this directly (or not!).
+However, if you would like me to queue up these kind of changes
+in my defconfig branch please just let me know.
