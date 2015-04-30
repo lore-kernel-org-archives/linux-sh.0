@@ -1,8 +1,10 @@
 From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 30 Apr 2015 14:18:59 +0000
+Date: Thu, 30 Apr 2015 14:23:05 +0000
 Subject: [PATCH v2 10/15] ARM: shmobile: r8a7793: add SMP support
-Message-Id: <1430403544-26742-11-git-send-email-ulrich.hecht+renesas@gmail.com>
+Message-Id: <1430403785-26898-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430403544-26742-11-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1430403544-26742-11-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
