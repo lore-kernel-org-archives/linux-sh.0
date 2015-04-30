@@ -1,123 +1,134 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 28 Apr 2015 10:17:50 +0000
-Subject: [PATCH] irqchip: irqc: Remove platform data support
-Message-Id: <1430216270-31929-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 30 Apr 2015 05:51:41 +0000
+Subject: Re: [PATCH] irqchip: irqc: Remove platform data support
+Message-Id: <20150430055140.GP15511@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430216270-31929-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430216270-31929-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-As of commit 914d7d148411997c ("ARM: shmobile: r8a73a4: Remove legacy
-code"), the Renesas R-Mobile/R-Car interrupt controller is used with DT
-only, and interrupt numbers are thus always assigned automatically.
+On Tue, Apr 28, 2015 at 12:17:50PM +0200, Geert Uytterhoeven wrote:
+> As of commit 914d7d148411997c ("ARM: shmobile: r8a73a4: Remove legacy
+> code"), the Renesas R-Mobile/R-Car interrupt controller is used with DT
+> only, and interrupt numbers are thus always assigned automatically.
+> 
+> Drop the platform data declaration and all related support code.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Drop the platform data declaration and all related support code.
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/irqchip/irq-renesas-irqc.c             | 17 +---------------
- include/linux/platform_data/irq-renesas-irqc.h | 27 --------------------------
- 2 files changed, 1 insertion(+), 43 deletions(-)
- delete mode 100644 include/linux/platform_data/irq-renesas-irqc.h
-
-diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
-index cdf80b7794cd738e..c8b15d1cd7c99d3e 100644
---- a/drivers/irqchip/irq-renesas-irqc.c
-+++ b/drivers/irqchip/irq-renesas-irqc.c
-@@ -29,7 +29,6 @@
- #include <linux/err.h>
- #include <linux/slab.h>
- #include <linux/module.h>
--#include <linux/platform_data/irq-renesas-irqc.h>
- #include <linux/pm_runtime.h>
- 
- #define IRQC_IRQ_MAX	32	/* maximum 32 interrupts per driver instance */
-@@ -62,7 +61,6 @@ struct irqc_priv {
- 	void __iomem *iomem;
- 	void __iomem *cpu_int_base;
- 	struct irqc_irq irq[IRQC_IRQ_MAX];
--	struct renesas_irqc_config config;
- 	unsigned int number_of_irqs;
- 	struct platform_device *pdev;
- 	struct irq_chip irq_chip;
-@@ -175,7 +173,6 @@ static struct irq_domain_ops irqc_irq_domain_ops = {
- 
- static int irqc_probe(struct platform_device *pdev)
- {
--	struct renesas_irqc_config *pdata = pdev->dev.platform_data;
- 	struct irqc_priv *p;
- 	struct resource *io;
- 	struct resource *irq;
-@@ -191,10 +188,6 @@ static int irqc_probe(struct platform_device *pdev)
- 		goto err0;
- 	}
- 
--	/* deal with driver instance configuration */
--	if (pdata)
--		memcpy(&p->config, pdata, sizeof(*pdata));
--
- 	p->pdev = pdev;
- 	platform_set_drvdata(pdev, p);
- 
-@@ -251,8 +244,7 @@ static int irqc_probe(struct platform_device *pdev)
- 	irq_chip->flags	= IRQCHIP_MASK_ON_SUSPEND;
- 
- 	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
--					      p->number_of_irqs,
--					      p->config.irq_base,
-+					      p->number_of_irqs, 0,
- 					      &irqc_irq_domain_ops, p);
- 	if (!p->irq_domain) {
- 		ret = -ENXIO;
-@@ -272,13 +264,6 @@ static int irqc_probe(struct platform_device *pdev)
- 
- 	dev_info(&pdev->dev, "driving %d irqs\n", p->number_of_irqs);
- 
--	/* warn in case of mismatch if irq base is specified */
--	if (p->config.irq_base) {
--		if (p->config.irq_base != p->irq[0].domain_irq)
--			dev_warn(&pdev->dev, "irq base mismatch (%d/%d)\n",
--				 p->config.irq_base, p->irq[0].domain_irq);
--	}
--
- 	return 0;
- err3:
- 	while (--k >= 0)
-diff --git a/include/linux/platform_data/irq-renesas-irqc.h b/include/linux/platform_data/irq-renesas-irqc.h
-deleted file mode 100644
-index 3ae17b3e00ed653c..0000000000000000
---- a/include/linux/platform_data/irq-renesas-irqc.h
-+++ /dev/null
-@@ -1,27 +0,0 @@
--/*
-- * Renesas IRQC Driver
-- *
-- *  Copyright (C) 2013 Magnus Damm
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-- */
--
--#ifndef __IRQ_RENESAS_IRQC_H__
--#define __IRQ_RENESAS_IRQC_H__
--
--struct renesas_irqc_config {
--	unsigned int irq_base;
--};
--
--#endif /* __IRQ_RENESAS_IRQC_H__ */
--- 
-1.9.1
-
+> ---
+>  drivers/irqchip/irq-renesas-irqc.c             | 17 +---------------
+>  include/linux/platform_data/irq-renesas-irqc.h | 27 --------------------------
+>  2 files changed, 1 insertion(+), 43 deletions(-)
+>  delete mode 100644 include/linux/platform_data/irq-renesas-irqc.h
+> 
+> diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
+> index cdf80b7794cd738e..c8b15d1cd7c99d3e 100644
+> --- a/drivers/irqchip/irq-renesas-irqc.c
+> +++ b/drivers/irqchip/irq-renesas-irqc.c
+> @@ -29,7 +29,6 @@
+>  #include <linux/err.h>
+>  #include <linux/slab.h>
+>  #include <linux/module.h>
+> -#include <linux/platform_data/irq-renesas-irqc.h>
+>  #include <linux/pm_runtime.h>
+>  
+>  #define IRQC_IRQ_MAX	32	/* maximum 32 interrupts per driver instance */
+> @@ -62,7 +61,6 @@ struct irqc_priv {
+>  	void __iomem *iomem;
+>  	void __iomem *cpu_int_base;
+>  	struct irqc_irq irq[IRQC_IRQ_MAX];
+> -	struct renesas_irqc_config config;
+>  	unsigned int number_of_irqs;
+>  	struct platform_device *pdev;
+>  	struct irq_chip irq_chip;
+> @@ -175,7 +173,6 @@ static struct irq_domain_ops irqc_irq_domain_ops = {
+>  
+>  static int irqc_probe(struct platform_device *pdev)
+>  {
+> -	struct renesas_irqc_config *pdata = pdev->dev.platform_data;
+>  	struct irqc_priv *p;
+>  	struct resource *io;
+>  	struct resource *irq;
+> @@ -191,10 +188,6 @@ static int irqc_probe(struct platform_device *pdev)
+>  		goto err0;
+>  	}
+>  
+> -	/* deal with driver instance configuration */
+> -	if (pdata)
+> -		memcpy(&p->config, pdata, sizeof(*pdata));
+> -
+>  	p->pdev = pdev;
+>  	platform_set_drvdata(pdev, p);
+>  
+> @@ -251,8 +244,7 @@ static int irqc_probe(struct platform_device *pdev)
+>  	irq_chip->flags	= IRQCHIP_MASK_ON_SUSPEND;
+>  
+>  	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
+> -					      p->number_of_irqs,
+> -					      p->config.irq_base,
+> +					      p->number_of_irqs, 0,
+>  					      &irqc_irq_domain_ops, p);
+>  	if (!p->irq_domain) {
+>  		ret = -ENXIO;
+> @@ -272,13 +264,6 @@ static int irqc_probe(struct platform_device *pdev)
+>  
+>  	dev_info(&pdev->dev, "driving %d irqs\n", p->number_of_irqs);
+>  
+> -	/* warn in case of mismatch if irq base is specified */
+> -	if (p->config.irq_base) {
+> -		if (p->config.irq_base != p->irq[0].domain_irq)
+> -			dev_warn(&pdev->dev, "irq base mismatch (%d/%d)\n",
+> -				 p->config.irq_base, p->irq[0].domain_irq);
+> -	}
+> -
+>  	return 0;
+>  err3:
+>  	while (--k >= 0)
+> diff --git a/include/linux/platform_data/irq-renesas-irqc.h b/include/linux/platform_data/irq-renesas-irqc.h
+> deleted file mode 100644
+> index 3ae17b3e00ed653c..0000000000000000
+> --- a/include/linux/platform_data/irq-renesas-irqc.h
+> +++ /dev/null
+> @@ -1,27 +0,0 @@
+> -/*
+> - * Renesas IRQC Driver
+> - *
+> - *  Copyright (C) 2013 Magnus Damm
+> - *
+> - * This program is free software; you can redistribute it and/or modify
+> - * it under the terms of the GNU General Public License as published by
+> - * the Free Software Foundation; either version 2 of the License
+> - *
+> - * This program is distributed in the hope that it will be useful,
+> - * but WITHOUT ANY WARRANTY; without even the implied warranty of
+> - * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> - * GNU General Public License for more details.
+> - *
+> - * You should have received a copy of the GNU General Public License
+> - * along with this program; if not, write to the Free Software
+> - * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+> - */
+> -
+> -#ifndef __IRQ_RENESAS_IRQC_H__
+> -#define __IRQ_RENESAS_IRQC_H__
+> -
+> -struct renesas_irqc_config {
+> -	unsigned int irq_base;
+> -};
+> -
+> -#endif /* __IRQ_RENESAS_IRQC_H__ */
+> -- 
+> 1.9.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
