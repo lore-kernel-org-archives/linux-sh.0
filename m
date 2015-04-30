@@ -1,45 +1,89 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 28 Apr 2015 02:07:02 +0000
-Subject: Re: [PATCH] clk: emev2: Use generic names for device nodes
-Message-Id: <20150428020701.GA26051@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 30 Apr 2015 14:18:56 +0000
+Subject: [PATCH v2 07/15] ARM: shmobile: Basic r8a7793 SoC support
+Message-Id: <1430403544-26742-8-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430139093-14769-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430139093-14769-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Apr 27, 2015 at 02:51:33PM +0200, Geert Uytterhoeven wrote:
-> uart -> serial
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Minimal support without power management or SMP.
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/Kconfig         |  4 ++++
+ arch/arm/mach-shmobile/Makefile        |  1 +
+ arch/arm/mach-shmobile/setup-r8a7793.c | 33 +++++++++++++++++++++++++++++++++
+ 3 files changed, 38 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/setup-r8a7793.c
 
-> ---
->  Documentation/devicetree/bindings/clock/emev2-clock.txt | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/clock/emev2-clock.txt b/Documentation/devicetree/bindings/clock/emev2-clock.txt
-> index 60bbb1a8c69a3852..268ca615459e7549 100644
-> --- a/Documentation/devicetree/bindings/clock/emev2-clock.txt
-> +++ b/Documentation/devicetree/bindings/clock/emev2-clock.txt
-> @@ -52,7 +52,7 @@ usia_u0_sclk: usia_u0_sclk {
->  
->  Example of consumer:
->  
-> -uart@e1020000 {
-> +serial@e1020000 {
->  	compatible = "renesas,em-uart";
->  	reg = <0xe1020000 0x38>;
->  	interrupts = <0 8 0>;
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 0fb4842..140b696 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -80,6 +80,10 @@ config ARCH_R8A7791
+ 	select ARCH_RCAR_GEN2
+ 	select I2C
+ 
++config ARCH_R8A7793
++	bool "R-Car M2-N (R8A7793)"
++	select ARCH_RCAR_GEN2
++
+ config ARCH_R8A7794
+ 	bool "R-Car E2 (R8A77940)"
+ 	select ARCH_RCAR_GEN2
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 89e463d..e4b8fdb 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -13,6 +13,7 @@ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o pm-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
+ obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o
++obj-$(CONFIG_ARCH_R8A7793)	+= setup-r8a7793.o
+ obj-$(CONFIG_ARCH_R8A7794)	+= setup-r8a7794.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
+ obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
+diff --git a/arch/arm/mach-shmobile/setup-r8a7793.c b/arch/arm/mach-shmobile/setup-r8a7793.c
+new file mode 100644
+index 0000000..1d2825c
+--- /dev/null
++++ b/arch/arm/mach-shmobile/setup-r8a7793.c
+@@ -0,0 +1,33 @@
++/*
++ * r8a7793 processor support
++ *
++ * Copyright (C) 2015  Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/init.h>
++#include <asm/mach/arch.h>
++
++#include "common.h"
++#include "rcar-gen2.h"
++
++static const char *r8a7793_boards_compat_dt[] __initconst = {
++	"renesas,r8a7793",
++	NULL,
++};
++
++DT_MACHINE_START(R8A7793_DT, "Generic R8A7793 (Flattened Device Tree)")
++	.init_early	= shmobile_init_delay,
++	.init_time	= rcar_gen2_timer_init,
++	.init_late	= shmobile_init_late,
++	.reserve	= rcar_gen2_reserve,
++	.dt_compat	= r8a7793_boards_compat_dt,
++MACHINE_END
+-- 
+2.3.5
+
