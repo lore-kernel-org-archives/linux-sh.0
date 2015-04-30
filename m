@@ -1,45 +1,32 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 30 Apr 2015 16:21:37 +0000
-Subject: [PATCH/RFC 13/13] serial: sh-sci: Correct FIFO stages on sh7705/sh7720/sh7721
-Message-Id: <1430410897-12770-14-git-send-email-geert+renesas@glider.be>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Thu, 30 Apr 2015 02:12:11 +0000
+Subject: [PATCH 0/1 v2] spi: Re-do the returning value of rspi_dma_check_then_transfer
+Message-Id: <1430359932-13245-1-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org
+Cc: broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, ryusuke.sakato.bx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-According to the datasheet, SCIFs on SoCs using SCIx_SH7705_SCIF_REGTYPE
-(sh7705, sh7720, and sh7721) have 64-stage FIFO registers.
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-Untested due to lack of hardware.
----
- drivers/tty/serial/sh-sci.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Hi Mark
+Hi Geert
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index f1591b243bccb2bf..583aa563d4038f8b 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2272,12 +2272,13 @@ static int sci_init_single(struct platform_device *dev,
- 		sampling_rate = 16;
- 		break;
- 	case PORT_SCIF:
--		port->fifosize = 16;
- 		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE) {
-+			port->fifosize = 64;
- 			sci_port->overrun_reg = SCxSR;
- 			sci_port->overrun_mask = SCIFA_ORER;
- 			sampling_rate = 16;
- 		} else {
-+			port->fifosize = 16;
- 			sci_port->overrun_reg = SCLSR;
- 			sci_port->overrun_mask = SCLSR_ORER;
- 			sampling_rate = 32;
+This is version 2 of spi-Re-do-the-returning-value-of-rspi_dma_check_then_transfer patch.
+I have tested it at linux Upstream Linux-4.0.0-10713-g6e24fd1 on Lager and Koelsch.
+To reduce indentation and complexity of code, drop "ret" then function 
+rspi_dma_check_then_transfer should be returning rspi_dma_transfer directly
+after checking error.
+Please consider the following patch for the Rcar-Gen2.
+
+Hiep Cao Minh (1):
+  spi: Re-do the returning value of rspi_dma_check_then_transfer
+
+ drivers/spi/spi-rspi.c | 13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
+
 -- 
 1.9.1
 
