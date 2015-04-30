@@ -1,48 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 30 Apr 2015 00:13:34 +0000
-Subject: Re: [PATCH 08/10] ARM: shmobile: armadillo800eva dts: Use generic names for device nodes
-Message-Id: <20150430001333.GC17758@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 30 Apr 2015 14:19:03 +0000
+Subject: [PATCH v2 14/15] clk: shmobile: Add r8a7793 SoC to MSTP bindings
+Message-Id: <1430403544-26742-15-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430139334-15272-1-git-send-email-geert+renesas@glider.be>
- <1430139334-15272-9-git-send-email-geert+renesas@glider.be>
- <553E3404.6020601@cogentembedded.com>
- <CAMuHMdVBCS66UCjZwRSdcWjgukoVK-JMq2ZFHX0WKkh=Jh+yBQ@mail.gmail.com>
- <20150430001254.GB17758@verge.net.au>
-In-Reply-To: <20150430001254.GB17758@verge.net.au>
+References: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: geert@linux-m68k.org, horms@verge.net.au, linux-sh@vger.kernel.org
+Cc: magnus.damm@gmail.com, laurent.pinchart+renesas@ideasonboard.com, kuninori.morimoto.gx@renesas.com, linus.walleij@linaro.org, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Michael Turquette <mturquette@linaro.org>, devicetree@vger.kernel.org
 
-On Thu, Apr 30, 2015 at 09:12:55AM +0900, Simon Horman wrote:
-> On Tue, Apr 28, 2015 at 10:52:37AM +0200, Geert Uytterhoeven wrote:
-> > On Mon, Apr 27, 2015 at 3:05 PM, Sergei Shtylyov
-> > <sergei.shtylyov@cogentembedded.com> wrote:
-> > >> -       wm8978: wm8978@1a {
-> > >> +       wm8978: codec@1a {
-> > >
-> > >     Perhaps sound-codec?
-> > 
-> > Given there's no single instance of "sound-codec" under
-> > Documentation/devicetree/, and only four occurrences in DTS files (whoops,
-> > I should fix up 3 of them ;-):
-> 
-> :)
-> 
-> I'm happy to help with that if you are dunning short of cycles.
+Also replaces "R-Car M2" with "R-Car M2-W" to avoid confusion.
 
-I see you have already sent patches, thanks.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Cc: Michael Turquette <mturquette@linaro.org>
+Cc: devicetree@vger.kernel.org
+---
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-> >     arch/arm/boot/dts/r8a7778-bockw.dts: ak4643: sound-codec@12 {
-> >     arch/arm/boot/dts/r8a7790-lager.dts: ak4643: sound-codec@12 {
-> >     arch/arm/boot/dts/r8a7791-koelsch.dts: ak4643: sound-codec@12 {
-> >     arch/xtensa/boot/dts/xtfpga.dtsi: tlv320aic23: sound-codec@0 {
-> > 
-> > I'm strongly leaning towards "codec".
-> 
-> On the strength of that I have queued this up.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 0a80fa7..923ee0f 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -15,7 +15,8 @@ Required Properties:
+     - "renesas,r8a7740-mstp-clocks" for R8A7740 (R-Mobile A1) MSTP gate clocks
+     - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
+     - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+-    - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
++    - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2-W) MSTP gate clocks
++    - "renesas,r8a7793-mstp-clocks" for R8A7793 (R-Car M2-N) MSTP gate clocks
+     - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
+     - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
+     - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
+-- 
+2.3.5
+
