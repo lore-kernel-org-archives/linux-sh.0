@@ -1,175 +1,45 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 03 Apr 2015 12:42:03 +0000
-Subject: [PATCH/RFC 6/6] staging: board: armadillo800eva: Board staging for sh_mobile_lcdc_fb
-Message-Id: <1428064923-24950-7-git-send-email-geert+renesas@glider.be>
+Date: Thu, 30 Apr 2015 16:21:37 +0000
+Subject: [PATCH/RFC 13/13] serial: sh-sci: Correct FIFO stages on sh7705/sh7720/sh7721
+Message-Id: <1430410897-12770-14-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1428064923-24950-1-git-send-email-geert+renesas@glider.be>
+References: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add staging board support for the r8a7740-based armadillo800eva board
-and add platform devices to allow in-tree continuous development of the
-drivers on the armadillo800eva board.
-
-When DT bindings are ready for theses drivers then the platform devices
-in the armadillo800eva staging board code can easily be removed. Until
-then we use platform devices to continuously improve the driver and
-integrate code.
-
-Added platform devices:
-  - sh_mobile_lcdc_fb for the on-board LCD.
+According to the datasheet, SCIFs on SoCs using SCIx_SH7705_SCIF_REGTYPE
+(sh7705, sh7720, and sh7721) have 64-stage FIFO registers.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-What other devices do we want to add?
+Untested due to lack of hardware.
 ---
- drivers/staging/board/Makefile          |   3 +-
- drivers/staging/board/armadillo800eva.c | 124 ++++++++++++++++++++++++++++++++
- 2 files changed, 126 insertions(+), 1 deletion(-)
- create mode 100644 drivers/staging/board/armadillo800eva.c
+ drivers/tty/serial/sh-sci.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/staging/board/Makefile b/drivers/staging/board/Makefile
-index 65d39ecfad63bbf4..6842745feb9404f8 100644
---- a/drivers/staging/board/Makefile
-+++ b/drivers/staging/board/Makefile
-@@ -1,2 +1,3 @@
- obj-y	:= board.o
--obj-$(CONFIG_ARCH_EMEV2)      += kzm9d.o
-+obj-$(CONFIG_ARCH_EMEV2)	+= kzm9d.o
-+obj-$(CONFIG_ARCH_R8A7740)	+= armadillo800eva.o
-diff --git a/drivers/staging/board/armadillo800eva.c b/drivers/staging/board/armadillo800eva.c
-new file mode 100644
-index 0000000000000000..f9cb645877f52c52
---- /dev/null
-+++ b/drivers/staging/board/armadillo800eva.c
-@@ -0,0 +1,124 @@
-+/*
-+ * Staging board support for Armadillo 800 eva.
-+ * Enable not-yet-DT-capable devices here.
-+ *
-+ * Based on board-armadillo800eva.c
-+ *
-+ * Copyright (C) 2012 Renesas Solutions Corp.
-+ * Copyright (C) 2012 Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#include <linux/dma-mapping.h>
-+#include <linux/fb.h>
-+#include <linux/gpio.h>
-+#include <linux/kernel.h>
-+#include <linux/pinctrl/machine.h>
-+#include <linux/platform_device.h>
-+#include <linux/videodev2.h>
-+
-+#include <video/sh_mobile_lcdc.h>
-+
-+#include "board.h"
-+
-+
-+static struct fb_videomode lcdc0_mode = {
-+	.name		= "AMPIER/AM-800480",
-+	.xres		= 800,
-+	.yres		= 480,
-+	.left_margin	= 88,
-+	.right_margin	= 40,
-+	.hsync_len	= 128,
-+	.upper_margin	= 20,
-+	.lower_margin	= 5,
-+	.vsync_len	= 5,
-+	.sync		= 0,
-+};
-+
-+static struct sh_mobile_lcdc_info lcdc0_info = {
-+	.clock_source	= LCDC_CLK_BUS,
-+	.ch[0] = {
-+		.chan		= LCDC_CHAN_MAINLCD,
-+		.fourcc		= V4L2_PIX_FMT_RGB565,
-+		.interface_type	= RGB24,
-+		.clock_divider	= 5,
-+		.flags		= 0,
-+		.lcd_modes	= &lcdc0_mode,
-+		.num_modes	= 1,
-+		.panel_cfg = {
-+			.width	= 111,
-+			.height = 68,
-+		},
-+	},
-+};
-+
-+static struct resource lcdc0_resources[] = {
-+	[0] = {
-+		.name	= "LCD0",
-+		.start	= 0xfe940000,
-+		.end	= 0xfe943fff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 177 + 32,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device lcdc0_device = {
-+	.name		= "sh_mobile_lcdc_fb",
-+	.num_resources	= ARRAY_SIZE(lcdc0_resources),
-+	.resource	= lcdc0_resources,
-+	.id		= 0,
-+	.dev	= {
-+		.platform_data	= &lcdc0_info,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+	},
-+};
-+
-+static const struct board_staging_clk lcdc0_clocks[] __initconst = {
-+	{ "lcdc0", NULL, "sh_mobile_lcdc_fb.0" },
-+};
-+
-+static const struct pinctrl_map lcdc0_pinmaps[] __initconst = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "e6050000.pfc",
-+				  "lcd0_data24_0", "lcd0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "e6050000.pfc",
-+				  "lcd0_lclk_1", "lcd0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "e6050000.pfc",
-+				  "lcd0_sync", "lcd0"),
-+};
-+
-+static const struct board_staging_gpio lcdc0_gpios[] __initconst = {
-+	{ 176, GPIOF_OUT_INIT_HIGH },	/* DBGMD/LCDC0/FSIA MUX */
-+};
-+
-+static const struct board_staging_dev armadillo800eva_devices[] __initconst = {
-+	{
-+		.pdev		= &lcdc0_device,
-+		.clocks		= lcdc0_clocks,
-+		.nclocks	= ARRAY_SIZE(lcdc0_clocks),
-+		.pinmaps	= lcdc0_pinmaps,
-+		.npinmaps	= ARRAY_SIZE(lcdc0_pinmaps),
-+		.gpios		= lcdc0_gpios,
-+		.ngpios		= ARRAY_SIZE(lcdc0_gpios),
-+		.domain		= "a4lc",
-+	},
-+};
-+
-+static void __init armadillo800eva_init(void)
-+{
-+	board_staging_setup_hwirq_xlate("arm,cortex-a9-gic", 32);
-+	board_staging_register_devices(armadillo800eva_devices,
-+				       ARRAY_SIZE(armadillo800eva_devices));
-+}
-+
-+board_staging("renesas,armadillo800eva", armadillo800eva_init);
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index f1591b243bccb2bf..583aa563d4038f8b 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2272,12 +2272,13 @@ static int sci_init_single(struct platform_device *dev,
+ 		sampling_rate = 16;
+ 		break;
+ 	case PORT_SCIF:
+-		port->fifosize = 16;
+ 		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE) {
++			port->fifosize = 64;
+ 			sci_port->overrun_reg = SCxSR;
+ 			sci_port->overrun_mask = SCIFA_ORER;
+ 			sampling_rate = 16;
+ 		} else {
++			port->fifosize = 16;
+ 			sci_port->overrun_reg = SCLSR;
+ 			sci_port->overrun_mask = SCLSR_ORER;
+ 			sampling_rate = 32;
 -- 
 1.9.1
 
