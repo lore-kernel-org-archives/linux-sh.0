@@ -1,57 +1,83 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 07 Apr 2015 14:38:41 +0000
-Subject: Re: [PATCH 07/14] media: omap3isp: remove unused clkdev
-Message-Id: <1734484.Zgs1aYnH8A@avalon>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 30 Apr 2015 14:18:49 +0000
+Subject: [PATCH v2 00/15] r8a7793 SoC, Gose board support
+Message-Id: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150403171149.GC13898@n2100.arm.linux.org.uk> <1894989.AGoQvgsks0@avalon> <20150407124536.GK4027@n2100.arm.linux.org.uk>
-In-Reply-To: <20150407124536.GK4027@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Cc: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org, Mauro Carvalho Chehab <mchehab@osg.samsung.com>, sakari.ailus@iki.fi
+To: linux-sh@vger.kernel.org
 
-Hi Russell,
+Hi!
 
-On Tuesday 07 April 2015 13:45:36 Russell King - ARM Linux wrote:
-> On Tue, Apr 07, 2015 at 12:42:52PM +0300, Laurent Pinchart wrote:
-> > On Sunday 05 April 2015 15:20:34 Russell King - ARM Linux wrote:
-> > > On Sat, Apr 04, 2015 at 12:44:35AM +0300, Laurent Pinchart wrote:
-> > > > Hi Russell,
-> > > > 
-> > > > Thank you for the patch;
-> > > > 
-> > > > On Friday 03 April 2015 18:12:58 Russell King wrote:
-> > > > > No merged platform supplies xclks via platform data.  As we want to
-> > > > > slightly change the clkdev interface, rather than fixing this unused
-> > > > > code, remove it instead.
-> > > > > 
-> > > > > Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
-> > > > 
-> > > > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > > > 
-> > > > with one caveat though : it conflicts with patches queued for v4.1 in
-> > > > the media tree. I'll post a rebased version in a reply to your e-mail.
-> > > > How would you like to handle the conflict ?
-> > > 
-> > > How bad is the conflict?
-> > 
-> > It's not too bad, it's mostly a context-related conflict. There are two
-> > additional lines to remove (plus the associated comment) from
-> > isp_xclk_init(), as your patch makes a loop now terminate with if
-> > (condition) continue;. Those two lines could be removed later, keeping
-> > them doesn't break anything.
->
-> I think it's fine to take it through the media tree as the series doesn't
-> have any dependencies on this patch.  It was merely attempting to get rid
-> of stuff so that we could move closer to clkdev dealing with a clk_hw
-> rather than a struct clk - but I never made it that far with the series.
-> Maybe at a later date... :)
+Here is a revised set of patches adding R8A7793 (M2-N) support.
+The major changes are that I dropped power management for now,
+and that the PFC monster patch has been broken down for ease
+of review.  Also a lot of small errors, most spotted by Geert,
+have been fixed.
 
-:-) I'll take the patch and send a pull request.
+CU
+Uli
+
+
+Changes since v1:
+- pfc: split patch in six
+- pfc: fixed typos
+- dts: named clock bits correctly
+- dts: made more consistent with the very similar r8a7791 dts
+- dts: removed adv7511, don't know the address
+- pm: dropped for now, needs to be fixed up first
+- everywhere: renamed M2N -> M2-N (and M2 to M2-W, while at it)
+- everywhere: added Acks
+
+
+Ulrich Hecht (15):
+  pinctrl: sh-pfc: Add r8a7793 PFC support part 1: pinmux data
+  pinctrl: sh-pfc: Add r8a7793 PFC support part 2: pin groups
+  pinctrl: sh-pfc: Add r8a7793 PFC support part 3: pinmux config
+    registers
+  pinctrl: sh-pfc: Add r8a7793 pinmux info
+  pinctrl: sh-pfc: Enable building of r8a7793 PFC support
+  pinctrl: sh-pfc: Add renesas,pfc-r8a7793 to binding documentation
+  ARM: shmobile: Basic r8a7793 SoC support
+  ARM: shmobile: add r8a7793 SoC device tree
+  ARM: shmobile: r8a7793: add Gose board device tree
+  ARM: shmobile: r8a7793: add SMP support
+  clk: shmobile: r8a7793: document DIV6 clock bindings
+  mmc: sh_mmcif: Document r8a7793 DT bindings
+  serial: sh-sci: Add device tree bindings for r8a7793
+  clk: shmobile: Add r8a7793 SoC to MSTP bindings
+  PCI: rcar: document r8a7793 DT bindings
+
+ .../bindings/clock/renesas,cpg-div6-clocks.txt     |    3 +-
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |    3 +-
+ .../devicetree/bindings/mmc/renesas,mmcif.txt      |    1 +
+ .../devicetree/bindings/pci/pci-rcar-gen2.txt      |    1 +
+ .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |    3 +-
+ .../bindings/serial/renesas,sci-serial.txt         |   12 +-
+ arch/arm/boot/dts/Makefile                         |    1 +
+ arch/arm/boot/dts/r8a7793-gose.dts                 |  534 ++
+ arch/arm/boot/dts/r8a7793.dtsi                     | 1376 +++++
+ arch/arm/mach-shmobile/Kconfig                     |    4 +
+ arch/arm/mach-shmobile/Makefile                    |    2 +
+ arch/arm/mach-shmobile/r8a7793.h                   |    6 +
+ arch/arm/mach-shmobile/setup-r8a7793.c             |   35 +
+ arch/arm/mach-shmobile/smp-r8a7793.c               |   67 +
+ drivers/pinctrl/sh-pfc/Kconfig                     |    5 +
+ drivers/pinctrl/sh-pfc/Makefile                    |    1 +
+ drivers/pinctrl/sh-pfc/core.c                      |    6 +
+ drivers/pinctrl/sh-pfc/core.h                      |    1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7793.c               | 6033 ++++++++++++++++++++
+ include/dt-bindings/clock/r8a7793-clock.h          |  158 +
+ 20 files changed, 8245 insertions(+), 7 deletions(-)
+ create mode 100644 arch/arm/boot/dts/r8a7793-gose.dts
+ create mode 100644 arch/arm/boot/dts/r8a7793.dtsi
+ create mode 100644 arch/arm/mach-shmobile/r8a7793.h
+ create mode 100644 arch/arm/mach-shmobile/setup-r8a7793.c
+ create mode 100644 arch/arm/mach-shmobile/smp-r8a7793.c
+ create mode 100644 drivers/pinctrl/sh-pfc/pfc-r8a7793.c
+ create mode 100644 include/dt-bindings/clock/r8a7793-clock.h
 
 -- 
-Regards,
-
-Laurent Pinchart
+2.3.5
 
