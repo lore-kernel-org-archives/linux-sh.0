@@ -1,36 +1,61 @@
-From: Russell King <rmk+kernel@arm.linux.org.uk>
-Date: Fri, 03 Apr 2015 17:12:32 +0000
-Subject: [PATCH 02/14] clkdev: drop __init from clkdev_add_table()
-Message-Id: <E1Ye58y-0001Ax-Qy@rmk-PC.arm.linux.org.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 30 Apr 2015 16:21:24 +0000
+Subject: [PATCH/RFC 00/13] serial: sh-sci: Cleanups and bug fixes
+Message-Id: <1430410897-12770-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150403171149.GC13898@n2100.arm.linux.org.uk>
-In-Reply-To: <20150403171149.GC13898@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: alsa-devel@alsa-project.org, linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org, linux-omap@vger.kernel.org, linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-We want to be able to call clkdev_add_table() from non-init code, so we
-need to drop the __init marker from it.
+	Hi,
 
-Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
----
- drivers/clk/clkdev.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+This patches series performs some cleanups, documentation updates, and
+bug fixes for the Renesas (H)SCI(F(A/B)) serial driver, used on ARM and
+SH (and H8300).
 
-diff --git a/drivers/clk/clkdev.c b/drivers/clk/clkdev.c
-index 043fd3633373..156f2e2f972c 100644
---- a/drivers/clk/clkdev.c
-+++ b/drivers/clk/clkdev.c
-@@ -251,7 +251,7 @@ void clkdev_add(struct clk_lookup *cl)
- }
- EXPORT_SYMBOL(clkdev_add);
- 
--void __init clkdev_add_table(struct clk_lookup *cl, size_t num)
-+void clkdev_add_table(struct clk_lookup *cl, size_t num)
- {
- 	mutex_lock(&clocks_mutex);
- 	while (num--) {
+It should be safe to apply the first 10 patches.
+
+The remaining patches are marked RFC, as they're make more invasive
+changes, or depend on other patches doing that.
+
+This received light testing on r8a7791/koelsch (SCIF) and
+r8a7740/armadillo (SCIFA/SCIFB), i.e. all on ARM.
+
+Thanks!
+
+Geert Uytterhoeven (13):
+  serial: sh-sci: Move private definitions to private header file
+  serial: sh-sci: Add (H)SCIF RTS/CTS pin data register bit definitions
+  serial: sh-sci: Add SCIFA/B SCPCR register definitions
+  serial: sh-sci: Document remaining FIFO Control Register bits
+  serial: sh-sci: Standardize on using the BIT() macro to define
+    register bits
+  serial: sh-sci: Replace hardcoded values in SCxSR_*_CLEAR macros
+  serial: sh-sci: Replace hardcoded overrun bit values
+  serial: sh-sci: Use the correct register for overrun checks
+  serial: sh-sci: Don't set SCLSR bits in the SCxSR error mask
+  serial: sh-sci: Remove obsolete comment about overrun detection
+  [RFC] serial: sh-sci: Replace buggy big #ifdef by runtime logic
+  [RFC] serial: sh-sci: Correct SCIF_ERROR_CLEAR for plain SCIF
+  [RFC] serial: sh-sci: Correct FIFO stages on sh7705/sh7720/sh7721
+
+ drivers/tty/serial/sh-sci.c | 147 +++++++++++++++++++++++++++-----------------
+ drivers/tty/serial/sh-sci.h | 140 +++++++++++++++++++++++++++++++++--------
+ include/linux/serial_sci.h  |  86 ++++----------------------
+ 3 files changed, 216 insertions(+), 157 deletions(-)
+
 -- 
-1.8.3.1
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
