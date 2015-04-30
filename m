@@ -1,20 +1,61 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 28 Apr 2015 00:48:28 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7740 dtsi: Fix SCIFB naming
-Message-Id: <20150428004827.GA557@verge.net.au>
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Thu, 30 Apr 2015 12:33:04 +0000
+Subject: [RFC PATCH 7/7] ARM: shmobile: r8a7790-lager.dts: Assert UHS-I SDR-50 capability
+Message-Id: <1430397184.5802.46.camel@xylophone.i.decadent.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430142924-15777-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430142924-15777-1-git-send-email-geert+renesas@glider.be>
+References: <1430396995.5802.39.camel@xylophone.i.decadent.org.uk>
+In-Reply-To: <1430396995.5802.39.camel-2NU49sBE5Aze9VDwLV8dzJPsBRI6B4nW9dF7HbQ/qKg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ian Molton <ian-zdned+2MO1+9FHfhHBbuYA@public.gmane.org>, linux-mmc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-81qHHgoATdFT9dQujB1mzip2UmYkHbXO@public.gmane.org, William Towle <william.towle-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
 
-On Mon, Apr 27, 2015 at 03:55:23PM +0200, Geert Uytterhoeven wrote:
-> The single SCIFB on R-Mobile A1 is called "scifb", not "scifb8".
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Cfr. commit 0b3a0ef613538cae ("ARM: shmobile: r8a73a4: fix scifb* naming")
+From: William Towle <william.towle@codethink.co.uk>
 
-Thanks, both patches queued up for v4.2.
+[bwh: Also enable the 'regulators' on the pfc that we need]
+Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 343ec0ccc8df..8bb4507f3112 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -384,6 +384,14 @@
+ 		renesas,groups = "audio_clk_a";
+ 		renesas,function = "audio_clk";
+ 	};
++
++	sd-regulator@0 {
++		status = "ok";
++	};
++
++	sd-regulator@2 {
++		status = "ok";
++	};
+ };
+ 
+ &ether {
+@@ -499,6 +507,7 @@
+ 	vmmc-supply = <&vcc_sdhi0>;
+ 	vqmmc-supply = <&vccq_sdhi0>;
+ 	cd-gpios = <&gpio3 6 GPIO_ACTIVE_LOW>;
++	sd-uhs-sdr50;
+ 	status = "okay";
+ };
+ 
+@@ -512,6 +521,7 @@
+ 	vmmc-supply = <&vcc_sdhi2>;
+ 	vqmmc-supply = <&vccq_sdhi2>;
+ 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
++	sd-uhs-sdr50;
+ 	status = "okay";
+ };
+ 
+-- 
+1.7.10.4
+
+
+
