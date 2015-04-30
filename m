@@ -1,65 +1,58 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 24 Apr 2015 08:54:11 +0000
-Subject: Re: [PATCH 1/2] drivers/tty/serial/sh-sci.h: remove dead reference on ARCH_SH7372
-Message-Id: <CAMuHMdWK0Nf7-pk=H1nt_WyARcDv=ZHXrOVi9WgUMorTd+YF+g@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 30 Apr 2015 05:17:35 +0000
+Subject: [PATCH 1/3] drivers: sh: Disable PM runtime for multi-platform sh73a0 with genpd
+Message-Id: <41b4b3bc7905615f7617c88bf9cf4b3b04bda78f.1430370969.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428747979-20455-1-git-send-email-valentinrothberg@gmail.com>
-In-Reply-To: <1428747979-20455-1-git-send-email-valentinrothberg@gmail.com>
+References: <cover.1430370969.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1430370969.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Valentin Rothberg <valentinrothberg@gmail.com>
-Cc: Greg KH <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Paul Bolle <pebolle@tiscali.nl>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
 
-Hi Valentin,
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Sat, Apr 11, 2015 at 12:26 PM, Valentin Rothberg
-<valentinrothberg@gmail.com> wrote:
-> The Kconfig option ARCH_SH7372 has been removed by commit 59b89af1d555
-> ("ARM: shmobile: sh7372: Remove Legacy C SoC code").  This patch removes
-> the last reference on this Kconfig option.
->
-> Signed-off-by: Valentin Rothberg <valentinrothberg@gmail.com>
+If the default PM domain using PM_CLK is used for PM runtime, the real PM
+domain(s) cannot be registered from DT later.
 
-Thanks for your patch!
+Hence do not enable it when running a multi-platform kernel with genpd
+support on an sh73a0. The R-Mobile PM domain driver will take care of
+PM runtime management of the module clocks.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The default PM domain is still needed for:
+  - platforms without genpd support,
+  - the legacy (non-DT) case, where genpd may take over later, except
+    for the C5 "always on" PM domain.
 
-> ---
-> I found this issue with ./scripts/checkkconfigsymbols.py
-> ---
->  drivers/tty/serial/sh-sci.h | 1 -
->  1 file changed, 1 deletion(-)
->
-> diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
-> index d5db81a0a430..350717404507 100644
-> --- a/drivers/tty/serial/sh-sci.h
-> +++ b/drivers/tty/serial/sh-sci.h
-> @@ -15,7 +15,6 @@
->      defined(CONFIG_CPU_SUBTYPE_SH7720) || \
->      defined(CONFIG_CPU_SUBTYPE_SH7721) || \
->      defined(CONFIG_ARCH_SH73A0) || \
-> -    defined(CONFIG_ARCH_SH7372) || \
->      defined(CONFIG_ARCH_R8A7740)
->  # define SCxSR_RDxF_CLEAR(port)         (serial_port_in(port, SCxSR) & 0xfffc)
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/sh/pm_runtime.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-There are more things wrong with the above:
-  1. It's not multi-platform safe: any ARM kernel with sh73a0 or r8a7740
-     support will treat all SCIFs and HSCIFs as SCIFA/Bs.
-  2. It wasn't updated for newer SoCs, e.g.
-       - r8a73a4 has SCIFA/B, too,
-       - R-Car Gen2 has all of SCIF, HSCIF, SCIFA, SCIFB, which isn't
-         supported by the current logic at all.
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index cd4c293f0dd0..6b16a67ba618 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -83,6 +83,7 @@ static int __init sh_pm_runtime_init(void)
+ 		    !of_machine_is_compatible("renesas,r8a73a4") &&
+ #ifndef CONFIG_PM_GENERIC_DOMAINS_OF
+ 		    !of_machine_is_compatible("renesas,r8a7740") &&
++		    !of_machine_is_compatible("renesas,sh73a0") &&
+ #endif
+ 		    !of_machine_is_compatible("renesas,r8a7778") &&
+ 		    !of_machine_is_compatible("renesas,r8a7779") &&
+@@ -91,8 +92,7 @@ static int __init sh_pm_runtime_init(void)
+ 		    !of_machine_is_compatible("renesas,r8a7792") &&
+ 		    !of_machine_is_compatible("renesas,r8a7793") &&
+ 		    !of_machine_is_compatible("renesas,r8a7794") &&
+-		    !of_machine_is_compatible("renesas,sh7372") &&
+-		    !of_machine_is_compatible("renesas,sh73a0"))
++		    !of_machine_is_compatible("renesas,sh7372"))
+ 			return 0;
+ 	}
+ 
+-- 
+2.1.4
 
-Looking into it...
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
