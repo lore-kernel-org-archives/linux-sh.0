@@ -1,38 +1,36 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 28 Apr 2015 10:12:56 +0000
-Subject: [PATCH 3/5] ARM: shmobile: henninger dts: Add "nor-jedec" compatible value
-Message-Id: <1430215978-31087-4-git-send-email-geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 30 Apr 2015 14:19:04 +0000
+Subject: [PATCH v2 15/15] PCI: rcar: document r8a7793 DT bindings
+Message-Id: <1430403544-26742-16-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430215978-31087-1-git-send-email-geert+renesas@glider.be>
+References: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org, horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, Ulrich Hecht <ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Spansion s25fl512s is compatible with "nor-jedec". Hence add the
-"nor-jedec" compatible value, so the driver can bind against the generic
-name, cfr. commit 8ff16cf77ce314c2 ("Documentation: devicetree: m25p80:
-add "nor-jedec" binding").
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
 ---
- arch/arm/boot/dts/r8a7791-henninger.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-index e33e4047b0b0c920..bb80122b4113bd8a 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -226,7 +226,7 @@
- 	flash@0 {
- 		#address-cells = <1>;
- 		#size-cells = <1>;
--		compatible = "spansion,s25fl512s";
-+		compatible = "spansion,s25fl512s", "nor-jedec";
- 		reg = <0>;
- 		spi-max-frequency = <30000000>;
- 		spi-tx-bus-width = <4>;
+diff --git a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
+index d8ef5bf..8b156fe 100644
+--- a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
++++ b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
+@@ -8,6 +8,7 @@ OHCI and EHCI controllers.
+ Required properties:
+ - compatible: "renesas,pci-r8a7790" for the R8A7790 SoC;
+ 	      "renesas,pci-r8a7791" for the R8A7791 SoC.
++	      "renesas,pci-r8a7793" for the R8A7793 SoC.
+ - reg:	A list of physical regions to access the device: the first is
+ 	the operational registers for the OHCI/EHCI controllers and the
+ 	second is for the bridge configuration and control registers.
 -- 
-1.9.1
+2.3.5
 
