@@ -1,21 +1,18 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 29 Apr 2015 11:53:22 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 30 Apr 2015 05:50:04 +0000
 Subject: Re: [PATCH 2/2] pinctrl: sh-pfc: Remove r8a73a4 platform_device_id entry
-Message-Id: <21370155.oZX1erNtOU@avalon>
+Message-Id: <20150430055003.GO15511@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430216107-31501-1-git-send-email-geert+renesas@glider.be> <1430216107-31501-2-git-send-email-geert+renesas@glider.be>
+References: <1430216107-31501-1-git-send-email-geert+renesas@glider.be>
+ <1430216107-31501-2-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1430216107-31501-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
 
-Hi Geert,
-
-Thank you for the patch.
-
-On Tuesday 28 April 2015 12:15:07 Geert Uytterhoeven wrote:
+On Tue, Apr 28, 2015 at 12:15:07PM +0200, Geert Uytterhoeven wrote:
 > As of commit 9d07d414d4c33d86 ("ARM: shmobile: r8a73a4: ape6evm: Remove
 > legacy platform"), r8a73a4 is only supported in generic DT-only ARM
 > multi-platform builds.  The driver doesn't need to match platform
@@ -24,7 +21,7 @@ On Tuesday 28 April 2015 12:15:07 Geert Uytterhoeven wrote:
 > 
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
 > ---
 >  drivers/pinctrl/sh-pfc/core.c | 3 ---
@@ -36,7 +33,7 @@ Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 > +++ b/drivers/pinctrl/sh-pfc/core.c
 > @@ -579,9 +579,6 @@ static int sh_pfc_remove(struct platform_device *pdev)
 >  }
-> 
+>  
 >  static const struct platform_device_id sh_pfc_id_table[] = {
 > -#ifdef CONFIG_PINCTRL_PFC_R8A73A4
 > -	{ "pfc-r8a73a4", (kernel_ulong_t)&r8a73a4_pinmux_info },
@@ -44,9 +41,11 @@ Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 >  #ifdef CONFIG_PINCTRL_PFC_R8A7740
 >  	{ "pfc-r8a7740", (kernel_ulong_t)&r8a7740_pinmux_info },
 >  #endif
-
--- 
-Regards,
-
-Laurent Pinchart
-
+> -- 
+> 1.9.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
