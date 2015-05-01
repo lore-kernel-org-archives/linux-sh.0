@@ -1,59 +1,67 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 28 May 2015 01:05:55 +0000
-Subject: [PATCH] ARM: shmobile: only select sound drivers that build
-Message-Id: <66f72f0c8e0d37339b6be1373c61d2a133c8b422.1432773909.git.horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 01 May 2015 00:15:13 +0000
+Subject: Re: [PATCH] ARM: shmobile: koelsch: Fix adv7511 IRQ sensing
+Message-Id: <20150501001509.GA13754@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1432773909.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1432773909.git.horms+renesas@verge.net.au>
+References: <1430315743-8521-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1430315743-8521-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+Hi Laurent,
 
-A couple of codec drivers are selected by shmobile platform code,
-but depend on I2C, which results in a build error:
+On Thu, Apr 30, 2015 at 10:30:48AM +0300, Laurent Pinchart wrote:
+> Hi Simon,
+> 
+> On Thursday 30 April 2015 13:56:40 Simon Horman wrote:
+> > Hi Laurent,
+> > 
+> > On Wed, Apr 29, 2015 at 04:55:43PM +0300, Laurent Pinchart wrote:
+> > > The adv7511 IRQ is low level triggered, not falling edge triggered. The
+> > > wrong sense configuration results in no interrupt being triggered at
+> > > all, breaking hotplug detection. Fix it.
+> > 
+> > Would I be correct in adding the following and queuing it up
+> > as a fix for v4.1 and v4.0-stable?
+> > 
+> > Fixes: 83a0731b39f3 ("ARM: shmobile: koelsch: Add DU HDMI output support")
+> 
+> I think that would be fine. It's not a regression fix in the traditional 
+> sense, but it fixes a shortcoming of the original commit.
 
-sound/soc/codecs/ak4642.c:638:1: warning: data definition has no type or storage class
- module_i2c_driver(ak4642_i2c_driver);
- ^
-sound/soc/codecs/ak4642.c:638:1: error: type defaults to 'int' in declaration of 'module_i2c_driver' [-Werror=implicit-int]
-sound/soc/codecs/ak4642.c:638:1: warning: parameter names (without types) in function declaration
-sound/soc/codecs/ak4642.c:627:26: warning: 'ak4642_i2c_driver' defined but not used [-Wunused-variable]
+Thanks, got it.
 
-This ensures that we do not enable the respective drivers when I2C
-is disabled.
-
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/Kconfig | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 0fb484221c90..45006479d461 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -139,7 +139,7 @@ config MACH_ARMADILLO800EVA
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select SMSC_PHY if SH_ETH
--	select SND_SOC_WM8978 if SND_SIMPLE_CARD
-+	select SND_SOC_WM8978 if SND_SIMPLE_CARD && I2C
- 	select USE_OF
- 
- config MACH_BOCKW
-@@ -148,7 +148,7 @@ config MACH_BOCKW
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select SND_SOC_AK4554 if SND_SIMPLE_CARD
--	select SND_SOC_AK4642 if SND_SIMPLE_CARD
-+	select SND_SOC_AK4642 if SND_SIMPLE_CARD && I2C
- 	select USE_OF
- 
- config MACH_BOCKW_REFERENCE
--- 
-2.1.4
-
+> > > Signed-off-by: Laurent Pinchart
+> > > <laurent.pinchart+renesas@ideasonboard.com>
+> > > ---
+> > > 
+> > >  arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+> > >  1 file changed, 1 insertion(+), 1 deletion(-)
+> > > 
+> > > diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts
+> > > b/arch/arm/boot/dts/r8a7791-koelsch.dts index 74c3212f1f11..824ddab9c3ad
+> > > 100644
+> > > --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
+> > > +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+> > > @@ -545,7 +545,7 @@
+> > >  		compatible = "adi,adv7511w";
+> > >  		reg = <0x39>;
+> > >  		interrupt-parent = <&gpio3>;
+> > > -		interrupts = <29 IRQ_TYPE_EDGE_FALLING>;
+> > > +		interrupts = <29 IRQ_TYPE_LEVEL_LOW>;
+> > > 
+> > >  		adi,input-depth = <8>;
+> > >  		adi,input-colorspace = "rgb";
+> 
+> -- 
+> Regards,
+> 
+> Laurent Pinchart
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
