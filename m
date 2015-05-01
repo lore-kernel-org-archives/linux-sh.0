@@ -1,36 +1,48 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 26 May 2015 01:56:51 +0000
-Subject: RE: [PATCH v2 2/2] usb: renesas_usbhs: Add support for R-Car E2
-Message-Id: <SG2PR06MB09192BBC31B9EABDFA38B383D8CC0@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 01 May 2015 00:44:19 +0000
+Subject: Re: [PATCH v2 06/15] pinctrl: sh-pfc: Add renesas,pfc-r8a7793 to binding documentation
+Message-Id: <20150501004419.GE13754@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431947055-4324-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-	<1431947055-4324-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <CAMuHMdWysVJU8Kk-cDB1rOSzO8B6bGvVBbQsdEoQq0sN-AwdOQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdWysVJU8Kk-cDB1rOSzO8B6bGvVBbQsdEoQq0sN-AwdOQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+References: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+ <1430403544-26742-7-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1430403544-26742-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Felipe Balbi <balbi-l0cyMroinI0@public.gmane.org>
-Cc: Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, USB list <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Cc: geert@linux-m68k.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, laurent.pinchart+renesas@ideasonboard.com, kuninori.morimoto.gx@renesas.com, linus.walleij@linaro.org, devicetree@vger.kernel.org
 
-SGkgRmVsaXBlLA0KDQo+IFNlbnQ6IE1vbmRheSwgTWF5IDE4LCAyMDE1IDg6NTYgUE0NCj4gDQo+
-IE9uIE1vbiwgTWF5IDE4LCAyMDE1IGF0IDE6MDQgUE0sIFlvc2hpaGlybyBTaGltb2RhDQo+IDx5
-b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2FzLmNvbT4gd3JvdGU6DQo+ID4gVGhpcyBwYXRjaCBh
-ZGRzIGEgY29tcGF0aWJsZSBzdHJpbmcgdG8gc3VwcG9ydCBmb3IgUi1DYXIgRTIuDQo+ID4NCj4g
-PiBTaWduZWQtb2ZmLWJ5OiBZb3NoaWhpcm8gU2hpbW9kYSA8eW9zaGloaXJvLnNoaW1vZGEudWhA
-cmVuZXNhcy5jb20+DQo+ID4gQWNrZWQtYnk6IEdlZXJ0IFV5dHRlcmhvZXZlbiA8Z2VlcnQrcmVu
-ZXNhc0BnbGlkZXIuYmU+IiBpbiBwYXRjaCAyDQo+ID4gLS0tDQo+ID4gIFJlbWFya3M6IEdlZXJ0
-J3MgQWNrZWQtYnkgaXMgZm9yIHRoZSBEVCBiaW5kaW5nIHBhcnQgKHJlbmVzYXNfdXNiaHMudHh0
-KS4NCj4gDQo+IEZvciB0aGUgcmVtYWluaW5nIHBhcnQ6DQo+IEFja2VkLWJ5OiBHZWVydCBVeXR0
-ZXJob2V2ZW4gPGdlZXJ0K3JlbmVzYXNAZ2xpZGVyLmJlPg0KDQpXb3VsZCB5b3UgYXBwbHkgdGhp
-cyBwYXRjaCBzZXQgdG8geW91ciB0ZXN0aW5nL25leHQgYnJhbmNoPw0KSSBjb25maXJtZWQgdGhh
-dCB0aGlzIHBhdGNoIHNldCBjb3VsZCBiZSBhcHBsaWVkIG9uIHRoZSBsYXRlc3QgdGVzdGluZy9u
-ZXh0IGJyYW5jaC4NCihjb21taXQgaWQgPSA2NzJiZmRhYTMxMDAwNDM2OGEwZDQ5MzQ3OGUyYTQw
-ZjJmMmY5MTRmKQ0KDQpCZXN0IHJlZ2FyZHMsDQpZb3NoaWhpcm8gU2hpbW9kYQ0KDQo+IEdye29l
-dGplLGVldGluZ31zLA0KPiANCj4gICAgICAgICAgICAgICAgICAgICAgICAgR2VlcnQNCj4gDQo+
-IC0tDQo+IEdlZXJ0IFV5dHRlcmhvZXZlbiAtLSBUaGVyZSdzIGxvdHMgb2YgTGludXggYmV5b25k
-IGlhMzIgLS0gZ2VlcnRAbGludXgtbTY4ay5vcmcNCj4gDQo+IEluIHBlcnNvbmFsIGNvbnZlcnNh
-dGlvbnMgd2l0aCB0ZWNobmljYWwgcGVvcGxlLCBJIGNhbGwgbXlzZWxmIGEgaGFja2VyLiBCdXQN
-Cj4gd2hlbiBJJ20gdGFsa2luZyB0byBqb3VybmFsaXN0cyBJIGp1c3Qgc2F5ICJwcm9ncmFtbWVy
-IiBvciBzb21ldGhpbmcgbGlrZSB0aGF0Lg0KPiAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgIC0tIExpbnVzIFRvcnZhbGRzDQo
+On Thu, Apr 30, 2015 at 04:18:55PM +0200, Ulrich Hecht wrote:
+> Also renames "R-Car M2" to "R-Car M2-W" to avoid confusion.
+> 
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> Cc: devicetree@vger.kernel.org
+
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+
+> ---
+>  Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+> index bfe72ec..6bcf851 100644
+> --- a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+> +++ b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+> @@ -16,7 +16,8 @@ Required Properties:
+>      - "renesas,pfc-r8a7778": for R8A7778 (R-Mobile M1) compatible pin-controller.
+>      - "renesas,pfc-r8a7779": for R8A7779 (R-Car H1) compatible pin-controller.
+>      - "renesas,pfc-r8a7790": for R8A7790 (R-Car H2) compatible pin-controller.
+> -    - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2) compatible pin-controller.
+> +    - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2-W) compatible pin-controller.
+> +    - "renesas,pfc-r8a7793": for R8A7793 (R-Car M2-N) compatible pin-controller.
+>      - "renesas,pfc-sh73a0": for SH73A0 (SH-Mobile AG5) compatible pin-controller.
+>  
+>    - reg: Base address and length of each memory resource used by the pin
+> -- 
+> 2.3.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
