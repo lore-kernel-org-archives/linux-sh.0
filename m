@@ -1,42 +1,86 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 07 May 2015 16:27:22 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Fixes for v4.1
-Message-Id: <201505071827.22255.arnd@arndb.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 01 May 2015 01:09:10 +0000
+Subject: Re: [PATCH 0/5] PM / clock_ops: provide default runtime ops and cleanup users
+Message-Id: <20150501010909.GI13754@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1430977471.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1430977471.git.horms+renesas@verge.net.au>
+References: <553A6289.4040001@oracle.com>
+ <CAMuHMdWMjULD8jQDA-U6tumnCd=Q7jhZ2koha4CKU-K50tJXmw@mail.gmail.com>
+ <20150428004618.GA1807@verge.net.au>
+In-Reply-To: <20150428004618.GA1807@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thursday 07 May 2015, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
+On Tue, Apr 28, 2015 at 09:46:18AM +0900, Simon Horman wrote:
+> On Fri, Apr 24, 2015 at 04:51:03PM +0200, Geert Uytterhoeven wrote:
+> > On Fri, Apr 24, 2015 at 4:41 PM, Rafael J. Wysocki <rjw@rjwysocki.net> wrote:
+> > > On Thursday, April 23, 2015 02:03:08 PM Rajendra Nayak wrote:
+> > >> Most users of PM clocks do the exact same thing in runtime callbacks.
+> > >> Provide default callbacks and cleanup the existing users (keystone/davinci
+> > >> /omap1/sh)
+> > >>
+> > >> Rajendra Nayak (5):
+> > >>   PM / clock_ops: Provide default runtime ops to users
+> > >>   arm: keystone: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
+> > >>   arm: omap1: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
+> > >>   arm: davinci: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
+> > >>   drivers: sh: remove boilerplate code and use USE_PM_CLK_RUNTIME_OPS
+> > >>
+> > >>  arch/arm/mach-davinci/pm_domain.c  | 32 +-------------------------
+> > >>  arch/arm/mach-keystone/pm_domain.c | 33 +-------------------------
+> > >>  arch/arm/mach-omap1/pm_bus.c       | 37 ++----------------------------
+> > >>  drivers/base/power/clock_ops.c     | 38 ++++++++++++++++++++++++++++++
+> > >>  drivers/sh/pm_runtime.c            | 47 ++------------------------------------
+> > >>  include/linux/pm_clock.h           | 10 ++++++++
+> > >>  6 files changed, 54 insertions(+), 143 deletions(-)
+> > >
+> > > It is not particularly clear to me who is supposed to apply this series, but
+> > > I can do that if people don't have problems with that.
+> > 
+> > All later patches depend on the first patch.
+> > 
+> > For shmobile, Simon has queued up changes for drivers/sh/pm_runtime.c,
+> > but I think they don't conflict with this series.
 > 
-> Please consider these Renesas ARM based SoC fixes for v4.1.
+> Yes, that is the case. I have some patches (from Geert) queued up for v4.1.
+> I have confirmed that they do not conflict with the shmobile (last) patch
+> if this series.
 > 
-> This addresses a short-coming which was introduced when
-> the adv7511 was enabled on the koelsch board.
-> 
-> 
-> The following changes since commit b787f68c36d49bb1d9236f403813641efa74a031:
-> 
->   Linux 4.1-rc1 (2015-04-26 17:59:10 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes-for-v4.1
-> 
-> for you to fetch changes up to 12392f5896c9affc03c1ddd95a83c32238862a58:
-> 
->   ARM: shmobile: koelsch: Fix adv7511 IRQ sensing (2015-05-01 09:13:03 +0900)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM Based SoC Fixes for v4.1
-> 
-> * Fix adv7511 IRQ sensing on koelsch board
-> 
+> <details>
+> The patches are in the sh-drivers-for-v4.1 branch of my renesas tree; I
+> rebased them yesterday; they should hit next today if there is a next
+> today; I plan to send a pull request to Linus in the not to distant future;
+> and I envisage they should end up in v4.1-rc2 or rc3.
 
-Merged into the fixes branch, thanks!
+The above mentioned changes were tagged as renesas-sh-drivers-for-v4.1 in
+my renesas tree; were merged into in Linus's tree yesterday; and should
+thus be included in v4.1-rc2.
 
-	Arnd
+I do not have any other changes to drivers/sh/pm_runtime.c pending at this time.
+
+> </details>
+> 
+> On Fri, Apr 24, 2015 at 08:34:33AM -0700, santosh shilimkar wrote:
+> > On 4/24/2015 7:41 AM, Rafael J. Wysocki wrote:
+> > >On Thursday, April 23, 2015 02:03:08 PM Rajendra Nayak wrote:
+> 
+> [snip]
+> 
+> > >It is not particularly clear to me who is supposed to apply this series, but
+> > >I can do that if people don't have problems with that.
+> > >
+> > >
+> > I am fine by that given dependency with first patch.
+> > Another way is, you pick up the first patch and give us an
+> > immutable branch.
+> > 
+> > Either way is fine by me.
+> 
+> Likewise.
+> 
+> Here is an ack for the shmobile (last) patch if you decide to take it
+> through your tree.
+> 
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> 
