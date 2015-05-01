@@ -1,39 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 22 May 2015 09:29:06 +0000
-Subject: Re: [PATCH v3 11/11] ARM: shmobile: gose: enable R-Car Gen2 regulator quirk
-Message-Id: <CAMuHMdUx_E09f5dfVQRzQW8dp0q5-pYGcpfw_LeD93nc648ayg@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 01 May 2015 00:33:25 +0000
+Subject: Re: [PATCH v2 14/15] clk: shmobile: Add r8a7793 SoC to MSTP bindings
+Message-Id: <20150501003325.GB13754@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432205293-9488-12-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1432205293-9488-12-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+ <1430403544-26742-15-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1430403544-26742-15-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Cc: geert@linux-m68k.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, laurent.pinchart+renesas@ideasonboard.com, kuninori.morimoto.gx@renesas.com, linus.walleij@linaro.org, Michael Turquette <mturquette@linaro.org>, devicetree@vger.kernel.org
 
-Hi Ulrich,
+On Thu, Apr 30, 2015 at 04:19:03PM +0200, Ulrich Hecht wrote:
+> Also replaces "R-Car M2" with "R-Car M2-W" to avoid confusion.
+> 
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> Cc: Michael Turquette <mturquette@linaro.org>
+> Cc: devicetree@vger.kernel.org
 
-On Fri, May 22, 2015 at 11:10 AM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> On Fri, May 22, 2015 at 11:07 AM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
->> Does it also print "IRQ2 is not asserted, removing quirk", to indicate success
->> after masking the da9063 and da9210 interrupt sources?
->
-> Yep:
->
-> i2c 6-0058: Masking da9063 interrupt sources
-> i2c 6-0068: Masking da9210 interrupt sources
-> i2c 6-0068: IRQ2 is not asserted, removing quirk
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-Thanks for testing!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+> ---
+>  Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+> index 0a80fa7..923ee0f 100644
+> --- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+> +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+> @@ -15,7 +15,8 @@ Required Properties:
+>      - "renesas,r8a7740-mstp-clocks" for R8A7740 (R-Mobile A1) MSTP gate clocks
+>      - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
+>      - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
+> -    - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
+> +    - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2-W) MSTP gate clocks
+> +    - "renesas,r8a7793-mstp-clocks" for R8A7793 (R-Car M2-N) MSTP gate clocks
+>      - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
+>      - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
+>      - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
+> -- 
+> 2.3.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
