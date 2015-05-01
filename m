@@ -1,31 +1,44 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Fri, 22 May 2015 09:59:35 +0000
-Subject: [PATCH 0/2 v3] spi: Re-do correctly function name and return value
-Message-Id: <1432288777-7229-1-git-send-email-cm-hiep@jinso.co.jp>
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Fri, 01 May 2015 01:47:47 +0000
+Subject: [PATCH 11/11] sh: mach-highlander/psw.c is tristate and should use module.h
+Message-Id: <1430444867-22342-12-git-send-email-paul.gortmaker@windriver.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430444867-22342-1-git-send-email-paul.gortmaker@windriver.com>
+In-Reply-To: <1430444867-22342-1-git-send-email-paul.gortmaker@windriver.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: broonie@kernel.org, geert+renesas@glider.be, linux-spi@vger.kernel.org
-Cc: kuninori.morimoto.gx@renesas.com, yoshihiro.shimoda.uh@renesas.com, ryusuke.sakato.bx@renesas.com, linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+This file is controlled by a tristate Kconfig option, and hence
+needs to include module.h so that it can get module_init() once
+we relocate it from init.h into module.h in the future.
 
-Hi Mark-san,
+Note that module_exit() appears to be missing from the driver, so
+it is questionable whether it would actually work for a removal
+and reload cycle if it was configured for a modular build.
 
-I added "Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>" in two patches.
-Please consider the following patches for the Rcar-Gen2.
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
+---
+ arch/sh/boards/mach-highlander/psw.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Best Regards,
-Cao Minh Hiep.
-
-Hiep Cao Minh (2):
-  spi: modify the name of "qspi_trigger_transfer_out_int" function
-  spi: Re-do the returning value of qspi_transfer_out_in
-
- drivers/spi/spi-rspi.c | 8 ++------
- 1 file changed, 2 insertions(+), 6 deletions(-)
-
+diff --git a/arch/sh/boards/mach-highlander/psw.c b/arch/sh/boards/mach-highlander/psw.c
+index 522786318d36..40e2b585d488 100644
+--- a/arch/sh/boards/mach-highlander/psw.c
++++ b/arch/sh/boards/mach-highlander/psw.c
+@@ -10,7 +10,7 @@
+  * for more details.
+  */
+ #include <linux/io.h>
+-#include <linux/init.h>
++#include <linux/module.h>
+ #include <linux/interrupt.h>
+ #include <linux/platform_device.h>
+ #include <mach/highlander.h>
 -- 
-1.9.1
+2.2.1
 
