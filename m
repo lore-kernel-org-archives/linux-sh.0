@@ -1,51 +1,159 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 29 May 2015 00:54:08 +0000
-Subject: [PATCH] ARM: multi_v7_defconfig: Enable shmobile r8a7778/bockw platform
-Message-Id: <f2a5cefbbb2c69253a8a8aa7f7f77b22f0595811.1432860785.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sat, 02 May 2015 16:21:03 +0000
+Subject: Re: [PATCH v2 10/15] ARM: shmobile: r8a7793: add SMP support
+Message-Id: <2030132.SLZ07cIBJv@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1432860785.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1432860785.git.horms+renesas@verge.net.au>
+References: <1430403544-26742-11-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1430403544-26742-11-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi Ulrich,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/configs/multi_v7_defconfig | 3 +++
- 1 file changed, 3 insertions(+)
+Thank you for the patch.
 
-diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
-index ab86655c1f4b..06e7e887fea5 100644
---- a/arch/arm/configs/multi_v7_defconfig
-+++ b/arch/arm/configs/multi_v7_defconfig
-@@ -69,6 +69,7 @@ CONFIG_ARCH_EMEV2=y
- CONFIG_ARCH_R7S72100=y
- CONFIG_ARCH_R8A73A4=y
- CONFIG_ARCH_R8A7740=y
-+CONFIG_ARCH_R8A7778=y
- CONFIG_ARCH_R8A7779=y
- CONFIG_ARCH_R8A7790=y
- CONFIG_ARCH_R8A7791=y
-@@ -387,6 +388,7 @@ CONFIG_V4L_MEM2MEM_DRIVERS=y
- CONFIG_VIDEO_RENESAS_VSP1=m
- # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
- CONFIG_VIDEO_ADV7180=m
-+CONFIG_VIDEO_ML86V7667=m
- CONFIG_DRM=y
- CONFIG_DRM_RCAR_DU=m
- CONFIG_DRM_TEGRA=y
-@@ -503,6 +505,7 @@ CONFIG_RTC_DRV_TWL4030=y
- CONFIG_RTC_DRV_TPS6586X=y
- CONFIG_RTC_DRV_TPS65910=y
- CONFIG_RTC_DRV_S35390A=m
-+CONFIG_RTC_DRV_RX8581=m
- CONFIG_RTC_DRV_EM3027=y
- CONFIG_RTC_DRV_PL031=y
- CONFIG_RTC_DRV_VT8500=y
+On Thursday 30 April 2015 16:23:05 Ulrich Hecht wrote:
+> Enables SMP support, similar to other R-Car Gen2 SoCs.
+> 
+> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+> [uli: moved reset handling to PM, minor adjustments]
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> ---
+>  arch/arm/mach-shmobile/Makefile        |  1 +
+>  arch/arm/mach-shmobile/r8a7793.h       |  6 +++
+>  arch/arm/mach-shmobile/setup-r8a7793.c |  2 +
+>  arch/arm/mach-shmobile/smp-r8a7793.c   | 67 +++++++++++++++++++++++++++++++
+>  4 files changed, 76 insertions(+)
+>  create mode 100644 arch/arm/mach-shmobile/r8a7793.h
+>  create mode 100644 arch/arm/mach-shmobile/smp-r8a7793.c
+> 
+> diff --git a/arch/arm/mach-shmobile/Makefile
+> b/arch/arm/mach-shmobile/Makefile index e4b8fdb..a8f5d5d 100644
+> --- a/arch/arm/mach-shmobile/Makefile
+> +++ b/arch/arm/mach-shmobile/Makefile
+> @@ -42,6 +42,7 @@ smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o
+> platsmp-scu.o smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o
+> platsmp-scu.o smp-$(CONFIG_ARCH_R8A7790)	+= smp-r8a7790.o
+>  smp-$(CONFIG_ARCH_R8A7791)	+= smp-r8a7791.o
+> +smp-$(CONFIG_ARCH_R8A7793)	+= smp-r8a7793.o
+>  smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o platsmp-scu.o
+> 
+>  # PM objects
+> diff --git a/arch/arm/mach-shmobile/r8a7793.h
+> b/arch/arm/mach-shmobile/r8a7793.h new file mode 100644
+> index 0000000..f961677
+> --- /dev/null
+> +++ b/arch/arm/mach-shmobile/r8a7793.h
+> @@ -0,0 +1,6 @@
+> +#ifndef __ASM_R8A7793_H__
+> +#define __ASM_R8A7793_H__
+> +
+> +extern struct smp_operations r8a7793_smp_ops;
+> +
+> +#endif /* __ASM_R8A7793_H__ */
+> diff --git a/arch/arm/mach-shmobile/setup-r8a7793.c
+> b/arch/arm/mach-shmobile/setup-r8a7793.c index 1d2825c..d20cf2a 100644
+> --- a/arch/arm/mach-shmobile/setup-r8a7793.c
+> +++ b/arch/arm/mach-shmobile/setup-r8a7793.c
+> @@ -17,6 +17,7 @@
+>  #include <asm/mach/arch.h>
+> 
+>  #include "common.h"
+> +#include "r8a7793.h"
+>  #include "rcar-gen2.h"
+> 
+>  static const char *r8a7793_boards_compat_dt[] __initconst = {
+> @@ -25,6 +26,7 @@ static const char *r8a7793_boards_compat_dt[] __initconst
+> = { };
+> 
+>  DT_MACHINE_START(R8A7793_DT, "Generic R8A7793 (Flattened Device Tree)")
+> +	.smp		= smp_ops(r8a7793_smp_ops),
+
+ARM has a CPU_METHOD_OF_DECLARE() macro which seems to be preferred over 
+setting the machine definition .smp field directly. Using it would make it 
+easier to merge the machine definitions for the Gen2 SoCs.
+
+>  	.init_early	= shmobile_init_delay,
+>  	.init_time	= rcar_gen2_timer_init,
+>  	.init_late	= shmobile_init_late,
+> diff --git a/arch/arm/mach-shmobile/smp-r8a7793.c
+> b/arch/arm/mach-shmobile/smp-r8a7793.c new file mode 100644
+> index 0000000..59b77b2
+> --- /dev/null
+> +++ b/arch/arm/mach-shmobile/smp-r8a7793.c
+> @@ -0,0 +1,67 @@
+> +/*
+> + * SMP support for r8a7793
+> + *
+> + * Copyright (C) 2014 Renesas Electronics Corporation
+> + * Copyright (C) 2015 Ulrich Hecht
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License as published by
+> + * the Free Software Foundation; version 2 of the License.
+> + *
+> + * This program is distributed in the hope that it will be useful,
+> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
+> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> + * GNU General Public License for more details.
+> + */
+> +#include <linux/kernel.h>
+> +#include <linux/init.h>
+> +#include <linux/smp.h>
+> +#include <linux/io.h>
+> +
+> +#include <asm/smp_plat.h>
+> +#include "platsmp-apmu.h"
+> +
+> +#include "common.h"
+> +#include "pm-rcar.h"
+> +#include "r8a7793.h"
+> +#include "rcar-gen2.h"
+> +
+> +#define APMU		0xe6151000
+> +#define CA15DBGRCR	0x1180
+> +#define CA15RESCNT	0x0040
+> +
+> +static struct rcar_apmu_config r8a7793_apmu_config[] = {
+> +	{
+> +		.iomem = DEFINE_RES_MEM(0xe6152000, 0x88),
+> +		.cpus = { 0, 1 },
+> +	},
+> +};
+> +
+> +static void __init r8a7793_smp_prepare_cpus(unsigned int max_cpus)
+> +{
+> +	void __iomem *p;
+> +	u32 val;
+> +
+> +	/* let APMU code install data related to shmobile_boot_vector */
+> +	shmobile_smp_apmu_prepare_cpus(max_cpus,
+> +				       r8a7793_apmu_config,
+> +				       ARRAY_SIZE(r8a7793_apmu_config));
+> +
+> +	/* setup for debug mode */
+> +	if (rcar_gen2_read_mode_pins() & MD(21)) {
+> +		p = ioremap_nocache(APMU, 0x2000);
+> +		val = readl_relaxed(p + CA15DBGRCR);
+> +		writel_relaxed((val | 0x01f80000), p + CA15DBGRCR);
+> +		iounmap(p);
+> +	}
+> +}
+> +
+> +struct smp_operations r8a7793_smp_ops __initdata = {
+> +	.smp_prepare_cpus	= r8a7793_smp_prepare_cpus,
+> +	.smp_boot_secondary	= shmobile_smp_apmu_boot_secondary,
+> +#ifdef CONFIG_HOTPLUG_CPU
+> +	.cpu_disable		= shmobile_smp_cpu_disable,
+> +	.cpu_die		= shmobile_smp_apmu_cpu_die,
+> +	.cpu_kill		= shmobile_smp_apmu_cpu_kill,
+> +#endif
+> +};
+
 -- 
-2.1.4
+Regards,
+
+Laurent Pinchart
 
