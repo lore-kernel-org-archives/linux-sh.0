@@ -1,29 +1,106 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 07 May 2015 04:29:32 +0000
-Subject: Re: [RFC PATCH 6/7] ARM: shmobile: r8a7790-lager.dts: Set sdhi and mmcif clock rates
-Message-Id: <20150507042932.GG28846@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sun, 03 May 2015 22:13:12 +0000
+Subject: Re: [PATCH/RFC] v4l: vsp1: Align crop rectangle to even boundary for YUV formats
+Message-Id: <2003077.85RPlhiJ1o@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430396995.5802.39.camel@xylophone.i.decadent.org.uk>
- <1430397166.5802.45.camel@xylophone.i.decadent.org.uk>
- <20150501005920.GH13754@verge.net.au>
- <1430876817.4222.50.camel@xylophone.i.decadent.org.uk>
-In-Reply-To: <1430876817.4222.50.camel@xylophone.i.decadent.org.uk>
+References: <1430327133-8461-1-git-send-email-ykaneko0929@gmail.com> <5542105A.1010601@cogentembedded.com>
+In-Reply-To: <5542105A.1010601@cogentembedded.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Cc: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, linux-media@vger.kernel.org, Mauro Carvalho Chehab <m.chehab@samsung.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Wed, May 06, 2015 at 02:46:57AM +0100, Ben Hutchings wrote:
-> On Fri, 2015-05-01 at 09:59 +0900, Simon Horman wrote:
-> > Hi Ben,
+Hello,
+
+On Thursday 30 April 2015 14:22:02 Sergei Shtylyov wrote:
+> On 4/29/2015 8:05 PM, Yoshihiro Kaneko wrote:
+> > From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
 > > 
-> > Please use the following prefix for r8a7790-lager.dts patches:
-> > 
-> > ARM: shmobile: lager:
-> [...]
+> > Make sure that there are valid values in the crop rectangle to ensure
+> > that the color plane doesn't get shifted when cropping.
+> > Since there is no distintion between 12bit and 16bit YUV formats in
 > 
-> OK, I'll do that in future.  I thought I'd seen the long name used more
-> often in the log, but I was mistaken.
+> Вistinсtion.
+> 
+> > at the subdev level, use the more restrictive 12bit limits for all YUV
+> > formats.
 
-Possibly, I don't always make sure the prefixes are as consistent as I should.
+I would like to mention in the commit message that only the top coordinate 
+constraints differ between the YUV formats, as the subsampling coefficient is 
+always two in the horizontal direction.
+
+Do you foresee a use case for odd cropping top coordinates ?
+
+> > Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+> > Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> > ---
+> > 
+> > This patch is based on the master branch of linuxtv.org/media_tree.git.
+> > 
+> >   drivers/media/platform/vsp1/vsp1_rwpf.c | 14 ++++++++++++--
+> >   1 file changed, 12 insertions(+), 2 deletions(-)
+> > 
+> > diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.c
+> > b/drivers/media/platform/vsp1/vsp1_rwpf.c index fa71f46..9fed0b2 100644
+> > --- a/drivers/media/platform/vsp1/vsp1_rwpf.c
+> > +++ b/drivers/media/platform/vsp1/vsp1_rwpf.c
+> > @@ -197,11 +197,21 @@ int vsp1_rwpf_set_selection(struct v4l2_subdev
+> > *subdev,> 
+> >   	 */
+> >   	format = vsp1_entity_get_pad_format(&rwpf->entity, cfg,
+> >   	RWPF_PAD_SINK,
+> >   					    sel->which);
+> > +
+> > +	if (format->code = MEDIA_BUS_FMT_AYUV8_1X32) {
+> > +		sel->r.left = (sel->r.left + 1) & ~1;
+> > +		sel->r.top = (sel->r.top + 1) & ~1;
+> 
+> There's ALIGN() macro just for that.
+> 
+> > +		sel->r.width = (sel->r.width) & ~1;
+> > +		sel->r.height = (sel->r.height) & ~1;
+> 
+> Parens not needed.
+
+round_down() could also be used, it might be more readable.
+
+> > +	}
+> > +
+> >   	sel->r.left = min_t(unsigned int, sel->r.left, format->width - 2);
+> >   	sel->r.top = min_t(unsigned int, sel->r.top, format->height - 2);
+
+If format->width (height) is odd and sel->r.left (top) is larger than format-
+>width (height) - 2 then the resulting value will become odd. The resulting 
+configuration will not be accepted at streamon time as the video node width 
+and height are correctly rounded based on YUV subsampling and will thus not 
+match the subdev width and height. However, it would be good to enforce the 
+constraint better at the subdev level, by moving the above alignment code 
+after these two lines.
+
+> >   	if (rwpf->entity.type = VSP1_ENTITY_WPF) {
+> > -		sel->r.left = min_t(unsigned int, sel->r.left, 255);
+> > -		sel->r.top = min_t(unsigned int, sel->r.top, 255);
+> > +		int maxcrop 
+I would declare maxcrop as an unsigned int.
+
+> > +			format->code = MEDIA_BUS_FMT_AYUV8_1X32 ? 254 : 255;
+> 
+> I think you need an empty line here.
+> 
+> > +		sel->r.left = min_t(unsigned int, sel->r.left, maxcrop);
+> > +		sel->r.top = min_t(unsigned int, sel->r.top, maxcrop);
+
+Is this needed ? Based on what I understand from the datasheet the WPF crops 
+the image before passing it to the DMA engine. At that point YUV data isn't 
+subsampled, so it looks like we don't need to restrict the left and top to 
+even values.
+
+> >   	}
+> >   	sel->r.width = min_t(unsigned int, sel->r.width,
+> >   			     format->width - sel->r.left);
+
+-- 
+Regards,
+
+Laurent Pinchart
