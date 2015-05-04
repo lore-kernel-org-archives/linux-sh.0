@@ -1,22 +1,33 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 19 May 2015 01:34:33 +0000
-Subject: Re: [PATCH v2 1/2] usb: renesas_usbhs: Change USBHS_TYPE_R8A779x to USBHS_TYPE_RCAR_GEN2
-Message-Id: <20150519013433.GB19506@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 04 May 2015 17:36:09 +0000
+Subject: [PATCH] ARM: shmobile: kzm9g dts: Configure the HOME key as wake-up source
+Message-Id: <1430760969-23368-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431947055-4324-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <1431947055-4324-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1431947055-4324-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: gregkh@linuxfoundation.org, balbi@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, May 18, 2015 at 08:04:14PM +0900, Yoshihiro Shimoda wrote:
-> Since the HSUSB controllers of R-Car Gen2 are the same specification
-> (they have 16 pipes and usb-dmac), this patch changes USBHS_TYPE_R8A7790
-> and USBHS_TYPE_R8A7791 to USBHS_TYPE_RCAR_GEN2.
-> 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Note that from now on any of the pfc8575 gpio keys will wake up the
+system, as the pfc8575 cannot mask individual interrupts.
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 022ba505f57339a9..24b4cd24dceb2f9e 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -147,6 +147,7 @@
+ 			gpios = <&pcf8575 14 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_HOME>;
+ 			label = "SW1";
++			gpio-key,wakeup;
+ 		};
+ 	};
+ 
+-- 
+1.9.1
+
