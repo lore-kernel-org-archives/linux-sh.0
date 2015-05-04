@@ -1,81 +1,53 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 28 May 2015 15:15:53 +0000
-Subject: [PATCH v4 0/4] r8a7793 SoC, Gose board support
-Message-Id: <1432826157-6414-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 04 May 2015 15:24:31 +0000
+Subject: [PATCH v3 5/6] ARM: shmobile: r8a7740: Remove mapping of L2 cache controller registers
+Message-Id: <1430753072-17145-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi!
+Now all r8a7740-based platforms have been migrated to the generic l2c OF
+initialization, it's no longer needed to map the L2 cache controller
+registers from .map_io().
 
-Here's a minimalized r8a7793 support series as requested by Simon.
-It dumps SMP and all non-essential devices and clocks.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v3:
+  - No changes,
 
-I will post the bindings in a separate series.
+v2:
+  - No changes.
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c | 12 ------------
+ 1 file changed, 12 deletions(-)
 
-CU
-Uli
-
-
-Changes since v3:
-- minimalized device trees
-- split off DT bindings
-- added Geert's ack
-
-Changes since v2:
-- dts: remove unused pins
-- dts: fix flash partition addresses
-- dts: add pmic
-- dtsi, dts: add CMTs
-- dts: add interrupt parent to regulator
-- smp, dtsi: use CPU_METHOD_OF_DECLARE, enable-method
-- smp: re-add rcar_gen2_pm_init() call
-- dtsi: add irqc0 clock
-- dtsi: add DMA controllers
-- dtsi: remove audmapp
-- dtsi: fix sdhi0 resource length
-- dtsi: add SDHI DMAs, remove unsupported properties
-- dtsi: add rcan, adsp clocks
-- dtsi: add missing MSTP4
-- dtsi: fix audmac clocks
-- dtsi: add MSIOF DMAs, remove unused register set
-- dtsi: copy sound description from r8a7791
-- enable rcar2 regulator quirk on Gose
-
-Changes since v1:
-
-- pfc: split patch in six
-- pfc: fixed typos
-- dts: named clock bits properly
-- dts: made more consistent with the very similar r8a7791 dts
-- dts: removed adv7511, don't know the address
-- pm: dropped for now, needs to be fixed up first
-- everywhere: renamed M2N -> M2-N (and M2 to M2-W, while at it)
-- everywhere: added Acks
-
-
-Ulrich Hecht (4):
-  ARM: shmobile: Basic r8a7793 SoC support
-  ARM: shmobile: add r8a7793 minimal SoC device tree
-  ARM: shmobile: r8a7793: add minimal Gose board device tree
-  ARM: shmobile: gose: enable R-Car Gen2 regulator quirk
-
- arch/arm/boot/dts/Makefile                         |   1 +
- arch/arm/boot/dts/r8a7793-gose.dts                 |  63 ++++
- arch/arm/boot/dts/r8a7793.dtsi                     | 368 +++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig                     |   4 +
- arch/arm/mach-shmobile/Makefile                    |   1 +
- arch/arm/mach-shmobile/regulator-quirk-rcar-gen2.c |   3 +-
- arch/arm/mach-shmobile/setup-r8a7793.c             |  33 ++
- include/dt-bindings/clock/r8a7793-clock.h          | 164 +++++++++
- 8 files changed, 636 insertions(+), 1 deletion(-)
- create mode 100644 arch/arm/boot/dts/r8a7793-gose.dts
- create mode 100644 arch/arm/boot/dts/r8a7793.dtsi
- create mode 100644 arch/arm/mach-shmobile/setup-r8a7793.c
- create mode 100644 include/dt-bindings/clock/r8a7793-clock.h
-
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 5dbb40d5c56b6495..3d8a8cfee9a62c6c 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -51,18 +51,6 @@ static struct map_desc r8a7740_io_desc[] __initdata = {
+ 		.length		= 160 << 20,
+ 		.type		= MT_DEVICE_NONSHARED
+ 	},
+-#ifdef CONFIG_CACHE_L2X0
+-	/*
+-	 * for l2x0_init()
+-	 * 0xf0100000-0xf0101000 -> 0xf0002000-0xf0003000
+-	 */
+-	{
+-		.virtual	= 0xf0002000,
+-		.pfn		= __phys_to_pfn(0xf0100000),
+-		.length		= PAGE_SIZE,
+-		.type		= MT_DEVICE_NONSHARED
+-	},
+-#endif
+ };
+ 
+ void __init r8a7740_map_io(void)
 -- 
-2.3.5
+1.9.1
 
