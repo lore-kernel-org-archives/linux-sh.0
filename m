@@ -1,39 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 14 May 2015 01:06:58 +0000
-Subject: [PATCH 29/31] ARM: shmobile: r8a7790: Enable DMA for HSUSB
-Message-Id: <e8295dc39136a23b090885f43e13087cd460fc26.1431565427.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 04 May 2015 15:24:32 +0000
+Subject: [PATCH v3 6/6] ARM: shmobile: r8a7740 dtsi: Add L1 cache information to CPU node
+Message-Id: <1430753072-17145-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1431565427.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
+References: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Describe the L1 cache in the CPU node:
+  - L1 instruction cache: 32 KiB (8 KiB x 4 ways),
+  - L1 data cache: 32 KiB (8 KiB x 4 ways).
 
-This patch adds DMA properties to the HSUSB node.
+Add a link to the L2 cache.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 3 +++
- 1 file changed, 3 insertions(+)
+v3:
+  - No changes,
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index c03a91506c2e..62a9086b133d 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -673,6 +673,9 @@
- 		renesas,buswait = <4>;
- 		phys = <&usb0 1>;
- 		phy-names = "usb";
-+		dmas = <&usb_dmac0 0>, <&usb_dmac0 1>,
-+		       <&usb_dmac1 0>, <&usb_dmac1 1>;
-+		dma-names = "ch0", "ch1", "ch2", "ch3";
- 		status = "disabled";
+v2:
+  - New.
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index ddef5b1c68fa06b3..3aaab195132bfc2c 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -26,6 +26,15 @@
+ 			reg = <0x0>;
+ 			clock-frequency = <800000000>;
+ 			power-domains = <&pd_a3sm>;
++			i-cache-size = <0x8000>;
++			i-cache-sets = <256>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <256>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2>;
+ 		};
  	};
  
 -- 
-2.1.4
+1.9.1
 
