@@ -1,71 +1,39 @@
-From: Catalin Marinas <catalin.marinas@arm.com>
-Date: Fri, 15 May 2015 13:55:13 +0000
-Subject: Re: [PATCH v2] ARM: l2c: Add support for the "arm, shared-override" property
-Message-Id: <20150515135513.GH19345@e104818-lin.cambridge.arm.com>
+From: Mark Brown <broonie@kernel.org>
+Date: Mon, 04 May 2015 12:21:27 +0000
+Subject: Re: [PATCH] ASoC: rsnd: Use generic names for device nodes
+Message-Id: <20150504122127.GP15510@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="FbmEh7Ek6NM6xKh/"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430990831-23825-1-git-send-email-geert+renesas@glider.be>
- <20150507160257.GA11067@e104818-lin.cambridge.arm.com>
- <20150515101028.GH2067@n2100.arm.linux.org.uk>
-In-Reply-To: <20150515101028.GH2067@n2100.arm.linux.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+References: <1430138949-14563-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430138949-14563-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+Cc: Liam Girdwood <lgirdwood-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>, alsa-devel-K7yf7f+aM1XWsZ/bQMPhNw@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Fri, May 15, 2015 at 11:10:28AM +0100, Russell King - ARM Linux wrote:
-> On Thu, May 07, 2015 at 05:02:57PM +0100, Catalin Marinas wrote:
-> > On Thu, May 07, 2015 at 11:27:11AM +0200, Geert Uytterhoeven wrote:
-> > > diff --git a/Documentation/devicetree/bindings/arm/l2cc.txt b/Documentation/devicetree/bindings/arm/l2cc.txt
-> > > index 0dbabe9a6b0abb91..2484aed78c86546d 100644
-> > > --- a/Documentation/devicetree/bindings/arm/l2cc.txt
-> > > +++ b/Documentation/devicetree/bindings/arm/l2cc.txt
-> > > @@ -67,6 +67,12 @@ Optional properties:
-> > >    disable if zero.
-> > >  - arm,prefetch-offset : Override prefetch offset value. Valid values are
-> > >    0-7, 15, 23, and 31.
-> > > +- arm,shared-override : The default behavior of the pl310 cache controller with
-> > > +  respect to the shareable attribute is to transform "normal memory
-> > > +  non-cacheable transactions" into "cacheable no allocate" (for reads) or
-> > > +  "write through no write allocate" (for writes).
-> > > +  On systems where this may cause DMA buffer corruption, this property must be
-> > > +  specified to indicate that such transforms are precluded.
-> > >  
-> > >  Example:
-> > >  
-> > > diff --git a/arch/arm/mm/cache-l2x0.c b/arch/arm/mm/cache-l2x0.c
-> > > index e309c8f35af5af61..86d0e7461e5b0b18 100644
-> > > --- a/arch/arm/mm/cache-l2x0.c
-> > > +++ b/arch/arm/mm/cache-l2x0.c
-> > > @@ -1149,6 +1149,11 @@ static void __init l2c310_of_parse(const struct device_node *np,
-> > >  		}
-> > >  	}
-> > >  
-> > > +	if (of_property_read_bool(np, "arm,shared-override")) {
-> > > +		*aux_val |= L2C_AUX_CTRL_SHARED_OVERRIDE;
-> > > +		*aux_mask &= ~L2C_AUX_CTRL_SHARED_OVERRIDE;
-> > > +	}
-> > > +
-> > >  	prefetch = l2x0_saved_regs.prefetch_ctrl;
-> > >  
-> > >  	ret = of_property_read_u32(np, "arm,double-linefill", &val);
-> > 
-> > It looks fine to me.
-> > 
-> > Acked-by: Catalin Marinas <catalin.marinas@arm.com>
-> > 
-> > (even better if a subsequent patch adds this property to all the dts
-> > files containing "arm,pl310" ;))
-> 
-> Even better would be for the boot loader/firmware to set the bit.
 
-In an ideal world, I agree. But, arguably, we already set other bits in
-the PL310 AUXCTRL register (and related cache controllers, just look at
-the l2cc.txt bindings).
+--FbmEh7Ek6NM6xKh/
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-If you want to rely on firmware, can we at least check this bit and
-print a warning? Or go a step further and refuse to enable PL310 when
-this bit is clear? Otherwise coherent (non-cacheable) DMA operations are
-not safe.
+On Mon, Apr 27, 2015 at 02:49:09PM +0200, Geert Uytterhoeven wrote:
+> rcar_sound -> sound
 
--- 
-Catalin
+Applied, thanks.
+
+--FbmEh7Ek6NM6xKh/
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBCAAGBQJVR2RGAAoJECTWi3JdVIfQUWIH/0ApGFgmoYAUKJ4Idx32vsHl
+IFe4mDMVQrSqrOt5nGD7XPzVQ1L09SttARqLPnbsuil6NGOHliP1TKO4sQlh0t8c
+xMB2YT4UwnjQHoziQklP+TCfALnZlZztxArMvQfpUaKELnMf8i1I0pT5U99QpDNz
+YlwHl8t/gE4ztYaatq8z+u7TAqUGhONasiY19BdyPgoQWFQC5IERTHVmfcWScNsY
+irfPrGmlFFByCBvokYTtH3+nq5Ia3Vn3k4S6zXIkoViDdYJcDaZ4OvhymRkNcmL7
+/MzynD6PzKbjxtcrM2Letiw20JXmS3kvAobGzy7r9qEte65+wtbj9D8ST9bZhUU=
+=o4RU
+-----END PGP SIGNATURE-----
+
+--FbmEh7Ek6NM6xKh/--
