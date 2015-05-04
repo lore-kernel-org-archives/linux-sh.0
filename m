@@ -1,58 +1,60 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Sun, 17 May 2015 00:27:39 +0000
-Subject: [PATCH 0/6] UHS-I support for sh_mobile_sdhi
-Message-Id: <1431822459.4222.166.camel@xylophone.i.decadent.org.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 04 May 2015 15:24:28 +0000
+Subject: [PATCH v3 2/6] ARM: shmobile: r8a7740 dtsi: Add L2 cache-controller node
+Message-Id: <1430753072-17145-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-This series adds support for UHS-I in sh_mobile_sdhi, partly implemented
-in tmio_mmc.  This does not yet include tuning for SDR-104, but SDR-50 now
-works on the R8A7790 Lager board and another development board.
+Add the missing L2 cache-controller node. This will allow migration to
+the generic l2c OF initialization.
 
-The pfc block needs to be reconfigured from 3.3V to 1.8V signalling on
-the pins wired to the SD card.  This is supported by adding separate
-functions for 1.8V signalling in sh-pfc ("sdhi0_1v8" etc.).  I expect
-that several SH SoCs have this capability, but I only have the R8A7790
-data sheet so I only implemented it for that one.
+The L2 cache is an ARM L2C-310 (r3p1-150rel0), of size 256 KiB (32 KiB x
+8 ways).
 
-Changes since the RFC:
-- Replace the 'regulator' devices for signal voltage switching with
-  pinctrl functions and states
-- Drop 'mmc: sh_mobile_sdhi: Add actual clock rate support' as it's
-  redundant
-- Use a switch statement in sh_mobile_sdhi_start_signal_voltage_switch()
-- Fix subject prefix for the DT changes
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v3:
+  - Add "arm,shared-override",
 
-Ben.
+v2:
+  - Fix interrupt (should be 3 cells, not 1),
+  - Describe cache better.
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-Ben Dooks (1):
-  ARM: shmobile: lager: Set sdhi and mmcif clock rates
-
-Ben Hutchings (5):
-  mmc: tmio: Add UHS-I mode support
-  pinctrl: sh-pfc: Add set_mux operation to struct sh_pfc_function
-  pinctrl: sh-pfc: r8a7790: Add separate functions for SDHI 1.8V
-    operation
-  mmc: sh_mobile_sdhi: Add UHS-I mode support
-  ARM: shmobile: lager: Enable UHS-I SDR-50
-
- arch/arm/boot/dts/r8a7790-lager.dts  |   29 +++++++++++++-
- drivers/mmc/host/sh_mobile_sdhi.c    |   58 ++++++++++++++++++++++++++++
- drivers/mmc/host/tmio_mmc.h          |    3 ++
- drivers/mmc/host/tmio_mmc_pio.c      |   31 +++++++++++++++
- drivers/pinctrl/sh-pfc/core.c        |    2 +-
- drivers/pinctrl/sh-pfc/core.h        |    1 +
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   70 ++++++++++++++++++++++++++++++++--
- drivers/pinctrl/sh-pfc/pinctrl.c     |    4 ++
- drivers/pinctrl/sh-pfc/sh_pfc.h      |   10 ++++-
- 9 files changed, 200 insertions(+), 8 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index d84714468cce18df..ddef5b1c68fa06b3 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -37,6 +37,22 @@
+ 		      <0xc2000000 0x1000>;
+ 	};
+ 
++	L2: cache-controller {
++		compatible = "arm,pl310-cache";
++		reg = <0xf0100000 0x1000>;
++		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
++		power-domains = <&pd_a3sm>;
++		arm,data-latency = <3 3 3>;
++		arm,tag-latency = <2 2 2>;
++		arm,shared-override;
++		cache-unified;
++		cache-level = <2>;
++		cache-size = <0x40000>;
++		cache-sets = <1024>;
++		cache-block-size = <32>;
++		cache-line-size = <32>;
++	};
++
+ 	dbsc3: memory-controller@fe400000 {
+ 		compatible = "renesas,dbsc3-r8a7740";
+ 		reg = <0xfe400000 0x400>;
 -- 
-1.7.10.4
-
-
+1.9.1
 
