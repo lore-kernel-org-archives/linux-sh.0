@@ -1,76 +1,67 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Fri, 08 May 2015 09:20:31 +0000
-Subject: Re: [PATCH] dmaengine: Remove Renesas Audio DMAC peri peri platform data
-Message-Id: <20150508090831.GD3521@localhost>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Tue, 05 May 2015 08:33:31 +0000
+Subject: Re: [PATCH 0/7 v4] mmc: sh_mmcif: add parent clk support
+Message-Id: <CAPDyKFq3Q1xCZmhQJKraQohPF6WXxbwj8O8OV+8QRPW9DQypFg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87oao1sjzp.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87oao1sjzp.wl%kuninori.morimoto.gx@renesas.com>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+	<87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
+	<3057568.fukq3GllLM@avalon>
+In-Reply-To: <3057568.fukq3GllLM@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-On Tue, Apr 28, 2015 at 12:21:40PM +0200, Geert Uytterhoeven wrote:
-> Commit 3cd44dcd35a6 ("dmaengine: remove Renesas Audio DMAC peri peri")
-> forgot to remove the header file with the platform data definitions.
-> 
-Applied now
-
-Thanks
--- 
-~Vinod
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  include/linux/platform_data/dma-rcar-audmapp.h | 34 --------------------------
->  1 file changed, 34 deletions(-)
->  delete mode 100644 include/linux/platform_data/dma-rcar-audmapp.h
-> 
-> diff --git a/include/linux/platform_data/dma-rcar-audmapp.h b/include/linux/platform_data/dma-rcar-audmapp.h
-> deleted file mode 100644
-> index 471fffebbeb4cdbe..0000000000000000
-> --- a/include/linux/platform_data/dma-rcar-audmapp.h
-> +++ /dev/null
-> @@ -1,34 +0,0 @@
-> -/*
-> - * This is for Renesas R-Car Audio-DMAC-peri-peri.
-> - *
-> - * Copyright (C) 2014 Renesas Electronics Corporation
-> - * Copyright (C) 2014 Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> - *
-> - * This file is based on the include/linux/sh_dma.h
-> - *
-> - * Header for the new SH dmaengine driver
-> - *
-> - * Copyright (C) 2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> - *
-> - * This program is free software; you can redistribute it and/or modify
-> - * it under the terms of the GNU General Public License version 2 as
-> - * published by the Free Software Foundation.
-> - */
-> -#ifndef SH_AUDMAPP_H
-> -#define SH_AUDMAPP_H
-> -
-> -#include <linux/dmaengine.h>
-> -
-> -struct audmapp_slave_config {
-> -	int		slave_id;
-> -	dma_addr_t	src;
-> -	dma_addr_t	dst;
-> -	u32		chcr;
-> -};
-> -
-> -struct audmapp_pdata {
-> -	struct audmapp_slave_config *slave;
-> -	int slave_num;
-> -};
-> -
-> -#endif /* SH_AUDMAPP_H */
-> -- 
-> 1.9.1
-> 
+On 23 April 2015 at 12:07, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Morimoto-san,
+>
+> Thank you for the patches.
+>
+> On Thursday 23 April 2015 08:11:36 Kuninori Morimoto wrote:
+>> Hi Ulf, Simon
+>>
+>> These patches are v4 of sh_mmcif.
+>> Current sh_mmcif driver was used on Renesas SH-Mobile series,
+>> and it is also used on Renesas R-Car series.
+>> But, R-Car series can setup parent clock.
+>> We couldn't setup it when SH-Mobile.
+>>
+>> These patches are tested by Kobayashi-san on Lager board.
+>>
+>> Simon
+>>
+>> 6), 7) are ARM side patches, but these doesn't depend on
+>> 1) - 5) patches.
+>>
+>> Kuninori Morimoto (7):
+>>   1) mmc: sh_mmcif: move mmcif_of_match to upside
+>>   2) mmc: sh_mmcif: cleanup to use dev instead of &pdev->dev
+>>   3) mmc: sh_mmcif: remove unnecessary int clk from struct sh_mmcif_host
+>>   4) mmc: sh_mmcif: separate sh_mmcif_clk_update() into setup and prepare
+>
+> For patches 1-4,
+>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+>
+> I'll comment separately on patch 5.
+>
+>>   5) mmc: sh_mmcif: calculate best clock with parent clock
+>>   6) ARM: shmobile: r8a7790: add MMCIF parent clock range
+>>   7) ARM: shmobile: r8a7791: add MMCIF parent clock range
+>>
+>>  Documentation/devicetree/bindings/mmc/renesas,mmcif.txt |   3 ++
+>>  arch/arm/boot/dts/r8a7790.dtsi                          |   2 ++
+>>  arch/arm/boot/dts/r8a7791.dtsi                          |   1 +
+>>  drivers/mmc/host/sh_mmcif.c                             | 173 +++++++++----
+>>  4 files changed, 135 insertions(+), 44 deletions(-)
+>
 > --
-> To unsubscribe from this list: send the line "unsubscribe dmaengine" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
--- 
+Thanks, applied patches 1->4.
+
+I am delaying patch 5, until it gets acked.
+
+Kind regards
+Uffe
