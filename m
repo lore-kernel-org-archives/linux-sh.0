@@ -1,44 +1,35 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Thu, 21 May 2015 10:46:09 +0000
-Subject: Re: [PATCH 2/4 v2] ASoC: rsnd: indicate unknown HW start
-Message-Id: <20150521104609.GT21577@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="gIHggtDV96iaw8wO"
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Tue, 05 May 2015 08:35:21 +0000
+Subject: Re: [Linux-kernel] [RFC PATCH 5/7] mmc: sh_mobile_sdhi: Add UHS-I mode support
+Message-Id: <554880C9.8080201@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878ucitwyh.wl%kuninori.morimoto.gx@renesas.com>
- <87617mtwvo.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87617mtwvo.wl%kuninori.morimoto.gx@renesas.com>
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Vinod Koul <vinod.koul@intel.com>, Simon <horms@verge.net.au>, Nguyen Viet Dung <nv-dung@jinso.co.jp>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Cao Minh Hiep <cm-hiep@jinso.co.jp>, sakato <ryusuke.sakato.bx@renesas.com>, dmaengine@vger.kernel.org
+References: <1430396995.5802.39.camel@xylophone.i.decadent.org.uk> <1430397136.5802.44.camel@xylophone.i.decadent.org.uk> <CAPDyKFodZscxZJmKgYyMV8m8mNWYc9GitkoKbixTKS5r7rv_fA@mail.gmail.com>
+In-Reply-To: <CAPDyKFodZscxZJmKgYyMV8m8mNWYc9GitkoKbixTKS5r7rv_fA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Ulf Hansson <ulf.hansson@linaro.org>, Ben Hutchings <ben.hutchings@codethink.co.uk>
+Cc: linux-kernel@lists.codethink.co.uk, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Ian Molton <ian@mnementh.co.uk>, linux-mmc <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
+On 05/05/15 10:56, Ulf Hansson wrote:
+> On 30 April 2015 at 14:32, Ben Hutchings <ben.hutchings@codethink.co.uk> wrote:
+>> Implement voltage switch, supporting modes up to SDR-50.
+>>
+>> Based on work by Shinobu Uehara, Rob Taylor, William Towle and Ian Molton.
+>>
+>> This uses two voltage regulators, one external and one on the pfc.
+> 
+> Why two? If there is a parent child relation ship, that should be
+> handled through the regulator tree, right!? Please elaborate.
 
---gIHggtDV96iaw8wO
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+The card main power is separate from the IO line voltages.
 
-On Thu, May 21, 2015 at 03:49:13AM +0000, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->=20
-> rsnd_ssi_hw_stop() should be called after rsnd_ssi_hw_start().
-> This patch indicates unknown hw_stop as error
+To get to the high-speed, card power is left at 3.3V and the IO
+voltage is changed to 1.8V.
 
-Applied, thanks.
+In the systems we have the power gate is separate from the controls
+for the IO but not integrated into the MMC controller itself.
 
---gIHggtDV96iaw8wO
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBCAAGBQJVXbdwAAoJECTWi3JdVIfQyXYH/ihmOCQknPk/ZK2NWAx4edug
-G9JCCDlKaX0ZLdrPY7CQOc9G0d5Yn2zMqHsGKohW+Pbdy9ZogXP7th+VOYwlnR5d
-APkALQwzcIL0WXnY6HD5uoj8Xzt2Ul7fpDn1/axIiyETkTFLs0zv/nruuVNeSd35
-9d6GKAAgbwUa76+JDMhBl9MPY9roPSpynbOyiniOhzgpfl+sjWfKMDR0rcyPzpGt
-fAaSj0Igd1PDSR8e46cE0fc3E5riVI5XwIfoPURBGt8530HJ5dAVeWVKhHSk5plf
-WY94degpRSTj9/UzEwLuOUyxgK7EBmMSsoxCVNLNjsFxwIckDLCspyMACkmSj7g=
-=wh10
------END PGP SIGNATURE-----
-
---gIHggtDV96iaw8wO--
+-- 
+Ben Dooks				http://www.codethink.co.uk/
+Senior Engineer				Codethink - Providing Genius
