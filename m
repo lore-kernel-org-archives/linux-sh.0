@@ -1,60 +1,32 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 04 May 2015 15:24:28 +0000
-Subject: [PATCH v3 2/6] ARM: shmobile: r8a7740 dtsi: Add L2 cache-controller node
-Message-Id: <1430753072-17145-3-git-send-email-geert+renesas@glider.be>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 05 May 2015 09:37:17 +0000
+Subject: Re: [PATCH v2 11/15] clk: shmobile: r8a7793: document DIV6 clock bindings
+Message-Id: <CAMuHMdV7kp6m-QHK8vQXRjfVBDqXcyyE5ah4W9NVWbRQr=VHLA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
+References: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+	<1430403544-26742-12-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1430403544-26742-12-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Cc: Simon Horman <horms@verge.net.au>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linus Walleij <linus.walleij@linaro.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Add the missing L2 cache-controller node. This will allow migration to
-the generic l2c OF initialization.
+On Thu, Apr 30, 2015 at 4:19 PM, Ulrich Hecht
+<ulrich.hecht+renesas@gmail.com> wrote:
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> Cc: devicetree@vger.kernel.org
 
-The L2 cache is an ARM L2C-310 (r3p1-150rel0), of size 256 KiB (32 KiB x
-8 ways).
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v3:
-  - Add "arm,shared-override",
+Gr{oetje,eeting}s,
 
-v2:
-  - Fix interrupt (should be 3 cells, not 1),
-  - Describe cache better.
----
- arch/arm/boot/dts/r8a7740.dtsi | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+                        Geert
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index d84714468cce18df..ddef5b1c68fa06b3 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -37,6 +37,22 @@
- 		      <0xc2000000 0x1000>;
- 	};
- 
-+	L2: cache-controller {
-+		compatible = "arm,pl310-cache";
-+		reg = <0xf0100000 0x1000>;
-+		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
-+		power-domains = <&pd_a3sm>;
-+		arm,data-latency = <3 3 3>;
-+		arm,tag-latency = <2 2 2>;
-+		arm,shared-override;
-+		cache-unified;
-+		cache-level = <2>;
-+		cache-size = <0x40000>;
-+		cache-sets = <1024>;
-+		cache-block-size = <32>;
-+		cache-line-size = <32>;
-+	};
-+
- 	dbsc3: memory-controller@fe400000 {
- 		compatible = "renesas,dbsc3-r8a7740";
- 		reg = <0xfe400000 0x400>;
--- 
-1.9.1
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
