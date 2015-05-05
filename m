@@ -1,71 +1,125 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 13 May 2015 08:36:21 +0000
-Subject: Re: [PATCH/RFC v6 4/7] PM / Domains: Add DT bindings for PM QoS device latencies
-Message-Id: <CAPDyKFp=FK1ietZdx4fkRF0j_i1me8f+w5YasFHHyBCARwAr+Q@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 05 May 2015 13:49:35 +0000
+Subject: Re: PM / Domains: Infinite loop during reboot
+Message-Id: <CAMuHMdUTirgF7Qk2uMPYnejCOa14Khi=Sn8-y23TsRyJrFT-6A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
-	<1430138622-14029-5-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430138622-14029-5-git-send-email-geert+renesas@glider.be>
+References: <CAMuHMdVAnZ5mH7EwJKVeKWSDqCxn+TSH1VOHoK3B2=b8oByoHg@mail.gmail.com>
+In-Reply-To: <CAMuHMdVAnZ5mH7EwJKVeKWSDqCxn+TSH1VOHoK3B2=b8oByoHg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Kevin Hilman <khilman@kernel.org>, Axel Haslam <ahaslam@baylibre.com>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Ulf Hansson <ulf.hansson@linaro.org>, "Rafael J. Wysocki" <rjw@rjwysocki.net>
+Cc: Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On 27 April 2015 at 14:43, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
-> PM QoS device start/stop are properties of the hardware.
-> In legacy code, they're specified from platform code.
-> On DT platforms, their values should come from DT.
+On Mon, Apr 13, 2015 at 2:18 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> Sometimes reboot doesn't work on r8a7791/koelsch with the CPG clock domain.
+> With additional debug messages, you can see it hangs in an infinite loop:
 >
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> v6:
->   - Rebased on top of v4.1-rc1 for new RFC,
+> rcar-dmac ec720000.dma-controller: removing from PM domain cpg_clocks
+> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+> [...]
 >
-> v4:
->   - Drop save/restore state latencies, as they're Linux driver-specific,
->   - Change state to RFC, as this is put on hold,
+> Presumably this is this loop in genpd_dev_pm_detach():
 >
-> v3:
->   - No changes,
+>         while (1) {
+>                 ret = pm_genpd_remove_device(pd, dev);
+>                 if (ret != -EAGAIN)
+>                         break;
+>                 cond_resched();
+>         }
 >
-> v2:
->   - New.
-> ---
->  Documentation/devicetree/bindings/power/power_domain.txt | 6 ++++++
->  1 file changed, 6 insertions(+)
+> which is retried because genpd->prepared_count > 0 in pm_genpd_remove_device().
+> This looks a bit strange, as no suspend is in progress, so prepared_count
+> should be zero?
 >
-> diff --git a/Documentation/devicetree/bindings/power/power_domain.txt b/Documentation/devicetree/bindings/power/power_domain.txt
-> index d659e5cb39be6057..32d1d3a399fe2a48 100644
-> --- a/Documentation/devicetree/bindings/power/power_domain.txt
-> +++ b/Documentation/devicetree/bindings/power/power_domain.txt
-> @@ -73,12 +73,18 @@ Required properties:
->   - power-domains : A phandle and PM domain specifier as defined by bindings of
->                     the power controller specified by phandle.
+> I'm adding more debugging code to verify this, but it's not 100% reproducable.
 >
-> +Optional properties:
-> + - stop-latency: Stop latency of the device, in ns,
-> + - start-latency: Start latency of the device, in ns,
-> +
+> [...]
+>
+> Confirmed: prepared_count turns out to be 1 at reboot time if at least one
+> s2ram cycle happened before. Additional s2ram cycles don't seem to increase
+> prepared_count any further.
 
-What do you think of renaming these to "suspend-latency" and
-"resume-latency" instead? I think that better reflects their purpose.
-I have no strong opinion though.
+This seems to be caused by the sh_cmt driver's sh_cmt_enable() calling
+dev_pm_syscore_device(..., true).
 
->  Example:
->
->         leaky-device@12350000 {
->                 compatible = "foo,i-leak-current";
->                 reg = <0x12350000 0x1000>;
->                 power-domains = <&power 0>;
-> +               stop-latency = <250000>;
-> +               start-latency = <250000>;
->         };
->
->  The node above defines a typical PM domain consumer device, which is located
-> --
-> 1.9.1
->
+If dev->power.syscore is set, device_prepare(), device_complete() et al.
+skip further operation.
 
-Kind regards
-Uffe
+Hence during an s2ram+resume cycle, the following happens:
+
+    PM: Syncing filesystems ... done.
+    PM: Preparing system for mem sleep
+    Freezing user space processes ... (elapsed 0.001 seconds) done.
+    Freezing remaining freezable tasks ... (elapsed 0.001 seconds) done.
+    PM: Entering mem sleep
+    Suspending console(s) (use no_console_suspend to debug)
+
+    [ pm_genpd_prepare() is called for all devices (incl. sh_cmt), ]
+    [ increasing prepared_count ]
+
+    PM: suspend of devices complete after 36.472 msecs
+    PM: late suspend of devices complete after 7.569 msecs
+    PM: noirq suspend of devices complete after 8.035 msecs
+    Disabling non-boot CPUs ...
+    CPU1: shutdown
+
+    [ sh_cmt_enable() is called, and power.syscore becomes true ]
+
+    Enabling non-boot CPUs ...
+    CPU1 is up
+    PM: noirq resume of devices complete after 4.724 msecs
+    PM: early resume of devices complete after 5.100 msecs
+    PM: resume of devices complete after 84.156 msecs
+
+    [ pm_genpd_complete() is called for all devices (except for sh_cmt!, ]
+    [ as its power.syscore is now true!), decreasing prepared_count ]
+
+    [ prepared_count is now 1 instead of 0! ]
+
+    PM: Finishing wakeup.
+    Restarting tasks ...
+
+During subsequent s2ram+resume cycles, the prepared_count imbalance doesn't
+increase, as pm_genpd_prepare() is no longer called for sh_cmt due to
+power.syscore still being set.
+
+During reboot/halt, platform_drv_shutdown() is called for any platform device
+that has a driver with a .shutdown() method (on R-Car Gen2, that's just the
+rcar-dmac driver). platform_drv_shutdown() calls dev_pm_domain_detach(),
+which enters an infinite loop, due to the prepared_count imbalance.
+
+On R-Mobile, the imbalance also happens. But there it doesn't cause any issues
+as sh_cmt is part of a PM domain that doesn't contain any devices with drivers
+that have .shutdown() methods.
+
+I see two ways to fix this:
+  1. Fix the prepared_count imbalance.
+     Anyone with a clue?
+  2. Fix the infinite loop.
+       a. Limit the loop to a fixed number of retries (e.g. 20),
+       b. Remove the call to dev_pm_domain_detach() from
+          platform_drv_shutdown(). Others buses (amba, i2c, spi) do not call
+          it from their .shutdown() method, only from .remove().
+
+Thanks for your comments and suggestions!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
