@@ -1,179 +1,130 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sat, 23 May 2015 19:23:40 +0000
-Subject: Re: [PATCH/RFC 8/8] serial: sh-sci: Add DT support to DMA setup
-Message-Id: <9488404.tq2DYoA6by@avalon>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Tue, 05 May 2015 07:56:15 +0000
+Subject: Re: [RFC PATCH 5/7] mmc: sh_mobile_sdhi: Add UHS-I mode support
+Message-Id: <CAPDyKFodZscxZJmKgYyMV8m8mNWYc9GitkoKbixTKS5r7rv_fA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432145174-11534-9-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432145174-11534-9-git-send-email-geert+renesas@glider.be>
+References: <1430396995.5802.39.camel@xylophone.i.decadent.org.uk>
+	<1430397136.5802.44.camel@xylophone.i.decadent.org.uk>
+In-Reply-To: <1430397136.5802.44.camel@xylophone.i.decadent.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Cc: Ian Molton <ian@mnementh.co.uk>, linux-mmc <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, linux-kernel@lists.codethink.co.uk
 
-Hi Geert,
+On 30 April 2015 at 14:32, Ben Hutchings <ben.hutchings@codethink.co.uk> wrote:
+> Implement voltage switch, supporting modes up to SDR-50.
+>
+> Based on work by Shinobu Uehara, Rob Taylor, William Towle and Ian Molton.
+>
+> This uses two voltage regulators, one external and one on the pfc.
 
-Thank you for the patch.
+Why two? If there is a parent child relation ship, that should be
+handled through the regulator tree, right!? Please elaborate.
 
-On Wednesday 20 May 2015 20:06:14 Geert Uytterhoeven wrote:
-> Add support for obtaining DMA channel information from the device tree.
-> 
-> This requires switching from the legacy sh_dmae_slave structures with
-> hardcoded channel numbers and the corresponding filter function to:
->   1. dma_request_slave_channel_compat(),
->        - On legacy platforms, dma_request_slave_channel_compat() uses
-> 	 the passed DMA channel numbers that originate from platform
-> 	 device data,
->        - On DT-based platforms, dma_request_slave_channel_compat() will
-> 	 retrieve the information from DT.
->   2. and the generic dmaengine_slave_config() configuration method,
->      which requires filling in DMA register ports and slave bus widths.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Kind regards
+Uffe
 
-This looks good to me,
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
+>
+> Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
 > ---
-> Note: There's still one shdmac'ism (shdma_desc.partial) left, which is
->       used to retrieve the number of transfered bytes of an incomplete
->       DMA request.
->       While rcar-dmac supports dma_tx_state.residue, I believe this is
->       not supported by shdmac on legacy ARM and SH platforms?
-
-More than that, residue reporting is only supported by the DMA engine API for 
-the current DMA transfer. There's no way to stop a DMA transfer and find out 
-how many bytes are left in a race-free way. I think we should add support for 
-that use case to the DMA engine API.
-
-> ---
->  drivers/tty/serial/sh-sci.c | 78 +++++++++++++++++++++++++-----------------
->  1 file changed, 47 insertions(+), 31 deletions(-)
-> 
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index 42634d99d047681f..20eaa120815f7fbe 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -113,8 +113,6 @@ struct sci_port {
->  	unsigned int			sg_len_tx;
->  	struct scatterlist		sg_rx[2];
->  	size_t				buf_len_rx;
-> -	struct sh_dmae_slave		param_tx;
-> -	struct sh_dmae_slave		param_rx;
->  	struct work_struct		work_tx;
->  	struct work_struct		work_rx;
->  	struct timer_list		rx_timer;
-> @@ -1664,17 +1662,6 @@ static void sci_break_ctl(struct uart_port *port, int
-> break_state) }
-> 
->  #ifdef CONFIG_SERIAL_SH_SCI_DMA
-> -static bool filter(struct dma_chan *chan, void *slave)
-> -{
-> -	struct sh_dmae_slave *param = slave;
-> -
-> -	dev_dbg(chan->device->dev, "%s: slave ID %d\n",
-> -		__func__, param->shdma_slave.slave_id);
-> -
-> -	chan->private = &param->shdma_slave;
-> -	return true;
-> -}
-> -
->  static void rx_timer_fn(unsigned long arg)
->  {
->  	struct sci_port *s = (struct sci_port *)arg;
-> @@ -1690,29 +1677,63 @@ static void rx_timer_fn(unsigned long arg)
->  	schedule_work(&s->work_rx);
+>  drivers/mmc/host/sh_mobile_sdhi.c |   48 +++++++++++++++++++++++++++++++++++++
+>  1 file changed, 48 insertions(+)
+>
+> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+> index 92a58c6007fe..c8538a256e22 100644
+> --- a/drivers/mmc/host/sh_mobile_sdhi.c
+> +++ b/drivers/mmc/host/sh_mobile_sdhi.c
+> @@ -30,6 +30,7 @@
+>  #include <linux/mfd/tmio.h>
+>  #include <linux/sh_dma.h>
+>  #include <linux/delay.h>
+> +#include <linux/regulator/consumer.h>
+>
+>  #include "tmio_mmc.h"
+>
+> @@ -84,6 +85,7 @@ MODULE_DEVICE_TABLE(of, sh_mobile_sdhi_of_match);
+>
+>  struct sh_mobile_sdhi {
+>         struct clk *clk;
+> +       struct regulator *vqmmc_ref;
+>         struct tmio_mmc_data mmc_data;
+>         struct tmio_mmc_dma dma_priv;
+>  };
+> @@ -148,6 +150,41 @@ static void sh_mobile_sdhi_set_clk_div(struct platform_device *pdev, int clk)
+>         }
 >  }
-> 
-> +static struct dma_chan *sci_request_dma_chan(struct uart_port *port,
-> +					     enum dma_transfer_direction dir,
-> +					     unsigned int id)
+>
+> +static int sh_mobile_sdhi_start_signal_voltage_switch(
+> +       struct tmio_mmc_host *host, unsigned char signal_voltage)
 > +{
-> +	dma_cap_mask_t mask;
-> +	struct dma_chan *chan;
-> +	struct dma_slave_config cfg;
-> +	int ret;
+> +       struct sh_mobile_sdhi *priv = host_to_priv(host);
+> +       int min_uV, max_uV;
+> +       int ret;
 > +
-> +	dma_cap_zero(mask);
-> +	dma_cap_set(DMA_SLAVE, mask);
+> +       if (signal_voltage = MMC_SIGNAL_VOLTAGE_330) {
+> +               min_uV = 2700000;
+> +               max_uV = 3600000;
+> +       } else if (signal_voltage = MMC_SIGNAL_VOLTAGE_180) {
+> +               min_uV = 1700000;
+> +               max_uV = 1950000;
+> +       } else {
+> +               return -EINVAL;
+> +       }
 > +
-> +	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
-> +					(void *)(unsigned long)id, port->dev,
-> +					dir = DMA_MEM_TO_DEV ? "tx" : "rx");
-> +	if (!chan) {
-> +		dev_warn(port->dev,
-> +			 "dma_request_slave_channel_compat failed\n");
-> +		return NULL;
-> +	}
+> +       if (!IS_ERR(host->mmc->supply.vqmmc)) {
+> +               ret = regulator_set_voltage(host->mmc->supply.vqmmc,
+> +                                           min_uV, max_uV);
+> +               if (ret)
+> +                       return ret;
+> +       }
 > +
-> +	memset(&cfg, 0, sizeof(cfg));
-> +	cfg.direction = dir;
-> +	if (dir = DMA_MEM_TO_DEV) {
-> +		cfg.dst_addr = port->mapbase +
-> +			(sci_getreg(port, SCxTDR)->offset << port->regshift);
-> +		cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
-> +	} else {
-> +		cfg.src_addr = port->mapbase +
-> +			(sci_getreg(port, SCxRDR)->offset << port->regshift);
-> +		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
-> +	}
+> +       if (!IS_ERR(priv->vqmmc_ref)) {
+> +               ret = regulator_set_voltage(priv->vqmmc_ref,
+> +                                           min_uV, max_uV);
+> +               if (ret)
+> +                       return ret;
+> +       }
 > +
-> +	ret = dmaengine_slave_config(chan, &cfg);
-> +	if (ret) {
-> +		dev_warn(port->dev, "dmaengine_slave_config failed %d\n", ret);
-> +		dma_release_channel(chan);
-> +		return NULL;
-> +	}
-> +
-> +	return chan;
+> +       usleep_range(5000, 5500);
+> +       return 0;
 > +}
 > +
->  static void sci_request_dma(struct uart_port *port)
+>  static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
 >  {
->  	struct sci_port *s = to_sci_port(port);
-> -	struct sh_dmae_slave *param;
->  	struct dma_chan *chan;
-> -	dma_cap_mask_t mask;
->  	int nent;
-> 
->  	dev_dbg(port->dev, "%s: port %d\n", __func__, port->line);
-> 
-> -	if (s->cfg->dma_slave_tx <= 0 || s->cfg->dma_slave_rx <= 0)
-> +	if (!port->dev->of_node &&
-> +	    (s->cfg->dma_slave_tx <= 0 || s->cfg->dma_slave_rx <= 0))
->  		return;
-> 
-> -	dma_cap_zero(mask);
-> -	dma_cap_set(DMA_SLAVE, mask);
-> -
-> -	param = &s->param_tx;
-> -
-> -	/* Slave ID, e.g., SHDMA_SLAVE_SCIF0_TX */
-> -	param->shdma_slave.slave_id = s->cfg->dma_slave_tx;
-> -
->  	s->cookie_tx = -EINVAL;
-> -	chan = dma_request_channel(mask, filter, param);
-> +	chan = sci_request_dma_chan(port, DMA_MEM_TO_DEV, s->cfg->dma_slave_tx);
->  	dev_dbg(port->dev, "%s: TX: got channel %p\n", __func__, chan);
->  	if (chan) {
->  		s->chan_tx = chan;
-> @@ -1736,12 +1757,7 @@ static void sci_request_dma(struct uart_port *port)
->  		INIT_WORK(&s->work_tx, work_fn_tx);
->  	}
-> 
-> -	param = &s->param_rx;
-> -
-> -	/* Slave ID, e.g., SHDMA_SLAVE_SCIF0_RX */
-> -	param->shdma_slave.slave_id = s->cfg->dma_slave_rx;
-> -
-> -	chan = dma_request_channel(mask, filter, param);
-> +	chan = sci_request_dma_chan(port, DMA_DEV_TO_MEM, s->cfg->dma_slave_rx);
->  	dev_dbg(port->dev, "%s: RX: got channel %p\n", __func__, chan);
->  	if (chan) {
->  		dma_addr_t dma[2];
-
--- 
-Regards,
-
-Laurent Pinchart
-
+>         int timeout = 1000;
+> @@ -240,6 +277,13 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+>                 goto eprobe;
+>         }
+>
+> +       priv->vqmmc_ref = devm_regulator_get_optional(&pdev->dev, "vqmmc-ref");
+> +       if (IS_ERR(priv->vqmmc_ref)) {
+> +               if (PTR_ERR(priv->vqmmc_ref) = -EPROBE_DEFER)
+> +                       return -EPROBE_DEFER;
+> +               dev_info(&pdev->dev, "No vqmmc reference regulator found\n");
+> +       }
+> +
+>         host = tmio_mmc_host_alloc(pdev);
+>         if (!host) {
+>                 ret = -ENOMEM;
+> @@ -253,6 +297,10 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+>         host->clk_enable        = sh_mobile_sdhi_clk_enable;
+>         host->clk_disable       = sh_mobile_sdhi_clk_disable;
+>         host->multi_io_quirk    = sh_mobile_sdhi_multi_io_quirk;
+> +
+> +       host->start_signal_voltage_switch
+> +                               = sh_mobile_sdhi_start_signal_voltage_switch;
+> +
+>         /* SD control register space size is 0x100, 0x200 for bus_shift=1 */
+>         if (resource_size(res) > 0x100)
+>                 host->bus_shift = 1;
+> --
+> 1.7.10.4
+>
+>
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
