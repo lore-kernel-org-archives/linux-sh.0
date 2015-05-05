@@ -1,49 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 01 May 2015 00:33:25 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 05 May 2015 09:38:30 +0000
 Subject: Re: [PATCH v2 14/15] clk: shmobile: Add r8a7793 SoC to MSTP bindings
-Message-Id: <20150501003325.GB13754@verge.net.au>
+Message-Id: <CAMuHMdW-Dt_WTy1q7ZF-n+FROQaM5Ug1e4RTnTHoj0wkyitZwg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <1430403544-26742-15-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1430403544-26742-15-git-send-email-ulrich.hecht+renesas@gmail.com>
+	<1430403544-26742-15-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1430403544-26742-15-git-send-email-ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: geert@linux-m68k.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, laurent.pinchart+renesas@ideasonboard.com, kuninori.morimoto.gx@renesas.com, linus.walleij@linaro.org, Michael Turquette <mturquette@linaro.org>, devicetree@vger.kernel.org
+To: Ulrich Hecht <ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Michael Turquette <mturquette-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Thu, Apr 30, 2015 at 04:19:03PM +0200, Ulrich Hecht wrote:
+On Thu, Apr 30, 2015 at 4:19 PM, Ulrich Hecht
+<ulrich.hecht+renesas@gmail.com> wrote:
 > Also replaces "R-Car M2" with "R-Car M2-W" to avoid confusion.
-> 
+>
 > Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 > Cc: Michael Turquette <mturquette@linaro.org>
 > Cc: devicetree@vger.kernel.org
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-> ---
->  Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> index 0a80fa7..923ee0f 100644
-> --- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-> @@ -15,7 +15,8 @@ Required Properties:
->      - "renesas,r8a7740-mstp-clocks" for R8A7740 (R-Mobile A1) MSTP gate clocks
->      - "renesas,r8a7779-mstp-clocks" for R8A7779 (R-Car H1) MSTP gate clocks
->      - "renesas,r8a7790-mstp-clocks" for R8A7790 (R-Car H2) MSTP gate clocks
-> -    - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
-> +    - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2-W) MSTP gate clocks
-> +    - "renesas,r8a7793-mstp-clocks" for R8A7793 (R-Car M2-N) MSTP gate clocks
->      - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
->      - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
->      - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
-> -- 
-> 2.3.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
