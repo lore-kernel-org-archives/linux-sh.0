@@ -1,73 +1,45 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 12 May 2015 10:36:12 +0000
-Subject: Re: [PATCH] gpio: rcar: Check for irq_set_irq_wake() failures
-Message-Id: <CACRpkdZ4DOXvF+jaL1Cmyqu6i_d+d70yY-7ejbXp-JHst7ApVQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 05 May 2015 09:07:20 +0000
+Subject: Re: [PATCH v2 01/15] pinctrl: sh-pfc: Add r8a7793 PFC support part 1: pinmux data
+Message-Id: <CAMuHMdU=wYHzjKW6Oe27wOvA_6qQBGkwtDmT+M9d2mwsAriZvg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430748592-6394-1-git-send-email-geert+renesas@glider.be>
-	<CACRpkdaDEr7Lw8u5tAC-som5W-WM4-Wfqena4Ftd4KFdEA2-Yg@mail.gmail.com>
-	<CAMuHMdX2zaRhZh20e-TMkMeES6Ftaez1vcdcnAimVczW6L7gsQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdX2zaRhZh20e-TMkMeES6Ftaez1vcdcnAimVczW6L7gsQ@mail.gmail.com>
+References: <1430403544-26742-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1430403544-26742-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Valentine <valentine.barshak@cogentembedded.com>, Magnus Damm <magnus.damm@gmail.com>, Alexandre Courbot <gnurou@gmail.com>, Marc Zyngier <marc.zyngier@arm.com>, Axel Haslam <ahaslam@baylibre.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Tue, May 12, 2015 at 10:07 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Tue, May 12, 2015 at 9:55 AM, Linus Walleij <linus.walleij@linaro.org> wrote:
+Hi Ulrich,
 
->> This should be moved to the commit message I think.
->
-> So that's why I put it below the "---".
+On Thu, Apr 30, 2015 at 4:18 PM, Ulrich Hecht
+<ulrich.hecht+renesas@gmail.com> wrote:
+> Part of PFC support for R-Car M2-N (r8a7793) that defines the pinmux
+> data.
 
-So it was below the --- and that is why I ask you to move this
-useful information above the --- and into the commit message.
+As this patch is difficult to quote, I'm just summarizing my comments:
+  - Other R-Car Gen2 variants use "MLB_CLK" instead of "MLB_CK",
+  - Compared to M2-W, CAN0/1, HSCIF2_D, and MLB+ are missing,
+    but they do exist on M2-N,
+  - Compared to M2-W, SSP is added, but it does exist on M2-W.
 
->>> -       irq_set_irq_wake(p->irq_parent, on);
->>> +       int error;
->>> +
->>> +       if (p->irq_parent) {
->>> +               error = irq_set_irq_wake(p->irq_parent, on);
->>> +               if (error) {
->>> +                       dev_dbg(&p->pdev->dev,
->>> +                               "irq %u doesn't support irq_set_wake\n",
->>> +                               p->irq_parent);
->>> +                       p->irq_parent = 0;
->>> +               }
->>> +       }
->>
->> Does the SH maintainers really like this... Warning
->> appear once and is squelched.
->>
->> Isn't it better to make sure it doesn't happen or something.
->>
->> It looks hacky. Any other suggestions?
->
-> The first call to irq_set_irq_wake() (on = true) doesn't print a warning.
-> It returns an error code, to indicate that the operation is not supported.
->
-> Calling irq_set_irq_wake() again (on = false, during resume) would print
-> a warning, as it wouldn't match internal state ("Unbalanced IRQ 26 wake
-> disable"). That one is gone now.
+After compensating for that, pfc-r8a7793.c is identical to pfc-r8a7791.c.
+So I think we should use a single file for both, or at least share (most of )
+the data structures (sh_pfc_soc_info contains the SoC name, so it can't
+be shared).
 
-Yeah :/
+BTW, it's my understanding M2-W and M2-N are identical, except for the
+wide/double vs. narrow/single memory channels, which doesn't impact
+configurable pins. Please correct me if I'm wrong.
+Are there other differences?
 
-There are a few different patches floating for irq_set_wake() things
-and some seem to be causing regressions, I just want some
-broader discussion on how we solve this across all platforms.
+Gr{oetje,eeting}s,
 
-Maybe the GPIOLIB_IRQCHIP should handle the set_wake()
-similarly for all chips?
+                        Geert
 
->> Also, please convert this driver to use GPIOLIB_IRQCHIP
->> like everyone else.
->
-> What old branch are you looking at, that it doesn't have commit
-> c7f3c5d3ac2d6831 ("gpio: rcar: Switch to use gpiolib irqchip helpers")
-> yet ;-)?
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-Argh sorry. (And that was an awesome patch.)
-
-Yours,
-Linus Walleij
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
