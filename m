@@ -1,90 +1,66 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Mon, 11 May 2015 14:58:04 +0000
-Subject: Re: [Linux-kernel] [RFC PATCH 5/7] mmc: sh_mobile_sdhi: Add UHS-I mode support
-Message-Id: <CAPDyKFrLVQk_dwJuKjPzFvjgpkHkYDMGq5qxC4Vi-6ey6J3Rrg@mail.gmail.com>
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Wed, 06 May 2015 01:05:32 +0000
+Subject: Re: [RFC PATCH 2/7] mmc: sh_mobile_sdhi: Add actual clock rate support
+Message-Id: <1430874332.4222.18.camel@xylophone.i.decadent.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1430396995.5802.39.camel@xylophone.i.decadent.org.uk>
-	<1430397136.5802.44.camel@xylophone.i.decadent.org.uk>
-	<CAPDyKFodZscxZJmKgYyMV8m8mNWYc9GitkoKbixTKS5r7rv_fA@mail.gmail.com>
-	<554880C9.8080201@codethink.co.uk>
-	<CAPDyKFpv0BOX0mAvhZx9j5Gnayt__YTiUa8SxvcmsEcuazsg0w@mail.gmail.com>
-	<1430876333.4222.43.camel@xylophone.i.decadent.org.uk>
-	<CAPDyKFo7WsE2wTLZc0E9ANrZ1amVsL3n71oxCLFG0+QrF0xH_A@mail.gmail.com>
-	<1430920143.4222.74.camel@xylophone.i.decadent.org.uk>
-	<CAPDyKFq6pGmk5eiSLqEkVnQ1b5FVyVyXNfOmkFAm-x40v5jWZg@mail.gmail.com>
-	<1431352861.4222.101.camel@xylophone.i.decadent.org.uk>
-In-Reply-To: <1431352861.4222.101.camel@xylophone.i.decadent.org.uk>
+	 <1430397081.5802.41.camel@xylophone.i.decadent.org.uk>
+	 <554259A0.9030307@cogentembedded.com>
+In-Reply-To: <554259A0.9030307-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Cc: Ben Dooks <ben.dooks@codethink.co.uk>, linux-kernel@lists.codethink.co.uk, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Ian Molton <ian@mnementh.co.uk>, linux-mmc <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
+Cc: Ian Molton <ian-zdned+2MO1+9FHfhHBbuYA@public.gmane.org>, linux-mmc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-81qHHgoATdFT9dQujB1mzip2UmYkHbXO@public.gmane.org, Shinobu Uehara <shinobu.uehara.xc-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-On 11 May 2015 at 16:01, Ben Hutchings <ben.hutchings@codethink.co.uk> wrote:
-> On Mon, 2015-05-11 at 10:54 +0200, Ulf Hansson wrote:
->> On 6 May 2015 at 15:49, Ben Hutchings <ben.hutchings@codethink.co.uk> wrote:
->> > On Wed, 2015-05-06 at 10:44 +0200, Ulf Hansson wrote:
->> >> On 6 May 2015 at 03:38, Ben Hutchings <ben.hutchings@codethink.co.uk> wrote:
->> >> > On Tue, 2015-05-05 at 10:47 +0200, Ulf Hansson wrote:
->> >> >> On 5 May 2015 at 10:35, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
->> >> >> > On 05/05/15 10:56, Ulf Hansson wrote:
->> >> >> >> On 30 April 2015 at 14:32, Ben Hutchings <ben.hutchings@codethink.co.uk> wrote:
->> >> >> >>> Implement voltage switch, supporting modes up to SDR-50.
->> >> >> >>>
->> >> >> >>> Based on work by Shinobu Uehara, Rob Taylor, William Towle and Ian Molton.
->> >> >> >>>
->> >> >> >>> This uses two voltage regulators, one external and one on the pfc.
->> >> >> >>
->> >> >> >> Why two? If there is a parent child relation ship, that should be
->> >> >> >> handled through the regulator tree, right!? Please elaborate.
->> >> >> >
->> >> >> > The card main power is separate from the IO line voltages.
->> >> >> >
->> >> >> > To get to the high-speed, card power is left at 3.3V and the IO
->> >> >> > voltage is changed to 1.8V.
->> >> >> >
->> >> >> > In the systems we have the power gate is separate from the controls
->> >> >> > for the IO but not integrated into the MMC controller itself.
->> >> >
->> >> > In this case, there are *three* regulators:
->> >> >
->> >> > 1. External regulator for card power (VDD pin): "vmmc"
->> >> > 2. External regulator for pull-up voltage for the data pins: "vqmmc"
->> >>
->> >> Is this really a regulator and not just about changing a pinctrl setting?
->> >
->> > Looking at the Lager board, the pull-up voltage appears to be controlled
->> > by the external PMIC (DA9063), which is signalled using GPIOs (I don't
->> > know why, when it's also connected to I2C).
->>
->> Okay, thus we should have a regulator for it.
->>
->> >
->> >> The reason why I wonder, is because there are several other mmc host
->> >> driver's the use a specific pinctrl state for this.
->> >>
->> >> > 3. Internal regulator for input(?) level on the data pins:
->> >> >    "vqmmc_ref" (I'm open to suggestions of a better name)
->> >
->> > This one is implemented in the pinctrl (pfc) block.
->>
->> I understand this as we should have a specific UHS pinctrl state,
->> instead of a regulator. Right?
->
-> That was another option I considered, but I didn't see anything in the
-> pinctrl API that would allow changing the pin configuration dynamically.
-> (And sh_mobile_sdhi doesn't explicitly do anything with pinctrl at the
-> moment.)
->
-> Now that you mention pinctrl states, I can see that might be a good way
-> to handle this.  Since the states are identified by strings, does that
-> mean it's OK to add a driver-specific state such as "sh-pfc-1.8v" and
-> not add it to the common pinctrl headers?
+On Thu, 2015-04-30 at 19:34 +0300, Sergei Shtylyov wrote:
+> On 04/30/2015 03:31 PM, Ben Hutchings wrote:
+> 
+> > From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+> 
+> > It is necessary to stop the SD clock before using
+> > the actual clock in case of SDHI controller.
+> 
+> > Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+> > Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+> > ---
+> >   drivers/mmc/host/sh_mobile_sdhi.c |   14 ++++++++++++++
+> >   1 file changed, 14 insertions(+)
+> 
+> > diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+> > index 6906a905cd54..92a58c6007fe 100644
+> > --- a/drivers/mmc/host/sh_mobile_sdhi.c
+> > +++ b/drivers/mmc/host/sh_mobile_sdhi.c
+> > @@ -136,6 +136,18 @@ static void sh_mobile_sdhi_clk_disable(struct platform_device *pdev)
+> >   	clk_disable_unprepare(priv->clk);
+> >   }
+> >
+> > +static void sh_mobile_sdhi_set_clk_div(struct platform_device *pdev, int clk)
+> > +{
+> > +	struct mmc_host *mmc = dev_get_drvdata(&pdev->dev);
+> > +	struct tmio_mmc_host *host = mmc_priv(mmc);
+> > +
+> > +	if (clk = true) {
+> 
+>     'clk' is *int*. Perhaps, should be just *if* (clk)?
 
-Yes, we already have other drivers doing it like that.
+clk is either 0 or 1 and should maybe be bool.  But you're right,
+regardless of its type, it doesn't make sense to compare with true.
 
-Depending on what SoC this driver is used for, maybe you want this
-state to be optional though.
+Ben.
 
-Kind regards
-Uffe
+> > +		sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, ~0x0100 &
+> > +				sd_ctrl_read16(host, CTL_SD_CARD_CLK_CTL));
+> > +		sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, 0x00ff);
+> > +	}
+> > +}
+> > +
+> >   static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
+> >   {
+> >   	int timeout = 1000;
+> [...]
+> 
+> WBR, Sergei
+> 
+
+
