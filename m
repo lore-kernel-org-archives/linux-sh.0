@@ -1,133 +1,48 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 20 May 2015 09:40:43 +0000
-Subject: Re: [PATCH/RFC] serial: sh-sci: Add R-Car SCIF DMA receive support
-Message-Id: <CAMuHMdVKWEK2y=y+wAF3r4Etxha4WhTe1O0u+RX3W8nH8AXq=g@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 06 May 2015 04:15:12 +0000
+Subject: [RFC] DT-based pinmux configuration for Renesas platforms (was: [PATCH v2 01/15] pinctrl: sh-pfc: Ad
+Message-Id: <2259197.0WD3Y1GXGT@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430500294-23407-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1430500294-23407-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-Cc: "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Kaneko-san, Matsuoka-san, Mizuguchi-san,
+Hi Geert,
 
-On Fri, May 1, 2015 at 7:11 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
-> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
->
-> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+On Tuesday 05 May 2015 11:07:20 Geert Uytterhoeven wrote:
+> Hi Ulrich,
+> 
+> On Thu, Apr 30, 2015 at 4:18 PM, Ulrich Hecht
+> 
+> <ulrich.hecht+renesas@gmail.com> wrote:
+> > Part of PFC support for R-Car M2-N (r8a7793) that defines the pinmux
+> > data.
+> 
+> As this patch is difficult to quote, I'm just summarizing my comments:
+>   - Other R-Car Gen2 variants use "MLB_CLK" instead of "MLB_CK",
+>   - Compared to M2-W, CAN0/1, HSCIF2_D, and MLB+ are missing,
+>     but they do exist on M2-N,
+>   - Compared to M2-W, SSP is added, but it does exist on M2-W.
+> 
+> After compensating for that, pfc-r8a7793.c is identical to pfc-r8a7791.c.
+> So I think we should use a single file for both, or at least share (most of)
+> the data structures (sh_pfc_soc_info contains the SoC name, so it can't
+> be shared).
 
-Thanks for your patch!
+I agree with that, and I'd even go further : I think we won't be able to scale 
+much further with our large in-kernel tables. We currently have around 150kB 
+or PFC .rodata when enabling all Renesas platforms, which is far from being 
+negligible in a multiplatform build. I could be time to reconsider the 
+approach and specify data in DT.
 
-BTW, with which DMA engine was this tested? The old shdmac or the new
-rcar-dmac?
+> BTW, it's my understanding M2-W and M2-N are identical, except for the
+> wide/double vs. narrow/single memory channels, which doesn't impact
+> configurable pins. Please correct me if I'm wrong.
+> Are there other differences?
 
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
+-- 
+Regards,
 
-> @@ -1348,13 +1363,26 @@ static void sci_rx_dma_release(struct sci_port *s, bool enable_pio)
->  {
->         struct dma_chan *chan = s->chan_rx;
->         struct uart_port *port = &s->port;
-> +       size_t buf_len_rx;
-> +       int t = 100000;
-> +
-> +       s->rx_release_flag = 1;
-> +       while (t--) {
-> +               if (!s->rx_flag)
-> +                       break;
-> +               usleep_range(10, 50);
-> +       }
+Laurent Pinchart
 
-This is done to make sure rx DMA has completed before releasing the channel
-(and setting s->chan_rx = NULL)?
-
-Is there a better way to wait for this, without looping?
-
->         s->chan_rx = NULL;
-
-> @@ -1419,11 +1457,19 @@ static void work_fn_rx(struct work_struct *work)
->         struct uart_port *port = &s->port;
->         struct dma_async_tx_descriptor *desc;
->         int new;
-> +       int next;
-> +
-> +       if (s->chan_rx = NULL) {
-> +               dev_dbg(port->dev, "%s: DMA channel is released.\n", __func__);
-> +               return;
-> +       }
-
-I believe this is a workaround for the race condition where work_fn_rx()
-is called after shutdown of the port, and s->chan_rx has already been set
-to NULL in sci_rx_dma_release(), which leads to a NULL pointer dereference
-in work_fn_rx()?
-
-As this is a bug fix, it should be a separate patch.
-
-Can this still happen in the presence of the loop until !rx_flag in
-sci_rx_dma_release() above?
-
-> @@ -1707,14 +1770,22 @@ static void sci_request_dma(struct uart_port *port)
->         chan = dma_request_channel(mask, filter, param);
->         dev_dbg(port->dev, "%s: RX: got channel %p\n", __func__, chan);
->         if (chan) {
-> -               dma_addr_t dma[2];
-> -               void *buf[2];
-> +               dma_addr_t dma[3];
-> +               void *buf[3];
-> +               size_t sum_buf_len;
-> +               int nr_sg = 2;
->                 int i;
->
->                 s->chan_rx = chan;
->
->                 s->buf_len_rx = 2 * max(16, (int)port->fifosize);
-> -               buf[0] = dma_alloc_coherent(port->dev, s->buf_len_rx * 2,
-> +               if (port->type = PORT_SCIF || port->type = PORT_HSCIF) {
-> +                       nr_sg = 3;
-> +                       sum_buf_len = 1 + s->buf_len_rx * 2;
-> +               } else {
-> +                       sum_buf_len = s->buf_len_rx * 2;
-> +               }
-> +               buf[0] = dma_alloc_coherent(port->dev, sum_buf_len,
->                                             &dma[0], GFP_KERNEL);
-
-I think the code manipulating the buffers can be simplified a lot by
-storing in sci_port:
-  - The number of buffers in use (2 vs. 3),
-  - The sizes of the individual buffers.
-
-That way you can remove many checks for (H)SCIF, and avoid recalculating the
-buffer sizes everywhere.
-
-> @@ -1778,7 +1863,6 @@ static int sci_startup(struct uart_port *port)
->
->         spin_lock_irqsave(&port->lock, flags);
->         sci_start_tx(port);
-> -       sci_start_rx(port);
-
-Why is this needed?
-
-> @@ -1796,6 +1880,8 @@ static void sci_shutdown(struct uart_port *port)
->         sci_stop_tx(port);
->         spin_unlock_irqrestore(&port->lock, flags);
->
-> +       serial_port_out(port, SCSCR, 0x00);
-
-Isn't this already handled by sci_stop_tx() above, and by sci_stop_rx() in
-the line above that (not visible in the patch)?
-Which additional bits do you need to clear?
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
