@@ -1,30 +1,28 @@
 From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Wed, 06 May 2015 01:44:51 +0000
+Date: Wed, 06 May 2015 01:46:57 +0000
 Subject: Re: [RFC PATCH 6/7] ARM: shmobile: r8a7790-lager.dts: Set sdhi and mmcif clock rates
-Message-Id: <1430876691.4222.48.camel@xylophone.i.decadent.org.uk>
+Message-Id: <1430876817.4222.50.camel@xylophone.i.decadent.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1430396995.5802.39.camel@xylophone.i.decadent.org.uk>
 	 <1430397166.5802.45.camel@xylophone.i.decadent.org.uk>
-	 <55425306.9090604@cogentembedded.com>
-In-Reply-To: <55425306.9090604@cogentembedded.com>
+	 <20150501005920.GH13754@verge.net.au>
+In-Reply-To: <20150501005920.GH13754-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Ben Dooks <ben.dooks@codethink.co.uk>
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+Cc: Ian Molton <ian-zdned+2MO1+9FHfhHBbuYA@public.gmane.org>, linux-mmc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-81qHHgoATdFT9dQujB1mzip2UmYkHbXO@public.gmane.org, Ben Dooks <ben.dooks-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
 
-On Thu, 2015-04-30 at 19:06 +0300, Sergei Shtylyov wrote:
-> On 04/30/2015 03:32 PM, Ben Hutchings wrote:
+On Fri, 2015-05-01 at 09:59 +0900, Simon Horman wrote:
+> Hi Ben,
 > 
-> > From: Ben Dooks <ben.dooks@codethink.co.uk>
+> Please use the following prefix for r8a7790-lager.dts patches:
 > 
-> > [bwh: Fold in fix from Ian Molton]
-> > Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
-> 
->     Not signed off by Ben Dooks?
+> ARM: shmobile: lager:
+[...]
 
-I'm quite capable of inferring that a colleague intended their work to
-be released under GPL, thanks.
+OK, I'll do that in future.  I thought I'd seen the long name used more
+often in the log, but I was mistaken.
 
 Ben.
 
