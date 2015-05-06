@@ -1,51 +1,28 @@
-From: Michal Simek <michal.simek@xilinx.com>
-Date: Fri, 22 May 2015 10:45:12 +0000
-Subject: Re: [PATCH] ARM: v7 setup function should invalidate L1 cache
-Message-Id: <555F08B8.5060606@xilinx.com>
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Wed, 06 May 2015 07:08:32 +0000
+Subject: Re: [PATCH] clk: emev2: Use generic names for device nodes
+Message-Id: <20150506070832.GC27050@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <E1Yuk8W-0001tC-IK@rmk-PC.arm.linux.org.uk>
-In-Reply-To: <E1Yuk8W-0001tC-IK@rmk-PC.arm.linux.org.uk>
+References: <1430139093-14769-1-git-send-email-geert+renesas@glider.be>
+ <20150428020701.GA26051@verge.net.au>
+In-Reply-To: <20150428020701.GA26051@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Mike Turquette <mturquette@linaro.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
 
-On 05/19/2015 06:12 PM, Russell King wrote:
-> All ARMv5 and older CPUs invalidate their caches in the early assembly
-> setup function, prior to enabling the MMU.  This is because the L1
-> cache should not contain any data relevant to the execution of the
-> kernel at this point; all data should have been flushed out to memory.
+On 04/28, Simon Horman wrote:
+> On Mon, Apr 27, 2015 at 02:51:33PM +0200, Geert Uytterhoeven wrote:
+> > uart -> serial
+> > 
+> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > 
-> This requirement should also be true for ARMv6 and ARMv7 CPUs - indeed,
-> these typically do not search their caches when caching is disabled (as
-> it needs to be when the MMU is disabled) so this change should be safe.
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
 > 
-> ARMv7 allows there to be CPUs which search their caches while caching is
-> disabled, and it's permitted that the cache is uninitialised at boot;
-> for these, the architecture reference manual requires that an
-> implementation specific code sequence is used immediately after reset
-> to ensure that the cache is placed into a sane state.  Such
-> functionality is definitely outside the remit of the Linux kernel, and
-> must be done by the SoC's firmware before _any_ CPU gets to the Linux
-> kernel.
-> 
-> Changing the data cache clean+invalidate to a mere invalidate allows us
-> to get rid of a lot of platform specific hacks around this issue for
-> their secondary CPU bringup paths - some of which were buggy.
-> 
-> Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
-> ---
 
-...
+Applied to clk-next
 
->  arch/arm/mach-zynq/common.h           |  2 --
->  arch/arm/mach-zynq/headsmp.S          |  5 -----
->  arch/arm/mach-zynq/platsmp.c          |  5 ++---
-
-For Zynq:
-Tested-by: Michal Simek <michal.simek@xilinx.com>
-
-Thanks,
-Michal
-
-
+-- 
+Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
+a Linux Foundation Collaborative Project
