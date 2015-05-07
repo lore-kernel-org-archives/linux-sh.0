@@ -1,80 +1,45 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 07 May 2015 21:10:36 +0000
+Date: Thu, 07 May 2015 21:25:36 +0000
 Subject: Re: [PATCH v3] Renesas Ethernet AVB driver
-Message-Id: <554BD4CC.3020308@cogentembedded.com>
+Message-Id: <554BD850.8040601@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <32501816.HtkLenWQpn@wasted.cogentembedded.com> <552C4554.2070608@gmail.com> <552D8898.3060905@cogentembedded.com> <55382D4E.5070708@gmail.com> <553A9123.3010906@cogentembedded.com>
-In-Reply-To: <553A9123.3010906@cogentembedded.com>
+References: <32501816.HtkLenWQpn@wasted.cogentembedded.com> <552C4554.2070608@gmail.com> <552D8898.3060905@cogentembedded.com> <55382D4E.5070708@gmail.com> <553A9123.3010906@cogentembedded.com> <554BD4CC.3020308@cogentembedded.com>
+In-Reply-To: <554BD4CC.3020308@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Florian Fainelli <f.fainelli@gmail.com>, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, richardcochran@gmail.com
 Cc: linux-sh@vger.kernel.org, Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>, Ben Hutchings <ben.hutchings@codethink.co.uk>
 
-Hello.
-
-On 04/24/2015 09:53 PM, Sergei Shtylyov wrote:
+On 05/08/2015 12:10 AM, Sergei Shtylyov wrote:
 
 [...]
 
->>>>> +static int ravb_start_xmit(struct sk_buff *skb, struct net_device
->>>>> *ndev)
->>>>> +{
->>>>> +    struct ravb_private *priv = netdev_priv(ndev);
->>>>> +    struct ravb_tstamp_skb *ts_skb = NULL;
->>>>> +    struct ravb_tx_desc *desc;
->>>>> +    unsigned long flags;
->>>>> +    void *buffer;
->>>>> +    u32 entry;
->>>>> +    u32 tccr;
->>>>> +    int q;
->>>>> +
->>>>> +    /* If skb needs TX timestamp, it is handled in network control
->>>>> queue */
->>>>> +    q = (skb_shinfo(skb)->tx_flags & SKBTX_HW_TSTAMP) ? RAVB_NC :
->>>>> RAVB_BE;
->>>>> +
->>>>> +    spin_lock_irqsave(&priv->lock, flags);
->>>>> +    if (priv->cur_tx[q] - priv->dirty_tx[q] >= priv->num_tx_ring[q]
->>>>> - 4) {
+>>>>>> +    desc->ds = skb->len;
+>>>>>> +    desc->dptr = dma_map_single(&ndev->dev, buffer, skb->len,
+>>>>>> +                    DMA_TO_DEVICE);
+>>>>>> +    if (dma_mapping_error(&ndev->dev, desc->dptr)) {
+>>>>>> +        dev_kfree_skb_any(skb);
+>>>>>> +        priv->tx_skb[q][entry] = NULL;
 
->>>> What's so special about 4 here, you don't seem to be using 4 descriptors
+>>>>> Don't you need to make sure this NULL is properly seen by ravb_tx_free()?
 
->>>     Not sure, this was clearly copied from sh_eth.c. Perhaps it's just a
->>> threshold for calling ravb_tx_free()...
->
->> Then 1 inclusive or 0 exclusive is probably what you should be comparing
->> to, otherwise you may just stop the tx queue earlier than needed.
+>>>>     You mean doing this before releasing the spinlock? Or what?
 
->     Will look into this...
+>>> Yes, the locking your transmit function seems to open windows during
+>>> which it is possible for the interrupt handler running on another CPU to
+>>> mess up with the data you are using here.
 
-     OK, I've fixed this.
+>>     Will look into that too...
 
-[...]
+>     I have looked into the code and I must admit I don't understand how the
+> data can be messed up with. ravb_tx_free() only advances 'priv->dirty_tx' and
+> doesn't go beyond (or change) 'priv->cur_tx' which is used here...
 
->>>>> +    desc->ds = skb->len;
->>>>> +    desc->dptr = dma_map_single(&ndev->dev, buffer, skb->len,
->>>>> +                    DMA_TO_DEVICE);
->>>>> +    if (dma_mapping_error(&ndev->dev, desc->dptr)) {
->>>>> +        dev_kfree_skb_any(skb);
->>>>> +        priv->tx_skb[q][entry] = NULL;
+    Nevermind, now I'm seeing the race. :-(
 
->>>> Don't you need to make sure this NULL is properly seen by ravb_tx_free()?
-
->>>     You mean doing this before releasing the spinlock? Or what?
-
->> Yes, the locking your transmit function seems to open windows during
->> which it is possible for the interrupt handler running on another CPU to
->> mess up with the data you are using here.
-
->     Will look into that too...
-
-    I have looked into the code and I must admit I don't understand how the 
-data can be messed up with. ravb_tx_free() only advances 'priv->dirty_tx' and 
-doesn't go beyond (or change) 'priv->cur_tx' which is used here...
-
->> --
->> Florian
+>>> --
+>>> Florian
 
 WBR, Sergei
 
