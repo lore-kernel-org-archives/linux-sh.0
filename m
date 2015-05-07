@@ -1,55 +1,41 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 15 May 2015 00:41:31 +0000
-Subject: RE: [PATCH 1/2] pwm: Add device tree binding document for R-Car PWM Timer
-Message-Id: <SG2PR06MB0919A398AD921D514BA454F3D8C70@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 07 May 2015 16:10:33 +0000
+Subject: [PATCH 0/4] r8a7793 pin control support
+Message-Id: <1431015037-25254-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431509238-7648-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1431509238-7648-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-SGkgR2VlcnQtc2FuLA0KDQpUaGFuayB5b3UgZm9yIHRoZSByZXZpZXchDQoNCj4gU2VudDogRnJp
-ZGF5LCBNYXkgMTUsIDIwMTUgMTI6NDggQU0NCj4gDQo+IEhpIFNoaW1vZGEtc2FuLA0KPiANCj4g
-T24gV2VkLCBNYXkgMTMsIDIwMTUgYXQgMTE6MjcgQU0sIFlvc2hpaGlybyBTaGltb2RhDQo+IDx5
-b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2FzLmNvbT4gd3JvdGU6DQo+ID4gQWRkIGJpbmRpbmcg
-ZG9jdW1lbnQgZm9yIFJlbmVzYXMgUFdNIFRpbWVyIG9uIFItQ2FyIFNvQ3MuDQo+IA0KPiBUaGFu
-a3MgZm9yIHlvdXIgcGF0Y2ghDQo+IA0KPiA+IFNpZ25lZC1vZmYtYnk6IFlvc2hpaGlybyBTaGlt
-b2RhIDx5b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2FzLmNvbT4NCj4gPiAtLS0NCj4gPiAgLi4u
-L2RldmljZXRyZWUvYmluZGluZ3MvcHdtL3JlbmVzYXMscHdtLXJjYXIudHh0ICAgIHwgMjEgKysr
-KysrKysrKysrKysrKysrKysrDQo+ID4gIDEgZmlsZSBjaGFuZ2VkLCAyMSBpbnNlcnRpb25zKCsp
-DQo+ID4gIGNyZWF0ZSBtb2RlIDEwMDY0NCBEb2N1bWVudGF0aW9uL2RldmljZXRyZWUvYmluZGlu
-Z3MvcHdtL3JlbmVzYXMscHdtLXJjYXIudHh0DQo+ID4NCj4gPiBkaWZmIC0tZ2l0IGEvRG9jdW1l
-bnRhdGlvbi9kZXZpY2V0cmVlL2JpbmRpbmdzL3B3bS9yZW5lc2FzLHB3bS1yY2FyLnR4dA0KPiBi
-L0RvY3VtZW50YXRpb24vZGV2aWNldHJlZS9iaW5kaW5ncy9wd20vcmVuZXNhcyxwd20tcmNhci50
-eHQNCj4gPiBuZXcgZmlsZSBtb2RlIDEwMDY0NA0KPiA+IGluZGV4IDAwMDAwMDAuLjM4MTIzZjkN
-Cj4gPiAtLS0gL2Rldi9udWxsDQo+ID4gKysrIGIvRG9jdW1lbnRhdGlvbi9kZXZpY2V0cmVlL2Jp
-bmRpbmdzL3B3bS9yZW5lc2FzLHB3bS1yY2FyLnR4dA0KPiA+IEBAIC0wLDAgKzEsMjEgQEANCj4g
-PiArKiBSZW5lc2FzIFItQ2FyIFBXTSBUaW1lciBDb250cm9sbGVyDQo+ID4gKw0KPiA+ICtSZXF1
-aXJlZCBQcm9wZXJ0aWVzOg0KPiA+ICstIGNvbXBhdGlibGU6IG11c3QgY29udGFpbiAicmVuZXNh
-cyxwd20tcmNhciINCj4gDQo+IENhbiB5b3UgcGxlYXNlIGFkZCBTb0Mtc3BlY2lmaWMgY29tcGF0
-aWJsZSB2YWx1ZXMsIHRvbz8gVGhhdCB3YXkgd2UgY2FuIGhhbmRsZQ0KPiAgU29DLXNwZWNpZmlj
-IGRpZmZlcmVuY2VzIGlmIHdlIGV2ZXIgZW5jb3VudGVyIHRoZW0uDQo+IElmIEknbSBub3QgbWlz
-dGFrZW4sIHRoaXMgUFdNIElQIGNvcmUgaXMgcHJlc2VudCBvbiBib3RoIFItQ2FyIEdlbjEgYW5k
-IEdlbjINCj4gU29Dcz8NCg0KQWNjb3JkaW5nIHRvIHRoZSBtYW51YWxzIG9mIGJvdGggUi1DYXIg
-R2VuMSAoSDEsIE0xLCBFMSkgYW5kIEdlbjIsDQp0aGlzIFBXTSBJUCBjb3JlIGlzIHByZXNlbnQg
-b24gdGhlbS4gQWxzbyB0aGlzIElQIGlzIHByZXNlbnQgb24gUi1DYXIgbmV4dCBnZW5lcmF0aW9u
-Lg0KDQpPZiBjb3Vyc2UsIEkgY2FuIGFkZCBTb0Mtc3BlY2lmaWMgY29tcGF0aWJsZSB2YWx1ZXMs
-IGxpa2UgInJlbmVzYXMscHdtLXI3YTc3OTAiIG9yDQpzb21ldGhpbmcuIFNvLCBJIHdpbGwgY2hh
-bmdlIHRoZSBjb21wYXRpYmxlIHZhbHVlcyBpbiB2MiBwYXRjaC4NCg0KPiA+ICstIHJlZzogYmFz
-ZSBhZGRyZXNzIGFuZCBsZW5ndGggb2YgdGhlIHJlZ2lzdGVycyBibG9jayBmb3IgdGhlIFBXTQ0K
-PiA+ICstICNwd20tY2VsbHM6IHNob3VsZCBiZSA3LiBTZWUgcHdtLnR4dCBpbiB0aGlzIGRpcmVj
-dG9yeSBmb3IgYSBkZXNjcmlwdGlvbiBvZg0KPiA+ICsgIHRoZSBjZWxscyBmb3JtYXQuDQo+IA0K
-PiBXaHkgNz8gVGhpcyBpcyBub3QgdGhlIG51bWJlciBvZiBjaGFubmVscywgY2ZyLiBwd20udHh0
-IHlvdSByZWZlcmVuY2UgYWJvdmU6DQo+IA0KPiAgICAgInB3bS1zcGVjaWZpZXIgdHlwaWNhbGx5
-IGVuY29kZXMgdGhlIGNoaXAtcmVsYXRpdmUgUFdNIG51bWJlciBhbmQgdGhlIFBXTQ0KPiAgICAg
-IHBlcmlvZCBpbiBuYW5vc2Vjb25kcy4NCj4gDQo+ICAgICAgT3B0aW9uYWxseSwgdGhlIHB3bS1z
-cGVjaWZpZXIgY2FuIGVuY29kZSBhIG51bWJlciBvZiBmbGFncyAoZGVmaW5lZCBpbg0KPiAgICAg
-IDxkdC1iaW5kaW5ncy9wd20vcHdtLmg+KSBpbiBhIHRoaXJkIGNlbGw6DQo+ICAgICAgLSBQV01f
-UE9MQVJJVFlfSU5WRVJURUQ6IGludmVydCB0aGUgUFdNIHNpZ25hbCBwb2xhcml0eSINCj4gDQo+
-IFNvIDIgb3IgMyBtYWtlcyBtb3JlIHNlbnNlIHRvIG1lLg0KDQpUaGFuayB5b3UgdmVyeSBtdWNo
-IGZvciB0aGUgcG9pbnQuIEkgY29tcGxldGVseSBtaXN1bmRlcnN0b29kIHRoaXMgc3BlY2lmaWNh
-dGlvbi4NClNpbmNlIHRoaXMgUFdNIElQIGNhbm5vdCBjb250cm9sIHBvbGFyaXR5LCB0aGlzIHZh
-bHVlIHNob3VsZCBiZSAyLg0KU28sIEkgd2lsbCBmaXggdGhpcyBpbiB2MiBwYXRjaC4NCg0KQmVz
-dCByZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1vZGENCg0K
+Hi!
+
+This is the PFC portion broken out of the previously posted r8a7793 series. 
+Sharing the code of the r8a7791 implementation, it is now about 6000 lines
+smaller. *cough*
+
+The one feature that was missing in the existing r8a7791 PFC implementation
+is the SSP pin group, which has been moved to a separate patch in this
+series.
+
+CU
+Uli
+
+
+Ulrich Hecht (4):
+  pinctrl: sh-pfc: Add r8a7793 support
+  pinctrl: sh-pfc: Enable building of r8a7793 PFC support
+  pinctrl: sh-pfc: Add renesas,pfc-r8a7793 to binding documentation
+  pinctrl: sh-pfc: r8a7791/3: Add SSP pin group
+
+ .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |  3 +-
+ drivers/pinctrl/sh-pfc/Kconfig                     |  5 +++
+ drivers/pinctrl/sh-pfc/Makefile                    |  1 +
+ drivers/pinctrl/sh-pfc/core.c                      |  6 ++++
+ drivers/pinctrl/sh-pfc/core.h                      |  1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c               | 41 ++++++++++++++++++++++
+ 6 files changed, 56 insertions(+), 1 deletion(-)
+
+-- 
+2.3.5
+
