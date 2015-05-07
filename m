@@ -1,22 +1,47 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sun, 31 May 2015 23:30:36 +0000
-Subject: Re: [PATCH] i2c: check for proper length of the reg property
-Message-Id: <20150531233035.GD17187@katana>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 07 May 2015 16:10:35 +0000
+Subject: [PATCH 2/4] pinctrl: sh-pfc: Enable building of r8a7793 PFC support
+Message-Id: <1431015037-25254-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432052988-6187-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1432052988-6187-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-On Tue, May 19, 2015 at 06:29:48PM +0200, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> 
-> int is vague, let's simply use the type of the variable in question.
-> 
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ drivers/pinctrl/sh-pfc/Kconfig  | 5 +++++
+ drivers/pinctrl/sh-pfc/Makefile | 1 +
+ 2 files changed, 6 insertions(+)
 
-Applied to for-next, thanks!
+diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
+index 8c4b3d3..5d570fd 100644
+--- a/drivers/pinctrl/sh-pfc/Kconfig
++++ b/drivers/pinctrl/sh-pfc/Kconfig
+@@ -55,6 +55,11 @@ config PINCTRL_PFC_R8A7791
+ 	depends on ARCH_R8A7791
+ 	select PINCTRL_SH_PFC
+ 
++config PINCTRL_PFC_R8A7793
++	def_bool y
++	depends on ARCH_R8A7793
++	select PINCTRL_SH_PFC
++
+ config PINCTRL_PFC_SH7203
+ 	def_bool y
+ 	depends on CPU_SUBTYPE_SH7203
+diff --git a/drivers/pinctrl/sh-pfc/Makefile b/drivers/pinctrl/sh-pfc/Makefile
+index f4074e1..11eefcb 100644
+--- a/drivers/pinctrl/sh-pfc/Makefile
++++ b/drivers/pinctrl/sh-pfc/Makefile
+@@ -10,6 +10,7 @@ obj-$(CONFIG_PINCTRL_PFC_R8A7778)	+= pfc-r8a7778.o
+ obj-$(CONFIG_PINCTRL_PFC_R8A7779)	+= pfc-r8a7779.o
+ obj-$(CONFIG_PINCTRL_PFC_R8A7790)	+= pfc-r8a7790.o
+ obj-$(CONFIG_PINCTRL_PFC_R8A7791)	+= pfc-r8a7791.o
++obj-$(CONFIG_PINCTRL_PFC_R8A7793)	+= pfc-r8a7791.o
+ obj-$(CONFIG_PINCTRL_PFC_SH7203)	+= pfc-sh7203.o
+ obj-$(CONFIG_PINCTRL_PFC_SH7264)	+= pfc-sh7264.o
+ obj-$(CONFIG_PINCTRL_PFC_SH7269)	+= pfc-sh7269.o
+-- 
+2.3.5
 
