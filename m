@@ -1,58 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 26 May 2015 15:01:55 +0000
-Subject: [PATCH 2/3] drm: rcar-du: Clarify error message when encoder initialization fails
-Message-Id: <1432652516-15085-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 07 May 2015 16:10:36 +0000
+Subject: [PATCH 3/4] pinctrl: sh-pfc: Add renesas,pfc-r8a7793 to binding documentation
+Message-Id: <1431015037-25254-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432652516-15085-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1432652516-15085-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1431015037-25254-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1431015037-25254-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: Cao Minh Hiep <cm-hiep@jinso.co.jp>, linux-sh@vger.kernel.org
+To: geert@linux-m68k.org, horms@verge.net.au, linux-sh@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com
+Cc: magnus.damm@gmail.com, kuninori.morimoto.gx@renesas.com, linus.walleij@linaro.org, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, devicetree@vger.kernel.org
 
-A failure to initialize an encoder currently prints an error message in
-the kernel log without mentioning which encoder failed to initialize. To
-help debugging initialization issues print the encoder DT node name.
+Also renames "R-Car M2" to "R-Car M2-W" to avoid confusion.
 
-This requires moving the error message to the rcar_du_encoders_init_one
-function and refactoring it slightly.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
 ---
- drivers/gpu/drm/rcar-du/rcar_du_kms.c | 12 +++++++++---
- 1 file changed, 9 insertions(+), 3 deletions(-)
+ Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 4bb5af4bc474..bca859ad204c 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -639,7 +639,15 @@ static int rcar_du_encoders_init_one(struct rcar_du_device *rcdu,
- 	of_node_put(encoder);
- 	of_node_put(connector);
+diff --git a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+index bfe72ec..6bcf851 100644
+--- a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
++++ b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+@@ -16,7 +16,8 @@ Required Properties:
+     - "renesas,pfc-r8a7778": for R8A7778 (R-Mobile M1) compatible pin-controller.
+     - "renesas,pfc-r8a7779": for R8A7779 (R-Car H1) compatible pin-controller.
+     - "renesas,pfc-r8a7790": for R8A7790 (R-Car H2) compatible pin-controller.
+-    - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2) compatible pin-controller.
++    - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2-W) compatible pin-controller.
++    - "renesas,pfc-r8a7793": for R8A7793 (R-Car M2-N) compatible pin-controller.
+     - "renesas,pfc-sh73a0": for SH73A0 (SH-Mobile AG5) compatible pin-controller.
  
--	return ret < 0 ? ret : 1;
-+	if (!ret)
-+		return 1;
-+
-+	if (ret != -EPROBE_DEFER)
-+		dev_warn(rcdu->dev,
-+			 "failed to initialize encoder %s (%d), skipping\n",
-+			 encoder->full_name, ret);
-+
-+	return 0;
- }
- 
- static int rcar_du_encoders_init(struct rcar_du_device *rcdu)
-@@ -688,8 +696,6 @@ static int rcar_du_encoders_init(struct rcar_du_device *rcdu)
- 				return ret;
- 			}
- 
--			dev_info(rcdu->dev,
--				 "encoder initialization failed, skipping\n");
- 			continue;
- 		}
- 
+   - reg: Base address and length of each memory resource used by the pin
 -- 
-2.3.6
+2.3.5
 
