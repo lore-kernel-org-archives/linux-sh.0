@@ -1,45 +1,107 @@
-From: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Date: Thu, 28 May 2015 22:19:50 +0000
-Subject: Re: [PATCH 2/2] PCI: pciehp: Convert pciehp to be builtin only, not modular
-Message-Id: <1432851590.4526.4.camel@kernel.crashing.org>
+From: Jean Delvare <jdelvare@suse.de>
+Date: Thu, 07 May 2015 20:08:12 +0000
+Subject: Re: [RFC] i2c-tools: i2ctransfer: add new tool
+Message-Id: <20150507220812.3776bb83@endymion.delvare>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130725175242.6006.56007.stgit@bhelgaas-glaptop>
-	 <CAE9FiQXq59tSBM0SQ4OToXydZrRC3yukALmWEb6K9xpCGbdUhg@mail.gmail.com>
-	 <20150527193149.GD10210@google.com> <4269355.CI4MW738Od@vostro.rjw.lan>
-	 <CAE9FiQWDsQxKK3m4_-dSXm8V3xNc4oOtg2UQi=aayeKhLutwQg@mail.gmail.com>
-In-Reply-To: <CAE9FiQWDsQxKK3m4_-dSXm8V3xNc4oOtg2UQi=aayeKhLutwQg@mail.gmail.com>
+References: <1425053816-19804-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1425053816-19804-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yinghai Lu <yinghai@kernel.org>
-Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Bjorn Helgaas <bhelgaas@google.com>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, Fenghua Yu <fenghua.yu@intel.com>, Tony Luck <tony.luck@intel.com>, "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>, linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Paul Mackerras <paulus@samba.org>, linuxppc-dev <linuxppc-dev@lists.ozlabs.org>
+To: Wolfram Sang <wsa@the-dreams.de>
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org
 
-On Thu, 2015-05-28 at 15:08 -0700, Yinghai Lu wrote:
-> On Wed, May 27, 2015 at 6:30 PM, Rafael J. Wysocki <rjw@rjwysocki.net> wrote:
-> > On Wednesday, May 27, 2015 02:31:49 PM Bjorn Helgaas wrote:
-> > For debug you can always use pcie_ports=compat and that will disable
-> > pciehp too.
+Hi Wolfram,
+
+On Fri, 27 Feb 2015 17:16:56 +0100, Wolfram Sang wrote:
+> This tool allows to construct and concat multiple I2C messages into one
+> single transfer. Its aim is to test I2C master controllers, and so there
+> is no SMBus fallback.
 > 
-> That will disable AER at the same time, right?.
+> Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
+> ---
+> 
+> I've been missing such a tool a number of times now, so I finally got around to
+> writing it myself. As with all I2C tools, it can be dangerous, but it can also
+> be very useful when developing. I am not sure if distros should supply it, I'll
+> leave that to Jean's experience. For embedded build systems, I think this
+> should be selectable. It is RFC for now because it needs broader testing and some
+> more beautification. However, I've been using it already to test the i2c_quirk
+> infrastructure and Renesas I2C controllers.
 
-For ppc machines under either our hypervisor or running bare metal with
-our EEH-enabled bridges, both generic AER and hotplug code are going to
-interfere.
+I took a very quick look today and I am fine with the general idea but
+one thing I don't like is the user interface. All parameters look the
+same even though they have very different meanings. It's very easy to
+get it wrong and guess what, at my very first attempt I managed to do
+exactly that. I was lucky enough that my incorrect syntax was not
+accepted by the tool, but with slightly different values it would have
+been accepted and and the tool would have performed something different
+from what I wanted to do. Possibly with tragic consequences.
 
-EEH "subsumes" AER, and we have firmware interfaces to do hotplug that
-know more than what the generic code can know about (such as on-board
-GPIOs that can control PERST, it's not always via the hotplug registers
-or hotplug from top-level slots which isn't the same as hotplug from
-switch slots on our platforms).
+So instead of:
 
-So basically, at this point, we must not have the PCIe port drivers at
-all, just just interfere.
+# i2ctransfer 0 0x50 w 0x11 0xc0 0xbd= 0x51 r 1
 
-We should replace that with the appropriate "hooks" for the platform to
-disable selected functions (hotplug and AER) from the generic port
-drivers.
+I would have imagined something like:
 
-Cheers,
-Ben.
+# i2ctransfer 0 w@0x50 0x11 0xc0 0xbd= r@0x51 1
+
+This at least avoids passing addresses as register values or
+vice-versa. What do you think? Or maybe it's just me being an idiot and
+other users would get it right even with your proposed syntax.
+
+My alternative proposal leaves the potential problem of mixing length
+and register values. I am not necessarily a fan of passing the write
+length on the command line, but it is similar to the read commands, and
+I see it allows writing the same value to a whole register range with
+little effort, so it does have some value. So I guess it's OK.
+
+BTW I'm curious if you actually needed the + and - suffixes in practice?
+I can easily imagine how the = suffix will be useful in the real
+world, but + and -...  Or maybe just for bus driver testing purpose?
+
+I don't have time for a full review today but just a couple things
+which caught my eye:
+
+> +static void help(void)
+> +{
+> +	fprintf(stderr,
+> +		"Usage: i2ctransfer [-f] [-y] [-v] [-V] I2CBUS ADDRESS FLAGS LENGTH [DATA]...\n"
+
+You should mention here that the ADDRESS FLAGS LENGTH [DATA] sequence
+can be repeated, it's not obvious that the trailing "..." mean that.
+
+> +		"  I2CBUS is an integer or an I2C bus name\n"
+> +		"  ADDRESS is an integer (0x03 - 0x77)\n"
+> +		"  FLAGS is one of:\n"
+> +		"    r (read)\n"
+> +		"    w (write)\n"
+
+These are really directions not flags.
+
+> +		"  LENGTH is an integer (0 - 65535)\n"
+> +		"  DATA are LENGTH bytes, for a write message. They can be shortened by a suffix:\n"
+> +		"    = (keep value constant until LENGTH)\n"
+> +		"    + (increase value by 1 until LENGTH)\n"
+> +		"    - (decrease value by 1 until LENGTH)\n"
+> +		"\nExample (on bus 0, write 0xbd to 0xc0-0xcf of device 0x50, read a byte from device 0x51):\n"
+> +		"  # i2ctransfer 0 0x50 w 0x11 0xc0 0xbd= 0x51 r 1\n"
+> +		);
+
+> (...)
+> +}
+> +	/* let Linux free malloced memory on termination */
+
+I don't like this. The memory allocated in i2cbusses.c is freed
+explicitly, so it is inconsistent to not free yours. Freeing the memory
+explicitly makes the code easier to read and debug as it documents the
+lifetime of allocated buffers (for both humans and tools like
+valgrind.) So please free your memory buffers explicitly.
+
+> +	exit(0);
+> +}
 
 
+-- 
+Jean Delvare
+SUSE L3 Support
