@@ -1,46 +1,43 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 21 May 2015 09:27:17 +0000
-Subject: RE: [PATCH v3 1/2] pwm: Add device tree binding document for R-Car PWM Timer
-Message-Id: <SG2PR06MB0919E1212DDC8B5E1875EF9CD8C10@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 07 May 2015 05:46:51 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Fixes for v4.1
+Message-Id: <cover.1430977471.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432176653-4452-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-	<1432176653-4452-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <CAMuHMdXgB9MTUfZxUXuES8JF42G9Ld2VTeOe2J9MjuZCeONOeg@mail.gmail.com>
-In-Reply-To: <CAMuHMdXgB9MTUfZxUXuES8JF42G9Ld2VTeOe2J9MjuZCeONOeg@mail.gmail.com>
+References: <cover.1389321620.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1389321620.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Thierry Reding <thierry.reding@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "linux-pwm@vger.kernel.org" <linux-pwm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-SGkgR2VlcnQtc2FuLA0KDQpUaGFuayB5b3UgZm9yIHRoZSByZXZpZXchDQoNCj4gU2VudDogVGh1
-cnNkYXksIE1heSAyMSwgMjAxNSA1OjMyIFBNDQo+IA0KPiBIaSBTaGltb2RhLXNhbiwNCj4gDQo+
-IE9uIFRodSwgTWF5IDIxLCAyMDE1IGF0IDQ6NTAgQU0sIFlvc2hpaGlybyBTaGltb2RhDQo+IDx5
-b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2FzLmNvbT4gd3JvdGU6DQo+ID4gQWRkIGJpbmRpbmcg
-ZG9jdW1lbnQgZm9yIFJlbmVzYXMgUFdNIFRpbWVyIG9uIFItQ2FyIFNvQ3MuDQo+IA0KPiBUaGFu
-a3MgZm9yIHlvdXIgcGF0Y2ghDQo+IA0KPiA+IFNpZ25lZC1vZmYtYnk6IFlvc2hpaGlybyBTaGlt
-b2RhIDx5b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2FzLmNvbT4NCj4gDQo+IEFja2VkLWJ5OiBH
-ZWVydCBVeXR0ZXJob2V2ZW4gPGdlZXJ0K3JlbmVzYXNAZ2xpZGVyLmJlPg0KPiB3aXRoIG9uZSBt
-aW5vciBuaXQgYmVsb3cuDQoNClRoYW5rIHlvdSBmb3IgdGhlIEFja2VkLWJ5Lg0KDQo+ID4gLS0t
-IC9kZXYvbnVsbA0KPiA+ICsrKyBiL0RvY3VtZW50YXRpb24vZGV2aWNldHJlZS9iaW5kaW5ncy9w
-d20vcmVuZXNhcyxwd20tcmNhci50eHQNCj4gDQo+ID4gK0V4YW1wbGU6IFI4QTc3OTAgKFItQ2Fy
-IEgyKSBQV00gVGltZXIgbm9kZQ0KPiA+ICsNCj4gPiArICAgICAgIHB3bTA6IHB3bUBlNmUzMDAw
-MCB7DQo+ID4gKyAgICAgICAgICAgICAgIGNvbXBhdGlibGUgPSAicmVuZXNhcyxwd20tcjhhNzc5
-MCIsICJyZW5lc2FzLHB3bS1yY2FyIjsNCj4gPiArICAgICAgICAgICAgICAgcmVnID0gPDAgMHhl
-NmUzMDAwMCAwIDB4MTA+Ow0KPiANCj4gTGVuZ3RoIDggaXMgc3VmZmljaWVudCwgYXMgdGhlcmUg
-YXJlIG9ubHkgMiAzMi1iaXQgcmVnaXN0ZXJzLg0KDQpUaGFuayB5b3UgZm9yIHRoZSBwb2ludC4g
-SSB3aWxsIGZpeCBpdC4NCg0KQmVzdCByZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1vZGENCg0KPiA+
-ICsgICAgICAgICAgICAgICAjcHdtLWNlbGxzID0gPDI+Ow0KPiA+ICsgICAgICAgICAgICAgICBj
-bG9ja3MgPSA8Jm1zdHA1X2Nsa3MgUjhBNzc5MF9DTEtfUFdNPjsNCj4gPiArICAgICAgICAgICAg
-ICAgcGluY3RybC0wID0gPCZwd20wX3BpbnM+Ow0KPiA+ICsgICAgICAgICAgICAgICBwaW5jdHJs
-LW5hbWVzID0gImRlZmF1bHQiOw0KPiA+ICsgICAgICAgfTsNCj4gDQo+IEdye29ldGplLGVldGlu
-Z31zLA0KPiANCj4gICAgICAgICAgICAgICAgICAgICAgICAgR2VlcnQNCj4gDQo+IC0tDQo+IEdl
-ZXJ0IFV5dHRlcmhvZXZlbiAtLSBUaGVyZSdzIGxvdHMgb2YgTGludXggYmV5b25kIGlhMzIgLS0g
-Z2VlcnRAbGludXgtbTY4ay5vcmcNCj4gDQo+IEluIHBlcnNvbmFsIGNvbnZlcnNhdGlvbnMgd2l0
-aCB0ZWNobmljYWwgcGVvcGxlLCBJIGNhbGwgbXlzZWxmIGEgaGFja2VyLiBCdXQNCj4gd2hlbiBJ
-J20gdGFsa2luZyB0byBqb3VybmFsaXN0cyBJIGp1c3Qgc2F5ICJwcm9ncmFtbWVyIiBvciBzb21l
-dGhpbmcgbGlrZSB0aGF0Lg0KPiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC0tIExp
-bnVzIFRvcnZhbGRzDQo+IC0tDQo+IFRvIHVuc3Vic2NyaWJlIGZyb20gdGhpcyBsaXN0OiBzZW5k
-IHRoZSBsaW5lICJ1bnN1YnNjcmliZSBkZXZpY2V0cmVlIiBpbg0KPiB0aGUgYm9keSBvZiBhIG1l
-c3NhZ2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVsLm9yZw0KPiBNb3JlIG1ham9yZG9tbyBpbmZv
-IGF0ICBodHRwOi8vdmdlci5rZXJuZWwub3JnL21ham9yZG9tby1pbmZvLmh0bWwNCg=
+Hi Olof, Hi Kevin, Hi Arnd,
+
+Please consider these Renesas ARM based SoC fixes for v4.1.
+
+This addresses a short-coming which was introduced when
+the adv7511 was enabled on the koelsch board.
+
+
+The following changes since commit b787f68c36d49bb1d9236f403813641efa74a031:
+
+  Linux 4.1-rc1 (2015-04-26 17:59:10 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-fixes-for-v4.1
+
+for you to fetch changes up to 12392f5896c9affc03c1ddd95a83c32238862a58:
+
+  ARM: shmobile: koelsch: Fix adv7511 IRQ sensing (2015-05-01 09:13:03 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Fixes for v4.1
+
+* Fix adv7511 IRQ sensing on koelsch board
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      ARM: shmobile: koelsch: Fix adv7511 IRQ sensing
+
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
