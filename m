@@ -1,189 +1,58 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 18 May 2015 07:52:05 +0000
-Subject: Re: [PATCH] sh-pfc: r8a7791: Add PWM pin groups and functions
-Message-Id: <21374322.QBmRJGgMKB@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 07 May 2015 05:26:59 +0000
+Subject: Re: [PATCH 6/7 v4] ARM: shmobile: r8a7790: add MMCIF parent clock range
+Message-Id: <20150507052656.GJ28846@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431913265-4020-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1431913265-4020-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+ <87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
+ <87383rgsy1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87383rgsy1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: linus.walleij@linaro.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Ulf Hansson <ulf.hansson@linaro.org>, linux-mmc <linux-mmc@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-Hello Shimoda-san,
+Hi Morimoto-san,
 
-Thank you for the patch.
+On Thu, Apr 23, 2015 at 08:18:04AM +0000, Kuninori Morimoto wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 
-On Monday 18 May 2015 10:41:05 Yoshihiro Shimoda wrote:
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Could you indicate if:
+* you think this and the next patch of the series is ready to be merged or;
+* I should wait for patch 5 to be merged/reworked/...
 
 > ---
->  drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 125 ++++++++++++++++++++++++++++++++
->  1 file changed, 125 insertions(+)
+> v3 -> v4
 > 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-> b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c index cbf8ec3..6e9ed6f 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-> @@ -2928,6 +2928,79 @@ static const unsigned int msiof2_tx_e_pins[] = {
->  static const unsigned int msiof2_tx_e_mux[] = {
->  	MSIOF2_TXD_E_MARK,
->  };
-> +/* - PWM --------------------------------------------------------------- */
-> +static const unsigned int pwm0_pins[] = {
-> +	RCAR_GP_PIN(6, 14),
-> +};
-> +static const unsigned int pwm0_mux[] = {
-> +	PWM0_MARK,
-> +};
-> +static const unsigned int pwm0_b_pins[] = {
-> +	RCAR_GP_PIN(5, 30),
-> +};
-> +static const unsigned int pwm0_b_mux[] = {
-> +	PWM0_B_MARK,
-> +};
-> +static const unsigned int pwm1_pins[] = {
-> +	RCAR_GP_PIN(1, 17),
-> +};
-> +static const unsigned int pwm1_mux[] = {
-> +	PWM1_MARK,
-> +};
-> +static const unsigned int pwm1_b_pins[] = {
-> +	RCAR_GP_PIN(6, 15),
-> +};
-> +static const unsigned int pwm1_b_mux[] = {
-> +	PWM1_B_MARK,
-> +};
-> +static const unsigned int pwm2_pins[] = {
-> +	RCAR_GP_PIN(1, 18),
-> +};
-> +static const unsigned int pwm2_mux[] = {
-> +	PWM2_MARK,
-> +};
-> +static const unsigned int pwm2_b_pins[] = {
-> +	RCAR_GP_PIN(0, 16),
-> +};
-> +static const unsigned int pwm2_b_mux[] = {
-> +	PWM2_B_MARK,
-> +};
-> +static const unsigned int pwm3_pins[] = {
-> +	RCAR_GP_PIN(1, 24),
-> +};
-> +static const unsigned int pwm3_mux[] = {
-> +	PWM3_MARK,
-> +};
-> +static const unsigned int pwm4_pins[] = {
-> +	RCAR_GP_PIN(3, 26),
-> +};
-> +static const unsigned int pwm4_mux[] = {
-> +	PWM4_MARK,
-> +};
-> +static const unsigned int pwm4_b_pins[] = {
-> +	RCAR_GP_PIN(3, 31),
-> +};
-> +static const unsigned int pwm4_b_mux[] = {
-> +	PWM4_B_MARK,
-> +};
-> +static const unsigned int pwm5_pins[] = {
-> +	RCAR_GP_PIN(7, 21),
-> +};
-> +static const unsigned int pwm5_mux[] = {
-> +	PWM5_MARK,
-> +};
-> +static const unsigned int pwm5_b_pins[] = {
-> +	RCAR_GP_PIN(7, 20),
-> +};
-> +static const unsigned int pwm5_b_mux[] = {
-> +	PWM5_B_MARK,
-> +};
-> +static const unsigned int pwm6_pins[] = {
-> +	RCAR_GP_PIN(7, 22),
-> +};
-> +static const unsigned int pwm6_mux[] = {
-> +	PWM6_MARK,
-> +};
->  /* - QSPI -------------------------------------------------------------- */
-> static const unsigned int qspi_ctrl_pins[] = {
->  	/* SPCLK, SSL */
-> @@ -4348,6 +4421,18 @@ static const struct sh_pfc_pin_group pinmux_groups[]
-> = { SH_PFC_PIN_GROUP(msiof2_sync_e),
->  	SH_PFC_PIN_GROUP(msiof2_rx_e),
->  	SH_PFC_PIN_GROUP(msiof2_tx_e),
-> +	SH_PFC_PIN_GROUP(pwm0),
-> +	SH_PFC_PIN_GROUP(pwm0_b),
-> +	SH_PFC_PIN_GROUP(pwm1),
-> +	SH_PFC_PIN_GROUP(pwm1_b),
-> +	SH_PFC_PIN_GROUP(pwm2),
-> +	SH_PFC_PIN_GROUP(pwm2_b),
-> +	SH_PFC_PIN_GROUP(pwm3),
-> +	SH_PFC_PIN_GROUP(pwm4),
-> +	SH_PFC_PIN_GROUP(pwm4_b),
-> +	SH_PFC_PIN_GROUP(pwm5),
-> +	SH_PFC_PIN_GROUP(pwm5_b),
-> +	SH_PFC_PIN_GROUP(pwm6),
->  	SH_PFC_PIN_GROUP(qspi_ctrl),
->  	SH_PFC_PIN_GROUP(qspi_data2),
->  	SH_PFC_PIN_GROUP(qspi_data4),
-> @@ -4745,6 +4830,39 @@ static const char * const msiof2_groups[] = {
->  	"msiof2_tx_e",
->  };
+>  - new patch
 > 
-> +static const char * const pwm0_groups[] = {
-> +	"pwm0",
-> +	"pwm0_b",
-> +};
-> +
-> +static const char * const pwm1_groups[] = {
-> +	"pwm1",
-> +	"pwm1_b",
-> +};
-> +
-> +static const char * const pwm2_groups[] = {
-> +	"pwm2",
-> +	"pwm2_b",
-> +};
-> +
-> +static const char * const pwm3_groups[] = {
-> +	"pwm3",
-> +};
-> +
-> +static const char * const pwm4_groups[] = {
-> +	"pwm4",
-> +	"pwm4_b",
-> +};
-> +
-> +static const char * const pwm5_groups[] = {
-> +	"pwm5",
-> +	"pwm5_b",
-> +};
-> +
-> +static const char * const pwm6_groups[] = {
-> +	"pwm6",
-> +};
-> +
->  static const char * const qspi_groups[] = {
->  	"qspi_ctrl",
->  	"qspi_data2",
-> @@ -4989,6 +5107,13 @@ static const struct sh_pfc_function
-> pinmux_functions[] = { SH_PFC_FUNCTION(msiof0),
->  	SH_PFC_FUNCTION(msiof1),
->  	SH_PFC_FUNCTION(msiof2),
-> +	SH_PFC_FUNCTION(pwm0),
-> +	SH_PFC_FUNCTION(pwm1),
-> +	SH_PFC_FUNCTION(pwm2),
-> +	SH_PFC_FUNCTION(pwm3),
-> +	SH_PFC_FUNCTION(pwm4),
-> +	SH_PFC_FUNCTION(pwm5),
-> +	SH_PFC_FUNCTION(pwm6),
->  	SH_PFC_FUNCTION(qspi),
->  	SH_PFC_FUNCTION(scif0),
->  	SH_PFC_FUNCTION(scif1),
-
--- 
-Regards,
-
-Laurent Pinchart
-
+>  arch/arm/boot/dts/r8a7790.dtsi | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> index f3b8430..ac61636 100644
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+> @@ -467,6 +467,7 @@
+>  		dma-names = "tx", "rx";
+>  		reg-io-width = <4>;
+>  		status = "disabled";
+> +		clk-range = <12187500 97500000>;
+>  	};
+>  
+>  	mmcif1: mmc@ee220000 {
+> @@ -478,6 +479,7 @@
+>  		dma-names = "tx", "rx";
+>  		reg-io-width = <4>;
+>  		status = "disabled";
+> +		clk-range = <12187500 97500000>;
+>  	};
+>  
+>  	pfc: pfc@e6060000 {
+> -- 
+> 1.9.1
+> 
