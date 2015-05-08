@@ -1,32 +1,22 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 07 May 2015 16:27:14 +0000
-Subject: Re: [PATCH 4/4] pinctrl: sh-pfc: r8a7791/3: Add SSP pin group
-Message-Id: <CAMuHMdVvSHdtY63is5iHFm2=EVBH19j0onHmDtrS+Z=DQxaOJA@mail.gmail.com>
+From: Brian Norris <computersforpeace@gmail.com>
+Date: Fri, 08 May 2015 18:47:54 +0000
+Subject: Re: [PATCH] ARM: tegra: add "nor-jedec" flash compatible binding
+Message-Id: <20150508184754.GA32500@ld-irv-0074>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431015037-25254-5-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1431015037-25254-5-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1431066098-19821-1-git-send-email-zajec5@gmail.com>
+ <554CDD8C.7050000@wwwdotorg.org>
+ <20150508184317.GZ32500@ld-irv-0074>
+In-Reply-To: <20150508184317.GZ32500@ld-irv-0074>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulrich,
+On Fri, May 08, 2015 at 11:43:17AM -0700, Brian Norris wrote:
+> I'm open to change, as this binding is new in 4.1-rc1.
 
-On Thu, May 7, 2015 at 6:10 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> "Stream and Security Processor", applicable to r8a7791 and r8a7793.
-> Based on patch by Hisashi Nakamura.
+Though we'd need to make sure any change to "nor-jedec" gets applied to
+the shmobile platforms that have started using this string in
+linux-next.
 
-If you bother adding these (who uses them?), I think you should add the
-_B and _C groups, too.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Brian
