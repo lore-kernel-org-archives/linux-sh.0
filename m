@@ -1,57 +1,66 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 21 May 2015 01:21:38 +0000
-Subject: [PATCH 00/04] ARM: shmobile: APMU DT support via SMP Enable method
-Message-Id: <20150521012138.25972.91336.sendpatchset@little-apple>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Fri, 08 May 2015 15:04:24 +0000
+Subject: [PATCH v11 04/19] sh-sci: Add h8300 SCI
+Message-Id: <1431097479-21101-5-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1431097479-21101-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1431097479-21101-1-git-send-email-ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: mark.rutland@arm.com, devicetree@vger.kernel.org, lorenzo.pieralisi@arm.com, keita.kobayashi.ym@renesas.com, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
 
-ARM: shmobile: APMU DT support via SMP Enable method
-
-[PATCH 01/04] devicetree: bindings: Renesas APMU and SMP Enable method
-[PATCH 02/04] ARM: shmobile: Add APMU DT support via Enable method
-[PATCH 03/04] ARM: shmobile: Add APMU nodes to r8a7791 DTSI
-[PATCH 04/04] ARM: shmobile: Remove r8a7791 non-DT APMU override
-
-These patches add DT support for the APMU hardware commonly found in
-Renesas R-Car Gen2 SoCs. Without these patches the APMU gets configured
-through data expressed in C, and with this series applied it is possible
-to describe the APMU configuration in DT and let the enable method point
-out that the APMU should be used.
-
-Patch 1 and 2 are Documenting and adding DT support to the APMU driver
-together with enabling use of the enable-method way to describe that
-the APMU hardware is needed for SMP operation.
-
-Patch 3 and 4 are related to r8a7791 support which gets a DTSI update to
-describe the APMU hardware. To avoid breaking support for older DTBs out
-in the wild these patches keep the older existing C code APMU configuration
-for r8a7791 as-is. During run-time, if the APMU is installed via the
-enable-method then it will not be overriden by older non-DT configuration.
-
-I suggest making APMU DT configuration mandatory for SMP operation on
-newer SoCs and that we keep the old APMU support code in place for a
-good number of kernel releases or until we can identify a couple of major
-reasons good enough to force a DTB update on the end users.
-
-The series have been tested on r8a7791 Koelsch in 4 cases:
-A) Default case when series is applied - 2 cores - OK (DT APMU)
-B) Like A) but r8a7791 smp_init() commented out - 2 cores - OK (DT APMU)
-C) Like B) but with patch 3 reverted - 1 core - OK (No SMP available)
-D) Like C) but reverted commented out code from B) - 2 cores - OK (C APMU)
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- Written against renesas-devel-20150519-v4.1-rc4
+ Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 1 +
+ drivers/tty/serial/Kconfig                                      | 2 +-
+ drivers/tty/serial/sh-sci.c                                     | 6 ++++++
+ 3 files changed, 8 insertions(+), 1 deletion(-)
 
- Documentation/devicetree/bindings/arm/cpus.txt           |    1 
- Documentation/devicetree/bindings/power/renesas,apmu.txt |   31 ++++
- arch/arm/boot/dts/r8a7791.dtsi                           |    7 +
- arch/arm/mach-shmobile/platsmp-apmu.c                    |   89 +++++++++++++-
- arch/arm/mach-shmobile/r8a7791.h                         |    2 
- arch/arm/mach-shmobile/setup-r8a7791.c                   |    2 
- arch/arm/mach-shmobile/smp-r8a7791.c                     |   11 +
- 7 files changed, 136 insertions(+), 7 deletions(-)
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index ae73bb0..7534d46 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -29,6 +29,7 @@ Required properties:
+     - "renesas,scifa" for generic SCIFA compatible UART.
+     - "renesas,scifb" for generic SCIFB compatible UART.
+     - "renesas,hscif" for generic HSCIF compatible UART.
++    - "renesas,sci" for generic SCI compatible UART.
+ 
+     When compatible with the generic version, nodes must list the
+     SoC-specific version corresponding to the platform first followed by the
+diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
+index f8120c1..dea1eff 100644
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -728,7 +728,7 @@ config SERIAL_IP22_ZILOG_CONSOLE
+ 
+ config SERIAL_SH_SCI
+ 	tristate "SuperH SCI(F) serial port support"
+-	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
++	depends on SUPERH || ARCH_SHMOBILE || H8300 || COMPILE_TEST
+ 	select SERIAL_CORE
+ 
+ config SERIAL_SH_SCI_NR_UARTS
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index e7d6566..1468ec5 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2536,6 +2536,12 @@ static const struct of_device_id of_sci_match[] = {
+ 			.regtype = SCIx_HSCIF_REGTYPE,
+ 		},
+ 	}, {
++		.compatible = "renesas,sci",
++		.data = &(const struct sci_port_info) {
++			.type = PORT_SCI,
++			.regtype = SCIx_SCI_REGTYPE,
++		},
++	}, {
+ 		/* Terminator */
+ 	},
+ };
+-- 
+2.1.4
+
