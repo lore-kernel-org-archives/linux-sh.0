@@ -1,77 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 29 Apr 2015 00:38:02 +0000
-Subject: [PATCH 08/10] drm: rcar-du: Consider plane to CRTC associations in the plane allocator
-Message-Id: <1430267884-20560-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 08 May 2015 07:13:05 +0000
+Subject: [PATCH v3 0/2] ARM: shmobile: r8a7790: add for USB-DMAC
+Message-Id: <1431069187-6088-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1430267884-20560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1372297984-9315-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1372297984-9315-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Hardware planes are driven by the timing generator of the CRTC they are
-associated to. Changing the association requires restarting the CRTC
-group that the plane belongs to, resulting in flicker on the other CRTC.
+This patch set is based on renesas.git / renesas-devel-20150507-v4.1-rc1
+tag. (commit id =3D c3059b3fff4ed6568783fdabdee1d62a55aa469c)
 
-To avoid flicker as much as possible, try to allocate planes first from
-the free planes already associated with the target CRTC. If allocation
-fails then fall back to allocation from all free planes.
+This patch set is related to the usb-dmac driver and renesas_usbhs driver.
+Almost all patches for the drivers have been merged in Linus tree.
+And a fixed patch for renesas_usbhs driver have beed merged in the subsyste=
+m:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/gpu/drm/rcar-du/rcar_du_kms.c | 22 +++++++++++++++++++++-
- 1 file changed, 21 insertions(+), 1 deletion(-)
+[ linux repository ]
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/driv=
+ers/dma/sh/usb-dmac.c?id=0C1c8ff32fa29e425b4938934c21afdb81104431
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/driv=
+ers/dma/sh/usb-dmac.c?id=D7d8e892aa6fe280a2e2974d9fd1ec9253ee1a05
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/driv=
+ers/usb/renesas_usbhs?idz96b78464bd8ba72c1c3095c543c1402db59e35
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/driv=
+ers/usb/renesas_usbhs?id=9B53d9af7aac09cf249d72bfbf15f08e47c4f7fe
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/driv=
+ers/usb/renesas_usbhs?id=AB330cf3888d8e0779fa05a243d53ba9f53a7ba9
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index ade135008e98..2c6cf691d163 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -383,6 +383,8 @@ static int rcar_du_atomic_check(struct drm_device *dev,
- 	for (i = 0; i < dev->mode_config.num_total_plane; ++i) {
- 		struct rcar_du_plane_state *plane_state;
- 		struct rcar_du_plane *plane;
-+		unsigned int crtc_planes;
-+		unsigned int free;
- 		int idx;
- 
- 		if (!state->planes[i])
-@@ -401,8 +403,21 @@ static int rcar_du_atomic_check(struct drm_device *dev,
- 		    !rcar_du_plane_needs_realloc(plane, plane_state))
- 			continue;
- 
-+		/* Try to allocate the plane from the free planes currently
-+		 * associated with the target CRTC to avoid restarting the CRTC
-+		 * group and thus minimize flicker. If it fails fall back to
-+		 * allocating from all free planes.
-+		 */
-+		crtc_planes = to_rcar_crtc(plane_state->state.crtc)->index % 2
-+			    ? plane->group->dptsr_planes
-+			    : ~plane->group->dptsr_planes;
-+		free = group_free_planes[plane->group->index];
-+
- 		idx = rcar_du_plane_hwalloc(plane_state->format->planes,
--					group_free_planes[plane->group->index]);
-+					    free & crtc_planes);
-+		if (idx < 0)
-+			idx = rcar_du_plane_hwalloc(plane_state->format->planes,
-+						    free);
- 		if (idx < 0) {
- 			dev_dbg(rcdu->dev, "%s: no available hardware plane\n",
- 				__func__);
-@@ -749,6 +764,11 @@ int rcar_du_modeset_init(struct rcar_du_device *rcdu)
- 		rgrp->mmio_offset = mmio_offsets[i];
- 		rgrp->index = i;
- 
-+		/* Pre-associate all hardware planes with the first CRTC in the
-+		 * group.
-+		 */
-+		rgrp->dptsr_planes = 0;
-+
- 		ret = rcar_du_planes_init(rgrp);
- 		if (ret < 0)
- 			return ret;
--- 
-2.0.5
+[ usb repository ]
+https://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?h=3Dtest=
+ing/next&idZ294e5469891d0701183049c4a9678887fa7091
+
+Changes from v2:
+ - Add "Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>" in patch 1.
+ - Change dma-names in patch 2.
+
+Changes from v1:
+ - Rebase the latest renesas-devel tag.
+
+Yoshihiro Shimoda (2):
+  ARM: shmobile: r8a7790: add USB-DMAC device nodes
+  ARM: shmobile: r8a7790: Enable DMA for HSUSB
+
+ arch/arm/boot/dts/r8a7790.dtsi | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+--=20
+1.9.1
 
