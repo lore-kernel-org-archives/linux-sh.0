@@ -1,26 +1,52 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 12 May 2015 10:25:05 +0000
-Subject: Re: [PATCH v2 1/3] pinctrl: sh-pfc: Add r8a7793 support
-Message-Id: <CACRpkdb01AZGq5F8QUthatDEncrGjZneTDf8Y+JFM5UGy746Ug@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 08 May 2015 07:13:32 +0000
+Subject: [PATCH v3 0/2] ARM: shmobile: r8a7791: add for USB-DMAC
+Message-Id: <1431069214-8052-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431422001-530-2-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1431422001-530-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-On Tue, May 12, 2015 at 11:13 AM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
+This patch set is based on renesas.git / renesas-devel-20150507-v4.1-rc1
+tag. (commit id =3D c3059b3fff4ed6568783fdabdee1d62a55aa469c)
 
-> Regarding pin control, r8a7791 and r8a7793 are identical, so it is
-> sufficient to add an sh_pfc_soc_info structure to enable r8a7793 support.
->
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+This patch set is related to the usb-dmac driver and renesas_usbhs driver.
+Almost all patches for the drivers have been merged in Linus tree.
+And a fixed patch for renesas_usbhs driver have beed merged in the subsyste=
+m:
 
-Patch applied.
+[ linux repository ]
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/driv=
+ers/dma/sh/usb-dmac.c?id=0C1c8ff32fa29e425b4938934c21afdb81104431
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/driv=
+ers/dma/sh/usb-dmac.c?id=D7d8e892aa6fe280a2e2974d9fd1ec9253ee1a05
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/driv=
+ers/usb/renesas_usbhs?idz96b78464bd8ba72c1c3095c543c1402db59e35
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/driv=
+ers/usb/renesas_usbhs?id=9B53d9af7aac09cf249d72bfbf15f08e47c4f7fe
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/driv=
+ers/usb/renesas_usbhs?id=AB330cf3888d8e0779fa05a243d53ba9f53a7ba9
 
-Yours,
-Linus Walleij
+[ usb repository ]
+https://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?h=3Dtest=
+ing/next&idZ294e5469891d0701183049c4a9678887fa7091
+
+Changes from v2:
+ - Add "Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>" in patch 1.
+ - Change dma-names in patch 2.
+
+Changes from v1:
+ - Rebase the latest renesas-devel tag.
+
+Yoshihiro Shimoda (2):
+  ARM: shmobile: r8a7791: add USB-DMAC device nodes
+  ARM: shmobile: r8a7791: Enable DMA for HSUSB
+
+ arch/arm/boot/dts/r8a7791.dtsi | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+--=20
+1.9.1
+
