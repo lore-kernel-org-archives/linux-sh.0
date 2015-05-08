@@ -1,44 +1,55 @@
-From: Kevin Hilman <khilman@kernel.org>
-Date: Fri, 08 May 2015 17:14:52 +0000
-Subject: Re: Possible regression due to "hrtimer: Get rid of hrtimer softirq"
-Message-Id: <7hvbg3gfeb.fsf@deeprootsystems.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 08 May 2015 07:13:06 +0000
+Subject: [PATCH v3 1/2] ARM: shmobile: r8a7790: add USB-DMAC device nodes
+Message-Id: <1431069187-6088-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150507111711.GA17448@verge.net.au>
- <alpine.DEB.2.11.1505071425520.4225@nanos>
- <20150507132543.GA14889@verge.net.au>
-In-Reply-To: <20150507132543.GA14889@verge.net.au> (Simon Horman's message of
- "Thu, 7 May 2015 22:25:43 +0900")
+References: <1431069187-6088-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1431069187-6088-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
+Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Simon Horman <horms@verge.net.au> writes:
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-> Hi Thomas,
->
-> On Thu, May 07, 2015 at 02:35:59PM +0200, Thomas Gleixner wrote:
->> On Thu, 7 May 2015, Simon Horman wrote:
->> > ------------[ cut here ]------------
->> > kernel BUG at kernel/irq_work.c:135!
->> 
->>   BUG_ON(!irqs_disabled());
->> 
->> So something enables interrupts in the periodic tick handling
->> machinery. Seems you have high resolution timers disabled, but nohz
->> enabled. And that code path has a local_irq_disable/enable pair which
->> causes havoc. Patch below.
->
-> Thanks for your quick response. I have been able to confirm that
-> when applied on top of next-20150507 the problem I observed no longer
-> manifests. I have successfully tested it on all the boards
-> where I previously observed a problem.
->
-> If you are planning to formally submit the patch below feel free to add:
->
-> Tested-by: Simon Horman <horms+renesas@verge.net.au>
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index c9055e3..c03a915 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -371,6 +371,28 @@
+ 		dma-channels = <13>;
+ 	};
+ 
++	usb_dmac0: dma-controller@e65a0000 {
++		compatible = "renesas,usb-dmac";
++		reg = <0 0xe65a0000 0 0x100>;
++		interrupts = <0 109 IRQ_TYPE_LEVEL_HIGH
++			      0 109 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "ch0", "ch1";
++		clocks = <&mstp3_clks R8A7790_CLK_USBDMAC0>;
++		#dma-cells = <1>;
++		dma-channels = <2>;
++	};
++
++	usb_dmac1: dma-controller@e65b0000 {
++		compatible = "renesas,usb-dmac";
++		reg = <0 0xe65b0000 0 0x100>;
++		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH
++			      0 110 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "ch0", "ch1";
++		clocks = <&mstp3_clks R8A7790_CLK_USBDMAC1>;
++		#dma-cells = <1>;
++		dma-channels = <2>;
++	};
++
+ 	i2c0: i2c@e6508000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-- 
+1.9.1
 
-FWIW, I confirmed this fixed a boot hang on my kzm9d in next-20150507
-also.
-
-Tested-by: Kevin Hilman <khilman@linaro.org>
