@@ -1,71 +1,107 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 14 May 2015 12:40:04 +0000
-Subject: [PATCH 3/4] i2c: slave: docs: be more precise about the prerequsites
-Message-Id: <1431607205-2316-4-git-send-email-wsa@the-dreams.de>
+From: Chen Gang <xili_gchen_5257@hotmail.com>
+Date: Sat, 09 May 2015 21:02:55 +0000
+Subject: [PATCH] sh: Wire up missing syscalls
+Message-Id: <BLU436-SMTP93208A4E06C8B5CC68CA1CB9DD0@phx.gbl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431607205-2316-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1431607205-2316-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Peter Huewe <peterhuewe-Mmb7MZpHnFY@public.gmane.org>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: linux-sh@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+The related warnings:
 
-There was some confusion what was needed to utilize the slave support,
-so let's be more precise about this. Add an introductory paragraph to
-the development section while we are here.
+    CALL    scripts/checksyscalls.sh
+  <stdin>:1229:2: warning: #warning syscall sched_setattr not implemented [-Wcpp]
+  <stdin>:1232:2: warning: #warning syscall sched_getattr not implemented [-Wcpp]
+  <stdin>:1235:2: warning: #warning syscall renameat2 not implemented [-Wcpp]
+  <stdin>:1238:2: warning: #warning syscall seccomp not implemented [-Wcpp]
+  <stdin>:1241:2: warning: #warning syscall getrandom not implemented [-Wcpp]
+  <stdin>:1244:2: warning: #warning syscall memfd_create not implemented [-Wcpp]
+  <stdin>:1247:2: warning: #warning syscall bpf not implemented [-Wcpp]
+  <stdin>:1250:2: warning: #warning syscall execveat not implemented [-Wcpp]
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Cc: Peter Huewe <peterhuewe@gmx.de>
+Signed-off-by: Chen Gang <gang.chen.5i5j@gmail.com>
 ---
- Documentation/i2c/slave-interface | 25 +++++++++++++++----------
- 1 file changed, 15 insertions(+), 10 deletions(-)
+ arch/sh/include/uapi/asm/unistd_32.h | 10 +++++++++-
+ arch/sh/include/uapi/asm/unistd_64.h | 10 +++++++++-
+ arch/sh/kernel/syscalls_32.S         |  8 ++++++++
+ arch/sh/kernel/syscalls_64.S         |  8 ++++++++
+ 4 files changed, 34 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/i2c/slave-interface b/Documentation/i2c/slave-interface
-index 389bb5d618549e..02b086510b6c10 100644
---- a/Documentation/i2c/slave-interface
-+++ b/Documentation/i2c/slave-interface
-@@ -3,16 +3,16 @@ Linux I2C slave interface description
+diff --git a/arch/sh/include/uapi/asm/unistd_32.h b/arch/sh/include/uapi/asm/unistd_32.h
+index d13a1d6..be5052e 100644
+--- a/arch/sh/include/uapi/asm/unistd_32.h
++++ b/arch/sh/include/uapi/asm/unistd_32.h
+@@ -380,7 +380,15 @@
+ #define __NR_process_vm_writev	366
+ #define __NR_kcmp		367
+ #define __NR_finit_module	368
++#define __NR_sched_setattr	369
++#define __NR_sched_getattr	370
++#define __NR_renameat2		371
++#define __NR_seccomp		372
++#define __NR_getrandom		373
++#define __NR_memfd_create	374
++#define __NR_bpf		375
++#define __NR_execveat		376
  
- by Wolfram Sang <wsa@sang-engineering.com> in 2014-15
+-#define NR_syscalls 369
++#define NR_syscalls 377
  
--Linux can also be an I2C slave in case I2C controllers have slave support.
--Besides this HW requirement, one also needs a software backend providing the
--actual functionality. An example for this is the slave-eeprom driver, which
--acts as a dual memory driver. While another I2C master on the bus can access it
--like a regular EEPROM, the Linux I2C slave can access the content via sysfs and
--retrieve/provide information as needed. The software backend driver and the I2C
--bus driver communicate via events. Here is a small graph visualizing the data
--flow and the means by which data is transported. The dotted line marks only one
--example. The backend could also use e.g. a character device, be in-kernel
--only, or something completely different:
-+Linux can also be an I2C slave if the I2C controller in use has slave
-+functionality. For that to work, one needs slave support in the bus driver plus
-+a hardware independent software backend providing the actual functionality. An
-+example for the latter is the slave-eeprom driver, which acts as a dual memory
-+driver. While another I2C master on the bus can access it like a regular
-+EEPROM, the Linux I2C slave can access the content via sysfs and handle data as
-+needed. The backend driver and the I2C bus driver communicate via events. Here
-+is a small graph visualizing the data flow and the means by which data is
-+transported. The dotted line marks only one example. The backend could also
-+use a character device, be in-kernel only, or something completely different:
+ #endif /* __ASM_SH_UNISTD_32_H */
+diff --git a/arch/sh/include/uapi/asm/unistd_64.h b/arch/sh/include/uapi/asm/unistd_64.h
+index e6820c8..decc1b8 100644
+--- a/arch/sh/include/uapi/asm/unistd_64.h
++++ b/arch/sh/include/uapi/asm/unistd_64.h
+@@ -400,7 +400,15 @@
+ #define __NR_process_vm_writev	377
+ #define __NR_kcmp		378
+ #define __NR_finit_module	379
++#define __NR_sched_setattr	380
++#define __NR_sched_getattr	381
++#define __NR_renameat2		382
++#define __NR_seccomp		383
++#define __NR_getrandom		384
++#define __NR_memfd_create	385
++#define __NR_bpf		386
++#define __NR_execveat		387
  
+-#define NR_syscalls 380
++#define NR_syscalls 388
  
-               e.g. sysfs        I2C slave events        I/O registers
-@@ -43,6 +43,11 @@ behaviour and setup.
- Developer manual
- ========
- 
-+First, the events which are used by the bus driver and the backend will be
-+described in detail. After that, some implementation hints for extending bus
-+drivers and writing backends will be given.
-+
-+
- I2C slave events
- ----------------
- 
+ #endif /* __ASM_SH_UNISTD_64_H */
+diff --git a/arch/sh/kernel/syscalls_32.S b/arch/sh/kernel/syscalls_32.S
+index 734234b..39ddd5c 100644
+--- a/arch/sh/kernel/syscalls_32.S
++++ b/arch/sh/kernel/syscalls_32.S
+@@ -386,3 +386,11 @@ ENTRY(sys_call_table)
+ 	.long sys_process_vm_writev
+ 	.long sys_kcmp
+ 	.long sys_finit_module
++	.long sys_sched_setattr
++	.long sys_sched_getattr		/* 370 */
++	.long sys_renameat2
++	.long sys_seccomp
++	.long sys_getrandom
++	.long sys_memfd_create
++	.long sys_bpf			/* 375 */
++	.long sys_execveat
+diff --git a/arch/sh/kernel/syscalls_64.S b/arch/sh/kernel/syscalls_64.S
+index 579fcb9..793d140 100644
+--- a/arch/sh/kernel/syscalls_64.S
++++ b/arch/sh/kernel/syscalls_64.S
+@@ -406,3 +406,11 @@ sys_call_table:
+ 	.long sys_process_vm_writev
+ 	.long sys_kcmp
+ 	.long sys_finit_module
++	.long sys_sched_setattr		/* 380 */
++	.long sys_sched_getattr
++	.long sys_renameat2
++	.long sys_seccomp
++	.long sys_getrandom
++	.long sys_memfd_create		/* 385 */
++	.long sys_bpf
++	.long sys_execveat
 -- 
-2.1.4
-
+1.9.3
