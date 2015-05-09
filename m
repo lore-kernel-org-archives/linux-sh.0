@@ -1,63 +1,76 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 09 May 2015 06:50:30 +0000
+Date: Sat, 09 May 2015 07:09:14 +0000
 Subject: Re: [RFC] i2c-tools: i2ctransfer: add new tool
-Message-Id: <20150509065030.GA1511@katana>
+Message-Id: <20150509070914.GB1511@katana>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="17pEHd4RhPHOinZp"
+Content-Type: multipart/mixed; boundary="K8nIJk4ghYZn606h"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1425053816-19804-1-git-send-email-wsa@the-dreams.de>
  <20150507220812.3776bb83@endymion.delvare>
- <20150508105401.223a8598@endymion.delvare>
- <20150508143826.GA1513@katana>
- <20150508234042.26708f86@endymion.delvare>
-In-Reply-To: <20150508234042.26708f86@endymion.delvare>
-To: Jean Delvare <jdelvare@suse.de>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org
+In-Reply-To: <20150507220812.3776bb83-R0o5gVi9kd7kN2dkZ6Wm7A@public.gmane.org>
+To: Jean Delvare <jdelvare-l3A5Bk7waGM@public.gmane.org>
+Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 
---17pEHd4RhPHOinZp
+--K8nIJk4ghYZn606h
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-Hi Jean,
 
-> If you think it's not enough, then the address modifier could go
-> separately before or after the address byte, i.e. either r1@0x123t or
-> r1@t0x123. I suspect that the latter should be easier to implement.
+> BTW I'm curious if you actually needed the + and - suffixes in practice?
+> I can easily imagine how the =3D suffix will be useful in the real
+> world, but + and -...  Or maybe just for bus driver testing purpose?
 
-In deed, I would aim for maximum flexibility (i.e. possible to mix 7 and
-10 bit addresses), and implement the latter proposal of yours.
+Exactly for that. While you can send complex messages with my tool, it
+should be clear this is mainly for testing/developing. Once you know
+what you need to do to access a slave, a specfic driver is the better
+option, be it in userspace or kernel space.
 
-> > Handling R/W as "just another" flag made this option extremly simple.
-> > But we probably can work something out.
+Those patterns are easily recognizable when fed into an EEPROM. They can
+already reveal quite some problems with bus drivers, e.g. off-by-one
+errors when fetching data, sending STOP etc.
+
+> > +}
+> > +	/* let Linux free malloced memory on termination */
 >=20
-> I think the proposal above makes more sense than grouping it with the
-> direction letter (r or w)
+> I don't like this. The memory allocated in i2cbusses.c is freed
+> explicitly, so it is inconsistent to not free yours. Freeing the memory
 
-I agree.
+Well, it is documented :)
+
+> explicitly makes the code easier to read and debug as it documents the
+
+I disagree about this one. Currently, we have a LOT of error paths when
+parsing input fails. Getting all the error paths right with freeing
+memory is usually error-prone (especially with later additions) and will
+IMO make the code way less readable. Since the lifetime of those buffers
+ends right before the exit(0), it seems unnecessarily complex to me.
+
+However, I need to redo the parsing anyhow. Let's see how it looks like
+in the next version. If it is easy/readable to free(), I'll do it.
 
 
---17pEHd4RhPHOinZp
+--K8nIJk4ghYZn606h
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1
 
-iQIcBAEBAgAGBQJVTa42AAoJEBQN5MwUoCm2xjEP/2tZmxvYmoXaU3hE/m5lSWar
-cGoXPUHmxC1w5d61ASFylYLhbgF/6UPRDvMDo2C3pzUTA2NrYjFJRuoqQ8N9XoWl
-KRNOapP2pf0byuG6FYacrRhxpCAs7TeCBJIGrTGZNfARzU5JDTu4zMriYes8DBMg
-gbH5UbcWvARSgWCXQ4auMw1QyIIR3UiBZvXX5pj0PnRF6vIEN027PwAByHsp/E7r
-49g+chtq3jwX7je//Qb9sDqal0JxXMOdzEwTNIV8iYXBHd0qcwodUNIdzNHTmdjH
-yhdoCYj+XdBdLcWCstG2qG+cUGqtosrMqL/Ntrg1bzbQH8L8evNptBuodHey6BkR
-91uuJZPDhX1gMpOng+KycivxVbUV9PxA4EoZmnRAQPkrXaHWA0ggCC2cMWoky89h
-bYzXLvT3cGUddE1rZTxKTB5ORTvpM3/ab9vNOWFLlTs7H+gxBblNz/zYkLc4tZQv
-7ozmGlLxIoYe2iI12kK7RJuOhDYAcatyZWSVhomUc6xoR3Aw62Wi2ZDU0n8C5l6B
-jCvbUycOeJzNXP+tdZEOtJk6LBsm9f5LhcdSwFy6+uwoa3WqZhZeDCUp4HHEc8Mt
-9aOuO5S4bWrzXWIipS6JjqmCAM7TgQ21civbnyvx+U+gslm8SM9W4RlwuMc7ezqe
-1EHoutsKa0GTZKPkhQcK
-=NJUc
+iQIcBAEBAgAGBQJVTbKaAAoJEBQN5MwUoCm2VMYP/RnDVZ7bmSstnQ1fKnZTNWnZ
+1m4DIrETfvQ0r9luWNpUNffcoH0tcJulDiKRWq6zHs5af1VS1odS+Ru6LvxgNdSY
+n4EMnn5kHbxXErHEOFzJ1f8pX8/SiIeoUHXipegwjOthrQIb5e4JLmPcvIfu00lD
+4HybdI+S2nv8DnBMKlLpA0Hhngjj3Vv9yrfNDxHAQ2XdWLI2WnyFet5Wp/K4nS9n
+E9l5btvKQyXEh839ZJBAi4J3fXCV9QRObPF/k4ZpSPjBBWcV1rH7UyYFkAfp9Cbr
+C/LOFztOO3ZaBy3dE1jlRtAsbbjyDRSVkPwpWkNhuCWi2rjkPa+RC8gSbkBW9sQt
+xS530njuWSQtAxQgvEslI37W4xU3Mm7tjUEjV6hKEv5aypXA1RY7vq+GfBiGtj5H
+a9Dy7YR2gltZeLPAUcGd6Nj8eQNOr+nob+uaR7ihMOQqi39OCixzOuTv0YqAXDLq
+8jIaSCkzK9qh9panslbYsncdlGvo9oYGZJwai+ks4rC3+NrP+CxAXkaH1Y14CkbA
+YZ4aALKRCZFo2OxdIqQLRUoseinbrwXZmGYrJ6mXGwWslNwaT9ampMGmvqzyzn4F
+OOaOhBfRw6Wh9iXFdquvsqw1JRkjvhJ8jDCJWP8czbILqa2+fzSJaR0/gcI/NOkJ
+A+prteXtXQcLldvc2n0G
+=PH7g
 -----END PGP SIGNATURE-----
 
---17pEHd4RhPHOinZp--
+--K8nIJk4ghYZn606h--
