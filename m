@@ -1,40 +1,38 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 21 May 2015 12:45:26 +0000
-Subject: Re: [PATCH v3 03/11] ARM: shmobile: r8a7793: add Gose board device tree
-Message-Id: <CAMuHMdWY0cby=rPtqEQb1tjpoZEZ6DtbdUVn4ty0jnkG+0_1vw@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Sat, 09 May 2015 02:14:03 +0000
+Subject: Re: [PATCH 2/2] ARM: multi_v7_defconfig: Replace USB_RCAR_GEN2_PHY by PHY_RCAR_GEN2
+Message-Id: <20150509021403.GA18443@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432205293-9488-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-	<1432205293-9488-4-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1432205293-9488-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1430222884-2095-1-git-send-email-geert+renesas@glider.be>
+ <1430222884-2095-2-git-send-email-geert+renesas@glider.be>
+ <20150430001743.GF17758@verge.net.au>
+In-Reply-To: <20150430001743.GF17758@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: Simon Horman <horms@verge.net.au>, Linux-sh list <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Biju Das <biju.das@bp.renesas.com>, Hiroyuki Yokoyama <hiroyuki.yokoyama.vx@renesas.com>, Kouichi Tomita <kouichi.tomita.yn@renesas.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 21, 2015 at 12:48 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> DT description and Makefile entry for the Gose eval board.
->
-> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Signed-off-by: Biju Das <biju.das@bp.renesas.com>
-> Signed-off-by: Hiroyuki Yokoyama <hiroyuki.yokoyama.vx@renesas.com>
-> Signed-off-by: Kouichi Tomita <kouichi.tomita.yn@renesas.com>
-> [uli: collapsed BSP revisions into a single commit]
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> Cc: devicetree@vger.kernel.org
+[CC Kevin]
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On Thu, Apr 30, 2015 at 09:17:44AM +0900, Simon Horman wrote:
+> On Tue, Apr 28, 2015 at 02:08:04PM +0200, Geert Uytterhoeven wrote:
+> > The legacy-only USB_RCAR_GEN2_PHY driver was replaced by the DT-only
+> > PHY_RCAR_GEN2 driver.
+> > 
+> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> > ---
+> > Oops, CONFIG_USB_RCAR_GEN2_PHY shouldn't have been in a multiplatform
+> > defconfig, as it supports legacy platform data only.
+> 
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> 
+> Olof, Arnd, Kevin,
+> 
+> I'm assuming that you want to take this directly (or not!).
+> However, if you would like me to queue up these kind of changes
+> in my defconfig branch please just let me know.
 
-Gr{oetje,eeting}s,
+Hi,
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+I'm wondering if you could take a moment to either review this patch
+or indicate that you would like me to queue up changes like this.
