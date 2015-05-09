@@ -1,73 +1,63 @@
-From: Jean Delvare <jdelvare@suse.de>
-Date: Fri, 08 May 2015 21:40:42 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 09 May 2015 06:50:30 +0000
 Subject: Re: [RFC] i2c-tools: i2ctransfer: add new tool
-Message-Id: <20150508234042.26708f86@endymion.delvare>
+Message-Id: <20150509065030.GA1511@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="17pEHd4RhPHOinZp"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1425053816-19804-1-git-send-email-wsa@the-dreams.de>
-	<20150507220812.3776bb83@endymion.delvare>
-	<20150508105401.223a8598@endymion.delvare>
-	<20150508143826.GA1513@katana>
-In-Reply-To: <20150508143826.GA1513@katana>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+ <20150507220812.3776bb83@endymion.delvare>
+ <20150508105401.223a8598@endymion.delvare>
+ <20150508143826.GA1513@katana>
+ <20150508234042.26708f86@endymion.delvare>
+In-Reply-To: <20150508234042.26708f86@endymion.delvare>
+To: Jean Delvare <jdelvare@suse.de>
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org
 
-Hi Wolfram,
 
-On Fri, 8 May 2015 16:38:26 +0200, Wolfram Sang wrote:
-> > Having slept over it, I came up with a 3rd proposal:
-> > 
-> > # i2ctransfer 0 w0x11@0x50 0xc0 0xbd= r1@0x51
-> > 
-> > That is, combining the slave address, direction and length into a
-> > single parameter. The advantage is that this is all more explicit and
-> > the risk of mixing up values is close to zero. Whether it is more or
-> > less readable than the previous proposals is probably a matter of
-> > taste. Also I suspect it would make the parsing and state machine more
-> > simple, but that's only a nice side effect.
-> > 
-> > Wolfram (and others), please tell me what you think. I am not trying to
-> > force my views here, just suggesting alternatives for your
-> > consideration.
-> 
-> I liked your proposal, so thanks for this input. I agree that the risk
-> of mixing something up is high, I was okay with the printout of the
-> messages to be sent, but a better syntax is very welcome, too. I need to
-> think about the flags a little bit, though. Although this isn't
-> implemented yet, PEC and 10-bit flags might be added in the future?
+--17pEHd4RhPHOinZp
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-This is a good point, we need to think about it. Maybe not PEC, as
-normally any PEC-enabled transaction would be handled by the other
-tools already. And I don't think the kernel can handle PEC over ioctl
-I2C_RDWR anyway. But 10-bit addresses, we already had a request to
-support than and your new tool would be perfect for that.
+Hi Jean,
 
-One easy way would be to assume that the transaction either targets one
-or more 10-bit addressed chips, or one or more 7-bit addressed chips,
-but doesn't mix. In that case a simple flag (say -t) in front of the
-transaction will do the trick. I'd think it is sufficient, and I even
-suspect that some controllers may only support that, but OTOH I never
-worked with 10-bit addressed chips so I can't really tell.
+> If you think it's not enough, then the address modifier could go
+> separately before or after the address byte, i.e. either r1@0x123t or
+> r1@t0x123. I suspect that the latter should be easier to implement.
 
-If you think it's not enough, then the address modifier could go
-separately before or after the address byte, i.e. either r1@0x123t or
-r1@t0x123. I suspect that the latter should be easier to implement.
+In deed, I would aim for maximum flexibility (i.e. possible to mix 7 and
+10 bit addresses), and implement the latter proposal of yours.
 
-> Handling R/W as "just another" flag made this option extremly simple.
-> But we probably can work something out.
+> > Handling R/W as "just another" flag made this option extremly simple.
+> > But we probably can work something out.
+>=20
+> I think the proposal above makes more sense than grouping it with the
+> direction letter (r or w)
 
-I think the proposal above makes more sense than grouping it with the
-direction letter (r or w) even though it's also a letter, as it's
-really an address modifier, which affects neither the direction nor the
-length. But again it's really only a suggestion, if you can come up
-with something clearer and/or easier to implement, please do.
+I agree.
 
-> So much for the quick response, I'll have a closer look later.
 
-I wouldn't call it "quick" ;-) but you're welcome.
+--17pEHd4RhPHOinZp
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
--- 
-Jean Delvare
-SUSE L3 Support
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJVTa42AAoJEBQN5MwUoCm2xjEP/2tZmxvYmoXaU3hE/m5lSWar
+cGoXPUHmxC1w5d61ASFylYLhbgF/6UPRDvMDo2C3pzUTA2NrYjFJRuoqQ8N9XoWl
+KRNOapP2pf0byuG6FYacrRhxpCAs7TeCBJIGrTGZNfARzU5JDTu4zMriYes8DBMg
+gbH5UbcWvARSgWCXQ4auMw1QyIIR3UiBZvXX5pj0PnRF6vIEN027PwAByHsp/E7r
+49g+chtq3jwX7je//Qb9sDqal0JxXMOdzEwTNIV8iYXBHd0qcwodUNIdzNHTmdjH
+yhdoCYj+XdBdLcWCstG2qG+cUGqtosrMqL/Ntrg1bzbQH8L8evNptBuodHey6BkR
+91uuJZPDhX1gMpOng+KycivxVbUV9PxA4EoZmnRAQPkrXaHWA0ggCC2cMWoky89h
+bYzXLvT3cGUddE1rZTxKTB5ORTvpM3/ab9vNOWFLlTs7H+gxBblNz/zYkLc4tZQv
+7ozmGlLxIoYe2iI12kK7RJuOhDYAcatyZWSVhomUc6xoR3Aw62Wi2ZDU0n8C5l6B
+jCvbUycOeJzNXP+tdZEOtJk6LBsm9f5LhcdSwFy6+uwoa3WqZhZeDCUp4HHEc8Mt
+9aOuO5S4bWrzXWIipS6JjqmCAM7TgQ21civbnyvx+U+gslm8SM9W4RlwuMc7ezqe
+1EHoutsKa0GTZKPkhQcK
+=NJUc
+-----END PGP SIGNATURE-----
+
+--17pEHd4RhPHOinZp--
