@@ -1,49 +1,43 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 11 May 2015 02:15:35 +0000
-Subject: Re: [PATCH 3/3 v3] mmc: sh_mmcif: calculate best clock with parent clock
-Message-Id: <87k2wf509m.wl%kuninori.morimoto.gx@renesas.com>
+Date: Mon, 11 May 2015 03:38:22 +0000
+Subject: Re: [RFC PATCH 1/7] mmc: tmio: Add UHS-I mode support
+Message-Id: <87egmn4wfo.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
-	<1433253.xXE7ok9ACb@avalon>
-	<87mw21m0ur.wl%kuninori.morimoto.gx@renesas.com>
-	<2477373.H5ReWsYloq@avalon>
-In-Reply-To: <2477373.H5ReWsYloq@avalon>
+References: <1430396995.5802.39.camel@xylophone.i.decadent.org.uk>
+	<1430397051.5802.40.camel@xylophone.i.decadent.org.uk>
+In-Reply-To: <1430397051.5802.40.camel@xylophone.i.decadent.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@linaro.org>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Ulf Hansson <ulf.hansson@linaro.org>, linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, kobayashi <keita.kobayashi.ym@renesas.com>
+To: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Cc: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@lists.codethink.co.uk
 
+Hi Ben
 
-Hi Laurent
+Thank you for your patch
 
-> Hi Morimoto-san,
+> Based on work by Shinobu Uehara and Ben Dooks.  This adds the
+> voltage switch operation needed for all UHS-I modes, but not
+> the tuning needed for SDR-104 which will come later.
 > 
-> Sorry for the late reply.
-
-Sorry for my late response too.
-
-> > > I'm not sure I would call this parent clock. It refers to the frequency of
-> > > the functional clock provided to the MMCIF, there's no concept of parent
-> > > there. True, the clock referenced by the MMCIF DT node is an MSTP gate
-> > > clock, and frequency control is implemented in the MSTP clock parent, but
-> > > that hardware architecture is internal to the CPG and shouldn't be
-> > > considered by the MMCIF.
-> >
-> > I couldn't understand about last 2 lines.
-> > Do you mean I need to add these method in CPG ?
-> > But, this calculates best clock of parent clock (= from CPG) and divider (> > on MMC) Why CPG need to care about MMC's divider,
-> > and how to set it from CPG ??
+> XXX The card_busy implementation is a bit of a guess.
 > 
-> No, that's not what I meant. The CPG should certainly not care about any MMCIF 
-> internal divider.
-> 
-> My point was about the name of the structure. However, now that you mention 
-> the internal MMCIF clock divider, the word "parent" indeed makes sense. Please 
-> ignore my comment.
+> Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
 
-Thank you for your feedback, and thank you for your understanding.
+If original patch was created by Shinobu/Ben Dooks,
+and you updated it, I prefer to add these guys on Signed-off-by line.
 
-Best regards
----
-Kuninori Morimoto
+>  static const struct mmc_host_ops tmio_mmc_ops = {
+>  	.request	= tmio_mmc_request,
+>  	.set_ios	= tmio_mmc_set_ios,
+>  	.get_ro         = tmio_mmc_get_ro,
+>  	.get_cd		= mmc_gpio_get_cd,
+>  	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
+> +	.start_signal_voltage_switch
+> +			= tmio_mmc_start_signal_voltage_switch,
+> +	.card_busy	= tmio_mmc_card_busy,
+>  	.multi_io_quirk	= tmio_multi_io_quirk,
+>  };
+
+I prefer to separate this patch for these 2 new callbacks if possible.
+
