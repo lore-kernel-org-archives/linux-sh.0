@@ -1,72 +1,57 @@
 From: Brian Norris <computersforpeace@gmail.com>
-Date: Fri, 08 May 2015 21:34:14 +0000
+Date: Mon, 11 May 2015 22:46:46 +0000
 Subject: Re: [PATCH] ARM: tegra: add "nor-jedec" flash compatible binding
-Message-Id: <20150508213414.GE32500@ld-irv-0074>
+Message-Id: <20150511224646.GJ32500@ld-irv-0074>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1431066098-19821-1-git-send-email-zajec5@gmail.com>
  <554CDD8C.7050000@wwwdotorg.org>
  <20150508184317.GZ32500@ld-irv-0074>
  <CAMuHMdXeen3cU2bb8TXxxtdDjgMCU_FS1Yxdu1b-Tq2xE+x0ZA@mail.gmail.com>
  <554D24DA.8060601@wwwdotorg.org>
-In-Reply-To: <554D24DA.8060601@wwwdotorg.org>
+ <20150508213414.GE32500@ld-irv-0074>
+In-Reply-To: <20150508213414.GE32500@ld-irv-0074>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, May 08, 2015 at 03:04:26PM -0600, Stephen Warren wrote:
-> On 05/08/2015 02:57 PM, Geert Uytterhoeven wrote:
-> >On Fri, May 8, 2015 at 8:43 PM, Brian Norris
-> ><computersforpeace@gmail.com> wrote:
-> >>On Fri, May 08, 2015 at 10:00:12AM -0600, Stephen Warren wrote:
-> >>>On 05/08/2015 12:21 AM, Rafał Miłecki wrote:
-> >>>>Starting with commits
-> >>>>8ff16cf ("Documentation: devicetree: m25p80: add "nor-jedec" binding")
-> >>>>1103b85 ("mtd: m25p80: bind to "nor-jedec" ID, for auto-detection")
-> >>>>we have "nor-jedec" binding indicating support for JEDEC identification.
-> >>>
-> >>>The documentation looks quite incomplete. "nor-jedec" sounds like
-> >>>it's intended to be something generic. As such, it should be
-> >>>documented in e.g.
-> >>>Documentation/devicetree/bindings/mtd/nor-jedec.txt, not buried in
-> >>>one particular flash device's binding. If it's not intended to be
-> >>>generic, why isn't the existing "winbond,w25q32dw" enough?
-> >>
-> >>It is generic, though there are plenty of additional manufacturer/device
-> >>pairs that could go on top of it. m25p80 was (one of?) the first
-> >>supported, so the naming has been based on legacy, and we're in the
-> >>process of unwinding a bit of that. If it helps, we could move the doc
-> >>to .../mtd/spi-nor,nor-jedec.txt or something like that.
-> >>
-> >>>Equally, "nor-jedec" doesn't sound like the right name. It doesn't
-> >>>differentiate between SPI and parallel NOR flash, which presumably
-> >>>need different compatible values, since the programming model is
-> >>>quite different, and the compatible value is supposed to
-> >>>define/imply the SW-visible programming model.
-> >>
-> >>It's definitely for SPI only. There was much discussion about this a
-> >>few months back. Somewhere along the way, it was mentioned that the
-> >>context (SPI slave is a child of SPI master) would make this clear. I'm
-> >>still not sure why we didn't end up with something more descriptive,
-> >>though, like "spi-nor,nor-jedec".
-> >
-> >What about "jedec,spi-nor"?
+Hi DT maintainers,
+
+On Fri, May 08, 2015 at 02:34:14PM -0700, Brian Norris wrote:
+> On Fri, May 08, 2015 at 03:04:26PM -0600, Stephen Warren wrote:
+> > On 05/08/2015 02:57 PM, Geert Uytterhoeven wrote:
+> > >On Fri, May 8, 2015 at 8:43 PM, Brian Norris <computersforpeace@gmail.com> wrote:
+> > >>On Fri, May 08, 2015 at 10:00:12AM -0600, Stephen Warren wrote:
+> > >>>Equally, "nor-jedec" doesn't sound like the right name. It doesn't
+> > >>>differentiate between SPI and parallel NOR flash, which presumably
+> > >>>need different compatible values, since the programming model is
+> > >>>quite different, and the compatible value is supposed to
+> > >>>define/imply the SW-visible programming model.
+> > >>
+> > >>It's definitely for SPI only. There was much discussion about this a
+> > >>few months back. Somewhere along the way, it was mentioned that the
+> > >>context (SPI slave is a child of SPI master) would make this clear. I'm
+> > >>still not sure why we didn't end up with something more descriptive,
+> > >>though, like "spi-nor,nor-jedec".
+> > >
+> > >What about "jedec,spi-nor"?
+> > 
+> > That seems unique enough to me, or the options below if they're
+> > actually applicable.
 > 
-> That seems unique enough to me, or the options below if they're
-> actually applicable.
+> That could be OK with me. If I can get the magic blessing from the DT
+> folks, then I'll send patches to update everything.
 
-That could be OK with me. If I can get the magic blessing from the DT
-folks, then I'll send patches to update everything.
+Can I get an 'ack' for this change? We merged a binding for "nor-jedec"
+in 4.1-rc1, with review (but no explicit 'ack') from Mark, and a few
+DTS's are starting to use it. But we're now seeing objections, with a
+request to change this to "jedec,spi-nor". I don't care too much, but I
+can understand Stephen's point.
 
-> >Is this "SERIAL FLASH DISCOVERABLE PARAMETERS (SFDP)"?
-> >https://www.jedec.org/standards-documents/docs/jesd216b
-> >(Don't have time to register with jedec now...)
-> >
-> >If yes, "jedec,sfdp"? "jedec,jesd216b"?
-
-It's not SFDP. We're looking at SPI flash that are detected simply by
-the READ ID (9Fh) opcode. SFDP is on newer SPI flash which support the
-5Ah opcode, for reading a parameter table. (I'd like to support this
-soon, actually, and one of those sorts of strings might work.)
+Anyway, I don't want to go through too many more patch cycles without an
+explicit ack here on the "jedec,spi-nor" binding (i.e.,
+s/nor-jedec/jedec,spi-nor/g). With an ack, then I can make sure the
+binding and current users get changed before 4.1 is minted, and prevent
+other ARM subarchitectures from pulling in the "wrong" binding for 4.2.
 
 Brian
