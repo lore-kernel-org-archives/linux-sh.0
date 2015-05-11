@@ -1,92 +1,66 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Sun, 17 May 2015 00:28:43 +0000
-Subject: [PATCH 2/6] pinctrl: sh-pfc: Add set_mux operation to struct sh_pfc_function
-Message-Id: <1431822523.4222.169.camel@xylophone.i.decadent.org.uk>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Mon, 11 May 2015 06:26:23 +0000
+Subject: [PATCH v12 04/21] sh-sci: Add h8300 SCI
+Message-Id: <1431325600-12333-5-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431822459.4222.166.camel@xylophone.i.decadent.org.uk>
-In-Reply-To: <1431822459.4222.166.camel@xylophone.i.decadent.org.uk>
+References: <1431325600-12333-1-git-send-email-ysato@users.sourceforge.jp>
+In-Reply-To: <1431325600-12333-1-git-send-email-ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>
+To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
 
-In some cases a change of function requires changes in more than just
-the GPSR/IPSR registers.  In particular, changing the SDHI between 3.3V
-and 1.8V signalling also requires modifying IOCTRL6.
-
-Add this optional operation so that such special cases can be handled
-in each SoC's code.
-
-Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/pinctrl/sh-pfc/pinctrl.c |    4 ++++
- drivers/pinctrl/sh-pfc/sh_pfc.h  |   10 +++++++++-
- 2 files changed, 13 insertions(+), 1 deletion(-)
+ Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 1 +
+ drivers/tty/serial/Kconfig                                      | 2 +-
+ drivers/tty/serial/sh-sci.c                                     | 6 ++++++
+ 3 files changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index 072e7c62cab7..068b1cdeddde 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -317,6 +317,7 @@ static int sh_pfc_func_set_mux(struct pinctrl_dev *pctldev, unsigned selector,
- {
- 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
- 	struct sh_pfc *pfc = pmx->pfc;
-+	const struct sh_pfc_function *func = &pfc->info->functions[selector];
- 	const struct sh_pfc_pin_group *grp = &pfc->info->groups[group];
- 	unsigned long flags;
- 	unsigned int i;
-@@ -340,6 +341,9 @@ static int sh_pfc_func_set_mux(struct pinctrl_dev *pctldev, unsigned selector,
- 			break;
- 	}
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index ae73bb0..7534d46 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -29,6 +29,7 @@ Required properties:
+     - "renesas,scifa" for generic SCIFA compatible UART.
+     - "renesas,scifb" for generic SCIFB compatible UART.
+     - "renesas,hscif" for generic HSCIF compatible UART.
++    - "renesas,sci" for generic SCI compatible UART.
  
-+	if (func->set_mux)
-+		func->set_mux(pfc, func, grp);
-+
- done:
- 	spin_unlock_irqrestore(&pfc->lock, flags);
- 	return ret;
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index c7508d5f6886..0ce4f5c7add8 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -28,6 +28,8 @@ enum {
- #define SH_PFC_PIN_CFG_PULL_DOWN	(1 << 3)
- #define SH_PFC_PIN_CFG_NO_GPIO		(1 << 31)
+     When compatible with the generic version, nodes must list the
+     SoC-specific version corresponding to the platform first followed by the
+diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
+index f8120c1..dea1eff 100644
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -728,7 +728,7 @@ config SERIAL_IP22_ZILOG_CONSOLE
  
-+struct sh_pfc;
-+
- struct sh_pfc_pin {
- 	u16 pin;
- 	u16 enum_id;
-@@ -50,17 +52,23 @@ struct sh_pfc_pin_group {
- 	unsigned int nr_pins;
+ config SERIAL_SH_SCI
+ 	tristate "SuperH SCI(F) serial port support"
+-	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
++	depends on SUPERH || ARCH_SHMOBILE || H8300 || COMPILE_TEST
+ 	select SERIAL_CORE
+ 
+ config SERIAL_SH_SCI_NR_UARTS
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index e7d6566..1468ec5 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2536,6 +2536,12 @@ static const struct of_device_id of_sci_match[] = {
+ 			.regtype = SCIx_HSCIF_REGTYPE,
+ 		},
+ 	}, {
++		.compatible = "renesas,sci",
++		.data = &(const struct sci_port_info) {
++			.type = PORT_SCI,
++			.regtype = SCIx_SCI_REGTYPE,
++		},
++	}, {
+ 		/* Terminator */
+ 	},
  };
- 
--#define SH_PFC_FUNCTION(n)				\
-+#define SH_PFC_FUNCTION_SPECIAL(n, set_mux_fn)		\
- 	{						\
- 		.name = #n,				\
- 		.groups = n##_groups,			\
- 		.nr_groups = ARRAY_SIZE(n##_groups),	\
-+		.set_mux = (set_mux_fn),		\
- 	}
- 
-+#define SH_PFC_FUNCTION(n) SH_PFC_FUNCTION_SPECIAL(n, NULL)
-+
- struct sh_pfc_function {
- 	const char *name;
- 	const char * const *groups;
- 	unsigned int nr_groups;
-+	void (*set_mux)(struct sh_pfc *pfc,
-+			const struct sh_pfc_function *func,
-+			const struct sh_pfc_pin_group *grp);
- };
- 
- struct pinmux_func {
 -- 
-1.7.10.4
-
-
-
+2.1.4
 
