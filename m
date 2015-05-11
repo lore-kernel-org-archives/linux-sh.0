@@ -1,36 +1,61 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 May 2015 09:36:28 +0000
-Subject: [PATCH 0/3] clk: shmobile: Document mandatory compatible fallbacks
-Message-Id: <1432892191-24039-1-git-send-email-geert+renesas@glider.be>
+Date: Mon, 11 May 2015 11:08:31 +0000
+Subject: renesas-drivers-2015-05-11-v4.1-rc3
+Message-Id: <1431342511-21057-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>
-Cc: Simon Horman <horms+renesas@verge.net.au>, linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-	Hi Mike, Stephen,
+I've pushed renesas-drivers-2015-05-11-v4.1-rc3 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
+branches of various subsystem trees and (b) branches with driver code
+submitted or planned for submission to maintainers into the development
+branch of Simon Horman's renesas.git tree.
 
-Several DT binding docs for shmobile clock drivers declare that the
-compatible value should be one out of a list of SoC-specific values and
-a generic value.
-However, the driver only binds against the generic value.
-Hence document that the generic value is a mandatory fallback.
+Today's version is based on renesas-devel-20150507-v4.1-rc2.
 
-Thanks for applying!
+Included fixes:
+  - Revert "ASoC: rsnd: make sure it uses lock when it calls rsnd_dai_call"
 
-Geert Uytterhoeven (3):
-  clk: shmobile: mstp: Document mandatory compatible fallback
-  clk: shmobile: rcar-gen2: Document mandatory compatible fallback
-  clk: shmobile: rz: Document mandatory compatible fallback
-
- Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt     | 2 +-
- .../devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt          | 2 +-
- Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt       | 2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
-
--- 
-1.9.1
+Included subsystem trees:
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+  - git://people.freedesktop.org/~airlied/linux#drm-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+  - git://linuxtv.org/mchehab/media-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+  - git://git.infradead.org/users/vkoul/slave-dma.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
+  - git://git.infradead.org/battery-2.6.git#master
+  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
 
 Gr{oetje,eeting}s,
 
