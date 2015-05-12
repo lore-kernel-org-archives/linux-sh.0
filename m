@@ -1,66 +1,98 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 19 May 2015 08:49:02 +0000
-Subject: renesas-drivers-2015-05-19-v4.1-rc4
-Message-Id: <1432025342-7924-1-git-send-email-geert+renesas@glider.be>
+Date: Tue, 12 May 2015 17:37:10 +0000
+Subject: [PATCH/RFC 07/12] ARM: shmobile: koelsch dts: Add overlay for SCIFB0 on EXIO A
+Message-Id: <1431452235-11692-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Pantelis Antoniou <pantelis.antoniou@konsulko.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-I've pushed renesas-drivers-2015-05-19-v4.1-rc4 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+Provide access to SCIFB0 on EXIO Connector A.
 
-Today's version is based on renesas-devel-20150519-v4.1-rc4.
+FIXME Document "ctsrts" DT property.
 
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/Makefile                         |  1 +
+ .../boot/dts/r8a7791-koelsch-exio-a-scifb0.dtso    | 53 ++++++++++++++++++++++
+ 2 files changed, 54 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a7791-koelsch-exio-a-scifb0.dtso
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index d5d2386694d57391..576fa500e987ad2b 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -673,6 +673,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	r8a7740-armadillo800eva-con15-scifb.dtbo \
+ 	r8a7791-koelsch-exio-a-hscif1.dtbo \
+ 	r8a7791-koelsch-exio-a-hscif2.dtbo \
++	r8a7791-koelsch-exio-a-scifb0.dtbo \
+ endif
+ endif
+ 
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch-exio-a-scifb0.dtso b/arch/arm/boot/dts/r8a7791-koelsch-exio-a-scifb0.dtso
+new file mode 100644
+index 0000000000000000..30b83c5d36b4fbe6
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a7791-koelsch-exio-a-scifb0.dtso
+@@ -0,0 +1,53 @@
++/*
++ * Device Tree Overlay for SCIFB0 on r8a7791/Koelsch EXIO Connector A
++ *
++ * Copyright (C) 2015 Glider bvba
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ *
++ * Pinout:
++ *   - RXD = EXIO Connector A pin 66
++ *   - TXD = EXIO Connector A pin 60
++ *   - CTS = EXIO Connector A pin 65
++ *   - RTS = EXIO Connector A pin 62
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			/* serial12 = &scifb0; */
++			serial12 = "/serial@e6c20000";
++		};
++	};
++
++	fragment@1 {
++		target = <&pfc>;
++
++		__overlay__ {
++			scifb0_pins: serial12 {
++				renesas,groups = "scifb0_data_b",
++						 "scifb0_ctrl_b";
++				renesas,function = "scifb0";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&scifb0>;
++
++		__overlay__ {
++			pinctrl-0 = <&scifb0_pins>;
++			pinctrl-names = "default";
++
++			ctsrts;
++			status = "okay";
++		};
++	};
++};
+-- 
+1.9.1
 
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
