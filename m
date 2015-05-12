@@ -1,37 +1,92 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 21 May 2015 10:48:11 +0000
-Subject: [PATCH v3 09/11] PCI: rcar: document r8a7793 DT bindings
-Message-Id: <1432205293-9488-10-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 12 May 2015 17:37:08 +0000
+Subject: [PATCH/RFC 05/12] ARM: shmobile: koelsch dts: Add overlay for HSCIF1 on EXIO A
+Message-Id: <1431452235-11692-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432205293-9488-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1432205293-9488-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert@linux-m68k.org, horms@verge.net.au, linux-sh@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com, kuninori.morimoto.gx@renesas.com
-Cc: magnus.damm@gmail.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Bjorn Helgaas <bhelgaas@google.com>, devicetree@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Pantelis Antoniou <pantelis.antoniou@konsulko.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Bjorn Helgaas <bhelgaas@google.com>
-Cc: devicetree@vger.kernel.org
+Provide access to HSCIF1 on EXIO Connector A.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/Makefile                         |  1 +
+ .../boot/dts/r8a7791-koelsch-exio-a-hscif1.dtso    | 49 ++++++++++++++++++++++
+ 2 files changed, 50 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a7791-koelsch-exio-a-hscif1.dtso
 
-diff --git a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-index d8ef5bf..8b156fe 100644
---- a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-+++ b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
-@@ -8,6 +8,7 @@ OHCI and EHCI controllers.
- Required properties:
- - compatible: "renesas,pci-r8a7790" for the R8A7790 SoC;
- 	      "renesas,pci-r8a7791" for the R8A7791 SoC.
-+	      "renesas,pci-r8a7793" for the R8A7793 SoC.
- - reg:	A list of physical regions to access the device: the first is
- 	the operational registers for the OHCI/EHCI controllers and the
- 	second is for the bridge configuration and control registers.
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 1f2478d6254ea70f..d800690e3aaf7bab 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -671,6 +671,7 @@ ifeq ($(CONFIG_OF_OVERLAY),y)
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	r8a7740-armadillo800eva-con15-scifa0.dtbo \
+ 	r8a7740-armadillo800eva-con15-scifb.dtbo \
++	r8a7791-koelsch-exio-a-hscif1.dtbo \
+ endif
+ endif
+ 
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch-exio-a-hscif1.dtso b/arch/arm/boot/dts/r8a7791-koelsch-exio-a-hscif1.dtso
+new file mode 100644
+index 0000000000000000..03793154b6fa2cb1
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a7791-koelsch-exio-a-hscif1.dtso
+@@ -0,0 +1,49 @@
++/*
++ * Device Tree Overlay for HSCIF1 on r8a7791/Koelsch EXIO Connector A
++ *
++ * Copyright (C) 2015 Glider bvba
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ *
++ * Pinout:
++ *   - RXD = EXIO Connector A pin 72
++ *   - TXD = EXIO Connector A pin 53
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			/* serial16 = &hscif1; */
++			serial16 = "/serial@e62c8000";
++		};
++	};
++
++	fragment@1 {
++		target = <&pfc>;
++
++		__overlay__ {
++			hscif1_pins: serial16 {
++				renesas,groups = "hscif1_data_b";
++				renesas,function = "hscif1";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&hscif1>;
++
++		__overlay__ {
++			pinctrl-0 = <&hscif1_pins>;
++			pinctrl-names = "default";
++
++			status = "okay";
++		};
++	};
++};
 -- 
-2.3.5
+1.9.1
 
