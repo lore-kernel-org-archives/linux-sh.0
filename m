@@ -1,125 +1,47 @@
-From: Dominik Dingel <dingel@linux.vnet.ibm.com>
-Date: Thu, 28 May 2015 11:52:36 +0000
-Subject: [PATCH 4/5] s390/hugetlb: remove dead code for sw emulated huge pages
-Message-Id: <1432813957-46874-5-git-send-email-dingel@linux.vnet.ibm.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 12 May 2015 17:37:04 +0000
+Subject: [PATCH/RFC 01/12] ARM: shmobile: armadillo dts: Add aliases for all serial ports
+Message-Id: <1431452235-11692-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432813957-46874-1-git-send-email-dingel@linux.vnet.ibm.com>
-In-Reply-To: <1432813957-46874-1-git-send-email-dingel@linux.vnet.ibm.com>
+References: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Pantelis Antoniou <pantelis.antoniou@konsulko.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-We now support only hugepages on hardware with EDAT1 support.
-So we remove the prepare/release_hugepage hooks and
-simplify set_huge_pte_at and huge_ptep_get.
+Add aliases for the remaining serial ports that don't already have an
+alias.
 
-Acked-by: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Signed-off-by: Dominik Dingel <dingel@linux.vnet.ibm.com>
+This is a temporary workaround, until of_alias_add() is called when
+loading a device tree overlay that adds an alias.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/s390/include/asm/hugetlb.h |  3 ---
- arch/s390/mm/hugetlbpage.c      | 60 +++--------------------------------------
- 2 files changed, 3 insertions(+), 60 deletions(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/arch/s390/include/asm/hugetlb.h b/arch/s390/include/asm/hugetlb.h
-index dfb542a..0130d03 100644
---- a/arch/s390/include/asm/hugetlb.h
-+++ b/arch/s390/include/asm/hugetlb.h
-@@ -37,9 +37,6 @@ static inline int prepare_hugepage_range(struct file *file,
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+index 2e31d8c01cbf6a74..e51ad203be73dcdb 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+@@ -20,7 +20,15 @@
+ 	compatible = "renesas,armadillo800eva", "renesas,r8a7740";
  
- #define arch_clear_hugepage_flags(page)		do { } while (0)
+ 	aliases {
++		serial0 = &scifa0;
+ 		serial1 = &scifa1;
++		serial2 = &scifa2;
++		serial3 = &scifa3;
++		serial4 = &scifa4;
++		serial5 = &scifa5;
++		serial6 = &scifa6;
++		serial7 = &scifa7;
++		serial8 = &scifb;
+ 	};
  
--int arch_prepare_hugepage(struct page *page);
--void arch_release_hugepage(struct page *page);
--
- static inline void huge_pte_clear(struct mm_struct *mm, unsigned long addr,
- 				  pte_t *ptep)
- {
-diff --git a/arch/s390/mm/hugetlbpage.c b/arch/s390/mm/hugetlbpage.c
-index fa6e1bc..999616b 100644
---- a/arch/s390/mm/hugetlbpage.c
-+++ b/arch/s390/mm/hugetlbpage.c
-@@ -80,31 +80,16 @@ static inline pte_t __pmd_to_pte(pmd_t pmd)
- void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
- 		     pte_t *ptep, pte_t pte)
- {
--	pmd_t pmd;
-+	pmd_t pmd = __pte_to_pmd(pte);
- 
--	pmd = __pte_to_pmd(pte);
--	if (!MACHINE_HAS_HPAGE) {
--		/* Emulated huge ptes loose the dirty and young bit */
--		pmd_val(pmd) &= ~_SEGMENT_ENTRY_ORIGIN;
--		pmd_val(pmd) |= pte_page(pte)[1].index;
--	} else
--		pmd_val(pmd) |= _SEGMENT_ENTRY_LARGE;
-+	pmd_val(pmd) |= _SEGMENT_ENTRY_LARGE;
- 	*(pmd_t *) ptep = pmd;
- }
- 
- pte_t huge_ptep_get(pte_t *ptep)
- {
--	unsigned long origin;
--	pmd_t pmd;
-+	pmd_t pmd = *(pmd_t *) ptep;
- 
--	pmd = *(pmd_t *) ptep;
--	if (!MACHINE_HAS_HPAGE && pmd_present(pmd)) {
--		origin = pmd_val(pmd) & _SEGMENT_ENTRY_ORIGIN;
--		pmd_val(pmd) &= ~_SEGMENT_ENTRY_ORIGIN;
--		pmd_val(pmd) |= *(unsigned long *) origin;
--		/* Emulated huge ptes are young and dirty by definition */
--		pmd_val(pmd) |= _SEGMENT_ENTRY_YOUNG | _SEGMENT_ENTRY_DIRTY;
--	}
- 	return __pmd_to_pte(pmd);
- }
- 
-@@ -119,45 +104,6 @@ pte_t huge_ptep_get_and_clear(struct mm_struct *mm,
- 	return pte;
- }
- 
--int arch_prepare_hugepage(struct page *page)
--{
--	unsigned long addr = page_to_phys(page);
--	pte_t pte;
--	pte_t *ptep;
--	int i;
--
--	if (MACHINE_HAS_HPAGE)
--		return 0;
--
--	ptep = (pte_t *) pte_alloc_one(&init_mm, addr);
--	if (!ptep)
--		return -ENOMEM;
--
--	pte_val(pte) = addr;
--	for (i = 0; i < PTRS_PER_PTE; i++) {
--		set_pte_at(&init_mm, addr + i * PAGE_SIZE, ptep + i, pte);
--		pte_val(pte) += PAGE_SIZE;
--	}
--	page[1].index = (unsigned long) ptep;
--	return 0;
--}
--
--void arch_release_hugepage(struct page *page)
--{
--	pte_t *ptep;
--
--	if (MACHINE_HAS_HPAGE)
--		return;
--
--	ptep = (pte_t *) page[1].index;
--	if (!ptep)
--		return;
--	clear_table((unsigned long *) ptep, _PAGE_INVALID,
--		    PTRS_PER_PTE * sizeof(pte_t));
--	page_table_free(&init_mm, (unsigned long *) ptep);
--	page[1].index = 0;
--}
--
- pte_t *huge_pte_alloc(struct mm_struct *mm,
- 			unsigned long addr, unsigned long sz)
- {
+ 	chosen {
 -- 
-2.3.7
+1.9.1
 
