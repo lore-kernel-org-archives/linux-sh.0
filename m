@@ -1,48 +1,49 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 21 May 2015 09:25:44 +0000
-Subject: RE: [PATCH v3 2/2] pwm: Add support for R-Car PWM Timer
-Message-Id: <SG2PR06MB09191A5315EF4FE8E6F4CFECD8C10@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 12 May 2015 09:13:20 +0000
+Subject: [PATCH v2 2/3] pinctrl: sh-pfc: Enable building of r8a7793 PFC support
+Message-Id: <1431422001-530-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432176653-4452-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-	<1432176653-4452-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <CAMuHMdXeNaHWbJ1hsVymUAa3gWW3-UkTwqQCpUBSG28UCy9vbw@mail.gmail.com>
-In-Reply-To: <CAMuHMdXeNaHWbJ1hsVymUAa3gWW3-UkTwqQCpUBSG28UCy9vbw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Thierry Reding <thierry.reding@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "linux-pwm@vger.kernel.org" <linux-pwm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-SGkgR2VlcnQtc2FuLA0KDQpUaGFuayB5b3UgZm9yIHRoZSByZXZpZXchDQoNCj4gU2VudDogVGh1
-cnNkYXksIE1heSAyMSwgMjAxNSA1OjMwIFBNDQo8IHNuaXAgPg0KPiA+IC0tLSAvZGV2L251bGwN
-Cj4gPiArKysgYi9kcml2ZXJzL3B3bS9wd20tcmNhci5jDQo+IA0KPiA+ICsjZGVmaW5lIFJDQVJf
-UFdNX0NIX09GRlNFVCAgICAgMHgxMDAwDQo+IA0KPiBUaGlzIGlzIG5vIGxvbmdlciB1c2VkLCBu
-b3cgZWFjaCBwd20gaW5zdGFuY2UgaGFzIGl0cyBvd24gZGV2aWNlIG5vZGUuDQoNCk9vcHMuIEkg
-d2lsbCByZW1vdmUgaXQuDQoNCj4gPiArc3RhdGljIHZvaWQgcmNhcl9wd21fc2V0X2NvdW50ZXIo
-c3RydWN0IHJjYXJfcHdtX2NoaXAgKnJwLCBpbnQgZGl2LA0KPiA+ICsgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgIGludCBkdXR5X25zLCBpbnQgcGVyaW9kX25zKQ0KPiA+ICt7DQo+ID4g
-KyAgICAgICB1bnNpZ25lZCBsb25nIGxvbmcgb25lX2N5Y2xlLCB0bXA7ICAgICAgLyogMC4wMSBu
-YW5vc2Vjb25kcyAqLw0KPiA+ICsgICAgICAgdW5zaWduZWQgbG9uZyBjbGtfcmF0ZSA9IGNsa19n
-ZXRfcmF0ZShycC0+Y2xrKTsNCj4gPiArICAgICAgIHUzMiBjeWMsIHBoOw0KPiA+ICsNCj4gPiAr
-ICAgICAgIG9uZV9jeWNsZSA9ICh1bnNpZ25lZCBsb25nIGxvbmcpTlNFQ19QRVJfU0VDICogMTAw
-ICogKDEgPDwgZGl2KTsNCj4gPiArICAgICAgIGRvX2RpdihvbmVfY3ljbGUsIGNsa19yYXRlKTsN
-Cj4gPiArDQo+ID4gKyAgICAgICB0bXAgPSBwZXJpb2RfbnMgKiAxMDA7DQo+IA0KPiBwZXJpb2Rf
-bnMgYW5kIHRoZSBjb25zdGFudCAxMDAgYXJlIGJvdGggaW50LCBoZW5jZSB0aGUgbXVsdGlwbGlj
-YXRpb24gbWF5DQo+IHN0aWxsIG92ZXJmbG93Lg0KPiBQbGVhc2UgdXNlIGUuZy4gInRtcCA9IHBl
-cmlvZF9ucyAqIDEwMFVMTCIgaW5zdGVhZC4NCg0KVGhhbmsgeW91IGZvciB0aGUgcG9pbnQuIEkg
-d2lsbCB1c2UgaXQuDQoNCj4gPiArICAgICAgIGRvX2Rpdih0bXAsIG9uZV9jeWNsZSk7DQo+ID4g
-KyAgICAgICBjeWMgPSAoKHUzMil0bXAgPDwgUkNBUl9QV01DTlRfQ1lDMF9TSElGVCkgJiBSQ0FS
-X1BXTUNOVF9DWUMwX01BU0s7DQo+IA0KPiBJIHRoaW5rIHRoZSBjYXN0IGlzIG5vdCBuZWVkZWQu
-DQoNClRoYW5rIHlvdSBmb3IgdGhlIHBvaW50LiBJIHdpbGwgcmVtb3ZlIGl0Lg0KDQo+ID4gKw0K
-PiA+ICsgICAgICAgdG1wID0gZHV0eV9ucyAqIDEwMDsNCj4gDQo+IFNhbWUgaGVyZTogInRtcCA9
-IGR1dHlfbnMgKiAxMDBVTEw7Ii4NCg0KVGhhbmsgeW91IGFnYWluLg0KDQo+ID4gKyAgICAgICBk
-b19kaXYodG1wLCBvbmVfY3ljbGUpOw0KPiA+ICsgICAgICAgcGggPSAodTMyKXRtcCAmIFJDQVJf
-UFdNQ05UX1BIMF9NQVNLOw0KPiANCj4gSSB0aGluayB0aGUgY2FzdCBpcyBub3QgbmVlZGVkLg0K
-DQpUaGFuayB5b3UgYWdhaW4uDQoNCkJlc3QgcmVnYXJkcywNCllvc2hpaGlybyBTaGltb2RhDQoN
-Cj4gR3J7b2V0amUsZWV0aW5nfXMsDQo+IA0KPiAgICAgICAgICAgICAgICAgICAgICAgICBHZWVy
-dA0KPiANCj4gLS0NCj4gR2VlcnQgVXl0dGVyaG9ldmVuIC0tIFRoZXJlJ3MgbG90cyBvZiBMaW51
-eCBiZXlvbmQgaWEzMiAtLSBnZWVydEBsaW51eC1tNjhrLm9yZw0KPiANCj4gSW4gcGVyc29uYWwg
-Y29udmVyc2F0aW9ucyB3aXRoIHRlY2huaWNhbCBwZW9wbGUsIEkgY2FsbCBteXNlbGYgYSBoYWNr
-ZXIuIEJ1dA0KPiB3aGVuIEknbSB0YWxraW5nIHRvIGpvdXJuYWxpc3RzIEkganVzdCBzYXkgInBy
-b2dyYW1tZXIiIG9yIHNvbWV0aGluZyBsaWtlIHRoYXQuDQo+ICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgLS0gTGludXMgVG9ydmFsZHMNCg=
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/Kconfig  | 5 +++++
+ drivers/pinctrl/sh-pfc/Makefile | 1 +
+ 2 files changed, 6 insertions(+)
+
+diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
+index 8c4b3d3..5d570fd 100644
+--- a/drivers/pinctrl/sh-pfc/Kconfig
++++ b/drivers/pinctrl/sh-pfc/Kconfig
+@@ -55,6 +55,11 @@ config PINCTRL_PFC_R8A7791
+ 	depends on ARCH_R8A7791
+ 	select PINCTRL_SH_PFC
+ 
++config PINCTRL_PFC_R8A7793
++	def_bool y
++	depends on ARCH_R8A7793
++	select PINCTRL_SH_PFC
++
+ config PINCTRL_PFC_SH7203
+ 	def_bool y
+ 	depends on CPU_SUBTYPE_SH7203
+diff --git a/drivers/pinctrl/sh-pfc/Makefile b/drivers/pinctrl/sh-pfc/Makefile
+index f4074e1..11eefcb 100644
+--- a/drivers/pinctrl/sh-pfc/Makefile
++++ b/drivers/pinctrl/sh-pfc/Makefile
+@@ -10,6 +10,7 @@ obj-$(CONFIG_PINCTRL_PFC_R8A7778)	+= pfc-r8a7778.o
+ obj-$(CONFIG_PINCTRL_PFC_R8A7779)	+= pfc-r8a7779.o
+ obj-$(CONFIG_PINCTRL_PFC_R8A7790)	+= pfc-r8a7790.o
+ obj-$(CONFIG_PINCTRL_PFC_R8A7791)	+= pfc-r8a7791.o
++obj-$(CONFIG_PINCTRL_PFC_R8A7793)	+= pfc-r8a7791.o
+ obj-$(CONFIG_PINCTRL_PFC_SH7203)	+= pfc-sh7203.o
+ obj-$(CONFIG_PINCTRL_PFC_SH7264)	+= pfc-sh7264.o
+ obj-$(CONFIG_PINCTRL_PFC_SH7269)	+= pfc-sh7269.o
+-- 
+2.3.5
+
