@@ -1,120 +1,98 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 28 May 2015 18:53:30 +0000
-Subject: [PATCH v2 05/14] clk: shmobile: rz: Add CPG Clock Domain support
-Message-Id: <1432839219-475-6-git-send-email-geert+renesas@glider.be>
+Date: Tue, 12 May 2015 17:37:09 +0000
+Subject: [PATCH/RFC 06/12] ARM: shmobile: koelsch dts: Add overlay for HSCIF2 on EXIO A
+Message-Id: <1431452235-11692-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432839219-475-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432839219-475-1-git-send-email-geert+renesas@glider.be>
+References: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1431452235-11692-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Pantelis Antoniou <pantelis.antoniou-OWPKS81ov/FWk0Htik3J/w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-Add Clock Domain support to the RZ Clock Pulse Generator (CPG) driver
-using the generic PM Domain.  This allows to power-manage the module
-clocks of SoC devices that are part of the CPG Clock Domain using
-Runtime PM, or for system suspend/resume.
+Provide access to HSCIF2 on EXIO Connector A.
 
-SoC devices that are part of the CPG Clock Domain and can be
-power-managed through an MSTP clock should be tagged in DT with a proper
-"power-domains" property.
+FIXME Document "ctsrts" DT property.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v2:
-  - New.
----
- .../bindings/clock/renesas,rz-cpg-clocks.txt       | 29 ++++++++++++++++++++--
- arch/arm/mach-shmobile/Kconfig                     |  1 +
- drivers/clk/shmobile/clk-rz.c                      |  3 +++
- 3 files changed, 31 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/Makefile                         |  1 +
+ .../boot/dts/r8a7791-koelsch-exio-a-hscif2.dtso    | 53 ++++++++++++++++++++++
+ 2 files changed, 54 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a7791-koelsch-exio-a-hscif2.dtso
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
-index 98a257492522cd45..c5666288e409ebd2 100644
---- a/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
-@@ -2,6 +2,8 @@
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index d800690e3aaf7bab..d5d2386694d57391 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -672,6 +672,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	r8a7740-armadillo800eva-con15-scifa0.dtbo \
+ 	r8a7740-armadillo800eva-con15-scifb.dtbo \
+ 	r8a7791-koelsch-exio-a-hscif1.dtbo \
++	r8a7791-koelsch-exio-a-hscif2.dtbo \
+ endif
+ endif
  
- The CPG generates core clocks for the RZ SoCs. It includes the PLL, variable
- CPU and GPU clocks, and several fixed ratio dividers.
-+The CPG also provides a Clock Domain for SoC devices, in combination with the
-+CPG Module Stop (MSTP) Clocks.
- 
- Required Properties:
- 
-@@ -14,10 +16,18 @@ Required Properties:
-   - #clock-cells: Must be 1
-   - clock-output-names: The names of the clocks. Supported clocks are "pll",
-     "i", and "g"
-+  - #power-domain-cells: Must be 0
- 
-+SoC devices that are part of the CPG Clock Domain and can be power-managed
-+through an MSTP clock should refer to the CPG device node in their
-+"power-domains" property, as documented by the generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
- 
--Example
---------
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch-exio-a-hscif2.dtso b/arch/arm/boot/dts/r8a7791-koelsch-exio-a-hscif2.dtso
+new file mode 100644
+index 0000000000000000..7570096b0377fc89
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a7791-koelsch-exio-a-hscif2.dtso
+@@ -0,0 +1,53 @@
++/*
++ * Device Tree Overlay for HSCIF2 on r8a7791/Koelsch EXIO Connector A
++ *
++ * Copyright (C) 2015 Glider bvba
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ *
++ * Pinout:
++ *   - RXD = EXIO Connector A pin 66
++ *   - TXD = EXIO Connector A pin 62
++ *   - CTS = EXIO Connector A pin 60
++ *   - RTS = EXIO Connector A pin 65
++ */
 +
-+Examples
-+--------
++/dts-v1/;
++/plugin/;
 +
-+  - CPG device node:
- 
- 	cpg_clocks: cpg_clocks@fcfe0000 {
- 		#clock-cells = <1>;
-@@ -26,4 +36,19 @@ Example
- 		reg = <0xfcfe0000 0x18>;
- 		clocks = <&extal_clk>, <&usb_x1_clk>;
- 		clock-output-names = "pll", "i", "g";
-+		#power-domain-cells = <0>;
++/ {
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			/* serial17 = &hscif2; */
++			serial17 = "/serial@e62d0000";
++		};
 +	};
 +
++	fragment@1 {
++		target = <&pfc>;
 +
-+  - CPG Clock Domain member device node:
++		__overlay__ {
++			hscif2_pins: serial17 {
++				renesas,groups = "hscif2_data_b",
++						 "hscif2_ctrl_b";
++				renesas,function = "hscif2";
++			};
++		};
++	};
 +
-+	mtu2: timer@fcff0000 {
-+		compatible = "renesas,mtu2-r7s72100", "renesas,mtu2";
-+		reg = <0xfcff0000 0x400>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "tgi0a";
-+		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
-+		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
- 	};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index e14fa5e87475a0d1..34eac88a98896b63 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -51,6 +51,7 @@ config ARCH_EMEV2
- 
- config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
-+	select PM_GENERIC_DOMAINS if PM
- 	select SYS_SUPPORTS_SH_MTU2
- 
- config ARCH_R8A73A4
-diff --git a/drivers/clk/shmobile/clk-rz.c b/drivers/clk/shmobile/clk-rz.c
-index 7e68e86309625c9e..9766e3cb595fd257 100644
---- a/drivers/clk/shmobile/clk-rz.c
-+++ b/drivers/clk/shmobile/clk-rz.c
-@@ -10,6 +10,7 @@
-  */
- 
- #include <linux/clk-provider.h>
-+#include <linux/clk/shmobile.h>
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/of.h>
-@@ -99,5 +100,7 @@ static void __init rz_cpg_clocks_init(struct device_node *np)
- 	}
- 
- 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++	fragment@2 {
++		target = <&hscif2>;
 +
-+	cpg_mstp_add_clk_domain(np);
- }
- CLK_OF_DECLARE(rz_cpg_clks, "renesas,rz-cpg-clocks", rz_cpg_clocks_init);
++		__overlay__ {
++			pinctrl-0 = <&hscif2_pins>;
++			pinctrl-names = "default";
++
++			ctsrts;
++			status = "okay";
++		};
++	};
++};
 -- 
 1.9.1
 
