@@ -1,28 +1,54 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 21 May 2015 16:07:13 +0000
-Subject: Re: [PATCH v3 04/11] ARM: shmobile: r8a7793: add SMP support
-Message-Id: <CAO3366zGP3yRDpGE0iND3mSvrHKr6ZcZ1NGu9Bnot+0XkN6BGg@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 12 May 2015 17:37:05 +0000
+Subject: [PATCH/RFC 02/12] ARM: shmobile: koelsch dts: Add aliases for all serial ports
+Message-Id: <1431452235-11692-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432205293-9488-5-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1432205293-9488-5-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1431452235-11692-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Pantelis Antoniou <pantelis.antoniou-OWPKS81ov/FWk0Htik3J/w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-On Thu, May 21, 2015 at 2:55 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> Last time you replied:
->
->> > The resource is larger on the r8a7791 because it has more cores.
->
-> but that's not correct: both r8a7791 and r8a7793 have 2 CA15 cores.
+Add aliases for the remaining serial ports that don't already have an
+alias.
 
-That is obviously correct, and as much as I try to reconstruct my
-train of thought there, I can't come up with a reasonable
-explanation...
+This is a temporary workaround, until of_alias_add() is called when
+loading a device tree overlay that adds an alias.
 
-Anyway, I'll fix it.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-CU
-Uli
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index e9c24036f00027c9..c1cd047173b6aed7 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -50,6 +50,22 @@
+ 	aliases {
+ 		serial0 = &scif0;
+ 		serial1 = &scif1;
++		serial2 = &scif2;
++		serial3 = &scif3;
++		serial4 = &scif4;
++		serial5 = &scif5;
++		serial6 = &scifa0;
++		serial7 = &scifa1;
++		serial8 = &scifa2;
++		serial9 = &scifa3;
++		serial10 = &scifa4;
++		serial11 = &scifa5;
++		serial12 = &scifb0;
++		serial13 = &scifb1;
++		serial14 = &scifb2;
++		serial15 = &hscif0;
++		serial16 = &hscif1;
++		serial17 = &hscif2;
+ 	};
+ 
+ 	chosen {
+-- 
+1.9.1
+
