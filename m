@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 05 May 2015 09:36:41 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 12 May 2015 06:50:01 +0000
 Subject: Re: [PATCH v2 10/15] ARM: shmobile: r8a7793: add SMP support
-Message-Id: <CAMuHMdUcaEiSMT0-nrUy-95_cSgW-qTdknic-nMHYh5A6zFSOA@mail.gmail.com>
+Message-Id: <1543071.BYqSDIJCJa@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1430403544-26742-11-git-send-email-ulrich.hecht+renesas@gmail.com>
 In-Reply-To: <1430403544-26742-11-git-send-email-ulrich.hecht+renesas@gmail.com>
@@ -10,46 +10,56 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Apr 30, 2015 at 4:23 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
+Hi Ulrich,
+
+Thank you for the patch.
+
+On Thursday 30 April 2015 16:18:59 Ulrich Hecht wrote:
 > Enables SMP support, similar to other R-Car Gen2 SoCs.
->
+> 
 > Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 > [uli: moved reset handling to PM, minor adjustments]
 > Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> ---
+>  arch/arm/mach-shmobile/Makefile        |  1 +
+>  arch/arm/mach-shmobile/r8a7793.h       |  6 +++
+>  arch/arm/mach-shmobile/setup-r8a7793.c |  2 +
+>  arch/arm/mach-shmobile/smp-r8a7793.c   | 67 +++++++++++++++++++++++++++++++
+>  4 files changed, 76 insertions(+)
+>  create mode 100644 arch/arm/mach-shmobile/r8a7793.h
+>  create mode 100644 arch/arm/mach-shmobile/smp-r8a7793.c
 
-> --- /dev/null
-> +++ b/arch/arm/mach-shmobile/smp-r8a7793.c
+[snip]
 
-> +static void __init r8a7793_smp_prepare_cpus(unsigned int max_cpus)
-> +{
-> +       void __iomem *p;
-> +       u32 val;
-> +
-> +       /* let APMU code install data related to shmobile_boot_vector */
-> +       shmobile_smp_apmu_prepare_cpus(max_cpus,
-> +                                      r8a7793_apmu_config,
-> +                                      ARRAY_SIZE(r8a7793_apmu_config));
-> +
-> +       /* setup for debug mode */
-> +       if (rcar_gen2_read_mode_pins() & MD(21)) {
-> +               p = ioremap_nocache(APMU, 0x2000);
-> +               val = readl_relaxed(p + CA15DBGRCR);
-> +               writel_relaxed((val | 0x01f80000), p + CA15DBGRCR);
-> +               iounmap(p);
-> +       }
+> diff --git a/arch/arm/mach-shmobile/setup-r8a7793.c
+> b/arch/arm/mach-shmobile/setup-r8a7793.c index 1d2825c..d20cf2a 100644
+> --- a/arch/arm/mach-shmobile/setup-r8a7793.c
+> +++ b/arch/arm/mach-shmobile/setup-r8a7793.c
+> @@ -17,6 +17,7 @@
+>  #include <asm/mach/arch.h>
+> 
+>  #include "common.h"
+> +#include "r8a7793.h"
+>  #include "rcar-gen2.h"
+> 
+>  static const char *r8a7793_boards_compat_dt[] __initconst = {
+> @@ -25,6 +26,7 @@ static const char *r8a7793_boards_compat_dt[] __initconst
+> = { };
+> 
+>  DT_MACHINE_START(R8A7793_DT, "Generic R8A7793 (Flattened Device Tree)")
+> +	.smp		= smp_ops(r8a7793_smp_ops),
 
-No call to rcar_gen2_pm_init()?
+As mentioned in my review of v1, ARM has a CPU_METHOD_OF_DECLARE() macro which 
+seems to be preferred over setting the machine definition .smp field directly. 
+Using it would make it easier to merge the machine definitions for the Gen2 
+SoCs.
 
-> +}
+>  	.init_early	= shmobile_init_delay,
+>  	.init_time	= rcar_gen2_timer_init,
+>  	.init_late	= shmobile_init_late,
 
-Gr{oetje,eeting}s,
+-- 
+Regards,
 
-                        Geert
+Laurent Pinchart
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
