@@ -1,107 +1,103 @@
-From: Chen Gang <xili_gchen_5257@hotmail.com>
-Date: Sat, 09 May 2015 21:02:55 +0000
-Subject: [PATCH] sh: Wire up missing syscalls
-Message-Id: <BLU436-SMTP93208A4E06C8B5CC68CA1CB9DD0@phx.gbl>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 12 May 2015 17:37:13 +0000
+Subject: [PATCH/RFC 10/12] ARM: shmobile: koelsch dts: Add overlay for SCIF5 on EXIO C
+Message-Id: <1431452235-11692-11-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: linux-sh@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Pantelis Antoniou <pantelis.antoniou@konsulko.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The related warnings:
+Provide access to SCIF5 on EXIO Connector C.
 
-    CALL    scripts/checksyscalls.sh
-  <stdin>:1229:2: warning: #warning syscall sched_setattr not implemented [-Wcpp]
-  <stdin>:1232:2: warning: #warning syscall sched_getattr not implemented [-Wcpp]
-  <stdin>:1235:2: warning: #warning syscall renameat2 not implemented [-Wcpp]
-  <stdin>:1238:2: warning: #warning syscall seccomp not implemented [-Wcpp]
-  <stdin>:1241:2: warning: #warning syscall getrandom not implemented [-Wcpp]
-  <stdin>:1244:2: warning: #warning syscall memfd_create not implemented [-Wcpp]
-  <stdin>:1247:2: warning: #warning syscall bpf not implemented [-Wcpp]
-  <stdin>:1250:2: warning: #warning syscall execveat not implemented [-Wcpp]
-
-Signed-off-by: Chen Gang <gang.chen.5i5j@gmail.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/include/uapi/asm/unistd_32.h | 10 +++++++++-
- arch/sh/include/uapi/asm/unistd_64.h | 10 +++++++++-
- arch/sh/kernel/syscalls_32.S         |  8 ++++++++
- arch/sh/kernel/syscalls_64.S         |  8 ++++++++
- 4 files changed, 34 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/Makefile                         |  1 +
+ .../arm/boot/dts/r8a7791-koelsch-exio-c-scif5.dtso | 60 ++++++++++++++++++++++
+ 2 files changed, 61 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a7791-koelsch-exio-c-scif5.dtso
 
-diff --git a/arch/sh/include/uapi/asm/unistd_32.h b/arch/sh/include/uapi/asm/unistd_32.h
-index d13a1d6..be5052e 100644
---- a/arch/sh/include/uapi/asm/unistd_32.h
-+++ b/arch/sh/include/uapi/asm/unistd_32.h
-@@ -380,7 +380,15 @@
- #define __NR_process_vm_writev	366
- #define __NR_kcmp		367
- #define __NR_finit_module	368
-+#define __NR_sched_setattr	369
-+#define __NR_sched_getattr	370
-+#define __NR_renameat2		371
-+#define __NR_seccomp		372
-+#define __NR_getrandom		373
-+#define __NR_memfd_create	374
-+#define __NR_bpf		375
-+#define __NR_execveat		376
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index ec2abfe19329b791..655a967b0566a3d1 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -676,6 +676,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	r8a7791-koelsch-exio-a-scifb0.dtbo \
+ 	r8a7791-koelsch-exio-a-scifb1.dtbo \
+ 	r8a7791-koelsch-exio-c-scif3.dtbo \
++	r8a7791-koelsch-exio-c-scif5.dtbo \
+ endif
+ endif
  
--#define NR_syscalls 369
-+#define NR_syscalls 377
- 
- #endif /* __ASM_SH_UNISTD_32_H */
-diff --git a/arch/sh/include/uapi/asm/unistd_64.h b/arch/sh/include/uapi/asm/unistd_64.h
-index e6820c8..decc1b8 100644
---- a/arch/sh/include/uapi/asm/unistd_64.h
-+++ b/arch/sh/include/uapi/asm/unistd_64.h
-@@ -400,7 +400,15 @@
- #define __NR_process_vm_writev	377
- #define __NR_kcmp		378
- #define __NR_finit_module	379
-+#define __NR_sched_setattr	380
-+#define __NR_sched_getattr	381
-+#define __NR_renameat2		382
-+#define __NR_seccomp		383
-+#define __NR_getrandom		384
-+#define __NR_memfd_create	385
-+#define __NR_bpf		386
-+#define __NR_execveat		387
- 
--#define NR_syscalls 380
-+#define NR_syscalls 388
- 
- #endif /* __ASM_SH_UNISTD_64_H */
-diff --git a/arch/sh/kernel/syscalls_32.S b/arch/sh/kernel/syscalls_32.S
-index 734234b..39ddd5c 100644
---- a/arch/sh/kernel/syscalls_32.S
-+++ b/arch/sh/kernel/syscalls_32.S
-@@ -386,3 +386,11 @@ ENTRY(sys_call_table)
- 	.long sys_process_vm_writev
- 	.long sys_kcmp
- 	.long sys_finit_module
-+	.long sys_sched_setattr
-+	.long sys_sched_getattr		/* 370 */
-+	.long sys_renameat2
-+	.long sys_seccomp
-+	.long sys_getrandom
-+	.long sys_memfd_create
-+	.long sys_bpf			/* 375 */
-+	.long sys_execveat
-diff --git a/arch/sh/kernel/syscalls_64.S b/arch/sh/kernel/syscalls_64.S
-index 579fcb9..793d140 100644
---- a/arch/sh/kernel/syscalls_64.S
-+++ b/arch/sh/kernel/syscalls_64.S
-@@ -406,3 +406,11 @@ sys_call_table:
- 	.long sys_process_vm_writev
- 	.long sys_kcmp
- 	.long sys_finit_module
-+	.long sys_sched_setattr		/* 380 */
-+	.long sys_sched_getattr
-+	.long sys_renameat2
-+	.long sys_seccomp
-+	.long sys_getrandom
-+	.long sys_memfd_create		/* 385 */
-+	.long sys_bpf
-+	.long sys_execveat
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scif5.dtso b/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scif5.dtso
+new file mode 100644
+index 0000000000000000..37ec7006e1174a37
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scif5.dtso
+@@ -0,0 +1,60 @@
++/*
++ * Device Tree Overlay for SCIF5 on r8a7791/Koelsch EXIO Connector C
++ *
++ * Copyright (C) 2015 Glider bvba
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ *
++ * Pinout:
++ *   - RXD = EXIO Connector C pin 39
++ *   - TXD = EXIO Connector C pin 37
++ *
++ * Notes:
++ *   - As these pins are shared with SDHI2, the latter is disabled first.
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			/* serial5 = &scif5; */
++			serial5 = "/serial@e6ee8000";
++		};
++	};
++
++	fragment@1 {
++		target = <&pfc>;
++
++		__overlay__ {
++			scif5_pins: serial5 {
++				renesas,groups = "scif5_data_b";
++				renesas,function = "scif5";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&sdhi2>;
++
++		__overlay__ {
++			status = "disabled";
++		};
++	};
++
++	fragment@3 {
++		target = <&scif5>;
++
++		__overlay__ {
++			pinctrl-0 = <&scif5_pins>;
++			pinctrl-names = "default";
++
++			status = "okay";
++		};
++	};
++};
 -- 
-1.9.3
+1.9.1
+
