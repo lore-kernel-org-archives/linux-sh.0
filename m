@@ -1,32 +1,41 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 12 May 2015 00:09:18 +0000
-Subject: Re: [alsa-devel] [PATCH 2/5] ASoC: rsnd: make sure it uses lock when it calls rsnd_dai_call
-Message-Id: <87617yd5f8.wl%kuninori.morimoto.gx@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 12 May 2015 09:13:21 +0000
+Subject: [PATCH v2 3/3] pinctrl: sh-pfc: Add renesas,pfc-r8a7793 to binding documentation
+Message-Id: <1431422001-530-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8761948j4f.wl%kuninori.morimoto.gx@renesas.com>
-	<8738488j2k.wl%kuninori.morimoto.gx@renesas.com>
-	<alpine.DEB.2.10.1505041134140.4711@ayla.of.borg>
-	<87iobz506i.wl%kuninori.morimoto.gx@renesas.com>
-	<87lhgv33mp.wl%kuninori.morimoto.gx@renesas.com>
-	<20150511145743.GD3458@sirena.org.uk>
-In-Reply-To: <20150511145743.GD3458@sirena.org.uk>
+References: <1431422001-530-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1431422001-530-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-ALSA <alsa-devel@alsa-project.org>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, linux-sh@vger.kernel.org, Liam Girdwood <lgirdwood@gmail.com>, TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, Simon <horms@verge.net.au>, Atsushi Tamaki <atsushi.tamaki.ks@renesas.com>
+To: geert@linux-m68k.org, horms@verge.net.au, linux-sh@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com, linus.walleij@linaro.org
+Cc: magnus.damm@gmail.com, kuninori.morimoto.gx@renesas.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, devicetree@vger.kernel.org
 
+Also renames "R-Car M2" to "R-Car M2-W" to avoid confusion.
 
-Hi Mark
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: devicetree@vger.kernel.org
+---
+ Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-> > Mark, is it possible to revert this patch ?
-> 
-> > e9c390df671fadc829550935ffb6b23549f26ded
-> > (ASoC: rsnd: make sure it uses lock when it calls rsnd_dai_call)
-> 
-> Sure, please send a patch for that with a changelog explaining why the
-> revert is being done.
-
-OK, I will send it.
-
+diff --git a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+index bfe72ec..6bcf851 100644
+--- a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
++++ b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+@@ -16,7 +16,8 @@ Required Properties:
+     - "renesas,pfc-r8a7778": for R8A7778 (R-Mobile M1) compatible pin-controller.
+     - "renesas,pfc-r8a7779": for R8A7779 (R-Car H1) compatible pin-controller.
+     - "renesas,pfc-r8a7790": for R8A7790 (R-Car H2) compatible pin-controller.
+-    - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2) compatible pin-controller.
++    - "renesas,pfc-r8a7791": for R8A7791 (R-Car M2-W) compatible pin-controller.
++    - "renesas,pfc-r8a7793": for R8A7793 (R-Car M2-N) compatible pin-controller.
+     - "renesas,pfc-sh73a0": for SH73A0 (SH-Mobile AG5) compatible pin-controller.
+ 
+   - reg: Base address and length of each memory resource used by the pin
+-- 
+2.3.5
 
