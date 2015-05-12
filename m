@@ -1,38 +1,103 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 14 May 2015 01:06:39 +0000
-Subject: [PATCH 10/31] ARM: shmobile: r8a7778 dtsi: Use generic names for device nodes
-Message-Id: <b38150fae0164d363c852d6b782ab7083697c6d2.1431565427.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 12 May 2015 17:37:15 +0000
+Subject: [PATCH/RFC 12/12] ARM: shmobile: koelsch dts: Add overlay for SCIFA5(c) on EXIO C
+Message-Id: <1431452235-11692-13-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1431565427.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
+References: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Pantelis Antoniou <pantelis.antoniou@konsulko.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-irqpin -> interrupt-controller
+Provide access to SCIFA5(c) on EXIO Connector C.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/Makefile                         |  1 +
+ .../boot/dts/r8a7791-koelsch-exio-c-scifa5-c.dtso  | 60 ++++++++++++++++++++++
+ 2 files changed, 61 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a7791-koelsch-exio-c-scifa5-c.dtso
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 868f97309533..7ce9f5fd5865 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -68,7 +68,7 @@
- 	};
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index a5cf8a6daf12ea1a..096d4939991b33c5 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -678,6 +678,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	r8a7791-koelsch-exio-c-scif3.dtbo \
+ 	r8a7791-koelsch-exio-c-scif5.dtbo \
+ 	r8a7791-koelsch-exio-c-scifa5-b.dtbo \
++	r8a7791-koelsch-exio-c-scifa5-c.dtbo
+ endif
+ endif
  
- 	/* irqpin: IRQ0 - IRQ3 */
--	irqpin: irqpin@fe78001c {
-+	irqpin: interrupt-controller@fe78001c {
- 		compatible = "renesas,intc-irqpin-r8a7778", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scifa5-c.dtso b/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scifa5-c.dtso
+new file mode 100644
+index 0000000000000000..062cf6740207ddcf
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scifa5-c.dtso
+@@ -0,0 +1,60 @@
++/*
++ * Device Tree Overlay for SCIFA5(c) on r8a7791/Koelsch EXIO Connector C
++ *
++ * Copyright (C) 2015 Glider bvba
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ *
++ * Pinout:
++ *   - RXD = EXIO Connector C pin 39
++ *   - TXD = EXIO Connector C pin 37
++ *
++ * Notes:
++ *   - As these pins are shared with SDHI2, the latter is disabled first.
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			/* serial11 = &scifa5; */
++			serial11 = "/serial@e6c80000";
++		};
++	};
++
++	fragment@1 {
++		target = <&pfc>;
++
++		__overlay__ {
++			scifa5_pins_c: serial11_c {
++				renesas,groups = "scifa5_data_c";
++				renesas,function = "scifa5";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&sdhi2>;
++
++		__overlay__ {
++			status = "disabled";
++		};
++	};
++
++	fragment@3 {
++		target = <&scifa5>;
++
++		__overlay__ {
++			pinctrl-0 = <&scifa5_pins_c>;
++			pinctrl-names = "default";
++
++			status = "okay";
++		};
++	};
++};
 -- 
-2.1.4
+1.9.1
 
