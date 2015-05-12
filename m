@@ -1,95 +1,103 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 13 May 2015 08:10:01 +0000
-Subject: Re: [PATCH/RFC v6 5/7] PM / Domains: Add helper variable np = dev->of_node
-Message-Id: <CAPDyKFoTe8hk1-T9_Tz5HdUcUbitR7nuuawB9iG16yCYiycKRA@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 12 May 2015 17:37:12 +0000
+Subject: [PATCH/RFC 09/12] ARM: shmobile: koelsch dts: Add overlay for SCIF3 on EXIO C
+Message-Id: <1431452235-11692-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
-	<1430138622-14029-6-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430138622-14029-6-git-send-email-geert+renesas@glider.be>
+References: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Kevin Hilman <khilman@kernel.org>, Axel Haslam <ahaslam@baylibre.com>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Pantelis Antoniou <pantelis.antoniou@konsulko.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 27 April 2015 at 14:43, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
-> Just a cleanup, no functional changes.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Acked-by: Kevin Hilman <khilman@linaro.org>
+Provide access to SCIF3 on EXIO Connector C.
 
-Acked-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/Makefile                         |  1 +
+ .../arm/boot/dts/r8a7791-koelsch-exio-c-scif3.dtso | 60 ++++++++++++++++++++++
+ 2 files changed, 61 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a7791-koelsch-exio-c-scif3.dtso
 
-> ---
-> v6:
->   - Rebased on top of v4.1-rc1 for new RFC,
->
-> v4:
->   - Add more explanations,
->   - Add Acked-by,
->
-> v3:
->   - No changes,
->
-> v2:
->   - New.
-> ---
->  drivers/base/power/domain.c | 12 ++++++------
->  1 file changed, 6 insertions(+), 6 deletions(-)
->
-> diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
-> index d1531602ae64528d..d20caa2c92b57edf 100644
-> --- a/drivers/base/power/domain.c
-> +++ b/drivers/base/power/domain.c
-> @@ -2190,17 +2190,18 @@ static void genpd_dev_pm_sync(struct device *dev)
->   */
->  int genpd_dev_pm_attach(struct device *dev)
->  {
-> +       struct device_node *np = dev->of_node;
->         struct of_phandle_args pd_args;
->         struct generic_pm_domain *pd;
->         int ret;
->
-> -       if (!dev->of_node)
-> +       if (!np)
->                 return -ENODEV;
->
->         if (dev->pm_domain)
->                 return -EEXIST;
->
-> -       ret = of_parse_phandle_with_args(dev->of_node, "power-domains",
-> +       ret = of_parse_phandle_with_args(np, "power-domains",
->                                         "#power-domain-cells", 0, &pd_args);
->         if (ret < 0) {
->                 if (ret != -ENOENT)
-> @@ -2211,8 +2212,7 @@ int genpd_dev_pm_attach(struct device *dev)
->                  * (for backwards compatibility of DT ABI)
->                  */
->                 pd_args.args_count = 0;
-> -               pd_args.np = of_parse_phandle(dev->of_node,
-> -                                               "samsung,power-domain", 0);
-> +               pd_args.np = of_parse_phandle(np, "samsung,power-domain", 0);
->                 if (!pd_args.np)
->                         return -ENOENT;
->         }
-> @@ -2221,7 +2221,7 @@ int genpd_dev_pm_attach(struct device *dev)
->         if (IS_ERR(pd)) {
->                 dev_dbg(dev, "%s() failed to find PM domain: %ld\n",
->                         __func__, PTR_ERR(pd));
-> -               of_node_put(dev->of_node);
-> +               of_node_put(np);
->                 return PTR_ERR(pd);
->         }
->
-> @@ -2237,7 +2237,7 @@ int genpd_dev_pm_attach(struct device *dev)
->         if (ret < 0) {
->                 dev_err(dev, "failed to add to PM domain %s: %d",
->                         pd->name, ret);
-> -               of_node_put(dev->of_node);
-> +               of_node_put(np);
->                 return ret;
->         }
->
-> --
-> 1.9.1
->
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 19e36347aeb302b1..ec2abfe19329b791 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -675,6 +675,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	r8a7791-koelsch-exio-a-hscif2.dtbo \
+ 	r8a7791-koelsch-exio-a-scifb0.dtbo \
+ 	r8a7791-koelsch-exio-a-scifb1.dtbo \
++	r8a7791-koelsch-exio-c-scif3.dtbo \
+ endif
+ endif
+ 
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scif3.dtso b/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scif3.dtso
+new file mode 100644
+index 0000000000000000..3cb5fd138c0997c6
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scif3.dtso
+@@ -0,0 +1,60 @@
++/*
++ * Device Tree Overlay for SCIF3 on r8a7791/Koelsch EXIO Connector C
++ *
++ * Copyright (C) 2015 Glider bvba
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ *
++ * Pinout:
++ *   - RXD = EXIO Connector C pin 40
++ *   - TXD = EXIO Connector C pin 38
++ *
++ * Notes:
++ *   - As these pins are shared with SDHI0, the latter is disabled first.
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	fragment@0 {
++		target-path = "/aliases";
++
++		__overlay__ {
++			/* serial3 = &scif3; */
++			serial3 = "/serial@e6ea8000";
++		};
++	};
++
++	fragment@1 {
++		target = <&pfc>;
++
++		__overlay__ {
++			scif3_pins: serial3 {
++				renesas,groups = "scif3_data_c";
++				renesas,function = "scif3";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&sdhi0>;
++
++		__overlay__ {
++			status = "disabled";
++		};
++	};
++
++	fragment@3 {
++		target = <&scif3>;
++
++		__overlay__ {
++			pinctrl-0 = <&scif3_pins>;
++			pinctrl-names = "default";
++
++			status = "okay";
++		};
++	};
++};
+-- 
+1.9.1
+
