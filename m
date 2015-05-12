@@ -1,49 +1,23 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Tue, 12 May 2015 09:13:20 +0000
-Subject: [PATCH v2 2/3] pinctrl: sh-pfc: Enable building of r8a7793 PFC support
-Message-Id: <1431422001-530-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 12 May 2015 10:25:51 +0000
+Subject: Re: [PATCH v2 2/3] pinctrl: sh-pfc: Enable building of r8a7793 PFC support
+Message-Id: <CACRpkdY+sNrSyiKM6yVAZ1AbMRSX_6dSjgnX8cB-NqVv7VbweQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1431422001-530-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1431422001-530-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
- drivers/pinctrl/sh-pfc/Kconfig  | 5 +++++
- drivers/pinctrl/sh-pfc/Makefile | 1 +
- 2 files changed, 6 insertions(+)
+On Tue, May 12, 2015 at 11:13 AM, Ulrich Hecht
+<ulrich.hecht+renesas@gmail.com> wrote:
 
-diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
-index 8c4b3d3..5d570fd 100644
---- a/drivers/pinctrl/sh-pfc/Kconfig
-+++ b/drivers/pinctrl/sh-pfc/Kconfig
-@@ -55,6 +55,11 @@ config PINCTRL_PFC_R8A7791
- 	depends on ARCH_R8A7791
- 	select PINCTRL_SH_PFC
- 
-+config PINCTRL_PFC_R8A7793
-+	def_bool y
-+	depends on ARCH_R8A7793
-+	select PINCTRL_SH_PFC
-+
- config PINCTRL_PFC_SH7203
- 	def_bool y
- 	depends on CPU_SUBTYPE_SH7203
-diff --git a/drivers/pinctrl/sh-pfc/Makefile b/drivers/pinctrl/sh-pfc/Makefile
-index f4074e1..11eefcb 100644
---- a/drivers/pinctrl/sh-pfc/Makefile
-+++ b/drivers/pinctrl/sh-pfc/Makefile
-@@ -10,6 +10,7 @@ obj-$(CONFIG_PINCTRL_PFC_R8A7778)	+= pfc-r8a7778.o
- obj-$(CONFIG_PINCTRL_PFC_R8A7779)	+= pfc-r8a7779.o
- obj-$(CONFIG_PINCTRL_PFC_R8A7790)	+= pfc-r8a7790.o
- obj-$(CONFIG_PINCTRL_PFC_R8A7791)	+= pfc-r8a7791.o
-+obj-$(CONFIG_PINCTRL_PFC_R8A7793)	+= pfc-r8a7791.o
- obj-$(CONFIG_PINCTRL_PFC_SH7203)	+= pfc-sh7203.o
- obj-$(CONFIG_PINCTRL_PFC_SH7264)	+= pfc-sh7264.o
- obj-$(CONFIG_PINCTRL_PFC_SH7269)	+= pfc-sh7269.o
--- 
-2.3.5
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
+Patch applied.
+
+Yours,
+Linus Walleij
