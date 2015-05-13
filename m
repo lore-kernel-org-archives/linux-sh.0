@@ -1,103 +1,68 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 12 May 2015 17:37:14 +0000
-Subject: [PATCH/RFC 11/12] ARM: shmobile: koelsch dts: Add overlay for SCIFA5(b) on EXIO C
-Message-Id: <1431452235-11692-12-git-send-email-geert+renesas@glider.be>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Wed, 13 May 2015 08:44:48 +0000
+Subject: Re: [PATCH/RFC v6 0/7] PM / Domains: DT power-on/off and QoS device latencies
+Message-Id: <CAPDyKFqGEuzqb7NC-OJzHYeAuEfaGukgn=in-tbC+Oz8Uo4vgA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
+References: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: Pantelis Antoniou <pantelis.antoniou@konsulko.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Kevin Hilman <khilman@kernel.org>, Axel Haslam <ahaslam@baylibre.com>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-Provide access to SCIFA5(b) on EXIO Connector C.
+On 27 April 2015 at 14:43, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
+>         Hi all,
+>
+> This patch series is an RFC to add (1) PM Domain power-on/off latencies
+> and (2) QoS device latencies to DT.
+>
+> To provide a good quality of service, the PM subsystem suspends PM
+> Domains and devices only if this doesn't break QoS constraints.  While
+> the PM subsystem performs measurements of the various latencies
+> involved, and adapts automatically according to these measurements, it's
+> still beneficial to provide initial values for these latencies.
+> Currently these initial values, which are properties of the hardware,
+> can only be specified from C code. This RFC adds DT support for
+> specifying them.
+>
+> All of these patches have been sent before (change logs are available in
+> the individual patches). I'm resending them upon request from Kevin
+> Hilman, and synced them all to the same version number (v6).
+>
+>   - Patch 1 adds DT bindings for PM Domain power-on/off latencies,
+>   - Patches 2 and 3 update the DT bindings and support code for the
+>     Renesas R-Mobile system controller, providing a sample
+>     implementation,
+>   - Patch 4 adds DT bindings for QoS device latencies,
+>   - Patches 5 and 6 implement retrieving the QoS device latencies in the
+>     genpd code,
+>   - Patch 7 updates the DT bindings for the Renesas R-Mobile system
+>     controller, adding an example.
+>
+> Compared to previous submissions, I've left out the (preliminary)
+> patches adding the actual latency values to the .dtsi files, as they
+> just used a single default value taken from the legacy code[*].
+>
+> In the mean time, support for PM Domains with multiple states has been
+> proposed, cfr. "[RFC v5 0/8]  genpd multiple states v5"
+> (http://marc.info/?l=linux-pm&m2989694214237&w=2).
+> If this is accepted, I think we have to rethink how to specify PM Domain
+> latencies (and be happy we didn't have the DT part cast in stone yet
+> ;-), as they won't be limited to power-on/off latencies anymore.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/Makefile                         |  1 +
- .../boot/dts/r8a7791-koelsch-exio-c-scifa5-b.dtso  | 60 ++++++++++++++++++++++
- 2 files changed, 61 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7791-koelsch-exio-c-scifa5-b.dtso
+In regard to the above, how about posting patch 4 and onwards separately?
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 655a967b0566a3d1..a5cf8a6daf12ea1a 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -677,6 +677,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
- 	r8a7791-koelsch-exio-a-scifb1.dtbo \
- 	r8a7791-koelsch-exio-c-scif3.dtbo \
- 	r8a7791-koelsch-exio-c-scif5.dtbo \
-+	r8a7791-koelsch-exio-c-scifa5-b.dtbo \
- endif
- endif
- 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scifa5-b.dtso b/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scifa5-b.dtso
-new file mode 100644
-index 0000000000000000..f8b7ea5ffc4b7247
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scifa5-b.dtso
-@@ -0,0 +1,60 @@
-+/*
-+ * Device Tree Overlay for SCIFA5(b) on r8a7791/Koelsch EXIO Connector C
-+ *
-+ * Copyright (C) 2015 Glider bvba
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ *
-+ * Pinout:
-+ *   - RXD = EXIO Connector C pin 40
-+ *   - TXD = EXIO Connector C pin 38
-+ *
-+ * Notes:
-+ *   - As these pins are shared with SDHI0, the latter is disabled first.
-+ */
-+
-+/dts-v1/;
-+/plugin/;
-+
-+/ {
-+	fragment@0 {
-+		target-path = "/aliases";
-+
-+		__overlay__ {
-+			/* serial11 = &scifa5; */
-+			serial11 = "/serial@e6c80000";
-+		};
-+	};
-+
-+	fragment@1 {
-+		target = <&pfc>;
-+
-+		__overlay__ {
-+			scifa5_pins_b: serial11_b {
-+				renesas,groups = "scifa5_data_b";
-+				renesas,function = "scifa5";
-+			};
-+		};
-+	};
-+
-+	fragment@2 {
-+		target = <&sdhi0>;
-+
-+		__overlay__ {
-+			status = "disabled";
-+		};
-+	};
-+
-+	fragment@3 {
-+		target = <&scifa5>;
-+
-+		__overlay__ {
-+			pinctrl-0 = <&scifa5_pins_b>;
-+			pinctrl-names = "default";
-+
-+			status = "okay";
-+		};
-+	};
-+};
--- 
-1.9.1
+Then we can come back to patch 1 -> 3, once the above patchset has
+been thoroughly discussed.
 
+>
+> Perhaps we should switch to a mechanism similar to what's used for idle
+> states (cfr. Documentation/devicetree/bindings/arm/idle-states.txt)?
+> I.e. a single "idle-states" node, with subnodes for each state, being
+> pointed to by phandles in the actual PM domain provider nodes.
+
+Seems reasonable.
+
+Kind regards
+Uffe
