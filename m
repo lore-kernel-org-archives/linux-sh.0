@@ -1,191 +1,95 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 29 May 2015 00:54:16 +0000
-Subject: [PATCH 08/10] ARM: shmobile: r8a7794 dtsi: Describe DMA for the serial ports
-Message-Id: <8233a0dee931a9ba7eb3991682538234fbe2729b.1432860632.git.horms+renesas@verge.net.au>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Wed, 13 May 2015 08:10:01 +0000
+Subject: Re: [PATCH/RFC v6 5/7] PM / Domains: Add helper variable np = dev->of_node
+Message-Id: <CAPDyKFoTe8hk1-T9_Tz5HdUcUbitR7nuuawB9iG16yCYiycKRA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1432860632.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1432860632.git.horms+renesas@verge.net.au>
+References: <1430138622-14029-1-git-send-email-geert+renesas@glider.be>
+	<1430138622-14029-6-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1430138622-14029-6-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Kevin Hilman <khilman@kernel.org>, Axel Haslam <ahaslam@baylibre.com>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+On 27 April 2015 at 14:43, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
+> Just a cleanup, no functional changes.
+>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Acked-by: Kevin Hilman <khilman@linaro.org>
 
-Add DMA properties to all SCIF, SCIFA, SCIFB, and HSCIF device nodes.
+Acked-by: Ulf Hansson <ulf.hansson@linaro.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7794.dtsi | 36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 01cf54f70501..b73819423311 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -174,6 +174,8 @@
- 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7794_CLK_SCIFA0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -183,6 +185,8 @@
- 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7794_CLK_SCIFA1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x25>, <&dmac0 0x26>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -192,6 +196,8 @@
- 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7794_CLK_SCIFA2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x27>, <&dmac0 0x28>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -201,6 +207,8 @@
- 		interrupts = <0 29 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7794_CLK_SCIFA3>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x1b>, <&dmac0 0x1c>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -210,6 +218,8 @@
- 		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7794_CLK_SCIFA4>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x1f>, <&dmac0 0x20>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -219,6 +229,8 @@
- 		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7794_CLK_SCIFA5>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x23>, <&dmac0 0x24>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -228,6 +240,8 @@
- 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7794_CLK_SCIFB0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x3d>, <&dmac0 0x3e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -237,6 +251,8 @@
- 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7794_CLK_SCIFB1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x19>, <&dmac0 0x1a>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -246,6 +262,8 @@
- 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7794_CLK_SCIFB2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x1d>, <&dmac0 0x1e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -255,6 +273,8 @@
- 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_SCIF0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -264,6 +284,8 @@
- 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_SCIF1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -273,6 +295,8 @@
- 		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_SCIF2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x2b>, <&dmac0 0x2c>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -282,6 +306,8 @@
- 		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_SCIF3>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x2f>, <&dmac0 0x30>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -291,6 +317,8 @@
- 		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_SCIF4>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0xfb>, <&dmac0 0xfc>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -300,6 +328,8 @@
- 		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_SCIF5>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0xfd>, <&dmac0 0xfe>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -309,6 +339,8 @@
- 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_HSCIF0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -318,6 +350,8 @@
- 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_HSCIF1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -327,6 +361,8 @@
- 		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7794_CLK_HSCIF2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x3b>, <&dmac0 0x3c>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
--- 
-2.1.4
-
+> ---
+> v6:
+>   - Rebased on top of v4.1-rc1 for new RFC,
+>
+> v4:
+>   - Add more explanations,
+>   - Add Acked-by,
+>
+> v3:
+>   - No changes,
+>
+> v2:
+>   - New.
+> ---
+>  drivers/base/power/domain.c | 12 ++++++------
+>  1 file changed, 6 insertions(+), 6 deletions(-)
+>
+> diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+> index d1531602ae64528d..d20caa2c92b57edf 100644
+> --- a/drivers/base/power/domain.c
+> +++ b/drivers/base/power/domain.c
+> @@ -2190,17 +2190,18 @@ static void genpd_dev_pm_sync(struct device *dev)
+>   */
+>  int genpd_dev_pm_attach(struct device *dev)
+>  {
+> +       struct device_node *np = dev->of_node;
+>         struct of_phandle_args pd_args;
+>         struct generic_pm_domain *pd;
+>         int ret;
+>
+> -       if (!dev->of_node)
+> +       if (!np)
+>                 return -ENODEV;
+>
+>         if (dev->pm_domain)
+>                 return -EEXIST;
+>
+> -       ret = of_parse_phandle_with_args(dev->of_node, "power-domains",
+> +       ret = of_parse_phandle_with_args(np, "power-domains",
+>                                         "#power-domain-cells", 0, &pd_args);
+>         if (ret < 0) {
+>                 if (ret != -ENOENT)
+> @@ -2211,8 +2212,7 @@ int genpd_dev_pm_attach(struct device *dev)
+>                  * (for backwards compatibility of DT ABI)
+>                  */
+>                 pd_args.args_count = 0;
+> -               pd_args.np = of_parse_phandle(dev->of_node,
+> -                                               "samsung,power-domain", 0);
+> +               pd_args.np = of_parse_phandle(np, "samsung,power-domain", 0);
+>                 if (!pd_args.np)
+>                         return -ENOENT;
+>         }
+> @@ -2221,7 +2221,7 @@ int genpd_dev_pm_attach(struct device *dev)
+>         if (IS_ERR(pd)) {
+>                 dev_dbg(dev, "%s() failed to find PM domain: %ld\n",
+>                         __func__, PTR_ERR(pd));
+> -               of_node_put(dev->of_node);
+> +               of_node_put(np);
+>                 return PTR_ERR(pd);
+>         }
+>
+> @@ -2237,7 +2237,7 @@ int genpd_dev_pm_attach(struct device *dev)
+>         if (ret < 0) {
+>                 dev_err(dev, "failed to add to PM domain %s: %d",
+>                         pd->name, ret);
+> -               of_node_put(dev->of_node);
+> +               of_node_put(np);
+>                 return ret;
+>         }
+>
+> --
+> 1.9.1
+>
