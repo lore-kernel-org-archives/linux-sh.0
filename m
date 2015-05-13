@@ -1,141 +1,33 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 14 May 2015 07:21:36 +0000
-Subject: [PATCH 2/5 v6] mmc: sh_mmcif: use sh_mmcif_xxx prefix for all functions
-Message-Id: <87382zpqw4.wl%kuninori.morimoto.gx@renesas.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 13 May 2015 09:27:16 +0000
+Subject: [PATCH 0/2] pwm: Add support for R-Car PWM Timer
+Message-Id: <1431509238-7648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
-	<87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, kobayashi <keita.kobayashi.ym@renesas.com>
+To: thierry.reding@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+R-Car SoCs have a seven-channel pulse width modulation (PWM) timer.
+This driver adds support for the PWM Timer as a single PWM chip and
+seven PWM devices.
 
-Current sh_mmcif driver is using sh_mmcif_xxx and mmcif_xxx
-for functions. This patch used sh_mmcif_xxx for all functions.
+This patch set is based on the linux-pwm.git / for-next branch.
+(commit id = efb0de55b6a2ec15fc424e660601f22ae2fa487a)
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
----
-v5 -> v6
+Yoshihiro Shimoda (2):
+  pwm: Add device tree binding document for R-Car PWM Timer
+  pwm: Add support for R-Car PWM Timer
 
- - no change
+ .../devicetree/bindings/pwm/renesas,pwm-rcar.txt   |  21 ++
+ drivers/pwm/Kconfig                                |  11 +
+ drivers/pwm/Makefile                               |   1 +
+ drivers/pwm/pwm-rcar.c                             | 282 +++++++++++++++++++++
+ 4 files changed, 315 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
+ create mode 100644 drivers/pwm/pwm-rcar.c
 
- drivers/mmc/host/sh_mmcif.c | 26 +++++++++++++-------------
- 1 file changed, 13 insertions(+), 13 deletions(-)
-
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 29835ae..e13c5f41 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -205,14 +205,14 @@
- #define CLKDEV_MMC_DATA		20000000 /* 20MHz */
- #define CLKDEV_INIT		400000   /* 400 KHz */
- 
--enum mmcif_state {
-+enum sh_mmcif_state {
- 	STATE_IDLE,
- 	STATE_REQUEST,
- 	STATE_IOS,
- 	STATE_TIMEOUT,
- };
- 
--enum mmcif_wait_for {
-+enum sh_mmcif_wait_for {
- 	MMCIF_WAIT_FOR_REQUEST,
- 	MMCIF_WAIT_FOR_CMD,
- 	MMCIF_WAIT_FOR_MREAD,
-@@ -237,8 +237,8 @@ struct sh_mmcif_host {
- 	void __iomem *addr;
- 	u32 *pio_ptr;
- 	spinlock_t lock;		/* protect sh_mmcif_host::state */
--	enum mmcif_state state;
--	enum mmcif_wait_for wait_for;
-+	enum sh_mmcif_state state;
-+	enum sh_mmcif_wait_for wait_for;
- 	struct delayed_work timeout_work;
- 	size_t blocksize;
- 	int sg_idx;
-@@ -256,11 +256,11 @@ struct sh_mmcif_host {
- 	bool			dma_active;
- };
- 
--static const struct of_device_id mmcif_of_match[] = {
-+static const struct of_device_id sh_mmcif_of_match[] = {
- 	{ .compatible = "renesas,sh-mmcif" },
- 	{ }
- };
--MODULE_DEVICE_TABLE(of, mmcif_of_match);
-+MODULE_DEVICE_TABLE(of, sh_mmcif_of_match);
- 
- #define sh_mmcif_host_to_dev(host) (&host->pd->dev)
- 
-@@ -276,7 +276,7 @@ static inline void sh_mmcif_bitclr(struct sh_mmcif_host *host,
- 	writel(~val & readl(host->addr + reg), host->addr + reg);
- }
- 
--static void mmcif_dma_complete(void *arg)
-+static void sh_mmcif_dma_complete(void *arg)
- {
- 	struct sh_mmcif_host *host = arg;
- 	struct mmc_request *mrq = host->mrq;
-@@ -310,7 +310,7 @@ static void sh_mmcif_start_dma_rx(struct sh_mmcif_host *host)
- 	}
- 
- 	if (desc) {
--		desc->callback = mmcif_dma_complete;
-+		desc->callback = sh_mmcif_dma_complete;
- 		desc->callback_param = host;
- 		cookie = dmaengine_submit(desc);
- 		sh_mmcif_bitset(host, MMCIF_CE_BUF_ACC, BUF_ACC_DMAREN);
-@@ -360,7 +360,7 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
- 	}
- 
- 	if (desc) {
--		desc->callback = mmcif_dma_complete;
-+		desc->callback = sh_mmcif_dma_complete;
- 		desc->callback_param = host;
- 		cookie = dmaengine_submit(desc);
- 		sh_mmcif_bitset(host, MMCIF_CE_BUF_ACC, BUF_ACC_DMAWEN);
-@@ -1327,7 +1327,7 @@ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
- 		if (!host->dma_active)
- 			return IRQ_WAKE_THREAD;
- 		else if (host->sd_error)
--			mmcif_dma_complete(host);
-+			sh_mmcif_dma_complete(host);
- 	} else {
- 		dev_dbg(dev, "Unexpected IRQ 0x%x\n", state);
- 	}
-@@ -1335,7 +1335,7 @@ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
- 	return IRQ_HANDLED;
- }
- 
--static void mmcif_timeout_work(struct work_struct *work)
-+static void sh_mmcif_timeout_work(struct work_struct *work)
- {
- 	struct delayed_work *d = container_of(work, struct delayed_work, work);
- 	struct sh_mmcif_host *host = container_of(d, struct sh_mmcif_host, timeout_work);
-@@ -1481,7 +1481,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	if (ret < 0)
- 		goto err_clk;
- 
--	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
-+	INIT_DELAYED_WORK(&host->timeout_work, sh_mmcif_timeout_work);
- 
- 	sh_mmcif_sync_reset(host);
- 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
-@@ -1587,7 +1587,7 @@ static struct platform_driver sh_mmcif_driver = {
- 	.driver		= {
- 		.name	= DRIVER_NAME,
- 		.pm	= &sh_mmcif_dev_pm_ops,
--		.of_match_table = mmcif_of_match,
-+		.of_match_table = sh_mmcif_of_match,
- 	},
- };
- 
 -- 
 1.9.1
 
