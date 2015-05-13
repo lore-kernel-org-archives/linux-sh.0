@@ -1,23 +1,22 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 05 May 2015 09:27:21 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 13 May 2015 05:57:56 +0000
 Subject: Re: [PATCH v2 08/15] ARM: shmobile: add r8a7793 SoC device tree
-Message-Id: <CAMuHMdVYwQPDWb5ukcnRGV7yQFAKTUr8RMEy9pW3HM0og=VZvg@mail.gmail.com>
+Message-Id: <87vbfxdnr3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 	<1430403544-26742-9-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1430403544-26742-9-git-send-email-ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1430403544-26742-9-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Hisashi Nakamura <hisashi.nakamura.ak-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Kazuya Mizuguchi <kazuya.mizuguchi.ks-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Hiroyuki Yokoyama <hiroyuki.yokoyama.vx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Ryo Kataoka <ryo.kataoka.wt-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Phil Edworthy <phil.edworthy-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Cc: geert@linux-m68k.org, horms@verge.net.au, linux-sh@vger.kernel.org, magnus.damm@gmail.com, laurent.pinchart+renesas@ideasonboard.com, linus.walleij@linaro.org, Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Hiroyuki Yokoyama <hiroyuki.yokoyama.vx@renesas.com>, Ryo Kataoka <ryo.kataoka.wt@renesas.com>, Phil Edworthy <phil.edworthy@renesas.com>, devicetree@vger.kernel.org
 
-Hi Ulrich,
 
-On Thu, Apr 30, 2015 at 4:18 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
+Hi Ulrich
+
 > r8a7793 device tree including clock descriptions.
->
+> 
 > Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
 > Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 > Signed-off-by: Hiroyuki Yokoyama <hiroyuki.yokoyama.vx@renesas.com>
@@ -28,153 +27,103 @@ On Thu, Apr 30, 2015 at 4:18 PM, Ulrich Hecht
 > Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 > Cc: devicetree@vger.kernel.org
 
-Thanks for your patch!
+# Hmm... I have never created patch for r8a7793 BSP before, but it has mine :)
 
-> --- /dev/null
-> +++ b/arch/arm/boot/dts/r8a7793.dtsi
-> @@ -0,0 +1,1376 @@
 
-> +       timer {
-> +               compatible = "arm,armv7-timer";
-> +               interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
-> +                            <1 14 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
-> +                            <1 11 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
-> +                            <1 10 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>;
-> +       };
+About sound, it is using old style.
+Please check upstreamed DTS, like r8a7790.dtsi/r8a7791.dtsi.
+I added comment inline
 
-No cmt0, cmt1?
+> +	rcar_sound: sound@0xec500000 {
+> +		#sound-dai-cells = <1>;
 
-> +       irqc0: interrupt-controller@e61c0000 {
-> +               compatible = "renesas,irqc-r8a7793", "renesas,irqc";
-> +               #interrupt-cells = <2>;
-> +               interrupt-controller;
-> +               reg = <0 0xe61c0000 0 0x200>;
-> +               interrupts = <0 0 IRQ_TYPE_LEVEL_HIGH>,
-> +                            <0 1 IRQ_TYPE_LEVEL_HIGH>,
-> +                            <0 2 IRQ_TYPE_LEVEL_HIGH>,
-> +                            <0 3 IRQ_TYPE_LEVEL_HIGH>,
-> +                            <0 12 IRQ_TYPE_LEVEL_HIGH>,
-> +                            <0 13 IRQ_TYPE_LEVEL_HIGH>,
-> +                            <0 14 IRQ_TYPE_LEVEL_HIGH>,
-> +                            <0 15 IRQ_TYPE_LEVEL_HIGH>,
-> +                            <0 16 IRQ_TYPE_LEVEL_HIGH>,
-> +                            <0 17 IRQ_TYPE_LEVEL_HIGH>;
+please don't set #sound-dai-cells on .dtsi
 
-clocks = <&mstp4_clks R8A7793_CLK_IRQC>;
+> +		compatible =  "renesas,rcar_sound-r8a7793", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
+> +		reg =	<0 0xec500000 0 0x1000>, /* SCU */
+> +			<0 0xec5a0000 0 0x100>,  /* ADG */
+> +			<0 0xec540000 0 0x1000>, /* SSIU */
+> +			<0 0xec541000 0 0x1280>; /* SSI */
 
-> +       };
+reg needs "Audio DMAC peri peri", and reg-names too.
 
-> +       audmapp: dma-controller@0xec740000 {
-> +               compatible = "renesas,rcar-audmapp";
-> +               #dma-cells = <1>;
+> +		clocks = <&mstp10_clks R8A7793_CLK_SSI_ALL>,
+> +			<&mstp10_clks R8A7793_CLK_SSI9>, <&mstp10_clks R8A7793_CLK_SSI8>,
+> +			<&mstp10_clks R8A7793_CLK_SSI7>, <&mstp10_clks R8A7793_CLK_SSI6>,
+> +			<&mstp10_clks R8A7793_CLK_SSI5>, <&mstp10_clks R8A7793_CLK_SSI4>,
+> +			<&mstp10_clks R8A7793_CLK_SSI3>, <&mstp10_clks R8A7793_CLK_SSI2>,
+> +			<&mstp10_clks R8A7793_CLK_SSI1>, <&mstp10_clks R8A7793_CLK_SSI0>,
+> +			<&mstp10_clks R8A7793_CLK_SCU_SRC9>, <&mstp10_clks R8A7793_CLK_SCU_SRC8>,
+> +			<&mstp10_clks R8A7793_CLK_SCU_SRC7>, <&mstp10_clks R8A7793_CLK_SCU_SRC6>,
+> +			<&mstp10_clks R8A7793_CLK_SCU_SRC5>, <&mstp10_clks R8A7793_CLK_SCU_SRC4>,
+> +			<&mstp10_clks R8A7793_CLK_SCU_SRC3>, <&mstp10_clks R8A7793_CLK_SCU_SRC2>,
+> +			<&mstp10_clks R8A7793_CLK_SCU_SRC1>, <&mstp10_clks R8A7793_CLK_SCU_SRC0>,
+> +			<&mstp10_clks R8A7793_CLK_SCU_DVC0>, <&mstp10_clks R8A7793_CLK_SCU_DVC1>,
+> +			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
+> +		clock-names = "ssi",
+> +				"ssi.9", "ssi.8", "ssi.7", "ssi.6", "ssi.5",
+> +				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
+> +				"src.9", "src.8", "src.7", "src.6", "src.5",
+> +				"src.4", "src.3", "src.2", "src.1", "src.0",
+> +				"dvc.0", "dvc.1",
+> +				"clk_a", "clk_b", "clk_c", "clk_i";
 > +
-> +               reg = <0 0xec740000 0 0x200>;
-> +       };
+> +		dmas =  <&audma0 0x01>,	<&audma1 0x02>,	<&audma0 0x15>,	<&audma1 0x16>,
+> +			<&audma0 0x03>,	<&audma1 0x04>,	<&audma0 0x49>,	<&audma1 0x4a>,
+> +			<&audma0 0x05>,	<&audma1 0x06>,	<&audma0 0x63>,	<&audma1 0x64>,
+> +			<&audma0 0x07>,	<&audma1 0x08>,	<&audma0 0x6f>,	<&audma1 0x70>,
+> +			<&audma0 0x09>,	<&audma1 0x0a>,	<&audma0 0x71>,	<&audma1 0x72>,
+> +			<&audma0 0x0b>,	<&audma1 0x0c>,	<&audma0 0x73>,	<&audma1 0x74>,
+> +			<&audma0 0x0d>,	<&audma1 0x0e>,	<&audma0 0x75>,	<&audma1 0x76>,
+> +			<&audma0 0x0f>,	<&audma1 0x10>,	<&audma0 0x79>,	<&audma1 0x7a>,
+> +			<&audma0 0x11>,	<&audma1 0x12>,	<&audma0 0x7b>,	<&audma1 0x7c>,
+> +			<&audma0 0x13>,	<&audma1 0x14>,	<&audma0 0x7d>,	<&audma1 0x7e>,
+(snip)
+> +		dma-names = "mem_ssi0", "ssi0_mem", "mem_ssiu0", "ssiu0_mem",
+> +			    "mem_ssi1", "ssi1_mem", "mem_ssiu1", "ssiu1_mem",
+> +			    "mem_ssi2", "ssi2_mem", "mem_ssiu2", "ssiu2_mem",
+> +			    "mem_ssi3", "ssi3_mem", "mem_ssiu3", "ssiu3_mem",
+> +			    "mem_ssi4", "ssi4_mem", "mem_ssiu4", "ssiu4_mem",
+> +			    "mem_ssi5", "ssi5_mem", "mem_ssiu5", "ssiu5_mem",
+> +			    "mem_ssi6", "ssi6_mem", "mem_ssiu6", "ssiu6_mem",
+> +			    "mem_ssi7", "ssi7_mem", "mem_ssiu7", "ssiu7_mem",
+> +			    "mem_ssi8", "ssi8_mem", "mem_ssiu8", "ssiu8_mem",
+> +			    "mem_ssi9", "ssi9_mem", "mem_ssiu9", "ssiu9_mem",
 
-The audmapp node is obsolete.
-There's no driver anymore for "renesas,rcar-audmapp".
+These dmas/dma-names are not supported on upstreamed driver.
 
-
-> +       sdhi0: sd@ee100000 {
-> +               compatible = "renesas,sdhi-r8a7793";
-> +               reg = <0 0xee100000 0 0x200>;
-
-Length should be 0x328 for sdhi0.
-
-> +               dma-names = "tx", "rx";
-> +               interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
-> +               clocks = <&mstp3_clks R8A7793_CLK_SDHI0>;
-> +               cap-uhs-sdr104;
-> +               cap-uhs-sdr50;
-> +               dma-xmit-sz = <32>;
-> +               renesas,clk-rate = <195000000>;
-> +               renesas,mmc-scc-tapnum = <8>;
-> +               renesas,pfcs = <0xe6060000 0x8c>;
-> +               renesas,id = <0>;
-
-Undocumented properties not supported in upstream, likewise for sdh[12].
-Please look at r8a7791.dtsi.
-
-> +               status = "disabled";
-> +       };
-
-
-> +       clocks {
-
-> +               /* Fixed factor clocks */
-
-> +               zg_clk: zg_clk {
-> +                       compatible = "fixed-factor-clock";
-> +                       clocks = <&cpg_clocks R8A7793_CLK_PLL1>;
-> +                       #clock-cells = <0>;
-> +                       clock-div = <5>;
-
-r8a7791 uses <3>.
-But upon closer look, the zg is configurable for 3 or 5 through the
-GPUCKCR register on both '91 and '93. so this is wrong on both.
-
-> +                       clock-mult = <1>;
-> +                       clock-output-names = "zg";
-> +               };
-
-> +               /* Gate clocks */
-
-> +               mstp5_clks: mstp5_clks@e6150144 {
-> +                       compatible = "renesas,r8a7793-mstp-clocks",
-> +                                    "renesas,cpg-mstp-clocks";
-> +                       reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
-> +                       clocks = <&zs_clk>, <&zs_clk>, <&extal_clk>, <&p_clk>;
-
-r8a7791 has hp_clk (High Speed Peripheral Clock) instead of zs_clk (AXI clock)
-as the parent clock for the audio DMA controllers.
-As audio DMA is connected to the APB, not to the AXI bus, hp_clk looks correct.
-
-> +                       #clock-cells = <1>;
-> +                       clock-indices = <R8A7793_CLK_AUDIO_DMAC0
-> +                                       R8A7793_CLK_AUDIO_DMAC1
-> +                                       R8A7793_CLK_THERMAL
-> +                                       R8A7793_CLK_PWM>;
-> +                       clock-output-names > +                               "audmac0", "audmac1", "thermal", "pwm";
-> +               };
-
-> +       msiof0: spi@e6e20000 {
-> +               compatible = "renesas,msiof-r8a7793";
-> +               reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
-
-Please drop the second register bank, which is obsolete.
-Likewise for msiof[12].
-
-> +       rcar_sound: sound@0xec500000 {
-
-Bogus "0x" after "@".
-
-> +               #sound-dai-cells = <1>;
-> +               compatible =  "renesas,rcar_sound-r8a7793", "renesas,rcar_sound-gen2", "renesas,rcar_sound";
-
-Please drop "renesas,rcar_sound";
-
-Probably more changes to the audio are needed. Please look at r8a7791.dtsi, or
-wait for Morimoto-san to comment.
-
-
-> --- /dev/null
-> +++ b/include/dt-bindings/clock/r8a7793-clock.h
-
-Missing:
-
-    /* MSTP4 */
-    #define R8A7793_CLK_IRQC               7
-
+> +		status = "disabled";
 > +
-> +/* MSTP5 */
+> +		rcar_sound,dvc {
+> +			dvc0: dvc@0 { };
+> +			dvc1: dvc@1 { };
+> +		};
+> +
+> +		rcar_sound,src {
+> +			src0: src@0 { interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>; };
+> +			src1: src@1 { interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>; };
+> +			src2: src@2 { interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>; };
+> +			src3: src@3 { interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>; };
+> +			src4: src@4 { interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>; };
+> +			src5: src@5 { interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>; };
+> +			src6: src@6 { interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>; };
+> +			src7: src@7 { interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>; };
+> +			src8: src@8 { interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>; };
+> +			src9: src@9 { interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>; };
+> +		};
+> +
+> +		rcar_sound,ssi {
+> +			ssi0: ssi@0 { interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>; };
+> +			ssi1: ssi@1 { interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>; };
+> +			ssi2: ssi@2 { interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>; };
+> +			ssi3: ssi@3 { interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>; };
+> +			ssi4: ssi@4 { interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>; };
+> +			ssi5: ssi@5 { interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>; };
+> +			ssi6: ssi@6 { interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>; };
+> +			ssi7: ssi@7 { interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>; };
+> +			ssi8: ssi@8 { interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>; };
+> +			ssi9: ssi@9 { interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>; };
+> +		};
 
-Gr{oetje,eeting}s,
+rcar_sound,dvc/src/ssi needs interrupts/dmas/dma-names
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
