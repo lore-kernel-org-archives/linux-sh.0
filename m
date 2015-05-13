@@ -1,56 +1,344 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 06 May 2015 07:13:56 +0000
-Subject: Re: [RFC] DT-based pinmux configuration for Renesas platforms (was: [PATCH v2 01/15] pinctrl: sh-pfc
-Message-Id: <CAMuHMdVVNxgyCoSpVyjadn+PLwuL40_ZBUBzxaQ9qUZ3+m_4QA@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 13 May 2015 09:27:18 +0000
+Subject: [PATCH 2/2] pwm: Add support for R-Car PWM Timer
+Message-Id: <1431509238-7648-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2259197.0WD3Y1GXGT@avalon>
-In-Reply-To: <2259197.0WD3Y1GXGT@avalon>
+References: <1431509238-7648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1431509238-7648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: thierry.reding@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Hi Laurent,
+R-Car SoCs have a seven-channel pulse width modulation (PWM) timer.
+This driver adds support for the PWM Timer as a single PWM chip and
+seven PWM devices.
 
-On Wed, May 6, 2015 at 6:15 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Tuesday 05 May 2015 11:07:20 Geert Uytterhoeven wrote:
->> On Thu, Apr 30, 2015 at 4:18 PM, Ulrich Hecht
->>
->> <ulrich.hecht+renesas@gmail.com> wrote:
->> > Part of PFC support for R-Car M2-N (r8a7793) that defines the pinmux
->> > data.
->>
->> As this patch is difficult to quote, I'm just summarizing my comments:
->>   - Other R-Car Gen2 variants use "MLB_CLK" instead of "MLB_CK",
->>   - Compared to M2-W, CAN0/1, HSCIF2_D, and MLB+ are missing,
->>     but they do exist on M2-N,
->>   - Compared to M2-W, SSP is added, but it does exist on M2-W.
->>
->> After compensating for that, pfc-r8a7793.c is identical to pfc-r8a7791.c.
->> So I think we should use a single file for both, or at least share (most of)
->> the data structures (sh_pfc_soc_info contains the SoC name, so it can't
->> be shared).
->
-> I agree with that, and I'd even go further : I think we won't be able to scale
-> much further with our large in-kernel tables. We currently have around 150kB
-> or PFC .rodata when enabling all Renesas platforms, which is far from being
-> negligible in a multiplatform build. I could be time to reconsider the
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/pwm/Kconfig    |  11 ++
+ drivers/pwm/Makefile   |   1 +
+ drivers/pwm/pwm-rcar.c | 276 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 288 insertions(+)
+ create mode 100644 drivers/pwm/pwm-rcar.c
 
-I've been thinking about compressing it using zlib/lzo/lz4, and only
-decompressing the data for the platform you're running on.
+diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
+index b1541f4..7e98175 100644
+--- a/drivers/pwm/Kconfig
++++ b/drivers/pwm/Kconfig
+@@ -249,6 +249,17 @@ config PWM_PXA
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called pwm-pxa.
+ 
++config PWM_RCAR
++	tristate "Renesas R-Car PWM support"
++	depends on ARCH_SHMOBILE || COMPILE_TEST
++	depends on HAS_IOMEM
++	help
++	  This driver exposes the PWM Timer controller found in Renesas
++	  chips through the PWM API.
++
++	  To compile this driver as a module, choose M here: the module
++	  will be called pwm-rcar.
++
+ config PWM_RENESAS_TPU
+ 	tristate "Renesas TPU PWM support"
+ 	depends on ARCH_SHMOBILE || COMPILE_TEST
+diff --git a/drivers/pwm/Makefile b/drivers/pwm/Makefile
+index ec50eb5..79d3dc3 100644
+--- a/drivers/pwm/Makefile
++++ b/drivers/pwm/Makefile
+@@ -22,6 +22,7 @@ obj-$(CONFIG_PWM_MXS)		+= pwm-mxs.o
+ obj-$(CONFIG_PWM_PCA9685)	+= pwm-pca9685.o
+ obj-$(CONFIG_PWM_PUV3)		+= pwm-puv3.o
+ obj-$(CONFIG_PWM_PXA)		+= pwm-pxa.o
++obj-$(CONFIG_PWM_RCAR)		+= pwm-rcar.o
+ obj-$(CONFIG_PWM_RENESAS_TPU)	+= pwm-renesas-tpu.o
+ obj-$(CONFIG_PWM_ROCKCHIP)	+= pwm-rockchip.o
+ obj-$(CONFIG_PWM_SAMSUNG)	+= pwm-samsung.o
+diff --git a/drivers/pwm/pwm-rcar.c b/drivers/pwm/pwm-rcar.c
+new file mode 100644
+index 0000000..29011e8
+--- /dev/null
++++ b/drivers/pwm/pwm-rcar.c
+@@ -0,0 +1,276 @@
++/*
++ * R-Car PWM Timer driver
++ *
++ * Copyright (C) 2015 Renesas Electronics Corporation
++ *
++ * This is free software; you can redistribute it and/or modify
++ * it under the terms of version 2 of the GNU General Public License as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/clk.h>
++#include <linux/err.h>
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++#include <linux/pwm.h>
++#include <linux/slab.h>
++
++#define NUM_RCAR_PWM_CHANNELS	7
++#define RCAR_PWM_MAX_DIVISION	24
++#define RCAR_PWM_MAX_CYCLE	1023
++
++#define RCAR_PWMCR		0x00
++#define RCAR_PWMCNT		0x04
++#define RCAR_PWM_CH_OFFSET	0x1000
++
++#define RCAR_PWMCR_CC0_MASK	0x000f0000
++#define RCAR_PWMCR_CC0_SHIFT	16
++#define RCAR_PWMCR_CCMD		BIT(15)
++#define RCAR_PWMCR_SYNC		BIT(11)
++#define RCAR_PWMCR_SS0		BIT(4)
++#define RCAR_PWMCR_EN0		BIT(0)
++
++#define RCAR_PWMCNT_CYC0_MASK	0x03ff0000
++#define RCAR_PWMCNT_CYC0_SHIFT	16
++#define RCAR_PWMCNT_PH0_MASK	0x000003ff
++#define RCAR_PWMCNT_PH0_SHIFT	0
++
++struct rcar_pwm_chip {
++	struct platform_device *pdev;
++	struct pwm_chip chip;
++
++	void __iomem *base;
++	struct clk *clk;
++};
++
++#define to_rcar_pwm_chip(chip)	container_of(chip, struct rcar_pwm_chip, chip)
++
++static u32 rcar_pwm_get_reg_offset(unsigned int channel)
++{
++	return channel * RCAR_PWM_CH_OFFSET;
++}
++
++static void rcar_pwm_write(struct rcar_pwm_chip *rp, unsigned int channel,
++			   u32 data, u32 reg)
++{
++	iowrite32(data, rp->base + rcar_pwm_get_reg_offset(channel) + reg);
++}
++
++static u32 rcar_pwm_read(struct rcar_pwm_chip *rp, unsigned int channel,
++			 u32 reg)
++{
++	return ioread32(rp->base + rcar_pwm_get_reg_offset(channel) + reg);
++}
++
++static void rcar_pwm_bit_modify(struct rcar_pwm_chip *rp, unsigned int channel,
++				u32 mask, u32 data, u32 reg)
++{
++	u32 val = rcar_pwm_read(rp, channel, reg);
++
++	val &= ~mask;
++	val |= data & mask;
++	rcar_pwm_write(rp, channel, val, reg);
++}
++
++static int rcar_pwn_get_clock_division(struct rcar_pwm_chip *rp,
++				       int period_ns)
++{
++	int div;
++	unsigned long clk_rate = clk_get_rate(rp->clk);
++	unsigned long long max;	/* max cycle / nanoseconds */
++
++	for (div = 0; div <= RCAR_PWM_MAX_DIVISION; div++) {
++		max = (unsigned long long)NSEC_PER_SEC * RCAR_PWM_MAX_CYCLE;
++		do_div(max, clk_rate / (1 << div));
++		if (period_ns < max)
++			break;
++	}
++
++	return div;
++}
++
++static void rcar_pwm_set_clock_control(struct rcar_pwm_chip *rp,
++				       int channel, int div)
++{
++	u32 val = rcar_pwm_read(rp, channel, RCAR_PWMCR);
++
++	if (div > RCAR_PWM_MAX_DIVISION)
++		return;
++
++	val &= ~(RCAR_PWMCR_CCMD | RCAR_PWMCR_CC0_MASK);
++	if (div & 1)
++		val |= RCAR_PWMCR_CCMD;
++	div >>= 1;
++	val |= div << RCAR_PWMCR_CC0_SHIFT;
++	rcar_pwm_write(rp, channel, val, RCAR_PWMCR);
++}
++
++static void rcar_pwm_set_counter(struct rcar_pwm_chip *rp, int channel,
++				 int div, int duty_ns, int period_ns)
++{
++	unsigned long long one_cycle, tmp;	/* 0.01 nanoseconds */
++	unsigned long clk_rate = clk_get_rate(rp->clk);
++	u32 cyc, ph;
++
++	one_cycle = (unsigned long long)NSEC_PER_SEC * 100;
++	do_div(one_cycle, clk_rate / (1 << div));
++
++	tmp = period_ns * 100;
++	do_div(tmp, one_cycle);
++	cyc = ((u32)tmp << RCAR_PWMCNT_CYC0_SHIFT) & RCAR_PWMCNT_CYC0_MASK;
++
++	tmp = duty_ns * 100;
++	do_div(tmp, one_cycle);
++	ph = (u32)tmp & RCAR_PWMCNT_PH0_MASK;
++
++	/* Avoid prohibited setting */
++	if (cyc && ph)
++		rcar_pwm_write(rp, channel, cyc | ph, RCAR_PWMCNT);
++}
++
++static int rcar_pwm_request(struct pwm_chip *chip, struct pwm_device *pwm)
++{
++	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
++
++	return clk_prepare_enable(rp->clk);
++}
++
++static void rcar_pwm_free(struct pwm_chip *chip, struct pwm_device *pwm)
++{
++	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
++
++	clk_disable_unprepare(rp->clk);
++}
++
++static int rcar_pwm_config(struct pwm_chip *chip, struct pwm_device *pwm,
++			   int duty_ns, int period_ns)
++{
++	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
++	int div;
++
++	div = rcar_pwn_get_clock_division(rp, period_ns);
++
++	rcar_pwm_bit_modify(rp, pwm->hwpwm, RCAR_PWMCR_SYNC, RCAR_PWMCR_SYNC,
++			    RCAR_PWMCR);
++	rcar_pwm_set_counter(rp, pwm->hwpwm, div, duty_ns, period_ns);
++	rcar_pwm_set_clock_control(rp, pwm->hwpwm, div);
++	rcar_pwm_bit_modify(rp, pwm->hwpwm, RCAR_PWMCR_SYNC, 0, RCAR_PWMCR);
++
++	return 0;
++}
++
++static int rcar_pwm_enable(struct pwm_chip *chip, struct pwm_device *pwm)
++{
++	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
++	u32 pwmcnt;
++
++	/* Don't enable the PWM device if CYC0 or PH0 is 0 */
++	pwmcnt = rcar_pwm_read(rp, pwm->hwpwm, RCAR_PWMCNT);
++	if (!(pwmcnt & RCAR_PWMCNT_CYC0_MASK) ||
++	    !(pwmcnt & RCAR_PWMCNT_PH0_MASK))
++		return -EINVAL;
++
++	rcar_pwm_bit_modify(rp, pwm->hwpwm, RCAR_PWMCR_EN0, RCAR_PWMCR_EN0,
++			    RCAR_PWMCR);
++
++	return 0;
++}
++
++static void rcar_pwm_disable(struct pwm_chip *chip, struct pwm_device *pwm)
++{
++	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
++
++	rcar_pwm_bit_modify(rp, pwm->hwpwm, RCAR_PWMCR_EN0, 0, RCAR_PWMCR);
++}
++
++static const struct pwm_ops rcar_pwm_ops = {
++	.request	= rcar_pwm_request,
++	.free		= rcar_pwm_free,
++	.config		= rcar_pwm_config,
++	.enable		= rcar_pwm_enable,
++	.disable	= rcar_pwm_disable,
++	.owner		= THIS_MODULE,
++};
++
++static int rcar_pwm_probe(struct platform_device *pdev)
++{
++	struct rcar_pwm_chip *rcar_pwm;
++	struct resource *res;
++	int ret;
++
++	rcar_pwm = devm_kzalloc(&pdev->dev, sizeof(*rcar_pwm), GFP_KERNEL);
++	if (rcar_pwm = NULL)
++		return -ENOMEM;
++
++	rcar_pwm->pdev = pdev;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	rcar_pwm->base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(rcar_pwm->base))
++		return PTR_ERR(rcar_pwm->base);
++
++	rcar_pwm->clk = devm_clk_get(&pdev->dev, NULL);
++	if (IS_ERR(rcar_pwm->clk)) {
++		dev_err(&pdev->dev, "cannot get clock\n");
++		return PTR_ERR(rcar_pwm->clk);
++	}
++
++	platform_set_drvdata(pdev, rcar_pwm);
++
++	rcar_pwm->chip.dev = &pdev->dev;
++	rcar_pwm->chip.ops = &rcar_pwm_ops;
++	rcar_pwm->chip.of_xlate = of_pwm_xlate_with_flags;
++	rcar_pwm->chip.base = -1;
++	rcar_pwm->chip.npwm = NUM_RCAR_PWM_CHANNELS;
++
++	ret = pwmchip_add(&rcar_pwm->chip);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "failed to register PWM chip\n");
++		return ret;
++	}
++
++	dev_info(&pdev->dev, "R-Car PWM Timer registered\n");
++
++	pm_runtime_enable(&pdev->dev);
++
++	return 0;
++}
++
++static int rcar_pwm_remove(struct platform_device *pdev)
++{
++	struct rcar_pwm_chip *rcar_pwm = platform_get_drvdata(pdev);
++	int ret;
++
++	ret = pwmchip_remove(&rcar_pwm->chip);
++	if (ret)
++		return ret;
++
++	pm_runtime_disable(&pdev->dev);
++
++	return 0;
++}
++
++static const struct of_device_id rcar_pwm_of_table[] = {
++	{ .compatible = "renesas,pwm-rcar", },
++	{ },
++};
++
++MODULE_DEVICE_TABLE(of, rcar_pwm_of_table);
++
++static struct platform_driver rcar_pwm_driver = {
++	.probe		= rcar_pwm_probe,
++	.remove		= rcar_pwm_remove,
++	.driver		= {
++		.name	= "pwm-rcar",
++		.of_match_table = of_match_ptr(rcar_pwm_of_table),
++	}
++};
++module_platform_driver(rcar_pwm_driver);
++
++MODULE_AUTHOR("Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>");
++MODULE_DESCRIPTION("Renesas PWM Timer Driver");
++MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("platform:pwm-rcar");
+-- 
+1.9.1
 
-> approach and specify data in DT.
-
-Ohoh... ;-)
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
