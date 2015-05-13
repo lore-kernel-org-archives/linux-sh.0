@@ -1,36 +1,141 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 20 May 2015 18:16:50 +0000
-Subject: [PATCH 1/5] ARM: shmobile: bockw-reference dts: Replace "nor-jedec" by "jedec,spi-nor"
-Message-Id: <1432145814-12442-2-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 13 May 2015 02:18:02 +0000
+Subject: [PATCH 2/3 v5] mmc: sh_mmcif: use sh_mmcif_xxx prefix for all functions
+Message-Id: <877fsdfci1.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432145814-12442-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432145814-12442-1-git-send-email-geert+renesas@glider.be>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+	<87a8x9fck7.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87a8x9fck7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-Cfr. commit 8947e396a8296c52 ('Documentation: dt: mtd: replace
-"nor-jedec" binding with "jedec, spi-nor"')
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Current sh_mmcif driver is using sh_mmcif_xxx and mmcif_xxx
+prefix for naming. This patch used sh_mmcif_xxx for all name.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 ---
- arch/arm/boot/dts/r8a7778-bockw-reference.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v4 -> v5
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-index f9422d887b4441c3..dffa6ff303608b19 100644
---- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
-@@ -119,7 +119,7 @@
- 	flash: flash@0 {
- 		#address-cells = <1>;
- 		#size-cells = <1>;
--		compatible = "spansion,s25fl008k", "nor-jedec";
-+		compatible = "spansion,s25fl008k", "jedec,spi-nor";
- 		reg = <0>;
- 		spi-max-frequency = <104000000>;
- 		m25p,fast-read;
+ - new patch for cleanup
+
+ drivers/mmc/host/sh_mmcif.c | 26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 29835ae..e13c5f41 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -205,14 +205,14 @@
+ #define CLKDEV_MMC_DATA		20000000 /* 20MHz */
+ #define CLKDEV_INIT		400000   /* 400 KHz */
+ 
+-enum mmcif_state {
++enum sh_mmcif_state {
+ 	STATE_IDLE,
+ 	STATE_REQUEST,
+ 	STATE_IOS,
+ 	STATE_TIMEOUT,
+ };
+ 
+-enum mmcif_wait_for {
++enum sh_mmcif_wait_for {
+ 	MMCIF_WAIT_FOR_REQUEST,
+ 	MMCIF_WAIT_FOR_CMD,
+ 	MMCIF_WAIT_FOR_MREAD,
+@@ -237,8 +237,8 @@ struct sh_mmcif_host {
+ 	void __iomem *addr;
+ 	u32 *pio_ptr;
+ 	spinlock_t lock;		/* protect sh_mmcif_host::state */
+-	enum mmcif_state state;
+-	enum mmcif_wait_for wait_for;
++	enum sh_mmcif_state state;
++	enum sh_mmcif_wait_for wait_for;
+ 	struct delayed_work timeout_work;
+ 	size_t blocksize;
+ 	int sg_idx;
+@@ -256,11 +256,11 @@ struct sh_mmcif_host {
+ 	bool			dma_active;
+ };
+ 
+-static const struct of_device_id mmcif_of_match[] = {
++static const struct of_device_id sh_mmcif_of_match[] = {
+ 	{ .compatible = "renesas,sh-mmcif" },
+ 	{ }
+ };
+-MODULE_DEVICE_TABLE(of, mmcif_of_match);
++MODULE_DEVICE_TABLE(of, sh_mmcif_of_match);
+ 
+ #define sh_mmcif_host_to_dev(host) (&host->pd->dev)
+ 
+@@ -276,7 +276,7 @@ static inline void sh_mmcif_bitclr(struct sh_mmcif_host *host,
+ 	writel(~val & readl(host->addr + reg), host->addr + reg);
+ }
+ 
+-static void mmcif_dma_complete(void *arg)
++static void sh_mmcif_dma_complete(void *arg)
+ {
+ 	struct sh_mmcif_host *host = arg;
+ 	struct mmc_request *mrq = host->mrq;
+@@ -310,7 +310,7 @@ static void sh_mmcif_start_dma_rx(struct sh_mmcif_host *host)
+ 	}
+ 
+ 	if (desc) {
+-		desc->callback = mmcif_dma_complete;
++		desc->callback = sh_mmcif_dma_complete;
+ 		desc->callback_param = host;
+ 		cookie = dmaengine_submit(desc);
+ 		sh_mmcif_bitset(host, MMCIF_CE_BUF_ACC, BUF_ACC_DMAREN);
+@@ -360,7 +360,7 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
+ 	}
+ 
+ 	if (desc) {
+-		desc->callback = mmcif_dma_complete;
++		desc->callback = sh_mmcif_dma_complete;
+ 		desc->callback_param = host;
+ 		cookie = dmaengine_submit(desc);
+ 		sh_mmcif_bitset(host, MMCIF_CE_BUF_ACC, BUF_ACC_DMAWEN);
+@@ -1327,7 +1327,7 @@ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
+ 		if (!host->dma_active)
+ 			return IRQ_WAKE_THREAD;
+ 		else if (host->sd_error)
+-			mmcif_dma_complete(host);
++			sh_mmcif_dma_complete(host);
+ 	} else {
+ 		dev_dbg(dev, "Unexpected IRQ 0x%x\n", state);
+ 	}
+@@ -1335,7 +1335,7 @@ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
+ 	return IRQ_HANDLED;
+ }
+ 
+-static void mmcif_timeout_work(struct work_struct *work)
++static void sh_mmcif_timeout_work(struct work_struct *work)
+ {
+ 	struct delayed_work *d = container_of(work, struct delayed_work, work);
+ 	struct sh_mmcif_host *host = container_of(d, struct sh_mmcif_host, timeout_work);
+@@ -1481,7 +1481,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	if (ret < 0)
+ 		goto err_clk;
+ 
+-	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
++	INIT_DELAYED_WORK(&host->timeout_work, sh_mmcif_timeout_work);
+ 
+ 	sh_mmcif_sync_reset(host);
+ 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
+@@ -1587,7 +1587,7 @@ static struct platform_driver sh_mmcif_driver = {
+ 	.driver		= {
+ 		.name	= DRIVER_NAME,
+ 		.pm	= &sh_mmcif_dev_pm_ops,
+-		.of_match_table = mmcif_of_match,
++		.of_match_table = sh_mmcif_of_match,
+ 	},
+ };
+ 
 -- 
 1.9.1
 
