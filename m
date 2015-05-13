@@ -1,38 +1,184 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 25 May 2015 05:07:30 +0000
-Subject: Re: [PATCH 6/6] ARM: shmobile: lager: Enable UHS-I SDR-50
-Message-Id: <20150525050727.GA28560@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 13 May 2015 02:18:22 +0000
+Subject: [PATCH 3/3 v5] mmc: sh_mmcif: calculate best clock with parent clock
+Message-Id: <87617xfchj.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431822459.4222.166.camel@xylophone.i.decadent.org.uk>
- <1431823184.4222.180.camel@xylophone.i.decadent.org.uk>
- <20150525010724.GD24690@verge.net.au>
- <87fv6ljokk.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fv6ljokk.wl%kuninori.morimoto.gx@renesas.com>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+	<87a8x9fck7.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87a8x9fck7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Ben Hutchings <ben.hutchings@codethink.co.uk>, Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-On Mon, May 25, 2015 at 04:00:11AM +0000, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> > On Sun, May 17, 2015 at 01:39:44AM +0100, Ben Hutchings wrote:
-> > > Add the "1v8" pinctrl state and sd-uhs-sdr50 property to SDHI{0,2}.
-> > > 
-> > > Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
-> > > ---
-> > > None of the states includes the CD pins, as they can't be allocated both
-> > > through pinctrl and as GPIOs.  But the Lager manual shows these signals
-> > > being pulled up to the same variable voltage as the other signals.  This
-> > > might possibly lead to spurious card detect interrupts after switching
-> > > to 1.8V signalling.
-> > 
-> > Morimoto-san,
-> > 
-> > I would appreciate your opinion on this change.
-> 
-> Ben will send new version patch set if my understanding is correct
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, got it.
+MMCIF IP on R-Car series has parent clock which can be set
+several rate, and it was not implemented on old SH-Mobile series
+(= SH-Mobile series parent clock was fixed rate)
+R-Car series MMCIF can use more high speed access if it setup
+parent clock. This patch adds parent clock setup method,
+and r8a7790/r8a7791 can use it.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
+v4 -> v5
+
+ - get clock data from compatible
+
+ drivers/mmc/host/sh_mmcif.c | 92 ++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 83 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index e13c5f41..7ade263 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -57,6 +57,7 @@
+ #include <linux/mmc/slot-gpio.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/mutex.h>
++#include <linux/of_device.h>
+ #include <linux/pagemap.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_qos.h>
+@@ -224,6 +225,15 @@ enum sh_mmcif_wait_for {
+ 	MMCIF_WAIT_FOR_STOP,
+ };
+ 
++/*
++ * difference for each SoC
++ */
++struct sh_mmcif_ver {
++	u32 clkdiv_map;		/* see CE_CLK_CTRL::CLKDIV */
++	unsigned int pf_min;	/* parent frequency min */
++	unsigned int pf_max;	/* parent frequency max */
++};
++
+ struct sh_mmcif_host {
+ 	struct mmc_host *mmc;
+ 	struct mmc_request *mrq;
+@@ -248,6 +258,7 @@ struct sh_mmcif_host {
+ 	bool ccs_enable;		/* Command Completion Signal support */
+ 	bool clk_ctrl2_enable;
+ 	struct mutex thread_lock;
++	const struct sh_mmcif_ver *ver;
+ 
+ 	/* DMA support */
+ 	struct dma_chan		*chan_rx;
+@@ -256,8 +267,16 @@ struct sh_mmcif_host {
+ 	bool			dma_active;
+ };
+ 
++static const struct sh_mmcif_ver sh_mmcif_gen2 = {
++	.clkdiv_map	= 0x3ff,
++	.pf_min		= 12187500,
++	.pf_max		= 97500000,
++};
++
+ static const struct of_device_id sh_mmcif_of_match[] = {
+ 	{ .compatible = "renesas,sh-mmcif" },
++	{ .compatible = "renesas,mmcif-r8a7790", .data = &sh_mmcif_gen2 },
++	{ .compatible = "renesas,mmcif-r8a7791", .data = &sh_mmcif_gen2 },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, sh_mmcif_of_match);
+@@ -492,19 +511,56 @@ static void sh_mmcif_clock_control(struct sh_mmcif_host *host, unsigned int clk)
+ 	struct sh_mmcif_plat_data *p = dev->platform_data;
+ 	bool sup_pclk = p ? p->sup_pclk : false;
+ 	unsigned int current_clk = clk_get_rate(host->clk);
++	unsigned int clkdiv;
+ 
+ 	sh_mmcif_bitclr(host, MMCIF_CE_CLK_CTRL, CLK_ENABLE);
+ 	sh_mmcif_bitclr(host, MMCIF_CE_CLK_CTRL, CLK_CLEAR);
+ 
+ 	if (!clk)
+ 		return;
+-	if (sup_pclk && clk = current_clk)
+-		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_SUP_PCLK);
+-	else
+-		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_CLEAR &
+-				((fls(DIV_ROUND_UP(current_clk,
+-						   clk) - 1) - 1) << 16));
+ 
++	if (host->ver) {
++		const struct sh_mmcif_ver *ver = host->ver;
++		unsigned int freq, best_freq, myclk, div, diff_min, diff;
++		int i;
++
++		clkdiv = 0;
++		diff_min = ~0;
++		best_freq = 0;
++		for (i = 31; i >= 0; i--) {
++			if (!((1 << i) & ver->clkdiv_map))
++				continue;
++
++			/*
++			 * clk = parent_freq / div
++			 * -> parent_freq = clk x div
++			 */
++
++			div = 1 << (i + 1);
++			freq = clk_round_rate(host->clk, clk * div);
++			myclk = freq / div;
++			diff = (myclk > clk) ? myclk - clk : clk - myclk;
++
++			if (diff <= diff_min) {
++				best_freq = freq;
++				clkdiv = i;
++				diff_min = diff;
++			}
++		}
++
++		dev_dbg(dev, "clk %u/%u (%u, 0x%x)\n",
++			(best_freq / (1 << (clkdiv + 1))), clk,
++			best_freq, clkdiv);
++
++		clk_set_rate(host->clk, best_freq);
++		clkdiv = clkdiv << 16;
++	} else if (sup_pclk && clk = current_clk) {
++		clkdiv = CLK_SUP_PCLK;
++	} else {
++		clkdiv = (fls(DIV_ROUND_UP(current_clk, clk) - 1) - 1) << 16;
++	}
++
++	sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_CLEAR & clkdiv);
+ 	sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_ENABLE);
+ }
+ 
+@@ -1000,10 +1056,28 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 
+ static void sh_mmcif_clk_setup(struct sh_mmcif_host *host)
+ {
+-	unsigned int clk = clk_get_rate(host->clk);
++	struct device *dev = sh_mmcif_host_to_dev(host);
++	const struct of_device_id *of_id;
++	const struct sh_mmcif_ver *ver = NULL;
++
++	of_id = of_match_device(sh_mmcif_of_match, dev);
++	if (of_id)
++		ver = of_id->data;
++
++	if (ver) {
++		host->mmc->f_min = ver->pf_min / (1 << fls(ver->clkdiv_map));
++		host->mmc->f_max = ver->pf_max / (1 << ffs(ver->clkdiv_map));
++
++		host->ver = ver;
++	} else {
++		unsigned int clk = clk_get_rate(host->clk);
++
++		host->mmc->f_max = clk / 2;
++		host->mmc->f_min = clk / 512;
++	}
+ 
+-	host->mmc->f_max = clk / 2;
+-	host->mmc->f_min = clk / 512;
++	dev_dbg(dev, "clk max/min = %d/%d\n",
++		host->mmc->f_max, host->mmc->f_min);
+ }
+ 
+ static void sh_mmcif_set_power(struct sh_mmcif_host *host, struct mmc_ios *ios)
+-- 
+1.9.1
+
