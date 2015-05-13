@@ -1,96 +1,32 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 May 2015 09:27:43 +0000
-Subject: [PATCH v3] irqchip: renesas-intc-irqpin: Improve binding documentation
-Message-Id: <1432891663-23641-1-git-send-email-geert+renesas@glider.be>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Wed, 13 May 2015 06:43:36 +0000
+Subject: Re: [Bug Report] DU: Error messages at boot log and can't show image on RGB Display.
+Message-Id: <5552F298.2020201@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1304081002190.29945@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1304081002190.29945@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
-Cc: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Add missing documentation for required properties:
-  - interrupt-controller,
-  - parent interrupts (one entry per provided interrupt).
+Hi All.
 
-Add missing documentation for optional properties:
-  - functional clock (managed since commit 705bc96c2c15313c ("irqchip:
-    renesas-intc-irqpin: Add minimal runtime PM support")),
-  - power-domains.
+We are testing Linux upstream version-4.1-rc2 on Lager.
+We found a Error message of DU(Display Unit) at boot logs:
+The Warning messages is showed as below:
+"rcar-du feb00000.display: encoder initialization failed, skipping"
+Then we tried to show a .bmp image on RGB Display via RGB port. But it 
+didn't work.
 
-Add an example, taken from r8a7740.dtsi.
+Testing method:
+1. Connect RGB Display to RGB port on Lager.
+2. Show a BMP image on Display by this command:
+# bmap /dev/fb0 ./image.bmp
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
----
-v3:
-  - Add Acked-by,
+We'd like to report this problem first.
+There are no error message at version v4.0 stable.
+And showed the image on RGB Display normally at version v4.0 stable.
+We are looking for the error patch that added between v4.0 and v4.1-rc2.
 
-v2:
-  - This is v2 of "Add optional functional clock to bindings",
-  - Document all missing properties, not just the functional clock,
-  - Use a generic name for the device node in the example.
----
- .../interrupt-controller/renesas,intc-irqpin.txt   | 39 ++++++++++++++++++++--
- 1 file changed, 37 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-index 4f7946ae8adcdc04..772c550d3b4bcfe2 100644
---- a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-+++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
-@@ -13,9 +13,12 @@ Required properties:
- - reg: Base address and length of each register bank used by the external
-   IRQ pins driven by the interrupt controller hardware module. The base
-   addresses, length and number of required register banks varies with soctype.
--
-+- interrupt-controller: Identifies the node as an interrupt controller.
- - #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
--  interrupts.txt in this directory
-+  interrupts.txt in this directory.
-+- interrupts: Must contain a list of interrupt specifiers. For each interrupt
-+  provided by this irqpin controller instance, there must be one entry,
-+  referring to the corresponding parent interrupt.
- 
- Optional properties:
- 
-@@ -25,3 +28,35 @@ Optional properties:
-   if different from the default 4 bits
- - control-parent: disable and enable interrupts on the parent interrupt
-   controller, needed for some broken implementations
-+- clocks: Must contain a reference to the functional clock.  This property is
-+  mandatory if the hardware implements a controllable functional clock for
-+  the irqpin controller instance.
-+- power-domains: Must contain a reference to the power domain. This property is
-+  mandatory if the irqpin controller instance is part of a controllable power
-+  domain.
-+
-+
-+Example
-+-------
-+
-+	irqpin1: interrupt-controller@e6900004 {
-+		compatible = "renesas,intc-irqpin-r8a7740",
-+			     "renesas,intc-irqpin";
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		reg = <0xe6900004 4>,
-+			<0xe6900014 4>,
-+			<0xe6900024 1>,
-+			<0xe6900044 1>,
-+			<0xe6900064 1>;
-+		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH
-+			      0 149 IRQ_TYPE_LEVEL_HIGH
-+			      0 149 IRQ_TYPE_LEVEL_HIGH
-+			      0 149 IRQ_TYPE_LEVEL_HIGH
-+			      0 149 IRQ_TYPE_LEVEL_HIGH
-+			      0 149 IRQ_TYPE_LEVEL_HIGH
-+			      0 149 IRQ_TYPE_LEVEL_HIGH
-+			      0 149 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
-+		power-domains = <&pd_a4s>;
-+	};
--- 
-1.9.1
+Best Regards,
+Jinso/Cao Minh Hiep.
 
