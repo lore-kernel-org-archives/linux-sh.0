@@ -1,71 +1,68 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 06 May 2015 10:00:54 +0000
-Subject: Re: [PATCH/RFC] mmc: sh_mmcif: Fix timeout value for command request
-Message-Id: <CAPDyKFrVQ7k9iUOnn=h3zv5xu=JBLmF_FgavmFv2popAu8Rm_A@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 14 May 2015 01:06:37 +0000
+Subject: [PATCH 08/31] ARM: shmobile: r8a7794: Add IRQC clock to device tree
+Message-Id: <1c5ca5db11edd7ff27ad8a98ffb2ac61bfd520b6.1431565427.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430327031-8349-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1430327031-8349-1-git-send-email-ykaneko0929@gmail.com>
+References: <cover.1431565427.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Chris Ball <chris@printf.net>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On 29 April 2015 at 19:03, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
-> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
->
-> f9fd54f22e ("mmc: sh_mmcif: Use msecs_to_jiffies() for host->timeout")
-> changed the timeout value from 1000 jiffies to 1s. In the case where
-> HZ is 1000 the values are the same. However, for smaller HZ values the
-> timeout is now smaller, 1s instead of 10s in the case of HZ0.
->
-> Since the timeout occurs in spite of a normal data transfer a timeout of
-> 10s seems more appropriate. This restores the previous timeout in the
-> case where HZ0 and results in an increase over the previous timeout
-> for larger values of HZ.
->
-> Fixes: f9fd54f22e ("mmc: sh_mmcif: Use msecs_to_jiffies() for host->timeout")
-> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-> [horms: rewrote changelog to refer to HZ]
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Thanks, applied for fixes!
+Link the external IRQ controller irqc0 to the IRQC module clock, so it
+can be power managed using that clock.
 
-Kind regards
-Uffe
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 9 +++++++++
+ include/dt-bindings/clock/r8a7794-clock.h | 3 +++
+ 2 files changed, 12 insertions(+)
 
-> ---
->
-> This patch is based on the for-next branch of Mark Brown's spi tree.
->
-> A survey of the HZ resulting from of defconfigs that enable MMCIF is
-> as follows:
->
-> bockw_defconfig: CONFIG_HZ24
-> kzm9g_defconfig: CONFIG_HZ8
-> multi_v7_defconfig: CONFIG_HZ 0
-> shmobile_defconfig: CONFIG_HZ0
->
-> Simon Horman, SH Mobile maintainer, notes that it is the last defconfig
-> that is recommended for use at this time.
->
->  drivers/mmc/host/sh_mmcif.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-> index 072f670..b82b982 100644
-> --- a/drivers/mmc/host/sh_mmcif.c
-> +++ b/drivers/mmc/host/sh_mmcif.c
-> @@ -1411,7 +1411,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
->         host            = mmc_priv(mmc);
->         host->mmc       = mmc;
->         host->addr      = reg;
-> -       host->timeout   = msecs_to_jiffies(1000);
-> +       host->timeout   = msecs_to_jiffies(10000);
->         host->ccs_enable = !pd || !pd->ccs_unsupported;
->         host->clk_ctrl2_enable = pd && pd->clk_ctrl2_present;
->
-> --
-> 1.9.1
->
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 7a3ffa51a8bf..01cf54f70501 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -105,6 +105,7 @@
+ 			     <0 15 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 16 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R8A7794_CLK_IRQC>;
+ 	};
+ 
+ 	dmac0: dma-controller@e6700000 {
+@@ -625,6 +626,14 @@
+ 			        "sdhi2", "sdhi1", "sdhi0",
+ 				"mmcif0", "cmt1", "usbdmac0", "usbdmac1";
+ 		};
++		mstp4_clks: mstp4_clks@e6150140 {
++			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
++			clocks = <&cp_clk>;
++			#clock-cells = <1>;
++			clock-indices = <R8A7794_CLK_IRQC>;
++			clock-output-names = "irqc";
++		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index d63323032d6e..09da38a58776 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -60,6 +60,9 @@
+ #define R8A7794_CLK_USBDMAC0		30
+ #define R8A7794_CLK_USBDMAC1		31
+ 
++/* MSTP4 */
++#define R8A7794_CLK_IRQC		7
++
+ /* MSTP5 */
+ #define R8A7794_CLK_THERMAL		22
+ #define R8A7794_CLK_PWM			23
+-- 
+2.1.4
+
