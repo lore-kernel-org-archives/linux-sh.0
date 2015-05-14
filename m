@@ -1,35 +1,41 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 13 May 2015 02:16:43 +0000
-Subject: [PATCH 0/3 v5] mmc: sh_mmcif: add parent clk support
-Message-Id: <87a8x9fck7.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 14 May 2015 01:06:49 +0000
+Subject: [PATCH 20/31] ARM: shmobile: bockw-reference dts: Add "nor-jedec" compatible value
+Message-Id: <97c5afdffaca5d549e5680a2e1264d74821c287c.1431565427.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1431565427.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, kobayashi <keita.kobayashi.ym@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Ulf
+Spansion s25fl008k is compatible with "nor-jedec". Hence add the
+"nor-jedec" compatible value, so the driver can bind against the generic
+name, cfr. commit 8ff16cf77ce314c2 ("Documentation: devicetree: m25p80:
+add "nor-jedec" binding").
 
-These patches are v5 of sh_mmcif clock support.
-1) and 2) are new patches for cleanup,
-and 3) is v5 patch for it.
-
-Kuninori Morimoto (3):
-      1) mmc: sh_mmcif: add sh_mmcif_host_to_dev() macro and use it.
-      2) mmc: sh_mmcif: use sh_mmcif_xxx prefix for all functions
-      5) mmc: sh_mmcif: calculate best clock with parent clock
-
- drivers/mmc/host/sh_mmcif.c | 232 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-------------------------------------
- 1 file changed, 167 insertions(+), 65 deletions(-)
-
-Best regards
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Kuninori Morimoto
---
-To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index 04c0c37bb784..f9422d887b44 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -119,7 +119,7 @@
+ 	flash: flash@0 {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		compatible = "spansion,s25fl008k";
++		compatible = "spansion,s25fl008k", "nor-jedec";
+ 		reg = <0>;
+ 		spi-max-frequency = <104000000>;
+ 		m25p,fast-read;
+-- 
+2.1.4
+
