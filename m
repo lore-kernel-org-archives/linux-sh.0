@@ -1,530 +1,141 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 21 May 2015 10:51:03 +0000
-Subject: [RFC] pinctrl: sh-pfc: add minimal R-Car Gen3 support
-Message-Id: <1432205463-9640-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 14 May 2015 07:21:36 +0000
+Subject: [PATCH 2/5 v6] mmc: sh_mmcif: use sh_mmcif_xxx prefix for all functions
+Message-Id: <87382zpqw4.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+	<87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-Hi!
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This is a minimal PFC implementation for Gen3, limited to the bits and
-pieces related to SCIF0.  Considering that there is no hardware and no
-non-preliminary documentation (at least not with me), this serves more to
-keep the code from getting lost than as an actual request for comment.  :)
+Current sh_mmcif driver is using sh_mmcif_xxx and mmcif_xxx
+for functions. This patch used sh_mmcif_xxx for all functions.
 
-CU
-Uli
-
-
-Not-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-rcar3.c | 494 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 494 insertions(+)
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-rcar3.c
+v5 -> v6
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-rcar3.c b/drivers/pinctrl/sh-pfc/pfc-rcar3.c
-new file mode 100644
-index 0000000..b7d0282
---- /dev/null
-+++ b/drivers/pinctrl/sh-pfc/pfc-rcar3.c
-@@ -0,0 +1,494 @@
-+/*
-+ * R-Car Gen3 processor support - PFC hardware block.
-+ *
-+ * Copyright (C) 2015 Ulrich Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2
-+ * as published by the Free Software Foundation.
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/platform_data/gpio-rcar.h>
-+
-+#include "core.h"
-+#include "sh_pfc.h"
-+
-+#define CPU_ALL_PORT(fn, sfx)						\
-+	PORT_GP_32(0, fn, sfx),						\
-+	PORT_GP_32(1, fn, sfx),						\
-+	PORT_GP_32(2, fn, sfx),						\
-+	PORT_GP_32(3, fn, sfx),						\
-+	PORT_GP_32(4, fn, sfx),						\
-+	PORT_GP_32(5, fn, sfx),						\
-+	PORT_GP_32(6, fn, sfx),						\
-+	PORT_GP_32(7, fn, sfx)
-+
-+enum {
-+	PINMUX_RESERVED = 0,
-+
-+	PINMUX_DATA_BEGIN,
-+	GP_ALL(DATA),
-+	PINMUX_DATA_END,
-+
-+	PINMUX_FUNCTION_BEGIN,
-+	GP_ALL(FN),
-+
-+	/* GPSR5 */
-+	FN_IP10_27_24, FN_IP10_31_28, FN_IP11_3_0, FN_IP11_7_4,
-+	FN_IP11_11_8, FN_IP11_15_12, FN_IP11_19_16, FN_IP11_23_20,
-+	FN_IP11_24_27, FN_IP11_31_28, FN_IP12_3_0, FN_IP12_7_4,
-+	FN_IP12_11_8, FN_IP12_15_12, FN_IP12_19_16, FN_IP12_23_20,
-+	FN_IP12_27_24, FN_MSIOF0_SCK, FN_IP12_31_28, FN_IP13_3_0,
-+	FN_MSIOF0_TXD, FN_IP13_7_4, FN_MSIOF0_RXD, FN_IP13_11_8,
-+	FN_IP13_15_12, FN_IP13_19_16,
-+
-+	/* IPSR10 */
-+	FN_SD3_DAT6, FN_SD3_CD,	FN_SD3_DAT7, FN_SD3_WP,	FN_SCL2_B,
-+	FN_SIM0_RST_A, FN_SD0_CD, FN_SDA2_B, FN_SD0_WP,	FN_SIM0_CLK_B,
-+	FN_SD1_CD, FN_SIM0_D_B, FN_SD1_WP, FN_SDA2_A, FN_SIM0_RST_B,
-+	FN_STP_OPWM_0_C, FN_RIF0_CLK_B, FN_SCK0, FN_HSCK1_B,
-+	FN_MSIOF1_SS2_B, FN_AUDIO_CLKC_B, FN_TS_SCK0_C, FN_STP_ISCLK_0_C,
-+	FN_RIF0_D0_B, FN_RX0, FN_HRX1_B,
-+
-+	/* IPSR11 */
-+	FN_SCK2, FN_SCIF_CLK_B, FN_MSIOF1_SCK_B, FN_TS_SCK1_C,
-+	FN_STP_ISCLK1_C, FN_RIF1_CLK_B, FN_RTS1_N_TANS, FN_HRTS1_N_A,
-+	FN_MSIOF1_TXD_B, FN_TS_SDAT1_C, FN_STP_ISD1_C, FN_RIF1_D1_B,
-+	FN_CTS1_N, FN_HCTS1_N_A, FN_MSIOF1_RXD_B, FN_TS_SDEN1_C,
-+	FN_STP_ISEN_1_C, FN_RIF1_D0_B, FN_TX1_A, FN_HTX1_A, FN_TS_SDEN0_C,
-+	FN_STP_ISEN_0_C, FN_RIF1_D0_C, FN_RX1_A, FN_HRX1_A, FN_TS_SDAT0_C,
-+	FN_STP_ISD_0_C, FN_RIF1_CLK_C, FN_RTS0_N_TANS, FN_HRTS1_N_B,
-+	FN_MSIOF1_SS1_B, FN_AUDIO_CLKA_B, FN_SCL2_A, FN_STP_IVCXO27_1_C,
-+	FN_RIF0_SYNC_B, FN_CTS0_N, FN_HCTS1_N_B, FN_MSIOF1_SYNC_B,
-+	FN_TS_SPSYNC1_C, FN_STP_ISSYNC_1_C, FN_RIF1_SYNC_B, FN_TX0,
-+	FN_HTX1_B, FN_TS_SPSYNC0_C, FN_STP_ISSYNC_0_C, FN_RIF0_D1_B,
-+
-+	/* MOD_SEL0 */
-+	FN_SEL_5LINE_0, FN_SEL_5LINE_1,
-+
-+	FN_SEL_ADG_0, FN_SEL_ADG_1,
-+	FN_SEL_ADG_2, FN_SEL_ADG_3,
-+
-+	FN_SEL_CANFD_0, FN_SEL_CANFD_1,
-+
-+	FN_SEL_DRIF0_0, FN_SEL_DRIF0_1,
-+	FN_SEL_DRIF0_2, FN_SEL_DRIF0_3,
-+
-+	FN_SEL_DRIF1_0, FN_SEL_DRIF1_1,
-+	FN_SEL_DRIF1_2, FN_SEL_DRIF1_3,
-+
-+	FN_SEL_ETHERAVB_0, FN_SEL_ETHERAVB_1,
-+
-+	FN_SEL_FM_0, FN_SEL_FM_1,
-+
-+	FN_SEL_FSO_0, FN_SEL_FSO_1,
-+
-+	FN_SEL_HSCIF1_0, FN_SEL_HSCIF1_1,
-+
-+	FN_SEL_HSCIF2_0, FN_SEL_HSCIF2_1,
-+
-+	FN_SEL_HSCIF3_0, FN_SEL_HSCIF3_1,
-+	FN_SEL_HSCIF3_2, FN_SEL_HSCIF3_3,
-+
-+	FN_SEL_HSCIF4_0, FN_SEL_HSCIF4_1,
-+
-+	FN_SEL_I2C1_0, FN_SEL_I2C1_1,
-+
-+	FN_SEL_I2C2_0, FN_SEL_I2C2_1,
-+
-+	FN_SEL_I2C6_0, FN_SEL_I2C6_1,
-+	FN_SEL_I2C6_2, FN_SEL_I2C6_3,
-+
-+	FN_SEL_IEBUS_0, FN_SEL_IEBUS_1,
-+
-+	FN_SEL_LBSC_0, FN_SEL_LBSC_1,
-+
-+	FN_SEL_MSIOF1_0, FN_SEL_MSIOF1_1,
-+	FN_SEL_MSIOF1_2, FN_SEL_MSIOF1_3,
-+	FN_SEL_MSIOF1_4, FN_SEL_MSIOF1_5,
-+	FN_SEL_MSIOF1_6, FN_SEL_MSIOF1_7,
-+
-+	FN_SEL_MSIOF2_0, FN_SEL_MSIOF2_1,
-+	FN_SEL_MSIOF2_2, FN_SEL_MSIOF2_3,
-+
-+	FN_SEL_MSIOF3_0, FN_SEL_MSIOF3_1,
-+	FN_SEL_MSIOF3_2, FN_SEL_MSIOF3_3,
-+
-+	/* MOD_SEL1 */
-+	FN_SEL_PWM1_0, FN_SEL_PWM1_1,
-+
-+	FN_SEL_PWM2_0, FN_SEL_PWM2_1,
-+
-+	FN_SEL_PWM3_0, FN_SEL_PWM3_1,
-+
-+	FN_SEL_PWM4_0, FN_SEL_PWM4_1,
-+
-+	FN_SEL_PWM5_0, FN_SEL_PWM5_1,
-+
-+	FN_SEL_PWM6_0, FN_SEL_PWM6_1,
-+
-+	FN_SEL_RCAN0_0, FN_SEL_RCAN0_1,
-+
-+	FN_SEL_RDS_0, FN_SEL_RDS_1, FN_SEL_RDS_2, FN_SEL_RDS_3,
-+
-+	FN_SEL_REMOCON_0, FN_SEL_REMOCON_1,
-+
-+	FN_SEL_SCIF_0, FN_SEL_SCIF_1,
-+
-+	FN_SEL_SCIF1_0, FN_SEL_SCIF1_1,
-+
-+	FN_SEL_SCIF2_0, FN_SEL_SCIF2_1,
-+
-+	FN_SEL_SCIF3_0, FN_SEL_SCIF3_1,
-+
-+	FN_SEL_SCIF4_0, FN_SEL_SCIF4_1,	FN_SEL_SCIF4_2, FN_SEL_SCIF4_3,
-+
-+	FN_SEL_SDHI2_0, FN_SEL_SDHI2_1,
-+
-+	FN_SEL_SIMCARD_0, FN_SEL_SIMCARD_1,
-+	FN_SEL_SIMCARD_2, FN_SEL_SIMCARD_3,
-+
-+	FN_SEL_SPEED_PULSE_IF_0, FN_SEL_SPEED_PULSE_IF_1,
-+
-+	FN_SEL_SSI_0, FN_SEL_SSI_1,
-+
-+	FN_SEL_SSP1_0_0, FN_SEL_SSP1_0_1,
-+	FN_SEL_SSP1_0_2, FN_SEL_SSP1_0_3,
-+	FN_SEL_SSP1_0_4, FN_SEL_SSP1_0_5,
-+	FN_SEL_SSP1_0_6, FN_SEL_SSP1_0_7,
-+
-+	FN_SEL_SSP1_1_0, FN_SEL_SSP1_1_1_1,
-+	FN_SEL_SSP1_1_2, FN_SEL_SSP1_1_1_3,
-+
-+	FN_SEL_TIMER_TMU_0, FN_SEL_TIMER_TMU_1,
-+
-+	FN_SEL_TSIF0_0, FN_SEL_TSIF0_1,	FN_SEL_TSIF0_2, FN_SEL_TSIF0_3,
-+	FN_SEL_TSIF0_4, FN_SEL_TSIF0_5,	FN_SEL_TSIF0_6, FN_SEL_TSIF0_7,
-+
-+	FN_SEL_TSIF1_0, FN_SEL_TSIF1_1, FN_SEL_TSIF1_2, FN_SEL_TSIF1_3,
-+
-+	PINMUX_FUNCTION_END,
-+
-+	PINMUX_MARK_BEGIN,
-+
-+	/* IPSR10 */
-+	SD3_DAT6_MARK, SD3_CD_MARK, SD3_DAT7_MARK, SD3_WP_MARK,	SCL2_B_MARK,
-+	SIM0_RST_A_MARK, SD0_CD_MARK, SDA2_B_MARK, SD0_WP_MARK,
-+	SIM0_CLK_B_MARK, SD1_CD_MARK, SIM0_D_B_MARK, SD1_WP_MARK,
-+	SDA2_A_MARK, SIM0_RST_B_MARK, STP_OPWM_0_C_MARK, RIF0_CLK_B_MARK,
-+	SCK0_MARK, HSCK1_B_MARK, MSIOF1_SS2_B_MARK, AUDIO_CLKC_B_MARK,
-+	TS_SCK0_C_MARK, STP_ISCLK_0_C_MARK, RIF0_D0_B_MARK, RX0_MARK,
-+	HRX1_B_MARK,
-+
-+	/* IPSR11 */
-+	SCK2_MARK, SCIF_CLK_B_MARK, MSIOF1_SCK_B_MARK, TS_SCK1_C_MARK,
-+	STP_ISCLK1_C_MARK, RIF1_CLK_B_MARK, RTS1_N_TANS_MARK, HRTS1_N_A_MARK,
-+	MSIOF1_TXD_B_MARK, TS_SDAT1_C_MARK, STP_ISD1_C_MARK, RIF1_D1_B_MARK,
-+	CTS1_N_MARK, HCTS1_N_A_MARK, MSIOF1_RXD_B_MARK, TS_SDEN1_C_MARK,
-+	STP_ISEN_1_C_MARK, RIF1_D0_B_MARK, TX1_A_MARK, HTX1_A_MARK, TS_SDEN0_C_MARK,
-+	STP_ISEN_0_C_MARK, RIF1_D0_C_MARK, RX1_A_MARK, HRX1_A_MARK, TS_SDAT0_C_MARK,
-+	STP_ISD_0_C_MARK, RIF1_CLK_C_MARK, RTS0_N_TANS_MARK, HRTS1_N_B_MARK,
-+	MSIOF1_SS1_B_MARK, AUDIO_CLKA_B_MARK, SCL2_A_MARK, STP_IVCXO27_1_C_MARK,
-+	RIF0_SYNC_B_MARK, CTS0_N_MARK, HCTS1_N_B_MARK, MSIOF1_SYNC_B_MARK,
-+	TS_SPSYNC1_C_MARK, STP_ISSYNC_1_C_MARK, RIF1_SYNC_B_MARK, TX0_MARK,
-+	HTX1_B_MARK, TS_SPSYNC0_C_MARK, STP_ISSYNC_0_C_MARK, RIF0_D1_B_MARK,
-+
-+	PINMUX_MARK_END,
-+};
-+
-+static const u16 pinmux_data[] = {
-+	PINMUX_DATA_GP_ALL(),
-+
-+	/* IPSR10 */
-+	PINMUX_IPSR_DATA(IP10_27_24, SCK0),
-+	PINMUX_IPSR_MODSEL_DATA(IP10_27_24, HSCK1_B, SEL_HSCIF1_1),
-+	PINMUX_IPSR_MODSEL_DATA(IP10_27_24, MSIOF1_SS2_B, SEL_MSIOF1_1),
-+	PINMUX_IPSR_MODSEL_DATA(IP10_27_24, AUDIO_CLKC_B, SEL_ADG_1),
-+	PINMUX_IPSR_MODSEL_DATA(IP10_27_24, SDA2_A, SEL_I2C2_0),
-+	PINMUX_IPSR_MODSEL_DATA(IP10_27_24, SIM0_RST_B, SEL_SIMCARD_1),
-+	PINMUX_IPSR_MODSEL_DATA(IP10_27_24, STP_OPWM_0_C, SEL_SSP1_0_2),
-+	PINMUX_IPSR_MODSEL_DATA(IP10_27_24, RIF0_CLK_B, SEL_DRIF0_1),
-+
-+	PINMUX_IPSR_DATA(IP10_31_28, RX0),
-+	PINMUX_IPSR_MODSEL_DATA(IP10_31_28, HRX1_B, SEL_HSCIF1_1),
-+	PINMUX_IPSR_MODSEL_DATA(IP10_31_28, TS_SCK0_C, SEL_TSIF0_2),
-+	PINMUX_IPSR_MODSEL_DATA(IP10_31_28, STP_ISCLK_0_C, SEL_SSP1_0_2),
-+	PINMUX_IPSR_MODSEL_DATA(IP10_31_28, RIF0_D0_B, SEL_DRIF0_1),
-+
-+	/* IPSR11 */
-+	PINMUX_IPSR_DATA(IP11_3_0, TX0),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_3_0, HTX1_B, SEL_HSCIF1_1),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_3_0, TS_SPSYNC0_C, SEL_TSIF0_2),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_3_0, STP_ISSYNC_0_C, SEL_SSP1_0_2),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_3_0, RIF0_D1_B, SEL_DRIF0_1),
-+
-+	PINMUX_IPSR_DATA(IP11_7_4, CTS0_N),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_7_4, HCTS1_N_B, SEL_HSCIF1_1),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_7_4, MSIOF1_SYNC_B, SEL_MSIOF1_1),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_7_4, TS_SPSYNC1_C, SEL_TSIF1_2),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_7_4, STP_ISSYNC_1_C, SEL_SSP1_1_2),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_7_4, RIF1_SYNC_B, SEL_DRIF1_1),
-+
-+	PINMUX_IPSR_DATA(IP11_11_8, RTS0_N_TANS),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_11_8, HRTS1_N_B, SEL_HSCIF1_1),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_11_8, MSIOF1_SS1_B, SEL_MSIOF1_1),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_11_8, AUDIO_CLKA_B, SEL_ADG_1),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_11_8, SCL2_A, SEL_I2C2_0),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_11_8, STP_IVCXO27_1_C, SEL_SSP1_1_2),
-+	PINMUX_IPSR_MODSEL_DATA(IP11_11_8, RIF0_SYNC_B, SEL_DRIF0_1),
-+};
-+
-+static const struct sh_pfc_pin pinmux_pins[] = {
-+	PINMUX_GPIO_GP_ALL(),
-+};
-+
-+/* - SCIF0 ------------------------------------------------------------------ */
-+static const unsigned int scif0_data_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(5, 1), RCAR_GP_PIN(5, 2),
-+};
-+static const unsigned int scif0_data_mux[] = {
-+	RX0_MARK, TX0_MARK,
-+};
-+static const unsigned int scif0_clk_b_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(5, 9),
-+};
-+static const unsigned int scif0_clk_b_mux[] = {
-+	SCIF_CLK_B_MARK,
-+};
-+
-+static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(scif0_data),
-+	SH_PFC_PIN_GROUP(scif0_clk_b),
-+};
-+
-+static const char * const scif0_groups[] = {
-+	"scif0_data",
-+	"scif0_clk_b",
-+};
-+
-+static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(scif0),
-+};
-+
-+static const struct pinmux_cfg_reg pinmux_config_regs[] = {
-+	{ PINMUX_CFG_REG("GPSR5", 0xe6060114, 32, 1) {
-+		0, 0, 0, 0, 0, 0, 0, 0,
-+		0, 0, 0, 0,
-+		GP_5_25_FN, FN_IP13_19_16,
-+		GP_5_24_FN, FN_IP13_15_12,
-+		GP_5_23_FN, FN_IP13_11_8,
-+		GP_5_22_FN, FN_MSIOF0_RXD,
-+		GP_5_21_FN, FN_IP13_7_4,
-+		GP_5_20_FN, FN_MSIOF0_TXD,
-+		GP_5_19_FN, FN_IP13_3_0,
-+		GP_5_18_FN, FN_IP12_31_28,
-+		GP_5_17_FN, FN_MSIOF0_SCK,
-+		GP_5_16_FN, FN_IP12_27_24,
-+		GP_5_15_FN, FN_IP12_23_20,
-+		GP_5_14_FN, FN_IP12_19_16,
-+		GP_5_13_FN, FN_IP12_15_12,
-+		GP_5_12_FN, FN_IP12_11_8,
-+		GP_5_11_FN, FN_IP12_7_4,
-+		GP_5_10_FN, FN_IP12_3_0,
-+		GP_5_9_FN, FN_IP11_31_28,
-+		GP_5_8_FN, FN_IP11_24_27,
-+		GP_5_7_FN, FN_IP11_23_20,
-+		GP_5_6_FN, FN_IP11_19_16,
-+		GP_5_5_FN, FN_IP11_15_12,
-+		GP_5_4_FN, FN_IP11_11_8,
-+		GP_5_3_FN, FN_IP11_7_4,
-+		GP_5_2_FN, FN_IP11_3_0,
-+		GP_5_1_FN, FN_IP10_31_28,
-+		GP_5_0_FN, FN_IP10_27_24, }
-+	},
-+
-+	{ PINMUX_CFG_REG("IPSR10", 0xe6060228, 32, 4) {
-+		/* IP10_31_28 */
-+		FN_RX0, FN_HRX1_B, 0, 0,
-+		0, FN_TS_SCK0_C, FN_STP_ISCLK_0_C, FN_RIF0_D0_B,
-+		/* IP10_27_24 */
-+		FN_SCK0, FN_HSCK1_B, FN_MSIOF1_SS2_B, FN_AUDIO_CLKC_B,
-+		FN_SDA2_A, FN_SIM0_RST_B, FN_STP_OPWM_0_C, FN_RIF0_CLK_B,
-+		/* IP10_23_20 */
-+		FN_SD1_WP, 0, 0, 0,
-+		0, FN_SIM0_D_B, 0, 0,
-+		/* IP10_19_16 */
-+		FN_SD1_CD, 0, 0, 0,
-+		0, FN_SIM0_CLK_B, 0, 0,
-+		/* IP10_15_12 */
-+		FN_SD0_WP, 0, 0, 0,
-+		FN_SDA2_B, 0, 0, 0,
-+		/* IP10_11_8 */
-+		FN_SD0_CD, 0, 0, 0,
-+		FN_SCL2_B, FN_SIM0_RST_A, 0,
-+		/* IP10_7_4 */
-+		FN_SD3_DAT7, FN_SD3_WP, 0, 0,
-+		0, 0, 0, 0,
-+		/* IP10_3_0 */
-+		FN_SD3_DAT6, FN_SD3_CD, 0, 0,
-+		0, 0, 0, 0, }
-+	},
-+	{ PINMUX_CFG_REG("IPSR11", 0xe606022c, 32, 4) {
-+		/* IP11_31_28 */
-+		FN_SCK2, FN_SCIF_CLK_B, FN_MSIOF1_SCK_B, 0,
-+		0, FN_TS_SCK1_C, FN_STP_ISCLK1_C, FN_RIF1_CLK_B,
-+		/* IP11_27_24 */
-+		FN_RTS1_N_TANS, FN_HRTS1_N_A, FN_MSIOF1_TXD_B, 0,
-+		0, FN_TS_SDAT1_C, FN_STP_ISD1_C, FN_RIF1_D1_B,
-+		/* IP11_23_20 */
-+		FN_CTS1_N, FN_HCTS1_N_A, FN_MSIOF1_RXD_B, 0,
-+		0, FN_TS_SDEN1_C, FN_STP_ISEN_1_C, FN_RIF1_D0_B,
-+		/* IP11_19_16 */
-+		FN_TX1_A, FN_HTX1_A, 0, 0,
-+		0, FN_TS_SDEN0_C, FN_STP_ISEN_0_C, FN_RIF1_D0_C,
-+		/* IP11_15_12 */
-+		FN_RX1_A, FN_HRX1_A, 0, 0,
-+		0, FN_TS_SDAT0_C, FN_STP_ISD_0_C, FN_RIF1_CLK_C,
-+		/* IP11_11_8 */
-+		FN_RTS0_N_TANS, FN_HRTS1_N_B, FN_MSIOF1_SS1_B, FN_AUDIO_CLKA_B,
-+		FN_SCL2_A, 0, FN_STP_IVCXO27_1_C, FN_RIF0_SYNC_B,
-+		/* IP11_7_4 */
-+		FN_CTS0_N, FN_HCTS1_N_B, FN_MSIOF1_SYNC_B, 0,
-+		0, FN_TS_SPSYNC1_C, FN_STP_ISSYNC_1_C, FN_RIF1_SYNC_B,
-+		/* IP11_3_0 */
-+		FN_TX0, FN_HTX1_B, 0, 0,
-+		0, FN_TS_SPSYNC0_C, FN_STP_ISSYNC_0_C, FN_RIF0_D1_B, }
-+	},
-+
-+	{ PINMUX_CFG_REG_VAR("MOD_SEL0", 0xe6060500, 32,
-+			     1, 2, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2,
-+			     1, 1, 1, 2, 1, 1, 3, 2, 2, 1) {
-+		FN_SEL_5LINE_0, FN_SEL_5LINE_1,
-+
-+		FN_SEL_ADG_0, FN_SEL_ADG_1,
-+		FN_SEL_ADG_2, FN_SEL_ADG_3,
-+
-+		FN_SEL_CANFD_0, FN_SEL_CANFD_1,
-+
-+		FN_SEL_DRIF0_0, FN_SEL_DRIF0_1,
-+		FN_SEL_DRIF0_2, FN_SEL_DRIF0_3,
-+
-+		FN_SEL_DRIF1_0, FN_SEL_DRIF1_1,
-+		FN_SEL_DRIF1_2, FN_SEL_DRIF1_3,
-+
-+		FN_SEL_ETHERAVB_0, FN_SEL_ETHERAVB_1,
-+
-+		FN_SEL_FM_0, FN_SEL_FM_1,
-+
-+		FN_SEL_FSO_0, FN_SEL_FSO_1,
-+
-+		FN_SEL_HSCIF1_0, FN_SEL_HSCIF1_1,
-+
-+		FN_SEL_HSCIF2_0, FN_SEL_HSCIF2_1,
-+
-+		FN_SEL_HSCIF3_0, FN_SEL_HSCIF3_1,
-+		FN_SEL_HSCIF3_2, FN_SEL_HSCIF3_3,
-+
-+		FN_SEL_HSCIF4_0, FN_SEL_HSCIF4_1,
-+
-+		FN_SEL_I2C1_0, FN_SEL_I2C1_1,
-+
-+		FN_SEL_I2C2_0, FN_SEL_I2C2_1,
-+
-+		FN_SEL_I2C6_0, FN_SEL_I2C6_1,
-+		FN_SEL_I2C6_2, FN_SEL_I2C6_3,
-+
-+		FN_SEL_IEBUS_0, FN_SEL_IEBUS_1,
-+
-+		FN_SEL_LBSC_0, FN_SEL_LBSC_1,
-+
-+		FN_SEL_MSIOF1_0, FN_SEL_MSIOF1_1,
-+		FN_SEL_MSIOF1_2, FN_SEL_MSIOF1_3,
-+		FN_SEL_MSIOF1_4, FN_SEL_MSIOF1_5,
-+		FN_SEL_MSIOF1_6, FN_SEL_MSIOF1_7,
-+
-+		FN_SEL_MSIOF2_0, FN_SEL_MSIOF2_1,
-+		FN_SEL_MSIOF2_2, FN_SEL_MSIOF2_3,
-+
-+		FN_SEL_MSIOF3_0, FN_SEL_MSIOF3_1,
-+		FN_SEL_MSIOF3_2, FN_SEL_MSIOF3_3,
-+
-+		0, }
-+	},
-+	{ PINMUX_CFG_REG_VAR("MOD_SEL1", 0xe6060504, 32,
-+			     1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2,
-+			     1, 2, 1, 1, 3, 2, 1, 3, 2) {
-+		FN_SEL_PWM1_0, FN_SEL_PWM1_1,
-+
-+		FN_SEL_PWM2_0, FN_SEL_PWM2_1,
-+
-+		FN_SEL_PWM3_0, FN_SEL_PWM3_1,
-+
-+		FN_SEL_PWM4_0, FN_SEL_PWM4_1,
-+
-+		FN_SEL_PWM5_0, FN_SEL_PWM5_1,
-+
-+		FN_SEL_PWM6_0, FN_SEL_PWM6_1,
-+
-+		FN_SEL_RCAN0_0, FN_SEL_RCAN0_1,
-+
-+		FN_SEL_RDS_0, FN_SEL_RDS_1, FN_SEL_RDS_2, FN_SEL_RDS_3,
-+
-+		FN_SEL_REMOCON_0, FN_SEL_REMOCON_1,
-+
-+		FN_SEL_SCIF_0, FN_SEL_SCIF_1,
-+
-+		FN_SEL_SCIF1_0, FN_SEL_SCIF1_1,
-+
-+		FN_SEL_SCIF2_0, FN_SEL_SCIF2_1,
-+
-+		FN_SEL_SCIF3_0, FN_SEL_SCIF3_1,
-+
-+		FN_SEL_SCIF4_0, FN_SEL_SCIF4_1,	FN_SEL_SCIF4_2, FN_SEL_SCIF4_3,
-+
-+		FN_SEL_SDHI2_0, FN_SEL_SDHI2_1,
-+
-+		FN_SEL_SIMCARD_0, FN_SEL_SIMCARD_1,
-+		FN_SEL_SIMCARD_2, FN_SEL_SIMCARD_3,
-+
-+		FN_SEL_SPEED_PULSE_IF_0, FN_SEL_SPEED_PULSE_IF_1,
-+
-+		FN_SEL_SSI_0, FN_SEL_SSI_1,
-+
-+		FN_SEL_SSP1_0_0, FN_SEL_SSP1_0_1,
-+		FN_SEL_SSP1_0_2, FN_SEL_SSP1_0_3,
-+		FN_SEL_SSP1_0_4, FN_SEL_SSP1_0_5,
-+		FN_SEL_SSP1_0_6, FN_SEL_SSP1_0_7,
-+
-+		FN_SEL_SSP1_1_0, FN_SEL_SSP1_1_1_1,
-+		FN_SEL_SSP1_1_2, FN_SEL_SSP1_1_1_3,
-+
-+		FN_SEL_TIMER_TMU_0, FN_SEL_TIMER_TMU_1,
-+
-+		FN_SEL_TSIF0_0, FN_SEL_TSIF0_1,	FN_SEL_TSIF0_2,
-+		FN_SEL_TSIF0_3, FN_SEL_TSIF0_4, FN_SEL_TSIF0_5,
-+		FN_SEL_TSIF0_6, FN_SEL_TSIF0_7,
-+
-+		FN_SEL_TSIF1_0, FN_SEL_TSIF1_1, FN_SEL_TSIF1_2,
-+		FN_SEL_TSIF1_3, }
-+	},
-+
-+	{ },
-+};
-+		
-+const struct sh_pfc_soc_info rcar3_pinmux_info = {
-+	.name = "rcar3_pfc",
-+	.unlock_reg = 0xe6060000, /* PMMR */
-+
-+	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
-+
-+	.pins = pinmux_pins,
-+	.nr_pins = ARRAY_SIZE(pinmux_pins),
-+	.groups = pinmux_groups,
-+	.nr_groups = ARRAY_SIZE(pinmux_groups),
-+	.functions = pinmux_functions,
-+	.nr_functions = ARRAY_SIZE(pinmux_functions),
-+
-+	.cfg_regs = pinmux_config_regs,
-+
-+	.gpio_data = pinmux_data,
-+	.gpio_data_size = ARRAY_SIZE(pinmux_data),
-+};
+ - no change
+
+ drivers/mmc/host/sh_mmcif.c | 26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 29835ae..e13c5f41 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -205,14 +205,14 @@
+ #define CLKDEV_MMC_DATA		20000000 /* 20MHz */
+ #define CLKDEV_INIT		400000   /* 400 KHz */
+ 
+-enum mmcif_state {
++enum sh_mmcif_state {
+ 	STATE_IDLE,
+ 	STATE_REQUEST,
+ 	STATE_IOS,
+ 	STATE_TIMEOUT,
+ };
+ 
+-enum mmcif_wait_for {
++enum sh_mmcif_wait_for {
+ 	MMCIF_WAIT_FOR_REQUEST,
+ 	MMCIF_WAIT_FOR_CMD,
+ 	MMCIF_WAIT_FOR_MREAD,
+@@ -237,8 +237,8 @@ struct sh_mmcif_host {
+ 	void __iomem *addr;
+ 	u32 *pio_ptr;
+ 	spinlock_t lock;		/* protect sh_mmcif_host::state */
+-	enum mmcif_state state;
+-	enum mmcif_wait_for wait_for;
++	enum sh_mmcif_state state;
++	enum sh_mmcif_wait_for wait_for;
+ 	struct delayed_work timeout_work;
+ 	size_t blocksize;
+ 	int sg_idx;
+@@ -256,11 +256,11 @@ struct sh_mmcif_host {
+ 	bool			dma_active;
+ };
+ 
+-static const struct of_device_id mmcif_of_match[] = {
++static const struct of_device_id sh_mmcif_of_match[] = {
+ 	{ .compatible = "renesas,sh-mmcif" },
+ 	{ }
+ };
+-MODULE_DEVICE_TABLE(of, mmcif_of_match);
++MODULE_DEVICE_TABLE(of, sh_mmcif_of_match);
+ 
+ #define sh_mmcif_host_to_dev(host) (&host->pd->dev)
+ 
+@@ -276,7 +276,7 @@ static inline void sh_mmcif_bitclr(struct sh_mmcif_host *host,
+ 	writel(~val & readl(host->addr + reg), host->addr + reg);
+ }
+ 
+-static void mmcif_dma_complete(void *arg)
++static void sh_mmcif_dma_complete(void *arg)
+ {
+ 	struct sh_mmcif_host *host = arg;
+ 	struct mmc_request *mrq = host->mrq;
+@@ -310,7 +310,7 @@ static void sh_mmcif_start_dma_rx(struct sh_mmcif_host *host)
+ 	}
+ 
+ 	if (desc) {
+-		desc->callback = mmcif_dma_complete;
++		desc->callback = sh_mmcif_dma_complete;
+ 		desc->callback_param = host;
+ 		cookie = dmaengine_submit(desc);
+ 		sh_mmcif_bitset(host, MMCIF_CE_BUF_ACC, BUF_ACC_DMAREN);
+@@ -360,7 +360,7 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
+ 	}
+ 
+ 	if (desc) {
+-		desc->callback = mmcif_dma_complete;
++		desc->callback = sh_mmcif_dma_complete;
+ 		desc->callback_param = host;
+ 		cookie = dmaengine_submit(desc);
+ 		sh_mmcif_bitset(host, MMCIF_CE_BUF_ACC, BUF_ACC_DMAWEN);
+@@ -1327,7 +1327,7 @@ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
+ 		if (!host->dma_active)
+ 			return IRQ_WAKE_THREAD;
+ 		else if (host->sd_error)
+-			mmcif_dma_complete(host);
++			sh_mmcif_dma_complete(host);
+ 	} else {
+ 		dev_dbg(dev, "Unexpected IRQ 0x%x\n", state);
+ 	}
+@@ -1335,7 +1335,7 @@ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
+ 	return IRQ_HANDLED;
+ }
+ 
+-static void mmcif_timeout_work(struct work_struct *work)
++static void sh_mmcif_timeout_work(struct work_struct *work)
+ {
+ 	struct delayed_work *d = container_of(work, struct delayed_work, work);
+ 	struct sh_mmcif_host *host = container_of(d, struct sh_mmcif_host, timeout_work);
+@@ -1481,7 +1481,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	if (ret < 0)
+ 		goto err_clk;
+ 
+-	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
++	INIT_DELAYED_WORK(&host->timeout_work, sh_mmcif_timeout_work);
+ 
+ 	sh_mmcif_sync_reset(host);
+ 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
+@@ -1587,7 +1587,7 @@ static struct platform_driver sh_mmcif_driver = {
+ 	.driver		= {
+ 		.name	= DRIVER_NAME,
+ 		.pm	= &sh_mmcif_dev_pm_ops,
+-		.of_match_table = mmcif_of_match,
++		.of_match_table = sh_mmcif_of_match,
+ 	},
+ };
+ 
 -- 
-2.3.5
+1.9.1
 
