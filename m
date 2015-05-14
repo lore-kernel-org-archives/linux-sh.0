@@ -1,111 +1,54 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sat, 16 May 2015 15:03:07 +0000
-Subject: [PATCH] sh-sci: Get register size from platform data
-Message-Id: <1431788588-14974-1-git-send-email-ysato@users.sourceforge.jp>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 14 May 2015 07:20:26 +0000
+Subject: [PATCH 0/3 v6] mmc: sh_mmcif: add parent clk support
+Message-Id: <87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431786127-10316-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1431786127-10316-1-git-send-email-ysato@users.sourceforge.jp>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-There is much implement of SCI,
-So the register size should be acquired from platform data.
 
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+Hi Ulf, Simon
+
+These patches are v6 of sh_mmcif clock support.
+
+1) - 2) : cleanup patches
+3)      : v6 patch for clk
+4) - 5) : DTS patch
+
+Simon
+
+ 1) - 3) only : driver uses default clock
+ 4) - 5) only : driver uses it, but it is updated to default clock
+ 1) - 5) all  : it uses new method
+
+so, you can check 4) - 5) without thinking about 1) - 3).
+
+Kuninori Morimoto (5):
+      1) mmc: sh_mmcif: add sh_mmcif_host_to_dev() macro and use it.
+      2) mmc: sh_mmcif: use sh_mmcif_xxx prefix for all functions
+      3) mmc: sh_mmcif: calculate best clock with parent clock
+      4) ARM: shmobile: r8a7790: add MMCIF max-frequency
+      5) ARM: shmobile: r8a7791: add MMCIF max-frequency
+
+ Documentation/devicetree/bindings/mmc/renesas,mmcif.txt |   3 ++
+ arch/arm/boot/dts/r8a7790.dtsi                          |   2 +
+ arch/arm/boot/dts/r8a7791.dtsi                          |   1 +
+ drivers/mmc/host/sh_mmcif.c                             | 220 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-------------------------------
+ 4 files changed, 161 insertions(+), 65 deletions(-)
+
+Best regards
 ---
- drivers/tty/serial/sh-sci.c | 34 +++++++++++++---------------------
- 1 file changed, 13 insertions(+), 21 deletions(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 1468ec5..784650b 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -84,7 +84,7 @@ struct sci_port {
- 	int			overrun_bit;
- 	unsigned int		error_mask;
- 	unsigned int		sampling_rate;
--
-+	unsigned int		reg_size;
- 
- 	/* Break timer */
- 	struct timer_list	break_timer;
-@@ -2073,23 +2073,9 @@ static const char *sci_type(struct uart_port *port)
- 	return NULL;
- }
- 
--static inline unsigned long sci_port_size(struct uart_port *port)
--{
--	/*
--	 * Pick an arbitrary size that encapsulates all of the base
--	 * registers by default. This can be optimized later, or derived
--	 * from platform resource data at such a time that ports begin to
--	 * behave more erratically.
--	 */
--	if (port->type = PORT_HSCIF)
--		return 96;
--	else
--		return 64;
--}
--
- static int sci_remap_port(struct uart_port *port)
- {
--	unsigned long size = sci_port_size(port);
-+	struct sci_port *sport = to_sci_port(port);
- 
- 	/*
- 	 * Nothing to do if there's already an established membase.
-@@ -2098,7 +2084,7 @@ static int sci_remap_port(struct uart_port *port)
- 		return 0;
- 
- 	if (port->flags & UPF_IOREMAP) {
--		port->membase = ioremap_nocache(port->mapbase, size);
-+		port->membase = ioremap_nocache(port->mapbase, sport->reg_size);
- 		if (unlikely(!port->membase)) {
- 			dev_err(port->dev, "can't remap port#%d\n", port->line);
- 			return -ENXIO;
-@@ -2117,23 +2103,28 @@ static int sci_remap_port(struct uart_port *port)
- 
- static void sci_release_port(struct uart_port *port)
- {
-+	struct sci_port *sport = to_sci_port(port);
-+
- 	if (port->flags & UPF_IOREMAP) {
- 		iounmap(port->membase);
- 		port->membase = NULL;
- 	}
- 
--	release_mem_region(port->mapbase, sci_port_size(port));
-+	release_mem_region(port->mapbase, sport->reg_size);
- }
- 
- static int sci_request_port(struct uart_port *port)
- {
--	unsigned long size = sci_port_size(port);
- 	struct resource *res;
-+	struct sci_port *sport = to_sci_port(port);
- 	int ret;
- 
--	res = request_mem_region(port->mapbase, size, dev_name(port->dev));
--	if (unlikely(res = NULL))
-+	res = request_mem_region(port->mapbase, sport->reg_size,
-+				 dev_name(port->dev));
-+	if (unlikely(res = NULL)) {
-+		dev_err(port->dev, "request_mem_region failed.");
- 		return -EBUSY;
-+	}
- 
- 	ret = sci_remap_port(port);
- 	if (unlikely(ret != 0)) {
-@@ -2207,6 +2198,7 @@ static int sci_init_single(struct platform_device *dev,
- 		return -ENOMEM;
- 
- 	port->mapbase = res->start;
-+	sci_port->reg_size = res->end - res->start + 1;
- 
- 	for (i = 0; i < ARRAY_SIZE(sci_port->irqs); ++i)
- 		sci_port->irqs[i] = platform_get_irq(dev, i);
--- 
-2.1.4
-
+Kuninori Morimoto
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
