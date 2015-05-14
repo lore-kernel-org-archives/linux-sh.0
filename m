@@ -1,47 +1,57 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Fri, 22 May 2015 01:41:17 +0000
-Subject: Re: [PATCH 0/4 v2] ASoC: rsnd: fixup interrupt / spin lock issue
-Message-Id: <555E893D.2060705@jinso.co.jp>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 14 May 2015 01:06:59 +0000
+Subject: [PATCH 30/31] ARM: shmobile: r8a7791: add USB-DMAC device nodes
+Message-Id: <e3e25edc1116ebf44b1813aff03b02b7737d41ca.1431565427.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878ucitwyh.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878ucitwyh.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1431565427.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>
-Cc: Simon <horms@verge.net.au>, Nguyen Viet Dung <nv-dung@jinso.co.jp>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, sakato <ryusuke.sakato.bx@renesas.com>, dmaengine@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san,
-Sorry for late replying.
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-On 2015年05月21日 12:47, Kuninori Morimoto wrote:
-> Hi Mark, Vinod
-> Cc Laurent, Hiep-san
->
-> These are v2 of fixup unknown interrupt issue patch which was reported by
-> Hiep-san in v4.1-rcX kernel. It was not happened in v4.0 because ARM
-> platform side couldn't use DMA transfer.
->
-> We tested these same as v1 patches, and confirmed these solved problem
->
-> Hiep-san, can you please re-test these patches ?
->
-> Kuninori Morimoto (4):
->        1) dmaengine: rcar-dmac: fixup spinlock in rcar-dmac
->        2) ASoC: rsnd: indicate unknown HW start
->        3) ASoC: rsnd: add rsnd_dai_stream_quit()
->        4) ASoC: rsnd: spin lock for interrupt handler
->
->   drivers/dma/sh/rcar-dmac.c | 55 +++++++++++++++++++++++++++++++------------------------
->   sound/soc/sh/rcar/core.c   | 25 ++++++++++++++++++-------
->   sound/soc/sh/rcar/rsnd.h   |  3 +--
->   sound/soc/sh/rcar/src.c    | 11 ++++++++---
->   sound/soc/sh/rcar/ssi.c    | 18 ++++++++++++++----
->   5 files changed, 72 insertions(+), 40 deletions(-)
-We re-tested these patches on our Lager board.
-(30 times playback + 10 minutes recode and playback)
-It works very well without any problems,
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-Best Regards,
-Cao Minh Hiep.
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 30e1e13a228f..754c3f20f224 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -358,6 +358,28 @@
+ 		dma-channels = <13>;
+ 	};
+ 
++	usb_dmac0: dma-controller@e65a0000 {
++		compatible = "renesas,usb-dmac";
++		reg = <0 0xe65a0000 0 0x100>;
++		interrupts = <0 109 IRQ_TYPE_LEVEL_HIGH
++			      0 109 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "ch0", "ch1";
++		clocks = <&mstp3_clks R8A7791_CLK_USBDMAC0>;
++		#dma-cells = <1>;
++		dma-channels = <2>;
++	};
++
++	usb_dmac1: dma-controller@e65b0000 {
++		compatible = "renesas,usb-dmac";
++		reg = <0 0xe65b0000 0 0x100>;
++		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH
++			      0 110 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "ch0", "ch1";
++		clocks = <&mstp3_clks R8A7791_CLK_USBDMAC1>;
++		#dma-cells = <1>;
++		dma-channels = <2>;
++	};
++
+ 	/* The memory map in the User's Manual maps the cores to bus numbers */
+ 	i2c0: i2c@e6508000 {
+ 		#address-cells = <1>;
+-- 
+2.1.4
 
