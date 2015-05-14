@@ -1,55 +1,38 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 08 May 2015 07:13:33 +0000
-Subject: [PATCH v3 1/2] ARM: shmobile: r8a7791: add USB-DMAC device nodes
-Message-Id: <1431069214-8052-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 14 May 2015 01:06:39 +0000
+Subject: [PATCH 10/31] ARM: shmobile: r8a7778 dtsi: Use generic names for device nodes
+Message-Id: <b38150fae0164d363c852d6b782ab7083697c6d2.1431565427.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431069214-8052-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1431069214-8052-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <cover.1431565427.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux@arm.linux.org.uk
-Cc: devicetree@vger.kernel.org, linux-arm-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+irqpin -> interrupt-controller
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+ arch/arm/boot/dts/r8a7778.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 30e1e13..754c3f2 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -358,6 +358,28 @@
- 		dma-channels = <13>;
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 868f97309533..7ce9f5fd5865 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -68,7 +68,7 @@
  	};
  
-+	usb_dmac0: dma-controller@e65a0000 {
-+		compatible = "renesas,usb-dmac";
-+		reg = <0 0xe65a0000 0 0x100>;
-+		interrupts = <0 109 IRQ_TYPE_LEVEL_HIGH
-+			      0 109 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "ch0", "ch1";
-+		clocks = <&mstp3_clks R8A7791_CLK_USBDMAC0>;
-+		#dma-cells = <1>;
-+		dma-channels = <2>;
-+	};
-+
-+	usb_dmac1: dma-controller@e65b0000 {
-+		compatible = "renesas,usb-dmac";
-+		reg = <0 0xe65b0000 0 0x100>;
-+		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH
-+			      0 110 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "ch0", "ch1";
-+		clocks = <&mstp3_clks R8A7791_CLK_USBDMAC1>;
-+		#dma-cells = <1>;
-+		dma-channels = <2>;
-+	};
-+
- 	/* The memory map in the User's Manual maps the cores to bus numbers */
- 	i2c0: i2c@e6508000 {
- 		#address-cells = <1>;
+ 	/* irqpin: IRQ0 - IRQ3 */
+-	irqpin: irqpin@fe78001c {
++	irqpin: interrupt-controller@fe78001c {
+ 		compatible = "renesas,intc-irqpin-r8a7778", "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
 -- 
-1.9.1
+2.1.4
 
