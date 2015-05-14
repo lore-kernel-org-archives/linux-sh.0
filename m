@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 14 May 2015 01:06:34 +0000
-Subject: [PATCH 05/31] ARM: shmobile: r8a73a4: Add IRQC clock to device tree
-Message-Id: <1c2a7eb7169b855f6c3e9db036c6767052528ffe.1431565427.git.horms+renesas@verge.net.au>
+Date: Thu, 14 May 2015 01:06:47 +0000
+Subject: [PATCH 18/31] ARM: shmobile: armadillo800eva dts: Use generic names for device nodes
+Message-Id: <92d2434d8effe6160eb7f4fd0d01ef5b76930f2a.1431565427.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1431565427.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
@@ -12,69 +12,27 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Link the external IRQ controllers irqc0 and irqc1 to the IRQC module
-clock, so they can be power managed using that clock.
+wm8978 -> codec
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-[horms: corrected typo in changelog to refer to r8a73a4]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a73a4.dtsi            | 11 +++++++----
- include/dt-bindings/clock/r8a73a4-clock.h |  1 +
- 2 files changed, 8 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
-index 0fd889f88109..7ee22a41c6c9 100644
---- a/arch/arm/boot/dts/r8a73a4.dtsi
-+++ b/arch/arm/boot/dts/r8a73a4.dtsi
-@@ -163,6 +163,7 @@
- 			     <0 29 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 30 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 31 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R8A73A4_CLK_IRQC>;
- 		power-domains = <&pd_c4>;
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+index 9bd0cb439f44..2e31d8c01cbf 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+@@ -208,7 +208,7 @@
+ 		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
  	};
  
-@@ -197,6 +198,7 @@
- 			     <0 55 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 56 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 57 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R8A73A4_CLK_IRQC>;
- 		power-domains = <&pd_c4>;
- 	};
- 
-@@ -724,15 +726,16 @@
- 		mstp4_clks: mstp4_clks@e6150140 {
- 			compatible = "renesas,r8a73a4-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
--			clocks = <&main_div2_clk>, <&cpg_clocks R8A73A4_CLK_HP>,
-+			clocks = <&main_div2_clk>, <&main_div2_clk>,
-+				 <&cpg_clocks R8A73A4_CLK_HP>,
- 				 <&cpg_clocks R8A73A4_CLK_HP>;
- 			#clock-cells = <1>;
- 			clock-indices = <
--				R8A73A4_CLK_IIC5 R8A73A4_CLK_IIC4
--				R8A73A4_CLK_IIC3
-+				R8A73A4_CLK_IRQC R8A73A4_CLK_IIC5
-+				R8A73A4_CLK_IIC4 R8A73A4_CLK_IIC3
- 			>;
- 			clock-output-names -				"iic5", "iic4", "iic3";
-+				"irqc", "iic5", "iic4", "iic3";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a73a4-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a73a4-clock.h b/include/dt-bindings/clock/r8a73a4-clock.h
-index 9a4b4c9ca44a..dd11ecdf837e 100644
---- a/include/dt-bindings/clock/r8a73a4-clock.h
-+++ b/include/dt-bindings/clock/r8a73a4-clock.h
-@@ -54,6 +54,7 @@
- #define R8A73A4_CLK_IIC3	11
- #define R8A73A4_CLK_IIC4	10
- #define R8A73A4_CLK_IIC5	9
-+#define R8A73A4_CLK_IRQC	7
- 
- /* MSTP5 */
- #define R8A73A4_CLK_THERMAL	22
+-	wm8978: wm8978@1a {
++	wm8978: codec@1a {
+ 		#sound-dai-cells = <0>;
+ 		compatible = "wlf,wm8978";
+ 		reg = <0x1a>;
 -- 
 2.1.4
 
