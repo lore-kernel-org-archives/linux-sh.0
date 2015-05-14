@@ -1,71 +1,92 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Wed, 06 May 2015 01:10:28 +0000
-Subject: Re: [RFC PATCH 2/7] mmc: sh_mobile_sdhi: Add actual clock rate support
-Message-Id: <1430874628.4222.20.camel@xylophone.i.decadent.org.uk>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 14 May 2015 12:40:05 +0000
+Subject: [PATCH 4/4] i2c: slave: add error messages to slave core
+Message-Id: <1431607205-2316-5-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430396995.5802.39.camel@xylophone.i.decadent.org.uk>
-	 <1430397081.5802.41.camel@xylophone.i.decadent.org.uk>
-	 <554259A0.9030307@cogentembedded.com>
-	 <1430874332.4222.18.camel@xylophone.i.decadent.org.uk>
-In-Reply-To: <1430874332.4222.18.camel@xylophone.i.decadent.org.uk>
+References: <1431607205-2316-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1431607205-2316-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Shinobu Uehara <shinobu.uehara.xc@renesas.com>
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Peter Huewe <peterhuewe-Mmb7MZpHnFY@public.gmane.org>
 
-On Wed, 2015-05-06 at 02:05 +0100, Ben Hutchings wrote:
-> On Thu, 2015-04-30 at 19:34 +0300, Sergei Shtylyov wrote:
-> > On 04/30/2015 03:31 PM, Ben Hutchings wrote:
-> > 
-> > > From: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> > 
-> > > It is necessary to stop the SD clock before using
-> > > the actual clock in case of SDHI controller.
-> > 
-> > > Signed-off-by: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-> > > Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
-> > > ---
-> > >   drivers/mmc/host/sh_mobile_sdhi.c |   14 ++++++++++++++
-> > >   1 file changed, 14 insertions(+)
-> > 
-> > > diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> > > index 6906a905cd54..92a58c6007fe 100644
-> > > --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> > > +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> > > @@ -136,6 +136,18 @@ static void sh_mobile_sdhi_clk_disable(struct platform_device *pdev)
-> > >   	clk_disable_unprepare(priv->clk);
-> > >   }
-> > >
-> > > +static void sh_mobile_sdhi_set_clk_div(struct platform_device *pdev, int clk)
-> > > +{
-> > > +	struct mmc_host *mmc = dev_get_drvdata(&pdev->dev);
-> > > +	struct tmio_mmc_host *host = mmc_priv(mmc);
-> > > +
-> > > +	if (clk = true) {
-> > 
-> >     'clk' is *int*. Perhaps, should be just *if* (clk)?
-> 
-> clk is either 0 or 1 and should maybe be bool.  But you're right,
-> regardless of its type, it doesn't make sense to compare with true.
-[...]
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Anyway, I think this is redundant with:
+Inform users what went wrong from the core, so drivers don't have to do
+it.
 
-commit b30d6958a014812158d9729a3e0b6d448f6e8968
-Author: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date:   Sun Aug 24 20:02:16 2014 -0700
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Cc: Peter Huewe <peterhuewe@gmx.de>
+---
+ drivers/i2c/i2c-core.c | 22 +++++++++++++++++-----
+ 1 file changed, 17 insertions(+), 5 deletions(-)
 
-    mmc: tmio: remove SCLKEN bit setting from tmio_mmc_set_clock()
-
-commit da29fe2bf573f0ae56fdc2e790387cb73fc8c6f8
-Author: Shinobu Uehara <shinobu.uehara.xc@renesas.com>
-Date:   Sun Aug 24 20:03:00 2014 -0700
-
-    mmc: tmio: add actual clock support as option
-
-so I will probably just drop it.
-
-Ben.
-
+diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
+index 987c124432c501..e4dfdde832aa5f 100644
+--- a/drivers/i2c/i2c-core.c
++++ b/drivers/i2c/i2c-core.c
+@@ -2914,18 +2914,24 @@ int i2c_slave_register(struct i2c_client *client, i2c_slave_cb_t slave_cb)
+ {
+ 	int ret;
+ 
+-	if (!client || !slave_cb)
++	if (!client || !slave_cb) {
++		dev_err(&client->dev, "%s: insufficent data\n", __func__);
+ 		return -EINVAL;
++	}
+ 
+ 	if (!(client->flags & I2C_CLIENT_TEN)) {
+ 		/* Enforce stricter address checking */
+ 		ret = i2c_check_addr_validity(client->addr);
+-		if (ret)
++		if (ret) {
++			dev_err(&client->dev, "%s: invalid address\n", __func__);
+ 			return ret;
++		}
+ 	}
+ 
+-	if (!client->adapter->algo->reg_slave)
++	if (!client->adapter->algo->reg_slave) {
++		dev_err(&client->dev, "%s: not supported by adapter\n", __func__);
+ 		return -EOPNOTSUPP;
++	}
+ 
+ 	client->slave_cb = slave_cb;
+ 
+@@ -2933,8 +2939,10 @@ int i2c_slave_register(struct i2c_client *client, i2c_slave_cb_t slave_cb)
+ 	ret = client->adapter->algo->reg_slave(client);
+ 	i2c_unlock_adapter(client->adapter);
+ 
+-	if (ret)
++	if (ret) {
+ 		client->slave_cb = NULL;
++		dev_err(&client->dev, "%s: adapter returned error %d\n", __func__, ret);
++	}
+ 
+ 	return ret;
+ }
+@@ -2944,8 +2952,10 @@ int i2c_slave_unregister(struct i2c_client *client)
+ {
+ 	int ret;
+ 
+-	if (!client->adapter->algo->unreg_slave)
++	if (!client->adapter->algo->unreg_slave) {
++		dev_err(&client->dev, "%s: not supported by adapter\n", __func__);
+ 		return -EOPNOTSUPP;
++	}
+ 
+ 	i2c_lock_adapter(client->adapter);
+ 	ret = client->adapter->algo->unreg_slave(client);
+@@ -2953,6 +2963,8 @@ int i2c_slave_unregister(struct i2c_client *client)
+ 
+ 	if (ret = 0)
+ 		client->slave_cb = NULL;
++	else
++		dev_err(&client->dev, "%s: adapter returned error %d\n", __func__, ret);
+ 
+ 	return ret;
+ }
+-- 
+2.1.4
 
