@@ -1,38 +1,58 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 19 May 2015 10:42:37 +0000
-Subject: [PATCH v2 0/2] pwm: Add support for R-Car PWM Timer
-Message-Id: <1432032159-704-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 14 May 2015 12:34:02 +0000
+Subject: [PATCH 2/2] drm: rcar-du: Disable all planes when stopping the CRTC
+Message-Id: <1431606842-15522-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1431606842-15522-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1431606842-15522-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: thierry.reding@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-This patch set is based on the linux-pwm.git / for-next branch.
-(commit id = efb0de55b6a2ec15fc424e660601f22ae2fa487a)
+The DSnPR plane configuration registers are updated on vblank, and no
+vblank will occur once the CRTC is stopped. We thus can't only disable
+planes right before starting the CRTC as it would start scanning out
+immediately from old frame buffers until the next vblank.
 
-Changes from v1:
- - Change compatible string to SoC-specific compatible values.
- - Fix #pwm-call value to 2 in the device tree document.
- - Fix "depends on" value in Kconfig.
- - Fix help explanation in Kconfig.
- - Remove an unnecessary member in rcar_pwm_chip.
- - Remove hardcoded number of channels and change chip.npwm value to 1.
- - Fix formulas for clock calculation to improve accuracy.
+Fix the problem by disabling all planes when stopping the CRTC and wait
+for the change to take effect. This increases the CRTC stop delay,
+especially when multiple CRTCs are stopped in one operation as we now
+wait for one vblank per CRTC. Whether this can be improved needs to be
+researched.
 
-Yoshihiro Shimoda (2):
-  pwm: Add device tree binding document for R-Car PWM Timer
-  pwm: Add support for R-Car PWM Timer
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
- .../devicetree/bindings/pwm/renesas,pwm-rcar.txt   |  26 ++
- drivers/pwm/Kconfig                                |  11 +
- drivers/pwm/Makefile                               |   1 +
- drivers/pwm/pwm-rcar.c                             | 268 +++++++++++++++++++++
- 4 files changed, 306 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
- create mode 100644 drivers/pwm/pwm-rcar.c
-
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index e6a32c4e4040..a40085806f5b 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -398,6 +398,19 @@ static void rcar_du_crtc_stop(struct rcar_du_crtc *rcrtc)
+ 	if (!rcrtc->started)
+ 		return;
+ 
++	/* Disable all planes and wait for the change to take effect. This is
++	 * required as the DSnPR registers are updated on vblank, and no vblank
++	 * will occur once the CRTC is stopped. Disabling planes when starting
++	 * the CRTC thus wouldn't be enough as it would start scanning out
++	 * immediately from old frame buffers until the next vblank.
++	 *
++	 * This increases the CRTC stop delay, especially when multiple CRTCs
++	 * are stopped in one operation as we now wait for one vblank per CRTC.
++	 * Whether this can be improved needs to be researched.
++	 */
++	rcar_du_group_write(rcrtc->group, rcrtc->index % 2 ? DS2PR : DS1PR, 0);
++	drm_crtc_wait_one_vblank(crtc);
++
+ 	/* Disable vertical blanking interrupt reporting. We first need to wait
+ 	 * for page flip completion before stopping the CRTC as userspace
+ 	 * expects page flips to eventually complete.
 -- 
-1.9.1
+Regards,
+
+Laurent Pinchart
 
