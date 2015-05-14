@@ -1,107 +1,73 @@
-From: Paul Gortmaker <paul.gortmaker@windriver.com>
-Date: Fri, 29 May 2015 00:47:58 +0000
-Subject: [PATCH 00/15] Replace module_init with device_initcall in non modules
-Message-Id: <1432860493-23831-1-git-send-email-paul.gortmaker@windriver.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 14 May 2015 01:06:31 +0000
+Subject: [PATCH 02/31] ARM: shmobile: r8a7791: Remove MSIOF address from device tree
+Message-Id: <cb6d08a2b61fc0025a0148d06b71b8a7d0920e98.1431565427.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1431565427.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This series of commits converts non-modular code that is using
-the module_init() call to hook itself into the system to instead
-use device_initcall().
+From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
 
-The conversion is a runtime no-op, since module_init actually
-becomes __initcall in the non-modular case, and that in turn gets
-mapped onto device_initcall.
+MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
+MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
 
-We fix this up now, so that we can relocate module_init from
-init.h into module.h in a future series.
-
-The files changed here are just limited to those that would
-otherwise have to add module.h to obviously non-modular code, since
-we don't want to do that.
-
-This work is factored out from what was a previously larger series[1] so
-that there is a common theme and lower patch count to ease review.
-
-Paul.
-
-[1] https://marc.info/?l=linux-kernel&m9033951228828
-
+Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ Documentation/devicetree/bindings/spi/sh-msiof.txt | 2 +-
+ arch/arm/boot/dts/r8a7791.dtsi                     | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Chris Zankel <chris@zankel.net>
-Cc: David Howells <dhowells@redhat.com>
-Cc: Fenghua Yu <fenghua.yu@intel.com>
-Cc: Geoff Levand <geoff@infradead.org>
-Cc: Helge Deller <deller@gmx.de>
-Cc: "H. Peter Anvin" <hpa@zytor.com>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Ivan Kokshaysky <ink@jurassic.park.msu.ru>
-Cc: "James E.J. Bottomley" <jejb@parisc-linux.org>
-Cc: Jesper Nilsson <jesper.nilsson@axis.com>
-Cc: Koichi Yasutake <yasutake.koichi@jp.panasonic.com>
-Cc: Matt Turner <mattst88@gmail.com>
-Cc: Max Filippov <jcmvbkbc@gmail.com>
-Cc: Mikael Starvik <starvik@axis.com>
-Cc: Mike Turquette <mturquette@linaro.org>
-Cc: Paul Mackerras <paulus@samba.org>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: Richard Henderson <rth@twiddle.net>
-Cc: Russell King <linux@arm.linux.org.uk>
-Cc: Scott Wood <scottwood@freescale.com>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Thomas Meyer <thomas@m3y3r.de>
-Cc: Tony Luck <tony.luck@intel.com>
-Cc: linux-alpha@vger.kernel.org
-Cc: linux-am33-list@redhat.com
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: linux-cris-kernel@axis.com
-Cc: linux-ia64@vger.kernel.org
-Cc: linux-parisc@vger.kernel.org
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-sh@vger.kernel.org
-Cc: linux-xtensa@linux-xtensa.org
-Cc: x86@kernel.org
-
-Paul Gortmaker (15):
-  x86: don't use module_init in non-modular intel_mid_vrtc.c
-  x86: don't use module_init in non-modular devicetree.c code
-  powerpc: use device_initcall for registering rtc devices
-  powerpc: don't use module_init in non-modular 83xx suspend code
-  arm: don't use module_init in non-modular mach-vexpress/spc.c code
-  alpha: don't use module_init for non-modular core code
-  ia64: don't use module_init for non-modular core kernel/mca.c code
-  ia64: don't use module_init in non-modular sim/simscsi.c code
-  cris: don't use module_init for non-modular core intmem.c code
-  parisc: don't use module_init for non-modular core pdc_cons code
-  parisc64: don't use module_init for non-modular core perf code
-  mn10300: don't use module_init in non-modular flash.c code
-  sh: don't use module_init in non-modular psw.c code
-  xtensa: don't use module_init for non-modular core network.c code
-  drivers/clk: don't use module_init in clk-nomadik.c which is
-    non-modular
-
- arch/alpha/kernel/srmcons.c                  |  3 +--
- arch/arm/mach-vexpress/spc.c                 |  2 +-
- arch/cris/arch-v32/mm/intmem.c               |  3 +--
- arch/ia64/hp/sim/simscsi.c                   | 11 +----------
- arch/ia64/sn/kernel/mca.c                    |  3 +--
- arch/mn10300/unit-asb2303/flash.c            |  3 +--
- arch/parisc/kernel/pdc_cons.c                |  3 +--
- arch/parisc/kernel/perf.c                    |  3 +--
- arch/powerpc/kernel/time.c                   |  2 +-
- arch/powerpc/platforms/83xx/suspend.c        |  3 +--
- arch/powerpc/platforms/ps3/time.c            |  3 +--
- arch/sh/boards/mach-landisk/psw.c            |  2 +-
- arch/x86/kernel/devicetree.c                 |  2 +-
- arch/x86/platform/intel-mid/intel_mid_vrtc.c |  3 +--
- arch/xtensa/platforms/iss/network.c          |  4 +---
- drivers/clk/clk-nomadik.c                    |  3 +--
- 16 files changed, 16 insertions(+), 37 deletions(-)
-
+diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+index 4c388bb2f0a2..8f771441be60 100644
+--- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
++++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+@@ -60,7 +60,7 @@ Example:
+ 
+ 	msiof0: spi@e6e20000 {
+ 		compatible = "renesas,msiof-r8a7791";
+-		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
++		reg = <0 0xe6e20000 0 0x0064>;
+ 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7791_CLK_MSIOF0>;
+ 		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 4696062f6dde..3e9f824797e7 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1288,7 +1288,7 @@
+ 
+ 	msiof0: spi@e6e20000 {
+ 		compatible = "renesas,msiof-r8a7791";
+-		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
++		reg = <0 0xe6e20000 0 0x0064>;
+ 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7791_CLK_MSIOF0>;
+ 		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
+@@ -1300,7 +1300,7 @@
+ 
+ 	msiof1: spi@e6e10000 {
+ 		compatible = "renesas,msiof-r8a7791";
+-		reg = <0 0xe6e10000 0 0x0064>, <0 0xe7e10000 0 0x0064>;
++		reg = <0 0xe6e10000 0 0x0064>;
+ 		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7791_CLK_MSIOF1>;
+ 		dmas = <&dmac0 0x55>, <&dmac0 0x56>;
+@@ -1312,7 +1312,7 @@
+ 
+ 	msiof2: spi@e6e00000 {
+ 		compatible = "renesas,msiof-r8a7791";
+-		reg = <0 0xe6e00000 0 0x0064>, <0 0xe7e00000 0 0x0064>;
++		reg = <0 0xe6e00000 0 0x0064>;
+ 		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7791_CLK_MSIOF2>;
+ 		dmas = <&dmac0 0x41>, <&dmac0 0x42>;
 -- 
-2.2.1
+2.1.4
+
