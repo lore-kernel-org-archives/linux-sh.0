@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 29 May 2015 00:54:18 +0000
-Subject: [PATCH 10/10] ARM: shmobile: r8a7790 dtsi: Describe DMA for the serial ports
-Message-Id: <acea43fcb02746e907725c6dbd2eb95b32d79ea5.1432860632.git.horms+renesas@verge.net.au>
+Date: Thu, 14 May 2015 01:06:35 +0000
+Subject: [PATCH 06/31] ARM: shmobile: r8a7790: Add IRQC clock to device tree
+Message-Id: <61624caf2479732beb42ea88a6b6ca3c7ae59cd7.1431565427.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1432860632.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1432860632.git.horms+renesas@verge.net.au>
+References: <cover.1431565427.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,108 +12,57 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add DMA properties to all SCIF, SCIFA, SCIFB, and HSCIF device nodes.
+Link the external IRQ controller irqc0 to the IRQC module clock, so it
+can be power managed using that clock.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi            | 9 +++++++++
+ include/dt-bindings/clock/r8a7790-clock.h | 3 +++
+ 2 files changed, 12 insertions(+)
 
 diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 70248df02342..51ab8865ea37 100644
+index f3b8430070b6..22e73906ec88 100644
 --- a/arch/arm/boot/dts/r8a7790.dtsi
 +++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -556,6 +556,8 @@
- 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
+@@ -252,6 +252,7 @@
+ 			     <0 1 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 2 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 3 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp4_clks R8A7790_CLK_IRQC>;
  	};
  
-@@ -565,6 +567,8 @@
- 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x25>, <&dmac0 0x26>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
+ 	dmac0: dma-controller@e6700000 {
+@@ -1158,6 +1159,14 @@
+ 				"iic0", "pciec", "iic1", "ssusb", "cmt1",
+ 				"usbdmac0", "usbdmac1";
+ 		};
++		mstp4_clks: mstp4_clks@e6150140 {
++			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
++			clocks = <&cp_clk>;
++			#clock-cells = <1>;
++			clock-indices = <R8A7790_CLK_IRQC>;
++			clock-output-names = "irqc";
++		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 3f2c6b198d4a..ff7ca3584e16 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -79,6 +79,9 @@
+ #define R8A7790_CLK_USBDMAC0		30
+ #define R8A7790_CLK_USBDMAC1		31
  
-@@ -574,6 +578,8 @@
- 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x27>, <&dmac0 0x28>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -583,6 +589,8 @@
- 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x3d>, <&dmac0 0x3e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -592,6 +600,8 @@
- 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x19>, <&dmac0 0x1a>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -601,6 +611,8 @@
- 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x1d>, <&dmac0 0x1e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -610,6 +622,8 @@
- 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -619,6 +633,8 @@
- 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -628,6 +644,8 @@
- 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -637,6 +655,8 @@
- 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
++/* MSTP4 */
++#define R8A7790_CLK_IRQC		7
++
+ /* MSTP5 */
+ #define R8A7790_CLK_AUDIO_DMAC1		1
+ #define R8A7790_CLK_AUDIO_DMAC0		2
 -- 
 2.1.4
 
