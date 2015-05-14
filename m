@@ -1,41 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 14 May 2015 01:06:48 +0000
-Subject: [PATCH 19/31] ARM: shmobile: henninger dts: Add "nor-jedec" compatible value
-Message-Id: <7aa4008133cc5c1dab7006c6f2773de2ce6e8786.1431565427.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 14 May 2015 07:23:20 +0000
+Subject: [PATCH 5/5 v6] ARM: shmobile: r8a7791: add MMCIF max-frequency
+Message-Id: <87y4kroc8r.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1431565427.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+	<87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Spansion s25fl512s is compatible with "nor-jedec". Hence add the
-"nor-jedec" compatible value, so the driver can bind against the generic
-name, cfr. commit 8ff16cf77ce314c2 ("Documentation: devicetree: m25p80:
-add "nor-jedec" binding").
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791-henninger.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v5 -> v6
 
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-index e33e4047b0b0..bb80122b4113 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -226,7 +226,7 @@
- 	flash@0 {
- 		#address-cells = <1>;
- 		#size-cells = <1>;
--		compatible = "spansion,s25fl512s";
-+		compatible = "spansion,s25fl512s", "nor-jedec";
- 		reg = <0>;
- 		spi-max-frequency = <30000000>;
- 		spi-tx-bus-width = <4>;
+ - no change
+
+ arch/arm/boot/dts/r8a7791.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 30e1e13..fda7dc6 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -472,6 +472,7 @@
+ 		dma-names = "tx", "rx";
+ 		reg-io-width = <4>;
+ 		status = "disabled";
++		max-frequency = <97500000>;
+ 	};
+ 
+ 	sdhi0: sd@ee100000 {
 -- 
-2.1.4
+1.9.1
 
