@@ -1,98 +1,48 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 12 May 2015 17:37:09 +0000
-Subject: [PATCH/RFC 06/12] ARM: shmobile: koelsch dts: Add overlay for HSCIF2 on EXIO A
-Message-Id: <1431452235-11692-7-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 14 May 2015 01:06:45 +0000
+Subject: [PATCH 16/31] ARM: shmobile: kzm9d dts: Use generic names for device nodes
+Message-Id: <69478b2093796860e3991db102ede97131b8d67a.1431565427.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1431452235-11692-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <cover.1431565427.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Pantelis Antoniou <pantelis.antoniou-OWPKS81ov/FWk0Htik3J/w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Provide access to HSCIF2 on EXIO Connector A.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-FIXME Document "ctsrts" DT property.
+lan9220 -> ethernet
+uart -> serial
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/Makefile                         |  1 +
- .../boot/dts/r8a7791-koelsch-exio-a-hscif2.dtso    | 53 ++++++++++++++++++++++
- 2 files changed, 54 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7791-koelsch-exio-a-hscif2.dtso
+ arch/arm/boot/dts/emev2-kzm9d.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index d800690e3aaf7bab..d5d2386694d57391 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -672,6 +672,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
- 	r8a7740-armadillo800eva-con15-scifa0.dtbo \
- 	r8a7740-armadillo800eva-con15-scifb.dtbo \
- 	r8a7791-koelsch-exio-a-hscif1.dtbo \
-+	r8a7791-koelsch-exio-a-hscif2.dtbo \
- endif
- endif
+diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
+index 19446273e4a7..1dee0aa4f40c 100644
+--- a/arch/arm/boot/dts/emev2-kzm9d.dts
++++ b/arch/arm/boot/dts/emev2-kzm9d.dts
+@@ -81,7 +81,7 @@
+ 		regulator-boot-on;
+ 	};
  
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch-exio-a-hscif2.dtso b/arch/arm/boot/dts/r8a7791-koelsch-exio-a-hscif2.dtso
-new file mode 100644
-index 0000000000000000..7570096b0377fc89
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7791-koelsch-exio-a-hscif2.dtso
-@@ -0,0 +1,53 @@
-+/*
-+ * Device Tree Overlay for HSCIF2 on r8a7791/Koelsch EXIO Connector A
-+ *
-+ * Copyright (C) 2015 Glider bvba
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ *
-+ * Pinout:
-+ *   - RXD = EXIO Connector A pin 66
-+ *   - TXD = EXIO Connector A pin 62
-+ *   - CTS = EXIO Connector A pin 60
-+ *   - RTS = EXIO Connector A pin 65
-+ */
-+
-+/dts-v1/;
-+/plugin/;
-+
-+/ {
-+	fragment@0 {
-+		target-path = "/aliases";
-+
-+		__overlay__ {
-+			/* serial17 = &hscif2; */
-+			serial17 = "/serial@e62d0000";
-+		};
-+	};
-+
-+	fragment@1 {
-+		target = <&pfc>;
-+
-+		__overlay__ {
-+			hscif2_pins: serial17 {
-+				renesas,groups = "hscif2_data_b",
-+						 "hscif2_ctrl_b";
-+				renesas,function = "hscif2";
-+			};
-+		};
-+	};
-+
-+	fragment@2 {
-+		target = <&hscif2>;
-+
-+		__overlay__ {
-+			pinctrl-0 = <&hscif2_pins>;
-+			pinctrl-names = "default";
-+
-+			ctsrts;
-+			status = "okay";
-+		};
-+	};
-+};
+-	lan9220@20000000 {
++	ethernet@20000000 {
+ 		compatible = "smsc,lan9220", "smsc,lan9115";
+ 		reg = <0x20000000 0x10000>;
+ 		phy-mode = "mii";
+@@ -96,7 +96,7 @@
+ };
+ 
+ &pfc {
+-	uart1_pins: uart@e1030000 {
++	uart1_pins: serial@e1030000 {
+ 		renesas,groups = "uart1_ctrl", "uart1_data";
+ 		renesas,function = "uart1";
+ 	};
 -- 
-1.9.1
+2.1.4
 
