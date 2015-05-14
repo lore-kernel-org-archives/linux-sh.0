@@ -1,590 +1,528 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 28 May 2015 18:53:34 +0000
-Subject: [PATCH v2 09/14] ARM: shmobile: r8a7790 dtsi: Add CPG Clock Domain
-Message-Id: <1432839219-475-10-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 14 May 2015 07:21:18 +0000
+Subject: [PATCH 1/5 v6] mmc: sh_mmcif: add sh_mmcif_host_to_dev() macro and use it.
+Message-Id: <874mnfpqwl.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432839219-475-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432839219-475-1-git-send-email-geert+renesas@glider.be>
+References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
+	<87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, kobayashi <keita.kobayashi.ym@renesas.com>
 
-Add an appropriate "#power-domain-cells" property to the cpg_clocks
-device node, to create the CPG Clock Domain.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add "power-domains" properties to all device nodes for devices that are
-part of the CPG Clock Domain and can be power-managed through an MSTP
-clock.  This applies to most on-SoC devices, which have a one-to-one
-mapping from SoC device to DT device node. Notable exceptions are the
-"display" and "sound" nodes, which represent multiple SoC devices, each
-having their own MSTP clocks.
+Current sh_mmcif driver is directly using &host->pd->dev in all place.
+It is not big problem, but it is unreadable, and it can be cause of
+future bug. This patch adds new sh_mmcif_host_to_dev() and use it.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 ---
-v2:
-  - Add Reviewed-by,
-  - Add "power-domains" properties to recently introduced USB-DMAC
-    device nodes,
-  - Drop adding "power-domains" properties to the GIC device node, as
-    adding the INTC_SYS clock is postponed.
----
- arch/arm/boot/dts/r8a7790.dtsi | 78 ++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 72 insertions(+), 6 deletions(-)
+v5 -> v6
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 51ab8865ea37dc89..468300fde3f0f124 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -134,6 +134,7 @@
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		clocks = <&mstp9_clks R8A7790_CLK_GPIO0>;
-+		power-domains = <&cpg_clocks>;
- 	};
+ - no change
+
+ drivers/mmc/host/sh_mmcif.c | 114 +++++++++++++++++++++++++++-----------------
+ 1 file changed, 71 insertions(+), 43 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 068b9a6..29835ae 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -262,6 +262,8 @@ static const struct of_device_id mmcif_of_match[] = {
+ };
+ MODULE_DEVICE_TABLE(of, mmcif_of_match);
  
- 	gpio1: gpio@e6051000 {
-@@ -146,6 +147,7 @@
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		clocks = <&mstp9_clks R8A7790_CLK_GPIO1>;
-+		power-domains = <&cpg_clocks>;
- 	};
++#define sh_mmcif_host_to_dev(host) (&host->pd->dev)
++
+ static inline void sh_mmcif_bitset(struct sh_mmcif_host *host,
+ 					unsigned int reg, u32 val)
+ {
+@@ -278,11 +280,12 @@ static void mmcif_dma_complete(void *arg)
+ {
+ 	struct sh_mmcif_host *host = arg;
+ 	struct mmc_request *mrq = host->mrq;
++	struct device *dev = sh_mmcif_host_to_dev(host);
  
- 	gpio2: gpio@e6052000 {
-@@ -158,6 +160,7 @@
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		clocks = <&mstp9_clks R8A7790_CLK_GPIO2>;
-+		power-domains = <&cpg_clocks>;
- 	};
+-	dev_dbg(&host->pd->dev, "Command completed\n");
++	dev_dbg(dev, "Command completed\n");
  
- 	gpio3: gpio@e6053000 {
-@@ -170,6 +173,7 @@
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		clocks = <&mstp9_clks R8A7790_CLK_GPIO3>;
-+		power-domains = <&cpg_clocks>;
- 	};
+ 	if (WARN(!mrq || !mrq->data, "%s: NULL data in DMA completion!\n",
+-		 dev_name(&host->pd->dev)))
++		 dev_name(dev)))
+ 		return;
  
- 	gpio4: gpio@e6054000 {
-@@ -182,6 +186,7 @@
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		clocks = <&mstp9_clks R8A7790_CLK_GPIO4>;
-+		power-domains = <&cpg_clocks>;
- 	};
+ 	complete(&host->dma_complete);
+@@ -294,6 +297,7 @@ static void sh_mmcif_start_dma_rx(struct sh_mmcif_host *host)
+ 	struct scatterlist *sg = data->sg;
+ 	struct dma_async_tx_descriptor *desc = NULL;
+ 	struct dma_chan *chan = host->chan_rx;
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	dma_cookie_t cookie = -EINVAL;
+ 	int ret;
  
- 	gpio5: gpio@e6055000 {
-@@ -194,6 +199,7 @@
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		clocks = <&mstp9_clks R8A7790_CLK_GPIO5>;
-+		power-domains = <&cpg_clocks>;
- 	};
+@@ -312,7 +316,7 @@ static void sh_mmcif_start_dma_rx(struct sh_mmcif_host *host)
+ 		sh_mmcif_bitset(host, MMCIF_CE_BUF_ACC, BUF_ACC_DMAREN);
+ 		dma_async_issue_pending(chan);
+ 	}
+-	dev_dbg(&host->pd->dev, "%s(): mapped %d -> %d, cookie %d\n",
++	dev_dbg(dev, "%s(): mapped %d -> %d, cookie %d\n",
+ 		__func__, data->sg_len, ret, cookie);
  
- 	thermal@e61f0000 {
-@@ -201,6 +207,7 @@
- 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
- 		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp5_clks R8A7790_CLK_THERMAL>;
-+		power-domains = <&cpg_clocks>;
- 	};
+ 	if (!desc) {
+@@ -328,12 +332,12 @@ static void sh_mmcif_start_dma_rx(struct sh_mmcif_host *host)
+ 			host->chan_tx = NULL;
+ 			dma_release_channel(chan);
+ 		}
+-		dev_warn(&host->pd->dev,
++		dev_warn(dev,
+ 			 "DMA failed: %d, falling back to PIO\n", ret);
+ 		sh_mmcif_bitclr(host, MMCIF_CE_BUF_ACC, BUF_ACC_DMAREN | BUF_ACC_DMAWEN);
+ 	}
  
- 	timer {
-@@ -218,6 +225,7 @@
- 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7790_CLK_CMT0>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
+-	dev_dbg(&host->pd->dev, "%s(): desc %p, cookie %d, sg[%d]\n", __func__,
++	dev_dbg(dev, "%s(): desc %p, cookie %d, sg[%d]\n", __func__,
+ 		desc, cookie, data->sg_len);
+ }
  
- 		renesas,channels-mask = <0x60>;
+@@ -343,6 +347,7 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
+ 	struct scatterlist *sg = data->sg;
+ 	struct dma_async_tx_descriptor *desc = NULL;
+ 	struct dma_chan *chan = host->chan_tx;
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	dma_cookie_t cookie = -EINVAL;
+ 	int ret;
  
-@@ -237,6 +245,7 @@
- 			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_CMT1>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
+@@ -361,7 +366,7 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
+ 		sh_mmcif_bitset(host, MMCIF_CE_BUF_ACC, BUF_ACC_DMAWEN);
+ 		dma_async_issue_pending(chan);
+ 	}
+-	dev_dbg(&host->pd->dev, "%s(): mapped %d -> %d, cookie %d\n",
++	dev_dbg(dev, "%s(): mapped %d -> %d, cookie %d\n",
+ 		__func__, data->sg_len, ret, cookie);
  
- 		renesas,channels-mask = <0xff>;
+ 	if (!desc) {
+@@ -377,12 +382,12 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
+ 			host->chan_rx = NULL;
+ 			dma_release_channel(chan);
+ 		}
+-		dev_warn(&host->pd->dev,
++		dev_warn(dev,
+ 			 "DMA failed: %d, falling back to PIO\n", ret);
+ 		sh_mmcif_bitclr(host, MMCIF_CE_BUF_ACC, BUF_ACC_DMAREN | BUF_ACC_DMAWEN);
+ 	}
  
-@@ -253,6 +262,7 @@
- 			     <0 2 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 3 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R8A7790_CLK_IRQC>;
-+		power-domains = <&cpg_clocks>;
- 	};
+-	dev_dbg(&host->pd->dev, "%s(): desc %p, cookie %d\n", __func__,
++	dev_dbg(dev, "%s(): desc %p, cookie %d\n", __func__,
+ 		desc, cookie);
+ }
  
- 	dmac0: dma-controller@e6700000 {
-@@ -281,6 +291,7 @@
- 				"ch12", "ch13", "ch14";
- 		clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC0>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
- 		#dma-cells = <1>;
- 		dma-channels = <15>;
- 	};
-@@ -311,6 +322,7 @@
- 				"ch12", "ch13", "ch14";
- 		clocks = <&mstp2_clks R8A7790_CLK_SYS_DMAC1>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
- 		#dma-cells = <1>;
- 		dma-channels = <15>;
- 	};
-@@ -339,6 +351,7 @@
- 				"ch12";
- 		clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC0>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
- 		#dma-cells = <1>;
- 		dma-channels = <13>;
- 	};
-@@ -367,6 +380,7 @@
- 				"ch12";
- 		clocks = <&mstp5_clks R8A7790_CLK_AUDIO_DMAC1>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
- 		#dma-cells = <1>;
- 		dma-channels = <13>;
- 	};
-@@ -378,6 +392,7 @@
- 			      0 109 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "ch0", "ch1";
- 		clocks = <&mstp3_clks R8A7790_CLK_USBDMAC0>;
-+		power-domains = <&cpg_clocks>;
- 		#dma-cells = <1>;
- 		dma-channels = <2>;
- 	};
-@@ -389,6 +404,7 @@
- 			      0 110 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "ch0", "ch1";
- 		clocks = <&mstp3_clks R8A7790_CLK_USBDMAC1>;
-+		power-domains = <&cpg_clocks>;
- 		#dma-cells = <1>;
- 		dma-channels = <2>;
- 	};
-@@ -400,6 +416,7 @@
- 		reg = <0 0xe6508000 0 0x40>;
- 		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C0>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+@@ -395,6 +400,7 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 	struct dma_chan *chan;
+ 	void *slave_data = NULL;
+ 	struct resource *res;
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	dma_cap_mask_t mask;
+ 	int ret;
  
-@@ -410,6 +427,7 @@
- 		reg = <0 0xe6518000 0 0x40>;
- 		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C1>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+@@ -407,10 +413,10 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 			(void *)pdata->slave_id_rx;
  
-@@ -420,6 +438,7 @@
- 		reg = <0 0xe6530000 0 0x40>;
- 		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C2>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ 	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
+-				slave_data, &host->pd->dev,
++				slave_data, dev,
+ 				direction = DMA_MEM_TO_DEV ? "tx" : "rx");
  
-@@ -430,6 +449,7 @@
- 		reg = <0 0xe6540000 0 0x40>;
- 		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C3>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+-	dev_dbg(&host->pd->dev, "%s: %s: got channel %p\n", __func__,
++	dev_dbg(dev, "%s: %s: got channel %p\n", __func__,
+ 		direction = DMA_MEM_TO_DEV ? "TX" : "RX", chan);
  
-@@ -440,6 +460,7 @@
- 		reg = <0 0xe6500000 0 0x425>;
- 		interrupts = <0 174 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_IIC0>;
-+		power-domains = <&cpg_clocks>;
- 		dmas = <&dmac0 0x61>, <&dmac0 0x62>;
- 		dma-names = "tx", "rx";
- 		status = "disabled";
-@@ -452,6 +473,7 @@
- 		reg = <0 0xe6510000 0 0x425>;
- 		interrupts = <0 175 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_IIC1>;
-+		power-domains = <&cpg_clocks>;
- 		dmas = <&dmac0 0x65>, <&dmac0 0x66>;
- 		dma-names = "tx", "rx";
- 		status = "disabled";
-@@ -464,6 +486,7 @@
- 		reg = <0 0xe6520000 0 0x425>;
- 		interrupts = <0 176 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_IIC2>;
-+		power-domains = <&cpg_clocks>;
- 		dmas = <&dmac0 0x69>, <&dmac0 0x6a>;
- 		dma-names = "tx", "rx";
- 		status = "disabled";
-@@ -476,6 +499,7 @@
- 		reg = <0 0xe60b0000 0 0x425>;
- 		interrupts = <0 173 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R8A7790_CLK_IICDVFS>;
-+		power-domains = <&cpg_clocks>;
- 		dmas = <&dmac0 0x77>, <&dmac0 0x78>;
- 		dma-names = "tx", "rx";
- 		status = "disabled";
-@@ -486,6 +510,7 @@
- 		reg = <0 0xee200000 0 0x80>;
- 		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
-+		power-domains = <&cpg_clocks>;
- 		dmas = <&dmac0 0xd1>, <&dmac0 0xd2>;
- 		dma-names = "tx", "rx";
- 		reg-io-width = <4>;
-@@ -498,6 +523,7 @@
- 		reg = <0 0xee220000 0 0x80>;
- 		interrupts = <0 170 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF1>;
-+		power-domains = <&cpg_clocks>;
- 		dmas = <&dmac0 0xe1>, <&dmac0 0xe2>;
- 		dma-names = "tx", "rx";
- 		reg-io-width = <4>;
-@@ -515,6 +541,7 @@
- 		reg = <0 0xee100000 0 0x328>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
-+		power-domains = <&cpg_clocks>;
- 		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
- 		dma-names = "tx", "rx";
- 		status = "disabled";
-@@ -525,6 +552,7 @@
- 		reg = <0 0xee120000 0 0x328>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
-+		power-domains = <&cpg_clocks>;
- 		dmas = <&dmac1 0xc9>, <&dmac1 0xca>;
- 		dma-names = "tx", "rx";
- 		status = "disabled";
-@@ -535,6 +563,7 @@
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
-+		power-domains = <&cpg_clocks>;
- 		dmas = <&dmac1 0xc1>, <&dmac1 0xc2>;
- 		dma-names = "tx", "rx";
- 		status = "disabled";
-@@ -545,6 +574,7 @@
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
-+		power-domains = <&cpg_clocks>;
- 		dmas = <&dmac1 0xd3>, <&dmac1 0xd4>;
- 		dma-names = "tx", "rx";
- 		status = "disabled";
-@@ -558,6 +588,7 @@
- 		clock-names = "sci_ick";
- 		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ 	if (!chan)
+@@ -440,12 +446,13 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
+ 				 struct sh_mmcif_plat_data *pdata)
+ {
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	host->dma_active = false;
  
-@@ -569,6 +600,7 @@
- 		clock-names = "sci_ick";
- 		dmas = <&dmac0 0x25>, <&dmac0 0x26>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ 	if (pdata) {
+ 		if (pdata->slave_id_tx <= 0 || pdata->slave_id_rx <= 0)
+ 			return;
+-	} else if (!host->pd->dev.of_node) {
++	} else if (!dev->of_node) {
+ 		return;
+ 	}
  
-@@ -580,6 +612,7 @@
- 		clock-names = "sci_ick";
- 		dmas = <&dmac0 0x27>, <&dmac0 0x28>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+@@ -481,7 +488,8 @@ static void sh_mmcif_release_dma(struct sh_mmcif_host *host)
  
-@@ -591,6 +624,7 @@
- 		clock-names = "sci_ick";
- 		dmas = <&dmac0 0x3d>, <&dmac0 0x3e>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ static void sh_mmcif_clock_control(struct sh_mmcif_host *host, unsigned int clk)
+ {
+-	struct sh_mmcif_plat_data *p = host->pd->dev.platform_data;
++	struct device *dev = sh_mmcif_host_to_dev(host);
++	struct sh_mmcif_plat_data *p = dev->platform_data;
+ 	bool sup_pclk = p ? p->sup_pclk : false;
+ 	unsigned int current_clk = clk_get_rate(host->clk);
  
-@@ -602,6 +636,7 @@
- 		clock-names = "sci_ick";
- 		dmas = <&dmac0 0x19>, <&dmac0 0x1a>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+@@ -520,6 +528,7 @@ static void sh_mmcif_sync_reset(struct sh_mmcif_host *host)
  
-@@ -613,6 +648,7 @@
- 		clock-names = "sci_ick";
- 		dmas = <&dmac0 0x1d>, <&dmac0 0x1e>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ static int sh_mmcif_error_manage(struct sh_mmcif_host *host)
+ {
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	u32 state1, state2;
+ 	int ret, timeout;
  
-@@ -624,6 +660,7 @@
- 		clock-names = "sci_ick";
- 		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+@@ -527,8 +536,8 @@ static int sh_mmcif_error_manage(struct sh_mmcif_host *host)
  
-@@ -635,6 +672,7 @@
- 		clock-names = "sci_ick";
- 		dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ 	state1 = sh_mmcif_readl(host->addr, MMCIF_CE_HOST_STS1);
+ 	state2 = sh_mmcif_readl(host->addr, MMCIF_CE_HOST_STS2);
+-	dev_dbg(&host->pd->dev, "ERR HOST_STS1 = %08x\n", state1);
+-	dev_dbg(&host->pd->dev, "ERR HOST_STS2 = %08x\n", state2);
++	dev_dbg(dev, "ERR HOST_STS1 = %08x\n", state1);
++	dev_dbg(dev, "ERR HOST_STS2 = %08x\n", state2);
  
-@@ -646,6 +684,7 @@
- 		clock-names = "sci_ick";
- 		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ 	if (state1 & STS1_CMDSEQ) {
+ 		sh_mmcif_bitset(host, MMCIF_CE_CMD_CTRL, CMD_CTRL_BREAK);
+@@ -540,25 +549,25 @@ static int sh_mmcif_error_manage(struct sh_mmcif_host *host)
+ 			mdelay(1);
+ 		}
+ 		if (!timeout) {
+-			dev_err(&host->pd->dev,
++			dev_err(dev,
+ 				"Forced end of command sequence timeout err\n");
+ 			return -EIO;
+ 		}
+ 		sh_mmcif_sync_reset(host);
+-		dev_dbg(&host->pd->dev, "Forced end of command sequence\n");
++		dev_dbg(dev, "Forced end of command sequence\n");
+ 		return -EIO;
+ 	}
  
-@@ -657,6 +696,7 @@
- 		clock-names = "sci_ick";
- 		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ 	if (state2 & STS2_CRC_ERR) {
+-		dev_err(&host->pd->dev, " CRC error: state %u, wait %u\n",
++		dev_err(dev, " CRC error: state %u, wait %u\n",
+ 			host->state, host->wait_for);
+ 		ret = -EIO;
+ 	} else if (state2 & STS2_TIMEOUT_ERR) {
+-		dev_err(&host->pd->dev, " Timeout: state %u, wait %u\n",
++		dev_err(dev, " Timeout: state %u, wait %u\n",
+ 			host->state, host->wait_for);
+ 		ret = -ETIMEDOUT;
+ 	} else {
+-		dev_dbg(&host->pd->dev, " End/Index error: state %u, wait %u\n",
++		dev_dbg(dev, " End/Index error: state %u, wait %u\n",
+ 			host->state, host->wait_for);
+ 		ret = -EIO;
+ 	}
+@@ -599,13 +608,14 @@ static void sh_mmcif_single_read(struct sh_mmcif_host *host,
  
-@@ -665,6 +705,7 @@
- 		reg = <0 0xee700000 0 0x400>;
- 		interrupts = <0 162 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp8_clks R8A7790_CLK_ETHER>;
-+		power-domains = <&cpg_clocks>;
- 		phy-mode = "rmii";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -676,6 +717,7 @@
- 		reg = <0 0xee300000 0 0x2000>;
- 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp8_clks R8A7790_CLK_SATA0>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ static bool sh_mmcif_read_block(struct sh_mmcif_host *host)
+ {
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	struct mmc_data *data = host->mrq->data;
+ 	u32 *p = sg_virt(data->sg);
+ 	int i;
  
-@@ -684,6 +726,7 @@
- 		reg = <0 0xee500000 0 0x2000>;
- 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp8_clks R8A7790_CLK_SATA1>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ 	if (host->sd_error) {
+ 		data->error = sh_mmcif_error_manage(host);
+-		dev_dbg(&host->pd->dev, "%s(): %d\n", __func__, data->error);
++		dev_dbg(dev, "%s(): %d\n", __func__, data->error);
+ 		return false;
+ 	}
  
-@@ -692,6 +735,7 @@
- 		reg = <0 0xe6590000 0 0x100>;
- 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
-+		power-domains = <&cpg_clocks>;
- 		renesas,buswait = <4>;
- 		phys = <&usb0 1>;
- 		phy-names = "usb";
-@@ -708,6 +752,7 @@
- 		#size-cells = <0>;
- 		clocks = <&mstp7_clks R8A7790_CLK_HSUSB>;
- 		clock-names = "usbhs";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
+@@ -640,13 +650,14 @@ static void sh_mmcif_multi_read(struct sh_mmcif_host *host,
  
- 		usb0: usb-channel@0 {
-@@ -722,33 +767,37 @@
+ static bool sh_mmcif_mread_block(struct sh_mmcif_host *host)
+ {
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	struct mmc_data *data = host->mrq->data;
+ 	u32 *p = host->pio_ptr;
+ 	int i;
  
- 	vin0: video@e6ef0000 {
- 		compatible = "renesas,vin-r8a7790";
--		clocks = <&mstp8_clks R8A7790_CLK_VIN0>;
- 		reg = <0 0xe6ef0000 0 0x1000>;
- 		interrupts = <0 188 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp8_clks R8A7790_CLK_VIN0>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ 	if (host->sd_error) {
+ 		data->error = sh_mmcif_error_manage(host);
+-		dev_dbg(&host->pd->dev, "%s(): %d\n", __func__, data->error);
++		dev_dbg(dev, "%s(): %d\n", __func__, data->error);
+ 		return false;
+ 	}
  
- 	vin1: video@e6ef1000 {
- 		compatible = "renesas,vin-r8a7790";
--		clocks = <&mstp8_clks R8A7790_CLK_VIN1>;
- 		reg = <0 0xe6ef1000 0 0x1000>;
- 		interrupts = <0 189 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp8_clks R8A7790_CLK_VIN1>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+@@ -677,13 +688,14 @@ static void sh_mmcif_single_write(struct sh_mmcif_host *host,
  
- 	vin2: video@e6ef2000 {
- 		compatible = "renesas,vin-r8a7790";
--		clocks = <&mstp8_clks R8A7790_CLK_VIN2>;
- 		reg = <0 0xe6ef2000 0 0x1000>;
- 		interrupts = <0 190 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp8_clks R8A7790_CLK_VIN2>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ static bool sh_mmcif_write_block(struct sh_mmcif_host *host)
+ {
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	struct mmc_data *data = host->mrq->data;
+ 	u32 *p = sg_virt(data->sg);
+ 	int i;
  
- 	vin3: video@e6ef3000 {
- 		compatible = "renesas,vin-r8a7790";
--		clocks = <&mstp8_clks R8A7790_CLK_VIN3>;
- 		reg = <0 0xe6ef3000 0 0x1000>;
- 		interrupts = <0 191 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp8_clks R8A7790_CLK_VIN3>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ 	if (host->sd_error) {
+ 		data->error = sh_mmcif_error_manage(host);
+-		dev_dbg(&host->pd->dev, "%s(): %d\n", __func__, data->error);
++		dev_dbg(dev, "%s(): %d\n", __func__, data->error);
+ 		return false;
+ 	}
  
-@@ -757,6 +806,7 @@
- 		reg = <0 0xfe920000 0 0x8000>;
- 		interrupts = <0 266 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7790_CLK_VSP1_R>;
-+		power-domains = <&cpg_clocks>;
+@@ -718,13 +730,14 @@ static void sh_mmcif_multi_write(struct sh_mmcif_host *host,
  
- 		renesas,has-sru;
- 		renesas,#rpf = <5>;
-@@ -769,6 +819,7 @@
- 		reg = <0 0xfe928000 0 0x8000>;
- 		interrupts = <0 267 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7790_CLK_VSP1_S>;
-+		power-domains = <&cpg_clocks>;
+ static bool sh_mmcif_mwrite_block(struct sh_mmcif_host *host)
+ {
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	struct mmc_data *data = host->mrq->data;
+ 	u32 *p = host->pio_ptr;
+ 	int i;
  
- 		renesas,has-lut;
- 		renesas,has-sru;
-@@ -782,6 +833,7 @@
- 		reg = <0 0xfe930000 0 0x8000>;
- 		interrupts = <0 246 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7790_CLK_VSP1_DU0>;
-+		power-domains = <&cpg_clocks>;
+ 	if (host->sd_error) {
+ 		data->error = sh_mmcif_error_manage(host);
+-		dev_dbg(&host->pd->dev, "%s(): %d\n", __func__, data->error);
++		dev_dbg(dev, "%s(): %d\n", __func__, data->error);
+ 		return false;
+ 	}
  
- 		renesas,has-lif;
- 		renesas,has-lut;
-@@ -795,6 +847,7 @@
- 		reg = <0 0xfe938000 0 0x8000>;
- 		interrupts = <0 247 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7790_CLK_VSP1_DU1>;
-+		power-domains = <&cpg_clocks>;
+@@ -762,6 +775,7 @@ static void sh_mmcif_get_cmd12response(struct sh_mmcif_host *host,
+ static u32 sh_mmcif_set_cmd(struct sh_mmcif_host *host,
+ 			    struct mmc_request *mrq)
+ {
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	struct mmc_data *data = mrq->data;
+ 	struct mmc_command *cmd = mrq->cmd;
+ 	u32 opc = cmd->opcode;
+@@ -781,7 +795,7 @@ static u32 sh_mmcif_set_cmd(struct sh_mmcif_host *host,
+ 		tmp |= CMD_SET_RTYP_17B;
+ 		break;
+ 	default:
+-		dev_err(&host->pd->dev, "Unsupported response type.\n");
++		dev_err(dev, "Unsupported response type.\n");
+ 		break;
+ 	}
+ 	switch (opc) {
+@@ -809,7 +823,7 @@ static u32 sh_mmcif_set_cmd(struct sh_mmcif_host *host,
+ 			tmp |= CMD_SET_DATW_8;
+ 			break;
+ 		default:
+-			dev_err(&host->pd->dev, "Unsupported bus width.\n");
++			dev_err(dev, "Unsupported bus width.\n");
+ 			break;
+ 		}
+ 		switch (host->timing) {
+@@ -852,6 +866,8 @@ static u32 sh_mmcif_set_cmd(struct sh_mmcif_host *host,
+ static int sh_mmcif_data_trans(struct sh_mmcif_host *host,
+ 			       struct mmc_request *mrq, u32 opc)
+ {
++	struct device *dev = sh_mmcif_host_to_dev(host);
++
+ 	switch (opc) {
+ 	case MMC_READ_MULTIPLE_BLOCK:
+ 		sh_mmcif_multi_read(host, mrq);
+@@ -867,7 +883,7 @@ static int sh_mmcif_data_trans(struct sh_mmcif_host *host,
+ 		sh_mmcif_single_read(host, mrq);
+ 		return 0;
+ 	default:
+-		dev_err(&host->pd->dev, "Unsupported CMD%d\n", opc);
++		dev_err(dev, "Unsupported CMD%d\n", opc);
+ 		return -EINVAL;
+ 	}
+ }
+@@ -924,6 +940,8 @@ static void sh_mmcif_start_cmd(struct sh_mmcif_host *host,
+ static void sh_mmcif_stop_cmd(struct sh_mmcif_host *host,
+ 			      struct mmc_request *mrq)
+ {
++	struct device *dev = sh_mmcif_host_to_dev(host);
++
+ 	switch (mrq->cmd->opcode) {
+ 	case MMC_READ_MULTIPLE_BLOCK:
+ 		sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MCMD12DRE);
+@@ -932,7 +950,7 @@ static void sh_mmcif_stop_cmd(struct sh_mmcif_host *host,
+ 		sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MCMD12RBE);
+ 		break;
+ 	default:
+-		dev_err(&host->pd->dev, "unsupported stop cmd\n");
++		dev_err(dev, "unsupported stop cmd\n");
+ 		mrq->stop->error = sh_mmcif_error_manage(host);
+ 		return;
+ 	}
+@@ -943,11 +961,13 @@ static void sh_mmcif_stop_cmd(struct sh_mmcif_host *host,
+ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ {
+ 	struct sh_mmcif_host *host = mmc_priv(mmc);
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	unsigned long flags;
  
- 		renesas,has-lif;
- 		renesas,has-lut;
-@@ -849,6 +902,7 @@
- 		clocks = <&mstp9_clks R8A7790_CLK_RCAN0>,
- 			 <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
- 		clock-names = "clkp1", "clkp2", "can_clk";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ 	spin_lock_irqsave(&host->lock, flags);
+ 	if (host->state != STATE_IDLE) {
+-		dev_dbg(&host->pd->dev, "%s() rejected, state %u\n", __func__, host->state);
++		dev_dbg(dev, "%s() rejected, state %u\n",
++			__func__, host->state);
+ 		spin_unlock_irqrestore(&host->lock, flags);
+ 		mrq->cmd->error = -EAGAIN;
+ 		mmc_request_done(mmc, mrq);
+@@ -999,11 +1019,13 @@ static void sh_mmcif_set_power(struct sh_mmcif_host *host, struct mmc_ios *ios)
+ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ {
+ 	struct sh_mmcif_host *host = mmc_priv(mmc);
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	unsigned long flags;
  
-@@ -859,6 +913,7 @@
- 		clocks = <&mstp9_clks R8A7790_CLK_RCAN1>,
- 			 <&cpg_clocks R8A7790_CLK_RCAN>, <&can_clk>;
- 		clock-names = "clkp1", "clkp2", "can_clk";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ 	spin_lock_irqsave(&host->lock, flags);
+ 	if (host->state != STATE_IDLE) {
+-		dev_dbg(&host->pd->dev, "%s() rejected, state %u\n", __func__, host->state);
++		dev_dbg(dev, "%s() rejected, state %u\n",
++			__func__, host->state);
+ 		spin_unlock_irqrestore(&host->lock, flags);
+ 		return;
+ 	}
+@@ -1014,7 +1036,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	if (ios->power_mode = MMC_POWER_UP) {
+ 		if (!host->card_present) {
+ 			/* See if we also get DMA */
+-			sh_mmcif_request_dma(host, host->pd->dev.platform_data);
++			sh_mmcif_request_dma(host, dev->platform_data);
+ 			host->card_present = true;
+ 		}
+ 		sh_mmcif_set_power(host, ios);
+@@ -1028,7 +1050,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 			}
+ 		}
+ 		if (host->power) {
+-			pm_runtime_put_sync(&host->pd->dev);
++			pm_runtime_put_sync(dev);
+ 			clk_disable_unprepare(host->clk);
+ 			host->power = false;
+ 			if (ios->power_mode = MMC_POWER_OFF)
+@@ -1042,7 +1064,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		if (!host->power) {
+ 			clk_prepare_enable(host->clk);
  
-@@ -936,6 +991,7 @@
- 			clock-output-names = "main", "pll0", "pll1", "pll3",
- 					     "lb", "qspi", "sdh", "sd0", "sd1",
- 					     "z", "rcan", "adsp";
-+			#power-domain-cells = <0>;
- 		};
+-			pm_runtime_get_sync(&host->pd->dev);
++			pm_runtime_get_sync(dev);
+ 			host->power = true;
+ 			sh_mmcif_sync_reset(host);
+ 		}
+@@ -1057,7 +1079,8 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ static int sh_mmcif_get_cd(struct mmc_host *mmc)
+ {
+ 	struct sh_mmcif_host *host = mmc_priv(mmc);
+-	struct sh_mmcif_plat_data *p = host->pd->dev.platform_data;
++	struct device *dev = sh_mmcif_host_to_dev(host);
++	struct sh_mmcif_plat_data *p = dev->platform_data;
+ 	int ret = mmc_gpio_get_cd(mmc);
  
- 		/* Variable factor clocks */
-@@ -1321,6 +1377,7 @@
- 		clocks = <&mstp9_clks R8A7790_CLK_QSPI_MOD>;
- 		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -1334,6 +1391,7 @@
- 		clocks = <&mstp0_clks R8A7790_CLK_MSIOF0>;
- 		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-@@ -1346,6 +1404,7 @@
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF1>;
- 		dmas = <&dmac0 0x55>, <&dmac0 0x56>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-@@ -1358,6 +1417,7 @@
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF2>;
- 		dmas = <&dmac0 0x41>, <&dmac0 0x42>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-@@ -1370,6 +1430,7 @@
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF3>;
- 		dmas = <&dmac0 0x45>, <&dmac0 0x46>;
- 		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-@@ -1380,6 +1441,7 @@
- 		reg = <0 0xee000000 0 0xc00>;
- 		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SSUSB>;
-+		power-domains = <&cpg_clocks>;
- 		phys = <&usb2 1>;
- 		phy-names = "usb";
- 		status = "disabled";
-@@ -1388,10 +1450,11 @@
- 	pci0: pci@ee090000 {
- 		compatible = "renesas,pci-r8a7790";
- 		device_type = "pci";
--		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
- 		reg = <0 0xee090000 0 0xc00>,
- 		      <0 0xee080000 0 0x1100>;
- 		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
+ 	if (ret >= 0)
+@@ -1079,6 +1102,7 @@ static bool sh_mmcif_end_cmd(struct sh_mmcif_host *host)
+ {
+ 	struct mmc_command *cmd = host->mrq->cmd;
+ 	struct mmc_data *data = host->mrq->data;
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	long time;
  
- 		bus-range = <0 0>;
-@@ -1422,10 +1485,11 @@
- 	pci1: pci@ee0b0000 {
- 		compatible = "renesas,pci-r8a7790";
- 		device_type = "pci";
--		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
- 		reg = <0 0xee0b0000 0 0xc00>,
- 		      <0 0xee0a0000 0 0x1100>;
- 		interrupts = <0 112 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
+ 	if (host->sd_error) {
+@@ -1092,7 +1116,7 @@ static bool sh_mmcif_end_cmd(struct sh_mmcif_host *host)
+ 			cmd->error = sh_mmcif_error_manage(host);
+ 			break;
+ 		}
+-		dev_dbg(&host->pd->dev, "CMD%d error %d\n",
++		dev_dbg(dev, "CMD%d error %d\n",
+ 			cmd->opcode, cmd->error);
+ 		host->sd_error = false;
+ 		return false;
+@@ -1172,6 +1196,7 @@ static irqreturn_t sh_mmcif_irqt(int irq, void *dev_id)
+ {
+ 	struct sh_mmcif_host *host = dev_id;
+ 	struct mmc_request *mrq;
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	bool wait = false;
+ 	unsigned long flags;
+ 	int wait_work;
+@@ -1186,7 +1211,7 @@ static irqreturn_t sh_mmcif_irqt(int irq, void *dev_id)
  
- 		bus-range = <1 1>;
-@@ -1443,6 +1507,7 @@
- 		compatible = "renesas,pci-r8a7790";
- 		device_type = "pci";
- 		clocks = <&mstp7_clks R8A7790_CLK_EHCI>;
-+		power-domains = <&cpg_clocks>;
- 		reg = <0 0xee0d0000 0 0xc00>,
- 		      <0 0xee0c0000 0 0x1100>;
- 		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1495,6 +1560,7 @@
- 		interrupt-map = <0 0 0 0 &gic 0 116 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_PCIEC>, <&pcie_bus_clk>;
- 		clock-names = "pcie", "pcie_bus";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ 	mrq = host->mrq;
+ 	if (!mrq) {
+-		dev_dbg(&host->pd->dev, "IRQ thread state %u, wait %u: NULL mrq!\n",
++		dev_dbg(dev, "IRQ thread state %u, wait %u: NULL mrq!\n",
+ 			host->state, host->wait_for);
+ 		mutex_unlock(&host->thread_lock);
+ 		return IRQ_HANDLED;
+@@ -1224,7 +1249,7 @@ static irqreturn_t sh_mmcif_irqt(int irq, void *dev_id)
+ 	case MMCIF_WAIT_FOR_STOP:
+ 		if (host->sd_error) {
+ 			mrq->stop->error = sh_mmcif_error_manage(host);
+-			dev_dbg(&host->pd->dev, "%s(): %d\n", __func__, mrq->stop->error);
++			dev_dbg(dev, "%s(): %d\n", __func__, mrq->stop->error);
+ 			break;
+ 		}
+ 		sh_mmcif_get_cmd12response(host, mrq->stop);
+@@ -1234,7 +1259,7 @@ static irqreturn_t sh_mmcif_irqt(int irq, void *dev_id)
+ 	case MMCIF_WAIT_FOR_WRITE_END:
+ 		if (host->sd_error) {
+ 			mrq->data->error = sh_mmcif_error_manage(host);
+-			dev_dbg(&host->pd->dev, "%s(): %d\n", __func__, mrq->data->error);
++			dev_dbg(dev, "%s(): %d\n", __func__, mrq->data->error);
+ 		}
+ 		break;
+ 	default:
+@@ -1277,6 +1302,7 @@ static irqreturn_t sh_mmcif_irqt(int irq, void *dev_id)
+ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
+ {
+ 	struct sh_mmcif_host *host = dev_id;
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	u32 state, mask;
  
+ 	state = sh_mmcif_readl(host->addr, MMCIF_CE_INT);
+@@ -1288,22 +1314,22 @@ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
+ 	sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, state & MASK_CLEAN);
+ 
+ 	if (state & ~MASK_CLEAN)
+-		dev_dbg(&host->pd->dev, "IRQ state = 0x%08x incompletely cleared\n",
++		dev_dbg(dev, "IRQ state = 0x%08x incompletely cleared\n",
+ 			state);
+ 
+ 	if (state & INT_ERR_STS || state & ~INT_ALL) {
+ 		host->sd_error = true;
+-		dev_dbg(&host->pd->dev, "int err state = 0x%08x\n", state);
++		dev_dbg(dev, "int err state = 0x%08x\n", state);
+ 	}
+ 	if (state & ~(INT_CMD12RBE | INT_CMD12CRE)) {
+ 		if (!host->mrq)
+-			dev_dbg(&host->pd->dev, "NULL IRQ state = 0x%08x\n", state);
++			dev_dbg(dev, "NULL IRQ state = 0x%08x\n", state);
+ 		if (!host->dma_active)
+ 			return IRQ_WAKE_THREAD;
+ 		else if (host->sd_error)
+ 			mmcif_dma_complete(host);
+ 	} else {
+-		dev_dbg(&host->pd->dev, "Unexpected IRQ 0x%x\n", state);
++		dev_dbg(dev, "Unexpected IRQ 0x%x\n", state);
+ 	}
+ 
+ 	return IRQ_HANDLED;
+@@ -1314,6 +1340,7 @@ static void mmcif_timeout_work(struct work_struct *work)
+ 	struct delayed_work *d = container_of(work, struct delayed_work, work);
+ 	struct sh_mmcif_host *host = container_of(d, struct sh_mmcif_host, timeout_work);
+ 	struct mmc_request *mrq = host->mrq;
++	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	unsigned long flags;
+ 
+ 	if (host->dying)
+@@ -1326,7 +1353,7 @@ static void mmcif_timeout_work(struct work_struct *work)
+ 		return;
+ 	}
+ 
+-	dev_err(&host->pd->dev, "Timeout waiting for %u on CMD%u\n",
++	dev_err(dev, "Timeout waiting for %u on CMD%u\n",
+ 		host->wait_for, mrq->cmd->opcode);
+ 
+ 	host->state = STATE_TIMEOUT;
+@@ -1363,7 +1390,8 @@ static void mmcif_timeout_work(struct work_struct *work)
+ 
+ static void sh_mmcif_init_ocr(struct sh_mmcif_host *host)
+ {
+-	struct sh_mmcif_plat_data *pd = host->pd->dev.platform_data;
++	struct device *dev = sh_mmcif_host_to_dev(host);
++	struct sh_mmcif_plat_data *pd = dev->platform_data;
+ 	struct mmc_host *mmc = host->mmc;
+ 
+ 	mmc_regulator_get_supply(mmc);
 -- 
 1.9.1
 
