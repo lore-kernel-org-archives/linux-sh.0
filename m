@@ -1,68 +1,71 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 14 May 2015 01:06:37 +0000
-Subject: [PATCH 08/31] ARM: shmobile: r8a7794: Add IRQC clock to device tree
-Message-Id: <1c5ca5db11edd7ff27ad8a98ffb2ac61bfd520b6.1431565427.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 14 May 2015 12:40:04 +0000
+Subject: [PATCH 3/4] i2c: slave: docs: be more precise about the prerequsites
+Message-Id: <1431607205-2316-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1431565427.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
+References: <1431607205-2316-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1431607205-2316-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Peter Huewe <peterhuewe-Mmb7MZpHnFY@public.gmane.org>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Link the external IRQ controller irqc0 to the IRQC module clock, so it
-can be power managed using that clock.
+There was some confusion what was needed to utilize the slave support,
+so let's be more precise about this. Add an introductory paragraph to
+the development section while we are here.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Cc: Peter Huewe <peterhuewe@gmx.de>
 ---
- arch/arm/boot/dts/r8a7794.dtsi            | 9 +++++++++
- include/dt-bindings/clock/r8a7794-clock.h | 3 +++
- 2 files changed, 12 insertions(+)
+ Documentation/i2c/slave-interface | 25 +++++++++++++++----------
+ 1 file changed, 15 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 7a3ffa51a8bf..01cf54f70501 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -105,6 +105,7 @@
- 			     <0 15 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 16 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R8A7794_CLK_IRQC>;
- 	};
+diff --git a/Documentation/i2c/slave-interface b/Documentation/i2c/slave-interface
+index 389bb5d618549e..02b086510b6c10 100644
+--- a/Documentation/i2c/slave-interface
++++ b/Documentation/i2c/slave-interface
+@@ -3,16 +3,16 @@ Linux I2C slave interface description
  
- 	dmac0: dma-controller@e6700000 {
-@@ -625,6 +626,14 @@
- 			        "sdhi2", "sdhi1", "sdhi0",
- 				"mmcif0", "cmt1", "usbdmac0", "usbdmac1";
- 		};
-+		mstp4_clks: mstp4_clks@e6150140 {
-+			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
-+			clocks = <&cp_clk>;
-+			#clock-cells = <1>;
-+			clock-indices = <R8A7794_CLK_IRQC>;
-+			clock-output-names = "irqc";
-+		};
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
-diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-index d63323032d6e..09da38a58776 100644
---- a/include/dt-bindings/clock/r8a7794-clock.h
-+++ b/include/dt-bindings/clock/r8a7794-clock.h
-@@ -60,6 +60,9 @@
- #define R8A7794_CLK_USBDMAC0		30
- #define R8A7794_CLK_USBDMAC1		31
+ by Wolfram Sang <wsa@sang-engineering.com> in 2014-15
  
-+/* MSTP4 */
-+#define R8A7794_CLK_IRQC		7
+-Linux can also be an I2C slave in case I2C controllers have slave support.
+-Besides this HW requirement, one also needs a software backend providing the
+-actual functionality. An example for this is the slave-eeprom driver, which
+-acts as a dual memory driver. While another I2C master on the bus can access it
+-like a regular EEPROM, the Linux I2C slave can access the content via sysfs and
+-retrieve/provide information as needed. The software backend driver and the I2C
+-bus driver communicate via events. Here is a small graph visualizing the data
+-flow and the means by which data is transported. The dotted line marks only one
+-example. The backend could also use e.g. a character device, be in-kernel
+-only, or something completely different:
++Linux can also be an I2C slave if the I2C controller in use has slave
++functionality. For that to work, one needs slave support in the bus driver plus
++a hardware independent software backend providing the actual functionality. An
++example for the latter is the slave-eeprom driver, which acts as a dual memory
++driver. While another I2C master on the bus can access it like a regular
++EEPROM, the Linux I2C slave can access the content via sysfs and handle data as
++needed. The backend driver and the I2C bus driver communicate via events. Here
++is a small graph visualizing the data flow and the means by which data is
++transported. The dotted line marks only one example. The backend could also
++use a character device, be in-kernel only, or something completely different:
+ 
+ 
+               e.g. sysfs        I2C slave events        I/O registers
+@@ -43,6 +43,11 @@ behaviour and setup.
+ Developer manual
+ ========
+ 
++First, the events which are used by the bus driver and the backend will be
++described in detail. After that, some implementation hints for extending bus
++drivers and writing backends will be given.
 +
- /* MSTP5 */
- #define R8A7794_CLK_THERMAL		22
- #define R8A7794_CLK_PWM			23
++
+ I2C slave events
+ ----------------
+ 
 -- 
 2.1.4
 
