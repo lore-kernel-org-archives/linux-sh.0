@@ -1,32 +1,39 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 21 May 2015 10:48:12 +0000
-Subject: [PATCH v3 10/11] clocksource: sh_cmt: Document r8a7793-specific bindings
-Message-Id: <1432205293-9488-11-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 14 May 2015 01:07:00 +0000
+Subject: [PATCH 31/31] ARM: shmobile: r8a7791: Enable DMA for HSUSB
+Message-Id: <7706993e2deb75022dbcfc3043890aa1a0020189.1431565427.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1431565427.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: Mark Rutland <mark.rutland@arm.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+
+This patch adds DMA properties to the HSUSB node.
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Documentation/devicetree/bindings/timer/renesas,cmt.txt | 2 ++
- 1 file changed, 2 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/timer/renesas,cmt.txt b/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-index 1a05c1b..b3c9547 100644
---- a/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-+++ b/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-@@ -48,6 +48,8 @@ Required Properties:
- 		(CMT[01])
-     - "renesas,cmt-48-r8a7791" for the r8a7791 48-bit CMT
- 		(CMT[01])
-+    - "renesas,cmt-48-r8a7793" for the r8a7793 48-bit CMT
-+		(CMT[01])
-     - "renesas,cmt-48-gen2" for all second generation 48-bit CMT
- 		(CMT[01] on r8a73a4, r8a7790 and r8a7791)
- 		This is a fallback for the renesas,cmt-48-r8a73a4,
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 754c3f20f224..7613abea13d7 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -723,6 +723,9 @@
+ 		renesas,buswait = <4>;
+ 		phys = <&usb0 1>;
+ 		phy-names = "usb";
++		dmas = <&usb_dmac0 0>, <&usb_dmac0 1>,
++		       <&usb_dmac1 0>, <&usb_dmac1 1>;
++		dma-names = "ch0", "ch1", "ch2", "ch3";
+ 		status = "disabled";
+ 	};
+ 
 -- 
-2.3.5
+2.1.4
 
