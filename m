@@ -1,31 +1,54 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 25 May 2015 09:38:50 +0000
-Subject: Re: [PATCH 0/3 v6] mmc: sh_mmcif: add parent clk support
-Message-Id: <871ti5j8w7.wl%kuninori.morimoto.gx@renesas.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 14 May 2015 09:39:17 +0000
+Subject: [PATCH v2 RFT] usb: xhci: Add to check CRR bit in xhci_suspend()
+Message-Id: <1431596357-4460-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
-	<87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
-	<CAPDyKFpi6NXx+s1eCJ0T9h_sxmQsXZRUxXi8=kmp5ohLJBHuwA@mail.gmail.com>
-	<CAPDyKFrqZMv25rYEwGopNQAajUAsXbFucX3X4wmRveFtQfbZ6Q@mail.gmail.com>
-In-Reply-To: <CAPDyKFrqZMv25rYEwGopNQAajUAsXbFucX3X4wmRveFtQfbZ6Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, kobayashi <keita.kobayashi.ym@renesas.com>
+To: linux-sh@vger.kernel.org
 
+The STS_HALT is not set until the CRR (CMD_RING_RUNNING) is cleared
+on specific xHCI controllers (e.g. R-Car SoCs) after this driver set
+the R/S (CMD_RUN) to 0. So, to avoid using a quirks XHCI_SLOW_SUSPEND,
+this patch adds to wait for the CRR to clear.
 
-Hi Ulf
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ My environment (R-Car H2) could work correctly. I would like to know
+ that this patch causes side effect or not. Also I'd like to know
+ this patch can avoid the XHCI_SLOW_SUSPEND quirk on other environment
+ (Fresco Logic XHCI controller).
 
-> >> Kuninori Morimoto (5):
-> >>       1) mmc: sh_mmcif: add sh_mmcif_host_to_dev() macro and use it.
-> >>       2) mmc: sh_mmcif: use sh_mmcif_xxx prefix for all functions
-> >>       3) mmc: sh_mmcif: calculate best clock with parent clock
-> >>       4) ARM: shmobile: r8a7790: add MMCIF max-frequency
-> >>       5) ARM: shmobile: r8a7791: add MMCIF max-frequency
-(snip)
-> I realized the patch 3 caused a compiler warning. I have fixed it up,
-> so no worries!
+ Changes from v1:
+  - Remove a abort code.
+  - Wait for the CRR to clear after this driver set the R/S to 0.
+  - Rebase on the usb.git / usb-next branch.
+    (commit id = aa519be34f45954f33a6c20430deac8e544a180f)
 
-Oops. Thank you for your help
+ drivers/usb/host/xhci.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
+index ec8ac16..a357917 100644
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
+@@ -923,6 +923,15 @@ int xhci_suspend(struct xhci_hcd *xhci, bool do_wakeup)
+ 	command &= ~CMD_RUN;
+ 	writel(command, &xhci->op_regs->command);
+ 
++	/*
++	 * The STS_HALT is not set until the CRR is cleared on specific
++	 * xHCI controllers (e.g. R-Car SoCs) after this driver set the R/S
++	 * to 0. So, to avoid using a quirks XHCI_SLOW_SUSPEND, this driver
++	 * waits for the CRR to clear.
++	 */
++	xhci_handshake(&xhci->op_regs->cmd_ring, CMD_RING_RUNNING, 0,
++		       5 * 1000 * 1000);
++
+ 	/* Some chips from Fresco Logic need an extraordinary delay */
+ 	delay *= (xhci->quirks & XHCI_SLOW_SUSPEND) ? 10 : 1;
+ 
+-- 
+1.9.1
 
