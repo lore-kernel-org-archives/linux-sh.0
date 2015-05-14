@@ -1,49 +1,38 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 14 May 2015 07:23:04 +0000
-Subject: [PATCH 4/5 v6] ARM: shmobile: r8a7790: add MMCIF max-frequency
-Message-Id: <87zj57oc95.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 14 May 2015 01:06:56 +0000
+Subject: [PATCH 27/31] ARM: shmobile: kzm9g dts: Configure the HOME key as wake-up source
+Message-Id: <cab7562a92edb89668fe548f5d8c8300e7438c62.1431565427.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
-	<87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1431565427.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, kobayashi <keita.kobayashi.ym@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Note that from now on any of the pfc8575 gpio keys will wake up the
+system, as the pfc8575 cannot mask individual interrupts.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v5 -> v6
+ arch/arm/boot/dts/sh73a0-kzm9g.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
- - new patch
-
- arch/arm/boot/dts/r8a7790.dtsi | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index c9055e3..044f0ef 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -468,6 +468,7 @@
- 		dma-names = "tx", "rx";
- 		reg-io-width = <4>;
- 		status = "disabled";
-+		max-frequency = <97500000>;
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 022ba505f573..24b4cd24dceb 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -147,6 +147,7 @@
+ 			gpios = <&pcf8575 14 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_HOME>;
+ 			label = "SW1";
++			gpio-key,wakeup;
+ 		};
  	};
  
- 	mmcif1: mmc@ee220000 {
-@@ -479,6 +480,7 @@
- 		dma-names = "tx", "rx";
- 		reg-io-width = <4>;
- 		status = "disabled";
-+		max-frequency = <97500000>;
- 	};
- 
- 	pfc: pfc@e6060000 {
 -- 
-1.9.1
+2.1.4
 
