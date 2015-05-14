@@ -1,104 +1,57 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 28 May 2015 18:53:28 +0000
-Subject: [PATCH v2 03/14] clk: shmobile: r8a7779: Add CPG Clock Domain support
-Message-Id: <1432839219-475-4-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 14 May 2015 01:06:57 +0000
+Subject: [PATCH 28/31] ARM: shmobile: r8a7790: add USB-DMAC device nodes
+Message-Id: <a3ff2090dc2a358bfe9e3d4c50f3921a732feb30.1431565427.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432839219-475-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432839219-475-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1431565427.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add Clock Domain support to the R-Car H1 Clock Pulse Generator (CPG)
-driver using the generic PM Domain.  This allows to power-manage the
-module clocks of SoC devices that are part of the CPG Clock Domain using
-Runtime PM, or for system suspend/resume.
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-SoC devices that are part of the CPG Clock Domain and can be
-power-managed through an MSTP clock should be tagged in DT with a proper
-"power-domains" property.
-
-Also update the reg property in the DT binding doc example to match the
-actual dtsi, which uses #address-cells and #size-cells = 1, not 2.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - New.
----
- .../bindings/clock/renesas,r8a7779-cpg-clocks.txt  | 30 +++++++++++++++++++---
- drivers/clk/shmobile/clk-r8a7779.c                 |  2 ++
- 2 files changed, 28 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
-index ed3c8cb12f4eb699..ded99abb4b6435ee 100644
---- a/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
-@@ -1,7 +1,9 @@
- * Renesas R8A7779 Clock Pulse Generator (CPG)
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index c9055e39b8bb..c03a91506c2e 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -371,6 +371,28 @@
+ 		dma-channels = <13>;
+ 	};
  
- The CPG generates core clocks for the R8A7779. It includes one PLL and
--several fixed ratio dividers
-+several fixed ratio dividers.
-+The CPG also provides a Clock Domain for SoC devices, in combination with the
-+CPG Module Stop (MSTP) Clocks.
- 
- Required Properties:
- 
-@@ -12,16 +14,36 @@ Required Properties:
-   - #clock-cells: Must be 1
-   - clock-output-names: The names of the clocks. Supported clocks are "plla",
-     "z", "zs", "s", "s1", "p", "b", "out".
-+  - #power-domain-cells: Must be 0
- 
-+SoC devices that are part of the CPG Clock Domain and can be power-managed
-+through an MSTP clock should refer to the CPG device node in their
-+"power-domains" property, as documented by the generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
- 
--Example
---------
-+
-+Examples
-+--------
-+
-+  - CPG device node:
- 
- 	cpg_clocks: cpg_clocks@ffc80000 {
- 		compatible = "renesas,r8a7779-cpg-clocks";
--		reg = <0 0xffc80000 0 0x30>;
-+		reg = <0xffc80000 0x30>;
- 		clocks = <&extal_clk>;
- 		#clock-cells = <1>;
- 		clock-output-names = "plla", "z", "zs", "s", "s1", "p",
- 		                     "b", "out";
-+		#power-domain-cells = <0>;
++	usb_dmac0: dma-controller@e65a0000 {
++		compatible = "renesas,usb-dmac";
++		reg = <0 0xe65a0000 0 0x100>;
++		interrupts = <0 109 IRQ_TYPE_LEVEL_HIGH
++			      0 109 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "ch0", "ch1";
++		clocks = <&mstp3_clks R8A7790_CLK_USBDMAC0>;
++		#dma-cells = <1>;
++		dma-channels = <2>;
 +	};
 +
++	usb_dmac1: dma-controller@e65b0000 {
++		compatible = "renesas,usb-dmac";
++		reg = <0 0xe65b0000 0 0x100>;
++		interrupts = <0 110 IRQ_TYPE_LEVEL_HIGH
++			      0 110 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "ch0", "ch1";
++		clocks = <&mstp3_clks R8A7790_CLK_USBDMAC1>;
++		#dma-cells = <1>;
++		dma-channels = <2>;
++	};
 +
-+  - CPG Clock Domain member device node:
-+
-+	sata: sata@fc600000 {
-+		compatible = "renesas,sata-r8a7779", "renesas,rcar-sata";
-+		reg = <0xfc600000 0x2000>;
-+		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7779_CLK_SATA>;
-+		power-domains = <&cpg_clocks>;
- 	};
-diff --git a/drivers/clk/shmobile/clk-r8a7779.c b/drivers/clk/shmobile/clk-r8a7779.c
-index 652ecacb6daf7922..e42a63a2ad251de2 100644
---- a/drivers/clk/shmobile/clk-r8a7779.c
-+++ b/drivers/clk/shmobile/clk-r8a7779.c
-@@ -168,6 +168,8 @@ static void __init r8a7779_cpg_clocks_init(struct device_node *np)
- 	}
- 
- 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-+
-+	cpg_mstp_add_clk_domain(np);
- }
- CLK_OF_DECLARE(r8a7779_cpg_clks, "renesas,r8a7779-cpg-clocks",
- 	       r8a7779_cpg_clocks_init);
+ 	i2c0: i2c@e6508000 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
 -- 
-1.9.1
+2.1.4
 
