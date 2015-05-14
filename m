@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 14 May 2015 01:06:43 +0000
-Subject: [PATCH 14/31] ARM: shmobile: sh73a0 dtsi: Use generic names for device nodes
-Message-Id: <4239baee807bbd93e89eef184b2547f5ae902615.1431565427.git.horms+renesas@verge.net.au>
+Date: Thu, 14 May 2015 01:06:41 +0000
+Subject: [PATCH 12/31] ARM: shmobile: r8a7790 dtsi: Use generic names for device nodes
+Message-Id: <b694e3807b5b12273ba057e8cfcf82c2331606e0.1431565427.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1431565427.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
@@ -12,54 +12,27 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-irqpin -> interrupt-controller
+rcar_sound -> sound
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index cde61b463b6a..11e17c5f26e2 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -90,7 +90,7 @@
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 22e73906ec88..c9055e39b8bb 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1451,7 +1451,7 @@
  		status = "disabled";
  	};
  
--	irqpin0: irqpin@e6900000 {
-+	irqpin0: interrupt-controller@e6900000 {
- 		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-@@ -112,7 +112,7 @@
- 		control-parent;
- 	};
- 
--	irqpin1: irqpin@e6900004 {
-+	irqpin1: interrupt-controller@e6900004 {
- 		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-@@ -134,7 +134,7 @@
- 		control-parent;
- 	};
- 
--	irqpin2: irqpin@e6900008 {
-+	irqpin2: interrupt-controller@e6900008 {
- 		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
-@@ -156,7 +156,7 @@
- 		control-parent;
- 	};
- 
--	irqpin3: irqpin@e690000c {
-+	irqpin3: interrupt-controller@e690000c {
- 		compatible = "renesas,intc-irqpin-sh73a0", "renesas,intc-irqpin";
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
+-	rcar_sound: rcar_sound@ec500000 {
++	rcar_sound: sound@ec500000 {
+ 		/*
+ 		 * #sound-dai-cells is required
+ 		 *
 -- 
 2.1.4
 
