@@ -1,129 +1,93 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 14 May 2015 16:06:50 +0000
-Subject: Re: [PATCH 2/2] pwm: Add support for R-Car PWM Timer
-Message-Id: <CAMuHMdV872yQ7crviCjzn7eEV7FaZPLpA08KnUkaGAUUX-UdCg@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 15 May 2015 01:15:14 +0000
+Subject: RE: [PATCH 2/2] pwm: Add support for R-Car PWM Timer
+Message-Id: <SG2PR06MB091997734E32D64228F0268ED8C70@SG2PR06MB0919.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1431509238-7648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 	<1431509238-7648-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1431509238-7648-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <CAMuHMdV872yQ7crviCjzn7eEV7FaZPLpA08KnUkaGAUUX-UdCg@mail.gmail.com>
+In-Reply-To: <CAMuHMdV872yQ7crviCjzn7eEV7FaZPLpA08KnUkaGAUUX-UdCg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: Thierry Reding <thierry.reding@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, linux-pwm@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Thierry Reding <thierry.reding@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "linux-pwm@vger.kernel.org" <linux-pwm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Hi Shimoda-san,
-
-On Wed, May 13, 2015 at 11:27 AM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> R-Car SoCs have a seven-channel pulse width modulation (PWM) timer.
-> This driver adds support for the PWM Timer as a single PWM chip and
-> seven PWM devices.
-
-Thanks for your patch!
-
-> diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
-> index b1541f4..7e98175 100644
-> --- a/drivers/pwm/Kconfig
-> +++ b/drivers/pwm/Kconfig
-> @@ -249,6 +249,17 @@ config PWM_PXA
->           To compile this driver as a module, choose M here: the module
->           will be called pwm-pxa.
->
-> +config PWM_RCAR
-> +       tristate "Renesas R-Car PWM support"
-> +       depends on ARCH_SHMOBILE || COMPILE_TEST
-
-Could be instead
-
-depends on ARCH_RCAR_GEN1 ||  ARCH_RCAR_GEN2 || COMPILE_TEST
-
-> +       depends on HAS_IOMEM
-> +       help
-> +         This driver exposes the PWM Timer controller found in Renesas
-> +         chips through the PWM API.
-
-"Renesas R-Car chips" (e.g. R-Mobile uses pwm-renesas-tpu).
-
-> --- /dev/null
-> +++ b/drivers/pwm/pwm-rcar.c
-> @@ -0,0 +1,276 @@
-> +/*
-> + * R-Car PWM Timer driver
-> + *
-> + * Copyright (C) 2015 Renesas Electronics Corporation
-> + *
-> + * This is free software; you can redistribute it and/or modify
-> + * it under the terms of version 2 of the GNU General Public License as
-> + * published by the Free Software Foundation.
-> + */
-> +
-> +#include <linux/clk.h>
-> +#include <linux/err.h>
-> +#include <linux/io.h>
-> +#include <linux/module.h>
-> +#include <linux/of.h>
-> +#include <linux/platform_device.h>
-> +#include <linux/pm_runtime.h>
-> +#include <linux/pwm.h>
-> +#include <linux/slab.h>
-> +
-> +#define NUM_RCAR_PWM_CHANNELS  7
-
-I'm wondering whether this should be a DT property, to prepare for
-future expansion.
-Alternatively, as these are really 7 individual channels, with 7 individual
-register blocks spaced 0x1000 apart, you could have 7 individual device nodes,
-each driving one pwm output. That would probably incur more overhead, as
-there would be 7 individual pwm controllers. But it does allow for future
-expansion, and allows to cope when the individual register blocks are moved
-in the SoC address space (I can imagine that on old SoCs e.g. all SCIF
-blocks were nicely lay out in the address space, while now they have arbitrary
-base addresses).
-
-What do other people think?
-
-> +static int rcar_pwn_get_clock_division(struct rcar_pwm_chip *rp,
-> +                                      int period_ns)
-> +{
-> +       int div;
-> +       unsigned long clk_rate = clk_get_rate(rp->clk);
-> +       unsigned long long max; /* max cycle / nanoseconds */
-> +
-> +       for (div = 0; div <= RCAR_PWM_MAX_DIVISION; div++) {
-> +               max = (unsigned long long)NSEC_PER_SEC * RCAR_PWM_MAX_CYCLE;
-> +               do_div(max, clk_rate / (1 << div));
-
-Dividing clk_rate by "1 << div" reduces accuracy a lot for large values of div.
-"NSEC_PER_SEC * RCAR_PWM_MAX_CYCLE * (1 << div)" just fits in 64-bit,
-so you can use
-
-        max = (unsigned long long)NSEC_PER_SEC * RCAR_PWM_MAX_CYCLE *
-              (1 << div);
-        do_div(max, clk_rate);
-
-> +static void rcar_pwm_set_counter(struct rcar_pwm_chip *rp, int channel,
-> +                                int div, int duty_ns, int period_ns)
-> +{
-> +       unsigned long long one_cycle, tmp;      /* 0.01 nanoseconds */
-> +       unsigned long clk_rate = clk_get_rate(rp->clk);
-> +       u32 cyc, ph;
-> +
-> +       one_cycle = (unsigned long long)NSEC_PER_SEC * 100;
-> +       do_div(one_cycle, clk_rate / (1 << div));
-
-Same here:
-
-        one_cycle = (unsigned long long)NSEC_PER_SEC * 100 * (1 << div)
-        do_div(one_cycle, clk_rate);
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR2VlcnQtc2FuLA0KDQpUaGFuayB5b3UgZm9yIHlvdXIgcmV2aWV3IQ0KDQo+IFNlbnQ6IEZy
+aWRheSwgTWF5IDE1LCAyMDE1IDE6MDcgQU0NCj4gDQo+IEhpIFNoaW1vZGEtc2FuLA0KPiANCj4g
+T24gV2VkLCBNYXkgMTMsIDIwMTUgYXQgMTE6MjcgQU0sIFlvc2hpaGlybyBTaGltb2RhDQo+IDx5
+b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2FzLmNvbT4gd3JvdGU6DQo+ID4gUi1DYXIgU29DcyBo
+YXZlIGEgc2V2ZW4tY2hhbm5lbCBwdWxzZSB3aWR0aCBtb2R1bGF0aW9uIChQV00pIHRpbWVyLg0K
+PiA+IFRoaXMgZHJpdmVyIGFkZHMgc3VwcG9ydCBmb3IgdGhlIFBXTSBUaW1lciBhcyBhIHNpbmds
+ZSBQV00gY2hpcCBhbmQNCj4gPiBzZXZlbiBQV00gZGV2aWNlcy4NCj4gDQo+IFRoYW5rcyBmb3Ig
+eW91ciBwYXRjaCENCj4gDQo+ID4gZGlmZiAtLWdpdCBhL2RyaXZlcnMvcHdtL0tjb25maWcgYi9k
+cml2ZXJzL3B3bS9LY29uZmlnDQo+ID4gaW5kZXggYjE1NDFmNC4uN2U5ODE3NSAxMDA2NDQNCj4g
+PiAtLS0gYS9kcml2ZXJzL3B3bS9LY29uZmlnDQo+ID4gKysrIGIvZHJpdmVycy9wd20vS2NvbmZp
+Zw0KPiA+IEBAIC0yNDksNiArMjQ5LDE3IEBAIGNvbmZpZyBQV01fUFhBDQo+ID4gICAgICAgICAg
+IFRvIGNvbXBpbGUgdGhpcyBkcml2ZXIgYXMgYSBtb2R1bGUsIGNob29zZSBNIGhlcmU6IHRoZSBt
+b2R1bGUNCj4gPiAgICAgICAgICAgd2lsbCBiZSBjYWxsZWQgcHdtLXB4YS4NCj4gPg0KPiA+ICtj
+b25maWcgUFdNX1JDQVINCj4gPiArICAgICAgIHRyaXN0YXRlICJSZW5lc2FzIFItQ2FyIFBXTSBz
+dXBwb3J0Ig0KPiA+ICsgICAgICAgZGVwZW5kcyBvbiBBUkNIX1NITU9CSUxFIHx8IENPTVBJTEVf
+VEVTVA0KPiANCj4gQ291bGQgYmUgaW5zdGVhZA0KPiANCj4gZGVwZW5kcyBvbiBBUkNIX1JDQVJf
+R0VOMSB8fCAgQVJDSF9SQ0FSX0dFTjIgfHwgQ09NUElMRV9URVNUDQoNCkkgd2lsbCBmaXggdGhp
+cy4NCg0KPiA+ICsgICAgICAgZGVwZW5kcyBvbiBIQVNfSU9NRU0NCj4gPiArICAgICAgIGhlbHAN
+Cj4gPiArICAgICAgICAgVGhpcyBkcml2ZXIgZXhwb3NlcyB0aGUgUFdNIFRpbWVyIGNvbnRyb2xs
+ZXIgZm91bmQgaW4gUmVuZXNhcw0KPiA+ICsgICAgICAgICBjaGlwcyB0aHJvdWdoIHRoZSBQV00g
+QVBJLg0KPiANCj4gIlJlbmVzYXMgUi1DYXIgY2hpcHMiIChlLmcuIFItTW9iaWxlIHVzZXMgcHdt
+LXJlbmVzYXMtdHB1KS4NCg0KSSB3aWxsIGZpeCB0aGlzLg0KDQo+ID4gLS0tIC9kZXYvbnVsbA0K
+PiA+ICsrKyBiL2RyaXZlcnMvcHdtL3B3bS1yY2FyLmMNCjwgc25pcCA+DQo+ID4gKyNkZWZpbmUg
+TlVNX1JDQVJfUFdNX0NIQU5ORUxTICA3DQo+IA0KPiBJJ20gd29uZGVyaW5nIHdoZXRoZXIgdGhp
+cyBzaG91bGQgYmUgYSBEVCBwcm9wZXJ0eSwgdG8gcHJlcGFyZSBmb3INCj4gZnV0dXJlIGV4cGFu
+c2lvbi4NCj4gQWx0ZXJuYXRpdmVseSwgYXMgdGhlc2UgYXJlIHJlYWxseSA3IGluZGl2aWR1YWwg
+Y2hhbm5lbHMsIHdpdGggNyBpbmRpdmlkdWFsDQo+IHJlZ2lzdGVyIGJsb2NrcyBzcGFjZWQgMHgx
+MDAwIGFwYXJ0LCB5b3UgY291bGQgaGF2ZSA3IGluZGl2aWR1YWwgZGV2aWNlIG5vZGVzLA0KPiBl
+YWNoIGRyaXZpbmcgb25lIHB3bSBvdXRwdXQuIFRoYXQgd291bGQgcHJvYmFibHkgaW5jdXIgbW9y
+ZSBvdmVyaGVhZCwgYXMNCj4gdGhlcmUgd291bGQgYmUgNyBpbmRpdmlkdWFsIHB3bSBjb250cm9s
+bGVycy4gQnV0IGl0IGRvZXMgYWxsb3cgZm9yIGZ1dHVyZQ0KPiBleHBhbnNpb24sIGFuZCBhbGxv
+d3MgdG8gY29wZSB3aGVuIHRoZSBpbmRpdmlkdWFsIHJlZ2lzdGVyIGJsb2NrcyBhcmUgbW92ZWQN
+Cj4gaW4gdGhlIFNvQyBhZGRyZXNzIHNwYWNlIChJIGNhbiBpbWFnaW5lIHRoYXQgb24gb2xkIFNv
+Q3MgZS5nLiBhbGwgU0NJRg0KPiBibG9ja3Mgd2VyZSBuaWNlbHkgbGF5IG91dCBpbiB0aGUgYWRk
+cmVzcyBzcGFjZSwgd2hpbGUgbm93IHRoZXkgaGF2ZSBhcmJpdHJhcnkNCj4gYmFzZSBhZGRyZXNz
+ZXMpLg0KPiANCj4gV2hhdCBkbyBvdGhlciBwZW9wbGUgdGhpbms/DQoNCk15IGluaXRpYWwgZGV2
+ZWxvcG1lbnQsIEkgd3JvdGUgNyBpbmRpdmlkdWFsIGRldmljZSBub2Rlcy4gSG93ZXZlciwgYWZ0
+ZXIgdGhlIGRyaXZlcg0Kd2FzIHByb3ZlZCwgdGhlIHN5c2ZzIGZvciBwd20gaXM6DQogL3N5cy9j
+bGFzcy9wd20vcHdtY2hpcDAvcHdtMA0KIC9zeXMvY2xhc3MvcHdtL3B3bWNoaXAxL3B3bTANCiAu
+Li4NCiAvc3lzL2NsYXNzL3B3bS9wd21jaGlwNi9wd20wDQoNCkkgZmVsdCB0aGlzIHdhcyBzdHJh
+bmdlIG51bWJlcmluZyBhIGxpdHRsZS4NClNvLCBJIGNoYW5nZWQgdGhlIHN0eWxlIHRvIG9uZSBw
+d20gY2hpcCBhbmQgNyBwd20gY2hhbm5lbHM6DQogL3N5cy9jbGFzcy9wd20vcHdtY2hpcDAvcHdt
+MA0KIC9zeXMvY2xhc3MvcHdtL3B3bWNoaXAwL3B3bTENCiAuLi4NCiAvc3lzL2NsYXNzL3B3bS9w
+d21jaGlwMC9wd202DQoNCkknbSBub3Qgc3VyZSB3aGljaCBzdHlsZSBpcyBnb29kIGZvciB0aGUg
+UFdNIElQLg0KDQo+ID4gK3N0YXRpYyBpbnQgcmNhcl9wd25fZ2V0X2Nsb2NrX2RpdmlzaW9uKHN0
+cnVjdCByY2FyX3B3bV9jaGlwICpycCwNCj4gPiArICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICBpbnQgcGVyaW9kX25zKQ0KPiA+ICt7DQo+ID4gKyAgICAgICBpbnQgZGl2Ow0K
+PiA+ICsgICAgICAgdW5zaWduZWQgbG9uZyBjbGtfcmF0ZSA9IGNsa19nZXRfcmF0ZShycC0+Y2xr
+KTsNCj4gPiArICAgICAgIHVuc2lnbmVkIGxvbmcgbG9uZyBtYXg7IC8qIG1heCBjeWNsZSAvIG5h
+bm9zZWNvbmRzICovDQo+ID4gKw0KPiA+ICsgICAgICAgZm9yIChkaXYgPSAwOyBkaXYgPD0gUkNB
+Ul9QV01fTUFYX0RJVklTSU9OOyBkaXYrKykgew0KPiA+ICsgICAgICAgICAgICAgICBtYXggPSAo
+dW5zaWduZWQgbG9uZyBsb25nKU5TRUNfUEVSX1NFQyAqIFJDQVJfUFdNX01BWF9DWUNMRTsNCj4g
+PiArICAgICAgICAgICAgICAgZG9fZGl2KG1heCwgY2xrX3JhdGUgLyAoMSA8PCBkaXYpKTsNCj4g
+DQo+IERpdmlkaW5nIGNsa19yYXRlIGJ5ICIxIDw8IGRpdiIgcmVkdWNlcyBhY2N1cmFjeSBhIGxv
+dCBmb3IgbGFyZ2UgdmFsdWVzIG9mIGRpdi4NCj4gIk5TRUNfUEVSX1NFQyAqIFJDQVJfUFdNX01B
+WF9DWUNMRSAqICgxIDw8IGRpdikiIGp1c3QgZml0cyBpbiA2NC1iaXQsDQo+IHNvIHlvdSBjYW4g
+dXNlDQo+IA0KPiAgICAgICAgIG1heCA9ICh1bnNpZ25lZCBsb25nIGxvbmcpTlNFQ19QRVJfU0VD
+ICogUkNBUl9QV01fTUFYX0NZQ0xFICoNCj4gICAgICAgICAgICAgICAoMSA8PCBkaXYpOw0KPiAg
+ICAgICAgIGRvX2RpdihtYXgsIGNsa19yYXRlKTsNCg0KVGhhbmsgeW91IHZlcnkgbXVjaCBmb3Ig
+dGhlIHN1Z2dlc3Rpb24uIEkgd2lsbCBmaXggdGhpcyBpbiB2Mi4NCg0KPiA+ICtzdGF0aWMgdm9p
+ZCByY2FyX3B3bV9zZXRfY291bnRlcihzdHJ1Y3QgcmNhcl9wd21fY2hpcCAqcnAsIGludCBjaGFu
+bmVsLA0KPiA+ICsgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGludCBkaXYsIGludCBk
+dXR5X25zLCBpbnQgcGVyaW9kX25zKQ0KPiA+ICt7DQo+ID4gKyAgICAgICB1bnNpZ25lZCBsb25n
+IGxvbmcgb25lX2N5Y2xlLCB0bXA7ICAgICAgLyogMC4wMSBuYW5vc2Vjb25kcyAqLw0KPiA+ICsg
+ICAgICAgdW5zaWduZWQgbG9uZyBjbGtfcmF0ZSA9IGNsa19nZXRfcmF0ZShycC0+Y2xrKTsNCj4g
+PiArICAgICAgIHUzMiBjeWMsIHBoOw0KPiA+ICsNCj4gPiArICAgICAgIG9uZV9jeWNsZSA9ICh1
+bnNpZ25lZCBsb25nIGxvbmcpTlNFQ19QRVJfU0VDICogMTAwOw0KPiA+ICsgICAgICAgZG9fZGl2
+KG9uZV9jeWNsZSwgY2xrX3JhdGUgLyAoMSA8PCBkaXYpKTsNCj4gDQo+IFNhbWUgaGVyZToNCj4g
+DQo+ICAgICAgICAgb25lX2N5Y2xlID0gKHVuc2lnbmVkIGxvbmcgbG9uZylOU0VDX1BFUl9TRUMg
+KiAxMDAgKiAoMSA8PCBkaXYpDQo+ICAgICAgICAgZG9fZGl2KG9uZV9jeWNsZSwgY2xrX3JhdGUp
+Ow0KDQpJIHdpbGwgZml4IHRoaXMgaW4gdjIuDQoNCkJlc3QgcmVnYXJkcywNCllvc2hpaGlybyBT
+aGltb2RhDQoNCj4gR3J7b2V0amUsZWV0aW5nfXMsDQo+IA0KPiAgICAgICAgICAgICAgICAgICAg
+ICAgICBHZWVydA0KPiANCj4gLS0NCj4gR2VlcnQgVXl0dGVyaG9ldmVuIC0tIFRoZXJlJ3MgbG90
+cyBvZiBMaW51eCBiZXlvbmQgaWEzMiAtLSBnZWVydEBsaW51eC1tNjhrLm9yZw0KPiANCj4gSW4g
+cGVyc29uYWwgY29udmVyc2F0aW9ucyB3aXRoIHRlY2huaWNhbCBwZW9wbGUsIEkgY2FsbCBteXNl
+bGYgYSBoYWNrZXIuIEJ1dA0KPiB3aGVuIEknbSB0YWxraW5nIHRvIGpvdXJuYWxpc3RzIEkganVz
+dCBzYXkgInByb2dyYW1tZXIiIG9yIHNvbWV0aGluZyBsaWtlIHRoYXQuDQo+ICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgLS0gTGludXMgVG9ydmFsZHMNCg=
