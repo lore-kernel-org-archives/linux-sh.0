@@ -1,29 +1,39 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 14 May 2015 12:40:01 +0000
-Subject: [PATCH 0/4] i2c: small updates to the slave framework
-Message-Id: <1431607205-2316-1-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 15 May 2015 08:22:53 +0000
+Subject: Re: [PATCH 0/4] i2c: small updates to the slave framework
+Message-Id: <CAMuHMdXGi5Gc=4_Fu2xmfGKN862w-v5EtQ_pCOd3Sx2tZyoCSg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1431607205-2316-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1431607205-2316-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+To: Wolfram Sang <wsa@the-dreams.de>
+Cc: Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Before nailing down the DT representation problem, here are some smaller
-updates for the slave framework I have lying around.
+Hi Wolfram,
 
-Wolfram Sang (4):
-  i2c: add FUNC flag for slave capabilities
-  i2c: rcar: report slave capabilities to users
-  i2c: slave: docs: be more precise about the prerequsites
-  i2c: slave: add error messages to slave core
+On Thu, May 14, 2015 at 2:40 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
+> Before nailing down the DT representation problem, here are some smaller
+> updates for the slave framework I have lying around.
+>
+> Wolfram Sang (4):
+>   i2c: add FUNC flag for slave capabilities
+>   i2c: rcar: report slave capabilities to users
+>   i2c: slave: docs: be more precise about the prerequsites
+>   i2c: slave: add error messages to slave core
 
- Documentation/i2c/slave-interface | 25 +++++++++++++++----------
- drivers/i2c/busses/i2c-rcar.c     |  3 ++-
- drivers/i2c/i2c-core.c            | 22 +++++++++++++++++-----
- include/uapi/linux/i2c.h          |  1 +
- 4 files changed, 35 insertions(+), 16 deletions(-)
+This series looks fine to me
 
--- 
-2.1.4
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
