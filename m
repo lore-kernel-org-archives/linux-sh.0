@@ -1,36 +1,28 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 15 May 2015 07:47:37 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 15 May 2015 15:22:23 +0000
 Subject: Re: [GIT PULL] Renesas ARM Based SoC DT Updates for v4.2
-Message-Id: <CAMuHMdUmqO5hkEhTxKbEeZ+Dw-fKrmbcMndxn4Oi8p2YLo5LDw@mail.gmail.com>
+Message-Id: <3987918.TsLFWxo2th@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1431565427.git.horms+renesas@verge.net.au>
- <CAMuHMdUgQ0xc0WVGHTjUK6Vx-29HFupsqmKJ1nctwVK1P=WjsQ@mail.gmail.com>
- <20150515004413.GG26927@verge.net.au>
-In-Reply-To: <20150515004413.GG26927@verge.net.au>
+In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, May 15, 2015 at 2:44 AM, Simon Horman <horms@verge.net.au> wrote:
->> > * Add "nor-jedec" compatible value to SH Mobile boards
->>
->> Please note Brian is reconsidering this compatible value.
->> If the binding will be changed (which has to happen before v4.1 is released),
->> the above must be changed, too.
->
-> Noted. I believe we can leave this pull-request as is and
-> follow up with any changes as needed.
+On Thursday 14 May 2015 10:06:56 Simon Horman wrote:
+> Renesas ARM Based SoC DT Updates for v4.2
+> 
+> * Enable DMA for HSUSB on r8a7790 and r8a7791 SoCs
+> * Configure the HOME key as wake-up source on kzm9g board
+> * Use generic names for device nodes on SH Mobile SoCs and boards
+> * Add "nor-jedec" compatible value to SH Mobile boards
+> * Add IRQC clock to r8a73a4, r8a779* SoCs
+> * Remove MSIOF address from r8a7790 and r8a7791 SoCs
 
-Yes we can.
+Pulled into next/dt, thanks!
 
-Gr{oetje,eeting}s,
+Please follow-up with a change for the nor-jedec property once that
+discussion has concluded.
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+	Arnd
