@@ -1,46 +1,57 @@
-From: Uwe =?iso-8859-1?Q?Kleine-K=F6nig?=  <u.kleine-koenig@pengutronix.de>
-Date: Sat, 16 May 2015 09:27:31 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 16 May 2015 10:09:09 +0000
 Subject: Re: [PATCH 1/4] i2c: add FUNC flag for slave capabilities
-Message-Id: <20150516092731.GU28888@pengutronix.de>
+Message-Id: <20150516100909.GA1617@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="vtzGhvizbBRQ85DL"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1431607205-2316-1-git-send-email-wsa@the-dreams.de>
  <1431607205-2316-2-git-send-email-wsa@the-dreams.de>
  <20150515113744.GS28888@pengutronix.de>
  <20150516082216.GA4014@schokonusskuchen.bad>
-In-Reply-To: <20150516082216.GA4014-oo5tB6JMkjKRinMKxDlMNPwbnWRJjS81@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+ <20150516092731.GU28888@pengutronix.de>
+In-Reply-To: <20150516092731.GU28888@pengutronix.de>
+To: Uwe =?utf-8?Q?Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-Hello Wolfram,
 
-On Sat, May 16, 2015 at 10:22:16AM +0200, Wolfram Sang wrote:
-> On Fri, May 15, 2015 at 01:37:44PM +0200, Uwe Kleine-K=F6nig wrote:
-> > On Thu, May 14, 2015 at 02:40:02PM +0200, Wolfram Sang wrote:
-> > > From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> > >=20
-> > > So users can check in advance if there is slave support.
-> > I wonder if the core should check if .{,un}reg_slave is !=3D NULL and
-> > automatically set this bit accordingly.
->=20
-> I thought about this, too, but decided against it. Maybe some driver
-> doesn't want to make its slave interface public because it is
-> specialized for one use-case only (thinking ECs here)? Also, doing it
-Hmm, I'd not say this is a valid reason. Sounds like policy in the
-kernel?!
+--vtzGhvizbBRQ85DL
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Does the framework check for the slave support flag before binding a
-slave to the controler? I assume that not, but wonder if it should.
 
-> would be a little inconsistent, since we could do the same for
-> I2C_FUNC_I2C when master_xfer is populated. So, let's start simple I'd
-> say.
+> Does the framework check for the slave support flag before binding a
+> slave to the controler? I assume that not, but wonder if it should.
 
-Best regards
-Uwe
+I think this nails it: Currently, the core doesn't use any I2C_FUNC_*
+flags for checking anything. It is solely for exposing information to
+users. I'd like to have FUNC_SLAVE in line with that for now.
 
---=20
-Pengutronix e.K.                           | Uwe Kleine-K=F6nig            |
-Industrial Linux Solutions                 | http://www.pengutronix.de/  |
+If we are going to change that, it should be a seperate thread and not
+limited to FUNC_SLAVE. I might note that for me this is not a priority
+issue, so don't expect patches from me ;)
+
+
+--vtzGhvizbBRQ85DL
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJVVxdFAAoJEBQN5MwUoCm2tOEP/ierYwTrIMMoJVACDgMGdBxk
+v/Hpdf8iVQKo56QFXY15r1Wdht8fEy0ZisodyYnnwDBooVoqNeUz63SA27bco7X3
+ZFWUIzorNgYe1+LA5xai2jvJR9wbBV12iCUYPyxstQBhw04zb4xt4yzx2q0QulXr
+m6auw+kd0yJMHpiBwYdX1akKXSTUz/R4mnPvrs8EpSnxPXHDqebuYPzbdLnfbMQZ
+53vfcptW13AFZcbIhT79fx11gCJ+KwroW+QlXloZYz5ksfN6OqgI6rQfE/3Mji9K
+vaNxtV1v4WFtbvIMKpRhC8PrOCJTcYSHyiM8Ji/l3I7K9iwQegEx8sLx83yTCohK
+mmD0/FT//9Yu1XlmVha+FJJ47S/LKOr6+CaJKy47zmoWYOMCmM0SrXJyudg77t3O
+wCJC0RCcjK8iYiqf+cos9bZshn2ISxVRVak83Ev5+3nnoeb3Y92ZWEGLOwjj4vH2
+fh9fZD+T2UEYAWcwaGCVdHZrKE81C1yLkaRwas/s32QgC+w0crgYfjSYEQ8dWRmH
+rjt/jlXwWRKI972TJwa51P5OR1cMPTlJpOgtuC/7QC8NgEDb+lpIYlI83/OWfRlJ
+zKX6iZQa0qo6paGu04n2J4cR/hZEZMFhyCn+cPXZwSG0juOG/4OKhLdZKl/XPVmN
+CEMYvMZNfIIimlFDqmNu
+=Onfd
+-----END PGP SIGNATURE-----
+
+--vtzGhvizbBRQ85DL--
