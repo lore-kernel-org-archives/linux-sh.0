@@ -1,64 +1,280 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Wed, 06 May 2015 01:41:23 +0000
-Subject: Re: [RFC PATCH 5/7] mmc: sh_mobile_sdhi: Add UHS-I mode support
-Message-Id: <1430876483.4222.45.camel@xylophone.i.decadent.org.uk>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 17 May 2015 15:50:30 +0000
+Subject: [PATCH v2] serial: sh-sci: Remove schedule_work in sci_dma_rx_complete
+Message-Id: <1431877830-4877-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430396995.5802.39.camel@xylophone.i.decadent.org.uk>
-	 <1430397136.5802.44.camel@xylophone.i.decadent.org.uk>
-	 <554252A1.6070302@cogentembedded.com>
-In-Reply-To: <554252A1.6070302-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
-Cc: Ian Molton <ian-zdned+2MO1+9FHfhHBbuYA@public.gmane.org>, linux-mmc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-81qHHgoATdFT9dQujB1mzip2UmYkHbXO@public.gmane.org
+To: linux-serial@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
 
-On Thu, 2015-04-30 at 19:04 +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 04/30/2015 03:32 PM, Ben Hutchings wrote:
-> 
-> > Implement voltage switch, supporting modes up to SDR-50.
-> 
-> > Based on work by Shinobu Uehara, Rob Taylor, William Towle and Ian Molton.
-> 
-> > This uses two voltage regulators, one external and one on the pfc.
-> 
-> > Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
-> > ---
-> >   drivers/mmc/host/sh_mobile_sdhi.c |   48 +++++++++++++++++++++++++++++++++++++
-> >   1 file changed, 48 insertions(+)
-> 
-> > diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> > index 92a58c6007fe..c8538a256e22 100644
-> > --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> > +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> [...]
-> > @@ -148,6 +150,41 @@ static void sh_mobile_sdhi_set_clk_div(struct platform_device *pdev, int clk)
-> >   	}
-> >   }
-> >
-> > +static int sh_mobile_sdhi_start_signal_voltage_switch(
-> > +	struct tmio_mmc_host *host, unsigned char signal_voltage)
-> > +{
-> > +	struct sh_mobile_sdhi *priv = host_to_priv(host);
-> > +	int min_uV, max_uV;
-> > +	int ret;
-> > +
-> > +	if (signal_voltage = MMC_SIGNAL_VOLTAGE_330) {
-> > +		min_uV = 2700000;
-> > +		max_uV = 3600000;
-> > +	} else if (signal_voltage = MMC_SIGNAL_VOLTAGE_180) {
-> > +		min_uV = 1700000;
-> > +		max_uV = 1950000;
-> > +	} else {
-> > +		return -EINVAL;
-> > +	}
-> 
->     The above is asking to be a *switch* statement.
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-I suppose so, yes.
+This patch calls work_fn_rx() directly so that the driver can avoid
+executing of next sci_dma_rx_complete() before work_fn_rx() completes.
 
-Ben.
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
+This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+tree.
+
+v2 [Yoshihiro Kaneko]
+* Move work_fn_rx() up and remove a function prototype accorded
+
+ drivers/tty/serial/sh-sci.c | 225 ++++++++++++++++++++++----------------------
+ 1 file changed, 113 insertions(+), 112 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index e7d6566..5b216ea 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1251,6 +1251,118 @@ static unsigned int sci_get_mctrl(struct uart_port *port)
+ }
+ 
+ #ifdef CONFIG_SERIAL_SH_SCI_DMA
++static void work_fn_rx(struct work_struct *work)
++{
++	struct sci_port *s = container_of(work, struct sci_port, work_rx);
++	struct uart_port *port = &s->port;
++	struct dma_async_tx_descriptor *desc;
++	int new;
++
++	if (s->active_rx = s->cookie_rx[0]) {
++		new = 0;
++	} else if (s->active_rx = s->cookie_rx[1]) {
++		new = 1;
++	} else {
++		dev_err(port->dev, "cookie %d not found!\n", s->active_rx);
++		return;
++	}
++	desc = s->desc_rx[new];
++
++	if (dma_async_is_tx_complete(s->chan_rx, s->active_rx, NULL, NULL) !+	    DMA_COMPLETE) {
++		/* Handle incomplete DMA receive */
++		struct dma_chan *chan = s->chan_rx;
++		struct shdma_desc *sh_desc = container_of(desc,
++					struct shdma_desc, async_tx);
++		unsigned long flags;
++		int count;
++
++		dmaengine_terminate_all(chan);
++		dev_dbg(port->dev, "Read %zu bytes with cookie %d\n",
++			sh_desc->partial, sh_desc->cookie);
++
++		spin_lock_irqsave(&port->lock, flags);
++		count = sci_dma_rx_push(s, sh_desc->partial);
++		spin_unlock_irqrestore(&port->lock, flags);
++
++		if (count)
++			tty_flip_buffer_push(&port->state->port);
++
++		sci_submit_rx(s);
++
++		return;
++	}
++
++	s->cookie_rx[new] = desc->tx_submit(desc);
++	if (s->cookie_rx[new] < 0) {
++		dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
++		sci_rx_dma_release(s, true);
++		return;
++	}
++
++	s->active_rx = s->cookie_rx[!new];
++
++	dev_dbg(port->dev, "%s: cookie %d #%d, new active #%d\n",
++		__func__, s->cookie_rx[new], new, s->active_rx);
++}
++
++static void work_fn_tx(struct work_struct *work)
++{
++	struct sci_port *s = container_of(work, struct sci_port, work_tx);
++	struct dma_async_tx_descriptor *desc;
++	struct dma_chan *chan = s->chan_tx;
++	struct uart_port *port = &s->port;
++	struct circ_buf *xmit = &port->state->xmit;
++	struct scatterlist *sg = &s->sg_tx;
++
++	/*
++	 * DMA is idle now.
++	 * Port xmit buffer is already mapped, and it is one page... Just adjust
++	 * offsets and lengths. Since it is a circular buffer, we have to
++	 * transmit till the end, and then the rest. Take the port lock to get a
++	 * consistent xmit buffer state.
++	 */
++	spin_lock_irq(&port->lock);
++	sg->offset = xmit->tail & (UART_XMIT_SIZE - 1);
++	sg_dma_address(sg) = (sg_dma_address(sg) & ~(UART_XMIT_SIZE - 1)) +
++		sg->offset;
++	sg_dma_len(sg) = min_t(int, CIRC_CNT(xmit->head, xmit->tail,
++		UART_XMIT_SIZE), CIRC_CNT_TO_END(xmit->head, xmit->tail,
++		UART_XMIT_SIZE));
++	spin_unlock_irq(&port->lock);
++
++	BUG_ON(!sg_dma_len(sg));
++
++	desc = dmaengine_prep_slave_sg(chan,
++			sg, s->sg_len_tx, DMA_MEM_TO_DEV,
++			DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
++	if (!desc) {
++		/* switch to PIO */
++		sci_tx_dma_release(s, true);
++		return;
++	}
++
++	dma_sync_sg_for_device(port->dev, sg, 1, DMA_TO_DEVICE);
++
++	spin_lock_irq(&port->lock);
++	s->desc_tx = desc;
++	desc->callback = sci_dma_tx_complete;
++	desc->callback_param = s;
++	spin_unlock_irq(&port->lock);
++	s->cookie_tx = desc->tx_submit(desc);
++	if (s->cookie_tx < 0) {
++		dev_warn(port->dev, "Failed submitting Tx DMA descriptor\n");
++		/* switch to PIO */
++		sci_tx_dma_release(s, true);
++		return;
++	}
++
++	dev_dbg(port->dev, "%s: %p: %d...%d, cookie %d\n",
++		__func__, xmit->buf, xmit->tail, xmit->head, s->cookie_tx);
++
++	dma_async_issue_pending(chan);
++}
++
+ static void sci_dma_tx_complete(void *arg)
+ {
+ 	struct sci_port *s = arg;
+@@ -1341,7 +1453,7 @@ static void sci_dma_rx_complete(void *arg)
+ 	if (count)
+ 		tty_flip_buffer_push(&port->state->port);
+ 
+-	schedule_work(&s->work_rx);
++	work_fn_rx(&s->work_rx);
+ }
+ 
+ static void sci_rx_dma_release(struct sci_port *s, bool enable_pio)
+@@ -1412,117 +1524,6 @@ static void sci_submit_rx(struct sci_port *s)
+ 
+ 	dma_async_issue_pending(chan);
+ }
+-
+-static void work_fn_rx(struct work_struct *work)
+-{
+-	struct sci_port *s = container_of(work, struct sci_port, work_rx);
+-	struct uart_port *port = &s->port;
+-	struct dma_async_tx_descriptor *desc;
+-	int new;
+-
+-	if (s->active_rx = s->cookie_rx[0]) {
+-		new = 0;
+-	} else if (s->active_rx = s->cookie_rx[1]) {
+-		new = 1;
+-	} else {
+-		dev_err(port->dev, "cookie %d not found!\n", s->active_rx);
+-		return;
+-	}
+-	desc = s->desc_rx[new];
+-
+-	if (dma_async_is_tx_complete(s->chan_rx, s->active_rx, NULL, NULL) !-	    DMA_COMPLETE) {
+-		/* Handle incomplete DMA receive */
+-		struct dma_chan *chan = s->chan_rx;
+-		struct shdma_desc *sh_desc = container_of(desc,
+-					struct shdma_desc, async_tx);
+-		unsigned long flags;
+-		int count;
+-
+-		dmaengine_terminate_all(chan);
+-		dev_dbg(port->dev, "Read %zu bytes with cookie %d\n",
+-			sh_desc->partial, sh_desc->cookie);
+-
+-		spin_lock_irqsave(&port->lock, flags);
+-		count = sci_dma_rx_push(s, sh_desc->partial);
+-		spin_unlock_irqrestore(&port->lock, flags);
+-
+-		if (count)
+-			tty_flip_buffer_push(&port->state->port);
+-
+-		sci_submit_rx(s);
+-
+-		return;
+-	}
+-
+-	s->cookie_rx[new] = desc->tx_submit(desc);
+-	if (s->cookie_rx[new] < 0) {
+-		dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
+-		sci_rx_dma_release(s, true);
+-		return;
+-	}
+-
+-	s->active_rx = s->cookie_rx[!new];
+-
+-	dev_dbg(port->dev, "%s: cookie %d #%d, new active #%d\n",
+-		__func__, s->cookie_rx[new], new, s->active_rx);
+-}
+-
+-static void work_fn_tx(struct work_struct *work)
+-{
+-	struct sci_port *s = container_of(work, struct sci_port, work_tx);
+-	struct dma_async_tx_descriptor *desc;
+-	struct dma_chan *chan = s->chan_tx;
+-	struct uart_port *port = &s->port;
+-	struct circ_buf *xmit = &port->state->xmit;
+-	struct scatterlist *sg = &s->sg_tx;
+-
+-	/*
+-	 * DMA is idle now.
+-	 * Port xmit buffer is already mapped, and it is one page... Just adjust
+-	 * offsets and lengths. Since it is a circular buffer, we have to
+-	 * transmit till the end, and then the rest. Take the port lock to get a
+-	 * consistent xmit buffer state.
+-	 */
+-	spin_lock_irq(&port->lock);
+-	sg->offset = xmit->tail & (UART_XMIT_SIZE - 1);
+-	sg_dma_address(sg) = (sg_dma_address(sg) & ~(UART_XMIT_SIZE - 1)) +
+-		sg->offset;
+-	sg_dma_len(sg) = min((int)CIRC_CNT(xmit->head, xmit->tail, UART_XMIT_SIZE),
+-		CIRC_CNT_TO_END(xmit->head, xmit->tail, UART_XMIT_SIZE));
+-	spin_unlock_irq(&port->lock);
+-
+-	BUG_ON(!sg_dma_len(sg));
+-
+-	desc = dmaengine_prep_slave_sg(chan,
+-			sg, s->sg_len_tx, DMA_MEM_TO_DEV,
+-			DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+-	if (!desc) {
+-		/* switch to PIO */
+-		sci_tx_dma_release(s, true);
+-		return;
+-	}
+-
+-	dma_sync_sg_for_device(port->dev, sg, 1, DMA_TO_DEVICE);
+-
+-	spin_lock_irq(&port->lock);
+-	s->desc_tx = desc;
+-	desc->callback = sci_dma_tx_complete;
+-	desc->callback_param = s;
+-	spin_unlock_irq(&port->lock);
+-	s->cookie_tx = desc->tx_submit(desc);
+-	if (s->cookie_tx < 0) {
+-		dev_warn(port->dev, "Failed submitting Tx DMA descriptor\n");
+-		/* switch to PIO */
+-		sci_tx_dma_release(s, true);
+-		return;
+-	}
+-
+-	dev_dbg(port->dev, "%s: %p: %d...%d, cookie %d\n",
+-		__func__, xmit->buf, xmit->tail, xmit->head, s->cookie_tx);
+-
+-	dma_async_issue_pending(chan);
+-}
+ #endif
+ 
+ static void sci_start_tx(struct uart_port *port)
+-- 
+1.9.1
 
