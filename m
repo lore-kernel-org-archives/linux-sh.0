@@ -1,7 +1,7 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 16 May 2015 18:18:30 +0000
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 17 May 2015 16:23:41 +0000
 Subject: Re: [PATCH v2] sh-sci: Get register size from platform data
-Message-Id: <555789F6.6000007@cogentembedded.com>
+Message-Id: <87k2w7npf6.wl-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1431788588-14974-2-git-send-email-ysato@users.sourceforge.jp>
 In-Reply-To: <1431788588-14974-2-git-send-email-ysato@users.sourceforge.jp>
@@ -10,31 +10,49 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+On Sun, 17 May 2015 03:18:30 +0900,
+Sergei Shtylyov wrote:
+> 
+> Hello.
+> 
+> On 05/16/2015 06:03 PM, Yoshinori Sato wrote:
+> 
+> > There is much implement of SCI,
+> 
+>    Many implementations, you mean?
 
-On 05/16/2015 06:03 PM, Yoshinori Sato wrote:
+There is much SCI of SoC having within,
+and the register size is also different in everyone.
 
-> There is much implement of SCI,
+> > So the register size should be acquired from platform data.
+> 
+>    You're not acquiring them from the platform data, you're using
+> platform device resources for that.
 
-    Many implementations, you mean?
+Yes.
+platform device is correct.
 
-> So the register size should be acquired from platform data.
+> > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+> 
+> [...]
+> > @@ -2207,6 +2198,7 @@ static int sci_init_single(struct platform_device *dev,
+> >   		return -ENOMEM;
+> > 
+> >   	port->mapbase = res->start;
+> > +	sci_port->reg_size = res->end - res->start + 1;
+> 
+>    Use resource_size(res) instead, please.
 
-    You're not acquiring them from the platform data, you're using platform 
-device resources for that.
+OK.
+I'll update.
 
-> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+Thanks.
 
-[...]
-> @@ -2207,6 +2198,7 @@ static int sci_init_single(struct platform_device *dev,
->   		return -ENOMEM;
->
->   	port->mapbase = res->start;
-> +	sci_port->reg_size = res->end - res->start + 1;
+> [...]
+> 
+> WBR, Sergei
+> 
 
-    Use resource_size(res) instead, please.
-
-[...]
-
-WBR, Sergei
-
+-- 
+Yoshinori Sato
+<ysato@users.sourceforge.jp>
