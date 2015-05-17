@@ -1,51 +1,125 @@
-From: Dominik Dingel <dingel@linux.vnet.ibm.com>
-Date: Thu, 28 May 2015 11:52:32 +0000
-Subject: [PATCH 0/5] Remove s390 sw-emulated hugepages and cleanup
-Message-Id: <1432813957-46874-1-git-send-email-dingel@linux.vnet.ibm.com>
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Sun, 17 May 2015 00:29:09 +0000
+Subject: [PATCH 4/6] mmc: sh_mobile_sdhi: Add UHS-I mode support
+Message-Id: <1431822549.4222.171.camel@xylophone.i.decadent.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1431822459.4222.166.camel@xylophone.i.decadent.org.uk>
+In-Reply-To: <1431822459.4222.166.camel@xylophone.i.decadent.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>
 
-Hi everyone,
+Implement voltage switch, supporting modes up to SDR-50.
 
-there is a potential bug with KVM and hugetlbfs if the hardware does not
-support hugepages (EDAT1).
-We fix this by making EDAT1 a hard requirement for hugepages and 
-therefore removing and simplifying code.
+Based on work by Shinobu Uehara, Rob Taylor, William Towle and Ian Molton.
 
-As s390, with the sw-emulated hugepages, was the only user of arch_prepare/release_hugepage
-I also removed theses calls from common and other architecture code.
+Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |   58 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 58 insertions(+)
 
-Thanks,
-    Dominik
-
-Dominik Dingel (5):
-  s390/mm: make hugepages_supported a boot time decision
-  mm/hugetlb: remove unused arch hook prepare/release_hugepage
-  mm/hugetlb: remove arch_prepare/release_hugepage from arch headers
-  s390/hugetlb: remove dead code for sw emulated huge pages
-  s390/mm: forward check for huge pmds to pmd_large()
-
- arch/arm/include/asm/hugetlb.h     |  9 ------
- arch/arm64/include/asm/hugetlb.h   |  9 ------
- arch/ia64/include/asm/hugetlb.h    |  9 ------
- arch/metag/include/asm/hugetlb.h   |  9 ------
- arch/mips/include/asm/hugetlb.h    |  9 ------
- arch/powerpc/include/asm/hugetlb.h |  9 ------
- arch/s390/include/asm/hugetlb.h    |  3 --
- arch/s390/include/asm/page.h       |  8 ++---
- arch/s390/kernel/setup.c           |  2 ++
- arch/s390/mm/hugetlbpage.c         | 65 +++-----------------------------------
- arch/s390/mm/pgtable.c             |  2 ++
- arch/sh/include/asm/hugetlb.h      |  9 ------
- arch/sparc/include/asm/hugetlb.h   |  9 ------
- arch/tile/include/asm/hugetlb.h    |  9 ------
- arch/x86/include/asm/hugetlb.h     |  9 ------
- mm/hugetlb.c                       | 10 ------
- 16 files changed, 12 insertions(+), 168 deletions(-)
-
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 354f4f335ed5..b96d7c084c2e 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -30,6 +30,9 @@
+ #include <linux/mfd/tmio.h>
+ #include <linux/sh_dma.h>
+ #include <linux/delay.h>
++#include <linux/pinctrl/consumer.h>
++#include <linux/pinctrl/pinctrl-state.h>
++#include <linux/regulator/consumer.h>
+ 
+ #include "tmio_mmc.h"
+ 
+@@ -86,6 +89,8 @@ struct sh_mobile_sdhi {
+ 	struct clk *clk;
+ 	struct tmio_mmc_data mmc_data;
+ 	struct tmio_mmc_dma dma_priv;
++	struct pinctrl *pinctrl;
++	struct pinctrl_state *pinctrl_3v3, *pinctrl_1v8;
+ };
+ 
+ static void sh_mobile_sdhi_sdbuf_width(struct tmio_mmc_host *host, int width)
+@@ -136,6 +141,47 @@ static void sh_mobile_sdhi_clk_disable(struct platform_device *pdev)
+ 	clk_disable_unprepare(priv->clk);
+ }
+ 
++static int sh_mobile_sdhi_start_signal_voltage_switch(
++	struct tmio_mmc_host *host, unsigned char signal_voltage)
++{
++	struct sh_mobile_sdhi *priv = host_to_priv(host);
++	struct pinctrl_state *state;
++	int min_uV, max_uV;
++	int ret;
++
++	if (IS_ERR(priv->pinctrl) || IS_ERR(host->mmc->supply.vqmmc))
++		return -EOPNOTSUPP;
++
++	switch (signal_voltage) {
++	case MMC_SIGNAL_VOLTAGE_330:
++		min_uV = 2700000;
++		max_uV = 3600000;
++		state = priv->pinctrl_3v3;
++		break;
++	case MMC_SIGNAL_VOLTAGE_180:
++		min_uV = 1700000;
++		max_uV = 1950000;
++		state = priv->pinctrl_1v8;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	if (IS_ERR(state))
++		return PTR_ERR(state);
++
++	ret = regulator_set_voltage(host->mmc->supply.vqmmc, min_uV, max_uV);
++	if (ret)
++		return ret;
++
++	ret = pinctrl_select_state(priv->pinctrl, state);
++	if (ret)
++		return ret;
++
++	usleep_range(5000, 5500);
++	return 0;
++}
++
+ static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
+ {
+ 	int timeout = 1000;
+@@ -228,6 +274,14 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		goto eprobe;
+ 	}
+ 
++	priv->pinctrl = devm_pinctrl_get(&pdev->dev);
++	if (!IS_ERR(priv->pinctrl)) {
++		priv->pinctrl_3v3 = pinctrl_lookup_state(priv->pinctrl,
++							 PINCTRL_STATE_DEFAULT);
++		priv->pinctrl_1v8 = pinctrl_lookup_state(priv->pinctrl,
++							 "1v8");
++	}
++
+ 	host = tmio_mmc_host_alloc(pdev);
+ 	if (!host) {
+ 		ret = -ENOMEM;
+@@ -239,6 +293,10 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	host->clk_enable	= sh_mobile_sdhi_clk_enable;
+ 	host->clk_disable	= sh_mobile_sdhi_clk_disable;
+ 	host->multi_io_quirk	= sh_mobile_sdhi_multi_io_quirk;
++
++	host->start_signal_voltage_switch
++				= sh_mobile_sdhi_start_signal_voltage_switch;
++
+ 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
+ 	if (resource_size(res) > 0x100)
+ 		host->bus_shift = 1;
 -- 
-2.3.7
+1.7.10.4
+
+
+
 
