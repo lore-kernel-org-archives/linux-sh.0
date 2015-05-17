@@ -1,103 +1,58 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 12 May 2015 17:37:15 +0000
-Subject: [PATCH/RFC 12/12] ARM: shmobile: koelsch dts: Add overlay for SCIFA5(c) on EXIO C
-Message-Id: <1431452235-11692-13-git-send-email-geert+renesas@glider.be>
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Sun, 17 May 2015 00:27:39 +0000
+Subject: [PATCH 0/6] UHS-I support for sh_mobile_sdhi
+Message-Id: <1431822459.4222.166.camel@xylophone.i.decadent.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: Pantelis Antoniou <pantelis.antoniou@konsulko.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>
 
-Provide access to SCIFA5(c) on EXIO Connector C.
+This series adds support for UHS-I in sh_mobile_sdhi, partly implemented
+in tmio_mmc.  This does not yet include tuning for SDR-104, but SDR-50 now
+works on the R8A7790 Lager board and another development board.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/Makefile                         |  1 +
- .../boot/dts/r8a7791-koelsch-exio-c-scifa5-c.dtso  | 60 ++++++++++++++++++++++
- 2 files changed, 61 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7791-koelsch-exio-c-scifa5-c.dtso
+The pfc block needs to be reconfigured from 3.3V to 1.8V signalling on
+the pins wired to the SD card.  This is supported by adding separate
+functions for 1.8V signalling in sh-pfc ("sdhi0_1v8" etc.).  I expect
+that several SH SoCs have this capability, but I only have the R8A7790
+data sheet so I only implemented it for that one.
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index a5cf8a6daf12ea1a..096d4939991b33c5 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -678,6 +678,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
- 	r8a7791-koelsch-exio-c-scif3.dtbo \
- 	r8a7791-koelsch-exio-c-scif5.dtbo \
- 	r8a7791-koelsch-exio-c-scifa5-b.dtbo \
-+	r8a7791-koelsch-exio-c-scifa5-c.dtbo
- endif
- endif
- 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scifa5-c.dtso b/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scifa5-c.dtso
-new file mode 100644
-index 0000000000000000..062cf6740207ddcf
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scifa5-c.dtso
-@@ -0,0 +1,60 @@
-+/*
-+ * Device Tree Overlay for SCIFA5(c) on r8a7791/Koelsch EXIO Connector C
-+ *
-+ * Copyright (C) 2015 Glider bvba
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ *
-+ * Pinout:
-+ *   - RXD = EXIO Connector C pin 39
-+ *   - TXD = EXIO Connector C pin 37
-+ *
-+ * Notes:
-+ *   - As these pins are shared with SDHI2, the latter is disabled first.
-+ */
-+
-+/dts-v1/;
-+/plugin/;
-+
-+/ {
-+	fragment@0 {
-+		target-path = "/aliases";
-+
-+		__overlay__ {
-+			/* serial11 = &scifa5; */
-+			serial11 = "/serial@e6c80000";
-+		};
-+	};
-+
-+	fragment@1 {
-+		target = <&pfc>;
-+
-+		__overlay__ {
-+			scifa5_pins_c: serial11_c {
-+				renesas,groups = "scifa5_data_c";
-+				renesas,function = "scifa5";
-+			};
-+		};
-+	};
-+
-+	fragment@2 {
-+		target = <&sdhi2>;
-+
-+		__overlay__ {
-+			status = "disabled";
-+		};
-+	};
-+
-+	fragment@3 {
-+		target = <&scifa5>;
-+
-+		__overlay__ {
-+			pinctrl-0 = <&scifa5_pins_c>;
-+			pinctrl-names = "default";
-+
-+			status = "okay";
-+		};
-+	};
-+};
+Changes since the RFC:
+- Replace the 'regulator' devices for signal voltage switching with
+  pinctrl functions and states
+- Drop 'mmc: sh_mobile_sdhi: Add actual clock rate support' as it's
+  redundant
+- Use a switch statement in sh_mobile_sdhi_start_signal_voltage_switch()
+- Fix subject prefix for the DT changes
+
+Ben.
+
+Ben Dooks (1):
+  ARM: shmobile: lager: Set sdhi and mmcif clock rates
+
+Ben Hutchings (5):
+  mmc: tmio: Add UHS-I mode support
+  pinctrl: sh-pfc: Add set_mux operation to struct sh_pfc_function
+  pinctrl: sh-pfc: r8a7790: Add separate functions for SDHI 1.8V
+    operation
+  mmc: sh_mobile_sdhi: Add UHS-I mode support
+  ARM: shmobile: lager: Enable UHS-I SDR-50
+
+ arch/arm/boot/dts/r8a7790-lager.dts  |   29 +++++++++++++-
+ drivers/mmc/host/sh_mobile_sdhi.c    |   58 ++++++++++++++++++++++++++++
+ drivers/mmc/host/tmio_mmc.h          |    3 ++
+ drivers/mmc/host/tmio_mmc_pio.c      |   31 +++++++++++++++
+ drivers/pinctrl/sh-pfc/core.c        |    2 +-
+ drivers/pinctrl/sh-pfc/core.h        |    1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   70 ++++++++++++++++++++++++++++++++--
+ drivers/pinctrl/sh-pfc/pinctrl.c     |    4 ++
+ drivers/pinctrl/sh-pfc/sh_pfc.h      |   10 ++++-
+ 9 files changed, 200 insertions(+), 8 deletions(-)
+
 -- 
-1.9.1
+1.7.10.4
+
+
 
