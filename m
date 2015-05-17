@@ -1,57 +1,64 @@
-From: Brian Norris <computersforpeace@gmail.com>
-Date: Mon, 11 May 2015 22:46:46 +0000
-Subject: Re: [PATCH] ARM: tegra: add "nor-jedec" flash compatible binding
-Message-Id: <20150511224646.GJ32500@ld-irv-0074>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 17 May 2015 15:15:21 +0000
+Subject: Re: [PATCH/RFC] serial: sh-sci: Remove schedule_work in sci_dma_rx_complete
+Message-Id: <CAH1o70LUUC7teuzLqM-8SsindwSaYP9LtsT2vLmwv6EGHcDygg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431066098-19821-1-git-send-email-zajec5@gmail.com>
- <554CDD8C.7050000@wwwdotorg.org>
- <20150508184317.GZ32500@ld-irv-0074>
- <CAMuHMdXeen3cU2bb8TXxxtdDjgMCU_FS1Yxdu1b-Tq2xE+x0ZA@mail.gmail.com>
- <554D24DA.8060601@wwwdotorg.org>
- <20150508213414.GE32500@ld-irv-0074>
-In-Reply-To: <20150508213414.GE32500@ld-irv-0074>
+References: <1430327256-8545-1-git-send-email-ykaneko0929@gmail.com>
+	<CAMuHMdWZj3tzwfFhjrTAB4cO0ZAKNJu+G_jBuNyfi46g1fQrYQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdWZj3tzwfFhjrTAB4cO0ZAKNJu+G_jBuNyfi46g1fQrYQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi DT maintainers,
+Hi Geert-san,
 
-On Fri, May 08, 2015 at 02:34:14PM -0700, Brian Norris wrote:
-> On Fri, May 08, 2015 at 03:04:26PM -0600, Stephen Warren wrote:
-> > On 05/08/2015 02:57 PM, Geert Uytterhoeven wrote:
-> > >On Fri, May 8, 2015 at 8:43 PM, Brian Norris <computersforpeace@gmail.com> wrote:
-> > >>On Fri, May 08, 2015 at 10:00:12AM -0600, Stephen Warren wrote:
-> > >>>Equally, "nor-jedec" doesn't sound like the right name. It doesn't
-> > >>>differentiate between SPI and parallel NOR flash, which presumably
-> > >>>need different compatible values, since the programming model is
-> > >>>quite different, and the compatible value is supposed to
-> > >>>define/imply the SW-visible programming model.
-> > >>
-> > >>It's definitely for SPI only. There was much discussion about this a
-> > >>few months back. Somewhere along the way, it was mentioned that the
-> > >>context (SPI slave is a child of SPI master) would make this clear. I'm
-> > >>still not sure why we didn't end up with something more descriptive,
-> > >>though, like "spi-nor,nor-jedec".
-> > >
-> > >What about "jedec,spi-nor"?
-> > 
-> > That seems unique enough to me, or the options below if they're
-> > actually applicable.
-> 
-> That could be OK with me. If I can get the magic blessing from the DT
-> folks, then I'll send patches to update everything.
+2015-04-30 3:21 GMT+09:00 Geert Uytterhoeven <geert@linux-m68k.org>:
+> Hi Kaneko-san, Mizuguchi-san,
+>
+> On Wed, Apr 29, 2015 at 7:07 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+>> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+>> index e7d6566..664ae78 100644
+>> --- a/drivers/tty/serial/sh-sci.c
+>> +++ b/drivers/tty/serial/sh-sci.c
+>> @@ -126,6 +126,9 @@ struct sci_port {
+>>  static void sci_start_tx(struct uart_port *port);
+>>  static void sci_stop_tx(struct uart_port *port);
+>>  static void sci_start_rx(struct uart_port *port);
+>> +#ifdef CONFIG_SERIAL_SH_SCI_DMA
+>> +static void work_fn_rx(struct work_struct *work);
+>> +#endif
+>
+> While it would generate a larger patch, I think it's worthwhile moving
+> work_fn_rx() up, so you don't need the #ifdef and the forward declaration.
 
-Can I get an 'ack' for this change? We merged a binding for "nor-jedec"
-in 4.1-rc1, with review (but no explicit 'ack') from Mark, and a few
-DTS's are starting to use it. But we're now seeing objections, with a
-request to change this to "jedec,spi-nor". I don't care too much, but I
-can understand Stephen's point.
+Thanks for your review.
+I'll send patch v2.
 
-Anyway, I don't want to go through too many more patch cycles without an
-explicit ack here on the "jedec,spi-nor" binding (i.e.,
-s/nor-jedec/jedec,spi-nor/g). With an ack, then I can make sure the
-binding and current users get changed before 4.1 is minted, and prevent
-other ARM subarchitectures from pulling in the "wrong" binding for 4.2.
+Regards,
+Kaneko
 
-Brian
+>
+>>  #define SCI_NPORTS CONFIG_SERIAL_SH_SCI_NR_UARTS
+>>
+>> @@ -1341,7 +1344,7 @@ static void sci_dma_rx_complete(void *arg)
+>>         if (count)
+>>                 tty_flip_buffer_push(&port->state->port);
+>>
+>> -       schedule_work(&s->work_rx);
+>> +       work_fn_rx(&s->work_rx);
+>>  }
+>>
+>>  static void sci_rx_dma_release(struct sci_port *s, bool enable_pio)
+>
+> Gr{oetje,eeting}s,
+>
+>                         Geert
+>
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+>
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                 -- Linus Torvalds
