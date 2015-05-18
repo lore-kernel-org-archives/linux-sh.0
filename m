@@ -1,53 +1,42 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 04 May 2015 15:24:31 +0000
-Subject: [PATCH v3 5/6] ARM: shmobile: r8a7740: Remove mapping of L2 cache controller registers
-Message-Id: <1430753072-17145-6-git-send-email-geert+renesas@glider.be>
+From: Brian Norris <computersforpeace@gmail.com>
+Date: Mon, 18 May 2015 23:24:30 +0000
+Subject: [PATCH] sh: mach-rsk: remove unnecessary MTD partition probe specification
+Message-Id: <1431991470-22388-1-git-send-email-computersforpeace@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Brian Norris <computersforpeace@gmail.com>, linux-mtd@lists.infradead.org, linux-kernel@vger.kernel.org
 
-Now all r8a7740-based platforms have been migrated to the generic l2c OF
-initialization, it's no longer needed to map the L2 cache controller
-registers from .map_io().
+The cmdlinepart parser is already supported in the default probe.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
 ---
-v3:
-  - No changes,
+ arch/sh/boards/mach-rsk/setup.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-v2:
-  - No changes.
----
- arch/arm/mach-shmobile/setup-r8a7740.c | 12 ------------
- 1 file changed, 12 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 5dbb40d5c56b6495..3d8a8cfee9a62c6c 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -51,18 +51,6 @@ static struct map_desc r8a7740_io_desc[] __initdata = {
- 		.length		= 160 << 20,
- 		.type		= MT_DEVICE_NONSHARED
- 	},
--#ifdef CONFIG_CACHE_L2X0
--	/*
--	 * for l2x0_init()
--	 * 0xf0100000-0xf0101000 -> 0xf0002000-0xf0003000
--	 */
--	{
--		.virtual	= 0xf0002000,
--		.pfn		= __phys_to_pfn(0xf0100000),
--		.length		= PAGE_SIZE,
--		.type		= MT_DEVICE_NONSHARED
--	},
--#endif
+diff --git a/arch/sh/boards/mach-rsk/setup.c b/arch/sh/boards/mach-rsk/setup.c
+index 2685ea03b064..6bc134bd7ec2 100644
+--- a/arch/sh/boards/mach-rsk/setup.c
++++ b/arch/sh/boards/mach-rsk/setup.c
+@@ -27,8 +27,6 @@ static struct regulator_consumer_supply dummy_supplies[] = {
+ 	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
  };
  
- void __init r8a7740_map_io(void)
+-static const char *part_probes[] = { "cmdlinepart", NULL };
+-
+ static struct mtd_partition rsk_partitions[] = {
+ 	{
+ 		.name		= "Bootloader",
+@@ -50,7 +48,6 @@ static struct physmap_flash_data flash_data = {
+ 	.parts			= rsk_partitions,
+ 	.nr_parts		= ARRAY_SIZE(rsk_partitions),
+ 	.width			= 2,
+-	.part_probe_types	= part_probes,
+ };
+ 
+ static struct resource flash_resource = {
 -- 
 1.9.1
 
