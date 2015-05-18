@@ -1,100 +1,78 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 18 May 2015 09:48:38 +0000
-Subject: Re: [PATCH 2/2] usb: renesas_usbhs: Add support for R-Car E2
-Message-Id: <CAMuHMdWs3y5vP5+mGeuEWOg5HJuZ4NbB4Ra=EriNOdQDzjDqOA@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 18 May 2015 10:04:25 +0000
+Subject: RE: [PATCH 2/2] usb: renesas_usbhs: Add support for R-Car E2
+Message-Id: <SG2PR06MB0919CFDF6BB80063F3E6B1BCD8C40@SG2PR06MB0919.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1431941665-3768-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 	<1431941665-3768-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1431941665-3768-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <CAMuHMdWs3y5vP5+mGeuEWOg5HJuZ4NbB4Ra=EriNOdQDzjDqOA@mail.gmail.com>
+In-Reply-To: <CAMuHMdWs3y5vP5+mGeuEWOg5HJuZ4NbB4Ra=EriNOdQDzjDqOA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Greg KH <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@ti.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, USB list <linux-usb@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Hi Shimoda-san,
-
-On Mon, May 18, 2015 at 11:34 AM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> This patch adds a compatible string to support for R-Car E2.
->
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
->  Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 1 +
->  drivers/usb/renesas_usbhs/common.c                      | 6 ++++++
->  include/linux/usb/renesas_usbhs.h                       | 1 +
->  3 files changed, 8 insertions(+)
->
-> diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-> index ddbe304..64a4ca6 100644
-> --- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-> +++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-> @@ -4,6 +4,7 @@ Required properties:
->    - compatible: Must contain one of the following:
->         - "renesas,usbhs-r8a7790"
->         - "renesas,usbhs-r8a7791"
-> +       - "renesas,usbhs-r8a7794"
->    - reg: Base address and length of the register for the USBHS
->    - interrupts: Interrupt specifier for the USBHS
->    - clocks: A list of phandle + clock specifier pairs
-
-For the DT binding part:
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-> diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
-> index 0f7e850..954357f 100644
-> --- a/drivers/usb/renesas_usbhs/common.c
-> +++ b/drivers/usb/renesas_usbhs/common.c
-> @@ -472,6 +472,10 @@ static const struct of_device_id usbhs_of_match[] = {
->                 .compatible = "renesas,usbhs-r8a7791",
->                 .data = (void *)USBHS_TYPE_R8A7791,
->         },
-> +       {
-> +               .compatible = "renesas,usbhs-r8a7794",
-> +               .data = (void *)USBHS_TYPE_R8A7794,
-> +       },
->         { },
->  };
->  MODULE_DEVICE_TABLE(of, usbhs_of_match);
-> @@ -500,6 +504,7 @@ static struct renesas_usbhs_platform_info *usbhs_parse_dt(struct device *dev)
->         switch (dparam->type) {
->         case USBHS_TYPE_R8A7790:
->         case USBHS_TYPE_R8A7791:
-> +       case USBHS_TYPE_R8A7794:
->                 dparam->has_usb_dmac = 1;
->                 break;
->         default:
-> @@ -561,6 +566,7 @@ static int usbhs_probe(struct platform_device *pdev)
->         switch (priv->dparam.type) {
->         case USBHS_TYPE_R8A7790:
->         case USBHS_TYPE_R8A7791:
-> +       case USBHS_TYPE_R8A7794:
-
-Given all R-Car Gen2 variants are treated the same...
-
->                 priv->pfunc = usbhs_rcar2_ops;
->                 if (!priv->dparam.pipe_type) {
->                         priv->dparam.pipe_type = usbhsc_new_pipe_type;
-> diff --git a/include/linux/usb/renesas_usbhs.h b/include/linux/usb/renesas_usbhs.h
-> index e438e72..08c62ba 100644
-> --- a/include/linux/usb/renesas_usbhs.h
-> +++ b/include/linux/usb/renesas_usbhs.h
-> @@ -172,6 +172,7 @@ struct renesas_usbhs_driver_param {
->  enum {
->         USBHS_TYPE_R8A7790 = 1,
->         USBHS_TYPE_R8A7791,
-> +       USBHS_TYPE_R8A7794,
-
-... perhaps it would be better to just have a single USBHS_TYPE_RCAR_GEN2,
-so you don't have to add more enums and case statements?
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR2VlcnQtc2FuLA0KDQo+IFNlbnQ6IE1vbmRheSwgTWF5IDE4LCAyMDE1IDY6NDkgUE0NCj4g
+DQo+IEhpIFNoaW1vZGEtc2FuLA0KPiANCj4gT24gTW9uLCBNYXkgMTgsIDIwMTUgYXQgMTE6MzQg
+QU0sIFlvc2hpaGlybyBTaGltb2RhDQo8IHNuaXAgPg0KPiA+IGRpZmYgLS1naXQgYS9Eb2N1bWVu
+dGF0aW9uL2RldmljZXRyZWUvYmluZGluZ3MvdXNiL3JlbmVzYXNfdXNiaHMudHh0DQo+IGIvRG9j
+dW1lbnRhdGlvbi9kZXZpY2V0cmVlL2JpbmRpbmdzL3VzYi9yZW5lc2FzX3VzYmhzLnR4dA0KPiA+
+IGluZGV4IGRkYmUzMDQuLjY0YTRjYTYgMTAwNjQ0DQo+ID4gLS0tIGEvRG9jdW1lbnRhdGlvbi9k
+ZXZpY2V0cmVlL2JpbmRpbmdzL3VzYi9yZW5lc2FzX3VzYmhzLnR4dA0KPiA+ICsrKyBiL0RvY3Vt
+ZW50YXRpb24vZGV2aWNldHJlZS9iaW5kaW5ncy91c2IvcmVuZXNhc191c2Jocy50eHQNCj4gPiBA
+QCAtNCw2ICs0LDcgQEAgUmVxdWlyZWQgcHJvcGVydGllczoNCj4gPiAgICAtIGNvbXBhdGlibGU6
+IE11c3QgY29udGFpbiBvbmUgb2YgdGhlIGZvbGxvd2luZzoNCj4gPiAgICAgICAgIC0gInJlbmVz
+YXMsdXNiaHMtcjhhNzc5MCINCj4gPiAgICAgICAgIC0gInJlbmVzYXMsdXNiaHMtcjhhNzc5MSIN
+Cj4gPiArICAgICAgIC0gInJlbmVzYXMsdXNiaHMtcjhhNzc5NCINCj4gPiAgICAtIHJlZzogQmFz
+ZSBhZGRyZXNzIGFuZCBsZW5ndGggb2YgdGhlIHJlZ2lzdGVyIGZvciB0aGUgVVNCSFMNCj4gPiAg
+ICAtIGludGVycnVwdHM6IEludGVycnVwdCBzcGVjaWZpZXIgZm9yIHRoZSBVU0JIUw0KPiA+ICAg
+IC0gY2xvY2tzOiBBIGxpc3Qgb2YgcGhhbmRsZSArIGNsb2NrIHNwZWNpZmllciBwYWlycw0KPiAN
+Cj4gRm9yIHRoZSBEVCBiaW5kaW5nIHBhcnQ6DQo+IEFja2VkLWJ5OiBHZWVydCBVeXR0ZXJob2V2
+ZW4gPGdlZXJ0K3JlbmVzYXNAZ2xpZGVyLmJlPg0KDQpUaGFuayB5b3UgZm9yIHRoZSBBY2tlZC1i
+eSENCg0KPiA+IGRpZmYgLS1naXQgYS9kcml2ZXJzL3VzYi9yZW5lc2FzX3VzYmhzL2NvbW1vbi5j
+IGIvZHJpdmVycy91c2IvcmVuZXNhc191c2Jocy9jb21tb24uYw0KPiA+IGluZGV4IDBmN2U4NTAu
+Ljk1NDM1N2YgMTAwNjQ0DQo+ID4gLS0tIGEvZHJpdmVycy91c2IvcmVuZXNhc191c2Jocy9jb21t
+b24uYw0KPiA+ICsrKyBiL2RyaXZlcnMvdXNiL3JlbmVzYXNfdXNiaHMvY29tbW9uLmMNCj4gPiBA
+QCAtNDcyLDYgKzQ3MiwxMCBAQCBzdGF0aWMgY29uc3Qgc3RydWN0IG9mX2RldmljZV9pZCB1c2Jo
+c19vZl9tYXRjaFtdID0gew0KPiA+ICAgICAgICAgICAgICAgICAuY29tcGF0aWJsZSA9ICJyZW5l
+c2FzLHVzYmhzLXI4YTc3OTEiLA0KPiA+ICAgICAgICAgICAgICAgICAuZGF0YSA9ICh2b2lkICop
+VVNCSFNfVFlQRV9SOEE3NzkxLA0KPiA+ICAgICAgICAgfSwNCj4gPiArICAgICAgIHsNCj4gPiAr
+ICAgICAgICAgICAgICAgLmNvbXBhdGlibGUgPSAicmVuZXNhcyx1c2Jocy1yOGE3Nzk0IiwNCj4g
+PiArICAgICAgICAgICAgICAgLmRhdGEgPSAodm9pZCAqKVVTQkhTX1RZUEVfUjhBNzc5NCwNCj4g
+PiArICAgICAgIH0sDQo+ID4gICAgICAgICB7IH0sDQo+ID4gIH07DQo+ID4gIE1PRFVMRV9ERVZJ
+Q0VfVEFCTEUob2YsIHVzYmhzX29mX21hdGNoKTsNCj4gPiBAQCAtNTAwLDYgKzUwNCw3IEBAIHN0
+YXRpYyBzdHJ1Y3QgcmVuZXNhc191c2Joc19wbGF0Zm9ybV9pbmZvICp1c2Joc19wYXJzZV9kdChz
+dHJ1Y3QgZGV2aWNlICpkZXYpDQo+ID4gICAgICAgICBzd2l0Y2ggKGRwYXJhbS0+dHlwZSkgew0K
+PiA+ICAgICAgICAgY2FzZSBVU0JIU19UWVBFX1I4QTc3OTA6DQo+ID4gICAgICAgICBjYXNlIFVT
+QkhTX1RZUEVfUjhBNzc5MToNCj4gPiArICAgICAgIGNhc2UgVVNCSFNfVFlQRV9SOEE3Nzk0Og0K
+PiA+ICAgICAgICAgICAgICAgICBkcGFyYW0tPmhhc191c2JfZG1hYyA9IDE7DQo+ID4gICAgICAg
+ICAgICAgICAgIGJyZWFrOw0KPiA+ICAgICAgICAgZGVmYXVsdDoNCj4gPiBAQCAtNTYxLDYgKzU2
+Niw3IEBAIHN0YXRpYyBpbnQgdXNiaHNfcHJvYmUoc3RydWN0IHBsYXRmb3JtX2RldmljZSAqcGRl
+dikNCj4gPiAgICAgICAgIHN3aXRjaCAocHJpdi0+ZHBhcmFtLnR5cGUpIHsNCj4gPiAgICAgICAg
+IGNhc2UgVVNCSFNfVFlQRV9SOEE3NzkwOg0KPiA+ICAgICAgICAgY2FzZSBVU0JIU19UWVBFX1I4
+QTc3OTE6DQo+ID4gKyAgICAgICBjYXNlIFVTQkhTX1RZUEVfUjhBNzc5NDoNCj4gDQo+IEdpdmVu
+IGFsbCBSLUNhciBHZW4yIHZhcmlhbnRzIGFyZSB0cmVhdGVkIHRoZSBzYW1lLi4uDQo+IA0KPiA+
+ICAgICAgICAgICAgICAgICBwcml2LT5wZnVuYyA9IHVzYmhzX3JjYXIyX29wczsNCj4gPiAgICAg
+ICAgICAgICAgICAgaWYgKCFwcml2LT5kcGFyYW0ucGlwZV90eXBlKSB7DQo+ID4gICAgICAgICAg
+ICAgICAgICAgICAgICAgcHJpdi0+ZHBhcmFtLnBpcGVfdHlwZSA9IHVzYmhzY19uZXdfcGlwZV90
+eXBlOw0KPiA+IGRpZmYgLS1naXQgYS9pbmNsdWRlL2xpbnV4L3VzYi9yZW5lc2FzX3VzYmhzLmgg
+Yi9pbmNsdWRlL2xpbnV4L3VzYi9yZW5lc2FzX3VzYmhzLmgNCj4gPiBpbmRleCBlNDM4ZTcyLi4w
+OGM2MmJhIDEwMDY0NA0KPiA+IC0tLSBhL2luY2x1ZGUvbGludXgvdXNiL3JlbmVzYXNfdXNiaHMu
+aA0KPiA+ICsrKyBiL2luY2x1ZGUvbGludXgvdXNiL3JlbmVzYXNfdXNiaHMuaA0KPiA+IEBAIC0x
+NzIsNiArMTcyLDcgQEAgc3RydWN0IHJlbmVzYXNfdXNiaHNfZHJpdmVyX3BhcmFtIHsNCj4gPiAg
+ZW51bSB7DQo+ID4gICAgICAgICBVU0JIU19UWVBFX1I4QTc3OTAgPSAxLA0KPiA+ICAgICAgICAg
+VVNCSFNfVFlQRV9SOEE3NzkxLA0KPiA+ICsgICAgICAgVVNCSFNfVFlQRV9SOEE3Nzk0LA0KPiAN
+Cj4gLi4uIHBlcmhhcHMgaXQgd291bGQgYmUgYmV0dGVyIHRvIGp1c3QgaGF2ZSBhIHNpbmdsZSBV
+U0JIU19UWVBFX1JDQVJfR0VOMiwNCj4gc28geW91IGRvbid0IGhhdmUgdG8gYWRkIG1vcmUgZW51
+bXMgYW5kIGNhc2Ugc3RhdGVtZW50cz8NCg0KVGhhbmsgeW91IGZvciB0aGUgc3VnZ2VzdGlvbi4g
+SSBhZ3JlZSB3aXRoIHlvdS4NClNvLCBJIHdpbGwgZml4IHRoaXMgcGF0Y2ggc2V0IFsxLzJdIHRv
+IGp1c3QgaGF2ZSBhIFVTQkhTX1RZUEVfUkNBUl9HRU4yDQphbmQgbW9kaWZ5IHRoaXMgcGF0Y2gu
+DQoNCkJlc3QgcmVnYXJkcywNCllvc2hpaGlybyBTaGltb2RhDQoNCj4gR3J7b2V0amUsZWV0aW5n
+fXMsDQo+IA0KPiAgICAgICAgICAgICAgICAgICAgICAgICBHZWVydA0KPiANCj4gLS0NCj4gR2Vl
+cnQgVXl0dGVyaG9ldmVuIC0tIFRoZXJlJ3MgbG90cyBvZiBMaW51eCBiZXlvbmQgaWEzMiAtLSBn
+ZWVydEBsaW51eC1tNjhrLm9yZw0KPiANCj4gSW4gcGVyc29uYWwgY29udmVyc2F0aW9ucyB3aXRo
+IHRlY2huaWNhbCBwZW9wbGUsIEkgY2FsbCBteXNlbGYgYSBoYWNrZXIuIEJ1dA0KPiB3aGVuIEkn
+bSB0YWxraW5nIHRvIGpvdXJuYWxpc3RzIEkganVzdCBzYXkgInByb2dyYW1tZXIiIG9yIHNvbWV0
+aGluZyBsaWtlIHRoYXQuDQo+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLS0gTGlu
+dXMgVG9ydmFsZHMNCg=
