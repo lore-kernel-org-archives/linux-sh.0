@@ -1,54 +1,36 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 18 May 2015 11:04:15 +0000
-Subject: [PATCH v2 2/2] usb: renesas_usbhs: Add support for R-Car E2
-Message-Id: <1431947055-4324-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 18 May 2015 11:55:53 +0000
+Subject: Re: [PATCH v2 2/2] usb: renesas_usbhs: Add support for R-Car E2
+Message-Id: <CAMuHMdWysVJU8Kk-cDB1rOSzO8B6bGvVBbQsdEoQq0sN-AwdOQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1431947055-4324-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1431947055-4324-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+	<1431947055-4324-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1431947055-4324-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: gregkh@linuxfoundation.org, balbi@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: Greg KH <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@ti.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, USB list <linux-usb@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-This patch adds a compatible string to support for R-Car E2.
+On Mon, May 18, 2015 at 1:04 PM, Yoshihiro Shimoda
+<yoshihiro.shimoda.uh@renesas.com> wrote:
+> This patch adds a compatible string to support for R-Car E2.
+>
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>" in patch 2
+> ---
+>  Remarks: Geert's Acked-by is for the DT binding part (renesas_usbhs.txt).
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>" in patch 2
----
- Remarks: Geert's Acked-by is for the DT binding part (renesas_usbhs.txt).
+For the remaining part:
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
- Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 1 +
- drivers/usb/renesas_usbhs/common.c                      | 4 ++++
- 2 files changed, 5 insertions(+)
+Gr{oetje,eeting}s,
 
-diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-index ddbe304..64a4ca6 100644
---- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-+++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
-@@ -4,6 +4,7 @@ Required properties:
-   - compatible: Must contain one of the following:
- 	- "renesas,usbhs-r8a7790"
- 	- "renesas,usbhs-r8a7791"
-+	- "renesas,usbhs-r8a7794"
-   - reg: Base address and length of the register for the USBHS
-   - interrupts: Interrupt specifier for the USBHS
-   - clocks: A list of phandle + clock specifier pairs
-diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
-index b56bb9d..e8bf408 100644
---- a/drivers/usb/renesas_usbhs/common.c
-+++ b/drivers/usb/renesas_usbhs/common.c
-@@ -472,6 +472,10 @@ static const struct of_device_id usbhs_of_match[] = {
- 		.compatible = "renesas,usbhs-r8a7791",
- 		.data = (void *)USBHS_TYPE_RCAR_GEN2,
- 	},
-+	{
-+		.compatible = "renesas,usbhs-r8a7794",
-+		.data = (void *)USBHS_TYPE_RCAR_GEN2,
-+	},
- 	{ },
- };
- MODULE_DEVICE_TABLE(of, usbhs_of_match);
--- 
-1.9.1
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
