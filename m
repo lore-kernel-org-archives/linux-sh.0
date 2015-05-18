@@ -1,73 +1,73 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 20 May 2015 02:36:19 +0000
-Subject: RE: [PATCH v2 2/2] pwm: Add support for R-Car PWM Timer
-Message-Id: <SG2PR06MB0919BB8E4B4BD700760CCD30D8C20@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 18 May 2015 06:04:48 +0000
+Subject: Re: [PATCH/RFC] i2c: rcar: Fix order of restart and clear status
+Message-Id: <20150518060448.GA17523@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432032159-704-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <1432032159-704-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <87d21w3yio.wl%kuninori.morimoto.gx@renesas.com>
- <SG2PR06MB09195F94EAFBAA73AD19F260D8C20@SG2PR06MB0919.apcprd06.prod.outlook.com>
- <20150520020656.GA31103@verge.net.au>
-In-Reply-To: <20150520020656.GA31103@verge.net.au>
+References: <1424011396-3492-1-git-send-email-ykaneko0929@gmail.com>
+ <b0a6dd2b593f2f891946ef910c876b48@the-dreams.de>
+ <20150304040819.GB12776@verge.net.au>
+ <20150306220531.GA6572@katana>
+ <20150307103349.GA1194@katana>
+ <20150327131044.GB19151@katana>
+ <20150330001530.GA1549@verge.net.au>
+In-Reply-To: <20150330001530.GA1549@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "thierry.reding@gmail.com" <thierry.reding@gmail.com>, "robh+dt@kernel.org" <robh+dt@kernel.org>, "pawel.moll@arm.com" <pawel.moll@arm.com>, "mark.rutland@arm.com" <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, "galak@codeaurora.org" <galak@codeaurora.org>, "linux-pwm@vger.kernel.org" <linux-pwm@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Wolfram Sang <wsa@the-dreams.de>
+Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, linux-i2c@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Simon-san,
+Hi Wolfram,
 
-> Sent: Wednesday, May 20, 2015 11:07 AM
+On Mon, Mar 30, 2015 at 09:15:30AM +0900, Simon Horman wrote:
+> On Fri, Mar 27, 2015 at 02:10:45PM +0100, Wolfram Sang wrote:
+> > On Sat, Mar 07, 2015 at 11:33:49AM +0100, Wolfram Sang wrote:
+> > > On Fri, Mar 06, 2015 at 11:05:31PM +0100, Wolfram Sang wrote:
+> > > > 
+> > > > > I asked Kataoka-san about this and his response was as follows:
+> > > > 
+> > > > Thanks, Simon!
+> > > > 
+> > > > > If system(CPU) is busy, the driver can't clear the status register soon
+> > > > > after kicking start.
+> > > > > 
+> > > > > If sequence of first start is as follows, there is a problem.
+> > > > > Because H/W starts by 1.
+> > > > > But sequence of re-start is as follows, there is no problem.
+> > > > > Because H/W starts by 2.
+> > > > > 
+> > > > >   1. Issue START condition by ESG bit of ICMCR register.
+> > > > >                   <--- If there is too much time, H/W finish transmitting
+> > > > >                        and set status in status register.
+> > > > >   2. Clear interrupt status (ICMSR).
+> > > > >   3. Open interrupt mask.
+> > > > >   4. Wait interrupt.
+> > > > >                   <--- If status is cleared, interrupt does not occur.
+> > > > 
+> > > > I understand. I'll add this explanation to the patch and apply it soon.
+> > > 
+> > > Sorry, another question came up while applying:
+> > > 
+> > > How can this interruption happen? The function is called in a
+> > > spin_lock_irqsave protected area. Is this an RT_PREEMPT related issue?
+> > > Am I missing something?
+> > 
+> > Hi,
+> > 
+> > any news on this one?
 > 
-> On Wed, May 20, 2015 at 01:24:32AM +0000, Yoshihiro Shimoda wrote:
-> > Hi Morimoto-san,
-> >
-> > > Sent: Wednesday, May 20, 2015 9:06 AM
-> > >
-> > > Hi Shimoda-san
-> > >
-> > > I guess previous Geert's opinion about compatible is...
-> > >
-> > > > +Required Properties:
-> > > > +- compatible: should be one of the following.
-> > > > + - "renesas,pwm-r8a7778": for R-Car M1A
-> > > > + - "renesas,pwm-r8a7779": for R-Car H1
-> > > > + - "renesas,pwm-r8a7790": for R-Car H2
-> > > > + - "renesas,pwm-r8a7791": for R-Car M2-W
-> > > > + - "renesas,pwm-r8a7794": for R-Car E2
-> > > (snip)
-> > > > +static const struct of_device_id rcar_pwm_of_table[] = {
-> > > > +	{ .compatible = "renesas,pwm-r8a7778", },
-> > > > +	{ .compatible = "renesas,pwm-r8a7779", },
-> > > > +	{ .compatible = "renesas,pwm-r8a7790", },
-> > > > +	{ .compatible = "renesas,pwm-r8a7791", },
-> > > > +	{ .compatible = "renesas,pwm-r8a7794", },
-> > > > +	{ },
-> > > > +};
-> > >
-> > > - compatible: should be one of the following.
-> > >  - "renesas,pwm-rcar": for R-Car  <> > >  ... /* we need gen1 / gen2 here ? */
-> > >  - "renesas,pwm-r8a7778": for R-Car M1A
-> > >  - "renesas,pwm-r8a7779": for R-Car H1
-> > >  - "renesas,pwm-r8a7790": for R-Car H2
-> > >  - "renesas,pwm-r8a7791": for R-Car M2-W
-> > >  - "renesas,pwm-r8a7794": for R-Car E2
-> > >
-> > > static const struct of_device_id rcar_pwm_of_table[] = {
-> > > 	{ .compatible = "renesas,pwm-rcar", }, <> > > 	{ },
-> >
-> > Thank you for your comment.
-> > I understood it. If such a document and code, there is similar with the sh-sci driver.
-> > So, I will fix this patch set.
-> 
-> Does the documentation (e.g. datasheet) indicate that the PWM blocks are
-> the same for at least all of the R-Car SoCs that we know about?
+> Sorry, I seem to have dropped the ball here. I've (finally) forwarded
+> your question on to the BSP team.
 
-The R-Car Gen2 documentation indicates that the PWM block are the same as R-Car [HME]2.
+Thanks for your patience, I have a response from the BSP team:
 
-However, Gen2 documentation doesn't indicate whether the PWM block are the same as R-Car H1 and M1A.
-(but, I compared documentation of R-Car H1 and M1A, and then I assumed these are the same as Gen2.)
+rcar_i2c_start(), rcar_i2c_recv() and rcar_i2c_send() are called in a
+spin_lock_irqsave protected area. Therefore, interruption and preemption
+doesn't happen in these functions.
 
-Best regards,
-Yoshihiro Shimoda
+But I think the driver should work fine even if the CPU is very slow.
+If above sequence 1 and 2 are slow, and if H/W is fast, there is a problem.
 
+Since H/W is kicked by sequence 1 then the driver waits the change of status,
+sequence 2 should be executed before sequence 1 even if the CPU is fast enough.
+I think it is a custom of software.
