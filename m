@@ -1,40 +1,34 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 14 May 2015 07:23:20 +0000
-Subject: [PATCH 5/5 v6] ARM: shmobile: r8a7791: add MMCIF max-frequency
-Message-Id: <87y4kroc8r.wl%kuninori.morimoto.gx@renesas.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 18 May 2015 11:04:13 +0000
+Subject: [PATCH v2 0/2] usb: renesas_usbhs: Add support for R-Car E2
+Message-Id: <1431947055-4324-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
-	<87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, kobayashi <keita.kobayashi.ym@renesas.com>
+To: gregkh@linuxfoundation.org, balbi@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This patch set is based on Felipe's usb.git / testing/next branch.
+(commit id = 1c14905ef951fb968c8da90e4e64be02c309a2ae)
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v5 -> v6
+This patch set adds support for R-Car E2. This patch set also changes
+the SoC types "USBHS_TYPE_R8A779[01]" to USBHS_TYPE_RCAR_GEN2.
 
- - no change
+Changes from v1:
+ - Use USBHS_TYPE_RCAR_GEN2 instead of USBHS_TYPE_R8A779[014].
+ - Add "Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>" in patch 2
+   (This is for the DT binding part).
 
- arch/arm/boot/dts/r8a7791.dtsi | 1 +
- 1 file changed, 1 insertion(+)
+Yoshihiro Shimoda (2):
+  usb: renesas_usbhs: Change USBHS_TYPE_R8A779x to USBHS_TYPE_RCAR_GEN2
+  usb: renesas_usbhs: Add support for R-Car E2
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 30e1e13..fda7dc6 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -472,6 +472,7 @@
- 		dma-names = "tx", "rx";
- 		reg-io-width = <4>;
- 		status = "disabled";
-+		max-frequency = <97500000>;
- 	};
- 
- 	sdhi0: sd@ee100000 {
+ .../devicetree/bindings/usb/renesas_usbhs.txt         |  1 +
+ drivers/usb/renesas_usbhs/common.c                    | 19 ++++++++-----------
+ include/linux/usb/renesas_usbhs.h                     |  3 +--
+ 3 files changed, 10 insertions(+), 13 deletions(-)
+
 -- 
 1.9.1
 
