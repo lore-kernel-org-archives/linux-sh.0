@@ -1,50 +1,46 @@
-From: Kevin Hilman <khilman@kernel.org>
-Date: Fri, 08 May 2015 20:26:06 +0000
-Subject: Re: [PATCH/RFC 00/03] irqchip: renesas-irqc: Fine grained Runtime PM support
-Message-Id: <7hmw1ehl41.fsf@deeprootsystems.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 18 May 2015 09:33:47 +0000
+Subject: [PATCH] phy: rcar-gen2: Add support for R-Car E2
+Message-Id: <1431941627-1720-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdWN5E35e8CEzOKYRo4PXkzjMpxErg6akCOHKGtAf=D8tQ@mail.gmail.com>
-	<Pine.LNX.4.44L0.1504231040560.1529-100000@iolanthe.rowland.org>
-	<CAMuHMdWtUYoFWWfijFbQCv6Z-phZW2XN+F5n1zfqbZMFGjM+Bg@mail.gmail.com>
-In-Reply-To: <CAMuHMdWtUYoFWWfijFbQCv6Z-phZW2XN+F5n1zfqbZMFGjM+Bg@mail.gmail.com>
-	(Geert Uytterhoeven's message of "Thu, 23 Apr 2015 19:49:59 +0200")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Alan Stern <stern@rowland.harvard.edu>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, Jason Cooper <jason@lakedaemon.net>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux PM list <linux-pm@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
+To: kishon@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, sergei.shtylyov@cogentembedded.com
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Geert Uytterhoeven <geert@linux-m68k.org> writes:
+This patch adds a compatible string to support for R-Car E2.
 
-> On Thu, Apr 23, 2015 at 4:44 PM, Alan Stern <stern@rowland.harvard.edu> wrote:
->> On Thu, 23 Apr 2015, Geert Uytterhoeven wrote:
->>> >> I'm afraid you can't call pm_runtime_get_sync() from these methods, as
->>> >> they may be called from interrupt context.
->>> >
->>> > Ouch. I know the clock framework has prepare/enable separated with
->>> > context, but with the irqchip callbacks I suppose no such separation
->>>
->>> It's not the clock operations, but the pm_runtime operations that cannot be
->>> called from interrupt context.
->>
->> In fact the pm_runtime operations _can_ be called from interrupt
->> context, provided the driver has first invoked pm_runtime_irq_safe().
->> Of course, this requires that none of the runtime-PM callback routines
->> ever sleep or perform a blocking operation.
->>
->> This is all explained in Documentation/power/runtime_pm.txt (search for
->> "irq_safe").
->
-> Perhaps that can help. We'll have to give it a try...
->
-> I've always found this a bit strange when PM Domains are involved:
-> pm_runtime_irq_safe(dev) applies to device dev, while the actual callbacks
-> belong to the PM Domain code (the device's driver doesn't have any).
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ Documentation/devicetree/bindings/phy/rcar-gen2-phy.txt | 1 +
+ drivers/phy/phy-rcar-gen2.c                             | 1 +
+ 2 files changed, 2 insertions(+)
 
-Currently PM domains don't support IRQ-safe devices very well.  Any
-irq_safe devices will prevent the entire PM domain from ever powering
-off.  There is some on-going work for this but it requires reworking the
-genpd locking a bit.
-
-Kevin
+diff --git a/Documentation/devicetree/bindings/phy/rcar-gen2-phy.txt b/Documentation/devicetree/bindings/phy/rcar-gen2-phy.txt
+index 00fc52a..d564ba4 100644
+--- a/Documentation/devicetree/bindings/phy/rcar-gen2-phy.txt
++++ b/Documentation/devicetree/bindings/phy/rcar-gen2-phy.txt
+@@ -6,6 +6,7 @@ This file provides information on what the device node for the R-Car generation
+ Required properties:
+ - compatible: "renesas,usb-phy-r8a7790" if the device is a part of R8A7790 SoC.
+ 	      "renesas,usb-phy-r8a7791" if the device is a part of R8A7791 SoC.
++	      "renesas,usb-phy-r8a7794" if the device is a part of R8A7794 SoC.
+ - reg: offset and length of the register block.
+ - #address-cells: number of address cells for the USB channel subnodes, must
+ 		  be <1>.
+diff --git a/drivers/phy/phy-rcar-gen2.c b/drivers/phy/phy-rcar-gen2.c
+index f47bfd8..0050301 100644
+--- a/drivers/phy/phy-rcar-gen2.c
++++ b/drivers/phy/phy-rcar-gen2.c
+@@ -195,6 +195,7 @@ static struct phy_ops rcar_gen2_phy_ops = {
+ static const struct of_device_id rcar_gen2_phy_match_table[] = {
+ 	{ .compatible = "renesas,usb-phy-r8a7790" },
+ 	{ .compatible = "renesas,usb-phy-r8a7791" },
++	{ .compatible = "renesas,usb-phy-r8a7794" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, rcar_gen2_phy_match_table);
+-- 
+1.9.1
 
