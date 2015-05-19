@@ -1,20 +1,52 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Mon, 25 May 2015 17:15:49 +0000
-Subject: Re: [PATCH] DMA: shdma: r8a73a4: Make dma_ts_shift[] static
-Message-Id: <20150525170349.GJ3140@localhost>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 19 May 2015 12:49:44 +0000
+Subject: [PATCH] ARM: shmobile: only select sound drivers that build
+Message-Id: <5616798.tmraH8vpuI@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432209510-20449-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432209510-20449-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, May 21, 2015 at 01:58:30PM +0200, Geert Uytterhoeven wrote:
-> dma_ts_shift[] isn't used outside this source file. All other users use
-> the definition from arch/arm/mach-shmobile/dma-register.h.
-Applied, thanks
+A couple of codec drivers are selected by shmobile platform code,
+but depend on I2C, which results in a build error:
 
--- 
-~Vinod
+sound/soc/codecs/ak4642.c:638:1: warning: data definition has no type or storage class
+ module_i2c_driver(ak4642_i2c_driver);
+ ^
+sound/soc/codecs/ak4642.c:638:1: error: type defaults to 'int' in declaration of 'module_i2c_driver' [-Werror=implicit-int]
+sound/soc/codecs/ak4642.c:638:1: warning: parameter names (without types) in function declaration
+sound/soc/codecs/ak4642.c:627:26: warning: 'ak4642_i2c_driver' defined but not used [-Wunused-variable]
+
+This ensures that we do not enable the respective drivers when I2C
+is disabled.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+If this patch looks good, please add it to the shmobile git
+
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 679b866399f2..ca2182078547 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -150,7 +150,7 @@ config MACH_ARMADILLO800EVA
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select SMSC_PHY if SH_ETH
+-	select SND_SOC_WM8978 if SND_SIMPLE_CARD
++	select SND_SOC_WM8978 if SND_SIMPLE_CARD && I2C
+ 	select USE_OF
+ 
+ config MACH_BOCKW
+@@ -158,8 +158,8 @@ config MACH_BOCKW
+ 	depends on ARCH_R8A7778
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-	select SND_SOC_AK4554 if SND_SIMPLE_CARD
+-	select SND_SOC_AK4642 if SND_SIMPLE_CARD
++	select SND_SOC_AK4554 if SND_SIMPLE_CARD && I2C
++	select SND_SOC_AK4642 if SND_SIMPLE_CARD && I2C
+ 	select USE_OF
+ 
+ config MACH_BOCKW_REFERENCE
 
