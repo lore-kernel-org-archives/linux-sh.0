@@ -1,52 +1,47 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 19 May 2015 12:49:44 +0000
-Subject: [PATCH] ARM: shmobile: only select sound drivers that build
-Message-Id: <5616798.tmraH8vpuI@wuerfel>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 19 May 2015 13:34:00 +0000
+Subject: Re: [PATCH] ARM: shmobile: only select sound drivers that build
+Message-Id: <CAMuHMdWDS73aA8ottgEPYgE=FHFeOwWdEcRGEyv8LbOUU1eUgQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <5616798.tmraH8vpuI@wuerfel>
+In-Reply-To: <5616798.tmraH8vpuI@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-A couple of codec drivers are selected by shmobile platform code,
-but depend on I2C, which results in a build error:
+Hi Arnd,
 
-sound/soc/codecs/ak4642.c:638:1: warning: data definition has no type or storage class
- module_i2c_driver(ak4642_i2c_driver);
- ^
-sound/soc/codecs/ak4642.c:638:1: error: type defaults to 'int' in declaration of 'module_i2c_driver' [-Werror=implicit-int]
-sound/soc/codecs/ak4642.c:638:1: warning: parameter names (without types) in function declaration
-sound/soc/codecs/ak4642.c:627:26: warning: 'ak4642_i2c_driver' defined but not used [-Wunused-variable]
+On Tue, May 19, 2015 at 2:49 PM, Arnd Bergmann <arnd@arndb.de> wrote:
+> A couple of codec drivers are selected by shmobile platform code,
+> but depend on I2C, which results in a build error:
 
-This ensures that we do not enable the respective drivers when I2C
-is disabled.
+> --- a/arch/arm/mach-shmobile/Kconfig
+> +++ b/arch/arm/mach-shmobile/Kconfig
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
----
-If this patch looks good, please add it to the shmobile git
+> @@ -158,8 +158,8 @@ config MACH_BOCKW
+>         depends on ARCH_R8A7778
+>         select ARCH_REQUIRE_GPIOLIB
+>         select REGULATOR_FIXED_VOLTAGE if REGULATOR
+> -       select SND_SOC_AK4554 if SND_SIMPLE_CARD
+> -       select SND_SOC_AK4642 if SND_SIMPLE_CARD
+> +       select SND_SOC_AK4554 if SND_SIMPLE_CARD && I2C
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 679b866399f2..ca2182078547 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -150,7 +150,7 @@ config MACH_ARMADILLO800EVA
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select SMSC_PHY if SH_ETH
--	select SND_SOC_WM8978 if SND_SIMPLE_CARD
-+	select SND_SOC_WM8978 if SND_SIMPLE_CARD && I2C
- 	select USE_OF
- 
- config MACH_BOCKW
-@@ -158,8 +158,8 @@ config MACH_BOCKW
- 	depends on ARCH_R8A7778
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	select SND_SOC_AK4554 if SND_SIMPLE_CARD
--	select SND_SOC_AK4642 if SND_SIMPLE_CARD
-+	select SND_SOC_AK4554 if SND_SIMPLE_CARD && I2C
-+	select SND_SOC_AK4642 if SND_SIMPLE_CARD && I2C
- 	select USE_OF
- 
- config MACH_BOCKW_REFERENCE
+AK4554 is not an i2c device, but a plain platform device.
 
+> +       select SND_SOC_AK4642 if SND_SIMPLE_CARD && I2C
+>         select USE_OF
+
+The others are OK, so if you have remove AK4554, you can add my
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
