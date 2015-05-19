@@ -1,31 +1,25 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 18 May 2015 09:44:50 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 19 May 2015 01:33:07 +0000
 Subject: Re: [PATCH] phy: rcar-gen2: Add support for R-Car E2
-Message-Id: <CAMuHMdWVgZbQap=hivYzdHwvLn86np7gVs52f7gzsMUDZZz-rg@mail.gmail.com>
+Message-Id: <20150519013306.GA19506@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1431941627-1720-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1431941627-1720-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <CAMuHMdWVgZbQap=hivYzdHwvLn86np7gVs52f7gzsMUDZZz-rg@mail.gmail.com>
+In-Reply-To: <CAMuHMdWVgZbQap=hivYzdHwvLn86np7gVs52f7gzsMUDZZz-rg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: kishon@ti.com, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, kishon@ti.com, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Mon, May 18, 2015 at 11:33 AM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> This patch adds a compatible string to support for R-Car E2.
->
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+On Mon, May 18, 2015 at 11:44:50AM +0200, Geert Uytterhoeven wrote:
+> On Mon, May 18, 2015 at 11:33 AM, Yoshihiro Shimoda
+> <yoshihiro.shimoda.uh@renesas.com> wrote:
+> > This patch adds a compatible string to support for R-Car E2.
+> >
+> > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> 
+> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
