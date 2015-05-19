@@ -1,117 +1,38 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 20 May 2015 17:46:25 +0000
-Subject: [PATCH 2/4] ARM: shmobile: r8a7790 dtsi: Describe DMA for the serial ports
-Message-Id: <1432143987-10308-3-git-send-email-geert+renesas@glider.be>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 19 May 2015 10:42:37 +0000
+Subject: [PATCH v2 0/2] pwm: Add support for R-Car PWM Timer
+Message-Id: <1432032159-704-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432143987-10308-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432143987-10308-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: devicetree@vger.kernel.org, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: thierry.reding@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Add DMA properties to all SCIF, SCIFA, SCIFB, and HSCIF device nodes.
+This patch set is based on the linux-pwm.git / for-next branch.
+(commit id = efb0de55b6a2ec15fc424e660601f22ae2fa487a)
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+Changes from v1:
+ - Change compatible string to SoC-specific compatible values.
+ - Fix #pwm-call value to 2 in the device tree document.
+ - Fix "depends on" value in Kconfig.
+ - Fix help explanation in Kconfig.
+ - Remove an unnecessary member in rcar_pwm_chip.
+ - Remove hardcoded number of channels and change chip.npwm value to 1.
+ - Fix formulas for clock calculation to improve accuracy.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 62a9086b133d5b91..6ef146d9384da332 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -554,6 +554,8 @@
- 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -563,6 +565,8 @@
- 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x25>, <&dmac0 0x26>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -572,6 +576,8 @@
- 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x27>, <&dmac0 0x28>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -581,6 +587,8 @@
- 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x3d>, <&dmac0 0x3e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -590,6 +598,8 @@
- 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x19>, <&dmac0 0x1a>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -599,6 +609,8 @@
- 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x1d>, <&dmac0 0x1e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -608,6 +620,8 @@
- 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -617,6 +631,8 @@
- 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -626,6 +642,8 @@
- 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -635,6 +653,8 @@
- 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
+Yoshihiro Shimoda (2):
+  pwm: Add device tree binding document for R-Car PWM Timer
+  pwm: Add support for R-Car PWM Timer
+
+ .../devicetree/bindings/pwm/renesas,pwm-rcar.txt   |  26 ++
+ drivers/pwm/Kconfig                                |  11 +
+ drivers/pwm/Makefile                               |   1 +
+ drivers/pwm/pwm-rcar.c                             | 268 +++++++++++++++++++++
+ 4 files changed, 306 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
+ create mode 100644 drivers/pwm/pwm-rcar.c
+
 -- 
 1.9.1
 
