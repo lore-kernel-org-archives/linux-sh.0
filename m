@@ -1,47 +1,44 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 19 May 2015 13:34:00 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 19 May 2015 13:50:07 +0000
 Subject: Re: [PATCH] ARM: shmobile: only select sound drivers that build
-Message-Id: <CAMuHMdWDS73aA8ottgEPYgE=FHFeOwWdEcRGEyv8LbOUU1eUgQ@mail.gmail.com>
+Message-Id: <8763723.lDqvJa39j2@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 References: <5616798.tmraH8vpuI@wuerfel>
-In-Reply-To: <5616798.tmraH8vpuI@wuerfel>
+ <CAMuHMdWDS73aA8ottgEPYgE=FHFeOwWdEcRGEyv8LbOUU1eUgQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdWDS73aA8ottgEPYgE=FHFeOwWdEcRGEyv8LbOUU1eUgQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd,
+On Tuesday 19 May 2015 15:34:00 Geert Uytterhoeven wrote:
+> On Tue, May 19, 2015 at 2:49 PM, Arnd Bergmann <arnd@arndb.de> wrote:
+> > A couple of codec drivers are selected by shmobile platform code,
+> > but depend on I2C, which results in a build error:
+> 
+> > --- a/arch/arm/mach-shmobile/Kconfig
+> > +++ b/arch/arm/mach-shmobile/Kconfig
+> 
+> > @@ -158,8 +158,8 @@ config MACH_BOCKW
+> >         depends on ARCH_R8A7778
+> >         select ARCH_REQUIRE_GPIOLIB
+> >         select REGULATOR_FIXED_VOLTAGE if REGULATOR
+> > -       select SND_SOC_AK4554 if SND_SIMPLE_CARD
+> > -       select SND_SOC_AK4642 if SND_SIMPLE_CARD
+> > +       select SND_SOC_AK4554 if SND_SIMPLE_CARD && I2C
+> 
+> AK4554 is not an i2c device, but a plain platform device.
+> 
+> > +       select SND_SOC_AK4642 if SND_SIMPLE_CARD && I2C
+> >         select USE_OF
+> 
+> The others are OK, so if you have remove AK4554, you can add my
+> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> 
+> 
 
-On Tue, May 19, 2015 at 2:49 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> A couple of codec drivers are selected by shmobile platform code,
-> but depend on I2C, which results in a build error:
+Ah, my mistake. I've sent a fixed version 2 now.
 
-> --- a/arch/arm/mach-shmobile/Kconfig
-> +++ b/arch/arm/mach-shmobile/Kconfig
+Thanks!
 
-> @@ -158,8 +158,8 @@ config MACH_BOCKW
->         depends on ARCH_R8A7778
->         select ARCH_REQUIRE_GPIOLIB
->         select REGULATOR_FIXED_VOLTAGE if REGULATOR
-> -       select SND_SOC_AK4554 if SND_SIMPLE_CARD
-> -       select SND_SOC_AK4642 if SND_SIMPLE_CARD
-> +       select SND_SOC_AK4554 if SND_SIMPLE_CARD && I2C
-
-AK4554 is not an i2c device, but a plain platform device.
-
-> +       select SND_SOC_AK4642 if SND_SIMPLE_CARD && I2C
->         select USE_OF
-
-The others are OK, so if you have remove AK4554, you can add my
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+	Arnd
