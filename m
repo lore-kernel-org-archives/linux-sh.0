@@ -1,65 +1,74 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 12 May 2015 06:50:01 +0000
-Subject: Re: [PATCH v2 10/15] ARM: shmobile: r8a7793: add SMP support
-Message-Id: <1543071.BYqSDIJCJa@avalon>
+From: Jiang Liu <jiang.liu@linux.intel.com>
+Date: Wed, 20 May 2015 09:59:58 +0000
+Subject: [RFC v1 10/25] sh: intc: Use irq_desc_get_xxx() to avoid redundant lookup of irq_desc
+Message-Id: <1432116013-25902-11-git-send-email-jiang.liu@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430403544-26742-11-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1430403544-26742-11-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1432116013-25902-1-git-send-email-jiang.liu@linux.intel.com>
+In-Reply-To: <1432116013-25902-1-git-send-email-jiang.liu@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Thomas Gleixner <tglx@linutronix.de>, Bjorn Helgaas <bhelgaas@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Randy Dunlap <rdunlap@infradead.org>, Yinghai Lu <yinghai@kernel.org>, Borislav Petkov <bp@alien8.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Jiang Liu <jiang.liu@linux.intel.com>
+Cc: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>, Tony Luck <tony.luck@intel.com>, x86@kernel.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-acpi@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi Ulrich,
+Use irq_desc_get_xxx() to avoid redundant lookup of irq_desc while we
+already have a pointer to corresponding irq_desc.
 
-Thank you for the patch.
+Also replace generic_handle_irq with generic_handle_irq_desc() to avoid
+looking up irq_desc again.
 
-On Thursday 30 April 2015 16:18:59 Ulrich Hecht wrote:
-> Enables SMP support, similar to other R-Car Gen2 SoCs.
-> 
-> Signed-off-by: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> [uli: moved reset handling to PM, minor adjustments]
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
->  arch/arm/mach-shmobile/Makefile        |  1 +
->  arch/arm/mach-shmobile/r8a7793.h       |  6 +++
->  arch/arm/mach-shmobile/setup-r8a7793.c |  2 +
->  arch/arm/mach-shmobile/smp-r8a7793.c   | 67 +++++++++++++++++++++++++++++++
->  4 files changed, 76 insertions(+)
->  create mode 100644 arch/arm/mach-shmobile/r8a7793.h
->  create mode 100644 arch/arm/mach-shmobile/smp-r8a7793.c
+Signed-off-by: Jiang Liu <jiang.liu@linux.intel.com>
+---
+ drivers/sh/intc/core.c |    2 +-
+ drivers/sh/intc/virq.c |   14 ++++++++------
+ 2 files changed, 9 insertions(+), 7 deletions(-)
 
-[snip]
-
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7793.c
-> b/arch/arm/mach-shmobile/setup-r8a7793.c index 1d2825c..d20cf2a 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7793.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7793.c
-> @@ -17,6 +17,7 @@
->  #include <asm/mach/arch.h>
-> 
->  #include "common.h"
-> +#include "r8a7793.h"
->  #include "rcar-gen2.h"
-> 
->  static const char *r8a7793_boards_compat_dt[] __initconst = {
-> @@ -25,6 +26,7 @@ static const char *r8a7793_boards_compat_dt[] __initconst
-> = { };
-> 
->  DT_MACHINE_START(R8A7793_DT, "Generic R8A7793 (Flattened Device Tree)")
-> +	.smp		= smp_ops(r8a7793_smp_ops),
-
-As mentioned in my review of v1, ARM has a CPU_METHOD_OF_DECLARE() macro which 
-seems to be preferred over setting the machine definition .smp field directly. 
-Using it would make it easier to merge the machine definitions for the Gen2 
-SoCs.
-
->  	.init_early	= shmobile_init_delay,
->  	.init_time	= rcar_gen2_timer_init,
->  	.init_late	= shmobile_init_late,
-
+diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
+index 81f22980b2de..e4ca964ca840 100644
+--- a/drivers/sh/intc/core.c
++++ b/drivers/sh/intc/core.c
+@@ -67,7 +67,7 @@ void intc_set_prio_level(unsigned int irq, unsigned int level)
+ 
+ static void intc_redirect_irq(unsigned int irq, struct irq_desc *desc)
+ {
+-	generic_handle_irq((unsigned int)irq_get_handler_data(irq));
++	generic_handle_irq_desc(irq, desc);
+ }
+ 
+ static void __init intc_register_irq(struct intc_desc *desc,
+diff --git a/drivers/sh/intc/virq.c b/drivers/sh/intc/virq.c
+index 3dbc21696924..8083882a91c0 100644
+--- a/drivers/sh/intc/virq.c
++++ b/drivers/sh/intc/virq.c
+@@ -109,7 +109,7 @@ static int add_virq_to_pirq(unsigned int irq, unsigned int virq)
+ 
+ static void intc_virq_handler(unsigned int irq, struct irq_desc *desc)
+ {
+-	struct irq_data *data = irq_get_irq_data(irq);
++	struct irq_data *data = irq_desc_get_irq_data(desc);
+ 	struct irq_chip *chip = irq_data_get_irq_chip(data);
+ 	struct intc_virq_list *entry, *vlist = irq_data_get_irq_handler_data(data);
+ 	struct intc_desc_int *d = get_intc_desc(irq);
+@@ -118,12 +118,14 @@ static void intc_virq_handler(unsigned int irq, struct irq_desc *desc)
+ 
+ 	for_each_virq(entry, vlist) {
+ 		unsigned long addr, handle;
++		struct irq_desc *vdesc = irq_to_desc(entry->irq);
+ 
+-		handle = (unsigned long)irq_get_handler_data(entry->irq);
+-		addr = INTC_REG(d, _INTC_ADDR_E(handle), 0);
+-
+-		if (intc_reg_fns[_INTC_FN(handle)](addr, handle, 0))
+-			generic_handle_irq(entry->irq);
++		if (vdesc) {
++			handle = (unsigned long)irq_desc_get_handler_data(vdesc);
++			addr = INTC_REG(d, _INTC_ADDR_E(handle), 0);
++			if (intc_reg_fns[_INTC_FN(handle)](addr, handle, 0))
++				generic_handle_irq_desc(entry->irq, vdesc);
++		}
+ 	}
+ 
+ 	chip->irq_unmask(data);
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.10.4
 
