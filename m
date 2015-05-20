@@ -1,64 +1,91 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 27 May 2015 11:40:10 +0000
-Subject: [PATCH 2/2] drm: rcar-du: Clean up planes in the error paths of .atomic_commit()
-Message-Id: <1432726810-15969-1-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 20 May 2015 18:06:13 +0000
+Subject: [PATCH 7/8] serial: sh-sci: Improve DMA error messages
+Message-Id: <1432145174-11534-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432726786-15906-1-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1432726786-15906-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-When the .atomic_commit() handler fails, clean up planes previoulsy
-prepared by drm_atomic_helper_prepare_planes() with a call to
-drm_atomic_helper_cleanup_planes().
+Make the life of the driver developer/debugger easier:
+  - Add __func__ prefix to identical messages,
+  - Add DMA directions to messages,
+  - Add TX failure messages.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_kms.c | 12 +++++++++---
- 1 file changed, 9 insertions(+), 3 deletions(-)
+ drivers/tty/serial/sh-sci.c | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 20859aae882e..226a7e368b59 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -495,8 +495,10 @@ static int rcar_du_atomic_commit(struct drm_device *dev,
- 
- 	/* Allocate the commit object. */
- 	commit = kzalloc(sizeof(*commit), GFP_KERNEL);
--	if (commit = NULL)
--		return -ENOMEM;
-+	if (commit = NULL) {
-+		ret = -ENOMEM;
-+		goto error;
-+	}
- 
- 	INIT_WORK(&commit->work, rcar_du_atomic_work);
- 	commit->dev = dev;
-@@ -519,7 +521,7 @@ static int rcar_du_atomic_commit(struct drm_device *dev,
- 
- 	if (ret) {
- 		kfree(commit);
--		return ret;
-+		goto error;
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index c9fd4e8d7b6537c2..42634d99d047681f 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1323,7 +1323,8 @@ static int sci_dma_rx_push(struct sci_port *s, size_t count)
+ 	} else if (s->active_rx = s->cookie_rx[1]) {
+ 		active = 1;
+ 	} else {
+-		dev_err(port->dev, "cookie %d not found!\n", s->active_rx);
++		dev_err(port->dev, "%s: Rx cookie %d not found!\n", __func__,
++			s->active_rx);
+ 		return 0;
  	}
  
- 	/* Swap the state, this is the point of no return. */
-@@ -531,6 +533,10 @@ static int rcar_du_atomic_commit(struct drm_device *dev,
- 		rcar_du_atomic_complete(commit);
+@@ -1433,7 +1434,7 @@ static void sci_submit_rx(struct sci_port *s)
+ 				s->cookie_rx[i] = -EINVAL;
+ 			}
+ 			dev_warn(s->port.dev,
+-				 "failed to re-start DMA, using PIO\n");
++				 "Failed to re-start Rx DMA, using PIO\n");
+ 			sci_rx_dma_release(s, true);
+ 			return;
+ 		}
+@@ -1458,7 +1459,8 @@ static void work_fn_rx(struct work_struct *work)
+ 	} else if (s->active_rx = s->cookie_rx[1]) {
+ 		new = 1;
+ 	} else {
+-		dev_err(port->dev, "cookie %d not found!\n", s->active_rx);
++		dev_err(port->dev, "%s: Rx cookie %d not found!\n", __func__,
++			s->active_rx);
+ 		return;
+ 	}
+ 	desc = s->desc_rx[new];
+@@ -1532,6 +1534,7 @@ static void work_fn_tx(struct work_struct *work)
+ 			sg, s->sg_len_tx, DMA_MEM_TO_DEV,
+ 			DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+ 	if (!desc) {
++		dev_warn(port->dev, "Failed preparing Tx DMA descriptor\n");
+ 		/* switch to PIO */
+ 		sci_tx_dma_release(s, true);
+ 		return;
+@@ -1718,13 +1721,15 @@ static void sci_request_dma(struct uart_port *port)
+ 		sg_init_one(&s->sg_tx, port->state->xmit.buf, UART_XMIT_SIZE);
+ 		nent = dma_map_sg(chan->device->dev, &s->sg_tx, 1,
+ 				  DMA_TO_DEVICE);
+-		if (!nent)
++		if (!nent) {
++			dev_warn(port->dev, "Failed mapping Tx DMA descriptor\n");
+ 			sci_tx_dma_release(s, false);
+-		else
++		} else {
+ 			dev_dbg(port->dev, "%s: mapped %d@%p to %pad\n",
+ 				__func__,
+ 				sg_dma_len(&s->sg_tx), port->state->xmit.buf,
+ 				&sg_dma_address(&s->sg_tx));
++		}
  
- 	return 0;
-+
-+error:
-+	drm_atomic_helper_cleanup_planes(dev, state);
-+	return ret;
- }
+ 		s->sg_len_tx = nent;
  
- /* -----------------------------------------------------------------------------
+@@ -1752,7 +1757,7 @@ static void sci_request_dma(struct uart_port *port)
+ 
+ 		if (!buf[0]) {
+ 			dev_warn(port->dev,
+-				 "failed to allocate dma buffer, using PIO\n");
++				 "Failed to allocate Rx dma buffer, using PIO\n");
+ 			sci_rx_dma_release(s, true);
+ 			return;
+ 		}
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
