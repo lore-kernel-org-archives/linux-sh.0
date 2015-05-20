@@ -1,141 +1,150 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 13 May 2015 02:18:02 +0000
-Subject: [PATCH 2/3 v5] mmc: sh_mmcif: use sh_mmcif_xxx prefix for all functions
-Message-Id: <877fsdfci1.wl%kuninori.morimoto.gx@renesas.com>
+From: Jiang Liu <jiang.liu@linux.intel.com>
+Date: Wed, 20 May 2015 10:00:07 +0000
+Subject: [RFC v1 19/25] genirq: Kill the first parameter 'irq' of irq_flow_handler_t
+Message-Id: <1432116013-25902-20-git-send-email-jiang.liu@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
-	<87a8x9fck7.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87a8x9fck7.wl%kuninori.morimoto.gx@renesas.com>
+References: <1432116013-25902-1-git-send-email-jiang.liu@linux.intel.com>
+In-Reply-To: <1432116013-25902-1-git-send-email-jiang.liu@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, kobayashi <keita.kobayashi.ym@renesas.com>
+To: Thomas Gleixner <tglx@linutronix.de>, Bjorn Helgaas <bhelgaas@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Randy Dunlap <rdunlap@infradead.org>, Yinghai Lu <yinghai@kernel.org>, Borislav Petkov <bp@alien8.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kevin Cernekee <cernekee@gmail.com>, abdoulaye berthe <berthe.ab@gmail.com>, Jiang Liu <jiang.liu@linux.intel.com>
+Cc: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>, Tony Luck <tony.luck@intel.com>, x86@kernel.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-acpi@vger.kernel.org, linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Now most IRQ flow handlers make no use of the first parameter 'irq'.
+And for those who do make use of 'irq', we could easily get the irq
+number through irq_desc->irq_data->irq. So kill the first parameter
+'irq' of irq_flow_handler_t.
 
-Current sh_mmcif driver is using sh_mmcif_xxx and mmcif_xxx
-prefix for naming. This patch used sh_mmcif_xxx for all name.
+To ease review, I have split the changes into several parts, though
+they should be merge as one to support bisecting.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Signed-off-by: Jiang Liu <jiang.liu@linux.intel.com>
 ---
-v4 -> v5
+ arch/sh/boards/mach-se/7343/irq.c  |    4 ++--
+ arch/sh/boards/mach-se/7722/irq.c  |    3 ++-
+ arch/sh/boards/mach-se/7724/irq.c  |    3 ++-
+ arch/sh/boards/mach-x3proto/gpio.c |    4 ++--
+ arch/sh/cchips/hd6446x/hd64461.c   |    2 +-
+ drivers/sh/intc/core.c             |    4 ++--
+ drivers/sh/intc/virq.c             |    5 +++--
+ 7 files changed, 14 insertions(+), 11 deletions(-)
 
- - new patch for cleanup
-
- drivers/mmc/host/sh_mmcif.c | 26 +++++++++++++-------------
- 1 file changed, 13 insertions(+), 13 deletions(-)
-
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 29835ae..e13c5f41 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -205,14 +205,14 @@
- #define CLKDEV_MMC_DATA		20000000 /* 20MHz */
- #define CLKDEV_INIT		400000   /* 400 KHz */
+diff --git a/arch/sh/boards/mach-se/7343/irq.c b/arch/sh/boards/mach-se/7343/irq.c
+index 1087dba9b015..6129aef6db76 100644
+--- a/arch/sh/boards/mach-se/7343/irq.c
++++ b/arch/sh/boards/mach-se/7343/irq.c
+@@ -29,9 +29,9 @@
+ static void __iomem *se7343_irq_regs;
+ struct irq_domain *se7343_irq_domain;
  
--enum mmcif_state {
-+enum sh_mmcif_state {
- 	STATE_IDLE,
- 	STATE_REQUEST,
- 	STATE_IOS,
- 	STATE_TIMEOUT,
+-static void se7343_irq_demux(unsigned int irq, struct irq_desc *desc)
++static void se7343_irq_demux(struct irq_desc *desc)
+ {
+-	struct irq_data *data = irq_get_irq_data(irq);
++	struct irq_data *data = irq_desc_get_irq_data(desc);
+ 	struct irq_chip *chip = irq_data_get_irq_chip(data);
+ 	unsigned long mask;
+ 	int bit;
+diff --git a/arch/sh/boards/mach-se/7722/irq.c b/arch/sh/boards/mach-se/7722/irq.c
+index 00e699232621..7200d595fe68 100644
+--- a/arch/sh/boards/mach-se/7722/irq.c
++++ b/arch/sh/boards/mach-se/7722/irq.c
+@@ -28,8 +28,9 @@
+ static void __iomem *se7722_irq_regs;
+ struct irq_domain *se7722_irq_domain;
+ 
+-static void se7722_irq_demux(unsigned int irq, struct irq_desc *desc)
++static void se7722_irq_demux(struct irq_desc *desc)
+ {
++	unsigned int irq = irq_desc_get_irq(desc);
+ 	struct irq_data *data = irq_get_irq_data(irq);
+ 	struct irq_chip *chip = irq_data_get_irq_chip(data);
+ 	unsigned long mask;
+diff --git a/arch/sh/boards/mach-se/7724/irq.c b/arch/sh/boards/mach-se/7724/irq.c
+index 5d1d3ec9a6cd..64e681e66c57 100644
+--- a/arch/sh/boards/mach-se/7724/irq.c
++++ b/arch/sh/boards/mach-se/7724/irq.c
+@@ -92,8 +92,9 @@ static struct irq_chip se7724_irq_chip __read_mostly = {
+ 	.irq_unmask	= enable_se7724_irq,
  };
  
--enum mmcif_wait_for {
-+enum sh_mmcif_wait_for {
- 	MMCIF_WAIT_FOR_REQUEST,
- 	MMCIF_WAIT_FOR_CMD,
- 	MMCIF_WAIT_FOR_MREAD,
-@@ -237,8 +237,8 @@ struct sh_mmcif_host {
- 	void __iomem *addr;
- 	u32 *pio_ptr;
- 	spinlock_t lock;		/* protect sh_mmcif_host::state */
--	enum mmcif_state state;
--	enum mmcif_wait_for wait_for;
-+	enum sh_mmcif_state state;
-+	enum sh_mmcif_wait_for wait_for;
- 	struct delayed_work timeout_work;
- 	size_t blocksize;
- 	int sg_idx;
-@@ -256,11 +256,11 @@ struct sh_mmcif_host {
- 	bool			dma_active;
- };
- 
--static const struct of_device_id mmcif_of_match[] = {
-+static const struct of_device_id sh_mmcif_of_match[] = {
- 	{ .compatible = "renesas,sh-mmcif" },
- 	{ }
- };
--MODULE_DEVICE_TABLE(of, mmcif_of_match);
-+MODULE_DEVICE_TABLE(of, sh_mmcif_of_match);
- 
- #define sh_mmcif_host_to_dev(host) (&host->pd->dev)
- 
-@@ -276,7 +276,7 @@ static inline void sh_mmcif_bitclr(struct sh_mmcif_host *host,
- 	writel(~val & readl(host->addr + reg), host->addr + reg);
+-static void se7724_irq_demux(unsigned int irq, struct irq_desc *desc)
++static void se7724_irq_demux(struct irq_desc *desc)
+ {
++	unsigned int irq = irq_desc_get_irq(desc);
+ 	struct fpga_irq set = get_fpga_irq(irq);
+ 	unsigned short intv = __raw_readw(set.sraddr);
+ 	unsigned int ext_irq = set.base;
+diff --git a/arch/sh/boards/mach-x3proto/gpio.c b/arch/sh/boards/mach-x3proto/gpio.c
+index f035a7ac6456..1fb2cbee25f2 100644
+--- a/arch/sh/boards/mach-x3proto/gpio.c
++++ b/arch/sh/boards/mach-x3proto/gpio.c
+@@ -60,9 +60,9 @@ static int x3proto_gpio_to_irq(struct gpio_chip *chip, unsigned gpio)
+ 	return virq;
  }
  
--static void mmcif_dma_complete(void *arg)
-+static void sh_mmcif_dma_complete(void *arg)
+-static void x3proto_gpio_irq_handler(unsigned int irq, struct irq_desc *desc)
++static void x3proto_gpio_irq_handler(struct irq_desc *desc)
  {
- 	struct sh_mmcif_host *host = arg;
- 	struct mmc_request *mrq = host->mrq;
-@@ -310,7 +310,7 @@ static void sh_mmcif_start_dma_rx(struct sh_mmcif_host *host)
- 	}
+-	struct irq_data *data = irq_get_irq_data(irq);
++	struct irq_data *data = irq_desc_get_irq_data(desc);
+ 	struct irq_chip *chip = irq_data_get_irq_chip(data);
+ 	unsigned long mask;
+ 	int pin;
+diff --git a/arch/sh/cchips/hd6446x/hd64461.c b/arch/sh/cchips/hd6446x/hd64461.c
+index e9735616bdc8..8180092502f7 100644
+--- a/arch/sh/cchips/hd6446x/hd64461.c
++++ b/arch/sh/cchips/hd6446x/hd64461.c
+@@ -56,7 +56,7 @@ static struct irq_chip hd64461_irq_chip = {
+ 	.irq_unmask	= hd64461_unmask_irq,
+ };
  
- 	if (desc) {
--		desc->callback = mmcif_dma_complete;
-+		desc->callback = sh_mmcif_dma_complete;
- 		desc->callback_param = host;
- 		cookie = dmaengine_submit(desc);
- 		sh_mmcif_bitset(host, MMCIF_CE_BUF_ACC, BUF_ACC_DMAREN);
-@@ -360,7 +360,7 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
- 	}
- 
- 	if (desc) {
--		desc->callback = mmcif_dma_complete;
-+		desc->callback = sh_mmcif_dma_complete;
- 		desc->callback_param = host;
- 		cookie = dmaengine_submit(desc);
- 		sh_mmcif_bitset(host, MMCIF_CE_BUF_ACC, BUF_ACC_DMAWEN);
-@@ -1327,7 +1327,7 @@ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
- 		if (!host->dma_active)
- 			return IRQ_WAKE_THREAD;
- 		else if (host->sd_error)
--			mmcif_dma_complete(host);
-+			sh_mmcif_dma_complete(host);
- 	} else {
- 		dev_dbg(dev, "Unexpected IRQ 0x%x\n", state);
- 	}
-@@ -1335,7 +1335,7 @@ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
- 	return IRQ_HANDLED;
+-static void hd64461_irq_demux(unsigned int irq, struct irq_desc *desc)
++static void hd64461_irq_demux(struct irq_desc *desc)
+ {
+ 	unsigned short intv = __raw_readw(HD64461_NIRR);
+ 	unsigned int ext_irq = HD64461_IRQBASE;
+diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
+index e4ca964ca840..8c75e7c2c9b3 100644
+--- a/drivers/sh/intc/core.c
++++ b/drivers/sh/intc/core.c
+@@ -65,9 +65,9 @@ void intc_set_prio_level(unsigned int irq, unsigned int level)
+ 	raw_spin_unlock_irqrestore(&intc_big_lock, flags);
  }
  
--static void mmcif_timeout_work(struct work_struct *work)
-+static void sh_mmcif_timeout_work(struct work_struct *work)
+-static void intc_redirect_irq(unsigned int irq, struct irq_desc *desc)
++static void intc_redirect_irq(struct irq_desc *desc)
  {
- 	struct delayed_work *d = container_of(work, struct delayed_work, work);
- 	struct sh_mmcif_host *host = container_of(d, struct sh_mmcif_host, timeout_work);
-@@ -1481,7 +1481,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	if (ret < 0)
- 		goto err_clk;
+-	generic_handle_irq_desc(irq, desc);
++	generic_handle_irq_desc(desc);
+ }
  
--	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
-+	INIT_DELAYED_WORK(&host->timeout_work, sh_mmcif_timeout_work);
+ static void __init intc_register_irq(struct intc_desc *desc,
+diff --git a/drivers/sh/intc/virq.c b/drivers/sh/intc/virq.c
+index 8083882a91c0..49ffc8d5cb00 100644
+--- a/drivers/sh/intc/virq.c
++++ b/drivers/sh/intc/virq.c
+@@ -107,8 +107,9 @@ static int add_virq_to_pirq(unsigned int irq, unsigned int virq)
+ 	return 0;
+ }
  
- 	sh_mmcif_sync_reset(host);
- 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
-@@ -1587,7 +1587,7 @@ static struct platform_driver sh_mmcif_driver = {
- 	.driver		= {
- 		.name	= DRIVER_NAME,
- 		.pm	= &sh_mmcif_dev_pm_ops,
--		.of_match_table = mmcif_of_match,
-+		.of_match_table = sh_mmcif_of_match,
- 	},
- };
+-static void intc_virq_handler(unsigned int irq, struct irq_desc *desc)
++static void intc_virq_handler(struct irq_desc *desc)
+ {
++	unsigned int irq = irq_desc_get_irq(desc);
+ 	struct irq_data *data = irq_desc_get_irq_data(desc);
+ 	struct irq_chip *chip = irq_data_get_irq_chip(data);
+ 	struct intc_virq_list *entry, *vlist = irq_data_get_irq_handler_data(data);
+@@ -124,7 +125,7 @@ static void intc_virq_handler(unsigned int irq, struct irq_desc *desc)
+ 			handle = (unsigned long)irq_desc_get_handler_data(vdesc);
+ 			addr = INTC_REG(d, _INTC_ADDR_E(handle), 0);
+ 			if (intc_reg_fns[_INTC_FN(handle)](addr, handle, 0))
+-				generic_handle_irq_desc(entry->irq, vdesc);
++				generic_handle_irq_desc(vdesc);
+ 		}
+ 	}
  
 -- 
-1.9.1
+1.7.10.4
 
