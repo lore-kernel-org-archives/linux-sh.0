@@ -1,67 +1,32 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 25 May 2015 00:53:46 +0000
-Subject: Re: [PATCH] usb: renesas_usbhs: avoid uninitialized variable use
-Message-Id: <20150525005346.GA24690@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 20 May 2015 18:06:10 +0000
+Subject: [PATCH 4/8] serial: sh-sci: Use SCIF_DR instead of hardcoded 1
+Message-Id: <1432145174-11534-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <16028110.26u0uMKA2O@wuerfel>
- <SG2PR06MB09192B9386F7E2BA5AF01D0ED8C00@SG2PR06MB0919.apcprd06.prod.outlook.com>
-In-Reply-To: <SG2PR06MB09192B9386F7E2BA5AF01D0ED8C00@SG2PR06MB0919.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, May 22, 2015 at 11:33:57AM +0000, Yoshihiro Shimoda wrote:
-> Hi Arnd,
-> 
-> > Sent: Friday, May 22, 2015 8:07 PM
-> > 
-> > After the renesas_usbhs driver is enabled in ARM multi_v7_defconfig,
-> > we now get a new warning:
-> > 
-> > renesas_usbhs/mod.c: In function 'usbhs_interrupt':
-> > renesas_usbhs/mod.c:246:7: warning: 'intenb1' may be used uninitialized in this function [-Wmaybe-uninitialized]
-> > 
-> > gcc correctly points to a problem here, for the case that the
-> > device is in host mode, we use the intenb1 variable without
-> > having assigned it first. The state->intsts1 has a similar
-> > problem, but gcc cannot know that.
-> > 
-> > This avoids the problem by initializing both sides of the
-> > comparison to zero when we don't read them from the respective
-> > registers.
-> > 
-> > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> > Fixes: 88a25e02f3 ("usb: renesas_usbhs: Add access control for INTSTS1 and INTENB1 register")
-> 
-> Thank you very much for the patch!
-> 
-> Acked-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> 
-> (I'm not sure why a toolchain I used (Linaro GCC 2014.11) doesn't show this warning...)
-> 
-> Best regards,
-> Yoshihiro Shimoda
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/tty/serial/sh-sci.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 21c07c6cb0cd2220..73f4115159a7fbbc 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -960,7 +960,8 @@ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
+ 		}
+ 		serial_port_out(port, SCSCR, scr);
+ 		/* Clear current interrupt */
+-		serial_port_out(port, SCxSR, ssr & ~(1 | SCxSR_RDxF(port)));
++		serial_port_out(port, SCxSR,
++				ssr & ~(SCIF_DR | SCxSR_RDxF(port)));
+ 		dev_dbg(port->dev, "Rx IRQ %lu: setup t-out in %u jiffies\n",
+ 			jiffies, s->rx_timeout);
+ 		mod_timer(&s->rx_timer, jiffies + s->rx_timeout);
+-- 
+1.9.1
 
-> 
-> > diff --git a/drivers/usb/renesas_usbhs/mod.c b/drivers/usb/renesas_usbhs/mod.c
-> > index e5ce6e6d4f51..d4be5d594896 100644
-> > --- a/drivers/usb/renesas_usbhs/mod.c
-> > +++ b/drivers/usb/renesas_usbhs/mod.c
-> > @@ -223,6 +223,8 @@ static int usbhs_status_get_each_irq(struct usbhs_priv *priv,
-> >  	if (usbhs_mod_is_host(priv)) {
-> >  		state->intsts1 = usbhs_read(priv, INTSTS1);
-> >  		intenb1 = usbhs_read(priv, INTENB1);
-> > +	} else {
-> > +		state->intsts1 = intenb1 = 0;
-> >  	}
-> > 
-> >  	/* mask */
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-usb" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
