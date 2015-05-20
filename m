@@ -1,44 +1,51 @@
-From: Thomas Gleixner <tglx@linutronix.de>
-Date: Fri, 15 May 2015 20:42:45 +0000
-Subject: Re: [RFC v1 02/11] genirq: Move field 'node' from struct irq_data into struct irq_common_data
-Message-Id: <alpine.DEB.2.11.1505152240280.4225@nanos>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 20 May 2015 18:16:49 +0000
+Subject: [PATCH 0/5] ARM: shmobile: dts: Replace "nor-jedec" by "jedec,spi-nor"
+Message-Id: <1432145814-12442-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430709339-29083-1-git-send-email-jiang.liu@linux.intel.com> <1430709339-29083-3-git-send-email-jiang.liu@linux.intel.com>
-In-Reply-To: <1430709339-29083-3-git-send-email-jiang.liu@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jiang Liu <jiang.liu@linux.intel.com>
-Cc: Bjorn Helgaas <bhelgaas@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Randy Dunlap <rdunlap@infradead.org>, Yinghai Lu <yinghai@kernel.org>, Borislav Petkov <bp@alien8.de>, x86@kernel.org, Jason Cooper <jason@lakedaemon.net>, Grant Likely <grant.likely@linaro.org>, Kevin Cernekee <cernekee@gmail.com>, Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>, Tony Luck <tony.luck@intel.com>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-acpi@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, 4 May 2015, Jiang Liu wrote:
+	Hi Simon, Magnus,
 
-> NUMA node information is per-irq instead of per-irqchip, so move it into
-> struct irq_common_data.
-> 
-> Signed-off-by: Jiang Liu <jiang.liu@linux.intel.com>
-> ---
->  arch/sh/kernel/irq.c          |    2 +-
->  arch/x86/kernel/apic/vector.c |    8 ++++----
->  arch/x86/platform/uv/uv_irq.c |    2 +-
->  include/linux/irq.h           |   20 ++++++++++++++++++--
->  kernel/irq/internals.h        |    5 +++++
->  kernel/irq/irqdesc.c          |   10 ++--------
->  kernel/irq/irqdomain.c        |    4 ++--
->  kernel/irq/manage.c           |    2 +-
->  kernel/irq/proc.c             |    2 +-
+This patch series replaces the recently introduced "nor-jedec"
+compatible value by "jedec,spi-nor" in all shmobile dts files,
+cfr. commit 8947e396a8296c52 ('Documentation: dt: mtd: replace
+"nor-jedec" binding with "jedec,spi-nor"'), which was applied in
+v4.1-rc4.
 
-Can you please split this into several patches for review and
-bisection sake?
+As the "bad" compatible values are already in -next for v4.2, these
+updates should be applied and queued for v4.2, too.
 
-    1) Do the cleanup of s/data->node/irq_data_get_node(data)/
+Thanks for applying!
 
-       1 a) core code
-       1 b) arch/sh
-       1 c) arch/x86
+Geert Uytterhoeven (5):
+  ARM: shmobile: bockw-reference dts: Replace "nor-jedec" by
+    "jedec,spi-nor"
+  ARM: shmobile: bockw dts: Replace "nor-jedec" by "jedec,spi-nor"
+  ARM: shmobile: lager dts: Replace "nor-jedec" by "jedec,spi-nor"
+  ARM: shmobile: henninger dts: Replace "nor-jedec" by "jedec,spi-nor"
+  ARM: shmobile: koelsch dts: Replace "nor-jedec" by "jedec,spi-nor"
 
-    2) Do the actual move of node to common_data
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 2 +-
+ arch/arm/boot/dts/r8a7778-bockw.dts           | 2 +-
+ arch/arm/boot/dts/r8a7790-lager.dts           | 2 +-
+ arch/arm/boot/dts/r8a7791-henninger.dts       | 2 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts         | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
 
-Thanks,
+-- 
+1.9.1
 
-	tglx
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
