@@ -1,34 +1,69 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 05 May 2015 09:38:30 +0000
-Subject: Re: [PATCH v2 14/15] clk: shmobile: Add r8a7793 SoC to MSTP bindings
-Message-Id: <CAMuHMdW-Dt_WTy1q7ZF-n+FROQaM5Ug1e4RTnTHoj0wkyitZwg@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 20 May 2015 18:06:07 +0000
+Subject: [PATCH 1/8] serial: sh-sci: Use correct device for DMA mapping with IOMMU
+Message-Id: <1432145174-11534-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430403544-26742-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-	<1430403544-26742-15-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1430403544-26742-15-git-send-email-ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Michael Turquette <mturquette-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-On Thu, Apr 30, 2015 at 4:19 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> Also replaces "R-Car M2" with "R-Car M2-W" to avoid confusion.
->
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> Cc: Michael Turquette <mturquette@linaro.org>
-> Cc: devicetree@vger.kernel.org
+To function correctly in the presence of an IOMMU, the DMA buffers must
+be managed using the DMA channel's device instead of the platform
+device's device.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Make sure to free the DMA memory before releasing the channel, and avoid
+freeing it twice (when DMA initialization succeeded before, but failed
+partially on next open).
 
-Gr{oetje,eeting}s,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/tty/serial/sh-sci.c | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
 
-                        Geert
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 583aa563d4038f8b..8756d186e86891ac 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1372,10 +1372,13 @@ static void sci_rx_dma_release(struct sci_port *s, bool enable_pio)
+ 
+ 	s->chan_rx = NULL;
+ 	s->cookie_rx[0] = s->cookie_rx[1] = -EINVAL;
++	if (sg_dma_address(&s->sg_rx[0])) {
++		dma_free_coherent(chan->device->dev, s->buf_len_rx * 2,
++				  sg_virt(&s->sg_rx[0]),
++				  sg_dma_address(&s->sg_rx[0]));
++		sg_dma_address(&s->sg_rx[0]) = 0;
++	}
+ 	dma_release_channel(chan);
+-	if (sg_dma_address(&s->sg_rx[0]))
+-		dma_free_coherent(port->dev, s->buf_len_rx * 2,
+-				  sg_virt(&s->sg_rx[0]), sg_dma_address(&s->sg_rx[0]));
+ 	if (enable_pio)
+ 		sci_start_rx(port);
+ }
+@@ -1706,7 +1709,8 @@ static void sci_request_dma(struct uart_port *port)
+ 		sg_set_page(&s->sg_tx, virt_to_page(port->state->xmit.buf),
+ 			    UART_XMIT_SIZE,
+ 			    (uintptr_t)port->state->xmit.buf & ~PAGE_MASK);
+-		nent = dma_map_sg(port->dev, &s->sg_tx, 1, DMA_TO_DEVICE);
++		nent = dma_map_sg(chan->device->dev, &s->sg_tx, 1,
++				  DMA_TO_DEVICE);
+ 		if (!nent)
+ 			sci_tx_dma_release(s, false);
+ 		else
+@@ -1735,8 +1739,9 @@ static void sci_request_dma(struct uart_port *port)
+ 		s->chan_rx = chan;
+ 
+ 		s->buf_len_rx = 2 * max(16, (int)port->fifosize);
+-		buf[0] = dma_alloc_coherent(port->dev, s->buf_len_rx * 2,
+-					    &dma[0], GFP_KERNEL);
++		buf[0] = dma_alloc_coherent(chan->device->dev,
++					    s->buf_len_rx * 2, &dma[0],
++					    GFP_KERNEL);
+ 
+ 		if (!buf[0]) {
+ 			dev_warn(port->dev,
+-- 
+1.9.1
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
