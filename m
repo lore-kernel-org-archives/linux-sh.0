@@ -1,75 +1,60 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 20 May 2015 03:47:03 +0000
-Subject: [PATCH 3/4] ASoC: rsnd: add rsnd_dai_stream_quit()
-Message-Id: <87y4kj3oab.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 20 May 2015 18:06:06 +0000
+Subject: [PATCH/RFC 0/8] serial: sh-sci: Add DT DMA support
+Message-Id: <1432145174-11534-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87382r52x2.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87382r52x2.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>
-Cc: Simon <horms@verge.net.au>, Nguyen Viet Dung <nv-dung@jinso.co.jp>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Cao Minh Hiep <cm-hiep@jinso.co.jp>, sakato <ryusuke.sakato.bx@renesas.com>, dmaengine@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+	Hi all,
 
-Current Renesas R-Car sound driver calls rsnd_dai_stream_init() when
-start, but it didn't call paired function. This patch adds
-rsnd_dai_stream_quit() for it. This is prepare for interrupt error
-status check feature support.
+This patch series contains various updates for the Renesas
+(H)SCI(F{,A,B}) driver:
+  - Patches 1 and 2 fix two DMA-related bugs,
+  - Patches 3-6 perform some cleanups,
+  - Patch 7 improves error messages,
+  - Patch 8 adds DT support to the DMA setup.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
----
- sound/soc/sh/rcar/core.c | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+This series is marked "RFC" and sent to a limited audience because DMA
+isn't working well yet, at least not on r8a7791/koelsch.
+Especially the last patch should not be applied before all critical
+issues are fixed.
 
-diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
-index 405cacd..2b7323c 100644
---- a/sound/soc/sh/rcar/core.c
-+++ b/sound/soc/sh/rcar/core.c
-@@ -315,7 +315,7 @@ void rsnd_dai_pointer_update(struct rsnd_dai_stream *io, int byte)
- 	}
- }
- 
--static int rsnd_dai_stream_init(struct rsnd_dai_stream *io,
-+static void rsnd_dai_stream_init(struct rsnd_dai_stream *io,
- 				struct snd_pcm_substream *substream)
- {
- 	struct snd_pcm_runtime *runtime = substream->runtime;
-@@ -327,8 +327,11 @@ static int rsnd_dai_stream_init(struct rsnd_dai_stream *io,
- 				  runtime->channels *
- 				  samples_to_bytes(runtime, 1);
- 	io->next_period_byte	= io->byte_per_period;
-+}
- 
--	return 0;
-+static void rsnd_dai_stream_quit(struct rsnd_dai_stream *io)
-+{
-+	io->substream		= NULL;
- }
- 
- static
-@@ -363,9 +366,7 @@ static int rsnd_soc_dai_trigger(struct snd_pcm_substream *substream, int cmd,
- 
- 	switch (cmd) {
- 	case SNDRV_PCM_TRIGGER_START:
--		ret = rsnd_dai_stream_init(io, substream);
--		if (ret < 0)
--			goto dai_trigger_end;
-+		rsnd_dai_stream_init(io, substream);
- 
- 		ret = rsnd_platform_call(priv, dai, start, ssi_id);
- 		if (ret < 0)
-@@ -391,6 +392,8 @@ static int rsnd_soc_dai_trigger(struct snd_pcm_substream *substream, int cmd,
- 		ret = rsnd_platform_call(priv, dai, stop, ssi_id);
- 		if (ret < 0)
- 			goto dai_trigger_end;
-+
-+		rsnd_dai_stream_quit(io);
- 		break;
- 	default:
- 		ret = -EINVAL;
+With a modified version of "[PATCH/RFC] serial: sh-sci: Add R-Car SCIF
+DMA receive support" applied on top, TX DMA seems to work fine on SCIF,
+SCIFA, SCIFB, and HSCIF, but RX DMA is still broken.
+
+This series is against next-20150520, and depends on "[PATCH 0/4]
+serial: sh-sci: Add DMA support to the DT binding" to enable DMA on
+R-Car Gen2.
+
+Thanks for your comments!
+
+Geert Uytterhoeven (8):
+  serial: sh-sci: Use correct device for DMA mapping with IOMMU
+  [RFC] serial: sh-sci: Fix scatterlist mapping leak
+  serial: sh-sci: Use min_t()/max_t() instead of casts
+  serial: sh-sci: Use SCIF_DR instead of hardcoded 1
+  serial: sh-sci: Use offset_in_page() helper instead of open coding
+  serial: sh-sci: Use sg_init_one() helper instead of open coding
+  serial: sh-sci: Improve DMA error messages
+  [RFC] serial: sh-sci: Add DT support to DMA setup
+
+ drivers/tty/serial/sh-sci.c | 137 +++++++++++++++++++++++++++-----------------
+ 1 file changed, 85 insertions(+), 52 deletions(-)
+
 -- 
 1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
