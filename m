@@ -1,108 +1,44 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 28 May 2015 15:15:56 +0000
-Subject: [PATCH v4 3/4] ARM: shmobile: r8a7793: add minimal Gose board device tree
-Message-Id: <1432826157-6414-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 20 May 2015 17:46:24 +0000
+Subject: [PATCH 1/4] serial: sh-sci: Add DMA support to the DT binding documentation
+Message-Id: <1432143987-10308-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432826157-6414-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1432826157-6414-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1432143987-10308-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1432143987-10308-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, linux-sh@vger.kernel.org
-Cc: magnus.damm@gmail.com, laurent.pinchart+renesas@ideasonboard.com, geert@linux-m68k.org, kuninori.morimoto.gx@renesas.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, devicetree@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: devicetree@vger.kernel.org, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Minmal DT description and Makefile entry for the Gose eval board.
-Support for console, timer, and Ethernet.
-
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: devicetree@vger.kernel.org
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/Makefile         |  1 +
- arch/arm/boot/dts/r8a7793-gose.dts | 63 ++++++++++++++++++++++++++++++++++++++
- 2 files changed, 64 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7793-gose.dts
+ Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 86217db..03d876f 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -492,6 +492,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
- 	r8a7790-lager.dtb \
- 	r8a7791-henninger.dtb \
- 	r8a7791-koelsch.dtb \
-+	r8a7793-gose.dtb \
- 	r8a7794-alt.dtb \
- 	sh73a0-kzm9g.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += \
-diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
-new file mode 100644
-index 0000000..96443ec
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7793-gose.dts
-@@ -0,0 +1,63 @@
-+/*
-+ * Device Tree Source for the Gose board
-+ *
-+ * Copyright (C) 2014-2015 Renesas Electronics Corporation
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index ae73bb0e9ad9e58b..b91fcff4b7d48133 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -44,6 +44,11 @@ Required properties:
+ Note: Each enabled SCIx UART should have an alias correctly numbered in the
+ "aliases" node.
+ 
++Optional properties:
++  - dmas: Must contain a list of two references to DMA specifiers, one for
++	  transmission, and one for reception.
++  - dma-names: Must contain a list of two DMA names, "tx" and "rx".
 +
-+/dts-v1/;
-+#include "r8a7793.dtsi"
-+#include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/input.h>
-+
-+/ {
-+	model = "Gose";
-+	compatible = "renesas,gose", "renesas,r8a7793";
-+
-+	aliases {
-+		serial0 = &scif0;
-+		serial1 = &scif1;
-+	};
-+
-+	chosen {
-+		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
-+		stdout-path = &scif0;
-+	};
-+
-+	memory@40000000 {
-+		device_type = "memory";
-+		reg = <0 0x40000000 0 0x40000000>;
-+	};
-+};
-+
-+&extal_clk {
-+	clock-frequency = <20000000>;
-+};
-+
-+&ether {
-+	phy-handle = <&phy1>;
-+	renesas,ether-link-active-low;
-+	status = "okay";
-+
-+	phy1: ethernet-phy@1 {
-+		reg = <1>;
-+		interrupt-parent = <&irqc0>;
-+		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
-+		micrel,led-mode = <1>;
-+	};
-+};
-+
-+&cmt0 {
-+	status = "okay";
-+};
-+
-+&scif0 {
-+	status = "okay";
-+};
-+
-+&scif1 {
-+	status = "okay";
-+};
+ Example:
+ 	aliases {
+ 		serial0 = &scifa0;
+@@ -56,4 +61,6 @@ Example:
+ 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
+ 		clock-names = "sci_ick";
++		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
++		dma-names = "tx", "rx";
+ 	};
 -- 
-2.3.5
+1.9.1
 
