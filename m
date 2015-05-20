@@ -1,67 +1,43 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 21 May 2015 11:21:37 +0000
-Subject: [PATCH v2] gpio: rcar: Check for irq_set_irq_wake() failures
-Message-Id: <1432207297-16887-1-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 20 May 2015 03:46:45 +0000
+Subject: [PATCH 2/4] ASoC: rsnd: indicate unknown HW start
+Message-Id: <87zj4z3oaz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87382r52x2.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87382r52x2.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>
-Cc: Marc Zyngier <marc.zyngier@arm.com>, Axel Haslam <ahaslam@baylibre.com>, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>
+Cc: Simon <horms@verge.net.au>, Nguyen Viet Dung <nv-dung@jinso.co.jp>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Cao Minh Hiep <cm-hiep@jinso.co.jp>, sakato <ryusuke.sakato.bx@renesas.com>, dmaengine@vger.kernel.org
 
-If an interrupt controller doesn't support wake-up configuration,
-irq_set_irq_wake() returns an error code.  Then any subsequent call
-trying to deconfigure wake-up will cause an imbalance, and a warning
-will be printed:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-    WARNING: CPU: 1 PID: 1341 at kernel/irq/manage.c:540 irq_set_irq_wake+0x9c/0xf8()
-    Unbalanced IRQ 26 wake disable
+rsnd_ssi_hw_stop() should be called after rsnd_ssi_hw_start().
+This patch indicates unknown hw_stop as error
 
-To fix this, refrain from any further parent interrupt controller
-(de)configuration if irq_set_irq_wake() failed.
-
-Alternative fixes would be:
-  - calling "gic_set_irqchip_flags(IRQCHIP_SKIP_SET_WAKE)" from the
-    platform code,
-  - setting "gic_chip.flags = IRQCHIP_SKIP_SET_WAKE" in the GIC driver
-    code,
-but these were withheld as the GIC hardware doesn't really support
-wake-up interrupts.
-
-Fixes: ab82fa7da4dce5c7 ("gpio: rcar: Prevent module clock disable when wake-up is enabled")
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 ---
-v2:
-  - Reworded patch description,
-  - Moved alternatives into the patch description.
----
- drivers/gpio/gpio-rcar.c | 13 +++++++++++--
- 1 file changed, 11 insertions(+), 2 deletions(-)
+ sound/soc/sh/rcar/ssi.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
-index fd39774659484fa6..1e14a6c74ed13941 100644
---- a/drivers/gpio/gpio-rcar.c
-+++ b/drivers/gpio/gpio-rcar.c
-@@ -177,8 +177,17 @@ static int gpio_rcar_irq_set_wake(struct irq_data *d, unsigned int on)
- 	struct gpio_chip *gc = irq_data_get_irq_chip_data(d);
- 	struct gpio_rcar_priv *p = container_of(gc, struct gpio_rcar_priv,
- 						gpio_chip);
--
--	irq_set_irq_wake(p->irq_parent, on);
-+	int error;
-+
-+	if (p->irq_parent) {
-+		error = irq_set_irq_wake(p->irq_parent, on);
-+		if (error) {
-+			dev_dbg(&p->pdev->dev,
-+				"irq %u doesn't support irq_set_wake\n",
-+				p->irq_parent);
-+			p->irq_parent = 0;
-+		}
+diff --git a/sound/soc/sh/rcar/ssi.c b/sound/soc/sh/rcar/ssi.c
+index 5b89723..927ac52 100644
+--- a/sound/soc/sh/rcar/ssi.c
++++ b/sound/soc/sh/rcar/ssi.c
+@@ -232,8 +232,10 @@ static void rsnd_ssi_hw_stop(struct rsnd_ssi *ssi)
+ 	struct device *dev = rsnd_priv_to_dev(priv);
+ 	u32 cr;
+ 
+-	if (0 = ssi->usrcnt) /* stop might be called without start */
++	if (0 = ssi->usrcnt) {
++		dev_err(dev, "%s called without starting\n", __func__);
+ 		return;
 +	}
  
- 	if (!p->clk)
- 		return 0;
+ 	ssi->usrcnt--;
+ 
 -- 
 1.9.1
 
