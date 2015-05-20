@@ -1,43 +1,44 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Tue, 19 May 2015 22:32:47 +0000
+From: Dinh Nguyen <dinguyen@opensource.altera.com>
+Date: Wed, 20 May 2015 18:54:34 +0000
 Subject: Re: [PATCH] ARM: v7 setup function should invalidate L1 cache
-Message-Id: <20150519223247.GN2067@n2100.arm.linux.org.uk>
+Message-Id: <555CD86A.2090206@opensource.altera.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <E1Yuk8W-0001tC-IK@rmk-PC.arm.linux.org.uk>
- <2080993.BUNZpO9uLL@wuerfel>
- <20150519220721.GK2067@n2100.arm.linux.org.uk>
- <8164344.VcU8v2tIF5@wuerfel>
-In-Reply-To: <8164344.VcU8v2tIF5@wuerfel>
+In-Reply-To: <E1Yuk8W-0001tC-IK@rmk-PC.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, May 20, 2015 at 12:18:43AM +0200, Arnd Bergmann wrote:
-> On Tuesday 19 May 2015 23:07:21 Russell King - ARM Linux wrote:
-> > The /simplest/ change which would fix this problem is to just change
-> > proc-v7.S.  The remainder is effectively a cleanup removing redundant
-> > code.
+On 05/19/2015 11:12 AM, Russell King wrote:
+> All ARMv5 and older CPUs invalidate their caches in the early assembly
+> setup function, prior to enabling the MMU.  This is because the L1
+> cache should not contain any data relevant to the execution of the
+> kernel at this point; all data should have been flushed out to memory.
 > 
-> Fair enough. I wasn't sure if we're confident enough about that
-> change already to put it into stable backports. If the risk is low
-> enough, that's fine.
+> This requirement should also be true for ARMv6 and ARMv7 CPUs - indeed,
+> these typically do not search their caches when caching is disabled (as
+> it needs to be when the MMU is disabled) so this change should be safe.
+> 
+> ARMv7 allows there to be CPUs which search their caches while caching is
+> disabled, and it's permitted that the cache is uninitialised at boot;
+> for these, the architecture reference manual requires that an
+> implementation specific code sequence is used immediately after reset
+> to ensure that the cache is placed into a sane state.  Such
+> functionality is definitely outside the remit of the Linux kernel, and
+> must be done by the SoC's firmware before _any_ CPU gets to the Linux
+> kernel.
+> 
+> Changing the data cache clean+invalidate to a mere invalidate allows us
+> to get rid of a lot of platform specific hacks around this issue for
+> their secondary CPU bringup paths - some of which were buggy.
+> 
+> Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 
-When the kernel is entered from the decompressor, the last steps just
-before calling the kernel is to clean and invalidate the caches, then
-turn them off, and then jump to the kernel.
+For socfpga:
 
-So, there _should_ be no dirty cache lines which we rely upon at this
-point - if there was dirty data in the cache, then it hasn't been flushed
-to memory, and we're potentially going to crash because some part of
-the decompressed kernel image hasn't been flushed out to memory.
+Tested-by: Dinh Nguyen <dinguyen@opensource.altera.com>
 
-So I'll put a confidence value of 99.999% on this.
+Thanks,
+Dinh
 
-The case which might bite people is if they bypass the decompressor.
-Even then, leaving bits of the kernel image in the caches is really
-dodgy.
-
--- 
-FTTC broadband for 0.8mile line: currently at 10.5Mbps down 400kbps up
-according to speedtest.net.
