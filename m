@@ -1,31 +1,93 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 25 May 2015 01:04:39 +0000
-Subject: Re: [PATCH 0/4] serial: sh-sci: Add DMA support to the DT binding
-Message-Id: <20150525010438.GC24690@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 21 May 2015 10:48:02 +0000
+Subject: [PATCH v3 00/11] r8a7793 SoC, Gose board support
+Message-Id: <1432205293-9488-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432143987-10308-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432143987-10308-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Magnus Damm <magnus.damm@gmail.com>, devicetree@vger.kernel.org, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Geert,
+Hi!
 
-On Wed, May 20, 2015 at 07:46:23PM +0200, Geert Uytterhoeven wrote:
-> 	Hi Greg, Simon, Magnus,
-> 
-> This patch series adds DMA support to the DT binding documentation for
-> the various Renesas (H)SCI(F{,A,B}) serial ports, and adds the
-> corresponding properties to the Renesas R-Car Gen2 DT source files.
-> 
->   - Patch 1 updates the DT binding documentation.
->   - Patches 2-4 update the dtsi files.
-> 
-> Although the sh-sci driver itself doesn't support DT DMA properties
-> yet, it's safe to apply patches 2-4, as DT describes the hardware, not
-> the (current) features of the Linux driver implementation.
+This revision drops the merged PFC parts, uses CPU_METHOD_OF_DECLARE with
+enable-method to define the SMP ops as suggested by Laurent, and fixes the
+numerous tidbits found by Geert and Morimoto-san.  It also adds assorted
+Cc's and acks to the various DT binding patches.
 
-I would prefer for the new binding (documentation) to be accepted before
-updating the DT files.
+CU
+Uli
+
+
+Changes since v2:
+- dts: remove unused pins
+- dts: fix flash partition addresses
+- dts: add pmic
+- dtsi, dts: add CMTs
+- dts: add interrupt parent to regulator
+- smp, dtsi: use CPU_METHOD_OF_DECLARE, enable-method
+- smp: re-add rcar_gen2_pm_init() call
+- dtsi: add irqc0 clock
+- dtsi: add DMA controllers
+- dtsi: remove audmapp
+- dtsi: fix sdhi0 resource length
+- dtsi: add SDHI DMAs, remove unsupported properties
+- dtsi: add rcan, adsp clocks
+- dtsi: add missing MSTP4
+- dtsi: fix audmac clocks
+- dtsi: add MSIOF DMAs, remove unused register set
+- dtsi: copy sound description from r8a7791
+- enable rcar2 regulator quirk on Gose
+
+Changes since v1:
+
+- pfc: split patch in six
+- pfc: fixed typos
+- dts: named clock bits properly
+- dts: made more consistent with the very similar r8a7791 dts
+- dts: removed adv7511, don't know the address
+- pm: dropped for now, needs to be fixed up first
+- everywhere: renamed M2N -> M2-N (and M2 to M2-W, while at it)
+- everywhere: added Acks
+
+
+Ulrich Hecht (11):
+  ARM: shmobile: Basic r8a7793 SoC support
+  ARM: shmobile: add r8a7793 SoC device tree
+  ARM: shmobile: r8a7793: add Gose board device tree
+  ARM: shmobile: r8a7793: add SMP support
+  clk: shmobile: r8a7793: document DIV6 clock bindings
+  mmc: sh_mmcif: Document r8a7793 DT bindings
+  serial: sh-sci: Add device tree bindings for r8a7793
+  clk: shmobile: Add r8a7793 SoC to MSTP bindings
+  PCI: rcar: document r8a7793 DT bindings
+  clocksource: sh_cmt: Document r8a7793-specific bindings
+  ARM: shmobile: gose: enable R-Car Gen2 regulator quirk
+
+ .../bindings/clock/renesas,cpg-div6-clocks.txt     |    3 +-
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |    3 +-
+ .../devicetree/bindings/mmc/renesas,mmcif.txt      |    1 +
+ .../devicetree/bindings/pci/pci-rcar-gen2.txt      |    1 +
+ .../bindings/serial/renesas,sci-serial.txt         |   12 +-
+ .../devicetree/bindings/timer/renesas,cmt.txt      |    2 +
+ arch/arm/boot/dts/Makefile                         |    1 +
+ arch/arm/boot/dts/r8a7793-gose.dts                 |  535 ++++++++
+ arch/arm/boot/dts/r8a7793.dtsi                     | 1429 ++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                     |    4 +
+ arch/arm/mach-shmobile/Makefile                    |    2 +
+ arch/arm/mach-shmobile/r8a7793.h                   |    6 +
+ arch/arm/mach-shmobile/regulator-quirk-rcar-gen2.c |    3 +-
+ arch/arm/mach-shmobile/setup-r8a7793.c             |   34 +
+ arch/arm/mach-shmobile/smp-r8a7793.c               |   70 +
+ include/dt-bindings/clock/r8a7793-clock.h          |  164 +++
+ 16 files changed, 2263 insertions(+), 7 deletions(-)
+ create mode 100644 arch/arm/boot/dts/r8a7793-gose.dts
+ create mode 100644 arch/arm/boot/dts/r8a7793.dtsi
+ create mode 100644 arch/arm/mach-shmobile/r8a7793.h
+ create mode 100644 arch/arm/mach-shmobile/setup-r8a7793.c
+ create mode 100644 arch/arm/mach-shmobile/smp-r8a7793.c
+ create mode 100644 include/dt-bindings/clock/r8a7793-clock.h
+
+-- 
+2.3.5
+
