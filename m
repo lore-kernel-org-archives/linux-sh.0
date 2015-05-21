@@ -1,30 +1,34 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Wed, 06 May 2015 01:12:15 +0000
-Subject: Re: [RFC PATCH 3/7] pinctrl: sh-pfc: r8a7790: Add regulators for SD voltage switch
-Message-Id: <1430874735.4222.21.camel@xylophone.i.decadent.org.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 21 May 2015 11:58:30 +0000
+Subject: [PATCH] DMA: shdma: r8a73a4: Make dma_ts_shift[] static
+Message-Id: <1432209510-20449-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430396995.5802.39.camel@xylophone.i.decadent.org.uk>
-	 <1430397095.5802.42.camel@xylophone.i.decadent.org.uk>
-	 <CAPDyKFq_y6tv8Tcuc+LXqKr5bbqVC5YRQAPvO=Tq3n2+p6CZfw@mail.gmail.com>
-In-Reply-To: <CAPDyKFq_y6tv8Tcuc+LXqKr5bbqVC5YRQAPvO=Tq3n2+p6CZfw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Ian Molton <ian@mnementh.co.uk>, linux-mmc <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, linux-kernel@lists.codethink.co.uk
+To: linux-sh@vger.kernel.org
 
-On Tue, 2015-05-05 at 09:52 +0200, Ulf Hansson wrote:
-> On 30 April 2015 at 14:31, Ben Hutchings <ben.hutchings@codethink.co.uk> wrote:
-> > Model the choice of 1.8V or 3.3V signalling for each SD interface as a
-> > regulator.
-> >
-> > Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
-> 
-> You need also to send this to the pinctrl maintainer and the corresponding list.
-[...]
+dma_ts_shift[] isn't used outside this source file. All other users use
+the definition from arch/arm/mach-shmobile/dma-register.h.
 
-OK, will do next time.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/dma/sh/shdma-r8a73a4.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Ben.
-
+diff --git a/drivers/dma/sh/shdma-r8a73a4.c b/drivers/dma/sh/shdma-r8a73a4.c
+index 4fb99970a3ea9b56..96ea3828c3eb8213 100644
+--- a/drivers/dma/sh/shdma-r8a73a4.c
++++ b/drivers/dma/sh/shdma-r8a73a4.c
+@@ -11,7 +11,7 @@
+ 
+ #include "shdma-arm.h"
+ 
+-const unsigned int dma_ts_shift[] = SH_DMAE_TS_SHIFT;
++static const unsigned int dma_ts_shift[] = SH_DMAE_TS_SHIFT;
+ 
+ static const struct sh_dmae_slave_config dma_slaves[] = {
+ 	{
+-- 
+1.9.1
 
