@@ -1,70 +1,186 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 13 May 2015 00:08:50 +0000
-Subject: Re: [PATCH 5/7 v4] mmc: sh_mmcif: calculate best clock with parent clock
-Message-Id: <87k2wdfihl.wl%kuninori.morimoto.gx@renesas.com>
+Date: Thu, 21 May 2015 03:48:38 +0000
+Subject: [PATCH 1/4 v2] dmaengine: rcar-dmac: fixup spinlock in rcar-dmac
+Message-Id: <877fs2twwm.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
-	<87d22vgt8u.wl%kuninori.morimoto.gx@renesas.com>
-	<874mo7gsza.wl%kuninori.morimoto.gx@renesas.com>
-	<8472238.ZvlxlsYeIr@avalon>
-In-Reply-To: <8472238.ZvlxlsYeIr@avalon>
+References: <878ucitwyh.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <878ucitwyh.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Mike Turquette <mturquette@linaro.org>, Ulf Hansson <ulf.hansson@linaro.org>, Simon <horms@verge.net.au>, linux-mmc <linux-mmc@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, kobayashi <keita.kobayashi.ym@renesas.com>, devicetree@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>
+Cc: Simon <horms@verge.net.au>, Nguyen Viet Dung <nv-dung@jinso.co.jp>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Cao Minh Hiep <cm-hiep@jinso.co.jp>, sakato <ryusuke.sakato.bx@renesas.com>, dmaengine@vger.kernel.org
 
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Laurent
+Current rcar-dmac driver is using spin_lock_irq() / spin_unlock_irq()
+in some functions. But, some other driver might call DMAEngine API
+during interrupt disabled. In such case, rcar-dmac side spin_unlock_irq()
+forcefully allows all interrupts. Therefore, other driver receives
+unexpected interruption, and its exclusive access control will be broken.
+This patch replaces spin_lock_irq() to spin_lock_irqsave(),
+and spin_unlock_irq() to spin_unlock_irqrestore().
 
-Thank you for your feedback
-
-> > diff --git a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> > b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt index
-> > 299081f..eb50f4e 100644
-> > --- a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> > +++ b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> > @@ -14,6 +14,8 @@ Required properties:
-> > 
-> >  - clocks: reference to the functional clock
-> > 
-> > +- clk-range: parent clock range
-> > +
-> 
-> I think the idea of a DT property to specify the admissible range for clock 
-> frequencies is good. However, I have a couple of small comments regarding the 
-> implementation.
-> 
-> First of all, this doesn't seem Renesas-specific to me (feel free to disagree, 
-> but in that case the property should probably be called renesas,clk-range). 
-> Wouldn't it make sense to specify the property in 
-> Documentation/devicetree/bindings/clock/clock-bindings.txt instead ?
-> 
-> Then, I think the documentation should be clarified a bit, as "parent clock 
-> range" is probably a bit vague for people who haven't followed the development 
-> of this patch series. How about something like "range of admissible 
-> frequencies for the input clock" ?
-> 
-> There's already a clock-ranges property with a totally different meaning. 
-> That's quite confusing, it would thus be good to rename clk-range. How about 
-> clock-freq-range or clock-frequency-range ?
-> 
-> Finally, if a DT node references several clocks in its clocks property, we 
-> need a way to specify the range for each of them.
-
-I didn't tell you about this, but actually I created v5 patch
-(it is under test stage now, I will send it to ML soon)
-which doesn't add new DT property.
-
-This v4 added new property for clock frequencies, and it was Geert's idea.
-This is just my opinion, and I don't know this is good match for DT,
-but, this clock frequencies range depends on each SoC, and we are already
-using SoC based "compatible" on DT. This means we can (should ?) get each SoC
-specific feature (which is not related to each platform/board) from "compatible".
-Thus, v5 patch gets clock frequency range from SoC based "compatible".
-
-Thank you for your help, please check my next v5 patch.
-
-Best regards
+Reported-by: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
 ---
-Kuninori Morimoto
+v1 -> v2
+
+ - .device_free_chan_resources() doesn't use spin_lock_irqsave()
+ - rcar_dmac_isr_channel_thread() doesn't use spin_lock_irqsave()
+
+ drivers/dma/sh/rcar-dmac.c | 37 +++++++++++++++++++++----------------
+ 1 file changed, 21 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index a18d16c..e0302c7 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -465,6 +465,7 @@ static dma_cookie_t rcar_dmac_tx_submit(struct dma_async_tx_descriptor *tx)
+ static int rcar_dmac_desc_alloc(struct rcar_dmac_chan *chan, gfp_t gfp)
+ {
+ 	struct rcar_dmac_desc_page *page;
++	unsigned long flags;
+ 	LIST_HEAD(list);
+ 	unsigned int i;
+ 
+@@ -482,10 +483,10 @@ static int rcar_dmac_desc_alloc(struct rcar_dmac_chan *chan, gfp_t gfp)
+ 		list_add_tail(&desc->node, &list);
+ 	}
+ 
+-	spin_lock_irq(&chan->lock);
++	spin_lock_irqsave(&chan->lock, flags);
+ 	list_splice_tail(&list, &chan->desc.free);
+ 	list_add_tail(&page->node, &chan->desc.pages);
+-	spin_unlock_irq(&chan->lock);
++	spin_unlock_irqrestore(&chan->lock, flags);
+ 
+ 	return 0;
+ }
+@@ -516,6 +517,7 @@ static void rcar_dmac_desc_put(struct rcar_dmac_chan *chan,
+ static void rcar_dmac_desc_recycle_acked(struct rcar_dmac_chan *chan)
+ {
+ 	struct rcar_dmac_desc *desc, *_desc;
++	unsigned long flags;
+ 	LIST_HEAD(list);
+ 
+ 	/*
+@@ -524,9 +526,9 @@ static void rcar_dmac_desc_recycle_acked(struct rcar_dmac_chan *chan)
+ 	 * list_for_each_entry_safe, isn't safe if we release the channel lock
+ 	 * around the rcar_dmac_desc_put() call.
+ 	 */
+-	spin_lock_irq(&chan->lock);
++	spin_lock_irqsave(&chan->lock, flags);
+ 	list_splice_init(&chan->desc.wait, &list);
+-	spin_unlock_irq(&chan->lock);
++	spin_unlock_irqrestore(&chan->lock, flags);
+ 
+ 	list_for_each_entry_safe(desc, _desc, &list, node) {
+ 		if (async_tx_test_ack(&desc->async_tx)) {
+@@ -539,9 +541,9 @@ static void rcar_dmac_desc_recycle_acked(struct rcar_dmac_chan *chan)
+ 		return;
+ 
+ 	/* Put the remaining descriptors back in the wait list. */
+-	spin_lock_irq(&chan->lock);
++	spin_lock_irqsave(&chan->lock, flags);
+ 	list_splice(&list, &chan->desc.wait);
+-	spin_unlock_irq(&chan->lock);
++	spin_unlock_irqrestore(&chan->lock, flags);
+ }
+ 
+ /*
+@@ -556,12 +558,13 @@ static void rcar_dmac_desc_recycle_acked(struct rcar_dmac_chan *chan)
+ static struct rcar_dmac_desc *rcar_dmac_desc_get(struct rcar_dmac_chan *chan)
+ {
+ 	struct rcar_dmac_desc *desc;
++	unsigned long flags;
+ 	int ret;
+ 
+ 	/* Recycle acked descriptors before attempting allocation. */
+ 	rcar_dmac_desc_recycle_acked(chan);
+ 
+-	spin_lock_irq(&chan->lock);
++	spin_lock_irqsave(&chan->lock, flags);
+ 
+ 	while (list_empty(&chan->desc.free)) {
+ 		/*
+@@ -570,17 +573,17 @@ static struct rcar_dmac_desc *rcar_dmac_desc_get(struct rcar_dmac_chan *chan)
+ 		 * allocated descriptors. If the allocation fails return an
+ 		 * error.
+ 		 */
+-		spin_unlock_irq(&chan->lock);
++		spin_unlock_irqrestore(&chan->lock, flags);
+ 		ret = rcar_dmac_desc_alloc(chan, GFP_NOWAIT);
+ 		if (ret < 0)
+ 			return NULL;
+-		spin_lock_irq(&chan->lock);
++		spin_lock_irqsave(&chan->lock, flags);
+ 	}
+ 
+ 	desc = list_first_entry(&chan->desc.free, struct rcar_dmac_desc, node);
+ 	list_del(&desc->node);
+ 
+-	spin_unlock_irq(&chan->lock);
++	spin_unlock_irqrestore(&chan->lock, flags);
+ 
+ 	return desc;
+ }
+@@ -593,6 +596,7 @@ static struct rcar_dmac_desc *rcar_dmac_desc_get(struct rcar_dmac_chan *chan)
+ static int rcar_dmac_xfer_chunk_alloc(struct rcar_dmac_chan *chan, gfp_t gfp)
+ {
+ 	struct rcar_dmac_desc_page *page;
++	unsigned long flags;
+ 	LIST_HEAD(list);
+ 	unsigned int i;
+ 
+@@ -606,10 +610,10 @@ static int rcar_dmac_xfer_chunk_alloc(struct rcar_dmac_chan *chan, gfp_t gfp)
+ 		list_add_tail(&chunk->node, &list);
+ 	}
+ 
+-	spin_lock_irq(&chan->lock);
++	spin_lock_irqsave(&chan->lock, flags);
+ 	list_splice_tail(&list, &chan->desc.chunks_free);
+ 	list_add_tail(&page->node, &chan->desc.pages);
+-	spin_unlock_irq(&chan->lock);
++	spin_unlock_irqrestore(&chan->lock, flags);
+ 
+ 	return 0;
+ }
+@@ -627,9 +631,10 @@ static struct rcar_dmac_xfer_chunk *
+ rcar_dmac_xfer_chunk_get(struct rcar_dmac_chan *chan)
+ {
+ 	struct rcar_dmac_xfer_chunk *chunk;
++	unsigned long flags;
+ 	int ret;
+ 
+-	spin_lock_irq(&chan->lock);
++	spin_lock_irqsave(&chan->lock, flags);
+ 
+ 	while (list_empty(&chan->desc.chunks_free)) {
+ 		/*
+@@ -638,18 +643,18 @@ rcar_dmac_xfer_chunk_get(struct rcar_dmac_chan *chan)
+ 		 * allocated descriptors. If the allocation fails return an
+ 		 * error.
+ 		 */
+-		spin_unlock_irq(&chan->lock);
++		spin_unlock_irqrestore(&chan->lock, flags);
+ 		ret = rcar_dmac_xfer_chunk_alloc(chan, GFP_NOWAIT);
+ 		if (ret < 0)
+ 			return NULL;
+-		spin_lock_irq(&chan->lock);
++		spin_lock_irqsave(&chan->lock, flags);
+ 	}
+ 
+ 	chunk = list_first_entry(&chan->desc.chunks_free,
+ 				 struct rcar_dmac_xfer_chunk, node);
+ 	list_del(&chunk->node);
+ 
+-	spin_unlock_irq(&chan->lock);
++	spin_unlock_irqrestore(&chan->lock, flags);
+ 
+ 	return chunk;
+ }
+-- 
+1.9.1
+
