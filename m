@@ -1,73 +1,80 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 18 May 2015 06:04:48 +0000
-Subject: Re: [PATCH/RFC] i2c: rcar: Fix order of restart and clear status
-Message-Id: <20150518060448.GA17523@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 21 May 2015 03:49:54 +0000
+Subject: [PATCH 3/4 v2] ASoC: rsnd: add rsnd_dai_stream_quit()
+Message-Id: <874mn6twui.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1424011396-3492-1-git-send-email-ykaneko0929@gmail.com>
- <b0a6dd2b593f2f891946ef910c876b48@the-dreams.de>
- <20150304040819.GB12776@verge.net.au>
- <20150306220531.GA6572@katana>
- <20150307103349.GA1194@katana>
- <20150327131044.GB19151@katana>
- <20150330001530.GA1549@verge.net.au>
-In-Reply-To: <20150330001530.GA1549@verge.net.au>
+References: <878ucitwyh.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <878ucitwyh.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: Yoshihiro Kaneko <ykaneko0929@gmail.com>, linux-i2c@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>, Mark Brown <broonie@kernel.org>
+Cc: Simon <horms@verge.net.au>, Nguyen Viet Dung <nv-dung@jinso.co.jp>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Cao Minh Hiep <cm-hiep@jinso.co.jp>, sakato <ryusuke.sakato.bx@renesas.com>, dmaengine@vger.kernel.org
 
-Hi Wolfram,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Mon, Mar 30, 2015 at 09:15:30AM +0900, Simon Horman wrote:
-> On Fri, Mar 27, 2015 at 02:10:45PM +0100, Wolfram Sang wrote:
-> > On Sat, Mar 07, 2015 at 11:33:49AM +0100, Wolfram Sang wrote:
-> > > On Fri, Mar 06, 2015 at 11:05:31PM +0100, Wolfram Sang wrote:
-> > > > 
-> > > > > I asked Kataoka-san about this and his response was as follows:
-> > > > 
-> > > > Thanks, Simon!
-> > > > 
-> > > > > If system(CPU) is busy, the driver can't clear the status register soon
-> > > > > after kicking start.
-> > > > > 
-> > > > > If sequence of first start is as follows, there is a problem.
-> > > > > Because H/W starts by 1.
-> > > > > But sequence of re-start is as follows, there is no problem.
-> > > > > Because H/W starts by 2.
-> > > > > 
-> > > > >   1. Issue START condition by ESG bit of ICMCR register.
-> > > > >                   <--- If there is too much time, H/W finish transmitting
-> > > > >                        and set status in status register.
-> > > > >   2. Clear interrupt status (ICMSR).
-> > > > >   3. Open interrupt mask.
-> > > > >   4. Wait interrupt.
-> > > > >                   <--- If status is cleared, interrupt does not occur.
-> > > > 
-> > > > I understand. I'll add this explanation to the patch and apply it soon.
-> > > 
-> > > Sorry, another question came up while applying:
-> > > 
-> > > How can this interruption happen? The function is called in a
-> > > spin_lock_irqsave protected area. Is this an RT_PREEMPT related issue?
-> > > Am I missing something?
-> > 
-> > Hi,
-> > 
-> > any news on this one?
-> 
-> Sorry, I seem to have dropped the ball here. I've (finally) forwarded
-> your question on to the BSP team.
+Current Renesas R-Car sound driver calls rsnd_dai_stream_init() when
+start, but it didn't call paired function. This patch adds
+rsnd_dai_stream_quit() for it. This is prepare for interrupt error
+status check feature support.
 
-Thanks for your patience, I have a response from the BSP team:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Tested by: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+---
+v1 -> v2
 
-rcar_i2c_start(), rcar_i2c_recv() and rcar_i2c_send() are called in a
-spin_lock_irqsave protected area. Therefore, interruption and preemption
-doesn't happen in these functions.
+ - no change, but added Hiep's Test-by
 
-But I think the driver should work fine even if the CPU is very slow.
-If above sequence 1 and 2 are slow, and if H/W is fast, there is a problem.
+ sound/soc/sh/rcar/core.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
-Since H/W is kicked by sequence 1 then the driver waits the change of status,
-sequence 2 should be executed before sequence 1 even if the CPU is fast enough.
-I think it is a custom of software.
+diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
+index 405cacd..2b7323c 100644
+--- a/sound/soc/sh/rcar/core.c
++++ b/sound/soc/sh/rcar/core.c
+@@ -315,7 +315,7 @@ void rsnd_dai_pointer_update(struct rsnd_dai_stream *io, int byte)
+ 	}
+ }
+ 
+-static int rsnd_dai_stream_init(struct rsnd_dai_stream *io,
++static void rsnd_dai_stream_init(struct rsnd_dai_stream *io,
+ 				struct snd_pcm_substream *substream)
+ {
+ 	struct snd_pcm_runtime *runtime = substream->runtime;
+@@ -327,8 +327,11 @@ static int rsnd_dai_stream_init(struct rsnd_dai_stream *io,
+ 				  runtime->channels *
+ 				  samples_to_bytes(runtime, 1);
+ 	io->next_period_byte	= io->byte_per_period;
++}
+ 
+-	return 0;
++static void rsnd_dai_stream_quit(struct rsnd_dai_stream *io)
++{
++	io->substream		= NULL;
+ }
+ 
+ static
+@@ -363,9 +366,7 @@ static int rsnd_soc_dai_trigger(struct snd_pcm_substream *substream, int cmd,
+ 
+ 	switch (cmd) {
+ 	case SNDRV_PCM_TRIGGER_START:
+-		ret = rsnd_dai_stream_init(io, substream);
+-		if (ret < 0)
+-			goto dai_trigger_end;
++		rsnd_dai_stream_init(io, substream);
+ 
+ 		ret = rsnd_platform_call(priv, dai, start, ssi_id);
+ 		if (ret < 0)
+@@ -391,6 +392,8 @@ static int rsnd_soc_dai_trigger(struct snd_pcm_substream *substream, int cmd,
+ 		ret = rsnd_platform_call(priv, dai, stop, ssi_id);
+ 		if (ret < 0)
+ 			goto dai_trigger_end;
++
++		rsnd_dai_stream_quit(io);
+ 		break;
+ 	default:
+ 		ret = -EINVAL;
+-- 
+1.9.1
+
