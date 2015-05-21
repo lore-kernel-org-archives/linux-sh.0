@@ -1,40 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 29 May 2015 00:54:09 +0000
-Subject: [PATCH 01/10] ARM: shmobile: lager dts: Replace "nor-jedec" by "jedec,spi-nor"
-Message-Id: <755185b279171d78a12f879d06502866c6173b04.1432860632.git.horms+renesas@verge.net.au>
-List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1432860632.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1432860632.git.horms+renesas@verge.net.au>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
-
 From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 21 May 2015 11:42:24 +0000
+Subject: [PATCH v2 0/2] Fix OF match for adxl34x driver
+Message-Id: <1432208546-18615-1-git-send-email-geert+renesas@glider.be>
+List-Id: <linux-sh.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Wolfram Sang <wsa@the-dreams.de>, linux-input@vger.kernel.org, linux-i2c@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Cfr. commit 8947e396a8296c52 ('Documentation: dt: mtd: replace
-"nor-jedec" binding with "jedec, spi-nor"')
+	Hi Dmitry,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Brian Norris <computersforpeace@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+This is a resent of a series by Laurent Pinchart to fix OF matching for
+the adxl34x driver.
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index b6cffcedd116..2eb8a995ae9f 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -429,7 +429,7 @@
- 	flash: flash@0 {
- 		#address-cells = <1>;
- 		#size-cells = <1>;
--		compatible = "spansion,s25fl512s", "nor-jedec";
-+		compatible = "spansion,s25fl512s", "jedec,spi-nor";
- 		reg = <0>;
- 		spi-max-frequency = <30000000>;
- 		spi-tx-bus-width = <4>;
--- 
-2.1.4
+According to the discussion in response to that series, we were under
+the impression this was going in through the input tree
+(http://www.spinics.net/lists/linux-i2c/msg18293.html).
 
+In input patchwork, the series is still marked "Awaiting Upstream"
+(https://patchwork.ozlabs.org/project/linux-i2c/list/?state=3D*&q=ADxl),
+but actually we are waiting for you, as we can't update the affected DTS
+before the driver fix has gone in ;-)
+
+From Laurent's submission:
+
+    This patch set fixes OF matching for the adxl34x driver when the DT
+    node lists a device-specific "adi,adxl345" or "adi,adxl346"
+    compatible value first.
+
+    The first version (see
+    http://www.spinics.net/lists/linux-i2c/msg18107.html) added an OF
+    match entry for the "adi,adxl34x" compatible string. The discussion
+    that followed concluded that that compatible string should be
+    deprecated and that the driver should match the device-specific
+    strings instead.
+
+    The first patch thus deprecates the "adi,adxl34x" compatible string
+    by removing it the DT trivial devices list, and the second patch
+    then adds an OF match table to the adxl34x driver.
+
+Thanks for applying!
+
+Laurent Pinchart (2):
+  DT: i2c: Deprecate adi,adxl34x compatible string
+  input: adxl34x: Add OF match support
+
+ .../devicetree/bindings/i2c/trivial-devices.txt     |  3 +--
+ drivers/input/misc/adxl34x-i2c.c                    | 21 +++++++++++++++++=
+++++
+ 2 files changed, 22 insertions(+), 2 deletions(-)
+
+--=20
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+							    -- Linus Torvalds
