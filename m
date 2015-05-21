@@ -1,87 +1,67 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 14 May 2015 12:42:19 +0000
-Subject: [PATCH] iommu/ipmmu-vmsa: Replace spinlock with mutex
-Message-Id: <1431607339-27378-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 21 May 2015 11:21:37 +0000
+Subject: [PATCH v2] gpio: rcar: Check for irq_set_irq_wake() failures
+Message-Id: <1432207297-16887-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>
+Cc: Marc Zyngier <marc.zyngier@arm.com>, Axel Haslam <ahaslam@baylibre.com>, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The spinlock is used to protect domain initialization when attaching a
-device, which allocates memory with GFP_KERNEL. Replace it with a mutex
-as the initialization always runs in a sleepable context.
+If an interrupt controller doesn't support wake-up configuration,
+irq_set_irq_wake() returns an error code.  Then any subsequent call
+trying to deconfigure wake-up will cause an imbalance, and a warning
+will be printed:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+    WARNING: CPU: 1 PID: 1341 at kernel/irq/manage.c:540 irq_set_irq_wake+0x9c/0xf8()
+    Unbalanced IRQ 26 wake disable
+
+To fix this, refrain from any further parent interrupt controller
+(de)configuration if irq_set_irq_wake() failed.
+
+Alternative fixes would be:
+  - calling "gic_set_irqchip_flags(IRQCHIP_SKIP_SET_WAKE)" from the
+    platform code,
+  - setting "gic_chip.flags = IRQCHIP_SKIP_SET_WAKE" in the GIC driver
+    code,
+but these were withheld as the GIC hardware doesn't really support
+wake-up interrupts.
+
+Fixes: ab82fa7da4dce5c7 ("gpio: rcar: Prevent module clock disable when wake-up is enabled")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/iommu/ipmmu-vmsa.c | 11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
+v2:
+  - Reworded patch description,
+  - Moved alternatives into the patch description.
+---
+ drivers/gpio/gpio-rcar.c | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/iommu/ipmmu-vmsa.c b/drivers/iommu/ipmmu-vmsa.c
-index 1a67c531a07e..24a950091458 100644
---- a/drivers/iommu/ipmmu-vmsa.c
-+++ b/drivers/iommu/ipmmu-vmsa.c
-@@ -16,6 +16,7 @@
- #include <linux/io.h>
- #include <linux/iommu.h>
- #include <linux/module.h>
-+#include <linux/mutex.h>
- #include <linux/of.h>
- #include <linux/platform_device.h>
- #include <linux/sizes.h>
-@@ -44,7 +45,7 @@ struct ipmmu_vmsa_domain {
- 	struct io_pgtable_ops *iop;
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index fd39774659484fa6..1e14a6c74ed13941 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -177,8 +177,17 @@ static int gpio_rcar_irq_set_wake(struct irq_data *d, unsigned int on)
+ 	struct gpio_chip *gc = irq_data_get_irq_chip_data(d);
+ 	struct gpio_rcar_priv *p = container_of(gc, struct gpio_rcar_priv,
+ 						gpio_chip);
+-
+-	irq_set_irq_wake(p->irq_parent, on);
++	int error;
++
++	if (p->irq_parent) {
++		error = irq_set_irq_wake(p->irq_parent, on);
++		if (error) {
++			dev_dbg(&p->pdev->dev,
++				"irq %u doesn't support irq_set_wake\n",
++				p->irq_parent);
++			p->irq_parent = 0;
++		}
++	}
  
- 	unsigned int context_id;
--	spinlock_t lock;			/* Protects mappings */
-+	struct mutex lock;			/* Protects domain init */
- };
- 
- struct ipmmu_vmsa_archdata {
-@@ -473,7 +474,7 @@ static struct iommu_domain *ipmmu_domain_alloc(unsigned type)
- 	if (!domain)
- 		return NULL;
- 
--	spin_lock_init(&domain->lock);
-+	mutex_init(&domain->lock);
- 
- 	return &domain->io_domain;
- }
-@@ -488,6 +489,7 @@ static void ipmmu_domain_free(struct iommu_domain *io_domain)
- 	 */
- 	ipmmu_domain_destroy_context(domain);
- 	free_io_pgtable_ops(domain->iop);
-+	mutex_destroy(&domain->lock);
- 	kfree(domain);
- }
- 
-@@ -497,7 +499,6 @@ static int ipmmu_attach_device(struct iommu_domain *io_domain,
- 	struct ipmmu_vmsa_archdata *archdata = dev->archdata.iommu;
- 	struct ipmmu_vmsa_device *mmu = archdata->mmu;
- 	struct ipmmu_vmsa_domain *domain = to_vmsa_domain(io_domain);
--	unsigned long flags;
- 	unsigned int i;
- 	int ret = 0;
- 
-@@ -506,7 +507,7 @@ static int ipmmu_attach_device(struct iommu_domain *io_domain,
- 		return -ENXIO;
- 	}
- 
--	spin_lock_irqsave(&domain->lock, flags);
-+	mutex_lock(&domain->lock);
- 
- 	if (!domain->mmu) {
- 		/* The domain hasn't been used yet, initialize it. */
-@@ -522,7 +523,7 @@ static int ipmmu_attach_device(struct iommu_domain *io_domain,
- 		ret = -EINVAL;
- 	}
- 
--	spin_unlock_irqrestore(&domain->lock, flags);
-+	mutex_unlock(&domain->lock);
- 
- 	if (ret < 0)
- 		return ret;
+ 	if (!p->clk)
+ 		return 0;
 -- 
-2.3.6
+1.9.1
 
