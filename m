@@ -1,46 +1,89 @@
-From: Luis Henriques <luis.henriques@canonical.com>
-Date: Wed, 06 May 2015 10:35:25 +0000
-Subject: Re: [3.16.y-ckt stable] Patch "ARM: shmobile: r8a7791: Correct SDHI clock labels and output-names" h
-Message-Id: <20150506103525.GB1691@ares.olymp>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 21 May 2015 10:48:03 +0000
+Subject: [PATCH v3 01/11] ARM: shmobile: Basic r8a7793 SoC support
+Message-Id: <1432205293-9488-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdUcXZZdof-OOowWJ9wuwQeD9Hu5qOp=CKvVO0KttbAdsw@mail.gmail.com>
-In-Reply-To: <CAMuHMdUcXZZdof-OOowWJ9wuwQeD9Hu5qOp=CKvVO0KttbAdsw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, May 06, 2015 at 12:28:34PM +0200, Geert Uytterhoeven wrote:
-> Hi Luis,
->=20
-> On Wed, May 6, 2015 at 11:52 AM, Luis Henriques
-> <luis.henriques@canonical.com> wrote:
-> > This is a note to let you know that I have just added a patch titled
-> >
-> >     ARM: shmobile: r8a7791: Correct SDHI clock labels and output-names
-> >
-> > to the linux-3.16.y-queue branch of the 3.16.y-ckt extended stable tree
-> > which can be found at:
-> >
-> >     http://kernel.ubuntu.com/git/ubuntu/linux.git/log/?h=3Dlinux-3.16.y=
--queue
-> >
-> > This patch is scheduled to be released in version 3.16.7-ckt11.
-> >
-> > If you, or anyone else, feels it should not be added to this tree, plea=
-se
-> > reply to this email.
->=20
-> Unless you want to queue other patches that depend on this, I don't think
-> there's a need to backport this to -stable:
->   - Changing the names of the labels doesn't have any visible effects,
->     as the phandles referring to them are changed, too,
->   - IIRC, nothing relies on the (changed) names of qclock-output-names.
->
+Minimal support without power management or SMP.
 
-Ok, that makes sense to me -- patch dropped from the 3.16 queue.
-Thank you for you review.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/Kconfig         |  4 ++++
+ arch/arm/mach-shmobile/Makefile        |  1 +
+ arch/arm/mach-shmobile/setup-r8a7793.c | 33 +++++++++++++++++++++++++++++++++
+ 3 files changed, 38 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/setup-r8a7793.c
 
-Cheers,
---
-Lu=EDs
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 4500647..c59d75e 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -80,6 +80,10 @@ config ARCH_R8A7791
+ 	select ARCH_RCAR_GEN2
+ 	select I2C
+ 
++config ARCH_R8A7793
++	bool "R-Car M2-N (R8A7793)"
++	select ARCH_RCAR_GEN2
++
+ config ARCH_R8A7794
+ 	bool "R-Car E2 (R8A77940)"
+ 	select ARCH_RCAR_GEN2
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 89e463d..e4b8fdb 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -13,6 +13,7 @@ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o pm-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
+ obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o
++obj-$(CONFIG_ARCH_R8A7793)	+= setup-r8a7793.o
+ obj-$(CONFIG_ARCH_R8A7794)	+= setup-r8a7794.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
+ obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
+diff --git a/arch/arm/mach-shmobile/setup-r8a7793.c b/arch/arm/mach-shmobile/setup-r8a7793.c
+new file mode 100644
+index 0000000..1d2825c
+--- /dev/null
++++ b/arch/arm/mach-shmobile/setup-r8a7793.c
+@@ -0,0 +1,33 @@
++/*
++ * r8a7793 processor support
++ *
++ * Copyright (C) 2015  Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/init.h>
++#include <asm/mach/arch.h>
++
++#include "common.h"
++#include "rcar-gen2.h"
++
++static const char *r8a7793_boards_compat_dt[] __initconst = {
++	"renesas,r8a7793",
++	NULL,
++};
++
++DT_MACHINE_START(R8A7793_DT, "Generic R8A7793 (Flattened Device Tree)")
++	.init_early	= shmobile_init_delay,
++	.init_time	= rcar_gen2_timer_init,
++	.init_late	= shmobile_init_late,
++	.reserve	= rcar_gen2_reserve,
++	.dt_compat	= r8a7793_boards_compat_dt,
++MACHINE_END
+-- 
+2.3.5
+
