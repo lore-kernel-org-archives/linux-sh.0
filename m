@@ -1,38 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 14 May 2015 01:06:42 +0000
-Subject: [PATCH 13/31] ARM: shmobile: r8a7791 dtsi: Use generic names for device nodes
-Message-Id: <6c63e07dcc2e941288d18e3fe9b448265f9ca9d0.1431565427.git.horms+renesas@verge.net.au>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Fri, 22 May 2015 09:59:37 +0000
+Subject: [PATCH 2/2] spi: Re-do the returning value of qspi_transfer_out_in
+Message-Id: <1432288777-7229-3-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1431565427.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
+References: <1432288777-7229-1-git-send-email-cm-hiep@jinso.co.jp>
+In-Reply-To: <1432288777-7229-1-git-send-email-cm-hiep@jinso.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: broonie@kernel.org, geert+renesas@glider.be, linux-spi@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, yoshihiro.shimoda.uh@renesas.com, ryusuke.sakato.bx@renesas.com, linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-rcar_sound -> sound
+To reduce complexity of code, drop "ret" then qspi_transfer_out_in function
+should return the value of "qspi_trigger_transfer_out_in" directly.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Hiep Cao Minh <cm-hiep@jinso.co.jp>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/spi/spi-rspi.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index d2c41ad701cc..30e1e13a228f 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1494,7 +1494,7 @@
- 		status = "disabled";
- 	};
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index ccef53a..b127042 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -771,12 +771,8 @@ static int qspi_transfer_out_in(struct rspi_data *rspi,
+ 	if (ret != -EAGAIN)
+ 		return ret;
  
--	rcar_sound: rcar_sound@ec500000 {
-+	rcar_sound: sound@ec500000 {
- 		/*
- 		 * #sound-dai-cells is required
- 		 *
+-	ret = qspi_trigger_transfer_out_in(rspi, xfer->tx_buf,
++	return qspi_trigger_transfer_out_in(rspi, xfer->tx_buf,
+ 					    xfer->rx_buf, xfer->len);
+-	if (ret < 0)
+-		return ret;
+-
+-	return 0;
+ }
+ 
+ static int qspi_transfer_out(struct rspi_data *rspi, struct spi_transfer *xfer)
 -- 
-2.1.4
+1.9.1
 
