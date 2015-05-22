@@ -1,38 +1,31 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 14 May 2015 01:06:41 +0000
-Subject: [PATCH 12/31] ARM: shmobile: r8a7790 dtsi: Use generic names for device nodes
-Message-Id: <b694e3807b5b12273ba057e8cfcf82c2331606e0.1431565427.git.horms+renesas@verge.net.au>
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Fri, 22 May 2015 09:59:35 +0000
+Subject: [PATCH 0/2 v3] spi: Re-do correctly function name and return value
+Message-Id: <1432288777-7229-1-git-send-email-cm-hiep@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1431565427.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: broonie@kernel.org, geert+renesas@glider.be, linux-spi@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, yoshihiro.shimoda.uh@renesas.com, ryusuke.sakato.bx@renesas.com, linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
 
-rcar_sound -> sound
+Hi Mark-san,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+I added "Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>" in two patches.
+Please consider the following patches for the Rcar-Gen2.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 22e73906ec88..c9055e39b8bb 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1451,7 +1451,7 @@
- 		status = "disabled";
- 	};
- 
--	rcar_sound: rcar_sound@ec500000 {
-+	rcar_sound: sound@ec500000 {
- 		/*
- 		 * #sound-dai-cells is required
- 		 *
+Best Regards,
+Cao Minh Hiep.
+
+Hiep Cao Minh (2):
+  spi: modify the name of "qspi_trigger_transfer_out_int" function
+  spi: Re-do the returning value of qspi_transfer_out_in
+
+ drivers/spi/spi-rspi.c | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
+
 -- 
-2.1.4
+1.9.1
 
