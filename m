@@ -1,47 +1,31 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 21 May 2015 11:42:25 +0000
-Subject: [PATCH v2 1/2] DT: i2c: Deprecate adi,adxl34x compatible string
-Message-Id: <1432208546-18615-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 22 May 2015 01:32:40 +0000
+Subject: Re: [PATCH v2 1/2] DT: i2c: Deprecate adi,adxl34x compatible string
+Message-Id: <20150522013239.GE27511@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1432208546-18615-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432208546-18615-1-git-send-email-geert+renesas@glider.be>
+ <1432208546-18615-2-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1432208546-18615-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Wolfram Sang <wsa@the-dreams.de>, linux-input@vger.kernel.org, linux-i2c@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Wolfram Sang <wsa@the-dreams.de>, linux-input@vger.kernel.org, linux-i2c@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On Thu, May 21, 2015 at 01:42:25PM +0200, Geert Uytterhoeven wrote:
+> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> 
+> DT nodes should use the more specific adi,adxl345 and adi,adxl346
+> compatible values instead. As the ADXL346 is backward-compatible with
+> the ADXL345, ADXL346 nodes must list both adi,adxl346 and adi,adxl345,
+> in that order.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Acked-by: Wolfram Sang <wsa@the-dreams.de>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+> v2:
+>   - Add Acked-by.
 
-DT nodes should use the more specific adi,adxl345 and adi,adxl346
-compatible values instead. As the ADXL346 is backward-compatible with
-the ADXL345, ADXL346 nodes must list both adi,adxl346 and adi,adxl345,
-in that order.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Wolfram Sang <wsa@the-dreams.de>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v2:
-  - Add Acked-by.
-
- Documentation/devicetree/bindings/i2c/trivial-devices.txt | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/i2c/trivial-devices.txt b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-index ad0c4ac916dd75ed..00f8652e193a940c 100644
---- a/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-+++ b/Documentation/devicetree/bindings/i2c/trivial-devices.txt
-@@ -19,8 +19,7 @@ adi,adt7475		+/-1C TDM Extended Temp Range I.C
- adi,adt7476		+/-1C TDM Extended Temp Range I.C
- adi,adt7490		+/-1C TDM Extended Temp Range I.C
- adi,adxl345		Three-Axis Digital Accelerometer
--adi,adxl346		Three-Axis Digital Accelerometer
--adi,adxl34x		Three-Axis Digital Accelerometer
-+adi,adxl346		Three-Axis Digital Accelerometer (backward-compatibility value "adi,adxl345" must be listed too)
- at,24c08		i2c serial eeprom  (24cxx)
- atmel,24c00		i2c serial eeprom  (24cxx)
- atmel,24c01		i2c serial eeprom  (24cxx)
--- 
-1.9.1
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
 
