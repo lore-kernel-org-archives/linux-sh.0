@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 22 May 2015 07:36:32 +0000
+From: Michal Simek <michal.simek@xilinx.com>
+Date: Fri, 22 May 2015 10:45:12 +0000
 Subject: Re: [PATCH] ARM: v7 setup function should invalidate L1 cache
-Message-Id: <CAMuHMdX=T3CsLTT95H_07Si6Kd8SRraBfxADpn+VtAF4GmZ=mw@mail.gmail.com>
+Message-Id: <555F08B8.5060606@xilinx.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <E1Yuk8W-0001tC-IK@rmk-PC.arm.linux.org.uk>
 In-Reply-To: <E1Yuk8W-0001tC-IK@rmk-PC.arm.linux.org.uk>
@@ -10,17 +10,16 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, May 19, 2015 at 6:12 PM, Russell King
-<rmk+kernel@arm.linux.org.uk> wrote:
+On 05/19/2015 06:12 PM, Russell King wrote:
 > All ARMv5 and older CPUs invalidate their caches in the early assembly
 > setup function, prior to enabling the MMU.  This is because the L1
 > cache should not contain any data relevant to the execution of the
 > kernel at this point; all data should have been flushed out to memory.
->
+> 
 > This requirement should also be true for ARMv6 and ARMv7 CPUs - indeed,
 > these typically do not search their caches when caching is disabled (as
 > it needs to be when the MMU is disabled) so this change should be safe.
->
+> 
 > ARMv7 allows there to be CPUs which search their caches while caching is
 > disabled, and it's permitted that the cache is uninitialised at boot;
 > for these, the architecture reference manual requires that an
@@ -29,28 +28,24 @@ On Tue, May 19, 2015 at 6:12 PM, Russell King
 > functionality is definitely outside the remit of the Linux kernel, and
 > must be done by the SoC's firmware before _any_ CPU gets to the Linux
 > kernel.
->
+> 
 > Changing the data cache clean+invalidate to a mere invalidate allows us
 > to get rid of a lot of platform specific hacks around this issue for
 > their secondary CPU bringup paths - some of which were buggy.
->
+> 
 > Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+> ---
 
-For various shmobile:
-  - sh73a0/kzm9g
-  - r8a7740/armadillo
-  - r8a73a4/ape6evm
-  - r8a7791/koelsch
+...
 
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>  arch/arm/mach-zynq/common.h           |  2 --
+>  arch/arm/mach-zynq/headsmp.S          |  5 -----
+>  arch/arm/mach-zynq/platsmp.c          |  5 ++---
 
-Gr{oetje,eeting}s,
+For Zynq:
+Tested-by: Michal Simek <michal.simek@xilinx.com>
 
-                        Geert
+Thanks,
+Michal
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
