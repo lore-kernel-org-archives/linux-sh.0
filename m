@@ -1,58 +1,51 @@
-From: Jiang Liu <jiang.liu@linux.intel.com>
-Date: Wed, 20 May 2015 15:24:34 +0000
-Subject: Re: [RFC v1 10/25] sh: intc: Use irq_desc_get_xxx() to avoid redundant lookup of irq_desc
-Message-Id: <555CA732.3050600@linux.intel.com>
+From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Date: Fri, 22 May 2015 23:32:45 +0000
+Subject: Re: [PATCH v2 0/2] Fix OF match for adxl34x driver
+Message-Id: <20150522233245.GB20687@dtor-ws>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432116013-25902-1-git-send-email-jiang.liu@linux.intel.com> <1432116013-25902-11-git-send-email-jiang.liu@linux.intel.com> <alpine.DEB.2.11.1505201705110.4225@nanos>
-In-Reply-To: <alpine.DEB.2.11.1505201705110.4225@nanos>
+References: <1432208546-18615-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1432208546-18615-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>
-Cc: Bjorn Helgaas <bhelgaas@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Randy Dunlap <rdunlap@infradead.org>, Yinghai Lu <yinghai@kernel.org>, Borislav Petkov <bp@alien8.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>, Tony Luck <tony.luck@intel.com>, x86@kernel.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-acpi@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Wolfram Sang <wsa@the-dreams.de>, linux-input@vger.kernel.org, linux-i2c@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
 
-On 2015/5/20 23:12, Thomas Gleixner wrote:
-> On Wed, 20 May 2015, Jiang Liu wrote:
-> 
->> Use irq_desc_get_xxx() to avoid redundant lookup of irq_desc while we
->> already have a pointer to corresponding irq_desc.
->>
->> Also replace generic_handle_irq with generic_handle_irq_desc() to avoid
->> looking up irq_desc again.
->>
->> Signed-off-by: Jiang Liu <jiang.liu@linux.intel.com>
->> ---
->>  drivers/sh/intc/core.c |    2 +-
->>  drivers/sh/intc/virq.c |   14 ++++++++------
->>  2 files changed, 9 insertions(+), 7 deletions(-)
->>
->> diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
->> index 81f22980b2de..e4ca964ca840 100644
->> --- a/drivers/sh/intc/core.c
->> +++ b/drivers/sh/intc/core.c
->> @@ -67,7 +67,7 @@ void intc_set_prio_level(unsigned int irq, unsigned int level)
->>  
->>  static void intc_redirect_irq(unsigned int irq, struct irq_desc *desc)
->>  {
->> -	generic_handle_irq((unsigned int)irq_get_handler_data(irq));
->> +	generic_handle_irq_desc(irq, desc);
-> 
-> This looks wrong. It's a redirector of irq to some other irq.
-> 
->      	redir_irq = (unsigned int)irq_get_handler_data(irq);
-> 
-> which should be:
-> 
->         redir_irq = (unsigned int)irq_desc_get_irq_handler_data(desc);
-> 
-> And redir_irq is certainly not the same as irq. So this wants a
-> conversion to irq_desc_get_irq_handler_data() first. That makes the
-> irq argument unused.
+On Thu, May 21, 2015 at 01:42:24PM +0200, Geert Uytterhoeven wrote:
+> 	Hi Dmitry,
+>=20
+> This is a resent of a series by Laurent Pinchart to fix OF matching for
+> the adxl34x driver.
+>=20
+> According to the discussion in response to that series, we were under
+> the impression this was going in through the input tree
+> (http://www.spinics.net/lists/linux-i2c/msg18293.html).
+>=20
+> In input patchwork, the series is still marked "Awaiting Upstream"
+> (https://patchwork.ozlabs.org/project/linux-i2c/list/?state=3D*&q=ADxl),
+> but actually we are waiting for you, as we can't update the affected DTS
+> before the driver fix has gone in ;-)
+>=20
+> From Laurent's submission:
+>=20
+>     This patch set fixes OF matching for the adxl34x driver when the DT
+>     node lists a device-specific "adi,adxl345" or "adi,adxl346"
+>     compatible value first.
+>=20
+>     The first version (see
+>     http://www.spinics.net/lists/linux-i2c/msg18107.html) added an OF
+>     match entry for the "adi,adxl34x" compatible string. The discussion
+>     that followed concluded that that compatible string should be
+>     deprecated and that the driver should match the device-specific
+>     strings instead.
+>=20
+>     The first patch thus deprecates the "adi,adxl34x" compatible string
+>     by removing it the DT trivial devices list, and the second patch
+>     then adds an OF match table to the adxl34x driver.
+>=20
+> Thanks for applying!
 
-Good catch, will fix it in next version.
+Applied and sorry for the delay.
 
-> 
-> Thanks,
-> 
-> 	tglx
-> 
+--=20
+Dmitry
