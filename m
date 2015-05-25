@@ -1,7 +1,7 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 06 May 2015 13:12:39 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 25 May 2015 01:08:24 +0000
 Subject: Re: [PATCH] ARM: shmobile: lager: Fix adv7511 IRQ sensing
-Message-Id: <2387192.erSazv8kcO@avalon>
+Message-Id: <20150525010823.GE24690@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1430885131-6098-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1430885131-6098-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -10,47 +10,57 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Ben,
+Hi Ben, Hi Laurent,
 
-On Wednesday 06 May 2015 12:34:34 Ben Hutchings wrote:
-> On Wed, 2015-05-06 at 07:05 +0300, Laurent Pinchart wrote:
-> > The adv7511 IRQ is low level triggered, not falling edge triggered. The
-> > wrong sense configuration results in no interrupt being triggered at
-> > all, breaking hotplug detection. Fix it.
-> > 
-> > Reported-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> > 
-> >  arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > Ben, would you be able to test this ? I won't have access to my Lager
-> > board before Sunday.
+On Wed, May 06, 2015 at 04:12:39PM +0300, Laurent Pinchart wrote:
+> Hi Ben,
 > 
-> I only have remote access to a Lager at present, so I would need to pass
-> this on to a colleague.
-
-No worries. Worst case I'll try it when I get back home.
-
-> > diff --git a/arch/arm/boot/dts/r8a7790-lager.dts
-> > b/arch/arm/boot/dts/r8a7790-lager.dts index 46f4c56c287c..21782e6b37f7
-> > 100644
-> > --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> > +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> > @@ -548,7 +548,7 @@
-> >  		compatible = "adi,adv7511w";
-> >  		reg = <0x39>;
-> >  		interrupt-parent = <&gpio1>;
-> > -		interrupts = <15 IRQ_TYPE_EDGE_FALLING>;
-> > +		interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
+> On Wednesday 06 May 2015 12:34:34 Ben Hutchings wrote:
+> > On Wed, 2015-05-06 at 07:05 +0300, Laurent Pinchart wrote:
+> > > The adv7511 IRQ is low level triggered, not falling edge triggered. The
+> > > wrong sense configuration results in no interrupt being triggered at
+> > > all, breaking hotplug detection. Fix it.
+> > > 
+> > > Reported-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+> > > Signed-off-by: Laurent Pinchart
+> > > <laurent.pinchart+renesas@ideasonboard.com>
+> > > ---
+> > > 
+> > >  arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
+> > >  1 file changed, 1 insertion(+), 1 deletion(-)
+> > > 
+> > > Ben, would you be able to test this ? I won't have access to my Lager
+> > > board before Sunday.
 > > 
-> >  		adi,input-depth = <8>;
-> >  		adi,input-colorspace = "rgb";
+> > I only have remote access to a Lager at present, so I would need to pass
+> > this on to a colleague.
+> 
+> No worries. Worst case I'll try it when I get back home.
 
--- 
-Regards,
+Did anyone manage to test this?
 
-Laurent Pinchart
-
+> > > diff --git a/arch/arm/boot/dts/r8a7790-lager.dts
+> > > b/arch/arm/boot/dts/r8a7790-lager.dts index 46f4c56c287c..21782e6b37f7
+> > > 100644
+> > > --- a/arch/arm/boot/dts/r8a7790-lager.dts
+> > > +++ b/arch/arm/boot/dts/r8a7790-lager.dts
+> > > @@ -548,7 +548,7 @@
+> > >  		compatible = "adi,adv7511w";
+> > >  		reg = <0x39>;
+> > >  		interrupt-parent = <&gpio1>;
+> > > -		interrupts = <15 IRQ_TYPE_EDGE_FALLING>;
+> > > +		interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
+> > > 
+> > >  		adi,input-depth = <8>;
+> > >  		adi,input-colorspace = "rgb";
+> 
+> -- 
+> Regards,
+> 
+> Laurent Pinchart
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
