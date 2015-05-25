@@ -1,93 +1,72 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 15 May 2015 01:15:14 +0000
-Subject: RE: [PATCH 2/2] pwm: Add support for R-Car PWM Timer
-Message-Id: <SG2PR06MB091997734E32D64228F0268ED8C70@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 25 May 2015 01:12:54 +0000
+Subject: Re: [PATCH 2/2] ARM: multi_v7_defconfig: Enable shmobile r8a7778/bockw platform
+Message-Id: <20150525011253.GF24690@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431509238-7648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-	<1431509238-7648-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <CAMuHMdV872yQ7crviCjzn7eEV7FaZPLpA08KnUkaGAUUX-UdCg@mail.gmail.com>
-In-Reply-To: <CAMuHMdV872yQ7crviCjzn7eEV7FaZPLpA08KnUkaGAUUX-UdCg@mail.gmail.com>
+References: <1425471261-25110-1-git-send-email-geert+renesas@glider.be>
+ <1425471261-25110-3-git-send-email-geert+renesas@glider.be>
+ <20150304225522.GB2470@verge.net.au>
+In-Reply-To: <20150304225522.GB2470@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Thierry Reding <thierry.reding@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "linux-pwm@vger.kernel.org" <linux-pwm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-SGkgR2VlcnQtc2FuLA0KDQpUaGFuayB5b3UgZm9yIHlvdXIgcmV2aWV3IQ0KDQo+IFNlbnQ6IEZy
-aWRheSwgTWF5IDE1LCAyMDE1IDE6MDcgQU0NCj4gDQo+IEhpIFNoaW1vZGEtc2FuLA0KPiANCj4g
-T24gV2VkLCBNYXkgMTMsIDIwMTUgYXQgMTE6MjcgQU0sIFlvc2hpaGlybyBTaGltb2RhDQo+IDx5
-b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2FzLmNvbT4gd3JvdGU6DQo+ID4gUi1DYXIgU29DcyBo
-YXZlIGEgc2V2ZW4tY2hhbm5lbCBwdWxzZSB3aWR0aCBtb2R1bGF0aW9uIChQV00pIHRpbWVyLg0K
-PiA+IFRoaXMgZHJpdmVyIGFkZHMgc3VwcG9ydCBmb3IgdGhlIFBXTSBUaW1lciBhcyBhIHNpbmds
-ZSBQV00gY2hpcCBhbmQNCj4gPiBzZXZlbiBQV00gZGV2aWNlcy4NCj4gDQo+IFRoYW5rcyBmb3Ig
-eW91ciBwYXRjaCENCj4gDQo+ID4gZGlmZiAtLWdpdCBhL2RyaXZlcnMvcHdtL0tjb25maWcgYi9k
-cml2ZXJzL3B3bS9LY29uZmlnDQo+ID4gaW5kZXggYjE1NDFmNC4uN2U5ODE3NSAxMDA2NDQNCj4g
-PiAtLS0gYS9kcml2ZXJzL3B3bS9LY29uZmlnDQo+ID4gKysrIGIvZHJpdmVycy9wd20vS2NvbmZp
-Zw0KPiA+IEBAIC0yNDksNiArMjQ5LDE3IEBAIGNvbmZpZyBQV01fUFhBDQo+ID4gICAgICAgICAg
-IFRvIGNvbXBpbGUgdGhpcyBkcml2ZXIgYXMgYSBtb2R1bGUsIGNob29zZSBNIGhlcmU6IHRoZSBt
-b2R1bGUNCj4gPiAgICAgICAgICAgd2lsbCBiZSBjYWxsZWQgcHdtLXB4YS4NCj4gPg0KPiA+ICtj
-b25maWcgUFdNX1JDQVINCj4gPiArICAgICAgIHRyaXN0YXRlICJSZW5lc2FzIFItQ2FyIFBXTSBz
-dXBwb3J0Ig0KPiA+ICsgICAgICAgZGVwZW5kcyBvbiBBUkNIX1NITU9CSUxFIHx8IENPTVBJTEVf
-VEVTVA0KPiANCj4gQ291bGQgYmUgaW5zdGVhZA0KPiANCj4gZGVwZW5kcyBvbiBBUkNIX1JDQVJf
-R0VOMSB8fCAgQVJDSF9SQ0FSX0dFTjIgfHwgQ09NUElMRV9URVNUDQoNCkkgd2lsbCBmaXggdGhp
-cy4NCg0KPiA+ICsgICAgICAgZGVwZW5kcyBvbiBIQVNfSU9NRU0NCj4gPiArICAgICAgIGhlbHAN
-Cj4gPiArICAgICAgICAgVGhpcyBkcml2ZXIgZXhwb3NlcyB0aGUgUFdNIFRpbWVyIGNvbnRyb2xs
-ZXIgZm91bmQgaW4gUmVuZXNhcw0KPiA+ICsgICAgICAgICBjaGlwcyB0aHJvdWdoIHRoZSBQV00g
-QVBJLg0KPiANCj4gIlJlbmVzYXMgUi1DYXIgY2hpcHMiIChlLmcuIFItTW9iaWxlIHVzZXMgcHdt
-LXJlbmVzYXMtdHB1KS4NCg0KSSB3aWxsIGZpeCB0aGlzLg0KDQo+ID4gLS0tIC9kZXYvbnVsbA0K
-PiA+ICsrKyBiL2RyaXZlcnMvcHdtL3B3bS1yY2FyLmMNCjwgc25pcCA+DQo+ID4gKyNkZWZpbmUg
-TlVNX1JDQVJfUFdNX0NIQU5ORUxTICA3DQo+IA0KPiBJJ20gd29uZGVyaW5nIHdoZXRoZXIgdGhp
-cyBzaG91bGQgYmUgYSBEVCBwcm9wZXJ0eSwgdG8gcHJlcGFyZSBmb3INCj4gZnV0dXJlIGV4cGFu
-c2lvbi4NCj4gQWx0ZXJuYXRpdmVseSwgYXMgdGhlc2UgYXJlIHJlYWxseSA3IGluZGl2aWR1YWwg
-Y2hhbm5lbHMsIHdpdGggNyBpbmRpdmlkdWFsDQo+IHJlZ2lzdGVyIGJsb2NrcyBzcGFjZWQgMHgx
-MDAwIGFwYXJ0LCB5b3UgY291bGQgaGF2ZSA3IGluZGl2aWR1YWwgZGV2aWNlIG5vZGVzLA0KPiBl
-YWNoIGRyaXZpbmcgb25lIHB3bSBvdXRwdXQuIFRoYXQgd291bGQgcHJvYmFibHkgaW5jdXIgbW9y
-ZSBvdmVyaGVhZCwgYXMNCj4gdGhlcmUgd291bGQgYmUgNyBpbmRpdmlkdWFsIHB3bSBjb250cm9s
-bGVycy4gQnV0IGl0IGRvZXMgYWxsb3cgZm9yIGZ1dHVyZQ0KPiBleHBhbnNpb24sIGFuZCBhbGxv
-d3MgdG8gY29wZSB3aGVuIHRoZSBpbmRpdmlkdWFsIHJlZ2lzdGVyIGJsb2NrcyBhcmUgbW92ZWQN
-Cj4gaW4gdGhlIFNvQyBhZGRyZXNzIHNwYWNlIChJIGNhbiBpbWFnaW5lIHRoYXQgb24gb2xkIFNv
-Q3MgZS5nLiBhbGwgU0NJRg0KPiBibG9ja3Mgd2VyZSBuaWNlbHkgbGF5IG91dCBpbiB0aGUgYWRk
-cmVzcyBzcGFjZSwgd2hpbGUgbm93IHRoZXkgaGF2ZSBhcmJpdHJhcnkNCj4gYmFzZSBhZGRyZXNz
-ZXMpLg0KPiANCj4gV2hhdCBkbyBvdGhlciBwZW9wbGUgdGhpbms/DQoNCk15IGluaXRpYWwgZGV2
-ZWxvcG1lbnQsIEkgd3JvdGUgNyBpbmRpdmlkdWFsIGRldmljZSBub2Rlcy4gSG93ZXZlciwgYWZ0
-ZXIgdGhlIGRyaXZlcg0Kd2FzIHByb3ZlZCwgdGhlIHN5c2ZzIGZvciBwd20gaXM6DQogL3N5cy9j
-bGFzcy9wd20vcHdtY2hpcDAvcHdtMA0KIC9zeXMvY2xhc3MvcHdtL3B3bWNoaXAxL3B3bTANCiAu
-Li4NCiAvc3lzL2NsYXNzL3B3bS9wd21jaGlwNi9wd20wDQoNCkkgZmVsdCB0aGlzIHdhcyBzdHJh
-bmdlIG51bWJlcmluZyBhIGxpdHRsZS4NClNvLCBJIGNoYW5nZWQgdGhlIHN0eWxlIHRvIG9uZSBw
-d20gY2hpcCBhbmQgNyBwd20gY2hhbm5lbHM6DQogL3N5cy9jbGFzcy9wd20vcHdtY2hpcDAvcHdt
-MA0KIC9zeXMvY2xhc3MvcHdtL3B3bWNoaXAwL3B3bTENCiAuLi4NCiAvc3lzL2NsYXNzL3B3bS9w
-d21jaGlwMC9wd202DQoNCkknbSBub3Qgc3VyZSB3aGljaCBzdHlsZSBpcyBnb29kIGZvciB0aGUg
-UFdNIElQLg0KDQo+ID4gK3N0YXRpYyBpbnQgcmNhcl9wd25fZ2V0X2Nsb2NrX2RpdmlzaW9uKHN0
-cnVjdCByY2FyX3B3bV9jaGlwICpycCwNCj4gPiArICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICBpbnQgcGVyaW9kX25zKQ0KPiA+ICt7DQo+ID4gKyAgICAgICBpbnQgZGl2Ow0K
-PiA+ICsgICAgICAgdW5zaWduZWQgbG9uZyBjbGtfcmF0ZSA9IGNsa19nZXRfcmF0ZShycC0+Y2xr
-KTsNCj4gPiArICAgICAgIHVuc2lnbmVkIGxvbmcgbG9uZyBtYXg7IC8qIG1heCBjeWNsZSAvIG5h
-bm9zZWNvbmRzICovDQo+ID4gKw0KPiA+ICsgICAgICAgZm9yIChkaXYgPSAwOyBkaXYgPD0gUkNB
-Ul9QV01fTUFYX0RJVklTSU9OOyBkaXYrKykgew0KPiA+ICsgICAgICAgICAgICAgICBtYXggPSAo
-dW5zaWduZWQgbG9uZyBsb25nKU5TRUNfUEVSX1NFQyAqIFJDQVJfUFdNX01BWF9DWUNMRTsNCj4g
-PiArICAgICAgICAgICAgICAgZG9fZGl2KG1heCwgY2xrX3JhdGUgLyAoMSA8PCBkaXYpKTsNCj4g
-DQo+IERpdmlkaW5nIGNsa19yYXRlIGJ5ICIxIDw8IGRpdiIgcmVkdWNlcyBhY2N1cmFjeSBhIGxv
-dCBmb3IgbGFyZ2UgdmFsdWVzIG9mIGRpdi4NCj4gIk5TRUNfUEVSX1NFQyAqIFJDQVJfUFdNX01B
-WF9DWUNMRSAqICgxIDw8IGRpdikiIGp1c3QgZml0cyBpbiA2NC1iaXQsDQo+IHNvIHlvdSBjYW4g
-dXNlDQo+IA0KPiAgICAgICAgIG1heCA9ICh1bnNpZ25lZCBsb25nIGxvbmcpTlNFQ19QRVJfU0VD
-ICogUkNBUl9QV01fTUFYX0NZQ0xFICoNCj4gICAgICAgICAgICAgICAoMSA8PCBkaXYpOw0KPiAg
-ICAgICAgIGRvX2RpdihtYXgsIGNsa19yYXRlKTsNCg0KVGhhbmsgeW91IHZlcnkgbXVjaCBmb3Ig
-dGhlIHN1Z2dlc3Rpb24uIEkgd2lsbCBmaXggdGhpcyBpbiB2Mi4NCg0KPiA+ICtzdGF0aWMgdm9p
-ZCByY2FyX3B3bV9zZXRfY291bnRlcihzdHJ1Y3QgcmNhcl9wd21fY2hpcCAqcnAsIGludCBjaGFu
-bmVsLA0KPiA+ICsgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGludCBkaXYsIGludCBk
-dXR5X25zLCBpbnQgcGVyaW9kX25zKQ0KPiA+ICt7DQo+ID4gKyAgICAgICB1bnNpZ25lZCBsb25n
-IGxvbmcgb25lX2N5Y2xlLCB0bXA7ICAgICAgLyogMC4wMSBuYW5vc2Vjb25kcyAqLw0KPiA+ICsg
-ICAgICAgdW5zaWduZWQgbG9uZyBjbGtfcmF0ZSA9IGNsa19nZXRfcmF0ZShycC0+Y2xrKTsNCj4g
-PiArICAgICAgIHUzMiBjeWMsIHBoOw0KPiA+ICsNCj4gPiArICAgICAgIG9uZV9jeWNsZSA9ICh1
-bnNpZ25lZCBsb25nIGxvbmcpTlNFQ19QRVJfU0VDICogMTAwOw0KPiA+ICsgICAgICAgZG9fZGl2
-KG9uZV9jeWNsZSwgY2xrX3JhdGUgLyAoMSA8PCBkaXYpKTsNCj4gDQo+IFNhbWUgaGVyZToNCj4g
-DQo+ICAgICAgICAgb25lX2N5Y2xlID0gKHVuc2lnbmVkIGxvbmcgbG9uZylOU0VDX1BFUl9TRUMg
-KiAxMDAgKiAoMSA8PCBkaXYpDQo+ICAgICAgICAgZG9fZGl2KG9uZV9jeWNsZSwgY2xrX3JhdGUp
-Ow0KDQpJIHdpbGwgZml4IHRoaXMgaW4gdjIuDQoNCkJlc3QgcmVnYXJkcywNCllvc2hpaGlybyBT
-aGltb2RhDQoNCj4gR3J7b2V0amUsZWV0aW5nfXMsDQo+IA0KPiAgICAgICAgICAgICAgICAgICAg
-ICAgICBHZWVydA0KPiANCj4gLS0NCj4gR2VlcnQgVXl0dGVyaG9ldmVuIC0tIFRoZXJlJ3MgbG90
-cyBvZiBMaW51eCBiZXlvbmQgaWEzMiAtLSBnZWVydEBsaW51eC1tNjhrLm9yZw0KPiANCj4gSW4g
-cGVyc29uYWwgY29udmVyc2F0aW9ucyB3aXRoIHRlY2huaWNhbCBwZW9wbGUsIEkgY2FsbCBteXNl
-bGYgYSBoYWNrZXIuIEJ1dA0KPiB3aGVuIEknbSB0YWxraW5nIHRvIGpvdXJuYWxpc3RzIEkganVz
-dCBzYXkgInByb2dyYW1tZXIiIG9yIHNvbWV0aGluZyBsaWtlIHRoYXQuDQo+ICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgLS0gTGludXMgVG9ydmFsZHMNCg=
+Hi Geert,
+
+On Thu, Mar 05, 2015 at 07:55:23AM +0900, Simon Horman wrote:
+> On Wed, Mar 04, 2015 at 01:14:21PM +0100, Geert Uytterhoeven wrote:
+> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> 
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+
+Quite some time has passed and during that time I have come to
+understand from Arnd that it is appropriate for me to take changes like
+this one.
+
+I have queued this up for 4.2 accordingly.
+
+> > ---
+> >   - Derived from r8a7778-bockw.dtb using
+> >     https://github.com/geertu/linux-scripts/blob/master/linux-config-from-dt
+> >   - Not tested on bockw due to lack of hardware
+> > ---
+> >  arch/arm/configs/multi_v7_defconfig | 3 +++
+> >  1 file changed, 3 insertions(+)
+> > 
+> > diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+> > index b7e6b6fba5e0f0d6..fa1ecbcfe08cb127 100644
+> > --- a/arch/arm/configs/multi_v7_defconfig
+> > +++ b/arch/arm/configs/multi_v7_defconfig
+> > @@ -67,6 +67,7 @@ CONFIG_ARCH_EMEV2=y
+> >  CONFIG_ARCH_R7S72100=y
+> >  CONFIG_ARCH_R8A73A4=y
+> >  CONFIG_ARCH_R8A7740=y
+> > +CONFIG_ARCH_R8A7778=y
+> >  CONFIG_ARCH_R8A7779=y
+> >  CONFIG_ARCH_R8A7790=y
+> >  CONFIG_ARCH_R8A7791=y
+> > @@ -377,6 +378,7 @@ CONFIG_V4L_MEM2MEM_DRIVERS=y
+> >  CONFIG_VIDEO_RENESAS_VSP1=m
+> >  # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
+> >  CONFIG_VIDEO_ADV7180=m
+> > +CONFIG_VIDEO_ML86V7667=m
+> >  CONFIG_DRM=y
+> >  CONFIG_DRM_RCAR_DU=m
+> >  CONFIG_DRM_TEGRA=y
+> > @@ -493,6 +495,7 @@ CONFIG_RTC_DRV_TWL4030=y
+> >  CONFIG_RTC_DRV_TPS6586X=y
+> >  CONFIG_RTC_DRV_TPS65910=y
+> >  CONFIG_RTC_DRV_S35390A=m
+> > +CONFIG_RTC_DRV_RX8581=m
+> >  CONFIG_RTC_DRV_EM3027=y
+> >  CONFIG_RTC_DRV_PL031=y
+> >  CONFIG_RTC_DRV_VT8500=y
+> > -- 
+> > 1.9.1
+> > 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
