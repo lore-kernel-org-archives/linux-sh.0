@@ -1,51 +1,49 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 21 May 2015 10:50:10 +0000
-Subject: [RFC 0/3] Generic R-Car Gen2 SoC setup
-Message-Id: <1432205413-9584-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 26 May 2015 11:13:43 +0000
+Subject: [PATCH 2/2] usb: renesas_usbhs: Don't disable the pipe if Control write status stage
+Message-Id: <1432638823-3028-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi!
+This patch fixes an issue that sometimes this controller is not able
+to complete the Control write status stage.
 
-This is an attempt to implement the consolidation of R-Car Gen2 SoC setup
-code suggested by Laurent.  In order to preserve DT compatibility, it is
-currently limited to r8a7793 (which is new) and r8a7794 (which doesn't have
-SMP in upstream yet).
+This driver should enable DCPCTR.CCPL and PID_BUF to complete the status
+stage. However, if this driver detects the ctrl_stage interruption first
+before the control write data is received, this driver will clear the
+PID_BUF wrongly in the usbhsf_pio_try_pop(). To avoid this issue, this
+patch doesn't clear the PID_BUF in the usbhsf_pio_try_pop().
+(Since also the privious code doesn't disable the PID_BUF after a control
+ transfer was finished, this patch doesn't have any side efforts.)
 
-Even though it would not be possible to apply this to r8a7790 and r8a7791
-without breaking DT compatibility, it still looks like a good idea to me to
-include their respective DT_MACHINE_START bits in setup-rcar-gen2.c and
-eliminate the setup files to keep everything in one place (and reduce
-boilerplate).
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/usb/renesas_usbhs/fifo.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
-This series depends on version 3 of the "r8a7793 SoC, Gose board support"
-series.
-
-CU
-Uli
-
-
-Ulrich Hecht (3):
-  ARM: shmobile: rcar-gen2: Add generic "renesas,rcar-gen2" machine
-  ARM: shmobile: r8a7793: use generic "renesas,rcar-gen2" machine
-  ARM: shmobile: r8a7794: use generic "renesas,rcar-gen2" machine
-
- Documentation/devicetree/bindings/arm/shmobile.txt |  8 +++--
- arch/arm/boot/dts/r8a7793-gose.dts                 |  2 +-
- arch/arm/boot/dts/r8a7793.dtsi                     |  2 +-
- arch/arm/boot/dts/r8a7794-alt.dts                  |  2 +-
- arch/arm/boot/dts/r8a7794.dtsi                     |  2 +-
- arch/arm/mach-shmobile/Makefile                    |  2 --
- arch/arm/mach-shmobile/setup-r8a7793.c             | 34 ----------------------
- arch/arm/mach-shmobile/setup-r8a7794.c             | 33 ---------------------
- arch/arm/mach-shmobile/setup-rcar-gen2.c           | 13 +++++++++
- 9 files changed, 23 insertions(+), 75 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/setup-r8a7793.c
- delete mode 100644 arch/arm/mach-shmobile/setup-r8a7794.c
-
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index 0bad84e..c0f5c65 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -678,7 +678,14 @@ static int usbhsf_pio_try_pop(struct usbhs_pkt *pkt, int *is_done)
+ 		*is_done = 1;
+ 		usbhsf_rx_irq_ctrl(pipe, 0);
+ 		usbhs_pipe_running(pipe, 0);
+-		usbhs_pipe_disable(pipe);	/* disable pipe first */
++		/*
++		 * If function mode, since this controller is possible to enter
++		 * Control Write status stage at this timing, this driver
++		 * should not disable the pipe. If such a case happens, this
++		 * controller is not able to complete the status stage.
++		 */
++		if (!usbhs_mod_is_host(priv) && !usbhs_pipe_is_dcp(pipe))
++			usbhs_pipe_disable(pipe);	/* disable pipe first */
+ 	}
+ 
+ 	/*
 -- 
-2.3.5
+1.9.1
 
