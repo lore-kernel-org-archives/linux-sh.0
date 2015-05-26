@@ -1,53 +1,58 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 04 May 2015 15:24:29 +0000
-Subject: [PATCH v3 3/6] ARM: shmobile: r8a7740: Migrate to generic l2c OF initialization
-Message-Id: <1430753072-17145-4-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 26 May 2015 15:01:55 +0000
+Subject: [PATCH 2/3] drm: rcar-du: Clarify error message when encoder initialization fails
+Message-Id: <1432652516-15085-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
+References: <1432652516-15085-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1432652516-15085-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: Cao Minh Hiep <cm-hiep@jinso.co.jp>, linux-sh@vger.kernel.org
 
-Migrate the generic r8a7740 platform from calling l2x0_of_init() to the
-generic l2c OF initialization.
+A failure to initialize an encoder currently prints an error message in
+the kernel log without mentioning which encoder failed to initialize. To
+help debugging initialization issues print the encoder DT node name.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This requires moving the error message to the rcar_du_encoders_init_one
+function and refactoring it slightly.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v3:
-  - Use 0/~0 now DT supports "arm,shared-override",
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
 
-v2:
-  - Keep only {,~}L2C_AUX_CTRL_SHARED_OVERRIDE.
----
- arch/arm/mach-shmobile/setup-r8a7740.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 9832e48396a40a92..5dbb40d5c56b6495 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -835,10 +835,6 @@ static void __init r8a7740_generic_init(void)
- {
- 	r8a7740_meram_workaround();
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 4bb5af4bc474..bca859ad204c 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -639,7 +639,15 @@ static int rcar_du_encoders_init_one(struct rcar_du_device *rcdu,
+ 	of_node_put(encoder);
+ 	of_node_put(connector);
  
--#ifdef CONFIG_CACHE_L2X0
--	/* Shared attribute override enable, 32K*8way */
--	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
--#endif
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-	return ret < 0 ? ret : 1;
++	if (!ret)
++		return 1;
++
++	if (ret != -EPROBE_DEFER)
++		dev_warn(rcdu->dev,
++			 "failed to initialize encoder %s (%d), skipping\n",
++			 encoder->full_name, ret);
++
++	return 0;
  }
  
-@@ -848,6 +844,8 @@ static const char *r8a7740_boards_compat_dt[] __initdata = {
- };
+ static int rcar_du_encoders_init(struct rcar_du_device *rcdu)
+@@ -688,8 +696,6 @@ static int rcar_du_encoders_init(struct rcar_du_device *rcdu)
+ 				return ret;
+ 			}
  
- DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
-+	.l2c_aux_val	= 0,
-+	.l2c_aux_mask	= ~0,
- 	.map_io		= r8a7740_map_io,
- 	.init_early	= shmobile_init_delay,
- 	.init_irq	= r8a7740_init_irq_of,
+-			dev_info(rcdu->dev,
+-				 "encoder initialization failed, skipping\n");
+ 			continue;
+ 		}
+ 
 -- 
-1.9.1
+2.3.6
 
