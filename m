@@ -1,68 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 14 May 2015 01:06:30 +0000
-Subject: [PATCH 01/31] ARM: shmobile: r8a7790: Remove MSIOF address from device tree
-Message-Id: <c7d1f08a0c91ad9796d6d1fac8eb913e8a6d4288.1431565427.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 26 May 2015 11:13:42 +0000
+Subject: [PATCH 1/2] usb: renesas_usbhs: Fix fifo unclear in usbhsf_prepare_pop
+Message-Id: <1432638823-3028-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1431565427.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-MSIOF Base Address H'E6xx can be accessed by CPU and DMAC.
-MSIOF Base Address H'E7xx for DMAC was removed from H/W manual.
+This patch fixes an issue for control write. When usbhsf_prepare_pop()
+is called after this driver called a gadget setup function, this controller
+doesn't receive the control write data. So, this patch adds a code to clear
+the fifo for control write in usbhsf_prepare_pop().
 
-Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ drivers/usb/renesas_usbhs/fifo.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 4bb2f4c17321..f3b8430070b6 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1273,7 +1273,7 @@
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index bc23b4a..0bad84e 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -611,6 +611,8 @@ struct usbhs_pkt_handle usbhs_fifo_pio_push_handler = {
+ static int usbhsf_prepare_pop(struct usbhs_pkt *pkt, int *is_done)
+ {
+ 	struct usbhs_pipe *pipe = pkt->pipe;
++	struct usbhs_priv *priv = usbhs_pipe_to_priv(pipe);
++	struct usbhs_fifo *fifo = usbhsf_get_cfifo(priv);
  
- 	msiof0: spi@e6e20000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6e20000 0 0x0064>, <0 0xe7e20000 0 0x0064>;
-+		reg = <0 0xe6e20000 0 0x0064>;
- 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7790_CLK_MSIOF0>;
- 		dmas = <&dmac0 0x51>, <&dmac0 0x52>;
-@@ -1285,7 +1285,7 @@
+ 	if (usbhs_pipe_is_busy(pipe))
+ 		return 0;
+@@ -624,6 +626,9 @@ static int usbhsf_prepare_pop(struct usbhs_pkt *pkt, int *is_done)
+ 	usbhs_pipe_data_sequence(pipe, pkt->sequence);
+ 	pkt->sequence = -1; /* -1 sequence will be ignored */
  
- 	msiof1: spi@e6e10000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6e10000 0 0x0064>, <0 0xe7e10000 0 0x0064>;
-+		reg = <0 0xe6e10000 0 0x0064>;
- 		interrupts = <0 157 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF1>;
- 		dmas = <&dmac0 0x55>, <&dmac0 0x56>;
-@@ -1297,7 +1297,7 @@
- 
- 	msiof2: spi@e6e00000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6e00000 0 0x0064>, <0 0xe7e00000 0 0x0064>;
-+		reg = <0 0xe6e00000 0 0x0064>;
- 		interrupts = <0 158 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF2>;
- 		dmas = <&dmac0 0x41>, <&dmac0 0x42>;
-@@ -1309,7 +1309,7 @@
- 
- 	msiof3: spi@e6c90000 {
- 		compatible = "renesas,msiof-r8a7790";
--		reg = <0 0xe6c90000 0 0x0064>, <0 0xe7c90000 0 0x0064>;
-+		reg = <0 0xe6c90000 0 0x0064>;
- 		interrupts = <0 159 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7790_CLK_MSIOF3>;
- 		dmas = <&dmac0 0x45>, <&dmac0 0x46>;
++	if (usbhs_pipe_is_dcp(pipe))
++		usbhsf_fifo_clear(pipe, fifo);
++
+ 	usbhs_pipe_set_trans_count_if_bulk(pipe, pkt->length);
+ 	usbhs_pipe_enable(pipe);
+ 	usbhs_pipe_running(pipe, 1);
 -- 
-2.1.4
+1.9.1
 
