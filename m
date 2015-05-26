@@ -1,55 +1,112 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 04 May 2015 15:24:30 +0000
-Subject: [PATCH v3 4/6] ARM: shmobile: armadillo legacy: Migrate to generic l2c OF initialization
-Message-Id: <1430753072-17145-5-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 26 May 2015 15:01:54 +0000
+Subject: [PATCH 1/3] drm: rcar-du: Fix crash with groups that have less than 9 planes
+Message-Id: <1432652516-15085-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
+References: <1432652516-15085-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1432652516-15085-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org, Cao Minh Hiep <cm-hiep@jinso.co.jp>
 
-Migrate the generic r8a7740 platform from calling l2x0_of_init() to the
-generic l2c OF initialization.
+Commit 917de180379d ("drm: rcar-du: Implement universal plane support")
+made the number of planes per group dynamic, but didn't update all loops
+over the planes array, resulting in out-of-bound accesses on DU
+instances that have an odd number of CRTCs (such as the R8A7790). Fix
+it.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Fixes: 917de180379d ("drm: rcar-du: Implement universal plane support")
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v3:
-  - Use 0/~0 now DT supports "arm,shared-override",
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c  | 4 ++--
+ drivers/gpu/drm/rcar-du/rcar_du_group.h | 2 ++
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c   | 2 +-
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 5 ++---
+ 4 files changed, 7 insertions(+), 6 deletions(-)
 
-v2:
-  - Keep only {,~}L2C_AUX_CTRL_SHARED_OVERRIDE.
----
- arch/arm/mach-shmobile/board-armadillo800eva.c | 8 ++------
- 1 file changed, 2 insertions(+), 6 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index bf37e3c532f661a6..e77fe29db4658357 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1308,12 +1308,6 @@ static void __init eva_init(void)
- 		sdhi1 = &sdhi1_device;
- 	}
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index a40085806f5b..65d6ba6621ac 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -214,7 +214,7 @@ static void rcar_du_crtc_update_planes(struct rcar_du_crtc *rcrtc)
+ 	unsigned int i;
+ 	u32 dspr = 0;
  
--
--#ifdef CONFIG_CACHE_L2X0
--	/* Shared attribute override enable, 32K*8way */
--	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
--#endif
--
- 	i2c_register_board_info(0, i2c0_devices, ARRAY_SIZE(i2c0_devices));
- 	i2c_register_board_info(2, i2c2_devices, ARRAY_SIZE(i2c2_devices));
+-	for (i = 0; i < ARRAY_SIZE(rcrtc->group->planes); ++i) {
++	for (i = 0; i < rcrtc->group->num_planes; ++i) {
+ 		struct rcar_du_plane *plane = &rcrtc->group->planes[i];
+ 		unsigned int j;
  
-@@ -1354,6 +1348,8 @@ static const char *eva_boards_compat_dt[] __initdata = {
+@@ -445,7 +445,7 @@ void rcar_du_crtc_resume(struct rcar_du_crtc *rcrtc)
+ 	rcar_du_crtc_start(rcrtc);
+ 
+ 	/* Commit the planes state. */
+-	for (i = 0; i < ARRAY_SIZE(rcrtc->group->planes); ++i) {
++	for (i = 0; i < rcrtc->group->num_planes; ++i) {
+ 		struct rcar_du_plane *plane = &rcrtc->group->planes[i];
+ 
+ 		if (plane->plane.state->crtc != &rcrtc->crtc)
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.h b/drivers/gpu/drm/rcar-du/rcar_du_group.h
+index 7b414b31c3be..d7318e1a6b00 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.h
+@@ -30,6 +30,7 @@ struct rcar_du_device;
+  * @used_crtcs: number of CRTCs currently in use
+  * @lock: protects the dptsr_planes field and the DPTSR register
+  * @dptsr_planes: bitmask of planes driven by dot-clock and timing generator 1
++ * @num_planes: number of planes in the group
+  * @planes: planes handled by the group
+  */
+ struct rcar_du_group {
+@@ -44,6 +45,7 @@ struct rcar_du_group {
+ 	struct mutex lock;
+ 	unsigned int dptsr_planes;
+ 
++	unsigned int num_planes;
+ 	struct rcar_du_plane planes[RCAR_DU_NUM_KMS_PLANES];
  };
  
- DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
-+	.l2c_aux_val	= 0,
-+	.l2c_aux_mask	= ~0,
- 	.map_io		= r8a7740_map_io,
- 	.init_early	= r8a7740_add_early_devices,
- 	.init_irq	= r8a7740_init_irq_of,
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 20859aae882e..4bb5af4bc474 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -336,7 +336,7 @@ static int rcar_du_atomic_check(struct drm_device *dev,
+ 		dev_dbg(rcdu->dev, "%s: finding free planes for group %u\n",
+ 			__func__, index);
+ 
+-		for (i = 0; i < RCAR_DU_NUM_KMS_PLANES; ++i) {
++		for (i = 0; i < group->num_planes; ++i) {
+ 			struct rcar_du_plane *plane = &group->planes[i];
+ 			struct rcar_du_plane_state *plane_state;
+ 			struct drm_plane_state *s;
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index 3e30d84b798f..d90dc428e3fd 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -390,7 +390,6 @@ static const uint32_t formats[] = {
+ int rcar_du_planes_init(struct rcar_du_group *rgrp)
+ {
+ 	struct rcar_du_device *rcdu = rgrp->dev;
+-	unsigned int num_planes;
+ 	unsigned int crtcs;
+ 	unsigned int i;
+ 	int ret;
+@@ -398,11 +397,11 @@ int rcar_du_planes_init(struct rcar_du_group *rgrp)
+ 	 /* Create one primary plane per CRTC in this group and seven overlay
+ 	  * planes.
+ 	  */
+-	num_planes = rgrp->num_crtcs + 7;
++	rgrp->num_planes = rgrp->num_crtcs + 7;
+ 
+ 	crtcs = ((1 << rcdu->num_crtcs) - 1) & (3 << (2 * rgrp->index));
+ 
+-	for (i = 0; i < num_planes; ++i) {
++	for (i = 0; i < rgrp->num_planes; ++i) {
+ 		enum drm_plane_type type = i < rgrp->num_crtcs
+ 					 ? DRM_PLANE_TYPE_PRIMARY
+ 					 : DRM_PLANE_TYPE_OVERLAY;
 -- 
-1.9.1
+2.3.6
 
