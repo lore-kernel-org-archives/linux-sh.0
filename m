@@ -1,52 +1,58 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 20 May 2015 18:06:06 +0000
-Subject: [PATCH/RFC 0/8] serial: sh-sci: Add DT DMA support
-Message-Id: <1432145174-11534-1-git-send-email-geert+renesas@glider.be>
+Date: Tue, 26 May 2015 09:17:43 +0000
+Subject: renesas-drivers-2015-05-26-v4.1-rc5
+Message-Id: <1432631863-5056-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-	Hi all,
+I've pushed renesas-drivers-2015-05-26-v4.1-rc5 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
+branches of various subsystem trees and (b) branches with driver code
+submitted or planned for submission to maintainers into the development
+branch of Simon Horman's renesas.git tree.
 
-This patch series contains various updates for the Renesas
-(H)SCI(F{,A,B}) driver:
-  - Patches 1 and 2 fix two DMA-related bugs,
-  - Patches 3-6 perform some cleanups,
-  - Patch 7 improves error messages,
-  - Patch 8 adds DT support to the DMA setup.
+Today's version is based on renesas-devel-20150525-v4.1-rc5.
 
-This series is marked "RFC" and sent to a limited audience because DMA
-isn't working well yet, at least not on r8a7791/koelsch.
-Especially the last patch should not be applied before all critical
-issues are fixed.
-
-With a modified version of "[PATCH/RFC] serial: sh-sci: Add R-Car SCIF
-DMA receive support" applied on top, TX DMA seems to work fine on SCIF,
-SCIFA, SCIFB, and HSCIF, but RX DMA is still broken.
-
-This series is against next-20150520, and depends on "[PATCH 0/4]
-serial: sh-sci: Add DMA support to the DT binding" to enable DMA on
-R-Car Gen2.
-
-Thanks for your comments!
-
-Geert Uytterhoeven (8):
-  serial: sh-sci: Use correct device for DMA mapping with IOMMU
-  [RFC] serial: sh-sci: Fix scatterlist mapping leak
-  serial: sh-sci: Use min_t()/max_t() instead of casts
-  serial: sh-sci: Use SCIF_DR instead of hardcoded 1
-  serial: sh-sci: Use offset_in_page() helper instead of open coding
-  serial: sh-sci: Use sg_init_one() helper instead of open coding
-  serial: sh-sci: Improve DMA error messages
-  [RFC] serial: sh-sci: Add DT support to DMA setup
-
- drivers/tty/serial/sh-sci.c | 137 +++++++++++++++++++++++++++-----------------
- 1 file changed, 85 insertions(+), 52 deletions(-)
-
--- 
-1.9.1
+Included subsystem trees:
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+  - git://people.freedesktop.org/~airlied/linux#drm-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+  - git://linuxtv.org/mchehab/media-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+  - git://git.infradead.org/users/vkoul/slave-dma.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
+  - git://git.infradead.org/battery-2.6.git#master
+  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
 
 Gr{oetje,eeting}s,
 
