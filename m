@@ -1,93 +1,60 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Sun, 17 May 2015 00:28:26 +0000
-Subject: [PATCH 1/6] mmc: tmio: Add UHS-I mode support
-Message-Id: <1431822506.4222.168.camel@xylophone.i.decadent.org.uk>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 27 May 2015 13:41:15 +0000
+Subject: [PATCH] drm: rcar-du: Use the drm atomic state duplication helpers for planes
+Message-Id: <1432734075-32483-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431822459.4222.166.camel@xylophone.i.decadent.org.uk>
-In-Reply-To: <1431822459.4222.166.camel@xylophone.i.decadent.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Based on work by Shinobu Uehara and Ben Dooks.  This adds the
-voltage switch operation needed for all UHS-I modes, but not
-the tuning needed for SDR-104 which will come later.
+Ensure that the duplicate and destroy plane state operations will always
+be in sync with the DRM core implementation of the plane state by using
+the __drm_atomic_helper_plane_duplicate_state() and
+__drm_atomic_helper_plane_destroy_state() functions designed especially
+for this purpose.
 
-XXX The card_busy implementation is a bit of a guess.
-
-Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/mmc/host/tmio_mmc.h     |    3 +++
- drivers/mmc/host/tmio_mmc_pio.c |   31 +++++++++++++++++++++++++++++++
- 2 files changed, 34 insertions(+)
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 4a597f5a53e2..a1a009879946 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -99,6 +99,9 @@ struct tmio_mmc_host {
- 	void (*clk_disable)(struct platform_device *pdev);
- 	int (*multi_io_quirk)(struct mmc_card *card,
- 			      unsigned int direction, int blk_size);
-+
-+	int (*start_signal_voltage_switch)(struct tmio_mmc_host *host,
-+					   unsigned char signal_voltage);
- };
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index 3e30d84b798f..dd38484e8281 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -302,13 +302,15 @@ rcar_du_plane_atomic_duplicate_state(struct drm_plane *plane)
+ 	struct rcar_du_plane_state *state;
+ 	struct rcar_du_plane_state *copy;
  
- struct tmio_mmc_host *tmio_mmc_host_alloc(struct platform_device *pdev);
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index e3dcf31a8bd6..3c1e0e53c0b1 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -1011,12 +1011,43 @@ static int tmio_multi_io_quirk(struct mmc_card *card,
- 	return blk_size;
++	if (WARN_ON(!plane->state))
++		return NULL;
++
+ 	state = to_rcar_plane_state(plane->state);
+ 	copy = kmemdup(state, sizeof(*state), GFP_KERNEL);
+ 	if (copy = NULL)
+ 		return NULL;
+ 
+-	if (copy->state.fb)
+-		drm_framebuffer_reference(copy->state.fb);
++	__drm_atomic_helper_plane_duplicate_state(plane, &copy->state);
+ 
+ 	return &copy->state;
+ }
+@@ -316,9 +318,7 @@ rcar_du_plane_atomic_duplicate_state(struct drm_plane *plane)
+ static void rcar_du_plane_atomic_destroy_state(struct drm_plane *plane,
+ 					       struct drm_plane_state *state)
+ {
+-	if (state->fb)
+-		drm_framebuffer_unreference(state->fb);
+-
++	__drm_atomic_helper_plane_destroy_state(plane, state);
+ 	kfree(to_rcar_plane_state(state));
  }
  
-+static int tmio_mmc_start_signal_voltage_switch(struct mmc_host *mmc,
-+	struct mmc_ios *ios)
-+{
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+
-+	if (!host->start_signal_voltage_switch)
-+		return 0;
-+
-+	return host->start_signal_voltage_switch(host, ios->signal_voltage);
-+}
-+
-+static int tmio_mmc_card_busy(struct mmc_host *mmc)
-+{
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	u32 status;
-+
-+	pm_runtime_get_sync(mmc_dev(mmc));
-+	status = sd_ctrl_read32(host, CTL_STATUS);
-+	pm_runtime_mark_last_busy(mmc_dev(mmc));
-+	pm_runtime_put_autosuspend(mmc_dev(mmc));
-+
-+	/*
-+	 * Card signals busy by pulling down all of DAT[3:0].  This status
-+	 * flag appears to reflect DAT3.
-+	 */
-+	return !(status & TMIO_STAT_SIGSTATE_A);
-+}
-+
- static const struct mmc_host_ops tmio_mmc_ops = {
- 	.request	= tmio_mmc_request,
- 	.set_ios	= tmio_mmc_set_ios,
- 	.get_ro         = tmio_mmc_get_ro,
- 	.get_cd		= mmc_gpio_get_cd,
- 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
-+	.start_signal_voltage_switch
-+			= tmio_mmc_start_signal_voltage_switch,
-+	.card_busy	= tmio_mmc_card_busy,
- 	.multi_io_quirk	= tmio_multi_io_quirk,
- };
- 
 -- 
-1.7.10.4
+Regards,
 
-
-
+Laurent Pinchart
 
