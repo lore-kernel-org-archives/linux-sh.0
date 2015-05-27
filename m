@@ -1,38 +1,100 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 22 May 2015 01:32:19 +0000
-Subject: Re: [PATCH v2 2/2] input: adxl34x: Add OF match support
-Message-Id: <20150522013218.GD27511@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 27 May 2015 08:52:54 +0000
+Subject: Re: [PATCH] sh-pfc: handle pin array holes in sh_pfc_map_pins()
+Message-Id: <CAMuHMdWU1WK+M+Mz3CBgXkbtYC9=D03Jrs4425BWrv22ARLdqA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432208546-18615-1-git-send-email-geert+renesas@glider.be>
- <1432208546-18615-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432208546-18615-3-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <1528110.Mb5xiNU0rc@wasted.cogentembedded.com>
+	<3656925.3GuTRhx1fV@avalon>
+	<55415D82.2020407@cogentembedded.com>
+In-Reply-To: <55415D82.2020407@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-Cc: Dmitry Torokhov <dmitry.torokhov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, linux-input-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
 
-On Thu, May 21, 2015 at 01:42:26PM +0200, Geert Uytterhoeven wrote:
-> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> The I2C subsystem can match devices without explicit OF support based on
-> the part of their compatible property after the comma. However, this
-> mechanism uses the first compatible value only. For adxl34x OF device
-> nodes the compatible property will contain the more specific
-> "adi,adxl345" or "adi,adxl346" value first. This prevents the device
-> node from being matched with the adxl34x driver.
-> 
-> Fix this by adding an OF match table with an "adi,adxl345" compatible
-> entry. There's no need to add the "adi,adxl346" entry as the ADXL346 is
-> backward-compatible with the ADXL345 with differences handled by runtime
-> detection of the device model.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> v2:
->   - Add Reviewed-by.
+On Thu, Apr 30, 2015 at 12:38 AM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> On 03/03/2015 03:24 AM, Laurent Pinchart wrote:
+>>> The  pin array handled by sh_pfc_map_pins() may contain holes
+>>> representing
+>>> non- existing pins. We have to first count the valid pins in order to
+>>> calculate the size  of the memory to be allocated, then to skip over the
+>>> non-existing pins when  initializing the allocated arrays, and then to
+>>> return the number of valid pins  from sh_pfc_map_pins() instead of 0 on
+>>> success.
+>>>
+>>> As we have to touch devm_kzalloc() calls anyway, use more fitting
+>>> devm_kcalloc() instead which additionally checks the array size. And
+>>> since
+>>> PINMUX_TYPE_NONE is #define'd as 0, stop re-initializing already zeroed
+>>> out
+>>> 'pmx->configs' array.
+>
+>
+>> I agree with this optimization, but I think it deserves a comment in the
+>> source code that explicitly mentions PINMUX_TYPE_NONE, to make sure any
+>> later
+>> rework changing the PINMUX_TYPE_NONE value would catch this.
+>
+>
+>    Note that this is not just "drove by" optimization, I was trying to avoid
+> the very need to explicitly initialize 'pmx->configs' array to
+> PINMUX_TYPE_NONE...
+>
+>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>
+>
+> [...]
+>
+>>> @@ -622,7 +628,7 @@ int sh_pfc_register_pinctrl(struct sh_pf
+>>>         pmx->pctl_desc.pmxops = &sh_pfc_pinmux_ops;
+>>>         pmx->pctl_desc.confops = &sh_pfc_pinconf_ops;
+>>>         pmx->pctl_desc.pins = pmx->pins;
+>>> -       pmx->pctl_desc.npins = pfc->info->nr_pins;
+>>> +       pmx->pctl_desc.npins = ret;
+>>>
+>>>         pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
+>>>         if (pmx->pctl = NULL)
+>
+>
+>> Shouldn't you also fix sh_pfc_init_ranges() ? It includes the following
+>> code
+>> that doesn't seem to handle holes properly.
+>
+>
+>>          for (i = 1, nr_ranges = 1; i < pfc->info->nr_pins; ++i) {
+>>                  if (pfc->info->pins[i-1].pin != pfc->info->pins[i].pin -
+>> 1)
+>>                          nr_ranges++;
+>>          }
+>
+>
+>> Please make sure that sh_pfc_get_pin_index() doesn't start blowing up
+>> afterwards though.
+>
+>
+>    I think I'm seeing a problem with this function (and it's not due to my
+> changes). Its result is often used to index 'pfc->info->pins' array. While
+> this is working now, when the holes are not yet allowed, it's going to break
+> when we start supporting the holes since that array couldn't be indexed this
+> way anymore (via ranges). This function is good only for 'pmx->configs' and
+> the like where we have already removed the holes. It looks like this holes
+> thing is going to be too complex, so how about leaving things as they are?
+> :-)
 
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Any conclusion on this?
+If yes, please resend, incl. the r8a7794 pfc patches that depend on it.
 
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
