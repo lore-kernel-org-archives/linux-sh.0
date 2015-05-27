@@ -1,40 +1,64 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 May 2015 09:36:29 +0000
-Subject: [PATCH 1/3] clk: shmobile: mstp: Document mandatory compatible fallback
-Message-Id: <1432892191-24039-2-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 27 May 2015 11:40:10 +0000
+Subject: [PATCH 2/2] drm: rcar-du: Clean up planes in the error paths of .atomic_commit()
+Message-Id: <1432726810-15969-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432892191-24039-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432892191-24039-1-git-send-email-geert+renesas@glider.be>
+References: <1432726786-15906-1-git-send-email-laurent.pinchart@ideasonboard.com>
+In-Reply-To: <1432726786-15906-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>
-Cc: Simon Horman <horms+renesas@verge.net.au>, linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-The generic MSTP gate clocks compatible value is mandatory, as the
-driver uses only this value for matching.  Document that this is a
-fallback that must be present.
+When the .atomic_commit() handler fails, clean up planes previoulsy
+prepared by drm_atomic_helper_prepare_planes() with a call to
+drm_atomic_helper_cleanup_planes().
 
-Also fix a typo (missing plural "s") in the compatible value.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-index 0a80fa70ca265c0f..237ff1c8dd632fc3 100644
---- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-@@ -18,7 +18,7 @@ Required Properties:
-     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
-     - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
-     - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
--    - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
-+    and "renesas,cpg-mstp-clocks" as a fallback.
-   - reg: Base address and length of the I/O mapped registers used by the MSTP
-     clocks. The first register is the clock control register and is mandatory.
-     The second register is the clock status register and is optional when not
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index 20859aae882e..226a7e368b59 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -495,8 +495,10 @@ static int rcar_du_atomic_commit(struct drm_device *dev,
+ 
+ 	/* Allocate the commit object. */
+ 	commit = kzalloc(sizeof(*commit), GFP_KERNEL);
+-	if (commit = NULL)
+-		return -ENOMEM;
++	if (commit = NULL) {
++		ret = -ENOMEM;
++		goto error;
++	}
+ 
+ 	INIT_WORK(&commit->work, rcar_du_atomic_work);
+ 	commit->dev = dev;
+@@ -519,7 +521,7 @@ static int rcar_du_atomic_commit(struct drm_device *dev,
+ 
+ 	if (ret) {
+ 		kfree(commit);
+-		return ret;
++		goto error;
+ 	}
+ 
+ 	/* Swap the state, this is the point of no return. */
+@@ -531,6 +533,10 @@ static int rcar_du_atomic_commit(struct drm_device *dev,
+ 		rcar_du_atomic_complete(commit);
+ 
+ 	return 0;
++
++error:
++	drm_atomic_helper_cleanup_planes(dev, state);
++	return ret;
+ }
+ 
+ /* -----------------------------------------------------------------------------
 -- 
-1.9.1
+Regards,
+
+Laurent Pinchart
 
