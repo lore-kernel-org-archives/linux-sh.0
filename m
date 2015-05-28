@@ -1,40 +1,113 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 29 May 2015 00:54:13 +0000
-Subject: [PATCH 05/10] ARM: shmobile: bockw dts: Replace "nor-jedec" by "jedec,spi-nor"
-Message-Id: <9cc785702d9f6367fdecf0fba6e425198e0754c8.1432860632.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 28 May 2015 18:53:27 +0000
+Subject: [PATCH v2 02/14] clk: shmobile: r8a7778: Add CPG Clock Domain support
+Message-Id: <1432839219-475-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1432860632.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1432860632.git.horms+renesas@verge.net.au>
+References: <1432839219-475-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1432839219-475-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Add Clock Domain support to the R-Car M1A Clock Pulse Generator (CPG)
+driver using the generic PM Domain.  This allows to power-manage the
+module clocks of SoC devices that are part of the CPG Clock Domain using
+Runtime PM, or for system suspend/resume.
 
-Cfr. commit 8947e396a8296c52 ('Documentation: dt: mtd: replace
-"nor-jedec" binding with "jedec, spi-nor"')
+SoC devices that are part of the CPG Clock Domain and can be
+power-managed through an MSTP clock should be tagged in DT with a proper
+"power-domains" property.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Brian Norris <computersforpeace@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v2:
+  - New.
+---
+ .../bindings/clock/renesas,r8a7778-cpg-clocks.txt  | 29 +++++++++++++++++++---
+ arch/arm/mach-shmobile/Kconfig                     |  1 +
+ drivers/clk/shmobile/clk-r8a7778.c                 |  2 ++
+ 3 files changed, 29 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index dfbb12e4fef4..90543b12d7e2 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -186,7 +186,7 @@
- 	flash: flash@0 {
- 		#address-cells = <1>;
- 		#size-cells = <1>;
--		compatible = "spansion,s25fl008k", "nor-jedec";
-+		compatible = "spansion,s25fl008k", "jedec,spi-nor";
- 		reg = <0>;
- 		spi-max-frequency = <104000000>;
- 		m25p,fast-read;
+diff --git a/Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
+index 2f3747fdcf1c5305..47dbda03e1fc2daa 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
+@@ -1,7 +1,9 @@
+ * Renesas R8A7778 Clock Pulse Generator (CPG)
+ 
+ The CPG generates core clocks for the R8A7778. It includes two PLLs and
+-several fixed ratio dividers
++several fixed ratio dividers.
++The CPG also provides a Clock Domain for SoC devices, in combination with the
++CPG Module Stop (MSTP) Clocks.
+ 
+ Required Properties:
+ 
+@@ -10,10 +12,18 @@ Required Properties:
+   - #clock-cells: Must be 1
+   - clock-output-names: The names of the clocks. Supported clocks are
+     "plla", "pllb", "b", "out", "p", "s", and "s1".
++  - #power-domain-cells: Must be 0
+ 
++SoC devices that are part of the CPG Clock Domain and can be power-managed
++through an MSTP clock should refer to the CPG device node in their
++"power-domains" property, as documented by the generic PM domain bindings in
++Documentation/devicetree/bindings/power/power_domain.txt.
+ 
+-Example
+--------
++
++Examples
++--------
++
++  - CPG device node:
+ 
+ 	cpg_clocks: cpg_clocks@ffc80000 {
+ 		compatible = "renesas,r8a7778-cpg-clocks";
+@@ -22,4 +32,17 @@ Example
+ 		clocks = <&extal_clk>;
+ 		clock-output-names = "plla", "pllb", "b",
+ 				     "out", "p", "s", "s1";
++		#power-domain-cells = <0>;
++	};
++
++
++  - CPG Clock Domain member device node:
++
++	sdhi0: sd@ffe4c000 {
++		compatible = "renesas,sdhi-r8a7778";
++		reg = <0xffe4c000 0x100>;
++		interrupts = <0 87 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7778_CLK_SDHI0>;
++		power-domains = <&cpg_clocks>;
++		status = "disabled";
+ 	};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 45006479d4617bf3..e14fa5e87475a0d1 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -4,6 +4,7 @@ config ARCH_SHMOBILE
+ 
+ config PM_RCAR
+ 	bool
++	select PM_GENERIC_DOMAINS if PM
+ 
+ config PM_RMOBILE
+ 	bool
+diff --git a/drivers/clk/shmobile/clk-r8a7778.c b/drivers/clk/shmobile/clk-r8a7778.c
+index cb33b57274bf9f55..fa45684e220c78ae 100644
+--- a/drivers/clk/shmobile/clk-r8a7778.c
++++ b/drivers/clk/shmobile/clk-r8a7778.c
+@@ -124,6 +124,8 @@ static void __init r8a7778_cpg_clocks_init(struct device_node *np)
+ 	}
+ 
+ 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++
++	cpg_mstp_add_clk_domain(np);
+ }
+ 
+ CLK_OF_DECLARE(r8a7778_cpg_clks, "renesas,r8a7778-cpg-clocks",
 -- 
-2.1.4
+1.9.1
 
