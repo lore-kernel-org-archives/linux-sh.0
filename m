@@ -1,30 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 16 May 2015 00:10:23 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC DT Updates for v4.2
-Message-Id: <20150516001023.GA11154@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 28 May 2015 01:05:48 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Updates for v4.2
+Message-Id: <cover.1432773909.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1431565427.git.horms+renesas@verge.net.au>
- <3987918.TsLFWxo2th@wuerfel>
-In-Reply-To: <3987918.TsLFWxo2th@wuerfel>
+References: <cover.1397627619.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, May 15, 2015 at 05:22:23PM +0200, Arnd Bergmann wrote:
-> On Thursday 14 May 2015 10:06:56 Simon Horman wrote:
-> > Renesas ARM Based SoC DT Updates for v4.2
-> > 
-> > * Enable DMA for HSUSB on r8a7790 and r8a7791 SoCs
-> > * Configure the HOME key as wake-up source on kzm9g board
-> > * Use generic names for device nodes on SH Mobile SoCs and boards
-> > * Add "nor-jedec" compatible value to SH Mobile boards
-> > * Add IRQC clock to r8a73a4, r8a779* SoCs
-> > * Remove MSIOF address from r8a7790 and r8a7791 SoCs
-> 
-> Pulled into next/dt, thanks!
-> 
-> Please follow-up with a change for the nor-jedec property once that
-> discussion has concluded.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Thanks Arnd, will do.
+Please consider these Renesas ARM based SoC updates for v4.2.
+
+This small pull-request consists of a Kconfig fix from Arnd.
+From my point of view does not seem severe enough to go through
+a fixes channel.
+
+
+The following changes since commit b787f68c36d49bb1d9236f403813641efa74a031:
+
+  Linux 4.1-rc1 (2015-04-26 17:59:10 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v4.2
+
+for you to fetch changes up to 66f72f0c8e0d37339b6be1373c61d2a133c8b422:
+
+  ARM: shmobile: only select sound drivers that build (2015-05-25 10:36:01 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Updates for v4.2
+
+* Only select sound drivers that build
+
+----------------------------------------------------------------
+Arnd Bergmann (1):
+      ARM: shmobile: only select sound drivers that build
+
+ arch/arm/mach-shmobile/Kconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
