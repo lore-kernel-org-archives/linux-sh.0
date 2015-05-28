@@ -1,36 +1,59 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 14 May 2015 12:34:01 +0000
-Subject: [PATCH 1/2] drm: rcar-du: Print the error value when DRM/KMS init fails
-Message-Id: <1431606842-15522-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Dominik Dingel <dingel@linux.vnet.ibm.com>
+Date: Thu, 28 May 2015 11:52:34 +0000
+Subject: [PATCH 2/5] mm/hugetlb: remove unused arch hook prepare/release_hugepage
+Message-Id: <1432813957-46874-3-git-send-email-dingel@linux.vnet.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1432813957-46874-1-git-send-email-dingel@linux.vnet.ibm.com>
+In-Reply-To: <1432813957-46874-1-git-send-email-dingel@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This helps debugging probe failures.
+With s390 dropping support for emulated hugepages, the last user of
+arch_prepare_hugepage and arch_release_hugepage is gone.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Martin Schwidefsky <schwidefsky@de.ibm.com>
+Signed-off-by: Dominik Dingel <dingel@linux.vnet.ibm.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_drv.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ mm/hugetlb.c | 10 ----------
+ 1 file changed, 10 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index da1216a73969..780ca11512ba 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -190,7 +190,7 @@ static int rcar_du_load(struct drm_device *dev, unsigned long flags)
- 	/* DRM/KMS objects */
- 	ret = rcar_du_modeset_init(rcdu);
- 	if (ret < 0) {
--		dev_err(&pdev->dev, "failed to initialize DRM/KMS\n");
-+		dev_err(&pdev->dev, "failed to initialize DRM/KMS (%d)\n", ret);
- 		goto done;
+diff --git a/mm/hugetlb.c b/mm/hugetlb.c
+index 290984b..a97958e 100644
+--- a/mm/hugetlb.c
++++ b/mm/hugetlb.c
+@@ -917,7 +917,6 @@ static void update_and_free_page(struct hstate *h, struct page *page)
+ 		destroy_compound_gigantic_page(page, huge_page_order(h));
+ 		free_gigantic_page(page, huge_page_order(h));
+ 	} else {
+-		arch_release_hugepage(page);
+ 		__free_pages(page, huge_page_order(h));
+ 	}
+ }
+@@ -1102,10 +1101,6 @@ static struct page *alloc_fresh_huge_page_node(struct hstate *h, int nid)
+ 						__GFP_REPEAT|__GFP_NOWARN,
+ 		huge_page_order(h));
+ 	if (page) {
+-		if (arch_prepare_hugepage(page)) {
+-			__free_pages(page, huge_page_order(h));
+-			return NULL;
+-		}
+ 		prep_new_huge_page(h, page, nid);
  	}
  
+@@ -1257,11 +1252,6 @@ static struct page *alloc_buddy_huge_page(struct hstate *h, int nid)
+ 			htlb_alloc_mask(h)|__GFP_COMP|__GFP_THISNODE|
+ 			__GFP_REPEAT|__GFP_NOWARN, huge_page_order(h));
+ 
+-	if (page && arch_prepare_hugepage(page)) {
+-		__free_pages(page, huge_page_order(h));
+-		page = NULL;
+-	}
+-
+ 	spin_lock(&hugetlb_lock);
+ 	if (page) {
+ 		INIT_LIST_HEAD(&page->lru);
 -- 
-Regards,
-
-Laurent Pinchart
+2.3.7
 
