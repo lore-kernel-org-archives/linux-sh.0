@@ -1,66 +1,71 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 04 May 2015 09:41:51 +0000
-Subject: renesas-drivers-2015-05-04-v4.1-rc2
-Message-Id: <1430732511-20227-1-git-send-email-geert+renesas@glider.be>
+Date: Thu, 28 May 2015 18:53:39 +0000
+Subject: [PATCH v2 14/14] ARM: shmobile: R-Mobile: Use CPG Clock Domain attach/detach helpers
+Message-Id: <1432839219-475-15-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1432839219-475-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1432839219-475-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-I've pushed renesas-drivers-2015-05-04-v4.1-rc2 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+The R-Mobile PM Domain driver manages both power domains and a clock
+domain.
 
-Today's version is based on renesas-devel-20150501-v4.1-rc1.
+The clock domain part is very similar to the CPG Clock Domain, which is
+used on shmobile SoCs without device power domains, except for the way
+how clocks suitable for power management are selected:
+  - The former uses the first clock tied to the device through the NULL
+    con_id, which is a relic from the legacy pm_clk_notifier-based
+    method in drivers/sh/pm_runtime.c,
+  - The latter looks for suitable clocks in DT, which is more
+    future-proof.
 
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.linaro.org/people/mturquette/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
+Hence switch to using the CPG Clock Domain helpers for DT-based
+multi-platform builds.
 
-Gr{oetje,eeting}s,
+The old method, using a NULL con_id, is still used for legacy builds.
 
-						Geert
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - New.
+---
+ arch/arm/mach-shmobile/pm-rmobile.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 747d557b7016ec6d..cac564c5348cd851 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -12,6 +12,7 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
++#include <linux/clk/shmobile.h>
+ #include <linux/console.h>
+ #include <linux/delay.h>
+ #include <linux/of.h>
+@@ -118,6 +119,7 @@ static bool rmobile_pd_active_wakeup(struct device *dev)
+ 	return true;
+ }
+ 
++#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
+ static int rmobile_pd_attach_dev(struct generic_pm_domain *domain,
+ 				 struct device *dev)
+ {
+@@ -147,6 +149,10 @@ static void rmobile_pd_detach_dev(struct generic_pm_domain *domain,
+ {
+ 	pm_clk_destroy(dev);
+ }
++#else /* CONFIG_ARCH_SHMOBILE_LEGACY */
++#define rmobile_pd_attach_dev	cpg_mstp_attach_dev
++#define rmobile_pd_detach_dev	cpg_mstp_detach_dev
++#endif /* CONFIG_ARCH_SHMOBILE_LEGACY */
+ 
+ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ {
+-- 
+1.9.1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
