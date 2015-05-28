@@ -1,59 +1,50 @@
-From: Dominik Dingel <dingel@linux.vnet.ibm.com>
-Date: Thu, 28 May 2015 11:52:34 +0000
-Subject: [PATCH 2/5] mm/hugetlb: remove unused arch hook prepare/release_hugepage
-Message-Id: <1432813957-46874-3-git-send-email-dingel@linux.vnet.ibm.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 28 May 2015 15:17:03 +0000
+Subject: [PATCH 4/6] serial: sh-sci: Add device tree bindings for r8a7793
+Message-Id: <1432826225-6743-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432813957-46874-1-git-send-email-dingel@linux.vnet.ibm.com>
-In-Reply-To: <1432813957-46874-1-git-send-email-dingel@linux.vnet.ibm.com>
+References: <1432826225-6743-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1432826225-6743-1-git-send-email-ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org
+Cc: horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ulrich Hecht <ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
 
-With s390 dropping support for emulated hugepages, the last user of
-arch_prepare_hugepage and arch_release_hugepage is gone.
+Also replaces "R-Car M2" with "R-Car M2-W" to avoid confusion.
 
-Acked-by: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Signed-off-by: Dominik Dingel <dingel@linux.vnet.ibm.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- mm/hugetlb.c | 10 ----------
- 1 file changed, 10 deletions(-)
+ .../devicetree/bindings/serial/renesas,sci-serial.txt        | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/mm/hugetlb.c b/mm/hugetlb.c
-index 290984b..a97958e 100644
---- a/mm/hugetlb.c
-+++ b/mm/hugetlb.c
-@@ -917,7 +917,6 @@ static void update_and_free_page(struct hstate *h, struct page *page)
- 		destroy_compound_gigantic_page(page, huge_page_order(h));
- 		free_gigantic_page(page, huge_page_order(h));
- 	} else {
--		arch_release_hugepage(page);
- 		__free_pages(page, huge_page_order(h));
- 	}
- }
-@@ -1102,10 +1101,6 @@ static struct page *alloc_fresh_huge_page_node(struct hstate *h, int nid)
- 						__GFP_REPEAT|__GFP_NOWARN,
- 		huge_page_order(h));
- 	if (page) {
--		if (arch_prepare_hugepage(page)) {
--			__free_pages(page, huge_page_order(h));
--			return NULL;
--		}
- 		prep_new_huge_page(h, page, nid);
- 	}
- 
-@@ -1257,11 +1252,6 @@ static struct page *alloc_buddy_huge_page(struct hstate *h, int nid)
- 			htlb_alloc_mask(h)|__GFP_COMP|__GFP_THISNODE|
- 			__GFP_REPEAT|__GFP_NOWARN, huge_page_order(h));
- 
--	if (page && arch_prepare_hugepage(page)) {
--		__free_pages(page, huge_page_order(h));
--		page = NULL;
--	}
--
- 	spin_lock(&hugetlb_lock);
- 	if (page) {
- 		INIT_LIST_HEAD(&page->lru);
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index ae73bb0..78419eb 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -15,10 +15,14 @@ Required properties:
+     - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible UART.
+     - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible UART.
+     - "renesas,hscif-r8a7790" for R8A7790 (R-Car H2) HSCIF compatible UART.
+-    - "renesas,scif-r8a7791" for R8A7791 (R-Car M2) SCIF compatible UART.
+-    - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2) SCIFA compatible UART.
+-    - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2) SCIFB compatible UART.
+-    - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2) HSCIF compatible UART.
++    - "renesas,scif-r8a7791" for R8A7791 (R-Car M2-W) SCIF compatible UART.
++    - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2-W) SCIFA compatible UART.
++    - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2-W) SCIFB compatible UART.
++    - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2-W) HSCIF compatible UART.
++    - "renesas,scif-r8a7793" for R8A7793 (R-Car M2-N) SCIF compatible UART.
++    - "renesas,scifa-r8a7793" for R8A7793 (R-Car M2-N) SCIFA compatible UART.
++    - "renesas,scifb-r8a7793" for R8A7793 (R-Car M2-N) SCIFB compatible UART.
++    - "renesas,hscif-r8a7793" for R8A7793 (R-Car M2-N) HSCIF compatible UART.
+     - "renesas,scif-r8a7794" for R8A7794 (R-Car E2) SCIF compatible UART.
+     - "renesas,scifa-r8a7794" for R8A7794 (R-Car E2) SCIFA compatible UART.
+     - "renesas,scifb-r8a7794" for R8A7794 (R-Car E2) SCIFB compatible UART.
 -- 
-2.3.7
+2.3.5
 
