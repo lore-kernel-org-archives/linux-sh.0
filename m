@@ -1,40 +1,81 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 29 May 2015 00:54:12 +0000
-Subject: [PATCH 04/10] ARM: shmobile: henninger dts: Replace "nor-jedec" by "jedec,spi-nor"
-Message-Id: <aad8afc7ac3d9af6f7c43961fc6f41d401207b00.1432860632.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 28 May 2015 15:15:53 +0000
+Subject: [PATCH v4 0/4] r8a7793 SoC, Gose board support
+Message-Id: <1432826157-6414-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1432860632.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1432860632.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi!
 
-Cfr. commit 8947e396a8296c52 ('Documentation: dt: mtd: replace
-"nor-jedec" binding with "jedec, spi-nor"')
+Here's a minimalized r8a7793 support series as requested by Simon.
+It dumps SMP and all non-essential devices and clocks.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Brian Norris <computersforpeace@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791-henninger.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+I will post the bindings in a separate series.
 
-diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
-index bb80122b4113..655d1804e5e9 100644
---- a/arch/arm/boot/dts/r8a7791-henninger.dts
-+++ b/arch/arm/boot/dts/r8a7791-henninger.dts
-@@ -226,7 +226,7 @@
- 	flash@0 {
- 		#address-cells = <1>;
- 		#size-cells = <1>;
--		compatible = "spansion,s25fl512s", "nor-jedec";
-+		compatible = "spansion,s25fl512s", "jedec,spi-nor";
- 		reg = <0>;
- 		spi-max-frequency = <30000000>;
- 		spi-tx-bus-width = <4>;
+CU
+Uli
+
+
+Changes since v3:
+- minimalized device trees
+- split off DT bindings
+- added Geert's ack
+
+Changes since v2:
+- dts: remove unused pins
+- dts: fix flash partition addresses
+- dts: add pmic
+- dtsi, dts: add CMTs
+- dts: add interrupt parent to regulator
+- smp, dtsi: use CPU_METHOD_OF_DECLARE, enable-method
+- smp: re-add rcar_gen2_pm_init() call
+- dtsi: add irqc0 clock
+- dtsi: add DMA controllers
+- dtsi: remove audmapp
+- dtsi: fix sdhi0 resource length
+- dtsi: add SDHI DMAs, remove unsupported properties
+- dtsi: add rcan, adsp clocks
+- dtsi: add missing MSTP4
+- dtsi: fix audmac clocks
+- dtsi: add MSIOF DMAs, remove unused register set
+- dtsi: copy sound description from r8a7791
+- enable rcar2 regulator quirk on Gose
+
+Changes since v1:
+
+- pfc: split patch in six
+- pfc: fixed typos
+- dts: named clock bits properly
+- dts: made more consistent with the very similar r8a7791 dts
+- dts: removed adv7511, don't know the address
+- pm: dropped for now, needs to be fixed up first
+- everywhere: renamed M2N -> M2-N (and M2 to M2-W, while at it)
+- everywhere: added Acks
+
+
+Ulrich Hecht (4):
+  ARM: shmobile: Basic r8a7793 SoC support
+  ARM: shmobile: add r8a7793 minimal SoC device tree
+  ARM: shmobile: r8a7793: add minimal Gose board device tree
+  ARM: shmobile: gose: enable R-Car Gen2 regulator quirk
+
+ arch/arm/boot/dts/Makefile                         |   1 +
+ arch/arm/boot/dts/r8a7793-gose.dts                 |  63 ++++
+ arch/arm/boot/dts/r8a7793.dtsi                     | 368 +++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                     |   4 +
+ arch/arm/mach-shmobile/Makefile                    |   1 +
+ arch/arm/mach-shmobile/regulator-quirk-rcar-gen2.c |   3 +-
+ arch/arm/mach-shmobile/setup-r8a7793.c             |  33 ++
+ include/dt-bindings/clock/r8a7793-clock.h          | 164 +++++++++
+ 8 files changed, 636 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/boot/dts/r8a7793-gose.dts
+ create mode 100644 arch/arm/boot/dts/r8a7793.dtsi
+ create mode 100644 arch/arm/mach-shmobile/setup-r8a7793.c
+ create mode 100644 include/dt-bindings/clock/r8a7793-clock.h
+
 -- 
-2.1.4
+2.3.5
 
