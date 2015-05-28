@@ -1,38 +1,108 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 14 May 2015 01:06:47 +0000
-Subject: [PATCH 18/31] ARM: shmobile: armadillo800eva dts: Use generic names for device nodes
-Message-Id: <92d2434d8effe6160eb7f4fd0d01ef5b76930f2a.1431565427.git.horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 28 May 2015 15:15:56 +0000
+Subject: [PATCH v4 3/4] ARM: shmobile: r8a7793: add minimal Gose board device tree
+Message-Id: <1432826157-6414-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1431565427.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
+References: <1432826157-6414-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1432826157-6414-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, linux-sh@vger.kernel.org
+Cc: magnus.damm@gmail.com, laurent.pinchart+renesas@ideasonboard.com, geert@linux-m68k.org, kuninori.morimoto.gx@renesas.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, devicetree@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Minmal DT description and Makefile entry for the Gose eval board.
+Support for console, timer, and Ethernet.
 
-wm8978 -> codec
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Cc: devicetree@vger.kernel.org
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/Makefile         |  1 +
+ arch/arm/boot/dts/r8a7793-gose.dts | 63 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 64 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a7793-gose.dts
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-index 9bd0cb439f44..2e31d8c01cbf 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-@@ -208,7 +208,7 @@
- 		gpios = <&pfc 166 GPIO_ACTIVE_LOW>;
- 	};
- 
--	wm8978: wm8978@1a {
-+	wm8978: codec@1a {
- 		#sound-dai-cells = <0>;
- 		compatible = "wlf,wm8978";
- 		reg = <0x1a>;
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 86217db..03d876f 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -492,6 +492,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	r8a7790-lager.dtb \
+ 	r8a7791-henninger.dtb \
+ 	r8a7791-koelsch.dtb \
++	r8a7793-gose.dtb \
+ 	r8a7794-alt.dtb \
+ 	sh73a0-kzm9g.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += \
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+new file mode 100644
+index 0000000..96443ec
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -0,0 +1,63 @@
++/*
++ * Device Tree Source for the Gose board
++ *
++ * Copyright (C) 2014-2015 Renesas Electronics Corporation
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/dts-v1/;
++#include "r8a7793.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++
++/ {
++	model = "Gose";
++	compatible = "renesas,gose", "renesas,r8a7793";
++
++	aliases {
++		serial0 = &scif0;
++		serial1 = &scif1;
++	};
++
++	chosen {
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		stdout-path = &scif0;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0 0x40000000 0 0x40000000>;
++	};
++};
++
++&extal_clk {
++	clock-frequency = <20000000>;
++};
++
++&ether {
++	phy-handle = <&phy1>;
++	renesas,ether-link-active-low;
++	status = "okay";
++
++	phy1: ethernet-phy@1 {
++		reg = <1>;
++		interrupt-parent = <&irqc0>;
++		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
++		micrel,led-mode = <1>;
++	};
++};
++
++&cmt0 {
++	status = "okay";
++};
++
++&scif0 {
++	status = "okay";
++};
++
++&scif1 {
++	status = "okay";
++};
 -- 
-2.1.4
+2.3.5
 
