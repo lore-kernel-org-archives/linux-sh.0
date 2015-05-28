@@ -1,44 +1,59 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 19 May 2015 13:50:07 +0000
-Subject: Re: [PATCH] ARM: shmobile: only select sound drivers that build
-Message-Id: <8763723.lDqvJa39j2@wuerfel>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 28 May 2015 01:05:55 +0000
+Subject: [PATCH] ARM: shmobile: only select sound drivers that build
+Message-Id: <66f72f0c8e0d37339b6be1373c61d2a133c8b422.1432773909.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5616798.tmraH8vpuI@wuerfel>
- <CAMuHMdWDS73aA8ottgEPYgE=FHFeOwWdEcRGEyv8LbOUU1eUgQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdWDS73aA8ottgEPYgE=FHFeOwWdEcRGEyv8LbOUU1eUgQ@mail.gmail.com>
+References: <cover.1432773909.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1432773909.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 19 May 2015 15:34:00 Geert Uytterhoeven wrote:
-> On Tue, May 19, 2015 at 2:49 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> > A couple of codec drivers are selected by shmobile platform code,
-> > but depend on I2C, which results in a build error:
-> 
-> > --- a/arch/arm/mach-shmobile/Kconfig
-> > +++ b/arch/arm/mach-shmobile/Kconfig
-> 
-> > @@ -158,8 +158,8 @@ config MACH_BOCKW
-> >         depends on ARCH_R8A7778
-> >         select ARCH_REQUIRE_GPIOLIB
-> >         select REGULATOR_FIXED_VOLTAGE if REGULATOR
-> > -       select SND_SOC_AK4554 if SND_SIMPLE_CARD
-> > -       select SND_SOC_AK4642 if SND_SIMPLE_CARD
-> > +       select SND_SOC_AK4554 if SND_SIMPLE_CARD && I2C
-> 
-> AK4554 is not an i2c device, but a plain platform device.
-> 
-> > +       select SND_SOC_AK4642 if SND_SIMPLE_CARD && I2C
-> >         select USE_OF
-> 
-> The others are OK, so if you have remove AK4554, you can add my
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> 
+From: Arnd Bergmann <arnd@arndb.de>
 
-Ah, my mistake. I've sent a fixed version 2 now.
+A couple of codec drivers are selected by shmobile platform code,
+but depend on I2C, which results in a build error:
 
-Thanks!
+sound/soc/codecs/ak4642.c:638:1: warning: data definition has no type or storage class
+ module_i2c_driver(ak4642_i2c_driver);
+ ^
+sound/soc/codecs/ak4642.c:638:1: error: type defaults to 'int' in declaration of 'module_i2c_driver' [-Werror=implicit-int]
+sound/soc/codecs/ak4642.c:638:1: warning: parameter names (without types) in function declaration
+sound/soc/codecs/ak4642.c:627:26: warning: 'ak4642_i2c_driver' defined but not used [-Wunused-variable]
 
-	Arnd
+This ensures that we do not enable the respective drivers when I2C
+is disabled.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/Kconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 0fb484221c90..45006479d461 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -139,7 +139,7 @@ config MACH_ARMADILLO800EVA
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select SMSC_PHY if SH_ETH
+-	select SND_SOC_WM8978 if SND_SIMPLE_CARD
++	select SND_SOC_WM8978 if SND_SIMPLE_CARD && I2C
+ 	select USE_OF
+ 
+ config MACH_BOCKW
+@@ -148,7 +148,7 @@ config MACH_BOCKW
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select SND_SOC_AK4554 if SND_SIMPLE_CARD
+-	select SND_SOC_AK4642 if SND_SIMPLE_CARD
++	select SND_SOC_AK4642 if SND_SIMPLE_CARD && I2C
+ 	select USE_OF
+ 
+ config MACH_BOCKW_REFERENCE
+-- 
+2.1.4
+
