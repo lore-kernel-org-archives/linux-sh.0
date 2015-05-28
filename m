@@ -1,38 +1,38 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 May 2015 09:36:30 +0000
-Subject: [PATCH 2/3] clk: shmobile: Document mandatory compatible fallback
-Message-Id: <1432892191-24039-3-git-send-email-geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 28 May 2015 15:17:01 +0000
+Subject: [PATCH 2/6] clk: shmobile: r8a7793: document DIV6 clock bindings
+Message-Id: <1432826225-6743-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432892191-24039-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432892191-24039-1-git-send-email-geert+renesas@glider.be>
+References: <1432826225-6743-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1432826225-6743-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>
-Cc: Simon Horman <horms+renesas@verge.net.au>, linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: devicetree@vger.kernel.org, geert@linux-m68k.org
+Cc: horms@verge.net.au, linux-sh@vger.kernel.org, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-The generic R-Car Gen2 CPG compatible value is mandatory, as the driver
-uses only this value for matching.  Document that this is a fallback
-that must be present.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
 ---
- .../devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt          | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-index aa2b94511f4d9e05..1dc65fc741b3b4a3 100644
---- a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-@@ -12,7 +12,7 @@ Required Properties:
-     - "renesas,r8a7791-cpg-clocks" for the r8a7791 CPG
-     - "renesas,r8a7793-cpg-clocks" for the r8a7793 CPG
-     - "renesas,r8a7794-cpg-clocks" for the r8a7794 CPG
--    - "renesas,rcar-gen2-cpg-clocks" for the generic R-Car Gen2 CPG
-+    and "renesas,rcar-gen2-cpg-clocks" as a fallback.
- 
-   - reg: Base address and length of the memory resource used by the CPG
- 
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+index 054f65f..b0a3a11 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+@@ -10,7 +10,8 @@ Required Properties:
+     - "renesas,r8a73a4-div6-clock" for R8A73A4 (R-Mobile APE6) DIV6 clocks
+     - "renesas,r8a7740-div6-clock" for R8A7740 (R-Mobile A1) DIV6 clocks
+     - "renesas,r8a7790-div6-clock" for R8A7790 (R-Car H2) DIV6 clocks
+-    - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2) DIV6 clocks
++    - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2-W) DIV6 clocks
++    - "renesas,r8a7793-div6-clock" for R8A7793 (R-Car M2-N) DIV6 clocks
+     - "renesas,sh73a0-div6-clock" for SH73A0 (SH-Mobile AG5) DIV6 clocks
+     - "renesas,cpg-div6-clock" for generic DIV6 clocks
+   - reg: Base address and length of the memory resource used by the DIV6 clock
 -- 
-1.9.1
+2.3.5
 
