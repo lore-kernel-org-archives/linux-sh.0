@@ -1,68 +1,59 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 21 May 2015 11:42:24 +0000
-Subject: [PATCH v2 0/2] Fix OF match for adxl34x driver
-Message-Id: <1432208546-18615-1-git-send-email-geert+renesas@glider.be>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Thu, 28 May 2015 12:59:39 +0000
+Subject: [PATCH v2] v4l: vsp1: Align crop rectangle to even boundary for YUV formats
+Message-Id: <1432817979-2929-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Wolfram Sang <wsa@the-dreams.de>, linux-input@vger.kernel.org, linux-i2c@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-media@vger.kernel.org
+Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-	Hi Dmitry,
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
 
-This is a resent of a series by Laurent Pinchart to fix OF matching for
-the adxl34x driver.
+Make sure that there are valid values in the crop rectangle to ensure
+that the color plane doesn't get shifted when cropping.
+Since there is no distinction between 12bit and 16bit YUV formats in
+at the subdev level, use the more restrictive 12bit limits for all YUV
+formats.
 
-According to the discussion in response to that series, we were under
-the impression this was going in through the input tree
-(http://www.spinics.net/lists/linux-i2c/msg18293.html).
+Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-In input patchwork, the series is still marked "Awaiting Upstream"
-(https://patchwork.ozlabs.org/project/linux-i2c/list/?state=3D*&q=ADxl),
-but actually we are waiting for you, as we can't update the affected DTS
-before the driver fix has gone in ;-)
+This patch is based on the master branch of linuxtv.org/media_tree.git.
 
-From Laurent's submission:
+v2 [Yoshihiro Kaneko]
+* As suggested by Laurent Pinchart
+  - remove the change to add a restriction to the left and top
+  - use round_down() to align the width and height
+* As suggested by Sergei Shtylyov
+  - use ALIGN() to align the left and top
+  - correct a misspelling of the commit message
+* Compile tested only
 
-    This patch set fixes OF matching for the adxl34x driver when the DT
-    node lists a device-specific "adi,adxl345" or "adi,adxl346"
-    compatible value first.
+ drivers/media/platform/vsp1/vsp1_rwpf.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-    The first version (see
-    http://www.spinics.net/lists/linux-i2c/msg18107.html) added an OF
-    match entry for the "adi,adxl34x" compatible string. The discussion
-    that followed concluded that that compatible string should be
-    deprecated and that the driver should match the device-specific
-    strings instead.
-
-    The first patch thus deprecates the "adi,adxl34x" compatible string
-    by removing it the DT trivial devices list, and the second patch
-    then adds an OF match table to the adxl34x driver.
-
-Thanks for applying!
-
-Laurent Pinchart (2):
-  DT: i2c: Deprecate adi,adxl34x compatible string
-  input: adxl34x: Add OF match support
-
- .../devicetree/bindings/i2c/trivial-devices.txt     |  3 +--
- drivers/input/misc/adxl34x-i2c.c                    | 21 +++++++++++++++++=
-++++
- 2 files changed, 22 insertions(+), 2 deletions(-)
-
---=20
+diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.c b/drivers/media/platform/vsp1/vsp1_rwpf.c
+index fa71f46..32687c7 100644
+--- a/drivers/media/platform/vsp1/vsp1_rwpf.c
++++ b/drivers/media/platform/vsp1/vsp1_rwpf.c
+@@ -197,6 +197,14 @@ int vsp1_rwpf_set_selection(struct v4l2_subdev *subdev,
+ 	 */
+ 	format = vsp1_entity_get_pad_format(&rwpf->entity, cfg, RWPF_PAD_SINK,
+ 					    sel->which);
++
++	if (format->code = MEDIA_BUS_FMT_AYUV8_1X32) {
++		sel->r.left = ALIGN(sel->r.left, 2);
++		sel->r.top = ALIGN(sel->r.top, 2);
++		sel->r.width = round_down(sel->r.width, 2);
++		sel->r.height = round_down(sel->r.height, 2);
++	}
++
+ 	sel->r.left = min_t(unsigned int, sel->r.left, format->width - 2);
+ 	sel->r.top = min_t(unsigned int, sel->r.top, format->height - 2);
+ 	if (rwpf->entity.type = VSP1_ENTITY_WPF) {
+-- 
 1.9.1
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-							    -- Linus Torvalds
