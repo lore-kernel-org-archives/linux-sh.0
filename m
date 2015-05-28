@@ -1,31 +1,34 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 18 May 2015 09:34:23 +0000
-Subject: [PATCH 0/2] usb: renesas_usbhs: Add support for R-Car E2
-Message-Id: <1431941665-3768-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 28 May 2015 15:15:57 +0000
+Subject: [PATCH v4 4/4] ARM: shmobile: gose: enable R-Car Gen2 regulator quirk
+Message-Id: <1432826157-6414-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1421639597-2784-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1421639597-2784-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: gregkh@linuxfoundation.org, balbi@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-sh@vger.kernel.org
 
-This patch set is based on Felipe's usb.git / testing/next branch.
-(commit id = 1c14905ef951fb968c8da90e4e64be02c309a2ae)
+Regulator setup seems identical to Koelsch.
 
-This patch set adds support for R-Car E2. This patch set also changes
-the SoC types from #define values to enum values.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/regulator-quirk-rcar-gen2.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-Yoshihiro Shimoda (2):
-  usb: renesas_usbhs: Change the SoC types to enum values
-  usb: renesas_usbhs: Add support for R-Car E2
-
- Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 1 +
- drivers/usb/renesas_usbhs/common.c                      | 6 ++++++
- include/linux/usb/renesas_usbhs.h                       | 7 +++++--
- 3 files changed, 12 insertions(+), 2 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/regulator-quirk-rcar-gen2.c b/arch/arm/mach-shmobile/regulator-quirk-rcar-gen2.c
+index 384e6e9..62437b5 100644
+--- a/arch/arm/mach-shmobile/regulator-quirk-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/regulator-quirk-rcar-gen2.c
+@@ -123,7 +123,8 @@ static int __init rcar_gen2_regulator_quirk(void)
+ 	u32 mon;
+ 
+ 	if (!of_machine_is_compatible("renesas,koelsch") &&
+-	    !of_machine_is_compatible("renesas,lager"))
++	    !of_machine_is_compatible("renesas,lager") &&
++	    !of_machine_is_compatible("renesas,gose"))
+ 		return -ENODEV;
+ 
+ 	irqc = ioremap(IRQC_BASE, PAGE_SIZE);
 -- 
-1.9.1
+2.3.5
 
