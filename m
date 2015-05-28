@@ -1,38 +1,43 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 29 May 2015 09:36:31 +0000
-Subject: [PATCH 3/3] clk: shmobile: rz: Document mandatory compatible fallback
-Message-Id: <1432892191-24039-4-git-send-email-geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 28 May 2015 15:16:59 +0000
+Subject: [PATCH 0/6] r8a7793 SoC DT bindings
+Message-Id: <1432826225-6743-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432892191-24039-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432892191-24039-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>
-Cc: Simon Horman <horms+renesas@verge.net.au>, linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: devicetree@vger.kernel.org, geert@linux-m68k.org
+Cc: horms@verge.net.au, linux-sh@vger.kernel.org, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-The generic RZ CPG compatible value is mandatory, as the driver uses
-only this value for matching.  Document that this is a fallback that
-must be present.
+Hi!
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+This series contains the DT bindings used by the r8a7793 SoC;
+it has been split off the "r8a7793 SoC, Gose board support"
+version 3 series.
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
-index c5666288e409ebd2..2a2c509f5f9d8553 100644
---- a/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
-@@ -9,7 +9,7 @@ Required Properties:
- 
-   - compatible: Must be one of
-     - "renesas,r7s72100-cpg-clocks" for the r7s72100 CPG
--    - "renesas,rz-cpg-clocks" for the generic RZ CPG
-+    and "renesas,rz-cpg-clocks" as a fallback.
-   - reg: Base address and length of the memory resource used by the CPG
-   - clocks: References to possible parent clocks. Order must match clock modes
-     in the datasheet. For the r7s72100, this is extal, usb_x1.
+CU
+Uli
+
+Changes since "r8a7793 SoC, Gose board support" v3:
+- updated "fallback" paragraph in cmt bindings
+
+
+Ulrich Hecht (6):
+  clk: shmobile: Add r8a7793 SoC to MSTP bindings
+  clk: shmobile: r8a7793: document DIV6 clock bindings
+  mmc: sh_mmcif: Document r8a7793 DT bindings
+  serial: sh-sci: Add device tree bindings for r8a7793
+  PCI: rcar: document r8a7793 DT bindings
+  clocksource: sh_cmt: Document r8a7793-specific bindings
+
+ .../devicetree/bindings/clock/renesas,cpg-div6-clocks.txt    |  3 ++-
+ .../devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt    |  3 ++-
+ Documentation/devicetree/bindings/mmc/renesas,mmcif.txt      |  1 +
+ Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt      |  1 +
+ .../devicetree/bindings/serial/renesas,sci-serial.txt        | 12 ++++++++----
+ Documentation/devicetree/bindings/timer/renesas,cmt.txt      |  7 +++++--
+ 6 files changed, 19 insertions(+), 8 deletions(-)
+
 -- 
-1.9.1
+2.3.5
 
