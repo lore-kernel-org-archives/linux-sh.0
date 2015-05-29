@@ -1,66 +1,38 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Mon, 11 May 2015 06:26:23 +0000
-Subject: [PATCH v12 04/21] sh-sci: Add h8300 SCI
-Message-Id: <1431325600-12333-5-git-send-email-ysato@users.sourceforge.jp>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 May 2015 09:36:31 +0000
+Subject: [PATCH 3/3] clk: shmobile: rz: Document mandatory compatible fallback
+Message-Id: <1432892191-24039-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431325600-12333-1-git-send-email-ysato@users.sourceforge.jp>
-In-Reply-To: <1431325600-12333-1-git-send-email-ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
+References: <1432892191-24039-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1432892191-24039-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>
+To: Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>
+Cc: Simon Horman <horms+renesas@verge.net.au>, linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The generic RZ CPG compatible value is mandatory, as the driver uses
+only this value for matching.  Document that this is a fallback that
+must be present.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 1 +
- drivers/tty/serial/Kconfig                                      | 2 +-
- drivers/tty/serial/sh-sci.c                                     | 6 ++++++
- 3 files changed, 8 insertions(+), 1 deletion(-)
+ Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-index ae73bb0..7534d46 100644
---- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-+++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-@@ -29,6 +29,7 @@ Required properties:
-     - "renesas,scifa" for generic SCIFA compatible UART.
-     - "renesas,scifb" for generic SCIFB compatible UART.
-     - "renesas,hscif" for generic HSCIF compatible UART.
-+    - "renesas,sci" for generic SCI compatible UART.
+diff --git a/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
+index c5666288e409ebd2..2a2c509f5f9d8553 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
+@@ -9,7 +9,7 @@ Required Properties:
  
-     When compatible with the generic version, nodes must list the
-     SoC-specific version corresponding to the platform first followed by the
-diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
-index f8120c1..dea1eff 100644
---- a/drivers/tty/serial/Kconfig
-+++ b/drivers/tty/serial/Kconfig
-@@ -728,7 +728,7 @@ config SERIAL_IP22_ZILOG_CONSOLE
- 
- config SERIAL_SH_SCI
- 	tristate "SuperH SCI(F) serial port support"
--	depends on SUPERH || ARCH_SHMOBILE || COMPILE_TEST
-+	depends on SUPERH || ARCH_SHMOBILE || H8300 || COMPILE_TEST
- 	select SERIAL_CORE
- 
- config SERIAL_SH_SCI_NR_UARTS
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index e7d6566..1468ec5 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2536,6 +2536,12 @@ static const struct of_device_id of_sci_match[] = {
- 			.regtype = SCIx_HSCIF_REGTYPE,
- 		},
- 	}, {
-+		.compatible = "renesas,sci",
-+		.data = &(const struct sci_port_info) {
-+			.type = PORT_SCI,
-+			.regtype = SCIx_SCI_REGTYPE,
-+		},
-+	}, {
- 		/* Terminator */
- 	},
- };
+   - compatible: Must be one of
+     - "renesas,r7s72100-cpg-clocks" for the r7s72100 CPG
+-    - "renesas,rz-cpg-clocks" for the generic RZ CPG
++    and "renesas,rz-cpg-clocks" as a fallback.
+   - reg: Base address and length of the memory resource used by the CPG
+   - clocks: References to possible parent clocks. Order must match clock modes
+     in the datasheet. For the r7s72100, this is extal, usb_x1.
 -- 
-2.1.4
+1.9.1
 
