@@ -1,103 +1,35 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 12 May 2015 17:37:13 +0000
-Subject: [PATCH/RFC 10/12] ARM: shmobile: koelsch dts: Add overlay for SCIF5 on EXIO C
-Message-Id: <1431452235-11692-11-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 29 May 2015 00:54:15 +0000
+Subject: [PATCH 07/10] ARM: shmobile: r8a7791: add MMCIF max-frequency
+Message-Id: <d957ab8dbd79ccd32f6f7c42651b956bb892858d.1432860632.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1432860632.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1432860632.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: Pantelis Antoniou <pantelis.antoniou@konsulko.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Provide access to SCIF5 on EXIO Connector C.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/Makefile                         |  1 +
- .../arm/boot/dts/r8a7791-koelsch-exio-c-scif5.dtso | 60 ++++++++++++++++++++++
- 2 files changed, 61 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7791-koelsch-exio-c-scif5.dtso
+ arch/arm/boot/dts/r8a7791.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index ec2abfe19329b791..655a967b0566a3d1 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -676,6 +676,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
- 	r8a7791-koelsch-exio-a-scifb0.dtbo \
- 	r8a7791-koelsch-exio-a-scifb1.dtbo \
- 	r8a7791-koelsch-exio-c-scif3.dtbo \
-+	r8a7791-koelsch-exio-c-scif5.dtbo \
- endif
- endif
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 7613abea13d7..bbef666596e5 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -494,6 +494,7 @@
+ 		dma-names = "tx", "rx";
+ 		reg-io-width = <4>;
+ 		status = "disabled";
++		max-frequency = <97500000>;
+ 	};
  
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scif5.dtso b/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scif5.dtso
-new file mode 100644
-index 0000000000000000..37ec7006e1174a37
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7791-koelsch-exio-c-scif5.dtso
-@@ -0,0 +1,60 @@
-+/*
-+ * Device Tree Overlay for SCIF5 on r8a7791/Koelsch EXIO Connector C
-+ *
-+ * Copyright (C) 2015 Glider bvba
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ *
-+ * Pinout:
-+ *   - RXD = EXIO Connector C pin 39
-+ *   - TXD = EXIO Connector C pin 37
-+ *
-+ * Notes:
-+ *   - As these pins are shared with SDHI2, the latter is disabled first.
-+ */
-+
-+/dts-v1/;
-+/plugin/;
-+
-+/ {
-+	fragment@0 {
-+		target-path = "/aliases";
-+
-+		__overlay__ {
-+			/* serial5 = &scif5; */
-+			serial5 = "/serial@e6ee8000";
-+		};
-+	};
-+
-+	fragment@1 {
-+		target = <&pfc>;
-+
-+		__overlay__ {
-+			scif5_pins: serial5 {
-+				renesas,groups = "scif5_data_b";
-+				renesas,function = "scif5";
-+			};
-+		};
-+	};
-+
-+	fragment@2 {
-+		target = <&sdhi2>;
-+
-+		__overlay__ {
-+			status = "disabled";
-+		};
-+	};
-+
-+	fragment@3 {
-+		target = <&scif5>;
-+
-+		__overlay__ {
-+			pinctrl-0 = <&scif5_pins>;
-+			pinctrl-names = "default";
-+
-+			status = "okay";
-+		};
-+	};
-+};
+ 	sdhi0: sd@ee100000 {
 -- 
-1.9.1
+2.1.4
 
