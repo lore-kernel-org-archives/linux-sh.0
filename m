@@ -1,67 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 25 May 2015 01:14:32 +0000
-Subject: Re: [PATCH] ARM: multi_v7_defconfig: Enable shmobile r8a7778 (M1A)
-Message-Id: <20150525011431.GG24690@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 29 May 2015 00:54:08 +0000
+Subject: [PATCH] ARM: multi_v7_defconfig: Enable shmobile r8a7778/bockw platform
+Message-Id: <f2a5cefbbb2c69253a8a8aa7f7f77b22f0595811.1432860785.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1429196897-18822-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <552FDD73.70805@cogentembedded.com>
- <CAMuHMdW4=ZA5STuUm1zBypRtfuQtrD=2rBDW5GBGRS--zGMbzw@mail.gmail.com>
-In-Reply-To: <CAMuHMdW4=ZA5STuUm1zBypRtfuQtrD=2rBDW5GBGRS--zGMbzw@mail.gmail.com>
+References: <cover.1432860785.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1432860785.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Apr 16, 2015 at 06:08:08PM +0200, Geert Uytterhoeven wrote:
-> On Thu, Apr 16, 2015 at 6:04 PM, Sergei Shtylyov
-> <sergei.shtylyov@cogentembedded.com> wrote:
-> > On 04/16/2015 06:08 PM, Ulrich Hecht wrote:
-> >
-> >> Also enables RTC (RX8581) and camera (ML86V7667) drivers as modules.
-> 
-> I think this is identical to
-> http://lists.infradead.org/pipermail/linux-arm-kernel/2015-March/327624.html?
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-I think so too. And I also now understand that it is appropriate for me
-to take such patches. Accordingly I have queued up the patch at the link
-above for v4.2.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/multi_v7_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
-> >> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> >> ---
-> >>   arch/arm/configs/multi_v7_defconfig | 3 +++
-> >>   1 file changed, 3 insertions(+)
-> >
-> >
-> >> diff --git a/arch/arm/configs/multi_v7_defconfig
-> >> b/arch/arm/configs/multi_v7_defconfig
-> >> index 06075b6..212199a 100644
-> >> --- a/arch/arm/configs/multi_v7_defconfig
-> >> +++ b/arch/arm/configs/multi_v7_defconfig
-> >
-> > [...]
-> >>
-> >> @@ -500,6 +502,7 @@ CONFIG_RTC_DRV_SUN6I=y
-> >>   CONFIG_RTC_DRV_SUNXI=y
-> >>   CONFIG_RTC_DRV_MV=y
-> >>   CONFIG_RTC_DRV_TEGRA=y
-> >> +CONFIG_RTC_DRV_RX8581=m
-> >
-> >    The other RTC drivers seem to be built-in.
-> 
-> The current trend is to make "non-core" functionalities modular, to
-> reduce kernel size.
-> 
-> Yes, this means many of the existing options should be changed from
-> y to m.
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> 
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index ab86655c1f4b..06e7e887fea5 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -69,6 +69,7 @@ CONFIG_ARCH_EMEV2=y
+ CONFIG_ARCH_R7S72100=y
+ CONFIG_ARCH_R8A73A4=y
+ CONFIG_ARCH_R8A7740=y
++CONFIG_ARCH_R8A7778=y
+ CONFIG_ARCH_R8A7779=y
+ CONFIG_ARCH_R8A7790=y
+ CONFIG_ARCH_R8A7791=y
+@@ -387,6 +388,7 @@ CONFIG_V4L_MEM2MEM_DRIVERS=y
+ CONFIG_VIDEO_RENESAS_VSP1=m
+ # CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
+ CONFIG_VIDEO_ADV7180=m
++CONFIG_VIDEO_ML86V7667=m
+ CONFIG_DRM=y
+ CONFIG_DRM_RCAR_DU=m
+ CONFIG_DRM_TEGRA=y
+@@ -503,6 +505,7 @@ CONFIG_RTC_DRV_TWL4030=y
+ CONFIG_RTC_DRV_TPS6586X=y
+ CONFIG_RTC_DRV_TPS65910=y
+ CONFIG_RTC_DRV_S35390A=m
++CONFIG_RTC_DRV_RX8581=m
+ CONFIG_RTC_DRV_EM3027=y
+ CONFIG_RTC_DRV_PL031=y
+ CONFIG_RTC_DRV_VT8500=y
+-- 
+2.1.4
+
