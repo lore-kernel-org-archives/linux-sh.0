@@ -1,52 +1,40 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 04 May 2015 15:24:32 +0000
-Subject: [PATCH v3 6/6] ARM: shmobile: r8a7740 dtsi: Add L1 cache information to CPU node
-Message-Id: <1430753072-17145-7-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 29 May 2015 00:54:10 +0000
+Subject: [PATCH 02/10] ARM: shmobile: koelsch dts: Replace "nor-jedec" by "jedec,spi-nor"
+Message-Id: <cc3db02c9c7cb0c322263b3a6983023b04e3944f.1432860632.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1430753072-17145-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1432860632.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1432860632.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Describe the L1 cache in the CPU node:
-  - L1 instruction cache: 32 KiB (8 KiB x 4 ways),
-  - L1 data cache: 32 KiB (8 KiB x 4 ways).
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add a link to the L2 cache.
+Cfr. commit 8947e396a8296c52 ('Documentation: dt: mtd: replace
+"nor-jedec" binding with "jedec, spi-nor"')
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Brian Norris <computersforpeace@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3:
-  - No changes,
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-v2:
-  - New.
----
- arch/arm/boot/dts/r8a7740.dtsi | 9 +++++++++
- 1 file changed, 9 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index ddef5b1c68fa06b3..3aaab195132bfc2c 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -26,6 +26,15 @@
- 			reg = <0x0>;
- 			clock-frequency = <800000000>;
- 			power-domains = <&pd_a3sm>;
-+			i-cache-size = <0x8000>;
-+			i-cache-sets = <256>;
-+			i-cache-block-size = <32>;
-+			i-cache-line-size = <32>;
-+			d-cache-size = <0x8000>;
-+			d-cache-sets = <256>;
-+			d-cache-block-size = <32>;
-+			d-cache-line-size = <32>;
-+			next-level-cache = <&L2>;
- 		};
- 	};
- 
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 9cb8a6c8e3f1..f8cd86b9d27f 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -474,7 +474,7 @@
+ 	flash: flash@0 {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		compatible = "spansion,s25fl512s", "nor-jedec";
++		compatible = "spansion,s25fl512s", "jedec,spi-nor";
+ 		reg = <0>;
+ 		spi-max-frequency = <30000000>;
+ 		spi-tx-bus-width = <4>;
 -- 
-1.9.1
+2.1.4
 
