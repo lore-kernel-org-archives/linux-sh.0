@@ -1,36 +1,38 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 28 May 2015 08:07:20 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 29 May 2015 00:40:13 +0000
 Subject: Re: [PATCH 1/2] ARM: multi_v7_defconfig: Replace CONFIG_USB_ISP1760_HCD by CONFIG_USB_ISP1760
-Message-Id: <2413647.WLsQ0T21gS@wuerfel>
+Message-Id: <20150529004013.GA23322@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1432637918-8946-1-git-send-email-geert+renesas@glider.be>
- <20150528003903.GB9384@verge.net.au>
-In-Reply-To: <20150528003903.GB9384@verge.net.au>
+ <20150528003903.GB9384@verge.net.au> <2413647.WLsQ0T21gS@wuerfel>
+In-Reply-To: <2413647.WLsQ0T21gS@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thursday 28 May 2015 09:39:08 Simon Horman wrote:
-> On Tue, May 26, 2015 at 12:58:37PM +0200, Geert Uytterhoeven wrote:
-> > Since commit 100832abf065bc18 ("usb: isp1760: Make HCD support
-> > optional"), CONFIG_USB_ISP1760_HCD is automatically selected when
-> > needed.  Enabling that option in the defconfig is now a no-op, and no
-> > longer enables ISP1760 HCD support.
+On Thu, May 28, 2015 at 10:07:20AM +0200, Arnd Bergmann wrote:
+> On Thursday 28 May 2015 09:39:08 Simon Horman wrote:
+> > On Tue, May 26, 2015 at 12:58:37PM +0200, Geert Uytterhoeven wrote:
+> > > Since commit 100832abf065bc18 ("usb: isp1760: Make HCD support
+> > > optional"), CONFIG_USB_ISP1760_HCD is automatically selected when
+> > > needed.  Enabling that option in the defconfig is now a no-op, and no
+> > > longer enables ISP1760 HCD support.
+> > > 
+> > > Re-enable the ISP1760 driver in the defconfig by enabling
+> > > USB_ISP1760_HOST_ROLE instead.
+> > > 
+> > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > > 
-> > Re-enable the ISP1760 driver in the defconfig by enabling
-> > USB_ISP1760_HOST_ROLE instead.
+> > Thanks, I have queued this up for v4.3.
 > > 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> > I would not object at all if the ARM SoC maintainers wish to
+> > take this earlier and I'd be happy to prepare a pull request
+> > to that effect once the change has sat in next. Unfortunately
+> > I anticipate that will be after the standard rc6 deadline.
 > 
-> Thanks, I have queued this up for v4.3.
-> 
-> I would not object at all if the ARM SoC maintainers wish to
-> take this earlier and I'd be happy to prepare a pull request
-> to that effect once the change has sat in next. Unfortunately
-> I anticipate that will be after the standard rc6 deadline.
+> I would consider patch 1 as a bug-fix, and put that into 4.1 or
+> 4.2, depending on timing. Patch 2 looks like 4.3 material.
 
-I would consider patch 1 as a bug-fix, and put that into 4.1 or
-4.2, depending on timing. Patch 2 looks like 4.3 material.
-
-	Arnd 
+Thanks Arnd, would you care to take pick it up directly for 4.1 (or 4.2)?
+If so I'll drop it from my tree.
