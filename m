@@ -1,49 +1,119 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 26 May 2015 11:13:42 +0000
-Subject: [PATCH 1/2] usb: renesas_usbhs: Fix fifo unclear in usbhsf_prepare_pop
-Message-Id: <1432638823-3028-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 29 May 2015 00:54:18 +0000
+Subject: [PATCH 10/10] ARM: shmobile: r8a7790 dtsi: Describe DMA for the serial ports
+Message-Id: <acea43fcb02746e907725c6dbd2eb95b32d79ea5.1432860632.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1432860632.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1432860632.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-This patch fixes an issue for control write. When usbhsf_prepare_pop()
-is called after this driver called a gadget setup function, this controller
-doesn't receive the control write data. So, this patch adds a code to clear
-the fifo for control write in usbhsf_prepare_pop().
+Add DMA properties to all SCIF, SCIFA, SCIFB, and HSCIF device nodes.
 
-Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/usb/renesas_usbhs/fifo.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
-index bc23b4a..0bad84e 100644
---- a/drivers/usb/renesas_usbhs/fifo.c
-+++ b/drivers/usb/renesas_usbhs/fifo.c
-@@ -611,6 +611,8 @@ struct usbhs_pkt_handle usbhs_fifo_pio_push_handler = {
- static int usbhsf_prepare_pop(struct usbhs_pkt *pkt, int *is_done)
- {
- 	struct usbhs_pipe *pipe = pkt->pipe;
-+	struct usbhs_priv *priv = usbhs_pipe_to_priv(pipe);
-+	struct usbhs_fifo *fifo = usbhsf_get_cfifo(priv);
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 70248df02342..51ab8865ea37 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -556,6 +556,8 @@
+ 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
+ 		clock-names = "sci_ick";
++		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
  
- 	if (usbhs_pipe_is_busy(pipe))
- 		return 0;
-@@ -624,6 +626,9 @@ static int usbhsf_prepare_pop(struct usbhs_pkt *pkt, int *is_done)
- 	usbhs_pipe_data_sequence(pipe, pkt->sequence);
- 	pkt->sequence = -1; /* -1 sequence will be ignored */
+@@ -565,6 +567,8 @@
+ 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA1>;
+ 		clock-names = "sci_ick";
++		dmas = <&dmac0 0x25>, <&dmac0 0x26>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
  
-+	if (usbhs_pipe_is_dcp(pipe))
-+		usbhsf_fifo_clear(pipe, fifo);
-+
- 	usbhs_pipe_set_trans_count_if_bulk(pipe, pkt->length);
- 	usbhs_pipe_enable(pipe);
- 	usbhs_pipe_running(pipe, 1);
+@@ -574,6 +578,8 @@
+ 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA2>;
+ 		clock-names = "sci_ick";
++		dmas = <&dmac0 0x27>, <&dmac0 0x28>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -583,6 +589,8 @@
+ 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB0>;
+ 		clock-names = "sci_ick";
++		dmas = <&dmac0 0x3d>, <&dmac0 0x3e>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -592,6 +600,8 @@
+ 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB1>;
+ 		clock-names = "sci_ick";
++		dmas = <&dmac0 0x19>, <&dmac0 0x1a>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -601,6 +611,8 @@
+ 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFB2>;
+ 		clock-names = "sci_ick";
++		dmas = <&dmac0 0x1d>, <&dmac0 0x1e>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -610,6 +622,8 @@
+ 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_SCIF0>;
+ 		clock-names = "sci_ick";
++		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -619,6 +633,8 @@
+ 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_SCIF1>;
+ 		clock-names = "sci_ick";
++		dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -628,6 +644,8 @@
+ 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF0>;
+ 		clock-names = "sci_ick";
++		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
+@@ -637,6 +655,8 @@
+ 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7790_CLK_HSCIF1>;
+ 		clock-names = "sci_ick";
++		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
++		dma-names = "tx", "rx";
+ 		status = "disabled";
+ 	};
+ 
 -- 
-1.9.1
+2.1.4
 
