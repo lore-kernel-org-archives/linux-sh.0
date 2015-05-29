@@ -1,50 +1,44 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Thu, 21 May 2015 10:48:09 +0000
-Subject: [PATCH v3 07/11] serial: sh-sci: Add device tree bindings for r8a7793
-Message-Id: <1432205293-9488-8-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 May 2015 09:36:28 +0000
+Subject: [PATCH 0/3] clk: shmobile: Document mandatory compatible fallbacks
+Message-Id: <1432892191-24039-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432205293-9488-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1432205293-9488-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert@linux-m68k.org, horms@verge.net.au, linux-sh@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com, kuninori.morimoto.gx@renesas.com
-Cc: magnus.damm@gmail.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, devicetree@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To: Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>
+Cc: Simon Horman <horms+renesas@verge.net.au>, linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Also replaces "R-Car M2" with "R-Car M2-W" to avoid confusion.
+	Hi Mike, Stephen,
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: devicetree@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
----
- .../devicetree/bindings/serial/renesas,sci-serial.txt        | 12 ++++++++----
- 1 file changed, 8 insertions(+), 4 deletions(-)
+Several DT binding docs for shmobile clock drivers declare that the
+compatible value should be one out of a list of SoC-specific values and
+a generic value.
+However, the driver only binds against the generic value.
+Hence document that the generic value is a mandatory fallback.
 
-diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-index ae73bb0..78419eb 100644
---- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-+++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-@@ -15,10 +15,14 @@ Required properties:
-     - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible UART.
-     - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible UART.
-     - "renesas,hscif-r8a7790" for R8A7790 (R-Car H2) HSCIF compatible UART.
--    - "renesas,scif-r8a7791" for R8A7791 (R-Car M2) SCIF compatible UART.
--    - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2) SCIFA compatible UART.
--    - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2) SCIFB compatible UART.
--    - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2) HSCIF compatible UART.
-+    - "renesas,scif-r8a7791" for R8A7791 (R-Car M2-W) SCIF compatible UART.
-+    - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2-W) SCIFA compatible UART.
-+    - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2-W) SCIFB compatible UART.
-+    - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2-W) HSCIF compatible UART.
-+    - "renesas,scif-r8a7793" for R8A7793 (R-Car M2-N) SCIF compatible UART.
-+    - "renesas,scifa-r8a7793" for R8A7793 (R-Car M2-N) SCIFA compatible UART.
-+    - "renesas,scifb-r8a7793" for R8A7793 (R-Car M2-N) SCIFB compatible UART.
-+    - "renesas,hscif-r8a7793" for R8A7793 (R-Car M2-N) HSCIF compatible UART.
-     - "renesas,scif-r8a7794" for R8A7794 (R-Car E2) SCIF compatible UART.
-     - "renesas,scifa-r8a7794" for R8A7794 (R-Car E2) SCIFA compatible UART.
-     - "renesas,scifb-r8a7794" for R8A7794 (R-Car E2) SCIFB compatible UART.
+Thanks for applying!
+
+Geert Uytterhoeven (3):
+  clk: shmobile: mstp: Document mandatory compatible fallback
+  clk: shmobile: rcar-gen2: Document mandatory compatible fallback
+  clk: shmobile: rz: Document mandatory compatible fallback
+
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt     | 2 +-
+ .../devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt          | 2 +-
+ Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt       | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
 -- 
-2.3.5
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
