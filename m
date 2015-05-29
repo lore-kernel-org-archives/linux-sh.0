@@ -1,57 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 14 May 2015 01:07:17 +0000
-Subject: [PATCH] ARM: shmobile: defconfig: Replace USB_RCAR_GEN2_PHY by PHY_RCAR_GEN2
-Message-Id: <90037558d5ed25a63499c3973cc1af25da02f673.1431565572.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 May 2015 09:36:29 +0000
+Subject: [PATCH 1/3] clk: shmobile: mstp: Document mandatory compatible fallback
+Message-Id: <1432892191-24039-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1431565572.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1431565572.git.horms+renesas@verge.net.au>
+References: <1432892191-24039-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1432892191-24039-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>
+Cc: Simon Horman <horms+renesas@verge.net.au>, linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The generic MSTP gate clocks compatible value is mandatory, as the
+driver uses only this value for matching.  Document that this is a
+fallback that must be present.
 
-The legacy-only USB_RCAR_GEN2_PHY driver was replaced by the DT-only
-PHY_RCAR_GEN2 driver.
-
-Refresh the defconfig using "make savedefconfig" while we're at it.
+Also fix a typo (missing plural "s") in the compatible value.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/shmobile_defconfig | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index b58618e2d13c..9961fbd633f8 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -121,7 +121,6 @@ CONFIG_WATCHDOG=y
- CONFIG_DA9063_WATCHDOG=y
- CONFIG_MFD_AS3711=y
- CONFIG_MFD_DA9063=y
--CONFIG_REGULATOR=y
- CONFIG_REGULATOR_AS3711=y
- CONFIG_REGULATOR_DA9210=y
- CONFIG_REGULATOR_GPIO=y
-@@ -160,7 +159,6 @@ CONFIG_USB_OHCI_HCD=y
- CONFIG_USB_R8A66597_HCD=y
- CONFIG_USB_RENESAS_USBHS=y
- CONFIG_USB_RCAR_PHY=y
--CONFIG_USB_RCAR_GEN2_PHY=y
- CONFIG_USB_GADGET=y
- CONFIG_USB_RENESAS_USBHS_UDC=y
- CONFIG_USB_ETH=y
-@@ -182,6 +180,8 @@ CONFIG_IIO=y
- CONFIG_AK8975=y
- CONFIG_PWM=y
- CONFIG_PWM_RENESAS_TPU=y
-+CONFIG_GENERIC_PHY=y
-+CONFIG_PHY_RCAR_GEN2=y
- # CONFIG_DNOTIFY is not set
- CONFIG_MSDOS_FS=y
- CONFIG_VFAT_FS=y
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 0a80fa70ca265c0f..237ff1c8dd632fc3 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -18,7 +18,7 @@ Required Properties:
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2) MSTP gate clocks
+     - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
+     - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
+-    - "renesas,cpg-mstp-clock" for generic MSTP gate clocks
++    and "renesas,cpg-mstp-clocks" as a fallback.
+   - reg: Base address and length of the I/O mapped registers used by the MSTP
+     clocks. The first register is the clock control register and is mandatory.
+     The second register is the clock status register and is optional when not
 -- 
-2.1.4
+1.9.1
 
