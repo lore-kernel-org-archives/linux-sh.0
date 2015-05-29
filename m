@@ -1,189 +1,40 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 20 May 2015 17:46:26 +0000
-Subject: [PATCH 3/4] ARM: shmobile: r8a7791 dtsi: Describe DMA for the serial ports
-Message-Id: <1432143987-10308-4-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 29 May 2015 00:54:13 +0000
+Subject: [PATCH 05/10] ARM: shmobile: bockw dts: Replace "nor-jedec" by "jedec,spi-nor"
+Message-Id: <9cc785702d9f6367fdecf0fba6e425198e0754c8.1432860632.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432143987-10308-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432143987-10308-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1432860632.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1432860632.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: devicetree@vger.kernel.org, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Add DMA properties to all SCIF, SCIFA, SCIFB, and HSCIF device nodes.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Cfr. commit 8947e396a8296c52 ('Documentation: dt: mtd: replace
+"nor-jedec" binding with "jedec, spi-nor"')
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Brian Norris <computersforpeace@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+ arch/arm/boot/dts/r8a7778-bockw.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 7613abea13d79037..7e79e01202f80dac 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -532,6 +532,8 @@
- 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_SCIFA0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -541,6 +543,8 @@
- 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_SCIFA1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x25>, <&dmac0 0x26>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -550,6 +554,8 @@
- 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_SCIFA2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x27>, <&dmac0 0x28>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -559,6 +565,8 @@
- 		interrupts = <0 29 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7791_CLK_SCIFA3>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x1b>, <&dmac0 0x1c>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -568,6 +576,8 @@
- 		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7791_CLK_SCIFA4>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x1f>, <&dmac0 0x20>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -577,6 +587,8 @@
- 		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7791_CLK_SCIFA5>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x23>, <&dmac0 0x24>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -586,6 +598,8 @@
- 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_SCIFB0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x3d>, <&dmac0 0x3e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -595,6 +609,8 @@
- 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_SCIFB1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x19>, <&dmac0 0x1a>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -604,6 +620,8 @@
- 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_SCIFB2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x1d>, <&dmac0 0x1e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -613,6 +631,8 @@
- 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_SCIF0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -622,6 +642,8 @@
- 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_SCIF1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -631,6 +653,8 @@
- 		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_SCIF2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x2b>, <&dmac0 0x2c>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -640,6 +664,8 @@
- 		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_SCIF3>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x2f>, <&dmac0 0x30>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -649,6 +675,8 @@
- 		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_SCIF4>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0xfb>, <&dmac0 0xfc>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -658,6 +686,8 @@
- 		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_SCIF5>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0xfd>, <&dmac0 0xfe>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -667,6 +697,8 @@
- 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_HSCIF0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -676,6 +708,8 @@
- 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_HSCIF1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
-@@ -685,6 +719,8 @@
- 		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_HSCIF2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x3b>, <&dmac0 0x3c>;
-+		dma-names = "tx", "rx";
- 		status = "disabled";
- 	};
- 
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index dfbb12e4fef4..90543b12d7e2 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -186,7 +186,7 @@
+ 	flash: flash@0 {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		compatible = "spansion,s25fl008k", "nor-jedec";
++		compatible = "spansion,s25fl008k", "jedec,spi-nor";
+ 		reg = <0>;
+ 		spi-max-frequency = <104000000>;
+ 		m25p,fast-read;
 -- 
-1.9.1
+2.1.4
 
