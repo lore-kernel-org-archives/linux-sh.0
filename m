@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 29 May 2015 00:53:56 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Defconfig Updates for v4.2
-Message-Id: <cover.1432860785.git.horms+renesas@verge.net.au>
+Date: Fri, 29 May 2015 00:54:16 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC DT Updates for v4.2
+Message-Id: <cover.1432860632.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
@@ -12,33 +12,57 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these second round of Renesas ARM based SoC defconfig updates for v4.2.
+Please consider these second round of Renesas ARM based SoC DT updates for v4.2.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-defconfig-for-v4.2,
+such requests, tagged as renesas-dt-for-v4.2,
 which I have already sent a pull-request for.
 
+The change from using "nor-jedec" instead of "jedec,spi-nor" should
+be safe as the usage of "nor-jedec" was added earlier in the v4.2 release
+cycle and thus has not been present in a release.
 
-The following changes since commit 90037558d5ed25a63499c3973cc1af25da02f673:
 
-  ARM: shmobile: defconfig: Replace USB_RCAR_GEN2_PHY by PHY_RCAR_GEN2 (2015-05-01 21:25:43 +0900)
+The following changes since commit 7706993e2deb75022dbcfc3043890aa1a0020189:
+
+  ARM: shmobile: r8a7791: Enable DMA for HSUSB (2015-05-12 08:55:16 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig2-for-v4.2
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt2-for-v4.2
 
-for you to fetch changes up to f2a5cefbbb2c69253a8a8aa7f7f77b22f0595811:
+for you to fetch changes up to acea43fcb02746e907725c6dbd2eb95b32d79ea5:
 
-  ARM: multi_v7_defconfig: Enable shmobile r8a7778/bockw platform (2015-05-25 10:10:48 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC Defconfig Updates for v4.2
-
-* Enable shmobile r8a7778/bockw platform
+  ARM: shmobile: r8a7790 dtsi: Describe DMA for the serial ports (2015-05-26 10:02:43 +0900)
 
 ----------------------------------------------------------------
-Geert Uytterhoeven (1):
-      ARM: multi_v7_defconfig: Enable shmobile r8a7778/bockw platform
+Second Round of Renesas ARM Based SoC DT Updates for v4.2
 
- arch/arm/configs/multi_v7_defconfig | 3 +++
- 1 file changed, 3 insertions(+)
+* Describe DMA for the serial ports of R-Car Gen2 SoCs
+* Add MMCIF max-frequency to R-Car Gen2 SoCs
+* Use "nor-jedec" instead of "jedec,spi-nor"
+
+----------------------------------------------------------------
+Geert Uytterhoeven (8):
+      ARM: shmobile: lager dts: Replace "nor-jedec" by "jedec,spi-nor"
+      ARM: shmobile: koelsch dts: Replace "nor-jedec" by "jedec,spi-nor"
+      ARM: shmobile: bockw-reference dts: Replace "nor-jedec" by "jedec,spi-nor"
+      ARM: shmobile: henninger dts: Replace "nor-jedec" by "jedec,spi-nor"
+      ARM: shmobile: bockw dts: Replace "nor-jedec" by "jedec,spi-nor"
+      ARM: shmobile: r8a7794 dtsi: Describe DMA for the serial ports
+      ARM: shmobile: r8a7791 dtsi: Describe DMA for the serial ports
+      ARM: shmobile: r8a7790 dtsi: Describe DMA for the serial ports
+
+Kuninori Morimoto (2):
+      ARM: shmobile: r8a7790: add MMCIF max-frequency
+      ARM: shmobile: r8a7791: add MMCIF max-frequency
+
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts |  2 +-
+ arch/arm/boot/dts/r8a7778-bockw.dts           |  2 +-
+ arch/arm/boot/dts/r8a7790-lager.dts           |  2 +-
+ arch/arm/boot/dts/r8a7790.dtsi                | 22 ++++++++++++++++
+ arch/arm/boot/dts/r8a7791-henninger.dts       |  2 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts         |  2 +-
+ arch/arm/boot/dts/r8a7791.dtsi                | 37 +++++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7794.dtsi                | 36 ++++++++++++++++++++++++++
+ 8 files changed, 100 insertions(+), 5 deletions(-)
