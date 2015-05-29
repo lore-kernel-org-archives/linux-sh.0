@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 14 May 2015 01:06:36 +0000
-Subject: [PATCH 07/31] ARM: shmobile: r8a7791: Add IRQC clock to device tree
-Message-Id: <62d386c04b1cb9df430c955b309406175d26b6b3.1431565427.git.horms+renesas@verge.net.au>
+Date: Fri, 29 May 2015 00:54:11 +0000
+Subject: [PATCH 03/10] ARM: shmobile: bockw-reference dts: Replace "nor-jedec" by "jedec,spi-nor"
+Message-Id: <49633bbbebcd2e398799389542d621bd9b8c5c56.1432860632.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1431565427.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1431565427.git.horms+renesas@verge.net.au>
+References: <cover.1432860632.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1432860632.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,57 +12,29 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Link the external IRQ controller irqc0 to the IRQC module clock, so it
-can be power managed using that clock.
+Cfr. commit 8947e396a8296c52 ('Documentation: dt: mtd: replace
+"nor-jedec" binding with "jedec, spi-nor"')
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Brian Norris <computersforpeace@gmail.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi            | 9 +++++++++
- include/dt-bindings/clock/r8a7791-clock.h | 3 +++
- 2 files changed, 12 insertions(+)
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 3e9f824797e7..d2c41ad701cc 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -239,6 +239,7 @@
- 			     <0 15 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 16 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp4_clks R8A7791_CLK_IRQC>;
- 	};
- 
- 	dmac0: dma-controller@e6700000 {
-@@ -1160,6 +1161,14 @@
- 				"mmcif0", "i2c7", "pciec", "i2c8", "ssusb", "cmt1",
- 				"usbdmac0", "usbdmac1";
- 		};
-+		mstp4_clks: mstp4_clks@e6150140 {
-+			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
-+			clocks = <&cp_clk>;
-+			#clock-cells = <1>;
-+			clock-indices = <R8A7791_CLK_IRQC>;
-+			clock-output-names = "irqc";
-+		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7791-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 8fc5dc8faeea..402268384b99 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -70,6 +70,9 @@
- #define R8A7791_CLK_USBDMAC0		30
- #define R8A7791_CLK_USBDMAC1		31
- 
-+/* MSTP4 */
-+#define R8A7791_CLK_IRQC		7
-+
- /* MSTP5 */
- #define R8A7791_CLK_AUDIO_DMAC1		1
- #define R8A7791_CLK_AUDIO_DMAC0		2
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+index f9422d887b44..dffa6ff30360 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw-reference.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -119,7 +119,7 @@
+ 	flash: flash@0 {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		compatible = "spansion,s25fl008k", "nor-jedec";
++		compatible = "spansion,s25fl008k", "jedec,spi-nor";
+ 		reg = <0>;
+ 		spi-max-frequency = <104000000>;
+ 		m25p,fast-read;
 -- 
 2.1.4
 
