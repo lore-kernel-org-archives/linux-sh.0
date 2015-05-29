@@ -1,190 +1,49 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 14 May 2015 07:22:46 +0000
-Subject: [PATCH 3/5 v6] mmc: sh_mmcif: calculate best clock with parent clock
-Message-Id: <871tijpqu8.wl%kuninori.morimoto.gx@renesas.com>
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Fri, 29 May 2015 00:48:11 +0000
+Subject: [PATCH 13/15] sh: don't use module_init in non-modular psw.c code
+Message-Id: <1432860493-23831-14-git-send-email-paul.gortmaker@windriver.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <873840a4ch.wl%kuninori.morimoto.gx@renesas.com>
-	<87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87617vpqy3.wl%kuninori.morimoto.gx@renesas.com>
+References: <1432860493-23831-1-git-send-email-paul.gortmaker@windriver.com>
+In-Reply-To: <1432860493-23831-1-git-send-email-paul.gortmaker@windriver.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Laurent <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, kobayashi <keita.kobayashi.ym@renesas.com>
+To: linux-kernel@vger.kernel.org
+Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The psw.o is built for obj-y -- and hence this code is always
+present.  It will never be modular, so using module_init as an alias
+for __initcall can be somewhat misleading.
 
-MMCIF IP on R-Car series has parent clock which can be set several rate,
-and it was not implemented on old SH-Mobile series (= SH-Mobile series
-parent clock was fixed rate) R-Car series MMCIF can use more high speed
-access if it setups parent clock. This patch adds parent clock setup
-method. It will be used if DT has "max-frequency", and then, this driver
-assumes it is booted on R-Car Gen2 or later SoC. Because SH-Mobile series
-(which doesn't boot from DT) and R-Car series (which boots from DT) have
-different divider.
+Fix this up now, so that we can relocate module_init from
+init.h into module.h in the future.  If we don't do this, we'd
+have to add module.h to obviously non-modular code, and that
+would be a worse thing.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Note that direct use of __initcall is discouraged, vs. one
+of the priority categorized subgroups.  As __initcall gets
+mapped onto device_initcall, our use of device_initcall
+directly in this change means that the runtime impact is
+zero -- it will remain at level 6 in initcall ordering.
+
+Reported-by: kbuild test robot <fengguang.wu@intel.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
 ---
-v5 -> v6
+ arch/sh/boards/mach-landisk/psw.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- - it uses max-frequency
- - don't add new compatible string
-
- .../devicetree/bindings/mmc/renesas,mmcif.txt      |  3 +
- drivers/mmc/host/sh_mmcif.c                        | 84 +++++++++++++++++++---
- 2 files changed, 78 insertions(+), 9 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-index 299081f..d38942f 100644
---- a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-+++ b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-@@ -18,6 +18,8 @@ Required properties:
-   dma-names property.
- - dma-names: must contain "tx" for the transmit DMA channel and "rx" for the
-   receive DMA channel.
-+- max-frequency: Maximum operating clock frequency, driver uses default clock
-+  frequency if it is not set.
- 
- 
- Example: R8A7790 (R-Car H2) MMCIF0
-@@ -29,4 +31,5 @@ Example: R8A7790 (R-Car H2) MMCIF0
- 		clocks = <&mstp3_clks R8A7790_CLK_MMCIF0>;
- 		dmas = <&dmac0 0xd1>, <&dmac0 0xd2>;
- 		dma-names = "tx", "rx";
-+		max-frequency = <97500000>;
- 	};
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index e13c5f41..554fa9d 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -57,6 +57,7 @@
- #include <linux/mmc/slot-gpio.h>
- #include <linux/mod_devicetable.h>
- #include <linux/mutex.h>
-+#include <linux/of_device.h>
- #include <linux/pagemap.h>
- #include <linux/platform_device.h>
- #include <linux/pm_qos.h>
-@@ -224,6 +225,9 @@ enum sh_mmcif_wait_for {
- 	MMCIF_WAIT_FOR_STOP,
- };
- 
-+/*
-+ * difference for each SoC
-+ */
- struct sh_mmcif_host {
- 	struct mmc_host *mmc;
- 	struct mmc_request *mrq;
-@@ -248,6 +252,7 @@ struct sh_mmcif_host {
- 	bool ccs_enable;		/* Command Completion Signal support */
- 	bool clk_ctrl2_enable;
- 	struct mutex thread_lock;
-+	u32 clkdiv_map;         /* see CE_CLK_CTRL::CLKDIV */
- 
- 	/* DMA support */
- 	struct dma_chan		*chan_rx;
-@@ -492,19 +497,55 @@ static void sh_mmcif_clock_control(struct sh_mmcif_host *host, unsigned int clk)
- 	struct sh_mmcif_plat_data *p = dev->platform_data;
- 	bool sup_pclk = p ? p->sup_pclk : false;
- 	unsigned int current_clk = clk_get_rate(host->clk);
-+	unsigned int clkdiv;
- 
- 	sh_mmcif_bitclr(host, MMCIF_CE_CLK_CTRL, CLK_ENABLE);
- 	sh_mmcif_bitclr(host, MMCIF_CE_CLK_CTRL, CLK_CLEAR);
- 
- 	if (!clk)
- 		return;
--	if (sup_pclk && clk = current_clk)
--		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_SUP_PCLK);
--	else
--		sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_CLEAR &
--				((fls(DIV_ROUND_UP(current_clk,
--						   clk) - 1) - 1) << 16));
- 
-+	if (host->clkdiv_map) {
-+		unsigned int freq, best_freq, myclk, div, diff_min, diff;
-+		int i;
-+
-+		clkdiv = 0;
-+		diff_min = ~0;
-+		best_freq = 0;
-+		for (i = 31; i >= 0; i--) {
-+			if (!((1 << i) & host->clkdiv_map))
-+				continue;
-+
-+			/*
-+			 * clk = parent_freq / div
-+			 * -> parent_freq = clk x div
-+			 */
-+
-+			div = 1 << (i + 1);
-+			freq = clk_round_rate(host->clk, clk * div);
-+			myclk = freq / div;
-+			diff = (myclk > clk) ? myclk - clk : clk - myclk;
-+
-+			if (diff <= diff_min) {
-+				best_freq = freq;
-+				clkdiv = i;
-+				diff_min = diff;
-+			}
-+		}
-+
-+		dev_dbg(dev, "clk %u/%u (%u, 0x%x)\n",
-+			(best_freq / (1 << (clkdiv + 1))), clk,
-+			best_freq, clkdiv);
-+
-+		clk_set_rate(host->clk, best_freq);
-+		clkdiv = clkdiv << 16;
-+	} else if (sup_pclk && clk = current_clk) {
-+		clkdiv = CLK_SUP_PCLK;
-+	} else {
-+		clkdiv = (fls(DIV_ROUND_UP(current_clk, clk) - 1) - 1) << 16;
-+	}
-+
-+	sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_CLEAR & clkdiv);
- 	sh_mmcif_bitset(host, MMCIF_CE_CLK_CTRL, CLK_ENABLE);
- }
- 
-@@ -1000,10 +1041,35 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
- 
- static void sh_mmcif_clk_setup(struct sh_mmcif_host *host)
+diff --git a/arch/sh/boards/mach-landisk/psw.c b/arch/sh/boards/mach-landisk/psw.c
+index bef83522f958..5192b1f43ada 100644
+--- a/arch/sh/boards/mach-landisk/psw.c
++++ b/arch/sh/boards/mach-landisk/psw.c
+@@ -140,4 +140,4 @@ static int __init psw_init(void)
  {
--	unsigned int clk = clk_get_rate(host->clk);
-+	struct device *dev = sh_mmcif_host_to_dev(host);
-+
-+	if (host->mmc->f_max) {
-+		unsigned int f_max, f_min, f_min_old;
-+
-+		f_max = host->mmc->f_max;
-+		for (f_min_old = f_max; f_min_old > 2;) {
-+			f_min = clk_round_rate(host->clk, f_min_old / 2);
-+			if (f_min = f_min_old)
-+				break;
-+			f_min_old = f_min;
-+		}
-+
-+		/*
-+		 * This driver assumes this SoC is R-Car Gen2 or later
-+		 */
-+		host->clkdiv_map = 0x3ff;
-+
-+		host->mmc->f_max = f_max / (1 << ffs(host->clkdiv_map));
-+		host->mmc->f_min = f_min / (1 << fls(host->clkdiv_map));
-+	} else {
-+		unsigned int clk = clk_get_rate(host->clk);
-+
-+		host->mmc->f_max = clk / 2;
-+		host->mmc->f_min = clk / 512;
-+	}
- 
--	host->mmc->f_max = clk / 2;
--	host->mmc->f_min = clk / 512;
-+	dev_dbg(dev, "clk max/min = %d/%d\n",
-+		host->mmc->f_max, host->mmc->f_min);
+ 	return platform_add_devices(psw_devices, ARRAY_SIZE(psw_devices));
  }
- 
- static void sh_mmcif_set_power(struct sh_mmcif_host *host, struct mmc_ios *ios)
+-module_init(psw_init);
++device_initcall(psw_init);
 -- 
-1.9.1
+2.2.1
 
