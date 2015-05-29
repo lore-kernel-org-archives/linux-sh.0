@@ -1,54 +1,96 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 26 May 2015 19:24:03 +0000
-Subject: Re: [PATCH 3/3] drm: rcar-du: Convert rcar_du_encoders_init_one() return value to 0/<0
-Message-Id: <CAMuHMdWYUnY82cFeeZePOqu3VwLP_gq95a0K4qDJLGx+utLWJQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 29 May 2015 09:27:43 +0000
+Subject: [PATCH v3] irqchip: renesas-intc-irqpin: Improve binding documentation
+Message-Id: <1432891663-23641-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432652516-15085-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<1432652516-15085-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1432652516-15085-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <Pine.LNX.4.64.1304081002190.29945@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1304081002190.29945@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: DRI Development <dri-devel@lists.freedesktop.org>, Linux-sh list <linux-sh@vger.kernel.org>, Cao Minh Hiep <cm-hiep@jinso.co.jp>
+To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
+Cc: devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Tue, May 26, 2015 at 5:01 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> --- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-> +++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+Add missing documentation for required properties:
+  - interrupt-controller,
+  - parent interrupts (one entry per provided interrupt).
 
-> @@ -640,14 +640,14 @@ static int rcar_du_encoders_init_one(struct rcar_du_device *rcdu,
->         of_node_put(connector);
->
->         if (!ret)
-> -               return 1;
-> +               return 0;
->
->         if (ret != -EPROBE_DEFER)
->                 dev_warn(rcdu->dev,
->                          "failed to initialize encoder %s (%d), skipping\n",
->                          encoder->full_name, ret);
->
-> -       return 0;
-> +       return ret;
->  }
+Add missing documentation for optional properties:
+  - functional clock (managed since commit 705bc96c2c15313c ("irqchip:
+    renesas-intc-irqpin: Add minimal runtime PM support")),
+  - power-domains.
 
-Perhaps just
+Add an example, taken from r8a7740.dtsi.
 
-        if (ret && ret != -EPROBE_DEFER)
-                dev_warn(...);
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+---
+v3:
+  - Add Acked-by,
 
-       return ret;
+v2:
+  - This is v2 of "Add optional functional clock to bindings",
+  - Document all missing properties, not just the functional clock,
+  - Use a generic name for the device node in the example.
+---
+ .../interrupt-controller/renesas,intc-irqpin.txt   | 39 ++++++++++++++++++++--
+ 1 file changed, 37 insertions(+), 2 deletions(-)
 
-?
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+index 4f7946ae8adcdc04..772c550d3b4bcfe2 100644
+--- a/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
++++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,intc-irqpin.txt
+@@ -13,9 +13,12 @@ Required properties:
+ - reg: Base address and length of each register bank used by the external
+   IRQ pins driven by the interrupt controller hardware module. The base
+   addresses, length and number of required register banks varies with soctype.
+-
++- interrupt-controller: Identifies the node as an interrupt controller.
+ - #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
+-  interrupts.txt in this directory
++  interrupts.txt in this directory.
++- interrupts: Must contain a list of interrupt specifiers. For each interrupt
++  provided by this irqpin controller instance, there must be one entry,
++  referring to the corresponding parent interrupt.
+ 
+ Optional properties:
+ 
+@@ -25,3 +28,35 @@ Optional properties:
+   if different from the default 4 bits
+ - control-parent: disable and enable interrupts on the parent interrupt
+   controller, needed for some broken implementations
++- clocks: Must contain a reference to the functional clock.  This property is
++  mandatory if the hardware implements a controllable functional clock for
++  the irqpin controller instance.
++- power-domains: Must contain a reference to the power domain. This property is
++  mandatory if the irqpin controller instance is part of a controllable power
++  domain.
++
++
++Example
++-------
++
++	irqpin1: interrupt-controller@e6900004 {
++		compatible = "renesas,intc-irqpin-r8a7740",
++			     "renesas,intc-irqpin";
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		reg = <0xe6900004 4>,
++			<0xe6900014 4>,
++			<0xe6900024 1>,
++			<0xe6900044 1>,
++			<0xe6900064 1>;
++		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH
++			      0 149 IRQ_TYPE_LEVEL_HIGH
++			      0 149 IRQ_TYPE_LEVEL_HIGH
++			      0 149 IRQ_TYPE_LEVEL_HIGH
++			      0 149 IRQ_TYPE_LEVEL_HIGH
++			      0 149 IRQ_TYPE_LEVEL_HIGH
++			      0 149 IRQ_TYPE_LEVEL_HIGH
++			      0 149 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks R8A7740_CLK_INTCA>;
++		power-domains = <&pd_a4s>;
++	};
+-- 
+1.9.1
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
