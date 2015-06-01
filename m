@@ -1,70 +1,56 @@
-From: Bjorn Helgaas <bhelgaas@google.com>
-Date: Thu, 18 Jun 2015 20:10:43 +0000
-Subject: Re: [PATCH 10/15] PCI: kill off set_irq_flags usage
-Message-Id: <CAErSpo6VWA-kxESd4VVrf9zLoy19JcFWKFCvnzCCNPe64bzkXA@mail.gmail.com>
+From: Jiang Liu <jiang.liu@linux.intel.com>
+Date: Mon, 01 Jun 2015 08:05:20 +0000
+Subject: [Patch v3 11/36] sh, irq: Use helper irq_data_get_irq_handler_data() to hide irq_desc details
+Message-Id: <1433145945-789-12-git-send-email-jiang.liu@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433874401-27161-1-git-send-email-robh@kernel.org>
- <1433874401-27161-11-git-send-email-robh@kernel.org>
- <20150618165954.GE7710@google.com>
- <CAL_Jsq+5820W8N1Pbmv8JXzz7mH_H89HhtjXK_FAYbWAwBd8Ng@mail.gmail.com>
-In-Reply-To: <CAL_Jsq+5820W8N1Pbmv8JXzz7mH_H89HhtjXK_FAYbWAwBd8Ng@mail.gmail.com>
+References: <1433145945-789-1-git-send-email-jiang.liu@linux.intel.com>
+In-Reply-To: <1433145945-789-1-git-send-email-jiang.liu@linux.intel.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Thomas Gleixner <tglx@linutronix.de>, Bjorn Helgaas <bhelgaas@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, Randy Dunlap <rdunlap@infradead.org>, Yinghai Lu <yinghai@kernel.org>, Borislav Petkov <bp@alien8.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Jiang Liu <jiang.liu@linux.intel.com>
+Cc: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>, Tony Luck <tony.luck@intel.com>, x86@kernel.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-acpi@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Thu, Jun 18, 2015 at 3:08 PM, Rob Herring <robh@kernel.org> wrote:
-> On Thu, Jun 18, 2015 at 11:59 AM, Bjorn Helgaas <bhelgaas@google.com> wro=
-te:
->> On Tue, Jun 09, 2015 at 01:26:36PM -0500, Rob Herring wrote:
->>> set_irq_flags is ARM specific with custom flags which have genirq
->>> equivalents. Convert drivers to use the genirq interfaces directly, so =
-we
->>> can kill off set_irq_flags. The translation of flags is as follows:
->>>
->>> IRQF_VALID -> !IRQ_NOREQUEST
->>> IRQF_PROBE -> !IRQ_NOPROBE
->>> IRQF_NOAUTOEN -> IRQ_NOAUTOEN
->>>
->>> For IRQs managed by an irqdomain, the irqdomain core code handles clear=
-ing
->>> and setting IRQ_NOREQUEST already, so there is no need to do this in
->>> .map() functions and we can simply remove the set_irq_flags calls. Some
->>> users also set IRQ_NOPROBE and this has been maintained although it is =
-not
->>> clear that is really needed. There appears to be a great deal of blind
->>> copy and paste of this code.
->>>
->>> Signed-off-by: Rob Herring <robh@kernel.org>
->>> Cc: Kishon Vijay Abraham I <kishon@ti.com>
->>> Cc: Bjorn Helgaas <bhelgaas@google.com>
->>> Cc: Murali Karicheri <m-karicheri2@ti.com>
->>> Cc: Thierry Reding <thierry.reding@gmail.com>
->>> Cc: Stephen Warren <swarren@wwwdotorg.org>
->>> Cc: Alexandre Courbot <gnurou@gmail.com>
->>> Cc: Jingoo Han <jingoohan1@gmail.com>
->>> Cc: Pratyush Anand <pratyush.anand@gmail.com>
->>> Cc: Simon Horman <horms@verge.net.au>
->>> Cc: Michal Simek <michal.simek@xilinx.com>
->>> Cc: "S=C3=B6ren Brinkmann" <soren.brinkmann@xilinx.com>
->>> Cc: linux-omap@vger.kernel.org
->>> Cc: linux-pci@vger.kernel.org
->>> Cc: linux-arm-kernel@lists.infradead.org
->>> Cc: linux-tegra@vger.kernel.org
->>> Cc: linux-sh@vger.kernel.org
->>
->> This is the only part of the series on linux-pci, so I assume this will =
-be
->> merged by somebody else along with the rest.
->
-> I copied you on the intro, but all the lists and all the maintainers
-> was too long to cc. Being late in the cycle I didn't really intend for
-> this to be for 4.2, but you can pick up this patch if you want to as
-> it doesn't have any dependencies. If you don't, then I will submit the
-> whole series for 4.3.
+Use helper function irq_data_get_irq_handler_data() to hide irq_desc
+implementation details.
 
-OK, why don't you just include this with the rest of the series, since
-I assume the whole series is related even if there's no actual
-dependency.
+Signed-off-by: Jiang Liu <jiang.liu@linux.intel.com>
+---
+ drivers/sh/intc/virq.c |   12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
 
-Bjorn
+diff --git a/drivers/sh/intc/virq.c b/drivers/sh/intc/virq.c
+index f30ac9354ff2..bc0601cf0f8f 100644
+--- a/drivers/sh/intc/virq.c
++++ b/drivers/sh/intc/virq.c
+@@ -83,12 +83,11 @@ EXPORT_SYMBOL_GPL(intc_irq_lookup);
+ 
+ static int add_virq_to_pirq(unsigned int irq, unsigned int virq)
+ {
+-	struct intc_virq_list **last, *entry;
+-	struct irq_data *data = irq_get_irq_data(irq);
++	struct intc_virq_list *entry;
++	struct intc_virq_list **last = NULL;
+ 
+ 	/* scan for duplicates */
+-	last = (struct intc_virq_list **)&data->handler_data;
+-	for_each_virq(entry, data->handler_data) {
++	for_each_virq(entry, irq_get_handler_data(irq)) {
+ 		if (entry->irq = virq)
+ 			return 0;
+ 		last = &entry->next;
+@@ -102,7 +101,10 @@ static int add_virq_to_pirq(unsigned int irq, unsigned int virq)
+ 
+ 	entry->irq = virq;
+ 
+-	*last = entry;
++	if (last)
++		*last = entry;
++	else
++		irq_set_handler_data(irq, entry);
+ 
+ 	return 0;
+ }
+-- 
+1.7.10.4
+
