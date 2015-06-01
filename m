@@ -1,74 +1,85 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 18 Jun 2015 20:01:58 +0000
-Subject: Re: [PATCH/RFC] v4l: vsp1: Change pixel count at scale-up setting
-Message-Id: <65213967.H6cJcZz00U@avalon>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 01 Jun 2015 14:22:53 +0000
+Subject: [PATCH v5 0/4] r8a7793 SoC, Gose board support
+Message-Id: <1433168577-7678-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434302954-31273-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1434302954-31273-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: linux-media@vger.kernel.org, Mauro Carvalho Chehab <m.chehab@samsung.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Damian Hobson-Garcia <dhobsong@igel.co.jp>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Kaneko-san,
+Hi!
 
-Thank you for the patch.
+Here's the minimalized r8a7793 support series once more, with the missing
+regulator bits added and the "enable-method" removed.
 
-On Monday 15 June 2015 02:29:14 Yoshihiro Kaneko wrote:
-> From: Atsushi Akatsuka <atsushi.akatsuka.vb@hitachi.com>
-> 
-> This commit sets AMD bit of VI6_UDSn_CTRL register,
-> and modifies scaling formula to fit AMD bit.
+CU
+Uli
 
-What's the rationale for that ? What are the side effects of setting the AMD 
-bit ? Will it change anything beside the scaling factor computation formula ?
 
-> Signed-off-by: Atsushi Akatsuka <atsushi.akatsuka.vb@hitachi.com>
-> Signed-off-by: Hiroki Negishi <hiroki.negishi.zr@hitachi-solutions.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
-> 
-> This patch is based on the master branch of linuxtv.org/media_tree.git.
-> 
->  drivers/media/platform/vsp1/vsp1_uds.c | 7 ++++---
->  1 file changed, 4 insertions(+), 3 deletions(-)
-> 
-> diff --git a/drivers/media/platform/vsp1/vsp1_uds.c
-> b/drivers/media/platform/vsp1/vsp1_uds.c index ccc8243..e7a046d 100644
-> --- a/drivers/media/platform/vsp1/vsp1_uds.c
-> +++ b/drivers/media/platform/vsp1/vsp1_uds.c
-> @@ -64,10 +64,10 @@ static unsigned int uds_output_size(unsigned int input,
-> unsigned int ratio) mp = ratio / 4096;
->  		mp = mp < 4 ? 1 : (mp < 8 ? 2 : 4);
-> 
-> -		return (input - 1) / mp * mp * 4096 / ratio + 1;
-> +		return input / mp * mp * 4096 / ratio;
+Changes since v4:
+- added missing build system changes for regulator quirk
+- removed enable-method from SoC DT
+- fixed typo
+- added ack
 
-According to the datasheet I have access to the AMD bit only influences the 
-scale-up case.
+Changes since v3:
+- minimalized device trees
+- split off DT bindings
+- added Geert's ack
 
->  	} else {
->  		/* Up-scaling */
-> -		return (input - 1) * 4096 / ratio + 1;
-> +		return input * 4096 / ratio;
->  	}
->  }
-> 
-> @@ -145,7 +145,8 @@ static int uds_s_stream(struct v4l2_subdev *subdev, int
-> enable)
-> 
->  	vsp1_uds_write(uds, VI6_UDS_CTRL,
->  		       (uds->scale_alpha ? VI6_UDS_CTRL_AON : 0) |
-> -		       (multitap ? VI6_UDS_CTRL_BC : 0));
-> +		       (multitap ? VI6_UDS_CTRL_BC : 0) |
-> +		       VI6_UDS_CTRL_AMD);
-> 
->  	vsp1_uds_write(uds, VI6_UDS_PASS_BWIDTH,
->  		       (uds_passband_width(hscale)
+Changes since v2:
+- dts: remove unused pins
+- dts: fix flash partition addresses
+- dts: add pmic
+- dtsi, dts: add CMTs
+- dts: add interrupt parent to regulator
+- smp, dtsi: use CPU_METHOD_OF_DECLARE, enable-method
+- smp: re-add rcar_gen2_pm_init() call
+- dtsi: add irqc0 clock
+- dtsi: add DMA controllers
+- dtsi: remove audmapp
+- dtsi: fix sdhi0 resource length
+- dtsi: add SDHI DMAs, remove unsupported properties
+- dtsi: add rcan, adsp clocks
+- dtsi: add missing MSTP4
+- dtsi: fix audmac clocks
+- dtsi: add MSIOF DMAs, remove unused register set
+- dtsi: copy sound description from r8a7791
+- enable rcar2 regulator quirk on Gose
+
+Changes since v1:
+
+- pfc: split patch in six
+- pfc: fixed typos
+- dts: named clock bits properly
+- dts: made more consistent with the very similar r8a7791 dts
+- dts: removed adv7511, don't know the address
+- pm: dropped for now, needs to be fixed up first
+- everywhere: renamed M2N -> M2-N (and M2 to M2-W, while at it)
+- everywhere: added Acks
+
+
+Ulrich Hecht (4):
+  ARM: shmobile: Basic r8a7793 SoC support
+  ARM: shmobile: add r8a7793 minimal SoC device tree
+  ARM: shmobile: r8a7793: add minimal Gose board device tree
+  ARM: shmobile: gose: enable R-Car Gen2 regulator quirk
+
+ arch/arm/boot/dts/Makefile                         |   1 +
+ arch/arm/boot/dts/r8a7793-gose.dts                 |  63 ++++
+ arch/arm/boot/dts/r8a7793.dtsi                     | 367 +++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                     |   5 +
+ arch/arm/mach-shmobile/Makefile                    |   2 +
+ arch/arm/mach-shmobile/regulator-quirk-rcar-gen2.c |   3 +-
+ arch/arm/mach-shmobile/setup-r8a7793.c             |  33 ++
+ include/dt-bindings/clock/r8a7793-clock.h          | 164 +++++++++
+ 8 files changed, 637 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/boot/dts/r8a7793-gose.dts
+ create mode 100644 arch/arm/boot/dts/r8a7793.dtsi
+ create mode 100644 arch/arm/mach-shmobile/setup-r8a7793.c
+ create mode 100644 include/dt-bindings/clock/r8a7793-clock.h
 
 -- 
-Regards,
-
-Laurent Pinchart
+2.4.2
 
