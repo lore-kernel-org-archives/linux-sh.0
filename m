@@ -1,56 +1,36 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 17 Jun 2015 13:20:33 +0000
-Subject: Re: [PATCH] i2c-tools: enable static use of libi2c
-Message-Id: <20150617132033.GJ13393@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="utPK4TBebyzZxMrE"
+From: Christian Borntraeger <borntraeger@de.ibm.com>
+Date: Mon, 01 Jun 2015 07:35:57 +0000
+Subject: Re: [PATCH 0/5] Remove s390 sw-emulated hugepages and cleanup
+Message-Id: <556C0B5D.40205@de.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434420079-3029-1-git-send-email-wsa@the-dreams.de>
- <20150617110615.7c7cb411@endymion.delvare>
- <20150617105309.GF1517@katana>
- <20150617151025.1353abe3@endymion.delvare>
-In-Reply-To: <20150617151025.1353abe3-R0o5gVi9kd7kN2dkZ6Wm7A@public.gmane.org>
-To: Jean Delvare <jdelvare-l3A5Bk7waGM@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+References: <1432813957-46874-1-git-send-email-dingel@linux.vnet.ibm.com>
+In-Reply-To: <1432813957-46874-1-git-send-email-dingel@linux.vnet.ibm.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+Am 28.05.2015 um 13:52 schrieb Dominik Dingel:
+> Hi everyone,
+> 
+> there is a potential bug with KVM and hugetlbfs if the hardware does not
+> support hugepages (EDAT1).
+> We fix this by making EDAT1 a hard requirement for hugepages and 
+> therefore removing and simplifying code.
 
---utPK4TBebyzZxMrE
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The cleanup itself is nice and probably the right thing to do. 
+Emulating large pages makes the code more complex and asks for
+trouble (as outlined above)
 
+The only downside that I see is that z/VM as of today does not
+announce EDAT1 for its guests so the "emulated" large pages for
+hugetlbfs would be useful in that case. The current code allocates
+the page table only once and shares it for all mappers - which is
+useful for some big databases that spawn hundreds of processes with
+shared mappings of several hundred GBs. In these cases we do save
+a decent amount of page table memory. 
 
-> You mean that USE_STATIC_LIB = 1 would silently imply
-> BUILD_STATIC_LIB = 1? Yes, that's much better than my proposal.
+Not sure if that case is actually important, though.
 
-Yes, I meant that.
+Christian
 
-> I'm wondering if we should make it even more flexible, but I'm not sure
-> if it's worth the effort... Are you calling "make install" after that?
-> I guess not.
-
-No, I am not. I just copy the file to the TFTP dir.
-
-
---utPK4TBebyzZxMrE
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJVgXQhAAoJEBQN5MwUoCm2ZTYQAKauMwW2gYAnmhaBP/rHnLt7
-n84/VpwU+KQfkWbt/3f1dKVf8o/qlOrIfxQZTNClOlF53ilBwU3YOIcjRwPEQ/IE
-AWeUr+2lJucQX2RfJ6ZhzMKLJHcuThLYbNgWPKTJB8JUN8OoefYOSQXufl93ZXj/
-DuPdpn/eCfxkHGByHL/zcsVximB9fhJ/uBb5ASlcHjsF2gxoL14tGwnflC5QEscY
-+2G4efJEPFoY+Ly+93+JZ0b2gNeCAIjb3tRpI1pJbae309SxQzdL+g+5Xm3LloZ8
-ePrMKWRP8fhaDjPBw+qdwp+xtEDfZcHvf40pL+g2XAIoZ0uhTbUe2Qe/imz7NCf8
-L9V/D2fxWTCGgaCpkBU/xlq2NcjP34Ovbv4tZ0Mkh7O+wDEp1yWVexYTfU0CiBYP
-CO1LFprO6cJxv+Hd/DoHiAG1DGkXROG/JgxynKEuiJrvyjxDZrXHU9lObLbZlSLB
-FlNlS+DYtclrOnhqloqgLz+ysB3k9oIl+44ALBWmkjndDNGtnSC3XE9K4HxPYWd1
-TfHDIV5LtDvl6NQxgT6h5FMPBAlZ0uWbCxbSc1aANG7U+GaK0ms3UtyJXWj1MjRy
-b0nyAP9Yxf5mJCUWlY8QHyD6m0eP8EYqVIJxtD/UAtlguh2hyxtNXm/Oa0EBTxOF
-S3ownsYctnnO3S0zXPWO
-=Y1YO
------END PGP SIGNATURE-----
-
---utPK4TBebyzZxMrE--
