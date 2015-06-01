@@ -1,62 +1,32 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Tue, 30 Jun 2015 16:57:16 +0000
-Subject: [PATCH v4 7/8] ARM: shmobile: r8a7790: Set maximum frequencies for SDHI clocks
-Message-Id: <1435683436.23818.69.camel@codethink.co.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 01 Jun 2015 09:27:42 +0000
+Subject: Re: [PATCH v4 4/4] ARM: shmobile: gose: enable R-Car Gen2 regulator quirk
+Message-Id: <CAMuHMdWDjSVKDbLs_=MZteVVYTCfTBvgZ8rvSCbvrZ4Ey3w2GQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435683177.23818.60.camel@codethink.co.uk>
-In-Reply-To: <1435683177.23818.60.camel@codethink.co.uk>
+References: <1432826157-6414-5-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1432826157-6414-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-sh@vger.kernel.org
 
-Taken from the datasheet.
+On Thu, May 28, 2015 at 5:15 PM, Ulrich Hecht
+<ulrich.hecht+renesas@gmail.com> wrote:
+> Regulator setup seems identical to Koelsch.
+>
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> ---
+>  arch/arm/mach-shmobile/regulator-quirk-rcar-gen2.c | 3 ++-
 
-Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
----
- arch/arm/boot/dts/r8a7790.dtsi | 4 ++++
- 1 file changed, 4 insertions(+)
+Again, missing Makefile update?
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 4bb2f4c17321..618b38938b24 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -490,6 +490,7 @@
- 		reg = <0 0xee100000 0 0x328>;
- 		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
-+		max-frequency = <156000000>;
- 		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
- 		dma-names = "tx", "rx";
- 		status = "disabled";
-@@ -500,6 +501,7 @@
- 		reg = <0 0xee120000 0 0x328>;
- 		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
-+		max-frequency = <156000000>;
- 		dmas = <&dmac1 0xc9>, <&dmac1 0xca>;
- 		dma-names = "tx", "rx";
- 		status = "disabled";
-@@ -510,6 +512,7 @@
- 		reg = <0 0xee140000 0 0x100>;
- 		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
-+		max-frequency = <97500000>;
- 		dmas = <&dmac1 0xc1>, <&dmac1 0xc2>;
- 		dma-names = "tx", "rx";
- 		status = "disabled";
-@@ -520,6 +523,7 @@
- 		reg = <0 0xee160000 0 0x100>;
- 		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
-+		max-frequency = <97500000>;
- 		dmas = <&dmac1 0xd3>, <&dmac1 0xd4>;
- 		dma-names = "tx", "rx";
- 		status = "disabled";
--- 
-2.1.4
+Gr{oetje,eeting}s,
 
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
