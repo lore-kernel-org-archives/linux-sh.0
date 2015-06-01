@@ -1,93 +1,37 @@
-From: Quentin Lambert <lambert.quentin@gmail.com>
-Date: Fri, 12 Jun 2015 09:07:26 +0000
-Subject: [PATCH] superhyway: convert code to use dev_groups
-Message-Id: <1434100046-19467-1-git-send-email-lambert.quentin@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 01 Jun 2015 09:39:25 +0000
+Subject: Re: [PATCH v4 3/4] ARM: shmobile: r8a7793: add minimal Gose board device tree
+Message-Id: <CAMuHMdVxc3NE1VaQ+1YHn9rt9sPht9qb-=ak1oiYh8NmQiLC6A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1432826157-6414-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+	<1432826157-6414-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1432826157-6414-4-git-send-email-ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: kernel-janitors@vger.kernel.org, Quentin Lambert <lambert.quentin@gmail.com>
+To: Ulrich Hecht <ulrich.hecht+renesas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-The dev_attrs field of struct bus_type is going away, use dev_groups
-instead. This converts the soundbus code to use the correct field.
+On Thu, May 28, 2015 at 5:15 PM, Ulrich Hecht
+<ulrich.hecht+renesas@gmail.com> wrote:
+> Minmal DT description and Makefile entry for the Gose eval board.
 
-These modifications were made using Coccinelle.
+Minimal
 
-Signed-off-by: Quentin Lambert <lambert.quentin@gmail.com>
----
- drivers/sh/superhyway/superhyway-sysfs.c |   26 ++++++++++++++++----------
- drivers/sh/superhyway/superhyway.c       |    4 +++-
- include/linux/superhyway.h               |    2 +-
- 3 files changed, 20 insertions(+), 12 deletions(-)
+> Support for console, timer, and Ethernet.
+>
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> Cc: devicetree@vger.kernel.org
 
---- a/drivers/sh/superhyway/superhyway-sysfs.c
-+++ b/drivers/sh/superhyway/superhyway-sysfs.c
-@@ -23,23 +23,29 @@ static ssize_t name##_show(struct device
- 
- /* VCR flags */
- superhyway_ro_attr(perr_flags, "0x%02x\n", vcr.perr_flags);
-+static DEVICE_ATTR_RO(perr_flags);
- superhyway_ro_attr(merr_flags, "0x%02x\n", vcr.merr_flags);
-+static DEVICE_ATTR_RO(merr_flags);
- superhyway_ro_attr(mod_vers, "0x%04x\n", vcr.mod_vers);
-+static DEVICE_ATTR_RO(mod_vers);
- superhyway_ro_attr(mod_id, "0x%04x\n", vcr.mod_id);
-+static DEVICE_ATTR_RO(mod_id);
- superhyway_ro_attr(bot_mb, "0x%02x\n", vcr.bot_mb);
-+static DEVICE_ATTR_RO(bot_mb);
- superhyway_ro_attr(top_mb, "0x%02x\n", vcr.top_mb);
-+static DEVICE_ATTR_RO(top_mb);
- 
- /* Misc */
- superhyway_ro_attr(resource, "0x%08lx\n", resource[0].start);
-+static DEVICE_ATTR_RO(resource);
- 
--struct device_attribute superhyway_dev_attrs[] = {
--	__ATTR_RO(perr_flags),
--	__ATTR_RO(merr_flags),
--	__ATTR_RO(mod_vers),
--	__ATTR_RO(mod_id),
--	__ATTR_RO(bot_mb),
--	__ATTR_RO(top_mb),
--	__ATTR_RO(resource),
--	__ATTR_NULL,
-+struct attribute *superhyway_dev_attrs[] = {
-+	&dev_attr_perr_flags.attr,
-+	&dev_attr_merr_flags.attr,
-+	&dev_attr_mod_vers.attr,
-+	&dev_attr_mod_id.attr,
-+	&dev_attr_bot_mb.attr,
-+	&dev_attr_top_mb.attr,
-+	&dev_attr_resource.attr,
-+	NULL,
- };
--
---- a/drivers/sh/superhyway/superhyway.c
-+++ b/drivers/sh/superhyway/superhyway.c
-@@ -205,11 +205,13 @@ static int superhyway_bus_match(struct d
- 	return -ENODEV;
- }
- 
-+/* superhyway_dev_attrs is defined in superhyway-sysfs.c */
-+ATTRIBUTE_GROUPS(superhyway_dev);
- struct bus_type superhyway_bus_type = {
- 	.name		= "superhyway",
- 	.match		= superhyway_bus_match,
- #ifdef CONFIG_SYSFS
--	.dev_attrs	= superhyway_dev_attrs,
-+	.dev_groups	= superhyway_dev_groups,
- #endif
- 	.probe		= superhyway_device_probe,
- 	.remove		= superhyway_device_remove,
---- a/include/linux/superhyway.h
-+++ b/include/linux/superhyway.h
-@@ -101,7 +101,7 @@ int superhyway_add_device(unsigned long
- int superhyway_add_devices(struct superhyway_bus *bus, struct superhyway_device **devices, int nr_devices);
- 
- /* drivers/sh/superhyway/superhyway-sysfs.c */
--extern struct device_attribute superhyway_dev_attrs[];
-+extern struct attribute *superhyway_dev_attrs[];
- 
- #endif /* __LINUX_SUPERHYWAY_H */
- 
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
