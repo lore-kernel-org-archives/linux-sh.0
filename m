@@ -1,111 +1,90 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Jun 2015 09:31:26 +0000
-Subject: [PATCH 10/15] ARM: shmobile: R-Mobile: Remove legacy PM Domain code
-Message-Id: <1434533491-21979-11-git-send-email-geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 01 Jun 2015 14:22:54 +0000
+Subject: [PATCH v5 1/4] ARM: shmobile: Basic r8a7793 SoC support
+Message-Id: <1433168577-7678-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The last user of the legacy R-Mobile PM Domain code was the r8a7740
-legacy SoC code, which has been removed.
+Minimal support without power management or SMP.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/pm-rmobile.c | 39 -------------------------------------
- arch/arm/mach-shmobile/pm-rmobile.h | 24 -----------------------
- 2 files changed, 63 deletions(-)
+ arch/arm/mach-shmobile/Kconfig         |  4 ++++
+ arch/arm/mach-shmobile/Makefile        |  1 +
+ arch/arm/mach-shmobile/setup-r8a7793.c | 33 +++++++++++++++++++++++++++++++++
+ 3 files changed, 38 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/setup-r8a7793.c
 
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index b9b494f5ca99fc7c..a5b96b990aea8dfc 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -169,43 +169,6 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
- 	__rmobile_pd_power_up(rmobile_pd, false);
- }
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 4500647..c59d75e 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -80,6 +80,10 @@ config ARCH_R8A7791
+ 	select ARCH_RCAR_GEN2
+ 	select I2C
  
--#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
--
--void rmobile_init_domains(struct rmobile_pm_domain domains[], int num)
--{
--	int j;
--
--	for (j = 0; j < num; j++)
--		rmobile_init_pm_domain(&domains[j]);
--}
--
--void rmobile_add_device_to_domain_td(const char *domain_name,
--				     struct platform_device *pdev,
--				     struct gpd_timing_data *td)
--{
--	struct device *dev = &pdev->dev;
--
--	__pm_genpd_name_add_device(domain_name, dev, td);
--}
--
--void rmobile_add_devices_to_domains(struct pm_domain_device data[],
--				    int size)
--{
--	struct gpd_timing_data latencies = {
--		.stop_latency_ns = DEFAULT_DEV_LATENCY_NS,
--		.start_latency_ns = DEFAULT_DEV_LATENCY_NS,
--		.save_state_latency_ns = DEFAULT_DEV_LATENCY_NS,
--		.restore_state_latency_ns = DEFAULT_DEV_LATENCY_NS,
--	};
--	int j;
--
--	for (j = 0; j < size; j++)
--		rmobile_add_device_to_domain_td(data[j].domain_name,
--						data[j].pdev, &latencies);
--}
--
--#else /* !CONFIG_ARCH_SHMOBILE_LEGACY */
--
- static int rmobile_pd_suspend_busy(void)
- {
- 	/*
-@@ -436,5 +399,3 @@ static int __init rmobile_init_pm_domains(void)
- }
- 
- core_initcall(rmobile_init_pm_domains);
--
--#endif /* !CONFIG_ARCH_SHMOBILE_LEGACY */
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.h b/arch/arm/mach-shmobile/pm-rmobile.h
-index 3992b619c1278dcc..30a4a421ee315b98 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.h
-+++ b/arch/arm/mach-shmobile/pm-rmobile.h
-@@ -31,28 +31,4 @@ struct pm_domain_device {
- 	struct platform_device *pdev;
- };
- 
--#if defined(CONFIG_PM_RMOBILE) && defined(CONFIG_ARCH_SHMOBILE_LEGACY)
--extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
--extern void rmobile_add_device_to_domain_td(const char *domain_name,
--					    struct platform_device *pdev,
--					    struct gpd_timing_data *td);
--
--static inline void rmobile_add_device_to_domain(const char *domain_name,
--						struct platform_device *pdev)
--{
--	rmobile_add_device_to_domain_td(domain_name, pdev, NULL);
--}
--
--extern void rmobile_add_devices_to_domains(struct pm_domain_device data[],
--					   int size);
--#else
--
--#define rmobile_init_domains(domains, num) do { } while (0)
--#define rmobile_add_device_to_domain_td(name, pdev, td) do { } while (0)
--#define rmobile_add_device_to_domain(name, pdev) do { } while (0)
--
--static inline void rmobile_add_devices_to_domains(struct pm_domain_device d[],
--						  int size) {}
--#endif /* CONFIG_PM_RMOBILE */
--
- #endif /* PM_RMOBILE_H */
++config ARCH_R8A7793
++	bool "R-Car M2-N (R8A7793)"
++	select ARCH_RCAR_GEN2
++
+ config ARCH_R8A7794
+ 	bool "R-Car E2 (R8A77940)"
+ 	select ARCH_RCAR_GEN2
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 89e463d..e4b8fdb 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -13,6 +13,7 @@ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o pm-r8a7779.o
+ obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
+ obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o
++obj-$(CONFIG_ARCH_R8A7793)	+= setup-r8a7793.o
+ obj-$(CONFIG_ARCH_R8A7794)	+= setup-r8a7794.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
+ obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
+diff --git a/arch/arm/mach-shmobile/setup-r8a7793.c b/arch/arm/mach-shmobile/setup-r8a7793.c
+new file mode 100644
+index 0000000..1d2825c
+--- /dev/null
++++ b/arch/arm/mach-shmobile/setup-r8a7793.c
+@@ -0,0 +1,33 @@
++/*
++ * r8a7793 processor support
++ *
++ * Copyright (C) 2015  Ulrich Hecht
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/init.h>
++#include <asm/mach/arch.h>
++
++#include "common.h"
++#include "rcar-gen2.h"
++
++static const char *r8a7793_boards_compat_dt[] __initconst = {
++	"renesas,r8a7793",
++	NULL,
++};
++
++DT_MACHINE_START(R8A7793_DT, "Generic R8A7793 (Flattened Device Tree)")
++	.init_early	= shmobile_init_delay,
++	.init_time	= rcar_gen2_timer_init,
++	.init_late	= shmobile_init_late,
++	.reserve	= rcar_gen2_reserve,
++	.dt_compat	= r8a7793_boards_compat_dt,
++MACHINE_END
 -- 
-1.9.1
+2.4.2
 
