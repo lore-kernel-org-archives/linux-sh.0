@@ -1,38 +1,31 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 05 Jun 2015 10:59:18 +0000
-Subject: [PATCH 02/10] sh-vou: fix querycap support
-Message-Id: <1433501966-30176-3-git-send-email-hverkuil@xs4all.nl>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 01 Jun 2015 10:17:58 +0000
+Subject: [PATCH] clk: shmobile: r8a7794: Document DIV6 clock bindings
+Message-Id: <1433153878-18765-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
-In-Reply-To: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
+To: Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>
+Cc: Simon Horman <horms+renesas@verge.net.au>, linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Hans Verkuil <hans.verkuil@cisco.com>
-
-Fix v4l2-compliance errors due to empty driver and bus_info fields.
-
-Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/media/platform/sh_vou.c | 2 ++
- 1 file changed, 2 insertions(+)
+ Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
-index 9e98233..ba1a16c 100644
---- a/drivers/media/platform/sh_vou.c
-+++ b/drivers/media/platform/sh_vou.c
-@@ -398,6 +398,8 @@ static int sh_vou_querycap(struct file *file, void  *priv,
- 	dev_dbg(vou_dev->v4l2_dev.dev, "%s()\n", __func__);
- 
- 	strlcpy(cap->card, "SuperH VOU", sizeof(cap->card));
-+	strlcpy(cap->driver, "sh-vou", sizeof(cap->driver));
-+	strlcpy(cap->bus_info, "platform:sh-vou", sizeof(cap->bus_info));
- 	cap->device_caps = V4L2_CAP_VIDEO_OUTPUT | V4L2_CAP_STREAMING;
- 	cap->capabilities = cap->device_caps | V4L2_CAP_DEVICE_CAPS;
- 	return 0;
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+index b0a3a1147d62f4fa..3e40c41b05658e5b 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+@@ -12,6 +12,7 @@ Required Properties:
+     - "renesas,r8a7790-div6-clock" for R8A7790 (R-Car H2) DIV6 clocks
+     - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2-W) DIV6 clocks
+     - "renesas,r8a7793-div6-clock" for R8A7793 (R-Car M2-N) DIV6 clocks
++    - "renesas,r8a7794-div6-clock" for R8A7794 (R-Car E2) DIV6 clocks
+     - "renesas,sh73a0-div6-clock" for SH73A0 (SH-Mobile AG5) DIV6 clocks
+     - "renesas,cpg-div6-clock" for generic DIV6 clocks
+   - reg: Base address and length of the memory resource used by the DIV6 clock
 -- 
-2.1.4
+1.9.1
 
