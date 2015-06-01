@@ -1,42 +1,34 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Fri, 26 Jun 2015 15:25:38 +0000
-Subject: Re: [PATCH v3 0/6] UHS-I support for sh_mobile_sdhi
-Message-Id: <1435332338.23818.15.camel@codethink.co.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 01 Jun 2015 10:44:15 +0000
+Subject: [PATCH] ASoC: rsnd: Document r8a7778-specific binding
+Message-Id: <1433155455-28827-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435332116.23818.7.camel@codethink.co.uk>
-In-Reply-To: <1435332116.23818.7.camel@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: Liam Girdwood <lgirdwood-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, alsa-devel-K7yf7f+aM1XWsZ/bQMPhNw@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-I accidentally used an older shortlog and diffstat in that cover mail;
-here are the correct ones.
+Add the missing r8a7778-specific compatible value, which is already in
+use since v4.1-rc1.
 
-Ben.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ Documentation/devicetree/bindings/sound/renesas,rsnd.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-Ben Hutchings (5):
-  mmc: tmio: Add UHS-I mode support
-  pinctrl: sh-pfc: Implement pinconf power-source param for voltage
-    switching
-  pinctrl: sh-pfc: r8a7790: Implement voltage switching for SDHI
-  mmc: sh_mobile_sdhi: Add UHS-I mode support
-  ARM: shmobile: lager: Enable UHS-I SDR-50
-
-Ian Molton (1):
-  ARM: shmobile: lager: Set clock rates for SDHI
-
- .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |  4 +-
- arch/arm/boot/dts/r8a7790-lager.dts                | 28 ++++++++-
- drivers/mmc/host/sh_mobile_sdhi.c                  | 60 +++++++++++++++++++
- drivers/mmc/host/tmio_mmc.h                        |  3 +
- drivers/mmc/host/tmio_mmc_pio.c                    | 31 ++++++++++
- drivers/pinctrl/sh-pfc/core.c                      |  2 +-
- drivers/pinctrl/sh-pfc/core.h                      |  1 +
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c               | 67 +++++++++++++++++++++-
- drivers/pinctrl/sh-pfc/pinctrl.c                   | 34 ++++++++++-
- drivers/pinctrl/sh-pfc/sh_pfc.h                    |  6 ++
- 10 files changed, 229 insertions(+), 7 deletions(-)
-
+diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+index 62ece4c59da759a4..b6b3a786855f275b 100644
+--- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
++++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
+@@ -5,6 +5,7 @@ Required properties:
+ 				  "renesas,rcar_sound-gen1" if generation1, and
+ 				  "renesas,rcar_sound-gen2" if generation2
+ 				  Examples with soctypes are:
++				    - "renesas,rcar_sound-r8a7778" (R-Car M1A)
+ 				    - "renesas,rcar_sound-r8a7790" (R-Car H2)
+ 				    - "renesas,rcar_sound-r8a7791" (R-Car M2-W)
+ - reg				: Should contain the register physical address.
+-- 
+1.9.1
 
