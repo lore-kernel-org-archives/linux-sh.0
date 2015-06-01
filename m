@@ -1,152 +1,109 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 04 Jun 2015 18:53:27 +0000
-Subject: [PATCH/RFC 01/15] PM / Domains: Add DT bindings for the R-Car System Controller
-Message-Id: <1433444021-22167-2-git-send-email-geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 01 Jun 2015 14:22:56 +0000
+Subject: [PATCH v5 3/4] ARM: shmobile: r8a7793: add minimal Gose board device tree
+Message-Id: <1433168577-7678-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
+References: <1433168577-7678-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1433168577-7678-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: horms@verge.net.au, linux-sh@vger.kernel.org
+Cc: magnus.damm@gmail.com, laurent.pinchart+renesas@ideasonboard.com, geert@linux-m68k.org, kuninori.morimoto.gx@renesas.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, devicetree@vger.kernel.org
 
-The Renesas R-Car System Controller provides power management for the
-CPU cores and various coprocessors, following the generic PM domain
-bindings in Documentation/devicetree/bindings/power/power_domain.txt.
+Minimal DT description and Makefile entry for the Gose eval board.
+Support for console, timer, and Ethernet.
 
-This supports both R-Car Gen1 and Gen2.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
 ---
-Alternatives I considered:
+ arch/arm/boot/dts/Makefile         |  1 +
+ arch/arm/boot/dts/r8a7793-gose.dts | 63 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 64 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a7793-gose.dts
 
-  - Using a single node per power register block, even if it contains
-    multiple domains.
-      - You cannot just have a property with the number of domains, as
-	index 0 is not used on R-Car H1. Hence the need for
-	"renesas,pm-domain-indices" and "renesas,interrupt-bits",
-      - "#power-domain-cells = <1>" for nodes with multiple domains,
-	which allows typos in "power-domains = <&pd_ca15_cpu n>", using
-	an invalid value of "n",
-      - Hence my first version had:
-
-	    pd_ca15_scu: ca15_scu@180 {
-		    reg = <0x180 0x20>;
-		    #address-cells = <1>;
-		    #size-cells = <0>;
-		    #power-domain-cells = <0>;
-		    renesas,interrupt-bits = <12>;
-
-		    pd_ca15_cpu: ca15_cpu@40 {
-			    reg = <0x40 0x20>;
-			    #power-domain-cells = <1>;
-			    renesas,pm-domain-indices = <0 1>;
-			    renesas,pm-domain-names 				    "ca15_cpu0", "ca15_cpu1";
-			    renesas,interrupt-bits = <0 1>;
-		    };
-	    };
-
-  - Using a linear description in DT
-      - Needs parent links for subdomains,
-      - More complicated to parse (lesson learned from R-Mobile PM
-	Domain support).
-  - Keeping the power register block offset and the bit number as separate
-    "reg" cells, increasing "#address-cells" from 2 to 3,
-  - Merging the interrupt bit (which needs only 5 bits) in the other "reg"
-    cell, decreasing "#address-cells" from 2 to 1.
-
- .../bindings/power/renesas,sysc-rcar.txt           | 82 ++++++++++++++++++++++
- 1 file changed, 82 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/power/renesas,sysc-rcar.txt
-
-diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rcar.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rcar.txt
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 86217db..03d876f 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -492,6 +492,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	r8a7790-lager.dtb \
+ 	r8a7791-henninger.dtb \
+ 	r8a7791-koelsch.dtb \
++	r8a7793-gose.dtb \
+ 	r8a7794-alt.dtb \
+ 	sh73a0-kzm9g.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += \
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
 new file mode 100644
-index 0000000000000000..72d2fcd6beb98749
+index 0000000..96443ec
 --- /dev/null
-+++ b/Documentation/devicetree/bindings/power/renesas,sysc-rcar.txt
-@@ -0,0 +1,82 @@
-+DT bindings for the Renesas R-Car System Controller
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -0,0 +1,63 @@
++/*
++ * Device Tree Source for the Gose board
++ *
++ * Copyright (C) 2014-2015 Renesas Electronics Corporation
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
 +
-+= System Controller Node =
++/dts-v1/;
++#include "r8a7793.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
 +
-+The R-Car System Controller provides power management for the CPU cores and
-+various coprocessors.
++/ {
++	model = "Gose";
++	compatible = "renesas,gose", "renesas,r8a7793";
 +
-+Required properties:
-+  - compatible: Should be "renesas,sysc-<soctype>", "renesas,sysc-rcar" as
-+	      fallback.
-+	      Examples with soctypes are:
-+		- "renesas,sysc-r8a7779" (R-Car H1)
-+		- "renesas,sysc-r8a7790" (R-Car H2)
-+		- "renesas,sysc-r8a7791" (R-Car M2-W)
-+		- "renesas,sysc-r8a7793" (R-Car M2-N)
-+		- "renesas,sysc-r8a7794" (R-Car E2)
-+  - reg: Address start and address range for the device.
-+  - pm-domains: This node contains a hierarchy of PM Domain Nodes.
-+    Dependencies (e.g. parent SCUs should not be powered off while child CPUs
-+    are on) should be reflected using subnodes.
-+
-+
-+= PM Domain Nodes =
-+
-+Each of the PM domain nodes represents a PM domain, as documented by the
-+generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
-+
-+Required properties:
-+  - #power-domain-cells: Must be 0.
-+  - reg: This property must contain 2 values:
-+	   - The first value is the number of the interrupt bit representing
-+	     the power area in the various Interrupt Registers (e.g. SYSCISR,
-+	     Interrupt Status Register),
-+	   - The second value encodes the power register block offset (which is
-+	     a multiple of 64), and the number of the bit representing the
-+	     power area in the various Power Control Registers (e.g. PWROFFSR,
-+	     Power Shutoff Status Register). This value is created by ORing
-+	     these two numbers.
-+	 The parent's node must contain the following two properties:
-+	   - #address-cells: Must be 2,
-+	   - #size-cells: Must be 0.
-+
-+
-+Example:
-+
-+	sysc: system-controller@e6180000 {
-+		compatible = "renesas,sysc-r8a7791", "renesas,sysc-rcar";
-+		reg = <0 0xe6180000 0 0x0200>;
-+
-+		pm-domains {
-+			#address-cells = <2>;
-+			#size-cells = <0>;
-+
-+			pd_ca15_scu: scu@12 {
-+				reg = <12 0x180>;
-+				#address-cells = <2>;
-+				#size-cells = <0>;
-+				#power-domain-cells = <0>;
-+
-+				pd_ca15_cpu0: cpu@0 {
-+					reg = <0 0x40>;
-+					#power-domain-cells = <0>;
-+				};
-+
-+				pd_ca15_cpu1: cpu@1 {
-+					reg = <1 0x41>;
-+					#power-domain-cells = <0>;
-+				};
-+			};
-+
-+			pd_sh: sh@16 {
-+				reg = <16 0x80>;
-+				#power-domain-cells = <0>;
-+			};
-+
-+			pd_sgx: sgx@20 {
-+				reg = <20 0xc0>;
-+				#power-domain-cells = <0>;
-+			};
-+		};
++	aliases {
++		serial0 = &scif0;
++		serial1 = &scif1;
 +	};
++
++	chosen {
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
++		stdout-path = &scif0;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0 0x40000000 0 0x40000000>;
++	};
++};
++
++&extal_clk {
++	clock-frequency = <20000000>;
++};
++
++&ether {
++	phy-handle = <&phy1>;
++	renesas,ether-link-active-low;
++	status = "okay";
++
++	phy1: ethernet-phy@1 {
++		reg = <1>;
++		interrupt-parent = <&irqc0>;
++		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
++		micrel,led-mode = <1>;
++	};
++};
++
++&cmt0 {
++	status = "okay";
++};
++
++&scif0 {
++	status = "okay";
++};
++
++&scif1 {
++	status = "okay";
++};
 -- 
-1.9.1
+2.4.2
 
