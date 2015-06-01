@@ -1,97 +1,35 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 04 Jun 2015 18:53:41 +0000
-Subject: [PATCH/RFC 15/15] ARM: shmobile: r8a7794 dtsi: Add SYSC PM domains
-Message-Id: <1433444021-22167-16-git-send-email-geert+renesas@glider.be>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Mon, 01 Jun 2015 14:56:31 +0000
+Subject: Re: [PATCH] gpio: pcf857x: Check for irq_set_irq_wake() failures
+Message-Id: <CACRpkdZPxBL24V=D_5OwEWSAHgnrwqU-zGG6OebXSB3Q7sYZNw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
+References: <1432640042-16650-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1432640042-16650-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Alexandre Courbot <gnurou@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-Add a device node for the System Controller, with subnodes that
-represent the hardware power area hierarchy.
-Hook up the Cortex-A7 CPU cores and the Cortex-A7 L2 cache/SCU to their
-respective PM domains.
+On Tue, May 26, 2015 at 1:34 PM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/r8a7794.dtsi | 40 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 40 insertions(+)
+> If an interrupt controller doesn't support wake-up configuration,
+> irq_set_irq_wake() returns an error code.  Then any subsequent call
+> trying to deconfigure wake-up will cause an imbalance, and a warning
+> will be printed:
+>
+>     WARNING: CPU: 1 PID: 1341 at kernel/irq/manage.c:540 irq_set_irq_wake+0x
+>     Unbalanced IRQ 26 wake disable
+>
+> To fix this, refrain from any further parent interrupt controller
+> (de)configuration if irq_set_irq_wake() failed.
+>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 0ea502a43d553e25..3d844edaf433ac05 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -28,6 +28,7 @@
- 			compatible = "arm,cortex-a7";
- 			reg = <0>;
- 			clock-frequency = <1000000000>;
-+			power-domains = <&pd_ca7_cpu0>;
- 
- 			i-cache-size = <0x8000>;
- 			i-cache-sets = <512>;
-@@ -45,6 +46,7 @@
- 			compatible = "arm,cortex-a7";
- 			reg = <1>;
- 			clock-frequency = <1000000000>;
-+			power-domains = <&pd_ca7_cpu1>;
- 
- 			i-cache-size = <0x8000>;
- 			i-cache-sets = <512>;
-@@ -60,6 +62,7 @@
- 
- 	L2_CA7: cache-controller@1 {
- 		compatible = "cache";
-+		power-domains = <&pd_ca7_scu>;
- 
- 		cache-unified;
- 		cache-level = <2>;
-@@ -787,6 +790,43 @@
- 		};
- 	};
- 
-+	sysc: system-controller@e6180000 {
-+		compatible = "renesas,sysc-r8a7794", "renesas,sysc-rcar";
-+		reg = <0 0xe6180000 0 0x0200>;
-+
-+		pm-domains {
-+			#address-cells = <2>;
-+			#size-cells = <0>;
-+
-+			pd_ca7_scu: scu@21 {
-+				reg = <21 0x100>;
-+				#address-cells = <2>;
-+				#size-cells = <0>;
-+				#power-domain-cells = <0>;
-+
-+				pd_ca7_cpu0: cpu@5 {
-+					reg = <5 0x1c0>;
-+					#power-domain-cells = <0>;
-+				};
-+
-+				pd_ca7_cpu1: cpu@6 {
-+					reg = <6 0x1c0>;
-+					#power-domain-cells = <0>;
-+				};
-+			};
-+
-+			pd_sh: sh@16 {
-+				reg = <16 0x80>;
-+				#power-domain-cells = <0>;
-+			};
-+
-+			pd_sgx: sgx@20 {
-+				reg = <20 0xc0>;
-+				#power-domain-cells = <0>;
-+			};
-+		};
-+	};
-+
- 	ipmmu_sy0: mmu@e6280000 {
- 		compatible = "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6280000 0 0x1000>;
--- 
-1.9.1
+Argh how hacky. Still I have no better ideas :(
 
+Patch applied.
+
+Yours,
+Linus Walleij
