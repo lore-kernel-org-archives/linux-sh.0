@@ -1,52 +1,32 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 30 Jun 2015 21:44:09 +0000
-Subject: [RFC 1/3] of: make of_mutex public
-Message-Id: <1435700651-3543-2-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Jun 2015 01:34:37 +0000
+Subject: [PATCH 2/2] ARM: multi_v7_defconfig: Enable shmobile r8a7793/gose platform
+Message-Id: <1433208877-3284-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435700651-3543-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1435700651-3543-1-git-send-email-wsa@the-dreams.de>
+References: <1433208877-3284-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1433208877-3284-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-
-If we want to use OF_DYNAMIC features outside the of framework, we need
-to access this lock. If OF maintainers don't like exporting, we can
-maybe create accessor functions that we can use?
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/of/of_private.h | 1 -
- include/linux/of.h      | 2 ++
- 2 files changed, 2 insertions(+), 1 deletion(-)
+ arch/arm/configs/multi_v7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/of/of_private.h b/drivers/of/of_private.h
-index 8e882e706cd8c6..f92ec41efb5dfd 100644
---- a/drivers/of/of_private.h
-+++ b/drivers/of/of_private.h
-@@ -31,7 +31,6 @@ struct alias_prop {
- 	char stem[0];
- };
- 
--extern struct mutex of_mutex;
- extern struct list_head aliases_lookup;
- extern struct kset *of_kset;
- 
-diff --git a/include/linux/of.h b/include/linux/of.h
-index b871ff9d81d720..f0464efcbdc5aa 100644
---- a/include/linux/of.h
-+++ b/include/linux/of.h
-@@ -32,6 +32,8 @@
- typedef u32 phandle;
- typedef u32 ihandle;
- 
-+extern struct mutex of_mutex;
-+
- struct property {
- 	char	*name;
- 	int	length;
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index 0d6d6984eb71..ffe3346529f9 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -72,6 +72,7 @@ CONFIG_ARCH_R8A7740=y
+ CONFIG_ARCH_R8A7779=y
+ CONFIG_ARCH_R8A7790=y
+ CONFIG_ARCH_R8A7791=y
++CONFIG_ARCH_R8A7793=y
+ CONFIG_ARCH_R8A7794=y
+ CONFIG_ARCH_SH73A0=y
+ CONFIG_MACH_MARZEN=y
 -- 
 2.1.4
 
