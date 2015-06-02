@@ -1,59 +1,32 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 15 Jun 2015 08:09:14 +0000
-Subject: Re: [PATCH 4/6][RFC] arm64: Add new Renesas R-Car Gen3 SoC Kconfig
-Message-Id: <CAMuHMdUi4gPihAvkKgjZ16zYUHeT2DNDm5KhgRCsEkz5ys22sw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 02 Jun 2015 01:34:36 +0000
+Subject: [PATCH 1/2] ARM: shmobile: Enable gose board in multiplatform defconfig
+Message-Id: <1433208877-3284-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zj41vaja.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zj41vaja.wl%kuninori.morimoto.gx@renesas.com>
+References: <1433208877-3284-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1433208877-3284-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san, Inami-san,
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/shmobile_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-On Mon, Jun 15, 2015 at 6:54 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
->
-> Initial version of device tree for Renesas R-Car Gen3 SoC Kconfig
->
-> Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm64/Kconfig           | 13 +++++++++++++
->  arch/arm64/boot/dts/Makefile |  1 +
->  2 files changed, 14 insertions(+)
->
-> diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
-> index 99930cf..3c93c03 100644
-> --- a/arch/arm64/Kconfig
-> +++ b/arch/arm64/Kconfig
-> @@ -154,6 +154,12 @@ config PGTABLE_LEVELS
->         default 3 if ARM64_4K_PAGES && ARM64_VA_BITS_39
->         default 4 if ARM64_4K_PAGES && ARM64_VA_BITS_48
->
-> +config ARCH_SHMOBILE
-> +       bool
-> +
-> +config ARCH_SHMOBILE_MULTI
-> +       bool
-> +
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index b58618e2d13c..4a6a1b2b8e03 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -18,6 +18,7 @@ CONFIG_ARCH_R8A7778=y
+ CONFIG_ARCH_R8A7779=y
+ CONFIG_ARCH_R8A7790=y
+ CONFIG_ARCH_R8A7791=y
++CONFIG_ARCH_R8A7793=y
+ CONFIG_ARCH_R8A7794=y
+ CONFIG_ARCH_SH73A0=y
+ CONFIG_MACH_MARZEN=y
+-- 
+2.1.4
 
-Please drop ARCH_SHMOBILE_MULTI.
-I don't think we're gonna need a distinction between legacy and
-multiplatform on arm64 :-)
-
-Ah, probably you need this to build properly various pieces of code under
-drivers/? One more reason to get rid of ARCH_SHMOBILE_LEGACY soon...
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
