@@ -1,141 +1,103 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 23 Jun 2015 23:53:15 +0000
-Subject: Re: [PATCH] gpio: em: Remove obsolete platform data support
-Message-Id: <20150623235314.GK9988@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 03 Jun 2015 10:14:20 +0000
+Subject: RE: [PATCH v2 RFT] usb: xhci: Add to check CRR bit in xhci_suspend()
+Message-Id: <SG2PR06MB0919C648AF03C89001532C97D8B40@SG2PR06MB0919.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435067282-17314-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1435067282-17314-1-git-send-email-geert+renesas@glider.be>
+References: <1431596357-4460-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1431596357-4460-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Jun 23, 2015 at 03:48:02PM +0200, Geert Uytterhoeven wrote:
-> Since commit 59032702ead90562 ("ARM: shmobile: Remove legacy platform
-> devices from EMEV2 SoC code"), EMMA Mobile SoCs are only supported in
-> generic DT-only ARM multi-platform builds.  The driver doesn't need to
-> use platform data anymore, hence remove platform data configuration.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi Mathias,
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> Sent: Tuesday, May 26, 2015 8:45 PM
+> 
+> On 14.05.2015 12:39, Yoshihiro Shimoda wrote:
+> > The STS_HALT is not set until the CRR (CMD_RING_RUNNING) is cleared
+> > on specific xHCI controllers (e.g. R-Car SoCs) after this driver set
+> > the R/S (CMD_RUN) to 0. So, to avoid using a quirks XHCI_SLOW_SUSPEND,
+> > this patch adds to wait for the CRR to clear.
+> >
+> > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> > ---
+> >  My environment (R-Car H2) could work correctly. I would like to know
+> >  that this patch causes side effect or not. Also I'd like to know
+> >  this patch can avoid the XHCI_SLOW_SUSPEND quirk on other environment
+> >  (Fresco Logic XHCI controller).
+> >
+> >  Changes from v1:
+> >   - Remove a abort code.
+> >   - Wait for the CRR to clear after this driver set the R/S to 0.
+> >   - Rebase on the usb.git / usb-next branch.
+> >     (commit id = aa519be34f45954f33a6c20430deac8e544a180f)
+> >
+> >  drivers/usb/host/xhci.c | 9 +++++++++
+> >  1 file changed, 9 insertions(+)
+> >
+> > diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
+> > index ec8ac16..a357917 100644
+> > --- a/drivers/usb/host/xhci.c
+> > +++ b/drivers/usb/host/xhci.c
+> > @@ -923,6 +923,15 @@ int xhci_suspend(struct xhci_hcd *xhci, bool do_wakeup)
+> >  	command &= ~CMD_RUN;
+> >  	writel(command, &xhci->op_regs->command);
+> >
+> > +	/*
+> > +	 * The STS_HALT is not set until the CRR is cleared on specific
+> > +	 * xHCI controllers (e.g. R-Car SoCs) after this driver set the R/S
+> > +	 * to 0. So, to avoid using a quirks XHCI_SLOW_SUSPEND, this driver
+> > +	 * waits for the CRR to clear.
+> > +	 */
+> > +	xhci_handshake(&xhci->op_regs->cmd_ring, CMD_RING_RUNNING, 0,
+> > +		       5 * 1000 * 1000);
+> > +
+> >  	/* Some chips from Fresco Logic need an extraordinary delay */
+> >  	delay *= (xhci->quirks & XHCI_SLOW_SUSPEND) ? 10 : 1;
+> >
+> >
+> 
+> Hi, sorry about the delay.
 
-> ---
-> Compile-tested only due to lack of hardware.
+Thank you for your reply!
+And, I'm sorry for the delayed response.
+
+> Does polling for the command ring running bit really help?
+> We are anyway polling for the HCHalted (STS_HALT) status bit right after this,
+> and it should indicate the command ring was halted as well.
 > 
->  drivers/gpio/gpio-em.c                | 34 ++++++++--------------------------
->  include/linux/platform_data/gpio-em.h | 11 -----------
->  2 files changed, 8 insertions(+), 37 deletions(-)
->  delete mode 100644 include/linux/platform_data/gpio-em.h
-> 
-> diff --git a/drivers/gpio/gpio-em.c b/drivers/gpio/gpio-em.c
-> index fbf287307c4cc736..a77f16c8d1422db3 100644
-> --- a/drivers/gpio/gpio-em.c
-> +++ b/drivers/gpio/gpio-em.c
-> @@ -31,7 +31,6 @@
->  #include <linux/slab.h>
->  #include <linux/module.h>
->  #include <linux/pinctrl/consumer.h>
-> -#include <linux/platform_data/gpio-em.h>
->  
->  struct em_gio_priv {
->  	void __iomem *base0;
-> @@ -273,13 +272,12 @@ static const struct irq_domain_ops em_gio_irq_domain_ops = {
->  
->  static int em_gio_probe(struct platform_device *pdev)
->  {
-> -	struct gpio_em_config pdata_dt;
-> -	struct gpio_em_config *pdata = dev_get_platdata(&pdev->dev);
->  	struct em_gio_priv *p;
->  	struct resource *io[2], *irq[2];
->  	struct gpio_chip *gpio_chip;
->  	struct irq_chip *irq_chip;
->  	const char *name = dev_name(&pdev->dev);
-> +	unsigned int ngpios;
->  	int ret;
->  
->  	p = devm_kzalloc(&pdev->dev, sizeof(*p), GFP_KERNEL);
-> @@ -319,18 +317,10 @@ static int em_gio_probe(struct platform_device *pdev)
->  		goto err0;
->  	}
->  
-> -	if (!pdata) {
-> -		memset(&pdata_dt, 0, sizeof(pdata_dt));
-> -		pdata = &pdata_dt;
-> -
-> -		if (of_property_read_u32(pdev->dev.of_node, "ngpios",
-> -					 &pdata->number_of_pins)) {
-> -			dev_err(&pdev->dev, "Missing ngpios OF property\n");
-> -			ret = -EINVAL;
-> -			goto err0;
-> -		}
-> -
-> -		pdata->gpio_base = -1;
-> +	if (of_property_read_u32(pdev->dev.of_node, "ngpios", &ngpios)) {
-> +		dev_err(&pdev->dev, "Missing ngpios OF property\n");
-> +		ret = -EINVAL;
-> +		goto err0;
->  	}
->  
->  	gpio_chip = &p->gpio_chip;
-> @@ -345,8 +335,8 @@ static int em_gio_probe(struct platform_device *pdev)
->  	gpio_chip->label = name;
->  	gpio_chip->dev = &pdev->dev;
->  	gpio_chip->owner = THIS_MODULE;
-> -	gpio_chip->base = pdata->gpio_base;
-> -	gpio_chip->ngpio = pdata->number_of_pins;
-> +	gpio_chip->base = -1;
-> +	gpio_chip->ngpio = ngpios;
->  
->  	irq_chip = &p->irq_chip;
->  	irq_chip->name = name;
-> @@ -357,9 +347,7 @@ static int em_gio_probe(struct platform_device *pdev)
->  	irq_chip->irq_release_resources = em_gio_irq_relres;
->  	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE | IRQCHIP_MASK_ON_SUSPEND;
->  
-> -	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
-> -					      pdata->number_of_pins,
-> -					      pdata->irq_base,
-> +	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node, ngpios, 0,
->  					      &em_gio_irq_domain_ops, p);
->  	if (!p->irq_domain) {
->  		ret = -ENXIO;
-> @@ -387,12 +375,6 @@ static int em_gio_probe(struct platform_device *pdev)
->  		goto err1;
->  	}
->  
-> -	if (pdata->pctl_name) {
-> -		ret = gpiochip_add_pin_range(gpio_chip, pdata->pctl_name, 0,
-> -					     gpio_chip->base, gpio_chip->ngpio);
-> -		if (ret < 0)
-> -			dev_warn(&pdev->dev, "failed to add pin range\n");
-> -	}
->  	return 0;
->  
->  err1:
-> diff --git a/include/linux/platform_data/gpio-em.h b/include/linux/platform_data/gpio-em.h
-> deleted file mode 100644
-> index 7c5a519d2dcde2bd..0000000000000000
-> --- a/include/linux/platform_data/gpio-em.h
-> +++ /dev/null
-> @@ -1,11 +0,0 @@
-> -#ifndef __GPIO_EM_H__
-> -#define __GPIO_EM_H__
-> -
-> -struct gpio_em_config {
-> -	unsigned int gpio_base;
-> -	unsigned int irq_base;
-> -	unsigned int number_of_pins;
-> -	const char *pctl_name;
-> -};
-> -
-> -#endif /* __GPIO_EM_H__ */
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> Is it possible that the R-Car xhci host controller halts just a tiny bit slower
+> than the default delay value, and the additional CRR check gives it
+> just enough time to HALT before timeout?
+
+Yes or No.
+If I used the XHCI_SLOW_SUSPEND quirk, the additional CRR check is not needed.
+
+In last October, I submitted a patch to use the quirk. However, I don't have any
+hardware documents why the R-Car xhci host controller needs this quirk:
+http://thread.gmane.org/gmane.linux.usb.general/115965/focus6056
+
+> Any chance you could compare the actual halt time using your patch against
+> the XHCI_SLOW_SUSPEND quirk?  (time from clearing CMD_RUN until STS_HALT is set)
+
+Using my patch:
+ xhci_handshake: CMD_RUN  usec = 4930408
+ xhci_handshake: STS_HALT usec =   16000
+
+So, total waiting time was about 70msec.
+(5000000 - 4930408 + 16000 - 16000 = 69592)
+
+Without my patch + using XHCI_SLOW_SUSPEND quirk:
+xhci_handshake: halt usec = 89796
+
+So, total waiting time was about 70msec.
+(160000 - 89796 = 70204)
+
+
+Therefore, should I use the XHCI_SLOW_SUSPEND quirk instead of my patch?
+
+Best regards,
+Yoshihiro Shimoda
+
+> -Mathias
