@@ -1,48 +1,91 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 25 Jun 2015 21:56:00 +0000
-Subject: Re: [PATCH 08/08] ARM: shmobile: Remove CMT renesas,channels-mask from DTS
-Message-Id: <1618432.qSqOq2tHsD@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 03 Jun 2015 20:57:55 +0000
+Subject: Re: [PATCH] sh-pfc: handle pin array holes in sh_pfc_map_pins()
+Message-Id: <556F6A53.9010601@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150621080903.10187.20998.sendpatchset@little-apple> <8019375.XSP9R0ZLbm@avalon> <CANqRtoRcv4VpF3vAgYKTOL1FyYURHx13-5-L9fH1HrJ-QvPymQ@mail.gmail.com>
-In-Reply-To: <CANqRtoRcv4VpF3vAgYKTOL1FyYURHx13-5-L9fH1HrJ-QvPymQ@mail.gmail.com>
+References: <1528110.Mb5xiNU0rc@wasted.cogentembedded.com>	<3656925.3GuTRhx1fV@avalon>	<55415D82.2020407@cogentembedded.com> <CAMuHMdWU1WK+M+Mz3CBgXkbtYC9=D03Jrs4425BWrv22ARLdqA@mail.gmail.com>
+In-Reply-To: <CAMuHMdWU1WK+M+Mz3CBgXkbtYC9=D03Jrs4425BWrv22ARLdqA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, SH-Linux <linux-sh@vger.kernel.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, Simon Horman <horms+renesas@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
 
-Hi Magnus,
+Hello.
 
-On Tuesday 23 June 2015 11:46:45 Magnus Damm wrote:
-> On Tue, Jun 23, 2015 at 7:40 AM, Laurent Pinchart wrote:
-> > On Sunday 21 June 2015 17:10:33 Magnus Damm wrote:
-> >> From: Magnus Damm <damm+renesas@opensource.se>
-> >> 
-> >> Update the DTS to remove the now deprecated "renesas,channels-mask"
-> >> property.
-> >> 
-> >> The channel information is now kept in the device driver and can easily
-> >> be determined based on the compat string.
-> > 
-> > Unless I've missed something (which is entirely possibly given the late
-> > hour), the channel mask is only stored in the driver for the Gen2 CMT
-> > instances.
->
-> The case for sh73a0 and r8a7740 is also covered by some of the earlier
-> patches in this series.
+On 05/27/2015 11:52 AM, Geert Uytterhoeven wrote:
 
-My bad, I've missed that. We should be good then.
+>>>> The  pin array handled by sh_pfc_map_pins() may contain holes
+>>>> representing
+>>>> non- existing pins. We have to first count the valid pins in order to
+>>>> calculate the size  of the memory to be allocated, then to skip over the
+>>>> non-existing pins when  initializing the allocated arrays, and then to
+>>>> return the number of valid pins  from sh_pfc_map_pins() instead of 0 on
+>>>> success.
 
-> So unless I'm mistaken the series should cover all current in-tree CMT DT
-> users that we have. I'm not aware of any out-of-tree users.
-> 
-> You are right that there are more unused compat strings documented, so
-> those will break. I would be tempted in phasing those out somehow.
-> Also, I did not spend much time cleaning up the non R-Car Gen2 cases,
-> so in general that needs some love.
+>>>> As we have to touch devm_kzalloc() calls anyway, use more fitting
+>>>> devm_kcalloc() instead which additionally checks the array size. And
+>>>> since
+>>>> PINMUX_TYPE_NONE is #define'd as 0, stop re-initializing already zeroed
+>>>> out 'pmx->configs' array.
 
--- 
-Regards,
+>>> I agree with this optimization, but I think it deserves a comment in the
+>>> source code that explicitly mentions PINMUX_TYPE_NONE, to make sure any
+>>> later
+>>> rework changing the PINMUX_TYPE_NONE value would catch this.
 
-Laurent Pinchart
+>>     Note that this is not just "drove by" optimization, I was trying to avoid
+>> the very need to explicitly initialize 'pmx->configs' array to
+>> PINMUX_TYPE_NONE...
+
+>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+>> [...]
+
+>>>> @@ -622,7 +628,7 @@ int sh_pfc_register_pinctrl(struct sh_pf
+>>>>          pmx->pctl_desc.pmxops = &sh_pfc_pinmux_ops;
+>>>>          pmx->pctl_desc.confops = &sh_pfc_pinconf_ops;
+>>>>          pmx->pctl_desc.pins = pmx->pins;
+>>>> -       pmx->pctl_desc.npins = pfc->info->nr_pins;
+>>>> +       pmx->pctl_desc.npins = ret;
+>>>>
+>>>>          pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
+>>>>          if (pmx->pctl = NULL)
+
+>>> Shouldn't you also fix sh_pfc_init_ranges() ? It includes the following
+>>> code
+>>> that doesn't seem to handle holes properly.
+
+>>>           for (i = 1, nr_ranges = 1; i < pfc->info->nr_pins; ++i) {
+>>>                   if (pfc->info->pins[i-1].pin != pfc->info->pins[i].pin -
+>>> 1)
+>>>                           nr_ranges++;
+>>>           }
+
+>>> Please make sure that sh_pfc_get_pin_index() doesn't start blowing up
+>>> afterwards though.
+
+>>     I think I'm seeing a problem with this function (and it's not due to my
+>> changes). Its result is often used to index 'pfc->info->pins' array. While
+>> this is working now, when the holes are not yet allowed, it's going to break
+>> when we start supporting the holes since that array couldn't be indexed this
+>> way anymore (via ranges). This function is good only for 'pmx->configs' and
+>> the like where we have already removed the holes. It looks like this holes
+>> thing is going to be too complex, so how about leaving things as they are?
+>> :-)
+
+> Any conclusion on this?
+
+    I did overestimate the complexity, it seems. :-)
+    I have just removed the calls to sh_pfc_get_pin_index() on 
+'pfc->info->pins' and its alias.
+
+> If yes, please resend, incl. the r8a7794 pfc patches that depend on it.
+
+    Will repost the patches RSN.
+
+> Gr{oetje,eeting}s,
+>                          Geert
+
+WBR, Sergei
 
