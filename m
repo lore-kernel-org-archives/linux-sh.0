@@ -1,83 +1,23 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 05 Jun 2015 14:37:32 +0000
-Subject: Re: [PATCH 07/10] sh-vou: add support for log_status
-Message-Id: <5571B42C.9010203@xs4all.nl>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 04 Jun 2015 23:23:39 +0000
+Subject: [PATCH v2 0/4] sh-pfc: handle pin array holes in sh_pfc_map_pins()
+Message-Id: <4326653.qPvIJDU6F2@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl> <1433501966-30176-8-git-send-email-hverkuil@xs4all.nl> <5571A3E3.6070805@cogentembedded.com>
-In-Reply-To: <5571A3E3.6070805@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
+To: linus.walleij@linaro.org, linux-sh@vger.kernel.org, laurent.pinchart@ideasonboard.com, linux-gpio@vger.kernel.org
 
-On 06/05/2015 03:28 PM, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 6/5/2015 1:59 PM, Hans Verkuil wrote:
-> 
->> From: Hans Verkuil <hans.verkuil@cisco.com>
-> 
->> Dump the VOU registers in log_status.
-> 
->> Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
->> ---
->>   drivers/media/platform/sh_vou.c | 29 +++++++++++++++++++++++++++++
->>   1 file changed, 29 insertions(+)
-> 
->> diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
->> index 7ed5a8b..400efec 100644
->> --- a/drivers/media/platform/sh_vou.c
->> +++ b/drivers/media/platform/sh_vou.c
->> @@ -951,6 +951,34 @@ static int sh_vou_g_std(struct file *file, void *priv, v4l2_std_id *std)
->>   	return 0;
->>   }
->>
->> +static int sh_vou_log_status(struct file *file, void *priv)
->> +{
->> +	struct sh_vou_device *vou_dev = video_drvdata(file);
->> +
->> +	pr_info("PSELA:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUER));
->> +	pr_info("VOUER:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUER));
-> 
->     You're dumping the same register twice, under different names?
+Hello.
 
-Oops, PSELA doesn't belong here. I'll remove that line. Thanks for spotting this.
+   Here's the set of 4 patches against the 'devel' branch of Linus Walleij's
+'linux-pinctrl.git' repo. Here we add proper handling of the pin array "holes"
+and then remove unused GPIO pins for R8A7790/1 SoCs.
 
-Regards,
+[1/4] sh-pfc: do not call sh_pfc_get_pin_index() when unnecessary
+[2/4] sh-pfc: handle pin array holes
+[3/4] sh-pfc: r8a7790 remove non-existing GPIO pins
+[4/4] sh-pfc: r8a7791 remove non-existing GPIO pins
 
-	Hans
-
-> 
->> +	pr_info("VOUCR:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUCR));
->> +	pr_info("VOUSTR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUSTR));
->> +	pr_info("VOUVCR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUVCR));
->> +	pr_info("VOUISR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUISR));
->> +	pr_info("VOUBCR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUBCR));
->> +	pr_info("VOUDPR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUDPR));
->> +	pr_info("VOUDSR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUDSR));
->> +	pr_info("VOUVPR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUVPR));
->> +	pr_info("VOUIR:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUIR));
->> +	pr_info("VOUSRR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUSRR));
->> +	pr_info("VOUMSR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUMSR));
->> +	pr_info("VOUHIR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUHIR));
->> +	pr_info("VOUDFR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUDFR));
->> +	pr_info("VOUAD1R: 0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUAD1R));
->> +	pr_info("VOUAD2R: 0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUAD2R));
->> +	pr_info("VOUAIR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUAIR));
->> +	pr_info("VOUSWR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUSWR));
->> +	pr_info("VOURCR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOURCR));
->> +	pr_info("VOURPR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOURPR));
->> +	return 0;
->> +}
->> +
-> [...]
-> 
-> WBR, Sergei
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-media" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+WBR, Sergei
 
