@@ -1,42 +1,45 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 20 Jun 2015 19:03:19 +0000
-Subject: [PATCH 1/4] i2c: rcar: use adapter default for timeout
-Message-Id: <1434827002-25918-2-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 04 Jun 2015 18:53:35 +0000
+Subject: [PATCH/RFC 09/15] ARM: shmobile: r8a7793 dtsi: Add L1 cache information to CPU node
+Message-Id: <1433444021-22167-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434827002-25918-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1434827002-25918-1-git-send-email-wsa@the-dreams.de>
+References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Describe the L1 instruction and data caches in the CPU node:
+  - The L1 caches for the Cortex-A15 CPU cores are organized as 16 KiB x
+    2 ways.
 
-5 seconds is a very large timeout, and it is hardcoded. Use the default
-timeout from 'struct adapter' which is 1 second. It can also be modified
-from userspace for specific workloads via i2c-dev.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/i2c/busses/i2c-rcar.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7793.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 9eef46254369b3..e57e520b4756a9 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -532,7 +532,7 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index cf153b9c2367a211..a7e892fe3efa7fd3 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -38,6 +38,16 @@
+ 					   < 937500 1000000>,
+ 					   < 750000 1000000>,
+ 					   < 375000 1000000>;
++
++			i-cache-size = <0x8000>;
++			i-cache-sets = <512>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <512>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2_CA15>;
+ 		};
+ 	};
  
- 		timeout = wait_event_timeout(priv->wait,
- 					     rcar_i2c_flags_has(priv, ID_DONE),
--					     5 * HZ);
-+					     adap->timeout);
- 		if (!timeout) {
- 			ret = -ETIMEDOUT;
- 			break;
 -- 
-2.1.4
+1.9.1
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
