@@ -1,42 +1,37 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sun, 21 Jun 2015 06:35:26 +0000
-Subject: [PATCH 01/02] ARM: shmobile: Select HAVE_ARM_ARCH_TIMER from Kconfig
-Message-Id: <20150621063526.6194.24678.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 04 Jun 2015 18:22:35 +0000
+Subject: [PATCH 11/11] ARM: shmobile: r8a7790: Make struct rcar_sysc_ch const
+Message-Id: <1433442155-19492-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
-
-Recent SoCs like R-Car Gen2 series and r8a73a4 include Cortex-A7 and/or
-Cortex-A15 hardware including arch timer, so select HAVE_ARM_ARCH_TIMER
-in such case.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ arch/arm/mach-shmobile/smp-r8a7790.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
- arch/arm/mach-shmobile/Kconfig |    2 ++
- 1 file changed, 2 insertions(+)
+diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
+index 930f45cbc08a5bb3..2ef0054ce934f021 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7790.c
++++ b/arch/arm/mach-shmobile/smp-r8a7790.c
+@@ -26,12 +26,12 @@
+ #include "rcar-gen2.h"
+ #include "r8a7790.h"
+ 
+-static struct rcar_sysc_ch r8a7790_ca15_scu = {
++static const struct rcar_sysc_ch r8a7790_ca15_scu = {
+ 	.chan_offs = 0x180, /* PWRSR5 .. PWRER5 */
+ 	.isr_bit = 12, /* CA15-SCU */
+ };
+ 
+-static struct rcar_sysc_ch r8a7790_ca7_scu = {
++static const struct rcar_sysc_ch r8a7790_ca7_scu = {
+ 	.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
+ 	.isr_bit = 21, /* CA7-SCU */
+ };
+-- 
+1.9.1
 
---- 0001/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2015-06-20 12:29:15.812366518 +0900
-@@ -21,6 +21,7 @@ config ARCH_RCAR_GEN2
- 	select RENESAS_IRQC
- 	select SYS_SUPPORTS_SH_CMT
- 	select PCI_DOMAINS if PCI
-+	select HAVE_ARM_ARCH_TIMER
- 
- config ARCH_RMOBILE
- 	bool
-@@ -56,6 +57,7 @@ config ARCH_R8A73A4
- 	bool "R-Mobile APE6 (R8A73A40)"
- 	select ARCH_RMOBILE
- 	select RENESAS_IRQC
-+	select HAVE_ARM_ARCH_TIMER
- 
- config ARCH_R8A7740
- 	bool "R-Mobile A1 (R8A77400)"
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
