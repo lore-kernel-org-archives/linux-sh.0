@@ -1,47 +1,64 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 20 Jun 2015 00:51:34 +0000
-Subject: [PATCH 2/2] rcar_can: unify error messages
-Message-Id: <2511974.9a3ucLkyEa@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 04 Jun 2015 18:53:36 +0000
+Subject: [PATCH/RFC 10/15] ARM: shmobile: r8a7794 dtsi: Add L1 cache information to CPU nodes
+Message-Id: <1433444021-22167-11-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1593397.kKIHxKLe5s@wasted.cogentembedded.com>
-In-Reply-To: <1593397.kKIHxKLe5s@wasted.cogentembedded.com>
+References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, wg@grandegger.com, mkl@pengutronix.de, linux-can@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-All the error messages in the driver but  the ones from devm_clk_get() failures
-use similar format.  Make those  two messages consitent with others.
+Describe the L1 instruction and data caches in the CPU nodes:
+  - The L1 instruction caches for the Cortex-A7 CPU cores are organized
+    as 16 KiB x 2 ways,
+  - The L1 data caches for the Cortex-A7 CPU cores are organized as 8
+    KiB x 4 ways.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/net/can/rcar_can.c |    5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7794.dtsi | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-Index: linux-can/drivers/net/can/rcar_can.c
-=================================--- linux-can.orig/drivers/net/can/rcar_can.c
-+++ linux-can/drivers/net/can/rcar_can.c
-@@ -785,7 +785,8 @@ static int rcar_can_probe(struct platfor
- 	priv->clk = devm_clk_get(&pdev->dev, "clkp1");
- 	if (IS_ERR(priv->clk)) {
- 		err = PTR_ERR(priv->clk);
--		dev_err(&pdev->dev, "cannot get peripheral clock: %d\n", err);
-+		dev_err(&pdev->dev, "cannot get peripheral clock, error %d\n",
-+			err);
- 		goto fail_clk;
- 	}
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 0c3ab5febe0a88d8..0ea502a43d553e25 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -28,6 +28,16 @@
+ 			compatible = "arm,cortex-a7";
+ 			reg = <0>;
+ 			clock-frequency = <1000000000>;
++
++			i-cache-size = <0x8000>;
++			i-cache-sets = <512>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <256>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2_CA7>;
+ 		};
  
-@@ -797,7 +798,7 @@ static int rcar_can_probe(struct platfor
- 	priv->can_clk = devm_clk_get(&pdev->dev, clock_names[clock_select]);
- 	if (IS_ERR(priv->can_clk)) {
- 		err = PTR_ERR(priv->can_clk);
--		dev_err(&pdev->dev, "cannot get CAN clock: %d\n", err);
-+		dev_err(&pdev->dev, "cannot get CAN clock, error %d\n", err);
- 		goto fail_clk;
- 	}
+ 		cpu1: cpu@1 {
+@@ -35,6 +45,16 @@
+ 			compatible = "arm,cortex-a7";
+ 			reg = <1>;
+ 			clock-frequency = <1000000000>;
++
++			i-cache-size = <0x8000>;
++			i-cache-sets = <512>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <256>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2_CA7>;
+ 		};
+ 	};
  
+-- 
+1.9.1
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
