@@ -1,138 +1,136 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Sun, 07 Jun 2015 08:58:01 +0000
-Subject: [PATCHv2 07/11] sh-vou: replace g/s_crop/cropcap by g/s_selection
-Message-Id: <1433667485-35711-8-git-send-email-hverkuil@xs4all.nl>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Thu, 04 Jun 2015 09:13:32 +0000
+Subject: Re: PM / Domains: Infinite loop during reboot
+Message-Id: <CAPDyKFpD6XMOjveqJ79_ivj4++=b7z4ST2=wgQoix40HO6mvxQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
-In-Reply-To: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
+References: <CAMuHMdVAnZ5mH7EwJKVeKWSDqCxn+TSH1VOHoK3B2=b8oByoHg@mail.gmail.com>
+	<CAMuHMdUTirgF7Qk2uMPYnejCOa14Khi=Sn8-y23TsRyJrFT-6A@mail.gmail.com>
+In-Reply-To: <CAMuHMdUTirgF7Qk2uMPYnejCOa14Khi=Sn8-y23TsRyJrFT-6A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-From: Hans Verkuil <hans.verkuil@cisco.com>
+On 5 May 2015 at 15:49, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> On Mon, Apr 13, 2015 at 2:18 PM, Geert Uytterhoeven
+> <geert@linux-m68k.org> wrote:
+>> Sometimes reboot doesn't work on r8a7791/koelsch with the CPG clock domain.
+>> With additional debug messages, you can see it hangs in an infinite loop:
+>>
+>> rcar-dmac ec720000.dma-controller: removing from PM domain cpg_clocks
+>> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+>> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+>> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+>> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+>> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+>> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+>> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+>> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+>> pm_genpd_remove_device: Remove ec720000.dma-controller from cpg_clocks
+>> [...]
+>>
+>> Presumably this is this loop in genpd_dev_pm_detach():
+>>
+>>         while (1) {
+>>                 ret = pm_genpd_remove_device(pd, dev);
+>>                 if (ret != -EAGAIN)
+>>                         break;
+>>                 cond_resched();
+>>         }
+>>
+>> which is retried because genpd->prepared_count > 0 in pm_genpd_remove_device().
+>> This looks a bit strange, as no suspend is in progress, so prepared_count
+>> should be zero?
+>>
+>> I'm adding more debugging code to verify this, but it's not 100% reproducable.
+>>
+>> [...]
+>>
+>> Confirmed: prepared_count turns out to be 1 at reboot time if at least one
+>> s2ram cycle happened before. Additional s2ram cycles don't seem to increase
+>> prepared_count any further.
+>
+> This seems to be caused by the sh_cmt driver's sh_cmt_enable() calling
+> dev_pm_syscore_device(..., true).
+>
+> If dev->power.syscore is set, device_prepare(), device_complete() et al.
+> skip further operation.
+>
+> Hence during an s2ram+resume cycle, the following happens:
+>
+>     PM: Syncing filesystems ... done.
+>     PM: Preparing system for mem sleep
+>     Freezing user space processes ... (elapsed 0.001 seconds) done.
+>     Freezing remaining freezable tasks ... (elapsed 0.001 seconds) done.
+>     PM: Entering mem sleep
+>     Suspending console(s) (use no_console_suspend to debug)
+>
+>     [ pm_genpd_prepare() is called for all devices (incl. sh_cmt), ]
+>     [ increasing prepared_count ]
+>
+>     PM: suspend of devices complete after 36.472 msecs
+>     PM: late suspend of devices complete after 7.569 msecs
+>     PM: noirq suspend of devices complete after 8.035 msecs
+>     Disabling non-boot CPUs ...
+>     CPU1: shutdown
+>
+>     [ sh_cmt_enable() is called, and power.syscore becomes true ]
+>
+>     Enabling non-boot CPUs ...
+>     CPU1 is up
+>     PM: noirq resume of devices complete after 4.724 msecs
+>     PM: early resume of devices complete after 5.100 msecs
+>     PM: resume of devices complete after 84.156 msecs
+>
+>     [ pm_genpd_complete() is called for all devices (except for sh_cmt!, ]
+>     [ as its power.syscore is now true!), decreasing prepared_count ]
+>
+>     [ prepared_count is now 1 instead of 0! ]
+>
+>     PM: Finishing wakeup.
+>     Restarting tasks ...
+>
+> During subsequent s2ram+resume cycles, the prepared_count imbalance doesn't
+> increase, as pm_genpd_prepare() is no longer called for sh_cmt due to
+> power.syscore still being set.
+>
+> During reboot/halt, platform_drv_shutdown() is called for any platform device
+> that has a driver with a .shutdown() method (on R-Car Gen2, that's just the
+> rcar-dmac driver). platform_drv_shutdown() calls dev_pm_domain_detach(),
+> which enters an infinite loop, due to the prepared_count imbalance.
+>
+> On R-Mobile, the imbalance also happens. But there it doesn't cause any issues
+> as sh_cmt is part of a PM domain that doesn't contain any devices with drivers
+> that have .shutdown() methods.
+>
+> I see two ways to fix this:
+>   1. Fix the prepared_count imbalance.
+>      Anyone with a clue?
 
-Implement g/s_selection. The v4l2 core will emulate g/s_crop and
-cropcap on top of g/s_selection.
+Hi Geert,
 
-Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
----
- drivers/media/platform/sh_vou.c | 71 +++++++++++++++--------------------------
- 1 file changed, 25 insertions(+), 46 deletions(-)
+Sorry for the delayed answer. I don't have an idea for 1), yet.
 
-diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
-index 262c244..9479c44 100644
---- a/drivers/media/platform/sh_vou.c
-+++ b/drivers/media/platform/sh_vou.c
-@@ -949,24 +949,36 @@ static int sh_vou_g_std(struct file *file, void *priv, v4l2_std_id *std)
- 	return 0;
- }
- 
--static int sh_vou_g_crop(struct file *file, void *fh, struct v4l2_crop *a)
-+static int sh_vou_g_selection(struct file *file, void *fh,
-+			      struct v4l2_selection *sel)
- {
- 	struct sh_vou_device *vou_dev = video_drvdata(file);
- 
--	dev_dbg(vou_dev->v4l2_dev.dev, "%s()\n", __func__);
--
--	a->type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
--	a->c = vou_dev->rect;
--
-+	if (sel->type != V4L2_BUF_TYPE_VIDEO_OUTPUT)
-+		return -EINVAL;
-+	switch (sel->target) {
-+	case V4L2_SEL_TGT_COMPOSE:
-+		sel->r = vou_dev->rect;
-+		break;
-+	case V4L2_SEL_TGT_COMPOSE_DEFAULT:
-+	case V4L2_SEL_TGT_COMPOSE_BOUNDS:
-+		sel->r.left = 0;
-+		sel->r.top = 0;
-+		sel->r.width = VOU_MAX_IMAGE_WIDTH;
-+		sel->r.height = VOU_MAX_IMAGE_HEIGHT;
-+		break;
-+	default:
-+		return -EINVAL;
-+	}
- 	return 0;
- }
- 
- /* Assume a dull encoder, do all the work ourselves. */
--static int sh_vou_s_crop(struct file *file, void *fh, const struct v4l2_crop *a)
-+static int sh_vou_s_selection(struct file *file, void *fh,
-+			      struct v4l2_selection *sel)
- {
--	struct v4l2_crop a_writable = *a;
-+	struct v4l2_rect *rect = &sel->r;
- 	struct sh_vou_device *vou_dev = video_drvdata(file);
--	struct v4l2_rect *rect = &a_writable.c;
- 	struct v4l2_crop sd_crop = {.type = V4L2_BUF_TYPE_VIDEO_OUTPUT};
- 	struct v4l2_pix_format *pix = &vou_dev->pix;
- 	struct sh_vou_geometry geo;
-@@ -980,10 +992,8 @@ static int sh_vou_s_crop(struct file *file, void *fh, const struct v4l2_crop *a)
- 	unsigned int img_height_max;
- 	int ret;
- 
--	dev_dbg(vou_dev->v4l2_dev.dev, "%s(): %ux%u@%u:%u\n", __func__,
--		rect->width, rect->height, rect->left, rect->top);
--
--	if (a->type != V4L2_BUF_TYPE_VIDEO_OUTPUT)
-+	if (sel->type != V4L2_BUF_TYPE_VIDEO_OUTPUT ||
-+	    sel->target != V4L2_SEL_TGT_COMPOSE)
- 		return -EINVAL;
- 
- 	if (vou_dev->std & V4L2_STD_525_60)
-@@ -1047,36 +1057,6 @@ static int sh_vou_s_crop(struct file *file, void *fh, const struct v4l2_crop *a)
- 	return 0;
- }
- 
--/*
-- * Total field: NTSC 858 x 2 * 262/263, PAL 864 x 2 * 312/313, default rectangle
-- * is the initial register values, height takes the interlaced format into
-- * account. The actual image can only go up to 720 x 2 * 240, So, VOUVPR can
-- * actually only meaningfully contain values <= 720 and <= 240 respectively, and
-- * not <= 864 and <= 312.
-- */
--static int sh_vou_cropcap(struct file *file, void *priv,
--			  struct v4l2_cropcap *a)
--{
--	struct sh_vou_device *vou_dev = video_drvdata(file);
--
--	dev_dbg(vou_dev->v4l2_dev.dev, "%s()\n", __func__);
--
--	a->type				= V4L2_BUF_TYPE_VIDEO_OUTPUT;
--	a->bounds.left			= 0;
--	a->bounds.top			= 0;
--	a->bounds.width			= VOU_MAX_IMAGE_WIDTH;
--	a->bounds.height		= VOU_MAX_IMAGE_HEIGHT;
--	/* Default = max, set VOUDPR = 0, which is not hardware default */
--	a->defrect.left			= 0;
--	a->defrect.top			= 0;
--	a->defrect.width		= VOU_MAX_IMAGE_WIDTH;
--	a->defrect.height		= VOU_MAX_IMAGE_HEIGHT;
--	a->pixelaspect.numerator	= 1;
--	a->pixelaspect.denominator	= 1;
--
--	return 0;
--}
--
- static irqreturn_t sh_vou_isr(int irq, void *dev_id)
- {
- 	struct sh_vou_device *vou_dev = dev_id;
-@@ -1305,9 +1285,8 @@ static const struct v4l2_ioctl_ops sh_vou_ioctl_ops = {
- 	.vidioc_enum_output		= sh_vou_enum_output,
- 	.vidioc_s_std			= sh_vou_s_std,
- 	.vidioc_g_std			= sh_vou_g_std,
--	.vidioc_cropcap			= sh_vou_cropcap,
--	.vidioc_g_crop			= sh_vou_g_crop,
--	.vidioc_s_crop			= sh_vou_s_crop,
-+	.vidioc_g_selection		= sh_vou_g_selection,
-+	.vidioc_s_selection		= sh_vou_s_selection,
- };
- 
- static const struct v4l2_file_operations sh_vou_fops = {
--- 
-2.1.4
+>   2. Fix the infinite loop.
+>        a. Limit the loop to a fixed number of retries (e.g. 20),
+>        b. Remove the call to dev_pm_domain_detach() from
+>           platform_drv_shutdown(). Others buses (amba, i2c, spi) do not call
+>           it from their .shutdown() method, only from .remove().
 
+The reason why I added dev_pm_domain_detach() in that path was because
+of the call to acpi_dev_pm_detach() that existed there already.
+
+acpi_dev_pm_detach was added by Rafael in commit
+94d76d5de38d7502c3e78fcd6bf50da95e3e0361 (platform / ACPI:
+Attach/detach ACPI PM during probe/remove/shutdown).
+
+From genpd point of view, I think it safe to remove the call to
+dev_pm_domain_detach() from platform_drv_shutdown(), but I can't tell
+from ACPI point of view.
+
+Moreover, we still need to looking into 1), as it's probably causing
+other issues as well.
+
+Kind regards
+Uffe
