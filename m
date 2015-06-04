@@ -1,41 +1,53 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Jun 2015 08:38:50 +0000
-Subject: [PATCH v2 1/7] Revert "staging: board: disable as it breaks the build"
-Message-Id: <1434530336-15073-2-git-send-email-geert+renesas@glider.be>
+Date: Thu, 04 Jun 2015 18:53:31 +0000
+Subject: [PATCH/RFC 05/15] ARM: shmobile: r8a7793 dtsi: Add L2 cache-controller node
+Message-Id: <1433444021-22167-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434530336-15073-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1434530336-15073-1-git-send-email-geert+renesas@glider.be>
+References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This reverts commit d13778d537a0ed6115d2a79a942af999cfb8eec6.
-
-Commit 13c11072536f2613 ("staging:board: remove unnecessary function")
-fixed the build of drivers/staging/board/board.c.
+Add a device node for the L2 cache:
+  - The L2 cache for the Cortex-A15 CPU cores is 1 MiB large (organized
+    as 64 KiB x 16 ways), and requires the following settings:
+      - Tag RAM latency: 3 cycles,
+      - Data RAM latency: 4 cycles,
+      - Data RAM setup: 0 cycles.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - Add Reviewed-by.
+What are the DT bindings for a Cortex-A15 L2 cache controller?
 ---
- drivers/staging/board/Kconfig | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7793.dtsi | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-diff --git a/drivers/staging/board/Kconfig b/drivers/staging/board/Kconfig
-index 0a89ad16371f7ded..b8ee81840666ad35 100644
---- a/drivers/staging/board/Kconfig
-+++ b/drivers/staging/board/Kconfig
-@@ -1,7 +1,6 @@
- config STAGING_BOARD
- 	bool "Staging Board Support"
- 	depends on OF_ADDRESS
--	depends on BROKEN
- 	help
- 	  Select to enable per-board staging support code.
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index f337634888de7800..cf153b9c2367a211 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -41,6 +41,19 @@
+ 		};
+ 	};
  
++	L2_CA15: cache-controller@0 {
++		compatible = "cache";
++
++		arm,data-latency = <4 4 0>;
++		arm,tag-latency = <3 3 3>;
++		cache-unified;
++		cache-level = <2>;
++		cache-size = <0x100000>;
++		cache-sets = <2048>;
++		cache-block-size = <32>;
++		cache-line-size = <32>;
++	};
++
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,cortex-a15-gic";
+ 		#interrupt-cells = <3>;
 -- 
 1.9.1
 
