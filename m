@@ -1,115 +1,172 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 19 Jun 2015 09:05:08 +0000
-Subject: Re: [PATCH 00/15] ARM: shmobile: Remove legacy sh73a0/kzm9g and r8a7740/armadillo
-Message-Id: <2048890.5QyZKokOfh@avalon>
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Thu, 04 Jun 2015 21:49:57 +0000
+Subject: [PATCH 5/7] PCI: Remove unnecessary #includes of <asm/pci.h>
+Message-Id: <20150604214957.2399.66129.stgit@bhelgaas-glaptop2.roam.corp.google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
- <20150619034052.GA22912@verge.net.au>
-In-Reply-To: <20150619034052.GA22912@verge.net.au>
+References: <20150604214614.2399.5142.stgit@bhelgaas-glaptop2.roam.corp.google.com>
+In-Reply-To: <20150604214614.2399.5142.stgit@bhelgaas-glaptop2.roam.corp.google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-pci@vger.kernel.org
+Cc: linux-mips@linux-mips.org, linux-sh@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, x86@kernel.org, linux-alpha@vger.kernel.org
 
-Hi Simon,
+In include/linux/pci.h, we already #include <asm/pci.h>, so we don't need
+to include <asm/pci.h> directly.
 
-On Friday 19 June 2015 12:41:00 Simon Horman wrote:
-> [ CC Linus, Laurent, linux-gpio ]
-> 
-> On Wed, Jun 17, 2015 at 11:31:16AM +0200, Geert Uytterhoeven wrote:
-> > 	Hi Simon, Magnus,
-> > 
-> > The KZM-A9-GT and Armadillo-800 EVA boards are now sufficiently
-> > supported by DT-based and board-less SH-Mobile AG5 (sh73a0) and R-Mobile
-> > A1 (r8a7740) multi-platform kernels.
-> > 
-> > Lacking areas are:
-> >   - USB (it does't work in legacy, neither),
-> >   - HDMI on armadillo (it doesn't work in legacy, neither),
-> >   - Camera on armadillo (we don't care),
-> >   
-> >   - LCDC:
-> >       - on armadillo, this is supported by the board staging code,
-> >       - on kzm9g, the LCDC is wired to the legacy INTC, which is not
-> > 	
-> > 	planned to be supported with DT,
-> > 	
-> >   - DMAC/IPMMU (no DT bindings are planned).
-> > 
-> > Hence this patch series removes legacy board and SoC code for
-> > sh73a0/kzm9g and r8a7740/armadillo.
-> > 
-> > It consists of 4 parts:
-> >   - Patches 1-4 remove legacy support for kzm9g (board code, defconfig,
-> >   
-> >     dtb) and sh73a0,
-> >   
-> >   - Patches 5-8 remove legacy support for armadillo (board code,
-> >   
-> >     defconfig, dtb) and r8a7740,
-> >   
-> >   - Patches 9-11 remove generic shmobile support code (dma-register.h,
-> >   
-> >     legacy PM Domains, zboot) that became unused by the removal of
-> >     legacy sh73a0/kzm9g and r8a7740/armadillo,
-> >   
-> >   - Patches 12-15 remove legacy sh73a0 and r8a7740 support in the
-> >   
-> >     pinctrl drivers.
-> > 
-> > Dependencies:
-> >   - This is against next-20150617,
-> >   - To keep up with existing LCDC functionality for armadillo-legacy,
-> >   
-> >     the r8a7740/armadillo part (and later parts) depends on "[PATCH v2
-> >     0/7] staging: board: armadillo800eva: Board staging for
-> >     sh_mobile_lcdc_fb" (https://lkml.org/lkml/2015/6/17/115).
-> >     However, it can be applied as-is now, and board staging can he
-> >     handled in parallel (if at all).
-> > 
-> > Thanks for applying!
-> > 
-> > Geert Uytterhoeven (15):
-> >   ARM: shmobile: Remove legacy board code for KZM-A9-GT
-> >   ARM: shmobile: Remove legacy kzm9g_defconfig
-> >   ARM: shmobile: Drop sh73a0-kzm9g.dtb for legacy builds
-> >   ARM: shmobile: Remove legacy SoC code for SH-Mobile AG5
-> >   ARM: shmobile: Remove legacy board code for Armadillo-800 EVA
-> >   ARM: shmobile: Remove legacy armadillo800eva_defconfig
-> >   ARM: shmobile: Drop r8a7740-armadillo800eva.dtb for legacy builds
-> >   ARM: shmobile: Remove legacy SoC code for R-Mobile A1
-> >   ARM: shmobile: Remove unused dma-register.h
-> >   ARM: shmobile: R-Mobile: Remove legacy PM Domain code
-> >   ARM: shmobile: Remove obsolete zboot support
-> 
-> I have queued up the above patches for v4.3.
-> 
-> >   pinctrl: sh-pfc: sh73a0: Remove obsolete multi-platform check
-> >   pinctrl: sh-pfc: Remove obsolete sh73a0 platform_device_id entry
-> >   pinctrl: sh-pfc: r8a7740: Remove obsolete multi-platform check
-> >   pinctrl: sh-pfc: Remove obsolete r8a7740 platform_device_id entry
-> 
-> As the above patches are sh-pfc patches they would typically
-> be steered through Linus's tree via Laurent. If they wish
-> to take that path then I'm happy for this to be attached:
-> 
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Remove the unnecessary includes.  All the files here already include
+<linux/pci.h>.
 
-And
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+CC: linux-alpha@vger.kernel.org
+CC: linux-mips@linux-mips.org
+CC: linuxppc-dev@lists.ozlabs.org
+CC: linux-sh@vger.kernel.org
+CC: x86@kernel.org
+---
+ arch/alpha/kernel/core_irongate.c |    1 -
+ arch/alpha/kernel/sys_eiger.c     |    1 -
+ arch/alpha/kernel/sys_nautilus.c  |    1 -
+ arch/mips/pci/fixup-cobalt.c      |    1 -
+ arch/mips/pci/ops-mace.c          |    1 -
+ arch/mips/pci/pci-lantiq.c        |    1 -
+ arch/powerpc/kernel/prom.c        |    1 -
+ arch/powerpc/kernel/prom_init.c   |    1 -
+ arch/sh/drivers/pci/ops-sh5.c     |    1 -
+ arch/sh/drivers/pci/pci-sh5.c     |    1 -
+ arch/x86/kernel/x86_init.c        |    1 -
+ 11 files changed, 11 deletions(-)
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> FWIW the above path is the one that the removal of mackerel/sh7372 took.
-> 
-> Alternatively, I am happy to take the above sh-pfc patches through
-> my tree but I would like to do so with an Ack from at least Linus.
-
-I'm fine with both. I think it would be easier to applied them through your 
-tree if Linus is fine with that. Those patches shouldn't generate any 
-conflict.
-
--- 
-Regards,
-
-Laurent Pinchart
+diff --git a/arch/alpha/kernel/core_irongate.c b/arch/alpha/kernel/core_irongate.c
+index 00096df..83d0a35 100644
+--- a/arch/alpha/kernel/core_irongate.c
++++ b/arch/alpha/kernel/core_irongate.c
+@@ -22,7 +22,6 @@
+ #include <linux/bootmem.h>
+ 
+ #include <asm/ptrace.h>
+-#include <asm/pci.h>
+ #include <asm/cacheflush.h>
+ #include <asm/tlbflush.h>
+ 
+diff --git a/arch/alpha/kernel/sys_eiger.c b/arch/alpha/kernel/sys_eiger.c
+index 79d69d7..15f4208 100644
+--- a/arch/alpha/kernel/sys_eiger.c
++++ b/arch/alpha/kernel/sys_eiger.c
+@@ -22,7 +22,6 @@
+ #include <asm/irq.h>
+ #include <asm/mmu_context.h>
+ #include <asm/io.h>
+-#include <asm/pci.h>
+ #include <asm/pgtable.h>
+ #include <asm/core_tsunami.h>
+ #include <asm/hwrpb.h>
+diff --git a/arch/alpha/kernel/sys_nautilus.c b/arch/alpha/kernel/sys_nautilus.c
+index 700686d..2cfaa0e 100644
+--- a/arch/alpha/kernel/sys_nautilus.c
++++ b/arch/alpha/kernel/sys_nautilus.c
+@@ -39,7 +39,6 @@
+ #include <asm/irq.h>
+ #include <asm/mmu_context.h>
+ #include <asm/io.h>
+-#include <asm/pci.h>
+ #include <asm/pgtable.h>
+ #include <asm/core_irongate.h>
+ #include <asm/hwrpb.h>
+diff --git a/arch/mips/pci/fixup-cobalt.c b/arch/mips/pci/fixup-cobalt.c
+index a138e8e..b3ab593 100644
+--- a/arch/mips/pci/fixup-cobalt.c
++++ b/arch/mips/pci/fixup-cobalt.c
+@@ -13,7 +13,6 @@
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ 
+-#include <asm/pci.h>
+ #include <asm/io.h>
+ #include <asm/gt64120.h>
+ 
+diff --git a/arch/mips/pci/ops-mace.c b/arch/mips/pci/ops-mace.c
+index 6b5821f..951d807 100644
+--- a/arch/mips/pci/ops-mace.c
++++ b/arch/mips/pci/ops-mace.c
+@@ -8,7 +8,6 @@
+ #include <linux/kernel.h>
+ #include <linux/pci.h>
+ #include <linux/types.h>
+-#include <asm/pci.h>
+ #include <asm/ip32/mace.h>
+ 
+ #if 0
+diff --git a/arch/mips/pci/pci-lantiq.c b/arch/mips/pci/pci-lantiq.c
+index 8b117e6..c5347d9 100644
+--- a/arch/mips/pci/pci-lantiq.c
++++ b/arch/mips/pci/pci-lantiq.c
+@@ -20,7 +20,6 @@
+ #include <linux/of_irq.h>
+ #include <linux/of_pci.h>
+ 
+-#include <asm/pci.h>
+ #include <asm/gpio.h>
+ #include <asm/addrspace.h>
+ 
+diff --git a/arch/powerpc/kernel/prom.c b/arch/powerpc/kernel/prom.c
+index 308c5e1..00fdea2 100644
+--- a/arch/powerpc/kernel/prom.c
++++ b/arch/powerpc/kernel/prom.c
+@@ -46,7 +46,6 @@
+ #include <asm/mmu.h>
+ #include <asm/paca.h>
+ #include <asm/pgtable.h>
+-#include <asm/pci.h>
+ #include <asm/iommu.h>
+ #include <asm/btext.h>
+ #include <asm/sections.h>
+diff --git a/arch/powerpc/kernel/prom_init.c b/arch/powerpc/kernel/prom_init.c
+index fd1fe4c..fcca807 100644
+--- a/arch/powerpc/kernel/prom_init.c
++++ b/arch/powerpc/kernel/prom_init.c
+@@ -37,7 +37,6 @@
+ #include <asm/smp.h>
+ #include <asm/mmu.h>
+ #include <asm/pgtable.h>
+-#include <asm/pci.h>
+ #include <asm/iommu.h>
+ #include <asm/btext.h>
+ #include <asm/sections.h>
+diff --git a/arch/sh/drivers/pci/ops-sh5.c b/arch/sh/drivers/pci/ops-sh5.c
+index 4ce95a0..4536194 100644
+--- a/arch/sh/drivers/pci/ops-sh5.c
++++ b/arch/sh/drivers/pci/ops-sh5.c
+@@ -18,7 +18,6 @@
+ #include <linux/delay.h>
+ #include <linux/types.h>
+ #include <linux/irq.h>
+-#include <asm/pci.h>
+ #include <asm/io.h>
+ #include "pci-sh5.h"
+ 
+diff --git a/arch/sh/drivers/pci/pci-sh5.c b/arch/sh/drivers/pci/pci-sh5.c
+index 16c1e72..8229114 100644
+--- a/arch/sh/drivers/pci/pci-sh5.c
++++ b/arch/sh/drivers/pci/pci-sh5.c
+@@ -20,7 +20,6 @@
+ #include <linux/types.h>
+ #include <linux/irq.h>
+ #include <cpu/irq.h>
+-#include <asm/pci.h>
+ #include <asm/io.h>
+ #include "pci-sh5.h"
+ 
+diff --git a/arch/x86/kernel/x86_init.c b/arch/x86/kernel/x86_init.c
+index 234b072..eed5625 100644
+--- a/arch/x86/kernel/x86_init.c
++++ b/arch/x86/kernel/x86_init.c
+@@ -11,7 +11,6 @@
+ #include <asm/bios_ebda.h>
+ #include <asm/paravirt.h>
+ #include <asm/pci_x86.h>
+-#include <asm/pci.h>
+ #include <asm/mpspec.h>
+ #include <asm/setup.h>
+ #include <asm/apic.h>
 
