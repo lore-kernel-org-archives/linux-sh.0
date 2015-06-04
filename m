@@ -1,45 +1,65 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Tue, 30 Jun 2015 16:25:05 +0000
-Subject: [PATCH v2 1/2] v4l: vsp1: Fix ref_count bug
-Message-Id: <1435681506-24296-2-git-send-email-ykaneko0929@gmail.com>
+From: Jiang Liu <jiang.liu@linux.intel.com>
+Date: Thu, 04 Jun 2015 04:13:37 +0000
+Subject: [RFT v2 27/48] sh, irq: Prepare for killing the first parameter 'irq' of irq_flow_handler_t
+Message-Id: <1433391238-19471-28-git-send-email-jiang.liu@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435681506-24296-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1435681506-24296-1-git-send-email-ykaneko0929@gmail.com>
+References: <1433391238-19471-1-git-send-email-jiang.liu@linux.intel.com>
+In-Reply-To: <1433391238-19471-1-git-send-email-jiang.liu@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Damian Hobson-Garcia <dhobsong@igel.co.jp>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Thomas Gleixner <tglx@linutronix.de>, Bjorn Helgaas <bhelgaas@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, Randy Dunlap <rdunlap@infradead.org>, Yinghai Lu <yinghai@kernel.org>, Borislav Petkov <bp@alien8.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kevin Cernekee <cernekee@gmail.com>, Jiang Liu <jiang.liu@linux.intel.com>
+Cc: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>, Tony Luck <tony.luck@intel.com>, x86@kernel.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-acpi@vger.kernel.org, linux-sh@vger.kernel.org
 
-This patch fixes the judgement error of ref count in vsp1_pm_resume().
+Change irq flow handlers to prepare for killing the first parameter 'irq'
+of irq_flow_handler_t.
 
-This patch was separated from the patch written by Sei Fumizono.
-
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-
+Signed-off-by: Jiang Liu <jiang.liu@linux.intel.com>
 ---
+ arch/sh/boards/mach-se/7722/irq.c |    2 +-
+ arch/sh/boards/mach-se/7724/irq.c |    2 +-
+ drivers/sh/intc/virq.c            |    2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
 
-This patch is based on the master branch of linuxtv.org/media_tree.git.
-
-v2 [Yoshihiro Kaneko]
-* compile tested only
-
- drivers/media/platform/vsp1/vsp1_drv.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index 913485a..a7dfbb0 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -413,7 +413,7 @@ static int vsp1_pm_resume(struct device *dev)
+diff --git a/arch/sh/boards/mach-se/7722/irq.c b/arch/sh/boards/mach-se/7722/irq.c
+index 00e699232621..60aebd14ccf8 100644
+--- a/arch/sh/boards/mach-se/7722/irq.c
++++ b/arch/sh/boards/mach-se/7722/irq.c
+@@ -30,7 +30,7 @@ struct irq_domain *se7722_irq_domain;
  
- 	WARN_ON(mutex_is_locked(&vsp1->lock));
+ static void se7722_irq_demux(unsigned int irq, struct irq_desc *desc)
+ {
+-	struct irq_data *data = irq_get_irq_data(irq);
++	struct irq_data *data = irq_desc_get_irq_data(desc);
+ 	struct irq_chip *chip = irq_data_get_irq_chip(data);
+ 	unsigned long mask;
+ 	int bit;
+diff --git a/arch/sh/boards/mach-se/7724/irq.c b/arch/sh/boards/mach-se/7724/irq.c
+index 5d1d3ec9a6cd..5feb246f642d 100644
+--- a/arch/sh/boards/mach-se/7724/irq.c
++++ b/arch/sh/boards/mach-se/7724/irq.c
+@@ -94,7 +94,7 @@ static struct irq_chip se7724_irq_chip __read_mostly = {
  
--	if (vsp1->ref_count)
-+	if (vsp1->ref_count = 0)
- 		return 0;
+ static void se7724_irq_demux(unsigned int irq, struct irq_desc *desc)
+ {
+-	struct fpga_irq set = get_fpga_irq(irq);
++	struct fpga_irq set = get_fpga_irq(irq_desc_get_irq(desc));
+ 	unsigned short intv = __raw_readw(set.sraddr);
+ 	unsigned int ext_irq = set.base;
  
- 	return clk_prepare_enable(vsp1->clock);
+diff --git a/drivers/sh/intc/virq.c b/drivers/sh/intc/virq.c
+index bb7e745d4266..8704873e8186 100644
+--- a/drivers/sh/intc/virq.c
++++ b/drivers/sh/intc/virq.c
+@@ -114,7 +114,7 @@ static void intc_virq_handler(unsigned int irq, struct irq_desc *desc)
+ 	struct irq_data *data = irq_desc_get_irq_data(desc);
+ 	struct irq_chip *chip = irq_data_get_irq_chip(data);
+ 	struct intc_virq_list *entry, *vlist = irq_data_get_irq_handler_data(data);
+-	struct intc_desc_int *d = get_intc_desc(irq);
++	struct intc_desc_int *d = get_intc_desc(irq_desc_get_irq(desc));
+ 
+ 	chip->irq_mask_ack(data);
+ 
 -- 
-1.9.1
+1.7.10.4
 
