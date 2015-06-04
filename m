@@ -1,31 +1,62 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 01 Jun 2015 10:17:58 +0000
-Subject: [PATCH] clk: shmobile: r8a7794: Document DIV6 clock bindings
-Message-Id: <1433153878-18765-1-git-send-email-geert+renesas@glider.be>
+Date: Thu, 04 Jun 2015 18:53:34 +0000
+Subject: [PATCH/RFC 08/15] ARM: shmobile: r8a7791 dtsi: Add L1 cache information to CPU nodes
+Message-Id: <1433444021-22167-9-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>
-Cc: Simon Horman <horms+renesas@verge.net.au>, linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
+
+Describe the L1 instruction and data caches in the CPU nodes:
+  - The L1 caches for the Cortex-A15 CPU cores are organized as 16 KiB x
+    2 ways.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7791.dtsi | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-index b0a3a1147d62f4fa..3e40c41b05658e5b 100644
---- a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-@@ -12,6 +12,7 @@ Required Properties:
-     - "renesas,r8a7790-div6-clock" for R8A7790 (R-Car H2) DIV6 clocks
-     - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2-W) DIV6 clocks
-     - "renesas,r8a7793-div6-clock" for R8A7793 (R-Car M2-N) DIV6 clocks
-+    - "renesas,r8a7794-div6-clock" for R8A7794 (R-Car E2) DIV6 clocks
-     - "renesas,sh73a0-div6-clock" for SH73A0 (SH-Mobile AG5) DIV6 clocks
-     - "renesas,cpg-div6-clock" for generic DIV6 clocks
-   - reg: Base address and length of the memory resource used by the DIV6 clock
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 8013223448b5b464..4e4011a2978bcfce 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -52,6 +52,16 @@
+ 			clocks = <&cpg_clocks R8A7791_CLK_Z>;
+ 			clock-latency = <300000>; /* 300 us */
+ 
++			i-cache-size = <0x8000>;
++			i-cache-sets = <512>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <512>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2_CA15>;
++
+ 			/* kHz - uV - OPPs unknown yet */
+ 			operating-points = <1500000 1000000>,
+ 					   <1312500 1000000>,
+@@ -66,6 +76,16 @@
+ 			compatible = "arm,cortex-a15";
+ 			reg = <1>;
+ 			clock-frequency = <1500000000>;
++
++			i-cache-size = <0x8000>;
++			i-cache-sets = <512>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <512>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2_CA15>;
+ 		};
+ 	};
+ 
 -- 
 1.9.1
 
