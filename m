@@ -1,105 +1,157 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Tue, 30 Jun 2015 16:54:21 +0000
-Subject: [PATCH v4 3/8] mmc: tmio, sh_mobile_sdhi: Pass tmio_mmc_host ptr to clk_{enable,disable} ops
-Message-Id: <1435683261.23818.63.camel@codethink.co.uk>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 04 Jun 2015 23:27:17 +0000
+Subject: [PATCH v2 2/4] sh-pfc: handle pin array holes
+Message-Id: <2126373.2XeHMZH1yc@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435683177.23818.60.camel@codethink.co.uk>
-In-Reply-To: <1435683177.23818.60.camel@codethink.co.uk>
+References: <4326653.qPvIJDU6F2@wasted.cogentembedded.com>
+In-Reply-To: <4326653.qPvIJDU6F2@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linus.walleij@linaro.org, linux-sh@vger.kernel.org, laurent.pinchart@ideasonboard.com, linux-gpio@vger.kernel.org
 
-Change the clk_enable operation to take a pointer to the struct
-tmio_mmc_host and have it set f_max.  For consistency, also change the
-clk_disable operation to take a pointer to struct tmio_mmc_host.
+The pin array  handled by sh_pfc_init_ranges() and sh_pfc_map_pins() may contain
+"holes" representing non-existing pins.  We have to first count  the pin ranges
+and valid pins in order to calculate the size of the memory to be allocated,
+then to skip over the non-existing pins when initializing the allocated arrays
+(we still assume that a pin at index 0 always exists). We also have  to return
+the number of valid pins  from sh_pfc_map_pins() instead of 0 on success.
 
-Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+As we have to touch devm_kzalloc() calls in sh_pfc_map_pins() anyway, use more
+fitting devm_kcalloc() instead which additionally checks the array size.  And
+since PINMUX_TYPE_NONE is #define'd as 0, stop re-initializing already zeroed
+out 'pmx->configs' array.
+
+While at it, add spaces around the minus signs in sh_pfc_init_ranges().
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/mmc/host/sh_mobile_sdhi.c | 12 +++++-------
- drivers/mmc/host/tmio_mmc.h       |  4 ++--
- drivers/mmc/host/tmio_mmc_pio.c   |  4 ++--
- 3 files changed, 9 insertions(+), 11 deletions(-)
+Changes in version 2:
+- added the handling of "holes" to sh_pfc_init_ranges();
+- renamed the 'n' local variable in sh_pfc_map_pins() to 'num_pins' and declared
+  it on a separate line;
+- moved the 'info' local variable inside  2nd loop in sh_pfc_map_pins();
+- added comment before the 2nd devm_kcalloc() call in sh_pfc_map_pins();
+- added comment to the 2nd loop in sh_pfc_map_pins();
+- renamed and refreshed the patch.
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 354f4f335ed5..f6e8c98819ad 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -111,16 +111,15 @@ static void sh_mobile_sdhi_sdbuf_width(struct tmio_mmc_host *host, int width)
- 	sd_ctrl_write16(host, EXT_ACC, val);
- }
+ drivers/pinctrl/sh-pfc/core.c    |   29 +++++++++++++++++++----------
+ drivers/pinctrl/sh-pfc/pinctrl.c |   29 +++++++++++++++++++----------
+ 2 files changed, 38 insertions(+), 20 deletions(-)
+
+Index: linux-pinctrl/drivers/pinctrl/sh-pfc/core.c
+=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/core.c
++++ linux-pinctrl/drivers/pinctrl/sh-pfc/core.c
+@@ -405,7 +405,10 @@ static int sh_pfc_init_ranges(struct sh_
+ 	 * last.
+ 	 */
+ 	for (i = 1, nr_ranges = 1; i < pfc->info->nr_pins; ++i) {
+-		if (pfc->info->pins[i-1].pin != pfc->info->pins[i].pin - 1)
++		/* Check for the "holes" first */
++		if (!pfc->info->pins[i].enum_id && !pfc->info->pins[i].configs)
++			continue;
++		if (pfc->info->pins[i - 1].pin != pfc->info->pins[i].pin - 1)
+ 			nr_ranges++;
+ 	}
  
--static int sh_mobile_sdhi_clk_enable(struct platform_device *pdev, unsigned int *f)
-+static int sh_mobile_sdhi_clk_enable(struct tmio_mmc_host *host)
- {
--	struct mmc_host *mmc = platform_get_drvdata(pdev);
--	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	struct mmc_host *mmc = host->mmc;
- 	struct sh_mobile_sdhi *priv = host_to_priv(host);
- 	int ret = clk_prepare_enable(priv->clk);
- 	if (ret < 0)
- 		return ret;
+@@ -419,19 +422,25 @@ static int sh_pfc_init_ranges(struct sh_
+ 	range->start = pfc->info->pins[0].pin;
  
--	*f = clk_get_rate(priv->clk);
-+	mmc->f_max = clk_get_rate(priv->clk);
+ 	for (i = 1; i < pfc->info->nr_pins; ++i) {
+-		if (pfc->info->pins[i-1].pin = pfc->info->pins[i].pin - 1)
++		if (pfc->info->pins[i - 1].pin = pfc->info->pins[i].pin - 1)
+ 			continue;
  
- 	/* enable 16bit data access on SDBUF as default */
- 	sh_mobile_sdhi_sdbuf_width(host, 16);
-@@ -128,11 +127,10 @@ static int sh_mobile_sdhi_clk_enable(struct platform_device *pdev, unsigned int
- 	return 0;
- }
- 
--static void sh_mobile_sdhi_clk_disable(struct platform_device *pdev)
-+static void sh_mobile_sdhi_clk_disable(struct tmio_mmc_host *host)
- {
--	struct mmc_host *mmc = platform_get_drvdata(pdev);
--	struct tmio_mmc_host *host = mmc_priv(mmc);
- 	struct sh_mobile_sdhi *priv = host_to_priv(host);
+-		range->end = pfc->info->pins[i-1].pin;
+-		if (!(pfc->info->pins[i-1].configs & SH_PFC_PIN_CFG_NO_GPIO))
+-			pfc->nr_gpio_pins = range->end + 1;
+-
+-		range++;
+-		range->start = pfc->info->pins[i].pin;
++		if (pfc->info->pins[i - 1].enum_id ||
++		    pfc->info->pins[i - 1].configs) {
++			range->end = pfc->info->pins[i - 1].pin;
++			if (!(pfc->info->pins[i - 1].configs &
++			      SH_PFC_PIN_CFG_NO_GPIO))
++				pfc->nr_gpio_pins = range->end + 1;
++		}
 +
- 	clk_disable_unprepare(priv->clk);
- }
++		if (pfc->info->pins[i].enum_id || pfc->info->pins[i].configs) {
++			range++;
++			range->start = pfc->info->pins[i].pin;
++		}
+ 	}
  
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 4a597f5a53e2..68fd8d791358 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -95,8 +95,8 @@ struct tmio_mmc_host {
- 	bool			sdio_irq_enabled;
- 
- 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
--	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
--	void (*clk_disable)(struct platform_device *pdev);
-+	int (*clk_enable)(struct tmio_mmc_host *host);
-+	void (*clk_disable)(struct tmio_mmc_host *host);
- 	int (*multi_io_quirk)(struct mmc_card *card,
- 			      unsigned int direction, int blk_size);
- };
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index e3dcf31a8bd6..8fdb8a6209e6 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -840,7 +840,7 @@ static int tmio_mmc_clk_update(struct tmio_mmc_host *host)
- 	if (!host->clk_enable)
- 		return -ENOTSUPP;
- 
--	ret = host->clk_enable(host->pdev, &mmc->f_max);
-+	ret = host->clk_enable(host);
- 	if (!ret)
- 		mmc->f_min = mmc->f_max / 512;
- 
-@@ -1246,7 +1246,7 @@ int tmio_mmc_host_runtime_suspend(struct device *dev)
- 		tmio_mmc_clk_stop(host);
- 
- 	if (host->clk_disable)
--		host->clk_disable(host->pdev);
-+		host->clk_disable(host);
+-	range->end = pfc->info->pins[i-1].pin;
+-	if (!(pfc->info->pins[i-1].configs & SH_PFC_PIN_CFG_NO_GPIO))
++	range->end = pfc->info->pins[i - 1].pin;
++	if (!(pfc->info->pins[i - 1].configs & SH_PFC_PIN_CFG_NO_GPIO))
+ 		pfc->nr_gpio_pins = range->end + 1;
  
  	return 0;
+Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pinctrl.c
+=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pinctrl.c
++++ linux-pinctrl/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -570,33 +570,42 @@ static const struct pinconf_ops sh_pfc_p
+ /* PFC ranges -> pinctrl pin descs */
+ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ {
++	struct pinctrl_pin_desc *pin;
++	unsigned int num_pins;
+ 	unsigned int i;
+ 
++	/* Count the valid pins. */
++	for (i = 0, num_pins = 0; i < pfc->info->nr_pins; i++) {
++		if (pfc->info->pins[i].enum_id || pfc->info->pins[i].configs)
++			num_pins++;
++	}
++
+ 	/* Allocate and initialize the pins and configs arrays. */
+-	pmx->pins = devm_kzalloc(pfc->dev,
+-				 sizeof(*pmx->pins) * pfc->info->nr_pins,
++	pmx->pins = devm_kcalloc(pfc->dev, num_pins, sizeof(*pmx->pins),
+ 				 GFP_KERNEL);
+ 	if (unlikely(!pmx->pins))
+ 		return -ENOMEM;
+ 
+-	pmx->configs = devm_kzalloc(pfc->dev,
+-				    sizeof(*pmx->configs) * pfc->info->nr_pins,
++	/* Equivalent to setting the type field to PINMUX_TYPE_NONE */
++	pmx->configs = devm_kcalloc(pfc->dev, num_pins, sizeof(*pmx->configs),
+ 				    GFP_KERNEL);
+ 	if (unlikely(!pmx->configs))
+ 		return -ENOMEM;
+ 
+-	for (i = 0; i < pfc->info->nr_pins; ++i) {
++	for (i = 0, pin = pmx->pins; i < pfc->info->nr_pins; i++) {
+ 		const struct sh_pfc_pin *info = &pfc->info->pins[i];
+-		struct sh_pfc_pin_config *cfg = &pmx->configs[i];
+-		struct pinctrl_pin_desc *pin = &pmx->pins[i];
++
++		/* Skip the "hole" */
++		if (!info->enum_id && !info->configs)
++			continue;
+ 
+ 		/* If the pin number is equal to -1 all pins are considered */
+ 		pin->number = info->pin != (u16)-1 ? info->pin : i;
+ 		pin->name = info->name;
+-		cfg->type = PINMUX_TYPE_NONE;
++		pin++;
+ 	}
+ 
+-	return 0;
++	return num_pins;
  }
--- 
-2.1.4
-
-
-
+ 
+ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+@@ -621,7 +630,7 @@ int sh_pfc_register_pinctrl(struct sh_pf
+ 	pmx->pctl_desc.pmxops = &sh_pfc_pinmux_ops;
+ 	pmx->pctl_desc.confops = &sh_pfc_pinconf_ops;
+ 	pmx->pctl_desc.pins = pmx->pins;
+-	pmx->pctl_desc.npins = pfc->info->nr_pins;
++	pmx->pctl_desc.npins = ret;
+ 
+ 	pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
+ 	if (pmx->pctl = NULL)
 
