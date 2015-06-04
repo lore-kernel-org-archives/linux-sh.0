@@ -1,80 +1,53 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 14 Jun 2015 17:26:26 +0000
-Subject: [PATCH/RFC] serial: sh-sci: Fix issue of frequent rx_full interrupt
-Message-Id: <1434302786-31162-1-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 04 Jun 2015 18:53:30 +0000
+Subject: [PATCH/RFC 04/15] ARM: shmobile: r8a7791 dtsi: Add L2 cache-controller node
+Message-Id: <1433444021-22167-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-serial@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Add a device node for the L2 cache:
+  - The L2 cache for the Cortex-A15 CPU cores is 1 MiB large (organized
+    as 64 KiB x 16 ways), and requires the following settings:
+      - Tag RAM latency: 3 cycles,
+      - Data RAM latency: 4 cycles,
+      - Data RAM setup: 0 cycles.
 
-When the receive FIFO is not read in PIO transfer, rx_full interrupt
-occurs frequently. This patch avoids it by discarding the receive FIFO.
-
-Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+What are the DT bindings for a Cortex-A15 L2 cache controller?
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
-tree.
-
- drivers/tty/serial/sh-sci.c | 22 ++++++++++++++++++++--
- 1 file changed, 20 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index b74a644..4ec3c32 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -121,6 +121,8 @@ struct sci_port {
- #endif
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index b657c7e7363e3d99..8013223448b5b464 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -69,6 +69,19 @@
+ 		};
+ 	};
  
- 	struct notifier_block		freq_transition;
++	L2_CA15: cache-controller@0 {
++		compatible = "cache";
 +
-+	u64				rxfull_time;
- };
- 
- /* Function prototypes */
-@@ -690,12 +692,26 @@ static void sci_receive_chars(struct uart_port *port)
- 		return;
- 
- 	while (1) {
-+		int rxfill = sci_rxfill(port);
-+		u64 now = get_jiffies_64();
- 		/* Don't copy more bytes than there is room for in the buffer */
--		count = tty_buffer_request_room(tport, sci_rxfill(port));
-+		count = tty_buffer_request_room(tport, rxfill);
- 
- 		/* If for any reason we can't copy more data, we're done! */
--		if (count = 0)
-+		if (count = 0) {
-+			int n;
-+			/* discarded bytes in RX-FIFO */
-+			for (n = 0; n < rxfill; n++)
-+				serial_port_in(port, SCxRDR);
-+			if (rxfill > 0 &&
-+			    time_after64(now, sci_port->rxfull_time + (5*HZ))) {
-+				sci_port->rxfull_time = now;
-+				dev_warn(port->dev,
-+					 "RX-FIFO isn't read, so %d bytes is discarded.\n",
-+					 rxfill);
-+			}
- 			break;
-+		}
- 
- 		if (port->type = PORT_SCI) {
- 			char c = serial_port_in(port, SCxRDR);
-@@ -2342,6 +2358,8 @@ static int sci_init_single(struct platform_device *dev,
- 		dev_dbg(port->dev, "DMA tx %d, rx %d\n",
- 			p->dma_slave_tx, p->dma_slave_rx);
- 
-+	sci_port->rxfull_time = get_jiffies_64();
++		arm,data-latency = <4 4 0>;
++		arm,tag-latency = <3 3 3>;
++		cache-unified;
++		cache-level = <2>;
++		cache-size = <0x100000>;
++		cache-sets = <2048>;
++		cache-block-size = <32>;
++		cache-line-size = <32>;
++	};
 +
- 	return 0;
- }
- 
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,cortex-a15-gic";
+ 		#interrupt-cells = <3>;
 -- 
 1.9.1
 
