@@ -1,43 +1,121 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 14 Jun 2015 17:20:43 +0000
-Subject: [PATCH/RFC] mmc: sh_mmcif: Fix suspend process
-Message-Id: <1434302443-30905-1-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 04 Jun 2015 18:22:27 +0000
+Subject: [PATCH 03/11] ARM: shmobile: R-Car: Improve documentation
+Message-Id: <1433442155-19492-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Add more SYSC register documentation.
+Use definitions instead of hardcoded numbers.
+Comment important operations.
 
-The clock should be enable when SDHI registers are accessed.
-
-Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ arch/arm/mach-shmobile/pm-rcar.c | 46 ++++++++++++++++++++++++++++------------
+ 1 file changed, 32 insertions(+), 14 deletions(-)
 
-This patch is based on mmc-next branch of Ulf Hansson's mmc tree.
-
-* Perhaps this relates to the need to enhance clock management
-
- drivers/mmc/host/sh_mmcif.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 5a1fdd4..ad9ffea 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -1632,7 +1632,9 @@ static int sh_mmcif_suspend(struct device *dev)
+diff --git a/arch/arm/mach-shmobile/pm-rcar.c b/arch/arm/mach-shmobile/pm-rcar.c
+index 00022ee56f80dc30..56ea82a851cb96f7 100644
+--- a/arch/arm/mach-shmobile/pm-rcar.c
++++ b/arch/arm/mach-shmobile/pm-rcar.c
+@@ -15,21 +15,35 @@
+ #include <asm/io.h>
+ #include "pm-rcar.h"
+ 
+-/* SYSC */
+-#define SYSCSR 0x00
+-#define SYSCISR 0x04
+-#define SYSCISCR 0x08
++/* SYSC Common */
++#define SYSCSR			0x00	/* SYSC Status Register */
++#define SYSCISR			0x04	/* Interrupt Status Register */
++#define SYSCISCR		0x08	/* Interrupt Status Clear Register */
++#define SYSCIER			0x0c	/* Interrupt Enable Register */
++#define SYSCIMR			0x10	/* Interrupt Mask Register */
+ 
+-#define PWRSR_OFFS 0x00
+-#define PWROFFCR_OFFS 0x04
+-#define PWRONCR_OFFS 0x0c
+-#define PWRER_OFFS 0x14
++/* SYSC Status Register */
++#define SYSCSR_PONENB		1	/* Ready for power resume requests */
++#define SYSCSR_POFFENB		0	/* Ready for power shutoff requests */
+ 
+-#define SYSCSR_RETRIES 100
+-#define SYSCSR_DELAY_US 1
++/*
++ * Power Control Register Offsets inside the register block for each domain
++ * Note: The "CR" registers for ARM cores exist on H1 only
++ *       Use WFI to power off, CPG/APMU to resume ARM cores on R-Car Gen2
++ */
++#define PWRSR_OFFS		0x00	/* Power Status Register */
++#define PWROFFCR_OFFS		0x04	/* Power Shutoff Control Register */
++#define PWROFFSR_OFFS		0x08	/* Power Shutoff Status Register */
++#define PWRONCR_OFFS		0x0c	/* Power Resume Control Register */
++#define PWRONSR_OFFS		0x10	/* Power Resume Status Register */
++#define PWRER_OFFS		0x14	/* Power Shutoff/Resume Error */
++
++
++#define SYSCSR_RETRIES		100
++#define SYSCSR_DELAY_US		1
+ 
+-#define SYSCISR_RETRIES 1000
+-#define SYSCISR_DELAY_US 1
++#define SYSCISR_RETRIES		1000
++#define SYSCISR_DELAY_US	1
+ 
+ static void __iomem *rcar_sysc_base;
+ static DEFINE_SPINLOCK(rcar_sysc_lock); /* SMP CPUs + I/O devices */
+@@ -39,6 +53,7 @@ static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
  {
- 	struct sh_mmcif_host *host = dev_get_drvdata(dev);
+ 	int k;
  
-+	pm_runtime_get_sync(dev);
- 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
-+	pm_runtime_put(dev);
++	/* Wait until SYSC is ready to accept a power request */
+ 	for (k = 0; k < SYSCSR_RETRIES; k++) {
+ 		if (ioread32(rcar_sysc_base + SYSCSR) & (1 << sr_bit))
+ 			break;
+@@ -48,6 +63,7 @@ static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
+ 	if (k = SYSCSR_RETRIES)
+ 		return -EAGAIN;
  
- 	return 0;
++	/* Submit power shutoff or power resume request */
+ 	iowrite32(1 << sysc_ch->chan_bit,
+ 		  rcar_sysc_base + sysc_ch->chan_offs + reg_offs);
+ 
+@@ -56,12 +72,12 @@ static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
+ 
+ static int rcar_sysc_pwr_off(struct rcar_sysc_ch *sysc_ch)
+ {
+-	return rcar_sysc_pwr_on_off(sysc_ch, 0, PWROFFCR_OFFS);
++	return rcar_sysc_pwr_on_off(sysc_ch, SYSCSR_POFFENB, PWROFFCR_OFFS);
  }
+ 
+ static int rcar_sysc_pwr_on(struct rcar_sysc_ch *sysc_ch)
+ {
+-	return rcar_sysc_pwr_on_off(sysc_ch, 1, PWRONCR_OFFS);
++	return rcar_sysc_pwr_on_off(sysc_ch, SYSCSR_PONENB, PWRONCR_OFFS);
+ }
+ 
+ static int rcar_sysc_update(struct rcar_sysc_ch *sysc_ch,
+@@ -78,6 +94,7 @@ static int rcar_sysc_update(struct rcar_sysc_ch *sysc_ch,
+ 
+ 	iowrite32(isr_mask, rcar_sysc_base + SYSCISCR);
+ 
++	/* Submit power shutoff or resume request until it was accepted */
+ 	do {
+ 		ret = on_off_fn(sysc_ch);
+ 		if (ret)
+@@ -87,6 +104,7 @@ static int rcar_sysc_update(struct rcar_sysc_ch *sysc_ch,
+ 				  sysc_ch->chan_offs + PWRER_OFFS);
+ 	} while (status & chan_mask);
+ 
++	/* Wait until the power shutoff or resume request has completed * */
+ 	for (k = 0; k < SYSCISR_RETRIES; k++) {
+ 		if (ioread32(rcar_sysc_base + SYSCISR) & isr_mask)
+ 			break;
 -- 
 1.9.1
 
