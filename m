@@ -1,150 +1,362 @@
-From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
-Date: Fri, 26 Jun 2015 12:23:29 +0000
-Subject: Re: [PATCH v3 1/1] V4L2: platform: Renesas R-Car JPEG codec driver
-Message-Id: <CALi4nhoznAWF2p8WQSdx6vscw7+6wMnEPD+WKqievL9yOCtLUg@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 04 Jun 2015 18:53:28 +0000
+Subject: [PATCH/RFC 02/15] ARM: shmobile: R-Car: Add DT support for PM domains
+Message-Id: <1433444021-22167-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430344409-11928-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
-	<5004544.CpPfGJfHMn@avalon>
-	<20150506010310.24f82a42@bones>
-	<5695336.CA8eQ67zhi@avalon>
-	<CAP3TMiFoKSYdsFrQfzx5gLqhJQv6J6HqPpPU0CrrhMyrzjvq3w@mail.gmail.com>
-	<CALi4nhrswSKVHzz4wJ2NQVK+gVWR0nHhMa-RZnZwT4R+iy-cdw@mail.gmail.com>
-	<CAP3TMiFcd-sJvpRw0qtwBrjUAGaDfBB=pxHoebr33UD9q8Fu_Q@mail.gmail.com>
-In-Reply-To: <CAP3TMiFcd-sJvpRw0qtwBrjUAGaDfBB=pxHoebr33UD9q8Fu_Q@mail.gmail.com>
+References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kamil Debski <kamil@wypas.org>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, "j.anaszewski" <j.anaszewski@samsung.com>
+To: linux-arm-kernel@lists.infradead.org
 
-2015-06-26 15:14 GMT+03:00 Kamil Debski <kamil@wypas.org>:
-> Hi Mikhail,
->
-> On 26 June 2015 at 12:34, Mikhail Ulyanov
-> <mikhail.ulyanov@cogentembedded.com> wrote:
->> Hi,
->>
->> Thanks everybody for comments.
->>
->> 2015-06-22 17:54 GMT+03:00 Kamil Debski <kamil@wypas.org>:
->>> Hi,
->>>
->>> I am adding Jacek Anaszewski to CC loop. He was working with the
->>> s5p-jpeg driver some time ago.
->>> I've spoken with him about questions in this email recently. Jacek,
->>> thank you for your comments :)
->>>
->>> On 18 June 2015 at 20:48, Laurent Pinchart
->>> <laurent.pinchart@ideasonboard.com> wrote:
->>>> Hi Mikhail,
->>>>
->>>> (CC'ing Kamil Debski)
->>>>
->>>> On Wednesday 06 May 2015 01:03:10 Mikhail Ulianov wrote:
->>>>> On Mon, 04 May 2015 02:32:05 +0300 Laurent Pinchart wrote:
->>>
->>> [snip]
->>>
->>>>> [snip]
->>>>>
->>>>> >> +/*
->>>>> >> + * ==================================
->>>>> >> + * Queue operations
->>>>> >> + * ==================================
->>>>> >> + */
->>>>> >> +static int jpu_queue_setup(struct vb2_queue *vq,
->>>>> >> +                     const struct v4l2_format *fmt,
->>>>> >> +                     unsigned int *nbuffers, unsigned int
->>>>> >> *nplanes,
->>>>> >> +                     unsigned int sizes[], void
->>>>> >> *alloc_ctxs[])
->>>>> >> +{
->>>>> >> +  struct jpu_ctx *ctx = vb2_get_drv_priv(vq);
->>>>> >> +  struct jpu_q_data *q_data;
->>>>> >> +  unsigned int count = *nbuffers;
->>>>> >> +  unsigned int i;
->>>>> >> +
->>>>> >> +  q_data = jpu_get_q_data(ctx, vq->type);
->>>>> >> +
->>>>> >> +  *nplanes = q_data->format.num_planes;
->>>>> >> +
->>>>> >> +  /*
->>>>> >> +   * Header is parsed during decoding and parsed information
->>>>> >> stored
->>>>> >> +   * in the context so we do not allow another buffer to
->>>>> >> overwrite it.
->>>>> >> +   * For now it works this way, but planned for alternation.
->>>>> >
->>>>> > It shouldn't be difficult to create a jpu_buffer structure that
->>>>> > inherits from vb2_buffer and store the information there instead of
->>>>> > in the context.
->>>>>
->>>>> You are absolutely right. But for this version i want to keep it
->>>>> simple and also at this moment not everything clear for me with this
->>>>> format "autodetection" feature we want to have e.g. for decoder if user
->>>>> requested 2 output buffers and then queue first with some valid JPEG
->>>>> with format -1-(so we setup queues format here), after that
->>>>> another one with format -2-... should we discard second one or just
->>>>> change format of queues? what about same situation if user already
->>>>> requested capture buffers. I mean relations with buf_prepare and
->>>>> queue_setup. AFAIU format should remain the same for all requested
->>>>> buffers. I see only one "solid" solution here - get rid of
->>>>> "autodetection" feature and rely only on format setted by user, so in
->>>>> this case we can just discard queued buffers with inappropriate
->>>>> format(kind of format validation in kernel). This solution will also
->>>>> work well with NV61, NV21, and semiplanar formats we want to add in next
->>>>> version. *But* with this solution header parsing must be done twice(in
->>>>> user and kernel spaces).
->>>>> I'm a little bit frustrated here :)
->>>>
->>>> Yes, it's a bit frustrating indeed. I'm not sure what to advise, I'm not too
->>>> familiar with the m2m API for JPEG.
->>>>
->>>> Kamil, do you have a comment on that ?
->>>
->>> I am not sure whether it is good to get rid of header parsing by the
->>> driver/hardware option. I agree that the buffers should have a
->>> consistent format and size. Maybe the way to go would be to allow
->>> header parsing by the hardware, but to stop processing when the format
->>> has changed? Other solution would be to use the
->>> V4L2_EVENT_SOURCE_CHANGE event to inform user space about the change.
->>> User space then could check whether the buffers are sufficient or
->>> reallocate them. Similar to what happens in MFC when format changes.
->>>
->>> For me implementing resolution change in JPEG seems like an overkill,
->>> but maybe you have a use case that would benefit from this. Initially
->>> the JPEG decoder was designed and written as a one shot device. Could
->>> you give an example of such use case?
->>>
->>> The possible use case I can imagine is having an M-JPEG stream where
->>> all JPEGs have the same dimensions and format. There I can see some
->>> benefits from having more than one buffer on the queues. Then there
->>> would be no change in the buffer parameters, so this should work.
->>
->> That's correct. It's exactly our use case, but we have few cameras. So
->> we serialize buffers in user space and sometimes one(or more) cameras
->> have different configuration. I think i should go with stop processing
->> option.
->
-> It could be possible to have frames from each camera decoded in
-> different contexts. This way the configuration should be consistent
-> for all frames in a context. It will require more memory (more
-> buffers) though...
+Populate the PM domains from DT.
 
-Yes, that's an option. Anyway in latest (v4) version i decided to drop
-frames with different format and make driver more strict in general. I
-think it's more robust in any case. Nobody knows what user will pass
-to kernel :)
+Special cases, like PM domains containing CPU cores or SCUs, are
+handled by scanning the DT topology.
 
->>>>> [snip]
->>>
->>> [snip]
->>>
->
-> Best wishes,
-> Kamil Debski
+The SYSCIER register value is derived from the PM domains found in DT,
+which will allow to get rid of the hardcoded values in pm-rcar-gen2.c.
+However, this means we have to scan for PM domains even if CONFIG_PM=n.
 
+Known issues:
+  - Although this supports R-Car H1 (r8a7779), the DT PM domain code
+    conflicts with the current setup code in pm-r8a7779, which is used
+    regardless of DT,
+  - This needs better integration with the PM code in pm-rcar-gen2, and
+    the SMP code in smp-r8a7790.
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/pm-rcar.c | 299 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 299 insertions(+)
 
+diff --git a/arch/arm/mach-shmobile/pm-rcar.c b/arch/arm/mach-shmobile/pm-rcar.c
+index 4092ad16e0a42a26..13e5f1ee8d89d296 100644
+--- a/arch/arm/mach-shmobile/pm-rcar.c
++++ b/arch/arm/mach-shmobile/pm-rcar.c
+@@ -11,6 +11,9 @@
+ #include <linux/delay.h>
+ #include <linux/err.h>
+ #include <linux/mm.h>
++#include <linux/of_address.h>
++#include <linux/pm_domain.h>
++#include <linux/slab.h>
+ #include <linux/spinlock.h>
+ #include <asm/io.h>
+ #include "pm-rcar.h"
+@@ -51,11 +54,29 @@
+ static void __iomem *rcar_sysc_base;
+ static DEFINE_SPINLOCK(rcar_sysc_lock); /* SMP CPUs + I/O devices */
+ 
++static unsigned int rcar_gen;
++
+ static int rcar_sysc_pwr_on_off(const struct rcar_sysc_ch *sysc_ch, bool on)
+ {
+ 	unsigned int sr_bit, reg_offs;
+ 	int k;
+ 
++	/*
++	 * Only R-Car H1 can control power to CPUs
++	 * Use WFI to power off, CPG/APMU to resume ARM cores on later R-Car
++	 * Generations
++	 */
++	switch (rcar_gen) {
++	case 2:
++		/* FIXME Check rcar_pm_domain.cpu instead? */
++		switch (sysc_ch->chan_offs) {
++		case SYSC_PWR_CA15_CPU:
++		case SYSC_PWR_CA7_CPU:
++			pr_err("%s: Cannot control power to CPU\n", __func__);
++			return -EINVAL;
++		}
++	}
++
+ 	if (on) {
+ 		sr_bit = SYSCSR_PONENB;
+ 		reg_offs = PWRONCR_OFFS;
+@@ -162,3 +183,281 @@ void __iomem *rcar_sysc_init(phys_addr_t base)
+ 
+ 	return rcar_sysc_base;
+ }
++
++#ifndef CONFIG_ARCH_SHMOBILE_LEGACY
++struct rcar_pm_domain {
++	struct generic_pm_domain genpd;
++	struct dev_power_governor *gov;
++	struct rcar_sysc_ch ch;
++	unsigned busy:1;		/* Set if always -EBUSY */
++	unsigned cpu:1;			/* Set if domain contains CPU */
++	char name[0];
++};
++
++static inline struct rcar_pm_domain *to_rcar_pd(struct generic_pm_domain *d)
++{
++	return container_of(d, struct rcar_pm_domain, genpd);
++}
++
++static bool rcar_pd_active_wakeup(struct device *dev)
++{
++	return true;
++}
++
++static int rcar_pd_power_down(struct generic_pm_domain *genpd)
++{
++	struct rcar_pm_domain *rcar_pd = to_rcar_pd(genpd);
++
++	pr_debug("%s: %s\n", __func__, genpd->name);
++
++	if (rcar_pd->busy) {
++		pr_debug("%s: %s busy\n", __func__, genpd->name);
++		return -EBUSY;
++	}
++
++	return rcar_sysc_power_down(&rcar_pd->ch);
++}
++
++static int rcar_pd_power_up(struct generic_pm_domain *genpd)
++{
++	pr_debug("%s: %s\n", __func__, genpd->name);
++	return rcar_sysc_power_up(&to_rcar_pd(genpd)->ch);
++}
++
++static void rcar_init_pm_domain(struct rcar_pm_domain *rcar_pd)
++{
++	struct generic_pm_domain *genpd = &rcar_pd->genpd;
++	struct dev_power_governor *gov = rcar_pd->gov;
++
++	pm_genpd_init(genpd, gov ? : &simple_qos_governor, false);
++	genpd->dev_ops.active_wakeup	= rcar_pd_active_wakeup;
++	genpd->power_off		= rcar_pd_power_down;
++	genpd->power_on			= rcar_pd_power_up;
++
++	if (rcar_sysc_power_is_off(&rcar_pd->ch))
++		rcar_sysc_power_up(&rcar_pd->ch);
++}
++
++enum pd_types {
++	PD_NORMAL,
++	PD_CPU,
++	PD_SCU,
++};
++
++#define MAX_NUM_SPECIAL_PDS	16
++
++static struct special_pd {
++	struct device_node *pd;
++	enum pd_types type;
++} special_pds[MAX_NUM_SPECIAL_PDS] __initdata;
++
++static unsigned int num_special_pds __initdata;
++
++static void __init add_special_pd(struct device_node *np, enum pd_types type)
++{
++	unsigned int i;
++	struct device_node *pd;
++
++	pd = of_parse_phandle(np, "power-domains", 0);
++	if (!pd)
++		return;
++
++	for (i = 0; i < num_special_pds; i++)
++		if (pd = special_pds[i].pd && type = special_pds[i].type) {
++			of_node_put(pd);
++			return;
++		}
++
++	if (num_special_pds = ARRAY_SIZE(special_pds)) {
++		pr_warn("Too many special PM domains\n");
++		of_node_put(pd);
++		return;
++	}
++
++	pr_debug("Special PM domain %s type %d for %s\n", pd->name, type,
++		 np->full_name);
++
++	special_pds[num_special_pds].pd = pd;
++	special_pds[num_special_pds].type = type;
++	num_special_pds++;
++}
++
++static void __init get_special_pds(void)
++{
++	struct device_node *cpu, *scu;
++
++	/* PM domains containing CPUs */
++	for_each_node_by_type(cpu, "cpu") {
++		add_special_pd(cpu, PD_CPU);
++
++		/* SCU, represented by an L2 node */
++		scu = of_parse_phandle(cpu, "next-level-cache", 0);
++		if (scu) {
++			add_special_pd(scu, PD_SCU);
++			of_node_put(scu);
++		}
++	}
++}
++
++static void __init put_special_pds(void)
++{
++	unsigned int i;
++
++	for (i = 0; i < num_special_pds; i++)
++		of_node_put(special_pds[i].pd);
++}
++
++static enum pd_types __init pd_type(const struct device_node *pd)
++{
++	unsigned int i;
++
++	for (i = 0; i < num_special_pds; i++)
++		if (pd = special_pds[i].pd)
++			return special_pds[i].type;
++
++	return PD_NORMAL;
++}
++
++static void __init rcar_setup_pm_domain(struct device_node *np,
++					struct rcar_pm_domain *pd)
++{
++	const char *name = pd->genpd.name;
++
++	switch (pd_type(np)) {
++	case PD_CPU:
++		/*
++		 * This domain contains a CPU core and therefore it should
++		 * only be turned off if the CPU is not in use.
++		 */
++		pr_debug("PM domain %s contains CPU\n", name);
++		pd->gov = &pm_domain_always_on_gov;
++		pd->busy = true;
++		pd->cpu = true;
++		break;
++
++	case PD_SCU:
++		/*
++		 * This domain contains an SCU and cache-controller, and
++		 * therefore it should only be turned off if the CPU cores are
++		 * not in use.
++		 */
++		pr_debug("PM domain %s contains SCU\n", name);
++		pd->gov = &pm_domain_always_on_gov;
++		pd->busy = true;
++		break;
++
++	case PD_NORMAL:
++		break;
++	}
++
++	rcar_init_pm_domain(pd);
++}
++
++static int __init rcar_add_pm_domains(struct device_node *parent,
++				      struct generic_pm_domain *genpd_parent,
++				      u32 *syscier)
++{
++	struct device_node *np;
++
++	for_each_child_of_node(parent, np) {
++		struct rcar_pm_domain *pd;
++		u32 reg[2];
++		int n;
++
++		if (of_property_read_u32_array(np, "reg", reg, ARRAY_SIZE(reg)))
++			return -EINVAL;
++
++		*syscier |= BIT(reg[0]);
++
++		if (!IS_ENABLED(CONFIG_PM)) {
++			/* Just continue parsing "reg" to update *syscier */
++			rcar_add_pm_domains(np, NULL, syscier);
++			continue;
++		}
++
++		n = snprintf(NULL, 0, "%s@%u", np->name, reg[0]) + 1;
++
++		pd = kzalloc(sizeof(*pd) + n, GFP_KERNEL);
++		if (!pd)
++			return -ENOMEM;
++
++		snprintf(pd->name, n, "%s@%u", np->name, reg[0]);
++		pd->genpd.name = pd->name;
++		pd->ch.chan_offs = reg[1] & ~31;
++		pd->ch.chan_bit = reg[1] & 31;
++		pd->ch.isr_bit = reg[0];
++
++		rcar_setup_pm_domain(np, pd);
++		if (genpd_parent)
++			pm_genpd_add_subdomain(genpd_parent, &pd->genpd);
++		of_genpd_add_provider_simple(np, &pd->genpd);
++
++		rcar_add_pm_domains(np, &pd->genpd, syscier);
++	}
++	return 0;
++}
++
++static const struct of_device_id rcar_sysc_matches[] = {
++	{ .compatible = "renesas,sysc-r8a7779", .data = (void *)1 },
++	/* Default is R-Car Gen2 */
++	{ .compatible = "renesas,sysc-rcar", .data = (void *)2 },
++	{ /* sentinel */ }
++};
++
++static int __init rcar_init_pm_domains(void)
++{
++	const struct of_device_id *match;
++	struct device_node *np, *pmd;
++	bool scanned = false;
++	void __iomem *base;
++	int ret = 0;
++
++	for_each_matching_node_and_match(np, rcar_sysc_matches, &match) {
++		u32 syscier = 0;
++
++		rcar_gen = (unsigned int)match->data;
++
++		base = of_iomap(np, 0);
++		if (!base) {
++			pr_warn("%s cannot map reg 0\n", np->full_name);
++			continue;
++		}
++
++		rcar_sysc_base = base;	// FIXME conflicts with rcar_sysc_init()
++
++		pmd = of_get_child_by_name(np, "pm-domains");
++		if (!pmd) {
++			pr_warn("%s lacks pm-domains node\n", np->full_name);
++			continue;
++		}
++
++		if (!scanned) {
++			/* Find PM domains containing special blocks */
++			get_special_pds();
++			scanned = true;
++		}
++
++		ret = rcar_add_pm_domains(pmd, NULL, &syscier);
++		of_node_put(pmd);
++		if (ret) {
++			of_node_put(np);
++			break;
++		}
++
++		/*
++		 * Enable all interrupt sources, but do not use interrupt
++		 * handler
++		 */
++		pr_debug("%s: syscier = 0x%08x\n", np->full_name, syscier);
++		iowrite32(syscier, rcar_sysc_base + SYSCIER);
++		iowrite32(0, rcar_sysc_base + SYSCIMR);
++	}
++
++	put_special_pds();
++
++	return ret;
++}
++
++core_initcall(rcar_init_pm_domains);
++
++#endif /* !CONFIG_ARCH_SHMOBILE_LEGACY */
 -- 
-W.B.R, Mikhail.
+1.9.1
+
