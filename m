@@ -1,63 +1,60 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sun, 21 Jun 2015 08:10:00 +0000
-Subject: [PATCH 05/08] devicetree: bindings: r8a73a4 and R-Car Gen2 CMT bindings
-Message-Id: <20150621081000.10187.3979.sendpatchset@little-apple>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 04 Jun 2015 23:30:40 +0000
+Subject: [PATCH v2 3/4] sh-pfc: r8a7790: remove non-existing GPIO pins
+Message-Id: <20198588.C6cLT92jQ4@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150621080903.10187.20998.sendpatchset@little-apple>
-In-Reply-To: <20150621080903.10187.20998.sendpatchset@little-apple>
+References: <4326653.qPvIJDU6F2@wasted.cogentembedded.com>
+In-Reply-To: <4326653.qPvIJDU6F2@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, daniel.lezcano-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org
+To: linus.walleij@linaro.org, linux-sh@vger.kernel.org, laurent.pinchart@ideasonboard.com, linux-gpio@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Update SoC-specific bindings for r8a73a4 and R-Car Gen2 CMT0 and CMT1.
+GPIO banks 1 and 2 are missing pins 30 and 31. Remove them.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
+Changes in version 2:
+- renamed the patch.
 
- Documentation/devicetree/bindings/timer/renesas,cmt.txt |   26 ++++++++-------
- 1 file changed, 15 insertions(+), 11 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
 
---- 0006/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-+++ work/Documentation/devicetree/bindings/timer/renesas,cmt.txt	2015-06-20 14:34:16.092366518 +0900
-@@ -40,20 +40,24 @@ Required Properties:
- 		(CMT1 on sh7372, sh73a0 and r8a7740)
- 		This is a fallback for the above renesas,cmt-48-* entries.
+Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -27,10 +27,27 @@
+ #include "core.h"
+ #include "sh_pfc.h"
  
-+    - "renesas,cmt0-r8a73a4" for the 32-bit CMT0 device included in r8a73a4.
-+    - "renesas,cmt1-r8a73a4" for the 48-bit CMT1 device included in r8a73a4.
-+    - "renesas,cmt0-r8a7790" for the 32-bit CMT0 device included in r8a7790.
-+    - "renesas,cmt1-r8a7790" for the 48-bit CMT1 device included in r8a7790.
-+    - "renesas,cmt0-r8a7791" for the 32-bit CMT0 device included in r8a7791.
-+    - "renesas,cmt1-r8a7791" for the 48-bit CMT1 device included in r8a7791.
-+    - "renesas,cmt0-r8a7793" for the 32-bit CMT0 device included in r8a7793.
-+    - "renesas,cmt1-r8a7793" for the 48-bit CMT1 device included in r8a7793.
-+    - "renesas,cmt0-r8a7794" for the 32-bit CMT0 device included in r8a7794.
-+    - "renesas,cmt1-r8a7794" for the 48-bit CMT1 device included in r8a7794.
++#define PORT_GP_30(bank, fn, sfx)					\
++	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
++	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
++	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
++	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
++	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
++	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
++	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
++	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
++	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
++	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
++	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
++	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
++	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
++	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
++	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx)
 +
-     - "renesas,cmt0-rcar-gen2" for 32-bit CMT0 devices included in R-Car Gen2.
-     - "renesas,cmt1-rcar-gen2" for 48-bit CMT1 devices included in R-Car Gen2.
-+		These are fallbacks for r8a73a4 and all the R-Car Gen2
-+		entries	listed above.
- 
--    - "renesas,cmt-48-r8a73a4" for the r8a73a4 48-bit CMT
--		(CMT[01])
--    - "renesas,cmt-48-r8a7790" for the r8a7790 48-bit CMT
--		(CMT[01])
--    - "renesas,cmt-48-r8a7791" for the r8a7791 48-bit CMT
--		(CMT[01])
--    - "renesas,cmt-48-gen2" for all second generation 48-bit CMT
--		(CMT[01] on r8a73a4, r8a7790 and r8a7791)
--		This is a fallback for the renesas,cmt-48-r8a73a4,
--		renesas,cmt-48-r8a7790 and renesas,cmt-48-r8a7791 entries.
--
-+    - "renesas,cmt-48-gen2" is <deprecated>, use "renesas,cmt[01]-*" instead.
-+    
-   - reg: base address and length of the registers block for the timer module.
-   - interrupts: interrupt-specifier for the timer, one per channel.
-   - clocks: a list of phandle + clock-specifier pairs, one for each entry
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+ #define CPU_ALL_PORT(fn, sfx)						\
+ 	PORT_GP_32(0, fn, sfx),						\
+-	PORT_GP_32(1, fn, sfx),						\
+-	PORT_GP_32(2, fn, sfx),						\
++	PORT_GP_30(1, fn, sfx),						\
++	PORT_GP_30(2, fn, sfx),						\
+ 	PORT_GP_32(3, fn, sfx),						\
+ 	PORT_GP_32(4, fn, sfx),						\
+ 	PORT_GP_32(5, fn, sfx)
+
