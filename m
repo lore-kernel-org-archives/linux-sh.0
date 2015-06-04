@@ -1,105 +1,152 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 26 Jun 2015 09:14:14 +0000
-Subject: [PATCH v3] PM / Domains: Avoid infinite loops in attach/detach code
-Message-Id: <1435310054-15585-1-git-send-email-geert+renesas@glider.be>
+Date: Thu, 04 Jun 2015 18:53:27 +0000
+Subject: [PATCH/RFC 01/15] PM / Domains: Add DT bindings for the R-Car System Controller
+Message-Id: <1433444021-22167-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@rjwysocki.net>, Kevin Hilman <khilman@kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-If pm_genpd_{add,remove}_device() keeps on failing with -EAGAIN, we end
-up with an infinite loop in genpd_dev_pm_{at,de}tach().
+The Renesas R-Car System Controller provides power management for the
+CPU cores and various coprocessors, following the generic PM domain
+bindings in Documentation/devicetree/bindings/power/power_domain.txt.
 
-This may happen due to a genpd.prepared_count imbalance.  This is a bug
-elsewhere, but it will result in a system lock up, possibly during
-reboot of an otherwise functioning system.
-
-To avoid this, put a limit on the maximum number of loop iterations,
-using an exponential back-off mechanism.  If the limit is reached, the
-operation will just fail.  An error message is already printed.
+This supports both R-Car Gen1 and Gen2.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v3:
-  - Increase maximum timeout to ca. 250 ms (delay time only, i.e. not
-    including actual processing time),
-  - use mdelay() instead of udelay(), as the former is limited to 2 ms,
-  - Use exponential back-off, busy waiting for 1 to 128 ms in each
-    iteration, up to 255 ms in total,
+Alternatives I considered:
 
-v2:
-  - Add missing declaration of "i" in genpd_dev_pm_attach().
----
- drivers/base/power/domain.c | 13 +++++++++++--
- 1 file changed, 11 insertions(+), 2 deletions(-)
+  - Using a single node per power register block, even if it contains
+    multiple domains.
+      - You cannot just have a property with the number of domains, as
+	index 0 is not used on R-Car H1. Hence the need for
+	"renesas,pm-domain-indices" and "renesas,interrupt-bits",
+      - "#power-domain-cells = <1>" for nodes with multiple domains,
+	which allows typos in "power-domains = <&pd_ca15_cpu n>", using
+	an invalid value of "n",
+      - Hence my first version had:
 
-diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
-index cdd547bd67df8218..0ee43c1056e045bd 100644
---- a/drivers/base/power/domain.c
-+++ b/drivers/base/power/domain.c
-@@ -6,6 +6,7 @@
-  * This file is released under the GPLv2.
-  */
- 
-+#include <linux/delay.h>
- #include <linux/kernel.h>
- #include <linux/io.h>
- #include <linux/platform_device.h>
-@@ -19,6 +20,8 @@
- #include <linux/suspend.h>
- #include <linux/export.h>
- 
-+#define GENPD_RETRY_MAX_MS	250		/* Approximate */
+	    pd_ca15_scu: ca15_scu@180 {
+		    reg = <0x180 0x20>;
+		    #address-cells = <1>;
+		    #size-cells = <0>;
+		    #power-domain-cells = <0>;
+		    renesas,interrupt-bits = <12>;
+
+		    pd_ca15_cpu: ca15_cpu@40 {
+			    reg = <0x40 0x20>;
+			    #power-domain-cells = <1>;
+			    renesas,pm-domain-indices = <0 1>;
+			    renesas,pm-domain-names 				    "ca15_cpu0", "ca15_cpu1";
+			    renesas,interrupt-bits = <0 1>;
+		    };
+	    };
+
+  - Using a linear description in DT
+      - Needs parent links for subdomains,
+      - More complicated to parse (lesson learned from R-Mobile PM
+	Domain support).
+  - Keeping the power register block offset and the bit number as separate
+    "reg" cells, increasing "#address-cells" from 2 to 3,
+  - Merging the interrupt bit (which needs only 5 bits) in the other "reg"
+    cell, decreasing "#address-cells" from 2 to 1.
+
+ .../bindings/power/renesas,sysc-rcar.txt           | 82 ++++++++++++++++++++++
+ 1 file changed, 82 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/power/renesas,sysc-rcar.txt
+
+diff --git a/Documentation/devicetree/bindings/power/renesas,sysc-rcar.txt b/Documentation/devicetree/bindings/power/renesas,sysc-rcar.txt
+new file mode 100644
+index 0000000000000000..72d2fcd6beb98749
+--- /dev/null
++++ b/Documentation/devicetree/bindings/power/renesas,sysc-rcar.txt
+@@ -0,0 +1,82 @@
++DT bindings for the Renesas R-Car System Controller
 +
- #define GENPD_DEV_CALLBACK(genpd, type, callback, dev)		\
- ({								\
- 	type (*__routine)(struct device *__d); 			\
-@@ -2131,6 +2134,7 @@ EXPORT_SYMBOL_GPL(of_genpd_get_from_provider);
- static void genpd_dev_pm_detach(struct device *dev, bool power_off)
- {
- 	struct generic_pm_domain *pd;
-+	unsigned int i;
- 	int ret = 0;
- 
- 	pd = pm_genpd_lookup_dev(dev);
-@@ -2139,10 +2143,12 @@ static void genpd_dev_pm_detach(struct device *dev, bool power_off)
- 
- 	dev_dbg(dev, "removing from PM domain %s\n", pd->name);
- 
--	while (1) {
-+	for (i = 1; i < GENPD_RETRY_MAX_MS; i <<= 1) {
- 		ret = pm_genpd_remove_device(pd, dev);
- 		if (ret != -EAGAIN)
- 			break;
++= System Controller Node =
 +
-+		mdelay(i);
- 		cond_resched();
- 	}
- 
-@@ -2183,6 +2189,7 @@ int genpd_dev_pm_attach(struct device *dev)
- {
- 	struct of_phandle_args pd_args;
- 	struct generic_pm_domain *pd;
-+	unsigned int i;
- 	int ret;
- 
- 	if (!dev->of_node)
-@@ -2218,10 +2225,12 @@ int genpd_dev_pm_attach(struct device *dev)
- 
- 	dev_dbg(dev, "adding to PM domain %s\n", pd->name);
- 
--	while (1) {
-+	for (i = 1; i < GENPD_RETRY_MAX_MS; i <<= 1) {
- 		ret = pm_genpd_add_device(pd, dev);
- 		if (ret != -EAGAIN)
- 			break;
++The R-Car System Controller provides power management for the CPU cores and
++various coprocessors.
 +
-+		mdelay(i);
- 		cond_resched();
- 	}
- 
++Required properties:
++  - compatible: Should be "renesas,sysc-<soctype>", "renesas,sysc-rcar" as
++	      fallback.
++	      Examples with soctypes are:
++		- "renesas,sysc-r8a7779" (R-Car H1)
++		- "renesas,sysc-r8a7790" (R-Car H2)
++		- "renesas,sysc-r8a7791" (R-Car M2-W)
++		- "renesas,sysc-r8a7793" (R-Car M2-N)
++		- "renesas,sysc-r8a7794" (R-Car E2)
++  - reg: Address start and address range for the device.
++  - pm-domains: This node contains a hierarchy of PM Domain Nodes.
++    Dependencies (e.g. parent SCUs should not be powered off while child CPUs
++    are on) should be reflected using subnodes.
++
++
++= PM Domain Nodes =
++
++Each of the PM domain nodes represents a PM domain, as documented by the
++generic PM domain bindings in
++Documentation/devicetree/bindings/power/power_domain.txt.
++
++Required properties:
++  - #power-domain-cells: Must be 0.
++  - reg: This property must contain 2 values:
++	   - The first value is the number of the interrupt bit representing
++	     the power area in the various Interrupt Registers (e.g. SYSCISR,
++	     Interrupt Status Register),
++	   - The second value encodes the power register block offset (which is
++	     a multiple of 64), and the number of the bit representing the
++	     power area in the various Power Control Registers (e.g. PWROFFSR,
++	     Power Shutoff Status Register). This value is created by ORing
++	     these two numbers.
++	 The parent's node must contain the following two properties:
++	   - #address-cells: Must be 2,
++	   - #size-cells: Must be 0.
++
++
++Example:
++
++	sysc: system-controller@e6180000 {
++		compatible = "renesas,sysc-r8a7791", "renesas,sysc-rcar";
++		reg = <0 0xe6180000 0 0x0200>;
++
++		pm-domains {
++			#address-cells = <2>;
++			#size-cells = <0>;
++
++			pd_ca15_scu: scu@12 {
++				reg = <12 0x180>;
++				#address-cells = <2>;
++				#size-cells = <0>;
++				#power-domain-cells = <0>;
++
++				pd_ca15_cpu0: cpu@0 {
++					reg = <0 0x40>;
++					#power-domain-cells = <0>;
++				};
++
++				pd_ca15_cpu1: cpu@1 {
++					reg = <1 0x41>;
++					#power-domain-cells = <0>;
++				};
++			};
++
++			pd_sh: sh@16 {
++				reg = <16 0x80>;
++				#power-domain-cells = <0>;
++			};
++
++			pd_sgx: sgx@20 {
++				reg = <20 0xc0>;
++				#power-domain-cells = <0>;
++			};
++		};
++	};
 -- 
 1.9.1
 
