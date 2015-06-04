@@ -1,57 +1,101 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Sun, 07 Jun 2015 08:57:54 +0000
-Subject: [PATCHv2 00/11] sh-vou: fixes, conversion to vb2
-Message-Id: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 04 Jun 2015 18:53:37 +0000
+Subject: [PATCH/RFC 11/15] ARM: shmobile: r8a7779 dtsi: Add SYSC PM domains
+Message-Id: <1433444021-22167-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Hans Verkuil <hans.verkuil@cisco.com>
+Add a device node for the System Controller, with subnodes that
+represent the hardware power area hierarchy.
+Hook up ARM CPU cores 1-3 to their respective PM domains.
+Note that ARM CPU core 0 cannot be shut off.
 
-This driver no longer works and uses old v4l2 frameworks. This patch series
-updates the driver so it is once again working and is up to date.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7779.dtsi | 48 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
 
-It now passes the v4l2-compliance tests as well.
-
-This has been tested with my Renesas R0P7724LC0011/21RL development board.
-
-Changes since v1:
-
-- Split up the clock fix from the 'use resource managed calls' patch.
-- Just changed the clock name as suggested by Geert Uytterhoeven.
-- No need to enable the clock explicitly, it is done by pm_runtime_get_sync().
-- Fixed the sh_vou_release() function which didn't reset the status to
-  SH_VOU_INITIALISING. Also make sure the _vb2_fop_release() is called before
-  pm_runtime_put is called in case _vb2_fop_release() still needs access to
-  the clock.
-
-Note that patches 3-10 are identical to patches 2-9 from v1. Only patches 1, 2
-and 11 are changed and patch 11 only changed the sh_vou_release() function.
-
-Regards,
-
-	Hans
-
-Hans Verkuil (11):
-  clock-sh7724.c: fix sh-vou clock identifier
-  sh-vou: use resource managed calls
-  sh-vou: fix querycap support
-  sh-vou: use v4l2_fh
-  sh-vou: support compulsory G/S/ENUM_OUTPUT ioctls
-  sh-vou: fix incorrect initial pixelformat.
-  sh-vou: replace g/s_crop/cropcap by g/s_selection
-  sh-vou: add support for log_status
-  sh-vou: let sh_vou_s_fmt_vid_out call sh_vou_try_fmt_vid_out
-  sh-vou: fix bytesperline
-  sh-vou: convert to vb2
-
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |   2 +-
- drivers/media/platform/sh_vou.c        | 818 +++++++++++++++------------------
- 2 files changed, 373 insertions(+), 447 deletions(-)
-
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index d75f46a539749eae..fbcf02c09fa5b57c 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -34,18 +34,21 @@
+ 			compatible = "arm,cortex-a9";
+ 			reg = <1>;
+ 			clock-frequency = <1000000000>;
++			power-domains = <&pd_arm1>;
+ 		};
+ 		cpu@2 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <2>;
+ 			clock-frequency = <1000000000>;
++			power-domains = <&pd_arm2>;
+ 		};
+ 		cpu@3 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <3>;
+ 			clock-frequency = <1000000000>;
++			power-domains = <&pd_arm3>;
+ 		};
+ 	};
+ 
+@@ -569,4 +572,49 @@
+ 				"mmc1", "mmc0";
+ 		};
+ 	};
++
++	sysc: system-controller@ffd85000 {
++		compatible = "renesas,sysc-r8a7779", "renesas,sysc-rcar";
++		reg = <0 0xffd85000 0 0x0200>;
++
++		pm-domains {
++			#address-cells = <2>;
++			#size-cells = <0>;
++
++			pd_arm1: cpu@1 {
++				reg = <1 0x41>;
++				#power-domain-cells = <0>;
++			};
++
++			pd_arm2: cpu@2 {
++				reg = <2 0x42>;
++				#power-domain-cells = <0>;
++			};
++
++			pd_arm3: cpu@3 {
++				reg = <3 0x43>;
++				#power-domain-cells = <0>;
++			};
++
++			pd_sh: sh@16 {
++				reg = <16 0x80>;
++				#power-domain-cells = <0>;
++			};
++
++			pd_sgx: sgx@20 {
++				reg = <20 0xc0>;
++				#power-domain-cells = <0>;
++			};
++
++			pd_vdp: vdp@21 {
++				reg = <21 0x100>;
++				#power-domain-cells = <0>;
++			};
++
++			pd_imp: imp@24 {
++				reg = <24 0x140>;
++				#power-domain-cells = <0>;
++			};
++		};
++	};
+ };
 -- 
-2.1.4
+1.9.1
 
