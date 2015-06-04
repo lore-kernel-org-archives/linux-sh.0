@@ -1,92 +1,167 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Tue, 09 Jun 2015 23:23:20 +0000
-Subject: [PATCH v2 2/6] pinctrl: sh-pfc: Add set_mux operation to struct sh_pfc_function
-Message-Id: <1433892200.12074.51.camel@codethink.co.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 04 Jun 2015 18:53:33 +0000
+Subject: [PATCH/RFC 07/15] ARM: shmobile: r8a7790 dtsi: Add L1 cache information to CPU nodes
+Message-Id: <1433444021-22167-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433892104.12074.49.camel@codethink.co.uk>
-In-Reply-To: <1433892104.12074.49.camel@codethink.co.uk>
+References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-In some cases a change of function requires changes in more than just
-the GPSR/IPSR registers.  In particular, changing the SDHI between 3.3V
-and 1.8V signalling also requires modifying IOCTRL6.
+Describe the L1 instruction and data caches in the CPU nodes:
+  - The L1 caches for the Cortex-A15 CPU cores, and the L1 instruction
+    caches for the Cortex-A7 CPU cores are organized as 16 KiB x 2
+    ways,
+  - The L1 data caches for the Cortex-A7 CPU cores are organized as 8
+    KiB x 4 ways.
 
-Add this optional operation so that such special cases can be handled
-in each SoC's code.
-
-Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/pinctrl/sh-pfc/pinctrl.c |  4 ++++
- drivers/pinctrl/sh-pfc/sh_pfc.h  | 10 +++++++++-
- 2 files changed, 13 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 80 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 80 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index 072e7c62cab7..068b1cdeddde 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -317,6 +317,7 @@ static int sh_pfc_func_set_mux(struct pinctrl_dev *pctldev, unsigned selector,
- {
- 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
- 	struct sh_pfc *pfc = pmx->pfc;
-+	const struct sh_pfc_function *func = &pfc->info->functions[selector];
- 	const struct sh_pfc_pin_group *grp = &pfc->info->groups[group];
- 	unsigned long flags;
- 	unsigned int i;
-@@ -340,6 +341,9 @@ static int sh_pfc_func_set_mux(struct pinctrl_dev *pctldev, unsigned selector,
- 			break;
- 	}
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 729172090f865e4d..bc98bb6cff635ae5 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -53,6 +53,16 @@
+ 			clocks = <&cpg_clocks R8A7790_CLK_Z>;
+ 			clock-latency = <300000>; /* 300 us */
  
-+	if (func->set_mux)
-+		func->set_mux(pfc, func, grp);
++			i-cache-size = <0x8000>;
++			i-cache-sets = <512>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <512>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2_CA15>;
 +
- done:
- 	spin_unlock_irqrestore(&pfc->lock, flags);
- 	return ret;
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index c7508d5f6886..0ce4f5c7add8 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -28,6 +28,8 @@ enum {
- #define SH_PFC_PIN_CFG_PULL_DOWN	(1 << 3)
- #define SH_PFC_PIN_CFG_NO_GPIO		(1 << 31)
- 
-+struct sh_pfc;
+ 			/* kHz - uV - OPPs unknown yet */
+ 			operating-points = <1400000 1000000>,
+ 					   <1225000 1000000>,
+@@ -67,6 +77,16 @@
+ 			compatible = "arm,cortex-a15";
+ 			reg = <1>;
+ 			clock-frequency = <1300000000>;
 +
- struct sh_pfc_pin {
- 	u16 pin;
- 	u16 enum_id;
-@@ -50,17 +52,23 @@ struct sh_pfc_pin_group {
- 	unsigned int nr_pins;
- };
++			i-cache-size = <0x8000>;
++			i-cache-sets = <512>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <512>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2_CA15>;
+ 		};
  
--#define SH_PFC_FUNCTION(n)				\
-+#define SH_PFC_FUNCTION_SPECIAL(n, set_mux_fn)		\
- 	{						\
- 		.name = #n,				\
- 		.groups = n##_groups,			\
- 		.nr_groups = ARRAY_SIZE(n##_groups),	\
-+		.set_mux = (set_mux_fn),		\
- 	}
- 
-+#define SH_PFC_FUNCTION(n) SH_PFC_FUNCTION_SPECIAL(n, NULL)
+ 		cpu2: cpu@2 {
+@@ -74,6 +94,16 @@
+ 			compatible = "arm,cortex-a15";
+ 			reg = <2>;
+ 			clock-frequency = <1300000000>;
 +
- struct sh_pfc_function {
- 	const char *name;
- 	const char * const *groups;
- 	unsigned int nr_groups;
-+	void (*set_mux)(struct sh_pfc *pfc,
-+			const struct sh_pfc_function *func,
-+			const struct sh_pfc_pin_group *grp);
- };
++			i-cache-size = <0x8000>;
++			i-cache-sets = <512>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <512>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2_CA15>;
+ 		};
  
- struct pinmux_func {
+ 		cpu3: cpu@3 {
+@@ -81,6 +111,16 @@
+ 			compatible = "arm,cortex-a15";
+ 			reg = <3>;
+ 			clock-frequency = <1300000000>;
++
++			i-cache-size = <0x8000>;
++			i-cache-sets = <512>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <512>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2_CA15>;
+ 		};
+ 
+ 		cpu4: cpu@4 {
+@@ -88,6 +128,16 @@
+ 			compatible = "arm,cortex-a7";
+ 			reg = <0x100>;
+ 			clock-frequency = <780000000>;
++
++			i-cache-size = <0x8000>;
++			i-cache-sets = <512>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <256>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2_CA7>;
+ 		};
+ 
+ 		cpu5: cpu@5 {
+@@ -95,6 +145,16 @@
+ 			compatible = "arm,cortex-a7";
+ 			reg = <0x101>;
+ 			clock-frequency = <780000000>;
++
++			i-cache-size = <0x8000>;
++			i-cache-sets = <512>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <256>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2_CA7>;
+ 		};
+ 
+ 		cpu6: cpu@6 {
+@@ -102,6 +162,16 @@
+ 			compatible = "arm,cortex-a7";
+ 			reg = <0x102>;
+ 			clock-frequency = <780000000>;
++
++			i-cache-size = <0x8000>;
++			i-cache-sets = <512>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <256>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2_CA7>;
+ 		};
+ 
+ 		cpu7: cpu@7 {
+@@ -109,6 +179,16 @@
+ 			compatible = "arm,cortex-a7";
+ 			reg = <0x103>;
+ 			clock-frequency = <780000000>;
++
++			i-cache-size = <0x8000>;
++			i-cache-sets = <512>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <256>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2_CA7>;
+ 		};
+ 	};
+ 
 -- 
-2.1.4
-
-
-
+1.9.1
 
