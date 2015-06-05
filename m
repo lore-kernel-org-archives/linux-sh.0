@@ -1,123 +1,138 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sun, 21 Jun 2015 08:10:11 +0000
-Subject: [PATCH 06/08] ARM: shmobile: Update CMT compat string users in DTS
-Message-Id: <20150621081011.10187.94046.sendpatchset@little-apple>
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Fri, 05 Jun 2015 10:59:22 +0000
+Subject: [PATCH 06/10] sh-vou: replace g/s_crop/cropcap by g/s_selection
+Message-Id: <1433501966-30176-7-git-send-email-hverkuil@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150621080903.10187.20998.sendpatchset@little-apple>
-In-Reply-To: <20150621080903.10187.20998.sendpatchset@little-apple>
+References: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
+In-Reply-To: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, daniel.lezcano-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Hans Verkuil <hans.verkuil@cisco.com>
 
-Use recently updated r8a73a4 and R-Car Gen2 CMT0 and CMT1 compat strings.
+Implement g/s_selection. The v4l2 core will emulate g/s_crop and
+cropcap on top of g/s_selection.
 
-With this change in place we can keep device-specific configuration in
-the driver and the driver can be able to support CMT1 specific features.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
 ---
+ drivers/media/platform/sh_vou.c | 71 +++++++++++++++--------------------------
+ 1 file changed, 25 insertions(+), 46 deletions(-)
 
- arch/arm/boot/dts/r8a73a4.dtsi |    2 +-
- arch/arm/boot/dts/r8a7790.dtsi |    4 ++--
- arch/arm/boot/dts/r8a7791.dtsi |    4 ++--
- arch/arm/boot/dts/r8a7793.dtsi |    4 ++--
- arch/arm/boot/dts/r8a7794.dtsi |    4 ++--
- 5 files changed, 9 insertions(+), 9 deletions(-)
+diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
+index eaa432e..7ed5a8b 100644
+--- a/drivers/media/platform/sh_vou.c
++++ b/drivers/media/platform/sh_vou.c
+@@ -951,24 +951,36 @@ static int sh_vou_g_std(struct file *file, void *priv, v4l2_std_id *std)
+ 	return 0;
+ }
+ 
+-static int sh_vou_g_crop(struct file *file, void *fh, struct v4l2_crop *a)
++static int sh_vou_g_selection(struct file *file, void *fh,
++			      struct v4l2_selection *sel)
+ {
+ 	struct sh_vou_device *vou_dev = video_drvdata(file);
+ 
+-	dev_dbg(vou_dev->v4l2_dev.dev, "%s()\n", __func__);
+-
+-	a->type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
+-	a->c = vou_dev->rect;
+-
++	if (sel->type != V4L2_BUF_TYPE_VIDEO_OUTPUT)
++		return -EINVAL;
++	switch (sel->target) {
++	case V4L2_SEL_TGT_COMPOSE:
++		sel->r = vou_dev->rect;
++		break;
++	case V4L2_SEL_TGT_COMPOSE_DEFAULT:
++	case V4L2_SEL_TGT_COMPOSE_BOUNDS:
++		sel->r.left = 0;
++		sel->r.top = 0;
++		sel->r.width = VOU_MAX_IMAGE_WIDTH;
++		sel->r.height = VOU_MAX_IMAGE_HEIGHT;
++		break;
++	default:
++		return -EINVAL;
++	}
+ 	return 0;
+ }
+ 
+ /* Assume a dull encoder, do all the work ourselves. */
+-static int sh_vou_s_crop(struct file *file, void *fh, const struct v4l2_crop *a)
++static int sh_vou_s_selection(struct file *file, void *fh,
++			      struct v4l2_selection *sel)
+ {
+-	struct v4l2_crop a_writable = *a;
++	struct v4l2_rect *rect = &sel->r;
+ 	struct sh_vou_device *vou_dev = video_drvdata(file);
+-	struct v4l2_rect *rect = &a_writable.c;
+ 	struct v4l2_crop sd_crop = {.type = V4L2_BUF_TYPE_VIDEO_OUTPUT};
+ 	struct v4l2_pix_format *pix = &vou_dev->pix;
+ 	struct sh_vou_geometry geo;
+@@ -982,10 +994,8 @@ static int sh_vou_s_crop(struct file *file, void *fh, const struct v4l2_crop *a)
+ 	unsigned int img_height_max;
+ 	int ret;
+ 
+-	dev_dbg(vou_dev->v4l2_dev.dev, "%s(): %ux%u@%u:%u\n", __func__,
+-		rect->width, rect->height, rect->left, rect->top);
+-
+-	if (a->type != V4L2_BUF_TYPE_VIDEO_OUTPUT)
++	if (sel->type != V4L2_BUF_TYPE_VIDEO_OUTPUT ||
++	    sel->target != V4L2_SEL_TGT_COMPOSE)
+ 		return -EINVAL;
+ 
+ 	if (vou_dev->std & V4L2_STD_525_60)
+@@ -1049,36 +1059,6 @@ static int sh_vou_s_crop(struct file *file, void *fh, const struct v4l2_crop *a)
+ 	return 0;
+ }
+ 
+-/*
+- * Total field: NTSC 858 x 2 * 262/263, PAL 864 x 2 * 312/313, default rectangle
+- * is the initial register values, height takes the interlaced format into
+- * account. The actual image can only go up to 720 x 2 * 240, So, VOUVPR can
+- * actually only meaningfully contain values <= 720 and <= 240 respectively, and
+- * not <= 864 and <= 312.
+- */
+-static int sh_vou_cropcap(struct file *file, void *priv,
+-			  struct v4l2_cropcap *a)
+-{
+-	struct sh_vou_device *vou_dev = video_drvdata(file);
+-
+-	dev_dbg(vou_dev->v4l2_dev.dev, "%s()\n", __func__);
+-
+-	a->type				= V4L2_BUF_TYPE_VIDEO_OUTPUT;
+-	a->bounds.left			= 0;
+-	a->bounds.top			= 0;
+-	a->bounds.width			= VOU_MAX_IMAGE_WIDTH;
+-	a->bounds.height		= VOU_MAX_IMAGE_HEIGHT;
+-	/* Default = max, set VOUDPR = 0, which is not hardware default */
+-	a->defrect.left			= 0;
+-	a->defrect.top			= 0;
+-	a->defrect.width		= VOU_MAX_IMAGE_WIDTH;
+-	a->defrect.height		= VOU_MAX_IMAGE_HEIGHT;
+-	a->pixelaspect.numerator	= 1;
+-	a->pixelaspect.denominator	= 1;
+-
+-	return 0;
+-}
+-
+ static irqreturn_t sh_vou_isr(int irq, void *dev_id)
+ {
+ 	struct sh_vou_device *vou_dev = dev_id;
+@@ -1307,9 +1287,8 @@ static const struct v4l2_ioctl_ops sh_vou_ioctl_ops = {
+ 	.vidioc_enum_output		= sh_vou_enum_output,
+ 	.vidioc_s_std			= sh_vou_s_std,
+ 	.vidioc_g_std			= sh_vou_g_std,
+-	.vidioc_cropcap			= sh_vou_cropcap,
+-	.vidioc_g_crop			= sh_vou_g_crop,
+-	.vidioc_s_crop			= sh_vou_s_crop,
++	.vidioc_g_selection		= sh_vou_g_selection,
++	.vidioc_s_selection		= sh_vou_s_selection,
+ };
+ 
+ static const struct v4l2_file_operations sh_vou_fops = {
+-- 
+2.1.4
 
---- 0001/arch/arm/boot/dts/r8a73a4.dtsi
-+++ work/arch/arm/boot/dts/r8a73a4.dtsi	2015-06-20 14:46:07.442366518 +0900
-@@ -114,7 +114,7 @@
- 	};
- 
- 	cmt1: timer@e6130000 {
--		compatible = "renesas,cmt-48-r8a73a4", "renesas,cmt-48-gen2";
-+		compatible = "renesas,cmt1-r8a73a4", "renesas,cmt1-rcar-gen2";
- 		reg = <0 0xe6130000 0 0x1004>;
- 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A73A4_CLK_CMT1>;
---- 0001/arch/arm/boot/dts/r8a7790.dtsi
-+++ work/arch/arm/boot/dts/r8a7790.dtsi	2015-06-20 14:47:48.652366518 +0900
-@@ -212,7 +212,7 @@
- 	};
- 
- 	cmt0: timer@ffca0000 {
--		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
-+		compatible = "renesas,cmt0-r8a7790", "renesas,cmt0-rcar-gen2";
- 		reg = <0 0xffca0000 0 0x1004>;
- 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
-@@ -225,7 +225,7 @@
- 	};
- 
- 	cmt1: timer@e6130000 {
--		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
-+		compatible = "renesas,cmt1-r8a7790", "renesas,cmt1-rcar-gen2";
- 		reg = <0 0xe6130000 0 0x1004>;
- 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
---- 0001/arch/arm/boot/dts/r8a7791.dtsi
-+++ work/arch/arm/boot/dts/r8a7791.dtsi	2015-06-20 14:47:28.652366518 +0900
-@@ -193,7 +193,7 @@
- 	};
- 
- 	cmt0: timer@ffca0000 {
--		compatible = "renesas,cmt-48-r8a7791", "renesas,cmt-48-gen2";
-+		compatible = "renesas,cmt0-r8a7791", "renesas,cmt0-rcar-gen2";
- 		reg = <0 0xffca0000 0 0x1004>;
- 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
-@@ -206,7 +206,7 @@
- 	};
- 
- 	cmt1: timer@e6130000 {
--		compatible = "renesas,cmt-48-r8a7791", "renesas,cmt-48-gen2";
-+		compatible = "renesas,cmt1-r8a7791", "renesas,cmt1-rcar-gen2";
- 		reg = <0 0xe6130000 0 0x1004>;
- 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
---- 0001/arch/arm/boot/dts/r8a7793.dtsi
-+++ work/arch/arm/boot/dts/r8a7793.dtsi	2015-06-20 14:46:58.642366518 +0900
-@@ -62,7 +62,7 @@
- 	};
- 
- 	cmt0: timer@ffca0000 {
--		compatible = "renesas,cmt-48-r8a7793", "renesas,cmt-48-gen2";
-+		compatible = "renesas,cmt0-r8a7793", "renesas,cmt0-rcar-gen2";
- 		reg = <0 0xffca0000 0 0x1004>;
- 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
-@@ -75,7 +75,7 @@
- 	};
- 
- 	cmt1: timer@e6130000 {
--		compatible = "renesas,cmt-48-r8a7793", "renesas,cmt-48-gen2";
-+		compatible = "renesas,cmt1-r8a7793", "renesas,cmt1-rcar-gen2";
- 		reg = <0 0xe6130000 0 0x1004>;
- 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
---- 0001/arch/arm/boot/dts/r8a7794.dtsi
-+++ work/arch/arm/boot/dts/r8a7794.dtsi	2015-06-20 14:47:17.122366518 +0900
-@@ -51,7 +51,7 @@
- 	};
- 
- 	cmt0: timer@ffca0000 {
--		compatible = "renesas,cmt-48-gen2";
-+		compatible = "renesas,cmt0-r8a7794", "renesas,cmt0-rcar-gen2";
- 		reg = <0 0xffca0000 0 0x1004>;
- 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
-@@ -64,7 +64,7 @@
- 	};
- 
- 	cmt1: timer@e6130000 {
--		compatible = "renesas,cmt-48-gen2";
-+		compatible = "renesas,cmt1-r8a7794", "renesas,cmt1-rcar-gen2";
- 		reg = <0 0xe6130000 0 0x1004>;
- 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
