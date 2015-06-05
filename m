@@ -1,135 +1,153 @@
-From: Jiang Liu <jiang.liu@linux.intel.com>
-Date: Thu, 04 Jun 2015 04:13:52 +0000
-Subject: [RFT v2 42/48] genirq, sh: Kill the first parameter 'irq' of irq_flow_handler_t
-Message-Id: <1433391238-19471-43-git-send-email-jiang.liu@linux.intel.com>
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Fri, 05 Jun 2015 10:59:24 +0000
+Subject: [PATCH 08/10] sh-vou: let sh_vou_s_fmt_vid_out call sh_vou_try_fmt_vid_out
+Message-Id: <1433501966-30176-9-git-send-email-hverkuil@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433391238-19471-1-git-send-email-jiang.liu@linux.intel.com>
-In-Reply-To: <1433391238-19471-1-git-send-email-jiang.liu@linux.intel.com>
+References: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
+In-Reply-To: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Bjorn Helgaas <bhelgaas@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, Randy Dunlap <rdunlap@infradead.org>, Yinghai Lu <yinghai@kernel.org>, Borislav Petkov <bp@alien8.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kevin Cernekee <cernekee@gmail.com>, abdoulaye berthe <berthe.ab@gmail.com>, Jiang Liu <jiang.liu@linux.intel.com>
-Cc: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>, Tony Luck <tony.luck@intel.com>, x86@kernel.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-acpi@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
 
-Now most IRQ flow handlers make no use of the first parameter 'irq'.
-And for those who do make use of 'irq', we could easily get the irq
-number through irq_desc->irq_data->irq. So kill the first parameter
-'irq' of irq_flow_handler_t.
+From: Hans Verkuil <hans.verkuil@cisco.com>
 
-To ease review, I have split the changes into several parts, though
-they should be merge as one to support bisecting.
+This ensures that both do the same checks, and simplifies s_fmt_vid_out
+a bit.
 
-Signed-off-by: Jiang Liu <jiang.liu@linux.intel.com>
+Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
 ---
- arch/sh/boards/mach-se/7343/irq.c  |    2 +-
- arch/sh/boards/mach-se/7722/irq.c  |    2 +-
- arch/sh/boards/mach-se/7724/irq.c  |    2 +-
- arch/sh/boards/mach-x3proto/gpio.c |    2 +-
- arch/sh/cchips/hd6446x/hd64461.c   |    2 +-
- drivers/sh/intc/core.c             |    2 +-
- drivers/sh/intc/virq.c             |    4 ++--
- 7 files changed, 8 insertions(+), 8 deletions(-)
+ drivers/media/platform/sh_vou.c | 86 +++++++++++++++++++----------------------
+ 1 file changed, 40 insertions(+), 46 deletions(-)
 
-diff --git a/arch/sh/boards/mach-se/7343/irq.c b/arch/sh/boards/mach-se/7343/irq.c
-index 6f97a8f0d0d6..6129aef6db76 100644
---- a/arch/sh/boards/mach-se/7343/irq.c
-+++ b/arch/sh/boards/mach-se/7343/irq.c
-@@ -29,7 +29,7 @@
- static void __iomem *se7343_irq_regs;
- struct irq_domain *se7343_irq_domain;
- 
--static void se7343_irq_demux(unsigned int irq, struct irq_desc *desc)
-+static void se7343_irq_demux(struct irq_desc *desc)
- {
- 	struct irq_data *data = irq_desc_get_irq_data(desc);
- 	struct irq_chip *chip = irq_data_get_irq_chip(data);
-diff --git a/arch/sh/boards/mach-se/7722/irq.c b/arch/sh/boards/mach-se/7722/irq.c
-index 60aebd14ccf8..24c74a88290c 100644
---- a/arch/sh/boards/mach-se/7722/irq.c
-+++ b/arch/sh/boards/mach-se/7722/irq.c
-@@ -28,7 +28,7 @@
- static void __iomem *se7722_irq_regs;
- struct irq_domain *se7722_irq_domain;
- 
--static void se7722_irq_demux(unsigned int irq, struct irq_desc *desc)
-+static void se7722_irq_demux(struct irq_desc *desc)
- {
- 	struct irq_data *data = irq_desc_get_irq_data(desc);
- 	struct irq_chip *chip = irq_data_get_irq_chip(data);
-diff --git a/arch/sh/boards/mach-se/7724/irq.c b/arch/sh/boards/mach-se/7724/irq.c
-index 5feb246f642d..d5f05af72d68 100644
---- a/arch/sh/boards/mach-se/7724/irq.c
-+++ b/arch/sh/boards/mach-se/7724/irq.c
-@@ -92,7 +92,7 @@ static struct irq_chip se7724_irq_chip __read_mostly = {
- 	.irq_unmask	= enable_se7724_irq,
- };
- 
--static void se7724_irq_demux(unsigned int irq, struct irq_desc *desc)
-+static void se7724_irq_demux(struct irq_desc *desc)
- {
- 	struct fpga_irq set = get_fpga_irq(irq_desc_get_irq(desc));
- 	unsigned short intv = __raw_readw(set.sraddr);
-diff --git a/arch/sh/boards/mach-x3proto/gpio.c b/arch/sh/boards/mach-x3proto/gpio.c
-index 24555c364d5b..1fb2cbee25f2 100644
---- a/arch/sh/boards/mach-x3proto/gpio.c
-+++ b/arch/sh/boards/mach-x3proto/gpio.c
-@@ -60,7 +60,7 @@ static int x3proto_gpio_to_irq(struct gpio_chip *chip, unsigned gpio)
- 	return virq;
+diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
+index 400efec..489d045 100644
+--- a/drivers/media/platform/sh_vou.c
++++ b/drivers/media/platform/sh_vou.c
+@@ -675,34 +675,19 @@ static void vou_adjust_output(struct sh_vou_geometry *geo, v4l2_std_id std)
+ 		 vou_scale_v_num[idx], vou_scale_v_den[idx], best);
  }
  
--static void x3proto_gpio_irq_handler(unsigned int irq, struct irq_desc *desc)
-+static void x3proto_gpio_irq_handler(struct irq_desc *desc)
+-static int sh_vou_s_fmt_vid_out(struct file *file, void *priv,
+-				struct v4l2_format *fmt)
++static int sh_vou_try_fmt_vid_out(struct file *file, void *priv,
++				  struct v4l2_format *fmt)
  {
- 	struct irq_data *data = irq_desc_get_irq_data(desc);
- 	struct irq_chip *chip = irq_data_get_irq_chip(data);
-diff --git a/arch/sh/cchips/hd6446x/hd64461.c b/arch/sh/cchips/hd6446x/hd64461.c
-index e9735616bdc8..8180092502f7 100644
---- a/arch/sh/cchips/hd6446x/hd64461.c
-+++ b/arch/sh/cchips/hd6446x/hd64461.c
-@@ -56,7 +56,7 @@ static struct irq_chip hd64461_irq_chip = {
- 	.irq_unmask	= hd64461_unmask_irq,
- };
+ 	struct sh_vou_device *vou_dev = video_drvdata(file);
+ 	struct v4l2_pix_format *pix = &fmt->fmt.pix;
+ 	unsigned int img_height_max;
+ 	int pix_idx;
+-	struct sh_vou_geometry geo;
+-	struct v4l2_subdev_format format = {
+-		.which = V4L2_SUBDEV_FORMAT_ACTIVE,
+-		/* Revisit: is this the correct code? */
+-		.format.code = MEDIA_BUS_FMT_YUYV8_2X8,
+-		.format.field = V4L2_FIELD_INTERLACED,
+-		.format.colorspace = V4L2_COLORSPACE_SMPTE170M,
+-	};
+-	struct v4l2_mbus_framefmt *mbfmt = &format.format;
+-	int ret;
+-
+-	dev_dbg(vou_dev->v4l2_dev.dev, "%s(): %ux%u -> %ux%u\n", __func__,
+-		vou_dev->rect.width, vou_dev->rect.height,
+-		pix->width, pix->height);
  
--static void hd64461_irq_demux(unsigned int irq, struct irq_desc *desc)
-+static void hd64461_irq_demux(struct irq_desc *desc)
- {
- 	unsigned short intv = __raw_readw(HD64461_NIRR);
- 	unsigned int ext_irq = HD64461_IRQBASE;
-diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
-index 6dc0361aeeeb..2fd4c163dd85 100644
---- a/drivers/sh/intc/core.c
-+++ b/drivers/sh/intc/core.c
-@@ -65,7 +65,7 @@ void intc_set_prio_level(unsigned int irq, unsigned int level)
- 	raw_spin_unlock_irqrestore(&intc_big_lock, flags);
- }
+-	if (pix->field = V4L2_FIELD_ANY)
+-		pix->field = V4L2_FIELD_NONE;
++	dev_dbg(vou_dev->v4l2_dev.dev, "%s()\n", __func__);
  
--static void intc_redirect_irq(unsigned int irq, struct irq_desc *desc)
-+static void intc_redirect_irq(struct irq_desc *desc)
- {
- 	generic_handle_irq((unsigned int)irq_desc_get_handler_data(desc));
- }
-diff --git a/drivers/sh/intc/virq.c b/drivers/sh/intc/virq.c
-index 8704873e8186..d50169cb4af1 100644
---- a/drivers/sh/intc/virq.c
-+++ b/drivers/sh/intc/virq.c
-@@ -109,7 +109,7 @@ static int add_virq_to_pirq(unsigned int irq, unsigned int virq)
+-	if (fmt->type != V4L2_BUF_TYPE_VIDEO_OUTPUT ||
+-	    pix->field != V4L2_FIELD_NONE)
+-		return -EINVAL;
++	pix->field = V4L2_FIELD_INTERLACED;
++	pix->colorspace = V4L2_COLORSPACE_SMPTE170M;
++	pix->ycbcr_enc = pix->quantization = 0;
+ 
+ 	for (pix_idx = 0; pix_idx < ARRAY_SIZE(vou_fmt); pix_idx++)
+ 		if (vou_fmt[pix_idx].pfmt = pix->pixelformat)
+@@ -716,9 +701,37 @@ static int sh_vou_s_fmt_vid_out(struct file *file, void *priv,
+ 	else
+ 		img_height_max = 576;
+ 
+-	/* Image width must be a multiple of 4 */
+ 	v4l_bound_align_image(&pix->width, 0, VOU_MAX_IMAGE_WIDTH, 2,
+ 			      &pix->height, 0, img_height_max, 1, 0);
++	pix->bytesperline = pix->width * 2;
++
++	return 0;
++}
++
++static int sh_vou_s_fmt_vid_out(struct file *file, void *priv,
++				struct v4l2_format *fmt)
++{
++	struct sh_vou_device *vou_dev = video_drvdata(file);
++	struct v4l2_pix_format *pix = &fmt->fmt.pix;
++	unsigned int img_height_max;
++	struct sh_vou_geometry geo;
++	struct v4l2_subdev_format format = {
++		.which = V4L2_SUBDEV_FORMAT_ACTIVE,
++		/* Revisit: is this the correct code? */
++		.format.code = MEDIA_BUS_FMT_YUYV8_2X8,
++		.format.field = V4L2_FIELD_INTERLACED,
++		.format.colorspace = V4L2_COLORSPACE_SMPTE170M,
++	};
++	struct v4l2_mbus_framefmt *mbfmt = &format.format;
++	int ret = sh_vou_try_fmt_vid_out(file, priv, fmt);
++	int pix_idx;
++
++	if (ret)
++		return ret;
++
++	for (pix_idx = 0; pix_idx < ARRAY_SIZE(vou_fmt); pix_idx++)
++		if (vou_fmt[pix_idx].pfmt = pix->pixelformat)
++			break;
+ 
+ 	geo.in_width = pix->width;
+ 	geo.in_height = pix->height;
+@@ -737,6 +750,11 @@ static int sh_vou_s_fmt_vid_out(struct file *file, void *priv,
+ 	dev_dbg(vou_dev->v4l2_dev.dev, "%s(): %ux%u -> %ux%u\n", __func__,
+ 		geo.output.width, geo.output.height, mbfmt->width, mbfmt->height);
+ 
++	if (vou_dev->std & V4L2_STD_525_60)
++		img_height_max = 480;
++	else
++		img_height_max = 576;
++
+ 	/* Sanity checks */
+ 	if ((unsigned)mbfmt->width > VOU_MAX_IMAGE_WIDTH ||
+ 	    (unsigned)mbfmt->height > img_height_max ||
+@@ -769,30 +787,6 @@ static int sh_vou_s_fmt_vid_out(struct file *file, void *priv,
  	return 0;
  }
  
--static void intc_virq_handler(unsigned int irq, struct irq_desc *desc)
-+static void intc_virq_handler(struct irq_desc *desc)
+-static int sh_vou_try_fmt_vid_out(struct file *file, void *priv,
+-				  struct v4l2_format *fmt)
+-{
+-	struct sh_vou_device *vou_dev = video_drvdata(file);
+-	struct v4l2_pix_format *pix = &fmt->fmt.pix;
+-	int i;
+-
+-	dev_dbg(vou_dev->v4l2_dev.dev, "%s()\n", __func__);
+-
+-	fmt->type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
+-	pix->field = V4L2_FIELD_NONE;
+-
+-	v4l_bound_align_image(&pix->width, 0, VOU_MAX_IMAGE_WIDTH, 1,
+-			      &pix->height, 0, VOU_MAX_IMAGE_HEIGHT, 1, 0);
+-
+-	for (i = 0; i < ARRAY_SIZE(vou_fmt); i++)
+-		if (vou_fmt[i].pfmt = pix->pixelformat)
+-			return 0;
+-
+-	pix->pixelformat = vou_fmt[0].pfmt;
+-
+-	return 0;
+-}
+-
+ static int sh_vou_reqbufs(struct file *file, void *priv,
+ 			  struct v4l2_requestbuffers *req)
  {
- 	struct irq_data *data = irq_desc_get_irq_data(desc);
- 	struct irq_chip *chip = irq_data_get_irq_chip(data);
-@@ -126,7 +126,7 @@ static void intc_virq_handler(unsigned int irq, struct irq_desc *desc)
- 			handle = (unsigned long)irq_desc_get_handler_data(vdesc);
- 			addr = INTC_REG(d, _INTC_ADDR_E(handle), 0);
- 			if (intc_reg_fns[_INTC_FN(handle)](addr, handle, 0))
--				generic_handle_irq_desc(entry->irq, vdesc);
-+				generic_handle_irq_desc(vdesc);
- 		}
- 	}
- 
 -- 
-1.7.10.4
+2.1.4
 
