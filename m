@@ -1,52 +1,72 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Wed, 17 Jun 2015 22:51:57 +0000
-Subject: Re: [PATCH] ARM: v7 setup function should invalidate L1 cache
-Message-Id: <20150617225157.GD7557@n2100.arm.linux.org.uk>
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Fri, 05 Jun 2015 10:59:23 +0000
+Subject: [PATCH 07/10] sh-vou: add support for log_status
+Message-Id: <1433501966-30176-8-git-send-email-hverkuil@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <E1Yuk8W-0001tC-IK@rmk-PC.arm.linux.org.uk>
- <CAMuHMdX=T3CsLTT95H_07Si6Kd8SRraBfxADpn+VtAF4GmZ=mw@mail.gmail.com>
- <CAMuHMdUQkm_9PhSdGS8j85Uodm-o0jiki=Xh4h59PBShB=rCXw@mail.gmail.com>
- <20150601105319.GQ2067@n2100.arm.linux.org.uk>
- <CAMuHMdUXCy+87-pwLiJ7ynaM1AeFq0f7R3sJ4prdE3QN09z++w@mail.gmail.com>
- <CADhT+wdJX7jMO3_rafrZMeA5ZVMaA6b2U4zkksfJcUjh41mH9A@mail.gmail.com>
- <20150617213006.GC7557@n2100.arm.linux.org.uk>
- <5581F0DD.60408@opensource.altera.com>
- <5581F542.708@opensource.altera.com>
-In-Reply-To: <5581F542.708@opensource.altera.com>
+References: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
+In-Reply-To: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
 
-On Wed, Jun 17, 2015 at 05:31:30PM -0500, Dinh Nguyen wrote:
-> Also, I am not seeing the error on the SoCFPGA Arria 10 platform at all.
-> This Arria10 platform is running a different version of bootloader than
-> the Cyclone5. Although, I also did test with the latest version of
-> U-Boot on the Cyclone5.
+From: Hans Verkuil <hans.verkuil@cisco.com>
 
-It _shouldn't_ cause any issue, unless secondary_startup is called with
-caches already enabled (which it shouldn't.)
+Dump the VOU registers in log_status.
 
-If caches are enabled, that's incredibly dodgy even with the old code -
-cache lines could be migrated to the incoming CPU which v7_invalidate_l1()
-would then invalidate, resulting in the loss of data in those migrated
-cache lines.
+Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+---
+ drivers/media/platform/sh_vou.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
 
-If caches are not enabled, this change should have no effect: caches
-should not be searched if the C bit is clear, and we still end up
-invalidating the local L1 cache later in the normal boot sequence.
-
-(If caches are searched with the C bit clear, and the caches initialise
-in an unpredictable state, the ARM ARM requires an implementation specific
-routine to be executed immediately on CPU startup.  The idea is that if
-this option were to be chosen, the vendor must guarantee a certain code
-sequence can't be disrupted by the uninitialised state in the caches,
-which, if you're searching the caches for instruction fetches, is pretty
-much impossible to guarantee no matter what kind of code sequence you
-specify: even the first instruction fetched from the CPU reset vector
-could ultimately be sourced from the instruction cache if the i-cache
-reports that it thinks it has valid data.)
-
+diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
+index 7ed5a8b..400efec 100644
+--- a/drivers/media/platform/sh_vou.c
++++ b/drivers/media/platform/sh_vou.c
+@@ -951,6 +951,34 @@ static int sh_vou_g_std(struct file *file, void *priv, v4l2_std_id *std)
+ 	return 0;
+ }
+ 
++static int sh_vou_log_status(struct file *file, void *priv)
++{
++	struct sh_vou_device *vou_dev = video_drvdata(file);
++
++	pr_info("PSELA:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUER));
++	pr_info("VOUER:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUER));
++	pr_info("VOUCR:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUCR));
++	pr_info("VOUSTR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUSTR));
++	pr_info("VOUVCR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUVCR));
++	pr_info("VOUISR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUISR));
++	pr_info("VOUBCR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUBCR));
++	pr_info("VOUDPR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUDPR));
++	pr_info("VOUDSR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUDSR));
++	pr_info("VOUVPR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUVPR));
++	pr_info("VOUIR:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUIR));
++	pr_info("VOUSRR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUSRR));
++	pr_info("VOUMSR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUMSR));
++	pr_info("VOUHIR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUHIR));
++	pr_info("VOUDFR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUDFR));
++	pr_info("VOUAD1R: 0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUAD1R));
++	pr_info("VOUAD2R: 0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUAD2R));
++	pr_info("VOUAIR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUAIR));
++	pr_info("VOUSWR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUSWR));
++	pr_info("VOURCR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOURCR));
++	pr_info("VOURPR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOURPR));
++	return 0;
++}
++
+ static int sh_vou_g_selection(struct file *file, void *fh,
+ 			      struct v4l2_selection *sel)
+ {
+@@ -1289,6 +1317,7 @@ static const struct v4l2_ioctl_ops sh_vou_ioctl_ops = {
+ 	.vidioc_g_std			= sh_vou_g_std,
+ 	.vidioc_g_selection		= sh_vou_g_selection,
+ 	.vidioc_s_selection		= sh_vou_s_selection,
++	.vidioc_log_status		= sh_vou_log_status,
+ };
+ 
+ static const struct v4l2_file_operations sh_vou_fops = {
 -- 
-FTTC broadband for 0.8mile line: currently at 10.5Mbps down 400kbps up
-according to speedtest.net.
+2.1.4
+
