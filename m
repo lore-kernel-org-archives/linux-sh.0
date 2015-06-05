@@ -1,47 +1,97 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Tue, 02 Jun 2015 13:59:32 +0000
-Subject: Re: [PATCH 0/2 v3] spi: Re-do correctly function name and return value
-Message-Id: <20150602135932.GR14071@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Lh1tzOZp3jg2TtWy"
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Fri, 05 Jun 2015 10:59:25 +0000
+Subject: [PATCH 09/10] sh-vou: fix bytesperline
+Message-Id: <1433501966-30176-10-git-send-email-hverkuil@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432288777-7229-1-git-send-email-cm-hiep@jinso.co.jp>
-In-Reply-To: <1432288777-7229-1-git-send-email-cm-hiep-HEF513clHfp3+QwDJ9on6Q@public.gmane.org>
-To: Cao Minh Hiep <cm-hiep-HEF513clHfp3+QwDJ9on6Q@public.gmane.org>
-Cc: geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, ryusuke.sakato.bx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+References: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
+In-Reply-To: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
 
+From: Hans Verkuil <hans.verkuil@cisco.com>
 
---Lh1tzOZp3jg2TtWy
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+The bytesperline values were wrong for planar formats where bytesperline is
+the line length for the first plane.
 
-On Fri, May 22, 2015 at 06:59:35PM +0900, Cao Minh Hiep wrote:
-> From: Hiep Cao Minh <cm-hiep@jinso.co.jp>
->=20
-> Hi Mark-san,
->=20
-> I added "Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>" in two p=
-atches.
-> Please consider the following patches for the Rcar-Gen2.
+Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+---
+ drivers/media/platform/sh_vou.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
 
-Applied both, thanks.  Please use subject lines reflecting the style for
-the subsystem.
+diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
+index 489d045..d431cb1 100644
+--- a/drivers/media/platform/sh_vou.c
++++ b/drivers/media/platform/sh_vou.c
+@@ -135,6 +135,7 @@ struct sh_vou_fmt {
+ 	u32		pfmt;
+ 	char		*desc;
+ 	unsigned char	bpp;
++	unsigned char	bpl;
+ 	unsigned char	rgb;
+ 	unsigned char	yf;
+ 	unsigned char	pkf;
+@@ -145,6 +146,7 @@ static struct sh_vou_fmt vou_fmt[] = {
+ 	{
+ 		.pfmt	= V4L2_PIX_FMT_NV12,
+ 		.bpp	= 12,
++		.bpl	= 1,
+ 		.desc	= "YVU420 planar",
+ 		.yf	= 0,
+ 		.rgb	= 0,
+@@ -152,6 +154,7 @@ static struct sh_vou_fmt vou_fmt[] = {
+ 	{
+ 		.pfmt	= V4L2_PIX_FMT_NV16,
+ 		.bpp	= 16,
++		.bpl	= 1,
+ 		.desc	= "YVYU planar",
+ 		.yf	= 1,
+ 		.rgb	= 0,
+@@ -159,6 +162,7 @@ static struct sh_vou_fmt vou_fmt[] = {
+ 	{
+ 		.pfmt	= V4L2_PIX_FMT_RGB24,
+ 		.bpp	= 24,
++		.bpl	= 3,
+ 		.desc	= "RGB24",
+ 		.pkf	= 2,
+ 		.rgb	= 1,
+@@ -166,6 +170,7 @@ static struct sh_vou_fmt vou_fmt[] = {
+ 	{
+ 		.pfmt	= V4L2_PIX_FMT_RGB565,
+ 		.bpp	= 16,
++		.bpl	= 2,
+ 		.desc	= "RGB565",
+ 		.pkf	= 3,
+ 		.rgb	= 1,
+@@ -173,6 +178,7 @@ static struct sh_vou_fmt vou_fmt[] = {
+ 	{
+ 		.pfmt	= V4L2_PIX_FMT_RGB565X,
+ 		.bpp	= 16,
++		.bpl	= 2,
+ 		.desc	= "RGB565 byteswapped",
+ 		.pkf	= 3,
+ 		.rgb	= 1,
+@@ -703,7 +709,8 @@ static int sh_vou_try_fmt_vid_out(struct file *file, void *priv,
+ 
+ 	v4l_bound_align_image(&pix->width, 0, VOU_MAX_IMAGE_WIDTH, 2,
+ 			      &pix->height, 0, img_height_max, 1, 0);
+-	pix->bytesperline = pix->width * 2;
++	pix->bytesperline = pix->width * vou_fmt[pix_idx].bpl;
++	pix->sizeimage = pix->height * ((pix->width * vou_fmt[pix_idx].bpp) >> 3);
+ 
+ 	return 0;
+ }
+@@ -1380,7 +1387,7 @@ static int sh_vou_probe(struct platform_device *pdev)
+ 	pix->height		= 480;
+ 	pix->pixelformat	= V4L2_PIX_FMT_NV16;
+ 	pix->field		= V4L2_FIELD_NONE;
+-	pix->bytesperline	= VOU_MAX_IMAGE_WIDTH * 2;
++	pix->bytesperline	= VOU_MAX_IMAGE_WIDTH;
+ 	pix->sizeimage		= VOU_MAX_IMAGE_WIDTH * 2 * 480;
+ 	pix->colorspace		= V4L2_COLORSPACE_SMPTE170M;
+ 
+-- 
+2.1.4
 
---Lh1tzOZp3jg2TtWy
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBCAAGBQJVbba+AAoJECTWi3JdVIfQh8EH/i33rmfyLsSr/cIXoGPgtbeE
-E4MNVREaclGoiOKHBjO4cv8QSqf1Zbd3MBfr4nm8Ks2AfCACQSRxNTrd1M4JSgD+
-RU9sSkeoj51BA4DvwvUANX59dwv8urZQz3XDfxP+vJVoD+sHigfiUcwsJga/1/r2
-dR+MfBaU04Rc8xzgBObFmuKElftmd9SH7EPZi+8YFrnGBfeyyHYTE4FKp4uTbKTR
-Dk765Dk9gwEcrSEACYL4e6IS2zUmBnFi6o08EWFvzHzB9W3SMyh10wko9SZr23tj
-Im8872/HyGwhfS8C9uCxXqeOA+XszAQjdDD8JuW3w+2fSIiLePlGWs2xnlsrExU=
-=WN1i
------END PGP SIGNATURE-----
-
---Lh1tzOZp3jg2TtWy--
