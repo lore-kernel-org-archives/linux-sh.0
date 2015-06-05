@@ -1,36 +1,71 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Jun 2015 09:31:19 +0000
-Subject: [PATCH 03/15] ARM: shmobile: Drop sh73a0-kzm9g.dtb for legacy builds
-Message-Id: <1434533491-21979-4-git-send-email-geert+renesas@glider.be>
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Fri, 05 Jun 2015 10:59:20 +0000
+Subject: [PATCH 04/10] sh-vou: support compulsory G/S/ENUM_OUTPUT ioctls
+Message-Id: <1433501966-30176-5-git-send-email-hverkuil@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
+References: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
+In-Reply-To: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
 
-The legacy board code for KZM-A9-GT has been removed.
+From: Hans Verkuil <hans.verkuil@cisco.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Video output drivers must support these ioctls. Otherwise applications
+cannot deduce that these outputs exist and what capabilities they have.
+
+Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
 ---
- arch/arm/boot/dts/Makefile | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ drivers/media/platform/sh_vou.c | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 679d7cc2f57c4981..e9eed01d48c5ccb5 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -504,8 +504,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
- 	r8a7778-bockw-reference.dtb \
--	r8a7779-marzen.dtb \
--	sh73a0-kzm9g.dtb
-+	r8a7779-marzen.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
- 	emev2-kzm9d.dtb \
- 	r7s72100-genmai.dtb \
+diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
+index a75e6fa..2adf16d 100644
+--- a/drivers/media/platform/sh_vou.c
++++ b/drivers/media/platform/sh_vou.c
+@@ -874,6 +874,30 @@ static int sh_vou_streamoff(struct file *file, void *priv,
+ 	return 0;
+ }
+ 
++static int sh_vou_enum_output(struct file *file, void *fh,
++			      struct v4l2_output *a)
++{
++	struct sh_vou_device *vou_dev = video_drvdata(file);
++
++	if (a->index)
++		return -EINVAL;
++	strlcpy(a->name, "Video Out", sizeof(a->name));
++	a->type = V4L2_OUTPUT_TYPE_ANALOG;
++	a->std = vou_dev->vdev.tvnorms;
++	return 0;
++}
++
++int sh_vou_g_output(struct file *file, void *fh, unsigned int *i)
++{
++	*i = 0;
++	return 0;
++}
++
++int sh_vou_s_output(struct file *file, void *fh, unsigned int i)
++{
++	return i ? -EINVAL : 0;
++}
++
+ static u32 sh_vou_ntsc_mode(enum sh_vou_bus_fmt bus_fmt)
+ {
+ 	switch (bus_fmt) {
+@@ -1278,6 +1302,9 @@ static const struct v4l2_ioctl_ops sh_vou_ioctl_ops = {
+ 	.vidioc_dqbuf			= sh_vou_dqbuf,
+ 	.vidioc_streamon		= sh_vou_streamon,
+ 	.vidioc_streamoff		= sh_vou_streamoff,
++	.vidioc_g_output		= sh_vou_g_output,
++	.vidioc_s_output		= sh_vou_s_output,
++	.vidioc_enum_output		= sh_vou_enum_output,
+ 	.vidioc_s_std			= sh_vou_s_std,
+ 	.vidioc_g_std			= sh_vou_g_std,
+ 	.vidioc_cropcap			= sh_vou_cropcap,
 -- 
-1.9.1
+2.1.4
 
