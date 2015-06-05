@@ -1,24 +1,43 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 20 Jun 2015 00:49:25 +0000
-Subject: [PATCH 0/2] Error message clean-ups for Renesas R-Car CAN driver
-Message-Id: <1593397.kKIHxKLe5s@wasted.cogentembedded.com>
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Fri, 05 Jun 2015 10:59:16 +0000
+Subject: [PATCH 00/10] sh-vou: fixes, convert to vb2
+Message-Id: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, wg@grandegger.com, mkl@pengutronix.de, linux-can@vger.kernel.org
+To: linux-media@vger.kernel.org
 Cc: linux-sh@vger.kernel.org
 
-Hello.
+From: Hans Verkuil <hans.verkuil@cisco.com>
 
-   Here's the set of 2 patches against Marc Kleine-Budde's 'linux-can.git'
-repo plus 3 fix patches just posted; they are small error message cleanups for
-the Renesas R-Car CAN driver.
+This driver no longer works and uses old v4l2 frameworks. This patch series
+updates the driver so it is once again working and is up to date.
 
-[1/2] rcar_can: print request_irq() error code
-[2/2] rcar_can: unify error messages
+It now passes the v4l2-compliance tests as well.
 
-WBR, Sergei
+This has been tested with my Renesas development board.
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+Regards,
+
+	Hans
+
+Hans Verkuil (10):
+  sh-vou: hook up the clock correctly
+  sh-vou: fix querycap support
+  sh-vou: use v4l2_fh
+  sh-vou: support compulsory G/S/ENUM_OUTPUT ioctls
+  sh-vou: fix incorrect initial pixelformat.
+  sh-vou: replace g/s_crop/cropcap by g/s_selection
+  sh-vou: add support for log_status
+  sh-vou: let sh_vou_s_fmt_vid_out call sh_vou_try_fmt_vid_out
+  sh-vou: fix bytesperline
+  sh-vou: convert to vb2
+
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c |   2 +-
+ drivers/media/platform/sh_vou.c        | 825 +++++++++++++++------------------
+ 2 files changed, 381 insertions(+), 446 deletions(-)
+
+-- 
+2.1.4
+
