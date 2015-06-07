@@ -1,57 +1,42 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 15 Jun 2015 19:44:47 +0000
-Subject: Re: [PATCH v2 12/14] drivers: sh: Stop using pm_runtime.c for multi-platform shmobile with genpd
-Message-Id: <CAMuHMdWfqXZKUShiSqi0RmGpfkqgsL-5We__Vnou1aj5OHYPmA@mail.gmail.com>
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Sun, 07 Jun 2015 08:57:55 +0000
+Subject: [PATCHv2 01/11] clock-sh7724.c: fix sh-vou clock identifier
+Message-Id: <1433667485-35711-2-git-send-email-hverkuil@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432839219-475-1-git-send-email-geert+renesas@glider.be>
- <1432839219-475-13-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432839219-475-13-git-send-email-geert+renesas@glider.be>
+References: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
+In-Reply-To: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>, Magnus Damm <damm@opensource.se>
 
-On Thu, May 28, 2015 at 8:53 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> Now most multi-platform ARM shmobile platforms (SH-Mobile, R-Mobile,
-> R-Car, RZ) use the CPG Clock Domain to take care of PM runtime
-> management of the module clocks, we no longer need the legacy default PM
-> domain hack, which also prevented registering the real PM domain.
->
-> EMMA Mobile EV2 doesn't have MSTP clocks and doesn't use the CPG Clock
-> Domain. But all its device drivers manage clocks explicitly, without
-> relying on Runtime PM, so it doesn't need the legacy default PM hack
-> neither.
->
-> Hence do not compile it when running an ARM multi-platform kernel with
-> genpd support.
->
-> The default PM domain is still needed:
->   - for legacy SuperH,
->   - for legacy (non-DT) ARM/shmobile platforms
->       - without genpd support (r8a7778, r8a7779),
->       - with genpd support, for devices in the "C5" always-on power
->         area (r8a7740, sh73a0),
->   - for the CONFIG_PM=n case.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
-> ---
-> v2:
->   - Add Reviewed-by,
->   - Just stop compiling pm_runtime.c instead of using a runtime check,
->     as no multi-platform ARM platforms need this anymore.
+From: Hans Verkuil <hans.verkuil@cisco.com>
 
-The runtime check must stay for the ARM multiplatform CONFIG_PM=n case,
-to prevent the code from running on non-shmobile machines. Will fix.
+Bitrot has set in for this driver and the sh-vou clock was never enabled,
+since the clock name in clock-sh7724.c was wrong. It should be sh-vou, not
+sh-vou.0.
 
-Gr{oetje,eeting}s,
+Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+Thanks-to: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Magnus Damm <damm@opensource.se>
+---
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-                        Geert
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+index c187b95..f27c618 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
+@@ -343,7 +343,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("2ddmac0", &mstp_clks[HWBLK_2DDMAC]),
+ 	CLKDEV_DEV_ID("sh_fsi.0", &mstp_clks[HWBLK_SPU]),
+ 	CLKDEV_CON_ID("jpu0", &mstp_clks[HWBLK_JPU]),
+-	CLKDEV_DEV_ID("sh-vou.0", &mstp_clks[HWBLK_VOU]),
++	CLKDEV_DEV_ID("sh-vou", &mstp_clks[HWBLK_VOU]),
+ 	CLKDEV_CON_ID("beu0", &mstp_clks[HWBLK_BEU0]),
+ 	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[HWBLK_CEU0]),
+ 	CLKDEV_CON_ID("veu0", &mstp_clks[HWBLK_VEU0]),
+-- 
+2.1.4
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
