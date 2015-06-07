@@ -1,16 +1,97 @@
-From: Harrison Ken <momotabi.5@apricot.ocn.ne.jp>
-Date: Sat, 13 Jun 2015 23:14:44 +0000
-Subject: BUSINESS DEAL?
-Message-Id: <202192751.960295.1434237284540.JavaMail.root@apricot.ocn.ne.jp>
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Sun, 07 Jun 2015 08:58:04 +0000
+Subject: [PATCHv2 10/11] sh-vou: fix bytesperline
+Message-Id: <1433667485-35711-11-git-send-email-hverkuil@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
+In-Reply-To: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
 
-Dear Sir/Ma,
+From: Hans Verkuil <hans.verkuil@cisco.com>
 
-I need your consent to transfer $25.5M that has remained unclaimed since 1999. The funds will be moved to any of our correspondent Banks in "YOUR NAME" immediately to secure the funds first. The Principal will be shared on a 50/50 basis.
+The bytesperline values were wrong for planar formats where bytesperline is
+the line length for the first plane.
 
-Yours Faithfully,
-Mr. Harrison Ken.
+Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+---
+ drivers/media/platform/sh_vou.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
+index 872da9a..22b32ec 100644
+--- a/drivers/media/platform/sh_vou.c
++++ b/drivers/media/platform/sh_vou.c
+@@ -133,6 +133,7 @@ struct sh_vou_fmt {
+ 	u32		pfmt;
+ 	char		*desc;
+ 	unsigned char	bpp;
++	unsigned char	bpl;
+ 	unsigned char	rgb;
+ 	unsigned char	yf;
+ 	unsigned char	pkf;
+@@ -143,6 +144,7 @@ static struct sh_vou_fmt vou_fmt[] = {
+ 	{
+ 		.pfmt	= V4L2_PIX_FMT_NV12,
+ 		.bpp	= 12,
++		.bpl	= 1,
+ 		.desc	= "YVU420 planar",
+ 		.yf	= 0,
+ 		.rgb	= 0,
+@@ -150,6 +152,7 @@ static struct sh_vou_fmt vou_fmt[] = {
+ 	{
+ 		.pfmt	= V4L2_PIX_FMT_NV16,
+ 		.bpp	= 16,
++		.bpl	= 1,
+ 		.desc	= "YVYU planar",
+ 		.yf	= 1,
+ 		.rgb	= 0,
+@@ -157,6 +160,7 @@ static struct sh_vou_fmt vou_fmt[] = {
+ 	{
+ 		.pfmt	= V4L2_PIX_FMT_RGB24,
+ 		.bpp	= 24,
++		.bpl	= 3,
+ 		.desc	= "RGB24",
+ 		.pkf	= 2,
+ 		.rgb	= 1,
+@@ -164,6 +168,7 @@ static struct sh_vou_fmt vou_fmt[] = {
+ 	{
+ 		.pfmt	= V4L2_PIX_FMT_RGB565,
+ 		.bpp	= 16,
++		.bpl	= 2,
+ 		.desc	= "RGB565",
+ 		.pkf	= 3,
+ 		.rgb	= 1,
+@@ -171,6 +176,7 @@ static struct sh_vou_fmt vou_fmt[] = {
+ 	{
+ 		.pfmt	= V4L2_PIX_FMT_RGB565X,
+ 		.bpp	= 16,
++		.bpl	= 2,
+ 		.desc	= "RGB565 byteswapped",
+ 		.pkf	= 3,
+ 		.rgb	= 1,
+@@ -701,7 +707,8 @@ static int sh_vou_try_fmt_vid_out(struct file *file, void *priv,
+ 
+ 	v4l_bound_align_image(&pix->width, 0, VOU_MAX_IMAGE_WIDTH, 2,
+ 			      &pix->height, 0, img_height_max, 1, 0);
+-	pix->bytesperline = pix->width * 2;
++	pix->bytesperline = pix->width * vou_fmt[pix_idx].bpl;
++	pix->sizeimage = pix->height * ((pix->width * vou_fmt[pix_idx].bpp) >> 3);
+ 
+ 	return 0;
+ }
+@@ -1372,7 +1379,7 @@ static int sh_vou_probe(struct platform_device *pdev)
+ 	pix->height		= 480;
+ 	pix->pixelformat	= V4L2_PIX_FMT_NV16;
+ 	pix->field		= V4L2_FIELD_NONE;
+-	pix->bytesperline	= VOU_MAX_IMAGE_WIDTH * 2;
++	pix->bytesperline	= VOU_MAX_IMAGE_WIDTH;
+ 	pix->sizeimage		= VOU_MAX_IMAGE_WIDTH * 2 * 480;
+ 	pix->colorspace		= V4L2_COLORSPACE_SMPTE170M;
+ 
+-- 
+2.1.4
+
