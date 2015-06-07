@@ -1,44 +1,123 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 04 Jun 2015 18:22:28 +0000
-Subject: [PATCH 04/11] ARM: shmobile: R-Car: Shrink rcar_sysc_ch size
-Message-Id: <1433442155-19492-5-git-send-email-geert+renesas@glider.be>
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Sun, 07 Jun 2015 08:57:56 +0000
+Subject: [PATCHv2 02/11] sh-vou: use resource managed calls
+Message-Id: <1433667485-35711-3-git-send-email-hverkuil@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
+In-Reply-To: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>, Magnus Damm <damm@opensource.se>
 
-Shrink the individual fields in struct rcar_sysc_ch, as unsigned long or
-int is overkill:
-  - chan_offs contains a register offset relative to a base value
-    (< 512),
-  - chan_bit and isr_bit contain bit indices (0-31).
+From: Hans Verkuil <hans.verkuil@cisco.com>
 
-This reduces the size of each instance from 3 (4 on 64-bit) 32-bit words
-to 1 32-bit word.
+Simplify the sh-vou clean up by using devm_* were possible.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+Cc: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/pm-rcar.h | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ drivers/media/platform/sh_vou.c | 43 ++++++++---------------------------------
+ 1 file changed, 8 insertions(+), 35 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-rcar.h b/arch/arm/mach-shmobile/pm-rcar.h
-index ef3a1ef628f18b00..06ebf00a6a5a78b8 100644
---- a/arch/arm/mach-shmobile/pm-rcar.h
-+++ b/arch/arm/mach-shmobile/pm-rcar.h
-@@ -2,9 +2,9 @@
- #define PM_RCAR_H
+diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
+index 8b799ba..801d5ef 100644
+--- a/drivers/media/platform/sh_vou.c
++++ b/drivers/media/platform/sh_vou.c
+@@ -1300,7 +1300,7 @@ static int sh_vou_probe(struct platform_device *pdev)
+ 	struct i2c_adapter *i2c_adap;
+ 	struct video_device *vdev;
+ 	struct sh_vou_device *vou_dev;
+-	struct resource *reg_res, *region;
++	struct resource *reg_res;
+ 	struct v4l2_subdev *subdev;
+ 	int irq, ret;
  
- struct rcar_sysc_ch {
--	unsigned long chan_offs;
--	unsigned int chan_bit;
--	unsigned int isr_bit;
-+	u16 chan_offs;
-+	u8 chan_bit;
-+	u8 isr_bit;
- };
+@@ -1312,7 +1312,7 @@ static int sh_vou_probe(struct platform_device *pdev)
+ 		return -ENODEV;
+ 	}
  
- int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
+-	vou_dev = kzalloc(sizeof(*vou_dev), GFP_KERNEL);
++	vou_dev = devm_kzalloc(&pdev->dev, sizeof(*vou_dev), GFP_KERNEL);
+ 	if (!vou_dev)
+ 		return -ENOMEM;
+ 
+@@ -1340,28 +1340,18 @@ static int sh_vou_probe(struct platform_device *pdev)
+ 	pix->sizeimage		= VOU_MAX_IMAGE_WIDTH * 2 * 480;
+ 	pix->colorspace		= V4L2_COLORSPACE_SMPTE170M;
+ 
+-	region = request_mem_region(reg_res->start, resource_size(reg_res),
+-				    pdev->name);
+-	if (!region) {
+-		dev_err(&pdev->dev, "VOU region already claimed\n");
+-		ret = -EBUSY;
+-		goto ereqmemreg;
+-	}
+-
+-	vou_dev->base = ioremap(reg_res->start, resource_size(reg_res));
+-	if (!vou_dev->base) {
+-		ret = -ENOMEM;
+-		goto emap;
+-	}
++	vou_dev->base = devm_ioremap_resource(&pdev->dev, reg_res);
++	if (IS_ERR(vou_dev->base))
++		return PTR_ERR(vou_dev->base);
+ 
+-	ret = request_irq(irq, sh_vou_isr, 0, "vou", vou_dev);
++	ret = devm_request_irq(&pdev->dev, irq, sh_vou_isr, 0, "vou", vou_dev);
+ 	if (ret < 0)
+-		goto ereqirq;
++		return ret;
+ 
+ 	ret = v4l2_device_register(&pdev->dev, &vou_dev->v4l2_dev);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "Error registering v4l2 device\n");
+-		goto ev4l2devreg;
++		return ret;
+ 	}
+ 
+ 	vdev = &vou_dev->vdev;
+@@ -1407,39 +1397,22 @@ ereset:
+ ei2cgadap:
+ 	pm_runtime_disable(&pdev->dev);
+ 	v4l2_device_unregister(&vou_dev->v4l2_dev);
+-ev4l2devreg:
+-	free_irq(irq, vou_dev);
+-ereqirq:
+-	iounmap(vou_dev->base);
+-emap:
+-	release_mem_region(reg_res->start, resource_size(reg_res));
+-ereqmemreg:
+-	kfree(vou_dev);
+ 	return ret;
+ }
+ 
+ static int sh_vou_remove(struct platform_device *pdev)
+ {
+-	int irq = platform_get_irq(pdev, 0);
+ 	struct v4l2_device *v4l2_dev = platform_get_drvdata(pdev);
+ 	struct sh_vou_device *vou_dev = container_of(v4l2_dev,
+ 						struct sh_vou_device, v4l2_dev);
+ 	struct v4l2_subdev *sd = list_entry(v4l2_dev->subdevs.next,
+ 					    struct v4l2_subdev, list);
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+-	struct resource *reg_res;
+ 
+-	if (irq > 0)
+-		free_irq(irq, vou_dev);
+ 	pm_runtime_disable(&pdev->dev);
+ 	video_unregister_device(&vou_dev->vdev);
+ 	i2c_put_adapter(client->adapter);
+ 	v4l2_device_unregister(&vou_dev->v4l2_dev);
+-	iounmap(vou_dev->base);
+-	reg_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (reg_res)
+-		release_mem_region(reg_res->start, resource_size(reg_res));
+-	kfree(vou_dev);
+ 	return 0;
+ }
+ 
 -- 
-1.9.1
+2.1.4
 
