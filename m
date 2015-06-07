@@ -1,396 +1,71 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 19 Jun 2015 10:40:31 +0000
-Subject: [PATCH 1/2] i2c-tools: add new tool 'i2ctransfer'
-Message-Id: <1434710432-4182-2-git-send-email-wsa@the-dreams.de>
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Sun, 07 Jun 2015 08:57:59 +0000
+Subject: [PATCHv2 05/11] sh-vou: support compulsory G/S/ENUM_OUTPUT ioctls
+Message-Id: <1433667485-35711-6-git-send-email-hverkuil@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434710432-4182-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1434710432-4182-1-git-send-email-wsa@the-dreams.de>
+References: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
+In-Reply-To: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org, Jean Delvare <jdelvare@suse.de>
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Hans Verkuil <hans.verkuil@cisco.com>
 
-This tool allows to construct and concat multiple I2C messages into one
-single transfer. Its aim is to test I2C master controllers, and so there
-is no SMBus fallback.
+Video output drivers must support these ioctls. Otherwise applications
+cannot deduce that these outputs exist and what capabilities they have.
 
-I've been missing such a tool a number of times now, so I finally got
-around to writing it myself. As with all I2C tools, it can be dangerous,
-but it can also be very useful when developing. I am not sure if distros
-should supply it, I'll leave that to Jean's experience. For embedded
-build systems, I think this should be selectable.
-
-Tested with various Renesas I2C IP cores as well as Tegra and AT91.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
 ---
- tools/Module.mk     |   8 +-
- tools/i2ctransfer.c | 320 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 327 insertions(+), 1 deletion(-)
- create mode 100644 tools/i2ctransfer.c
+ drivers/media/platform/sh_vou.c | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
-diff --git a/tools/Module.mk b/tools/Module.mk
-index 641ac81..7192361 100644
---- a/tools/Module.mk
-+++ b/tools/Module.mk
-@@ -18,7 +18,7 @@ else
- TOOLS_LDFLAGS	+= -Llib -li2c
- endif
+diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
+index 4994b7b..d9a4502 100644
+--- a/drivers/media/platform/sh_vou.c
++++ b/drivers/media/platform/sh_vou.c
+@@ -872,6 +872,30 @@ static int sh_vou_streamoff(struct file *file, void *priv,
+ 	return 0;
+ }
  
--TOOLS_TARGETS	:= i2cdetect i2cdump i2cset i2cget
-+TOOLS_TARGETS	:= i2cdetect i2cdump i2cset i2cget i2ctransfer
- 
- #
- # Programs
-@@ -36,6 +36,9 @@ $(TOOLS_DIR)/i2cset: $(TOOLS_DIR)/i2cset.o $(TOOLS_DIR)/i2cbusses.o $(TOOLS_DIR)
- $(TOOLS_DIR)/i2cget: $(TOOLS_DIR)/i2cget.o $(TOOLS_DIR)/i2cbusses.o $(TOOLS_DIR)/util.o
- 	$(CC) $(LDFLAGS) -o $@ $^ $(TOOLS_LDFLAGS)
- 
-+$(TOOLS_DIR)/i2ctransfer: $(TOOLS_DIR)/i2ctransfer.o $(TOOLS_DIR)/i2cbusses.o $(TOOLS_DIR)/util.o
-+	$(CC) $(LDFLAGS) -o $@ $^ $(TOOLS_LDFLAGS)
-+
- #
- # Objects
- #
-@@ -52,6 +55,9 @@ $(TOOLS_DIR)/i2cset.o: $(TOOLS_DIR)/i2cset.c $(TOOLS_DIR)/i2cbusses.h $(TOOLS_DI
- $(TOOLS_DIR)/i2cget.o: $(TOOLS_DIR)/i2cget.c $(TOOLS_DIR)/i2cbusses.h $(TOOLS_DIR)/util.h version.h $(INCLUDE_DIR)/i2c/smbus.h
- 	$(CC) $(CFLAGS) $(TOOLS_CFLAGS) -c $< -o $@
- 
-+$(TOOLS_DIR)/i2ctransfer.o: $(TOOLS_DIR)/i2ctransfer.c $(TOOLS_DIR)/i2cbusses.h $(TOOLS_DIR)/util.h version.h
-+	$(CC) $(CFLAGS) $(TOOLS_CFLAGS) -c $< -o $@
-+
- $(TOOLS_DIR)/i2cbusses.o: $(TOOLS_DIR)/i2cbusses.c $(TOOLS_DIR)/i2cbusses.h
- 	$(CC) $(CFLAGS) $(TOOLS_CFLAGS) -c $< -o $@
- 
-diff --git a/tools/i2ctransfer.c b/tools/i2ctransfer.c
-new file mode 100644
-index 0000000..27f4d7a
---- /dev/null
-+++ b/tools/i2ctransfer.c
-@@ -0,0 +1,320 @@
-+/*
-+    i2ctransfer.c - A user-space program to send concatenated i2c messages
-+    Copyright (C) 2015 Wolfram Sang <wsa@sang-engineering.com>
-+    Copyright (C) 2015 Renesas Electronics Corporation
-+
-+    Based on i2cget.c:
-+    Copyright (C) 2005-2012  Jean Delvare <jdelvare@suse.de>
-+
-+    which is based on i2cset.c:
-+    Copyright (C) 2001-2003  Frodo Looijaard <frodol@dds.nl>, and
-+                             Mark D. Studebaker <mdsxyz123@yahoo.com>
-+    Copyright (C) 2004-2005  Jean Delvare
-+
-+    This program is free software; you can redistribute it and/or modify
-+    it under the terms of the GNU General Public License as published by
-+    the Free Software Foundation; either version 2 of the License, or
-+    (at your option) any later version.
-+
-+    This program is distributed in the hope that it will be useful,
-+    but WITHOUT ANY WARRANTY; without even the implied warranty of
-+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+    GNU General Public License for more details.
-+*/
-+
-+#include <sys/ioctl.h>
-+#include <errno.h>
-+#include <string.h>
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <unistd.h>
-+#include <linux/i2c.h>
-+#include <linux/i2c-dev.h>
-+#include "i2cbusses.h"
-+#include "util.h"
-+#include "../version.h"
-+
-+enum parse_state {
-+	PARSE_GET_DESC,
-+	PARSE_GET_DATA
-+};
-+
-+#define PRINT_STDERR	(1 << 0)
-+#define PRINT_READ_BUF	(1 << 1)
-+#define PRINT_WRITE_BUF	(1 << 2)
-+#define PRINT_HEADER	(1 << 3)
-+
-+static void help(void)
++static int sh_vou_enum_output(struct file *file, void *fh,
++			      struct v4l2_output *a)
 +{
-+	fprintf(stderr,
-+		"Usage: i2ctransfer [-f] [-y] [-v] [-V] I2CBUS DESC [DATA] [DESC [DATA]]...\n"
-+		"  I2CBUS is an integer or an I2C bus name\n"
-+		"  DESC describes the transfer in the form: {r|w}LENGTH[@address]\n"
-+		"    1) read/write-flag 2) LENGTH (range 0-65535) 3) I2C address (use last one if omitted)\n"
-+		"  DATA are LENGTH bytes for a write message. They can be shortened by a suffix:\n"
-+		"    = (keep value constant until LENGTH)\n"
-+		"    + (increase value by 1 until LENGTH)\n"
-+		"    - (decrease value by 1 until LENGTH)\n"
-+		"\nExample (bus 0, read 8 byte at offset 0x64 from eeprom at 0x50):\n"
-+		"  # i2ctransfer 0 w1@0x50 0x64 r8\n"
-+		"Example (same eeprom, at offset 0x42 write 0xff 0xfe .. 0x00 ):\n"
-+		"  # i2ctransfer 0 w257@0x50 0x42 0xff-\n"
-+		);
-+}
++	struct sh_vou_device *vou_dev = video_drvdata(file);
 +
-+static int check_funcs(int file)
-+{
-+	unsigned long funcs;
-+
-+	/* check adapter functionality */
-+	if (ioctl(file, I2C_FUNCS, &funcs) < 0) {
-+		fprintf(stderr, "Error: Could not get the adapter "
-+			"functionality matrix: %s\n", strerror(errno));
-+		return -1;
-+	}
-+
-+	if (!(funcs & I2C_FUNC_I2C)) {
-+		fprintf(stderr, MISSING_FUNC_FMT, "I2C transfers");
-+		return -1;
-+	}
-+
++	if (a->index)
++		return -EINVAL;
++	strlcpy(a->name, "Video Out", sizeof(a->name));
++	a->type = V4L2_OUTPUT_TYPE_ANALOG;
++	a->std = vou_dev->vdev.tvnorms;
 +	return 0;
 +}
 +
-+static void print_msgs(struct i2c_msg *msgs, __u32 nmsgs, unsigned flags)
++int sh_vou_g_output(struct file *file, void *fh, unsigned int *i)
 +{
-+	__u32 i, j;
-+	FILE *output = flags & PRINT_STDERR ? stderr : stdout;
-+
-+	for (i = 0; i < nmsgs; i++) {
-+		int read = !!(msgs[i].flags & I2C_M_RD);
-+		int newline = !!(flags & PRINT_HEADER);
-+
-+		if (flags & PRINT_HEADER)
-+			fprintf(output, "Msg %u: addr 0x%02x, %s, len %u",
-+				i, msgs[i].addr, read ? "read" : "write", msgs[i].len);
-+		if (msgs[i].len &&
-+		   (read = !!(flags & PRINT_READ_BUF) ||
-+		   !read = !!(flags & PRINT_WRITE_BUF))) {
-+			if (flags & PRINT_HEADER)
-+				fprintf(output, ", buf ");
-+			for (j = 0; j < msgs[i].len; j++)
-+				fprintf(output, "0x%02x ", msgs[i].buf[j]);
-+			newline = 1;
-+		}
-+		if (newline)
-+			fprintf(output, "\n");
-+	}
++	*i = 0;
++	return 0;
 +}
 +
-+static int confirm(const char *filename, struct i2c_msg *msgs, __u32 nmsgs)
++int sh_vou_s_output(struct file *file, void *fh, unsigned int i)
 +{
-+	fprintf(stderr, "WARNING! This program can confuse your I2C bus, cause data loss and worse!\n");
-+	fprintf(stderr, "I will send the following messages to device file %s:\n", filename);
-+	print_msgs(msgs, nmsgs, PRINT_STDERR | PRINT_HEADER | PRINT_WRITE_BUF);
-+
-+	fprintf(stderr, "Continue? [y/N] ");
-+	fflush(stderr);
-+	if (!user_ack(0)) {
-+		fprintf(stderr, "Aborting on user request.\n");
-+		return 0;
-+	}
-+
-+	return 1;
++	return i ? -EINVAL : 0;
 +}
 +
-+int main(int argc, char *argv[])
-+{
-+	char filename[20];
-+	char *end;
-+	int i2cbus, address = -1, file, arg_idx = 1, nmsgs = 0, nmsgs_sent;
-+	int force = 0, yes = 0, version = 0, verbose = 0;
-+	unsigned buf_idx = 0;
-+	unsigned long len, raw_data;
-+	__u8 data;
-+	__u8 *buf;
-+	__u16 flags;
-+	struct i2c_msg msgs[I2C_RDRW_IOCTL_MAX_MSGS];
-+	struct i2c_rdwr_ioctl_data rdwr;
-+	enum parse_state state = PARSE_GET_DESC;
-+
-+	/* handle (optional) arg_idx first */
-+	while (arg_idx < argc && argv[arg_idx][0] = '-') {
-+		switch (argv[arg_idx][1]) {
-+		case 'V': version = 1; break;
-+		case 'v': verbose = 1; break;
-+		case 'f': force = 1; break;
-+		case 'y': yes = 1; break;
-+		default:
-+			fprintf(stderr, "Error: Unsupported option "
-+				"\"%s\"!\n", argv[arg_idx]);
-+			help();
-+			exit(1);
-+		}
-+		arg_idx++;
-+	}
-+
-+	if (version) {
-+		fprintf(stderr, "i2ctransfer version %s\n", VERSION);
-+		exit(0);
-+	}
-+
-+	if (arg_idx = argc) {
-+		help();
-+		exit(0);
-+	}
-+
-+	i2cbus = lookup_i2c_bus(argv[arg_idx++]);
-+	if (i2cbus < 0)
-+		exit(1);
-+
-+	file = open_i2c_dev(i2cbus, filename, sizeof(filename), 0);
-+	if (file < 0 || check_funcs(file))
-+		exit(1);
-+
-+	while (arg_idx < argc) {
-+		char *arg_ptr = argv[arg_idx];
-+
-+		if (nmsgs > I2C_RDRW_IOCTL_MAX_MSGS) {
-+			fprintf(stderr, "Error: Too many messages (max: %d)\n",
-+				I2C_RDRW_IOCTL_MAX_MSGS);
-+			exit(1);
-+		}
-+
-+		switch (state) {
-+		case PARSE_GET_DESC:
-+			flags = 0;
-+
-+			switch (*arg_ptr++) {
-+			case 'r': flags |= I2C_M_RD; break;
-+			case 'w': break;
-+			default:
-+				fprintf(stderr, "Error: Invalid direction\n");
-+				goto err_out;
-+			}
-+
-+			len = strtoul(arg_ptr, &end, 0);
-+			if (len > 65535) {
-+				fprintf(stderr, "Error: Length invalid\n");
-+				goto err_out;
-+			}
-+
-+			arg_ptr = end;
-+			if (*arg_ptr) {
-+				if (*arg_ptr++ != '@') {
-+					fprintf(stderr, "Error: No '@' after length\n");
-+					goto err_out;
-+				}
-+
-+				/* We skip 10-bit support for now. If we want it, it
-+				 * should be marked with a 't' flag before the address
-+				 * here.
-+				 */
-+
-+				address = parse_i2c_address(arg_ptr);
-+				if (address < 0)
-+					goto err_out;
-+
-+				if (!force && set_slave_addr(file, address, 0))
-+					goto err_out;
-+
-+			} else {
-+				/* Reuse last address if possible */
-+				if (address < 0) {
-+					fprintf(stderr, "Error: No address given\n");
-+					goto err_out;
-+				}
-+			}
-+
-+			msgs[nmsgs].addr = address;
-+			msgs[nmsgs].flags = flags;
-+			msgs[nmsgs].len = len;
-+
-+			if (len) {
-+				buf = malloc(len);
-+				if (!buf) {
-+					fprintf(stderr, "Error: No memory for buffer\n");
-+					goto err_out;
-+				}
-+				memset(buf, 0, len);
-+				msgs[nmsgs].buf = buf;
-+			}
-+
-+			if (flags & I2C_M_RD || len = 0) {
-+				nmsgs++;
-+			} else {
-+				buf_idx = 0;
-+				state = PARSE_GET_DATA;
-+			}
-+
-+			break;
-+
-+		case PARSE_GET_DATA:
-+			raw_data = strtoul(arg_ptr, &end, 0);
-+			if (raw_data > 255) {
-+				fprintf(stderr, "Error: Data byte invalid\n");
-+				goto err_out;
-+			}
-+			data = raw_data;
-+			len = msgs[nmsgs].len;
-+
-+			while (buf_idx < len) {
-+				msgs[nmsgs].buf[buf_idx++] = data;
-+
-+				if (!*end)
-+					break;
-+
-+				switch (*end) {
-+				case '+': data++; break;
-+				case '-': data--; break;
-+				case '=': break;
-+				default:
-+					fprintf(stderr, "Error: Invalid data byte suffix\n");
-+					goto err_out;
-+				}
-+			}
-+
-+			if (buf_idx = len) {
-+				nmsgs++;
-+				state = PARSE_GET_DESC;
-+			}
-+
-+			break;
-+
-+		default:
-+			fprintf(stderr, "Error: Unnkown state in state machine!\n");
-+			goto err_out;
-+		}
-+
-+		arg_idx++;
-+	}
-+
-+	if (state != PARSE_GET_DESC || nmsgs = 0) {
-+		fprintf(stderr, "Error: Incomplete message\n");
-+		exit(1);
-+	}
-+
-+	if (!yes && !confirm(filename, msgs, nmsgs))
-+		exit(0);
-+
-+	rdwr.msgs = msgs;
-+	rdwr.nmsgs = nmsgs;
-+	nmsgs_sent = ioctl(file, I2C_RDWR, &rdwr);
-+	if (nmsgs_sent < 0) {
-+		fprintf(stderr, "Error: Sending messages failed: %s\n", strerror(errno));
-+		exit(errno);
-+	} else if (nmsgs_sent < nmsgs) {
-+		fprintf(stderr, "Warning: only %d/%d messages were sent\n", nmsgs_sent, nmsgs);
-+	}
-+
-+	close(file);
-+
-+	print_msgs(msgs, nmsgs_sent, PRINT_READ_BUF | (verbose ? PRINT_HEADER | PRINT_WRITE_BUF : 0));
-+
-+	/* let Linux free malloced memory on termination */
-+	exit(0);
-+
-+err_out:
-+	fprintf(stderr, "Error: faulty argument is '%s'\n", argv[arg_idx]);
-+	exit(1);
-+}
+ static u32 sh_vou_ntsc_mode(enum sh_vou_bus_fmt bus_fmt)
+ {
+ 	switch (bus_fmt) {
+@@ -1276,6 +1300,9 @@ static const struct v4l2_ioctl_ops sh_vou_ioctl_ops = {
+ 	.vidioc_dqbuf			= sh_vou_dqbuf,
+ 	.vidioc_streamon		= sh_vou_streamon,
+ 	.vidioc_streamoff		= sh_vou_streamoff,
++	.vidioc_g_output		= sh_vou_g_output,
++	.vidioc_s_output		= sh_vou_s_output,
++	.vidioc_enum_output		= sh_vou_enum_output,
+ 	.vidioc_s_std			= sh_vou_s_std,
+ 	.vidioc_g_std			= sh_vou_g_std,
+ 	.vidioc_cropcap			= sh_vou_cropcap,
 -- 
 2.1.4
 
