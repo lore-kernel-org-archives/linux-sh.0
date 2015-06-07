@@ -1,121 +1,145 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 04 Jun 2015 18:22:27 +0000
-Subject: [PATCH 03/11] ARM: shmobile: R-Car: Improve documentation
-Message-Id: <1433442155-19492-4-git-send-email-geert+renesas@glider.be>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sun, 07 Jun 2015 09:28:27 +0000
+Subject: [RFC] sh-sci: Add CONFIG_SERIAL_EARLYCON support
+Message-Id: <1433669307-19478-1-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add more SYSC register documentation.
-Use definitions instead of hardcoded numbers.
-Comment important operations.
+Hello.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+"earlyprintk" is architecture specific option.
+I think general "earlycon" option support more better.
+
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/arm/mach-shmobile/pm-rcar.c | 46 ++++++++++++++++++++++++++++------------
- 1 file changed, 32 insertions(+), 14 deletions(-)
+ drivers/tty/serial/Kconfig  |  6 ++++
+ drivers/tty/serial/sh-sci.c | 70 +++++++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 73 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-rcar.c b/arch/arm/mach-shmobile/pm-rcar.c
-index 00022ee56f80dc30..56ea82a851cb96f7 100644
---- a/arch/arm/mach-shmobile/pm-rcar.c
-+++ b/arch/arm/mach-shmobile/pm-rcar.c
-@@ -15,21 +15,35 @@
- #include <asm/io.h>
- #include "pm-rcar.h"
+diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
+index dea1eff..b4c9820 100644
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -741,6 +741,12 @@ config SERIAL_SH_SCI_CONSOLE
+ 	depends on SERIAL_SH_SCI=y
+ 	select SERIAL_CORE_CONSOLE
  
--/* SYSC */
--#define SYSCSR 0x00
--#define SYSCISR 0x04
--#define SYSCISCR 0x08
-+/* SYSC Common */
-+#define SYSCSR			0x00	/* SYSC Status Register */
-+#define SYSCISR			0x04	/* Interrupt Status Register */
-+#define SYSCISCR		0x08	/* Interrupt Status Clear Register */
-+#define SYSCIER			0x0c	/* Interrupt Enable Register */
-+#define SYSCIMR			0x10	/* Interrupt Mask Register */
- 
--#define PWRSR_OFFS 0x00
--#define PWROFFCR_OFFS 0x04
--#define PWRONCR_OFFS 0x0c
--#define PWRER_OFFS 0x14
-+/* SYSC Status Register */
-+#define SYSCSR_PONENB		1	/* Ready for power resume requests */
-+#define SYSCSR_POFFENB		0	/* Ready for power shutoff requests */
- 
--#define SYSCSR_RETRIES 100
--#define SYSCSR_DELAY_US 1
-+/*
-+ * Power Control Register Offsets inside the register block for each domain
-+ * Note: The "CR" registers for ARM cores exist on H1 only
-+ *       Use WFI to power off, CPG/APMU to resume ARM cores on R-Car Gen2
-+ */
-+#define PWRSR_OFFS		0x00	/* Power Status Register */
-+#define PWROFFCR_OFFS		0x04	/* Power Shutoff Control Register */
-+#define PWROFFSR_OFFS		0x08	/* Power Shutoff Status Register */
-+#define PWRONCR_OFFS		0x0c	/* Power Resume Control Register */
-+#define PWRONSR_OFFS		0x10	/* Power Resume Status Register */
-+#define PWRER_OFFS		0x14	/* Power Shutoff/Resume Error */
++config SERIAL_SH_SCI_EARLYCON
++	bool "Support for early console on SuperH SCI(F)"
++	depends on SERIAL_SH_SCI=y
++	select SERIAL_CORE_CONSOLE
++	select SERIAL_EARLYCON
 +
-+
-+#define SYSCSR_RETRIES		100
-+#define SYSCSR_DELAY_US		1
- 
--#define SYSCISR_RETRIES 1000
--#define SYSCISR_DELAY_US 1
-+#define SYSCISR_RETRIES		1000
-+#define SYSCISR_DELAY_US	1
- 
- static void __iomem *rcar_sysc_base;
- static DEFINE_SPINLOCK(rcar_sysc_lock); /* SMP CPUs + I/O devices */
-@@ -39,6 +53,7 @@ static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
- {
- 	int k;
- 
-+	/* Wait until SYSC is ready to accept a power request */
- 	for (k = 0; k < SYSCSR_RETRIES; k++) {
- 		if (ioread32(rcar_sysc_base + SYSCSR) & (1 << sr_bit))
- 			break;
-@@ -48,6 +63,7 @@ static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
- 	if (k = SYSCSR_RETRIES)
- 		return -EAGAIN;
- 
-+	/* Submit power shutoff or power resume request */
- 	iowrite32(1 << sysc_ch->chan_bit,
- 		  rcar_sysc_base + sysc_ch->chan_offs + reg_offs);
- 
-@@ -56,12 +72,12 @@ static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
- 
- static int rcar_sysc_pwr_off(struct rcar_sysc_ch *sysc_ch)
- {
--	return rcar_sysc_pwr_on_off(sysc_ch, 0, PWROFFCR_OFFS);
-+	return rcar_sysc_pwr_on_off(sysc_ch, SYSCSR_POFFENB, PWROFFCR_OFFS);
+ config SERIAL_SH_SCI_DMA
+ 	bool "DMA support"
+ 	depends on SERIAL_SH_SCI && SH_DMAE
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 95772cf..6eb82e1 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -466,7 +466,8 @@ static void sci_port_disable(struct sci_port *sci_port)
+ 	pm_runtime_put_sync(sci_port->port.dev);
  }
  
- static int rcar_sysc_pwr_on(struct rcar_sysc_ch *sysc_ch)
- {
--	return rcar_sysc_pwr_on_off(sysc_ch, 1, PWRONCR_OFFS);
-+	return rcar_sysc_pwr_on_off(sysc_ch, SYSCSR_PONENB, PWRONCR_OFFS);
+-#if defined(CONFIG_CONSOLE_POLL) || defined(CONFIG_SERIAL_SH_SCI_CONSOLE)
++#if defined(CONFIG_CONSOLE_POLL) || defined(CONFIG_SERIAL_SH_SCI_CONSOLE) \
++	|| defined(CONFIG_SERIAL_EARLYCON)
+ 
+ #ifdef CONFIG_CONSOLE_POLL
+ static int sci_poll_get_char(struct uart_port *port)
+@@ -2339,7 +2340,7 @@ static void sci_cleanup_single(struct sci_port *port)
+ 	pm_runtime_disable(port->port.dev);
  }
  
- static int rcar_sysc_update(struct rcar_sysc_ch *sysc_ch,
-@@ -78,6 +94,7 @@ static int rcar_sysc_update(struct rcar_sysc_ch *sysc_ch,
+-#ifdef CONFIG_SERIAL_SH_SCI_CONSOLE
++#if defined(CONFIG_SERIAL_SH_SCI_CONSOLE) || defined(CONFIG_SERIAL_EARLYCON)
+ static void serial_console_putchar(struct uart_port *port, int ch)
+ {
+ 	sci_poll_put_char(port, ch);
+@@ -2359,9 +2360,12 @@ static void serial_console_write(struct console *co, const char *s,
+ 	int locked = 1;
  
- 	iowrite32(isr_mask, rcar_sysc_base + SYSCISCR);
+ 	local_irq_save(flags);
++#if defined(SUPPORT_SYSRQ)
+ 	if (port->sysrq)
+ 		locked = 0;
+-	else if (oops_in_progress)
++	else
++#endif
++	if (oops_in_progress)
+ 		locked = spin_trylock(&port->lock);
+ 	else
+ 		spin_lock(&port->lock);
+@@ -2719,6 +2723,66 @@ static void __exit sci_exit(void)
+ early_platform_init_buffer("earlyprintk", &sci_driver,
+ 			   early_serial_buf, ARRAY_SIZE(early_serial_buf));
+ #endif
++#ifdef CONFIG_SERIAL_EARLYCON
++static struct __init plat_sci_port port_cfg;
++
++static int __init early_console_setup(struct earlycon_device *device,
++				      int type)
++{
++	if (!device->port.membase)
++		return -ENODEV;
++
++	device->port.serial_in = sci_serial_in;
++	device->port.serial_out	= sci_serial_out;
++	device->port.type = type;
++	memcpy(&sci_ports[0].port, &device->port, sizeof(struct uart_port));
++	sci_ports[0].cfg = &port_cfg;
++	sci_ports[0].cfg->type = type;
++	sci_probe_regmap(sci_ports[0].cfg);
++	port_cfg.scscr = SCSCR_RE | SCSCR_TE;
++	sci_serial_out(&sci_ports[0].port, SCSCR, port_cfg.scscr);
++
++	device->con->write = serial_console_write;
++	return 0;
++}
++static int __init sci_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_SCI);
++}
++static int __init scif_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_SCIF);
++}
++static int __init scifa_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_SCIFA);
++}
++static int __init scifb_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_SCIFB);
++}
++static int __init hscif_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_HSCIF);
++}
++
++EARLYCON_DECLARE(sci, sci_early_console_setup);
++OF_EARLYCON_DECLARE(sci, "renesas,sci", sci_early_console_setup);
++EARLYCON_DECLARE(scif, scif_early_console_setup);
++OF_EARLYCON_DECLARE(scif, "renesas,scif", scif_early_console_setup);
++EARLYCON_DECLARE(scifa, scifa_early_console_setup);
++OF_EARLYCON_DECLARE(scifa, "renesas,scifa", scifa_early_console_setup);
++EARLYCON_DECLARE(scifb, scifb_early_console_setup);
++OF_EARLYCON_DECLARE(scifb, "renesas,scifb", scifb_early_console_setup);
++EARLYCON_DECLARE(hscif, hscif_early_console_setup);
++OF_EARLYCON_DECLARE(hscif, "renesas,hscif", hscif_early_console_setup);
++#endif
++
+ module_init(sci_init);
+ module_exit(sci_exit);
  
-+	/* Submit power shutoff or resume request until it was accepted */
- 	do {
- 		ret = on_off_fn(sysc_ch);
- 		if (ret)
-@@ -87,6 +104,7 @@ static int rcar_sysc_update(struct rcar_sysc_ch *sysc_ch,
- 				  sysc_ch->chan_offs + PWRER_OFFS);
- 	} while (status & chan_mask);
- 
-+	/* Wait until the power shutoff or resume request has completed * */
- 	for (k = 0; k < SYSCISR_RETRIES; k++) {
- 		if (ioread32(rcar_sysc_base + SYSCISR) & isr_mask)
- 			break;
 -- 
-1.9.1
+2.1.4
 
