@@ -1,99 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 19 Jun 2015 09:38:51 +0000
-Subject: Re: [PATCH v2 0/2] ARM: shmobile: r8a7791: add for USB-DMAC
-Message-Id: <3233557.4LoILFSoWF@avalon>
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Mon, 08 Jun 2015 06:20:15 +0000
+Subject: [PATCHv3 08/11] sh-vou: add support for log_status
+Message-Id: <5575341F.9060405@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl> <1433667485-35711-9-git-send-email-hverkuil@xs4all.nl>
+In-Reply-To: <1433667485-35711-9-git-send-email-hverkuil@xs4all.nl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
 
-Hello Shimoda-san,
+(Changes since v2: drop the duplicate PSELA register)
 
-(Dropping the DT maintainers from CC and adding Linus Walleij, Kishon Vijay=
-=20
-Abraham and Felipe Balbi)
+Dump the VOU registers in log_status.
 
-On Tuesday 07 April 2015 16:53:49 Yoshihiro Shimoda wrote:
-> This patch set is based on renesas.git / renesas-devel-20150406-v4.0-rc6
-> tag. (commit id =3D 8acf8f0880b6a142e6291b9a7d81f2f38c9425ac)
->=20
-> This patch set is related to the usb-dmac driver and renesas_usbhs driver.
-> And these drivers have been merged in each subsystem:
->=20
-> [ slave-dma repository ]
-> https://git.kernel.org/cgit/linux/kernel/git/vkoul/slave-dma.git/commit/?=
-h=3Df
-> or-linus&id=A7267831565030ab94dab76eb1afe5d4b63a1009
-> https://git.kernel.org/cgit/linux/kernel/git/vkoul/slave-dma.git/commit/?=
-h> for-linus&id=0C1c8ff32fa29e425b4938934c21afdb81104431
->=20
-> [ usb repository ]
-> https://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?h=3Dte=
-sting
-> /next&idz96b78464bd8ba72c1c3095c543c1402db59e35
-> https://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?h=3Dte=
-stin
-> g/next&id=9B53d9af7aac09cf249d72bfbf15f08e47c4f7fe
-> https://git.kernel.org/cgit/linux/kernel/git/balbi/usb.git/commit/?h=3Dte=
-stin
-> g/next&id=AB330cf3888d8e0779fa05a243d53ba9f53a7ba9
->=20
-> Changes from v1:
->  - Rebase the latest renesas-devel tag.
->=20
-> Yoshihiro Shimoda (2):
->   ARM: shmobile: r8a7791: add USB-DMAC device nodes
->   ARM: shmobile: r8a7791: Enable DMA for HSUSB
+Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+---
+ drivers/media/platform/sh_vou.c | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
-I've successfully tested USB-DMAC integration (congratulations for the good=
-=20
-work !), but ran into several issues that I wanted to discuss with you.
+diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
+index 9479c44..9319a64 100644
+--- a/drivers/media/platform/sh_vou.c
++++ b/drivers/media/platform/sh_vou.c
+@@ -949,6 +949,33 @@ static int sh_vou_g_std(struct file *file, void *priv, v4l2_std_id *std)
+ 	return 0;
+ }
+ 
++static int sh_vou_log_status(struct file *file, void *priv)
++{
++	struct sh_vou_device *vou_dev = video_drvdata(file);
++
++	pr_info("VOUER:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUER));
++	pr_info("VOUCR:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUCR));
++	pr_info("VOUSTR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUSTR));
++	pr_info("VOUVCR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUVCR));
++	pr_info("VOUISR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUISR));
++	pr_info("VOUBCR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUBCR));
++	pr_info("VOUDPR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUDPR));
++	pr_info("VOUDSR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUDSR));
++	pr_info("VOUVPR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUVPR));
++	pr_info("VOUIR:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUIR));
++	pr_info("VOUSRR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUSRR));
++	pr_info("VOUMSR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUMSR));
++	pr_info("VOUHIR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUHIR));
++	pr_info("VOUDFR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUDFR));
++	pr_info("VOUAD1R: 0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUAD1R));
++	pr_info("VOUAD2R: 0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUAD2R));
++	pr_info("VOUAIR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUAIR));
++	pr_info("VOUSWR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUSWR));
++	pr_info("VOURCR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOURCR));
++	pr_info("VOURPR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOURPR));
++	return 0;
++}
++
+ static int sh_vou_g_selection(struct file *file, void *fh,
+ 			      struct v4l2_selection *sel)
+ {
+@@ -1287,6 +1314,7 @@ static const struct v4l2_ioctl_ops sh_vou_ioctl_ops = {
+ 	.vidioc_g_std			= sh_vou_g_std,
+ 	.vidioc_g_selection		= sh_vou_g_selection,
+ 	.vidioc_s_selection		= sh_vou_s_selection,
++	.vidioc_log_status		= sh_vou_log_status,
+ };
+ 
+ static const struct v4l2_file_operations sh_vou_fops = {
+-- 
+2.1.4
 
-Both issues are I believe related to the fact that the HSUSB and EHCI/OHCI =
-
-controllers share the same PHY and the same pins.
-
-When both drivers are loaded, the following messages are printed to the ker=
-nel=20
-log.
-
-[    8.917418] sh-pfc e6060000.pfc: pin GP_7_23 already requested by=20
-ee090000.pci; cannot claim for e6590000.usb
-[    8.927594] sh-pfc e6060000.pfc: pin-247 (e6590000.usb) status -22
-[    8.933913] sh-pfc e6060000.pfc: could not request pin 247 (GP_7_23) fro=
-m=20
-group usb0  on device sh-pfc
-[    8.943990] renesas_usbhs e6590000.usb: Error applying setting, reverse =
-
-things back
-
-This is caused by the pci0 and hsusb DT nodes referencing the same default =
-pin=20
-configuration node. There should be no issue in practice as the pin=20
-configuration is already applied through the other device, but I'd still li=
-ke=20
-to find a fix to avoid the error message.
-
-The other issue is that the renesas_hsusb and ehci drivers compete to contr=
-ol=20
-the same PHY. The phy-rcar-gen2 driver creates two Linux PHYs for each=20
-physical PHY (called channel in the driver) to ensure that each driver can =
-get=20
-its own PHY instance. Arbitration is then handled in the PHY .init() handle=
-r=20
-which returns -EBUSY if another driver already controls the channel. The er=
-ror=20
-value is propagated up to usbhsc_power_ctrl() where it's then ignored. This=
-=20
-doesn't look like a good way to handled the shared PHY, but I'm not familia=
-r=20
-enough with the PHY subsystem to know how to fix it.
-
->  arch/arm/boot/dts/r8a7791.dtsi | 25 +++++++++++++++++++++++++
->  1 file changed, 25 insertions(+)
-
---=20
-Regards,
-
-Laurent Pinchart
