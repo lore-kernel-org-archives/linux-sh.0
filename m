@@ -1,73 +1,56 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 18 Jun 2015 20:18:12 +0000
-Subject: Re: [PATCH/RFC] v4l: vsp1: Align crop rectangle to even boundary for YUV formats
-Message-Id: <9503303.Op9lV3ecnM@avalon>
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Tue, 09 Jun 2015 19:08:28 +0000
+Subject: Re: [PATCH v5] ARM: smp: Only expose /sys/.../cpuX/online if hotpluggable
+Message-Id: <557739AC.8000903@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430327133-8461-1-git-send-email-ykaneko0929@gmail.com> <2003077.85RPlhiJ1o@avalon> <5559A030.4030301@igel.co.jp>
-In-Reply-To: <5559A030.4030301@igel.co.jp>
+References: <1428705191-15670-1-git-send-email-sboyd@codeaurora.org>
+ <20150413134246.GS12732@n2100.arm.linux.org.uk>
+In-Reply-To: <20150413134246.GS12732@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, linux-media@vger.kernel.org, Mauro Carvalho Chehab <m.chehab@samsung.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Damian,
+On 04/13/2015 06:42 AM, Russell King - ARM Linux wrote:
+> On Fri, Apr 10, 2015 at 03:33:11PM -0700, Stephen Boyd wrote:
+>> Writes to /sys/.../cpuX/online fail if we determine the platform
+>> doesn't support hotplug for that CPU. Furthermore, if the cpu_die
+>> op isn't specified the system hangs when we try to offline a CPU
+>> and it comes right back online unexpectedly. Let's figure this
+>> stuff out before we make the sysfs nodes so that the online file
+>> doesn't even exist if it isn't (at least sometimes) possible to
+>> hotplug the CPU.
+>>
+>> Add a new 'cpu_can_disable' op and repoint all 'cpu_disable'
+>> implementations at it because all implementers use the op to
+>> indicate if a CPU can be hotplugged or not in a static fashion.
+>> With PSCI we may need to add a 'cpu_disable' op so that the
+>> secure OS can be migrated off the CPU we're trying to hotplug.
+>> In this case, the 'cpu_can_disable' op will indicate that all
+>> CPUs are hotpluggable by returning true, but the 'cpu_disable' op
+>> will make a PSCI migration call and occasionally fail, denying
+>> the hotplug of a CPU. This shouldn't be any worse than x86 where
+>> we may indicate that all CPUs are hotpluggable but occasionally
+>> we can't offline a CPU due to check_irq_vectors_for_cpu_disable()
+>> failing to find a CPU to move vectors to.
+>>
+>> Cc: Mark Rutland <mark.rutland@arm.com>
+>> Cc: Nicolas Pitre <nico@linaro.org>
+>> Cc: Dave Martin <Dave.Martin@arm.com>
+>> Acked-by: Simon Horman <horms@verge.net.au> [shmobile portion]
+>> Tested-by: Simon Horman <horms@verge.net.au>
+>> Cc: Magnus Damm <magnus.damm@gmail.com>
+>> Cc: <linux-sh@vger.kernel.org>
+>> Cc: Tyler Baker <tyler.baker@linaro.org>
+>> Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+>> Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+> Let's see some more acks for this...
+>
 
-On Monday 18 May 2015 17:17:52 Damian Hobson-Garcia wrote:
-> On 2015-05-04 7:13 AM, Laurent Pinchart wrote:
-> > On Thursday 30 April 2015 14:22:02 Sergei Shtylyov wrote:
-> >> On 4/29/2015 8:05 PM, Yoshihiro Kaneko wrote:
-> >>> From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-> >>> 
-> >>> Make sure that there are valid values in the crop rectangle to ensure
-> >>> that the color plane doesn't get shifted when cropping.
-> >>> Since there is no distintion between 12bit and 16bit YUV formats in
-> >> 
-> >> Вistinсtion.
-> >> 
-> >>> at the subdev level, use the more restrictive 12bit limits for all YUV
-> >>> formats.
-> > 
-> > I would like to mention in the commit message that only the top coordinate
-> > constraints differ between the YUV formats, as the subsampling coefficient
-> > is always two in the horizontal direction.
-> 
-> I believe that the height value has the same constraint as the top.
-
-Sure, I meant only the vertical coordinates, sorry.
-
-> > Do you foresee a use case for odd cropping top coordinates ?
-> 
-> There might be a case when you're blending surfaces together and one
-> extends beyond the boundary of the other and you want to clip away the
-> non-overlapping portions.
-
-Let's wait until someone requests support for that use case :-)
-
-> >>>   	if (rwpf->entity.type = VSP1_ENTITY_WPF) {
-> >>> -		sel->r.left = min_t(unsigned int, sel->r.left, 255);
-> >>> -		sel->r.top = min_t(unsigned int, sel->r.top, 255);
-> >>> +		int maxcrop > > 
-> > I would declare maxcrop as an unsigned int.
-> > 
-> >>> +			format->code = MEDIA_BUS_FMT_AYUV8_1X32 ? 254 : 255;
-> >> 
-> >> I think you need an empty line here.
-> >> 
-> >>> +		sel->r.left = min_t(unsigned int, sel->r.left, maxcrop);
-> >>> +		sel->r.top = min_t(unsigned int, sel->r.top, maxcrop);
-> > 
-> > Is this needed ? Based on what I understand from the datasheet the WPF
-> > crops the image before passing it to the DMA engine. At that point YUV
-> > data isn't subsampled, so it looks like we don't need to restrict the
-> > left and top to even values.
-> 
-> I think that you're correct. There is no subsampling at this stage in
-> the pipeline so the maxcrop setting should be fine at 255 regardless of
-> the format.
+Nobody else has acked this so far. Shall I put it in the patch tracker
+now? Or is there someone more specific we need an ack from?
 
 -- 
-Regards,
-
-Laurent Pinchart
+Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
+a Linux Foundation Collaborative Project
 
