@@ -1,38 +1,29 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 20 Jun 2015 16:25:24 +0000
-Subject: Re: [PATCH 2/3] rcar_can: print signed IRQ #
-Message-Id: <558593F4.1080402@cogentembedded.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 09 Jun 2015 07:14:38 +0000
+Subject: [PATCH 0/2] ARM: shmobile: r8a7740: move I2C errata handling into the driver
+Message-Id: <1433834080-5630-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2010452.WyFito6egU@wasted.cogentembedded.com> <2390389.thI8mIvbv5@wasted.cogentembedded.com> <CAMuHMdWZFKR04NJc7xtnPUosYuosX9FPDJopG3wovu_GqGxSOw@mail.gmail.com> <55857AD3.4040000@cogentembedded.com> <55858E8B.9000801@pengutronix.de>
-In-Reply-To: <55858E8B.9000801@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Marc Kleine-Budde <mkl@pengutronix.de>, Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, wg@grandegger.com, linux-can@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-Hello.
+This series moves the errata handling from the setup function into the driver.
+It has been tested that this changeset does not cause a regression on the
+armadillo board we had access to. Unfortunately, this board did not need the
+workaround at all, only some revisions of the r8a7740 are affected.
 
-On 6/20/2015 7:02 PM, Marc Kleine-Budde wrote:
+After a short discussion with Simon, we agreed this should go via I2C.
 
->>>> Printing IRQ # using "%x" and "%u" unsigned formats isn't quite correct as
->>>> 'ndev->irq' is of  type *int*, so  the "%d" format  needs to be used instead.
+Wolfram Sang (2):
+  i2c: sh_mobile: add errata workaround
+  ARM: shmobile: r8a7740: remove I2C errata handling
 
->>>> While fixing this, beautify the dev_info() message in rcar_can_probe() a bit.
+ arch/arm/mach-shmobile/setup-r8a7740.c | 55 ----------------------------------
+ drivers/i2c/busses/i2c-sh_mobile.c     | 40 +++++++++++++++++++++++++
+ 2 files changed, 40 insertions(+), 55 deletions(-)
 
->>> If you change the message, why don't you make it consistent
->>> ("interrupt" vs. "IRQ")?
+-- 
+2.1.4
 
->>      I decided to change the message in a follow-up patch (posted afterwards).
-
-> Please squash you patches, so that you don't modify code (or error
-> messages) that you've added in a previous patch.
-
-    I didn't add any messages.
-
-> Marc
-
-WBR, Sergei
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
