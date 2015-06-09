@@ -1,30 +1,127 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 25 Jun 2015 08:58:12 +0000
-Subject: [PATCH v2 05/06] ARM: shmobile: Remove Marzen from shmobile_defconfig
-Message-Id: <20150625085812.24543.85061.sendpatchset@little-apple>
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Tue, 09 Jun 2015 23:23:48 +0000
+Subject: [PATCH v2 4/6] mmc: sh_mobile_sdhi: Add UHS-I mode support
+Message-Id: <1433892228.12074.53.camel@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1433892104.12074.49.camel@codethink.co.uk>
+In-Reply-To: <1433892104.12074.49.camel@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Implement voltage switch, supporting modes up to SDR-50.
 
-Kill of the defconfig bits now when the marzen-reference board code is gone. 
+Based on work by Shinobu Uehara, Rob Taylor, William Towle and Ian Molton.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
 ---
+ drivers/mmc/host/sh_mobile_sdhi.c | 60 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
 
- arch/arm/configs/shmobile_defconfig |    1 -
- 1 file changed, 1 deletion(-)
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 354f4f335ed5..2e65b855a7f7 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -30,6 +30,9 @@
+ #include <linux/mfd/tmio.h>
+ #include <linux/sh_dma.h>
+ #include <linux/delay.h>
++#include <linux/pinctrl/consumer.h>
++#include <linux/pinctrl/pinctrl-state.h>
++#include <linux/regulator/consumer.h>
+ 
+ #include "tmio_mmc.h"
+ 
+@@ -86,6 +89,8 @@ struct sh_mobile_sdhi {
+ 	struct clk *clk;
+ 	struct tmio_mmc_data mmc_data;
+ 	struct tmio_mmc_dma dma_priv;
++	struct pinctrl *pinctrl;
++	struct pinctrl_state *pinctrl_3v3, *pinctrl_1v8;
+ };
+ 
+ static void sh_mobile_sdhi_sdbuf_width(struct tmio_mmc_host *host, int width)
+@@ -136,6 +141,49 @@ static void sh_mobile_sdhi_clk_disable(struct platform_device *pdev)
+ 	clk_disable_unprepare(priv->clk);
+ }
+ 
++static int sh_mobile_sdhi_start_signal_voltage_switch(
++	struct tmio_mmc_host *host, unsigned char signal_voltage)
++{
++	struct sh_mobile_sdhi *priv = host_to_priv(host);
++	struct pinctrl_state *state;
++	int min_uV, max_uV;
++	int ret;
++
++	switch (signal_voltage) {
++	case MMC_SIGNAL_VOLTAGE_330:
++		min_uV = 2700000;
++		max_uV = 3600000;
++		state = priv->pinctrl_3v3;
++		break;
++	case MMC_SIGNAL_VOLTAGE_180:
++		min_uV = 1700000;
++		max_uV = 1950000;
++		state = priv->pinctrl_1v8;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	/*
++	 * If anything is missing, assume signal voltage is fixed at
++	 * 3.3V and succeed/fail accordingly.
++	 */
++	if (IS_ERR(host->mmc->supply.vqmmc) ||
++	    IS_ERR(priv->pinctrl) || IS_ERR(state))
++		return signal_voltage = MMC_SIGNAL_VOLTAGE_330 ? 0 : -EINVAL;
++
++	ret = regulator_set_voltage(host->mmc->supply.vqmmc, min_uV, max_uV);
++	if (ret)
++		return ret;
++
++	ret = pinctrl_select_state(priv->pinctrl, state);
++	if (ret)
++		return ret;
++
++	usleep_range(5000, 5500);
++	return 0;
++}
++
+ static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
+ {
+ 	int timeout = 1000;
+@@ -228,6 +276,14 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		goto eprobe;
+ 	}
+ 
++	priv->pinctrl = devm_pinctrl_get(&pdev->dev);
++	if (!IS_ERR(priv->pinctrl)) {
++		priv->pinctrl_3v3 = pinctrl_lookup_state(priv->pinctrl,
++							 PINCTRL_STATE_DEFAULT);
++		priv->pinctrl_1v8 = pinctrl_lookup_state(priv->pinctrl,
++							 "1v8");
++	}
++
+ 	host = tmio_mmc_host_alloc(pdev);
+ 	if (!host) {
+ 		ret = -ENOMEM;
+@@ -239,6 +295,10 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	host->clk_enable	= sh_mobile_sdhi_clk_enable;
+ 	host->clk_disable	= sh_mobile_sdhi_clk_disable;
+ 	host->multi_io_quirk	= sh_mobile_sdhi_multi_io_quirk;
++
++	host->start_signal_voltage_switch
++				= sh_mobile_sdhi_start_signal_voltage_switch;
++
+ 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
+ 	if (resource_size(res) > 0x100)
+ 		host->bus_shift = 1;
+-- 
+2.1.4
 
---- 0001/arch/arm/configs/shmobile_defconfig
-+++ work/arch/arm/configs/shmobile_defconfig	2015-06-25 17:32:40.752366518 +0900
-@@ -21,7 +21,6 @@ CONFIG_ARCH_R8A7791=y
- CONFIG_ARCH_R8A7793=y
- CONFIG_ARCH_R8A7794=y
- CONFIG_ARCH_SH73A0=y
--CONFIG_MACH_MARZEN=y
- CONFIG_CPU_BPREDICT_DISABLE=y
- CONFIG_PL310_ERRATA_588369=y
- CONFIG_ARM_ERRATA_754322=y
+
+
+
