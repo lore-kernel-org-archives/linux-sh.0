@@ -1,52 +1,66 @@
-From: Will Deacon <will.deacon@arm.com>
-Date: Tue, 16 Jun 2015 17:39:07 +0000
-Subject: Re: [PATCH 0/2] Consolidate redundant register/stack access code
-Message-Id: <20150616173907.GV30522@arm.com>
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Tue, 09 Jun 2015 23:21:44 +0000
+Subject: [PATCH v2 0/6] UHS-I support for sh_mobile_sdhi
+Message-Id: <1433892104.12074.49.camel@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434386579-6045-1-git-send-email-dave.long@linaro.org>
-In-Reply-To: <1434386579-6045-1-git-send-email-dave.long@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi David,
+This series adds support for UHS-I in sh_mobile_sdhi, partly implemented
+in tmio_mmc.  This does not yet include tuning for SDR-104, but SDR-50 now
+works on the R8A7790 Lager board and another development board.
 
-On Mon, Jun 15, 2015 at 05:42:57PM +0100, David Long wrote:
-> From: "David A. Long" <dave.long@linaro.org>
-> 
-> Move duplicate and functionally equivalent code for accessing registers
-> and stack (CONFIG_HAVE_REGS_AND_STACK_ACCESS_API) from arch subdirs into
-> common kernel files.
-> 
-> Note: Help regression testing s390, hexagon, and sh would be appreciated.
->       Powerpc builds but I have not verified the functionality.
-> 
-> David A. Long (2):
->   Move the pt_regs_offset struct definition from arch to common include
->     file
->   Consolidate redundant register/stack access code
-> 
->  arch/arm/include/asm/ptrace.h          |  6 ---
->  arch/arm/kernel/ptrace.c               | 72 +---------------------------------
->  arch/hexagon/include/uapi/asm/ptrace.h |  3 --
->  arch/powerpc/include/asm/ptrace.h      | 38 ------------------
->  arch/powerpc/kernel/ptrace.c           | 39 +-----------------
->  arch/s390/include/asm/ptrace.h         |  3 --
->  arch/s390/kernel/ptrace.c              | 70 ++++++++++-----------------------
->  arch/sh/include/asm/ptrace.h           | 44 ---------------------
->  arch/sh/kernel/Makefile                |  2 +-
->  arch/sh/kernel/ptrace.c                | 33 ----------------
->  arch/sh/kernel/ptrace_32.c             |  2 +-
->  arch/sh/kernel/ptrace_64.c             |  2 +-
->  arch/x86/include/asm/ptrace.h          | 37 -----------------
->  arch/x86/kernel/ptrace.c               | 39 +-----------------
->  include/linux/ptrace.h                 | 51 ++++++++++++++++++++++++
->  kernel/ptrace.c                        | 38 ++++++++++++++++++
->  16 files changed, 116 insertions(+), 363 deletions(-)
+The pfc block needs to be reconfigured from 3.3V to 1.8V signalling on
+the pins wired to the SD card.  This is supported by adding separate
+functions for 1.8V signalling in sh-pfc ("sdhi0_1v8" etc.).  I expect
+that several SH SoCs have this capability, but I only have the R8A7790
+data sheet so I only implemented it for that one.
 
-Nice cleanup! The ARMy bits all look fine to me.
+Changes since v1:
+- Reword commit message for "mmc: tmio: Add UHS-I mode support"
+- Make sh_mobile_sdhi_start_signal_voltage_switch() succeed if asked
+  to switch to 3.3V and the regulator or pinctrl or pinctrl state is
+  missing
+- Drop change to mmcif clock on Lager
+- Correct original author for sdhi clock changes on Lager
 
-  Acked-by: Will Deacon <will.deacon@arm.com>
+Changes since the RFC:
+- Replace the 'regulator' devices for signal voltage switching with
+  pinctrl functions and states
+- Drop 'mmc: sh_mobile_sdhi: Add actual clock rate support' as it's
+  redundant
+- Use a switch statement in sh_mobile_sdhi_start_signal_voltage_switch()
+- Fix subject prefix for the DT changes
 
-Will
+Ben.
+
+Ben Hutchings (5):
+  mmc: tmio: Add UHS-I mode support
+  pinctrl: sh-pfc: Add set_mux operation to struct sh_pfc_function
+  pinctrl: sh-pfc: r8a7790: Add separate functions for SDHI 1.8V
+    operation
+  mmc: sh_mobile_sdhi: Add UHS-I mode support
+  ARM: shmobile: lager: Enable UHS-I SDR-50
+
+Ian Molton (1):
+  ARM: shmobile: lager: Set clock rates for SDHI
+
+ arch/arm/boot/dts/r8a7790-lager.dts  | 24 +++++++++++--
+ drivers/mmc/host/sh_mobile_sdhi.c    | 60 +++++++++++++++++++++++++++++++
+ drivers/mmc/host/tmio_mmc.h          |  3 ++
+ drivers/mmc/host/tmio_mmc_pio.c      | 31 ++++++++++++++++
+ drivers/pinctrl/sh-pfc/core.c        |  2 +-
+ drivers/pinctrl/sh-pfc/core.h        |  1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 70 +++++++++++++++++++++++++++++++++---
+ drivers/pinctrl/sh-pfc/pinctrl.c     |  4 +++
+ drivers/pinctrl/sh-pfc/sh_pfc.h      | 10 +++++-
+ 9 files changed, 197 insertions(+), 8 deletions(-)
+
+-- 
+2.1.4
+
+
+
