@@ -1,43 +1,85 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Jun 2015 09:31:31 +0000
-Subject: [PATCH 15/15] pinctrl: sh-pfc: Remove obsolete r8a7740 platform_device_id entry
-Message-Id: <1434533491-21979-16-git-send-email-geert+renesas@glider.be>
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Tue, 09 Jun 2015 23:24:29 +0000
+Subject: [PATCH v2 6/6] ARM: shmobile: lager: Enable UHS-I SDR-50
+Message-Id: <1433892269.12074.55.camel@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
+References: <1433892104.12074.49.camel@codethink.co.uk>
+In-Reply-To: <1433892104.12074.49.camel@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Since the removal of the r8a7740 legacy board code, r8a7740 is only
-supported in generic DT-only ARM multi-platform builds.  The driver
-doesn't need to match platform devices by name anymore, hence remove the
-corresponding platform_device_id entry.
+Add the "1v8" pinctrl state and sd-uhs-sdr50 property to SDHI{0,2}.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
 ---
-Please do not apply until the legacy r8a7740 SoC code has been removed.
-Or just provide an ack, so Simon can apply it when appropriate.
----
- drivers/pinctrl/sh-pfc/core.c | 3 ---
- 1 file changed, 3 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 3ff523e58c38d123..aeeeb76327c0684e 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -585,9 +585,6 @@ static int sh_pfc_remove(struct platform_device *pdev)
- }
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 5f68e53c58ae..ff5eea8ea765 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -314,11 +314,21 @@
+ 		renesas,function = "sdhi0";
+ 	};
  
- static const struct platform_device_id sh_pfc_id_table[] = {
--#ifdef CONFIG_PINCTRL_PFC_R8A7740
--	{ "pfc-r8a7740", (kernel_ulong_t)&r8a7740_pinmux_info },
--#endif
- #ifdef CONFIG_PINCTRL_PFC_R8A7778
- 	{ "pfc-r8a7778", (kernel_ulong_t)&r8a7778_pinmux_info },
- #endif
++	sdhi0_pins_1v8: sd0_1v8 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
++		renesas,function = "sdhi0_1v8";
++	};
++
+ 	sdhi2_pins: sd2 {
+ 		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
+ 		renesas,function = "sdhi2";
+ 	};
+ 
++	sdhi2_pins_1v8: sd2_1v8 {
++		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
++		renesas,function = "sdhi2_1v8";
++	};
++
+ 	mmc1_pins: mmc1 {
+ 		renesas,groups = "mmc1_data8", "mmc1_ctrl";
+ 		renesas,function = "mmc1";
+@@ -486,7 +496,8 @@
+ 
+ &sdhi0 {
+ 	pinctrl-0 = <&sdhi0_pins>;
+-	pinctrl-names = "default";
++	pinctrl-1 = <&sdhi0_pins_1v8>;
++	pinctrl-names = "default", "1v8";
+ 
+ 	assigned-clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
+ 	assigned-clock-rates = <156000000>;
+@@ -494,12 +505,14 @@
+ 	vmmc-supply = <&vcc_sdhi0>;
+ 	vqmmc-supply = <&vccq_sdhi0>;
+ 	cd-gpios = <&gpio3 6 GPIO_ACTIVE_LOW>;
++	sd-uhs-sdr50;
+ 	status = "okay";
+ };
+ 
+ &sdhi2 {
+ 	pinctrl-0 = <&sdhi2_pins>;
+-	pinctrl-names = "default";
++	pinctrl-1 = <&sdhi2_pins_1v8>;
++	pinctrl-names = "default", "1v8";
+ 
+ 	assigned-clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
+ 	assigned-clock-rates = <97500000>;
+@@ -507,6 +520,7 @@
+ 	vmmc-supply = <&vcc_sdhi2>;
+ 	vqmmc-supply = <&vccq_sdhi2>;
+ 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
++	sd-uhs-sdr50;
+ 	status = "okay";
+ };
+ 
 -- 
-1.9.1
+2.1.4
+
+
 
