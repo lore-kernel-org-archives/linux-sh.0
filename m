@@ -1,92 +1,299 @@
-From: KOJI MATSUOKA <koji.matsuoka.xm@renesas.com>
-Date: Tue, 16 Jun 2015 01:41:29 +0000
-Subject: RE: [PATCH/RFC] spi: sh-msiof: Fix FIFO size to 64 word from 256 word
-Message-Id: <SIXPR06MB3019FFD2570D8C53E25477EC1A70@SIXPR06MB301.apcprd06.prod.outlook.com>
+From: Thierry Reding <thierry.reding@gmail.com>
+Date: Fri, 12 Jun 2015 12:06:01 +0000
+Subject: Re: [PATCH v4 2/2] pwm: Add support for R-Car PWM Timer
+Message-Id: <20150612120600.GM19400@ulmo.nvidia.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="KSn4sQg3MnruwCB4"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434302705-31104-1-git-send-email-ykaneko0929@gmail.com>
- <CAMuHMdV-6zwDGxyFmzVga4ocXFDkfv8vot4ZHRgM9Kq6MBUcWw@mail.gmail.com>
-In-Reply-To: <CAMuHMdV-6zwDGxyFmzVga4ocXFDkfv8vot4ZHRgM9Kq6MBUcWw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, KOJI MATSUOKA <koji.matsuoka.xm-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <1432205846-4312-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <1432205846-4312-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1432205846-4312-3-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+Cc: robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-pwm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-SGkgR2VlcnQtc2FuDQoNCj4gPiBUaGUgdXBwZXIgbGltaXQgb2YgVHgvUnggRklGTyBzaXplIGlz
-IDY0IHdvcmQgYnkgdGhlIHNwZWNpZmljYXRpb24gb2YNCj4gPiBIL1cuIFRoaXMgcGF0Y2ggY29y
-cmVjdHMgdG8gNjQgd29yZCBmcm9tIDI1NiB3b3JkLg0KPiANCj4gQXJlIHlvdSBzdXJlIGFib3V0
-IHRoYXQ/DQoNCkFzIGEgcmVzdWx0IG9mIHF1ZXJ5aW5nIHRoZSBIL1cgZGVzaWduZXIsIGl0IGhh
-cyBwcm92ZW4gdG8gYmUgYSBtaXNkZXNjcmlwdGlvbiBvZg0KdGhlIEgvVyBzcGVjaWZpY2F0aW9u
-IGRvY3VtZW50YXRpb24uDQoNCkluIGZhY3QsIHRoZSB2YWx1ZSB0aGF0IGNhbiBiZSBzZXQgdG8g
-dGhlIFdETEVOMVs3OjBdIGJpdCBvZiBNU0lPRiBUcmFuc21pdCBNb2RlDQpSZWdpc3RlciAyIGlz
-IDY0IHdvcmRzLg0KDQpCZXN0IHJlZ2FyZHMsIEtvamkgTWF0c3Vva2ENCg0KPiAtLS0tLU9yaWdp
-bmFsIE1lc3NhZ2UtLS0tLQ0KPiBGcm9tOiBnZWVydC51eXR0ZXJob2V2ZW5AZ21haWwuY29tDQo+
-IFttYWlsdG86Z2VlcnQudXl0dGVyaG9ldmVuQGdtYWlsLmNvbV0gT24gQmVoYWxmIE9mIEdlZXJ0
-IFV5dHRlcmhvZXZlbg0KPiBTZW50OiBNb25kYXksIEp1bmUgMTUsIDIwMTUgNDo1NiBQTQ0KPiBU
-bzogWW9zaGloaXJvIEthbmVrbzsgS09KSSBNQVRTVU9LQQ0KPiBDYzogbGludXgtc3BpOyBNYXJr
-IEJyb3duOyBTaW1vbiBIb3JtYW47IE1hZ251cyBEYW1tOyBMaW51eC1zaCBsaXN0DQo+IFN1Ympl
-Y3Q6IFJlOiBbUEFUQ0gvUkZDXSBzcGk6IHNoLW1zaW9mOiBGaXggRklGTyBzaXplIHRvIDY0IHdv
-cmQgZnJvbSAyNTYNCj4gd29yZA0KPiANCj4gSGkgS2FuZWtvLXNhbiwgTWF0c3Vva2Etc2FuLA0K
-PiANCj4gT24gU3VuLCBKdW4gMTQsIDIwMTUgYXQgNzoyNSBQTSwgWW9zaGloaXJvIEthbmVrbyA8
-eWthbmVrbzA5MjlAZ21haWwuY29tPg0KPiB3cm90ZToNCj4gPiBGcm9tOiBLb2ppIE1hdHN1b2th
-IDxrb2ppLm1hdHN1b2thLnhtQHJlbmVzYXMuY29tPg0KPiA+DQo+ID4gVGhlIHVwcGVyIGxpbWl0
-IG9mIFR4L1J4IEZJRk8gc2l6ZSBpcyA2NCB3b3JkIGJ5IHRoZSBzcGVjaWZpY2F0aW9uIG9mDQo+
-ID4gSC9XLiBUaGlzIHBhdGNoIGNvcnJlY3RzIHRvIDY0IHdvcmQgZnJvbSAyNTYgd29yZC4NCj4g
-DQo+IEFyZSB5b3Ugc3VyZSBhYm91dCB0aGF0Pw0KPiANCj4gVGhlIFItQ2FyIEdlbjIgZGF0YXNo
-ZWV0ICh1cCB0byBSZXYgMS4wMSkgc2F5czoNCj4gDQo+ICJGSUZPIGNhcGFjaXR5OiAzMiBiaXRz
-IMOXIDY0IHN0YWdlcyBmb3IgdHJhbnNtaXNzaW9uIGFuZCAzMiBiaXRzIMOXIDI1NiBzdGFnZXMN
-Cj4gZm9yIHJlY2VwdGlvbiINCj4gDQo+IEhhcyB0aGlzIGJlZW4gY2hhbmdlZCBpbiBhIG1vcmUg
-cmVjZW50IHZlcnNpb24gb2YgdGhlIGRhdGFzaGVldD8NCj4gDQo+IFRoYW5rcyENCj4gDQo+ID4g
-U2lnbmVkLW9mZi1ieTogS29qaSBNYXRzdW9rYSA8a29qaS5tYXRzdW9rYS54bUByZW5lc2FzLmNv
-bT4NCj4gPiBTaWduZWQtb2ZmLWJ5OiBZb3NoaWhpcm8gS2FuZWtvIDx5a2FuZWtvMDkyOUBnbWFp
-bC5jb20+DQo+ID4gLS0tDQo+ID4NCj4gPiBUaGlzIHBhdGNoIGlzIGJhc2VkIG9uIHRoZSBmb3It
-bmV4dCBicmFuY2ggb2YgTWFyayBCcm93bidzIHNwaSB0cmVlLg0KPiA+DQo+ID4gIGRyaXZlcnMv
-c3BpL3NwaS1zaC1tc2lvZi5jIHwgMTUgKysrKysrKysrLS0tLS0tDQo+ID4gIDEgZmlsZSBjaGFu
-Z2VkLCA5IGluc2VydGlvbnMoKyksIDYgZGVsZXRpb25zKC0pDQo+ID4NCj4gPiBkaWZmIC0tZ2l0
-IGEvZHJpdmVycy9zcGkvc3BpLXNoLW1zaW9mLmMgYi9kcml2ZXJzL3NwaS9zcGktc2gtbXNpb2Yu
-Yw0KPiA+IGluZGV4IGQzMzcwYTYuLmE3NjI5ZjggMTAwNjQ0DQo+ID4gLS0tIGEvZHJpdmVycy9z
-cGkvc3BpLXNoLW1zaW9mLmMNCj4gPiArKysgYi9kcml2ZXJzL3NwaS9zcGktc2gtbXNpb2YuYw0K
-PiA+IEBAIC00OCw4ICs0OCw4IEBAIHN0cnVjdCBzaF9tc2lvZl9zcGlfcHJpdiB7DQo+ID4gICAg
-ICAgICBjb25zdCBzdHJ1Y3Qgc2hfbXNpb2ZfY2hpcGRhdGEgKmNoaXBkYXRhOw0KPiA+ICAgICAg
-ICAgc3RydWN0IHNoX21zaW9mX3NwaV9pbmZvICppbmZvOw0KPiA+ICAgICAgICAgc3RydWN0IGNv
-bXBsZXRpb24gZG9uZTsNCj4gPiAtICAgICAgIGludCB0eF9maWZvX3NpemU7DQo+ID4gLSAgICAg
-ICBpbnQgcnhfZmlmb19zaXplOw0KPiA+ICsgICAgICAgdW5zaWduZWQgaW50IHR4X2ZpZm9fc2l6
-ZTsNCj4gPiArICAgICAgIHVuc2lnbmVkIGludCByeF9maWZvX3NpemU7DQo+ID4gICAgICAgICB2
-b2lkICp0eF9kbWFfcGFnZTsNCj4gPiAgICAgICAgIHZvaWQgKnJ4X2RtYV9wYWdlOw0KPiA+ICAg
-ICAgICAgZG1hX2FkZHJfdCB0eF9kbWFfYWRkcjsNCj4gPiBAQCAtOTUsOCArOTUsNiBAQCBzdHJ1
-Y3Qgc2hfbXNpb2Zfc3BpX3ByaXYgeyAgI2RlZmluZSBNRFIyX1dETEVOMShpKQ0KPiA+ICgoKGkp
-IC0gMSkgPDwgMTYpIC8qIFdvcmQgQ291bnQgKDEtNjQvMjU2IChTSCwgQTEpKSkgKi8gICNkZWZp
-bmUNCj4gPiBNRFIyX0dSUE1BU0sxICAweDAwMDAwMDAxIC8qIEdyb3VwIE91dHB1dCBNYXNrIDEg
-KFNILCBBMSkgKi8NCj4gPg0KPiA+IC0jZGVmaW5lIE1BWF9XRExFTiAgICAgIDI1NlUNCj4gDQo+
-IFRoaXMgaXMgbm90IHJlbGF0ZWQgdG8gRklGTyBzaXplLCBidXQgdG8gbWF4LiBETUEgY2h1bmsg
-dHJhbnNmZXIgc2l6ZS4NCj4gDQo+ID4gLQ0KPiA+ICAvKiBUU0NSIGFuZCBSU0NSICovDQo+ID4g
-ICNkZWZpbmUgU0NSX0JSUFNfTUFTSyAgICAgIDB4MWYwMCAvKiBQcmVzY2FsZXIgU2V0dGluZyAo
-MS0zMikgKi8NCj4gPiAgI2RlZmluZSBTQ1JfQlJQUyhpKSAgICAoKChpKSAtIDEpIDw8IDgpDQo+
-ID4gQEAgLTg1MCw3ICs4NDgsMTIgQEAgc3RhdGljIGludCBzaF9tc2lvZl90cmFuc2Zlcl9vbmUo
-c3RydWN0IHNwaV9tYXN0ZXINCj4gKm1hc3RlciwNCj4gPiAgICAgICAgICAgICAgICAgICogIERN
-QSBzdXBwb3J0cyAzMi1iaXQgd29yZHMgb25seSwgaGVuY2UgcGFjayA4LWJpdCBhbmQNCj4gMTYt
-Yml0DQo+ID4gICAgICAgICAgICAgICAgICAqICB3b3Jkcywgd2l0aCBieXRlIHJlc3AuIHdvcmQg
-c3dhcHBpbmcuDQo+ID4gICAgICAgICAgICAgICAgICAqLw0KPiA+IC0gICAgICAgICAgICAgICB1
-bnNpZ25lZCBpbnQgbCA9IG1pbihsZW4sIE1BWF9XRExFTiAqIDQpOw0KPiANCj4gVGhpcyBpcyBu
-b3QgcmVsYXRlZCB0byBGSUZPIHNpemUsIGJ1dCB0byBtYXguIERNQSBjaHVuayB0cmFuc2ZlciBz
-aXplLg0KPiANCj4gPiArICAgICAgICAgICAgICAgdW5zaWduZWQgaW50IGwgPSAwOw0KPiA+ICsN
-Cj4gPiArICAgICAgICAgICAgICAgaWYgKHR4X2J1ZikNCj4gPiArICAgICAgICAgICAgICAgICAg
-ICAgICBsID0gbWluKGxlbiwgcC0+dHhfZmlmb19zaXplICogNCk7DQo+ID4gKyAgICAgICAgICAg
-ICAgIGlmIChyeF9idWYpDQo+ID4gKyAgICAgICAgICAgICAgICAgICAgICAgbCA9IG1pbihsZW4s
-IHAtPnJ4X2ZpZm9fc2l6ZSAqIDQpOw0KPiA+DQo+ID4gICAgICAgICAgICAgICAgIGlmIChiaXRz
-IDw9IDgpIHsNCj4gPiAgICAgICAgICAgICAgICAgICAgICAgICBpZiAobCAmIDMpDQo+ID4gQEAg
-LTk2Myw3ICs5NjYsNyBAQCBzdGF0aWMgY29uc3Qgc3RydWN0IHNoX21zaW9mX2NoaXBkYXRhIHNo
-X2RhdGEgPSB7DQo+ID4NCj4gPiAgc3RhdGljIGNvbnN0IHN0cnVjdCBzaF9tc2lvZl9jaGlwZGF0
-YSByOGE3Nzl4X2RhdGEgPSB7DQo+ID4gICAgICAgICAudHhfZmlmb19zaXplID0gNjQsDQo+ID4g
-LSAgICAgICAucnhfZmlmb19zaXplID0gMjU2LA0KPiA+ICsgICAgICAgLnJ4X2ZpZm9fc2l6ZSA9
-IDY0LA0KPiANCj4gUGxlYXNlIG5vdGUgdGhlIFItQ2FyIEdlbjIgRklGTyBzaXplIGlzIGFsc28g
-ZG9jdW1lbnRlZCB0byBiZSAyNTYgaW4NCj4gRG9jdW1lbnRhdGlvbi9kZXZpY2V0cmVlL2JpbmRp
-bmdzL3NwaS9zaC1tc2lvZi50eHQNCj4gDQo+ID4gICAgICAgICAubWFzdGVyX2ZsYWdzID0gU1BJ
-X01BU1RFUl9NVVNUX1RYLCAgfTsNCj4gDQo+IEdye29ldGplLGVldGluZ31zLA0KPiANCj4gICAg
-ICAgICAgICAgICAgICAgICAgICAgR2VlcnQNCj4gDQo+IC0tDQo+IEdlZXJ0IFV5dHRlcmhvZXZl
-biAtLSBUaGVyZSdzIGxvdHMgb2YgTGludXggYmV5b25kIGlhMzIgLS0NCj4gZ2VlcnRAbGludXgt
-bTY4ay5vcmcNCj4gDQo+IEluIHBlcnNvbmFsIGNvbnZlcnNhdGlvbnMgd2l0aCB0ZWNobmljYWwg
-cGVvcGxlLCBJIGNhbGwgbXlzZWxmIGEgaGFja2VyLg0KPiBCdXQgd2hlbiBJJ20gdGFsa2luZyB0
-byBqb3VybmFsaXN0cyBJIGp1c3Qgc2F5ICJwcm9ncmFtbWVyIiBvciBzb21ldGhpbmcNCj4gbGlr
-ZSB0aGF0Lg0KPiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC0tIExpbnVzIFRvcnZh
-bGRzDQo
+
+--KSn4sQg3MnruwCB4
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Thu, May 21, 2015 at 07:57:26PM +0900, Yoshihiro Shimoda wrote:
+[...]
+> diff --git a/drivers/pwm/pwm-rcar.c b/drivers/pwm/pwm-rcar.c
+[...]
+> +#define to_rcar_pwm_chip(chip)	container_of(chip, struct rcar_pwm_chip, chip)
+
+For consistency with other drivers I'd like this to be a static inline
+function.
+
+> +
+> +static void rcar_pwm_write(struct rcar_pwm_chip *rp, u32 data, u32 reg)
+> +{
+> +	iowrite32(data, rp->base + reg);
+> +}
+> +
+> +static u32 rcar_pwm_read(struct rcar_pwm_chip *rp, u32 reg)
+> +{
+> +	return ioread32(rp->base + reg);
+> +}
+
+ioread*() and iowrite*() are to be used for devices that can be on a
+memory-mapped bus or an I/O mapped bus. I suspect that this particular
+IP block doesn't fall into that category, so it should be using the
+regular readl()/writel() instead.
+
+> +static void rcar_pwm_bit_modify(struct rcar_pwm_chip *rp,
+> +				u32 mask, u32 data, u32 reg)
+
+You should try to fill up lines as much as you can: mask and data should
+still fit on the first line.
+
+> +{
+> +	u32 val = rcar_pwm_read(rp, reg);
+> +
+> +	val &= ~mask;
+> +	val |= data & mask;
+> +	rcar_pwm_write(rp, val, reg);
+> +}
+> +
+> +static int rcar_pwn_get_clock_division(struct rcar_pwm_chip *rp,
+
+Typo: "pwn" -> "pwm"
+
+> +				       int period_ns)
+> +{
+> +	int div;
+
+Perhaps make this unsigned int?
+
+> +	unsigned long clk_rate = clk_get_rate(rp->clk);
+> +	unsigned long long max;	/* max cycle / nanoseconds */
+
+I think you want to check for clk_rate == 0 here and return an error.
+Otherwise the do_div() call below may try to divide by 0.
+
+> +	for (div = 0; div <= RCAR_PWM_MAX_DIVISION; div++) {
+> +		max = (unsigned long long)NSEC_PER_SEC * RCAR_PWM_MAX_CYCLE *
+> +			(1 << div);
+> +		do_div(max, clk_rate);
+> +		if (period_ns < max)
+> +			break;
+> +	}
+> +
+> +	return div;
+> +}
+> +
+> +static void rcar_pwm_set_clock_control(struct rcar_pwm_chip *rp, int div)
+> +{
+> +	u32 val = rcar_pwm_read(rp, RCAR_PWMCR);
+> +
+> +	if (div > RCAR_PWM_MAX_DIVISION)
+> +		return;
+
+Shouldn't you return an error here (and propagate it later on) if an
+invalid value is passed in? Or perhaps even avoid calling this function
+with an invalid value in the first place? As it is, you're silently
+ignoring cases where an invalid value is being passed in. That'll leave
+anybody working with this driver completely puzzled when it doesn't
+behave the way they expect it too. And it gives users no indication
+about what went wrong.
+
+> +
+> +	val &= ~(RCAR_PWMCR_CCMD | RCAR_PWMCR_CC0_MASK);
+> +	if (div & 1)
+> +		val |= RCAR_PWMCR_CCMD;
+> +	div >>= 1;
+> +	val |= div << RCAR_PWMCR_CC0_SHIFT;
+> +	rcar_pwm_write(rp, val, RCAR_PWMCR);
+> +}
+> +
+> +static void rcar_pwm_set_counter(struct rcar_pwm_chip *rp, int div,
+> +				 int duty_ns, int period_ns)
+> +{
+> +	unsigned long long one_cycle, tmp;	/* 0.01 nanoseconds */
+> +	unsigned long clk_rate = clk_get_rate(rp->clk);
+> +	u32 cyc, ph;
+> +
+> +	one_cycle = (unsigned long long)NSEC_PER_SEC * 100ULL * (1 << div);
+> +	do_div(one_cycle, clk_rate);
+> +
+> +	tmp = period_ns * 100ULL;
+> +	do_div(tmp, one_cycle);
+> +	cyc = (tmp << RCAR_PWMCNT_CYC0_SHIFT) & RCAR_PWMCNT_CYC0_MASK;
+> +
+> +	tmp = duty_ns * 100ULL;
+> +	do_div(tmp, one_cycle);
+> +	ph = tmp & RCAR_PWMCNT_PH0_MASK;
+> +
+> +	/* Avoid prohibited setting */
+> +	if (cyc && ph)
+> +		rcar_pwm_write(rp, cyc | ph, RCAR_PWMCNT);
+
+So if a period and duty-cycle are passed in that yield the prohibited
+setting the operation will simply be silently ignored?
+
+> +}
+> +
+> +static int rcar_pwm_request(struct pwm_chip *chip, struct pwm_device *pwm)
+> +{
+> +	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
+> +
+> +	return clk_prepare_enable(rp->clk);
+> +}
+> +
+> +static void rcar_pwm_free(struct pwm_chip *chip, struct pwm_device *pwm)
+> +{
+> +	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
+> +
+> +	clk_disable_unprepare(rp->clk);
+> +}
+> +
+> +static int rcar_pwm_config(struct pwm_chip *chip, struct pwm_device *pwm,
+> +			   int duty_ns, int period_ns)
+> +{
+> +	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
+> +	int div;
+> +
+> +	div = rcar_pwn_get_clock_division(rp, period_ns);
+
+The above three lines can be collapsed into a single one.
+
+> +
+> +	rcar_pwm_bit_modify(rp, RCAR_PWMCR_SYNC, RCAR_PWMCR_SYNC, RCAR_PWMCR);
+> +	rcar_pwm_set_counter(rp, div, duty_ns, period_ns);
+> +	rcar_pwm_set_clock_control(rp, div);
+> +	rcar_pwm_bit_modify(rp, RCAR_PWMCR_SYNC, 0, RCAR_PWMCR);
+> +
+> +	return 0;
+> +}
+> +
+> +static int rcar_pwm_enable(struct pwm_chip *chip, struct pwm_device *pwm)
+> +{
+> +	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
+> +	u32 pwmcnt;
+> +
+> +	/* Don't enable the PWM device if CYC0 or PH0 is 0 */
+> +	pwmcnt = rcar_pwm_read(rp, RCAR_PWMCNT);
+> +	if (!(pwmcnt & RCAR_PWMCNT_CYC0_MASK) ||
+> +	    !(pwmcnt & RCAR_PWMCNT_PH0_MASK))
+> +		return -EINVAL;
+> +
+> +	rcar_pwm_bit_modify(rp, RCAR_PWMCR_EN0, RCAR_PWMCR_EN0, RCAR_PWMCR);
+> +
+> +	return 0;
+> +}
+> +
+> +static void rcar_pwm_disable(struct pwm_chip *chip, struct pwm_device *pwm)
+> +{
+> +	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
+> +
+> +	rcar_pwm_bit_modify(rp, RCAR_PWMCR_EN0, 0, RCAR_PWMCR);
+> +}
+> +
+> +static const struct pwm_ops rcar_pwm_ops = {
+> +	.request	= rcar_pwm_request,
+> +	.free		= rcar_pwm_free,
+> +	.config		= rcar_pwm_config,
+> +	.enable		= rcar_pwm_enable,
+> +	.disable	= rcar_pwm_disable,
+> +	.owner		= THIS_MODULE,
+> +};
+
+No need for this padding. Single spaces around = are good enough.
+
+> +
+> +static int rcar_pwm_probe(struct platform_device *pdev)
+> +{
+> +	struct rcar_pwm_chip *rcar_pwm;
+> +	struct resource *res;
+> +	int ret;
+> +
+> +	rcar_pwm = devm_kzalloc(&pdev->dev, sizeof(*rcar_pwm), GFP_KERNEL);
+> +	if (rcar_pwm == NULL)
+> +		return -ENOMEM;
+> +
+> +	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+> +	rcar_pwm->base = devm_ioremap_resource(&pdev->dev, res);
+> +	if (IS_ERR(rcar_pwm->base))
+> +		return PTR_ERR(rcar_pwm->base);
+> +
+> +	rcar_pwm->clk = devm_clk_get(&pdev->dev, NULL);
+> +	if (IS_ERR(rcar_pwm->clk)) {
+> +		dev_err(&pdev->dev, "cannot get clock\n");
+> +		return PTR_ERR(rcar_pwm->clk);
+> +	}
+> +
+> +	platform_set_drvdata(pdev, rcar_pwm);
+> +
+> +	rcar_pwm->chip.dev = &pdev->dev;
+> +	rcar_pwm->chip.ops = &rcar_pwm_ops;
+> +	rcar_pwm->chip.of_xlate = of_pwm_xlate_with_flags;
+> +	rcar_pwm->chip.base = -1;
+> +	rcar_pwm->chip.npwm = 1;
+> +
+> +	ret = pwmchip_add(&rcar_pwm->chip);
+> +	if (ret < 0) {
+> +		dev_err(&pdev->dev, "failed to register PWM chip\n");
+> +		return ret;
+> +	}
+> +
+> +	dev_info(&pdev->dev, "R-Car PWM Timer registered\n");
+
+No need to brag about success. Expect that things will go well and let
+users know when they don't. Output error messages, not success messages.
+
+> +	pm_runtime_enable(&pdev->dev);
+> +
+> +	return 0;
+> +}
+> +
+> +static int rcar_pwm_remove(struct platform_device *pdev)
+> +{
+> +	struct rcar_pwm_chip *rcar_pwm = platform_get_drvdata(pdev);
+> +	int ret;
+> +
+> +	ret = pwmchip_remove(&rcar_pwm->chip);
+> +	if (ret)
+> +		return ret;
+> +
+> +	pm_runtime_disable(&pdev->dev);
+
+Perhaps you'd still like to disable runtime PM even if the chip can't be
+removed?
+
+> +
+> +	return 0;
+> +}
+> +
+> +static const struct of_device_id rcar_pwm_of_table[] = {
+> +	{ .compatible = "renesas,pwm-rcar", },
+> +	{ },
+> +};
+> +
+> +MODULE_DEVICE_TABLE(of, rcar_pwm_of_table);
+
+No blank line between the above two.
+
+Thierry
+
+--KSn4sQg3MnruwCB4
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAABCAAGBQJVesslAAoJEN0jrNd/PrOhOoUQAJo+TiOuWfL7IabY6UtFcjjk
+kS16UELoQbnHF4jpHjybwC5FuCn33jbn8urqQDydrVBNioNgTxdXjLBRwDayYuut
+/K0AuS1u1xHuljk459eef0PsXbwiX9yyR04jSJj2DOxQdZ88iKMdJmyyyAztHaN5
+sy+u/3ttB1VNujwg1k7BXjGfEXwAoklRCV8p1lOOg0O6H5dFyST2wFZJIWD+QDtq
+TgzxSl1WMmBZN2AvjV+zaregHPPXIU58zne7CiGpWUyG1+Pfwx7cNO8XhivD0wg+
+oi9YvSUHv/UAZcDVtrFjMPANWBvkJmsV44KL3SaJH1EB8goVxUpOicoUiQVYmONF
+sW/u2hkoBfSYvR128+acsfUFIflL7eZx3ysq7IodGHoskGnWJ/JmXcqzMKeorLr7
+AeXFl6KnqDPvJ9ceRRGPSH824iguTGjfnhQaZWCjWpYwWeve6uDyRoXY0mrIq5QY
+7GE+58aEy6j1EMxDq/vE8T13c+AYh3or/MMTbcuokZpyVrOPX9yGQlodKY8C6nvR
+JZ4YBFD0XV/ZUcYq2UgWfYQwRLE293/ooL9KD3/XpcNkAaTBN468DB66NCEw/ptr
+cBFeQsN5n7B5KZx0u+s7REAR3SGNlGec4gfZ7zyxfz9T0JKCN0GFjHcvYWLrxlQS
+D8sXceUdxwFTiGfBi2+C
+=64Nx
+-----END PGP SIGNATURE-----
+
+--KSn4sQg3MnruwCB4--
