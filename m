@@ -1,94 +1,93 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Fri, 26 Jun 2015 15:22:33 +0000
-Subject: [PATCH v3 1/6] mmc: tmio: Add UHS-I mode support
-Message-Id: <1435332153.23818.8.camel@codethink.co.uk>
+From: Quentin Lambert <lambert.quentin@gmail.com>
+Date: Fri, 12 Jun 2015 09:07:26 +0000
+Subject: [PATCH] superhyway: convert code to use dev_groups
+Message-Id: <1434100046-19467-1-git-send-email-lambert.quentin@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435332116.23818.7.camel@codethink.co.uk>
-In-Reply-To: <1435332116.23818.7.camel@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: kernel-janitors@vger.kernel.org, Quentin Lambert <lambert.quentin@gmail.com>
 
-Based on work by Shinobu Uehara and Ben Dooks.  This adds the voltage
-switch operation needed for all UHS-I modes, but not the tuning needed
-for SDR-104 which will come later.
+The dev_attrs field of struct bus_type is going away, use dev_groups
+instead. This converts the soundbus code to use the correct field.
 
-The card_busy implementation is a bit of a guess, but works for me on
-an R8A7790 chip.
+These modifications were made using Coccinelle.
 
-Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Signed-off-by: Quentin Lambert <lambert.quentin@gmail.com>
 ---
- drivers/mmc/host/tmio_mmc.h     |  3 +++
- drivers/mmc/host/tmio_mmc_pio.c | 31 +++++++++++++++++++++++++++++++
- 2 files changed, 34 insertions(+)
+ drivers/sh/superhyway/superhyway-sysfs.c |   26 ++++++++++++++++----------
+ drivers/sh/superhyway/superhyway.c       |    4 +++-
+ include/linux/superhyway.h               |    2 +-
+ 3 files changed, 20 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index 4a597f5a53e2..a1a009879946 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -99,6 +99,9 @@ struct tmio_mmc_host {
- 	void (*clk_disable)(struct platform_device *pdev);
- 	int (*multi_io_quirk)(struct mmc_card *card,
- 			      unsigned int direction, int blk_size);
-+
-+	int (*start_signal_voltage_switch)(struct tmio_mmc_host *host,
-+					   unsigned char signal_voltage);
- };
+--- a/drivers/sh/superhyway/superhyway-sysfs.c
++++ b/drivers/sh/superhyway/superhyway-sysfs.c
+@@ -23,23 +23,29 @@ static ssize_t name##_show(struct device
  
- struct tmio_mmc_host *tmio_mmc_host_alloc(struct platform_device *pdev);
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index e3dcf31a8bd6..3c1e0e53c0b1 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -1011,12 +1011,43 @@ static int tmio_multi_io_quirk(struct mmc_card *card,
- 	return blk_size;
+ /* VCR flags */
+ superhyway_ro_attr(perr_flags, "0x%02x\n", vcr.perr_flags);
++static DEVICE_ATTR_RO(perr_flags);
+ superhyway_ro_attr(merr_flags, "0x%02x\n", vcr.merr_flags);
++static DEVICE_ATTR_RO(merr_flags);
+ superhyway_ro_attr(mod_vers, "0x%04x\n", vcr.mod_vers);
++static DEVICE_ATTR_RO(mod_vers);
+ superhyway_ro_attr(mod_id, "0x%04x\n", vcr.mod_id);
++static DEVICE_ATTR_RO(mod_id);
+ superhyway_ro_attr(bot_mb, "0x%02x\n", vcr.bot_mb);
++static DEVICE_ATTR_RO(bot_mb);
+ superhyway_ro_attr(top_mb, "0x%02x\n", vcr.top_mb);
++static DEVICE_ATTR_RO(top_mb);
+ 
+ /* Misc */
+ superhyway_ro_attr(resource, "0x%08lx\n", resource[0].start);
++static DEVICE_ATTR_RO(resource);
+ 
+-struct device_attribute superhyway_dev_attrs[] = {
+-	__ATTR_RO(perr_flags),
+-	__ATTR_RO(merr_flags),
+-	__ATTR_RO(mod_vers),
+-	__ATTR_RO(mod_id),
+-	__ATTR_RO(bot_mb),
+-	__ATTR_RO(top_mb),
+-	__ATTR_RO(resource),
+-	__ATTR_NULL,
++struct attribute *superhyway_dev_attrs[] = {
++	&dev_attr_perr_flags.attr,
++	&dev_attr_merr_flags.attr,
++	&dev_attr_mod_vers.attr,
++	&dev_attr_mod_id.attr,
++	&dev_attr_bot_mb.attr,
++	&dev_attr_top_mb.attr,
++	&dev_attr_resource.attr,
++	NULL,
+ };
+-
+--- a/drivers/sh/superhyway/superhyway.c
++++ b/drivers/sh/superhyway/superhyway.c
+@@ -205,11 +205,13 @@ static int superhyway_bus_match(struct d
+ 	return -ENODEV;
  }
  
-+static int tmio_mmc_start_signal_voltage_switch(struct mmc_host *mmc,
-+	struct mmc_ios *ios)
-+{
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+
-+	if (!host->start_signal_voltage_switch)
-+		return 0;
-+
-+	return host->start_signal_voltage_switch(host, ios->signal_voltage);
-+}
-+
-+static int tmio_mmc_card_busy(struct mmc_host *mmc)
-+{
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	u32 status;
-+
-+	pm_runtime_get_sync(mmc_dev(mmc));
-+	status = sd_ctrl_read32(host, CTL_STATUS);
-+	pm_runtime_mark_last_busy(mmc_dev(mmc));
-+	pm_runtime_put_autosuspend(mmc_dev(mmc));
-+
-+	/*
-+	 * Card signals busy by pulling down all of DAT[3:0].  This status
-+	 * flag appears to reflect DAT3.
-+	 */
-+	return !(status & TMIO_STAT_SIGSTATE_A);
-+}
-+
- static const struct mmc_host_ops tmio_mmc_ops = {
- 	.request	= tmio_mmc_request,
- 	.set_ios	= tmio_mmc_set_ios,
- 	.get_ro         = tmio_mmc_get_ro,
- 	.get_cd		= mmc_gpio_get_cd,
- 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
-+	.start_signal_voltage_switch
-+			= tmio_mmc_start_signal_voltage_switch,
-+	.card_busy	= tmio_mmc_card_busy,
- 	.multi_io_quirk	= tmio_multi_io_quirk,
- };
++/* superhyway_dev_attrs is defined in superhyway-sysfs.c */
++ATTRIBUTE_GROUPS(superhyway_dev);
+ struct bus_type superhyway_bus_type = {
+ 	.name		= "superhyway",
+ 	.match		= superhyway_bus_match,
+ #ifdef CONFIG_SYSFS
+-	.dev_attrs	= superhyway_dev_attrs,
++	.dev_groups	= superhyway_dev_groups,
+ #endif
+ 	.probe		= superhyway_device_probe,
+ 	.remove		= superhyway_device_remove,
+--- a/include/linux/superhyway.h
++++ b/include/linux/superhyway.h
+@@ -101,7 +101,7 @@ int superhyway_add_device(unsigned long
+ int superhyway_add_devices(struct superhyway_bus *bus, struct superhyway_device **devices, int nr_devices);
  
--- 
-2.1.4
-
-
-
-
+ /* drivers/sh/superhyway/superhyway-sysfs.c */
+-extern struct device_attribute superhyway_dev_attrs[];
++extern struct attribute *superhyway_dev_attrs[];
+ 
+ #endif /* __LINUX_SUPERHYWAY_H */
+ 
