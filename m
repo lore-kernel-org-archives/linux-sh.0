@@ -1,64 +1,16 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 04 Jun 2015 18:53:36 +0000
-Subject: [PATCH/RFC 10/15] ARM: shmobile: r8a7794 dtsi: Add L1 cache information to CPU nodes
-Message-Id: <1433444021-22167-11-git-send-email-geert+renesas@glider.be>
+From: Harrison Ken <momotabi.5@apricot.ocn.ne.jp>
+Date: Sat, 13 Jun 2015 23:14:44 +0000
+Subject: BUSINESS DEAL?
+Message-Id: <202192751.960295.1434237284540.JavaMail.root@apricot.ocn.ne.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Describe the L1 instruction and data caches in the CPU nodes:
-  - The L1 instruction caches for the Cortex-A7 CPU cores are organized
-    as 16 KiB x 2 ways,
-  - The L1 data caches for the Cortex-A7 CPU cores are organized as 8
-    KiB x 4 ways.
+Dear Sir/Ma,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/r8a7794.dtsi | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+I need your consent to transfer $25.5M that has remained unclaimed since 1999. The funds will be moved to any of our correspondent Banks in "YOUR NAME" immediately to secure the funds first. The Principal will be shared on a 50/50 basis.
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 0c3ab5febe0a88d8..0ea502a43d553e25 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -28,6 +28,16 @@
- 			compatible = "arm,cortex-a7";
- 			reg = <0>;
- 			clock-frequency = <1000000000>;
-+
-+			i-cache-size = <0x8000>;
-+			i-cache-sets = <512>;
-+			i-cache-block-size = <32>;
-+			i-cache-line-size = <32>;
-+			d-cache-size = <0x8000>;
-+			d-cache-sets = <256>;
-+			d-cache-block-size = <32>;
-+			d-cache-line-size = <32>;
-+			next-level-cache = <&L2_CA7>;
- 		};
- 
- 		cpu1: cpu@1 {
-@@ -35,6 +45,16 @@
- 			compatible = "arm,cortex-a7";
- 			reg = <1>;
- 			clock-frequency = <1000000000>;
-+
-+			i-cache-size = <0x8000>;
-+			i-cache-sets = <512>;
-+			i-cache-block-size = <32>;
-+			i-cache-line-size = <32>;
-+			d-cache-size = <0x8000>;
-+			d-cache-sets = <256>;
-+			d-cache-block-size = <32>;
-+			d-cache-line-size = <32>;
-+			next-level-cache = <&L2_CA7>;
- 		};
- 	};
- 
--- 
-1.9.1
-
+Yours Faithfully,
+Mr. Harrison Ken.
