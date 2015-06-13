@@ -1,97 +1,48 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 04 Jun 2015 18:53:39 +0000
-Subject: [PATCH/RFC 13/15] ARM: shmobile: r8a7791 dtsi: Add SYSC PM domains
-Message-Id: <1433444021-22167-14-git-send-email-geert+renesas@glider.be>
+From: "Herr Martins D Weber" <test@fumeilaistone.cn>
+Date: Sat, 13 Jun 2015 12:14:17 +0000
+Subject: Lieber Freund!!!
+Message-Id: <9D68CE35-B679-4AAF-A49F-CE77F9D3D665@fumeilaistone.cn>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-Add a device node for the System Controller, with subnodes that
-represent the hardware power area hierarchy.
-Hook up the Cortex-A15 CPU cores and the Cortex-A15 L2 cache/SCU to
-their respective PM domains.
+Lieber Freund!!!
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Ich vermute das diese E-Mail eine ?berraschung f?r Sie sein wird, aber es i=
+st wahr.Ich bin bei einer routinen ?berpr?fung in meiner Bank (StandardBank=
+ PLC von S?d Afrika) wo ich arbeite, auf einem Konto gesto?en, was nicht in=
+ anspruch genommen worden ist, wo derzeit USD$18.5M (Achtzehn Million, F?nf=
+ Hundert Tausend, US Dollar)  gutgeschrieben sind.Dieses Konto geh?rte Herr=
+n Manfred Becker, der ein Kunde in unsere Bank war, der leider verstorben i=
+st. Herrn Manfred Becker war ein geb?rtiger Deutscher.
+
+Damit es mir m?glich ist dieses Geld $18,500,000 inanspruch zunehmen,ben?ti=
+ge ich die zusammenarbeit eines Ausl?ndischen Partners wie Sie,den ich als =
+Verwandter und Erbe des verstorbenen Herrn Manfred Becker vorstellen kann,d=
+amit wir das Geld inanspruch nehmen k?nnen. F?r diese Unterst?tzung erhalte=
+n Sie 30% der Erbschaftsumme und die restlichen 70% teile ich mirmit meinen=
+ zwei Arbeitskollegen, die mich bei dieser Transaktion ebenfalls unterst?tz=
+en.
+
+
+Wenn Sie interessiert sind, k?nnen Sie mir bitte eine E-Mail schicken, dami=
+t ich Ihnen mehr Details zukommen lassen kann. N.B.BITTE SENDEN SIE MIR Mar=
+tins D Weber ANTWORT ZU durch mein E-mail: ( martinsdweber@aim.com ) f?R VE=
+RTRAULICHEN GRUND. Schicken Sie keine POST ZU MEINEM B?RO-E-MAIL.(martinsdw=
+eber@aim.com )
+
+
+If you understand english,please  kindly reply with english ( martinsdweber=
+@aim.com )
+
+Mit freundlichen Gr=FC=DFen
+
+Herr Martins D Weber
+
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 40 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 40 insertions(+)
+This email has been checked for viruses by Avast antivirus software.
+https://www.avast.com/antivirus
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 4e4011a2978bcfce..3554043ee2af3b26 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -51,6 +51,7 @@
- 			voltage-tolerance = <1>; /* 1% */
- 			clocks = <&cpg_clocks R8A7791_CLK_Z>;
- 			clock-latency = <300000>; /* 300 us */
-+			power-domains = <&pd_ca15_cpu0>;
- 
- 			i-cache-size = <0x8000>;
- 			i-cache-sets = <512>;
-@@ -76,6 +77,7 @@
- 			compatible = "arm,cortex-a15";
- 			reg = <1>;
- 			clock-frequency = <1500000000>;
-+			power-domains = <&pd_ca15_cpu1>;
- 
- 			i-cache-size = <0x8000>;
- 			i-cache-sets = <512>;
-@@ -91,6 +93,7 @@
- 
- 	L2_CA15: cache-controller@0 {
- 		compatible = "cache";
-+		power-domains = <&pd_ca15_scu>;
- 
- 		arm,data-latency = <4 4 0>;
- 		arm,tag-latency = <3 3 3>;
-@@ -1406,6 +1409,43 @@
- 		};
- 	};
- 
-+	sysc: system-controller@e6180000 {
-+		compatible = "renesas,sysc-r8a7791", "renesas,sysc-rcar";
-+		reg = <0 0xe6180000 0 0x0200>;
-+
-+		pm-domains {
-+			#address-cells = <2>;
-+			#size-cells = <0>;
-+
-+			pd_ca15_scu: scu@12 {
-+				reg = <12 0x180>;
-+				#address-cells = <2>;
-+				#size-cells = <0>;
-+				#power-domain-cells = <0>;
-+
-+				pd_ca15_cpu0: cpu@0 {
-+					reg = <0 0x40>;
-+					#power-domain-cells = <0>;
-+				};
-+
-+				pd_ca15_cpu1: cpu@1 {
-+					reg = <1 0x41>;
-+					#power-domain-cells = <0>;
-+				};
-+			};
-+
-+			pd_sh: sh@16 {
-+				reg = <16 0x80>;
-+				#power-domain-cells = <0>;
-+			};
-+
-+			pd_sgx: sgx@20 {
-+				reg = <20 0xc0>;
-+				#power-domain-cells = <0>;
-+			};
-+		};
-+	};
-+
- 	qspi: spi@e6b10000 {
- 		compatible = "renesas,qspi-r8a7791", "renesas,qspi";
- 		reg = <0 0xe6b10000 0 0x2c>;
--- 
-1.9.1
 
