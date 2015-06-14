@@ -1,192 +1,80 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 30 Jun 2015 08:29:57 +0000
-Subject: [PATCH] pinctrl: sh-pfc: Accept standard function, pins and groups properties
-Message-Id: <1435652997-25254-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 14 Jun 2015 17:26:26 +0000
+Subject: [PATCH/RFC] serial: sh-sci: Fix issue of frequent rx_full interrupt
+Message-Id: <1434302786-31162-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-gpio@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Linus Walleij <linus.walleij@linaro.org>
+To: linux-serial@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-The "function", "pins" and "groups" pinmux and pinctrl properties have
-been standardized. Support them in addition to the custom "renesas,*"
-properties. New-style and old-style properties can't be mixed in DT.
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+When the receive FIFO is not read in PIO transfer, rx_full interrupt
+occurs frequently. This patch avoids it by discarding the receive FIFO.
+
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
- .../bindings/pinctrl/renesas,pfc-pinctrl.txt       | 20 +++++------
- drivers/pinctrl/sh-pfc/pinctrl.c                   | 42 +++++++++++++++++-----
- 2 files changed, 44 insertions(+), 18 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
-index 51cee44fc140..e089142cfb14 100644
---- a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
-+++ b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
-@@ -58,12 +58,12 @@ are parsed through phandles and processed purely based on their content.
+This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+tree.
+
+ drivers/tty/serial/sh-sci.c | 22 ++++++++++++++++++++--
+ 1 file changed, 20 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index b74a644..4ec3c32 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -121,6 +121,8 @@ struct sci_port {
+ #endif
  
- Pin Configuration Node Properties:
- 
--- renesas,pins : An array of strings, each string containing the name of a pin.
--- renesas,groups : An array of strings, each string containing the name of a pin
-+- pins : An array of strings, each string containing the name of a pin.
-+- groups : An array of strings, each string containing the name of a pin
-   group.
- 
--- renesas,function: A string containing the name of the function to mux to the
--  pin group(s) specified by the renesas,groups property
-+- function: A string containing the name of the function to mux to the pin
-+  group(s) specified by the groups property.
- 
-   Valid values for pin, group and function names can be found in the group and
-   function arrays of the PFC data file corresponding to the SoC
-@@ -141,19 +141,19 @@ Example 3: KZM-A9-GT (SH-Mobile AG5) default pin state hog and pin control maps
- 
- 		mmcif_pins: mmcif {
- 			mux {
--				renesas,groups = "mmc0_data8_0", "mmc0_ctrl_0";
--				renesas,function = "mmc0";
-+				groups = "mmc0_data8_0", "mmc0_ctrl_0";
-+				function = "mmc0";
- 			};
- 			cfg {
--				renesas,groups = "mmc0_data8_0";
--				renesas,pins = "PORT279";
-+				groups = "mmc0_data8_0";
-+				pins = "PORT279";
- 				bias-pull-up;
- 			};
- 		};
- 
- 		scifa4_pins: scifa4 {
--			renesas,groups = "scifa4_data", "scifa4_ctrl";
--			renesas,function = "scifa4";
-+			groups = "scifa4_data", "scifa4_ctrl";
-+			function = "scifa4";
- 		};
- 	};
- 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index ff678966008b..6fe7459f0ccb 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -40,6 +40,10 @@ struct sh_pfc_pinctrl {
- 
- 	struct pinctrl_pin_desc *pins;
- 	struct sh_pfc_pin_config *configs;
+ 	struct notifier_block		freq_transition;
 +
-+	const char *func_prop_name;
-+	const char *groups_prop_name;
-+	const char *pins_prop_name;
++	u64				rxfull_time;
  };
  
- static int sh_pfc_get_groups_count(struct pinctrl_dev *pctldev)
-@@ -96,10 +100,13 @@ static int sh_pfc_map_add_config(struct pinctrl_map *map,
+ /* Function prototypes */
+@@ -690,12 +692,26 @@ static void sci_receive_chars(struct uart_port *port)
+ 		return;
+ 
+ 	while (1) {
++		int rxfill = sci_rxfill(port);
++		u64 now = get_jiffies_64();
+ 		/* Don't copy more bytes than there is room for in the buffer */
+-		count = tty_buffer_request_room(tport, sci_rxfill(port));
++		count = tty_buffer_request_room(tport, rxfill);
+ 
+ 		/* If for any reason we can't copy more data, we're done! */
+-		if (count = 0)
++		if (count = 0) {
++			int n;
++			/* discarded bytes in RX-FIFO */
++			for (n = 0; n < rxfill; n++)
++				serial_port_in(port, SCxRDR);
++			if (rxfill > 0 &&
++			    time_after64(now, sci_port->rxfull_time + (5*HZ))) {
++				sci_port->rxfull_time = now;
++				dev_warn(port->dev,
++					 "RX-FIFO isn't read, so %d bytes is discarded.\n",
++					 rxfill);
++			}
+ 			break;
++		}
+ 
+ 		if (port->type = PORT_SCI) {
+ 			char c = serial_port_in(port, SCxRDR);
+@@ -2342,6 +2358,8 @@ static int sci_init_single(struct platform_device *dev,
+ 		dev_dbg(port->dev, "DMA tx %d, rx %d\n",
+ 			p->dma_slave_tx, p->dma_slave_rx);
+ 
++	sci_port->rxfull_time = get_jiffies_64();
++
  	return 0;
  }
  
--static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
-+static int sh_pfc_dt_subnode_to_map(struct pinctrl_dev *pctldev,
-+				    struct device_node *np,
- 				    struct pinctrl_map **map,
- 				    unsigned int *num_maps, unsigned int *index)
- {
-+	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
-+	struct device *dev = pmx->pfc->dev;
- 	struct pinctrl_map *maps = *map;
- 	unsigned int nmaps = *num_maps;
- 	unsigned int idx = *index;
-@@ -113,10 +120,27 @@ static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
- 	const char *pin;
- 	int ret;
- 
-+	/* Support both the old Renesas-specific properties and the new standard
-+	 * properties. Mixing old and new properties isn't allowed, neither
-+	 * inside a subnode nor across subnodes.
-+	 */
-+	if (!pmx->func_prop_name) {
-+		if (of_find_property(np, "groups", NULL) ||
-+		    of_find_property(np, "pins", NULL)) {
-+			pmx->func_prop_name = "function";
-+			pmx->groups_prop_name = "groups";
-+			pmx->pins_prop_name = "pins";
-+		} else {
-+			pmx->func_prop_name = "renesas,function";
-+			pmx->groups_prop_name = "renesas,groups";
-+			pmx->pins_prop_name = "renesas,pins";
-+		}
-+	}
-+
- 	/* Parse the function and configuration properties. At least a function
- 	 * or one configuration must be specified.
- 	 */
--	ret = of_property_read_string(np, "renesas,function", &function);
-+	ret = of_property_read_string(np, pmx->func_prop_name, &function);
- 	if (ret < 0 && ret != -EINVAL) {
- 		dev_err(dev, "Invalid function in DT\n");
- 		return ret;
-@@ -129,11 +153,12 @@ static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
- 	if (!function && num_configs = 0) {
- 		dev_err(dev,
- 			"DT node must contain at least a function or config\n");
-+		ret = -ENODEV;
- 		goto done;
- 	}
- 
- 	/* Count the number of pins and groups and reallocate mappings. */
--	ret = of_property_count_strings(np, "renesas,pins");
-+	ret = of_property_count_strings(np, pmx->pins_prop_name);
- 	if (ret = -EINVAL) {
- 		num_pins = 0;
- 	} else if (ret < 0) {
-@@ -143,7 +168,7 @@ static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
- 		num_pins = ret;
- 	}
- 
--	ret = of_property_count_strings(np, "renesas,groups");
-+	ret = of_property_count_strings(np, pmx->groups_prop_name);
- 	if (ret = -EINVAL) {
- 		num_groups = 0;
- 	} else if (ret < 0) {
-@@ -174,7 +199,7 @@ static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
- 	*num_maps = nmaps;
- 
- 	/* Iterate over pins and groups and create the mappings. */
--	of_property_for_each_string(np, "renesas,groups", prop, group) {
-+	of_property_for_each_string(np, pmx->groups_prop_name, prop, group) {
- 		if (function) {
- 			maps[idx].type = PIN_MAP_TYPE_MUX_GROUP;
- 			maps[idx].data.mux.group = group;
-@@ -198,7 +223,7 @@ static int sh_pfc_dt_subnode_to_map(struct device *dev, struct device_node *np,
- 		goto done;
- 	}
- 
--	of_property_for_each_string(np, "renesas,pins", prop, pin) {
-+	of_property_for_each_string(np, pmx->pins_prop_name, prop, pin) {
- 		ret = sh_pfc_map_add_config(&maps[idx], pin,
- 					    PIN_MAP_TYPE_CONFIGS_PIN,
- 					    configs, num_configs);
-@@ -246,7 +271,7 @@ static int sh_pfc_dt_node_to_map(struct pinctrl_dev *pctldev,
- 	index = 0;
- 
- 	for_each_child_of_node(np, child) {
--		ret = sh_pfc_dt_subnode_to_map(dev, child, map, num_maps,
-+		ret = sh_pfc_dt_subnode_to_map(pctldev, child, map, num_maps,
- 					       &index);
- 		if (ret < 0)
- 			goto done;
-@@ -254,7 +279,8 @@ static int sh_pfc_dt_node_to_map(struct pinctrl_dev *pctldev,
- 
- 	/* If no mapping has been found in child nodes try the config node. */
- 	if (*num_maps = 0) {
--		ret = sh_pfc_dt_subnode_to_map(dev, np, map, num_maps, &index);
-+		ret = sh_pfc_dt_subnode_to_map(pctldev, np, map, num_maps,
-+					       &index);
- 		if (ret < 0)
- 			goto done;
- 	}
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
