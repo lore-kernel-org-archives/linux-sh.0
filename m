@@ -1,159 +1,43 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Jun 2015 08:38:55 +0000
-Subject: [PATCH v2 6/7] staging: board: armadillo800eva: Board staging for sh_mobile_lcdc_fb
-Message-Id: <1434530336-15073-7-git-send-email-geert+renesas@glider.be>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 14 Jun 2015 17:20:43 +0000
+Subject: [PATCH/RFC] mmc: sh_mmcif: Fix suspend process
+Message-Id: <1434302443-30905-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434530336-15073-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1434530336-15073-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: Ulf Hansson <ulf.hansson@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-sh@vger.kernel.org
 
-Add staging board support for the r8a7740-based armadillo800eva board
-and add platform devices to allow in-tree continuous development of the
-drivers on the armadillo800eva board.
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-When DT bindings are ready for theses drivers then the platform devices
-in the armadillo800eva staging board code can easily be removed. Until
-then we use platform devices to continuously improve the driver and
-integrate code.
+The clock should be enable when SDHI registers are accessed.
 
-Added platform devices:
-  - sh_mobile_lcdc_fb for the on-board LCD.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 ---
-v2:
-  - Drop pinctrl and configured GPIOs, these are now configured from DT,
-  - Update for changed function names,
-  - Drop RFC status.
----
- drivers/staging/board/Makefile          |   3 +-
- drivers/staging/board/armadillo800eva.c | 105 ++++++++++++++++++++++++++++++++
- 2 files changed, 107 insertions(+), 1 deletion(-)
- create mode 100644 drivers/staging/board/armadillo800eva.c
 
-diff --git a/drivers/staging/board/Makefile b/drivers/staging/board/Makefile
-index 65d39ecfad63bbf4..6842745feb9404f8 100644
---- a/drivers/staging/board/Makefile
-+++ b/drivers/staging/board/Makefile
-@@ -1,2 +1,3 @@
- obj-y	:= board.o
--obj-$(CONFIG_ARCH_EMEV2)      += kzm9d.o
-+obj-$(CONFIG_ARCH_EMEV2)	+= kzm9d.o
-+obj-$(CONFIG_ARCH_R8A7740)	+= armadillo800eva.o
-diff --git a/drivers/staging/board/armadillo800eva.c b/drivers/staging/board/armadillo800eva.c
-new file mode 100644
-index 0000000000000000..81df77bd55cc9868
---- /dev/null
-+++ b/drivers/staging/board/armadillo800eva.c
-@@ -0,0 +1,105 @@
-+/*
-+ * Staging board support for Armadillo 800 eva.
-+ * Enable not-yet-DT-capable devices here.
-+ *
-+ * Based on board-armadillo800eva.c
-+ *
-+ * Copyright (C) 2012 Renesas Solutions Corp.
-+ * Copyright (C) 2012 Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#include <linux/dma-mapping.h>
-+#include <linux/fb.h>
-+#include <linux/kernel.h>
-+#include <linux/platform_device.h>
-+#include <linux/videodev2.h>
-+
-+#include <video/sh_mobile_lcdc.h>
-+
-+#include "board.h"
-+
-+
-+static struct fb_videomode lcdc0_mode = {
-+	.name		= "AMPIER/AM-800480",
-+	.xres		= 800,
-+	.yres		= 480,
-+	.left_margin	= 88,
-+	.right_margin	= 40,
-+	.hsync_len	= 128,
-+	.upper_margin	= 20,
-+	.lower_margin	= 5,
-+	.vsync_len	= 5,
-+	.sync		= 0,
-+};
-+
-+static struct sh_mobile_lcdc_info lcdc0_info = {
-+	.clock_source	= LCDC_CLK_BUS,
-+	.ch[0] = {
-+		.chan		= LCDC_CHAN_MAINLCD,
-+		.fourcc		= V4L2_PIX_FMT_RGB565,
-+		.interface_type	= RGB24,
-+		.clock_divider	= 5,
-+		.flags		= 0,
-+		.lcd_modes	= &lcdc0_mode,
-+		.num_modes	= 1,
-+		.panel_cfg = {
-+			.width	= 111,
-+			.height = 68,
-+		},
-+	},
-+};
-+
-+static struct resource lcdc0_resources[] = {
-+	[0] = {
-+		.name	= "LCD0",
-+		.start	= 0xfe940000,
-+		.end	= 0xfe943fff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 177 + 32,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device lcdc0_device = {
-+	.name		= "sh_mobile_lcdc_fb",
-+	.num_resources	= ARRAY_SIZE(lcdc0_resources),
-+	.resource	= lcdc0_resources,
-+	.id		= 0,
-+	.dev	= {
-+		.platform_data	= &lcdc0_info,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+	},
-+};
-+
-+static const struct board_staging_clk lcdc0_clocks[] __initconst = {
-+	{ "lcdc0", NULL, "sh_mobile_lcdc_fb.0" },
-+};
-+
-+static const struct board_staging_dev armadillo800eva_devices[] __initconst = {
-+	{
-+		.pdev		= &lcdc0_device,
-+		.clocks		= lcdc0_clocks,
-+		.nclocks	= ARRAY_SIZE(lcdc0_clocks),
-+		.domain		= "a4lc",
-+	},
-+};
-+
-+static void __init armadillo800eva_init(void)
-+{
-+	board_staging_gic_setup_xlate("arm,cortex-a9-gic", 32);
-+	board_staging_register_devices(armadillo800eva_devices,
-+				       ARRAY_SIZE(armadillo800eva_devices));
-+}
-+
-+board_staging("renesas,armadillo800eva", armadillo800eva_init);
+This patch is based on mmc-next branch of Ulf Hansson's mmc tree.
+
+* Perhaps this relates to the need to enhance clock management
+
+ drivers/mmc/host/sh_mmcif.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 5a1fdd4..ad9ffea 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1632,7 +1632,9 @@ static int sh_mmcif_suspend(struct device *dev)
+ {
+ 	struct sh_mmcif_host *host = dev_get_drvdata(dev);
+ 
++	pm_runtime_get_sync(dev);
+ 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
++	pm_runtime_put(dev);
+ 
+ 	return 0;
+ }
 -- 
 1.9.1
 
