@@ -1,65 +1,93 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 02 Jun 2015 00:27:48 +0000
-Subject: Re: [PATCH v4 2/4] ARM: shmobile: add r8a7793 minimal SoC device tree
-Message-Id: <20150602002747.GA4781@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 14 Jun 2015 17:27:19 +0000
+Subject: [PATCH/RFC] serial: sh-sci: Fix exclusion of work_fn_rx and sci_dma_rx_complete
+Message-Id: <1434302839-31216-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432826157-6414-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <1432826157-6414-3-git-send-email-ulrich.hecht+renesas@gmail.com>
- <CAMuHMdXr3BxULQohYo1U0RuW8SRTtb5Ge_ypAbByW8vuRWs=PA@mail.gmail.com>
- <CAO3366wm=LvYntDYBwh9AY-jpfmBF57cJhfY2A=yAk13kHg3oQ@mail.gmail.com>
-In-Reply-To: <CAO3366wm=LvYntDYBwh9AY-jpfmBF57cJhfY2A=yAk13kHg3oQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-serial@vger.kernel.org
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Mon, Jun 01, 2015 at 11:45:45AM +0200, Ulrich Hecht wrote:
-> On Mon, Jun 1, 2015 at 11:37 AM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
-> > Hi Ulrich,
-> >
-> > On Thu, May 28, 2015 at 5:15 PM, Ulrich Hecht
-> > <ulrich.hecht+renesas@gmail.com> wrote:
-> >> Minimal r8a7793 device tree including one CPU core, interrupt controllers,
-> >> timers, two serial ports, and the Ethernet controller, plus the required
-> >> clock descriptions.
-> >
-> >> --- /dev/null
-> >> +++ b/arch/arm/boot/dts/r8a7793.dtsi
-> >> @@ -0,0 +1,368 @@
-> >
-> >> +       cpus {
-> >> +               #address-cells = <1>;
-> >> +               #size-cells = <0>;
-> >> +
-> >> +               cpu0: cpu@0 {
-> >> +                       device_type = "cpu";
-> >> +                       compatible = "arm,cortex-a15";
-> >> +                       enable-method = "renesas,r8a7793";
-> >
-> > I don't think we need the enable-method in a minimal tree, do we?
-> 
-> Nope.
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Could you respin without the enable-method?
+There is a problem when the sci_dma_rx_complete() is processed
+before cancel process of work_fn_rx() completes by rx_timer_fn().
+This patch locks work_fn_rx().
 
-I see there is also a minor Makefile change pending for the last patch of
-the series. With that and the above in place I think we should be very
-close.
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-> >> +       clocks {
-> [...]
-> >> +       };
-> >
-> > I don't see the rationele behind keeping some mstp clocks, and others not,
-> > for a miminal dtsi.
-> 
-> Some clocks are required by the minimal set of devices, and I did not
-> want to take apart individual MSTPs because IMO it's error-prone and
-> does not provide any real benefit.
+This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+tree.
 
-My feeling is that while it would be ideal to trim things down it
-this is reasonable not to do so to avoid breaking what is left.
+ drivers/tty/serial/sh-sci.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
 
-I lean towards taking the MSTP clocks as is.
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index b74a644..ef59842 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1423,14 +1423,16 @@ static void work_fn_rx(struct work_struct *work)
+ 	struct uart_port *port = &s->port;
+ 	struct dma_async_tx_descriptor *desc;
+ 	int new;
++	unsigned long flags;
+ 
++	spin_lock_irqsave(&port->lock, flags);
+ 	if (s->active_rx = s->cookie_rx[0]) {
+ 		new = 0;
+ 	} else if (s->active_rx = s->cookie_rx[1]) {
+ 		new = 1;
+ 	} else {
+ 		dev_err(port->dev, "cookie %d not found!\n", s->active_rx);
+-		return;
++		goto out;
+ 	}
+ 	desc = s->desc_rx[new];
+ 
+@@ -1440,36 +1442,35 @@ static void work_fn_rx(struct work_struct *work)
+ 		struct dma_chan *chan = s->chan_rx;
+ 		struct shdma_desc *sh_desc = container_of(desc,
+ 					struct shdma_desc, async_tx);
+-		unsigned long flags;
+ 		int count;
+ 
+ 		dmaengine_terminate_all(chan);
+ 		dev_dbg(port->dev, "Read %zu bytes with cookie %d\n",
+ 			sh_desc->partial, sh_desc->cookie);
+ 
+-		spin_lock_irqsave(&port->lock, flags);
+ 		count = sci_dma_rx_push(s, sh_desc->partial);
+-		spin_unlock_irqrestore(&port->lock, flags);
+ 
+ 		if (count)
+ 			tty_flip_buffer_push(&port->state->port);
+ 
+ 		sci_submit_rx(s);
+ 
+-		return;
++		goto out;
+ 	}
+ 
+ 	s->cookie_rx[new] = desc->tx_submit(desc);
+ 	if (s->cookie_rx[new] < 0) {
+ 		dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
+ 		sci_rx_dma_release(s, true);
+-		return;
++		goto out;
+ 	}
+ 
+ 	s->active_rx = s->cookie_rx[!new];
+ 
+ 	dev_dbg(port->dev, "%s: cookie %d #%d, new active #%d\n",
+ 		__func__, s->cookie_rx[new], new, s->active_rx);
++out:
++	spin_unlock_irqrestore(&port->lock, flags);
+ }
+ 
+ static void work_fn_tx(struct work_struct *work)
+-- 
+1.9.1
+
