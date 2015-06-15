@@ -1,78 +1,288 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 30 Jun 2015 09:48:23 +0000
-Subject: Re: [PATCH 7/7] pinctrl: sh-pfc: Confine legacy function GPIOs to SH
-Message-Id: <CAMuHMdX9xK7SWvEacOx4+7QAXJ=oRREAvCBQ5X8cjv+4XeeRrg@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 15 Jun 2015 04:53:56 +0000
+Subject: [PATCH 3/6][RFC] clk: shmobile: add Renesas R-Car Gen3 CPG support
+Message-Id: <871thdwp4d.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435650327-2542-1-git-send-email-geert+renesas@glider.be>
- <1435650327-2542-8-git-send-email-geert+renesas@glider.be>
- <10481403.sNoQCGtpkA@avalon>
-In-Reply-To: <10481403.sNoQCGtpkA@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Laurent,
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-On Tue, Jun 30, 2015 at 11:38 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
->> --- a/drivers/pinctrl/sh-pfc/gpio.c
->> +++ b/drivers/pinctrl/sh-pfc/gpio.c
->> @@ -290,6 +290,7 @@ static int gpio_pin_setup(struct sh_pfc_chip *chip)
->>   * Function GPIOs
->>   */
->>
->> +#ifdef CONFIG_SUPERH
->>  static int gpio_function_request(struct gpio_chip *gc, unsigned offset)
->>  {
->>       static bool __print_once;
->> @@ -330,6 +331,31 @@ static int gpio_function_setup(struct sh_pfc_chip
->> *chip) return 0;
->>  }
->>
->> +static int sh_pfc_add_function_gpios(struct sh_pfc *pfc)
->> +{
->> +     struct sh_pfc_chip *chip;
->> +
->> +     if (!pfc->info->nr_func_gpios)
->> +             return 0;
->> +
->> +     chip = sh_pfc_add_gpiochip(pfc, gpio_function_setup, NULL);
->> +     if (IS_ERR(chip))
->> +             return PTR_ERR(chip);
->> +
->> +     pfc->func = chip;
->> +
->> +     return 0;
->> +}
->> +
->> +static void sh_pfc_remove_function_gpios(struct sh_pfc *pfc)
->> +{
->> +     gpiochip_remove(&pfc->func->gpio_chip);
->> +}
->> +#else
->> +static inline int sh_pfc_add_function_gpios(struct sh_pfc *pfc) { return 0;
->> }
->> +static inline int sh_pfc_remove_function_gpios(struct sh_pfc *pfc) {
->> return 0; }
->
-> Given that those functions are only called from a single location, would it
-> make sense to just compile the calls conditionally instead ? I would find that
-> slightly more readable as it would be more explicit.
+This patch adds very initial CPG support.
+R-Car Gen3 write function should use CPG write protection method
+which is shared with MSTP driver. This patch has it but not used.
 
-If that's acceptable for you, that would be fine for me, too. One (or two) more
-visual cues for future removal of legacy code.
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/clk/shmobile/Makefile        |   1 +
+ drivers/clk/shmobile/clk-rcar-gen3.c | 243 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 244 insertions(+)
+ create mode 100644 drivers/clk/shmobile/clk-rcar-gen3.c
 
-And then I can drop "[PATCH 6/7] pinctrl: sh-pfc: Move sh_pfc_add_gpiochip()
-up".
+diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
+index 6790268..441adcf 100644
+--- a/drivers/clk/shmobile/Makefile
++++ b/drivers/clk/shmobile/Makefile
+@@ -8,6 +8,7 @@ obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
+ obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
+ obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o
+ obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o
++obj-$(CONFIG_ARCH_RCAR_GEN3)		+= clk-rcar-gen3.o
+ obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o
+ obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
+ obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-mstp.o
+diff --git a/drivers/clk/shmobile/clk-rcar-gen3.c b/drivers/clk/shmobile/clk-rcar-gen3.c
+new file mode 100644
+index 0000000..20ab044
+--- /dev/null
++++ b/drivers/clk/shmobile/clk-rcar-gen3.c
+@@ -0,0 +1,243 @@
++/*
++ * rcar_gen3 Core CPG Clocks
++ *
++ * Based on rcar_gen2 Core CPG Clocks driver.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ */
++
++#include <linux/clk-provider.h>
++#include <linux/clkdev.h>
++#include <linux/clk/shmobile.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/math64.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/spinlock.h>
++#include "rcar-clk.h"
++
++struct rcar_gen3_cpg {
++	struct clk_onecell_data data;
++	spinlock_t lock;
++	void __iomem *reg;
++};
++
++#define CPG_CPGWPR	0x0900
++#define CPG_PLL0CR	0x00d8
++#define CPG_PLL2CR	0x002c
++
++/*
++ * common function
++ */
++#define rcar_clk_readl(cpg, _reg) clk_readl(cpg->reg + _reg)
++
++#if 0 /* this write should be used in the future */
++static void rcar_clk_writel(struct rcar_gen3_cpg *cpg,
++			    u32 val, u32 __iomem *reg)
++{
++	unsigned long flags;
++
++	rcar_cpgwpcr_lock(flags);
++	clk_writel(~val, cpg->reg + CPG_CPGWPR);
++	clk_writel(val, cpg->reg + reg);
++	rcar_cpgwpcr_unlock(flags);
++}
++#endif
++
++/*
++ * Reset register definitions.
++ */
++#define MODEMR 0xe6160060
++
++static u32 rcar_gen3_read_mode_pins(void)
++{
++	static u32 mode;
++	static bool mode_valid;
++
++	if (!mode_valid) {
++		void __iomem *modemr = ioremap_nocache(MODEMR, 4);
++		BUG_ON(!modemr);
++		mode = ioread32(modemr);
++		iounmap(modemr);
++		mode_valid = true;
++	}
++
++	return mode;
++}
++
++/* -----------------------------------------------------------------------------
++ * CPG Clock Data
++ */
++
++/*
++ *   MD		EXTAL		PLL0	PLL1	PLL2	PLL3	PLL4
++ * 14 13 19 17	(MHz)		*1	*1	*1
++ *-------------------------------------------------------------------
++ * 0  0  0  0	16.66 x 1	x180/2	x192/2	x144/2	x192	x144
++ * 0  0  0  1	16.66 x 1	x180/2	x192/2	x144/2	x128	x144
++ * 0  0  1  0	Prohibited setting
++ * 0  0  1  1	16.66 x 1	x180/2	x192/2	x144/2	x192	x144
++ * 0  1  0  0	20    x 1	x150/2	x156/2	x120/2	x156	x120
++ * 0  1  0  1	20    x 1	x150/2	x156/2	x120/2	x106	x120
++ * 0  1  1  0	Prohibited setting
++ * 0  1  1  1	20    x 1	x150/2	x156/2	x120/2	x156	x120
++ * 1  0  0  0	25    x 1	x120/2	x128/2	x96/2	x128	x96
++ * 1  0  0  1	25    x 1	x120/2	x128/2	x96/2	x84	x96
++ * 1  0  1  0	Prohibited setting
++ * 1  0  1  1	25    x 1	x120/2	x128/2	x96/2	x128	x96
++ * 1  1  0  0	33.33 / 2	x180/2	x192/2	x144/2	x192	x144
++ * 1  1  0  1	33.33 / 2	x180/2	x192/2	x144/2	x128	x144
++ * 1  1  1  0	Prohibited setting
++ * 1  1  1  1	33.33 / 2	x180/2	x192/2	x144/2	x192	x144
++ *
++ * *1 : datasheet indicates VCO ouput (PLLx = VCO/2)
++ *
++ */
++#define CPG_PLL_CONFIG_INDEX(md)	((((md) & BIT(14)) >> 11) | \
++					 (((md) & BIT(13)) >> 11) | \
++					 (((md) & BIT(19)) >> 18) | \
++					 (((md) & BIT(17)) >> 17))
++struct cpg_pll_config {
++	unsigned int extal_div;
++	unsigned int pll1_mult;
++	unsigned int pll3_mult;
++	unsigned int pll4_mult;
++};
++
++static const struct cpg_pll_config cpg_pll_configs[16] __initconst = {
++/* EXTAL div	PLL1	PLL3	PLL4 */
++	{ 1,	192,	192,	144, },
++	{ 1,	192,	128,	144, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	192,	192,	144, },
++	{ 1,	156,	156,	120, },
++	{ 1,	156,	106,	120, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	156,	156,	120, },
++	{ 1,	128,	128,	96,  },
++	{ 1,	128,	84,	96,  },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	128,	128,	96,  },
++	{ 2,	192,	192,	144, },
++	{ 2,	192,	128,	144, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 2,	192,	192,	144, },
++};
++
++/* -----------------------------------------------------------------------------
++ * Initialization
++ */
++
++static u32 cpg_mode __initdata;
++
++static struct clk * __init
++rcar_gen3_cpg_register_clock(struct device_node *np, struct rcar_gen3_cpg *cpg,
++			     const struct cpg_pll_config *config,
++			     const char *name)
++{
++	const char *parent_name;
++	unsigned int mult = 1;
++	unsigned int div = 1;
++
++	if (!strcmp(name, "main")) {
++		parent_name = of_clk_get_parent_name(np, 0);
++		div = config->extal_div;
++	} else if (!strcmp(name, "pll0")) {
++		/* PLL0 is a configurable multiplier clock. Register it as a
++		 * fixed factor clock for now as there's no generic multiplier
++		 * clock implementation and we currently have no need to change
++		 * the multiplier value.
++		 */
++		u32 value = rcar_clk_readl(cpg, CPG_PLL0CR);
++		parent_name = "main";
++		mult = ((value >> 24) & ((1 << 7) - 1)) + 1;
++	} else if (!strcmp(name, "pll1")) {
++		parent_name = "main";
++		mult = config->pll1_mult / 2;
++	} else if (!strcmp(name, "pll2")) {
++		/* PLL2 is a configurable multiplier clock. Register it as a
++		 * fixed factor clock for now as there's no generic multiplier
++		 * clock implementation and we currently have no need to change
++		 * the multiplier value.
++		 */
++		u32 value = rcar_clk_readl(cpg, CPG_PLL2CR);
++		parent_name = "main";
++		mult = ((value >> 24) & ((1 << 7) - 1)) + 1;
++	} else if (!strcmp(name, "pll3")) {
++		parent_name = "main";
++		mult = config->pll3_mult;
++	} else if (!strcmp(name, "pll4")) {
++		parent_name = "main";
++		mult = config->pll4_mult;
++	} else {
++		return ERR_PTR(-EINVAL);
++	}
++
++	return clk_register_fixed_factor(NULL, name, parent_name, 0, mult, div);
++}
++
++static void __init rcar_gen3_cpg_clocks_init(struct device_node *np)
++{
++	const struct cpg_pll_config *config;
++	struct rcar_gen3_cpg *cpg;
++	struct clk **clks;
++	unsigned int i;
++	int num_clks;
++
++	cpg_mode = rcar_gen3_read_mode_pins();
++
++	num_clks = of_property_count_strings(np, "clock-output-names");
++	if (num_clks < 0) {
++		pr_err("%s: failed to count clocks\n", __func__);
++		return;
++	}
++
++	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
++	clks = kzalloc(num_clks * sizeof(*clks), GFP_KERNEL);
++	if (cpg = NULL || clks = NULL) {
++		/* We're leaking memory on purpose, there's no point in cleaning
++		 * up as the system won't boot anyway.
++		 */
++		pr_err("%s: failed to allocate cpg\n", __func__);
++		return;
++	}
++
++	spin_lock_init(&cpg->lock);
++
++	cpg->data.clks = clks;
++	cpg->data.clk_num = num_clks;
++
++	cpg->reg = of_iomap(np, 0);
++	if (WARN_ON(cpg->reg = NULL))
++		return;
++
++	config = &cpg_pll_configs[CPG_PLL_CONFIG_INDEX(cpg_mode)];
++	if (!config->extal_div) {
++		pr_err("%s: Prohibited setting (cpg_mode=0x%x)\n",
++		       __func__, cpg_mode);
++		return;
++	}
++
++	for (i = 0; i < num_clks; ++i) {
++		const char *name;
++		struct clk *clk;
++
++		of_property_read_string_index(np, "clock-output-names", i,
++					      &name);
++
++		clk = rcar_gen3_cpg_register_clock(np, cpg, config, name);
++		if (IS_ERR(clk))
++			pr_err("%s: failed to register %s %s clock (%ld)\n",
++			       __func__, np->name, name, PTR_ERR(clk));
++		else
++			cpg->data.clks[i] = clk;
++	}
++
++	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++}
++CLK_OF_DECLARE(rcar_gen3_cpg_clks, "renesas,rcar-gen3-cpg-clocks",
++	       rcar_gen3_cpg_clocks_init);
++
+-- 
+1.9.1
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
