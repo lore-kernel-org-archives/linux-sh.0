@@ -1,93 +1,64 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 14 Jun 2015 17:27:19 +0000
-Subject: [PATCH/RFC] serial: sh-sci: Fix exclusion of work_fn_rx and sci_dma_rx_complete
-Message-Id: <1434302839-31216-1-git-send-email-ykaneko0929@gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 15 Jun 2015 23:42:42 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7790: add EtherAVB clocks
+Message-Id: <3547940.lZD6YNB6hA@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <2857896.YA1bBSQVkA@wasted.cogentembedded.com>
+In-Reply-To: <2857896.YA1bBSQVkA@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-serial@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Add the EtherAVB clock to the R8A7790 device tree.
 
-There is a problem when the sci_dma_rx_complete() is processed
-before cancel process of work_fn_rx() completes by rx_timer_fn().
-This patch locks work_fn_rx().
+Based on original patch by Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>.
 
-Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
+Changes in version 2:
+- fixed the order of the clock property values;
+- refreshed the patch.
 
-This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
-tree.
+ arch/arm/boot/dts/r8a7790.dtsi            |   10 ++++++----
+ include/dt-bindings/clock/r8a7790-clock.h |    1 +
+ 2 files changed, 7 insertions(+), 4 deletions(-)
 
- drivers/tty/serial/sh-sci.c | 13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index b74a644..ef59842 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1423,14 +1423,16 @@ static void work_fn_rx(struct work_struct *work)
- 	struct uart_port *port = &s->port;
- 	struct dma_async_tx_descriptor *desc;
- 	int new;
-+	unsigned long flags;
- 
-+	spin_lock_irqsave(&port->lock, flags);
- 	if (s->active_rx = s->cookie_rx[0]) {
- 		new = 0;
- 	} else if (s->active_rx = s->cookie_rx[1]) {
- 		new = 1;
- 	} else {
- 		dev_err(port->dev, "cookie %d not found!\n", s->active_rx);
--		return;
-+		goto out;
- 	}
- 	desc = s->desc_rx[new];
- 
-@@ -1440,36 +1442,35 @@ static void work_fn_rx(struct work_struct *work)
- 		struct dma_chan *chan = s->chan_rx;
- 		struct shdma_desc *sh_desc = container_of(desc,
- 					struct shdma_desc, async_tx);
--		unsigned long flags;
- 		int count;
- 
- 		dmaengine_terminate_all(chan);
- 		dev_dbg(port->dev, "Read %zu bytes with cookie %d\n",
- 			sh_desc->partial, sh_desc->cookie);
- 
--		spin_lock_irqsave(&port->lock, flags);
- 		count = sci_dma_rx_push(s, sh_desc->partial);
--		spin_unlock_irqrestore(&port->lock, flags);
- 
- 		if (count)
- 			tty_flip_buffer_push(&port->state->port);
- 
- 		sci_submit_rx(s);
- 
--		return;
-+		goto out;
- 	}
- 
- 	s->cookie_rx[new] = desc->tx_submit(desc);
- 	if (s->cookie_rx[new] < 0) {
- 		dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
- 		sci_rx_dma_release(s, true);
--		return;
-+		goto out;
- 	}
- 
- 	s->active_rx = s->cookie_rx[!new];
- 
- 	dev_dbg(port->dev, "%s: cookie %d #%d, new active #%d\n",
- 		__func__, s->cookie_rx[new], new, s->active_rx);
-+out:
-+	spin_unlock_irqrestore(&port->lock, flags);
- }
- 
- static void work_fn_tx(struct work_struct *work)
--- 
-1.9.1
+Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
++++ renesas/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1249,16 +1249,18 @@
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+ 			clocks = <&hp_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>,
+-			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
++			         <&zg_clk>, <&hp_clk>, <&p_clk>, <&zs_clk>,
++				 <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+ 				R8A7790_CLK_MLB R8A7790_CLK_VIN3 R8A7790_CLK_VIN2
+-				R8A7790_CLK_VIN1 R8A7790_CLK_VIN0 R8A7790_CLK_ETHER
++				R8A7790_CLK_VIN1 R8A7790_CLK_VIN0
++				R8A7790_CLK_ETHERAVB R8A7790_CLK_ETHER
+ 				R8A7790_CLK_SATA1 R8A7790_CLK_SATA0
+ 			>;
+ 			clock-output-names -				"mlb", "vin3", "vin2", "vin1", "vin0", "ether",
+-				"sata1", "sata0";
++				"mlb", "vin3", "vin2", "vin1", "vin0",
++				"etheravb", "ether", "sata1", "sata0";
+ 		};
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+Index: renesas/include/dt-bindings/clock/r8a7790-clock.h
+=================================--- renesas.orig/include/dt-bindings/clock/r8a7790-clock.h
++++ renesas/include/dt-bindings/clock/r8a7790-clock.h
+@@ -108,6 +108,7 @@
+ #define R8A7790_CLK_VIN2		9
+ #define R8A7790_CLK_VIN1		10
+ #define R8A7790_CLK_VIN0		11
++#define R8A7790_CLK_ETHERAVB		12
+ #define R8A7790_CLK_ETHER		13
+ #define R8A7790_CLK_SATA1		14
+ #define R8A7790_CLK_SATA0		15
 
