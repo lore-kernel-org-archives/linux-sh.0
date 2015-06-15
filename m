@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 15 Jun 2015 08:23:19 +0000
+Date: Mon, 15 Jun 2015 08:30:12 +0000
 Subject: Re: [PATCH 5/6][RFC] arm64: renesas: Add r8a7795 SoC support
-Message-Id: <87y4jltmae.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87vbeptluz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87y4jlvait.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87y4jlvait.wl%kuninori.morimoto.gx@renesas.com>
@@ -11,32 +11,26 @@ Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
 
-Hi Geert
+Hi Magnus, Inami-san
 
-> > --- /dev/null
-> > +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> > @@ -0,0 +1,90 @@
-> > +/*
-> > + * Device Tree Source for the r8a7795 SoC
-> > + *
-> > + * Copyright (C) 2015 Renesas Electronics Corp.
-> > + *
-> > + * This file is licensed under the terms of the GNU General Public License
-> > + * version 2.  This program is licensed "as is" without any warranty of any
-> > + * kind, whether express or implied.
-> > + */
-> > +/dts-v1/;
-> > +
-> > +#include <dt-bindings/clock/r8a7795-clock.h>
-> > +#include <dt-bindings/interrupt-controller/arm-gic.h>
-> > +
-> > +/ {
-> > +       compatible = "renesas,r8a7795";
+> > +       gic: interrupt-controller@0xf1010000 {
+> > +               compatible = "arm,gic-400", "arm,cortex-a15-gic";
+> > +               #interrupt-cells = <3>;
+> > +               #address-cells = <0>;
+> > +               interrupt-controller;
+> > +               reg = <0x0 0xf1010000 0 0x1000>,
+> > +                     <0x0 0xf1020000 0 0x2000>;
+> > +               interrupts = <GIC_PPI 9 (GIC_CPU_MASK_SIMPLE(6) | IRQ_TYPE_LEVEL_HIGH)>;
+> > +       };
 > 
-> ideally, this compatible value should be documented before it's being used.
+> Thanks for your efforts. On ARM v8, is ARM v7 compat string
+> "arm,cortex-a15-gic" really correct?
 
-Ahh.. yes indeed
-
+I don't know detail of this.
+but, I guess current Inami-san's status is "create working something".
+Maybe he don't care small detail at this point.
+Do you think  "arm,gic-400" is very enough ?
+If so, I can drop it in v2
 
 Best regards
 ---
