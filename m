@@ -1,42 +1,78 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Sun, 07 Jun 2015 08:57:55 +0000
-Subject: [PATCHv2 01/11] clock-sh7724.c: fix sh-vou clock identifier
-Message-Id: <1433667485-35711-2-git-send-email-hverkuil@xs4all.nl>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 15 Jun 2015 12:21:47 +0000
+Subject: renesas-drivers-2015-06-15-v4.1-rc8
+Message-Id: <1434370907-17158-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
-In-Reply-To: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>, Magnus Damm <damm@opensource.se>
+To: linux-sh@vger.kernel.org
 
-From: Hans Verkuil <hans.verkuil@cisco.com>
+I've pushed renesas-drivers-2015-06-15-v4.1-rc8 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
+branches of various subsystem trees and (b) branches with driver code
+submitted or planned for submission to maintainers into the development
+branch of Simon Horman's renesas.git tree.
 
-Bitrot has set in for this driver and the sh-vou clock was never enabled,
-since the clock name in clock-sh7724.c was wrong. It should be sh-vou, not
-sh-vou.0.
+Today's version is based on renesas-devel-20150610-v4.1-rc7.
 
-Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
-Thanks-to: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Magnus Damm <damm@opensource.se>
----
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Included branches with driver code:
+  - clk-shmobile-for-4.2:
+      - clk: shmobile: Add r8a7778 SoC to MSTP bindings
+      - clk: shmobile: Add r8a7793 SoC to MSTP bindings
+      - clk: shmobile: r8a7793: Document DIV6 clock bindings
+      - clk: shmobile: r8a7794: Document DIV6 clock bindings
+      - clk: shmobile: div6: Document mandatory compatible fallback
+      - clk: shmobile: mstp: Document mandatory compatible fallback
+      - clk: shmobile: rcar-gen2: Document mandatory compatible fallback
+      - clk: shmobile: rz: Document mandatory compatible fallback
 
-diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-index c187b95..f27c618 100644
---- a/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-+++ b/arch/sh/kernel/cpu/sh4a/clock-sh7724.c
-@@ -343,7 +343,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("2ddmac0", &mstp_clks[HWBLK_2DDMAC]),
- 	CLKDEV_DEV_ID("sh_fsi.0", &mstp_clks[HWBLK_SPU]),
- 	CLKDEV_CON_ID("jpu0", &mstp_clks[HWBLK_JPU]),
--	CLKDEV_DEV_ID("sh-vou.0", &mstp_clks[HWBLK_VOU]),
-+	CLKDEV_DEV_ID("sh-vou", &mstp_clks[HWBLK_VOU]),
- 	CLKDEV_CON_ID("beu0", &mstp_clks[HWBLK_BEU0]),
- 	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[HWBLK_CEU0]),
- 	CLKDEV_CON_ID("veu0", &mstp_clks[HWBLK_VEU0]),
--- 
-2.1.4
+Included subsystem trees:
+  - v4.1-rc8
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+  - git://people.freedesktop.org/~airlied/linux#drm-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+  - git://linuxtv.org/mchehab/media-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+  - git://git.infradead.org/users/vkoul/slave-dma.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
+  - git://git.infradead.org/battery-2.6.git#master
+  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
