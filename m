@@ -1,18 +1,57 @@
-From: Joseph Myers <joseph@codesourcery.com>
-Date: Mon, 29 Jun 2015 14:19:23 +0000
-Subject: Ping Re: [PATCH RESEND] Update kernel math-emu code from current glibc soft-fp
-Message-Id: <alpine.DEB.2.10.1506291416420.7278@digraph.polyomino.org.uk>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 15 Jun 2015 19:44:47 +0000
+Subject: Re: [PATCH v2 12/14] drivers: sh: Stop using pm_runtime.c for multi-platform shmobile with genpd
+Message-Id: <CAMuHMdWfqXZKUShiSqi0RmGpfkqgsL-5We__Vnou1aj5OHYPmA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.10.1505192206580.28384@digraph.polyomino.org.uk>
- <alpine.DEB.2.10.1506221321340.27145@digraph.polyomino.org.uk>
-In-Reply-To: <alpine.DEB.2.10.1506221321340.27145@digraph.polyomino.org.uk>
+References: <1432839219-475-1-git-send-email-geert+renesas@glider.be>
+ <1432839219-475-13-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1432839219-475-13-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Ping.  This patch <https://lkml.org/lkml/2015/6/22/266> is pending review.
+On Thu, May 28, 2015 at 8:53 PM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
+> Now most multi-platform ARM shmobile platforms (SH-Mobile, R-Mobile,
+> R-Car, RZ) use the CPG Clock Domain to take care of PM runtime
+> management of the module clocks, we no longer need the legacy default PM
+> domain hack, which also prevented registering the real PM domain.
+>
+> EMMA Mobile EV2 doesn't have MSTP clocks and doesn't use the CPG Clock
+> Domain. But all its device drivers manage clocks explicitly, without
+> relying on Runtime PM, so it doesn't need the legacy default PM hack
+> neither.
+>
+> Hence do not compile it when running an ARM multi-platform kernel with
+> genpd support.
+>
+> The default PM domain is still needed:
+>   - for legacy SuperH,
+>   - for legacy (non-DT) ARM/shmobile platforms
+>       - without genpd support (r8a7778, r8a7779),
+>       - with genpd support, for devices in the "C5" always-on power
+>         area (r8a7740, sh73a0),
+>   - for the CONFIG_PM=n case.
+>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+> ---
+> v2:
+>   - Add Reviewed-by,
+>   - Just stop compiling pm_runtime.c instead of using a runtime check,
+>     as no multi-platform ARM platforms need this anymore.
 
--- 
-Joseph S. Myers
-joseph@codesourcery.com
+The runtime check must stay for the ARM multiplatform CONFIG_PM=n case,
+to prevent the code from running on non-shmobile machines. Will fix.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
