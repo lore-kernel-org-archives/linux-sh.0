@@ -1,75 +1,108 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 14 Jun 2015 17:25:05 +0000
-Subject: [PATCH/RFC] spi: sh-msiof: Fix FIFO size to 64 word from 256 word
-Message-Id: <1434302705-31104-1-git-send-email-ykaneko0929@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 15 Jun 2015 07:55:46 +0000
+Subject: Re: [PATCH/RFC] spi: sh-msiof: Fix FIFO size to 64 word from 256 word
+Message-Id: <CAMuHMdV-6zwDGxyFmzVga4ocXFDkfv8vot4ZHRgM9Kq6MBUcWw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1434302705-31104-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1434302705-31104-1-git-send-email-ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-spi@vger.kernel.org
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Mark Brown <broonie@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Koji Matsuoka <koji.matsuoka.xm-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+Cc: linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Hi Kaneko-san, Matsuoka-san,
 
-The upper limit of Tx/Rx FIFO size is 64 word by the
-specification of H/W. This patch corrects to 64 word from 256 word.
+On Sun, Jun 14, 2015 at 7:25 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+>
+> The upper limit of Tx/Rx FIFO size is 64 word by the
+> specification of H/W. This patch corrects to 64 word from 256 word.
 
-Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
----
+Are you sure about that?
 
-This patch is based on the for-next branch of Mark Brown's spi tree.
+The R-Car Gen2 datasheet (up to Rev 1.01) says:
 
- drivers/spi/spi-sh-msiof.c | 15 +++++++++------
- 1 file changed, 9 insertions(+), 6 deletions(-)
+"FIFO capacity: 32 bits × 64 stages for transmission and 32 bits × 256 stages
+ for reception"
 
-diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-index d3370a6..a7629f8 100644
---- a/drivers/spi/spi-sh-msiof.c
-+++ b/drivers/spi/spi-sh-msiof.c
-@@ -48,8 +48,8 @@ struct sh_msiof_spi_priv {
- 	const struct sh_msiof_chipdata *chipdata;
- 	struct sh_msiof_spi_info *info;
- 	struct completion done;
--	int tx_fifo_size;
--	int rx_fifo_size;
-+	unsigned int tx_fifo_size;
-+	unsigned int rx_fifo_size;
- 	void *tx_dma_page;
- 	void *rx_dma_page;
- 	dma_addr_t tx_dma_addr;
-@@ -95,8 +95,6 @@ struct sh_msiof_spi_priv {
- #define MDR2_WDLEN1(i)	(((i) - 1) << 16) /* Word Count (1-64/256 (SH, A1))) */
- #define MDR2_GRPMASK1	0x00000001 /* Group Output Mask 1 (SH, A1) */
- 
--#define MAX_WDLEN	256U
--
- /* TSCR and RSCR */
- #define SCR_BRPS_MASK	    0x1f00 /* Prescaler Setting (1-32) */
- #define SCR_BRPS(i)	(((i) - 1) << 8)
-@@ -850,7 +848,12 @@ static int sh_msiof_transfer_one(struct spi_master *master,
- 		 *  DMA supports 32-bit words only, hence pack 8-bit and 16-bit
- 		 *  words, with byte resp. word swapping.
- 		 */
--		unsigned int l = min(len, MAX_WDLEN * 4);
-+		unsigned int l = 0;
-+
-+		if (tx_buf)
-+			l = min(len, p->tx_fifo_size * 4);
-+		if (rx_buf)
-+			l = min(len, p->rx_fifo_size * 4);
- 
- 		if (bits <= 8) {
- 			if (l & 3)
-@@ -963,7 +966,7 @@ static const struct sh_msiof_chipdata sh_data = {
- 
- static const struct sh_msiof_chipdata r8a779x_data = {
- 	.tx_fifo_size = 64,
--	.rx_fifo_size = 256,
-+	.rx_fifo_size = 64,
- 	.master_flags = SPI_MASTER_MUST_TX,
- };
- 
--- 
-1.9.1
+Has this been changed in a more recent version of the datasheet?
 
+Thanks!
+
+> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+> ---
+>
+> This patch is based on the for-next branch of Mark Brown's spi tree.
+>
+>  drivers/spi/spi-sh-msiof.c | 15 +++++++++------
+>  1 file changed, 9 insertions(+), 6 deletions(-)
+>
+> diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+> index d3370a6..a7629f8 100644
+> --- a/drivers/spi/spi-sh-msiof.c
+> +++ b/drivers/spi/spi-sh-msiof.c
+> @@ -48,8 +48,8 @@ struct sh_msiof_spi_priv {
+>         const struct sh_msiof_chipdata *chipdata;
+>         struct sh_msiof_spi_info *info;
+>         struct completion done;
+> -       int tx_fifo_size;
+> -       int rx_fifo_size;
+> +       unsigned int tx_fifo_size;
+> +       unsigned int rx_fifo_size;
+>         void *tx_dma_page;
+>         void *rx_dma_page;
+>         dma_addr_t tx_dma_addr;
+> @@ -95,8 +95,6 @@ struct sh_msiof_spi_priv {
+>  #define MDR2_WDLEN1(i) (((i) - 1) << 16) /* Word Count (1-64/256 (SH, A1))) */
+>  #define MDR2_GRPMASK1  0x00000001 /* Group Output Mask 1 (SH, A1) */
+>
+> -#define MAX_WDLEN      256U
+
+This is not related to FIFO size, but to max. DMA chunk transfer size.
+
+> -
+>  /* TSCR and RSCR */
+>  #define SCR_BRPS_MASK      0x1f00 /* Prescaler Setting (1-32) */
+>  #define SCR_BRPS(i)    (((i) - 1) << 8)
+> @@ -850,7 +848,12 @@ static int sh_msiof_transfer_one(struct spi_master *master,
+>                  *  DMA supports 32-bit words only, hence pack 8-bit and 16-bit
+>                  *  words, with byte resp. word swapping.
+>                  */
+> -               unsigned int l = min(len, MAX_WDLEN * 4);
+
+This is not related to FIFO size, but to max. DMA chunk transfer size.
+
+> +               unsigned int l = 0;
+> +
+> +               if (tx_buf)
+> +                       l = min(len, p->tx_fifo_size * 4);
+> +               if (rx_buf)
+> +                       l = min(len, p->rx_fifo_size * 4);
+>
+>                 if (bits <= 8) {
+>                         if (l & 3)
+> @@ -963,7 +966,7 @@ static const struct sh_msiof_chipdata sh_data = {
+>
+>  static const struct sh_msiof_chipdata r8a779x_data = {
+>         .tx_fifo_size = 64,
+> -       .rx_fifo_size = 256,
+> +       .rx_fifo_size = 64,
+
+Please note the R-Car Gen2 FIFO size is also documented to be 256 in
+Documentation/devicetree/bindings/spi/sh-msiof.txt
+
+>         .master_flags = SPI_MASTER_MUST_TX,
+>  };
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
