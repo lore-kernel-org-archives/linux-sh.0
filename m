@@ -1,66 +1,58 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sun, 21 Jun 2015 08:10:22 +0000
-Subject: [PATCH 07/08] devicetree: bindings: Deprecate property, update example
-Message-Id: <20150621081022.10187.18366.sendpatchset@little-apple>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 15 Jun 2015 09:08:43 +0000
+Subject: [PATCH v5 1/2] pwm: Add device tree binding document for R-Car PWM Timer
+Message-Id: <1434359324-2964-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150621080903.10187.20998.sendpatchset@little-apple>
-In-Reply-To: <20150621080903.10187.20998.sendpatchset@little-apple>
+References: <1434359324-2964-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1434359324-2964-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: devicetree@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: thierry.reding@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Add binding document for Renesas PWM Timer on R-Car SoCs.
 
-Deprecate "renesas,channels-mask" and update the r8a7790 CMT example.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ .../devicetree/bindings/pwm/renesas,pwm-rcar.txt   | 27 ++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
 
- Documentation/devicetree/bindings/timer/renesas,cmt.txt |   24 ++++++++++-----
- 1 file changed, 17 insertions(+), 7 deletions(-)
-
---- 0006/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-+++ work/Documentation/devicetree/bindings/timer/renesas,cmt.txt	2015-06-20 15:13:32.752366518 +0900
-@@ -60,21 +60,31 @@ Required Properties:
-     in clock-names.
-   - clock-names: must contain "fck" for the functional clock.
- 
--  - renesas,channels-mask: bitmask of the available channels.
-+  - renesas,channels-mask: <deprecated>, information kept in device driver.
- 
- 
--Example: R8A7790 (R-Car H2) CMT0 node
--
--	CMT0 on R8A7790 implements hardware channels 5 and 6 only and names
--	them channels 0 and 1 in the documentation.
-+Example: R8A7790 (R-Car H2) CMT0 and CMT1 nodes
- 
- 	cmt0: timer@ffca0000 {
--		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
-+		compatible = "renesas,cmt0-r8a7790", "renesas,cmt0-rcar-gen2";
- 		reg = <0 0xffca0000 0 0x1004>;
- 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 142 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7790_CLK_CMT0>;
- 		clock-names = "fck";
+diff --git a/Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt b/Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
+new file mode 100644
+index 0000000..ea0a27b
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
+@@ -0,0 +1,27 @@
++* Renesas R-Car PWM Timer Controller
++
++Required Properties:
++- compatible: should be one of the following.
++ - "renesas,pwm-rcar": for generic R-Car compatible PWM Timer
++ - "renesas,pwm-r8a7778": for R-Car M1A
++ - "renesas,pwm-r8a7779": for R-Car H1
++ - "renesas,pwm-r8a7790": for R-Car H2
++ - "renesas,pwm-r8a7791": for R-Car M2-W
++ - "renesas,pwm-r8a7794": for R-Car E2
++- reg: base address and length of the registers block for the PWM.
++- #pwm-cells: should be 2. See pwm.txt in this directory for a description of
++  the cells format.
++- clocks: clock phandle and specifier pair.
++- pinctrl-0: phandle, referring to a default pin configuration node.
++- pinctrl-names: Set to "default".
++
++Example: R8A7790 (R-Car H2) PWM Timer node
++
++	pwm0: pwm@e6e30000 {
++		compatible = "renesas,pwm-r8a7790", "renesas,pwm-rcar";
++		reg = <0 0xe6e30000 0 0x8>;
++		#pwm-cells = <2>;
++		clocks = <&mstp5_clks R8A7790_CLK_PWM>;
++		pinctrl-0 = <&pwm0_pins>;
++		pinctrl-names = "default";
 +	};
- 
--		renesas,channels-mask = <0x60>;
-+	cmt1: timer@e6130000 {
-+		compatible = "renesas,cmt1-r8a7790", "renesas,cmt1-rcar-gen2";
-+		reg = <0 0xe6130000 0 0x1004>;
-+		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 122 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 123 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 124 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 125 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 126 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_CMT1>;
-+		clock-names = "fck";
- 	};
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+-- 
+1.9.1
+
