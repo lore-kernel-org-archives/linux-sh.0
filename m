@@ -1,64 +1,46 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 15 Jun 2015 23:42:42 +0000
-Subject: [PATCH v2 1/2] ARM: shmobile: r8a7790: add EtherAVB clocks
-Message-Id: <3547940.lZD6YNB6hA@wasted.cogentembedded.com>
+From: David Long <dave.long@linaro.org>
+Date: Mon, 15 Jun 2015 16:42:57 +0000
+Subject: [PATCH 0/2] Consolidate redundant register/stack access code
+Message-Id: <1434386579-6045-1-git-send-email-dave.long@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2857896.YA1bBSQVkA@wasted.cogentembedded.com>
-In-Reply-To: <2857896.YA1bBSQVkA@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add the EtherAVB clock to the R8A7790 device tree.
+From: "David A. Long" <dave.long@linaro.org>
 
-Based on original patch by Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>.
+Move duplicate and functionally equivalent code for accessing registers
+and stack (CONFIG_HAVE_REGS_AND_STACK_ACCESS_API) from arch subdirs into
+common kernel files.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Note: Help regression testing s390, hexagon, and sh would be appreciated.
+      Powerpc builds but I have not verified the functionality.
 
----
-Changes in version 2:
-- fixed the order of the clock property values;
-- refreshed the patch.
+David A. Long (2):
+  Move the pt_regs_offset struct definition from arch to common include
+    file
+  Consolidate redundant register/stack access code
 
- arch/arm/boot/dts/r8a7790.dtsi            |   10 ++++++----
- include/dt-bindings/clock/r8a7790-clock.h |    1 +
- 2 files changed, 7 insertions(+), 4 deletions(-)
+ arch/arm/include/asm/ptrace.h          |  6 ---
+ arch/arm/kernel/ptrace.c               | 72 +---------------------------------
+ arch/hexagon/include/uapi/asm/ptrace.h |  3 --
+ arch/powerpc/include/asm/ptrace.h      | 38 ------------------
+ arch/powerpc/kernel/ptrace.c           | 39 +-----------------
+ arch/s390/include/asm/ptrace.h         |  3 --
+ arch/s390/kernel/ptrace.c              | 70 ++++++++++-----------------------
+ arch/sh/include/asm/ptrace.h           | 44 ---------------------
+ arch/sh/kernel/Makefile                |  2 +-
+ arch/sh/kernel/ptrace.c                | 33 ----------------
+ arch/sh/kernel/ptrace_32.c             |  2 +-
+ arch/sh/kernel/ptrace_64.c             |  2 +-
+ arch/x86/include/asm/ptrace.h          | 37 -----------------
+ arch/x86/kernel/ptrace.c               | 39 +-----------------
+ include/linux/ptrace.h                 | 51 ++++++++++++++++++++++++
+ kernel/ptrace.c                        | 38 ++++++++++++++++++
+ 16 files changed, 116 insertions(+), 363 deletions(-)
+ delete mode 100644 arch/sh/kernel/ptrace.c
 
-Index: renesas/arch/arm/boot/dts/r8a7790.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7790.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1249,16 +1249,18 @@
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
- 			clocks = <&hp_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>,
--			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
-+			         <&zg_clk>, <&hp_clk>, <&p_clk>, <&zs_clk>,
-+				 <&zs_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
- 				R8A7790_CLK_MLB R8A7790_CLK_VIN3 R8A7790_CLK_VIN2
--				R8A7790_CLK_VIN1 R8A7790_CLK_VIN0 R8A7790_CLK_ETHER
-+				R8A7790_CLK_VIN1 R8A7790_CLK_VIN0
-+				R8A7790_CLK_ETHERAVB R8A7790_CLK_ETHER
- 				R8A7790_CLK_SATA1 R8A7790_CLK_SATA0
- 			>;
- 			clock-output-names -				"mlb", "vin3", "vin2", "vin1", "vin0", "ether",
--				"sata1", "sata0";
-+				"mlb", "vin3", "vin2", "vin1", "vin0",
-+				"etheravb", "ether", "sata1", "sata0";
- 		};
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-Index: renesas/include/dt-bindings/clock/r8a7790-clock.h
-=================================--- renesas.orig/include/dt-bindings/clock/r8a7790-clock.h
-+++ renesas/include/dt-bindings/clock/r8a7790-clock.h
-@@ -108,6 +108,7 @@
- #define R8A7790_CLK_VIN2		9
- #define R8A7790_CLK_VIN1		10
- #define R8A7790_CLK_VIN0		11
-+#define R8A7790_CLK_ETHERAVB		12
- #define R8A7790_CLK_ETHER		13
- #define R8A7790_CLK_SATA1		14
- #define R8A7790_CLK_SATA0		15
+-- 
+1.8.1.2
 
