@@ -1,72 +1,41 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 07 Jun 2015 12:41:23 +0000
-Subject: Re: [PATCHv2 08/11] sh-vou: add support for log_status
-Message-Id: <55743BF3.1080301@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 15 Jun 2015 04:54:49 +0000
+Subject: [PATCH 6/6][RFC] arm64: defconfig: Enable Renesas R-Car Gen3 SoC in defconfig
+Message-Id: <87wpz5vaia.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl> <1433667485-35711-9-git-send-email-hverkuil@xs4all.nl>
-In-Reply-To: <1433667485-35711-9-git-send-email-hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Hans Verkuil <hverkuil@xs4all.nl>, linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
+To: linux-sh@vger.kernel.org
 
-Hello.
+This patch enables Renesas R-Car Gen3 SoCs in the arm64 defconfig.
 
-On 6/7/2015 11:58 AM, Hans Verkuil wrote:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm64/configs/defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
-> From: Hans Verkuil <hans.verkuil@cisco.com>
-
-> Dump the VOU registers in log_status.
-
-> Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
-> ---
->   drivers/media/platform/sh_vou.c | 29 +++++++++++++++++++++++++++++
->   1 file changed, 29 insertions(+)
-
-> diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
-> index 9479c44..cbee361 100644
-> --- a/drivers/media/platform/sh_vou.c
-> +++ b/drivers/media/platform/sh_vou.c
-> @@ -949,6 +949,34 @@ static int sh_vou_g_std(struct file *file, void *priv, v4l2_std_id *std)
->   	return 0;
->   }
->
-> +static int sh_vou_log_status(struct file *file, void *priv)
-> +{
-> +	struct sh_vou_device *vou_dev = video_drvdata(file);
-> +
-> +	pr_info("PSELA:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUER));
-
-    You forgot to remove this line. :-(
-
-> +	pr_info("VOUER:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUER));
-> +	pr_info("VOUCR:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUCR));
-> +	pr_info("VOUSTR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUSTR));
-> +	pr_info("VOUVCR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUVCR));
-> +	pr_info("VOUISR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUISR));
-> +	pr_info("VOUBCR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUBCR));
-> +	pr_info("VOUDPR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUDPR));
-> +	pr_info("VOUDSR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUDSR));
-> +	pr_info("VOUVPR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUVPR));
-> +	pr_info("VOUIR:   0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUIR));
-> +	pr_info("VOUSRR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUSRR));
-> +	pr_info("VOUMSR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUMSR));
-> +	pr_info("VOUHIR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUHIR));
-> +	pr_info("VOUDFR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUDFR));
-> +	pr_info("VOUAD1R: 0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUAD1R));
-> +	pr_info("VOUAD2R: 0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUAD2R));
-> +	pr_info("VOUAIR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUAIR));
-> +	pr_info("VOUSWR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOUSWR));
-> +	pr_info("VOURCR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOURCR));
-> +	pr_info("VOURPR:  0x%08x\n", sh_vou_reg_a_read(vou_dev, VOURPR));
-> +	return 0;
-> +}
-> +
->   static int sh_vou_g_selection(struct file *file, void *fh,
->   			      struct v4l2_selection *sel)
->   {
-[...]
-
-WBR, Sergei
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 866640b..b175c2a 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -34,6 +34,7 @@ CONFIG_MODULE_UNLOAD=y
+ CONFIG_ARCH_EXYNOS7=y
+ CONFIG_ARCH_FSL_LS2085A=y
+ CONFIG_ARCH_MEDIATEK=y
++CONFIG_ARCH_RCAR_GEN3=y
+ CONFIG_ARCH_SEATTLE=y
+ CONFIG_ARCH_TEGRA=y
+ CONFIG_ARCH_TEGRA_132_SOC=y
+@@ -102,6 +103,8 @@ CONFIG_SERIAL_8250_CONSOLE=y
+ CONFIG_SERIAL_8250_MT6577=y
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
++CONFIG_SERIAL_SH_SCI=m
++CONFIG_SERIAL_SH_SCI_NR_UARTS=6
+ CONFIG_SERIAL_MSM=y
+ CONFIG_SERIAL_MSM_CONSOLE=y
+ CONFIG_SERIAL_OF_PLATFORM=y
+-- 
+1.9.1
 
