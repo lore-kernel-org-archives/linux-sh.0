@@ -1,37 +1,96 @@
-From: Stephen Boyd <sboyd@codeaurora.org>
-Date: Thu, 18 Jun 2015 21:40:18 +0000
-Subject: Re: [PATCH 01/44] kernel: Add support for poweroff handler call chain
-Message-Id: <55833AC2.5080700@codeaurora.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 15 Jun 2015 04:53:30 +0000
+Subject: [PATCH 2/6][RFC] clk: shmobile: CPG write protect register support for MSTP
+Message-Id: <87381twp4y.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1412659726-29957-1-git-send-email-linux@roeck-us.net> <1412659726-29957-2-git-send-email-linux@roeck-us.net> <55821936.4040704@codeaurora.org> <20150618153003.GA19224@roeck-us.net>
-In-Reply-To: <20150618153003.GA19224@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guenter Roeck <linux@roeck-us.net>
-Cc: linux-kernel@vger.kernel.org, linux-m32r-ja@ml.linux-m32r.org, linux-mips@linux-mips.org, linux-efi@vger.kernel.org, linux-ia64@vger.kernel.org, Heiko Stuebner <heiko@sntech.de>, Len Brown <len.brown@intel.com>, linux-xtensa@linux-xtensa.org, Pavel Machek <pavel@ucw.cz>, devel@driverdev.osuosl.org, linux-s390@vger.kernel.org, lguest@lists.ozlabs.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-sh@vger.kernel.org, Alexander Graf <agraf@suse.de>, linux-acpi@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, xen-devel@lists.xenproject.org, devicetree@vger.kernel.org, user-mode-linux-devel@lists.sourceforge.net, linux-pm@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-m68k@lists.linux-m68k.org, linux-am33-list@redhat.com, linux-tegra@vger.kernel.org, openipmi-developer@lists.sourceforge.net, linux-metag@vger.kernel.orgli
+To: linux-sh@vger.kernel.org
 
-On 06/18/2015 08:30 AM, Guenter Roeck wrote:
-> On Wed, Jun 17, 2015 at 06:04:54PM -0700, Stephen Boyd wrote:
-> [ ... ]
->> What happened to this series? I want to add shutdown support to my
->> platform and I need to write a register on the PMIC in one driver to
->> configure it for shutdown instead of restart and then write an MMIO
->> register to tell the PMIC to actually do the shutdown in another driver.
->> It seems that the notifier solves this case for me, albeit with the
->> slight complication that I need to order the two with some priority.
->>
-> Can you use the .shutdown driver callback instead ?
->
-> I see other drivers use that, and check for system_state = SYSTEM_POWER_OFF
-> to power off the hardware.
->
+R-Car Gen3 needs to care about CPG write protect register when driver
+driver access to CPG/MSTP.
 
-Yes I think that will work. I'll still have to hook pm_power_off() for
-the mmio register, but I guess that's ok and I don't need to worry about
-this series then.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt           |  3 +++
+ drivers/clk/shmobile/clk-mstp.c                          | 16 +++++++++++++++-
+ 2 files changed, 18 insertions(+), 1 deletion(-)
 
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 16ed181..d897b13 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -19,12 +19,15 @@ Required Properties:
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2-W) MSTP gate clocks
+     - "renesas,r8a7793-mstp-clocks" for R8A7793 (R-Car M2-N) MSTP gate clocks
+     - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
++    - "renesas,r8a7795-mstp-clocks" for R8A7795 (R-Car H3) MSTP gate clocks
+     - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
+     and "renesas,cpg-mstp-clocks" as a fallback.
+   - reg: Base address and length of the I/O mapped registers used by the MSTP
+     clocks. The first register is the clock control register and is mandatory.
+     The second register is the clock status register and is optional when not
+     implemented in hardware.
++    The third register is the CPG write protect register and is optional when
++    not implemented in hardware.
+   - clocks: Reference to the parent clocks, one per output clock. The parents
+     must appear in the same order as the output clocks.
+   - #clock-cells: Must be 1
+diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
+index 2d2fe77..eb92cf8 100644
+--- a/drivers/clk/shmobile/clk-mstp.c
++++ b/drivers/clk/shmobile/clk-mstp.c
+@@ -16,6 +16,7 @@
+ #include <linux/of.h>
+ #include <linux/of_address.h>
+ #include <linux/spinlock.h>
++#include "rcar-clk.h"
+ 
+ /*
+  * MSTP clocks. We can't use standard gate clocks as we need to poll on the
+@@ -30,12 +31,14 @@
+  * @data: clocks in this group
+  * @smstpcr: module stop control register
+  * @mstpsr: module stop status register (optional)
++ * @cpgwpr: CPG write protect register (optional)
+  * @lock: protects writes to SMSTPCR
+  */
+ struct mstp_clock_group {
+ 	struct clk_onecell_data data;
+ 	void __iomem *smstpcr;
+ 	void __iomem *mstpsr;
++	void __iomem *cpgwpr;
+ 	spinlock_t lock;
+ };
+ 
+@@ -69,7 +72,17 @@ static int cpg_mstp_clock_endisable(struct clk_hw *hw, bool enable)
+ 		value &= ~bitmask;
+ 	else
+ 		value |= bitmask;
+-	clk_writel(value, group->smstpcr);
++
++	if (group->cpgwpr) {
++		unsigned long cmn_flags;
++
++		rcar_cpgwpcr_lock(&cmn_flags);
++		clk_writel(~value, group->cpgwpr);
++		clk_writel(value, group->smstpcr);
++		rcar_cpgwpcr_unlock(&cmn_flags);
++	} else {
++		clk_writel(value, group->smstpcr);
++	}
+ 
+ 	spin_unlock_irqrestore(&group->lock, flags);
+ 
+@@ -174,6 +187,7 @@ static void __init cpg_mstp_clocks_init(struct device_node *np)
+ 
+ 	group->smstpcr = of_iomap(np, 0);
+ 	group->mstpsr = of_iomap(np, 1);
++	group->cpgwpr = of_iomap(np, 2);
+ 
+ 	if (group->smstpcr = NULL) {
+ 		pr_err("%s: failed to remap SMSTPCR\n", __func__);
 -- 
-Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
-a Linux Foundation Collaborative Project
+1.9.1
 
