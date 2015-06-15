@@ -1,15 +1,22 @@
-From: Ralf Baechle <ralf@linux-mips.org>
-Date: Fri, 05 Jun 2015 08:08:36 +0000
-Subject: Re: [PATCH 5/7] PCI: Remove unnecessary #includes of <asm/pci.h>
-Message-Id: <20150605080836.GR26432@linux-mips.org>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 15 Jun 2015 23:41:07 +0000
+Subject: [PATCH v2 0/2] Add R8A7790 EtherAVB DT support
+Message-Id: <2857896.YA1bBSQVkA@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150604214614.2399.5142.stgit@bhelgaas-glaptop2.roam.corp.google.com>
- <20150604214957.2399.66129.stgit@bhelgaas-glaptop2.roam.corp.google.com>
-In-Reply-To: <20150604214957.2399.66129.stgit@bhelgaas-glaptop2.roam.corp.google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <bhelgaas@google.com>
-Cc: linux-pci@vger.kernel.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, x86@kernel.org, linux-alpha@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Acked-by: Ralf Baechle <ralf@linux-mips.org>
+Hello.
+
+   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
+'renesas-devel-20150610-v4.1-rc7' tag. Here we add the EtherAVB device tree
+support for the R8A7790 SoC. The 2nd patch depends on the EtherAVB driver
+merged into the 'net-next.git' repo recently for the bindings...
+
+[1/2] ARM: shmobile: r8a7790: add EtherAVB clocks
+[2/2] ARM: shmobile: r8a7790: add EtherAVB DT support
+
+WBR, Sergei
+
