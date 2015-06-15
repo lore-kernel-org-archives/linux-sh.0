@@ -1,50 +1,97 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 23 Jun 2015 13:04:29 +0000
-Subject: [PATCH 2/2] spi: rspi: Make qspi_set_send_trigger() return "unsigned int"
-Message-Id: <1435064669-11969-2-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 15 Jun 2015 04:53:11 +0000
+Subject: [PATCH 1/6][RFC] clk: shmobile: add CPG common lock support for Gen3
+Message-Id: <874mm9wp5h.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435064669-11969-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1435064669-11969-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-qspi_set_send_trigger() returns an unsigned value, so make it return
-"unsigned int".
-Update the loop variables qspi_trigger_transfer_out_int() to match the
-above.
+Gen3 needs to access CPG write protect register for CPG/MSTP.
+This patch adds common spin lock method for it.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/spi/spi-rspi.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ drivers/clk/shmobile/Makefile   |  1 +
+ drivers/clk/shmobile/rcar-clk.c | 30 ++++++++++++++++++++++++++++++
+ drivers/clk/shmobile/rcar-clk.h | 21 +++++++++++++++++++++
+ 3 files changed, 52 insertions(+)
+ create mode 100644 drivers/clk/shmobile/rcar-clk.c
+ create mode 100644 drivers/clk/shmobile/rcar-clk.h
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index f368d8f3dce869bb..c5a03163028aec1f 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -383,7 +383,8 @@ static void qspi_update(const struct rspi_data *rspi, u8 mask, u8 val, u8 reg)
- 	rspi_write8(rspi, data, reg);
- }
- 
--static int qspi_set_send_trigger(struct rspi_data *rspi, unsigned int len)
-+static unsigned int qspi_set_send_trigger(struct rspi_data *rspi,
-+					  unsigned int len)
- {
- 	unsigned int n;
- 
-@@ -724,7 +725,8 @@ static int rspi_rz_transfer_one(struct spi_master *master,
- static int qspi_trigger_transfer_out_in(struct rspi_data *rspi, const u8 *tx,
- 					u8 *rx, unsigned int len)
- {
--	int i, n, ret;
-+	unsigned int i, n;
-+	int ret;
- 
- 	while (len > 0) {
- 		n = qspi_set_send_trigger(rspi, len);
+diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
+index 97c71c8..6790268 100644
+--- a/drivers/clk/shmobile/Makefile
++++ b/drivers/clk/shmobile/Makefile
+@@ -11,3 +11,4 @@ obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o
+ obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o
+ obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
+ obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-mstp.o
++obj-$(CONFIG_ARCH_RCAR_GEN3)		+= rcar-clk.o
+diff --git a/drivers/clk/shmobile/rcar-clk.c b/drivers/clk/shmobile/rcar-clk.c
+new file mode 100644
+index 0000000..57943aa
+--- /dev/null
++++ b/drivers/clk/shmobile/rcar-clk.c
+@@ -0,0 +1,30 @@
++/*
++ * rcar-clk.c
++ *
++ * Copyright (c) 2015 Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++#include <linux/spinlock.h>
++
++static DEFINE_SPINLOCK(rcar_cpg_lock);
++
++/*
++ * R-Car Gen3 needs CPGWPCR write protection for
++ *	CPG
++ *	MSTP
++ *	APMU
++ * these lock/unlock are for CPGWPCR
++ */
++
++void rcar_cpgwpcr_lock(unsigned long *flags)
++{
++	spin_lock_irqsave(&rcar_cpg_lock, *flags);
++}
++
++void rcar_cpgwpcr_unlock(unsigned long *flags)
++{
++	spin_unlock_irqrestore(&rcar_cpg_lock, *flags);
++}
+diff --git a/drivers/clk/shmobile/rcar-clk.h b/drivers/clk/shmobile/rcar-clk.h
+new file mode 100644
+index 0000000..12cf2f0
+--- /dev/null
++++ b/drivers/clk/shmobile/rcar-clk.h
+@@ -0,0 +1,21 @@
++/*
++ * rcar-clk.h
++ *
++ * Copyright (c) 2015 Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++#ifndef __RCAR_CLK_H
++#define __RCAR_CLK_H
++
++#if defined(CONFIG_ARCH_RCAR_GEN3)
++void rcar_cpgwpcr_lock(unsigned long *flags);
++void rcar_cpgwpcr_unlock(unsigned long *flags);
++#else
++#define rcar_cpgwpcr_lock(flags)
++#define rcar_cpgwpcr_unlock(flags)
++#endif
++
++#endif /* __RCAR_CLK_H */
 -- 
 1.9.1
 
