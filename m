@@ -1,58 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 30 Jun 2015 09:34:19 +0000
-Subject: Re: [PATCH 5/7] pinctrl: sh-pfc: Remove empty gpio_function_free()
-Message-Id: <1450850.G82aWGCP42@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 15 Jun 2015 17:51:46 +0000
+Subject: [PATCH] i2c: slave: fix the example how to instantiate from userspace
+Message-Id: <1434390706-19364-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435650327-2542-1-git-send-email-geert+renesas@glider.be>
- <1435650327-2542-6-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1435650327-2542-6-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Tim Bakker <bakkert-Lqq7FYbpbC48+Wv5JVE8qw@public.gmane.org>
 
-Hi Geert,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Thank you for the patch.
+I copied the wrong shell code into the documentation. Sorry to all who
+tried to get sense out of this current example :/ Slight rewording while
+we are here.
 
-On Tuesday 30 June 2015 09:45:25 Geert Uytterhoeven wrote:
-> gpio_chip.free() is optional, and can just be left unimplemented.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reported-by: Tim Bakker <bakkert@mymail.vcu.edu>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ Documentation/i2c/slave-interface | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
-> Untested due to lack of hardware (used on sh only).
-> ---
->  drivers/pinctrl/sh-pfc/gpio.c | 5 -----
->  1 file changed, 5 deletions(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-> index 1be118e4865fd3f8..b8929b5e2fa26c53 100644
-> --- a/drivers/pinctrl/sh-pfc/gpio.c
-> +++ b/drivers/pinctrl/sh-pfc/gpio.c
-> @@ -286,17 +286,12 @@ static int gpio_function_request(struct gpio_chip *gc,
-> unsigned offset) return ret;
->  }
-> 
-> -static void gpio_function_free(struct gpio_chip *gc, unsigned offset)
-> -{
-> -}
-> -
->  static int gpio_function_setup(struct sh_pfc_chip *chip)
->  {
->  	struct sh_pfc *pfc = chip->pfc;
->  	struct gpio_chip *gc = &chip->gpio_chip;
-> 
->  	gc->request = gpio_function_request;
-> -	gc->free = gpio_function_free;
-> 
->  	gc->label = pfc->info->name;
->  	gc->owner = THIS_MODULE;
-
+diff --git a/Documentation/i2c/slave-interface b/Documentation/i2c/slave-interface
+index 02b086510b6c10..2dee4e2d62df19 100644
+--- a/Documentation/i2c/slave-interface
++++ b/Documentation/i2c/slave-interface
+@@ -31,10 +31,10 @@ User manual
+ ===== 
+ I2C slave backends behave like standard I2C clients. So, you can instantiate
+-them like described in the document 'instantiating-devices'. A quick example
+-for instantiating the slave-eeprom driver from userspace:
++them as described in the document 'instantiating-devices'. A quick example for
++instantiating the slave-eeprom driver from userspace at address 0x64 on bus 1:
+ 
+-  # echo 0-0064 > /sys/bus/i2c/drivers/i2c-slave-eeprom/bind
++  # echo slave-24c02 0x64 > /sys/bus/i2c/devices/i2c-1/new_device
+ 
+ Each backend should come with separate documentation to describe its specific
+ behaviour and setup.
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.4
 
