@@ -1,7 +1,7 @@
 From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Mon, 15 Jun 2015 00:30:41 +0000
+Date: Mon, 15 Jun 2015 00:30:53 +0000
 Subject: Re: [PATCH v2 0/6] UHS-I support for sh_mobile_sdhi
-Message-Id: <1434328241.25446.43.camel@codethink.co.uk>
+Message-Id: <1434328253.25446.45.camel@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1433892104.12074.49.camel@codethink.co.uk>
 	 <CAPDyKFq+fZrH1hMdMd8FEzy8h1U9pu8PbaMQtBDOEe+UySqJkA@mail.gmail.com>
