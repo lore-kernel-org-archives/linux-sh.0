@@ -1,49 +1,58 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 20 Jun 2015 18:53:54 +0000
-Subject: Re: [PATCH 2/2] i2c: sh_mobile: use adapter default for timeout
-Message-Id: <20150620185354.GA3333@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="gKMricLos+KVdGMg"
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 15 Jun 2015 09:08:42 +0000
+Subject: [PATCH v5 0/2] pwm: Add support for R-Car PWM Timer
+Message-Id: <1434359324-2964-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434826104-16346-1-git-send-email-wsa@the-dreams.de>
- <1434826104-16346-3-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1434826104-16346-3-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: thierry.reding@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
+This patch set is based on the linux-pwm.git / for-next branch.
+(commit id = 361c1066c939a88e3bb59364f47055b2a5fb3fd4)
 
---gKMricLos+KVdGMg
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Changes from v4:
+ - Clean up coding style and typo in patch 2.
+ - Change to_rcar_pwm_chip() macro to static inline function in patch 2.
+ - Use writel()/readl() instead of iowrite32()/ioread32() in patch 2.
+ - Add an error handling in rcar_pwm_config() to avoid silent in patch 2.
+ - Remove success message in rcar_pwm_probe() in patch 2.
+ - Change rcar_pwm_remove() to always call pm_runtime_disable() in patch 2.
 
-> -				       5 * HZ);
-> +				       adap->timeout);
+Changes from v3:
+ - Fix register size in patch 1.
+ - Add "Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>" in patch 1
+ - Remove an unnecessary definition in patch 2.
+ - Use "ULL" to avoid overflow in patch 2.
+ - Remove unnecessary casts in patch 2.
 
-This should be adapter->timeout :(
+Changes from v2:
+ - Add compatible string "renesas,pwm-rcar".
+ - Remove compatible strings "renesas,pwm-r8a77xx" in rcar_pwm_of_table.
+ - Fix build error.
 
+Changes from v1:
+ - Change compatible string to SoC-specific compatible values.
+ - Fix #pwm-call value to 2 in the device tree document.
+ - Fix "depends on" value in Kconfig.
+ - Fix help explanation in Kconfig.
+ - Remove an unnecessary member in rcar_pwm_chip.
+ - Remove hardcoded number of channels and change chip.npwm value to 1.
+ - Fix formulas for clock calculation to improve accuracy.
 
---gKMricLos+KVdGMg
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Yoshihiro Shimoda (2):
+  pwm: Add device tree binding document for R-Car PWM Timer
+  pwm: Add support for R-Car PWM Timer
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+ .../devicetree/bindings/pwm/renesas,pwm-rcar.txt   |  27 +++
+ drivers/pwm/Kconfig                                |  11 +
+ drivers/pwm/Makefile                               |   1 +
+ drivers/pwm/pwm-rcar.c                             | 263 +++++++++++++++++++++
+ 4 files changed, 302 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
+ create mode 100644 drivers/pwm/pwm-rcar.c
 
-iQIcBAEBAgAGBQJVhbbCAAoJEBQN5MwUoCm2bOsP/2hStK77b2hqkhQHX33bMeWS
-ow3SfKWHZK5OBGuV6KDq2nSsYgelvIh3LzZtsJpH2SZo0j1j0dXDAO7oDPHvdapc
-pSPUEt23qEI5TpVeSzikXKAI3O5G3lUIXr5oyEqIOw06ahgKfNndhkO6PPo74JY2
-kOr0udcPbUdfrxB/IRdsMUW5FDZyE1WK6g6PLbV0+IdwzttHt+UlWSZwTms+0MJN
-zQ2QyW4dHzaZt3RWoZMU+FgZQj/MThwmd7/LiHYo9IS6ISZRYZgX4c4f72F2stwz
-PMLVjBPzsb1zzlLTS3oNXOZ7S2/ak4uEGzzojxauOxNI+36mIh00F4+zy6vsh9PK
-ZGqTRnH0zQXNRkodNqYIArLPHG/jiF6xmhMsjC5keduDtWxUdNQ06Cz9qNHOasVS
-fCZlz6bkPgGUQlBRt1+EL2AW0IrFpMHZnAo6ofTAAqcusg4iNRlyBCeuhuCm7prx
-UKmsoImXRd0bOsIZa20A4L/+T/bRXugCi89A+mFQaPRTTRa8oNCVzVARrTyi0KwH
-88Hxa1KIlxbidpEgJsDALCDUFGFD0qCyZGuA0zTa1GXb1v4A4FPLTN0yrv/YvHp1
-kOlbTu2lylEvZUjWE22VDQs96kw3T4pGtTOT6dWKGCI/7LNx1awoUtAIMDhvj/Vs
-3X3u7HNCzMeOROjnpVjp
-=UlMG
------END PGP SIGNATURE-----
+-- 
+1.9.1
 
---gKMricLos+KVdGMg--
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
