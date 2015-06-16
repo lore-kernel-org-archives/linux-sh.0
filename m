@@ -1,108 +1,92 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 15 Jun 2015 07:55:46 +0000
-Subject: Re: [PATCH/RFC] spi: sh-msiof: Fix FIFO size to 64 word from 256 word
-Message-Id: <CAMuHMdV-6zwDGxyFmzVga4ocXFDkfv8vot4ZHRgM9Kq6MBUcWw@mail.gmail.com>
+From: KOJI MATSUOKA <koji.matsuoka.xm@renesas.com>
+Date: Tue, 16 Jun 2015 01:41:29 +0000
+Subject: RE: [PATCH/RFC] spi: sh-msiof: Fix FIFO size to 64 word from 256 word
+Message-Id: <SIXPR06MB3019FFD2570D8C53E25477EC1A70@SIXPR06MB301.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1434302705-31104-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1434302705-31104-1-git-send-email-ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+ <CAMuHMdV-6zwDGxyFmzVga4ocXFDkfv8vot4ZHRgM9Kq6MBUcWw@mail.gmail.com>
+In-Reply-To: <CAMuHMdV-6zwDGxyFmzVga4ocXFDkfv8vot4ZHRgM9Kq6MBUcWw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Koji Matsuoka <koji.matsuoka.xm-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, KOJI MATSUOKA <koji.matsuoka.xm-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-Hi Kaneko-san, Matsuoka-san,
-
-On Sun, Jun 14, 2015 at 7:25 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
-> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
->
-> The upper limit of Tx/Rx FIFO size is 64 word by the
-> specification of H/W. This patch corrects to 64 word from 256 word.
-
-Are you sure about that?
-
-The R-Car Gen2 datasheet (up to Rev 1.01) says:
-
-"FIFO capacity: 32 bits × 64 stages for transmission and 32 bits × 256 stages
- for reception"
-
-Has this been changed in a more recent version of the datasheet?
-
-Thanks!
-
-> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
->
-> This patch is based on the for-next branch of Mark Brown's spi tree.
->
->  drivers/spi/spi-sh-msiof.c | 15 +++++++++------
->  1 file changed, 9 insertions(+), 6 deletions(-)
->
-> diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-> index d3370a6..a7629f8 100644
-> --- a/drivers/spi/spi-sh-msiof.c
-> +++ b/drivers/spi/spi-sh-msiof.c
-> @@ -48,8 +48,8 @@ struct sh_msiof_spi_priv {
->         const struct sh_msiof_chipdata *chipdata;
->         struct sh_msiof_spi_info *info;
->         struct completion done;
-> -       int tx_fifo_size;
-> -       int rx_fifo_size;
-> +       unsigned int tx_fifo_size;
-> +       unsigned int rx_fifo_size;
->         void *tx_dma_page;
->         void *rx_dma_page;
->         dma_addr_t tx_dma_addr;
-> @@ -95,8 +95,6 @@ struct sh_msiof_spi_priv {
->  #define MDR2_WDLEN1(i) (((i) - 1) << 16) /* Word Count (1-64/256 (SH, A1))) */
->  #define MDR2_GRPMASK1  0x00000001 /* Group Output Mask 1 (SH, A1) */
->
-> -#define MAX_WDLEN      256U
-
-This is not related to FIFO size, but to max. DMA chunk transfer size.
-
-> -
->  /* TSCR and RSCR */
->  #define SCR_BRPS_MASK      0x1f00 /* Prescaler Setting (1-32) */
->  #define SCR_BRPS(i)    (((i) - 1) << 8)
-> @@ -850,7 +848,12 @@ static int sh_msiof_transfer_one(struct spi_master *master,
->                  *  DMA supports 32-bit words only, hence pack 8-bit and 16-bit
->                  *  words, with byte resp. word swapping.
->                  */
-> -               unsigned int l = min(len, MAX_WDLEN * 4);
-
-This is not related to FIFO size, but to max. DMA chunk transfer size.
-
-> +               unsigned int l = 0;
-> +
-> +               if (tx_buf)
-> +                       l = min(len, p->tx_fifo_size * 4);
-> +               if (rx_buf)
-> +                       l = min(len, p->rx_fifo_size * 4);
->
->                 if (bits <= 8) {
->                         if (l & 3)
-> @@ -963,7 +966,7 @@ static const struct sh_msiof_chipdata sh_data = {
->
->  static const struct sh_msiof_chipdata r8a779x_data = {
->         .tx_fifo_size = 64,
-> -       .rx_fifo_size = 256,
-> +       .rx_fifo_size = 64,
-
-Please note the R-Car Gen2 FIFO size is also documented to be 256 in
-Documentation/devicetree/bindings/spi/sh-msiof.txt
-
->         .master_flags = SPI_MASTER_MUST_TX,
->  };
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR2VlcnQtc2FuDQoNCj4gPiBUaGUgdXBwZXIgbGltaXQgb2YgVHgvUnggRklGTyBzaXplIGlz
+IDY0IHdvcmQgYnkgdGhlIHNwZWNpZmljYXRpb24gb2YNCj4gPiBIL1cuIFRoaXMgcGF0Y2ggY29y
+cmVjdHMgdG8gNjQgd29yZCBmcm9tIDI1NiB3b3JkLg0KPiANCj4gQXJlIHlvdSBzdXJlIGFib3V0
+IHRoYXQ/DQoNCkFzIGEgcmVzdWx0IG9mIHF1ZXJ5aW5nIHRoZSBIL1cgZGVzaWduZXIsIGl0IGhh
+cyBwcm92ZW4gdG8gYmUgYSBtaXNkZXNjcmlwdGlvbiBvZg0KdGhlIEgvVyBzcGVjaWZpY2F0aW9u
+IGRvY3VtZW50YXRpb24uDQoNCkluIGZhY3QsIHRoZSB2YWx1ZSB0aGF0IGNhbiBiZSBzZXQgdG8g
+dGhlIFdETEVOMVs3OjBdIGJpdCBvZiBNU0lPRiBUcmFuc21pdCBNb2RlDQpSZWdpc3RlciAyIGlz
+IDY0IHdvcmRzLg0KDQpCZXN0IHJlZ2FyZHMsIEtvamkgTWF0c3Vva2ENCg0KPiAtLS0tLU9yaWdp
+bmFsIE1lc3NhZ2UtLS0tLQ0KPiBGcm9tOiBnZWVydC51eXR0ZXJob2V2ZW5AZ21haWwuY29tDQo+
+IFttYWlsdG86Z2VlcnQudXl0dGVyaG9ldmVuQGdtYWlsLmNvbV0gT24gQmVoYWxmIE9mIEdlZXJ0
+IFV5dHRlcmhvZXZlbg0KPiBTZW50OiBNb25kYXksIEp1bmUgMTUsIDIwMTUgNDo1NiBQTQ0KPiBU
+bzogWW9zaGloaXJvIEthbmVrbzsgS09KSSBNQVRTVU9LQQ0KPiBDYzogbGludXgtc3BpOyBNYXJr
+IEJyb3duOyBTaW1vbiBIb3JtYW47IE1hZ251cyBEYW1tOyBMaW51eC1zaCBsaXN0DQo+IFN1Ympl
+Y3Q6IFJlOiBbUEFUQ0gvUkZDXSBzcGk6IHNoLW1zaW9mOiBGaXggRklGTyBzaXplIHRvIDY0IHdv
+cmQgZnJvbSAyNTYNCj4gd29yZA0KPiANCj4gSGkgS2FuZWtvLXNhbiwgTWF0c3Vva2Etc2FuLA0K
+PiANCj4gT24gU3VuLCBKdW4gMTQsIDIwMTUgYXQgNzoyNSBQTSwgWW9zaGloaXJvIEthbmVrbyA8
+eWthbmVrbzA5MjlAZ21haWwuY29tPg0KPiB3cm90ZToNCj4gPiBGcm9tOiBLb2ppIE1hdHN1b2th
+IDxrb2ppLm1hdHN1b2thLnhtQHJlbmVzYXMuY29tPg0KPiA+DQo+ID4gVGhlIHVwcGVyIGxpbWl0
+IG9mIFR4L1J4IEZJRk8gc2l6ZSBpcyA2NCB3b3JkIGJ5IHRoZSBzcGVjaWZpY2F0aW9uIG9mDQo+
+ID4gSC9XLiBUaGlzIHBhdGNoIGNvcnJlY3RzIHRvIDY0IHdvcmQgZnJvbSAyNTYgd29yZC4NCj4g
+DQo+IEFyZSB5b3Ugc3VyZSBhYm91dCB0aGF0Pw0KPiANCj4gVGhlIFItQ2FyIEdlbjIgZGF0YXNo
+ZWV0ICh1cCB0byBSZXYgMS4wMSkgc2F5czoNCj4gDQo+ICJGSUZPIGNhcGFjaXR5OiAzMiBiaXRz
+IMOXIDY0IHN0YWdlcyBmb3IgdHJhbnNtaXNzaW9uIGFuZCAzMiBiaXRzIMOXIDI1NiBzdGFnZXMN
+Cj4gZm9yIHJlY2VwdGlvbiINCj4gDQo+IEhhcyB0aGlzIGJlZW4gY2hhbmdlZCBpbiBhIG1vcmUg
+cmVjZW50IHZlcnNpb24gb2YgdGhlIGRhdGFzaGVldD8NCj4gDQo+IFRoYW5rcyENCj4gDQo+ID4g
+U2lnbmVkLW9mZi1ieTogS29qaSBNYXRzdW9rYSA8a29qaS5tYXRzdW9rYS54bUByZW5lc2FzLmNv
+bT4NCj4gPiBTaWduZWQtb2ZmLWJ5OiBZb3NoaWhpcm8gS2FuZWtvIDx5a2FuZWtvMDkyOUBnbWFp
+bC5jb20+DQo+ID4gLS0tDQo+ID4NCj4gPiBUaGlzIHBhdGNoIGlzIGJhc2VkIG9uIHRoZSBmb3It
+bmV4dCBicmFuY2ggb2YgTWFyayBCcm93bidzIHNwaSB0cmVlLg0KPiA+DQo+ID4gIGRyaXZlcnMv
+c3BpL3NwaS1zaC1tc2lvZi5jIHwgMTUgKysrKysrKysrLS0tLS0tDQo+ID4gIDEgZmlsZSBjaGFu
+Z2VkLCA5IGluc2VydGlvbnMoKyksIDYgZGVsZXRpb25zKC0pDQo+ID4NCj4gPiBkaWZmIC0tZ2l0
+IGEvZHJpdmVycy9zcGkvc3BpLXNoLW1zaW9mLmMgYi9kcml2ZXJzL3NwaS9zcGktc2gtbXNpb2Yu
+Yw0KPiA+IGluZGV4IGQzMzcwYTYuLmE3NjI5ZjggMTAwNjQ0DQo+ID4gLS0tIGEvZHJpdmVycy9z
+cGkvc3BpLXNoLW1zaW9mLmMNCj4gPiArKysgYi9kcml2ZXJzL3NwaS9zcGktc2gtbXNpb2YuYw0K
+PiA+IEBAIC00OCw4ICs0OCw4IEBAIHN0cnVjdCBzaF9tc2lvZl9zcGlfcHJpdiB7DQo+ID4gICAg
+ICAgICBjb25zdCBzdHJ1Y3Qgc2hfbXNpb2ZfY2hpcGRhdGEgKmNoaXBkYXRhOw0KPiA+ICAgICAg
+ICAgc3RydWN0IHNoX21zaW9mX3NwaV9pbmZvICppbmZvOw0KPiA+ICAgICAgICAgc3RydWN0IGNv
+bXBsZXRpb24gZG9uZTsNCj4gPiAtICAgICAgIGludCB0eF9maWZvX3NpemU7DQo+ID4gLSAgICAg
+ICBpbnQgcnhfZmlmb19zaXplOw0KPiA+ICsgICAgICAgdW5zaWduZWQgaW50IHR4X2ZpZm9fc2l6
+ZTsNCj4gPiArICAgICAgIHVuc2lnbmVkIGludCByeF9maWZvX3NpemU7DQo+ID4gICAgICAgICB2
+b2lkICp0eF9kbWFfcGFnZTsNCj4gPiAgICAgICAgIHZvaWQgKnJ4X2RtYV9wYWdlOw0KPiA+ICAg
+ICAgICAgZG1hX2FkZHJfdCB0eF9kbWFfYWRkcjsNCj4gPiBAQCAtOTUsOCArOTUsNiBAQCBzdHJ1
+Y3Qgc2hfbXNpb2Zfc3BpX3ByaXYgeyAgI2RlZmluZSBNRFIyX1dETEVOMShpKQ0KPiA+ICgoKGkp
+IC0gMSkgPDwgMTYpIC8qIFdvcmQgQ291bnQgKDEtNjQvMjU2IChTSCwgQTEpKSkgKi8gICNkZWZp
+bmUNCj4gPiBNRFIyX0dSUE1BU0sxICAweDAwMDAwMDAxIC8qIEdyb3VwIE91dHB1dCBNYXNrIDEg
+KFNILCBBMSkgKi8NCj4gPg0KPiA+IC0jZGVmaW5lIE1BWF9XRExFTiAgICAgIDI1NlUNCj4gDQo+
+IFRoaXMgaXMgbm90IHJlbGF0ZWQgdG8gRklGTyBzaXplLCBidXQgdG8gbWF4LiBETUEgY2h1bmsg
+dHJhbnNmZXIgc2l6ZS4NCj4gDQo+ID4gLQ0KPiA+ICAvKiBUU0NSIGFuZCBSU0NSICovDQo+ID4g
+ICNkZWZpbmUgU0NSX0JSUFNfTUFTSyAgICAgIDB4MWYwMCAvKiBQcmVzY2FsZXIgU2V0dGluZyAo
+MS0zMikgKi8NCj4gPiAgI2RlZmluZSBTQ1JfQlJQUyhpKSAgICAoKChpKSAtIDEpIDw8IDgpDQo+
+ID4gQEAgLTg1MCw3ICs4NDgsMTIgQEAgc3RhdGljIGludCBzaF9tc2lvZl90cmFuc2Zlcl9vbmUo
+c3RydWN0IHNwaV9tYXN0ZXINCj4gKm1hc3RlciwNCj4gPiAgICAgICAgICAgICAgICAgICogIERN
+QSBzdXBwb3J0cyAzMi1iaXQgd29yZHMgb25seSwgaGVuY2UgcGFjayA4LWJpdCBhbmQNCj4gMTYt
+Yml0DQo+ID4gICAgICAgICAgICAgICAgICAqICB3b3Jkcywgd2l0aCBieXRlIHJlc3AuIHdvcmQg
+c3dhcHBpbmcuDQo+ID4gICAgICAgICAgICAgICAgICAqLw0KPiA+IC0gICAgICAgICAgICAgICB1
+bnNpZ25lZCBpbnQgbCA9IG1pbihsZW4sIE1BWF9XRExFTiAqIDQpOw0KPiANCj4gVGhpcyBpcyBu
+b3QgcmVsYXRlZCB0byBGSUZPIHNpemUsIGJ1dCB0byBtYXguIERNQSBjaHVuayB0cmFuc2ZlciBz
+aXplLg0KPiANCj4gPiArICAgICAgICAgICAgICAgdW5zaWduZWQgaW50IGwgPSAwOw0KPiA+ICsN
+Cj4gPiArICAgICAgICAgICAgICAgaWYgKHR4X2J1ZikNCj4gPiArICAgICAgICAgICAgICAgICAg
+ICAgICBsID0gbWluKGxlbiwgcC0+dHhfZmlmb19zaXplICogNCk7DQo+ID4gKyAgICAgICAgICAg
+ICAgIGlmIChyeF9idWYpDQo+ID4gKyAgICAgICAgICAgICAgICAgICAgICAgbCA9IG1pbihsZW4s
+IHAtPnJ4X2ZpZm9fc2l6ZSAqIDQpOw0KPiA+DQo+ID4gICAgICAgICAgICAgICAgIGlmIChiaXRz
+IDw9IDgpIHsNCj4gPiAgICAgICAgICAgICAgICAgICAgICAgICBpZiAobCAmIDMpDQo+ID4gQEAg
+LTk2Myw3ICs5NjYsNyBAQCBzdGF0aWMgY29uc3Qgc3RydWN0IHNoX21zaW9mX2NoaXBkYXRhIHNo
+X2RhdGEgPSB7DQo+ID4NCj4gPiAgc3RhdGljIGNvbnN0IHN0cnVjdCBzaF9tc2lvZl9jaGlwZGF0
+YSByOGE3Nzl4X2RhdGEgPSB7DQo+ID4gICAgICAgICAudHhfZmlmb19zaXplID0gNjQsDQo+ID4g
+LSAgICAgICAucnhfZmlmb19zaXplID0gMjU2LA0KPiA+ICsgICAgICAgLnJ4X2ZpZm9fc2l6ZSA9
+IDY0LA0KPiANCj4gUGxlYXNlIG5vdGUgdGhlIFItQ2FyIEdlbjIgRklGTyBzaXplIGlzIGFsc28g
+ZG9jdW1lbnRlZCB0byBiZSAyNTYgaW4NCj4gRG9jdW1lbnRhdGlvbi9kZXZpY2V0cmVlL2JpbmRp
+bmdzL3NwaS9zaC1tc2lvZi50eHQNCj4gDQo+ID4gICAgICAgICAubWFzdGVyX2ZsYWdzID0gU1BJ
+X01BU1RFUl9NVVNUX1RYLCAgfTsNCj4gDQo+IEdye29ldGplLGVldGluZ31zLA0KPiANCj4gICAg
+ICAgICAgICAgICAgICAgICAgICAgR2VlcnQNCj4gDQo+IC0tDQo+IEdlZXJ0IFV5dHRlcmhvZXZl
+biAtLSBUaGVyZSdzIGxvdHMgb2YgTGludXggYmV5b25kIGlhMzIgLS0NCj4gZ2VlcnRAbGludXgt
+bTY4ay5vcmcNCj4gDQo+IEluIHBlcnNvbmFsIGNvbnZlcnNhdGlvbnMgd2l0aCB0ZWNobmljYWwg
+cGVvcGxlLCBJIGNhbGwgbXlzZWxmIGEgaGFja2VyLg0KPiBCdXQgd2hlbiBJJ20gdGFsa2luZyB0
+byBqb3VybmFsaXN0cyBJIGp1c3Qgc2F5ICJwcm9ncmFtbWVyIiBvciBzb21ldGhpbmcNCj4gbGlr
+ZSB0aGF0Lg0KPiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC0tIExpbnVzIFRvcnZh
+bGRzDQo
