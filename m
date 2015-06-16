@@ -1,121 +1,53 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Mon, 29 Jun 2015 23:44:19 +0000
-Subject: Re: [PATCH v3 3/6] pinctrl: sh-pfc: r8a7790: Implement voltage switching for SDHI
-Message-Id: <1435621459.23818.28.camel@codethink.co.uk>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 16 Jun 2015 10:57:03 +0000
+Subject: Re: [PATCH 3/3] drm: rcar-du: Convert rcar_du_encoders_init_one() return value to 0/<0
+Message-Id: <3606392.4dYiok7J5y@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435332116.23818.7.camel@codethink.co.uk>
-	 <1435332210.23818.10.camel@codethink.co.uk> <2044299.XRI5bVohtM@avalon>
-In-Reply-To: <2044299.XRI5bVohtM@avalon>
+References: <1432652516-15085-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1432652516-15085-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <CAMuHMdWYUnY82cFeeZePOqu3VwLP_gq95a0K4qDJLGx+utLWJQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdWYUnY82cFeeZePOqu3VwLP_gq95a0K4qDJLGx+utLWJQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, DRI Development <dri-devel@lists.freedesktop.org>, Linux-sh list <linux-sh@vger.kernel.org>, Cao Minh Hiep <cm-hiep@jinso.co.jp>
 
-On Mon, 2015-06-29 at 11:50 +0300, Laurent Pinchart wrote:
-> Hi Ben,
-> 
-> Thank you for the patch.
-> 
-> On Friday 26 June 2015 16:23:30 Ben Hutchings wrote:
-> > All the SHDIs can operate with either 3.3V or 1.8V signals, depending
-> > on negotiation with the card.
+Hi Geert,
+
+On Tuesday 26 May 2015 21:24:03 Geert Uytterhoeven wrote:
+> On Tue, May 26, 2015 at 5:01 PM, Laurent Pinchart wrote:
+> > --- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+> > +++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+> > @@ -640,14 +640,14 @@ static int rcar_du_encoders_init_one(struct
+> > rcar_du_device *rcdu,
+> >         of_node_put(connector);
+> >         
+> >         if (!ret)
+> > -               return 1;
+> > +               return 0;
 > > 
-> > Implement the {get,set}_low_voltage operations and set the low-voltage
-> > capability flag for the associated pins.
+> >         if (ret != -EPROBE_DEFER)
+> >                 dev_warn(rcdu->dev,
+> >                          "failed to initialize encoder %s (%d),
+> >                          skipping\n",
+> >                          encoder->full_name, ret);
 > > 
-> > Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
-> > ---
-> >  drivers/pinctrl/sh-pfc/core.c        |  2 +-
-> >  drivers/pinctrl/sh-pfc/core.h        |  1 +
-> >  drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 67 ++++++++++++++++++++++++++++++++-
-> >  3 files changed, 68 insertions(+), 2
-> > deletions(-)
-> > 
-> > diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-> > index 7b2c9495c383..7d51f96afc9a 100644
-> > --- a/drivers/pinctrl/sh-pfc/core.c
-> > +++ b/drivers/pinctrl/sh-pfc/core.c
-> > @@ -92,7 +92,7 @@ static int sh_pfc_map_resources(struct sh_pfc *pfc,
-> >  	return 0;
+> > -       return 0;
+> > +       return ret;
 > >  }
-> > 
-> > -static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc, u32 reg)
-> > +void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc, u32 reg)
-> >  {
-> >  	struct sh_pfc_window *window;
-> >  	phys_addr_t address = reg;
-> > diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-> > index 6dc8a6fc2746..af355629c5d2 100644
-> > --- a/drivers/pinctrl/sh-pfc/core.h
-> > +++ b/drivers/pinctrl/sh-pfc/core.h
-> > @@ -57,6 +57,7 @@ int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
-> >  int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
-> >  int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc);
-> > 
-> > +void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc, u32 address);
-> >  u32 sh_pfc_read_raw_reg(void __iomem *mapped_reg, unsigned int reg_width);
-> >  void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned int reg_width,
-> > u32 data);
-> > diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> > b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c index 22a5470889f5..38be7cbea4ca
-> > 100644
-> > --- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> > +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-> > @@ -1739,10 +1739,20 @@ static const u16 pinmux_data[] = {
-> >  #define PIN_NUMBER(r, c) (((r) - 'A') * 31 + (c) + 200)
-> >  #define PIN_A_NUMBER(r, c) PIN_NUMBER(ROW_GROUP_A(r), c)
-> > 
-> > +#define PIN_LOW_VOLTAGE(bank, _pin, _name, sfx)		\
-> > +	[RCAR_GP_PIN(bank, _pin)].configs = SH_PFC_PIN_CFG_LOW_VOLTAGE
-> > +
-> >  static const struct sh_pfc_pin pinmux_pins[] = {
-> >  	PINMUX_GPIO_GP_ALL(),
-> > 
-> > -	/* Pins not associated with a GPIO port */
-> > +	/*
-> > +	 * All pins assigned to GPIO bank 3 can be used for SD interfaces
-> > +	 * in which case they support low voltage (1.8V) signalling.
-> > +	 */
-> > +	PORT_GP_32(3, PIN_LOW_VOLTAGE, unused),
 > 
-> Ouch. I didn't know gcc would even support initializing fields of array member 
-> structures separately from full initialization of the array member structure. 
-> Is it standard C ? Is it supported by LLVM ? I would prefer replacing 
-> PINMUX_GPIO_GP_ALL instead with a version that initializes the config field 
-> appropriately.
-
-It appears to be defined in the C99 standard.  (I only have the final
-draft here, though.)
-
-[...] 
-> > +static bool sdhi_get_low_voltage(struct sh_pfc *pfc, unsigned int pin)
-> > +{
-> > +	void __iomem *mapped_reg;
-> > +	u32 data, mask;
-> > +
-> > +	if (WARN(pin < RCAR_GP_PIN(3, 0) || pin > RCAR_GP_PIN(3, 31),
-> > +		 "sdhi_get_low_voltage: invalid pin %#x", pin))
-> > +		return 0;
+> Perhaps just
 > 
-> If the rest of the driver behaves correctly this should never happen, right ?
-
-Right.
-
-> > +	/* Map IOCTRL6 */
-> > +	mapped_reg = sh_pfc_phys_to_virt(pfc, 0xe606008c);
-> > +
-> > +	/* Bits in IOCTRL6 are numbered in opposite order to pins */
-> > +	mask = 0x80000000 >> (pin & 0x1f);
-> > +
-> > +	data = sh_pfc_read_raw_reg(mapped_reg, 32);
+>         if (ret && ret != -EPROBE_DEFER)
+>                 dev_warn(...);
 > 
-> Given that we know the register width here I would replace this with a direct 
-> call to ioread32(). Same for the read and write calls below.
-[...]
+>        return ret;
+> 
+> ?
 
-OK.
+Good point. I'll fix that.
 
-Ben.
+-- 
+Regards,
 
+Laurent Pinchart
 
