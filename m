@@ -1,100 +1,43 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 05 Jun 2015 10:59:19 +0000
-Subject: [PATCH 03/10] sh-vou: use v4l2_fh
-Message-Id: <1433501966-30176-4-git-send-email-hverkuil@xs4all.nl>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2015 09:31:31 +0000
+Subject: [PATCH 15/15] pinctrl: sh-pfc: Remove obsolete r8a7740 platform_device_id entry
+Message-Id: <1434533491-21979-16-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
-In-Reply-To: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
+References: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Hans Verkuil <hans.verkuil@cisco.com>
+Since the removal of the r8a7740 legacy board code, r8a7740 is only
+supported in generic DT-only ARM multi-platform builds.  The driver
+doesn't need to match platform devices by name anymore, hence remove the
+corresponding platform_device_id entry.
 
-This allows us to drop the use_count and you get free G/S_PRIORITY support.
-
-Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/media/platform/sh_vou.c | 19 ++++++++++++-------
- 1 file changed, 12 insertions(+), 7 deletions(-)
+Please do not apply until the legacy r8a7740 SoC code has been removed.
+Or just provide an ack, so Simon can apply it when appropriate.
+---
+ drivers/pinctrl/sh-pfc/core.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
-index ba1a16c..a75e6fa 100644
---- a/drivers/media/platform/sh_vou.c
-+++ b/drivers/media/platform/sh_vou.c
-@@ -64,7 +64,6 @@ enum sh_vou_status {
- struct sh_vou_device {
- 	struct v4l2_device v4l2_dev;
- 	struct video_device vdev;
--	atomic_t use_count;
- 	struct sh_vou_pdata *pdata;
- 	struct clk *clk;
- 	spinlock_t lock;
-@@ -81,6 +80,7 @@ struct sh_vou_device {
- };
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 3ff523e58c38d123..aeeeb76327c0684e 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -585,9 +585,6 @@ static int sh_pfc_remove(struct platform_device *pdev)
+ }
  
- struct sh_vou_file {
-+	struct v4l2_fh fh;
- 	struct videobuf_queue vbq;
- };
- 
-@@ -1175,20 +1175,24 @@ static int sh_vou_open(struct file *file)
- 
- 	dev_dbg(vou_dev->v4l2_dev.dev, "%s()\n", __func__);
- 
-+	v4l2_fh_init(&vou_file->fh, &vou_dev->vdev);
- 	if (mutex_lock_interruptible(&vou_dev->fop_lock)) {
- 		kfree(vou_file);
- 		return -ERESTARTSYS;
- 	}
--	if (atomic_inc_return(&vou_dev->use_count) = 1) {
-+	v4l2_fh_add(&vou_file->fh);
-+	if (v4l2_fh_is_singular(&vou_file->fh)) {
- 		int ret;
-+
- 		/* First open */
- 		vou_dev->status = SH_VOU_INITIALISING;
- 		pm_runtime_get_sync(vou_dev->v4l2_dev.dev);
- 		ret = sh_vou_hw_init(vou_dev);
- 		if (ret < 0) {
--			atomic_dec(&vou_dev->use_count);
- 			pm_runtime_put(vou_dev->v4l2_dev.dev);
- 			vou_dev->status = SH_VOU_IDLE;
-+			v4l2_fh_del(&vou_file->fh);
-+			v4l2_fh_exit(&vou_file->fh);
- 			mutex_unlock(&vou_dev->fop_lock);
- 			kfree(vou_file);
- 			return ret;
-@@ -1215,14 +1219,16 @@ static int sh_vou_release(struct file *file)
- 
- 	dev_dbg(vou_dev->v4l2_dev.dev, "%s()\n", __func__);
- 
--	if (!atomic_dec_return(&vou_dev->use_count)) {
--		mutex_lock(&vou_dev->fop_lock);
-+	mutex_lock(&vou_dev->fop_lock);
-+	if (v4l2_fh_is_singular(&vou_file->fh)) {
- 		/* Last close */
- 		vou_dev->status = SH_VOU_IDLE;
- 		sh_vou_reg_a_set(vou_dev, VOUER, 0, 0x101);
- 		pm_runtime_put(vou_dev->v4l2_dev.dev);
--		mutex_unlock(&vou_dev->fop_lock);
- 	}
-+	v4l2_fh_del(&vou_file->fh);
-+	v4l2_fh_exit(&vou_file->fh);
-+	mutex_unlock(&vou_dev->fop_lock);
- 
- 	file->private_data = NULL;
- 	kfree(vou_file);
-@@ -1329,7 +1335,6 @@ static int sh_vou_probe(struct platform_device *pdev)
- 	INIT_LIST_HEAD(&vou_dev->queue);
- 	spin_lock_init(&vou_dev->lock);
- 	mutex_init(&vou_dev->fop_lock);
--	atomic_set(&vou_dev->use_count, 0);
- 	vou_dev->pdata = vou_pdata;
- 	vou_dev->status = SH_VOU_IDLE;
- 
+ static const struct platform_device_id sh_pfc_id_table[] = {
+-#ifdef CONFIG_PINCTRL_PFC_R8A7740
+-	{ "pfc-r8a7740", (kernel_ulong_t)&r8a7740_pinmux_info },
+-#endif
+ #ifdef CONFIG_PINCTRL_PFC_R8A7778
+ 	{ "pfc-r8a7778", (kernel_ulong_t)&r8a7778_pinmux_info },
+ #endif
 -- 
-2.1.4
+1.9.1
 
