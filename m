@@ -1,54 +1,150 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 23 Jun 2015 19:28:34 +0000
-Subject: Re: [PATCH] drm: rcar-du: Remove obsolete rcar-du-r8a779x platform_device_id entries
-Message-Id: <2783349.h4yTnYNSAh@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2015 08:38:54 +0000
+Subject: [PATCH v2 5/7] staging: board: Add support for devices with complex dependencies
+Message-Id: <1434530336-15073-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435064332-11503-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1435064332-11503-1-git-send-email-geert+renesas@glider.be>
+References: <1434530336-15073-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1434530336-15073-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: David Airlie <airlied@linux.ie>, dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Add support for easy registering of one ore more platform devices that
+may:
+  - need clocks that are described in DT,
+  - be part of a PM Domain.
 
-Thank you for the patch.
+All these dependencies are optional.
 
-On Tuesday 23 June 2015 14:58:52 Geert Uytterhoeven wrote:
-> Since commit a483dcbfa21f919c ("ARM: shmobile: lager: Remove legacy
-> board support"), R-Car Gen2 SoCs are only supported in generic DT-only
-> ARM multi-platform builds.  The driver doesn't need to match platform
-> devices by name anymore, hence remove the corresponding
-> platform_device_id entry.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - Drop support for pinctrl, use standard pinctrl in DT instead,
+  - Drop support for configured GPIOs, use "gpio-hog" in DT instead,
+  - Use clk_add_alias() instead of open coding,
+  - Update for changed function names,
+  - Drop RFC status.
+---
+ drivers/staging/board/board.c | 56 +++++++++++++++++++++++++++++++++++++++++++
+ drivers/staging/board/board.h | 20 ++++++++++++++++
+ 2 files changed, 76 insertions(+)
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-and applied to my tree.
-
-> ---
->  drivers/gpu/drm/rcar-du/rcar_du_drv.c | 2 --
->  1 file changed, 2 deletions(-)
-> 
-> diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-> b/drivers/gpu/drm/rcar-du/rcar_du_drv.c index
-> 780ca11512ba6cf1..fb6709160a591a4d 100644
-> --- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-> +++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-> @@ -108,8 +108,6 @@ static const struct rcar_du_device_info
-> rcar_du_r8a7791_info = {
-> 
->  static const struct platform_device_id rcar_du_id_table[] = {
->  	{ "rcar-du-r8a7779", (kernel_ulong_t)&rcar_du_r8a7779_info },
-> -	{ "rcar-du-r8a7790", (kernel_ulong_t)&rcar_du_r8a7790_info },
-> -	{ "rcar-du-r8a7791", (kernel_ulong_t)&rcar_du_r8a7791_info },
->  	{ }
->  };
-
+diff --git a/drivers/staging/board/board.c b/drivers/staging/board/board.c
+index 8712f566b31196e0..29d456e29f38feac 100644
+--- a/drivers/staging/board/board.c
++++ b/drivers/staging/board/board.c
+@@ -9,6 +9,7 @@
+ 
+ #define pr_fmt(fmt)	"board_staging: "  fmt
+ 
++#include <linux/clkdev.h>
+ #include <linux/init.h>
+ #include <linux/irq.h>
+ #include <linux/device.h>
+@@ -16,6 +17,8 @@
+ #include <linux/of.h>
+ #include <linux/of_address.h>
+ #include <linux/of_irq.h>
++#include <linux/platform_device.h>
++#include <linux/pm_domain.h>
+ 
+ #include "board.h"
+ 
+@@ -118,3 +121,56 @@ void __init board_staging_gic_fixup_resources(struct resource *res,
+ 	for (i = 0; i < nres; i++)
+ 		gic_fixup_resource(&res[i]);
+ }
++
++int __init board_staging_register_clock(const struct board_staging_clk *bsc)
++{
++	int error;
++
++	pr_debug("Aliasing clock %s for con_id %s dev_id %s\n", bsc->clk,
++		 bsc->con_id, bsc->dev_id);
++	error = clk_add_alias(bsc->con_id, bsc->dev_id, bsc->clk, NULL);
++	if (error)
++		pr_err("Failed to alias clock %s (%d)\n", bsc->clk, error);
++
++	return error;
++}
++
++int __init board_staging_register_device(const struct board_staging_dev *dev)
++{
++	struct platform_device *pdev = dev->pdev;
++	unsigned int i;
++	int error;
++
++	pr_debug("Trying to register device %s\n", pdev->name);
++	if (board_staging_dt_node_available(pdev->resource,
++					    pdev->num_resources)) {
++		pr_warn("Skipping %s, already in DT\n", pdev->name);
++		return -EEXIST;
++	}
++
++	board_staging_gic_fixup_resources(pdev->resource, pdev->num_resources);
++
++	for (i = 0; i < dev->nclocks; i++)
++		board_staging_register_clock(&dev->clocks[i]);
++
++	error = platform_device_register(pdev);
++	if (error) {
++		pr_err("Failed to register device %s (%d)\n", pdev->name,
++		       error);
++		return error;
++	}
++
++	if (dev->domain)
++		__pm_genpd_name_add_device(dev->domain, &pdev->dev, NULL);
++
++	return error;
++}
++
++void __init board_staging_register_devices(const struct board_staging_dev *devs,
++					   unsigned int ndevs)
++{
++	unsigned int i;
++
++	for (i = 0; i < ndevs; i++)
++		board_staging_register_device(&devs[i]);
++}
+diff --git a/drivers/staging/board/board.h b/drivers/staging/board/board.h
+index 3af6dbe22f91ebdc..42ed125132201327 100644
+--- a/drivers/staging/board/board.h
++++ b/drivers/staging/board/board.h
+@@ -4,12 +4,32 @@
+ #include <linux/init.h>
+ #include <linux/of.h>
+ 
++struct board_staging_clk {
++	const char *clk;
++	const char *con_id;
++	const char *dev_id;
++};
++
++struct board_staging_dev {
++	/* Platform Device */
++	struct platform_device *pdev;
++	/* Clocks (optional) */
++	const struct board_staging_clk *clocks;
++	unsigned int nclocks;
++	/* Generic PM Domain (optional) */
++	const char *domain;
++};
++
+ struct resource;
+ 
+ bool board_staging_dt_node_available(const struct resource *resource,
+ 				     unsigned int num_resources);
+ int board_staging_gic_setup_xlate(const char *gic_match, unsigned int base);
+ void board_staging_gic_fixup_resources(struct resource *res, unsigned int nres);
++int board_staging_register_clock(const struct board_staging_clk *bsc);
++int board_staging_register_device(const struct board_staging_dev *dev);
++void board_staging_register_devices(const struct board_staging_dev *devs,
++				    unsigned int ndevs);
+ 
+ #define board_staging(str, fn)			\
+ static int __init runtime_board_check(void)	\
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
