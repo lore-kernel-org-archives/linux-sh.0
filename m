@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Jun 2015 09:31:22 +0000
-Subject: [PATCH 06/15] ARM: shmobile: Remove legacy armadillo800eva_defconfig
-Message-Id: <1434533491-21979-7-git-send-email-geert+renesas@glider.be>
+Date: Wed, 17 Jun 2015 09:31:18 +0000
+Subject: [PATCH 02/15] ARM: shmobile: Remove legacy kzm9g_defconfig
+Message-Id: <1434533491-21979-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
@@ -10,71 +10,71 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The legacy board code for Armadillo-800 EVA has been removed.
+The legacy board code for KZM-A9-GT has been removed.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- MAINTAINERS                                |   1 -
- arch/arm/configs/armadillo800eva_defconfig | 162 -----------------------------
- 2 files changed, 163 deletions(-)
- delete mode 100644 arch/arm/configs/armadillo800eva_defconfig
+ MAINTAINERS                      |   1 -
+ arch/arm/configs/kzm9g_defconfig | 154 ---------------------------------------
+ 2 files changed, 155 deletions(-)
+ delete mode 100644 arch/arm/configs/kzm9g_defconfig
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index f1fe0cc0dadee9df..32ee18a233b6db80 100644
+index eaadc4a87d38bf64..f1fe0cc0dadee9df 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -1455,7 +1455,6 @@ F:	arch/arm/boot/dts/emev2*
- F:	arch/arm/boot/dts/r7s*
- F:	arch/arm/boot/dts/r8a*
+@@ -1457,7 +1457,6 @@ F:	arch/arm/boot/dts/r8a*
  F:	arch/arm/boot/dts/sh*
--F:	arch/arm/configs/armadillo800eva_defconfig
+ F:	arch/arm/configs/armadillo800eva_defconfig
  F:	arch/arm/configs/bockw_defconfig
+-F:	arch/arm/configs/kzm9g_defconfig
  F:	arch/arm/configs/marzen_defconfig
  F:	arch/arm/configs/shmobile_defconfig
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+ F:	arch/arm/include/debug/renesas-scif.S
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
 deleted file mode 100644
-index 5666e3700a821814..0000000000000000
---- a/arch/arm/configs/armadillo800eva_defconfig
+index 23e8d146dc16972f..0000000000000000
+--- a/arch/arm/configs/kzm9g_defconfig
 +++ /dev/null
-@@ -1,162 +0,0 @@
+@@ -1,154 +0,0 @@
+-# CONFIG_ARM_PATCH_PHYS_VIRT is not set
 -CONFIG_EXPERIMENTAL=y
+-# CONFIG_LOCALVERSION_AUTO is not set
 -CONFIG_SYSVIPC=y
 -CONFIG_IKCONFIG=y
 -CONFIG_IKCONFIG_PROC=y
 -CONFIG_LOG_BUF_SHIFT
+-CONFIG_NAMESPACES=y
 -# CONFIG_UTS_NS is not set
 -# CONFIG_IPC_NS is not set
+-# CONFIG_USER_NS is not set
 -# CONFIG_PID_NS is not set
+-# CONFIG_NET_NS is not set
 -CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+-CONFIG_SYSCTL_SYSCALL=y
+-CONFIG_EMBEDDED=y
 -CONFIG_PERF_EVENTS=y
 -CONFIG_SLAB=y
 -CONFIG_MODULES=y
+-CONFIG_MODULE_FORCE_LOAD=y
 -CONFIG_MODULE_UNLOAD=y
--CONFIG_MODULE_FORCE_UNLOAD=y
 -# CONFIG_BLK_DEV_BSG is not set
 -# CONFIG_IOSCHED_DEADLINE is not set
 -# CONFIG_IOSCHED_CFQ is not set
 -CONFIG_ARCH_SHMOBILE_LEGACY=y
--CONFIG_ARCH_R8A7740=y
--CONFIG_MACH_ARMADILLO800EVA=y
--# CONFIG_SH_TIMER_TMU is not set
--CONFIG_ARM_THUMB=y
--CONFIG_CACHE_L2X0=y
--CONFIG_ARM_ERRATA_430973=y
--CONFIG_ARM_ERRATA_458693=y
--CONFIG_ARM_ERRATA_460075=y
--CONFIG_PL310_ERRATA_588369=y
--CONFIG_ARM_ERRATA_720789=y
--CONFIG_PL310_ERRATA_727915=y
+-CONFIG_ARCH_SH73A0=y
+-CONFIG_MACH_KZM9G=y
+-CONFIG_MEMORY_START=0x41000000
+-CONFIG_MEMORY_SIZE=0x1f000000
 -CONFIG_ARM_ERRATA_743622=y
--CONFIG_ARM_ERRATA_751472=y
--CONFIG_PL310_ERRATA_753970=y
 -CONFIG_ARM_ERRATA_754322=y
--CONFIG_PL310_ERRATA_769419=y
--CONFIG_ARM_ERRATA_775420=y
+-CONFIG_NO_HZ=y
+-CONFIG_HIGH_RES_TIMERS=y
+-CONFIG_SMP=y
+-CONFIG_SCHED_MC=y
 -CONFIG_AEABI=y
 -# CONFIG_OABI_COMPAT is not set
--CONFIG_FORCE_MAX_ZONEORDER
+-CONFIG_HIGHMEM=y
 -CONFIG_ZBOOT_ROM_TEXT=0x0
 -CONFIG_ZBOOT_ROM_BSS=0x0
 -CONFIG_ARM_APPENDED_DTB=y
@@ -95,95 +95,84 @@ index 5666e3700a821814..0000000000000000
 -# CONFIG_INET_LRO is not set
 -# CONFIG_INET_DIAG is not set
 -# CONFIG_IPV6 is not set
+-CONFIG_IRDA=y
+-CONFIG_SH_IRDA=y
 -# CONFIG_WIRELESS is not set
 -CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
 -CONFIG_DEVTMPFS=y
 -CONFIG_DEVTMPFS_MOUNT=y
 -CONFIG_SCSI=y
 -CONFIG_BLK_DEV_SD=y
--CONFIG_MD=y
--CONFIG_BLK_DEV_DM=y
 -CONFIG_NETDEVICES=y
--# CONFIG_NET_VENDOR_BROADCOM is not set
--# CONFIG_NET_VENDOR_CHELSIO is not set
--# CONFIG_NET_VENDOR_CIRRUS is not set
--# CONFIG_NET_VENDOR_FARADAY is not set
--# CONFIG_NET_VENDOR_INTEL is not set
--# CONFIG_NET_VENDOR_MARVELL is not set
--# CONFIG_NET_VENDOR_MICREL is not set
--# CONFIG_NET_VENDOR_NATSEMI is not set
--CONFIG_SH_ETH=y
--# CONFIG_NET_VENDOR_SEEQ is not set
--# CONFIG_NET_VENDOR_SMSC is not set
--# CONFIG_NET_VENDOR_STMICRO is not set
+-CONFIG_SMSC911X=y
 -# CONFIG_WLAN is not set
--# CONFIG_INPUT_MOUSEDEV_PSAUX is not set
+-CONFIG_INPUT_SPARSEKMAP=y
+-# CONFIG_INPUT_MOUSEDEV is not set
 -CONFIG_INPUT_EVDEV=y
 -# CONFIG_KEYBOARD_ATKBD is not set
 -CONFIG_KEYBOARD_GPIO=y
 -# CONFIG_INPUT_MOUSE is not set
 -CONFIG_INPUT_TOUCHSCREEN=y
 -CONFIG_TOUCHSCREEN_ST1232=y
--# CONFIG_SERIO is not set
+-CONFIG_INPUT_MISC=y
+-CONFIG_INPUT_ADXL34X=y
 -# CONFIG_LEGACY_PTYS is not set
 -CONFIG_SERIAL_SH_SCI=y
 -CONFIG_SERIAL_SH_SCI_NR_UARTS=9
 -CONFIG_SERIAL_SH_SCI_CONSOLE=y
 -# CONFIG_HW_RANDOM is not set
--CONFIG_I2C=y
--CONFIG_I2C_GPIO=y
+-CONFIG_I2C_CHARDEV=y
 -CONFIG_I2C_SH_MOBILE=y
+-CONFIG_GPIO_PCF857X=y
 -# CONFIG_HWMON is not set
+-CONFIG_MFD_AS3711=y
 -CONFIG_REGULATOR=y
--CONFIG_REGULATOR_GPIO=y
--CONFIG_MEDIA_SUPPORT=y
--CONFIG_VIDEO_DEV=y
--CONFIG_MEDIA_CAMERA_SUPPORT=y
--CONFIG_V4L_PLATFORM_DRIVERS=y
--CONFIG_SOC_CAMERA=y
--CONFIG_SOC_CAMERA_MT9T112=y
--CONFIG_VIDEO_SH_MOBILE_CEU=y
+-CONFIG_REGULATOR_AS3711=y
 -CONFIG_FB=y
 -CONFIG_FB_SH_MOBILE_LCDC=y
--CONFIG_FB_SH_MOBILE_HDMI=y
--CONFIG_LCD_CLASS_DEVICE=y
--CONFIG_BACKLIGHT_PWM=y
+-CONFIG_BACKLIGHT_AS3711=y
 -CONFIG_FRAMEBUFFER_CONSOLE=y
--CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y
 -CONFIG_LOGO=y
--# CONFIG_LOGO_LINUX_MONO is not set
--# CONFIG_LOGO_LINUX_VGA16 is not set
+-CONFIG_FB_SH_MOBILE_MERAM=y
+-CONFIG_SOUND=y
+-CONFIG_SND=y
 -# CONFIG_SND_SUPPORT_OLD_API is not set
 -# CONFIG_SND_VERBOSE_PROCFS is not set
 -# CONFIG_SND_DRIVERS is not set
 -# CONFIG_SND_ARM is not set
+-# CONFIG_SND_USB is not set
+-CONFIG_SND_SOC=y
 -CONFIG_SND_SOC_SH4_FSI=y
 -# CONFIG_HID_SUPPORT is not set
 -CONFIG_USB=y
+-CONFIG_USB_R8A66597_HCD=y
 -CONFIG_USB_RENESAS_USBHS=y
+-CONFIG_USB_STORAGE=y
 -CONFIG_USB_GADGET=y
 -CONFIG_USB_RENESAS_USBHS_UDC=y
 -CONFIG_USB_ETH=m
+-CONFIG_USB_MASS_STORAGE=m
 -CONFIG_MMC=y
+-# CONFIG_MMC_BLOCK_BOUNCE is not set
 -CONFIG_MMC_SDHI=y
 -CONFIG_MMC_SH_MMCIF=y
 -CONFIG_NEW_LEDS=y
 -CONFIG_LEDS_CLASS=y
 -CONFIG_LEDS_GPIO=y
 -CONFIG_RTC_CLASS=y
--CONFIG_RTC_DRV_S35390A=y
+-CONFIG_RTC_DRV_RS5C372=y
 -CONFIG_DMADEVICES=y
 -CONFIG_SH_DMAE=y
--CONFIG_UIO=y
--CONFIG_UIO_PDRV_GENIRQ=y
--CONFIG_PWM=y
--CONFIG_PWM_RENESAS_TPU=y
+-CONFIG_ASYNC_TX_DMA=y
+-CONFIG_STAGING=y
+-CONFIG_IIO=y
+-CONFIG_AK8975=y
 -# CONFIG_DNOTIFY is not set
--CONFIG_MSDOS_FS=y
 -CONFIG_VFAT_FS=y
 -CONFIG_TMPFS=y
 -# CONFIG_MISC_FILESYSTEMS is not set
 -CONFIG_NFS_FS=y
+-CONFIG_NFS_V3=y
 -CONFIG_NFS_V3_ACL=y
 -CONFIG_NFS_V4=y
 -CONFIG_NFS_V4_1=y
@@ -192,13 +181,16 @@ index 5666e3700a821814..0000000000000000
 -CONFIG_NLS_ISO8859_1=y
 -# CONFIG_ENABLE_WARN_DEPRECATED is not set
 -# CONFIG_ENABLE_MUST_CHECK is not set
+-# CONFIG_SCHED_DEBUG is not set
+-# CONFIG_DEBUG_PREEMPT is not set
+-# CONFIG_DEBUG_BUGVERBOSE is not set
+-# CONFIG_FTRACE is not set
 -# CONFIG_ARM_UNWIND is not set
 -CONFIG_CRYPTO=y
 -CONFIG_CRYPTO_CBC=y
 -CONFIG_CRYPTO_MD5=y
 -CONFIG_CRYPTO_DES=y
--CONFIG_CRYPTO_ANSI_CPRNG=y
--CONFIG_XZ_DEC=y
+-CONFIG_CRC16=y
 -- 
 1.9.1
 
