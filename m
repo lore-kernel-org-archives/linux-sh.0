@@ -1,56 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Jun 2015 08:38:25 +0000
-Subject: Re: [PATCH 5/6][RFC] arm64: renesas: Add r8a7795 SoC support
-Message-Id: <20150617083824.GA9458@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2015 09:34:21 +0000
+Subject: [PATCH 2/2] ARM: shmobile: timer: r8a73a4 and r8a7790 are multi-platform only
+Message-Id: <1434533661-22730-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87y4jlvait.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y4jlvait.wl%kuninori.morimoto.gx@renesas.com>
+References: <1434533661-22730-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1434533661-22730-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jun 17, 2015 at 09:22:00AM +0200, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Wed, Jun 17, 2015 at 3:05 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Mon, Jun 15, 2015 at 10:44:33AM +0200, Geert Uytterhoeven wrote:
-> >> On Mon, Jun 15, 2015 at 10:30 AM, Kuninori Morimoto
-> >> <kuninori.morimoto.gx@renesas.com> wrote:
-> >> >> > +       gic: interrupt-controller@0xf1010000 {
-> >> >> > +               compatible = "arm,gic-400", "arm,cortex-a15-gic";
-> >> >> > +               #interrupt-cells = <3>;
-> >> >> > +               #address-cells = <0>;
-> >> >> > +               interrupt-controller;
-> >> >> > +               reg = <0x0 0xf1010000 0 0x1000>,
-> >> >> > +                     <0x0 0xf1020000 0 0x2000>;
-> >> >> > +               interrupts = <GIC_PPI 9 (GIC_CPU_MASK_SIMPLE(6) | IRQ_TYPE_LEVEL_HIGH)>;
-> >> >> > +       };
-> >> >>
-> >> >> Thanks for your efforts. On ARM v8, is ARM v7 compat string
-> >> >> "arm,cortex-a15-gic" really correct?
-> >> >
-> >> > I don't know detail of this.
-> >> > but, I guess current Inami-san's status is "create working something".
-> >> > Maybe he don't care small detail at this point.
-> >> > Do you think  "arm,gic-400" is very enough ?
-> >> > If so, I can drop it in v2
-> >>
-> >> Both are (currently) handled identically by drivers/irqchip/irq-gic.c.
-> >>
-> >> As the datasheet documents it as "GIC-400", we should use "arm,gic-400".
-> >> BTW, we should do the same for APE6 and R-Car Gen2, cfr.
-> >> https://lkml.org/lkml/2015/4/29/315
-> >
-> > Although it seems low priority I am interested in cleaning up the GIC nodes
-> > for the you mention above. Can I confirm that their desired compat string
-> > usage is:
-> >
-> >         compatible = "arm,gic-400";
-> 
-> That's correct.
-> 
-> But please don't start working on it, as I already made the changes locally.
-> I haven't send out the patches yet, though. Will do.
+Since commits e042681894b62d60 ("ARM: shmobile: r8a7790: Remove legacy
+code") and 9d07d414d4c33d86 ("ARM: shmobile: r8a73a4: ape6evm: Remove
+legacy platform"), the R-Mobile APE6 and R-Car H2 SoCs are supported by
+multiplatform kernels only.
+Hence we can drop checks for these SoCs in legacy kernel builds.
 
-No problem, I am quite happy to wait.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/timer.c | 12 ------------
+ 1 file changed, 12 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
+index 0edf2a6d2bbef7f7..f1d027aa7a81ac33 100644
+--- a/arch/arm/mach-shmobile/timer.c
++++ b/arch/arm/mach-shmobile/timer.c
+@@ -70,18 +70,6 @@ void __init shmobile_init_delay(void)
+ 	if (!max_freq)
+ 		return;
+ 
+-#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
+-	/* Non-multiplatform r8a73a4 SoC cannot use arch timer due
+-	 * to GIC being initialized from C and arch timer via DT */
+-	if (of_machine_is_compatible("renesas,r8a73a4"))
+-		has_arch_timer = false;
+-
+-	/* Non-multiplatform r8a7790 SoC cannot use arch timer due
+-	 * to GIC being initialized from C and arch timer via DT */
+-	if (of_machine_is_compatible("renesas,r8a7790"))
+-		has_arch_timer = false;
+-#endif
+-
+ 	if (!has_arch_timer || !IS_ENABLED(CONFIG_ARM_ARCH_TIMER)) {
+ 		if (is_a7_a8_a9)
+ 			shmobile_setup_delay_hz(max_freq, 1, 3);
+-- 
+1.9.1
+
