@@ -1,54 +1,60 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 11 Jun 2015 12:58:26 +0000
-Subject: Re: [PATCH v6 2/2] Renesas Ethernet AVB PTP clock driver
-Message-Id: <557985F2.9010900@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2015 13:03:31 +0000
+Subject: [PATCH 0/5] ARM: shmobile: R-Mobile APE6 / R-Car Gen2: Use "arm,gic-400"
+Message-Id: <1434546216-10773-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2950738.iaDWZVkjG3@wasted.cogentembedded.com>	<20150611.001455.377939359927165224.davem@davemloft.net> <20150611.002425.1698330124707614277.davem@davemloft.net>
-In-Reply-To: <20150611.002425.1698330124707614277.davem@davemloft.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: netdev@vger.kernel.org, richardcochran@gmail.com, linux-sh@vger.kernel.org, masaru.nagai.vx@renesas.com
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+	Hi Simon, Magnus,
 
-On 6/11/2015 10:24 AM, David Miller wrote:
+This patch series replaces the "arm,cortex-a15-gic" compatible value for
+the GIC device node by "arm,gic-400" in the R-Mobile APE6 and R-Car Gen2
+device trees:
+  - The R-Mobile APE6 documentation states it has a GIC-400,
+  - The R-Car Gen2 is assumed to have a GIC-400, too.
 
->>> Ethernet AVB device includes the gPTP  timer, so we can implement a PTP clock
->>> driver.  We're doing that in a separate file, with  the main Ethernet driver
->>> calling the PTP driver's [de]initialization and interrupt handler functions.
->>> Unfortunately, the clock seems tightly coupled with the AVB-DMAC, so when that
->>> one leaves the operation mode, we have to unregister the PTP clock... :-(
+The presence of a GIC-400 has been confirmed on APE6 and R-Car M2 by
+reading the GICD_IIDR register[1], which reports 0x0200043b (GIC-400 0x02, ARM = 0x43b).
 
->>> Based on the original patches by Masaru Nagai.
+This change has no effect on runtime behavior, as currently[2] the GIC
+driver treats both compatible values the same.
 
->>> Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This has been tested on r8a73a4/ape6evm and r8a7791/koelsch.
 
->> Applied.
+Thanks for applying!
 
-    Thank you!
+[1] Using Mark Rutland's patch in https://lkml.org/lkml/2015/4/29/259,
+    or from U-Boot using "md 0xf1001008 1",
+[2] Backporter's note: since commit 144cb08864ed44be ("irqchip: gic: Add
+    binding probe for ARM GIC400").
 
-> I had to fix up this patch because:
+Geert Uytterhoeven (5):
+  ARM: shmobile: r8a73a4 dtsi: Use "arm,gic-400" for GIC
+  ARM: shmobile: r8a7790 dtsi: Use "arm,gic-400" for GIC
+  ARM: shmobile: r8a7791 dtsi: Use "arm,gic-400" for GIC
+  ARM: shmobile: r8a7793 dtsi: Use "arm,gic-400" for GIC
+  ARM: shmobile: r8a7794 dtsi: Use "arm,gic-400" for GIC
 
-> obj-$(CONFIG_RAVB) += ravb_main.o ravb_ptp.o
+ arch/arm/boot/dts/r8a73a4.dtsi | 2 +-
+ arch/arm/boot/dts/r8a7790.dtsi | 2 +-
+ arch/arm/boot/dts/r8a7791.dtsi | 2 +-
+ arch/arm/boot/dts/r8a7793.dtsi | 2 +-
+ arch/arm/boot/dts/r8a7794.dtsi | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
 
-> Doesn't do what you want it to for the modular case.
+-- 
+1.9.1
 
-    Oh, crap, I forgot to test the modular build after splitting the driver 
-again into separate files. Sorry about that... :-<
+Gr{oetje,eeting}s,
 
-> You instead need to say something like:
+						Geert
 
-> ravb-objs := ravb_main.o ravb_ptp.o
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-> obj-$(CONFIG_RAVB) += ravb.o
-
-> and that's how I fixed up this commit before pushing it out.
-
-    And the code base I was using as a reference had this issue fixed quite 
-similarly...
-
-WBR, Sergei
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
