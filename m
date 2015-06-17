@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 17 Jun 2015 07:22:00 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 17 Jun 2015 08:38:25 +0000
 Subject: Re: [PATCH 5/6][RFC] arm64: renesas: Add r8a7795 SoC support
-Message-Id: <CAMuHMdVZXiKsNHhHgagG=swufCvoR6D6eCCn5usDPfhXEUB=Cg@mail.gmail.com>
+Message-Id: <20150617083824.GA9458@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87y4jlvait.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87y4jlvait.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,55 +10,47 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Simon,
+On Wed, Jun 17, 2015 at 09:22:00AM +0200, Geert Uytterhoeven wrote:
+> Hi Simon,
+> 
+> On Wed, Jun 17, 2015 at 3:05 AM, Simon Horman <horms@verge.net.au> wrote:
+> > On Mon, Jun 15, 2015 at 10:44:33AM +0200, Geert Uytterhoeven wrote:
+> >> On Mon, Jun 15, 2015 at 10:30 AM, Kuninori Morimoto
+> >> <kuninori.morimoto.gx@renesas.com> wrote:
+> >> >> > +       gic: interrupt-controller@0xf1010000 {
+> >> >> > +               compatible = "arm,gic-400", "arm,cortex-a15-gic";
+> >> >> > +               #interrupt-cells = <3>;
+> >> >> > +               #address-cells = <0>;
+> >> >> > +               interrupt-controller;
+> >> >> > +               reg = <0x0 0xf1010000 0 0x1000>,
+> >> >> > +                     <0x0 0xf1020000 0 0x2000>;
+> >> >> > +               interrupts = <GIC_PPI 9 (GIC_CPU_MASK_SIMPLE(6) | IRQ_TYPE_LEVEL_HIGH)>;
+> >> >> > +       };
+> >> >>
+> >> >> Thanks for your efforts. On ARM v8, is ARM v7 compat string
+> >> >> "arm,cortex-a15-gic" really correct?
+> >> >
+> >> > I don't know detail of this.
+> >> > but, I guess current Inami-san's status is "create working something".
+> >> > Maybe he don't care small detail at this point.
+> >> > Do you think  "arm,gic-400" is very enough ?
+> >> > If so, I can drop it in v2
+> >>
+> >> Both are (currently) handled identically by drivers/irqchip/irq-gic.c.
+> >>
+> >> As the datasheet documents it as "GIC-400", we should use "arm,gic-400".
+> >> BTW, we should do the same for APE6 and R-Car Gen2, cfr.
+> >> https://lkml.org/lkml/2015/4/29/315
+> >
+> > Although it seems low priority I am interested in cleaning up the GIC nodes
+> > for the you mention above. Can I confirm that their desired compat string
+> > usage is:
+> >
+> >         compatible = "arm,gic-400";
+> 
+> That's correct.
+> 
+> But please don't start working on it, as I already made the changes locally.
+> I haven't send out the patches yet, though. Will do.
 
-On Wed, Jun 17, 2015 at 3:05 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Mon, Jun 15, 2015 at 10:44:33AM +0200, Geert Uytterhoeven wrote:
->> On Mon, Jun 15, 2015 at 10:30 AM, Kuninori Morimoto
->> <kuninori.morimoto.gx@renesas.com> wrote:
->> >> > +       gic: interrupt-controller@0xf1010000 {
->> >> > +               compatible = "arm,gic-400", "arm,cortex-a15-gic";
->> >> > +               #interrupt-cells = <3>;
->> >> > +               #address-cells = <0>;
->> >> > +               interrupt-controller;
->> >> > +               reg = <0x0 0xf1010000 0 0x1000>,
->> >> > +                     <0x0 0xf1020000 0 0x2000>;
->> >> > +               interrupts = <GIC_PPI 9 (GIC_CPU_MASK_SIMPLE(6) | IRQ_TYPE_LEVEL_HIGH)>;
->> >> > +       };
->> >>
->> >> Thanks for your efforts. On ARM v8, is ARM v7 compat string
->> >> "arm,cortex-a15-gic" really correct?
->> >
->> > I don't know detail of this.
->> > but, I guess current Inami-san's status is "create working something".
->> > Maybe he don't care small detail at this point.
->> > Do you think  "arm,gic-400" is very enough ?
->> > If so, I can drop it in v2
->>
->> Both are (currently) handled identically by drivers/irqchip/irq-gic.c.
->>
->> As the datasheet documents it as "GIC-400", we should use "arm,gic-400".
->> BTW, we should do the same for APE6 and R-Car Gen2, cfr.
->> https://lkml.org/lkml/2015/4/29/315
->
-> Although it seems low priority I am interested in cleaning up the GIC nodes
-> for the you mention above. Can I confirm that their desired compat string
-> usage is:
->
->         compatible = "arm,gic-400";
-
-That's correct.
-
-But please don't start working on it, as I already made the changes locally.
-I haven't send out the patches yet, though. Will do.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+No problem, I am quite happy to wait.
