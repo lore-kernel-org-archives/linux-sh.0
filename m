@@ -1,62 +1,45 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 04 Jun 2015 18:53:34 +0000
-Subject: [PATCH/RFC 08/15] ARM: shmobile: r8a7791 dtsi: Add L1 cache information to CPU nodes
-Message-Id: <1433444021-22167-9-git-send-email-geert+renesas@glider.be>
+Date: Wed, 17 Jun 2015 13:03:35 +0000
+Subject: [PATCH 4/5] ARM: shmobile: r8a7793 dtsi: Use "arm,gic-400" for GIC
+Message-Id: <1434546216-10773-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
+References: <1434546216-10773-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1434546216-10773-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Describe the L1 instruction and data caches in the CPU nodes:
-  - The L1 caches for the Cortex-A15 CPU cores are organized as 16 KiB x
-    2 ways.
+Replace the "arm,cortex-a15-gic" compatible value for the GIC by
+"arm,gic-400", as the R-Car Gen2 GIC is assumed to be a GIC-400.
+This has been confirmed by reading the GICD_IIDR register (on r8a7791),
+which reports 0x0200043b (GIC-400 = 0x02, ARM = 0x43b).
+
+This has no effect on runtime behavior, as currently the GIC driver
+treats both compatible values the same.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+You can read the GICD_IIDR register from U-Boot using
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 8013223448b5b464..4e4011a2978bcfce 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -52,6 +52,16 @@
- 			clocks = <&cpg_clocks R8A7791_CLK_Z>;
- 			clock-latency = <300000>; /* 300 us */
- 
-+			i-cache-size = <0x8000>;
-+			i-cache-sets = <512>;
-+			i-cache-block-size = <32>;
-+			i-cache-line-size = <32>;
-+			d-cache-size = <0x8000>;
-+			d-cache-sets = <512>;
-+			d-cache-block-size = <32>;
-+			d-cache-line-size = <32>;
-+			next-level-cache = <&L2_CA15>;
-+
- 			/* kHz - uV - OPPs unknown yet */
- 			operating-points = <1500000 1000000>,
- 					   <1312500 1000000>,
-@@ -66,6 +76,16 @@
- 			compatible = "arm,cortex-a15";
- 			reg = <1>;
- 			clock-frequency = <1500000000>;
-+
-+			i-cache-size = <0x8000>;
-+			i-cache-sets = <512>;
-+			i-cache-block-size = <32>;
-+			i-cache-line-size = <32>;
-+			d-cache-size = <0x8000>;
-+			d-cache-sets = <512>;
-+			d-cache-block-size = <32>;
-+			d-cache-line-size = <32>;
-+			next-level-cache = <&L2_CA15>;
- 		};
+    md 0xf1001008 1
+---
+ arch/arm/boot/dts/r8a7793.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index c50c5f65388af2d0..3355c487d108360f 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -42,7 +42,7 @@
  	};
  
+ 	gic: interrupt-controller@f1001000 {
+-		compatible = "arm,cortex-a15-gic";
++		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
+ 		#address-cells = <0>;
+ 		interrupt-controller;
 -- 
 1.9.1
 
