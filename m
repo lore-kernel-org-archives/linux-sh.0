@@ -1,67 +1,41 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 30 Jun 2015 21:44:08 +0000
-Subject: [RFC 0/3] switch I2C IP cores at runtime
-Message-Id: <1435700651-3543-1-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2015 08:38:50 +0000
+Subject: [PATCH v2 1/7] Revert "staging: board: disable as it breaks the build"
+Message-Id: <1434530336-15073-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1434530336-15073-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1434530336-15073-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This series allows an I2C bus to switch between multiple masters. This is not
-hot-switching because connected I2C slaves will be re-instantiated. It is meant
-to select the best I2C core at runtime once the task is known. Example: Prefer
-i2c-gpio over another I2C core because of HW errata affecting your use case.
+This reverts commit d13778d537a0ed6115d2a79a942af999cfb8eec6.
 
-It works by using OF_DYNAMIC and en-/disabling the devices as needed. See patch
-2 for the implementation and more documentation.
+Commit 13c11072536f2613 ("staging:board: remove unnecessary function")
+fixed the build of drivers/staging/board/board.c.
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+---
+v2:
+  - Add Reviewed-by.
+---
+ drivers/staging/board/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
-Changes since alpha v2 (only sent to sh-devel):
-
-* don't use the i2c-mux infrastructure but create own adapter
-  This makes the DT binding proper. Otherwise, they were nested
-  another level deeper only for a useless reg = <0>;
-  It makes the approach also less I2C specific.
-
-* the bus can now be named
-  I like this and consider moving this out of this series and
-  implement it in the i2c-core.
-
-* pinctrl states to be used are now named as the bus
-  "active" was just a too random name IMO.
-
-* bugfixes (removed two OOPSes)
-
-* more error checking
-
-* beautified the sysfs-readout to make distinction of adapters
-  easier
-
-So, this not only a brush up since the last version, rather a new revision.
-I couldn't send this to the public with these obvious points left open :)
-
-PS: Since these patches depend on two others, I pushed out a branch here:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/ip-core-switch-v2-on-4.1-experimental
-
-
-Wolfram Sang (3):
-  of: make of_mutex public
-  i2c: mux: demux-pinctrl: add driver
-  ARM: shmobile: r8a7790: rework dts to use i2c demuxer
-
- .../devicetree/bindings/i2c/i2c-demux-pinctrl.txt  |  44 ++++
- arch/arm/boot/dts/r8a7790-lager.dts                | 141 +++++++----
- drivers/i2c/muxes/Kconfig                          |   9 +
- drivers/i2c/muxes/Makefile                         |   2 +
- drivers/i2c/muxes/i2c-demux-pinctrl.c              | 266 +++++++++++++++++++++
- drivers/of/of_private.h                            |   1 -
- include/linux/of.h                                 |   2 +
- 7 files changed, 411 insertions(+), 54 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
- create mode 100644 drivers/i2c/muxes/i2c-demux-pinctrl.c
-
+diff --git a/drivers/staging/board/Kconfig b/drivers/staging/board/Kconfig
+index 0a89ad16371f7ded..b8ee81840666ad35 100644
+--- a/drivers/staging/board/Kconfig
++++ b/drivers/staging/board/Kconfig
+@@ -1,7 +1,6 @@
+ config STAGING_BOARD
+ 	bool "Staging Board Support"
+ 	depends on OF_ADDRESS
+-	depends on BROKEN
+ 	help
+ 	  Select to enable per-board staging support code.
+ 
 -- 
-2.1.4
+1.9.1
 
