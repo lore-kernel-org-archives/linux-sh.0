@@ -1,208 +1,99 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 19 Jun 2015 07:47:00 +0000
-Subject: Re: [PATCH 1/2] New files for 0PF FPGA board.
-Message-Id: <CAMuHMdWR-pc3rghZcyv_CNgizwddX1fqtvkDwJbtGbBnpOqnaA@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2015 08:38:49 +0000
+Subject: [PATCH v2 0/7] staging: board: armadillo800eva: Board staging for sh_mobile_lcdc_fb
+Message-Id: <1434530336-15073-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434647946.861556@landley.net>
-	<1434647946.861804@landley.net>
-In-Reply-To: <1434647946.861804@landley.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Landley <rob@landley.net>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Rob,
+	Hi Greg, Simon, Magnus,
 
-On Thu, Jun 18, 2015 at 7:19 PM, Rob Landley <rob@landley.net> wrote:
-> New files for Open Processor Foundation j2 (superh sh2 compatible open
-> hardware) FPGA board, with enough drivers to boot initramfs to a shell
-> prompt on serial console. See http://0pf.org for details.
+This patch series adds board staging support for the Renesas R-Mobile A1
+(r8a7740) based Armadillo-800 EVA board. It allows to support the frame
+buffer device for the on-board LCD (which isn't supported by a DT-aware
+driver yet) in modern DT-based multi-platform kernels.
 
-Thanks for your patch!
+The board staging area was introduced last year to allow continuous
+upstream in-tree development and integration of platform devices. It
+helps developers integrate devices as platform devices for device
+drivers that only provide platform device bindings.  This in turn allows
+for incremental development of both hardware feature support and DT
+binding work in parallel.
 
->
-> --- /dev/null   2015-06-06 04:15:40.702718005 -0500
-> +++ linux/arch/sh/boards/board-0pf.c    2015-06-17 21:20:05.825356382 -0500
-> @@ -0,0 +1,270 @@
+The goal is to complete the move to ARM multi-platform kernels for all
+shmobile platforms, and drop the existing board files
+(arch/arm/mach-shmobile/board-*). Once this series is accepted, more
+than 3000 lines of legacy armadillo board code and r8a7740 SoC code can
+be removed.
 
-> +static inline void shj_enable_irq(struct irq_data *data)
-> +{
-> +       unsigned int irq = data->irq;
-> +       volatile unsigned int vui;
-> +
-> +//     printk("%s: IRQ %d (0x%x)\n", __func__, irq, irq);
+This series consists of 5 parts:
+  - Patch 1 re-enables compilation of the board staging area, which was
+    disabled after a compile breakage, but has been fixed in the mean
+    time,
+  - Path 2 moves initialization of staging board code to an earlier
+    moment, as currently it happens after unused PM domains are powered
+    down,
+  - Patches 3 and 4 (hopefully) fix the existing kzm9d board staging
+    code, which was presumably "broken" by commit 9a1091ef0017c40a
+    ("irqchip: gic: Support hierarchy irq domain."),
+  - Patches 5 and 6 add support for registering platform devices with
+    complex dependencies (clocks and PM domains), and add armadillo
+    board staging code for enabling a frame buffer on the on-board LCD,
+  - Patch 7 (new) adds pinctrl and gpio-hog configuration to enable the
+    LCD.
 
-Please no C++ style comments, nor commented-out code.
+The first 6 patches should go in through the staging tree, the last one
+through the shmobile tree.
 
-> +       switch (irq) {
-> +       case PIT_IRQ:
-> +               //AQ_PIO = 0x0BB;
-> +               /* enable, lvl 2, vector 64 */
-> +               AQ_SYS = (1 << 26) |    /* enable PIT */
-> +                   (0x02 << 20) |      /* interrupt level 2 */
-> +                   (PIT_IRQ << 12) |   /* vector 64 */
+Major changes since v1 (more detailed changelogs in the individual
+patches):
+  - Add support for low/high edge/level interrupts in hwirq translation,
+  - Move pinctrl and GPIO configuration from board staging code to DT,
+  - Use clk_add_alias() instead of open coding.
 
-Magic numbers need #defines.
+Dependencies:
+  - This is against next-20150617,
+  - The gpio-hog in patch 7 depends on a bug fix like "[PATCH] [RFC]
+    gpio: Retry deferred GPIO hogging on pin range change"
+    (https://lkml.org/lkml/2015/6/16/455). It can be applied as-is
+    though.
 
-> +                   1;          /* turn off interval timer */
-> +               break;
-> +
-> +       case Irq_UART0:
-> +               vui = *(volatile unsigned int *)(sys_SYS_BASE + Sys_IntPri);
+This was tested on r8a7740/armadillo.
+This was not tested on emev2/kzm9d, due to lack of hardware.
 
-volatile considered harmful, writel()? (more below)
+Thanks for applying!
 
-> +static void __init shj_irq_init(void)
-> +{
-> +       int c;
+Geert Uytterhoeven (7):
+  Revert "staging: board: disable as it breaks the build"
+  staging: board: Initialize staging board code earlier
+  staging: board: Add support for translating hwirq to virq numbers
+  staging: board: kzm9d: Translate hwirq numbers to virq numbers
+  staging: board: Add support for devices with complex dependencies
+  staging: board: armadillo800eva: Board staging for sh_mobile_lcdc_fb
+  ARM: shmobile: armadillo800eva dts: Add pinctrl and gpio-hog for lcdc0
 
-unsigned int
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts |  13 +++
+ drivers/staging/board/Kconfig                 |   1 -
+ drivers/staging/board/Makefile                |   3 +-
+ drivers/staging/board/armadillo800eva.c       | 105 ++++++++++++++++++++
+ drivers/staging/board/board.c                 | 136 ++++++++++++++++++++++++++
+ drivers/staging/board/board.h                 |  27 ++++-
+ drivers/staging/board/kzm9d.c                 |  10 +-
+ 7 files changed, 290 insertions(+), 5 deletions(-)
+ create mode 100644 drivers/staging/board/armadillo800eva.c
 
-> +
-> +       printk(KERN_INFO "0PF FPGA interrupt controller...\n");
-
-pr_info()
-
-> +
-> +       for (c = 0; c < NR_IRQS; c++) {
-> +               //irq_desc[c].action = NULL;
-> +               //irq_desc[c].depth = 1;
-> +               irq_set_chip_and_handler_name(c, &shj_irq_chip,
-> +                                             handle_simple_irq, "simple");
-> +       }
-> +}
-> +
-> +#ifdef CONFIG_ARCH_USES_GETTIMEOFFSET
-> +// Commit 7b1f62076 switched this to a pointer
-
-Please don't refer to git commits in comments.
-
-> +static struct sh_machine_vector mv_se __initmv = {
-> +       .mv_name = "0PF_FPGA",
-> +       //.mv_nr_irqs = 256,
-
-No commented-out code/data
-
-> +static void __init start_pit(void)
-> +{
-> +       if (request_irq
-> +           (PIT_IRQ, timer_interrupt, IRQF_TIMER, "pit", NULL))
-> +               printk("irq_desc[%p] : fail to register\n", &irq_desc[PIT_IRQ]);
-
-pr_err()
-
-> --- /dev/null   2015-06-06 04:15:40.702718005 -0500
-> +++ linux/arch/sh/include/asm/board-0pf.h       2015-06-17 21:20:05.825356382 -0500
-> @@ -0,0 +1,247 @@
-> +#ifndef SGM_BOARD_H
-> +#define SGM_BOARD_H
-
-Strange include guard name, not matching file name.
-
-> +#define sys_IntTable (*(unsigned*)0x0)
-
-NULL? Besides, it seems unused?
-
-> +#define SIC_ENMI       ((unsigned int) 0x1<<31)        /* Emulate NMI */
-
-"BIT(31)" (more below)
-
-> +#if 0
-
-No #ifdef'ed-out definitions please
-
-> --- /dev/null   2015-06-06 04:15:40.702718005 -0500
-> +++ linux/arch/sh/kernel/cpu/sh2/clock-0pf.c    2015-06-17 21:20:05.825356382 -0500
-> @@ -0,0 +1,80 @@
-
-> +int __init arch_clk_init()
-> +{
-> +       int ret;
-> +
-> +       printk("%s(): 0PF Clock init...\n", __func__);
-
-pr_debug()?
-
-> --- /dev/null   2015-06-06 04:15:40.702718005 -0500
-> +++ linux/arch/sh/kernel/cpu/sh2/setup-0pf.c    2015-06-17 21:20:05.825356382 -0500
-> @@ -0,0 +1,82 @@
-
-> +#if defined(CONFIG_SERIAL_UARTLITE_0PF)
-> +static struct resource shj_uartlite_resources[] = {
-> +       [0] = DEFINE_RES_MEM(0xABCD0100, 16),
-> +       [1] = DEFINE_RES_IRQ(0x12),
-> +
-> +       [2] = DEFINE_RES_MEM(0xABCD0300, 16),
-> +       [3] = DEFINE_RES_IRQ(0x17),
-> +
-> +       [4] = DEFINE_RES_MEM(0xABCD0400, 16),
-> +       [5] = DEFINE_RES_IRQ(0x13),
-> +};
-> +
-> +static struct platform_device shj_uartlite_device[] = {
-> +       [0] = { .name = "uartlite", .id = 0 },
-> +       [1] = { .name = "uartlite", .id = 1 },
-> +       [2] = { .name = "uartlite", .id = 2 },
-> +};
-
-Typically we have only the driver depend on CONFIG_XXX, not the
-platform code that creates the platform device.
-
-> +#endif
-> +
-> +/*****************************************************************************
-> + *  0PF FPGA platform devices
-> + ****************************************************************************/
-> +static struct platform_device *shj_devices[] __initdata = {
-> +#if defined(CONFIG_SERIAL_UARTLITE_0PF)
-
-Idem ditto
-
-> +       shj_uartlite_device,
-> +       shj_uartlite_device + 1,
-> +       shj_uartlite_device + 2,
-> +#endif
-> +};
-> +
-> +static int __init shj_devices_setup(void)
-> +{
-> +       int i;
-> +       pr_info("%s(): registering device resources\n", __func__);
-> +
-> +#if defined(CONFIG_SERIAL_UARTLITE_0PF)
-
-idem ditto
-
-> +       for (i = 0; i < ARRAY_SIZE(shj_uartlite_device); i++) {
-> +               printk("Register UARTLITE resources %d\n", i);
-> +               if (platform_device_add_resources(
-> +                               shj_uartlite_device + i,
-> +                               shj_uartlite_resources + 2 * i,
-> +                               2))
-> +                       pr_err("Failed to set uartlite %d IRQ and MEM\n", i);
-> +
-> +       }
-> +#endif
-> +       platform_add_devices(shj_devices, ARRAY_SIZE(shj_devices));
-> +
-> +       return 0;
-> +}
-
-> --- /dev/null   2015-06-06 04:15:40.702718005 -0500
-> +++ linux/arch/sh/configs/0pf_defconfig 2015-06-17 21:47:46.869366542 -0500
-> @@ -0,0 +1,945 @@
-
-I may be mistaken, but this doesn't look like a minimal defconfig as
-created by "make savedefconfig".
+-- 
+1.9.1
 
 Gr{oetje,eeting}s,
 
-                        Geert
+						Geert
 
 --
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+							    -- Linus Torvalds
