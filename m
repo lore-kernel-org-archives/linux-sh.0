@@ -1,78 +1,255 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 15 Jun 2015 12:21:47 +0000
-Subject: renesas-drivers-2015-06-15-v4.1-rc8
-Message-Id: <1434370907-17158-1-git-send-email-geert+renesas@glider.be>
+Date: Wed, 17 Jun 2015 09:31:27 +0000
+Subject: [PATCH 11/15] ARM: shmobile: Remove obsolete zboot support
+Message-Id: <1434533491-21979-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-I've pushed renesas-drivers-2015-06-15-v4.1-rc8 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+The last user of the zboot code was the KZM-A9-GT legacy board code,
+which has been removed.
 
-Today's version is based on renesas-devel-20150610-v4.1-rc7.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/compressed/Makefile                  |   4 -
+ arch/arm/boot/compressed/head-shmobile.S           |  71 --------------
+ arch/arm/mach-shmobile/include/mach/zboot.h        |  14 ---
+ arch/arm/mach-shmobile/include/mach/zboot_macros.h | 108 ---------------------
+ 4 files changed, 197 deletions(-)
+ delete mode 100644 arch/arm/boot/compressed/head-shmobile.S
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/zboot.h
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/zboot_macros.h
 
-Included branches with driver code:
-  - clk-shmobile-for-4.2:
-      - clk: shmobile: Add r8a7778 SoC to MSTP bindings
-      - clk: shmobile: Add r8a7793 SoC to MSTP bindings
-      - clk: shmobile: r8a7793: Document DIV6 clock bindings
-      - clk: shmobile: r8a7794: Document DIV6 clock bindings
-      - clk: shmobile: div6: Document mandatory compatible fallback
-      - clk: shmobile: mstp: Document mandatory compatible fallback
-      - clk: shmobile: rcar-gen2: Document mandatory compatible fallback
-      - clk: shmobile: rz: Document mandatory compatible fallback
+diff --git a/arch/arm/boot/compressed/Makefile b/arch/arm/boot/compressed/Makefile
+index 7a13aebacf81d47c..3f9a9ebc77c389bb 100644
+--- a/arch/arm/boot/compressed/Makefile
++++ b/arch/arm/boot/compressed/Makefile
+@@ -51,10 +51,6 @@ else
+ endif
+ endif
+ 
+-ifeq ($(CONFIG_ARCH_SHMOBILE_LEGACY),y)
+-OBJS		+= head-shmobile.o
+-endif
+-
+ #
+ # We now have a PIC decompressor implementation.  Decompressors running
+ # from RAM should not define ZTEXTADDR.  Decompressors running directly
+diff --git a/arch/arm/boot/compressed/head-shmobile.S b/arch/arm/boot/compressed/head-shmobile.S
+deleted file mode 100644
+index 22a75259faa32996..0000000000000000
+--- a/arch/arm/boot/compressed/head-shmobile.S
++++ /dev/null
+@@ -1,71 +0,0 @@
+-/*
+- * The head-file for SH-Mobile ARM platforms
+- *
+- * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+- * Simon Horman <horms@verge.net.au>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+- */
+-
+-#ifdef CONFIG_ZBOOT_ROM
+-
+-	.section	".start", "ax"
+-
+-	/* load board-specific initialization code */
+-#include <mach/zboot.h>
+-
+-	adr	r0, dtb_info
+-	ldmia	r0, {r1, r3, r4, r5, r7}
+-
+-	sub	r0, r0, r1		@ calculate the delta offset
+-	add	r5, r5, r0		@ _edata
+-
+-	ldr	lr, [r5, #0]		@ check if valid DTB is present
+-	cmp	lr, r3
+-	bne	0f
+-
+-	add	r9, r7, #31		@ rounded up to a multiple
+-	bic	r9, r9, #31		@ ... of 32 bytes
+-
+-	add	r6, r9, r5		@ copy from _edata
+-	add	r9, r9, r4		@ to MEMORY_START
+-
+-1:	ldmdb	r6!, {r0 - r3, r10 - r12, lr}
+-	cmp	r6, r5
+-	stmdb	r9!, {r0 - r3, r10 - r12, lr}
+-	bhi	1b
+-
+-	/* Success: Zero board ID, pointer to start of memory for atag/dtb */
+-	mov	r7, #0
+-	mov	r8, r4
+-	b	2f
+-
+-	.align	2
+-dtb_info:
+-	.word	dtb_info
+-#ifndef __ARMEB__
+-	.word	0xedfe0dd0		@ sig is 0xd00dfeed big endian
+-#else
+-	.word	0xd00dfeed
+-#endif
+-	.word	MEMORY_START
+-	.word	_edata
+-	.word	0x4000			@ maximum DTB size
+-0:
+-	/* Failure: Zero board ID, NULL atag/dtb */
+-	mov 	r7, #0
+-	mov	r8, #0			@ pass null pointer as atag
+-2 :
+-
+-#endif /* CONFIG_ZBOOT_ROM */
+diff --git a/arch/arm/mach-shmobile/include/mach/zboot.h b/arch/arm/mach-shmobile/include/mach/zboot.h
+deleted file mode 100644
+index 80f599f4b5ab5733..0000000000000000
+--- a/arch/arm/mach-shmobile/include/mach/zboot.h
++++ /dev/null
+@@ -1,14 +0,0 @@
+-#ifndef ZBOOT_H
+-#define ZBOOT_H
+-
+-#include <mach/zboot_macros.h>
+-
+-/**************************************************
+- *
+- *		board specific settings
+- *
+- **************************************************/
+-
+-#error "unsupported board."
+-
+-#endif /* ZBOOT_H */
+diff --git a/arch/arm/mach-shmobile/include/mach/zboot_macros.h b/arch/arm/mach-shmobile/include/mach/zboot_macros.h
+deleted file mode 100644
+index 14fd3d538e9aa11a..0000000000000000
+--- a/arch/arm/mach-shmobile/include/mach/zboot_macros.h
++++ /dev/null
+@@ -1,108 +0,0 @@
+-#ifndef __ZBOOT_MACRO_H
+-#define __ZBOOT_MACRO_H
+-
+-/* The LIST command is used to include comments in the script */
+-.macro	LIST comment
+-.endm
+-
+-/* The ED command is used to write a 32-bit word */
+-.macro ED, addr, data
+-	LDR	r0, 1f
+-	LDR	r1, 2f
+-	STR	r1, [r0]
+-	B	3f
+-1 :	.long	\addr
+-2 :	.long	\data
+-3 :
+-.endm
+-
+-/* The EW command is used to write a 16-bit word */
+-.macro EW, addr, data
+-	LDR	r0, 1f
+-	LDR	r1, 2f
+-	STRH	r1, [r0]
+-	B	3f
+-1 :	.long	\addr
+-2 :	.long	\data
+-3 :
+-.endm
+-
+-/* The EB command is used to write an 8-bit word */
+-.macro EB, addr, data
+-	LDR	r0, 1f
+-	LDR	r1, 2f
+-	STRB	r1, [r0]
+-	B	3f
+-1 :	.long	\addr
+-2 :	.long	\data
+-3 :
+-.endm
+-
+-/* The WAIT command is used to delay the execution */
+-.macro  WAIT, time, reg
+-	LDR	r1, 1f
+-	LDR	r0, 2f
+-	STR	r0, [r1]
+-10 :
+-	LDR	r0, [r1]
+-	CMP	r0, #0x00000000
+-	BNE	10b
+-	NOP
+-	B	3f
+-1 :	.long	\reg
+-2 :	.long	\time * 100
+-3 :
+-.endm
+-
+-/* The DD command is used to read a 32-bit word */
+-.macro  DD, start, end
+-	LDR	r1, 1f
+-	B	2f
+-1 :	.long	\start
+-2 :
+-.endm
+-
+-/* loop until a given value has been read (with mask) */
+-.macro WAIT_MASK, addr, data, cmp
+-	LDR	r0, 2f
+-	LDR	r1, 3f
+-	LDR	r2, 4f
+-1:
+-	LDR	r3, [r0, #0]
+-	AND	r3, r1, r3
+-	CMP	r2, r3
+-	BNE	1b
+-	B	5f
+-2:	.long	\addr
+-3:	.long	\data
+-4:	.long	\cmp
+-5:
+-.endm
+-
+-/* read 32-bit value from addr, "or" an immediate and write back */
+-.macro ED_OR, addr, data
+-	LDR r4, 1f
+-	LDR r5, 2f
+-	LDR r6, [r4]
+-	ORR r5, r6, r5
+-	STR r5, [r4]
+-	B	3f
+-1:	.long	\addr
+-2:	.long	\data
+-3:
+-.endm
+-
+-/* read 32-bit value from addr, "and" an immediate and write back */
+-.macro ED_AND, addr, data
+-	LDR r4, 1f
+-	LDR r5, 2f
+-	LDR r6, [r4]
+-	AND r5, r6, r5
+-	STR r5, [r4]
+-	B	3f
+-1:	.long \addr
+-2:	.long \data
+-3:
+-.endm
+-
+-#endif /* __ZBOOT_MACRO_H */
+-- 
+1.9.1
 
-Included subsystem trees:
-  - v4.1-rc8
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
