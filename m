@@ -1,38 +1,45 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Sun, 07 Jun 2015 08:58:00 +0000
-Subject: [PATCHv2 06/11] sh-vou: fix incorrect initial pixelformat.
-Message-Id: <1433667485-35711-7-git-send-email-hverkuil@xs4all.nl>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2015 13:03:33 +0000
+Subject: [PATCH 2/5] ARM: shmobile: r8a7790 dtsi: Use "arm,gic-400" for GIC
+Message-Id: <1434546216-10773-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
-In-Reply-To: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
+References: <1434546216-10773-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1434546216-10773-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Hans Verkuil <hans.verkuil@cisco.com>
+Replace the "arm,cortex-a15-gic" compatible value for the GIC by
+"arm,gic-400", as the R-Car Gen2 GIC is assumed to be a GIC-400.
+This has been confirmed by reading the GICD_IIDR register (on r8a7791),
+which reports 0x0200043b (GIC-400 = 0x02, ARM = 0x43b).
 
-It was set to a format that wasn't supported.
+This has no effect on runtime behavior, as currently the GIC driver
+treats both compatible values the same.
 
-Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/media/platform/sh_vou.c | 2 +-
+You can read the GICD_IIDR register from U-Boot using
+
+    md 0xf1001008 1
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
-index d9a4502..262c244 100644
---- a/drivers/media/platform/sh_vou.c
-+++ b/drivers/media/platform/sh_vou.c
-@@ -1368,7 +1368,7 @@ static int sh_vou_probe(struct platform_device *pdev)
- 	rect->height		= 480;
- 	pix->width		= VOU_MAX_IMAGE_WIDTH;
- 	pix->height		= 480;
--	pix->pixelformat	= V4L2_PIX_FMT_YVYU;
-+	pix->pixelformat	= V4L2_PIX_FMT_NV16;
- 	pix->field		= V4L2_FIELD_NONE;
- 	pix->bytesperline	= VOU_MAX_IMAGE_WIDTH * 2;
- 	pix->sizeimage		= VOU_MAX_IMAGE_WIDTH * 2 * 480;
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 51ab8865ea37dc89..d24dcf231fff65ed 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -113,7 +113,7 @@
+ 	};
+ 
+ 	gic: interrupt-controller@f1001000 {
+-		compatible = "arm,cortex-a15-gic";
++		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
+ 		#address-cells = <0>;
+ 		interrupt-controller;
 -- 
-2.1.4
+1.9.1
 
