@@ -1,60 +1,43 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 04 Jun 2015 23:30:40 +0000
-Subject: [PATCH v2 3/4] sh-pfc: r8a7790: remove non-existing GPIO pins
-Message-Id: <20198588.C6cLT92jQ4@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2015 09:31:29 +0000
+Subject: [PATCH 13/15] pinctrl: sh-pfc: Remove obsolete sh73a0 platform_device_id entry
+Message-Id: <1434533491-21979-14-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4326653.qPvIJDU6F2@wasted.cogentembedded.com>
-In-Reply-To: <4326653.qPvIJDU6F2@wasted.cogentembedded.com>
+References: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linus.walleij@linaro.org, linux-sh@vger.kernel.org, laurent.pinchart@ideasonboard.com, linux-gpio@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Since the removal of the sh73a0 legacy board code, sh73a0 is only
+supported in generic DT-only ARM multi-platform builds.  The driver
+doesn't need to match platform devices by name anymore, hence remove the
+corresponding platform_device_id entry.
 
-GPIO banks 1 and 2 are missing pins 30 and 31. Remove them.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Linus Walleij <linus.walleij@linaro.org>
 ---
-Changes in version 2:
-- renamed the patch.
+Please do not apply until the legacy sh73a0 SoC code has been removed.
+Or just provide an ack, so Simon can apply it when appropriate.
+---
+ drivers/pinctrl/sh-pfc/core.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   21 +++++++++++++++++++--
- 1 file changed, 19 insertions(+), 2 deletions(-)
-
-Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -27,10 +27,27 @@
- #include "core.h"
- #include "sh_pfc.h"
- 
-+#define PORT_GP_30(bank, fn, sfx)					\
-+	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
-+	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
-+	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
-+	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
-+	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
-+	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
-+	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
-+	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
-+	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
-+	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
-+	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
-+	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
-+	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
-+	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
-+	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx)
-+
- #define CPU_ALL_PORT(fn, sfx)						\
- 	PORT_GP_32(0, fn, sfx),						\
--	PORT_GP_32(1, fn, sfx),						\
--	PORT_GP_32(2, fn, sfx),						\
-+	PORT_GP_30(1, fn, sfx),						\
-+	PORT_GP_30(2, fn, sfx),						\
- 	PORT_GP_32(3, fn, sfx),						\
- 	PORT_GP_32(4, fn, sfx),						\
- 	PORT_GP_32(5, fn, sfx)
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 96556362b28f2caa..3ff523e58c38d123 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -603,9 +603,6 @@ static const struct platform_device_id sh_pfc_id_table[] = {
+ #ifdef CONFIG_PINCTRL_PFC_SH7269
+ 	{ "pfc-sh7269", (kernel_ulong_t)&sh7269_pinmux_info },
+ #endif
+-#ifdef CONFIG_PINCTRL_PFC_SH73A0
+-	{ "pfc-sh73a0", (kernel_ulong_t)&sh73a0_pinmux_info },
+-#endif
+ #ifdef CONFIG_PINCTRL_PFC_SH7720
+ 	{ "pfc-sh7720", (kernel_ulong_t)&sh7720_pinmux_info },
+ #endif
+-- 
+1.9.1
 
