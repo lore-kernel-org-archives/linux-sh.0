@@ -1,40 +1,36 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 04 Jun 2015 18:22:33 +0000
-Subject: [PATCH 09/11] ARM: shmobile: r8a7779: Remove GENPD_FLAG_PM_CLK flag
-Message-Id: <1433442155-19492-10-git-send-email-geert+renesas@glider.be>
+Date: Wed, 17 Jun 2015 09:31:19 +0000
+Subject: [PATCH 03/15] ARM: shmobile: Drop sh73a0-kzm9g.dtb for legacy builds
+Message-Id: <1434533491-21979-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The R-Car SYSC PM Domain only manages power domains for the main CPUs
-and for coprocessors. It does not fill in the genpd .{at,de}tach_dev()
-callbacks, and no power management clocks are registered for devices.
-Hence pm_clk_{suspend,resume}() are no-ops, and setting of the
-GENPD_FLAG_PM_CLK flag can be removed.
-
-Originally the clock handling was copied from the R-Mobile PM Domain
-code, which does manage a clock domain, in addition to device power
-domains.
+The legacy board code for KZM-A9-GT has been removed.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/pm-r8a7779.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/Makefile | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-r8a7779.c b/arch/arm/mach-shmobile/pm-r8a7779.c
-index 44a74c4c5a01d0d4..d5f258e4d890f0ca 100644
---- a/arch/arm/mach-shmobile/pm-r8a7779.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7779.c
-@@ -83,7 +83,6 @@ static void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd)
- {
- 	struct generic_pm_domain *genpd = &r8a7779_pd->genpd;
- 
--	genpd->flags = GENPD_FLAG_PM_CLK;
- 	pm_genpd_init(genpd, NULL, false);
- 	genpd->dev_ops.active_wakeup = pd_active_wakeup;
- 	genpd->power_off = pd_power_down;
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 679d7cc2f57c4981..e9eed01d48c5ccb5 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -504,8 +504,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
+ 	r8a7740-armadillo800eva.dtb \
+ 	r8a7778-bockw.dtb \
+ 	r8a7778-bockw-reference.dtb \
+-	r8a7779-marzen.dtb \
+-	sh73a0-kzm9g.dtb
++	r8a7779-marzen.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	emev2-kzm9d.dtb \
+ 	r7s72100-genmai.dtb \
 -- 
 1.9.1
 
