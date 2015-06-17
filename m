@@ -1,40 +1,157 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sun, 21 Jun 2015 08:09:38 +0000
-Subject: [PATCH 03/08] devicetree: bindings: R-Car Gen2 CMT0 and CMT1 bindings
-Message-Id: <20150621080938.10187.47239.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2015 08:38:52 +0000
+Subject: [PATCH v2 3/7] staging: board: Add support for translating hwirq to virq numbers
+Message-Id: <1434530336-15073-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150621080903.10187.20998.sendpatchset@little-apple>
-In-Reply-To: <20150621080903.10187.20998.sendpatchset@little-apple>
+References: <1434530336-15073-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1434530336-15073-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, daniel.lezcano-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+As of commit 9a1091ef0017c40a ("irqchip: gic: Support hierarchy irq
+domain."), GIC IRQ numbers are virtual, breaking hardcoded hardware IRQ
+numbers in platform device resources.
 
-Add documentation for new separate CMT0 and CMT1 DT compatible strings
-for R-Car Gen2. These compat strings allow us to enable CMT1-specific
-features in the driver. The old compat strings will be deprecated in
-the not so distant future.
+Add support for translating hardware IRQ numbers to virtual IRQ numbers,
+and fixing up platform device resources with hardcoded IRQ numbers.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Add a copyright header, including the original author.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+v2:
+  - Change the function names to include "gic", as the 3-parameter
+    interrupt specifiers are GIC-specific,
+  - Warn if board_staging_gic_setup_xlate() is called twice,
+  - Add support for low/high edge/level interrupts (the default is still
+    high level),
+  - Drop RFC status.
+---
+ drivers/staging/board/board.c | 80 +++++++++++++++++++++++++++++++++++++++++++
+ drivers/staging/board/board.h |  5 +++
+ 2 files changed, 85 insertions(+)
 
- Documentation/devicetree/bindings/timer/renesas,cmt.txt |    3 +++
- 1 file changed, 3 insertions(+)
-
---- 0004/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-+++ work/Documentation/devicetree/bindings/timer/renesas,cmt.txt	2015-06-20 14:04:25.592366518 +0900
-@@ -40,6 +40,9 @@ Required Properties:
- 		(CMT1 on sh7372, sh73a0 and r8a7740)
- 		This is a fallback for the above renesas,cmt-48-* entries.
- 
-+    - "renesas,cmt0-rcar-gen2" for 32-bit CMT0 devices included in R-Car Gen2.
-+    - "renesas,cmt1-rcar-gen2" for 48-bit CMT1 devices included in R-Car Gen2.
+diff --git a/drivers/staging/board/board.c b/drivers/staging/board/board.c
+index d5a6abc845191c93..8712f566b31196e0 100644
+--- a/drivers/staging/board/board.c
++++ b/drivers/staging/board/board.c
+@@ -1,10 +1,27 @@
++/*
++ * Copyright (C) 2014 Magnus Damm
++ * Copyright (C) 2015 Glider bvba
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
 +
-     - "renesas,cmt-48-r8a73a4" for the r8a73a4 48-bit CMT
- 		(CMT[01])
-     - "renesas,cmt-48-r8a7790" for the r8a7790 48-bit CMT
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
++#define pr_fmt(fmt)	"board_staging: "  fmt
++
+ #include <linux/init.h>
++#include <linux/irq.h>
+ #include <linux/device.h>
+ #include <linux/kernel.h>
+ #include <linux/of.h>
+ #include <linux/of_address.h>
++#include <linux/of_irq.h>
++
+ #include "board.h"
+ 
++static struct device_node *irqc_node __initdata;
++static unsigned int irqc_base __initdata;
++
+ static bool find_by_address(u64 base_address)
+ {
+ 	struct device_node *dn = of_find_all_nodes(NULL);
+@@ -38,3 +55,66 @@ bool __init board_staging_dt_node_available(const struct resource *resource,
+ 
+ 	return false; /* Nothing found */
+ }
++
++int __init board_staging_gic_setup_xlate(const char *gic_match,
++					 unsigned int base)
++{
++	WARN_ON(irqc_node);
++
++	irqc_node = of_find_compatible_node(NULL, NULL, gic_match);
++
++	WARN_ON(!irqc_node);
++	if (!irqc_node)
++		return -ENOENT;
++
++	irqc_base = base;
++	return 0;
++}
++
++static void __init gic_fixup_resource(struct resource *res)
++{
++	struct of_phandle_args irq_data;
++	unsigned int hwirq = res->start;
++	unsigned int virq;
++
++	if (resource_type(res) != IORESOURCE_IRQ || !irqc_node)
++		return;
++
++	irq_data.np = irqc_node;
++	irq_data.args_count = 3;
++	irq_data.args[0] = 0;
++	irq_data.args[1] = hwirq - irqc_base;
++	switch (res->flags &
++		(IORESOURCE_IRQ_LOWEDGE | IORESOURCE_IRQ_HIGHEDGE |
++		 IORESOURCE_IRQ_LOWLEVEL | IORESOURCE_IRQ_HIGHLEVEL)) {
++	case IORESOURCE_IRQ_LOWEDGE:
++		irq_data.args[2] = IRQ_TYPE_EDGE_FALLING;
++		break;
++	case IORESOURCE_IRQ_HIGHEDGE:
++		irq_data.args[2] = IRQ_TYPE_EDGE_RISING;
++		break;
++	case IORESOURCE_IRQ_LOWLEVEL:
++		irq_data.args[2] = IRQ_TYPE_LEVEL_LOW;
++		break;
++	case IORESOURCE_IRQ_HIGHLEVEL:
++	default:
++		irq_data.args[2] = IRQ_TYPE_LEVEL_HIGH;
++		break;
++	}
++
++	virq = irq_create_of_mapping(&irq_data);
++	if (WARN_ON(!virq))
++		return;
++
++	pr_debug("hwirq %u -> virq %u\n", hwirq, virq);
++	res->start = virq;
++}
++
++void __init board_staging_gic_fixup_resources(struct resource *res,
++					      unsigned int nres)
++{
++	unsigned int i;
++
++	for (i = 0; i < nres; i++)
++		gic_fixup_resource(&res[i]);
++}
+diff --git a/drivers/staging/board/board.h b/drivers/staging/board/board.h
+index e9c914985d4acb36..3af6dbe22f91ebdc 100644
+--- a/drivers/staging/board/board.h
++++ b/drivers/staging/board/board.h
+@@ -1,10 +1,15 @@
+ #ifndef __BOARD_H__
+ #define __BOARD_H__
++
+ #include <linux/init.h>
+ #include <linux/of.h>
+ 
++struct resource;
++
+ bool board_staging_dt_node_available(const struct resource *resource,
+ 				     unsigned int num_resources);
++int board_staging_gic_setup_xlate(const char *gic_match, unsigned int base);
++void board_staging_gic_fixup_resources(struct resource *res, unsigned int nres);
+ 
+ #define board_staging(str, fn)			\
+ static int __init runtime_board_check(void)	\
+-- 
+1.9.1
+
