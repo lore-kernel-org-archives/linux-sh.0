@@ -1,255 +1,93 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Jun 2015 09:31:27 +0000
-Subject: [PATCH 11/15] ARM: shmobile: Remove obsolete zboot support
-Message-Id: <1434533491-21979-12-git-send-email-geert+renesas@glider.be>
+From: Rob Landley <rob@landley.net>
+Date: Thu, 18 Jun 2015 17:19:09 +0000
+Subject: [PATCH 0/2] 0pf-j2 (sh2-compatible open hardware) FPGA board support.
+Message-Id: <1434647946.861556@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, ysato@users.sourceforge.jp
 
-The last user of the zboot code was the KZM-A9-GT legacy board code,
-which has been removed.
+Basic board support for the open processor foundation j2, an sh2-compatible
+open processor (built from BSD licesed VHDL) described in our Linuxcon Japan
+presentation a couple weeks back, which was covered by Linux Weekly News at
+https://lwn.net/Articles/647636/ and our slides are at
+http://events.linuxfoundation.org/sites/events/files/slides/Turtles%20all%20the%20way.pdf
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/compressed/Makefile                  |   4 -
- arch/arm/boot/compressed/head-shmobile.S           |  71 --------------
- arch/arm/mach-shmobile/include/mach/zboot.h        |  14 ---
- arch/arm/mach-shmobile/include/mach/zboot_macros.h | 108 ---------------------
- 4 files changed, 197 deletions(-)
- delete mode 100644 arch/arm/boot/compressed/head-shmobile.S
- delete mode 100644 arch/arm/mach-shmobile/include/mach/zboot.h
- delete mode 100644 arch/arm/mach-shmobile/include/mach/zboot_macros.h
+The first patch adds the new files, the second touches existing files.
+This is just enough to boot to a serial prompt out of initramfs.
 
-diff --git a/arch/arm/boot/compressed/Makefile b/arch/arm/boot/compressed/Makefile
-index 7a13aebacf81d47c..3f9a9ebc77c389bb 100644
---- a/arch/arm/boot/compressed/Makefile
-+++ b/arch/arm/boot/compressed/Makefile
-@@ -51,10 +51,6 @@ else
- endif
- endif
- 
--ifeq ($(CONFIG_ARCH_SHMOBILE_LEGACY),y)
--OBJS		+= head-shmobile.o
--endif
--
- #
- # We now have a PIC decompressor implementation.  Decompressors running
- # from RAM should not define ZTEXTADDR.  Decompressors running directly
-diff --git a/arch/arm/boot/compressed/head-shmobile.S b/arch/arm/boot/compressed/head-shmobile.S
-deleted file mode 100644
-index 22a75259faa32996..0000000000000000
---- a/arch/arm/boot/compressed/head-shmobile.S
-+++ /dev/null
-@@ -1,71 +0,0 @@
--/*
-- * The head-file for SH-Mobile ARM platforms
-- *
-- * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-- * Simon Horman <horms@verge.net.au>
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--
--#ifdef CONFIG_ZBOOT_ROM
--
--	.section	".start", "ax"
--
--	/* load board-specific initialization code */
--#include <mach/zboot.h>
--
--	adr	r0, dtb_info
--	ldmia	r0, {r1, r3, r4, r5, r7}
--
--	sub	r0, r0, r1		@ calculate the delta offset
--	add	r5, r5, r0		@ _edata
--
--	ldr	lr, [r5, #0]		@ check if valid DTB is present
--	cmp	lr, r3
--	bne	0f
--
--	add	r9, r7, #31		@ rounded up to a multiple
--	bic	r9, r9, #31		@ ... of 32 bytes
--
--	add	r6, r9, r5		@ copy from _edata
--	add	r9, r9, r4		@ to MEMORY_START
--
--1:	ldmdb	r6!, {r0 - r3, r10 - r12, lr}
--	cmp	r6, r5
--	stmdb	r9!, {r0 - r3, r10 - r12, lr}
--	bhi	1b
--
--	/* Success: Zero board ID, pointer to start of memory for atag/dtb */
--	mov	r7, #0
--	mov	r8, r4
--	b	2f
--
--	.align	2
--dtb_info:
--	.word	dtb_info
--#ifndef __ARMEB__
--	.word	0xedfe0dd0		@ sig is 0xd00dfeed big endian
--#else
--	.word	0xd00dfeed
--#endif
--	.word	MEMORY_START
--	.word	_edata
--	.word	0x4000			@ maximum DTB size
--0:
--	/* Failure: Zero board ID, NULL atag/dtb */
--	mov 	r7, #0
--	mov	r8, #0			@ pass null pointer as atag
--2 :
--
--#endif /* CONFIG_ZBOOT_ROM */
-diff --git a/arch/arm/mach-shmobile/include/mach/zboot.h b/arch/arm/mach-shmobile/include/mach/zboot.h
-deleted file mode 100644
-index 80f599f4b5ab5733..0000000000000000
---- a/arch/arm/mach-shmobile/include/mach/zboot.h
-+++ /dev/null
-@@ -1,14 +0,0 @@
--#ifndef ZBOOT_H
--#define ZBOOT_H
--
--#include <mach/zboot_macros.h>
--
--/**************************************************
-- *
-- *		board specific settings
-- *
-- **************************************************/
--
--#error "unsupported board."
--
--#endif /* ZBOOT_H */
-diff --git a/arch/arm/mach-shmobile/include/mach/zboot_macros.h b/arch/arm/mach-shmobile/include/mach/zboot_macros.h
-deleted file mode 100644
-index 14fd3d538e9aa11a..0000000000000000
---- a/arch/arm/mach-shmobile/include/mach/zboot_macros.h
-+++ /dev/null
-@@ -1,108 +0,0 @@
--#ifndef __ZBOOT_MACRO_H
--#define __ZBOOT_MACRO_H
--
--/* The LIST command is used to include comments in the script */
--.macro	LIST comment
--.endm
--
--/* The ED command is used to write a 32-bit word */
--.macro ED, addr, data
--	LDR	r0, 1f
--	LDR	r1, 2f
--	STR	r1, [r0]
--	B	3f
--1 :	.long	\addr
--2 :	.long	\data
--3 :
--.endm
--
--/* The EW command is used to write a 16-bit word */
--.macro EW, addr, data
--	LDR	r0, 1f
--	LDR	r1, 2f
--	STRH	r1, [r0]
--	B	3f
--1 :	.long	\addr
--2 :	.long	\data
--3 :
--.endm
--
--/* The EB command is used to write an 8-bit word */
--.macro EB, addr, data
--	LDR	r0, 1f
--	LDR	r1, 2f
--	STRB	r1, [r0]
--	B	3f
--1 :	.long	\addr
--2 :	.long	\data
--3 :
--.endm
--
--/* The WAIT command is used to delay the execution */
--.macro  WAIT, time, reg
--	LDR	r1, 1f
--	LDR	r0, 2f
--	STR	r0, [r1]
--10 :
--	LDR	r0, [r1]
--	CMP	r0, #0x00000000
--	BNE	10b
--	NOP
--	B	3f
--1 :	.long	\reg
--2 :	.long	\time * 100
--3 :
--.endm
--
--/* The DD command is used to read a 32-bit word */
--.macro  DD, start, end
--	LDR	r1, 1f
--	B	2f
--1 :	.long	\start
--2 :
--.endm
--
--/* loop until a given value has been read (with mask) */
--.macro WAIT_MASK, addr, data, cmp
--	LDR	r0, 2f
--	LDR	r1, 3f
--	LDR	r2, 4f
--1:
--	LDR	r3, [r0, #0]
--	AND	r3, r1, r3
--	CMP	r2, r3
--	BNE	1b
--	B	5f
--2:	.long	\addr
--3:	.long	\data
--4:	.long	\cmp
--5:
--.endm
--
--/* read 32-bit value from addr, "or" an immediate and write back */
--.macro ED_OR, addr, data
--	LDR r4, 1f
--	LDR r5, 2f
--	LDR r6, [r4]
--	ORR r5, r6, r5
--	STR r5, [r4]
--	B	3f
--1:	.long	\addr
--2:	.long	\data
--3:
--.endm
--
--/* read 32-bit value from addr, "and" an immediate and write back */
--.macro ED_AND, addr, data
--	LDR r4, 1f
--	LDR r5, 2f
--	LDR r6, [r4]
--	AND r5, r6, r5
--	STR r5, [r4]
--	B	3f
--1:	.long \addr
--2:	.long \data
--3:
--.endm
--
--#endif /* __ZBOOT_MACRO_H */
--- 
-1.9.1
+I'm aware there is... room for improvement. Yes I need to convert it to device
+tree. Yes I need to clean up whatever the interrupt controller is doing.
+Yes I need to fix the SPARSE_IRQ and GETTIMEOFFSET stuff. But it boots
+initramfs to a shell prompt, and I want to get that out there.
 
+This is the smallest chunk I could chip out that boots to a shell prompt via
+initramfs and serial console. There are more drivers to come in future, but
+at the moment they're all too ugly for words.
+
+If you want to try this yourself, you can get a Numato Mimas v2 board at
+https://numato.com/fpga-boards/xilinx/spartan6/mimas-v2-spartan-6-fpga-development-board-with-ddr-sdram.html
+download a bitstream and vmlinux image from the "developer" tab of 0pf.org,
+(yes, that's a zero, the Organgutan Protection Foundation predates the Open
+Processor Foundation, but our marketing guys are running with it and saying
+the zero stands for no licensing fees), and then presumably install them
+with the (sadly python 3) bitstream flasher tool at
+https://numato.com/community/threads/mimas-v2-programming-in-linux.15/
+(then stick the kernel on a fat formatted sdcard in a file called "vmlinux"
+and the bootloader should know what to do. These kernel patches haven't got
+an mmc driver (it was too ugly for words, so was ethernet, we'll get there)
+but the bootloader knows how to use it.
+
+(We also have instructions for the spartan s6 avnet microboard if you
+have one of those lying around or order one from
+http://www.em.avnet.com/en-us/design/drc/Pages/Xilinx-Spartan-6-FPGA-LX9-MicroBoard.aspx
+but adding an sdcard to that requires a soldering iron. There are external
+4-pin sdcard readers for like $4 but the power/ground/data pins in the header
+don't match up to the order mmc card readers want them, so you have to solder
+on extension wires to the reader so you can reorder them. The numato is cheaper
+_and_ has built-in sdcard. The avnet has built-in ethernet instead. The
+same kernel runs on both, only the bitstreams differ.)
+
+There's a VHDL build on 0pf.org too, which _can_ build bitstreams if you
+can figure out how to install the Xilinx Webthing bitstream compiler. (Which
+is a free download but immensely ugly. I'm working on proper documentation
+for that, but the install process is outright eldrich. I'm also looking at
+people trying to make open source bitstream compilers that work, but at the
+moment that's "build a full linux distro with llvm or pcc" territory.
+Oh, and the VHDL build needs an sh2-elf compiler, not sh2-unknown-linux,
+because the symbol prefixes are different and the bootloader code is written
+for the elf ones, not the linux ones. I'm told the ELF spec was translated
+into japanese and the translation codepage switch changed punctation,
+which is why the _ vs . thing happened in superh. The has underscore vs
+does not have underscore is just ELF's fault.)
+
+Toolchain to build kernel and userspace: the last code sourcery superh release
+worked with elf2flt, aboriginal linux's sh2eb target builds a working
+simple-cross-compiler also elf2flt, and the musl-libc.org have a working
+fdpic setup. (With a horrible hack in the specfile to _not_ build the kernel
+as pic code. In his defense, he got the horrible hack from gentoo.) I should
+have prebuilt binaries in my next aboriginal linux release, I'll post about
+them on the nommu.org list.
+
+We're working on it. We want this all smoothed out by ELC Europe in october
+because we're giving our talk there again _and_ we're doing a tutorial where we
+give away a coupld dozen numato boards and walk everybody through building and
+installing bitstreams on their own linux laptop, and we'd really like that not
+to be the _first_ time somebody other than us makes it all work. (We _want_
+to focus on teaching people VHDL programming, but there's so much surrounding
+material that all has to work for that to be useful...)
+
+Oh, linux laptop is good because the Numato boards only wired up 2 pins for
+their serial port (no data terminal ready, no hardware flow control),
+so you have to do something like "stty clocal -crtscts -cdtrdsr /dev/ttyUSB0"
+to see terminal output, and for some reason it's impossible to do this on
+macosx? Their stty man page says you can do it, but it doesn't work. Possibly
+something to do with the way numato implemented their USB serial packatization
+is tickling macosx the wrong way? Works on windows, works on linux, not on mac.
+We've got a bug report in with numato and I'm told there's progress on that
+front...
+
+Sorry. Working on it. Have some kernel patches.
+
+Rob
