@@ -1,65 +1,50 @@
-From: Jiang Liu <jiang.liu@linux.intel.com>
-Date: Thu, 04 Jun 2015 04:13:37 +0000
-Subject: [RFT v2 27/48] sh, irq: Prepare for killing the first parameter 'irq' of irq_flow_handler_t
-Message-Id: <1433391238-19471-28-git-send-email-jiang.liu@linux.intel.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 18 Jun 2015 10:22:32 +0000
+Subject: [PATCH 0/2] PM / Domains: Infinite loop during reboot
+Message-Id: <1434622954-26747-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433391238-19471-1-git-send-email-jiang.liu@linux.intel.com>
-In-Reply-To: <1433391238-19471-1-git-send-email-jiang.liu@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Bjorn Helgaas <bhelgaas@google.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, Randy Dunlap <rdunlap@infradead.org>, Yinghai Lu <yinghai@kernel.org>, Borislav Petkov <bp@alien8.de>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kevin Cernekee <cernekee@gmail.com>, Jiang Liu <jiang.liu@linux.intel.com>
-Cc: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>, Tony Luck <tony.luck@intel.com>, x86@kernel.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-acpi@vger.kernel.org, linux-sh@vger.kernel.org
+To: Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Kevin Hilman <khilman@kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Magnus Damm <damm@opensource.se>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Change irq flow handlers to prepare for killing the first parameter 'irq'
-of irq_flow_handler_t.
+	Hi all,
 
-Signed-off-by: Jiang Liu <jiang.liu@linux.intel.com>
----
- arch/sh/boards/mach-se/7722/irq.c |    2 +-
- arch/sh/boards/mach-se/7724/irq.c |    2 +-
- drivers/sh/intc/virq.c            |    2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
+This patch series fixes an infinite loop during reboot after s2ram, as
+seen on r8a7791/koelsch with the CPG Clock Domain:
+  - Patch 1 fixes the cause in the sh_cmt driver,
+  - Patch 2 hardens the PM Domain core code against infinite loops.
 
-diff --git a/arch/sh/boards/mach-se/7722/irq.c b/arch/sh/boards/mach-se/7722/irq.c
-index 00e699232621..60aebd14ccf8 100644
---- a/arch/sh/boards/mach-se/7722/irq.c
-+++ b/arch/sh/boards/mach-se/7722/irq.c
-@@ -30,7 +30,7 @@ struct irq_domain *se7722_irq_domain;
- 
- static void se7722_irq_demux(unsigned int irq, struct irq_desc *desc)
- {
--	struct irq_data *data = irq_get_irq_data(irq);
-+	struct irq_data *data = irq_desc_get_irq_data(desc);
- 	struct irq_chip *chip = irq_data_get_irq_chip(data);
- 	unsigned long mask;
- 	int bit;
-diff --git a/arch/sh/boards/mach-se/7724/irq.c b/arch/sh/boards/mach-se/7724/irq.c
-index 5d1d3ec9a6cd..5feb246f642d 100644
---- a/arch/sh/boards/mach-se/7724/irq.c
-+++ b/arch/sh/boards/mach-se/7724/irq.c
-@@ -94,7 +94,7 @@ static struct irq_chip se7724_irq_chip __read_mostly = {
- 
- static void se7724_irq_demux(unsigned int irq, struct irq_desc *desc)
- {
--	struct fpga_irq set = get_fpga_irq(irq);
-+	struct fpga_irq set = get_fpga_irq(irq_desc_get_irq(desc));
- 	unsigned short intv = __raw_readw(set.sraddr);
- 	unsigned int ext_irq = set.base;
- 
-diff --git a/drivers/sh/intc/virq.c b/drivers/sh/intc/virq.c
-index bb7e745d4266..8704873e8186 100644
---- a/drivers/sh/intc/virq.c
-+++ b/drivers/sh/intc/virq.c
-@@ -114,7 +114,7 @@ static void intc_virq_handler(unsigned int irq, struct irq_desc *desc)
- 	struct irq_data *data = irq_desc_get_irq_data(desc);
- 	struct irq_chip *chip = irq_data_get_irq_chip(data);
- 	struct intc_virq_list *entry, *vlist = irq_data_get_irq_handler_data(data);
--	struct intc_desc_int *d = get_intc_desc(irq);
-+	struct intc_desc_int *d = get_intc_desc(irq_desc_get_irq(desc));
- 
- 	chip->irq_mask_ack(data);
- 
+Both patches individually fix the symptom (lock up during reboot), but
+only the first one fixes the root cause.
+Patches are against next-20150618.
+
+The discussion thread where the problem was originally reported is "PM /
+Domains: Infinite loop during reboot"
+(http://permalink.gmane.org/gmane.linux.ports.sh.devel/45249).
+
+Thanks!
+
+Geert Uytterhoeven (2):
+  clocksource: sh_cmt: Only perform clocksource suspend/resume if
+    enabled
+  PM / Domains: Avoid infinite loops in attach/detach code
+
+ drivers/base/power/domain.c  | 15 +++++++++++++--
+ drivers/clocksource/sh_cmt.c |  6 ++++++
+ 2 files changed, 19 insertions(+), 2 deletions(-)
+
 -- 
-1.7.10.4
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
