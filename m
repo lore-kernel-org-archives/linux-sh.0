@@ -1,117 +1,67 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 18 Jun 2015 19:36:21 +0000
+From: Rob Landley <rob@landley.net>
+Date: Fri, 19 Jun 2015 21:57:00 +0000
 Subject: Re: [PATCH 2/2] Changes to existing files for 0PF FPGA board.
-Message-Id: <CAMuHMdV_hNng9MDotN3jidRdG+WEUwjDwYcmTTohLPtfMEoAKg@mail.gmail.com>
+Message-Id: <5584902C.5010309@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434647946.861556@landley.net>
-	<1434647946.861922@landley.net>
-In-Reply-To: <1434647946.861922@landley.net>
+References: <1434647946.861556@landley.net> <1434647946.861922@landley.net> <20150618175931.GA11748@kroah.com>
+In-Reply-To: <20150618175931.GA11748@kroah.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Landley <rob@landley.net>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.cz>, Andrew Morton <akpm@linux-foundation.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Kevin Hilman <khilman@linaro.org>, "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, Vivek Goyal <vgoyal@redhat.com>, "Steven Rostedt (Red Hat)" <rostedt@goodmis.org>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Riku Voipio <riku.voipio@linaro.org>, Jiri Kosina <jkosina@suse.cz>, Paul Bolle <pebolle@tiscali.nl>, Ingo Molnar <mingo@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Davidlohr Bueso <davidlohr@hp.com>, Richard Weinberger <richard@nod.at>, Zhigang Lu <zlu@tilera.com>, Vineet Gupta <vgupta@synopsys.com>, Richard Kuo <rkuo@codeaurora.org>, Max Filippov <jcmvbkbc@gmail.com>, Pranith Kumar <bobby.prani@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.ker
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Jiri Slaby <jslaby@suse.cz>, Andrew Morton <akpm@linux-foundation.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Kevin Hilman <khilman@linaro.org>, "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, Vivek Goyal <vgoyal@redhat.com>, "Steven Rostedt (Red Hat)" <rostedt@goodmis.org>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Riku Voipio <riku.voipio@linaro.org>, Jiri Kosina <jkosina@suse.cz>, Paul Bolle <pebolle@tiscali.nl>, Ingo Molnar <mingo@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Davidlohr Bueso <davidlohr@hp.com>, Richard Weinberger <richard@nod.at>, Zhigang Lu <zlu@tilera.com>, Vineet Gupta <vgupta@synopsys.com>, Richard Kuo <rkuo@codeaurora.org>, Max Filippov <jcmvbkbc@gmail.com>, Pranith Kumar <bobby.prani@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-serial@vger.kernel.org, ysato@users.sourceforge.jp
 
-Hi Rob,
+On 06/18/2015 12:59 PM, Greg Kroah-Hartman wrote:
+> On Thu, Jun 18, 2015 at 10:19:19AM -0700, Rob Landley wrote:
+>> Changes to existing files to add 0pf j2 board support.
+>>
+> 
+> That's the second worse commit message and subject: line I've read
+> today.
+> 
+> And there's no signed off by line.
 
-On Thu, Jun 18, 2015 at 7:19 PM, Rob Landley <rob@landley.net> wrote:
-> Changes to existing files to add 0pf j2 board support.
+My bad. I've always sucked at filling out paperwork, and I didn't expect
+this to go in as is. But for the sake of following the official
+procedures (well, step 11 of of SubmittingPatches, it's not mentioned in
+any of the 26 steps of SubmitChecklist), here's the requested certification:
 
-Thanks for your patch!
+Signed-off-by: Rob Landley <rob@landley.net>
+Reviewed-by: D. Jeff Dionne <jeff@uclinux.org>
 
-Like Greg already said, splitting it up in logical parts and providing useful
-patch descriptions would be highly appreciated.
+> And there was no 1/2 patch sent.
 
-> diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-> index bf5b3f5..e609157 100644
-> --- a/arch/sh/Makefile
-> +++ b/arch/sh/Makefile
+I sent one, which made it to the archive...
 
-> @@ -31,6 +33,7 @@ isa-y                                 := $(isa-y)-up
->  endif
->
->  cflags-$(CONFIG_CPU_SH2)               := $(call cc-option,-m2,)
-> +cflags-$(CONFIG_CPU_SH2J)              := $(call cc-option,-m2,)
+http://lkml.iu.edu/hypermail/linux/kernel/1506.2/02539.html
 
-This is superfluous, as CPU_SH2J selects CPU_SH2.
+> And, most importantly:
+> 
+>> diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+> 
+> I don't care about arch/sh/ stuff, why are you sending this to me?
 
-> diff --git a/arch/sh/kernel/irq.c b/arch/sh/kernel/irq.c
-> index eb10ff8..7de9bcb 100644
-> --- a/arch/sh/kernel/irq.c
-> +++ b/arch/sh/kernel/irq.c
-> @@ -20,6 +20,8 @@
->  #include <asm/thread_info.h>
->  #include <cpu/mmu_context.h>
->
-> +#include <asm/board-0pf.h>
+$ scripts/get_maintainer.pl j2-oldfiles.patch | grep Greg
+Greg Kroah-Hartman <gregkh@linuxfoundation.org> (maintainer:SERIAL DRIVERS)
 
-Board-specific inclusion in generic sh source file?
+Sorry, my bad, I was trying to follow the documented procedure.
+Personally I'd have trimmed the cc: list but filling things out in
+triplicate seems to be all the rage these days.
 
-> +
->  atomic_t irq_err_count;
->
->  /*
-> @@ -175,11 +177,24 @@ void do_softirq_own_stack(void)
->         );
->  }
->  #else
-> +#define noinline __attribute__((noinline))
-> +static noinline void handle_irq_UART0(unsigned int irq) { generic_handle_irq(irq); }
-> +static noinline void handle_irq_UART1(unsigned int irq) { generic_handle_irq(irq); }
-> +static noinline void handle_irq_GPS(unsigned int irq) { generic_handle_irq(irq); }
-> +static noinline void handle_irq_EMAC(unsigned int irq) { generic_handle_irq(irq); }
->  static inline void handle_one_irq(unsigned int irq)
->  {
-> -       generic_handle_irq(irq);
-> +       switch(irq) {
-> +       case Irq_UART0: handle_irq_UART0(irq); break;
-> +       case Irq_UART1: handle_irq_UART1(irq); break;
-> +       case Irq_GPS:   handle_irq_GPS(irq); break;
-> +       case Irq_EMAC:  handle_irq_EMAC(irq); break;
-> +       default:
-> +               generic_handle_irq(irq);
-> +               break;
-> +       }
+> You have a bit of work to do here...
 
-What's the purpose of this change?
+As I mentioned in 0/2, yes. But "release early, release often" and all that.
 
->  }
-> -#endif
-> +#endif // CONFIG_IRQSTACKS
+(Or did we stop doing that now the Linux Foundation's in charge? I'm
+still stuck in the hobbyist era from back before we had a foundation
+with committees and a hierarchy where you need to go through proper
+channels and three dozen patch submission steps in two different files
+and all that. I'm trying to keep up, but I've always been really bad at
+bureaucracy...)
 
-Please no C++-style comments (scripts/checkpatch.pl?)
+> greg k-h
+> .
 
-> diff --git a/arch/sh/mm/cache-sh2.c b/arch/sh/mm/cache-sh2.c
-> index a74259f..438eadb 100644
-> --- a/arch/sh/mm/cache-sh2.c
-> +++ b/arch/sh/mm/cache-sh2.c
-
-> @@ -16,6 +17,30 @@
->  #include <asm/cacheflush.h>
->  #include <asm/io.h>
->
-> +#if defined(CONFIG_CPU_SUBTYPE_0PF)
-> +
-> +// Just flush the whole thing each time
-
-Likewise
-
-> +static void j2_flush_icache_range(void *fwoosh)
-> +{
-> +       __raw_writel(CCR_CACHE_RESET, CCR);
-> +}
-> +
-> +// This should never happen, but...
-
-Likewise.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
+Rob
 --
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
