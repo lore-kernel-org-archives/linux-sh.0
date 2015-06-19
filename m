@@ -1,94 +1,45 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Tue, 30 Jun 2015 16:56:59 +0000
-Subject: [PATCH v4 5/8] mmc: tmio: Add UHS-I mode support
-Message-Id: <1435683419.23818.67.camel@codethink.co.uk>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 19 Jun 2015 10:40:30 +0000
+Subject: [PATCH 0/2] new tool 'i2ctransfer'
+Message-Id: <1434710432-4182-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435683177.23818.60.camel@codethink.co.uk>
-In-Reply-To: <1435683177.23818.60.camel@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-i2c@vger.kernel.org, Jean Delvare <jdelvare@suse.de>
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org
 
-Based on work by Shinobu Uehara and Ben Dooks.  This adds the voltage
-switch operation needed for all UHS-I modes, but not the tuning needed
-for SDR-104 which will come later.
+So, here is my updated, better tested, much improved version of i2ctransfer:
 
-The card_busy implementation is a bit of a guess, but works for me on
-an R8A7790 chip.
+* rewrote parser to match agreed syntax (even improved it futher by reusing
+  last address if not specified again)
 
-Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
----
- drivers/mmc/host/tmio_mmc.h     |  3 +++
- drivers/mmc/host/tmio_mmc_pio.c | 31 +++++++++++++++++++++++++++++++
- 2 files changed, 34 insertions(+)
+* fixed 0-byte length transfers
 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index b44b58902906..aabd36955e73 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -101,6 +101,9 @@ struct tmio_mmc_host {
- 	void (*clk_disable)(struct tmio_mmc_host *host);
- 	int (*multi_io_quirk)(struct mmc_card *card,
- 			      unsigned int direction, int blk_size);
-+
-+	int (*start_signal_voltage_switch)(struct tmio_mmc_host *host,
-+					   unsigned char signal_voltage);
- };
- 
- struct tmio_mmc_host *tmio_mmc_host_alloc(struct platform_device *pdev);
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 4869dd9ffa9f..192bf3dda964 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -1008,12 +1008,43 @@ static int tmio_multi_io_quirk(struct mmc_card *card,
- 	return blk_size;
- }
- 
-+static int tmio_mmc_start_signal_voltage_switch(struct mmc_host *mmc,
-+	struct mmc_ios *ios)
-+{
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+
-+	if (!host->start_signal_voltage_switch)
-+		return 0;
-+
-+	return host->start_signal_voltage_switch(host, ios->signal_voltage);
-+}
-+
-+static int tmio_mmc_card_busy(struct mmc_host *mmc)
-+{
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	u32 status;
-+
-+	pm_runtime_get_sync(mmc_dev(mmc));
-+	status = sd_ctrl_read32(host, CTL_STATUS);
-+	pm_runtime_mark_last_busy(mmc_dev(mmc));
-+	pm_runtime_put_autosuspend(mmc_dev(mmc));
-+
-+	/*
-+	 * Card signals busy by pulling down all of DAT[3:0].  This status
-+	 * flag appears to reflect DAT3.
-+	 */
-+	return !(status & TMIO_STAT_SIGSTATE_A);
-+}
-+
- static const struct mmc_host_ops tmio_mmc_ops = {
- 	.request	= tmio_mmc_request,
- 	.set_ios	= tmio_mmc_set_ios,
- 	.get_ro         = tmio_mmc_get_ro,
- 	.get_cd		= mmc_gpio_get_cd,
- 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
-+	.start_signal_voltage_switch
-+			= tmio_mmc_start_signal_voltage_switch,
-+	.card_busy	= tmio_mmc_card_busy,
- 	.multi_io_quirk	= tmio_multi_io_quirk,
- };
- 
+* way more error checking
+
+* better error reporting
+
+And further details and cleanups. I still believe we should let Linux clean up
+the buffers, but I suspect Jean won't like it, so I added a patch to just do
+that.
+
+Please review, test, apply...
+
+Thanks,
+
+   Wolfram
+
+
+Wolfram Sang (2):
+  i2c-tools: add new tool 'i2ctransfer'
+  i2c-tools: i2ctransfer: clean up allocated resources
+
+ tools/Module.mk     |   8 +-
+ tools/i2ctransfer.c | 330 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 337 insertions(+), 1 deletion(-)
+ create mode 100644 tools/i2ctransfer.c
+
 -- 
 2.1.4
-
-
-
 
