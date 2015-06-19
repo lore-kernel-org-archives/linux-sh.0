@@ -1,7 +1,7 @@
-From: Andreas Schwab <schwab@linux-m68k.org>
-Date: Fri, 19 Jun 2015 19:57:22 +0000
+From: Rich Felker <dalias@libc.org>
+Date: Fri, 19 Jun 2015 20:32:21 +0000
 Subject: Re: [musl] Re: SH sigcontext ABI is broken
-Message-Id: <87fv5nv5ct.fsf@igel.home>
+Message-Id: <20150619203221.GX1173@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150619070912.GA15025@brightrain.aerifal.cx>
 In-Reply-To: <20150619070912.GA15025@brightrain.aerifal.cx>
@@ -10,17 +10,19 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Rich Felker <dalias@libc.org> writes:
+On Fri, Jun 19, 2015 at 09:57:22PM +0200, Andreas Schwab wrote:
+> Rich Felker <dalias@libc.org> writes:
+> 
+> > Thanks, but most of the links seem to be broken.
+> 
+> Are they?  I'm only seeing a single broken link, which has a mirror.
 
-> Thanks, but most of the links seem to be broken.
+My bad. Indeed only the davej one is broken, but that's where the code
+must have been introduced (even the earliest commit in tglx
+history.git has the #ifdef __SH4__ for FPU regs) and I can't find a
+cgit interface to it. Fetching several GB to browse history locally is
+going to take a while if I have to do that..
 
-Are they?  I'm only seeing a single broken link, which has a mirror.
-
-Andreas.
-
--- 
-Andreas Schwab, schwab@linux-m68k.org
-GPG Key fingerprint = 58CA 54C7 6D53 942B 1756  01D3 44D5 214B 8276 4ED5
-"And now for something completely different."
+Rich
 --
 To unsubscribe from this list: send the line "unsubscribe linux-sh" in
