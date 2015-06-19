@@ -1,187 +1,42 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Tue, 30 Jun 2015 16:25:06 +0000
-Subject: [PATCH v2 2/2] v4l: vsp1: Fix Suspend-to-RAM
-Message-Id: <1435681506-24296-3-git-send-email-ykaneko0929@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 19 Jun 2015 13:39:59 +0000
+Subject: [PATCH] v4l: vsp1: Fix plane stride and size checks
+Message-Id: <1434721199-3843-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435681506-24296-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1435681506-24296-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-media@vger.kernel.org
-Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Damian Hobson-Garcia <dhobsong@igel.co.jp>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Sei Fumizono <sei.fumizono.jw@hitachi-solutions.com>
+The checks need to be performed on up to two planes, as the third plane,
+if present, must have the same stride and size as the second plane.
 
-Fix Suspend-to-RAM
-so that VSP1 driver continues to work after resuming.
+The code incorrectly performs the checks on at least two planes instead
+of at most two planes, fix it.
 
-Add stopping VSP1 during suspend.
-
-Signed-off-by: Sei Fumizono <sei.fumizono.jw@hitachi-solutions.com>
-Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
-[Kaneko: Moved correction of vsp1_pm_resume() logic to separate patch]
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/media/platform/vsp1/vsp1_video.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-This patch is based on the master branch of linuxtv.org/media_tree.git.
-
-v2 [Yoshihiro Kaneko]
-* compile tested only
-* As suggested by Laurent Pinchart
-  - separate a patch into two patches
-  - add stop/restart the video stream code to vsp1_pipelines_suspend() and
-    vsp1_pipelines_resume() function in vsp1_video.c.
-
- drivers/media/platform/vsp1/vsp1_drv.c   |  9 ++++-
- drivers/media/platform/vsp1/vsp1_video.c | 69 +++++++++++++++++++++++++++++++-
- drivers/media/platform/vsp1/vsp1_video.h |  5 ++-
- 3 files changed, 79 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index a7dfbb0..caf55e4 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -1,7 +1,7 @@
- /*
-  * vsp1_drv.c  --  R-Car VSP1 Driver
-  *
-- * Copyright (C) 2013-2014 Renesas Electronics Corporation
-+ * Copyright (C) 2013-2015 Renesas Electronics Corporation
-  *
-  * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
-  *
-@@ -403,7 +403,9 @@ static int vsp1_pm_suspend(struct device *dev)
- 	if (vsp1->ref_count = 0)
- 		return 0;
- 
-+	vsp1_pipelines_suspend(vsp1);
- 	clk_disable_unprepare(vsp1->clock);
-+
- 	return 0;
- }
- 
-@@ -416,7 +418,10 @@ static int vsp1_pm_resume(struct device *dev)
- 	if (vsp1->ref_count = 0)
- 		return 0;
- 
--	return clk_prepare_enable(vsp1->clock);
-+	clk_prepare_enable(vsp1->clock);
-+	vsp1_pipelines_resume(vsp1);
-+
-+	return 0;
- }
- #endif
- 
 diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index d91f19a..2be96cd 100644
+index c1b5a09b8331..60aa99faaa7f 100644
 --- a/drivers/media/platform/vsp1/vsp1_video.c
 +++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -1,7 +1,7 @@
- /*
-  * vsp1_video.c  --  R-Car VSP1 Video Node
-  *
-- * Copyright (C) 2013-2014 Renesas Electronics Corporation
-+ * Copyright (C) 2013-2015 Renesas Electronics Corporation
-  *
-  * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
-  *
-@@ -662,6 +662,73 @@ done:
- 	spin_unlock_irqrestore(&pipe->irqlock, flags);
- }
- 
-+void vsp1_pipelines_suspend(struct vsp1_device *vsp1)
-+{
-+	unsigned int i;
-+	unsigned long flags;
-+	int ret;
-+
-+	/* To avoid increasing the system suspend time needlessly, loop over
-+	 * the pipelines twice, first to set them all to the stopping state,
-+	 * and then to wait for the stop to complete.
-+	 */
-+	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
-+		struct vsp1_rwpf *wpf = vsp1->wpf[i];
-+		struct vsp1_pipeline *pipe;
-+
-+		if (wpf = NULL)
-+			continue;
-+
-+		pipe = to_vsp1_pipeline(&wpf->entity.subdev.entity);
-+		if (pipe = NULL)
-+			continue;
-+
-+		spin_lock_irqsave(&pipe->irqlock, flags);
-+		if (pipe->state = VSP1_PIPELINE_RUNNING)
-+			pipe->state = VSP1_PIPELINE_STOPPING;
-+		spin_unlock_irqrestore(&pipe->irqlock, flags);
-+	}
-+
-+	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
-+		struct vsp1_rwpf *wpf = vsp1->wpf[i];
-+		struct vsp1_pipeline *pipe;
-+
-+		if (wpf = NULL)
-+			continue;
-+
-+		pipe = to_vsp1_pipeline(&wpf->entity.subdev.entity);
-+		if (pipe = NULL)
-+			continue;
-+
-+		ret = wait_event_timeout(pipe->wq,
-+					 pipe->state = VSP1_PIPELINE_STOPPED,
-+					 msecs_to_jiffies(500));
-+		if (ret = 0)
-+			dev_warn(vsp1->dev, "pipeline stop timeout\n");
-+	}
-+}
-+
-+void vsp1_pipelines_resume(struct vsp1_device *vsp1)
-+{
-+	unsigned int i;
-+
-+	/* Resume pipeline */
-+	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
-+		struct vsp1_rwpf *wpf = vsp1->wpf[i];
-+		struct vsp1_pipeline *pipe;
-+
-+		if (wpf = NULL)
-+			continue;
-+
-+		pipe = to_vsp1_pipeline(&wpf->entity.subdev.entity);
-+		if (pipe = NULL)
-+			continue;
-+
-+		if (vsp1_pipeline_ready(pipe))
-+			vsp1_pipeline_run(pipe);
-+	}
-+}
-+
- /*
-  * Propagate the alpha value through the pipeline.
-  *
-diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
-index fd2851a..0887a4d 100644
---- a/drivers/media/platform/vsp1/vsp1_video.h
-+++ b/drivers/media/platform/vsp1/vsp1_video.h
-@@ -1,7 +1,7 @@
- /*
-  * vsp1_video.h  --  R-Car VSP1 Video Node
-  *
-- * Copyright (C) 2013-2014 Renesas Electronics Corporation
-+ * Copyright (C) 2013-2015 Renesas Electronics Corporation
-  *
-  * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
-  *
-@@ -149,4 +149,7 @@ void vsp1_pipeline_propagate_alpha(struct vsp1_pipeline *pipe,
- 				   struct vsp1_entity *input,
- 				   unsigned int alpha);
- 
-+void vsp1_pipelines_suspend(struct vsp1_device *vsp1);
-+void vsp1_pipelines_resume(struct vsp1_device *vsp1);
-+
- #endif /* __VSP1_VIDEO_H__ */
+@@ -245,7 +245,7 @@ static int __vsp1_video_try_format(struct vsp1_video *video,
+ 	 * the datasheet, strides not aligned to a multiple of 128 bytes result
+ 	 * in image corruption.
+ 	 */
+-	for (i = 0; i < max(info->planes, 2U); ++i) {
++	for (i = 0; i < min(info->planes, 2U); ++i) {
+ 		unsigned int hsub = i > 0 ? info->hsub : 1;
+ 		unsigned int vsub = i > 0 ? info->vsub : 1;
+ 		unsigned int align = 128;
 -- 
-1.9.1
+Regards,
 
+Laurent Pinchart
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
