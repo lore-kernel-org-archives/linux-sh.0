@@ -1,56 +1,41 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 15 Jun 2015 04:49:45 +0000
-Subject: [PATCH 0/6][RFC] arm64: Renesas Gen3 initial patch
-Message-Id: <87616pwp7a.wl%kuninori.morimoto.gx@renesas.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Fri, 19 Jun 2015 10:38:14 +0000
+Subject: Re: [PATCH 0/6][RFC] arm64: Renesas Gen3 initial patch
+Message-Id: <CAO3366wAcViA=UE-V27v-gtHd5cdSmg5g7VQ12qUmQGPWQe3Zw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87616pwp7a.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87616pwp7a.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+On Mon, Jun 15, 2015 at 6:49 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+>
+> Hi SH-ML
+>
+> I guess I need to Cc ARM-ML, but I didn't at this point.
+>
+> These are initial patch set for Gen3 support. These were tested on our
+[...]
+> My concern about these patches are about clocks. CPG/MSTP/APMU need
+> write protection on Gen3, but these need to share same protection.
+> Current version is using new global rcar_cpgwpcr_lock(),
+> but we should to create new driver ? Then DT is ?
 
-Hi SH-ML
+IMO the task of the CPG drivers is to encapsulate the weirdness that
+is not reasonably-well describable in the device tree, and the
+write-protect feature falls into that field.
 
-I guess I need to Cc ARM-ML, but I didn't at this point.
+I'd leave the CPG device to be the owner of the write-protect
+registers and provide a write function used by all drivers touching
+clock registers. Depending on initialization by the CPG driver, this
+function would either do a regular write, or one with the
+write-protect safety dance.  No new drivers, no new DT bindings, and
+no code duplication between write-protect users.
 
-These are initial patch set for Gen3 support. These were tested on our emulator,
-not real board. And these are pick-uped SoC related parts from it.
-Basically, these are created by Inami-san, and I tidyuped these.
-Very limited people only can access to this emulator, and it takes very long
-time to get output. Inami-san is using it, but I couldn't.
+Or disable write protection. :)
 
-Inami-san (and I) have emulator parts (and hacks) patch as platform,
-but I don't post it.
-
-My concern about these patches are about clocks. CPG/MSTP/APMU need
-write protection on Gen3, but these need to share same protection.
-Current version is using new global rcar_cpgwpcr_lock(),
-but we should to create new driver ? Then DT is ?
-
-I know we need to more discuss / brushup for these Gen3.
-But, I believe this patch-set can be good start point for Gen3 !
-
-
-Gaku Inami (3):
-      clk: shmobile: add Renesas R-Car Gen3 CPG support
-      arm64: Add new Renesas R-Car Gen3 SoC Kconfig
-      arm64: renesas: Add r8a7795 SoC support
-
-Kuninori Morimoto (3):
-      clk: shmobile: add CPG common lock support for Gen3
-      clk: shmobile: CPG write protect register support for MSTP
-      arm64: defconfig: Enable Renesas R-Car Gen3 SoC in defconfig
-
- Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt |   3 ++
- arch/arm64/Kconfig                                                  |  13 +++++
- arch/arm64/boot/dts/Makefile                                        |   1 +
- arch/arm64/boot/dts/renesas/Makefile                                |   5 ++
- arch/arm64/boot/dts/renesas/r8a7795.dtsi                            |  90 ++++++++++++++++++++++++++++++++++
- arch/arm64/configs/defconfig                                        |   3 ++
- drivers/clk/shmobile/Makefile                                       |   2 +
- drivers/clk/shmobile/clk-mstp.c                                     |  16 +++++-
- drivers/clk/shmobile/clk-rcar-gen3.c                                | 243 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- drivers/clk/shmobile/rcar-clk.c                                     |  30 ++++++++++++
- drivers/clk/shmobile/rcar-clk.h                                     |  21 ++++++++
- include/dt-bindings/clock/r8a7795-clock.h                           |  31 ++++++++++++
- 12 files changed, 457 insertions(+), 1 deletion(-)
+CU
+Uli
