@@ -1,91 +1,81 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 03 Jun 2015 20:57:55 +0000
-Subject: Re: [PATCH] sh-pfc: handle pin array holes in sh_pfc_map_pins()
-Message-Id: <556F6A53.9010601@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 19 Jun 2015 08:14:17 +0000
+Subject: possible regression caused by "ARM: shmobile: r8a7778: Instantiate
+Message-Id: <20150619081416.GA434@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1528110.Mb5xiNU0rc@wasted.cogentembedded.com>	<3656925.3GuTRhx1fV@avalon>	<55415D82.2020407@cogentembedded.com> <CAMuHMdWU1WK+M+Mz3CBgXkbtYC9=D03Jrs4425BWrv22ARLdqA@mail.gmail.com>
-In-Reply-To: <CAMuHMdWU1WK+M+Mz3CBgXkbtYC9=D03Jrs4425BWrv22ARLdqA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hello.
+GIC from C board code in legacy builds"
+Reply-To: 
 
-On 05/27/2015 11:52 AM, Geert Uytterhoeven wrote:
+cpu_possible_mask to fix SMP broadcast
+Reply-To: 
+Organisation: Horms Solutions Ltd.
 
->>>> The  pin array handled by sh_pfc_map_pins() may contain holes
->>>> representing
->>>> non- existing pins. We have to first count the valid pins in order to
->>>> calculate the size  of the memory to be allocated, then to skip over the
->>>> non-existing pins when  initializing the allocated arrays, and then to
->>>> return the number of valid pins  from sh_pfc_map_pins() instead of 0 on
->>>> success.
+Hi Magnus, Hi All,
 
->>>> As we have to touch devm_kzalloc() calls anyway, use more fitting
->>>> devm_kcalloc() instead which additionally checks the array size. And
->>>> since
->>>> PINMUX_TYPE_NONE is #define'd as 0, stop re-initializing already zeroed
->>>> out 'pmx->configs' array.
+I have observed what appears to be a regression caused by
+1fbbc3f0c544 ("ARM: shmobile: r8a7778: Instantiate GIC from C board code in
+legacy builds"), which was included in v3.19.
 
->>> I agree with this optimization, but I think it deserves a comment in the
->>> source code that explicitly mentions PINMUX_TYPE_NONE, to make sure any
->>> later
->>> rework changing the PINMUX_TYPE_NONE value would catch this.
+As its subject states,
+patch in question is initiates the GIC from C board code in legacy builds.
+And this appears to work when booting using non-DT-reference. However,
+it causes the boot to fail - I see no console output - for DT-reference.
 
->>     Note that this is not just "drove by" optimization, I was trying to avoid
->> the very need to explicitly initialize 'pmx->configs' array to
->> PINMUX_TYPE_NONE...
+The patch below is a work-around I used while investigating the problem.
 
->>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+I can think of two solutions:
+* A run-time check to see if DT-reference is in use or not:
+  possibly by checking for a GIC node in DT.
+* Scheduling bockw-reference for removal.
 
->> [...]
+Given our recent discussion of a regression in marzen legacy
+I suspect the latter will be preferred.
 
->>>> @@ -622,7 +628,7 @@ int sh_pfc_register_pinctrl(struct sh_pf
->>>>          pmx->pctl_desc.pmxops = &sh_pfc_pinmux_ops;
->>>>          pmx->pctl_desc.confops = &sh_pfc_pinconf_ops;
->>>>          pmx->pctl_desc.pins = pmx->pins;
->>>> -       pmx->pctl_desc.npins = pfc->info->nr_pins;
->>>> +       pmx->pctl_desc.npins = ret;
->>>>
->>>>          pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
->>>>          if (pmx->pctl = NULL)
+-- >8 --
+From: Simon Horman <horms@verge.net.au>
 
->>> Shouldn't you also fix sh_pfc_init_ranges() ? It includes the following
->>> code
->>> that doesn't seem to handle holes properly.
+Subject: [RFC/PATCH] ARM: shmobile: r8a7778: Do not instantiate GIC from C board
+ code in DT-reference builds
 
->>>           for (i = 1, nr_ranges = 1; i < pfc->info->nr_pins; ++i) {
->>>                   if (pfc->info->pins[i-1].pin != pfc->info->pins[i].pin -
->>> 1)
->>>                           nr_ranges++;
->>>           }
+This is just a work around as it will break booting (non-reference) using
+legacy C code if CONFIG_MACH_BOCKW_REFERENCE is enabled.
 
->>> Please make sure that sh_pfc_get_pin_index() doesn't start blowing up
->>> afterwards though.
+*** For informational purposes only
+*** Not for mainline merge
 
->>     I think I'm seeing a problem with this function (and it's not due to my
->> changes). Its result is often used to index 'pfc->info->pins' array. While
->> this is working now, when the holes are not yet allowed, it's going to break
->> when we start supporting the holes since that array couldn't be indexed this
->> way anymore (via ranges). This function is good only for 'pmx->configs' and
->> the like where we have already removed the holes. It looks like this holes
->> thing is going to be too complex, so how about leaving things as they are?
->> :-)
+Fixes: 1fbbc3f0c5440 ("ARM: shmobile: r8a7778: Instantiate GIC from C board
+code in legacy builds")
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7778.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-> Any conclusion on this?
-
-    I did overestimate the complexity, it seems. :-)
-    I have just removed the calls to sh_pfc_get_pin_index() on 
-'pfc->info->pins' and its alias.
-
-> If yes, please resend, incl. the r8a7794 pfc patches that depend on it.
-
-    Will repost the patches RSN.
-
-> Gr{oetje,eeting}s,
->                          Geert
-
-WBR, Sergei
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index c49aa094fe17..94d5489b4b07 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -592,14 +592,14 @@ void __init r8a7778_init_irq_extpin(int irlm)
+ void __init r8a7778_init_irq_dt(void)
+ {
+ 	void __iomem *base = ioremap_nocache(0xfe700000, 0x00100000);
+-#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
++#if defined(CONFIG_ARCH_SHMOBILE_LEGACY) && !defined(CONFIG_MACH_BOCKW_REFERENCE)
+ 	void __iomem *gic_dist_base = ioremap_nocache(0xfe438000, 0x1000);
+ 	void __iomem *gic_cpu_base = ioremap_nocache(0xfe430000, 0x1000);
+ #endif
+ 
+ 	BUG_ON(!base);
+ 
+-#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
++#if defined(CONFIG_ARCH_SHMOBILE_LEGACY) && !defined(CONFIG_MACH_BOCKW_REFERENCE)
+ 	gic_init(0, 29, gic_dist_base, gic_cpu_base);
+ #else
+ 	irqchip_init();
+-- 
+2.1.4
 
