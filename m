@@ -1,83 +1,75 @@
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Date: Fri, 19 Jun 2015 22:49:58 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sat, 20 Jun 2015 08:00:37 +0000
 Subject: Re: [PATCH 2/2] Changes to existing files for 0PF FPGA board.
-Message-Id: <20150619224958.GA27925@kroah.com>
+Message-Id: <CAMuHMdXscFCvHGGkFvF6XPS9b=K+p7cCQrnUA86BMfyWpwHP1Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1434647946.861556@landley.net>
- <1434647946.861922@landley.net>
- <20150618175931.GA11748@kroah.com>
- <5584902C.5010309@landley.net>
-In-Reply-To: <5584902C.5010309@landley.net>
+	<1434647946.861922@landley.net>
+	<CAMuHMdV_hNng9MDotN3jidRdG+WEUwjDwYcmTTohLPtfMEoAKg@mail.gmail.com>
+	<55849397.1060000@landley.net>
+In-Reply-To: <55849397.1060000@landley.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Rob Landley <rob@landley.net>
-Cc: Jiri Slaby <jslaby@suse.cz>, Andrew Morton <akpm@linux-foundation.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Kevin Hilman <khilman@linaro.org>, "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, Vivek Goyal <vgoyal@redhat.com>, "Steven Rostedt (Red Hat)" <rostedt@goodmis.org>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Riku Voipio <riku.voipio@linaro.org>, Jiri Kosina <jkosina@suse.cz>, Paul Bolle <pebolle@tiscali.nl>, Ingo Molnar <mingo@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Davidlohr Bueso <davidlohr@hp.com>, Richard Weinberger <richard@nod.at>, Zhigang Lu <zlu@tilera.com>, Vineet Gupta <vgupta@synopsys.com>, Richard Kuo <rkuo@codeaurora.org>, Max Filippov <jcmvbkbc@gmail.com>, Pranith Kumar <bobby.prani@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-serial@vger.kernel.org, ysato@users.sourceforge.jp
+Cc: Jiri Slaby <jslaby@suse.cz>, Andrew Morton <akpm@linux-foundation.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Kevin Hilman <khilman@linaro.org>, "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, Vivek Goyal <vgoyal@redhat.com>, "Steven Rostedt (Red Hat)" <rostedt@goodmis.org>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Riku Voipio <riku.voipio@linaro.org>, Jiri Kosina <jkosina@suse.cz>, Paul Bolle <pebolle@tiscali.nl>, Ingo Molnar <mingo@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Davidlohr Bueso <davidlohr@hp.com>, Richard Weinberger <richard@nod.at>, Zhigang Lu <zlu@tilera.com>, Vineet Gupta <vgupta@synopsys.com>, Richard Kuo <rkuo@codeaurora.org>, Max Filippov <jcmvbkbc@gmail.com>, Pranith Kumar <bobby.prani@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>linux-s
 
-On Fri, Jun 19, 2015 at 04:57:00PM -0500, Rob Landley wrote:
-> On 06/18/2015 12:59 PM, Greg Kroah-Hartman wrote:
-> > On Thu, Jun 18, 2015 at 10:19:19AM -0700, Rob Landley wrote:
-> >> Changes to existing files to add 0pf j2 board support.
-> >>
-> > 
-> > That's the second worse commit message and subject: line I've read
-> > today.
-> > 
-> > And there's no signed off by line.
-> 
-> My bad. I've always sucked at filling out paperwork, and I didn't expect
-> this to go in as is. But for the sake of following the official
-> procedures (well, step 11 of of SubmittingPatches, it's not mentioned in
-> any of the 26 steps of SubmitChecklist), here's the requested certification:
-> 
-> Signed-off-by: Rob Landley <rob@landley.net>
-> Reviewed-by: D. Jeff Dionne <jeff@uclinux.org>
+Hi Rob,
 
-You didn't do the 26 steps of SubmitChecklist, as step 5 would have
-caught almost all of these issues.
+On Sat, Jun 20, 2015 at 12:11 AM, Rob Landley <rob@landley.net> wrote:
+> On 06/18/2015 02:36 PM, Geert Uytterhoeven wrote:
+>> On Thu, Jun 18, 2015 at 7:19 PM, Rob Landley <rob@landley.net> wrote:
+>>> Changes to existing files to add 0pf j2 board support.
+>>
+>> Thanks for your patch!
+>>
+>> Like Greg already said, splitting it up in logical parts and providing useful
+>> patch descriptions would be highly appreciated.
+>
+> I actually don't know how to split it up further. The initial port was
+> done by a series of contractors (in Russia, I think), and then I
+> inherited it to try to get something releasable. This is the smallest
+> chunk I could get to actually boot.
+>
+> I suppose I could send you the serial driver by itself, and _then_ the
+> board, but it wouldn't compile if nothing uses it. (Similarly you can't
+> boot the board without a serial console...)
 
-> > And there was no 1/2 patch sent.
-> 
-> I sent one, which made it to the archive...
-> 
-> http://lkml.iu.edu/hypermail/linux/kernel/1506.2/02539.html
+You don't have to send in a big initial patch that actually boots.
+For new architecture/SoC/board support, just split it in logical hunks,
+and submit it in some logical order that always builds.
 
-But you didn't cc: me on that, how am I supposed to know?
+E.g.:
+  - SoC core support (arch/sh/),
+  - Board support (arch/sh/),
+  - Drivers.
 
-> > And, most importantly:
-> > 
-> >> diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-> > 
-> > I don't care about arch/sh/ stuff, why are you sending this to me?
-> 
-> $ scripts/get_maintainer.pl j2-oldfiles.patch | grep Greg
-> Greg Kroah-Hartman <gregkh@linuxfoundation.org> (maintainer:SERIAL DRIVERS)
-> 
-> Sorry, my bad, I was trying to follow the documented procedure.
-> Personally I'd have trimmed the cc: list but filling things out in
-> triplicate seems to be all the rage these days.
+The first two should go in through akpm (sh is orphaned),
+the rest through the individual subsystem maintainers.
 
-No, you need to break your patch up properly, a single patch hitting all
-of these files has never been ok.
+> (Now the reason _I_ thought you'd reject it had more to do with not
+> having converted it to device tree yet, and things on that level. But I
 
-> > You have a bit of work to do here...
-> 
-> As I mentioned in 0/2, yes. But "release early, release often" and all that.
-> 
-> (Or did we stop doing that now the Linux Foundation's in charge?
+Sh is an existing supported architecture, so DT is not a hard requirement.
+If you would have waited until after the removal of sh, it would be much
+harder :-) (cfr. h8300, but Sato-san did a great job there, with DT, CCF, ...)
 
-Seriously?  It's one thing to cc: a ton of people with a patch that for
-90% of it, isn't relevant to them, and isn't even something they can do
-anything with.  It's another thing to rant against those who try to
-point out how to solve your issues.
+> wanted to get it out there so people outside $DAYJOB can test the
+> hardware. We did a linuxcon japan presentation which lwn.net covered,
+> and we're getting pokes about "where can I download this", so...)
 
-> I'm still stuck in the hobbyist era from back before we had a
-> foundation with committees and a hierarchy where you need to go
-> through proper channels and three dozen patch submission steps in two
-> different files and all that. I'm trying to keep up, but I've always
-> been really bad at bureaucracy...)
+It's great to hear there's so much interest in this! Let's hope this will
+attract more actual contributors...
 
-There is no such thing here, you know better than that, stop trying to
-troll, it's not very becoming.
+Gr{oetje,eeting}s,
 
-greg k-h
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
