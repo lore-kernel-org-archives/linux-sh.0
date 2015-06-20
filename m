@@ -1,53 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 16 Jun 2015 10:57:03 +0000
-Subject: Re: [PATCH 3/3] drm: rcar-du: Convert rcar_du_encoders_init_one() return value to 0/<0
-Message-Id: <3606392.4dYiok7J5y@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 20 Jun 2015 18:48:24 +0000
+Subject: [PATCH 2/2] i2c: sh_mobile: use adapter default for timeout
+Message-Id: <1434826104-16346-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432652516-15085-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1432652516-15085-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <CAMuHMdWYUnY82cFeeZePOqu3VwLP_gq95a0K4qDJLGx+utLWJQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdWYUnY82cFeeZePOqu3VwLP_gq95a0K4qDJLGx+utLWJQ@mail.gmail.com>
+References: <1434826104-16346-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1434826104-16346-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, DRI Development <dri-devel@lists.freedesktop.org>, Linux-sh list <linux-sh@vger.kernel.org>, Cao Minh Hiep <cm-hiep@jinso.co.jp>
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 
-Hi Geert,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Tuesday 26 May 2015 21:24:03 Geert Uytterhoeven wrote:
-> On Tue, May 26, 2015 at 5:01 PM, Laurent Pinchart wrote:
-> > --- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-> > +++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-> > @@ -640,14 +640,14 @@ static int rcar_du_encoders_init_one(struct
-> > rcar_du_device *rcdu,
-> >         of_node_put(connector);
-> >         
-> >         if (!ret)
-> > -               return 1;
-> > +               return 0;
-> > 
-> >         if (ret != -EPROBE_DEFER)
-> >                 dev_warn(rcdu->dev,
-> >                          "failed to initialize encoder %s (%d),
-> >                          skipping\n",
-> >                          encoder->full_name, ret);
-> > 
-> > -       return 0;
-> > +       return ret;
-> >  }
-> 
-> Perhaps just
-> 
->         if (ret && ret != -EPROBE_DEFER)
->                 dev_warn(...);
-> 
->        return ret;
-> 
-> ?
+5 seconds is a very large timeout, and it is hardcoded. Use the default
+timeout from 'struct adapter' which is 1 second. It can also be modified
+from userspace for specific workloads.
 
-Good point. I'll fix that.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-sh_mobile.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index 7193bcfdd94013..67eb8d8256ca5d 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -751,7 +751,7 @@ static int sh_mobile_i2c_xfer(struct i2c_adapter *adapter,
+ 		/* The interrupt handler takes care of the rest... */
+ 		k = wait_event_timeout(pd->wait,
+ 				       pd->sr & (ICSR_TACK | SW_DONE),
+-				       5 * HZ);
++				       adap->timeout);
+ 		if (!k) {
+ 			dev_err(pd->dev, "Transfer request timed out\n");
+ 			if (pd->dma_direction != DMA_NONE)
 -- 
-Regards,
+2.1.4
 
-Laurent Pinchart
-
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
