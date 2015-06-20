@@ -1,123 +1,35 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Sun, 07 Jun 2015 08:57:56 +0000
-Subject: [PATCHv2 02/11] sh-vou: use resource managed calls
-Message-Id: <1433667485-35711-3-git-send-email-hverkuil@xs4all.nl>
+From: Rob Landley <rob@landley.net>
+Date: Sat, 20 Jun 2015 21:19:55 +0000
+Subject: Re: [PATCH] sh: Wire up missing syscalls
+Message-Id: <5585D8FB.5070202@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
-In-Reply-To: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
+References: <BLU436-SMTP93208A4E06C8B5CC68CA1CB9DD0@phx.gbl>
+In-Reply-To: <BLU436-SMTP93208A4E06C8B5CC68CA1CB9DD0@phx.gbl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>, Magnus Damm <damm@opensource.se>
+To: Chen Gang <xili_gchen_5257@hotmail.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: linux-sh@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-From: Hans Verkuil <hans.verkuil@cisco.com>
+On 05/09/2015 04:02 PM, Chen Gang wrote:
+> The related warnings:
+> 
+>     CALL    scripts/checksyscalls.sh
+>   <stdin>:1229:2: warning: #warning syscall sched_setattr not implemented [-Wcpp]
+>   <stdin>:1232:2: warning: #warning syscall sched_getattr not implemented [-Wcpp]
+>   <stdin>:1235:2: warning: #warning syscall renameat2 not implemented [-Wcpp]
+>   <stdin>:1238:2: warning: #warning syscall seccomp not implemented [-Wcpp]
+>   <stdin>:1241:2: warning: #warning syscall getrandom not implemented [-Wcpp]
+>   <stdin>:1244:2: warning: #warning syscall memfd_create not implemented [-Wcpp]
+>   <stdin>:1247:2: warning: #warning syscall bpf not implemented [-Wcpp]
+>   <stdin>:1250:2: warning: #warning syscall execveat not implemented [-Wcpp]
+> 
+> Signed-off-by: Chen Gang <gang.chen.5i5j@gmail.com>
 
-Simplify the sh-vou clean up by using devm_* were possible.
+Acked-by: Rob Landley <rob@landley.net>
 
-Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
-Cc: Magnus Damm <damm@opensource.se>
----
- drivers/media/platform/sh_vou.c | 43 ++++++++---------------------------------
- 1 file changed, 8 insertions(+), 35 deletions(-)
+I.E. I tried it and it worked for me on sh2 and sh4.
 
-diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
-index 8b799ba..801d5ef 100644
---- a/drivers/media/platform/sh_vou.c
-+++ b/drivers/media/platform/sh_vou.c
-@@ -1300,7 +1300,7 @@ static int sh_vou_probe(struct platform_device *pdev)
- 	struct i2c_adapter *i2c_adap;
- 	struct video_device *vdev;
- 	struct sh_vou_device *vou_dev;
--	struct resource *reg_res, *region;
-+	struct resource *reg_res;
- 	struct v4l2_subdev *subdev;
- 	int irq, ret;
- 
-@@ -1312,7 +1312,7 @@ static int sh_vou_probe(struct platform_device *pdev)
- 		return -ENODEV;
- 	}
- 
--	vou_dev = kzalloc(sizeof(*vou_dev), GFP_KERNEL);
-+	vou_dev = devm_kzalloc(&pdev->dev, sizeof(*vou_dev), GFP_KERNEL);
- 	if (!vou_dev)
- 		return -ENOMEM;
- 
-@@ -1340,28 +1340,18 @@ static int sh_vou_probe(struct platform_device *pdev)
- 	pix->sizeimage		= VOU_MAX_IMAGE_WIDTH * 2 * 480;
- 	pix->colorspace		= V4L2_COLORSPACE_SMPTE170M;
- 
--	region = request_mem_region(reg_res->start, resource_size(reg_res),
--				    pdev->name);
--	if (!region) {
--		dev_err(&pdev->dev, "VOU region already claimed\n");
--		ret = -EBUSY;
--		goto ereqmemreg;
--	}
--
--	vou_dev->base = ioremap(reg_res->start, resource_size(reg_res));
--	if (!vou_dev->base) {
--		ret = -ENOMEM;
--		goto emap;
--	}
-+	vou_dev->base = devm_ioremap_resource(&pdev->dev, reg_res);
-+	if (IS_ERR(vou_dev->base))
-+		return PTR_ERR(vou_dev->base);
- 
--	ret = request_irq(irq, sh_vou_isr, 0, "vou", vou_dev);
-+	ret = devm_request_irq(&pdev->dev, irq, sh_vou_isr, 0, "vou", vou_dev);
- 	if (ret < 0)
--		goto ereqirq;
-+		return ret;
- 
- 	ret = v4l2_device_register(&pdev->dev, &vou_dev->v4l2_dev);
- 	if (ret < 0) {
- 		dev_err(&pdev->dev, "Error registering v4l2 device\n");
--		goto ev4l2devreg;
-+		return ret;
- 	}
- 
- 	vdev = &vou_dev->vdev;
-@@ -1407,39 +1397,22 @@ ereset:
- ei2cgadap:
- 	pm_runtime_disable(&pdev->dev);
- 	v4l2_device_unregister(&vou_dev->v4l2_dev);
--ev4l2devreg:
--	free_irq(irq, vou_dev);
--ereqirq:
--	iounmap(vou_dev->base);
--emap:
--	release_mem_region(reg_res->start, resource_size(reg_res));
--ereqmemreg:
--	kfree(vou_dev);
- 	return ret;
- }
- 
- static int sh_vou_remove(struct platform_device *pdev)
- {
--	int irq = platform_get_irq(pdev, 0);
- 	struct v4l2_device *v4l2_dev = platform_get_drvdata(pdev);
- 	struct sh_vou_device *vou_dev = container_of(v4l2_dev,
- 						struct sh_vou_device, v4l2_dev);
- 	struct v4l2_subdev *sd = list_entry(v4l2_dev->subdevs.next,
- 					    struct v4l2_subdev, list);
- 	struct i2c_client *client = v4l2_get_subdevdata(sd);
--	struct resource *reg_res;
- 
--	if (irq > 0)
--		free_irq(irq, vou_dev);
- 	pm_runtime_disable(&pdev->dev);
- 	video_unregister_device(&vou_dev->vdev);
- 	i2c_put_adapter(client->adapter);
- 	v4l2_device_unregister(&vou_dev->v4l2_dev);
--	iounmap(vou_dev->base);
--	reg_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	if (reg_res)
--		release_mem_region(reg_res->start, resource_size(reg_res));
--	kfree(vou_dev);
- 	return 0;
- }
- 
--- 
-2.1.4
-
+Rob
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
