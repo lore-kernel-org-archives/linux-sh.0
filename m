@@ -1,34 +1,38 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 25 Jun 2015 08:57:51 +0000
-Subject: [PATCH v2 03/06] ARM: shmobile: r8a7779: Generic SMP ops
-Message-Id: <20150625085751.24543.2361.sendpatchset@little-apple>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 20 Jun 2015 00:50:35 +0000
+Subject: [PATCH 1/2] rcar_can: print request_irq() error code
+Message-Id: <1636106.QZXWqHuxCQ@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1593397.kKIHxKLe5s@wasted.cogentembedded.com>
+In-Reply-To: <1593397.kKIHxKLe5s@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org, wg@grandegger.com, mkl@pengutronix.de, linux-can@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Also print the error code when the request_irq() call fails in rcar_can_open(),
+rewording  the error message...
 
-Add a r8a7779-specific SMP operation pointer to support
-all 4 CPU cores through SMP on r8a7779 without C board code.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- Changes since V1:
- - None
+ drivers/net/can/rcar_can.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
- arch/arm/mach-shmobile/setup-r8a7779.c |    1 +
- 1 file changed, 1 insertion(+)
+Index: linux-can/drivers/net/can/rcar_can.c
+=================================--- linux-can.orig/drivers/net/can/rcar_can.c
++++ linux-can/drivers/net/can/rcar_can.c
+@@ -527,7 +527,8 @@ static int rcar_can_open(struct net_devi
+ 	napi_enable(&priv->napi);
+ 	err = request_irq(ndev->irq, rcar_can_interrupt, 0, ndev->name, ndev);
+ 	if (err) {
+-		netdev_err(ndev, "error requesting interrupt %d\n", ndev->irq);
++		netdev_err(ndev, "request_irq(%d) failed, error %d\n",
++			   ndev->irq, err);
+ 		goto out_close;
+ 	}
+ 	can_led_event(ndev, CAN_LED_EVENT_OPEN);
 
---- 0003/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2015-06-25 17:30:31.232366518 +0900
-@@ -772,6 +772,7 @@ static const char *r8a7779_compat_dt[] _
- };
- 
- DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
-+	.smp		= smp_ops(r8a7779_smp_ops),
- 	.map_io		= r8a7779_map_io,
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= r8a7779_init_time,
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
