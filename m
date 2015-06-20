@@ -1,60 +1,194 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 04 Jun 2015 18:22:31 +0000
-Subject: [PATCH 07/11] ARM: shmobile: R-Car: Use BIT() macro instead of open coding
-Message-Id: <1433442155-19492-8-git-send-email-geert+renesas@glider.be>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+Date: Sat, 20 Jun 2015 05:11:51 +0000
+Subject: [PATCH] sh: New gcc support
+Message-Id: <1434777111-22908-1-git-send-email-ysato@users.sourceforge.jp>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+New gcc (4.8 or later) used new shift helper functions.
+So we need added new helper to private libgcc.
+
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/arm/mach-shmobile/pm-rcar.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ arch/sh/kernel/sh_ksyms_32.c |  3 +++
+ arch/sh/lib/ashlsi3.S        | 35 ++++++++++++++++++++++++++---------
+ arch/sh/lib/ashrsi3.S        | 33 ++++++++++++++++++++++++---------
+ arch/sh/lib/lshrsi3.S        | 34 +++++++++++++++++++++++++---------
+ 4 files changed, 78 insertions(+), 27 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-rcar.c b/arch/arm/mach-shmobile/pm-rcar.c
-index b1a7f2a7f7572152..7adf9ce5fc1d1ffe 100644
---- a/arch/arm/mach-shmobile/pm-rcar.c
-+++ b/arch/arm/mach-shmobile/pm-rcar.c
-@@ -58,7 +58,7 @@ static int rcar_sysc_pwr_on_off(const struct rcar_sysc_ch *sysc_ch,
+diff --git a/arch/sh/kernel/sh_ksyms_32.c b/arch/sh/kernel/sh_ksyms_32.c
+index d77f2f6..0b30b9d 100644
+--- a/arch/sh/kernel/sh_ksyms_32.c
++++ b/arch/sh/kernel/sh_ksyms_32.c
+@@ -34,6 +34,9 @@ DECLARE_EXPORT(__sdivsi3);
+ DECLARE_EXPORT(__lshrsi3);
+ DECLARE_EXPORT(__ashrsi3);
+ DECLARE_EXPORT(__ashlsi3);
++DECLARE_EXPORT(__lshrsi3_r0);
++DECLARE_EXPORT(__ashrsi3_r0);
++DECLARE_EXPORT(__ashlsi3_r0);
+ DECLARE_EXPORT(__ashiftrt_r4_6);
+ DECLARE_EXPORT(__ashiftrt_r4_7);
+ DECLARE_EXPORT(__ashiftrt_r4_8);
+diff --git a/arch/sh/lib/ashlsi3.S b/arch/sh/lib/ashlsi3.S
+index bd47e9b..70a6434 100644
+--- a/arch/sh/lib/ashlsi3.S
++++ b/arch/sh/lib/ashlsi3.S
+@@ -54,21 +54,38 @@ Boston, MA 02110-1301, USA.  */
+ !
+ ! (none)
+ !
++! __ashlsi3_r0
++!
++! Entry:
++!
++! r4: Value to shift
++! r0: Shifts
++!
++! Exit:
++!
++! r0: Result
++!
++! Destroys:
++!
++! (none)
++
++
+ 	.global	__ashlsi3
++	.global	__ashlsi3_r0
+ 	
+ 	.align	2
+ __ashlsi3:
+-	mov	#31,r0
+-	and	r0,r5
++	mov	r5,r0
++	.align	2
++__ashlsi3_r0:
++	and	#31,r0
++	mov.l	r4,@-r15
++	mov	r0,r4
+ 	mova	ashlsi3_table,r0
+-	mov.b	@(r0,r5),r5
+-#ifdef __sh1__
+-	add	r5,r0
++	mov.b	@(r0,r4),r4
++	add	r4,r0
+ 	jmp	@r0
+-#else
+-	braf	r5
+-#endif
+-	mov	r4,r0
++	mov.l	@r15+,r0
  
- 	/* Wait until SYSC is ready to accept a power request */
- 	for (k = 0; k < SYSCSR_RETRIES; k++) {
--		if (ioread32(rcar_sysc_base + SYSCSR) & (1 << sr_bit))
-+		if (ioread32(rcar_sysc_base + SYSCSR) & BIT(sr_bit))
- 			break;
- 		udelay(SYSCSR_DELAY_US);
- 	}
-@@ -67,7 +67,7 @@ static int rcar_sysc_pwr_on_off(const struct rcar_sysc_ch *sysc_ch,
- 		return -EAGAIN;
+ 	.align	2
+ ashlsi3_table:
+diff --git a/arch/sh/lib/ashrsi3.S b/arch/sh/lib/ashrsi3.S
+index 6f3cf46..602599d 100644
+--- a/arch/sh/lib/ashrsi3.S
++++ b/arch/sh/lib/ashrsi3.S
+@@ -54,22 +54,37 @@ Boston, MA 02110-1301, USA.  */
+ !
+ ! (none)
+ !
++! __ashrsi3_r0
++!
++! Entry:
++!
++! r4: Value to shift
++! r0: Shifts
++!
++! Exit:
++!
++! r0: Result
++!
++! Destroys:
++!
++! (none)
  
- 	/* Submit power shutoff or power resume request */
--	iowrite32(1 << sysc_ch->chan_bit,
-+	iowrite32(BIT(sysc_ch->chan_bit),
- 		  rcar_sysc_base + sysc_ch->chan_offs + reg_offs);
+ 	.global	__ashrsi3
++	.global	__ashrsi3_r0
+ 	
+ 	.align	2
+ __ashrsi3:
+-	mov	#31,r0
+-	and	r0,r5
++	mov	r5,r0
++	.align	2
++__ashrsi3_r0:
++	and	#31,r0
++	mov.l	r4,@-r15
++	mov	r0,r4
+ 	mova	ashrsi3_table,r0
+-	mov.b	@(r0,r5),r5
+-#ifdef __sh1__
+-	add	r5,r0
++	mov.b	@(r0,r4),r4
++	add	r4,r0
+ 	jmp	@r0
+-#else
+-	braf	r5
+-#endif
+-	mov	r4,r0
++	mov.l	@r15+,r0
  
- 	return 0;
-@@ -86,8 +86,8 @@ static int rcar_sysc_pwr_on(const struct rcar_sysc_ch *sysc_ch)
- static int rcar_sysc_update(const struct rcar_sysc_ch *sysc_ch,
- 			    int (*on_off_fn)(const struct rcar_sysc_ch *))
- {
--	unsigned int isr_mask = 1 << sysc_ch->isr_bit;
--	unsigned int chan_mask = 1 << sysc_ch->chan_bit;
-+	unsigned int isr_mask = BIT(sysc_ch->isr_bit);
-+	unsigned int chan_mask = BIT(sysc_ch->chan_bit);
- 	unsigned int status;
- 	unsigned long flags;
- 	int ret = 0;
-@@ -151,7 +151,7 @@ bool rcar_sysc_power_is_off(const struct rcar_sysc_ch *sysc_ch)
- 	unsigned int st;
+ 	.align	2
+ ashrsi3_table:
+diff --git a/arch/sh/lib/lshrsi3.S b/arch/sh/lib/lshrsi3.S
+index 1e7aaa5..f2a6959 100644
+--- a/arch/sh/lib/lshrsi3.S
++++ b/arch/sh/lib/lshrsi3.S
+@@ -54,21 +54,37 @@ Boston, MA 02110-1301, USA.  */
+ !
+ ! (none)
+ !
++! __lshrsi3_r0
++!
++! Entry:
++!
++! r0: Value to shift
++! r5: Shifts
++!
++! Exit:
++!
++! r0: Result
++!
++! Destroys:
++!
++! (none)
++!
+ 	.global	__lshrsi3
++	.global	__lshrsi3_r0
+ 	
+ 	.align	2
+ __lshrsi3:
+-	mov	#31,r0
+-	and	r0,r5
++	mov	r5,r0
++	.align	2
++__lshrsi3_r0:
++	and	#31,r0
++	mov.l	r4,@-r15
++	mov	r0,r4
+ 	mova	lshrsi3_table,r0
+-	mov.b	@(r0,r5),r5
+-#ifdef __sh1__
+-	add	r5,r0
++	mov.b	@(r0,r4),r4
++	add	r4,r0
+ 	jmp	@r0
+-#else
+-	braf	r5
+-#endif
+-	mov	r4,r0
++	mov.l	@r15+,r0
  
- 	st = ioread32(rcar_sysc_base + sysc_ch->chan_offs + PWRSR_OFFS);
--	if (st & (1 << sysc_ch->chan_bit))
-+	if (st & BIT(sysc_ch->chan_bit))
- 		return true;
- 
- 	return false;
+ 	.align	2
+ lshrsi3_table:
 -- 
-1.9.1
+2.1.4
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
