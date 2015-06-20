@@ -1,89 +1,42 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Fri, 26 Jun 2015 15:23:59 +0000
-Subject: [PATCH v3 6/6] ARM: shmobile: lager: Enable UHS-I SDR-50
-Message-Id: <1435332239.23818.13.camel@codethink.co.uk>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 20 Jun 2015 18:48:23 +0000
+Subject: [PATCH 1/2] i2c: rcar: use adapter default for timeout
+Message-Id: <1434826104-16346-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435332116.23818.7.camel@codethink.co.uk>
-In-Reply-To: <1435332116.23818.7.camel@codethink.co.uk>
+References: <1434826104-16346-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1434826104-16346-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>
 
-Add the "1v8" pinctrl state and sd-uhs-sdr50 property to SDHI{0,2}.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+5 seconds is a very large timeout, and it is hardcoded. Use the default
+timeout from 'struct adapter' which is 1 second. It can also be modified
+from userspace for specific workloads.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 22 ++++++++++++++++++++--
- 1 file changed, 20 insertions(+), 2 deletions(-)
+ drivers/i2c/busses/i2c-rcar.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 5f68e53c58ae..c7db213054f6 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -312,11 +312,25 @@
- 	sdhi0_pins: sd0 {
- 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
- 		renesas,function = "sdhi0";
-+		power-source = <0>;
-+	};
-+
-+	sdhi0_pins_1v8: sd0_1v8 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
-+		renesas,function = "sdhi0";
-+		power-source = <1>;
- 	};
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 9eef46254369b3..e57e520b4756a9 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -532,7 +532,7 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
  
- 	sdhi2_pins: sd2 {
- 		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
- 		renesas,function = "sdhi2";
-+		power-source = <0>;
-+	};
-+
-+	sdhi2_pins_1v8: sd2_1v8 {
-+		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
-+		renesas,function = "sdhi2";
-+		power-source = <1>;
- 	};
- 
- 	mmc1_pins: mmc1 {
-@@ -486,7 +500,8 @@
- 
- &sdhi0 {
- 	pinctrl-0 = <&sdhi0_pins>;
--	pinctrl-names = "default";
-+	pinctrl-1 = <&sdhi0_pins_1v8>;
-+	pinctrl-names = "default", "1v8";
- 
- 	assigned-clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
- 	assigned-clock-rates = <156000000>;
-@@ -494,12 +509,14 @@
- 	vmmc-supply = <&vcc_sdhi0>;
- 	vqmmc-supply = <&vccq_sdhi0>;
- 	cd-gpios = <&gpio3 6 GPIO_ACTIVE_LOW>;
-+	sd-uhs-sdr50;
- 	status = "okay";
- };
- 
- &sdhi2 {
- 	pinctrl-0 = <&sdhi2_pins>;
--	pinctrl-names = "default";
-+	pinctrl-1 = <&sdhi2_pins_1v8>;
-+	pinctrl-names = "default", "1v8";
- 
- 	assigned-clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
- 	assigned-clock-rates = <97500000>;
-@@ -507,6 +524,7 @@
- 	vmmc-supply = <&vcc_sdhi2>;
- 	vqmmc-supply = <&vccq_sdhi2>;
- 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
-+	sd-uhs-sdr50;
- 	status = "okay";
- };
- 
+ 		timeout = wait_event_timeout(priv->wait,
+ 					     rcar_i2c_flags_has(priv, ID_DONE),
+-					     5 * HZ);
++					     adap->timeout);
+ 		if (!timeout) {
+ 			ret = -ETIMEDOUT;
+ 			break;
 -- 
 2.1.4
 
-
-
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
