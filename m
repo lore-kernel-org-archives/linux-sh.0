@@ -1,58 +1,49 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 23 Jun 2015 17:51:45 +0000
-Subject: Re: [PATCH 0/4] generic timeout handling for Renesas drivers
-Message-Id: <20150623175145.GA3326@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Q68bSM7Ycu6FN28Q"
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 20 Jun 2015 00:33:53 +0000
+Subject: [PATCH 2/3] rcar_can: print signed IRQ #
+Message-Id: <2390389.thI8mIvbv5@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434827002-25918-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1434827002-25918-1-git-send-email-wsa@the-dreams.de>
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>
+References: <2010452.WyFito6egU@wasted.cogentembedded.com>
+In-Reply-To: <2010452.WyFito6egU@wasted.cogentembedded.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: netdev@vger.kernel.org, wg@grandegger.com, mkl@pengutronix.de, linux-can@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
+Printing IRQ # using "%x" and "%u" unsigned formats isn't quite correct as
+'ndev->irq' is of  type *int*, so  the "%d" format  needs to be used instead.
 
---Q68bSM7Ycu6FN28Q
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+While fixing this, beautify the dev_info() message in rcar_can_probe() a bit.
 
-On Sat, Jun 20, 2015 at 09:03:18PM +0200, Wolfram Sang wrote:
-> Here is a small patch series to make I2C timeout handling easier for user=
-s. It
-> is not so amazingly huge anymore and it can be modified via i2c-dev if wa=
-nted.
-> While at it, fix the type of the timeout variable to the proper one.
-> This time build-tested twice!
->=20
-> Wolfram Sang (4):
->   i2c: rcar: use adapter default for timeout
->   i2c: rcar: use proper type for timeout
->   i2c: sh_mobile: use adapter default for timeout
->   i2c: sh_mobile: use proper type for timeout
+Fixes: fd1159318e55 ("can: add Renesas R-Car CAN driver")
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Applied to for-next, thanks!
+---
+ drivers/net/can/rcar_can.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
+Index: linux-can/drivers/net/can/rcar_can.c
+=================================--- linux-can.orig/drivers/net/can/rcar_can.c
++++ linux-can/drivers/net/can/rcar_can.c
+@@ -526,7 +526,7 @@ static int rcar_can_open(struct net_devi
+ 	napi_enable(&priv->napi);
+ 	err = request_irq(ndev->irq, rcar_can_interrupt, 0, ndev->name, ndev);
+ 	if (err) {
+-		netdev_err(ndev, "error requesting interrupt %x\n", ndev->irq);
++		netdev_err(ndev, "error requesting interrupt %d\n", ndev->irq);
+ 		goto out_close;
+ 	}
+ 	can_led_event(ndev, CAN_LED_EVENT_OPEN);
+@@ -824,7 +824,7 @@ static int rcar_can_probe(struct platfor
+ 
+ 	devm_can_led_init(ndev);
+ 
+-	dev_info(&pdev->dev, "device registered (reg_base=%p, irq=%u)\n",
++	dev_info(&pdev->dev, "device registered (regs @ %p, IRQ%d)\n",
+ 		 priv->regs, ndev->irq);
+ 
+ 	return 0;
 
---Q68bSM7Ycu6FN28Q
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJViZyxAAoJEBQN5MwUoCm2dVoP/0U8ox3Mb9hUucwT4bEVZ8sw
-5nWWTxUAmhzuiMUdXnvamYijxnWINPvwk8Wuvx64rUgdsIo2mWM1frR5TRZZ20Ty
-KM3s/ldtFQgSx1OxDyBF9cWyWPbZIRYa6vYXj39mGqYQ783YWm4l7RtXbJJLEd2t
-zYLagoQZpdxzeXyiXGWK5a+bZnnquHngbPMpzx7d9/HpyqBT8KxZ4viZs7ohkV7M
-dijT7rppsIerAF4QB+uYMbC8GR9X4nnjocL6J3E1GwK4mD+CNOBghKvB3GIsDfuX
-QlSvmfTphVZQCfhrzIfCitpo6yqGepLm1/ZyD94c4esBbtxskuwnMzPfFx8BFIxw
-+lAuieRY308hLgVzYswBAu6rWbGfmMzUspOxuQthVijaDBmNljQnmvVRysS2aIaM
-q34GSsJphz88ufYAxNghBEiRzAbP9T2heQ0aMw8ywGJ/5Pb4L8S/QAOFu8hCe1Fc
-L0o4DBbBjEIHZERo+U2zxI6yyB9HOeRQ8I0a47aasV72rxqOkIdS6cJSTTarrAXc
-paOiLwY5jkj3tM5syregA0NqYBo5GqlYu9Q1muoTuqQftW2DAqjD7sPn+L8YCmS1
-ETJLPZwxDLYvak0vLunST3h2+nWM2ekP9HjJwDwBawPJD59NqC6f5ZlD2qxofY8n
-GQ1QYNtAnEJbP83QMINj
-=Sels
------END PGP SIGNATURE-----
-
---Q68bSM7Ycu6FN28Q--
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
