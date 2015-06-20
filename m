@@ -1,33 +1,24 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sun, 21 Jun 2015 06:35:36 +0000
-Subject: [PATCH 02/02] ARM: shmobile: Drop HAVE_ARM_ARCH_TIMER from defconfig
-Message-Id: <20150621063536.6194.32705.sendpatchset@little-apple>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 20 Jun 2015 00:30:51 +0000
+Subject: [PATCH 0/3] Small fixes for Renesas R-Car CAN driver
+Message-Id: <2010452.WyFito6egU@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org, wg@grandegger.com, mkl@pengutronix.de, linux-can@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Hello.
 
-Remove arch timer from the defconfig now when this is selected
-by Kconfig based on enabled SoC variants.
+   Here's the set of 3 patches against Marc Kleine-Budde's 'linux-can.git'
+repo; they are small fixes for the Renesas R-Car CAN driver.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+rcar_can: fix IRQ check
+rcar_can: print signed IRQ #
+rcar_can: fix typo in error message
 
- arch/arm/configs/shmobile_defconfig |    1 -
- 1 file changed, 1 deletion(-)
+WBR, Sergei
 
---- 0001/arch/arm/configs/shmobile_defconfig
-+++ work/arch/arm/configs/shmobile_defconfig	2015-06-20 12:32:43.752366518 +0900
-@@ -30,7 +30,6 @@ CONFIG_PCI_RCAR_GEN2=y
- CONFIG_PCI_RCAR_GEN2_PCIE=y
- CONFIG_SMP=y
- CONFIG_SCHED_MC=y
--CONFIG_HAVE_ARM_ARCH_TIMER=y
- CONFIG_NR_CPUS=8
- CONFIG_AEABI=y
- CONFIG_HIGHMEM=y
 --
 To unsubscribe from this list: send the line "unsubscribe linux-sh" in
