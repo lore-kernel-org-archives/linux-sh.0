@@ -1,45 +1,33 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 19 Jun 2015 10:40:30 +0000
-Subject: [PATCH 0/2] new tool 'i2ctransfer'
-Message-Id: <1434710432-4182-1-git-send-email-wsa@the-dreams.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sun, 21 Jun 2015 06:35:36 +0000
+Subject: [PATCH 02/02] ARM: shmobile: Drop HAVE_ARM_ARCH_TIMER from defconfig
+Message-Id: <20150621063536.6194.32705.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org, Jean Delvare <jdelvare@suse.de>
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-So, here is my updated, better tested, much improved version of i2ctransfer:
+From: Magnus Damm <damm+renesas@opensource.se>
 
-* rewrote parser to match agreed syntax (even improved it futher by reusing
-  last address if not specified again)
+Remove arch timer from the defconfig now when this is selected
+by Kconfig based on enabled SoC variants.
 
-* fixed 0-byte length transfers
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-* way more error checking
+ arch/arm/configs/shmobile_defconfig |    1 -
+ 1 file changed, 1 deletion(-)
 
-* better error reporting
-
-And further details and cleanups. I still believe we should let Linux clean up
-the buffers, but I suspect Jean won't like it, so I added a patch to just do
-that.
-
-Please review, test, apply...
-
-Thanks,
-
-   Wolfram
-
-
-Wolfram Sang (2):
-  i2c-tools: add new tool 'i2ctransfer'
-  i2c-tools: i2ctransfer: clean up allocated resources
-
- tools/Module.mk     |   8 +-
- tools/i2ctransfer.c | 330 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 337 insertions(+), 1 deletion(-)
- create mode 100644 tools/i2ctransfer.c
-
--- 
-2.1.4
-
+--- 0001/arch/arm/configs/shmobile_defconfig
++++ work/arch/arm/configs/shmobile_defconfig	2015-06-20 12:32:43.752366518 +0900
+@@ -30,7 +30,6 @@ CONFIG_PCI_RCAR_GEN2=y
+ CONFIG_PCI_RCAR_GEN2_PCIE=y
+ CONFIG_SMP=y
+ CONFIG_SCHED_MC=y
+-CONFIG_HAVE_ARM_ARCH_TIMER=y
+ CONFIG_NR_CPUS=8
+ CONFIG_AEABI=y
+ CONFIG_HIGHMEM=y
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
