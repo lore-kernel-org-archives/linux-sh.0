@@ -1,75 +1,123 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 18 Jun 2015 20:21:08 +0000
-Subject: Re: [PATCH v2] v4l: vsp1: Align crop rectangle to even boundary for YUV formats
-Message-Id: <14792550.FyoUCuzjPK@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sun, 21 Jun 2015 08:10:11 +0000
+Subject: [PATCH 06/08] ARM: shmobile: Update CMT compat string users in DTS
+Message-Id: <20150621081011.10187.94046.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432817979-2929-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1432817979-2929-1-git-send-email-ykaneko0929@gmail.com>
+References: <20150621080903.10187.20998.sendpatchset@little-apple>
+In-Reply-To: <20150621080903.10187.20998.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, Simon Horman <horms@verge.net.au>
-Cc: linux-media@vger.kernel.org, Mauro Carvalho Chehab <m.chehab@samsung.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, daniel.lezcano-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org
 
-Hi Kaneko-san,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thank you for the patch.
+Use recently updated r8a73a4 and R-Car Gen2 CMT0 and CMT1 compat strings.
 
-On Thursday 28 May 2015 21:59:39 Yoshihiro Kaneko wrote:
-> From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-> 
-> Make sure that there are valid values in the crop rectangle to ensure
-> that the color plane doesn't get shifted when cropping.
-> Since there is no distinction between 12bit and 16bit YUV formats in
-> at the subdev level, use the more restrictive 12bit limits for all YUV
-> formats.
-> 
-> Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+With this change in place we can keep device-specific configuration in
+the driver and the driver can be able to support CMT1 specific features.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-and applied to my tree with a summary of the commit message added as a source 
-code comment.
+ arch/arm/boot/dts/r8a73a4.dtsi |    2 +-
+ arch/arm/boot/dts/r8a7790.dtsi |    4 ++--
+ arch/arm/boot/dts/r8a7791.dtsi |    4 ++--
+ arch/arm/boot/dts/r8a7793.dtsi |    4 ++--
+ arch/arm/boot/dts/r8a7794.dtsi |    4 ++--
+ 5 files changed, 9 insertions(+), 9 deletions(-)
 
-> ---
-> 
-> This patch is based on the master branch of linuxtv.org/media_tree.git.
-> 
-> v2 [Yoshihiro Kaneko]
-> * As suggested by Laurent Pinchart
->   - remove the change to add a restriction to the left and top
->   - use round_down() to align the width and height
-> * As suggested by Sergei Shtylyov
->   - use ALIGN() to align the left and top
->   - correct a misspelling of the commit message
-> * Compile tested only
-> 
->  drivers/media/platform/vsp1/vsp1_rwpf.c | 8 ++++++++
->  1 file changed, 8 insertions(+)
-> 
-> diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.c
-> b/drivers/media/platform/vsp1/vsp1_rwpf.c index fa71f46..32687c7 100644
-> --- a/drivers/media/platform/vsp1/vsp1_rwpf.c
-> +++ b/drivers/media/platform/vsp1/vsp1_rwpf.c
-> @@ -197,6 +197,14 @@ int vsp1_rwpf_set_selection(struct v4l2_subdev *subdev,
-> */
->  	format = vsp1_entity_get_pad_format(&rwpf->entity, cfg, RWPF_PAD_SINK,
->  					    sel->which);
-> +
-> +	if (format->code = MEDIA_BUS_FMT_AYUV8_1X32) {
-> +		sel->r.left = ALIGN(sel->r.left, 2);
-> +		sel->r.top = ALIGN(sel->r.top, 2);
-> +		sel->r.width = round_down(sel->r.width, 2);
-> +		sel->r.height = round_down(sel->r.height, 2);
-> +	}
-> +
->  	sel->r.left = min_t(unsigned int, sel->r.left, format->width - 2);
->  	sel->r.top = min_t(unsigned int, sel->r.top, format->height - 2);
->  	if (rwpf->entity.type = VSP1_ENTITY_WPF) {
-
--- 
-Regards,
-
-Laurent Pinchart
-
+--- 0001/arch/arm/boot/dts/r8a73a4.dtsi
++++ work/arch/arm/boot/dts/r8a73a4.dtsi	2015-06-20 14:46:07.442366518 +0900
+@@ -114,7 +114,7 @@
+ 	};
+ 
+ 	cmt1: timer@e6130000 {
+-		compatible = "renesas,cmt-48-r8a73a4", "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt1-r8a73a4", "renesas,cmt1-rcar-gen2";
+ 		reg = <0 0xe6130000 0 0x1004>;
+ 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A73A4_CLK_CMT1>;
+--- 0001/arch/arm/boot/dts/r8a7790.dtsi
++++ work/arch/arm/boot/dts/r8a7790.dtsi	2015-06-20 14:47:48.652366518 +0900
+@@ -212,7 +212,7 @@
+ 	};
+ 
+ 	cmt0: timer@ffca0000 {
+-		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt0-r8a7790", "renesas,cmt0-rcar-gen2";
+ 		reg = <0 0xffca0000 0 0x1004>;
+ 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
+@@ -225,7 +225,7 @@
+ 	};
+ 
+ 	cmt1: timer@e6130000 {
+-		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt1-r8a7790", "renesas,cmt1-rcar-gen2";
+ 		reg = <0 0xe6130000 0 0x1004>;
+ 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
+--- 0001/arch/arm/boot/dts/r8a7791.dtsi
++++ work/arch/arm/boot/dts/r8a7791.dtsi	2015-06-20 14:47:28.652366518 +0900
+@@ -193,7 +193,7 @@
+ 	};
+ 
+ 	cmt0: timer@ffca0000 {
+-		compatible = "renesas,cmt-48-r8a7791", "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt0-r8a7791", "renesas,cmt0-rcar-gen2";
+ 		reg = <0 0xffca0000 0 0x1004>;
+ 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
+@@ -206,7 +206,7 @@
+ 	};
+ 
+ 	cmt1: timer@e6130000 {
+-		compatible = "renesas,cmt-48-r8a7791", "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt1-r8a7791", "renesas,cmt1-rcar-gen2";
+ 		reg = <0 0xe6130000 0 0x1004>;
+ 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
+--- 0001/arch/arm/boot/dts/r8a7793.dtsi
++++ work/arch/arm/boot/dts/r8a7793.dtsi	2015-06-20 14:46:58.642366518 +0900
+@@ -62,7 +62,7 @@
+ 	};
+ 
+ 	cmt0: timer@ffca0000 {
+-		compatible = "renesas,cmt-48-r8a7793", "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt0-r8a7793", "renesas,cmt0-rcar-gen2";
+ 		reg = <0 0xffca0000 0 0x1004>;
+ 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
+@@ -75,7 +75,7 @@
+ 	};
+ 
+ 	cmt1: timer@e6130000 {
+-		compatible = "renesas,cmt-48-r8a7793", "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt1-r8a7793", "renesas,cmt1-rcar-gen2";
+ 		reg = <0 0xe6130000 0 0x1004>;
+ 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
+--- 0001/arch/arm/boot/dts/r8a7794.dtsi
++++ work/arch/arm/boot/dts/r8a7794.dtsi	2015-06-20 14:47:17.122366518 +0900
+@@ -51,7 +51,7 @@
+ 	};
+ 
+ 	cmt0: timer@ffca0000 {
+-		compatible = "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt0-r8a7794", "renesas,cmt0-rcar-gen2";
+ 		reg = <0 0xffca0000 0 0x1004>;
+ 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
+@@ -64,7 +64,7 @@
+ 	};
+ 
+ 	cmt1: timer@e6130000 {
+-		compatible = "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt1-r8a7794", "renesas,cmt1-rcar-gen2";
+ 		reg = <0 0xe6130000 0 0x1004>;
+ 		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
