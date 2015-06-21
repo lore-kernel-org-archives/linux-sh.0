@@ -1,68 +1,158 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 24 Jun 2015 09:21:16 +0000
-Subject: Re: [PATCH 2/2] spi: rspi: Remove obsolete qspi platform_device_id entry
-Message-Id: <CAMuHMdUpn-fs7b5QpQNyheYDLSqZxp_GmAsaOsRKTRdNw8Qsfw@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sun, 21 Jun 2015 08:10:33 +0000
+Subject: [PATCH 08/08] ARM: shmobile: Remove CMT renesas,channels-mask from DTS
+Message-Id: <20150621081033.10187.38630.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435064527-11786-1-git-send-email-geert+renesas@glider.be>
-	<1435064527-11786-2-git-send-email-geert+renesas@glider.be>
-	<CAMuHMdUEWmNKreYcMOyJZjBiL_raG37BdSTAnFGg_W-jqOuV1Q@mail.gmail.com>
-In-Reply-To: <CAMuHMdUEWmNKreYcMOyJZjBiL_raG37BdSTAnFGg_W-jqOuV1Q-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+References: <20150621080903.10187.20998.sendpatchset@little-apple>
+In-Reply-To: <20150621080903.10187.20998.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-kernel@vger.kernel.org
+Cc: devicetree@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-On Wed, Jun 24, 2015 at 10:01 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Tue, Jun 23, 2015 at 3:02 PM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
->> Since commit a483dcbfa21f919c ("ARM: shmobile: lager: Remove legacy
->> board support"), R-Car Gen2 SoCs are only supported in generic DT-only
->> ARM multi-platform builds.  The driver doesn't need to match platform
->> devices by name anymore, hence remove the corresponding
->> platform_device_id entry.
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> ---
->>  drivers/spi/spi-rspi.c | 1 -
->>  1 file changed, 1 deletion(-)
->>
->> diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
->> index 56216b205e0f2c34..3e82b84c9ed48b2f 100644
->> --- a/drivers/spi/spi-rspi.c
->> +++ b/drivers/spi/spi-rspi.c
->> @@ -1295,7 +1295,6 @@ error1:
->>
->>  static const struct platform_device_id spi_driver_ids[] = {
->>         { "rspi",       (kernel_ulong_t)&rspi_ops },
->> -       { "qspi",       (kernel_ulong_t)&qspi_ops },
->>         {},
->>  };
->
-> qspi_ops is still used for DT matching, but rspi_of_match[] is protected
-> by #ifdef CONFIG_OF, so this may lead to compiler warnings.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-(same as rspi_rz_ops)
+Update the DTS to remove the now deprecated "renesas,channels-mask" property.
 
-Unlike the sh_eth case, I don't get a warning if CONFIG_OF=n, because
-qspi_ops is const. Not even with a picky gcc 4.1.2.
+The channel information is now kept in the device driver and can easily
+be determined based on the compat string.
 
-> Please drop this one, will fix.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-And unlike the sh_eth case, this cannot be fixed with one #ifdef without
-restructuring the whole driver.
+ arch/arm/boot/dts/r8a73a4.dtsi |    3 ---
+ arch/arm/boot/dts/r8a7740.dtsi |    3 ---
+ arch/arm/boot/dts/r8a7790.dtsi |    6 ------
+ arch/arm/boot/dts/r8a7791.dtsi |    6 ------
+ arch/arm/boot/dts/r8a7793.dtsi |    6 ------
+ arch/arm/boot/dts/r8a7794.dtsi |    6 ------
+ arch/arm/boot/dts/sh73a0.dtsi  |    3 ---
+ 7 files changed, 33 deletions(-)
 
-Hence I'm inclined to withdraw my drop requst.
-Mark, what do you think? Is this patch OK as-is?
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
+--- 0009/arch/arm/boot/dts/r8a73a4.dtsi
++++ work/arch/arm/boot/dts/r8a73a4.dtsi	2015-06-20 14:51:41.942366518 +0900
+@@ -120,9 +120,6 @@
+ 		clocks = <&mstp3_clks R8A73A4_CLK_CMT1>;
+ 		clock-names = "fck";
+ 		power-domains = <&pd_c5>;
+-
+-		renesas,channels-mask = <0xff>;
+-
+ 		status = "disabled";
+ 	};
+ 
+--- 0001/arch/arm/boot/dts/r8a7740.dtsi
++++ work/arch/arm/boot/dts/r8a7740.dtsi	2015-06-20 14:52:11.332366518 +0900
+@@ -60,9 +60,6 @@
+ 		clocks = <&mstp3_clks R8A7740_CLK_CMT1>;
+ 		clock-names = "fck";
+ 		power-domains = <&pd_c5>;
+-
+-		renesas,channels-mask = <0x3f>;
+-
+ 		status = "disabled";
+ 	};
+ 
+--- 0009/arch/arm/boot/dts/r8a7790.dtsi
++++ work/arch/arm/boot/dts/r8a7790.dtsi	2015-06-20 14:50:43.532366518 +0900
+@@ -218,9 +218,6 @@
+ 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7790_CLK_CMT0>;
+ 		clock-names = "fck";
+-
+-		renesas,channels-mask = <0x60>;
+-
+ 		status = "disabled";
+ 	};
+ 
+@@ -237,9 +234,6 @@
+ 			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7790_CLK_CMT1>;
+ 		clock-names = "fck";
+-
+-		renesas,channels-mask = <0xff>;
+-
+ 		status = "disabled";
+ 	};
+ 
+--- 0009/arch/arm/boot/dts/r8a7791.dtsi
++++ work/arch/arm/boot/dts/r8a7791.dtsi	2015-06-20 14:51:00.622366518 +0900
+@@ -199,9 +199,6 @@
+ 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7791_CLK_CMT0>;
+ 		clock-names = "fck";
+-
+-		renesas,channels-mask = <0x60>;
+-
+ 		status = "disabled";
+ 	};
+ 
+@@ -218,9 +215,6 @@
+ 			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7791_CLK_CMT1>;
+ 		clock-names = "fck";
+-
+-		renesas,channels-mask = <0xff>;
+-
+ 		status = "disabled";
+ 	};
+ 
+--- 0009/arch/arm/boot/dts/r8a7793.dtsi
++++ work/arch/arm/boot/dts/r8a7793.dtsi	2015-06-20 14:51:16.702366518 +0900
+@@ -68,9 +68,6 @@
+ 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7793_CLK_CMT0>;
+ 		clock-names = "fck";
+-
+-		renesas,channels-mask = <0x60>;
+-
+ 		status = "disabled";
+ 	};
+ 
+@@ -87,9 +84,6 @@
+ 			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7793_CLK_CMT1>;
+ 		clock-names = "fck";
+-
+-		renesas,channels-mask = <0xff>;
+-
+ 		status = "disabled";
+ 	};
+ 
+--- 0009/arch/arm/boot/dts/r8a7794.dtsi
++++ work/arch/arm/boot/dts/r8a7794.dtsi	2015-06-20 14:51:29.512366518 +0900
+@@ -57,9 +57,6 @@
+ 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7794_CLK_CMT0>;
+ 		clock-names = "fck";
+-
+-		renesas,channels-mask = <0x60>;
+-
+ 		status = "disabled";
+ 	};
+ 
+@@ -76,9 +73,6 @@
+ 			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7794_CLK_CMT1>;
+ 		clock-names = "fck";
+-
+-		renesas,channels-mask = <0xff>;
+-
+ 		status = "disabled";
+ 	};
+ 
+--- 0001/arch/arm/boot/dts/sh73a0.dtsi
++++ work/arch/arm/boot/dts/sh73a0.dtsi	2015-06-20 14:51:56.502366518 +0900
+@@ -84,9 +84,6 @@
+ 		clocks = <&mstp3_clks SH73A0_CLK_CMT1>;
+ 		clock-names = "fck";
+ 		power-domains = <&pd_c5>;
+-
+-		renesas,channels-mask = <0x3f>;
+-
+ 		status = "disabled";
+ 	};
+ 
 --
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
