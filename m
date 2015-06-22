@@ -1,54 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 22 Jun 2015 08:41:18 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 22 Jun 2015 09:05:47 +0000
 Subject: Re: [PATCH] ASoC: rsrc-card: Remove unused variable in rsrc_card_startup()
-Message-Id: <87wpyw6stl.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <CAMuHMdX0WnQ61FrEmCq5_YCmvoh5NWk5br76+xr+DSXV0ocPcA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1434962073-9597-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1434962073-9597-1-git-send-email-geert+renesas@glider.be>
+	<87wpyw6stl.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87wpyw6stl.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
+On Mon, Jun 22, 2015 at 10:41 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> Thank you for your patch
+> But, this patch was already posted/applied
+>
+> http://thread.gmane.org/gmane.linux.alsa.devel/140317
 
-Hi Geert
+Ah, Google didn't find your patch, and it's not yet in
+sound-asoc/for-next.
 
-Thank you for your patch
-But, this patch was already posted/applied
+Gr{oetje,eeting}s,
 
-http://thread.gmane.org/gmane.linux.alsa.devel/140317
+                        Geert
 
-> sound/soc/sh/rcar/rsrc-card.c: In function 'rsrc_card_startup':
-> sound/soc/sh/rcar/rsrc-card.c:78:6: warning: unused variable 'ret' [-Wunused-variable]
->   int ret;
->       ^
-> 
-> Fixes: 047000278da3a17f ("ASoC: rsrc-card: cleanup for DPCM")
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  sound/soc/sh/rcar/rsrc-card.c | 2 --
->  1 file changed, 2 deletions(-)
-> 
-> diff --git a/sound/soc/sh/rcar/rsrc-card.c b/sound/soc/sh/rcar/rsrc-card.c
-> index 8caca2e180c39122..84e935711e29e442 100644
-> --- a/sound/soc/sh/rcar/rsrc-card.c
-> +++ b/sound/soc/sh/rcar/rsrc-card.c
-> @@ -75,8 +75,6 @@ static int rsrc_card_startup(struct snd_pcm_substream *substream)
->  	struct rsrc_card_priv *priv =	snd_soc_card_get_drvdata(rtd->card);
->  	struct rsrc_card_dai *dai_props >  		rsrc_priv_to_props(priv, rtd - rtd->card->rtd);
-> -	int ret;
-> -
->  
->  	return clk_prepare_enable(dai_props->clk);
->  }
-> -- 
-> 1.9.1
-> 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-
-Best regards
----
-Kuninori Morimoto
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
 --
 To unsubscribe from this list: send the line "unsubscribe linux-sh" in
