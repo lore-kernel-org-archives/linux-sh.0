@@ -1,72 +1,66 @@
-From: Michael =?UTF-8?B?QsO8c2No?= <m@bues.ch>
-Date: Thu, 18 Jun 2015 18:45:18 +0000
-Subject: [PATCH] m32r: Fix clearing of thread info fault code
-Message-Id: <20150618204518.02c852e0@wiggum>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Sig_/g6Fe+gvx959_N887is3nFy4"
+From: Michael Turquette <mturquette@linaro.org>
+Date: Mon, 22 Jun 2015 20:05:49 +0000
+Subject: Re: [PATCH v2 13/14] clk: shmobile: mstp: Consider "zb_clk" suitable for power management
+Message-Id: <20150622200549.9112.2411@quantum>
 List-Id: <linux-sh.vger.kernel.org>
-To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: Ilia Mirkin <imirkin@alum.mit.edu>
+References: <1432839219-475-1-git-send-email-geert+renesas@glider.be>
+ <1432839219-475-14-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1432839219-475-14-git-send-email-geert+renesas@glider.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
---Sig_/g6Fe+gvx959_N887is3nFy4
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+Quoting Geert Uytterhoeven (2015-05-28 11:53:38)
+> Currently the CPG Clock Domain code looks for MSTP clocks to power
+> manage a device.
+> 
+> Unfortunately, on R-Mobile APE6 (r8a73a4) and SH-Mobile AG5 (sh73a0),
+> the Bus State Controller (BSC) is not power-managed by an MSTP clock,
+> but by a plain CPG clock (zb_clk).  Add a special case to handle this,
+> so the clock is properly managed, and devices connected to the BSC work
+> as expected.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+> v2:
+>   - New.
+> ---
+>  drivers/clk/shmobile/clk-mstp.c | 4 ++++
+>  1 file changed, 4 insertions(+)
+> 
+> diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
+> index 619f3eccefd4884f..19e2b11953383587 100644
+> --- a/drivers/clk/shmobile/clk-mstp.c
+> +++ b/drivers/clk/shmobile/clk-mstp.c
+> @@ -258,6 +258,10 @@ int cpg_mstp_attach_dev(struct generic_pm_domain *domain, struct device *dev)
+>                                             "renesas,cpg-mstp-clocks"))
+>                         goto found;
+>  
+> +               /* BSC on r8a73a4/sh73a0 uses zb_clk instead of an mstp clock*/
+> +               if (!strcmp(clkspec.np->name, "zb_clk"))
+> +                       goto found;
 
-The expression (~0 >> x) will always yield all-ones, because the right
-shift is an arithmetic right shift that will always shift ones in.
-Hence the old fault code bits will not be cleared before being ORed
-with the new fault code.
+Hello Geert,
 
-Fix this by forcing a logical right shift instead of an arithmetic
-right shift by using an unsigned long constant.
+Is the driver the right place to handle this corner case? What do you
+think about linking zb_clk up to the bsc devicetree node for
+r8a73a4/sh73a0?
 
-Reported-by: Ilia Mirkin <imirkin@alum.mit.edu>
-Signed-off-by: Michael Buesch <m@bues.ch>
+Regards,
+Mike
 
----
-
-The code also assumes sizeof(ti->flags) =3D=3D 4. But that probably is ok f=
-or this arch.
-
-This patch is untested, because I do not have the hardware.
-
-
-Index: linux/arch/m32r/include/asm/thread_info.h
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
---- linux.orig/arch/m32r/include/asm/thread_info.h
-+++ linux/arch/m32r/include/asm/thread_info.h
-@@ -77,7 +77,7 @@ static inline struct thread_info *curren
- static inline void set_thread_fault_code(unsigned int val)
- {
- 	struct thread_info *ti =3D current_thread_info();
--	ti->flags =3D (ti->flags & (~0 >> (32 - TI_FLAG_FAULT_CODE_SHIFT)))
-+	ti->flags =3D (ti->flags & (~0UL >> (32 - TI_FLAG_FAULT_CODE_SHIFT)))
- 		| (val << TI_FLAG_FAULT_CODE_SHIFT);
- }
-=20
-
---Sig_/g6Fe+gvx959_N887is3nFy4
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBCAAGBQJVgxG+AAoJEPUyvh2QjYsOHCwP/3T/2ISBE3sFQ28kJdW6pByG
-2DPMNgkR7tdvUriPOfzytKygougSODBE4LYj5lQP9eqOe5/NK1o17Uufl2Xk2H78
-xm5G9+s0d/6QZLeNAxGb25XwOioLmVMpdNggCLoNbuHL2se2nQW29hlqsa//zwmi
-AmsI5Xf2kNHSkGZMwtjnJfAt/XIr8xKhyUot3lCKARNRqYPIjYqIwVy9I2D0ZjWO
-k7pxxM/pt5vPan3pAfrVmHRON977o6dtMe3hDqZjR2LrJueTsB9Nti+vq2FpEbyy
-zfHt0M1Ako2Eg/ysgxoenbXcbEJXEGGV18F5gIONTX+R9SjmnqOOzxt+8DLFIWwZ
-22exhWCkDm9FmLmD825oZwvmpLTx7z95Xi7k9tvdzn1LdDa9UnuJmEhvdd3GY6iI
-yMGMTrMTAf0bP61cQd07Jdj4ggN4BtDb+IRSCdlj90GwjG9xtBCqx8KG6EUeVWLc
-nfv0/a1icCPWE8d8jdT/b4UsiIEOXpjmx51NCatIYIvcuCVeiNYMkB67W02Mm4Eq
-eR2GL24kfyL9pOfLN0s0kN1EWEZbSVJryDgVaDce7WGc+gHHV4ojwTLpQ0zT43ZE
-LZ42hJnHjouPIGL8P+CgZI1dWNSQtPSOjB+ZZ4b4+4nqZwCw2HaqHgJpMM1xSTnc
-lDeWqYHzAGiColj6QU2D
-=NkqY
------END PGP SIGNATURE-----
-
---Sig_/g6Fe+gvx959_N887is3nFy4--
+> +
+>                 of_node_put(clkspec.np);
+>                 i++;
+>         }
+> -- 
+> 1.9.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
