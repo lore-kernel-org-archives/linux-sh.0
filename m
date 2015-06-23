@@ -1,57 +1,38 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 22 Jun 2015 17:49:15 +0000
-Subject: Re: [PATCH 3/3] arm: koelsch: make USB0 perform Host/Function switching
-Message-Id: <55884A9B.9030505@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 23 Jun 2015 12:58:52 +0000
+Subject: [PATCH] drm: rcar-du: Remove obsolete rcar-du-r8a779x platform_device_id entries
+Message-Id: <1435064332-11503-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434984151-27274-1-git-send-email-phil.edworthy@renesas.com> <1434984151-27274-4-git-send-email-phil.edworthy@renesas.com> <55884943.9080607@cogentembedded.com>
-In-Reply-To: <55884943.9080607@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Phil Edworthy <phil.edworthy@renesas.com>, Kishon Vijay Abraham I <kishon@ti.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Simon Horman <horms@verge.net.au>
-Cc: linux-kernel@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, David Airlie <airlied@linux.ie>
+Cc: dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hello.
+Since commit a483dcbfa21f919c ("ARM: shmobile: lager: Remove legacy
+board support"), R-Car Gen2 SoCs are only supported in generic DT-only
+ARM multi-platform builds.  The driver doesn't need to match platform
+devices by name anymore, hence remove the corresponding
+platform_device_id entry.
 
-On 06/22/2015 08:43 PM, Sergei Shtylyov wrote:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c | 2 --
+ 1 file changed, 2 deletions(-)
 
->> Both USB Host (pci0) and Function (USBHS) drivers are enabled.
->> The USB PHY driver determines which IP block should be connected
->> based on vbus and id signals read via gpios.
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index 780ca11512ba6cf1..fb6709160a591a4d 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -108,8 +108,6 @@ static const struct rcar_du_device_info rcar_du_r8a7791_info = {
+ 
+ static const struct platform_device_id rcar_du_id_table[] = {
+ 	{ "rcar-du-r8a7779", (kernel_ulong_t)&rcar_du_r8a7779_info },
+-	{ "rcar-du-r8a7790", (kernel_ulong_t)&rcar_du_r8a7790_info },
+-	{ "rcar-du-r8a7791", (kernel_ulong_t)&rcar_du_r8a7791_info },
+ 	{ }
+ };
+ 
+-- 
+1.9.1
 
->> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
->> ---
->>   arch/arm/boot/dts/r8a7791-koelsch.dts | 7 ++++---
->>   1 file changed, 4 insertions(+), 3 deletions(-)
-
->> diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts
->> b/arch/arm/boot/dts/r8a7791-koelsch.dts
->> index cffe33f..8f394be 100644
->> --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
->> +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-> [...]
->> @@ -627,13 +626,15 @@
->>
->>   &hsusb {
->>       status = "okay";
->> -    pinctrl-0 = <&usb0_pins>;
->>       pinctrl-names = "default";
->> -    renesas,enable-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
->>   };
->>
->>   &usbphy {
->>       status = "okay";
->> +    renesas,pwr = <&gpio2 4 GPIO_ACTIVE_HIGH>;
->> +    renesas,id = <&gpio5 31 GPIO_ACTIVE_HIGH>;
->> +    renesas,vbus = <&gpio7 24 GPIO_ACTIVE_HIGH>;
->> +    renesas,vbus-pwr = <&gpio7 23 GPIO_ACTIVE_HIGH>;
-
->     The prop names should end with "-gpio" or even "-gpios", according to the
-> GPIO bindings.
-
-    Oh, and you didn't document the props in the previous patch.
-
-WBR, Sergei
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
