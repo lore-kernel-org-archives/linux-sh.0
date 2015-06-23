@@ -1,42 +1,56 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 20 Jun 2015 18:48:23 +0000
-Subject: [PATCH 1/2] i2c: rcar: use adapter default for timeout
-Message-Id: <1434826104-16346-2-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 23 Jun 2015 13:04:28 +0000
+Subject: [PATCH 1/2] spi: rspi: Drop variable "error" in qspi_trigger_transfer_out_in()
+Message-Id: <1435064669-11969-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434826104-16346-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1434826104-16346-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Just use "ret" instead, for consistency with other similar functions.
 
-5 seconds is a very large timeout, and it is hardcoded. Use the default
-timeout from 'struct adapter' which is 1 second. It can also be modified
-from userspace for specific workloads.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/i2c/busses/i2c-rcar.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/spi/spi-rspi.c | 13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 9eef46254369b3..e57e520b4756a9 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -532,7 +532,7 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 3e82b84c9ed48b2f..f368d8f3dce869bb 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -725,24 +725,23 @@ static int qspi_trigger_transfer_out_in(struct rspi_data *rspi, const u8 *tx,
+ 					u8 *rx, unsigned int len)
+ {
+ 	int i, n, ret;
+-	int error;
  
- 		timeout = wait_event_timeout(priv->wait,
- 					     rcar_i2c_flags_has(priv, ID_DONE),
--					     5 * HZ);
-+					     adap->timeout);
- 		if (!timeout) {
- 			ret = -ETIMEDOUT;
- 			break;
+ 	while (len > 0) {
+ 		n = qspi_set_send_trigger(rspi, len);
+ 		qspi_set_receive_trigger(rspi, len);
+ 		if (n = QSPI_BUFFER_SIZE) {
+-			error = rspi_wait_for_tx_empty(rspi);
+-			if (error < 0) {
++			ret = rspi_wait_for_tx_empty(rspi);
++			if (ret < 0) {
+ 				dev_err(&rspi->master->dev, "transmit timeout\n");
+-				return error;
++				return ret;
+ 			}
+ 			for (i = 0; i < n; i++)
+ 				rspi_write_data(rspi, *tx++);
+ 
+-			error = rspi_wait_for_rx_full(rspi);
+-			if (error < 0) {
++			ret = rspi_wait_for_rx_full(rspi);
++			if (ret < 0) {
+ 				dev_err(&rspi->master->dev, "receive timeout\n");
+-				return error;
++				return ret;
+ 			}
+ 			for (i = 0; i < n; i++)
+ 				*rx++ = rspi_read_data(rspi);
 -- 
-2.1.4
+1.9.1
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
