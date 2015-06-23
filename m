@@ -1,21 +1,39 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Mon, 01 Jun 2015 13:50:46 +0000
-Subject: Re: [PATCH trivial] pinctrl: Spelling s/reseved/reserved/
-Message-Id: <CACRpkdZZpLGsB91FcJNxHA3R0-scc3hg_4_QeM=ZO=KVtgCkAg@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 23 Jun 2015 13:02:07 +0000
+Subject: [PATCH 2/2] spi: rspi: Remove obsolete qspi platform_device_id entry
+Message-Id: <1435064527-11786-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432209910-21307-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432209910-21307-1-git-send-email-geert+renesas@glider.be>
+References: <1435064527-11786-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1435064527-11786-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, May 21, 2015 at 2:05 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+Since commit a483dcbfa21f919c ("ARM: shmobile: lager: Remove legacy
+board support"), R-Car Gen2 SoCs are only supported in generic DT-only
+ARM multi-platform builds.  The driver doesn't need to match platform
+devices by name anymore, hence remove the corresponding
+platform_device_id entry.
 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/spi/spi-rspi.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-Patch applied.
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 56216b205e0f2c34..3e82b84c9ed48b2f 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -1295,7 +1295,6 @@ error1:
+ 
+ static const struct platform_device_id spi_driver_ids[] = {
+ 	{ "rspi",	(kernel_ulong_t)&rspi_ops },
+-	{ "qspi",	(kernel_ulong_t)&qspi_ops },
+ 	{},
+ };
+ 
+-- 
+1.9.1
 
-Yours,
-Linus Walleij
