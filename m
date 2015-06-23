@@ -1,115 +1,73 @@
-From: Michael Turquette <mturquette@linaro.org>
-Date: Mon, 22 Jun 2015 20:46:17 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 23 Jun 2015 08:59:15 +0000
 Subject: Re: [PATCH v2 00/14] ARM: shmobile: Add CPG Clock Domains
-Message-Id: <20150622204617.9112.71054@quantum>
+Message-Id: <CAMuHMdXsnKZjMe1FVr5etz6EakBxw9VONWa=UhC5uqa-TZWC_Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1432839219-475-1-git-send-email-geert+renesas@glider.be>
  <CAMuHMdXntR6c4-uUNGVGx7D7941e8hvnmtVBvDu2+iUsNHQ=Qw@mail.gmail.com>
-In-Reply-To: <CAMuHMdXntR6c4-uUNGVGx7D7941e8hvnmtVBvDu2+iUsNHQ=Qw@mail.gmail.com>
+ <20150622204617.9112.71054@quantum>
+In-Reply-To: <20150622204617.9112.71054@quantum>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Quoting Geert Uytterhoeven (2015-06-15 09:15:04)
-> On Thu, May 28, 2015 at 8:53 PM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
-> >         Hi all,
-> >
-> > This patch series adds Clock Domain support to the Clock Pulse Generator
-> > (CPG) Module Stop (MSTP) Clocks driver using the generic PM Domain, to
-> > be used on shmobile SoCs without device power domains (R-Car Gen1 and
-> > Gen2, RZ).  This allows to power-manage the module clocks of SoC devices
-> > that are part of the CPG Clock Domain using Runtime PM, or for system
-> > suspend/resume, similar to SoCs with device power domains (SH-Mobile and
-> > R-Mobile).
-> >
-> > SoC devices that are part of the CPG Clock Domain and can be
-> > power-managed through an MSTP clock are tagged in DT with a proper
-> > "power-domains" property. This applies to most on-SoC devices, which
-> > have a one-to-one mapping from SoC device to DT device node.
-> > Notable exceptions are "display" and "sound" device nodes, which
-> > represent multiple SoC devices, each having their own MSTP clocks. Hence
-> > drivers for such devices still have to manage their (multiple module)
-> > clocks themselves.
-> >
-> > The (MSTP) clock to use for power-management is found by scanning for
-> > clocks that are compatible with "renesas,cpg-mstp-clocks".
-> > Before, the "first" clock tied to each device (con_id NULL) was used,
-> > being a bit ad-hoc. It was suggested to use the "fck" clock instead,
-> > but this may conflict with DT bindings for devices we don't control
-> > (e.g. GIC-400 plans to mandate "clk" for the clk-name of its single
-> > clock). Looking for real MSTP clocks avoids this problem.
-> >
-> > Logically, the CPG Clock Domain operates on the SoC CPG/MSTP block.
-> > As there's no single device node in DT representing this block (there
-> > are separate device nodes for the CPG and for the individual MSTP
-> > clocks), I bound the logic to the CPG device node.
-> > Perhaps this is something we should change for future SoCs?
-> 
+Hi Mike,
 
-Hello Geert,
+On Mon, Jun 22, 2015 at 10:46 PM, Michael Turquette
+<mturquette@linaro.org> wrote:
+>> The MSTP block provides two functions:
+>>   1. Module Standby: "Clock supply to specified modules is stopped by
+>>      setting the module stop control register bits."
+>>      However, the clock supply to a module is not stopped until all CPUs
+>>      in the SoC agree.  Indeed, there are separate MSTP registers for
+>>      application (Cortex-A) and real-time (SH and/or Cortex-R) cores.
+>>   2. Reset control. to perform a software reset of a specific module.
+>>
+>> Given the second function, perhaps the MSTP bits shouldn't have been
+>> moduled as clocks, but it made sense at the time of introduction, and
+>> IMHO it still does.
+>
+> Does the clk.enable_count refcount for an MSTP "clock" mirror your
+> statement, "the clock supply to a module is not stopped until all CPUs
+> in the SoC agree"? Put another way, is it possble in a shmobile system
+> for an MSTP "clock" to have an enable_count of zero, but still by
+> physically enabled in hardware?
 
-I'm still going through this series but I have a few comments/questions.
+Yes. The enable_count only matches the bit in the application core MSTP
+control register. The real-time core MSTP control register may still have the
+same module clock enabled (i.e. module not put in standby).
+On some SoCs (e.g. R-Mobile APE6) there can be 3 sets of control registers
+(for application, real-time, and baseband core).
 
-> Inside Renesas, we've been discussing this face-to-face, but haven't
-> reached a conclusion yet.
-> 
-> In Linux terminology, "PM domain" is a higher-level abstraction than
-> just (hardware) "power domain" (sometimes called "power area").
-> A "PM domain" is any collection of devices that are power-managed
-> similarly. As such it covers not only hardware power domains, but also
-> clock domains, and even firmware controlled devices (e.g. as used by the
-> Linux ACPI subsystem).
-> 
-> I find it a bit unfortunate this was not reflected in the DT bindings
-> for Generic PM domains, which use "power-domains" properties, making
-> believe people this is about hardware power domains only.
+Most (not all) module clocks have a status register to check if the module
+clock is actually enabled or not. This shows that the module clock is stopped
+iff all cores agree to stop it.
 
-"Power island" is used commonly to describe the hardware power domain.
-I like that one since it conveys the concept of power isolation/clamping
-in a power distribution network.  It might be more clear to refer to the
-hardware as power islands and reserve "power domains" for the Linux
-construct?
+However, I found a few module clocks that never can be stopped, according to
+the status register. Perhaps there's another set of control registers for an
+undocumented core...
 
-> 
-> One other point of confusion is that there are multiple kernel
-> subsystems that can (or seem to be able to) be used for the same
-> purpose. Both regulators and power domains are used to "control power".
-> The same is true for clocks vs. clock domains.
-> My point of view is that the regulator and clock subsystems are more
-> about the properties of regulators (voltage, current) resp. clocks
-> (frequencies), while power/clock domains are about being active or
-> inactive.
+In addition, there are many undocumented bits in the MSTP control registers,
+which may represent existing but undocumented clocks. Disabling such bits
+may lock up the system.
 
-Only speaking for the clock framework, but the prepare/unprepare and
-enable/disable semantics are very important here, not just the
-rate-change stuff.
+As Linux doesn't touch the control registers for other CPU cores (they're
+not described in DT), a module clock may be enabled (read: not stopped) in
+a control registers meant for another CPU core, depending on reset state or
+on the boot loader. Or by another OS running on another CPU core.
+I've been running for quite some time with extra code that disables all module
+clocks (for all cores) at early boot time, which let me find lots of drivers
+that relied on implicit module clocks. Most got fixed, the only major
+offender left is the module clock for the GIC ;-)
 
-> 
-> On Renesas SoCs (SH/R-Mobile, R-Car, RZ), the MSTP (Module Standby and
-> Software Reset) block is very intimately tied to the CPG (Clock Pulse
-> Generator) block.
-> 
-> The MSTP block provides two functions:
->   1. Module Standby: "Clock supply to specified modules is stopped by
->      setting the module stop control register bits."
->      However, the clock supply to a module is not stopped until all CPUs
->      in the SoC agree.  Indeed, there are separate MSTP registers for
->      application (Cortex-A) and real-time (SH and/or Cortex-R) cores.
->   2. Reset control. to perform a software reset of a specific module.
-> 
-> Given the second function, perhaps the MSTP bits shouldn't have been
-> moduled as clocks, but it made sense at the time of introduction, and
-> IMHO it still does.
+Gr{oetje,eeting}s,
 
-Does the clk.enable_count refcount for an MSTP "clock" mirror your
-statement, "the clock supply to a module is not stopped until all CPUs
-in the SoC agree"? Put another way, is it possble in a shmobile system
-for an MSTP "clock" to have an enable_count of zero, but still by
-physically enabled in hardware?
+                        Geert
 
-Regards,
-Mike
 --
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
