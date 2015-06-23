@@ -1,53 +1,37 @@
-From: Dominik Dingel <dingel@linux.vnet.ibm.com>
-Date: Tue, 02 Jun 2015 07:46:40 +0000
-Subject: Re: [PATCH 0/5] Remove s390 sw-emulated hugepages and cleanup
-Message-Id: <20150602094640.4fedc046@BR9TG4T3.de.ibm.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 23 Jun 2015 13:01:01 +0000
+Subject: [PATCH 1/2] sh_eth: Remove obsolete r7s72100-ether platform_device_id entry
+Message-Id: <1435064462-11680-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432813957-46874-1-git-send-email-dingel@linux.vnet.ibm.com>
- <556C0B5D.40205@de.ibm.com>
-In-Reply-To: <556C0B5D.40205@de.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "David S. Miller" <davem@davemloft.net>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Mon, 01 Jun 2015 09:35:57 +0200
-Christian Borntraeger <borntraeger@de.ibm.com> wrote:
+Since commit 05104c266ae9a167 ("ARM: shmobile: r7s72100: genmai: Remove
+legacy board file"), r7s72100 is only supported in generic DT-only ARM
+multi-platform builds.  The driver doesn't need to match platform
+devices by name anymore, hence remove the corresponding
+platform_device_id entry.
 
-> Am 28.05.2015 um 13:52 schrieb Dominik Dingel:
-> > Hi everyone,
-> > 
-> > there is a potential bug with KVM and hugetlbfs if the hardware does not
-> > support hugepages (EDAT1).
-> > We fix this by making EDAT1 a hard requirement for hugepages and 
-> > therefore removing and simplifying code.
-> 
-> The cleanup itself is nice and probably the right thing to do. 
-> Emulating large pages makes the code more complex and asks for
-> trouble (as outlined above)
-> 
-> The only downside that I see is that z/VM as of today does not
-> announce EDAT1 for its guests so the "emulated" large pages for
-> hugetlbfs would be useful in that case. The current code allocates
-> the page table only once and shares it for all mappers - which is
-> useful for some big databases that spawn hundreds of processes with
-> shared mappings of several hundred GBs. In these cases we do save
-> a decent amount of page table memory. 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-To limit the damage done, we could always allocate page tables with pgstes for that case.
-That would allow one guest manipulating another guests storage keys,
-but at least would prevent random memory overwrites in the host.
-
-Another thing we could do, make software emulated large pages a kernel config option
-and only if KVM is not selected allow it, visa versa.
-
-@Martin what do you think?
-
-Thanks,
-	Dominik
-
-> Not sure if that case is actually important, though.
-> 
-> Christian
-> 
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 7fb244f565b283b0..06ac93468e04aff8 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -3303,7 +3303,6 @@ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "sh7757-ether", (kernel_ulong_t)&sh7757_data },
+ 	{ "sh7757-gether", (kernel_ulong_t)&sh7757_data_giga },
+ 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
+-	{ "r7s72100-ether", (kernel_ulong_t)&r7s72100_data },
+ 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
+ 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
+ 	{ "r8a7790-ether", (kernel_ulong_t)&r8a779x_data },
+-- 
+1.9.1
 
