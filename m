@@ -1,7 +1,7 @@
 From: Rob Landley <rob@landley.net>
-Date: Sat, 20 Jun 2015 19:59:38 +0000
-Subject: Re: [musl] Re: SH sigcontext ABI is broken
-Message-Id: <5585C62A.5060301@landley.net>
+Date: Wed, 24 Jun 2015 04:25:08 +0000
+Subject: Re: [musl] SH sigcontext ABI is broken
+Message-Id: <558A3124.30701@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150619070912.GA15025@brightrain.aerifal.cx>
 In-Reply-To: <20150619070912.GA15025@brightrain.aerifal.cx>
@@ -10,42 +10,33 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 06/20/2015 03:10 AM, Geert Uytterhoeven wrote:
-> On Fri, Jun 19, 2015 at 10:32 PM, Rich Felker <dalias@libc.org> wrote:
->> On Fri, Jun 19, 2015 at 09:57:22PM +0200, Andreas Schwab wrote:
->>> Rich Felker <dalias@libc.org> writes:
->>>
->>>> Thanks, but most of the links seem to be broken.
->>>
->>> Are they?  I'm only seeing a single broken link, which has a mirror.
->>
->> My bad. Indeed only the davej one is broken, but that's where the code
->> must have been introduced (even the earliest commit in tglx
->> history.git has the #ifdef __SH4__ for FPU regs) and I can't find a
->> cgit interface to it. Fetching several GB to browse history locally is
->> going to take a while if I have to do that..
-> 
-> Using web interfaces for archeology doesn't fly.
-> If you're doing serious Linux work, you should already have a git repository
-> of the kernel. full-history-linux.git.tar weights in at only ca. 0.5 giB.
+On 06/20/2015 01:06 PM, Rich Felker wrote:
+> So there's a lot of historical mess and breakage here, but sh3
+> binaries have been running with a stable (albeit wrong, IMO)
+> definition of ucontext_t/mcontext_t/sigcontext for around 14 years
+> now (as long as they only run on sh3 hardware, not sh4). So I'm a bit
+> hesitant to consider this something that could be changed with no path
+> for compatibility.
 
-I have a somewhat updated version of that at
-http://landley.net/kdocs/local/linux-fullhist.tar.bz2 which I should
-probably update for the 4.0 release. (It's pulled to 3.0 currently.)
+I'm told SH3 was only on sale for about a year between its introduction
+and sh4 coming out, at which point everybody switched. There were
+significant sh2 deployments and significant sh4 deployments, but sh3 was
+more or less a rounding error. The Wikipedia[citation needed] article
+doesn't even break it out separately because there's really nothing to
+say: https://en.wikipedia.org/?title=SuperH
 
-Meanwhile you can download and extract that tarball, cd into it, then
-"git checkout -f" followed by "git pull". (It doesn't have the checked
-out files because it would make the tarball bigger, it's just the .git
-directory.) That gives you a repository that goes from 0.0.1 to current,
-although I haven't gone back and tagged the old releases yet.
+(Again, there's a reason qemu-system-sh4 has a 4 in it. At $DAYJOB their
+plan is to eventually jump from sh2 straight to sh4 because sh3 doesn't
+matter.)
 
-Oh, you may want to edit .git/config so it pulls from linux instead of
-linux-2.6. Largely cosmetic, but eh...
+sh2a was a retcon, started shipping in 2007, a decade after the
+dreamcast. Hitachi had already unloaded superh onto Renesas, which did a
+big Not Invented Here on superh and kept trying to come up with their
+own processor designs. The H in H8300 also stands for Hitachi, so you
+can imagine how well Renesas supported it:
 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
+http://permalink.gmane.org/gmane.linux.ports.sh.devel/7237
+
+Seriously, It only became interesting again when the patents expired...
 
 Rob
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
