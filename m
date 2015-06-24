@@ -1,7 +1,7 @@
 From: "Rafael J. Wysocki" <rjw@rjwysocki.net>
-Date: Wed, 24 Jun 2015 13:44:11 +0000
+Date: Wed, 24 Jun 2015 13:48:12 +0000
 Subject: Re: [PATCH 2/2] PM / Domains: Avoid infinite loops in attach/detach code
-Message-Id: <10339007.ODJxqcfmHy@vostro.rjw.lan>
+Message-Id: <1472640.FZpH0ugFKI@vostro.rjw.lan>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1434622954-26747-3-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1434622954-26747-3-git-send-email-geert+renesas@glider.be>
@@ -10,10 +10,19 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tuesday, June 23, 2015 03:45:43 PM Geert Uytterhoeven wrote:
-> Hi Rafael,
-> 
-> On Tue, Jun 23, 2015 at 3:38 PM, Rafael J. Wysocki <rafael@kernel.org> wrote:
+On Wednesday, June 24, 2015 10:35:44 AM Geert Uytterhoeven wrote:
+> On Wed, Jun 24, 2015 at 10:33 AM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
+> > [...]
+> >
+> >>>>
+> >>>> @@ -2183,6 +2191,7 @@ int genpd_dev_pm_attach(struct device *dev)
+> >>>>  {
+> >>>>         struct of_phandle_args pd_args;
+> >>>>         struct generic_pm_domain *pd;
+> >>>> +       unsigned int i;
+> >>>>         int ret;
+> >>>>
+> >>>>         if (!dev->of_node)
 > >>>> @@ -2218,10 +2227,13 @@ int genpd_dev_pm_attach(struct device *dev)
 > >>>>
 > >>>>         dev_dbg(dev, "adding to PM domain %s\n", pd->name);
@@ -40,20 +49,26 @@ On Tuesday, June 23, 2015 03:45:43 PM Geert Uytterhoeven wrote:
 > >> That's indeed viable. I have no idea for how long this temporary state can
 > >> extend.
 > >
-> > A usual approach to this kind of thing is to use exponential fallback
-> > where you increase the delay twice with respect to the previous one
-> > every time.
+> > That will depend on the system PM resume time for the devices residing
+> > in the genpd. So, I guess we need a guestimate then. How about a total
+> > sleep time of a few seconds?
+> >
+> >>
+> >>> However, what if the reason to why we get -EAGAIN isn't *temporary*,
+> >>> because we are about to enter system PM suspend state. Then the caller
+> >>> of this function which comes via some bus' ->probe(), will hang until
+> >>> the a system PM resume is completed. Is that really going to work? So,
+> >>> for this case your limited re-try approach will affect this scenario
+> >>> as well, have you considered that?
+> >>
+> >> There's a limit on the number of retries, so it won't hang indefinitely.
+> >
+> > What happens with the timer functions (like msleep()) during the
+> > system PM suspend transition?
 > 
-> Right, but when do you give up?
+> I guess we can no longer call msleep() after syscore suspend?
 
-Well, I guess you know what a reasonable timeout should be?
+That's correct.  Time is effectively frozen at that point.
 
-> Note that udelay() is a busy loop. Should it fall back to msleep() after
-> a while?
-
-If we can't fall back to msleep() at one point, you may as well simply poll
-periodically as you did originally.
-
-Thanks,
 Rafael
 
