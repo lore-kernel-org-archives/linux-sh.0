@@ -1,46 +1,58 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 24 Jun 2015 08:01:23 +0000
+Date: Wed, 24 Jun 2015 09:19:09 +0000
 Subject: Re: [PATCH 1/2] spi: rspi: Remove obsolete rspi-rz platform_device_id entry
-Message-Id: <CAMuHMdWfttuYc6zDiWgzG=SoFWKw7Ghkx3pREmM1vQiANus_bg@mail.gmail.com>
+Message-Id: <CAMuHMdUS-4GjTu324g2qXBQnyeOmYBt7JLUo4AXjRjcZo6Bs2Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1435064527-11786-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1435064527-11786-1-git-send-email-geert+renesas@glider.be>
+	<CAMuHMdWfttuYc6zDiWgzG=SoFWKw7Ghkx3pREmM1vQiANus_bg@mail.gmail.com>
+In-Reply-To: <CAMuHMdWfttuYc6zDiWgzG=SoFWKw7Ghkx3pREmM1vQiANus_bg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Mark Brown <broonie@kernel.org>, linux-spi <linux-spi@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi <linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Tue, Jun 23, 2015 at 3:02 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> Since commit 05104c266ae9a167 ("ARM: shmobile: r7s72100: genmai: Remove
-> legacy board file"), r7s72100 is only supported in generic DT-only ARM
-> multi-platform builds.  The driver doesn't need to match platform
-> devices by name anymore, hence remove the corresponding
-> platform_device_id entry.
+On Wed, Jun 24, 2015 at 10:01 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> On Tue, Jun 23, 2015 at 3:02 PM, Geert Uytterhoeven
+> <geert+renesas@glider.be> wrote:
+>> Since commit 05104c266ae9a167 ("ARM: shmobile: r7s72100: genmai: Remove
+>> legacy board file"), r7s72100 is only supported in generic DT-only ARM
+>> multi-platform builds.  The driver doesn't need to match platform
+>> devices by name anymore, hence remove the corresponding
+>> platform_device_id entry.
+>>
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> ---
+>>  drivers/spi/spi-rspi.c | 1 -
+>>  1 file changed, 1 deletion(-)
+>>
+>> diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+>> index f9189a0c8cec81f2..56216b205e0f2c34 100644
+>> --- a/drivers/spi/spi-rspi.c
+>> +++ b/drivers/spi/spi-rspi.c
+>> @@ -1295,7 +1295,6 @@ error1:
+>>
+>>  static const struct platform_device_id spi_driver_ids[] = {
+>>         { "rspi",       (kernel_ulong_t)&rspi_ops },
+>> -       { "rspi-rz",    (kernel_ulong_t)&rspi_rz_ops },
+>>         { "qspi",       (kernel_ulong_t)&qspi_ops },
+>>         {},
+>>  };
 >
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  drivers/spi/spi-rspi.c | 1 -
->  1 file changed, 1 deletion(-)
->
-> diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-> index f9189a0c8cec81f2..56216b205e0f2c34 100644
-> --- a/drivers/spi/spi-rspi.c
-> +++ b/drivers/spi/spi-rspi.c
-> @@ -1295,7 +1295,6 @@ error1:
->
->  static const struct platform_device_id spi_driver_ids[] = {
->         { "rspi",       (kernel_ulong_t)&rspi_ops },
-> -       { "rspi-rz",    (kernel_ulong_t)&rspi_rz_ops },
->         { "qspi",       (kernel_ulong_t)&qspi_ops },
->         {},
->  };
+> rspi_rz_ops is still used for DT matching, but rspi_of_match[] is protected
+> by #ifdef CONFIG_OF, so this may lead to compiler warnings.
 
-rspi_rz_ops is still used for DT matching, but rspi_of_match[] is protected
-by #ifdef CONFIG_OF, so this may lead to compiler warnings.
+Unlike the sh_eth case, I don't get a warning if CONFIG_OF=n, because
+rspi_rz_ops is const. Not even with a picky gcc 4.1.2.
 
-Please drop this one, will fix.
+> Please drop this one, will fix.
+
+And unlike the sh_eth case, this cannot be fixed with one #ifdef without
+restructuring the whole driver.
+
+Hence inclined to withdraw my drop requst.
+Mark, what do you think? Is this patch OK as-is?
 
 Gr{oetje,eeting}s,
 
