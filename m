@@ -1,47 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 02 Jun 2015 00:34:58 +0000
-Subject: Re: [PATCH] ASoC: rsnd: Document r8a7778-specific binding
-Message-Id: <20150602003457.GB4781@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 25 Jun 2015 08:57:16 +0000
+Subject: [PATCH v2 00/06] ARM: shmobile: r8a7779 IRQ update and Marzen cleanup V2
+Message-Id: <20150625085716.24543.84444.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433155455-28827-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1433155455-28827-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Jun 01, 2015 at 12:44:15PM +0200, Geert Uytterhoeven wrote:
-> Add the missing r8a7778-specific compatible value, which is already in
-> use since v4.1-rc1.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+ARM: shmobile: r8a7779 IRQ update and Marzen cleanup V2
 
-Apologies for not noticing this myself.
+[PATCH v2 01/06] ARM: shmobile: r8a7779: Configure IRLM mode via DT
+[PATCH v2 02/06] ARM: shmobile: r8a7779: Generic CCF and timer support
+[PATCH v2 03/06] ARM: shmobile: r8a7779: Generic SMP ops
+[PATCH v2 04/06] ARM: shmobile: marzen-reference: Remove C board code
+[PATCH v2 05/06] ARM: shmobile: Remove Marzen from shmobile_defconfig
+[PATCH v2 06/06] ARM: shmobile: r8a7779: Cleanup header file
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Now when "irqchip: renesas-intc-irqpin: r8a7779 IRLM setup support" is
+merged we can continue to cleanup r8a7779 and Marzen.
 
-> ---
->  Documentation/devicetree/bindings/sound/renesas,rsnd.txt | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-> index 62ece4c59da759a4..b6b3a786855f275b 100644
-> --- a/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-> +++ b/Documentation/devicetree/bindings/sound/renesas,rsnd.txt
-> @@ -5,6 +5,7 @@ Required properties:
->  				  "renesas,rcar_sound-gen1" if generation1, and
->  				  "renesas,rcar_sound-gen2" if generation2
->  				  Examples with soctypes are:
-> +				    - "renesas,rcar_sound-r8a7778" (R-Car M1A)
->  				    - "renesas,rcar_sound-r8a7790" (R-Car H2)
->  				    - "renesas,rcar_sound-r8a7791" (R-Car M2-W)
->  - reg				: Should contain the register physical address.
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+With these patches applied the r8a7779 SoC gets DT-only multiplatform
+support and old C board code for multiplatform gets removed.
+
+The legacy r8a7779 Marzen code is not touched by this series, but
+with these patches applied basic r8a7779 multiplatform SoC support
+is done and only a few I/O devices are legacy-only.
+
+Only minor changes since V1, fixed build issues for the legacy case.
+Boot tested with shmobile_defconfig on real hardware. Built using
+marzen_defconfig as well but no testing in such case.
+
+We probably want to figure out a way how to handle kernel configuration
+of regulators...
+
+Thanks for earlier review by Geert!
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Built on top of renesas-devel-20150624-v4.1
+ No special dependencies
+
+ arch/arm/boot/dts/r8a7779.dtsi                  |    5 +-
+ arch/arm/configs/shmobile_defconfig             |    1 
+ arch/arm/mach-shmobile/Kconfig                  |    7 --
+ arch/arm/mach-shmobile/Makefile                 |    4 -
+ arch/arm/mach-shmobile/board-marzen-reference.c |   56 -----------------------
+ arch/arm/mach-shmobile/clock-r8a7779.c          |    2 
+ arch/arm/mach-shmobile/r8a7779.h                |    2 
+ arch/arm/mach-shmobile/setup-r8a7779.c          |   15 +++++-
+ 8 files changed, 19 insertions(+), 73 deletions(-)
