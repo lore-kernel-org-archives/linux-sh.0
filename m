@@ -1,97 +1,68 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 05 Jun 2015 10:59:25 +0000
-Subject: [PATCH 09/10] sh-vou: fix bytesperline
-Message-Id: <1433501966-30176-10-git-send-email-hverkuil@xs4all.nl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 25 Jun 2015 08:58:23 +0000
+Subject: [PATCH v2 06/06] ARM: shmobile: r8a7779: Cleanup header file
+Message-Id: <20150625085823.24543.23737.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
-In-Reply-To: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
+To: linux-sh@vger.kernel.org
 
-From: Hans Verkuil <hans.verkuil@cisco.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-The bytesperline values were wrong for planar formats where bytesperline is
-the line length for the first plane.
+Remove unused function prototypes from r8a7779.h and
+make the functions static.
 
-Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/media/platform/sh_vou.c | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
-index 489d045..d431cb1 100644
---- a/drivers/media/platform/sh_vou.c
-+++ b/drivers/media/platform/sh_vou.c
-@@ -135,6 +135,7 @@ struct sh_vou_fmt {
- 	u32		pfmt;
- 	char		*desc;
- 	unsigned char	bpp;
-+	unsigned char	bpl;
- 	unsigned char	rgb;
- 	unsigned char	yf;
- 	unsigned char	pkf;
-@@ -145,6 +146,7 @@ static struct sh_vou_fmt vou_fmt[] = {
- 	{
- 		.pfmt	= V4L2_PIX_FMT_NV12,
- 		.bpp	= 12,
-+		.bpl	= 1,
- 		.desc	= "YVU420 planar",
- 		.yf	= 0,
- 		.rgb	= 0,
-@@ -152,6 +154,7 @@ static struct sh_vou_fmt vou_fmt[] = {
- 	{
- 		.pfmt	= V4L2_PIX_FMT_NV16,
- 		.bpp	= 16,
-+		.bpl	= 1,
- 		.desc	= "YVYU planar",
- 		.yf	= 1,
- 		.rgb	= 0,
-@@ -159,6 +162,7 @@ static struct sh_vou_fmt vou_fmt[] = {
- 	{
- 		.pfmt	= V4L2_PIX_FMT_RGB24,
- 		.bpp	= 24,
-+		.bpl	= 3,
- 		.desc	= "RGB24",
- 		.pkf	= 2,
- 		.rgb	= 1,
-@@ -166,6 +170,7 @@ static struct sh_vou_fmt vou_fmt[] = {
- 	{
- 		.pfmt	= V4L2_PIX_FMT_RGB565,
- 		.bpp	= 16,
-+		.bpl	= 2,
- 		.desc	= "RGB565",
- 		.pkf	= 3,
- 		.rgb	= 1,
-@@ -173,6 +178,7 @@ static struct sh_vou_fmt vou_fmt[] = {
- 	{
- 		.pfmt	= V4L2_PIX_FMT_RGB565X,
- 		.bpp	= 16,
-+		.bpl	= 2,
- 		.desc	= "RGB565 byteswapped",
- 		.pkf	= 3,
- 		.rgb	= 1,
-@@ -703,7 +709,8 @@ static int sh_vou_try_fmt_vid_out(struct file *file, void *priv,
- 
- 	v4l_bound_align_image(&pix->width, 0, VOU_MAX_IMAGE_WIDTH, 2,
- 			      &pix->height, 0, img_height_max, 1, 0);
--	pix->bytesperline = pix->width * 2;
-+	pix->bytesperline = pix->width * vou_fmt[pix_idx].bpl;
-+	pix->sizeimage = pix->height * ((pix->width * vou_fmt[pix_idx].bpp) >> 3);
- 
- 	return 0;
- }
-@@ -1380,7 +1387,7 @@ static int sh_vou_probe(struct platform_device *pdev)
- 	pix->height		= 480;
- 	pix->pixelformat	= V4L2_PIX_FMT_NV16;
- 	pix->field		= V4L2_FIELD_NONE;
--	pix->bytesperline	= VOU_MAX_IMAGE_WIDTH * 2;
-+	pix->bytesperline	= VOU_MAX_IMAGE_WIDTH;
- 	pix->sizeimage		= VOU_MAX_IMAGE_WIDTH * 2 * 480;
- 	pix->colorspace		= V4L2_COLORSPACE_SMPTE170M;
- 
--- 
-2.1.4
+ Changes since V1:
+ - left r8a7779_read_mode_pins() since it used by legacy clock code
+ - removed r8a7779_clock_init() from the header file
 
+ arch/arm/mach-shmobile/clock-r8a7779.c |    2 +-
+ arch/arm/mach-shmobile/r8a7779.h       |    2 --
+ arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
+ 3 files changed, 2 insertions(+), 4 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/clock-r8a7779.c
++++ work/arch/arm/mach-shmobile/clock-r8a7779.c	2015-06-25 17:18:28.972366518 +0900
+@@ -201,7 +201,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("rcar-du-r8a7779", &mstp_clks[MSTP103]), /* DU */
+ };
+ 
+-void __init r8a7779_clock_init(void)
++static void __init r8a7779_clock_init(void)
+ {
+ 	u32 mode = r8a7779_read_mode_pins();
+ 	int k, ret = 0;
+--- 0001/arch/arm/mach-shmobile/r8a7779.h
++++ work/arch/arm/mach-shmobile/r8a7779.h	2015-06-25 17:18:28.972366518 +0900
+@@ -11,7 +11,6 @@ enum {
+ };
+ 
+ extern void r8a7779_init_irq_extpin(int irlm);
+-extern void r8a7779_init_irq_extpin_dt(int irlm);
+ extern void r8a7779_init_irq_dt(void);
+ extern void r8a7779_map_io(void);
+ extern void r8a7779_earlytimer_init(void);
+@@ -19,7 +18,6 @@ extern void r8a7779_add_early_devices(vo
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_init_late(void);
+ extern u32 r8a7779_read_mode_pins(void);
+-extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+ extern void r8a7779_pm_init(void);
+ extern void r8a7779_register_twd(void);
+--- 0004/arch/arm/mach-shmobile/setup-r8a7779.c
++++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2015-06-25 17:18:28.972366518 +0900
+@@ -99,7 +99,7 @@ static struct resource irqpin0_resources
+ 	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ3 */
+ };
+ 
+-void __init r8a7779_init_irq_extpin_dt(int irlm)
++static void __init r8a7779_init_irq_extpin_dt(int irlm)
+ {
+ 	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
+ 	u32 tmp;
