@@ -1,83 +1,34 @@
-From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Tue, 30 Jun 2015 16:57:27 +0000
-Subject: [PATCH v4 8/8] ARM: shmobile: lager: Enable UHS-I SDR-50
-Message-Id: <1435683447.23818.70.camel@codethink.co.uk>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 25 Jun 2015 08:57:51 +0000
+Subject: [PATCH v2 03/06] ARM: shmobile: r8a7779: Generic SMP ops
+Message-Id: <20150625085751.24543.2361.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435683177.23818.60.camel@codethink.co.uk>
-In-Reply-To: <1435683177.23818.60.camel@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-sh@vger.kernel.org
 
-Add the "1v8" pinctrl state and sd-uhs-sdr50 property to SDHI{0,2}.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Add a r8a7779-specific SMP operation pointer to support
+all 4 CPU cores through SMP on r8a7779 without C board code.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 22 ++++++++++++++++++++--
- 1 file changed, 20 insertions(+), 2 deletions(-)
+ Changes since V1:
+ - None
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index aaa4f258e279..c14c416b6704 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -312,11 +312,25 @@
- 	sdhi0_pins: sd0 {
- 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
- 		renesas,function = "sdhi0";
-+		power-source = <3300>;
-+	};
-+
-+	sdhi0_pins_1v8: sd0_1v8 {
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
-+		renesas,function = "sdhi0";
-+		power-source = <1800>;
- 	};
- 
- 	sdhi2_pins: sd2 {
- 		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
- 		renesas,function = "sdhi2";
-+		power-source = <3300>;
-+	};
-+
-+	sdhi2_pins_1v8: sd2_1v8 {
-+		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
-+		renesas,function = "sdhi2";
-+		power-source = <1800>;
- 	};
- 
- 	mmc1_pins: mmc1 {
-@@ -486,21 +500,25 @@
- 
- &sdhi0 {
- 	pinctrl-0 = <&sdhi0_pins>;
--	pinctrl-names = "default";
-+	pinctrl-1 = <&sdhi0_pins_1v8>;
-+	pinctrl-names = "default", "1v8";
- 
- 	vmmc-supply = <&vcc_sdhi0>;
- 	vqmmc-supply = <&vccq_sdhi0>;
- 	cd-gpios = <&gpio3 6 GPIO_ACTIVE_LOW>;
-+	sd-uhs-sdr50;
- 	status = "okay";
+ arch/arm/mach-shmobile/setup-r8a7779.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- 0003/arch/arm/mach-shmobile/setup-r8a7779.c
++++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2015-06-25 17:30:31.232366518 +0900
+@@ -772,6 +772,7 @@ static const char *r8a7779_compat_dt[] _
  };
  
- &sdhi2 {
- 	pinctrl-0 = <&sdhi2_pins>;
--	pinctrl-names = "default";
-+	pinctrl-1 = <&sdhi2_pins_1v8>;
-+	pinctrl-names = "default", "1v8";
- 
- 	vmmc-supply = <&vcc_sdhi2>;
- 	vqmmc-supply = <&vccq_sdhi2>;
- 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
-+	sd-uhs-sdr50;
- 	status = "okay";
- };
- 
--- 
-2.1.4
-
-
-
+ DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
++	.smp		= smp_ops(r8a7779_smp_ops),
+ 	.map_io		= r8a7779_map_io,
+ 	.init_early	= shmobile_init_delay,
+ 	.init_time	= r8a7779_init_time,
