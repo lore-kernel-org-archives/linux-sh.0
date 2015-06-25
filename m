@@ -1,32 +1,96 @@
-From: David Miller <davem@davemloft.net>
-Date: Thu, 11 Jun 2015 07:14:50 +0000
-Subject: Re: [PATCH v6 1/2] Renesas Ethernet AVB driver proper
-Message-Id: <20150611.001450.896536559764289809.davem@davemloft.net>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 25 Jun 2015 14:45:57 +0000
+Subject: [PATCH] gpio: rcar: Fine-grained Runtime PM support
+Message-Id: <1435243557-7050-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1890562.JASeYkKSbr@wasted.cogentembedded.com>
-In-Reply-To: <1890562.JASeYkKSbr@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, richardcochran@gmail.com, linux-sh@vger.kernel.org, mitsuhiro.kimura.kc@renesas.com
+To: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-gpio@vger.kernel.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 11 Jun 2015 01:01:43 +0300
+Currently gpio modules are runtime-resumed at probe time. This means the
+gpio module will be active all the time (except during system suspend,
+if not configured as a wake-up source).
 
-> Ethernet AVB includes an Gigabit Ethernet controller (E-MAC) that is basically
-> compatible with SuperH Gigabit Ethernet E-MAC.  Ethernet AVB has  a  dedicated
-> direct memory access controller (AVB-DMAC) that is a new design compared to the
-> SuperH E-DMAC. The AVB-DMAC is compliant with 3 standards formulated for IEEE
-> 802.1BA: IEEE 802.1AS timing and synchronization protocol, IEEE 802.1Qav real-
-> time transfer, and the IEEE 802.1Qat stream reservation protocol.
-> 
-> The  driver only supports device tree probing, so the binding document is
-> included in this patch.
-> 
-> Based on the original patches by Mitsuhiro Kimura.
-> 
-> Signed-off-by: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+While an R-Car Gen2 gpio module retains pins configured for output at
+the requested level while put in standby mode, gpio registercannot be
+accessed while suspended.  Unfortunately pm_runtime_get_sync() cannot be
+called from all contexts where gpio register access is needed. Hence
+move the Runtime PM handling from probe/remove time to gpio request/free
+time, which is probably the best we can do.
 
-Applied.
+On r8a7791/koelsch, gpio modules 0, 1, 3, and 4 are now suspended during
+normal use (gpio2 is used for LEDs and regulators, gpio5 for keys, gpio6
+for SD-Card CD & WP, gpio7 for keys and regulators).
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/gpio/gpio-rcar.c | 20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index 29089ef6969fd33f..099a6f508f867821 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -251,17 +251,32 @@ static void gpio_rcar_config_general_input_output_mode(struct gpio_chip *chip,
+ 
+ static int gpio_rcar_request(struct gpio_chip *chip, unsigned offset)
+ {
+-	return pinctrl_request_gpio(chip->base + offset);
++	struct gpio_rcar_priv *p = gpio_to_priv(chip);
++	int error;
++
++	error = pm_runtime_get_sync(&p->pdev->dev);
++	if (error < 0)
++		return error;
++
++	error = pinctrl_request_gpio(chip->base + offset);
++	if (error)
++		pm_runtime_put(&p->pdev->dev);
++
++	return error;
+ }
+ 
+ static void gpio_rcar_free(struct gpio_chip *chip, unsigned offset)
+ {
++	struct gpio_rcar_priv *p = gpio_to_priv(chip);
++
+ 	pinctrl_free_gpio(chip->base + offset);
+ 
+ 	/* Set the GPIO as an input to ensure that the next GPIO request won't
+ 	 * drive the GPIO pin as an output.
+ 	 */
+ 	gpio_rcar_config_general_input_output_mode(chip, offset, false);
++
++	pm_runtime_put(&p->pdev->dev);
+ }
+ 
+ static int gpio_rcar_direction_input(struct gpio_chip *chip, unsigned offset)
+@@ -405,7 +420,6 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	pm_runtime_enable(dev);
+-	pm_runtime_get_sync(dev);
+ 
+ 	io = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+@@ -488,7 +502,6 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ err1:
+ 	gpiochip_remove(gpio_chip);
+ err0:
+-	pm_runtime_put(dev);
+ 	pm_runtime_disable(dev);
+ 	return ret;
+ }
+@@ -499,7 +512,6 @@ static int gpio_rcar_remove(struct platform_device *pdev)
+ 
+ 	gpiochip_remove(&p->gpio_chip);
+ 
+-	pm_runtime_put(&pdev->dev);
+ 	pm_runtime_disable(&pdev->dev);
+ 	return 0;
+ }
+-- 
+1.9.1
+
