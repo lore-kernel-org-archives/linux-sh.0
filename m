@@ -1,52 +1,67 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 23 Jun 2015 23:52:14 +0000
-Subject: Re: [PATCH] spi: sh-msiof: Remove obsolete spi_r8a779x_msiof platform_device_id entries
-Message-Id: <20150623235214.GJ9988@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 25 Jun 2015 08:45:59 +0000
+Subject: Re: [PATCH 03/05] ARM: shmobile: r8a7779: Generic SoC SMP support
+Message-Id: <CANqRtoTVwJ3si=vWO7ERqaxu4uiT9n1opXVvRbG1Ay1n+6fbHQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435064564-11877-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1435064564-11877-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <20150218023842.12588.17833.sendpatchset@little-apple>
+In-Reply-To: <20150218023842.12588.17833.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-Cc: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Jun 23, 2015 at 03:02:44PM +0200, Geert Uytterhoeven wrote:
-> Since commit a483dcbfa21f919c ("ARM: shmobile: lager: Remove legacy
-> board support"), R-Car Gen2 SoCs are only supported in generic DT-only
-> ARM multi-platform builds.  The driver doesn't need to match platform
-> devices by name anymore, hence remove the corresponding
-> platform_device_id entry.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi Laurent,
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+On Wed, Feb 18, 2015 at 4:27 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Magnus,
+>
+> Thank you for the patch.
+>
+> On Wednesday 18 February 2015 11:38:42 Magnus Damm wrote:
+>> From: Magnus Damm <damm+renesas@opensource.se>
+>>
+>> Add a r8a7779-specific SMP operation pointer to support
+>> all 4 CPU cores through SMP on r8a7779 without C board code.
+>>
+>> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+>> ---
+>>
+>>  arch/arm/mach-shmobile/setup-r8a7779.c |    1 +
+>>  1 file changed, 1 insertion(+)
+>>
+>> --- 0003/arch/arm/mach-shmobile/setup-r8a7779.c
+>> +++ work/arch/arm/mach-shmobile/setup-r8a7779.c       2015-02-17
+>> 00:46:51.566221714 +0900 @@ -773,6 +773,7 @@ static const char
+>> *r8a7779_compat_dt[] _
+>>  };
+>>
+>>  DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
+>> +     .smp            = smp_ops(r8a7779_smp_ops),
+>>       .map_io         = r8a7779_map_io,
+>>       .init_early     = shmobile_init_delay,
+>>       .init_time      = r8a7779_init_time,
+>
+> I've been told by Arnd last week that an alternate method exists to select SMP
+> operations when booting from DT. The CPU_METHOD_OF_DECLARE() registers SMP
+> operations with a CPU enabling method name, which can then be specified in DT
+> using the enable-method property. This allows using the same DT machine
+> description for several SoCs when only the SMP operations differ.
+>
+> We unfortunately can't switch to this method completely for Gen2, otherwise we
+> would break backward compatibility with older DT that don't specify the
+> enable-method property. For newer addition, though, we could avoid introducing
+> a dependency on SMP operations in the DT machine descriptions.
 
-> ---
->  drivers/spi/spi-sh-msiof.c | 5 -----
->  1 file changed, 5 deletions(-)
-> 
-> diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-> index d3370a612d8432cf..118c652d88b570a5 100644
-> --- a/drivers/spi/spi-sh-msiof.c
-> +++ b/drivers/spi/spi-sh-msiof.c
-> @@ -1265,11 +1265,6 @@ static int sh_msiof_spi_remove(struct platform_device *pdev)
->  
->  static const struct platform_device_id spi_driver_ids[] = {
->  	{ "spi_sh_msiof",	(kernel_ulong_t)&sh_data },
-> -	{ "spi_r8a7790_msiof",	(kernel_ulong_t)&r8a779x_data },
-> -	{ "spi_r8a7791_msiof",	(kernel_ulong_t)&r8a779x_data },
-> -	{ "spi_r8a7792_msiof",	(kernel_ulong_t)&r8a779x_data },
-> -	{ "spi_r8a7793_msiof",	(kernel_ulong_t)&r8a779x_data },
-> -	{ "spi_r8a7794_msiof",	(kernel_ulong_t)&r8a779x_data },
->  	{},
->  };
->  MODULE_DEVICE_TABLE(platform, spi_driver_ids);
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+I've started to address this in the series "[PATCH 00/05] ARM:
+shmobile: APMU DT support via SMP Enable method", but this only covers
+R-Car Gen2 so it does not apply to the r8a7779 case. My priority at
+this point is to get rid of the Marzen reference board code, and
+enabling SMP in the generic r8a7779 machvec is a blocker for that. So
+my current plan is to migrate r8a7779 smp over as-is and then
+incrementally fix it up as a separate issue - ideally after converting
+over R-Car Gen2 to the new way.
+
+Thanks,
+
+/ magnus
