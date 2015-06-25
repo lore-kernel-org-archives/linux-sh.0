@@ -1,66 +1,115 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 04 Jun 2015 18:53:29 +0000
-Subject: [PATCH/RFC 03/15] ARM: shmobile: r8a7790 dtsi: Add L2 cache-controller nodes
-Message-Id: <1433444021-22167-4-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 25 Jun 2015 08:58:02 +0000
+Subject: [PATCH v2 04/06] ARM: shmobile: marzen-reference: Remove C board code
+Message-Id: <20150625085802.24543.27224.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add device nodes for the L2 caches:
-  - The L2 cache for the Cortex-A15 CPU cores is 2 MiB large (organized
-    as 128 KiB x 16 ways), and requires the following settings:
-      - Tag RAM latency: 3 cycles,
-      - Data RAM latency: 4 cycles,
-      - Data RAM setup: 1 cycle,
-  - The L2 cache for the Cortex-A7 CPU cores is 512 KiB large (organized
-    as 64 KiB x 8 ways).
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The generic r8a7779 machine vector is now feature-wise equivalent
+to the Marzen-reference case, so simply remove the Marzen C board
+code to fall over on the generic r8a7779 machine vector.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-What are the DT bindings for a Cortex-A15 L2 cache controller?
----
- arch/arm/boot/dts/r8a7790.dtsi | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 7fbcad087ee384e8..729172090f865e4d 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -112,6 +112,30 @@
- 		};
- 	};
+ Changes since V1:
+ - none
+
+ arch/arm/mach-shmobile/Kconfig                  |    7 --
+ arch/arm/mach-shmobile/Makefile                 |    4 -
+ arch/arm/mach-shmobile/board-marzen-reference.c |   56 -----------------------
+ 3 files changed, 1 insertion(+), 66 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2015-06-25 17:31:39.152366518 +0900
+@@ -96,13 +96,6 @@ config ARCH_SH73A0
+ 	select ARCH_RMOBILE
+ 	select RENESAS_INTC_IRQPIN
  
-+	L2_CA15: cache-controller@0 {
-+		compatible = "cache";
-+
-+		arm,data-latency = <4 4 1>;
-+		arm,tag-latency = <3 3 3>;
-+		cache-unified;
-+		cache-level = <2>;
-+		cache-size = <0x200000>;
-+		cache-sets = <4096>;
-+		cache-block-size = <32>;
-+		cache-line-size = <32>;
-+	};
-+
-+	L2_CA7: cache-controller@1 {
-+		compatible = "cache";
-+
-+		cache-unified;
-+		cache-level = <2>;
-+		cache-size = <0x80000>;
-+		cache-sets = <2048>;
-+		cache-block-size = <32>;
-+		cache-line-size = <32>;
-+	};
-+
- 	gic: interrupt-controller@f1001000 {
- 		compatible = "arm,cortex-a15-gic";
- 		#interrupt-cells = <3>;
--- 
-1.9.1
-
+-comment "Renesas ARM SoCs Board Type"
+-
+-config MACH_MARZEN
+-	bool "MARZEN board"
+-	depends on ARCH_R8A7779
+-	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-
+ comment "Renesas ARM SoCs System Configuration"
+ endif
+ 
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2015-06-25 17:31:39.152366518 +0900
+@@ -51,9 +51,7 @@ obj-$(CONFIG_PM_RMOBILE)	+= pm-rmobile.o
+ obj-$(CONFIG_ARCH_RCAR_GEN2)	+= pm-rcar-gen2.o
+ 
+ # Board objects
+-ifdef CONFIG_ARCH_SHMOBILE_MULTI
+-obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
+-else
++ifndef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+--- 0001/arch/arm/mach-shmobile/board-marzen-reference.c
++++ /dev/null	2015-01-13 15:44:39.280208949 +0900
+@@ -1,56 +0,0 @@
+-/*
+- * marzen board support - Reference DT implementation
+- *
+- * Copyright (C) 2011  Renesas Solutions Corp.
+- * Copyright (C) 2011  Magnus Damm
+- * Copyright (C) 2013  Simon Horman
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#include <linux/clk/shmobile.h>
+-#include <linux/clocksource.h>
+-#include <linux/of_platform.h>
+-
+-#include <asm/irq.h>
+-#include <asm/mach/arch.h>
+-
+-#include "common.h"
+-#include "irqs.h"
+-#include "r8a7779.h"
+-
+-static void __init marzen_init_timer(void)
+-{
+-	r8a7779_clocks_init(r8a7779_read_mode_pins());
+-	clocksource_of_init();
+-}
+-
+-static void __init marzen_init(void)
+-{
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+-}
+-
+-static const char *marzen_boards_compat_dt[] __initdata = {
+-	"renesas,marzen",
+-	"renesas,marzen-reference",
+-	NULL,
+-};
+-
+-DT_MACHINE_START(MARZEN, "marzen")
+-	.smp		= smp_ops(r8a7779_smp_ops),
+-	.map_io		= r8a7779_map_io,
+-	.init_early	= shmobile_init_delay,
+-	.init_time	= marzen_init_timer,
+-	.init_irq	= r8a7779_init_irq_dt,
+-	.init_machine	= marzen_init,
+-	.init_late	= shmobile_init_late,
+-	.dt_compat	= marzen_boards_compat_dt,
+-MACHINE_END
