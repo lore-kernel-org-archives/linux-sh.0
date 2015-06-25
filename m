@@ -1,35 +1,46 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Mon, 01 Jun 2015 14:56:31 +0000
-Subject: Re: [PATCH] gpio: pcf857x: Check for irq_set_irq_wake() failures
-Message-Id: <CACRpkdZPxBL24V=D_5OwEWSAHgnrwqU-zGG6OebXSB3Q7sYZNw@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 25 Jun 2015 08:57:28 +0000
+Subject: [PATCH v2 01/06] ARM: shmobile: r8a7779: Configure IRLM mode via DT
+Message-Id: <20150625085728.24543.29200.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432640042-16650-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1432640042-16650-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Alexandre Courbot <gnurou@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Tue, May 26, 2015 at 1:34 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+From: Magnus Damm <damm+renesas@opensource.se>
 
-> If an interrupt controller doesn't support wake-up configuration,
-> irq_set_irq_wake() returns an error code.  Then any subsequent call
-> trying to deconfigure wake-up will cause an imbalance, and a warning
-> will be printed:
->
->     WARNING: CPU: 1 PID: 1341 at kernel/irq/manage.c:540 irq_set_irq_wake+0x
->     Unbalanced IRQ 26 wake disable
->
-> To fix this, refrain from any further parent interrupt controller
-> (de)configuration if irq_set_irq_wake() failed.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Adjust the r8a7779 SoC DTS and the Marzen Reference
+C board code to use DTS only for INTC-IRQPIN IRLM setup.
 
-Argh how hacky. Still I have no better ideas :(
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
 
-Patch applied.
+ Changes since V1:
+ - Fixed unit-address mismatch, thanks Geert!
 
-Yours,
-Linus Walleij
+ arch/arm/boot/dts/r8a7779.dtsi |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- 0001/arch/arm/boot/dts/r8a7779.dtsi
++++ work/arch/arm/boot/dts/r8a7779.dtsi	2015-06-25 16:33:46.132366518 +0900
+@@ -148,7 +148,7 @@
+ 		interrupt-controller;
+ 	};
+ 
+-	irqpin0: interrupt-controller@fe780010 {
++	irqpin0: interrupt-controller@fe78001c {
+ 		compatible = "renesas,intc-irqpin-r8a7779", "renesas,intc-irqpin";
+ 		#interrupt-cells = <2>;
+ 		status = "disabled";
+@@ -157,7 +157,8 @@
+ 			<0xfe780010 4>,
+ 			<0xfe780024 4>,
+ 			<0xfe780044 4>,
+-			<0xfe780064 4>;
++			<0xfe780064 4>,
++			<0xfe780000 4>;
+ 		interrupts = <0 27 IRQ_TYPE_LEVEL_HIGH
+ 			      0 28 IRQ_TYPE_LEVEL_HIGH
+ 			      0 29 IRQ_TYPE_LEVEL_HIGH
