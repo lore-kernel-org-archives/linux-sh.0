@@ -1,77 +1,39 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 01 Jun 2015 11:54:26 +0000
-Subject: renesas-drivers-2015-06-01-v4.1-rc6
-Message-Id: <1433159666-12731-1-git-send-email-geert+renesas@glider.be>
+From: hari kunda <harikunda91@gmail.com>
+Date: Fri, 26 Jun 2015 15:02:20 +0000
+Subject: I Am Mr. Hari A. Kunda
+Message-Id: <CAKs_B0bA2_c+w3t3rjkXG8E8gARExz8+2sMi2WbF7Gn3wBFDsA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-I've pushed renesas-drivers-2015-06-01-v4.1-rc6 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+-- 
+Dear Friend,
+  I Am Mr. Hari A. Kunda
 
-Today's version is based on renesas-devel-20150601-v4.1-rc6.
+  However, It's Just my urgent need For foreign partner that made me to
+  contact you for this transaction.I am currently holding the post Of manager
+  foreign affairs the bank where I work (Bank of Africa,Ouagadougou. Burkina
+  Faso.
 
-Included branches with driver code:
-  - clk-shmobile-for-4.2:
-      - clk: shmobile: Add r8a7778 SoC to MSTP bindings
-      - clk: shmobile: Add r8a7793 SoC to MSTP bindings
-      - clk: shmobile: r8a7793: Document DIV6 clock bindings
-      - clk: shmobile: r8a7794: Document DIV6 clock bindings
-      - clk: shmobile: div6: Document mandatory compatible fallback
-      - clk: shmobile: mstp: Document mandatory compatible fallback
-      - clk: shmobile: rcar-gen2: Document mandatory compatible fallback
-      - clk: shmobile: rz: Document mandatory compatible fallback
+  I got your contact when i was searching for an overseas partner to assist me
+  through banker's seminar held recently in UK I have the opportunity of
+  transferring the left over funds ($10.5million) abandoned in an account for
+  years.
 
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
+  Hence, i am inviting you for a business deal where this money can betransfer
+  to a foreign account shared between us in the ratio of 50% for me,40% for
+  you and 10% for any income expenses that will come during the transfer, if
+  you agree to my business proposal. Further details of the transfer will be
+  forwarded to you as soon as I receive your return mail.
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+  (1)your Full name ................,
+  (2)your country ..................,
+  (3)your Telephone ................,
+  (4)your Occupation ...............,
+  (5)your Status ...................,
+  (6)your Age ......................,
+  (7)your photo ....................,
+  Best regards
+  MR. HARI A. KUNDA.
