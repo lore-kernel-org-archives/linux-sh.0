@@ -1,71 +1,89 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 05 Jun 2015 10:59:20 +0000
-Subject: [PATCH 04/10] sh-vou: support compulsory G/S/ENUM_OUTPUT ioctls
-Message-Id: <1433501966-30176-5-git-send-email-hverkuil@xs4all.nl>
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Fri, 26 Jun 2015 15:23:59 +0000
+Subject: [PATCH v3 6/6] ARM: shmobile: lager: Enable UHS-I SDR-50
+Message-Id: <1435332239.23818.13.camel@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
-In-Reply-To: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
+References: <1435332116.23818.7.camel@codethink.co.uk>
+In-Reply-To: <1435332116.23818.7.camel@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
+To: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-From: Hans Verkuil <hans.verkuil@cisco.com>
+Add the "1v8" pinctrl state and sd-uhs-sdr50 property to SDHI{0,2}.
 
-Video output drivers must support these ioctls. Otherwise applications
-cannot deduce that these outputs exist and what capabilities they have.
-
-Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
 ---
- drivers/media/platform/sh_vou.c | 27 +++++++++++++++++++++++++++
- 1 file changed, 27 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts | 22 ++++++++++++++++++++--
+ 1 file changed, 20 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
-index a75e6fa..2adf16d 100644
---- a/drivers/media/platform/sh_vou.c
-+++ b/drivers/media/platform/sh_vou.c
-@@ -874,6 +874,30 @@ static int sh_vou_streamoff(struct file *file, void *priv,
- 	return 0;
- }
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 5f68e53c58ae..c7db213054f6 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -312,11 +312,25 @@
+ 	sdhi0_pins: sd0 {
+ 		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
+ 		renesas,function = "sdhi0";
++		power-source = <0>;
++	};
++
++	sdhi0_pins_1v8: sd0_1v8 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
++		renesas,function = "sdhi0";
++		power-source = <1>;
+ 	};
  
-+static int sh_vou_enum_output(struct file *file, void *fh,
-+			      struct v4l2_output *a)
-+{
-+	struct sh_vou_device *vou_dev = video_drvdata(file);
+ 	sdhi2_pins: sd2 {
+ 		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
+ 		renesas,function = "sdhi2";
++		power-source = <0>;
++	};
 +
-+	if (a->index)
-+		return -EINVAL;
-+	strlcpy(a->name, "Video Out", sizeof(a->name));
-+	a->type = V4L2_OUTPUT_TYPE_ANALOG;
-+	a->std = vou_dev->vdev.tvnorms;
-+	return 0;
-+}
-+
-+int sh_vou_g_output(struct file *file, void *fh, unsigned int *i)
-+{
-+	*i = 0;
-+	return 0;
-+}
-+
-+int sh_vou_s_output(struct file *file, void *fh, unsigned int i)
-+{
-+	return i ? -EINVAL : 0;
-+}
-+
- static u32 sh_vou_ntsc_mode(enum sh_vou_bus_fmt bus_fmt)
- {
- 	switch (bus_fmt) {
-@@ -1278,6 +1302,9 @@ static const struct v4l2_ioctl_ops sh_vou_ioctl_ops = {
- 	.vidioc_dqbuf			= sh_vou_dqbuf,
- 	.vidioc_streamon		= sh_vou_streamon,
- 	.vidioc_streamoff		= sh_vou_streamoff,
-+	.vidioc_g_output		= sh_vou_g_output,
-+	.vidioc_s_output		= sh_vou_s_output,
-+	.vidioc_enum_output		= sh_vou_enum_output,
- 	.vidioc_s_std			= sh_vou_s_std,
- 	.vidioc_g_std			= sh_vou_g_std,
- 	.vidioc_cropcap			= sh_vou_cropcap,
++	sdhi2_pins_1v8: sd2_1v8 {
++		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
++		renesas,function = "sdhi2";
++		power-source = <1>;
+ 	};
+ 
+ 	mmc1_pins: mmc1 {
+@@ -486,7 +500,8 @@
+ 
+ &sdhi0 {
+ 	pinctrl-0 = <&sdhi0_pins>;
+-	pinctrl-names = "default";
++	pinctrl-1 = <&sdhi0_pins_1v8>;
++	pinctrl-names = "default", "1v8";
+ 
+ 	assigned-clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
+ 	assigned-clock-rates = <156000000>;
+@@ -494,12 +509,14 @@
+ 	vmmc-supply = <&vcc_sdhi0>;
+ 	vqmmc-supply = <&vccq_sdhi0>;
+ 	cd-gpios = <&gpio3 6 GPIO_ACTIVE_LOW>;
++	sd-uhs-sdr50;
+ 	status = "okay";
+ };
+ 
+ &sdhi2 {
+ 	pinctrl-0 = <&sdhi2_pins>;
+-	pinctrl-names = "default";
++	pinctrl-1 = <&sdhi2_pins_1v8>;
++	pinctrl-names = "default", "1v8";
+ 
+ 	assigned-clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
+ 	assigned-clock-rates = <97500000>;
+@@ -507,6 +524,7 @@
+ 	vmmc-supply = <&vcc_sdhi2>;
+ 	vqmmc-supply = <&vccq_sdhi2>;
+ 	cd-gpios = <&gpio3 22 GPIO_ACTIVE_LOW>;
++	sd-uhs-sdr50;
+ 	status = "okay";
+ };
+ 
 -- 
 2.1.4
+
+
 
