@@ -1,103 +1,154 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 03 Jun 2015 10:14:20 +0000
-Subject: RE: [PATCH v2 RFT] usb: xhci: Add to check CRR bit in xhci_suspend()
-Message-Id: <SG2PR06MB0919C648AF03C89001532C97D8B40@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Fri, 26 Jun 2015 15:23:24 +0000
+Subject: [PATCH v3 2/6] pinctrl: sh-pfc: Implement pinconf power-source param for voltage switching
+Message-Id: <1435332204.23818.9.camel@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431596357-4460-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1431596357-4460-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1435332116.23818.7.camel@codethink.co.uk>
+In-Reply-To: <1435332116.23818.7.camel@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Mathias,
+The pfc in the R8A7790 (and probably others in the R-Car gen 2 family)
+supports switching SDHI signals between 3.3V and 1.8V voltage, and the
+SD driver should do that when selecting a higher-speed mode.
 
-> Sent: Tuesday, May 26, 2015 8:45 PM
-> 
-> On 14.05.2015 12:39, Yoshihiro Shimoda wrote:
-> > The STS_HALT is not set until the CRR (CMD_RING_RUNNING) is cleared
-> > on specific xHCI controllers (e.g. R-Car SoCs) after this driver set
-> > the R/S (CMD_RUN) to 0. So, to avoid using a quirks XHCI_SLOW_SUSPEND,
-> > this patch adds to wait for the CRR to clear.
-> >
-> > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> > ---
-> >  My environment (R-Car H2) could work correctly. I would like to know
-> >  that this patch causes side effect or not. Also I'd like to know
-> >  this patch can avoid the XHCI_SLOW_SUSPEND quirk on other environment
-> >  (Fresco Logic XHCI controller).
-> >
-> >  Changes from v1:
-> >   - Remove a abort code.
-> >   - Wait for the CRR to clear after this driver set the R/S to 0.
-> >   - Rebase on the usb.git / usb-next branch.
-> >     (commit id = aa519be34f45954f33a6c20430deac8e544a180f)
-> >
-> >  drivers/usb/host/xhci.c | 9 +++++++++
-> >  1 file changed, 9 insertions(+)
-> >
-> > diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
-> > index ec8ac16..a357917 100644
-> > --- a/drivers/usb/host/xhci.c
-> > +++ b/drivers/usb/host/xhci.c
-> > @@ -923,6 +923,15 @@ int xhci_suspend(struct xhci_hcd *xhci, bool do_wakeup)
-> >  	command &= ~CMD_RUN;
-> >  	writel(command, &xhci->op_regs->command);
-> >
-> > +	/*
-> > +	 * The STS_HALT is not set until the CRR is cleared on specific
-> > +	 * xHCI controllers (e.g. R-Car SoCs) after this driver set the R/S
-> > +	 * to 0. So, to avoid using a quirks XHCI_SLOW_SUSPEND, this driver
-> > +	 * waits for the CRR to clear.
-> > +	 */
-> > +	xhci_handshake(&xhci->op_regs->cmd_ring, CMD_RING_RUNNING, 0,
-> > +		       5 * 1000 * 1000);
-> > +
-> >  	/* Some chips from Fresco Logic need an extraordinary delay */
-> >  	delay *= (xhci->quirks & XHCI_SLOW_SUSPEND) ? 10 : 1;
-> >
-> >
-> 
-> Hi, sorry about the delay.
+Add a flag for pins that support low voltage mode and SoC operations to
+get and set it.  Implement the pinconf power-source parameter using these
+operations.
 
-Thank you for your reply!
-And, I'm sorry for the delayed response.
+Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+---
+ .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |  4 ++-
+ drivers/pinctrl/sh-pfc/pinctrl.c                   | 34 ++++++++++++++++++++--
+ drivers/pinctrl/sh-pfc/sh_pfc.h                    |  6 ++++
+ 3 files changed, 41 insertions(+), 3 deletions(-)
 
-> Does polling for the command ring running bit really help?
-> We are anyway polling for the HCHalted (STS_HALT) status bit right after this,
-> and it should indicate the command ring was halted as well.
-> 
-> Is it possible that the R-Car xhci host controller halts just a tiny bit slower
-> than the default delay value, and the additional CRR check gives it
-> just enough time to HALT before timeout?
+diff --git a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+index bfe72ec055e3..93651742f1c1 100644
+--- a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
++++ b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+@@ -69,7 +69,9 @@ Pin Configuration Node Properties:
+ 
+ The pin configuration parameters use the generic pinconf bindings defined in
+ pinctrl-bindings.txt in this directory. The supported parameters are
+-bias-disable, bias-pull-up and bias-pull-down.
++bias-disable, bias-pull-up, bias-pull-down and power-source. For pins that
++can operate with either 3.3V or 1.8V signals, the power-source value should
++be 0 for 3.3V or 1 for 1.8V.
+ 
 
-Yes or No.
-If I used the XHCI_SLOW_SUSPEND quirk, the additional CRR check is not needed.
+ GPIO
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 072e7c62cab7..fa4066d4bc61 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -465,6 +465,9 @@ static bool sh_pfc_pinconf_validate(struct sh_pfc *pfc, unsigned int _pin,
+ 	case PIN_CONFIG_BIAS_PULL_DOWN:
+ 		return pin->configs & SH_PFC_PIN_CFG_PULL_DOWN;
+ 
++	case PIN_CONFIG_POWER_SOURCE:
++		return pin->configs & SH_PFC_PIN_CFG_LOW_VOLTAGE;
++
+ 	default:
+ 		return false;
+ 	}
+@@ -477,7 +480,6 @@ static int sh_pfc_pinconf_get(struct pinctrl_dev *pctldev, unsigned _pin,
+ 	struct sh_pfc *pfc = pmx->pfc;
+ 	enum pin_config_param param = pinconf_to_config_param(*config);
+ 	unsigned long flags;
+-	unsigned int bias;
+ 
+ 	if (!sh_pfc_pinconf_validate(pfc, _pin, param))
+ 		return -ENOTSUPP;
+@@ -485,7 +487,9 @@ static int sh_pfc_pinconf_get(struct pinctrl_dev *pctldev, unsigned _pin,
+ 	switch (param) {
+ 	case PIN_CONFIG_BIAS_DISABLE:
+ 	case PIN_CONFIG_BIAS_PULL_UP:
+-	case PIN_CONFIG_BIAS_PULL_DOWN:
++	case PIN_CONFIG_BIAS_PULL_DOWN: {
++		unsigned int bias;
++
+ 		if (!pfc->info->ops || !pfc->info->ops->get_bias)
+ 			return -ENOTSUPP;
+ 
+@@ -498,6 +502,16 @@ static int sh_pfc_pinconf_get(struct pinctrl_dev *pctldev, unsigned _pin,
+ 
+ 		*config = 0;
+ 		break;
++	}
++
++	case PIN_CONFIG_POWER_SOURCE:
++		if (!pfc->info->ops || !pfc->info->ops->get_low_voltage)
++			return -ENOTSUPP;
++
++		spin_lock_irqsave(&pfc->lock, flags);
++		*config = pfc->info->ops->get_low_voltage(pfc, _pin);
++		spin_unlock_irqrestore(&pfc->lock, flags);
++		break;
+ 
+ 	default:
+ 		return -ENOTSUPP;
+@@ -534,6 +548,22 @@ static int sh_pfc_pinconf_set(struct pinctrl_dev *pctldev, unsigned _pin,
+ 
+ 			break;
+ 
++		case PIN_CONFIG_POWER_SOURCE: {
++			unsigned int arg +				pinconf_to_config_argument(configs[i]);
++
++			if (!pfc->info->ops || !pfc->info->ops->set_low_voltage)
++				return -ENOTSUPP;
++			if (arg > 1)
++				return -ENOTSUPP;
++
++			spin_lock_irqsave(&pfc->lock, flags);
++			pfc->info->ops->set_low_voltage(pfc, _pin, arg);
++			spin_unlock_irqrestore(&pfc->lock, flags);
++
++			break;
++		}
++
+ 		default:
+ 			return -ENOTSUPP;
+ 		}
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index c7508d5f6886..b95d60bf2f1b 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -13,6 +13,7 @@
+ 
+ #include <linux/bug.h>
+ #include <linux/stringify.h>
++#include <linux/pinctrl/pinconf-generic.h>
+ 
+ enum {
+ 	PINMUX_TYPE_NONE,
+@@ -26,8 +27,11 @@ enum {
+ #define SH_PFC_PIN_CFG_OUTPUT		(1 << 1)
+ #define SH_PFC_PIN_CFG_PULL_UP		(1 << 2)
+ #define SH_PFC_PIN_CFG_PULL_DOWN	(1 << 3)
++#define SH_PFC_PIN_CFG_LOW_VOLTAGE	(1 << 4)
+ #define SH_PFC_PIN_CFG_NO_GPIO		(1 << 31)
+ 
++struct sh_pfc;
++
+ struct sh_pfc_pin {
+ 	u16 pin;
+ 	u16 enum_id;
+@@ -121,6 +125,8 @@ struct sh_pfc_soc_operations {
+ 	unsigned int (*get_bias)(struct sh_pfc *pfc, unsigned int pin);
+ 	void (*set_bias)(struct sh_pfc *pfc, unsigned int pin,
+ 			 unsigned int bias);
++	bool (*get_low_voltage)(struct sh_pfc *pfc, unsigned int pin);
++	void (*set_low_voltage)(struct sh_pfc *pfc, unsigned int pin, bool low);
+ };
+ 
+ struct sh_pfc_soc_info {
+-- 
+2.1.4
 
-In last October, I submitted a patch to use the quirk. However, I don't have any
-hardware documents why the R-Car xhci host controller needs this quirk:
-http://thread.gmane.org/gmane.linux.usb.general/115965/focus6056
-
-> Any chance you could compare the actual halt time using your patch against
-> the XHCI_SLOW_SUSPEND quirk?  (time from clearing CMD_RUN until STS_HALT is set)
-
-Using my patch:
- xhci_handshake: CMD_RUN  usec = 4930408
- xhci_handshake: STS_HALT usec =   16000
-
-So, total waiting time was about 70msec.
-(5000000 - 4930408 + 16000 - 16000 = 69592)
-
-Without my patch + using XHCI_SLOW_SUSPEND quirk:
-xhci_handshake: halt usec = 89796
-
-So, total waiting time was about 70msec.
-(160000 - 89796 = 70204)
 
 
-Therefore, should I use the XHCI_SLOW_SUSPEND quirk instead of my patch?
 
-Best regards,
-Yoshihiro Shimoda
-
-> -Mathias
