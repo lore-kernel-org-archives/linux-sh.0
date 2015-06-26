@@ -1,15 +1,15 @@
 From: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Date: Tue, 09 Jun 2015 23:23:48 +0000
-Subject: [PATCH v2 4/6] mmc: sh_mobile_sdhi: Add UHS-I mode support
-Message-Id: <1433892228.12074.53.camel@codethink.co.uk>
+Date: Fri, 26 Jun 2015 15:23:39 +0000
+Subject: [PATCH v3 4/6] mmc: sh_mobile_sdhi: Add UHS-I mode support
+Message-Id: <1435332219.23818.11.camel@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433892104.12074.49.camel@codethink.co.uk>
-In-Reply-To: <1433892104.12074.49.camel@codethink.co.uk>
+References: <1435332116.23818.7.camel@codethink.co.uk>
+In-Reply-To: <1435332116.23818.7.camel@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
 Implement voltage switch, supporting modes up to SDR-50.
 
