@@ -1,167 +1,94 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 04 Jun 2015 18:53:33 +0000
-Subject: [PATCH/RFC 07/15] ARM: shmobile: r8a7790 dtsi: Add L1 cache information to CPU nodes
-Message-Id: <1433444021-22167-8-git-send-email-geert+renesas@glider.be>
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Fri, 26 Jun 2015 15:22:33 +0000
+Subject: [PATCH v3 1/6] mmc: tmio: Add UHS-I mode support
+Message-Id: <1435332153.23818.8.camel@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1433444021-22167-1-git-send-email-geert+renesas@glider.be>
+References: <1435332116.23818.7.camel@codethink.co.uk>
+In-Reply-To: <1435332116.23818.7.camel@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Describe the L1 instruction and data caches in the CPU nodes:
-  - The L1 caches for the Cortex-A15 CPU cores, and the L1 instruction
-    caches for the Cortex-A7 CPU cores are organized as 16 KiB x 2
-    ways,
-  - The L1 data caches for the Cortex-A7 CPU cores are organized as 8
-    KiB x 4 ways.
+Based on work by Shinobu Uehara and Ben Dooks.  This adds the voltage
+switch operation needed for all UHS-I modes, but not the tuning needed
+for SDR-104 which will come later.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The card_busy implementation is a bit of a guess, but works for me on
+an R8A7790 chip.
+
+Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 80 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 80 insertions(+)
+ drivers/mmc/host/tmio_mmc.h     |  3 +++
+ drivers/mmc/host/tmio_mmc_pio.c | 31 +++++++++++++++++++++++++++++++
+ 2 files changed, 34 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 729172090f865e4d..bc98bb6cff635ae5 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -53,6 +53,16 @@
- 			clocks = <&cpg_clocks R8A7790_CLK_Z>;
- 			clock-latency = <300000>; /* 300 us */
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index 4a597f5a53e2..a1a009879946 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -99,6 +99,9 @@ struct tmio_mmc_host {
+ 	void (*clk_disable)(struct platform_device *pdev);
+ 	int (*multi_io_quirk)(struct mmc_card *card,
+ 			      unsigned int direction, int blk_size);
++
++	int (*start_signal_voltage_switch)(struct tmio_mmc_host *host,
++					   unsigned char signal_voltage);
+ };
  
-+			i-cache-size = <0x8000>;
-+			i-cache-sets = <512>;
-+			i-cache-block-size = <32>;
-+			i-cache-line-size = <32>;
-+			d-cache-size = <0x8000>;
-+			d-cache-sets = <512>;
-+			d-cache-block-size = <32>;
-+			d-cache-line-size = <32>;
-+			next-level-cache = <&L2_CA15>;
-+
- 			/* kHz - uV - OPPs unknown yet */
- 			operating-points = <1400000 1000000>,
- 					   <1225000 1000000>,
-@@ -67,6 +77,16 @@
- 			compatible = "arm,cortex-a15";
- 			reg = <1>;
- 			clock-frequency = <1300000000>;
-+
-+			i-cache-size = <0x8000>;
-+			i-cache-sets = <512>;
-+			i-cache-block-size = <32>;
-+			i-cache-line-size = <32>;
-+			d-cache-size = <0x8000>;
-+			d-cache-sets = <512>;
-+			d-cache-block-size = <32>;
-+			d-cache-line-size = <32>;
-+			next-level-cache = <&L2_CA15>;
- 		};
+ struct tmio_mmc_host *tmio_mmc_host_alloc(struct platform_device *pdev);
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index e3dcf31a8bd6..3c1e0e53c0b1 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -1011,12 +1011,43 @@ static int tmio_multi_io_quirk(struct mmc_card *card,
+ 	return blk_size;
+ }
  
- 		cpu2: cpu@2 {
-@@ -74,6 +94,16 @@
- 			compatible = "arm,cortex-a15";
- 			reg = <2>;
- 			clock-frequency = <1300000000>;
++static int tmio_mmc_start_signal_voltage_switch(struct mmc_host *mmc,
++	struct mmc_ios *ios)
++{
++	struct tmio_mmc_host *host = mmc_priv(mmc);
 +
-+			i-cache-size = <0x8000>;
-+			i-cache-sets = <512>;
-+			i-cache-block-size = <32>;
-+			i-cache-line-size = <32>;
-+			d-cache-size = <0x8000>;
-+			d-cache-sets = <512>;
-+			d-cache-block-size = <32>;
-+			d-cache-line-size = <32>;
-+			next-level-cache = <&L2_CA15>;
- 		};
- 
- 		cpu3: cpu@3 {
-@@ -81,6 +111,16 @@
- 			compatible = "arm,cortex-a15";
- 			reg = <3>;
- 			clock-frequency = <1300000000>;
++	if (!host->start_signal_voltage_switch)
++		return 0;
 +
-+			i-cache-size = <0x8000>;
-+			i-cache-sets = <512>;
-+			i-cache-block-size = <32>;
-+			i-cache-line-size = <32>;
-+			d-cache-size = <0x8000>;
-+			d-cache-sets = <512>;
-+			d-cache-block-size = <32>;
-+			d-cache-line-size = <32>;
-+			next-level-cache = <&L2_CA15>;
- 		};
- 
- 		cpu4: cpu@4 {
-@@ -88,6 +128,16 @@
- 			compatible = "arm,cortex-a7";
- 			reg = <0x100>;
- 			clock-frequency = <780000000>;
++	return host->start_signal_voltage_switch(host, ios->signal_voltage);
++}
 +
-+			i-cache-size = <0x8000>;
-+			i-cache-sets = <512>;
-+			i-cache-block-size = <32>;
-+			i-cache-line-size = <32>;
-+			d-cache-size = <0x8000>;
-+			d-cache-sets = <256>;
-+			d-cache-block-size = <32>;
-+			d-cache-line-size = <32>;
-+			next-level-cache = <&L2_CA7>;
- 		};
- 
- 		cpu5: cpu@5 {
-@@ -95,6 +145,16 @@
- 			compatible = "arm,cortex-a7";
- 			reg = <0x101>;
- 			clock-frequency = <780000000>;
++static int tmio_mmc_card_busy(struct mmc_host *mmc)
++{
++	struct tmio_mmc_host *host = mmc_priv(mmc);
++	u32 status;
 +
-+			i-cache-size = <0x8000>;
-+			i-cache-sets = <512>;
-+			i-cache-block-size = <32>;
-+			i-cache-line-size = <32>;
-+			d-cache-size = <0x8000>;
-+			d-cache-sets = <256>;
-+			d-cache-block-size = <32>;
-+			d-cache-line-size = <32>;
-+			next-level-cache = <&L2_CA7>;
- 		};
- 
- 		cpu6: cpu@6 {
-@@ -102,6 +162,16 @@
- 			compatible = "arm,cortex-a7";
- 			reg = <0x102>;
- 			clock-frequency = <780000000>;
++	pm_runtime_get_sync(mmc_dev(mmc));
++	status = sd_ctrl_read32(host, CTL_STATUS);
++	pm_runtime_mark_last_busy(mmc_dev(mmc));
++	pm_runtime_put_autosuspend(mmc_dev(mmc));
 +
-+			i-cache-size = <0x8000>;
-+			i-cache-sets = <512>;
-+			i-cache-block-size = <32>;
-+			i-cache-line-size = <32>;
-+			d-cache-size = <0x8000>;
-+			d-cache-sets = <256>;
-+			d-cache-block-size = <32>;
-+			d-cache-line-size = <32>;
-+			next-level-cache = <&L2_CA7>;
- 		};
- 
- 		cpu7: cpu@7 {
-@@ -109,6 +179,16 @@
- 			compatible = "arm,cortex-a7";
- 			reg = <0x103>;
- 			clock-frequency = <780000000>;
++	/*
++	 * Card signals busy by pulling down all of DAT[3:0].  This status
++	 * flag appears to reflect DAT3.
++	 */
++	return !(status & TMIO_STAT_SIGSTATE_A);
++}
 +
-+			i-cache-size = <0x8000>;
-+			i-cache-sets = <512>;
-+			i-cache-block-size = <32>;
-+			i-cache-line-size = <32>;
-+			d-cache-size = <0x8000>;
-+			d-cache-sets = <256>;
-+			d-cache-block-size = <32>;
-+			d-cache-line-size = <32>;
-+			next-level-cache = <&L2_CA7>;
- 		};
- 	};
+ static const struct mmc_host_ops tmio_mmc_ops = {
+ 	.request	= tmio_mmc_request,
+ 	.set_ios	= tmio_mmc_set_ios,
+ 	.get_ro         = tmio_mmc_get_ro,
+ 	.get_cd		= mmc_gpio_get_cd,
+ 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
++	.start_signal_voltage_switch
++			= tmio_mmc_start_signal_voltage_switch,
++	.card_busy	= tmio_mmc_card_busy,
+ 	.multi_io_quirk	= tmio_multi_io_quirk,
+ };
  
 -- 
-1.9.1
+2.1.4
+
+
+
 
