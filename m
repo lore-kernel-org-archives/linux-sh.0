@@ -1,90 +1,187 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 01 Jun 2015 14:22:54 +0000
-Subject: [PATCH v5 1/4] ARM: shmobile: Basic r8a7793 SoC support
-Message-Id: <1433168577-7678-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Tue, 30 Jun 2015 16:25:06 +0000
+Subject: [PATCH v2 2/2] v4l: vsp1: Fix Suspend-to-RAM
+Message-Id: <1435681506-24296-3-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1435681506-24296-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1435681506-24296-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Damian Hobson-Garcia <dhobsong@igel.co.jp>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Minimal support without power management or SMP.
+From: Sei Fumizono <sei.fumizono.jw@hitachi-solutions.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Fix Suspend-to-RAM
+so that VSP1 driver continues to work after resuming.
+
+Add stopping VSP1 during suspend.
+
+Signed-off-by: Sei Fumizono <sei.fumizono.jw@hitachi-solutions.com>
+Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+[Kaneko: Moved correction of vsp1_pm_resume() logic to separate patch]
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+
 ---
- arch/arm/mach-shmobile/Kconfig         |  4 ++++
- arch/arm/mach-shmobile/Makefile        |  1 +
- arch/arm/mach-shmobile/setup-r8a7793.c | 33 +++++++++++++++++++++++++++++++++
- 3 files changed, 38 insertions(+)
- create mode 100644 arch/arm/mach-shmobile/setup-r8a7793.c
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 4500647..c59d75e 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -80,6 +80,10 @@ config ARCH_R8A7791
- 	select ARCH_RCAR_GEN2
- 	select I2C
+This patch is based on the master branch of linuxtv.org/media_tree.git.
+
+v2 [Yoshihiro Kaneko]
+* compile tested only
+* As suggested by Laurent Pinchart
+  - separate a patch into two patches
+  - add stop/restart the video stream code to vsp1_pipelines_suspend() and
+    vsp1_pipelines_resume() function in vsp1_video.c.
+
+ drivers/media/platform/vsp1/vsp1_drv.c   |  9 ++++-
+ drivers/media/platform/vsp1/vsp1_video.c | 69 +++++++++++++++++++++++++++++++-
+ drivers/media/platform/vsp1/vsp1_video.h |  5 ++-
+ 3 files changed, 79 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
+index a7dfbb0..caf55e4 100644
+--- a/drivers/media/platform/vsp1/vsp1_drv.c
++++ b/drivers/media/platform/vsp1/vsp1_drv.c
+@@ -1,7 +1,7 @@
+ /*
+  * vsp1_drv.c  --  R-Car VSP1 Driver
+  *
+- * Copyright (C) 2013-2014 Renesas Electronics Corporation
++ * Copyright (C) 2013-2015 Renesas Electronics Corporation
+  *
+  * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
+  *
+@@ -403,7 +403,9 @@ static int vsp1_pm_suspend(struct device *dev)
+ 	if (vsp1->ref_count = 0)
+ 		return 0;
  
-+config ARCH_R8A7793
-+	bool "R-Car M2-N (R8A7793)"
-+	select ARCH_RCAR_GEN2
++	vsp1_pipelines_suspend(vsp1);
+ 	clk_disable_unprepare(vsp1->clock);
 +
- config ARCH_R8A7794
- 	bool "R-Car E2 (R8A77940)"
- 	select ARCH_RCAR_GEN2
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 89e463d..e4b8fdb 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -13,6 +13,7 @@ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
- obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o pm-r8a7779.o
- obj-$(CONFIG_ARCH_R8A7790)	+= setup-r8a7790.o
- obj-$(CONFIG_ARCH_R8A7791)	+= setup-r8a7791.o
-+obj-$(CONFIG_ARCH_R8A7793)	+= setup-r8a7793.o
- obj-$(CONFIG_ARCH_R8A7794)	+= setup-r8a7794.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o
- obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
-diff --git a/arch/arm/mach-shmobile/setup-r8a7793.c b/arch/arm/mach-shmobile/setup-r8a7793.c
-new file mode 100644
-index 0000000..1d2825c
---- /dev/null
-+++ b/arch/arm/mach-shmobile/setup-r8a7793.c
-@@ -0,0 +1,33 @@
-+/*
-+ * r8a7793 processor support
-+ *
-+ * Copyright (C) 2015  Ulrich Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
+ 	return 0;
+ }
+ 
+@@ -416,7 +418,10 @@ static int vsp1_pm_resume(struct device *dev)
+ 	if (vsp1->ref_count = 0)
+ 		return 0;
+ 
+-	return clk_prepare_enable(vsp1->clock);
++	clk_prepare_enable(vsp1->clock);
++	vsp1_pipelines_resume(vsp1);
 +
-+#include <linux/init.h>
-+#include <asm/mach/arch.h>
++	return 0;
+ }
+ #endif
+ 
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index d91f19a..2be96cd 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -1,7 +1,7 @@
+ /*
+  * vsp1_video.c  --  R-Car VSP1 Video Node
+  *
+- * Copyright (C) 2013-2014 Renesas Electronics Corporation
++ * Copyright (C) 2013-2015 Renesas Electronics Corporation
+  *
+  * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
+  *
+@@ -662,6 +662,73 @@ done:
+ 	spin_unlock_irqrestore(&pipe->irqlock, flags);
+ }
+ 
++void vsp1_pipelines_suspend(struct vsp1_device *vsp1)
++{
++	unsigned int i;
++	unsigned long flags;
++	int ret;
 +
-+#include "common.h"
-+#include "rcar-gen2.h"
++	/* To avoid increasing the system suspend time needlessly, loop over
++	 * the pipelines twice, first to set them all to the stopping state,
++	 * and then to wait for the stop to complete.
++	 */
++	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
++		struct vsp1_rwpf *wpf = vsp1->wpf[i];
++		struct vsp1_pipeline *pipe;
 +
-+static const char *r8a7793_boards_compat_dt[] __initconst = {
-+	"renesas,r8a7793",
-+	NULL,
-+};
++		if (wpf = NULL)
++			continue;
 +
-+DT_MACHINE_START(R8A7793_DT, "Generic R8A7793 (Flattened Device Tree)")
-+	.init_early	= shmobile_init_delay,
-+	.init_time	= rcar_gen2_timer_init,
-+	.init_late	= shmobile_init_late,
-+	.reserve	= rcar_gen2_reserve,
-+	.dt_compat	= r8a7793_boards_compat_dt,
-+MACHINE_END
++		pipe = to_vsp1_pipeline(&wpf->entity.subdev.entity);
++		if (pipe = NULL)
++			continue;
++
++		spin_lock_irqsave(&pipe->irqlock, flags);
++		if (pipe->state = VSP1_PIPELINE_RUNNING)
++			pipe->state = VSP1_PIPELINE_STOPPING;
++		spin_unlock_irqrestore(&pipe->irqlock, flags);
++	}
++
++	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
++		struct vsp1_rwpf *wpf = vsp1->wpf[i];
++		struct vsp1_pipeline *pipe;
++
++		if (wpf = NULL)
++			continue;
++
++		pipe = to_vsp1_pipeline(&wpf->entity.subdev.entity);
++		if (pipe = NULL)
++			continue;
++
++		ret = wait_event_timeout(pipe->wq,
++					 pipe->state = VSP1_PIPELINE_STOPPED,
++					 msecs_to_jiffies(500));
++		if (ret = 0)
++			dev_warn(vsp1->dev, "pipeline stop timeout\n");
++	}
++}
++
++void vsp1_pipelines_resume(struct vsp1_device *vsp1)
++{
++	unsigned int i;
++
++	/* Resume pipeline */
++	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
++		struct vsp1_rwpf *wpf = vsp1->wpf[i];
++		struct vsp1_pipeline *pipe;
++
++		if (wpf = NULL)
++			continue;
++
++		pipe = to_vsp1_pipeline(&wpf->entity.subdev.entity);
++		if (pipe = NULL)
++			continue;
++
++		if (vsp1_pipeline_ready(pipe))
++			vsp1_pipeline_run(pipe);
++	}
++}
++
+ /*
+  * Propagate the alpha value through the pipeline.
+  *
+diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
+index fd2851a..0887a4d 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.h
++++ b/drivers/media/platform/vsp1/vsp1_video.h
+@@ -1,7 +1,7 @@
+ /*
+  * vsp1_video.h  --  R-Car VSP1 Video Node
+  *
+- * Copyright (C) 2013-2014 Renesas Electronics Corporation
++ * Copyright (C) 2013-2015 Renesas Electronics Corporation
+  *
+  * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
+  *
+@@ -149,4 +149,7 @@ void vsp1_pipeline_propagate_alpha(struct vsp1_pipeline *pipe,
+ 				   struct vsp1_entity *input,
+ 				   unsigned int alpha);
+ 
++void vsp1_pipelines_suspend(struct vsp1_device *vsp1);
++void vsp1_pipelines_resume(struct vsp1_device *vsp1);
++
+ #endif /* __VSP1_VIDEO_H__ */
 -- 
-2.4.2
+1.9.1
 
