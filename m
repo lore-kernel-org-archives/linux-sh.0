@@ -1,52 +1,65 @@
-From: rkuo <rkuo@codeaurora.org>
-Date: Thu, 18 Jun 2015 18:13:05 +0000
-Subject: Re: [PATCH 2/2] Consolidate redundant register/stack access code
-Message-Id: <20150618181304.GA9557@codeaurora.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 30 Jun 2015 07:45:23 +0000
+Subject: [PATCH 3/7] ARM: shmobile: sh73a0 dtsi: Add missing "gpio-ranges" to gpio node
+Message-Id: <1435650327-2542-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434386579-6045-1-git-send-email-dave.long@linaro.org>
- <1434386579-6045-3-git-send-email-dave.long@linaro.org>
-In-Reply-To: <1434386579-6045-3-git-send-email-dave.long@linaro.org>
+References: <1435650327-2542-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1435650327-2542-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jun 15, 2015 at 12:42:59PM -0400, David Long wrote:
-> From: "David A. Long" <dave.long@linaro.org>
-> 
-> Several architectures have identical or functionally equivalent code
-> implementing parts of the HAVE_REGS_AND_STACK_ACCESS_API feature.  Move
-> that code out of the architecture directories.
-> 
-> Signed-off-by: David A. Long <dave.long@linaro.org>
-> ---
->  arch/arm/include/asm/ptrace.h          |  6 ---
->  arch/arm/kernel/ptrace.c               | 67 +-------------------------------
->  arch/hexagon/include/uapi/asm/ptrace.h |  3 --
->  arch/powerpc/include/asm/ptrace.h      | 38 ------------------
->  arch/powerpc/kernel/ptrace.c           | 34 +----------------
->  arch/s390/include/asm/ptrace.h         |  3 --
->  arch/s390/kernel/ptrace.c              | 70 ++++++++++------------------------
->  arch/sh/include/asm/ptrace.h           | 39 -------------------
->  arch/sh/kernel/Makefile                |  2 +-
->  arch/sh/kernel/ptrace.c                | 33 ----------------
->  arch/sh/kernel/ptrace_32.c             |  2 +-
->  arch/sh/kernel/ptrace_64.c             |  2 +-
->  arch/x86/include/asm/ptrace.h          | 37 ------------------
->  arch/x86/kernel/ptrace.c               | 34 +----------------
->  include/linux/ptrace.h                 | 42 ++++++++++++++++++++
->  kernel/ptrace.c                        | 38 ++++++++++++++++++
->  16 files changed, 107 insertions(+), 343 deletions(-)
->  delete mode 100644 arch/sh/kernel/ptrace.c
-> 
+If a GPIO driver uses gpiochip_add_pin_range() (which is usually the
+case for GPIO/PFC combos), the GPIO hogging mechanism configured from DT
+doesn't work:
 
-(And in some cases, the architecture didn't have the code in the first place!)
+    requesting hog GPIO led1-high (chip sh73a0_pfc, offset 20) failed
 
-For Hexagon:
+The actual error code is -517 = -EPROBE_DEFER.
 
-Acked-by: Richard Kuo <rkuo@codeaurora.org>
+The problem is that PFC+GPIO registration is handled in multiple steps:
+  1. pinctrl_register(),
+  2. gpiochip_add(),
+  3. gpiochip_add_pin_range().
 
+Configuration of the hogs is handled in gpiochip_add():
+
+    gpiochip_add
+        of_gpiochip_add
+            of_gpiochip_scan_hogs
+                gpiod_hog
+                    gpiochip_request_own_desc
+                        __gpiod_request
+                            chip->request
+                                pinctrl_request_gpio
+                                    pinctrl_get_device_gpio_range
+
+However, at this point the GPIO controller hasn't been added to
+pinctrldev_list yet, so the range can't be found, and the operation fails
+with -EPROBE_DEFER.
+
+To fix this, add a "gpio-ranges" property to the gpio device node, so
+the ranges are added by of_gpiochip_add_pin_range(), which is called by
+of_gpiochip_add() before the call to of_gpiochip_scan_hogs().
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 11e17c5f26e2cae2..ff7c8f298f30a58d 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -392,6 +392,9 @@
+ 		      <0xe605801c 0x1c>;
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
++		gpio-ranges +			<&pfc 0 0 119>, <&pfc 128 128 37>, <&pfc 192 192 91>,
++			<&pfc 288 288 22>;
+ 		interrupts-extended  			<&irqpin0 0 0>, <&irqpin0 1 0>, <&irqpin0 2 0>, <&irqpin0 3 0>,
+ 			<&irqpin0 4 0>, <&irqpin0 5 0>, <&irqpin0 6 0>, <&irqpin0 7 0>,
 -- 
-Qualcomm Innovation Center, Inc.
-The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum, 
-a Linux Foundation Collaborative Project
+1.9.1
+
