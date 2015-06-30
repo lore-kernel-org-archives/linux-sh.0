@@ -1,27 +1,45 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 20 Jun 2015 18:48:22 +0000
-Subject: [PATCH 0/2] generic timeout handling for Renesas drivers
-Message-Id: <1434826104-16346-1-git-send-email-wsa@the-dreams.de>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Tue, 30 Jun 2015 16:25:05 +0000
+Subject: [PATCH v2 1/2] v4l: vsp1: Fix ref_count bug
+Message-Id: <1435681506-24296-2-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1435681506-24296-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1435681506-24296-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+To: linux-media@vger.kernel.org
+Cc: Mauro Carvalho Chehab <m.chehab@samsung.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Damian Hobson-Garcia <dhobsong@igel.co.jp>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Here is a small patch series to make I2C timeout handling easier for users. It
-is not so amazingly huge anymore and it can be modified via i2c-dev if wanted.
+This patch fixes the judgement error of ref count in vsp1_pm_resume().
 
-Wolfram Sang (2):
-  i2c: rcar: use adapter default for timeout
-  i2c: sh_mobile: use adapter default for timeout
+This patch was separated from the patch written by Sei Fumizono.
 
- drivers/i2c/busses/i2c-rcar.c      | 2 +-
- drivers/i2c/busses/i2c-sh_mobile.c | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 
+---
+
+This patch is based on the master branch of linuxtv.org/media_tree.git.
+
+v2 [Yoshihiro Kaneko]
+* compile tested only
+
+ drivers/media/platform/vsp1/vsp1_drv.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
+index 913485a..a7dfbb0 100644
+--- a/drivers/media/platform/vsp1/vsp1_drv.c
++++ b/drivers/media/platform/vsp1/vsp1_drv.c
+@@ -413,7 +413,7 @@ static int vsp1_pm_resume(struct device *dev)
+ 
+ 	WARN_ON(mutex_is_locked(&vsp1->lock));
+ 
+-	if (vsp1->ref_count)
++	if (vsp1->ref_count = 0)
+ 		return 0;
+ 
+ 	return clk_prepare_enable(vsp1->clock);
 -- 
-2.1.4
+1.9.1
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-sh" in
