@@ -1,97 +1,127 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Sun, 07 Jun 2015 08:58:04 +0000
-Subject: [PATCHv2 10/11] sh-vou: fix bytesperline
-Message-Id: <1433667485-35711-11-git-send-email-hverkuil@xs4all.nl>
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Tue, 30 Jun 2015 16:57:07 +0000
+Subject: [PATCH v4 6/8] mmc: sh_mobile_sdhi: Add UHS-I mode support
+Message-Id: <1435683427.23818.68.camel@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
-In-Reply-To: <1433667485-35711-1-git-send-email-hverkuil@xs4all.nl>
+References: <1435683177.23818.60.camel@codethink.co.uk>
+In-Reply-To: <1435683177.23818.60.camel@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
+To: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-From: Hans Verkuil <hans.verkuil@cisco.com>
+Implement voltage switch, supporting modes up to SDR-50.
 
-The bytesperline values were wrong for planar formats where bytesperline is
-the line length for the first plane.
+Based on work by Shinobu Uehara, Rob Taylor, William Towle and Ian Molton.
 
-Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
+Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
 ---
- drivers/media/platform/sh_vou.c | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
+ drivers/mmc/host/sh_mobile_sdhi.c | 60 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
 
-diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
-index 872da9a..22b32ec 100644
---- a/drivers/media/platform/sh_vou.c
-+++ b/drivers/media/platform/sh_vou.c
-@@ -133,6 +133,7 @@ struct sh_vou_fmt {
- 	u32		pfmt;
- 	char		*desc;
- 	unsigned char	bpp;
-+	unsigned char	bpl;
- 	unsigned char	rgb;
- 	unsigned char	yf;
- 	unsigned char	pkf;
-@@ -143,6 +144,7 @@ static struct sh_vou_fmt vou_fmt[] = {
- 	{
- 		.pfmt	= V4L2_PIX_FMT_NV12,
- 		.bpp	= 12,
-+		.bpl	= 1,
- 		.desc	= "YVU420 planar",
- 		.yf	= 0,
- 		.rgb	= 0,
-@@ -150,6 +152,7 @@ static struct sh_vou_fmt vou_fmt[] = {
- 	{
- 		.pfmt	= V4L2_PIX_FMT_NV16,
- 		.bpp	= 16,
-+		.bpl	= 1,
- 		.desc	= "YVYU planar",
- 		.yf	= 1,
- 		.rgb	= 0,
-@@ -157,6 +160,7 @@ static struct sh_vou_fmt vou_fmt[] = {
- 	{
- 		.pfmt	= V4L2_PIX_FMT_RGB24,
- 		.bpp	= 24,
-+		.bpl	= 3,
- 		.desc	= "RGB24",
- 		.pkf	= 2,
- 		.rgb	= 1,
-@@ -164,6 +168,7 @@ static struct sh_vou_fmt vou_fmt[] = {
- 	{
- 		.pfmt	= V4L2_PIX_FMT_RGB565,
- 		.bpp	= 16,
-+		.bpl	= 2,
- 		.desc	= "RGB565",
- 		.pkf	= 3,
- 		.rgb	= 1,
-@@ -171,6 +176,7 @@ static struct sh_vou_fmt vou_fmt[] = {
- 	{
- 		.pfmt	= V4L2_PIX_FMT_RGB565X,
- 		.bpp	= 16,
-+		.bpl	= 2,
- 		.desc	= "RGB565 byteswapped",
- 		.pkf	= 3,
- 		.rgb	= 1,
-@@ -701,7 +707,8 @@ static int sh_vou_try_fmt_vid_out(struct file *file, void *priv,
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 6ed36b984e6e..76899b90946e 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -30,6 +30,9 @@
+ #include <linux/mfd/tmio.h>
+ #include <linux/sh_dma.h>
+ #include <linux/delay.h>
++#include <linux/pinctrl/consumer.h>
++#include <linux/pinctrl/pinctrl-state.h>
++#include <linux/regulator/consumer.h>
  
- 	v4l_bound_align_image(&pix->width, 0, VOU_MAX_IMAGE_WIDTH, 2,
- 			      &pix->height, 0, img_height_max, 1, 0);
--	pix->bytesperline = pix->width * 2;
-+	pix->bytesperline = pix->width * vou_fmt[pix_idx].bpl;
-+	pix->sizeimage = pix->height * ((pix->width * vou_fmt[pix_idx].bpp) >> 3);
+ #include "tmio_mmc.h"
  
- 	return 0;
+@@ -86,6 +89,8 @@ struct sh_mobile_sdhi {
+ 	struct clk *clk;
+ 	struct tmio_mmc_data mmc_data;
+ 	struct tmio_mmc_dma dma_priv;
++	struct pinctrl *pinctrl;
++	struct pinctrl_state *pinctrl_3v3, *pinctrl_1v8;
+ };
+ 
+ static void sh_mobile_sdhi_sdbuf_width(struct tmio_mmc_host *host, int width)
+@@ -185,6 +190,49 @@ static void sh_mobile_sdhi_clk_disable(struct tmio_mmc_host *host)
+ 	clk_disable_unprepare(priv->clk);
  }
-@@ -1372,7 +1379,7 @@ static int sh_vou_probe(struct platform_device *pdev)
- 	pix->height		= 480;
- 	pix->pixelformat	= V4L2_PIX_FMT_NV16;
- 	pix->field		= V4L2_FIELD_NONE;
--	pix->bytesperline	= VOU_MAX_IMAGE_WIDTH * 2;
-+	pix->bytesperline	= VOU_MAX_IMAGE_WIDTH;
- 	pix->sizeimage		= VOU_MAX_IMAGE_WIDTH * 2 * 480;
- 	pix->colorspace		= V4L2_COLORSPACE_SMPTE170M;
  
++static int sh_mobile_sdhi_start_signal_voltage_switch(
++	struct tmio_mmc_host *host, unsigned char signal_voltage)
++{
++	struct sh_mobile_sdhi *priv = host_to_priv(host);
++	struct pinctrl_state *state;
++	int min_uV, max_uV;
++	int ret;
++
++	switch (signal_voltage) {
++	case MMC_SIGNAL_VOLTAGE_330:
++		min_uV = 2700000;
++		max_uV = 3600000;
++		state = priv->pinctrl_3v3;
++		break;
++	case MMC_SIGNAL_VOLTAGE_180:
++		min_uV = 1700000;
++		max_uV = 1950000;
++		state = priv->pinctrl_1v8;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	/*
++	 * If anything is missing, assume signal voltage is fixed at
++	 * 3.3V and succeed/fail accordingly.
++	 */
++	if (IS_ERR(host->mmc->supply.vqmmc) ||
++	    IS_ERR(priv->pinctrl) || IS_ERR(state))
++		return signal_voltage = MMC_SIGNAL_VOLTAGE_330 ? 0 : -EINVAL;
++
++	ret = regulator_set_voltage(host->mmc->supply.vqmmc, min_uV, max_uV);
++	if (ret)
++		return ret;
++
++	ret = pinctrl_select_state(priv->pinctrl, state);
++	if (ret)
++		return ret;
++
++	usleep_range(5000, 5500);
++	return 0;
++}
++
+ static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
+ {
+ 	int timeout = 1000;
+@@ -277,6 +325,14 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		goto eprobe;
+ 	}
+ 
++	priv->pinctrl = devm_pinctrl_get(&pdev->dev);
++	if (!IS_ERR(priv->pinctrl)) {
++		priv->pinctrl_3v3 = pinctrl_lookup_state(priv->pinctrl,
++							 PINCTRL_STATE_DEFAULT);
++		priv->pinctrl_1v8 = pinctrl_lookup_state(priv->pinctrl,
++							 "1v8");
++	}
++
+ 	host = tmio_mmc_host_alloc(pdev);
+ 	if (!host) {
+ 		ret = -ENOMEM;
+@@ -289,6 +345,10 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	host->clk_update	= sh_mobile_sdhi_clk_update;
+ 	host->clk_disable	= sh_mobile_sdhi_clk_disable;
+ 	host->multi_io_quirk	= sh_mobile_sdhi_multi_io_quirk;
++
++	host->start_signal_voltage_switch
++				= sh_mobile_sdhi_start_signal_voltage_switch;
++
+ 	/* SD control register space size is 0x100, 0x200 for bus_shift=1 */
+ 	if (resource_size(res) > 0x100)
+ 		host->bus_shift = 1;
 -- 
 2.1.4
+
+
+
 
