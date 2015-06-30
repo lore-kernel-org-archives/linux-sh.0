@@ -1,138 +1,67 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 05 Jun 2015 10:59:22 +0000
-Subject: [PATCH 06/10] sh-vou: replace g/s_crop/cropcap by g/s_selection
-Message-Id: <1433501966-30176-7-git-send-email-hverkuil@xs4all.nl>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 30 Jun 2015 21:44:08 +0000
+Subject: [RFC 0/3] switch I2C IP cores at runtime
+Message-Id: <1435700651-3543-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
-In-Reply-To: <1433501966-30176-1-git-send-email-hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Hans Verkuil <hans.verkuil@cisco.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Hans Verkuil <hans.verkuil@cisco.com>
+This series allows an I2C bus to switch between multiple masters. This is not
+hot-switching because connected I2C slaves will be re-instantiated. It is meant
+to select the best I2C core at runtime once the task is known. Example: Prefer
+i2c-gpio over another I2C core because of HW errata affecting your use case.
 
-Implement g/s_selection. The v4l2 core will emulate g/s_crop and
-cropcap on top of g/s_selection.
+It works by using OF_DYNAMIC and en-/disabling the devices as needed. See patch
+2 for the implementation and more documentation.
 
-Signed-off-by: Hans Verkuil <hans.verkuil@cisco.com>
----
- drivers/media/platform/sh_vou.c | 71 +++++++++++++++--------------------------
- 1 file changed, 25 insertions(+), 46 deletions(-)
 
-diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
-index eaa432e..7ed5a8b 100644
---- a/drivers/media/platform/sh_vou.c
-+++ b/drivers/media/platform/sh_vou.c
-@@ -951,24 +951,36 @@ static int sh_vou_g_std(struct file *file, void *priv, v4l2_std_id *std)
- 	return 0;
- }
- 
--static int sh_vou_g_crop(struct file *file, void *fh, struct v4l2_crop *a)
-+static int sh_vou_g_selection(struct file *file, void *fh,
-+			      struct v4l2_selection *sel)
- {
- 	struct sh_vou_device *vou_dev = video_drvdata(file);
- 
--	dev_dbg(vou_dev->v4l2_dev.dev, "%s()\n", __func__);
--
--	a->type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
--	a->c = vou_dev->rect;
--
-+	if (sel->type != V4L2_BUF_TYPE_VIDEO_OUTPUT)
-+		return -EINVAL;
-+	switch (sel->target) {
-+	case V4L2_SEL_TGT_COMPOSE:
-+		sel->r = vou_dev->rect;
-+		break;
-+	case V4L2_SEL_TGT_COMPOSE_DEFAULT:
-+	case V4L2_SEL_TGT_COMPOSE_BOUNDS:
-+		sel->r.left = 0;
-+		sel->r.top = 0;
-+		sel->r.width = VOU_MAX_IMAGE_WIDTH;
-+		sel->r.height = VOU_MAX_IMAGE_HEIGHT;
-+		break;
-+	default:
-+		return -EINVAL;
-+	}
- 	return 0;
- }
- 
- /* Assume a dull encoder, do all the work ourselves. */
--static int sh_vou_s_crop(struct file *file, void *fh, const struct v4l2_crop *a)
-+static int sh_vou_s_selection(struct file *file, void *fh,
-+			      struct v4l2_selection *sel)
- {
--	struct v4l2_crop a_writable = *a;
-+	struct v4l2_rect *rect = &sel->r;
- 	struct sh_vou_device *vou_dev = video_drvdata(file);
--	struct v4l2_rect *rect = &a_writable.c;
- 	struct v4l2_crop sd_crop = {.type = V4L2_BUF_TYPE_VIDEO_OUTPUT};
- 	struct v4l2_pix_format *pix = &vou_dev->pix;
- 	struct sh_vou_geometry geo;
-@@ -982,10 +994,8 @@ static int sh_vou_s_crop(struct file *file, void *fh, const struct v4l2_crop *a)
- 	unsigned int img_height_max;
- 	int ret;
- 
--	dev_dbg(vou_dev->v4l2_dev.dev, "%s(): %ux%u@%u:%u\n", __func__,
--		rect->width, rect->height, rect->left, rect->top);
--
--	if (a->type != V4L2_BUF_TYPE_VIDEO_OUTPUT)
-+	if (sel->type != V4L2_BUF_TYPE_VIDEO_OUTPUT ||
-+	    sel->target != V4L2_SEL_TGT_COMPOSE)
- 		return -EINVAL;
- 
- 	if (vou_dev->std & V4L2_STD_525_60)
-@@ -1049,36 +1059,6 @@ static int sh_vou_s_crop(struct file *file, void *fh, const struct v4l2_crop *a)
- 	return 0;
- }
- 
--/*
-- * Total field: NTSC 858 x 2 * 262/263, PAL 864 x 2 * 312/313, default rectangle
-- * is the initial register values, height takes the interlaced format into
-- * account. The actual image can only go up to 720 x 2 * 240, So, VOUVPR can
-- * actually only meaningfully contain values <= 720 and <= 240 respectively, and
-- * not <= 864 and <= 312.
-- */
--static int sh_vou_cropcap(struct file *file, void *priv,
--			  struct v4l2_cropcap *a)
--{
--	struct sh_vou_device *vou_dev = video_drvdata(file);
--
--	dev_dbg(vou_dev->v4l2_dev.dev, "%s()\n", __func__);
--
--	a->type				= V4L2_BUF_TYPE_VIDEO_OUTPUT;
--	a->bounds.left			= 0;
--	a->bounds.top			= 0;
--	a->bounds.width			= VOU_MAX_IMAGE_WIDTH;
--	a->bounds.height		= VOU_MAX_IMAGE_HEIGHT;
--	/* Default = max, set VOUDPR = 0, which is not hardware default */
--	a->defrect.left			= 0;
--	a->defrect.top			= 0;
--	a->defrect.width		= VOU_MAX_IMAGE_WIDTH;
--	a->defrect.height		= VOU_MAX_IMAGE_HEIGHT;
--	a->pixelaspect.numerator	= 1;
--	a->pixelaspect.denominator	= 1;
--
--	return 0;
--}
--
- static irqreturn_t sh_vou_isr(int irq, void *dev_id)
- {
- 	struct sh_vou_device *vou_dev = dev_id;
-@@ -1307,9 +1287,8 @@ static const struct v4l2_ioctl_ops sh_vou_ioctl_ops = {
- 	.vidioc_enum_output		= sh_vou_enum_output,
- 	.vidioc_s_std			= sh_vou_s_std,
- 	.vidioc_g_std			= sh_vou_g_std,
--	.vidioc_cropcap			= sh_vou_cropcap,
--	.vidioc_g_crop			= sh_vou_g_crop,
--	.vidioc_s_crop			= sh_vou_s_crop,
-+	.vidioc_g_selection		= sh_vou_g_selection,
-+	.vidioc_s_selection		= sh_vou_s_selection,
- };
- 
- static const struct v4l2_file_operations sh_vou_fops = {
+Changes since alpha v2 (only sent to sh-devel):
+
+* don't use the i2c-mux infrastructure but create own adapter
+  This makes the DT binding proper. Otherwise, they were nested
+  another level deeper only for a useless reg = <0>;
+  It makes the approach also less I2C specific.
+
+* the bus can now be named
+  I like this and consider moving this out of this series and
+  implement it in the i2c-core.
+
+* pinctrl states to be used are now named as the bus
+  "active" was just a too random name IMO.
+
+* bugfixes (removed two OOPSes)
+
+* more error checking
+
+* beautified the sysfs-readout to make distinction of adapters
+  easier
+
+So, this not only a brush up since the last version, rather a new revision.
+I couldn't send this to the public with these obvious points left open :)
+
+PS: Since these patches depend on two others, I pushed out a branch here:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/ip-core-switch-v2-on-4.1-experimental
+
+
+Wolfram Sang (3):
+  of: make of_mutex public
+  i2c: mux: demux-pinctrl: add driver
+  ARM: shmobile: r8a7790: rework dts to use i2c demuxer
+
+ .../devicetree/bindings/i2c/i2c-demux-pinctrl.txt  |  44 ++++
+ arch/arm/boot/dts/r8a7790-lager.dts                | 141 +++++++----
+ drivers/i2c/muxes/Kconfig                          |   9 +
+ drivers/i2c/muxes/Makefile                         |   2 +
+ drivers/i2c/muxes/i2c-demux-pinctrl.c              | 266 +++++++++++++++++++++
+ drivers/of/of_private.h                            |   1 -
+ include/linux/of.h                                 |   2 +
+ 7 files changed, 411 insertions(+), 54 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
+ create mode 100644 drivers/i2c/muxes/i2c-demux-pinctrl.c
+
 -- 
 2.1.4
 
