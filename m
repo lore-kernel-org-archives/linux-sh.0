@@ -1,35 +1,88 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Mon, 29 Jun 2015 10:43:09 +0000
-Subject: Re: [PATCH v3 0/3] Remove non-existing GPIO pins for R8A7790/1
-Message-Id: <CACRpkdZNqkoz9xSikCgKdp3LGgQnb4BRcOuF0nnc1rd49aS6xQ@mail.gmail.com>
+From: Michael Ellerman <mpe@ellerman.id.au>
+Date: Tue, 30 Jun 2015 03:28:33 +0000
+Subject: Re: [PATCH RESEND] Update kernel math-emu code from current glibc soft-fp
+Message-Id: <1435634913.24866.1.camel@ellerman.id.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1460630.GxHT4lRd7u@wasted.cogentembedded.com>
-	<558DBB45.3020507@cogentembedded.com>
-In-Reply-To: <558DBB45.3020507@cogentembedded.com>
+References: <alpine.DEB.2.10.1505192206580.28384@digraph.polyomino.org.uk>
+ <alpine.DEB.2.10.1506221321340.27145@digraph.polyomino.org.uk>
+In-Reply-To: <alpine.DEB.2.10.1506221321340.27145@digraph.polyomino.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: Joseph Myers <joseph@codesourcery.com>
+Cc: linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
 
-On Fri, Jun 26, 2015 at 10:51 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> On 06/26/2015 01:39 AM, Sergei Shtylyov wrote:
->
->>     Here's the set of 3 patches against the 'fixes' branch of Linus
->> Walleij's
->> 'linux-pinctrl.git' repo. Here we eliminate the pin array "holes" on R-Car
->> SoCs
->> and then remove unused GPIO pins for R8A7790/1.
->
->
->> [1/3] sh-pfc: fix sparse GPIOs for R-Car SoCs
->
->
->    Note that this patch is necessary for the R8A7794 driver (already in
-> Linus' tree to work correctly.
+On Mon, 2015-06-22 at 13:26 +0000, Joseph Myers wrote:
+> From: Joseph Myers <joseph@codesourcery.com>
+> 
+> The include/math-emu code (used for alpha powerpc sh sparc, and to a
+> very limited extent for s390) was taken from an old version of glibc's
+> soft-fp code around 15 years ago (in the pre-git era, anyway, and some
 
-Laurent is it OK to apply these three for fixes?
+...
 
-Yours,
-Linus Walleij
+> This patch is unchanged from that posted at 
+> <https://lkml.org/lkml/2015/5/19/1047>, still applies to current sources 
+> and is proposed for 4.2.
+
+
+Hi Joseph,
+
+This is an awesome effort, and greatly appreciated.
+
+However in it's current form it's not easily mergeable, because it touches five
+architectures and has the potential to cause breakage on all of them.
+
+It's also too late for 4.2. The merge window for 4.2 is open now, which means
+arch maintainers have stopped taking intrusive patches 1-2 weeks ago.
+
+Is there some way you can imagine of splitting this up into smaller chunks, so
+that different arches can merge the pieces separately?
+
+cheers
+
+
+ arch/alpha/include/asm/sfp-machine.h    |    3 
+ arch/alpha/math-emu/math.c              |  131 -
+ arch/powerpc/include/asm/sfp-machine.h  |   39 
+ arch/powerpc/math-emu/fadd.c            |    6 
+ arch/powerpc/math-emu/fadds.c           |    6 
+ arch/powerpc/math-emu/fcmpo.c           |    2 
+ arch/powerpc/math-emu/fcmpu.c           |    2 
+ arch/powerpc/math-emu/fctiw.c           |    2 
+ arch/powerpc/math-emu/fctiwz.c          |    2 
+ arch/powerpc/math-emu/fmadd.c           |    8 
+ arch/powerpc/math-emu/fmadds.c          |    8 
+ arch/powerpc/math-emu/fmsub.c           |    8 
+ arch/powerpc/math-emu/fmsubs.c          |    8 
+ arch/powerpc/math-emu/fnmadd.c          |    8 
+ arch/powerpc/math-emu/fnmadds.c         |    8 
+ arch/powerpc/math-emu/fnmsub.c          |    8 
+ arch/powerpc/math-emu/fnmsubs.c         |    8 
+ arch/powerpc/math-emu/fsub.c            |    6 
+ arch/powerpc/math-emu/fsubs.c           |    6 
+ arch/powerpc/math-emu/lfs.c             |   11 
+ arch/powerpc/math-emu/math_efp.c        |  254 +-
+ arch/powerpc/math-emu/stfs.c            |    6 
+ arch/s390/include/asm/sfp-machine.h     |   10 
+ arch/s390/kernel/sysinfo.c              |   11 
+ arch/sh/include/asm/sfp-machine.h       |   10 
+ arch/sh/math-emu/math.c                 |   51 
+ arch/sparc/include/asm/sfp-machine_32.h |    3 
+ arch/sparc/include/asm/sfp-machine_64.h |    3 
+ arch/sparc/math-emu/math_32.c           |  144 -
+ arch/sparc/math-emu/math_64.c           |  140 -
+ include/math-emu/double.h               |  398 ++--
+ include/math-emu/op-1.h                 |  554 +++---
+ include/math-emu/op-2.h                 | 1136 ++++++------
+ include/math-emu/op-4.h                 | 1457 ++++++++-------
+ include/math-emu/op-8.h                 |  211 +-
+ include/math-emu/op-common.h            | 2927 ++++++++++++++++++++++----------
+ include/math-emu/quad.h                 |  434 +++-
+ include/math-emu/single.h               |  233 +-
+ include/math-emu/soft-fp.h              |  367 ++--
+ 39 files changed, 5433 insertions(+), 3196 deletions(-)
+
+
+
+
