@@ -1,112 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 30 Jun 2015 09:35:29 +0000
-Subject: Re: [PATCH 6/7] pinctrl: sh-pfc: Move sh_pfc_add_gpiochip() up
-Message-Id: <2241869.R00PfnOgEO@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 30 Jun 2015 07:45:22 +0000
+Subject: [PATCH 2/7] ARM: shmobile: r8a7740 dtsi: Add missing "gpio-ranges" to gpio node
+Message-Id: <1435650327-2542-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1435650327-2542-1-git-send-email-geert+renesas@glider.be>
- <1435650327-2542-7-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1435650327-2542-7-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1435650327-2542-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+If a GPIO driver uses gpiochip_add_pin_range() (which is usually the
+case for GPIO/PFC combos), the GPIO hogging mechanism configured from DT
+doesn't work:
 
-Thank you for the patch.
+    requesting hog GPIO lcd0 (chip r8a7740_pfc, offset 176) failed
 
-On Tuesday 30 June 2015 09:45:26 Geert Uytterhoeven wrote:
-> Move sh_pfc_add_gpiochip() to the generic helper section at the top of
-> the file, so it can be called from the "Function GPIOs" section later.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The actual error code is -517 = -EPROBE_DEFER.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+The problem is that PFC+GPIO registration is handled in multiple steps:
+  1. pinctrl_register(),
+  2. gpiochip_add(),
+  3. gpiochip_add_pin_range().
 
-> ---
->  drivers/pinctrl/sh-pfc/gpio.c | 58  +++++++++++++++++++--------------------
->  1 file changed, 29 insertions(+), 29 deletions(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-> index b8929b5e2fa26c53..30654e800580524d 100644
-> --- a/drivers/pinctrl/sh-pfc/gpio.c
-> +++ b/drivers/pinctrl/sh-pfc/gpio.c
-> @@ -131,6 +131,35 @@ static int gpio_setup_data_regs(struct sh_pfc_chip
-> *chip) return 0;
->  }
-> 
-> +static struct sh_pfc_chip *
-> +sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *),
-> +		    struct sh_pfc_window *mem)
-> +{
-> +	struct sh_pfc_chip *chip;
-> +	int ret;
-> +
-> +	chip = devm_kzalloc(pfc->dev, sizeof(*chip), GFP_KERNEL);
-> +	if (unlikely(!chip))
-> +		return ERR_PTR(-ENOMEM);
-> +
-> +	chip->mem = mem;
-> +	chip->pfc = pfc;
-> +
-> +	ret = setup(chip);
-> +	if (ret < 0)
-> +		return ERR_PTR(ret);
-> +
-> +	ret = gpiochip_add(&chip->gpio_chip);
-> +	if (unlikely(ret < 0))
-> +		return ERR_PTR(ret);
-> +
-> +	dev_info(pfc->dev, "%s handling gpio %u -> %u\n",
-> +		 chip->gpio_chip.label, chip->gpio_chip.base,
-> +		 chip->gpio_chip.base + chip->gpio_chip.ngpio - 1);
-> +
-> +	return chip;
-> +}
-> +
->  /*
-> ---------------------------------------------------------------------------
-> -- * Pin GPIOs
->   */
-> @@ -305,35 +334,6 @@ static int gpio_function_setup(struct sh_pfc_chip
-> *chip) * Register/unregister
->   */
-> 
-> -static struct sh_pfc_chip *
-> -sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *),
-> -		    struct sh_pfc_window *mem)
-> -{
-> -	struct sh_pfc_chip *chip;
-> -	int ret;
-> -
-> -	chip = devm_kzalloc(pfc->dev, sizeof(*chip), GFP_KERNEL);
-> -	if (unlikely(!chip))
-> -		return ERR_PTR(-ENOMEM);
-> -
-> -	chip->mem = mem;
-> -	chip->pfc = pfc;
-> -
-> -	ret = setup(chip);
-> -	if (ret < 0)
-> -		return ERR_PTR(ret);
-> -
-> -	ret = gpiochip_add(&chip->gpio_chip);
-> -	if (unlikely(ret < 0))
-> -		return ERR_PTR(ret);
-> -
-> -	dev_info(pfc->dev, "%s handling gpio %u -> %u\n",
-> -		 chip->gpio_chip.label, chip->gpio_chip.base,
-> -		 chip->gpio_chip.base + chip->gpio_chip.ngpio - 1);
-> -
-> -	return chip;
-> -}
-> -
->  int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
->  {
->  	struct sh_pfc_chip *chip;
+Configuration of the hogs is handled in gpiochip_add():
 
+    gpiochip_add
+        of_gpiochip_add
+            of_gpiochip_scan_hogs
+                gpiod_hog
+                    gpiochip_request_own_desc
+                        __gpiod_request
+                            chip->request
+                                pinctrl_request_gpio
+                                    pinctrl_get_device_gpio_range
+
+However, at this point the GPIO controller hasn't been added to
+pinctrldev_list yet, so the range can't be found, and the operation fails
+with -EPROBE_DEFER.
+
+To fix this, add a "gpio-ranges" property to the gpio device node, so
+the range is added by of_gpiochip_add_pin_range(), which is called by
+of_gpiochip_add() before the call to of_gpiochip_scan_hogs().
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 3aaab195132bfc2c..15977b5834de9579 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -316,6 +316,7 @@
+ 		      <0xe605800c 0x20>;
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
++		gpio-ranges = <&pfc 0 0 212>;
+ 		interrupts-extended  			<&irqpin0 0 0>, <&irqpin0 1 0>, <&irqpin0 2 0>, <&irqpin0 3 0>,
+ 			<&irqpin0 4 0>, <&irqpin0 5 0>, <&irqpin0 6 0>, <&irqpin0 7 0>,
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
