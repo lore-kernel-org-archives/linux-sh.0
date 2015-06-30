@@ -1,47 +1,69 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 10 Jun 2015 05:08:51 +0000
-Subject: Re: [git pull] clk/shmobile updates for v4.2
-Message-Id: <CAMuHMdUbuSEXRhU6d2he0xUY=Xg6n2Acgk99xC09m=7tJcSQiw@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 30 Jun 2015 07:45:21 +0000
+Subject: [PATCH 1/7] ARM: shmobile: r8a73a4 dtsi: Add missing "gpio-ranges" to gpio node
+Message-Id: <1435650327-2542-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1433244779-5447-1-git-send-email-geert+renesas@glider.be>
-	<20150610024717.6017.50093@quantum>
-In-Reply-To: <20150610024717.6017.50093@quantum>
+References: <1435650327-2542-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1435650327-2542-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Michael Turquette <mturquette@linaro.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Stephen Boyd <sboyd@codeaurora.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, linux-clk@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Mike,
+If a GPIO driver uses gpiochip_add_pin_range() (which is usually the
+case for GPIO/PFC combos), the GPIO hogging mechanism configured from DT
+doesn't work:
 
-On Wed, Jun 10, 2015 at 4:47 AM, Michael Turquette
-<mturquette@linaro.org> wrote:
-> Quoting Geert Uytterhoeven (2015-06-02 04:32:59)
->> The following changes since commit c65b99f046843d2455aa231747b5a07a999a9f3d:
->>
->>   Linux 4.1-rc6 (2015-05-31 19:01:07 -0700)
->>
->> are available in the git repository at:
->>
->>   git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git clk-shmobile-for-4.2
->
-> Pulled!
+    requesting hog GPIO led1-high (chip r8a73a4_pfc, offset 28) failed
 
-Thank you.
+The actual error code is -517 = -EPROBE_DEFER.
 
-> FYI, I prefer to take PRs based on -rc1 if possible. This PR forced me
-> to update clk-next which was previously based on -rc1 (I merged clk-next
-> into -rc7 and then pulled your tag).
+The problem is that PFC+GPIO registration is handled in multiple steps:
+  1. pinctrl_register(),
+  2. gpiochip_add(),
+  3. gpiochip_add_pin_range().
 
-OK, will do next time. Sorry for the trouble.
+Configuration of the hogs is handled in gpiochip_add():
 
-Gr{oetje,eeting}s,
+    gpiochip_add
+        of_gpiochip_add
+            of_gpiochip_scan_hogs
+                gpiod_hog
+                    gpiochip_request_own_desc
+                        __gpiod_request
+                            chip->request
+                                pinctrl_request_gpio
+                                    pinctrl_get_device_gpio_range
 
-                        Geert
+However, at this point the GPIO controller hasn't been added to
+pinctrldev_list yet, so the range can't be found, and the operation fails
+with -EPROBE_DEFER.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+To fix this, add a "gpio-ranges" property to the gpio device node, so
+the ranges are added by of_gpiochip_add_pin_range(), which is called by
+of_gpiochip_add() before the call to of_gpiochip_scan_hogs().
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a73a4.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 5090d1a8f652e8be..cb4f7b2798fe23be 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -207,6 +207,13 @@
+ 		reg = <0 0xe6050000 0 0x9000>;
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
++		gpio-ranges +			<&pfc 0 0 31>, <&pfc 32 32 9>,
++			<&pfc 64 64 22>, <&pfc 96 96 31>,
++			<&pfc 128 128 7>, <&pfc 160 160 19>,
++			<&pfc 192 192 31>, <&pfc 224 224 27>,
++			<&pfc 256 256 28>, <&pfc 288 288 21>,
++			<&pfc 320 320 10>;
+ 		interrupts-extended  			<&irqc0  0 0>, <&irqc0  1 0>, <&irqc0  2 0>, <&irqc0  3 0>,
+ 			<&irqc0  4 0>, <&irqc0  5 0>, <&irqc0  6 0>, <&irqc0  7 0>,
+-- 
+1.9.1
+
