@@ -1,51 +1,46 @@
-From: Eric Dumazet <eric.dumazet@gmail.com>
-Date: Tue, 09 Jun 2015 00:12:46 +0000
-Subject: Re: [PATCH v5 1/2] Renesas Ethernet AVB driver proper
-Message-Id: <1433808766.29864.70.camel@edumazet-glaptop2.roam.corp.google.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 30 Jun 2015 07:45:25 +0000
+Subject: [PATCH 5/7] pinctrl: sh-pfc: Remove empty gpio_function_free()
+Message-Id: <1435650327-2542-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <55760CB0.1020503@cogentembedded.com>
-	 <20150608.151954.191885697349673611.davem@davemloft.net>
-	 <55761A08.1050503@cogentembedded.com>
-	 <20150608.154326.2037112726253299896.davem@davemloft.net>
-In-Reply-To: <20150608.154326.2037112726253299896.davem@davemloft.net>
+References: <1435650327-2542-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1435650327-2542-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: sergei.shtylyov@cogentembedded.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, devicetree@vger.kernel.org, galak@codeaurora.org, netdev@vger.kernel.org, richardcochran@gmail.com, linux-sh@vger.kernel.org, mitsuhiro.kimura.kc@renesas.com
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, 2015-06-08 at 15:43 -0700, David Miller wrote:
-> From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Date: Tue, 09 Jun 2015 01:41:12 +0300
-> 
-> > On 06/09/2015 01:19 AM, David Miller wrote:
-> > 
-> >> It's completely implemented in software, you don't need to do anything
-> >> other than properly invoke napi_gro_receive().
-> > 
-> >    Not even set NETIF_F_GRO?
-> 
-> Yes, you have to set that by default for it to go.  Thankfully this is
-> also "in software" ;-)
+gpio_chip.free() is optional, and can just be left unimplemented.
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Untested due to lack of hardware (used on sh only).
+---
+ drivers/pinctrl/sh-pfc/gpio.c | 5 -----
+ 1 file changed, 5 deletions(-)
 
-More precisely, drivers do not have to care about this flag.
-
-They only have to call napi_gro_receive().
-
-core networking sets GRO flag by default in register_netdevice() for all
-network devices.
-
-
-#define NETIF_F_SOFT_FEATURES   (NETIF_F_GSO | NETIF_F_GRO)
-
-vi +6512 net/core/dev.c
-
-        /* Transfer changeable features to wanted_features and enable
-         * software offloads (GSO and GRO).
-         */
-        dev->hw_features |= NETIF_F_SOFT_FEATURES;
-        dev->features |= NETIF_F_SOFT_FEATURES;
-
-
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 1be118e4865fd3f8..b8929b5e2fa26c53 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -286,17 +286,12 @@ static int gpio_function_request(struct gpio_chip *gc, unsigned offset)
+ 	return ret;
+ }
+ 
+-static void gpio_function_free(struct gpio_chip *gc, unsigned offset)
+-{
+-}
+-
+ static int gpio_function_setup(struct sh_pfc_chip *chip)
+ {
+ 	struct sh_pfc *pfc = chip->pfc;
+ 	struct gpio_chip *gc = &chip->gpio_chip;
+ 
+ 	gc->request = gpio_function_request;
+-	gc->free = gpio_function_free;
+ 
+ 	gc->label = pfc->info->name;
+ 	gc->owner = THIS_MODULE;
+-- 
+1.9.1
 
