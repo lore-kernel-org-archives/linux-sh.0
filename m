@@ -1,114 +1,86 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Jun 2015 09:31:25 +0000
-Subject: [PATCH 09/15] ARM: shmobile: Remove unused dma-register.h
-Message-Id: <1434533491-21979-10-git-send-email-geert+renesas@glider.be>
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Tue, 30 Jun 2015 16:52:57 +0000
+Subject: [PATCH v4 0/8] UHS-I support for sh_mobile_sdhi
+Message-Id: <1435683177.23818.60.camel@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1434533491-21979-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The last users of "dma-register.h" were the sh73a0 and r8a7740 legacy
-SoC code, which have been removed.
+This series adds support for UHS-I in sh_mobile_sdhi, partly implemented
+in tmio_mmc.  This does not yet include tuning for SDR-104, but SDR-50 now
+works on the R8A7790 Lager board and another development board.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/mach-shmobile/dma-register.h | 84 -----------------------------------
- 1 file changed, 84 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/dma-register.h
+The pfc block needs to be reconfigured from 3.3V to 1.8V signalling on
+the pins wired to the SD card.  This is supported by implementing the
+pinconf power-source parameter.  I expect that several SH SoCs have this
+capability, but I only have the R8A7790 data sheet so I only implemented
+it for that one.
 
-diff --git a/arch/arm/mach-shmobile/dma-register.h b/arch/arm/mach-shmobile/dma-register.h
-deleted file mode 100644
-index 52a2f66e600f2995..0000000000000000
---- a/arch/arm/mach-shmobile/dma-register.h
-+++ /dev/null
-@@ -1,84 +0,0 @@
--/*
-- * SH-ARM CPU-specific DMA definitions, used by both DMA drivers
-- *
-- * Copyright (C) 2012 Renesas Solutions Corp
-- *
-- * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-- *
-- * Based on arch/sh/include/cpu-sh4/cpu/dma-register.h
-- * Copyright (C) 2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License version 2 as
-- * published by the Free Software Foundation.
-- */
--
--#ifndef DMA_REGISTER_H
--#define DMA_REGISTER_H
--
--/*
-- *		Direct Memory Access Controller
-- */
--
--/* Transmit sizes and respective CHCR register values */
--enum {
--	XMIT_SZ_8BIT		= 0,
--	XMIT_SZ_16BIT		= 1,
--	XMIT_SZ_32BIT		= 2,
--	XMIT_SZ_64BIT		= 7,
--	XMIT_SZ_128BIT		= 3,
--	XMIT_SZ_256BIT		= 4,
--	XMIT_SZ_512BIT		= 5,
--};
--
--/* log2(size / 8) - used to calculate number of transfers */
--static const unsigned int dma_ts_shift[] = {
--	[XMIT_SZ_8BIT]		= 0,
--	[XMIT_SZ_16BIT]		= 1,
--	[XMIT_SZ_32BIT]		= 2,
--	[XMIT_SZ_64BIT]		= 3,
--	[XMIT_SZ_128BIT]	= 4,
--	[XMIT_SZ_256BIT]	= 5,
--	[XMIT_SZ_512BIT]	= 6,
--};
--
--#define TS_LOW_BIT	0x3 /* --xx */
--#define TS_HI_BIT	0xc /* xx-- */
--
--#define TS_LOW_SHIFT	(3)
--#define TS_HI_SHIFT	(20 - 2)	/* 2 bits for shifted low TS */
--
--#define TS_INDEX2VAL(i) \
--	((((i) & TS_LOW_BIT) << TS_LOW_SHIFT) |\
--	 (((i) & TS_HI_BIT)  << TS_HI_SHIFT))
--
--#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL((xmit_sz)))
--#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL((xmit_sz)))
--
--
--/*
-- *		USB High-Speed DMAC
-- */
--/* Transmit sizes and respective CHCR register values */
--enum {
--	USBTS_XMIT_SZ_8BYTE		= 0,
--	USBTS_XMIT_SZ_16BYTE		= 1,
--	USBTS_XMIT_SZ_32BYTE		= 2,
--};
--
--/* log2(size / 8) - used to calculate number of transfers */
--static const unsigned int dma_usbts_shift[] = {
--	[USBTS_XMIT_SZ_8BYTE]	= 3,
--	[USBTS_XMIT_SZ_16BYTE]	= 4,
--	[USBTS_XMIT_SZ_32BYTE]	= 5,
--};
--
--#define USBTS_LOW_BIT	0x3 /* --xx */
--#define USBTS_HI_BIT	0x0 /* ---- */
--
--#define USBTS_LOW_SHIFT	6
--#define USBTS_HI_SHIFT	0
--
--#define USBTS_INDEX2VAL(i) (((i) & 3) << 6)
--
--#endif /* DMA_REGISTER_H */
+Changes since v3:
+- Change pinconf power-source argument to millivolts instead of boolean
+  for low voltage
+- Rename pinctrl voltage operations accordingly
+- Use io{read,write}32() instead of sh_pfc_{read,write}_raw_reg()
+- Change tmio, sh_mobile_sdhi to adjust input clock frequency to match
+  requested bus frequency more closely
+- Replace SDHI assigned-clock{,-rate}s properties with max-frequency
+- Reorder patch series to put all pinctrl changes first
+
+Changes since v2:
+- Implement the pinconf power-source parameter instead of separate
+  functions for the low-voltage mode
+- Adjust low-voltage mode setter function and device tree accordingly
+- Add low-voltage mode getter function for R8A7790
+
+Changes since v1:
+- Reword commit message for "mmc: tmio: Add UHS-I mode support"
+- Make sh_mobile_sdhi_start_signal_voltage_switch() succeed if asked
+  to switch to 3.3V and the regulator or pinctrl or pinctrl state is
+  missing
+- Drop change to mmcif clock on Lager
+- Correct original author for sdhi clock changes on Lager
+
+Changes since the RFC:
+- Replace the 'regulator' devices for signal voltage switching with
+  pinctrl functions and states
+- Drop 'mmc: sh_mobile_sdhi: Add actual clock rate support' as it's
+  redundant
+- Use a switch statement in sh_mobile_sdhi_start_signal_voltage_switch()
+- Fix subject prefix for the DT changes
+
+Ben.
+
+Ben Hutchings (8):
+  pinctrl: sh-pfc: Implement pinconf power-source param for voltage
+    switching
+  pinctrl: sh-pfc: r8a7790: Implement voltage switching for SDHI
+  mmc: tmio, sh_mobile_sdhi: Pass tmio_mmc_host ptr to
+    clk_{enable,disable} ops
+  mmc: tmio, sh_mobile_sdhi: Add support for variable input clock
+    frequency
+  mmc: tmio: Add UHS-I mode support
+  mmc: sh_mobile_sdhi: Add UHS-I mode support
+  ARM: shmobile: r8a7790: Set maximum frequencies for SDHI clocks
+  ARM: shmobile: lager: Enable UHS-I SDR-50
+
+ .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |   4 +-
+ arch/arm/boot/dts/r8a7790-lager.dts                |  22 +++-
+ arch/arm/boot/dts/r8a7790.dtsi                     |   4 +
+ drivers/mmc/host/sh_mobile_sdhi.c                  | 126 +++++++++++++++++++--
+ drivers/mmc/host/tmio_mmc.h                        |   9 +-
+ drivers/mmc/host/tmio_mmc_pio.c                    |  56 ++++++---
+ drivers/pinctrl/sh-pfc/core.c                      |   2 +-
+ drivers/pinctrl/sh-pfc/core.h                      |   1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c               |  71 +++++++++++-
+ drivers/pinctrl/sh-pfc/pinctrl.c                   |  44 ++++++-
+ drivers/pinctrl/sh-pfc/sh_pfc.h                    |   5 +
+ 11 files changed, 313 insertions(+), 31 deletions(-)
+
 -- 
-1.9.1
+2.1.4
+
+
 
