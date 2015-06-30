@@ -1,191 +1,161 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 19 Jun 2015 10:40:32 +0000
-Subject: [PATCH 2/2] i2c-tools: i2ctransfer: clean up allocated resources
-Message-Id: <1434710432-4182-3-git-send-email-wsa@the-dreams.de>
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Tue, 30 Jun 2015 16:53:59 +0000
+Subject: [PATCH v4 1/8] pinctrl: sh-pfc: Implement pinconf power-source param for voltage switching
+Message-Id: <1435683239.23818.61.camel@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434710432-4182-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1434710432-4182-1-git-send-email-wsa@the-dreams.de>
+References: <1435683177.23818.60.camel@codethink.co.uk>
+In-Reply-To: <1435683177.23818.60.camel@codethink.co.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: linux-i2c@vger.kernel.org, Jean Delvare <jdelvare@suse.de>
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+The pfc in the R8A7790 (and probably others in the R-Car gen 2 family)
+supports switching SDHI signals between 3.3V and 1.8V nominal voltage,
+and the SD driver should do that when switching to and from UHS modes.
 
-I still think this makes the code less readable and unnecessarily big [1],
-but I assume Jean insists on it :) So, here is an add-on patch to squash.
+Add a flag for pins that have configurable I/O voltage and SoC
+operations to get and set the nominal voltage.  Implement the pinconf
+power-source parameter using these operations.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-
-[1] http://www.gnu.org/software/libc/manual/html_node/Freeing-after-Malloc.=
-html#Freeing-after-Malloc
-
-"There is no point in freeing blocks at the end of a program, because
-all of the program=E2=80=99s space is given back to the system when the pro=
-cess
-terminates."
+Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
 ---
- tools/i2ctransfer.c | 44 +++++++++++++++++++++++++++-----------------
- 1 file changed, 27 insertions(+), 17 deletions(-)
+ .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |  4 +-
+ drivers/pinctrl/sh-pfc/pinctrl.c                   | 44 +++++++++++++++++++++-
+ drivers/pinctrl/sh-pfc/sh_pfc.h                    |  5 +++
+ 3 files changed, 50 insertions(+), 3 deletions(-)
 
-diff --git a/tools/i2ctransfer.c b/tools/i2ctransfer.c
-index 27f4d7a..418e303 100644
---- a/tools/i2ctransfer.c
-+++ b/tools/i2ctransfer.c
-@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
- {
- 	char filename[20];
- 	char *end;
--	int i2cbus, address =3D -1, file, arg_idx =3D 1, nmsgs =3D 0, nmsgs_sent;
-+	int i2cbus, address =3D -1, file, arg_idx =3D 1, nmsgs =3D 0, nmsgs_sent,=
- i;
- 	int force =3D 0, yes =3D 0, version =3D 0, verbose =3D 0;
- 	unsigned buf_idx =3D 0;
- 	unsigned long len, raw_data;
-@@ -138,6 +138,9 @@ int main(int argc, char *argv[])
- 	struct i2c_rdwr_ioctl_data rdwr;
- 	enum parse_state state =3D PARSE_GET_DESC;
-=20
-+	for (i =3D 0; i < I2C_RDRW_IOCTL_MAX_MSGS; i++)
-+		msgs[i].buf =3D NULL;
+diff --git a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+index bfe72ec055e3..57487481ce8c 100644
+--- a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
++++ b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+@@ -69,7 +69,9 @@ Pin Configuration Node Properties:
+ 
+ The pin configuration parameters use the generic pinconf bindings defined in
+ pinctrl-bindings.txt in this directory. The supported parameters are
+-bias-disable, bias-pull-up and bias-pull-down.
++bias-disable, bias-pull-up, bias-pull-down and power-source. For pins that
++have a configurable I/O voltage, the power-source value should be the
++nominal I/O voltage in millivolts.
+ 
+
+ GPIO
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 072e7c62cab7..72ae7d0d8b75 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -465,6 +465,9 @@ static bool sh_pfc_pinconf_validate(struct sh_pfc *pfc, unsigned int _pin,
+ 	case PIN_CONFIG_BIAS_PULL_DOWN:
+ 		return pin->configs & SH_PFC_PIN_CFG_PULL_DOWN;
+ 
++	case PIN_CONFIG_POWER_SOURCE:
++		return pin->configs & SH_PFC_PIN_CFG_IO_VOLTAGE;
 +
- 	/* handle (optional) arg_idx first */
- 	while (arg_idx < argc && argv[arg_idx][0] =3D '-') {
- 		switch (argv[arg_idx][1]) {
-@@ -178,7 +181,7 @@ int main(int argc, char *argv[])
- 		if (nmsgs > I2C_RDRW_IOCTL_MAX_MSGS) {
- 			fprintf(stderr, "Error: Too many messages (max: %d)\n",
- 				I2C_RDRW_IOCTL_MAX_MSGS);
--			exit(1);
-+			goto err_out;
- 		}
-=20
- 		switch (state) {
-@@ -190,20 +193,20 @@ int main(int argc, char *argv[])
- 			case 'w': break;
- 			default:
- 				fprintf(stderr, "Error: Invalid direction\n");
--				goto err_out;
-+				goto err_out_with_arg;
- 			}
-=20
- 			len =3D strtoul(arg_ptr, &end, 0);
- 			if (len > 65535) {
- 				fprintf(stderr, "Error: Length invalid\n");
--				goto err_out;
-+				goto err_out_with_arg;
- 			}
-=20
- 			arg_ptr =3D end;
- 			if (*arg_ptr) {
- 				if (*arg_ptr++ !=3D '@') {
- 					fprintf(stderr, "Error: No '@' after length\n");
--					goto err_out;
-+					goto err_out_with_arg;
- 				}
-=20
- 				/* We skip 10-bit support for now. If we want it, it
-@@ -213,16 +216,16 @@ int main(int argc, char *argv[])
-=20
- 				address =3D parse_i2c_address(arg_ptr);
- 				if (address < 0)
--					goto err_out;
-+					goto err_out_with_arg;
-=20
- 				if (!force && set_slave_addr(file, address, 0))
--					goto err_out;
-+					goto err_out_with_arg;
-=20
- 			} else {
- 				/* Reuse last address if possible */
- 				if (address < 0) {
- 					fprintf(stderr, "Error: No address given\n");
--					goto err_out;
-+					goto err_out_with_arg;
- 				}
- 			}
-=20
-@@ -234,7 +237,7 @@ int main(int argc, char *argv[])
- 				buf =3D malloc(len);
- 				if (!buf) {
- 					fprintf(stderr, "Error: No memory for buffer\n");
--					goto err_out;
-+					goto err_out_with_arg;
- 				}
- 				memset(buf, 0, len);
- 				msgs[nmsgs].buf =3D buf;
-@@ -253,7 +256,7 @@ int main(int argc, char *argv[])
- 			raw_data =3D strtoul(arg_ptr, &end, 0);
- 			if (raw_data > 255) {
- 				fprintf(stderr, "Error: Data byte invalid\n");
--				goto err_out;
-+				goto err_out_with_arg;
- 			}
- 			data =3D raw_data;
- 			len =3D msgs[nmsgs].len;
-@@ -270,7 +273,7 @@ int main(int argc, char *argv[])
- 				case '=3D': break;
- 				default:
- 					fprintf(stderr, "Error: Invalid data byte suffix\n");
--					goto err_out;
-+					goto err_out_with_arg;
- 				}
- 			}
-=20
-@@ -283,7 +286,7 @@ int main(int argc, char *argv[])
-=20
+ 	default:
+ 		return false;
+ 	}
+@@ -477,7 +480,6 @@ static int sh_pfc_pinconf_get(struct pinctrl_dev *pctldev, unsigned _pin,
+ 	struct sh_pfc *pfc = pmx->pfc;
+ 	enum pin_config_param param = pinconf_to_config_param(*config);
+ 	unsigned long flags;
+-	unsigned int bias;
+ 
+ 	if (!sh_pfc_pinconf_validate(pfc, _pin, param))
+ 		return -ENOTSUPP;
+@@ -485,7 +487,9 @@ static int sh_pfc_pinconf_get(struct pinctrl_dev *pctldev, unsigned _pin,
+ 	switch (param) {
+ 	case PIN_CONFIG_BIAS_DISABLE:
+ 	case PIN_CONFIG_BIAS_PULL_UP:
+-	case PIN_CONFIG_BIAS_PULL_DOWN:
++	case PIN_CONFIG_BIAS_PULL_DOWN: {
++		unsigned int bias;
++
+ 		if (!pfc->info->ops || !pfc->info->ops->get_bias)
+ 			return -ENOTSUPP;
+ 
+@@ -498,6 +502,24 @@ static int sh_pfc_pinconf_get(struct pinctrl_dev *pctldev, unsigned _pin,
+ 
+ 		*config = 0;
+ 		break;
++	}
++
++	case PIN_CONFIG_POWER_SOURCE: {
++		int ret;
++
++		if (!pfc->info->ops || !pfc->info->ops->get_io_voltage)
++			return -ENOTSUPP;
++
++		spin_lock_irqsave(&pfc->lock, flags);
++		ret = pfc->info->ops->get_io_voltage(pfc, _pin);
++		spin_unlock_irqrestore(&pfc->lock, flags);
++
++		if (ret < 0)
++			return ret;
++
++		*config = ret;
++		break;
++	}
+ 
+ 	default:
+ 		return -ENOTSUPP;
+@@ -534,6 +556,24 @@ static int sh_pfc_pinconf_set(struct pinctrl_dev *pctldev, unsigned _pin,
+ 
+ 			break;
+ 
++		case PIN_CONFIG_POWER_SOURCE: {
++			unsigned int arg +				pinconf_to_config_argument(configs[i]);
++			int ret;
++
++			if (!pfc->info->ops || !pfc->info->ops->set_io_voltage)
++				return -ENOTSUPP;
++
++			spin_lock_irqsave(&pfc->lock, flags);
++			ret = pfc->info->ops->set_io_voltage(pfc, _pin, arg);
++			spin_unlock_irqrestore(&pfc->lock, flags);
++
++			if (ret)
++				return ret;
++
++			break;
++		}
++
  		default:
- 			fprintf(stderr, "Error: Unnkown state in state machine!\n");
--			goto err_out;
-+			goto err_out_with_arg;
+ 			return -ENOTSUPP;
  		}
-=20
- 		arg_idx++;
-@@ -291,18 +294,18 @@ int main(int argc, char *argv[])
-=20
- 	if (state !=3D PARSE_GET_DESC || nmsgs =3D 0) {
- 		fprintf(stderr, "Error: Incomplete message\n");
--		exit(1);
-+		goto err_out;
- 	}
-=20
- 	if (!yes && !confirm(filename, msgs, nmsgs))
--		exit(0);
-+		goto out;
-=20
- 	rdwr.msgs =3D msgs;
- 	rdwr.nmsgs =3D nmsgs;
- 	nmsgs_sent =3D ioctl(file, I2C_RDWR, &rdwr);
- 	if (nmsgs_sent < 0) {
- 		fprintf(stderr, "Error: Sending messages failed: %s\n", strerror(errno));
--		exit(errno);
-+		goto err_out;
- 	} else if (nmsgs_sent < nmsgs) {
- 		fprintf(stderr, "Warning: only %d/%d messages were sent\n", nmsgs_sent, =
-nmsgs);
- 	}
-@@ -311,10 +314,17 @@ int main(int argc, char *argv[])
-=20
- 	print_msgs(msgs, nmsgs_sent, PRINT_READ_BUF | (verbose ? PRINT_HEADER | P=
-RINT_WRITE_BUF : 0));
-=20
--	/* let Linux free malloced memory on termination */
-+out:
-+	for (i =3D 0; i <=3D nmsgs; i++)
-+		free(msgs[i].buf);
-+
- 	exit(0);
-=20
--err_out:
-+err_out_with_arg:
- 	fprintf(stderr, "Error: faulty argument is '%s'\n", argv[arg_idx]);
-+err_out:
-+	for (i =3D 0; i <=3D nmsgs; i++)
-+		free(msgs[i].buf);
-+
- 	exit(1);
- }
---=20
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index c7508d5f6886..734f7a92229c 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -12,6 +12,7 @@
+ #define __SH_PFC_H
+ 
+ #include <linux/bug.h>
++#include <linux/pinctrl/pinconf-generic.h>
+ #include <linux/stringify.h>
+ 
+ enum {
+@@ -26,6 +27,7 @@ enum {
+ #define SH_PFC_PIN_CFG_OUTPUT		(1 << 1)
+ #define SH_PFC_PIN_CFG_PULL_UP		(1 << 2)
+ #define SH_PFC_PIN_CFG_PULL_DOWN	(1 << 3)
++#define SH_PFC_PIN_CFG_IO_VOLTAGE	(1 << 4)
+ #define SH_PFC_PIN_CFG_NO_GPIO		(1 << 31)
+ 
+ struct sh_pfc_pin {
+@@ -121,6 +123,9 @@ struct sh_pfc_soc_operations {
+ 	unsigned int (*get_bias)(struct sh_pfc *pfc, unsigned int pin);
+ 	void (*set_bias)(struct sh_pfc *pfc, unsigned int pin,
+ 			 unsigned int bias);
++	int (*get_io_voltage)(struct sh_pfc *pfc, unsigned int pin);
++	int (*set_io_voltage)(struct sh_pfc *pfc, unsigned int pin,
++			      u16 voltage_mV);
+ };
+ 
+ struct sh_pfc_soc_info {
+-- 
 2.1.4
+
+
+
 
