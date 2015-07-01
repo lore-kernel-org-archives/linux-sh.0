@@ -1,37 +1,65 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 07 Jul 2015 20:58:49 +0000
-Subject: Re: [PATCH v3 0/3] Remove non-existing GPIO pins for R8A7790/1
-Message-Id: <4071361.aKboP8jfz3@avalon>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 01 Jul 2015 07:34:11 +0000
+Subject: Re: [PATCH RESEND] Update kernel math-emu code from current glibc soft-fp
+Message-Id: <CAMuHMdV+t0OVYq=VFydRCq6+94E89Rt8AupZApZgCNqZ6mGJSw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1460630.GxHT4lRd7u@wasted.cogentembedded.com> <558DBB45.3020507@cogentembedded.com> <CACRpkdZNqkoz9xSikCgKdp3LGgQnb4BRcOuF0nnc1rd49aS6xQ@mail.gmail.com>
-In-Reply-To: <CACRpkdZNqkoz9xSikCgKdp3LGgQnb4BRcOuF0nnc1rd49aS6xQ@mail.gmail.com>
+References: <alpine.DEB.2.10.1505192206580.28384@digraph.polyomino.org.uk>
+ <alpine.DEB.2.10.1506221321340.27145@digraph.polyomino.org.uk>
+ <1435634913.24866.1.camel@ellerman.id.au>
+ <alpine.DEB.2.10.1506301042250.2339@digraph.polyomino.org.uk>
+ <1435702685.24693.3.camel@ellerman.id.au>
+In-Reply-To: <1435702685.24693.3.camel@ellerman.id.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: Michael Ellerman <mpe@ellerman.id.au>
+Cc: Joseph Myers <joseph@codesourcery.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, alpha <linux-alpha@vger.kernel.org>, "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>, linux-s390 <linux-s390@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, sparclinux <sparclinux@vger.kernel.org>, "David S.Miller" <davem@davemloft.net>, Martin Schwidefsky <schwidefsky@de.ibm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>
 
-Hi Linus,
+On Wed, Jul 1, 2015 at 12:18 AM, Michael Ellerman <mpe@ellerman.id.au> wrote:
+> On Tue, 2015-06-30 at 10:48 +0000, Joseph Myers wrote:
+>> On Tue, 30 Jun 2015, Michael Ellerman wrote:
+>>
+>> > Is there some way you can imagine of splitting this up into smaller chunks, so
+>> > that different arches can merge the pieces separately?
+>>
+>> Well, it could be split as:
+>>
+>> 1. Rename include/math-emu to math-emu-old and update architectures for
+>> the renaming (mechanically).
+>>
+>> 2. Add new include/math-emu.
+>>
+>> 3,4,5,6,7. Move each architecture from math-emu-old to math-emu.
+>>
+>> 8. Remove math-emu-old.
+>>
+>> You still have patch 1 affecting all five architectures, but with the
+>> per-architecture changes being much simpler.
+>
+> OK. That's obviously a bit more churn, but I think it's probably the best
+> approach. Unless someone else has a better idea?
 
-On Monday 29 June 2015 12:43:09 Linus Walleij wrote:
-> On Fri, Jun 26, 2015 at 10:51 PM, Sergei Shtylyov wrote:
-> > On 06/26/2015 01:39 AM, Sergei Shtylyov wrote:
-> >> Here's the set of 3 patches against the 'fixes' branch of Linus
-> >> Walleij's 'linux-pinctrl.git' repo. Here we eliminate the pin array
-> >> "holes" on R-Car SoCs and then remove unused GPIO pins for R8A7790/1.
-> >> 
-> >> [1/3] sh-pfc: fix sparse GPIOs for R-Car SoCs
-> >> 
-> > Note that this patch is necessary for the R8A7794 driver (already in
-> > Linus' tree to work correctly.
-> 
-> Laurent is it OK to apply these three for fixes?
+Does it make that much of a difference?
 
-You can apply 1/3 as a v4.2-rc fix, as pfc-r8a7794 merged in v4.2-rc1 is 
-broken without it. I would prefer delaying 2/3 and 3/3 to v4.3.
+You said:
+| However in it's current form it's not easily mergeable, because it
+touches five
+| architectures and has the potential to cause breakage on all of them.
 
--- 
-Regards,
+Patch 1 still touches five architectures.
+Patches 3-7 still have the potential to break an architecture, but only one of
+them at a time.
 
-Laurent Pinchart
+From a bisectability point of view there's no change.
+Except that patch 1 (and 8) may break something, too ;-)
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
