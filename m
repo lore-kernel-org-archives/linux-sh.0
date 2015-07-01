@@ -1,111 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 17 Jul 2015 08:26:04 +0000
-Subject: [PATCH 2/5] drm: rcar-du: Add support for the R8A7794 DU
-Message-Id: <1437121567-18467-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Marc Kleine-Budde <mkl@pengutronix.de>
+Date: Wed, 01 Jul 2015 09:01:03 +0000
+Subject: Re: [PATCH 0/2] Error message clean-ups for Renesas R-Car CAN driver
+Message-Id: <5593AC4F.4010005@pengutronix.de>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="LJWAgBD9CPneG4PP2HpnrnutqkGdUXKQ6"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437121567-18467-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1437121567-18467-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org
-Cc: Magnus Damm <magnus.damm@gmail.com>
+References: <1593397.kKIHxKLe5s@wasted.cogentembedded.com>
+In-Reply-To: <1593397.kKIHxKLe5s@wasted.cogentembedded.com>
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, wg@grandegger.com, linux-can@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-The R8A7794 DU has a fixed output routing configuration with one RGB
-output per CRTC and thus lacks the RGB output routing register field.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--LJWAgBD9CPneG4PP2HpnrnutqkGdUXKQ6
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- .../devicetree/bindings/video/renesas,du.txt       |  4 +++-
- drivers/gpu/drm/rcar-du/rcar_du_drv.c              | 23 ++++++++++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_group.c            |  5 +++--
- 3 files changed, 29 insertions(+), 3 deletions(-)
+On 06/20/2015 02:49 AM, Sergei Shtylyov wrote:
+> Hello.
+>=20
+>    Here's the set of 2 patches against Marc Kleine-Budde's 'linux-can.g=
+it'
+> repo plus 3 fix patches just posted; they are small error message clean=
+ups for
+> the Renesas R-Car CAN driver.
 
-diff --git a/Documentation/devicetree/bindings/video/renesas,du.txt b/Documentation/devicetree/bindings/video/renesas,du.txt
-index d05be121486f..eccd4f4867b2 100644
---- a/Documentation/devicetree/bindings/video/renesas,du.txt
-+++ b/Documentation/devicetree/bindings/video/renesas,du.txt
-@@ -7,6 +7,7 @@ Required Properties:
-     - "renesas,du-r8a7790" for R8A7790 (R-Car H2) compatible DU
-     - "renesas,du-r8a7791" for R8A7791 (R-Car M2-W) compatible DU
-     - "renesas,du-r8a7793" for R8A7793 (R-Car M2-N) compatible DU
-+    - "renesas,du-r8a7794" for R8A7794 (R-Car E2) compatible DU
- 
-   - reg: A list of base address and length of each memory resource, one for
-     each entry in the reg-names property.
-@@ -23,7 +24,7 @@ Required Properties:
-   - clock-names: Name of the clocks. This property is model-dependent.
-     - R8A7779 uses a single functional clock. The clock doesn't need to be
-       named.
--    - R8A779[013] use one functional clock per channel and one clock per LVDS
-+    - R8A779[0134] use one functional clock per channel and one clock per LVDS
-       encoder (if available). The functional clocks must be named "du.x" with
-       "x" being the channel numerical index. The LVDS clocks must be named
-       "lvds.x" with "x" being the LVDS encoder numerical index.
-@@ -46,6 +47,7 @@ corresponding to each DU output.
-  R8A7790 (H2)	DPAD		LVDS 0		LVDS 1
-  R8A7791 (M2-W)	DPAD		LVDS 0		-
-  R8A7793 (M2-N)	DPAD		LVDS 0		-
-+ R8A7794 (E2)	DPAD 0		DPAD 1		-
- 
- 
- Example: R8A7790 (R-Car H2) DU
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index 5a7e6dfa5df2..2b9a7c87467c 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -107,11 +107,34 @@ static const struct rcar_du_device_info rcar_du_r8a7791_info = {
- 	.num_lvds = 1,
- };
- 
-+static const struct rcar_du_device_info rcar_du_r8a7794_info = {
-+	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK
-+		  | RCAR_DU_FEATURE_EXT_CTRL_REGS,
-+	.num_crtcs = 2,
-+	.routes = {
-+		/* R8A7794 has two RGB outputs and one (currently unsupported)
-+		 * TCON output.
-+		 */
-+		[RCAR_DU_OUTPUT_DPAD0] = {
-+			.possible_crtcs = BIT(0),
-+			.encoder_type = DRM_MODE_ENCODER_NONE,
-+			.port = 0,
-+		},
-+		[RCAR_DU_OUTPUT_DPAD1] = {
-+			.possible_crtcs = BIT(1),
-+			.encoder_type = DRM_MODE_ENCODER_NONE,
-+			.port = 1,
-+		},
-+	},
-+	.num_lvds = 1,
-+};
-+
- static const struct platform_device_id rcar_du_id_table[] = {
- 	{ "rcar-du-r8a7779", (kernel_ulong_t)&rcar_du_r8a7779_info },
- 	{ "rcar-du-r8a7790", (kernel_ulong_t)&rcar_du_r8a7790_info },
- 	{ "rcar-du-r8a7791", (kernel_ulong_t)&rcar_du_r8a7791_info },
- 	{ "rcar-du-r8a7793", (kernel_ulong_t)&rcar_du_r8a7791_info },
-+	{ "rcar-du-r8a7794", (kernel_ulong_t)&rcar_du_r8a7794_info },
- 	{ }
- };
- 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-index 7fd39a7d91c8..8e2ffe025153 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-@@ -49,9 +49,10 @@ static void rcar_du_group_setup_defr8(struct rcar_du_group *rgrp)
- 	u32 defr8 = DEFR8_CODE | DEFR8_DEFE8;
- 
- 	/* The DEFR8 register for the first group also controls RGB output
--	 * routing to DPAD0
-+	 * routing to DPAD0 for DU instances that support it.
- 	 */
--	if (rgrp->index = 0)
-+	if (rgrp->dev->info->routes[RCAR_DU_OUTPUT_DPAD0].possible_crtcs > 1 &&
-+	    rgrp->index = 0)
- 		defr8 |= DEFR8_DRGBS_DU(rgrp->dev->dpad0_source);
- 
- 	rcar_du_group_write(rgrp, DEFR8, defr8);
--- 
-2.3.6
+Applied both series to can/master.
 
+Thanks,
+Marc
+
+--=20
+Pengutronix e.K.                  | Marc Kleine-Budde           |
+Industrial Linux Solutions        | Phone: +49-231-2826-924     |
+Vertretung West/Dortmund          | Fax:   +49-5121-206917-5555 |
+Amtsgericht Hildesheim, HRA 2686  | http://www.pengutronix.de   |
+
+
+--LJWAgBD9CPneG4PP2HpnrnutqkGdUXKQ6
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEcBAEBCgAGBQJVk6xSAAoJEP5prqPJtc/HKl4H/Rc4QGTXN7TWxIbcwcJehnoz
+/9ceMr9Xr9N1jmddkAhAl8nc8IEJ2MqjYW+IqX6SaMcCqT1KVnzyqvnwf5t2sxvZ
+jKnhoNj2zzusursdV4zkykXvCHD6HnuytHY/iNPRFOd7y7sAdZO7RE1gpre/kBwM
+GopEIFzveUT01kQkICKCYIL3i0z8zkEiSDbLEsowOIH//o7sGfvDTXOZDi4nJ5R4
+z7t1kEvLnt0cAt9/hxUAOVBPNORxUTxtz5838yuF+HoWpC9CU3+7gzZbMz262J7H
+Wbx19R2YD33NZJSL5DZU/L2ZNDv3M251Ni7pfPuREJqAAy+BPo9+3JCYQhsIPXc=
+=AcUU
+-----END PGP SIGNATURE-----
+
+--LJWAgBD9CPneG4PP2HpnrnutqkGdUXKQ6--
