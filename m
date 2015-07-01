@@ -1,47 +1,190 @@
-From: Bjorn Helgaas <bhelgaas@google.com>
-Date: Sun, 12 Jul 2015 22:02:02 +0000
-Subject: [PATCH 2/3] x86, irq: Clarify "No irq handler" message
-Message-Id: <20150712220202.7166.22099.stgit@bhelgaas-glaptop2.roam.corp.google.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 01 Jul 2015 15:58:00 +0000
+Subject: [PATCH v3 06/16] ARM: shmobile: r7s72100 dtsi: Add CPG/MSTP Clock Domain
+Message-Id: <1435766290-3005-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150712215559.7166.33068.stgit@bhelgaas-glaptop2.roam.corp.google.com>
-In-Reply-To: <20150712215559.7166.33068.stgit@bhelgaas-glaptop2.roam.corp.google.com>
+References: <1435766290-3005-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1435766290-3005-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>
-Cc: linux-arch@vger.kernel.org, linux-mips@linux-mips.org, linux-am33-list@redhat.com, linux-ia64@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-alpha@vger.kernel.org, x86@kernel.org, linuxppc-dev@lists.ozlabs.org
+To: linux-arm-kernel@lists.infradead.org
 
-Previously we printed, e.g.,
+Add an appropriate "#power-domain-cells" property to the cpg_clocks
+device node, to create the CPG/MSTP Clock Domain.
 
-  do_IRQ: 0.242 No irq handler for vector (irq -1)
+Add "power-domains" properties to all device nodes for devices that are
+part of the CPG/MSTP Clock Domain and can be power-managed through an
+MSTP clock.  This applies to most on-SoC devices, which have a
+one-to-one mapping from SoC device to DT device node.
 
-There's no clue about what "0.242" means, and the IRQ number, which is the
-important generic information used by drivers and /proc/interrupts, is
-almost an afterthought.
-
-Change the format to this:
-
-  No handler for IRQ -1 (CPU 0 vector 0xf2)
-
-Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/x86/kernel/irq.c |    5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+v3:
+  - Use "CPG/MSTP Clock Domain" instead of "CPG Clock Domain",
 
-diff --git a/arch/x86/kernel/irq.c b/arch/x86/kernel/irq.c
-index 2949c6e..3c6b069 100644
---- a/arch/x86/kernel/irq.c
-+++ b/arch/x86/kernel/irq.c
-@@ -224,9 +224,8 @@ __visible unsigned int __irq_entry do_IRQ(struct pt_regs *regs)
- 		ack_APIC_irq();
+v2:
+  - New.
+---
+ arch/arm/boot/dts/r7s72100.dtsi | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index 277e73c110e5d40c..060c32cbd66923ed 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -86,6 +86,7 @@
+ 			reg = <0xfcfe0000 0x18>;
+ 			clocks = <&extal_clk>, <&usb_x1_clk>;
+ 			clock-output-names = "pll", "i", "g";
++			#power-domain-cells = <0>;
+ 		};
  
- 		if (irq != IRQ_RETRIGGERED) {
--			pr_emerg_ratelimited("%s: %d.%d No irq handler for vector (irq %d)\n",
--					     __func__, smp_processor_id(),
--					     vector, irq);
-+			pr_emerg_ratelimited("No handler for IRQ %d (CPU %d vector %#x)\n",
-+					     irq, smp_processor_id(), vector);
- 		} else {
- 			__this_cpu_write(vector_irq[vector], IRQ_UNDEFINED);
- 		}
+ 		/* MSTP clocks */
+@@ -157,6 +158,7 @@
+ 			     <0 189 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF0>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -169,6 +171,7 @@
+ 			     <0 193 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF1>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -181,6 +184,7 @@
+ 			     <0 197 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF2>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -193,6 +197,7 @@
+ 			     <0 201 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF3>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -205,6 +210,7 @@
+ 			     <0 205 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF4>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -217,6 +223,7 @@
+ 			     <0 209 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF5>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -229,6 +236,7 @@
+ 			     <0 213 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF6>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -241,6 +249,7 @@
+ 			     <0 217 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF7>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -252,6 +261,7 @@
+ 			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
+ 		clocks = <&mstp10_clks R7S72100_CLK_SPI0>;
++		power-domains = <&cpg_clocks>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -266,6 +276,7 @@
+ 			     <0 243 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
+ 		clocks = <&mstp10_clks R7S72100_CLK_SPI1>;
++		power-domains = <&cpg_clocks>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -280,6 +291,7 @@
+ 			     <0 246 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
+ 		clocks = <&mstp10_clks R7S72100_CLK_SPI2>;
++		power-domains = <&cpg_clocks>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -294,6 +306,7 @@
+ 			     <0 249 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
+ 		clocks = <&mstp10_clks R7S72100_CLK_SPI3>;
++		power-domains = <&cpg_clocks>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -308,6 +321,7 @@
+ 			     <0 252 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "error", "rx", "tx";
+ 		clocks = <&mstp10_clks R7S72100_CLK_SPI4>;
++		power-domains = <&cpg_clocks>;
+ 		num-cs = <1>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -338,6 +352,7 @@
+ 			     <0 164 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R7S72100_CLK_I2C0>;
+ 		clock-frequency = <100000>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -356,6 +371,7 @@
+ 			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R7S72100_CLK_I2C1>;
+ 		clock-frequency = <100000>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -374,6 +390,7 @@
+ 			     <0 180 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R7S72100_CLK_I2C2>;
+ 		clock-frequency = <100000>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -392,6 +409,7 @@
+ 			     <0 188 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp9_clks R7S72100_CLK_I2C3>;
+ 		clock-frequency = <100000>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -402,6 +420,7 @@
+ 		interrupt-names = "tgi0a";
+ 		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
+ 		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ };
+-- 
+1.9.1
 
