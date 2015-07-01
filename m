@@ -1,153 +1,114 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 01 Jul 2015 07:08:12 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 01 Jul 2015 10:07:08 +0000
 Subject: Re: [RFC 2/3] i2c: mux: demux-pinctrl: add driver
-Message-Id: <CAMuHMdW+rd+U0VQjitbyJ3AiZakhLztdYe27n1rkK9tFWT=z4w@mail.gmail.com>
+Message-Id: <20150701100707.GA1926@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="FCuugMFkClbJLl1L"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1435700651-3543-1-git-send-email-wsa@the-dreams.de>
  <1435700651-3543-3-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1435700651-3543-3-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <CAMuHMdW+rd+U0VQjitbyJ3AiZakhLztdYe27n1rkK9tFWT=z4w@mail.gmail.com>
+In-Reply-To: <CAMuHMdW+rd+U0VQjitbyJ3AiZakhLztdYe27n1rkK9tFWT=z4w@mail.gmail.com>
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Wolfram,
 
-On Tue, Jun 30, 2015 at 11:44 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->
-> This driver allows an I2C bus to switch between multiple masters. This
-> is not hot-switching because connected I2C slaves will be
-> re-instantiated. It is meant to select the best I2C core at runtime once
-> the task is known. Example: Prefer i2c-gpio over another I2C core
-> because of HW errata affecting your use case.
->
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> ---
->  .../devicetree/bindings/i2c/i2c-demux-pinctrl.txt  |  44 ++++
->  drivers/i2c/muxes/Kconfig                          |   9 +
->  drivers/i2c/muxes/Makefile                         |   2 +
->  drivers/i2c/muxes/i2c-demux-pinctrl.c              | 266 +++++++++++++++++++++
->  4 files changed, 321 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
->  create mode 100644 drivers/i2c/muxes/i2c-demux-pinctrl.c
->
-> diff --git a/Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt b/Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
-> new file mode 100644
-> index 00000000000000..2211f6acbf8c0c
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
+--FCuugMFkClbJLl1L
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> +Changing I2C controllers:
-> +
-> +The created mux-device will have a file "cur_master" in its sysfs-entry. Write
-> +0 there for the first master listed in the "i2c-parent" property, 1 for the
-> +second etc. Reading the file will give you a list with the active master
-> +marked.
+> > +Changing I2C controllers:
+> > +
+> > +The created mux-device will have a file "cur_master" in its sysfs-entr=
+y. Write
+> > +0 there for the first master listed in the "i2c-parent" property, 1 fo=
+r the
+> > +second etc. Reading the file will give you a list with the active mast=
+er
+> > +marked.
+>=20
+> This paragraph doesn't belong in the DT binding doc, but somewhere
+> under Documentation/i2c/
 
-This paragraph doesn't belong in the DT binding doc, but somewhere
-under Documentation/i2c/
+Yes.
 
-> diff --git a/drivers/i2c/muxes/i2c-demux-pinctrl.c b/drivers/i2c/muxes/i2c-demux-pinctrl.c
-> new file mode 100644
-> index 00000000000000..5444c65de76c55
-> --- /dev/null
-> +++ b/drivers/i2c/muxes/i2c-demux-pinctrl.c
-> @@ -0,0 +1,266 @@
-> +/*
-> + * Pinctrl based I2C DeMultiplexer V2 PROTOTYPE!
-> + *
-> + * Copyright (C) 2015 by Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
-> + * Copyright (C) 2015 by Renesas Electronics Corporation
-> + *
-> + * This program is free software; you can redistribute it and/or modify it
-> + * under the terms of the GNU General Public License as published by the
-> + * Free Software Foundation; version 2 of the License.
-> + *
-> + * See the bindings doc for DTS setup.
-> + */
-> +
-> +#include <linux/i2c.h>
-> +#include <linux/init.h>
-> +#include <linux/module.h>
-> +#include <linux/mutex.h>
-> +#include <linux/of.h>
-> +#include <linux/pinctrl/consumer.h>
-> +#include <linux/platform_device.h>
-> +#include <linux/slab.h>
-> +#include <linux/sysfs.h>
-> +
-> +struct i2c_demux_pinctrl_chan {
-> +       struct device_node *parent_np;
-> +       struct i2c_adapter *parent_adap;
-> +       struct of_changeset chgset;
-> +};
-> +
-> +struct i2c_demux_pinctrl_priv {
-> +       int cur_chan;
-> +       int num_chan;
+> > +struct i2c_demux_pinctrl_priv {
+> > +       int cur_chan;
+> > +       int num_chan;
+>=20
+> unsigned int
 
-unsigned int
+When comparing variables, I prefer to have them the same signedness.
 
-> +       struct device *dev;
-> +       const char *bus_name;
-> +       struct i2c_adapter cur_adap;
-> +       struct i2c_algorithm algo;
-> +       struct i2c_demux_pinctrl_chan chan[];
-> +};
-> +
-> +static struct property status_okay = { .name = "status", .length = 3, .value = "ok" };
+> > +static struct property status_okay =3D { .name =3D "status", .length =
+=3D 3, .value =3D "ok" };
+>=20
+> "okay" or "ok"?
 
-"okay" or "ok"?
+Both are valid, I took the shorter one.
 
-> +static ssize_t cur_master_show(struct device *dev, struct device_attribute *attr,
-> +                          char *buf)
-> +{
-> +       struct i2c_demux_pinctrl_priv *priv = dev_get_drvdata(dev);
-> +       int count = 0, i;
+> > +       struct i2c_demux_pinctrl_priv *priv =3D dev_get_drvdata(dev);
+> > +       int count =3D 0, i;
+>=20
+> unsigned int i
 
-unsigned int i
+Same as above.
 
-> +
-> +       for (i = 0; i < priv->num_chan; i++)
-> +               count += sprintf(buf + count, "%c %d - %s\n",
-> +                                i = priv->cur_chan ? '*' : ' ', i,
-> +                                priv->chan[i].parent_np->full_name);
-> +       //FIXME: Check count > PAGE_SIZE
+>=20
+> > +
+> > +       for (i =3D 0; i < priv->num_chan; i++)
+> > +               count +=3D sprintf(buf + count, "%c %d - %s\n",
+> > +                                i =3D=3D priv->cur_chan ? '*' : ' ', i,
+> > +                                priv->chan[i].parent_np->full_name);
+> > +       //FIXME: Check count > PAGE_SIZE
+>=20
+> Can you use seq_printf() for device attributes?
 
-Can you use seq_printf() for device attributes?
+I can't find a reference to that.
 
-> +
-> +       return count;
-> +}
-> +
-> +static ssize_t cur_master_store(struct device *dev, struct device_attribute *attr,
-> +                           const char *buf, size_t count)
-> +{
-> +       struct i2c_demux_pinctrl_priv *priv = dev_get_drvdata(dev);
-> +       unsigned long val;
 
-unsigned int
+> > +static ssize_t cur_master_store(struct device *dev, struct device_attr=
+ibute *attr,
+> > +                           const char *buf, size_t count)
+> > +{
+> > +       struct i2c_demux_pinctrl_priv *priv =3D dev_get_drvdata(dev);
+> > +       unsigned long val;
+>=20
+> unsigned int
+>=20
+> > +       int ret;
+> > +
+> > +       ret =3D kstrtoul(buf, 0, &val);
+>=20
+> kstrtouint()
 
-> +       int ret;
-> +
-> +       ret = kstrtoul(buf, 0, &val);
+Yes, I agree to the last two.
 
-kstrtouint()
+Thanks for the review,
 
-> +       if (ret < 0)
-> +               return ret;
-> +
-> +       if (val >= priv->num_chan)
-> +               return -EINVAL;
+   Wolfram
 
-Gr{oetje,eeting}s,
 
-                        Geert
+--FCuugMFkClbJLl1L
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+iQIcBAEBAgAGBQJVk7vLAAoJEBQN5MwUoCm2VXoP/2i+I6LwDxbyw/TFGBVsREp+
+0vvLY2wnZERNhbU6BIlB+RDE3Tv1Gk95NLZ8ljDqC50HzsBCxWdj20sqkUS9vy4q
+oYZybnenghwBWJTpaeoSqaMCKx/K/re+yTSmZT9npMHYuBDYke60ELUrwuDGbXhi
+u6ojQZlZ1ylpLUTDAtOOEqvGPx53jdY1dwx3cPYGxyWMytNDZbYXDiZ4lgLFaS+u
+Ydb0gkHVvYcmNZ4accxFfJqBHOYtlbrpjDzlM7QBPFxvia/56v3n+rZQLL4gO0MO
+pi7UQNr6wO81CwyX9aNMmQKXz0vPDOQlpHptPGq2kjyHHNwBJ0VX/zaenAN2nK3i
+4EebCVugtYww/ZHoo1hPr+YSgDk4rI+MIrFjQb0xiF7QB+yhpPUaxNB+a6/MQ6ip
+Xv2owsd3oM3yQz5X+g+Rf65SH0jSeoDmPiOF48IgwlYB8IXJj/KnU8yNlL2sm8xR
+WyBQ69CHZOxuPi1w1saN+50Pw8UmVH5ktQPsrqJpbE3EBSQw4iy2nFP0P48bFwGW
+HCONULPxegdmvdnoSEHwl17Dir/4f8HFE0bHC57SahRuj4T7wQcXAtjWTL6jHGNV
+FGv4yzpfPh/1JQRD4f/BL7/4oOtPzaepUcW0b4fA95Ccadue8lQa7xD7Gu5A68v1
+JW+jpjBreIC2pxNf3Q5P
+=KGTo
+-----END PGP SIGNATURE-----
+
+--FCuugMFkClbJLl1L--
