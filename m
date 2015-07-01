@@ -1,67 +1,153 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 31 Jul 2015 02:23:04 +0000
-Subject: Re: [PATCH] DT: mmc: sh_mmcif: fix "compatible" property text
-Message-Id: <CANqRtoSVU77Q7hnoMJ2_VbqprJYxbvbbe5MHBReH_dVxyvGAQQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 01 Jul 2015 07:08:12 +0000
+Subject: Re: [RFC 2/3] i2c: mux: demux-pinctrl: add driver
+Message-Id: <CAMuHMdW+rd+U0VQjitbyJ3AiZakhLztdYe27n1rkK9tFWT=z4w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
-	<3979266.lQrOKbu0yo@wasted.cogentembedded.com>
-In-Reply-To: <3979266.lQrOKbu0yo@wasted.cogentembedded.com>
+References: <1435700651-3543-1-git-send-email-wsa@the-dreams.de>
+ <1435700651-3543-3-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1435700651-3543-3-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, ulf.hansson@linaro.org, linux-mmc@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+Hi Wolfram,
 
-On Fri, Jul 31, 2015 at 4:59 AM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> The "compatible" property text contradicts even the example given in the MMCIF
-> binding document itself; moreover, the Renesas MMCIF driver only  matches  on
-> the generic "compatible" string, and doesn't look for at SoC specific strings
-> currently at all. Thus describe "renesas,sh-mmcif" string as mandatory and the
-> others as optional.
+On Tue, Jun 30, 2015 at 11:44 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
+> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 >
-> Fixes: b4c27763d749 ("mmc: sh_mmcif: Document DT bindings")
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-Thanks for your efforts trying to improve the DT binding documentation.
-
-> --- renesas.orig/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> +++ renesas/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> @@ -6,11 +6,11 @@ and the properties used by the MMCIF dev
+> This driver allows an I2C bus to switch between multiple masters. This
+> is not hot-switching because connected I2C slaves will be
+> re-instantiated. It is meant to select the best I2C core at runtime once
+> the task is known. Example: Prefer i2c-gpio over another I2C core
+> because of HW errata affecting your use case.
 >
->  Required properties:
+> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> ---
+>  .../devicetree/bindings/i2c/i2c-demux-pinctrl.txt  |  44 ++++
+>  drivers/i2c/muxes/Kconfig                          |   9 +
+>  drivers/i2c/muxes/Makefile                         |   2 +
+>  drivers/i2c/muxes/i2c-demux-pinctrl.c              | 266 +++++++++++++++++++++
+>  4 files changed, 321 insertions(+)
+>  create mode 100644 Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
+>  create mode 100644 drivers/i2c/muxes/i2c-demux-pinctrl.c
 >
-> -- compatible: must contain one of the following
-> +- compatible: must contain "renesas,sh-mmcif"; may also contain one of
-> +  the following:
->         - "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
->         - "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
->         - "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
-> -       - "renesas,sh-mmcif" for the generic MMCIF
+> diff --git a/Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt b/Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
+> new file mode 100644
+> index 00000000000000..2211f6acbf8c0c
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/i2c/i2c-demux-pinctrl.txt
 
-As you know, each SoC contains a wide range of on-chip devices and the
-MMCIF device is just one of them. Exactly how to manage the DT
-bindings must be up to each maintainer and of course this needs to be
-aligned with the SoC maintainer and SoC vendor with policies used for
-SoC support and BSPs and whatnot. Changing policy like this for a
-single device without at least discussing this with the SoC
-maintainers does not help.
+> +Changing I2C controllers:
+> +
+> +The created mux-device will have a file "cur_master" in its sysfs-entry. Write
+> +0 there for the first master listed in the "i2c-parent" property, 1 for the
+> +second etc. Reading the file will give you a list with the active master
+> +marked.
 
-For Renesas hardware we so far use both SoC part number and optionally
-a generic binding as well. As commonly expected, the DT binding is
-supposed to describe the hardware and if hardware devices are
-compatible. Unless we use SoC part number in the compatible string
-there is a risk that the SoC integrator simply copy-and-pastes generic
-bindings "because it works" but this will result in DT binding based
-on software compatibility and not hardware compatibility. Later when
-the driver support is extended this may result in broken software due
-to incorrect compatibility information through generic bindings.
+This paragraph doesn't belong in the DT binding doc, but somewhere
+under Documentation/i2c/
 
-If anything is unclear please ask and feel free to discuss this DT
-topic with Simon, Laurent, Geert and/or me.
+> diff --git a/drivers/i2c/muxes/i2c-demux-pinctrl.c b/drivers/i2c/muxes/i2c-demux-pinctrl.c
+> new file mode 100644
+> index 00000000000000..5444c65de76c55
+> --- /dev/null
+> +++ b/drivers/i2c/muxes/i2c-demux-pinctrl.c
+> @@ -0,0 +1,266 @@
+> +/*
+> + * Pinctrl based I2C DeMultiplexer V2 PROTOTYPE!
+> + *
+> + * Copyright (C) 2015 by Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
+> + * Copyright (C) 2015 by Renesas Electronics Corporation
+> + *
+> + * This program is free software; you can redistribute it and/or modify it
+> + * under the terms of the GNU General Public License as published by the
+> + * Free Software Foundation; version 2 of the License.
+> + *
+> + * See the bindings doc for DTS setup.
+> + */
+> +
+> +#include <linux/i2c.h>
+> +#include <linux/init.h>
+> +#include <linux/module.h>
+> +#include <linux/mutex.h>
+> +#include <linux/of.h>
+> +#include <linux/pinctrl/consumer.h>
+> +#include <linux/platform_device.h>
+> +#include <linux/slab.h>
+> +#include <linux/sysfs.h>
+> +
+> +struct i2c_demux_pinctrl_chan {
+> +       struct device_node *parent_np;
+> +       struct i2c_adapter *parent_adap;
+> +       struct of_changeset chgset;
+> +};
+> +
+> +struct i2c_demux_pinctrl_priv {
+> +       int cur_chan;
+> +       int num_chan;
 
-Thanks,
+unsigned int
 
-/ magnus
+> +       struct device *dev;
+> +       const char *bus_name;
+> +       struct i2c_adapter cur_adap;
+> +       struct i2c_algorithm algo;
+> +       struct i2c_demux_pinctrl_chan chan[];
+> +};
+> +
+> +static struct property status_okay = { .name = "status", .length = 3, .value = "ok" };
+
+"okay" or "ok"?
+
+> +static ssize_t cur_master_show(struct device *dev, struct device_attribute *attr,
+> +                          char *buf)
+> +{
+> +       struct i2c_demux_pinctrl_priv *priv = dev_get_drvdata(dev);
+> +       int count = 0, i;
+
+unsigned int i
+
+> +
+> +       for (i = 0; i < priv->num_chan; i++)
+> +               count += sprintf(buf + count, "%c %d - %s\n",
+> +                                i = priv->cur_chan ? '*' : ' ', i,
+> +                                priv->chan[i].parent_np->full_name);
+> +       //FIXME: Check count > PAGE_SIZE
+
+Can you use seq_printf() for device attributes?
+
+> +
+> +       return count;
+> +}
+> +
+> +static ssize_t cur_master_store(struct device *dev, struct device_attribute *attr,
+> +                           const char *buf, size_t count)
+> +{
+> +       struct i2c_demux_pinctrl_priv *priv = dev_get_drvdata(dev);
+> +       unsigned long val;
+
+unsigned int
+
+> +       int ret;
+> +
+> +       ret = kstrtoul(buf, 0, &val);
+
+kstrtouint()
+
+> +       if (ret < 0)
+> +               return ret;
+> +
+> +       if (val >= priv->num_chan)
+> +               return -EINVAL;
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
