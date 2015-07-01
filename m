@@ -1,28 +1,35 @@
-From: Tejun Heo <tj@kernel.org>
-Date: Tue, 14 Jul 2015 21:39:41 +0000
-Subject: Re: [PATCH] ata: sata_rcar: Remove obsolete sata-r8a779* platform_device_id entries
-Message-Id: <20150714213941.GF2273@mtj.duckdns.org>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 01 Jul 2015 07:10:23 +0000
+Subject: Re: [RFC 3/3] ARM: shmobile: r8a7790: rework dts to use i2c demuxer
+Message-Id: <CAMuHMdXTnY_gg+VWcSxUZWnD6yrL9xxCSoJYQVCh4Dj7Lxr8Qg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435064113-10742-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1435064113-10742-1-git-send-email-geert+renesas@glider.be>
+References: <1435700651-3543-1-git-send-email-wsa@the-dreams.de>
+ <1435700651-3543-4-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1435700651-3543-4-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: linux-ide@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jun 23, 2015 at 02:55:13PM +0200, Geert Uytterhoeven wrote:
-> Since commit a483dcbfa21f919c ("ARM: shmobile: lager: Remove legacy
-> board support"), R-Car Gen2 SoCs are only supported in generic DT-only
-> ARM multi-platform builds.  The driver doesn't need to match platform
-> devices by name anymore, hence remove the corresponding
-> platform_device_id entry.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On Tue, Jun 30, 2015 at 11:44 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
+> --- a/arch/arm/boot/dts/r8a7790-lager.dts
+> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
+> @@ -49,6 +49,8 @@
+>         aliases {
+>                 serial0 = &scifa0;
+>                 serial1 = &scifa1;
+> +               i2c8 = &i2chdmi;
+> +               i2c9 = &gpioi2c;
 
-Applied to libata/for-4.3.
+"i2c<suffix>" or "<prefix>i2c"?
 
-Thanks.
+Gr{oetje,eeting}s,
 
--- 
-tejun
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
