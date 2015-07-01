@@ -1,52 +1,50 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 02 Jul 2015 05:13:16 +0000
-Subject: [PATCH 2/4 v2][RFC] arm64: Add new Renesas R-Car Gen3 SoC Kconfig
-Message-Id: <876163m9fd.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 01 Jul 2015 15:58:09 +0000
+Subject: [PATCH v3 15/16] clk: shmobile: mstp: Consider "zb_clk" suitable for power management
+Message-Id: <1435766290-3005-16-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1435766290-3005-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1435766290-3005-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Currently the CPG/MSTP Clock Domain code looks for MSTP clocks to power
+manage a device.
 
-Initial version of device tree for Renesas R-Car Gen3 SoC Kconfig
+Unfortunately, on R-Mobile APE6 (r8a73a4) and SH-Mobile AG5 (sh73a0),
+the Bus State Controller (BSC) is not power-managed by an MSTP clock,
+but by a plain CPG clock (zb_clk).  Add a special case to handle this,
+so the clock is properly managed, and devices connected to the BSC work
+as expected.
 
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v1 -> v2
+v3:
+  - Use "CPG/MSTP Clock Domain" instead of "CPG Clock Domain",
 
- - remove ARCH_SHMOBILE_MULTI
+v2:
+  - New.
+---
+ drivers/clk/shmobile/clk-mstp.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
- arch/arm64/Kconfig | 9 +++++++++
- 1 file changed, 9 insertions(+)
-
-diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
-index 7796af4..cf5edd6 100644
---- a/arch/arm64/Kconfig
-+++ b/arch/arm64/Kconfig
-@@ -194,11 +194,20 @@ config ARCH_QCOM
- 	help
- 	  This enables support for the ARMv8 based Qualcomm chipsets.
+diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
+index 9b4451304f5732d4..9975695ca814614f 100644
+--- a/drivers/clk/shmobile/clk-mstp.c
++++ b/drivers/clk/shmobile/clk-mstp.c
+@@ -258,6 +258,10 @@ int cpg_mstp_attach_dev(struct generic_pm_domain *domain, struct device *dev)
+ 					    "renesas,cpg-mstp-clocks"))
+ 			goto found;
  
-+config ARCH_RCAR_GEN3
-+	bool "Renesas R-Car Gen3 SoC Platform"
-+	select ARCH_SHMOBILE
-+	help
-+	  This enables support for Renesas SoC.
++		/* BSC on r8a73a4/sh73a0 uses zb_clk instead of an mstp clock*/
++		if (!strcmp(clkspec.np->name, "zb_clk"))
++			goto found;
 +
- config ARCH_SEATTLE
- 	bool "AMD Seattle SoC Family"
- 	help
- 	  This enables support for AMD Seattle SOC Family
- 
-+config ARCH_SHMOBILE
-+	bool
-+
- config ARCH_TEGRA
- 	bool "NVIDIA Tegra SoC Family"
- 	select ARCH_HAS_RESET_CONTROLLER
+ 		of_node_put(clkspec.np);
+ 		i++;
+ 	}
 -- 
 1.9.1
 
