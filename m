@@ -1,38 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Jul 2015 08:41:48 +0000
-Subject: [PATCH 7/9] ARM: multi_v7_defconfig: Remove Marzen
-Message-Id: <8dd80b6d7c5bac89315d07c0c2495fe31d0cb348.1437726584.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 02 Jul 2015 05:14:02 +0000
+Subject: [PATCH 4/4 v2][RFC] arm64: defconfig: Enable Renesas R-Car Gen3 SoC in defconfig
+Message-Id: <873817m9dx.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1437726584.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1437726584.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Kill of the defconfig bits now when the marzen-reference board code is gone.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Based on work by Magnus Damm.
+This patch enables Renesas R-Car Gen3 SoCs in the arm64 defconfig.
 
-Acked-by: Magnus Damm <damm@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 ---
- arch/arm/configs/multi_v7_defconfig | 1 -
- 1 file changed, 1 deletion(-)
+v1 -> v2
 
-diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
-index 6d83a1bf0c74..b34cd868daa5 100644
---- a/arch/arm/configs/multi_v7_defconfig
-+++ b/arch/arm/configs/multi_v7_defconfig
-@@ -82,7 +82,6 @@ CONFIG_ARCH_R8A7790=y
- CONFIG_ARCH_R8A7791=y
- CONFIG_ARCH_R8A7794=y
- CONFIG_ARCH_SH73A0=y
--CONFIG_MACH_MARZEN=y
- CONFIG_ARCH_SUNXI=y
- CONFIG_ARCH_SIRF=y
+ - no change
+
+ arch/arm64/configs/defconfig | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 2ed7449..eb7c59f 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -34,6 +34,7 @@ CONFIG_MODULE_UNLOAD=y
+ CONFIG_ARCH_EXYNOS7=y
+ CONFIG_ARCH_FSL_LS2085A=y
+ CONFIG_ARCH_MEDIATEK=y
++CONFIG_ARCH_RCAR_GEN3=y
+ CONFIG_ARCH_SEATTLE=y
  CONFIG_ARCH_TEGRA=y
+ CONFIG_ARCH_TEGRA_132_SOC=y
+@@ -102,6 +103,9 @@ CONFIG_SERIAL_8250_CONSOLE=y
+ CONFIG_SERIAL_8250_MT6577=y
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS=6
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_SERIAL_MSM=y
+ CONFIG_SERIAL_MSM_CONSOLE=y
+ CONFIG_SERIAL_OF_PLATFORM=y
 -- 
-2.1.4
+1.9.1
 
