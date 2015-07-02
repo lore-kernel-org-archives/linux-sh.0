@@ -1,48 +1,64 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 30 Jul 2015 21:54:05 +0000
-Subject: [PATCH v2 1/2] ARM: shmobile: r8a7794: add MMCIF DT support
-Message-Id: <2274701.D1UH0V9VRM@wasted.cogentembedded.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Thu, 02 Jul 2015 08:14:29 +0000
+Subject: [PATCH v2] arm: koelsch: make USB0 perform Host/Function switching
+Message-Id: <1435824869-22784-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1546028.CFITDbxXtD@wasted.cogentembedded.com>
-In-Reply-To: <1546028.CFITDbxXtD@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Kishon Vijay Abraham I <kishon@ti.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-Define the generic R8A7794 part of the MMCIF0 device node.
+Both USB Host (pci0) and Function (USBHS) drivers are enabled.
+The USB PHY driver determines which IP block should be connected
+based on vbus and id signals read via gpios.
 
-Based on the orginal patch by Shinobu Uehara <shinobu.uehara.xc@renesas.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Note that switch SW5 and SW6 on Koelsch board needs to be set to
+position 3 for this to work.
 
 ---
-Changes in version  2:
-- updated the patch due to the SDHI patch being accepted first;
-- refreshed the patch.
 
- arch/arm/boot/dts/r8a7794.dtsi |   11 +++++++++++
- 1 file changed, 11 insertions(+)
+Not for upstream until the following patches have been accepted:
+"usb: renesas_usbhs: Allow an OTG PHY driver to provide VBUS"
+"phy: rcar-gen2 usb: Add Host/Function switching for USB0"
+Hence, not signed off.
 
-Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7794.dtsi
-@@ -383,6 +383,17 @@
- 		status = "disabled";
- 	};
+v2:
+  - Added -gpio to dts prop names of GPIO pins.
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index cffe33f..1bb34d0 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -615,7 +615,6 @@
  
-+	mmcif0: mmc@ee200000 {
-+		compatible = "renesas,mmcif-r8a7794", "renesas,sh-mmcif";
-+		reg = <0 0xee200000 0 0x80>;
-+		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7794_CLK_MMCIF0>;
-+		dmas = <&dmac0 0xd1>, <&dmac0 0xd2>;
-+		dma-names = "tx", "rx";
-+		reg-io-width = <4>;
-+		status = "disabled";
-+	};
-+
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-r8a7794";
- 		reg = <0 0xee100000 0 0x200>;
+ &pci0 {
+ 	status = "okay";
+-	pinctrl-0 = <&usb0_pins>;
+ 	pinctrl-names = "default";
+ };
+ 
+@@ -627,13 +626,15 @@
+ 
+ &hsusb {
+ 	status = "okay";
+-	pinctrl-0 = <&usb0_pins>;
+ 	pinctrl-names = "default";
+-	renesas,enable-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
+ };
+ 
+ &usbphy {
+ 	status = "okay";
++	renesas,pwr-gpio = <&gpio2 4 GPIO_ACTIVE_HIGH>;
++	renesas,id-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
++	renesas,vbus-gpio = <&gpio7 24 GPIO_ACTIVE_HIGH>;
++	renesas,vbus-pwr-gpio = <&gpio7 23 GPIO_ACTIVE_HIGH>;
+ };
+ 
+ &pcie_bus_clk {
+-- 
+1.9.1
 
