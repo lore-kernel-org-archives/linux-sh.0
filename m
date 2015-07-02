@@ -1,39 +1,52 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 14 Jul 2015 04:57:34 +0000
-Subject: [PATCH 3/3] ARM: shmobile: defconfig: add Renesas DPCM Sound Card
-Message-Id: <87380rbapi.wl%kuninori.morimoto.gx@renesas.com>
+Date: Thu, 02 Jul 2015 05:13:16 +0000
+Subject: [PATCH 2/4 v2][RFC] arm64: Add new Renesas R-Car Gen3 SoC Kconfig
+Message-Id: <876163m9fd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-This patch enables DPCM related sound card.
-It is used for...
- - Sampline rate convert
- - CTU/MIXer
+Initial version of device tree for Renesas R-Car Gen3 SoC Kconfig
 
-Note: you need to enable these settings on DTS file
-
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/configs/shmobile_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+v1 -> v2
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 14087ca..0d8c7126 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -151,6 +151,7 @@ CONFIG_SND=y
- CONFIG_SND_SOC=y
- CONFIG_SND_SOC_SH4_FSI=y
- CONFIG_SND_SOC_RCAR=y
-+CONFIG_SND_SOC_RSRC_CARD=y
- CONFIG_SND_SOC_AK4642=y
- CONFIG_SND_SOC_WM8978=y
- CONFIG_USB=y
+ - remove ARCH_SHMOBILE_MULTI
+
+ arch/arm64/Kconfig | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index 7796af4..cf5edd6 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -194,11 +194,20 @@ config ARCH_QCOM
+ 	help
+ 	  This enables support for the ARMv8 based Qualcomm chipsets.
+ 
++config ARCH_RCAR_GEN3
++	bool "Renesas R-Car Gen3 SoC Platform"
++	select ARCH_SHMOBILE
++	help
++	  This enables support for Renesas SoC.
++
+ config ARCH_SEATTLE
+ 	bool "AMD Seattle SoC Family"
+ 	help
+ 	  This enables support for AMD Seattle SOC Family
+ 
++config ARCH_SHMOBILE
++	bool
++
+ config ARCH_TEGRA
+ 	bool "NVIDIA Tegra SoC Family"
+ 	select ARCH_HAS_RESET_CONTROLLER
 -- 
 1.9.1
 
