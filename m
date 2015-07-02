@@ -1,67 +1,172 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 16 Jul 2015 07:59:40 +0000
-Subject: Re: [PATCH v2] ARM: l2c: Add support for the "arm, shared-override" property
-Message-Id: <CAMuHMdX2ko3f8s7dnvwk2w-L3CPt_O-vaJ4Bbj+EHUvin7uVRg@mail.gmail.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Thu, 02 Jul 2015 10:26:33 +0000
+Subject: [PATCH v3] usb: renesas_usbhs: Allow an OTG PHY driver to provide VBUS
+Message-Id: <1435832793-9999-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430990831-23825-1-git-send-email-geert+renesas@glider.be>
- <20150507160257.GA11067@e104818-lin.cambridge.arm.com>
- <20150515101028.GH2067@n2100.arm.linux.org.uk>
- <20150515135513.GH19345@e104818-lin.cambridge.arm.com>
- <556D593C.1090002@monstr.eu> <558C7068.7070105@hauke-m.de>
- <CAMuHMdV8MhkOP+cfZx1HHaOctccrGmKp9RQBLuqy-NS1SQCh8Q@mail.gmail.com>
-In-Reply-To: <CAMuHMdV8MhkOP+cfZx1HHaOctccrGmKp9RQBLuqy-NS1SQCh8Q@mail.gmail.com>
+References: <2896957.Pcl0CbmdvL@avalon>
+In-Reply-To: <2896957.Pcl0CbmdvL@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@ti.com>, Ulrich Hecht <ulrich.hecht@gmail.com>, Kishon Vijay Abraham I <kishon@ti.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-kernel@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-On Fri, Jun 26, 2015 at 9:15 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Thu, Jun 25, 2015 at 11:19 PM, Hauke Mehrtens <hauke@hauke-m.de> wrote:
->> On 06/02/2015 09:20 AM, Michal Simek wrote:
->>> On 05/15/2015 03:55 PM, Catalin Marinas wrote:
->>>> On Fri, May 15, 2015 at 11:10:28AM +0100, Russell King - ARM
->>>> Linux wrote:
->>>>> On Thu, May 07, 2015 at 05:02:57PM +0100, Catalin Marinas
->>>>> wrote:
->>>>>> On Thu, May 07, 2015 at 11:27:11AM +0200, Geert Uytterhoeven
->>>>>> wrote:
->>>>>>> diff --git a/Documentation/devicetree/bindings/arm/l2cc.txt
->>>>>>> b/Documentation/devicetree/bindings/arm/l2cc.txt index
->>>>>>> 0dbabe9a6b0abb91..2484aed78c86546d 100644 ---
->>>>>>> a/Documentation/devicetree/bindings/arm/l2cc.txt +++
->>>>>>> b/Documentation/devicetree/bindings/arm/l2cc.txt @@ -67,6
->>>>>>> +67,12 @@ Optional properties: disable if zero. -
->>>>>>> arm,prefetch-offset : Override prefetch offset value. Valid
->>>>>>> values are 0-7, 15, 23, and 31. +- arm,shared-override :
->>>>>>> The default behavior of the pl310 cache controller with +
->>>>>>> respect to the shareable attribute is to transform "normal
->>>>>>> memory +  non-cacheable transactions" into "cacheable no
->>>>>>> allocate" (for reads) or +  "write through no write
->>>>>>> allocate" (for writes). +  On systems where this may cause
->>>>>>> DMA buffer corruption, this property must be +  specified
->>>>>>> to indicate that such transforms are precluded.
->
->>>>>> Acked-by: Catalin Marinas <catalin.marinas@arm.com>
->
->> I do not see this in linux-next, and would like to use this.
->>
->> Geert have you submitted this through this patch submission page?
->> http://www.arm.linux.org.uk/developer/patches/
->
-> Thanks for reminding me!
->
-> Submitted with Catalin's Acked-by.
+These changes allow a PHY driver to trigger a VBUS interrupt and
+to provide the value of VBUS.
 
-Now included in today's arm/for-next. Thanks!
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 
-Gr{oetje,eeting}s,
+---
+v3:
+  - Changed how indirect vbus is plumbed in.
+  - Removed unnecessary (void) on call to otg_set_peripheral.
+  - Moved code that connects to bus through transceiver so it
+    is before setting gpriv->driver.
 
-                        Geert
+v2:
+  - vbus variables changed from int to bool.
+  - dev_info() changed to dev_err()
+---
+ drivers/usb/renesas_usbhs/common.c     |  8 +++++--
+ drivers/usb/renesas_usbhs/common.h     |  2 ++
+ drivers/usb/renesas_usbhs/mod_gadget.c | 38 ++++++++++++++++++++++++++++++++++
+ 3 files changed, 46 insertions(+), 2 deletions(-)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
+index 0f7e850..15e67d8 100644
+--- a/drivers/usb/renesas_usbhs/common.c
++++ b/drivers/usb/renesas_usbhs/common.c
+@@ -379,7 +379,10 @@ static void usbhsc_hotplug(struct usbhs_priv *priv)
+ 	/*
+ 	 * get vbus status from platform
+ 	 */
+-	enable = usbhs_platform_call(priv, get_vbus, pdev);
++	if (priv->vbus_is_indirect)
++		enable = priv->vbus_indirect_value;
++	else
++		enable = usbhs_platform_call(priv, get_vbus, pdev);
+ 
+ 	/*
+ 	 * get id from platform
+@@ -662,7 +665,8 @@ static int usbhs_probe(struct platform_device *pdev)
+ 	pm_runtime_enable(&pdev->dev);
+ 	if (!usbhsc_flags_has(priv, USBHSF_RUNTIME_PWCTRL)) {
+ 		usbhsc_power_ctrl(priv, 1);
+-		usbhs_mod_autonomy_mode(priv);
++		if (!priv->vbus_is_indirect)
++			usbhs_mod_autonomy_mode(priv);
+ 	}
+ 
+ 	/*
+diff --git a/drivers/usb/renesas_usbhs/common.h b/drivers/usb/renesas_usbhs/common.h
+index 8c5fc12..478700c 100644
+--- a/drivers/usb/renesas_usbhs/common.h
++++ b/drivers/usb/renesas_usbhs/common.h
+@@ -255,6 +255,8 @@ struct usbhs_priv {
+ 	struct renesas_usbhs_driver_param	dparam;
+ 
+ 	struct delayed_work notify_hotplug_work;
++	bool vbus_is_indirect;
++	bool vbus_indirect_value;
+ 	struct platform_device *pdev;
+ 
+ 	struct extcon_dev *edev;
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index dc2aa32..93ad4ea 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -21,6 +21,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/usb/ch9.h>
+ #include <linux/usb/gadget.h>
++#include <linux/usb/otg.h>
+ #include "common.h"
+ 
+ /*
+@@ -50,6 +51,7 @@ struct usbhsg_gpriv {
+ 	int			 uep_size;
+ 
+ 	struct usb_gadget_driver	*driver;
++	struct usb_phy		*transceiver;
+ 
+ 	u32	status;
+ #define USBHSG_STATUS_STARTED		(1 << 0)
+@@ -882,12 +884,25 @@ static int usbhsg_gadget_start(struct usb_gadget *gadget,
+ {
+ 	struct usbhsg_gpriv *gpriv = usbhsg_gadget_to_gpriv(gadget);
+ 	struct usbhs_priv *priv = usbhsg_gpriv_to_priv(gpriv);
++	struct device *dev = usbhs_priv_to_dev(priv);
++	int ret;
+ 
+ 	if (!driver		||
+ 	    !driver->setup	||
+ 	    driver->max_speed < USB_SPEED_FULL)
+ 		return -EINVAL;
+ 
++	/* connect to bus through transceiver */
++	if (!IS_ERR_OR_NULL(gpriv->transceiver)) {
++		ret = otg_set_peripheral(gpriv->transceiver->otg,
++					&gpriv->gadget);
++		if (ret) {
++			dev_err(dev, "%s: can't bind to transceiver\n",
++				gpriv->gadget.name);
++			return ret;
++		}
++	}
++
+ 	/* first hook up the driver ... */
+ 	gpriv->driver = driver;
+ 
+@@ -900,6 +915,10 @@ static int usbhsg_gadget_stop(struct usb_gadget *gadget)
+ 	struct usbhs_priv *priv = usbhsg_gpriv_to_priv(gpriv);
+ 
+ 	usbhsg_try_stop(priv, USBHSG_STATUS_REGISTERD);
++
++	if (!IS_ERR_OR_NULL(gpriv->transceiver))
++		otg_set_peripheral(gpriv->transceiver->otg, NULL);
++
+ 	gpriv->driver = NULL;
+ 
+ 	return 0;
+@@ -947,12 +966,27 @@ static int usbhsg_set_selfpowered(struct usb_gadget *gadget, int is_self)
+ 	return 0;
+ }
+ 
++static int usbhsg_vbus_session(struct usb_gadget *gadget, int is_active)
++{
++	struct usbhsg_gpriv *gpriv = usbhsg_gadget_to_gpriv(gadget);
++	struct usbhs_priv *priv = usbhsg_gpriv_to_priv(gpriv);
++	struct platform_device *pdev = usbhs_priv_to_pdev(priv);
++
++	priv->vbus_is_indirect = 1;
++	priv->vbus_indirect_value = !!is_active;
++
++	renesas_usbhs_call_notify_hotplug(pdev);
++
++	return 0;
++}
++
+ static const struct usb_gadget_ops usbhsg_gadget_ops = {
+ 	.get_frame		= usbhsg_get_frame,
+ 	.set_selfpowered	= usbhsg_set_selfpowered,
+ 	.udc_start		= usbhsg_gadget_start,
+ 	.udc_stop		= usbhsg_gadget_stop,
+ 	.pullup			= usbhsg_pullup,
++	.vbus_session		= usbhsg_vbus_session,
+ };
+ 
+ static int usbhsg_start(struct usbhs_priv *priv)
+@@ -994,6 +1028,10 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
+ 		goto usbhs_mod_gadget_probe_err_gpriv;
+ 	}
+ 
++	gpriv->transceiver = usb_get_phy(USB_PHY_TYPE_UNDEFINED);
++	dev_info(dev, "%s transceiver found\n",
++		 gpriv->transceiver ? "" : "No");
++
+ 	/*
+ 	 * CAUTION
+ 	 *
+-- 
+1.9.1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
