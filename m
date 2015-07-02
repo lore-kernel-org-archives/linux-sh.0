@@ -1,126 +1,322 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:37:06 +0000
-Subject: [PATCH 1/8] ARM: shmobile: R-Car: Improve documentation
-Message-Id: <577d104d85f05c1de6e56784a5da3e0fb4746f3a.1436510166.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 02 Jul 2015 05:12:52 +0000
+Subject: [PATCH 1/4 v2][RFC] clk: shmobile: add Renesas R-Car Gen3 CPG support
+Message-Id: <877fqjm9fv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436510166.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436510166.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Add more SYSC register documentation.
-Use definitions instead of hardcoded numbers.
-Comment important operations.
+This patch adds very initial CPG support.
+R-Car Gen3 write function should use CPG write protection method
+which is shared with MSTP driver. This patch has it but not used.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/pm-rcar.c | 46 ++++++++++++++++++++++++++++------------
- 1 file changed, 32 insertions(+), 14 deletions(-)
+v1 -> v2
 
-diff --git a/arch/arm/mach-shmobile/pm-rcar.c b/arch/arm/mach-shmobile/pm-rcar.c
-index 00022ee56f80..56ea82a851cb 100644
---- a/arch/arm/mach-shmobile/pm-rcar.c
-+++ b/arch/arm/mach-shmobile/pm-rcar.c
-@@ -15,21 +15,35 @@
- #include <asm/io.h>
- #include "pm-rcar.h"
- 
--/* SYSC */
--#define SYSCSR 0x00
--#define SYSCISR 0x04
--#define SYSCISCR 0x08
-+/* SYSC Common */
-+#define SYSCSR			0x00	/* SYSC Status Register */
-+#define SYSCISR			0x04	/* Interrupt Status Register */
-+#define SYSCISCR		0x08	/* Interrupt Status Clear Register */
-+#define SYSCIER			0x0c	/* Interrupt Enable Register */
-+#define SYSCIMR			0x10	/* Interrupt Mask Register */
- 
--#define PWRSR_OFFS 0x00
--#define PWROFFCR_OFFS 0x04
--#define PWRONCR_OFFS 0x0c
--#define PWRER_OFFS 0x14
-+/* SYSC Status Register */
-+#define SYSCSR_PONENB		1	/* Ready for power resume requests */
-+#define SYSCSR_POFFENB		0	/* Ready for power shutoff requests */
- 
--#define SYSCSR_RETRIES 100
--#define SYSCSR_DELAY_US 1
+ - Add Copyright
+ - Add DT Documentation
+ - Don't care CPG write protection
+
+ .../clock/renesas,rcar-gen3-cpg-clocks.txt         |  31 +++
+ drivers/clk/shmobile/Makefile                      |   1 +
+ drivers/clk/shmobile/clk-rcar-gen3.c               | 232 +++++++++++++++++++++
+ 3 files changed, 264 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
+ create mode 100644 drivers/clk/shmobile/clk-rcar-gen3.c
+
+diff --git a/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
+new file mode 100644
+index 0000000..b1a7e01
+--- /dev/null
++++ b/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
+@@ -0,0 +1,31 @@
++* Renesas R-Car Gen3 Clock Pulse Generator (CPG)
++
++The CPG generates core clocks for the R-Car Gen3 SoCs. It includes three PLLs
++and several fixed ratio dividers.
++
++Required Properties:
++
++  - compatible: Must be one of
++    - "renesas,r8a7795-cpg-clocks" for the r8a7795 CPG
++    - "renesas,rcar-gen3-cpg-clocks" for the generic R-Car Gen3 CPG
++
++  - reg: Base address and length of the memory resource used by the CPG
++
++  - clocks: References to the parent clocks: first to the EXTAL clock
++  - #clock-cells: Must be 1
++  - clock-output-names: The names of the clocks. Supported clocks are
++    "main", "pll0", "pll1", "pll2", "pll3", "pll4"
++
++
++Example
++-------
++
++	cpg_clocks: cpg_clocks@e6150000 {
++		compatible = "renesas,r8a7795-cpg-clocks",
++			     "renesas,rcar-gen3-cpg-clocks";
++		reg = <0 0xe6150000 0 0x1000>;
++		clocks = <&extal_clk>;
++		#clock-cells = <1>;
++		clock-output-names = "main", "pll0", "pll1","pll2",
++				     "pll3", "pll4";
++	};
+diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
+index 97c71c8..4e70a73 100644
+--- a/drivers/clk/shmobile/Makefile
++++ b/drivers/clk/shmobile/Makefile
+@@ -8,6 +8,7 @@ obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
+ obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
+ obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o
+ obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o
++obj-$(CONFIG_ARCH_RCAR_GEN3)		+= clk-rcar-gen3.o
+ obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o
+ obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
+ obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-mstp.o
+diff --git a/drivers/clk/shmobile/clk-rcar-gen3.c b/drivers/clk/shmobile/clk-rcar-gen3.c
+new file mode 100644
+index 0000000..098caac
+--- /dev/null
++++ b/drivers/clk/shmobile/clk-rcar-gen3.c
+@@ -0,0 +1,232 @@
 +/*
-+ * Power Control Register Offsets inside the register block for each domain
-+ * Note: The "CR" registers for ARM cores exist on H1 only
-+ *       Use WFI to power off, CPG/APMU to resume ARM cores on R-Car Gen2
++ * rcar_gen3 Core CPG Clocks
++ *
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * Based on rcar_gen2 Core CPG Clocks driver.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
 + */
-+#define PWRSR_OFFS		0x00	/* Power Status Register */
-+#define PWROFFCR_OFFS		0x04	/* Power Shutoff Control Register */
-+#define PWROFFSR_OFFS		0x08	/* Power Shutoff Status Register */
-+#define PWRONCR_OFFS		0x0c	/* Power Resume Control Register */
-+#define PWRONSR_OFFS		0x10	/* Power Resume Status Register */
-+#define PWRER_OFFS		0x14	/* Power Shutoff/Resume Error */
 +
++#include <linux/clk-provider.h>
++#include <linux/clkdev.h>
++#include <linux/clk/shmobile.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/math64.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/spinlock.h>
 +
-+#define SYSCSR_RETRIES		100
-+#define SYSCSR_DELAY_US		1
- 
--#define SYSCISR_RETRIES 1000
--#define SYSCISR_DELAY_US 1
-+#define SYSCISR_RETRIES		1000
-+#define SYSCISR_DELAY_US	1
- 
- static void __iomem *rcar_sysc_base;
- static DEFINE_SPINLOCK(rcar_sysc_lock); /* SMP CPUs + I/O devices */
-@@ -39,6 +53,7 @@ static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
- {
- 	int k;
- 
-+	/* Wait until SYSC is ready to accept a power request */
- 	for (k = 0; k < SYSCSR_RETRIES; k++) {
- 		if (ioread32(rcar_sysc_base + SYSCSR) & (1 << sr_bit))
- 			break;
-@@ -48,6 +63,7 @@ static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
- 	if (k = SYSCSR_RETRIES)
- 		return -EAGAIN;
- 
-+	/* Submit power shutoff or power resume request */
- 	iowrite32(1 << sysc_ch->chan_bit,
- 		  rcar_sysc_base + sysc_ch->chan_offs + reg_offs);
- 
-@@ -56,12 +72,12 @@ static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
- 
- static int rcar_sysc_pwr_off(struct rcar_sysc_ch *sysc_ch)
- {
--	return rcar_sysc_pwr_on_off(sysc_ch, 0, PWROFFCR_OFFS);
-+	return rcar_sysc_pwr_on_off(sysc_ch, SYSCSR_POFFENB, PWROFFCR_OFFS);
- }
- 
- static int rcar_sysc_pwr_on(struct rcar_sysc_ch *sysc_ch)
- {
--	return rcar_sysc_pwr_on_off(sysc_ch, 1, PWRONCR_OFFS);
-+	return rcar_sysc_pwr_on_off(sysc_ch, SYSCSR_PONENB, PWRONCR_OFFS);
- }
- 
- static int rcar_sysc_update(struct rcar_sysc_ch *sysc_ch,
-@@ -78,6 +94,7 @@ static int rcar_sysc_update(struct rcar_sysc_ch *sysc_ch,
- 
- 	iowrite32(isr_mask, rcar_sysc_base + SYSCISCR);
- 
-+	/* Submit power shutoff or resume request until it was accepted */
- 	do {
- 		ret = on_off_fn(sysc_ch);
- 		if (ret)
-@@ -87,6 +104,7 @@ static int rcar_sysc_update(struct rcar_sysc_ch *sysc_ch,
- 				  sysc_ch->chan_offs + PWRER_OFFS);
- 	} while (status & chan_mask);
- 
-+	/* Wait until the power shutoff or resume request has completed * */
- 	for (k = 0; k < SYSCISR_RETRIES; k++) {
- 		if (ioread32(rcar_sysc_base + SYSCISR) & isr_mask)
- 			break;
++struct rcar_gen3_cpg {
++	struct clk_onecell_data data;
++	spinlock_t lock;
++	void __iomem *reg;
++};
++
++#define CPG_PLL0CR	0x00d8
++#define CPG_PLL2CR	0x002c
++
++/*
++ * common function
++ */
++#define rcar_clk_readl(cpg, _reg) clk_readl(cpg->reg + _reg)
++
++/*
++ * Reset register definitions.
++ */
++#define MODEMR 0xe6160060
++
++static u32 rcar_gen3_read_mode_pins(void)
++{
++	static u32 mode;
++	static bool mode_valid;
++
++	if (!mode_valid) {
++		void __iomem *modemr = ioremap_nocache(MODEMR, 4);
++
++		BUG_ON(!modemr);
++		mode = ioread32(modemr);
++		iounmap(modemr);
++		mode_valid = true;
++	}
++
++	return mode;
++}
++
++/* -----------------------------------------------------------------------------
++ * CPG Clock Data
++ */
++
++/*
++ *   MD		EXTAL		PLL0	PLL1	PLL2	PLL3	PLL4
++ * 14 13 19 17	(MHz)		*1	*1	*1
++ *-------------------------------------------------------------------
++ * 0  0  0  0	16.66 x 1	x180/2	x192/2	x144/2	x192	x144
++ * 0  0  0  1	16.66 x 1	x180/2	x192/2	x144/2	x128	x144
++ * 0  0  1  0	Prohibited setting
++ * 0  0  1  1	16.66 x 1	x180/2	x192/2	x144/2	x192	x144
++ * 0  1  0  0	20    x 1	x150/2	x156/2	x120/2	x156	x120
++ * 0  1  0  1	20    x 1	x150/2	x156/2	x120/2	x106	x120
++ * 0  1  1  0	Prohibited setting
++ * 0  1  1  1	20    x 1	x150/2	x156/2	x120/2	x156	x120
++ * 1  0  0  0	25    x 1	x120/2	x128/2	x96/2	x128	x96
++ * 1  0  0  1	25    x 1	x120/2	x128/2	x96/2	x84	x96
++ * 1  0  1  0	Prohibited setting
++ * 1  0  1  1	25    x 1	x120/2	x128/2	x96/2	x128	x96
++ * 1  1  0  0	33.33 / 2	x180/2	x192/2	x144/2	x192	x144
++ * 1  1  0  1	33.33 / 2	x180/2	x192/2	x144/2	x128	x144
++ * 1  1  1  0	Prohibited setting
++ * 1  1  1  1	33.33 / 2	x180/2	x192/2	x144/2	x192	x144
++ *
++ * *1 : datasheet indicates VCO output (PLLx = VCO/2)
++ *
++ */
++#define CPG_PLL_CONFIG_INDEX(md)	((((md) & BIT(14)) >> 11) | \
++					 (((md) & BIT(13)) >> 11) | \
++					 (((md) & BIT(19)) >> 18) | \
++					 (((md) & BIT(17)) >> 17))
++struct cpg_pll_config {
++	unsigned int extal_div;
++	unsigned int pll1_mult;
++	unsigned int pll3_mult;
++	unsigned int pll4_mult;
++};
++
++static const struct cpg_pll_config cpg_pll_configs[16] __initconst = {
++/* EXTAL div	PLL1	PLL3	PLL4 */
++	{ 1,	192,	192,	144, },
++	{ 1,	192,	128,	144, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	192,	192,	144, },
++	{ 1,	156,	156,	120, },
++	{ 1,	156,	106,	120, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	156,	156,	120, },
++	{ 1,	128,	128,	96,  },
++	{ 1,	128,	84,	96,  },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	128,	128,	96,  },
++	{ 2,	192,	192,	144, },
++	{ 2,	192,	128,	144, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 2,	192,	192,	144, },
++};
++
++/* -----------------------------------------------------------------------------
++ * Initialization
++ */
++
++static u32 cpg_mode __initdata;
++
++static struct clk * __init
++rcar_gen3_cpg_register_clock(struct device_node *np, struct rcar_gen3_cpg *cpg,
++			     const struct cpg_pll_config *config,
++			     const char *name)
++{
++	const char *parent_name;
++	unsigned int mult = 1;
++	unsigned int div = 1;
++
++	if (!strcmp(name, "main")) {
++		parent_name = of_clk_get_parent_name(np, 0);
++		div = config->extal_div;
++	} else if (!strcmp(name, "pll0")) {
++		/* PLL0 is a configurable multiplier clock. Register it as a
++		 * fixed factor clock for now as there's no generic multiplier
++		 * clock implementation and we currently have no need to change
++		 * the multiplier value.
++		 */
++		u32 value = rcar_clk_readl(cpg, CPG_PLL0CR);
++
++		parent_name = "main";
++		mult = ((value >> 24) & ((1 << 7) - 1)) + 1;
++	} else if (!strcmp(name, "pll1")) {
++		parent_name = "main";
++		mult = config->pll1_mult / 2;
++	} else if (!strcmp(name, "pll2")) {
++		/* PLL2 is a configurable multiplier clock. Register it as a
++		 * fixed factor clock for now as there's no generic multiplier
++		 * clock implementation and we currently have no need to change
++		 * the multiplier value.
++		 */
++		u32 value = rcar_clk_readl(cpg, CPG_PLL2CR);
++
++		parent_name = "main";
++		mult = ((value >> 24) & ((1 << 7) - 1)) + 1;
++	} else if (!strcmp(name, "pll3")) {
++		parent_name = "main";
++		mult = config->pll3_mult;
++	} else if (!strcmp(name, "pll4")) {
++		parent_name = "main";
++		mult = config->pll4_mult;
++	} else {
++		return ERR_PTR(-EINVAL);
++	}
++
++	return clk_register_fixed_factor(NULL, name, parent_name, 0, mult, div);
++}
++
++static void __init rcar_gen3_cpg_clocks_init(struct device_node *np)
++{
++	const struct cpg_pll_config *config;
++	struct rcar_gen3_cpg *cpg;
++	struct clk **clks;
++	unsigned int i;
++	int num_clks;
++
++	cpg_mode = rcar_gen3_read_mode_pins();
++
++	num_clks = of_property_count_strings(np, "clock-output-names");
++	if (num_clks < 0) {
++		pr_err("%s: failed to count clocks\n", __func__);
++		return;
++	}
++
++	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
++	clks = kzalloc((num_clks * sizeof(*clks)), GFP_KERNEL);
++	if (cpg = NULL || clks = NULL) {
++		/* We're leaking memory on purpose, there's no point in cleaning
++		 * up as the system won't boot anyway.
++		 */
++		pr_err("%s: failed to allocate cpg\n", __func__);
++		return;
++	}
++
++	spin_lock_init(&cpg->lock);
++
++	cpg->data.clks = clks;
++	cpg->data.clk_num = num_clks;
++
++	cpg->reg = of_iomap(np, 0);
++	if (WARN_ON(cpg->reg = NULL))
++		return;
++
++	config = &cpg_pll_configs[CPG_PLL_CONFIG_INDEX(cpg_mode)];
++	if (!config->extal_div) {
++		pr_err("%s: Prohibited setting (cpg_mode=0x%x)\n",
++		       __func__, cpg_mode);
++		return;
++	}
++
++	for (i = 0; i < num_clks; ++i) {
++		const char *name;
++		struct clk *clk;
++
++		of_property_read_string_index(np, "clock-output-names", i,
++					      &name);
++
++		clk = rcar_gen3_cpg_register_clock(np, cpg, config, name);
++		if (IS_ERR(clk))
++			pr_err("%s: failed to register %s %s clock (%ld)\n",
++			       __func__, np->name, name, PTR_ERR(clk));
++		else
++			cpg->data.clks[i] = clk;
++	}
++
++	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++}
++CLK_OF_DECLARE(rcar_gen3_cpg_clks, "renesas,rcar-gen3-cpg-clocks",
++	       rcar_gen3_cpg_clocks_init);
 -- 
-2.1.4
+1.9.1
 
