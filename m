@@ -1,61 +1,39 @@
-From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
-Date: Wed, 22 Jul 2015 11:23:04 +0000
-Subject: [PATCH v3 2/3] devicetree: bindings: Document Renesas R-Car JPEG  Processing Unit
-Message-Id: <1437564185-13593-3-git-send-email-mikhail.ulyanov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 03 Jul 2015 23:29:57 +0000
+Subject: Re: [PATCH v3 0/3] Remove non-existing GPIO pins for R8A7790/1
+Message-Id: <1483256.kDOgcO6qW3@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437564185-13593-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
-In-Reply-To: <1437564185-13593-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
+References: <1460630.GxHT4lRd7u@wasted.cogentembedded.com> <558DBB45.3020507@cogentembedded.com> <CACRpkdZNqkoz9xSikCgKdp3LGgQnb4BRcOuF0nnc1rd49aS6xQ@mail.gmail.com>
+In-Reply-To: <CACRpkdZNqkoz9xSikCgKdp3LGgQnb4BRcOuF0nnc1rd49aS6xQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hverkuil@xs4all.nl, horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, mchehab@osg.samsung.com
-Cc: laurent.pinchart@ideasonboard.com, j.anaszewski@samsung.com, kamil@wypas.org, sergei.shtylyov@cogentembedded.com, devicetree@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
 
-Add Renesas R-Car JPEG processing unit driver device tree bindings 
-documentation.
+Hello,
 
-Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
----
-Changes since v2:
- - remove generic "renesas,jpu-gen2" descriptor
+On Monday 29 June 2015 12:43:09 Linus Walleij wrote:
+> On Fri, Jun 26, 2015 at 10:51 PM, Sergei Shtylyov wrote:
+> > On 06/26/2015 01:39 AM, Sergei Shtylyov wrote:
+> >> Here's the set of 3 patches against the 'fixes' branch of Linus
+> >> Walleij's
+> >> 'linux-pinctrl.git' repo. Here we eliminate the pin array "holes" on
+> >> R-Car SoCs and then remove unused GPIO pins for R8A7790/1.
+> >> 
+> >> 
+> >> [1/3] sh-pfc: fix sparse GPIOs for R-Car SoCs
+> >> 
+> >    Note that this patch is necessary for the R8A7794 driver (already in
+> > 
+> > Linus' tree to work correctly.
+> 
+> Laurent is it OK to apply these three for fixes?
 
-Changes since v1:
- - Fix typos
+Sorry for the delay. I'll try to review this patch set on Monday.
 
- .../devicetree/bindings/media/renesas,jpu.txt      | 24 ++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/media/renesas,jpu.txt
-
-diff --git a/Documentation/devicetree/bindings/media/renesas,jpu.txt b/Documentation/devicetree/bindings/media/renesas,jpu.txt
-new file mode 100644
-index 0000000..0cb9420
---- /dev/null
-+++ b/Documentation/devicetree/bindings/media/renesas,jpu.txt
-@@ -0,0 +1,24 @@
-+* Renesas JPEG Processing Unit
-+
-+The JPEG processing unit (JPU) incorporates the JPEG codec with an encoding
-+and decoding function conforming to the JPEG baseline process, so that the JPU
-+can encode image data and decode JPEG data quickly.
-+
-+Required properties:
-+  - compatible: should containg one of the following:
-+			- "renesas,jpu-r8a7790" for R-Car H2
-+			- "renesas,jpu-r8a7791" for R-Car M2-W
-+			- "renesas,jpu-r8a7792" for R-Car V2H
-+			- "renesas,jpu-r8a7793" for R-Car M2-N
-+
-+  - reg: Base address and length of the registers block for the JPU.
-+  - interrupts: JPU interrupt specifier.
-+  - clocks: A phandle + clock-specifier pair for the JPU functional clock.
-+
-+Example: R8A7790 (R-Car H2) JPU node
-+	jpeg-codec@fe980000 {
-+		compatible = "renesas,jpu-r8a7790";
-+		reg = <0 0xfe980000 0 0x10300>;
-+		interrupts = <0 272 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7790_CLK_JPU>;
-+	};
 -- 
-2.1.4
+Regards,
+
+Laurent Pinchart
 
