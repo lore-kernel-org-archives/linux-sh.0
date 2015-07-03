@@ -1,62 +1,20 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Thu, 02 Jul 2015 12:11:00 +0000
-Subject: RE: [PATCH v2] arm: koelsch: make USB0 perform Host/Function switching
-Message-Id: <SIXPR06MB0639A6F4258A9BE3B6AB16DDF5970@SIXPR06MB0639.apcprd06.prod.outlook.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 03 Jul 2015 00:14:30 +0000
+Subject: Re: [PATCH v2] arm: koelsch: make USB0 perform Host/Function switching
+Message-Id: <20150703001430.GB20396@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1435824869-22784-1-git-send-email-phil.edworthy@renesas.com>
- <5595213B.7080809@cogentembedded.com>
-In-Reply-To: <5595213B.7080809@cogentembedded.com>
+In-Reply-To: <1435824869-22784-1-git-send-email-phil.edworthy-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Kishon Vijay Abraham I <kishon@ti.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: Phil Edworthy <phil.edworthy-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kishon Vijay Abraham I <kishon-l0cyMroinI0@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi Sergei.
+Hi Phil,
 
-On 02 July 2015 12:32, Sergei wrote:
-> Hello.
-> 
-> On 7/2/2015 11:14 AM, Phil Edworthy wrote:
-> 
-> > Both USB Host (pci0) and Function (USBHS) drivers are enabled.
-> > The USB PHY driver determines which IP block should be connected
-> > based on vbus and id signals read via gpios.
-> 
-> > Note that switch SW5 and SW6 on Koelsch board needs to be set to
-> > position 3 for this to work.
-> 
-> [...]
-> 
-> > diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts
-> b/arch/arm/boot/dts/r8a7791-koelsch.dts
-> > index cffe33f..1bb34d0 100644
-> > --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-> > +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-> > @@ -615,7 +615,6 @@
-> >
-> >   &pci0 {
-> >   	status = "okay";
-> > -	pinctrl-0 = <&usb0_pins>;
-> >   	pinctrl-names = "default";
-> 
->     As you're removing "pinctrl-0" prop, you also should remove "pinctrl-names".
-Ok.
+when you re-spin this patch could you change the prefix to the following?
 
-> >   };
-> >
-> > @@ -627,13 +626,15 @@
-> >
-> >   &hsusb {
-> >   	status = "okay";
-> > -	pinctrl-0 = <&usb0_pins>;
-> 
->     Likewise.
-Sure.
-
-> [...]
-> 
-> WBR, Sergei
+ARM: shmobile: koelsch:
 
 Thanks
-Phil
