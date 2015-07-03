@@ -1,56 +1,39 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 03 Jul 2015 16:00:22 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 03 Jul 2015 17:02:22 +0000
 Subject: Re: Possible regression due to "tick: broadcast: Prevent livelock from event handler"
-Message-Id: <20150703160022.GE19284@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Oiv9uiLrevHtW1RS"
+Message-Id: <CAMuHMdWQeYA=LrYcsD8W_0ZQUp3BKYVxedhBDpD5kPQp++yu1A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150703105441.GF1521@katana>
+References: <20150703024044.GB24695@verge.net.au>
+ <20150703105441.GF1521@katana>
  <alpine.DEB.2.11.1507031511180.3916@nanos>
  <20150703133245.GA19284@katana>
  <alpine.DEB.2.11.1507031612410.3916@nanos>
  <20150703143703.GB19284@katana>
- <alpine.DEB.2.11.1507031640060.3916@nanos>
- <20150703150951.GC19284@katana>
- <alpine.DEB.2.11.1507031721390.3916@nanos>
- <20150703154036.GD19284@katana>
- <alpine.DEB.2.11.1507031746550.3916@nanos>
-In-Reply-To: <alpine.DEB.2.11.1507031746550.3916@nanos>
+In-Reply-To: <20150703143703.GB19284@katana>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hi Wolfram,
 
---Oiv9uiLrevHtW1RS
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On Fri, Jul 3, 2015 at 4:37 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
+>> So this is a single core machine and uses the em_sti timer w/o the
+>> broadcast nonsense. In Simons case it looks like em_sti is used as
+>> broadcast device.
+>
+> We use the same board. Just my kernel has SMP=n.
 
+Unlike our other multi-core A9 SoCs, emev2.dtsi doesn't have a node
+for the arm,cortex-a9-twd-timer?
 
-> Can you try the patch below, whether it makes a difference?
+Gr{oetje,eeting}s,
 
-It doesn't. Board locks again.
+                        Geert
 
-> -	clockevents_config_and_register(ced, 1, 2, 0xffffffff);
-> +	clockevents_config_and_register(ced, 1, 100, 0xffffffff);
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
---Oiv9uiLrevHtW1RS
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJVlrGWAAoJEBQN5MwUoCm21o0QAIZ5rOUPImum8F8BV2f937+U
-W7W7jsunX+wZS6Dk/ksSlEb+mjOthKSVhHouZYdMhu5sUxCFAQDz6lrCwf2CqXBA
-aM2q2PJkO5/yPsNLQK5a/Vhlosww0yIQN1z0+ZkDPzq0OpJuvhJZZK1X/fEXm0zA
-j58QNPY0lFAaJ3K3TRVzA7Kn+bOFWMi2accdtmZluurQQhWrwWBfHWYj/7Qtrmfq
-CVIdDdqPd/XssuxxE7slL8NmOn80Z5nKq3X7zglQKi/QGFPmgZXrVIU0LPHWoA/E
-jCF1WhUiSrRMm2P33mF3fBzYCQvvqqjie5kmNXjWiF44+gNaCqut66abvoouPVLZ
-MciQghmZNdl4nJZ3yEwdvX7Na4u2WoCBvLqwZUa87gGx7O3QW+KDkIUc2seP79RF
-wKENWGZNo0YsFl2BmSFHCvfpUVLRvZjAcTcWbPQfIfzfzUNt4EU641TkBwuWVM4l
-shew26BLGaz1spNF0BadB+f3qDyMmj2+gD1sbFPb7QYr7u2z9e6FMdSslhYFs3yu
-sV9zJbDOmloLQDr6fF+a9JlOV2UsBpBc2XMEYbFJmmh+9PCv+y1rh0k+Wn5vBMrP
-2Yk/xcZZ2oQHsi8gyFv6ywUavOKU3/njON+Z6djKYw8XU/lYMhnvZbL1azmQINuN
-MZfoXpb5N+85VuEapNgA
-=w7WN
------END PGP SIGNATURE-----
-
---Oiv9uiLrevHtW1RS--
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
