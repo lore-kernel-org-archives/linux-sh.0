@@ -1,39 +1,56 @@
-From: Sudeep Holla <sudeep.holla@arm.com>
-Date: Fri, 03 Jul 2015 14:57:24 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 03 Jul 2015 15:09:52 +0000
 Subject: Re: Possible regression due to "tick: broadcast: Prevent livelock from event handler"
-Message-Id: <5596A2D4.4080103@arm.com>
+Message-Id: <20150703150951.GC19284@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="/Uq4LBwYP4y1W6pO"
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150703024044.GB24695@verge.net.au>
- <20150703105441.GF1521@katana> <alpine.DEB.2.11.1507031511180.3916@nanos>
- <20150703133245.GA19284@katana> <alpine.DEB.2.11.1507031612410.3916@nanos>
- <20150703143703.GB19284@katana> <5596A015.1030709@arm.com>
- <alpine.DEB.2.11.1507031654180.3916@nanos>
-In-Reply-To: <alpine.DEB.2.11.1507031654180.3916@nanos>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <20150703105441.GF1521@katana>
+ <alpine.DEB.2.11.1507031511180.3916@nanos>
+ <20150703133245.GA19284@katana>
+ <alpine.DEB.2.11.1507031612410.3916@nanos>
+ <20150703143703.GB19284@katana>
+ <alpine.DEB.2.11.1507031640060.3916@nanos>
+In-Reply-To: <alpine.DEB.2.11.1507031640060.3916@nanos>
 To: linux-arm-kernel@lists.infradead.org
 
 
+--/Uq4LBwYP4y1W6pO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-On 03/07/15 15:54, Thomas Gleixner wrote:
-> On Fri, 3 Jul 2015, Sudeep Holla wrote:
->> On 03/07/15 15:37, Wolfram Sang wrote:
->>>
->>>> So this is a single core machine and uses the em_sti timer w/o the
->>>> broadcast nonsense. In Simons case it looks like em_sti is used as
->>>> broadcast device.
->>>
->>> We use the same board. Just my kernel has SMP=n.
->>>
->>
->> If it's UP build, then GENERIC_CLOCKEVENTS_BROADCAST is disabled. You
->> may be hitting the issue I reported[1] and is still under discussion.
->
-> Nope. The UP version uses a non affected timer.
->
 
-Ah OK, sorry for the noise then.
+> Ok. So it's unrelated to deep idle states. Any chance of poking with
+> JTAG at the frozen box? If not, are there GPIOs which you could use to
+> monitor certain state?
 
-Regards,
-Sudeep
+No JTAGger here at the moment. And no manual/schematics for this board
+:(
+
+I'll ask around...
+
+
+--/Uq4LBwYP4y1W6pO
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJVlqW/AAoJEBQN5MwUoCm2Wr0P/jOyLDp68V9mpaBboqymKJb+
+9JmlXcI39XjyqqqLeTzz1qhRPABjutiR+FVp7kEec2FKXPdLJSwWCXBsp0QEBDz+
+JY7mSaA5SNhJoMMrQpF43oxonLCFAZk02GVSf1k/jSZNZmtlgGccSbTQeeE9nbgi
+aOkgUA84OGY2yQlvavoAMWYBIXqIX5XINJKUBW3p7mD/7H0pElesffHaVFXvib56
+pu4mFlzsjR0KH06XIk0f95iicprGZXlv6pr3SkXZFm/j/0fxGXhwOa8Ty54y8IzZ
+SAR5qeX8e2GIlqf0qECp68Ee0/DUVEZ7Z2D4E07t8wZfUGQWdNJj++ecR/9JZeTi
+mPQq20TZrrns6WxiJPMo09nq7S1KEc83q+iaJIKwntf54TN7Zy4xDXAHIU8oNBTk
+SA/ZjE4VAUn3hVOsYZrqhc7jPSScOAOMTEE7yJiFTk9+02W3+vy2XLEigYpglKq7
+nTOkObwxzluzlzGeYzsRXXIkhhFqXaoss9d4+hjYB/2ZbNymIDyWNMmlOBWTXBid
+56vbOogrUCGY4c6p1bw8iUrlGVcoZrarDEOP9A4s6iSstpOdF/RAMTQK81ErSUOP
+cZYLX7C5bEw52NZiwY0jcAngBrbHszD/QvuOxaYYBQ+foM5/2S8RsqxGs5lUPCEg
++MqFtE2jDFs/pnYjK+JQ
+=U+fQ
+-----END PGP SIGNATURE-----
+
+--/Uq4LBwYP4y1W6pO--
