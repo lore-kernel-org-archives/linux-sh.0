@@ -1,31 +1,52 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Mon, 13 Jul 2015 20:29:07 +0000
-Subject: Re: [PATCH v3 1/3] sh-pfc: fix sparse GPIOs for R-Car SoCs
-Message-Id: <CACRpkdbPAR4X7q2wJ14JF8nnd4GTy2pR2vJi3tNOcvRoEfEk-A@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 06 Jul 2015 21:46:06 +0000
+Subject: [PATCH 2/5] i2c: emev2: add binding documentation
+Message-Id: <1436219188-4325-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1460630.GxHT4lRd7u@wasted.cogentembedded.com>
-	<2925145.E3lLFJfWJW@wasted.cogentembedded.com>
-In-Reply-To: <2925145.E3lLFJfWJW@wasted.cogentembedded.com>
+References: <1436219188-4325-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1436219188-4325-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>
 
-On Fri, Jun 26, 2015 at 12:40 AM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-> The PFC driver causes the kernel to hang on the R-Car gen2 SoC based  boards
-> when the CPU_ALL_PORT() macro is fixed to reflect the reality, i.e. when the
-> GPIO space becomes actually sparse.  This happens because the _GP_GPIO() macro
-> includes  an indexed initializer which causes the "holes" (array entries filled
-> with all 0s) between the groups  of the existing GPIOs; and the driver can't
-> cope with that.  There seems to  be no reason to use the indexed initializer,
-> so we can remove the index specifier and so avoid the "holes".
->
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ .../devicetree/bindings/i2c/i2c-emev2.txt          | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/i2c/i2c-emev2.txt
 
-Patch applied for fixes.
+diff --git a/Documentation/devicetree/bindings/i2c/i2c-emev2.txt b/Documentation/devicetree/bindings/i2c/i2c-emev2.txt
+new file mode 100644
+index 00000000000000..a6740066835056
+--- /dev/null
++++ b/Documentation/devicetree/bindings/i2c/i2c-emev2.txt
+@@ -0,0 +1,22 @@
++Device tree configuration for Renesas EMEV2 IIC driver
++
++Required properties:
++- compatible      : "renesas,iic-<soctype>". "renesas,iic-emev2" as fallback
++- reg             : address start and address range size of device
++- interrupts      : 1 interrupt
++- clocks          : phandle to the IP core SCLK
++- clock-names     : must be "sclk"
++- #address-cells  : should be <1>
++- #size-cells     : should be <0>
++
++Example:
++
++	iic0: i2c@e0070000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,iic-emev2";
++		reg = <0xe0070000 0x28>;
++		interrupts = <0 32 IRQ_TYPE_EDGE_RISING>;
++		clocks = <&iic0_sclk>;
++		clock-names = "sclk";
++	};
+-- 
+2.1.4
 
-Yours,
-Linus Walleij
