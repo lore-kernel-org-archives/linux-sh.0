@@ -1,47 +1,69 @@
-From: Catalin Marinas <catalin.marinas@arm.com>
-Date: Wed, 08 Jul 2015 11:06:51 +0000
-Subject: Re: [PATCH V3 2/5] mm: mlock: Add new mlock, munlock, and munlockall system calls
-Message-Id: <20150708110651.GC6944@e104818-lin.cambridge.arm.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 06 Jul 2015 09:35:25 +0000
+Subject: Re: Build regressions/improvements in v4.2-rc1
+Message-Id: <CAMuHMdVm+_KyHLx=--0tm5iTgJ4nfMkhxCkoUqhqpbQL6gO82Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436288623-13007-1-git-send-email-emunson@akamai.com>
- <1436288623-13007-3-git-send-email-emunson@akamai.com>
-In-Reply-To: <1436288623-13007-3-git-send-email-emunson-JqFfY2XvxFXQT0dZR+AlfA@public.gmane.org>
+References: <1436174858-10254-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1436174858-10254-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Eric B Munson <emunson-JqFfY2XvxFXQT0dZR+AlfA@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-am33-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-parisc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-cris-kernel-VrBV9hrLPhE@public.gmane.org, linux-mips-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org, linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, adi-buildroot-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-m68k-cunTk1MwBs8S/qaLPR03pWD2FQJk+8+b@public.gmane.org, Vlastimil Babka <vbabka-AlSwsSmVLrQ@public.gmane.org>, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>
 
-On Tue, Jul 07, 2015 at 01:03:40PM -0400, Eric B Munson wrote:
-> diff --git a/arch/arm/kernel/calls.S b/arch/arm/kernel/calls.S
-> index 05745eb..514e77b 100644
-> --- a/arch/arm/kernel/calls.S
-> +++ b/arch/arm/kernel/calls.S
-> @@ -397,6 +397,9 @@
->  /* 385 */	CALL(sys_memfd_create)
->  		CALL(sys_bpf)
->  		CALL(sys_execveat)
-> +		CALL(sys_mlock2)
-> +		CALL(sys_munlock2)
-> +/* 400 */	CALL(sys_munlockall2)
+On Mon, Jul 6, 2015 at 11:27 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> Below is the list of build error/warning regressions/improvements in
+> v4.2-rc1[1] compared to v4.1[2].
+>
+> Summarized:
+>   - build errors: +11/-51
 
-s/400/390/
+> [1] http://kisskb.ellerman.id.au/kisskb/head/9102/ (all 254 configs)
+> [2] http://kisskb.ellerman.id.au/kisskb/head/9038/ (all 254 configs)
+>
+>
+> *** ERRORS ***
+>
+> 11 regressions:
+>   + /home/kisskb/slave/src/arch/m68k/include/asm/irq.h: error: expected '=
+=3D', ',', ';', 'asm' or '__attribute__' before 'void':  =3D> 77:12
+>   + /home/kisskb/slave/src/arch/m68k/include/asm/irq.h: error: unknown ty=
+pe name 'atomic_t':  =3D> 78:1
 
-> diff --git a/arch/arm64/include/asm/unistd32.h b/arch/arm64/include/asm/unistd32.h
-> index cef934a..318072aa 100644
-> --- a/arch/arm64/include/asm/unistd32.h
-> +++ b/arch/arm64/include/asm/unistd32.h
-> @@ -797,3 +797,9 @@ __SYSCALL(__NR_memfd_create, sys_memfd_create)
->  __SYSCALL(__NR_bpf, sys_bpf)
->  #define __NR_execveat 387
->  __SYSCALL(__NR_execveat, compat_sys_execveat)
-> +#define __NR_mlock2 388
-> +__SYSCALL(__NR_mlock2, sys_mlock2)
-> +#define __NR_munlock2 389
-> +__SYSCALL(__NR_munlock2, sys_munlock2)
-> +#define __NR_munlockall2 390
-> +__SYSCALL(__NR_munlockall2, sys_munlockall2)
+m68k-allmodconfig
 
-These look fine.
+As G{ue,=C3=BC}nter already reported, fixed by
+"staging:lustre: remove irq.h from socklnd.h [2]" by James Simmons
+[2] https://lkml.org/lkml/2015/6/25/621
 
-Catalin
+>   + /home/kisskb/slave/src/drivers/net/ethernet/via/via-rhine.c: error: i=
+mplicit declaration of function 'pci_iomap' [-Werror=3Dimplicit-function-de=
+claration]:  =3D> 1098:2
+>   + /home/kisskb/slave/src/drivers/net/ethernet/via/via-rhine.c: error: i=
+mplicit declaration of function 'pci_iounmap' [-Werror=3Dimplicit-function-=
+declaration]:  =3D> 1119:2
+
+sh-allmodconfig
+sh-allyesconfig
+
+sh doesn't use <asm-generic/pci_iomap.h>, and doesn't provide dummies of
+pci_io{,un}map().
+
+>   + error: No rule to make target drivers/scsi/aic7xxx/aicasm/*.[chyl]:  =
+=3D> N/A
+
+i386-randconfig
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
