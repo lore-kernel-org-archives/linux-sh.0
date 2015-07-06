@@ -1,37 +1,52 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 06 Jul 2015 09:59:06 +0000
-Subject: [PATCH] ARM: shmobile: kzm9g dts: Add adxl345-specific compatible property
-Message-Id: <1436176746-10995-1-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 06 Jul 2015 10:17:13 +0000
+Subject: Re: [PATCH] ARM: shmobile: kzm9g dts: Add adxl345-specific compatible property
+Message-Id: <1980362.9qv8Mc7ut7@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1436176746-10995-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1436176746-10995-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The accelerometer node used the generic compatible property only.
-Add the device-specific one, to make it future proof.
+Hi Geert,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-Depends on commit 3a38958d2477b718 ("Input: adxl34x - add OF match
-support"), which is in v4.2-rc1.
----
- arch/arm/boot/dts/sh73a0-kzm9g.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Thank you for the patch.
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index 24b4cd24dceb2f9e..ae91278d77b45b38 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -206,7 +206,7 @@
- 	};
- 
- 	accelerometer@1d {
--		compatible = "adi,adxl34x";
-+		compatible = "adi,adxl345", "adi,adxl34x";
- 		reg = <0x1d>;
- 		interrupt-parent = <&irqpin3>;
- 		interrupts = <2 IRQ_TYPE_LEVEL_HIGH>,
+On Monday 06 July 2015 11:59:06 Geert Uytterhoeven wrote:
+> The accelerometer node used the generic compatible property only.
+> Add the device-specific one, to make it future proof.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+> Depends on commit 3a38958d2477b718 ("Input: adxl34x - add OF match
+> support"), which is in v4.2-rc1.
+> ---
+>  arch/arm/boot/dts/sh73a0-kzm9g.dts | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts
+> b/arch/arm/boot/dts/sh73a0-kzm9g.dts index
+> 24b4cd24dceb2f9e..ae91278d77b45b38 100644
+> --- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
+> +++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+> @@ -206,7 +206,7 @@
+>  	};
+> 
+>  	accelerometer@1d {
+> -		compatible = "adi,adxl34x";
+> +		compatible = "adi,adxl345", "adi,adxl34x";
+
+"adi,adxl34x" is deprecated and shouldn't be used in DT. You can just specify 
+"adi,adxl345".
+
+>  		reg = <0x1d>;
+>  		interrupt-parent = <&irqpin3>;
+>  		interrupts = <2 IRQ_TYPE_LEVEL_HIGH>,
+
 -- 
-1.9.1
+Regards,
+
+Laurent Pinchart
 
