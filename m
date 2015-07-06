@@ -1,109 +1,99 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 01 Jul 2015 15:57:58 +0000
-Subject: [PATCH v3 04/16] clk: shmobile: rcar-gen2: Add CPG/MSTP Clock Domain support
-Message-Id: <1435766290-3005-5-git-send-email-geert+renesas@glider.be>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 06 Jul 2015 08:34:48 +0000
+Subject: Re: [PATCH] thermal: consistently use int for temperatures
+Message-Id: <CAMuHMdV0rHrNMt1kUg0CwoJ0etQ7sK0jF_My1qLRJLz0z958rA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435766290-3005-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1435766290-3005-1-git-send-email-geert+renesas@glider.be>
+References: <1436167189-29835-1-git-send-email-s.hauer@pengutronix.de>
+In-Reply-To: <1436167189-29835-1-git-send-email-s.hauer@pengutronix.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Sascha Hauer <s.hauer@pengutronix.de>
+Cc: Linux PM list <linux-pm@vger.kernel.org>, Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Jean Delvare <jdelvare@suse.de>, Peter Feuerer <peter@piie.net>, Heiko Stuebner <heiko@sntech.de>, Lukasz Majewski <l.majewski@samsung.com>, Stephen Warren <swarren@wwwdotorg.org>, Thierry Reding <thierry.reding@gmail.com>, ACPI Devel Maling List <linux-acpi@vger.kernel.org>, platform-driver-x86@vger.kernel.org, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, "linux-omap@vger.kernel.org" <linux-omap@vger.kernel.org>, "linux-samsung-soc@vger.kernel.org" <linux-samsung-soc@vger.kernel.org>, Guenter Roeck <linux@roeck-us.net>, "Rafael J. Wysocki" <rjw@rjwysocki.net>, Maxime Ripard <maxime.ripard@free-electrons.com>, Darren Hart <dvhart@infradead.org>, lm-sen
 
-Add Clock Domain support to the R-Car Gen2 Clock Pulse Generator (CPG)
-driver using the generic PM Domain.  This allows to power-manage the
-module clocks of SoC devices that are part of the CPG/MSTP Clock Domain
-using Runtime PM, or for system suspend/resume.
+On Mon, Jul 6, 2015 at 9:19 AM, Sascha Hauer <s.hauer@pengutronix.de> wrote:
+> The thermal code uses int, long and unsigned long for temperatures
+> in different places.
+>
+> Using an unsigned type limits the thermal framework to positive
+> temperatures without need. Also several drivers currently will report
+> temperatures near UINT_MAX for temperatures below 0°C. This will probably
+> immediately shut the machine down due to overtemperature if started below
+> 0°C.
+>
+> 'long' is 64bit on several architectures. This is not needed since INT_MAX °mC
+> is above the melting point of all known materials.
+>
+> Consistently use a plain 'int' for temperatures throughout the thermal code and
+> the drivers. This only changes the places in the drivers where the temperature
+> is passed around as pointer, when drivers internally use another type this is
+> not changed.
+>
+> Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+> Cc: Zhang Rui <rui.zhang@intel.com>
+> Cc: Eduardo Valentin <edubezval@gmail.com>
+> Cc: linux-pm@vger.kernel.org
+> Cc: linux-kernel@vger.kernel.org
+> Cc: Jean Delvare <jdelvare@suse.de>
+> Cc: Peter Feuerer <peter@piie.net>
+> Cc: Heiko Stuebner <heiko@sntech.de>
+> Cc: Lukasz Majewski <l.majewski@samsung.com>
+> Cc: Stephen Warren <swarren@wwwdotorg.org>
+> Cc: Thierry Reding <thierry.reding@gmail.com>
+> Cc: linux-acpi@vger.kernel.org
+> Cc: platform-driver-x86@vger.kernel.org
+> Cc: linux-arm-kernel@lists.infradead.org
+> Cc: linux-omap@vger.kernel.org
+> Cc: linux-samsung-soc@vger.kernel.org
+> Cc: Guenter Roeck <linux@roeck-us.net>
+> Cc: Rafael J. Wysocki <rjw@rjwysocki.net>
+> Cc: Maxime Ripard <maxime.ripard@free-electrons.com>
+> Cc: Darren Hart <dvhart@infradead.org>
+> Cc: lm-sensors@lm-sensors.org
 
-SoC devices that are part of the CPG/MSTP Clock Domain and can be
-power-managed through an MSTP clock should be tagged in DT with a proper
-"power-domains" property.
+For rcar-thermal:
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Stephen Boyd <sboyd@codeaurora.org>
----
-v3:
-  - Add Acked-by,
-  - Use "CPG/MSTP Clock Domain" instead of "CPG Clock Domain",
+> diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+> index fe4e767..5d4ae7d 100644
+> --- a/drivers/thermal/rcar_thermal.c
+> +++ b/drivers/thermal/rcar_thermal.c
+> @@ -200,8 +200,7 @@ err_out_unlock:
+>         return ret;
+>  }
+>
+> -static int rcar_thermal_get_temp(struct thermal_zone_device *zone,
+> -                                unsigned long *temp)
+> +static int rcar_thermal_get_temp(struct thermal_zone_device *zone, int *temp)
+>  {
+>         struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
+>
+> @@ -235,7 +234,7 @@ static int rcar_thermal_get_trip_type(struct thermal_zone_device *zone,
+>  }
+>
+>  static int rcar_thermal_get_trip_temp(struct thermal_zone_device *zone,
+> -                                     int trip, unsigned long *temp)
+> +                                     int trip, int *temp)
+>  {
+>         struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
+>         struct device *dev = rcar_priv_to_dev(priv);
+> @@ -299,7 +298,7 @@ static void _rcar_thermal_irq_ctrl(struct rcar_thermal_priv *priv, int enable)
+>  static void rcar_thermal_work(struct work_struct *work)
+>  {
+>         struct rcar_thermal_priv *priv;
+> -       unsigned long cctemp, nctemp;
+> +       int cctemp, nctemp;
+>
+>         priv = container_of(work, struct rcar_thermal_priv, work.work);
+>
 
-v2:
-  - Add Acked-by and Reviewed-by,
-  - Move core CPG Clock Domain code from the R-Car Gen2 driver to the
-    CPG MSTP Clocks driver, as it's generic, and can be used on other
-    Renesas SoCs that have a CPG/MSTP block,
-  - Scan for an MSTP clock instead of using the first clock tied to the
-    device (con_id NULL),
-  - Extract R-Car Gen2 specifics from "[PATCH/RFC 1/5] clk: shmobile:
-    rcar-gen2: Add CPG Clock Domain support" into this patch.
----
- .../clock/renesas,rcar-gen2-cpg-clocks.txt         | 26 ++++++++++++++++++++--
- drivers/clk/shmobile/clk-rcar-gen2.c               |  2 ++
- 2 files changed, 26 insertions(+), 2 deletions(-)
+Gr{oetje,eeting}s,
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-index 56f111bd3e456619..2a9a8edc8f3547b0 100644
---- a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-@@ -2,6 +2,8 @@
- 
- The CPG generates core clocks for the R-Car Gen2 SoCs. It includes three PLLs
- and several fixed ratio dividers.
-+The CPG also provides a Clock Domain for SoC devices, in combination with the
-+CPG Module Stop (MSTP) Clocks.
- 
- Required Properties:
- 
-@@ -20,10 +22,18 @@ Required Properties:
-   - clock-output-names: The names of the clocks. Supported clocks are "main",
-     "pll0", "pll1", "pll3", "lb", "qspi", "sdh", "sd0", "sd1", "z", "rcan", and
-     "adsp"
-+  - #power-domain-cells: Must be 0
- 
-+SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
-+through an MSTP clock should refer to the CPG device node in their
-+"power-domains" property, as documented by the generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
- 
--Example
---------
-+
-+Examples
-+--------
-+
-+  - CPG device node:
- 
- 	cpg_clocks: cpg_clocks@e6150000 {
- 		compatible = "renesas,r8a7790-cpg-clocks",
-@@ -34,4 +44,16 @@ Example
- 		clock-output-names = "main", "pll0, "pll1", "pll3",
- 				     "lb", "qspi", "sdh", "sd0", "sd1", "z",
- 				     "rcan", "adsp";
-+		#power-domain-cells = <0>;
-+	};
-+
-+
-+  - CPG/MSTP Clock Domain member device node:
-+
-+	thermal@e61f0000 {
-+		compatible = "renesas,thermal-r8a7790", "renesas,rcar-thermal";
-+		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
-+		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks R8A7790_CLK_THERMAL>;
-+		power-domains = <&cpg_clocks>;
- 	};
-diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
-index acfb6d7dbd6bc049..f2c457f494ebb6b0 100644
---- a/drivers/clk/shmobile/clk-rcar-gen2.c
-+++ b/drivers/clk/shmobile/clk-rcar-gen2.c
-@@ -415,6 +415,8 @@ static void __init rcar_gen2_cpg_clocks_init(struct device_node *np)
- 	}
- 
- 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-+
-+	cpg_mstp_add_clk_domain(np);
- }
- CLK_OF_DECLARE(rcar_gen2_cpg_clks, "renesas,rcar-gen2-cpg-clocks",
- 	       rcar_gen2_cpg_clocks_init);
--- 
-1.9.1
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
