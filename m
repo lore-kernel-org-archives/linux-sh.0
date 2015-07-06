@@ -1,63 +1,53 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 21 Jul 2015 06:55:58 +0000
-Subject: Re: [RFC 9/9] dts: tegra: WIP: hack dts to test new dt flags for i2c
-Message-Id: <20150721065558.GA1537@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="VS++wcV0S1rZb1Fb"
+Date: Mon, 06 Jul 2015 21:46:05 +0000
+Subject: [PATCH 1/5] clk: shmobile: emev2: deassert reset for IIC0/1
+Message-Id: <1436219188-4325-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
- <1437142109-31975-10-git-send-email-wsa@the-dreams.de>
- <3764937.mMMXIHUnrR@avalon>
- <20150720084557.GA2551@katana>
- <CAL_JsqKAoydzJ5KOKJTByB9kOQ8KrSX99hVYNkm6FnOZ33xN1w@mail.gmail.com>
- <55AD71A6.4030105@wwwdotorg.org>
-In-Reply-To: <55AD71A6.4030105-3lzwWm7+Weoh9ZMKESR00Q@public.gmane.org>
-To: Stephen Warren <swarren-3lzwWm7+Weoh9ZMKESR00Q@public.gmane.org>
-Cc: Rob Herring <robherring2-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, "linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Andrey Danin <danindrey-JGs/UdohzUI@public.gmane.org>, "linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+References: <1436219188-4325-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1436219188-4325-1-git-send-email-wsa@the-dreams.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Mike Turquette <mturquette@linaro.org>, Stephen Boyd <sboyd@codeaurora.org>, linux-clk@vger.kernel.org
 
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
---VS++wcV0S1rZb1Fb
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+We have a driver now for IIC, so disable reset for them.
 
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
 
-> >>@Rob: If we introduce flag bits in the MSBs of an I2C address, the reg
-> >>property is different from the node name. Is this a problem?
-> >
-> >No, I don't it is a problem.
->=20
-> The rule so far has been that the unit address (the value in the node nam=
-e)
-> must match the first value in the reg property. I don't see why this rule
-> should change. To solve this, just name the node eeprom@c0000042 (or
-> eeprom@40000042 with the correction pointed out earlier in the thread).
+If possible, I'd like to take this patch via the I2C tree because the driver
+will spit WARNs if the dependency to this patch is not met. OK?
 
-We can do that; that would mean that people need to find out the values
-of the #define which will be used in the reg property. It works, but
-will be cumbersome IMO.
+ drivers/clk/shmobile/clk-emev2.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
+diff --git a/drivers/clk/shmobile/clk-emev2.c b/drivers/clk/shmobile/clk-emev2.c
+index 5b60beb7d0ebce..a91825471c79ac 100644
+--- a/drivers/clk/shmobile/clk-emev2.c
++++ b/drivers/clk/shmobile/clk-emev2.c
+@@ -28,6 +28,8 @@
+ #define USIBU1_RSTCTRL 0x0ac
+ #define USIBU2_RSTCTRL 0x0b0
+ #define USIBU3_RSTCTRL 0x0b4
++#define IIC0_RSTCTRL 0x0dc
++#define IIC1_RSTCTRL 0x0e0
+ #define STI_RSTCTRL 0x124
+ #define STI_CLKSEL 0x688
+ 
+@@ -66,6 +68,10 @@ static void __init emev2_smu_init(void)
+ 	emev2_smu_write(2, USIBU1_RSTCTRL);
+ 	emev2_smu_write(2, USIBU2_RSTCTRL);
+ 	emev2_smu_write(2, USIBU3_RSTCTRL);
++
++	/* deassert reset for IIC0->IIC1 */
++	emev2_smu_write(1, IIC0_RSTCTRL);
++	emev2_smu_write(1, IIC1_RSTCTRL);
+ }
+ 
+ static void __init emev2_smu_clkdiv_init(struct device_node *np)
+-- 
+2.1.4
 
---VS++wcV0S1rZb1Fb
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJVrez+AAoJEBQN5MwUoCm2cwgP/ArZJ/EeV+ORgN4Okp5WfNxS
-rfAfu0Z/m3eODgQ0Y3Xmhr/X9hte0AB9dSwbLMoTqPDMtk4qreDOnd3BA2RAlGrg
-mHINw0YpE3hfE9WxP3YpqzqlKOCyo8M16YS9Ams+hXFWpl1jP5pzqx3xH/Zw14kb
-57aLp2qxTXcN/FomCdkyBnO6xezXcxEF6GNco+dEcyE7Eln5Ewca7hlwgx0aquxw
-nh9okoZBuMrZzrVmRcFKabQQ1eqF2Lol0MF2zFA3ITG+kimuwCFRGqnOufjoASiI
-qWdaH3c+uaZynovJseCKiQByNOtDxWGbBOcnAFi7NPg4iUI8XRg3XHw6GCYo4Tf9
-+nC6yd5ZDXDo7UYDmBUBzh8+7f4fDBnoPL5ckrUWfayDcX/n8Jjcm/MewBdm7AAE
-1AFKi63bS/OJQCjKech/D0J8UYiA5n7cdbMGn+Vq9zNKjhzXFxJalNCQ6JNSWtjl
-eu3SlzzmzMBx6OSDOKBfDUtpx+J7BtepqUrqg8ciDTruy3+mqTXEH+hqrUXVMr8U
-31gNqp3gQIx6o6ocdfDg+rK/JkizhN9idWNZtxQ1vG1LmY/CW9BL4t80DuoNJYl5
-Ul5TXml+KHPAKbIVYI5zSppQj0IgQLUOzWFU5EnknM4y9jSw/vbUmm+xPdFqeyNy
-rEou4dh6d0GQVpfrQ+Dq
-=yy3U
------END PGP SIGNATURE-----
-
---VS++wcV0S1rZb1Fb--
