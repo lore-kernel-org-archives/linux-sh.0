@@ -1,45 +1,42 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 16 Jul 2015 18:21:55 +0000
-Subject: [PATCH/RFC v2 24/29] serial: sh-sci: Stop TX and RX on shutdown
-Message-Id: <1437070920-28069-25-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 06 Jul 2015 21:46:09 +0000
+Subject: [PATCH 5/5] ARM: shmobile: emev2: kzm9d: enable IIC busses
+Message-Id: <1436219188-4325-6-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1436219188-4325-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1436219188-4325-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 
-Make sure the transmitter and receiver are stopped when shutting down
-the port, to avoid new RX DMA requests to arrive.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Inspired by a patch in the BSP by Koji Matsuoka
-<koji.matsuoka.xm@renesas.com>.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- drivers/tty/serial/sh-sci.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/boot/dts/emev2-kzm9d.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 9714fc1b72b3cf8c..dda1f7b13497817a 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1846,12 +1846,16 @@ static void sci_shutdown(struct uart_port *port)
- {
- 	struct sci_port *s = to_sci_port(port);
- 	unsigned long flags;
-+	u16 scscr;
+diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
+index 0aa1b345f871c9..2e944437287599 100644
+--- a/arch/arm/boot/dts/emev2-kzm9d.dts
++++ b/arch/arm/boot/dts/emev2-kzm9d.dts
+@@ -95,6 +95,14 @@
+ 	};
+ };
  
- 	dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
- 
- 	spin_lock_irqsave(&port->lock, flags);
- 	sci_stop_rx(port);
- 	sci_stop_tx(port);
-+	scscr = serial_port_in(port, SCSCR);
-+	scscr &= ~(SCSCR_TE | SCSCR_RE);
-+	serial_port_out(port, SCSCR, scscr);
- 	spin_unlock_irqrestore(&port->lock, flags);
- 
- 	sci_free_dma(port);
++&iic0 {
++	status = "okay";
++};
++
++&iic1 {
++	status = "okay";
++};
++
+ &pfc {
+ 	uart1_pins: serial@e1030000 {
+ 		renesas,groups = "uart1_ctrl", "uart1_data";
 -- 
-1.9.1
+2.1.4
 
