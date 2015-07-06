@@ -1,88 +1,65 @@
-From: Hidehiro Kawai <hidehiro.kawai.ez@hitachi.com>
-Date: Wed, 15 Jul 2015 10:49:42 +0000
-Subject: Re: [PATCH 1/3] panic: Disable crash_kexec_post_notifiers if kdump is not available
-Message-Id: <55A63AC6.4040806@hitachi.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 06 Jul 2015 06:59:13 +0000
+Subject: [PATCH] ARM: shmobile: r8a7779 Marzen legacy fix
+Message-Id: <20150706070216.25453.35953.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150710113331.4368.10495.stgit@softrs>
- <20150710113331.4368.63745.stgit@softrs>
- <87wpy82kqf.fsf@x220.int.ebiederm.org> <20150713202611.GA16525@fifo99.com>
- <87h9p7r0we.fsf@x220.int.ebiederm.org> <20150714135919.GA18333@fifo99.com>
- <20150714150208.GD10792@redhat.com> <20150714153430.GA18766@fifo99.com>
- <20150714154040.GA3912@redhat.com>
-In-Reply-To: <20150714154040.GA3912@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-(2015/07/15 0:40), Vivek Goyal wrote:
-> On Tue, Jul 14, 2015 at 03:34:30PM +0000, dwalker@fifo99.com wrote:
->> On Tue, Jul 14, 2015 at 11:02:08AM -0400, Vivek Goyal wrote:
->>> On Tue, Jul 14, 2015 at 01:59:19PM +0000, dwalker@fifo99.com wrote:
->>>> On Mon, Jul 13, 2015 at 08:19:45PM -0500, Eric W. Biederman wrote:
->>>>> dwalker@fifo99.com writes:
->>>>>
->>>>>> On Fri, Jul 10, 2015 at 08:41:28AM -0500, Eric W. Biederman wrote:
->>>>>>> Hidehiro Kawai <hidehiro.kawai.ez@hitachi.com> writes:
->>>>>>>
->>>>>>>> You can call panic notifiers and kmsg dumpers before kdump by
->>>>>>>> specifying "crash_kexec_post_notifiers" as a boot parameter.
->>>>>>>> However, it doesn't make sense if kdump is not available.  In that
->>>>>>>> case, disable "crash_kexec_post_notifiers" boot parameter so that
->>>>>>>> you can't change the value of the parameter.
->>>>>>>
->>>>>>> Nacked-by: "Eric W. Biederman" <ebiederm@xmission.com>
->>>>>>
->>>>>> I think it would make sense if he just replaced "kdump" with "kexec".
->>>>>
->>>>> It would be less insane, however it still makes no sense as without
->>>>> kexec on panic support crash_kexec is a noop.  So the value of the
->>>>> seeting makes no difference.
->>>>
->>>> Can you explain more, I don't really understand what you mean. Are you suggesting
->>>> the whole "crash_kexec_post_notifiers" feature has no value ?
->>>
->>> Daniel,
->>>
->>> BTW, why are you using crash_kexec_post_notifiers commandline? Why not
->>> without it?
->>
->> It was explained in the prior thread but to rehash, the notifiers are used to do a switch
->> over from the crashed machine to another redundant machine.
-> 
-> So why not detect failure using polling or issue notifications from second
-> kernel.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Polling is not sufficient because some kernel parts may be
-alive even if the responder of the polling is dead.  We want
-to notify the failure after stopping other CPUs.
+Unbreak the r8a7779 Marzen legacy code provided by marzen_defconfig.
 
-Notifying from second kernel needs to wait for the kernel
-booted up and device initialization if needed, and this
-is not applicable if we want to do fast switchover.
+As it is today Marzen multiplatform is working, but the legacy code
+is broken. This patch intends to leave multiplatform as-is but do
+a simple one-shot fix to unbreak the legacy code base.
 
-Notifying just before second kernel, as Eric stated, is
-one of the reliable option although we can't do complicate
-things there.  For example, we can notify the failure by
-writing some specific I/O registers in purgatory codes
-provided by kexec command.  Since the purgatory codes are
-currently embedded into kexec command, so we might need to
-modify the mechanism to be pluggable because how to notify
-will differ among vendors.
+Without this patch there is no preset delay and the TWD is defined
+both in C code and in DT. Solve the delay by invoking shmobile_init_delay()
+and simply exclude the TWD DT instance in case of building for legacy.
 
-Anyway, this is the case of switchover use case.  If we want
-to save minimal information before kdump, notifiers or
-kmsg_dump() can be used.
+Marzen legacy code will be removed in the near future, but until then
+we may as well avoid breaking it.
 
-> IOW, expecting that a crashed machine will be able to deliver notification
-> reliably is falwed to begin with, IMHO.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-I think it depends on what callback is used.  Most of panic
-notifiers just do memory copy or I/O register access.
-Of course, there are relatively complicate notifiers too,
-and I'm preparing patch sets for hardening for that case.
+ Built on top of renesas-devel-20150629-v4.1
 
-Regards,
-Hidehiro Kawai
+ arch/arm/boot/dts/r8a7779.dtsi         |    4 ++--
+ arch/arm/mach-shmobile/setup-r8a7779.c |    2 ++
+ 2 files changed, 4 insertions(+), 2 deletions(-)
 
-
+--- 0001/arch/arm/boot/dts/r8a7779.dtsi
++++ work/arch/arm/boot/dts/r8a7779.dtsi	2015-07-06 15:42:28.182366518 +0900
+@@ -62,7 +62,7 @@
+ 		reg = <0xf0001000 0x1000>,
+ 		      <0xf0000100 0x100>;
+ 	};
+-
++#ifndef CONFIG_ARCH_SHMOBILE_LEGACY /* TWD defined in C code for legacy case */
+ 	timer@f0000600 {
+ 		compatible = "arm,cortex-a9-twd-timer";
+ 		reg = <0xf0000600 0x20>;
+@@ -70,7 +70,7 @@
+ 			(GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
+ 		clocks = <&cpg_clocks R8A7779_CLK_ZS>;
+ 	};
+-
++#endif
+ 	gpio0: gpio@ffc40000 {
+ 		compatible = "renesas,gpio-r8a7779", "renesas,gpio-rcar";
+ 		reg = <0xffc40000 0x2c>;
+--- 0001/arch/arm/mach-shmobile/setup-r8a7779.c
++++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2015-07-06 15:43:58.472366518 +0900
+@@ -677,6 +677,8 @@ void __init r8a7779_add_standard_devices
+ 
+ void __init r8a7779_add_early_devices(void)
+ {
++	shmobile_init_delay();
++
+ 	early_platform_add_devices(r8a7779_early_devices,
+ 				   ARRAY_SIZE(r8a7779_early_devices));
+ 
