@@ -1,97 +1,52 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 15 Jul 2015 11:26:16 +0000
-Subject: Re: [PATCH/RFC] serial: sh-sci: Fix issue of frequent rx_full interrupt
-Message-Id: <CAMuHMdVfLV7v1YzobauN8ZfJNZ3265k7uUBROOedJF4dWwb0pQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 07 Jul 2015 14:10:17 +0000
+Subject: [PATCH/RFC 11/11] clk: shmobile: rcar-gen2: Remove obsolete rcar_gen2_clocks_init()
+Message-Id: <1436278217-20522-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434302786-31162-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1434302786-31162-1-git-send-email-ykaneko0929@gmail.com>
+References: <1436278217-20522-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1436278217-20522-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-Cc: "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Kaneko-san, Mizuguchi-san,
+Since "ARM: shmobile: rcar-gen2: Use syscon to configure the CPG",
+rcar_gen2_clocks_init() is no longer called by the R-Car Gen2 platform
+code. Remove it.
 
-On Sun, Jun 14, 2015 at 7:26 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
-> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->
-> When the receive FIFO is not read in PIO transfer, rx_full interrupt
-> occurs frequently. This patch avoids it by discarding the receive FIFO.
->
-> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-> ---
->
-> This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
-> tree.
->
->  drivers/tty/serial/sh-sci.c | 22 ++++++++++++++++++++--
->  1 file changed, 20 insertions(+), 2 deletions(-)
->
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index b74a644..4ec3c32 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -121,6 +121,8 @@ struct sci_port {
->  #endif
->
->         struct notifier_block           freq_transition;
-> +
-> +       u64                             rxfull_time;
->  };
->
->  /* Function prototypes */
-> @@ -690,12 +692,26 @@ static void sci_receive_chars(struct uart_port *port)
->                 return;
->
->         while (1) {
-> +               int rxfill = sci_rxfill(port);
-> +               u64 now = get_jiffies_64();
->                 /* Don't copy more bytes than there is room for in the buffer */
-> -               count = tty_buffer_request_room(tport, sci_rxfill(port));
-> +               count = tty_buffer_request_room(tport, rxfill);
->
->                 /* If for any reason we can't copy more data, we're done! */
-> -               if (count = 0)
-> +               if (count = 0) {
-> +                       int n;
-> +                       /* discarded bytes in RX-FIFO */
-> +                       for (n = 0; n < rxfill; n++)
-> +                               serial_port_in(port, SCxRDR);
-> +                       if (rxfill > 0 &&
-> +                           time_after64(now, sci_port->rxfull_time + (5*HZ))) {
-> +                               sci_port->rxfull_time = now;
-> +                               dev_warn(port->dev,
-> +                                        "RX-FIFO isn't read, so %d bytes is discarded.\n",
-> +                                        rxfill);
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/clk/shmobile/clk-rcar-gen2.c | 7 -------
+ include/linux/clk/shmobile.h         | 1 -
+ 2 files changed, 8 deletions(-)
 
-If I'm not mistaken, this means we loose data, without the tty user noticing?
-As data is discarded from the FIFO, we won't get an overrun condition later,
-and TTY_OVERRUN will never be inserted into the flip buffer.
+diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
+index b121a49f7575a97b..3f02b40b4911831c 100644
+--- a/drivers/clk/shmobile/clk-rcar-gen2.c
++++ b/drivers/clk/shmobile/clk-rcar-gen2.c
+@@ -435,10 +435,3 @@ static void __init rcar_gen2_cpg_clocks_init(struct device_node *np)
+ }
+ CLK_OF_DECLARE(rcar_gen2_cpg_clks, "renesas,rcar-gen2-cpg-clocks",
+ 	       rcar_gen2_cpg_clocks_init);
+-
+-void __init rcar_gen2_clocks_init(u32 mode)
+-{
+-	cpg_mode = mode;
+-
+-	of_clk_init(NULL);
+-}
+diff --git a/include/linux/clk/shmobile.h b/include/linux/clk/shmobile.h
+index cb19cc1865ca5cfb..95357cdde185d518 100644
+--- a/include/linux/clk/shmobile.h
++++ b/include/linux/clk/shmobile.h
+@@ -22,7 +22,6 @@ struct generic_pm_domain;
+ 
+ void r8a7778_clocks_init(u32 mode);
+ void r8a7779_clocks_init(u32 mode);
+-void rcar_gen2_clocks_init(u32 mode);
+ 
+ #ifdef CONFIG_PM_GENERIC_DOMAINS_OF
+ void cpg_mstp_add_clk_domain(struct device_node *np);
+-- 
+1.9.1
 
-> +                       }
->                         break;
-> +               }
->
->                 if (port->type = PORT_SCI) {
->                         char c = serial_port_in(port, SCxRDR);
-> @@ -2342,6 +2358,8 @@ static int sci_init_single(struct platform_device *dev,
->                 dev_dbg(port->dev, "DMA tx %d, rx %d\n",
->                         p->dma_slave_tx, p->dma_slave_rx);
->
-> +       sci_port->rxfull_time = get_jiffies_64();
-> +
->         return 0;
->  }
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
