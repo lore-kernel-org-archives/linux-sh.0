@@ -1,39 +1,67 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Jul 2015 08:41:43 +0000
-Subject: [PATCH 2/9] ARM: shmobile: r8a7779: Generic SMP ops
-Message-Id: <44ade5edf90ccd38efa741240efb2586239c9751.1437726584.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 07 Jul 2015 14:10:07 +0000
+Subject: [PATCH/RFC 01/11] clk: shmobile: rcar-gen2: Obtain MD pin values using syscon/regmap
+Message-Id: <1436278217-20522-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1437726584.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1437726584.git.horms+renesas@verge.net.au>
+References: <1436278217-20522-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1436278217-20522-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Obtain the values of the MD pins by reading the Mode Monitoring Register
+(MODEMR) using syscon and regmap. The syscon device and register offset
+to use are obtained from the "renesas,modemr" property in DT.
 
-Add a r8a7779-specific SMP operation pointer to support
-all 4 CPU cores through SMP on r8a7779 without C board code.
+Fall back to calling rcar_gen2_read_mode_pins() in the R-Car Gen2
+platform code for backward-compatibility with old DTs.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+TODO Document "renesas,modemr" property in DT binding doc.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c | 1 +
- 1 file changed, 1 insertion(+)
+ drivers/clk/shmobile/clk-rcar-gen2.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 5625fd1c89c0..2c3e433f84ca 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -772,6 +772,7 @@ static const char *r8a7779_compat_dt[] __initdata = {
- };
+diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
+index 745496f7ee9c7402..b121a49f7575a97b 100644
+--- a/drivers/clk/shmobile/clk-rcar-gen2.c
++++ b/drivers/clk/shmobile/clk-rcar-gen2.c
+@@ -15,8 +15,10 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/math64.h>
++#include <linux/mfd/syscon.h>
+ #include <linux/of.h>
+ #include <linux/of_address.h>
++#include <linux/regmap.h>
+ #include <linux/slab.h>
+ #include <linux/spinlock.h>
  
- DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
-+	.smp		= smp_ops(r8a7779_smp_ops),
- 	.map_io		= r8a7779_map_io,
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= r8a7779_init_time,
+@@ -368,9 +370,22 @@ static void __init rcar_gen2_cpg_clocks_init(struct device_node *np)
+ {
+ 	const struct cpg_pll_config *config;
+ 	struct rcar_gen2_cpg *cpg;
++	struct regmap *regmap;
+ 	struct clk **clks;
+ 	unsigned int i;
+ 	int num_clks;
++	u32 reg;
++
++	regmap = syscon_regmap_lookup_by_phandle(np, "renesas,modemr");
++	if (IS_ERR(regmap) ||
++	    of_property_read_u32_index(np, "renesas,modemr", 1, &reg) ||
++	    regmap_read(regmap, reg, &cpg_mode)) {
++		/* Backward-compatibility with old DT */
++		extern u32 rcar_gen2_read_mode_pins(void);
++
++		pr_warn("%s: failed to parse renesas,modemr\n", np->full_name);
++		cpg_mode = rcar_gen2_read_mode_pins();
++	}
+ 
+ 	num_clks = of_property_count_strings(np, "clock-output-names");
+ 	if (num_clks < 0) {
 -- 
-2.1.4
+1.9.1
 
