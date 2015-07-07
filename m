@@ -1,41 +1,20 @@
-From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
-Date: Fri, 24 Jul 2015 13:25:45 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7790: Add JPU device node.
-Message-Id: <1437744346-499-2-git-send-email-mikhail.ulyanov@cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 07 Jul 2015 01:06:36 +0000
+Subject: Re: [PATCH v5 0/2] pwm: Add support for R-Car PWM Timer
+Message-Id: <20150707010636.GH13326@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437744346-499-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
-In-Reply-To: <1437744346-499-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
+References: <1434359324-2964-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1434359324-2964-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: thierry.reding@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
 
-This patch contains device tree node definition for JPEG codec peripheral
-found in the Renesas R-Car r8a7790 SoC.
+On Mon, Jun 15, 2015 at 06:08:42PM +0900, Yoshihiro Shimoda wrote:
+> This patch set is based on the linux-pwm.git / for-next branch.
+> (commit id = 361c1066c939a88e3bb59364f47055b2a5fb3fd4)
 
-Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
----
- arch/arm/boot/dts/r8a7790.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
+Both patches:
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 3ae0c3b..e961352 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -872,6 +872,13 @@
- 		status = "disabled";
- 	};
- 
-+	jpu: jpeg-codec@fe980000 {
-+		compatible = "renesas,jpu-r8a7790";
-+		reg = <0 0xfe980000 0 0x10300>;
-+		interrupts = <0 272 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7790_CLK_JPU>;
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
--- 
-2.1.4
-
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
