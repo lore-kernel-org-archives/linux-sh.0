@@ -1,450 +1,129 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 07 Jul 2015 18:40:30 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 07 Jul 2015 19:49:32 +0000
 Subject: Re: [PATCH 3/5] i2c: emev2: add driver
-Message-Id: <8117172.9hfShvmdlS@avalon>
+Message-Id: <20150707194931.GC1572@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="ctP54qlpMx3WjD+/"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436219188-4325-1-git-send-email-wsa@the-dreams.de> <1436219188-4325-4-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1436219188-4325-4-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>
+References: <1436219188-4325-1-git-send-email-wsa@the-dreams.de>
+ <1436219188-4325-4-git-send-email-wsa@the-dreams.de>
+ <8117172.9hfShvmdlS@avalon>
+In-Reply-To: <8117172.9hfShvmdlS@avalon>
+To: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
 
-Hi Wolfram,
 
-Thank you for the patch.
+--ctP54qlpMx3WjD+/
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Monday 06 July 2015 23:46:07 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> 
-> Add a basic driver for the Renesas EMEV2 SoC. Based on the driver from
-> the BSP which was first worked on by Ian, and made ready for upstream by
-> me.
-> 
-> Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> ---
->  drivers/i2c/busses/Kconfig     |   7 +
->  drivers/i2c/busses/Makefile    |   1 +
->  drivers/i2c/busses/i2c-emev2.c | 334 ++++++++++++++++++++++++++++++++++++++
->  3 files changed, 342 insertions(+)
->  create mode 100644 drivers/i2c/busses/i2c-emev2.c
-> 
-> diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-> index 2255af23b9c70e..503abb64861f37 100644
-> --- a/drivers/i2c/busses/Kconfig
-> +++ b/drivers/i2c/busses/Kconfig
-> @@ -516,6 +516,13 @@ config I2C_EG20T
->  	  ML7213/ML7223/ML7831 is companion chip for Intel Atom E6xx series.
->  	  ML7213/ML7223/ML7831 is completely compatible for Intel EG20T PCH.
-> 
-> +config I2C_EMEV2
-> +	tristate "EMMA Mobile series I2C adapter"
-> +	depends on HAVE_CLK
-> +	help
-> +	  If you say yes to this option, support will be included for the
-> +	  I2C interface on the Renesas Electronics EM/EV family of processors.
-> +
->  config I2C_EXYNOS5
->  	tristate "Exynos5 high-speed I2C driver"
->  	depends on ARCH_EXYNOS && OF
-> diff --git a/drivers/i2c/busses/Makefile b/drivers/i2c/busses/Makefile
-> index cdf941da91c65e..73f1145da5b4c8 100644
-> --- a/drivers/i2c/busses/Makefile
-> +++ b/drivers/i2c/busses/Makefile
-> @@ -48,6 +48,7 @@ i2c-designware-pci-objs := i2c-designware-pcidrv.o
->  obj-$(CONFIG_I2C_DIGICOLOR)	+= i2c-digicolor.o
->  obj-$(CONFIG_I2C_EFM32)		+= i2c-efm32.o
->  obj-$(CONFIG_I2C_EG20T)		+= i2c-eg20t.o
-> +obj-$(CONFIG_I2C_EMEV2)		+= i2c-emev2.o
->  obj-$(CONFIG_I2C_EXYNOS5)	+= i2c-exynos5.o
->  obj-$(CONFIG_I2C_GPIO)		+= i2c-gpio.o
->  obj-$(CONFIG_I2C_HIGHLANDER)	+= i2c-highlander.o
-> diff --git a/drivers/i2c/busses/i2c-emev2.c b/drivers/i2c/busses/i2c-emev2.c
-> new file mode 100644
-> index 00000000000000..baa88fc5ff05e5
-> --- /dev/null
-> +++ b/drivers/i2c/busses/i2c-emev2.c
-> @@ -0,0 +1,334 @@
-> +/*
-> + * I2C driver for the Renesas EMEV2 SoC
-> + *
-> + * Copyright (C) 2015 Wolfram Sang <wsa@sang-engineering.com>
-> + * Copyright 2013 Codethink Ltd.
-> + * Copyright 2010-2015 Renesas Electronics Corporation
-> + *
-> + * This program is free software; you can redistribute it and/or modify
-> + * it under the terms of the GNU General Public License version 2
-> + * as published by the Free Software Foundation.
-> + */
-> +
-> +#include <linux/clk.h>
-> +#include <linux/completion.h>
-> +#include <linux/device.h>
-> +#include <linux/i2c.h>
-> +#include <linux/init.h>
-> +#include <linux/interrupt.h>
-> +#include <linux/io.h>
-> +#include <linux/kernel.h>
-> +#include <linux/module.h>
-> +#include <linux/of_device.h>
-> +#include <linux/platform_device.h>
-> +#include <linux/sched.h>
-> +
-> +/* I2C Registers */
-> +#define I2C_OFS_IICACT0		0x00	/* start */
-> +#define I2C_OFS_IIC0		0x04	/* shift */
-> +#define I2C_OFS_IICC0		0x08	/* control */
-> +#define I2C_OFS_SVA0		0x0c	/* slave address */
-> +#define I2C_OFS_IICCL0		0x10	/* clock select */
-> +#define I2C_OFS_IICX0		0x14	/* extension */
-> +#define I2C_OFS_IICS0		0x18	/* status */
-> +#define I2C_OFS_IICSE0		0x1c	/* status For emulation */
-> +#define I2C_OFS_IICF0		0x20	/* IIC flag */
-> +
-> +/* I2C IICACT0 Masks */
-> +#define I2C_BIT_IICE0		0x0001
-> +
-> +/* I2C IICC0 Masks */
-> +#define I2C_BIT_LREL0		0x0040
-> +#define I2C_BIT_WREL0		0x0020
-> +#define I2C_BIT_SPIE0		0x0010
-> +#define I2C_BIT_WTIM0		0x0008
-> +#define I2C_BIT_ACKE0		0x0004
-> +#define I2C_BIT_STT0		0x0002
-> +#define I2C_BIT_SPT0		0x0001
-> +
-> +/* I2C IICCL0 Masks */
-> +#define I2C_BIT_SMC0		0x0008
-> +#define I2C_BIT_DFC0		0x0004
-> +
-> +/* I2C IICSE0 Masks */
-> +#define I2C_BIT_MSTS0		0x0080
-> +#define I2C_BIT_ALD0		0x0040
-> +#define I2C_BIT_EXC0		0x0020
-> +#define I2C_BIT_COI0		0x0010
-> +#define I2C_BIT_TRC0		0x0008
-> +#define I2C_BIT_ACKD0		0x0004
-> +#define I2C_BIT_STD0		0x0002
-> +#define I2C_BIT_SPD0		0x0001
-> +
-> +/* I2C IICF0 Masks */
-> +#define I2C_BIT_STCF		0x0080
-> +#define I2C_BIT_IICBSY		0x0040
-> +#define I2C_BIT_STCEN		0x0002
-> +#define I2C_BIT_IICRSV		0x0001
-> +
-> +struct em_i2c_device {
-> +	void __iomem *base;
-> +	struct i2c_adapter adap;
-> +	struct completion msg_done;
-> +	struct clk *sclk;
-> +};
-> +
-> +static inline void em_clear_set_bit(struct em_i2c_device *priv, u8 clear,
-> u8 set, u8 reg)
 
-Maybe em_i2c_clear_set_bit for consistency ? I'd prefer having the reg 
-argument before clear and set, but maybe that's just me.
+> > +static inline void em_clear_set_bit(struct em_i2c_device *priv, u8 cle=
+ar,
+> > u8 set, u8 reg)
+>=20
+> Maybe em_i2c_clear_set_bit for consistency ? I'd prefer having the reg=20
+> argument before clear and set, but maybe that's just me.
 
-I would have also introduced em_i2c_read and em_i2c_write. That's entirely up 
-to you.
+This is such a generic function that I decided to skip 'i2c' in the
+function name. Can add it, don't have a strong preference.
 
-> +{
-> +	writeb((readb(priv->base + reg) & ~clear) | set, priv->base + reg);
-> +}
-> +
-> +static int em_i2c_wait_for_event(struct em_i2c_device *priv)
-> +{
-> +	unsigned long time_left;
-> +	int status;
-> +
-> +	reinit_completion(&priv->msg_done);
-> +
-> +	time_left = wait_for_completion_timeout(&priv->msg_done,
-> priv->adap.timeout);
-> +
-> +	if (!time_left)
-> +		return -ETIMEDOUT;
-> +
-> +	status = readb(priv->base + I2C_OFS_IICSE0);
-> +	return status & I2C_BIT_ALD0 ? -EAGAIN : status;
-> +}
-> +
-> +static void em_i2c_stop(struct em_i2c_device *priv)
-> +{
-> +	/* Send Stop condition */
-> +	em_clear_set_bit(priv, 0, I2C_BIT_SPT0 | I2C_BIT_SPIE0, I2C_OFS_IICC0);
-> +
-> +	/* Wait for stop condition */
-> +	em_i2c_wait_for_event(priv);
-> +}
-> +
-> +static void em_i2c_reset(struct i2c_adapter *adap)
-> +{
-> +	struct em_i2c_device *priv = i2c_get_adapdata(adap);
-> +	int retr;
-> +
-> +	/* If I2C active */
-> +	if (readb(priv->base + I2C_OFS_IICACT0) & I2C_BIT_IICE0) {
-> +		/* Disable I2C operation */
-> +		writeb(0, priv->base + I2C_OFS_IICACT0);
-> +
-> +		retr = 1000;
-> +		while (readb(priv->base + I2C_OFS_IICACT0) = 1 && retr)
+> I would have also introduced em_i2c_read and em_i2c_write. That's entirel=
+y up=20
+> to you.
 
-How about adding a cpu_relax() here ?
+I don't like such wrappers around standard read/write functions. What's
+the gain?
 
-> +			retr--;
-> +		WARN_ON(retr = 0);
-> +	}
-> +
-> +	/* Transfer mode set */
-> +	writeb(I2C_BIT_DFC0, priv->base + I2C_OFS_IICCL0);
-> +
-> +	/* Can Issue start without detecting a stop, Reservation disabled. */
-> +	writeb(I2C_BIT_STCEN | I2C_BIT_IICRSV, priv->base + I2C_OFS_IICF0);
-> +
-> +	/* I2C enable, 9 bit interrupt mode */
-> +	writeb(I2C_BIT_WTIM0, priv->base + I2C_OFS_IICC0);
-> +
-> +	/* Enable I2C operation */
-> +	writeb(I2C_BIT_IICE0, priv->base + I2C_OFS_IICACT0);
-> +
-> +	retr = 1000;
-> +	while (readb(priv->base + I2C_OFS_IICACT0) = 0 && retr)
+> > +		retr =3D 1000;
+> > +		while (readb(priv->base + I2C_OFS_IICACT0) =3D=3D 1 && retr)
+>=20
+> How about adding a cpu_relax() here ?
 
-And here too.
+Can do, but I think it is overkill.
 
-> +		retr--;
-> +	WARN_ON(retr = 0);
-> +}
-> +
-> +static int __em_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg *msg,
-> +				int stop)
-> +{
-> +	struct em_i2c_device *priv = i2c_get_adapdata(adap);
-> +	int count, status;
-> +
-> +	/* Send start condition */
-> +	em_clear_set_bit(priv, 0, I2C_BIT_ACKE0 | I2C_BIT_WTIM0, I2C_OFS_IICC0);
-> +	em_clear_set_bit(priv, 0, I2C_BIT_STT0, I2C_OFS_IICC0);
-> +
-> +	/* Send slave address and R/W type */
-> +	writeb((msg->addr << 1) | ((msg->flags & I2C_M_RD) ? 1 : 0),
-> +		priv->base + I2C_OFS_IIC0);
-> +
-> +	/* Wait for transaction */
-> +	status = em_i2c_wait_for_event(priv);
-> +	if (status < 0)
-> +		goto out_reset;
-> +
-> +	/* Received NACK (result of setting slave address and R/W) */
-> +	if (!(status & I2C_BIT_ACKD0)) {
-> +		em_i2c_stop(priv);
-> +		goto out;
-> +	}
-> +
-> +	/* Extra setup for read transactions */
-> +	if (!(status & I2C_BIT_TRC0)) {
+>=20
+> > +	/* Extra setup for read transactions */
+> > +	if (!(status & I2C_BIT_TRC0)) {
+>=20
+> How about checking msg->flags & I2C_M_RD here ? It should be equivalent b=
+ut=20
+> would make the code more readable by not requiring knowledge of the hardw=
+are.=20
 
-How about checking msg->flags & I2C_M_RD here ? It should be equivalent but 
-would make the code more readable by not requiring knowledge of the hardware. 
-Same for the check in the loop below.
+I buy this argument. Will change.
 
-> +		/* 8 bit interrupt mode */
-> +		em_clear_set_bit(priv, I2C_BIT_WTIM0, I2C_BIT_ACKE0, I2C_OFS_IICC0);
-> +		em_clear_set_bit(priv, I2C_BIT_WTIM0, I2C_BIT_WREL0, I2C_OFS_IICC0);
-> +
-> +		/* Wait for transaction */
-> +		status = em_i2c_wait_for_event(priv);
-> +		if (status < 0)
-> +			goto out_reset;
-> +	}
-> +
-> +	/* Send / receive data */
-> +	for (count = 0; count < msg->len; count++) {
-> +		if (!(status & I2C_BIT_TRC0)) { /* Read transaction */
-> +			msg->buf[count] = readb(priv->base + I2C_OFS_IIC0);
-> +			em_clear_set_bit(priv, 0, I2C_BIT_WREL0, I2C_OFS_IICC0);
-> +
-> +		} else { /* Write transaction */
-> +			/* Received NACK */
-> +			if (!(status & I2C_BIT_ACKD0)) {
-> +				em_i2c_stop(priv);
-> +				goto out;
-> +			}
-> +
-> +			/* Write data */
-> +			writeb(msg->buf[count], priv->base + I2C_OFS_IIC0);
-> +		}
-> +
-> +		/* Wait for R/W transaction */
-> +		status = em_i2c_wait_for_event(priv);
-> +		if (status < 0)
-> +			goto out_reset;
-> +	}
-> +
-> +	if (stop)
-> +		em_i2c_stop(priv);
-> +
-> +	return count;
-> +
-> +out_reset:
-> +	em_i2c_reset(adap);
-> +out:
-> +	return status < 0 ? status : -ENXIO;
-> +}
-> +
-> +static int em_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
-> +	int num)
-> +{
-> +	struct em_i2c_device *priv = i2c_get_adapdata(adap);
-> +	int ret, i;
-> +
-> +	if (readb(priv->base + I2C_OFS_IICF0) & I2C_BIT_IICBSY)
-> +		return -EAGAIN;
-> +
-> +	for (i = 0; i < num; i++) {
-> +		ret = __em_i2c_xfer(adap, &msgs[i], (i = (num - 1)));
-> +		if (ret < 0)
-> +			return ret;
-> +	}
-> +
-> +	/* I2C transfer completed */
-> +	return num;
-> +}
-> +
-> +static irqreturn_t em_i2c_irq_handler(int this_irq, void *dev_id)
-> +{
-> +	struct em_i2c_device *priv = dev_id;
-> +
-> +	complete(&priv->msg_done);
-> +	return IRQ_HANDLED;
-> +}
-> +
-> +static u32 em_i2c_func(struct i2c_adapter *adap)
-> +{
-> +	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL;
-> +}
-> +
-> +static struct i2c_algorithm em_i2c_algo = {
-> +	.master_xfer = em_i2c_xfer,
-> +	.functionality = em_i2c_func,
-> +};
-> +
-> +static int em_i2c_probe(struct platform_device *pdev)
-> +{
-> +	struct em_i2c_device *priv;
-> +	struct resource *r;
-> +	int irq, ret;
-> +
-> +	priv = devm_kzalloc(&pdev->dev, sizeof(struct em_i2c_device), 
-GFP_KERNEL);
+> > +	priv =3D devm_kzalloc(&pdev->dev, sizeof(struct em_i2c_device),=20
+> GFP_KERNEL);
+>=20
+> I'd use sizeof(*priv).
 
-I'd use sizeof(*priv).
+Yes, definately.
 
-> +	if (!priv)
-> +		return -ENOMEM;
-> +
-> +	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-> +	priv->base = devm_ioremap_resource(&pdev->dev, r);
-> +	if (IS_ERR(priv->base))
-> +		return PTR_ERR(priv->base);
-> +
-> +	strlcpy(priv->adap.name, "EMEV2 I2C", sizeof(priv->adap.name));
-> +
-> +	priv->sclk = devm_clk_get(&pdev->dev, "sclk");
-> +	if (IS_ERR(priv->sclk))
-> +		return PTR_ERR(priv->sclk);
-> +
-> +	clk_prepare_enable(priv->sclk);
-> +
-> +	irq = platform_get_irq(pdev, 0);
+> > +	irq =3D platform_get_irq(pdev, 0);
+>=20
+> I'd move this call right before devm_request_irq() below. devm_request_ir=
+q()=20
+> should handle invalid IRQs, but won't print an error message. I'd let you=
+=20
+> decide whether that's a problem.
 
-I'd move this call right before devm_request_irq() below. devm_request_irq() 
-should handle invalid IRQs, but won't print an error message. I'd let you 
-decide whether that's a problem.
+Will check.
 
-> +	priv->adap.timeout = msecs_to_jiffies(100);
-> +	priv->adap.retries = 5;
+>=20
+> > +	priv->adap.timeout =3D msecs_to_jiffies(100);
+> > +	priv->adap.retries =3D 5;
+>=20
+> Is there a particular reason for setting the number of retries to 5 ?
 
-Is there a particular reason for setting the number of retries to 5 ?
+It should be non-zero at least, so bus access will be retried if -EAGAIN
+is returned because of a busy bus.
 
-> +	priv->adap.dev.parent = &pdev->dev;
-> +	priv->adap.algo = &em_i2c_algo;
-> +	priv->adap.owner = THIS_MODULE;
-> +	priv->adap.dev.of_node = pdev->dev.of_node;
-> +
-> +	init_completion(&priv->msg_done);
-> +
-> +	platform_set_drvdata(pdev, priv);
-> +	i2c_set_adapdata(&priv->adap, priv);
-> +
-> +	em_i2c_reset(&priv->adap);
-> +
-> +	ret = devm_request_irq(&pdev->dev, irq, em_i2c_irq_handler, 0,
-> +				"em_i2c", priv);
-> +	if (ret)
-> +		goto exit_clk;
+> > +	if (ret)
+> > +		goto exit_clk;
+>=20
+> Nitpicking, I'd call this error_clk to show that the label is used in cas=
+e of=20
+> error only. You could also just call it error as there's no other error-
+> related label.
 
-Nitpicking, I'd call this error_clk to show that the label is used in case of 
-error only. You could also just call it error as there's no other error-
-related label.
+Yup.
 
-> +
-> +	ret = i2c_add_adapter(&priv->adap);
-> +
-> +	if (ret)
-> +		goto exit_clk;
-> +
-> +	dev_info(&pdev->dev, "Added i2c controller %d irq %d @ 0x%p\n",
-> +		priv->adap.nr, irq, priv->base);
+> > +	dev_info(&pdev->dev, "Added i2c controller %d irq %d @ 0x%p\n",
+> > +		priv->adap.nr, irq, priv->base);
+>=20
+> Is priv->base useful here ? The physical address of the registers block c=
+ould=20
+> be, but its kernel virtual address doesn't seem very interesting to me.
 
-Is priv->base useful here ? The physical address of the registers block could 
-be, but its kernel virtual address doesn't seem very interesting to me.
+Agreed.
 
-> +
-> +	return 0;
-> +
-> +exit_clk:
-> +	clk_disable_unprepare(priv->sclk);
-> +	return ret;
-> +}
-> +
-> +static int em_i2c_remove(struct platform_device *dev)
-> +{
-> +	struct em_i2c_device *priv = platform_get_drvdata(dev);
-> +
-> +	i2c_del_adapter(&priv->adap);
-> +	clk_disable_unprepare(priv->sclk);
-> +
-> +	return 0;
-> +}
-> +
-> +static const struct of_device_id em_i2c_ids[] = {
-> +	{ .compatible = "renesas,iic-emev2", },
-> +	{ }
-> +};
-> +
-> +static struct platform_driver em_i2c_driver = {
-> +	.probe = em_i2c_probe,
-> +	.remove = em_i2c_remove,
-> +	.driver = {
-> +		.name = "em-i2c",
-> +		.of_match_table = em_i2c_ids,
-> +	}
-> +};
-> +module_platform_driver(em_i2c_driver);
-> +
-> +MODULE_DESCRIPTION("EMEV2 I2C bus driver");
-> +MODULE_AUTHOR("Ian Molton and Wolfram Sang <wsa@sang-engineering.com>");
-> +MODULE_LICENSE("GPL v2");
-> +MODULE_DEVICE_TABLE(of, em_i2c_ids);
+Thanks for the review!
 
--- 
-Regards,
+   Wolfram
 
-Laurent Pinchart
 
+--ctP54qlpMx3WjD+/
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJVnC1LAAoJEBQN5MwUoCm2EPUP/i1PGhBVjbswPkoLW5/sw+0g
+osIPi8mRhR5g/KiKNsa3hSDaQXkBj5znbmp/tpZ35Gky8/rL5h0gfUqyo8koocif
+yO/jgfE1XecbXsk1sEO2EdgH2AqY1+WzIBvc+ZmRZK4UBmo/MKJG8YPj4vDsd5ZW
+T/1LMObWu0QnAf4r5oPs2KvfgH0+4v4xQfy+jat02oyINNZoG27RMf3i3rElyh3p
+wfxMMwxYiwkEHztnyviOft9ndR7qtw9vloe0UsP4i6LAjhzMiOG3Fz3ZTgwWQYmS
+8i+zq9JK8Orz/aDfGtJUhuq3sdMaxdtkLYNZiLeh/HG9J1NuVf/+LxlthAseVmHR
+k+nuxYsGcq2kDvKtH0FYq0ET9KVDa3Jph+eqfDL3oYJoF6d171sJuYoFVB0ZmC6N
+PlOImTwhLF07N2pOegpMiZ2Nm8tjmh7zZtHl9iEo9ozekQyLQnjY2j8UpObEcjGH
+BjOdO0D6MwVyBsUWaZSQ2o7r0WGFA+LaDRYvRuUACA97e1++tbOJfl+DWc3y+FXR
+puM9vmM3zxRe5/+HWubaHiy14gnfGvT3z0KkqrdSyqol3esOlGTz29xrYbxW1eem
+P4Px60MYyVXqmZqgTsMTiU47zWD/ozlHbOY/hjQXYjJTYDjxpsHd2A3VixU02e/t
+PBbSPEUQxxJC7n2Z4Sq1
+=/yCE
+-----END PGP SIGNATURE-----
+
+--ctP54qlpMx3WjD+/--
