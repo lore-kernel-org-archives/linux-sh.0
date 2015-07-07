@@ -1,154 +1,171 @@
 From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Tue, 07 Jul 2015 08:38:49 +0000
-Subject: RE: [PATCH v2] phy: rcar-gen2 usb: Add Host/Function switching for USB0
-Message-Id: <SIXPR06MB06394AED5D183C15C5A66BCEF5920@SIXPR06MB0639.apcprd06.prod.outlook.com>
+Date: Tue, 07 Jul 2015 11:52:43 +0000
+Subject: [PATCH v5] usb: renesas_usbhs: Allow an OTG PHY driver to provide VBUS
+Message-Id: <1436269963-25885-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435824347-22732-1-git-send-email-phil.edworthy@renesas.com>
- <SG2PR06MB0919835888EBD162D4B86C24D8930@SG2PR06MB0919.apcprd06.prod.outlook.com>
-In-Reply-To: <SG2PR06MB0919835888EBD162D4B86C24D8930@SG2PR06MB0919.apcprd06.prod.outlook.com>
+References: <3446210.Evs1k3c1oP@avalon>
+In-Reply-To: <3446210.Evs1k3c1oP@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Kishon Vijay Abraham I <kishon@ti.com>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@ti.com>, Ulrich Hecht <ulrich.hecht@gmail.com>, Kishon Vijay Abraham I <kishon@ti.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-kernel@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-Hi Shimoda-san,
+These changes allow a PHY driver to trigger a VBUS interrupt and
+to provide the value of VBUS.
 
-On 06 July 2015 08:18, Shimoda-san wrote:
-> Hi Phil-san,
-> 
-> Thank you very much for the patch!
-> 
-> > Sent: Thursday, July 02, 2015 5:06 PM
-> < snip >
-> > +/* VBUS change IRQ handler */
-> > +static irqreturn_t gpio_vbus_irq(int irq, void *data)
-> > +{
-> > +	struct rcar_gen2_channel *channel = data;
-> > +
-> > +	/* Wait 20ms before doing anything as VBUS needs to settle */
-> > +	schedule_delayed_work(&channel->work, msecs_to_jiffies(20));
-> > +
-> > +	return IRQ_HANDLED;
-> > +}
-> > +
-> > +static int probe_otg(struct platform_device *pdev,
-> > +	struct rcar_gen2_phy_driver *drv)
-> > +{
-> > +	struct device *dev = &pdev->dev;
-> > +	struct rcar_gen2_channel *ch = drv->channels;
-> > +	int irq;
-> > +	int ret;
-> > +
-> > +	/* GPIOs for Host/Fn switching */
-> > +	ch->gpio_id = of_get_named_gpio_flags(dev->of_node,
-> > +				"renesas,id-gpio", 0, NULL);
-> > +	ch->gpio_vbus = of_get_named_gpio_flags(dev->of_node,
-> > +				"renesas,vbus-gpio", 0, NULL);
-> > +
-> > +	/* Need valid ID and VBUS gpios for Host/Fn switching */
-> > +	if (gpio_is_valid(ch->gpio_id) && gpio_is_valid(ch->gpio_vbus)) {
-> > +		ch->use_otg = 1;
-> > +
-> > +		/* GPIO for ID input */
-> > +		ret = devm_gpio_request_one(dev, ch->gpio_id, GPIOF_IN,
-> "id");
-> > +		if (ret)
-> > +			return ret;
-> > +
-> > +		/* GPIO for VBUS input */
-> > +		ret = devm_gpio_request_one(dev, ch->gpio_vbus, GPIOF_IN,
-> "vbus");
-> 
-> According to the checkpatch.pl, "line over 80 characters".
-As I understand it, the 80 chars is not a hard rule. One reason for the
-80 char guideline is to avoid overly complex code, but I don't think
-that can be said of the above line!
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 
-> > +		if (ret)
-> > +			return ret;
-> > +
-> > +		irq = gpio_to_irq(ch->gpio_vbus);
-> > +		ret = devm_request_irq(dev, irq, gpio_vbus_irq,
-> VBUS_IRQ_FLAGS,
-> > +				"vbus_detect", ch);
-> > +		if (ret)
-> > +			return ret;
-> > +
-> > +		/* Optional GPIO for VBUS power */
-> > +		ch->gpio_vbus_pwr = of_get_named_gpio_flags(dev->of_node,
-> > +						"renesas,vbus-pwr-gpio", 0,
-> NULL);
-> 
-> Same above.
-Since this code was already split over two lines, I agree with you here.
+---
+v5:
+  - Avoid race when vbus_is_indirect may or may not be read
+    before the phy has called vbus_session. In doing so, the
+    changes have also been isolated to mod_gadget.c
 
-> 
-> > +		if (gpio_is_valid(ch->gpio_id)) {
-> > +			ret = devm_gpio_request_one(dev, ch->gpio_vbus_pwr,
-> > +					GPIOF_OUT_INIT_LOW, "vbus-pwr");
-> > +			if (ret)
-> > +				return ret;
-> > +		}
-> > +
-> > +	} else if (gpio_is_valid(ch->gpio_id)) {
-> > +		dev_err(dev, "Failed to get VBUS gpio\n");
-> > +		return ch->gpio_vbus;
-> > +	} else if (gpio_is_valid(ch->gpio_vbus)) {
-> > +		dev_err(dev, "Failed to get ID gpio\n");
-> > +		return ch->gpio_id;
-> > +	}
-> > +
-> > +	return 0;
-> > +}
-> > +
-> > +/* bind/unbind the peripheral controller */
-> > +static int rcar_gen2_usb_set_peripheral(struct usb_otg *otg,
-> > +					struct usb_gadget *gadget)
-> > +{
-> > +	otg->gadget = gadget;
-> > +	if (!gadget) {
-> > +		usb_gadget_vbus_disconnect(otg->gadget);
-> 
-> Since the otg->gadget is NULL, this driver should not call this function here.
-Ah, yes you are correct!
+v4:
+  - Use true/false with bool vars.
+  - Clean up "transceiver found" message.
 
-> > +		otg->state = OTG_STATE_UNDEFINED;
-> > +	}
-> > +
-> > +	return 0;
-> > +}
-> > +
-> >  static int rcar_gen2_phy_probe(struct platform_device *pdev)
-> >  {
-> >  	struct device *dev = &pdev->dev;
-> < snip >
-> > @@ -323,6 +540,14 @@ static int rcar_gen2_phy_probe(struct platform_device
-> *pdev)
-> >
-> >  	dev_set_drvdata(dev, drv);
-> >
-> > +	/*
-> > +	 * If we already have something plugged into USB0, we won't get an edge
-> > +	 * on VBUS, so we have to manually schedule work to look at the VBUS
-> > +	 * and ID signals.
-> > +	 */
-> > +	if (drv->channels->use_otg)
-> > +		schedule_delayed_work(&drv->channels->work,
-> msecs_to_jiffies(100));
-> 
-> This line is also "line over 80 characters".
-I don't think it is necessary to force this into the 80 char recommendation.
+v3:
+  - Changed how indirect vbus is plumbed in.
+  - Removed unnecessary (void) on call to otg_set_peripheral.
+  - Moved code that connects to bus through transceiver so it
+    is before setting gpriv->driver.
 
-> Best regards,
-> Yoshihiro Shimoda
-> 
-> > +
-> >  	return 0;
-> >  }
-> >
-> > --
-> > 1.9.1
+v2:
+  - vbus variables changed from int to bool.
+  - dev_info() changed to dev_err()
+---
+ drivers/usb/renesas_usbhs/mod_gadget.c | 62 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 62 insertions(+)
 
-Best regards
-Phil
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index dc2aa32..19a22a3 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -21,6 +21,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/usb/ch9.h>
+ #include <linux/usb/gadget.h>
++#include <linux/usb/otg.h>
+ #include "common.h"
+ 
+ /*
+@@ -50,6 +51,8 @@ struct usbhsg_gpriv {
+ 	int			 uep_size;
+ 
+ 	struct usb_gadget_driver	*driver;
++	struct usb_phy		*transceiver;
++	bool 			 vbus_indirect_value;
+ 
+ 	u32	status;
+ #define USBHSG_STATUS_STARTED		(1 << 0)
+@@ -873,6 +876,27 @@ static int usbhsg_try_stop(struct usbhs_priv *priv, u32 status)
+ }
+ 
+ /*
++ * VBUS provided by the PHY
++ */
++static int usbhsm_phy_get_vbus(struct platform_device *pdev)
++{
++	struct usbhs_priv *priv = usbhs_pdev_to_priv(pdev);
++	struct usbhsg_gpriv *gpriv = usbhsg_priv_to_gpriv(priv);
++
++	return  gpriv->vbus_indirect_value;
++}
++
++static void usbhs_mod_phy_mode(struct usbhs_priv *priv)
++{
++	struct usbhs_mod_info *info = &priv->mod_info;
++
++	info->irq_vbus		= NULL;
++	priv->pfunc.get_vbus	= usbhsm_phy_get_vbus;
++
++	usbhs_irq_callback_update(priv, NULL);
++}
++
++/*
+  *
+  *		linux usb function
+  *
+@@ -882,12 +906,28 @@ static int usbhsg_gadget_start(struct usb_gadget *gadget,
+ {
+ 	struct usbhsg_gpriv *gpriv = usbhsg_gadget_to_gpriv(gadget);
+ 	struct usbhs_priv *priv = usbhsg_gpriv_to_priv(gpriv);
++	struct device *dev = usbhs_priv_to_dev(priv);
++	int ret;
+ 
+ 	if (!driver		||
+ 	    !driver->setup	||
+ 	    driver->max_speed < USB_SPEED_FULL)
+ 		return -EINVAL;
+ 
++	/* connect to bus through transceiver */
++	if (!IS_ERR_OR_NULL(gpriv->transceiver)) {
++		ret = otg_set_peripheral(gpriv->transceiver->otg,
++					&gpriv->gadget);
++		if (ret) {
++			dev_err(dev, "%s: can't bind to transceiver\n",
++				gpriv->gadget.name);
++			return ret;
++		}
++
++		/* get vbus using phy versions */
++		usbhs_mod_phy_mode(priv);
++	}
++
+ 	/* first hook up the driver ... */
+ 	gpriv->driver = driver;
+ 
+@@ -900,6 +940,10 @@ static int usbhsg_gadget_stop(struct usb_gadget *gadget)
+ 	struct usbhs_priv *priv = usbhsg_gpriv_to_priv(gpriv);
+ 
+ 	usbhsg_try_stop(priv, USBHSG_STATUS_REGISTERD);
++
++	if (!IS_ERR_OR_NULL(gpriv->transceiver))
++		otg_set_peripheral(gpriv->transceiver->otg, NULL);
++
+ 	gpriv->driver = NULL;
+ 
+ 	return 0;
+@@ -947,12 +991,26 @@ static int usbhsg_set_selfpowered(struct usb_gadget *gadget, int is_self)
+ 	return 0;
+ }
+ 
++static int usbhsg_vbus_session(struct usb_gadget *gadget, int is_active)
++{
++	struct usbhsg_gpriv *gpriv = usbhsg_gadget_to_gpriv(gadget);
++	struct usbhs_priv *priv = usbhsg_gpriv_to_priv(gpriv);
++	struct platform_device *pdev = usbhs_priv_to_pdev(priv);
++
++	gpriv->vbus_indirect_value = !!is_active;
++
++	renesas_usbhs_call_notify_hotplug(pdev);
++
++	return 0;
++}
++
+ static const struct usb_gadget_ops usbhsg_gadget_ops = {
+ 	.get_frame		= usbhsg_get_frame,
+ 	.set_selfpowered	= usbhsg_set_selfpowered,
+ 	.udc_start		= usbhsg_gadget_start,
+ 	.udc_stop		= usbhsg_gadget_stop,
+ 	.pullup			= usbhsg_pullup,
++	.vbus_session		= usbhsg_vbus_session,
+ };
+ 
+ static int usbhsg_start(struct usbhs_priv *priv)
+@@ -994,6 +1052,10 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
+ 		goto usbhs_mod_gadget_probe_err_gpriv;
+ 	}
+ 
++	gpriv->transceiver = usb_get_phy(USB_PHY_TYPE_UNDEFINED);
++	dev_info(dev, "%stransceiver found\n",
++		 gpriv->transceiver ? "" : "no ");
++
+ 	/*
+ 	 * CAUTION
+ 	 *
+-- 
+1.9.1
+
