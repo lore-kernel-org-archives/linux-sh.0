@@ -1,62 +1,43 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 01 Jul 2015 15:10:00 +0000
-Subject: RE: [PATCH 3/3] arm: koelsch: make USB0 perform Host/Function switching
-Message-Id: <SIXPR06MB0639898D241111BB3FD97160F5A80@SIXPR06MB0639.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 07 Jul 2015 14:05:27 +0000
+Subject: [PATCH] ARM: shmobile: rcar-gen2: CONFIG_ARM_ARCH_TIMER is always set
+Message-Id: <1436277927-20159-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434984151-27274-1-git-send-email-phil.edworthy@renesas.com>
- <1434984151-27274-4-git-send-email-phil.edworthy@renesas.com>
- <55884943.9080607@cogentembedded.com> <55884A9B.9030505@cogentembedded.com>
-In-Reply-To: <55884A9B.9030505@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Kishon Vijay Abraham I <kishon@ti.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Sergei,
+Since commit 731bde02f622d694 ("ARM: shmobile: Select
+HAVE_ARM_ARCH_TIMER from Kconfig"), CONFIG_ARM_ARCH_TIMER is always set
+when building for R-Car Gen2 SoCs, as it is selected by
+CONFIG_HAVE_ARM_ARCH_TIMER.  Remove the obsolete #ifdef testing for it.
 
-On 22 June 2015 18:49, Sergei wrote:
-> Hello.
-> 
-> On 06/22/2015 08:43 PM, Sergei Shtylyov wrote:
-> 
-> >> Both USB Host (pci0) and Function (USBHS) drivers are enabled.
-> >> The USB PHY driver determines which IP block should be connected
-> >> based on vbus and id signals read via gpios.
-> 
-> >> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> >> ---
-> >>   arch/arm/boot/dts/r8a7791-koelsch.dts | 7 ++++---
-> >>   1 file changed, 4 insertions(+), 3 deletions(-)
-> 
-> >> diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts
-> >> b/arch/arm/boot/dts/r8a7791-koelsch.dts
-> >> index cffe33f..8f394be 100644
-> >> --- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-> >> +++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-> > [...]
-> >> @@ -627,13 +626,15 @@
-> >>
-> >>   &hsusb {
-> >>       status = "okay";
-> >> -    pinctrl-0 = <&usb0_pins>;
-> >>       pinctrl-names = "default";
-> >> -    renesas,enable-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
-> >>   };
-> >>
-> >>   &usbphy {
-> >>       status = "okay";
-> >> +    renesas,pwr = <&gpio2 4 GPIO_ACTIVE_HIGH>;
-> >> +    renesas,id = <&gpio5 31 GPIO_ACTIVE_HIGH>;
-> >> +    renesas,vbus = <&gpio7 24 GPIO_ACTIVE_HIGH>;
-> >> +    renesas,vbus-pwr = <&gpio7 23 GPIO_ACTIVE_HIGH>;
-> 
-> >     The prop names should end with "-gpio" or even "-gpios", according to the
-> > GPIO bindings.
-> 
->     Oh, and you didn't document the props in the previous patch.
-> 
-Thanks for your comments, since I've not seen any other comments I'll fix
-these and repost.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-Phil
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index aa3339258d9c0232..570d6bd3784f7464 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -52,7 +52,6 @@ u32 rcar_gen2_read_mode_pins(void)
+ void __init rcar_gen2_timer_init(void)
+ {
+ 	u32 mode = rcar_gen2_read_mode_pins();
+-#ifdef CONFIG_ARM_ARCH_TIMER
+ 	void __iomem *base;
+ 	int extal_mhz = 0;
+ 	u32 freq;
+@@ -125,7 +124,6 @@ void __init rcar_gen2_timer_init(void)
+ 	}
+ 
+ 	iounmap(base);
+-#endif /* CONFIG_ARM_ARCH_TIMER */
+ 
+ 	rcar_gen2_clocks_init(mode);
+ 	clocksource_of_init();
+-- 
+1.9.1
+
