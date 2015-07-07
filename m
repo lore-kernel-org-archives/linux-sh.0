@@ -1,101 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:37:11 +0000
-Subject: [PATCH 6/8] ARM: shmobile: R-Car: Get rid of on_off_fn() function pointer
-Message-Id: <bcb8243792eaa855a51c96bfeaa5dbca19f48d07.1436510166.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 07 Jul 2015 14:10:14 +0000
+Subject: [PATCH/RFC 08/11] ARM: shmobile: r8a7793: Link CPG to RST using "renesas,modemr"
+Message-Id: <1436278217-20522-9-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436510166.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436510166.git.horms+renesas@verge.net.au>
+References: <1436278217-20522-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1436278217-20522-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Simplify the power request code by passing an "on" flag, and picking the
-right status bit and register offset in the innermost function, based on
-this flag.
-This allows to remove the rcar_sysc_pwr_{off,on}() helper functions, and
-the function pointer through which they were called.
-
-Make sr_bit and reg_offs unsigned while we're at it.
+Add a link from the Clock Pulse Generator node to the Reset Controller
+node, so the CPG can read the Mode Monitoring Register (MODEMR) to
+obtain the MD pin values.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/pm-rcar.c | 31 ++++++++++++++-----------------
- 1 file changed, 14 insertions(+), 17 deletions(-)
+ arch/arm/boot/dts/r8a7793.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/pm-rcar.c b/arch/arm/mach-shmobile/pm-rcar.c
-index 7adf9ce5fc1d..4092ad16e0a4 100644
---- a/arch/arm/mach-shmobile/pm-rcar.c
-+++ b/arch/arm/mach-shmobile/pm-rcar.c
-@@ -51,11 +51,19 @@
- static void __iomem *rcar_sysc_base;
- static DEFINE_SPINLOCK(rcar_sysc_lock); /* SMP CPUs + I/O devices */
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index fbb1aa3740e2b55e..4bddaf2fbd0b2e1c 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -192,6 +192,7 @@
+ 					     "lb", "qspi", "sdh", "sd0", "z",
+ 					     "rcan", "adsp";
+ 			#power-domain-cells = <0>;
++			renesas,modemr = <&rst 0x60>;
+ 		};
  
--static int rcar_sysc_pwr_on_off(const struct rcar_sysc_ch *sysc_ch,
--				int sr_bit, int reg_offs)
-+static int rcar_sysc_pwr_on_off(const struct rcar_sysc_ch *sysc_ch, bool on)
- {
-+	unsigned int sr_bit, reg_offs;
- 	int k;
- 
-+	if (on) {
-+		sr_bit = SYSCSR_PONENB;
-+		reg_offs = PWRONCR_OFFS;
-+	} else {
-+		sr_bit = SYSCSR_POFFENB;
-+		reg_offs = PWROFFCR_OFFS;
-+	}
-+
- 	/* Wait until SYSC is ready to accept a power request */
- 	for (k = 0; k < SYSCSR_RETRIES; k++) {
- 		if (ioread32(rcar_sysc_base + SYSCSR) & BIT(sr_bit))
-@@ -73,18 +81,7 @@ static int rcar_sysc_pwr_on_off(const struct rcar_sysc_ch *sysc_ch,
- 	return 0;
- }
- 
--static int rcar_sysc_pwr_off(const struct rcar_sysc_ch *sysc_ch)
--{
--	return rcar_sysc_pwr_on_off(sysc_ch, SYSCSR_POFFENB, PWROFFCR_OFFS);
--}
--
--static int rcar_sysc_pwr_on(const struct rcar_sysc_ch *sysc_ch)
--{
--	return rcar_sysc_pwr_on_off(sysc_ch, SYSCSR_PONENB, PWRONCR_OFFS);
--}
--
--static int rcar_sysc_update(const struct rcar_sysc_ch *sysc_ch,
--			    int (*on_off_fn)(const struct rcar_sysc_ch *))
-+static int rcar_sysc_power(const struct rcar_sysc_ch *sysc_ch, bool on)
- {
- 	unsigned int isr_mask = BIT(sysc_ch->isr_bit);
- 	unsigned int chan_mask = BIT(sysc_ch->chan_bit);
-@@ -99,7 +96,7 @@ static int rcar_sysc_update(const struct rcar_sysc_ch *sysc_ch,
- 
- 	/* Submit power shutoff or resume request until it was accepted */
- 	for (k = 0; k < PWRER_RETRIES; k++) {
--		ret = on_off_fn(sysc_ch);
-+		ret = rcar_sysc_pwr_on_off(sysc_ch, on);
- 		if (ret)
- 			goto out;
- 
-@@ -138,12 +135,12 @@ static int rcar_sysc_update(const struct rcar_sysc_ch *sysc_ch,
- 
- int rcar_sysc_power_down(const struct rcar_sysc_ch *sysc_ch)
- {
--	return rcar_sysc_update(sysc_ch, rcar_sysc_pwr_off);
-+	return rcar_sysc_power(sysc_ch, false);
- }
- 
- int rcar_sysc_power_up(const struct rcar_sysc_ch *sysc_ch)
- {
--	return rcar_sysc_update(sysc_ch, rcar_sysc_pwr_on);
-+	return rcar_sysc_power(sysc_ch, true);
- }
- 
- bool rcar_sysc_power_is_off(const struct rcar_sysc_ch *sysc_ch)
+ 		/* Variable factor clocks */
 -- 
-2.1.4
+1.9.1
 
