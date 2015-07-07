@@ -1,33 +1,66 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 13 Jul 2015 07:35:37 +0000
-Subject: Re: [PATCH v3 02/04] ARM: shmobile: marzen-reference: Remove C board code
-Message-Id: <CAMuHMdUTPi-2VvBMNmEFTFjy=JCjaAGN9UKLJcNzK0vc6YgW-g@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 07 Jul 2015 17:39:42 +0000
+Subject: Re: [PATCH v3 1/3] sh-pfc: fix sparse GPIOs for R-Car SoCs
+Message-Id: <1756227.uoeezymTmX@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150713061512.25534.18136.sendpatchset@little-apple>
-In-Reply-To: <20150713061512.25534.18136.sendpatchset@little-apple>
+References: <1460630.GxHT4lRd7u@wasted.cogentembedded.com> <2925145.E3lLFJfWJW@wasted.cogentembedded.com>
+In-Reply-To: <2925145.E3lLFJfWJW@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: linus.walleij@linaro.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
 
-On Mon, Jul 13, 2015 at 8:15 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
+Hi Sergei,
+
+Thank you for the patch.
+
+On Friday 26 June 2015 01:40:56 Sergei Shtylyov wrote:
+> The PFC driver causes the kernel to hang on the R-Car gen2 SoC based  boards
+> when the CPU_ALL_PORT() macro is fixed to reflect the reality, i.e. when
+> the GPIO space becomes actually sparse.  This happens because the
+> _GP_GPIO() macro includes  an indexed initializer which causes the "holes"
+> (array entries filled with all 0s) between the groups  of the existing
+> GPIOs; and the driver can't cope with that.  There seems to  be no reason
+> to use the indexed initializer, so we can remove the index specifier and so
+> avoid the "holes".
 >
-> The generic r8a7779 machine vector is now feature-wise equivalent
-> to the Marzen-reference case, so simply remove the Marzen C board
-> code to fall over on the generic r8a7779 machine vector.
->
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+I initially thought that this patch looked too good to be true. The fix is so 
+simple, there must have been a reason why _GP_GPIO used indexed initializers. 
+I then tried to find that reason and failed.
 
-Gr{oetje,eeting}s,
+I still feel that this is too simple to be true, but I have no objective 
+reason to push back, so
 
-                        Geert
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+for the whole series, provided you have tested it, and paid attention to pins 
+after the holes.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+> ---
+> Changes in version 3:
+> - new patch.
+> 
+>  drivers/pinctrl/sh-pfc/sh_pfc.h |    2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> Index: linux-pinctrl/drivers/pinctrl/sh-pfc/sh_pfc.h
+> =================================> --- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/sh_pfc.h
+> +++ linux-pinctrl/drivers/pinctrl/sh-pfc/sh_pfc.h
+> @@ -224,7 +224,7 @@ struct sh_pfc_soc_info {
+> 
+>  /* PINMUX_GPIO_GP_ALL - Expand to a list of sh_pfc_pin entries */
+>  #define _GP_GPIO(bank, _pin, _name, sfx)				\
+> -	[(bank * 32) + _pin] = {					\
+> +	{								\
+>  		.pin = (bank * 32) + _pin,				\
+>  		.name = __stringify(_name),				\
+>  		.enum_id = _name##_DATA,				\
+
+-- 
+Regards,
+
+Laurent Pinchart
+
