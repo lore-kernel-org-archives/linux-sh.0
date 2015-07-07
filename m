@@ -1,44 +1,68 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 16 Jul 2015 09:05:53 +0000
-Subject: Re: [PATCH] gpio: rcar: Fine-grained Runtime PM support
-Message-Id: <CANqRtoTfCZoH61dcDgVH9sGX76WK6OW6YPKv3XAFb31Ri=ZXPw@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 07 Jul 2015 00:39:52 +0000
+Subject: Re: [PATCH v4 7/8] ARM: shmobile: r8a7790: Set maximum frequencies for SDHI clocks
+Message-Id: <20150707003949.GE13326@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435243557-7050-1-git-send-email-geert+renesas@glider.be>
-	<CACRpkdagkFPVvU3Ox1YHhg9edzxPQyd6XddC1vLMj20HhAyY7A@mail.gmail.com>
-In-Reply-To: <CACRpkdagkFPVvU3Ox1YHhg9edzxPQyd6XddC1vLMj20HhAyY7A@mail.gmail.com>
+References: <1435683177.23818.60.camel@codethink.co.uk>
+ <1435683436.23818.69.camel@codethink.co.uk>
+In-Reply-To: <1435683436.23818.69.camel@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Alexandre Courbot <gnurou@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ben Hutchings <ben.hutchings@codethink.co.uk>
+Cc: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Hi Linus,
+Morimoto-san,
 
-On Thu, Jul 16, 2015 at 5:43 PM, Linus Walleij <linus.walleij@linaro.org> wrote:
-> On Thu, Jun 25, 2015 at 4:45 PM, Geert Uytterhoeven
-> <geert+renesas@glider.be> wrote:
->
->> Currently gpio modules are runtime-resumed at probe time. This means the
->> gpio module will be active all the time (except during system suspend,
->> if not configured as a wake-up source).
->>
->> While an R-Car Gen2 gpio module retains pins configured for output at
->> the requested level while put in standby mode, gpio registercannot be
->> accessed while suspended.  Unfortunately pm_runtime_get_sync() cannot be
->> called from all contexts where gpio register access is needed. Hence
->> move the Runtime PM handling from probe/remove time to gpio request/free
->> time, which is probably the best we can do.
->>
->> On r8a7791/koelsch, gpio modules 0, 1, 3, and 4 are now suspended during
->> normal use (gpio2 is used for LEDs and regulators, gpio5 for keys, gpio6
->> for SD-Card CD & WP, gpio7 for keys and regulators).
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> Patch applied unless Magnus complains.
+could you find some time to review this patch?
 
-No complaints, just happy Magnus!
-
-Thanks,
-
-/ magnus
+On Tue, Jun 30, 2015 at 05:57:16PM +0100, Ben Hutchings wrote:
+> Taken from the datasheet.
+> 
+> Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+> ---
+>  arch/arm/boot/dts/r8a7790.dtsi | 4 ++++
+>  1 file changed, 4 insertions(+)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+> index 4bb2f4c17321..618b38938b24 100644
+> --- a/arch/arm/boot/dts/r8a7790.dtsi
+> +++ b/arch/arm/boot/dts/r8a7790.dtsi
+> @@ -490,6 +490,7 @@
+>  		reg = <0 0xee100000 0 0x328>;
+>  		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
+>  		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
+> +		max-frequency = <156000000>;
+>  		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
+>  		dma-names = "tx", "rx";
+>  		status = "disabled";
+> @@ -500,6 +501,7 @@
+>  		reg = <0 0xee120000 0 0x328>;
+>  		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
+>  		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
+> +		max-frequency = <156000000>;
+>  		dmas = <&dmac1 0xc9>, <&dmac1 0xca>;
+>  		dma-names = "tx", "rx";
+>  		status = "disabled";
+> @@ -510,6 +512,7 @@
+>  		reg = <0 0xee140000 0 0x100>;
+>  		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
+>  		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
+> +		max-frequency = <97500000>;
+>  		dmas = <&dmac1 0xc1>, <&dmac1 0xc2>;
+>  		dma-names = "tx", "rx";
+>  		status = "disabled";
+> @@ -520,6 +523,7 @@
+>  		reg = <0 0xee160000 0 0x100>;
+>  		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
+>  		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
+> +		max-frequency = <97500000>;
+>  		dmas = <&dmac1 0xd3>, <&dmac1 0xd4>;
+>  		dma-names = "tx", "rx";
+>  		status = "disabled";
+> -- 
+> 2.1.4
+> 
+> 
+> 
+> 
