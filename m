@@ -1,69 +1,45 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 07 Jul 2015 06:56:29 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 08 Jul 2015 00:51:49 +0000
 Subject: Re: [PATCH v2] ARM: shmobile: kzm9g dts: Use adxl345-specific compatible property
-Message-Id: <9389528.5qtaECVqX7@avalon>
+Message-Id: <20150708005148.GA28100@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1436180132-26190-1-git-send-email-geert+renesas@glider.be>
  <15966074.zDS67FO48r@avalon> <20150707002621.GD13326@verge.net.au>
-In-Reply-To: <20150707002621.GD13326@verge.net.au>
+ <9389528.5qtaECVqX7@avalon>
+In-Reply-To: <9389528.5qtaECVqX7@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
-
-On Tuesday 07 July 2015 09:26:21 Simon Horman wrote:
-> On Mon, Jul 06, 2015 at 04:29:33PM +0300, Laurent Pinchart wrote:
-> > On Monday 06 July 2015 12:55:32 Geert Uytterhoeven wrote:
-> > > Replace the deprecated generic "adi,adxl34x" compatible value by the
-> > > adxl345-specific "adi,adxl345" value, cfr. commit e465bf6fc55d5ce2 ("DT:
-> > > i2c: Deprecate adi,adxl34x compatible string").
-> > > 
-> > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > 
-> > Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > 
-> > > ---
-> > > Depends on commit 3a38958d2477b718 ("Input: adxl34x - add OF match
-> > > support"), which is in v4.2-rc1.
-> > > 
-> > > This is v2 of "ARM: shmobile: kzm9g dts: Add adxl345-specific compatible
-> > > property".
+On Tue, Jul 07, 2015 at 09:56:29AM +0300, Laurent Pinchart wrote:
+> Hi Simon,
 > 
-> It appears to me that this will cause a regression when booting old kernels
-> with new dts blobs. For that reason think we should consider v1
-> of this change coupled with a schedule to remove use of the deprecated
-> compat string.
-
-That's the forward compatibility that Geert mentioned, is that really an 
-issue, especially on this board ?
-
-> > > v2:
-> > >   - Drop deprecated "adi,adxl34x"
+> On Tuesday 07 July 2015 09:26:21 Simon Horman wrote:
+> > On Mon, Jul 06, 2015 at 04:29:33PM +0300, Laurent Pinchart wrote:
+> > > On Monday 06 July 2015 12:55:32 Geert Uytterhoeven wrote:
+> > > > Replace the deprecated generic "adi,adxl34x" compatible value by the
+> > > > adxl345-specific "adi,adxl345" value, cfr. commit e465bf6fc55d5ce2 ("DT:
+> > > > i2c: Deprecate adi,adxl34x compatible string").
+> > > > 
+> > > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > > > 
-> > > ---
+> > > Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 > > > 
-> > >  arch/arm/boot/dts/sh73a0-kzm9g.dts | 2 +-
-> > >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > > 
-> > > diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-> > > b/arch/arm/boot/dts/sh73a0-kzm9g.dts index
-> > > 24b4cd24dceb2f9e..7fc5602810ad0da1 100644
-> > > --- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-> > > +++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-> > > @@ -206,7 +206,7 @@
-> > >  	};
-> > >  	
-> > >  	accelerometer@1d {
-> > > -		compatible = "adi,adxl34x";
-> > > +		compatible = "adi,adxl345";
-> > >  		reg = <0x1d>;
-> > >  		interrupt-parent = <&irqpin3>;
-> > >  		interrupts = <2 IRQ_TYPE_LEVEL_HIGH>,
+> > > > ---
+> > > > Depends on commit 3a38958d2477b718 ("Input: adxl34x - add OF match
+> > > > support"), which is in v4.2-rc1.
+> > > > 
+> > > > This is v2 of "ARM: shmobile: kzm9g dts: Add adxl345-specific compatible
+> > > > property".
+> > 
+> > It appears to me that this will cause a regression when booting old kernels
+> > with new dts blobs. For that reason think we should consider v1
+> > of this change coupled with a schedule to remove use of the deprecated
+> > compat string.
+> 
+> That's the forward compatibility that Geert mentioned, is that really an 
+> issue, especially on this board ?
 
--- 
-Regards,
-
-Laurent Pinchart
-
+I think it would be best to provide backwards compatibility unless there
+is a compelling reason not to.
