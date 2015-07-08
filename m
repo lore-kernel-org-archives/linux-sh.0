@@ -1,94 +1,37 @@
-From: Eric B Munson <emunson@akamai.com>
-Date: Fri, 24 Jul 2015 15:53:13 +0000
-Subject: Re: [PATCH V4 2/6] mm: mlock: Add new mlock, munlock, and munlockall system calls
-Message-Id: <20150724155313.GF9203@akamai.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="iBwuxWUsK/REspAd"
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 08 Jul 2015 07:38:30 +0000
+Subject: Re: [PATCH v3 3/3] sh-pfc: r8a7791: remove non-existing GPIO pins
+Message-Id: <CAMuHMdWK=42TXv8213kjPxAXMB+wDtnOTOOhyD65-cs8ncV_1A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437508781-28655-1-git-send-email-emunson@akamai.com>
- <1437508781-28655-3-git-send-email-emunson@akamai.com>
- <20150721134441.d69e4e1099bd43e56835b3c5@linux-foundation.org>
- <1437528316.16792.7.camel@ellerman.id.au>
- <20150722141501.GA3203@akamai.com>
- <20150723065830.GA5919@linux-mips.org>
- <20150724143936.GE9203@akamai.com>
- <55B25DDE.8090107@roeck-us.net>
-In-Reply-To: <55B25DDE.8090107@roeck-us.net>
-To: Guenter Roeck <linux@roeck-us.net>
-Cc: Ralf Baechle <ralf@linux-mips.org>, Michael Ellerman <mpe@ellerman.id.au>, Andrew Morton <akpm@linux-foundation.org>, linux-mips@linux-mips.org, linux-m68k@vger.kernel.org, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Michal Hocko <mhocko@suse.cz>, linux-mm@kvack.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, Stephen Rothwell <sfr@canb.auug.org.au>, linux-am33-list@redhat.com, Geert Uytterhoeven <geert@linux-m68k.org>, Vlastimil Babka <vbabka@suse.cz>, linux-xtensa@linux-xtensa.org, linux-s390@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-arm-kernel@lists.infradead.org, linux-cris-kernel@axis.com, linux-parisc@vger.kernel.org, linux-api@vger.kernel.org, linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.or
+References: <1460630.GxHT4lRd7u@wasted.cogentembedded.com>
+	<1503001.TnFHhSFjY8@wasted.cogentembedded.com>
+In-Reply-To: <1503001.TnFHhSFjY8@wasted.cogentembedded.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Linus Walleij <linus.walleij@linaro.org>, Linux-sh list <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
 
+On Fri, Jun 26, 2015 at 12:43 AM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+>
+> GPIO banks 1 and 7 are missing pins 26 to 31. Remove them.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
---iBwuxWUsK/REspAd
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On r8a7791/koelsch, the switches (gpio banks 5 and 7) and LEDs (gpio bank 2)
+still work, so
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Fri, 24 Jul 2015, Guenter Roeck wrote:
+Gr{oetje,eeting}s,
 
-> On 07/24/2015 07:39 AM, Eric B Munson wrote:
-> >On Thu, 23 Jul 2015, Ralf Baechle wrote:
-> >
-> >>On Wed, Jul 22, 2015 at 10:15:01AM -0400, Eric B Munson wrote:
-> >>
-> >>>>
-> >>>>You haven't wired it up properly on powerpc, but I haven't mentioned =
-it because
-> >>>>I'd rather we did it.
-> >>>>
-> >>>>cheers
-> >>>
-> >>>It looks like I will be spinning a V5, so I will drop all but the x86
-> >>>system calls additions in that version.
-> >>
-> >>The MIPS bits are looking good however, so
-> >>
-> >>Acked-by: Ralf Baechle <ralf@linux-mips.org>
-> >>
-> >>With my ack, will you keep them or maybe carry them as a separate patch?
-> >
-> >I will keep the MIPS additions as a separate patch in the series, though
-> >I have dropped two of the new syscalls after some discussion.  So I will
-> >not include your ack on the new patch.
-> >
-> >Eric
-> >
->=20
-> Hi Eric,
->=20
-> next-20150724 still has some failures due to this patch set. Are those
-> being looked at (I know parisc builds fail, but there may be others) ?
->=20
-> Thanks,
-> Guenter
+                        Geert
 
-Guenter,
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-Yes, the next respin will drop all new arch syscall entries except
-x86[_64] and MIPS.  I will leave it up to arch maintainers to add the
-entries.
-
-Eric
-
---iBwuxWUsK/REspAd
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJVsl9pAAoJELbVsDOpoOa9EEUP/2M1Xsm8+njDOkkKbV0gBjBz
-b3xOA+mBrdWvRUHtbhky0XhLX9AQkuolm5Lqel2ldbkHMF2DQtqvQxMCpWJ25dJW
-oR5fnuh+arfoOsnEJAJ4Z47Qs/jiVAWHB3jupCxexg5zVZL2BIomII5Ewk00waGw
-zHjUYeLYPTn6IE1MWV1Mlbbx+kGCDRz8HgFq8b3WbrgH4pPzqaeSf3wxMnIYVKuL
-D/vyOdBOE0dW0Co4GdA3iqZ0JGSKknZUP/F3xB/z67wCkIjh133cUI3oDL/4MKbU
-vSac0mG99uhmMPii1kWKyF3OVx3flbHo4IPFDAaUfU1O1OAXHvjezBgL3eLEV3xl
-M/BZQZMEGNZjs6+c8oIrFuEvKDc424HRj7bKbBRvv7rXp3oaksyvuJ3mpEJyEhep
-O+pSxjZc5J9QaXer+Rdh3yX/hjM/dpnTsUPXTIgPlJcIS8gSc5GxrCOe1hQD7u08
-lIxdAs3sI5Tn6iwrjDRq1ySz2NZ2LkfBlliZ41xxt8/kzHvPoieeep2DRDJnpqJG
-nyQItitQpzs0vB7UMJV+yrbfSAR+lupvVdfyXjk8fsYPMNPBhWHQKZ6Ky6euTkYs
-/BWwZ2nvEjopIBEdrXJ97jJcjsAstFCnCm8V75JOX9KznfD0OUNCB6bg9UpUYQfX
-IV8UQYGPDzfVm060LKYD
-=SPSa
------END PGP SIGNATURE-----
-
---iBwuxWUsK/REspAd--
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
