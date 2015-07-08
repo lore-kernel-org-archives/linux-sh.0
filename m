@@ -1,76 +1,33 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 07 Jul 2015 01:19:55 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 08 Jul 2015 01:25:47 +0000
 Subject: Re: [PATCH v4 7/8] ARM: shmobile: r8a7790: Set maximum frequencies for SDHI clocks
-Message-Id: <87zj38lqax.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <20150708012544.GD28100@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1435683177.23818.60.camel@codethink.co.uk>
-	<1435683436.23818.69.camel@codethink.co.uk>
-	<20150707003949.GE13326@verge.net.au>
-In-Reply-To: <20150707003949.GE13326@verge.net.au>
+ <1435683436.23818.69.camel@codethink.co.uk>
+ <20150707003949.GE13326@verge.net.au>
+ <87zj38lqax.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87zj38lqax.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Cc: Ben Hutchings <ben.hutchings@codethink.co.uk>, Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
+Hi Morimoto-san,
 
-Hi Simon
-
-> Morimoto-san,
+On Tue, Jul 07, 2015 at 01:19:55AM +0000, Kuninori Morimoto wrote:
 > 
-> could you find some time to review this patch?
-
-Sorry, I had forgot about this, I sent Acked-by mail.
-But, I guess Ben will send v5 patch
-
+> Hi Simon
 > 
-> On Tue, Jun 30, 2015 at 05:57:16PM +0100, Ben Hutchings wrote:
-> > Taken from the datasheet.
+> > Morimoto-san,
 > > 
-> > Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
-> > ---
-> >  arch/arm/boot/dts/r8a7790.dtsi | 4 ++++
-> >  1 file changed, 4 insertions(+)
-> > 
-> > diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> > index 4bb2f4c17321..618b38938b24 100644
-> > --- a/arch/arm/boot/dts/r8a7790.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> > @@ -490,6 +490,7 @@
-> >  		reg = <0 0xee100000 0 0x328>;
-> >  		interrupts = <0 165 IRQ_TYPE_LEVEL_HIGH>;
-> >  		clocks = <&mstp3_clks R8A7790_CLK_SDHI0>;
-> > +		max-frequency = <156000000>;
-> >  		dmas = <&dmac1 0xcd>, <&dmac1 0xce>;
-> >  		dma-names = "tx", "rx";
-> >  		status = "disabled";
-> > @@ -500,6 +501,7 @@
-> >  		reg = <0 0xee120000 0 0x328>;
-> >  		interrupts = <0 166 IRQ_TYPE_LEVEL_HIGH>;
-> >  		clocks = <&mstp3_clks R8A7790_CLK_SDHI1>;
-> > +		max-frequency = <156000000>;
-> >  		dmas = <&dmac1 0xc9>, <&dmac1 0xca>;
-> >  		dma-names = "tx", "rx";
-> >  		status = "disabled";
-> > @@ -510,6 +512,7 @@
-> >  		reg = <0 0xee140000 0 0x100>;
-> >  		interrupts = <0 167 IRQ_TYPE_LEVEL_HIGH>;
-> >  		clocks = <&mstp3_clks R8A7790_CLK_SDHI2>;
-> > +		max-frequency = <97500000>;
-> >  		dmas = <&dmac1 0xc1>, <&dmac1 0xc2>;
-> >  		dma-names = "tx", "rx";
-> >  		status = "disabled";
-> > @@ -520,6 +523,7 @@
-> >  		reg = <0 0xee160000 0 0x100>;
-> >  		interrupts = <0 168 IRQ_TYPE_LEVEL_HIGH>;
-> >  		clocks = <&mstp3_clks R8A7790_CLK_SDHI3>;
-> > +		max-frequency = <97500000>;
-> >  		dmas = <&dmac1 0xd3>, <&dmac1 0xd4>;
-> >  		dma-names = "tx", "rx";
-> >  		status = "disabled";
-> > -- 
-> > 2.1.4
-> > 
-> > 
-> > 
-> > 
+> > could you find some time to review this patch?
+> 
+> Sorry, I had forgot about this, I sent Acked-by mail.
+> But, I guess Ben will send v5 patch
+
+Thanks.
+
+Ben, I'm happy to take this patch now or after you repost it.
+Let me know which is best for you.
