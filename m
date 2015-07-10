@@ -1,68 +1,44 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 17 Jul 2015 14:08:28 +0000
-Subject: [RFC 8/9] i2c: take address space into account when checking for used addresses
-Message-Id: <1437142109-31975-9-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:37:17 +0000
+Subject: [PATCH 09/11] ARM: shmobile: r8a7793 dtsi: Use "arm,gic-400" for GIC
+Message-Id: <5b3b3268518fb67c7accf83d786909b2a8cbee63.1436509954.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1437142109-31975-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+References: <cover.1436509954.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436509954.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Andrey Danin <danindrey-JGs/UdohzUI@public.gmane.org>, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-It is not enough to compare the plain address value, we also need to
-check the flags enabling a different address space. E.g. it is valid to
-have address 0x50 as a 7-bit address and 0x050 as 10-bit address on the
-same bus. Same for addresses when we are the slave.
+Replace the "arm,cortex-a15-gic" compatible value for the GIC by
+"arm,gic-400", as the R-Car Gen2 GIC is assumed to be a GIC-400.
+This has been confirmed by reading the GICD_IIDR register (on r8a7791),
+which reports 0x0200043b (GIC-400 = 0x02, ARM = 0x43b).
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+This has no effect on runtime behavior, as currently the GIC driver
+treats both compatible values the same.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/i2c-core.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/r8a7793.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
-index 4a92eded4ece9c..021ff232beaae3 100644
---- a/drivers/i2c/i2c-core.c
-+++ b/drivers/i2c/i2c-core.c
-@@ -834,7 +834,7 @@ static int __i2c_check_addr_busy(struct device *dev, void *addrp)
- 	struct i2c_client	*client = i2c_verify_client(dev);
- 	int			addr = *(int *)addrp;
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index c50c5f65388a..3355c487d108 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -42,7 +42,7 @@
+ 	};
  
--	if (client && client->addr = addr)
-+	if (client && i2c_encode_flags_to_addr(client) = addr)
- 		return -EBUSY;
- 	return 0;
- }
-@@ -988,7 +988,7 @@ i2c_new_device(struct i2c_adapter *adap, struct i2c_board_info const *info)
- 	}
- 
- 	/* Check for address business */
--	status = i2c_check_addr_busy(adap, client->addr);
-+	status = i2c_check_addr_busy(adap, i2c_encode_flags_to_addr(client));
- 	if (status)
- 		goto out_err;
- 
-@@ -2284,7 +2284,7 @@ static int i2c_detect_address(struct i2c_client *temp_client,
- 		return err;
- 	}
- 
--	/* Skip if already in use */
-+	/* Skip if already in use (7 bit, no need to encode flags) */
- 	if (i2c_check_addr_busy(adapter, addr))
- 		return 0;
- 
-@@ -2400,7 +2400,7 @@ i2c_new_probed_device(struct i2c_adapter *adap,
- 			continue;
- 		}
- 
--		/* Check address availability */
-+		/* Check address availability (7 bit, no need to encode flags) */
- 		if (i2c_check_addr_busy(adap, addr_list[i])) {
- 			dev_dbg(&adap->dev, "Address 0x%02x already in "
- 				"use, not probing\n", addr_list[i]);
+ 	gic: interrupt-controller@f1001000 {
+-		compatible = "arm,cortex-a15-gic";
++		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
+ 		#address-cells = <0>;
+ 		interrupt-controller;
 -- 
 2.1.4
 
