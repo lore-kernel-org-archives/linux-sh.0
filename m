@@ -1,55 +1,65 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 16 Jul 2015 18:21:53 +0000
-Subject: [PATCH/RFC v2 22/29] serial: sh-sci: Stop acknowledging DMA transmit completions
-Message-Id: <1437070920-28069-23-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:37:10 +0000
+Subject: [PATCH 5/8] ARM: shmobile: R-Car: Use BIT() macro instead of open coding
+Message-Id: <21437c53f3dc2e1e52ccb8aed0a65dd3879ca671.1436510166.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1436510166.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436510166.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-As dmaengine_prep_slave_sg() is called with the DMA_CTRL_ACK flag set
-for DMA transmit requests, there's no need to explicitly acknowledge DMA
-transmit requests in the DMA transmit completion callback.
-
-Hence remove the call to async_tx_ack(), and remove the now unused
-dma_async_tx_descriptor pointer in the sci_port structure.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 5 -----
- 1 file changed, 5 deletions(-)
+ arch/arm/mach-shmobile/pm-rcar.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 13600e552947fb69..5707cd0c8e432be4 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -104,7 +104,6 @@ struct sci_port {
- 	struct dma_chan			*chan_rx;
+diff --git a/arch/arm/mach-shmobile/pm-rcar.c b/arch/arm/mach-shmobile/pm-rcar.c
+index b1a7f2a7f757..7adf9ce5fc1d 100644
+--- a/arch/arm/mach-shmobile/pm-rcar.c
++++ b/arch/arm/mach-shmobile/pm-rcar.c
+@@ -58,7 +58,7 @@ static int rcar_sysc_pwr_on_off(const struct rcar_sysc_ch *sysc_ch,
  
- #ifdef CONFIG_SERIAL_SH_SCI_DMA
--	struct dma_async_tx_descriptor	*desc_tx;
- 	struct dma_async_tx_descriptor	*desc_rx[2];
- 	dma_cookie_t			cookie_tx;
- 	dma_cookie_t			cookie_rx[2];
-@@ -1284,9 +1283,6 @@ static void sci_dma_tx_complete(void *arg)
+ 	/* Wait until SYSC is ready to accept a power request */
+ 	for (k = 0; k < SYSCSR_RETRIES; k++) {
+-		if (ioread32(rcar_sysc_base + SYSCSR) & (1 << sr_bit))
++		if (ioread32(rcar_sysc_base + SYSCSR) & BIT(sr_bit))
+ 			break;
+ 		udelay(SYSCSR_DELAY_US);
+ 	}
+@@ -67,7 +67,7 @@ static int rcar_sysc_pwr_on_off(const struct rcar_sysc_ch *sysc_ch,
+ 		return -EAGAIN;
  
- 	port->icount.tx += sg_dma_len(&s->sg_tx);
+ 	/* Submit power shutoff or power resume request */
+-	iowrite32(1 << sysc_ch->chan_bit,
++	iowrite32(BIT(sysc_ch->chan_bit),
+ 		  rcar_sysc_base + sysc_ch->chan_offs + reg_offs);
  
--	async_tx_ack(s->desc_tx);
--	s->desc_tx = NULL;
--
- 	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
- 		uart_write_wakeup(port);
+ 	return 0;
+@@ -86,8 +86,8 @@ static int rcar_sysc_pwr_on(const struct rcar_sysc_ch *sysc_ch)
+ static int rcar_sysc_update(const struct rcar_sysc_ch *sysc_ch,
+ 			    int (*on_off_fn)(const struct rcar_sysc_ch *))
+ {
+-	unsigned int isr_mask = 1 << sysc_ch->isr_bit;
+-	unsigned int chan_mask = 1 << sysc_ch->chan_bit;
++	unsigned int isr_mask = BIT(sysc_ch->isr_bit);
++	unsigned int chan_mask = BIT(sysc_ch->chan_bit);
+ 	unsigned int status;
+ 	unsigned long flags;
+ 	int ret = 0;
+@@ -151,7 +151,7 @@ bool rcar_sysc_power_is_off(const struct rcar_sysc_ch *sysc_ch)
+ 	unsigned int st;
  
-@@ -1541,7 +1537,6 @@ static void work_fn_tx(struct work_struct *work)
- 	dma_sync_sg_for_device(port->dev, sg, 1, DMA_TO_DEVICE);
+ 	st = ioread32(rcar_sysc_base + sysc_ch->chan_offs + PWRSR_OFFS);
+-	if (st & (1 << sysc_ch->chan_bit))
++	if (st & BIT(sysc_ch->chan_bit))
+ 		return true;
  
- 	spin_lock_irq(&port->lock);
--	s->desc_tx = desc;
- 	desc->callback = sci_dma_tx_complete;
- 	desc->callback_param = s;
- 	spin_unlock_irq(&port->lock);
+ 	return false;
 -- 
-1.9.1
+2.1.4
 
