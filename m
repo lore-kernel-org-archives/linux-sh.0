@@ -1,100 +1,60 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:37:09 +0000
-Subject: [PATCH 4/8] ARM: shmobile: R-Car: Make struct rcar_sysc_ch * parameters const
-Message-Id: <624deb39a1c684b42569a3ec6a0fdcc74b950ed3.1436510166.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 10 Jul 2015 10:07:25 +0000
+Subject: [PATCH] dmaengine: shdma: Make dummy shdma_chan_filter() always return false
+Message-Id: <1436522845-13929-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436510166.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436510166.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+If CONFIG_SH_DMAE_BASE (which is required for DMA engine support for
+legacy SH, SH/R-Mobile, and R-Car Gen1, but not for R-Car Gen2) is not
+enabled, but CONFIG_RCAR_DMAC (for R-Car Gen2 DMA engine support) is,
+and the DTS doesn't provide a "dmas" property for a device,
+dma_request_slave_channel_compat() incorrectly succeeds, and returns a
+DMA channel.
 
-The passed struct rcar_sysc_ch is never modified, so it can be const.
+However, when trying to use that DMA channel later, it fails with:
+
+    rcar-dmac e6700000.dma-controller: rcar_dmac_prep_slave_sg: bad parameter: len=1, id=-22
+
+(Fortunately most drivers can handle this failure, and fall back to
+PIO)
+
+The reason for this is that a NULL legacy filter function is used, which
+actually means "all channels are OK", not "do not match".
+If CONFIG_SH_DMAE_BASE is enabled (like in shmobile_defconfig, which
+supports other SoCs besides R-Car Gen2), shdma_chan_filter() correctly
+returns false, as no available channel on R-Car Gen2 matches a
+shdma-base channel.
+If the DTS does provide a "dmas" property, dma_request_slave_channel()
+succeeds, and legacy filter-based matching is not used.
+
+To fix this, change shdma_chan_filter from being NULL to a dummy
+function that always returns false, like is done on other platforms.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/pm-rcar.c | 16 ++++++++--------
- arch/arm/mach-shmobile/pm-rcar.h |  6 +++---
- 2 files changed, 11 insertions(+), 11 deletions(-)
+ include/linux/shdma-base.h | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-rcar.c b/arch/arm/mach-shmobile/pm-rcar.c
-index a5e4c3a88ec4..b1a7f2a7f757 100644
---- a/arch/arm/mach-shmobile/pm-rcar.c
-+++ b/arch/arm/mach-shmobile/pm-rcar.c
-@@ -51,7 +51,7 @@
- static void __iomem *rcar_sysc_base;
- static DEFINE_SPINLOCK(rcar_sysc_lock); /* SMP CPUs + I/O devices */
+diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+index dd0ba502ccb3a0ea..d927647e6350324f 100644
+--- a/include/linux/shdma-base.h
++++ b/include/linux/shdma-base.h
+@@ -128,7 +128,10 @@ void shdma_cleanup(struct shdma_dev *sdev);
+ #if IS_ENABLED(CONFIG_SH_DMAE_BASE)
+ bool shdma_chan_filter(struct dma_chan *chan, void *arg);
+ #else
+-#define shdma_chan_filter NULL
++static inline bool shdma_chan_filter(struct dma_chan *chan, void *arg)
++{
++	return false;
++}
+ #endif
  
--static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
-+static int rcar_sysc_pwr_on_off(const struct rcar_sysc_ch *sysc_ch,
- 				int sr_bit, int reg_offs)
- {
- 	int k;
-@@ -73,18 +73,18 @@ static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
- 	return 0;
- }
- 
--static int rcar_sysc_pwr_off(struct rcar_sysc_ch *sysc_ch)
-+static int rcar_sysc_pwr_off(const struct rcar_sysc_ch *sysc_ch)
- {
- 	return rcar_sysc_pwr_on_off(sysc_ch, SYSCSR_POFFENB, PWROFFCR_OFFS);
- }
- 
--static int rcar_sysc_pwr_on(struct rcar_sysc_ch *sysc_ch)
-+static int rcar_sysc_pwr_on(const struct rcar_sysc_ch *sysc_ch)
- {
- 	return rcar_sysc_pwr_on_off(sysc_ch, SYSCSR_PONENB, PWRONCR_OFFS);
- }
- 
--static int rcar_sysc_update(struct rcar_sysc_ch *sysc_ch,
--			    int (*on_off_fn)(struct rcar_sysc_ch *))
-+static int rcar_sysc_update(const struct rcar_sysc_ch *sysc_ch,
-+			    int (*on_off_fn)(const struct rcar_sysc_ch *))
- {
- 	unsigned int isr_mask = 1 << sysc_ch->isr_bit;
- 	unsigned int chan_mask = 1 << sysc_ch->chan_bit;
-@@ -136,17 +136,17 @@ static int rcar_sysc_update(struct rcar_sysc_ch *sysc_ch,
- 	return ret;
- }
- 
--int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch)
-+int rcar_sysc_power_down(const struct rcar_sysc_ch *sysc_ch)
- {
- 	return rcar_sysc_update(sysc_ch, rcar_sysc_pwr_off);
- }
- 
--int rcar_sysc_power_up(struct rcar_sysc_ch *sysc_ch)
-+int rcar_sysc_power_up(const struct rcar_sysc_ch *sysc_ch)
- {
- 	return rcar_sysc_update(sysc_ch, rcar_sysc_pwr_on);
- }
- 
--bool rcar_sysc_power_is_off(struct rcar_sysc_ch *sysc_ch)
-+bool rcar_sysc_power_is_off(const struct rcar_sysc_ch *sysc_ch)
- {
- 	unsigned int st;
- 
-diff --git a/arch/arm/mach-shmobile/pm-rcar.h b/arch/arm/mach-shmobile/pm-rcar.h
-index 06ebf00a6a5a..1b901db4a24c 100644
---- a/arch/arm/mach-shmobile/pm-rcar.h
-+++ b/arch/arm/mach-shmobile/pm-rcar.h
-@@ -7,9 +7,9 @@ struct rcar_sysc_ch {
- 	u8 isr_bit;
- };
- 
--int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
--int rcar_sysc_power_up(struct rcar_sysc_ch *sysc_ch);
--bool rcar_sysc_power_is_off(struct rcar_sysc_ch *sysc_ch);
-+int rcar_sysc_power_down(const struct rcar_sysc_ch *sysc_ch);
-+int rcar_sysc_power_up(const struct rcar_sysc_ch *sysc_ch);
-+bool rcar_sysc_power_is_off(const struct rcar_sysc_ch *sysc_ch);
- void __iomem *rcar_sysc_init(phys_addr_t base);
- 
- #endif /* PM_RCAR_H */
+ #endif
 -- 
-2.1.4
+1.9.1
 
