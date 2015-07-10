@@ -1,42 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Jul 2015 08:41:26 +0000
-Subject: [PATCH 5/9] ARM: shmobile: lager: Fix adv7511 IRQ sensing
-Message-Id: <850346eccc2d32dd6d0a3b08e6ac127b8982c067.1437724902.git.horms+renesas@verge.net.au>
+From: "Central Trust Loan Limited " <rocio.suarez@dpss.gob.ec>
+Date: Fri, 10 Jul 2015 08:03:29 +0000
+Subject: =?utf-8?Q?L=C3=A5netilbud_1,5%?=
+Message-Id: <1551682928.1608333.1436515409661.JavaMail.root@dpss.gob.ec>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1437724902.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1437724902.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The adv7511 IRQ is low level triggered, not falling edge triggered. The
-wrong sense configuration results in no interrupt being triggered at
-all, breaking hotplug detection. Fix it.
 
-Reported-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Tested-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 5ae07a8385c5..37dec5269491 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -548,7 +548,7 @@
- 		compatible = "adi,adv7511w";
- 		reg = <0x39>;
- 		interrupt-parent = <&gpio1>;
--		interrupts = <15 IRQ_TYPE_EDGE_FALLING>;
-+		interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
- 
- 		adi,input-depth = <8>;
- 		adi,input-colorspace = "rgb";
--- 
-2.1.4
+God dag,
 
+Dette er CENTRAL TRUST lån selskaper tilbyr lån.
+
+CENTRAL TRUST lån selskapet tilbyr fleksible og rimelige lån til ethvert formål, for å hjelpe deg å nå dine finansielle mål. vi lån med lav rente på 1,5%. Her er noen viktige trekk ved personlig lån fra sentral stoler på utlån selskaper tilbys. Her er de Låne Faktorer vi samarbeider med de ledende britiske meglere som har tilgang til toppen långivere og være i stand til å finne den beste økonomiske løsningen til en rimelig price.Please, hvis du er interessert kan du kontakte oss via denne e-post: centraltrust_ltd @ webadicta .org
+
+
+Etter reaksjonen, vil du motta en søknad om kreditt fyll. Ingen sosial sikkerhet og ingen kredittsjekk, 100% garantert.
+
+Det er en ære for oss hvis du tillater oss til tjeneste.
+
+
+Informasjon som er nødvendig
+
+Dine navn:
+Adresse: ...........
+Telefon: ...........
+Nødvendig Antall: ........
+Varighet: ...............
+Yrke: ...........
+Månedlig inntekt: ........
+Kjønn: ...............
+Fødselsdato: ........
+Status: ..................
+Land: ..........
+Hensikt: .........
+
+Oppfylle dine økonomiske behov er vår stolthet.
+
+David Donald
