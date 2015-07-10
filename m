@@ -1,42 +1,44 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Jul 2015 08:44:49 +0000
-Subject: [PATCH 3/5] ARM: shmobile: defconfig: add Renesas DPCM Sound Card
-Message-Id: <6cec276808bc0a4ac5fc3ab9e42a1b5d1e3e9cc4.1437727455.git.horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:37:14 +0000
+Subject: [PATCH 06/11] ARM: shmobile: r8a73a4 dtsi: Use "arm,gic-400" for GIC
+Message-Id: <eaec1d675c194965081297014503938a9f58e2f7.1436509954.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1437727455.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1437727455.git.horms+renesas@verge.net.au>
+References: <cover.1436509954.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436509954.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-This patch enables DPCM related sound card.
-It is used for...
- - Sampline rate convert
- - CTU/MIXer
+Replace the "arm,cortex-a15-gic" compatible value for the GIC by
+"arm,gic-400", as the documentation states it's a GIC-400.
+This has been confirmed by reading the GICD_IIDR register, which reports
+0x0200043b (GIC-400 = 0x02, ARM = 0x43b).
 
-Note: you need to enable these settings on DTS file
+This has no effect on runtime behavior, as currently the GIC driver
+treats both compatible values the same.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/shmobile_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a73a4.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index c8e9caeb1c02..8da509327265 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -152,6 +152,7 @@ CONFIG_SND=y
- CONFIG_SND_SOC=y
- CONFIG_SND_SOC_SH4_FSI=y
- CONFIG_SND_SOC_RCAR=y
-+CONFIG_SND_SOC_RSRC_CARD=y
- CONFIG_SND_SOC_AK4642=y
- CONFIG_SND_SOC_WM8978=y
- CONFIG_USB=y
+diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+index 7ee22a41c6c9..5090d1a8f652 100644
+--- a/arch/arm/boot/dts/r8a73a4.dtsi
++++ b/arch/arm/boot/dts/r8a73a4.dtsi
+@@ -434,7 +434,7 @@
+ 	};
+ 
+ 	gic: interrupt-controller@f1001000 {
+-		compatible = "arm,cortex-a15-gic";
++		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
+ 		#address-cells = <0>;
+ 		interrupt-controller;
 -- 
 2.1.4
 
