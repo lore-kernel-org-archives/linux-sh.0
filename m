@@ -1,51 +1,48 @@
-From: David Long <dave.long@linaro.org>
-Date: Mon, 27 Jul 2015 04:39:32 +0000
-Subject: [PATCH v2 0/2] Consolidate redundant register/stack access code
-Message-Id: <1437971974-2434-1-git-send-email-dave.long@linaro.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:37:12 +0000
+Subject: [PATCH 04/11] ARM: shmobile: r8a7790: add EtherAVB DT support
+Message-Id: <f25d6b977240117eb4b6e3111f4eb41f968d28fb.1436509954.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1436509954.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436509954.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: "David A. Long" <dave.long@linaro.org>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Move duplicate and functionally equivalent code for accessing registers
-and stack (CONFIG_HAVE_REGS_AND_STACK_ACCESS_API) from arch subdirs into
-common kernel files.
+Define the generic R8A7790 part of the EtherAVB device node.
 
-Changes since v1:
-    Move the REG_OFFSET_NAME and REG_OFFSET_END macros to architecture-
-    independent include file. Change their name from REG_* to REGS_* for
-    consistency.
+Based on original patch by Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>.
 
-Note: Help regression testing s390, hexagon, and sh would be appreciated.
-      Powerpc builds but I have not verified the functionality.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-David A. Long (2):
-  Move the pt_regs_offset struct definition from arch to common include
-    file
-  Consolidate redundant register/stack access code
-
- arch/arm/include/asm/ptrace.h          |   6 --
- arch/arm/kernel/ptrace.c               |  74 +---------------
- arch/hexagon/include/uapi/asm/ptrace.h |   3 -
- arch/powerpc/include/asm/ptrace.h      |  38 --------
- arch/powerpc/kernel/ptrace.c           |  65 +++-----------
- arch/s390/include/asm/ptrace.h         |   3 -
- arch/s390/kernel/ptrace.c              |  69 +++++----------
- arch/sh/include/asm/ptrace.h           |  48 +---------
- arch/sh/kernel/Makefile                |   2 +-
- arch/sh/kernel/ptrace.c                |  33 -------
- arch/sh/kernel/ptrace_32.c             |  50 +++++------
- arch/sh/kernel/ptrace_64.c             | 154 ++++++++++++++++-----------------
- arch/x86/include/asm/ptrace.h          |  37 --------
- arch/x86/kernel/ptrace.c               |  93 ++++++--------------
- include/linux/ptrace.h                 |  54 ++++++++++++
- kernel/ptrace.c                        |  38 ++++++++
- 16 files changed, 258 insertions(+), 509 deletions(-)
- delete mode 100644 arch/sh/kernel/ptrace.c
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index feb4652ed4b2..c9aae06319c0 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -671,6 +671,16 @@
+ 		status = "disabled";
+ 	};
+ 
++	avb: ethernet@e6800000 {
++		compatible = "renesas,etheravb-r8a7790";
++		reg = <0 0xe6800000 0 0x800>, <0 0xee0e8000 0 0x4000>;
++		interrupts = <0 163 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp8_clks R8A7790_CLK_ETHERAVB>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	sata0: sata@ee300000 {
+ 		compatible = "renesas,sata-r8a7790";
+ 		reg = <0 0xee300000 0 0x2000>;
 -- 
-1.8.1.2
+2.1.4
 
