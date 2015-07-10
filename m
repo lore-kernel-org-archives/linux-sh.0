@@ -1,43 +1,90 @@
-From: "Central Trust Loan Limited " <rocio.suarez@dpss.gob.ec>
-Date: Fri, 10 Jul 2015 08:03:29 +0000
-Subject: =?utf-8?Q?L=C3=A5netilbud_1,5%?=
-Message-Id: <1551682928.1608333.1436515409661.JavaMail.root@dpss.gob.ec>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:37:12 +0000
+Subject: [PATCH 7/8] ARM: shmobile: r8a7779: Make struct rcar_sysc_ch const
+Message-Id: <5afcd90f65ac990ca08b101a0e0fd9eac4e0dcde.1436510166.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1436510166.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436510166.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/pm-r8a7779.c  |  3 ++-
+ arch/arm/mach-shmobile/smp-r8a7779.c | 12 ++++++------
+ 2 files changed, 8 insertions(+), 7 deletions(-)
 
+diff --git a/arch/arm/mach-shmobile/pm-r8a7779.c b/arch/arm/mach-shmobile/pm-r8a7779.c
+index 44a74c4c5a01..44e29e54b3bf 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7779.c
++++ b/arch/arm/mach-shmobile/pm-r8a7779.c
+@@ -35,7 +35,8 @@ struct r8a7779_pm_domain {
+ 	struct rcar_sysc_ch ch;
+ };
+ 
+-static inline struct rcar_sysc_ch *to_r8a7779_ch(struct generic_pm_domain *d)
++static inline
++const struct rcar_sysc_ch *to_r8a7779_ch(struct generic_pm_domain *d)
+ {
+ 	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
+ }
+diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
+index 01f792fcb220..9122216df060 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7779.c
++++ b/arch/arm/mach-shmobile/smp-r8a7779.c
+@@ -32,25 +32,25 @@
+ #define AVECR IOMEM(0xfe700040)
+ #define R8A7779_SCU_BASE 0xf0000000
+ 
+-static struct rcar_sysc_ch r8a7779_ch_cpu1 = {
++static const struct rcar_sysc_ch r8a7779_ch_cpu1 = {
+ 	.chan_offs = 0x40, /* PWRSR0 .. PWRER0 */
+ 	.chan_bit = 1, /* ARM1 */
+ 	.isr_bit = 1, /* ARM1 */
+ };
+ 
+-static struct rcar_sysc_ch r8a7779_ch_cpu2 = {
++static const struct rcar_sysc_ch r8a7779_ch_cpu2 = {
+ 	.chan_offs = 0x40, /* PWRSR0 .. PWRER0 */
+ 	.chan_bit = 2, /* ARM2 */
+ 	.isr_bit = 2, /* ARM2 */
+ };
+ 
+-static struct rcar_sysc_ch r8a7779_ch_cpu3 = {
++static const struct rcar_sysc_ch r8a7779_ch_cpu3 = {
+ 	.chan_offs = 0x40, /* PWRSR0 .. PWRER0 */
+ 	.chan_bit = 3, /* ARM3 */
+ 	.isr_bit = 3, /* ARM3 */
+ };
+ 
+-static struct rcar_sysc_ch *r8a7779_ch_cpu[4] = {
++static const struct rcar_sysc_ch * const r8a7779_ch_cpu[4] = {
+ 	[1] = &r8a7779_ch_cpu1,
+ 	[2] = &r8a7779_ch_cpu2,
+ 	[3] = &r8a7779_ch_cpu3,
+@@ -66,7 +66,7 @@ void __init r8a7779_register_twd(void)
+ 
+ static int r8a7779_platform_cpu_kill(unsigned int cpu)
+ {
+-	struct rcar_sysc_ch *ch = NULL;
++	const struct rcar_sysc_ch *ch = NULL;
+ 	int ret = -EIO;
+ 
+ 	cpu = cpu_logical_map(cpu);
+@@ -82,7 +82,7 @@ static int r8a7779_platform_cpu_kill(unsigned int cpu)
+ 
+ static int r8a7779_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ {
+-	struct rcar_sysc_ch *ch = NULL;
++	const struct rcar_sysc_ch *ch = NULL;
+ 	unsigned int lcpu = cpu_logical_map(cpu);
+ 	int ret;
+ 
+-- 
+2.1.4
 
-God dag,
-
-Dette er CENTRAL TRUST lån selskaper tilbyr lån.
-
-CENTRAL TRUST lån selskapet tilbyr fleksible og rimelige lån til ethvert formål, for å hjelpe deg å nå dine finansielle mål. vi lån med lav rente på 1,5%. Her er noen viktige trekk ved personlig lån fra sentral stoler på utlån selskaper tilbys. Her er de Låne Faktorer vi samarbeider med de ledende britiske meglere som har tilgang til toppen långivere og være i stand til å finne den beste økonomiske løsningen til en rimelig price.Please, hvis du er interessert kan du kontakte oss via denne e-post: centraltrust_ltd @ webadicta .org
-
-
-Etter reaksjonen, vil du motta en søknad om kreditt fyll. Ingen sosial sikkerhet og ingen kredittsjekk, 100% garantert.
-
-Det er en ære for oss hvis du tillater oss til tjeneste.
-
-
-Informasjon som er nødvendig
-
-Dine navn:
-Adresse: ...........
-Telefon: ...........
-Nødvendig Antall: ........
-Varighet: ...............
-Yrke: ...........
-Månedlig inntekt: ........
-Kjønn: ...............
-Fødselsdato: ........
-Status: ..................
-Land: ..........
-Hensikt: .........
-
-Oppfylle dine økonomiske behov er vår stolthet.
-
-David Donald
