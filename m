@@ -1,33 +1,66 @@
-From: Rasmus Villemoes <rv@rasmusvillemoes.dk>
-Date: Mon, 20 Jul 2015 21:02:17 +0000
-Subject: likely signedness bug in arch/{m32r,sh}/include/asm/thread_info.h
-Message-Id: <87bnf6o84m.fsf@rasmusvillemoes.dk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:37:11 +0000
+Subject: [PATCH 03/11] ARM: shmobile: r8a7790: add EtherAVB clocks
+Message-Id: <63d2d750c902dec77439f12b2eac9709468298ce.1436509954.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1436509954.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436509954.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Right-shifted ~0 aka -1 always gives -1 again, since gcc always does
-arithmetic right shift of signed types. So the common code (one is
-copy-pasted from the other)
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-      ti->flags = (ti->flags & (~0 >> (32 - TI_FLAG_FAULT_CODE_SHIFT)))
-              | (val << TI_FLAG_FAULT_CODE_SHIFT);
+Add the EtherAVB clock to the R8A7790 device tree.
 
-doesn't actually clear any of ti->flags; it's entirely equivalent to
+Based on original patch by Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>.
 
-      ti->flags |= (val << TI_FLAG_FAULT_CODE_SHIFT);
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi            | 10 ++++++----
+ include/dt-bindings/clock/r8a7790-clock.h |  1 +
+ 2 files changed, 7 insertions(+), 4 deletions(-)
 
-Presumably harmless since this hasn't been noticed before.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 51ab8865ea37..feb4652ed4b2 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1249,16 +1249,18 @@
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
+ 			clocks = <&hp_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>,
+-			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
++			         <&zg_clk>, <&hp_clk>, <&p_clk>, <&zs_clk>,
++				 <&zs_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+ 				R8A7790_CLK_MLB R8A7790_CLK_VIN3 R8A7790_CLK_VIN2
+-				R8A7790_CLK_VIN1 R8A7790_CLK_VIN0 R8A7790_CLK_ETHER
++				R8A7790_CLK_VIN1 R8A7790_CLK_VIN0
++				R8A7790_CLK_ETHERAVB R8A7790_CLK_ETHER
+ 				R8A7790_CLK_SATA1 R8A7790_CLK_SATA0
+ 			>;
+ 			clock-output-names -				"mlb", "vin3", "vin2", "vin1", "vin0", "ether",
+-				"sata1", "sata0";
++				"mlb", "vin3", "vin2", "vin1", "vin0",
++				"etheravb", "ether", "sata1", "sata0";
+ 		};
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index ff7ca3584e16..e119ef372ba3 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -108,6 +108,7 @@
+ #define R8A7790_CLK_VIN2		9
+ #define R8A7790_CLK_VIN1		10
+ #define R8A7790_CLK_VIN0		11
++#define R8A7790_CLK_ETHERAVB		12
+ #define R8A7790_CLK_ETHER		13
+ #define R8A7790_CLK_SATA1		14
+ #define R8A7790_CLK_SATA0		15
+-- 
+2.1.4
 
-[Surprisingly, for non-const shifts, gcc doesn't realize the shift is a
-noop: unsigned g(int s) { return ~0 >> s; } compiles to
-
-        movl    %edi, %ecx
-        movl    $-1, %eax
-        sarl    %cl, %eax
-        ret
-
-Since ~0 >> whatever is almost always used as a mask, probably
-gcc/sparse/smatch should warn about this and suggest using 0u.]
