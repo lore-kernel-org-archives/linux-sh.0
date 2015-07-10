@@ -1,61 +1,44 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 08 Jul 2015 10:12:52 +0000
-Subject: Re: [PATCH] dmaengine: use phys_addr_t for slave configuration
-Message-Id: <CAMuHMdUTzTBT8DyRb5WN048U5DbVsFnhJB0c5tjHBnA4rfetJg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:37:15 +0000
+Subject: [PATCH 07/11] ARM: shmobile: r8a7790 dtsi: Use "arm,gic-400" for GIC
+Message-Id: <e715e9c57826cc3370fc5fcdb9d57602d52bba9a.1436509954.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366967214-20776-1-git-send-email-linus.walleij@linaro.org>
-In-Reply-To: <1366967214-20776-1-git-send-email-linus.walleij@linaro.org>
+References: <cover.1436509954.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436509954.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Lee Jones <lee.jones@linaro.org>, Vinod Koul <vinod.koul@intel.com>, dmaengine@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Apr 26, 2013 at 11:06 AM, Linus Walleij
-<linus.walleij@linaro.org> wrote:
-> The documentation already says these are physical addresses, and
-> we have concluded that any translation into the DMA address space
-> needs to reside in the dmaengine driver, so change the type of
-> the passed arguments.
->
-> Cc: Arnd Bergmann <arnd@arndb.de>
-> Cc: Lee Jones <lee.jones@linaro.org>
-> Cc: Vinod Koul <vinod.koul@intel.com>
-> Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-What's the status of this one, which has been acked by Lee and Arnd?
+Replace the "arm,cortex-a15-gic" compatible value for the GIC by
+"arm,gic-400", as the R-Car Gen2 GIC is assumed to be a GIC-400.
+This has been confirmed by reading the GICD_IIDR register (on r8a7791),
+which reports 0x0200043b (GIC-400 = 0x02, ARM = 0x43b).
 
-Thanks!
+This has no effect on runtime behavior, as currently the GIC driver
+treats both compatible values the same.
 
-> ---
->  include/linux/dmaengine.h | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
->
-> diff --git a/include/linux/dmaengine.h b/include/linux/dmaengine.h
-> index 91ac8da..681df5f9 100644
-> --- a/include/linux/dmaengine.h
-> +++ b/include/linux/dmaengine.h
-> @@ -361,8 +361,8 @@ enum dma_slave_buswidth {
->   */
->  struct dma_slave_config {
->         enum dma_transfer_direction direction;
-> -       dma_addr_t src_addr;
-> -       dma_addr_t dst_addr;
-> +       phys_addr_t src_addr;
-> +       phys_addr_t dst_addr;
->         enum dma_slave_buswidth src_addr_width;
->         enum dma_slave_buswidth dst_addr_width;
->         u32 src_maxburst;
-> --
-> 1.8.1.4
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index c9aae06319c0..3ae0c3bfb9b9 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -113,7 +113,7 @@
+ 	};
+ 
+ 	gic: interrupt-controller@f1001000 {
+-		compatible = "arm,cortex-a15-gic";
++		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
+ 		#address-cells = <0>;
+ 		interrupt-controller;
+-- 
+2.1.4
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
