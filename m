@@ -1,62 +1,68 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 17 Jul 2015 14:08:26 +0000
-Subject: [RFC 6/9] i2c: make address check indpendent from client struct
-Message-Id: <1437142109-31975-7-git-send-email-wsa@the-dreams.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 10 Jul 2015 17:44:39 +0000
+Subject: [PATCH] ravb: kill usless initializers
+Message-Id: <6091630.MmiAo8Envs@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1437142109-31975-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Andrey Danin <danindrey-JGs/UdohzUI@public.gmane.org>, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Some of the local variable intializers in the driver turned out to be pointless,
+kill them.
 
-We want to use this function with struct boardinfo soon, so let's just
-pass the parameters really needed. We also extend the type of addr, so
-more types can be input. Remove a superfluous dangling comment while
-here.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- drivers/i2c/i2c-core.c | 11 +++++------
- 1 file changed, 5 insertions(+), 6 deletions(-)
+The patch is against the Dave Miller's 'net-next.git' repo.
 
-diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
-index b54a0f092d53f6..b5719a2cff97bf 100644
---- a/drivers/i2c/i2c-core.c
-+++ b/drivers/i2c/i2c-core.c
-@@ -793,15 +793,15 @@ static unsigned short i2c_encode_flags_to_addr(struct i2c_client *client)
- 
- /* This is a permissive address validity check, I2C address map constraints
-  * are purposely not enforced, except for the general call address. */
--static int i2c_check_addr_validity(const struct i2c_client *client)
-+static int i2c_check_addr_validity(unsigned addr, unsigned short flags)
+ drivers/net/ethernet/renesas/ravb_main.c |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/ravb_main.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/ravb_main.c
++++ net-next/drivers/net/ethernet/renesas/ravb_main.c
+@@ -223,9 +223,9 @@ static void ravb_ring_free(struct net_de
+ static void ravb_ring_format(struct net_device *ndev, int q)
  {
--	if (client->flags & I2C_CLIENT_TEN) {
-+	if (flags & I2C_CLIENT_TEN) {
- 		/* 10-bit address, all values are valid */
--		if (client->addr > 0x3ff)
-+		if (addr > 0x3ff)
- 			return -EINVAL;
- 	} else {
- 		/* 7-bit address, reject the general call address */
--		if (client->addr = 0x00 || client->addr > 0x7f)
-+		if (addr = 0x00 || addr > 0x7f)
- 			return -EINVAL;
- 	}
- 	return 0;
-@@ -979,8 +979,7 @@ i2c_new_device(struct i2c_adapter *adap, struct i2c_board_info const *info)
+ 	struct ravb_private *priv = netdev_priv(ndev);
+-	struct ravb_ex_rx_desc *rx_desc = NULL;
+-	struct ravb_tx_desc *tx_desc = NULL;
+-	struct ravb_desc *desc = NULL;
++	struct ravb_ex_rx_desc *rx_desc;
++	struct ravb_tx_desc *tx_desc;
++	struct ravb_desc *desc;
+ 	int rx_ring_size = sizeof(*rx_desc) * priv->num_rx_ring[q];
+ 	int tx_ring_size = sizeof(*tx_desc) * priv->num_tx_ring[q];
+ 	struct sk_buff *skb;
+@@ -435,7 +435,7 @@ static int ravb_tx_free(struct net_devic
+ 	struct net_device_stats *stats = &priv->stats[q];
+ 	struct ravb_tx_desc *desc;
+ 	int free_num = 0;
+-	int entry = 0;
++	int entry;
+ 	u32 size;
  
- 	strlcpy(client->name, info->type, sizeof(client->name));
+ 	for (; priv->cur_tx[q] - priv->dirty_tx[q] > 0; priv->dirty_tx[q]++) {
+@@ -508,8 +508,8 @@ static bool ravb_rx(struct net_device *n
+ 	struct sk_buff *skb;
+ 	dma_addr_t dma_addr;
+ 	struct timespec64 ts;
+-	u16 pkt_len = 0;
+ 	u8  desc_status;
++	u16 pkt_len;
+ 	int limit;
  
--	/* Check for address validity */
--	status = i2c_check_addr_validity(client);
-+	status = i2c_check_addr_validity(client->addr, client->flags);
- 	if (status) {
- 		dev_err(&adap->dev, "Invalid %d-bit I2C address 0x%02hx\n",
- 			client->flags & I2C_CLIENT_TEN ? 10 : 7, client->addr);
--- 
-2.1.4
+ 	boguscnt = min(boguscnt, *quota);
+@@ -1272,8 +1272,8 @@ static void ravb_tx_timeout_work(struct
+ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ {
+ 	struct ravb_private *priv = netdev_priv(ndev);
+-	struct ravb_tstamp_skb *ts_skb = NULL;
+ 	u16 q = skb_get_queue_mapping(skb);
++	struct ravb_tstamp_skb *ts_skb;
+ 	struct ravb_tx_desc *desc;
+ 	unsigned long flags;
+ 	u32 dma_addr;
 
