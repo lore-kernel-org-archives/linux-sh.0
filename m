@@ -1,50 +1,45 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 01 Jul 2015 15:58:09 +0000
-Subject: [PATCH v3 15/16] clk: shmobile: mstp: Consider "zb_clk" suitable for power management
-Message-Id: <1435766290-3005-16-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:36:49 +0000
+Subject: [PATCH 02/16] ARM: shmobile: R-Mobile: Use BIT() macro instead of open coding
+Message-Id: <23e95fc2964de5a38c1c76109188756420268858.1436509680.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435766290-3005-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1435766290-3005-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1436509680.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436509680.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Currently the CPG/MSTP Clock Domain code looks for MSTP clocks to power
-manage a device.
-
-Unfortunately, on R-Mobile APE6 (r8a73a4) and SH-Mobile AG5 (sh73a0),
-the Bus State Controller (BSC) is not power-managed by an MSTP clock,
-but by a plain CPG clock (zb_clk).  Add a special case to handle this,
-so the clock is properly managed, and devices connected to the BSC work
-as expected.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3:
-  - Use "CPG/MSTP Clock Domain" instead of "CPG Clock Domain",
+ arch/arm/mach-shmobile/pm-rmobile.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-v2:
-  - New.
----
- drivers/clk/shmobile/clk-mstp.c | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
-index 9b4451304f5732d4..9975695ca814614f 100644
---- a/drivers/clk/shmobile/clk-mstp.c
-+++ b/drivers/clk/shmobile/clk-mstp.c
-@@ -258,6 +258,10 @@ int cpg_mstp_attach_dev(struct generic_pm_domain *domain, struct device *dev)
- 					    "renesas,cpg-mstp-clocks"))
- 			goto found;
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 94161c9b1878..b9b494f5ca99 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -48,7 +48,7 @@ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
+ 	if (rmobile_pd->bit_shift = ~0)
+ 		return -EBUSY;
  
-+		/* BSC on r8a73a4/sh73a0 uses zb_clk instead of an mstp clock*/
-+		if (!strcmp(clkspec.np->name, "zb_clk"))
-+			goto found;
-+
- 		of_node_put(clkspec.np);
- 		i++;
- 	}
+-	mask = 1 << rmobile_pd->bit_shift;
++	mask = BIT(rmobile_pd->bit_shift);
+ 	if (rmobile_pd->suspend) {
+ 		int ret = rmobile_pd->suspend();
+ 
+@@ -85,7 +85,7 @@ static int __rmobile_pd_power_up(struct rmobile_pm_domain *rmobile_pd,
+ 	if (rmobile_pd->bit_shift = ~0)
+ 		return 0;
+ 
+-	mask = 1 << rmobile_pd->bit_shift;
++	mask = BIT(rmobile_pd->bit_shift);
+ 	if (__raw_readl(rmobile_pd->base + PSTR) & mask)
+ 		goto out;
+ 
 -- 
-1.9.1
+2.1.4
 
