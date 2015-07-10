@@ -1,1949 +1,1761 @@
-From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
-Date: Wed, 22 Jul 2015 11:23:03 +0000
-Subject: [PATCH v6 1/3] V4L2: platform: Add Renesas R-Car JPEG codec driver
-Message-Id: <1437564185-13593-2-git-send-email-mikhail.ulyanov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:36:54 +0000
+Subject: [PATCH 07/16] ARM: shmobile: Remove legacy SoC code for SH-Mobile AG5
+Message-Id: <9a9863987bf7307f619f1dbba678a3e6d65c901a.1436509680.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437564185-13593-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
-In-Reply-To: <1437564185-13593-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
+References: <cover.1436509680.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436509680.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hverkuil@xs4all.nl, horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, mchehab@osg.samsung.com
-Cc: laurent.pinchart@ideasonboard.com, j.anaszewski@samsung.com, kamil@wypas.org, sergei.shtylyov@cogentembedded.com, devicetree@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Here's the driver for the Renesas R-Car JPEG processing unit.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-The driver is implemented within the V4L2 framework as a memory-to-memory
-device.  It presents two video nodes to userspace, one for the encoding part,
-and one for the decoding part.
+The last user of the SH-Mobile AG5 (sh73a0) legacy SoC code was the
+KZM-A9-GT legacy board code, which has been removed.
 
-It was found that the only working mode for encoding is no markers output, so we
-generate markers with software. In the current version of driver we also use
-software JPEG header parsing because with hardware parsing performance is lower
-than desired.
-
-From a userspace point of view the process is typical (S_FMT, REQBUF,
-optionally QUERYBUF, QBUF, STREAMON, DQBUF) for both the source and destination
-queues. STREAMON can return -EINVAL in case of mismatch of output and capture
-queues format. Also during decoding driver can return buffers if queued
-buffer with JPEG image contains image with inappropriate subsampling (e.g.
-4:2:0 in JPEG and 4:2:2 in capture).  If JPEG image and queue format dimensions
-differ driver will return buffer on QBUF with VB2_BUF_STATE_ERROR flag.
-
-During encoding the available formats are: V4L2_PIX_FMT_NV12M,
-V4L2_PIX_FMT_NV12, V4L2_PIX_FMT_NV16, V4L2_PIX_FMT_NV16M for source and
-V4L2_PIX_FMT_JPEG for destination.
-
-During decoding the available formats are: V4L2_PIX_FMT_JPEG for source and
-V4L2_PIX_FMT_NV12M, V4L2_PIX_FMT_NV16M, V4L2_PIX_FMT_NV12, V4L2_PIX_FMT_NV16
-for destination.
-
-Performance of current version:
-1280x800 NV12 image encoding/decoding
-	decoding ~122 FPS
-	encoding ~191 FPS
-
-Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Changes since v5:
-    - VIDIOC_CREATE_BUFS support added(m2m helper and jpu_queue_setup fix)
-    - VIDIOC_EXPBUF support added(m2m helper)
+ arch/arm/mach-shmobile/Kconfig        |   9 -
+ arch/arm/mach-shmobile/Makefile       |   3 +-
+ arch/arm/mach-shmobile/clock-sh73a0.c | 752 ----------------------------------
+ arch/arm/mach-shmobile/pm-sh73a0.c    |  32 --
+ arch/arm/mach-shmobile/setup-sh73a0.c | 739 +--------------------------------
+ arch/arm/mach-shmobile/sh73a0.h       |  83 ----
+ arch/arm/mach-shmobile/smp-sh73a0.c   |   8 -
+ 7 files changed, 2 insertions(+), 1624 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/clock-sh73a0.c
+ delete mode 100644 arch/arm/mach-shmobile/pm-sh73a0.c
 
- Changes since v4:
-    - ARCH dependency added to Kconfig
-    - module name fix in Kconfig
-    - add v4l2_buf.sequence number filling
-    - add v4l2_buf.field copy from source to destination buffer
-    - only valid flags in destination buffer
-    - fix bpl type in __jpu_try_fmt()
-    - remove V4L2_MEMORY_USERPTR support as almost useless and buggy
-    - fix jpu->curr setup in irq handler
-
- Changes since v3:
-    - driver file renamed to rcar_jpu.c
-    - semiplanar formats NV12 and NV16 support
-    - new callbacks streamon, job_abort and stop_streaming
-    - extra processing error information printout irq handler
-    - fill in JPEG header for encoded buffer in buf_finish
-    - wrapped reading/writing to registers
-    - vb2_set_plane_payload only for necessary buffer in buf_prepare
-    - multiple buffers now supported
-    - removed format setup with parsed info; rely only on users info
-    - JPEG header parser redesigned
-    - video_device structs embedded
-    - video_device_alloc/release removed
-    - "name" filed in format description removed
-    - remove g_selection
-    - start_streaming removed
-
-Changes since v2:
-    - Kconfig entry reordered
-    - unnecessary clk_disable_unprepare(jpu->clk) removed
-    - ref_count fixed in jpu_resume
-    - enable DMABUF in src_vq->io_modes
-    - remove jpu_s_priority jpu_g_priority
-    - jpu_g_selection fixed
-    - timeout in jpu_reset added and hardware reset reworked
-    - remove unused macros
-    - JPEG header parsing now is software because of performance issues
-      based on s5p-jpeg code
-    - JPEG header generation redesigned:
-      JPEG header(s) pre-generated and memcpy'ed on encoding
-      we only fill the necessary fields
-      more "transparent" header format description
-    - S_FMT, G_FMT and TRY_FMT hooks redesigned
-      partially inspired by VSP1 driver code
-    - some code was reformatted
-    - image formats handling redesigned
-    - multi-planar V4L2 API now in use
-    - now passes v4l2-compliance tool check
-
-Cnanges since v1:
-    - s/g_fmt function simplified
-    - default format for queues added
-    - dumb vidioc functions added to be in compliance with standard api:
-        jpu_s_priority, jpu_g_priority
-    - standard v4l2_ctrl_subscribe_event and v4l2_event_unsubscribe
-      now in use by the same reason
-
- drivers/media/platform/Kconfig    |   12 +
- drivers/media/platform/Makefile   |    1 +
- drivers/media/platform/rcar_jpu.c | 1794 +++++++++++++++++++++++++++++++++++++
- 3 files changed, 1807 insertions(+)
- create mode 100644 drivers/media/platform/rcar_jpu.c
-
-diff --git a/drivers/media/platform/Kconfig b/drivers/media/platform/Kconfig
-index f6bed19..ea1cb83 100644
---- a/drivers/media/platform/Kconfig
-+++ b/drivers/media/platform/Kconfig
-@@ -231,6 +231,18 @@ config VIDEO_SH_VEU
- 	    Support for the Video Engine Unit (VEU) on SuperH and
- 	    SH-Mobile SoCs.
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 3cebc4cbb8ca..8e82ef4abdce 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -103,15 +103,6 @@ if ARCH_SHMOBILE_LEGACY
  
-+config VIDEO_RENESAS_JPU
-+	tristate "Renesas JPEG Processing Unit"
-+	depends on VIDEO_DEV && VIDEO_V4L2
-+	depends on ARCH_SHMOBILE || COMPILE_TEST
-+	select VIDEOBUF2_DMA_CONTIG
-+	select V4L2_MEM2MEM_DEV
-+	---help---
-+	  This is a V4L2 driver for the Renesas JPEG Processing Unit.
-+
-+	  To compile this driver as a module, choose M here: the module
-+	  will be called rcar_jpu.
-+
- config VIDEO_RENESAS_VSP1
- 	tristate "Renesas VSP1 Video Processing Engine"
- 	depends on VIDEO_V4L2 && VIDEO_V4L2_SUBDEV_API && HAS_DMA
-diff --git a/drivers/media/platform/Makefile b/drivers/media/platform/Makefile
-index 114f9ab..c2d17c3 100644
---- a/drivers/media/platform/Makefile
-+++ b/drivers/media/platform/Makefile
-@@ -44,6 +44,7 @@ obj-$(CONFIG_VIDEO_SH_VOU)		+= sh_vou.o
+ comment "Renesas ARM SoCs System Type"
  
- obj-$(CONFIG_SOC_CAMERA)		+= soc_camera/
+-config ARCH_SH73A0
+-	bool "SH-Mobile AG5 (R8A73A00)"
+-	select ARCH_RMOBILE
+-	select ARCH_WANT_OPTIONAL_GPIOLIB
+-	select ARM_GIC
+-	select I2C
+-	select SH_INTC
+-	select RENESAS_INTC_IRQPIN
+-
+ config ARCH_R8A7740
+ 	bool "R-Mobile A1 (R8A77400)"
+ 	select ARCH_RMOBILE
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index a4d7f5734e91..28e0f05a8577 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -6,7 +6,7 @@
+ obj-y				:= timer.o console.o
  
-+obj-$(CONFIG_VIDEO_RENESAS_JPU) 	+= rcar_jpu.o
- obj-$(CONFIG_VIDEO_RENESAS_VSP1)	+= vsp1/
+ # CPU objects
+-obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o pm-sh73a0.o
++obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o pm-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
+@@ -20,7 +20,6 @@ obj-$(CONFIG_ARCH_R7S72100)	+= setup-r7s72100.o
+ # Clock objects
+ ifndef CONFIG_COMMON_CLK
+ obj-y				+= clock.o
+-obj-$(CONFIG_ARCH_SH73A0)	+= clock-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= clock-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7778)	+= clock-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= clock-r8a7779.o
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+deleted file mode 100644
+index 3855fb024fdb..000000000000
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ /dev/null
+@@ -1,752 +0,0 @@
+-/*
+- * sh73a0 clock framework support
+- *
+- * Copyright (C) 2010 Magnus Damm
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-#include <linux/init.h>
+-#include <linux/kernel.h>
+-#include <linux/io.h>
+-#include <linux/sh_clk.h>
+-#include <linux/clkdev.h>
+-#include <asm/processor.h>
+-#include "clock.h"
+-#include "common.h"
+-
+-#define FRQCRA		IOMEM(0xe6150000)
+-#define FRQCRB		IOMEM(0xe6150004)
+-#define FRQCRD		IOMEM(0xe61500e4)
+-#define VCLKCR1		IOMEM(0xe6150008)
+-#define VCLKCR2		IOMEM(0xe615000C)
+-#define VCLKCR3		IOMEM(0xe615001C)
+-#define ZBCKCR		IOMEM(0xe6150010)
+-#define FLCKCR		IOMEM(0xe6150014)
+-#define SD0CKCR		IOMEM(0xe6150074)
+-#define SD1CKCR		IOMEM(0xe6150078)
+-#define SD2CKCR		IOMEM(0xe615007C)
+-#define FSIACKCR	IOMEM(0xe6150018)
+-#define FSIBCKCR	IOMEM(0xe6150090)
+-#define SUBCKCR		IOMEM(0xe6150080)
+-#define SPUACKCR	IOMEM(0xe6150084)
+-#define SPUVCKCR	IOMEM(0xe6150094)
+-#define MSUCKCR		IOMEM(0xe6150088)
+-#define HSICKCR		IOMEM(0xe615008C)
+-#define MFCK1CR		IOMEM(0xe6150098)
+-#define MFCK2CR		IOMEM(0xe615009C)
+-#define DSITCKCR	IOMEM(0xe6150060)
+-#define DSI0PCKCR	IOMEM(0xe6150064)
+-#define DSI1PCKCR	IOMEM(0xe6150068)
+-#define DSI0PHYCR	0xe615006C
+-#define DSI1PHYCR	0xe6150070
+-#define PLLECR		IOMEM(0xe61500d0)
+-#define PLL0CR		IOMEM(0xe61500d8)
+-#define PLL1CR		IOMEM(0xe6150028)
+-#define PLL2CR		IOMEM(0xe615002c)
+-#define PLL3CR		IOMEM(0xe61500dc)
+-#define SMSTPCR0	IOMEM(0xe6150130)
+-#define SMSTPCR1	IOMEM(0xe6150134)
+-#define SMSTPCR2	IOMEM(0xe6150138)
+-#define SMSTPCR3	IOMEM(0xe615013c)
+-#define SMSTPCR4	IOMEM(0xe6150140)
+-#define SMSTPCR5	IOMEM(0xe6150144)
+-#define CKSCR		IOMEM(0xe61500c0)
+-
+-/* Fixed 32 KHz root clock from EXTALR pin */
+-static struct clk r_clk = {
+-	.rate           = 32768,
+-};
+-
+-/*
+- * 26MHz default rate for the EXTAL1 root input clock.
+- * If needed, reset this with clk_set_rate() from the platform code.
+- */
+-struct clk sh73a0_extal1_clk = {
+-	.rate		= 26000000,
+-};
+-
+-/*
+- * 48MHz default rate for the EXTAL2 root input clock.
+- * If needed, reset this with clk_set_rate() from the platform code.
+- */
+-struct clk sh73a0_extal2_clk = {
+-	.rate		= 48000000,
+-};
+-
+-static struct sh_clk_ops main_clk_ops = {
+-	.recalc		= followparent_recalc,
+-};
+-
+-/* Main clock */
+-static struct clk main_clk = {
+-	/* .parent wll be set on sh73a0_clock_init() */
+-	.ops		= &main_clk_ops,
+-};
+-
+-/* PLL0, PLL1, PLL2, PLL3 */
+-static unsigned long pll_recalc(struct clk *clk)
+-{
+-	unsigned long mult = 1;
+-
+-	if (__raw_readl(PLLECR) & (1 << clk->enable_bit)) {
+-		mult = (((__raw_readl(clk->enable_reg) >> 24) & 0x3f) + 1);
+-		/* handle CFG bit for PLL1 and PLL2 */
+-		switch (clk->enable_bit) {
+-		case 1:
+-		case 2:
+-			if (__raw_readl(clk->enable_reg) & (1 << 20))
+-				mult *= 2;
+-		}
+-	}
+-
+-	return clk->parent->rate * mult;
+-}
+-
+-static struct sh_clk_ops pll_clk_ops = {
+-	.recalc		= pll_recalc,
+-};
+-
+-static struct clk pll0_clk = {
+-	.ops		= &pll_clk_ops,
+-	.flags		= CLK_ENABLE_ON_INIT,
+-	.parent		= &main_clk,
+-	.enable_reg	= (void __iomem *)PLL0CR,
+-	.enable_bit	= 0,
+-};
+-
+-static struct clk pll1_clk = {
+-	.ops		= &pll_clk_ops,
+-	.flags		= CLK_ENABLE_ON_INIT,
+-	.parent		= &main_clk,
+-	.enable_reg	= (void __iomem *)PLL1CR,
+-	.enable_bit	= 1,
+-};
+-
+-static struct clk pll2_clk = {
+-	.ops		= &pll_clk_ops,
+-	.flags		= CLK_ENABLE_ON_INIT,
+-	.parent		= &main_clk,
+-	.enable_reg	= (void __iomem *)PLL2CR,
+-	.enable_bit	= 2,
+-};
+-
+-static struct clk pll3_clk = {
+-	.ops		= &pll_clk_ops,
+-	.flags		= CLK_ENABLE_ON_INIT,
+-	.parent		= &main_clk,
+-	.enable_reg	= (void __iomem *)PLL3CR,
+-	.enable_bit	= 3,
+-};
+-
+-/* A fixed divide block */
+-SH_CLK_RATIO(div2,  1, 2);
+-SH_CLK_RATIO(div7,  1, 7);
+-SH_CLK_RATIO(div13, 1, 13);
+-
+-SH_FIXED_RATIO_CLK(extal1_div2_clk,	sh73a0_extal1_clk,	div2);
+-SH_FIXED_RATIO_CLK(extal2_div2_clk,	sh73a0_extal2_clk,	div2);
+-SH_FIXED_RATIO_CLK(main_div2_clk,	main_clk,		div2);
+-SH_FIXED_RATIO_CLK(pll1_div2_clk,	pll1_clk,		div2);
+-SH_FIXED_RATIO_CLK(pll1_div7_clk,	pll1_clk,		div7);
+-SH_FIXED_RATIO_CLK(pll1_div13_clk,	pll1_clk,		div13);
+-
+-/* External input clock */
+-struct clk sh73a0_extcki_clk = {
+-};
+-
+-struct clk sh73a0_extalr_clk = {
+-};
+-
+-static struct clk *main_clks[] = {
+-	&r_clk,
+-	&sh73a0_extal1_clk,
+-	&sh73a0_extal2_clk,
+-	&extal1_div2_clk,
+-	&extal2_div2_clk,
+-	&main_clk,
+-	&main_div2_clk,
+-	&pll0_clk,
+-	&pll1_clk,
+-	&pll2_clk,
+-	&pll3_clk,
+-	&pll1_div2_clk,
+-	&pll1_div7_clk,
+-	&pll1_div13_clk,
+-	&sh73a0_extcki_clk,
+-	&sh73a0_extalr_clk,
+-};
+-
+-static int frqcr_kick(void)
+-{
+-	int i;
+-
+-	/* set KICK bit in FRQCRB to update hardware setting, check success */
+-	__raw_writel(__raw_readl(FRQCRB) | (1 << 31), FRQCRB);
+-	for (i = 1000; i; i--)
+-		if (__raw_readl(FRQCRB) & (1 << 31))
+-			cpu_relax();
+-		else
+-			return i;
+-
+-	return -ETIMEDOUT;
+-}
+-
+-static void div4_kick(struct clk *clk)
+-{
+-	frqcr_kick();
+-}
+-
+-static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18,
+-			  24, 0, 36, 48, 7 };
+-
+-static struct clk_div_mult_table div4_div_mult_table = {
+-	.divisors = divisors,
+-	.nr_divisors = ARRAY_SIZE(divisors),
+-};
+-
+-static struct clk_div4_table div4_table = {
+-	.div_mult_table = &div4_div_mult_table,
+-	.kick = div4_kick,
+-};
+-
+-enum { DIV4_I, DIV4_ZG, DIV4_M3, DIV4_B, DIV4_M1, DIV4_M2,
+-	DIV4_Z, DIV4_ZX, DIV4_HP, DIV4_NR };
+-
+-#define DIV4(_reg, _bit, _mask, _flags) \
+-	SH_CLK_DIV4(&pll1_clk, _reg, _bit, _mask, _flags)
+-
+-static struct clk div4_clks[DIV4_NR] = {
+-	[DIV4_I] = DIV4(FRQCRA, 20, 0xdff, CLK_ENABLE_ON_INIT),
+-	/*
+-	 * ZG clock is dividing PLL0 frequency to supply SGX. Make sure not to
+-	 * exceed maximum frequencies of 201.5MHz for VDD_DVFS=1.175 and
+-	 * 239.2MHz for VDD_DVFS=1.315V.
+-	 */
+-	[DIV4_ZG] = SH_CLK_DIV4(&pll0_clk, FRQCRA, 16, 0xd7f, CLK_ENABLE_ON_INIT),
+-	[DIV4_M3] = DIV4(FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT),
+-	[DIV4_B] = DIV4(FRQCRA, 8, 0xdff, CLK_ENABLE_ON_INIT),
+-	[DIV4_M1] = DIV4(FRQCRA, 4, 0x1dff, 0),
+-	[DIV4_M2] = DIV4(FRQCRA, 0, 0x1dff, 0),
+-	[DIV4_Z] = SH_CLK_DIV4(&pll0_clk, FRQCRB, 24, 0x97f, 0),
+-	[DIV4_ZX] = DIV4(FRQCRB, 12, 0xdff, 0),
+-	[DIV4_HP] = DIV4(FRQCRB, 4, 0xdff, 0),
+-};
+-
+-static unsigned long twd_recalc(struct clk *clk)
+-{
+-	return clk_get_rate(clk->parent) / 4;
+-}
+-
+-static struct sh_clk_ops twd_clk_ops = {
+-	.recalc = twd_recalc,
+-};
+-
+-static struct clk twd_clk = {
+-	.parent = &div4_clks[DIV4_Z],
+-	.ops = &twd_clk_ops,
+-};
+-
+-static struct sh_clk_ops zclk_ops, kicker_ops;
+-static const struct sh_clk_ops *div4_clk_ops;
+-
+-static int zclk_set_rate(struct clk *clk, unsigned long rate)
+-{
+-	int ret;
+-
+-	if (!clk->parent || !__clk_get(clk->parent))
+-		return -ENODEV;
+-
+-	if (readl(FRQCRB) & (1 << 31))
+-		return -EBUSY;
+-
+-	if (rate = clk_get_rate(clk->parent)) {
+-		/* 1:1 - switch off divider */
+-		__raw_writel(__raw_readl(FRQCRB) & ~(1 << 28), FRQCRB);
+-		/* nullify the divider to prepare for the next time */
+-		ret = div4_clk_ops->set_rate(clk, rate / 2);
+-		if (!ret)
+-			ret = frqcr_kick();
+-		if (ret > 0)
+-			ret = 0;
+-	} else {
+-		/* Enable the divider */
+-		__raw_writel(__raw_readl(FRQCRB) | (1 << 28), FRQCRB);
+-
+-		ret = frqcr_kick();
+-		if (ret >= 0)
+-			/*
+-			 * set the divider - call the DIV4 method, it will kick
+-			 * FRQCRB too
+-			 */
+-			ret = div4_clk_ops->set_rate(clk, rate);
+-		if (ret < 0)
+-			goto esetrate;
+-	}
+-
+-esetrate:
+-	__clk_put(clk->parent);
+-	return ret;
+-}
+-
+-static long zclk_round_rate(struct clk *clk, unsigned long rate)
+-{
+-	unsigned long div_freq = div4_clk_ops->round_rate(clk, rate),
+-		parent_freq = clk_get_rate(clk->parent);
+-
+-	if (rate > div_freq && abs(parent_freq - rate) < rate - div_freq)
+-		return parent_freq;
+-
+-	return div_freq;
+-}
+-
+-static unsigned long zclk_recalc(struct clk *clk)
+-{
+-	/*
+-	 * Must recalculate frequencies in case PLL0 has been changed, even if
+-	 * the divisor is unused ATM!
+-	 */
+-	unsigned long div_freq = div4_clk_ops->recalc(clk);
+-
+-	if (__raw_readl(FRQCRB) & (1 << 28))
+-		return div_freq;
+-
+-	return clk_get_rate(clk->parent);
+-}
+-
+-static int kicker_set_rate(struct clk *clk, unsigned long rate)
+-{
+-	if (__raw_readl(FRQCRB) & (1 << 31))
+-		return -EBUSY;
+-
+-	return div4_clk_ops->set_rate(clk, rate);
+-}
+-
+-static void div4_clk_extend(void)
+-{
+-	int i;
+-
+-	div4_clk_ops = div4_clks[0].ops;
+-
+-	/* Add a kicker-busy check before changing the rate */
+-	kicker_ops = *div4_clk_ops;
+-	/* We extend the DIV4 clock with a 1:1 pass-through case */
+-	zclk_ops = *div4_clk_ops;
+-
+-	kicker_ops.set_rate = kicker_set_rate;
+-	zclk_ops.set_rate = zclk_set_rate;
+-	zclk_ops.round_rate = zclk_round_rate;
+-	zclk_ops.recalc = zclk_recalc;
+-
+-	for (i = 0; i < DIV4_NR; i++)
+-		div4_clks[i].ops = i = DIV4_Z ? &zclk_ops : &kicker_ops;
+-}
+-
+-enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
+-	DIV6_FLCTL, DIV6_SDHI0, DIV6_SDHI1, DIV6_SDHI2,
+-	DIV6_FSIA, DIV6_FSIB, DIV6_SUB,
+-	DIV6_SPUA, DIV6_SPUV, DIV6_MSU,
+-	DIV6_HSI,  DIV6_MFG1, DIV6_MFG2,
+-	DIV6_DSIT, DIV6_DSI0P, DIV6_DSI1P,
+-	DIV6_NR };
+-
+-static struct clk *vck_parent[8] = {
+-	[0] = &pll1_div2_clk,
+-	[1] = &pll2_clk,
+-	[2] = &sh73a0_extcki_clk,
+-	[3] = &sh73a0_extal2_clk,
+-	[4] = &main_div2_clk,
+-	[5] = &sh73a0_extalr_clk,
+-	[6] = &main_clk,
+-};
+-
+-static struct clk *pll_parent[4] = {
+-	[0] = &pll1_div2_clk,
+-	[1] = &pll2_clk,
+-	[2] = &pll1_div13_clk,
+-};
+-
+-static struct clk *hsi_parent[4] = {
+-	[0] = &pll1_div2_clk,
+-	[1] = &pll2_clk,
+-	[2] = &pll1_div7_clk,
+-};
+-
+-static struct clk *pll_extal2_parent[] = {
+-	[0] = &pll1_div2_clk,
+-	[1] = &pll2_clk,
+-	[2] = &sh73a0_extal2_clk,
+-	[3] = &sh73a0_extal2_clk,
+-};
+-
+-static struct clk *dsi_parent[8] = {
+-	[0] = &pll1_div2_clk,
+-	[1] = &pll2_clk,
+-	[2] = &main_clk,
+-	[3] = &sh73a0_extal2_clk,
+-	[4] = &sh73a0_extcki_clk,
+-};
+-
+-static struct clk div6_clks[DIV6_NR] = {
+-	[DIV6_VCK1] = SH_CLK_DIV6_EXT(VCLKCR1, 0,
+-			vck_parent, ARRAY_SIZE(vck_parent), 12, 3),
+-	[DIV6_VCK2] = SH_CLK_DIV6_EXT(VCLKCR2, 0,
+-			vck_parent, ARRAY_SIZE(vck_parent), 12, 3),
+-	[DIV6_VCK3] = SH_CLK_DIV6_EXT(VCLKCR3, 0,
+-			vck_parent, ARRAY_SIZE(vck_parent), 12, 3),
+-	[DIV6_ZB1] = SH_CLK_DIV6_EXT(ZBCKCR, CLK_ENABLE_ON_INIT,
+-			pll_parent, ARRAY_SIZE(pll_parent), 7, 1),
+-	[DIV6_FLCTL] = SH_CLK_DIV6_EXT(FLCKCR, 0,
+-			pll_parent, ARRAY_SIZE(pll_parent), 7, 1),
+-	[DIV6_SDHI0] = SH_CLK_DIV6_EXT(SD0CKCR, 0,
+-			pll_parent, ARRAY_SIZE(pll_parent), 6, 2),
+-	[DIV6_SDHI1] = SH_CLK_DIV6_EXT(SD1CKCR, 0,
+-			pll_parent, ARRAY_SIZE(pll_parent), 6, 2),
+-	[DIV6_SDHI2] = SH_CLK_DIV6_EXT(SD2CKCR, 0,
+-			pll_parent, ARRAY_SIZE(pll_parent), 6, 2),
+-	[DIV6_FSIA] = SH_CLK_DIV6_EXT(FSIACKCR, 0,
+-			pll_parent, ARRAY_SIZE(pll_parent), 6, 1),
+-	[DIV6_FSIB] = SH_CLK_DIV6_EXT(FSIBCKCR, 0,
+-			pll_parent, ARRAY_SIZE(pll_parent), 6, 1),
+-	[DIV6_SUB] = SH_CLK_DIV6_EXT(SUBCKCR, 0,
+-			pll_extal2_parent, ARRAY_SIZE(pll_extal2_parent), 6, 2),
+-	[DIV6_SPUA] = SH_CLK_DIV6_EXT(SPUACKCR, 0,
+-			pll_extal2_parent, ARRAY_SIZE(pll_extal2_parent), 6, 2),
+-	[DIV6_SPUV] = SH_CLK_DIV6_EXT(SPUVCKCR, 0,
+-			pll_extal2_parent, ARRAY_SIZE(pll_extal2_parent), 6, 2),
+-	[DIV6_MSU] = SH_CLK_DIV6_EXT(MSUCKCR, 0,
+-			pll_parent, ARRAY_SIZE(pll_parent), 7, 1),
+-	[DIV6_HSI] = SH_CLK_DIV6_EXT(HSICKCR, 0,
+-			hsi_parent, ARRAY_SIZE(hsi_parent), 6, 2),
+-	[DIV6_MFG1] = SH_CLK_DIV6_EXT(MFCK1CR, 0,
+-			pll_parent, ARRAY_SIZE(pll_parent), 7, 1),
+-	[DIV6_MFG2] = SH_CLK_DIV6_EXT(MFCK2CR, 0,
+-			pll_parent, ARRAY_SIZE(pll_parent), 7, 1),
+-	[DIV6_DSIT] = SH_CLK_DIV6_EXT(DSITCKCR, 0,
+-			pll_parent, ARRAY_SIZE(pll_parent), 7, 1),
+-	[DIV6_DSI0P] = SH_CLK_DIV6_EXT(DSI0PCKCR, 0,
+-			dsi_parent, ARRAY_SIZE(dsi_parent), 12, 3),
+-	[DIV6_DSI1P] = SH_CLK_DIV6_EXT(DSI1PCKCR, 0,
+-			dsi_parent, ARRAY_SIZE(dsi_parent), 12, 3),
+-};
+-
+-/* DSI DIV */
+-static unsigned long dsiphy_recalc(struct clk *clk)
+-{
+-	u32 value;
+-
+-	value = __raw_readl(clk->mapping->base);
+-
+-	/* FIXME */
+-	if (!(value & 0x000B8000))
+-		return clk->parent->rate;
+-
+-	value &= 0x3f;
+-	value += 1;
+-
+-	if ((value < 12) ||
+-	    (value > 33)) {
+-		pr_err("DSIPHY has wrong value (%d)", value);
+-		return 0;
+-	}
+-
+-	return clk->parent->rate / value;
+-}
+-
+-static long dsiphy_round_rate(struct clk *clk, unsigned long rate)
+-{
+-	return clk_rate_mult_range_round(clk, 12, 33, rate);
+-}
+-
+-static void dsiphy_disable(struct clk *clk)
+-{
+-	u32 value;
+-
+-	value = __raw_readl(clk->mapping->base);
+-	value &= ~0x000B8000;
+-
+-	__raw_writel(value , clk->mapping->base);
+-}
+-
+-static int dsiphy_enable(struct clk *clk)
+-{
+-	u32 value;
+-	int multi;
+-
+-	value = __raw_readl(clk->mapping->base);
+-	multi = (value & 0x3f) + 1;
+-
+-	if ((multi < 12) || (multi > 33))
+-		return -EIO;
+-
+-	__raw_writel(value | 0x000B8000, clk->mapping->base);
+-
+-	return 0;
+-}
+-
+-static int dsiphy_set_rate(struct clk *clk, unsigned long rate)
+-{
+-	u32 value;
+-	int idx;
+-
+-	idx = rate / clk->parent->rate;
+-	if ((idx < 12) || (idx > 33))
+-		return -EINVAL;
+-
+-	idx += -1;
+-
+-	value = __raw_readl(clk->mapping->base);
+-	value = (value & ~0x3f) + idx;
+-
+-	__raw_writel(value, clk->mapping->base);
+-
+-	return 0;
+-}
+-
+-static struct sh_clk_ops dsiphy_clk_ops = {
+-	.recalc		= dsiphy_recalc,
+-	.round_rate	= dsiphy_round_rate,
+-	.set_rate	= dsiphy_set_rate,
+-	.enable		= dsiphy_enable,
+-	.disable	= dsiphy_disable,
+-};
+-
+-static struct clk_mapping dsi0phy_clk_mapping = {
+-	.phys	= DSI0PHYCR,
+-	.len	= 4,
+-};
+-
+-static struct clk_mapping dsi1phy_clk_mapping = {
+-	.phys	= DSI1PHYCR,
+-	.len	= 4,
+-};
+-
+-static struct clk dsi0phy_clk = {
+-	.ops		= &dsiphy_clk_ops,
+-	.parent		= &div6_clks[DIV6_DSI0P], /* late install */
+-	.mapping	= &dsi0phy_clk_mapping,
+-};
+-
+-static struct clk dsi1phy_clk = {
+-	.ops		= &dsiphy_clk_ops,
+-	.parent		= &div6_clks[DIV6_DSI1P], /* late install */
+-	.mapping	= &dsi1phy_clk_mapping,
+-};
+-
+-static struct clk *late_main_clks[] = {
+-	&dsi0phy_clk,
+-	&dsi1phy_clk,
+-	&twd_clk,
+-};
+-
+-enum { MSTP001,
+-	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP112, MSTP100,
+-	MSTP219, MSTP218, MSTP217,
+-	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+-	MSTP331, MSTP329, MSTP328, MSTP325, MSTP323, MSTP322,
+-	MSTP314, MSTP313, MSTP312, MSTP311,
+-	MSTP304, MSTP303, MSTP302, MSTP301, MSTP300,
+-	MSTP411, MSTP410, MSTP403,
+-	MSTP508,
+-	MSTP_NR };
+-
+-#define MSTP(_parent, _reg, _bit, _flags) \
+-	SH_CLK_MSTP32(_parent, _reg, _bit, _flags)
+-
+-static struct clk mstp_clks[MSTP_NR] = {
+-	[MSTP001] = MSTP(&div4_clks[DIV4_HP], SMSTPCR0, 1, 0), /* IIC2 */
+-	[MSTP129] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 29, 0), /* CEU1 */
+-	[MSTP128] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 28, 0), /* CSI2-RX1 */
+-	[MSTP127] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 27, 0), /* CEU0 */
+-	[MSTP126] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 26, 0), /* CSI2-RX0 */
+-	[MSTP125] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR1, 25, 0), /* TMU0 */
+-	[MSTP118] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 18, 0), /* DSITX0 */
+-	[MSTP116] = MSTP(&div4_clks[DIV4_HP], SMSTPCR1, 16, 0), /* IIC0 */
+-	[MSTP112] = MSTP(&div4_clks[DIV4_ZG], SMSTPCR1, 12, 0), /* SGX */
+-	[MSTP100] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 0, 0), /* LCDC0 */
+-	[MSTP219] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 19, 0), /* SCIFA7 */
+-	[MSTP218] = MSTP(&div4_clks[DIV4_HP], SMSTPCR2, 18, 0), /* SY-DMAC */
+-	[MSTP217] = MSTP(&div4_clks[DIV4_HP], SMSTPCR2, 17, 0), /* MP-DMAC */
+-	[MSTP207] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 7, 0), /* SCIFA5 */
+-	[MSTP206] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 6, 0), /* SCIFB */
+-	[MSTP204] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 4, 0), /* SCIFA0 */
+-	[MSTP203] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 3, 0), /* SCIFA1 */
+-	[MSTP202] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 2, 0), /* SCIFA2 */
+-	[MSTP201] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 1, 0), /* SCIFA3 */
+-	[MSTP200] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 0, 0), /* SCIFA4 */
+-	[MSTP331] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 31, 0), /* SCIFA6 */
+-	[MSTP329] = MSTP(&r_clk, SMSTPCR3, 29, 0), /* CMT10 */
+-	[MSTP328] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 28, 0), /*FSI*/
+-	[MSTP325] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 25, 0), /* IrDA */
+-	[MSTP323] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 23, 0), /* IIC1 */
+-	[MSTP322] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 22, 0), /* USB */
+-	[MSTP314] = MSTP(&div6_clks[DIV6_SDHI0], SMSTPCR3, 14, 0), /* SDHI0 */
+-	[MSTP313] = MSTP(&div6_clks[DIV6_SDHI1], SMSTPCR3, 13, 0), /* SDHI1 */
+-	[MSTP312] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 12, 0), /* MMCIF0 */
+-	[MSTP311] = MSTP(&div6_clks[DIV6_SDHI2], SMSTPCR3, 11, 0), /* SDHI2 */
+-	[MSTP304] = MSTP(&main_div2_clk, SMSTPCR3, 4, 0), /* TPU0 */
+-	[MSTP303] = MSTP(&main_div2_clk, SMSTPCR3, 3, 0), /* TPU1 */
+-	[MSTP302] = MSTP(&main_div2_clk, SMSTPCR3, 2, 0), /* TPU2 */
+-	[MSTP301] = MSTP(&main_div2_clk, SMSTPCR3, 1, 0), /* TPU3 */
+-	[MSTP300] = MSTP(&main_div2_clk, SMSTPCR3, 0, 0), /* TPU4 */
+-	[MSTP411] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 11, 0), /* IIC3 */
+-	[MSTP410] = MSTP(&div4_clks[DIV4_HP], SMSTPCR4, 10, 0), /* IIC4 */
+-	[MSTP403] = MSTP(&r_clk, SMSTPCR4, 3, 0), /* KEYSC */
+-	[MSTP508] = MSTP(&div4_clks[DIV4_HP], SMSTPCR5, 8, 0), /* INTCA0 */
+-};
+-
+-/* The lookups structure below includes duplicate entries for some clocks
+- * with alternate names.
+- * - The traditional name used when a device is initialised with platform data
+- * - The name used when a device is initialised using device tree
+- * The longer-term aim is to remove these duplicates, and indeed the
+- * lookups table entirely, by describing clocks using device tree.
+- */
+-static struct clk_lookup lookups[] = {
+-	/* main clocks */
+-	CLKDEV_CON_ID("r_clk", &r_clk),
+-	CLKDEV_DEV_ID("smp_twd", &twd_clk), /* smp_twd */
+-
+-	/* DIV4 clocks */
+-	CLKDEV_DEV_ID("cpu0", &div4_clks[DIV4_Z]),
+-
+-	/* DIV6 clocks */
+-	CLKDEV_CON_ID("vck1_clk", &div6_clks[DIV6_VCK1]),
+-	CLKDEV_CON_ID("vck2_clk", &div6_clks[DIV6_VCK2]),
+-	CLKDEV_CON_ID("vck3_clk", &div6_clks[DIV6_VCK3]),
+-	CLKDEV_CON_ID("sdhi0_clk", &div6_clks[DIV6_SDHI0]),
+-	CLKDEV_CON_ID("sdhi1_clk", &div6_clks[DIV6_SDHI1]),
+-	CLKDEV_CON_ID("sdhi2_clk", &div6_clks[DIV6_SDHI2]),
+-
+-	/* MSTP32 clocks */
+-	CLKDEV_DEV_ID("i2c-sh_mobile.2", &mstp_clks[MSTP001]), /* I2C2 */
+-	CLKDEV_DEV_ID("e6824000.i2c", &mstp_clks[MSTP001]), /* I2C2 */
+-	CLKDEV_DEV_ID("sh_mobile_ceu.1", &mstp_clks[MSTP129]), /* CEU1 */
+-	CLKDEV_DEV_ID("sh-mobile-csi2.1", &mstp_clks[MSTP128]), /* CSI2-RX1 */
+-	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[MSTP127]), /* CEU0 */
+-	CLKDEV_DEV_ID("sh-mobile-csi2.0", &mstp_clks[MSTP126]), /* CSI2-RX0 */
+-	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX */
+-	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* I2C0 */
+-	CLKDEV_DEV_ID("e6820000.i2c", &mstp_clks[MSTP116]), /* I2C0 */
+-	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0", &mstp_clks[MSTP100]), /* LCDC0 */
+-	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP219]), /* SCIFA7 */
+-	CLKDEV_DEV_ID("e6cd0000.serial", &mstp_clks[MSTP219]), /* SCIFA7 */
+-	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]), /* SY-DMAC */
+-	CLKDEV_DEV_ID("sh-dma-engine.1", &mstp_clks[MSTP217]), /* MP-DMAC */
+-	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]), /* SCIFA5 */
+-	CLKDEV_DEV_ID("e6cb0000.serial", &mstp_clks[MSTP207]), /* SCIFA5 */
+-	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP206]), /* SCIFB */
+-	CLKDEV_DEV_ID("e6c3000.serial", &mstp_clks[MSTP206]), /* SCIFB */
+-	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
+-	CLKDEV_DEV_ID("e6c40000.serial", &mstp_clks[MSTP204]), /* SCIFA0 */
+-	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]), /* SCIFA1 */
+-	CLKDEV_DEV_ID("e6c50000.serial", &mstp_clks[MSTP203]), /* SCIFA1 */
+-	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP202]), /* SCIFA2 */
+-	CLKDEV_DEV_ID("e6c60000.serial", &mstp_clks[MSTP202]), /* SCIFA2 */
+-	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP201]), /* SCIFA3 */
+-	CLKDEV_DEV_ID("e6c70000.serial", &mstp_clks[MSTP201]), /* SCIFA3 */
+-	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
+-	CLKDEV_DEV_ID("e6c80000.serial", &mstp_clks[MSTP200]), /* SCIFA4 */
+-	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
+-	CLKDEV_DEV_ID("e6cc0000.serial", &mstp_clks[MSTP331]), /* SCIFA6 */
+-	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
+-	CLKDEV_DEV_ID("ec230000.sound", &mstp_clks[MSTP328]), /* FSI */
+-	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
+-	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
+-	CLKDEV_DEV_ID("e6822000.i2c", &mstp_clks[MSTP323]), /* I2C1 */
+-	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP322]), /* USB */
+-	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
+-	CLKDEV_DEV_ID("ee100000.sd", &mstp_clks[MSTP314]), /* SDHI0 */
+-	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
+-	CLKDEV_DEV_ID("ee120000.sd", &mstp_clks[MSTP313]), /* SDHI1 */
+-	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
+-	CLKDEV_DEV_ID("e6bd0000.mmc", &mstp_clks[MSTP312]), /* MMCIF0 */
+-	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
+-	CLKDEV_DEV_ID("ee140000.sd", &mstp_clks[MSTP311]), /* SDHI2 */
+-	CLKDEV_DEV_ID("renesas-tpu-pwm.0", &mstp_clks[MSTP304]), /* TPU0 */
+-	CLKDEV_DEV_ID("renesas-tpu-pwm.1", &mstp_clks[MSTP303]), /* TPU1 */
+-	CLKDEV_DEV_ID("renesas-tpu-pwm.2", &mstp_clks[MSTP302]), /* TPU2 */
+-	CLKDEV_DEV_ID("renesas-tpu-pwm.3", &mstp_clks[MSTP301]), /* TPU3 */
+-	CLKDEV_DEV_ID("renesas-tpu-pwm.4", &mstp_clks[MSTP300]), /* TPU4 */
+-	CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* I2C3 */
+-	CLKDEV_DEV_ID("e6826000.i2c", &mstp_clks[MSTP411]), /* I2C3 */
+-	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* I2C4 */
+-	CLKDEV_DEV_ID("e6828000.i2c", &mstp_clks[MSTP410]), /* I2C4 */
+-	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
+-	CLKDEV_DEV_ID("renesas_intc_irqpin.0",	&mstp_clks[MSTP508]), /* INTCA0 */
+-	CLKDEV_DEV_ID("e6900000.irqpin",	&mstp_clks[MSTP508]), /* INTCA0 */
+-	CLKDEV_DEV_ID("renesas_intc_irqpin.1",	&mstp_clks[MSTP508]), /* INTCA0 */
+-	CLKDEV_DEV_ID("e6900004.irqpin",	&mstp_clks[MSTP508]), /* INTCA0 */
+-	CLKDEV_DEV_ID("renesas_intc_irqpin.2",	&mstp_clks[MSTP508]), /* INTCA0 */
+-	CLKDEV_DEV_ID("e6900008.irqpin",	&mstp_clks[MSTP508]), /* INTCA0 */
+-	CLKDEV_DEV_ID("renesas_intc_irqpin.3",	&mstp_clks[MSTP508]), /* INTCA0 */
+-	CLKDEV_DEV_ID("e690000c.irqpin",	&mstp_clks[MSTP508]), /* INTCA0 */
+-
+-	/* ICK */
+-	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSIT]),
+-	CLKDEV_ICK_ID("dsit_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSIT]),
+-	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.0", &div6_clks[DIV6_DSI0P]),
+-	CLKDEV_ICK_ID("dsip_clk", "sh-mipi-dsi.1", &div6_clks[DIV6_DSI1P]),
+-	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.0", &dsi0phy_clk),
+-	CLKDEV_ICK_ID("dsiphy_clk", "sh-mipi-dsi.1", &dsi1phy_clk),
+-	CLKDEV_ICK_ID("fck", "sh-cmt-48.1", &mstp_clks[MSTP329]), /* CMT1 */
+-	CLKDEV_ICK_ID("fck", "e6138000.timer", &mstp_clks[MSTP329]), /* CMT1 */
+-	CLKDEV_ICK_ID("fck", "sh-tmu.0", &mstp_clks[MSTP125]), /* TMU0 */
+-};
+-
+-void __init sh73a0_clock_init(void)
+-{
+-	int k, ret = 0;
+-
+-	/* Set SDHI clocks to a known state */
+-	__raw_writel(0x108, SD0CKCR);
+-	__raw_writel(0x108, SD1CKCR);
+-	__raw_writel(0x108, SD2CKCR);
+-
+-	/* detect main clock parent */
+-	switch ((__raw_readl(CKSCR) >> 28) & 0x03) {
+-	case 0:
+-		main_clk.parent = &sh73a0_extal1_clk;
+-		break;
+-	case 1:
+-		main_clk.parent = &extal1_div2_clk;
+-		break;
+-	case 2:
+-		main_clk.parent = &sh73a0_extal2_clk;
+-		break;
+-	case 3:
+-		main_clk.parent = &extal2_div2_clk;
+-		break;
+-	}
+-
+-	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
+-		ret = clk_register(main_clks[k]);
+-
+-	if (!ret) {
+-		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
+-		if (!ret)
+-			div4_clk_extend();
+-	}
+-
+-	if (!ret)
+-		ret = sh_clk_div6_reparent_register(div6_clks, DIV6_NR);
+-
+-	if (!ret)
+-		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+-
+-	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
+-		ret = clk_register(late_main_clks[k]);
+-
+-	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+-
+-	if (!ret)
+-		shmobile_clk_init();
+-	else
+-		panic("failed to setup sh73a0 clocks\n");
+-}
+diff --git a/arch/arm/mach-shmobile/pm-sh73a0.c b/arch/arm/mach-shmobile/pm-sh73a0.c
+deleted file mode 100644
+index a7e466817965..000000000000
+--- a/arch/arm/mach-shmobile/pm-sh73a0.c
++++ /dev/null
+@@ -1,32 +0,0 @@
+-/*
+- * sh73a0 Power management support
+- *
+- *  Copyright (C) 2012 Bastian Hecht <hechtb+renesas@gmail.com>
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- */
+-
+-#include <linux/suspend.h>
+-#include "common.h"
+-
+-#ifdef CONFIG_SUSPEND
+-static int sh73a0_enter_suspend(suspend_state_t suspend_state)
+-{
+-	cpu_do_idle();
+-	return 0;
+-}
+-
+-static void sh73a0_suspend_init(void)
+-{
+-	shmobile_suspend_ops.enter = sh73a0_enter_suspend;
+-}
+-#else
+-static void sh73a0_suspend_init(void) {}
+-#endif
+-
+-void __init sh73a0_pm_init(void)
+-{
+-	sh73a0_suspend_init();
+-}
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index fb2ab7590af8..a1e8e72e25b5 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -18,28 +18,17 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+-#include <linux/platform_device.h>
+ #include <linux/of_platform.h>
+ #include <linux/delay.h>
+ #include <linux/input.h>
+-#include <linux/i2c/i2c-sh_mobile.h>
+ #include <linux/io.h>
+-#include <linux/serial_sci.h>
+-#include <linux/sh_dma.h>
+-#include <linux/sh_timer.h>
+-#include <linux/platform_data/sh_ipmmu.h>
+-#include <linux/platform_data/irq-renesas-intc-irqpin.h>
  
- obj-y	+= omap/
-diff --git a/drivers/media/platform/rcar_jpu.c b/drivers/media/platform/rcar_jpu.c
-new file mode 100644
-index 0000000..2973f07
---- /dev/null
-+++ b/drivers/media/platform/rcar_jpu.c
-@@ -0,0 +1,1794 @@
-+/*
-+ * Author: Mikhail Ulyanov
-+ * Copyright (C) 2014-2015 Cogent Embedded, Inc.  <source@cogentembedded.com>
-+ * Copyright (C) 2014-2015 Renesas Electronics Corporation
-+ *
-+ * This is based on the drivers/media/platform/s5p-jpeg driver by
-+ * Andrzej Pietrasiewicz and Jacek Anaszewski.
-+ * Some portions of code inspired by VSP1 driver by Laurent Pinchart.
-+ *
-+ * TODO in order of priority:
-+ *      1) Rotation
-+ *      2) Cropping
-+ *      3) V4L2_CID_JPEG_ACTIVE_MARKER
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#include <asm/unaligned.h>
-+#include <linux/clk.h>
-+#include <linux/err.h>
-+#include <linux/interrupt.h>
-+#include <linux/io.h>
-+#include <linux/kernel.h>
-+#include <linux/module.h>
-+#include <linux/of.h>
-+#include <linux/of_device.h>
-+#include <linux/platform_device.h>
-+#include <linux/slab.h>
-+#include <linux/spinlock.h>
-+#include <linux/string.h>
-+#include <linux/videodev2.h>
-+#include <media/v4l2-ctrls.h>
-+#include <media/v4l2-device.h>
-+#include <media/v4l2-event.h>
-+#include <media/v4l2-fh.h>
-+#include <media/v4l2-mem2mem.h>
-+#include <media/v4l2-ioctl.h>
-+#include <media/videobuf2-core.h>
-+#include <media/videobuf2-dma-contig.h>
-+
-+
-+#define DRV_NAME "rcar_jpu"
-+
-+/*
-+ * Align JPEG header end to cache line to make sure we will not have any issues
-+ * with cache; additionally to requerment (33.3.27 R01UH0501EJ0100 Rev.1.00)
-+ */
-+#define JPU_JPEG_HDR_SIZE		(ALIGN(0x258, L1_CACHE_BYTES))
-+#define JPU_JPEG_MAX_BYTES_PER_PIXEL	2	/* 16 bit precision format */
-+#define JPU_JPEG_MIN_SIZE		25	/* SOI + SOF + EOI */
-+#define JPU_JPEG_QTBL_SIZE		0x40
-+#define JPU_JPEG_HDCTBL_SIZE		0x1c
-+#define JPU_JPEG_HACTBL_SIZE		0xb2
-+#define JPU_JPEG_HEIGHT_OFFSET		0x91
-+#define JPU_JPEG_WIDTH_OFFSET		0x93
-+#define JPU_JPEG_SUBS_OFFSET		0x97
-+#define JPU_JPEG_QTBL_LUM_OFFSET	0x07
-+#define JPU_JPEG_QTBL_CHR_OFFSET	0x4c
-+#define JPU_JPEG_HDCTBL_LUM_OFFSET	0xa4
-+#define JPU_JPEG_HACTBL_LUM_OFFSET	0xc5
-+#define JPU_JPEG_HDCTBL_CHR_OFFSET	0x17c
-+#define JPU_JPEG_HACTBL_CHR_OFFSET	0x19d
-+#define JPU_JPEG_PADDING_OFFSET		0x24f
-+#define JPU_JPEG_LUM 0x00
-+#define JPU_JPEG_CHR 0x01
-+#define JPU_JPEG_DC  0x00
-+#define JPU_JPEG_AC  0x10
-+
-+#define JPU_JPEG_422 0x21
-+#define JPU_JPEG_420 0x22
-+
-+#define JPU_JPEG_DEFAULT_422_PIX_FMT V4L2_PIX_FMT_NV16M
-+#define JPU_JPEG_DEFAULT_420_PIX_FMT V4L2_PIX_FMT_NV12M
-+
-+/* JPEG markers */
-+#define TEM	0x01
-+#define SOF0	0xc0
-+#define RST	0xd0
-+#define SOI	0xd8
-+#define EOI	0xd9
-+#define DHP	0xde
-+#define DHT	0xc4
-+#define COM	0xfe
-+#define DQT	0xdb
-+#define DRI	0xdd
-+#define APP0	0xe0
-+
-+#define JPU_RESET_TIMEOUT	100 /* ms */
-+#define JPU_JOB_TIMEOUT		300 /* ms */
-+#define JPU_MAX_QUALITY		4
-+#define JPU_WIDTH_MIN		16
-+#define JPU_HEIGHT_MIN		16
-+#define JPU_WIDTH_MAX		4096
-+#define JPU_HEIGHT_MAX		4096
-+#define JPU_MEMALIGN		8
-+
-+/* Flags that indicate a format can be used for capture/output */
-+#define JPU_FMT_TYPE_OUTPUT	0
-+#define JPU_FMT_TYPE_CAPTURE	1
-+#define JPU_ENC_CAPTURE		(1 << 0)
-+#define JPU_ENC_OUTPUT		(1 << 1)
-+#define JPU_DEC_CAPTURE		(1 << 2)
-+#define JPU_DEC_OUTPUT		(1 << 3)
-+
-+/*
-+ * JPEG registers and bits
-+ */
-+
-+/* JPEG code mode register */
-+#define JCMOD	0x00
-+#define JCMOD_PCTR		(1 << 7)
-+#define JCMOD_MSKIP_ENABLE	(1 << 5)
-+#define JCMOD_DSP_ENC		(0 << 3)
-+#define JCMOD_DSP_DEC		(1 << 3)
-+#define JCMOD_REDU		(7 << 0)
-+#define JCMOD_REDU_422		(1 << 0)
-+#define JCMOD_REDU_420		(2 << 0)
-+
-+/* JPEG code command register */
-+#define JCCMD	0x04
-+#define JCCMD_SRST	(1 << 12)
-+#define JCCMD_JEND	(1 << 2)
-+#define JCCMD_JSRT	(1 << 0)
-+
-+/* JPEG code quantanization table number register */
-+#define JCQTN	0x0c
-+#define JCQTN_SHIFT(t)		(((t) - 1) << 1)
-+
-+/* JPEG code Huffman table number register */
-+#define JCHTN	0x10
-+#define JCHTN_AC_SHIFT(t)	(((t) << 1) - 1)
-+#define JCHTN_DC_SHIFT(t)	(((t) - 1) << 1)
-+
-+#define JCVSZU	0x1c /* JPEG code vertical size upper register */
-+#define JCVSZD	0x20 /* JPEG code vertical size lower register */
-+#define JCHSZU	0x24 /* JPEG code horizontal size upper register */
-+#define JCHSZD	0x28 /* JPEG code horizontal size lower register */
-+#define JCSZ_MASK 0xff /* JPEG code h/v size register contains only 1 byte*/
-+
-+#define JCDTCU	0x2c /* JPEG code data count upper register */
-+#define JCDTCM	0x30 /* JPEG code data count middle register */
-+#define JCDTCD	0x34 /* JPEG code data count lower register */
-+
-+/* JPEG interrupt enable register */
-+#define JINTE	0x38
-+#define JINTE_ERR		(7 << 5) /* INT5 + INT6 + INT7 */
-+#define JINTE_TRANSF_COMPL	(1 << 10)
-+
-+/* JPEG interrupt status register */
-+#define JINTS	0x3c
-+#define JINTS_MASK	0x7c68
-+#define JINTS_ERR		(1 << 5)
-+#define JINTS_PROCESS_COMPL	(1 << 6)
-+#define JINTS_TRANSF_COMPL	(1 << 10)
-+
-+#define JCDERR	0x40 /* JPEG code decode error register */
-+#define JCDERR_MASK	0xf /* JPEG code decode error register mask*/
-+
-+/* JPEG interface encoding */
-+#define JIFECNT	0x70
-+#define JIFECNT_INFT_422	0
-+#define JIFECNT_INFT_420	1
-+#define JIFECNT_SWAP_WB		(3 << 4) /* to JPU */
-+
-+#define JIFESYA1	0x74	/* encode source Y address register 1 */
-+#define JIFESCA1	0x78	/* encode source C address register 1 */
-+#define JIFESYA2	0x7c	/* encode source Y address register 2 */
-+#define JIFESCA2	0x80	/* encode source C address register 2 */
-+#define JIFESMW		0x84	/* encode source memory width register */
-+#define JIFESVSZ	0x88	/* encode source vertical size register */
-+#define JIFESHSZ	0x8c	/* encode source horizontal size register */
-+#define JIFEDA1		0x90	/* encode destination address register 1 */
-+#define JIFEDA2		0x94	/* encode destination address register 2 */
-+
-+/* JPEG decoding control register */
-+#define JIFDCNT	0xa0
-+#define JIFDCNT_SWAP_WB		(3 << 1) /* from JPU */
-+
-+#define JIFDSA1		0xa4	/* decode source address register 1 */
-+#define JIFDDMW		0xb0	/* decode destination  memory width register */
-+#define JIFDDVSZ	0xb4	/* decode destination  vert. size register */
-+#define JIFDDHSZ	0xb8	/* decode destination  horiz. size register */
-+#define JIFDDYA1	0xbc	/* decode destination  Y address register 1 */
-+#define JIFDDCA1	0xc0	/* decode destination  C address register 1 */
-+
-+#define JCQTBL(n)	(0x10000 + (n) * 0x40)	/* quantization tables regs */
-+#define JCHTBD(n)	(0x10100 + (n) * 0x100)	/* Huffman table DC regs */
-+#define JCHTBA(n)	(0x10120 + (n) * 0x100)	/* Huffman table AC regs */
-+
-+/**
-+ * struct jpu - JPEG IP abstraction
-+ * @mutex: the mutex protecting this structure
-+ * @lock: spinlock protecting the device contexts
-+ * @v4l2_dev: v4l2 device for mem2mem mode
-+ * @vfd_encoder: video device node for encoder mem2mem mode
-+ * @vfd_decoder: video device node for decoder mem2mem mode
-+ * @m2m_dev: v4l2 mem2mem device data
-+ * @curr: pointer to current context
-+ * @irq_queue:	interrupt handler waitqueue
-+ * @regs: JPEG IP registers mapping
-+ * @irq: JPEG IP irq
-+ * @clk: JPEG IP clock
-+ * @dev: JPEG IP struct device
-+ * @alloc_ctx: videobuf2 memory allocator's context
-+ * @ref_count: reference counter
-+ */
-+struct jpu {
-+	struct mutex	mutex;
-+	spinlock_t	lock;
-+	struct v4l2_device	v4l2_dev;
-+	struct video_device	vfd_encoder;
-+	struct video_device	vfd_decoder;
-+	struct v4l2_m2m_dev	*m2m_dev;
-+	struct jpu_ctx		*curr;
-+	wait_queue_head_t	irq_queue;
-+
-+	void __iomem		*regs;
-+	unsigned int		irq;
-+	struct clk		*clk;
-+	struct device		*dev;
-+	void			*alloc_ctx;
-+	int			ref_count;
-+};
-+
-+/**
-+ * struct jpu_buffer - driver's specific video buffer
-+ * @buf: m2m buffer
-+ * @compr_quality: destination image quality in compression mode
-+ * @subsampling: source image subsampling in decompression mode
-+ */
-+struct jpu_buffer {
-+	struct v4l2_m2m_buffer buf;
-+	unsigned short	compr_quality;
-+	unsigned char	subsampling;
-+};
-+
-+/**
-+ * struct jpu_fmt - driver's internal format data
-+ * @fourcc: the fourcc code, 0 if not applicable
-+ * @colorspace: the colorspace specifier
-+ * @bpp: number of bits per pixel per plane
-+ * @h_align: horizontal alignment order (align to 2^h_align)
-+ * @v_align: vertical alignment order (align to 2^v_align)
-+ * @subsampling: (horizontal:4 | vertical:4) subsampling factor
-+ * @num_planes: number of planes
-+ * @types: types of queue this format is applicable to
-+ */
-+struct jpu_fmt {
-+	u32 fourcc;
-+	u32 colorspace;
-+	u8 bpp[2];
-+	u8 h_align;
-+	u8 v_align;
-+	u8 subsampling;
-+	u8 num_planes;
-+	u16 types;
-+};
-+
-+/**
-+ * jpu_q_data - parameters of one queue
-+ * @fmtinfo: driver-specific format of this queue
-+ * @format: multiplanar format of this queue
-+ * @sequence: sequence number
-+ */
-+struct jpu_q_data {
-+	struct jpu_fmt *fmtinfo;
-+	struct v4l2_pix_format_mplane format;
-+	unsigned int sequence;
-+};
-+
-+/**
-+ * jpu_ctx - the device context data
-+ * @jpu: JPEG IP device for this context
-+ * @encoder: compression (encode) operation or decompression (decode)
-+ * @compr_quality: destination image quality in compression (encode) mode
-+ * @out_q: source (output) queue information
-+ * @cap_q: destination (capture) queue information
-+ * @fh: file handler
-+ * @ctrl_handler: controls handler
-+ */
-+struct jpu_ctx {
-+	struct jpu		*jpu;
-+	bool			encoder;
-+	unsigned short		compr_quality;
-+	struct jpu_q_data	out_q;
-+	struct jpu_q_data	cap_q;
-+	struct v4l2_fh		fh;
-+	struct v4l2_ctrl_handler ctrl_handler;
-+};
-+
-+ /**
-+ * jpeg_buffer - description of memory containing input JPEG data
-+ * @end: end position in the buffer
-+ * @curr: current position in the buffer
-+ */
-+struct jpeg_buffer {
-+	void *end;
-+	void *curr;
-+};
-+
-+static struct jpu_fmt jpu_formats[] = {
-+	{ V4L2_PIX_FMT_JPEG, V4L2_COLORSPACE_JPEG,
-+	  {0, 0}, 0, 0, 0, 1, JPU_ENC_CAPTURE | JPU_DEC_OUTPUT },
-+	{ V4L2_PIX_FMT_NV16M, V4L2_COLORSPACE_SRGB,
-+	  {8, 8}, 2, 2, JPU_JPEG_422, 2, JPU_ENC_OUTPUT | JPU_DEC_CAPTURE },
-+	{ V4L2_PIX_FMT_NV12M, V4L2_COLORSPACE_SRGB,
-+	  {8, 4}, 2, 2, JPU_JPEG_420, 2, JPU_ENC_OUTPUT | JPU_DEC_CAPTURE },
-+	{ V4L2_PIX_FMT_NV16, V4L2_COLORSPACE_SRGB,
-+	  {16, 0}, 2, 2, JPU_JPEG_422, 1, JPU_ENC_OUTPUT | JPU_DEC_CAPTURE },
-+	{ V4L2_PIX_FMT_NV12, V4L2_COLORSPACE_SRGB,
-+	  {12, 0}, 2, 2, JPU_JPEG_420, 1, JPU_ENC_OUTPUT | JPU_DEC_CAPTURE },
-+};
-+
-+static const u8 zigzag[] = {
-+	0x03, 0x02, 0x0b, 0x13, 0x0a, 0x01, 0x00, 0x09,
-+	0x12, 0x1b, 0x23, 0x1a, 0x11, 0x08, 0x07, 0x06,
-+	0x0f, 0x10, 0x19, 0x22, 0x2b, 0x33, 0x2a, 0x21,
-+	0x18, 0x17, 0x0e, 0x05, 0x04, 0x0d, 0x16, 0x1f,
-+	0x20, 0x29, 0x32, 0x3b, 0x3a, 0x31, 0x28, 0x27,
-+	0x1e, 0x15, 0x0e, 0x14, 0x10, 0x26, 0x2f, 0x30,
-+	0x39, 0x38, 0x37, 0x2e, 0x25, 0x1c, 0x24, 0x2b,
-+	0x36, 0x3f, 0x3e, 0x35, 0x2c, 0x34, 0x3d, 0x3c
-+};
-+
-+#define QTBL_SIZE (ALIGN(JPU_JPEG_QTBL_SIZE, \
-+			  sizeof(unsigned int)) / sizeof(unsigned int))
-+#define HDCTBL_SIZE (ALIGN(JPU_JPEG_HDCTBL_SIZE, \
-+			  sizeof(unsigned int)) / sizeof(unsigned int))
-+#define HACTBL_SIZE (ALIGN(JPU_JPEG_HACTBL_SIZE, \
-+			  sizeof(unsigned int)) / sizeof(unsigned int))
-+/*
-+ * Start of image; Quantization tables
-+ * SOF0 (17 bytes payload) is Baseline DCT - Sample precision, height, width,
-+ * Number of image components, (Ci:8 - Hi:4 - Vi:4 - Tq:8) * 3 - Y,Cb,Cr;
-+ * Huffman tables; Padding with 0xff (33.3.27 R01UH0501EJ0100 Rev.1.00)
-+ */
-+#define JPU_JPEG_HDR_BLOB {                                                    \
-+	0xff, SOI, 0xff, DQT, 0x00, JPU_JPEG_QTBL_SIZE + 0x3, JPU_JPEG_LUM,    \
-+	[JPU_JPEG_QTBL_LUM_OFFSET ...                                          \
-+		JPU_JPEG_QTBL_LUM_OFFSET + JPU_JPEG_QTBL_SIZE - 1] = 0x00,     \
-+	0xff, DQT, 0x00, JPU_JPEG_QTBL_SIZE + 0x3, JPU_JPEG_CHR,               \
-+	[JPU_JPEG_QTBL_CHR_OFFSET ... JPU_JPEG_QTBL_CHR_OFFSET +               \
-+		JPU_JPEG_QTBL_SIZE - 1] = 0x00, 0xff, SOF0, 0x00, 0x11, 0x08,  \
-+	[JPU_JPEG_HEIGHT_OFFSET ... JPU_JPEG_HEIGHT_OFFSET + 1] = 0x00,        \
-+	[JPU_JPEG_WIDTH_OFFSET ... JPU_JPEG_WIDTH_OFFSET + 1] = 0x00,          \
-+	0x03, 0x01, [JPU_JPEG_SUBS_OFFSET] = 0x00, JPU_JPEG_LUM,               \
-+	0x02, 0x11, JPU_JPEG_CHR, 0x03, 0x11, JPU_JPEG_CHR,                    \
-+	0xff, DHT, 0x00, JPU_JPEG_HDCTBL_SIZE + 0x3, JPU_JPEG_LUM|JPU_JPEG_DC, \
-+	[JPU_JPEG_HDCTBL_LUM_OFFSET ...                                        \
-+		JPU_JPEG_HDCTBL_LUM_OFFSET + JPU_JPEG_HDCTBL_SIZE - 1] = 0x00, \
-+	0xff, DHT, 0x00, JPU_JPEG_HACTBL_SIZE + 0x3, JPU_JPEG_LUM|JPU_JPEG_AC, \
-+	[JPU_JPEG_HACTBL_LUM_OFFSET ...                                        \
-+		JPU_JPEG_HACTBL_LUM_OFFSET + JPU_JPEG_HACTBL_SIZE - 1] = 0x00, \
-+	0xff, DHT, 0x00, JPU_JPEG_HDCTBL_SIZE + 0x3, JPU_JPEG_CHR|JPU_JPEG_DC, \
-+	[JPU_JPEG_HDCTBL_CHR_OFFSET ...                                        \
-+		JPU_JPEG_HDCTBL_CHR_OFFSET + JPU_JPEG_HDCTBL_SIZE - 1] = 0x00, \
-+	0xff, DHT, 0x00, JPU_JPEG_HACTBL_SIZE + 0x3, JPU_JPEG_CHR|JPU_JPEG_AC, \
-+	[JPU_JPEG_HACTBL_CHR_OFFSET ...                                        \
-+		JPU_JPEG_HACTBL_CHR_OFFSET + JPU_JPEG_HACTBL_SIZE - 1] = 0x00, \
-+	[JPU_JPEG_PADDING_OFFSET ... JPU_JPEG_HDR_SIZE - 1] = 0xff             \
-+}
-+
-+static unsigned char jpeg_hdrs[JPU_MAX_QUALITY][JPU_JPEG_HDR_SIZE] = {
-+	[0 ... JPU_MAX_QUALITY - 1] = JPU_JPEG_HDR_BLOB
-+};
-+
-+static const unsigned int qtbl_lum[JPU_MAX_QUALITY][QTBL_SIZE] = {
-+	{
-+		0x14101927, 0x322e3e44, 0x10121726, 0x26354144,
-+		0x19171f26, 0x35414444, 0x27262635, 0x41444444,
-+		0x32263541, 0x44444444, 0x2e354144, 0x44444444,
-+		0x3e414444, 0x44444444, 0x44444444, 0x44444444
-+	},
-+	{
-+		0x100b0b10, 0x171b1f1e, 0x0b0c0c0f, 0x1417171e,
-+		0x0b0c0d10, 0x171a232f, 0x100f1017, 0x1a252f40,
-+		0x1714171a, 0x27334040, 0x1b171a25, 0x33404040,
-+		0x1f17232f, 0x40404040, 0x1e1e2f40, 0x40404040
-+	},
-+	{
-+		0x0c08080c, 0x11151817, 0x0809090b, 0x0f131217,
-+		0x08090a0c, 0x13141b24, 0x0c0b0c15, 0x141c2435,
-+		0x110f1314, 0x1e27333b, 0x1513141c, 0x27333b3b,
-+		0x18121b24, 0x333b3b3b, 0x17172435, 0x3b3b3b3b
-+	},
-+	{
-+		0x08060608, 0x0c0e1011, 0x06060608, 0x0a0d0c0f,
-+		0x06060708, 0x0d0e1218, 0x0808080e, 0x0d131823,
-+		0x0c0a0d0d, 0x141a2227, 0x0e0d0e13, 0x1a222727,
-+		0x100c1318, 0x22272727, 0x110f1823, 0x27272727
-+	}
-+};
-+
-+static const unsigned int qtbl_chr[JPU_MAX_QUALITY][QTBL_SIZE] = {
-+	{
-+		0x15192026, 0x36444444, 0x191c1826, 0x36444444,
-+		0x2018202b, 0x42444444, 0x26262b35, 0x44444444,
-+		0x36424444, 0x44444444, 0x44444444, 0x44444444,
-+		0x44444444, 0x44444444, 0x44444444, 0x44444444
-+	},
-+	{
-+		0x110f1115, 0x141a2630, 0x0f131211, 0x141a232b,
-+		0x11121416, 0x1a1e2e35, 0x1511161c, 0x1e273540,
-+		0x14141a1e, 0x27304040, 0x1a1a1e27, 0x303f4040,
-+		0x26232e35, 0x40404040, 0x302b3540, 0x40404040
-+	},
-+	{
-+		0x0d0b0d10, 0x14141d25, 0x0b0e0e0e, 0x10141a20,
-+		0x0d0e0f11, 0x14172328, 0x100e1115, 0x171e2832,
-+		0x14101417, 0x1e25323b, 0x1414171e, 0x25303b3b,
-+		0x1d1a2328, 0x323b3b3b, 0x25202832, 0x3b3b3b3b
-+	},
-+	{
-+		0x0908090b, 0x0e111318, 0x080a090b, 0x0e0d1116,
-+		0x09090d0e, 0x0d0f171a, 0x0b0b0e0e, 0x0f141a21,
-+		0x0e0e0d0f, 0x14182127, 0x110d0f14, 0x18202727,
-+		0x1311171a, 0x21272727, 0x18161a21, 0x27272727
-+	}
-+};
-+
-+static const unsigned int hdctbl_lum[HDCTBL_SIZE] = {
-+	0x00010501, 0x01010101, 0x01000000, 0x00000000,
-+	0x00010203, 0x04050607, 0x08090a0b
-+};
-+
-+static const unsigned int hdctbl_chr[HDCTBL_SIZE] = {
-+	0x00010501, 0x01010101, 0x01000000, 0x00000000,
-+	0x00010203, 0x04050607, 0x08090a0b
-+};
-+
-+static const unsigned int hactbl_lum[HACTBL_SIZE] = {
-+	0x00020103, 0x03020403, 0x05050404, 0x0000017d, 0x01020300, 0x04110512,
-+	0x21314106, 0x13516107,	0x22711432, 0x8191a108, 0x2342b1c1, 0x1552d1f0,
-+	0x24336272, 0x82090a16, 0x1718191a, 0x25262728, 0x292a3435, 0x36373839,
-+	0x3a434445, 0x46474849, 0x4a535455, 0x56575859, 0x5a636465, 0x66676869,
-+	0x6a737475, 0x76777879, 0x7a838485, 0x86878889, 0x8a929394, 0x95969798,
-+	0x999aa2a3, 0xa4a5a6a7, 0xa8a9aab2, 0xb3b4b5b6, 0xb7b8b9ba, 0xc2c3c4c5,
-+	0xc6c7c8c9, 0xcad2d3d4, 0xd5d6d7d8, 0xd9dae1e2, 0xe3e4e5e6, 0xe7e8e9ea,
-+	0xf1f2f3f4, 0xf5f6f7f8, 0xf9fa0000
-+};
-+
-+static const unsigned int hactbl_chr[HACTBL_SIZE] = {
-+	0x00020103, 0x03020403, 0x05050404, 0x0000017d, 0x01020300, 0x04110512,
-+	0x21314106, 0x13516107,	0x22711432, 0x8191a108, 0x2342b1c1, 0x1552d1f0,
-+	0x24336272, 0x82090a16, 0x1718191a, 0x25262728, 0x292a3435, 0x36373839,
-+	0x3a434445, 0x46474849, 0x4a535455, 0x56575859, 0x5a636465, 0x66676869,
-+	0x6a737475, 0x76777879, 0x7a838485, 0x86878889, 0x8a929394, 0x95969798,
-+	0x999aa2a3, 0xa4a5a6a7, 0xa8a9aab2, 0xb3b4b5b6, 0xb7b8b9ba, 0xc2c3c4c5,
-+	0xc6c7c8c9, 0xcad2d3d4, 0xd5d6d7d8, 0xd9dae1e2, 0xe3e4e5e6, 0xe7e8e9ea,
-+	0xf1f2f3f4, 0xf5f6f7f8, 0xf9fa0000
-+};
-+
-+static const char *error_to_text[16] = {
-+	"Normal",
-+	"SOI not detected",
-+	"SOF1 to SOFF detected",
-+	"Subsampling not detected",
-+	"SOF accuracy error",
-+	"DQT accuracy error",
-+	"Component error 1",
-+	"Component error 2",
-+	"SOF0, DQT, and DHT not detected when SOS detected",
-+	"SOS not detected",
-+	"EOI not detected",
-+	"Restart interval data number error detected",
-+	"Image size error",
-+	"Last MCU data number error",
-+	"Block data number error",
-+	"Unknown"
-+};
-+
-+static struct jpu_buffer *vb2_to_jpu_buffer(struct vb2_buffer *vb)
-+{
-+	struct v4l2_m2m_buffer *b +		container_of(vb, struct v4l2_m2m_buffer, vb);
-+
-+	return container_of(b, struct jpu_buffer, buf);
-+}
-+
-+static u32 jpu_read(struct jpu *jpu, unsigned int reg)
-+{
-+	return ioread32(jpu->regs + reg);
-+}
-+
-+static void jpu_write(struct jpu *jpu, u32 val, unsigned int reg)
-+{
-+	iowrite32(val, jpu->regs + reg);
-+}
-+
-+static struct jpu_ctx *ctrl_to_ctx(struct v4l2_ctrl *c)
-+{
-+	return container_of(c->handler, struct jpu_ctx, ctrl_handler);
-+}
-+
-+static struct jpu_ctx *fh_to_ctx(struct v4l2_fh *fh)
-+{
-+	return container_of(fh, struct jpu_ctx, fh);
-+}
-+
-+static void jpu_set_tbl(struct jpu *jpu, u32 reg, const unsigned int *tbl,
-+			unsigned int len) {
-+	unsigned int i;
-+
-+	for (i = 0; i < len; i++)
-+		jpu_write(jpu, tbl[i], reg + (i << 2));
-+}
-+
-+static void jpu_set_qtbl(struct jpu *jpu, unsigned short quality)
-+{
-+	jpu_set_tbl(jpu, JCQTBL(0), qtbl_lum[quality], QTBL_SIZE);
-+	jpu_set_tbl(jpu, JCQTBL(1), qtbl_chr[quality], QTBL_SIZE);
-+}
-+
-+static void jpu_set_htbl(struct jpu *jpu)
-+{
-+	jpu_set_tbl(jpu, JCHTBD(0), hdctbl_lum, HDCTBL_SIZE);
-+	jpu_set_tbl(jpu, JCHTBA(0), hactbl_lum, HACTBL_SIZE);
-+	jpu_set_tbl(jpu, JCHTBD(1), hdctbl_chr, HDCTBL_SIZE);
-+	jpu_set_tbl(jpu, JCHTBA(1), hactbl_chr, HACTBL_SIZE);
-+}
-+
-+static int jpu_wait_reset(struct jpu *jpu)
-+{
-+	unsigned long timeout;
-+
-+	timeout = jiffies + msecs_to_jiffies(JPU_RESET_TIMEOUT);
-+
-+	while (jpu_read(jpu, JCCMD) & JCCMD_SRST) {
-+		if (time_after(jiffies, timeout)) {
-+			dev_err(jpu->dev, "timed out in reset\n");
-+			return -ETIMEDOUT;
-+		}
-+		schedule();
-+	}
-+
-+	return 0;
-+}
-+
-+static int jpu_reset(struct jpu *jpu)
-+{
-+	jpu_write(jpu, JCCMD_SRST, JCCMD);
-+	return jpu_wait_reset(jpu);
-+}
-+
-+/*
-+ * ======================================
-+ * video ioctl operations
-+ * ======================================
-+ */
-+static void put_qtbl(u8 *p, const u8 *qtbl)
-+{
-+	unsigned int i;
-+
-+	for (i = 0; i < ARRAY_SIZE(zigzag); i++)
-+		p[i] = *(qtbl + zigzag[i]);
-+}
-+
-+static void put_htbl(u8 *p, const u8 *htbl, unsigned int len)
-+{
-+	unsigned int i, j;
-+
-+	for (i = 0; i < len; i += 4)
-+		for (j = 0; j < 4 && (i + j) < len; ++j)
-+			p[i + j] = htbl[i + 3 - j];
-+}
-+
-+static void jpu_generate_hdr(unsigned short quality, unsigned char *p)
-+{
-+	put_qtbl(p + JPU_JPEG_QTBL_LUM_OFFSET, (const u8 *)qtbl_lum[quality]);
-+	put_qtbl(p + JPU_JPEG_QTBL_CHR_OFFSET, (const u8 *)qtbl_chr[quality]);
-+
-+	put_htbl(p + JPU_JPEG_HDCTBL_LUM_OFFSET, (const u8 *)hdctbl_lum,
-+		 JPU_JPEG_HDCTBL_SIZE);
-+	put_htbl(p + JPU_JPEG_HACTBL_LUM_OFFSET, (const u8 *)hactbl_lum,
-+		 JPU_JPEG_HACTBL_SIZE);
-+
-+	put_htbl(p + JPU_JPEG_HDCTBL_CHR_OFFSET, (const u8 *)hdctbl_chr,
-+		 JPU_JPEG_HDCTBL_SIZE);
-+	put_htbl(p + JPU_JPEG_HACTBL_CHR_OFFSET, (const u8 *)hactbl_chr,
-+		 JPU_JPEG_HACTBL_SIZE);
-+}
-+
-+static int get_byte(struct jpeg_buffer *buf)
-+{
-+	if (buf->curr >= buf->end)
-+		return -1;
-+
-+	return *(u8 *)buf->curr++;
-+}
-+
-+static int get_word_be(struct jpeg_buffer *buf, unsigned int *word)
-+{
-+	if (buf->end - buf->curr < 2)
-+		return -1;
-+
-+	*word = get_unaligned_be16(buf->curr);
-+	buf->curr += 2;
-+
-+	return 0;
-+}
-+
-+static void skip(struct jpeg_buffer *buf, unsigned long len)
-+{
-+	buf->curr += min((unsigned long)(buf->end - buf->curr), len);
-+}
-+
-+static u8 jpu_parse_hdr(void *buffer, unsigned long size, unsigned int *width,
-+			  unsigned int *height)
-+{
-+	struct jpeg_buffer jpeg_buffer;
-+	unsigned int word;
-+	bool soi = false;
-+
-+	jpeg_buffer.end = buffer + size;
-+	jpeg_buffer.curr = buffer;
-+
-+	/*
-+	 * basic size check and EOI - we don't want to let JPU cross
-+	 * buffer bounds in any case. Hope it's stopping by EOI.
-+	 */
-+	if (size < JPU_JPEG_MIN_SIZE || *(u8 *)(buffer + size - 1) != EOI)
-+		return 0;
-+
-+	for (;;) {
-+		int c;
-+
-+		/* skip preceding filler bytes */
-+		do
-+			c = get_byte(&jpeg_buffer);
-+		while (c = 0xff || c = 0);
-+
-+		if (!soi && c = SOI) {
-+			soi = true;
-+			continue;
-+		} else if (soi != (c != SOI))
-+			return 0;
-+
-+		switch (c) {
-+		case SOF0: /* SOF0: baseline JPEG */
-+			skip(&jpeg_buffer, 3); /* segment length and bpp */
-+			if (get_word_be(&jpeg_buffer, height) ||
-+			    get_word_be(&jpeg_buffer, width) ||
-+			    get_byte(&jpeg_buffer) != 3) /* YCbCr only */
-+				return 0;
-+
-+			skip(&jpeg_buffer, 1);
-+			return get_byte(&jpeg_buffer);
-+		case DHT:
-+		case DQT:
-+		case COM:
-+		case DRI:
-+		case APP0 ... APP0 + 0x0f:
-+			if (get_word_be(&jpeg_buffer, &word))
-+				return 0;
-+			skip(&jpeg_buffer, (long)word - 2);
-+		case 0:
-+			break;
-+		default:
-+			return 0;
-+		}
-+	}
-+
-+	return 0;
-+}
-+
-+static int jpu_querycap(struct file *file, void *priv,
-+			struct v4l2_capability *cap)
-+{
-+	struct jpu_ctx *ctx = fh_to_ctx(priv);
-+
-+	if (ctx->encoder)
-+		strlcpy(cap->card, DRV_NAME " encoder", sizeof(cap->card));
-+	else
-+		strlcpy(cap->card, DRV_NAME " decoder", sizeof(cap->card));
-+
-+	strlcpy(cap->driver, DRV_NAME, sizeof(cap->driver));
-+	snprintf(cap->bus_info, sizeof(cap->bus_info), "platform:%s",
-+		 dev_name(ctx->jpu->dev));
-+	cap->device_caps |= V4L2_CAP_STREAMING | V4L2_CAP_VIDEO_M2M_MPLANE;
-+	cap->capabilities = V4L2_CAP_DEVICE_CAPS | cap->device_caps;
-+	memset(cap->reserved, 0, sizeof(cap->reserved));
-+
-+	return 0;
-+}
-+
-+static struct jpu_fmt *jpu_find_format(bool encoder, u32 pixelformat,
-+				       unsigned int fmt_type)
-+{
-+	unsigned int i, fmt_flag;
-+
-+	if (encoder)
-+		fmt_flag = fmt_type = JPU_FMT_TYPE_OUTPUT ? JPU_ENC_OUTPUT :
-+							     JPU_ENC_CAPTURE;
-+	else
-+		fmt_flag = fmt_type = JPU_FMT_TYPE_OUTPUT ? JPU_DEC_OUTPUT :
-+							     JPU_DEC_CAPTURE;
-+
-+	for (i = 0; i < ARRAY_SIZE(jpu_formats); i++) {
-+		struct jpu_fmt *fmt = &jpu_formats[i];
-+
-+		if (fmt->fourcc = pixelformat && fmt->types & fmt_flag)
-+			return fmt;
-+	}
-+
-+	return NULL;
-+}
-+
-+static int jpu_enum_fmt(struct v4l2_fmtdesc *f, u32 type)
-+{
-+	unsigned int i, num = 0;
-+
-+	for (i = 0; i < ARRAY_SIZE(jpu_formats); ++i) {
-+		if (jpu_formats[i].types & type) {
-+			if (num = f->index)
-+				break;
-+			++num;
-+		}
-+	}
-+
-+	if (i >= ARRAY_SIZE(jpu_formats))
-+		return -EINVAL;
-+
-+	f->pixelformat = jpu_formats[i].fourcc;
-+
-+	return 0;
-+}
-+
-+static int jpu_enum_fmt_cap(struct file *file, void *priv,
-+			    struct v4l2_fmtdesc *f)
-+{
-+	struct jpu_ctx *ctx = fh_to_ctx(priv);
-+
-+	return jpu_enum_fmt(f, ctx->encoder ? JPU_ENC_CAPTURE :
-+			    JPU_DEC_CAPTURE);
-+}
-+
-+static int jpu_enum_fmt_out(struct file *file, void *priv,
-+			    struct v4l2_fmtdesc *f)
-+{
-+	struct jpu_ctx *ctx = fh_to_ctx(priv);
-+
-+	return jpu_enum_fmt(f, ctx->encoder ? JPU_ENC_OUTPUT : JPU_DEC_OUTPUT);
-+}
-+
-+static struct jpu_q_data *jpu_get_q_data(struct jpu_ctx *ctx,
-+					 enum v4l2_buf_type type)
-+{
-+	if (V4L2_TYPE_IS_OUTPUT(type))
-+		return &ctx->out_q;
-+	else
-+		return &ctx->cap_q;
-+}
-+
-+static void jpu_bound_align_image(u32 *w, unsigned int w_min,
-+				  unsigned int w_max, unsigned int w_align,
-+				  u32 *h, unsigned int h_min,
-+				  unsigned int h_max, unsigned int h_align)
-+{
-+	unsigned int width, height, w_step, h_step;
-+
-+	width = *w;
-+	height = *h;
-+
-+	w_step = 1U << w_align;
-+	h_step = 1U << h_align;
-+	v4l_bound_align_image(w, w_min, w_max, w_align, h, h_min, h_max,
-+			      h_align, 3);
-+
-+	if (*w < width && *w + w_step < w_max)
-+		*w += w_step;
-+	if (*h < height && *h + h_step < h_max)
-+		*h += h_step;
-+}
-+
-+static int __jpu_try_fmt(struct jpu_ctx *ctx, struct jpu_fmt **fmtinfo,
-+			 struct v4l2_pix_format_mplane *pix,
-+			 enum v4l2_buf_type type)
-+{
-+	struct jpu_fmt *fmt;
-+	unsigned int f_type, w, h;
-+
-+	f_type = V4L2_TYPE_IS_OUTPUT(type) ? JPU_FMT_TYPE_OUTPUT :
-+						JPU_FMT_TYPE_CAPTURE;
-+
-+	fmt = jpu_find_format(ctx->encoder, pix->pixelformat, f_type);
-+	if (!fmt) {
-+		unsigned int pixelformat;
-+
-+		dev_dbg(ctx->jpu->dev, "unknown format; set default format\n");
-+		if (ctx->encoder)
-+			pixelformat = f_type = JPU_FMT_TYPE_OUTPUT ?
-+				V4L2_PIX_FMT_NV16M : V4L2_PIX_FMT_JPEG;
-+		else
-+			pixelformat = f_type = JPU_FMT_TYPE_CAPTURE ?
-+				V4L2_PIX_FMT_NV16M : V4L2_PIX_FMT_JPEG;
-+		fmt = jpu_find_format(ctx->encoder, pixelformat, f_type);
-+	}
-+
-+	pix->pixelformat = fmt->fourcc;
-+	pix->colorspace = fmt->colorspace;
-+	pix->field = V4L2_FIELD_NONE;
-+	pix->num_planes = fmt->num_planes;
-+	memset(pix->reserved, 0, sizeof(pix->reserved));
-+
-+	jpu_bound_align_image(&pix->width, JPU_WIDTH_MIN, JPU_WIDTH_MAX,
-+			      fmt->h_align, &pix->height, JPU_HEIGHT_MIN,
-+			      JPU_HEIGHT_MAX, fmt->v_align);
-+
-+	w = pix->width;
-+	h = pix->height;
-+
-+	if (fmt->fourcc = V4L2_PIX_FMT_JPEG) {
-+		/* ignore userspaces's sizeimage for encoding */
-+		if (pix->plane_fmt[0].sizeimage <= 0 || ctx->encoder)
-+			pix->plane_fmt[0].sizeimage = JPU_JPEG_HDR_SIZE +
-+				(JPU_JPEG_MAX_BYTES_PER_PIXEL * w * h);
-+		pix->plane_fmt[0].bytesperline = 0;
-+		memset(pix->plane_fmt[0].reserved, 0,
-+		       sizeof(pix->plane_fmt[0].reserved));
-+	} else {
-+		unsigned int i, bpl = 0;
-+
-+		for (i = 0; i < pix->num_planes; ++i)
-+			bpl = max(bpl, pix->plane_fmt[i].bytesperline);
-+
-+		bpl = clamp_t(unsigned int, bpl, w, JPU_WIDTH_MAX);
-+		bpl = round_up(bpl, JPU_MEMALIGN);
-+
-+		for (i = 0; i < pix->num_planes; ++i) {
-+			pix->plane_fmt[i].bytesperline = bpl;
-+			pix->plane_fmt[i].sizeimage = bpl * h * fmt->bpp[i] / 8;
-+			memset(pix->plane_fmt[i].reserved, 0,
-+			       sizeof(pix->plane_fmt[i].reserved));
-+		}
-+	}
-+
-+	if (fmtinfo)
-+		*fmtinfo = fmt;
-+
-+	return 0;
-+}
-+
-+static int jpu_try_fmt(struct file *file, void *priv, struct v4l2_format *f)
-+{
-+	struct jpu_ctx *ctx = fh_to_ctx(priv);
-+
-+	if (!v4l2_m2m_get_vq(ctx->fh.m2m_ctx, f->type))
-+		return -EINVAL;
-+
-+	return __jpu_try_fmt(ctx, NULL, &f->fmt.pix_mp, f->type);
-+}
-+
-+static int jpu_s_fmt(struct file *file, void *priv, struct v4l2_format *f)
-+{
-+	struct vb2_queue *vq;
-+	struct jpu_ctx *ctx = fh_to_ctx(priv);
-+	struct v4l2_m2m_ctx *m2m_ctx = ctx->fh.m2m_ctx;
-+	struct jpu_fmt *fmtinfo;
-+	struct jpu_q_data *q_data;
-+	int ret;
-+
-+	vq = v4l2_m2m_get_vq(m2m_ctx, f->type);
-+	if (!vq)
-+		return -EINVAL;
-+
-+	if (vb2_is_busy(vq)) {
-+		v4l2_err(&ctx->jpu->v4l2_dev, "%s queue busy\n", __func__);
-+		return -EBUSY;
-+	}
-+
-+	ret = __jpu_try_fmt(ctx, &fmtinfo, &f->fmt.pix_mp, f->type);
-+	if (ret < 0)
-+		return ret;
-+
-+	q_data = jpu_get_q_data(ctx, f->type);
-+
-+	q_data->format = f->fmt.pix_mp;
-+	q_data->fmtinfo = fmtinfo;
-+
-+	return 0;
-+}
-+
-+static int jpu_g_fmt(struct file *file, void *priv, struct v4l2_format *f)
-+{
-+	struct jpu_q_data *q_data;
-+	struct jpu_ctx *ctx = fh_to_ctx(priv);
-+
-+	if (!v4l2_m2m_get_vq(ctx->fh.m2m_ctx, f->type))
-+		return -EINVAL;
-+
-+	q_data = jpu_get_q_data(ctx, f->type);
-+	f->fmt.pix_mp = q_data->format;
-+
-+	return 0;
-+}
-+
-+/*
-+ * V4L2 controls
-+ */
-+static int jpu_s_ctrl(struct v4l2_ctrl *ctrl)
-+{
-+	struct jpu_ctx *ctx = ctrl_to_ctx(ctrl);
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&ctx->jpu->lock, flags);
-+	if (ctrl->id = V4L2_CID_JPEG_COMPRESSION_QUALITY)
-+		ctx->compr_quality = ctrl->val;
-+	spin_unlock_irqrestore(&ctx->jpu->lock, flags);
-+
-+	return 0;
-+}
-+
-+static const struct v4l2_ctrl_ops jpu_ctrl_ops = {
-+	.s_ctrl		= jpu_s_ctrl,
-+};
-+
-+static int jpu_streamon(struct file *file, void *priv, enum v4l2_buf_type type)
-+{
-+	struct jpu_ctx *ctx = fh_to_ctx(priv);
-+	struct jpu_q_data *src_q_data, *dst_q_data, *orig, adj, *ref;
-+	enum v4l2_buf_type adj_type;
-+
-+	src_q_data = jpu_get_q_data(ctx, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
-+	dst_q_data = jpu_get_q_data(ctx, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
-+
-+	if (ctx->encoder) {
-+		adj = *src_q_data;
-+		orig = src_q_data;
-+		ref = dst_q_data;
-+		adj_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
-+	} else {
-+		adj = *dst_q_data;
-+		orig = dst_q_data;
-+		ref = src_q_data;
-+		adj_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-+	}
-+
-+	adj.format.width = ref->format.width;
-+	adj.format.height = ref->format.height;
-+
-+	__jpu_try_fmt(ctx, NULL, &adj.format, adj_type);
-+
-+	if (adj.format.width != orig->format.width ||
-+	    adj.format.height != orig->format.height) {
-+		dev_err(ctx->jpu->dev, "src and dst formats do not match.\n");
-+		/* maybe we can return -EPIPE here? */
-+		return -EINVAL;
-+	}
-+
-+	return v4l2_m2m_streamon(file, ctx->fh.m2m_ctx, type);
-+}
-+
-+static const struct v4l2_ioctl_ops jpu_ioctl_ops = {
-+	.vidioc_querycap		= jpu_querycap,
-+
-+	.vidioc_enum_fmt_vid_cap_mplane = jpu_enum_fmt_cap,
-+	.vidioc_enum_fmt_vid_out_mplane = jpu_enum_fmt_out,
-+	.vidioc_g_fmt_vid_cap_mplane	= jpu_g_fmt,
-+	.vidioc_g_fmt_vid_out_mplane	= jpu_g_fmt,
-+	.vidioc_try_fmt_vid_cap_mplane	= jpu_try_fmt,
-+	.vidioc_try_fmt_vid_out_mplane	= jpu_try_fmt,
-+	.vidioc_s_fmt_vid_cap_mplane	= jpu_s_fmt,
-+	.vidioc_s_fmt_vid_out_mplane	= jpu_s_fmt,
-+
-+	.vidioc_reqbufs			= v4l2_m2m_ioctl_reqbufs,
-+	.vidioc_create_bufs             = v4l2_m2m_ioctl_create_bufs,
-+	.vidioc_querybuf		= v4l2_m2m_ioctl_querybuf,
-+	.vidioc_qbuf			= v4l2_m2m_ioctl_qbuf,
-+	.vidioc_dqbuf			= v4l2_m2m_ioctl_dqbuf,
-+	.vidioc_expbuf			= v4l2_m2m_ioctl_expbuf,
-+
-+	.vidioc_streamon		= jpu_streamon,
-+	.vidioc_streamoff		= v4l2_m2m_ioctl_streamoff,
-+
-+	.vidioc_subscribe_event		= v4l2_ctrl_subscribe_event,
-+	.vidioc_unsubscribe_event	= v4l2_event_unsubscribe
-+};
-+
-+static int jpu_controls_create(struct jpu_ctx *ctx)
-+{
-+	struct v4l2_ctrl *ctrl;
-+	int ret;
-+
-+	v4l2_ctrl_handler_init(&ctx->ctrl_handler, 1);
-+
-+	ctrl = v4l2_ctrl_new_std(&ctx->ctrl_handler, &jpu_ctrl_ops,
-+				 V4L2_CID_JPEG_COMPRESSION_QUALITY,
-+				 0, JPU_MAX_QUALITY - 1, 1, 0);
-+
-+	if (ctx->ctrl_handler.error) {
-+		ret = ctx->ctrl_handler.error;
-+		goto error_free;
-+	}
-+
-+	if (!ctx->encoder)
-+		ctrl->flags |= V4L2_CTRL_FLAG_VOLATILE |
-+				V4L2_CTRL_FLAG_READ_ONLY;
-+
-+	ret = v4l2_ctrl_handler_setup(&ctx->ctrl_handler);
-+	if (ret < 0)
-+		goto error_free;
-+
-+	return 0;
-+
-+error_free:
-+	v4l2_ctrl_handler_free(&ctx->ctrl_handler);
-+	return ret;
-+}
-+
-+/*
-+ * ======================================
-+ * Queue operations
-+ * ======================================
-+ */
-+static int jpu_queue_setup(struct vb2_queue *vq,
-+			   const struct v4l2_format *fmt,
-+			   unsigned int *nbuffers, unsigned int *nplanes,
-+			   unsigned int sizes[], void *alloc_ctxs[])
-+{
-+	struct jpu_ctx *ctx = vb2_get_drv_priv(vq);
-+	struct jpu_q_data *q_data;
-+	unsigned int i;
-+
-+	q_data = jpu_get_q_data(ctx, vq->type);
-+
-+	*nplanes = q_data->format.num_planes;
-+
-+	for (i = 0; i < *nplanes; i++) {
-+		unsigned int q_size = q_data->format.plane_fmt[i].sizeimage;
-+		unsigned int f_size = fmt ?
-+			fmt->fmt.pix_mp.plane_fmt[i].sizeimage : 0;
-+
-+		if (fmt && f_size < q_size)
-+			return -EINVAL;
-+
-+		sizes[i] = fmt ? f_size : q_size;
-+		alloc_ctxs[i] = ctx->jpu->alloc_ctx;
-+	}
-+
-+	return 0;
-+}
-+
-+static int jpu_buf_prepare(struct vb2_buffer *vb)
-+{
-+	struct jpu_ctx *ctx = vb2_get_drv_priv(vb->vb2_queue);
-+	struct jpu_q_data *q_data;
-+	unsigned int i;
-+
-+	q_data = jpu_get_q_data(ctx, vb->vb2_queue->type);
-+
-+	if (V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type)) {
-+		if (vb->v4l2_buf.field = V4L2_FIELD_ANY)
-+			vb->v4l2_buf.field = V4L2_FIELD_NONE;
-+		if (vb->v4l2_buf.field != V4L2_FIELD_NONE) {
-+			dev_err(ctx->jpu->dev, "%s field isn't supported\n",
-+					__func__);
-+			return -EINVAL;
-+		}
-+	}
-+
-+	for (i = 0; i < q_data->format.num_planes; i++) {
-+		unsigned long size = q_data->format.plane_fmt[i].sizeimage;
-+
-+		if (vb2_plane_size(vb, i) < size) {
-+			dev_err(ctx->jpu->dev,
-+				"%s: data will not fit into plane (%lu < %lu)\n",
-+			       __func__, vb2_plane_size(vb, i), size);
-+			return -EINVAL;
-+		}
-+
-+		/* decoder capture queue */
-+		if (!ctx->encoder && !V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type))
-+			vb2_set_plane_payload(vb, i, size);
-+	}
-+
-+	return 0;
-+}
-+
-+static void jpu_buf_queue(struct vb2_buffer *vb)
-+{
-+	struct jpu_ctx *ctx = vb2_get_drv_priv(vb->vb2_queue);
-+
-+	if (!ctx->encoder && V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type)) {
-+		struct jpu_buffer *jpu_buf = vb2_to_jpu_buffer(vb);
-+		struct jpu_q_data *q_data, adjust;
-+		void *buffer = vb2_plane_vaddr(vb, 0);
-+		unsigned long buf_size = vb2_get_plane_payload(vb, 0);
-+		unsigned int width, height;
-+
-+		u8 subsampling = jpu_parse_hdr(buffer, buf_size, &width,
-+						 &height);
-+
-+		/* check if JPEG data basic parsing was successful */
-+		if (subsampling != JPU_JPEG_422 && subsampling != JPU_JPEG_420)
-+			goto format_error;
-+
-+		q_data = &ctx->out_q;
-+
-+		adjust = *q_data;
-+		adjust.format.width = width;
-+		adjust.format.height = height;
-+
-+		__jpu_try_fmt(ctx, &adjust.fmtinfo, &adjust.format,
-+			      V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
-+
-+		if (adjust.format.width != q_data->format.width ||
-+		    adjust.format.height != q_data->format.height)
-+			goto format_error;
-+
-+		/*
-+		 * keep subsampling in buffer to check it
-+		 * for compatibility in device_run
-+		 */
-+		jpu_buf->subsampling = subsampling;
-+	}
-+
-+	if (ctx->fh.m2m_ctx)
-+		v4l2_m2m_buf_queue(ctx->fh.m2m_ctx, vb);
-+
-+	return;
-+
-+format_error:
-+	dev_err(ctx->jpu->dev, "incompatible or corrupted JPEG data\n");
-+	vb2_buffer_done(vb, VB2_BUF_STATE_ERROR);
-+}
-+
-+static void jpu_buf_finish(struct vb2_buffer *vb)
-+{
-+	struct jpu_buffer *jpu_buf = vb2_to_jpu_buffer(vb);
-+	struct jpu_ctx *ctx = vb2_get_drv_priv(vb->vb2_queue);
-+	struct jpu_q_data *q_data = &ctx->out_q;
-+	enum v4l2_buf_type type = vb->vb2_queue->type;
-+	u8 *buffer;
-+
-+	if (vb->state = VB2_BUF_STATE_DONE)
-+		vb->v4l2_buf.sequence = jpu_get_q_data(ctx, type)->sequence++;
-+
-+	if (!ctx->encoder || vb->state != VB2_BUF_STATE_DONE ||
-+	    V4L2_TYPE_IS_OUTPUT(type))
-+		return;
-+
-+	buffer = vb2_plane_vaddr(vb, 0);
-+
-+	memcpy(buffer, jpeg_hdrs[jpu_buf->compr_quality], JPU_JPEG_HDR_SIZE);
-+	*(u16 *)(buffer + JPU_JPEG_HEIGHT_OFFSET) +					cpu_to_be16(q_data->format.height);
-+	*(u16 *)(buffer + JPU_JPEG_WIDTH_OFFSET) +					cpu_to_be16(q_data->format.width);
-+	*(buffer + JPU_JPEG_SUBS_OFFSET) = q_data->fmtinfo->subsampling;
-+}
-+
-+static int jpu_start_streaming(struct vb2_queue *vq, unsigned count)
-+{
-+	struct jpu_ctx *ctx = vb2_get_drv_priv(vq);
-+	struct jpu_q_data *q_data = jpu_get_q_data(ctx, vq->type);
-+
-+	q_data->sequence = 0;
-+	return 0;
-+}
-+
-+static void jpu_stop_streaming(struct vb2_queue *vq)
-+{
-+	struct jpu_ctx *ctx = vb2_get_drv_priv(vq);
-+	struct vb2_buffer *vb;
-+	unsigned long flags;
-+
-+	for (;;) {
-+		if (V4L2_TYPE_IS_OUTPUT(vq->type))
-+			vb = v4l2_m2m_src_buf_remove(ctx->fh.m2m_ctx);
-+		else
-+			vb = v4l2_m2m_dst_buf_remove(ctx->fh.m2m_ctx);
-+		if (vb = NULL)
-+			return;
-+		spin_lock_irqsave(&ctx->jpu->lock, flags);
-+		v4l2_m2m_buf_done(vb, VB2_BUF_STATE_ERROR);
-+		spin_unlock_irqrestore(&ctx->jpu->lock, flags);
-+	}
-+}
-+
-+static struct vb2_ops jpu_qops = {
-+	.queue_setup		= jpu_queue_setup,
-+	.buf_prepare		= jpu_buf_prepare,
-+	.buf_queue		= jpu_buf_queue,
-+	.buf_finish		= jpu_buf_finish,
-+	.start_streaming	= jpu_start_streaming,
-+	.stop_streaming		= jpu_stop_streaming,
-+	.wait_prepare		= vb2_ops_wait_prepare,
-+	.wait_finish		= vb2_ops_wait_finish,
-+};
-+
-+static int jpu_queue_init(void *priv, struct vb2_queue *src_vq,
-+			  struct vb2_queue *dst_vq)
-+{
-+	struct jpu_ctx *ctx = priv;
-+	int ret;
-+
-+	memset(src_vq, 0, sizeof(*src_vq));
-+	src_vq->type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
-+	src_vq->io_modes = VB2_MMAP | VB2_DMABUF;
-+	src_vq->drv_priv = ctx;
-+	src_vq->buf_struct_size = sizeof(struct jpu_buffer);
-+	src_vq->ops = &jpu_qops;
-+	src_vq->mem_ops = &vb2_dma_contig_memops;
-+	src_vq->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_COPY;
-+	src_vq->lock = &ctx->jpu->mutex;
-+
-+	ret = vb2_queue_init(src_vq);
-+	if (ret)
-+		return ret;
-+
-+	memset(dst_vq, 0, sizeof(*dst_vq));
-+	dst_vq->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-+	dst_vq->io_modes = VB2_MMAP | VB2_DMABUF;
-+	dst_vq->drv_priv = ctx;
-+	dst_vq->buf_struct_size = sizeof(struct jpu_buffer);
-+	dst_vq->ops = &jpu_qops;
-+	dst_vq->mem_ops = &vb2_dma_contig_memops;
-+	dst_vq->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_COPY;
-+	dst_vq->lock = &ctx->jpu->mutex;
-+
-+	return vb2_queue_init(dst_vq);
-+}
-+
-+/*
-+ * ======================================
-+ * Device file operations
-+ * ======================================
-+ */
-+static int jpu_open(struct file *file)
-+{
-+	struct jpu *jpu = video_drvdata(file);
-+	struct video_device *vfd = video_devdata(file);
-+	struct jpu_ctx *ctx;
-+	int ret;
-+
-+	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
-+	if (!ctx)
-+		return -ENOMEM;
-+
-+	v4l2_fh_init(&ctx->fh, vfd);
-+	ctx->fh.ctrl_handler = &ctx->ctrl_handler;
-+	file->private_data = &ctx->fh;
-+	v4l2_fh_add(&ctx->fh);
-+
-+	ctx->jpu = jpu;
-+	ctx->encoder = vfd = &jpu->vfd_encoder;
-+
-+	__jpu_try_fmt(ctx, &ctx->out_q.fmtinfo, &ctx->out_q.format,
-+		      V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
-+	__jpu_try_fmt(ctx, &ctx->cap_q.fmtinfo, &ctx->cap_q.format,
-+		      V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
-+
-+	ctx->fh.m2m_ctx = v4l2_m2m_ctx_init(jpu->m2m_dev, ctx, jpu_queue_init);
-+	if (IS_ERR(ctx->fh.m2m_ctx)) {
-+		ret = PTR_ERR(ctx->fh.m2m_ctx);
-+		goto v4l_prepare_rollback;
-+	}
-+
-+	ret = jpu_controls_create(ctx);
-+	if (ret < 0)
-+		goto v4l_prepare_rollback;
-+
-+	if (mutex_lock_interruptible(&jpu->mutex)) {
-+		ret = -ERESTARTSYS;
-+		goto v4l_prepare_rollback;
-+	}
-+
-+	if (jpu->ref_count = 0) {
-+		ret = clk_prepare_enable(jpu->clk);
-+		if (ret < 0)
-+			goto device_prepare_rollback;
-+		/* ...issue software reset */
-+		ret = jpu_reset(jpu);
-+		if (ret)
-+			goto device_prepare_rollback;
-+	}
-+
-+	jpu->ref_count++;
-+
-+	mutex_unlock(&jpu->mutex);
-+	return 0;
-+
-+device_prepare_rollback:
-+	mutex_unlock(&jpu->mutex);
-+v4l_prepare_rollback:
-+	v4l2_fh_del(&ctx->fh);
-+	v4l2_fh_exit(&ctx->fh);
-+	kfree(ctx);
-+	return ret;
-+}
-+
-+static int jpu_release(struct file *file)
-+{
-+	struct jpu *jpu = video_drvdata(file);
-+	struct jpu_ctx *ctx = fh_to_ctx(file->private_data);
-+
-+	mutex_lock(&jpu->mutex);
-+	if (--jpu->ref_count = 0)
-+		clk_disable_unprepare(jpu->clk);
-+	mutex_unlock(&jpu->mutex);
-+
-+	v4l2_m2m_ctx_release(ctx->fh.m2m_ctx);
-+	v4l2_ctrl_handler_free(&ctx->ctrl_handler);
-+	v4l2_fh_del(&ctx->fh);
-+	v4l2_fh_exit(&ctx->fh);
-+	kfree(ctx);
-+
-+	return 0;
-+}
-+
-+static const struct v4l2_file_operations jpu_fops = {
-+	.owner		= THIS_MODULE,
-+	.open		= jpu_open,
-+	.release	= jpu_release,
-+	.unlocked_ioctl	= video_ioctl2,
-+	.poll		= v4l2_m2m_fop_poll,
-+	.mmap		= v4l2_m2m_fop_mmap,
-+};
-+
-+/*
-+ * ======================================
-+ * mem2mem callbacks
-+ * ======================================
-+ */
-+static void jpu_cleanup(struct jpu_ctx *ctx, bool reset)
-+{
-+	/* remove current buffers and finish job */
-+	struct vb2_buffer *src_buf, *dst_buf;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&ctx->jpu->lock, flags);
-+
-+	src_buf = v4l2_m2m_src_buf_remove(ctx->fh.m2m_ctx);
-+	dst_buf = v4l2_m2m_dst_buf_remove(ctx->fh.m2m_ctx);
-+
-+	v4l2_m2m_buf_done(src_buf, VB2_BUF_STATE_ERROR);
-+	v4l2_m2m_buf_done(dst_buf, VB2_BUF_STATE_ERROR);
-+
-+	/* ...and give it a chance on next run */
-+	if (reset)
-+		jpu_write(ctx->jpu, JCCMD_SRST, JCCMD);
-+
-+	spin_unlock_irqrestore(&ctx->jpu->lock, flags);
-+
-+	v4l2_m2m_job_finish(ctx->jpu->m2m_dev, ctx->fh.m2m_ctx);
-+}
-+
-+static void jpu_device_run(void *priv)
-+{
-+	struct jpu_ctx *ctx = priv;
-+	struct jpu *jpu = ctx->jpu;
-+	struct jpu_buffer *jpu_buf;
-+	struct jpu_q_data *q_data;
-+	struct vb2_buffer *src_buf, *dst_buf;
-+	unsigned int w, h, bpl;
-+	unsigned char num_planes, subsampling;
-+	unsigned long flags;
-+
-+	/* ...wait until module reset completes; we have mutex locked here */
-+	if (jpu_wait_reset(jpu)) {
-+		jpu_cleanup(ctx, true);
-+		return;
-+	}
-+
-+	spin_lock_irqsave(&ctx->jpu->lock, flags);
-+
-+	jpu->curr = ctx;
-+
-+	src_buf = v4l2_m2m_next_src_buf(ctx->fh.m2m_ctx);
-+	dst_buf = v4l2_m2m_next_dst_buf(ctx->fh.m2m_ctx);
-+
-+	if (ctx->encoder) {
-+		jpu_buf = vb2_to_jpu_buffer(dst_buf);
-+		q_data = &ctx->out_q;
-+	} else {
-+		jpu_buf = vb2_to_jpu_buffer(src_buf);
-+		q_data = &ctx->cap_q;
-+	}
-+
-+	w = q_data->format.width;
-+	h = q_data->format.height;
-+	bpl = q_data->format.plane_fmt[0].bytesperline;
-+	num_planes = q_data->fmtinfo->num_planes;
-+	subsampling = q_data->fmtinfo->subsampling;
-+
-+	if (ctx->encoder) {
-+		unsigned long src_1_addr, src_2_addr, dst_addr;
-+		unsigned int redu, inft;
-+
-+		dst_addr = vb2_dma_contig_plane_dma_addr(dst_buf, 0);
-+		src_1_addr = vb2_dma_contig_plane_dma_addr(src_buf, 0);
-+		if (num_planes > 1)
-+			src_2_addr = vb2_dma_contig_plane_dma_addr(src_buf, 1);
-+		else
-+			src_2_addr = src_1_addr + w * h;
-+
-+		jpu_buf->compr_quality = ctx->compr_quality;
-+
-+		if (subsampling = JPU_JPEG_420) {
-+			redu = JCMOD_REDU_420;
-+			inft = JIFECNT_INFT_420;
-+		} else {
-+			redu = JCMOD_REDU_422;
-+			inft = JIFECNT_INFT_422;
-+		}
-+
-+		/* only no marker mode works for encoding */
-+		jpu_write(jpu, JCMOD_DSP_ENC | JCMOD_PCTR | redu |
-+			  JCMOD_MSKIP_ENABLE, JCMOD);
-+
-+		jpu_write(jpu, JIFECNT_SWAP_WB | inft, JIFECNT);
-+		jpu_write(jpu, JIFDCNT_SWAP_WB, JIFDCNT);
-+		jpu_write(jpu, JINTE_TRANSF_COMPL, JINTE);
-+
-+		/* Y and C components source addresses */
-+		jpu_write(jpu, src_1_addr, JIFESYA1);
-+		jpu_write(jpu, src_2_addr, JIFESCA1);
-+
-+		/* memory width */
-+		jpu_write(jpu, bpl, JIFESMW);
-+
-+		jpu_write(jpu, (w >> 8) & JCSZ_MASK, JCHSZU);
-+		jpu_write(jpu, w & JCSZ_MASK, JCHSZD);
-+
-+		jpu_write(jpu, (h >> 8) & JCSZ_MASK, JCVSZU);
-+		jpu_write(jpu, h & JCSZ_MASK, JCVSZD);
-+
-+		jpu_write(jpu, w, JIFESHSZ);
-+		jpu_write(jpu, h, JIFESVSZ);
-+
-+		jpu_write(jpu, dst_addr + JPU_JPEG_HDR_SIZE, JIFEDA1);
-+
-+		jpu_write(jpu, 0 << JCQTN_SHIFT(1) | 1 << JCQTN_SHIFT(2) |
-+			  1 << JCQTN_SHIFT(3), JCQTN);
-+
-+		jpu_write(jpu, 0 << JCHTN_AC_SHIFT(1) | 0 << JCHTN_DC_SHIFT(1) |
-+			  1 << JCHTN_AC_SHIFT(2) | 1 << JCHTN_DC_SHIFT(2) |
-+			  1 << JCHTN_AC_SHIFT(3) | 1 << JCHTN_DC_SHIFT(3),
-+			  JCHTN);
-+
-+		jpu_set_qtbl(jpu, ctx->compr_quality);
-+		jpu_set_htbl(jpu);
-+	} else {
-+		unsigned long src_addr, dst_1_addr, dst_2_addr;
-+
-+		if (jpu_buf->subsampling != subsampling) {
-+			dev_err(ctx->jpu->dev,
-+				"src and dst formats do not match.\n");
-+			spin_unlock_irqrestore(&ctx->jpu->lock, flags);
-+			jpu_cleanup(ctx, false);
-+			return;
-+		}
-+
-+		src_addr = vb2_dma_contig_plane_dma_addr(src_buf, 0);
-+		dst_1_addr = vb2_dma_contig_plane_dma_addr(dst_buf, 0);
-+		if (q_data->fmtinfo->num_planes > 1)
-+			dst_2_addr = vb2_dma_contig_plane_dma_addr(dst_buf, 1);
-+		else
-+			dst_2_addr = dst_1_addr + w * h;
-+
-+		/* ...set up decoder operation */
-+		jpu_write(jpu, JCMOD_DSP_DEC | JCMOD_PCTR, JCMOD);
-+		jpu_write(jpu, JIFECNT_SWAP_WB, JIFECNT);
-+		jpu_write(jpu, JIFDCNT_SWAP_WB, JIFDCNT);
-+
-+		/* ...enable interrupts on transfer completion and d-g error */
-+		jpu_write(jpu, JINTE_TRANSF_COMPL | JINTE_ERR, JINTE);
-+
-+		/* ...set source/destination addresses of encoded data */
-+		jpu_write(jpu, src_addr, JIFDSA1);
-+		jpu_write(jpu, dst_1_addr, JIFDDYA1);
-+		jpu_write(jpu, dst_2_addr, JIFDDCA1);
-+
-+		jpu_write(jpu, bpl, JIFDDMW);
-+	}
-+
-+	/* ...start encoder/decoder operation */
-+	jpu_write(jpu, JCCMD_JSRT, JCCMD);
-+
-+	spin_unlock_irqrestore(&ctx->jpu->lock, flags);
-+}
-+
-+static int jpu_job_ready(void *priv)
-+{
-+	return 1;
-+}
-+
-+static void jpu_job_abort(void *priv)
-+{
-+	struct jpu_ctx *ctx = priv;
-+
-+	if (!wait_event_timeout(ctx->jpu->irq_queue, !ctx->jpu->curr,
-+				msecs_to_jiffies(JPU_JOB_TIMEOUT)))
-+		jpu_cleanup(ctx, true);
-+}
-+
-+static struct v4l2_m2m_ops jpu_m2m_ops = {
-+	.device_run	= jpu_device_run,
-+	.job_ready	= jpu_job_ready,
-+	.job_abort	= jpu_job_abort,
-+};
-+
-+/*
-+ * ======================================
-+ * IRQ handler
-+ * ======================================
-+ */
-+static irqreturn_t jpu_irq_handler(int irq, void *dev_id)
-+{
-+	struct jpu *jpu = dev_id;
-+	struct jpu_ctx *curr_ctx;
-+	struct vb2_buffer *src_buf, *dst_buf;
-+	unsigned int int_status;
-+
-+	int_status = jpu_read(jpu, JINTS);
-+
-+	/* ...spurious interrupt */
-+	if (!((JINTS_TRANSF_COMPL | JINTS_PROCESS_COMPL | JINTS_ERR) &
-+	    int_status))
-+		return IRQ_NONE;
-+
-+	/* ...clear interrupts */
-+	jpu_write(jpu, ~(int_status & JINTS_MASK), JINTS);
-+	if (int_status & (JINTS_ERR | JINTS_PROCESS_COMPL))
-+		jpu_write(jpu, JCCMD_JEND, JCCMD);
-+
-+	spin_lock(&jpu->lock);
-+
-+	if ((int_status & JINTS_PROCESS_COMPL) &&
-+	   !(int_status & JINTS_TRANSF_COMPL))
-+		goto handled;
-+
-+	curr_ctx = v4l2_m2m_get_curr_priv(jpu->m2m_dev);
-+	if (!curr_ctx) {
-+		/* ...instance is not running */
-+		dev_err(jpu->dev, "no active context for m2m\n");
-+		goto handled;
-+	}
-+
-+	src_buf = v4l2_m2m_src_buf_remove(curr_ctx->fh.m2m_ctx);
-+	dst_buf = v4l2_m2m_dst_buf_remove(curr_ctx->fh.m2m_ctx);
-+
-+	if (int_status & JINTS_TRANSF_COMPL) {
-+		if (curr_ctx->encoder) {
-+			unsigned long payload_size = jpu_read(jpu, JCDTCU) << 16
-+						   | jpu_read(jpu, JCDTCM) << 8
-+						   | jpu_read(jpu, JCDTCD);
-+			vb2_set_plane_payload(dst_buf, 0,
-+				payload_size + JPU_JPEG_HDR_SIZE);
-+		}
-+
-+		dst_buf->v4l2_buf.field = src_buf->v4l2_buf.field;
-+		dst_buf->v4l2_buf.timestamp = src_buf->v4l2_buf.timestamp;
-+		if (src_buf->v4l2_buf.flags & V4L2_BUF_FLAG_TIMECODE)
-+			dst_buf->v4l2_buf.timecode = src_buf->v4l2_buf.timecode;
-+		dst_buf->v4l2_buf.flags &= ~V4L2_BUF_FLAG_TSTAMP_SRC_MASK;
-+		dst_buf->v4l2_buf.flags |= src_buf->v4l2_buf.flags &
-+					V4L2_BUF_FLAG_TSTAMP_SRC_MASK;
-+		dst_buf->v4l2_buf.flags = src_buf->v4l2_buf.flags &
-+			(V4L2_BUF_FLAG_TIMECODE | V4L2_BUF_FLAG_KEYFRAME |
-+			 V4L2_BUF_FLAG_PFRAME | V4L2_BUF_FLAG_BFRAME |
-+			 V4L2_BUF_FLAG_TSTAMP_SRC_MASK);
-+
-+		v4l2_m2m_buf_done(src_buf, VB2_BUF_STATE_DONE);
-+		v4l2_m2m_buf_done(dst_buf, VB2_BUF_STATE_DONE);
-+	} else if (int_status & JINTS_ERR) {
-+		unsigned char error = jpu_read(jpu, JCDERR) & JCDERR_MASK;
-+
-+		dev_dbg(jpu->dev, "processing error: %#X: %s\n", error,
-+			error_to_text[error]);
-+
-+		v4l2_m2m_buf_done(src_buf, VB2_BUF_STATE_ERROR);
-+		v4l2_m2m_buf_done(dst_buf, VB2_BUF_STATE_ERROR);
-+	}
-+
-+	jpu->curr = NULL;
-+
-+	/* ...reset JPU after completion */
-+	jpu_write(jpu, JCCMD_SRST, JCCMD);
-+	spin_unlock(&jpu->lock);
-+
-+	v4l2_m2m_job_finish(jpu->m2m_dev, curr_ctx->fh.m2m_ctx);
-+
-+	/* ...wakeup abort routine if needed */
-+	wake_up(&jpu->irq_queue);
-+
-+	return IRQ_HANDLED;
-+
-+handled:
-+	spin_unlock(&jpu->lock);
-+	return IRQ_HANDLED;
-+}
-+
-+/*
-+ * ======================================
-+ * Driver basic infrastructure
-+ * ======================================
-+ */
-+static const struct of_device_id jpu_dt_ids[] = {
-+	{ .compatible = "renesas,jpu-r8a7790" }, /* H2 */
-+	{ .compatible = "renesas,jpu-r8a7791" }, /* M2-W */
-+	{ .compatible = "renesas,jpu-r8a7792" }, /* V2H */
-+	{ .compatible = "renesas,jpu-r8a7793" }, /* M2-N */
-+	{ },
-+};
-+MODULE_DEVICE_TABLE(of, jpu_dt_ids);
-+
-+static int jpu_probe(struct platform_device *pdev)
-+{
-+	struct jpu *jpu;
-+	struct resource *res;
-+	int ret;
-+	unsigned int i;
-+
-+	jpu = devm_kzalloc(&pdev->dev, sizeof(*jpu), GFP_KERNEL);
-+	if (!jpu)
-+		return -ENOMEM;
-+
-+	init_waitqueue_head(&jpu->irq_queue);
-+	mutex_init(&jpu->mutex);
-+	spin_lock_init(&jpu->lock);
-+	jpu->dev = &pdev->dev;
-+
-+	/* memory-mapped registers */
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	jpu->regs = devm_ioremap_resource(&pdev->dev, res);
-+	if (IS_ERR(jpu->regs))
-+		return PTR_ERR(jpu->regs);
-+
-+	/* interrupt service routine registration */
-+	jpu->irq = ret = platform_get_irq(pdev, 0);
-+	if (ret < 0) {
-+		dev_err(&pdev->dev, "cannot find IRQ\n");
-+		return ret;
-+	}
-+
-+	ret = devm_request_irq(&pdev->dev, jpu->irq, jpu_irq_handler, 0,
-+			       dev_name(&pdev->dev), jpu);
-+	if (ret) {
-+		dev_err(&pdev->dev, "cannot claim IRQ %d\n", jpu->irq);
-+		return ret;
-+	}
-+
-+	/* clocks */
-+	jpu->clk = devm_clk_get(&pdev->dev, NULL);
-+	if (IS_ERR(jpu->clk)) {
-+		dev_err(&pdev->dev, "cannot get clock\n");
-+		return PTR_ERR(jpu->clk);
-+	}
-+
-+	/* v4l2 device */
-+	ret = v4l2_device_register(&pdev->dev, &jpu->v4l2_dev);
-+	if (ret) {
-+		dev_err(&pdev->dev, "Failed to register v4l2 device\n");
-+		return ret;
-+	}
-+
-+	/* mem2mem device */
-+	jpu->m2m_dev = v4l2_m2m_init(&jpu_m2m_ops);
-+	if (IS_ERR(jpu->m2m_dev)) {
-+		v4l2_err(&jpu->v4l2_dev, "Failed to init mem2mem device\n");
-+		ret = PTR_ERR(jpu->m2m_dev);
-+		goto device_register_rollback;
-+	}
-+
-+	jpu->alloc_ctx = vb2_dma_contig_init_ctx(&pdev->dev);
-+	if (IS_ERR(jpu->alloc_ctx)) {
-+		v4l2_err(&jpu->v4l2_dev, "Failed to init memory allocator\n");
-+		ret = PTR_ERR(jpu->alloc_ctx);
-+		goto m2m_init_rollback;
-+	}
-+
-+	/* fill in qantization and Huffman tables for encoder */
-+	for (i = 0; i < JPU_MAX_QUALITY; i++)
-+		jpu_generate_hdr(i, (unsigned char *)jpeg_hdrs[i]);
-+
-+	strlcpy(jpu->vfd_encoder.name, DRV_NAME, sizeof(jpu->vfd_encoder.name));
-+	jpu->vfd_encoder.fops		= &jpu_fops;
-+	jpu->vfd_encoder.ioctl_ops	= &jpu_ioctl_ops;
-+	jpu->vfd_encoder.minor		= -1;
-+	jpu->vfd_encoder.release	= video_device_release_empty;
-+	jpu->vfd_encoder.lock		= &jpu->mutex;
-+	jpu->vfd_encoder.v4l2_dev	= &jpu->v4l2_dev;
-+	jpu->vfd_encoder.vfl_dir	= VFL_DIR_M2M;
-+
-+	ret = video_register_device(&jpu->vfd_encoder, VFL_TYPE_GRABBER, -1);
-+	if (ret) {
-+		v4l2_err(&jpu->v4l2_dev, "Failed to register video device\n");
-+		goto vb2_allocator_rollback;
-+	}
-+
-+	video_set_drvdata(&jpu->vfd_encoder, jpu);
-+
-+	strlcpy(jpu->vfd_decoder.name, DRV_NAME, sizeof(jpu->vfd_decoder.name));
-+	jpu->vfd_decoder.fops		= &jpu_fops;
-+	jpu->vfd_decoder.ioctl_ops	= &jpu_ioctl_ops;
-+	jpu->vfd_decoder.minor		= -1;
-+	jpu->vfd_decoder.release	= video_device_release_empty;
-+	jpu->vfd_decoder.lock		= &jpu->mutex;
-+	jpu->vfd_decoder.v4l2_dev	= &jpu->v4l2_dev;
-+	jpu->vfd_decoder.vfl_dir	= VFL_DIR_M2M;
-+
-+	ret = video_register_device(&jpu->vfd_decoder, VFL_TYPE_GRABBER, -1);
-+	if (ret) {
-+		v4l2_err(&jpu->v4l2_dev, "Failed to register video device\n");
-+		goto enc_vdev_register_rollback;
-+	}
-+
-+	video_set_drvdata(&jpu->vfd_decoder, jpu);
-+	platform_set_drvdata(pdev, jpu);
-+
-+	v4l2_info(&jpu->v4l2_dev, "encoder device registered as /dev/video%d\n",
-+		  jpu->vfd_encoder.num);
-+	v4l2_info(&jpu->v4l2_dev, "decoder device registered as /dev/video%d\n",
-+		  jpu->vfd_decoder.num);
-+
-+	return 0;
-+
-+enc_vdev_register_rollback:
-+	video_unregister_device(&jpu->vfd_encoder);
-+
-+vb2_allocator_rollback:
-+	vb2_dma_contig_cleanup_ctx(jpu->alloc_ctx);
-+
-+m2m_init_rollback:
-+	v4l2_m2m_release(jpu->m2m_dev);
-+
-+device_register_rollback:
-+	v4l2_device_unregister(&jpu->v4l2_dev);
-+
-+	return ret;
-+}
-+
-+static int jpu_remove(struct platform_device *pdev)
-+{
-+	struct jpu *jpu = platform_get_drvdata(pdev);
-+
-+	video_unregister_device(&jpu->vfd_decoder);
-+	video_unregister_device(&jpu->vfd_encoder);
-+	vb2_dma_contig_cleanup_ctx(jpu->alloc_ctx);
-+	v4l2_m2m_release(jpu->m2m_dev);
-+	v4l2_device_unregister(&jpu->v4l2_dev);
-+
-+	return 0;
-+}
-+
-+#ifdef CONFIG_PM_SLEEP
-+static int jpu_suspend(struct device *dev)
-+{
-+	struct jpu *jpu = dev_get_drvdata(dev);
-+
-+	if (jpu->ref_count = 0)
-+		return 0;
-+
-+	clk_disable_unprepare(jpu->clk);
-+
-+	return 0;
-+}
-+
-+static int jpu_resume(struct device *dev)
-+{
-+	struct jpu *jpu = dev_get_drvdata(dev);
-+
-+	if (jpu->ref_count = 0)
-+		return 0;
-+
-+	clk_prepare_enable(jpu->clk);
-+
-+	return 0;
-+}
-+#endif
-+
-+static const struct dev_pm_ops jpu_pm_ops = {
-+	SET_SYSTEM_SLEEP_PM_OPS(jpu_suspend, jpu_resume)
-+};
-+
-+static struct platform_driver jpu_driver = {
-+	.probe = jpu_probe,
-+	.remove = jpu_remove,
-+	.driver = {
-+		.of_match_table = jpu_dt_ids,
-+		.name = DRV_NAME,
-+		.pm = &jpu_pm_ops,
-+	},
-+};
-+
-+module_platform_driver(jpu_driver);
-+
-+MODULE_ALIAS("platform:" DRV_NAME);
-+MODULE_AUTHOR("Mikhail Ulianov <mikhail.ulyanov@cogentembedded.com>");
-+MODULE_DESCRIPTION("Renesas R-Car JPEG processing unit driver");
-+MODULE_LICENSE("GPL v2");
+ #include <asm/hardware/cache-l2x0.h>
+-#include <asm/mach-types.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
+ 
+ #include "common.h"
+-#include "dma-register.h"
+-#include "intc.h"
+-#include "irqs.h"
+ #include "sh73a0.h"
+ 
+ static struct map_desc sh73a0_io_desc[] __initdata = {
+@@ -54,737 +43,12 @@ static struct map_desc sh73a0_io_desc[] __initdata = {
+ 	},
+ };
+ 
+-void __init sh73a0_map_io(void)
++static void __init sh73a0_map_io(void)
+ {
+ 	debug_ll_io_init();
+ 	iotable_init(sh73a0_io_desc, ARRAY_SIZE(sh73a0_io_desc));
+ }
+ 
+-/* PFC */
+-static struct resource pfc_resources[] __initdata = {
+-	DEFINE_RES_MEM(0xe6050000, 0x8000),
+-	DEFINE_RES_MEM(0xe605801c, 0x000c),
+-};
+-
+-void __init sh73a0_pinmux_init(void)
+-{
+-	platform_device_register_simple("pfc-sh73a0", -1, pfc_resources,
+-					ARRAY_SIZE(pfc_resources));
+-}
+-
+-/* SCIF */
+-#define SH73A0_SCIF(scif_type, index, baseaddr, irq)		\
+-static struct plat_sci_port scif##index##_platform_data = {	\
+-	.type		= scif_type,				\
+-	.flags		= UPF_BOOT_AUTOCONF,			\
+-	.scscr		= SCSCR_RE | SCSCR_TE,			\
+-};								\
+-								\
+-static struct resource scif##index##_resources[] = {		\
+-	DEFINE_RES_MEM(baseaddr, 0x100),			\
+-	DEFINE_RES_IRQ(irq),					\
+-};								\
+-								\
+-static struct platform_device scif##index##_device = {		\
+-	.name		= "sh-sci",				\
+-	.id		= index,				\
+-	.resource	= scif##index##_resources,		\
+-	.num_resources	= ARRAY_SIZE(scif##index##_resources),	\
+-	.dev		= {					\
+-		.platform_data	= &scif##index##_platform_data,	\
+-	},							\
+-}
+-
+-SH73A0_SCIF(PORT_SCIFA, 0, 0xe6c40000, gic_spi(72));
+-SH73A0_SCIF(PORT_SCIFA, 1, 0xe6c50000, gic_spi(73));
+-SH73A0_SCIF(PORT_SCIFA, 2, 0xe6c60000, gic_spi(74));
+-SH73A0_SCIF(PORT_SCIFA, 3, 0xe6c70000, gic_spi(75));
+-SH73A0_SCIF(PORT_SCIFA, 4, 0xe6c80000, gic_spi(78));
+-SH73A0_SCIF(PORT_SCIFA, 5, 0xe6cb0000, gic_spi(79));
+-SH73A0_SCIF(PORT_SCIFA, 6, 0xe6cc0000, gic_spi(156));
+-SH73A0_SCIF(PORT_SCIFA, 7, 0xe6cd0000, gic_spi(143));
+-SH73A0_SCIF(PORT_SCIFB, 8, 0xe6c30000, gic_spi(80));
+-
+-static struct sh_timer_config cmt1_platform_data = {
+-	.channels_mask = 0x3f,
+-};
+-
+-static struct resource cmt1_resources[] = {
+-	DEFINE_RES_MEM(0xe6138000, 0x200),
+-	DEFINE_RES_IRQ(gic_spi(65)),
+-};
+-
+-static struct platform_device cmt1_device = {
+-	.name		= "sh-cmt-48",
+-	.id		= 1,
+-	.dev = {
+-		.platform_data	= &cmt1_platform_data,
+-	},
+-	.resource	= cmt1_resources,
+-	.num_resources	= ARRAY_SIZE(cmt1_resources),
+-};
+-
+-/* TMU */
+-static struct sh_timer_config tmu0_platform_data = {
+-	.channels_mask = 7,
+-};
+-
+-static struct resource tmu0_resources[] = {
+-	DEFINE_RES_MEM(0xfff60000, 0x2c),
+-	DEFINE_RES_IRQ(intcs_evt2irq(0xe80)),
+-	DEFINE_RES_IRQ(intcs_evt2irq(0xea0)),
+-	DEFINE_RES_IRQ(intcs_evt2irq(0xec0)),
+-};
+-
+-static struct platform_device tmu0_device = {
+-	.name		= "sh-tmu",
+-	.id		= 0,
+-	.dev = {
+-		.platform_data	= &tmu0_platform_data,
+-	},
+-	.resource	= tmu0_resources,
+-	.num_resources	= ARRAY_SIZE(tmu0_resources),
+-};
+-
+-static struct resource i2c0_resources[] = {
+-	[0] = DEFINE_RES_MEM(0xe6820000, 0x426),
+-	[1] = {
+-		.start	= gic_spi(167),
+-		.end	= gic_spi(170),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct resource i2c1_resources[] = {
+-	[0] = DEFINE_RES_MEM(0xe6822000, 0x426),
+-	[1] = {
+-		.start	= gic_spi(51),
+-		.end	= gic_spi(54),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct resource i2c2_resources[] = {
+-	[0] = DEFINE_RES_MEM(0xe6824000, 0x426),
+-	[1] = {
+-		.start	= gic_spi(171),
+-		.end	= gic_spi(174),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct resource i2c3_resources[] = {
+-	[0] = DEFINE_RES_MEM(0xe6826000, 0x426),
+-	[1] = {
+-		.start	= gic_spi(183),
+-		.end	= gic_spi(186),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct resource i2c4_resources[] = {
+-	[0] = DEFINE_RES_MEM(0xe6828000, 0x426),
+-	[1] = {
+-		.start	= gic_spi(187),
+-		.end	= gic_spi(190),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct i2c_sh_mobile_platform_data i2c_platform_data = {
+-	.clks_per_count	= 2,
+-};
+-
+-static struct platform_device i2c0_device = {
+-	.name		= "i2c-sh_mobile",
+-	.id		= 0,
+-	.resource	= i2c0_resources,
+-	.num_resources	= ARRAY_SIZE(i2c0_resources),
+-	.dev		= {
+-		.platform_data	= &i2c_platform_data,
+-	},
+-};
+-
+-static struct platform_device i2c1_device = {
+-	.name		= "i2c-sh_mobile",
+-	.id		= 1,
+-	.resource	= i2c1_resources,
+-	.num_resources	= ARRAY_SIZE(i2c1_resources),
+-	.dev		= {
+-		.platform_data	= &i2c_platform_data,
+-	},
+-};
+-
+-static struct platform_device i2c2_device = {
+-	.name		= "i2c-sh_mobile",
+-	.id		= 2,
+-	.resource	= i2c2_resources,
+-	.num_resources	= ARRAY_SIZE(i2c2_resources),
+-	.dev		= {
+-		.platform_data	= &i2c_platform_data,
+-	},
+-};
+-
+-static struct platform_device i2c3_device = {
+-	.name		= "i2c-sh_mobile",
+-	.id		= 3,
+-	.resource	= i2c3_resources,
+-	.num_resources	= ARRAY_SIZE(i2c3_resources),
+-	.dev		= {
+-		.platform_data	= &i2c_platform_data,
+-	},
+-};
+-
+-static struct platform_device i2c4_device = {
+-	.name		= "i2c-sh_mobile",
+-	.id		= 4,
+-	.resource	= i2c4_resources,
+-	.num_resources	= ARRAY_SIZE(i2c4_resources),
+-	.dev		= {
+-		.platform_data	= &i2c_platform_data,
+-	},
+-};
+-
+-static const struct sh_dmae_slave_config sh73a0_dmae_slaves[] = {
+-	{
+-		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
+-		.addr		= 0xe6c40020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x21,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF0_RX,
+-		.addr		= 0xe6c40024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x22,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF1_TX,
+-		.addr		= 0xe6c50020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x25,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF1_RX,
+-		.addr		= 0xe6c50024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x26,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF2_TX,
+-		.addr		= 0xe6c60020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x29,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF2_RX,
+-		.addr		= 0xe6c60024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x2a,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF3_TX,
+-		.addr		= 0xe6c70020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x2d,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF3_RX,
+-		.addr		= 0xe6c70024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x2e,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF4_TX,
+-		.addr		= 0xe6c80020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x39,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF4_RX,
+-		.addr		= 0xe6c80024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x3a,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF5_TX,
+-		.addr		= 0xe6cb0020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x35,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF5_RX,
+-		.addr		= 0xe6cb0024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x36,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF6_TX,
+-		.addr		= 0xe6cc0020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x1d,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF6_RX,
+-		.addr		= 0xe6cc0024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x1e,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF7_TX,
+-		.addr		= 0xe6cd0020,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x19,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF7_RX,
+-		.addr		= 0xe6cd0024,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x1a,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF8_TX,
+-		.addr		= 0xe6c30040,
+-		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x3d,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SCIF8_RX,
+-		.addr		= 0xe6c30060,
+-		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+-		.mid_rid	= 0x3e,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
+-		.addr		= 0xee100030,
+-		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xc1,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
+-		.addr		= 0xee100030,
+-		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xc2,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
+-		.addr		= 0xee120030,
+-		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xc9,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
+-		.addr		= 0xee120030,
+-		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xca,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
+-		.addr		= 0xee140030,
+-		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xcd,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
+-		.addr		= 0xee140030,
+-		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
+-		.mid_rid	= 0xce,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
+-		.addr		= 0xe6bd0034,
+-		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0xd1,
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
+-		.addr		= 0xe6bd0034,
+-		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0xd2,
+-	},
+-};
+-
+-#define DMAE_CHANNEL(_offset)					\
+-	{							\
+-		.offset         = _offset - 0x20,		\
+-		.dmars          = _offset - 0x20 + 0x40,	\
+-	}
+-
+-static const struct sh_dmae_channel sh73a0_dmae_channels[] = {
+-	DMAE_CHANNEL(0x8000),
+-	DMAE_CHANNEL(0x8080),
+-	DMAE_CHANNEL(0x8100),
+-	DMAE_CHANNEL(0x8180),
+-	DMAE_CHANNEL(0x8200),
+-	DMAE_CHANNEL(0x8280),
+-	DMAE_CHANNEL(0x8300),
+-	DMAE_CHANNEL(0x8380),
+-	DMAE_CHANNEL(0x8400),
+-	DMAE_CHANNEL(0x8480),
+-	DMAE_CHANNEL(0x8500),
+-	DMAE_CHANNEL(0x8580),
+-	DMAE_CHANNEL(0x8600),
+-	DMAE_CHANNEL(0x8680),
+-	DMAE_CHANNEL(0x8700),
+-	DMAE_CHANNEL(0x8780),
+-	DMAE_CHANNEL(0x8800),
+-	DMAE_CHANNEL(0x8880),
+-	DMAE_CHANNEL(0x8900),
+-	DMAE_CHANNEL(0x8980),
+-};
+-
+-static struct sh_dmae_pdata sh73a0_dmae_platform_data = {
+-	.slave          = sh73a0_dmae_slaves,
+-	.slave_num      = ARRAY_SIZE(sh73a0_dmae_slaves),
+-	.channel        = sh73a0_dmae_channels,
+-	.channel_num    = ARRAY_SIZE(sh73a0_dmae_channels),
+-	.ts_low_shift   = TS_LOW_SHIFT,
+-	.ts_low_mask    = TS_LOW_BIT << TS_LOW_SHIFT,
+-	.ts_high_shift  = TS_HI_SHIFT,
+-	.ts_high_mask   = TS_HI_BIT << TS_HI_SHIFT,
+-	.ts_shift       = dma_ts_shift,
+-	.ts_shift_num   = ARRAY_SIZE(dma_ts_shift),
+-	.dmaor_init     = DMAOR_DME,
+-};
+-
+-static struct resource sh73a0_dmae_resources[] = {
+-	DEFINE_RES_MEM(0xfe000020, 0x89e0),
+-	{
+-		.name	= "error_irq",
+-		.start  = gic_spi(129),
+-		.end    = gic_spi(129),
+-		.flags  = IORESOURCE_IRQ,
+-	},
+-	{
+-		/* IRQ for channels 0-19 */
+-		.start  = gic_spi(109),
+-		.end    = gic_spi(128),
+-		.flags  = IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device dma0_device = {
+-	.name		= "sh-dma-engine",
+-	.id		= 0,
+-	.resource	= sh73a0_dmae_resources,
+-	.num_resources	= ARRAY_SIZE(sh73a0_dmae_resources),
+-	.dev		= {
+-		.platform_data	= &sh73a0_dmae_platform_data,
+-	},
+-};
+-
+-/* MPDMAC */
+-static const struct sh_dmae_slave_config sh73a0_mpdma_slaves[] = {
+-	{
+-		.slave_id	= SHDMA_SLAVE_FSI2A_RX,
+-		.addr		= 0xec230020,
+-		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0xd6, /* CHECK ME */
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_FSI2A_TX,
+-		.addr		= 0xec230024,
+-		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0xd5, /* CHECK ME */
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_FSI2C_RX,
+-		.addr		= 0xec230060,
+-		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0xda, /* CHECK ME */
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_FSI2C_TX,
+-		.addr		= 0xec230064,
+-		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0xd9, /* CHECK ME */
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_FSI2B_RX,
+-		.addr		= 0xec240020,
+-		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0x8e, /* CHECK ME */
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_FSI2B_TX,
+-		.addr		= 0xec240024,
+-		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0x8d, /* CHECK ME */
+-	}, {
+-		.slave_id	= SHDMA_SLAVE_FSI2D_RX,
+-		.addr		=  0xec240060,
+-		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
+-		.mid_rid	= 0x9a, /* CHECK ME */
+-	},
+-};
+-
+-#define MPDMA_CHANNEL(a, b, c)			\
+-{						\
+-	.offset		= a,			\
+-	.dmars		= b,			\
+-	.dmars_bit	= c,			\
+-	.chclr_offset	= (0x220 - 0x20) + a	\
+-}
+-
+-static const struct sh_dmae_channel sh73a0_mpdma_channels[] = {
+-	MPDMA_CHANNEL(0x00, 0, 0),
+-	MPDMA_CHANNEL(0x10, 0, 8),
+-	MPDMA_CHANNEL(0x20, 4, 0),
+-	MPDMA_CHANNEL(0x30, 4, 8),
+-	MPDMA_CHANNEL(0x50, 8, 0),
+-	MPDMA_CHANNEL(0x70, 8, 8),
+-};
+-
+-static struct sh_dmae_pdata sh73a0_mpdma_platform_data = {
+-	.slave		= sh73a0_mpdma_slaves,
+-	.slave_num	= ARRAY_SIZE(sh73a0_mpdma_slaves),
+-	.channel	= sh73a0_mpdma_channels,
+-	.channel_num	= ARRAY_SIZE(sh73a0_mpdma_channels),
+-	.ts_low_shift	= TS_LOW_SHIFT,
+-	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
+-	.ts_high_shift	= TS_HI_SHIFT,
+-	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
+-	.ts_shift	= dma_ts_shift,
+-	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
+-	.dmaor_init	= DMAOR_DME,
+-	.chclr_present	= 1,
+-};
+-
+-/* Resource order important! */
+-static struct resource sh73a0_mpdma_resources[] = {
+-	/* Channel registers and DMAOR */
+-	DEFINE_RES_MEM(0xec618020, 0x270),
+-	/* DMARSx */
+-	DEFINE_RES_MEM(0xec619000, 0xc),
+-	{
+-		.name	= "error_irq",
+-		.start	= gic_spi(181),
+-		.end	= gic_spi(181),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-	{
+-		/* IRQ for channels 0-5 */
+-		.start	= gic_spi(175),
+-		.end	= gic_spi(180),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device mpdma0_device = {
+-	.name		= "sh-dma-engine",
+-	.id		= 1,
+-	.resource	= sh73a0_mpdma_resources,
+-	.num_resources	= ARRAY_SIZE(sh73a0_mpdma_resources),
+-	.dev		= {
+-		.platform_data	= &sh73a0_mpdma_platform_data,
+-	},
+-};
+-
+-static struct resource pmu_resources[] = {
+-	[0] = {
+-		.start	= gic_spi(55),
+-		.end	= gic_spi(55),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-	[1] = {
+-		.start	= gic_spi(56),
+-		.end	= gic_spi(56),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device pmu_device = {
+-	.name		= "armv7-pmu",
+-	.id		= -1,
+-	.num_resources	= ARRAY_SIZE(pmu_resources),
+-	.resource	= pmu_resources,
+-};
+-
+-/* an IPMMU module for ICB */
+-static struct resource ipmmu_resources[] = {
+-	DEFINE_RES_MEM(0xfe951000, 0x100),
+-};
+-
+-static const char * const ipmmu_dev_names[] = {
+-	"sh_mobile_lcdc_fb.0",
+-};
+-
+-static struct shmobile_ipmmu_platform_data ipmmu_platform_data = {
+-	.dev_names = ipmmu_dev_names,
+-	.num_dev_names = ARRAY_SIZE(ipmmu_dev_names),
+-};
+-
+-static struct platform_device ipmmu_device = {
+-	.name           = "ipmmu",
+-	.id             = -1,
+-	.dev = {
+-		.platform_data = &ipmmu_platform_data,
+-	},
+-	.resource       = ipmmu_resources,
+-	.num_resources  = ARRAY_SIZE(ipmmu_resources),
+-};
+-
+-static struct renesas_intc_irqpin_config irqpin0_platform_data = {
+-	.irq_base = irq_pin(0), /* IRQ0 -> IRQ7 */
+-	.control_parent = true,
+-};
+-
+-static struct resource irqpin0_resources[] = {
+-	DEFINE_RES_MEM(0xe6900000, 4), /* ICR1A */
+-	DEFINE_RES_MEM(0xe6900010, 4), /* INTPRI00A */
+-	DEFINE_RES_MEM(0xe6900020, 1), /* INTREQ00A */
+-	DEFINE_RES_MEM(0xe6900040, 1), /* INTMSK00A */
+-	DEFINE_RES_MEM(0xe6900060, 1), /* INTMSKCLR00A */
+-	DEFINE_RES_IRQ(gic_spi(1)), /* IRQ0 */
+-	DEFINE_RES_IRQ(gic_spi(2)), /* IRQ1 */
+-	DEFINE_RES_IRQ(gic_spi(3)), /* IRQ2 */
+-	DEFINE_RES_IRQ(gic_spi(4)), /* IRQ3 */
+-	DEFINE_RES_IRQ(gic_spi(5)), /* IRQ4 */
+-	DEFINE_RES_IRQ(gic_spi(6)), /* IRQ5 */
+-	DEFINE_RES_IRQ(gic_spi(7)), /* IRQ6 */
+-	DEFINE_RES_IRQ(gic_spi(8)), /* IRQ7 */
+-};
+-
+-static struct platform_device irqpin0_device = {
+-	.name		= "renesas_intc_irqpin",
+-	.id		= 0,
+-	.resource	= irqpin0_resources,
+-	.num_resources	= ARRAY_SIZE(irqpin0_resources),
+-	.dev		= {
+-		.platform_data	= &irqpin0_platform_data,
+-	},
+-};
+-
+-static struct renesas_intc_irqpin_config irqpin1_platform_data = {
+-	.irq_base = irq_pin(8), /* IRQ8 -> IRQ15 */
+-	.control_parent = true, /* Disable spurious IRQ10 */
+-};
+-
+-static struct resource irqpin1_resources[] = {
+-	DEFINE_RES_MEM(0xe6900004, 4), /* ICR2A */
+-	DEFINE_RES_MEM(0xe6900014, 4), /* INTPRI10A */
+-	DEFINE_RES_MEM(0xe6900024, 1), /* INTREQ10A */
+-	DEFINE_RES_MEM(0xe6900044, 1), /* INTMSK10A */
+-	DEFINE_RES_MEM(0xe6900064, 1), /* INTMSKCLR10A */
+-	DEFINE_RES_IRQ(gic_spi(9)), /* IRQ8 */
+-	DEFINE_RES_IRQ(gic_spi(10)), /* IRQ9 */
+-	DEFINE_RES_IRQ(gic_spi(11)), /* IRQ10 */
+-	DEFINE_RES_IRQ(gic_spi(12)), /* IRQ11 */
+-	DEFINE_RES_IRQ(gic_spi(13)), /* IRQ12 */
+-	DEFINE_RES_IRQ(gic_spi(14)), /* IRQ13 */
+-	DEFINE_RES_IRQ(gic_spi(15)), /* IRQ14 */
+-	DEFINE_RES_IRQ(gic_spi(16)), /* IRQ15 */
+-};
+-
+-static struct platform_device irqpin1_device = {
+-	.name		= "renesas_intc_irqpin",
+-	.id		= 1,
+-	.resource	= irqpin1_resources,
+-	.num_resources	= ARRAY_SIZE(irqpin1_resources),
+-	.dev		= {
+-		.platform_data	= &irqpin1_platform_data,
+-	},
+-};
+-
+-static struct renesas_intc_irqpin_config irqpin2_platform_data = {
+-	.irq_base = irq_pin(16), /* IRQ16 -> IRQ23 */
+-	.control_parent = true,
+-};
+-
+-static struct resource irqpin2_resources[] = {
+-	DEFINE_RES_MEM(0xe6900008, 4), /* ICR3A */
+-	DEFINE_RES_MEM(0xe6900018, 4), /* INTPRI20A */
+-	DEFINE_RES_MEM(0xe6900028, 1), /* INTREQ20A */
+-	DEFINE_RES_MEM(0xe6900048, 1), /* INTMSK20A */
+-	DEFINE_RES_MEM(0xe6900068, 1), /* INTMSKCLR20A */
+-	DEFINE_RES_IRQ(gic_spi(17)), /* IRQ16 */
+-	DEFINE_RES_IRQ(gic_spi(18)), /* IRQ17 */
+-	DEFINE_RES_IRQ(gic_spi(19)), /* IRQ18 */
+-	DEFINE_RES_IRQ(gic_spi(20)), /* IRQ19 */
+-	DEFINE_RES_IRQ(gic_spi(21)), /* IRQ20 */
+-	DEFINE_RES_IRQ(gic_spi(22)), /* IRQ21 */
+-	DEFINE_RES_IRQ(gic_spi(23)), /* IRQ22 */
+-	DEFINE_RES_IRQ(gic_spi(24)), /* IRQ23 */
+-};
+-
+-static struct platform_device irqpin2_device = {
+-	.name		= "renesas_intc_irqpin",
+-	.id		= 2,
+-	.resource	= irqpin2_resources,
+-	.num_resources	= ARRAY_SIZE(irqpin2_resources),
+-	.dev		= {
+-		.platform_data	= &irqpin2_platform_data,
+-	},
+-};
+-
+-static struct renesas_intc_irqpin_config irqpin3_platform_data = {
+-	.irq_base = irq_pin(24), /* IRQ24 -> IRQ31 */
+-	.control_parent = true,
+-};
+-
+-static struct resource irqpin3_resources[] = {
+-	DEFINE_RES_MEM(0xe690000c, 4), /* ICR4A */
+-	DEFINE_RES_MEM(0xe690001c, 4), /* INTPRI30A */
+-	DEFINE_RES_MEM(0xe690002c, 1), /* INTREQ30A */
+-	DEFINE_RES_MEM(0xe690004c, 1), /* INTMSK30A */
+-	DEFINE_RES_MEM(0xe690006c, 1), /* INTMSKCLR30A */
+-	DEFINE_RES_IRQ(gic_spi(25)), /* IRQ24 */
+-	DEFINE_RES_IRQ(gic_spi(26)), /* IRQ25 */
+-	DEFINE_RES_IRQ(gic_spi(27)), /* IRQ26 */
+-	DEFINE_RES_IRQ(gic_spi(28)), /* IRQ27 */
+-	DEFINE_RES_IRQ(gic_spi(29)), /* IRQ28 */
+-	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ29 */
+-	DEFINE_RES_IRQ(gic_spi(31)), /* IRQ30 */
+-	DEFINE_RES_IRQ(gic_spi(32)), /* IRQ31 */
+-};
+-
+-static struct platform_device irqpin3_device = {
+-	.name		= "renesas_intc_irqpin",
+-	.id		= 3,
+-	.resource	= irqpin3_resources,
+-	.num_resources	= ARRAY_SIZE(irqpin3_resources),
+-	.dev		= {
+-		.platform_data	= &irqpin3_platform_data,
+-	},
+-};
+-
+-static struct platform_device *sh73a0_early_devices[] __initdata = {
+-	&scif0_device,
+-	&scif1_device,
+-	&scif2_device,
+-	&scif3_device,
+-	&scif4_device,
+-	&scif5_device,
+-	&scif6_device,
+-	&scif7_device,
+-	&scif8_device,
+-	&tmu0_device,
+-	&ipmmu_device,
+-	&cmt1_device,
+-};
+-
+-static struct platform_device *sh73a0_late_devices[] __initdata = {
+-	&i2c0_device,
+-	&i2c1_device,
+-	&i2c2_device,
+-	&i2c3_device,
+-	&i2c4_device,
+-	&dma0_device,
+-	&mpdma0_device,
+-	&pmu_device,
+-	&irqpin0_device,
+-	&irqpin1_device,
+-	&irqpin2_device,
+-	&irqpin3_device,
+-};
+-
+-#define SRCR2          IOMEM(0xe61580b0)
+-
+-void __init sh73a0_add_standard_devices(void)
+-{
+-	/* Clear software reset bit on SY-DMAC module */
+-	__raw_writel(__raw_readl(SRCR2) & ~(1 << 18), SRCR2);
+-
+-	platform_add_devices(sh73a0_early_devices,
+-			    ARRAY_SIZE(sh73a0_early_devices));
+-	platform_add_devices(sh73a0_late_devices,
+-			    ARRAY_SIZE(sh73a0_late_devices));
+-}
+-
+-/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+-void __init __weak sh73a0_register_twd(void) { }
+-
+-void __init sh73a0_earlytimer_init(void)
+-{
+-	shmobile_init_delay();
+-#ifndef CONFIG_COMMON_CLK
+-	sh73a0_clock_init();
+-#endif
+-	shmobile_earlytimer_init();
+-	sh73a0_register_twd();
+-}
+-
+-void __init sh73a0_add_early_devices(void)
+-{
+-	early_platform_add_devices(sh73a0_early_devices,
+-				   ARRAY_SIZE(sh73a0_early_devices));
+-
+-	/* setup early console here as well */
+-	shmobile_setup_console();
+-}
+-
+-#ifdef CONFIG_USE_OF
+-
+ static void __init sh73a0_generic_init(void)
+ {
+ #ifdef CONFIG_CACHE_L2X0
+@@ -807,4 +71,3 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
+ MACHINE_END
+-#endif /* CONFIG_USE_OF */
+diff --git a/arch/arm/mach-shmobile/sh73a0.h b/arch/arm/mach-shmobile/sh73a0.h
+index 5a80f18b4fa0..39646806cf64 100644
+--- a/arch/arm/mach-shmobile/sh73a0.h
++++ b/arch/arm/mach-shmobile/sh73a0.h
+@@ -1,89 +1,6 @@
+ #ifndef __ASM_SH73A0_H__
+ #define __ASM_SH73A0_H__
+ 
+-/* DMA slave IDs */
+-enum {
+-	SHDMA_SLAVE_INVALID,
+-	SHDMA_SLAVE_SCIF0_TX,
+-	SHDMA_SLAVE_SCIF0_RX,
+-	SHDMA_SLAVE_SCIF1_TX,
+-	SHDMA_SLAVE_SCIF1_RX,
+-	SHDMA_SLAVE_SCIF2_TX,
+-	SHDMA_SLAVE_SCIF2_RX,
+-	SHDMA_SLAVE_SCIF3_TX,
+-	SHDMA_SLAVE_SCIF3_RX,
+-	SHDMA_SLAVE_SCIF4_TX,
+-	SHDMA_SLAVE_SCIF4_RX,
+-	SHDMA_SLAVE_SCIF5_TX,
+-	SHDMA_SLAVE_SCIF5_RX,
+-	SHDMA_SLAVE_SCIF6_TX,
+-	SHDMA_SLAVE_SCIF6_RX,
+-	SHDMA_SLAVE_SCIF7_TX,
+-	SHDMA_SLAVE_SCIF7_RX,
+-	SHDMA_SLAVE_SCIF8_TX,
+-	SHDMA_SLAVE_SCIF8_RX,
+-	SHDMA_SLAVE_SDHI0_TX,
+-	SHDMA_SLAVE_SDHI0_RX,
+-	SHDMA_SLAVE_SDHI1_TX,
+-	SHDMA_SLAVE_SDHI1_RX,
+-	SHDMA_SLAVE_SDHI2_TX,
+-	SHDMA_SLAVE_SDHI2_RX,
+-	SHDMA_SLAVE_MMCIF_TX,
+-	SHDMA_SLAVE_MMCIF_RX,
+-	SHDMA_SLAVE_FSI2A_TX,
+-	SHDMA_SLAVE_FSI2A_RX,
+-	SHDMA_SLAVE_FSI2B_TX,
+-	SHDMA_SLAVE_FSI2B_RX,
+-	SHDMA_SLAVE_FSI2C_TX,
+-	SHDMA_SLAVE_FSI2C_RX,
+-	SHDMA_SLAVE_FSI2D_RX,
+-};
+-
+-/*
+- *		SH73A0 IRQ LOCATION TABLE
+- *
+- * 416	-----------------------------------------
+- *		IRQ0-IRQ15
+- * 431	-----------------------------------------
+- * ...
+- * 448	-----------------------------------------
+- *		sh73a0-intcs
+- *		sh73a0-intca-irq-pins
+- * 680	-----------------------------------------
+- * ...
+- * 700	-----------------------------------------
+- *		sh73a0-pint0
+- * 731	-----------------------------------------
+- * 732	-----------------------------------------
+- *		sh73a0-pint1
+- * 739	-----------------------------------------
+- * ...
+- * 800	-----------------------------------------
+- *		IRQ16-IRQ31
+- * 815	-----------------------------------------
+- * ...
+- * 928	-----------------------------------------
+- *		sh73a0-intca-irq-pins
+- * 943	-----------------------------------------
+- */
+-
+-/* PINT interrupts are located at Linux IRQ 700 and up */
+-#define SH73A0_PINT0_IRQ(irq) ((irq) + 700)
+-#define SH73A0_PINT1_IRQ(irq) ((irq) + 732)
+-
+-extern void sh73a0_init_irq(void);
+-extern void sh73a0_init_irq_dt(void);
+-extern void sh73a0_map_io(void);
+-extern void sh73a0_earlytimer_init(void);
+-extern void sh73a0_add_early_devices(void);
+-extern void sh73a0_add_standard_devices(void);
+-extern void sh73a0_clock_init(void);
+-extern void sh73a0_pinmux_init(void);
+-extern void sh73a0_pm_init(void);
+-extern struct clk sh73a0_extal1_clk;
+-extern struct clk sh73a0_extal2_clk;
+-extern struct clk sh73a0_extcki_clk;
+-extern struct clk sh73a0_extalr_clk;
+ extern struct smp_operations sh73a0_smp_ops;
+ 
+ #endif /* __ASM_SH73A0_H__ */
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index 2106d6b76a06..d03aa11fb46d 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -33,14 +33,6 @@
+ 
+ #define SH73A0_SCU_BASE 0xf0000000
+ 
+-#if defined(CONFIG_HAVE_ARM_TWD) && !defined(CONFIG_ARCH_MULTIPLATFORM)
+-static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, SH73A0_SCU_BASE + 0x600, 29);
+-void __init sh73a0_register_twd(void)
+-{
+-	twd_local_timer_register(&twd_local_timer);
+-}
+-#endif
+-
+ static int sh73a0_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ {
+ 	unsigned int lcpu = cpu_logical_map(cpu);
 -- 
 2.1.4
 
