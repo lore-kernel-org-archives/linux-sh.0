@@ -1,23 +1,70 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 30 Jul 2015 00:07:52 +0000
-Subject: Re: [PATCH v3] ARM: shmobile: silk: initial device tree
-Message-Id: <20150730000752.GA22515@verge.net.au>
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Fri, 10 Jul 2015 08:26:11 +0000
+Subject: Re: [PATCH] dmaengine: use phys_addr_t for slave configuration
+Message-Id: <20150710081411.GF836@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
- <2360526.88foRQAOiM@wasted.cogentembedded.com>
-In-Reply-To: <2360526.88foRQAOiM@wasted.cogentembedded.com>
+References: <1366967214-20776-1-git-send-email-linus.walleij@linaro.org>
+ <CAMuHMdUTzTBT8DyRb5WN048U5DbVsFnhJB0c5tjHBnA4rfetJg@mail.gmail.com>
+In-Reply-To: <CAMuHMdUTzTBT8DyRb5WN048U5DbVsFnhJB0c5tjHBnA4rfetJg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Lee Jones <lee.jones@linaro.org>, dmaengine@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Wed, Jul 29, 2015 at 01:14:59AM +0300, Sergei Shtylyov wrote:
-> Add the initial device  tree for the R8A7794 SoC based SILK low cost board.
-> SCIF2 serial port support is included, so that the serial console can work.
+On Wed, Jul 08, 2015 at 12:12:52PM +0200, Geert Uytterhoeven wrote:
+> On Fri, Apr 26, 2013 at 11:06 AM, Linus Walleij
+> <linus.walleij@linaro.org> wrote:
+> > The documentation already says these are physical addresses, and
+> > we have concluded that any translation into the DMA address space
+> > needs to reside in the dmaengine driver, so change the type of
+> > the passed arguments.
+> >
+> > Cc: Arnd Bergmann <arnd@arndb.de>
+> > Cc: Lee Jones <lee.jones@linaro.org>
+> > Cc: Vinod Koul <vinod.koul@intel.com>
+> > Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 > 
-> Based on the original patch by Vladimir Barinov
-> <vladimir.barinov@cogentembedded.com>.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> What's the status of this one, which has been acked by Lee and Arnd?
+Looks to have slipped thru. I will redo it
 
-Thanks, I have queued this up.
+-- 
+~Vinod
+
+> 
+> Thanks!
+> 
+> > ---
+> >  include/linux/dmaengine.h | 4 ++--
+> >  1 file changed, 2 insertions(+), 2 deletions(-)
+> >
+> > diff --git a/include/linux/dmaengine.h b/include/linux/dmaengine.h
+> > index 91ac8da..681df5f9 100644
+> > --- a/include/linux/dmaengine.h
+> > +++ b/include/linux/dmaengine.h
+> > @@ -361,8 +361,8 @@ enum dma_slave_buswidth {
+> >   */
+> >  struct dma_slave_config {
+> >         enum dma_transfer_direction direction;
+> > -       dma_addr_t src_addr;
+> > -       dma_addr_t dst_addr;
+> > +       phys_addr_t src_addr;
+> > +       phys_addr_t dst_addr;
+> >         enum dma_slave_buswidth src_addr_width;
+> >         enum dma_slave_buswidth dst_addr_width;
+> >         u32 src_maxburst;
+> > --
+> > 1.8.1.4
+> 
+> Gr{oetje,eeting}s,
+> 
+>                         Geert
+> 
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                 -- Linus Torvalds
+
+-- 
