@@ -1,42 +1,42 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 11 Jul 2015 07:46:26 +0000
-Subject: [PATCH v2 5/5] ARM: shmobile: emev2: kzm9d: enable IIC busses
-Message-Id: <1436600786-3068-6-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:37:13 +0000
+Subject: [PATCH 8/8] ARM: shmobile: r8a7790: Make struct rcar_sysc_ch const
+Message-Id: <bd82aff9192dad2bfd3cb3fc19fdf741c2f6028e.1436510166.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436600786-3068-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1436600786-3068-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+References: <cover.1436510166.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436510166.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Ian Molton <ian.molton-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/emev2-kzm9d.dts | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/arm/mach-shmobile/smp-r8a7790.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
-index 0aa1b345f871c9..2e944437287599 100644
---- a/arch/arm/boot/dts/emev2-kzm9d.dts
-+++ b/arch/arm/boot/dts/emev2-kzm9d.dts
-@@ -95,6 +95,14 @@
- 	};
+diff --git a/arch/arm/mach-shmobile/smp-r8a7790.c b/arch/arm/mach-shmobile/smp-r8a7790.c
+index 930f45cbc08a..2ef0054ce934 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7790.c
++++ b/arch/arm/mach-shmobile/smp-r8a7790.c
+@@ -26,12 +26,12 @@
+ #include "rcar-gen2.h"
+ #include "r8a7790.h"
+ 
+-static struct rcar_sysc_ch r8a7790_ca15_scu = {
++static const struct rcar_sysc_ch r8a7790_ca15_scu = {
+ 	.chan_offs = 0x180, /* PWRSR5 .. PWRER5 */
+ 	.isr_bit = 12, /* CA15-SCU */
  };
  
-+&iic0 {
-+	status = "okay";
-+};
-+
-+&iic1 {
-+	status = "okay";
-+};
-+
- &pfc {
- 	uart1_pins: serial@e1030000 {
- 		renesas,groups = "uart1_ctrl", "uart1_data";
+-static struct rcar_sysc_ch r8a7790_ca7_scu = {
++static const struct rcar_sysc_ch r8a7790_ca7_scu = {
+ 	.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
+ 	.isr_bit = 21, /* CA7-SCU */
+ };
 -- 
 2.1.4
 
