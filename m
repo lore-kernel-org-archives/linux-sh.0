@@ -1,71 +1,70 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 30 Jul 2015 00:21:36 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Marzen Board Removal for v4.3
-Message-Id: <20150730002136.GA3450@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 10 Jul 2015 18:10:10 +0000
+Subject: [PATCH] ravb: kill useless initializers
+Message-Id: <3087282.SVZhuJYtXK@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1437726584.git.horms+renesas@verge.net.au>
- <20150727123327.GF14224@localhost>
-In-Reply-To: <20150727123327.GF14224@localhost>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Hi Olof,
+Some of the local variable intializers in the driver turned out to be pointless,
+kill them.
 
-On Mon, Jul 27, 2015 at 02:33:27PM +0200, Olof Johansson wrote:
-> On Fri, Jul 24, 2015 at 05:41:47PM +0900, Simon Horman wrote:
-> > Hi Olof, Hi Kevin, Hi Arnd,
-> > 
-> > Please consider these Renesas ARM based SoC marzen board removal for v4.3.
-> > 
-> > This series removes legacy r8a7779 SoC and marzen board code.
-> > It does so in a way that does not introduce feature regressions
-> > when when booting the r8a7779/marzen board using shmobile_defconfig,
-> > which provides for booting using multiplatform, a scenario which previously
-> > used board code to provide some features including SMP.
-> > 
-> > Because of the above this series modifies SoC and DT files,
-> > and then removes code. And because of that it was not entirely clear to
-> > me which branch it should go into, so I have provided it in a stand-alone
-> > branch.
-> > 
-> > Unfortunately this branch has a number of minor conflicts with the "Renesas
-> > ARM Based SoC Cleanup for v4.3", tagged as renesas-cleanup-for-v4.3, which
-> > you have previously pulled.
-> > 
-> > A resolution to those conflicts can be found in the
-> > renesas-next-20150724-v4.2-rc1 tag of the renesas tree.
-> > 
-> > I would be happy to rebase these patches on top of renesas-cleanup-for-v4.3
-> > and resubmit a conflict-free pull request if you like.
-> > 
-> > On a more positive note, I believe this to well over 8000 lines of legacy
-> > code removed in this cycle :)
-> 
-> Organization is OK since the additions were small. If there were more
-> additions needed, doing the enablement one release and removing the
-> legacy code the release after would make more sense. But here that's fine.
-> 
-> The only thing I'd like to see different is to please send the defconfig
-> updates separately. They just take out no-longer-existent entries anyway, so
-> the series should do fine without them here.
-> 
-> So, please respin without the defconfig updates and provide them
-> separately, if you want to avoid bisectability problems just do them
-> next release.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Understood.
+---
+The patch is against the Dave Miller's 'net-next.git' repo.
 
-I am fine with breaking out the following, most likely deferring them to
-the next release as I am concerned about bisectability:
+Changes in version 2:
+- fixed typo in the subject.
 
-* ARM: multi_v7_defconfig: Remove Marzen
-* ARM: shmobile: Remove Marzen from shmobile_defconfig
+ drivers/net/ethernet/renesas/ravb_main.c |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-There is another defconfig change, which I will resubmit in the
-defconfig branch for this release.
-
-* ARM: shmobile: Enable fixed voltage regulator in shmobile_defconfig
-
-Without the above a number of devices do not function.
+Index: net-next/drivers/net/ethernet/renesas/ravb_main.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/ravb_main.c
++++ net-next/drivers/net/ethernet/renesas/ravb_main.c
+@@ -223,9 +223,9 @@ static void ravb_ring_free(struct net_de
+ static void ravb_ring_format(struct net_device *ndev, int q)
+ {
+ 	struct ravb_private *priv = netdev_priv(ndev);
+-	struct ravb_ex_rx_desc *rx_desc = NULL;
+-	struct ravb_tx_desc *tx_desc = NULL;
+-	struct ravb_desc *desc = NULL;
++	struct ravb_ex_rx_desc *rx_desc;
++	struct ravb_tx_desc *tx_desc;
++	struct ravb_desc *desc;
+ 	int rx_ring_size = sizeof(*rx_desc) * priv->num_rx_ring[q];
+ 	int tx_ring_size = sizeof(*tx_desc) * priv->num_tx_ring[q];
+ 	struct sk_buff *skb;
+@@ -435,7 +435,7 @@ static int ravb_tx_free(struct net_devic
+ 	struct net_device_stats *stats = &priv->stats[q];
+ 	struct ravb_tx_desc *desc;
+ 	int free_num = 0;
+-	int entry = 0;
++	int entry;
+ 	u32 size;
+ 
+ 	for (; priv->cur_tx[q] - priv->dirty_tx[q] > 0; priv->dirty_tx[q]++) {
+@@ -508,8 +508,8 @@ static bool ravb_rx(struct net_device *n
+ 	struct sk_buff *skb;
+ 	dma_addr_t dma_addr;
+ 	struct timespec64 ts;
+-	u16 pkt_len = 0;
+ 	u8  desc_status;
++	u16 pkt_len;
+ 	int limit;
+ 
+ 	boguscnt = min(boguscnt, *quota);
+@@ -1272,8 +1272,8 @@ static void ravb_tx_timeout_work(struct
+ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ {
+ 	struct ravb_private *priv = netdev_priv(ndev);
+-	struct ravb_tstamp_skb *ts_skb = NULL;
+ 	u16 q = skb_get_queue_mapping(skb);
++	struct ravb_tstamp_skb *ts_skb;
+ 	struct ravb_tx_desc *desc;
+ 	unsigned long flags;
+ 	u32 dma_addr;
