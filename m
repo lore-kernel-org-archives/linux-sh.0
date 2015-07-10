@@ -1,48 +1,49 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 16 Jul 2015 09:08:16 +0000
-Subject: Re: [PATCH] pinctrl: sh-pfc: Convert to platform_get_*()
-Message-Id: <CACRpkdbp6FccWH5+8FT=y_Es389_oCkVp9-Wveb1HG73a1719A@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 10 Jul 2015 20:48:16 +0000
+Subject: [PATCH] ARM: shmobile: apmu: silence build warnings
+Message-Id: <1436561296-29141-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435225193-10078-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1435225193-10078-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-Cc: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Pantelis Antoniou <pantelis.antoniou-OWPKS81ov/FWk0Htik3J/w@public.gmane.org>, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-gpio-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-gpio-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-On Thu, Jun 25, 2015 at 11:39 AM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-> If the pin function controller (which can be a GPIO controller) is
-> instantiated before the interrupt controllers, due to the ordering in
-> the DTS, the irq domains for the interrupt controllers referenced by its
-> "interrupts-extended" property cannot be found yet:
->
->     irq: no irq domain found for /interrupt-controller@e61c0000 !
->
-> As the sh-pfc driver accesses the platform device's resources directly,
-> it cannot find the (optional) IRQ resources, and thinks no interrupts
-> are available. This may lead to failures later, when GPIOs are used as
-> interupts:
->
->     gpio-keys keyboard: Unable to claim irq 0; error -22
->     gpio-keys: probe of keyboard failed with error -22
->
-> To fix this, add support for deferred probing to sh-pfc, by converting
-> the driver from direct platform device resource access to using the
-> platform_get_resource() and platform_get_irq() helpers.
->
-> Note that while this fixes the root cause worked around by commit
-> e4ba0a9bddff3ba5 ("ARM: shmobile: r8a73a4: Move pfc node to work around
-> probe ordering bug"), I strongly recommend against reverting the
-> workaround now, as this would lead to lots of probe deferrals in drivers
-> relying on pinctrl. This may be reconsidered once the DT code starts
-> taking into account phandle dependencies during device instantation.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+With shmobile_defconfig but SMP=n && SUSPEND=n, I get:
 
-Patch applied with Laurent's ACK.
+arch/arm/mach-shmobile/platsmp-apmu.c:49:12: warning: 'apmu_power_off' defined but not used [-Wunused-function]
+arch/arm/mach-shmobile/platsmp-apmu.c:70:12: warning: 'apmu_wrap' defined but not used [-Wunused-function]
 
-Yours,
-Linus Walleij
+Annotate those functions like the functions around it.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ arch/arm/mach-shmobile/platsmp-apmu.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
+index b0790fc3228244..4e54512bee3083 100644
+--- a/arch/arm/mach-shmobile/platsmp-apmu.c
++++ b/arch/arm/mach-shmobile/platsmp-apmu.c
+@@ -46,7 +46,7 @@ static int __maybe_unused apmu_power_on(void __iomem *p, int bit)
+ 	return 0;
+ }
+ 
+-static int apmu_power_off(void __iomem *p, int bit)
++static int __maybe_unused apmu_power_off(void __iomem *p, int bit)
+ {
+ 	/* request Core Standby for next WFI */
+ 	writel_relaxed(3, p + CPUNCR_OFFS(bit));
+@@ -67,7 +67,7 @@ static int __maybe_unused apmu_power_off_poll(void __iomem *p, int bit)
+ 	return 0;
+ }
+ 
+-static int apmu_wrap(int cpu, int (*fn)(void __iomem *p, int cpu))
++static int __maybe_unused apmu_wrap(int cpu, int (*fn)(void __iomem *p, int cpu))
+ {
+ 	void __iomem *p = apmu_cpus[cpu].iomem;
+ 
+-- 
+2.1.4
+
