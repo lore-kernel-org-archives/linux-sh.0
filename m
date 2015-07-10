@@ -1,91 +1,49 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 16 Jul 2015 18:21:46 +0000
-Subject: [PATCH/RFC v2 15/29] serial: sh-sci: Improve sampling rate readability
-Message-Id: <1437070920-28069-16-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:37:07 +0000
+Subject: [PATCH 2/8] ARM: shmobile: R-Car: Shrink rcar_sysc_ch size
+Message-Id: <6fd2242e60e89a26e731e57dbf8f88d6639e09de.1436510166.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1436510166.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436510166.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Reorder sampling_rate assignment for consistency in all cases of the
-switch statement.
-Avoid using the ternary conditional operator to make it more clear that
-the value is overridden by platform data.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Shrink the individual fields in struct rcar_sysc_ch, as unsigned long or
+int is overkill:
+  - chan_offs contains a register offset relative to a base value
+    (< 512),
+  - chan_bit and isr_bit contain bit indices (0-31).
+
+This reduces the size of each instance from 3 (4 on 64-bit) 32-bit words
+to 1 32-bit word.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 17 ++++++++---------
- 1 file changed, 8 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/pm-rcar.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index d8a851b913dcadd7..3b29489bc0805a7c 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2237,7 +2237,6 @@ static int sci_init_single(struct platform_device *dev,
- {
- 	struct uart_port *port = &sci_port->port;
- 	const struct resource *res;
--	unsigned int sampling_rate;
- 	unsigned int i;
- 	int ret;
+diff --git a/arch/arm/mach-shmobile/pm-rcar.h b/arch/arm/mach-shmobile/pm-rcar.h
+index ef3a1ef628f1..06ebf00a6a5a 100644
+--- a/arch/arm/mach-shmobile/pm-rcar.h
++++ b/arch/arm/mach-shmobile/pm-rcar.h
+@@ -2,9 +2,9 @@
+ #define PM_RCAR_H
  
-@@ -2282,38 +2281,38 @@ static int sci_init_single(struct platform_device *dev,
- 		port->fifosize = 256;
- 		sci_port->overrun_reg = SCxSR;
- 		sci_port->overrun_mask = SCIFA_ORER;
--		sampling_rate = 16;
-+		sci_port->sampling_rate = 16;
- 		break;
- 	case PORT_HSCIF:
- 		port->fifosize = 128;
--		sampling_rate = 0;
- 		sci_port->overrun_reg = SCLSR;
- 		sci_port->overrun_mask = SCLSR_ORER;
-+		sci_port->sampling_rate = 0;
- 		break;
- 	case PORT_SCIFA:
- 		port->fifosize = 64;
- 		sci_port->overrun_reg = SCxSR;
- 		sci_port->overrun_mask = SCIFA_ORER;
--		sampling_rate = 16;
-+		sci_port->sampling_rate = 16;
- 		break;
- 	case PORT_SCIF:
- 		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE) {
- 			port->fifosize = 64;
- 			sci_port->overrun_reg = SCxSR;
- 			sci_port->overrun_mask = SCIFA_ORER;
--			sampling_rate = 16;
-+			sci_port->sampling_rate = 16;
- 		} else {
- 			port->fifosize = 16;
- 			sci_port->overrun_reg = SCLSR;
- 			sci_port->overrun_mask = SCLSR_ORER;
--			sampling_rate = 32;
-+			sci_port->sampling_rate = 32;
- 		}
- 		break;
- 	default:
- 		port->fifosize = 1;
- 		sci_port->overrun_reg = SCxSR;
- 		sci_port->overrun_mask = SCI_ORER;
--		sampling_rate = 32;
-+		sci_port->sampling_rate = 32;
- 		break;
- 	}
+ struct rcar_sysc_ch {
+-	unsigned long chan_offs;
+-	unsigned int chan_bit;
+-	unsigned int isr_bit;
++	u16 chan_offs;
++	u8 chan_bit;
++	u8 isr_bit;
+ };
  
-@@ -2321,8 +2320,8 @@ static int sci_init_single(struct platform_device *dev,
- 	 * match the SoC datasheet, this should be investigated. Let platform
- 	 * data override the sampling rate for now.
- 	 */
--	sci_port->sampling_rate = p->sampling_rate ? p->sampling_rate
--				: sampling_rate;
-+	if (p->sampling_rate)
-+		sci_port->sampling_rate = p->sampling_rate;
- 
- 	if (!early) {
- 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
+ int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
 -- 
-1.9.1
+2.1.4
 
