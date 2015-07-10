@@ -1,37 +1,43 @@
-From: William Towle <william.towle@codethink.co.uk>
-Date: Tue, 28 Jul 2015 16:17:44 +0000
-Subject: [PATCH 2/2] ARM: shmobile: lager dts: specify default-input for ADV7612
-Message-Id: <1438100264-17280-3-git-send-email-william.towle@codethink.co.uk>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:37:02 +0000
+Subject: [PATCH 15/16] ARM: shmobile: R-Car Gen2: CONFIG_ARCH_SHMOBILE_MULTI is always set
+Message-Id: <d62ba10c31ac16aaa16f5b49308658ea2f1e71a9.1436509680.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438100264-17280-1-git-send-email-william.towle@codethink.co.uk>
-In-Reply-To: <1438100264-17280-1-git-send-email-william.towle@codethink.co.uk>
+References: <cover.1436509680.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436509680.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Set 'default-input' property for ADV7612. Enables image/video capture
-without the need to have userspace specifying routing.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
-Tested-by: William Towle <william.towle@codethink.co.uk>
+Since commit e042681894b62d60 ("ARM: shmobile: r8a7790: Remove legacy
+code"), all R-Car Gen2 SoCs are supported by multiplatform kernels only.
+As CONFIG_ARCH_SHMOBILE_MULTI is always set for shmobile multiplatform
+kernels, we can remove related #ifdefs in code specific to R-Car Gen2
+SoCs.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts |    1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index aec7db6..e537052 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -552,6 +552,7 @@
- 		port {
- 			hdmi_in_ep: endpoint {
- 				remote-endpoint = <&vin0ep0>;
-+				default-input = <0>;
- 			};
- 		};
- 	};
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index 5d13595aa027..aa3339258d9c 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -128,9 +128,7 @@ void __init rcar_gen2_timer_init(void)
+ #endif /* CONFIG_ARM_ARCH_TIMER */
+ 
+ 	rcar_gen2_clocks_init(mode);
+-#ifdef CONFIG_ARCH_SHMOBILE_MULTI
+ 	clocksource_of_init();
+-#endif
+ }
+ 
+ struct memory_reserve_config {
 -- 
-1.7.10.4
+2.1.4
 
