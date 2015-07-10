@@ -1,100 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Jul 2015 08:41:27 +0000
-Subject: [PATCH 6/9] ARM: shmobile: r8a7790: Add Audio CTU support on DTSI
-Message-Id: <a7163784961e513a6d8c60b264737af623d1f33c.1437724902.git.horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:36:53 +0000
+Subject: [PATCH 06/16] ARM: shmobile: Drop sh73a0-kzm9g.dtb for legacy builds
+Message-Id: <d99f70b9533dc355e0facbaee8a42dcd821a5e73.1436509680.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1437724902.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1437724902.git.horms+renesas@verge.net.au>
+References: <cover.1436509680.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436509680.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+The legacy board code for KZM-A9-GT has been removed.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 16 ++++++++++++++++
- include/dt-bindings/clock/r8a7790-clock.h |  2 ++
- 2 files changed, 18 insertions(+)
+ arch/arm/boot/dts/Makefile | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 3ae0c3bfb9b9..6aa1d759690b 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1303,6 +1303,7 @@
- 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
- 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
- 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
-+				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
- 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>;
- 
- 			#clock-cells = <1>;
-@@ -1312,6 +1313,7 @@
- 				R8A7790_CLK_SSI4 R8A7790_CLK_SSI3 R8A7790_CLK_SSI2 R8A7790_CLK_SSI1 R8A7790_CLK_SSI0
- 				R8A7790_CLK_SCU_ALL
- 				R8A7790_CLK_SCU_DVC1 R8A7790_CLK_SCU_DVC0
-+				R8A7790_CLK_SCU_CTU1_MIX1 R8A7790_CLK_SCU_CTU0_MIX0
- 				R8A7790_CLK_SCU_SRC9 R8A7790_CLK_SCU_SRC8 R8A7790_CLK_SCU_SRC7 R8A7790_CLK_SCU_SRC6 R8A7790_CLK_SCU_SRC5
- 				R8A7790_CLK_SCU_SRC4 R8A7790_CLK_SCU_SRC3 R8A7790_CLK_SCU_SRC2 R8A7790_CLK_SCU_SRC1 R8A7790_CLK_SCU_SRC0
- 			>;
-@@ -1321,6 +1323,7 @@
- 				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0",
- 				"scu-all",
- 				"scu-dvc1", "scu-dvc0",
-+				"scu-ctu1-mix1", "scu-ctu0-mix0",
- 				"scu-src9", "scu-src8", "scu-src7", "scu-src6", "scu-src5",
- 				"scu-src4", "scu-src3", "scu-src2", "scu-src1", "scu-src0";
- 		};
-@@ -1536,6 +1539,7 @@
- 			<&mstp10_clks R8A7790_CLK_SCU_SRC5>, <&mstp10_clks R8A7790_CLK_SCU_SRC4>,
- 			<&mstp10_clks R8A7790_CLK_SCU_SRC3>, <&mstp10_clks R8A7790_CLK_SCU_SRC2>,
- 			<&mstp10_clks R8A7790_CLK_SCU_SRC1>, <&mstp10_clks R8A7790_CLK_SCU_SRC0>,
-+			<&mstp10_clks R8A7790_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7790_CLK_SCU_CTU1_MIX1>,
- 			<&mstp10_clks R8A7790_CLK_SCU_DVC0>, <&mstp10_clks R8A7790_CLK_SCU_DVC1>,
- 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
- 		clock-names = "ssi-all",
-@@ -1543,6 +1547,7 @@
- 				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
- 				"src.9", "src.8", "src.7", "src.6", "src.5",
- 				"src.4", "src.3", "src.2", "src.1", "src.0",
-+				"ctu.0", "ctu.1",
- 				"dvc.0", "dvc.1",
- 				"clk_a", "clk_b", "clk_c", "clk_i";
- 
-@@ -1559,6 +1564,17 @@
- 			};
- 		};
- 
-+		rcar_sound,ctu {
-+			ctu00: ctu@0 { };
-+			ctu01: ctu@1 { };
-+			ctu02: ctu@2 { };
-+			ctu03: ctu@3 { };
-+			ctu10: ctu@4 { };
-+			ctu11: ctu@5 { };
-+			ctu12: ctu@6 { };
-+			ctu13: ctu@7 { };
-+		};
-+
- 		rcar_sound,src {
- 			src0: src@0 {
- 				interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index e119ef372ba3..7b1ad8922eec 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -144,6 +144,8 @@
- #define R8A7790_CLK_SCU_ALL		17
- #define R8A7790_CLK_SCU_DVC1		18
- #define R8A7790_CLK_SCU_DVC0		19
-+#define R8A7790_CLK_SCU_CTU1_MIX1	20
-+#define R8A7790_CLK_SCU_CTU0_MIX0	21
- #define R8A7790_CLK_SCU_SRC9		22
- #define R8A7790_CLK_SCU_SRC8		23
- #define R8A7790_CLK_SCU_SRC7		24
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 246473a244f6..b1d0a12a94ef 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -504,8 +504,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
+ 	r8a7740-armadillo800eva.dtb \
+ 	r8a7778-bockw.dtb \
+ 	r8a7778-bockw-reference.dtb \
+-	r8a7779-marzen.dtb \
+-	sh73a0-kzm9g.dtb
++	r8a7779-marzen.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	emev2-kzm9d.dtb \
+ 	r7s72100-genmai.dtb \
 -- 
 2.1.4
 
