@@ -1,74 +1,100 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Tue, 07 Jul 2015 12:16:34 +0000
-Subject: [PATCH v4] ARM: shmobile: koelsch: make USB0 perform Host/Function switching
-Message-Id: <1436271394-25964-1-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:37:09 +0000
+Subject: [PATCH 4/8] ARM: shmobile: R-Car: Make struct rcar_sysc_ch * parameters const
+Message-Id: <624deb39a1c684b42569a3ec6a0fdcc74b950ed3.1436510166.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150703001430.GB20396@verge.net.au>
-In-Reply-To: <20150703001430.GB20396@verge.net.au>
+References: <cover.1436510166.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436510166.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Kishon Vijay Abraham I <kishon@ti.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Both USB Host (pci0) and Function (USBHS) drivers are enabled.
-The USB PHY driver determines which IP block should be connected
-based on vbus and id signals read via gpios.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Note that switch SW5 and SW6 on Koelsch board needs to be set to
-position 3 for this to work.
+The passed struct rcar_sysc_ch is never modified, so it can be const.
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Not for upstream until the following patches have been accepted:
-"usb: renesas_usbhs: Allow an OTG PHY driver to provide VBUS"
-"phy: rcar-gen2 usb: Add Host/Function switching for USB0"
-Hence, not signed off.
+ arch/arm/mach-shmobile/pm-rcar.c | 16 ++++++++--------
+ arch/arm/mach-shmobile/pm-rcar.h |  6 +++---
+ 2 files changed, 11 insertions(+), 11 deletions(-)
 
-v4:
-  - Changed prefix in title.
-
-v3:
-  - Remove "pinctrl-names" as well as "pinctrl-0" props.
-
-v2:
-  - Added -gpio to dts prop names of GPIO pins.
----
- arch/arm/boot/dts/r8a7791-koelsch.dts | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index cffe33f..21c2fdc 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -615,8 +615,6 @@
+diff --git a/arch/arm/mach-shmobile/pm-rcar.c b/arch/arm/mach-shmobile/pm-rcar.c
+index a5e4c3a88ec4..b1a7f2a7f757 100644
+--- a/arch/arm/mach-shmobile/pm-rcar.c
++++ b/arch/arm/mach-shmobile/pm-rcar.c
+@@ -51,7 +51,7 @@
+ static void __iomem *rcar_sysc_base;
+ static DEFINE_SPINLOCK(rcar_sysc_lock); /* SMP CPUs + I/O devices */
  
- &pci0 {
- 	status = "okay";
--	pinctrl-0 = <&usb0_pins>;
--	pinctrl-names = "default";
+-static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
++static int rcar_sysc_pwr_on_off(const struct rcar_sysc_ch *sysc_ch,
+ 				int sr_bit, int reg_offs)
+ {
+ 	int k;
+@@ -73,18 +73,18 @@ static int rcar_sysc_pwr_on_off(struct rcar_sysc_ch *sysc_ch,
+ 	return 0;
+ }
+ 
+-static int rcar_sysc_pwr_off(struct rcar_sysc_ch *sysc_ch)
++static int rcar_sysc_pwr_off(const struct rcar_sysc_ch *sysc_ch)
+ {
+ 	return rcar_sysc_pwr_on_off(sysc_ch, SYSCSR_POFFENB, PWROFFCR_OFFS);
+ }
+ 
+-static int rcar_sysc_pwr_on(struct rcar_sysc_ch *sysc_ch)
++static int rcar_sysc_pwr_on(const struct rcar_sysc_ch *sysc_ch)
+ {
+ 	return rcar_sysc_pwr_on_off(sysc_ch, SYSCSR_PONENB, PWRONCR_OFFS);
+ }
+ 
+-static int rcar_sysc_update(struct rcar_sysc_ch *sysc_ch,
+-			    int (*on_off_fn)(struct rcar_sysc_ch *))
++static int rcar_sysc_update(const struct rcar_sysc_ch *sysc_ch,
++			    int (*on_off_fn)(const struct rcar_sysc_ch *))
+ {
+ 	unsigned int isr_mask = 1 << sysc_ch->isr_bit;
+ 	unsigned int chan_mask = 1 << sysc_ch->chan_bit;
+@@ -136,17 +136,17 @@ static int rcar_sysc_update(struct rcar_sysc_ch *sysc_ch,
+ 	return ret;
+ }
+ 
+-int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch)
++int rcar_sysc_power_down(const struct rcar_sysc_ch *sysc_ch)
+ {
+ 	return rcar_sysc_update(sysc_ch, rcar_sysc_pwr_off);
+ }
+ 
+-int rcar_sysc_power_up(struct rcar_sysc_ch *sysc_ch)
++int rcar_sysc_power_up(const struct rcar_sysc_ch *sysc_ch)
+ {
+ 	return rcar_sysc_update(sysc_ch, rcar_sysc_pwr_on);
+ }
+ 
+-bool rcar_sysc_power_is_off(struct rcar_sysc_ch *sysc_ch)
++bool rcar_sysc_power_is_off(const struct rcar_sysc_ch *sysc_ch)
+ {
+ 	unsigned int st;
+ 
+diff --git a/arch/arm/mach-shmobile/pm-rcar.h b/arch/arm/mach-shmobile/pm-rcar.h
+index 06ebf00a6a5a..1b901db4a24c 100644
+--- a/arch/arm/mach-shmobile/pm-rcar.h
++++ b/arch/arm/mach-shmobile/pm-rcar.h
+@@ -7,9 +7,9 @@ struct rcar_sysc_ch {
+ 	u8 isr_bit;
  };
  
- &pci1 {
-@@ -627,13 +625,14 @@
+-int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
+-int rcar_sysc_power_up(struct rcar_sysc_ch *sysc_ch);
+-bool rcar_sysc_power_is_off(struct rcar_sysc_ch *sysc_ch);
++int rcar_sysc_power_down(const struct rcar_sysc_ch *sysc_ch);
++int rcar_sysc_power_up(const struct rcar_sysc_ch *sysc_ch);
++bool rcar_sysc_power_is_off(const struct rcar_sysc_ch *sysc_ch);
+ void __iomem *rcar_sysc_init(phys_addr_t base);
  
- &hsusb {
- 	status = "okay";
--	pinctrl-0 = <&usb0_pins>;
--	pinctrl-names = "default";
--	renesas,enable-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
- };
- 
- &usbphy {
- 	status = "okay";
-+	renesas,pwr-gpio = <&gpio2 4 GPIO_ACTIVE_HIGH>;
-+	renesas,id-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
-+	renesas,vbus-gpio = <&gpio7 24 GPIO_ACTIVE_HIGH>;
-+	renesas,vbus-pwr-gpio = <&gpio7 23 GPIO_ACTIVE_HIGH>;
- };
- 
- &pcie_bus_clk {
+ #endif /* PM_RCAR_H */
 -- 
-1.9.1
+2.1.4
 
