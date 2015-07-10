@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:37:13 +0000
-Subject: [PATCH 05/11] ARM: shmobile: armadillo800eva dts: Add pinctrl and gpio-hog for lcdc0
-Message-Id: <ffd2f9a5afb730b9f6c1d1938934213c3cfcf249.1436509954.git.horms+renesas@verge.net.au>
+Date: Fri, 10 Jul 2015 06:37:01 +0000
+Subject: [PATCH 14/16] ARM: shmobile: Remove obsolete zboot support
+Message-Id: <11e386719b08606502477cddf10c832b6658bb55.1436509680.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436509954.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436509954.git.horms+renesas@verge.net.au>
+References: <cover.1436509680.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1436509680.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,46 +12,247 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Configure pinctrl and a GPIO-controller board mux for LCD use.
-This allows the armadillo800eva board staging code to enable lcdc0.
+The last user of the zboot code was the KZM-A9-GT legacy board code,
+which has been removed.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ arch/arm/boot/compressed/Makefile                  |   4 -
+ arch/arm/boot/compressed/head-shmobile.S           |  71 --------------
+ arch/arm/mach-shmobile/include/mach/zboot.h        |  14 ---
+ arch/arm/mach-shmobile/include/mach/zboot_macros.h | 108 ---------------------
+ 4 files changed, 197 deletions(-)
+ delete mode 100644 arch/arm/boot/compressed/head-shmobile.S
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/zboot.h
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/zboot_macros.h
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-index 2e31d8c01cbf..105d9c95de4a 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-@@ -224,6 +224,9 @@
- };
+diff --git a/arch/arm/boot/compressed/Makefile b/arch/arm/boot/compressed/Makefile
+index 7a13aebacf81..3f9a9ebc77c3 100644
+--- a/arch/arm/boot/compressed/Makefile
++++ b/arch/arm/boot/compressed/Makefile
+@@ -51,10 +51,6 @@ else
+ endif
+ endif
  
- &pfc {
-+	pinctrl-0 = <&lcd0_pins>;
-+	pinctrl-names = "default";
-+
- 	ether_pins: ether {
- 		renesas,groups = "gether_mii", "gether_int";
- 		renesas,function = "gether";
-@@ -259,6 +262,16 @@
- 				 "fsia_data_in_1", "fsia_data_out_0";
- 		renesas,function = "fsia";
- 	};
-+
-+	lcd0_pins: lcd0 {
-+		renesas,groups = "lcd0_data24_0", "lcd0_lclk_1", "lcd0_sync";
-+		renesas,function = "lcd0";
-+
-+		/* DBGMD/LCDC0/FSIA MUX */
-+		gpio-hog;
-+		gpios = <176 0>;
-+		output-high;
-+	};
- };
- 
- &tpu {
+-ifeq ($(CONFIG_ARCH_SHMOBILE_LEGACY),y)
+-OBJS		+= head-shmobile.o
+-endif
+-
+ #
+ # We now have a PIC decompressor implementation.  Decompressors running
+ # from RAM should not define ZTEXTADDR.  Decompressors running directly
+diff --git a/arch/arm/boot/compressed/head-shmobile.S b/arch/arm/boot/compressed/head-shmobile.S
+deleted file mode 100644
+index 22a75259faa3..000000000000
+--- a/arch/arm/boot/compressed/head-shmobile.S
++++ /dev/null
+@@ -1,71 +0,0 @@
+-/*
+- * The head-file for SH-Mobile ARM platforms
+- *
+- * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+- * Simon Horman <horms@verge.net.au>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+- */
+-
+-#ifdef CONFIG_ZBOOT_ROM
+-
+-	.section	".start", "ax"
+-
+-	/* load board-specific initialization code */
+-#include <mach/zboot.h>
+-
+-	adr	r0, dtb_info
+-	ldmia	r0, {r1, r3, r4, r5, r7}
+-
+-	sub	r0, r0, r1		@ calculate the delta offset
+-	add	r5, r5, r0		@ _edata
+-
+-	ldr	lr, [r5, #0]		@ check if valid DTB is present
+-	cmp	lr, r3
+-	bne	0f
+-
+-	add	r9, r7, #31		@ rounded up to a multiple
+-	bic	r9, r9, #31		@ ... of 32 bytes
+-
+-	add	r6, r9, r5		@ copy from _edata
+-	add	r9, r9, r4		@ to MEMORY_START
+-
+-1:	ldmdb	r6!, {r0 - r3, r10 - r12, lr}
+-	cmp	r6, r5
+-	stmdb	r9!, {r0 - r3, r10 - r12, lr}
+-	bhi	1b
+-
+-	/* Success: Zero board ID, pointer to start of memory for atag/dtb */
+-	mov	r7, #0
+-	mov	r8, r4
+-	b	2f
+-
+-	.align	2
+-dtb_info:
+-	.word	dtb_info
+-#ifndef __ARMEB__
+-	.word	0xedfe0dd0		@ sig is 0xd00dfeed big endian
+-#else
+-	.word	0xd00dfeed
+-#endif
+-	.word	MEMORY_START
+-	.word	_edata
+-	.word	0x4000			@ maximum DTB size
+-0:
+-	/* Failure: Zero board ID, NULL atag/dtb */
+-	mov 	r7, #0
+-	mov	r8, #0			@ pass null pointer as atag
+-2 :
+-
+-#endif /* CONFIG_ZBOOT_ROM */
+diff --git a/arch/arm/mach-shmobile/include/mach/zboot.h b/arch/arm/mach-shmobile/include/mach/zboot.h
+deleted file mode 100644
+index 80f599f4b5ab..000000000000
+--- a/arch/arm/mach-shmobile/include/mach/zboot.h
++++ /dev/null
+@@ -1,14 +0,0 @@
+-#ifndef ZBOOT_H
+-#define ZBOOT_H
+-
+-#include <mach/zboot_macros.h>
+-
+-/**************************************************
+- *
+- *		board specific settings
+- *
+- **************************************************/
+-
+-#error "unsupported board."
+-
+-#endif /* ZBOOT_H */
+diff --git a/arch/arm/mach-shmobile/include/mach/zboot_macros.h b/arch/arm/mach-shmobile/include/mach/zboot_macros.h
+deleted file mode 100644
+index 14fd3d538e9a..000000000000
+--- a/arch/arm/mach-shmobile/include/mach/zboot_macros.h
++++ /dev/null
+@@ -1,108 +0,0 @@
+-#ifndef __ZBOOT_MACRO_H
+-#define __ZBOOT_MACRO_H
+-
+-/* The LIST command is used to include comments in the script */
+-.macro	LIST comment
+-.endm
+-
+-/* The ED command is used to write a 32-bit word */
+-.macro ED, addr, data
+-	LDR	r0, 1f
+-	LDR	r1, 2f
+-	STR	r1, [r0]
+-	B	3f
+-1 :	.long	\addr
+-2 :	.long	\data
+-3 :
+-.endm
+-
+-/* The EW command is used to write a 16-bit word */
+-.macro EW, addr, data
+-	LDR	r0, 1f
+-	LDR	r1, 2f
+-	STRH	r1, [r0]
+-	B	3f
+-1 :	.long	\addr
+-2 :	.long	\data
+-3 :
+-.endm
+-
+-/* The EB command is used to write an 8-bit word */
+-.macro EB, addr, data
+-	LDR	r0, 1f
+-	LDR	r1, 2f
+-	STRB	r1, [r0]
+-	B	3f
+-1 :	.long	\addr
+-2 :	.long	\data
+-3 :
+-.endm
+-
+-/* The WAIT command is used to delay the execution */
+-.macro  WAIT, time, reg
+-	LDR	r1, 1f
+-	LDR	r0, 2f
+-	STR	r0, [r1]
+-10 :
+-	LDR	r0, [r1]
+-	CMP	r0, #0x00000000
+-	BNE	10b
+-	NOP
+-	B	3f
+-1 :	.long	\reg
+-2 :	.long	\time * 100
+-3 :
+-.endm
+-
+-/* The DD command is used to read a 32-bit word */
+-.macro  DD, start, end
+-	LDR	r1, 1f
+-	B	2f
+-1 :	.long	\start
+-2 :
+-.endm
+-
+-/* loop until a given value has been read (with mask) */
+-.macro WAIT_MASK, addr, data, cmp
+-	LDR	r0, 2f
+-	LDR	r1, 3f
+-	LDR	r2, 4f
+-1:
+-	LDR	r3, [r0, #0]
+-	AND	r3, r1, r3
+-	CMP	r2, r3
+-	BNE	1b
+-	B	5f
+-2:	.long	\addr
+-3:	.long	\data
+-4:	.long	\cmp
+-5:
+-.endm
+-
+-/* read 32-bit value from addr, "or" an immediate and write back */
+-.macro ED_OR, addr, data
+-	LDR r4, 1f
+-	LDR r5, 2f
+-	LDR r6, [r4]
+-	ORR r5, r6, r5
+-	STR r5, [r4]
+-	B	3f
+-1:	.long	\addr
+-2:	.long	\data
+-3:
+-.endm
+-
+-/* read 32-bit value from addr, "and" an immediate and write back */
+-.macro ED_AND, addr, data
+-	LDR r4, 1f
+-	LDR r5, 2f
+-	LDR r6, [r4]
+-	AND r5, r6, r5
+-	STR r5, [r4]
+-	B	3f
+-1:	.long \addr
+-2:	.long \data
+-3:
+-.endm
+-
+-#endif /* __ZBOOT_MACRO_H */
 -- 
 2.1.4
 
