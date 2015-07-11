@@ -1,37 +1,94 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 30 Jul 2015 21:29:26 +0000
-Subject: [PATCH] DT: mmc: sh_mmcif: document R8A779[34] support
-Message-Id: <4675878.582hE3P2Fo@wasted.cogentembedded.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 11 Jul 2015 07:46:25 +0000
+Subject: [PATCH v2 4/5] ARM: shmobile: emev2: add IIC cores to dtsi
+Message-Id: <1436600786-3068-5-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+References: <1436600786-3068-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1436600786-3068-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org, ulf.hansson@linaro.org, linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Ian Molton <ian.molton-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
 
-Renesas R8A7793 and R8A7793 SoC also have the MMCIF controller...
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
-The patch is against Ulf Hansson's 'mmc.git'  repo's 'next' branch plus the
-patch I posted earlier today...
+ arch/arm/boot/dts/emev2.dtsi | 48 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
 
- Documentation/devicetree/bindings/mmc/renesas,mmcif.txt |    2 ++
- 1 file changed, 2 insertions(+)
-
-Index: mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-=================================--- mmc.orig/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-+++ mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-@@ -11,6 +11,8 @@ Required properties:
- 	- "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
- 	- "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
- 	- "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
-+	- "renesas,mmcif-r8a7793" for the MMCIF found in r8a7793 SoCs
-+	- "renesas,mmcif-r8a7794" for the MMCIF found in r8a7794 SoCs
+diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
+index bb45694d91bc1e..edad0c4eea3505 100644
+--- a/arch/arm/boot/dts/emev2.dtsi
++++ b/arch/arm/boot/dts/emev2.dtsi
+@@ -21,6 +21,8 @@
+ 		gpio2 = &gpio2;
+ 		gpio3 = &gpio3;
+ 		gpio4 = &gpio4;
++		i2c0 = &iic0;
++		i2c1 = &iic1;
+ 	};
  
- - clocks: reference to the functional clock
- 
+ 	cpus {
+@@ -66,6 +68,30 @@
+ 			clock-frequency = <32768>;
+ 			#clock-cells = <0>;
+ 		};
++		iic0_sclkdiv: iic0_sclkdiv {
++			compatible = "renesas,emev2-smu-clkdiv";
++			reg = <0x624 0>;
++			clocks = <&pll3_fo>;
++			#clock-cells = <0>;
++		};
++		iic0_sclk: iic0_sclk {
++			compatible = "renesas,emev2-smu-gclk";
++			reg = <0x48c 1>;
++			clocks = <&iic0_sclkdiv>;
++			#clock-cells = <0>;
++		};
++		iic1_sclkdiv: iic1_sclkdiv {
++			compatible = "renesas,emev2-smu-clkdiv";
++			reg = <0x624 16>;
++			clocks = <&pll3_fo>;
++			#clock-cells = <0>;
++		};
++		iic1_sclk: iic1_sclk {
++			compatible = "renesas,emev2-smu-gclk";
++			reg = <0x490 1>;
++			clocks = <&iic1_sclkdiv>;
++			#clock-cells = <0>;
++		};
+ 		pll3_fo: pll3_fo {
+ 			compatible = "fixed-factor-clock";
+ 			clocks = <&c32ki>;
+@@ -234,4 +260,26 @@
+ 		interrupt-controller;
+ 		#interrupt-cells = <2>;
+ 	};
++
++	iic0: i2c@e0070000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,iic-emev2";
++		reg = <0xe0070000 0x28>;
++		interrupts = <0 32 IRQ_TYPE_EDGE_RISING>;
++		clocks = <&iic0_sclk>;
++		clock-names = "sclk";
++		status = "disabled";
++	};
++
++	iic1: i2c@e10a0000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,iic-emev2";
++		reg = <0xe10a0000 0x28>;
++		interrupts = <0 33 IRQ_TYPE_EDGE_RISING>;
++		clocks = <&iic1_sclk>;
++		clock-names = "sclk";
++		status = "disabled";
++	};
+ };
+-- 
+2.1.4
 
