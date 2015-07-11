@@ -1,46 +1,54 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 16 Jul 2015 18:21:40 +0000
-Subject: [PATCH/RFC v2 09/29] serial: sh-sci: Use sg_init_one() helper instead of open coding
-Message-Id: <1437070920-28069-10-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 11 Jul 2015 07:46:22 +0000
+Subject: [PATCH v2 1/5] clk: shmobile: emev2: deassert reset for IIC0/1
+Message-Id: <1436600786-3068-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1436600786-3068-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1436600786-3068-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Ian Molton <ian.molton-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>, Stephen Boyd <sboyd-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+
+We have a driver now for IIC, so disable reset for them.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Acked-by: Stephen Boyd <sboyd@codeaurora.org>
 ---
-Note: There's another sg_init_table()/sg_set_page() combo in
-      sci_request_dma() that looks eligible for conversion to
-      sg_init_one().
-      However, that one operates on memory allocated by
-      dma_alloc_coherent(), which triggers the
 
-	  BUG_ON(!virt_addr_valid(buf));
+Change since v1:
+* added ack from Stephen, thanks
 
-      in sg_set_buf() if CONFIG_DEBUG_SG=y. Sigh...
----
- drivers/tty/serial/sh-sci.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ drivers/clk/shmobile/clk-emev2.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index d6ee645de1d40794..36a1d1735dd562cd 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1713,12 +1713,9 @@ static void sci_request_dma(struct uart_port *port)
- 	dev_dbg(port->dev, "%s: TX: got channel %p\n", __func__, chan);
- 	if (chan) {
- 		s->chan_tx = chan;
--		sg_init_table(&s->sg_tx, 1);
- 		/* UART circular tx buffer is an aligned page. */
- 		BUG_ON(offset_in_page(port->state->xmit.buf));
--		sg_set_page(&s->sg_tx, virt_to_page(port->state->xmit.buf),
--			    UART_XMIT_SIZE,
--			    offset_in_page(port->state->xmit.buf));
-+		sg_init_one(&s->sg_tx, port->state->xmit.buf, UART_XMIT_SIZE);
- 		nent = dma_map_sg(chan->device->dev, &s->sg_tx, 1,
- 				  DMA_TO_DEVICE);
- 		if (!nent)
+diff --git a/drivers/clk/shmobile/clk-emev2.c b/drivers/clk/shmobile/clk-emev2.c
+index 5b60beb7d0ebce..a91825471c79ac 100644
+--- a/drivers/clk/shmobile/clk-emev2.c
++++ b/drivers/clk/shmobile/clk-emev2.c
+@@ -28,6 +28,8 @@
+ #define USIBU1_RSTCTRL 0x0ac
+ #define USIBU2_RSTCTRL 0x0b0
+ #define USIBU3_RSTCTRL 0x0b4
++#define IIC0_RSTCTRL 0x0dc
++#define IIC1_RSTCTRL 0x0e0
+ #define STI_RSTCTRL 0x124
+ #define STI_CLKSEL 0x688
+ 
+@@ -66,6 +68,10 @@ static void __init emev2_smu_init(void)
+ 	emev2_smu_write(2, USIBU1_RSTCTRL);
+ 	emev2_smu_write(2, USIBU2_RSTCTRL);
+ 	emev2_smu_write(2, USIBU3_RSTCTRL);
++
++	/* deassert reset for IIC0->IIC1 */
++	emev2_smu_write(1, IIC0_RSTCTRL);
++	emev2_smu_write(1, IIC1_RSTCTRL);
+ }
+ 
+ static void __init emev2_smu_clkdiv_init(struct device_node *np)
 -- 
-1.9.1
+2.1.4
 
