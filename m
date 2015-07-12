@@ -1,60 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:36:48 +0000
-Subject: [PATCH 01/16] ARM: shmobile: R-Mobile: Move to_rmobile_pd from header to source file
-Message-Id: <23758258220c2fcdabb30a3c6fe0a3ce6c705550.1436509680.git.horms+renesas@verge.net.au>
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Sun, 12 Jul 2015 22:01:45 +0000
+Subject: [PATCH 0/3] IRQ trivial clarifications
+Message-Id: <20150712215559.7166.33068.stgit@bhelgaas-glaptop2.roam.corp.google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436509680.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436509680.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Thomas Gleixner <tglx@linutronix.de>
+Cc: linux-arch@vger.kernel.org, linux-mips@linux-mips.org, linux-am33-list@redhat.com, linux-ia64@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-alpha@vger.kernel.org, x86@kernel.org, linuxppc-dev@lists.ozlabs.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+These don't fix anything at all.  But they might make code understanding
+and debugging slightly easier.
 
-to_rmobile_pd() is only used inside pm-rmobile.c
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/pm-rmobile.c | 6 ++++++
- arch/arm/mach-shmobile/pm-rmobile.h | 6 ------
- 2 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index 95018209ff0b..94161c9b1878 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -34,6 +34,12 @@
- #define PSTR_RETRIES	100
- #define PSTR_DELAY_US	10
- 
-+static inline
-+struct rmobile_pm_domain *to_rmobile_pd(struct generic_pm_domain *d)
-+{
-+	return container_of(d, struct rmobile_pm_domain, genpd);
-+}
-+
- static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
- {
- 	struct rmobile_pm_domain *rmobile_pd = to_rmobile_pd(genpd);
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.h b/arch/arm/mach-shmobile/pm-rmobile.h
-index 53219786f539..3992b619c127 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.h
-+++ b/arch/arm/mach-shmobile/pm-rmobile.h
-@@ -26,12 +26,6 @@ struct rmobile_pm_domain {
- 	bool no_debug;
- };
- 
--static inline
--struct rmobile_pm_domain *to_rmobile_pd(struct generic_pm_domain *d)
--{
--	return container_of(d, struct rmobile_pm_domain, genpd);
--}
--
- struct pm_domain_device {
- 	const char *domain_name;
- 	struct platform_device *pdev;
--- 
-2.1.4
+Bjorn Helgaas (3):
+      x86, irq: Rename VECTOR_UNDEFINED and VECTOR_RETRIGGERED to IRQ_*
+      x86, irq: Clarify "No irq handler" message
+      IRQ: Print "unexpected IRQ" messages consistently across architectures
 
+
+ arch/alpha/kernel/irq.c            |    2 +-
+ arch/blackfin/kernel/irqchip.c     |    2 +-
+ arch/c6x/kernel/irq.c              |    2 +-
+ arch/ia64/kernel/irq.c             |    2 +-
+ arch/m68k/include/asm/hardirq.h    |    2 +-
+ arch/mips/kernel/irq.c             |    2 +-
+ arch/mn10300/kernel/irq.c          |    2 +-
+ arch/parisc/include/asm/hardirq.h  |    2 +-
+ arch/powerpc/include/asm/hardirq.h |    2 +-
+ arch/s390/include/asm/hardirq.h    |    2 +-
+ arch/sh/kernel/irq.c               |    2 +-
+ arch/tile/kernel/irq.c             |    2 +-
+ arch/x86/include/asm/hw_irq.h      |    4 ++--
+ arch/x86/kernel/apic/vector.c      |   14 +++++++-------
+ arch/x86/kernel/irq.c              |   19 +++++++++----------
+ arch/x86/kernel/irqinit.c          |    4 ++--
+ include/asm-generic/hardirq.h      |    2 +-
+ 17 files changed, 33 insertions(+), 34 deletions(-)
