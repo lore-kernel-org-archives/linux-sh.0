@@ -1,45 +1,59 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 31 Jul 2015 10:34:01 +0000
-Subject: Re: [PATCH 3/6] mmc: sh_mmcif: Document r8a7793 DT bindings
-Message-Id: <55BB4F19.40602@cogentembedded.com>
+From: Rob Herring <robh@kernel.org>
+Date: Sun, 12 Jul 2015 14:26:49 +0000
+Subject: [PATCH v2 11/13] sh: kill off set_irq_flags usage
+Message-Id: <1436711211-18223-12-git-send-email-robh@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1432826225-6743-1-git-send-email-ulrich.hecht+renesas@gmail.com>
- <1432826225-6743-4-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1432826225-6743-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1436711211-18223-1-git-send-email-robh@kernel.org>
+In-Reply-To: <1436711211-18223-1-git-send-email-robh@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, devicetree@vger.kernel.org, geert@linux-m68k.org
-Cc: horms@verge.net.au, linux-sh@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+set_irq_flags is ARM specific with custom flags which have genirq
+equivalents. Convert drivers to use the genirq interfaces directly, so we
+can kill off set_irq_flags. The translation of flags is as follows:
 
-On 5/28/2015 6:17 PM, Ulrich Hecht wrote:
+IRQF_VALID -> !IRQ_NOREQUEST
+IRQF_PROBE -> !IRQ_NOPROBE
+IRQF_NOAUTOEN -> IRQ_NOAUTOEN
 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Cc: Ulf Hansson <ulf.hansson@linaro.org>
-> Cc: devicetree@vger.kernel.org
-> ---
->   Documentation/devicetree/bindings/mmc/renesas,mmcif.txt | 1 +
->   1 file changed, 1 insertion(+)
+For IRQs managed by an irqdomain, the irqdomain core code handles clearing
+and setting IRQ_NOREQUEST already, so there is no need to do this in
+.map() functions and we can simply remove the set_irq_flags calls. Some
+users also set IRQ_NOPROBE and this has been maintained although it is not
+clear that is really needed. There appears to be a great deal of blind
+copy and paste of this code.
 
-> diff --git a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> index 299081f..3b9422b 100644
-> --- a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> +++ b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> @@ -10,6 +10,7 @@ Required properties:
->   	- "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
->   	- "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
->   	- "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
-> +	- "renesas,mmcif-r8a7793" for the MMCIF found in r8a7793 SoCs
->   	- "renesas,sh-mmcif" for the generic MMCIF
-[...]
+Signed-off-by: Rob Herring <robh@kernel.org>
+Acked-by: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org
+---
+ drivers/sh/intc/internals.h | 10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
 
-    Why this patch still hasn't been merged?
-    (I have submitted analogous patch yesterday covering both R8A779[34], not 
-knowing about this patch.)
-
-MBR, Sergei
+diff --git a/drivers/sh/intc/internals.h b/drivers/sh/intc/internals.h
+index 7dff08e..897ffb1 100644
+--- a/drivers/sh/intc/internals.h
++++ b/drivers/sh/intc/internals.h
+@@ -99,15 +99,7 @@ static inline struct intc_desc_int *get_intc_desc(unsigned int irq)
+  */
+ static inline void activate_irq(int irq)
+ {
+-#ifdef CONFIG_ARM
+-	/* ARM requires an extra step to clear IRQ_NOREQUEST, which it
+-	 * sets on behalf of every irq_chip.  Also sets IRQ_NOPROBE.
+-	 */
+-	set_irq_flags(irq, IRQF_VALID);
+-#else
+-	/* same effect on other architectures */
+-	irq_set_noprobe(irq);
+-#endif
++	irq_clear_status_flags(irq, IRQ_NOREQUEST | IRQ_NOPROBE);
+ }
+ 
+ static inline int intc_handle_int_cmp(const void *a, const void *b)
+-- 
+2.1.0
 
