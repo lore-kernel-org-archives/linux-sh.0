@@ -1,110 +1,172 @@
-From: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Date: Sat, 25 Jul 2015 15:01:46 +0000
-Subject: Re: [PATCH v5] ARM: smp: Only expose /sys/.../cpuX/online if hotpluggable
-Message-Id: <20150725150146.GA7557@n2100.arm.linux.org.uk>
+From: Rob Herring <robh@kernel.org>
+Date: Sun, 12 Jul 2015 14:26:47 +0000
+Subject: [PATCH v2 09/13] PCI: kill off set_irq_flags usage
+Message-Id: <1436711211-18223-10-git-send-email-robh@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1428705191-15670-1-git-send-email-sboyd@codeaurora.org>
- <20150413134246.GS12732@n2100.arm.linux.org.uk>
- <557739AC.8000903@codeaurora.org>
- <20150610225744.GT7557@n2100.arm.linux.org.uk>
- <5578C427.1070100@codeaurora.org> <55A971C1.8090308@codeaurora.org>
-In-Reply-To: <55A971C1.8090308@codeaurora.org>
+References: <1436711211-18223-1-git-send-email-robh@kernel.org>
+In-Reply-To: <1436711211-18223-1-git-send-email-robh@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jul 17, 2015 at 02:21:05PM -0700, Stephen Boyd wrote:
-> On 06/10/2015 04:11 PM, Stephen Boyd wrote:
-> >On 06/10/2015 03:57 PM, Russell King - ARM Linux wrote:
-> >>diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
-> >>index 476092b86c6e..f2c4bf437ea7 100644
-> >>--- a/arch/arm/mach-shmobile/common.h
-> >>+++ b/arch/arm/mach-shmobile/common.h
-> >>@@ -13,7 +13,8 @@ extern void shmobile_smp_boot(void);
-> >>  extern void shmobile_smp_sleep(void);
-> >>  extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
-> >>  			      unsigned long arg);
-> >>-extern int shmobile_smp_cpu_disable(unsigned int cpu);
-> >>+extern bool shmobile_smp_cpu_can_disable(unsigned int cpu);
-> >>+extern void shmobile_invalidate_start(void);
-> >>
-> >>which your original patch did not include.  The tree I'm applying to
-> >>(-rc1) contains:
-> >>
-> >>extern int shmobile_smp_cpu_disable(unsigned int cpu);
-> >>extern void shmobile_invalidate_start(void);
-> >>
-> >>there.  Hence git quite rightfully declines to apply the patch.
-> >>
-> >Thanks. Fixed.
-> >
-> 
-> Sorry I just noticed that you applied 8392/1 instead of 8392/2 from the
-> patch tracker. So shmobile_invalidate_start() came back.
+set_irq_flags is ARM specific with custom flags which have genirq
+equivalents. Convert drivers to use the genirq interfaces directly, so we
+can kill off set_irq_flags. The translation of flags is as follows:
 
-Stephen,
+IRQF_VALID -> !IRQ_NOREQUEST
+IRQF_PROBE -> !IRQ_NOPROBE
+IRQF_NOAUTOEN -> IRQ_NOAUTOEN
 
-8392/2 does _not_ apply:
+For IRQs managed by an irqdomain, the irqdomain core code handles clearing
+and setting IRQ_NOREQUEST already, so there is no need to do this in
+.map() functions and we can simply remove the set_irq_flags calls. Some
+users also set IRQ_NOPROBE and this has been maintained although it is not
+clear that is really needed. There appears to be a great deal of blind
+copy and paste of this code.
 
-$ pdb gitapply 8392/2
-Patching 8392/2...
-git apply --whitespace=fix -p1 --index --check > /tmp/pdb.521 2>&1 exited with non-zero status: 256
-error: patch failed: arch/arm/mach-shmobile/common.h:13
-error: arch/arm/mach-shmobile/common.h: patch does not apply
+Signed-off-by: Rob Herring <robh@kernel.org>
+Cc: Kishon Vijay Abraham I <kishon@ti.com>
+Acked-by: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Murali Karicheri <m-karicheri2@ti.com>
+Cc: Thierry Reding <thierry.reding@gmail.com>
+Cc: Stephen Warren <swarren@wwwdotorg.org>
+Cc: Alexandre Courbot <gnurou@gmail.com>
+Cc: Jingoo Han <jingoohan1@gmail.com>
+Cc: Pratyush Anand <pratyush.anand@gmail.com>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Michal Simek <michal.simek@xilinx.com>
+Cc: "S=C3=B6ren Brinkmann" <soren.brinkmann@xilinx.com>
+Cc: linux-omap@vger.kernel.org
+Cc: linux-pci@vger.kernel.org
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-tegra@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+---
+v2:
+- Add xgene which was added in v4.2
 
-However, 8392/1 does:
+ drivers/pci/host/pci-dra7xx.c      | 1 -
+ drivers/pci/host/pci-keystone-dw.c | 2 --
+ drivers/pci/host/pci-tegra.c       | 1 -
+ drivers/pci/host/pci-xgene-msi.c   | 1 -
+ drivers/pci/host/pcie-designware.c | 1 -
+ drivers/pci/host/pcie-rcar.c       | 1 -
+ drivers/pci/host/pcie-xilinx.c     | 2 --
+ 7 files changed, 9 deletions(-)
 
-$ pdb gitapply 8392/1
-Patching 8392/1...
-Checking in...
-[misc e28678d7b83a] ARM: 8392/1: smp: Only expose /sys/.../cpuX/online if hotpluggable
- Author: Stephen Boyd <sboyd@codeaurora.org>
- 10 files changed, 36 insertions(+), 16 deletions(-)
+diff --git a/drivers/pci/host/pci-dra7xx.c b/drivers/pci/host/pci-dra7xx.c
+index 80db09e..1a0d124 100644
+--- a/drivers/pci/host/pci-dra7xx.c
++++ b/drivers/pci/host/pci-dra7xx.c
+@@ -155,7 +155,6 @@ static int dra7xx_pcie_intx_map(struct irq_domain *doma=
+in, unsigned int irq,
+ {
+ 	irq_set_chip_and_handler(irq, &dummy_irq_chip, handle_simple_irq);
+ 	irq_set_chip_data(irq, domain->host_data);
+-	set_irq_flags(irq, IRQF_VALID);
 
-This is because your patch 8392/2 has this hunk:
+ 	return 0;
+ }
+diff --git a/drivers/pci/host/pci-keystone-dw.c b/drivers/pci/host/pci-keys=
+tone-dw.c
+index f34892e..f1d0749 100644
+--- a/drivers/pci/host/pci-keystone-dw.c
++++ b/drivers/pci/host/pci-keystone-dw.c
+@@ -196,7 +196,6 @@ static int ks_dw_pcie_msi_map(struct irq_domain *domain=
+, unsigned int irq,
+ 	irq_set_chip_and_handler(irq, &ks_dw_pcie_msi_irq_chip,
+ 				 handle_level_irq);
+ 	irq_set_chip_data(irq, domain->host_data);
+-	set_irq_flags(irq, IRQF_VALID);
 
-diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
-index afc60bad6fd6..f2c4bf437ea7 100644
---- a/arch/arm/mach-shmobile/common.h
-+++ b/arch/arm/mach-shmobile/common.h
-@@ -13,7 +13,7 @@ extern void shmobile_smp_boot(void);
- extern void shmobile_smp_sleep(void);
- extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
-                              unsigned long arg);
--extern int shmobile_smp_cpu_disable(unsigned int cpu);
-+extern bool shmobile_smp_cpu_can_disable(unsigned int cpu);
- extern void shmobile_invalidate_start(void);
- extern void shmobile_boot_scu(void);
- extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
+ 	return 0;
+ }
+@@ -277,7 +276,6 @@ static int ks_dw_pcie_init_legacy_irq_map(struct irq_do=
+main *d,
+ 	irq_set_chip_and_handler(irq, &ks_dw_pcie_legacy_irq_chip,
+ 				 handle_level_irq);
+ 	irq_set_chip_data(irq, d->host_data);
+-	set_irq_flags(irq, IRQF_VALID);
 
-which states that shmobile_invalidate_start() must exist in the original
-code.  In v4.2-rc1 and later kernels, there is no such line - here is
-v4.2-rc1 and later contains from line 13 onwards:
+ 	return 0;
+ }
+diff --git a/drivers/pci/host/pci-tegra.c b/drivers/pci/host/pci-tegra.c
+index 10c0571..81df0c1 100644
+--- a/drivers/pci/host/pci-tegra.c
++++ b/drivers/pci/host/pci-tegra.c
+@@ -1248,7 +1248,6 @@ static int tegra_msi_map(struct irq_domain *domain, u=
+nsigned int irq,
+ {
+ 	irq_set_chip_and_handler(irq, &tegra_msi_irq_chip, handle_simple_irq);
+ 	irq_set_chip_data(irq, domain->host_data);
+-	set_irq_flags(irq, IRQF_VALID);
 
- extern void shmobile_smp_sleep(void);
- extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
-			      unsigned long arg);
- extern int shmobile_smp_cpu_disable(unsigned int cpu);
- extern void shmobile_boot_scu(void);
- extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
- extern void shmobile_smp_scu_cpu_die(unsigned int cpu);
+ 	tegra_cpuidle_pcie_irqs_in_use();
 
-The difference between your two patches is relatively minor:
+diff --git a/drivers/pci/host/pci-xgene-msi.c b/drivers/pci/host/pci-xgene-=
+msi.c
+index 2d31d4d..8e559d1 100644
+--- a/drivers/pci/host/pci-xgene-msi.c
++++ b/drivers/pci/host/pci-xgene-msi.c
+@@ -223,7 +223,6 @@ static int xgene_irq_domain_alloc(struct irq_domain *do=
+main, unsigned int virq,
+ 	irq_domain_set_info(domain, virq, msi_irq,
+ 			    &xgene_msi_bottom_irq_chip, domain->host_data,
+ 			    handle_simple_irq, NULL, NULL);
+-	set_irq_flags(virq, IRQF_VALID);
 
-8392/1 _adds_ shmobile_invalidate_start()
-8392/2 _requires_ that shmobile_invalidate_start() exist
+ 	return 0;
+ }
+diff --git a/drivers/pci/host/pcie-designware.c b/drivers/pci/host/pcie-des=
+ignware.c
+index 69486be..5c6b562 100644
+--- a/drivers/pci/host/pcie-designware.c
++++ b/drivers/pci/host/pcie-designware.c
+@@ -350,7 +350,6 @@ static int dw_pcie_msi_map(struct irq_domain *domain, u=
+nsigned int irq,
+ {
+ 	irq_set_chip_and_handler(irq, &dw_msi_irq_chip, handle_simple_irq);
+ 	irq_set_chip_data(irq, domain->host_data);
+-	set_irq_flags(irq, IRQF_VALID);
 
-If you wish me to apply a patch which _neither_ requires _nor_ adds the
-shmobile_invalidate_start() prototype, maybe you should send me a patch
-to that effect?
+ 	return 0;
+ }
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index c086210..7678fe0 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -664,7 +664,6 @@ static int rcar_msi_map(struct irq_domain *domain, unsi=
+gned int irq,
+ {
+ 	irq_set_chip_and_handler(irq, &rcar_msi_irq_chip, handle_simple_irq);
+ 	irq_set_chip_data(irq, domain->host_data);
+-	set_irq_flags(irq, IRQF_VALID);
 
-> I thought it would automatically supersede the previous patch but it
-> looks like it just sticks around?
+ 	return 0;
+ }
+diff --git a/drivers/pci/host/pcie-xilinx.c b/drivers/pci/host/pcie-xilinx.c
+index f1a06a0..72015119 100644
+--- a/drivers/pci/host/pcie-xilinx.c
++++ b/drivers/pci/host/pcie-xilinx.c
+@@ -338,7 +338,6 @@ static int xilinx_pcie_msi_map(struct irq_domain *domai=
+n, unsigned int irq,
+ {
+ 	irq_set_chip_and_handler(irq, &xilinx_msi_irq_chip, handle_simple_irq);
+ 	irq_set_chip_data(irq, domain->host_data);
+-	set_irq_flags(irq, IRQF_VALID);
 
-It doesn't, because the /n thing was supposed to be for related patches
-rather than automatic superseding of previous patches.
+ 	return 0;
+ }
+@@ -377,7 +376,6 @@ static int xilinx_pcie_intx_map(struct irq_domain *doma=
+in, unsigned int irq,
+ {
+ 	irq_set_chip_and_handler(irq, &dummy_irq_chip, handle_simple_irq);
+ 	irq_set_chip_data(irq, domain->host_data);
+-	set_irq_flags(irq, IRQF_VALID);
 
--- 
-FTTC broadband for 0.8mile line: currently at 10.5Mbps down 400kbps up
-according to speedtest.net.
+ 	return 0;
+ }
+--
+2.1.0
+
