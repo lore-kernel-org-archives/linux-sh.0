@@ -1,65 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:37:10 +0000
-Subject: [PATCH 5/8] ARM: shmobile: R-Car: Use BIT() macro instead of open coding
-Message-Id: <21437c53f3dc2e1e52ccb8aed0a65dd3879ca671.1436510166.git.horms+renesas@verge.net.au>
+From: Bjorn Helgaas <bhelgaas@google.com>
+Date: Sun, 12 Jul 2015 22:02:02 +0000
+Subject: [PATCH 2/3] x86, irq: Clarify "No irq handler" message
+Message-Id: <20150712220202.7166.22099.stgit@bhelgaas-glaptop2.roam.corp.google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436510166.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436510166.git.horms+renesas@verge.net.au>
+References: <20150712215559.7166.33068.stgit@bhelgaas-glaptop2.roam.corp.google.com>
+In-Reply-To: <20150712215559.7166.33068.stgit@bhelgaas-glaptop2.roam.corp.google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Thomas Gleixner <tglx@linutronix.de>
+Cc: linux-arch@vger.kernel.org, linux-mips@linux-mips.org, linux-am33-list@redhat.com, linux-ia64@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-alpha@vger.kernel.org, x86@kernel.org, linuxppc-dev@lists.ozlabs.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Previously we printed, e.g.,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+  do_IRQ: 0.242 No irq handler for vector (irq -1)
+
+There's no clue about what "0.242" means, and the IRQ number, which is the
+important generic information used by drivers and /proc/interrupts, is
+almost an afterthought.
+
+Change the format to this:
+
+  No handler for IRQ -1 (CPU 0 vector 0xf2)
+
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 ---
- arch/arm/mach-shmobile/pm-rcar.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ arch/x86/kernel/irq.c |    5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-rcar.c b/arch/arm/mach-shmobile/pm-rcar.c
-index b1a7f2a7f757..7adf9ce5fc1d 100644
---- a/arch/arm/mach-shmobile/pm-rcar.c
-+++ b/arch/arm/mach-shmobile/pm-rcar.c
-@@ -58,7 +58,7 @@ static int rcar_sysc_pwr_on_off(const struct rcar_sysc_ch *sysc_ch,
+diff --git a/arch/x86/kernel/irq.c b/arch/x86/kernel/irq.c
+index 2949c6e..3c6b069 100644
+--- a/arch/x86/kernel/irq.c
++++ b/arch/x86/kernel/irq.c
+@@ -224,9 +224,8 @@ __visible unsigned int __irq_entry do_IRQ(struct pt_regs *regs)
+ 		ack_APIC_irq();
  
- 	/* Wait until SYSC is ready to accept a power request */
- 	for (k = 0; k < SYSCSR_RETRIES; k++) {
--		if (ioread32(rcar_sysc_base + SYSCSR) & (1 << sr_bit))
-+		if (ioread32(rcar_sysc_base + SYSCSR) & BIT(sr_bit))
- 			break;
- 		udelay(SYSCSR_DELAY_US);
- 	}
-@@ -67,7 +67,7 @@ static int rcar_sysc_pwr_on_off(const struct rcar_sysc_ch *sysc_ch,
- 		return -EAGAIN;
- 
- 	/* Submit power shutoff or power resume request */
--	iowrite32(1 << sysc_ch->chan_bit,
-+	iowrite32(BIT(sysc_ch->chan_bit),
- 		  rcar_sysc_base + sysc_ch->chan_offs + reg_offs);
- 
- 	return 0;
-@@ -86,8 +86,8 @@ static int rcar_sysc_pwr_on(const struct rcar_sysc_ch *sysc_ch)
- static int rcar_sysc_update(const struct rcar_sysc_ch *sysc_ch,
- 			    int (*on_off_fn)(const struct rcar_sysc_ch *))
- {
--	unsigned int isr_mask = 1 << sysc_ch->isr_bit;
--	unsigned int chan_mask = 1 << sysc_ch->chan_bit;
-+	unsigned int isr_mask = BIT(sysc_ch->isr_bit);
-+	unsigned int chan_mask = BIT(sysc_ch->chan_bit);
- 	unsigned int status;
- 	unsigned long flags;
- 	int ret = 0;
-@@ -151,7 +151,7 @@ bool rcar_sysc_power_is_off(const struct rcar_sysc_ch *sysc_ch)
- 	unsigned int st;
- 
- 	st = ioread32(rcar_sysc_base + sysc_ch->chan_offs + PWRSR_OFFS);
--	if (st & (1 << sysc_ch->chan_bit))
-+	if (st & BIT(sysc_ch->chan_bit))
- 		return true;
- 
- 	return false;
--- 
-2.1.4
+ 		if (irq != IRQ_RETRIGGERED) {
+-			pr_emerg_ratelimited("%s: %d.%d No irq handler for vector (irq %d)\n",
+-					     __func__, smp_processor_id(),
+-					     vector, irq);
++			pr_emerg_ratelimited("No handler for IRQ %d (CPU %d vector %#x)\n",
++					     irq, smp_processor_id(), vector);
+ 		} else {
+ 			__this_cpu_write(vector_irq[vector], IRQ_UNDEFINED);
+ 		}
 
