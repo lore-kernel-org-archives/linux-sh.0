@@ -1,44 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 30 Jul 2015 00:23:50 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Defconfig Updates for v4.3
-Message-Id: <cover.1438215768.git.horms+renesas@verge.net.au>
+From: Michael Ellerman <mpe@ellerman.id.au>
+Date: Mon, 13 Jul 2015 03:23:03 +0000
+Subject: Re: [3/3] IRQ: Print "unexpected IRQ" messages consistently across architectures
+Message-Id: <20150713032303.D49801402B1@ozlabs.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381222967.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
+References: <20150712220211.7166.42035.stgit@bhelgaas-glaptop2.roam.corp.google.com>
+In-Reply-To: <20150712220211.7166.42035.stgit@bhelgaas-glaptop2.roam.corp.google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Bjorn Helgaas <bhelgaas@google.com>, Thomas Gleixner <tglx@linutronix.de>
+Cc: linux-arch@vger.kernel.org, linux-mips@linux-mips.org, linux-am33-list@redhat.com, linux-ia64@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-alpha@vger.kernel.org, x86@kernel.org, linuxppc-dev@lists.ozlabs.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+On Sun, 2015-12-07 at 22:02:11 UTC, Bjorn Helgaas wrote:
+> Many architectures use a variant of "unexpected IRQ trap at vector %x" to
+> log unexpected IRQs.  This is confusing because (a) it prints the Linux IRQ
+> number, but "vector" more often refers to a CPU vector number, and (b) it
+> prints the IRQ number in hex with no base indication, while Linux IRQ
+> numbers are usually printed in decimal.
+> 
+> Print the same text ("unexpected IRQ %d") across all architectures.
+> 
+> No functional change other than the output text.
 
-Please consider these second round of Renesas ARM based SoC defconfig updates for v4.3.
+There's already a fallback version in asm-generic, so shouldn't you instead
+just delete all the versions that are identical to that?
 
-This pull request is based on the previous round of
-such requests, tagged as renesas-defconfig-for-v4.3,
-which I have already sent a pull-request for.
+eg. on powerpc we have:
 
+>  static inline void ack_bad_irq(unsigned int irq)
+>  {
+> -	printk(KERN_CRIT "unexpected IRQ trap at vector %02x\n", irq);
+> +	printk(KERN_CRIT "unexpected IRQ %d\n", irq);
+>  }
 
-The following changes since commit 821e79cb5686695f0adaef61587a184e953a937e:
+And the generic version is:
 
-  ARM: shmobile: Remove marzen_defconfig (2015-07-17 08:29:45 +0900)
+>  #ifndef ack_bad_irq
+>  static inline void ack_bad_irq(unsigned int irq)
+>  {
+> -	printk(KERN_CRIT "unexpected IRQ trap at vector %02x\n", irq);
+> +	printk(KERN_CRIT "unexpected IRQ %d\n", irq);
+>  }
+>  #endif
 
-are available in the git repository at:
+So we can just delete the powerpc version?
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig2-for-v4.3
-
-for you to fetch changes up to 4055a722d260ca30610fc52238d0aa49ff5bffa9:
-
-  ARM: shmobile: Enable fixed voltage regulator in shmobile_defconfig (2015-07-28 09:27:00 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC Defconfig Updates for v4.3
-
-* Enable fixed voltage regulator in shmobile_defconfig
-
-----------------------------------------------------------------
-Simon Horman (1):
-      ARM: shmobile: Enable fixed voltage regulator in shmobile_defconfig
-
- arch/arm/configs/shmobile_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+cheers
