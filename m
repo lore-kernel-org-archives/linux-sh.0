@@ -1,35 +1,28 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 13 Jul 2015 06:15:02 +0000
-Subject: [PATCH v3 01/04] ARM: shmobile: r8a7779: Generic SMP ops
-Message-Id: <20150713061502.25534.94700.sendpatchset@little-apple>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Mon, 13 Jul 2015 20:30:31 +0000
+Subject: Re: [PATCH v3 2/3] sh-pfc: r8a7790: remove non-existing GPIO pins
+Message-Id: <CACRpkdbMJSX5B+SOfqBn9PK52g5OX2bToqQTR=BR=zxi69-xTg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1460630.GxHT4lRd7u@wasted.cogentembedded.com>
+	<14360647.s1qTxSuam8@wasted.cogentembedded.com>
+In-Reply-To: <14360647.s1qTxSuam8@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+On Fri, Jun 26, 2015 at 12:42 AM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
 
-Add a r8a7779-specific SMP operation pointer to support
-all 4 CPU cores through SMP on r8a7779 without C board code.
+> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+>
+> GPIO banks 1 and 2 are missing pins 30 and 31. Remove them.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
+Patch applied for next merge window.
 
-Changes since V2:
- - None
-
- arch/arm/mach-shmobile/setup-r8a7779.c |    1 +
- 1 file changed, 1 insertion(+)
-
---- 0001/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2015-07-13 14:19:04.000000000 +0900
-@@ -772,6 +772,7 @@ static const char *r8a7779_compat_dt[] _
- };
- 
- DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
-+	.smp		= smp_ops(r8a7779_smp_ops),
- 	.map_io		= r8a7779_map_io,
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= r8a7779_init_time,
+Yours,
+Linus Walleij
