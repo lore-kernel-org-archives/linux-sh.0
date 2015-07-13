@@ -1,94 +1,67 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 06 Jul 2015 21:46:08 +0000
-Subject: [PATCH 4/5] ARM: shmobile: emev2: add IIC cores to dtsi
-Message-Id: <1436219188-4325-5-git-send-email-wsa@the-dreams.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 13 Jul 2015 06:15:33 +0000
+Subject: [PATCH v3 04/04] ARM: shmobile: r8a7779: Cleanup header file
+Message-Id: <20150713061533.25534.59533.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436219188-4325-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1436219188-4325-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Remove unused function prototypes from r8a7779.h and
+make the functions static.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/emev2.dtsi | 48 ++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 48 insertions(+)
 
-diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
-index bb45694d91bc1e..edad0c4eea3505 100644
---- a/arch/arm/boot/dts/emev2.dtsi
-+++ b/arch/arm/boot/dts/emev2.dtsi
-@@ -21,6 +21,8 @@
- 		gpio2 = &gpio2;
- 		gpio3 = &gpio3;
- 		gpio4 = &gpio4;
-+		i2c0 = &iic0;
-+		i2c1 = &iic1;
- 	};
- 
- 	cpus {
-@@ -66,6 +68,30 @@
- 			clock-frequency = <32768>;
- 			#clock-cells = <0>;
- 		};
-+		iic0_sclkdiv: iic0_sclkdiv {
-+			compatible = "renesas,emev2-smu-clkdiv";
-+			reg = <0x624 0>;
-+			clocks = <&pll3_fo>;
-+			#clock-cells = <0>;
-+		};
-+		iic0_sclk: iic0_sclk {
-+			compatible = "renesas,emev2-smu-gclk";
-+			reg = <0x48c 1>;
-+			clocks = <&iic0_sclkdiv>;
-+			#clock-cells = <0>;
-+		};
-+		iic1_sclkdiv: iic1_sclkdiv {
-+			compatible = "renesas,emev2-smu-clkdiv";
-+			reg = <0x624 16>;
-+			clocks = <&pll3_fo>;
-+			#clock-cells = <0>;
-+		};
-+		iic1_sclk: iic1_sclk {
-+			compatible = "renesas,emev2-smu-gclk";
-+			reg = <0x490 1>;
-+			clocks = <&iic1_sclkdiv>;
-+			#clock-cells = <0>;
-+		};
- 		pll3_fo: pll3_fo {
- 			compatible = "fixed-factor-clock";
- 			clocks = <&c32ki>;
-@@ -234,4 +260,26 @@
- 		interrupt-controller;
- 		#interrupt-cells = <2>;
- 	};
-+
-+	iic0: i2c@e0070000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,iic-emev2";
-+		reg = <0xe0070000 0x28>;
-+		interrupts = <0 32 IRQ_TYPE_EDGE_RISING>;
-+		clocks = <&iic0_sclk>;
-+		clock-names = "sclk";
-+		status = "disabled";
-+	};
-+
-+	iic1: i2c@e10a0000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,iic-emev2";
-+		reg = <0xe10a0000 0x28>;
-+		interrupts = <0 33 IRQ_TYPE_EDGE_RISING>;
-+		clocks = <&iic1_sclk>;
-+		clock-names = "sclk";
-+		status = "disabled";
-+	};
+ Changes since V2:
+ - None
+
+ arch/arm/mach-shmobile/clock-r8a7779.c |    2 +-
+ arch/arm/mach-shmobile/r8a7779.h       |    2 --
+ arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
+ 3 files changed, 2 insertions(+), 4 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/clock-r8a7779.c
++++ work/arch/arm/mach-shmobile/clock-r8a7779.c	2015-07-13 15:13:00.452366518 +0900
+@@ -201,7 +201,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("rcar-du-r8a7779", &mstp_clks[MSTP103]), /* DU */
  };
--- 
-2.1.4
-
+ 
+-void __init r8a7779_clock_init(void)
++static void __init r8a7779_clock_init(void)
+ {
+ 	u32 mode = r8a7779_read_mode_pins();
+ 	int k, ret = 0;
+--- 0001/arch/arm/mach-shmobile/r8a7779.h
++++ work/arch/arm/mach-shmobile/r8a7779.h	2015-07-13 15:13:00.452366518 +0900
+@@ -11,7 +11,6 @@ enum {
+ };
+ 
+ extern void r8a7779_init_irq_extpin(int irlm);
+-extern void r8a7779_init_irq_extpin_dt(int irlm);
+ extern void r8a7779_init_irq_dt(void);
+ extern void r8a7779_map_io(void);
+ extern void r8a7779_earlytimer_init(void);
+@@ -19,7 +18,6 @@ extern void r8a7779_add_early_devices(vo
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_init_late(void);
+ extern u32 r8a7779_read_mode_pins(void);
+-extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+ extern void r8a7779_pm_init(void);
+ extern void r8a7779_register_twd(void);
+--- 0002/arch/arm/mach-shmobile/setup-r8a7779.c
++++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2015-07-13 15:13:00.452366518 +0900
+@@ -99,7 +99,7 @@ static struct resource irqpin0_resources
+ 	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ3 */
+ };
+ 
+-void __init r8a7779_init_irq_extpin_dt(int irlm)
++static void __init r8a7779_init_irq_extpin_dt(int irlm)
+ {
+ 	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
+ 	u32 tmp;
