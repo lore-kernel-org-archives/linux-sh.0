@@ -1,73 +1,115 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 30 Jul 2015 21:55:23 +0000
-Subject: [PATCH v2 2/2] ARM: shmobile: silk: add eMMC DT support
-Message-Id: <1923824.ZmtLDEU8gy@wasted.cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 13 Jul 2015 06:15:12 +0000
+Subject: [PATCH v3 02/04] ARM: shmobile: marzen-reference: Remove C board code
+Message-Id: <20150713061512.25534.18136.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1546028.CFITDbxXtD@wasted.cogentembedded.com>
-In-Reply-To: <1546028.CFITDbxXtD@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Define the SILK board dependent part of the MMCIF device node (the board has
-eMMC chip) along with the  necessary voltage regulator (note that the Vcc/Vccq
-regulator is dummy -- it's required by the MMCIF driver but doesn't actually
-exist on the board).
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Based on the original patch by Vladimir Barinov
-<vladimir.barinov@cogentembedded.com>.
+The generic r8a7779 machine vector is now feature-wise equivalent
+to the Marzen-reference case, so simply remove the Marzen C board
+code to fall over on the generic r8a7779 machine vector.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7794-silk.dts |   25 +++++++++++++++++++++++++
- 1 file changed, 25 insertions(+)
 
-Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7794-silk.dts
-+++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
-@@ -30,6 +30,15 @@
- 		device_type = "memory";
- 		reg = <0 0x40000000 0 0x40000000>;
- 	};
-+
-+	d3_3v: regulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "D3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-boot-on;
-+		regulator-always-on;
-+	};
- };
- 
- &extal_clk {
-@@ -51,6 +60,11 @@
- 		renesas,groups = "intc_irq8";
- 		renesas,function = "intc";
- 	};
-+
-+	mmcif0_pins: mmcif0 {
-+		renesas,groups = "mmc_data8", "mmc_ctrl";
-+		renesas,function = "mmc";
-+	};
- };
- 
- &scif2 {
-@@ -75,3 +89,14 @@
- 		micrel,led-mode = <1>;
- 	};
- };
-+
-+&mmcif0 {
-+	pinctrl-0 = <&mmcif0_pins>;
-+	pinctrl-names = "default";
-+
-+	vmmc-supply = <&d3_3v>;
-+	vqmmc-supply = <&d3_3v>;
-+	bus-width = <8>;
-+	non-removable;
-+	status = "okay";
-+};
+ Changes since V2:
+ - None
 
+ arch/arm/mach-shmobile/Kconfig                  |    7 --
+ arch/arm/mach-shmobile/Makefile                 |    4 -
+ arch/arm/mach-shmobile/board-marzen-reference.c |   56 -----------------------
+ 3 files changed, 1 insertion(+), 66 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2015-07-13 14:28:04.082366518 +0900
+@@ -96,13 +96,6 @@ config ARCH_SH73A0
+ 	select ARCH_RMOBILE
+ 	select RENESAS_INTC_IRQPIN
+ 
+-comment "Renesas ARM SoCs Board Type"
+-
+-config MACH_MARZEN
+-	bool "MARZEN board"
+-	depends on ARCH_R8A7779
+-	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-
+ comment "Renesas ARM SoCs System Configuration"
+ endif
+ 
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2015-07-13 14:28:04.082366518 +0900
+@@ -51,9 +51,7 @@ obj-$(CONFIG_PM_RMOBILE)	+= pm-rmobile.o
+ obj-$(CONFIG_ARCH_RCAR_GEN2)	+= pm-rcar-gen2.o
+ 
+ # Board objects
+-ifdef CONFIG_ARCH_SHMOBILE_MULTI
+-obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
+-else
++ifndef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+--- 0001/arch/arm/mach-shmobile/board-marzen-reference.c
++++ /dev/null	2015-01-13 15:44:39.280208949 +0900
+@@ -1,56 +0,0 @@
+-/*
+- * marzen board support - Reference DT implementation
+- *
+- * Copyright (C) 2011  Renesas Solutions Corp.
+- * Copyright (C) 2011  Magnus Damm
+- * Copyright (C) 2013  Simon Horman
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#include <linux/clk/shmobile.h>
+-#include <linux/clocksource.h>
+-#include <linux/of_platform.h>
+-
+-#include <asm/irq.h>
+-#include <asm/mach/arch.h>
+-
+-#include "common.h"
+-#include "irqs.h"
+-#include "r8a7779.h"
+-
+-static void __init marzen_init_timer(void)
+-{
+-	r8a7779_clocks_init(r8a7779_read_mode_pins());
+-	clocksource_of_init();
+-}
+-
+-static void __init marzen_init(void)
+-{
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+-}
+-
+-static const char *marzen_boards_compat_dt[] __initdata = {
+-	"renesas,marzen",
+-	"renesas,marzen-reference",
+-	NULL,
+-};
+-
+-DT_MACHINE_START(MARZEN, "marzen")
+-	.smp		= smp_ops(r8a7779_smp_ops),
+-	.map_io		= r8a7779_map_io,
+-	.init_early	= shmobile_init_delay,
+-	.init_time	= marzen_init_timer,
+-	.init_irq	= r8a7779_init_irq_dt,
+-	.init_machine	= marzen_init,
+-	.init_late	= shmobile_init_late,
+-	.dt_compat	= marzen_boards_compat_dt,
+-MACHINE_END
