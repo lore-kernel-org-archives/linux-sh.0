@@ -1,34 +1,33 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 25 Jul 2015 20:49:27 +0000
-Subject: Re: [PATCH] ravb: minimize TX data copying
-Message-Id: <55B3F657.8090606@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 14 Jul 2015 04:55:25 +0000
+Subject: [PATCH 0/3] ARM: shmobile: add sound missing parts on DT
+Message-Id: <877fq3basy.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <7692456.7SI5hJLWyQ@wasted.cogentembedded.com>
- <20150725204037.GA2172@nanopsycho.fritz.box>
-In-Reply-To: <20150725204037.GA2172@nanopsycho.fritz.box>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jiri Pirko <jiri@resnulli.us>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, David Miller <davem@davemloft.net>
+To: linux-sh@vger.kernel.org
 
-Hello.
 
-On 07/25/2015 11:40 PM, Jiri Pirko wrote:
+Hi Simon
 
-> <snip>
+These patches are not so important, but useful, especially
+for debug/test.
+1), 2) add missing sound label on DTS.
+3) enables DPCM related sound card driver which is not used in upstream.
+But, it is needed if customer wants advanced sound feature.
 
->> The patch is against Dave Miller's 'net-next.git' repo.
+Kuninori Morimoto (3):
+      1) ARM: shmobile: lager: add sound label on DTS
+      2) ARM: shmobile: koelsch: add sound label on DTS
+      3) ARM: shmobile: defconfig: add Renesas DPCM Sound Card
 
-    Dave, don't apply this yet, I'll post v2 with couple of comments fixed up.
+ arch/arm/boot/dts/r8a7790-lager.dts   | 2 +-
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ arch/arm/configs/shmobile_defconfig   | 1 +
+ 3 files changed, 3 insertions(+), 2 deletions(-)
 
-> You can just put "net-next" into patch brackets like:
-> [patch net-next] whatever
-> That would do the trick :)
 
-    Oh, I know. :-)
-    I just prefer to do this kind of thing uniformly regardless of the target 
-repo.
-
-MBR, Sergei
-
+Best regards
+---
+Kuninori Morimoto
