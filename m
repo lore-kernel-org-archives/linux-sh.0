@@ -1,112 +1,97 @@
-From: Leon Romanovsky <leon@leon.nu>
-Date: Mon, 20 Jul 2015 19:33:28 +0000
-Subject: Re: [PATCH v2] mmc: tmio: Fix timeout value for command request
-Message-Id: <CALq1K=KPSnzSu5uOzzN5h1EWNzCEM+aJ91LUg04KOLbmyN6JuA@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 14 Jul 2015 12:05:14 +0000
+Subject: Re: [PATCH 1/7] ARM: shmobile: r8a73a4 dtsi: Add missing "gpio-ranges" to gpio node
+Message-Id: <CAMuHMdX4=C6DsbsaphndXQuPm8WFqv08kwq+cdQRJJQtDph1cg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437323999-7938-1-git-send-email-ykaneko0929@gmail.com>
- <CALq1K=JbgNGpik6jTXvd+JHzRP9HGFhgu9PgDC3bE_ftBG1FSQ@mail.gmail.com> <CAH1o70JPcdFYdhJ=0ap2EZfZB87vjJV+WeHf2gGwhPigoh_DdQ@mail.gmail.com>
-In-Reply-To: <CAH1o70JPcdFYdhJ=0ap2EZfZB87vjJV+WeHf2gGwhPigoh_DdQ@mail.gmail.com>
+References: <1435650327-2542-1-git-send-email-geert+renesas@glider.be>
+ <1435650327-2542-2-git-send-email-geert+renesas@glider.be>
+ <32630741.rNENluEsDE@avalon>
+In-Reply-To: <32630741.rNENluEsDE@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Ulf Hansson <ulf.hansson@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 20, 2015 at 5:08 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
-> Hi Leon,
+Hi Laurent, Linus,
+
+On Tue, Jun 30, 2015 at 11:49 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Tuesday 30 June 2015 09:45:21 Geert Uytterhoeven wrote:
+>> If a GPIO driver uses gpiochip_add_pin_range() (which is usually the
+>> case for GPIO/PFC combos), the GPIO hogging mechanism configured from DT
+>> doesn't work:
+>>
+>>     requesting hog GPIO led1-high (chip r8a73a4_pfc, offset 28) failed
+>>
+>> The actual error code is -517 = -EPROBE_DEFER.
+>>
+>> The problem is that PFC+GPIO registration is handled in multiple steps:
+>>   1. pinctrl_register(),
+>>   2. gpiochip_add(),
+>>   3. gpiochip_add_pin_range().
+>>
+>> Configuration of the hogs is handled in gpiochip_add():
+>>
+>>     gpiochip_add
+>>         of_gpiochip_add
+>>             of_gpiochip_scan_hogs
+>>                 gpiod_hog
+>>                     gpiochip_request_own_desc
+>>                         __gpiod_request
+>>                             chip->request
+>>                                 pinctrl_request_gpio
+>>                                     pinctrl_get_device_gpio_range
+>>
+>> However, at this point the GPIO controller hasn't been added to
+>> pinctrldev_list yet, so the range can't be found, and the operation fails
+>> with -EPROBE_DEFER.
+>>
+>> To fix this, add a "gpio-ranges" property to the gpio device node, so
+>> the ranges are added by of_gpiochip_add_pin_range(), which is called by
+>> of_gpiochip_add() before the call to of_gpiochip_scan_hogs().
+>>
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 >
-> 2015-07-20 14:03 GMT+09:00 Leon Romanovsky <leon@leon.nu>:
->> On Sun, Jul 19, 2015 at 7:39 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
->>> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
->>>
->>> Fix the problem which timeout occurs at the time of command request with
->>> several cards.
->> Hi Yoshihiro,
->> I afraid that I missed the answer to my concern about such cards [1].
->> It is good to write this information in commit message and/or comment
->> in the code.
->>
->> It is extremely valuable to know which cards are required x2.5 timeout increase.
+> This looks sane to me, even though referencing the same DT node seems a bit
+> dodgy. I'll let Linus comment on that, but for the implementation itself,
 >
-> I apologize for the lack of information.
-> However, I have not yet obtained information about which cards corresponds to.
-> I intend to update the commit message if I obtain information.
-Please don't hesitate to resend this patch when you will get such information.
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Thanks.
+Thank you!
 
+Any wise words from Linus?
+
+Thanks again!
 
 >
-> Thanks,
-> Kaneko
->
+>> ---
+>>  arch/arm/boot/dts/r8a73a4.dtsi | 7 +++++++
+>>  1 file changed, 7 insertions(+)
 >>
->> [1] http://www.spinics.net/lists/linux-mmc/msg32295.html
->>
->>>
->>> The timeout value was insufficient as a verification of several cards,
->>> so it was changed 5 seconds from 2 seconds.
->>>
->>> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
->>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->>> ---
->>>
->>> This patch is based on mmc-next branch of Ulf Hansson's mmc tree.
->>>
->>> v2 [Yoshihiro Kaneko]
->>> * As suggested by Wolfram Sang
->>> - use a definition instead of a magic value
->>>
->>>  drivers/mmc/host/tmio_mmc_pio.c | 6 ++++--
->>>  1 file changed, 4 insertions(+), 2 deletions(-)
->>>
->>> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
->>> index e3dcf31..a10fde4 100644
->>> --- a/drivers/mmc/host/tmio_mmc_pio.c
->>> +++ b/drivers/mmc/host/tmio_mmc_pio.c
->>> @@ -83,6 +83,8 @@ static int tmio_mmc_next_sg(struct tmio_mmc_host *host)
->>>         return --host->sg_len;
->>>  }
->>>
->>> +#define CMDREQ_TIMEOUT 5000
->>> +
->>>  #ifdef CONFIG_MMC_DEBUG
->>>
->>>  #define STATUS_TO_TEXT(a, status, i) \
->>> @@ -230,7 +232,7 @@ static void tmio_mmc_reset_work(struct work_struct *work)
->>>          */
->>>         if (IS_ERR_OR_NULL(mrq)
->>>             || time_is_after_jiffies(host->last_req_ts +
->>> -               msecs_to_jiffies(2000))) {
->>> +               msecs_to_jiffies(CMDREQ_TIMEOUT))) {
->>>                 spin_unlock_irqrestore(&host->lock, flags);
->>>                 return;
->>>         }
->>> @@ -818,7 +820,7 @@ static void tmio_mmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
->>>         ret = tmio_mmc_start_command(host, mrq->cmd);
->>>         if (!ret) {
->>>                 schedule_delayed_work(&host->delayed_reset_work,
->>> -                                     msecs_to_jiffies(2000));
->>> +                                     msecs_to_jiffies(CMDREQ_TIMEOUT));
->>>                 return;
->>>         }
->>>
->>> --
->>> 1.9.1
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->>
->>
->> --
->> Leon Romanovsky | Independent Linux Consultant
->>         www.leon.nu | leon@leon.nu
+>> diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
+>> index 5090d1a8f652e8be..cb4f7b2798fe23be 100644
+>> --- a/arch/arm/boot/dts/r8a73a4.dtsi
+>> +++ b/arch/arm/boot/dts/r8a73a4.dtsi
+>> @@ -207,6 +207,13 @@
+>>               reg = <0 0xe6050000 0 0x9000>;
+>>               gpio-controller;
+>>               #gpio-cells = <2>;
+>> +             gpio-ranges >> +                     <&pfc 0 0 31>, <&pfc 32 32 9>,
+>> +                     <&pfc 64 64 22>, <&pfc 96 96 31>,
+>> +                     <&pfc 128 128 7>, <&pfc 160 160 19>,
+>> +                     <&pfc 192 192 31>, <&pfc 224 224 27>,
+>> +                     <&pfc 256 256 28>, <&pfc 288 288 21>,
+>> +                     <&pfc 320 320 10>;
+>>               interrupts-extended >>                       <&irqc0  0 0>, <&irqc0  1 0>, <&irqc0  2 0>, <&irqc0  3 0>,
+>>                       <&irqc0  4 0>, <&irqc0  5 0>, <&irqc0  6 0>, <&irqc0  7 0>,
 
+Gr{oetje,eeting}s,
 
+                        Geert
 
--- 
-Leon Romanovsky | Independent Linux Consultant
-        www.leon.nu | leon@leon.nu
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
