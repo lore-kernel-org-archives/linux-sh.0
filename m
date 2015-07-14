@@ -1,59 +1,49 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 17 Jul 2015 09:10:04 +0000
-Subject: Re: [PATCH 0/5] R-Car DU: Add support for R8A7793 and R8A7794
-Message-Id: <CANqRtoSeaBExag+z7_yeJKYg1R+HpvJR_+FMpV2wZqQ85H=YrQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 14 Jul 2015 11:56:52 +0000
+Subject: [PATCH v2 1/4] pinctrl: sh-pfc: sh73a0: Remove obsolete multi-platform check
+Message-Id: <1436875015-13706-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437121567-18467-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-	<87twt3chh3.wl%kuninori.morimoto.gx@renesas.com>
-	<87oajbcg5n.wl%kuninori.morimoto.gx@renesas.com>
-	<2044648.OO6sEKHBOn@avalon>
-In-Reply-To: <2044648.OO6sEKHBOn@avalon>
+References: <1436875015-13706-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1436875015-13706-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, SH-Linux <linux-sh@vger.kernel.org>, dri-devel@lists.freedesktop.org
+To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Laurent,
+Since the removal of the sh73a0 legacy SoC code in commit
+9a9863987bf7307f ("ARM: shmobile: Remove legacy SoC code for SH-Mobile
+AG5"), sh73a0 is only supported in generic ARM multi-platform builds.
+Hence CONFIG_ARCH_MULTIPLATFORM is always set, and the check can be
+removed.
 
-On Fri, Jul 17, 2015 at 6:06 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Morimoto-san,
->
-> Thank you for your quick reply.
->
-> On Friday 17 July 2015 09:03:32 Kuninori Morimoto wrote:
->> Hi Laurent, again
->>
->> >> This patch series adds support for the DU found in the R8A7793 and
->> >> R8A7794 SoCs. It mostly consists of DT bindings updates (1/5 and 2/5)
->> >> with a small driver change in 2/5 to support fixed RGB output routing.
->> >> Patches 4/5 and 5/5 then add DU nodes to the r8a7793.dtsi and
->> >> r8a7794.dtsi, with patch 3/5 adding support for the DU0 clock to
->> >> r8a7794.dtsi.
->> >>
->> >> I will enable DU support for the Gose and Alt board in a later step when
->> >> I'll have access to the schematics. I won't be able to test that due to
->> >> lack of hardware though.
->> >>
->> >> The R8A7794 datasheet documents as single DU clock named DU0, while the
->> >> DU section documents DU0 and DU1 channels. I don't know at this point
->> >> whether this is a datasheet mistake or if the DU0 clock drives both
->> >> channels. I've opted for the latter, but I'd appreciate a confirmation.
->> >
->> > I will check it. please wait
->>
->> According to HW team, MSTP page of datasheet seems wrong
->> Maybe you have already tried, but,
->> can you access to MSTPSR1 :: 27bit (for DU1)
->
-> I would try if I had access to an Alt board :-)
->
-> Magnus, do you have an Alt board I could access remotely ?
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+The commit mentioned above is in -next, destined for v4.3.
 
-Not sure if it is hooked up right now, but I will make sure you can
-get access sometime soon.
+v2:
+  - Add Acked-by.
+---
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
-Cheers,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index d2efbfb776ac57d6..097526576f88181f 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -26,10 +26,6 @@
+ #include <linux/regulator/machine.h>
+ #include <linux/slab.h>
+ 
+-#ifndef CONFIG_ARCH_MULTIPLATFORM
+-#include <mach/irqs.h>
+-#endif
+-
+ #include "core.h"
+ #include "sh_pfc.h"
+ 
+-- 
+1.9.1
 
-/ magnus
