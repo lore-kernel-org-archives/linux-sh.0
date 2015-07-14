@@ -1,45 +1,55 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Jun 2015 13:03:34 +0000
-Subject: [PATCH 3/5] ARM: shmobile: r8a7791 dtsi: Use "arm,gic-400" for GIC
-Message-Id: <1434546216-10773-4-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 14 Jul 2015 07:25:22 +0000
+Subject: [PATCH v2] ARM: shmobile: r8a7779 Marzen legacy fix V2
+Message-Id: <20150714072522.2854.69938.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434546216-10773-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1434546216-10773-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Replace the "arm,cortex-a15-gic" compatible value for the GIC by
-"arm,gic-400", as the R-Car Gen2 GIC is assumed to be a GIC-400.
-This has been confirmed by reading the GICD_IIDR register, which reports
-0x0200043b (GIC-400 = 0x02, ARM = 0x43b).
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This has no effect on runtime behavior, as currently the GIC driver
-treats both compatible values the same.
+Unbreak the r8a7779 Marzen legacy code provided by marzen_defconfig.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+As it is today Marzen multiplatform is working, but the legacy code
+is broken. This patch intends to leave multiplatform as-is but do
+a simple one-shot fix to unbreak the legacy code base.
+
+Without this patch there is no preset delay and the TWD is defined
+both in C code and in DT. Solve the delay by invoking shmobile_init_delay()
+and simply disable TWD in case of building for legacy.
+
+Marzen legacy code will be removed in the near future, but until then
+we may as well avoid breaking it.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-You can read the GICD_IIDR register from U-Boot using
 
-    md 0xf1001008 1
----
- arch/arm/boot/dts/r8a7791.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ Developed and tested on top of renesas-devel-20150706-v4.2-rc1
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index dc1cd3f166060712..07ea2bebe4966da0 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -70,7 +70,7 @@
- 	};
+ arch/arm/Kconfig                       |    1 -
+ arch/arm/mach-shmobile/setup-r8a7779.c |    2 ++
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/Kconfig
++++ work/arch/arm/Kconfig	2015-07-14 16:00:38.902366518 +0900
+@@ -626,7 +626,6 @@ config ARCH_SHMOBILE_LEGACY
+ 	select CPU_V7
+ 	select GENERIC_CLOCKEVENTS
+ 	select HAVE_ARM_SCU if SMP
+-	select HAVE_ARM_TWD if SMP
+ 	select HAVE_SMP
+ 	select MIGHT_HAVE_CACHE_L2X0
+ 	select MULTI_IRQ_HANDLER
+--- 0003/arch/arm/mach-shmobile/setup-r8a7779.c
++++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2015-07-13 15:18:50.000000000 +0900
+@@ -677,6 +677,8 @@ void __init r8a7779_add_standard_devices
  
- 	gic: interrupt-controller@f1001000 {
--		compatible = "arm,cortex-a15-gic";
-+		compatible = "arm,gic-400";
- 		#interrupt-cells = <3>;
- 		#address-cells = <0>;
- 		interrupt-controller;
--- 
-1.9.1
-
+ void __init r8a7779_add_early_devices(void)
+ {
++	shmobile_init_delay();
++
+ 	early_platform_add_devices(r8a7779_early_devices,
+ 				   ARRAY_SIZE(r8a7779_early_devices));
+ 
