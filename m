@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 13 Jul 2015 16:51:30 +0000
-Subject: Re: [PATCH/RFC] usb: gadget: udc: core: Fix argument of dma_map_single for IOMMU
-Message-Id: <CAMuHMdX80Ztr+ypaFGc9bbODNx3RgY7wVM4RESjL_z-oeMvRdw@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 14 Jul 2015 00:59:25 +0000
+Subject: RE: [PATCH/RFC] usb: gadget: udc: core: Fix argument of dma_map_single for IOMMU
+Message-Id: <SG2PR06MB09198308BE5EBFF8E2E8306AD89B0@SG2PR06MB0919.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1436778605-5576-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 In-Reply-To: <1436778605-5576-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
@@ -10,32 +10,28 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Greg,
-
-On Mon, Jul 13, 2015 at 6:19 PM, Greg KH <gregkh@linuxfoundation.org> wrote:
-> On Mon, Jul 13, 2015 at 06:10:05PM +0900, Yoshihiro Shimoda wrote:
->> The dma_map_single and dma_unmap_single should set "gadget->dev.parent"
->> instead of "&gadget->dev" in the first argument because the parent has
->> a udc controller's device pointer.
->> Otherwise, iommu functions are not called in ARM environment.
->>
->> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
->> ---
->>  This patch is based on the Felipe's usb.git / testing/next branch.
->>  commit id = 298623983e74d935fc241d0eb1d0740cf4c32599
->
-> Why send something that has already been accepted into Felipe's tree?
-
-That commit ID does not refer to Shimoda-san's patch, but to the HEAD of
-Felipe's testing/next branch.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR2VlcnQtc2FuLA0KDQo+IFNlbnQ6IFR1ZXNkYXksIEp1bHkgMTQsIDIwMTUgMTo1MiBBTQ0K
+PiANCj4gSGkgR3JlZywNCj4gDQo+IE9uIE1vbiwgSnVsIDEzLCAyMDE1IGF0IDY6MTkgUE0sIEdy
+ZWcgS0ggPGdyZWdraEBsaW51eGZvdW5kYXRpb24ub3JnPiB3cm90ZToNCj4gPiBPbiBNb24sIEp1
+bCAxMywgMjAxNSBhdCAwNjoxMDowNVBNICswOTAwLCBZb3NoaWhpcm8gU2hpbW9kYSB3cm90ZToN
+Cj4gPj4gVGhlIGRtYV9tYXBfc2luZ2xlIGFuZCBkbWFfdW5tYXBfc2luZ2xlIHNob3VsZCBzZXQg
+ImdhZGdldC0+ZGV2LnBhcmVudCINCj4gPj4gaW5zdGVhZCBvZiAiJmdhZGdldC0+ZGV2IiBpbiB0
+aGUgZmlyc3QgYXJndW1lbnQgYmVjYXVzZSB0aGUgcGFyZW50IGhhcw0KPiA+PiBhIHVkYyBjb250
+cm9sbGVyJ3MgZGV2aWNlIHBvaW50ZXIuDQo+ID4+IE90aGVyd2lzZSwgaW9tbXUgZnVuY3Rpb25z
+IGFyZSBub3QgY2FsbGVkIGluIEFSTSBlbnZpcm9ubWVudC4NCj4gPj4NCj4gPj4gU2lnbmVkLW9m
+Zi1ieTogWW9zaGloaXJvIFNoaW1vZGEgPHlvc2hpaGlyby5zaGltb2RhLnVoQHJlbmVzYXMuY29t
+Pg0KPiA+PiAtLS0NCj4gPj4gIFRoaXMgcGF0Y2ggaXMgYmFzZWQgb24gdGhlIEZlbGlwZSdzIHVz
+Yi5naXQgLyB0ZXN0aW5nL25leHQgYnJhbmNoLg0KPiA+PiAgY29tbWl0IGlkID0gMjk4NjIzOTgz
+ZTc0ZDkzNWZjMjQxZDBlYjFkMDc0MGNmNGMzMjU5OQ0KPiA+DQo+ID4gV2h5IHNlbmQgc29tZXRo
+aW5nIHRoYXQgaGFzIGFscmVhZHkgYmVlbiBhY2NlcHRlZCBpbnRvIEZlbGlwZSdzIHRyZWU/DQo+
+IA0KPiBUaGF0IGNvbW1pdCBJRCBkb2VzIG5vdCByZWZlciB0byBTaGltb2RhLXNhbidzIHBhdGNo
+LCBidXQgdG8gdGhlIEhFQUQgb2YNCj4gRmVsaXBlJ3MgdGVzdGluZy9uZXh0IGJyYW5jaC4NCg0K
+VGhhbmsgeW91IGZvciB5b3VyIGNvbW1lbnQhIEkgbWVhbnQgdGhhdC4NCihJJ20gc29ycnkgZm9y
+IG15IGxhY2sgZXhwbGFuYXRpb24uKQ0KDQpCZXN0IHJlZ2FyZHMsDQpZb3NoaWhpcm8gU2hpbW9k
+YQ0KDQo+IEdye29ldGplLGVldGluZ31zLA0KPiANCj4gICAgICAgICAgICAgICAgICAgICAgICAg
+R2VlcnQNCj4gDQo+IC0tDQo+IEdlZXJ0IFV5dHRlcmhvZXZlbiAtLSBUaGVyZSdzIGxvdHMgb2Yg
+TGludXggYmV5b25kIGlhMzIgLS0gZ2VlcnRAbGludXgtbTY4ay5vcmcNCj4gDQo+IEluIHBlcnNv
+bmFsIGNvbnZlcnNhdGlvbnMgd2l0aCB0ZWNobmljYWwgcGVvcGxlLCBJIGNhbGwgbXlzZWxmIGEg
+aGFja2VyLiBCdXQNCj4gd2hlbiBJJ20gdGFsa2luZyB0byBqb3VybmFsaXN0cyBJIGp1c3Qgc2F5
+ICJwcm9ncmFtbWVyIiBvciBzb21ldGhpbmcgbGlrZSB0aGF0Lg0KPiAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgIC0tIExpbnVzIFRvcnZhbGRzDQo
