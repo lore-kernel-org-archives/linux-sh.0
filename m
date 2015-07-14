@@ -1,114 +1,49 @@
-From: Masami Hiramatsu <masami.hiramatsu.pt@hitachi.com>
-Date: Wed, 15 Jul 2015 03:09:08 +0000
-Subject: Re: Re: [PATCH 3/3] kexec: Change the timing of callbacks related to "crash_kexec_post_notifiers" bo
-Message-Id: <55A5CED4.7050400@hitachi.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 14 Jul 2015 11:56:54 +0000
+Subject: [PATCH v2 3/4] pinctrl: sh-pfc: r8a7740: Remove obsolete multi-platform check
+Message-Id: <1436875015-13706-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150710113331.4368.10495.stgit@softrs>
- <20150710113331.4368.77050.stgit@softrs> <20150714144248.GC10792@redhat.com>
-In-Reply-To: <20150714144248.GC10792@redhat.com>
+References: <1436875015-13706-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1436875015-13706-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 2015/07/14 23:42, Vivek Goyal wrote:
-> On Fri, Jul 10, 2015 at 08:33:31PM +0900, Hidehiro Kawai wrote:
->> This patch fixes problems reported by Daniel Walker
->> (https://lkml.org/lkml/2015/6/24/44), and also replaces the bug fix
->> commits 5375b70 and f45d85f.
->>
->> If "crash_kexec_post_notifiers" boot option is specified,
->> other cpus are stopped by smp_send_stop() before entering
->> crash_kexec(), while usually machine_crash_shutdown() called by
->> crash_kexec() does that.  This behavior change leads two problems.
->>
->>  Problem 1:
->>  Some function in the crash_kexec() path depend on other cpus being
->>  still online.  If other cpus have been offlined already, they
->>  doesn't work properly.
->>
->>   Example:
->>    panic()
->>     crash_kexec()
->>      machine_crash_shutdown()
->>       octeon_generic_shutdown() // shutdown watchdog for ONLINE cpus
->>      machine_kexec()
->>
->>  Problem 2:
->>  Most of architectures stop other cpus in the machine_crash_shutdown()
->>  path and save register information at the same time.  However, if
->>  smp_send_stop() is called before that, we can't save the register
->>  information.
->>
->> To solve these problems, this patch changes the timing of calling
->> the callbacks instead of changing the timing of crash_kexec() if
->> crash_kexec_post_notifiers boot option is specified.
->>
->>  Before:
->>   if (!crash_kexec_post_notifiers)
->>       crash_kexec()
->>
->>   smp_send_stop()
->>   atomic_notifier_call_chain()
->>   kmsg_dump()
->>
->>   if (crash_kexec_post_notifiers)
->>       crash_kexec()
->>
->>  After:
->>   crash_kexec()
->>       machine_crash_shutdown()
->>       if (crash_kexec_post_notifiers) {
->>           atomic_notifier_call_chain()
->>           kmsg_dump()
->>       }
->>       machine_kexec()
->>
->>   smp_send_stop()
->>   if (!crash_kexec_post_notifiers) {
->>       atomic_notifier_call_chain()
->>       kmsg_dump()
->>   }
->>
-> 
-> I think this new code flow looks bad. Now we are calling kmsg_dump()
-> and atomic_notifier_call_chain() from inside the crash_kexec() as well
-> as from inside panic(). This is bad.
-> 
-> So basic problem seems to be that cpus need to be stopped once (with
-> or without panic notifiers. So why don't we look into desiginig a 
-> function which stops cpus, saves register states first and then does
-> rest of the processing.
-> 
-> Something like.
-> 
-> stop_cpus_save_register_state;
-> 
-> if (!crash_kexec_post_notifiers)
-> 	crash_kexec()
-> 
-> atomic_notifier_call_chain()
-> kmsg_dump()
-> 
-> Here crash_kexec() will have to be modified and it will assume that cpus
-> have already been stopped and register states have already been saved.
+Since the removal of the r8a7740 legacy SoC code in commit
+44d88c754e57a6d9 ("ARM: shmobile: Remove legacy SoC code for R-Mobile
+A1"), r8a7740 is only supported in generic ARM multi-platform builds.
+Hence CONFIG_ARCH_MULTIPLATFORM is always set, and the check can be
+removed.
 
-Ah, nice! I like this idea :)
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+The commit mentioned above is in -next, destined for v4.3. Please apply.
 
-> 
-> IOW, is there a reason that we can't get rid of smp_send_stop() and
-> use the mechanism crash_kexec() is using to stop cpus after panic()?
+v2:
+  - Add Acked-by.
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
-I think there is no reason why we don't do so. smp_send_stop() just
-stops other cpus, but crash's one does more (collect registers and
-stop watchdogs if needed, etc.). why don't we just replace(improve) it?
-
-Thank you!
-
-
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index d0bb1459783a16d2..82ef1862dd1ba808 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -22,10 +22,6 @@
+ #include <linux/kernel.h>
+ #include <linux/pinctrl/pinconf-generic.h>
+ 
+-#ifndef CONFIG_ARCH_MULTIPLATFORM
+-#include <mach/irqs.h>
+-#endif
+-
+ #include "core.h"
+ #include "sh_pfc.h"
+ 
 -- 
-Masami HIRAMATSU
-Linux Technology Research Center, System Productivity Research Dept.
-Center for Technology Innovation - Systems Engineering
-Hitachi, Ltd., Research & Development Group
-E-mail: masami.hiramatsu.pt@hitachi.com
+1.9.1
+
