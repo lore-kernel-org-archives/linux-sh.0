@@ -1,34 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Jul 2015 08:44:47 +0000
-Subject: [PATCH 1/5] ARM: shmobile: Enable gose board in multiplatform defconfig
-Message-Id: <b059be7ecfa80550f635194f7c12578423177729.1437727455.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 14 Jul 2015 11:56:51 +0000
+Subject: [PATCH v2 0/4] pinctrl: sh-pfc: sh73a0/r8a7740 legacy is gone
+Message-Id: <1436875015-13706-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1437727455.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1437727455.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/configs/shmobile_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+	Hi Linus,
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 9961fbd633f8..c8e9caeb1c02 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -18,6 +18,7 @@ CONFIG_ARCH_R8A7778=y
- CONFIG_ARCH_R8A7779=y
- CONFIG_ARCH_R8A7790=y
- CONFIG_ARCH_R8A7791=y
-+CONFIG_ARCH_R8A7793=y
- CONFIG_ARCH_R8A7794=y
- CONFIG_ARCH_SH73A0=y
- CONFIG_MACH_MARZEN=y
+In -next, legacy support for the Renesas SH-Mobile AG5 (sh73a0) and
+R-Mobile A1 (r8a7740) SoCs has been removed, and these SoCs are now only
+supported in generic ARM multi-platform builds.
+
+Hence this patch series, which is the remaining part of series "[PATCH
+00/15] ARM: shmobile: Remove legacy sh73a0/kzm9g and r8a7740/armadillo"
+(http://www.spinics.net/lists/arm-kernel/msg425987.html) removes
+multi-platform checks and platform_device_id entries that are no longer
+needed.
+
+Changes in v2:
+  - Add Laurent's Acked-by.
+
+Thanks for applying!
+
+Geert Uytterhoeven (4):
+  pinctrl: sh-pfc: sh73a0: Remove obsolete multi-platform check
+  pinctrl: sh-pfc: Remove obsolete sh73a0 platform_device_id entry
+  pinctrl: sh-pfc: r8a7740: Remove obsolete multi-platform check
+  pinctrl: sh-pfc: Remove obsolete r8a7740 platform_device_id entry
+
+ drivers/pinctrl/sh-pfc/core.c        | 6 ------
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 4 ----
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c  | 4 ----
+ 3 files changed, 14 deletions(-)
+
 -- 
-2.1.4
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
