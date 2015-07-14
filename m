@@ -1,7 +1,7 @@
 From: Vivek Goyal <vgoyal@redhat.com>
-Date: Tue, 14 Jul 2015 14:20:04 +0000
+Date: Tue, 14 Jul 2015 15:02:08 +0000
 Subject: Re: [PATCH 1/3] panic: Disable crash_kexec_post_notifiers if kdump is not available
-Message-Id: <20150714142004.GB10792@redhat.com>
+Message-Id: <20150714150208.GD10792@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150710113331.4368.10495.stgit@softrs>
  <20150710113331.4368.63745.stgit@softrs>
@@ -39,11 +39,10 @@ On Tue, Jul 14, 2015 at 01:59:19PM +0000, dwalker@fifo99.com wrote:
 > Can you explain more, I don't really understand what you mean. Are you suggesting
 > the whole "crash_kexec_post_notifiers" feature has no value ?
 
-If CONFIG_KEXEC=n, then crash_kexec() is a nop. So it does not matter
-whether crash_kexec() is called before panic notifiers or after.
+Daniel,
 
-IOW, what do you gain by disabling crash_kexec_post_notifiers, in 
-case of CONFIG_KEXEC=n?
+BTW, why are you using crash_kexec_post_notifiers commandline? Why not
+without it?
 
 Thanks
 Vivek
