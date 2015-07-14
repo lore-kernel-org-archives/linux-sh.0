@@ -1,47 +1,40 @@
-From: Hidehiro Kawai <hidehiro.kawai.ez@hitachi.com>
-Date: Tue, 14 Jul 2015 01:56:13 +0000
+From: dwalker@fifo99.com
+Date: Tue, 14 Jul 2015 13:59:19 +0000
 Subject: Re: [PATCH 1/3] panic: Disable crash_kexec_post_notifiers if kdump is not available
-Message-Id: <55A46C3D.7000208@hitachi.com>
+Message-Id: <20150714135919.GA18333@fifo99.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150710113331.4368.10495.stgit@softrs>
  <20150710113331.4368.63745.stgit@softrs>
- <87wpy82kqf.fsf@x220.int.ebiederm.org> <20150713202611.GA16525@fifo99.com>
-In-Reply-To: <20150713202611.GA16525@fifo99.com>
+ <87wpy82kqf.fsf@x220.int.ebiederm.org>
+ <20150713202611.GA16525@fifo99.com>
+ <87h9p7r0we.fsf@x220.int.ebiederm.org>
+In-Reply-To: <87h9p7r0we.fsf@x220.int.ebiederm.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello Eric and Daniel,
+On Mon, Jul 13, 2015 at 08:19:45PM -0500, Eric W. Biederman wrote:
+> dwalker@fifo99.com writes:
+> 
+> > On Fri, Jul 10, 2015 at 08:41:28AM -0500, Eric W. Biederman wrote:
+> >> Hidehiro Kawai <hidehiro.kawai.ez@hitachi.com> writes:
+> >> 
+> >> > You can call panic notifiers and kmsg dumpers before kdump by
+> >> > specifying "crash_kexec_post_notifiers" as a boot parameter.
+> >> > However, it doesn't make sense if kdump is not available.  In that
+> >> > case, disable "crash_kexec_post_notifiers" boot parameter so that
+> >> > you can't change the value of the parameter.
+> >> 
+> >> Nacked-by: "Eric W. Biederman" <ebiederm@xmission.com>
+> >
+> > I think it would make sense if he just replaced "kdump" with "kexec".
+> 
+> It would be less insane, however it still makes no sense as without
+> kexec on panic support crash_kexec is a noop.  So the value of the
+> seeting makes no difference.
 
-(2015/07/14 5:26), dwalker@fifo99.com wrote:
-> On Fri, Jul 10, 2015 at 08:41:28AM -0500, Eric W. Biederman wrote:
->> Hidehiro Kawai <hidehiro.kawai.ez@hitachi.com> writes:
->>
->>> You can call panic notifiers and kmsg dumpers before kdump by
->>> specifying "crash_kexec_post_notifiers" as a boot parameter.
->>> However, it doesn't make sense if kdump is not available.  In that
->>> case, disable "crash_kexec_post_notifiers" boot parameter so that
->>> you can't change the value of the parameter.
->>
->> Nacked-by: "Eric W. Biederman" <ebiederm@xmission.com>
->>
->> You are confusing kexec on panic and CONFIG_CRASH_DUMP
->> which is about the tools for reading the state of the previous kernel.
+Can you explain more, I don't really understand what you mean. Are you suggesting
+the whole "crash_kexec_post_notifiers" feature has no value ?
 
-You are right.  I mistook the meaning of CONFIG_CRASH_DUMP.
-
-> I think it would make sense if he just replaced "kdump" with "kexec".
-
-If a user specified crash_kexec_post_notifiers option with kexec
-being totally disabled, it just disables notifier and kmsg dumper calls
-(please see PATCH 3/3). So as Daniel said, I also think it makes sense
-to hide crash_kexec_post_notifiers option if kexec is disabled.
-
-Regards,
-
--- 
-Hidehiro Kawai
-Hitachi, Ltd. Research & Development Group
-
-
+Daniel
