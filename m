@@ -1,37 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 30 Jul 2015 00:23:57 +0000
-Subject: [PATCH] ARM: shmobile: Enable fixed voltage regulator in shmobile_defconfig
-Message-Id: <4055a722d260ca30610fc52238d0aa49ff5bffa9.1438215768.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 14 Jul 2015 21:56:52 +0000
+Subject: [PATCH] ravb: do not invalidate cache for RX buffer twice
+Message-Id: <4759713.2ulGRKsd9L@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438215768.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1438215768.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-This is selected by MACH_MARZEN which is enabled in shmobile_defconfig,
-however, MACH_MARZEN is going away along with the board code it enables.
+First, dma_sync_single_for_cpu() shouldn't have been called in the first place
+(it's a streaming DMA API). dma_unmap_single() should have been called instead.
+Second, dma_unmap_single() call after handing the buffer to napi_gro_receive()
+makes little sense.
 
-Acked-by: Magnus Damm <damm@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/configs/shmobile_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+The patch is against Dave Miller's 'net.git' repo.
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 8da509327265..89bf31ccfbfa 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -122,6 +122,7 @@ CONFIG_WATCHDOG=y
- CONFIG_DA9063_WATCHDOG=y
- CONFIG_MFD_AS3711=y
- CONFIG_MFD_DA9063=y
-+CONFIG_REGULATOR_FIXED_VOLTAGE=y
- CONFIG_REGULATOR_AS3711=y
- CONFIG_REGULATOR_DA9210=y
- CONFIG_REGULATOR_GPIO=y
--- 
-2.1.4
+Don't know why I missed this DMA API misuse while working on the driver. :-<
+
+ drivers/net/ethernet/renesas/ravb_main.c |   10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+Index: net/drivers/net/ethernet/renesas/ravb_main.c
+=================================--- net.orig/drivers/net/ethernet/renesas/ravb_main.c
++++ net/drivers/net/ethernet/renesas/ravb_main.c
+@@ -543,10 +543,9 @@ static bool ravb_rx(struct net_device *n
+ 
+ 			skb = priv->rx_skb[q][entry];
+ 			priv->rx_skb[q][entry] = NULL;
+-			dma_sync_single_for_cpu(&ndev->dev,
+-						le32_to_cpu(desc->dptr),
+-						ALIGN(PKT_BUF_SZ, 16),
+-						DMA_FROM_DEVICE);
++			dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
++					 ALIGN(PKT_BUF_SZ, 16),
++					 DMA_FROM_DEVICE);
+ 			get_ts &= (q = RAVB_NC) ?
+ 					RAVB_RXTSTAMP_TYPE_V2_L2_EVENT :
+ 					~RAVB_RXTSTAMP_TYPE_V2_L2_EVENT;
+@@ -584,9 +583,6 @@ static bool ravb_rx(struct net_device *n
+ 			if (!skb)
+ 				break;	/* Better luck next round. */
+ 			ravb_set_buffer_align(skb);
+-			dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
+-					 ALIGN(PKT_BUF_SZ, 16),
+-					 DMA_FROM_DEVICE);
+ 			dma_addr = dma_map_single(&ndev->dev, skb->data,
+ 						  le16_to_cpu(desc->ds_cc),
+ 						  DMA_FROM_DEVICE);
 
