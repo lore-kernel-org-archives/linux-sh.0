@@ -1,20 +1,40 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 03 Jul 2015 00:14:30 +0000
-Subject: Re: [PATCH v2] arm: koelsch: make USB0 perform Host/Function switching
-Message-Id: <20150703001430.GB20396@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 15 Jul 2015 06:42:35 +0000
+Subject: [PATCH] ARM: shmobile: Enable fixed voltage regulator in shmobile_defconfig
+Message-Id: <1436942555-4851-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435824869-22784-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1435824869-22784-1-git-send-email-phil.edworthy-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Phil Edworthy <phil.edworthy-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kishon Vijay Abraham I <kishon-l0cyMroinI0@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Phil,
+This is selected by MACH_MARZEN which is enabled in shmobile_defconfig,
+however, MACH_MARZEN is going away along with the board code it enables.
 
-when you re-spin this patch could you change the prefix to the following?
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-ARM: shmobile: koelsch:
+---
 
-Thanks
+Tested on top of renesas-next-20150715-v4.2-rc1
+
+This patch is intended to be queued up before the patch that removes
+MACH_MARZEN, thus the wording above.
+---
+ arch/arm/configs/shmobile_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 38f0da00114e..fc15a19bfaf0 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -120,6 +120,7 @@ CONFIG_WATCHDOG=y
+ CONFIG_DA9063_WATCHDOG=y
+ CONFIG_MFD_AS3711=y
+ CONFIG_MFD_DA9063=y
++CONFIG_REGULATOR_FIXED_VOLTAGE=y
+ CONFIG_REGULATOR_AS3711=y
+ CONFIG_REGULATOR_DA9210=y
+ CONFIG_REGULATOR_GPIO=y
+-- 
+2.1.4
+
