@@ -1,43 +1,112 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 28 Jul 2015 04:23:22 +0000
-Subject: Re: [PATCH] ARM: shmobile: dts: Add common file for AA121TD01 panel
-Message-Id: <20150728042321.GB25714@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 15 Jul 2015 12:53:56 +0000
+Subject: Re: [PATCH/RFC] serial: sh-sci: Fix exclusion of work_fn_rx and sci_dma_rx_complete
+Message-Id: <CAMuHMdXMLaNUYg4zNu5WoyEE2_shTVxuc5ksfLPZvxzbYjNSyA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87bnf2rle6.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87bnf2rle6.wl%kuninori.morimoto.gx@renesas.com>
+References: <1434302839-31216-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1434302839-31216-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Tue, Jul 28, 2015 at 12:44:46PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Mon, Jul 27, 2015 at 3:20 PM, Simon Horman <horms@verge.net.au> wrote:
-> > Hi Magnus,
-> >
-> > On Mon, Jul 27, 2015 at 02:18:12PM +0900, Magnus Damm wrote:
-> >> Hi Morimoto-san,
-> >>
-> >> On Fri, Jul 24, 2015 at 5:52 PM, Kuninori Morimoto
-> >> <kuninori.morimoto.gx@renesas.com> wrote:
-> >> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >> >
-> >> > The Mitsubishi AA121TD01 panel is commonly used with the Marzen, Lager
-> >> > and Koelsch boards. Create a .dtsi file that describe the panel and its
-> >> > connection to the board.
-> >> >
-> >> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >> > ---
-> >>
-> >> Thanks for preparing and submitting this patch - very nice!
-> >
-> > Is that an Ack?
-> 
-> Close enough, but my intention was more of a thank-you to Morimoto-san
-> for preparing and submitting that patch upstream.
-> 
-> I propose that we wait for Morimoto-san and Laurent to sort out the
-> details about the panel.
+Hi Kaneko-san, Mizuguchi-san,
 
-Thanks, that seems reasonable.
+On Sun, Jun 14, 2015 at 7:27 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>
+> There is a problem when the sci_dma_rx_complete() is processed
+> before cancel process of work_fn_rx() completes by rx_timer_fn().
+> This patch locks work_fn_rx().
+>
+> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+
+Thanks for your patch!
+
+Unfortunately this is not sufficient. work_fn_rx() may race with
+sci_rx_dma_release(), too.
+
+> ---
+>
+> This patch is based on the tty-next branch of Greg Kroah-Hartman's tty
+> tree.
+>
+>  drivers/tty/serial/sh-sci.c | 13 +++++++------
+>  1 file changed, 7 insertions(+), 6 deletions(-)
+>
+> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+> index b74a644..ef59842 100644
+> --- a/drivers/tty/serial/sh-sci.c
+> +++ b/drivers/tty/serial/sh-sci.c
+> @@ -1423,14 +1423,16 @@ static void work_fn_rx(struct work_struct *work)
+>         struct uart_port *port = &s->port;
+>         struct dma_async_tx_descriptor *desc;
+>         int new;
+> +       unsigned long flags;
+>
+> +       spin_lock_irqsave(&port->lock, flags);
+>         if (s->active_rx = s->cookie_rx[0]) {
+>                 new = 0;
+>         } else if (s->active_rx = s->cookie_rx[1]) {
+>                 new = 1;
+>         } else {
+>                 dev_err(port->dev, "cookie %d not found!\n", s->active_rx);
+> -               return;
+> +               goto out;
+>         }
+>         desc = s->desc_rx[new];
+>
+> @@ -1440,36 +1442,35 @@ static void work_fn_rx(struct work_struct *work)
+>                 struct dma_chan *chan = s->chan_rx;
+>                 struct shdma_desc *sh_desc = container_of(desc,
+>                                         struct shdma_desc, async_tx);
+> -               unsigned long flags;
+>                 int count;
+>
+>                 dmaengine_terminate_all(chan);
+>                 dev_dbg(port->dev, "Read %zu bytes with cookie %d\n",
+>                         sh_desc->partial, sh_desc->cookie);
+>
+> -               spin_lock_irqsave(&port->lock, flags);
+>                 count = sci_dma_rx_push(s, sh_desc->partial);
+> -               spin_unlock_irqrestore(&port->lock, flags);
+>
+>                 if (count)
+>                         tty_flip_buffer_push(&port->state->port);
+>
+>                 sci_submit_rx(s);
+>
+> -               return;
+> +               goto out;
+>         }
+>
+>         s->cookie_rx[new] = desc->tx_submit(desc);
+>         if (s->cookie_rx[new] < 0) {
+>                 dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
+>                 sci_rx_dma_release(s, true);
+> -               return;
+> +               goto out;
+>         }
+>
+>         s->active_rx = s->cookie_rx[!new];
+>
+>         dev_dbg(port->dev, "%s: cookie %d #%d, new active #%d\n",
+>                 __func__, s->cookie_rx[new], new, s->active_rx);
+> +out:
+> +       spin_unlock_irqrestore(&port->lock, flags);
+>  }
+>
+>  static void work_fn_tx(struct work_struct *work)
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
