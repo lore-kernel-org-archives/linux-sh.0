@@ -1,56 +1,39 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 15 Jul 2015 10:45:34 +0000
+Date: Wed, 15 Jul 2015 12:11:07 +0000
 Subject: Re: [PATCH] ravb: do not invalidate cache for RX buffer twice
-Message-Id: <55A639CE.2030201@cogentembedded.com>
+Message-Id: <55A64DDB.4010108@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4759713.2ulGRKsd9L@wasted.cogentembedded.com>
-In-Reply-To: <4759713.2ulGRKsd9L@wasted.cogentembedded.com>
+ <55A639CE.2030201@cogentembedded.com>
+In-Reply-To: <55A639CE.2030201@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
+To: netdev@vger.kernel.org, David Miller <davem@davemloft.net>
 Cc: linux-sh@vger.kernel.org
 
-Hello.
+On 7/15/2015 1:45 PM, Sergei Shtylyov wrote:
 
-On 7/15/2015 12:56 AM, Sergei Shtylyov wrote:
+>> First, dma_sync_single_for_cpu() shouldn't have been called in the first place
+>> (it's a streaming DMA API). dma_unmap_single() should have been called instead.
+>                            ^
+>     Oops, I meant comma here.
 
-> First, dma_sync_single_for_cpu() shouldn't have been called in the first place
-> (it's a streaming DMA API). dma_unmap_single() should have been called instead.
-                             ^
-    Oops, I meant comma here.
+>> Second, dma_unmap_single() call after handing the buffer to napi_gro_receive()
+>> makes little sense.
 
-> Second, dma_unmap_single() call after handing the buffer to napi_gro_receive()
-> makes little sense.
+>     Moreover, 'desc->dptr' may not be valid at this point...
 
-    Moreover, 'desc->dptr' may not be valid at this point...
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->
-> ---
-> The patch is against Dave Miller's 'net.git' repo.
+>> ---
+>> The patch is against Dave Miller's 'net.git' repo.
 
-> Don't know why I missed this DMA API misuse while working on the driver. :-<
+>> Don't know why I missed this DMA API misuse while working on the driver. :-<
 
-    Dave, do you want me to resend the patch with fixed up changelog?
+>     Dave, do you want me to resend the patch with fixed up changelog?
 
->   drivers/net/ethernet/renesas/ravb_main.c |   10 +++-------
->   1 file changed, 3 insertions(+), 7 deletions(-)
->
-> Index: net/drivers/net/ethernet/renesas/ravb_main.c
-> =================================> --- net.orig/drivers/net/ethernet/renesas/ravb_main.c
-> +++ net/drivers/net/ethernet/renesas/ravb_main.c
-[...]
-> @@ -584,9 +583,6 @@ static bool ravb_rx(struct net_device *n
->   			if (!skb)
->   				break;	/* Better luck next round. */
->   			ravb_set_buffer_align(skb);
-> -			dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
-> -					 ALIGN(PKT_BUF_SZ, 16),
-> -					 DMA_FROM_DEVICE);
->   			dma_addr = dma_map_single(&ndev->dev, skb->data,
->   						  le16_to_cpu(desc->ds_cc),
->   						  DMA_FROM_DEVICE);
+    Oops, forgot to CC Dave. :-(
 
 WBR, Sergei
 
