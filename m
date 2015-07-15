@@ -1,90 +1,88 @@
-From: Masami Hiramatsu <masami.hiramatsu.pt@hitachi.com>
-Date: Wed, 15 Jul 2015 05:16:51 +0000
-Subject: Re: Re: [PATCH 1/3] panic: Disable crash_kexec_post_notifiers if kdump is not available
-Message-Id: <55A5ECC3.5060803@hitachi.com>
+From: Hidehiro Kawai <hidehiro.kawai.ez@hitachi.com>
+Date: Wed, 15 Jul 2015 10:49:42 +0000
+Subject: Re: [PATCH 1/3] panic: Disable crash_kexec_post_notifiers if kdump is not available
+Message-Id: <55A63AC6.4040806@hitachi.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150714135919.GA18333@fifo99.com>
+References: <20150710113331.4368.10495.stgit@softrs>
+ <20150710113331.4368.63745.stgit@softrs>
+ <87wpy82kqf.fsf@x220.int.ebiederm.org> <20150713202611.GA16525@fifo99.com>
+ <87h9p7r0we.fsf@x220.int.ebiederm.org> <20150714135919.GA18333@fifo99.com>
  <20150714150208.GD10792@redhat.com> <20150714153430.GA18766@fifo99.com>
- <20150714154040.GA3912@redhat.com> <20150714154833.GA18883@fifo99.com>
- <20150714161612.GH10792@redhat.com> <87a8uyoeig.fsf@x220.int.ebiederm.org>
- <20150714172953.GA19135@fifo99.com> <20150714175527.GI10792@redhat.com>
- <87si8qmxef.fsf@x220.int.ebiederm.org> <20150714182336.GB3912@redhat.com>
-In-Reply-To: <20150714182336.GB3912@redhat.com>
+ <20150714154040.GA3912@redhat.com>
+In-Reply-To: <20150714154040.GA3912@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 2015/07/15 3:23, Vivek Goyal wrote:
-> On Tue, Jul 14, 2015 at 01:01:12PM -0500, Eric W. Biederman wrote:
->> Vivek Goyal <vgoyal@redhat.com> writes:
->>
->>> On Tue, Jul 14, 2015 at 05:29:53PM +0000, dwalker@fifo99.com wrote:
->>>
->>> [..]
->>>>>>>> If a machine is failing, there are high chance it can't deliver you the
->>>>>>>> notification. Detecting that failure suing some kind of polling mechanism
->>>>>>>> might be more reliable. And it will make even kdump mechanism more
->>>>>>>> reliable so that it does not have to run panic notifiers after the crash.
+(2015/07/15 0:40), Vivek Goyal wrote:
+> On Tue, Jul 14, 2015 at 03:34:30PM +0000, dwalker@fifo99.com wrote:
+>> On Tue, Jul 14, 2015 at 11:02:08AM -0400, Vivek Goyal wrote:
+>>> On Tue, Jul 14, 2015 at 01:59:19PM +0000, dwalker@fifo99.com wrote:
+>>>> On Mon, Jul 13, 2015 at 08:19:45PM -0500, Eric W. Biederman wrote:
+>>>>> dwalker@fifo99.com writes:
+>>>>>
+>>>>>> On Fri, Jul 10, 2015 at 08:41:28AM -0500, Eric W. Biederman wrote:
+>>>>>>> Hidehiro Kawai <hidehiro.kawai.ez@hitachi.com> writes:
 >>>>>>>
->>>>>>> I think what your suggesting is that my company should change how it's hardware works
->>>>>>> and that's not really an option for me. This isn't a simple thing like checking over the
->>>>>>> network if the machine is down or not, this is way more complex hardware design.
+>>>>>>>> You can call panic notifiers and kmsg dumpers before kdump by
+>>>>>>>> specifying "crash_kexec_post_notifiers" as a boot parameter.
+>>>>>>>> However, it doesn't make sense if kdump is not available.  In that
+>>>>>>>> case, disable "crash_kexec_post_notifiers" boot parameter so that
+>>>>>>>> you can't change the value of the parameter.
+>>>>>>>
+>>>>>>> Nacked-by: "Eric W. Biederman" <ebiederm@xmission.com>
 >>>>>>
->>>>>> That means you are ready to live with an unreliable design. There might be
->>>>>> cases where notifier does not get run properly and you will not do switch
->>>>>> despite the fact that OS has failed. I was just trying to nudge you in
->>>>>> a direction which could be more reliable mechanism.
+>>>>>> I think it would make sense if he just replaced "kdump" with "kexec".
 >>>>>
->>>>> Sigh I see some deep confusion going on here.
->>>>>
->>>>> The panic notifiers are just that panic notifiers.  They have not been
->>>>> nor should they be tied to kexec.   If those notifiers force a switch
->>>>> over of between machines I fail to see why you would care if it was
->>>>> kexec or another panic situation that is forcing that switchover.
+>>>>> It would be less insane, however it still makes no sense as without
+>>>>> kexec on panic support crash_kexec is a noop.  So the value of the
+>>>>> seeting makes no difference.
 >>>>
->>>> Hidehiro isn't fixing the failover situation on my side, he's fixing register
->>>> information collection when crash_kexec_post_notifiers is used.
+>>>> Can you explain more, I don't really understand what you mean. Are you suggesting
+>>>> the whole "crash_kexec_post_notifiers" feature has no value ?
 >>>
->>> Sure. Given that we have created this new parameter, let us fix it so that
->>> we can capture the other cpu register state in crash dump.
+>>> Daniel,
 >>>
->>> I am little disappointed that it was not tested well when this parameter was
->>> introuced. We should have atleast tested it to the extent to see if there
->>> is proper cpu state present for all cpus in the crash dump.
->>>
->>> At that point of time it looked like a simple modification
->>> to allow panic notifiers before crash_kexec().
+>>> BTW, why are you using crash_kexec_post_notifiers commandline? Why not
+>>> without it?
 >>
->> Either that or we say no one cares enough, and it known broken so let's
->> just revert the fool thing.
+>> It was explained in the prior thread but to rehash, the notifiers are used to do a switch
+>> over from the crashed machine to another redundant machine.
 > 
-> Masami, you introduced this option. Are you fine with the revert? Is it
-> really being used and tested?
+> So why not detect failure using polling or issue notifications from second
+> kernel.
 
-Actually, it is tested but under very limited situation. I think we
-need a clear acceptance criteria, IOW, we need a testset for kdump
-so that we can make things better.
-Would you have it? maybe we can push it into kselftest.
+Polling is not sufficient because some kernel parts may be
+alive even if the responder of the polling is dead.  We want
+to notify the failure after stopping other CPUs.
 
->> I honestly can't see how to support panic notifiers, before kexec.
->> There is no way to tell what is being done and all of the pieces
->> including smp_send_stop are known to be buggy.
-> 
-> we should be able to replace smp_send_stop() with what crash_kexec() is
-> doing to stop the machine? If yes, then it should be fine I guess. This
-> parameter description clearly says that specify it at your own risk. So
-> we are not issuing a big support statement for successful kdump after
-> panic notifiers. If it is something fixable, otherwise user needs
-> to deal with it.
+Notifying from second kernel needs to wait for the kernel
+booted up and device initialization if needed, and this
+is not applicable if we want to do fast switchover.
 
-Agreed (as I've sent in other replay).
+Notifying just before second kernel, as Eric stated, is
+one of the reliable option although we can't do complicate
+things there.  For example, we can notify the failure by
+writing some specific I/O registers in purgatory codes
+provided by kexec command.  Since the purgatory codes are
+currently embedded into kexec command, so we might need to
+modify the mechanism to be pluggable because how to notify
+will differ among vendors.
 
-Thank you,
+Anyway, this is the case of switchover use case.  If we want
+to save minimal information before kdump, notifiers or
+kmsg_dump() can be used.
 
--- 
-Masami HIRAMATSU
-Linux Technology Research Center, System Productivity Research Dept.
-Center for Technology Innovation - Systems Engineering
-Hitachi, Ltd., Research & Development Group
-E-mail: masami.hiramatsu.pt@hitachi.com
+> IOW, expecting that a crashed machine will be able to deliver notification
+> reliably is falwed to begin with, IMHO.
+
+I think it depends on what callback is used.  Most of panic
+notifiers just do memory copy or I/O register access.
+Of course, there are relatively complicate notifiers too,
+and I'm preparing patch sets for hardening for that case.
+
+Regards,
+Hidehiro Kawai
+
+
