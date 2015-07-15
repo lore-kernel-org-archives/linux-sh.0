@@ -1,34 +1,26 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 27 Jul 2015 12:35:46 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Defconfig Updates for v4.3
-Message-Id: <20150727123546.GH14224@localhost>
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Date: Wed, 15 Jul 2015 23:17:58 +0000
+Subject: Re: [PATCH v4 1/1] V4L2: platform: Add Renesas R-Car JPEG codec driver.
+Message-Id: <CALi4nhrbYb9Mo+vgQuhDUN2YA+16kcQgLojf-a8_yZne_X3iTA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1437727455.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1437727455.git.horms+renesas@verge.net.au>
+References: <1435318645-20565-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
+In-Reply-To: <1435318645-20565-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Hans Verkuil <hverkuil@xs4all.nl>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "j.anaszewski" <j.anaszewski@samsung.com>, Kamil Debski <kamil@wypas.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 
-On Fri, Jul 24, 2015 at 05:44:49PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC defconfig updates for v4.3.
-> 
-> 
-> The following changes since commit d770e558e21961ad6cfdf0ff7df0eb5d7d4f0754:
-> 
->   Linux 4.2-rc1 (2015-07-05 11:01:52 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v4.3
-> 
-> for you to fetch changes up to 821e79cb5686695f0adaef61587a184e953a937e:
-> 
->   ARM: shmobile: Remove marzen_defconfig (2015-07-17 08:29:45 +0900)
+Hello,
 
-Merged, thanks.
+If you have any comments or suggestion, please let me know :)
+Asking because it seems stuck for nearly a 3 weeks...
 
 
--Olof
+2015-06-26 14:37 GMT+03:00 Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>:
+> Here's the driver for the Renesas R-Car JPEG processing unit.
+
+[snip]
+
+-- 
+W.B.R, Mikhail.
