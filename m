@@ -1,29 +1,41 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 12 Jul 2015 21:12:33 +0000
-Subject: Re: [PATCH v2 3/5] i2c: emev2: add driver
-Message-Id: <2917132.jbtRA6ZB7M@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 16 Jul 2015 07:53:42 +0000
+Subject: [PATCH 00/03] ARM: shmobile: r8a7779 Marzen legacy removal
+Message-Id: <20150716075342.1198.63257.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436600786-3068-1-git-send-email-wsa@the-dreams.de> <1436600786-3068-4-git-send-email-wsa@the-dreams.de> <20150711100312.GA1536@katana>
-In-Reply-To: <20150711100312.GA1536@katana>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Ian Molton <ian.molton-4yDnlxn2s6sWdaTGBSpHTA@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-On Saturday 11 July 2015 12:03:13 Wolfram Sang wrote:
-> > +	dev_info(&pdev->dev, "Added i2c controller %d irq %d @ 0x%zx\n",
-> > +		priv->adap.nr, irq, r->start);
-> 
-> I removed the address printout entirely. It is part of the dev_*
-> printout already and I got a format warning from buildbot.
+ARM: shmobile: r8a7779 Marzen legacy removal
 
-With that change,
+[PATCH 01/03] ARM: shmobile: marzen: Remove legacy board code
+[PATCH 02/03] ARM: shmobile: r8a7779: Remove legacy SoC code
+[PATCH 03/03] ARM: shmobile: Remove marzen_defconfig
 
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+This series removes the r8a7779 Marzen legacy code. Board
+code for Marzen written in C and r8a7779 SoC code including
+old clock framework code and platform devices are removed.
 
--- 
-Regards,
+Existing Marzen users need to move over to Multiplatform and
+shmobile_defconfig. The DT file r8a7779-marzen.dts file is
+the same as for the legacy case.
 
-Laurent Pinchart
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
+ Built on top of renesas-devel-20150716-v4.2-rc2
+ No special dependencies
+
+ arch/arm/boot/dts/Makefile             |    3 
+ arch/arm/configs/marzen_defconfig      |  124 -----
+ arch/arm/mach-shmobile/Kconfig         |    7 
+ arch/arm/mach-shmobile/Makefile        |    2 
+ arch/arm/mach-shmobile/Makefile.boot   |    1 
+ arch/arm/mach-shmobile/board-marzen.c  |  347 ----------------
+ arch/arm/mach-shmobile/clock-r8a7779.c |  271 ------------
+ arch/arm/mach-shmobile/r8a7779.h       |   17 
+ arch/arm/mach-shmobile/setup-r8a7779.c |  676 --------------------------------
+ arch/arm/mach-shmobile/smp-r8a7779.c   |    9 
+ 10 files changed, 5 insertions(+), 1452 deletions(-)
