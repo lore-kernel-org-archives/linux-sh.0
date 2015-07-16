@@ -1,54 +1,62 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 21 Jul 2015 00:27:24 +0000
-Subject: [PATCH 4/4] ARM: shmobile: r8a7791: Add Audio MIX support on DTSI
-Message-Id: <87oaj6cq8a.wl%kuninori.morimoto.gx@renesas.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 16 Jul 2015 09:00:34 +0000
+Subject: Re: [PATCH 0/7] ARM: shmobile: Move gpio ranges from C code to DT
+Message-Id: <CACRpkdYFE1xDV75_ecR36OTePPm8Ta_O1G1fSqOHO=s4TQw20A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389082976-22254-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1389082976-22254-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1435650327-2542-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1435650327-2542-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Tue, Jun 30, 2015 at 9:45 AM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/boot/dts/r8a7791.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
+>         Hi Linus, Alex, Laurent, Simon, Magnus,
+>
+> This patch series moves the setup of the GPIO-PFC pin mapping for
+> Renesas PFC/GPIO combos from C code to DT, and does some cleanups.
+> The move to DT is needed to make the GPIO hogging mechanism work, cfr.
+> the discussion following "[PATCH] [RFC] gpio: Retry deferred GPIO
+> hogging on pin range change" (https://lkml.org/lkml/2015/6/16/455).
+>
+> The series consists of 3 parts:
+>   a. Patches 1-3 add the missing "gpio-ranges" properties to the dtsi
+>      files for all affected SoCs,
+>   b. Patch 4 disables the C code to set up the mapping on DT platforms
+>      (it's still needed on SH or ARM-legacy),
+>   c. Patches 5-7 do a few more cleanups in the sh-pfc gpio code.
+>
+> Dependencies:
+>   - This series applies against next-next-20150630.
+>   - Part a must go in first, to avoid regressions.
+>     In addition, it's a prerequisite for "ARM: shmobile: armadillo800eva
+>     dts: Add pinctrl and gpio-hog for lcdc0", which has been queued up
+>     already in Simon's dt-for-v4.3 branch. Perhaps it can still be
+>     reordered?
+>   - While I didn't notice any bad behavior by having part a only, part b
+>     should go in immediately after part a. Hence I think it's best if
+>     Simon can take this one, too.
+>   - Part c is independent (it doesn't touch the same code), so it can go
+>     in before or after the other parts, or in parallel.
+>
+> Thanks for applying!
+>
+> Geert Uytterhoeven (7):
+>   ARM: shmobile: r8a73a4 dtsi: Add missing "gpio-ranges" to gpio node
+>   ARM: shmobile: r8a7740 dtsi: Add missing "gpio-ranges" to gpio node
+>   ARM: shmobile: sh73a0 dtsi: Add missing "gpio-ranges" to gpio node
+>   pinctrl: sh-pfc: Stop calling gpiochip_add_pin_range() on DT platforms
+>   pinctrl: sh-pfc: Remove empty gpio_function_free()
+>   pinctrl: sh-pfc: Move sh_pfc_add_gpiochip() up
+>   pinctrl: sh-pfc: Confine legacy function GPIOs to SH
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index cdd55b8..d37339bd7 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1586,6 +1586,7 @@
- 			<&mstp10_clks R8A7791_CLK_SCU_SRC3>, <&mstp10_clks R8A7791_CLK_SCU_SRC2>,
- 			<&mstp10_clks R8A7791_CLK_SCU_SRC1>, <&mstp10_clks R8A7791_CLK_SCU_SRC0>,
- 			<&mstp10_clks R8A7791_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7791_CLK_SCU_CTU1_MIX1>,
-+			<&mstp10_clks R8A7791_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7791_CLK_SCU_CTU1_MIX1>,
- 			<&mstp10_clks R8A7791_CLK_SCU_DVC0>, <&mstp10_clks R8A7791_CLK_SCU_DVC1>,
- 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
- 		clock-names = "ssi-all",
-@@ -1594,6 +1595,7 @@
- 				"src.9", "src.8", "src.7", "src.6", "src.5",
- 				"src.4", "src.3", "src.2", "src.1", "src.0",
- 				"ctu.0", "ctu.1",
-+				"mix.0", "mix.1",
- 				"dvc.0", "dvc.1",
- 				"clk_a", "clk_b", "clk_c", "clk_i";
- 
-@@ -1610,6 +1612,11 @@
- 			};
- 		};
- 
-+		rcar_sound,mix {
-+			mix0: mix@0 { };
-+			mix1: mix@1 { };
-+		};
-+
- 		rcar_sound,ctu {
- 			ctu00: ctu@0 { };
- 			ctu01: ctu@1 { };
--- 
-1.9.1
+I'm happy of shmobile people are happy.
 
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+
+For all.
+
+Yours,
+Linus Walleij
