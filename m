@@ -1,69 +1,73 @@
-From: "Kirill A. Shutemov" <kirill@shutemov.name>
-Date: Mon, 27 Jul 2015 06:43:00 +0000
-Subject: Re: [PATCH V5 2/7] mm: mlock: Add new mlock system call
-Message-Id: <20150727064300.GB11657@node.dhcp.inet.fi>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 16 Jul 2015 08:44:07 +0000
+Subject: [PATCH] drm: rcar-du: Add dependency to OF
+Message-Id: <1437036247-30168-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437773325-8623-1-git-send-email-emunson@akamai.com>
- <1437773325-8623-3-git-send-email-emunson@akamai.com>
-In-Reply-To: <1437773325-8623-3-git-send-email-emunson@akamai.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Eric B Munson <emunson@akamai.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Michal Hocko <mhocko@suse.cz>, Vlastimil Babka <vbabka@suse.cz>, Heiko Carstens <heiko.carstens@de.ibm.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Catalin Marinas <catalin.marinas@arm.com>, Stephen Rothwell <sfr@canb.auug.org.au>, Guenter Roeck <linux@roeck-us.net>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-cris-kernel@axis.com, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-am33-list@redhat.com, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-On Fri, Jul 24, 2015 at 05:28:40PM -0400, Eric B Munson wrote:
-> With the refactored mlock code, introduce a new system call for mlock.
-> The new call will allow the user to specify what lock states are being
-> added.  mlock2 is trivial at the moment, but a follow on patch will add
-> a new mlock state making it useful.
-> 
-> Signed-off-by: Eric B Munson <emunson@akamai.com>
-> Cc: Michal Hocko <mhocko@suse.cz>
-> Cc: Vlastimil Babka <vbabka@suse.cz>
-> Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-> Cc: Geert Uytterhoeven <geert@linux-m68k.org>
-> Cc: Catalin Marinas <catalin.marinas@arm.com>
-> Cc: Stephen Rothwell <sfr@canb.auug.org.au>
-> Cc: Guenter Roeck <linux@roeck-us.net>
-> Cc: linux-alpha@vger.kernel.org
-> Cc: linux-kernel@vger.kernel.org
-> Cc: linux-arm-kernel@lists.infradead.org
-> Cc: adi-buildroot-devel@lists.sourceforge.net
-> Cc: linux-cris-kernel@axis.com
-> Cc: linux-ia64@vger.kernel.org
-> Cc: linux-m68k@lists.linux-m68k.org
-> Cc: linux-am33-list@redhat.com
-> Cc: linux-parisc@vger.kernel.org
-> Cc: linuxppc-dev@lists.ozlabs.org
-> Cc: linux-s390@vger.kernel.org
-> Cc: linux-sh@vger.kernel.org
-> Cc: sparclinux@vger.kernel.org
-> Cc: linux-xtensa@linux-xtensa.org
-> Cc: linux-api@vger.kernel.org
-> Cc: linux-arch@vger.kernel.org
-> Cc: linux-mm@kvack.org
-> ---
-> Changes from V4:
-> * Drop all architectures except x86[_64] from this patch, MIPS is added
->   later in the series.  All others will be left to their maintainers.
-> 
-> Changes from V3:
-> * Do a (hopefully) complete job of adding the new system calls
->  arch/alpha/include/uapi/asm/mman.h     | 2 ++
->  arch/mips/include/uapi/asm/mman.h      | 5 +++++
->  arch/parisc/include/uapi/asm/mman.h    | 2 ++
->  arch/powerpc/include/uapi/asm/mman.h   | 2 ++
->  arch/sparc/include/uapi/asm/mman.h     | 2 ++
->  arch/tile/include/uapi/asm/mman.h      | 5 +++++
->  arch/x86/entry/syscalls/syscall_32.tbl | 1 +
->  arch/x86/entry/syscalls/syscall_64.tbl | 1 +
->  arch/xtensa/include/uapi/asm/mman.h    | 5 +++++
+The driver requires OF support, add a dependency in Kconfig and remove
+the platform_device_id table that isn't used anymore.
 
-Define MLOCK_LOCKED in include/uapi/asm-generic/mman-common.h.
-This way you can drop changes in powerpc, sparc and tile.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/Kconfig       |  2 +-
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c | 11 +----------
+ 2 files changed, 2 insertions(+), 11 deletions(-)
 
-Otherwise looks good.
-
+diff --git a/drivers/gpu/drm/rcar-du/Kconfig b/drivers/gpu/drm/rcar-du/Kconfig
+index 11485a4a16ae..d4e0a39568f6 100644
+--- a/drivers/gpu/drm/rcar-du/Kconfig
++++ b/drivers/gpu/drm/rcar-du/Kconfig
+@@ -1,6 +1,6 @@
+ config DRM_RCAR_DU
+ 	tristate "DRM Support for R-Car Display Unit"
+-	depends on DRM && ARM && HAVE_DMA_ATTRS
++	depends on DRM && ARM && HAVE_DMA_ATTRS && OF
+ 	depends on ARCH_SHMOBILE || COMPILE_TEST
+ 	select DRM_KMS_HELPER
+ 	select DRM_KMS_CMA_HELPER
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index fb6709160a59..a9c445f1ebff 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -106,13 +106,6 @@ static const struct rcar_du_device_info rcar_du_r8a7791_info = {
+ 	.num_lvds = 1,
+ };
+ 
+-static const struct platform_device_id rcar_du_id_table[] = {
+-	{ "rcar-du-r8a7779", (kernel_ulong_t)&rcar_du_r8a7779_info },
+-	{ }
+-};
+-
+-MODULE_DEVICE_TABLE(platform, rcar_du_id_table);
+-
+ static const struct of_device_id rcar_du_of_table[] = {
+ 	{ .compatible = "renesas,du-r8a7779", .data = &rcar_du_r8a7779_info },
+ 	{ .compatible = "renesas,du-r8a7790", .data = &rcar_du_r8a7790_info },
+@@ -165,8 +158,7 @@ static int rcar_du_load(struct drm_device *dev, unsigned long flags)
+ 	init_waitqueue_head(&rcdu->commit.wait);
+ 
+ 	rcdu->dev = &pdev->dev;
+-	rcdu->info = np ? of_match_device(rcar_du_of_table, rcdu->dev)->data
+-		   : (void *)platform_get_device_id(pdev)->driver_data;
++	rcdu->info = of_match_device(rcar_du_of_table, rcdu->dev)->data;
+ 	rcdu->ddev = dev;
+ 	dev->dev_private = rcdu;
+ 
+@@ -338,7 +330,6 @@ static struct platform_driver rcar_du_platform_driver = {
+ 		.pm	= &rcar_du_pm_ops,
+ 		.of_match_table = rcar_du_of_table,
+ 	},
+-	.id_table	= rcar_du_id_table,
+ };
+ 
+ module_platform_driver(rcar_du_platform_driver);
 -- 
- Kirill A. Shutemov
+Regards,
+
+Laurent Pinchart
+
