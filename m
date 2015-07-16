@@ -1,43 +1,81 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:37:02 +0000
-Subject: [PATCH 15/16] ARM: shmobile: R-Car Gen2: CONFIG_ARCH_SHMOBILE_MULTI is always set
-Message-Id: <d62ba10c31ac16aaa16f5b49308658ea2f1e71a9.1436509680.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 16 Jul 2015 18:21:57 +0000
+Subject: [PATCH/RFC v2 26/29] serial: sh-sci: Do not resubmit DMA descriptors
+Message-Id: <1437070920-28069-27-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436509680.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436509680.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Unlike the old shdmac DMA engine driver, the new rcar-dmac DMA engine
+driver does not support resubmitting a DMA descriptor.
+If a DMA slave resubmits a descriptor, the descriptor will be added to
+the "pending list", while it wasn't removed from the "wait" list. This
+will cause list corruption, leading to an infinite loop in
+rcar_dmac_chan_reinit().
 
-Since commit e042681894b62d60 ("ARM: shmobile: r8a7790: Remove legacy
-code"), all R-Car Gen2 SoCs are supported by multiplatform kernels only.
-As CONFIG_ARCH_SHMOBILE_MULTI is always set for shmobile multiplatform
-kernels, we can remove related #ifdefs in code specific to R-Car Gen2
-SoCs.
+As a (temporary?) workaround, pass DMA_CTRL_ACK to
+dmaengine_prep_slave_sg(), and prepare a new DMA descriptor instead of
+reusing the old one.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 2 --
- 1 file changed, 2 deletions(-)
+ drivers/tty/serial/sh-sci.c | 27 ++++++++++++++++++++-------
+ 1 file changed, 20 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index 5d13595aa027..aa3339258d9c 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -128,9 +128,7 @@ void __init rcar_gen2_timer_init(void)
- #endif /* CONFIG_ARM_ARCH_TIMER */
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 2c6a58595016fe07..0e99c570e2da4d64 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1414,7 +1414,8 @@ static void sci_submit_rx(struct sci_port *s)
+ 		struct dma_async_tx_descriptor *desc;
  
- 	rcar_gen2_clocks_init(mode);
--#ifdef CONFIG_ARCH_SHMOBILE_MULTI
- 	clocksource_of_init();
--#endif
+ 		desc = dmaengine_prep_slave_sg(chan,
+-			sg, 1, DMA_DEV_TO_MEM, DMA_PREP_INTERRUPT);
++			sg, 1, DMA_DEV_TO_MEM,
++			DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+ 		if (!desc)
+ 			goto fail;
+ 
+@@ -1491,19 +1492,31 @@ static void work_fn_rx(struct work_struct *work)
+ 		return;
+ 	}
+ 
++	desc = dmaengine_prep_slave_sg(s->chan_rx, &s->sg_rx[new], 1,
++				       DMA_DEV_TO_MEM,
++				       DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
++	if (!desc)
++		goto fail;
++
++	s->desc_rx[new] = desc;
++	desc->callback = sci_dma_rx_complete;
++	desc->callback_param = s;
+ 	s->cookie_rx[new] = dmaengine_submit(desc);
+-	if (dma_submit_error(s->cookie_rx[new])) {
+-		dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
+-		spin_unlock_irqrestore(&port->lock, flags);
+-		sci_rx_dma_release(s, true);
+-		return;
+-	}
++	if (dma_submit_error(s->cookie_rx[new]))
++		goto fail;
+ 
+ 	s->active_rx = s->cookie_rx[!new];
+ 
+ 	dev_dbg(port->dev, "%s: cookie %d #%d, new active cookie %d\n",
+ 		__func__, s->cookie_rx[new], new, s->active_rx);
+ 	spin_unlock_irqrestore(&port->lock, flags);
++	return;
++
++fail:
++	spin_unlock_irqrestore(&port->lock, flags);
++	dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
++	sci_rx_dma_release(s, true);
++	return;
  }
  
- struct memory_reserve_config {
+ static void work_fn_tx(struct work_struct *work)
 -- 
-2.1.4
+1.9.1
 
