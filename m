@@ -1,126 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Jul 2015 08:41:45 +0000
-Subject: [PATCH 4/9] ARM: shmobile: marzen-reference: Remove C board code
-Message-Id: <d2fb6bdaffc7438e75ffbd669623a2b61cdad3d8.1437726584.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 16 Jul 2015 18:22:00 +0000
+Subject: [PATCH/RFC v2 29/29] serial: sh-sci: Remove schedule_work in sci_dma_rx_complete
+Message-Id: <1437070920-28069-30-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1437726584.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1437726584.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-The generic r8a7779 machine vector is now feature-wise equivalent
-to the Marzen-reference case, so simply remove the Marzen C board
-code to fall over on the generic r8a7779 machine vector.
+This patch calls work_fn_rx() directly so that the driver can avoid
+executing of next sci_dma_rx_complete() before work_fn_rx() completes.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+FIXME: Move work_fn_rx() instead of using a forward declaration
+
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/Kconfig                  |  7 ----
- arch/arm/mach-shmobile/Makefile                 |  4 +-
- arch/arm/mach-shmobile/board-marzen-reference.c | 56 -------------------------
- 3 files changed, 1 insertion(+), 66 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/board-marzen-reference.c
+ drivers/tty/serial/sh-sci.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 45006479d461..3d6f46cb8b18 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -89,13 +89,6 @@ config ARCH_SH73A0
- 	select ARCH_RMOBILE
- 	select RENESAS_INTC_IRQPIN
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 27c811351e1bff45..7e8fa3703e5de328 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -128,6 +128,9 @@ struct sci_port {
+ static void sci_start_tx(struct uart_port *port);
+ static void sci_stop_tx(struct uart_port *port);
+ static void sci_start_rx(struct uart_port *port);
++#ifdef CONFIG_SERIAL_SH_SCI_DMA
++static void work_fn_rx(struct work_struct *work);
++#endif
  
--comment "Renesas ARM SoCs Board Type"
--
--config MACH_MARZEN
--	bool "MARZEN board"
--	depends on ARCH_R8A7779
--	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--
- comment "Renesas ARM SoCs System Configuration"
- endif
+ #define SCI_NPORTS CONFIG_SERIAL_SH_SCI_NR_UARTS
  
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 89e463de4479..08b12b4d3f90 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -51,9 +51,7 @@ obj-$(CONFIG_PM_RMOBILE)	+= pm-rmobile.o
- obj-$(CONFIG_ARCH_RCAR_GEN2)	+= pm-rcar-gen2.o
+@@ -1364,7 +1367,7 @@ static void sci_dma_rx_complete(void *arg)
+ 	if (count)
+ 		tty_flip_buffer_push(&port->state->port);
  
- # Board objects
--ifdef CONFIG_ARCH_SHMOBILE_MULTI
--obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
--else
-+ifndef CONFIG_ARCH_SHMOBILE_MULTI
- obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
- obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
-diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
-deleted file mode 100644
-index b15eb923263f..000000000000
---- a/arch/arm/mach-shmobile/board-marzen-reference.c
-+++ /dev/null
-@@ -1,56 +0,0 @@
--/*
-- * marzen board support - Reference DT implementation
-- *
-- * Copyright (C) 2011  Renesas Solutions Corp.
-- * Copyright (C) 2011  Magnus Damm
-- * Copyright (C) 2013  Simon Horman
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- */
--
--#include <linux/clk/shmobile.h>
--#include <linux/clocksource.h>
--#include <linux/of_platform.h>
--
--#include <asm/irq.h>
--#include <asm/mach/arch.h>
--
--#include "common.h"
--#include "irqs.h"
--#include "r8a7779.h"
--
--static void __init marzen_init_timer(void)
--{
--	r8a7779_clocks_init(r8a7779_read_mode_pins());
--	clocksource_of_init();
--}
--
--static void __init marzen_init(void)
--{
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
--}
--
--static const char *marzen_boards_compat_dt[] __initdata = {
--	"renesas,marzen",
--	"renesas,marzen-reference",
--	NULL,
--};
--
--DT_MACHINE_START(MARZEN, "marzen")
--	.smp		= smp_ops(r8a7779_smp_ops),
--	.map_io		= r8a7779_map_io,
--	.init_early	= shmobile_init_delay,
--	.init_time	= marzen_init_timer,
--	.init_irq	= r8a7779_init_irq_dt,
--	.init_machine	= marzen_init,
--	.init_late	= shmobile_init_late,
--	.dt_compat	= marzen_boards_compat_dt,
--MACHINE_END
+-	schedule_work(&s->work_rx);
++	work_fn_rx(&s->work_rx);
+ }
+ 
+ static void sci_rx_dma_release(struct sci_port *s, bool enable_pio)
 -- 
-2.1.4
+1.9.1
 
