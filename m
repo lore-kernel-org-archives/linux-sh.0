@@ -1,97 +1,40 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 14 Jul 2015 12:05:14 +0000
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 16 Jul 2015 09:42:06 +0000
 Subject: Re: [PATCH 1/7] ARM: shmobile: r8a73a4 dtsi: Add missing "gpio-ranges" to gpio node
-Message-Id: <CAMuHMdX4=C6DsbsaphndXQuPm8WFqv08kwq+cdQRJJQtDph1cg@mail.gmail.com>
+Message-Id: <CACRpkdbB6mLZAxpvPq8X5cWVLYD05ruF2XbwZSYn16Kj8tXvdQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1435650327-2542-1-git-send-email-geert+renesas@glider.be>
  <1435650327-2542-2-git-send-email-geert+renesas@glider.be>
  <32630741.rNENluEsDE@avalon>
-In-Reply-To: <32630741.rNENluEsDE@avalon>
+ <CAMuHMdX4=C6DsbsaphndXQuPm8WFqv08kwq+cdQRJJQtDph1cg@mail.gmail.com>
+In-Reply-To: <CAMuHMdX4=C6DsbsaphndXQuPm8WFqv08kwq+cdQRJJQtDph1cg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent, Linus,
+On Tue, Jul 14, 2015 at 2:05 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> On Tue, Jun 30, 2015 at 11:49 AM, Laurent Pinchart
+> <laurent.pinchart@ideasonboard.com> wrote:
 
-On Tue, Jun 30, 2015 at 11:49 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Tuesday 30 June 2015 09:45:21 Geert Uytterhoeven wrote:
->> If a GPIO driver uses gpiochip_add_pin_range() (which is usually the
->> case for GPIO/PFC combos), the GPIO hogging mechanism configured from DT
->> doesn't work:
+>>> To fix this, add a "gpio-ranges" property to the gpio device node, so
+>>> the ranges are added by of_gpiochip_add_pin_range(), which is called by
+>>> of_gpiochip_add() before the call to of_gpiochip_scan_hogs().
+>>>
+>>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 >>
->>     requesting hog GPIO led1-high (chip r8a73a4_pfc, offset 28) failed
+>> This looks sane to me, even though referencing the same DT node seems a bit
+>> dodgy. I'll let Linus comment on that, but for the implementation itself,
 >>
->> The actual error code is -517 = -EPROBE_DEFER.
->>
->> The problem is that PFC+GPIO registration is handled in multiple steps:
->>   1. pinctrl_register(),
->>   2. gpiochip_add(),
->>   3. gpiochip_add_pin_range().
->>
->> Configuration of the hogs is handled in gpiochip_add():
->>
->>     gpiochip_add
->>         of_gpiochip_add
->>             of_gpiochip_scan_hogs
->>                 gpiod_hog
->>                     gpiochip_request_own_desc
->>                         __gpiod_request
->>                             chip->request
->>                                 pinctrl_request_gpio
->>                                     pinctrl_get_device_gpio_range
->>
->> However, at this point the GPIO controller hasn't been added to
->> pinctrldev_list yet, so the range can't be found, and the operation fails
->> with -EPROBE_DEFER.
->>
->> To fix this, add a "gpio-ranges" property to the gpio device node, so
->> the ranges are added by of_gpiochip_add_pin_range(), which is called by
->> of_gpiochip_add() before the call to of_gpiochip_scan_hogs().
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 >
-> This looks sane to me, even though referencing the same DT node seems a bit
-> dodgy. I'll let Linus comment on that, but for the implementation itself,
+> Thank you!
 >
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> Any wise words from Linus?
 
-Thank you!
+I don't know if I'm wise but I'm OK with this:
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
-Any wise words from Linus?
-
-Thanks again!
-
->
->> ---
->>  arch/arm/boot/dts/r8a73a4.dtsi | 7 +++++++
->>  1 file changed, 7 insertions(+)
->>
->> diff --git a/arch/arm/boot/dts/r8a73a4.dtsi b/arch/arm/boot/dts/r8a73a4.dtsi
->> index 5090d1a8f652e8be..cb4f7b2798fe23be 100644
->> --- a/arch/arm/boot/dts/r8a73a4.dtsi
->> +++ b/arch/arm/boot/dts/r8a73a4.dtsi
->> @@ -207,6 +207,13 @@
->>               reg = <0 0xe6050000 0 0x9000>;
->>               gpio-controller;
->>               #gpio-cells = <2>;
->> +             gpio-ranges >> +                     <&pfc 0 0 31>, <&pfc 32 32 9>,
->> +                     <&pfc 64 64 22>, <&pfc 96 96 31>,
->> +                     <&pfc 128 128 7>, <&pfc 160 160 19>,
->> +                     <&pfc 192 192 31>, <&pfc 224 224 27>,
->> +                     <&pfc 256 256 28>, <&pfc 288 288 21>,
->> +                     <&pfc 320 320 10>;
->>               interrupts-extended >>                       <&irqc0  0 0>, <&irqc0  1 0>, <&irqc0  2 0>, <&irqc0  3 0>,
->>                       <&irqc0  4 0>, <&irqc0  5 0>, <&irqc0  6 0>, <&irqc0  7 0>,
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Yours,
+Linus Walleij
