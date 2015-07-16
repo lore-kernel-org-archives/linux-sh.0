@@ -1,70 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Jul 2015 08:41:42 +0000
-Subject: [PATCH 1/9] ARM: shmobile: r8a7779: Generic CCF and timer support
-Message-Id: <131c2e0480b0f7afefbc9a46cc4e158e17caa844.1437726584.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 16 Jul 2015 18:21:34 +0000
+Subject: [PATCH/RFC v2 03/29] serial: sh-sci: Correct FIFO stages on sh7705/sh7720/sh7721
+Message-Id: <1437070920-28069-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1437726584.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1437726584.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+According to the datasheet, SCIFs on SoCs using SCIx_SH7705_SCIF_REGTYPE
+(sh7705, sh7720, and sh7721) have 64-stage FIFO registers.
 
-Add a r8a7779-specific callback to initialize CCF and
-clocksources. With this in place we are one step closer
-to be able to use r8a7779 without C board code.
-
-Also add a multiplatform wrapper to avoid breaking the
-r8a7779 marzen legacy case.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+Untested due to lack of hardware.
+---
+ drivers/tty/serial/sh-sci.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index c03e562be12b..5625fd1c89c0 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -14,6 +14,8 @@
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU General Public License for more details.
-  */
-+#include <linux/clk/shmobile.h>
-+#include <linux/clocksource.h>
- #include <linux/kernel.h>
- #include <linux/init.h>
- #include <linux/interrupt.h>
-@@ -756,6 +758,14 @@ u32 __init r8a7779_read_mode_pins(void)
- 	return mode;
- }
- 
-+#ifdef CONFIG_ARCH_SHMOBILE_MULTI
-+
-+static void __init r8a7779_init_time(void)
-+{
-+	r8a7779_clocks_init(r8a7779_read_mode_pins());
-+	clocksource_of_init();
-+}
-+
- static const char *r8a7779_compat_dt[] __initdata = {
- 	"renesas,r8a7779",
- 	NULL,
-@@ -764,8 +774,10 @@ static const char *r8a7779_compat_dt[] __initdata = {
- DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
- 	.map_io		= r8a7779_map_io,
- 	.init_early	= shmobile_init_delay,
-+	.init_time	= r8a7779_init_time,
- 	.init_irq	= r8a7779_init_irq_dt,
- 	.init_late	= shmobile_init_late,
- 	.dt_compat	= r8a7779_compat_dt,
- MACHINE_END
-+#endif /* CONFIG_ARCH_SHMOBILE_MULTI */
- #endif /* CONFIG_USE_OF */
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index fa26be7f9414dfc2..dc8d1b6a82684c17 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2264,12 +2264,13 @@ static int sci_init_single(struct platform_device *dev,
+ 		sampling_rate = 16;
+ 		break;
+ 	case PORT_SCIF:
+-		port->fifosize = 16;
+ 		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE) {
++			port->fifosize = 64;
+ 			sci_port->overrun_reg = SCxSR;
+ 			sci_port->overrun_mask = SCIFA_ORER;
+ 			sampling_rate = 16;
+ 		} else {
++			port->fifosize = 16;
+ 			sci_port->overrun_reg = SCLSR;
+ 			sci_port->overrun_mask = SCLSR_ORER;
+ 			sampling_rate = 32;
 -- 
-2.1.4
+1.9.1
 
