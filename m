@@ -1,49 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:37:07 +0000
-Subject: [PATCH 2/8] ARM: shmobile: R-Car: Shrink rcar_sysc_ch size
-Message-Id: <6fd2242e60e89a26e731e57dbf8f88d6639e09de.1436510166.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 16 Jul 2015 18:21:39 +0000
+Subject: [PATCH/RFC v2 08/29] serial: sh-sci: Use offset_in_page() helper instead of open coding
+Message-Id: <1437070920-28069-9-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436510166.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436510166.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Shrink the individual fields in struct rcar_sysc_ch, as unsigned long or
-int is overkill:
-  - chan_offs contains a register offset relative to a base value
-    (< 512),
-  - chan_bit and isr_bit contain bit indices (0-31).
-
-This reduces the size of each instance from 3 (4 on 64-bit) 32-bit words
-to 1 32-bit word.
+TODO: Simplify by switching to dma_map_single()
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/pm-rcar.h | 6 +++---
+v2:
+  - Add TODO
+---
+ drivers/tty/serial/sh-sci.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pm-rcar.h b/arch/arm/mach-shmobile/pm-rcar.h
-index ef3a1ef628f1..06ebf00a6a5a 100644
---- a/arch/arm/mach-shmobile/pm-rcar.h
-+++ b/arch/arm/mach-shmobile/pm-rcar.h
-@@ -2,9 +2,9 @@
- #define PM_RCAR_H
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index eae2989890337ee8..d6ee645de1d40794 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1715,10 +1715,10 @@ static void sci_request_dma(struct uart_port *port)
+ 		s->chan_tx = chan;
+ 		sg_init_table(&s->sg_tx, 1);
+ 		/* UART circular tx buffer is an aligned page. */
+-		BUG_ON((uintptr_t)port->state->xmit.buf & ~PAGE_MASK);
++		BUG_ON(offset_in_page(port->state->xmit.buf));
+ 		sg_set_page(&s->sg_tx, virt_to_page(port->state->xmit.buf),
+ 			    UART_XMIT_SIZE,
+-			    (uintptr_t)port->state->xmit.buf & ~PAGE_MASK);
++			    offset_in_page(port->state->xmit.buf));
+ 		nent = dma_map_sg(chan->device->dev, &s->sg_tx, 1,
+ 				  DMA_TO_DEVICE);
+ 		if (!nent)
+@@ -1768,7 +1768,7 @@ static void sci_request_dma(struct uart_port *port)
  
- struct rcar_sysc_ch {
--	unsigned long chan_offs;
--	unsigned int chan_bit;
--	unsigned int isr_bit;
-+	u16 chan_offs;
-+	u8 chan_bit;
-+	u8 isr_bit;
- };
+ 			sg_init_table(sg, 1);
+ 			sg_set_page(sg, virt_to_page(buf[i]), s->buf_len_rx,
+-				    (uintptr_t)buf[i] & ~PAGE_MASK);
++				    offset_in_page(buf[i]));
+ 			sg_dma_address(sg) = dma[i];
+ 		}
  
- int rcar_sysc_power_down(struct rcar_sysc_ch *sysc_ch);
 -- 
-2.1.4
+1.9.1
 
