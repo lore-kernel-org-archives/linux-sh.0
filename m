@@ -1,66 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:37:11 +0000
-Subject: [PATCH 03/11] ARM: shmobile: r8a7790: add EtherAVB clocks
-Message-Id: <63d2d750c902dec77439f12b2eac9709468298ce.1436509954.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 16 Jul 2015 18:21:40 +0000
+Subject: [PATCH/RFC v2 09/29] serial: sh-sci: Use sg_init_one() helper instead of open coding
+Message-Id: <1437070920-28069-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436509954.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436509954.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-Add the EtherAVB clock to the R8A7790 device tree.
-
-Based on original patch by Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 10 ++++++----
- include/dt-bindings/clock/r8a7790-clock.h |  1 +
- 2 files changed, 7 insertions(+), 4 deletions(-)
+Note: There's another sg_init_table()/sg_set_page() combo in
+      sci_request_dma() that looks eligible for conversion to
+      sg_init_one().
+      However, that one operates on memory allocated by
+      dma_alloc_coherent(), which triggers the
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 51ab8865ea37..feb4652ed4b2 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1249,16 +1249,18 @@
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
- 			clocks = <&hp_clk>, <&zg_clk>, <&zg_clk>, <&zg_clk>,
--			         <&zg_clk>, <&p_clk>, <&zs_clk>, <&zs_clk>;
-+			         <&zg_clk>, <&hp_clk>, <&p_clk>, <&zs_clk>,
-+				 <&zs_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
- 				R8A7790_CLK_MLB R8A7790_CLK_VIN3 R8A7790_CLK_VIN2
--				R8A7790_CLK_VIN1 R8A7790_CLK_VIN0 R8A7790_CLK_ETHER
-+				R8A7790_CLK_VIN1 R8A7790_CLK_VIN0
-+				R8A7790_CLK_ETHERAVB R8A7790_CLK_ETHER
- 				R8A7790_CLK_SATA1 R8A7790_CLK_SATA0
- 			>;
- 			clock-output-names -				"mlb", "vin3", "vin2", "vin1", "vin0", "ether",
--				"sata1", "sata0";
-+				"mlb", "vin3", "vin2", "vin1", "vin0",
-+				"etheravb", "ether", "sata1", "sata0";
- 		};
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index ff7ca3584e16..e119ef372ba3 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -108,6 +108,7 @@
- #define R8A7790_CLK_VIN2		9
- #define R8A7790_CLK_VIN1		10
- #define R8A7790_CLK_VIN0		11
-+#define R8A7790_CLK_ETHERAVB		12
- #define R8A7790_CLK_ETHER		13
- #define R8A7790_CLK_SATA1		14
- #define R8A7790_CLK_SATA0		15
+	  BUG_ON(!virt_addr_valid(buf));
+
+      in sg_set_buf() if CONFIG_DEBUG_SG=y. Sigh...
+---
+ drivers/tty/serial/sh-sci.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index d6ee645de1d40794..36a1d1735dd562cd 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1713,12 +1713,9 @@ static void sci_request_dma(struct uart_port *port)
+ 	dev_dbg(port->dev, "%s: TX: got channel %p\n", __func__, chan);
+ 	if (chan) {
+ 		s->chan_tx = chan;
+-		sg_init_table(&s->sg_tx, 1);
+ 		/* UART circular tx buffer is an aligned page. */
+ 		BUG_ON(offset_in_page(port->state->xmit.buf));
+-		sg_set_page(&s->sg_tx, virt_to_page(port->state->xmit.buf),
+-			    UART_XMIT_SIZE,
+-			    offset_in_page(port->state->xmit.buf));
++		sg_init_one(&s->sg_tx, port->state->xmit.buf, UART_XMIT_SIZE);
+ 		nent = dma_map_sg(chan->device->dev, &s->sg_tx, 1,
+ 				  DMA_TO_DEVICE);
+ 		if (!nent)
 -- 
-2.1.4
+1.9.1
 
