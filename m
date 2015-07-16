@@ -1,34 +1,67 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 16 Jul 2015 09:22:29 +0000
-Subject: Re: [PATCH] dmaengine: use phys_addr_t for slave configuration
-Message-Id: <CACRpkdbwyDHe21pk95w4OMxKN4Ns8w-V-qb+nqSbpEh4UD=7vA@mail.gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 16 Jul 2015 07:59:40 +0000
+Subject: Re: [PATCH v2] ARM: l2c: Add support for the "arm, shared-override" property
+Message-Id: <CAMuHMdX2ko3f8s7dnvwk2w-L3CPt_O-vaJ4Bbj+EHUvin7uVRg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1366967214-20776-1-git-send-email-linus.walleij@linaro.org>
-	<CAMuHMdUTzTBT8DyRb5WN048U5DbVsFnhJB0c5tjHBnA4rfetJg@mail.gmail.com>
-In-Reply-To: <CAMuHMdUTzTBT8DyRb5WN048U5DbVsFnhJB0c5tjHBnA4rfetJg@mail.gmail.com>
+References: <1430990831-23825-1-git-send-email-geert+renesas@glider.be>
+ <20150507160257.GA11067@e104818-lin.cambridge.arm.com>
+ <20150515101028.GH2067@n2100.arm.linux.org.uk>
+ <20150515135513.GH19345@e104818-lin.cambridge.arm.com>
+ <556D593C.1090002@monstr.eu> <558C7068.7070105@hauke-m.de>
+ <CAMuHMdV8MhkOP+cfZx1HHaOctccrGmKp9RQBLuqy-NS1SQCh8Q@mail.gmail.com>
+In-Reply-To: <CAMuHMdV8MhkOP+cfZx1HHaOctccrGmKp9RQBLuqy-NS1SQCh8Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Lee Jones <lee.jones@linaro.org>, Vinod Koul <vinod.koul@intel.com>, dmaengine@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jul 8, 2015 at 12:12 PM, Geert Uytterhoeven
+On Fri, Jun 26, 2015 at 9:15 AM, Geert Uytterhoeven
 <geert@linux-m68k.org> wrote:
-> On Fri, Apr 26, 2013 at 11:06 AM, Linus Walleij
-> <linus.walleij@linaro.org> wrote:
->> The documentation already says these are physical addresses, and
->> we have concluded that any translation into the DMA address space
->> needs to reside in the dmaengine driver, so change the type of
->> the passed arguments.
->>
->> Cc: Arnd Bergmann <arnd@arndb.de>
->> Cc: Lee Jones <lee.jones@linaro.org>
->> Cc: Vinod Koul <vinod.koul@intel.com>
->> Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+> On Thu, Jun 25, 2015 at 11:19 PM, Hauke Mehrtens <hauke@hauke-m.de> wrote:
+>> On 06/02/2015 09:20 AM, Michal Simek wrote:
+>>> On 05/15/2015 03:55 PM, Catalin Marinas wrote:
+>>>> On Fri, May 15, 2015 at 11:10:28AM +0100, Russell King - ARM
+>>>> Linux wrote:
+>>>>> On Thu, May 07, 2015 at 05:02:57PM +0100, Catalin Marinas
+>>>>> wrote:
+>>>>>> On Thu, May 07, 2015 at 11:27:11AM +0200, Geert Uytterhoeven
+>>>>>> wrote:
+>>>>>>> diff --git a/Documentation/devicetree/bindings/arm/l2cc.txt
+>>>>>>> b/Documentation/devicetree/bindings/arm/l2cc.txt index
+>>>>>>> 0dbabe9a6b0abb91..2484aed78c86546d 100644 ---
+>>>>>>> a/Documentation/devicetree/bindings/arm/l2cc.txt +++
+>>>>>>> b/Documentation/devicetree/bindings/arm/l2cc.txt @@ -67,6
+>>>>>>> +67,12 @@ Optional properties: disable if zero. -
+>>>>>>> arm,prefetch-offset : Override prefetch offset value. Valid
+>>>>>>> values are 0-7, 15, 23, and 31. +- arm,shared-override :
+>>>>>>> The default behavior of the pl310 cache controller with +
+>>>>>>> respect to the shareable attribute is to transform "normal
+>>>>>>> memory +  non-cacheable transactions" into "cacheable no
+>>>>>>> allocate" (for reads) or +  "write through no write
+>>>>>>> allocate" (for writes). +  On systems where this may cause
+>>>>>>> DMA buffer corruption, this property must be +  specified
+>>>>>>> to indicate that such transforms are precluded.
 >
-> What's the status of this one, which has been acked by Lee and Arnd?
+>>>>>> Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+>
+>> I do not see this in linux-next, and would like to use this.
+>>
+>> Geert have you submitted this through this patch submission page?
+>> http://www.arm.linux.org.uk/developer/patches/
+>
+> Thanks for reminding me!
+>
+> Submitted with Catalin's Acked-by.
 
-I don't even remember writing this patch anymore, haha :D
+Now included in today's arm/for-next. Thanks!
 
-Yours,
-Linus Walleij
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
