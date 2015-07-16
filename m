@@ -1,65 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 17 Jul 2015 08:26:06 +0000
-Subject: [PATCH 4/5] ARM: shmobile: r8a7793: Add DU node to device tree
-Message-Id: <1437121567-18467-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 16 Jul 2015 18:21:49 +0000
+Subject: [PATCH/RFC v2 18/29] serial: sh-sci: Remove useless memory allocation failure printks
+Message-Id: <1437070920-28069-19-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437121567-18467-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1437121567-18467-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org
-Cc: Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Add the DU device with a disabled state. Boards that want to enable the
-DU need to specify the output topology.
+Printing an error on memory allocation failures is unnecessary.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+ drivers/tty/serial/sh-sci.c | 9 ++-------
+ 1 file changed, 2 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index c50c5f65388a..2072f55a524a 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -140,6 +140,36 @@
- 		status = "disabled";
- 	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 7589e9b33ce346f0..6eb24f72e89906bb 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1170,11 +1170,8 @@ static int sci_request_irq(struct sci_port *port)
+ 		desc = sci_irq_desc + i;
+ 		port->irqstr[j] = kasprintf(GFP_KERNEL, "%s:%s",
+ 					    dev_name(up->dev), desc->desc);
+-		if (!port->irqstr[j]) {
+-			dev_err(up->dev, "Failed to allocate %s IRQ string\n",
+-				desc->desc);
++		if (!port->irqstr[j])
+ 			goto out_nomem;
+-		}
  
-+	du: display@feb00000 {
-+		compatible = "renesas,du-r8a7793";
-+		reg = <0 0xfeb00000 0 0x40000>,
-+		      <0 0xfeb90000 0 0x1c>;
-+		reg-names = "du", "lvds.0";
-+		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 268 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7793_CLK_DU0>,
-+			 <&mstp7_clks R8A7793_CLK_DU1>,
-+			 <&mstp7_clks R8A7793_CLK_LVDS0>;
-+		clock-names = "du.0", "du.1", "lvds.0";
-+		status = "disabled";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				du_out_rgb: endpoint {
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				du_out_lvds0: endpoint {
-+				};
-+			};
-+		};
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+ 		ret = request_irq(irq, desc->handler, up->irqflags,
+ 				  port->irqstr[j], port);
+@@ -2621,10 +2618,8 @@ sci_parse_dt(struct platform_device *pdev, unsigned int *dev_id)
+ 	info = match->data;
+ 
+ 	p = devm_kzalloc(&pdev->dev, sizeof(struct plat_sci_port), GFP_KERNEL);
+-	if (!p) {
+-		dev_err(&pdev->dev, "failed to allocate DT config data\n");
++	if (!p)
+ 		return NULL;
+-	}
+ 
+ 	/* Get the line number for the aliases node. */
+ 	id = of_alias_get_id(np, "serial");
 -- 
-2.3.6
+1.9.1
 
