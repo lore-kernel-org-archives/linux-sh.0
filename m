@@ -1,149 +1,33 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 16 Jul 2015 07:54:14 +0000
-Subject: [PATCH 03/03] ARM: shmobile: Remove marzen_defconfig
-Message-Id: <20150716075414.1198.78403.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 16 Jul 2015 08:20:05 +0000
+Subject: Re: [PATCH 03/03] ARM: shmobile: Remove marzen_defconfig
+Message-Id: <CAMuHMdVYBpAW_Vps+fAmvGcqgBNSOc2rHL=M1DwhubzCfA7HkA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150716075414.1198.78403.sendpatchset@little-apple>
+In-Reply-To: <20150716075414.1198.78403.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+On Thu, Jul 16, 2015 at 9:54 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> From: Magnus Damm <damm+renesas@opensource.se>
+>
+> Now when the Marzen legacy board code is removed also
+> get rid of the marzen_defconfig file. Existing users
+> shall move over to shmobile_defconfig.
+>
+> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 
-Now when the Marzen legacy board code is removed also
-get rid of the marzen_defconfig file. Existing users
-shall move over to shmobile_defconfig.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+Gr{oetje,eeting}s,
 
- arch/arm/configs/marzen_defconfig |  124 -------------------------------------
- 1 file changed, 124 deletions(-)
+                        Geert
 
---- 0001/arch/arm/configs/marzen_defconfig
-+++ /dev/null	2015-01-13 15:44:39.280208949 +0900
-@@ -1,124 +0,0 @@
--# CONFIG_ARM_PATCH_PHYS_VIRT is not set
--CONFIG_EXPERIMENTAL=y
--CONFIG_KERNEL_LZMA=y
--CONFIG_NO_HZ=y
--CONFIG_IKCONFIG=y
--CONFIG_IKCONFIG_PROC=y
--CONFIG_LOG_BUF_SHIFT
--CONFIG_SYSCTL_SYSCALL=y
--CONFIG_EMBEDDED=y
--CONFIG_SLAB=y
--# CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE_LEGACY=y
--CONFIG_ARCH_R8A7779=y
--CONFIG_MACH_MARZEN=y
--CONFIG_MEMORY_START=0x60000000
--CONFIG_MEMORY_SIZE=0x10000000
--CONFIG_SHMOBILE_TIMER_HZ24
--# CONFIG_SH_TIMER_CMT is not set
--# CONFIG_SWP_EMULATE is not set
--CONFIG_ARM_ERRATA_430973=y
--CONFIG_ARM_ERRATA_458693=y
--CONFIG_ARM_ERRATA_460075=y
--CONFIG_ARM_ERRATA_743622=y
--CONFIG_ARM_ERRATA_754322=y
--CONFIG_SMP=y
--# CONFIG_ARM_CPU_TOPOLOGY is not set
--CONFIG_AEABI=y
--# CONFIG_OABI_COMPAT is not set
--CONFIG_HIGHMEM=y
--CONFIG_ZBOOT_ROM_TEXT=0x0
--CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_ARM_APPENDED_DTB=y
--CONFIG_VFP=y
--CONFIG_KEXEC=y
--# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
--CONFIG_PM=y
--CONFIG_NET=y
--CONFIG_PACKET=y
--CONFIG_UNIX=y
--CONFIG_INET=y
--CONFIG_IP_PNP=y
--CONFIG_IP_PNP_DHCP=y
--# CONFIG_IPV6 is not set
--# CONFIG_WIRELESS is not set
--CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
--CONFIG_DEVTMPFS=y
--CONFIG_DEVTMPFS_MOUNT=y
--# CONFIG_STANDALONE is not set
--# CONFIG_PREVENT_FIRMWARE_BUILD is not set
--# CONFIG_FW_LOADER is not set
--CONFIG_SCSI=y
--CONFIG_BLK_DEV_SD=y
--CONFIG_ATA=y
--CONFIG_ATA_SFF=y
--CONFIG_ATA_BMDMA=y
--CONFIG_SATA_RCAR=y
--CONFIG_NETDEVICES=y
--# CONFIG_NET_VENDOR_BROADCOM is not set
--# CONFIG_NET_VENDOR_FARADAY is not set
--# CONFIG_NET_VENDOR_INTEL is not set
--# CONFIG_NET_VENDOR_MICREL is not set
--# CONFIG_NET_VENDOR_NATSEMI is not set
--# CONFIG_NET_VENDOR_SEEQ is not set
--CONFIG_SMSC911X=y
--# CONFIG_NET_VENDOR_STMICRO is not set
--# CONFIG_WLAN is not set
--# CONFIG_INPUT_MOUSEDEV is not set
--CONFIG_INPUT_EVDEV=y
--# CONFIG_INPUT_MOUSE is not set
--# CONFIG_VT is not set
--# CONFIG_LEGACY_PTYS is not set
--# CONFIG_DEVKMEM is not set
--CONFIG_SERIAL_SH_SCI=y
--CONFIG_SERIAL_SH_SCI_NR_UARTS=6
--CONFIG_SERIAL_SH_SCI_CONSOLE=y
--# CONFIG_HW_RANDOM is not set
--CONFIG_I2C=y
--CONFIG_I2C_RCAR=y
--CONFIG_SPI=y
--CONFIG_SPI_SH_HSPI=y
--CONFIG_GPIO_SYSFS=y
--CONFIG_GPIO_RCAR=y
--# CONFIG_HWMON is not set
--CONFIG_THERMAL=y
--CONFIG_RCAR_THERMAL=y
--CONFIG_SSB=y
--CONFIG_REGULATOR=y
--CONFIG_MEDIA_SUPPORT=y
--CONFIG_MEDIA_CAMERA_SUPPORT=y
--CONFIG_V4L_PLATFORM_DRIVERS=y
--CONFIG_SOC_CAMERA=y
--CONFIG_VIDEO_RCAR_VIN=y
--# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
--CONFIG_VIDEO_ADV7180=y
--CONFIG_DRM=y
--CONFIG_DRM_RCAR_DU=y
--CONFIG_USB=y
--CONFIG_USB_RCAR_PHY=y
--CONFIG_MMC=y
--CONFIG_MMC_SDHI=y
--CONFIG_USB_EHCI_HCD=y
--CONFIG_USB_OHCI_HCD=y
--CONFIG_USB_OHCI_HCD_PLATFORM=y
--CONFIG_USB_EHCI_HCD_PLATFORM=y
--CONFIG_USB_STORAGE=y
--CONFIG_NEW_LEDS=y
--CONFIG_LEDS_CLASS=y
--CONFIG_LEDS_GPIO=y
--CONFIG_DMADEVICES=y
--CONFIG_RCAR_HPB_DMAE=y
--CONFIG_UIO=y
--CONFIG_UIO_PDRV_GENIRQ=y
--# CONFIG_IOMMU_SUPPORT is not set
--# CONFIG_DNOTIFY is not set
--CONFIG_TMPFS=y
--# CONFIG_MISC_FILESYSTEMS is not set
--CONFIG_NFS_FS=y
--CONFIG_ROOT_NFS=y
--CONFIG_MAGIC_SYSRQ=y
--CONFIG_DEBUG_INFO=y
--CONFIG_DEBUG_INFO_REDUCED=y
--# CONFIG_FTRACE is not set
--CONFIG_DEBUG_USER=y
--CONFIG_AVERAGE=y
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
