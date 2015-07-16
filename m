@@ -1,91 +1,31 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 01 Jul 2015 15:58:05 +0000
-Subject: [PATCH v3 11/16] ARM: shmobile: r8a7793 dtsi: Add CPG/MSTP Clock Domain
-Message-Id: <1435766290-3005-12-git-send-email-geert+renesas@glider.be>
+Date: Thu, 16 Jul 2015 18:21:43 +0000
+Subject: [PATCH/RFC v2 12/29] serial: sh-sci: Use SCSMR_CKS instead of hardcoded value 3
+Message-Id: <1437070920-28069-13-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435766290-3005-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1435766290-3005-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
-
-Add an appropriate "#power-domain-cells" property to the cpg_clocks
-device node, to create the CPG/MSTP Clock Domain.
-
-Add "power-domains" properties to all device nodes for devices that are
-part of the CPG/MSTP Clock Domain and can be power-managed through an
-MSTP clock.  This applies to most on-SoC devices, which have a
-one-to-one mapping from SoC device to DT device node.
+To: linux-sh@vger.kernel.org
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v3:
-  - New.
----
- arch/arm/boot/dts/r8a7793.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
+ drivers/tty/serial/sh-sci.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index 3355c487d108360f..c4654047e684ff09 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -68,6 +68,7 @@
- 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7793_CLK_CMT0>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index ec891ec51b8672e3..df4727186d7a9f29 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2001,7 +2001,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
  
- 		renesas,channels-mask = <0x60>;
+ 	sci_reset(port);
  
-@@ -87,6 +88,7 @@
- 			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7793_CLK_CMT1>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
+-	smr_val |= serial_port_in(port, SCSMR) & 3;
++	smr_val |= serial_port_in(port, SCSMR) & SCSMR_CKS;
  
- 		renesas,channels-mask = <0xff>;
+ 	uart_update_timeout(port, termios->c_cflag, baud);
  
-@@ -109,6 +111,7 @@
- 			     <0 16 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R8A7793_CLK_IRQC>;
-+		power-domains = <&cpg_clocks>;
- 	};
- 
- 	scif0: serial@e6e60000 {
-@@ -117,6 +120,7 @@
- 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF0>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -126,6 +130,7 @@
- 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF1>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -134,6 +139,7 @@
- 		reg = <0 0xee700000 0 0x400>;
- 		interrupts = <0 162 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp8_clks R8A7793_CLK_ETHER>;
-+		power-domains = <&cpg_clocks>;
- 		phy-mode = "rmii";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -164,6 +170,7 @@
- 			clock-output-names = "main", "pll0", "pll1", "pll3",
- 					     "lb", "qspi", "sdh", "sd0", "z",
- 					     "rcan", "adsp";
-+			#power-domain-cells = <0>;
- 		};
- 
- 		/* Variable factor clocks */
 -- 
 1.9.1
 
