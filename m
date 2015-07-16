@@ -1,44 +1,59 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:37:16 +0000
-Subject: [PATCH 08/11] ARM: shmobile: r8a7791 dtsi: Use "arm,gic-400" for GIC
-Message-Id: <d238b5e628c98c39fe669610e6ab8e06a6f00b5b.1436509954.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 16 Jul 2015 18:21:36 +0000
+Subject: [PATCH/RFC v2 05/29] serial: sh-sci: Fix scatterlist mapping leak
+Message-Id: <1437070920-28069-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436509954.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436509954.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The mapped scatterlist is never unmapped. This leaks quite some
+mappings, as the mapping is done in uart_ops.startup(), i.e. every time
+the device is opened. Unmap the scatterlist on device close.
 
-Replace the "arm,cortex-a15-gic" compatible value for the GIC by
-"arm,gic-400", as the R-Car Gen2 GIC is assumed to be a GIC-400.
-This has been confirmed by reading the GICD_IIDR register, which reports
-0x0200043b (GIC-400 = 0x02, ARM = 0x43b).
+Note that we have to restore the original DMA entry length and DMA
+address, as it has been modified in work_fn_tx(). Else warnings are
+printed if CONFIG_DMA_API_DEBUG=y:
 
-This has no effect on runtime behavior, as currently the GIC driver
-treats both compatible values the same.
+    WARNING: CPU: 0 PID: 20 at lib/dma-debug.c:1103 check_unmap+0x24c/0x85c()
+    rcar-dmac e6700000.dma-controller: DMA-API: device driver frees DMA memory with different size [device address=0x000000006e15f000] [map size@96 bytes] [unmap size=3 bytes]
+
+and:
+
+    WARNING: CPU: 0 PID: 1364 at lib/dma-debug.c:1093 check_unmap+0x178/0x85c()
+    rcar-dmac e6700000.dma-controller: DMA-API: device driver tries to free DMA memory it has not allocated [device address=0x000000006e16b006] [size@96 bytes]
+
+TODO: Simplify by switching to dma_map_single(), as the transmit
+scatterlist contains one single entry, which is reused and modified.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v2:
+  - Add TODO
+---
+ drivers/tty/serial/sh-sci.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index dc1cd3f16606..07ea2bebe496 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -70,7 +70,7 @@
- 	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 6431b1fb9c162e77..8ffc6320ff0a8448 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1390,6 +1390,14 @@ static void sci_tx_dma_release(struct sci_port *s, bool enable_pio)
  
- 	gic: interrupt-controller@f1001000 {
--		compatible = "arm,cortex-a15-gic";
-+		compatible = "arm,gic-400";
- 		#interrupt-cells = <3>;
- 		#address-cells = <0>;
- 		interrupt-controller;
+ 	s->chan_tx = NULL;
+ 	s->cookie_tx = -EINVAL;
++	if (s->sg_len_tx) {
++		/* Restore sg_dma_len() and sg_dma_address() */
++		sg_dma_len(&s->sg_tx) = UART_XMIT_SIZE;
++		sg_dma_address(&s->sg_tx) = sg_dma_address(&s->sg_tx) &
++					    ~(UART_XMIT_SIZE - 1);
++		dma_unmap_sg(chan->device->dev, &s->sg_tx, 1, DMA_TO_DEVICE);
++		s->sg_len_tx = 0;
++	}
+ 	dma_release_channel(chan);
+ 	if (enable_pio)
+ 		sci_start_tx(port);
 -- 
-2.1.4
+1.9.1
 
