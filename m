@@ -1,33 +1,29 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 15 Jul 2015 07:44:14 +0000
-Subject: Re: [PATCH] ARM: multi_v7_defconfig: Remove Marzen
-Message-Id: <CAMuHMdUx-XmvbdRFgAiOAw43oyBHmme-V7QF3QKBZFTaB4SQkg@mail.gmail.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 16 Jul 2015 08:31:58 +0000
+Subject: Re: [PATCH] gpio: em: Remove obsolete platform data support
+Message-Id: <CACRpkda1M-AmT=YJUEpK2BbpHjjXu5=EgSOWy1yjOgVcJAS6VA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436942723-5934-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1436942723-5934-1-git-send-email-horms+renesas@verge.net.au>
+References: <1435067282-17314-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1435067282-17314-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Alexandre Courbot <gnurou@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-On Wed, Jul 15, 2015 at 8:45 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> Kill of the defconfig bits now when the marzen-reference board code is gone.
+On Tue, Jun 23, 2015 at 3:48 PM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
+
+> Since commit 59032702ead90562 ("ARM: shmobile: Remove legacy platform
+> devices from EMEV2 SoC code"), EMMA Mobile SoCs are only supported in
+> generic DT-only ARM multi-platform builds.  The driver doesn't need to
+> use platform data anymore, hence remove platform data configuration.
 >
-> Based on work by Magnus Damm.
->
-> Cc: Magnus Damm <magnus.damm@gmail.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+> Compile-tested only due to lack of hardware.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Patch applied.
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Yours,
+Linus Walleij
