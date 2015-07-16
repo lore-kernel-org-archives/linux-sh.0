@@ -1,42 +1,45 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 07 Jul 2015 14:10:10 +0000
-Subject: [PATCH/RFC 04/11] ARM: shmobile: r8a7793 dtsi: Add device node for RST module
-Message-Id: <1436278217-20522-5-git-send-email-geert+renesas@glider.be>
+Date: Thu, 16 Jul 2015 18:21:45 +0000
+Subject: [PATCH/RFC v2 14/29] serial: sh-sci: Improve comments for DMA timeout calculation
+Message-Id: <1437070920-28069-15-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436278217-20522-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1436278217-20522-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add a device node for the RST module, which provides reset control.
-Declare it to be a system controller (syscon), so other device nodes can
-refer to its registers.
-
-TODO Add DT binding documentation.
+Reformat, grammar improvements, use "ms" instead of "msec".
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 5 +++++
- 1 file changed, 5 insertions(+)
+ drivers/tty/serial/sh-sci.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index 420fafda442b8a0e..fbb1aa3740e2b55e 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -394,6 +394,11 @@
- 		};
- 	};
- 
-+	rst: reset-controller@e616000 {
-+		compatible = "renesas,rst-r8a7793", "syscon";
-+		reg = <0 0xe6160000 0 0x0100>;
-+	};
-+
- 	sysc: system-controller@e6180000 {
- 		compatible = "renesas,sysc-r8a7793", "renesas,sysc-rcar";
- 		reg = <0 0xe6180000 0 0x0200>;
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 63dab7ce5be92b6b..d8a851b913dcadd7 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2046,13 +2046,13 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ #ifdef CONFIG_SERIAL_SH_SCI_DMA
+ 	/*
+ 	 * Calculate delay for 2 DMA buffers (4 FIFO).
+-	 * See serial_core.c::uart_update_timeout(). With 10
+-	 * bits (CS8), 250Hz, 115200 baud and 64 bytes FIFO, the above function
+-	 * calculates 1 jiffie for the data plus 5 jiffies for the "slop(e)."
+-	 * Then below we calculate 5 jiffies (20ms) for 2 DMA buffers (4 FIFO
+-	 * sizes), but when performing a faster transfer, value obtained by
+-	 * this formula is may not enough. Therefore, if value is smaller than
+-	 * 20msec, this sets 20msec as timeout of DMA.
++	 * See serial_core.c::uart_update_timeout().
++	 * With 10 bits (CS8), 250Hz, 115200 baud and 64 bytes FIFO, the above
++	 * function calculates 1 jiffie for the data plus 5 jiffies for the
++	 * "slop(e)." Then below we calculate 5 jiffies (20ms) for 2 DMA
++	 * buffers (4 FIFO sizes), but when performing a faster transfer, the
++	 * value obtained by this formula is too small. Therefore, if the value
++	 * is smaller than 20ms, use 20ms as the timeout value for DMA.
+ 	 */
+ 	if (s->chan_rx) {
+ 		unsigned int bits;
 -- 
 1.9.1
 
