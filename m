@@ -1,47 +1,92 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 06 Jul 2015 21:52:15 +0000
-Subject: Re: [PATCH] clk: shmobile: emev2: annotate smu base pointer
-Message-Id: <20150706215215.GA1528@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="5mCyUwZo2JvN/JJP"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 16 Jul 2015 18:21:31 +0000
+Subject: [PATCH/RFC v2 00/29] serial: sh-sci: Miscellaneous and DMA Improvements
+Message-Id: <1437070920-28069-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436216708-1815-1-git-send-email-wsa@the-dreams.de>
- <20150706214805.GD20866@codeaurora.org>
-In-Reply-To: <20150706214805.GD20866@codeaurora.org>
-To: Stephen Boyd <sboyd@codeaurora.org>
-Cc: Mike Turquette <mturquette@linaro.org>, linux-clk@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+	Hi all,
 
---5mCyUwZo2JvN/JJP
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+This patch series contains various updates for the Renesas
+(H)SCI(F{,A,B}) driver, incl. DMA support for SCIF on R-Car Gen2.
+Some of these patches have been sent before. (Few) Changes are indicated
+in the individual patches.
 
+This is definitely not a final series, that's why it's marked as RFC and
+sent to a limited audience:
+  - There are still some race conditions between e.g. RX DMA
+    completion(s) and the worker function,
+  - Under high load RX DMA breaks,
+  - The patch to add DT DMA support should be last, after all DMA fixes,
+    to avoid regressions,
+  - Unlike the old shdmac DMA engine driver, the new rcar-dmac DMA
+    engine driver does not support resubmitting a DMA descriptor, so I
+    added a workaround to the sh-sci driver,
+  - This won't work with the old shdmac DMA engine driver anymore, due
+    to the lack of residue handling in shdmac (preliminary untested
+    patch sent, but it will need more work),
+  - There are issues with residual handling in general,
+  - ...
 
-> Yep, and it was already fixed and merged
+However, DMA is now usable for the serial console on r8a7791/koelsch.
+This also received light testing with scif3 and scifa5 on r8a7791/koelsch.
 
-Oops, sorry for the noise and thanks for fixing it!
+For your convenience, I've also pushed this to
+git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git#scif-dma-v2
 
+Thanks for your comments!
 
---5mCyUwZo2JvN/JJP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Geert Uytterhoeven (27):
+  serial: sh-sci: Replace buggy big #ifdef by runtime logic
+  serial: sh-sci: Correct SCIF_ERROR_CLEAR for plain SCIF
+  serial: sh-sci: Correct FIFO stages on sh7705/sh7720/sh7721
+  serial: sh-sci: Use correct device for DMA mapping with IOMMU
+  serial: sh-sci: Fix scatterlist mapping leak
+  serial: sh-sci: Use min_t()/max_t() instead of casts
+  serial: sh-sci: Use SCIF_DR instead of hardcoded 1
+  serial: sh-sci: Use offset_in_page() helper instead of open coding
+  serial: sh-sci: Use sg_init_one() helper instead of open coding
+  serial: sh-sci: Improve DMA error messages
+  serial: sh-sci: Add DT support to DMA setup
+  serial: sh-sci: Use SCSMR_CKS instead of hardcoded value 3
+  serial: sh-sci: Drop path in reference to serial_core.c
+  serial: sh-sci: Improve comments for DMA timeout calculation
+  serial: sh-sci: Improve sampling rate readability
+  serial: sh-sci: Make sci_irq_desc[] const
+  serial: sh-sci: Make sci_regmap[] const
+  serial: sh-sci: Remove useless memory allocation failure printks
+  serial: sh-sci: Use DMA submission helpers instead of open-coding
+  serial: sh-sci: Switch to generic DMA residue handling
+  serial: sh-sci: Stop acknowledging DMA transmit completions
+  serial: sh-sci: Fix race condition between RX work_struct and cleanup
+  serial: sh-sci: Stop TX and RX on shutdown
+  serial: sh-sci: Simplify sci_submit_rx() error handling
+  serial: sh-sci: Do not resubmit DMA descriptors
+  serial: sh-sci: Pass scatterlist to sci_dma_rx_push()
+  serial: sh-sci: Add (H)SCIF DMA support
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Kazuya Mizuguchi (2):
+  serial: sh-sci: Fix exclusion of work_fn_rx and sci_dma_rx_complete
+  serial: sh-sci: Remove schedule_work in sci_dma_rx_complete
 
-iQIcBAEBAgAGBQJVmviPAAoJEBQN5MwUoCm2KAoP/2S7MMcv/GsW2Glr7cpFz3dm
-zq33Tg/kngXfUjazMxCMxY1xpCnoTcPCdvpktPOP167pPuuUkGrrQPv+tE9iJSi7
-va2OC7wclBhRBysBaUX9xHwVerXAZ/RbaQdeksp1PQ4LSA2UZKMir+/qluvDgccF
-1C8MwIz1Dnhn3aEpi3fAoxUuh6Y+928xeP2Pin/bdnSRcoGI7NJP65RfL+r38mcz
-tHS8ovOVXMn3SFih+6hMR0XWtPUrhdfgmbLGHPPmosM1KD8zq8tBVkyrqMv0zrzv
-xe9NKlAZ8dHxPSvoWbNqsXd/GWj5+sTVGby/ZcP5NvW7bGJlblRH6pDCVt1xtofb
-iq46KnXkI0N2ZLrKCRNzpTpS9PP4QONN/Tm5oPRtJu7+v7zmTCURotwMyBLg/D4b
-CvTjs4/6OPRs7ndB2zK6/mqp/g1wlRky4U8R07lg4NyIyBQrbeM6o+MeW2yW9XRF
-oIEw02315Pl9syR+xHyA36sN9RMrecunT0iOXYTZjjiG2yk2BiyUSt3+ps2O4c+o
-0Tud9qu/msXjY5mUj0v3GXumTZP9kr2UissQ8NTl68899gqAaIVWgQ5g7unPszkT
-5gt09lF6TBTbGtlerXFnZC/Kuh4cm059T6x0bl5Yr9SUWZjh971T3O62+mDuLKBT
-n8CeGvAuHcVofygk/vwf
-=nvQz
------END PGP SIGNATURE-----
+ drivers/tty/serial/Kconfig  |   2 +-
+ drivers/tty/serial/sh-sci.c | 492 +++++++++++++++++++++++++++-----------------
+ drivers/tty/serial/sh-sci.h |  35 +---
+ 3 files changed, 308 insertions(+), 221 deletions(-)
 
---5mCyUwZo2JvN/JJP--
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
