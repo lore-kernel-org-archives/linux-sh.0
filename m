@@ -1,44 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:37:17 +0000
-Subject: [PATCH 09/11] ARM: shmobile: r8a7793 dtsi: Use "arm,gic-400" for GIC
-Message-Id: <5b3b3268518fb67c7accf83d786909b2a8cbee63.1436509954.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 16 Jul 2015 18:21:55 +0000
+Subject: [PATCH/RFC v2 24/29] serial: sh-sci: Stop TX and RX on shutdown
+Message-Id: <1437070920-28069-25-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436509954.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436509954.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Make sure the transmitter and receiver are stopped when shutting down
+the port, to avoid new RX DMA requests to arrive.
 
-Replace the "arm,cortex-a15-gic" compatible value for the GIC by
-"arm,gic-400", as the R-Car Gen2 GIC is assumed to be a GIC-400.
-This has been confirmed by reading the GICD_IIDR register (on r8a7791),
-which reports 0x0200043b (GIC-400 = 0x02, ARM = 0x43b).
-
-This has no effect on runtime behavior, as currently the GIC driver
-treats both compatible values the same.
+Inspired by a patch in the BSP by Koji Matsuoka
+<koji.matsuoka.xm@renesas.com>.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/tty/serial/sh-sci.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index c50c5f65388a..3355c487d108 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -42,7 +42,7 @@
- 	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 9714fc1b72b3cf8c..dda1f7b13497817a 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1846,12 +1846,16 @@ static void sci_shutdown(struct uart_port *port)
+ {
+ 	struct sci_port *s = to_sci_port(port);
+ 	unsigned long flags;
++	u16 scscr;
  
- 	gic: interrupt-controller@f1001000 {
--		compatible = "arm,cortex-a15-gic";
-+		compatible = "arm,gic-400";
- 		#interrupt-cells = <3>;
- 		#address-cells = <0>;
- 		interrupt-controller;
+ 	dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
+ 
+ 	spin_lock_irqsave(&port->lock, flags);
+ 	sci_stop_rx(port);
+ 	sci_stop_tx(port);
++	scscr = serial_port_in(port, SCSCR);
++	scscr &= ~(SCSCR_TE | SCSCR_RE);
++	serial_port_out(port, SCSCR, scscr);
+ 	spin_unlock_irqrestore(&port->lock, flags);
+ 
+ 	sci_free_dma(port);
 -- 
-2.1.4
+1.9.1
 
