@@ -1,52 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:37:03 +0000
-Subject: [PATCH 16/16] ARM: shmobile: timer: r8a73a4 and r8a7790 are multi-platform only
-Message-Id: <20834a406ee20b57c796f9911f06600b71c75788.1436509680.git.horms+renesas@verge.net.au>
+From: Chris Brandt <chris.brandt@renesas.com>
+Date: Thu, 16 Jul 2015 14:37:12 +0000
+Subject: [PATCH 0/2] ARM: xip: Get XIP for ARMv7 working again
+Message-Id: <1437057434-1616-1-git-send-email-chris.brandt@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436509680.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436509680.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+While it seems that XIP_KERNEL for ARMv7 is not a popular option, this patchset
+is the minimum code fixes needed to get it working which it appears to have
+been broken for a couple years.
 
-Since commits e042681894b62d60 ("ARM: shmobile: r8a7790: Remove legacy
-code") and 9d07d414d4c33d86 ("ARM: shmobile: r8a73a4: ape6evm: Remove
-legacy platform"), the R-Mobile APE6 and R-Car H2 SoCs are supported by
-multiplatform kernels only.
-Hence we can drop checks for these SoCs in legacy kernel builds.
+The current Kconfig architecture prevents you from enabling XIP_KERNEL on many
+platforms due to ARCH_MULTIPLATFORM. That will have to be addressed in a later
+patchset.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/timer.c | 12 ------------
- 1 file changed, 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
-index 0edf2a6d2bbe..f1d027aa7a81 100644
---- a/arch/arm/mach-shmobile/timer.c
-+++ b/arch/arm/mach-shmobile/timer.c
-@@ -70,18 +70,6 @@ void __init shmobile_init_delay(void)
- 	if (!max_freq)
- 		return;
- 
--#ifdef CONFIG_ARCH_SHMOBILE_LEGACY
--	/* Non-multiplatform r8a73a4 SoC cannot use arch timer due
--	 * to GIC being initialized from C and arch timer via DT */
--	if (of_machine_is_compatible("renesas,r8a73a4"))
--		has_arch_timer = false;
--
--	/* Non-multiplatform r8a7790 SoC cannot use arch timer due
--	 * to GIC being initialized from C and arch timer via DT */
--	if (of_machine_is_compatible("renesas,r8a7790"))
--		has_arch_timer = false;
--#endif
--
- 	if (!has_arch_timer || !IS_ENABLED(CONFIG_ARM_ARCH_TIMER)) {
- 		if (is_a7_a8_a9)
- 			shmobile_setup_delay_hz(max_freq, 1, 3);
+Chris Brandt (2):
+  ARM: xip: Can't use text area as stack
+  ARM: xip: Use correct symbol for end of ROM marker
+
+ arch/arm/kernel/module.c       |    2 +-
+ arch/arm/mm/mmu.c              |    4 ++--
+ arch/arm/mm/proc-v7.S          |    4 ++++
+ include/asm-generic/sections.h |    2 +-
+ 4 files changed, 8 insertions(+), 4 deletions(-)
+
 -- 
-2.1.4
+1.7.9.5
+
 
