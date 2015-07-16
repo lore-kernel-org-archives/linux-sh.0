@@ -1,220 +1,67 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Tue, 07 Jul 2015 09:12:17 +0000
-Subject: RE: [PATCH v3] usb: renesas_usbhs: Allow an OTG PHY driver to provide VBUS
-Message-Id: <SIXPR06MB0639A7ED8FB3633F4482A95AF5920@SIXPR06MB0639.apcprd06.prod.outlook.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 16 Jul 2015 08:37:11 +0000
+Subject: Re: [PATCH] pinctrl: sh-pfc: Convert to platform_get_*()
+Message-Id: <CACRpkdYAtrp-tk1+0WGS3UJy3ZJvKAMkAF=Kky3MwHBd4Fk=sg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2896957.Pcl0CbmdvL@avalon>
- <1435832793-9999-1-git-send-email-phil.edworthy@renesas.com>
- <3446210.Evs1k3c1oP@avalon>
-In-Reply-To: <3446210.Evs1k3c1oP@avalon>
+References: <1435225193-10078-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1435225193-10078-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Felipe Balbi <balbi@ti.com>, Ulrich Hecht <ulrich.hecht@gmail.com>, Kishon Vijay Abraham I <kishon@ti.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Pantelis Antoniou <pantelis.antoniou@konsulko.com>, Grant Likely <grant.likely@linaro.org>, Rob Herring <robh+dt@kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Hi Laurent,
+On Thu, Jun 25, 2015 at 11:39 AM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
 
-On 06 July 2015 09:20, Laurent wrote:
-> Hi Phil,
-> 
-> Thank you for the patch.
-Thanks for your review!
- 
-> On Thursday 02 July 2015 11:26:33 Phil Edworthy wrote:
-> > These changes allow a PHY driver to trigger a VBUS interrupt and
-> > to provide the value of VBUS.
-> >
-> > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> >
-> > ---
-> > v3:
-> >   - Changed how indirect vbus is plumbed in.
-> >   - Removed unnecessary (void) on call to otg_set_peripheral.
-> >   - Moved code that connects to bus through transceiver so it
-> >     is before setting gpriv->driver.
-> >
-> > v2:
-> >   - vbus variables changed from int to bool.
-> >   - dev_info() changed to dev_err()
-> > ---
-> >  drivers/usb/renesas_usbhs/common.c     |  8 +++++--
-> >  drivers/usb/renesas_usbhs/common.h     |  2 ++
-> >  drivers/usb/renesas_usbhs/mod_gadget.c | 38
-> +++++++++++++++++++++++++++++++
-> >  3 files changed, 46 insertions(+), 2 deletions(-)
-> >
-> > diff --git a/drivers/usb/renesas_usbhs/common.c
-> > b/drivers/usb/renesas_usbhs/common.c index 0f7e850..15e67d8 100644
-> > --- a/drivers/usb/renesas_usbhs/common.c
-> > +++ b/drivers/usb/renesas_usbhs/common.c
-> > @@ -379,7 +379,10 @@ static void usbhsc_hotplug(struct usbhs_priv *priv)
-> >  	/*
-> >  	 * get vbus status from platform
-> >  	 */
-> > -	enable = usbhs_platform_call(priv, get_vbus, pdev);
-> > +	if (priv->vbus_is_indirect)
-> > +		enable = priv->vbus_indirect_value;
-> > +	else
-> > +		enable = usbhs_platform_call(priv, get_vbus, pdev);
-> >
-> >  	/*
-> >  	 * get id from platform
-> > @@ -662,7 +665,8 @@ static int usbhs_probe(struct platform_device *pdev)
-> >  	pm_runtime_enable(&pdev->dev);
-> >  	if (!usbhsc_flags_has(priv, USBHSF_RUNTIME_PWCTRL)) {
-> >  		usbhsc_power_ctrl(priv, 1);
-> > -		usbhs_mod_autonomy_mode(priv);
-> > +		if (!priv->vbus_is_indirect)
-> 
-> Isn't this racy ? The vbus_session operation is called by transceivers from
-> interrupt handlers or work queues. Do we have a guarantee that it will be
-> called at least once before this code is reached ? Please see below for a
-> possible way to fix this.
-You are right, it is racy... :(
+> If the pin function controller (which can be a GPIO controller) is
+> instantiated before the interrupt controllers, due to the ordering in
+> the DTS, the irq domains for the interrupt controllers referenced by its
+> "interrupts-extended" property cannot be found yet:
+>
+>     irq: no irq domain found for /interrupt-controller@e61c0000 !
+>
+> As the sh-pfc driver accesses the platform device's resources directly,
+> it cannot find the (optional) IRQ resources, and thinks no interrupts
+> are available. This may lead to failures later, when GPIOs are used as
+> interupts:
+>
+>     gpio-keys keyboard: Unable to claim irq 0; error -22
+>     gpio-keys: probe of keyboard failed with error -22
+>
+> To fix this, add support for deferred probing to sh-pfc, by converting
+> the driver from direct platform device resource access to using the
+> platform_get_resource() and platform_get_irq() helpers.
+>
+> Note that while this fixes the root cause worked around by commit
+> e4ba0a9bddff3ba5 ("ARM: shmobile: r8a73a4: Move pfc node to work around
+> probe ordering bug"), I strongly recommend against reverting the
+> workaround now, as this would lead to lots of probe deferrals in drivers
+> relying on pinctrl. This may be reconsidered once the DT code starts
+> taking into account phandle dependencies during device instantation.
+>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+> This patch is against next-20150625
+>
+> "[PATCH] [RFC] OF: probe order dependency aware of_platform_populate"
+> (https://www.marc.info/?l=DEvicetree&m=141873189825553&w=3D1) is a first
+> step, but it doesn't postpone the instantiation of the pfc.
+>
+> Tested:
+>   - r8a73a4/ape6evm (with pfc before/after irqc in DT),
+>   - sh73a0/kzm9g (with pfc before/after intc-irqpin in DT).
+>
+> Regression-tested:
+>   - r8a7791/koelsch (pfc doesn't have interrupts),
+>   - r8a7740/armadillo (pfc after intc-irqpin in DT),
+>   - r8a7740/armadillo-legacy (gpio-keys wired to pfc),
+>   - sh73a0/kzm9g-legacy (gpio-keys not wired to pfc).
+>
+> Compile-tested:
+>   - sh/se7724_defconfig.
 
-> > +			usbhs_mod_autonomy_mode(priv);
-> >  	}
-> >
-> >  	/*
-> > diff --git a/drivers/usb/renesas_usbhs/common.h
-> > b/drivers/usb/renesas_usbhs/common.h index 8c5fc12..478700c 100644
-> > --- a/drivers/usb/renesas_usbhs/common.h
-> > +++ b/drivers/usb/renesas_usbhs/common.h
-> > @@ -255,6 +255,8 @@ struct usbhs_priv {
-> >  	struct renesas_usbhs_driver_param	dparam;
-> >
-> >  	struct delayed_work notify_hotplug_work;
-> > +	bool vbus_is_indirect;
-> > +	bool vbus_indirect_value;
-> >  	struct platform_device *pdev;
-> >
-> >  	struct extcon_dev *edev;
-> > diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c
-> > b/drivers/usb/renesas_usbhs/mod_gadget.c index dc2aa32..93ad4ea 100644
-> > --- a/drivers/usb/renesas_usbhs/mod_gadget.c
-> > +++ b/drivers/usb/renesas_usbhs/mod_gadget.c
-> > @@ -21,6 +21,7 @@
-> >  #include <linux/platform_device.h>
-> >  #include <linux/usb/ch9.h>
-> >  #include <linux/usb/gadget.h>
-> > +#include <linux/usb/otg.h>
-> >  #include "common.h"
-> >
-> >  /*
-> > @@ -50,6 +51,7 @@ struct usbhsg_gpriv {
-> >  	int			 uep_size;
-> >
-> >  	struct usb_gadget_driver	*driver;
-> > +	struct usb_phy		*transceiver;
-> >
-> >  	u32	status;
-> >  #define USBHSG_STATUS_STARTED		(1 << 0)
-> > @@ -882,12 +884,25 @@ static int usbhsg_gadget_start(struct usb_gadget
-> > *gadget, {
-> >  	struct usbhsg_gpriv *gpriv = usbhsg_gadget_to_gpriv(gadget);
-> >  	struct usbhs_priv *priv = usbhsg_gpriv_to_priv(gpriv);
-> > +	struct device *dev = usbhs_priv_to_dev(priv);
-> > +	int ret;
-> >
-> >  	if (!driver		||
-> >  	    !driver->setup	||
-> >  	    driver->max_speed < USB_SPEED_FULL)
-> >  		return -EINVAL;
-> >
-> > +	/* connect to bus through transceiver */
-> > +	if (!IS_ERR_OR_NULL(gpriv->transceiver)) {
-> > +		ret = otg_set_peripheral(gpriv->transceiver->otg,
-> > +					&gpriv->gadget);
-> > +		if (ret) {
-> > +			dev_err(dev, "%s: can't bind to transceiver\n",
-> > +				gpriv->gadget.name);
-> > +			return ret;
-> > +		}
-> > +	}
-> > +
-> 
-> How is this change related to the topic ? I'm not too familiar with this
-> driver so I might just have missed something, but then others could as well,
-> and the commit message could do with a bit more information.
-I'm not sure what you mean, this code is needed to tell the phy driver
-if it is in host or gadget mode. I would have thought this is clear as it calls
-otg_set_peripheral.
+Waiting for Laurent's ACK on this.
 
-> >  	/* first hook up the driver ... */
-> >  	gpriv->driver = driver;
-> >
-> > @@ -900,6 +915,10 @@ static int usbhsg_gadget_stop(struct usb_gadget
-> > *gadget) struct usbhs_priv *priv = usbhsg_gpriv_to_priv(gpriv);
-> >
-> >  	usbhsg_try_stop(priv, USBHSG_STATUS_REGISTERD);
-> > +
-> > +	if (!IS_ERR_OR_NULL(gpriv->transceiver))
-> > +		otg_set_peripheral(gpriv->transceiver->otg, NULL);
-> > +
-> >  	gpriv->driver = NULL;
-> >
-> >  	return 0;
-> > @@ -947,12 +966,27 @@ static int usbhsg_set_selfpowered(struct usb_gadget
-> > *gadget, int is_self) return 0;
-> >  }
-> >
-> > +static int usbhsg_vbus_session(struct usb_gadget *gadget, int is_active)
-> > +{
-> > +	struct usbhsg_gpriv *gpriv = usbhsg_gadget_to_gpriv(gadget);
-> > +	struct usbhs_priv *priv = usbhsg_gpriv_to_priv(gpriv);
-> > +	struct platform_device *pdev = usbhs_priv_to_pdev(priv);
-> > +
-> > +	priv->vbus_is_indirect = 1;
-> 
-> vbus_is_indirect is never reset to 0. Shouldn't you set it to 1 (or rather to
-> true) in usbhs_mod_gadget_probe() if an external transceiver is found ?
-Yes, I see what you say.
-
-> What would you think of implementing and wiring up the get_vbus operation in
-> usbhs_mod_gadget_probe() in the same way that
-> usbhs_mod_autonomy_mode() does,
-> and return the value of vbus_indirect_value there ? You could then get rid of
-> the vbus_is_indirect field and move the vbus_indirect_value field to struct
-> usbhsg_gpriv, removing the need to modify
-> drivers/usb/renesas_usbhs/common.c.
-> It should also solve the race condition mentioned above.
-Ok, I'll have a look at that.
- 
-> > +	priv->vbus_indirect_value = !!is_active;
-> > +
-> > +	renesas_usbhs_call_notify_hotplug(pdev);
-> > +
-> > +	return 0;
-> > +}
-> > +
-> >  static const struct usb_gadget_ops usbhsg_gadget_ops = {
-> >  	.get_frame		= usbhsg_get_frame,
-> >  	.set_selfpowered	= usbhsg_set_selfpowered,
-> >  	.udc_start		= usbhsg_gadget_start,
-> >  	.udc_stop		= usbhsg_gadget_stop,
-> >  	.pullup			= usbhsg_pullup,
-> > +	.vbus_session		= usbhsg_vbus_session,
-> >  };
-> >
-> >  static int usbhsg_start(struct usbhs_priv *priv)
-> > @@ -994,6 +1028,10 @@ int usbhs_mod_gadget_probe(struct usbhs_priv
-> *priv)
-> >  		goto usbhs_mod_gadget_probe_err_gpriv;
-> >  	}
-> >
-> > +	gpriv->transceiver = usb_get_phy(USB_PHY_TYPE_UNDEFINED);
-> > +	dev_info(dev, "%s transceiver found\n",
-> > +		 gpriv->transceiver ? "" : "No");
-> > +
-> >  	/*
-> >  	 * CAUTION
-> >  	 *
-> 
-> --
-> Regards,
-> 
-> Laurent Pinchart
-
-Thanks
-Phil
+Yours,
+Linus Walleij
