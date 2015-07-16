@@ -1,102 +1,423 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 13 Jul 2015 17:44:09 +0000
-Subject: RE: [PATCH v3] phy: rcar-gen2 usb: Add Host/Function switching for USB0
-Message-Id: <SIXPR06MB0639F265BF54B92FE5940139F59C0@SIXPR06MB0639.apcprd06.prod.outlook.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 16 Jul 2015 07:53:52 +0000
+Subject: [PATCH 01/03] ARM: shmobile: marzen: Remove legacy board code
+Message-Id: <20150716075352.1198.7492.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <SG2PR06MB0919835888EBD162D4B86C24D8930@SG2PR06MB0919.apcprd06.prod.outlook.com>
- <1436270121-25924-1-git-send-email-phil.edworthy@renesas.com>
- <559FF47A.5000001@cogentembedded.com>
- <SIXPR06MB0639B9810214ACE6C7F91FB6F59C0@SIXPR06MB0639.apcprd06.prod.outlook.com>
- <55A39030.1030601@cogentembedded.com>
- <SIXPR06MB0639D6F8EC3D9091D139FC36F59C0@SIXPR06MB0639.apcprd06.prod.outlook.com>
- <55A3E937.2050804@cogentembedded.com>
- <SIXPR06MB063912FA28F435A8D46CE56CF59C0@SIXPR06MB0639.apcprd06.prod.outlook.com>
- <55A3F0D2.2080908@cogentembedded.com>
-In-Reply-To: <55A3F0D2.2080908-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>, Kishon Vijay Abraham I <kishon-l0cyMroinI0@public.gmane.org>
-Cc: Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-Hi Sergei,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On 13 July 2015 18:10, Sergei wrote:
-> On 07/13/2015 07:55 PM, Phil Edworthy wrote:
-> 
-> >>>>>>> Instead of statically selecting the PHY connection to either the
-> >>>>>>> USBHS (Function) or PCI0 (Host) IP blocks, this change allows the
-> >>>>>>> dts to specifiy gpio pins for the vbus and id signals. Additional
-> 
-> >>>>>>        These GPIOs don't have anything to do with the PHY, they're
-> interfacing
-> 
-> >>>>       Perhaps that was too strong statement but nevertheless...
-> 
-> >>> Looking at your MAX3355 extcon driver, I can't see how it would work on it's
-> >>> own.
-> 
-> >>      I've added the 'extcon' support into the Renesas USBHS driver, so that it
-> >> should be able to sense the ID pin status.
-> 
-> >>> The system needs to sense vbus in order to determine that the board
-> >>> has been plugged into a USB Host.
-<snip>
-Ok, so in summary, the max3355 device has two ways to communicate vbus
-back to a processor. You can either use the vbus signal or the status1/2 signals
-connected as gpios. The status1/2 signals give HNP information for OTG and
-are preferred, but depending on the board, they might not be available.
+Remove Marzen legacy board code written in C. Instead
+board support expressed in DT shall be used together
+with Multiplatform and shmobile_defconfig.
 
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ arch/arm/boot/dts/Makefile            |    3 
+ arch/arm/mach-shmobile/Kconfig        |    7 
+ arch/arm/mach-shmobile/Makefile       |    1 
+ arch/arm/mach-shmobile/Makefile.boot  |    1 
+ arch/arm/mach-shmobile/board-marzen.c |  347 ---------------------------------
+ 5 files changed, 1 insertion(+), 358 deletions(-)
+
+--- 0001/arch/arm/boot/dts/Makefile
++++ work/arch/arm/boot/dts/Makefile	2015-07-16 16:23:28.812366518 +0900
+@@ -502,8 +502,7 @@ dtb-$(CONFIG_ARCH_S5PV210) += \
+ 	s5pv210-torbreck.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
+ 	r8a7778-bockw.dtb \
+-	r8a7778-bockw-reference.dtb \
+-	r8a7779-marzen.dtb
++	r8a7778-bockw-reference.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	emev2-kzm9d.dtb \
+ 	r7s72100-genmai.dtb \
+--- 0001/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2015-07-16 16:20:47.822366518 +0900
+@@ -137,13 +137,6 @@ config MACH_BOCKW_REFERENCE
  
-> >>> My intention is to make the USB PHY driver listen for extcon events instead
-> >>> of directly accessing the ID and VBUS signals, but otherwise behave in the
-> >>> same way it currently does.
-> 
-> >>      I'm not sure the PHY driver should be interested in that...
-> 
-> > Then how is the PHY going to know when to switch between pci0 (host) and
-> > hsusb (function)?
-> 
->     As I said, I planted the extcon hooks directly into USBHS (merged patch)
-> and USB HCD code (unmerged, low quality hack).
-Unless I am missing something, the problem I see with this is that it will not
-dynamically switch between Host and Gadget, hence my suggestion that the
-USB PHY driver be interested in the extcon events.
-
-
-> >>> After reading some other threads, I also intend to set up a fixed regulator
-> >>> for the MAX3355 device to setup the shutdown and vbus enable pins.  I
-> know
-> >>> that the vbus enable should really be controlled some other way depending
-> >>> on the role, but for the moment I think it's ok just to enable it always.
-> 
-> >>      It's OK only in the host mode.
-> >>      I don't think we need regulators. SHDN- is already supported by the driver
-> >> (though it only drives it high at start-up time), in fact it was the only reason
-> >> not to use gpio.
-> 
-> >>> Do you think that is the correct way to progress this?
-> 
-> >>      I didn't have a clear picture how to implement the OTG support at the time
-> >> of writing the MAX3355 driver; actually, I was tasked to only support ID p[in
-> >> sensing.
-> 
-> > Right, so the max3355 driver needs some changes to include vbus handling.
-> > Are you working on this, or should I take it on?
-> 
->     No, not working yet, I have other things on my plate still...
-Ok, thanks for your comments! Hopefully I'll find the time to have a stab at this.
-
-
-> >>      Note that there's some ongoing effort now on linux-usb to support OTG
-> >> functionality.
-> 
-> > Yes, I need to spend some time reading that list!
-> 
-> > Thanks
-> > Phil
-> 
-> WBR, Sergei
-
-Thanks
-Phil
+ 	   This is intended to aid developers
+ 
+-config MACH_MARZEN
+-	bool "MARZEN board"
+-	depends on ARCH_R8A7779
+-	select ARCH_REQUIRE_GPIOLIB
+-	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-	select USE_OF
+-
+ comment "Renesas ARM SoCs System Configuration"
+ 
+ config CPU_HAS_INTEVT
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2015-07-16 16:20:47.000000000 +0900
+@@ -54,7 +54,6 @@ obj-$(CONFIG_ARCH_RCAR_GEN2)	+= pm-rcar-
+ ifndef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+-obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+ endif
+ 
+ # Framework support
+--- 0001/arch/arm/mach-shmobile/Makefile.boot
++++ work/arch/arm/mach-shmobile/Makefile.boot	2015-07-16 16:20:47.822366518 +0900
+@@ -2,7 +2,6 @@
+ loadaddr-y	: loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
+-loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
+ 
+ __ZRELADDR	:= $(sort $(loadaddr-y))
+    zreladdr-y   += $(__ZRELADDR)
+--- 0001/arch/arm/mach-shmobile/board-marzen.c
++++ /dev/null	2015-01-13 15:44:39.280208949 +0900
+@@ -1,347 +0,0 @@
+-/*
+- * marzen board support
+- *
+- * Copyright (C) 2011, 2013  Renesas Solutions Corp.
+- * Copyright (C) 2011  Magnus Damm
+- * Copyright (C) 2013  Cogent Embedded, Inc.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#include <linux/kernel.h>
+-#include <linux/init.h>
+-#include <linux/interrupt.h>
+-#include <linux/irq.h>
+-#include <linux/platform_device.h>
+-#include <linux/delay.h>
+-#include <linux/io.h>
+-#include <linux/leds.h>
+-#include <linux/dma-mapping.h>
+-#include <linux/pinctrl/machine.h>
+-#include <linux/platform_data/camera-rcar.h>
+-#include <linux/platform_data/gpio-rcar.h>
+-#include <linux/platform_data/usb-rcar-phy.h>
+-#include <linux/regulator/fixed.h>
+-#include <linux/regulator/machine.h>
+-#include <linux/smsc911x.h>
+-#include <linux/spi/spi.h>
+-#include <linux/spi/sh_hspi.h>
+-#include <linux/mmc/host.h>
+-#include <linux/mmc/sh_mobile_sdhi.h>
+-#include <linux/mfd/tmio.h>
+-
+-#include <media/soc_camera.h>
+-#include <asm/mach-types.h>
+-#include <asm/mach/arch.h>
+-#include <asm/traps.h>
+-
+-#include "common.h"
+-#include "irqs.h"
+-#include "r8a7779.h"
+-
+-/* Fixed 3.3V regulator to be used by SDHI0 */
+-static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
+-	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
+-	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
+-};
+-
+-/* Dummy supplies, where voltage doesn't matter */
+-static struct regulator_consumer_supply dummy_supplies[] = {
+-	REGULATOR_SUPPLY("vddvario", "smsc911x"),
+-	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
+-};
+-
+-/* USB PHY */
+-static struct resource usb_phy_resources[] = {
+-	[0] = {
+-		.start		= 0xffe70800,
+-		.end		= 0xffe70900 - 1,
+-		.flags		= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct rcar_phy_platform_data usb_phy_platform_data;
+-
+-static struct platform_device usb_phy = {
+-	.name		= "rcar_usb_phy",
+-	.id		= -1,
+-	.dev  = {
+-		.platform_data = &usb_phy_platform_data,
+-	},
+-	.resource	= usb_phy_resources,
+-	.num_resources	= ARRAY_SIZE(usb_phy_resources),
+-};
+-
+-/* SMSC LAN89218 */
+-static struct resource smsc911x_resources[] = {
+-	[0] = {
+-		.start		= 0x18000000, /* ExCS0 */
+-		.end		= 0x180000ff, /* A1->A7 */
+-		.flags		= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start		= irq_pin(1), /* IRQ 1 */
+-		.flags		= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct smsc911x_platform_config smsc911x_platdata = {
+-	.flags		= SMSC911X_USE_32BIT, /* 32-bit SW on 16-bit HW bus */
+-	.phy_interface	= PHY_INTERFACE_MODE_MII,
+-	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
+-	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
+-};
+-
+-static struct platform_device eth_device = {
+-	.name		= "smsc911x",
+-	.id		= -1,
+-	.dev  = {
+-		.platform_data = &smsc911x_platdata,
+-	},
+-	.resource	= smsc911x_resources,
+-	.num_resources	= ARRAY_SIZE(smsc911x_resources),
+-};
+-
+-static struct resource sdhi0_resources[] = {
+-	[0] = {
+-		.name	= "sdhi0",
+-		.start	= 0xffe4c000,
+-		.end	= 0xffe4c0ff,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= gic_iid(0x88),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct tmio_mmc_data sdhi0_platform_data = {
+-	.chan_priv_tx = (void *)HPBDMA_SLAVE_SDHI0_TX,
+-	.chan_priv_rx = (void *)HPBDMA_SLAVE_SDHI0_RX,
+-	.flags        = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
+-	.capabilities = MMC_CAP_SD_HIGHSPEED,
+-};
+-
+-static struct platform_device sdhi0_device = {
+-	.name = "sh_mobile_sdhi",
+-	.num_resources = ARRAY_SIZE(sdhi0_resources),
+-	.resource = sdhi0_resources,
+-	.id = 0,
+-	.dev = {
+-		.platform_data = &sdhi0_platform_data,
+-	}
+-};
+-
+-/* Thermal */
+-static struct resource thermal_resources[] = {
+-	[0] = {
+-		.start		= 0xFFC48000,
+-		.end		= 0xFFC48038 - 1,
+-		.flags		= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct platform_device thermal_device = {
+-	.name		= "rcar_thermal",
+-	.resource	= thermal_resources,
+-	.num_resources	= ARRAY_SIZE(thermal_resources),
+-};
+-
+-/* HSPI */
+-static struct resource hspi_resources[] = {
+-	[0] = {
+-		.start		= 0xFFFC7000,
+-		.end		= 0xFFFC7018 - 1,
+-		.flags		= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct platform_device hspi_device = {
+-	.name	= "sh-hspi",
+-	.id	= 0,
+-	.resource	= hspi_resources,
+-	.num_resources	= ARRAY_SIZE(hspi_resources),
+-};
+-
+-/* LEDS */
+-static struct gpio_led marzen_leds[] = {
+-	{
+-		.name		= "led2",
+-		.gpio		= RCAR_GP_PIN(4, 29),
+-		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+-	}, {
+-		.name		= "led3",
+-		.gpio		= RCAR_GP_PIN(4, 30),
+-		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+-	}, {
+-		.name		= "led4",
+-		.gpio		= RCAR_GP_PIN(4, 31),
+-		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+-	},
+-};
+-
+-static struct gpio_led_platform_data marzen_leds_pdata = {
+-	.leds		= marzen_leds,
+-	.num_leds	= ARRAY_SIZE(marzen_leds),
+-};
+-
+-static struct platform_device leds_device = {
+-	.name	= "leds-gpio",
+-	.id	= 0,
+-	.dev	= {
+-		.platform_data  = &marzen_leds_pdata,
+-	},
+-};
+-
+-/* VIN */
+-static struct rcar_vin_platform_data vin_platform_data __initdata = {
+-	.flags	= RCAR_VIN_BT656,
+-};
+-
+-#define MARZEN_VIN(idx)						\
+-static struct resource vin##idx##_resources[] __initdata = {	\
+-	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),	\
+-	DEFINE_RES_IRQ(gic_iid(0x5f + (idx))),			\
+-};								\
+-								\
+-static struct platform_device_info vin##idx##_info __initdata = { \
+-	.name		= "r8a7779-vin",			\
+-	.id		= idx,					\
+-	.res		= vin##idx##_resources,			\
+-	.num_res	= ARRAY_SIZE(vin##idx##_resources),	\
+-	.dma_mask	= DMA_BIT_MASK(32),			\
+-	.data		= &vin_platform_data,			\
+-	.size_data	= sizeof(vin_platform_data),		\
+-}
+-MARZEN_VIN(1);
+-MARZEN_VIN(3);
+-
+-#define MARZEN_CAMERA(idx)					\
+-static struct i2c_board_info camera##idx##_info = {		\
+-	I2C_BOARD_INFO("adv7180", 0x20 + (idx)),		\
+-};								\
+-								\
+-static struct soc_camera_link iclink##idx##_adv7180 = {		\
+-	.bus_id		= 1 + 2 * (idx),			\
+-	.i2c_adapter_id	= 0,					\
+-	.board_info	= &camera##idx##_info,			\
+-};								\
+-								\
+-static struct platform_device camera##idx##_device = {		\
+-	.name	= "soc-camera-pdrv",				\
+-	.id	= idx,						\
+-	.dev	= {						\
+-		.platform_data	= &iclink##idx##_adv7180,	\
+-	},							\
+-};
+-
+-MARZEN_CAMERA(0);
+-MARZEN_CAMERA(1);
+-
+-static struct platform_device *marzen_devices[] __initdata = {
+-	&eth_device,
+-	&sdhi0_device,
+-	&thermal_device,
+-	&hspi_device,
+-	&leds_device,
+-	&usb_phy,
+-	&camera0_device,
+-	&camera1_device,
+-};
+-
+-static const struct pinctrl_map marzen_pinctrl_map[] = {
+-	/* DU (CN10: ARGB0, CN13: LVDS) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
+-				  "du0_rgb888", "du0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
+-				  "du0_sync_1", "du0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
+-				  "du0_clk_out_0", "du0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
+-				  "du1_rgb666", "du1"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
+-				  "du1_sync_1", "du1"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
+-				  "du1_clk_out", "du1"),
+-	/* HSPI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7779",
+-				  "hspi0", "hspi0"),
+-	/* SCIF2 (CN18: DEBUG0) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
+-				  "scif2_data_c", "scif2"),
+-	/* SCIF4 (CN19: DEBUG1) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
+-				  "scif4_data", "scif4"),
+-	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
+-				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
+-				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
+-				  "sdhi0_cd", "sdhi0"),
+-	/* SMSC */
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
+-				  "intc_irq1_b", "intc"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
+-				  "lbsc_ex_cs0", "lbsc"),
+-	/* USB0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.0", "pfc-r8a7779",
+-				  "usb0", "usb0"),
+-	/* USB1 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.0", "pfc-r8a7779",
+-				  "usb1", "usb1"),
+-	/* USB2 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.1", "pfc-r8a7779",
+-				  "usb2", "usb2"),
+-	/* VIN1 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.1", "pfc-r8a7779",
+-				  "vin1_clk", "vin1"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.1", "pfc-r8a7779",
+-				  "vin1_data8", "vin1"),
+-	/* VIN3 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.3", "pfc-r8a7779",
+-				  "vin3_clk", "vin3"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.3", "pfc-r8a7779",
+-				  "vin3_data8", "vin3"),
+-};
+-
+-static void __init marzen_init(void)
+-{
+-	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+-				ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+-	regulator_register_fixed(1, dummy_supplies,
+-				ARRAY_SIZE(dummy_supplies));
+-
+-	pinctrl_register_mappings(marzen_pinctrl_map,
+-				  ARRAY_SIZE(marzen_pinctrl_map));
+-	r8a7779_pinmux_init();
+-	r8a7779_init_irq_extpin(1); /* IRQ1 as individual interrupt */
+-
+-	r8a7779_add_standard_devices();
+-	platform_device_register_full(&vin1_info);
+-	platform_device_register_full(&vin3_info);
+-	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+-}
+-
+-static const char *marzen_boards_compat_dt[] __initdata = {
+-        "renesas,marzen",
+-        NULL,
+-};
+-
+-DT_MACHINE_START(MARZEN, "marzen")
+-	.smp		= smp_ops(r8a7779_smp_ops),
+-	.map_io		= r8a7779_map_io,
+-	.init_early	= r8a7779_add_early_devices,
+-	.init_irq	= r8a7779_init_irq_dt,
+-	.init_machine	= marzen_init,
+-	.init_late	= r8a7779_init_late,
+-	.dt_compat	= marzen_boards_compat_dt,
+-	.init_time	= r8a7779_earlytimer_init,
+-MACHINE_END
