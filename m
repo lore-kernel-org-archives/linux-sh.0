@@ -1,90 +1,91 @@
-From: William Towle <william.towle@codethink.co.uk>
-Date: Tue, 28 Jul 2015 16:17:43 +0000
-Subject: [PATCH 1/2] ARM: shmobile: lager dts: Add entries for VIN HDMI input support
-Message-Id: <1438100264-17280-2-git-send-email-william.towle@codethink.co.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 16 Jul 2015 18:21:46 +0000
+Subject: [PATCH/RFC v2 15/29] serial: sh-sci: Improve sampling rate readability
+Message-Id: <1437070920-28069-16-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438100264-17280-1-git-send-email-william.towle@codethink.co.uk>
-In-Reply-To: <1438100264-17280-1-git-send-email-william.towle@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Add DT entries for vin0, vin0_pins, and adv7612
+Reorder sampling_rate assignment for consistency in all cases of the
+switch statement.
+Avoid using the ternary conditional operator to make it more clear that
+the value is overridden by platform data.
 
-Signed-off-by: William Towle <william.towle@codethink.co.uk>
-Signed-off-by: Rob Taylor <rob.taylor@codethink.co.uk>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts |   41 ++++++++++++++++++++++++++++++++++-
- 1 file changed, 40 insertions(+), 1 deletion(-)
+ drivers/tty/serial/sh-sci.c | 17 ++++++++---------
+ 1 file changed, 8 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index e02b523..aec7db6 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -378,7 +378,12 @@
- 		renesas,function = "usb2";
- 	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index d8a851b913dcadd7..3b29489bc0805a7c 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2237,7 +2237,6 @@ static int sci_init_single(struct platform_device *dev,
+ {
+ 	struct uart_port *port = &sci_port->port;
+ 	const struct resource *res;
+-	unsigned int sampling_rate;
+ 	unsigned int i;
+ 	int ret;
  
--	vin1_pins: vin {
-+	vin0_pins: vin0 {
-+		renesas,groups = "vin0_data24", "vin0_sync", "vin0_field", "vin0_clkenb", "vin0_clk";
-+		renesas,function = "vin0";
-+	};
-+
-+	vin1_pins: vin1 {
- 		renesas,groups = "vin1_data8", "vin1_clk";
- 		renesas,function = "vin1";
- 	};
-@@ -539,6 +544,18 @@
- 		reg = <0x12>;
- 	};
+@@ -2282,38 +2281,38 @@ static int sci_init_single(struct platform_device *dev,
+ 		port->fifosize = 256;
+ 		sci_port->overrun_reg = SCxSR;
+ 		sci_port->overrun_mask = SCIFA_ORER;
+-		sampling_rate = 16;
++		sci_port->sampling_rate = 16;
+ 		break;
+ 	case PORT_HSCIF:
+ 		port->fifosize = 128;
+-		sampling_rate = 0;
+ 		sci_port->overrun_reg = SCLSR;
+ 		sci_port->overrun_mask = SCLSR_ORER;
++		sci_port->sampling_rate = 0;
+ 		break;
+ 	case PORT_SCIFA:
+ 		port->fifosize = 64;
+ 		sci_port->overrun_reg = SCxSR;
+ 		sci_port->overrun_mask = SCIFA_ORER;
+-		sampling_rate = 16;
++		sci_port->sampling_rate = 16;
+ 		break;
+ 	case PORT_SCIF:
+ 		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE) {
+ 			port->fifosize = 64;
+ 			sci_port->overrun_reg = SCxSR;
+ 			sci_port->overrun_mask = SCIFA_ORER;
+-			sampling_rate = 16;
++			sci_port->sampling_rate = 16;
+ 		} else {
+ 			port->fifosize = 16;
+ 			sci_port->overrun_reg = SCLSR;
+ 			sci_port->overrun_mask = SCLSR_ORER;
+-			sampling_rate = 32;
++			sci_port->sampling_rate = 32;
+ 		}
+ 		break;
+ 	default:
+ 		port->fifosize = 1;
+ 		sci_port->overrun_reg = SCxSR;
+ 		sci_port->overrun_mask = SCI_ORER;
+-		sampling_rate = 32;
++		sci_port->sampling_rate = 32;
+ 		break;
+ 	}
  
-+	hdmi-in@4c {
-+		compatible = "adi,adv7612";
-+		reg = <0x4c>;
-+		remote = <&vin0>;
-+
-+		port {
-+			hdmi_in_ep: endpoint {
-+				remote-endpoint = <&vin0ep0>;
-+			};
-+		};
-+	};
-+
- 	composite-in@20 {
- 		compatible = "adi,adv7180";
- 		reg = <0x20>;
-@@ -654,6 +671,28 @@
- 	status = "okay";
- };
+@@ -2321,8 +2320,8 @@ static int sci_init_single(struct platform_device *dev,
+ 	 * match the SoC datasheet, this should be investigated. Let platform
+ 	 * data override the sampling rate for now.
+ 	 */
+-	sci_port->sampling_rate = p->sampling_rate ? p->sampling_rate
+-				: sampling_rate;
++	if (p->sampling_rate)
++		sci_port->sampling_rate = p->sampling_rate;
  
-+/* HDMI video input */
-+&vin0 {
-+	pinctrl-0 = <&vin0_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "ok";
-+
-+	port {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		vin0ep0: endpoint {
-+			remote-endpoint = <&hdmi_in_ep>;
-+			bus-width = <24>;
-+			hsync-active = <0>;
-+			vsync-active = <0>;
-+			pclk-sample = <1>;
-+			data-active = <1>;
-+		};
-+	};
-+};
-+
- /* composite video input */
- &vin1 {
- 	pinctrl-0 = <&vin1_pins>;
+ 	if (!early) {
+ 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
 -- 
-1.7.10.4
+1.9.1
 
