@@ -1,108 +1,31 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 14 Jul 2015 11:41:04 +0000
-Subject: [PATCH v2] clocksource: sh_cmt: Only perform clocksource suspend/resume if enabled
-Message-Id: <1436874064-2729-1-git-send-email-geert+renesas@glider.be>
+From: Daniel Lezcano <daniel.lezcano@linaro.org>
+Date: Thu, 16 Jul 2015 13:41:19 +0000
+Subject: Re: [PATCH v2] clocksource: sh_cmt: Only perform clocksource suspend/resume if enabled
+Message-Id: <55A7B47F.7060202@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1436874064-2729-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1436874064-2729-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>
-Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: Geert Uytterhoeven <geert+renesas@glider.be>, Thomas Gleixner <tglx@linutronix.de>
+Cc: linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Currently the sh_cmt clocksource timer is disabled or enabled
-unconditionally on clocksource suspend resp. resume, even if a better
-clocksource is present (e.g. arch_sys_counter) and the sh_cmt
-clocksource is not enabled.
 
-As sh_cmt is a syscore device when its timer is enabled, this may lead
-to a genpd.prepared_count imbalance in the presence of PM Domains, which
-may cause a lock-up during reboot after s2ram.
+Hi Geert,
 
-During suspend:
-  - pm_genpd_prepare() is called for all non-syscore devices (incl.
-    sh_cmt), increasing genpd.prepared_count for each device,
-  - clocksource.suspend() is called for all clocksource devices,
-  - sh_cmt_clocksource_suspend() calls sh_cmt_stop(), which is a no-op
-    as the clocksource was not enabled.
+do you mean to test if the patch [1] solves your problem.
 
-During resume:
-  - clocksource.resume() is called for all clocksource devices,
-  - sh_cmt_clocksource_resume() calls sh_cmt_start(), which enables the
-    clocksource timer, and turns sh_cmt into a syscore device,
-  - pm_genpd_complete() is called for all non-syscore devices (excl.
-    sh_cmt now!), decreasing genpd.prepared_count for each device but
-    sh_cmt.
+   -- Daniel
 
-Now genpd.prepared_count of the PM Domain containing sh_cmt is still 1
-instead of zero.  On subsequent suspend/resume cycles, sh_cmt is still a
-syscore device, hence it's skipped for pm_genpd_{prepare,complete}(),
-keeping the imbalance of genpd.prepared_count at 1.
+[1] https://lkml.org/lkml/2015/1/16/81
 
-During reboot:
-  - platform_drv_shutdown() is called for any platform device that has
-    a driver with a .shutdown() method (only rcar-dmac on R-Car Gen2),
-  - platform_drv_shutdown() calls dev_pm_domain_detach(), which
-    calls genpd_dev_pm_detach(),
-  - genpd_dev_pm_detach() keeps calling pm_genpd_remove_device() until
-    it doesn't return -EAGAIN[*],
-  - If the device is part of the same PM Domain as sh_cmt,
-    pm_genpd_remove_device() always fails with -EAGAIN due to
-    genpd.prepared_count > 0.
-  - Infinite loop in genpd_dev_pm_detach()[*].
 
-[*] Commit 93af5e9354432828 ("PM / Domains: Avoid infinite loops in
-    attach/detach code") already limited the number of loop iterations,
-    avoiding the lock-up.
+--=20
+  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
+M SoCs
 
-To fix this, only disable or enable the clocksource timer on clocksource
-suspend resp. resume if the clocksource was enabled.
-
-This was tested on r8a7791/koelsch with the CPG Clock Domain:
-  - using arch_sys_counter as the clocksource, which is the default, and
-    which showed the problem,
-  - using sh_cmt as a clocksource ("echo ffca0000.timer > \
-    /sys/devices/system/clocksource/clocksource0/current_clocksource"),
-    which behaves the same as before.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
-v1 was part of "[PATCH 0/2] PM / Domains: Infinite loop during reboot"
-(https://lkml.org/lkml/2015/6/18/212). The other part has been applied
-already (commit 93af5e9354432828).
-
-v2:
-  - Add Acked-by,
-  - Add a reference to the commit that fixed the infinite loop in the
-    core PM Domain code.
----
- drivers/clocksource/sh_cmt.c | 6 ++++++
- 1 file changed, 6 insertions(+)
-
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index d56d4e0e3fb3956d..ef799532a7a7963e 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -661,6 +661,9 @@ static void sh_cmt_clocksource_suspend(struct clocksource *cs)
- {
- 	struct sh_cmt_channel *ch = cs_to_sh_cmt(cs);
- 
-+	if (!ch->cs_enabled)
-+		return;
-+
- 	sh_cmt_stop(ch, FLAG_CLOCKSOURCE);
- 	pm_genpd_syscore_poweroff(&ch->cmt->pdev->dev);
- }
-@@ -669,6 +672,9 @@ static void sh_cmt_clocksource_resume(struct clocksource *cs)
- {
- 	struct sh_cmt_channel *ch = cs_to_sh_cmt(cs);
- 
-+	if (!ch->cs_enabled)
-+		return;
-+
- 	pm_genpd_syscore_poweron(&ch->cmt->pdev->dev);
- 	sh_cmt_start(ch, FLAG_CLOCKSOURCE);
- }
--- 
-1.9.1
+Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
+<http://twitter.com/#!/linaroorg> Twitter |
+<http://www.linaro.org/linaro-blog/> Blog
 
