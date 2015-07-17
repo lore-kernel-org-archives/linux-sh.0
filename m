@@ -1,38 +1,46 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Jul 2015 08:41:47 +0000
-Subject: [PATCH 6/9] ARM: shmobile: Remove Marzen from shmobile_defconfig
-Message-Id: <824fd0fb7daa12521eebc2344869f07305e24431.1437726584.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 17 Jul 2015 14:08:23 +0000
+Subject: [RFC 3/9] i2c: add a flag to mark clients as slaves
+Message-Id: <1437142109-31975-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1437726584.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1437726584.git.horms+renesas@verge.net.au>
+References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1437142109-31975-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Andrey Danin <danindrey-JGs/UdohzUI@public.gmane.org>, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Kill of the defconfig bits now when the marzen-reference board code is gone.
+And update indentation with one more tab, sigh...
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/configs/shmobile_defconfig | 1 -
- 1 file changed, 1 deletion(-)
+ include/linux/i2c.h | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 9fece82a4127..fc15a19bfaf0 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -20,7 +20,6 @@ CONFIG_ARCH_R8A7790=y
- CONFIG_ARCH_R8A7791=y
- CONFIG_ARCH_R8A7794=y
- CONFIG_ARCH_SH73A0=y
--CONFIG_MACH_MARZEN=y
- CONFIG_CPU_BPREDICT_DISABLE=y
- CONFIG_PL310_ERRATA_588369=y
- CONFIG_ARM_ERRATA_754322=y
+diff --git a/include/linux/i2c.h b/include/linux/i2c.h
+index e83a738a3b8741..51ed2e40932f3d 100644
+--- a/include/linux/i2c.h
++++ b/include/linux/i2c.h
+@@ -550,11 +550,12 @@ void i2c_lock_adapter(struct i2c_adapter *);
+ void i2c_unlock_adapter(struct i2c_adapter *);
+ 
+ /*flags for the client struct: */
+-#define I2C_CLIENT_PEC	0x04		/* Use Packet Error Checking */
+-#define I2C_CLIENT_TEN	0x10		/* we have a ten bit chip address */
++#define I2C_CLIENT_PEC		0x04	/* Use Packet Error Checking */
++#define I2C_CLIENT_TEN		0x10	/* we have a ten bit chip address */
+ 					/* Must equal I2C_M_TEN below */
+-#define I2C_CLIENT_WAKE	0x80		/* for board_info; true iff can wake */
+-#define I2C_CLIENT_SCCB	0x9000		/* Use Omnivision SCCB protocol */
++#define I2C_CLIENT_SLAVE	0x20	/* we are the slave */
++#define I2C_CLIENT_WAKE		0x80	/* for board_info; true iff can wake */
++#define I2C_CLIENT_SCCB		0x9000	/* Use Omnivision SCCB protocol */
+ 					/* Must match I2C_M_STOP|IGNORE_NAK */
+ 
+ /* i2c adapter classes (bitmask) */
 -- 
 2.1.4
 
