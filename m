@@ -1,37 +1,45 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 14 Jul 2015 00:59:25 +0000
-Subject: RE: [PATCH/RFC] usb: gadget: udc: core: Fix argument of dma_map_single for IOMMU
-Message-Id: <SG2PR06MB09198308BE5EBFF8E2E8306AD89B0@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 17 Jul 2015 14:08:29 +0000
+Subject: [RFC 9/9] dts: tegra: WIP: hack dts to test new dt flags for i2c
+Message-Id: <1437142109-31975-10-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436778605-5576-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1436778605-5576-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1437142109-31975-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Andrey Danin <danindrey-JGs/UdohzUI@public.gmane.org>, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-SGkgR2VlcnQtc2FuLA0KDQo+IFNlbnQ6IFR1ZXNkYXksIEp1bHkgMTQsIDIwMTUgMTo1MiBBTQ0K
-PiANCj4gSGkgR3JlZywNCj4gDQo+IE9uIE1vbiwgSnVsIDEzLCAyMDE1IGF0IDY6MTkgUE0sIEdy
-ZWcgS0ggPGdyZWdraEBsaW51eGZvdW5kYXRpb24ub3JnPiB3cm90ZToNCj4gPiBPbiBNb24sIEp1
-bCAxMywgMjAxNSBhdCAwNjoxMDowNVBNICswOTAwLCBZb3NoaWhpcm8gU2hpbW9kYSB3cm90ZToN
-Cj4gPj4gVGhlIGRtYV9tYXBfc2luZ2xlIGFuZCBkbWFfdW5tYXBfc2luZ2xlIHNob3VsZCBzZXQg
-ImdhZGdldC0+ZGV2LnBhcmVudCINCj4gPj4gaW5zdGVhZCBvZiAiJmdhZGdldC0+ZGV2IiBpbiB0
-aGUgZmlyc3QgYXJndW1lbnQgYmVjYXVzZSB0aGUgcGFyZW50IGhhcw0KPiA+PiBhIHVkYyBjb250
-cm9sbGVyJ3MgZGV2aWNlIHBvaW50ZXIuDQo+ID4+IE90aGVyd2lzZSwgaW9tbXUgZnVuY3Rpb25z
-IGFyZSBub3QgY2FsbGVkIGluIEFSTSBlbnZpcm9ubWVudC4NCj4gPj4NCj4gPj4gU2lnbmVkLW9m
-Zi1ieTogWW9zaGloaXJvIFNoaW1vZGEgPHlvc2hpaGlyby5zaGltb2RhLnVoQHJlbmVzYXMuY29t
-Pg0KPiA+PiAtLS0NCj4gPj4gIFRoaXMgcGF0Y2ggaXMgYmFzZWQgb24gdGhlIEZlbGlwZSdzIHVz
-Yi5naXQgLyB0ZXN0aW5nL25leHQgYnJhbmNoLg0KPiA+PiAgY29tbWl0IGlkID0gMjk4NjIzOTgz
-ZTc0ZDkzNWZjMjQxZDBlYjFkMDc0MGNmNGMzMjU5OQ0KPiA+DQo+ID4gV2h5IHNlbmQgc29tZXRo
-aW5nIHRoYXQgaGFzIGFscmVhZHkgYmVlbiBhY2NlcHRlZCBpbnRvIEZlbGlwZSdzIHRyZWU/DQo+
-IA0KPiBUaGF0IGNvbW1pdCBJRCBkb2VzIG5vdCByZWZlciB0byBTaGltb2RhLXNhbidzIHBhdGNo
-LCBidXQgdG8gdGhlIEhFQUQgb2YNCj4gRmVsaXBlJ3MgdGVzdGluZy9uZXh0IGJyYW5jaC4NCg0K
-VGhhbmsgeW91IGZvciB5b3VyIGNvbW1lbnQhIEkgbWVhbnQgdGhhdC4NCihJJ20gc29ycnkgZm9y
-IG15IGxhY2sgZXhwbGFuYXRpb24uKQ0KDQpCZXN0IHJlZ2FyZHMsDQpZb3NoaWhpcm8gU2hpbW9k
-YQ0KDQo+IEdye29ldGplLGVldGluZ31zLA0KPiANCj4gICAgICAgICAgICAgICAgICAgICAgICAg
-R2VlcnQNCj4gDQo+IC0tDQo+IEdlZXJ0IFV5dHRlcmhvZXZlbiAtLSBUaGVyZSdzIGxvdHMgb2Yg
-TGludXggYmV5b25kIGlhMzIgLS0gZ2VlcnRAbGludXgtbTY4ay5vcmcNCj4gDQo+IEluIHBlcnNv
-bmFsIGNvbnZlcnNhdGlvbnMgd2l0aCB0ZWNobmljYWwgcGVvcGxlLCBJIGNhbGwgbXlzZWxmIGEg
-aGFja2VyLiBCdXQNCj4gd2hlbiBJJ20gdGFsa2luZyB0byBqb3VybmFsaXN0cyBJIGp1c3Qgc2F5
-ICJwcm9ncmFtbWVyIiBvciBzb21ldGhpbmcgbGlrZSB0aGF0Lg0KPiAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgIC0tIExpbnVzIFRvcnZhbGRzDQo
+Not-Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
+---
+ arch/arm/boot/dts/tegra124-jetson-tk1.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/tegra124-jetson-tk1.dts b/arch/arm/boot/dts/tegra124-jetson-tk1.dts
+index bd43ed6d6ec7c0..4d5f2a4c4da1ce 100644
+--- a/arch/arm/boot/dts/tegra124-jetson-tk1.dts
++++ b/arch/arm/boot/dts/tegra124-jetson-tk1.dts
+@@ -1,5 +1,6 @@
+ /dts-v1/;
+ 
++#include <dt-bindings/i2c/i2c.h>
+ #include <dt-bindings/input/input.h>
+ #include "tegra124.dtsi"
+ 
+@@ -1390,6 +1391,12 @@
+ 			reg = <0x56>;
+ 			pagesize = <8>;
+ 		};
++
++		eeprom@42 {
++			compatible = "linux,slave-24c02";
++			//FIXME: Should be I2C_OWN_SLAVE_ADDRESS | 0x42
++			reg = <0xc0000042>;
++		};
+ 	};
+ 
+ 	/* Expansion GEN2_I2C_* */
+-- 
+2.1.4
+
