@@ -1,117 +1,225 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:36:59 +0000
-Subject: [PATCH 12/16] ARM: shmobile: Remove unused dma-register.h
-Message-Id: <68a31785697c6292e4de3f54914a6ff5ebd0a82d.1436509680.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 17 Jul 2015 14:08:21 +0000
+Subject: [RFC 1/9] i2c: tegra: implement slave mode
+Message-Id: <1437142109-31975-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436509680.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436509680.git.horms+renesas@verge.net.au>
+References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1437142109-31975-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Andrey Danin <danindrey-JGs/UdohzUI@public.gmane.org>, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Andrey Danin <danindrey@mail.ru>
 
-The last users of "dma-register.h" were the sh73a0 and r8a7740 legacy
-SoC code, which have been removed.
+Initialization code is based on NVEC driver.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+There is a HW bug in AP20 that was also mentioned in kernel sources
+for Toshiba AC100.
+
+Signed-off-by: Andrey Danin <danindrey@mail.ru>
+Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
 ---
- arch/arm/mach-shmobile/dma-register.h | 84 -----------------------------------
- 1 file changed, 84 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/dma-register.h
+ drivers/i2c/busses/Kconfig     |   1 +
+ drivers/i2c/busses/i2c-tegra.c | 119 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 120 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/dma-register.h b/arch/arm/mach-shmobile/dma-register.h
-deleted file mode 100644
-index 52a2f66e600f..000000000000
---- a/arch/arm/mach-shmobile/dma-register.h
-+++ /dev/null
-@@ -1,84 +0,0 @@
--/*
-- * SH-ARM CPU-specific DMA definitions, used by both DMA drivers
-- *
-- * Copyright (C) 2012 Renesas Solutions Corp
-- *
-- * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-- *
-- * Based on arch/sh/include/cpu-sh4/cpu/dma-register.h
-- * Copyright (C) 2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License version 2 as
-- * published by the Free Software Foundation.
-- */
--
--#ifndef DMA_REGISTER_H
--#define DMA_REGISTER_H
--
--/*
-- *		Direct Memory Access Controller
-- */
--
--/* Transmit sizes and respective CHCR register values */
--enum {
--	XMIT_SZ_8BIT		= 0,
--	XMIT_SZ_16BIT		= 1,
--	XMIT_SZ_32BIT		= 2,
--	XMIT_SZ_64BIT		= 7,
--	XMIT_SZ_128BIT		= 3,
--	XMIT_SZ_256BIT		= 4,
--	XMIT_SZ_512BIT		= 5,
--};
--
--/* log2(size / 8) - used to calculate number of transfers */
--static const unsigned int dma_ts_shift[] = {
--	[XMIT_SZ_8BIT]		= 0,
--	[XMIT_SZ_16BIT]		= 1,
--	[XMIT_SZ_32BIT]		= 2,
--	[XMIT_SZ_64BIT]		= 3,
--	[XMIT_SZ_128BIT]	= 4,
--	[XMIT_SZ_256BIT]	= 5,
--	[XMIT_SZ_512BIT]	= 6,
--};
--
--#define TS_LOW_BIT	0x3 /* --xx */
--#define TS_HI_BIT	0xc /* xx-- */
--
--#define TS_LOW_SHIFT	(3)
--#define TS_HI_SHIFT	(20 - 2)	/* 2 bits for shifted low TS */
--
--#define TS_INDEX2VAL(i) \
--	((((i) & TS_LOW_BIT) << TS_LOW_SHIFT) |\
--	 (((i) & TS_HI_BIT)  << TS_HI_SHIFT))
--
--#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | RS_ERS | TS_INDEX2VAL((xmit_sz)))
--#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | RS_ERS | TS_INDEX2VAL((xmit_sz)))
--
--
--/*
-- *		USB High-Speed DMAC
-- */
--/* Transmit sizes and respective CHCR register values */
--enum {
--	USBTS_XMIT_SZ_8BYTE		= 0,
--	USBTS_XMIT_SZ_16BYTE		= 1,
--	USBTS_XMIT_SZ_32BYTE		= 2,
--};
--
--/* log2(size / 8) - used to calculate number of transfers */
--static const unsigned int dma_usbts_shift[] = {
--	[USBTS_XMIT_SZ_8BYTE]	= 3,
--	[USBTS_XMIT_SZ_16BYTE]	= 4,
--	[USBTS_XMIT_SZ_32BYTE]	= 5,
--};
--
--#define USBTS_LOW_BIT	0x3 /* --xx */
--#define USBTS_HI_BIT	0x0 /* ---- */
--
--#define USBTS_LOW_SHIFT	6
--#define USBTS_HI_SHIFT	0
--
--#define USBTS_INDEX2VAL(i) (((i) & 3) << 6)
--
--#endif /* DMA_REGISTER_H */
+diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
+index 577d58d1f1a198..6026271f6d1af5 100644
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -881,6 +881,7 @@ config I2C_SUN6I_P2WI
+ config I2C_TEGRA
+ 	tristate "NVIDIA Tegra internal I2C controller"
+ 	depends on ARCH_TEGRA
++	select I2C_SLAVE
+ 	help
+ 	  If you say yes to this option, support will be included for the
+ 	  I2C controller embedded in NVIDIA Tegra SOCs
+diff --git a/drivers/i2c/busses/i2c-tegra.c b/drivers/i2c/busses/i2c-tegra.c
+index 78a36681469674..dc080ca952960c 100644
+--- a/drivers/i2c/busses/i2c-tegra.c
++++ b/drivers/i2c/busses/i2c-tegra.c
+@@ -42,8 +42,17 @@
+ #define I2C_SL_CNFG				0x020
+ #define I2C_SL_CNFG_NACK			(1<<1)
+ #define I2C_SL_CNFG_NEWSL			(1<<2)
++#define I2C_SL_RCVD				0x024
++#define I2C_SL_STATUS				0x028
++#define I2C_SL_ST_IRQ				(1<<3)
++#define I2C_SL_ST_END_TRANS			(1<<4)
++#define I2C_SL_ST_RCVD				(1<<2)
++#define I2C_SL_ST_RNW				(1<<1)
+ #define I2C_SL_ADDR1				0x02c
+ #define I2C_SL_ADDR2				0x030
++#define I2C_SL_ADDR2_TEN_BIT_MODE		1
++#define I2C_SL_DELAY_COUNT			0x03c
++#define I2C_SL_DELAY_COUNT_DEFAULT		0x1E
+ #define I2C_TX_FIFO				0x050
+ #define I2C_RX_FIFO				0x054
+ #define I2C_PACKET_TRANSFER_STATUS		0x058
+@@ -125,6 +134,8 @@ enum msg_end_type {
+  * @clk_divisor_std_fast_mode: Clock divisor in standard/fast mode. It is
+  *		applicable if there is no fast clock source i.e. single clock
+  *		source.
++ * @slave_read_start_delay: Workaround for AP20 I2C Slave Controller bug. Delay
++ *              before writing data byte into register I2C_SL_RCVD.
+  */
+ 
+ struct tegra_i2c_hw_feature {
+@@ -133,6 +144,7 @@ struct tegra_i2c_hw_feature {
+ 	bool has_single_clk_source;
+ 	int clk_divisor_hs_mode;
+ 	int clk_divisor_std_fast_mode;
++	int slave_read_start_delay;
+ };
+ 
+ /**
+@@ -173,6 +185,7 @@ struct tegra_i2c_dev {
+ 	int msg_read;
+ 	u32 bus_clk_rate;
+ 	bool is_suspended;
++	struct i2c_client *slave;
+ };
+ 
+ static void dvc_writel(struct tegra_i2c_dev *i2c_dev, u32 val, unsigned long reg)
+@@ -461,12 +474,78 @@ static int tegra_i2c_init(struct tegra_i2c_dev *i2c_dev)
+ 	return err;
+ }
+ 
++static void tegra_i2c_slave_write(struct tegra_i2c_dev *i2c_dev, u32 val)
++{
++	i2c_writel(i2c_dev, val, I2C_SL_RCVD);
++
++	/*
++	 * TODO: A correct fix needs to be found for this.
++	 *
++	 * We experience less incomplete messages with this delay than without
++	 * it, but we don't know why. Help is appreciated.
++	 */
++	udelay(100);
++}
++
++static int tegra_i2c_slave_isr(int irq, struct tegra_i2c_dev *i2c_dev)
++{
++	u32 status;
++	u8 value;
++	u8 dummy;
++	u32 is_slave_irq, is_read, is_trans_start, is_trans_end;
++
++	if (!i2c_dev->slave || !i2c_dev->slave->slave_cb)
++		return -EINVAL;
++
++	status = i2c_readl(i2c_dev, I2C_SL_STATUS);
++
++	is_slave_irq = (status & I2C_SL_ST_IRQ);
++	is_read = (status & I2C_SL_ST_RNW);
++	is_trans_start = (status & I2C_SL_ST_RCVD);
++	is_trans_end = (status & I2C_SL_ST_END_TRANS);
++
++	if (!is_slave_irq)
++		return -EINVAL;
++
++	/* master sent stop */
++	if (is_trans_end) {
++		i2c_slave_event(i2c_dev->slave, I2C_SLAVE_STOP, &dummy);
++		if (!is_trans_start)
++			return 0;
++	}
++
++	if (is_read) {
++		/* i2c master reads data from us */
++		i2c_slave_event(i2c_dev->slave,
++				is_trans_start ? I2C_SLAVE_READ_REQUESTED
++					       : I2C_SLAVE_READ_PROCESSED,
++				&value);
++		if (is_trans_start && i2c_dev->hw->slave_read_start_delay)
++			udelay(i2c_dev->hw->slave_read_start_delay);
++		tegra_i2c_slave_write(i2c_dev, value);
++	} else {
++		/* i2c master sends data to us */
++		value = i2c_readl(i2c_dev, I2C_SL_RCVD);
++		if (is_trans_start)
++			tegra_i2c_slave_write(i2c_dev, 0);
++		i2c_slave_event(i2c_dev->slave,
++				is_trans_start ? I2C_SLAVE_WRITE_REQUESTED
++					       : I2C_SLAVE_WRITE_RECEIVED,
++				&value);
++	}
++
++	return 0;
++}
++
+ static irqreturn_t tegra_i2c_isr(int irq, void *dev_id)
+ {
+ 	u32 status;
+ 	const u32 status_err = I2C_INT_NO_ACK | I2C_INT_ARBITRATION_LOST;
+ 	struct tegra_i2c_dev *i2c_dev = dev_id;
+ 
++	if (!tegra_i2c_slave_isr(irq, i2c_dev))
++		return IRQ_HANDLED;
++
+ 	status = i2c_readl(i2c_dev, I2C_INT_STATUS);
+ 
+ 	if (status = 0) {
+@@ -664,9 +743,48 @@ static u32 tegra_i2c_func(struct i2c_adapter *adap)
+ 	return ret;
+ }
+ 
++static int tegra_reg_slave(struct i2c_client *slave)
++{
++	struct tegra_i2c_dev *i2c_dev = i2c_get_adapdata(slave->adapter);
++	int addr2 = 0;
++
++	if (i2c_dev->slave)
++		return -EBUSY;
++
++	i2c_dev->slave = slave;
++
++	tegra_i2c_clock_enable(i2c_dev);
++
++	i2c_writel(i2c_dev, I2C_SL_CNFG_NEWSL, I2C_SL_CNFG);
++	i2c_writel(i2c_dev, I2C_SL_DELAY_COUNT_DEFAULT, I2C_SL_DELAY_COUNT);
++
++	if (slave->addr > 0x7F)
++		addr2 = (slave->addr >> 7) | I2C_SL_ADDR2_TEN_BIT_MODE;
++
++	i2c_writel(i2c_dev, slave->addr, I2C_SL_ADDR1);
++	i2c_writel(i2c_dev, addr2, I2C_SL_ADDR2);
++
++	return 0;
++}
++
++static int tegra_unreg_slave(struct i2c_client *slave)
++{
++	struct tegra_i2c_dev *i2c_dev = i2c_get_adapdata(slave->adapter);
++
++	WARN_ON(!i2c_dev->slave);
++
++	i2c_writel(i2c_dev, 0, I2C_SL_CNFG);
++
++	i2c_dev->slave = NULL;
++
++	return 0;
++}
++
+ static const struct i2c_algorithm tegra_i2c_algo = {
+ 	.master_xfer	= tegra_i2c_xfer,
+ 	.functionality	= tegra_i2c_func,
++	.reg_slave	= tegra_reg_slave,
++	.unreg_slave	= tegra_unreg_slave,
+ };
+ 
+ /* payload size is only 12 bit */
+@@ -681,6 +799,7 @@ static const struct tegra_i2c_hw_feature tegra20_i2c_hw = {
+ 	.has_single_clk_source = false,
+ 	.clk_divisor_hs_mode = 3,
+ 	.clk_divisor_std_fast_mode = 0,
++	.slave_read_start_delay = 8,
+ };
+ 
+ static const struct tegra_i2c_hw_feature tegra30_i2c_hw = {
 -- 
 2.1.4
 
