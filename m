@@ -1,39 +1,24 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 15 Jul 2015 12:11:07 +0000
+From: David Miller <davem@davemloft.net>
+Date: Fri, 17 Jul 2015 07:11:41 +0000
 Subject: Re: [PATCH] ravb: do not invalidate cache for RX buffer twice
-Message-Id: <55A64DDB.4010108@cogentembedded.com>
+Message-Id: <20150717.001141.1945286438330434553.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4759713.2ulGRKsd9L@wasted.cogentembedded.com>
- <55A639CE.2030201@cogentembedded.com>
-In-Reply-To: <55A639CE.2030201@cogentembedded.com>
+In-Reply-To: <4759713.2ulGRKsd9L@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, David Miller <davem@davemloft.net>
-Cc: linux-sh@vger.kernel.org
+To: sergei.shtylyov@cogentembedded.com
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-On 7/15/2015 1:45 PM, Sergei Shtylyov wrote:
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 15 Jul 2015 00:56:52 +0300
 
->> First, dma_sync_single_for_cpu() shouldn't have been called in the first place
->> (it's a streaming DMA API). dma_unmap_single() should have been called instead.
->                            ^
->     Oops, I meant comma here.
+> First, dma_sync_single_for_cpu() shouldn't have been called in the first place
+> (it's a streaming DMA API). dma_unmap_single() should have been called instead.
+> Second, dma_unmap_single() call after handing the buffer to napi_gro_receive()
+> makes little sense.
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
->> Second, dma_unmap_single() call after handing the buffer to napi_gro_receive()
->> makes little sense.
-
->     Moreover, 'desc->dptr' may not be valid at this point...
-
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
->> ---
->> The patch is against Dave Miller's 'net.git' repo.
-
->> Don't know why I missed this DMA API misuse while working on the driver. :-<
-
->     Dave, do you want me to resend the patch with fixed up changelog?
-
-    Oops, forgot to CC Dave. :-(
-
-WBR, Sergei
-
+Applied with fixed up commit log message, thanks.
