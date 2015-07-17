@@ -1,59 +1,68 @@
-From: Rob Herring <robh@kernel.org>
-Date: Sun, 12 Jul 2015 14:26:49 +0000
-Subject: [PATCH v2 11/13] sh: kill off set_irq_flags usage
-Message-Id: <1436711211-18223-12-git-send-email-robh@kernel.org>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 17 Jul 2015 14:08:28 +0000
+Subject: [RFC 8/9] i2c: take address space into account when checking for used addresses
+Message-Id: <1437142109-31975-9-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436711211-18223-1-git-send-email-robh@kernel.org>
-In-Reply-To: <1436711211-18223-1-git-send-email-robh@kernel.org>
+References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1437142109-31975-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Andrey Danin <danindrey-JGs/UdohzUI@public.gmane.org>, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-set_irq_flags is ARM specific with custom flags which have genirq
-equivalents. Convert drivers to use the genirq interfaces directly, so we
-can kill off set_irq_flags. The translation of flags is as follows:
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-IRQF_VALID -> !IRQ_NOREQUEST
-IRQF_PROBE -> !IRQ_NOPROBE
-IRQF_NOAUTOEN -> IRQ_NOAUTOEN
+It is not enough to compare the plain address value, we also need to
+check the flags enabling a different address space. E.g. it is valid to
+have address 0x50 as a 7-bit address and 0x050 as 10-bit address on the
+same bus. Same for addresses when we are the slave.
 
-For IRQs managed by an irqdomain, the irqdomain core code handles clearing
-and setting IRQ_NOREQUEST already, so there is no need to do this in
-.map() functions and we can simply remove the set_irq_flags calls. Some
-users also set IRQ_NOPROBE and this has been maintained although it is not
-clear that is really needed. There appears to be a great deal of blind
-copy and paste of this code.
-
-Signed-off-by: Rob Herring <robh@kernel.org>
-Acked-by: Simon Horman <horms@verge.net.au>
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- drivers/sh/intc/internals.h | 10 +---------
- 1 file changed, 1 insertion(+), 9 deletions(-)
+ drivers/i2c/i2c-core.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/sh/intc/internals.h b/drivers/sh/intc/internals.h
-index 7dff08e..897ffb1 100644
---- a/drivers/sh/intc/internals.h
-+++ b/drivers/sh/intc/internals.h
-@@ -99,15 +99,7 @@ static inline struct intc_desc_int *get_intc_desc(unsigned int irq)
-  */
- static inline void activate_irq(int irq)
- {
--#ifdef CONFIG_ARM
--	/* ARM requires an extra step to clear IRQ_NOREQUEST, which it
--	 * sets on behalf of every irq_chip.  Also sets IRQ_NOPROBE.
--	 */
--	set_irq_flags(irq, IRQF_VALID);
--#else
--	/* same effect on other architectures */
--	irq_set_noprobe(irq);
--#endif
-+	irq_clear_status_flags(irq, IRQ_NOREQUEST | IRQ_NOPROBE);
- }
+diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
+index 4a92eded4ece9c..021ff232beaae3 100644
+--- a/drivers/i2c/i2c-core.c
++++ b/drivers/i2c/i2c-core.c
+@@ -834,7 +834,7 @@ static int __i2c_check_addr_busy(struct device *dev, void *addrp)
+ 	struct i2c_client	*client = i2c_verify_client(dev);
+ 	int			addr = *(int *)addrp;
  
- static inline int intc_handle_int_cmp(const void *a, const void *b)
+-	if (client && client->addr = addr)
++	if (client && i2c_encode_flags_to_addr(client) = addr)
+ 		return -EBUSY;
+ 	return 0;
+ }
+@@ -988,7 +988,7 @@ i2c_new_device(struct i2c_adapter *adap, struct i2c_board_info const *info)
+ 	}
+ 
+ 	/* Check for address business */
+-	status = i2c_check_addr_busy(adap, client->addr);
++	status = i2c_check_addr_busy(adap, i2c_encode_flags_to_addr(client));
+ 	if (status)
+ 		goto out_err;
+ 
+@@ -2284,7 +2284,7 @@ static int i2c_detect_address(struct i2c_client *temp_client,
+ 		return err;
+ 	}
+ 
+-	/* Skip if already in use */
++	/* Skip if already in use (7 bit, no need to encode flags) */
+ 	if (i2c_check_addr_busy(adapter, addr))
+ 		return 0;
+ 
+@@ -2400,7 +2400,7 @@ i2c_new_probed_device(struct i2c_adapter *adap,
+ 			continue;
+ 		}
+ 
+-		/* Check address availability */
++		/* Check address availability (7 bit, no need to encode flags) */
+ 		if (i2c_check_addr_busy(adap, addr_list[i])) {
+ 			dev_dbg(&adap->dev, "Address 0x%02x already in "
+ 				"use, not probing\n", addr_list[i]);
 -- 
-2.1.0
+2.1.4
 
