@@ -1,67 +1,63 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 13 Jul 2015 06:15:33 +0000
-Subject: [PATCH v3 04/04] ARM: shmobile: r8a7779: Cleanup header file
-Message-Id: <20150713061533.25534.59533.sendpatchset@little-apple>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 17 Jul 2015 08:26:05 +0000
+Subject: [PATCH 3/5] ARM: shmobile: r8a7794: Add DU0 clock
+Message-Id: <1437121567-18467-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1437121567-18467-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1437121567-18467-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org
+Cc: Magnus Damm <magnus.damm@gmail.com>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+The DU0 clock is an MSTP clock, child of the CPG ZX clock.
 
-Remove unused function prototypes from r8a7779.h and
-make the functions static.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/boot/dts/r8a7794.dtsi            | 7 ++++---
+ include/dt-bindings/clock/r8a7794-clock.h | 1 +
+ 2 files changed, 5 insertions(+), 3 deletions(-)
 
- Changes since V2:
- - None
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index b73819423311..2a0d375e45b3 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -675,19 +675,20 @@
+ 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>,
+ 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
+-				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
++				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
++				 <&zx_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+ 				R8A7794_CLK_EHCI R8A7794_CLK_HSUSB
+ 				R8A7794_CLK_HSCIF2 R8A7794_CLK_SCIF5
+ 				R8A7794_CLK_SCIF4 R8A7794_CLK_HSCIF1 R8A7794_CLK_HSCIF0
+ 				R8A7794_CLK_SCIF3 R8A7794_CLK_SCIF2 R8A7794_CLK_SCIF1
+-				R8A7794_CLK_SCIF0
++				R8A7794_CLK_SCIF0 R8A7794_CLK_DU0
+ 			>;
+ 			clock-output-names  				"ehci", "hsusb",
+ 				"hscif2", "scif5", "scif4", "hscif1", "hscif0",
+-				"scif3", "scif2", "scif1", "scif0";
++				"scif3", "scif2", "scif1", "scif0", "du0";
+ 		};
+ 		mstp8_clks: mstp8_clks@e6150990 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index 09da38a58776..a7a7e0370968 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -79,6 +79,7 @@
+ #define R8A7794_CLK_SCIF2		19
+ #define R8A7794_CLK_SCIF1		20
+ #define R8A7794_CLK_SCIF0		21
++#define R8A7794_CLK_DU0			24
+ 
+ /* MSTP8 */
+ #define R8A7794_CLK_VIN1		10
+-- 
+2.3.6
 
- arch/arm/mach-shmobile/clock-r8a7779.c |    2 +-
- arch/arm/mach-shmobile/r8a7779.h       |    2 --
- arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
- 3 files changed, 2 insertions(+), 4 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ work/arch/arm/mach-shmobile/clock-r8a7779.c	2015-07-13 15:13:00.452366518 +0900
-@@ -201,7 +201,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("rcar-du-r8a7779", &mstp_clks[MSTP103]), /* DU */
- };
- 
--void __init r8a7779_clock_init(void)
-+static void __init r8a7779_clock_init(void)
- {
- 	u32 mode = r8a7779_read_mode_pins();
- 	int k, ret = 0;
---- 0001/arch/arm/mach-shmobile/r8a7779.h
-+++ work/arch/arm/mach-shmobile/r8a7779.h	2015-07-13 15:13:00.452366518 +0900
-@@ -11,7 +11,6 @@ enum {
- };
- 
- extern void r8a7779_init_irq_extpin(int irlm);
--extern void r8a7779_init_irq_extpin_dt(int irlm);
- extern void r8a7779_init_irq_dt(void);
- extern void r8a7779_map_io(void);
- extern void r8a7779_earlytimer_init(void);
-@@ -19,7 +18,6 @@ extern void r8a7779_add_early_devices(vo
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_init_late(void);
- extern u32 r8a7779_read_mode_pins(void);
--extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
- extern void r8a7779_pm_init(void);
- extern void r8a7779_register_twd(void);
---- 0002/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2015-07-13 15:13:00.452366518 +0900
-@@ -99,7 +99,7 @@ static struct resource irqpin0_resources
- 	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ3 */
- };
- 
--void __init r8a7779_init_irq_extpin_dt(int irlm)
-+static void __init r8a7779_init_irq_extpin_dt(int irlm)
- {
- 	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
- 	u32 tmp;
