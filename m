@@ -1,91 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 13 Jul 2015 19:00:43 +0000
-Subject: Re: [PATCH/RFC 2/3] dmaengine: shdmac: Add missing DMA_MEM_TO_MEM direction
-Message-Id: <59869612.fDLAJFKxLR@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 17 Jul 2015 14:08:20 +0000
+Subject: [RFC 0/9] i2c: slave: improve i2c client address spaces and their DT support
+Message-Id: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436529553-30571-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1436529553-30571-3-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Andrey Danin <danindrey@mail.ru>, linux-tegra@vger.kernel.org
 
-Hi Geert,
+As promised here is my RFC to improve address spaces for I2C. This should give
+i2c seperate address spaces for standard clients, 10 bit clients, and our own
+slave clients. So, you can now have a 7 bit slave at 0x50 and a 10 bit slave at
+0x050. Or, you can have a slave driver listening at some address and at the
+same time have a client driver talking to this address. Note that this is only
+the core support for that separation, I am still not sure if there is hardware
+being able talking to its own slave address, but we will see.
 
-Thank you for the patch.
+This RFC and while I did some quick tests, it is not thoroughly tested. But I
+wanted to push it out before I leave the computer for the weekend. It still
+shows what path I chose to solve the problem. So, comments on that and further
+testing are more than welcome!
 
-On Friday 10 July 2015 13:59:12 Geert Uytterhoeven wrote:
-> If a driver does "dma_cap_set(DMA_MEMCPY), ...)", it should advertise
-> DMA_MEM_TO_MEM support in the direction mask.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Is it true that DMA_MEMCPY implies DMA_MEM_TO_MEM?
+BTW Andrey, I did not modify your patch and couldn't get the i2c-slave-eeprom driver
+to work with my Jetson TK1. Does this work for you?
 
-The directions field is defined as
+Thanks,
 
- * @directions: bit mask of slave direction the channel supported
- *      since the enum dma_transfer_direction is not defined as bits for each
- *      type of direction, the dma controller should fill (1 << <TYPE>) and 
-same
- *      should be checked by controller as well
+   Wolfram
 
-Memory-to-memory transfer isn't a DMA slave capability, so I don't think the 
-directions field should report BIT(DMA_MEM_TO_MEM).
 
-> ---
->  drivers/dma/sh/rcar-dmac.c   | 3 ++-
->  drivers/dma/sh/rcar-hpbdma.c | 3 ++-
->  drivers/dma/sh/shdmac.c      | 4 +++-
->  3 files changed, 7 insertions(+), 3 deletions(-)
-> 
-> diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
-> index 7820d07e7beea7dd..11e5003a6cc27b40 100644
-> --- a/drivers/dma/sh/rcar-dmac.c
-> +++ b/drivers/dma/sh/rcar-dmac.c
-> @@ -1707,7 +1707,8 @@ static int rcar_dmac_probe(struct platform_device
-> *pdev)
-> 
->  	engine->src_addr_widths = widths;
->  	engine->dst_addr_widths = widths;
-> -	engine->directions = BIT(DMA_MEM_TO_DEV) | BIT(DMA_DEV_TO_MEM);
-> +	engine->directions = BIT(DMA_MEM_TO_MEM) | BIT(DMA_MEM_TO_DEV) |
-> +			     BIT(DMA_DEV_TO_MEM);
->  	engine->residue_granularity = DMA_RESIDUE_GRANULARITY_BURST;
-> 
->  	engine->device_alloc_chan_resources = rcar_dmac_alloc_chan_resources;
-> diff --git a/drivers/dma/sh/rcar-hpbdma.c b/drivers/dma/sh/rcar-hpbdma.c
-> index 2e21c1197769d0c8..29d67277415084b4 100644
-> --- a/drivers/dma/sh/rcar-hpbdma.c
-> +++ b/drivers/dma/sh/rcar-hpbdma.c
-> @@ -599,7 +599,8 @@ static int hpb_dmae_probe(struct platform_device *pdev)
->  	dma_cap_set(DMA_SLAVE, dma_dev->cap_mask);
->  	dma_dev->src_addr_widths = widths;
->  	dma_dev->dst_addr_widths = widths;
-> -	dma_dev->directions = BIT(DMA_MEM_TO_DEV) | BIT(DMA_DEV_TO_MEM);
-> +	dma_dev->directions = BIT(DMA_MEM_TO_MEM) | BIT(DMA_MEM_TO_DEV) |
-> +			      BIT(DMA_DEV_TO_MEM);
->  	dma_dev->residue_granularity = DMA_RESIDUE_GRANULARITY_BURST;
-> 
->  	hpbdev->shdma_dev.ops = &hpb_dmae_ops;
-> diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
-> index c9489ae6c0fa7f47..8693fff83d7b3af4 100644
-> --- a/drivers/dma/sh/shdmac.c
-> +++ b/drivers/dma/sh/shdmac.c
-> @@ -750,8 +750,10 @@ static int sh_dmae_probe(struct platform_device *pdev)
->  	dma_dev->directions = BIT(DMA_MEM_TO_DEV) | BIT(DMA_DEV_TO_MEM);
->  	dma_dev->residue_granularity = DMA_RESIDUE_GRANULARITY_BURST;
-> 
-> -	if (!pdata->slave_only)
-> +	if (!pdata->slave_only) {
->  		dma_cap_set(DMA_MEMCPY, dma_dev->cap_mask);
-> +		dma_dev->directions |= BIT(DMA_MEM_TO_MEM);
-> +	}
->  	if (pdata->slave && pdata->slave_num)
->  		dma_cap_set(DMA_SLAVE, dma_dev->cap_mask);
+Andrey Danin (1):
+  i2c: tegra: implement slave mode
+
+Wolfram Sang (8):
+  dt-bindings: add header for generic I2C flags in bindings
+  i2c: add a flag to mark clients as slaves
+  i2c: apply address offset for slaves, too
+  i2c: rename address check functions
+  i2c: make address check indpendent from client struct
+  i2c: apply DT flags when probing
+  i2c: take address space into account when checking for used addresses
+  dts: tegra: WIP: hack dts to test new dt flags for i2c
+
+ arch/arm/boot/dts/tegra124-jetson-tk1.dts |   7 ++
+ drivers/i2c/busses/Kconfig                |   1 +
+ drivers/i2c/busses/i2c-tegra.c            | 119 ++++++++++++++++++++++++++++++
+ drivers/i2c/i2c-core.c                    |  69 +++++++++++------
+ include/dt-bindings/i2c/i2c.h             |  18 +++++
+ include/linux/i2c.h                       |   9 ++-
+ 6 files changed, 197 insertions(+), 26 deletions(-)
+ create mode 100644 include/dt-bindings/i2c/i2c.h
 
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.4
 
