@@ -1,43 +1,52 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 13 Jul 2015 08:35:45 +0000
-Subject: Re: [PATCH/RFC 3/3] dmaengine: sudmac: Add missing address widths and directions
-Message-Id: <CAMuHMdVKnaQNwtRm4fFh9apsrj3DhTEuNKTEtuX936s3OoCtBg@mail.gmail.com>
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Fri, 17 Jul 2015 21:21:05 +0000
+Subject: Re: [PATCH v5] ARM: smp: Only expose /sys/.../cpuX/online if hotpluggable
+Message-Id: <55A971C1.8090308@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436529553-30571-4-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1436529553-30571-4-git-send-email-geert+renesas@glider.be>
+References: <1428705191-15670-1-git-send-email-sboyd@codeaurora.org>
+ <20150413134246.GS12732@n2100.arm.linux.org.uk>
+ <557739AC.8000903@codeaurora.org>
+ <20150610225744.GT7557@n2100.arm.linux.org.uk>
+ <5578C427.1070100@codeaurora.org>
+In-Reply-To: <5578C427.1070100@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Shimoda-san,
-
-On Mon, Jul 13, 2015 at 10:31 AM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
->> Shimoda-san, are these correct?
->
-> Unfortunately, the buswitdh of SUDMAC is 1 only.
-
-Thanks, I'll update the patch.
-
->> diff --git a/drivers/dma/sh/sudmac.c b/drivers/dma/sh/sudmac.c
->> index 31e681230e1894f2..7c4066503ce335f7 100644
->> --- a/drivers/dma/sh/sudmac.c
->> +++ b/drivers/dma/sh/sudmac.c
->> @@ -331,6 +331,8 @@ static const struct shdma_ops sudmac_shdma_ops = {
+On 06/10/2015 04:11 PM, Stephen Boyd wrote:
+> On 06/10/2015 03:57 PM, Russell King - ARM Linux wrote:
+>> diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+>> index 476092b86c6e..f2c4bf437ea7 100644
+>> --- a/arch/arm/mach-shmobile/common.h
+>> +++ b/arch/arm/mach-shmobile/common.h
+>> @@ -13,7 +13,8 @@ extern void shmobile_smp_boot(void);
+>>   extern void shmobile_smp_sleep(void);
+>>   extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
+>>   			      unsigned long arg);
+>> -extern int shmobile_smp_cpu_disable(unsigned int cpu);
+>> +extern bool shmobile_smp_cpu_can_disable(unsigned int cpu);
+>> +extern void shmobile_invalidate_start(void);
 >>
->>  static int sudmac_probe(struct platform_device *pdev)
->>  {
->> +     const enum dma_slave_buswidth widths = DMA_SLAVE_BUSWIDTH_1_BYTE |
->> +             DMA_SLAVE_BUSWIDTH_2_BYTES | DMA_SLAVE_BUSWIDTH_4_BYTES;
+>> which your original patch did not include.  The tree I'm applying to
+>> (-rc1) contains:
+>>
+>> extern int shmobile_smp_cpu_disable(unsigned int cpu);
+>> extern void shmobile_invalidate_start(void);
+>>
+>> there.  Hence git quite rightfully declines to apply the patch.
+>>
+> Thanks. Fixed.
+>
 
-Gr{oetje,eeting}s,
+Sorry I just noticed that you applied 8392/1 instead of 8392/2 from the 
+patch tracker. So shmobile_invalidate_start() came back.
 
-                        Geert
+I thought it would automatically supersede the previous patch but it 
+looks like it just sticks around? I've never had to replace a patch 
+before so I'll keep this in mind next time.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+-- 
+Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
+a Linux Foundation Collaborative Project
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
