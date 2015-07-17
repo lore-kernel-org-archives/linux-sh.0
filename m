@@ -1,37 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:36:57 +0000
-Subject: [PATCH 10/16] ARM: shmobile: Drop r8a7740-armadillo800eva.dtb for legacy builds
-Message-Id: <6a902a2ea1ffe432ce46bb562b9dcae8f396b3b4.1436509680.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 17 Jul 2015 14:08:22 +0000
+Subject: [RFC 2/9] dt-bindings: add header for generic I2C flags in bindings
+Message-Id: <1437142109-31975-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436509680.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436509680.git.horms+renesas@verge.net.au>
+References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1437142109-31975-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Andrey Danin <danindrey-JGs/UdohzUI@public.gmane.org>, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-The legacy board code for Armadillo-800 EVA has been removed.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/Makefile | 1 -
- 1 file changed, 1 deletion(-)
+ include/dt-bindings/i2c/i2c.h | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+ create mode 100644 include/dt-bindings/i2c/i2c.h
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index b1d0a12a94ef..14fc8f1fe2d8 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -501,7 +501,6 @@ dtb-$(CONFIG_ARCH_S5PV210) += \
- 	s5pv210-smdkv210.dtb \
- 	s5pv210-torbreck.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
--	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
- 	r8a7778-bockw-reference.dtb \
- 	r8a7779-marzen.dtb
+diff --git a/include/dt-bindings/i2c/i2c.h b/include/dt-bindings/i2c/i2c.h
+new file mode 100644
+index 00000000000000..1d5da81d90f144
+--- /dev/null
++++ b/include/dt-bindings/i2c/i2c.h
+@@ -0,0 +1,18 @@
++/*
++ * This header provides constants for I2C bindings
++ *
++ * Copyright (C) 2015 by Sang Engineering
++ * Copyright (C) 2015 by Renesas Electronics Corporation
++ *
++ * Wolfram Sang <wsa@sang-engineering.com>
++ *
++ * GPLv2 only
++ */
++
++#ifndef _DT_BINDINGS_I2C_I2C_H
++#define _DT_BINDINGS_I2C_I2C_H
++
++#define I2C_TEN_BIT_ADDRESS	(1 << 31)
++#define I2C_OWN_SLAVE_ADDRESS	(1 << 30)
++
++#endif
 -- 
 2.1.4
 
