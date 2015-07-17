@@ -1,47 +1,84 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 10 Jul 2015 11:59:10 +0000
-Subject: [PATCH/RFC 0/3] dmaengine: shdma: Miscellaneous changes
-Message-Id: <1436529553-30571-1-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 17 Jul 2015 14:08:27 +0000
+Subject: [RFC 7/9] i2c: apply DT flags when probing
+Message-Id: <1437142109-31975-8-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Andrey Danin <danindrey@mail.ru>, linux-tegra@vger.kernel.org
 
-	Hi,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-This is an RFC series containing miscellaneous changes to the various SH
-and (ARM) shmobile DMA engine drivers.  This series is not meant to be
-applied yet, but I'd like to receive some comments. I will
-split/rework/resubmit/... later.
+Check for slave and 10-bit flags when probing and mark the client when
+found. Improve the address validity check, too
 
-Due to lack of hardware/support/... this didn't receive real testing.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/i2c-core.c | 23 ++++++++++++++++++-----
+ 1 file changed, 18 insertions(+), 5 deletions(-)
 
-Thanks for your feedback!
-
-Geert Uytterhoeven (3):
-  dmaengine: shdmac: Use generic residue handling
-  dmaengine: shdmac: Add missing DMA_MEM_TO_MEM direction
-  dmaengine: sudmac: Add missing address widths and directions
-
- drivers/dma/sh/rcar-dmac.c   |  3 ++-
- drivers/dma/sh/rcar-hpbdma.c | 13 +++++++------
- drivers/dma/sh/shdma-base.c  | 12 ++++++++----
- drivers/dma/sh/shdmac.c      | 17 ++++++++---------
- drivers/dma/sh/sudmac.c      | 15 ++++++++++-----
- include/linux/shdma-base.h   |  4 ++--
- 6 files changed, 37 insertions(+), 27 deletions(-)
-
+diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
+index b5719a2cff97bf..4a92eded4ece9c 100644
+--- a/drivers/i2c/i2c-core.c
++++ b/drivers/i2c/i2c-core.c
+@@ -27,6 +27,7 @@
+    I2C slave support (c) 2014 by Wolfram Sang <wsa@sang-engineering.com>
+  */
+ 
++#include <dt-bindings/i2c/i2c.h>
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/delay.h>
+@@ -1283,7 +1284,8 @@ static struct i2c_client *of_i2c_register_device(struct i2c_adapter *adap,
+ 	struct i2c_client *result;
+ 	struct i2c_board_info info = {};
+ 	struct dev_archdata dev_ad = {};
+-	const __be32 *addr;
++	const __be32 *addr_be;
++	u32 addr;
+ 	int len;
+ 
+ 	dev_dbg(&adap->dev, "of_i2c: register %s\n", node->full_name);
+@@ -1294,20 +1296,31 @@ static struct i2c_client *of_i2c_register_device(struct i2c_adapter *adap,
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
+-	addr = of_get_property(node, "reg", &len);
+-	if (!addr || (len < sizeof(*addr))) {
++	addr_be = of_get_property(node, "reg", &len);
++	if (!addr_be || (len < sizeof(*addr_be))) {
+ 		dev_err(&adap->dev, "of_i2c: invalid reg on %s\n",
+ 			node->full_name);
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
+-	info.addr = be32_to_cpup(addr);
+-	if (info.addr > (1 << 10) - 1) {
++	addr = be32_to_cpup(addr_be);
++	if (addr & I2C_TEN_BIT_ADDRESS) {
++		addr &= ~I2C_TEN_BIT_ADDRESS;
++		info.flags |= I2C_CLIENT_TEN;
++	}
++
++	if (addr & I2C_OWN_SLAVE_ADDRESS) {
++		addr &= ~I2C_OWN_SLAVE_ADDRESS;
++		info.flags |= I2C_CLIENT_SLAVE;
++	}
++
++	if (i2c_check_addr_validity(addr, info.flags)) {
+ 		dev_err(&adap->dev, "of_i2c: invalid addr=%x on %s\n",
+ 			info.addr, node->full_name);
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
++	info.addr = addr;
+ 	info.of_node = of_node_get(node);
+ 	info.archdata = &dev_ad;
+ 
 -- 
-1.9.1
+2.1.4
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
