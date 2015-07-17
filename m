@@ -1,92 +1,111 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 16 Jul 2015 18:21:52 +0000
-Subject: [PATCH/RFC v2 21/29] serial: sh-sci: Fix exclusion of work_fn_rx and sci_dma_rx_complete
-Message-Id: <1437070920-28069-22-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 17 Jul 2015 08:26:04 +0000
+Subject: [PATCH 2/5] drm: rcar-du: Add support for the R8A7794 DU
+Message-Id: <1437121567-18467-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1437121567-18467-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1437121567-18467-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org
+Cc: Magnus Damm <magnus.damm@gmail.com>
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+The R8A7794 DU has a fixed output routing configuration with one RGB
+output per CRTC and thus lacks the RGB output routing register field.
 
-There is a problem when the sci_dma_rx_complete() is processed
-before cancel process of work_fn_rx() completes by rx_timer_fn().
-This patch locks work_fn_rx().
-
-Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/tty/serial/sh-sci.c | 13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
+ .../devicetree/bindings/video/renesas,du.txt       |  4 +++-
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c              | 23 ++++++++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_group.c            |  5 +++--
+ 3 files changed, 29 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 204f1f6ad72f6236..13600e552947fb69 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1449,8 +1449,10 @@ static void work_fn_rx(struct work_struct *work)
- 	struct dma_async_tx_descriptor *desc;
- 	struct dma_tx_state state;
- 	enum dma_status status;
-+	unsigned long flags;
- 	int new;
+diff --git a/Documentation/devicetree/bindings/video/renesas,du.txt b/Documentation/devicetree/bindings/video/renesas,du.txt
+index d05be121486f..eccd4f4867b2 100644
+--- a/Documentation/devicetree/bindings/video/renesas,du.txt
++++ b/Documentation/devicetree/bindings/video/renesas,du.txt
+@@ -7,6 +7,7 @@ Required Properties:
+     - "renesas,du-r8a7790" for R8A7790 (R-Car H2) compatible DU
+     - "renesas,du-r8a7791" for R8A7791 (R-Car M2-W) compatible DU
+     - "renesas,du-r8a7793" for R8A7793 (R-Car M2-N) compatible DU
++    - "renesas,du-r8a7794" for R8A7794 (R-Car E2) compatible DU
  
-+	spin_lock_irqsave(&port->lock, flags);
- 	if (s->active_rx = s->cookie_rx[0]) {
- 		new = 0;
- 	} else if (s->active_rx = s->cookie_rx[1]) {
-@@ -1458,7 +1460,7 @@ static void work_fn_rx(struct work_struct *work)
- 	} else {
- 		dev_err(port->dev, "%s: Rx cookie %d not found!\n", __func__,
- 			s->active_rx);
--		return;
-+		goto out;
- 	}
- 	desc = s->desc_rx[new];
+   - reg: A list of base address and length of each memory resource, one for
+     each entry in the reg-names property.
+@@ -23,7 +24,7 @@ Required Properties:
+   - clock-names: Name of the clocks. This property is model-dependent.
+     - R8A7779 uses a single functional clock. The clock doesn't need to be
+       named.
+-    - R8A779[013] use one functional clock per channel and one clock per LVDS
++    - R8A779[0134] use one functional clock per channel and one clock per LVDS
+       encoder (if available). The functional clocks must be named "du.x" with
+       "x" being the channel numerical index. The LVDS clocks must be named
+       "lvds.x" with "x" being the LVDS encoder numerical index.
+@@ -46,6 +47,7 @@ corresponding to each DU output.
+  R8A7790 (H2)	DPAD		LVDS 0		LVDS 1
+  R8A7791 (M2-W)	DPAD		LVDS 0		-
+  R8A7793 (M2-N)	DPAD		LVDS 0		-
++ R8A7794 (E2)	DPAD 0		DPAD 1		-
  
-@@ -1466,7 +1468,6 @@ static void work_fn_rx(struct work_struct *work)
- 	if (status != DMA_COMPLETE) {
- 		/* Handle incomplete DMA receive */
- 		struct dma_chan *chan = s->chan_rx;
--		unsigned long flags;
- 		unsigned int read;
- 		int count;
  
-@@ -1475,29 +1476,29 @@ static void work_fn_rx(struct work_struct *work)
- 		dev_dbg(port->dev, "Read %zu bytes with cookie %d\n", read,
- 			s->active_rx);
+ Example: R8A7790 (R-Car H2) DU
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index 5a7e6dfa5df2..2b9a7c87467c 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -107,11 +107,34 @@ static const struct rcar_du_device_info rcar_du_r8a7791_info = {
+ 	.num_lvds = 1,
+ };
  
--		spin_lock_irqsave(&port->lock, flags);
- 		count = sci_dma_rx_push(s, read);
--		spin_unlock_irqrestore(&port->lock, flags);
++static const struct rcar_du_device_info rcar_du_r8a7794_info = {
++	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK
++		  | RCAR_DU_FEATURE_EXT_CTRL_REGS,
++	.num_crtcs = 2,
++	.routes = {
++		/* R8A7794 has two RGB outputs and one (currently unsupported)
++		 * TCON output.
++		 */
++		[RCAR_DU_OUTPUT_DPAD0] = {
++			.possible_crtcs = BIT(0),
++			.encoder_type = DRM_MODE_ENCODER_NONE,
++			.port = 0,
++		},
++		[RCAR_DU_OUTPUT_DPAD1] = {
++			.possible_crtcs = BIT(1),
++			.encoder_type = DRM_MODE_ENCODER_NONE,
++			.port = 1,
++		},
++	},
++	.num_lvds = 1,
++};
++
+ static const struct platform_device_id rcar_du_id_table[] = {
+ 	{ "rcar-du-r8a7779", (kernel_ulong_t)&rcar_du_r8a7779_info },
+ 	{ "rcar-du-r8a7790", (kernel_ulong_t)&rcar_du_r8a7790_info },
+ 	{ "rcar-du-r8a7791", (kernel_ulong_t)&rcar_du_r8a7791_info },
+ 	{ "rcar-du-r8a7793", (kernel_ulong_t)&rcar_du_r8a7791_info },
++	{ "rcar-du-r8a7794", (kernel_ulong_t)&rcar_du_r8a7794_info },
+ 	{ }
+ };
  
- 		if (count)
- 			tty_flip_buffer_push(&port->state->port);
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+index 7fd39a7d91c8..8e2ffe025153 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
+@@ -49,9 +49,10 @@ static void rcar_du_group_setup_defr8(struct rcar_du_group *rgrp)
+ 	u32 defr8 = DEFR8_CODE | DEFR8_DEFE8;
  
- 		sci_submit_rx(s);
+ 	/* The DEFR8 register for the first group also controls RGB output
+-	 * routing to DPAD0
++	 * routing to DPAD0 for DU instances that support it.
+ 	 */
+-	if (rgrp->index = 0)
++	if (rgrp->dev->info->routes[RCAR_DU_OUTPUT_DPAD0].possible_crtcs > 1 &&
++	    rgrp->index = 0)
+ 		defr8 |= DEFR8_DRGBS_DU(rgrp->dev->dpad0_source);
  
--		return;
-+		goto out;
- 	}
- 
- 	s->cookie_rx[new] = dmaengine_submit(desc);
- 	if (dma_submit_error(s->cookie_rx[new])) {
- 		dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
- 		sci_rx_dma_release(s, true);
--		return;
-+		goto out;
- 	}
- 
- 	s->active_rx = s->cookie_rx[!new];
- 
- 	dev_dbg(port->dev, "%s: cookie %d #%d, new active cookie %d\n",
- 		__func__, s->cookie_rx[new], new, s->active_rx);
-+out:
-+	spin_unlock_irqrestore(&port->lock, flags);
- }
- 
- static void work_fn_tx(struct work_struct *work)
+ 	rcar_du_group_write(rgrp, DEFR8, defr8);
 -- 
-1.9.1
+2.3.6
 
