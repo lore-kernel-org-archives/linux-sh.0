@@ -1,55 +1,65 @@
-From: Marc Kleine-Budde <mkl@pengutronix.de>
-Date: Wed, 01 Jul 2015 09:01:03 +0000
-Subject: Re: [PATCH 0/2] Error message clean-ups for Renesas R-Car CAN driver
-Message-Id: <5593AC4F.4010005@pengutronix.de>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="LJWAgBD9CPneG4PP2HpnrnutqkGdUXKQ6"
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 17 Jul 2015 08:26:06 +0000
+Subject: [PATCH 4/5] ARM: shmobile: r8a7793: Add DU node to device tree
+Message-Id: <1437121567-18467-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1593397.kKIHxKLe5s@wasted.cogentembedded.com>
-In-Reply-To: <1593397.kKIHxKLe5s@wasted.cogentembedded.com>
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, wg@grandegger.com, linux-can@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+References: <1437121567-18467-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1437121567-18467-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org
+Cc: Magnus Damm <magnus.damm@gmail.com>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---LJWAgBD9CPneG4PP2HpnrnutqkGdUXKQ6
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Add the DU device with a disabled state. Boards that want to enable the
+DU need to specify the output topology.
 
-On 06/20/2015 02:49 AM, Sergei Shtylyov wrote:
-> Hello.
->=20
->    Here's the set of 2 patches against Marc Kleine-Budde's 'linux-can.g=
-it'
-> repo plus 3 fix patches just posted; they are small error message clean=
-ups for
-> the Renesas R-Car CAN driver.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7793.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
-Applied both series to can/master.
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index c50c5f65388a..2072f55a524a 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -140,6 +140,36 @@
+ 		status = "disabled";
+ 	};
+ 
++	du: display@feb00000 {
++		compatible = "renesas,du-r8a7793";
++		reg = <0 0xfeb00000 0 0x40000>,
++		      <0 0xfeb90000 0 0x1c>;
++		reg-names = "du", "lvds.0";
++		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 268 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7793_CLK_DU0>,
++			 <&mstp7_clks R8A7793_CLK_DU1>,
++			 <&mstp7_clks R8A7793_CLK_LVDS0>;
++		clock-names = "du.0", "du.1", "lvds.0";
++		status = "disabled";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				du_out_rgb: endpoint {
++				};
++			};
++			port@1 {
++				reg = <1>;
++				du_out_lvds0: endpoint {
++				};
++			};
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+-- 
+2.3.6
 
-Thanks,
-Marc
-
---=20
-Pengutronix e.K.                  | Marc Kleine-Budde           |
-Industrial Linux Solutions        | Phone: +49-231-2826-924     |
-Vertretung West/Dortmund          | Fax:   +49-5121-206917-5555 |
-Amtsgericht Hildesheim, HRA 2686  | http://www.pengutronix.de   |
-
-
---LJWAgBD9CPneG4PP2HpnrnutqkGdUXKQ6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQEcBAEBCgAGBQJVk6xSAAoJEP5prqPJtc/HKl4H/Rc4QGTXN7TWxIbcwcJehnoz
-/9ceMr9Xr9N1jmddkAhAl8nc8IEJ2MqjYW+IqX6SaMcCqT1KVnzyqvnwf5t2sxvZ
-jKnhoNj2zzusursdV4zkykXvCHD6HnuytHY/iNPRFOd7y7sAdZO7RE1gpre/kBwM
-GopEIFzveUT01kQkICKCYIL3i0z8zkEiSDbLEsowOIH//o7sGfvDTXOZDi4nJ5R4
-z7t1kEvLnt0cAt9/hxUAOVBPNORxUTxtz5838yuF+HoWpC9CU3+7gzZbMz262J7H
-Wbx19R2YD33NZJSL5DZU/L2ZNDv3M251Ni7pfPuREJqAAy+BPo9+3JCYQhsIPXc=
-=AcUU
------END PGP SIGNATURE-----
-
---LJWAgBD9CPneG4PP2HpnrnutqkGdUXKQ6--
