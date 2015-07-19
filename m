@@ -1,70 +1,66 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 16 Jul 2015 18:23:33 +0000
-Subject: Re: [PATCH] clk: shmobile: Remove unneeded #include <linux/clkdev.h>
-Message-Id: <CAMuHMdU5nmeoWC4Xagoa_1m7jid2+=dp4uQ-EDimwn0tsDjfsQ@mail.gmail.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 19 Jul 2015 16:39:59 +0000
+Subject: [PATCH v2] mmc: tmio: Fix timeout value for command request
+Message-Id: <1437323999-7938-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435064967-12299-1-git-send-email-geert+renesas@glider.be>
-	<20150716000819.GU30412@codeaurora.org>
-	<CAMuHMdXnUgWFCrEt6hBh9bThzk-VexoyU54h-xmiWeShMLmzeg@mail.gmail.com>
-	<55A7EC72.7070905@codeaurora.org>
-In-Reply-To: <55A7EC72.7070905@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Stephen Boyd <sboyd@codeaurora.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Michael Turquette <mturquette@baylibre.com>, linux-clk@vger.kernel.org, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-mmc@vger.kernel.org
+Cc: Ian Molton <ian.molton@codethink.co.uk>, Ulf Hansson <ulf.hansson@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-sh@vger.kernel.org
 
-Hi Stephen,
+From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 
-On Thu, Jul 16, 2015 at 7:40 PM, Stephen Boyd <sboyd@codeaurora.org> wrote:
-> On 07/15/2015 11:29 PM, Geert Uytterhoeven wrote:
->> On Thu, Jul 16, 2015 at 2:08 AM, Stephen Boyd <sboyd@codeaurora.org>
->> wrote:
->>>
->>> On 06/23, Geert Uytterhoeven wrote:
->>>>
->>>> diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c
->>>> b/drivers/clk/shmobile/clk-rcar-gen2.c
->>>> index 9612e3145b7ea370..745496f7ee9c7402 100644
->>>> --- a/drivers/clk/shmobile/clk-rcar-gen2.c
->>>> +++ b/drivers/clk/shmobile/clk-rcar-gen2.c
->>>> @@ -11,15 +11,13 @@
->>>>    */
->>>>
->>>>   #include <linux/clk-provider.h>
->>>> -#include <linux/clkdev.h>
->>>>   #include <linux/clk/shmobile.h>
->>>>   #include <linux/init.h>
->>>>   #include <linux/kernel.h>
->>>>   #include <linux/math64.h>
->>>>   #include <linux/of.h>
->>>>   #include <linux/of_address.h>
->>>> -#include <linux/pm_clock.h>
->>>> -#include <linux/pm_domain.h>
->>>> +#include <linux/slab.h>
->>>
->>> Is this the right diff? I wanted to apply this to clk-next but it
->>> fails here because we don't have the pm_clock.h and pm_domain.h
->>> includes in this file.
->>>
->>>>   #include <linux/spinlock.h>
->>
->> Oops, these two lines were due to a bad rebase, and shouldn't be there.
->> Just ignore them. Sorry for the trouble.
->>
->> Shall I send a new patch?
->
-> No need. I fixed it up when applying.
+Fix the problem which timeout occurs at the time of command request with
+several cards.
 
-Thanks a lot!
+The timeout value was insufficient as a verification of several cards,
+so it was changed 5 seconds from 2 seconds.
 
-Gr{oetje,eeting}s,
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-                        Geert
+This patch is based on mmc-next branch of Ulf Hansson's mmc tree.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+v2 [Yoshihiro Kaneko]
+* As suggested by Wolfram Sang
+- use a definition instead of a magic value
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+ drivers/mmc/host/tmio_mmc_pio.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index e3dcf31..a10fde4 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -83,6 +83,8 @@ static int tmio_mmc_next_sg(struct tmio_mmc_host *host)
+ 	return --host->sg_len;
+ }
+ 
++#define CMDREQ_TIMEOUT	5000
++
+ #ifdef CONFIG_MMC_DEBUG
+ 
+ #define STATUS_TO_TEXT(a, status, i) \
+@@ -230,7 +232,7 @@ static void tmio_mmc_reset_work(struct work_struct *work)
+ 	 */
+ 	if (IS_ERR_OR_NULL(mrq)
+ 	    || time_is_after_jiffies(host->last_req_ts +
+-		msecs_to_jiffies(2000))) {
++		msecs_to_jiffies(CMDREQ_TIMEOUT))) {
+ 		spin_unlock_irqrestore(&host->lock, flags);
+ 		return;
+ 	}
+@@ -818,7 +820,7 @@ static void tmio_mmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 	ret = tmio_mmc_start_command(host, mrq->cmd);
+ 	if (!ret) {
+ 		schedule_delayed_work(&host->delayed_reset_work,
+-				      msecs_to_jiffies(2000));
++				      msecs_to_jiffies(CMDREQ_TIMEOUT));
+ 		return;
+ 	}
+ 
+-- 
+1.9.1
+
