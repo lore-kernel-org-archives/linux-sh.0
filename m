@@ -1,31 +1,29 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 16 Jul 2015 18:21:43 +0000
-Subject: [PATCH/RFC v2 12/29] serial: sh-sci: Use SCSMR_CKS instead of hardcoded value 3
-Message-Id: <1437070920-28069-13-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 20 Jul 2015 10:06:02 +0000
+Subject: [PATCH 00/03] irqchip: renesas-irqc: Minor update
+Message-Id: <20150720100602.2552.85507.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: jason@lakedaemon.net, geert+renesas@glider.be, linux-kernel@vger.kernel.org, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+irqchip: renesas-irqc: Minor update
+
+[PATCH 01/03] irqchip: renesas-irqc: Get rid of IRQF_VALID
+[PATCH 02/03] irqchip: renesas-irqc: Use linear IRQ domain
+[PATCH 03/03] irqchip: renesas-irqc: Make use of irq_find_mapping()
+
+This series contains a few minor updates for the IRQC driver, some
+basic cleanups as preparation series for future generic chip rework.
+
+With these patches applied the driver is becoming less special
+and closer to the generic chip implementation.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/tty/serial/sh-sci.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ Written against renesas-devel-20150720-v4.2-rc3
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index ec891ec51b8672e3..df4727186d7a9f29 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2001,7 +2001,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 
- 	sci_reset(port);
- 
--	smr_val |= serial_port_in(port, SCSMR) & 3;
-+	smr_val |= serial_port_in(port, SCSMR) & SCSMR_CKS;
- 
- 	uart_update_timeout(port, termios->c_cflag, baud);
- 
--- 
-1.9.1
-
+ drivers/irqchip/irq-renesas-irqc.c |   16 ++++++----------
+ 1 file changed, 6 insertions(+), 10 deletions(-)
