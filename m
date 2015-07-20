@@ -1,49 +1,74 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 16 Jul 2015 18:22:00 +0000
-Subject: [PATCH/RFC v2 29/29] serial: sh-sci: Remove schedule_work in sci_dma_rx_complete
-Message-Id: <1437070920-28069-30-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 20 Jul 2015 10:06:35 +0000
+Subject: [PATCH 03/03] irqchip: renesas-irqc: Make use of irq_find_mapping()
+Message-Id: <20150720100635.2552.20906.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150720100602.2552.85507.sendpatchset@little-apple>
+In-Reply-To: <20150720100602.2552.85507.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: jason@lakedaemon.net, geert+renesas@glider.be, linux-kernel@vger.kernel.org, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This patch calls work_fn_rx() directly so that the driver can avoid
-executing of next sci_dma_rx_complete() before work_fn_rx() completes.
+Instead of locally caching the virq as domain_irq
+simply rely on the IRQ domain code and irq_find_mapping().
+This reduces the delta between the IRQC driver and
+the generic chip implementation.
 
-FIXME: Move work_fn_rx() instead of using a forward declaration
-
-Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/tty/serial/sh-sci.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 27c811351e1bff45..7e8fa3703e5de328 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -128,6 +128,9 @@ struct sci_port {
- static void sci_start_tx(struct uart_port *port);
- static void sci_stop_tx(struct uart_port *port);
- static void sci_start_rx(struct uart_port *port);
-+#ifdef CONFIG_SERIAL_SH_SCI_DMA
-+static void work_fn_rx(struct work_struct *work);
-+#endif
+ drivers/irqchip/irq-renesas-irqc.c |   11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
+
+--- 0003/drivers/irqchip/irq-renesas-irqc.c
++++ work/drivers/irqchip/irq-renesas-irqc.c	2015-07-20 17:59:13.000000000 +0900
+@@ -53,7 +53,6 @@
+ struct irqc_irq {
+ 	int hw_irq;
+ 	int requested_irq;
+-	int domain_irq;
+ 	struct irqc_priv *p;
+ };
  
- #define SCI_NPORTS CONFIG_SERIAL_SH_SCI_NR_UARTS
+@@ -70,8 +69,8 @@ struct irqc_priv {
  
-@@ -1364,7 +1367,7 @@ static void sci_dma_rx_complete(void *arg)
- 	if (count)
- 		tty_flip_buffer_push(&port->state->port);
- 
--	schedule_work(&s->work_rx);
-+	work_fn_rx(&s->work_rx);
+ static void irqc_dbg(struct irqc_irq *i, char *str)
+ {
+-	dev_dbg(&i->p->pdev->dev, "%s (%d:%d:%d)\n",
+-		str, i->requested_irq, i->hw_irq, i->domain_irq);
++	dev_dbg(&i->p->pdev->dev, "%s (%d:%d)\n",
++		str, i->requested_irq, i->hw_irq);
  }
  
- static void sci_rx_dma_release(struct sci_port *s, bool enable_pio)
--- 
-1.9.1
-
+ static void irqc_irq_enable(struct irq_data *d)
+@@ -145,7 +144,7 @@ static irqreturn_t irqc_irq_handler(int
+ 	if (ioread32(p->iomem + DETECT_STATUS) & bit) {
+ 		iowrite32(bit, p->iomem + DETECT_STATUS);
+ 		irqc_dbg(i, "demux2");
+-		generic_handle_irq(i->domain_irq);
++		generic_handle_irq(irq_find_mapping(p->irq_domain, i->hw_irq));
+ 		return IRQ_HANDLED;
+ 	}
+ 	return IRQ_NONE;
+@@ -156,9 +155,6 @@ static int irqc_irq_domain_map(struct ir
+ {
+ 	struct irqc_priv *p = h->host_data;
+ 
+-	p->irq[hw].domain_irq = virq;
+-	p->irq[hw].hw_irq = hw;
+-
+ 	irqc_dbg(&p->irq[hw], "map");
+ 	irq_set_chip_data(virq, h->host_data);
+ 	irq_set_chip_and_handler(virq, &p->irq_chip, handle_level_irq);
+@@ -214,6 +210,7 @@ static int irqc_probe(struct platform_de
+ 			break;
+ 
+ 		p->irq[k].p = p;
++		p->irq[k].hw_irq = k;
+ 		p->irq[k].requested_irq = irq->start;
+ 	}
+ 
