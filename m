@@ -1,58 +1,65 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 20 Jul 2015 07:53:09 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 20 Jul 2015 08:45:57 +0000
 Subject: Re: [RFC 9/9] dts: tegra: WIP: hack dts to test new dt flags for i2c
-Message-Id: <3764937.mMMXIHUnrR@avalon>
+Message-Id: <20150720084557.GA2551@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="IS0zKkzwUGydFO0o"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de> <1437142109-31975-10-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1437142109-31975-10-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Andrey Danin <danindrey-JGs/UdohzUI@public.gmane.org>, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
+ <1437142109-31975-10-git-send-email-wsa@the-dreams.de>
+ <3764937.mMMXIHUnrR@avalon>
+In-Reply-To: <3764937.mMMXIHUnrR@avalon>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Rob Herring <robherring2@gmail.com>
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Andrey Danin <danindrey@mail.ru>, linux-tegra@vger.kernel.org
 
-Hi Wolfram,
 
-Thank you for the patch.
+--IS0zKkzwUGydFO0o
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Friday 17 July 2015 16:08:29 Wolfram Sang wrote:
-> Not-Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
-> ---
->  arch/arm/boot/dts/tegra124-jetson-tk1.dts | 7 +++++++
->  1 file changed, 7 insertions(+)
-> 
-> diff --git a/arch/arm/boot/dts/tegra124-jetson-tk1.dts
-> b/arch/arm/boot/dts/tegra124-jetson-tk1.dts index
-> bd43ed6d6ec7c0..4d5f2a4c4da1ce 100644
-> --- a/arch/arm/boot/dts/tegra124-jetson-tk1.dts
-> +++ b/arch/arm/boot/dts/tegra124-jetson-tk1.dts
-> @@ -1,5 +1,6 @@
->  /dts-v1/;
-> 
-> +#include <dt-bindings/i2c/i2c.h>
->  #include <dt-bindings/input/input.h>
->  #include "tegra124.dtsi"
-> 
-> @@ -1390,6 +1391,12 @@
->  			reg = <0x56>;
->  			pagesize = <8>;
->  		};
-> +
-> +		eeprom@42 {
-> +			compatible = "linux,slave-24c02";
-> +			//FIXME: Should be I2C_OWN_SLAVE_ADDRESS | 0x42
-> +			reg = <0xc0000042>;
 
-The node name doesn't match the reg property anymore. Isn't that considered as 
-a problem ?
+> > +
+> > +		eeprom@42 {
+> > +			compatible =3D "linux,slave-24c02";
+> > +			//FIXME: Should be I2C_OWN_SLAVE_ADDRESS | 0x42
+> > +			reg =3D <0xc0000042>;
+>=20
+> The node name doesn't match the reg property anymore. Isn't that consider=
+ed as=20
+> a problem ?
 
-> +		};
->  	};
-> 
->  	/* Expansion GEN2_I2C_* */
+Hmm, true. So far, Rob (CCed) was fine with this approach:
+http://www.spinics.net/lists/linux-tegra/msg22760.html
 
--- 
-Regards,
+@Rob: If we introduce flag bits in the MSBs of an I2C address, the reg
+property is different from the node name. Is this a problem?
 
-Laurent Pinchart
+Thanks,
 
+   Wolfram
+
+
+--IS0zKkzwUGydFO0o
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJVrLVFAAoJEBQN5MwUoCm2EsYP/ju1Ly2SSnBYKOENYGM2Rh/r
+MSR4+kmVT1e0I/Kxns+QO9pVfVMg1+c4jJX8reBhjm1ThjThck9a/SmdHdYtFmuG
+0pXzAPgSbi0oy+/FwBpSpyRByGEHwLh06kF2IpEL2BaHKqGjiR64e56CCUkIclUA
+GL/erkqxG9+5M4McrxLm+vwL4Z2owmQosHu/4ghLPwv26RtqTTOAEbqGaPbVzRI1
+Zeh4L4yXw0uAuyi76nW0sgiq98QzZwpRGjtBSbUg8Q4hNZlyR4Dt9BHJxx9o4SE+
+MYJsXMnhxuBPf7AknU86OWu80o3b4ohYcD90pKz5t7V7QDYdpCK0N7D/IcjcONmw
+/5SnWndjnMLa41MURY6TejHB1dZZxI5HpNWNnYi1UeuZIaTso9V0CDSC4q8tyGlH
+RZnhBb7WSFHJaoGSVdi6a6VVC+DYZEvSYOXlelx3KcmBCAt/5PEwTTs0g5UD0RZc
+46rqhGJladZEy2Y1s7XQn6w/pPMrfR/ghcCM82DICpU4oLIGJIuuOqi9X3vystTb
+N6K/7nHLdIMKHeVkbagP2uTxFxnZEnW4ysY32fkmtL5liouBc0xTHmCO2RMEMjl9
+o0FS9N2Aqkm9hZMLTch7RfGSilhsKV6fFy6FqrJp8+3jy0bQLJS3QVdqszE33cit
+2fWGDw5V3xTSBllJ240b
+=PiOa
+-----END PGP SIGNATURE-----
+
+--IS0zKkzwUGydFO0o--
