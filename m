@@ -1,53 +1,35 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 20 Jul 2015 09:03:11 +0000
+From: Rob Herring <robherring2@gmail.com>
+Date: Mon, 20 Jul 2015 16:10:11 +0000
 Subject: Re: [RFC 9/9] dts: tegra: WIP: hack dts to test new dt flags for i2c
-Message-Id: <20150720090310.GC2551@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="VywGB/WGlW4DM4P8"
+Message-Id: <CAL_JsqKAoydzJ5KOKJTByB9kOQ8KrSX99hVYNkm6FnOZ33xN1w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
- <1437142109-31975-10-git-send-email-wsa@the-dreams.de>
- <55ACA314.6090104@mail.ru>
-In-Reply-To: <55ACA314.6090104@mail.ru>
-To: Andrey Danin <danindrey@mail.ru>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-tegra@vger.kernel.org
+ <1437142109-31975-10-git-send-email-wsa@the-dreams.de> <3764937.mMMXIHUnrR@avalon>
+ <20150720084557.GA2551@katana>
+In-Reply-To: <20150720084557.GA2551@katana>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+Cc: Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, "linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Andrey Danin <danindrey-JGs/UdohzUI@public.gmane.org>, "linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
+On Mon, Jul 20, 2015 at 3:45 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
+>
+>> > +
+>> > +           eeprom@42 {
+>> > +                   compatible = "linux,slave-24c02";
+>> > +                   //FIXME: Should be I2C_OWN_SLAVE_ADDRESS | 0x42
+>> > +                   reg = <0xc0000042>;
+>>
+>> The node name doesn't match the reg property anymore. Isn't that considered as
+>> a problem ?
+>
+> Hmm, true. So far, Rob (CCed) was fine with this approach:
+> http://www.spinics.net/lists/linux-tegra/msg22760.html
+>
+> @Rob: If we introduce flag bits in the MSBs of an I2C address, the reg
+> property is different from the node name. Is this a problem?
 
---VywGB/WGlW4DM4P8
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+No, I don't it is a problem.
 
-
-> >+			//FIXME: Should be I2C_OWN_SLAVE_ADDRESS | 0x42
-> >+			reg =3D <0xc0000042>;
->=20
-> I used it in this way:
-> reg =3D <(I2C_OWN_SLAVE_ADDRESS | 0x42)>;
-
-Ah, nice, it was that easy :) Thanks!
-
-
---VywGB/WGlW4DM4P8
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJVrLlOAAoJEBQN5MwUoCm2qQMQAKHQ258qR5P1kWerVRW7MrZ8
-kIHfUcYvwELYZbLw8M8t6BbJFwz4TzoQ+URSxRG6Awtx945/XfAf1ZFPntJo3DWy
-gylDgcNF2SKcGFKMlbVBg72UkI+9MDb2UksoH/LWgWuMoBNptNm4gEHKdPhjFSQu
-84JZXZmYMNMIeL069vvb4TvmIal446KMGU+AXp1RVsDCH5h170vlMVwF7U4dZ8nJ
-GK+NTittr8LFowKC3DogC2oco1ix4abNId6IxpYq44/3Eh0h2ZId9nAkFB96+ZZC
-tbyC2cjUAOxPfmOvPctQruhmrNmNlN9OjTygJk2XIuXXjgs9nsyBc16toRONa9Pd
-XOHAJ1rCJdwBI83mYAWb4lUno/xnnXwYck2SbpfdP6sYqFjMFeDGEc6M+Bldj9+T
-fTSjt5xjANMGqO9AU3KdHOvE+z7dc3DxF6mXLH6b5Aa/0Vd7LrgypceFWrjeZFgt
-GzH8DyJ661uI0qHpGV6wbyW5QrmozoHS5QK7Ettzeiq9tIBAqmPzbdaWxow+9bxW
-bgrWjllt5yUb5MxD7nbLayBDbs4+QrHwvYjD32sonFuiHPv420YSJIpIefBsKgxh
-9w4Qh/+zneIRsK8rpt5+6mO3CXpZXrGIUQI2c1R2eYE15rVnPPbVA+HTvXFqWc1W
-CkF+9ekxVv07eQYtj/aS
-=rUg4
------END PGP SIGNATURE-----
-
---VywGB/WGlW4DM4P8--
+Rob
