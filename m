@@ -1,37 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Jul 2015 08:41:44 +0000
-Subject: [PATCH 3/9] ARM: shmobile: Enable fixed voltage regulator in shmobile_defconfig
-Message-Id: <719074d8b2209ead1f33d935dfa3f7dd8c83e018.1437726584.git.horms+renesas@verge.net.au>
+From: Rasmus Villemoes <rv@rasmusvillemoes.dk>
+Date: Mon, 20 Jul 2015 21:02:17 +0000
+Subject: likely signedness bug in arch/{m32r,sh}/include/asm/thread_info.h
+Message-Id: <87bnf6o84m.fsf@rasmusvillemoes.dk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1437726584.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1437726584.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This is selected by MACH_MARZEN which is enabled in shmobile_defconfig,
-however, MACH_MARZEN is going away along with the board code it enables.
+Right-shifted ~0 aka -1 always gives -1 again, since gcc always does
+arithmetic right shift of signed types. So the common code (one is
+copy-pasted from the other)
 
-Acked-by: Magnus Damm <damm@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/configs/shmobile_defconfig | 1 +
- 1 file changed, 1 insertion(+)
+      ti->flags = (ti->flags & (~0 >> (32 - TI_FLAG_FAULT_CODE_SHIFT)))
+              | (val << TI_FLAG_FAULT_CODE_SHIFT);
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 9961fbd633f8..9fece82a4127 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -121,6 +121,7 @@ CONFIG_WATCHDOG=y
- CONFIG_DA9063_WATCHDOG=y
- CONFIG_MFD_AS3711=y
- CONFIG_MFD_DA9063=y
-+CONFIG_REGULATOR_FIXED_VOLTAGE=y
- CONFIG_REGULATOR_AS3711=y
- CONFIG_REGULATOR_DA9210=y
- CONFIG_REGULATOR_GPIO=y
--- 
-2.1.4
+doesn't actually clear any of ti->flags; it's entirely equivalent to
 
+      ti->flags |= (val << TI_FLAG_FAULT_CODE_SHIFT);
+
+Presumably harmless since this hasn't been noticed before.
+
+[Surprisingly, for non-const shifts, gcc doesn't realize the shift is a
+noop: unsigned g(int s) { return ~0 >> s; } compiles to
+
+        movl    %edi, %ecx
+        movl    $-1, %eax
+        sarl    %cl, %eax
+        ret
+
+Since ~0 >> whatever is almost always used as a mask, probably
+gcc/sparse/smatch should warn about this and suggest using 0u.]
