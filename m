@@ -1,100 +1,112 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Mon, 20 Jul 2015 14:08:18 +0000
+From: Leon Romanovsky <leon@leon.nu>
+Date: Mon, 20 Jul 2015 19:33:28 +0000
 Subject: Re: [PATCH v2] mmc: tmio: Fix timeout value for command request
-Message-Id: <CAH1o70JPcdFYdhJ=0ap2EZfZB87vjJV+WeHf2gGwhPigoh_DdQ@mail.gmail.com>
+Message-Id: <CALq1K=KPSnzSu5uOzzN5h1EWNzCEM+aJ91LUg04KOLbmyN6JuA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1437323999-7938-1-git-send-email-ykaneko0929@gmail.com>
-	<CALq1K=JbgNGpik6jTXvd+JHzRP9HGFhgu9PgDC3bE_ftBG1FSQ@mail.gmail.com>
-In-Reply-To: <CALq1K=JbgNGpik6jTXvd+JHzRP9HGFhgu9PgDC3bE_ftBG1FSQ@mail.gmail.com>
+ <CALq1K=JbgNGpik6jTXvd+JHzRP9HGFhgu9PgDC3bE_ftBG1FSQ@mail.gmail.com> <CAH1o70JPcdFYdhJ=0ap2EZfZB87vjJV+WeHf2gGwhPigoh_DdQ@mail.gmail.com>
+In-Reply-To: <CAH1o70JPcdFYdhJ=0ap2EZfZB87vjJV+WeHf2gGwhPigoh_DdQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Leon Romanovsky <leon@leon.nu>
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 Cc: linux-mmc@vger.kernel.org, Ian Molton <ian.molton@codethink.co.uk>, Ulf Hansson <ulf.hansson@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Leon,
-
-2015-07-20 14:03 GMT+09:00 Leon Romanovsky <leon@leon.nu>:
-> On Sun, Jul 19, 2015 at 7:39 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
->> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
->>
->> Fix the problem which timeout occurs at the time of command request with
->> several cards.
-> Hi Yoshihiro,
-> I afraid that I missed the answer to my concern about such cards [1].
-> It is good to write this information in commit message and/or comment
-> in the code.
+On Mon, Jul 20, 2015 at 5:08 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+> Hi Leon,
 >
-> It is extremely valuable to know which cards are required x2.5 timeout increase.
+> 2015-07-20 14:03 GMT+09:00 Leon Romanovsky <leon@leon.nu>:
+>> On Sun, Jul 19, 2015 at 7:39 PM, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+>>> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+>>>
+>>> Fix the problem which timeout occurs at the time of command request with
+>>> several cards.
+>> Hi Yoshihiro,
+>> I afraid that I missed the answer to my concern about such cards [1].
+>> It is good to write this information in commit message and/or comment
+>> in the code.
+>>
+>> It is extremely valuable to know which cards are required x2.5 timeout increase.
+>
+> I apologize for the lack of information.
+> However, I have not yet obtained information about which cards corresponds to.
+> I intend to update the commit message if I obtain information.
+Please don't hesitate to resend this patch when you will get such information.
 
-I apologize for the lack of information.
-However, I have not yet obtained information about which cards corresponds to.
-I intend to update the commit message if I obtain information.
+Thanks.
 
-Thanks,
-Kaneko
 
 >
-> [1] http://www.spinics.net/lists/linux-mmc/msg32295.html
+> Thanks,
+> Kaneko
 >
 >>
->> The timeout value was insufficient as a verification of several cards,
->> so it was changed 5 seconds from 2 seconds.
+>> [1] http://www.spinics.net/lists/linux-mmc/msg32295.html
 >>
->> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
+>>>
+>>> The timeout value was insufficient as a verification of several cards,
+>>> so it was changed 5 seconds from 2 seconds.
+>>>
+>>> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+>>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+>>> ---
+>>>
+>>> This patch is based on mmc-next branch of Ulf Hansson's mmc tree.
+>>>
+>>> v2 [Yoshihiro Kaneko]
+>>> * As suggested by Wolfram Sang
+>>> - use a definition instead of a magic value
+>>>
+>>>  drivers/mmc/host/tmio_mmc_pio.c | 6 ++++--
+>>>  1 file changed, 4 insertions(+), 2 deletions(-)
+>>>
+>>> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+>>> index e3dcf31..a10fde4 100644
+>>> --- a/drivers/mmc/host/tmio_mmc_pio.c
+>>> +++ b/drivers/mmc/host/tmio_mmc_pio.c
+>>> @@ -83,6 +83,8 @@ static int tmio_mmc_next_sg(struct tmio_mmc_host *host)
+>>>         return --host->sg_len;
+>>>  }
+>>>
+>>> +#define CMDREQ_TIMEOUT 5000
+>>> +
+>>>  #ifdef CONFIG_MMC_DEBUG
+>>>
+>>>  #define STATUS_TO_TEXT(a, status, i) \
+>>> @@ -230,7 +232,7 @@ static void tmio_mmc_reset_work(struct work_struct *work)
+>>>          */
+>>>         if (IS_ERR_OR_NULL(mrq)
+>>>             || time_is_after_jiffies(host->last_req_ts +
+>>> -               msecs_to_jiffies(2000))) {
+>>> +               msecs_to_jiffies(CMDREQ_TIMEOUT))) {
+>>>                 spin_unlock_irqrestore(&host->lock, flags);
+>>>                 return;
+>>>         }
+>>> @@ -818,7 +820,7 @@ static void tmio_mmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
+>>>         ret = tmio_mmc_start_command(host, mrq->cmd);
+>>>         if (!ret) {
+>>>                 schedule_delayed_work(&host->delayed_reset_work,
+>>> -                                     msecs_to_jiffies(2000));
+>>> +                                     msecs_to_jiffies(CMDREQ_TIMEOUT));
+>>>                 return;
+>>>         }
+>>>
+>>> --
+>>> 1.9.1
+>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >>
->> This patch is based on mmc-next branch of Ulf Hansson's mmc tree.
 >>
->> v2 [Yoshihiro Kaneko]
->> * As suggested by Wolfram Sang
->> - use a definition instead of a magic value
->>
->>  drivers/mmc/host/tmio_mmc_pio.c | 6 ++++--
->>  1 file changed, 4 insertions(+), 2 deletions(-)
->>
->> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
->> index e3dcf31..a10fde4 100644
->> --- a/drivers/mmc/host/tmio_mmc_pio.c
->> +++ b/drivers/mmc/host/tmio_mmc_pio.c
->> @@ -83,6 +83,8 @@ static int tmio_mmc_next_sg(struct tmio_mmc_host *host)
->>         return --host->sg_len;
->>  }
->>
->> +#define CMDREQ_TIMEOUT 5000
->> +
->>  #ifdef CONFIG_MMC_DEBUG
->>
->>  #define STATUS_TO_TEXT(a, status, i) \
->> @@ -230,7 +232,7 @@ static void tmio_mmc_reset_work(struct work_struct *work)
->>          */
->>         if (IS_ERR_OR_NULL(mrq)
->>             || time_is_after_jiffies(host->last_req_ts +
->> -               msecs_to_jiffies(2000))) {
->> +               msecs_to_jiffies(CMDREQ_TIMEOUT))) {
->>                 spin_unlock_irqrestore(&host->lock, flags);
->>                 return;
->>         }
->> @@ -818,7 +820,7 @@ static void tmio_mmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
->>         ret = tmio_mmc_start_command(host, mrq->cmd);
->>         if (!ret) {
->>                 schedule_delayed_work(&host->delayed_reset_work,
->> -                                     msecs_to_jiffies(2000));
->> +                                     msecs_to_jiffies(CMDREQ_TIMEOUT));
->>                 return;
->>         }
 >>
 >> --
->> 1.9.1
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
->
-> --
-> Leon Romanovsky | Independent Linux Consultant
->         www.leon.nu | leon@leon.nu
+>> Leon Romanovsky | Independent Linux Consultant
+>>         www.leon.nu | leon@leon.nu
+
+
+
+-- 
+Leon Romanovsky | Independent Linux Consultant
+        www.leon.nu | leon@leon.nu
