@@ -1,17 +1,17 @@
-From: Andrey Danin <danindrey@mail.ru>
-Date: Mon, 20 Jul 2015 08:59:00 +0000
+From: Stephen Warren <swarren@wwwdotorg.org>
+Date: Mon, 20 Jul 2015 22:13:13 +0000
 Subject: Re: [RFC 0/9] i2c: slave: improve i2c client address spaces and their DT support
-Message-Id: <55ACB854.4010208@mail.ru>
+Message-Id: <55AD7279.5090203@wwwdotorg.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1437142109-31975-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>, linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-tegra@vger.kernel.org
+To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Andrey Danin <danindrey-JGs/UdohzUI@public.gmane.org>, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On 17.07.2015 17:08, Wolfram Sang wrote:
+On 07/17/2015 08:08 AM, Wolfram Sang wrote:
 > As promised here is my RFC to improve address spaces for I2C. This should give
 > i2c seperate address spaces for standard clients, 10 bit clients, and our own
 > slave clients. So, you can now have a 7 bit slave at 0x50 and a 10 bit slave at
@@ -27,34 +27,16 @@ On 17.07.2015 17:08, Wolfram Sang wrote:
 >
 > BTW Andrey, I did not modify your patch and couldn't get the i2c-slave-eeprom driver
 > to work with my Jetson TK1. Does this work for you?
->
-> Thanks,
->
->     Wolfram
->
->
-> Andrey Danin (1):
->    i2c: tegra: implement slave mode
->
-> Wolfram Sang (8):
->    dt-bindings: add header for generic I2C flags in bindings
->    i2c: add a flag to mark clients as slaves
->    i2c: apply address offset for slaves, too
->    i2c: rename address check functions
->    i2c: make address check indpendent from client struct
->    i2c: apply DT flags when probing
->    i2c: take address space into account when checking for used addresses
->    dts: tegra: WIP: hack dts to test new dt flags for i2c
->
->   arch/arm/boot/dts/tegra124-jetson-tk1.dts |   7 ++
->   drivers/i2c/busses/Kconfig                |   1 +
->   drivers/i2c/busses/i2c-tegra.c            | 119 ++++++++++++++++++++++++++++++
->   drivers/i2c/i2c-core.c                    |  69 +++++++++++------
->   include/dt-bindings/i2c/i2c.h             |  18 +++++
->   include/linux/i2c.h                       |   9 ++-
->   6 files changed, 197 insertions(+), 26 deletions(-)
->   create mode 100644 include/dt-bindings/i2c/i2c.h
->
 
-The series is
-Tested-by: Andrey Danin <danindrey@mail.ru>
+This approach makes sense to me.
+
+I'd expect patch 2/9 "dt-bindings: add header for generic I2C flags in 
+bindings" to document the flags (or at least mention their existence, 
+and point at the new header file) in the core I2C bindings document.
+
+Please consider the series,
+Acked-by: Stephen Warren <swarren@nvidia.com>
+
+(ack rather than review since I didn't review patch 1, and mostly 
+concentrated on reviewing the concepts of how slaves were represented 
+rather than the coding details).
