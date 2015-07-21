@@ -1,83 +1,158 @@
-From: Chris Brandt <Chris.Brandt@renesas.com>
-Date: Thu, 16 Jul 2015 16:23:36 +0000
-Subject: RE: [PATCH 2/2] ARM: xip: Use correct symbol for end of ROM marker
-Message-Id: <HK2PR06MB056167AA24AF00983F860C898A990@HK2PR06MB0561.apcprd06.prod.outlook.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 21 Jul 2015 22:31:59 +0000
+Subject: [PATCH] ravb: fix ring memory allocation
+Message-Id: <1836998.fscmK2EJWV@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437057434-1616-1-git-send-email-chris.brandt@renesas.com>
- <1437057434-1616-3-git-send-email-chris.brandt@renesas.com>
- <20150716161219.GL7557@n2100.arm.linux.org.uk>
-In-Reply-To: <20150716161219.GL7557@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-> I think you need to either provide more details of the problem you're seeing, or further reasoning why this is a correct change.
+The driver is written as if it can adapt to a low memory situation  allocating
+less RX  skbs and TX aligned buffers than the respective RX/TX ring sizes.  In
+reality  though  the driver  would malfunction in this case. Stop being overly
+smart and just fail in such situation -- this is achieved by moving the memory
+allocation from ravb_ring_format() to ravb_ring_init().
 
+We leave dma_map_single() calls in place but make their failure non-fatal
+by marking the corresponding RX descriptors  with zero data size which should
+prevent DMA to an invalid addresses.
 
-When I look at my System.map, it's clear that _edata_loc is the very last thing of ROM, and hence programmed into Flash.
-_etext is farther back.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
+---
+The patch is against Dave Miller's 'net.git' repo.
 
-Example:
+drivers/net/ethernet/renesas/ravb_main.c |   59 +++++++++++++++++--------------
+ 1 file changed, 34 insertions(+), 25 deletions(-)
 
-00000000 t __vectors_start
-00000024 A cpu_ca8_suspend_size
-00000024 A cpu_v7_suspend_size
-0000002c A cpu_ca9mp_suspend_size
-00001000 t __stubs_start
-00001004 t vector_rst
-00001020 t vector_irq
-000010a0 t vector_dabt
-00001120 t vector_pabt
-000011a0 t vector_und
-00001220 t vector_addrexcptn
-00001240 t vector_fiq
-00001240 T vector_fiq_offset
-bf000000 T _text
-bf000000 T stext
-bf000070 t __create_page_tables
-bf000180 t __turn_mmu_on_loc
-bf00018c t __enable_mmu
-bf0001c0 t __vet_atags
-bf000240 T __idmap_text_start
-bf000240 T __turn_mmu_on
-bf000240 T _stext
-bf000260 t __turn_mmu_on_end
-bf000260 T cpu_resume_mmu
-bf000284 T cpu_ca8_reset
-bf000284 T cpu_ca9mp_reset
-bf000284 T cpu_v7_reset
-~ ~ ~
-bf370f30 T __start_notes
-bf370f30 R __stop___ex_table
-bf370f54 T __stop_notes
-bf370f54 A __vectors_start
-bf370f54 A _etext                  <<<<<<<<<<<<<<<<<<<<<
-bf370f74 A __stubs_start
-bf370f74 A __vectors_end
-bf371234 A __stubs_end
-bf371240 t __mmap_switched
-~ ~ ~
-bf38ca74 T __security_initcall_end
-bf38ca74 T __security_initcall_start
-bf428a4a t __irf_end
-bf428a50 T __initramfs_size
-bf428a54 A __data_loc
-bf445314 A _edata_loc
-c0004000 A swapper_pg_dir
-c0008000 D _data                  <<<<<<<<<<<<<<<<<<<<<
-c0008000 D _sdata
-c0008000 D init_thread_union
-c000a000 D __init_begin
-c000a000 d kthreadd_done
-c000a00c d done.42220
-~ ~ ~
-
-
-The issue is basically early in boot when the MMU is being set up, it is mapping (in 1MB chucks) your ROM kernel to 0xBF000000.
-If the size of you kernel happens to be that _etext is on 1 side of a 1MB boundary and the actual end of ROM (marked by _edata_loc) is on the other side of the 1MB boundry, it doesn't get mapped and you lose the end of your ROM as soon as the MMU is turned on.
-
-
-Chris
+Index: net/drivers/net/ethernet/renesas/ravb_main.c
+=================================--- net.orig/drivers/net/ethernet/renesas/ravb_main.c
++++ net/drivers/net/ethernet/renesas/ravb_main.c
+@@ -228,9 +228,7 @@ static void ravb_ring_format(struct net_
+ 	struct ravb_desc *desc = NULL;
+ 	int rx_ring_size = sizeof(*rx_desc) * priv->num_rx_ring[q];
+ 	int tx_ring_size = sizeof(*tx_desc) * priv->num_tx_ring[q];
+-	struct sk_buff *skb;
+ 	dma_addr_t dma_addr;
+-	void *buffer;
+ 	int i;
+ 
+ 	priv->cur_rx[q] = 0;
+@@ -241,41 +239,28 @@ static void ravb_ring_format(struct net_
+ 	memset(priv->rx_ring[q], 0, rx_ring_size);
+ 	/* Build RX ring buffer */
+ 	for (i = 0; i < priv->num_rx_ring[q]; i++) {
+-		priv->rx_skb[q][i] = NULL;
+-		skb = netdev_alloc_skb(ndev, PKT_BUF_SZ + RAVB_ALIGN - 1);
+-		if (!skb)
+-			break;
+-		ravb_set_buffer_align(skb);
+ 		/* RX descriptor */
+ 		rx_desc = &priv->rx_ring[q][i];
+ 		/* The size of the buffer should be on 16-byte boundary. */
+ 		rx_desc->ds_cc = cpu_to_le16(ALIGN(PKT_BUF_SZ, 16));
+-		dma_addr = dma_map_single(&ndev->dev, skb->data,
++		dma_addr = dma_map_single(&ndev->dev, priv->rx_skb[q][i]->data,
+ 					  ALIGN(PKT_BUF_SZ, 16),
+ 					  DMA_FROM_DEVICE);
+-		if (dma_mapping_error(&ndev->dev, dma_addr)) {
+-			dev_kfree_skb(skb);
+-			break;
+-		}
+-		priv->rx_skb[q][i] = skb;
++		/* We just set the data size to 0 for a failed mapping which
++		 * should prevent DMA from happening...
++		 */
++		if (dma_mapping_error(&ndev->dev, dma_addr))
++			rx_desc->ds_cc = cpu_to_le16(0);
+ 		rx_desc->dptr = cpu_to_le32(dma_addr);
+ 		rx_desc->die_dt = DT_FEMPTY;
+ 	}
+ 	rx_desc = &priv->rx_ring[q][i];
+ 	rx_desc->dptr = cpu_to_le32((u32)priv->rx_desc_dma[q]);
+ 	rx_desc->die_dt = DT_LINKFIX; /* type */
+-	priv->dirty_rx[q] = (u32)(i - priv->num_rx_ring[q]);
+ 
+ 	memset(priv->tx_ring[q], 0, tx_ring_size);
+ 	/* Build TX ring buffer */
+ 	for (i = 0; i < priv->num_tx_ring[q]; i++) {
+-		priv->tx_skb[q][i] = NULL;
+-		priv->tx_buffers[q][i] = NULL;
+-		buffer = kmalloc(PKT_BUF_SZ + RAVB_ALIGN - 1, GFP_KERNEL);
+-		if (!buffer)
+-			break;
+-		/* Aligned TX buffer */
+-		priv->tx_buffers[q][i] = buffer;
+ 		tx_desc = &priv->tx_ring[q][i];
+ 		tx_desc->die_dt = DT_EEMPTY;
+ 	}
+@@ -298,7 +283,10 @@ static void ravb_ring_format(struct net_
+ static int ravb_ring_init(struct net_device *ndev, int q)
+ {
+ 	struct ravb_private *priv = netdev_priv(ndev);
++	struct sk_buff *skb;
+ 	int ring_size;
++	void *buffer;
++	int i;
+ 
+ 	/* Allocate RX and TX skb rings */
+ 	priv->rx_skb[q] = kcalloc(priv->num_rx_ring[q],
+@@ -308,12 +296,28 @@ static int ravb_ring_init(struct net_dev
+ 	if (!priv->rx_skb[q] || !priv->tx_skb[q])
+ 		goto error;
+ 
++	for (i = 0; i < priv->num_rx_ring[q]; i++) {
++		skb = netdev_alloc_skb(ndev, PKT_BUF_SZ + RAVB_ALIGN - 1);
++		if (!skb)
++			goto error;
++		ravb_set_buffer_align(skb);
++		priv->rx_skb[q][i] = skb;
++	}
++
+ 	/* Allocate rings for the aligned buffers */
+ 	priv->tx_buffers[q] = kcalloc(priv->num_tx_ring[q],
+ 				      sizeof(*priv->tx_buffers[q]), GFP_KERNEL);
+ 	if (!priv->tx_buffers[q])
+ 		goto error;
+ 
++	for (i = 0; i < priv->num_tx_ring[q]; i++) {
++		buffer = kmalloc(PKT_BUF_SZ + RAVB_ALIGN - 1, GFP_KERNEL);
++		if (!buffer)
++			goto error;
++		/* Aligned TX buffer */
++		priv->tx_buffers[q][i] = buffer;
++	}
++
+ 	/* Allocate all RX descriptors. */
+ 	ring_size = sizeof(struct ravb_ex_rx_desc) * (priv->num_rx_ring[q] + 1);
+ 	priv->rx_ring[q] = dma_alloc_coherent(NULL, ring_size,
+@@ -524,6 +528,10 @@ static bool ravb_rx(struct net_device *n
+ 		if (--boguscnt < 0)
+ 			break;
+ 
++		/* We use 0-byte descriptors to mark the DMA mapping errors */
++		if (!pkt_len)
++			continue;
++
+ 		if (desc_status & MSC_MC)
+ 			stats->multicast++;
+ 
+@@ -587,10 +595,11 @@ static bool ravb_rx(struct net_device *n
+ 						  le16_to_cpu(desc->ds_cc),
+ 						  DMA_FROM_DEVICE);
+ 			skb_checksum_none_assert(skb);
+-			if (dma_mapping_error(&ndev->dev, dma_addr)) {
+-				dev_kfree_skb_any(skb);
+-				break;
+-			}
++			/* We just set the data size to 0 for a failed mapping
++			 * which should prevent DMA  from happening...
++			 */
++			if (dma_mapping_error(&ndev->dev, dma_addr))
++				desc->ds_cc = cpu_to_le16(0);
+ 			desc->dptr = cpu_to_le32(dma_addr);
+ 			priv->rx_skb[q][entry] = skb;
+ 		}
 
