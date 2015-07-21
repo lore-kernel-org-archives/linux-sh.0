@@ -1,33 +1,99 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 16 Jul 2015 09:40:29 +0000
-Subject: Re: [PATCH v2 4/4] pinctrl: sh-pfc: Remove obsolete r8a7740 platform_device_id entry
-Message-Id: <CACRpkdacAZQ-i6-UX=n673Qu4=MPw+EeSSePOjHCtYygjoFWug@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 21 Jul 2015 00:26:20 +0000
+Subject: [PATCH 1/4] ARM: shmobile: r8a7790: Add Audio CTU support on DTSI
+Message-Id: <87si8icqa2.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436875015-13706-1-git-send-email-geert+renesas@glider.be>
-	<1436875015-13706-5-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1436875015-13706-5-git-send-email-geert+renesas@glider.be>
+References: <1389082976-22254-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1389082976-22254-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Tue, Jul 14, 2015 at 1:56 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> Since the removal of the r8a7740 legacy SoC code in commit
-> 44d88c754e57a6d9 ("ARM: shmobile: Remove legacy SoC code for R-Mobile
-> A1"), r8a7740 is only supported in generic DT-only ARM multi-platform
-> builds.  The driver doesn't need to match platform devices by name
-> anymore, hence remove the corresponding platform_device_id entry.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> ---
-> The commit mentioned above is in -next, destined for v4.3. Please apply.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi            | 16 ++++++++++++++++
+ include/dt-bindings/clock/r8a7790-clock.h |  2 ++
+ 2 files changed, 18 insertions(+)
 
-Patch applied.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 3ae0c3b..6aa1d75 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1303,6 +1303,7 @@
+ 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
+ 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
+ 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
++				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
+ 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>;
+ 
+ 			#clock-cells = <1>;
+@@ -1312,6 +1313,7 @@
+ 				R8A7790_CLK_SSI4 R8A7790_CLK_SSI3 R8A7790_CLK_SSI2 R8A7790_CLK_SSI1 R8A7790_CLK_SSI0
+ 				R8A7790_CLK_SCU_ALL
+ 				R8A7790_CLK_SCU_DVC1 R8A7790_CLK_SCU_DVC0
++				R8A7790_CLK_SCU_CTU1_MIX1 R8A7790_CLK_SCU_CTU0_MIX0
+ 				R8A7790_CLK_SCU_SRC9 R8A7790_CLK_SCU_SRC8 R8A7790_CLK_SCU_SRC7 R8A7790_CLK_SCU_SRC6 R8A7790_CLK_SCU_SRC5
+ 				R8A7790_CLK_SCU_SRC4 R8A7790_CLK_SCU_SRC3 R8A7790_CLK_SCU_SRC2 R8A7790_CLK_SCU_SRC1 R8A7790_CLK_SCU_SRC0
+ 			>;
+@@ -1321,6 +1323,7 @@
+ 				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0",
+ 				"scu-all",
+ 				"scu-dvc1", "scu-dvc0",
++				"scu-ctu1-mix1", "scu-ctu0-mix0",
+ 				"scu-src9", "scu-src8", "scu-src7", "scu-src6", "scu-src5",
+ 				"scu-src4", "scu-src3", "scu-src2", "scu-src1", "scu-src0";
+ 		};
+@@ -1536,6 +1539,7 @@
+ 			<&mstp10_clks R8A7790_CLK_SCU_SRC5>, <&mstp10_clks R8A7790_CLK_SCU_SRC4>,
+ 			<&mstp10_clks R8A7790_CLK_SCU_SRC3>, <&mstp10_clks R8A7790_CLK_SCU_SRC2>,
+ 			<&mstp10_clks R8A7790_CLK_SCU_SRC1>, <&mstp10_clks R8A7790_CLK_SCU_SRC0>,
++			<&mstp10_clks R8A7790_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7790_CLK_SCU_CTU1_MIX1>,
+ 			<&mstp10_clks R8A7790_CLK_SCU_DVC0>, <&mstp10_clks R8A7790_CLK_SCU_DVC1>,
+ 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
+ 		clock-names = "ssi-all",
+@@ -1543,6 +1547,7 @@
+ 				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
+ 				"src.9", "src.8", "src.7", "src.6", "src.5",
+ 				"src.4", "src.3", "src.2", "src.1", "src.0",
++				"ctu.0", "ctu.1",
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
+ 
+@@ -1559,6 +1564,17 @@
+ 			};
+ 		};
+ 
++		rcar_sound,ctu {
++			ctu00: ctu@0 { };
++			ctu01: ctu@1 { };
++			ctu02: ctu@2 { };
++			ctu03: ctu@3 { };
++			ctu10: ctu@4 { };
++			ctu11: ctu@5 { };
++			ctu12: ctu@6 { };
++			ctu13: ctu@7 { };
++		};
++
+ 		rcar_sound,src {
+ 			src0: src@0 {
+ 				interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index e119ef3..7b1ad89 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -144,6 +144,8 @@
+ #define R8A7790_CLK_SCU_ALL		17
+ #define R8A7790_CLK_SCU_DVC1		18
+ #define R8A7790_CLK_SCU_DVC0		19
++#define R8A7790_CLK_SCU_CTU1_MIX1	20
++#define R8A7790_CLK_SCU_CTU0_MIX0	21
+ #define R8A7790_CLK_SCU_SRC9		22
+ #define R8A7790_CLK_SCU_SRC8		23
+ #define R8A7790_CLK_SCU_SRC7		24
+-- 
+1.9.1
 
-Yours,
-Linus Walleij
