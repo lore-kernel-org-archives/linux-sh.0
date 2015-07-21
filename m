@@ -1,33 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 08 Jul 2015 01:25:47 +0000
-Subject: Re: [PATCH v4 7/8] ARM: shmobile: r8a7790: Set maximum frequencies for SDHI clocks
-Message-Id: <20150708012544.GD28100@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 21 Jul 2015 00:25:43 +0000
+Subject: [PATCH 0/4] ARM: shmobile: r8a779x: Add CTU/MIX support
+Message-Id: <87twsycqb5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435683177.23818.60.camel@codethink.co.uk>
- <1435683436.23818.69.camel@codethink.co.uk>
- <20150707003949.GE13326@verge.net.au>
- <87zj38lqax.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zj38lqax.wl%kuninori.morimoto.gx@renesas.com>
+References: <87wq4ny1ig.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87wq4ny1ig.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Ben Hutchings <ben.hutchings@codethink.co.uk>, Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: linux-sh@vger.kernel.org
 
-Hi Morimoto-san,
 
-On Tue, Jul 07, 2015 at 01:19:55AM +0000, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> > Morimoto-san,
-> > 
-> > could you find some time to review this patch?
-> 
-> Sorry, I had forgot about this, I sent Acked-by mail.
-> But, I guess Ben will send v5 patch
+Hi Simon
 
-Thanks.
+Latest ALSA SoC branch includes CTU/MIX support.
+This patch-set enables these on r8a7790/r8a7791.
+This advanced feature is assuming to be used via rsrc-card sound card,
+since it needs DPCM on sound card,
 
-Ben, I'm happy to take this patch now or after you repost it.
-Let me know which is best for you.
+It is not used on upstream:ed Lager/Koelsh at this point.
+Because, 1) These CTU/MIX is still prototype, 2) it needs to exchange sound
+card driver.
+
+git branch
+git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git :: topic/rcar
+
+cgit
+https://git.kernel.org/cgit/linux/kernel/git/broonie/sound.git/log/?h=topic/rcar
+
+Kuninori Morimoto (4):
+      ARM: shmobile: r8a7790: Add Audio CTU support on DTSI
+      ARM: shmobile: r8a7790: Add Audio MIX support on DTSI
+      ARM: shmobile: r8a7791: Add Audio CTU support on DTSI
+      ARM: shmobile: r8a7791: Add Audio MIX support on DTSI
+
+ arch/arm/boot/dts/r8a7790.dtsi            | 23 +++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7791.dtsi            | 23 +++++++++++++++++++++++
+ include/dt-bindings/clock/r8a7790-clock.h |  2 ++
+ include/dt-bindings/clock/r8a7791-clock.h |  2 ++
+ 4 files changed, 50 insertions(+)
