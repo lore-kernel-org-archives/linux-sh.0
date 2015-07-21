@@ -1,50 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 17 Jul 2015 06:32:33 +0000
-Subject: Re: [PATCH 00/03] ARM: shmobile: r8a7779 Marzen legacy removal
-Message-Id: <2509734.cmn6CZOzu1@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 21 Jul 2015 00:26:42 +0000
+Subject: [PATCH 2/4] ARM: shmobile: r8a7790: Add Audio MIX support on DTSI
+Message-Id: <87r3o2cq9h.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150716075342.1198.63257.sendpatchset@little-apple>
-In-Reply-To: <20150716075342.1198.63257.sendpatchset@little-apple>
+References: <87txj898qu.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87txj898qu.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Friday 17 July 2015 13:04:57 Simon Horman wrote:
-> On Thu, Jul 16, 2015 at 04:53:42PM +0900, Magnus Damm wrote:
-> > ARM: shmobile: r8a7779 Marzen legacy removal
-> > 
-> > [PATCH 01/03] ARM: shmobile: marzen: Remove legacy board code
-> > [PATCH 02/03] ARM: shmobile: r8a7779: Remove legacy SoC code
-> > [PATCH 03/03] ARM: shmobile: Remove marzen_defconfig
-> > 
-> > This series removes the r8a7779 Marzen legacy code. Board
-> > code for Marzen written in C and r8a7779 SoC code including
-> > old clock framework code and platform devices are removed.
-> > 
-> > Existing Marzen users need to move over to Multiplatform and
-> > shmobile_defconfig. The DT file r8a7779-marzen.dts file is
-> > the same as for the legacy case.
-> > 
-> > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Thanks, I have queued these up.
-> 
-> FYI doing so was rather awkward as patch 01 and especially patch 02
-> have various conflicts with patches in several different branches.
-> 
-> For now I have gone with queuing them up on top of the marzen-reference
-> removal patches, which leaves minor conflicts mainly in Kconfig and
-> Makefiles. There is also a conflict with the marzen board code fix you
-> recently posted which is present in a separate fixes branch. I wonder if it
-> would make sense to drop that patch now removal of the code it fixes is
-> queued up.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I see little point in keeping it beyond pushing our commit statistics, which 
-shouldn't be the motivating factor :-)
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 6aa1d75..f1cdccc 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1540,6 +1540,7 @@
+ 			<&mstp10_clks R8A7790_CLK_SCU_SRC3>, <&mstp10_clks R8A7790_CLK_SCU_SRC2>,
+ 			<&mstp10_clks R8A7790_CLK_SCU_SRC1>, <&mstp10_clks R8A7790_CLK_SCU_SRC0>,
+ 			<&mstp10_clks R8A7790_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7790_CLK_SCU_CTU1_MIX1>,
++			<&mstp10_clks R8A7790_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7790_CLK_SCU_CTU1_MIX1>,
+ 			<&mstp10_clks R8A7790_CLK_SCU_DVC0>, <&mstp10_clks R8A7790_CLK_SCU_DVC1>,
+ 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
+ 		clock-names = "ssi-all",
+@@ -1548,6 +1549,7 @@
+ 				"src.9", "src.8", "src.7", "src.6", "src.5",
+ 				"src.4", "src.3", "src.2", "src.1", "src.0",
+ 				"ctu.0", "ctu.1",
++				"mix.0", "mix.1",
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
+ 
+@@ -1564,6 +1566,11 @@
+ 			};
+ 		};
+ 
++		rcar_sound,mix {
++			mix0: mix@0 { };
++			mix1: mix@1 { };
++		};
++
+ 		rcar_sound,ctu {
+ 			ctu00: ctu@0 { };
+ 			ctu01: ctu@1 { };
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
