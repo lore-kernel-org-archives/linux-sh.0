@@ -1,33 +1,61 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 16 Jul 2015 08:16:55 +0000
-Subject: Re: [PATCH 01/03] ARM: shmobile: marzen: Remove legacy board code
-Message-Id: <CAMuHMdVrtZeqEkMcL=zPd_G44gpuv74cCxytsXKe01-MBMnSOA@mail.gmail.com>
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Date: Tue, 21 Jul 2015 02:00:21 +0000
+Subject: [PATCH v3 2/3] devicetree: bindings: Document Renesas R-Car JPEG  Processing Unit
+Message-Id: <1437444022-28916-3-git-send-email-mikhail.ulyanov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150716075352.1198.7492.sendpatchset@little-apple>
-In-Reply-To: <20150716075352.1198.7492.sendpatchset@little-apple>
+References: <1437444022-28916-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
+In-Reply-To: <1437444022-28916-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: hverkuil@xs4all.nl, horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, mchehab@osg.samsung.com
+Cc: laurent.pinchart@ideasonboard.com, j.anaszewski@samsung.com, kamil@wypas.org, sergei.shtylyov@cogentembedded.com, devicetree@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 
-On Thu, Jul 16, 2015 at 9:53 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
->
-> Remove Marzen legacy board code written in C. Instead
-> board support expressed in DT shall be used together
-> with Multiplatform and shmobile_defconfig.
->
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Add Renesas R-Car JPEG processing unit driver device tree bindings 
+documentation.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+---
+Changes since v2:
+ - remove generic "renesas,jpu-gen2" descriptor
 
-Gr{oetje,eeting}s,
+Changes since v1:
+ - Fix typos
 
-                        Geert
+ .../devicetree/bindings/media/renesas,jpu.txt      | 24 ++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/media/renesas,jpu.txt
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+diff --git a/Documentation/devicetree/bindings/media/renesas,jpu.txt b/Documentation/devicetree/bindings/media/renesas,jpu.txt
+new file mode 100644
+index 0000000..0cb9420
+--- /dev/null
++++ b/Documentation/devicetree/bindings/media/renesas,jpu.txt
+@@ -0,0 +1,24 @@
++* Renesas JPEG Processing Unit
++
++The JPEG processing unit (JPU) incorporates the JPEG codec with an encoding
++and decoding function conforming to the JPEG baseline process, so that the JPU
++can encode image data and decode JPEG data quickly.
++
++Required properties:
++  - compatible: should containg one of the following:
++			- "renesas,jpu-r8a7790" for R-Car H2
++			- "renesas,jpu-r8a7791" for R-Car M2-W
++			- "renesas,jpu-r8a7792" for R-Car V2H
++			- "renesas,jpu-r8a7793" for R-Car M2-N
++
++  - reg: Base address and length of the registers block for the JPU.
++  - interrupts: JPU interrupt specifier.
++  - clocks: A phandle + clock-specifier pair for the JPU functional clock.
++
++Example: R8A7790 (R-Car H2) JPU node
++	jpeg-codec@fe980000 {
++		compatible = "renesas,jpu-r8a7790";
++		reg = <0 0xfe980000 0 0x10300>;
++		interrupts = <0 272 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7790_CLK_JPU>;
++	};
+-- 
+2.1.4
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
