@@ -1,145 +1,98 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 30 Jul 2015 10:42:17 +0000
-Subject: Re: [PATCH/RFC v2 00/29] serial: sh-sci: Miscellaneous and DMA Improvements
-Message-Id: <55B9FF89.7080902@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 21 Jul 2015 00:27:03 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7791: Add Audio CTU support on DTSI
+Message-Id: <87pp3mcq8v.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437070920-28069-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1437070920-28069-1-git-send-email-geert+renesas@glider.be>
+References: <1393159224-14377-3-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1393159224-14377-3-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Geert-san again,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-(2015/07/28 16:56), Yoshihiro Shimoda wrote:
-> Hi Geert-san,
-> 
-> Thank you for the patches!
-> 
-> (2015/07/17 3:21), Geert Uytterhoeven wrote:
->> 	Hi all,
->>
->> This patch series contains various updates for the Renesas
->> (H)SCI(F{,A,B}) driver, incl. DMA support for SCIF on R-Car Gen2.
->> Some of these patches have been sent before. (Few) Changes are indicated
->> in the individual patches.
->>
->> This is definitely not a final series, that's why it's marked as RFC and
->> sent to a limited audience:
->>   - There are still some race conditions between e.g. RX DMA
->>     completion(s) and the worker function,
->>   - Under high load RX DMA breaks,
-
-I investigated this driver more. And then, I found some issues about RX DMA.
-So, I wrote some patches below. Would you check them?
-(Or, should I send these patches to the ML using "git send-email"?)
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Subject: [PATCH 1/3] serial: sh-sci: Avoid disable_irq_nosync() twice after sci_er_interrupt()
+ arch/arm/boot/dts/r8a7791.dtsi            | 16 ++++++++++++++++
+ include/dt-bindings/clock/r8a7791-clock.h |  2 ++
+ 2 files changed, 18 insertions(+)
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-
-This patch fixes an issue that this driver calls disable_irq_nosync()
-twice wrongly in a specific condition. After that, this driver cannot
-work correctly:
- - CONFIG_SERIAL_SH_SCI_DMA=y
- - SCIFA or SCIFB
- - After overrun happened
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/tty/serial/sh-sci.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index e1ac4c3b..ab1e15a 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -958,7 +958,14 @@ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
-
- 		/* Disable future Rx interrupts */
- 		if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
--			disable_irq_nosync(irq);
-+			/*
-+			 * Since this function is called by sci_mpxed_interrupt
-+			 * and sci_er_interrupt, this function may call
-+			 * disale_irq_nosync() twice wrongly. And then, this
-+			 * driver doesn't enable the interrupt anymore.
-+			 */
-+			if (!(scr & SCSCR_RDRQE))
-+				disable_irq_nosync(irq);
- 			scr |= SCSCR_RDRQE;
- 		} else {
- 			scr &= ~SCSCR_RIE;
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 07ea2be..cdd55b8 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1311,6 +1311,7 @@
+ 				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
+ 				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
+ 				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
++				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
+ 				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>;
+ 
+ 			#clock-cells = <1>;
+@@ -1320,6 +1321,7 @@
+ 				R8A7791_CLK_SSI4 R8A7791_CLK_SSI3 R8A7791_CLK_SSI2 R8A7791_CLK_SSI1 R8A7791_CLK_SSI0
+ 				R8A7791_CLK_SCU_ALL
+ 				R8A7791_CLK_SCU_DVC1 R8A7791_CLK_SCU_DVC0
++				R8A7791_CLK_SCU_CTU1_MIX1 R8A7791_CLK_SCU_CTU0_MIX0
+ 				R8A7791_CLK_SCU_SRC9 R8A7791_CLK_SCU_SRC8 R8A7791_CLK_SCU_SRC7 R8A7791_CLK_SCU_SRC6 R8A7791_CLK_SCU_SRC5
+ 				R8A7791_CLK_SCU_SRC4 R8A7791_CLK_SCU_SRC3 R8A7791_CLK_SCU_SRC2 R8A7791_CLK_SCU_SRC1 R8A7791_CLK_SCU_SRC0
+ 			>;
+@@ -1329,6 +1331,7 @@
+ 				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0",
+ 				"scu-all",
+ 				"scu-dvc1", "scu-dvc0",
++				"scu-ctu1-mix1", "scu-ctu0-mix0",
+ 				"scu-src9", "scu-src8", "scu-src7", "scu-src6", "scu-src5",
+ 				"scu-src4", "scu-src3", "scu-src2", "scu-src1", "scu-src0";
+ 		};
+@@ -1582,6 +1585,7 @@
+ 			<&mstp10_clks R8A7791_CLK_SCU_SRC5>, <&mstp10_clks R8A7791_CLK_SCU_SRC4>,
+ 			<&mstp10_clks R8A7791_CLK_SCU_SRC3>, <&mstp10_clks R8A7791_CLK_SCU_SRC2>,
+ 			<&mstp10_clks R8A7791_CLK_SCU_SRC1>, <&mstp10_clks R8A7791_CLK_SCU_SRC0>,
++			<&mstp10_clks R8A7791_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7791_CLK_SCU_CTU1_MIX1>,
+ 			<&mstp10_clks R8A7791_CLK_SCU_DVC0>, <&mstp10_clks R8A7791_CLK_SCU_DVC1>,
+ 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
+ 		clock-names = "ssi-all",
+@@ -1589,6 +1593,7 @@
+ 				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
+ 				"src.9", "src.8", "src.7", "src.6", "src.5",
+ 				"src.4", "src.3", "src.2", "src.1", "src.0",
++				"ctu.0", "ctu.1",
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
+ 
+@@ -1605,6 +1610,17 @@
+ 			};
+ 		};
+ 
++		rcar_sound,ctu {
++			ctu00: ctu@0 { };
++			ctu01: ctu@1 { };
++			ctu02: ctu@2 { };
++			ctu03: ctu@3 { };
++			ctu10: ctu@4 { };
++			ctu11: ctu@5 { };
++			ctu12: ctu@6 { };
++			ctu13: ctu@7 { };
++		};
++
+ 		rcar_sound,src {
+ 			src0: src@0 {
+ 				interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
+index 4022683..dd09b73 100644
+--- a/include/dt-bindings/clock/r8a7791-clock.h
++++ b/include/dt-bindings/clock/r8a7791-clock.h
+@@ -141,6 +141,8 @@
+ #define R8A7791_CLK_SCU_ALL		17
+ #define R8A7791_CLK_SCU_DVC1		18
+ #define R8A7791_CLK_SCU_DVC0		19
++#define R8A7791_CLK_SCU_CTU1_MIX1	20
++#define R8A7791_CLK_SCU_CTU0_MIX0	21
+ #define R8A7791_CLK_SCU_SRC9		22
+ #define R8A7791_CLK_SCU_SRC8		23
+ #define R8A7791_CLK_SCU_SRC7		24
 -- 
 1.9.1
 
-----
-Subject: [PATCH 2/3] serial: sh-sci: Don't kick tx in sci_er_interrupt()
-
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-
-If CONFIG_SERIAL_SH_SCI_DMA is enabled, the driver doesn't enable TIE
-on SCIF or HSCIF. However, this driver may call sci_tx_interrupt()
-in sci_er_interrupt(). After that, the driver cannot care of the
-interrupt, and then "irq 109: nobody cared" happens on r8a7791/koelsch
-board. This patch fixes the issue.
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/tty/serial/sh-sci.c | 3 ---
- 1 file changed, 3 deletions(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index ab1e15a..87ebce7 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1021,9 +1021,6 @@ static irqreturn_t sci_er_interrupt(int irq, void *ptr)
-
- 	sci_clear_SCxSR(port, SCxSR_ERROR_CLEAR(port));
-
--	/* Kick the transmission */
--	sci_tx_interrupt(irq, ptr);
--
- 	return IRQ_HANDLED;
- }
-
--- 
-1.9.1
-
-----
-Subject: [PATCH 3/3] serial: sh-sci: return IRQ_HANDLED if detects overrun
-
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-
-This patch fix an issue that the driver may cause "nobody cared" IRQ
-when this driver detects the overrun flag only.
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/tty/serial/sh-sci.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 87ebce7..b896a1c 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1090,8 +1090,10 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
- 		ret = sci_br_interrupt(irq, ptr);
-
- 	/* Overrun Interrupt */
--	if (orer_status & s->overrun_mask)
-+	if (orer_status & s->overrun_mask) {
- 		sci_handle_fifo_overrun(port);
-+		ret = IRQ_HANDLED;
-+	}
-
- 	return ret;
- }
--- 
-1.9.1
-
----
-Best regards,
-Yoshihiro Shimoda
