@@ -1,10 +1,10 @@
 From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
-Date: Tue, 21 Jul 2015 02:00:21 +0000
+Date: Wed, 22 Jul 2015 11:23:04 +0000
 Subject: [PATCH v3 2/3] devicetree: bindings: Document Renesas R-Car JPEG  Processing Unit
-Message-Id: <1437444022-28916-3-git-send-email-mikhail.ulyanov@cogentembedded.com>
+Message-Id: <1437564185-13593-3-git-send-email-mikhail.ulyanov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437444022-28916-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
-In-Reply-To: <1437444022-28916-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
+References: <1437564185-13593-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
+In-Reply-To: <1437564185-13593-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
