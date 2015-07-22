@@ -1,10 +1,10 @@
 From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
-Date: Tue, 21 Jul 2015 02:00:22 +0000
+Date: Wed, 22 Jul 2015 11:23:05 +0000
 Subject: [PATCH 3/3] MAINTAINERS: V4L2: PLATFORM: Add entry for Renesas JPEG Processing Unit driver
-Message-Id: <1437444022-28916-4-git-send-email-mikhail.ulyanov@cogentembedded.com>
+Message-Id: <1437564185-13593-4-git-send-email-mikhail.ulyanov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437444022-28916-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
-In-Reply-To: <1437444022-28916-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
+References: <1437564185-13593-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
+In-Reply-To: <1437564185-13593-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
