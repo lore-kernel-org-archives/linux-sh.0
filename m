@@ -1,98 +1,79 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 21 Jul 2015 00:27:03 +0000
-Subject: [PATCH 3/4] ARM: shmobile: r8a7791: Add Audio CTU support on DTSI
-Message-Id: <87pp3mcq8v.wl%kuninori.morimoto.gx@renesas.com>
+From: David Long <dave.long@linaro.org>
+Date: Wed, 22 Jul 2015 04:46:47 +0000
+Subject: Re: [PATCH 1/2] Move the pt_regs_offset struct definition from arch to common include file
+Message-Id: <55AF2037.2000803@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1393159224-14377-3-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1393159224-14377-3-git-send-email-wsa@the-dreams.de>
+References: <1434386579-6045-1-git-send-email-dave.long@linaro.org>	
+ <1434386579-6045-2-git-send-email-dave.long@linaro.org>	
+ <CAL_JsqK3L9Hv9bhAtwAAXVYjLJBTOG9=4ddOo-SFqnD-_KieCQ@mail.gmail.com>	
+ <5581BCD0.2040405@linaro.org> <1435634945.24866.2.camel@ellerman.id.au>
+In-Reply-To: <1435634945.24866.2.camel@ellerman.id.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On 06/29/15 23:29, Michael Ellerman wrote:
+> On Wed, 2015-06-17 at 14:30 -0400, David Long wrote:
+>> On 06/16/15 09:17, Rob Herring wrote:
+>>> On Mon, Jun 15, 2015 at 11:42 AM, David Long <dave.long@linaro.org> wrote:
+>>>>
+>>>>    #define REG_OFFSET_NAME(r) \
+>>>>           {.name = #r, .offset = offsetof(struct pt_regs, ARM_##r)}
+>>>>    #define REG_OFFSET_END {.name = NULL, .offset = 0}
+>>>
+>>> Can't you also move these? ARM is complicated with the "ARM_"
+>>> prefixing, but the others appear to be the same. Maybe you can remove
+>>> the prefix or redefine the macro for ARM.
+>>
+>> That would mandate that all the architecture-specific pt_regs structures
+>> would have to use a top-level named field for each named register.
+>
+> Why does it mandate that?
+>
+> See eg. powerpc where we use REG_OFFSET_NAME for the top-level named fields and
+> then a different macro for the array elements:
+>
+>    #define REG_OFFSET_NAME(r) {.name = #r, .offset = offsetof(struct pt_regs, r)}
+>    #define GPR_OFFSET_NAME(num)	\
+>    	{.name = STR(gpr##num), .offset = offsetof(struct pt_regs, gpr[num])}
+>
+>    static const struct pt_regs_offset regoffset_table[] = {
+>    	GPR_OFFSET_NAME(0),
+>    	GPR_OFFSET_NAME(1),
+>    	GPR_OFFSET_NAME(2),
+>    	GPR_OFFSET_NAME(3),
+>    	...
+>    	REG_OFFSET_NAME(nip),
+>    	REG_OFFSET_NAME(msr),
+>
+>
+> So I don't see why REG_OFFSET_NAME couldn't be common.
+>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/boot/dts/r8a7791.dtsi            | 16 ++++++++++++++++
- include/dt-bindings/clock/r8a7791-clock.h |  2 ++
- 2 files changed, 18 insertions(+)
+Sorry for the delay in responding to this.
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 07ea2be..cdd55b8 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -1311,6 +1311,7 @@
- 				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
- 				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
- 				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
-+				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>,
- 				<&mstp10_clks R8A7791_CLK_SCU_ALL>, <&mstp10_clks R8A7791_CLK_SCU_ALL>;
- 
- 			#clock-cells = <1>;
-@@ -1320,6 +1321,7 @@
- 				R8A7791_CLK_SSI4 R8A7791_CLK_SSI3 R8A7791_CLK_SSI2 R8A7791_CLK_SSI1 R8A7791_CLK_SSI0
- 				R8A7791_CLK_SCU_ALL
- 				R8A7791_CLK_SCU_DVC1 R8A7791_CLK_SCU_DVC0
-+				R8A7791_CLK_SCU_CTU1_MIX1 R8A7791_CLK_SCU_CTU0_MIX0
- 				R8A7791_CLK_SCU_SRC9 R8A7791_CLK_SCU_SRC8 R8A7791_CLK_SCU_SRC7 R8A7791_CLK_SCU_SRC6 R8A7791_CLK_SCU_SRC5
- 				R8A7791_CLK_SCU_SRC4 R8A7791_CLK_SCU_SRC3 R8A7791_CLK_SCU_SRC2 R8A7791_CLK_SCU_SRC1 R8A7791_CLK_SCU_SRC0
- 			>;
-@@ -1329,6 +1331,7 @@
- 				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0",
- 				"scu-all",
- 				"scu-dvc1", "scu-dvc0",
-+				"scu-ctu1-mix1", "scu-ctu0-mix0",
- 				"scu-src9", "scu-src8", "scu-src7", "scu-src6", "scu-src5",
- 				"scu-src4", "scu-src3", "scu-src2", "scu-src1", "scu-src0";
- 		};
-@@ -1582,6 +1585,7 @@
- 			<&mstp10_clks R8A7791_CLK_SCU_SRC5>, <&mstp10_clks R8A7791_CLK_SCU_SRC4>,
- 			<&mstp10_clks R8A7791_CLK_SCU_SRC3>, <&mstp10_clks R8A7791_CLK_SCU_SRC2>,
- 			<&mstp10_clks R8A7791_CLK_SCU_SRC1>, <&mstp10_clks R8A7791_CLK_SCU_SRC0>,
-+			<&mstp10_clks R8A7791_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7791_CLK_SCU_CTU1_MIX1>,
- 			<&mstp10_clks R8A7791_CLK_SCU_DVC0>, <&mstp10_clks R8A7791_CLK_SCU_DVC1>,
- 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
- 		clock-names = "ssi-all",
-@@ -1589,6 +1593,7 @@
- 				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
- 				"src.9", "src.8", "src.7", "src.6", "src.5",
- 				"src.4", "src.3", "src.2", "src.1", "src.0",
-+				"ctu.0", "ctu.1",
- 				"dvc.0", "dvc.1",
- 				"clk_a", "clk_b", "clk_c", "clk_i";
- 
-@@ -1605,6 +1610,17 @@
- 			};
- 		};
- 
-+		rcar_sound,ctu {
-+			ctu00: ctu@0 { };
-+			ctu01: ctu@1 { };
-+			ctu02: ctu@2 { };
-+			ctu03: ctu@3 { };
-+			ctu10: ctu@4 { };
-+			ctu11: ctu@5 { };
-+			ctu12: ctu@6 { };
-+			ctu13: ctu@7 { };
-+		};
-+
- 		rcar_sound,src {
- 			src0: src@0 {
- 				interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
-diff --git a/include/dt-bindings/clock/r8a7791-clock.h b/include/dt-bindings/clock/r8a7791-clock.h
-index 4022683..dd09b73 100644
---- a/include/dt-bindings/clock/r8a7791-clock.h
-+++ b/include/dt-bindings/clock/r8a7791-clock.h
-@@ -141,6 +141,8 @@
- #define R8A7791_CLK_SCU_ALL		17
- #define R8A7791_CLK_SCU_DVC1		18
- #define R8A7791_CLK_SCU_DVC0		19
-+#define R8A7791_CLK_SCU_CTU1_MIX1	20
-+#define R8A7791_CLK_SCU_CTU0_MIX0	21
- #define R8A7791_CLK_SCU_SRC9		22
- #define R8A7791_CLK_SCU_SRC8		23
- #define R8A7791_CLK_SCU_SRC7		24
--- 
-1.9.1
+OK, so you're saying architectures that don't want this constraint can 
+make their own macro.  Seems to make this whole exercise slightly less 
+useful, but whatever.
+
+I see three ways to go here:
+
+1) Leave it as is.
+2) Force all architectures to use a common definition.
+3) Provide a common definition that all architectures (except "arm") 
+currently using this functionality will use.
+
+I have a v2 patch to implement #3, ready to post.  Do we think this is 
+the way to go? I don't like #2 because I really don't want to rename all 
+uses of the current register fields for arm since this is 
+architecture-specific code to begin with and since it affects code in 39 
+arm source files.
+
+> cheers
+>
+
+
+Thanks,
+-dl
 
