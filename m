@@ -1,35 +1,72 @@
-From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Thu, 30 Jul 2015 11:13:10 +0000
-Subject: Re: [PATCH] bus: subsys: update return type of ->remove_dev() to void
-Message-Id: <20150730110110.GA24546@linux>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 24 Jul 2015 08:52:02 +0000
+Subject: [PATCH] ARM: shmobile: dts: Add common file for AA121TD01 panel
+Message-Id: <87bnf2rle6.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <02c0569741812b655edde5124c3e2937bb79f9f8.1438248445.git.viresh.kumar@linaro.org>
- <20150730105917.GA25460@nazgul.tnic>
-In-Reply-To: <20150730105917.GA25460@nazgul.tnic>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Borislav Petkov <bp@alien8.de>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Rafael Wysocki <rjw@rjwysocki.net>, Chris Metcalf <cmetcalf@ezchip.com>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, "H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@redhat.com>, Joe Perches <joe@perches.com>, Joerg Roedel <jroedel@suse.de>, open list <linux-kernel@vger.kernel.org>, "open list:CPU FREQUENCY DRIVERS" <linux-pm@vger.kernel.org>, "open list:SUPERH" <linux-sh@vger.kernel.org>, "Luis R. Rodriguez" <mcgrof@suse.com>, "open list:NETWORKING DRIVERS" <netdev@vger.kernel.org>, Nicolas Iooss <nicolas.iooss_linux@m4x.org>, Paul Gortmaker <paul.gortmaker@windriver.com>, Thomas Gleixner <tglx@linutronix.de>, "maintainer:X86 ARCHITECTURE (32-BIT AND 64-BIT)" <x86@kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On 30-07-15, 12:59, Borislav Petkov wrote:
-> On Thu, Jul 30, 2015 at 03:04:01PM +0530, Viresh Kumar wrote:
-> > Its return value is not used by the subsys core and nothing meaningful
-> > can be done with it, even if we want to use it. The subsys device is
-> > anyway getting removed.
-> 
-> I'm assuming sysfs paths covered by it, will remain intact... ? For the
-> microcode loader case that's this hierarchy here:
-> 
-> $ tree /sys/devices/system/cpu/cpu?/microcode/
-> /sys/devices/system/cpu/cpu0/microcode/
-> ├── processor_flags
-> └── version
-> /sys/devices/system/cpu/cpu1/microcode/
-> ├── processor_flags
-> └── version
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Yeah, Its not touching the sysfs path at all.
+The Mitsubishi AA121TD01 panel is commonly used with the Marzen, Lager
+and Koelsch boards. Create a .dtsi file that describe the panel and its
+connection to the board.
 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi | 41 ++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi
+
+diff --git a/arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi b/arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi
+new file mode 100644
+index 0000000..4261e6f
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi
+@@ -0,0 +1,41 @@
++/*
++ * Common file for the AA121TD01 panel connected to Renesas R-Car boards
++ *
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/ {
++	panel {
++		compatible = "mitsubishi,aa121td01", "panel-dpi";
++
++		width-mm = <260>;
++		height-mm = <165>;
++
++		panel-timing {
++			/* 1280x800 @71Hz */
++			clock-frequency = <71000000>;
++			hactive = <1280>;
++			vactive = <800>;
++			hsync-len = <160>;
++			hfront-porch = <64>;
++			hback-porch = <96>;
++			vfront-porch = <9>;
++			vback-porch = <15>;
++			vsync-len = <24>;
++		};
++
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&lvds_connector>;
++			};
++		};
++	};
++};
++
++&lvds_connector {
++	remote-endpoint = <&panel_in>;
++};
 -- 
-viresh
+1.9.1
+
