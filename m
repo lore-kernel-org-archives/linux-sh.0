@@ -1,60 +1,70 @@
-From: Hidehiro Kawai <hidehiro.kawai.ez@hitachi.com>
-Date: Fri, 10 Jul 2015 11:33:31 +0000
-Subject: [PATCH 0/3] kexec: crash_kexec_post_notifiers boot option related fixes
-Message-Id: <20150710113331.4368.10495.stgit@softrs>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:41:42 +0000
+Subject: [PATCH 1/9] ARM: shmobile: r8a7779: Generic CCF and timer support
+Message-Id: <131c2e0480b0f7afefbc9a46cc4e158e17caa844.1437726584.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1437726584.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1437726584.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This is a bugfix patch set for crash_kexec_post_notifiers boot option
-which allows users to call panic notifiers and kmsg dumpers before
-kdump.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-The main patch is PATCH 3/3, and it fixes two problems reported by
-Daniel Walker (https://lkml.org/lkml/2015/6/24/44). 
+Add a r8a7779-specific callback to initialize CCF and
+clocksources. With this in place we are one step closer
+to be able to use r8a7779 without C board code.
 
- Problem 1:
- If crash_kexec_post_notifiers boot option is specified, some
- shutting down process which assume other cpus are still alive
- don't work properly.
+Also add a multiplatform wrapper to avoid breaking the
+r8a7779 marzen legacy case.
 
- Problem 2:
- If crash_kexec_post_notifiers boot option is specified, register
- information of other cpus are not saved to crash dumps.
-
-PATCH 3/3 is also another solution for a bug reported by Daisuke
-Hatayama (https://lkml.org/lkml/2015/5/15/284).  So, this patch
-replace commits 5375b70 and f45d85f which fix the bug.
-
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/setup-r8a7779.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-Hidehiro Kawai (3):
-      panic: Disable crash_kexec_post_notifiers if kdump is not available
-      kexec: Pass panic message to crash_kexec()
-      kexec: Change the timing of callbacks related to "crash_kexec_post_notifiers" boot option
-
-
- Documentation/kernel-parameters.txt |    4 ++
- arch/arm/kernel/traps.c             |    2 +
- arch/arm64/kernel/traps.c           |    2 +
- arch/metag/kernel/traps.c           |    2 +
- arch/mips/kernel/traps.c            |    2 +
- arch/powerpc/kernel/traps.c         |    2 +
- arch/s390/kernel/ipl.c              |    2 +
- arch/sh/kernel/traps.c              |    2 +
- arch/x86/kernel/dumpstack.c         |    2 +
- arch/x86/platform/uv/uv_nmi.c       |    2 +
- include/linux/kernel.h              |    1 +
- include/linux/kexec.h               |    7 +++-
- kernel/kexec.c                      |   62 ++++++++++++++++++++++++++++++-----
- kernel/panic.c                      |   23 ++++---------
- 14 files changed, 80 insertions(+), 35 deletions(-)
-
-
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index c03e562be12b..5625fd1c89c0 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -14,6 +14,8 @@
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  */
++#include <linux/clk/shmobile.h>
++#include <linux/clocksource.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+@@ -756,6 +758,14 @@ u32 __init r8a7779_read_mode_pins(void)
+ 	return mode;
+ }
+ 
++#ifdef CONFIG_ARCH_SHMOBILE_MULTI
++
++static void __init r8a7779_init_time(void)
++{
++	r8a7779_clocks_init(r8a7779_read_mode_pins());
++	clocksource_of_init();
++}
++
+ static const char *r8a7779_compat_dt[] __initdata = {
+ 	"renesas,r8a7779",
+ 	NULL,
+@@ -764,8 +774,10 @@ static const char *r8a7779_compat_dt[] __initdata = {
+ DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
+ 	.map_io		= r8a7779_map_io,
+ 	.init_early	= shmobile_init_delay,
++	.init_time	= r8a7779_init_time,
+ 	.init_irq	= r8a7779_init_irq_dt,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= r8a7779_compat_dt,
+ MACHINE_END
++#endif /* CONFIG_ARCH_SHMOBILE_MULTI */
+ #endif /* CONFIG_USE_OF */
 -- 
-Hidehiro Kawai
-Hitachi, Ltd. Research & Development Group
-
+2.1.4
 
