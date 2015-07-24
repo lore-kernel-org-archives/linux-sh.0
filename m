@@ -1,21 +1,42 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 30 Jul 2015 21:52:23 +0000
-Subject: [PATCH v2 0/2] Add R8A7794/SILK board eMMC DT support
-Message-Id: <1546028.CFITDbxXtD@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:44:49 +0000
+Subject: [PATCH 3/5] ARM: shmobile: defconfig: add Renesas DPCM Sound Card
+Message-Id: <6cec276808bc0a4ac5fc3ab9e42a1b5d1e3e9cc4.1437727455.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1437727455.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1437727455.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
-'renesas-devel-20150730-v4.2-rc4' tag. Here we add the eMMC device tree support
-for the R8A7794-based SILK board.
+This patch enables DPCM related sound card.
+It is used for...
+ - Sampline rate convert
+ - CTU/MIXer
 
-[1/2] ARM: shmobile: r8a7794: add MMCIF DT support
-[2/2] ARM: shmobile: silk: add eMMC DT support
+Note: you need to enable these settings on DTS file
 
-WBR, Sergei
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/shmobile_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index c8e9caeb1c02..8da509327265 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -152,6 +152,7 @@ CONFIG_SND=y
+ CONFIG_SND_SOC=y
+ CONFIG_SND_SOC_SH4_FSI=y
+ CONFIG_SND_SOC_RCAR=y
++CONFIG_SND_SOC_RSRC_CARD=y
+ CONFIG_SND_SOC_AK4642=y
+ CONFIG_SND_SOC_WM8978=y
+ CONFIG_USB=y
+-- 
+2.1.4
 
