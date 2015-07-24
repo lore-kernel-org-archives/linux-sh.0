@@ -1,48 +1,94 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 10 Jul 2015 06:37:12 +0000
-Subject: [PATCH 04/11] ARM: shmobile: r8a7790: add EtherAVB DT support
-Message-Id: <f25d6b977240117eb4b6e3111f4eb41f968d28fb.1436509954.git.horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:41:22 +0000
+Subject: [PATCH 1/9] ARM: shmobile: emev2: add IIC cores to dtsi
+Message-Id: <cd42d042a2e712a7f9880f860075815539ce4baf.1437724902.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436509954.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436509954.git.horms+renesas@verge.net.au>
+References: <cover.1437724902.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1437724902.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Define the generic R8A7790 part of the EtherAVB device node.
-
-Based on original patch by Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/arm/boot/dts/emev2.dtsi | 48 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index feb4652ed4b2..c9aae06319c0 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -671,6 +671,16 @@
- 		status = "disabled";
+diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
+index bb45694d91bc..edad0c4eea35 100644
+--- a/arch/arm/boot/dts/emev2.dtsi
++++ b/arch/arm/boot/dts/emev2.dtsi
+@@ -21,6 +21,8 @@
+ 		gpio2 = &gpio2;
+ 		gpio3 = &gpio3;
+ 		gpio4 = &gpio4;
++		i2c0 = &iic0;
++		i2c1 = &iic1;
  	};
  
-+	avb: ethernet@e6800000 {
-+		compatible = "renesas,etheravb-r8a7790";
-+		reg = <0 0xe6800000 0 0x800>, <0 0xee0e8000 0 0x4000>;
-+		interrupts = <0 163 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp8_clks R8A7790_CLK_ETHERAVB>;
+ 	cpus {
+@@ -66,6 +68,30 @@
+ 			clock-frequency = <32768>;
+ 			#clock-cells = <0>;
+ 		};
++		iic0_sclkdiv: iic0_sclkdiv {
++			compatible = "renesas,emev2-smu-clkdiv";
++			reg = <0x624 0>;
++			clocks = <&pll3_fo>;
++			#clock-cells = <0>;
++		};
++		iic0_sclk: iic0_sclk {
++			compatible = "renesas,emev2-smu-gclk";
++			reg = <0x48c 1>;
++			clocks = <&iic0_sclkdiv>;
++			#clock-cells = <0>;
++		};
++		iic1_sclkdiv: iic1_sclkdiv {
++			compatible = "renesas,emev2-smu-clkdiv";
++			reg = <0x624 16>;
++			clocks = <&pll3_fo>;
++			#clock-cells = <0>;
++		};
++		iic1_sclk: iic1_sclk {
++			compatible = "renesas,emev2-smu-gclk";
++			reg = <0x490 1>;
++			clocks = <&iic1_sclkdiv>;
++			#clock-cells = <0>;
++		};
+ 		pll3_fo: pll3_fo {
+ 			compatible = "fixed-factor-clock";
+ 			clocks = <&c32ki>;
+@@ -234,4 +260,26 @@
+ 		interrupt-controller;
+ 		#interrupt-cells = <2>;
+ 	};
++
++	iic0: i2c@e0070000 {
 +		#address-cells = <1>;
 +		#size-cells = <0>;
++		compatible = "renesas,iic-emev2";
++		reg = <0xe0070000 0x28>;
++		interrupts = <0 32 IRQ_TYPE_EDGE_RISING>;
++		clocks = <&iic0_sclk>;
++		clock-names = "sclk";
 +		status = "disabled";
 +	};
 +
- 	sata0: sata@ee300000 {
- 		compatible = "renesas,sata-r8a7790";
- 		reg = <0 0xee300000 0 0x2000>;
++	iic1: i2c@e10a0000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,iic-emev2";
++		reg = <0xe10a0000 0x28>;
++		interrupts = <0 33 IRQ_TYPE_EDGE_RISING>;
++		clocks = <&iic1_sclk>;
++		clock-names = "sclk";
++		status = "disabled";
++	};
+ };
 -- 
 2.1.4
 
