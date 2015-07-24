@@ -1,93 +1,44 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 08 Jul 2015 10:54:45 +0000
-Subject: Re: [PATCH/RFC 06/11] ARM: shmobile: r8a7790: Link CPG to RST using "renesas,modemr"
-Message-Id: <2505402.iuhaUfZBWq@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:41:15 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Cleanup for v4.3
+Message-Id: <cover.1437725206.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436278217-20522-1-git-send-email-geert+renesas@glider.be>
- <15446450.YUqyGq9qOl@avalon>
- <CAMuHMdUpMFLqA+jRwq=tA1niRkm=L5cMyZ5mxSj18BQnc8CpJw@mail.gmail.com>
-In-Reply-To: <CAMuHMdUpMFLqA+jRwq=tA1niRkm=L5cMyZ5mxSj18BQnc8CpJw@mail.gmail.com>
+References: <cover.1381222967.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On Wednesday 08 July 2015 10:29:56 Geert Uytterhoeven wrote:
-> On Tue, Jul 7, 2015 at 6:20 PM, Laurent Pinchart wrote:
-> >>>> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> >>>> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> >>>> @@ -1115,6 +1115,7 @@
-> >>>>                                            "lb", "qspi", "sdh", "sd0",
-> >>>>                                            "sd1",
-> >>>>                                            "z", "rcan", "adsp";
-> >>>>                       #power-domain-cells = <0>;
-> >>>> +                     renesas,modemr = <&rst 0x60>;
-> >>> 
-> >>> I have mixed feelings about this as I don't think it really describes
-> >>> the hardware.
-> >> 
-> >> From the R-Car Gen2 manual:
-> >> 
-> >> 8. Reset (RST)
-> >> 8.1 Features
-> >> The following functions are implemented by RST.
-> >> [...]
-> >> Latching of the levels on mode pins when PRESET# is negated
-> >> Mode monitoring register
-> >> 
-> >> 7. Clock Pulse Generator (CPG)
-> >> 7.2 Input/Output Pins
-> >> Table 7.1 lists the CPG pin configuration.
-> >> Table 7.1 Pin Configuration and Functions of CPG
-> >> Pin Name Function I/O Description
-> >> [...]
-> >> MD0 Mode 0 ...
-> >> 
-> >> Hence there definitely is a link between the (latched) values in the RST
-> >> module and CPG configuration. This link is expressed using the
-> >> "renesas,modemr" property, where the phandle provides the link to the RST
-> >> block, and the register offset provides a way for software to read the
-> >> configuration.
-> > 
-> > The mode bits of course influence the CPG (otherwise we wouldn't be having
-> > this discussion :-)), but to me it looks more like a configuration
-> > broadcast through the whole SoC than a real link between two IP cores.
-> > It's obviously subject to interpretation.
-> 
-> Yep.
-> 
-> Broadcast? Like a bus clock? For that we also have properties with
-> phandles...
+Please consider these second round of Renesas ARM based SoC cleanup for v4.3.
 
-I knew someone would raise that topic ;-)
+This pull request is based on the previous round of
+such requests, tagged as renesas-cleanup-for-v4.3,
+which I have already sent a pull-request for.
 
-> Syscon is the Hot New Abstraction for a module that provides a bunch of
-> registers needed by drivers for other modules. Those other modules need
-> some way to refer to the appropriate syscon register.
-> 
-> The RST module definitely falls in that category: CPG needs the MODEMR
-> register, watchdog (RWDT/SWDT) needs the Watchdog Timer Reset Control
-> Register, and APMU probably needs the CA15/7 reset control registers.
 
-syscon is a quick hack to be used when no clean solution exists. Sometimes 
-implementing a proper API is just overkill, especially when the "system 
-controller" aggregates registers that really belong to individual IP cores.
+The following changes since commit 20834a406ee20b57c796f9911f06600b71c75788:
 
-Proper abstract kernel APIs should of course be used wherever possible. Some 
-system controllers are already supported in such a way, using the MFD 
-subsystem and exposing proper APIs for part of their features, and letting 
-drivers access registers directly for other features.
+  ARM: shmobile: timer: r8a73a4 and r8a7790 are multi-platform only (2015-07-06 09:29:46 +0900)
 
-In the boot mode case I believe adding a new API would be both useful and 
-quite simple, so I'd like to explore that option.
+are available in the git repository at:
 
-By the way, regarding the CA15/7 reset control registers, shouldn't they be 
-exposed through the reset controller API ?
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup2-for-v4.3
 
--- 
-Regards,
+for you to fetch changes up to 151dd346a2dadaa151d5110553e3fb08774c888e:
 
-Laurent Pinchart
+  ARM: shmobile: apmu: silence build warnings (2015-07-14 16:35:24 +0900)
 
+----------------------------------------------------------------
+Second Round of Renesas ARM Based SoC Cleanup for v4.3
+
+* Silence APMU build warnings
+
+----------------------------------------------------------------
+Wolfram Sang (1):
+      ARM: shmobile: apmu: silence build warnings
+
+ arch/arm/mach-shmobile/platsmp-apmu.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
