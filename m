@@ -1,40 +1,38 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 16 Jul 2015 18:21:47 +0000
-Subject: [PATCH/RFC v2 16/29] serial: sh-sci: Make sci_irq_desc[] const
-Message-Id: <1437070920-28069-17-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:41:48 +0000
+Subject: [PATCH 7/9] ARM: multi_v7_defconfig: Remove Marzen
+Message-Id: <8dd80b6d7c5bac89315d07c0c2495fe31d0cb348.1437726584.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1437726584.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1437726584.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Kill of the defconfig bits now when the marzen-reference board code is gone.
+
+Based on work by Magnus Damm.
+
+Acked-by: Magnus Damm <damm@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/configs/multi_v7_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 3b29489bc0805a7c..1c0d337cbea1ad99 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1108,7 +1108,7 @@ static int sci_notifier(struct notifier_block *self,
- 	return NOTIFY_OK;
- }
- 
--static struct sci_irq_desc {
-+static const struct sci_irq_desc {
- 	const char	*desc;
- 	irq_handler_t	handler;
- } sci_irq_desc[] = {
-@@ -1150,7 +1150,7 @@ static int sci_request_irq(struct sci_port *port)
- 	int i, j, ret = 0;
- 
- 	for (i = j = 0; i < SCIx_NR_IRQS; i++, j++) {
--		struct sci_irq_desc *desc;
-+		const struct sci_irq_desc *desc;
- 		int irq;
- 
- 		if (SCIx_IRQ_IS_MUXED(port)) {
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index 6d83a1bf0c74..b34cd868daa5 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -82,7 +82,6 @@ CONFIG_ARCH_R8A7790=y
+ CONFIG_ARCH_R8A7791=y
+ CONFIG_ARCH_R8A7794=y
+ CONFIG_ARCH_SH73A0=y
+-CONFIG_MACH_MARZEN=y
+ CONFIG_ARCH_SUNXI=y
+ CONFIG_ARCH_SIRF=y
+ CONFIG_ARCH_TEGRA=y
 -- 
-1.9.1
+2.1.4
 
