@@ -1,40 +1,42 @@
-From: Bjorn Helgaas <bhelgaas@google.com>
-Date: Sun, 12 Jul 2015 22:01:45 +0000
-Subject: [PATCH 0/3] IRQ trivial clarifications
-Message-Id: <20150712215559.7166.33068.stgit@bhelgaas-glaptop2.roam.corp.google.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:41:23 +0000
+Subject: [PATCH 2/9] ARM: shmobile: emev2: kzm9d: enable IIC busses
+Message-Id: <c53b0c92a829fe804f2f5f749ebc907658ebcf75.1437724902.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1437724902.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1437724902.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>
-Cc: linux-arch@vger.kernel.org, linux-mips@linux-mips.org, linux-am33-list@redhat.com, linux-ia64@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, adi-buildroot-devel@lists.sourceforge.net, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-alpha@vger.kernel.org, x86@kernel.org, linuxppc-dev@lists.ozlabs.org
+To: linux-arm-kernel@lists.infradead.org
 
-These don't fix anything at all.  But they might make code understanding
-and debugging slightly easier.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/emev2-kzm9d.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-Bjorn Helgaas (3):
-      x86, irq: Rename VECTOR_UNDEFINED and VECTOR_RETRIGGERED to IRQ_*
-      x86, irq: Clarify "No irq handler" message
-      IRQ: Print "unexpected IRQ" messages consistently across architectures
+diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
+index 1dee0aa4f40c..955c24ee4a8c 100644
+--- a/arch/arm/boot/dts/emev2-kzm9d.dts
++++ b/arch/arm/boot/dts/emev2-kzm9d.dts
+@@ -95,6 +95,14 @@
+ 	};
+ };
+ 
++&iic0 {
++	status = "okay";
++};
++
++&iic1 {
++	status = "okay";
++};
++
+ &pfc {
+ 	uart1_pins: serial@e1030000 {
+ 		renesas,groups = "uart1_ctrl", "uart1_data";
+-- 
+2.1.4
 
-
- arch/alpha/kernel/irq.c            |    2 +-
- arch/blackfin/kernel/irqchip.c     |    2 +-
- arch/c6x/kernel/irq.c              |    2 +-
- arch/ia64/kernel/irq.c             |    2 +-
- arch/m68k/include/asm/hardirq.h    |    2 +-
- arch/mips/kernel/irq.c             |    2 +-
- arch/mn10300/kernel/irq.c          |    2 +-
- arch/parisc/include/asm/hardirq.h  |    2 +-
- arch/powerpc/include/asm/hardirq.h |    2 +-
- arch/s390/include/asm/hardirq.h    |    2 +-
- arch/sh/kernel/irq.c               |    2 +-
- arch/tile/kernel/irq.c             |    2 +-
- arch/x86/include/asm/hw_irq.h      |    4 ++--
- arch/x86/kernel/apic/vector.c      |   14 +++++++-------
- arch/x86/kernel/irq.c              |   19 +++++++++----------
- arch/x86/kernel/irqinit.c          |    4 ++--
- include/asm-generic/hardirq.h      |    2 +-
- 17 files changed, 33 insertions(+), 34 deletions(-)
