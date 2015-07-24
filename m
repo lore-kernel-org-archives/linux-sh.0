@@ -1,85 +1,126 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 17 Jul 2015 14:08:25 +0000
-Subject: [RFC 5/9] i2c: rename address check functions
-Message-Id: <1437142109-31975-6-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:41:45 +0000
+Subject: [PATCH 4/9] ARM: shmobile: marzen-reference: Remove C board code
+Message-Id: <d2fb6bdaffc7438e75ffbd669623a2b61cdad3d8.1437726584.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1437726584.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1437726584.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Andrey Danin <danindrey@mail.ru>, linux-tegra@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-The current naming is based on the arguments of the functions and not on
-what they do. Even I as the maintainer find this confusing, so let's
-rename them to something more descriptive.
+The generic r8a7779 machine vector is now feature-wise equivalent
+to the Marzen-reference case, so simply remove the Marzen C board
+code to fall over on the generic r8a7779 machine vector.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/i2c-core.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/Kconfig                  |  7 ----
+ arch/arm/mach-shmobile/Makefile                 |  4 +-
+ arch/arm/mach-shmobile/board-marzen-reference.c | 56 -------------------------
+ 3 files changed, 1 insertion(+), 66 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/board-marzen-reference.c
 
-diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
-index a807e272e1fc2e..b54a0f092d53f6 100644
---- a/drivers/i2c/i2c-core.c
-+++ b/drivers/i2c/i2c-core.c
-@@ -793,7 +793,7 @@ static unsigned short i2c_encode_flags_to_addr(struct i2c_client *client)
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 45006479d461..3d6f46cb8b18 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -89,13 +89,6 @@ config ARCH_SH73A0
+ 	select ARCH_RMOBILE
+ 	select RENESAS_INTC_IRQPIN
  
- /* This is a permissive address validity check, I2C address map constraints
-  * are purposely not enforced, except for the general call address. */
--static int i2c_check_client_addr_validity(const struct i2c_client *client)
-+static int i2c_check_addr_validity(const struct i2c_client *client)
- {
- 	if (client->flags & I2C_CLIENT_TEN) {
- 		/* 10-bit address, all values are valid */
-@@ -811,7 +811,7 @@ static int i2c_check_client_addr_validity(const struct i2c_client *client)
-  * device uses a reserved address, then it shouldn't be probed. 7-bit
-  * addressing is assumed, 10-bit address devices are rare and should be
-  * explicitly enumerated. */
--static int i2c_check_addr_validity(unsigned short addr)
-+static int i2c_check_7bit_addr_validity_strict(unsigned short addr)
- {
- 	/*
- 	 * Reserved addresses per I2C specification:
-@@ -980,7 +980,7 @@ i2c_new_device(struct i2c_adapter *adap, struct i2c_board_info const *info)
- 	strlcpy(client->name, info->type, sizeof(client->name));
+-comment "Renesas ARM SoCs Board Type"
+-
+-config MACH_MARZEN
+-	bool "MARZEN board"
+-	depends on ARCH_R8A7779
+-	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-
+ comment "Renesas ARM SoCs System Configuration"
+ endif
  
- 	/* Check for address validity */
--	status = i2c_check_client_addr_validity(client);
-+	status = i2c_check_addr_validity(client);
- 	if (status) {
- 		dev_err(&adap->dev, "Invalid %d-bit I2C address 0x%02hx\n",
- 			client->flags & I2C_CLIENT_TEN ? 10 : 7, client->addr);
-@@ -2265,7 +2265,7 @@ static int i2c_detect_address(struct i2c_client *temp_client,
- 	int err;
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 89e463de4479..08b12b4d3f90 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -51,9 +51,7 @@ obj-$(CONFIG_PM_RMOBILE)	+= pm-rmobile.o
+ obj-$(CONFIG_ARCH_RCAR_GEN2)	+= pm-rcar-gen2.o
  
- 	/* Make sure the address is valid */
--	err = i2c_check_addr_validity(addr);
-+	err = i2c_check_7bit_addr_validity_strict(addr);
- 	if (err) {
- 		dev_warn(&adapter->dev, "Invalid probe address 0x%02x\n",
- 			 addr);
-@@ -2382,7 +2382,7 @@ i2c_new_probed_device(struct i2c_adapter *adap,
- 
- 	for (i = 0; addr_list[i] != I2C_CLIENT_END; i++) {
- 		/* Check address validity */
--		if (i2c_check_addr_validity(addr_list[i]) < 0) {
-+		if (i2c_check_7bit_addr_validity_strict(addr_list[i]) < 0) {
- 			dev_warn(&adap->dev, "Invalid 7-bit address "
- 				 "0x%02x\n", addr_list[i]);
- 			continue;
-@@ -2957,7 +2957,7 @@ int i2c_slave_register(struct i2c_client *client, i2c_slave_cb_t slave_cb)
- 
- 	if (!(client->flags & I2C_CLIENT_TEN)) {
- 		/* Enforce stricter address checking */
--		ret = i2c_check_addr_validity(client->addr);
-+		ret = i2c_check_7bit_addr_validity_strict(client->addr);
- 		if (ret) {
- 			dev_err(&client->dev, "%s: invalid address\n", __func__);
- 			return ret;
+ # Board objects
+-ifdef CONFIG_ARCH_SHMOBILE_MULTI
+-obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
+-else
++ifndef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+deleted file mode 100644
+index b15eb923263f..000000000000
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ /dev/null
+@@ -1,56 +0,0 @@
+-/*
+- * marzen board support - Reference DT implementation
+- *
+- * Copyright (C) 2011  Renesas Solutions Corp.
+- * Copyright (C) 2011  Magnus Damm
+- * Copyright (C) 2013  Simon Horman
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#include <linux/clk/shmobile.h>
+-#include <linux/clocksource.h>
+-#include <linux/of_platform.h>
+-
+-#include <asm/irq.h>
+-#include <asm/mach/arch.h>
+-
+-#include "common.h"
+-#include "irqs.h"
+-#include "r8a7779.h"
+-
+-static void __init marzen_init_timer(void)
+-{
+-	r8a7779_clocks_init(r8a7779_read_mode_pins());
+-	clocksource_of_init();
+-}
+-
+-static void __init marzen_init(void)
+-{
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+-}
+-
+-static const char *marzen_boards_compat_dt[] __initdata = {
+-	"renesas,marzen",
+-	"renesas,marzen-reference",
+-	NULL,
+-};
+-
+-DT_MACHINE_START(MARZEN, "marzen")
+-	.smp		= smp_ops(r8a7779_smp_ops),
+-	.map_io		= r8a7779_map_io,
+-	.init_early	= shmobile_init_delay,
+-	.init_time	= marzen_init_timer,
+-	.init_irq	= r8a7779_init_irq_dt,
+-	.init_machine	= marzen_init,
+-	.init_late	= shmobile_init_late,
+-	.dt_compat	= marzen_boards_compat_dt,
+-MACHINE_END
 -- 
 2.1.4
 
