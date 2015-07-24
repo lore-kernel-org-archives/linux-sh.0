@@ -1,225 +1,100 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 17 Jul 2015 14:08:21 +0000
-Subject: [RFC 1/9] i2c: tegra: implement slave mode
-Message-Id: <1437142109-31975-2-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:41:27 +0000
+Subject: [PATCH 6/9] ARM: shmobile: r8a7790: Add Audio CTU support on DTSI
+Message-Id: <a7163784961e513a6d8c60b264737af623d1f33c.1437724902.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437142109-31975-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1437142109-31975-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+References: <cover.1437724902.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1437724902.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Andrey Danin <danindrey-JGs/UdohzUI@public.gmane.org>, linux-tegra-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Andrey Danin <danindrey@mail.ru>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Initialization code is based on NVEC driver.
-
-There is a HW bug in AP20 that was also mentioned in kernel sources
-for Toshiba AC100.
-
-Signed-off-by: Andrey Danin <danindrey@mail.ru>
-Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/busses/Kconfig     |   1 +
- drivers/i2c/busses/i2c-tegra.c | 119 +++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 120 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi            | 16 ++++++++++++++++
+ include/dt-bindings/clock/r8a7790-clock.h |  2 ++
+ 2 files changed, 18 insertions(+)
 
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index 577d58d1f1a198..6026271f6d1af5 100644
---- a/drivers/i2c/busses/Kconfig
-+++ b/drivers/i2c/busses/Kconfig
-@@ -881,6 +881,7 @@ config I2C_SUN6I_P2WI
- config I2C_TEGRA
- 	tristate "NVIDIA Tegra internal I2C controller"
- 	depends on ARCH_TEGRA
-+	select I2C_SLAVE
- 	help
- 	  If you say yes to this option, support will be included for the
- 	  I2C controller embedded in NVIDIA Tegra SOCs
-diff --git a/drivers/i2c/busses/i2c-tegra.c b/drivers/i2c/busses/i2c-tegra.c
-index 78a36681469674..dc080ca952960c 100644
---- a/drivers/i2c/busses/i2c-tegra.c
-+++ b/drivers/i2c/busses/i2c-tegra.c
-@@ -42,8 +42,17 @@
- #define I2C_SL_CNFG				0x020
- #define I2C_SL_CNFG_NACK			(1<<1)
- #define I2C_SL_CNFG_NEWSL			(1<<2)
-+#define I2C_SL_RCVD				0x024
-+#define I2C_SL_STATUS				0x028
-+#define I2C_SL_ST_IRQ				(1<<3)
-+#define I2C_SL_ST_END_TRANS			(1<<4)
-+#define I2C_SL_ST_RCVD				(1<<2)
-+#define I2C_SL_ST_RNW				(1<<1)
- #define I2C_SL_ADDR1				0x02c
- #define I2C_SL_ADDR2				0x030
-+#define I2C_SL_ADDR2_TEN_BIT_MODE		1
-+#define I2C_SL_DELAY_COUNT			0x03c
-+#define I2C_SL_DELAY_COUNT_DEFAULT		0x1E
- #define I2C_TX_FIFO				0x050
- #define I2C_RX_FIFO				0x054
- #define I2C_PACKET_TRANSFER_STATUS		0x058
-@@ -125,6 +134,8 @@ enum msg_end_type {
-  * @clk_divisor_std_fast_mode: Clock divisor in standard/fast mode. It is
-  *		applicable if there is no fast clock source i.e. single clock
-  *		source.
-+ * @slave_read_start_delay: Workaround for AP20 I2C Slave Controller bug. Delay
-+ *              before writing data byte into register I2C_SL_RCVD.
-  */
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 3ae0c3bfb9b9..6aa1d759690b 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1303,6 +1303,7 @@
+ 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
+ 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
+ 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
++				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
+ 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>;
  
- struct tegra_i2c_hw_feature {
-@@ -133,6 +144,7 @@ struct tegra_i2c_hw_feature {
- 	bool has_single_clk_source;
- 	int clk_divisor_hs_mode;
- 	int clk_divisor_std_fast_mode;
-+	int slave_read_start_delay;
- };
+ 			#clock-cells = <1>;
+@@ -1312,6 +1313,7 @@
+ 				R8A7790_CLK_SSI4 R8A7790_CLK_SSI3 R8A7790_CLK_SSI2 R8A7790_CLK_SSI1 R8A7790_CLK_SSI0
+ 				R8A7790_CLK_SCU_ALL
+ 				R8A7790_CLK_SCU_DVC1 R8A7790_CLK_SCU_DVC0
++				R8A7790_CLK_SCU_CTU1_MIX1 R8A7790_CLK_SCU_CTU0_MIX0
+ 				R8A7790_CLK_SCU_SRC9 R8A7790_CLK_SCU_SRC8 R8A7790_CLK_SCU_SRC7 R8A7790_CLK_SCU_SRC6 R8A7790_CLK_SCU_SRC5
+ 				R8A7790_CLK_SCU_SRC4 R8A7790_CLK_SCU_SRC3 R8A7790_CLK_SCU_SRC2 R8A7790_CLK_SCU_SRC1 R8A7790_CLK_SCU_SRC0
+ 			>;
+@@ -1321,6 +1323,7 @@
+ 				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0",
+ 				"scu-all",
+ 				"scu-dvc1", "scu-dvc0",
++				"scu-ctu1-mix1", "scu-ctu0-mix0",
+ 				"scu-src9", "scu-src8", "scu-src7", "scu-src6", "scu-src5",
+ 				"scu-src4", "scu-src3", "scu-src2", "scu-src1", "scu-src0";
+ 		};
+@@ -1536,6 +1539,7 @@
+ 			<&mstp10_clks R8A7790_CLK_SCU_SRC5>, <&mstp10_clks R8A7790_CLK_SCU_SRC4>,
+ 			<&mstp10_clks R8A7790_CLK_SCU_SRC3>, <&mstp10_clks R8A7790_CLK_SCU_SRC2>,
+ 			<&mstp10_clks R8A7790_CLK_SCU_SRC1>, <&mstp10_clks R8A7790_CLK_SCU_SRC0>,
++			<&mstp10_clks R8A7790_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7790_CLK_SCU_CTU1_MIX1>,
+ 			<&mstp10_clks R8A7790_CLK_SCU_DVC0>, <&mstp10_clks R8A7790_CLK_SCU_DVC1>,
+ 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
+ 		clock-names = "ssi-all",
+@@ -1543,6 +1547,7 @@
+ 				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
+ 				"src.9", "src.8", "src.7", "src.6", "src.5",
+ 				"src.4", "src.3", "src.2", "src.1", "src.0",
++				"ctu.0", "ctu.1",
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
  
- /**
-@@ -173,6 +185,7 @@ struct tegra_i2c_dev {
- 	int msg_read;
- 	u32 bus_clk_rate;
- 	bool is_suspended;
-+	struct i2c_client *slave;
- };
+@@ -1559,6 +1564,17 @@
+ 			};
+ 		};
  
- static void dvc_writel(struct tegra_i2c_dev *i2c_dev, u32 val, unsigned long reg)
-@@ -461,12 +474,78 @@ static int tegra_i2c_init(struct tegra_i2c_dev *i2c_dev)
- 	return err;
- }
- 
-+static void tegra_i2c_slave_write(struct tegra_i2c_dev *i2c_dev, u32 val)
-+{
-+	i2c_writel(i2c_dev, val, I2C_SL_RCVD);
++		rcar_sound,ctu {
++			ctu00: ctu@0 { };
++			ctu01: ctu@1 { };
++			ctu02: ctu@2 { };
++			ctu03: ctu@3 { };
++			ctu10: ctu@4 { };
++			ctu11: ctu@5 { };
++			ctu12: ctu@6 { };
++			ctu13: ctu@7 { };
++		};
 +
-+	/*
-+	 * TODO: A correct fix needs to be found for this.
-+	 *
-+	 * We experience less incomplete messages with this delay than without
-+	 * it, but we don't know why. Help is appreciated.
-+	 */
-+	udelay(100);
-+}
-+
-+static int tegra_i2c_slave_isr(int irq, struct tegra_i2c_dev *i2c_dev)
-+{
-+	u32 status;
-+	u8 value;
-+	u8 dummy;
-+	u32 is_slave_irq, is_read, is_trans_start, is_trans_end;
-+
-+	if (!i2c_dev->slave || !i2c_dev->slave->slave_cb)
-+		return -EINVAL;
-+
-+	status = i2c_readl(i2c_dev, I2C_SL_STATUS);
-+
-+	is_slave_irq = (status & I2C_SL_ST_IRQ);
-+	is_read = (status & I2C_SL_ST_RNW);
-+	is_trans_start = (status & I2C_SL_ST_RCVD);
-+	is_trans_end = (status & I2C_SL_ST_END_TRANS);
-+
-+	if (!is_slave_irq)
-+		return -EINVAL;
-+
-+	/* master sent stop */
-+	if (is_trans_end) {
-+		i2c_slave_event(i2c_dev->slave, I2C_SLAVE_STOP, &dummy);
-+		if (!is_trans_start)
-+			return 0;
-+	}
-+
-+	if (is_read) {
-+		/* i2c master reads data from us */
-+		i2c_slave_event(i2c_dev->slave,
-+				is_trans_start ? I2C_SLAVE_READ_REQUESTED
-+					       : I2C_SLAVE_READ_PROCESSED,
-+				&value);
-+		if (is_trans_start && i2c_dev->hw->slave_read_start_delay)
-+			udelay(i2c_dev->hw->slave_read_start_delay);
-+		tegra_i2c_slave_write(i2c_dev, value);
-+	} else {
-+		/* i2c master sends data to us */
-+		value = i2c_readl(i2c_dev, I2C_SL_RCVD);
-+		if (is_trans_start)
-+			tegra_i2c_slave_write(i2c_dev, 0);
-+		i2c_slave_event(i2c_dev->slave,
-+				is_trans_start ? I2C_SLAVE_WRITE_REQUESTED
-+					       : I2C_SLAVE_WRITE_RECEIVED,
-+				&value);
-+	}
-+
-+	return 0;
-+}
-+
- static irqreturn_t tegra_i2c_isr(int irq, void *dev_id)
- {
- 	u32 status;
- 	const u32 status_err = I2C_INT_NO_ACK | I2C_INT_ARBITRATION_LOST;
- 	struct tegra_i2c_dev *i2c_dev = dev_id;
- 
-+	if (!tegra_i2c_slave_isr(irq, i2c_dev))
-+		return IRQ_HANDLED;
-+
- 	status = i2c_readl(i2c_dev, I2C_INT_STATUS);
- 
- 	if (status = 0) {
-@@ -664,9 +743,48 @@ static u32 tegra_i2c_func(struct i2c_adapter *adap)
- 	return ret;
- }
- 
-+static int tegra_reg_slave(struct i2c_client *slave)
-+{
-+	struct tegra_i2c_dev *i2c_dev = i2c_get_adapdata(slave->adapter);
-+	int addr2 = 0;
-+
-+	if (i2c_dev->slave)
-+		return -EBUSY;
-+
-+	i2c_dev->slave = slave;
-+
-+	tegra_i2c_clock_enable(i2c_dev);
-+
-+	i2c_writel(i2c_dev, I2C_SL_CNFG_NEWSL, I2C_SL_CNFG);
-+	i2c_writel(i2c_dev, I2C_SL_DELAY_COUNT_DEFAULT, I2C_SL_DELAY_COUNT);
-+
-+	if (slave->addr > 0x7F)
-+		addr2 = (slave->addr >> 7) | I2C_SL_ADDR2_TEN_BIT_MODE;
-+
-+	i2c_writel(i2c_dev, slave->addr, I2C_SL_ADDR1);
-+	i2c_writel(i2c_dev, addr2, I2C_SL_ADDR2);
-+
-+	return 0;
-+}
-+
-+static int tegra_unreg_slave(struct i2c_client *slave)
-+{
-+	struct tegra_i2c_dev *i2c_dev = i2c_get_adapdata(slave->adapter);
-+
-+	WARN_ON(!i2c_dev->slave);
-+
-+	i2c_writel(i2c_dev, 0, I2C_SL_CNFG);
-+
-+	i2c_dev->slave = NULL;
-+
-+	return 0;
-+}
-+
- static const struct i2c_algorithm tegra_i2c_algo = {
- 	.master_xfer	= tegra_i2c_xfer,
- 	.functionality	= tegra_i2c_func,
-+	.reg_slave	= tegra_reg_slave,
-+	.unreg_slave	= tegra_unreg_slave,
- };
- 
- /* payload size is only 12 bit */
-@@ -681,6 +799,7 @@ static const struct tegra_i2c_hw_feature tegra20_i2c_hw = {
- 	.has_single_clk_source = false,
- 	.clk_divisor_hs_mode = 3,
- 	.clk_divisor_std_fast_mode = 0,
-+	.slave_read_start_delay = 8,
- };
- 
- static const struct tegra_i2c_hw_feature tegra30_i2c_hw = {
+ 		rcar_sound,src {
+ 			src0: src@0 {
+ 				interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index e119ef372ba3..7b1ad8922eec 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -144,6 +144,8 @@
+ #define R8A7790_CLK_SCU_ALL		17
+ #define R8A7790_CLK_SCU_DVC1		18
+ #define R8A7790_CLK_SCU_DVC0		19
++#define R8A7790_CLK_SCU_CTU1_MIX1	20
++#define R8A7790_CLK_SCU_CTU0_MIX0	21
+ #define R8A7790_CLK_SCU_SRC9		22
+ #define R8A7790_CLK_SCU_SRC8		23
+ #define R8A7790_CLK_SCU_SRC7		24
 -- 
 2.1.4
 
