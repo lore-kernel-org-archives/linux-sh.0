@@ -1,35 +1,158 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 01 Jul 2015 00:28:11 +0000
-Subject: Re: [PATCH v4 0/8] UHS-I support for sh_mobile_sdhi
-Message-Id: <87lhf0911f.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:44:51 +0000
+Subject: [PATCH 5/5] ARM: shmobile: Remove marzen_defconfig
+Message-Id: <821e79cb5686695f0adaef61587a184e953a937e.1437727455.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435683177.23818.60.camel@codethink.co.uk>
-In-Reply-To: <1435683177.23818.60.camel@codethink.co.uk>
+References: <cover.1437727455.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1437727455.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Hutchings <ben.hutchings@codethink.co.uk>
-Cc: Ian Molton <ian@mnementh.co.uk>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Hi Ben
+Now when the Marzen legacy board code is removed also
+get rid of the marzen_defconfig file. Existing users
+shall move over to shmobile_defconfig.
 
-Thank you for your hard work
-
-> This series adds support for UHS-I in sh_mobile_sdhi, partly implemented
-> in tmio_mmc.  This does not yet include tuning for SDR-104, but SDR-50 now
-> works on the R8A7790 Lager board and another development board.
-> 
-> The pfc block needs to be reconfigured from 3.3V to 1.8V signalling on
-> the pins wired to the SD card.  This is supported by implementing the
-> pinconf power-source parameter.  I expect that several SH SoCs have this
-> capability, but I only have the R8A7790 data sheet so I only implemented
-> it for that one.
-
-For tmio/sh_mobile_sdhi
-
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Best regards
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Kuninori Morimoto
+ arch/arm/configs/marzen_defconfig | 124 --------------------------------------
+ 1 file changed, 124 deletions(-)
+ delete mode 100644 arch/arm/configs/marzen_defconfig
+
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+deleted file mode 100644
+index 3c8b6d823189..000000000000
+--- a/arch/arm/configs/marzen_defconfig
++++ /dev/null
+@@ -1,124 +0,0 @@
+-# CONFIG_ARM_PATCH_PHYS_VIRT is not set
+-CONFIG_EXPERIMENTAL=y
+-CONFIG_KERNEL_LZMA=y
+-CONFIG_NO_HZ=y
+-CONFIG_IKCONFIG=y
+-CONFIG_IKCONFIG_PROC=y
+-CONFIG_LOG_BUF_SHIFT
+-CONFIG_SYSCTL_SYSCALL=y
+-CONFIG_EMBEDDED=y
+-CONFIG_SLAB=y
+-# CONFIG_IOSCHED_CFQ is not set
+-CONFIG_ARCH_SHMOBILE_LEGACY=y
+-CONFIG_ARCH_R8A7779=y
+-CONFIG_MACH_MARZEN=y
+-CONFIG_MEMORY_START=0x60000000
+-CONFIG_MEMORY_SIZE=0x10000000
+-CONFIG_SHMOBILE_TIMER_HZ24
+-# CONFIG_SH_TIMER_CMT is not set
+-# CONFIG_SWP_EMULATE is not set
+-CONFIG_ARM_ERRATA_430973=y
+-CONFIG_ARM_ERRATA_458693=y
+-CONFIG_ARM_ERRATA_460075=y
+-CONFIG_ARM_ERRATA_743622=y
+-CONFIG_ARM_ERRATA_754322=y
+-CONFIG_SMP=y
+-# CONFIG_ARM_CPU_TOPOLOGY is not set
+-CONFIG_AEABI=y
+-# CONFIG_OABI_COMPAT is not set
+-CONFIG_HIGHMEM=y
+-CONFIG_ZBOOT_ROM_TEXT=0x0
+-CONFIG_ZBOOT_ROM_BSS=0x0
+-CONFIG_ARM_APPENDED_DTB=y
+-CONFIG_VFP=y
+-CONFIG_KEXEC=y
+-# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+-CONFIG_PM=y
+-CONFIG_NET=y
+-CONFIG_PACKET=y
+-CONFIG_UNIX=y
+-CONFIG_INET=y
+-CONFIG_IP_PNP=y
+-CONFIG_IP_PNP_DHCP=y
+-# CONFIG_IPV6 is not set
+-# CONFIG_WIRELESS is not set
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-CONFIG_DEVTMPFS=y
+-CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_STANDALONE is not set
+-# CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FW_LOADER is not set
+-CONFIG_SCSI=y
+-CONFIG_BLK_DEV_SD=y
+-CONFIG_ATA=y
+-CONFIG_ATA_SFF=y
+-CONFIG_ATA_BMDMA=y
+-CONFIG_SATA_RCAR=y
+-CONFIG_NETDEVICES=y
+-# CONFIG_NET_VENDOR_BROADCOM is not set
+-# CONFIG_NET_VENDOR_FARADAY is not set
+-# CONFIG_NET_VENDOR_INTEL is not set
+-# CONFIG_NET_VENDOR_MICREL is not set
+-# CONFIG_NET_VENDOR_NATSEMI is not set
+-# CONFIG_NET_VENDOR_SEEQ is not set
+-CONFIG_SMSC911X=y
+-# CONFIG_NET_VENDOR_STMICRO is not set
+-# CONFIG_WLAN is not set
+-# CONFIG_INPUT_MOUSEDEV is not set
+-CONFIG_INPUT_EVDEV=y
+-# CONFIG_INPUT_MOUSE is not set
+-# CONFIG_VT is not set
+-# CONFIG_LEGACY_PTYS is not set
+-# CONFIG_DEVKMEM is not set
+-CONFIG_SERIAL_SH_SCI=y
+-CONFIG_SERIAL_SH_SCI_NR_UARTS=6
+-CONFIG_SERIAL_SH_SCI_CONSOLE=y
+-# CONFIG_HW_RANDOM is not set
+-CONFIG_I2C=y
+-CONFIG_I2C_RCAR=y
+-CONFIG_SPI=y
+-CONFIG_SPI_SH_HSPI=y
+-CONFIG_GPIO_SYSFS=y
+-CONFIG_GPIO_RCAR=y
+-# CONFIG_HWMON is not set
+-CONFIG_THERMAL=y
+-CONFIG_RCAR_THERMAL=y
+-CONFIG_SSB=y
+-CONFIG_REGULATOR=y
+-CONFIG_MEDIA_SUPPORT=y
+-CONFIG_MEDIA_CAMERA_SUPPORT=y
+-CONFIG_V4L_PLATFORM_DRIVERS=y
+-CONFIG_SOC_CAMERA=y
+-CONFIG_VIDEO_RCAR_VIN=y
+-# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
+-CONFIG_VIDEO_ADV7180=y
+-CONFIG_DRM=y
+-CONFIG_DRM_RCAR_DU=y
+-CONFIG_USB=y
+-CONFIG_USB_RCAR_PHY=y
+-CONFIG_MMC=y
+-CONFIG_MMC_SDHI=y
+-CONFIG_USB_EHCI_HCD=y
+-CONFIG_USB_OHCI_HCD=y
+-CONFIG_USB_OHCI_HCD_PLATFORM=y
+-CONFIG_USB_EHCI_HCD_PLATFORM=y
+-CONFIG_USB_STORAGE=y
+-CONFIG_NEW_LEDS=y
+-CONFIG_LEDS_CLASS=y
+-CONFIG_LEDS_GPIO=y
+-CONFIG_DMADEVICES=y
+-CONFIG_RCAR_HPB_DMAE=y
+-CONFIG_UIO=y
+-CONFIG_UIO_PDRV_GENIRQ=y
+-# CONFIG_IOMMU_SUPPORT is not set
+-# CONFIG_DNOTIFY is not set
+-CONFIG_TMPFS=y
+-# CONFIG_MISC_FILESYSTEMS is not set
+-CONFIG_NFS_FS=y
+-CONFIG_ROOT_NFS=y
+-CONFIG_MAGIC_SYSRQ=y
+-CONFIG_DEBUG_INFO=y
+-CONFIG_DEBUG_INFO_REDUCED=y
+-# CONFIG_FTRACE is not set
+-CONFIG_DEBUG_USER=y
+-CONFIG_AVERAGE=y
+-- 
+2.1.4
+
