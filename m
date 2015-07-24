@@ -1,38 +1,31 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 16 Jul 2015 07:55:26 +0000
-Subject: Re: [PATCH] ASoC: fsi: Remove obsolete sh_fsi2 platform_device_id entry
-Message-Id: <CAMuHMdXPyvy8Koa37NCXtzmQX9td5k12ft=5T-0ET35jp1JtEQ@mail.gmail.com>
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Date: Fri, 24 Jul 2015 13:25:44 +0000
+Subject: [PATCH 0/2] ARM: shmobile: Add JPU device nodes to Renesas R-Car SoCs.
+Message-Id: <1437744346-499-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436875174-13960-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1436875174-13960-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Liam Girdwood <lgirdwood@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, ALSA Development Mailing List <alsa-devel@alsa-project.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Mark,
+This series of patches contains device tree nodes definitions for JPEG
+codec peripheral found in the Renesas R-Car SoCs.
 
-On Tue, Jul 14, 2015 at 1:59 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> Since the removal of the r8a7740 legacy board code in commit
-> 1fa59bda21c7fa36 ("ARM: shmobile: Remove legacy board code for
-> Armadillo-800 EVA"), all former users of the "sh_fsi2" platform device
-> name are only supported in generic DT-only ARM multi-platform builds.
-> The driver doesn't need to match platform devices by name anymore, hence
-> remove the corresponding platform_device_id entry.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This series of patches is against the renesas-devel-20150720-v4.2-rc3
+of https://kernel.googlesource.com/pub/scm/linux/kernel/git/horms/renesas
 
-Looks like you applied this to spi/for-next instead of sound-asoc/for-next?
+The driver itself was accepted by Hans Verkuil
+http://git.linuxtv.org/cgit.cgi/hverkuil/media_tree.git
+commit hash 761a0eee505f3a7051b187e67cd28c50b385d409
 
-Gr{oetje,eeting}s,
+Mikhail Ulyanov (2):
+  ARM: shmobile: r8a7790: Add JPU device node.
+  ARM: shmobile: r8a7791: Add JPU device node.
 
-                        Geert
+ arch/arm/boot/dts/r8a7790.dtsi | 7 +++++++
+ arch/arm/boot/dts/r8a7791.dtsi | 7 +++++++
+ 2 files changed, 14 insertions(+)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+-- 
+2.1.4
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
