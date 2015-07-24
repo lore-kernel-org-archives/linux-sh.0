@@ -1,34 +1,45 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 14 Jul 2015 09:52:42 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC DT Updates for v4.3
-Message-Id: <20150714095242.GK20686@localhost>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:41:58 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Updates for v4.3
+Message-Id: <cover.1437725057.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1436509954.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1436509954.git.horms+renesas@verge.net.au>
+References: <cover.1397627619.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jul 10, 2015 at 03:37:19PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC DT updates for v4.3.
-> 
-> 
-> The following changes since commit d770e558e21961ad6cfdf0ff7df0eb5d7d4f0754:
-> 
->   Linux 4.2-rc1 (2015-07-05 11:01:52 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-for-v4.3
-> 
-> for you to fetch changes up to 7bf46d0be278a3586c78322c65ceff5fd03bb95d:
-> 
->   ARM: shmobile: r8a7779: Configure IRLM mode via DT (2015-07-06 09:33:41 +0900)
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Thanks, merged into next/dt.
+Please consider these Renesas ARM based SoC updates for v4.3.
 
 
--Olof
+The following changes since commit d770e558e21961ad6cfdf0ff7df0eb5d7d4f0754:
+
+  Linux 4.2-rc1 (2015-07-05 11:01:52 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v4.3
+
+for you to fetch changes up to 765b50030c218f65ee4ffd2eeb07045aa79fd5ee:
+
+  ARM: shmobile: gose: enable R-Car Gen2 regulator quirk (2015-07-06 09:37:24 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Updates for v4.3
+
+* Add basic support for gose/r8a7793
+
+----------------------------------------------------------------
+Ulrich Hecht (2):
+      ARM: shmobile: Basic r8a7793 SoC support
+      ARM: shmobile: gose: enable R-Car Gen2 regulator quirk
+
+ arch/arm/mach-shmobile/Kconfig                     |  5 ++++
+ arch/arm/mach-shmobile/Makefile                    |  2 ++
+ arch/arm/mach-shmobile/regulator-quirk-rcar-gen2.c |  3 +-
+ arch/arm/mach-shmobile/setup-r8a7793.c             | 33 ++++++++++++++++++++++
+ 4 files changed, 42 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/mach-shmobile/setup-r8a7793.c
