@@ -1,38 +1,42 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 20 Jul 2015 10:06:25 +0000
-Subject: [PATCH 02/03] irqchip: renesas-irqc: Use linear IRQ domain
-Message-Id: <20150720100625.2552.63939.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:44:50 +0000
+Subject: [PATCH 4/5] ARM: multi_v7_defconfig: add Renesas DPCM Sound Card
+Message-Id: <9afa6c4980492f0305c57e6e8acb4161960df6f4.1437727455.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150720100602.2552.85507.sendpatchset@little-apple>
-In-Reply-To: <20150720100602.2552.85507.sendpatchset@little-apple>
+References: <cover.1437727455.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1437727455.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: jason@lakedaemon.net, geert+renesas@glider.be, linux-kernel@vger.kernel.org, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Use linear IRQ domain instead of irq_domain_add_simple()
-that also handles non-DT cases. This reduces the delta
-between the IRQC code and the generic chip implementation.
+This patch enables Renesas DPCM related sound card.
+It is used for...
+ - Sampline rate convert
+ - CTU/MIXer
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Note: you need to enable these settings on DTS file
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/configs/multi_v7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
- drivers/irqchip/irq-renesas-irqc.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index 77f4b76d16e9..c2eae2abf190 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -462,6 +462,7 @@ CONFIG_SND_ATMEL_SOC=m
+ CONFIG_SND_ATMEL_SOC_WM8904=m
+ CONFIG_SND_SOC_SH4_FSI=m
+ CONFIG_SND_SOC_RCAR=m
++CONFIG_SND_SOC_RSRC_CARD=m
+ CONFIG_SND_SOC_TEGRA=m
+ CONFIG_SND_SOC_TEGRA_RT5640=m
+ CONFIG_SND_SOC_TEGRA_WM8753=m
+-- 
+2.1.4
 
---- 0002/drivers/irqchip/irq-renesas-irqc.c
-+++ work/drivers/irqchip/irq-renesas-irqc.c	2015-07-20 18:42:39.762366518 +0900
-@@ -242,8 +242,8 @@ static int irqc_probe(struct platform_de
- 	irq_chip->irq_set_wake = irqc_irq_set_wake;
- 	irq_chip->flags	= IRQCHIP_MASK_ON_SUSPEND;
- 
--	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
--					      p->number_of_irqs, 0,
-+	p->irq_domain = irq_domain_add_linear(pdev->dev.of_node,
-+					      p->number_of_irqs,
- 					      &irqc_irq_domain_ops, p);
- 	if (!p->irq_domain) {
- 		ret = -ENXIO;
