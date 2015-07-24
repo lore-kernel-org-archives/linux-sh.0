@@ -1,34 +1,40 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 27 Jul 2015 12:35:11 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Updates for v4.3
-Message-Id: <20150727123511.GG14224@localhost>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 24 Jul 2015 15:21:54 +0000
+Subject: [PATCH v2 0/3] bockw SD pull-ups
+Message-Id: <1437751317-12235-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1437725057.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1437725057.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Jul 24, 2015 at 05:41:58PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC updates for v4.3.
-> 
-> 
-> The following changes since commit d770e558e21961ad6cfdf0ff7df0eb5d7d4f0754:
-> 
->   Linux 4.2-rc1 (2015-07-05 11:01:52 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v4.3
-> 
-> for you to fetch changes up to 765b50030c218f65ee4ffd2eeb07045aa79fd5ee:
-> 
->   ARM: shmobile: gose: enable R-Car Gen2 regulator quirk (2015-07-06 09:37:24 +0900)
+Hi!
 
-Merged, thanks.
+This series implements pull-up configuration in the r8a7778 PFC driver
+and sets the SD0_WP and SD0_CD pull-ups on the Bock-W board correctly,
+replacing the hack that is used in the legacy platforms.
+
+This revision uses bitfields for the pull-up table, reducing its size to 310
+bytes, and demotes undefined pull-ups from a bug to a warning.
+
+CU
+Uli
+
+Changes since v1:
+- use bitfields for pull-up table
+- WARN_ON_ONCE instead of BUG_ON on undefined pull-ups
 
 
--Olof
+Ulrich Hecht (3):
+  pinctrl: sh-pfc: add macros defining GP ports with config flags
+  pinctrl: sh-pfc: r8a7778: Add bias (pull-up) pinconf support
+  ARM: shmobile: bockw dts: define sdhi0 pins with pull-ups
+
+ arch/arm/boot/dts/r8a7778-bockw.dts  |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 259 ++++++++++++++++++++++++++++++++---
+ drivers/pinctrl/sh-pfc/sh_pfc.h      |  47 ++++---
+ 3 files changed, 270 insertions(+), 46 deletions(-)
+
+-- 
+2.4.6
+
