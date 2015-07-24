@@ -1,65 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 17 Jul 2015 06:47:28 +0000
-Subject: Re: [PATCH] ARM: shmobile: lager: Fix adv7511 IRQ sensing
-Message-Id: <20150717064727.GC7986@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 24 Jul 2015 15:21:57 +0000
+Subject: [PATCH v2 3/3] ARM: shmobile: bockw dts: define sdhi0 pins with pull-ups
+Message-Id: <1437751317-12235-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1430885131-6098-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1430885131-6098-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jul 17, 2015 at 09:31:24AM +0300, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Friday 17 July 2015 09:03:11 Simon Horman wrote:
-> > On Thu, Jul 16, 2015 at 02:29:04PM +0300, Laurent Pinchart wrote:
-> > > On Tuesday 07 July 2015 09:48:09 Simon Horman wrote:
-> > >> On Mon, May 25, 2015 at 10:08:24AM +0900, Simon Horman wrote:
-> > >>> On Wed, May 06, 2015 at 04:12:39PM +0300, Laurent Pinchart wrote:
-> > >>>> On Wednesday 06 May 2015 12:34:34 Ben Hutchings wrote:
-> > >>>>> On Wed, 2015-05-06 at 07:05 +0300, Laurent Pinchart wrote:
-> > >>>>>> The adv7511 IRQ is low level triggered, not falling edge triggered.
-> > >>>>>> The wrong sense configuration results in no interrupt being
-> > >>>>>> triggered at all, breaking hotplug detection. Fix it.
-> > >>>>>> 
-> > >>>>>> Reported-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
-> > >>>>>> Signed-off-by: Laurent Pinchart
-> > >>>>>> <laurent.pinchart+renesas@ideasonboard.com>
-> > >>>>>> ---
-> > >>>>>> 
-> > >>>>>>  arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
-> > >>>>>>  1 file changed, 1 insertion(+), 1 deletion(-)
-> > >>>>>> 
-> > >>>>>> Ben, would you be able to test this ? I won't have access to my
-> > >>>>>> Lager board before Sunday.
-> > >>>>> 
-> > >>>>> I only have remote access to a Lager at present, so I would need to
-> > >>>> 
-> > >>>> pass this on to a colleague.
-> > >>>> 
-> > >>>> No worries. Worst case I'll try it when I get back home.
-> > >>> 
-> > >>> Did anyone manage to test this?
-> > >> 
-> > >> This seems to have fallen through the cracks.
-> > > 
-> > > It did indeed. There seems to be many cracks these days, must be the
-> > > season.
-> > >
-> > >> Laurent, is there any chance you could test this?
-> > > 
-> > > Tested-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > 
-> > Thanks.
-> > 
-> > Shall I queue it up as a fix with the following tag?
-> > 
-> > Fixes: fd25cdd15b7f ("ARM: shmobile: lager: Add DU HDMI output support")
-> 
-> It's a related fix, but I don't think a fixes tag is appropriate given that 
-> the above commit doesn't introduce a regression.
+Ensures that the pull-ups for pins SD0_CD and SD0_WP are enabled.
 
-Ok, I'll just queue it up as a regular-non-fix patch.
-Most likely early next week.
+This is one of two features from the DT reference platform that are
+still missing in MP.
+
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 7df5036..13645db 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -154,10 +154,14 @@
+ 	};
+ 
+ 	sdhi0_pins: sd0 {
+-		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
+-				  "sdhi0_cd";
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
+ 		renesas,function = "sdhi0";
+ 	};
++	sdhi0_pup_pins: sd0_pup {
++		renesas,groups = "sdhi0_cd", "sdhi0_wp";
++		renesas,function = "sdhi0";
++		bias-pull-up;
++	};
+ 
+ 	hspi0_pins: hspi0 {
+ 		renesas,groups = "hspi0_a";
+@@ -186,7 +190,7 @@
+ };
+ 
+ &sdhi0 {
+-	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-0 = <&sdhi0_pins>, <&sdhi0_pup_pins>;
+ 	pinctrl-names = "default";
+ 
+ 	vmmc-supply = <&fixedregulator3v3>;
+-- 
+2.4.6
+
