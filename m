@@ -1,36 +1,38 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 16 Jul 2015 18:21:38 +0000
-Subject: [PATCH/RFC v2 07/29] serial: sh-sci: Use SCIF_DR instead of hardcoded 1
-Message-Id: <1437070920-28069-8-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:41:24 +0000
+Subject: [PATCH 3/9] ARM: shmobile: lager: add sound label on DTS
+Message-Id: <30be0ba5f92c9a728bf3b3f41dbf3240eb3bbc11.1437724902.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1437724902.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1437724902.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
-v2:
-  - Add Acked-by.
----
- drivers/tty/serial/sh-sci.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index afbfcab8f19a6b99..eae2989890337ee8 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -960,7 +960,8 @@ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
- 		}
- 		serial_port_out(port, SCSCR, scr);
- 		/* Clear current interrupt */
--		serial_port_out(port, SCxSR, ssr & ~(1 | SCxSR_RDxF(port)));
-+		serial_port_out(port, SCxSR,
-+				ssr & ~(SCIF_DR | SCxSR_RDxF(port)));
- 		dev_dbg(port->dev, "Rx IRQ %lu: setup t-out in %u jiffies\n",
- 			jiffies, s->rx_timeout);
- 		mod_timer(&s->rx_timer, jiffies + s->rx_timeout);
+It is easy to modify settings for Test or other purpose if sound has label
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 2eb8a995ae9f..5ae07a8385c5 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -174,7 +174,7 @@
+ 			  1800000 0>;
+ 	};
+ 
+-	sound {
++	rsnd_ak4643: sound {
+ 		compatible = "simple-audio-card";
+ 
+ 		simple-audio-card,format = "left_j";
 -- 
-1.9.1
+2.1.4
 
