@@ -1,91 +1,97 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 15 Jul 2015 07:41:33 +0000
-Subject: Re: [PATCH v3 00/04] ARM: shmobile: r8a7779 Marzen multiplatform cleanup V3
-Message-Id: <CAMuHMdXbthqp1Up2DFmHJEgHAViMU0TmMEbZ1HueWY+kvf9eGQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:41:47 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Marzen Board Removal for v4.3
+Message-Id: <cover.1437726584.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150713061450.25534.96315.sendpatchset@little-apple>
-In-Reply-To: <20150713061450.25534.96315.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On Wed, Jul 15, 2015 at 3:16 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Wed, Jul 15, 2015 at 09:25:01AM +0900, Simon Horman wrote:
->> On Mon, Jul 13, 2015 at 03:14:50PM +0900, Magnus Damm wrote:
->> > ARM: shmobile: r8a7779 Marzen multiplatform cleanup V3
->> >
->> > [PATCH v3 01/04] ARM: shmobile: r8a7779: Generic SMP ops
->> > [PATCH v3 02/04] ARM: shmobile: marzen-reference: Remove C board code
->> > [PATCH v3 03/04] ARM: shmobile: Remove Marzen from shmobile_defconfig
->> > [PATCH v3 04/04] ARM: shmobile: r8a7779: Cleanup header file
->> >
->> > This series is simply resending the remaining r8a7779 multiplatform
->> > cleanup patches. The code has not changed since V2:
->> >
->> > [PATCH v2 00/06] ARM: shmobile: r8a7779 IRQ update and Marzen cleanup V2
->> >
->> > With these patches applied the r8a7779 SoC gets DT-only multiplatform
->> > support and old C board code for multiplatform gets removed.
->> >
->> > The legacy r8a7779 Marzen code is not touched by this series, but
->> > with these patches applied basic r8a7779 multiplatform SoC support
->> > is done and only a few I/O devices are legacy-only.
->>
->> Thanks, I have queued these up.
->>
->> Please send a follow-up patch to address Geert's observation that
->> CONFIG_MACH_MARZEN should be removed from multi_v7_defconfig.
->
-> Unfortunately I have noticed a problem with patch 02/04,
-> and in particular the following portion of it:
->
-> --- a/arch/arm/mach-shmobile/Kconfig
-> +++ b/arch/arm/mach-shmobile/Kconfig
-> @@ -89,13 +89,6 @@ config ARCH_SH73A0
->         select ARCH_RMOBILE
->         select RENESAS_INTC_IRQPIN
->
-> -comment "Renesas ARM SoCs Board Type"
-> -
-> -config MACH_MARZEN
-> -       bool "MARZEN board"
-> -       depends on ARCH_R8A7779
-> -       select REGULATOR_FIXED_VOLTAGE if REGULATOR
-> -
->
-> It appears that with the above applied REGULATOR_FIXED_VOLTAGE is
-> no longer set after make shmobile_defconfig which causes all sorts of
-> trouble as the fixed regulator is used by many devices on many boards.
+Please consider these Renesas ARM based SoC marzen board removal for v4.3.
 
-Indeed,
+This series removes legacy r8a7779 SoC and marzen board code.
+It does so in a way that does not introduce feature regressions
+when when booting the r8a7779/marzen board using shmobile_defconfig,
+which provides for booting using multiplatform, a scenario which previously
+used board code to provide some features including SMP.
 
-"linux-config-from-dt arch/arm/boot/dts/r8a7779-marzen.dtb" says:
+Because of the above this series modifies SoC and DT files,
+and then removes code. And because of that it was not entirely clear to
+me which branch it should go into, so I have provided it in a stand-alone
+branch.
 
-    ...
-    regulator-fixed is provided by:
-            drivers/regulator/fixed.c
-                    needs CONFIG_REGULATOR_FIXED_VOLTAGE
-    ...
+Unfortunately this branch has a number of minor conflicts with the "Renesas
+ARM Based SoC Cleanup for v4.3", tagged as renesas-cleanup-for-v4.3, which
+you have previously pulled.
 
-> I wonder if the best way forwards would be to simply enable
-> REGULATOR_FIXED_VOLTAGE in shmobile_defconfig (and probably
-> multi_v7_defconfig too).
+A resolution to those conflicts can be found in the
+renesas-next-20150724-v4.2-rc1 tag of the renesas tree.
 
-Yes please.
+I would be happy to rebase these patches on top of renesas-cleanup-for-v4.3
+and resubmit a conflict-free pull request if you like.
 
-Rule of thumb: check if the .configs generated from defconfigs have
-changed after dropping a select.
+On a more positive note, I believe this to well over 8000 lines of legacy
+code removed in this cycle :)
 
-Gr{oetje,eeting}s,
 
-                        Geert
+The following changes since commit d770e558e21961ad6cfdf0ff7df0eb5d7d4f0754:
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+  Linux 4.2-rc1 (2015-07-05 11:01:52 -0700)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-marzen-board-removal-for-v4.3
+
+for you to fetch changes up to 3fecc170e5b7b141a2db6c8bc40607fb323c3aa2:
+
+  ARM: shmobile: r8a7779: Remove legacy SoC code (2015-07-17 10:34:51 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Marzen Board Removal for v4.3
+
+* Remove legacy r8a7779 SoC code
+* Remove legacy marzen board code
+
+3fecc170e5b7 ARM: shmobile: r8a7779: Remove legacy SoC code
+9d35777f2b96 ARM: shmobile: marzen: Remove legacy board code
+8dd80b6d7c5b ARM: multi_v7_defconfig: Remove Marzen
+824fd0fb7daa ARM: shmobile: Remove Marzen from shmobile_defconfig
+a73e4d95da66 ARM: shmobile: r8a7779: Cleanup header file
+d2fb6bdaffc7 ARM: shmobile: marzen-reference: Remove C board code
+719074d8b220 ARM: shmobile: Enable fixed voltage regulator in shmobile_defconfig
+44ade5edf90c ARM: shmobile: r8a7779: Generic SMP ops
+131c2e0480b0 ARM: shmobile: r8a7779: Generic CCF and timer support
+
+----------------------------------------------------------------
+Magnus Damm (7):
+      ARM: shmobile: r8a7779: Generic CCF and timer support
+      ARM: shmobile: r8a7779: Generic SMP ops
+      ARM: shmobile: marzen-reference: Remove C board code
+      ARM: shmobile: r8a7779: Cleanup header file
+      ARM: shmobile: Remove Marzen from shmobile_defconfig
+      ARM: shmobile: marzen: Remove legacy board code
+      ARM: shmobile: r8a7779: Remove legacy SoC code
+
+Simon Horman (2):
+      ARM: shmobile: Enable fixed voltage regulator in shmobile_defconfig
+      ARM: multi_v7_defconfig: Remove Marzen
+
+ arch/arm/boot/dts/Makefile                      |   1 -
+ arch/arm/configs/multi_v7_defconfig             |   1 -
+ arch/arm/configs/shmobile_defconfig             |   2 +-
+ arch/arm/mach-shmobile/Kconfig                  |  14 -
+ arch/arm/mach-shmobile/Makefile                 |   6 +-
+ arch/arm/mach-shmobile/Makefile.boot            |   1 -
+ arch/arm/mach-shmobile/board-marzen-reference.c |  56 --
+ arch/arm/mach-shmobile/board-marzen.c           | 347 ------------
+ arch/arm/mach-shmobile/clock-r8a7779.c          | 271 ----------
+ arch/arm/mach-shmobile/r8a7779.h                |  19 -
+ arch/arm/mach-shmobile/setup-r8a7779.c          | 681 +-----------------------
+ arch/arm/mach-shmobile/smp-r8a7779.c            |   9 -
+ 12 files changed, 16 insertions(+), 1392 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/board-marzen-reference.c
+ delete mode 100644 arch/arm/mach-shmobile/board-marzen.c
+ delete mode 100644 arch/arm/mach-shmobile/clock-r8a7779.c
