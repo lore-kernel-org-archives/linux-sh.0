@@ -1,33 +1,34 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 20 Jul 2015 10:06:14 +0000
-Subject: [PATCH 01/03] irqchip: renesas-irqc: Get rid of IRQF_VALID
-Message-Id: <20150720100614.2552.86867.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:44:48 +0000
+Subject: [PATCH 2/5] ARM: multi_v7_defconfig: Enable shmobile r8a7793/gose platform
+Message-Id: <dbeb9728d4b9785fc78336038654eb2bac155d92.1437727455.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150720100602.2552.85507.sendpatchset@little-apple>
-In-Reply-To: <20150720100602.2552.85507.sendpatchset@little-apple>
+References: <cover.1437727455.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1437727455.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: jason@lakedaemon.net, geert+renesas@glider.be, linux-kernel@vger.kernel.org, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
-
-IRQF_VALID is not needed on ARM anymore, so get rid of it.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/configs/multi_v7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
- drivers/irqchip/irq-renesas-irqc.c |    1 -
- 1 file changed, 1 deletion(-)
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index 6d83a1bf0c74..77f4b76d16e9 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -80,6 +80,7 @@ CONFIG_ARCH_R8A7778=y
+ CONFIG_ARCH_R8A7779=y
+ CONFIG_ARCH_R8A7790=y
+ CONFIG_ARCH_R8A7791=y
++CONFIG_ARCH_R8A7793=y
+ CONFIG_ARCH_R8A7794=y
+ CONFIG_ARCH_SH73A0=y
+ CONFIG_MACH_MARZEN=y
+-- 
+2.1.4
 
---- 0001/drivers/irqchip/irq-renesas-irqc.c
-+++ work/drivers/irqchip/irq-renesas-irqc.c	2015-07-20 17:40:00.272366518 +0900
-@@ -162,7 +162,6 @@ static int irqc_irq_domain_map(struct ir
- 	irqc_dbg(&p->irq[hw], "map");
- 	irq_set_chip_data(virq, h->host_data);
- 	irq_set_chip_and_handler(virq, &p->irq_chip, handle_level_irq);
--	set_irq_flags(virq, IRQF_VALID); /* kill me now */
- 	return 0;
- }
- 
