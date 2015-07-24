@@ -1,59 +1,56 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 01 Jul 2015 10:08:03 +0000
-Subject: Re: [RFC 3/3] ARM: shmobile: r8a7790: rework dts to use i2c demuxer
-Message-Id: <20150701100803.GB1926@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="7iMSBzlTiPOCCT2k"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 24 Jul 2015 08:41:28 +0000
+Subject: [PATCH 7/9] ARM: shmobile: r8a7790: Add Audio MIX support on DTSI
+Message-Id: <fc67bf42fa9a3e7c891e6318475f9c4d81a1d44e.1437724902.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435700651-3543-1-git-send-email-wsa@the-dreams.de>
- <1435700651-3543-4-git-send-email-wsa@the-dreams.de>
- <CAMuHMdXTnY_gg+VWcSxUZWnD6yrL9xxCSoJYQVCh4Dj7Lxr8Qg@mail.gmail.com>
-In-Reply-To: <CAMuHMdXTnY_gg+VWcSxUZWnD6yrL9xxCSoJYQVCh4Dj7Lxr8Qg@mail.gmail.com>
+References: <cover.1437724902.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1437724902.git.horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
---7iMSBzlTiPOCCT2k
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-On Wed, Jul 01, 2015 at 09:10:23AM +0200, Geert Uytterhoeven wrote:
-> On Tue, Jun 30, 2015 at 11:44 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> > --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> > +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> > @@ -49,6 +49,8 @@
-> >         aliases {
-> >                 serial0 =3D &scifa0;
-> >                 serial1 =3D &scifa1;
-> > +               i2c8 =3D &i2chdmi;
-> > +               i2c9 =3D &gpioi2c;
->=20
-> "i2c<suffix>" or "<prefix>i2c"?
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 6aa1d759690b..f1cdccc0a8c8 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1540,6 +1540,7 @@
+ 			<&mstp10_clks R8A7790_CLK_SCU_SRC3>, <&mstp10_clks R8A7790_CLK_SCU_SRC2>,
+ 			<&mstp10_clks R8A7790_CLK_SCU_SRC1>, <&mstp10_clks R8A7790_CLK_SCU_SRC0>,
+ 			<&mstp10_clks R8A7790_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7790_CLK_SCU_CTU1_MIX1>,
++			<&mstp10_clks R8A7790_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7790_CLK_SCU_CTU1_MIX1>,
+ 			<&mstp10_clks R8A7790_CLK_SCU_DVC0>, <&mstp10_clks R8A7790_CLK_SCU_DVC1>,
+ 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
+ 		clock-names = "ssi-all",
+@@ -1548,6 +1549,7 @@
+ 				"src.9", "src.8", "src.7", "src.6", "src.5",
+ 				"src.4", "src.3", "src.2", "src.1", "src.0",
+ 				"ctu.0", "ctu.1",
++				"mix.0", "mix.1",
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
+ 
+@@ -1564,6 +1566,11 @@
+ 			};
+ 		};
+ 
++		rcar_sound,mix {
++			mix0: mix@0 { };
++			mix1: mix@1 { };
++		};
++
+ 		rcar_sound,ctu {
+ 			ctu00: ctu@0 { };
+ 			ctu01: ctu@1 { };
+-- 
+2.1.4
 
-i2c<suffix> describes the bus here. <prefix>i2c another master. Could be
-made more obvious, probably.
-
-
---7iMSBzlTiPOCCT2k
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJVk7wDAAoJEBQN5MwUoCm2rRQP/1paHnQcfriGVGKjmlk11v+H
-RXpWNGV2VYGIEb9QDtmniTqQrGR5Z0ZrItrXJo5Xnd6wY92kYQ30DQtCvYUnSVy+
-5TJ1ibS7zsV98cR4Qrnsuf9NzY9YsJPTFteJcJfiMuqvU59uRkX8qelszYk0NA+z
-520Bos8PdEoaLNi2Zxf6SKtCA3AAUlJewDyxm0QjqhYHQwuF+svZJyX94ygMGfLt
-S/2tQJ6jLiwwVhGlPKG+rK9BiorMcHlgwNGrVOR6sGCmYKvzP2AVgqW2BoUG17zy
-b3cMSeNliqxgA1jPZlWWGfEvD4czDoEa8irl6wLgZ/jW5unghxUUFKlyw7/c54A9
-80huHVtZzzZ1pnC3Ivr57dWBV/tnnwEDEisto0+Yz3qZL7ijSTkRG8WMeUvF9V4t
-JztUJsCJJCFrzVnEi9zhOokF9gI21yLk3Omu4d2K9Yq6246PlO0grYOgYjSePxA0
-hDLikoOCcCoFgQr6VMW/sQdXEHFuIXoKe8TE6BIuL1/N0LGhZ0I2ew07jAU9bhYR
-qLn46vCTT9wkrv7VBpVzCBUjpBe9eaogX63yLIZF7qnnpG6I0hCzlgWlePYpsDop
-T5m6GJkZArhxYZVKdUGPEyuVvGbNVGmYG3pql6Ygn1EhD5j43Sb80UXI9vt2nx5w
-LVCS6gAKbmj20IbfR72u
-=JXYV
------END PGP SIGNATURE-----
-
---7iMSBzlTiPOCCT2k--
