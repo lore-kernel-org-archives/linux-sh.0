@@ -1,54 +1,34 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Jul 2015 08:44:49 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Defconfig Updates for v4.3
-Message-Id: <cover.1437727455.git.horms+renesas@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Mon, 27 Jul 2015 12:35:46 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC Defconfig Updates for v4.3
+Message-Id: <20150727123546.GH14224@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364877094-1508-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1437727455.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1437727455.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+On Fri, Jul 24, 2015 at 05:44:49PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC defconfig updates for v4.3.
+> 
+> 
+> The following changes since commit d770e558e21961ad6cfdf0ff7df0eb5d7d4f0754:
+> 
+>   Linux 4.2-rc1 (2015-07-05 11:01:52 -0700)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v4.3
+> 
+> for you to fetch changes up to 821e79cb5686695f0adaef61587a184e953a937e:
+> 
+>   ARM: shmobile: Remove marzen_defconfig (2015-07-17 08:29:45 +0900)
 
-Please consider these Renesas ARM based SoC defconfig updates for v4.3.
+Merged, thanks.
 
 
-The following changes since commit d770e558e21961ad6cfdf0ff7df0eb5d7d4f0754:
-
-  Linux 4.2-rc1 (2015-07-05 11:01:52 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v4.3
-
-for you to fetch changes up to 821e79cb5686695f0adaef61587a184e953a937e:
-
-  ARM: shmobile: Remove marzen_defconfig (2015-07-17 08:29:45 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Defconfig Updates for v4.3
-
-* Remove marzen_defconfig
-* shmobile_defconfig and multi_v7_defconfig
-  - Enable DPCM Sound Card
-  - Enable r8a7793/gose platform
-
-----------------------------------------------------------------
-Kuninori Morimoto (2):
-      ARM: shmobile: defconfig: add Renesas DPCM Sound Card
-      ARM: multi_v7_defconfig: add Renesas DPCM Sound Card
-
-Magnus Damm (1):
-      ARM: shmobile: Remove marzen_defconfig
-
-Simon Horman (2):
-      ARM: shmobile: Enable gose board in multiplatform defconfig
-      ARM: multi_v7_defconfig: Enable shmobile r8a7793/gose platform
-
- arch/arm/configs/marzen_defconfig   | 124 ------------------------------------
- arch/arm/configs/multi_v7_defconfig |   2 +
- arch/arm/configs/shmobile_defconfig |   2 +
- 3 files changed, 4 insertions(+), 124 deletions(-)
- delete mode 100644 arch/arm/configs/marzen_defconfig
+-Olof
