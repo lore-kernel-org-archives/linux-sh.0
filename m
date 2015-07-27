@@ -1,99 +1,45 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 21 Jul 2015 00:26:20 +0000
-Subject: [PATCH 1/4] ARM: shmobile: r8a7790: Add Audio CTU support on DTSI
-Message-Id: <87si8icqa2.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 27 Jul 2015 22:29:31 +0000
+Subject: [PATCH v2] ARM: shmobile: r8a7794: add PFC DT support
+Message-Id: <1878107.PNh5nFF1p8@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1389082976-22254-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1389082976-22254-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Define the generic R8A7794 part of the PFC device node.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Tested-by: Keita Kobayashi <keita.kobayashi.ym@renesas.com>
+Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 16 ++++++++++++++++
- include/dt-bindings/clock/r8a7790-clock.h |  2 ++
- 2 files changed, 18 insertions(+)
+This patch is against 'renesas-devel-20150727-v4.2-rc4' tag of Simon Horman's
+'renesas.git' repo.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 3ae0c3b..6aa1d75 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1303,6 +1303,7 @@
- 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
- 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
- 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
-+				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>,
- 				<&mstp10_clks R8A7790_CLK_SCU_ALL>, <&mstp10_clks R8A7790_CLK_SCU_ALL>;
+Changes in version 2:
+- refreshed the patch.
+
+ arch/arm/boot/dts/r8a7794.dtsi |    6 ++++++
+ 1 file changed, 6 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
++++ renesas/arch/arm/boot/dts/r8a7794.dtsi
+@@ -108,6 +108,12 @@
+ 		clocks = <&mstp4_clks R8A7794_CLK_IRQC>;
+ 	};
  
- 			#clock-cells = <1>;
-@@ -1312,6 +1313,7 @@
- 				R8A7790_CLK_SSI4 R8A7790_CLK_SSI3 R8A7790_CLK_SSI2 R8A7790_CLK_SSI1 R8A7790_CLK_SSI0
- 				R8A7790_CLK_SCU_ALL
- 				R8A7790_CLK_SCU_DVC1 R8A7790_CLK_SCU_DVC0
-+				R8A7790_CLK_SCU_CTU1_MIX1 R8A7790_CLK_SCU_CTU0_MIX0
- 				R8A7790_CLK_SCU_SRC9 R8A7790_CLK_SCU_SRC8 R8A7790_CLK_SCU_SRC7 R8A7790_CLK_SCU_SRC6 R8A7790_CLK_SCU_SRC5
- 				R8A7790_CLK_SCU_SRC4 R8A7790_CLK_SCU_SRC3 R8A7790_CLK_SCU_SRC2 R8A7790_CLK_SCU_SRC1 R8A7790_CLK_SCU_SRC0
- 			>;
-@@ -1321,6 +1323,7 @@
- 				"ssi4", "ssi3", "ssi2", "ssi1", "ssi0",
- 				"scu-all",
- 				"scu-dvc1", "scu-dvc0",
-+				"scu-ctu1-mix1", "scu-ctu0-mix0",
- 				"scu-src9", "scu-src8", "scu-src7", "scu-src6", "scu-src5",
- 				"scu-src4", "scu-src3", "scu-src2", "scu-src1", "scu-src0";
- 		};
-@@ -1536,6 +1539,7 @@
- 			<&mstp10_clks R8A7790_CLK_SCU_SRC5>, <&mstp10_clks R8A7790_CLK_SCU_SRC4>,
- 			<&mstp10_clks R8A7790_CLK_SCU_SRC3>, <&mstp10_clks R8A7790_CLK_SCU_SRC2>,
- 			<&mstp10_clks R8A7790_CLK_SCU_SRC1>, <&mstp10_clks R8A7790_CLK_SCU_SRC0>,
-+			<&mstp10_clks R8A7790_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7790_CLK_SCU_CTU1_MIX1>,
- 			<&mstp10_clks R8A7790_CLK_SCU_DVC0>, <&mstp10_clks R8A7790_CLK_SCU_DVC1>,
- 			<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&m2_clk>;
- 		clock-names = "ssi-all",
-@@ -1543,6 +1547,7 @@
- 				"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
- 				"src.9", "src.8", "src.7", "src.6", "src.5",
- 				"src.4", "src.3", "src.2", "src.1", "src.0",
-+				"ctu.0", "ctu.1",
- 				"dvc.0", "dvc.1",
- 				"clk_a", "clk_b", "clk_c", "clk_i";
- 
-@@ -1559,6 +1564,17 @@
- 			};
- 		};
- 
-+		rcar_sound,ctu {
-+			ctu00: ctu@0 { };
-+			ctu01: ctu@1 { };
-+			ctu02: ctu@2 { };
-+			ctu03: ctu@3 { };
-+			ctu10: ctu@4 { };
-+			ctu11: ctu@5 { };
-+			ctu12: ctu@6 { };
-+			ctu13: ctu@7 { };
-+		};
++	pfc: pin-controller@e6060000 {
++		compatible = "renesas,pfc-r8a7794";
++		reg = <0 0xe6060000 0 0x11c>;
++		#gpio-range-cells = <3>;
++	};
 +
- 		rcar_sound,src {
- 			src0: src@0 {
- 				interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index e119ef3..7b1ad89 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -144,6 +144,8 @@
- #define R8A7790_CLK_SCU_ALL		17
- #define R8A7790_CLK_SCU_DVC1		18
- #define R8A7790_CLK_SCU_DVC0		19
-+#define R8A7790_CLK_SCU_CTU1_MIX1	20
-+#define R8A7790_CLK_SCU_CTU0_MIX0	21
- #define R8A7790_CLK_SCU_SRC9		22
- #define R8A7790_CLK_SCU_SRC8		23
- #define R8A7790_CLK_SCU_SRC7		24
--- 
-1.9.1
+ 	dmac0: dma-controller@e6700000 {
+ 		compatible = "renesas,rcar-dmac";
+ 		reg = <0 0xe6700000 0 0x20000>;
 
