@@ -1,66 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Jul 2015 08:41:29 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC DT Updates for v4.3
-Message-Id: <cover.1437724902.git.horms+renesas@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Mon, 27 Jul 2015 12:27:27 +0000
+Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Cleanup for v4.3
+Message-Id: <20150727122727.GE14224@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381222967.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
+References: <cover.1437725206.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1437725206.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+On Fri, Jul 24, 2015 at 05:41:15PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these second round of Renesas ARM based SoC cleanup for v4.3.
+> 
+> This pull request is based on the previous round of
+> such requests, tagged as renesas-cleanup-for-v4.3,
+> which I have already sent a pull-request for.
+> 
+> 
+> The following changes since commit 20834a406ee20b57c796f9911f06600b71c75788:
+> 
+>   ARM: shmobile: timer: r8a73a4 and r8a7790 are multi-platform only (2015-07-06 09:29:46 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup2-for-v4.3
+> 
+> for you to fetch changes up to 151dd346a2dadaa151d5110553e3fb08774c888e:
+> 
+>   ARM: shmobile: apmu: silence build warnings (2015-07-14 16:35:24 +0900)
 
-Please consider these second round of Renesas ARM based SoC DT updates for v4.3.
-
-This pull request is based on the previous round of
-such requests, tagged as renesas-dt-for-v4.3,
-which I have already sent a pull-request for.
+Thanks, merged.
 
 
-The following changes since commit 7bf46d0be278a3586c78322c65ceff5fd03bb95d:
-
-  ARM: shmobile: r8a7779: Configure IRLM mode via DT (2015-07-06 09:33:41 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt2-for-v4.3
-
-for you to fetch changes up to 7fd6e11dca09b21efbe2b9db4eff08c8f4a16125:
-
-  ARM: shmobile: r8a7791: Add Audio MIX support on DTSI (2015-07-22 09:36:49 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC DT Updates for v4.3
-
-* Add Audio MIX and CTU support to r8a779[01] SoCs
-* Correct IRQ sense for adv7511 on lager board
-* Add sound label to koelsch and lager boards
-* Add IIC support to emev2 SoC
-
-----------------------------------------------------------------
-Kuninori Morimoto (6):
-      ARM: shmobile: lager: add sound label on DTS
-      ARM: shmobile: koelsch: add sound label on DTS
-      ARM: shmobile: r8a7790: Add Audio CTU support on DTSI
-      ARM: shmobile: r8a7790: Add Audio MIX support on DTSI
-      ARM: shmobile: r8a7791: Add Audio CTU support on DTSI
-      ARM: shmobile: r8a7791: Add Audio MIX support on DTSI
-
-Laurent Pinchart (1):
-      ARM: shmobile: lager: Fix adv7511 IRQ sensing
-
-Wolfram Sang (2):
-      ARM: shmobile: emev2: add IIC cores to dtsi
-      ARM: shmobile: emev2: kzm9d: enable IIC busses
-
- arch/arm/boot/dts/emev2-kzm9d.dts         |  8 ++++++
- arch/arm/boot/dts/emev2.dtsi              | 48 +++++++++++++++++++++++++++++++
- arch/arm/boot/dts/r8a7790-lager.dts       |  4 +--
- arch/arm/boot/dts/r8a7790.dtsi            | 23 +++++++++++++++
- arch/arm/boot/dts/r8a7791-koelsch.dts     |  2 +-
- arch/arm/boot/dts/r8a7791.dtsi            | 23 +++++++++++++++
- include/dt-bindings/clock/r8a7790-clock.h |  2 ++
- include/dt-bindings/clock/r8a7791-clock.h |  2 ++
- 8 files changed, 109 insertions(+), 3 deletions(-)
+-Olof
