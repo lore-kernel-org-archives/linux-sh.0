@@ -1,42 +1,51 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 07 Jul 2015 14:10:08 +0000
-Subject: [PATCH/RFC 02/11] ARM: shmobile: r8a7790 dtsi: Add device node for RST module
-Message-Id: <1436278217-20522-3-git-send-email-geert+renesas@glider.be>
+From: David Long <dave.long@linaro.org>
+Date: Mon, 27 Jul 2015 04:39:32 +0000
+Subject: [PATCH v2 0/2] Consolidate redundant register/stack access code
+Message-Id: <1437971974-2434-1-git-send-email-dave.long@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436278217-20522-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1436278217-20522-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add a device node for the RST module, which provides reset control.
-Declare it to be a system controller (syscon), so other device nodes can
-refer to its registers.
+From: "David A. Long" <dave.long@linaro.org>
 
-TODO Add DT binding documentation.
+Move duplicate and functionally equivalent code for accessing registers
+and stack (CONFIG_HAVE_REGS_AND_STACK_ACCESS_API) from arch subdirs into
+common kernel files.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/arm/boot/dts/r8a7790.dtsi | 5 +++++
- 1 file changed, 5 insertions(+)
+Changes since v1:
+    Move the REG_OFFSET_NAME and REG_OFFSET_END macros to architecture-
+    independent include file. Change their name from REG_* to REGS_* for
+    consistency.
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 837090ec9b4fb987..08067ae177643b8f 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1495,6 +1495,11 @@
- 		};
- 	};
- 
-+	rst: reset-controller@e616000 {
-+		compatible = "renesas,rst-r8a7790", "syscon";
-+		reg = <0 0xe6160000 0 0x0100>;
-+	};
-+
- 	sysc: system-controller@e6180000 {
- 		compatible = "renesas,sysc-r8a7790", "renesas,sysc-rcar";
- 		reg = <0 0xe6180000 0 0x0200>;
+Note: Help regression testing s390, hexagon, and sh would be appreciated.
+      Powerpc builds but I have not verified the functionality.
+
+David A. Long (2):
+  Move the pt_regs_offset struct definition from arch to common include
+    file
+  Consolidate redundant register/stack access code
+
+ arch/arm/include/asm/ptrace.h          |   6 --
+ arch/arm/kernel/ptrace.c               |  74 +---------------
+ arch/hexagon/include/uapi/asm/ptrace.h |   3 -
+ arch/powerpc/include/asm/ptrace.h      |  38 --------
+ arch/powerpc/kernel/ptrace.c           |  65 +++-----------
+ arch/s390/include/asm/ptrace.h         |   3 -
+ arch/s390/kernel/ptrace.c              |  69 +++++----------
+ arch/sh/include/asm/ptrace.h           |  48 +---------
+ arch/sh/kernel/Makefile                |   2 +-
+ arch/sh/kernel/ptrace.c                |  33 -------
+ arch/sh/kernel/ptrace_32.c             |  50 +++++------
+ arch/sh/kernel/ptrace_64.c             | 154 ++++++++++++++++-----------------
+ arch/x86/include/asm/ptrace.h          |  37 --------
+ arch/x86/kernel/ptrace.c               |  93 ++++++--------------
+ include/linux/ptrace.h                 |  54 ++++++++++++
+ kernel/ptrace.c                        |  38 ++++++++
+ 16 files changed, 258 insertions(+), 509 deletions(-)
+ delete mode 100644 arch/sh/kernel/ptrace.c
+
 -- 
-1.9.1
+1.8.1.2
 
