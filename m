@@ -1,67 +1,37 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 07 Jul 2015 14:10:07 +0000
-Subject: [PATCH/RFC 01/11] clk: shmobile: rcar-gen2: Obtain MD pin values using syscon/regmap
-Message-Id: <1436278217-20522-2-git-send-email-geert+renesas@glider.be>
+From: William Towle <william.towle@codethink.co.uk>
+Date: Tue, 28 Jul 2015 16:17:44 +0000
+Subject: [PATCH 2/2] ARM: shmobile: lager dts: specify default-input for ADV7612
+Message-Id: <1438100264-17280-3-git-send-email-william.towle@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436278217-20522-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1436278217-20522-1-git-send-email-geert+renesas@glider.be>
+References: <1438100264-17280-1-git-send-email-william.towle@codethink.co.uk>
+In-Reply-To: <1438100264-17280-1-git-send-email-william.towle@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org
 
-Obtain the values of the MD pins by reading the Mode Monitoring Register
-(MODEMR) using syscon and regmap. The syscon device and register offset
-to use are obtained from the "renesas,modemr" property in DT.
+Set 'default-input' property for ADV7612. Enables image/video capture
+without the need to have userspace specifying routing.
 
-Fall back to calling rcar_gen2_read_mode_pins() in the R-Car Gen2
-platform code for backward-compatibility with old DTs.
-
-TODO Document "renesas,modemr" property in DT binding doc.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
+Tested-by: William Towle <william.towle@codethink.co.uk>
 ---
- drivers/clk/shmobile/clk-rcar-gen2.c | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
-index 745496f7ee9c7402..b121a49f7575a97b 100644
---- a/drivers/clk/shmobile/clk-rcar-gen2.c
-+++ b/drivers/clk/shmobile/clk-rcar-gen2.c
-@@ -15,8 +15,10 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/math64.h>
-+#include <linux/mfd/syscon.h>
- #include <linux/of.h>
- #include <linux/of_address.h>
-+#include <linux/regmap.h>
- #include <linux/slab.h>
- #include <linux/spinlock.h>
- 
-@@ -368,9 +370,22 @@ static void __init rcar_gen2_cpg_clocks_init(struct device_node *np)
- {
- 	const struct cpg_pll_config *config;
- 	struct rcar_gen2_cpg *cpg;
-+	struct regmap *regmap;
- 	struct clk **clks;
- 	unsigned int i;
- 	int num_clks;
-+	u32 reg;
-+
-+	regmap = syscon_regmap_lookup_by_phandle(np, "renesas,modemr");
-+	if (IS_ERR(regmap) ||
-+	    of_property_read_u32_index(np, "renesas,modemr", 1, &reg) ||
-+	    regmap_read(regmap, reg, &cpg_mode)) {
-+		/* Backward-compatibility with old DT */
-+		extern u32 rcar_gen2_read_mode_pins(void);
-+
-+		pr_warn("%s: failed to parse renesas,modemr\n", np->full_name);
-+		cpg_mode = rcar_gen2_read_mode_pins();
-+	}
- 
- 	num_clks = of_property_count_strings(np, "clock-output-names");
- 	if (num_clks < 0) {
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index aec7db6..e537052 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -552,6 +552,7 @@
+ 		port {
+ 			hdmi_in_ep: endpoint {
+ 				remote-endpoint = <&vin0ep0>;
++				default-input = <0>;
+ 			};
+ 		};
+ 	};
 -- 
-1.9.1
+1.7.10.4
 
