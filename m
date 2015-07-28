@@ -1,31 +1,106 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 13 Jul 2015 18:52:24 +0000
-Subject: Re: [PATCH] gpio: rcar: Add r8a7795 (R-Car H3) support
-Message-Id: <5989084.eV4Jj6UaN5@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 28 Jul 2015 22:14:59 +0000
+Subject: [PATCH v3] ARM: shmobile: silk: initial device tree
+Message-Id: <2360526.88foRQAOiM@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434710308-15901-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1434710308-15901-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Monday 13 July 2015 12:07:02 Linus Walleij wrote:
-> On Fri, Jun 19, 2015 at 12:38 PM, Ulrich Hecht
-> 
-> <ulrich.hecht+renesas@gmail.com> wrote:
-> > R-Car Gen3's GPIO blocks are identical to Gen2's in every respect.
-> > 
-> > Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> 
-> I see there are some comments so waiting for a v2.
-> 
-> I'd like Lauren't ACK on this too.
+Add the initial device  tree for the R8A7794 SoC based SILK low cost board.
+SCIF2 serial port support is included, so that the serial console can work.
 
-I'm already fine with v1 so I'll likely ack v2.
+Based on the original patch by Vladimir Barinov
+<vladimir.barinov@cogentembedded.com>.
 
--- 
-Regards,
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Laurent Pinchart
+---
+This patch is against the 'renesas-devel-20150728-v4.2-rc4' tag of Simon
+Horman's 'renesas.git' repo. It requires R8A7794 PFC DT patch posted yesterday
+in order to compile.
+
+Changes in version 3:
+- refreshed the patch;
+- reformatted the changelog.
+
+Changes in version 2:
+- removed "console=" parameter from the kernel command line;
+- added PFC node with SCIF2 pins subnode and referred it from the SCIF2 node;
+- rebased the patch
+- mentioned the origin of patch in the changelog.
+
+ arch/arm/boot/dts/Makefile         |    1 
+ arch/arm/boot/dts/r8a7794-silk.dts |   51 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 52 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/Makefile
+=================================--- renesas.orig/arch/arm/boot/dts/Makefile
++++ renesas/arch/arm/boot/dts/Makefile
+@@ -515,6 +515,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	r8a7791-koelsch.dtb \
+ 	r8a7793-gose.dtb \
+ 	r8a7794-alt.dtb \
++	r8a7794-silk.dtb \
+ 	sh73a0-kzm9g.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += \
+ 	socfpga_arria5_socdk.dtb \
+Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
+=================================--- /dev/null
++++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -0,0 +1,51 @@
++/*
++ * Device Tree Source for the SILK board
++ *
++ * Copyright (C) 2014 Renesas Electronics Corporation
++ * Copyright (C) 2014-2015 Renesas Solutions Corp.
++ * Copyright (C) 2014-2015 Cogent Embedded, Inc.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/dts-v1/;
++#include "r8a7794.dtsi"
++
++/ {
++	model = "SILK";
++	compatible = "renesas,silk", "renesas,r8a7794";
++
++	aliases {
++		serial0 = &scif2;
++	};
++
++	chosen {
++		bootargs = "ignore_loglevel";
++		stdout-path = &scif2;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0 0x40000000 0 0x40000000>;
++	};
++};
++
++&extal_clk {
++	clock-frequency = <20000000>;
++};
++
++&pfc {
++	scif2_pins: serial2 {
++		renesas,groups = "scif2_data";
++		renesas,function = "scif2";
++	};
++};
++
++&scif2 {
++	pinctrl-0 = <&scif2_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
 
