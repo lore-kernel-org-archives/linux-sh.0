@@ -1,60 +1,24 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 10 Jul 2015 10:07:25 +0000
-Subject: [PATCH] dmaengine: shdma: Make dummy shdma_chan_filter() always return false
-Message-Id: <1436522845-13929-1-git-send-email-geert+renesas@glider.be>
+From: William Towle <william.towle@codethink.co.uk>
+Date: Tue, 28 Jul 2015 16:17:42 +0000
+Subject: Renesas Lager: Device Tree entries for VIN HDMI input
+Message-Id: <1438100264-17280-1-git-send-email-william.towle@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org
 
-If CONFIG_SH_DMAE_BASE (which is required for DMA engine support for
-legacy SH, SH/R-Mobile, and R-Car Gen1, but not for R-Car Gen2) is not
-enabled, but CONFIG_RCAR_DMAC (for R-Car Gen2 DMA engine support) is,
-and the DTS doesn't provide a "dmas" property for a device,
-dma_request_slave_channel_compat() incorrectly succeeds, and returns a
-DMA channel.
+  The patch series "HDMI and Composite capture on Lager...", here
+	https://www.mail-archive.com/linux-media@vger.kernel.org/msg90650.html
 
-However, when trying to use that DMA channel later, it fails with:
+  ...received a request for a re-post of its first two patches with an
+additional Cc: to linux-sh@vger.kernel.org here:
+	https://www.mail-archive.com/linux-media@vger.kernel.org/msg90748.html
 
-    rcar-dmac e6700000.dma-controller: rcar_dmac_prep_slave_sg: bad parameter: len=1, id=-22
+  That selection follows, with subject lines:
+	[PATCH 1/2] ARM: shmobile: lager dts: Add entries for VIN HDMI input
+	[PATCH 2/2] ARM: shmobile: lager dts: specify default-input for
 
-(Fortunately most drivers can handle this failure, and fall back to
-PIO)
-
-The reason for this is that a NULL legacy filter function is used, which
-actually means "all channels are OK", not "do not match".
-If CONFIG_SH_DMAE_BASE is enabled (like in shmobile_defconfig, which
-supports other SoCs besides R-Car Gen2), shdma_chan_filter() correctly
-returns false, as no available channel on R-Car Gen2 matches a
-shdma-base channel.
-If the DTS does provide a "dmas" property, dma_request_slave_channel()
-succeeds, and legacy filter-based matching is not used.
-
-To fix this, change shdma_chan_filter from being NULL to a dummy
-function that always returns false, like is done on other platforms.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- include/linux/shdma-base.h | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
-index dd0ba502ccb3a0ea..d927647e6350324f 100644
---- a/include/linux/shdma-base.h
-+++ b/include/linux/shdma-base.h
-@@ -128,7 +128,10 @@ void shdma_cleanup(struct shdma_dev *sdev);
- #if IS_ENABLED(CONFIG_SH_DMAE_BASE)
- bool shdma_chan_filter(struct dma_chan *chan, void *arg);
- #else
--#define shdma_chan_filter NULL
-+static inline bool shdma_chan_filter(struct dma_chan *chan, void *arg)
-+{
-+	return false;
-+}
- #endif
- 
- #endif
--- 
-1.9.1
-
+Cheers,
+  Wills.
