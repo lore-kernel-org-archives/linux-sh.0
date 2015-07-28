@@ -1,81 +1,41 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 27 Jul 2015 11:57:33 +0000
-Subject: Re: [PATCH v2] ravb: minimize TX data copying
-Message-Id: <55B61CAD.1010009@cogentembedded.com>
+Date: Tue, 28 Jul 2015 12:45:47 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7794: add PFC DT support
+Message-Id: <55B7797B.1060008@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6916181.NMDRL3LUfS@wasted.cogentembedded.com>
- <063D6719AE5E284EB5DD2968C1650D6D1CB6C651@AcuExch.aculab.com>
-In-Reply-To: <063D6719AE5E284EB5DD2968C1650D6D1CB6C651@AcuExch.aculab.com>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+ <5570320.hDPc0mxmnU@wasted.cogentembedded.com>
+ <CAMuHMdWvoFxjc586Xpmva678ZA85FEXbWbREYK6RmGTsC+5RZQ@mail.gmail.com>
+ <20150215165740.GG25065@verge.net.au> <20150215170024.GH25065@verge.net.au>
+ <54E0D125.7010202@cogentembedded.com>
+In-Reply-To: <54E0D125.7010202@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Laight <David.Laight@ACULAB.COM>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On 7/27/2015 11:47 AM, David Laight wrote:
+Hello.
 
->> Renesas Ethernet AVB controller requires that all data are aligned on 4-byte
->> boundary.  While it's  easily achievable for  the RX  data with  the help of
->> skb_reserve() (we even align on 128-byte boundary as recommended by the manual),
->> we  can't  do the same with the TX data, and it always comes  unaligned from
->> the networking core. Originally we solved it an easy way, copying all packet
->> to  a  preallocated  aligned buffer; however, it's enough to copy only up to
->> 3 first bytes from each packet, doing the transfer using 2 TX descriptors
->> instead of just 1. Here's an implementation of the new  TX algorithm that
->> significantly reduces the driver's memory requirements.
+On 2/15/2015 8:02 PM, Sergei Shtylyov wrote:
 
-> ...
->> -	buffer = PTR_ALIGN(priv->tx_buffers[q][entry], RAVB_ALIGN);
->> -	memcpy(buffer, skb->data, skb->len);
->> -	desc = &priv->tx_ring[q][entry];
->> -	desc->ds_tagl = cpu_to_le16(skb->len);
->> -	dma_addr = dma_map_single(&ndev->dev, buffer, skb->len, DMA_TO_DEVICE);
->> +	buffer = PTR_ALIGN(priv->tx_align[q], DPTR_ALIGN) +
->> +		 entry / NUM_TX_DESC * DPTR_ALIGN;
+>>>>> Define the generic R8A7794 part of the PFC device node.
 
-> The above would be clearer if tx_align was char[DPTR_ALIGN][].
+>>>>> Based on original patch by Hisashi Nakamura
+>>>>> <hisashi.nakamura.ak@renesas.com>.
 
-    tx_align is a pointer, not an array.
+>>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
->> +	len = PTR_ALIGN(skb->data, DPTR_ALIGN) - skb->data;
->> +	memcpy(buffer, skb->data, len);
+>>>> Acked-by: by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-> Does this imply there has been an skb_linearize() ???
+>>> Thanks, I have queued this up.
 
-    Sure, I don't support S/G (and it seems problematic given how the DMA 
-descriptors are handled by the h/w).
+>> Sorry, I was a bit hasty here.
 
-> The old version didn't really need it (it was doing a copy anyway).
+>> Could you repost this once the driver has been accepted?
 
-    It did since it copied the whole packet.
+>     I don't expect it to change, but OK.
 
->> +	dma_addr = dma_map_single(&ndev->dev, buffer, len, DMA_TO_DEVICE);
->>   	if (dma_mapping_error(&ndev->dev, dma_addr))
->>   		goto drop;
->> +
->> +	desc = &priv->tx_ring[q][entry];
->> +	desc->ds_tagl = cpu_to_le16(len);
->> +	desc->dptr = cpu_to_le32(dma_addr);
->> +
->> +	buffer = skb->data + len;
->> +	len = skb->len - len;
->> +	dma_addr = dma_map_single(&ndev->dev, buffer, len, DMA_TO_DEVICE);
->> +	if (dma_mapping_error(&ndev->dev, dma_addr))
->> +		goto unmap;
->> +
->> +	desc++;
->> +	desc->ds_tagl = cpu_to_le16(len);
+    Sent v2 last night but overlooked Geert's ACK to v1. Should I resend?
 
-> What happens if a fragment is less than DPTR_ALIGN bytes ???
-
-    It's always the case. If you mean a packet shorter than DPTR_ALIGN, it can 
-happen due to call to skb_put_padto(skb, ETH_ZLEN).
-
-> Actually is looks like you relying on having a linear skb.
-
-    Yes, and I was relying on it even before this patch.
-
-> 	David
-
-WBR, Sergei
+MBR, Sergei
 
