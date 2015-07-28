@@ -1,40 +1,76 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 24 Jul 2015 08:39:38 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: r8a7779 Marzen legacy fix V2
-Message-Id: <20150724083938.GA8669@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 28 Jul 2015 07:06:45 +0000
+Subject: [PATCH v2] ARM: shmobile: dts: Add common file for AA121TD01 panel
+Message-Id: <87vbd4227u.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150714072522.2854.69938.sendpatchset@little-apple>
-In-Reply-To: <20150714072522.2854.69938.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Jul 22, 2015 at 09:34:38AM +0900, Simon Horman wrote:
-> On Tue, Jul 14, 2015 at 04:25:22PM +0900, Magnus Damm wrote:
-> > From: Magnus Damm <damm+renesas@opensource.se>
-> > 
-> > Unbreak the r8a7779 Marzen legacy code provided by marzen_defconfig.
-> > 
-> > As it is today Marzen multiplatform is working, but the legacy code
-> > is broken. This patch intends to leave multiplatform as-is but do
-> > a simple one-shot fix to unbreak the legacy code base.
-> > 
-> > Without this patch there is no preset delay and the TWD is defined
-> > both in C code and in DT. Solve the delay by invoking shmobile_init_delay()
-> > and simply disable TWD in case of building for legacy.
-> > 
-> > Marzen legacy code will be removed in the near future, but until then
-> > we may as well avoid breaking it.
-> > 
-> > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> 
-> I currently have this patch queued up.
-> However, as "[PATCH 00/03] ARM: shmobile: r8a7779 Marzen legacy removal" is
-> also queued up I have it in mind to drop this patch. The reasoning is
-> twofold:
-> 
-> * There seems little benefit to fix legacy code that is being removed
-> * There is a tedious merge conflict between fixing and removing the code
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I have gone ahead and dropped this patch.
+The Mitsubishi AA121TD01 panel is commonly used with the Marzen, Lager
+and Koelsch boards. Create a .dtsi file that describe the panel and its
+connection to the board.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
+
+ - tidyup panel-timing / width / height settings
+
+ arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi | 41 ++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi
+
+diff --git a/arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi b/arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi
+new file mode 100644
+index 0000000..a07ebf8
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi
+@@ -0,0 +1,41 @@
++/*
++ * Common file for the AA121TD01 panel connected to Renesas R-Car boards
++ *
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/ {
++	panel {
++		compatible = "mitsubishi,aa121td01", "panel-dpi";
++
++		width-mm = <261>;
++		height-mm = <163>;
++
++		panel-timing {
++			/* 1280x800 @60Hz */
++			clock-frequency = <71000000>;
++			hactive = <1280>;
++			vactive = <800>;
++			hsync-len = <70>;
++			hfront-porch = <20>;
++			hback-porch = <70>;
++			vsync-len = <5>;
++			vfront-porch = <3>;
++			vback-porch = <15>;
++		};
++
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&lvds_connector>;
++			};
++		};
++	};
++};
++
++&lvds_connector {
++	remote-endpoint = <&panel_in>;
++};
+-- 
+1.9.1
+
