@@ -1,54 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 30 Jul 2015 13:50:32 +0000
-Subject: R-Car Gen3 VSP/DU work in progress
-Message-Id: <1788822.6tuLoCYX5D@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 30 Jul 2015 21:29:26 +0000
+Subject: [PATCH] DT: mmc: sh_mmcif: document R8A779[34] support
+Message-Id: <4675878.582hE3P2Fo@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org, ulf.hansson@linaro.org, linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Hello,
+Renesas R8A7793 and R8A7793 SoC also have the MMCIF controller...
 
-In order to allow early feedback on the API and implementation, I've pushed my 
-work in progress branch for R-Car Gen3 DU support to
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-	git://linuxtv.org/pinchartl/media.git drm/du/vsp1-kms
+---
+The patch is against Ulf Hansson's 'mmc.git'  repo's 'next' branch plus the
+patch I posted earlier today...
 
-Compared to the 2nd generation, the Gen3 DU has lost the ability to read 
-directly from memory. It must instead be fed by a VSP instance dedicated to 
-display composition.
+ Documentation/devicetree/bindings/mmc/renesas,mmcif.txt |    2 ++
+ 1 file changed, 2 insertions(+)
 
-The direct hardware link between the VSP and the DU was already available in 
-Gen2 but using the VSP wasn't mandatory. For that reason, and as the VSP is a 
-memory-to-memory video processing device in the general case, the VSP driver 
-has been implemented using the V4L2 API and the DU driver using the DRM/KMS 
-API. Applications have to use both APIs if they want to use the VSP with the 
-DU.
-
-As the Gen3 DU has no composition capability, forcing all display applications 
-to use both APIs increases userspace complexity beyond what was considered 
-acceptable. We have thus decided to drive the Gen3 VSP DU from the DU driver. 
-However, to avoid code duplication, the existing VSP driver should still be 
-used, without exposing the full V4L2 API.
-
-The work in progress code reworks the VSP driver to make the V4L2 userspace 
-API optional while still modeling the device using V4L2 objects inside the 
-kernel. It also creates an high-lever in-kernel API exposed by the VSP driver 
-to be used by the DU driver to control the VSP.
-
-On the DU side, a new provider of planes has been added that delegates plane 
-control to the VSP.
-
-I've targeted the code at Gen2 hardware for testing purpose. I will still need 
-to implement support for the differences between Gen2 and Gen3 registers for 
-the VSP and DU once after validating the operation  using Gen2.
-
-The code is not fully functional yet. In particular the vsp1-drm.c 
-implementation isn't complete. I'll keep working on that over the weekend.
-
--- 
-Regards,
-
-Laurent Pinchart
+Index: mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+=================================--- mmc.orig/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
++++ mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+@@ -11,6 +11,8 @@ Required properties:
+ 	- "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
+ 	- "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
+ 	- "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
++	- "renesas,mmcif-r8a7793" for the MMCIF found in r8a7793 SoCs
++	- "renesas,mmcif-r8a7794" for the MMCIF found in r8a7794 SoCs
+ 
+ - clocks: reference to the functional clock
+ 
 
