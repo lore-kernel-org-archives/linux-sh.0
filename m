@@ -1,29 +1,73 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Mon, 27 Jul 2015 12:52:29 +0000
-Subject: Re: [PATCH v2] gpio: rcar: Add r8a7795 (R-Car H3) support
-Message-Id: <CACRpkdY0u69L9dHhRFE4WqcAvMsxhi6=LDh5UQgY5uFBqcu4+Q@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 30 Jul 2015 21:55:23 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: silk: add eMMC DT support
+Message-Id: <1923824.ZmtLDEU8gy@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437469730-16460-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1437469730-16460-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <1546028.CFITDbxXtD@wasted.cogentembedded.com>
+In-Reply-To: <1546028.CFITDbxXtD@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jul 21, 2015 at 11:08 AM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
+Define the SILK board dependent part of the MMCIF device node (the board has
+eMMC chip) along with the  necessary voltage regulator (note that the Vcc/Vccq
+regulator is dummy -- it's required by the MMCIF driver but doesn't actually
+exist on the board).
 
-> R-Car Gen3's GPIO blocks are identical to Gen2's in every respect.
->
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
-> This still recycles the Gen2 structure, but explains why.  That seems
-> better to me than having the same data twice.
->
-> Changes since v1:
-> - added comment explaining the use of Gen2 info on Gen3
+Based on the original patch by Vladimir Barinov
+<vladimir.barinov@cogentembedded.com>.
 
-Patch applied with the ACKs.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Yours,
-Linus Walleij
+---
+ arch/arm/boot/dts/r8a7794-silk.dts |   25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794-silk.dts
++++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -30,6 +30,15 @@
+ 		device_type = "memory";
+ 		reg = <0 0x40000000 0 0x40000000>;
+ 	};
++
++	d3_3v: regulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "D3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
+ };
+ 
+ &extal_clk {
+@@ -51,6 +60,11 @@
+ 		renesas,groups = "intc_irq8";
+ 		renesas,function = "intc";
+ 	};
++
++	mmcif0_pins: mmcif0 {
++		renesas,groups = "mmc_data8", "mmc_ctrl";
++		renesas,function = "mmc";
++	};
+ };
+ 
+ &scif2 {
+@@ -75,3 +89,14 @@
+ 		micrel,led-mode = <1>;
+ 	};
+ };
++
++&mmcif0 {
++	pinctrl-0 = <&mmcif0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&d3_3v>;
++	vqmmc-supply = <&d3_3v>;
++	bus-width = <8>;
++	non-removable;
++	status = "okay";
++};
+
