@@ -1,44 +1,34 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 30 Jul 2015 19:59:22 +0000
-Subject: [PATCH] DT: mmc: sh_mmcif: fix "compatible" property text
-Message-Id: <3979266.lQrOKbu0yo@wasted.cogentembedded.com>
+Date: Thu, 30 Jul 2015 20:33:04 +0000
+Subject: Re: [PATCH] DT: mmc: sh_mmcif: fix "compatible" property text
+Message-Id: <55BA8A00.9090703@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+ <3979266.lQrOKbu0yo@wasted.cogentembedded.com>
+In-Reply-To: <3979266.lQrOKbu0yo@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org, ulf.hansson@linaro.org, linux-mmc@vger.kernel.org
 Cc: linux-sh@vger.kernel.org
 
-The "compatible" property text contradicts even the example given in the MMCIF
-binding document itself; moreover, the Renesas MMCIF driver only  matches  on
-the generic "compatible" string, and doesn't look for at SoC specific strings
-currently at all. Thus describe "renesas,sh-mmcif" string as mandatory and the
-others as optional.
+Hello.
 
-Fixes: b4c27763d749 ("mmc: sh_mmcif: Document DT bindings")
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+On 07/30/2015 10:59 PM, Sergei Shtylyov wrote:
 
----
- Documentation/devicetree/bindings/mmc/renesas,mmcif.txt |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+> The "compatible" property text contradicts even the example given in the MMCIF
+> binding document itself; moreover, the Renesas MMCIF driver only  matches  on
+> the generic "compatible" string, and doesn't look for at SoC specific strings
 
-Index: renesas/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-=================================--- renesas.orig/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-+++ renesas/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-@@ -6,11 +6,11 @@ and the properties used by the MMCIF dev
- 
- Required properties:
- 
--- compatible: must contain one of the following
-+- compatible: must contain "renesas,sh-mmcif"; may also contain one of
-+  the following:
- 	- "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
- 	- "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
- 	- "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
--	- "renesas,sh-mmcif" for the generic MMCIF
- 
- - clocks: reference to the functional clock
- 
+    "For" not needed here.
+
+> currently at all. Thus describe "renesas,sh-mmcif" string as mandatory and the
+> others as optional.
+
+> Fixes: b4c27763d749 ("mmc: sh_mmcif: Document DT bindings")
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+    Do I need to repost?
+
+MBR, Sergei
 
