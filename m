@@ -1,38 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 24 Jul 2015 08:41:24 +0000
-Subject: [PATCH 3/9] ARM: shmobile: lager: add sound label on DTS
-Message-Id: <30be0ba5f92c9a728bf3b3f41dbf3240eb3bbc11.1437724902.git.horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 31 Jul 2015 10:34:01 +0000
+Subject: Re: [PATCH 3/6] mmc: sh_mmcif: Document r8a7793 DT bindings
+Message-Id: <55BB4F19.40602@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1437724902.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1437724902.git.horms+renesas@verge.net.au>
+References: <1432826225-6743-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+ <1432826225-6743-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1432826225-6743-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, devicetree@vger.kernel.org, geert@linux-m68k.org
+Cc: horms@verge.net.au, linux-sh@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hello.
 
-It is easy to modify settings for Test or other purpose if sound has label
+On 5/28/2015 6:17 PM, Ulrich Hecht wrote:
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Cc: Ulf Hansson <ulf.hansson@linaro.org>
+> Cc: devicetree@vger.kernel.org
+> ---
+>   Documentation/devicetree/bindings/mmc/renesas,mmcif.txt | 1 +
+>   1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 2eb8a995ae9f..5ae07a8385c5 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -174,7 +174,7 @@
- 			  1800000 0>;
- 	};
- 
--	sound {
-+	rsnd_ak4643: sound {
- 		compatible = "simple-audio-card";
- 
- 		simple-audio-card,format = "left_j";
--- 
-2.1.4
+> diff --git a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+> index 299081f..3b9422b 100644
+> --- a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+> +++ b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+> @@ -10,6 +10,7 @@ Required properties:
+>   	- "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
+>   	- "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
+>   	- "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
+> +	- "renesas,mmcif-r8a7793" for the MMCIF found in r8a7793 SoCs
+>   	- "renesas,sh-mmcif" for the generic MMCIF
+[...]
+
+    Why this patch still hasn't been merged?
+    (I have submitted analogous patch yesterday covering both R8A779[34], not 
+knowing about this patch.)
+
+MBR, Sergei
 
