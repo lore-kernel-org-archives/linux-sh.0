@@ -1,77 +1,84 @@
-From: Bjorn Helgaas <bhelgaas@google.com>
-Date: Fri, 28 Aug 2015 21:43:50 +0000
-Subject: Re: [PATCH] PCI: PCI_RCAR_GEN2 and PCI_RCAR_GEN2_PCIE should depend on ARM
-Message-Id: <20150828214350.GC27890@google.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sat, 01 Aug 2015 09:41:52 +0000
+Subject: Re: [PATCH] DT: mmc: sh_mmcif: fix "compatible" property text
+Message-Id: <2743376.X2l1zDXaCd@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439296994-28480-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1439296994-28480-1-git-send-email-geert+renesas@glider.be>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com> <3979266.lQrOKbu0yo@wasted.cogentembedded.com> <CANqRtoSVU77Q7hnoMJ2_VbqprJYxbvbbe5MHBReH_dVxyvGAQQ@mail.gmail.com>
+In-Reply-To: <CANqRtoSVU77Q7hnoMJ2_VbqprJYxbvbbe5MHBReH_dVxyvGAQQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Simon Horman <horms@verge.net.au>, Phil Edworthy <phil.edworthy@renesas.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, ulf.hansson@linaro.org, linux-mmc@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Tue, Aug 11, 2015 at 02:43:14PM +0200, Geert Uytterhoeven wrote:
-> On arm64/shmobile:
+On Friday 31 July 2015 11:23:04 Magnus Damm wrote:
+> On Fri, Jul 31, 2015 at 4:59 AM, Sergei Shtylyov wrote:
+> > The "compatible" property text contradicts even the example given in the
+> > MMCIF binding document itself; moreover, the Renesas MMCIF driver only 
+> > matches  on the generic "compatible" string, and doesn't look for at SoC
+> > specific strings currently at all. Thus describe "renesas,sh-mmcif"
+> > string as mandatory and the others as optional.
+> > 
+> > Fixes: b4c27763d749 ("mmc: sh_mmcif: Document DT bindings")
+> > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 > 
->     drivers/pci/host/pci-rcar-gen2.c: In function 'rcar_pci_cfg_base': drivers/pci/host/pci-rcar-gen2.c:112:34: error: dereferencing pointer to incomplete type
->       struct rcar_pci_priv *priv = sys->private_data;
-> 				      ^
+> Thanks for your efforts trying to improve the DT binding documentation.
 > 
-> and
+> > --- renesas.orig/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+> > +++ renesas/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+> > @@ -6,11 +6,11 @@ and the properties used by the MMCIF dev
+> > 
+> >  Required properties:
+> > -- compatible: must contain one of the following
+> > +- compatible: must contain "renesas,sh-mmcif"; may also contain one of
+> > 
+> > +  the following:
+> >         - "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
+> >         - "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
+> >         - "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
+> > 
+> > -       - "renesas,sh-mmcif" for the generic MMCIF
 > 
->     drivers/pci/host/pcie-rcar.c:138:52: warning: 'struct pci_sys_data' declared inside parameter list
->      static inline struct rcar_pcie *sys_to_pcie(struct pci_sys_data *sys)
-> 							^
+> As you know, each SoC contains a wide range of on-chip devices and the
+> MMCIF device is just one of them. Exactly how to manage the DT
+> bindings must be up to each maintainer and of course this needs to be
+> aligned with the SoC maintainer and SoC vendor with policies used for
+> SoC support and BSPs and whatnot. Changing policy like this for a
+> single device without at least discussing this with the SoC
+> maintainers does not help.
 > 
-> pci_sys_data exists on ARM only, hence these drivers should depend on
-> ARM unconditionally.
+> For Renesas hardware we so far use both SoC part number and optionally
+> a generic binding as well. As commonly expected, the DT binding is
+> supposed to describe the hardware and if hardware devices are
+> compatible. Unless we use SoC part number in the compatible string
+> there is a risk that the SoC integrator simply copy-and-pastes generic
+> bindings "because it works" but this will result in DT binding based
+> on software compatibility and not hardware compatibility. Later when
+> the driver support is extended this may result in broken software due
+> to incorrect compatibility information through generic bindings.
 > 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> If anything is unclear please ask and feel free to discuss this DT
+> topic with Simon, Laurent, Geert and/or me.
 
-Thanks, I applied this to pci-4.4/host-rcar, which I will rebase after v4.3
-is released.
+To clarify this, the current DT compatible strings policy for Renesas SoCs is 
+to use a mandatory SoC-based string followed by a optional generic strings. 
+Optional here refers to the fact that individual DT bindings can decide 
+whether to use a generic string or not, based on hardware information. An IP 
+core that has a different, incompatible implementation for each SoC it is 
+present in can't make use of a generic compatible string. If a particular 
+binding defines generic compatible strings those should be made mandatory by 
+that binding.
 
-commit ae93c3763a294543fd790107e223023ae75cd93a
-Author: Geert Uytterhoeven <geert+renesas@glider.be>
-Date:   Tue Aug 11 14:43:14 2015 +0200
+In the MMCIF case, I would propose wording it as
 
-    PCI: rcar: Build only on ARM
-    
-    The pci-rcar-gen2.c and pcie-rcar.c drivers use struct pci_sys_data, which
-    only exists on ARM.  Building them on other arches, e.g., arm64/shmobile,
-    causes errors like this:
-    
-      drivers/pci/host/pci-rcar-gen2.c: In function 'rcar_pci_cfg_base': drivers/pci/host/pci-rcar-gen2.c:112:34: error: dereferencing pointer to incomplete type
-        struct rcar_pci_priv *priv = sys->private_data;
-                                        ^
-    Make these drivers depend on ARM unconditionally.
-    
-    [bhelgaas: changelog]
-    Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-    Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+- compatible: must contain one of the following
+      - "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
+      - "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
+      - "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
+  followed by "renesas,sh-mmcif".
 
-diff --git a/drivers/pci/host/Kconfig b/drivers/pci/host/Kconfig
-index c132bdd..3745c63 100644
---- a/drivers/pci/host/Kconfig
-+++ b/drivers/pci/host/Kconfig
-@@ -39,7 +39,8 @@ config PCI_TEGRA
- 
- config PCI_RCAR_GEN2
- 	bool "Renesas R-Car Gen2 Internal PCI controller"
--	depends on ARCH_SHMOBILE || (ARM && COMPILE_TEST)
-+	depends on ARM
-+	depends on ARCH_SHMOBILE || COMPILE_TEST
- 	help
- 	  Say Y here if you want internal PCI support on R-Car Gen2 SoC.
- 	  There are 3 internal PCI controllers available with a single
-@@ -47,7 +48,8 @@ config PCI_RCAR_GEN2
- 
- config PCI_RCAR_GEN2_PCIE
- 	bool "Renesas R-Car PCIe controller"
--	depends on ARCH_SHMOBILE || (ARM && COMPILE_TEST)
-+	depends on ARM
-+	depends on ARCH_SHMOBILE || COMPILE_TEST
- 	help
- 	  Say Y here if you want PCIe controller support on R-Car Gen2 SoCs.
- 
+-- 
+Regards,
+
+Laurent Pinchart
+
