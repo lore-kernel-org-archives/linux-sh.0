@@ -1,88 +1,70 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 20 Aug 2015 06:29:11 +0000
-Subject: [PATCH 4/7][RFC] arm64: dts: r8a7795: add device nodes of EHCI and OHCI
-Message-Id: <1440052154-3768-5-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 03 Aug 2015 06:04:52 +0000
+Subject: [PATCH 1/6] ARM: shmobile: r8a7779: Generic CCF and timer support
+Message-Id: <131c2e0480b0f7afefbc9a46cc4e158e17caa844.1438581659.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1438581659.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1438581659.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
+
+Add a r8a7779-specific callback to initialize CCF and
+clocksources. With this in place we are one step closer
+to be able to use r8a7779 without C board code.
+
+Also add a multiplatform wrapper to avoid breaking the
+r8a7779 marzen legacy case.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 60 ++++++++++++++++++++++++++++++++
- 1 file changed, 60 insertions(+)
+ arch/arm/mach-shmobile/setup-r8a7779.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index cd6629c..bb46629 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -160,5 +160,65 @@
- 			#phy-cells = <0>;
- 			status = "disabled";
- 		};
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index c03e562be12b..5625fd1c89c0 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -14,6 +14,8 @@
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  */
++#include <linux/clk/shmobile.h>
++#include <linux/clocksource.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+@@ -756,6 +758,14 @@ u32 __init r8a7779_read_mode_pins(void)
+ 	return mode;
+ }
+ 
++#ifdef CONFIG_ARCH_SHMOBILE_MULTI
 +
-+		ehci0: usb@ee080100 {
-+			compatible = "renesas,ehci-r8a7795", "generic-ehci";
-+			reg = <0 0xee080100 0 0xff>;
-+			interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp7_clks R8A7795_CLK_EHCI0>;
-+			phys = <&usb2_phy0>;
-+			phy-names = "usb";
-+			status = "disabled";
-+		};
++static void __init r8a7779_init_time(void)
++{
++	r8a7779_clocks_init(r8a7779_read_mode_pins());
++	clocksource_of_init();
++}
 +
-+		ehci1: usb@ee0a0100 {
-+			compatible = "renesas,ehci-r8a7795", "generic-ehci";
-+			reg = <0 0xee0a0100 0 0xff>;
-+			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp7_clks R8A7795_CLK_EHCI1>;
-+			phys = <&usb2_phy1>;
-+			phy-names = "usb";
-+			status = "disabled";
-+		};
-+
-+		ehci2: usb@ee0c0100 {
-+			compatible = "renesas,ehci-r8a7795", "generic-ehci";
-+			reg = <0 0xee0c0100 0 0xff>;
-+			interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp7_clks R8A7795_CLK_EHCI2>;
-+			phys = <&usb2_phy2>;
-+			phy-names = "usb";
-+			status = "disabled";
-+		};
-+
-+		ohci0: usb@ee080000 {
-+			compatible = "renesas,ohci-r8a7795", "generic-ohci";
-+			reg = <0 0xee080000 0 0xff>;
-+			interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp7_clks R8A7795_CLK_EHCI0>;
-+			phys = <&usb2_phy0>;
-+			phy-names = "usb";
-+			status = "disabled";
-+		};
-+
-+		ohci1: usb@ee0a0000 {
-+			compatible = "renesas,ohci-r8a7795", "generic-ohci";
-+			reg = <0 0xee0a0000 0 0xff>;
-+			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp7_clks R8A7795_CLK_EHCI1>;
-+			phys = <&usb2_phy1>;
-+			phy-names = "usb";
-+			status = "disabled";
-+		};
-+
-+		ohci2: usb@ee0c0000 {
-+			compatible = "renesas,ohci-r8a7795", "generic-ohci";
-+			reg = <0 0xee0c0000 0 0xff>;
-+			interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp7_clks R8A7795_CLK_EHCI2>;
-+			phys = <&usb2_phy2>;
-+			phy-names = "usb";
-+			status = "disabled";
-+		};
- 	};
- };
+ static const char *r8a7779_compat_dt[] __initdata = {
+ 	"renesas,r8a7779",
+ 	NULL,
+@@ -764,8 +774,10 @@ static const char *r8a7779_compat_dt[] __initdata = {
+ DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
+ 	.map_io		= r8a7779_map_io,
+ 	.init_early	= shmobile_init_delay,
++	.init_time	= r8a7779_init_time,
+ 	.init_irq	= r8a7779_init_irq_dt,
+ 	.init_late	= shmobile_init_late,
+ 	.dt_compat	= r8a7779_compat_dt,
+ MACHINE_END
++#endif /* CONFIG_ARCH_SHMOBILE_MULTI */
+ #endif /* CONFIG_USE_OF */
 -- 
-1.9.1
+2.1.4
 
