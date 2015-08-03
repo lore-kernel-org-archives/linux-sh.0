@@ -1,127 +1,216 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 04 Aug 2015 14:19:57 +0000
-Subject: Re: [PATCH v2 6/6] pinctrl: sh-pfc: Confine legacy function GPIOs to SH
-Message-Id: <2553252.oFXfDSh3t2@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 03 Aug 2015 01:53:23 +0000
+Subject: [PATCH 3/4 v3][RFC] arm64: renesas: Add initial r8a7795 SoC support
+Message-Id: <873801w377.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
- <1438696519-13727-7-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1438696519-13727-7-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Geert,
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Thank you for the patch.
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
 
-On Tuesday 04 August 2015 15:55:19 Geert Uytterhoeven wrote:
-> Legacy function GPIOs are no longer used on ARM since commit
-> a27c5cd1a08cc95c ("sh-pfc: sh73a0: Remove function GPIOs").
-> Extract its setup code into a separate function, and make all function
-> GPIO related code and data depend on CONFIG_SUPERH.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Acked-by: Linus Walleij <linus.walleij@linaro.org>
+ - no change
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+ Documentation/devicetree/bindings/arm/shmobile.txt |  2 +
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |  1 +
+ arch/arm64/boot/dts/Makefile                       |  1 +
+ arch/arm64/boot/dts/renesas/Makefile               |  5 ++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 93 ++++++++++++++++++++++
+ include/dt-bindings/clock/r8a7795-clock.h          | 31 ++++++++
+ 6 files changed, 133 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/renesas/Makefile
+ create mode 100644 arch/arm64/boot/dts/renesas/r8a7795.dtsi
+ create mode 100644 include/dt-bindings/clock/r8a7795-clock.h
 
-We now need a volunteer to port SH to proper pinctrl to remove the function 
-GPIOs completely :-)
-
-> ---
-> Compile-tested on sh using se7724_defconfig.
-> 
-> v2:
->   - Add Acked-by,
->   - #ifdef out the code instead of introducing helper and dummy
->     functions.
-> ---
->  drivers/pinctrl/sh-pfc/core.h   | 2 ++
->  drivers/pinctrl/sh-pfc/gpio.c   | 7 ++++++-
->  drivers/pinctrl/sh-pfc/sh_pfc.h | 2 ++
->  3 files changed, 10 insertions(+), 1 deletion(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-> index 4c3c37bf7161804d..c38ace46d7111b0d 100644
-> --- a/drivers/pinctrl/sh-pfc/core.h
-> +++ b/drivers/pinctrl/sh-pfc/core.h
-> @@ -46,7 +46,9 @@ struct sh_pfc {
->  	unsigned int nr_gpio_pins;
-> 
->  	struct sh_pfc_chip *gpio;
-> +#ifdef CONFIG_SUPERH
->  	struct sh_pfc_chip *func;
-> +#endif
-> 
->  	struct sh_pfc_pinctrl *pinctrl;
->  };
-> diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-> index e46439030914ad13..685b3c24627daf03 100644
-> --- a/drivers/pinctrl/sh-pfc/gpio.c
-> +++ b/drivers/pinctrl/sh-pfc/gpio.c
-> @@ -261,6 +261,7 @@ static int gpio_pin_setup(struct sh_pfc_chip *chip)
->   * Function GPIOs
->   */
-> 
-> +#ifdef CONFIG_SUPERH
->  static int gpio_function_request(struct gpio_chip *gc, unsigned offset)
->  {
->  	static bool __print_once;
-> @@ -300,6 +301,7 @@ static int gpio_function_setup(struct sh_pfc_chip *chip)
-> 
->  	return 0;
->  }
-> +#endif
-> 
->  /*
-> ---------------------------------------------------------------------------
-> -- * Register/unregister
-> @@ -399,6 +401,7 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
->  		}
->  	}
-> 
-> +#ifdef CONFIG_SUPERH
->  	/* Register the function GPIOs chip. */
->  	if (pfc->info->nr_func_gpios = 0)
->  		return 0;
-> @@ -408,6 +411,7 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
->  		return PTR_ERR(chip);
-> 
->  	pfc->func = chip;
-> +#endif /* CONFIG_SUPERH */
-> 
->  	return 0;
->  }
-> @@ -415,7 +419,8 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
->  int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc)
->  {
->  	gpiochip_remove(&pfc->gpio->gpio_chip);
-> +#ifdef CONFIG_SUPERH
->  	gpiochip_remove(&pfc->func->gpio_chip);
-> -
-> +#endif
->  	return 0;
->  }
-> diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h
-> b/drivers/pinctrl/sh-pfc/sh_pfc.h index 0874cfee6889afa1..1f43bae56065e659
-> 100644
-> --- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-> +++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-> @@ -138,8 +138,10 @@ struct sh_pfc_soc_info {
->  	const struct sh_pfc_function *functions;
->  	unsigned int nr_functions;
-> 
-> +#ifdef CONFIG_SUPERH
->  	const struct pinmux_func *func_gpios;
->  	unsigned int nr_func_gpios;
-> +#endif
-> 
->  	const struct pinmux_cfg_reg *cfg_regs;
->  	const struct pinmux_data_reg *data_regs;
-
+diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
+index c4f19b2..8d696a0 100644
+--- a/Documentation/devicetree/bindings/arm/shmobile.txt
++++ b/Documentation/devicetree/bindings/arm/shmobile.txt
+@@ -27,6 +27,8 @@ SoCs:
+     compatible = "renesas,r8a7793"
+   - R-Car E2 (R8A77940)
+     compatible = "renesas,r8a7794"
++  - R-Car H3 (R8A77950)
++    compatible = "renesas,r8a7795"
+ 
+ 
+ Boards:
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 16ed181..4169c76 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -19,6 +19,7 @@ Required Properties:
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2-W) MSTP gate clocks
+     - "renesas,r8a7793-mstp-clocks" for R8A7793 (R-Car M2-N) MSTP gate clocks
+     - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
++    - "renesas,r8a7795-mstp-clocks" for R8A7795 (R-Car H3) MSTP gate clocks
+     - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
+     and "renesas,cpg-mstp-clocks" as a fallback.
+   - reg: Base address and length of the I/O mapped registers used by the MSTP
+diff --git a/arch/arm64/boot/dts/Makefile b/arch/arm64/boot/dts/Makefile
+index 38913be2..5691ca4 100644
+--- a/arch/arm64/boot/dts/Makefile
++++ b/arch/arm64/boot/dts/Makefile
+@@ -7,6 +7,7 @@ dts-dirs += freescale
+ dts-dirs += hisilicon
+ dts-dirs += mediatek
+ dts-dirs += qcom
++dts-dirs += renesas
+ dts-dirs += sprd
+ dts-dirs += xilinx
+ 
+diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
+new file mode 100644
+index 0000000..6aeefd9
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/Makefile
+@@ -0,0 +1,5 @@
++dtb-$(CONFIG_ARCH_RCAR_GEN3) ++
++always		:= $(dtb-y)
++subdir-y	:= $(dts-dirs)
++clean-files	:= *.dtb
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+new file mode 100644
+index 0000000..0f298c3
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -0,0 +1,93 @@
++/*
++ * Device Tree Source for the r8a7795 SoC
++ *
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++#include <dt-bindings/clock/r8a7795-clock.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++
++/ {
++	compatible = "renesas,r8a7795";
++	interrupt-parent = <&gic>;
++	#address-cells = <2>;
++	#size-cells = <2>;
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		/* 1core only at this point */
++		a57_0: cpu@0 {
++			compatible = "arm,cortex-a57", "arm,armv8";
++			reg = <0x0>;
++			device_type = "cpu";
++		};
++	};
++
++	gic: interrupt-controller@0xf1010000 {
++		compatible = "arm,gic-400";
++		#interrupt-cells = <3>;
++		#address-cells = <0>;
++		interrupt-controller;
++		reg = <0x0 0xf1010000 0 0x1000>,
++		      <0x0 0xf1020000 0 0x2000>;
++		interrupts = <GIC_PPI 9
++				(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_HIGH)>;
++	};
++
++	timer {
++		compatible = "arm,armv8-timer";
++		interrupts = <GIC_PPI 13
++				(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
++			     <GIC_PPI 14
++				(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
++			     <GIC_PPI 11
++				(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
++			     <GIC_PPI 10
++				(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>;
++	};
++
++	clocks {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		extal_clk: extal_clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <0>;
++			clock-output-names = "extal";
++		};
++		cpg_clocks: cpg_clocks@e6150000 {
++			compatible = "renesas,r8a7795-cpg-clocks",
++				     "renesas,rcar-gen3-cpg-clocks";
++			reg = <0 0xe6150000 0 0x1000>;
++			clocks = <&extal_clk>;
++			#clock-cells = <1>;
++			clock-output-names = "main", "pll0", "pll1","pll2",
++					     "pll3", "pll4";
++		};
++		p_clk: p_clk {
++			compatible = "fixed-factor-clock";
++			clocks = <&cpg_clocks RCAR_GEN3_CLK_PLL1>;
++			#clock-cells = <0>;
++			clock-div = <24>;
++			clock-mult = <1>;
++			clock-output-names = "p";
++		};
++		mstp3_clks: mstp3_clks@e615013c {
++			compatible = "renesas,r8a7795-mstp-clocks",
++				     "renesas,cpg-mstp-clocks";
++			reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
++			clocks =  <&p_clk>;
++			#clock-cells = <1>;
++			renesas,clock-indices = <RCAR_GEN3_CLK_IRDA>;
++			clock-output-names = "irda";
++		};
++	};
++};
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+new file mode 100644
+index 0000000..fc1c4da
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -0,0 +1,31 @@
++#ifndef __DT_BINDINGS_CLOCK_RCAR_GEN3_H__
++#define __DT_BINDINGS_CLOCK_RCAR_GEN3_H__
++
++/* CPG */
++#define RCAR_GEN3_CLK_MAIN		0
++#define RCAR_GEN3_CLK_PLL0		1
++#define RCAR_GEN3_CLK_PLL1		2
++#define RCAR_GEN3_CLK_PLL2		3
++#define RCAR_GEN3_CLK_PLL3		4
++#define RCAR_GEN3_CLK_PLL4		5
++
++/* MSTP0 */
++
++/* MSTP1 */
++
++/* MSTP2 */
++
++/* MSTP3 */
++#define RCAR_GEN3_CLK_IRDA		10
++
++/* MSTP5 */
++
++/* MSTP7 */
++
++/* MSTP8 */
++
++/* MSTP9 */
++
++/* MSTP10 */
++
++#endif /* __DT_BINDINGS_CLOCK_RCAR_GEN3_H__ */
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
