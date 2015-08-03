@@ -1,40 +1,26 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 21 Aug 2015 00:20:24 +0000
-Subject: Re: [PATCH 02/16 v5][RFC] arm64: renesas: Add new Renesas R-Car Gen3 SoC Kconfig
-Message-Id: <87fv3dbin1.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 03 Aug 2015 00:53:53 +0000
+Subject: Re: [PATCH v2 1/2] ARM: shmobile: r8a7794: add MMCIF DT support
+Message-Id: <20150803005353.GC29555@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87614reqrb.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87614reqrb.wl%kuninori.morimoto.gx@renesas.com>
+References: <1546028.CFITDbxXtD@wasted.cogentembedded.com>
+ <2274701.D1UH0V9VRM@wasted.cogentembedded.com>
+In-Reply-To: <2274701.D1UH0V9VRM@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-
-Hi Simon, Geert
-
-> > > shouldn't we have ARCH_SHMOBILE first, and make ARCH_RCAR_GEN3
-> > > depend on it, cfr. what Tegra is doing (and everyone has been doing on 32-bit
-> > > arm)?
-> > 
-> > I'm not sure, but if we used alphabetical order, ARCH_SHMOBILE can be here
-> > I will keep this in v6
+On Fri, Jul 31, 2015 at 12:54:05AM +0300, Sergei Shtylyov wrote:
+> Define the generic R8A7794 part of the MMCIF0 device node.
 > 
-> Geerts suggestion sounds reasonable to me.
+> Based on the orginal patch by Shinobu Uehara <shinobu.uehara.xc@renesas.com>.
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> 
+> ---
+> Changes in version  2:
+> - updated the patch due to the SDHI patch being accepted first;
+> - refreshed the patch.
 
-Sorry, I was misunderstood about this.
-If we keep alphabetical order for ARCH_SHMOBILE and ARCH_RCAR_GEN3,
-and uses "depends on", the menuconfig will be
-
-	[*] Renesas R-Car Gen3 SoC Platform
-	[ ] xxx
-	[ ] xxx
-	[*] Renesas SoC Family
-	[ ] xxx
-
-but we want to have this ?
-
-	[ ] xxx
-	[*] Renesas SoC Family
-	[*]   Renesas R-Car Gen3 SoC Platform
-	[ ] xxx
+Thanks, I have queued-up this and the following patch.
