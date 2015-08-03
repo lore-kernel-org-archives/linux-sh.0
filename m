@@ -1,35 +1,126 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 25 Aug 2015 06:43:02 +0000
-Subject: [PATCH 2/2] clk: shmobile: Add r8a7795 SoC to MSTP bindings
-Message-Id: <87io837typ.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 03 Aug 2015 06:04:54 +0000
+Subject: [PATCH 3/6] ARM: shmobile: marzen-reference: Remove C board code
+Message-Id: <26f9e03fb1c8b8b5dd2f1ad34da775cc129df98a.1438581659.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lhcz7u2i.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87lhcz7u2i.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1438581659.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1438581659.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Stephen Boyd <sboyd@codeaurora.org>, Michael Turquette <mturquette@baylibre.com>
-Cc: Simon Horman <horms+renesas@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>, linux-clk@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The generic r8a7779 machine vector is now feature-wise equivalent
+to the Marzen-reference case, so simply remove the Marzen C board
+code to fall over on the generic r8a7779 machine vector.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/Kconfig                  |  7 ----
+ arch/arm/mach-shmobile/Makefile                 |  4 +-
+ arch/arm/mach-shmobile/board-marzen-reference.c | 56 -------------------------
+ 3 files changed, 1 insertion(+), 66 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/board-marzen-reference.c
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-index 16ed181..4169c76 100644
---- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
-@@ -19,6 +19,7 @@ Required Properties:
-     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2-W) MSTP gate clocks
-     - "renesas,r8a7793-mstp-clocks" for R8A7793 (R-Car M2-N) MSTP gate clocks
-     - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
-+    - "renesas,r8a7795-mstp-clocks" for R8A7795 (R-Car H3) MSTP gate clocks
-     - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
-     and "renesas,cpg-mstp-clocks" as a fallback.
-   - reg: Base address and length of the I/O mapped registers used by the MSTP
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 45006479d461..3d6f46cb8b18 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -89,13 +89,6 @@ config ARCH_SH73A0
+ 	select ARCH_RMOBILE
+ 	select RENESAS_INTC_IRQPIN
+ 
+-comment "Renesas ARM SoCs Board Type"
+-
+-config MACH_MARZEN
+-	bool "MARZEN board"
+-	depends on ARCH_R8A7779
+-	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-
+ comment "Renesas ARM SoCs System Configuration"
+ endif
+ 
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 89e463de4479..08b12b4d3f90 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -51,9 +51,7 @@ obj-$(CONFIG_PM_RMOBILE)	+= pm-rmobile.o
+ obj-$(CONFIG_ARCH_RCAR_GEN2)	+= pm-rcar-gen2.o
+ 
+ # Board objects
+-ifdef CONFIG_ARCH_SHMOBILE_MULTI
+-obj-$(CONFIG_MACH_MARZEN)	+= board-marzen-reference.o
+-else
++ifndef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+diff --git a/arch/arm/mach-shmobile/board-marzen-reference.c b/arch/arm/mach-shmobile/board-marzen-reference.c
+deleted file mode 100644
+index b15eb923263f..000000000000
+--- a/arch/arm/mach-shmobile/board-marzen-reference.c
++++ /dev/null
+@@ -1,56 +0,0 @@
+-/*
+- * marzen board support - Reference DT implementation
+- *
+- * Copyright (C) 2011  Renesas Solutions Corp.
+- * Copyright (C) 2011  Magnus Damm
+- * Copyright (C) 2013  Simon Horman
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#include <linux/clk/shmobile.h>
+-#include <linux/clocksource.h>
+-#include <linux/of_platform.h>
+-
+-#include <asm/irq.h>
+-#include <asm/mach/arch.h>
+-
+-#include "common.h"
+-#include "irqs.h"
+-#include "r8a7779.h"
+-
+-static void __init marzen_init_timer(void)
+-{
+-	r8a7779_clocks_init(r8a7779_read_mode_pins());
+-	clocksource_of_init();
+-}
+-
+-static void __init marzen_init(void)
+-{
+-	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+-	r8a7779_init_irq_extpin_dt(1); /* IRQ1 as individual interrupt */
+-}
+-
+-static const char *marzen_boards_compat_dt[] __initdata = {
+-	"renesas,marzen",
+-	"renesas,marzen-reference",
+-	NULL,
+-};
+-
+-DT_MACHINE_START(MARZEN, "marzen")
+-	.smp		= smp_ops(r8a7779_smp_ops),
+-	.map_io		= r8a7779_map_io,
+-	.init_early	= shmobile_init_delay,
+-	.init_time	= marzen_init_timer,
+-	.init_irq	= r8a7779_init_irq_dt,
+-	.init_machine	= marzen_init,
+-	.init_late	= shmobile_init_late,
+-	.dt_compat	= marzen_boards_compat_dt,
+-MACHINE_END
 -- 
-1.9.1
+2.1.4
 
