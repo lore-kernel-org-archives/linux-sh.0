@@ -1,94 +1,75 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 31 Aug 2015 12:49:38 +0000
-Subject: [PATCH v5 05/05] clk: shmobile: Make MSTP clock-output-names optional
-Message-Id: <20150831124938.31057.21553.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 03 Aug 2015 06:04:55 +0000
+Subject: [PATCH 4/6] ARM: shmobile: r8a7779: Cleanup header file
+Message-Id: <640780efdd97eefd9ee78e1cd03ba97b1a1e1d9a.1438581659.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150831124842.31057.54534.sendpatchset@little-apple>
-In-Reply-To: <20150831124842.31057.54534.sendpatchset@little-apple>
+References: <cover.1438581659.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1438581659.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-clk@vger.kernel.org
-Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm+renesas@opensource.se>
 
-This patch updates the MSTP driver to make the "clock-output-names"
-DT property optional instead of mandatory. In case the DT property
-is omitted then the function clk_register_clkdev() is skipped.
-
-The default for new SoCs is to not use "clock-output-names".
+Remove unused function prototypes from r8a7779.h and
+make the functions static.
 
 Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/clock-r8a7779.c | 2 +-
+ arch/arm/mach-shmobile/r8a7779.h       | 2 --
+ arch/arm/mach-shmobile/setup-r8a7779.c | 2 +-
+ 3 files changed, 2 insertions(+), 4 deletions(-)
 
- Changes since V4:
- - None
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index fa8ab2cc9187..a376ba3b67c0 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -201,7 +201,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("rcar-du-r8a7779", &mstp_clks[MSTP103]), /* DU */
+ };
+ 
+-void __init r8a7779_clock_init(void)
++static void __init r8a7779_clock_init(void)
+ {
+ 	u32 mode = r8a7779_read_mode_pins();
+ 	int k, ret = 0;
+diff --git a/arch/arm/mach-shmobile/r8a7779.h b/arch/arm/mach-shmobile/r8a7779.h
+index 19f97046dd70..f69c7477178b 100644
+--- a/arch/arm/mach-shmobile/r8a7779.h
++++ b/arch/arm/mach-shmobile/r8a7779.h
+@@ -11,7 +11,6 @@ enum {
+ };
+ 
+ extern void r8a7779_init_irq_extpin(int irlm);
+-extern void r8a7779_init_irq_extpin_dt(int irlm);
+ extern void r8a7779_init_irq_dt(void);
+ extern void r8a7779_map_io(void);
+ extern void r8a7779_earlytimer_init(void);
+@@ -19,7 +18,6 @@ extern void r8a7779_add_early_devices(void);
+ extern void r8a7779_add_standard_devices(void);
+ extern void r8a7779_init_late(void);
+ extern u32 r8a7779_read_mode_pins(void);
+-extern void r8a7779_clock_init(void);
+ extern void r8a7779_pinmux_init(void);
+ extern void r8a7779_pm_init(void);
+ extern void r8a7779_register_twd(void);
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 2c3e433f84ca..f436cba958fa 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -99,7 +99,7 @@ static struct resource irqpin0_resources[] __initdata = {
+ 	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ3 */
+ };
+ 
+-void __init r8a7779_init_irq_extpin_dt(int irlm)
++static void __init r8a7779_init_irq_extpin_dt(int irlm)
+ {
+ 	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
+ 	u32 tmp;
+-- 
+2.1.4
 
- Changes since V3:
- - Added support for multiple MSTP bits. =)
-
- drivers/clk/shmobile/clk-mstp.c |   28 +++++++++++++++++++---------
- 1 file changed, 19 insertions(+), 9 deletions(-)
-
---- 0001/drivers/clk/shmobile/clk-mstp.c
-+++ work/drivers/clk/shmobile/clk-mstp.c	2015-08-29 18:01:00.662366518 +0900
-@@ -199,26 +199,29 @@ static void __init cpg_mstp_clocks_init(
- 	for (i = 0; i < MSTP_MAX_CLOCKS; ++i) {
- 		const char *parent_name;
- 		const char *name;
-+		bool allocated_name;
- 		u32 clkidx;
- 		int ret;
- 
--		/* Skip clocks with no name. */
--		ret = of_property_read_string_index(np, "clock-output-names",
--						    i, &name);
--		if (ret < 0 || strlen(name) = 0)
--			continue;
--
- 		parent_name = of_clk_get_parent_name(np, i);
- 		ret = of_property_read_u32_index(np, idxname, i, &clkidx);
- 		if (parent_name = NULL || ret < 0)
- 			break;
- 
- 		if (clkidx >= MSTP_MAX_CLOCKS) {
--			pr_err("%s: invalid clock %s %s index %u)\n",
--			       __func__, np->name, name, clkidx);
-+			pr_err("%s: invalid clock %s index %u)\n",
-+			       __func__, np->name, clkidx);
- 			continue;
- 		}
- 
-+		if (of_property_read_string_index(np, "clock-output-names",
-+						  i, &name) = 0) {
-+			allocated_name = false;
-+		} else {
-+			name = kasprintf(GFP_KERNEL, "%s.%u", np->name, clkidx);
-+			allocated_name = true;
-+		}
-+
- 		clks[clkidx] = cpg_mstp_clock_register(name, parent_name,
- 						       clkidx, group);
- 		if (!IS_ERR(clks[clkidx])) {
-@@ -231,12 +234,19 @@ static void __init cpg_mstp_clocks_init(
- 			 *
- 			 * FIXME: Remove this when all devices that require a
- 			 * clock will be instantiated from DT.
-+			 *
-+			 * We currently register clkdev only when the DT
-+			 * property clock-output-names is present.
- 			 */
--			clk_register_clkdev(clks[clkidx], name, NULL);
-+			if (!allocated_name)
-+				clk_register_clkdev(clks[clkidx], name, NULL);
- 		} else {
- 			pr_err("%s: failed to register %s %s clock (%ld)\n",
- 			       __func__, np->name, name, PTR_ERR(clks[clkidx]));
- 		}
-+
-+		if (allocated_name)
-+			kfree(name);
- 	}
- 
- 	of_clk_add_provider(np, of_clk_src_onecell_get, &group->data);
