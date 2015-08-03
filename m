@@ -1,122 +1,440 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 12 Aug 2015 08:15:19 +0000
-Subject: [PATCH 5/5] clk: shmobile: rz: Add CPG/MSTP Clock Domain support
-Message-Id: <f04b486d34ac6bab2aaa3988ee098b2bad3950de.1439365731.git.horms+renesas@verge.net.au>
+Date: Mon, 03 Aug 2015 06:04:56 +0000
+Subject: [PATCH 5/6] ARM: shmobile: marzen: Remove legacy board code
+Message-Id: <b97fdb836a36df53de5685278c0126a222903c5e.1438581659.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1439365731.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1439365731.git.horms+renesas@verge.net.au>
+References: <cover.1438581659.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1438581659.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Add Clock Domain support to the RZ Clock Pulse Generator (CPG) driver
-using the generic PM Domain.  This allows to power-manage the module
-clocks of SoC devices that are part of the CPG/MSTP Clock Domain using
-Runtime PM, or for system suspend/resume.
+Remove Marzen legacy board code written in C. Instead
+board support expressed in DT shall be used together
+with Multiplatform and shmobile_defconfig.
 
-SoC devices that are part of the CPG/MSTP Clock Domain and can be
-power-managed through an MSTP clock should be tagged in DT with a proper
-"power-domains" property.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Stephen Boyd <sboyd@codeaurora.org>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../bindings/clock/renesas,rz-cpg-clocks.txt       | 29 ++++++++++++++++++++--
- arch/arm/mach-shmobile/Kconfig                     |  1 +
- drivers/clk/shmobile/clk-rz.c                      |  3 +++
- 3 files changed, 31 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/Makefile            |   1 -
+ arch/arm/mach-shmobile/Kconfig        |   7 -
+ arch/arm/mach-shmobile/Makefile       |   1 -
+ arch/arm/mach-shmobile/Makefile.boot  |   1 -
+ arch/arm/mach-shmobile/board-marzen.c | 347 ----------------------------------
+ 5 files changed, 357 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/board-marzen.c
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
-index b0f7ddb8cdb1..bb51a33a1fbf 100644
---- a/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
-@@ -2,6 +2,8 @@
- 
- The CPG generates core clocks for the RZ SoCs. It includes the PLL, variable
- CPU and GPU clocks, and several fixed ratio dividers.
-+The CPG also provides a Clock Domain for SoC devices, in combination with the
-+CPG Module Stop (MSTP) Clocks.
- 
- Required Properties:
- 
-@@ -14,10 +16,18 @@ Required Properties:
-   - #clock-cells: Must be 1
-   - clock-output-names: The names of the clocks. Supported clocks are "pll",
-     "i", and "g"
-+  - #power-domain-cells: Must be 0
- 
-+SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
-+through an MSTP clock should refer to the CPG device node in their
-+"power-domains" property, as documented by the generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
- 
--Example
---------
-+
-+Examples
-+--------
-+
-+  - CPG device node:
- 
- 	cpg_clocks: cpg_clocks@fcfe0000 {
- 		#clock-cells = <1>;
-@@ -26,4 +36,19 @@ Example
- 		reg = <0xfcfe0000 0x18>;
- 		clocks = <&extal_clk>, <&usb_x1_clk>;
- 		clock-output-names = "pll", "i", "g";
-+		#power-domain-cells = <0>;
-+	};
-+
-+
-+  - CPG/MSTP Clock Domain member device node:
-+
-+	mtu2: timer@fcff0000 {
-+		compatible = "renesas,mtu2-r7s72100", "renesas,mtu2";
-+		reg = <0xfcff0000 0x400>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "tgi0a";
-+		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
-+		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
- 	};
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 246473a244f6..2e3fabad0f7a 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -504,7 +504,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_LEGACY) += \
+ 	r8a7740-armadillo800eva.dtb \
+ 	r8a7778-bockw.dtb \
+ 	r8a7778-bockw-reference.dtb \
+-	r8a7779-marzen.dtb \
+ 	sh73a0-kzm9g.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	emev2-kzm9d.dtb \
 diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index e14fa5e87475..34eac88a9889 100644
+index 3d6f46cb8b18..1fe775c7e004 100644
 --- a/arch/arm/mach-shmobile/Kconfig
 +++ b/arch/arm/mach-shmobile/Kconfig
-@@ -51,6 +51,7 @@ config ARCH_EMEV2
+@@ -157,13 +157,6 @@ config MACH_BOCKW_REFERENCE
  
- config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
-+	select PM_GENERIC_DOMAINS if PM
- 	select SYS_SUPPORTS_SH_MTU2
+ 	   This is intended to aid developers
  
- config ARCH_R8A73A4
-diff --git a/drivers/clk/shmobile/clk-rz.c b/drivers/clk/shmobile/clk-rz.c
-index 7e68e8630962..9766e3cb595f 100644
---- a/drivers/clk/shmobile/clk-rz.c
-+++ b/drivers/clk/shmobile/clk-rz.c
-@@ -10,6 +10,7 @@
-  */
+-config MACH_MARZEN
+-	bool "MARZEN board"
+-	depends on ARCH_R8A7779
+-	select ARCH_REQUIRE_GPIOLIB
+-	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+-	select USE_OF
+-
+ config MACH_KZM9G
+ 	bool "KZM-A9-GT board"
+ 	depends on ARCH_SH73A0
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 08b12b4d3f90..dd214ca8b09e 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -54,7 +54,6 @@ obj-$(CONFIG_ARCH_RCAR_GEN2)	+= pm-rcar-gen2.o
+ ifndef CONFIG_ARCH_SHMOBILE_MULTI
+ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
+ obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+-obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
+ obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o intc-sh73a0.o
+ endif
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+index e1ef19cef89c..7e7e0f47848c 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -4,7 +4,6 @@ loadaddr-$(CONFIG_MACH_ARMADILLO800EVA) += 0x40008000
+ loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
+ loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
+ loadaddr-$(CONFIG_MACH_KZM9G) += 0x41008000
+-loadaddr-$(CONFIG_MACH_MARZEN) += 0x60008000
  
- #include <linux/clk-provider.h>
-+#include <linux/clk/shmobile.h>
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/of.h>
-@@ -99,5 +100,7 @@ static void __init rz_cpg_clocks_init(struct device_node *np)
- 	}
- 
- 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-+
-+	cpg_mstp_add_clk_domain(np);
- }
- CLK_OF_DECLARE(rz_cpg_clks, "renesas,rz-cpg-clocks", rz_cpg_clocks_init);
+ __ZRELADDR	:= $(sort $(loadaddr-y))
+    zreladdr-y   += $(__ZRELADDR)
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+deleted file mode 100644
+index 51db288f192a..000000000000
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ /dev/null
+@@ -1,347 +0,0 @@
+-/*
+- * marzen board support
+- *
+- * Copyright (C) 2011, 2013  Renesas Solutions Corp.
+- * Copyright (C) 2011  Magnus Damm
+- * Copyright (C) 2013  Cogent Embedded, Inc.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#include <linux/kernel.h>
+-#include <linux/init.h>
+-#include <linux/interrupt.h>
+-#include <linux/irq.h>
+-#include <linux/platform_device.h>
+-#include <linux/delay.h>
+-#include <linux/io.h>
+-#include <linux/leds.h>
+-#include <linux/dma-mapping.h>
+-#include <linux/pinctrl/machine.h>
+-#include <linux/platform_data/camera-rcar.h>
+-#include <linux/platform_data/gpio-rcar.h>
+-#include <linux/platform_data/usb-rcar-phy.h>
+-#include <linux/regulator/fixed.h>
+-#include <linux/regulator/machine.h>
+-#include <linux/smsc911x.h>
+-#include <linux/spi/spi.h>
+-#include <linux/spi/sh_hspi.h>
+-#include <linux/mmc/host.h>
+-#include <linux/mmc/sh_mobile_sdhi.h>
+-#include <linux/mfd/tmio.h>
+-
+-#include <media/soc_camera.h>
+-#include <asm/mach-types.h>
+-#include <asm/mach/arch.h>
+-#include <asm/traps.h>
+-
+-#include "common.h"
+-#include "irqs.h"
+-#include "r8a7779.h"
+-
+-/* Fixed 3.3V regulator to be used by SDHI0 */
+-static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
+-	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
+-	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
+-};
+-
+-/* Dummy supplies, where voltage doesn't matter */
+-static struct regulator_consumer_supply dummy_supplies[] = {
+-	REGULATOR_SUPPLY("vddvario", "smsc911x"),
+-	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
+-};
+-
+-/* USB PHY */
+-static struct resource usb_phy_resources[] = {
+-	[0] = {
+-		.start		= 0xffe70800,
+-		.end		= 0xffe70900 - 1,
+-		.flags		= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct rcar_phy_platform_data usb_phy_platform_data;
+-
+-static struct platform_device usb_phy = {
+-	.name		= "rcar_usb_phy",
+-	.id		= -1,
+-	.dev  = {
+-		.platform_data = &usb_phy_platform_data,
+-	},
+-	.resource	= usb_phy_resources,
+-	.num_resources	= ARRAY_SIZE(usb_phy_resources),
+-};
+-
+-/* SMSC LAN89218 */
+-static struct resource smsc911x_resources[] = {
+-	[0] = {
+-		.start		= 0x18000000, /* ExCS0 */
+-		.end		= 0x180000ff, /* A1->A7 */
+-		.flags		= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start		= irq_pin(1), /* IRQ 1 */
+-		.flags		= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct smsc911x_platform_config smsc911x_platdata = {
+-	.flags		= SMSC911X_USE_32BIT, /* 32-bit SW on 16-bit HW bus */
+-	.phy_interface	= PHY_INTERFACE_MODE_MII,
+-	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
+-	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
+-};
+-
+-static struct platform_device eth_device = {
+-	.name		= "smsc911x",
+-	.id		= -1,
+-	.dev  = {
+-		.platform_data = &smsc911x_platdata,
+-	},
+-	.resource	= smsc911x_resources,
+-	.num_resources	= ARRAY_SIZE(smsc911x_resources),
+-};
+-
+-static struct resource sdhi0_resources[] = {
+-	[0] = {
+-		.name	= "sdhi0",
+-		.start	= 0xffe4c000,
+-		.end	= 0xffe4c0ff,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= gic_iid(0x88),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct tmio_mmc_data sdhi0_platform_data = {
+-	.chan_priv_tx = (void *)HPBDMA_SLAVE_SDHI0_TX,
+-	.chan_priv_rx = (void *)HPBDMA_SLAVE_SDHI0_RX,
+-	.flags        = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
+-	.capabilities = MMC_CAP_SD_HIGHSPEED,
+-};
+-
+-static struct platform_device sdhi0_device = {
+-	.name = "sh_mobile_sdhi",
+-	.num_resources = ARRAY_SIZE(sdhi0_resources),
+-	.resource = sdhi0_resources,
+-	.id = 0,
+-	.dev = {
+-		.platform_data = &sdhi0_platform_data,
+-	}
+-};
+-
+-/* Thermal */
+-static struct resource thermal_resources[] = {
+-	[0] = {
+-		.start		= 0xFFC48000,
+-		.end		= 0xFFC48038 - 1,
+-		.flags		= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct platform_device thermal_device = {
+-	.name		= "rcar_thermal",
+-	.resource	= thermal_resources,
+-	.num_resources	= ARRAY_SIZE(thermal_resources),
+-};
+-
+-/* HSPI */
+-static struct resource hspi_resources[] = {
+-	[0] = {
+-		.start		= 0xFFFC7000,
+-		.end		= 0xFFFC7018 - 1,
+-		.flags		= IORESOURCE_MEM,
+-	},
+-};
+-
+-static struct platform_device hspi_device = {
+-	.name	= "sh-hspi",
+-	.id	= 0,
+-	.resource	= hspi_resources,
+-	.num_resources	= ARRAY_SIZE(hspi_resources),
+-};
+-
+-/* LEDS */
+-static struct gpio_led marzen_leds[] = {
+-	{
+-		.name		= "led2",
+-		.gpio		= RCAR_GP_PIN(4, 29),
+-		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+-	}, {
+-		.name		= "led3",
+-		.gpio		= RCAR_GP_PIN(4, 30),
+-		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+-	}, {
+-		.name		= "led4",
+-		.gpio		= RCAR_GP_PIN(4, 31),
+-		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+-	},
+-};
+-
+-static struct gpio_led_platform_data marzen_leds_pdata = {
+-	.leds		= marzen_leds,
+-	.num_leds	= ARRAY_SIZE(marzen_leds),
+-};
+-
+-static struct platform_device leds_device = {
+-	.name	= "leds-gpio",
+-	.id	= 0,
+-	.dev	= {
+-		.platform_data  = &marzen_leds_pdata,
+-	},
+-};
+-
+-/* VIN */
+-static struct rcar_vin_platform_data vin_platform_data __initdata = {
+-	.flags	= RCAR_VIN_BT656,
+-};
+-
+-#define MARZEN_VIN(idx)						\
+-static struct resource vin##idx##_resources[] __initdata = {	\
+-	DEFINE_RES_MEM(0xffc50000 + 0x1000 * (idx), 0x1000),	\
+-	DEFINE_RES_IRQ(gic_iid(0x5f + (idx))),			\
+-};								\
+-								\
+-static struct platform_device_info vin##idx##_info __initdata = { \
+-	.name		= "r8a7779-vin",			\
+-	.id		= idx,					\
+-	.res		= vin##idx##_resources,			\
+-	.num_res	= ARRAY_SIZE(vin##idx##_resources),	\
+-	.dma_mask	= DMA_BIT_MASK(32),			\
+-	.data		= &vin_platform_data,			\
+-	.size_data	= sizeof(vin_platform_data),		\
+-}
+-MARZEN_VIN(1);
+-MARZEN_VIN(3);
+-
+-#define MARZEN_CAMERA(idx)					\
+-static struct i2c_board_info camera##idx##_info = {		\
+-	I2C_BOARD_INFO("adv7180", 0x20 + (idx)),		\
+-};								\
+-								\
+-static struct soc_camera_link iclink##idx##_adv7180 = {		\
+-	.bus_id		= 1 + 2 * (idx),			\
+-	.i2c_adapter_id	= 0,					\
+-	.board_info	= &camera##idx##_info,			\
+-};								\
+-								\
+-static struct platform_device camera##idx##_device = {		\
+-	.name	= "soc-camera-pdrv",				\
+-	.id	= idx,						\
+-	.dev	= {						\
+-		.platform_data	= &iclink##idx##_adv7180,	\
+-	},							\
+-};
+-
+-MARZEN_CAMERA(0);
+-MARZEN_CAMERA(1);
+-
+-static struct platform_device *marzen_devices[] __initdata = {
+-	&eth_device,
+-	&sdhi0_device,
+-	&thermal_device,
+-	&hspi_device,
+-	&leds_device,
+-	&usb_phy,
+-	&camera0_device,
+-	&camera1_device,
+-};
+-
+-static const struct pinctrl_map marzen_pinctrl_map[] = {
+-	/* DU (CN10: ARGB0, CN13: LVDS) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
+-				  "du0_rgb888", "du0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
+-				  "du0_sync_1", "du0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
+-				  "du0_clk_out_0", "du0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
+-				  "du1_rgb666", "du1"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
+-				  "du1_sync_1", "du1"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du-r8a7779", "pfc-r8a7779",
+-				  "du1_clk_out", "du1"),
+-	/* HSPI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7779",
+-				  "hspi0", "hspi0"),
+-	/* SCIF2 (CN18: DEBUG0) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
+-				  "scif2_data_c", "scif2"),
+-	/* SCIF4 (CN19: DEBUG1) */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
+-				  "scif4_data", "scif4"),
+-	/* SDHI0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
+-				  "sdhi0_data4", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
+-				  "sdhi0_ctrl", "sdhi0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
+-				  "sdhi0_cd", "sdhi0"),
+-	/* SMSC */
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
+-				  "intc_irq1_b", "intc"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
+-				  "lbsc_ex_cs0", "lbsc"),
+-	/* USB0 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.0", "pfc-r8a7779",
+-				  "usb0", "usb0"),
+-	/* USB1 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.0", "pfc-r8a7779",
+-				  "usb1", "usb1"),
+-	/* USB2 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.1", "pfc-r8a7779",
+-				  "usb2", "usb2"),
+-	/* VIN1 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.1", "pfc-r8a7779",
+-				  "vin1_clk", "vin1"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.1", "pfc-r8a7779",
+-				  "vin1_data8", "vin1"),
+-	/* VIN3 */
+-	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.3", "pfc-r8a7779",
+-				  "vin3_clk", "vin3"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("r8a7779-vin.3", "pfc-r8a7779",
+-				  "vin3_data8", "vin3"),
+-};
+-
+-static void __init marzen_init(void)
+-{
+-	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+-				ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+-	regulator_register_fixed(1, dummy_supplies,
+-				ARRAY_SIZE(dummy_supplies));
+-
+-	pinctrl_register_mappings(marzen_pinctrl_map,
+-				  ARRAY_SIZE(marzen_pinctrl_map));
+-	r8a7779_pinmux_init();
+-	r8a7779_init_irq_extpin(1); /* IRQ1 as individual interrupt */
+-
+-	r8a7779_add_standard_devices();
+-	platform_device_register_full(&vin1_info);
+-	platform_device_register_full(&vin3_info);
+-	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+-}
+-
+-static const char *marzen_boards_compat_dt[] __initdata = {
+-        "renesas,marzen",
+-        NULL,
+-};
+-
+-DT_MACHINE_START(MARZEN, "marzen")
+-	.smp		= smp_ops(r8a7779_smp_ops),
+-	.map_io		= r8a7779_map_io,
+-	.init_early	= r8a7779_add_early_devices,
+-	.init_irq	= r8a7779_init_irq_dt,
+-	.init_machine	= marzen_init,
+-	.init_late	= r8a7779_init_late,
+-	.dt_compat	= marzen_boards_compat_dt,
+-	.init_time	= r8a7779_earlytimer_init,
+-MACHINE_END
 -- 
 2.1.4
 
