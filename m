@@ -1,62 +1,42 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 14 Aug 2015 18:22:12 +0000
-Subject: Re: [PATCH 00/10] i2c: improve i2c client address spaces and their DT support
-Message-Id: <20150814182210.GA1822@katana>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 03 Aug 2015 13:00:32 +0000
+Subject: Re: [PATCH v3] ARM: shmobile: silk: initial device tree
+Message-Id: <CAMuHMdWT=nzsFuM-vfe5GoAtDE-AtW4LAZoEnBGGVZm54-mAzg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+ <2360526.88foRQAOiM@wasted.cogentembedded.com>
+In-Reply-To: <2360526.88foRQAOiM@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Andrey Danin <danindrey@mail.ru>, Stephen Warren <swarren@wwwdotorg.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Aug 08, 2015 at 10:33:17PM +0200, Wolfram Sang wrote:
-> Here is the updated RFC series ready for submission. This gives the i2c core
-> seperate address spaces for standard clients, 10 bit clients, and our own slave
-> clients. So, you can now have a 7 bit slave at 0x50 and a 10 bit slave at
-> 0x050. Or, you can have a slave driver listening at some address and at the
-> same time have a client driver talking to this address. Note that this is only
-> the core support for that separation, I am still not sure if there is hardware
-> being able talking to its own slave address, but we will see. The RFC had DT
-> support, this series also has support for that when instantiating via sysfs at
-> runtime.
-> 
-> Changes since RFC:
-> 
-> * dropped the patches for Tegra slave support. I couldn't get them to work
->   and we found out that they need further changes. Tests have now been
->   performed with a Renesas Lager board
-> * the hardcoded arbitrary offsets have now been #defined. Other than that,
->   patches 1-7 which also have been in the RFC stayed the same.
-> * patch 8 adds support for the new flags in sysfs
-> * patch 9 gives some extra warning for users in case of a misconfiguration
-> * patch 10 finally introduces a binding documentation for generic i2c
->   bindings. Finally, at last, hooray!
-> * tags from Andrey and Stephen have been added, thanks a lot!
-> 
-> Please comment, review...
-> 
-> Thanks,
-> 
->    Wolfram
-> 
-> 
-> Wolfram Sang (10):
->   dt-bindings: add header for generic I2C flags in bindings
->   i2c: add a flag to mark clients as slaves
->   i2c: apply address offset for slaves, too
->   i2c: rename address check functions
->   i2c: make address check indpendent from client struct
->   i2c: apply DT flags when probing
->   i2c: take address space into account when checking for used addresses
->   i2c: support 10 bit and slave addresses in sysfs 'new_device'
->   i2c: slave: print warning if slave flag not set
->   i2c: dt: describe generic bindings
-> 
->  Documentation/devicetree/bindings/i2c/i2c.txt | 33 ++++++++++
->  Documentation/i2c/slave-interface             |  9 ++-
->  Documentation/i2c/ten-bit-addresses           |  4 ++
+Hi Sergei,
 
-Applied to for-next, thanks!
+On Wed, Jul 29, 2015 at 12:14 AM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> --- /dev/null
+> +++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
+> @@ -0,0 +1,51 @@
 
+> +/ {
+> +       model = "SILK";
+> +       compatible = "renesas,silk", "renesas,r8a7794";
+
+WARNING: DT compatible string "renesas,silk" appears un-documented --
+check ./Documentation/devicetree/bindings/
+
+Do you plan to update Documentation/devicetree/bindings/arm/shmobile.txt?
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
