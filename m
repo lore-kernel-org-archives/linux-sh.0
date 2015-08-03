@@ -1,43 +1,38 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:30 +0000
-Subject: [PATCH v3 06/33] serial: sh-sci: Drop path in reference to serial_core.c
-Message-Id: <1440180177-6924-7-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 03 Aug 2015 01:53:44 +0000
+Subject: [PATCH 4/4 v3][RFC] arm64: defconfig: Enable Renesas R-Car Gen3 SoC in defconfig
+Message-Id: <871tflw36n.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-serial_core.c was moved from drivers/serial/ to drivers/tty/serial/ a
-while ago. Remove the path to make it move-proof.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This patch enables Renesas R-Car Gen3 SoCs in the arm64 defconfig.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v3:
-  - No changes,
+v2 -> v3
 
-v2:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ - remove SCIF
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 206673f44a2943af..dbb4bbdac37ce0d8 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2014,7 +2014,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- #ifdef CONFIG_SERIAL_SH_SCI_DMA
- 	/*
- 	 * Calculate delay for 2 DMA buffers (4 FIFO).
--	 * See drivers/serial/serial_core.c::uart_update_timeout(). With 10
-+	 * See serial_core.c::uart_update_timeout(). With 10
- 	 * bits (CS8), 250Hz, 115200 baud and 64 bytes FIFO, the above function
- 	 * calculates 1 jiffie for the data plus 5 jiffies for the "slop(e)."
- 	 * Then below we calculate 5 jiffies (20ms) for 2 DMA buffers (4 FIFO
+ arch/arm64/configs/defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 4e17e7e..fd316b7 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -35,6 +35,7 @@ CONFIG_ARCH_EXYNOS7=y
+ CONFIG_ARCH_FSL_LS2085A=y
+ CONFIG_ARCH_HISI=y
+ CONFIG_ARCH_MEDIATEK=y
++CONFIG_ARCH_RCAR_GEN3=y
+ CONFIG_ARCH_SEATTLE=y
+ CONFIG_ARCH_TEGRA=y
+ CONFIG_ARCH_TEGRA_132_SOC=y
 -- 
 1.9.1
 
