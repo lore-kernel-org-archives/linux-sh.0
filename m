@@ -1,75 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Aug 2015 23:58:31 +0000
-Subject: Re: [PATCH v2] DT: mmc: sh_mmcif: fix "compatible" property text
-Message-Id: <20150812235828.GA5221@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 03 Aug 2015 07:38:25 +0000
+Subject: Re: [PATCH v2] ARM: shmobile: dts: Add common file for AA121TD01 panel
+Message-Id: <20150803073825.GA1522@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="wRRV7LY7NUeQGEoC"
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
- <1643858.nkRxsQo3O3@wasted.cogentembedded.com>
- <20150812005628.GE15957@verge.net.au>
- <55CB22E4.5040904@cogentembedded.com>
-In-Reply-To: <55CB22E4.5040904@cogentembedded.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org, ulf.hansson@linaro.org, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+References: <87vbd4227u.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87vbd4227u.wl%kuninori.morimoto.gx@renesas.com>
+To: linux-sh@vger.kernel.org
 
-On Wed, Aug 12, 2015 at 01:41:40PM +0300, Sergei Shtylyov wrote:
-> On 8/12/2015 3:56 AM, Simon Horman wrote:
-> 
-> >>The "compatible" property text contradicts even the example given in the MMCIF
-> >>binding document itself;  moreover, the Renesas MMCIF driver only matches on
-> >>the generic "compatible" string and doesn't look for the SoC specific strings
-> >>at all. Thus describe "renesas,sh-mmcif" as a fallback value.
-> 
-> >>Fixes: b4c27763d749 ("mmc: sh_mmcif: Document DT bindings")
-> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> 
-> >I don't believe this file is the appropriate place to describe
-> >best-practice for the ordering of compatible strings which must surely be
-> >documented elsewhere.
-> 
->    Where? I have no idea what you mean...
->    And let me reiterate: this text is *wrong* and needs to be fixed anyway.
 
-The document lists the acceptable compat strings for the driver.
-Some are currently implemented by the driver. Some are not.
-This provides a mechanism for enhancing the driver while maintaining
-compatibility with existing DT blobs.
+--wRRV7LY7NUeQGEoC
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-The document does not describe the way to order the compat strings, which I
-believe is a more generic issue as many drivers have more and less specific
-compat strings to describe hardware which is compatible with each other. To
-some extent I believe it is up to the user, that is the person writing DT
-files, to understand what the hardware they are dealing with is compatible
-with. And to some extent I believe the ordering is a best-practice that
-ought to be described in a high-level document if it is not already.
 
-Your proposed update assumes that all past and future hardware handled by
-current and future versions of the driver will be compatible with
-"renesas,sh-mmcif". How can you possibly know that is true?
+> I tested this panel on Koelsch board (with I2C fixup local patch),
 
-> >>---
-> >>The patch is against Ulf Hansson's 'mmc.git' repo's 'fixes' and 'next' branches.
-> >>
-> >>Changes in version 2:
-> >>- kept the SoC specific "compatible" property values mandatory and made the
-> >>   generic string a fallback.
-> >>
-> >>  Documentation/devicetree/bindings/mmc/renesas,mmcif.txt |    2 +-
-> >>  1 file changed, 1 insertion(+), 1 deletion(-)
-> >>
-> >>Index: mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> >>=================================> >>--- mmc.orig/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> >>+++ mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> >>@@ -10,7 +10,7 @@ Required properties:
-> >>  	- "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
-> >>  	- "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
-> >>  	- "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
-> >>-	- "renesas,sh-mmcif" for the generic MMCIF
-> >>+  followed by "renesas,sh-mmcif".
-> >>
-> >>  - clocks: reference to the functional clock
-> 
-> MBR, Sergei
-> 
+I2C fixup? The NACK issue?
+
+
+--wRRV7LY7NUeQGEoC
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJVvxpxAAoJEBQN5MwUoCm2G2sP/291T+UdJsDuB4vmwIYydimL
+VUX55xKipbOhWNy4LL6iSIzdq4QWomDwwLXQ6o3kohBx7/O5OiEVTUgL4/cODaZ8
+AEsIZy77l7dOyU2idQ2A+XzS+iHX2eXvOb4Jir3v7UHR2TOM39H6OL9D6Cpp/AG8
+psMVTQGsvYHALlMDBeFI1tCbu8dqMm+AhHtHHWDf/Ll6fq8XjyN68LcMELbff84+
+yvNSw1c7J6F/5TrdNIMWM8f8KEC04ycIo0/DXFb+gscFvwtjgVeI9/CVAE4N7Ak6
+CkxoKpNSigaq3yWw9pyrjQu80hAp+bcDNIiUO2y6oqW8Lx37oHOWMa5Qc7zaCKOw
+UdW0swGRYM+ZuDwWiUutwwNtCrC17OFCcl8xyqSGFiGr5Tru9mAlDJOcjyqd2WsY
+uXW3tS2F4Fc9mbuQL2iHzR1Ze7EYlyBhYVzxiX1fSHzRo17qITPQpyutvT5v3Do6
+a+OyD1hI/PSbK8Nc3J35lPpCKKpPBIBWsQC5Oics+DZos5IGYm4ePQKVf0xkLNQc
+rQxyGFNIdgmu8vG0RKrJRoigPsOFoPC5sn+LX59aUke8QRpz+ow+k6a+gmmn/f0f
+dcbKRjLSoYJ38IY74NasZNy7w5bx46pj3Z4HdeYMJPMhZRVkyR8DO4u8Fa/NY797
+hLVg9jNlzrZ5Z25qOKYZ
+=aylb
+-----END PGP SIGNATURE-----
+
+--wRRV7LY7NUeQGEoC--
