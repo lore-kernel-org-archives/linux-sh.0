@@ -1,50 +1,109 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sun, 23 Aug 2015 07:25:11 +0000
-Subject: [PATCH v2 04/07] ARM: shmobile: Add APMU nodes to r8a7791 DTSI
-Message-Id: <20150823072511.14156.61411.sendpatchset@little-apple>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 04 Aug 2015 12:01:41 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: lager dts: Add entries for VIN HDMI input support
+Message-Id: <3911852.kuPGHSpHNa@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150823072427.14156.1960.sendpatchset@little-apple>
-In-Reply-To: <20150823072427.14156.1960.sendpatchset@little-apple>
+References: <1438100264-17280-1-git-send-email-william.towle@codethink.co.uk> <1438100264-17280-2-git-send-email-william.towle@codethink.co.uk>
+In-Reply-To: <1438100264-17280-2-git-send-email-william.towle@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: mark.rutland@arm.com, devicetree@vger.kernel.org, lorenzo.pieralisi@arm.com, keita.kobayashi.ym@renesas.com, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: William Towle <william.towle@codethink.co.uk>
+Cc: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Hi William,
 
-Add an APMU DT node for the r8a7791 SoC and use the enable-method to
-point out that the APMU should be used for SMP support.
+Thank you for the patch.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+On Tuesday 28 July 2015 17:17:43 William Towle wrote:
+> Add DT entries for vin0, vin0_pins, and adv7612
+> 
+> Signed-off-by: William Towle <william.towle@codethink.co.uk>
+> Signed-off-by: Rob Taylor <rob.taylor@codethink.co.uk>
+> ---
+>  arch/arm/boot/dts/r8a7790-lager.dts |   41 +++++++++++++++++++++++++++++++-
+>  1 file changed, 40 insertions(+), 1 deletion(-)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts
+> b/arch/arm/boot/dts/r8a7790-lager.dts index e02b523..aec7db6 100644
+> --- a/arch/arm/boot/dts/r8a7790-lager.dts
+> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
+> @@ -378,7 +378,12 @@
+>  		renesas,function = "usb2";
+>  	};
+> 
+> -	vin1_pins: vin {
+> +	vin0_pins: vin0 {
+> +		renesas,groups = "vin0_data24", "vin0_sync", "vin0_field", 
+"vin0_clkenb", "vin0_clk";
 
- Changes from V1:
- - None
+If I'm not mistaken the VI0_FIELD pin isn't used on Lager.
 
- arch/arm/boot/dts/r8a7791.dtsi |    7 +++++++
- 1 file changed, 7 insertions(+)
+> +		renesas,function = "vin0";
+> +	};
+> +
+> +	vin1_pins: vin1 {
+>  		renesas,groups = "vin1_data8", "vin1_clk";
+>  		renesas,function = "vin1";
+>  	};
+> @@ -539,6 +544,18 @@
+>  		reg = <0x12>;
+>  	};
+> 
+> +	hdmi-in@4c {
+> +		compatible = "adi,adv7612";
+> +		reg = <0x4c>;
+> +		remote = <&vin0>;
 
---- 0001/arch/arm/boot/dts/r8a7791.dtsi
-+++ work/arch/arm/boot/dts/r8a7791.dtsi	2015-08-23 15:42:10.522366518 +0900
-@@ -42,6 +42,7 @@
- 	cpus {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		enable-method = "renesas,apmu";
- 
- 		cpu0: cpu@0 {
- 			device_type = "cpu";
-@@ -69,6 +70,12 @@
- 		};
- 	};
- 
-+	apmu@e6152000 {
-+		compatible = "renesas,apmu-r8a7791", "renesas,apmu";
-+		reg = <0 0xe6152000 0 0x188>;
-+		cpus = <&cpu0 &cpu1>;
-+	};
-+
- 	gic: interrupt-controller@f1001000 {
- 		compatible = "arm,gic-400";
- 		#interrupt-cells = <3>;
+There's no remote property documented in the adv7612 bindings as far as I 
+know. And that's good, I don't think there should be one :-)
+
+> +
+> +		port {
+> +			hdmi_in_ep: endpoint {
+> +				remote-endpoint = <&vin0ep0>;
+> +			};
+> +		};
+> +	};
+> +
+>  	composite-in@20 {
+>  		compatible = "adi,adv7180";
+>  		reg = <0x20>;
+> @@ -654,6 +671,28 @@
+>  	status = "okay";
+>  };
+> 
+> +/* HDMI video input */
+> +&vin0 {
+> +	pinctrl-0 = <&vin0_pins>;
+> +	pinctrl-names = "default";
+> +
+> +	status = "ok";
+> +
+> +	port {
+> +		#address-cells = <1>;
+> +		#size-cells = <0>;
+
+If there's a single endpoint I don't think you need those two properties.
+
+> +
+> +		vin0ep0: endpoint {
+> +			remote-endpoint = <&hdmi_in_ep>;
+> +			bus-width = <24>;
+> +			hsync-active = <0>;
+> +			vsync-active = <0>;
+> +			pclk-sample = <1>;
+> +			data-active = <1>;
+> +		};
+> +	};
+> +};
+> +
+>  /* composite video input */
+>  &vin1 {
+>  	pinctrl-0 = <&vin1_pins>;
+
+-- 
+Regards,
+
+Laurent Pinchart
+
