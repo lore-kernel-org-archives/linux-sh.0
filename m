@@ -1,70 +1,226 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 08 Aug 2015 20:33:24 +0000
-Subject: [PATCH 07/10] i2c: take address space into account when checking for used addresses
-Message-Id: <1439066007-13951-8-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 12:28:09 +0000
+Subject: [PATCH v4 08/16] ARM: shmobile: r8a7779 dtsi: Add CPG/MSTP Clock Domain
+Message-Id: <1438691297-29235-9-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
+References: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Andrey Danin <danindrey@mail.ru>, Stephen Warren <swarren@wwwdotorg.org>, Stephen Warren <swarren@nvidia.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Add an appropriate "#power-domain-cells" property to the cpg_clocks
+device node, to create the CPG/MSTP Clock Domain.
 
-It is not enough to compare the plain address value, we also need to
-check the flags enabling a different address space. E.g. it is valid to
-have address 0x50 as a 7-bit address and 0x050 as 10-bit address on the
-same bus. Same for addresses when we are the slave.
+Add "power-domains" properties to all device nodes for devices that are
+part of the CPG/MSTP Clock Domain and can be power-managed through an
+MSTP clock.  This applies to most on-SoC devices, which have a
+one-to-one mapping from SoC device to DT device node.
 
-Tested-by: Andrey Danin <danindrey@mail.ru>
-Acked-by: Stephen Warren <swarren@nvidia.com>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- drivers/i2c/i2c-core.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+v4:
+  - Add Reviewed-by,
 
-diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
-index 7638eb1a5998f8..24c96dd0a5bee4 100644
---- a/drivers/i2c/i2c-core.c
-+++ b/drivers/i2c/i2c-core.c
-@@ -837,7 +837,7 @@ static int __i2c_check_addr_busy(struct device *dev, void *addrp)
- 	struct i2c_client	*client = i2c_verify_client(dev);
- 	int			addr = *(int *)addrp;
+v3:
+  - Use "CPG/MSTP Clock Domain" instead of "CPG Clock Domain",
+
+v2:
+  - New.
+---
+ arch/arm/boot/dts/r8a7779.dtsi | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index a2b5430d32575f99..6afa909865b52b71 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -173,6 +173,7 @@
+ 		reg = <0xffc70000 0x1000>;
+ 		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_I2C0>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
  
--	if (client && client->addr = addr)
-+	if (client && i2c_encode_flags_to_addr(client) = addr)
- 		return -EBUSY;
- 	return 0;
- }
-@@ -991,7 +991,7 @@ i2c_new_device(struct i2c_adapter *adap, struct i2c_board_info const *info)
- 	}
+@@ -183,6 +184,7 @@
+ 		reg = <0xffc71000 0x1000>;
+ 		interrupts = <0 82 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_I2C1>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
  
- 	/* Check for address business */
--	status = i2c_check_addr_busy(adap, client->addr);
-+	status = i2c_check_addr_busy(adap, i2c_encode_flags_to_addr(client));
- 	if (status)
- 		goto out_err;
+@@ -193,6 +195,7 @@
+ 		reg = <0xffc72000 0x1000>;
+ 		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_I2C2>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
  
-@@ -2287,7 +2287,7 @@ static int i2c_detect_address(struct i2c_client *temp_client,
- 		return err;
- 	}
+@@ -203,6 +206,7 @@
+ 		reg = <0xffc73000 0x1000>;
+ 		interrupts = <0 81 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_I2C3>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
  
--	/* Skip if already in use */
-+	/* Skip if already in use (7 bit, no need to encode flags) */
- 	if (i2c_check_addr_busy(adapter, addr))
- 		return 0;
+@@ -212,6 +216,7 @@
+ 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF0>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
  
-@@ -2403,7 +2403,7 @@ i2c_new_probed_device(struct i2c_adapter *adap,
- 			continue;
- 		}
+@@ -221,6 +226,7 @@
+ 		interrupts = <0 89 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF1>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
  
--		/* Check address availability */
-+		/* Check address availability (7 bit, no need to encode flags) */
- 		if (i2c_check_addr_busy(adap, addr_list[i])) {
- 			dev_dbg(&adap->dev, "Address 0x%02x already in "
- 				"use, not probing\n", addr_list[i]);
+@@ -230,6 +236,7 @@
+ 		interrupts = <0 90 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF2>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -239,6 +246,7 @@
+ 		interrupts = <0 91 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF3>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -248,6 +256,7 @@
+ 		interrupts = <0 92 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF4>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -257,6 +266,7 @@
+ 		interrupts = <0 93 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF5>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -278,6 +288,7 @@
+ 			     <0 34 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_TMU0>;
+ 		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
+ 
+ 		#renesas,channels = <3>;
+ 
+@@ -292,6 +303,7 @@
+ 			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_TMU1>;
+ 		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
+ 
+ 		#renesas,channels = <3>;
+ 
+@@ -306,6 +318,7 @@
+ 			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_TMU2>;
+ 		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
+ 
+ 		#renesas,channels = <3>;
+ 
+@@ -317,6 +330,7 @@
+ 		reg = <0xfc600000 0x2000>;
+ 		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7779_CLK_SATA>;
++		power-domains = <&cpg_clocks>;
+ 	};
+ 
+ 	sdhi0: sd@ffe4c000 {
+@@ -324,6 +338,7 @@
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI0>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -332,6 +347,7 @@
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI1>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -340,6 +356,7 @@
+ 		reg = <0xffe4e000 0x100>;
+ 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI2>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -348,6 +365,7 @@
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7779_CLK_SDHI3>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -358,6 +376,7 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -368,6 +387,7 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -378,6 +398,7 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_HSPI>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -386,6 +407,7 @@
+ 		reg = <0 0xfff80000 0 0x40000>;
+ 		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7779_CLK_DU>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 
+ 		ports {
+@@ -427,6 +449,7 @@
+ 			#clock-cells = <1>;
+ 			clock-output-names = "plla", "z", "zs", "s",
+ 					     "s1", "p", "b", "out";
++			#power-domain-cells = <0>;
+ 		};
+ 
+ 		/* Fixed factor clocks */
 -- 
-2.1.4
+1.9.1
 
