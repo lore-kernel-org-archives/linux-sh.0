@@ -1,193 +1,90 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 24 Aug 2015 16:12:15 +0000
-Subject: [PATCH 3/3] arm64: renesas: r8a7795 dtsi: Add all common divider clocks
-Message-Id: <1440432735-9906-4-git-send-email-geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 12:28:15 +0000
+Subject: [PATCH v4 14/16] drivers: sh: Disable PM runtime for multi-platform ARM with genpd
+Message-Id: <1438691297-29235-15-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add all clocks generated from PLL1 by the CPG common divider block.
-This includes s3d4, which was modelled as a direct child from pll1
-before.
+If the default PM Domain using PM_CLK is used for PM runtime, the real
+Clock Domain cannot be registered from DT later.
+
+Hence do not enable it when running a multi-platform kernel with genpd
+support on R-Car or RZ.  The CPG/MSTP Clock Domain driver will take care
+of PM runtime management of the module clocks.
+
+Now most multi-platform ARM shmobile platforms (SH-Mobile, R-Mobile,
+R-Car, RZ) use DT-based PM Domains to take care of PM runtime management
+of the module clocks, simplify the platform logic by replacing the
+explicit SoC checks by a single check for the presence of MSTP clocks in
+DT.
+
+Backwards-compatiblity with old DTs (mainly for R-Car Gen2) is provided
+by checking for the presence of a "#power-domain-cells" property in DT.
+
+The default PM Domain is still needed for:
+  - backwards-compatibility with old DTs that lack PM Domain properties,
+  - the CONFIG_PM=n case,
+  - legacy (non-DT) ARM/shmobile platforms without genpd support
+    (r8a7778, r8a7779),
+  - legacy SuperH.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
+v4:
+  - No changes,
+
+v3:
+  - The runtime check must stay for the ARM multiplatform CONFIG_PM=n
+    case, to prevent the code from running on non-shmobile machines,
+  - Provide backwards-compatibility with old DTs,
+  - Extract EMMA Mobile EV2 removal into a separate patch,
+  - Replace explicit platform checks by a check for the presence of MSTP
+    clocks,
+  - Drop references to legacy r8a7740/sh73a0, which are gone,
+  - Rephrase description,
+
 v2:
-  - New.
+  - Add Reviewed-by,
+  - Just stop compiling pm_runtime.c instead of using a runtime check,
+    as no multi-platform ARM platforms need this anymore.
+---
+ drivers/sh/pm_runtime.c | 18 +++++-------------
+ 1 file changed, 5 insertions(+), 13 deletions(-)
 
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 154 ++++++++++++++++++++++++++++++-
- 1 file changed, 153 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 1c71c8c8a42a9a24..f3c30bd51d9a063d 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -71,11 +71,163 @@
- 			#clock-cells = <1>;
- 			ranges;
- 
-+			zt_clk: zt {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			ztr_clk: ztr {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <6>;
-+				clock-mult = <1>;
-+			};
-+
-+			ztrd2_clk: ztrd2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <12>;
-+				clock-mult = <1>;
-+			};
-+
-+			zx_clk: zx {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
-+			s0_clk: s0 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
-+			s0d1_clk: s0d1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s0_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <1>;
-+				clock-mult = <1>;
-+			};
-+
-+			s0d4_clk: s0d4 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s0_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			s1_clk: s1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <3>;
-+				clock-mult = <1>;
-+			};
-+
-+			s1d1_clk: s1d1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s1_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <1>;
-+				clock-mult = <1>;
-+			};
-+
-+			s1d2_clk: s1d2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s1_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
-+			s1d4_clk: s1d4 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s1_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			s2_clk: s2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			s2d1_clk: s2d1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <1>;
-+				clock-mult = <1>;
-+			};
-+
-+			s2d2_clk: s2d2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
-+			s2d4_clk: s2d4 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			s3_clk: s3 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <6>;
-+				clock-mult = <1>;
-+			};
-+
-+			s3d1_clk: s3d1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s3_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <1>;
-+				clock-mult = <1>;
-+			};
-+
-+			s3d2_clk: s3d2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s3_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
- 			s3d4_clk: s3d4 {
- 				compatible = "fixed-factor-clock";
-+				clocks = <&s3_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			cl_clk: cl {
-+				compatible = "fixed-factor-clock";
- 				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
- 				#clock-cells = <0>;
--				clock-div = <24>;
-+				clock-div = <48>;
- 				clock-mult = <1>;
- 			};
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index ad9188138ed56ffb..25abd4eb7d102113 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -35,19 +35,11 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
+ static int __init sh_pm_runtime_init(void)
+ {
+ 	if (IS_ENABLED(CONFIG_ARCH_SHMOBILE_MULTI)) {
+-		if (!of_machine_is_compatible("renesas,r7s72100") &&
+-#ifndef CONFIG_PM_GENERIC_DOMAINS_OF
+-		    !of_machine_is_compatible("renesas,r8a73a4") &&
+-		    !of_machine_is_compatible("renesas,r8a7740") &&
+-		    !of_machine_is_compatible("renesas,sh73a0") &&
+-#endif
+-		    !of_machine_is_compatible("renesas,r8a7778") &&
+-		    !of_machine_is_compatible("renesas,r8a7779") &&
+-		    !of_machine_is_compatible("renesas,r8a7790") &&
+-		    !of_machine_is_compatible("renesas,r8a7791") &&
+-		    !of_machine_is_compatible("renesas,r8a7792") &&
+-		    !of_machine_is_compatible("renesas,r8a7793") &&
+-		    !of_machine_is_compatible("renesas,r8a7794"))
++		if (!of_find_compatible_node(NULL, NULL,
++					     "renesas,cpg-mstp-clocks"))
++			return 0;
++		if (IS_ENABLED(CONFIG_PM_GENERIC_DOMAINS_OF) &&
++		    of_find_node_with_property(NULL, "#power-domain-cells"))
+ 			return 0;
+ 	}
  
 -- 
 1.9.1
