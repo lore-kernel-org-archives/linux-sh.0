@@ -1,143 +1,113 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 26 Aug 2015 18:13:49 +0000
-Subject: [PATCH 3/6] arm64: renesas: r8a7795 dtsi: Add all SCIF nodes
-Message-Id: <1440612832-17627-4-git-send-email-geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 12:28:05 +0000
+Subject: [PATCH v4 04/16] clk: shmobile: rcar-gen2: Add CPG/MSTP Clock Domain support
+Message-Id: <1438691297-29235-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add the device nodes for all remaining SCIF serial ports, incl. clocks,
-clock domain, and dma properties.
+Add Clock Domain support to the R-Car Gen2 Clock Pulse Generator (CPG)
+driver using the generic PM Domain.  This allows to power-manage the
+module clocks of SoC devices that are part of the CPG/MSTP Clock Domain
+using Runtime PM, or for system suspend/resume.
+
+SoC devices that are part of the CPG/MSTP Clock Domain and can be
+power-managed through an MSTP clock should be tagged in DT with a proper
+"power-domains" property.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Stephen Boyd <sboyd@codeaurora.org>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 82 +++++++++++++++++++++++++++++++
- include/dt-bindings/clock/r8a7795-clock.h |  5 ++
- 2 files changed, 87 insertions(+)
+v4:
+  - Add Reviewed-by,
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 449472c3e5362c0d..54cc67ef37c650ca 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -245,6 +245,28 @@
- 						     "pll3", "pll4";
- 				#power-domain-cells = <0>;
+v3:
+  - Add Acked-by,
+  - Use "CPG/MSTP Clock Domain" instead of "CPG Clock Domain",
+
+v2:
+  - Add Acked-by and Reviewed-by,
+  - Move core CPG Clock Domain code from the R-Car Gen2 driver to the
+    CPG MSTP Clocks driver, as it's generic, and can be used on other
+    Renesas SoCs that have a CPG/MSTP block,
+  - Scan for an MSTP clock instead of using the first clock tied to the
+    device (con_id NULL),
+  - Extract R-Car Gen2 specifics from "[PATCH/RFC 1/5] clk: shmobile:
+    rcar-gen2: Add CPG Clock Domain support" into this patch.
+---
+ .../clock/renesas,rcar-gen2-cpg-clocks.txt         | 26 ++++++++++++++++++++--
+ drivers/clk/shmobile/clk-rcar-gen2.c               |  2 ++
+ 2 files changed, 26 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
+index 56f111bd3e456619..2a9a8edc8f3547b0 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
+@@ -2,6 +2,8 @@
  
-+				mstp2_clks: mstp2_clks@e6150138 {
-+					compatible +						"renesas,r8a7795-mstp-clocks",
-+						"renesas,cpg-mstp-clocks";
-+					reg = <0 0xe6150138 0 4>,
-+					      <0 0xe6150040 0 4>;
-+					clocks = <&s3d4_clk>, <&s3d4_clk>,
-+						 <&s3d4_clk>, <&s3d4_clk>,
-+						 <&s3d4_clk>;
-+					#clock-cells = <1>;
-+					renesas,clock-indices = <
-+						R8A7795_CLK_SCIF5
-+						R8A7795_CLK_SCIF4
-+						R8A7795_CLK_SCIF3
-+						R8A7795_CLK_SCIF1
-+						R8A7795_CLK_SCIF0
-+					>;
-+					clock-output-names +						"scif5", "scif4", "scif3",
-+						"scif1", "scif0";
-+				};
-+
- 				mstp3_clks: mstp3_clks@e615013c {
- 					compatible = "renesas,r8a7795-mstp-clocks",
- 					             "renesas,cpg-mstp-clocks";
-@@ -288,6 +310,30 @@
- 			/* Empty node for now */
- 		};
+ The CPG generates core clocks for the R-Car Gen2 SoCs. It includes three PLLs
+ and several fixed ratio dividers.
++The CPG also provides a Clock Domain for SoC devices, in combination with the
++CPG Module Stop (MSTP) Clocks.
  
-+		scif0: serial@e6e60000 {
-+			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			reg = <0 0xe6e60000 0 64>;
-+			interrupts = <GIC_SPI 152 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp2_clks R8A7795_CLK_SCIF0>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac1 0x51>, <&dmac1 0x50>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg_clocks>;
-+			status = "disabled";
-+		};
-+
-+		scif1: serial@e6e68000 {
-+			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			reg = <0 0xe6e68000 0 64>;
-+			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp2_clks R8A7795_CLK_SCIF1>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac1 0x53>, <&dmac1 0x52>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg_clocks>;
-+			status = "disabled";
-+		};
-+
- 		scif2: serial@e6e88000 {
- 			compatible = "renesas,scif-r8a7795", "renesas,scif";
- 			reg = <0 0xe6e88000 0 64>;
-@@ -298,6 +344,42 @@
- 			status = "disabled";
- 		};
+ Required Properties:
  
-+		scif3: serial@e6c50000 {
-+			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			reg = <0 0xe6c50000 0 64>;
-+			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp2_clks R8A7795_CLK_SCIF3>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac0 0x57>, <&dmac0 0x56>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg_clocks>;
-+			status = "disabled";
-+		};
-+
-+		scif4: serial@e6c40000 {
-+			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			reg = <0 0xe6c40000 0 64>;
-+			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp2_clks R8A7795_CLK_SCIF4>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac0 0x59>, <&dmac0 0x58>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg_clocks>;
-+			status = "disabled";
-+		};
-+
-+		scif5: serial@e6f30000 {
-+			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			reg = <0 0xe6f30000 0 64>;
-+			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp2_clks R8A7795_CLK_SCIF5>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac1 0x5b>, <&dmac1 0x5a>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg_clocks>;
-+			status = "disabled";
-+		};
-+
- 		usb2_phy0: usb-phy@ee080200 {
- 			compatible = "renesas,usb2-phy-r8a7795";
- 			reg = <0 0xee080200 0 0x6ff>, <0 0xe6590100 0 0x100>;
-diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
-index 2bd9d934e341ba91..baf884dad15eaf73 100644
---- a/include/dt-bindings/clock/r8a7795-clock.h
-+++ b/include/dt-bindings/clock/r8a7795-clock.h
-@@ -22,6 +22,11 @@
- /* MSTP1 */
+@@ -20,10 +22,18 @@ Required Properties:
+   - clock-output-names: The names of the clocks. Supported clocks are "main",
+     "pll0", "pll1", "pll3", "lb", "qspi", "sdh", "sd0", "sd1", "z", "rcan", and
+     "adsp"
++  - #power-domain-cells: Must be 0
  
- /* MSTP2 */
-+#define R8A7795_CLK_SCIF5		2
-+#define R8A7795_CLK_SCIF4		3
-+#define R8A7795_CLK_SCIF3		4
-+#define R8A7795_CLK_SCIF1		6
-+#define R8A7795_CLK_SCIF0		7
++SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
++through an MSTP clock should refer to the CPG device node in their
++"power-domains" property, as documented by the generic PM domain bindings in
++Documentation/devicetree/bindings/power/power_domain.txt.
  
- /* MSTP3 */
- #define R8A7795_CLK_SCIF2		10
+-Example
+--------
++
++Examples
++--------
++
++  - CPG device node:
+ 
+ 	cpg_clocks: cpg_clocks@e6150000 {
+ 		compatible = "renesas,r8a7790-cpg-clocks",
+@@ -34,4 +44,16 @@ Example
+ 		clock-output-names = "main", "pll0, "pll1", "pll3",
+ 				     "lb", "qspi", "sdh", "sd0", "sd1", "z",
+ 				     "rcan", "adsp";
++		#power-domain-cells = <0>;
++	};
++
++
++  - CPG/MSTP Clock Domain member device node:
++
++	thermal@e61f0000 {
++		compatible = "renesas,thermal-r8a7790", "renesas,rcar-thermal";
++		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
++		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks R8A7790_CLK_THERMAL>;
++		power-domains = <&cpg_clocks>;
+ 	};
+diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
+index 9233ebf8cc49f933..745496f7ee9c7402 100644
+--- a/drivers/clk/shmobile/clk-rcar-gen2.c
++++ b/drivers/clk/shmobile/clk-rcar-gen2.c
+@@ -415,6 +415,8 @@ static void __init rcar_gen2_cpg_clocks_init(struct device_node *np)
+ 	}
+ 
+ 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++
++	cpg_mstp_add_clk_domain(np);
+ }
+ CLK_OF_DECLARE(rcar_gen2_cpg_clks, "renesas,rcar-gen2-cpg-clocks",
+ 	       rcar_gen2_cpg_clocks_init);
 -- 
 1.9.1
 
