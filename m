@@ -1,100 +1,81 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Aug 2015 02:11:28 +0000
-Subject: [PATCH 04/10] ARM: shmobile: silk: initial device tree
-Message-Id: <a42fc57a9e9d1dbb1d8cc0c3ccf2d7ea1a939559.1438911334.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 13:55:17 +0000
+Subject: [PATCH v2 4/6] pinctrl: sh-pfc: Stop calling gpiochip_add_pin_range() on DT platforms
+Message-Id: <1438696519-13727-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438911334.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1438911334.git.horms+renesas@verge.net.au>
+References: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+On platforms where the PFC/GPIO controller is instantiated from DT, the
+mapping between GPIOs and pins is set up using the "gpio-ranges"
+property in DT.
 
-Add the initial device  tree for the R8A7794 SoC based SILK low cost board.
-SCIF2 serial port support is included, so that the serial console can work.
+Hence stop setting up the mapping from C code on DT platforms.
+This code is still used for SH or ARM-legacy platforms.
 
-Based on the original patch by Vladimir Barinov
-<vladimir.barinov@cogentembedded.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/boot/dts/Makefile         |  1 +
- arch/arm/boot/dts/r8a7794-silk.dts | 51 ++++++++++++++++++++++++++++++++++++++
- 2 files changed, 52 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7794-silk.dts
+v2:
+  - Add Acked-by,
+  - Add check for CONFIG_OF and pfc->dev->of_node.
+---
+ drivers/pinctrl/sh-pfc/gpio.c | 37 ++++++++++++++++++++++---------------
+ 1 file changed, 22 insertions(+), 15 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 679d7cc2f57c..c6e0befabada 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -518,6 +518,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
- 	r8a7791-koelsch.dtb \
- 	r8a7793-gose.dtb \
- 	r8a7794-alt.dtb \
-+	r8a7794-silk.dtb \
- 	sh73a0-kzm9g.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += \
- 	socfpga_arria5_socdk.dtb \
-diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
-new file mode 100644
-index 000000000000..f3da95b1dedd
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7794-silk.dts
-@@ -0,0 +1,51 @@
-+/*
-+ * Device Tree Source for the SILK board
-+ *
-+ * Copyright (C) 2014 Renesas Electronics Corporation
-+ * Copyright (C) 2014-2015 Renesas Solutions Corp.
-+ * Copyright (C) 2014-2015 Cogent Embedded, Inc.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index ba353735ecf2be9a..b380e3f17b121bbb 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -379,22 +379,29 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 
+ 	pfc->gpio = chip;
+ 
+-	/* Register the GPIO to pin mappings. As pins with GPIO ports must come
+-	 * first in the ranges, skip the pins without GPIO ports by stopping at
+-	 * the first range that contains such a pin.
+-	 */
+-	for (i = 0; i < pfc->nr_ranges; ++i) {
+-		const struct sh_pfc_pin_range *range = &pfc->ranges[i];
+-
+-		if (range->start >= pfc->nr_gpio_pins)
+-			break;
++	if (IS_ENABLED(CONFIG_OF) && pfc->dev->of_node)
++		return 0;
+ 
+-		ret = gpiochip_add_pin_range(&chip->gpio_chip,
+-					     dev_name(pfc->dev),
+-					     range->start, range->start,
+-					     range->end - range->start + 1);
+-		if (ret < 0)
+-			return ret;
++	if (IS_ENABLED(CONFIG_SUPERH) ||
++	    IS_ENABLED(CONFIG_ARCH_SHMOBILE_LEGACY)) {
++		/*
++		 * Register the GPIO to pin mappings. As pins with GPIO ports
++		 * must come first in the ranges, skip the pins without GPIO
++		 * ports by stopping at the first range that contains such a
++		 * pin.
++		 */
++		for (i = 0; i < pfc->nr_ranges; ++i) {
++			const struct sh_pfc_pin_range *range = &pfc->ranges[i];
 +
-+/dts-v1/;
-+#include "r8a7794.dtsi"
++			if (range->start >= pfc->nr_gpio_pins)
++				break;
 +
-+/ {
-+	model = "SILK";
-+	compatible = "renesas,silk", "renesas,r8a7794";
-+
-+	aliases {
-+		serial0 = &scif2;
-+	};
-+
-+	chosen {
-+		bootargs = "ignore_loglevel";
-+		stdout-path = &scif2;
-+	};
-+
-+	memory@40000000 {
-+		device_type = "memory";
-+		reg = <0 0x40000000 0 0x40000000>;
-+	};
-+};
-+
-+&extal_clk {
-+	clock-frequency = <20000000>;
-+};
-+
-+&pfc {
-+	scif2_pins: serial2 {
-+		renesas,groups = "scif2_data";
-+		renesas,function = "scif2";
-+	};
-+};
-+
-+&scif2 {
-+	pinctrl-0 = <&scif2_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
++			ret = gpiochip_add_pin_range(&chip->gpio_chip,
++				dev_name(pfc->dev), range->start, range->start,
++				range->end - range->start + 1);
++			if (ret < 0)
++				return ret;
++		}
+ 	}
+ 
+ 	/* Register the function GPIOs chip. */
 -- 
-2.1.4
+1.9.1
 
