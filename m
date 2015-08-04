@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 04 Aug 2015 22:47:20 +0000
+Date: Tue, 04 Aug 2015 22:48:37 +0000
 Subject: Re: [PATCH v2] ARM: shmobile: dts: Add common file for AA121TD01 panel
-Message-Id: <2813112.BnUq2TDXsF@avalon>
+Message-Id: <3865755.sh4ak5Q5Bq@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87vbd4227u.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87vbd4227u.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,79 +10,21 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Morimoto-san,
-
-Thank you for the patch.
-
-On Tuesday 28 July 2015 07:06:45 Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Monday 03 August 2015 17:38:37 Magnus Damm wrote:
+> On Mon, Aug 3, 2015 at 5:34 PM, Kuninori Morimoto wrote:
+> > Hi Wolfram
+> > 
+> >> > I tested this panel on Koelsch board (with I2C fixup local patch),
+> >> 
+> >> I2C fixup? The NACK issue?
+> > 
+> > I don't know detail.
+> > But, I need to use gpio-i2c to use HDMI, otherwise it doesn't work.
 > 
-> The Mitsubishi AA121TD01 panel is commonly used with the Marzen, Lager
-> and Koelsch boards. Create a .dtsi file that describe the panel and its
-> connection to the board.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> I wonder if it is possible to use the "I2C master" bind/unbind code
+> developed by Wolfram to switch to GPIO bit-bang at run-time?
 
-The timings now look good to me, great !
-
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
-> v1 -> v2
-> 
->  - tidyup panel-timing / width / height settings
-> 
->  arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi | 41 +++++++++++++++++++++++
->  1 file changed, 41 insertions(+)
->  create mode 100644 arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi
-> 
-> diff --git a/arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi
-> b/arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi new file mode 100644
-> index 0000000..a07ebf8
-> --- /dev/null
-> +++ b/arch/arm/boot/dts/r8a77xx-aa121td01-panel.dtsi
-> @@ -0,0 +1,41 @@
-> +/*
-> + * Common file for the AA121TD01 panel connected to Renesas R-Car boards
-> + *
-> + * Copyright (C) 2015 Renesas Electronics Corp.
-> + *
-> + * This file is licensed under the terms of the GNU General Public License
-> + * version 2.  This program is licensed "as is" without any warranty of any
-> + * kind, whether express or implied.
-> + */
-> +
-> +/ {
-> +	panel {
-> +		compatible = "mitsubishi,aa121td01", "panel-dpi";
-> +
-> +		width-mm = <261>;
-> +		height-mm = <163>;
-> +
-> +		panel-timing {
-> +			/* 1280x800 @60Hz */
-> +			clock-frequency = <71000000>;
-> +			hactive = <1280>;
-> +			vactive = <800>;
-> +			hsync-len = <70>;
-> +			hfront-porch = <20>;
-> +			hback-porch = <70>;
-> +			vsync-len = <5>;
-> +			vfront-porch = <3>;
-> +			vback-porch = <15>;
-> +		};
-> +
-> +		port {
-> +			panel_in: endpoint {
-> +				remote-endpoint = <&lvds_connector>;
-> +			};
-> +		};
-> +	};
-> +};
-> +
-> +&lvds_connector {
-> +	remote-endpoint = <&panel_in>;
-> +};
+Or to fix the hardware I2C controller driver ? :-)
 
 -- 
 Regards,
