@@ -1,112 +1,51 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 28 Aug 2015 20:39:36 +0000
-Subject: [PATCH] pinctrl: sh-pfc: r8a779[01]: move 'union vin_data' to shared header file
-Message-Id: <4177542.1tOnYXlTVP@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 13:55:18 +0000
+Subject: [PATCH v2 5/6] pinctrl: sh-pfc: Remove empty gpio_function_free()
+Message-Id: <1438696519-13727-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <13219129.kD4pZSmcAP@wasted.cogentembedded.com>
-In-Reply-To: <13219129.kD4pZSmcAP@wasted.cogentembedded.com>
+References: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linus.walleij@linaro.org, linux-sh@vger.kernel.org, laurent.pinchart@ideasonboard.com, linux-gpio@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-R8A7790/1 PFC  drivers use almost identical  'union vin_data' and completely
-identical VIN_DATA_PIN_GROUP() macro; we thus can  move them into the shared
-header file...
+gpio_chip.free() is optional, and can just be left unimplemented.
 
-Suggested-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
-The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git' repo.
+Untested due to lack of hardware (used on sh only).
 
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   18 ------------------
- drivers/pinctrl/sh-pfc/pfc-r8a7791.c |   18 ------------------
- drivers/pinctrl/sh-pfc/sh_pfc.h      |   18 ++++++++++++++++++
- 3 files changed, 18 insertions(+), 36 deletions(-)
+v2:
+  - Add Acked-by.
+---
+ drivers/pinctrl/sh-pfc/gpio.c | 5 -----
+ 1 file changed, 5 deletions(-)
 
-Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -3625,24 +3625,6 @@ static const unsigned int usb2_mux[] = {
- 	USB2_PWEN_MARK, USB2_OVC_MARK,
- };
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index b380e3f17b121bbb..e46439030914ad13 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -286,17 +286,12 @@ static int gpio_function_request(struct gpio_chip *gc, unsigned offset)
+ 	return ret;
+ }
  
--union vin_data {
--	unsigned int data24[24];
--	unsigned int data20[20];
--	unsigned int data16[16];
--	unsigned int data12[12];
--	unsigned int data10[10];
--	unsigned int data8[8];
--	unsigned int data4[4];
--};
+-static void gpio_function_free(struct gpio_chip *gc, unsigned offset)
+-{
+-}
 -
--#define VIN_DATA_PIN_GROUP(n, s)				\
--	{							\
--		.name = #n#s,					\
--		.pins = n##_pins.data##s,			\
--		.mux = n##_mux.data##s,				\
--		.nr_pins = ARRAY_SIZE(n##_pins.data##s),	\
--	}
--
- /* - VIN0 ------------------------------------------------------------------- */
- static const union vin_data vin0_data_pins = {
- 	.data24 = {
-Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-+++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-@@ -3986,24 +3986,6 @@ static const unsigned int usb1_mux[] = {
- 	USB1_PWEN_MARK,
- 	USB1_OVC_MARK,
- };
--
--union vin_data {
--	unsigned int data24[24];
--	unsigned int data20[20];
--	unsigned int data16[16];
--	unsigned int data12[12];
--	unsigned int data10[10];
--	unsigned int data8[8];
--};
--
--#define VIN_DATA_PIN_GROUP(n, s)				\
--	{							\
--		.name = #n#s,					\
--		.pins = n##_pins.data##s,			\
--		.mux = n##_mux.data##s,				\
--		.nr_pins = ARRAY_SIZE(n##_pins.data##s),	\
--	}
--
- /* - VIN0 ------------------------------------------------------------------- */
- static const union vin_data vin0_data_pins = {
- 	.data24 = {
-Index: linux-pinctrl/drivers/pinctrl/sh-pfc/sh_pfc.h
-=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ linux-pinctrl/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -52,6 +52,24 @@ struct sh_pfc_pin_group {
- 	unsigned int nr_pins;
- };
+ static int gpio_function_setup(struct sh_pfc_chip *chip)
+ {
+ 	struct sh_pfc *pfc = chip->pfc;
+ 	struct gpio_chip *gc = &chip->gpio_chip;
  
-+#define VIN_DATA_PIN_GROUP(n, s)				\
-+	{							\
-+		.name = #n#s,					\
-+		.pins = n##_pins.data##s,			\
-+		.mux = n##_mux.data##s,				\
-+		.nr_pins = ARRAY_SIZE(n##_pins.data##s),	\
-+	}
-+
-+union vin_data {
-+	unsigned int data24[24];
-+	unsigned int data20[20];
-+	unsigned int data16[16];
-+	unsigned int data12[12];
-+	unsigned int data10[10];
-+	unsigned int data8[8];
-+	unsigned int data4[4];
-+};
-+
- #define SH_PFC_FUNCTION(n)				\
- 	{						\
- 		.name = #n,				\
+ 	gc->request = gpio_function_request;
+-	gc->free = gpio_function_free;
+ 
+ 	gc->label = pfc->info->name;
+ 	gc->owner = THIS_MODULE;
+-- 
+1.9.1
 
