@@ -1,48 +1,70 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:56 +0000
-Subject: [PATCH v3 32/33] serial: sh-sci: Don't kick tx in sci_er_interrupt() when using DMA
-Message-Id: <1440180177-6924-33-git-send-email-geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 13:55:16 +0000
+Subject: [PATCH v2 3/6] ARM: shmobile: sh73a0 dtsi: Add missing "gpio-ranges" to gpio node
+Message-Id: <1438696519-13727-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+References: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+If a GPIO driver uses gpiochip_add_pin_range() (which is usually the
+case for GPIO/PFC combos), the GPIO hogging mechanism configured from DT
+doesn't work:
 
-If CONFIG_SERIAL_SH_SCI_DMA is enabled, the driver doesn't enable TIE
-on SCIF or HSCIF. However, this driver may call sci_tx_interrupt()
-in sci_er_interrupt(). After that, the driver cannot care of the
-interrupt, and then "irq 109: nobody cared" happens on r8a7791/koelsch
-board. This patch fixes the issue.
+    requesting hog GPIO led1-high (chip sh73a0_pfc, offset 20) failed
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-[geert] Keep kicking tx when using PIO
+The actual error code is -517 = -EPROBE_DEFER.
+
+The problem is that PFC+GPIO registration is handled in multiple steps:
+  1. pinctrl_register(),
+  2. gpiochip_add(),
+  3. gpiochip_add_pin_range().
+
+Configuration of the hogs is handled in gpiochip_add():
+
+    gpiochip_add
+        of_gpiochip_add
+            of_gpiochip_scan_hogs
+                gpiod_hog
+                    gpiochip_request_own_desc
+                        __gpiod_request
+                            chip->request
+                                pinctrl_request_gpio
+                                    pinctrl_get_device_gpio_range
+
+However, at this point the GPIO controller hasn't been added to
+pinctrldev_list yet, so the range can't be found, and the operation fails
+with -EPROBE_DEFER.
+
+To fix this, add a "gpio-ranges" property to the gpio device node, so
+the ranges are added by of_gpiochip_add_pin_range(), which is called by
+of_gpiochip_add() before the call to of_gpiochip_scan_hogs().
+
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
-v3:
-  - Assimilated into my series.
+v2:
+  - Add Acked-by.
 ---
- drivers/tty/serial/sh-sci.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/sh73a0.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 82456fb09138dc2a..ffcbf6eaf5f98723 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1011,7 +1011,8 @@ static irqreturn_t sci_er_interrupt(int irq, void *ptr)
- 	sci_clear_SCxSR(port, SCxSR_ERROR_CLEAR(port));
- 
- 	/* Kick the transmission */
--	sci_tx_interrupt(irq, ptr);
-+	if (!s->chan_tx)
-+		sci_tx_interrupt(irq, ptr);
- 
- 	return IRQ_HANDLED;
- }
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 11e17c5f26e2cae2..ff7c8f298f30a58d 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -392,6 +392,9 @@
+ 		      <0xe605801c 0x1c>;
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
++		gpio-ranges +			<&pfc 0 0 119>, <&pfc 128 128 37>, <&pfc 192 192 91>,
++			<&pfc 288 288 22>;
+ 		interrupts-extended  			<&irqpin0 0 0>, <&irqpin0 1 0>, <&irqpin0 2 0>, <&irqpin0 3 0>,
+ 			<&irqpin0 4 0>, <&irqpin0 5 0>, <&irqpin0 6 0>, <&irqpin0 7 0>,
 -- 
 1.9.1
 
