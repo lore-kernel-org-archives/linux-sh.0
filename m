@@ -1,53 +1,108 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 24 Aug 2015 02:32:14 +0000
-Subject: [PATCH 22/25 v7][RFC] Local: Hack: enable CONFIG_ARCH_SHMOBILE_MULTI temporary
-Message-Id: <87wpwl5sj7.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 12:28:17 +0000
+Subject: [PATCH v4 16/16] ARM: shmobile: R-Mobile: Use CPG/MSTP Clock Domain attach/detach helpers
+Message-Id: <1438691297-29235-17-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+The R-Mobile PM Domain driver manages both power domains and a clock
+domain.
 
-Since legacy code is not required in arm64, it is not necessary to use
-"CONFIG_ARCH_SHMOBILE_MULTI". But some drivers files have referred to
-this config. Until drivers files are fixed, it will use this config in
-H3 board.
+The clock domain part is very similar to the CPG/MSTP Clock Domain,
+which is used on shmobile SoCs without device power domains, except for
+the way how clocks suitable for power management are selected:
+  - The former uses the first clock tied to the device through the NULL
+    con_id, which is a relic from the legacy pm_clk_notifier-based
+    method in drivers/sh/pm_runtime.c,
+  - The latter looks for suitable clocks in DT, which is more
+    future-proof.
 
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+All platforms using this driver are now supported in DT-based ARM
+multi-platform builds only, hence switch to using the CPG/MSTP Clock
+Domain helpers.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
-v5 -> v7
+v4:
+  - Add Reviewed-by,
 
- - no change
+v3:
+  - Drop -legacy support, hence this patch depends on r8a7740/sh73a0
+    legacy removal,
+  - Use "CPG/MSTP Clock Domain" instead of "CPG Clock Domain",
 
- arch/arm64/Kconfig.platforms | 4 ++++
- 1 file changed, 4 insertions(+)
+v2:
+  - New.
+---
+ arch/arm/mach-shmobile/pm-rmobile.c | 35 +++--------------------------------
+ 1 file changed, 3 insertions(+), 32 deletions(-)
 
-diff --git a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
-index 8e45879..1e9b0c8 100644
---- a/arch/arm64/Kconfig.platforms
-+++ b/arch/arm64/Kconfig.platforms
-@@ -54,6 +54,7 @@ config ARCH_QCOM
- config ARCH_RCAR_GEN3
- 	bool "Renesas R-Car Gen3 SoC Platform"
- 	select ARCH_SHMOBILE
-+	select ARCH_SHMOBILE_MULTI
- 	help
- 	  This enables support for Renesas SoC.
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index a5b96b990aea8dfc..89068c8ec50f2c76 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -12,6 +12,7 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
++#include <linux/clk/shmobile.h>
+ #include <linux/console.h>
+ #include <linux/delay.h>
+ #include <linux/of.h>
+@@ -124,36 +125,6 @@ static bool rmobile_pd_active_wakeup(struct device *dev)
+ 	return true;
+ }
  
-@@ -75,6 +76,9 @@ config ARCH_SEATTLE
- config ARCH_SHMOBILE
- 	bool
+-static int rmobile_pd_attach_dev(struct generic_pm_domain *domain,
+-				 struct device *dev)
+-{
+-	int error;
+-
+-	error = pm_clk_create(dev);
+-	if (error) {
+-		dev_err(dev, "pm_clk_create failed %d\n", error);
+-		return error;
+-	}
+-
+-	error = pm_clk_add(dev, NULL);
+-	if (error) {
+-		dev_err(dev, "pm_clk_add failed %d\n", error);
+-		goto fail;
+-	}
+-
+-	return 0;
+-
+-fail:
+-	pm_clk_destroy(dev);
+-	return error;
+-}
+-
+-static void rmobile_pd_detach_dev(struct generic_pm_domain *domain,
+-				  struct device *dev)
+-{
+-	pm_clk_destroy(dev);
+-}
+-
+ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ {
+ 	struct generic_pm_domain *genpd = &rmobile_pd->genpd;
+@@ -164,8 +135,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ 	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
+ 	genpd->power_off		= rmobile_pd_power_down;
+ 	genpd->power_on			= rmobile_pd_power_up;
+-	genpd->attach_dev		= rmobile_pd_attach_dev;
+-	genpd->detach_dev		= rmobile_pd_detach_dev;
++	genpd->attach_dev		= cpg_mstp_attach_dev;
++	genpd->detach_dev		= cpg_mstp_detach_dev;
+ 	__rmobile_pd_power_up(rmobile_pd, false);
+ }
  
-+config ARCH_SHMOBILE_MULTI
-+	bool
-+
- config ARCH_TEGRA
- 	bool "NVIDIA Tegra SoC Family"
- 	select ARCH_HAS_RESET_CONTROLLER
 -- 
 1.9.1
 
