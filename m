@@ -1,161 +1,220 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:25:46 +0000
-Subject: [PATCH/RFC v3 4/4] serial: sh-sci: Add DT support to DMA setup
-Message-Id: <1440181546-7334-5-git-send-email-geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 12:28:08 +0000
+Subject: [PATCH v4 07/16] ARM: shmobile: r8a7778 dtsi: Add CPG/MSTP Clock Domain
+Message-Id: <1438691297-29235-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440181546-7334-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440181546-7334-1-git-send-email-geert+renesas@glider.be>
+References: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Add support for obtaining DMA channel information from the device tree.
+Add an appropriate "#power-domain-cells" property to the cpg_clocks
+device node, to create the CPG/MSTP Clock Domain.
 
-This requires switching from the legacy sh_dmae_slave structures with
-hardcoded channel numbers and the corresponding filter function to:
-  1. dma_request_slave_channel_compat(),
-       - On legacy platforms, dma_request_slave_channel_compat() uses
-	 the passed DMA channel numbers that originate from platform
-	 device data,
-       - On DT-based platforms, dma_request_slave_channel_compat() will
-	 retrieve the information from DT.
-  2. and the generic dmaengine_slave_config() configuration method,
-     which requires filling in DMA register ports and slave bus widths.
+Add "power-domains" properties to all device nodes for devices that are
+part of the CPG/MSTP Clock Domain and can be power-managed through an
+MSTP clock.  This applies to most on-SoC devices, which have a
+one-to-one mapping from SoC device to DT device node.  A notable
+exception is the "sound" node, which represents multiple SoC devices,
+each having their own MSTP clocks.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
+v4:
+  - Add Reviewed-by,
+
 v3:
-  - Moved to end of series, to avoid enabling broken DMA,
+  - Use "CPG/MSTP Clock Domain" instead of "CPG Clock Domain",
 
 v2:
-  - Add Acked-by.
+  - New.
 ---
- drivers/tty/serial/sh-sci.c | 78 +++++++++++++++++++++++++++------------------
- 1 file changed, 47 insertions(+), 31 deletions(-)
+ arch/arm/boot/dts/r8a7778.dtsi | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index b18e2e64f163ca48..c8a99be4d0175b23 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -112,8 +112,6 @@ struct sci_port {
- 	struct scatterlist		sg_rx[2];
- 	void				*rx_buf[2];
- 	size_t				buf_len_rx;
--	struct sh_dmae_slave		param_tx;
--	struct sh_dmae_slave		param_rx;
- 	struct work_struct		work_tx;
- 	struct timer_list		rx_timer;
- 	unsigned int			rx_timeout;
-@@ -1618,17 +1616,6 @@ static void sci_break_ctl(struct uart_port *port, int break_state)
- }
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 7ce9f5fd586504f2..4b1fa9f42ad5457b 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -53,6 +53,7 @@
+ 		reg = <0xfde00000 0x400>;
+ 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7778_CLK_ETHER>;
++		power-domains = <&cpg_clocks>;
+ 		phy-mode = "rmii";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -152,6 +153,7 @@
+ 		reg = <0xffc70000 0x1000>;
+ 		interrupts = <0 67 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_I2C0>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
  
- #ifdef CONFIG_SERIAL_SH_SCI_DMA
--static bool filter(struct dma_chan *chan, void *slave)
--{
--	struct sh_dmae_slave *param = slave;
--
--	dev_dbg(chan->device->dev, "%s: slave ID %d\n",
--		__func__, param->shdma_slave.slave_id);
--
--	chan->private = &param->shdma_slave;
--	return true;
--}
--
- static void rx_timer_fn(unsigned long arg)
- {
- 	struct sci_port *s = (struct sci_port *)arg;
-@@ -1679,28 +1666,62 @@ static void rx_timer_fn(unsigned long arg)
- 		sci_submit_rx(s);
- }
+@@ -162,6 +164,7 @@
+ 		reg = <0xffc71000 0x1000>;
+ 		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_I2C1>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
  
-+static struct dma_chan *sci_request_dma_chan(struct uart_port *port,
-+					     enum dma_transfer_direction dir,
-+					     unsigned int id)
-+{
-+	dma_cap_mask_t mask;
-+	struct dma_chan *chan;
-+	struct dma_slave_config cfg;
-+	int ret;
-+
-+	dma_cap_zero(mask);
-+	dma_cap_set(DMA_SLAVE, mask);
-+
-+	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
-+					(void *)(unsigned long)id, port->dev,
-+					dir = DMA_MEM_TO_DEV ? "tx" : "rx");
-+	if (!chan) {
-+		dev_warn(port->dev,
-+			 "dma_request_slave_channel_compat failed\n");
-+		return NULL;
-+	}
-+
-+	memset(&cfg, 0, sizeof(cfg));
-+	cfg.direction = dir;
-+	if (dir = DMA_MEM_TO_DEV) {
-+		cfg.dst_addr = port->mapbase +
-+			(sci_getreg(port, SCxTDR)->offset << port->regshift);
-+		cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
-+	} else {
-+		cfg.src_addr = port->mapbase +
-+			(sci_getreg(port, SCxRDR)->offset << port->regshift);
-+		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
-+	}
-+
-+	ret = dmaengine_slave_config(chan, &cfg);
-+	if (ret) {
-+		dev_warn(port->dev, "dmaengine_slave_config failed %d\n", ret);
-+		dma_release_channel(chan);
-+		return NULL;
-+	}
-+
-+	return chan;
-+}
-+
- static void sci_request_dma(struct uart_port *port)
- {
- 	struct sci_port *s = to_sci_port(port);
--	struct sh_dmae_slave *param;
- 	struct dma_chan *chan;
--	dma_cap_mask_t mask;
+@@ -172,6 +175,7 @@
+ 		reg = <0xffc72000 0x1000>;
+ 		interrupts = <0 76 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_I2C2>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
  
- 	dev_dbg(port->dev, "%s: port %d\n", __func__, port->line);
+@@ -182,6 +186,7 @@
+ 		reg = <0xffc73000 0x1000>;
+ 		interrupts = <0 77 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_I2C3>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
  
--	if (s->cfg->dma_slave_tx <= 0 || s->cfg->dma_slave_rx <= 0)
-+	if (!port->dev->of_node &&
-+	    (s->cfg->dma_slave_tx <= 0 || s->cfg->dma_slave_rx <= 0))
- 		return;
+@@ -193,6 +198,7 @@
+ 			     <0 34 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_TMU0>;
+ 		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
  
--	dma_cap_zero(mask);
--	dma_cap_set(DMA_SLAVE, mask);
--
--	param = &s->param_tx;
--
--	/* Slave ID, e.g., SHDMA_SLAVE_SCIF0_TX */
--	param->shdma_slave.slave_id = s->cfg->dma_slave_tx;
--
- 	s->cookie_tx = -EINVAL;
--	chan = dma_request_channel(mask, filter, param);
-+	chan = sci_request_dma_chan(port, DMA_MEM_TO_DEV, s->cfg->dma_slave_tx);
- 	dev_dbg(port->dev, "%s: TX: got channel %p\n", __func__, chan);
- 	if (chan) {
- 		s->chan_tx = chan;
-@@ -1722,12 +1743,7 @@ static void sci_request_dma(struct uart_port *port)
- 		INIT_WORK(&s->work_tx, work_fn_tx);
- 	}
+ 		#renesas,channels = <3>;
  
--	param = &s->param_rx;
--
--	/* Slave ID, e.g., SHDMA_SLAVE_SCIF0_RX */
--	param->shdma_slave.slave_id = s->cfg->dma_slave_rx;
--
--	chan = dma_request_channel(mask, filter, param);
-+	chan = sci_request_dma_chan(port, DMA_DEV_TO_MEM, s->cfg->dma_slave_rx);
- 	dev_dbg(port->dev, "%s: RX: got channel %p\n", __func__, chan);
- 	if (chan) {
- 		unsigned int i;
+@@ -207,6 +213,7 @@
+ 			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_TMU1>;
+ 		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
+ 
+ 		#renesas,channels = <3>;
+ 
+@@ -221,6 +228,7 @@
+ 			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_TMU2>;
+ 		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
+ 
+ 		#renesas,channels = <3>;
+ 
+@@ -288,6 +296,7 @@
+ 		interrupts = <0 70 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF0>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -297,6 +306,7 @@
+ 		interrupts = <0 71 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF1>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -306,6 +316,7 @@
+ 		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF2>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -315,6 +326,7 @@
+ 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF3>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -324,6 +336,7 @@
+ 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF4>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -333,6 +346,7 @@
+ 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF5>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -341,6 +355,7 @@
+ 		reg = <0xffe4e000 0x100>;
+ 		interrupts = <0 61 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7778_CLK_MMC>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -349,6 +364,7 @@
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupts = <0 87 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7778_CLK_SDHI0>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -357,6 +373,7 @@
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7778_CLK_SDHI1>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -365,6 +382,7 @@
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupts = <0 86 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7778_CLK_SDHI2>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -373,6 +391,7 @@
+ 		reg = <0xfffc7000 0x18>;
+ 		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_HSPI>;
++		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+@@ -383,6 +402,7 @@
+ 		reg = <0xfffc8000 0x18>;
+ 		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_HSPI>;
++		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+@@ -393,6 +413,7 @@
+ 		reg = <0xfffc6000 0x18>;
+ 		interrupts = <0 85 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_HSPI>;
++		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+@@ -419,6 +440,7 @@
+ 			clocks = <&extal_clk>;
+ 			clock-output-names = "plla", "pllb", "b",
+ 					     "out", "p", "s", "s1";
++			#power-domain-cells = <0>;
+ 		};
+ 
+ 		/* Audio clocks; frequencies are set by boards if applicable. */
 -- 
 1.9.1
 
