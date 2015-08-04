@@ -1,119 +1,110 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 14 Aug 2015 15:16:49 +0000
-Subject: Re: [PATCH v4 1/6] media: get rid of unused "extra_links" param on media_entity_init()
-Message-Id: <3975256.nCAQDV8Exf@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 13:55:19 +0000
+Subject: [PATCH v2 6/6] pinctrl: sh-pfc: Confine legacy function GPIOs to SH
+Message-Id: <1438696519-13727-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1439563682.git.mchehab@osg.samsung.com>
- <b0b576e0bfcc043b4fdab3a57665b525fc054add.1439563682.git.mchehab@osg.samsung.com>
-In-Reply-To: <b0b576e0bfcc043b4fdab3a57665b525fc054add.1439563682.git.mchehab@osg.samsung.com>
+References: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Mauro,
+Legacy function GPIOs are no longer used on ARM since commit
+a27c5cd1a08cc95c ("sh-pfc: sh73a0: Remove function GPIOs").
+Extract its setup code into a separate function, and make all function
+GPIO related code and data depend on CONFIG_SUPERH.
 
-Thank you for the patch.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+---
+Compile-tested on sh using se7724_defconfig.
 
-On Friday 14 August 2015 11:56:38 Mauro Carvalho Chehab wrote:
-> Currently, media_entity_init() creates an array with the links,
-> allocated at init time. It provides a parameter (extra_links)
-> that would allocate more links than the current needs, but this
-> is not used by any driver.
-> 
-> As we want to be able to do dynamic link allocation/removal,
-> we'll need to change the implementation of the links. So,
-> before doing that, let's first remove that extra unused
-> parameter, in order to cleanup the interface first.
-> 
-> Signed-off-by: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
-> Acked-by: Sakari Ailus <sakari.ailus@linux.intel.com>
-> 
-> diff --git a/Documentation/media-framework.txt
-> b/Documentation/media-framework.txt index f552a75c0e70..2cc6019f7147 100644
-> --- a/Documentation/media-framework.txt
-> +++ b/Documentation/media-framework.txt
-> @@ -104,7 +104,7 @@ although drivers can allocate entities directly.
->  Drivers initialize entities by calling
-> 
->  	media_entity_init(struct media_entity *entity, u16 num_pads,
-> -			  struct media_pad *pads, u16 extra_links);
-> +			  struct media_pad *pads);
-> 
->  The media_entity name, type, flags, revision and group_id fields can be
->  initialized before or after calling media_entity_init. Entities embedded in
+v2:
+  - Add Acked-by,
+  - #ifdef out the code instead of introducing helper and dummy
+    functions.
+---
+ drivers/pinctrl/sh-pfc/core.h   | 2 ++
+ drivers/pinctrl/sh-pfc/gpio.c   | 7 ++++++-
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 2 ++
+ 3 files changed, 10 insertions(+), 1 deletion(-)
 
-The extra_links parameter is documented later on in this file. Could you 
-replace the paragraph
-
-"Unlike the number of pads, the total number of links isn't always known in
-advance by the entity driver. As an initial estimate, media_entity_init
-pre-allocates a number of links equal to the number of pads plus an optional
-number of extra links. The links array will be reallocated if it grows beyond
-the initial estimate."
-
-with
-
-"Unlike the number of pads, the total number of links isn't always known in
-advance by the entity driver. As an initial estimate, media_entity_init
-pre-allocates a number of links equal to the number of pads. The links array 
-will be reallocated if it grows beyond the initial estimate."
-
-?
-
-[snip]
-
-> diff --git a/drivers/media/media-entity.c b/drivers/media/media-entity.c
-> index 4d8e01c7b1b2..78440c7aad94 100644
-> --- a/drivers/media/media-entity.c
-> +++ b/drivers/media/media-entity.c
-> @@ -30,7 +30,6 @@
->   * media_entity_init - Initialize a media entity
->   *
->   * @num_pads: Total number of sink and source pads.
-> - * @extra_links: Initial estimate of the number of extra links.
->   * @pads: Array of 'num_pads' pads.
->   *
->   * The total number of pads is an intrinsic property of entities known by
-> the
-
-Similarly here, I would rewrite the documentation as
-
- * The total number of pads is an intrinsic property of entities known by the
- * entity driver, while the total number of links depends on hardware design
- * and is an extrinsic property unknown to the entity driver. However, in most
- * use cases the number of links can safely be assumed to be equal to or
- * larger than the number of pads.
- *
- * For those reasons the links array can be preallocated based on the number
- * of pads and will be reallocated later if extra links need to be created.
- *
- * This function allocates a links array with enough space to hold at least
- * 'num_pads' elements. The media_entity::max_links field will be set to the
- * number of allocated elements.
-
-With that fixed,
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-And feel free to merge this patch for v4.3 independently of the rest.
-
-> @@ -52,10 +51,10 @@
->   */
->  int
->  media_entity_init(struct media_entity *entity, u16 num_pads,
-> -		  struct media_pad *pads, u16 extra_links)
-> +		  struct media_pad *pads)
->  {
->  	struct media_link *links;
-> -	unsigned int max_links = num_pads + extra_links;
-> +	unsigned int max_links = num_pads;
->  	unsigned int i;
-> 
->  	links = kzalloc(max_links * sizeof(links[0]), GFP_KERNEL);
-
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index 4c3c37bf7161804d..c38ace46d7111b0d 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -46,7 +46,9 @@ struct sh_pfc {
+ 	unsigned int nr_gpio_pins;
+ 
+ 	struct sh_pfc_chip *gpio;
++#ifdef CONFIG_SUPERH
+ 	struct sh_pfc_chip *func;
++#endif
+ 
+ 	struct sh_pfc_pinctrl *pinctrl;
+ };
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index e46439030914ad13..685b3c24627daf03 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -261,6 +261,7 @@ static int gpio_pin_setup(struct sh_pfc_chip *chip)
+  * Function GPIOs
+  */
+ 
++#ifdef CONFIG_SUPERH
+ static int gpio_function_request(struct gpio_chip *gc, unsigned offset)
+ {
+ 	static bool __print_once;
+@@ -300,6 +301,7 @@ static int gpio_function_setup(struct sh_pfc_chip *chip)
+ 
+ 	return 0;
+ }
++#endif
+ 
+ /* -----------------------------------------------------------------------------
+  * Register/unregister
+@@ -399,6 +401,7 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 		}
+ 	}
+ 
++#ifdef CONFIG_SUPERH
+ 	/* Register the function GPIOs chip. */
+ 	if (pfc->info->nr_func_gpios = 0)
+ 		return 0;
+@@ -408,6 +411,7 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 		return PTR_ERR(chip);
+ 
+ 	pfc->func = chip;
++#endif /* CONFIG_SUPERH */
+ 
+ 	return 0;
+ }
+@@ -415,7 +419,8 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc)
+ {
+ 	gpiochip_remove(&pfc->gpio->gpio_chip);
++#ifdef CONFIG_SUPERH
+ 	gpiochip_remove(&pfc->func->gpio_chip);
+-
++#endif
+ 	return 0;
+ }
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 0874cfee6889afa1..1f43bae56065e659 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -138,8 +138,10 @@ struct sh_pfc_soc_info {
+ 	const struct sh_pfc_function *functions;
+ 	unsigned int nr_functions;
+ 
++#ifdef CONFIG_SUPERH
+ 	const struct pinmux_func *func_gpios;
+ 	unsigned int nr_func_gpios;
++#endif
+ 
+ 	const struct pinmux_cfg_reg *cfg_regs;
+ 	const struct pinmux_data_reg *data_regs;
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
