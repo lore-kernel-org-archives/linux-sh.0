@@ -1,16 +1,14 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Aug 2015 02:12:02 +0000
-Subject: [PATCH 03/12] clk: shmobile: r8a7779: Add CPG/MSTP Clock Domain support
-Message-Id: <38d37c53d6e475d0660626cbb349c3fe28354602.1438911559.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 12:28:04 +0000
+Subject: [PATCH v4 03/16] clk: shmobile: r8a7779: Add CPG/MSTP Clock Domain support
+Message-Id: <1438691297-29235-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438911559.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1438911559.git.horms+renesas@verge.net.au>
+References: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
-
-From: Geert Uytterhoeven <geert+renesas@glider.be>
 
 Add Clock Domain support to the R-Car H1 Clock Pulse Generator (CPG)
 driver using the generic PM Domain.  This allows to power-manage the
@@ -27,14 +25,23 @@ actual dtsi, which uses #address-cells and #size-cells = 1, not 2.
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Acked-by: Stephen Boyd <sboyd@codeaurora.org>
 Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+v4:
+  - Add Reviewed-by,
+
+v3:
+  - Add Acked-by,
+  - Use "CPG/MSTP Clock Domain" instead of "CPG Clock Domain",
+
+v2:
+  - New.
 ---
  .../bindings/clock/renesas,r8a7779-cpg-clocks.txt  | 30 +++++++++++++++++++---
  drivers/clk/shmobile/clk-r8a7779.c                 |  2 ++
  2 files changed, 28 insertions(+), 4 deletions(-)
 
 diff --git a/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
-index ed3c8cb12f4e..8c81547c29f5 100644
+index ed3c8cb12f4eb699..8c81547c29f568e8 100644
 --- a/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
 +++ b/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
 @@ -1,7 +1,9 @@
@@ -89,7 +96,7 @@ index ed3c8cb12f4e..8c81547c29f5 100644
 +		power-domains = <&cpg_clocks>;
  	};
 diff --git a/drivers/clk/shmobile/clk-r8a7779.c b/drivers/clk/shmobile/clk-r8a7779.c
-index 652ecacb6daf..e42a63a2ad25 100644
+index af297963489f473d..92275c5f2c60303e 100644
 --- a/drivers/clk/shmobile/clk-r8a7779.c
 +++ b/drivers/clk/shmobile/clk-r8a7779.c
 @@ -168,6 +168,8 @@ static void __init r8a7779_cpg_clocks_init(struct device_node *np)
@@ -102,5 +109,5 @@ index 652ecacb6daf..e42a63a2ad25 100644
  CLK_OF_DECLARE(r8a7779_cpg_clks, "renesas,r8a7779-cpg-clocks",
  	       r8a7779_cpg_clocks_init);
 -- 
-2.1.4
+1.9.1
 
