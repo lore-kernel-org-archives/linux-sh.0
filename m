@@ -1,37 +1,35 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 24 Aug 2015 16:12:12 +0000
-Subject: [PATCH 0/3] arm64: renesas: r8a7795 clock updates
-Message-Id: <1440432735-9906-1-git-send-email-geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 18:03:06 +0000
+Subject: [PATCH 1/7] ARM: shmobile: Remove unused declaration of r8a7778_add_standard_devices_dt()
+Message-Id: <1438711392-23763-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1438711392-23763-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438711392-23763-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch series adds the CPG/MSTP clock domain, and all clocks
-generated from PLL1 by the CPG common divider block.
+The actual implementation was removed by commit 40216263d3d0b9b4 ("ARM:
+shmobile: Remove unused r8a7778 auxdata and callback") in v3.12.
 
-Geert Uytterhoeven (3):
-  clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support
-  arm64: renesas: r8a7795 dtsi: Add CPG/MSTP Clock Domain
-  arm64: renesas: r8a7795 dtsi: Add all common divider clocks
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/r8a7778.h | 1 -
+ 1 file changed, 1 deletion(-)
 
- .../clock/renesas,rcar-gen3-cpg-clocks.txt         |  26 +++-
- arch/arm64/Kconfig.platforms                       |   1 +
- arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 162 ++++++++++++++++++++-
- drivers/clk/shmobile/clk-rcar-gen3.c               |   2 +
- 4 files changed, 188 insertions(+), 3 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/r8a7778.h b/arch/arm/mach-shmobile/r8a7778.h
+index f64fedb1f2ccb50d..0e77f3f81123a0d3 100644
+--- a/arch/arm/mach-shmobile/r8a7778.h
++++ b/arch/arm/mach-shmobile/r8a7778.h
+@@ -63,7 +63,6 @@ enum {
+ };
+ 
+ extern void r8a7778_add_standard_devices(void);
+-extern void r8a7778_add_standard_devices_dt(void);
+ extern void r8a7778_add_dt_devices(void);
+ 
+ extern void r8a7778_init_late(void);
 -- 
 1.9.1
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
