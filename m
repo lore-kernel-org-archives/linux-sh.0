@@ -1,42 +1,69 @@
-From: William Towle <william.towle@codethink.co.uk>
-Date: Thu, 13 Aug 2015 11:36:51 +0000
-Subject: [PATCH 3/3] ARM: shmobile: lager dts: specify default-input for ADV7612
-Message-Id: <1439465811-936-4-git-send-email-william.towle@codethink.co.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 13:55:15 +0000
+Subject: [PATCH v2 2/6] ARM: shmobile: r8a7740 dtsi: Add missing "gpio-ranges" to gpio node
+Message-Id: <1438696519-13727-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439465811-936-1-git-send-email-william.towle@codethink.co.uk>
-In-Reply-To: <1439465811-936-1-git-send-email-william.towle@codethink.co.uk>
+References: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk
-Cc: linux-sh@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Ian Molton <ian.molton@codethink.co.uk>
+If a GPIO driver uses gpiochip_add_pin_range() (which is usually the
+case for GPIO/PFC combos), the GPIO hogging mechanism configured from DT
+doesn't work:
 
-Set the 'default-input' property for ADV7612, enabling image and video
-capture without the need to have userspace specifying routing.
+    requesting hog GPIO lcd0 (chip r8a7740_pfc, offset 176) failed
 
-(This version places the property in the adv7612 node, in line with
-Ian's documentation)
+The actual error code is -517 = -EPROBE_DEFER.
 
-Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
-Signed-off-by: William Towle <william.towle@codethink.co.uk>
+The problem is that PFC+GPIO registration is handled in multiple steps:
+  1. pinctrl_register(),
+  2. gpiochip_add(),
+  3. gpiochip_add_pin_range().
+
+Configuration of the hogs is handled in gpiochip_add():
+
+    gpiochip_add
+        of_gpiochip_add
+            of_gpiochip_scan_hogs
+                gpiod_hog
+                    gpiochip_request_own_desc
+                        __gpiod_request
+                            chip->request
+                                pinctrl_request_gpio
+                                    pinctrl_get_device_gpio_range
+
+However, at this point the GPIO controller hasn't been added to
+pinctrldev_list yet, so the range can't be found, and the operation fails
+with -EPROBE_DEFER.
+
+To fix this, add a "gpio-ranges" property to the gpio device node, so
+the range is added by of_gpiochip_add_pin_range(), which is called by
+of_gpiochip_add() before the call to of_gpiochip_scan_hogs().
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts |    1 +
+v2:
+  - Add Acked-by.
+---
+ arch/arm/boot/dts/r8a7740.dtsi | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 31854bc..12e1cfa 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -547,6 +547,7 @@
- 	hdmi-in@4c {
- 		compatible = "adi,adv7612";
- 		reg = <0x4c>;
-+		default-input = <0>;
- 
- 		port {
- 			hdmi_in_ep: endpoint {
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index d84714468cce18df..e14cb1438216e8df 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -291,6 +291,7 @@
+ 		      <0xe605800c 0x20>;
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
++		gpio-ranges = <&pfc 0 0 212>;
+ 		interrupts-extended  			<&irqpin0 0 0>, <&irqpin0 1 0>, <&irqpin0 2 0>, <&irqpin0 3 0>,
+ 			<&irqpin0 4 0>, <&irqpin0 5 0>, <&irqpin0 6 0>, <&irqpin0 7 0>,
 -- 
-1.7.10.4
+1.9.1
 
