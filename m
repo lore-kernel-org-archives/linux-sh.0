@@ -1,36 +1,85 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 20 Aug 2015 09:28:38 +0000
-Subject: [PATCH 12/17 v6][RFC] arm64: defconfig: renesas: enable SCIF
-Message-Id: <87614ab9cm.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 18:03:08 +0000
+Subject: [PATCH 3/7] ARM: shmobile: Remove obsolete custom earlyprintk code
+Message-Id: <1438711392-23763-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1438711392-23763-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438711392-23763-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The last caller of shmobile_setup_console() was removed in commit
+44d88c754e57a6d9 ("ARM: shmobile: Remove legacy SoC code for R-Mobile
+A1").
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v5 -> v6
+ arch/arm/mach-shmobile/Makefile  |  2 +-
+ arch/arm/mach-shmobile/common.h  |  1 -
+ arch/arm/mach-shmobile/console.c | 27 ---------------------------
+ 3 files changed, 1 insertion(+), 29 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/console.c
 
- - no change
-
- arch/arm64/configs/defconfig | 3 +++
- 1 file changed, 3 insertions(+)
-
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index 8f35763..f49d044 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -110,6 +110,9 @@ CONFIG_SERIAL_8250_DW=y
- CONFIG_SERIAL_8250_MT6577=y
- CONFIG_SERIAL_AMBA_PL011=y
- CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
-+CONFIG_SERIAL_SH_SCI=y
-+CONFIG_SERIAL_SH_SCI_NR_UARTS
-+CONFIG_SERIAL_SH_SCI_CONSOLE=y
- CONFIG_SERIAL_MSM=y
- CONFIG_SERIAL_MSM_CONSOLE=y
- CONFIG_SERIAL_OF_PLATFORM=y
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 476de30798d7290b..b02841528e05bbdb 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -3,7 +3,7 @@
+ #
+ 
+ # Common objects
+-obj-y				:= timer.o console.o
++obj-y				:= timer.o
+ 
+ # CPU objects
+ obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o
+diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+index 8d27ec546a35f4b9..ee8fe9e473d72895 100644
+--- a/arch/arm/mach-shmobile/common.h
++++ b/arch/arm/mach-shmobile/common.h
+@@ -4,7 +4,6 @@
+ extern void shmobile_earlytimer_init(void);
+ extern void shmobile_init_delay(void);
+ struct twd_local_timer;
+-extern void shmobile_setup_console(void);
+ extern void shmobile_boot_vector(void);
+ extern unsigned long shmobile_boot_fn;
+ extern unsigned long shmobile_boot_arg;
+diff --git a/arch/arm/mach-shmobile/console.c b/arch/arm/mach-shmobile/console.c
+deleted file mode 100644
+index e329ccbd0a6734f1..0000000000000000
+--- a/arch/arm/mach-shmobile/console.c
++++ /dev/null
+@@ -1,27 +0,0 @@
+-/*
+- * SH-Mobile Console
+- *
+- * Copyright (C) 2010  Magnus Damm
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-#include <linux/kernel.h>
+-#include <linux/init.h>
+-#include <linux/platform_device.h>
+-#include <asm/mach/map.h>
+-#include "common.h"
+-
+-void __init shmobile_setup_console(void)
+-{
+-	parse_early_param();
+-
+-	/* Let earlyprintk output early console messages */
+-	early_platform_driver_probe("earlyprintk", 1, 1);
+-}
 -- 
 1.9.1
 
