@@ -1,39 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 03 Aug 2015 06:04:53 +0000
-Subject: [PATCH 2/6] ARM: shmobile: r8a7779: Generic SMP ops
-Message-Id: <44ade5edf90ccd38efa741240efb2586239c9751.1438581659.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 04 Aug 2015 12:07:41 +0000
+Subject: Re: [PATCH 2/2] ARM: shmobile: lager dts: specify default-input for ADV7612
+Message-Id: <2031552.vcAWTm60WT@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438581659.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1438581659.git.horms+renesas@verge.net.au>
+References: <1438100264-17280-1-git-send-email-william.towle@codethink.co.uk> <1438100264-17280-3-git-send-email-william.towle@codethink.co.uk>
+In-Reply-To: <1438100264-17280-3-git-send-email-william.towle@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: William Towle <william.towle@codethink.co.uk>
+Cc: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Hi William,
 
-Add a r8a7779-specific SMP operation pointer to support
-all 4 CPU cores through SMP on r8a7779 without C board code.
+Thank you for the patch.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-r8a7779.c | 1 +
- 1 file changed, 1 insertion(+)
+On Tuesday 28 July 2015 17:17:44 William Towle wrote:
+> Set 'default-input' property for ADV7612. Enables image/video capture
+> without the need to have userspace specifying routing.
+> 
+> Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
+> Tested-by: William Towle <william.towle@codethink.co.uk>
+> ---
+>  arch/arm/boot/dts/r8a7790-lager.dts |    1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts
+> b/arch/arm/boot/dts/r8a7790-lager.dts index aec7db6..e537052 100644
+> --- a/arch/arm/boot/dts/r8a7790-lager.dts
+> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
+> @@ -552,6 +552,7 @@
+>  		port {
+>  			hdmi_in_ep: endpoint {
+>  				remote-endpoint = <&vin0ep0>;
+> +				default-input = <0>;
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 5625fd1c89c0..2c3e433f84ca 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -772,6 +772,7 @@ static const char *r8a7779_compat_dt[] __initdata = {
- };
- 
- DT_MACHINE_START(R8A7779_DT, "Generic R8A7779 (Flattened Device Tree)")
-+	.smp		= smp_ops(r8a7779_smp_ops),
- 	.map_io		= r8a7779_map_io,
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= r8a7779_init_time,
+The default property must be placed in the adv7612 node, not in the endpoint 
+node.
+
+It looks like I've missed the patch that added the property to the DT 
+bindings. I would probably have complained about it, but now it's in :-/
+
+Nevertheless, I think it would make sense for the driver to select the default 
+input automatically when only one input is connected. I'd prefer a driver 
+patch that implements that behaviour instead of adding the property to the 
+Lager DT.
+
+>  			};
+>  		};
+>  	};
+
 -- 
-2.1.4
+Regards,
+
+Laurent Pinchart
 
