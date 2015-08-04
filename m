@@ -1,21 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 06 Aug 2015 01:00:38 +0000
-Subject: [ANNOUNCE] renesas tree closed for v4.3
-Message-Id: <20150806010038.GF17231@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 18:03:12 +0000
+Subject: [PATCH 7/7] ARM: shmobile: Remove obsolete twd_local_timer declaration
+Message-Id: <1438711392-23763-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1438711392-23763-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438711392-23763-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+The last user of twd_local_timer was removed in commit c99cd90d98a98aa1
+("ARM: shmobile: r8a7779: Remove legacy SoC code").
 
-As v4.2-rc6 is looming, which is my deadline for pull-request submissions
-to ARM SoC, I am no longer taking any non-fix patches for v4.3.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/mach-shmobile/common.h | 1 -
+ 1 file changed, 1 deletion(-)
 
-I have already started queuing-up patches for v4.4.  These appear in
-the devel branch of the renesas tree and migrate over to the next branch
-after being rebased on v4.3-rc1 once it has been released.
+diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+index 2a350b48b893a1b6..0833a6ed02e4a127 100644
+--- a/arch/arm/mach-shmobile/common.h
++++ b/arch/arm/mach-shmobile/common.h
+@@ -2,7 +2,6 @@
+ #define __ARCH_MACH_COMMON_H
+ 
+ extern void shmobile_init_delay(void);
+-struct twd_local_timer;
+ extern void shmobile_boot_vector(void);
+ extern unsigned long shmobile_boot_fn;
+ extern unsigned long shmobile_boot_arg;
+-- 
+1.9.1
 
-The next branch is merged into the devel branch so patches available in the
-next branch are also available in the devel branch.
