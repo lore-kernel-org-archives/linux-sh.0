@@ -1,73 +1,65 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:26 +0000
-Subject: [PATCH v3 02/33] serial: sh-sci: Prevent compiler warnings on 64-bit
-Message-Id: <1440180177-6924-3-git-send-email-geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 18:03:11 +0000
+Subject: [PATCH 6/7] ARM: shmobile: Remove obsolete earlytimer registration
+Message-Id: <1438711392-23763-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+References: <1438711392-23763-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438711392-23763-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Expressions involving "BIT(...)" create values of type "long", which is
-64-bit on 64-bit.  Hence "~BIT(...)" no longer fits in 32-bit, which
-will cause future compiler warnings when assigning to 32-bit variables:
+The last caller of shmobile_earlytimer_init() was removed in commit
+c99cd90d98a98aa1 ("ARM: shmobile: r8a7779: Remove legacy SoC code").
 
-    drivers/tty/serial/sh-sci.c: In function 'sci_init_single':
-    drivers/tty/serial/sh-sci.h:58:25: warning: large integer implicitly truncated to unsigned type [-Woverflow]
-     #define SCI_ERROR_CLEAR ~(SCI_RESERVED | SCI_PER | SCI_FER | SCI_ORER)
-			     ^
-    drivers/tty/serial/sh-sci.c:2325:27: note: in expansion of macro 'SCI_ERROR_CLEAR'
-       sci_port->error_clear = SCI_ERROR_CLEAR;
-
-As these values are (at most) 32-bit register values anyway, cast them
-to "u32" at the definition level to prevent such compiler warnings.
-
-Reported-by: kbuild test robot <fengguang.wu@intel.com>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v3:
-  - New.
----
- drivers/tty/serial/sh-sci.h | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/common.h |  1 -
+ arch/arm/mach-shmobile/timer.c  | 21 ---------------------
+ 2 files changed, 22 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
-index 1e1edbd152673e8f..fe7108bc022a495a 100644
---- a/drivers/tty/serial/sh-sci.h
-+++ b/drivers/tty/serial/sh-sci.h
-@@ -54,10 +54,10 @@ enum {
+diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+index ee8fe9e473d72895..2a350b48b893a1b6 100644
+--- a/arch/arm/mach-shmobile/common.h
++++ b/arch/arm/mach-shmobile/common.h
+@@ -1,7 +1,6 @@
+ #ifndef __ARCH_MACH_COMMON_H
+ #define __ARCH_MACH_COMMON_H
  
- #define SCI_DEFAULT_ERROR_MASK (SCI_PER | SCI_FER)
- 
--#define SCI_RDxF_CLEAR	~(SCI_RESERVED | SCI_RDRF)
--#define SCI_ERROR_CLEAR	~(SCI_RESERVED | SCI_PER | SCI_FER | SCI_ORER)
--#define SCI_TDxE_CLEAR	~(SCI_RESERVED | SCI_TEND | SCI_TDRE)
--#define SCI_BREAK_CLEAR	~(SCI_RESERVED | SCI_PER | SCI_FER | SCI_ORER)
-+#define SCI_RDxF_CLEAR	(u32)(~(SCI_RESERVED | SCI_RDRF))
-+#define SCI_ERROR_CLEAR	(u32)(~(SCI_RESERVED | SCI_PER | SCI_FER | SCI_ORER))
-+#define SCI_TDxE_CLEAR	(u32)(~(SCI_RESERVED | SCI_TEND | SCI_TDRE))
-+#define SCI_BREAK_CLEAR	(u32)(~(SCI_RESERVED | SCI_PER | SCI_FER | SCI_ORER))
- 
- /* SCxSR (Serial Status Register) on SCIF, SCIFA, SCIFB, HSCIF */
- #define SCIF_ER		BIT(7)	/* Receive Error */
-@@ -76,10 +76,10 @@ enum {
- 
- #define SCIF_DEFAULT_ERROR_MASK (SCIF_PER | SCIF_FER | SCIF_BRK | SCIF_ER)
- 
--#define SCIF_RDxF_CLEAR		~(SCIF_DR | SCIF_RDF)
--#define SCIF_ERROR_CLEAR	~(SCIFA_ORER | SCIF_PER | SCIF_FER | SCIF_ER)
--#define SCIF_TDxE_CLEAR		~(SCIF_TDFE)
--#define SCIF_BREAK_CLEAR	~(SCIF_PER | SCIF_FER | SCIF_BRK)
-+#define SCIF_RDxF_CLEAR		(u32)(~(SCIF_DR | SCIF_RDF))
-+#define SCIF_ERROR_CLEAR	(u32)(~(SCIFA_ORER | SCIF_PER | SCIF_FER | SCIF_ER))
-+#define SCIF_TDxE_CLEAR		(u32)(~(SCIF_TDFE))
-+#define SCIF_BREAK_CLEAR	(u32)(~(SCIF_PER | SCIF_FER | SCIF_BRK))
- 
- /* SCFCR (FIFO Control Register) */
- #define SCFCR_MCE	BIT(3)	/* Modem Control Enable */
+-extern void shmobile_earlytimer_init(void);
+ extern void shmobile_init_delay(void);
+ struct twd_local_timer;
+ extern void shmobile_boot_vector(void);
+diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
+index f1d027aa7a81ac33..c17d4d3881ffc45e 100644
+--- a/arch/arm/mach-shmobile/timer.c
++++ b/arch/arm/mach-shmobile/timer.c
+@@ -77,24 +77,3 @@ void __init shmobile_init_delay(void)
+ 			shmobile_setup_delay_hz(max_freq, 2, 4);
+ 	}
+ }
+-
+-static void __init shmobile_late_time_init(void)
+-{
+-	/*
+-	 * Make sure all compiled-in early timers register themselves.
+-	 *
+-	 * Run probe() for two "earlytimer" devices, these will be the
+-	 * clockevents and clocksource devices respectively. In the event
+-	 * that only a clockevents device is available, we -ENODEV on the
+-	 * clocksource and the jiffies clocksource is used transparently
+-	 * instead. No error handling is necessary here.
+-	 */
+-	early_platform_driver_register_all("earlytimer");
+-	early_platform_driver_probe("earlytimer", 2, 0);
+-}
+-
+-void __init shmobile_earlytimer_init(void)
+-{
+-	late_time_init = shmobile_late_time_init;
+-}
+-
 -- 
 1.9.1
 
