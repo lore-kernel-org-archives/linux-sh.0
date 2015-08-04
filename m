@@ -1,59 +1,95 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 19 Aug 2015 04:13:58 +0000
-Subject: [PATCH v6 1/2] pwm: Add device tree binding document for R-Car PWM Timer
-Message-Id: <1439957639-4816-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 04 Aug 2015 12:28:12 +0000
+Subject: [PATCH v4 11/16] ARM: shmobile: r8a7793 dtsi: Add CPG/MSTP Clock Domain
+Message-Id: <1438691297-29235-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439957639-4816-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1439957639-4816-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: thierry.reding@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Add binding document for Renesas PWM Timer on R-Car SoCs.
+Add an appropriate "#power-domain-cells" property to the cpg_clocks
+device node, to create the CPG/MSTP Clock Domain.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Add "power-domains" properties to all device nodes for devices that are
+part of the CPG/MSTP Clock Domain and can be power-managed through an
+MSTP clock.  This applies to most on-SoC devices, which have a
+one-to-one mapping from SoC device to DT device node.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- .../devicetree/bindings/pwm/renesas,pwm-rcar.txt   | 27 ++++++++++++++++++++++
- 1 file changed, 27 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
+v4:
+  - Add Reviewed-by,
 
-diff --git a/Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt b/Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
-new file mode 100644
-index 0000000..ea0a27b
---- /dev/null
-+++ b/Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
-@@ -0,0 +1,27 @@
-+* Renesas R-Car PWM Timer Controller
-+
-+Required Properties:
-+- compatible: should be one of the following.
-+ - "renesas,pwm-rcar": for generic R-Car compatible PWM Timer
-+ - "renesas,pwm-r8a7778": for R-Car M1A
-+ - "renesas,pwm-r8a7779": for R-Car H1
-+ - "renesas,pwm-r8a7790": for R-Car H2
-+ - "renesas,pwm-r8a7791": for R-Car M2-W
-+ - "renesas,pwm-r8a7794": for R-Car E2
-+- reg: base address and length of the registers block for the PWM.
-+- #pwm-cells: should be 2. See pwm.txt in this directory for a description of
-+  the cells format.
-+- clocks: clock phandle and specifier pair.
-+- pinctrl-0: phandle, referring to a default pin configuration node.
-+- pinctrl-names: Set to "default".
-+
-+Example: R8A7790 (R-Car H2) PWM Timer node
-+
-+	pwm0: pwm@e6e30000 {
-+		compatible = "renesas,pwm-r8a7790", "renesas,pwm-rcar";
-+		reg = <0 0xe6e30000 0 0x8>;
-+		#pwm-cells = <2>;
-+		clocks = <&mstp5_clks R8A7790_CLK_PWM>;
-+		pinctrl-0 = <&pwm0_pins>;
-+		pinctrl-names = "default";
-+	};
+v3:
+  - New.
+---
+ arch/arm/boot/dts/r8a7793.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index 3355c487d108360f..c4654047e684ff09 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -68,6 +68,7 @@
+ 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7793_CLK_CMT0>;
+ 		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
+ 
+ 		renesas,channels-mask = <0x60>;
+ 
+@@ -87,6 +88,7 @@
+ 			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7793_CLK_CMT1>;
+ 		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
+ 
+ 		renesas,channels-mask = <0xff>;
+ 
+@@ -109,6 +111,7 @@
+ 			     <0 16 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R8A7793_CLK_IRQC>;
++		power-domains = <&cpg_clocks>;
+ 	};
+ 
+ 	scif0: serial@e6e60000 {
+@@ -117,6 +120,7 @@
+ 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_SCIF0>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -126,6 +130,7 @@
+ 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_SCIF1>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -134,6 +139,7 @@
+ 		reg = <0 0xee700000 0 0x400>;
+ 		interrupts = <0 162 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp8_clks R8A7793_CLK_ETHER>;
++		power-domains = <&cpg_clocks>;
+ 		phy-mode = "rmii";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -164,6 +170,7 @@
+ 			clock-output-names = "main", "pll0", "pll1", "pll3",
+ 					     "lb", "qspi", "sdh", "sd0", "z",
+ 					     "rcan", "adsp";
++			#power-domain-cells = <0>;
+ 		};
+ 
+ 		/* Variable factor clocks */
 -- 
 1.9.1
 
