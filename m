@@ -1,44 +1,58 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 11 Aug 2015 12:47:18 +0000
-Subject: [PATCH] ASoC: rsnd: Silence DMA slave ID compile warning on 64-bit
-Message-Id: <1439297238-28943-1-git-send-email-geert+renesas@glider.be>
+Date: Wed, 05 Aug 2015 08:58:09 +0000
+Subject: [PATCH v4 5/6] ARM: shmobile: r8a7740: Migrate to generic l2c OF initialization
+Message-Id: <1438765090-823-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1438765090-823-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438765090-823-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-On arm64:
-
-    sound/soc/sh/rcar/dma.c: In function 'rsnd_dmaen_init':
-    sound/soc/sh/rcar/dma.c:180:9: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
-	     (void *)id);
-	     ^
-    include/linux/dmaengine.h:1185:75: note: in definition of macro 'dma_request_channel'
-     #define dma_request_channel(mask, x, y) __dma_request_channel(&(mask), x, y)
-									       ^
-
-Add an intermediate cast to "uintptr_t" to kill the compile warning.
+Migrate the generic r8a7740 platform from calling l2x0_of_init() to the
+generic l2c OF initialization.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- sound/soc/sh/rcar/dma.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v4:
+  - This depends on commit eeedcea69e927857 ("ARM: 8395/1: l2c: Add
+    support for the "arm,shared-override" property"), which is queued
+    for 4.3 in arm/for-next,
 
-diff --git a/sound/soc/sh/rcar/dma.c b/sound/soc/sh/rcar/dma.c
-index 305b129298538850..bfbb8a5e93bdce6c 100644
---- a/sound/soc/sh/rcar/dma.c
-+++ b/sound/soc/sh/rcar/dma.c
-@@ -177,7 +177,7 @@ static int rsnd_dmaen_init(struct rsnd_dai_stream *io,
- 		dma_cap_set(DMA_SLAVE, mask);
+v3:
+  - Use 0/~0 now DT supports "arm,shared-override",
+
+v2:
+  - Keep only {,~}L2C_AUX_CTRL_SHARED_OVERRIDE.
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 0c8f80c5b04df34d..7b16c12e3f816f7f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -110,10 +110,6 @@ static void __init r8a7740_generic_init(void)
+ {
+ 	r8a7740_meram_workaround();
  
- 		dmaen->chan = dma_request_channel(mask, shdma_chan_filter,
--						  (void *)id);
-+						  (void *)(uintptr_t)id);
- 	}
- 	if (IS_ERR_OR_NULL(dmaen->chan)) {
- 		dmaen->chan = NULL;
+-#ifdef CONFIG_CACHE_L2X0
+-	/* Shared attribute override enable, 32K*8way */
+-	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
+-#endif
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
+ 
+@@ -123,6 +119,8 @@ static const char *const r8a7740_boards_compat_dt[] __initconst = {
+ };
+ 
+ DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
++	.l2c_aux_val	= 0,
++	.l2c_aux_mask	= ~0,
+ 	.map_io		= r8a7740_map_io,
+ 	.init_early	= shmobile_init_delay,
+ 	.init_irq	= r8a7740_init_irq_of,
 -- 
 1.9.1
 
