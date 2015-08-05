@@ -1,81 +1,58 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 19 Aug 2015 22:24:47 +0000
-Subject: [PATCH 2/2] ARM: shmobile: silk: add VIN0/ADV7180 DT support
-Message-Id: <4017919.utiMzpz6ED@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 05 Aug 2015 08:58:07 +0000
+Subject: [PATCH v4 3/6] ARM: shmobile: sh73a0 dtsi: Add L2 cache-controller node
+Message-Id: <1438765090-823-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1750082.WpWf34HsI6@wasted.cogentembedded.com>
-In-Reply-To: <1750082.WpWf34HsI6@wasted.cogentembedded.com>
+References: <1438765090-823-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438765090-823-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Define  the  SILK board dependent part of the  VIN0  device  node.
-Add the device node for Analog Devices ADV7180 video decoder to I2C1 bus.
-Add the necessary subnodes to interconnect VIN0 and ADV7180 devices.
+Add the missing L2 cache-controller node. This will allow migration to
+the generic l2c OF initialization.
 
-Based on the Henninger VIN0/ADV8170 device tree patch by myself.
+The L2 cache is an ARM L2C-310 (r3p1), of size 512 KiB (64 KiB x 8
+ways).
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7794-silk.dts |   35 +++++++++++++++++++++++++++++++++++
- 1 file changed, 35 insertions(+)
+v4:
+  - New,
+  - Commit eeedcea69e927857 ("ARM: 8395/1: l2c: Add support for the
+    "arm,shared-override" property") is queued for 4.3 in arm/for-next.
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7794-silk.dts
-+++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
-@@ -104,6 +104,11 @@
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 11e17c5f26e2cae2..e84fce5e4090f4ab 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -53,6 +53,22 @@
+ 		      <0xf0000100 0x100>;
  	};
-+
-+	vin0_pins: vin0 {
-+		renesas,groups = "vin0_data8", "vin0_clk";
-+		renesas,function = "vin0";
-+	};
- };
  
- &scif2 {
-@@ -135,6 +140,19 @@
- 
- 	status = "okay";
- 	clock-frequency = <400000>;
-+
-+	composite-in@20 {
-+		compatible = "adi,adv7180";
-+		reg = <0x20>;
-+		remote = <&vin0>;
-+
-+		port {
-+			adv7180: endpoint {
-+				bus-width = <8>;
-+				remote-endpoint = <&vin0ep>;
-+			};
-+		};
++	L2: cache-controller {
++		compatible = "arm,pl310-cache";
++		reg = <0xf0100000 0x1000>;
++		interrupts = <0 44 IRQ_TYPE_LEVEL_HIGH>;
++		power-domains = <&pd_a3sm>;
++		arm,data-latency = <3 3 3>;
++		arm,tag-latency = <2 2 2>;
++		arm,shared-override;
++		cache-unified;
++		cache-level = <2>;
++		cache-size = <0x80000>;
++		cache-sets = <2048>;
++		cache-block-size = <32>;
++		cache-line-size = <32>;
 +	};
- };
- 
- &mmcif0 {
-@@ -193,3 +211,20 @@
- 		};
- 	};
- };
 +
-+/* composite video input */
-+&vin0 {
-+	status = "okay";
-+	pinctrl-0 = <&vin0_pins>;
-+	pinctrl-names = "default";
-+
-+	port {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		vin0ep: endpoint {
-+			remote-endpoint = <&adv7180>;
-+			bus-width = <8>;
-+		};
-+	};
-+};
+ 	sbsc2: memory-controller@fb400000 {
+ 		compatible = "renesas,sbsc-sh73a0";
+ 		reg = <0xfb400000 0x400>;
+-- 
+1.9.1
 
