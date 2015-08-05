@@ -1,32 +1,35 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 03 Aug 2015 07:37:44 +0000
-Subject: Re: [PATCH 3/5] ARM: shmobile: r8a7794: Add DU0 clock
-Message-Id: <CAMuHMdU1eQHQXAotpyh=pobz8XMT0MDwZ_Ouw7aNyPbgENXgGA@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 05 Aug 2015 13:18:24 +0000
+Subject: [RFT 0/2] i2c: add support for r8a7795 (RCar H3)
+Message-Id: <1438780706-20945-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437121567-18467-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1437121567-18467-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1437121567-18467-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, DRI Development <dri-devel@lists.freedesktop.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>
 
-On Fri, Jul 17, 2015 at 10:26 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> The DU0 clock is an MSTP clock, child of the CPG ZX clock.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Here are the driver updates to support this new SoC. Since I don't have HW
+access, this is a request for testing. The IP cores are backwards compatible to
+Gen2. So, as long as the clocks are properly setup and the bus speed is OK,
+the rest should work out of the box.
 
-Acked-by: by: Geert Uytterhoeven <geert+renesas@glider.be>
+Question: Shall I prototype the dtsi additions for these modules? On the one
+hand, this is quite some change for not being able to test. On the other hand,
+other people might be so busy setting up the rest, so it may be useful after
+all.
 
-Gr{oetje,eeting}s,
 
-                        Geert
+Wolfram Sang (2):
+  i2c: rcar: add support for r8a7795 (R-Car H3)
+  i2c: sh_mobile: add support for r8a7795 (R-Car H3)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+ Documentation/devicetree/bindings/i2c/i2c-rcar.txt      | 1 +
+ Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt | 1 +
+ drivers/i2c/busses/i2c-rcar.c                           | 3 +++
+ drivers/i2c/busses/i2c-sh_mobile.c                      | 1 +
+ 4 files changed, 6 insertions(+)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+2.1.4
+
