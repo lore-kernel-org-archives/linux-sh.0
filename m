@@ -1,74 +1,67 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 25 Aug 2015 05:50:03 +0000
-Subject: Re: [PATCH v2 03/07] ARM: shmobile: Add APMU nodes to r8a7790 DTSI
-Message-Id: <1526541.cKGtqzOZAK@avalon>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 05 Aug 2015 13:18:25 +0000
+Subject: [RFT 1/2] i2c: rcar: add support for r8a7795 (R-Car H3)
+Message-Id: <1438780706-20945-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150823072427.14156.1960.sendpatchset@little-apple> <1534893.ppOlo5pCGu@avalon> <CANqRtoQev9=mA_rHBKDOMisoi2o8eekiPPfbG+wUjR0yFK-uCQ@mail.gmail.com>
-In-Reply-To: <CANqRtoQev9=mA_rHBKDOMisoi2o8eekiPPfbG+wUjR0yFK-uCQ@mail.gmail.com>
+References: <1438780706-20945-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1438780706-20945-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Mark Rutland <mark.rutland@arm.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>, =?utf-8?B?5bCP5p6X5pWs5aSq?= <keita.kobayashi.ym@renesas.com>, "Simon Horman [Horms]" <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>
 
-Hi Magnus,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Tuesday 25 August 2015 13:13:46 Magnus Damm wrote:
-> On Tue, Aug 25, 2015 at 3:29 AM, Laurent Pinchart wrote:
-> > On Sunday 23 August 2015 16:25:00 Magnus Damm wrote:
-> >> From: Magnus Damm <damm+renesas@opensource.se>
-> >> 
-> >> Add an APMU DT node for the r8a7790 SoC and use the enable-method to
-> >> point out that the APMU should be used for SMP support.
-> >> 
-> >> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> >> ---
-> >> 
-> >>  Changes from V1:
-> >>  - New patch
-> >>  
-> >>  arch/arm/boot/dts/r8a7790.dtsi |   13 +++++++++++++
-> >>  1 file changed, 13 insertions(+)
-> >> 
-> >> --- 0001/arch/arm/boot/dts/r8a7790.dtsi
-> >> +++ work/arch/arm/boot/dts/r8a7790.dtsi       2015-08-23
-> >> 15:51:24.132366518 +0900 @@ -43,6 +43,7 @@
-> >>       cpus {
-> >>               #address-cells = <1>;
-> >>               #size-cells = <0>;
-> >> +             enable-method = "renesas,apmu";
-> >> 
-> >>               cpu0: cpu@0 {
-> >>                       device_type = "cpu";
-> >> @@ -112,6 +113,18 @@
-> >>               };
-> >>       };
-> >> 
-> >> +     apmu@e6151000 {
-> >> +             compatible = "renesas,apmu-r8a7790", "renesas,apmu";
-> >> +             reg = <0 0xe6151000 0 0x188>;
-> >> +             cpus = <&cpu4 &cpu5 &cpu6 &cpu7>;
-> >> +     };
-> >> +
-> >> +     apmu@e6152000 {
-> >> +             compatible = "renesas,apmu-r8a7790", "renesas,apmu";
-> >> +             reg = <0 0xe6152000 0 0x188>;
-> >> +             cpus = <&cpu0 &cpu1 &cpu2 &cpu3>;
-> >> +     };
-> > 
-> > I wonder whether those two nodes shouldn't be moved inside the CPG node as
-> > it seems that the APMU is part of the CPG IP core. We can delay that
-> > though, as the Gen3 DTS will need to be refactored anyway.
-> 
-> Hm, I don't mind reworking things, but with power domain focus I sort
-> of expected the APMU to be closer to SYSC than the CPG actually...
+Enable the I2C core for this SoC. I add a new type because this version
+has new features (e.g. DMA) which will be added somewhen later.
 
-So did I, but the APMU is in the CPG address range, and is documented in the 
-datasheet in the same section as the CPG (7. for CPG, 7A. for MSTP and 7B. for 
-APMU). Don't ask me why :-)
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ Documentation/devicetree/bindings/i2c/i2c-rcar.txt | 1 +
+ drivers/i2c/busses/i2c-rcar.c                      | 3 +++
+ 2 files changed, 4 insertions(+)
 
+diff --git a/Documentation/devicetree/bindings/i2c/i2c-rcar.txt b/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
+index 16b3e07aa98fdd..ea406eb20fa5ad 100644
+--- a/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
++++ b/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
+@@ -10,6 +10,7 @@ Required properties:
+ 	"renesas,i2c-r8a7792"
+ 	"renesas,i2c-r8a7793"
+ 	"renesas,i2c-r8a7794"
++	"renesas,i2c-r8a7795"
+ - reg: physical base address of the controller and length of memory mapped
+   region.
+ - interrupts: interrupt specifier.
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index d8361dada58455..3e125654bb288a 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -103,6 +103,7 @@
+ enum rcar_i2c_type {
+ 	I2C_RCAR_GEN1,
+ 	I2C_RCAR_GEN2,
++	I2C_RCAR_GEN3,
+ };
+ 
+ struct rcar_i2c_priv {
+@@ -178,6 +179,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 		cdf_width = 2;
+ 		break;
+ 	case I2C_RCAR_GEN2:
++	case I2C_RCAR_GEN3:
+ 		cdf_width = 3;
+ 		break;
+ 	default:
+@@ -625,6 +627,7 @@ static const struct of_device_id rcar_i2c_dt_ids[] = {
+ 	{ .compatible = "renesas,i2c-r8a7792", .data = (void *)I2C_RCAR_GEN2 },
+ 	{ .compatible = "renesas,i2c-r8a7793", .data = (void *)I2C_RCAR_GEN2 },
+ 	{ .compatible = "renesas,i2c-r8a7794", .data = (void *)I2C_RCAR_GEN2 },
++	{ .compatible = "renesas,i2c-r8a7795", .data = (void *)I2C_RCAR_GEN3 },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, rcar_i2c_dt_ids);
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.4
 
