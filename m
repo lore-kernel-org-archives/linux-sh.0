@@ -1,61 +1,48 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 31 Aug 2015 00:19:17 +0000
-Subject: Re: [PATCH][RFC] sh-pfc: add new PINMUX_IPSR_MODS() macro
-Message-Id: <87d1y448kn.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 05 Aug 2015 13:56:38 +0000
+Subject: Re: [PATCH v2] clocksource: sh_cmt: Only perform clocksource suspend/resume if enabled
+Message-Id: <CAMuHMdU+dwETiSk4=rgpykbJt03Fe4dnSmHYJP6G_xC4M45N3w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87h9nkc7km.wl%kuninori.morimoto.gx@renesas.com>
-	<38944168.Lsx7EbeIaO@avalon>
-	<87io7w4a7u.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87io7w4a7u.wl%kuninori.morimoto.gx@renesas.com>
+References: <1436874064-2729-1-git-send-email-geert+renesas@glider.be>
+	<55A7B47F.7060202@linaro.org>
+	<CAMuHMdU-+-+zygoZneBe9SWM1u8VCmpYOMSB00v29KS4HX-37g@mail.gmail.com>
+In-Reply-To: <CAMuHMdU-+-+zygoZneBe9SWM1u8VCmpYOMSB00v29KS4HX-37g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulrich <ulrich.hecht@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linus Walleij <linus.walleij@linaro.org>, Laurent <laurent.pinchart@ideasonboard.com>
+To: Daniel Lezcano <daniel.lezcano@linaro.org>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Thomas Gleixner <tglx@linutronix.de>, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
+Hi Daniel,
 
-Hi Ulrich
+On Thu, Jul 16, 2015 at 4:03 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> On Thu, Jul 16, 2015 at 3:41 PM, Daniel Lezcano
+> <daniel.lezcano@linaro.org> wrote:
+>> do you mean to test if the patch [1] solves your problem.
+>>
+>>   -- Daniel
+>>
+>> [1] https://lkml.org/lkml/2015/1/16/81
+>
+> I'll give it a try after my holidays...
 
-> > > 	PINMUX_IPSR_NOGP(ispr, ...)
-> > > 	PINMUX_IPSR_DATA(ipsr, ...)
-> > > 	PINMUX_IPSR_NOGM(ispr, ...)
-> > > 	PINMUX_IPSR_NOFN(ipsr, ...)
-> > > 	PINMUX_IPSR_MSEL(ipsr, ...)
-> > > 	PINMUX_IPSR_MODSEL_DATA(ipsr, ...)
-> > > 
-> > > These are readable
-> > > 
-> > > 	PINMUX_IPSR_NOGP(ispr, ...)
-> > > 	PINMUX_IPSR_DATA(ipsr, ...)
-> > > 	PINMUX_IPSR_NOGM(ispr, ...)
-> > > 	PINMUX_IPSR_NOFN(ipsr, ...)
-> > > 	PINMUX_IPSR_MSEL(ipsr, ...)
-> > > 	PINMUX_IPSR_MODS(ipsr, ...)
-> > > 
-> > > We can replace all PINMUX_IPSR_MODSEL_DATA() to PINMUX_IPSR_MODS(),
-> > > and remove PINMUX_IPSR_MODSEL_DATA() from header.
-> > 
-> > I agree that the PINMUX_IPSR_MODSEL_DATA() name makes code harder to read. 
-> > However, PINMUX_IPSR_MODS() isn't very descriptive, I think it would make the 
-> > code confusing (not that it isn't already...).
-> > 
-> > The only difference between  PINMUX_IPSR_MSEL and PINMUX_IPSR_MODSEL_DATA is 
-> > the order in which the MODSEL, GSPR and IPSR registers are written. I wonder 
-> > if that's actually important, or if we could merge both macros into a single 
-> > one. What do you think ?
-> 
-> Yes, I agree about this.
-> But, PINMUX_IPSR_MSEL is used on r8a7778 only, and my concern is we don't know what happen
-> if we merged PINMUX_IPSR_MODSEL_DATA() and PINMUX_IPSR_MSEL()
-> And, I don't have bockw board now...
+Apparently that patch was integrated in v4.2-rc1, while I still see the problem
+on recent kernels.
 
-Can you check this ?
-Is r8a7778 can work correctly if PINMUX_IPSR_MSEL() and PINMUX_IPSR_MODSEL_DATA() are merged ?
+Furthermore, that patch handles clockevents, not clocksources.
+struct clocksource doesn't seem to have a way to check if it's enabled,
+so I still need my patch.
 
-  #define PINMUX_IPSR_MSEL(ipsr, fn, ms)				\
-- 	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ipsr, FN_##ms)
-+ 	PINMUX_DATA(fn##_MARK, FN_##ms, FN_##ipsr, FN_##fn)
-  #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms)				\
-  	PINMUX_DATA(fn##_MARK, FN_##ms, FN_##ipsr, FN_##fn)
+Thanks!
 
-If it works, we can use PINMUX_IPSR_MSEL() for all SoC
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
