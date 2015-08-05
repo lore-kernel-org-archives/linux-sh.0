@@ -1,34 +1,38 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 20 Aug 2015 05:26:11 +0000
-Subject: Re: [PATCH 05/16 v5][RFC] arm64: renesas: Add initial r8a7795 SoC support
-Message-Id: <871teycz57.wl%kuninori.morimoto.gx@renesas.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Wed, 05 Aug 2015 08:36:50 +0000
+Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Defconfig Updates for v4.3
+Message-Id: <20150805083650.GA6390@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <871tffeqps.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <871tffeqps.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1438215768.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1438215768.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-
-Hi Geert
-
-> > --- /dev/null
-> > +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> > @@ -0,0 +1,93 @@
+On Thu, Jul 30, 2015 at 09:23:50AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
 > 
-> > +                       p_clk: p_clk {
-> > +                               compatible = "fixed-factor-clock";
-> > +                               clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-> > +                               #clock-cells = <0>;
-> > +                               clock-div = <24>;
-> > +                               clock-mult = <1>;
-> > +                               clock-output-names = "p";
-> > +                       };
+> Please consider these second round of Renesas ARM based SoC defconfig updates for v4.3.
 > 
-> I can't find a "p" clock. Shouldn't that be one of the "sXdY" clocks?
+> This pull request is based on the previous round of
+> such requests, tagged as renesas-defconfig-for-v4.3,
+> which I have already sent a pull-request for.
+> 
+> 
+> The following changes since commit 821e79cb5686695f0adaef61587a184e953a937e:
+> 
+>   ARM: shmobile: Remove marzen_defconfig (2015-07-17 08:29:45 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig2-for-v4.3
+> 
+> for you to fetch changes up to 4055a722d260ca30610fc52238d0aa49ff5bffa9:
+> 
+>   ARM: shmobile: Enable fixed voltage regulator in shmobile_defconfig (2015-07-28 09:27:00 +0900)
 
-Good catch.
-it seems "p" was changed to s3d4
-will fix in v6
+Merged, thanks.
 
+
+-Olof
