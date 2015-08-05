@@ -1,25 +1,65 @@
-From: William Towle <william.towle@codethink.co.uk>
-Date: Thu, 13 Aug 2015 11:36:48 +0000
-Subject: Renesas Lager: Device Tree entries for VIN HDMI input, version 2
-Message-Id: <1439465811-936-1-git-send-email-william.towle@codethink.co.uk>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 05 Aug 2015 08:58:08 +0000
+Subject: [PATCH v4 4/6] ARM: shmobile: sh73a0 dtsi: Add L1 cache information to CPU nodes
+Message-Id: <1438765090-823-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1438765090-823-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438765090-823-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk
-Cc: linux-sh@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>
+To: linux-arm-kernel@lists.infradead.org
 
-  Version 2 ... removes some redundant configuration from device nodes,
-and provides some supplementary logic for automatic initialisation of
-state->pdata.default_input based on the hardware present.
+Describe the L1 caches in the CPU nodes:
+  - L1 instruction cache: 32 KiB (8 KiB x 4 ways) per CPU,
+  - L1 data cache: 32 KiB (8 KiB x 4 ways) per CPU.
 
-  (Obsoletes corresponding parts of "HDMI and Composite capture on
-Lager...", published previously)
+Add links to the L2 cache.
 
-Cheers,
-  Wills.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v4:
+  - New.
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-To follow:
-	[PATCH 1/3] ARM: shmobile: lager dts: Add entries for VIN HDMI input
-	[PATCH 2/3] media: adv7604: automatic "default-input" selection
-	[PATCH 3/3] ARM: shmobile: lager dts: specify default-input for
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index e84fce5e4090f4ab..34f45023d1d29ed0 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -28,6 +28,15 @@
+ 			reg = <0>;
+ 			clock-frequency = <1196000000>;
+ 			power-domains = <&pd_a2sl>;
++			i-cache-size = <0x8000>;
++			i-cache-sets = <256>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <256>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2>;
+ 		};
+ 		cpu@1 {
+ 			device_type = "cpu";
+@@ -35,6 +44,15 @@
+ 			reg = <1>;
+ 			clock-frequency = <1196000000>;
+ 			power-domains = <&pd_a2sl>;
++			i-cache-size = <0x8000>;
++			i-cache-sets = <256>;
++			i-cache-block-size = <32>;
++			i-cache-line-size = <32>;
++			d-cache-size = <0x8000>;
++			d-cache-sets = <256>;
++			d-cache-block-size = <32>;
++			d-cache-line-size = <32>;
++			next-level-cache = <&L2>;
+ 		};
+ 	};
+ 
+-- 
+1.9.1
+
