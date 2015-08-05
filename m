@@ -1,81 +1,41 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 04 Aug 2015 13:55:17 +0000
-Subject: [PATCH v2 4/6] pinctrl: sh-pfc: Stop calling gpiochip_add_pin_range() on DT platforms
-Message-Id: <1438696519-13727-5-git-send-email-geert+renesas@glider.be>
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Wed, 05 Aug 2015 03:30:37 +0000
+Subject: Re: [PATCH] dmaengine: shdma: Make dummy shdma_chan_filter() always return false
+Message-Id: <20150805031837.GG11789@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On platforms where the PFC/GPIO controller is instantiated from DT, the
-mapping between GPIOs and pins is set up using the "gpio-ranges"
-property in DT.
+On Fri, Jul 10, 2015 at 12:07:25PM +0200, Geert Uytterhoeven wrote:
+> If CONFIG_SH_DMAE_BASE (which is required for DMA engine support for
+> legacy SH, SH/R-Mobile, and R-Car Gen1, but not for R-Car Gen2) is not
+> enabled, but CONFIG_RCAR_DMAC (for R-Car Gen2 DMA engine support) is,
+> and the DTS doesn't provide a "dmas" property for a device,
+> dma_request_slave_channel_compat() incorrectly succeeds, and returns a
+> DMA channel.
+> 
+> However, when trying to use that DMA channel later, it fails with:
+> 
+>     rcar-dmac e6700000.dma-controller: rcar_dmac_prep_slave_sg: bad parameter: len=1, id=-22
+> 
+> (Fortunately most drivers can handle this failure, and fall back to
+> PIO)
+> 
+> The reason for this is that a NULL legacy filter function is used, which
+> actually means "all channels are OK", not "do not match".
+> If CONFIG_SH_DMAE_BASE is enabled (like in shmobile_defconfig, which
+> supports other SoCs besides R-Car Gen2), shdma_chan_filter() correctly
+> returns false, as no available channel on R-Car Gen2 matches a
+> shdma-base channel.
+> If the DTS does provide a "dmas" property, dma_request_slave_channel()
+> succeeds, and legacy filter-based matching is not used.
+> 
+> To fix this, change shdma_chan_filter from being NULL to a dummy
+> function that always returns false, like is done on other platforms.
 
-Hence stop setting up the mapping from C code on DT platforms.
-This code is still used for SH or ARM-legacy platforms.
+Applied, thanks
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
----
-v2:
-  - Add Acked-by,
-  - Add check for CONFIG_OF and pfc->dev->of_node.
----
- drivers/pinctrl/sh-pfc/gpio.c | 37 ++++++++++++++++++++++---------------
- 1 file changed, 22 insertions(+), 15 deletions(-)
-
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index ba353735ecf2be9a..b380e3f17b121bbb 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -379,22 +379,29 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
- 
- 	pfc->gpio = chip;
- 
--	/* Register the GPIO to pin mappings. As pins with GPIO ports must come
--	 * first in the ranges, skip the pins without GPIO ports by stopping at
--	 * the first range that contains such a pin.
--	 */
--	for (i = 0; i < pfc->nr_ranges; ++i) {
--		const struct sh_pfc_pin_range *range = &pfc->ranges[i];
--
--		if (range->start >= pfc->nr_gpio_pins)
--			break;
-+	if (IS_ENABLED(CONFIG_OF) && pfc->dev->of_node)
-+		return 0;
- 
--		ret = gpiochip_add_pin_range(&chip->gpio_chip,
--					     dev_name(pfc->dev),
--					     range->start, range->start,
--					     range->end - range->start + 1);
--		if (ret < 0)
--			return ret;
-+	if (IS_ENABLED(CONFIG_SUPERH) ||
-+	    IS_ENABLED(CONFIG_ARCH_SHMOBILE_LEGACY)) {
-+		/*
-+		 * Register the GPIO to pin mappings. As pins with GPIO ports
-+		 * must come first in the ranges, skip the pins without GPIO
-+		 * ports by stopping at the first range that contains such a
-+		 * pin.
-+		 */
-+		for (i = 0; i < pfc->nr_ranges; ++i) {
-+			const struct sh_pfc_pin_range *range = &pfc->ranges[i];
-+
-+			if (range->start >= pfc->nr_gpio_pins)
-+				break;
-+
-+			ret = gpiochip_add_pin_range(&chip->gpio_chip,
-+				dev_name(pfc->dev), range->start, range->start,
-+				range->end - range->start + 1);
-+			if (ret < 0)
-+				return ret;
-+		}
- 	}
- 
- 	/* Register the function GPIOs chip. */
 -- 
-1.9.1
-
+~Vinod
