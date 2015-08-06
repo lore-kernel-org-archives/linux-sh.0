@@ -1,48 +1,217 @@
-From: Michael Ellerman <mpe@ellerman.id.au>
-Date: Thu, 20 Aug 2015 01:09:55 +0000
-Subject: Re: provide more common DMA API functions V2
-Message-Id: <1440032995.13406.6.camel@ellerman.id.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 06 Aug 2015 08:05:41 +0000
+Subject: [PATCH 03/13 v4][RFC] arm64: renesas: Add initial r8a7795 SoC support
+Message-Id: <87si7wyhde.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439795216-32189-1-git-send-email-hch@lst.de>
-         <20150817142429.95a3965e0b35d0f35d3c4cfe@linux-foundation.org>
-         <20150818053825.GA20771@lst.de>
-         <20150817224552.43d7267d.akpm@linux-foundation.org>
-         <20150818075107.GA31884@gmail.com> <20150819080814.GA18115@lst.de>
-         <20150819143656.3a38eb538ffac60386e1224a@linux-foundation.org>
-         <20150820095233.30bb9689@canb.auug.org.au>
-In-Reply-To: <20150820095233.30bb9689@canb.auug.org.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Stephen Rothwell <sfr@canb.auug.org.au>
-Cc: Andrew Morton <akpm@linux-foundation.org>, jonas@southpole.se, linux-ia64@vger.kernel.org, monstr@monstr.eu, linux@arm.linux.org.uk, ysato@users.sourceforge.jp, arnd@arndb.de, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, catalin.marinas@arm.com, x86@kernel.org, will.deacon@arm.com, linux-kernel@vger.kernel.org, Ingo Molnar <mingo@kernel.org>, cmetcalf@ezchip.com, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-s390@vger.kernel.org, gxt@mprc.pku.edu.cn, linuxppc-dev@lists.ozlabs.org, Christoph Hellwig <hch@lst.de>
+To: linux-sh@vger.kernel.org
 
-On Thu, 2015-08-20 at 09:52 +1000, Stephen Rothwell wrote:
-> Hi Andrew (sorry, I can't tell who made the incorrect statement below
-> that I am replying to),
-> 
-> On Wed, 19 Aug 2015 14:36:56 -0700 Andrew Morton <akpm@linux-foundation.org> wrote:
-> >
-> > On Wed, 19 Aug 2015 10:08:14 +0200 Christoph Hellwig <hch@lst.de> wrote:
-> > 
-> > > On Tue, Aug 18, 2015 at 09:51:07AM +0200, Ingo Molnar wrote:
-> > > > I.e. shouldn't this be:
-> > > > 
-> > > > > I'll merge these 5 patches for 4.4.  That means I'll release them into 
-> > > > > linux-next after 4.2 is released.
-> > > > >
-> > > > > [...]
-> > > > > 
-> > > > > Linus will be releasing 4.2 in 1-2 weeks and until then, linux-next is supposed 
-> > > > > to contain only 4.3 material.  Once 4.2 is released and the 4.3 merge window 
-> > > > > opens, linux-next is open for 4.4 material.
-> 
-> Just to be clear: the above should read "Once 4.2 is released and the
-> 4.3 merge window *closes* (i.e. v4.3-rc1 is released), linux-next is
-> open for 4.4 material".
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-/me registers www.whatdamnkernelversionareweuptoagain.com
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v3 -> v4
 
-cheers
+ - use simple-bus topology
+ - remove IRDA from clock.h
+ - RCAR_GEN3_CLK_xxxx -> RCAR_R8A7795_CLK_xxxx
 
+ Documentation/devicetree/bindings/arm/shmobile.txt |  2 +
+ .../bindings/clock/renesas,cpg-mstp-clocks.txt     |  1 +
+ arch/arm64/boot/dts/Makefile                       |  1 +
+ arch/arm64/boot/dts/renesas/Makefile               |  5 ++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 93 ++++++++++++++++++++++
+ include/dt-bindings/clock/r8a7795-clock.h          | 30 +++++++
+ 6 files changed, 132 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/renesas/Makefile
+ create mode 100644 arch/arm64/boot/dts/renesas/r8a7795.dtsi
+ create mode 100644 include/dt-bindings/clock/r8a7795-clock.h
+
+diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
+index c4f19b2..8d696a0 100644
+--- a/Documentation/devicetree/bindings/arm/shmobile.txt
++++ b/Documentation/devicetree/bindings/arm/shmobile.txt
+@@ -27,6 +27,8 @@ SoCs:
+     compatible = "renesas,r8a7793"
+   - R-Car E2 (R8A77940)
+     compatible = "renesas,r8a7794"
++  - R-Car H3 (R8A77950)
++    compatible = "renesas,r8a7795"
+ 
+ 
+ Boards:
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 16ed181..4169c76 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -19,6 +19,7 @@ Required Properties:
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2-W) MSTP gate clocks
+     - "renesas,r8a7793-mstp-clocks" for R8A7793 (R-Car M2-N) MSTP gate clocks
+     - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
++    - "renesas,r8a7795-mstp-clocks" for R8A7795 (R-Car H3) MSTP gate clocks
+     - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
+     and "renesas,cpg-mstp-clocks" as a fallback.
+   - reg: Base address and length of the I/O mapped registers used by the MSTP
+diff --git a/arch/arm64/boot/dts/Makefile b/arch/arm64/boot/dts/Makefile
+index 38913be2..5691ca4 100644
+--- a/arch/arm64/boot/dts/Makefile
++++ b/arch/arm64/boot/dts/Makefile
+@@ -7,6 +7,7 @@ dts-dirs += freescale
+ dts-dirs += hisilicon
+ dts-dirs += mediatek
+ dts-dirs += qcom
++dts-dirs += renesas
+ dts-dirs += sprd
+ dts-dirs += xilinx
+ 
+diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
+new file mode 100644
+index 0000000..6aeefd9
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/Makefile
+@@ -0,0 +1,5 @@
++dtb-$(CONFIG_ARCH_RCAR_GEN3) ++
++always		:= $(dtb-y)
++subdir-y	:= $(dts-dirs)
++clean-files	:= *.dtb
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+new file mode 100644
+index 0000000..2375b2d
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -0,0 +1,93 @@
++/*
++ * Device Tree Source for the r8a7795 SoC
++ *
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++#include <dt-bindings/clock/r8a7795-clock.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++
++/ {
++	compatible = "renesas,r8a7795";
++	#address-cells = <2>;
++	#size-cells = <2>;
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		/* 1core only at this point */
++		a57_0: cpu@0 {
++			compatible = "arm,cortex-a57", "arm,armv8";
++			reg = <0x0>;
++			device_type = "cpu";
++		};
++	};
++
++	extal_clk: extal_clk {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <0>;
++		clock-output-names = "extal";
++	};
++
++	soc {
++		compatible = "simple-bus";
++		interrupt-parent = <&gic>;
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		gic: interrupt-controller@0xf1010000 {
++			compatible = "arm,gic-400";
++			#interrupt-cells = <3>;
++			#address-cells = <0>;
++			interrupt-controller;
++			reg = <0x0 0xf1010000 0 0x1000>,
++			      <0x0 0xf1020000 0 0x2000>;
++			interrupts = <GIC_PPI 9
++					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_HIGH)>;
++		};
++
++		timer {
++			compatible = "arm,armv8-timer";
++			interrupts = <GIC_PPI 13
++					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
++				     <GIC_PPI 14
++					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
++				     <GIC_PPI 11
++					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
++				     <GIC_PPI 10
++					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>;
++		};
++
++		clocks {
++			#address-cells = <2>;
++			#size-cells = <2>;
++			ranges;
++
++			p_clk: p_clk {
++				compatible = "fixed-factor-clock";
++				clocks = <&cpg_clocks RCAR_R8A7795_CLK_PLL1>;
++				#clock-cells = <0>;
++				clock-div = <24>;
++				clock-mult = <1>;
++				clock-output-names = "p";
++			};
++
++			cpg_clocks: cpg_clocks@e6150000 {
++				compatible = "renesas,r8a7795-cpg-clocks",
++					     "renesas,rcar-gen3-cpg-clocks";
++				reg = <0 0xe6150000 0 0x1000>;
++				clocks = <&extal_clk>;
++				#clock-cells = <1>;
++				clock-output-names = "main", "pll0", "pll1","pll2",
++						     "pll3", "pll4";
++			};
++		};
++	};
++};
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+new file mode 100644
+index 0000000..4097b0b
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -0,0 +1,30 @@
++#ifndef __DT_BINDINGS_CLOCK_RCAR_R8A7795_H__
++#define __DT_BINDINGS_CLOCK_RCAR_R8A7795_H__
++
++/* CPG */
++#define RCAR_R8A7795_CLK_MAIN		0
++#define RCAR_R8A7795_CLK_PLL0		1
++#define RCAR_R8A7795_CLK_PLL1		2
++#define RCAR_R8A7795_CLK_PLL2		3
++#define RCAR_R8A7795_CLK_PLL3		4
++#define RCAR_R8A7795_CLK_PLL4		5
++
++/* MSTP0 */
++
++/* MSTP1 */
++
++/* MSTP2 */
++
++/* MSTP3 */
++
++/* MSTP5 */
++
++/* MSTP7 */
++
++/* MSTP8 */
++
++/* MSTP9 */
++
++/* MSTP10 */
++
++#endif /* __DT_BINDINGS_CLOCK_RCAR_R8A7795_H__ */
+-- 
+1.9.1
 
