@@ -1,78 +1,66 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 08 Aug 2015 20:33:20 +0000
-Subject: [PATCH 03/10] i2c: apply address offset for slaves, too
-Message-Id: <1439066007-13951-4-git-send-email-wsa@the-dreams.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 06 Aug 2015 08:08:38 +0000
+Subject: [PATCH 10/13 v4][RFC] Local Hack: of: Limit FDT size for CRC check on arm64
+Message-Id: <87io8syh8j.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1439066007-13951-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Andrey Danin <danindrey-JGs/UdohzUI@public.gmane.org>, Stephen Warren <swarren-3lzwWm7+Weoh9ZMKESR00Q@public.gmane.org>, Stephen Warren <swarren-DDmLM1+adcrQT0dZR+AlfA@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Jon Medhurst <tixy@linaro.org>
 
-We want a separate address range for being an I2C slave. Add an offset
-of 0x1000, so it can be combined with ten bit addresses as well. Add a
-separate function to create the address value, we will need it later in
-other places.
+There is a bug in the UEFI implementation used on Juno and 64-bit
+FVPs which corrupts the reported size of the FDT. Work around this
+by limiting the size for CRC checks to 2MB.
 
-Tested-by: Andrey Danin <danindrey@mail.ru>
-Acked-by: Stephen Warren <swarren@nvidia.com>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+See http://lists.infradead.org/pipermail/linux-arm-kernel/2014-December/310106.html
+
+Signed-off-by: Jon Medhurst <tixy@linaro.org>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 ---
- drivers/i2c/i2c-core.c | 22 +++++++++++++++++++---
- 1 file changed, 19 insertions(+), 3 deletions(-)
+v3 -> v4
 
-diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
-index e6d4935161e490..150ee00b5ff5cb 100644
---- a/drivers/i2c/i2c-core.c
-+++ b/drivers/i2c/i2c-core.c
-@@ -57,6 +57,9 @@
- #define CREATE_TRACE_POINTS
- #include <trace/events/i2c.h>
+ - new patch
+
+ drivers/of/fdt.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/of/fdt.c b/drivers/of/fdt.c
+index 07496560..53f8c82 100644
+--- a/drivers/of/fdt.c
++++ b/drivers/of/fdt.c
+@@ -28,6 +28,12 @@
+ #include <asm/setup.h>  /* for COMMAND_LINE_SIZE */
+ #include <asm/page.h>
  
-+#define I2C_ADDR_OFFSET_TEN_BIT	0xa000
-+#define I2C_ADDR_OFFSET_SLAVE	0x1000
++#ifdef CONFIG_ARM64
++#define fdt_crc_size_hack(_s)	min(fdt_totalsize(_s),(unsigned)0x200000)
++#else
++#define fdt_crc_size_hack(_s)	fdt_totalsize(_s)
++#endif
 +
- /* core_lock protects i2c_adapter_idr, and guarantees
-    that device detection, deletion of detected devices, and attach_adapter
-    calls are serialized */
-@@ -776,6 +779,21 @@ struct i2c_client *i2c_verify_client(struct device *dev)
- EXPORT_SYMBOL(i2c_verify_client);
- 
- 
-+/* Return a unique address which takes the flags of the client into account */
-+static unsigned short i2c_encode_flags_to_addr(struct i2c_client *client)
-+{
-+	unsigned short addr = client->addr;
-+
-+	/* For some client flags, add an arbitrary offset to avoid collisions */
-+	if (client->flags & I2C_CLIENT_TEN)
-+		addr |= I2C_ADDR_OFFSET_TEN_BIT;
-+
-+	if (client->flags & I2C_CLIENT_SLAVE)
-+		addr |= I2C_ADDR_OFFSET_SLAVE;
-+
-+	return addr;
-+}
-+
- /* This is a permissive address validity check, I2C address map constraints
-  * are purposely not enforced, except for the general call address. */
- static int i2c_check_client_addr_validity(const struct i2c_client *client)
-@@ -921,10 +939,8 @@ static void i2c_dev_set_name(struct i2c_adapter *adap,
- 		return;
- 	}
- 
--	/* For 10-bit clients, add an arbitrary offset to avoid collisions */
- 	dev_set_name(&client->dev, "%d-%04x", i2c_adapter_id(adap),
--		     client->addr | ((client->flags & I2C_CLIENT_TEN)
--				     ? 0xa000 : 0));
-+		     i2c_encode_flags_to_addr(client));
+ /*
+  * of_fdt_limit_memory - limit the number of regions in the /memory node
+  * @limit: maximum entries
+@@ -1059,7 +1065,7 @@ bool __init early_init_dt_verify(void *params)
+ 	/* Setup flat device-tree pointer */
+ 	initial_boot_params = params;
+ 	of_fdt_crc32 = crc32_be(~0, initial_boot_params,
+-				fdt_totalsize(initial_boot_params));
++				fdt_crc_size_hack(initial_boot_params));
+ 	return true;
  }
  
- /**
+@@ -1155,7 +1161,7 @@ static int __init of_fdt_raw_init(void)
+ 		return 0;
+ 
+ 	if (of_fdt_crc32 != crc32_be(~0, initial_boot_params,
+-				     fdt_totalsize(initial_boot_params))) {
++				     fdt_crc_size_hack(initial_boot_params))) {
+ 		pr_warn("fdt: not creating '/sys/firmware/fdt': CRC check failed\n");
+ 		return 0;
+ 	}
 -- 
-2.1.4
+1.9.1
 
