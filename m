@@ -1,42 +1,95 @@
-From: Stephen Boyd <sboyd@codeaurora.org>
-Date: Fri, 28 Aug 2015 17:21:29 +0000
-Subject: Re: [PATCH v3 00/04] Renesas R-Car Gen3 CPG support V3
-Message-Id: <20150828172129.GA19120@codeaurora.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 06 Aug 2015 08:06:35 +0000
+Subject: [PATCH 05/13 v4][RFC] arm64: renesas: Add SCIF2 support on r8a7795
+Message-Id: <87pp30yhby.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150828091550.21731.85227.sendpatchset@little-apple>
-In-Reply-To: <20150828091550.21731.85227.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-clk@vger.kernel.org, kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com
+To: linux-sh@vger.kernel.org
 
-On 08/28, Magnus Damm wrote:
-> Renesas R-Car Gen3 CPG support V3
-> 
-> [PATCH v3 01/04] clk: shmobile: Get rid of CONFIG_ARCH_SHMOBILE_MULTI
-> [PATCH v3 02/04] clk: shmobile: Make MSTP clock-output-names optional
-> [PATCH v3 03/04] clk: shmobile: Add Renesas R-Car Gen3 CPG support
-> [PATCH v3 04/04] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support
-> 
-> This series is the first attempt to take the CCF code from the single patch:
-> "[PATCH 1/9] clk: shmobile: add Renesas R-Car Gen3 CPG support"
-> to a full series of various CCF related updates related to R-Car Gen3.
-> 
-> In this series patch 1 and 2 get rid of CONFIG_ARCH_SHMOBILE_MULTI kconfig
-> bits and converts the MSTP CCF driver to not rely on clock-output-names. The
-> latter may need a bit more work.
-> 
-> Patch 3 and 4 introduce an updated R-Car Gen3 CPG driver where I have reworked
-> the code to not depend on clock-output-names instead of using strings simply
-> rely on RCAR_GEN3_CLK_xxx. Those must match the ABI defined in SoC specific
-> indicies such as the ones included in r8a7795-clock.h.
-> 
-> Patch 3 most likely needs to be reworked further to incorporate earlier
-> feedback from CCF maintainers.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Oh I should have read the cover letter first. Doh.
+This patch enables SCIF2
 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v3 -> v4
+
+ - new patch
+
+ .../bindings/serial/renesas,sci-serial.txt          |  4 ++++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi            | 21 +++++++++++++++++++++
+ include/dt-bindings/clock/r8a7795-clock.h           |  1 +
+ 3 files changed, 26 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index e84b13a..8c97599 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -23,6 +23,10 @@ Required properties:
+     - "renesas,scifa-r8a7794" for R8A7794 (R-Car E2) SCIFA compatible UART.
+     - "renesas,scifb-r8a7794" for R8A7794 (R-Car E2) SCIFB compatible UART.
+     - "renesas,hscif-r8a7794" for R8A7794 (R-Car E2) HSCIF compatible UART.
++    - "renesas,scif-r8a7795" for R8A7795 (R-Car H3) SCIF compatible UART.
++    - "renesas,scifa-r8a7795" for R8A7795 (R-Car H3) SCIFA compatible UART.
++    - "renesas,scifb-r8a7795" for R8A7795 (R-Car H3) SCIFB compatible UART.
++    - "renesas,hscif-r8a7795" for R8A7795 (R-Car H3) HSCIF compatible UART.
+     - "renesas,scifa-sh73a0" for SH73A0 (SH-Mobile AG5) SCIFA compatible UART.
+     - "renesas,scifb-sh73a0" for SH73A0 (SH-Mobile AG5) SCIFB compatible UART.
+     - "renesas,scif" for generic SCIF compatible UART.
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 2375b2d..db0828a 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -80,6 +80,10 @@
+ 			};
+ 
+ 			cpg_clocks: cpg_clocks@e6150000 {
++				#address-cells = <2>;
++				#size-cells = <2>;
++				ranges;
++
+ 				compatible = "renesas,r8a7795-cpg-clocks",
+ 					     "renesas,rcar-gen3-cpg-clocks";
+ 				reg = <0 0xe6150000 0 0x1000>;
+@@ -87,7 +91,24 @@
+ 				#clock-cells = <1>;
+ 				clock-output-names = "main", "pll0", "pll1","pll2",
+ 						     "pll3", "pll4";
++
++				mstp3_clks: mstp3_clks@e615013c {
++					compatible = "renesas,r8a7795-mstp-clocks",
++						     "renesas,cpg-mstp-clocks";
++					reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
++					clocks =  <&p_clk>;
++					#clock-cells = <1>;
++					renesas,clock-indices = <RCAR_R8A7795_CLK_SCIF2>;
++					clock-output-names = "scif2";
++				};
+ 			};
+ 		};
++		scif2: serial@e6e88000 {
++			compatible = "renesas,scif-r8a7795", "renesas,scif";
++			reg = <0 0xe6e88000 0 64>;
++			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp3_clks RCAR_R8A7795_CLK_SCIF2>;
++			clock-names = "sci_ick";
++		};
+ 	};
+ };
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+index 4097b0b..43e942a 100644
+--- a/include/dt-bindings/clock/r8a7795-clock.h
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -16,6 +16,7 @@
+ /* MSTP2 */
+ 
+ /* MSTP3 */
++#define RCAR_R8A7795_CLK_SCIF2		10
+ 
+ /* MSTP5 */
+ 
 -- 
-Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
-a Linux Foundation Collaborative Project
+1.9.1
+
