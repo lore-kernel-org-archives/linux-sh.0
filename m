@@ -1,79 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Aug 2015 02:11:29 +0000
-Subject: [PATCH 05/10] ARM: shmobile: silk: add Ether DT support
-Message-Id: <dad5c83d71fcfa117ee678fe66ffa5fd2f1f2440.1438911334.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 06 Aug 2015 08:09:06 +0000
+Subject: [PATCH 11/13 v4][RFC] Local: Hack: disable CONFIG_SUSPEND
+Message-Id: <87h9ocyh7u.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438911334.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1438911334.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Define the SILK board dependent part of the Ether device node.
-Enable DHCP and NFS root for the kernel booting.
+Since cpu suspend is not supported in R-Car Gen3 initial version,
+disable CONFIG_SUSPEND as interim fix until pcsi is available.
 
-Based on the original patch by Vladimir Barinov
-<vladimir.barinov@cogentembedded.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 ---
- arch/arm/boot/dts/r8a7794-silk.dts | 28 +++++++++++++++++++++++++++-
- 1 file changed, 27 insertions(+), 1 deletion(-)
+v3 -> v4
 
-diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
-index f3da95b1dedd..79bc64b94456 100644
---- a/arch/arm/boot/dts/r8a7794-silk.dts
-+++ b/arch/arm/boot/dts/r8a7794-silk.dts
-@@ -22,7 +22,7 @@
- 	};
- 
- 	chosen {
--		bootargs = "ignore_loglevel";
-+		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
- 		stdout-path = &scif2;
- 	};
- 
-@@ -41,6 +41,16 @@
- 		renesas,groups = "scif2_data";
- 		renesas,function = "scif2";
- 	};
-+
-+	ether_pins: ether {
-+		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
-+		renesas,function = "eth";
-+	};
-+
-+	phy1_pins: phy1 {
-+		renesas,groups = "intc_irq8";
-+		renesas,function = "intc";
-+	};
- };
- 
- &scif2 {
-@@ -49,3 +59,19 @@
- 
- 	status = "okay";
- };
-+
-+&ether {
-+	pinctrl-0 = <&ether_pins &phy1_pins>;
-+	pinctrl-names = "default";
-+
-+	phy-handle = <&phy1>;
-+	renesas,ether-link-active-low;
-+	status = "okay";
-+
-+	phy1: ethernet-phy@1 {
-+		reg = <1>;
-+		interrupt-parent = <&irqc0>;
-+		interrupts = <8 IRQ_TYPE_LEVEL_LOW>;
-+		micrel,led-mode = <1>;
-+	};
-+};
+ - new patch
+
+ arch/arm64/configs/defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 53519ae..9139c0b 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -56,6 +56,7 @@ CONFIG_CMA=y
+ CONFIG_CMDLINE="console=ttyAMA0"
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ CONFIG_COMPAT=y
++# CONFIG_SUSPEND is not set
+ CONFIG_CPU_IDLE=y
+ CONFIG_ARM_CPUIDLE=y
+ CONFIG_NET=y
 -- 
-2.1.4
+1.9.1
 
