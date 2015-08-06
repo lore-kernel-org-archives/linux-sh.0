@@ -1,65 +1,92 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 31 Aug 2015 16:03:20 +0000
-Subject: Re: [PATCH v8 00/07] Renesas R-Car H3 (r8a7795) integration patches V8
-Message-Id: <CAMuHMdUiUo-Qwz+T0yzwAuh1UQVFCHF7O9TYC8Jx6sSkzQCE_A@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 06 Aug 2015 00:23:00 +0000
+Subject: [PATCH] drm: rcar-du: Fix plane state free in plane reset handler
+Message-Id: <1438820580-14301-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150831062907.24004.79614.sendpatchset@little-apple>
-In-Reply-To: <20150831062907.24004.79614.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Hi Magnus,
+The plane reset handler frees the plane state and allocates a new
+default state, but when doing so attempt to free the plane state using
+the base plane state pointer instead of casting it to the
+driver-specific state object that has been allocated. Fix it by using
+the rcar_du_plane_atomic_destroy_state() function to destroy the plane
+state instead of duplicating the code.
 
-On Mon, Aug 31, 2015 at 8:29 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> Renesas R-Car H3 (r8a7795) integration patches V8
->
-> [PATCH v8 01/07] arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
-> [PATCH v8 02/07] arm64: renesas: r8a7795 dtsi: Add all common divider clocks
-> [PATCH v8 03/07] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
-> [PATCH v8 04/07] arm64: renesas: r8a7795 dtsi: Add all SCIF nodes
-> [PATCH v8 05/07] arm64: renesas: r8a7795: enable PFC
-> [PATCH v8 06/07] arm64: renesas: add Salvator-X board support on DTS
-> [PATCH v8 07/07] arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
->
-> This is V8 of the R-Car H3 SoC support which contains a simplified
-> series of initial r8a7795 support including:
-> - Single CPU core, Arch timer, GIC
-> - CPG and MSTP
-> - r8a7795 SCIF0->SCIF6
-> - PFC
-> - Salvator-X DEBUG0 and DEBUG1 serial ports.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 45 ++++++++++++++++-----------------
+ 1 file changed, 22 insertions(+), 23 deletions(-)
 
-> Regarding dependencies, this V8 integration series depends on the following:
->
-> CPG:
-> [PATCH v4 00/05] Renesas R-Car Gen3 CPG support V4
->
-> PFC:
-> [PATCH 0/2][RFC] pinctrl: sh-pfc: r8a7795 support
->
-> SCIF:
-> [PATCH] serial: sh-sci: Add device tree support for r8a7795
+Should the DRM core free the atomic state before calling the reset operation ?
+That would simplify drivers.
 
-Thanks!
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index c66986414bb4..ffa583712cd9 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -273,29 +273,6 @@ static const struct drm_plane_helper_funcs rcar_du_plane_helper_funcs = {
+ 	.atomic_update = rcar_du_plane_atomic_update,
+ };
+ 
+-static void rcar_du_plane_reset(struct drm_plane *plane)
+-{
+-	struct rcar_du_plane_state *state;
+-
+-	if (plane->state && plane->state->fb)
+-		drm_framebuffer_unreference(plane->state->fb);
+-
+-	kfree(plane->state);
+-	plane->state = NULL;
+-
+-	state = kzalloc(sizeof(*state), GFP_KERNEL);
+-	if (state = NULL)
+-		return;
+-
+-	state->hwindex = -1;
+-	state->alpha = 255;
+-	state->colorkey = RCAR_DU_COLORKEY_NONE;
+-	state->zpos = plane->type = DRM_PLANE_TYPE_PRIMARY ? 0 : 1;
+-
+-	plane->state = &state->state;
+-	plane->state->plane = plane;
+-}
+-
+ static struct drm_plane_state *
+ rcar_du_plane_atomic_duplicate_state(struct drm_plane *plane)
+ {
+@@ -322,6 +299,28 @@ static void rcar_du_plane_atomic_destroy_state(struct drm_plane *plane,
+ 	kfree(to_rcar_plane_state(state));
+ }
+ 
++static void rcar_du_plane_reset(struct drm_plane *plane)
++{
++	struct rcar_du_plane_state *state;
++
++	if (plane->state) {
++		rcar_du_plane_atomic_destroy_state(plane, plane->state);
++		plane->state = NULL;
++	}
++
++	state = kzalloc(sizeof(*state), GFP_KERNEL);
++	if (state = NULL)
++		return;
++
++	state->hwindex = -1;
++	state->alpha = 255;
++	state->colorkey = RCAR_DU_COLORKEY_NONE;
++	state->zpos = plane->type = DRM_PLANE_TYPE_PRIMARY ? 0 : 1;
++
++	plane->state = &state->state;
++	plane->state->plane = plane;
++}
++
+ static int rcar_du_plane_atomic_set_property(struct drm_plane *plane,
+ 					     struct drm_plane_state *state,
+ 					     struct drm_property *property,
+-- 
+2.4.6
 
-I've pushed your series, its dependencies (cpg upgraded to v5), and everything
-merged together[*] to a few topic branches in the renesas-drivers repository:
-
-  topic/gen3-integration-v8
-  topic/gen3-cpg-v5
-  topic/r8a7795-pfc
-  topic/r8a7795-scif
-  topic/gen3-latest [*]
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
