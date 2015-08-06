@@ -1,98 +1,87 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:27 +0000
-Subject: [PATCH v3 03/33] serial: sh-sci: Correct SCIF_ERROR_CLEAR for plain SCIF
-Message-Id: <1440180177-6924-4-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 06 Aug 2015 08:07:55 +0000
+Subject: [PATCH 08/13 v4][RFC] Local: Hack: enable SCIF2 without using PFC
+Message-Id: <87lhdoyh9p.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-SCIF_ERROR_CLEAR includes SCIFA_ORER, which exists only on SCIFA/SCIFB
-and SCIF on sh7705/sh7720/sh7721.
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-To fix this:
-  1. Remove SCIFA_ORER from the definition of SCIF_ERROR_CLEAR,
-  2. During initialization, store the error clear mask to use,
-     incorporating the overrun bit only if it applies to the SCxSR
-     register.
+Since PFC is not supported yet, this patch manually enables SCIF2 pin
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 ---
-v3:
-  - Rebased on top of "serial: sh-sci: Prevent compiler warnings on
-    64-bit", to avoid introducing a compiler warning,
+v3 -> v4
 
-v2:
-  - No changes.
----
- drivers/tty/serial/sh-sci.c | 14 +++++++++++---
- drivers/tty/serial/sh-sci.h |  4 ++--
- 2 files changed, 13 insertions(+), 5 deletions(-)
+ - new patch
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index b014fce1509d6535..fa26be7f9414dfc2 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -84,6 +84,7 @@ struct sci_port {
- 	unsigned int		overrun_reg;
- 	unsigned int		overrun_mask;
- 	unsigned int		error_mask;
-+	unsigned int		error_clear;
- 	unsigned int		sampling_rate;
- 	resource_size_t		reg_size;
+ drivers/clk/shmobile/clk-rcar-gen3.c | 42 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
+
+diff --git a/drivers/clk/shmobile/clk-rcar-gen3.c b/drivers/clk/shmobile/clk-rcar-gen3.c
+index 098caac..a5edc7b 100644
+--- a/drivers/clk/shmobile/clk-rcar-gen3.c
++++ b/drivers/clk/shmobile/clk-rcar-gen3.c
+@@ -119,6 +119,47 @@ static const struct cpg_pll_config cpg_pll_configs[16] __initconst = {
+  * Initialization
+  */
  
-@@ -2319,15 +2320,22 @@ static int sci_init_single(struct platform_device *dev,
- 	/*
- 	 * Establish some sensible defaults for the error detection.
- 	 */
--	sci_port->error_mask = (p->type = PORT_SCI) ?
--			SCI_DEFAULT_ERROR_MASK : SCIF_DEFAULT_ERROR_MASK;
-+	if (p->type = PORT_SCI) {
-+		sci_port->error_mask = SCI_DEFAULT_ERROR_MASK;
-+		sci_port->error_clear = SCI_ERROR_CLEAR;
-+	} else {
-+		sci_port->error_mask = SCIF_DEFAULT_ERROR_MASK;
-+		sci_port->error_clear = SCIF_ERROR_CLEAR;
-+	}
++/*
++ * Pin Function Controller (PFC) definitions.
++ * TODO: Should move to appropriate header.
++ */
++#define PFC_BASE	0xe6060000
++#define PFC_PMMR	0x0	/* LSI Multiplexed Pin Setting Mask Register */
++#define PFC_GPSR5	0x114	/* GPIO/peripheral function select register 5 */
++#define PFC_IPSR12	0x230	/* Peripheral function select register 12 */
++#define PFC_MOD_SEL1	0x504	/* Module select register 1 */
++#define PFC_SIZE	0x1000
++
++/*
++ * Initialize PFC for SCIF2.
++ * TODO: Should move to appropriate source.
++ */
++void InitScif2PinFunction(void)
++{
++	void __iomem *pfc_base;
++	u32 data;
++
++	pfc_base = ioremap_nocache(PFC_BASE, PFC_SIZE);
++	BUG_ON(!pfc_base);
++
++	data = ioread32(pfc_base + PFC_MOD_SEL1);
++	data &= ~BIT(12);
++	iowrite32(~data, pfc_base + PFC_PMMR);
++	iowrite32(data, pfc_base + PFC_MOD_SEL1);
++
++	data = ioread32(pfc_base + PFC_IPSR12);
++	data &= ~0x000000ff;	//IP12[7:4]=4'b0000, IP12[3:0]=4'b0000
++	iowrite32(~data, pfc_base + PFC_PMMR);
++	iowrite32(data, pfc_base + PFC_IPSR12);
++
++	data = ioread32(pfc_base + PFC_GPSR5);
++	data |= 0x00000c00;	//GP5[11],GP5[10]
++	iowrite32(~data, pfc_base + PFC_PMMR);
++	iowrite32(data, pfc_base + PFC_GPSR5);
++
++	iounmap(pfc_base);
++}
++
+ static u32 cpg_mode __initdata;
  
- 	/*
- 	 * Make the error mask inclusive of overrun detection, if
- 	 * supported.
- 	 */
--	if (sci_port->overrun_reg = SCxSR)
-+	if (sci_port->overrun_reg = SCxSR) {
- 		sci_port->error_mask |= sci_port->overrun_mask;
-+		sci_port->error_clear &= ~sci_port->overrun_mask;
-+	}
+ static struct clk * __init
+@@ -177,6 +218,7 @@ static void __init rcar_gen3_cpg_clocks_init(struct device_node *np)
+ 	unsigned int i;
+ 	int num_clks;
  
- 	port->type		= p->type;
- 	port->flags		= UPF_FIXED_PORT | p->flags;
-diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
-index fe7108bc022a495a..bf69bbdcc1f9aa39 100644
---- a/drivers/tty/serial/sh-sci.h
-+++ b/drivers/tty/serial/sh-sci.h
-@@ -77,7 +77,7 @@ enum {
- #define SCIF_DEFAULT_ERROR_MASK (SCIF_PER | SCIF_FER | SCIF_BRK | SCIF_ER)
++	InitScif2PinFunction();
+ 	cpg_mode = rcar_gen3_read_mode_pins();
  
- #define SCIF_RDxF_CLEAR		(u32)(~(SCIF_DR | SCIF_RDF))
--#define SCIF_ERROR_CLEAR	(u32)(~(SCIFA_ORER | SCIF_PER | SCIF_FER | SCIF_ER))
-+#define SCIF_ERROR_CLEAR	(u32)(~(SCIF_PER | SCIF_FER | SCIF_ER))
- #define SCIF_TDxE_CLEAR		(u32)(~(SCIF_TDFE))
- #define SCIF_BREAK_CLEAR	(u32)(~(SCIF_PER | SCIF_FER | SCIF_BRK))
- 
-@@ -122,7 +122,7 @@ enum {
- #define SCxSR_RDxF_CLEAR(port) \
- 	(((port)->type = PORT_SCI) ? SCI_RDxF_CLEAR : SCIF_RDxF_CLEAR)
- #define SCxSR_ERROR_CLEAR(port) \
--	(((port)->type = PORT_SCI) ? SCI_ERROR_CLEAR : SCIF_ERROR_CLEAR)
-+	(to_sci_port(port)->error_clear)
- #define SCxSR_TDxE_CLEAR(port) \
- 	(((port)->type = PORT_SCI) ? SCI_TDxE_CLEAR : SCIF_TDxE_CLEAR)
- #define SCxSR_BREAK_CLEAR(port) \
+ 	num_clks = of_property_count_strings(np, "clock-output-names");
 -- 
 1.9.1
 
