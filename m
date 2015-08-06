@@ -1,29 +1,52 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 20 Aug 2015 18:54:29 +0000
-Subject: Re: [PATCH 0/2] Add R8A7794/SILK I2C device tree support
-Message-Id: <20150820185429.GD18990@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 06 Aug 2015 08:04:48 +0000
+Subject: [PATCH 02/13 v4][RFC] arm64: renesas: Add new Renesas R-Car Gen3 SoC Kconfig
+Message-Id: <87twscyhev.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2390854.nqPs17CVpc@wasted.cogentembedded.com>
- <55D4FE61.5010800@cogentembedded.com>
-In-Reply-To: <55D4FE61.5010800@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Aug 20, 2015 at 01:08:33AM +0300, Sergei Shtylyov wrote:
-> On 08/20/2015 12:57 AM, Sergei Shtylyov wrote:
-> 
-> >    Here's the set of 2 patches against Simon Horman's 'renesas.git' repo's
-> >'renesas-devel-20150819-v4.2-rc7' tag. Here we add the I2C device tree support
-> >for the R8A7794/SILK board.
-> >
-> >[1/2] ARM: shmobile: r8a7794: add I2C DT support
-> >[2/2] ARM: shmobile: silk: add I2C1 DT support
-> 
->    Simon, actually the above patch is atop of my SILK SDHI1 patch but should
-> apply with offsets atop of your tag.
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Thanks for following up.
+Initial version of device tree for Renesas R-Car Gen3 SoC Kconfig
 
-I have queued up this series for v4.4.
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v3 -> v4
+
+ - no change
+
+ arch/arm64/Kconfig | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index 318175f..bd1257e 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -202,11 +202,20 @@ config ARCH_QCOM
+ 	help
+ 	  This enables support for the ARMv8 based Qualcomm chipsets.
+ 
++config ARCH_RCAR_GEN3
++	bool "Renesas R-Car Gen3 SoC Platform"
++	select ARCH_SHMOBILE
++	help
++	  This enables support for Renesas SoC.
++
+ config ARCH_SEATTLE
+ 	bool "AMD Seattle SoC Family"
+ 	help
+ 	  This enables support for AMD Seattle SOC Family
+ 
++config ARCH_SHMOBILE
++	bool
++
+ config ARCH_TEGRA
+ 	bool "NVIDIA Tegra SoC Family"
+ 	select ARCH_HAS_RESET_CONTROLLER
+-- 
+1.9.1
+
