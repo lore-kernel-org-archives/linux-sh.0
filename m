@@ -1,50 +1,44 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Wed, 05 Aug 2015 16:59:21 +0000
-Subject: Re: [PATCH v2] clocksource: sh_cmt: Only perform clocksource suspend/resume if enabled
-Message-Id: <55C240E9.1070205@linaro.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Aug 2015 02:11:25 +0000
+Subject: [PATCH 01/10] ARM: shmobile: r8a7790: Add JPU device node.
+Message-Id: <fb847575f8f5a9580c26bdc3e08fe49639144619.1438911334.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436874064-2729-1-git-send-email-geert+renesas@glider.be>	<55A7B47F.7060202@linaro.org>	<CAMuHMdU-+-+zygoZneBe9SWM1u8VCmpYOMSB00v29KS4HX-37g@mail.gmail.com> <CAMuHMdU+dwETiSk4=rgpykbJt03Fe4dnSmHYJP6G_xC4M45N3w@mail.gmail.com>
-In-Reply-To: <CAMuHMdU+dwETiSk4=rgpykbJt03Fe4dnSmHYJP6G_xC4M45N3w@mail.gmail.com>
+References: <cover.1438911334.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1438911334.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Thomas Gleixner <tglx@linutronix.de>, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-On 08/05/2015 03:56 PM, Geert Uytterhoeven wrote:
-> Hi Daniel,
->
-> On Thu, Jul 16, 2015 at 4:03 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
->> On Thu, Jul 16, 2015 at 3:41 PM, Daniel Lezcano
->> <daniel.lezcano@linaro.org> wrote:
->>> do you mean to test if the patch [1] solves your problem.
->>>
->>>    -- Daniel
->>>
->>> [1] https://lkml.org/lkml/2015/1/16/81
->>
->> I'll give it a try after my holidays...
->
-> Apparently that patch was integrated in v4.2-rc1, while I still see the p=
-roblem
-> on recent kernels.
->
-> Furthermore, that patch handles clockevents, not clocksources.
-> struct clocksource doesn't seem to have a way to check if it's enabled,
-> so I still need my patch.
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 
-Hmm, I see. I will take this patch as a fix then.
+This patch contains device tree node definition for JPEG codec peripheral
+found in the Renesas R-Car r8a7790 SoC.
 
-Thanks.
-   -- Daniel
+Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-
---=20
-  <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for AR=
-M SoCs
-
-Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
-<http://twitter.com/#!/linaroorg> Twitter |
-<http://www.linaro.org/linaro-blog/> Blog
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index f1cdccc0a8c8..5b2952d5c700 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -872,6 +872,13 @@
+ 		status = "disabled";
+ 	};
+ 
++	jpu: jpeg-codec@fe980000 {
++		compatible = "renesas,jpu-r8a7790";
++		reg = <0 0xfe980000 0 0x10300>;
++		interrupts = <0 272 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7790_CLK_JPU>;
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+-- 
+2.1.4
 
