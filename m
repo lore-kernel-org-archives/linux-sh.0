@@ -1,42 +1,79 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 06 Aug 2015 00:37:51 +0000
-Subject: Re: [PATCH] ARM: shmobile: Add silk device tree bindings documentation
-Message-Id: <20150806003751.GC17231@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 07 Aug 2015 03:20:02 +0000
+Subject: [PATCH 16/16 v5][RFC] Local: arm64: renesas: add SalvatorX board support on DTS
+Message-Id: <87lhdndbz9.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438723848-14812-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1438723848-14812-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Aug 05, 2015 at 06:30:48AM +0900, Simon Horman wrote:
-> Add Silk Device tree bindings Documentation, listing it as a supported board.
-> 
-> This allows to use checkpatch to validate DTSes referring to the Silk board.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Thanks, I have queued this up for v4.4 rather than as a fix for v4.3
-as it doesn't have any run or build time effect.
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v4 -> v5
 
-> ---
->  Documentation/devicetree/bindings/arm/shmobile.txt | 2 ++
->  1 file changed, 2 insertions(+)
-> 
-> diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
-> index c4f19b2e7dd9..f3f96b5a7418 100644
-> --- a/Documentation/devicetree/bindings/arm/shmobile.txt
-> +++ b/Documentation/devicetree/bindings/arm/shmobile.txt
-> @@ -57,6 +57,8 @@ Boards:
->      compatible = "renesas,lager", "renesas,r8a7790"
->    - Marzen
->      compatible = "renesas,marzen", "renesas,r8a7779"
-> +  - Silk
-> +    compatible = "renesas,silk", "renesas,r8a7794";
->  
->  Note: Reference Device Tree Implementations are temporary implementations
->        to ease the migration from platform devices to Device Tree, and are
-> -- 
-> 2.1.4
-> 
+ - modify bootargs
+
+ arch/arm64/boot/dts/renesas/Makefile              |  2 +-
+ arch/arm64/boot/dts/renesas/r8a7795-salvatorx.dts | 36 +++++++++++++++++++++++
+ 2 files changed, 37 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm64/boot/dts/renesas/r8a7795-salvatorx.dts
+
+diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
+index 6aeefd9..255c957 100644
+--- a/arch/arm64/boot/dts/renesas/Makefile
++++ b/arch/arm64/boot/dts/renesas/Makefile
+@@ -1,4 +1,4 @@
+-dtb-$(CONFIG_ARCH_RCAR_GEN3) ++dtb-$(CONFIG_ARCH_RCAR_GEN3) += r8a7795-salvatorx.dtb
+ 
+ always		:= $(dtb-y)
+ subdir-y	:= $(dts-dirs)
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvatorx.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvatorx.dts
+new file mode 100644
+index 0000000..1b00390
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvatorx.dts
+@@ -0,0 +1,36 @@
++/*
++ * Device Tree Source for the SalvatorX board
++ *
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/dts-v1/;
++#include "r8a7795.dtsi"
++
++/ {
++	model = "Renesas SalvatorX board based on r8a7795";
++	compatible = "renesas,salvatorx", "renesas,r8a7795";
++
++	aliases {
++		serial0 = &scif2;
++	};
++
++	chosen {
++		bootargs = "ignore_loglevel";
++		stdout-path = &scif2;
++	};
++
++	memory@48000000 {
++		device_type = "memory";
++		/* first 128MB is reserved for secure area. */
++		reg = <0x0 0x48000000 0x0 0x38000000>;
++	};
++};
++
++&scif2 {
++	status = "okay";
++};
+-- 
+1.9.1
+
