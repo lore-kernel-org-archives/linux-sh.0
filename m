@@ -1,96 +1,72 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 06 Aug 2015 16:21:58 +0000
+From: Sudeep Holla <sudeep.holla@arm.com>
+Date: Fri, 07 Aug 2015 09:45:22 +0000
 Subject: Re: [PATCH v4 1/6] ARM: shmobile: r8a7740 dtsi: Add L2 cache-controller node
-Message-Id: <CAMuHMdVAOba0ofmoy8OH2DdY1m3XaD8iOXvXBE035=C4yK58VQ@mail.gmail.com>
+Message-Id: <55C47E32.6070400@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438765090-823-1-git-send-email-geert+renesas@glider.be>
- <1438765090-823-2-git-send-email-geert+renesas@glider.be>
- <55C1D894.8070302@arm.com>
- <CAMuHMdXdEV+41mH338bDbazzqOErDLQkBUAj2+uVX4Wupn1ABQ@mail.gmail.com>
- <55C1EC3C.9000407@arm.com>
-In-Reply-To: <55C1EC3C.9000407@arm.com>
+References: <1438765090-823-1-git-send-email-geert+renesas@glider.be>	<1438765090-823-2-git-send-email-geert+renesas@glider.be>	<55C1D894.8070302@arm.com>	<CAMuHMdXdEV+41mH338bDbazzqOErDLQkBUAj2+uVX4Wupn1ABQ@mail.gmail.com>	<55C1EC3C.9000407@arm.com>
+ <CAMuHMdVAOba0ofmoy8OH2DdY1m3XaD8iOXvXBE035=C4yK58VQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdVAOba0ofmoy8OH2DdY1m3XaD8iOXvXBE035=C4yK58VQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Sudeep,
 
-On Wed, Aug 5, 2015 at 12:58 PM, Sudeep Holla <sudeep.holla@arm.com> wrote:
-> On 05/08/15 11:44, Geert Uytterhoeven wrote:
->> On Wed, Aug 5, 2015 at 11:34 AM, Sudeep Holla <sudeep.holla@arm.com>
->> wrote:
->>> On 05/08/15 09:58, Geert Uytterhoeven wrote:
->>>> Add the missing L2 cache-controller node. This will allow migration to
->>>> the generic l2c OF initialization.
+
+On 06/08/15 17:21, Geert Uytterhoeven wrote:
+> Hi Sudeep,
+>
+> On Wed, Aug 5, 2015 at 12:58 PM, Sudeep Holla <sudeep.holla@arm.com> wrote:
+>> On 05/08/15 11:44, Geert Uytterhoeven wrote:
+>>> On Wed, Aug 5, 2015 at 11:34 AM, Sudeep Holla <sudeep.holla@arm.com>
+>>> wrote:
+
+[..]
+
 >>>>
->>>> The L2 cache is an ARM L2C-310 (r3p1-150rel0), of size 256 KiB (32 KiB x
->>>> 8 ways).
->>>>
->>>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->>
->>
->>>> diff --git a/arch/arm/boot/dts/r8a7740.dtsi
->>>> b/arch/arm/boot/dts/r8a7740.dtsi
->>>> index d84714468cce18df..ddef5b1c68fa06b3 100644
->>>> --- a/arch/arm/boot/dts/r8a7740.dtsi
->>>> +++ b/arch/arm/boot/dts/r8a7740.dtsi
->>>> @@ -37,6 +37,22 @@
->>>>                        <0xc2000000 0x1000>;
->>>>          };
->>>>
->>>> +       L2: cache-controller {
->>>> +               compatible = "arm,pl310-cache";
->>>> +               reg = <0xf0100000 0x1000>;
->>>> +               interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
->>>> +               power-domains = <&pd_a3sm>;
->>>> +               arm,data-latency = <3 3 3>;
->>>> +               arm,tag-latency = <2 2 2>;
->>>> +               arm,shared-override;
->>>> +               cache-unified;
->>>> +               cache-level = <2>;
->>>> +               cache-size = <0x40000>;
->>>> +               cache-sets = <1024>;
->>>> +               cache-block-size = <32>;
->>>> +               cache-line-size = <32>;
+>>>> Any particular reason whey you need all this cache-* properties ? Is
 >>>
->>> Any particular reason whey you need all this cache-* properties ? Is
+>>> To describe the cache as good as possible.
 >>
->> To describe the cache as good as possible.
->
-> Why if you can probe it ? IMO DT is mostly useful to describe things
-> that can't be probed/discovered using hardware.
->
->>> something broken on these SoCs ? We should be able to get most of these
->>> information from the SoC(reading some registers). It's good to avoid
->>> passing them via DT if they can be discovered from hardware.
+>> Why if you can probe it ? IMO DT is mostly useful to describe things
+>> that can't be probed/discovered using hardware.
 >>
->> So we have all these documented properties in
->> Documentation/devicetree/bindings/arm/l2cc.txt, but they're not meant to
->> be used?
+>>>> something broken on these SoCs ? We should be able to get most of these
+>>>> information from the SoC(reading some registers). It's good to avoid
+>>>> passing them via DT if they can be discovered from hardware.
+>>>
+>>> So we have all these documented properties in
+>>> Documentation/devicetree/bindings/arm/l2cc.txt, but they're not meant to
+>>> be used?
+>>
+>> No I didn't mean that, I just wanted to know if they can't be probed due
+>> to some hardware issue. It would avoid issues with wrong DTs especially
+>> if they are not so easy to upgrade.
 >
-> No I didn't mean that, I just wanted to know if they can't be probed due
-> to some hardware issue. It would avoid issues with wrong DTs especially
-> if they are not so easy to upgrade.
+> I think it works just fine without them.
+>
 
-I think it works just fine without them.
+Yes, in general if you specify a value in DT that can be probed, its
+usually to override the probed value(useful if there is some h/w errata)...
 
-Should I drop all cache-* properties marked optional in
-Documentation/devicetree/bindings/arm/l2cc.txt?
-That would be cache-size, cache-sets, cache-block-size, and cache-line-size.
+> Should I drop all cache-* properties marked optional in
+> Documentation/devicetree/bindings/arm/l2cc.txt?
+> That would be cache-size, cache-sets, cache-block-size, and cache-line-size.
+>
 
-What about the L1 cache? I know Linux uses none of the d-cache-*
-and i-cache-* properties.
+... however if you incorrect values by mistake, then it's problematic
+even if h/w provides correct value.
 
-Thanks!
 
-Gr{oetje,eeting}s,
+> What about the L1 cache? I know Linux uses none of the d-cache-*
+> and i-cache-* properties.
+>
 
-                        Geert
+Same there, IIRC PPC use them, but on ARM I think so far the need has
+not arise.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Just to re-iterate myself, I am not against adding them, but it's not
+really needed. I just wanted to know if there was any h/w issue.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Regards,
+Sudeep
