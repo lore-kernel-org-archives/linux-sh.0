@@ -1,37 +1,30 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 07 Aug 2015 03:15:49 +0000
-Subject: [PATCH 03/16 v5][RFC] ARM: shmobile: Add Renesas R8A7795 SoC support
-Message-Id: <874mkbeqqt.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 07 Aug 2015 07:15:09 +0000
+Subject: Re: [PATCH 03/16 v5][RFC] ARM: shmobile: Add Renesas R8A7795 SoC support
+Message-Id: <CAMuHMdXys1zaNMj90P144Mkr-KzrMAHZ-NXB6bXTQ4FrcNg4yQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <874mkbeqqt.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <874mkbeqqt.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Fri, Aug 7, 2015 at 5:15 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v4 -> v5
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
- - separate to Documentation only
+Gr{oetje,eeting}s,
 
- Documentation/devicetree/bindings/arm/shmobile.txt | 2 ++
- 1 file changed, 2 insertions(+)
+                        Geert
 
-diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
-index c4f19b2..8d696a0 100644
---- a/Documentation/devicetree/bindings/arm/shmobile.txt
-+++ b/Documentation/devicetree/bindings/arm/shmobile.txt
-@@ -27,6 +27,8 @@ SoCs:
-     compatible = "renesas,r8a7793"
-   - R-Car E2 (R8A77940)
-     compatible = "renesas,r8a7794"
-+  - R-Car H3 (R8A77950)
-+    compatible = "renesas,r8a7795"
- 
- 
- Boards:
--- 
-1.9.1
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
