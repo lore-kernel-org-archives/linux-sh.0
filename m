@@ -1,37 +1,30 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 07 Aug 2015 03:17:07 +0000
-Subject: [PATCH 07/16 v5][RFC] serial: sh-sci: Add device tree support for r8a7795
-Message-Id: <87y4hndc46.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 07 Aug 2015 07:14:34 +0000
+Subject: Re: [PATCH 07/16 v5][RFC] serial: sh-sci: Add device tree support for r8a7795
+Message-Id: <CAMuHMdVGscF_LQKaCDwSbZX_m0+Qd6eAmi9cmiYbgcZhAOKV3A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87y4hndc46.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87y4hndc46.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Fri, Aug 7, 2015 at 5:17 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v4 -> v5
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
- - SCIFA/SCIFB are removed
+Gr{oetje,eeting}s,
 
- Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 2 ++
- 1 file changed, 2 insertions(+)
+                        Geert
 
-diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-index e84b13a..73f825e 100644
---- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-+++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-@@ -23,6 +23,8 @@ Required properties:
-     - "renesas,scifa-r8a7794" for R8A7794 (R-Car E2) SCIFA compatible UART.
-     - "renesas,scifb-r8a7794" for R8A7794 (R-Car E2) SCIFB compatible UART.
-     - "renesas,hscif-r8a7794" for R8A7794 (R-Car E2) HSCIF compatible UART.
-+    - "renesas,scif-r8a7795" for R8A7795 (R-Car H3) SCIF compatible UART.
-+    - "renesas,hscif-r8a7795" for R8A7795 (R-Car H3) HSCIF compatible UART.
-     - "renesas,scifa-sh73a0" for SH73A0 (SH-Mobile AG5) SCIFA compatible UART.
-     - "renesas,scifb-sh73a0" for SH73A0 (SH-Mobile AG5) SCIFB compatible UART.
-     - "renesas,scif" for generic SCIF compatible UART.
--- 
-1.9.1
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
