@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 07 Aug 2015 00:13:25 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 07 Aug 2015 01:59:28 +0000
 Subject: Re: [PATCH 13/13 v4][RFC] Local: arm64: renesas: add SalvatorX board support on DTS
-Message-Id: <87bnekdkmc.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <CANqRtoQv_O6q0POaW1wQmXLi-_FNnxbnbnJ6hKfLCdd+tHmNJg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87egjgyh6d.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87egjgyh6d.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,25 +10,25 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Hi Geert,
 
-Hi Geert
-
-
-> > +       aliases {
-> > +               serial0 = &scif2;
-> 
+On Thu, Aug 6, 2015 at 7:15 PM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> On Thu, Aug 6, 2015 at 10:09 AM, Kuninori Morimoto
+> <kuninori.morimoto.gx@renesas.com> wrote:
+>> --- /dev/null
+>> +++ b/arch/arm64/boot/dts/renesas/r8a7795-salvatorx.dts
+>> @@ -0,0 +1,36 @@
+>
+>> +       aliases {
+>> +               serial0 = &scif2;
+>
 > Mapping 0 to 2?
-(snip)
-> |        stdout-path = "/path/to/scifa0:115200n8"
-> |
-> |        stdout-path = "serial0:115200n8"
-> 
-> I haven't tried that yet, but we may want to start doing The Right Thing (tm)
-> with Gen3.
 
-I will try it if I have chance to HW access.
-otherwise, my v5 will be just tidyups.
+I recall that "serial0" is supposed to be used for the first serial
+port on the board. On older kernels we used a 1:1 mapping between the
+scif index and the serial index, but not anymore. I may be wrong
+though. And if I'm right then marzen needs to be fixed.
 
-Best regards
----
-Kuninori Morimoto
+Cheers,
+
+/ magnus
