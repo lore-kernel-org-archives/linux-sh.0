@@ -1,32 +1,33 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 07 Aug 2015 00:40:48 +0000
+Date: Fri, 07 Aug 2015 00:41:40 +0000
 Subject: Re: [PATCH v2 0/2] Add R8A7794 GPIO DT support
-Message-Id: <20150807004048.GC1145@verge.net.au>
+Message-Id: <20150807004140.GD1145@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <6388101.Drn6rL87rl@wasted.cogentembedded.com>
  <20150806004714.GD17231@verge.net.au>
- <CAMuHMdV5F2JL6_OhPY3y7WZn_pfG_ufRUe9NA+2C-CGLtVxVaw@mail.gmail.com>
-In-Reply-To: <CAMuHMdV5F2JL6_OhPY3y7WZn_pfG_ufRUe9NA+2C-CGLtVxVaw@mail.gmail.com>
+ <55C3BE35.8020408@cogentembedded.com>
+In-Reply-To: <55C3BE35.8020408@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Aug 06, 2015 at 09:21:34AM +0200, Geert Uytterhoeven wrote:
-> On Thu, Aug 6, 2015 at 2:47 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Tue, Aug 04, 2015 at 12:36:27AM +0300, Sergei Shtylyov wrote:
-> >>    Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
-> >> 'renesas-devel-20150803-v4.2-rc5' tag. Here we add the GPIO device tree support
-> >> for the R8A7794 SoC.
-> >>
-> >> [1/2] ARM: shmobile: r8a7794: add GPIO clocks
-> >> [2/2] ARM: shmobile: r8a7794: add GPIO DT support
-> >
-> > Thanks, I have queued these up for v4.4.
+On Thu, Aug 06, 2015 at 11:06:13PM +0300, Sergei Shtylyov wrote:
+> Hello.
 > 
-> Woops, Since CPG/MSTP support is in, GPIO won't work, as the nodes
-> lack "power-domains" properties.
+> On 08/06/2015 03:47 AM, Simon Horman wrote:
+> 
+> >>    Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
+> >>'renesas-devel-20150803-v4.2-rc5' tag. Here we add the GPIO device tree support
+> >>for the R8A7794 SoC.
+> 
+> >>[1/2] ARM: shmobile: r8a7794: add GPIO clocks
+> >>[2/2] ARM: shmobile: r8a7794: add GPIO DT support
+> 
+> >Thanks, I have queued these up for v4.4.
+> 
+>    Not seeing anything new in your repo. Which is probably a good thing
+> considering Geert's comments.
 
-Sorry for letting that through.
-I will drop these patches accordingly.
-Sergei, could you please re-spin them?
+It seems that I forgot to push yesterday, which as you say,
+does seem quite fortunate given Geert's comments.
