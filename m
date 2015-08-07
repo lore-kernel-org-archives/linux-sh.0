@@ -1,44 +1,45 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 25 Aug 2015 07:57:56 +0000
-Subject: [PATCH] net: compile renesas directory if NET_VENDOR_RENESAS is configured
-Message-Id: <1440489476-26700-1-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 07 Aug 2015 02:11:27 +0000
+Subject: [PATCH 03/10] ARM: shmobile: r8a7794: add PFC DT support
+Message-Id: <fd1683c18c372d51aeeeb25efa8b451f922c9c52.1438911334.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1438911334.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1438911334.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Currently the renesas ethernet driver directory is compiled if SH_ETH is
-configured rather than NET_VENDOR_RENESAS. Although incorrect that was
-quite harmless as until recently as SH_ETH configured the only driver in
-the renesas directory. However, as of c156633f1353 ("Renesas Ethernet AVB
-driver proper") the renesas directory includes another driver, configured
-by RAVB, and it makes little sense for it to have a hidden dependency on
-SH_ETH.
+Define the generic R8A7794 part of the PFC device node.
 
-Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-[horms: rewrote changelog]
+Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/net/ethernet/Makefile | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7794.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/drivers/net/ethernet/Makefile b/drivers/net/ethernet/Makefile
-index f42177b11723..ddfc808110a1 100644
---- a/drivers/net/ethernet/Makefile
-+++ b/drivers/net/ethernet/Makefile
-@@ -65,7 +65,7 @@ obj-$(CONFIG_NET_VENDOR_PASEMI) += pasemi/
- obj-$(CONFIG_NET_VENDOR_QLOGIC) += qlogic/
- obj-$(CONFIG_NET_VENDOR_QUALCOMM) += qualcomm/
- obj-$(CONFIG_NET_VENDOR_REALTEK) += realtek/
--obj-$(CONFIG_SH_ETH) += renesas/
-+obj-$(CONFIG_NET_VENDOR_RENESAS) += renesas/
- obj-$(CONFIG_NET_VENDOR_RDC) += rdc/
- obj-$(CONFIG_NET_VENDOR_ROCKER) += rocker/
- obj-$(CONFIG_NET_VENDOR_SAMSUNG) += samsung/
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 8824dbd5dbb4..51cc2b975c3f 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -108,6 +108,12 @@
+ 		clocks = <&mstp4_clks R8A7794_CLK_IRQC>;
+ 	};
+ 
++	pfc: pin-controller@e6060000 {
++		compatible = "renesas,pfc-r8a7794";
++		reg = <0 0xe6060000 0 0x11c>;
++		#gpio-range-cells = <3>;
++	};
++
+ 	dmac0: dma-controller@e6700000 {
+ 		compatible = "renesas,rcar-dmac";
+ 		reg = <0 0xe6700000 0 0x20000>;
 -- 
 2.1.4
 
