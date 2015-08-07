@@ -1,70 +1,83 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 04 Aug 2015 13:55:16 +0000
-Subject: [PATCH v2 3/6] ARM: shmobile: sh73a0 dtsi: Add missing "gpio-ranges" to gpio node
-Message-Id: <1438696519-13727-4-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 07 Aug 2015 03:17:34 +0000
+Subject: [PATCH 08/16 v5][RFC] arm64: renesas: Add SCIF2 support on r8a7795
+Message-Id: <87wpx7dc3e.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-If a GPIO driver uses gpiochip_add_pin_range() (which is usually the
-case for GPIO/PFC combos), the GPIO hogging mechanism configured from DT
-doesn't work:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-    requesting hog GPIO led1-high (chip sh73a0_pfc, offset 20) failed
+This patch enables SCIF2
+Gaku Inami <gaku.inami.xw@bp.renesas.com> created original patch,
+and Kuninori updated DTSI
 
-The actual error code is -517 = -EPROBE_DEFER.
-
-The problem is that PFC+GPIO registration is handled in multiple steps:
-  1. pinctrl_register(),
-  2. gpiochip_add(),
-  3. gpiochip_add_pin_range().
-
-Configuration of the hogs is handled in gpiochip_add():
-
-    gpiochip_add
-        of_gpiochip_add
-            of_gpiochip_scan_hogs
-                gpiod_hog
-                    gpiochip_request_own_desc
-                        __gpiod_request
-                            chip->request
-                                pinctrl_request_gpio
-                                    pinctrl_get_device_gpio_range
-
-However, at this point the GPIO controller hasn't been added to
-pinctrldev_list yet, so the range can't be found, and the operation fails
-with -EPROBE_DEFER.
-
-To fix this, add a "gpio-ranges" property to the gpio device node, so
-the ranges are added by of_gpiochip_add_pin_range(), which is called by
-of_gpiochip_add() before the call to of_gpiochip_scan_hogs().
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v2:
-  - Add Acked-by.
----
- arch/arm/boot/dts/sh73a0.dtsi | 3 +++
- 1 file changed, 3 insertions(+)
+v4 -> v5
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 11e17c5f26e2cae2..ff7c8f298f30a58d 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -392,6 +392,9 @@
- 		      <0xe605801c 0x1c>;
- 		gpio-controller;
- 		#gpio-cells = <2>;
-+		gpio-ranges +			<&pfc 0 0 119>, <&pfc 128 128 37>, <&pfc 192 192 91>,
-+			<&pfc 288 288 22>;
- 		interrupts-extended  			<&irqpin0 0 0>, <&irqpin0 1 0>, <&irqpin0 2 0>, <&irqpin0 3 0>,
- 			<&irqpin0 4 0>, <&irqpin0 5 0>, <&irqpin0 6 0>, <&irqpin0 7 0>,
+ - no change
+
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 22 ++++++++++++++++++++++
+ include/dt-bindings/clock/r8a7795-clock.h |  1 +
+ 2 files changed, 23 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index efcd3c2..0de2771 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -80,6 +80,10 @@
+ 			};
+ 
+ 			cpg_clocks: cpg_clocks@e6150000 {
++				#address-cells = <2>;
++				#size-cells = <2>;
++				ranges;
++
+ 				compatible = "renesas,r8a7795-cpg-clocks",
+ 					     "renesas,rcar-gen3-cpg-clocks";
+ 				reg = <0 0xe6150000 0 0x1000>;
+@@ -87,7 +91,25 @@
+ 				#clock-cells = <1>;
+ 				clock-output-names = "main", "pll0", "pll1","pll2",
+ 						     "pll3", "pll4";
++
++				mstp3_clks: mstp3_clks@e615013c {
++					compatible = "renesas,r8a7795-mstp-clocks",
++						     "renesas,cpg-mstp-clocks";
++					reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
++					clocks =  <&p_clk>;
++					#clock-cells = <1>;
++					renesas,clock-indices = <R8A7795_CLK_SCIF2>;
++					clock-output-names = "scif2";
++				};
+ 			};
+ 		};
++
++		scif2: serial@e6e88000 {
++			compatible = "renesas,scif-r8a7795", "renesas,scif";
++			reg = <0 0xe6e88000 0 64>;
++			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp3_clks R8A7795_CLK_SCIF2>;
++			clock-names = "sci_ick";
++		};
+ 	};
+ };
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+index 334fa13..27b3a29 100644
+--- a/include/dt-bindings/clock/r8a7795-clock.h
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -24,6 +24,7 @@
+ /* MSTP2 */
+ 
+ /* MSTP3 */
++#define R8A7795_CLK_SCIF2		10
+ 
+ /* MSTP5 */
+ 
 -- 
 1.9.1
 
