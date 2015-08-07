@@ -1,40 +1,69 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 27 Aug 2015 19:02:29 +0000
-Subject: [PATCH 3/5] arm64: renesas: r8a7795 dtsi: Add pll1_div2 clock
-Message-Id: <1440702151-1406-4-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Aug 2015 02:11:33 +0000
+Subject: [PATCH 09/10] ARM: shmobile: r8a7740 dtsi: Add missing "gpio-ranges" to gpio node
+Message-Id: <09d1c7b4babd3ef9bfc0a148931e5e5702db5e1b.1438911334.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1438911334.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1438911334.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add the pll1_div2 clock, which runs at half the frequency of pll1.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+
+If a GPIO driver uses gpiochip_add_pin_range() (which is usually the
+case for GPIO/PFC combos), the GPIO hogging mechanism configured from DT
+doesn't work:
+
+    requesting hog GPIO lcd0 (chip r8a7740_pfc, offset 176) failed
+
+The actual error code is -517 = -EPROBE_DEFER.
+
+The problem is that PFC+GPIO registration is handled in multiple steps:
+  1. pinctrl_register(),
+  2. gpiochip_add(),
+  3. gpiochip_add_pin_range().
+
+Configuration of the hogs is handled in gpiochip_add():
+
+    gpiochip_add
+        of_gpiochip_add
+            of_gpiochip_scan_hogs
+                gpiod_hog
+                    gpiochip_request_own_desc
+                        __gpiod_request
+                            chip->request
+                                pinctrl_request_gpio
+                                    pinctrl_get_device_gpio_range
+
+However, at this point the GPIO controller hasn't been added to
+pinctrldev_list yet, so the range can't be found, and the operation fails
+with -EPROBE_DEFER.
+
+To fix this, add a "gpio-ranges" property to the gpio device node, so
+the range is added by of_gpiochip_add_pin_range(), which is called by
+of_gpiochip_add() before the call to of_gpiochip_scan_hogs().
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ arch/arm/boot/dts/r8a7740.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 54f2a2b0e1158335..7a9dee91fee6ba7b 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -71,6 +71,15 @@
- 			#clock-cells = <1>;
- 			ranges;
- 
-+			pll1_div2_clk: pll1_div2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+				clock-output-names = "pll1_div2";
-+			};
-+
- 			zt_clk: zt {
- 				compatible = "fixed-factor-clock";
- 				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index d84714468cce..e14cb1438216 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -291,6 +291,7 @@
+ 		      <0xe605800c 0x20>;
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
++		gpio-ranges = <&pfc 0 0 212>;
+ 		interrupts-extended  			<&irqpin0 0 0>, <&irqpin0 1 0>, <&irqpin0 2 0>, <&irqpin0 3 0>,
+ 			<&irqpin0 4 0>, <&irqpin0 5 0>, <&irqpin0 6 0>, <&irqpin0 7 0>,
 -- 
-1.9.1
+2.1.4
 
