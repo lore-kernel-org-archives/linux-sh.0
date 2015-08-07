@@ -1,108 +1,214 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 24 Aug 2015 16:12:13 +0000
-Subject: [PATCH 1/3] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support
-Message-Id: <1440432735-9906-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Aug 2015 02:12:06 +0000
+Subject: [PATCH 07/12] ARM: shmobile: r8a7778 dtsi: Add CPG/MSTP Clock Domain
+Message-Id: <eb0a3b905078e8789a4bdcce5947fe96d39f47a9.1438911559.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1438911559.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1438911559.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add Clock Domain support to the R-Car Gen3 Clock Pulse Generator (CPG)
-driver using the generic PM Domain.  This allows to power-manage the
-module clocks of SoC devices that are part of the CPG/MSTP Clock Domain
-using Runtime PM, or for system suspend/resume.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-SoC devices that are part of the CPG/MSTP Clock Domain and can be
-power-managed through an MSTP clock should be tagged in DT with a proper
-"power-domains" property.
+Add an appropriate "#power-domain-cells" property to the cpg_clocks
+device node, to create the CPG/MSTP Clock Domain.
+
+Add "power-domains" properties to all device nodes for devices that are
+part of the CPG/MSTP Clock Domain and can be power-managed through an
+MSTP clock.  This applies to most on-SoC devices, which have a
+one-to-one mapping from SoC device to DT device node.  A notable
+exception is the "sound" node, which represents multiple SoC devices,
+each having their own MSTP clocks.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - No changes.
+ arch/arm/boot/dts/r8a7778.dtsi | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
- .../clock/renesas,rcar-gen3-cpg-clocks.txt         | 26 ++++++++++++++++++++--
- arch/arm64/Kconfig.platforms                       |  1 +
- drivers/clk/shmobile/clk-rcar-gen3.c               |  2 ++
- 3 files changed, 27 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
-index b1a7e01fd042c6ce..a46245b834e0477a 100644
---- a/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
-@@ -2,6 +2,8 @@
- 
- The CPG generates core clocks for the R-Car Gen3 SoCs. It includes three PLLs
- and several fixed ratio dividers.
-+The CPG also provides a Clock Domain for SoC devices, in combination with the
-+CPG Module Stop (MSTP) Clocks.
- 
- Required Properties:
- 
-@@ -15,10 +17,18 @@ Required Properties:
-   - #clock-cells: Must be 1
-   - clock-output-names: The names of the clocks. Supported clocks are
-     "main", "pll0", "pll1", "pll2", "pll3", "pll4"
-+  - #power-domain-cells: Must be 0
- 
-+SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
-+through an MSTP clock should refer to the CPG device node in their
-+"power-domains" property, as documented by the generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
- 
--Example
---------
-+
-+Examples
-+--------
-+
-+  - CPG device node:
- 
- 	cpg_clocks: cpg_clocks@e6150000 {
- 		compatible = "renesas,r8a7795-cpg-clocks",
-@@ -28,4 +38,16 @@ Example
- 		#clock-cells = <1>;
- 		clock-output-names = "main", "pll0", "pll1","pll2",
- 				     "pll3", "pll4";
-+		#power-domain-cells = <0>;
-+	};
-+
-+  - CPG/MSTP Clock Domain member device node:
-+
-+	scif2: serial@e6e88000 {
-+		compatible = "renesas,scif-r8a7795", "renesas,scif";
-+		reg = <0 0xe6e88000 0 64>;
-+		interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks RCAR_R8A7795_CLK_SCIF2>;
-+		clock-names = "sci_ick";
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 7ce9f5fd5865..4b1fa9f42ad5 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -53,6 +53,7 @@
+ 		reg = <0xfde00000 0x400>;
+ 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7778_CLK_ETHER>;
 +		power-domains = <&cpg_clocks>;
+ 		phy-mode = "rmii";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -152,6 +153,7 @@
+ 		reg = <0xffc70000 0x1000>;
+ 		interrupts = <0 67 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_I2C0>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
  	};
-diff --git a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
-index 1e9b0c89fdbc3517..8b47d2bac9018873 100644
---- a/arch/arm64/Kconfig.platforms
-+++ b/arch/arm64/Kconfig.platforms
-@@ -55,6 +55,7 @@ config ARCH_RCAR_GEN3
- 	bool "Renesas R-Car Gen3 SoC Platform"
- 	select ARCH_SHMOBILE
- 	select ARCH_SHMOBILE_MULTI
-+	select PM_GENERIC_DOMAINS if PM
- 	help
- 	  This enables support for Renesas SoC.
  
-diff --git a/drivers/clk/shmobile/clk-rcar-gen3.c b/drivers/clk/shmobile/clk-rcar-gen3.c
-index 098caac07bdc2727..80c9b1dfff05990d 100644
---- a/drivers/clk/shmobile/clk-rcar-gen3.c
-+++ b/drivers/clk/shmobile/clk-rcar-gen3.c
-@@ -227,6 +227,8 @@ static void __init rcar_gen3_cpg_clocks_init(struct device_node *np)
- 	}
+@@ -162,6 +164,7 @@
+ 		reg = <0xffc71000 0x1000>;
+ 		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_I2C1>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
  
- 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-+
-+	cpg_mstp_add_clk_domain(np);
- }
- CLK_OF_DECLARE(rcar_gen3_cpg_clks, "renesas,rcar-gen3-cpg-clocks",
- 	       rcar_gen3_cpg_clocks_init);
+@@ -172,6 +175,7 @@
+ 		reg = <0xffc72000 0x1000>;
+ 		interrupts = <0 76 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_I2C2>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -182,6 +186,7 @@
+ 		reg = <0xffc73000 0x1000>;
+ 		interrupts = <0 77 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_I2C3>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -193,6 +198,7 @@
+ 			     <0 34 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_TMU0>;
+ 		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
+ 
+ 		#renesas,channels = <3>;
+ 
+@@ -207,6 +213,7 @@
+ 			     <0 38 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_TMU1>;
+ 		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
+ 
+ 		#renesas,channels = <3>;
+ 
+@@ -221,6 +228,7 @@
+ 			     <0 42 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_TMU2>;
+ 		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
+ 
+ 		#renesas,channels = <3>;
+ 
+@@ -288,6 +296,7 @@
+ 		interrupts = <0 70 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF0>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -297,6 +306,7 @@
+ 		interrupts = <0 71 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF1>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -306,6 +316,7 @@
+ 		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF2>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -315,6 +326,7 @@
+ 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF3>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -324,6 +336,7 @@
+ 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF4>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -333,6 +346,7 @@
+ 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF5>;
+ 		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -341,6 +355,7 @@
+ 		reg = <0xffe4e000 0x100>;
+ 		interrupts = <0 61 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7778_CLK_MMC>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -349,6 +364,7 @@
+ 		reg = <0xffe4c000 0x100>;
+ 		interrupts = <0 87 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7778_CLK_SDHI0>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -357,6 +373,7 @@
+ 		reg = <0xffe4d000 0x100>;
+ 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7778_CLK_SDHI1>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -365,6 +382,7 @@
+ 		reg = <0xffe4f000 0x100>;
+ 		interrupts = <0 86 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks R8A7778_CLK_SDHI2>;
++		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -373,6 +391,7 @@
+ 		reg = <0xfffc7000 0x18>;
+ 		interrupts = <0 63 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_HSPI>;
++		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+@@ -383,6 +402,7 @@
+ 		reg = <0xfffc8000 0x18>;
+ 		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_HSPI>;
++		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+@@ -393,6 +413,7 @@
+ 		reg = <0xfffc6000 0x18>;
+ 		interrupts = <0 85 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_HSPI>;
++		power-domains = <&cpg_clocks>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
+@@ -419,6 +440,7 @@
+ 			clocks = <&extal_clk>;
+ 			clock-output-names = "plla", "pllb", "b",
+ 					     "out", "p", "s", "s1";
++			#power-domain-cells = <0>;
+ 		};
+ 
+ 		/* Audio clocks; frequencies are set by boards if applicable. */
 -- 
-1.9.1
+2.1.4
 
