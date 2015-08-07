@@ -1,102 +1,200 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 14 Aug 2015 20:44:47 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: dts: Add common file for AA121TD01 panel
-Message-Id: <8651511.IKVhtFr2ll@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 07 Aug 2015 03:16:25 +0000
+Subject: [PATCH 05/16 v5][RFC] arm64: renesas: Add initial r8a7795 SoC support
+Message-Id: <871tffeqps.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vbd4227u.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbd4227u.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Wednesday 29 July 2015 16:32:43 Magnus Damm wrote:
-> Hi Laurent, Morimoto-san, everyone,
-> 
-> I have now together with Morimoto-san tried to get a bit closer to
-> tracking down what the issue is for LVDS on Lager. This is what we
-> have observed so far:
-> 
-> - On Koelsch both LVDS panels work fine (aa104xd12 and aa121td01).
-> - On Koelsch HDMI works well too.
+Gaku Inami <gaku.inami.xw@bp.renesas.com> created original patch,
+and Kuninori updated DTSI
 
-Good news so far :-)
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v4 -> v5
 
-> - On Lager the VGA output seems to work.
-> - On Lager the LVDS panel output does not work.
-> - On Lager the HDMI does not work.
+ - Documente was separated
+ - RCAR_R8A7795_CLK_xxx -> R8A7795_CLK_xxx
 
-How do they "not work" ?
+ arch/arm64/boot/dts/Makefile              |  1 +
+ arch/arm64/boot/dts/renesas/Makefile      |  5 ++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 93 +++++++++++++++++++++++++++++++
+ include/dt-bindings/clock/r8a7795-clock.h | 38 +++++++++++++
+ 4 files changed, 137 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/renesas/Makefile
+ create mode 100644 arch/arm64/boot/dts/renesas/r8a7795.dtsi
+ create mode 100644 include/dt-bindings/clock/r8a7795-clock.h
 
-I've tested both here using modetest without any issue, neither with renesas-
-devel-20150729-v4.2-rc4 nor with renesas-drivers-2015-07-14-v4.2-rc2. To test 
-HDMI, I ran (your connector numbers may vary)
-
-modetest -M rcar-du -s 44:1280x800@AR24
-
-and to test LVDS
-
-modetest -M rcar-du -s 46:1280x800@AR24
-
-after applying Morimoto-san's AA121TD01 panel patch.
-
-The HDMI tests were performed twice, once with the display connected at boot 
-and once after connecting the display at runtime. Both worked fine, the screen 
-showed the fbdev console and the test pattern when running modetest.
-
-As my LVDS panel is an AA104XD12 the image showed some artifacts when fed with 
-1280x800 (most notably cropping and a bit of flickering), but it worked 
-nonetheless.
-
-> - On Lager we get the crash described by Morimoto-san using the 1280x800
-> panel.
-
-I couldn't reproduce that crash either.
-
-> - On Lager we get no crash if we use the 1024x768 panel.
-> 
-> We seem to have some issues with Lager. =)
-> 
-> The Lager crash disappears if we force use of DU2 on LVDS1:
-> 
-> --- 0001/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-> +++ work/drivers/gpu/drm/rcar-du/rcar_du_drv.c    2015-07-29
-> 16:24:21.212366518 +0900
-> @@ -66,7 +66,7 @@ static const struct rcar_du_device_info
->           * (currently unsupported) TCON output.
->           */
->          [RCAR_DU_OUTPUT_DPAD0] = {
-> -            .possible_crtcs = BIT(2) | BIT(1) | BIT(0),
-> +            .possible_crtcs = BIT(1) | BIT(0),
->              .encoder_type = DRM_MODE_ENCODER_NONE,
->              .port = 0,
->          },
-> @@ -76,7 +76,7 @@ static const struct rcar_du_device_info
->              .port = 1,
->          },
->          [RCAR_DU_OUTPUT_LVDS1] = {
-> -            .possible_crtcs = BIT(2) | BIT(1),
-> +            .possible_crtcs = BIT(2),
->              .encoder_type = DRM_MODE_ENCODER_LVDS,
->              .port = 2,
->          },
-> 
-> Regardless of if the crash disappears or not we still get no output on
-> the LVDS panel on Lager.
->
-> As for kernel, Morimoto-san used renesas-drivers-2015-07-14-v4.2-rc2
-> with a real LVDS panel and I used renesas-devel-20150729-v4.2-rc4
-> without panel connected (but added 1024x768 panel in DTS).
-> 
-> Any ideas?
-
-That might be a bit of a stupid question, but have you verified that the 
-connectors pinout (both data and backlight) is compatible ?
-
+diff --git a/arch/arm64/boot/dts/Makefile b/arch/arm64/boot/dts/Makefile
+index 1560478..3bed382 100644
+--- a/arch/arm64/boot/dts/Makefile
++++ b/arch/arm64/boot/dts/Makefile
+@@ -8,6 +8,7 @@ dts-dirs += freescale
+ dts-dirs += hisilicon
+ dts-dirs += mediatek
+ dts-dirs += qcom
++dts-dirs += renesas
+ dts-dirs += rockchip
+ dts-dirs += sprd
+ dts-dirs += xilinx
+diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
+new file mode 100644
+index 0000000..6aeefd9
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/Makefile
+@@ -0,0 +1,5 @@
++dtb-$(CONFIG_ARCH_RCAR_GEN3) ++
++always		:= $(dtb-y)
++subdir-y	:= $(dts-dirs)
++clean-files	:= *.dtb
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+new file mode 100644
+index 0000000..efcd3c2
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -0,0 +1,93 @@
++/*
++ * Device Tree Source for the r8a7795 SoC
++ *
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++#include <dt-bindings/clock/r8a7795-clock.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++
++/ {
++	compatible = "renesas,r8a7795";
++	#address-cells = <2>;
++	#size-cells = <2>;
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		/* 1core only at this point */
++		a57_0: cpu@0 {
++			compatible = "arm,cortex-a57", "arm,armv8";
++			reg = <0x0>;
++			device_type = "cpu";
++		};
++	};
++
++	extal_clk: extal_clk {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <0>;
++		clock-output-names = "extal";
++	};
++
++	soc {
++		compatible = "simple-bus";
++		interrupt-parent = <&gic>;
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		gic: interrupt-controller@0xf1010000 {
++			compatible = "arm,gic-400";
++			#interrupt-cells = <3>;
++			#address-cells = <0>;
++			interrupt-controller;
++			reg = <0x0 0xf1010000 0 0x1000>,
++			      <0x0 0xf1020000 0 0x2000>;
++			interrupts = <GIC_PPI 9
++					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_HIGH)>;
++		};
++
++		timer {
++			compatible = "arm,armv8-timer";
++			interrupts = <GIC_PPI 13
++					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
++				     <GIC_PPI 14
++					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
++				     <GIC_PPI 11
++					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>,
++				     <GIC_PPI 10
++					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>;
++		};
++
++		clocks {
++			#address-cells = <2>;
++			#size-cells = <2>;
++			ranges;
++
++			p_clk: p_clk {
++				compatible = "fixed-factor-clock";
++				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				#clock-cells = <0>;
++				clock-div = <24>;
++				clock-mult = <1>;
++				clock-output-names = "p";
++			};
++
++			cpg_clocks: cpg_clocks@e6150000 {
++				compatible = "renesas,r8a7795-cpg-clocks",
++					     "renesas,rcar-gen3-cpg-clocks";
++				reg = <0 0xe6150000 0 0x1000>;
++				clocks = <&extal_clk>;
++				#clock-cells = <1>;
++				clock-output-names = "main", "pll0", "pll1","pll2",
++						     "pll3", "pll4";
++			};
++		};
++	};
++};
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+new file mode 100644
+index 0000000..334fa13
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -0,0 +1,38 @@
++/*
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++#ifndef __DT_BINDINGS_CLOCK_R8A7795_H__
++#define __DT_BINDINGS_CLOCK_R8A7795_H__
++
++/* CPG */
++#define R8A7795_CLK_MAIN		0
++#define R8A7795_CLK_PLL0		1
++#define R8A7795_CLK_PLL1		2
++#define R8A7795_CLK_PLL2		3
++#define R8A7795_CLK_PLL3		4
++#define R8A7795_CLK_PLL4		5
++
++/* MSTP0 */
++
++/* MSTP1 */
++
++/* MSTP2 */
++
++/* MSTP3 */
++
++/* MSTP5 */
++
++/* MSTP7 */
++
++/* MSTP8 */
++
++/* MSTP9 */
++
++/* MSTP10 */
++
++#endif /* __DT_BINDINGS_CLOCK_R8A7795_H__ */
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
