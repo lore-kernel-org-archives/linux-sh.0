@@ -1,99 +1,44 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:31 +0000
-Subject: [PATCH v3 07/33] serial: sh-sci: Improve readability of sampling rate configuration
-Message-Id: <1440180177-6924-8-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Aug 2015 02:11:26 +0000
+Subject: [PATCH 02/10] ARM: shmobile: r8a7791: Add JPU device node.
+Message-Id: <0caa36603300dd4ff4841227cf372e91e940c8bd.1438911334.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1438911334.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1438911334.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Reorder sampling_rate assignment for consistency in all cases of the
-switch statement.
-Avoid using the ternary conditional operator to make it more clear that
-the value is overridden by platform data.
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This patch contains device tree node definition for JPEG codec peripheral
+found in the Renesas R-Car r8a7791 SoC.
+
+Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3:
-  - Reworded one-line summary,
+ arch/arm/boot/dts/r8a7791.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-v2:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 17 ++++++++---------
- 1 file changed, 8 insertions(+), 9 deletions(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index dbb4bbdac37ce0d8..9502f52d4b55808a 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2205,7 +2205,6 @@ static int sci_init_single(struct platform_device *dev,
- {
- 	struct uart_port *port = &sci_port->port;
- 	const struct resource *res;
--	unsigned int sampling_rate;
- 	unsigned int i;
- 	int ret;
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index d37339bd7cdb..1cb6c2d07933 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -898,6 +898,13 @@
+ 		status = "disabled";
+ 	};
  
-@@ -2250,37 +2249,37 @@ static int sci_init_single(struct platform_device *dev,
- 		port->fifosize = 256;
- 		sci_port->overrun_reg = SCxSR;
- 		sci_port->overrun_mask = SCIFA_ORER;
--		sampling_rate = 16;
-+		sci_port->sampling_rate = 16;
- 		break;
- 	case PORT_HSCIF:
- 		port->fifosize = 128;
--		sampling_rate = 0;
- 		sci_port->overrun_reg = SCLSR;
- 		sci_port->overrun_mask = SCLSR_ORER;
-+		sci_port->sampling_rate = 0;
- 		break;
- 	case PORT_SCIFA:
- 		port->fifosize = 64;
- 		sci_port->overrun_reg = SCxSR;
- 		sci_port->overrun_mask = SCIFA_ORER;
--		sampling_rate = 16;
-+		sci_port->sampling_rate = 16;
- 		break;
- 	case PORT_SCIF:
- 		port->fifosize = 16;
- 		if (p->regtype = SCIx_SH7705_SCIF_REGTYPE) {
- 			sci_port->overrun_reg = SCxSR;
- 			sci_port->overrun_mask = SCIFA_ORER;
--			sampling_rate = 16;
-+			sci_port->sampling_rate = 16;
- 		} else {
- 			sci_port->overrun_reg = SCLSR;
- 			sci_port->overrun_mask = SCLSR_ORER;
--			sampling_rate = 32;
-+			sci_port->sampling_rate = 32;
- 		}
- 		break;
- 	default:
- 		port->fifosize = 1;
- 		sci_port->overrun_reg = SCxSR;
- 		sci_port->overrun_mask = SCI_ORER;
--		sampling_rate = 32;
-+		sci_port->sampling_rate = 32;
- 		break;
- 	}
- 
-@@ -2288,8 +2287,8 @@ static int sci_init_single(struct platform_device *dev,
- 	 * match the SoC datasheet, this should be investigated. Let platform
- 	 * data override the sampling rate for now.
- 	 */
--	sci_port->sampling_rate = p->sampling_rate ? p->sampling_rate
--				: sampling_rate;
-+	if (p->sampling_rate)
-+		sci_port->sampling_rate = p->sampling_rate;
- 
- 	if (!early) {
- 		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
++	jpu: jpeg-codec@fe980000 {
++		compatible = "renesas,jpu-r8a7791";
++		reg = <0 0xfe980000 0 0x10300>;
++		interrupts = <0 272 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7791_CLK_JPU>;
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-1.9.1
+2.1.4
 
