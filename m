@@ -1,40 +1,79 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:29 +0000
-Subject: [PATCH v3 05/33] serial: sh-sci: Use SCSMR_CKS instead of hardcoded literal 3
-Message-Id: <1440180177-6924-6-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Aug 2015 02:11:29 +0000
+Subject: [PATCH 05/10] ARM: shmobile: silk: add Ether DT support
+Message-Id: <dad5c83d71fcfa117ee678fe66ffa5fd2f1f2440.1438911334.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1438911334.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1438911334.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+Define the SILK board dependent part of the Ether device node.
+Enable DHCP and NFS root for the kernel booting.
+
+Based on the original patch by Vladimir Barinov
+<vladimir.barinov@cogentembedded.com>.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3:
-  - No changes,
+ arch/arm/boot/dts/r8a7794-silk.dts | 28 +++++++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
 
-v2:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 300f641e730d1ac5..206673f44a2943af 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1969,7 +1969,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
+index f3da95b1dedd..79bc64b94456 100644
+--- a/arch/arm/boot/dts/r8a7794-silk.dts
++++ b/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -22,7 +22,7 @@
+ 	};
  
- 	sci_reset(port);
+ 	chosen {
+-		bootargs = "ignore_loglevel";
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 		stdout-path = &scif2;
+ 	};
  
--	smr_val |= serial_port_in(port, SCSMR) & 3;
-+	smr_val |= serial_port_in(port, SCSMR) & SCSMR_CKS;
+@@ -41,6 +41,16 @@
+ 		renesas,groups = "scif2_data";
+ 		renesas,function = "scif2";
+ 	};
++
++	ether_pins: ether {
++		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
++		renesas,function = "eth";
++	};
++
++	phy1_pins: phy1 {
++		renesas,groups = "intc_irq8";
++		renesas,function = "intc";
++	};
+ };
  
- 	uart_update_timeout(port, termios->c_cflag, baud);
+ &scif2 {
+@@ -49,3 +59,19 @@
  
+ 	status = "okay";
+ };
++
++&ether {
++	pinctrl-0 = <&ether_pins &phy1_pins>;
++	pinctrl-names = "default";
++
++	phy-handle = <&phy1>;
++	renesas,ether-link-active-low;
++	status = "okay";
++
++	phy1: ethernet-phy@1 {
++		reg = <1>;
++		interrupt-parent = <&irqc0>;
++		interrupts = <8 IRQ_TYPE_LEVEL_LOW>;
++		micrel,led-mode = <1>;
++	};
++};
 -- 
-1.9.1
+2.1.4
 
