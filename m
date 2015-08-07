@@ -1,41 +1,38 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Wed, 05 Aug 2015 03:30:37 +0000
-Subject: Re: [PATCH] dmaengine: shdma: Make dummy shdma_chan_filter() always return false
-Message-Id: <20150805031837.GG11789@localhost>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 07 Aug 2015 03:17:51 +0000
+Subject: [PATCH 09/16 v5][RFC] arm64: renesas: enable SCIF on defconfig
+Message-Id: <87vbcrdc2y.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jul 10, 2015 at 12:07:25PM +0200, Geert Uytterhoeven wrote:
-> If CONFIG_SH_DMAE_BASE (which is required for DMA engine support for
-> legacy SH, SH/R-Mobile, and R-Car Gen1, but not for R-Car Gen2) is not
-> enabled, but CONFIG_RCAR_DMAC (for R-Car Gen2 DMA engine support) is,
-> and the DTS doesn't provide a "dmas" property for a device,
-> dma_request_slave_channel_compat() incorrectly succeeds, and returns a
-> DMA channel.
-> 
-> However, when trying to use that DMA channel later, it fails with:
-> 
->     rcar-dmac e6700000.dma-controller: rcar_dmac_prep_slave_sg: bad parameter: len=1, id=-22
-> 
-> (Fortunately most drivers can handle this failure, and fall back to
-> PIO)
-> 
-> The reason for this is that a NULL legacy filter function is used, which
-> actually means "all channels are OK", not "do not match".
-> If CONFIG_SH_DMAE_BASE is enabled (like in shmobile_defconfig, which
-> supports other SoCs besides R-Car Gen2), shdma_chan_filter() correctly
-> returns false, as no available channel on R-Car Gen2 matches a
-> shdma-base channel.
-> If the DTS does provide a "dmas" property, dma_request_slave_channel()
-> succeeds, and legacy filter-based matching is not used.
-> 
-> To fix this, change shdma_chan_filter from being NULL to a dummy
-> function that always returns false, like is done on other platforms.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Applied, thanks
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v4 -> v5
 
+ - NR 6 -> 11
+
+ arch/arm64/configs/defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 2d696e9..536f836 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -109,6 +109,9 @@ CONFIG_SERIAL_8250_DW=y
+ CONFIG_SERIAL_8250_MT6577=y
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_SERIAL_MSM=y
+ CONFIG_SERIAL_MSM_CONSOLE=y
+ CONFIG_SERIAL_OF_PLATFORM=y
 -- 
-~Vinod
+1.9.1
+
