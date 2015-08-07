@@ -1,84 +1,78 @@
-From: Mauro Carvalho Chehab <mchehab@infradead.org>
-Date: Fri, 28 Aug 2015 13:08:02 +0000
-Subject: Re: [PATCH v7 10/44] [media] media: rename the function that create pad links
-Message-Id: <20150828100802.6e626e4c@recife.lan>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Aug 2015 02:12:03 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC CPG MSTP Clock Domain Updates for v4.3
+Message-Id: <cover.1438911559.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1440359643.git.mchehab@osg.samsung.com>
- <f095b87884d435e296a455ab07a9951a74c0c3a6.1440359643.git.mchehab@osg.samsung.com>
- <55DCBA2D.9090901@osg.samsung.com>
- <20150826115403.7a794597@recife.lan>
-In-Reply-To: <20150826115403.7a794597@recife.lan>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Em Wed, 26 Aug 2015 11:54:03 -0300
-Mauro Carvalho Chehab <mchehab@osg.samsung.com> escreveu:
+Hi Olof, Hi Kevin, Hi Arnd,
 
-> Em Tue, 25 Aug 2015 12:55:41 -0600
-> Shuah Khan <shuahkh@osg.samsung.com> escreveu:
-> 
-> > On 08/23/2015 02:17 PM, Mauro Carvalho Chehab wrote:
-> > > Now that a link can be either between two different graph
-> > > objects, we'll need to add more functions to create links.
-> > 
-> > Is this an incomplete sentence. Should it read: "either between
-> > two different graph objects or two pads" ?
-> 
-> That would be redundant, as pad is a graph object ;)
+Please consider these Renesas ARM based SoC CPG MSTP clock domain updates
+for v4.3.
 
-Renamed the patch description to:
+This pull request is based on "Third Round of Renesas ARM Based SoC DT
+Updates for v4.3", tagged as renesas-dt3-for-v4.3, which I have also sent a
+pull-request for.
 
-	With the new API, a link can be either between two PADs or between an interface
-	and an entity. So, we need to use a better name for the function that create
-	links between two pads.
+The reason for that base is that the DT changes in this series update nodes
+added in that tag.
 
-	So, rename the such function to media_create_pad_link().
+This series begins with driver changes and follows up with DT changes.
+The latter depend on the former.
 
-	No functional changes.
 
-	This patch was created via this shell script:
-		for i in $(find drivers/media -name '*.[ch]' -type f) $(find drivers/staging/media -name '*.[ch]' -type f) $(find include/ -name '*.h' -type f) ; do sed s,media_entity_create_link,media_create_pad_link,g <$i >a && mv a $i; done
+The following changes since commit 94bdc48d55ca10f90b4a625f0e443197e0013557:
 
-	Signed-off-by: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
-	Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+  ARM: shmobile: sh73a0 dtsi: Add missing "gpio-ranges" to gpio node (2015-08-05 06:39:28 +0900)
 
-Regards,
-Mauro
+are available in the git repository at:
 
-> 
-> > 
-> > > So, rename the existing one that create links only between
-> > > two pads as media_create_pad_link().
-> > 
-> > > 
-> > > No functional changes.
-> > > 
-> > > This patch was created via this shell script:
-> > > 	for i in $(find drivers/media -name '*.[ch]' -type f) $(find drivers/staging/media -name '*.[ch]' -type f) $(find include/ -name '*.h' -type f) ; do sed s,media_entity_create_link,media_create_pad_link,g <$i >a && mv a $i; done
-> > > 
-> > 
-> > Didn't want to experiment with Coccinelle?? :)
-> 
-> I use Coccinelle, but only when I need more complex changes, as
-> Coccinelle may mangle with comments.
-> 
-> > 
-> > > Signed-off-by: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
-> > > Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
-> > > Signed-off-by: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
-> > > 
-> > 
-> > Changes look good to me. After fixing the commit log:
-> > 
-> > Acked-by: Shuah Khan <shuahkh@osg.samsung.com>
-> > 
-> > thanks,
-> > -- Shuah
-> > 
-> > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-media" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cpg-mstp-clock-domain-for-v4.3
+
+for you to fetch changes up to 2daa8a5a8c0994893c2ca456303f0bf53e881cb9:
+
+  ARM: shmobile: r8a7794 dtsi: Add CPG/MSTP Clock Domain (2015-08-05 06:42:51 +0900)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC CPG MSTP Clock Domain Updates for v4.3
+
+* Add Clock Domain support to the Clock Pulse Generator
+  (CPG) Module Stop (MSTP) Clocks driver using the generic PM Domain.
+
+----------------------------------------------------------------
+Geert Uytterhoeven (12):
+      clk: shmobile: Add CPG/MSTP Clock Domain support
+      clk: shmobile: r8a7778: Add CPG/MSTP Clock Domain support
+      clk: shmobile: r8a7779: Add CPG/MSTP Clock Domain support
+      clk: shmobile: rcar-gen2: Add CPG/MSTP Clock Domain support
+      clk: shmobile: rz: Add CPG/MSTP Clock Domain support
+      ARM: shmobile: r7s72100 dtsi: Add CPG/MSTP Clock Domain
+      ARM: shmobile: r8a7778 dtsi: Add CPG/MSTP Clock Domain
+      ARM: shmobile: r8a7779 dtsi: Add CPG/MSTP Clock Domain
+      ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain
+      ARM: shmobile: r8a7791 dtsi: Add CPG/MSTP Clock Domain
+      ARM: shmobile: r8a7793 dtsi: Add CPG/MSTP Clock Domain
+      ARM: shmobile: r8a7794 dtsi: Add CPG/MSTP Clock Domain
+
+ .../bindings/clock/renesas,r8a7778-cpg-clocks.txt  | 29 ++++++-
+ .../bindings/clock/renesas,r8a7779-cpg-clocks.txt  | 30 +++++++-
+ .../clock/renesas,rcar-gen2-cpg-clocks.txt         | 26 ++++++-
+ .../bindings/clock/renesas,rz-cpg-clocks.txt       | 29 ++++++-
+ arch/arm/boot/dts/r7s72100.dtsi                    | 19 +++++
+ arch/arm/boot/dts/r8a7778.dtsi                     | 22 ++++++
+ arch/arm/boot/dts/r8a7779.dtsi                     | 23 ++++++
+ arch/arm/boot/dts/r8a7790.dtsi                     | 86 ++++++++++++++++++---
+ arch/arm/boot/dts/r8a7791.dtsi                     | 88 ++++++++++++++++++++--
+ arch/arm/boot/dts/r8a7793.dtsi                     |  7 ++
+ arch/arm/boot/dts/r8a7794.dtsi                     | 29 +++++++
+ arch/arm/mach-shmobile/Kconfig                     |  2 +
+ drivers/clk/shmobile/clk-mstp.c                    | 87 +++++++++++++++++++++
+ drivers/clk/shmobile/clk-r8a7778.c                 |  2 +
+ drivers/clk/shmobile/clk-r8a7779.c                 |  2 +
+ drivers/clk/shmobile/clk-rcar-gen2.c               |  2 +
+ drivers/clk/shmobile/clk-rz.c                      |  3 +
+ include/linux/clk/shmobile.h                       | 12 +++
+ 18 files changed, 470 insertions(+), 28 deletions(-)
