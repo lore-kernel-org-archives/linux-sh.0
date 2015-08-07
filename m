@@ -1,86 +1,106 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 08 Aug 2015 20:33:23 +0000
-Subject: [PATCH 06/10] i2c: apply DT flags when probing
-Message-Id: <1439066007-13951-7-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 07 Aug 2015 02:12:02 +0000
+Subject: [PATCH 03/12] clk: shmobile: r8a7779: Add CPG/MSTP Clock Domain support
+Message-Id: <38d37c53d6e475d0660626cbb349c3fe28354602.1438911559.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1438911559.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1438911559.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Andrey Danin <danindrey@mail.ru>, Stephen Warren <swarren@wwwdotorg.org>, Stephen Warren <swarren@nvidia.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Check for slave and 10-bit flags when probing and mark the client when
-found. Improve the address validity check, too
+Add Clock Domain support to the R-Car H1 Clock Pulse Generator (CPG)
+driver using the generic PM Domain.  This allows to power-manage the
+module clocks of SoC devices that are part of the CPG/MSTP Clock Domain
+using Runtime PM, or for system suspend/resume.
 
-Tested-by: Andrey Danin <danindrey@mail.ru>
-Acked-by: Stephen Warren <swarren@nvidia.com>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+SoC devices that are part of the CPG/MSTP Clock Domain and can be
+power-managed through an MSTP clock should be tagged in DT with a proper
+"power-domains" property.
+
+Also update the reg property in the DT binding doc example to match the
+actual dtsi, which uses #address-cells and #size-cells = 1, not 2.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Stephen Boyd <sboyd@codeaurora.org>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/i2c-core.c | 23 ++++++++++++++++++-----
- 1 file changed, 18 insertions(+), 5 deletions(-)
+ .../bindings/clock/renesas,r8a7779-cpg-clocks.txt  | 30 +++++++++++++++++++---
+ drivers/clk/shmobile/clk-r8a7779.c                 |  2 ++
+ 2 files changed, 28 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
-index 4a83d39a5aabe2..7638eb1a5998f8 100644
---- a/drivers/i2c/i2c-core.c
-+++ b/drivers/i2c/i2c-core.c
-@@ -27,6 +27,7 @@
-    I2C slave support (c) 2014 by Wolfram Sang <wsa@sang-engineering.com>
-  */
+diff --git a/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
+index ed3c8cb12f4e..8c81547c29f5 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
+@@ -1,7 +1,9 @@
+ * Renesas R8A7779 Clock Pulse Generator (CPG)
  
-+#include <dt-bindings/i2c/i2c.h>
- #include <linux/module.h>
- #include <linux/kernel.h>
- #include <linux/delay.h>
-@@ -1286,7 +1287,8 @@ static struct i2c_client *of_i2c_register_device(struct i2c_adapter *adap,
- 	struct i2c_client *result;
- 	struct i2c_board_info info = {};
- 	struct dev_archdata dev_ad = {};
--	const __be32 *addr;
-+	const __be32 *addr_be;
-+	u32 addr;
- 	int len;
+ The CPG generates core clocks for the R8A7779. It includes one PLL and
+-several fixed ratio dividers
++several fixed ratio dividers.
++The CPG also provides a Clock Domain for SoC devices, in combination with the
++CPG Module Stop (MSTP) Clocks.
  
- 	dev_dbg(&adap->dev, "of_i2c: register %s\n", node->full_name);
-@@ -1297,20 +1299,31 @@ static struct i2c_client *of_i2c_register_device(struct i2c_adapter *adap,
- 		return ERR_PTR(-EINVAL);
- 	}
+ Required Properties:
  
--	addr = of_get_property(node, "reg", &len);
--	if (!addr || (len < sizeof(*addr))) {
-+	addr_be = of_get_property(node, "reg", &len);
-+	if (!addr_be || (len < sizeof(*addr_be))) {
- 		dev_err(&adap->dev, "of_i2c: invalid reg on %s\n",
- 			node->full_name);
- 		return ERR_PTR(-EINVAL);
- 	}
+@@ -12,16 +14,36 @@ Required Properties:
+   - #clock-cells: Must be 1
+   - clock-output-names: The names of the clocks. Supported clocks are "plla",
+     "z", "zs", "s", "s1", "p", "b", "out".
++  - #power-domain-cells: Must be 0
  
--	info.addr = be32_to_cpup(addr);
--	if (info.addr > (1 << 10) - 1) {
-+	addr = be32_to_cpup(addr_be);
-+	if (addr & I2C_TEN_BIT_ADDRESS) {
-+		addr &= ~I2C_TEN_BIT_ADDRESS;
-+		info.flags |= I2C_CLIENT_TEN;
-+	}
++SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
++through an MSTP clock should refer to the CPG device node in their
++"power-domains" property, as documented by the generic PM domain bindings in
++Documentation/devicetree/bindings/power/power_domain.txt.
+ 
+-Example
+--------
 +
-+	if (addr & I2C_OWN_SLAVE_ADDRESS) {
-+		addr &= ~I2C_OWN_SLAVE_ADDRESS;
-+		info.flags |= I2C_CLIENT_SLAVE;
-+	}
++Examples
++--------
 +
-+	if (i2c_check_addr_validity(addr, info.flags)) {
- 		dev_err(&adap->dev, "of_i2c: invalid addr=%x on %s\n",
- 			info.addr, node->full_name);
- 		return ERR_PTR(-EINVAL);
++  - CPG device node:
+ 
+ 	cpg_clocks: cpg_clocks@ffc80000 {
+ 		compatible = "renesas,r8a7779-cpg-clocks";
+-		reg = <0 0xffc80000 0 0x30>;
++		reg = <0xffc80000 0x30>;
+ 		clocks = <&extal_clk>;
+ 		#clock-cells = <1>;
+ 		clock-output-names = "plla", "z", "zs", "s", "s1", "p",
+ 		                     "b", "out";
++		#power-domain-cells = <0>;
++	};
++
++
++  - CPG/MSTP Clock Domain member device node:
++
++	sata: sata@fc600000 {
++		compatible = "renesas,sata-r8a7779", "renesas,rcar-sata";
++		reg = <0xfc600000 0x2000>;
++		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp1_clks R8A7779_CLK_SATA>;
++		power-domains = <&cpg_clocks>;
+ 	};
+diff --git a/drivers/clk/shmobile/clk-r8a7779.c b/drivers/clk/shmobile/clk-r8a7779.c
+index 652ecacb6daf..e42a63a2ad25 100644
+--- a/drivers/clk/shmobile/clk-r8a7779.c
++++ b/drivers/clk/shmobile/clk-r8a7779.c
+@@ -168,6 +168,8 @@ static void __init r8a7779_cpg_clocks_init(struct device_node *np)
  	}
  
-+	info.addr = addr;
- 	info.of_node = of_node_get(node);
- 	info.archdata = &dev_ad;
- 
+ 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++
++	cpg_mstp_add_clk_domain(np);
+ }
+ CLK_OF_DECLARE(r8a7779_cpg_clks, "renesas,r8a7779-cpg-clocks",
+ 	       r8a7779_cpg_clocks_init);
 -- 
 2.1.4
 
