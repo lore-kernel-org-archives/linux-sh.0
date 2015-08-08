@@ -1,34 +1,79 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 31 Aug 2015 08:47:23 +0000
-Subject: Re: [PATCH v4 04/05] clk: shmobile: Add r8a7795 SoC to MSTP bindings
-Message-Id: <CAMuHMdU-3Ph19QQ1jj=RHYRfKwVe+oG8ECP8Z+Nyte7Yqqur=g@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 08 Aug 2015 22:27:14 +0000
+Subject: [PATCH 2/2] ARM: shmobile: silk: add QSPI DT support
+Message-Id: <1768974.jEFIAaInqd@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150829091323.28546.28287.sendpatchset@little-apple>
-	<20150829091407.28546.23953.sendpatchset@little-apple>
-In-Reply-To: <20150829091407.28546.23953.sendpatchset@little-apple>
+References: <1898263.zrOs5SAUTS@wasted.cogentembedded.com>
+In-Reply-To: <1898263.zrOs5SAUTS@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-clk@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Gaku Inami <gaku.inami.xw@bp.renesas.com>, Michael Turquette <mturquette@baylibre.com>, Linux-sh list <linux-sh@vger.kernel.org>, Stephen Boyd <sboyd@codeaurora.org>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Aug 29, 2015 at 11:14 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Add r8a7795 to the MSTP DT binding documentation.
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Define the SILK board dependent part of the QSPI device node.
+Add device nodes  for Spansion  S25FL512S SPI flash and MTD partitions on it.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Based on the original patch by Vladimir Barinov
+<vladimir.barinov@cogentembedded.com>.
 
-Gr{oetje,eeting}s,
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-                        Geert
+---
+ arch/arm/boot/dts/r8a7794-silk.dts |   40 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794-silk.dts
++++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -65,6 +65,11 @@
+ 		renesas,groups = "mmc_data8", "mmc_ctrl";
+ 		renesas,function = "mmc";
+ 	};
++
++	qspi_pins: spi0 {
++		renesas,groups = "qspi_ctrl", "qspi_data4";
++		renesas,function = "qspi";
++	};
+ };
+ 
+ &scif2 {
+@@ -100,3 +105,38 @@
+ 	non-removable;
+ 	status = "okay";
+ };
++
++&qspi {
++	pinctrl-0 = <&qspi_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl512s";
++		reg = <0>;
++		spi-max-frequency = <30000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
++		m25p,fast-read;
++		spi-cpol;
++		spi-cpha;
++
++		partition@0 {
++			label = "loader";
++			reg = <0x00000000 0x00040000>;
++			read-only;
++		};
++		partition@40000 {
++			label = "user";
++			reg = <0x00040000 0x00400000>;
++			read-only;
++		};
++		partition@440000 {
++			label = "flash";
++			reg = <0x00440000 0x03bc0000>;
++		};
++	};
++};
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
