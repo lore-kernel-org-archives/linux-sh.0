@@ -1,49 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 13 Aug 2015 00:05:38 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: kzm9g dts: Use adxl345-specific compatible property
-Message-Id: <20150813000537.GD5221@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 08 Aug 2015 20:33:22 +0000
+Subject: [PATCH 05/10] i2c: make address check indpendent from client struct
+Message-Id: <1439066007-13951-6-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1436180132-26190-1-git-send-email-geert+renesas@glider.be>
- <15966074.zDS67FO48r@avalon> <20150707002621.GD13326@verge.net.au>
- <9389528.5qtaECVqX7@avalon> <20150708005148.GA28100@verge.net.au>
-In-Reply-To: <20150708005148.GA28100@verge.net.au>
+References: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Andrey Danin <danindrey@mail.ru>, Stephen Warren <swarren@wwwdotorg.org>, Stephen Warren <swarren@nvidia.com>
 
-On Wed, Jul 08, 2015 at 09:51:49AM +0900, Simon Horman wrote:
-> On Tue, Jul 07, 2015 at 09:56:29AM +0300, Laurent Pinchart wrote:
-> > Hi Simon,
-> > 
-> > On Tuesday 07 July 2015 09:26:21 Simon Horman wrote:
-> > > On Mon, Jul 06, 2015 at 04:29:33PM +0300, Laurent Pinchart wrote:
-> > > > On Monday 06 July 2015 12:55:32 Geert Uytterhoeven wrote:
-> > > > > Replace the deprecated generic "adi,adxl34x" compatible value by the
-> > > > > adxl345-specific "adi,adxl345" value, cfr. commit e465bf6fc55d5ce2 ("DT:
-> > > > > i2c: Deprecate adi,adxl34x compatible string").
-> > > > > 
-> > > > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > > > 
-> > > > Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > > > 
-> > > > > ---
-> > > > > Depends on commit 3a38958d2477b718 ("Input: adxl34x - add OF match
-> > > > > support"), which is in v4.2-rc1.
-> > > > > 
-> > > > > This is v2 of "ARM: shmobile: kzm9g dts: Add adxl345-specific compatible
-> > > > > property".
-> > > 
-> > > It appears to me that this will cause a regression when booting old kernels
-> > > with new dts blobs. For that reason think we should consider v1
-> > > of this change coupled with a schedule to remove use of the deprecated
-> > > compat string.
-> > 
-> > That's the forward compatibility that Geert mentioned, is that really an 
-> > issue, especially on this board ?
-> 
-> I think it would be best to provide backwards compatibility unless there
-> is a compelling reason not to.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-I would like to revisit this discussion with a view to getting some version
-of this patch queued up (yes I know I pushed back on it earlier in this thread).
+We want to use this function with struct boardinfo soon, so let's just
+pass the parameters really needed. We also extend the type of addr, so
+more types can be input. Remove a superfluous dangling comment while
+here.
+
+Tested-by: Andrey Danin <danindrey@mail.ru>
+Acked-by: Stephen Warren <swarren@nvidia.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/i2c-core.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
+index 28766b7208bcc2..4a83d39a5aabe2 100644
+--- a/drivers/i2c/i2c-core.c
++++ b/drivers/i2c/i2c-core.c
+@@ -796,15 +796,15 @@ static unsigned short i2c_encode_flags_to_addr(struct i2c_client *client)
+ 
+ /* This is a permissive address validity check, I2C address map constraints
+  * are purposely not enforced, except for the general call address. */
+-static int i2c_check_addr_validity(const struct i2c_client *client)
++static int i2c_check_addr_validity(unsigned addr, unsigned short flags)
+ {
+-	if (client->flags & I2C_CLIENT_TEN) {
++	if (flags & I2C_CLIENT_TEN) {
+ 		/* 10-bit address, all values are valid */
+-		if (client->addr > 0x3ff)
++		if (addr > 0x3ff)
+ 			return -EINVAL;
+ 	} else {
+ 		/* 7-bit address, reject the general call address */
+-		if (client->addr = 0x00 || client->addr > 0x7f)
++		if (addr = 0x00 || addr > 0x7f)
+ 			return -EINVAL;
+ 	}
+ 	return 0;
+@@ -982,8 +982,7 @@ i2c_new_device(struct i2c_adapter *adap, struct i2c_board_info const *info)
+ 
+ 	strlcpy(client->name, info->type, sizeof(client->name));
+ 
+-	/* Check for address validity */
+-	status = i2c_check_addr_validity(client);
++	status = i2c_check_addr_validity(client->addr, client->flags);
+ 	if (status) {
+ 		dev_err(&adap->dev, "Invalid %d-bit I2C address 0x%02hx\n",
+ 			client->flags & I2C_CLIENT_TEN ? 10 : 7, client->addr);
+-- 
+2.1.4
+
