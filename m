@@ -1,38 +1,58 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Wed, 05 Aug 2015 08:36:50 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Defconfig Updates for v4.3
-Message-Id: <20150805083650.GA6390@localhost>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 08 Aug 2015 22:26:10 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7794: add QSPI DT support
+Message-Id: <5339616.vfIYf6AeR8@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438215768.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1438215768.git.horms+renesas@verge.net.au>
+References: <1898263.zrOs5SAUTS@wasted.cogentembedded.com>
+In-Reply-To: <1898263.zrOs5SAUTS@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jul 30, 2015 at 09:23:50AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these second round of Renesas ARM based SoC defconfig updates for v4.3.
-> 
-> This pull request is based on the previous round of
-> such requests, tagged as renesas-defconfig-for-v4.3,
-> which I have already sent a pull-request for.
-> 
-> 
-> The following changes since commit 821e79cb5686695f0adaef61587a184e953a937e:
-> 
->   ARM: shmobile: Remove marzen_defconfig (2015-07-17 08:29:45 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig2-for-v4.3
-> 
-> for you to fetch changes up to 4055a722d260ca30610fc52238d0aa49ff5bffa9:
-> 
->   ARM: shmobile: Enable fixed voltage regulator in shmobile_defconfig (2015-07-28 09:27:00 +0900)
+Define the generic R8A7794 part of the QSPI device node.
 
-Merged, thanks.
+Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
 
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
--Olof
+---
+ arch/arm/boot/dts/r8a7794.dtsi |   18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
++++ renesas/arch/arm/boot/dts/r8a7794.dtsi
+@@ -19,6 +19,10 @@
+ 	#address-cells = <2>;
+ 	#size-cells = <2>;
+ 
++	aliases {
++		spi0 = &qspi;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -537,6 +541,20 @@
+ 		status = "disabled";
+ 	};
+ 
++	qspi: spi@e6b10000 {
++		compatible = "renesas,qspi-r8a7794", "renesas,qspi";
++		reg = <0 0xe6b10000 0 0x2c>;
++		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_QSPI_MOD>;
++		power-domains = <&cpg_clocks>;
++		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
++		dma-names = "tx", "rx";
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+
