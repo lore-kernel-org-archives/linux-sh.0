@@ -1,38 +1,86 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 24 Aug 2015 02:26:21 +0000
-Subject: [PATCH 03/25 v7][RFC] serial: sh-sci: Add device tree support for r8a7795
-Message-Id: <87oahx77di.wl%kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 08 Aug 2015 20:33:23 +0000
+Subject: [PATCH 06/10] i2c: apply DT flags when probing
+Message-Id: <1439066007-13951-7-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Andrey Danin <danindrey@mail.ru>, Stephen Warren <swarren@wwwdotorg.org>, Stephen Warren <swarren@nvidia.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Check for slave and 10-bit flags when probing and mark the client when
+found. Improve the address validity check, too
+
+Tested-by: Andrey Danin <danindrey@mail.ru>
+Acked-by: Stephen Warren <swarren@nvidia.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
-v5 -> v7
+ drivers/i2c/i2c-core.c | 23 ++++++++++++++++++-----
+ 1 file changed, 18 insertions(+), 5 deletions(-)
 
- - no change
-
- Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-index e84b13a..73f825e 100644
---- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-+++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
-@@ -23,6 +23,8 @@ Required properties:
-     - "renesas,scifa-r8a7794" for R8A7794 (R-Car E2) SCIFA compatible UART.
-     - "renesas,scifb-r8a7794" for R8A7794 (R-Car E2) SCIFB compatible UART.
-     - "renesas,hscif-r8a7794" for R8A7794 (R-Car E2) HSCIF compatible UART.
-+    - "renesas,scif-r8a7795" for R8A7795 (R-Car H3) SCIF compatible UART.
-+    - "renesas,hscif-r8a7795" for R8A7795 (R-Car H3) HSCIF compatible UART.
-     - "renesas,scifa-sh73a0" for SH73A0 (SH-Mobile AG5) SCIFA compatible UART.
-     - "renesas,scifb-sh73a0" for SH73A0 (SH-Mobile AG5) SCIFB compatible UART.
-     - "renesas,scif" for generic SCIF compatible UART.
+diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
+index 4a83d39a5aabe2..7638eb1a5998f8 100644
+--- a/drivers/i2c/i2c-core.c
++++ b/drivers/i2c/i2c-core.c
+@@ -27,6 +27,7 @@
+    I2C slave support (c) 2014 by Wolfram Sang <wsa@sang-engineering.com>
+  */
+ 
++#include <dt-bindings/i2c/i2c.h>
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/delay.h>
+@@ -1286,7 +1287,8 @@ static struct i2c_client *of_i2c_register_device(struct i2c_adapter *adap,
+ 	struct i2c_client *result;
+ 	struct i2c_board_info info = {};
+ 	struct dev_archdata dev_ad = {};
+-	const __be32 *addr;
++	const __be32 *addr_be;
++	u32 addr;
+ 	int len;
+ 
+ 	dev_dbg(&adap->dev, "of_i2c: register %s\n", node->full_name);
+@@ -1297,20 +1299,31 @@ static struct i2c_client *of_i2c_register_device(struct i2c_adapter *adap,
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
+-	addr = of_get_property(node, "reg", &len);
+-	if (!addr || (len < sizeof(*addr))) {
++	addr_be = of_get_property(node, "reg", &len);
++	if (!addr_be || (len < sizeof(*addr_be))) {
+ 		dev_err(&adap->dev, "of_i2c: invalid reg on %s\n",
+ 			node->full_name);
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
+-	info.addr = be32_to_cpup(addr);
+-	if (info.addr > (1 << 10) - 1) {
++	addr = be32_to_cpup(addr_be);
++	if (addr & I2C_TEN_BIT_ADDRESS) {
++		addr &= ~I2C_TEN_BIT_ADDRESS;
++		info.flags |= I2C_CLIENT_TEN;
++	}
++
++	if (addr & I2C_OWN_SLAVE_ADDRESS) {
++		addr &= ~I2C_OWN_SLAVE_ADDRESS;
++		info.flags |= I2C_CLIENT_SLAVE;
++	}
++
++	if (i2c_check_addr_validity(addr, info.flags)) {
+ 		dev_err(&adap->dev, "of_i2c: invalid addr=%x on %s\n",
+ 			info.addr, node->full_name);
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
++	info.addr = addr;
+ 	info.of_node = of_node_get(node);
+ 	info.archdata = &dev_ad;
+ 
 -- 
-1.9.1
+2.1.4
 
