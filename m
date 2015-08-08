@@ -1,45 +1,65 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 26 Aug 2015 18:02:19 +0000
-Subject: [PATCH 0/5] pinctrl: sh-pfc: r8a7795: (H)SCIF Updates
-Message-Id: <1440612144-16877-1-git-send-email-geert+renesas@glider.be>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 08 Aug 2015 22:08:21 +0000
+Subject: [PATCH v3 1/2] ARM: shmobile: r8a7794: add GPIO clocks
+Message-Id: <6521353.aWaEAArBdd@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <2265315.MpjeDzrVz2@wasted.cogentembedded.com>
+In-Reply-To: <2265315.MpjeDzrVz2@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Takeshi Kihara <takeshi.kihara.df@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-	Hi,
+Describe the GPIO clocks in the R8A7794 device tree.
 
-This series contains (H)SCIF-related updates for the R-Car H3 (r8a7795)
-pin function controller driver:
-  - Fixes and updates for SCIF pindata (incl. a DTS update),
-  - Addition of HSCIF support.
+Based on the original patch by Koji Matsuoka <koji.matsuoka.xm@renesas.com>.
 
-This is against "[PATCH] pinctrl: sh-pfc: Add R8A7795 PFC support" and
-the current state (sic) of the Salvator-X DTS.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Geert Uytterhoeven (5):
-  pinctrl: sh-pfc: r8a7795: Fix and extend SCIF0 pin data
-  pinctrl: sh-pfc: r8a7795: Extend SCIF2 pin data
-  pinctrl: sh-pfc: r8a7795: Fix SCIF5 pin data
-  pinctrl: sh-pfc: r8a7795: Add HSCIF pins, groups, and functions
-  arm64: renesas: salvator-x: Update SCIF2 pin group
+---
+Changes in version 3:
+- refreshed the patch.
 
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |   2 +-
- drivers/pinctrl/sh-pfc/pfc-r8a7795.c               | 296 ++++++++++++++++++++-
- 2 files changed, 285 insertions(+), 13 deletions(-)
+Changes in version 2:
+- refreshed the patch;
+- added Geert's and Laurent's ACKs.
 
--- 
-1.9.1
+ arch/arm/boot/dts/r8a7794.dtsi |   22 ++++++++++++++--------
+ 1 file changed, 14 insertions(+), 8 deletions(-)
 
-Gr{oetje,eeting}s,
+Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
++++ renesas/arch/arm/boot/dts/r8a7794.dtsi
+@@ -749,16 +749,22 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
+-				<&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
++			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
++				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+-			clock-indices = <
+-				R8A7794_CLK_QSPI_MOD R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
+-				R8A7794_CLK_I2C3 R8A7794_CLK_I2C2 R8A7794_CLK_I2C1
+-				R8A7794_CLK_I2C0
+-			>;
++			clock-indices = <R8A7794_CLK_GPIO6 R8A7794_CLK_GPIO5
++					 R8A7794_CLK_GPIO4 R8A7794_CLK_GPIO3
++					 R8A7794_CLK_GPIO2 R8A7794_CLK_GPIO1
++					 R8A7794_CLK_GPIO0 R8A7794_CLK_QSPI_MOD
++					 R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
++					 R8A7794_CLK_I2C3 R8A7794_CLK_I2C2
++					 R8A7794_CLK_I2C1 R8A7794_CLK_I2C0>;
+ 			clock-output-names -				"qspi_mod", "i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
++				"gpio6", "gpio5", "gpio4", "gpio3", "gpio2",
++				"gpio1", "gpio0", "qspi_mod",
++				"i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
+ 		mstp11_clks: mstp11_clks@e615099c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
 
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
