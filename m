@@ -1,49 +1,133 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 06 Aug 2015 00:52:22 +0000
-Subject: Re: [RFT 1/2] i2c: rcar: add support for r8a7795 (R-Car H3)
-Message-Id: <20150806005222.GE1743@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="ffoCPvUAPMgSXi6H"
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 08 Aug 2015 22:09:31 +0000
+Subject: [PATCH v3 2/2] ARM: shmobile: r8a7794: add GPIO DT support
+Message-Id: <10288801.ZnYt2TD47O@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438780706-20945-1-git-send-email-wsa@the-dreams.de>
- <4463128.lAKghhIhbx@avalon>
- <20150806003849.GA1743@katana>
- <2090805.Cxfp9Z1Hmm@avalon>
-In-Reply-To: <2090805.Cxfp9Z1Hmm@avalon>
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>
+References: <2265315.MpjeDzrVz2@wasted.cogentembedded.com>
+In-Reply-To: <2265315.MpjeDzrVz2@wasted.cogentembedded.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
+
+Describe GPIO[0-6] controllers in the R8A7794 device tree.
+
+Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+---
+Changes in version 3:
+- added "power-domains" property to the GPIO device nodes.
+
+Changes in version 2:
+- fixed "gpio-ranges" property's last value for GPIO1/5/6;
+- added Geert's ACK.
+
+ arch/arm/boot/dts/r8a7794.dtsi |   91 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 91 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
++++ renesas/arch/arm/boot/dts/r8a7794.dtsi
+@@ -50,6 +50,97 @@
+ 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
+ 
++	gpio0: gpio@e6050000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6050000 0 0x50>;
++		interrupts = <0 4 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO0>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio1: gpio@e6051000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6051000 0 0x50>;
++		interrupts = <0 5 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 26>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO1>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio2: gpio@e6052000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6052000 0 0x50>;
++		interrupts = <0 6 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO2>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio3: gpio@e6053000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6053000 0 0x50>;
++		interrupts = <0 7 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO3>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio4: gpio@e6054000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6054000 0 0x50>;
++		interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO4>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio5: gpio@e6055000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6055000 0 0x50>;
++		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 160 28>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO5>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio6: gpio@e6055400 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6055400 0 0x50>;
++		interrupts = <0 10 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 192 26>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO6>;
++		power-domains = <&cpg_clocks>;
++	};
++
+ 	cmt0: timer@ffca0000 {
+ 		compatible = "renesas,cmt-48-gen2";
+ 		reg = <0 0xffca0000 0 0x1004>;
 
 
---ffoCPvUAPMgSXi6H
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-
-> My bad. I should go to bed. And so should you by the way ;-)
-
-Acked-by: Wolfram Sang <wsa@the-dreams.de>
-
-
---ffoCPvUAPMgSXi6H
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJVwq/GAAoJEBQN5MwUoCm2KroQAJ6S5qER6YZKi3NovRkottgl
-L+DUM/il93w9Eod5rgiUzrksd6ufmjpEJZpbVUcUAsKIpyNMNZEXN3Tqeq/vFEhL
-IKhyMqaIOnIH1xEnGRA0Vvx/FL6qisERTiMWE51787KLvlJHzUeELtTgtSTM4VFe
-a+ypoXOSAs1pWnO9RbKAGEuPIMYXW+19pKz7cwKPaHYRWnSPtXBv8FO3v/qzJCgi
-3RsCaYVNVzvQylDsxpi9REWlq7NZFVBAZAsOb2xg+z2u6FWT/ca/DOo0m+PueAlj
-xxi/KDhUGz9pDVKzioIsEfdvCh068DjpTfcwXULhtULJXanKZl/FMxabk2NqCSlm
-wHVou0riUcCpI6Ig1GQxspAfPWo5VmFrYwLr1rkPZfi3N6ZjbFhb9Dxo8pU3Mvj0
-JLLE5Ghhl6m/7Du0qjEcIbeYxct2TVXdLJOkhzzi00gl4yKSOn5hXfJZpGy6il8j
-CuLb1wggO/wfMwok0DzBUH87yz2L9S38lTH1k+OkFTxYB/rtAfqjm+VSfxfojW/h
-35B/YUYHxrtFjo9VxK5IXAMreNwtlR1pxl0OuuwFjT2h2wGjMu96gVhHo7PyKDhg
-iHDxsmGwfatUomKSS15I1RRac3TbopdA1rbXVm3fjwgtvZhqshqHry1/xjmLa5CU
-8ZJW0jxi8dfdOH865yhf
-=B+ux
------END PGP SIGNATURE-----
-
---ffoCPvUAPMgSXi6H--
