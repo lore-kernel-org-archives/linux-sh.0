@@ -1,51 +1,20 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 24 Aug 2015 02:30:44 +0000
-Subject: [PATCH 17/25 v7][RFC] arm64: renesas: salvator-x: enable usb2_phy nodes
-Message-Id: <874mjp7765.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 08 Aug 2015 22:06:55 +0000
+Subject: [PATCH v3 0/2] Add R8A7794 GPIO DT support
+Message-Id: <2265315.MpjeDzrVz2@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Hello.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v5 -> v7
+   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo,
+'renesas-devel-20150807-v4.2-rc5' tag. Here we add the GPIO device tree support
+for the R8A7794 SoC.
 
- - based on Gen3 v7 patch-set
+[1/2] ARM: shmobile: r8a7794: add GPIO clocks
+[2/2] ARM: shmobile: r8a7794: add GPIO DT support
 
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 2742fc2..fbc2e98 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -61,3 +61,21 @@
- 
- 	status = "okay";
- };
-+
-+&usb2_phy0 {
-+	status = "okay";
-+	pinctrl-0 = <&usb0_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&usb2_phy1 {
-+	status = "okay";
-+	pinctrl-0 = <&usb1_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&usb2_phy2 {
-+	status = "okay";
-+	pinctrl-0 = <&usb2_pins>;
-+	pinctrl-names = "default";
-+};
--- 
-1.9.1
-
+WBR, Sergei
