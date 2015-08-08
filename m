@@ -1,258 +1,66 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 28 Aug 2015 20:46:46 +0000
-Subject: [PATCH v2] pinctrl: sh-pfc: r8a7794: add VIN pin groups
-Message-Id: <2918225.gAfMYgxlCz@wasted.cogentembedded.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 08 Aug 2015 20:33:17 +0000
+Subject: [PATCH 00/10] i2c: improve i2c client address spaces and their DT support
+Message-Id: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <13219129.kD4pZSmcAP@wasted.cogentembedded.com>
-In-Reply-To: <13219129.kD4pZSmcAP@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linus.walleij@linaro.org, linux-sh@vger.kernel.org, laurent.pinchart@ideasonboard.com, linux-gpio@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Andrey Danin <danindrey@mail.ru>, Stephen Warren <swarren@wwwdotorg.org>
 
-From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Here is the updated RFC series ready for submission. This gives the i2c core
+seperate address spaces for standard clients, 10 bit clients, and our own slave
+clients. So, you can now have a 7 bit slave at 0x50 and a 10 bit slave at
+0x050. Or, you can have a slave driver listening at some address and at the
+same time have a client driver talking to this address. Note that this is only
+the core support for that separation, I am still not sure if there is hardware
+being able talking to its own slave address, but we will see. The RFC had DT
+support, this series also has support for that when instantiating via sysfs at
+runtime.
 
-Add VIN0/1 pin groups to R8A7794 PFC driver.
+Changes since RFC:
 
-Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-[Sergei: rebased, renamed, added changelog, gathered 12 VIN1 data pins into a
-single pin group.]
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+* dropped the patches for Tegra slave support. I couldn't get them to work
+  and we found out that they need further changes. Tests have now been
+  performed with a Renesas Lager board
+* the hardcoded arbitrary offsets have now been #defined. Other than that,
+  patches 1-7 which also have been in the RFC stayed the same.
+* patch 8 adds support for the new flags in sysfs
+* patch 9 gives some extra warning for users in case of a misconfiguration
+* patch 10 finally introduces a binding documentation for generic i2c
+  bindings. Finally, at last, hooray!
+* tags from Andrey and Stephen have been added, thanks a lot!
 
----
-The patch  is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git' repo.
-It depends on the patch I've just posted in order to build.
+Please comment, review...
 
-Changes in version 2:
-- relied on the 'struct vin_data' and #define VIN_DATA_PIN_GROUP() moved to the
-  common header file;
-- added to the VI1_DATA8/9/10/11 pin group VI1_DATA[0-7] pins and renamed/moved
-  this pin group.
+Thanks,
 
- drivers/pinctrl/sh-pfc/pfc-r8a7794.c |  192 +++++++++++++++++++++++++++++++++++
- 1 file changed, 192 insertions(+)
+   Wolfram
 
-Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
-=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
-+++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
-@@ -2789,6 +2789,156 @@ static const unsigned int usb1_mux[] = {
- 	USB1_OVC_MARK,
- };
- 
-+/* - VIN0 ------------------------------------------------------------------- */
-+static const union vin_data vin0_data_pins = {
-+	.data24 = {
-+		/* B */
-+		RCAR_GP_PIN(3, 1), RCAR_GP_PIN(3, 2),
-+		RCAR_GP_PIN(3, 3), RCAR_GP_PIN(3, 4),
-+		RCAR_GP_PIN(3, 5), RCAR_GP_PIN(3, 6),
-+		RCAR_GP_PIN(3, 7), RCAR_GP_PIN(3, 8),
-+		/* G */
-+		RCAR_GP_PIN(3, 13), RCAR_GP_PIN(3, 14),
-+		RCAR_GP_PIN(3, 15), RCAR_GP_PIN(3, 16),
-+		RCAR_GP_PIN(3, 17), RCAR_GP_PIN(3, 18),
-+		RCAR_GP_PIN(3, 19), RCAR_GP_PIN(3, 20),
-+		/* R */
-+		RCAR_GP_PIN(3, 21), RCAR_GP_PIN(3, 22),
-+		RCAR_GP_PIN(3, 23), RCAR_GP_PIN(3, 24),
-+		RCAR_GP_PIN(3, 25), RCAR_GP_PIN(3, 26),
-+		RCAR_GP_PIN(3, 27), RCAR_GP_PIN(3, 28),
-+	},
-+};
-+static const union vin_data vin0_data_mux = {
-+	.data24 = {
-+		/* B */
-+		VI0_DATA0_VI0_B0_MARK, VI0_DATA1_VI0_B1_MARK,
-+		VI0_DATA2_VI0_B2_MARK, VI0_DATA3_VI0_B3_MARK,
-+		VI0_DATA4_VI0_B4_MARK, VI0_DATA5_VI0_B5_MARK,
-+		VI0_DATA6_VI0_B6_MARK, VI0_DATA7_VI0_B7_MARK,
-+		/* G */
-+		VI0_G0_MARK, VI0_G1_MARK,
-+		VI0_G2_MARK, VI0_G3_MARK,
-+		VI0_G4_MARK, VI0_G5_MARK,
-+		VI0_G6_MARK, VI0_G7_MARK,
-+		/* R */
-+		VI0_R0_MARK, VI0_R1_MARK,
-+		VI0_R2_MARK, VI0_R3_MARK,
-+		VI0_R4_MARK, VI0_R5_MARK,
-+		VI0_R6_MARK, VI0_R7_MARK,
-+	},
-+};
-+static const unsigned int vin0_data18_pins[] = {
-+	/* B */
-+	RCAR_GP_PIN(3, 3), RCAR_GP_PIN(3, 4),
-+	RCAR_GP_PIN(3, 5), RCAR_GP_PIN(3, 6),
-+	RCAR_GP_PIN(3, 7), RCAR_GP_PIN(3, 8),
-+	/* G */
-+	RCAR_GP_PIN(3, 15), RCAR_GP_PIN(3, 16),
-+	RCAR_GP_PIN(3, 17), RCAR_GP_PIN(3, 18),
-+	RCAR_GP_PIN(3, 19), RCAR_GP_PIN(3, 20),
-+	/* R */
-+	RCAR_GP_PIN(3, 23), RCAR_GP_PIN(3, 24),
-+	RCAR_GP_PIN(3, 25), RCAR_GP_PIN(3, 26),
-+	RCAR_GP_PIN(3, 27), RCAR_GP_PIN(3, 28),
-+};
-+static const unsigned int vin0_data18_mux[] = {
-+	/* B */
-+	VI0_DATA2_VI0_B2_MARK, VI0_DATA3_VI0_B3_MARK,
-+	VI0_DATA4_VI0_B4_MARK, VI0_DATA5_VI0_B5_MARK,
-+	VI0_DATA6_VI0_B6_MARK, VI0_DATA7_VI0_B7_MARK,
-+	/* G */
-+	VI0_G2_MARK, VI0_G3_MARK,
-+	VI0_G4_MARK, VI0_G5_MARK,
-+	VI0_G6_MARK, VI0_G7_MARK,
-+	/* R */
-+	VI0_R2_MARK, VI0_R3_MARK,
-+	VI0_R4_MARK, VI0_R5_MARK,
-+	VI0_R6_MARK, VI0_R7_MARK,
-+};
-+static const unsigned int vin0_sync_pins[] = {
-+	RCAR_GP_PIN(3, 11), /* HSYNC */
-+	RCAR_GP_PIN(3, 12), /* VSYNC */
-+};
-+static const unsigned int vin0_sync_mux[] = {
-+	VI0_HSYNC_N_MARK,
-+	VI0_VSYNC_N_MARK,
-+};
-+static const unsigned int vin0_field_pins[] = {
-+	RCAR_GP_PIN(3, 10),
-+};
-+static const unsigned int vin0_field_mux[] = {
-+	VI0_FIELD_MARK,
-+};
-+static const unsigned int vin0_clkenb_pins[] = {
-+	RCAR_GP_PIN(3, 9),
-+};
-+static const unsigned int vin0_clkenb_mux[] = {
-+	VI0_CLKENB_MARK,
-+};
-+static const unsigned int vin0_clk_pins[] = {
-+	RCAR_GP_PIN(3, 0),
-+};
-+static const unsigned int vin0_clk_mux[] = {
-+	VI0_CLK_MARK,
-+};
-+
-+/* - VIN1 ----------------------------------------------------------------- */
-+static const unsigned int vin1_data8_pins[] = {
-+	RCAR_GP_PIN(5, 12), RCAR_GP_PIN(5, 13),
-+	RCAR_GP_PIN(5, 14), RCAR_GP_PIN(5, 15),
-+	RCAR_GP_PIN(5, 16), RCAR_GP_PIN(5, 17),
-+	RCAR_GP_PIN(5, 18), RCAR_GP_PIN(5, 19),
-+};
-+static const unsigned int vin1_data8_mux[] = {
-+	VI1_DATA0_MARK, VI1_DATA1_MARK,
-+	VI1_DATA2_MARK, VI1_DATA3_MARK,
-+	VI1_DATA4_MARK, VI1_DATA5_MARK,
-+	VI1_DATA6_MARK, VI1_DATA7_MARK,
-+};
-+static const unsigned int vin1_data12_pins[] = {
-+	RCAR_GP_PIN(5, 12), RCAR_GP_PIN(5, 13),
-+	RCAR_GP_PIN(5, 14), RCAR_GP_PIN(5, 15),
-+	RCAR_GP_PIN(5, 16), RCAR_GP_PIN(5, 17),
-+	RCAR_GP_PIN(5, 18), RCAR_GP_PIN(5, 19),
-+	RCAR_GP_PIN(1, 10), RCAR_GP_PIN(1, 11),
-+	RCAR_GP_PIN(1, 12), RCAR_GP_PIN(1, 13),
-+};
-+static const unsigned int vin1_data12_mux[] = {
-+	VI1_DATA0_MARK, VI1_DATA1_MARK,
-+	VI1_DATA2_MARK, VI1_DATA3_MARK,
-+	VI1_DATA4_MARK, VI1_DATA5_MARK,
-+	VI1_DATA6_MARK, VI1_DATA7_MARK,
-+	VI1_DATA8_MARK, VI1_DATA9_MARK,
-+	VI1_DATA10_MARK, VI1_DATA11_MARK,
-+};
-+static const unsigned int vin1_sync_pins[] = {
-+	RCAR_GP_PIN(5, 22), /* HSYNC */
-+	RCAR_GP_PIN(5, 23), /* VSYNC */
-+};
-+static const unsigned int vin1_sync_mux[] = {
-+	VI1_HSYNC_N_MARK,
-+	VI1_VSYNC_N_MARK,
-+};
-+static const unsigned int vin1_field_pins[] = {
-+	RCAR_GP_PIN(5, 21),
-+};
-+static const unsigned int vin1_field_mux[] = {
-+	VI1_FIELD_MARK,
-+};
-+static const unsigned int vin1_clkenb_pins[] = {
-+	RCAR_GP_PIN(5, 20),
-+};
-+static const unsigned int vin1_clkenb_mux[] = {
-+	VI1_CLKENB_MARK,
-+};
-+static const unsigned int vin1_clk_pins[] = {
-+	RCAR_GP_PIN(5, 11),
-+};
-+static const unsigned int vin1_clk_mux[] = {
-+	VI1_CLK_MARK,
-+};
-+
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(eth_link),
- 	SH_PFC_PIN_GROUP(eth_magic),
-@@ -2965,6 +3115,23 @@ static const struct sh_pfc_pin_group pin
- 	SH_PFC_PIN_GROUP(sdhi2_wp),
- 	SH_PFC_PIN_GROUP(usb0),
- 	SH_PFC_PIN_GROUP(usb1),
-+	VIN_DATA_PIN_GROUP(vin0_data, 24),
-+	VIN_DATA_PIN_GROUP(vin0_data, 20),
-+	SH_PFC_PIN_GROUP(vin0_data18),
-+	VIN_DATA_PIN_GROUP(vin0_data, 16),
-+	VIN_DATA_PIN_GROUP(vin0_data, 12),
-+	VIN_DATA_PIN_GROUP(vin0_data, 10),
-+	VIN_DATA_PIN_GROUP(vin0_data, 8),
-+	SH_PFC_PIN_GROUP(vin0_sync),
-+	SH_PFC_PIN_GROUP(vin0_field),
-+	SH_PFC_PIN_GROUP(vin0_clkenb),
-+	SH_PFC_PIN_GROUP(vin0_clk),
-+	SH_PFC_PIN_GROUP(vin1_data8),
-+	SH_PFC_PIN_GROUP(vin1_data12),
-+	SH_PFC_PIN_GROUP(vin1_sync),
-+	SH_PFC_PIN_GROUP(vin1_field),
-+	SH_PFC_PIN_GROUP(vin1_clkenb),
-+	SH_PFC_PIN_GROUP(vin1_clk),
- };
- 
- static const char * const eth_groups[] = {
-@@ -3247,6 +3414,29 @@ static const char * const usb1_groups[]
- 	"usb1",
- };
- 
-+static const char * const vin0_groups[] = {
-+	"vin0_data24",
-+	"vin0_data20",
-+	"vin0_data18",
-+	"vin0_data16",
-+	"vin0_data12",
-+	"vin0_data10",
-+	"vin0_data8",
-+	"vin0_sync",
-+	"vin0_field",
-+	"vin0_clkenb",
-+	"vin0_clk",
-+};
-+
-+static const char * const vin1_groups[] = {
-+	"vin1_data8",
-+	"vin1_data12",
-+	"vin1_sync",
-+	"vin1_field",
-+	"vin1_clkenb",
-+	"vin1_clk",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(eth),
- 	SH_PFC_FUNCTION(hscif0),
-@@ -3283,6 +3473,8 @@ static const struct sh_pfc_function pinm
- 	SH_PFC_FUNCTION(sdhi2),
- 	SH_PFC_FUNCTION(usb0),
- 	SH_PFC_FUNCTION(usb1),
-+	SH_PFC_FUNCTION(vin0),
-+	SH_PFC_FUNCTION(vin1),
- };
- 
- static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+
+Wolfram Sang (10):
+  dt-bindings: add header for generic I2C flags in bindings
+  i2c: add a flag to mark clients as slaves
+  i2c: apply address offset for slaves, too
+  i2c: rename address check functions
+  i2c: make address check indpendent from client struct
+  i2c: apply DT flags when probing
+  i2c: take address space into account when checking for used addresses
+  i2c: support 10 bit and slave addresses in sysfs 'new_device'
+  i2c: slave: print warning if slave flag not set
+  i2c: dt: describe generic bindings
+
+ Documentation/devicetree/bindings/i2c/i2c.txt | 33 ++++++++++
+ Documentation/i2c/slave-interface             |  9 ++-
+ Documentation/i2c/ten-bit-addresses           |  4 ++
+ drivers/i2c/i2c-core.c                        | 88 ++++++++++++++++++++-------
+ include/dt-bindings/i2c/i2c.h                 | 18 ++++++
+ include/linux/i2c.h                           |  9 +--
+ 6 files changed, 131 insertions(+), 30 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/i2c/i2c.txt
+ create mode 100644 include/dt-bindings/i2c/i2c.h
+
+-- 
+2.1.4
 
