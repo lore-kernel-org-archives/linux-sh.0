@@ -1,76 +1,48 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 26 Aug 2015 17:53:58 +0000
-Subject: [PATCH] pinctrl: sh-pfc: r8a7794: Remove bogus SCIF0 SCK pin data
-Message-Id: <1440611638-16256-1-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 08 Aug 2015 20:33:19 +0000
+Subject: [PATCH 02/10] i2c: add a flag to mark clients as slaves
+Message-Id: <1439066007-13951-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Andrey Danin <danindrey@mail.ru>, Stephen Warren <swarren@wwwdotorg.org>, Stephen Warren <swarren@nvidia.com>
 
-SCIF0 on R-Car E2 does not have an SCK pin.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-"SCIF_CLK" is the (H)SCIF baud rate generation clock pin, which is not
-yet supported.
+And update indentation with one more tab, sigh...
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Andrey Danin <danindrey@mail.ru>
+Acked-by: Stephen Warren <swarren@nvidia.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7794.c | 18 ------------------
- 1 file changed, 18 deletions(-)
+ include/linux/i2c.h | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7794.c b/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
-index bfdcac4b3bc4a4a0..2f169d5bc230bdcc 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
-@@ -2197,13 +2197,6 @@ static const unsigned int scif0_data_pins[] = {
- static const unsigned int scif0_data_mux[] = {
- 	SCIF0_RXD_MARK, SCIF0_TXD_MARK,
- };
--static const unsigned int scif0_clk_pins[] = {
--	/* SCK */
--	RCAR_GP_PIN(1, 23),
--};
--static const unsigned int scif0_clk_mux[] = {
--	SCIF_CLK_MARK,
--};
- static const unsigned int scif0_data_b_pins[] = {
- 	/* RX, TX */
- 	RCAR_GP_PIN(3, 11), RCAR_GP_PIN(3, 12),
-@@ -2211,13 +2204,6 @@ static const unsigned int scif0_data_b_pins[] = {
- static const unsigned int scif0_data_b_mux[] = {
- 	SCIF0_RXD_B_MARK, SCIF0_TXD_B_MARK,
- };
--static const unsigned int scif0_clk_b_pins[] = {
--	/* SCK */
--	RCAR_GP_PIN(3, 29),
--};
--static const unsigned int scif0_clk_b_mux[] = {
--	SCIF_CLK_B_MARK,
--};
- static const unsigned int scif0_data_c_pins[] = {
- 	/* RX, TX */
- 	RCAR_GP_PIN(3, 30), RCAR_GP_PIN(3, 31),
-@@ -2866,9 +2852,7 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(qspi_data2),
- 	SH_PFC_PIN_GROUP(qspi_data4),
- 	SH_PFC_PIN_GROUP(scif0_data),
--	SH_PFC_PIN_GROUP(scif0_clk),
- 	SH_PFC_PIN_GROUP(scif0_data_b),
--	SH_PFC_PIN_GROUP(scif0_clk_b),
- 	SH_PFC_PIN_GROUP(scif0_data_c),
- 	SH_PFC_PIN_GROUP(scif0_data_d),
- 	SH_PFC_PIN_GROUP(scif1_data),
-@@ -3087,9 +3071,7 @@ static const char * const qspi_groups[] = {
+diff --git a/include/linux/i2c.h b/include/linux/i2c.h
+index e83a738a3b8741..51ed2e40932f3d 100644
+--- a/include/linux/i2c.h
++++ b/include/linux/i2c.h
+@@ -550,11 +550,12 @@ void i2c_lock_adapter(struct i2c_adapter *);
+ void i2c_unlock_adapter(struct i2c_adapter *);
  
- static const char * const scif0_groups[] = {
- 	"scif0_data",
--	"scif0_clk",
- 	"scif0_data_b",
--	"scif0_clk_b",
- 	"scif0_data_c",
- 	"scif0_data_d",
- };
+ /*flags for the client struct: */
+-#define I2C_CLIENT_PEC	0x04		/* Use Packet Error Checking */
+-#define I2C_CLIENT_TEN	0x10		/* we have a ten bit chip address */
++#define I2C_CLIENT_PEC		0x04	/* Use Packet Error Checking */
++#define I2C_CLIENT_TEN		0x10	/* we have a ten bit chip address */
+ 					/* Must equal I2C_M_TEN below */
+-#define I2C_CLIENT_WAKE	0x80		/* for board_info; true iff can wake */
+-#define I2C_CLIENT_SCCB	0x9000		/* Use Omnivision SCCB protocol */
++#define I2C_CLIENT_SLAVE	0x20	/* we are the slave */
++#define I2C_CLIENT_WAKE		0x80	/* for board_info; true iff can wake */
++#define I2C_CLIENT_SCCB		0x9000	/* Use Omnivision SCCB protocol */
+ 					/* Must match I2C_M_STOP|IGNORE_NAK */
+ 
+ /* i2c adapter classes (bitmask) */
 -- 
-1.9.1
+2.1.4
 
