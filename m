@@ -1,191 +1,199 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 27 Aug 2015 09:24:03 +0000
-Subject: [PATCH/RFC 03/10] ravb: Provide dev parameter to DMA API
-Message-Id: <1440667450-3513-4-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Sun, 09 Aug 2015 23:31:13 +0000
+Subject: Re: [PATCH] ARM: shmobile: IPMMU and DMAC prototype
+Message-Id: <89949879.QppV1EtK2z@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Hi Magnus,
 
-This patch is in preparation for using this driver on arm64 where the
-implementation of __dma_alloc_coherent fails if a device parameter is not
-provided.
+Thank you for the patch.
 
-Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
-[horms: squashed into a single patch]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+On Monday 27 July 2015 21:05:18 Magnus Damm wrote:
+> From: Magnus Damm <damm+renesas@opensource.se>
+> 
+> This patch is a prototype hack to enable DMA Engine over IPMMU for
+> devices such as QSPI, SDHI and MMCIF. The simple approach taken here
+> is to identity map the DMA Engine slave devices in the IPMMU driver.
+> 
+> As expected this is just a test to see if the actual hardware works.
+> I believe it at least half-works - the IPMMU fault errors go away
+> when I test on r8a7791 Koelsch.
+> 
+> The code is far from ready for upstream merge for various reasons:
+>  - The code is one huge layering violation (topology fixes should be
+> elsewhere)
+> - It also clobbers the virtual I/O space without reservation (corruption!)
+> - Moreover, the identity mappings are added for all devices (just plain
+> wrong)
+> 
+> Next step would be to figure out how to fix this properly.
 
----
-* [horms]
-  I have only tested this on arm64.
-  It should be tested for regressions on arm hardware.
----
- drivers/net/ethernet/renesas/ravb_main.c | 38 ++++++++++++++++----------------
- 1 file changed, 19 insertions(+), 19 deletions(-)
+Given that you've yourself identified this approach as being a big layering 
+violation, the proper fix is to move it to a different layer :-)
 
-diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
-index 3d972d819420..026d98435d87 100644
---- a/drivers/net/ethernet/renesas/ravb_main.c
-+++ b/drivers/net/ethernet/renesas/ravb_main.c
-@@ -201,7 +201,7 @@ static void ravb_ring_free(struct net_device *ndev, int q)
- 	if (priv->rx_ring[q]) {
- 		ring_size = sizeof(struct ravb_ex_rx_desc) *
- 			    (priv->num_rx_ring[q] + 1);
--		dma_free_coherent(NULL, ring_size, priv->rx_ring[q],
-+		dma_free_coherent(ndev->dev.parent, ring_size, priv->rx_ring[q],
- 				  priv->rx_desc_dma[q]);
- 		priv->rx_ring[q] = NULL;
- 	}
-@@ -209,7 +209,7 @@ static void ravb_ring_free(struct net_device *ndev, int q)
- 	if (priv->tx_ring[q]) {
- 		ring_size = sizeof(struct ravb_tx_desc) *
- 			    (priv->num_tx_ring[q] * NUM_TX_DESC + 1);
--		dma_free_coherent(NULL, ring_size, priv->tx_ring[q],
-+		dma_free_coherent(ndev->dev.parent, ring_size, priv->tx_ring[q],
- 				  priv->tx_desc_dma[q]);
- 		priv->tx_ring[q] = NULL;
- 	}
-@@ -240,13 +240,13 @@ static void ravb_ring_format(struct net_device *ndev, int q)
- 		rx_desc = &priv->rx_ring[q][i];
- 		/* The size of the buffer should be on 16-byte boundary. */
- 		rx_desc->ds_cc = cpu_to_le16(ALIGN(PKT_BUF_SZ, 16));
--		dma_addr = dma_map_single(&ndev->dev, priv->rx_skb[q][i]->data,
-+		dma_addr = dma_map_single(ndev->dev.parent, priv->rx_skb[q][i]->data,
- 					  ALIGN(PKT_BUF_SZ, 16),
- 					  DMA_FROM_DEVICE);
- 		/* We just set the data size to 0 for a failed mapping which
- 		 * should prevent DMA from happening...
- 		 */
--		if (dma_mapping_error(&ndev->dev, dma_addr))
-+		if (dma_mapping_error(ndev->dev.parent, dma_addr))
- 			rx_desc->ds_cc = cpu_to_le16(0);
- 		rx_desc->dptr = cpu_to_le32(dma_addr);
- 		rx_desc->die_dt = DT_FEMPTY;
-@@ -309,7 +309,7 @@ static int ravb_ring_init(struct net_device *ndev, int q)
- 
- 	/* Allocate all RX descriptors. */
- 	ring_size = sizeof(struct ravb_ex_rx_desc) * (priv->num_rx_ring[q] + 1);
--	priv->rx_ring[q] = dma_alloc_coherent(NULL, ring_size,
-+	priv->rx_ring[q] = dma_alloc_coherent(ndev->dev.parent, ring_size,
- 					      &priv->rx_desc_dma[q],
- 					      GFP_KERNEL);
- 	if (!priv->rx_ring[q])
-@@ -320,7 +320,7 @@ static int ravb_ring_init(struct net_device *ndev, int q)
- 	/* Allocate all TX descriptors. */
- 	ring_size = sizeof(struct ravb_tx_desc) *
- 		    (priv->num_tx_ring[q] * NUM_TX_DESC + 1);
--	priv->tx_ring[q] = dma_alloc_coherent(NULL, ring_size,
-+	priv->tx_ring[q] = dma_alloc_coherent(ndev->dev.parent, ring_size,
- 					      &priv->tx_desc_dma[q],
- 					      GFP_KERNEL);
- 	if (!priv->tx_ring[q])
-@@ -443,7 +443,7 @@ static int ravb_tx_free(struct net_device *ndev, int q)
- 		size = le16_to_cpu(desc->ds_tagl) & TX_DS;
- 		/* Free the original skb. */
- 		if (priv->tx_skb[q][entry / NUM_TX_DESC]) {
--			dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
-+			dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
- 					 size, DMA_TO_DEVICE);
- 			/* Last packet descriptor? */
- 			if (entry % NUM_TX_DESC = NUM_TX_DESC - 1) {
-@@ -546,7 +546,7 @@ static bool ravb_rx(struct net_device *ndev, int *quota, int q)
- 
- 			skb = priv->rx_skb[q][entry];
- 			priv->rx_skb[q][entry] = NULL;
--			dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
-+			dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
- 					 ALIGN(PKT_BUF_SZ, 16),
- 					 DMA_FROM_DEVICE);
- 			get_ts &= (q = RAVB_NC) ?
-@@ -586,14 +586,14 @@ static bool ravb_rx(struct net_device *ndev, int *quota, int q)
- 			if (!skb)
- 				break;	/* Better luck next round. */
- 			ravb_set_buffer_align(skb);
--			dma_addr = dma_map_single(&ndev->dev, skb->data,
-+			dma_addr = dma_map_single(ndev->dev.parent, skb->data,
- 						  le16_to_cpu(desc->ds_cc),
- 						  DMA_FROM_DEVICE);
- 			skb_checksum_none_assert(skb);
- 			/* We just set the data size to 0 for a failed mapping
- 			 * which should prevent DMA  from happening...
- 			 */
--			if (dma_mapping_error(&ndev->dev, dma_addr))
-+			if (dma_mapping_error(ndev->dev.parent, dma_addr))
- 				desc->ds_cc = cpu_to_le16(0);
- 			desc->dptr = cpu_to_le32(dma_addr);
- 			priv->rx_skb[q][entry] = skb;
-@@ -1300,8 +1300,8 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
- 		 entry / NUM_TX_DESC * DPTR_ALIGN;
- 	len = PTR_ALIGN(skb->data, DPTR_ALIGN) - skb->data;
- 	memcpy(buffer, skb->data, len);
--	dma_addr = dma_map_single(&ndev->dev, buffer, len, DMA_TO_DEVICE);
--	if (dma_mapping_error(&ndev->dev, dma_addr))
-+	dma_addr = dma_map_single(ndev->dev.parent, buffer, len, DMA_TO_DEVICE);
-+	if (dma_mapping_error(ndev->dev.parent, dma_addr))
- 		goto drop;
- 
- 	desc = &priv->tx_ring[q][entry];
-@@ -1310,8 +1310,8 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
- 
- 	buffer = skb->data + len;
- 	len = skb->len - len;
--	dma_addr = dma_map_single(&ndev->dev, buffer, len, DMA_TO_DEVICE);
--	if (dma_mapping_error(&ndev->dev, dma_addr))
-+	dma_addr = dma_map_single(ndev->dev.parent, buffer, len, DMA_TO_DEVICE);
-+	if (dma_mapping_error(ndev->dev.parent, dma_addr))
- 		goto unmap;
- 
- 	desc++;
-@@ -1323,7 +1323,7 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
- 		ts_skb = kmalloc(sizeof(*ts_skb), GFP_ATOMIC);
- 		if (!ts_skb) {
- 			desc--;
--			dma_unmap_single(&ndev->dev, dma_addr, len,
-+			dma_unmap_single(ndev->dev.parent, dma_addr, len,
- 					 DMA_TO_DEVICE);
- 			goto unmap;
- 		}
-@@ -1358,7 +1358,7 @@ exit:
- 	return NETDEV_TX_OK;
- 
- unmap:
--	dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
-+	dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
- 			 le16_to_cpu(desc->ds_tagl), DMA_TO_DEVICE);
- drop:
- 	dev_kfree_skb_any(skb);
-@@ -1708,7 +1708,7 @@ static int ravb_probe(struct platform_device *pdev)
- 
- 	/* Allocate descriptor base address table */
- 	priv->desc_bat_size = sizeof(struct ravb_desc) * DBAT_ENTRY_NUM;
--	priv->desc_bat = dma_alloc_coherent(NULL, priv->desc_bat_size,
-+	priv->desc_bat = dma_alloc_coherent(ndev->dev.parent, priv->desc_bat_size,
- 					    &priv->desc_bat_dma, GFP_KERNEL);
- 	if (!priv->desc_bat) {
- 		dev_err(&ndev->dev,
-@@ -1763,7 +1763,7 @@ out_napi_del:
- 	netif_napi_del(&priv->napi[RAVB_BE]);
- 	ravb_mdio_release(priv);
- out_dma_free:
--	dma_free_coherent(NULL, priv->desc_bat_size, priv->desc_bat,
-+	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
- 			  priv->desc_bat_dma);
- out_release:
- 	if (ndev)
-@@ -1779,7 +1779,7 @@ static int ravb_remove(struct platform_device *pdev)
- 	struct net_device *ndev = platform_get_drvdata(pdev);
- 	struct ravb_private *priv = netdev_priv(ndev);
- 
--	dma_free_coherent(NULL, priv->desc_bat_size, priv->desc_bat,
-+	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
- 			  priv->desc_bat_dma);
- 	/* Set reset mode */
- 	ravb_write(ndev, CCC_OPC_RESET, CCC);
+The DMA engine API currently passes slave addresses as dma_addr_t but slave 
+drivers pass physical addresses instead. There's only two ways to fix that:
+
+(please read the "[periperi] About using IPMMU" mail thread for more 
+information)
+
+- Modify the DMA engine API to pass a phys_addr_t. Slave drivers will then be 
+right, and DMAC drivers will need to map the phys_addr_t to a dma_addr_t 
+(through the IOMMU) using the DMA mapping API.
+
+- Keep the DMA engine API as-is and fix slave drivers to map the physical 
+address to a dma_addr_t using the DMA mapping API.
+
+The struct device used to create the mapping must be the DMAC device as that's 
+the bus master that needs to be translated by the IOMMU. For that reason, and 
+to keep slave drivers simple(r), I believe the first approach should be 
+preferred.
+
+This should of course be discussed on the dma-engine mailing list first. The 
+good news is that the topic has already been discussed, and patches even got 
+sent. See https://lkml.org/lkml/2015/7/10/167 for instance.
+
+> Not-Yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+> ---
+> 
+>  arch/arm/boot/dts/r8a7791.dtsi |   32 +++++++++++++++++++++-
+>  drivers/iommu/ipmmu-vmsa.c     |   57 +++++++++++++++++++++++++++++++++++++
+>  2 files changed, 88 insertions(+), 1 deletion(-)
+> 
+> --- 0001/arch/arm/boot/dts/r8a7791.dtsi
+> +++ work/arch/arm/boot/dts/r8a7791.dtsi	2015-07-27 15:15:34.922366518 +0900
+> @@ -270,6 +270,21 @@
+>  		clock-names = "fck";
+>  		#dma-cells = <1>;
+>  		dma-channels = <15>;
+> +		iommus = <&ipmmu_ds 0>,
+> +		       <&ipmmu_ds 1>,
+> +		       <&ipmmu_ds 2>,
+> +		       <&ipmmu_ds 3>,
+> +		       <&ipmmu_ds 4>,
+> +		       <&ipmmu_ds 5>,
+> +		       <&ipmmu_ds 6>,
+> +		       <&ipmmu_ds 7>,
+> +		       <&ipmmu_ds 8>,
+> +		       <&ipmmu_ds 9>,
+> +		       <&ipmmu_ds 10>,
+> +		       <&ipmmu_ds 11>,
+> +		       <&ipmmu_ds 12>,
+> +		       <&ipmmu_ds 13>,
+> +		       <&ipmmu_ds 14>;
+>  	};
+> 
+>  	dmac1: dma-controller@e6720000 {
+> @@ -300,6 +315,21 @@
+>  		clock-names = "fck";
+>  		#dma-cells = <1>;
+>  		dma-channels = <15>;
+> +		iommus = <&ipmmu_ds 15>,
+> +		       <&ipmmu_ds 16>,
+> +		       <&ipmmu_ds 17>,
+> +		       <&ipmmu_ds 18>,
+> +		       <&ipmmu_ds 19>,
+> +		       <&ipmmu_ds 20>,
+> +		       <&ipmmu_ds 21>,
+> +		       <&ipmmu_ds 22>,
+> +		       <&ipmmu_ds 23>,
+> +		       <&ipmmu_ds 24>,
+> +		       <&ipmmu_ds 25>,
+> +		       <&ipmmu_ds 26>,
+> +		       <&ipmmu_ds 27>,
+> +		       <&ipmmu_ds 28>,
+> +		       <&ipmmu_ds 29>;
+>  	};
+> 
+>  	audma0: dma-controller@ec700000 {
+> @@ -1522,7 +1552,7 @@
+>  		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
+>  			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
+>  		#iommu-cells = <1>;
+> -		status = "disabled";
+> +		status = "okay";
+>  	};
+> 
+>  	ipmmu_mp: mmu@ec680000 {
+> --- 0001/drivers/iommu/ipmmu-vmsa.c
+> +++ work/drivers/iommu/ipmmu-vmsa.c	2015-07-27 20:48:02.642366518 +0900
+> @@ -491,6 +491,61 @@ static void ipmmu_domain_free(struct iom
+>  	kfree(domain);
+>  }
+> 
+> +/* Hack to identity map address ranges needed by the DMAC hardware */
+> +static struct {
+> +	phys_addr_t base;
+> +	size_t size;
+> +} dmac_workaround[] = {
+> +	{
+> +		.base = 0xe6b10000, /* QSPI */
+> +		.size = SZ_4K,
+> +	},
+> +	{
+> +		.base = 0xee100000, /* SDHI0 */
+> +		.size = SZ_16K,
+> +	},
+> +	{
+> +		.base = 0xee120000, /* SDHIx */
+> +		.size = SZ_16K,
+> +	},
+> +	{
+> +		.base = 0xee140000, /* SDHIy */
+> +		.size = SZ_16K,
+> +	},
+> +	{
+> +		.base = 0xee160000, /* SDHIz */
+> +		.size = SZ_16K,
+> +	},
+> +	{
+> +		.base = 0xee200000, /* MMCIF0 */
+> +		.size = SZ_4K,
+> +	},
+> +	{
+> +		.base = 0xee220000, /* MMCIF1 */
+> +		.size = SZ_4K,
+> +	},
+> +};
+> +
+> +static void ipmmu_workaround(struct iommu_domain *domain)
+> +{
+> +	int k;
+> +
+> +	for (k = 0; k < ARRAY_SIZE(dmac_workaround); k++) {
+> +		phys_addr_t phys_addr;
+> +
+> +		printk("xxxx adding workaround for device at %pap\n",
+> +		       &dmac_workaround[k].base);
+> +
+> +		phys_addr = iommu_iova_to_phys(domain, dmac_workaround[k].base);
+> +		if (phys_addr)
+> +			continue;
+> +
+> +		iommu_map(domain, dmac_workaround[k].base,
+> +			  dmac_workaround[k].base, dmac_workaround[k].size,
+> +			  IOMMU_READ | IOMMU_READ);
+> +	}
+> +}
+> +
+>  static int ipmmu_attach_device(struct iommu_domain *io_domain,
+>  			       struct device *dev)
+>  {
+> @@ -530,6 +585,8 @@ static int ipmmu_attach_device(struct io
+>  	for (i = 0; i < archdata->num_utlbs; ++i)
+>  		ipmmu_utlb_enable(domain, archdata->utlbs[i]);
+> 
+> +	ipmmu_workaround(io_domain);
+> +
+>  	return 0;
+>  }
+
 -- 
-2.1.4
+Regards,
+
+Laurent Pinchart
 
