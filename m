@@ -1,83 +1,59 @@
-From: Vaibhav Hiremath <vaibhav.hiremath@linaro.org>
-Date: Sun, 09 Aug 2015 09:51:51 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sun, 09 Aug 2015 12:15:46 +0000
 Subject: Re: [PATCH 10/10] i2c: dt: describe generic bindings
-Message-Id: <55C722A5.4020403@linaro.org>
+Message-Id: <20150809121545.GA1521@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="ibTvN161/egqYuK8"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439066007-13951-1-git-send-email-wsa@the-dreams.de> <1439066007-13951-11-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1439066007-13951-11-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>, linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Andrey Danin <danindrey@mail.ru>, Stephen Warren <swarren@wwwdotorg.org>
+References: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
+ <1439066007-13951-11-git-send-email-wsa@the-dreams.de>
+ <55C722A5.4020403@linaro.org>
+In-Reply-To: <55C722A5.4020403@linaro.org>
+To: Vaibhav Hiremath <vaibhav.hiremath@linaro.org>
+Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Andrey Danin <danindrey@mail.ru>, Stephen Warren <swarren@wwwdotorg.org>
 
 
-
-On Sunday 09 August 2015 02:03 AM, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->
-> Start a new file which describes the generic bindings used for I2C with
-> device tree. So we have a central place to look for them, increase
-> visibility of them, and hopefully reduce the amount of custom properties
-> introduced.
->
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> ---
->   Documentation/devicetree/bindings/i2c/i2c.txt | 33 +++++++++++++++++++++++++++
->   1 file changed, 33 insertions(+)
->   create mode 100644 Documentation/devicetree/bindings/i2c/i2c.txt
->
-> diff --git a/Documentation/devicetree/bindings/i2c/i2c.txt b/Documentation/devicetree/bindings/i2c/i2c.txt
-> new file mode 100644
-> index 00000000000000..1175efed4a41b5
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/i2c/i2c.txt
-> @@ -0,0 +1,33 @@
-> +Generic device tree bindings for I2C busses
-> +=====================> +
-> +This document describes generic bindings which can be used to describe I2C
-> +busses in a device tree.
-> +
-> +Required properties
-> +-------------------
-> +
-> +- #address-cells  - should be <1>. Read more about addresses below.
-> +- #size-cells     - should be <0>.
-> +- compatible      - name of I2C bus controller following generic names
-> +		    recommended practice.
-> +
-> +For other required properties e.g. to describe register sets, interrupts,
-> +clocks, etc. check the binding documentation of the specific driver.
-> +
-> +The cells properties above define that an address of children of an I2C bus
-> +are described by a single value. This is usually a 7 bit address. However,
-> +flags can be attached to the address. I2C_TEN_BIT_ADDRESS is used to mark a 10
-> +bit address. It is needed to avoid the ambiguity between e.g. a 7 bit address
-> +of 0x50 and a 10 bit address of 0x050 which, in theory, can be on the same bus.
-> +Another flag is I2C_OWN_SLAVE_ADDRESS to mark addresses on which we listen to
-> +be devices ourselves.
-> +
-> +Optional properties
-> +-------------------
-> +
-> +These properties may not be supported by all drivers. However, if a driver
-> +wants to support one of the below features, it should adapt the bindings below.
-> +
-> +- clock-frequency	- frequency of bus clock in Hz
-> +- wakeup-source		- device can be used as a wakeup source.
->
-
-Thanks for the patch and it looks good to me.
-
-Shouldn't we also update/add other generic optional properties?
-For example,
-
-  - i2c-sclk-low-time-ns
-  - i2c-sclk-high-time-ns
-  - etc...
+--ibTvN161/egqYuK8
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
 
-We need to consolidate all such generic properties in here.
+> Thanks for the patch and it looks good to me.
 
-Thanks,
-Vaibhav
+Thanks, I interpret this as an Acked-by :)
+
+> Shouldn't we also update/add other generic optional properties?
+> For example,
+>=20
+>  - i2c-sclk-low-time-ns
+>  - i2c-sclk-high-time-ns
+>  - etc...
+
+Yes, I will do this as an incremental patch once people are happy with
+this start. Review is usually easier if done in small chunks.
+
+
+--ibTvN161/egqYuK8
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJVx0RxAAoJEBQN5MwUoCm2aPoQAJFJMCOga/E6jGrcakP5F9Sj
+jYObq+N7Byi/xjchh7APNI9X/n/QJEH/qAh3ntDAPT+KfoN9Fmcg7QiywiO7LyBK
+qJc6mC9N2oJr9LZV5bCWuCyW6T4beYTwZQQKUlvX9p3OQztALK31s/W/KKCp3QmT
+P+xTe4um+Izf5z+g7vjJwGyjA90+aDpfx5klzKbQrOyTKRozQij7hzy996idzRrw
+UzZcqjxrABcnngu8zL37IcrOJUsx+yO72/Vuef1d/k+GCQMZhiCHMw36eHA/gWin
+XJlxs5LFeLAt+ZyiotMM1PcuD7G6VKD7OBXqenjvdi3cPs3M8+/AW1YyCLZf4r1G
+K7ZcWJcY0f5MkiAeF3LODVEFNpeMbeG15h8MUqR+sKH9STGYfRXWK/rRxmLv1J8o
+e+5OUPjfPgXvnAG+mJNQDmlaXjzAC29X3vaSWMinqe6g6tBn2BEj4xP34/+V0vAj
+uF2e4AJ0YDPSSw5TAu47rifPqRbMbF6GuO56HnY3Vv6OhHXgCGEd71gBGmIjeVQ7
+/aF9iQwAgfZEh9j9hfl9iOusycmOycwXmUoZinKtqrW1KqAxroMKUR+c3U+17AqX
+Qmp5WVd/9jR6W5b4Uy2MpJ3GBhPQoI08jPetZw4/3sBaSLSVpS1JdflHvy9rZ1JN
+0bM3FoMMStvwloDtUbnt
+=zRKI
+-----END PGP SIGNATURE-----
+
+--ibTvN161/egqYuK8--
