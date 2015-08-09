@@ -1,59 +1,59 @@
-From: Javier Martinez Canillas <javier@osg.samsung.com>
-Date: Thu, 20 Aug 2015 12:50:53 +0000
-Subject: Re: [PATCH 0/4] [media] Media entity cleanups and build fixes
-Message-Id: <55D5CD2D.2010607@osg.samsung.com>
+From: Alexander Kuleshov <kuleshovmail@gmail.com>
+Date: Sun, 09 Aug 2015 18:28:11 +0000
+Subject: [PATCH] SH: use PFN_DOWN macro
+Message-Id: <1439144891-8141-1-git-send-email-kuleshovmail@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439998526-12832-1-git-send-email-javier@osg.samsung.com>
- <55D5CB04.50508@xs4all.nl>
-In-Reply-To: <55D5CB04.50508@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Dan Carpenter <dan.carpenter@oracle.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Alexander Kuleshov <kuleshovmail@gmail.com>
 
-Hello Hans,
+Replace ((x) >> PAGE_SHIFT) with the predefined PFN_DOWN macro.
 
-On 08/20/2015 02:41 PM, Hans Verkuil wrote:
-> On 08/19/15 17:35, Javier Martinez Canillas wrote:
->> Hello,
->>
->> This series contains a couple of build fixes and cleanups for the
->> Media Controller framework. The goal of the series is to get rid of
->> the struct media_entity .parent member since now that a media_gobj is
->> embedded into entities, the media_gobj .mdev member can be used to
->> store a pointer to the parent struct media_device.
->>
->> So the .parent field becomes redundant and can be removed after all
->> the users are converted to use entity .graph_obj.mdev instead.
->>
->> Patches 1/4 and 2/4 are build fixes I found while build testing if no
->> regressions were introduced by the conversion. Patch 3/4 converts
->> all the drivers and the MC core to use .mdev instead of .parent and
->> finally patch 4/4 removes the .parent field since now is unused.
-> 
-> Regarding patches 1 and 2: these should of course be merged with Mauro's
-> patches that make this particular change (patch 3/8), otherwise it would
-> break git bisect.
-> 
-> Anyway,
-> 
-> Acked-by: Hans Verkuil <hans.verkuil@cisco.com> for the changes in patch
+Signed-off-by: Alexander Kuleshov <kuleshovmail@gmail.com>
+---
+ arch/sh/mm/init.c | 4 ++--
+ arch/sh/mm/numa.c | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-Thanks a lot for the acks.
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index 2790b6a..17f4862 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -488,6 +488,6 @@ void free_initrd_mem(unsigned long start, unsigned long end)
+ int arch_add_memory(int nid, u64 start, u64 size)
+ {
+ 	pg_data_t *pgdat;
+-	unsigned long start_pfn = start >> PAGE_SHIFT;
++	unsigned long start_pfn = PFN_DOWN(start);
+ 	unsigned long nr_pages = size >> PAGE_SHIFT;
+ 	int ret;
 
-> 1 and 2, as long as they are added to Mauro's patch 3/8.
->
+@@ -517,7 +517,7 @@ EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
+ #ifdef CONFIG_MEMORY_HOTREMOVE
+ int arch_remove_memory(u64 start, u64 size)
+ {
+-	unsigned long start_pfn = start >> PAGE_SHIFT;
++	unsigned long start_pfn = PFN_DOWN(start);
+ 	unsigned long nr_pages = size >> PAGE_SHIFT;
+ 	struct zone *zone;
+ 	int ret;
+diff --git a/arch/sh/mm/numa.c b/arch/sh/mm/numa.c
+index bce52ba..05713d1 100644
+--- a/arch/sh/mm/numa.c
++++ b/arch/sh/mm/numa.c
+@@ -33,2 +33,2 @@ void __init setup_bootmem_node(int nid, unsigned long start, unsigned long end)
+ 	/* Don't allow bogus node assignment */
+ 	BUG_ON(nid >= MAX_NUMNODES || nid <= 0);
 
-Indeed, I completely agree that these should be squashed with
-Mauro's patch to maintain git bisect-ability.
- 
-> Regards,
-> 
-> 	Hans
-> 
+-	start_pfn = start >> PAGE_SHIFT;
+-	end_pfn = end >> PAGE_SHIFT;
++	start_pfn = PFN_DOWN(start);
++	end_pfn = PFN_DOWN(end);
 
-Best regards,
--- 
-Javier Martinez Canillas
-Open Source Group
-Samsung Research America
+ 	pmb_bolt_mapping((unsigned long)__va(start), start, end - start,
+ 			 PAGE_KERNEL);
+--
+2.5.0
+
