@@ -1,163 +1,30 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 07 Aug 2015 16:34:57 +0000
-Subject: [PATCH 2/2] ARM: shmobile: bockw: remove "reference" board file and config
-Message-Id: <1438965297-12888-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 10 Aug 2015 09:24:57 +0000
+Subject: Re: [PATCH 2/2] ARM: shmobile: bockw: remove "reference" board file and config
+Message-Id: <CAMuHMdXB7GO01BZs2oHEcrg=Vw9oMvgm2iO8S=ToiBm+05A3Ng@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1438965297-12888-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1438965297-12888-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replaced by multi-platform.
+On Fri, Aug 7, 2015 at 6:34 PM, Ulrich Hecht
+<ulrich.hecht+renesas@gmail.com> wrote:
+> Replaced by multi-platform.
+>
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
----
- arch/arm/mach-shmobile/Kconfig                 | 13 ----
- arch/arm/mach-shmobile/Makefile                |  1 -
- arch/arm/mach-shmobile/Makefile.boot           |  1 -
- arch/arm/mach-shmobile/board-bockw-reference.c | 86 --------------------------
- 4 files changed, 101 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/board-bockw-reference.c
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 926e336..670dce3 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -126,19 +126,6 @@ config MACH_BOCKW
- 	select SND_SOC_AK4642 if SND_SIMPLE_CARD && I2C
- 	select USE_OF
- 
--config MACH_BOCKW_REFERENCE
--	bool "BOCK-W  - Reference Device Tree Implementation"
--	depends on ARCH_R8A7778
--	select ARCH_REQUIRE_GPIOLIB
--	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	select USE_OF
--	---help---
--	   Use reference implementation of BockW board support
--	   which makes use of device tree at the expense
--	   of not supporting a number of devices.
--
--	   This is intended to aid developers
--
- comment "Renesas ARM SoCs System Configuration"
- 
- config CPU_HAS_INTEVT
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index b028415..8f235c5 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -52,7 +52,6 @@ obj-$(CONFIG_ARCH_RCAR_GEN2)	+= pm-rcar-gen2.o
- # Board objects
- ifndef CONFIG_ARCH_SHMOBILE_MULTI
- obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
--obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
- endif
- 
- # Framework support
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index a489fe9..1a4ab16 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -1,7 +1,6 @@
- # per-board load address for uImage
- loadaddr-y	: loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
--loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
- 
- __ZRELADDR	:= $(sort $(loadaddr-y))
-    zreladdr-y   += $(__ZRELADDR)
-diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
-deleted file mode 100644
-index 9a74efd..0000000
---- a/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ /dev/null
-@@ -1,86 +0,0 @@
--/*
-- * Bock-W board support
-- *
-- * Copyright (C) 2013  Renesas Solutions Corp.
-- * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- */
--
--#include <linux/of_platform.h>
--
--#include <asm/mach/arch.h>
--
--#include "common.h"
--#include "r8a7778.h"
--
--/*
-- *	see board-bock.c for checking detail of dip-switch
-- */
--
--#define FPGA	0x18200000
--#define IRQ0MR	0x30
--#define COMCTLR	0x101c
--
--#define PFC	0xfffc0000
--#define PUPR4	0x110
--static void __init bockw_init(void)
--{
--	void __iomem *fpga;
--	void __iomem *pfc;
--
--#ifndef CONFIG_COMMON_CLK
--	r8a7778_clock_init();
--#endif
--	r8a7778_init_irq_extpin_dt(1);
--	r8a7778_add_dt_devices();
--
--	fpga = ioremap_nocache(FPGA, SZ_1M);
--	if (fpga) {
--		/*
--		 * CAUTION
--		 *
--		 * IRQ0/1 is cascaded interrupt from FPGA.
--		 * it should be cared in the future
--		 * Now, it is assuming IRQ0 was used only from SMSC.
--		 */
--		u16 val = ioread16(fpga + IRQ0MR);
--		val &= ~(1 << 4); /* enable SMSC911x */
--		iowrite16(val, fpga + IRQ0MR);
--
--		iounmap(fpga);
--	}
--
--	pfc = ioremap_nocache(PFC, 0x200);
--	if (pfc) {
--		/*
--		 * FIXME
--		 *
--		 * SDHI CD/WP pin needs pull-up
--		 */
--		iowrite32(ioread32(pfc + PUPR4) | (3 << 26), pfc + PUPR4);
--		iounmap(pfc);
--	}
--
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--}
--
--static const char *bockw_boards_compat_dt[] __initdata = {
--	"renesas,bockw-reference",
--	NULL,
--};
--
--DT_MACHINE_START(BOCKW_DT, "bockw")
--	.init_early	= shmobile_init_delay,
--	.init_irq	= r8a7778_init_irq_dt,
--	.init_machine	= bockw_init,
--	.init_late	= shmobile_init_late,
--	.dt_compat	= bockw_boards_compat_dt,
--MACHINE_END
--- 
-2.4.6
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
