@@ -1,59 +1,31 @@
-From: Alexander Kuleshov <kuleshovmail@gmail.com>
-Date: Sun, 09 Aug 2015 18:28:11 +0000
-Subject: [PATCH] SH: use PFN_DOWN macro
-Message-Id: <1439144891-8141-1-git-send-email-kuleshovmail@gmail.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 10 Aug 2015 09:26:41 +0000
+Subject: Re: [PATCH] SH: use PFN_DOWN macro
+Message-Id: <CAMuHMdV6OPg23AKEU=YaaW5OVMOR9-mVagdZgdO2UeBi85Jb5A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1439144891-8141-1-git-send-email-kuleshovmail@gmail.com>
+In-Reply-To: <1439144891-8141-1-git-send-email-kuleshovmail@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Dan Carpenter <dan.carpenter@oracle.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Alexander Kuleshov <kuleshovmail@gmail.com>
+To: Alexander Kuleshov <kuleshovmail@gmail.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Dan Carpenter <dan.carpenter@oracle.com>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-Replace ((x) >> PAGE_SHIFT) with the predefined PFN_DOWN macro.
+On Sun, Aug 9, 2015 at 8:28 PM, Alexander Kuleshov
+<kuleshovmail@gmail.com> wrote:
+> Replace ((x) >> PAGE_SHIFT) with the predefined PFN_DOWN macro.
+>
+> Signed-off-by: Alexander Kuleshov <kuleshovmail@gmail.com>
 
-Signed-off-by: Alexander Kuleshov <kuleshovmail@gmail.com>
----
- arch/sh/mm/init.c | 4 ++--
- arch/sh/mm/numa.c | 4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index 2790b6a..17f4862 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -488,6 +488,6 @@ void free_initrd_mem(unsigned long start, unsigned long end)
- int arch_add_memory(int nid, u64 start, u64 size)
- {
- 	pg_data_t *pgdat;
--	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long start_pfn = PFN_DOWN(start);
- 	unsigned long nr_pages = size >> PAGE_SHIFT;
- 	int ret;
+Gr{oetje,eeting}s,
 
-@@ -517,7 +517,7 @@ EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
- #ifdef CONFIG_MEMORY_HOTREMOVE
- int arch_remove_memory(u64 start, u64 size)
- {
--	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long start_pfn = PFN_DOWN(start);
- 	unsigned long nr_pages = size >> PAGE_SHIFT;
- 	struct zone *zone;
- 	int ret;
-diff --git a/arch/sh/mm/numa.c b/arch/sh/mm/numa.c
-index bce52ba..05713d1 100644
---- a/arch/sh/mm/numa.c
-+++ b/arch/sh/mm/numa.c
-@@ -33,2 +33,2 @@ void __init setup_bootmem_node(int nid, unsigned long start, unsigned long end)
- 	/* Don't allow bogus node assignment */
- 	BUG_ON(nid >= MAX_NUMNODES || nid <= 0);
+                        Geert
 
--	start_pfn = start >> PAGE_SHIFT;
--	end_pfn = end >> PAGE_SHIFT;
-+	start_pfn = PFN_DOWN(start);
-+	end_pfn = PFN_DOWN(end);
-
- 	pmb_bolt_mapping((unsigned long)__va(start), start, end - start,
- 			 PAGE_KERNEL);
 --
-2.5.0
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
