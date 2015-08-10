@@ -1,37 +1,23 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 07 Aug 2015 16:34:55 +0000
-Subject: [PATCH 0/2] kill bockw reference platform
-Message-Id: <1438965297-12888-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 10 Aug 2015 23:22:49 +0000
+Subject: Re: [PATCH 0/2] kill bockw reference platform
+Message-Id: <20150810232249.GB9484@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1438965297-12888-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1438965297-12888-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi!
+On Fri, Aug 07, 2015 at 06:34:55PM +0200, Ulrich Hecht wrote:
+> Hi!
+> 
+> As discussed off-list, here's the burial of the r8a7778 bockw reference
+> platform, the penultimate step in removing legacy platforms for good.
 
-As discussed off-list, here's the burial of the r8a7778 bockw reference
-platform, the penultimate step in removing legacy platforms for good.
+Thanks! I have queued these up for v4.4.
 
-CU
-Uli
-
-
-Ulrich Hecht (2):
-  ARM: shmobile: bockw: remove "reference" device tree
-  ARM: shmobile: bockw: remove "reference" board file and config
-
- Documentation/devicetree/bindings/arm/shmobile.txt |   2 -
- arch/arm/boot/dts/Makefile                         |   3 +-
- arch/arm/boot/dts/r8a7778-bockw-reference.dts      | 139 ---------------------
- arch/arm/mach-shmobile/Kconfig                     |  13 --
- arch/arm/mach-shmobile/Makefile                    |   1 -
- arch/arm/mach-shmobile/Makefile.boot               |   1 -
- arch/arm/mach-shmobile/board-bockw-reference.c     |  86 -------------
- 7 files changed, 1 insertion(+), 244 deletions(-)
- delete mode 100644 arch/arm/boot/dts/r8a7778-bockw-reference.dts
- delete mode 100644 arch/arm/mach-shmobile/board-bockw-reference.c
-
--- 
-2.4.6
-
+As per Geert's feedback, please send a follow-up patch to remove the
+comment about reference at the bottom of
+Documentation/devicetree/bindings/arm/shmobile.txt.
