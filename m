@@ -1,46 +1,40 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Thu, 20 Aug 2015 06:43:36 +0000
-Subject: Re: [PATCH] dmaengine: Stricter legacy checking in dma_request_slave_channel_compat()
-Message-Id: <20150820063136.GD13546@localhost>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 11 Aug 2015 22:57:45 +0000
+Subject: [PATCH v2] DT: mmc: sh_mmcif: document R8A779[34] support
+Message-Id: <28226759.dUa3lFkaxJ@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439816935-27554-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1439816935-27554-1-git-send-email-geert+renesas@glider.be>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Dan Williams <dan.j.williams@intel.com>, Arnd Bergmann <arnd@arndb.de>, Tony Lindgren <tony@atomide.com>, Matt Porter <mporter@kernel.crashing.org>, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org, ulf.hansson@linaro.org, linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Mon, Aug 17, 2015 at 03:08:55PM +0200, Geert Uytterhoeven wrote:
-> dma_request_slave_channel_compat() is meant for drivers that support
-> both DT and legacy platform device based probing: if DT channel DMA
-> setup fails, it will fall back to platform data based DMA channel setup,
-> using hardcoded DMA channel IDs and a filter function.
-> 
-> However, if the DTS doesn't provide a "dmas" property for the device,
-> the fallback is also used. If the legacy filter function is not
-> hardcoded in the DMA slave driver, but comes from platform data, it will
-> be NULL. Then dma_request_slave_channel_compat() will succeed
-> incorrectly, and return a DMA channel, as a NULL legacy filter function
-> actually means "all channels are OK", not "do not match".
-> 
-> Later, when trying to use that DMA channel, it will fail with:
-> 
->     rcar-dmac e6700000.dma-controller: rcar_dmac_prep_slave_sg: bad parameter: len=1, id=-22
-> 
-> To fix this, ensure that both the filter function and the DMA channel ID
-> are not NULL before using the legacy fallback.
-> 
-> Note that some DMA slave drivers can handle this failure, and will fall
-> back to PIO.
-> 
-> See also commit 056f6c87028544de ("dmaengine: shdma: Make dummy
-> shdma_chan_filter() always return false"), which fixed the same issue
-> for the case where shdma_chan_filter() is hardcoded in a DMA slave
-> driver.
+Renesas R8A7794 SoC also has the MMCIF controller...
 
-Applied, thanks
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
--- 
-~Vinod
+---
+The patch is against Ulf Hansson's 'mmc.git'  repo's 'next' branch plus the
+patch I posted earlier today...
+
+Changes in version 2:
+- deferred R8A7793 support to the patch posted earlier by Ulrich Hecht;
+- fixed typo in the changelog.
+
+ Documentation/devicetree/bindings/mmc/renesas,mmcif.txt |    1 +
+ 1 file changed, 1 insertion(+)
+
+Index: mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+=================================--- mmc.orig/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
++++ mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+@@ -10,6 +10,7 @@ Required properties:
+ 	- "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
+ 	- "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
+ 	- "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
++	- "renesas,mmcif-r8a7794" for the MMCIF found in r8a7794 SoCs
+   followed by "renesas,sh-mmcif".
+ 
+ - clocks: reference to the functional clock
 
