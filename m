@@ -1,26 +1,58 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Thu, 13 Aug 2015 09:27:31 +0000
-Subject: Re: [PATCH v2] DT: mmc: sh_mmcif: document R8A779[34] support
-Message-Id: <CAO3366wUR99n_=Lu1+y3s0kwexd2PuP+H2k+KGe-ooA6te+jdw@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 11 Aug 2015 12:43:14 +0000
+Subject: [PATCH] PCI: PCI_RCAR_GEN2 and PCI_RCAR_GEN2_PCIE should depend on ARM
+Message-Id: <1439296994-28480-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
-	<28226759.dUa3lFkaxJ@wasted.cogentembedded.com>
-	<20150812005901.GF15957@verge.net.au>
-	<55CB220A.5040209@cogentembedded.com>
-In-Reply-To: <55CB220A.5040209@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Simon Horman <horms@verge.net.au>, robh+dt@kernel.org, pawel.moll@arm.com, Mark Rutland <mark.rutland@arm.com>, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>, linux-mmc@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>
+To: Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Phil Edworthy <phil.edworthy@renesas.com>, Valentine Barshak <valentine.barshak@cogentembedded.com>
+Cc: linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Wed, Aug 12, 2015 at 12:38 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
->    I thought about taking out Ulrich's binding patch and re-posting it along
-> with this one but finally decided not to ruin his series. Do you mean that I
-> should have posted his patch along with mine?
+On arm64/shmobile:
 
-I wouldn't mind that; anything that gets stuff picked up is a win.
+    drivers/pci/host/pci-rcar-gen2.c: In function 'rcar_pci_cfg_base': drivers/pci/host/pci-rcar-gen2.c:112:34: error: dereferencing pointer to incomplete type
+      struct rcar_pci_priv *priv = sys->private_data;
+				      ^
 
-CU
-Uli
+and
+
+    drivers/pci/host/pcie-rcar.c:138:52: warning: 'struct pci_sys_data' declared inside parameter list
+     static inline struct rcar_pcie *sys_to_pcie(struct pci_sys_data *sys)
+							^
+
+pci_sys_data exists on ARM only, hence these drivers should depend on
+ARM unconditionally.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/pci/host/Kconfig | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/pci/host/Kconfig b/drivers/pci/host/Kconfig
+index 48b5b3058d9d09eb..e94392560842be0a 100644
+--- a/drivers/pci/host/Kconfig
++++ b/drivers/pci/host/Kconfig
+@@ -39,7 +39,8 @@ config PCI_TEGRA
+ 
+ config PCI_RCAR_GEN2
+ 	bool "Renesas R-Car Gen2 Internal PCI controller"
+-	depends on ARCH_SHMOBILE || (ARM && COMPILE_TEST)
++	depends on ARM
++	depends on ARCH_SHMOBILE || COMPILE_TEST
+ 	help
+ 	  Say Y here if you want internal PCI support on R-Car Gen2 SoC.
+ 	  There are 3 internal PCI controllers available with a single
+@@ -47,7 +48,8 @@ config PCI_RCAR_GEN2
+ 
+ config PCI_RCAR_GEN2_PCIE
+ 	bool "Renesas R-Car PCIe controller"
+-	depends on ARCH_SHMOBILE || (ARM && COMPILE_TEST)
++	depends on ARM
++	depends on ARCH_SHMOBILE || COMPILE_TEST
+ 	help
+ 	  Say Y here if you want PCIe controller support on R-Car Gen2 SoCs.
+ 
+-- 
+1.9.1
+
