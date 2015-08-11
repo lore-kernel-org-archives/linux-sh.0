@@ -1,78 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Aug 2015 02:12:03 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC CPG MSTP Clock Domain Updates for v4.3
-Message-Id: <cover.1438911559.git.horms+renesas@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 11 Aug 2015 13:38:43 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC CPG MSTP Clock Domain Updates for v4.3
+Message-Id: <20150811133843.GP30181@localhost>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1438911559.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1438911559.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+On Fri, Aug 07, 2015 at 11:12:03AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Kevin, Hi Arnd,
+> 
+> Please consider these Renesas ARM based SoC CPG MSTP clock domain updates
+> for v4.3.
+> 
+> This pull request is based on "Third Round of Renesas ARM Based SoC DT
+> Updates for v4.3", tagged as renesas-dt3-for-v4.3, which I have also sent a
+> pull-request for.
+> 
+> The reason for that base is that the DT changes in this series update nodes
+> added in that tag.
+> 
+> This series begins with driver changes and follows up with DT changes.
+> The latter depend on the former.
 
-Please consider these Renesas ARM based SoC CPG MSTP clock domain updates
-for v4.3.
+I see the acked-by tags on the clk patches, but it took some searching to find
+the ack email from Stephen.
 
-This pull request is based on "Third Round of Renesas ARM Based SoC DT
-Updates for v4.3", tagged as renesas-dt3-for-v4.3, which I have also sent a
-pull-request for.
+Can you please make our homework a bit easier when providing that in
+the future?
 
-The reason for that base is that the DT changes in this series update nodes
-added in that tag.
-
-This series begins with driver changes and follows up with DT changes.
-The latter depend on the former.
+Thanks,
 
 
-The following changes since commit 94bdc48d55ca10f90b4a625f0e443197e0013557:
+-Olof
 
-  ARM: shmobile: sh73a0 dtsi: Add missing "gpio-ranges" to gpio node (2015-08-05 06:39:28 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cpg-mstp-clock-domain-for-v4.3
-
-for you to fetch changes up to 2daa8a5a8c0994893c2ca456303f0bf53e881cb9:
-
-  ARM: shmobile: r8a7794 dtsi: Add CPG/MSTP Clock Domain (2015-08-05 06:42:51 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC CPG MSTP Clock Domain Updates for v4.3
-
-* Add Clock Domain support to the Clock Pulse Generator
-  (CPG) Module Stop (MSTP) Clocks driver using the generic PM Domain.
-
-----------------------------------------------------------------
-Geert Uytterhoeven (12):
-      clk: shmobile: Add CPG/MSTP Clock Domain support
-      clk: shmobile: r8a7778: Add CPG/MSTP Clock Domain support
-      clk: shmobile: r8a7779: Add CPG/MSTP Clock Domain support
-      clk: shmobile: rcar-gen2: Add CPG/MSTP Clock Domain support
-      clk: shmobile: rz: Add CPG/MSTP Clock Domain support
-      ARM: shmobile: r7s72100 dtsi: Add CPG/MSTP Clock Domain
-      ARM: shmobile: r8a7778 dtsi: Add CPG/MSTP Clock Domain
-      ARM: shmobile: r8a7779 dtsi: Add CPG/MSTP Clock Domain
-      ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain
-      ARM: shmobile: r8a7791 dtsi: Add CPG/MSTP Clock Domain
-      ARM: shmobile: r8a7793 dtsi: Add CPG/MSTP Clock Domain
-      ARM: shmobile: r8a7794 dtsi: Add CPG/MSTP Clock Domain
-
- .../bindings/clock/renesas,r8a7778-cpg-clocks.txt  | 29 ++++++-
- .../bindings/clock/renesas,r8a7779-cpg-clocks.txt  | 30 +++++++-
- .../clock/renesas,rcar-gen2-cpg-clocks.txt         | 26 ++++++-
- .../bindings/clock/renesas,rz-cpg-clocks.txt       | 29 ++++++-
- arch/arm/boot/dts/r7s72100.dtsi                    | 19 +++++
- arch/arm/boot/dts/r8a7778.dtsi                     | 22 ++++++
- arch/arm/boot/dts/r8a7779.dtsi                     | 23 ++++++
- arch/arm/boot/dts/r8a7790.dtsi                     | 86 ++++++++++++++++++---
- arch/arm/boot/dts/r8a7791.dtsi                     | 88 ++++++++++++++++++++--
- arch/arm/boot/dts/r8a7793.dtsi                     |  7 ++
- arch/arm/boot/dts/r8a7794.dtsi                     | 29 +++++++
- arch/arm/mach-shmobile/Kconfig                     |  2 +
- drivers/clk/shmobile/clk-mstp.c                    | 87 +++++++++++++++++++++
- drivers/clk/shmobile/clk-r8a7778.c                 |  2 +
- drivers/clk/shmobile/clk-r8a7779.c                 |  2 +
- drivers/clk/shmobile/clk-rcar-gen2.c               |  2 +
- drivers/clk/shmobile/clk-rz.c                      |  3 +
- include/linux/clk/shmobile.h                       | 12 +++
- 18 files changed, 470 insertions(+), 28 deletions(-)
