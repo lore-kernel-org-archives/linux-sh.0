@@ -1,21 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 20 Aug 2015 18:54:54 +0000
-Subject: Re: [PATCH] ARM: shmobile: koelsch: use CCF for audio clock
-Message-Id: <20150820185452.GH18990@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 11 Aug 2015 22:37:28 +0000
+Subject: [PATCH v2] DT: mmc: sh_mmcif: fix "compatible" property text
+Message-Id: <1643858.nkRxsQo3O3@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <877foqd5gz.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <877foqd5gz.wl%kuninori.morimoto.gx@renesas.com>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org, ulf.hansson@linaro.org, linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Thu, Aug 20, 2015 at 03:09:30AM +0000, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Because of historical reason, audio clock didn't use CCF.
-> Let's use it now.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The "compatible" property text contradicts even the example given in the MMCIF
+binding document itself;  moreover, the Renesas MMCIF driver only matches on
+the generic "compatible" string and doesn't look for the SoC specific strings
+at all. Thus describe "renesas,sh-mmcif" as a fallback value.
 
-Thanks, I have queued this up for v4.4.
+Fixes: b4c27763d749 ("mmc: sh_mmcif: Document DT bindings")
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+The patch is against Ulf Hansson's 'mmc.git' repo's 'fixes' and 'next' branches.
+
+Changes in version 2:
+- kept the SoC specific "compatible" property values mandatory and made the
+  generic string a fallback.
+
+ Documentation/devicetree/bindings/mmc/renesas,mmcif.txt |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Index: mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+=================================--- mmc.orig/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
++++ mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+@@ -10,7 +10,7 @@ Required properties:
+ 	- "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
+ 	- "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
+ 	- "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
+-	- "renesas,sh-mmcif" for the generic MMCIF
++  followed by "renesas,sh-mmcif".
+ 
+ - clocks: reference to the functional clock
+ 
+
