@@ -1,57 +1,56 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Aug 2015 00:56:28 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 12 Aug 2015 10:41:40 +0000
 Subject: Re: [PATCH v2] DT: mmc: sh_mmcif: fix "compatible" property text
-Message-Id: <20150812005628.GE15957@verge.net.au>
+Message-Id: <55CB22E4.5040904@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
  <1643858.nkRxsQo3O3@wasted.cogentembedded.com>
-In-Reply-To: <1643858.nkRxsQo3O3@wasted.cogentembedded.com>
+ <20150812005628.GE15957@verge.net.au>
+In-Reply-To: <20150812005628.GE15957@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: Simon Horman <horms@verge.net.au>
 Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org, ulf.hansson@linaro.org, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi Sergei,
+On 8/12/2015 3:56 AM, Simon Horman wrote:
 
-On Wed, Aug 12, 2015 at 01:37:28AM +0300, Sergei Shtylyov wrote:
-> The "compatible" property text contradicts even the example given in the MMCIF
-> binding document itself;  moreover, the Renesas MMCIF driver only matches on
-> the generic "compatible" string and doesn't look for the SoC specific strings
-> at all. Thus describe "renesas,sh-mmcif" as a fallback value.
-> 
-> Fixes: b4c27763d749 ("mmc: sh_mmcif: Document DT bindings")
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>> The "compatible" property text contradicts even the example given in the MMCIF
+>> binding document itself;  moreover, the Renesas MMCIF driver only matches on
+>> the generic "compatible" string and doesn't look for the SoC specific strings
+>> at all. Thus describe "renesas,sh-mmcif" as a fallback value.
 
-I don't believe this file is the appropriate place to describe
-best-practice for the ordering of compatible strings which must surely be
-documented elsewhere.
+>> Fixes: b4c27763d749 ("mmc: sh_mmcif: Document DT bindings")
+>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> ---
-> The patch is against Ulf Hansson's 'mmc.git' repo's 'fixes' and 'next' branches.
-> 
-> Changes in version 2:
-> - kept the SoC specific "compatible" property values mandatory and made the
->   generic string a fallback.
-> 
->  Documentation/devicetree/bindings/mmc/renesas,mmcif.txt |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> Index: mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> =================================> --- mmc.orig/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> +++ mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> @@ -10,7 +10,7 @@ Required properties:
->  	- "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
->  	- "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
->  	- "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
-> -	- "renesas,sh-mmcif" for the generic MMCIF
-> +  followed by "renesas,sh-mmcif".
->  
->  - clocks: reference to the functional clock
->  
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> I don't believe this file is the appropriate place to describe
+> best-practice for the ordering of compatible strings which must surely be
+> documented elsewhere.
+
+    Where? I have no idea what you mean...
+    And let me reiterate: this text is *wrong* and needs to be fixed anyway.
+
+>> ---
+>> The patch is against Ulf Hansson's 'mmc.git' repo's 'fixes' and 'next' branches.
+>>
+>> Changes in version 2:
+>> - kept the SoC specific "compatible" property values mandatory and made the
+>>    generic string a fallback.
+>>
+>>   Documentation/devicetree/bindings/mmc/renesas,mmcif.txt |    2 +-
+>>   1 file changed, 1 insertion(+), 1 deletion(-)
+>>
+>> Index: mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+>> =================================>> --- mmc.orig/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+>> +++ mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+>> @@ -10,7 +10,7 @@ Required properties:
+>>   	- "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
+>>   	- "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
+>>   	- "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
+>> -	- "renesas,sh-mmcif" for the generic MMCIF
+>> +  followed by "renesas,sh-mmcif".
+ >>
+>>   - clocks: reference to the functional clock
+
+MBR, Sergei
+
