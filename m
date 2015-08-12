@@ -1,91 +1,73 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 25 Aug 2015 13:01:17 +0000
-Subject: Re: [PATCH/RFC v3 1/4] serial: sh-sci: Stop TX and RX on shutdown
-Message-Id: <CAMuHMdUez4SK+-PDVw_DCqQeq8o6SL22jfSdpGg7=9cq2QZtQw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 12 Aug 2015 08:15:25 +0000
+Subject: [GIT PULL] Fourth Round of Renesas ARM Based SoC DT Updates for v4.3
+Message-Id: <cover.1439366241.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440181546-7334-1-git-send-email-geert+renesas@glider.be>
-	<1440181546-7334-2-git-send-email-geert+renesas@glider.be>
-	<1780221.Xost2UeeDz@avalon>
-In-Reply-To: <1780221.Xost2UeeDz@avalon>
+References: <cover.1394080829.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1394080829.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent, Matsuoka-san,
+Hi Olof, Hi Kevin, Hi Arnd,
 
-On Sat, Aug 22, 2015 at 1:17 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Friday 21 August 2015 20:25:43 Geert Uytterhoeven wrote:
->> Make sure the transmitter and receiver are stopped when shutting down
->> the port, to avoid new RX DMA requests to arrive.
->>
->> Inspired by a patch in the BSP by Koji Matsuoka
->> <koji.matsuoka.xm@renesas.com>.
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Please consider these fourth round of Renesas ARM based SoC DT updates for v4.3.
 
->> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
->> index d8b73e791a554823..0622cafaf1c71cab 100644
->> --- a/drivers/tty/serial/sh-sci.c
->> +++ b/drivers/tty/serial/sh-sci.c
->> @@ -1820,12 +1820,16 @@ static void sci_shutdown(struct uart_port *port)
->>  {
->>       struct sci_port *s = to_sci_port(port);
->>       unsigned long flags;
->> +     u16 scscr;
->>
->>       dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
->>
->>       spin_lock_irqsave(&port->lock, flags);
->>       sci_stop_rx(port);
->>       sci_stop_tx(port);
->> +     scscr = serial_port_in(port, SCSCR);
->> +     scscr &= ~(SCSCR_TE | SCSCR_RE);
->> +     serial_port_out(port, SCSCR, scscr);
->
-> Given that the register contains lots of interrupt enable bits, would it make
-> sense to just write it to 0 to disable everything ? I don't think we need to
-> keep any of the SCSCR bits across shutdown/startup.
+As requested by Olof, this is a repost of patches broken out of a now
+defunct pull-request, "Renesas ARM Based SoC CPG MSTP Clock Domain Updates
+for v4.3".  The motivation being to have driver changes in a separate
+branch to DT changes.
 
-I don't  know.
 
-Actually this patch causes a problem on e.g. armadillo and kzm9g, where
-serial console output suddenly stops on halt/reboot:
+This pull request is based on a merge of:
 
-| # halt
-|
-| Broadcast message from root@armadillo (ttySC1) (Tue Aug 25 14:52:35 2015):
-| The system is going down for system halt NOW!
-| INIT: Switching to runlevel: 0
-| INIT: Sending process
+* "Renesas ARM Based SoC CPG/MSTP Clock Driver Updates for v4.3",
+  tagged as renesas-clk-for-v4.3, which I have also sent a pull request for.
 
-After reverting, it continues again with:
+  The patches in this pull request depend on driver changes in
+  renesas-clk-for-v4.3.
 
-| es the TERM signal
-| [info] Using makefile-style concurrent boot in runlevel 0.
-| [ ok ] Asking all remaining processes to terminate...done.
-| [ ok ] All processes ended within 1 seconds...done.
-| [ ok ] Stopping enhanced syslogd: rsyslogd.
-| [ ok ] Stopping NFS common utilities: idmapd statd.
-| rpcbind: rpcbind terminating on signal. Restart with "rpcbind -w"
-| [ ok ] Stopping rpcbind daemon....
-| [....] not deconfiguring network interfaces: network file systems
-still mounted.[war (warning).
-| [info] Saving the system clock.
-| [info] Hardware Clock updated to Tue Aug 25 14:56:18 CEST 2015.
-| [ ok ] Deactivating swap...done.
-| [info] Will now halt.
-| reboot: System halted
+* "Third Round of Renesas ARM Based SoC DT Updates for v4.3",
+  tagged as renesas-dt3-for-v4.3, which you have already merged.
 
-Gr{oetje,eeting}s,
+  The patches in this pull request update nodes added by patches
+  present in renesas-dt3-for-v4.3.
 
-                        Geert
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+The following changes since commit 3f3f0ea0afe031ca20e48a212f4faa00f9920450:
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+  Merge branch 'clk-for-v4.3' into dt-for-v4.3 (2015-08-12 11:15:19 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt4-for-v4.3
+
+for you to fetch changes up to 60c0745a80be075bbd4e0925e4b740b3e588a445:
+
+  ARM: shmobile: r8a7794 dtsi: Add CPG/MSTP Clock Domain (2015-08-12 11:15:28 +0900)
+
+----------------------------------------------------------------
+Fourth Round of Renesas ARM Based SoC DT Updates for v4.3
+
+* Enable Clock Domain support of the Clock Pulse Generator (CPG)
+  Module Stop (MSTP) Clocks driver.
+
+----------------------------------------------------------------
+Geert Uytterhoeven (7):
+      ARM: shmobile: r7s72100 dtsi: Add CPG/MSTP Clock Domain
+      ARM: shmobile: r8a7778 dtsi: Add CPG/MSTP Clock Domain
+      ARM: shmobile: r8a7779 dtsi: Add CPG/MSTP Clock Domain
+      ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain
+      ARM: shmobile: r8a7791 dtsi: Add CPG/MSTP Clock Domain
+      ARM: shmobile: r8a7793 dtsi: Add CPG/MSTP Clock Domain
+      ARM: shmobile: r8a7794 dtsi: Add CPG/MSTP Clock Domain
+
+ arch/arm/boot/dts/r7s72100.dtsi | 19 +++++++++
+ arch/arm/boot/dts/r8a7778.dtsi  | 22 +++++++++++
+ arch/arm/boot/dts/r8a7779.dtsi  | 23 +++++++++++
+ arch/arm/boot/dts/r8a7790.dtsi  | 86 +++++++++++++++++++++++++++++++++++-----
+ arch/arm/boot/dts/r8a7791.dtsi  | 88 +++++++++++++++++++++++++++++++++++++----
+ arch/arm/boot/dts/r8a7793.dtsi  |  7 ++++
+ arch/arm/boot/dts/r8a7794.dtsi  | 29 ++++++++++++++
+ 7 files changed, 257 insertions(+), 17 deletions(-)
