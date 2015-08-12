@@ -1,30 +1,26 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 07 Aug 2015 07:14:34 +0000
-Subject: Re: [PATCH 07/16 v5][RFC] serial: sh-sci: Add device tree support for r8a7795
-Message-Id: <CAMuHMdVGscF_LQKaCDwSbZX_m0+Qd6eAmi9cmiYbgcZhAOKV3A@mail.gmail.com>
+From: Rich Felker <dalias@libc.org>
+Date: Wed, 12 Aug 2015 01:56:16 +0000
+Subject: SH2 kernel fails to build with recent GCC
+Message-Id: <20150812015616.GA19843@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87y4hndc46.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y4hndc46.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Aug 7, 2015 at 5:17 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The commit that resolved GCC issue #54089 broke building the kernel
+for SH2, by causing GCC to generate calls to new libgcc functions
+which the kernel's fake libgcc does not provide. See the GCC issue
+tracker for details:
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+https://gcc.gnu.org/bugzilla/show_bug.cgi?idT089
 
-Gr{oetje,eeting}s,
+The relevant commit is linked from comment 16; comments 33-43 (and
+perhaps beyond) discuss the issue in detail and possible fixes.
 
-                        Geert
+Before I work on a fix, would dropping the kernel's copy of libgcc
+functions for SH and using the real libgcc (like some archs do; see
+comment 43) be acceptable, or do we need to get updated
+libgcc[-compatible] code into the kernel?
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Rich
