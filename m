@@ -1,44 +1,42 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 20 Aug 2015 06:29:13 +0000
-Subject: [PATCH 6/7][RFC] arm64: dts: salvatorx: enable usb2_phy nodes
-Message-Id: <1440052154-3768-7-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: William Towle <william.towle@codethink.co.uk>
+Date: Thu, 13 Aug 2015 11:36:51 +0000
+Subject: [PATCH 3/3] ARM: shmobile: lager dts: specify default-input for ADV7612
+Message-Id: <1439465811-936-4-git-send-email-william.towle@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1439465811-936-1-git-send-email-william.towle@codethink.co.uk>
+In-Reply-To: <1439465811-936-1-git-send-email-william.towle@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk
+Cc: linux-sh@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+From: Ian Molton <ian.molton@codethink.co.uk>
+
+Set the 'default-input' property for ADV7612, enabling image and video
+capture without the need to have userspace specifying routing.
+
+(This version places the property in the adv7612 node, in line with
+Ian's documentation)
+
+Signed-off-by: Ian Molton <ian.molton@codethink.co.uk>
+Signed-off-by: William Towle <william.towle@codethink.co.uk>
 ---
- arch/arm64/boot/dts/renesas/r8a7795-salvatorx.dts | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+ arch/arm/boot/dts/r8a7790-lager.dts |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvatorx.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvatorx.dts
-index 7f6039d..e697f3e 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvatorx.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvatorx.dts
-@@ -51,3 +51,21 @@
- &scif2 {
- 	status = "okay";
- };
-+
-+&usb2_phy0 {
-+	status = "okay";
-+	pinctrl-0 = <&usb0_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&usb2_phy1 {
-+	status = "okay";
-+	pinctrl-0 = <&usb1_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&usb2_phy2 {
-+	status = "okay";
-+	pinctrl-0 = <&usb2_pins>;
-+	pinctrl-names = "default";
-+};
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 31854bc..12e1cfa 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -547,6 +547,7 @@
+ 	hdmi-in@4c {
+ 		compatible = "adi,adv7612";
+ 		reg = <0x4c>;
++		default-input = <0>;
+ 
+ 		port {
+ 			hdmi_in_ep: endpoint {
 -- 
-1.9.1
+1.7.10.4
 
