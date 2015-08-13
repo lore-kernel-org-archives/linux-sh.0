@@ -1,364 +1,406 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 25 Aug 2015 09:10:35 +0000
-Subject: [PATCH] phy: rcar-gen3-usb2: Add R-Car Gen3 USB2 PHY driver
-Message-Id: <1440493835-6732-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 13 Aug 2015 15:04:05 +0000
+Subject: [PATCH 2/5] dma-mapping: consolidate dma_{alloc,free}_noncoherent
+Message-Id: <1439478248-15183-3-git-send-email-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440052098-4840-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1440052098-4840-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1439478248-15183-1-git-send-email-hch@lst.de>
+In-Reply-To: <1439478248-15183-1-git-send-email-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: kishon@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: akpm@linux-foundation.org
+Cc: arnd@arndb.de, linux@arm.linux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, ysato@users.sourceforge.jp, monstr@monstr.eu, jonas@southpole.se, cmetcalf@ezchip.com, gxt@mprc.pku.edu.cn, x86@kernel.org, linux-alpha@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-kernel@vger.kernel.org
 
-This patch adds support for R-Car generation 3 USB2 PHY driver.
-This SoC has 3 EHCI/OHCI channels, and the channel 0 is shared
-with the HSUSB (USB2.0 peripheral) device.
+Most architectures do not support non-coherent allocations and either
+define dma_{alloc,free}_noncoherent to their coherent versions or stub
+them out.
 
-So, the purpose of this driver is:
- 1) initializes some registers of SoC specific to use the
-    {ehci,ohci}-platform driver.
+Openrisc uses dma_{alloc,free}_attrs to implement them, and only Mips
+implements them directly.
 
- 2) detects id pin to select host or peripheral on the channel 0.
+This patch moves the Openrisc version to common code, and handles the
+DMA_ATTR_NON_CONSISTENT case in the mips dma_map_ops instance.
 
-For now, this driver only supports 1) above.
+Note that actual non-coherent allocations require a dma_cache_sync
+implementation, so if non-coherent allocations didn't work on
+an architecture before this patch they still won't work after it.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- This patch is based on the latest linux-phy / next branch.
- (commit id = cfd093bbb5fe84ec8c7bb069fe618159a8b601f5)
+ arch/alpha/include/asm/dma-mapping.h      |  3 ---
+ arch/arm/include/asm/dma-mapping.h        | 15 ---------------
+ arch/arm64/include/asm/dma-mapping.h      | 14 --------------
+ arch/h8300/include/asm/dma-mapping.h      |  3 ---
+ arch/hexagon/include/asm/dma-mapping.h    |  3 ---
+ arch/ia64/include/asm/dma-mapping.h       |  3 ---
+ arch/microblaze/include/asm/dma-mapping.h |  3 ---
+ arch/mips/include/asm/dma-mapping.h       |  6 ------
+ arch/mips/mm/dma-default.c                | 20 +++++++++++++++-----
+ arch/openrisc/include/asm/dma-mapping.h   | 20 --------------------
+ arch/powerpc/include/asm/dma-mapping.h    |  3 ---
+ arch/s390/include/asm/dma-mapping.h       |  3 ---
+ arch/sh/include/asm/dma-mapping.h         |  3 ---
+ arch/sparc/include/asm/dma-mapping.h      |  3 ---
+ arch/tile/include/asm/dma-mapping.h       |  3 ---
+ arch/unicore32/include/asm/dma-mapping.h  |  3 ---
+ arch/x86/include/asm/dma-mapping.h        |  3 ---
+ include/asm-generic/dma-mapping-common.h  | 18 ++++++++++++++++++
+ 18 files changed, 33 insertions(+), 96 deletions(-)
 
- Changes from v1:
-  - Revise some typos.
-  - Remove using clk API to enable/disable the clocks.
-    (In other words, this driver expects to enable/disable the clocks by
-     Runtime PM API by the phy-core driver.)
-  - Remove an unnecessary header file (asm/cmpxchg.h).
-
- .../devicetree/bindings/phy/rcar-gen3-phy-usb2.txt |  35 +++
- drivers/phy/Kconfig                                |   6 +
- drivers/phy/Makefile                               |   1 +
- drivers/phy/phy-rcar-gen3-usb2.c                   | 240 +++++++++++++++++++++
- 4 files changed, 282 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
- create mode 100644 drivers/phy/phy-rcar-gen3-usb2.c
-
-diff --git a/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
-new file mode 100644
-index 0000000..1d57766
---- /dev/null
-+++ b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
-@@ -0,0 +1,35 @@
-+* Renesas R-Car generation 3 USB 2.0 PHY
-+
-+This file provides information on what the device node for the R-Car generation
-+3 USB 2.0 PHY contains.
-+
-+Required properties:
-+- compatible: "renesas,usb2-phy-r8a7795" if the device is a part of an R8A7795
-+	      SoC.
-+- reg: offset and length of the USB2.0 host register block.
-+- reg-names: must be "usb2".
-+- clocks: clock phandle and specifier pair(s).
-+- #phy-cells: see phy-bindings.txt in the same directory, must be <0>.
-+
-+Optional properties:
-+To use a USB channel where EHCI/OHCI and HSUSB are combined, the device tree
-+node should set HSUSB properties to reg and reg-names properties:
-+- reg: offset and length of the HSUSB register block.
-+- reg-names: must be "hsusb".
-+
-+Example (R-Car H3):
-+
-+	usb-phy@ee080200 {
-+		compatible = "renesas,usb2-phy-r8a7795";
-+		reg = <0 0xee080200 0 0x6ff>, <0 0xe6590100 0 0x100>;
-+		reg-names = "usb2", "hsusb";
-+		clocks = <&mstp7_clks R8A7795_CLK_EHCI0>,
-+			 <&mstp7_clks R8A7795_CLK_HSUSB>;
-+	};
-+
-+	usb-phy@ee0a0200 {
-+		compatible = "renesas,usb2-phy-r8a7795";
-+		reg = <0 0xee0a0200 0 0x6ff>;
-+		reg-names = "usb2";
-+		clocks = <&mstp7_clks R8A7795_CLK_EHCI0>;
-+	};
-diff --git a/drivers/phy/Kconfig b/drivers/phy/Kconfig
-index 0fe9bff..406dc43 100644
---- a/drivers/phy/Kconfig
-+++ b/drivers/phy/Kconfig
-@@ -116,6 +116,12 @@ config PHY_RCAR_GEN2
- 	help
- 	  Support for USB PHY found on Renesas R-Car generation 2 SoCs.
+diff --git a/arch/alpha/include/asm/dma-mapping.h b/arch/alpha/include/asm/dma-mapping.h
+index 9fef5bd..0552bf0 100644
+--- a/arch/alpha/include/asm/dma-mapping.h
++++ b/arch/alpha/include/asm/dma-mapping.h
+@@ -27,9 +27,6 @@ static inline int dma_set_mask(struct device *dev, u64 mask)
+ 	return get_dma_ops(dev)->set_dma_mask(dev, mask);
+ }
  
-+config PHY_RCAR_GEN3_USB2
-+	tristate "Renesas R-Car generation 3 USB 2.0 PHY driver"
-+	depends on GENERIC_PHY
-+	help
-+	  Support for USB 2.0 PHY found on Renesas R-Car generation 3 SoCs.
-+
- config OMAP_CONTROL_PHY
- 	tristate "OMAP CONTROL PHY Driver"
- 	depends on ARCH_OMAP2PLUS || COMPILE_TEST
-diff --git a/drivers/phy/Makefile b/drivers/phy/Makefile
-index a5b18c1..97e83bc 100644
---- a/drivers/phy/Makefile
-+++ b/drivers/phy/Makefile
-@@ -17,6 +17,7 @@ obj-$(CONFIG_PHY_MVEBU_SATA)		+= phy-mvebu-sata.o
- obj-$(CONFIG_PHY_MIPHY28LP) 		+= phy-miphy28lp.o
- obj-$(CONFIG_PHY_MIPHY365X)		+= phy-miphy365x.o
- obj-$(CONFIG_PHY_RCAR_GEN2)		+= phy-rcar-gen2.o
-+obj-$(CONFIG_PHY_RCAR_GEN3_USB2)	+= phy-rcar-gen3-usb2.o
- obj-$(CONFIG_OMAP_CONTROL_PHY)		+= phy-omap-control.o
- obj-$(CONFIG_OMAP_USB2)			+= phy-omap-usb2.o
- obj-$(CONFIG_TI_PIPE3)			+= phy-ti-pipe3.o
-diff --git a/drivers/phy/phy-rcar-gen3-usb2.c b/drivers/phy/phy-rcar-gen3-usb2.c
-new file mode 100644
-index 0000000..2c2fcf9
---- /dev/null
-+++ b/drivers/phy/phy-rcar-gen3-usb2.c
-@@ -0,0 +1,240 @@
-+/*
-+ * Renesas R-Car Gen3 for USB2.0 PHY driver
-+ *
-+ * Copyright (C) 2015 Renesas Electronics Corporation
-+ *
-+ * This is based on the phy-rcar-gen2 driver:
-+ * Copyright (C) 2014 Renesas Solutions Corp.
-+ * Copyright (C) 2014 Cogent Embedded, Inc.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#include <linux/io.h>
-+#include <linux/module.h>
-+#include <linux/of.h>
-+#include <linux/of_address.h>
-+#include <linux/phy/phy.h>
-+#include <linux/platform_device.h>
-+#include <linux/spinlock.h>
-+
-+/******* USB2.0 Host registers (original offset is +0x200) *******/
-+#define USB2_INT_ENABLE		0x000
-+#define USB2_USBCTR		0x00c
-+#define USB2_SPD_RSM_TIMSET	0x10c
-+#define USB2_OC_TIMSET		0x110
-+
-+/* INT_ENABLE */
-+#define USB2_INT_ENABLE_USBH_INTB_EN	BIT(2)
-+#define USB2_INT_ENABLE_USBH_INTA_EN	BIT(1)
-+#define USB2_INT_ENABLE_INIT		(USB2_INT_ENABLE_USBH_INTB_EN | \
-+					 USB2_INT_ENABLE_USBH_INTA_EN)
-+
-+/* USBCTR */
-+#define USB2_USBCTR_DIRPD	BIT(2)
-+#define USB2_USBCTR_PLL_RST	BIT(1)
-+
-+/* SPD_RSM_TIMSET */
-+#define USB2_SPD_RSM_TIMSET_INIT	0x014e029b
-+
-+/* OC_TIMSET */
-+#define USB2_OC_TIMSET_INIT		0x000209ab
-+
-+/******* HSUSB registers (original offset is +0x100) *******/
-+#define HSUSB_LPSTS			0x02
-+#define HSUSB_UGCTRL2			0x84
-+
-+/* Low Power Status register (LPSTS) */
-+#define HSUSB_LPSTS_SUSPM		0x4000
-+
-+/* USB General control register 2 (UGCTRL2) */
-+#define HSUSB_UGCTRL2_MASK		0x00000031 /* bit[31:6] should be 0 */
-+#define HSUSB_UGCTRL2_USB0SEL		0x00000030
-+#define HSUSB_UGCTRL2_USB0SEL_HOST	0x00000010
-+#define HSUSB_UGCTRL2_USB0SEL_HS_USB	0x00000020
-+#define HSUSB_UGCTRL2_USB0SEL_OTG	0x00000030
-+
-+struct rcar_gen3_phy_usb2_data {
-+	void __iomem *base;
-+	struct clk *clk;
-+};
-+
-+struct rcar_gen3_phy_usb2_channel {
-+	struct rcar_gen3_phy_usb2_data usb2;
-+	struct rcar_gen3_phy_usb2_data hsusb;
-+	struct phy *phy;
-+	spinlock_t lock;
-+};
-+
-+static int rcar_gen3_phy_usb2_init(struct phy *p)
-+{
-+	struct rcar_gen3_phy_usb2_channel *channel = phy_get_drvdata(p);
-+	unsigned long flags;
-+	void __iomem *usb2_base = channel->usb2.base;
-+	void __iomem *hsusb_base = channel->hsusb.base;
-+	u32 tmp;
-+
-+	spin_lock_irqsave(&channel->lock, flags);
-+
-+	/* Initialize USB2 part */
-+	writel(USB2_INT_ENABLE_INIT, usb2_base + USB2_INT_ENABLE);
-+	writel(USB2_SPD_RSM_TIMSET_INIT, usb2_base + USB2_SPD_RSM_TIMSET);
-+	writel(USB2_OC_TIMSET_INIT, usb2_base + USB2_OC_TIMSET);
-+
-+	/* Initialize HSUSB part */
-+	if (hsusb_base) {
-+		/* TODO: support "OTG" mode */
-+		tmp = readl(hsusb_base + HSUSB_UGCTRL2);
-+		tmp = (tmp & ~HSUSB_UGCTRL2_USB0SEL) |
-+		      HSUSB_UGCTRL2_USB0SEL_HOST;
-+		writel(tmp & HSUSB_UGCTRL2_MASK, hsusb_base + HSUSB_UGCTRL2);
-+	}
-+
-+	spin_unlock_irqrestore(&channel->lock, flags);
-+
-+	return 0;
-+}
-+
-+static int rcar_gen3_phy_usb2_exit(struct phy *p)
-+{
-+	struct rcar_gen3_phy_usb2_channel *channel = phy_get_drvdata(p);
-+
-+	writel(0, channel->usb2.base + USB2_INT_ENABLE);
-+
-+	return 0;
-+}
-+
-+static int rcar_gen3_phy_usb2_power_on(struct phy *p)
-+{
-+	struct rcar_gen3_phy_usb2_channel *channel = phy_get_drvdata(p);
-+	void __iomem *usb2_base = channel->usb2.base;
-+	void __iomem *hsusb_base = channel->hsusb.base;
-+	unsigned long flags;
-+	u32 tmp;
-+
-+	spin_lock_irqsave(&channel->lock, flags);
-+
-+	tmp = readl(usb2_base + USB2_USBCTR);
-+	tmp |= USB2_USBCTR_PLL_RST;
-+	writel(tmp, usb2_base + USB2_USBCTR);
-+	tmp &= ~USB2_USBCTR_PLL_RST;
-+	writel(tmp, usb2_base + USB2_USBCTR);
-+
+-#define dma_alloc_noncoherent(d, s, h, f)	dma_alloc_coherent(d, s, h, f)
+-#define dma_free_noncoherent(d, s, v, h)	dma_free_coherent(d, s, v, h)
+-
+ #define dma_cache_sync(dev, va, size, dir)		  ((void)0)
+ 
+ #endif	/* _ALPHA_DMA_MAPPING_H */
+diff --git a/arch/arm/include/asm/dma-mapping.h b/arch/arm/include/asm/dma-mapping.h
+index 2ae3424..ab521d5 100644
+--- a/arch/arm/include/asm/dma-mapping.h
++++ b/arch/arm/include/asm/dma-mapping.h
+@@ -175,21 +175,6 @@ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ 	return dma_addr = DMA_ERROR_CODE;
+ }
+ 
+-/*
+- * Dummy noncoherent implementation.  We don't provide a dma_cache_sync
+- * function so drivers using this API are highlighted with build warnings.
+- */
+-static inline void *dma_alloc_noncoherent(struct device *dev, size_t size,
+-		dma_addr_t *handle, gfp_t gfp)
+-{
+-	return NULL;
+-}
+-
+-static inline void dma_free_noncoherent(struct device *dev, size_t size,
+-		void *cpu_addr, dma_addr_t handle)
+-{
+-}
+-
+ extern int dma_supported(struct device *dev, u64 mask);
+ 
+ extern int arm_dma_set_mask(struct device *dev, u64 dma_mask);
+diff --git a/arch/arm64/include/asm/dma-mapping.h b/arch/arm64/include/asm/dma-mapping.h
+index 5e11b3f..178e60b 100644
+--- a/arch/arm64/include/asm/dma-mapping.h
++++ b/arch/arm64/include/asm/dma-mapping.h
+@@ -118,19 +118,5 @@ static inline void dma_mark_clean(void *addr, size_t size)
+ {
+ }
+ 
+-/*
+- * There is no dma_cache_sync() implementation, so just return NULL here.
+- */
+-static inline void *dma_alloc_noncoherent(struct device *dev, size_t size,
+-					  dma_addr_t *handle, gfp_t flags)
+-{
+-	return NULL;
+-}
+-
+-static inline void dma_free_noncoherent(struct device *dev, size_t size,
+-					void *cpu_addr, dma_addr_t handle)
+-{
+-}
+-
+ #endif	/* __KERNEL__ */
+ #endif	/* __ASM_DMA_MAPPING_H */
+diff --git a/arch/h8300/include/asm/dma-mapping.h b/arch/h8300/include/asm/dma-mapping.h
+index 826aa9b..72465ce 100644
+--- a/arch/h8300/include/asm/dma-mapping.h
++++ b/arch/h8300/include/asm/dma-mapping.h
+@@ -20,9 +20,6 @@ static inline int dma_set_mask(struct device *dev, u64 mask)
+ 	return 0;
+ }
+ 
+-#define dma_alloc_noncoherent(d, s, h, f) dma_alloc_coherent(d, s, h, f)
+-#define dma_free_noncoherent(d, s, v, h) dma_free_coherent(d, s, v, h)
+-
+ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ {
+ 	return 0;
+diff --git a/arch/hexagon/include/asm/dma-mapping.h b/arch/hexagon/include/asm/dma-mapping.h
+index c20d3ca..58d2d8f 100644
+--- a/arch/hexagon/include/asm/dma-mapping.h
++++ b/arch/hexagon/include/asm/dma-mapping.h
+@@ -34,9 +34,6 @@ extern int bad_dma_address;
+ 
+ extern struct dma_map_ops *dma_ops;
+ 
+-#define dma_alloc_noncoherent(d, s, h, f) dma_alloc_coherent(d, s, h, f)
+-#define dma_free_noncoherent(d, s, v, h) dma_free_coherent(d, s, v, h)
+-
+ static inline struct dma_map_ops *get_dma_ops(struct device *dev)
+ {
+ 	if (unlikely(dev = NULL))
+diff --git a/arch/ia64/include/asm/dma-mapping.h b/arch/ia64/include/asm/dma-mapping.h
+index d36f83c..a925ff0 100644
+--- a/arch/ia64/include/asm/dma-mapping.h
++++ b/arch/ia64/include/asm/dma-mapping.h
+@@ -23,9 +23,6 @@ extern void machvec_dma_sync_single(struct device *, dma_addr_t, size_t,
+ extern void machvec_dma_sync_sg(struct device *, struct scatterlist *, int,
+ 				enum dma_data_direction);
+ 
+-#define dma_alloc_noncoherent(d, s, h, f) dma_alloc_coherent(d, s, h, f)
+-#define dma_free_noncoherent(d, s, v, h) dma_free_coherent(d, s, v, h)
+-
+ #define get_dma_ops(dev) platform_dma_get_ops(dev)
+ 
+ #include <asm-generic/dma-mapping-common.h>
+diff --git a/arch/microblaze/include/asm/dma-mapping.h b/arch/microblaze/include/asm/dma-mapping.h
+index 801dbe2..bc81625 100644
+--- a/arch/microblaze/include/asm/dma-mapping.h
++++ b/arch/microblaze/include/asm/dma-mapping.h
+@@ -98,9 +98,6 @@ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ 	return (dma_addr = DMA_ERROR_CODE);
+ }
+ 
+-#define dma_alloc_noncoherent(d, s, h, f) dma_alloc_coherent(d, s, h, f)
+-#define dma_free_noncoherent(d, s, v, h) dma_free_coherent(d, s, v, h)
+-
+ static inline void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+ 		enum dma_data_direction direction)
+ {
+diff --git a/arch/mips/include/asm/dma-mapping.h b/arch/mips/include/asm/dma-mapping.h
+index b197595..709b2ba 100644
+--- a/arch/mips/include/asm/dma-mapping.h
++++ b/arch/mips/include/asm/dma-mapping.h
+@@ -64,10 +64,4 @@ dma_set_mask(struct device *dev, u64 mask)
+ extern void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+ 	       enum dma_data_direction direction);
+ 
+-void *dma_alloc_noncoherent(struct device *dev, size_t size,
+-			   dma_addr_t *dma_handle, gfp_t flag);
+-
+-void dma_free_noncoherent(struct device *dev, size_t size,
+-			 void *vaddr, dma_addr_t dma_handle);
+-
+ #endif /* _ASM_DMA_MAPPING_H */
+diff --git a/arch/mips/mm/dma-default.c b/arch/mips/mm/dma-default.c
+index 8cad422..a5ae290 100644
+--- a/arch/mips/mm/dma-default.c
++++ b/arch/mips/mm/dma-default.c
+@@ -112,7 +112,7 @@ static gfp_t massage_gfp_flags(const struct device *dev, gfp_t gfp)
+ 	return gfp | dma_flag;
+ }
+ 
+-void *dma_alloc_noncoherent(struct device *dev, size_t size,
++static void *mips_dma_alloc_noncoherent(struct device *dev, size_t size,
+ 	dma_addr_t * dma_handle, gfp_t gfp)
+ {
+ 	void *ret;
+@@ -128,7 +128,6 @@ void *dma_alloc_noncoherent(struct device *dev, size_t size,
+ 
+ 	return ret;
+ }
+-EXPORT_SYMBOL(dma_alloc_noncoherent);
+ 
+ static void *mips_dma_alloc_coherent(struct device *dev, size_t size,
+ 	dma_addr_t * dma_handle, gfp_t gfp, struct dma_attrs *attrs)
+@@ -137,6 +136,13 @@ static void *mips_dma_alloc_coherent(struct device *dev, size_t size,
+ 	struct page *page = NULL;
+ 	unsigned int count = PAGE_ALIGN(size) >> PAGE_SHIFT;
+ 
 +	/*
-+	 * TODO: To reduce power consuming, this driver should set the SUSPM
-+	 *	after the PHY detects ID pin as peripheral.
++	 * XXX: seems like the coherent and non-coherent implementations could
++	 * be consolidated.
 +	 */
-+	if (hsusb_base) {
-+		/* Power on HSUSB PHY */
-+		tmp = readw(hsusb_base + HSUSB_LPSTS);
-+		tmp |= HSUSB_LPSTS_SUSPM;
-+		writew(tmp, hsusb_base + HSUSB_LPSTS);
++	if (dma_get_attr(DMA_ATTR_NON_CONSISTENT, attrs))
++		return mips_dma_alloc_noncoherent(dev, size, dma_handle, gfp);
++
+ 	gfp = massage_gfp_flags(dev, gfp);
+ 
+ 	if (IS_ENABLED(CONFIG_DMA_CMA) && !(gfp & GFP_ATOMIC))
+@@ -161,13 +167,12 @@ static void *mips_dma_alloc_coherent(struct device *dev, size_t size,
+ }
+ 
+ 
+-void dma_free_noncoherent(struct device *dev, size_t size, void *vaddr,
+-	dma_addr_t dma_handle)
++static void mips_dma_free_noncoherent(struct device *dev, size_t size,
++		void *vaddr, dma_addr_t dma_handle)
+ {
+ 	plat_unmap_dma_mem(dev, dma_handle, size, DMA_BIDIRECTIONAL);
+ 	free_pages((unsigned long) vaddr, get_order(size));
+ }
+-EXPORT_SYMBOL(dma_free_noncoherent);
+ 
+ static void mips_dma_free_coherent(struct device *dev, size_t size, void *vaddr,
+ 	dma_addr_t dma_handle, struct dma_attrs *attrs)
+@@ -176,6 +181,11 @@ static void mips_dma_free_coherent(struct device *dev, size_t size, void *vaddr,
+ 	unsigned int count = PAGE_ALIGN(size) >> PAGE_SHIFT;
+ 	struct page *page = NULL;
+ 
++	if (dma_get_attr(DMA_ATTR_NON_CONSISTENT, attrs)) {
++		mips_dma_free_noncoherent(dev, size, vaddr, dma_handle);
++		return;
 +	}
 +
-+	spin_unlock_irqrestore(&channel->lock, flags);
-+
-+	return 0;
-+}
-+
-+static int rcar_gen3_phy_usb2_power_off(struct phy *p)
+ 	plat_unmap_dma_mem(dev, dma_handle, size, DMA_BIDIRECTIONAL);
+ 
+ 	if (!plat_device_is_coherent(dev) && !hw_coherentio)
+diff --git a/arch/openrisc/include/asm/dma-mapping.h b/arch/openrisc/include/asm/dma-mapping.h
+index a81d6f6..57722528 100644
+--- a/arch/openrisc/include/asm/dma-mapping.h
++++ b/arch/openrisc/include/asm/dma-mapping.h
+@@ -37,26 +37,6 @@ static inline struct dma_map_ops *get_dma_ops(struct device *dev)
+ 
+ #include <asm-generic/dma-mapping-common.h>
+ 
+-static inline void *dma_alloc_noncoherent(struct device *dev, size_t size,
+-					  dma_addr_t *dma_handle, gfp_t gfp)
+-{
+-	struct dma_attrs attrs;
+-
+-	dma_set_attr(DMA_ATTR_NON_CONSISTENT, &attrs);
+-
+-	return dma_alloc_attrs(dev, size, dma_handle, gfp, &attrs);
+-}
+-
+-static inline void dma_free_noncoherent(struct device *dev, size_t size,
+-					 void *cpu_addr, dma_addr_t dma_handle)
+-{
+-	struct dma_attrs attrs;
+-
+-	dma_set_attr(DMA_ATTR_NON_CONSISTENT, &attrs);
+-
+-	dma_free_attrs(dev, size, cpu_addr, dma_handle, &attrs);
+-}
+-
+ static inline int dma_supported(struct device *dev, u64 dma_mask)
+ {
+ 	/* Support 32 bit DMA mask exclusively */
+diff --git a/arch/powerpc/include/asm/dma-mapping.h b/arch/powerpc/include/asm/dma-mapping.h
+index 846c630..dec0260 100644
+--- a/arch/powerpc/include/asm/dma-mapping.h
++++ b/arch/powerpc/include/asm/dma-mapping.h
+@@ -177,9 +177,6 @@ static inline phys_addr_t dma_to_phys(struct device *dev, dma_addr_t daddr)
+ 	return daddr - get_dma_offset(dev);
+ }
+ 
+-#define dma_alloc_noncoherent(d, s, h, f) dma_alloc_coherent(d, s, h, f)
+-#define dma_free_noncoherent(d, s, v, h) dma_free_coherent(d, s, v, h)
+-
+ #define ARCH_HAS_DMA_MMAP_COHERENT
+ 
+ static inline void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+diff --git a/arch/s390/include/asm/dma-mapping.h b/arch/s390/include/asm/dma-mapping.h
+index c29c9c7..b729efe 100644
+--- a/arch/s390/include/asm/dma-mapping.h
++++ b/arch/s390/include/asm/dma-mapping.h
+@@ -25,9 +25,6 @@ static inline void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+ {
+ }
+ 
+-#define dma_alloc_noncoherent(d, s, h, f) dma_alloc_coherent(d, s, h, f)
+-#define dma_free_noncoherent(d, s, v, h) dma_free_coherent(d, s, v, h)
+-
+ #include <asm-generic/dma-mapping-common.h>
+ 
+ static inline int dma_supported(struct device *dev, u64 mask)
+diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
+index 3c78059..2c3fa2c 100644
+--- a/arch/sh/include/asm/dma-mapping.h
++++ b/arch/sh/include/asm/dma-mapping.h
+@@ -38,9 +38,6 @@ static inline int dma_set_mask(struct device *dev, u64 mask)
+ void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+ 		    enum dma_data_direction dir);
+ 
+-#define dma_alloc_noncoherent(d, s, h, f) dma_alloc_coherent(d, s, h, f)
+-#define dma_free_noncoherent(d, s, v, h) dma_free_coherent(d, s, v, h)
+-
+ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ {
+ 	struct dma_map_ops *ops = get_dma_ops(dev);
+diff --git a/arch/sparc/include/asm/dma-mapping.h b/arch/sparc/include/asm/dma-mapping.h
+index a8c6784..2564edc 100644
+--- a/arch/sparc/include/asm/dma-mapping.h
++++ b/arch/sparc/include/asm/dma-mapping.h
+@@ -9,9 +9,6 @@
+ 
+ int dma_supported(struct device *dev, u64 mask);
+ 
+-#define dma_alloc_noncoherent(d, s, h, f) dma_alloc_coherent(d, s, h, f)
+-#define dma_free_noncoherent(d, s, v, h) dma_free_coherent(d, s, v, h)
+-
+ static inline void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
+ 				  enum dma_data_direction dir)
+ {
+diff --git a/arch/tile/include/asm/dma-mapping.h b/arch/tile/include/asm/dma-mapping.h
+index 4aba10e..e982dfa 100644
+--- a/arch/tile/include/asm/dma-mapping.h
++++ b/arch/tile/include/asm/dma-mapping.h
+@@ -116,9 +116,6 @@ dma_set_mask(struct device *dev, u64 mask)
+ 	return 0;
+ }
+ 
+-#define dma_alloc_noncoherent(d, s, h, f) dma_alloc_attrs(d, s, h, f, NULL)
+-#define dma_free_noncoherent(d, s, v, h) dma_free_attrs(d, s, v, h, NULL)
+-
+ /*
+  * dma_alloc_noncoherent() is #defined to return coherent memory,
+  * so there's no need to do any flushing here.
+diff --git a/arch/unicore32/include/asm/dma-mapping.h b/arch/unicore32/include/asm/dma-mapping.h
+index 5294d03..636e942 100644
+--- a/arch/unicore32/include/asm/dma-mapping.h
++++ b/arch/unicore32/include/asm/dma-mapping.h
+@@ -80,9 +80,6 @@ static inline int dma_set_mask(struct device *dev, u64 dma_mask)
+ 	return 0;
+ }
+ 
+-#define dma_alloc_noncoherent(d, s, h, f) dma_alloc_coherent(d, s, h, f)
+-#define dma_free_noncoherent(d, s, v, h) dma_free_coherent(d, s, v, h)
+-
+ static inline void dma_cache_sync(struct device *dev, void *vaddr,
+ 		size_t size, enum dma_data_direction direction)
+ {
+diff --git a/arch/x86/include/asm/dma-mapping.h b/arch/x86/include/asm/dma-mapping.h
+index f9b1b6c..7e47e4d 100644
+--- a/arch/x86/include/asm/dma-mapping.h
++++ b/arch/x86/include/asm/dma-mapping.h
+@@ -56,9 +56,6 @@ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ 	return (dma_addr = DMA_ERROR_CODE);
+ }
+ 
+-#define dma_alloc_noncoherent(d, s, h, f) dma_alloc_coherent(d, s, h, f)
+-#define dma_free_noncoherent(d, s, v, h) dma_free_coherent(d, s, v, h)
+-
+ extern int dma_supported(struct device *hwdev, u64 mask);
+ extern int dma_set_mask(struct device *dev, u64 mask);
+ 
+diff --git a/include/asm-generic/dma-mapping-common.h b/include/asm-generic/dma-mapping-common.h
+index 56dd9ea..ec321dd 100644
+--- a/include/asm-generic/dma-mapping-common.h
++++ b/include/asm-generic/dma-mapping-common.h
+@@ -295,4 +295,22 @@ static inline void dma_free_coherent(struct device *dev, size_t size,
+ 	return dma_free_attrs(dev, size, cpu_addr, dma_handle, NULL);
+ }
+ 
++static inline void *dma_alloc_noncoherent(struct device *dev, size_t size,
++		dma_addr_t *dma_handle, gfp_t gfp)
 +{
-+	struct rcar_gen3_phy_usb2_channel *channel = phy_get_drvdata(p);
-+	void __iomem *hsusb_base = channel->hsusb.base;
-+	unsigned long flags;
-+	u32 tmp;
++	DEFINE_DMA_ATTRS(attrs);
 +
-+	spin_lock_irqsave(&channel->lock, flags);
-+
-+	if (hsusb_base) {
-+		/* Power off HSUSB PHY */
-+		tmp = readw(hsusb_base + HSUSB_LPSTS);
-+		tmp &= ~HSUSB_LPSTS_SUSPM;
-+		writew(tmp, hsusb_base + HSUSB_LPSTS);
-+	}
-+
-+	spin_unlock_irqrestore(&channel->lock, flags);
-+
-+	return 0;
++	dma_set_attr(DMA_ATTR_NON_CONSISTENT, &attrs);
++	return dma_alloc_attrs(dev, size, dma_handle, gfp, &attrs);
 +}
 +
-+static struct phy_ops rcar_gen3_phy_usb2_ops = {
-+	.init		= rcar_gen3_phy_usb2_init,
-+	.exit		= rcar_gen3_phy_usb2_exit,
-+	.power_on	= rcar_gen3_phy_usb2_power_on,
-+	.power_off	= rcar_gen3_phy_usb2_power_off,
-+	.owner		= THIS_MODULE,
-+};
-+
-+static const struct of_device_id rcar_gen3_phy_usb2_match_table[] = {
-+	{ .compatible = "renesas,usb2-phy-r8a7795" },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(of, rcar_gen3_phy_usb2_match_table);
-+
-+static int rcar_gen3_phy_usb2_probe(struct platform_device *pdev)
++static inline void dma_free_noncoherent(struct device *dev, size_t size,
++		void *cpu_addr, dma_addr_t dma_handle)
 +{
-+	struct device *dev = &pdev->dev;
-+	struct rcar_gen3_phy_usb2_channel *channel;
-+	struct phy_provider *provider;
-+	struct resource *res;
++	DEFINE_DMA_ATTRS(attrs);
 +
-+	if (!dev->of_node) {
-+		dev_err(dev, "This driver needs device tree\n");
-+		return -EINVAL;
-+	}
-+
-+	channel = devm_kzalloc(dev, sizeof(*channel), GFP_KERNEL);
-+	if (!channel)
-+		return -ENOMEM;
-+
-+	spin_lock_init(&channel->lock);
-+
-+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "usb2");
-+	channel->usb2.base = devm_ioremap_resource(dev, res);
-+	if (IS_ERR(channel->usb2.base))
-+		return PTR_ERR(channel->usb2.base);
-+
-+	/* "hsusb" memory resource is optional */
-+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "hsusb");
-+
-+	/* To avoid error message by devm_ioremap_resource() */
-+	if (res) {
-+		channel->hsusb.base = devm_ioremap_resource(dev, res);
-+		if (IS_ERR(channel->hsusb.base))
-+			channel->hsusb.base = NULL;
-+	}
-+
-+	/* devm_phy_create() will call pm_runtime_enable(dev); */
-+	channel->phy = devm_phy_create(dev, NULL, &rcar_gen3_phy_usb2_ops);
-+	if (IS_ERR(channel->phy)) {
-+		dev_err(dev, "Failed to create USB2 PHY\n");
-+		return PTR_ERR(channel->phy);
-+	}
-+
-+	phy_set_drvdata(channel->phy, channel);
-+
-+	provider = devm_of_phy_provider_register(dev, of_phy_simple_xlate);
-+	if (IS_ERR(provider)) {
-+		dev_err(dev, "Failed to register PHY provider\n");
-+		return PTR_ERR(provider);
-+	}
-+
-+	dev_set_drvdata(dev, channel);
-+
-+	return 0;
++	dma_set_attr(DMA_ATTR_NON_CONSISTENT, &attrs);
++	dma_free_attrs(dev, size, cpu_addr, dma_handle, &attrs);
 +}
 +
-+static struct platform_driver rcar_gen3_phy_usb2_driver = {
-+	.driver = {
-+		.name		= "phy_rcar_gen3_usb2",
-+		.of_match_table	= rcar_gen3_phy_usb2_match_table,
-+	},
-+	.probe	= rcar_gen3_phy_usb2_probe,
-+};
-+module_platform_driver(rcar_gen3_phy_usb2_driver);
-+
-+MODULE_LICENSE("GPL v2");
-+MODULE_DESCRIPTION("Renesas R-Car Gen3 USB 2.0 PHY");
-+MODULE_AUTHOR("Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>");
+ #endif
 -- 
 1.9.1
 
