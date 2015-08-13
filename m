@@ -1,130 +1,77 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:33 +0000
-Subject: [PATCH v3 09/33] serial: sh-sci: Make sci_regmap[] const
-Message-Id: <1440180177-6924-10-git-send-email-geert+renesas@glider.be>
+From: William Towle <william.towle@codethink.co.uk>
+Date: Thu, 13 Aug 2015 11:36:50 +0000
+Subject: [PATCH 2/3] media: adv7604: automatic "default-input" selection
+Message-Id: <1439465811-936-3-git-send-email-william.towle@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+References: <1439465811-936-1-git-send-email-william.towle@codethink.co.uk>
+In-Reply-To: <1439465811-936-1-git-send-email-william.towle@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk
+Cc: linux-sh@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Add logic such that the "default-input" property becomes unnecessary
+for chips that only have one suitable input (ADV7611 by design, and
+ADV7612 due to commit 7111cddd "[media] media: adv7604: reduce support
+to first (digital) input").
+
+Additionally, Ian's documentation in commit bf9c8227 ("[media] media:
+adv7604: ability to read default input port from DT") states that the
+"default-input" property should reside directly in the node for
+adv7612. Hence, also adjust the parsing to make the implementation
+consistent with this.
+
+Signed-off-by: William Towle <william.towle@codethink.co.uk>
 ---
-v3:
-  - No changes,
+ drivers/media/i2c/adv7604.c |   25 ++++++++++++++++++-------
+ 1 file changed, 18 insertions(+), 7 deletions(-)
 
-v2:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 22 +++++++++++-----------
- 1 file changed, 11 insertions(+), 11 deletions(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 1758039066515fb7..383f6df3815a1747 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -147,7 +147,7 @@ struct plat_sci_reg {
- /* Helper for invalidating specific entries of an inherited map. */
- #define sci_reg_invalid	{ .offset = 0, .size = 0 }
+diff --git a/drivers/media/i2c/adv7604.c b/drivers/media/i2c/adv7604.c
+index 5631ec0..5bd81bd 100644
+--- a/drivers/media/i2c/adv7604.c
++++ b/drivers/media/i2c/adv7604.c
+@@ -2799,7 +2799,7 @@ static int adv76xx_parse_dt(struct adv76xx_state *state)
+ 	struct device_node *endpoint;
+ 	struct device_node *np;
+ 	unsigned int flags;
+-	u32 v;
++	u32 v= -1;
  
--static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
-+static const struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 	[SCIx_PROBE_REGTYPE] = {
- 		[0 ... SCIx_NR_REGS - 1] = sci_reg_invalid,
- 	},
-@@ -400,7 +400,7 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
-  */
- static unsigned int sci_serial_in(struct uart_port *p, int offset)
- {
--	struct plat_sci_reg *reg = sci_getreg(p, offset);
-+	const struct plat_sci_reg *reg = sci_getreg(p, offset);
+ 	np = state->i2c_clients[ADV76XX_PAGE_IO]->dev.of_node;
  
- 	if (reg->size = 8)
- 		return ioread8(p->membase + (reg->offset << p->regshift));
-@@ -414,7 +414,7 @@ static unsigned int sci_serial_in(struct uart_port *p, int offset)
+@@ -2809,14 +2809,25 @@ static int adv76xx_parse_dt(struct adv76xx_state *state)
+ 		return -EINVAL;
  
- static void sci_serial_out(struct uart_port *p, int offset, int value)
- {
--	struct plat_sci_reg *reg = sci_getreg(p, offset);
-+	const struct plat_sci_reg *reg = sci_getreg(p, offset);
+ 	v4l2_of_parse_endpoint(endpoint, &bus_cfg);
+-
+-	if (!of_property_read_u32(endpoint, "default-input", &v))
+-		state->pdata.default_input = v;
+-	else
+-		state->pdata.default_input = -1;
+-
+ 	of_node_put(endpoint);
  
- 	if (reg->size = 8)
- 		iowrite8(value, p->membase + (reg->offset << p->regshift));
-@@ -552,7 +552,7 @@ static void sci_poll_put_char(struct uart_port *port, unsigned char c)
- static void sci_init_pins(struct uart_port *port, unsigned int cflag)
- {
- 	struct sci_port *s = to_sci_port(port);
--	struct plat_sci_reg *reg = sci_regmap[s->cfg->regtype] + SCSPTR;
-+	const struct plat_sci_reg *reg = sci_regmap[s->cfg->regtype] + SCSPTR;
++	if (of_property_read_u32(np, "default-input", &v)) {
++		/* not specified ... can we choose automatically? */
++		switch (state->info->type) {
++		case ADV7611:
++			v = 0;
++			break;
++		case ADV7612:
++			if (state->info->max_port
++					= ADV76XX_PAD_HDMI_PORT_A)
++				v = 0;
++			/* else is unhobbled, leave unspecified */
++		default:
++			break;
++		}
++	}
++	state->pdata.default_input = v;
++
+ 	flags = bus_cfg.bus.parallel.flags;
  
- 	/*
- 	 * Use port-specific handler if provided.
-@@ -582,7 +582,7 @@ static void sci_init_pins(struct uart_port *port, unsigned int cflag)
- 
- static int sci_txfill(struct uart_port *port)
- {
--	struct plat_sci_reg *reg;
-+	const struct plat_sci_reg *reg;
- 
- 	reg = sci_getreg(port, SCTFDR);
- 	if (reg->size)
-@@ -602,7 +602,7 @@ static int sci_txroom(struct uart_port *port)
- 
- static int sci_rxfill(struct uart_port *port)
- {
--	struct plat_sci_reg *reg;
-+	const struct plat_sci_reg *reg;
- 
- 	reg = sci_getreg(port, SCRFDR);
- 	if (reg->size)
-@@ -883,7 +883,7 @@ static int sci_handle_fifo_overrun(struct uart_port *port)
- {
- 	struct tty_port *tport = &port->state->port;
- 	struct sci_port *s = to_sci_port(port);
--	struct plat_sci_reg *reg;
-+	const struct plat_sci_reg *reg;
- 	int copied = 0;
- 	u16 status;
- 
-@@ -1250,7 +1250,7 @@ static unsigned int sci_tx_empty(struct uart_port *port)
- static void sci_set_mctrl(struct uart_port *port, unsigned int mctrl)
- {
- 	if (mctrl & TIOCM_LOOP) {
--		struct plat_sci_reg *reg;
-+		const struct plat_sci_reg *reg;
- 
- 		/*
- 		 * Standard loopback mode for SCFCR ports.
-@@ -1621,7 +1621,7 @@ static void sci_stop_rx(struct uart_port *port)
- static void sci_break_ctl(struct uart_port *port, int break_state)
- {
- 	struct sci_port *s = to_sci_port(port);
--	struct plat_sci_reg *reg = sci_regmap[s->cfg->regtype] + SCSPTR;
-+	const struct plat_sci_reg *reg = sci_regmap[s->cfg->regtype] + SCSPTR;
- 	unsigned short scscr, scsptr;
- 
- 	/* check wheter the port has SCSPTR */
-@@ -1910,7 +1910,7 @@ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq,
- 
- static void sci_reset(struct uart_port *port)
- {
--	struct plat_sci_reg *reg;
-+	const struct plat_sci_reg *reg;
- 	unsigned int status;
- 
- 	do {
-@@ -1928,7 +1928,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 			    struct ktermios *old)
- {
- 	struct sci_port *s = to_sci_port(port);
--	struct plat_sci_reg *reg;
-+	const struct plat_sci_reg *reg;
- 	unsigned int baud, smr_val = 0, max_baud, cks = 0;
- 	int t = -1;
- 	unsigned int srr = 15;
+ 	if (flags & V4L2_MBUS_HSYNC_ACTIVE_HIGH)
 -- 
-1.9.1
+1.7.10.4
 
