@@ -1,92 +1,25 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 12 Aug 2015 08:15:26 +0000
-Subject: [PATCH 6/7] ARM: shmobile: r8a7793 dtsi: Add CPG/MSTP Clock Domain
-Message-Id: <4b31bad51f83bcce039e43f1659ffcb4bff454dc.1439366241.git.horms+renesas@verge.net.au>
+From: William Towle <william.towle@codethink.co.uk>
+Date: Thu, 13 Aug 2015 11:36:48 +0000
+Subject: Renesas Lager: Device Tree entries for VIN HDMI input, version 2
+Message-Id: <1439465811-936-1-git-send-email-william.towle@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1439366241.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1439366241.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk
+Cc: linux-sh@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+  Version 2 ... removes some redundant configuration from device nodes,
+and provides some supplementary logic for automatic initialisation of
+state->pdata.default_input based on the hardware present.
 
-Add an appropriate "#power-domain-cells" property to the cpg_clocks
-device node, to create the CPG/MSTP Clock Domain.
+  (Obsoletes corresponding parts of "HDMI and Composite capture on
+Lager...", published previously)
 
-Add "power-domains" properties to all device nodes for devices that are
-part of the CPG/MSTP Clock Domain and can be power-managed through an
-MSTP clock.  This applies to most on-SoC devices, which have a
-one-to-one mapping from SoC device to DT device node.
+Cheers,
+  Wills.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7793.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index 3355c487d108..c4654047e684 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -68,6 +68,7 @@
- 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7793_CLK_CMT0>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
- 
- 		renesas,channels-mask = <0x60>;
- 
-@@ -87,6 +88,7 @@
- 			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7793_CLK_CMT1>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
- 
- 		renesas,channels-mask = <0xff>;
- 
-@@ -109,6 +111,7 @@
- 			     <0 16 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R8A7793_CLK_IRQC>;
-+		power-domains = <&cpg_clocks>;
- 	};
- 
- 	scif0: serial@e6e60000 {
-@@ -117,6 +120,7 @@
- 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF0>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -126,6 +130,7 @@
- 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF1>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -134,6 +139,7 @@
- 		reg = <0 0xee700000 0 0x400>;
- 		interrupts = <0 162 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp8_clks R8A7793_CLK_ETHER>;
-+		power-domains = <&cpg_clocks>;
- 		phy-mode = "rmii";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -164,6 +170,7 @@
- 			clock-output-names = "main", "pll0", "pll1", "pll3",
- 					     "lb", "qspi", "sdh", "sd0", "z",
- 					     "rcan", "adsp";
-+			#power-domain-cells = <0>;
- 		};
- 
- 		/* Variable factor clocks */
--- 
-2.1.4
-
+To follow:
+	[PATCH 1/3] ARM: shmobile: lager dts: Add entries for VIN HDMI input
+	[PATCH 2/3] media: adv7604: automatic "default-input" selection
+	[PATCH 3/3] ARM: shmobile: lager dts: specify default-input for
