@@ -1,98 +1,121 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 31 Aug 2015 12:49:16 +0000
-Subject: [PATCH v5 03/05] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support
-Message-Id: <20150831124916.31057.13404.sendpatchset@little-apple>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 14 Aug 2015 13:51:06 +0000
+Subject: [PATCH 5/7] ARM: shmobile: remove ARCH_SHMOBILE_LEGACY option
+Message-Id: <1439560268-4935-6-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150831124842.31057.54534.sendpatchset@little-apple>
-In-Reply-To: <20150831124842.31057.54534.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-clk@vger.kernel.org
-Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+With Bock-W, the last legacy platform has been removed.
 
-Add Clock Domain support to the R-Car Gen3 Clock Pulse Generator (CPG)
-driver using the generic PM Domain.  This allows to power-manage the
-module clocks of SoC devices that are part of the CPG/MSTP Clock Domain
-using Runtime PM, or for system suspend/resume.
-
-SoC devices that are part of the CPG/MSTP Clock Domain and can be
-power-managed through an MSTP clock should be tagged in DT with a proper
-"power-domains" property.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
+ arch/arm/Kconfig               | 26 +-------------------------
+ arch/arm/Kconfig.debug         |  3 +--
+ arch/arm/mach-shmobile/Kconfig | 23 -----------------------
+ 3 files changed, 2 insertions(+), 50 deletions(-)
 
- Changes since V4:
- - Rebased to fit on top of updated CPG DT binding document
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 1c50210..a5ddf37 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -618,28 +618,6 @@ config ARCH_PXA
+ 	help
+ 	  Support for Intel/Marvell's PXA2xx/PXA3xx processor line.
+ 
+-config ARCH_SHMOBILE_LEGACY
+-	bool "Renesas ARM SoCs (non-multiplatform)"
+-	select ARCH_SHMOBILE
+-	select ARM_PATCH_PHYS_VIRT if MMU
+-	select CLKDEV_LOOKUP
+-	select CPU_V7
+-	select GENERIC_CLOCKEVENTS
+-	select HAVE_ARM_SCU if SMP
+-	select HAVE_ARM_TWD if SMP
+-	select HAVE_SMP
+-	select MIGHT_HAVE_CACHE_L2X0
+-	select MULTI_IRQ_HANDLER
+-	select NO_IOPORT_MAP
+-	select PINCTRL
+-	select PM_GENERIC_DOMAINS if PM
+-	select SH_CLK_CPG
+-	select SPARSE_IRQ
+-	help
+-	  Support for Renesas ARM SoC platforms using a non-multiplatform
+-	  kernel. This includes the SH-Mobile, R-Mobile, EMMA-Mobile, R-Car
+-	  and RZ families.
+-
+ config ARCH_RPC
+ 	bool "RiscPC"
+ 	select ARCH_ACORN
+@@ -1530,7 +1508,6 @@ config HZ_FIXED
+ 	default 200 if ARCH_EBSA110 || ARCH_S3C24XX || \
+ 		ARCH_S5PV210 || ARCH_EXYNOS4
+ 	default 128 if SOC_AT91RM9200
+-	default SHMOBILE_TIMER_HZ if ARCH_SHMOBILE_LEGACY
+ 	default 0
+ 
+ choice
+@@ -1737,8 +1714,7 @@ config ARM_MODULE_PLTS
+ source "mm/Kconfig"
+ 
+ config FORCE_MAX_ZONEORDER
+-	int "Maximum zone order" if ARCH_SHMOBILE_LEGACY
+-	range 11 64 if ARCH_SHMOBILE_LEGACY
++	int "Maximum zone order"
+ 	default "12" if SOC_AM33XX
+ 	default "9" if SA1111 || ARCH_EFM32
+ 	default "11"
+diff --git a/arch/arm/Kconfig.debug b/arch/arm/Kconfig.debug
+index a2e16f9..38ad594 100644
+--- a/arch/arm/Kconfig.debug
++++ b/arch/arm/Kconfig.debug
+@@ -1606,8 +1606,7 @@ config DEBUG_UNCOMPRESS
+ config UNCOMPRESS_INCLUDE
+ 	string
+ 	default "debug/uncompress.h" if ARCH_MULTIPLATFORM || ARCH_MSM || \
+-					PLAT_SAMSUNG || ARM_SINGLE_ARMV7M || \
+-					ARCH_SHMOBILE_LEGACY
++					PLAT_SAMSUNG || ARM_SINGLE_ARMV7M
+ 	default "mach/uncompress.h"
+ 
+ config EARLY_PRINTK
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 61a59b1..7f2e053 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -99,29 +99,6 @@ config ARCH_SH73A0
+ comment "Renesas ARM SoCs System Configuration"
+ endif
+ 
+-if ARCH_SHMOBILE_LEGACY
+-
+-comment "Renesas ARM SoCs System Type"
+-
+-config ARCH_R8A7779
+-	bool "R-Car H1 (R8A77790)"
+-	select ARCH_RCAR_GEN1
+-	select ARCH_WANT_OPTIONAL_GPIOLIB
+-	select ARM_GIC
+-
+-comment "Renesas ARM SoCs System Configuration"
+-
+-config CPU_HAS_INTEVT
+-        bool
+-	default y
+-
+-config SH_CLK_CPG
+-	bool
+-
+-source "drivers/sh/Kconfig"
+-
+-endif
+-
+ if ARCH_SHMOBILE
+ 
+ menu "Timer and clock configuration"
+-- 
+2.4.6
 
- Changes since V3:
- - Fixed so correct file is actually used. =)
- - Took V2 from Geert but filtered out Kconfig.platforms bits
-
- Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt |   26 +++++++++-
- drivers/clk/shmobile/clk-rcar-gen3.c                                     |    2 
- 2 files changed, 26 insertions(+), 2 deletions(-)
-
---- 0007/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
-+++ work/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt	2015-08-31 21:20:31.782366518 +0900
-@@ -2,6 +2,8 @@
- 
- The CPG generates core clocks for the R-Car Gen3 SoCs. It includes three PLLs
- and several fixed ratio dividers.
-+The CPG also provides a Clock Domain for SoC devices, in combination with the
-+CPG Module Stop (MSTP) Clocks.
- 
- Required Properties:
- 
-@@ -14,9 +16,17 @@ Required Properties:
-   - clocks: References to the parent clocks: first to the EXTAL clock
-   - #clock-cells: Must be 1
-   - clock-indices: Indices of the exported clocks
-+  - #power-domain-cells: Must be 0
- 
--Example
---------
-+SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
-+through an MSTP clock should refer to the CPG device node in their
-+"power-domains" property, as documented by the generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
-+
-+Examples
-+--------
-+
-+  - CPG device node:
- 
- 	cpg_clocks: cpg_clocks@e6150000 {
- 		compatible = "renesas,r8a7795-cpg-clocks",
-@@ -29,4 +39,16 @@ Example
-                              R8A7795_CLK_PLL1 R8A7795_CLK_PLL2
-                              R8A7795_CLK_PLL3 R8A7795_CLK_PLL4
-                 >;
-+		#power-domain-cells = <0>;
-+	};
-+
-+  - CPG/MSTP Clock Domain member device node:
-+
-+	scif2: serial@e6e88000 {
-+		compatible = "renesas,scif-r8a7795", "renesas,scif";
-+		reg = <0 0xe6e88000 0 64>;
-+		interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks RCAR_R8A7795_CLK_SCIF2>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 	};
---- 0007/drivers/clk/shmobile/clk-rcar-gen3.c
-+++ work/drivers/clk/shmobile/clk-rcar-gen3.c	2015-08-31 21:17:02.242366518 +0900
-@@ -240,6 +240,8 @@ static void __init rcar_gen3_cpg_clocks_
- 	}
- 
- 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-+
-+	cpg_mstp_add_clk_domain(np);
- }
- CLK_OF_DECLARE(rcar_gen3_cpg_clks, "renesas,rcar-gen3-cpg-clocks",
- 	       rcar_gen3_cpg_clocks_init);
