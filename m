@@ -1,24 +1,52 @@
-From: David Miller <davem@davemloft.net>
-Date: Sat, 29 Aug 2015 05:26:17 +0000
-Subject: Re: [PATCH 1/2] ravb: propagate platform_get_irq() error upstream
-Message-Id: <20150828.222617.2059651130537411431.davem@davemloft.net>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 14 Aug 2015 13:51:01 +0000
+Subject: [PATCH 0/7] Bock-W legacy excision
+Message-Id: <1439560268-4935-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <9944836.IRPmWk4iN8@wasted.cogentembedded.com>
-	<1625516.DmSERANoIv@wasted.cogentembedded.com>
-In-Reply-To: <1625516.DmSERANoIv@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, horms@verge.net.au
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 28 Aug 2015 16:55:10 +0300
+Hi!
 
-> The driver overrides the error returned by platform_get_irq() with -ENODEV
-> which e.g. precludes the deferred  probing from working. Propagate the real
-> error code to the driver core instead.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This eliminates the last shmobile legacy platform, Bock-W, and with it a
+number of other things that have thus become obsolete.
 
-Applied.
+CU
+Uli
+
+
+Ulrich Hecht (7):
+  ARM: shmobile: bockw: remove legacy board file and config
+  ARM: shmobile: r8a7778: remove obsolete setup code
+  ARM: shmobile: Kconfig: remove obsolete option ARCH_R8A7778
+  ARM: shmobile: r8a7778: remove legacy clock implementation
+  ARM: shmobile: remove ARCH_SHMOBILE_LEGACY option
+  ARM: shmobile: bockw: remove legacy defconfig
+  MAINTAINERS: remove references to dropped marzen and bockw defconfigs
+
+ MAINTAINERS                            |   2 -
+ arch/arm/Kconfig                       |  26 +-
+ arch/arm/Kconfig.debug                 |   3 +-
+ arch/arm/configs/bockw_defconfig       | 133 ------
+ arch/arm/mach-shmobile/Kconfig         |  40 --
+ arch/arm/mach-shmobile/Makefile        |  11 -
+ arch/arm/mach-shmobile/Makefile.boot   |  11 -
+ arch/arm/mach-shmobile/board-bockw.c   | 737 ---------------------------------
+ arch/arm/mach-shmobile/clock-r8a7778.c | 342 ---------------
+ arch/arm/mach-shmobile/clock.c         |  47 ---
+ arch/arm/mach-shmobile/clock.h         |  42 --
+ arch/arm/mach-shmobile/r8a7778.h       |  77 ----
+ arch/arm/mach-shmobile/setup-r8a7778.c | 560 +------------------------
+ 13 files changed, 3 insertions(+), 2028 deletions(-)
+ delete mode 100644 arch/arm/configs/bockw_defconfig
+ delete mode 100644 arch/arm/mach-shmobile/board-bockw.c
+ delete mode 100644 arch/arm/mach-shmobile/clock-r8a7778.c
+ delete mode 100644 arch/arm/mach-shmobile/clock.c
+ delete mode 100644 arch/arm/mach-shmobile/clock.h
+ delete mode 100644 arch/arm/mach-shmobile/r8a7778.h
+
+-- 
+2.4.6
+
