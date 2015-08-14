@@ -1,103 +1,32 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 28 Aug 2015 22:02:12 +0000
-Subject: Re: [PATCH] pinctrl: sh-pfc: Get rid of CONFIG_SHMOBILE_LEGACY
-Message-Id: <1519243.Gb6txjtt2n@avalon>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 14 Aug 2015 13:54:04 +0000
+Subject: [PATCH] ARM: shmobile: remove paragraph on DT reference platforms
+Message-Id: <1439560444-5111-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440705812-2960-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440705812-2960-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Linus Walleij <linus.walleij@linaro.org>, Simon Horman <horms@verge.net.au>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Geert,
+They have all been eliminated now.
 
-Thank you for the patch.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ Documentation/devicetree/bindings/arm/shmobile.txt | 4 ----
+ 1 file changed, 4 deletions(-)
 
-On Thursday 27 August 2015 22:03:32 Geert Uytterhoeven wrote:
-> Shmobile is all multiplatform these days, so get rid of the reference to
-> CONFIG_ARCH_SHMOBILE_LEGACY.
-> 
-> Move the legacy code to do the non-DT mapping between GPIOs and pins
-> inside the existing #ifdef CONFIG_SUPERH section.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
->   - Against renesas-devel-20150826-v4.2-rc8,
->   - This must not be applied to a branch that still has
->     CONFIG_SHMOBILE_LEGACY.
-> 
->  drivers/pinctrl/sh-pfc/gpio.c | 41 ++++++++++++++++++---------------------
->  1 file changed, 19 insertions(+), 22 deletions(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-> index 685b3c24627daf03..a917c62f07124b0b 100644
-> --- a/drivers/pinctrl/sh-pfc/gpio.c
-> +++ b/drivers/pinctrl/sh-pfc/gpio.c
-> @@ -341,7 +341,6 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
->  	struct sh_pfc_chip *chip;
->  	phys_addr_t address;
->  	unsigned int i;
-> -	int ret;
-> 
->  	if (pfc->info->data_regs = NULL)
->  		return 0;
-> @@ -379,29 +378,27 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
->  	if (IS_ENABLED(CONFIG_OF) && pfc->dev->of_node)
->  		return 0;
-> 
-> -	if (IS_ENABLED(CONFIG_SUPERH) ||
-> -	    IS_ENABLED(CONFIG_ARCH_SHMOBILE_LEGACY)) {
-> -		/*
-> -		 * Register the GPIO to pin mappings. As pins with GPIO ports
-> -		 * must come first in the ranges, skip the pins without GPIO
-> -		 * ports by stopping at the first range that contains such a
-> -		 * pin.
-> -		 */
-> -		for (i = 0; i < pfc->nr_ranges; ++i) {
-> -			const struct sh_pfc_pin_range *range = &pfc->ranges[i];
-> -
-> -			if (range->start >= pfc->nr_gpio_pins)
-> -				break;
-> -
-> -			ret = gpiochip_add_pin_range(&chip->gpio_chip,
-> -				dev_name(pfc->dev), range->start, range->start,
-> -				range->end - range->start + 1);
-> -			if (ret < 0)
-> -				return ret;
-> -		}
-> +#ifdef CONFIG_SUPERH
-> +	/*
-> +	 * Register the GPIO to pin mappings. As pins with GPIO ports
-> +	 * must come first in the ranges, skip the pins without GPIO
-> +	 * ports by stopping at the first range that contains such a
-> +	 * pin.
-> +	 */
-> +	for (i = 0; i < pfc->nr_ranges; ++i) {
-> +		const struct sh_pfc_pin_range *range = &pfc->ranges[i];
-> +		int ret;
-> +
-> +		if (range->start >= pfc->nr_gpio_pins)
-> +			break;
-> +
-> +		ret = gpiochip_add_pin_range(&chip->gpio_chip,
-> +			dev_name(pfc->dev), range->start, range->start,
-> +			range->end - range->start + 1);
-> +		if (ret < 0)
-> +			return ret;
->  	}
-> 
-> -#ifdef CONFIG_SUPERH
->  	/* Register the function GPIOs chip. */
->  	if (pfc->info->nr_func_gpios = 0)
->  		return 0;
-
+diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
+index f8aad0b..1d70e78e 100644
+--- a/Documentation/devicetree/bindings/arm/shmobile.txt
++++ b/Documentation/devicetree/bindings/arm/shmobile.txt
+@@ -57,7 +57,3 @@ Boards:
+     compatible = "renesas,marzen", "renesas,r8a7779"
+   - Silk
+     compatible = "renesas,silk", "renesas,r8a7794";
+-
+-Note: Reference Device Tree Implementations are temporary implementations
+-      to ease the migration from platform devices to Device Tree, and are
+-      intended to be removed in the future.
 -- 
-Regards,
-
-Laurent Pinchart
+2.4.6
 
