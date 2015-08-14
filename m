@@ -1,87 +1,349 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 08 Aug 2015 20:33:21 +0000
-Subject: [PATCH 04/10] i2c: rename address check functions
-Message-Id: <1439066007-13951-5-git-send-email-wsa@the-dreams.de>
+From: Yinghai Lu <yinghai@kernel.org>
+Date: Fri, 14 Aug 2015 04:22:24 +0000
+Subject: [PATCH v2] lib/decompressors: Use real out buf size for gunzip with kernel
+Message-Id: <1439526144-3243-1-git-send-email-yinghai@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1439066007-13951-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Andrey Danin <danindrey@mail.ru>, Stephen Warren <swarren@wwwdotorg.org>, Stephen Warren <swarren@nvidia.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+When loading x86 64bit kernel above 4GiB with patched grub2, got kernel
+gunzip error.
 
-The current naming is based on the arguments of the functions and not on
-what they do. Even I as the maintainer find this confusing, so let's
-rename them to something more descriptive.
+| early console in decompress_kernel
+| decompress_kernel:
+|       input: [0x807f2143b4-0x807ff61aee]
+|      output: [0x807cc00000-0x807f3ea29b] 0x027ea29c: output_len
+| boot via startup_64
+| KASLR using RDTSC...
+|  new output: [0x46fe000000-0x470138cfff] 0x0338d000: output_run_size
+|  decompress: [0x46fe000000-0x47007ea29b] <== [0x807f2143b4-0x807ff61aee]
+|
+| Decompressing Linux... gz...
+|
+| uncompression error
+|
+| -- System halted
 
-Tested-by: Andrey Danin <danindrey@mail.ru>
-Acked-by: Stephen Warren <swarren@nvidia.com>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+the new buffer is at 0x46fe000000ULL, decompressor_gzip is using
+0xffffffb901ffffff as out_len. gunzip in lib/zlib_inflate/inflate.c
+cap that len to 0x01ffffff and decompress fails later.
+
+We could hit this problem with crashkernel booting that uses kexec
+loading kernel above 4GiB.
+
+We have decompress_* support:
+    1. inbuf[]/outbuf[] for kernel preboot.
+    2. inbuf[]/flush() for initramfs
+    3. fill()/flush() for initrd.
+This bug only affect kernel preboot path that use outbuf[].
+
+Add __decompress and take real out_buf_len for gunzip instead of guessing
+wrong buf size.
+
+-v2: fix unused warning on sh/arm/m32r from Fengguang.
+
+Signed-off-by: Yinghai Lu <yinghai@kernel.org>
+Fixes: 1431574a1c4 (lib/decompressors: fix "no limit" output buffer length)
+Cc: Alexandre Courbot <acourbot@nvidia.com>
+Cc: Jon Medhurst <tixy@linaro.org>
+Cc: Stephen Warren <swarren@wwwdotorg.org>
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Russell King <linux@arm.linux.org.uk>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Ralf Baechle <ralf@linux-mips.org>
+Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
+Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
+Cc: Guan Xuetao <gxt@mprc.pku.edu.cn>
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: uclinux-h8-devel@lists.sourceforge.jp
+Cc: linux-mips@linux-mips.org
+Cc: linux-s390@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: Fengguang Wu <fengguang.wu@intel.com>
+Cc: stable <stable@vger.kernel.org>
+
 ---
- drivers/i2c/i2c-core.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ arch/arm/boot/compressed/decompress.c  |    2 +-
+ arch/h8300/boot/compressed/misc.c      |    2 +-
+ arch/m32r/boot/compressed/misc.c       |    3 ++-
+ arch/mips/boot/compressed/decompress.c |    4 ++--
+ arch/s390/boot/compressed/misc.c       |    2 +-
+ arch/sh/boot/compressed/misc.c         |    2 +-
+ arch/unicore32/boot/compressed/misc.c  |    4 ++--
+ arch/x86/boot/compressed/misc.c        |    3 ++-
+ lib/decompress_bunzip2.c               |    6 +++---
+ lib/decompress_inflate.c               |   31 ++++++++++++++++++++++++++-----
+ lib/decompress_unlz4.c                 |    6 +++---
+ lib/decompress_unlzma.c                |    7 +++----
+ lib/decompress_unlzo.c                 |   13 ++++++++++++-
+ lib/decompress_unxz.c                  |   12 +++++++++++-
+ 14 files changed, 70 insertions(+), 27 deletions(-)
 
-diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
-index 150ee00b5ff5cb..28766b7208bcc2 100644
---- a/drivers/i2c/i2c-core.c
-+++ b/drivers/i2c/i2c-core.c
-@@ -796,7 +796,7 @@ static unsigned short i2c_encode_flags_to_addr(struct i2c_client *client)
+Index: linux-2.6/arch/arm/boot/compressed/decompress.c
+=================================--- linux-2.6.orig/arch/arm/boot/compressed/decompress.c
++++ linux-2.6/arch/arm/boot/compressed/decompress.c
+@@ -57,5 +57,5 @@ extern char * strstr(const char * s1, co
  
- /* This is a permissive address validity check, I2C address map constraints
-  * are purposely not enforced, except for the general call address. */
--static int i2c_check_client_addr_validity(const struct i2c_client *client)
-+static int i2c_check_addr_validity(const struct i2c_client *client)
+ int do_decompress(u8 *input, int len, u8 *output, void (*error)(char *x))
  {
- 	if (client->flags & I2C_CLIENT_TEN) {
- 		/* 10-bit address, all values are valid */
-@@ -814,7 +814,7 @@ static int i2c_check_client_addr_validity(const struct i2c_client *client)
-  * device uses a reserved address, then it shouldn't be probed. 7-bit
-  * addressing is assumed, 10-bit address devices are rare and should be
-  * explicitly enumerated. */
--static int i2c_check_addr_validity(unsigned short addr)
-+static int i2c_check_7bit_addr_validity_strict(unsigned short addr)
- {
+-	return decompress(input, len, NULL, NULL, output, NULL, error);
++	return __decompress(input, len, NULL, NULL, output, 0, NULL, error);
+ }
+Index: linux-2.6/arch/h8300/boot/compressed/misc.c
+=================================--- linux-2.6.orig/arch/h8300/boot/compressed/misc.c
++++ linux-2.6/arch/h8300/boot/compressed/misc.c
+@@ -70,5 +70,5 @@ void decompress_kernel(void)
+ 	free_mem_ptr = (unsigned long)&_end;
+ 	free_mem_end_ptr = free_mem_ptr + HEAP_SIZE;
+ 
+-	decompress(input_data, input_len, NULL, NULL, output, NULL, error);
++	__decompress(input_data, input_len, NULL, NULL, output, 0, NULL, error);
+ }
+Index: linux-2.6/arch/m32r/boot/compressed/misc.c
+=================================--- linux-2.6.orig/arch/m32r/boot/compressed/misc.c
++++ linux-2.6/arch/m32r/boot/compressed/misc.c
+@@ -86,6 +86,7 @@ decompress_kernel(int mmu_on, unsigned c
+ 	free_mem_end_ptr = free_mem_ptr + BOOT_HEAP_SIZE;
+ 
+ 	puts("\nDecompressing Linux... ");
+-	decompress(input_data, input_len, NULL, NULL, output_data, NULL, error);
++	__decompress(input_data, input_len, NULL, NULL, output_data, 0,
++			NULL, error);
+ 	puts("done.\nBooting the kernel.\n");
+ }
+Index: linux-2.6/arch/mips/boot/compressed/decompress.c
+=================================--- linux-2.6.orig/arch/mips/boot/compressed/decompress.c
++++ linux-2.6/arch/mips/boot/compressed/decompress.c
+@@ -111,8 +111,8 @@ void decompress_kernel(unsigned long boo
+ 	puts("\n");
+ 
+ 	/* Decompress the kernel with according algorithm */
+-	decompress((char *)zimage_start, zimage_size, 0, 0,
+-		   (void *)VMLINUX_LOAD_ADDRESS_ULL, 0, error);
++	__decompress((char *)zimage_start, zimage_size, 0, 0,
++		   (void *)VMLINUX_LOAD_ADDRESS_ULL, 0, 0, error);
+ 
+ 	/* FIXME: should we flush cache here? */
+ 	puts("Now, booting the kernel...\n");
+Index: linux-2.6/arch/s390/boot/compressed/misc.c
+=================================--- linux-2.6.orig/arch/s390/boot/compressed/misc.c
++++ linux-2.6/arch/s390/boot/compressed/misc.c
+@@ -167,7 +167,7 @@ unsigned long decompress_kernel(void)
+ #endif
+ 
+ 	puts("Uncompressing Linux... ");
+-	decompress(input_data, input_len, NULL, NULL, output, NULL, error);
++	__decompress(input_data, input_len, NULL, NULL, output, 0, NULL, error);
+ 	puts("Ok, booting the kernel.\n");
+ 	return (unsigned long) output;
+ }
+Index: linux-2.6/arch/sh/boot/compressed/misc.c
+=================================--- linux-2.6.orig/arch/sh/boot/compressed/misc.c
++++ linux-2.6/arch/sh/boot/compressed/misc.c
+@@ -132,7 +132,7 @@ void decompress_kernel(void)
+ 
+ 	puts("Uncompressing Linux... ");
+ 	cache_control(CACHE_ENABLE);
+-	decompress(input_data, input_len, NULL, NULL, output, NULL, error);
++	__decompress(input_data, input_len, NULL, NULL, output, 0, NULL, error);
+ 	cache_control(CACHE_DISABLE);
+ 	puts("Ok, booting the kernel.\n");
+ }
+Index: linux-2.6/arch/unicore32/boot/compressed/misc.c
+=================================--- linux-2.6.orig/arch/unicore32/boot/compressed/misc.c
++++ linux-2.6/arch/unicore32/boot/compressed/misc.c
+@@ -119,8 +119,8 @@ unsigned long decompress_kernel(unsigned
+ 	output_ptr = get_unaligned_le32(tmp);
+ 
+ 	arch_decomp_puts("Uncompressing Linux...");
+-	decompress(input_data, input_data_end - input_data, NULL, NULL,
+-			output_data, NULL, error);
++	__decompress(input_data, input_data_end - input_data, NULL, NULL,
++			output_data, 0, NULL, error);
+ 	arch_decomp_puts(" done, booting the kernel.\n");
+ 	return output_ptr;
+ }
+Index: linux-2.6/arch/x86/boot/compressed/misc.c
+=================================--- linux-2.6.orig/arch/x86/boot/compressed/misc.c
++++ linux-2.6/arch/x86/boot/compressed/misc.c
+@@ -448,7 +448,8 @@ asmlinkage __visible void *decompress_ke
+ #endif
+ 
+ 	debug_putstr("\nDecompressing Linux... ");
+-	decompress(input_data, input_len, NULL, NULL, output, NULL, error);
++	__decompress(input_data, input_len, NULL, NULL, output, output_len,
++			NULL, error);
+ 	parse_elf(output);
  	/*
- 	 * Reserved addresses per I2C specification:
-@@ -983,7 +983,7 @@ i2c_new_device(struct i2c_adapter *adap, struct i2c_board_info const *info)
- 	strlcpy(client->name, info->type, sizeof(client->name));
+ 	 * 32-bit always performs relocations. 64-bit relocations are only
+Index: linux-2.6/lib/decompress_bunzip2.c
+=================================--- linux-2.6.orig/lib/decompress_bunzip2.c
++++ linux-2.6/lib/decompress_bunzip2.c
+@@ -743,12 +743,12 @@ exit_0:
+ }
  
- 	/* Check for address validity */
--	status = i2c_check_client_addr_validity(client);
-+	status = i2c_check_addr_validity(client);
- 	if (status) {
- 		dev_err(&adap->dev, "Invalid %d-bit I2C address 0x%02hx\n",
- 			client->flags & I2C_CLIENT_TEN ? 10 : 7, client->addr);
-@@ -2268,7 +2268,7 @@ static int i2c_detect_address(struct i2c_client *temp_client,
- 	int err;
+ #ifdef PREBOOT
+-STATIC int INIT decompress(unsigned char *buf, long len,
++STATIC int INIT __decompress(unsigned char *buf, long len,
+ 			long (*fill)(void*, unsigned long),
+ 			long (*flush)(void*, unsigned long),
+-			unsigned char *outbuf,
++			unsigned char *outbuf, long olen,
+ 			long *pos,
+-			void(*error)(char *x))
++			void (*error)(char *x))
+ {
+ 	return bunzip2(buf, len - 4, fill, flush, outbuf, pos, error);
+ }
+Index: linux-2.6/lib/decompress_inflate.c
+=================================--- linux-2.6.orig/lib/decompress_inflate.c
++++ linux-2.6/lib/decompress_inflate.c
+@@ -1,4 +1,5 @@
+ #ifdef STATIC
++#define PREBOOT
+ /* Pre-boot environment: included */
  
- 	/* Make sure the address is valid */
--	err = i2c_check_addr_validity(addr);
-+	err = i2c_check_7bit_addr_validity_strict(addr);
- 	if (err) {
- 		dev_warn(&adapter->dev, "Invalid probe address 0x%02x\n",
- 			 addr);
-@@ -2385,7 +2385,7 @@ i2c_new_probed_device(struct i2c_adapter *adap,
+ /* prevent inclusion of _LINUX_KERNEL_H in pre-boot environment: lots
+@@ -33,23 +34,23 @@ static long INIT nofill(void *buffer, un
+ }
  
- 	for (i = 0; addr_list[i] != I2C_CLIENT_END; i++) {
- 		/* Check address validity */
--		if (i2c_check_addr_validity(addr_list[i]) < 0) {
-+		if (i2c_check_7bit_addr_validity_strict(addr_list[i]) < 0) {
- 			dev_warn(&adap->dev, "Invalid 7-bit address "
- 				 "0x%02x\n", addr_list[i]);
- 			continue;
-@@ -2960,7 +2960,7 @@ int i2c_slave_register(struct i2c_client *client, i2c_slave_cb_t slave_cb)
+ /* Included from initramfs et al code */
+-STATIC int INIT gunzip(unsigned char *buf, long len,
++STATIC int INIT __gunzip(unsigned char *buf, long len,
+ 		       long (*fill)(void*, unsigned long),
+ 		       long (*flush)(void*, unsigned long),
+-		       unsigned char *out_buf,
++		       unsigned char *out_buf, long out_len,
+ 		       long *pos,
+ 		       void(*error)(char *x)) {
+ 	u8 *zbuf;
+ 	struct z_stream_s *strm;
+ 	int rc;
+-	size_t out_len;
  
- 	if (!(client->flags & I2C_CLIENT_TEN)) {
- 		/* Enforce stricter address checking */
--		ret = i2c_check_addr_validity(client->addr);
-+		ret = i2c_check_7bit_addr_validity_strict(client->addr);
- 		if (ret) {
- 			dev_err(&client->dev, "%s: invalid address\n", __func__);
- 			return ret;
--- 
-2.1.4
-
+ 	rc = -1;
+ 	if (flush) {
+ 		out_len = 0x8000; /* 32 K */
+ 		out_buf = malloc(out_len);
+ 	} else {
+-		out_len = ((size_t)~0) - (size_t)out_buf; /* no limit */
++		if (!out_len)
++			out_len = ((size_t)~0) - (size_t)out_buf; /* no limit */
+ 	}
+ 	if (!out_buf) {
+ 		error("Out of memory while allocating output buffer");
+@@ -181,4 +182,24 @@ gunzip_nomem1:
+ 	return rc; /* returns Z_OK (0) if successful */
+ }
+ 
+-#define decompress gunzip
++#ifndef PREBOOT
++STATIC int INIT gunzip(unsigned char *buf, long len,
++		       long (*fill)(void*, unsigned long),
++		       long (*flush)(void*, unsigned long),
++		       unsigned char *out_buf,
++		       long *pos,
++		       void (*error)(char *x))
++{
++	return __gunzip(buf, len, fill, flush, out_buf, 0, pos, error);
++}
++#else
++STATIC int INIT __decompress(unsigned char *buf, long len,
++			   long (*fill)(void*, unsigned long),
++			   long (*flush)(void*, unsigned long),
++			   unsigned char *out_buf, long out_len,
++			   long *pos,
++			   void (*error)(char *x))
++{
++	return __gunzip(buf, len, fill, flush, out_buf, out_len, pos, error);
++}
++#endif
+Index: linux-2.6/lib/decompress_unlz4.c
+=================================--- linux-2.6.orig/lib/decompress_unlz4.c
++++ linux-2.6/lib/decompress_unlz4.c
+@@ -196,12 +196,12 @@ exit_0:
+ }
+ 
+ #ifdef PREBOOT
+-STATIC int INIT decompress(unsigned char *buf, long in_len,
++STATIC int INIT __decompress(unsigned char *buf, long in_len,
+ 			      long (*fill)(void*, unsigned long),
+ 			      long (*flush)(void*, unsigned long),
+-			      unsigned char *output,
++			      unsigned char *output, long out_len,
+ 			      long *posp,
+-			      void(*error)(char *x)
++			      void (*error)(char *x)
+ 	)
+ {
+ 	return unlz4(buf, in_len - 4, fill, flush, output, posp, error);
+Index: linux-2.6/lib/decompress_unlzma.c
+=================================--- linux-2.6.orig/lib/decompress_unlzma.c
++++ linux-2.6/lib/decompress_unlzma.c
+@@ -667,13 +667,12 @@ exit_0:
+ }
+ 
+ #ifdef PREBOOT
+-STATIC int INIT decompress(unsigned char *buf, long in_len,
++STATIC int INIT __decompress(unsigned char *buf, long in_len,
+ 			      long (*fill)(void*, unsigned long),
+ 			      long (*flush)(void*, unsigned long),
+-			      unsigned char *output,
++			      unsigned char *output, long out_len,
+ 			      long *posp,
+-			      void(*error)(char *x)
+-	)
++			      void (*error)(char *x))
+ {
+ 	return unlzma(buf, in_len - 4, fill, flush, output, posp, error);
+ }
+Index: linux-2.6/lib/decompress_unlzo.c
+=================================--- linux-2.6.orig/lib/decompress_unlzo.c
++++ linux-2.6/lib/decompress_unlzo.c
+@@ -31,6 +31,7 @@
+  */
+ 
+ #ifdef STATIC
++#define PREBOOT
+ #include "lzo/lzo1x_decompress_safe.c"
+ #else
+ #include <linux/decompress/unlzo.h>
+@@ -287,4 +288,14 @@ exit:
+ 	return ret;
+ }
+ 
+-#define decompress unlzo
++#ifdef PREBOOT
++STATIC int INIT __decompress(unsigned char *buf, long len,
++			   long (*fill)(void*, unsigned long),
++			   long (*flush)(void*, unsigned long),
++			   unsigned char *out_buf, long olen,
++			   long *pos,
++			   void (*error)(char *x))
++{
++	return unlzo(buf, len, fill, flush, out_buf, pos, error);
++}
++#endif
+Index: linux-2.6/lib/decompress_unxz.c
+=================================--- linux-2.6.orig/lib/decompress_unxz.c
++++ linux-2.6/lib/decompress_unxz.c
+@@ -394,4 +394,14 @@ error_alloc_state:
+  * This macro is used by architecture-specific files to decompress
+  * the kernel image.
+  */
+-#define decompress unxz
++#ifdef XZ_PREBOOT
++STATIC int INIT __decompress(unsigned char *buf, long len,
++			   long (*fill)(void*, unsigned long),
++			   long (*flush)(void*, unsigned long),
++			   unsigned char *out_buf, long olen,
++			   long *pos,
++			   void (*error)(char *x))
++{
++	return unxz(buf, len, fill, flush, out_buf, pos, error);
++}
++#endif
