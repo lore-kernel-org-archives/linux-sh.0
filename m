@@ -1,156 +1,185 @@
-From: Rich Felker <dalias@libc.org>
-Date: Tue, 25 Aug 2015 21:23:11 +0000
-Subject: [PATCH v2] arch/sh: provide unified syscall trap compatible with all SH models
-Message-Id: <20150825212311.GM32742@brightrain.aerifal.cx>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 14 Aug 2015 23:42:21 +0000
+Subject: Re: Issues with rcar-dmac and sh-sci
+Message-Id: <1862788.NYkJDoIfhG@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150825030338.GA14922@brightrain.aerifal.cx>
-In-Reply-To: <20150825030338.GA14922@brightrain.aerifal.cx>
+References: <alpine.DEB.2.10.1507162026200.821@ayla.of.borg>
+In-Reply-To: <alpine.DEB.2.10.1507162026200.821@ayla.of.borg>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, shumpei.kawasaki@swhwc.com, Yoshinori Sato <ysato@users.sourceforge.jp>, jeff@uclinux.org, Geert Uytterhoeven <geert@linux-m68k.org>
 
-From: Rich Felker <dalias@libc.org>
+Hi Geert,
 
-Historically SH-2 Linux (and originally uClinux) used a syscall
-calling convention incompatible with the established SH-3/4 Linux ABI.
-This choice was made because the trap range used by the existing ABI,
-0x10-0x17, overlaps with the hardware exception/interrupt trap range
-reserved by SH-2, and in particular, with the SH-2A divide-by-zero and
-division-overflow exceptions.
+On Thursday 16 July 2015 20:36:49 Geert Uytterhoeven wrote:
+> 	Hi Laurent,
+> 
+> While working on DMA for R-Car Gen2 using the sh-sci serial driver with
+> rcar-dmac, I ran into two issues:
+>
+>   1. Unlike the old shdmac DMA engine driver, the new rcar-dmac DMA
+>      engine driver does not support resubmitting a DMA descriptor.
+>      I first tried the patch below, until I ran into the race condition,
+>      after which I changed sh-sci to not reuse DMA descriptors.
 
-Despite the documented syscall convention using the low bits of the
-trap number to signal the number of arguments the kernel should
-expect, no version of the kernel has ever used this information, nor
-is it useful; all of the registers need to be saved anyway. Therefore,
-it is possible to pick a new trap number, 0x1f, that is both supported
-by all existing SH-3/4 kernels and unassigned as a hardware trap in
-the SH-2 range. This makes it possible to produce SH-2 application
-binaries that are forwards-compatible with running on SH-3/4 kernels
-and to treat SH as a unified platform with varying ISA support levels
-rather than multiple gratuitously-incompatible platforms.
+Is reusing descriptors something that the DMA engine API explicitly allows ?
 
-This patch adjusts the range checking SH-2 and SH-2A kernels make for
-the syscall trap to accept the range 0x1f-0x2f rather than just
-0x20-0x2f. As a result, trap 0x1f now acts as a syscall for all SH
-models.
+>   2. rcar_dmac_chan_get_residue() has:
+> 
+> static unsigned int rcar_dmac_chan_get_residue(struct rcar_dmac_chan *chan,
+>                                                dma_cookie_t cookie)
+> {
+>         struct rcar_dmac_desc *desc = chan->desc.running;
+>         ...
+> 
+>         /*
+>          * If the cookie doesn't correspond to the currently running
+> transfer * then the descriptor hasn't been processed yet, and the residue
+> is       * equal to the full descriptor size.
+>          */
+>         if (cookie != desc->async_tx.cookie)
+>                 return desc->size;
+> 
+>      If the cookie doesn't correspond to the currently running transfer,
+>      it returns the full descriptor size of the _currently running
+>      transfer_, not the transfer the cookie corresponds to.
 
-Signed-off-by: Rich Felker <dalias@libc.org>
+How about the following (untested) patch ?
 
+From 131968befd5de3400631b879b1574beea27b8239 Mon Sep 17 00:00:00 2001
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Aug 2015 01:28:28 +0300
+Subject: [PATCH] dmaengine: rcar-dmac: Fix residue reporting for pending
+ descriptors
+
+Cookies corresponding to pending transfers have a residue value equal to
+the full size of the corresponding descriptor. The driver miscomputes
+that and uses the size of the active descriptor instead. Fix it.
+
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/dma/sh/rcar-dmac.c | 28 ++++++++++++++++++++++++++--
+ 1 file changed, 26 insertions(+), 2 deletions(-)
 
-The original proposal for using 0x1f as a unified syscall trap was
-reviewed by Jeff Dionne, Yoshinori Sato, and Shumpei Kawasaki for
-conflicts with existing trap number assignments, and none were found.
-I introduced this proposal as a way to add SH-2 support to musl libc
-in a forwards-compatible way, treating SH as a unified architecture,
-with the particular intent of supporting the Open Processor
-Foundation's J2 Core (SH-2 ISA plus some extensions) and providing a
-smooth upgrade path to the future J4 Core (SH-4 equivalent) and other
-full-fledged SH platforms with MMU.
-
-There is also some interest in having glibc's SH port support SH-2/J2,
-which is more practical with a common syscall ABI; whether this will
-actually happen remains uncertain.
-
-Version 2 of the patch addresses issues raised by Geert Uytterhoeven
-with the changes to comments in entry-common.S.
-
-Rich
-
-
-
-diff -urp ../linux-4.2-rc6.orig/arch/sh/kernel/cpu/sh2/entry.S ./arch/sh/kernel/cpu/sh2/entry.S
---- ../linux-4.2-rc6.orig/arch/sh/kernel/cpu/sh2/entry.S	2015-08-09 19:54:30.000000000 +0000
-+++ ./arch/sh/kernel/cpu/sh2/entry.S	2015-08-24 03:23:34.159387924 +0000
-@@ -144,9 +144,9 @@ ENTRY(exception_handler)
- 	mov	#64,r8
- 	cmp/hs	r8,r9
- 	bt	interrupt_entry	! vec >= 64 is interrupt
--	mov	#32,r8
-+	mov	#31,r8
- 	cmp/hs	r8,r9
--	bt	trap_entry	! 64 > vec >= 32  is trap
-+	bt	trap_entry	! 64 > vec >= 31  is trap
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index 7820d07e7bee..a98596a1f12f 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -1143,19 +1143,43 @@ static unsigned int rcar_dmac_chan_get_residue(struct 
+rcar_dmac_chan *chan,
+ 	struct rcar_dmac_desc *desc = chan->desc.running;
+ 	struct rcar_dmac_xfer_chunk *running = NULL;
+ 	struct rcar_dmac_xfer_chunk *chunk;
++	enum dma_status status;
+ 	unsigned int residue = 0;
+ 	unsigned int dptr = 0;
  
- 	mov.l	4f,r8
- 	mov	r9,r4
-@@ -178,9 +178,9 @@ interrupt_entry:
+ 	if (!desc)
+ 		return 0;
  
- trap_entry:
- 	mov	#0x30,r8
--	cmp/ge	r8,r9		! vector 0x20-0x2f is systemcall
-+	cmp/ge	r8,r9		! vector 0x1f-0x2f is systemcall
- 	bt	1f
--	add	#-0x10,r9	! convert SH2 to SH3/4 ABI
-+	mov     #0x1f,r9	! convert to unified SH2/3/4 trap number
- 1:	
- 	shll2	r9			! TRA
- 	bra	system_call	! jump common systemcall entry
-diff -urp ../linux-4.2-rc6.orig/arch/sh/kernel/cpu/sh2a/entry.S ./arch/sh/kernel/cpu/sh2a/entry.S
---- ../linux-4.2-rc6.orig/arch/sh/kernel/cpu/sh2a/entry.S	2015-08-09 19:54:30.000000000 +0000
-+++ ./arch/sh/kernel/cpu/sh2a/entry.S	2015-08-24 03:23:58.849386418 +0000
-@@ -109,9 +109,9 @@ ENTRY(exception_handler)
- 	mov	#64,r8
- 	cmp/hs	r8,r9
- 	bt	interrupt_entry	! vec >= 64 is interrupt
--	mov	#32,r8
-+	mov	#31,r8
- 	cmp/hs	r8,r9
--	bt	trap_entry	! 64 > vec >= 32  is trap
-+	bt	trap_entry	! 64 > vec >= 31  is trap
++
++	/*
++	 * If the cookie corresponds to a descriptor that has been completed
++	 * there is no residue. The same check has already been performed by the
++	 * caller but without holding the channel lock, so the descriptor could
++	 * now be complete.
++	 */
++	status = dma_cookie_status(&chan->chan, cookie, NULL);
++	if (status = DMA_COMPLETE)
++		return 0;
++
+ 	/*
+ 	 * If the cookie doesn't correspond to the currently running transfer
+ 	 * then the descriptor hasn't been processed yet, and the residue is
+ 	 * equal to the full descriptor size.
+ 	 */
+-	if (cookie != desc->async_tx.cookie)
+-		return desc->size;
++	if (cookie != desc->async_tx.cookie) {
++		list_for_each_entry(desc, &chan->desc.pending, node) {
++			if (cookie = desc->async_tx.cookie)
++				return desc->size;
++		}
++
++		/*
++		 * No descriptor found for the cookie, there's thus no residue.
++		 * This shouldn't happen if the calling driver passes a correct
++		 * cookie value.
++		 */
++		WARN(1, "No descriptor for cookie!");
++		return 0;
++	}
  
- 	mov.l	4f,r8
- 	mov	r9,r4
-@@ -143,9 +143,9 @@ interrupt_entry:
- 
- trap_entry:
- 	mov	#0x30,r8
--	cmp/ge	r8,r9		! vector 0x20-0x2f is systemcall
-+	cmp/ge	r8,r9		! vector 0x1f-0x2f is systemcall
- 	bt	1f
--	add	#-0x10,r9	! convert SH2 to SH3/4 ABI
-+	mov     #0x1f,r9	! convert to unified SH2/3/4 trap number
- 1:	
- 	shll2	r9			! TRA
- 	bra	system_call	! jump common systemcall entry
-diff -urp ../linux-4.2-rc6.orig/arch/sh/kernel/entry-common.S ./arch/sh/kernel/entry-common.S
---- ../linux-4.2-rc6.orig/arch/sh/kernel/entry-common.S	2015-08-09 19:54:30.000000000 +0000
-+++ ./arch/sh/kernel/entry-common.S	2015-08-25 21:08:15.835463227 +0000
-@@ -268,20 +268,29 @@ debug_trap:
-  *	Syscall #: R3
-  *	Arguments #0 to #3: R4--R7
-  *	Arguments #4 to #6: R0, R1, R2
-- *	TRA: (number of arguments + ABI revision) x 4
-+ *	TRA: See following table.
-  *
-- * This code also handles delegating other traps to the BIOS/gdb stub
-- * according to:
-- *
-- * Trap number
-  * (TRA>>2)	Purpose
-  * --------	-------
-  * 0x00-0x0f	original SH-3/4 syscall ABI (not in general use).
-  * 0x10-0x1f	general SH-3/4 syscall ABI.
-- * 0x20-0x2f	syscall ABI for SH-2 parts.
-+ *      0x1f	unified SH-2/3/4 syscall ABI (preferred).
-+ * 0x20-0x2f	original SH-2 syscall ABI.
-  * 0x30-0x3f	debug traps used by the kernel.
-  * 0x40-0xff	Not supported by all parts, so left unhandled.
-  *
-+ * For making system calls, any trap number in the range for the
-+ * given cpu model may be used, but the unified trap number 0x1f is
-+ * preferred for compatibility with all models.
-+ *
-+ * The low bits of the trap number were once documented as matching
-+ * the number of arguments, but they were never actually used as such
-+ * by the kernel. SH-2 originally used its own separate trap range
-+ * because several hardware exceptions fell in the range used for the
-+ * SH-3/4 syscall ABI.
-+ *
-+ * This code also handles delegating other traps to the BIOS/gdb stub.
-+ *
-  * Note: When we're first called, the TRA value must be shifted
-  * right 2 bits in order to get the value that was used as the "trapa"
-  * argument.
+ 	/*
+ 	 * In descriptor mode the descriptor running pointer is not maintained
+
+>      I believe this the reason why the sh-sci driver once thought DMA
+>      transfered 4294967265 (= -31) bytes (for SCIF, descriptor lengths
+>      are either 1 or 32 bytes, and (length) 1 - (residue) 32 >      (transfered) -31).
+> 
+> Thanks for your comments!
+> 
+> From 589dbd908a59dba6efc2a78fca24645962235ec2 Mon Sep 17 00:00:00 2001
+> From: Geert Uytterhoeven <geert+renesas@glider.be>
+> Date: Tue, 14 Jul 2015 11:27:14 +0200
+> Subject: [PATCH] [RFC] dmaengine: rcar-dmac: Allow resubmission of DMA
+>  descriptors
+> 
+> Unlike the old shdmac DMA engine driver, the new rcar-dmac DMA engine
+> driver does not support resubmitting a DMA descriptor.  If a DMA slave
+> resubmits a descriptor, the descriptor will be added to the "pending
+> list", while it wasn't removed from the "wait" list. This will cause
+> list corruption, leading to an infinite loop in
+> rcar_dmac_chan_reinit().
+> 
+> Find out if the descriptor is reused by looking at the current cookie
+> valie, and remove it from the other list if needed:
+>   - cookie is initialized to -EBUSY (by rcar-dma) for fresh and properly
+>     recycled descriptors,
+>   - cookie is set to a strict-positive value by dma_cookie_assign() (in
+>     core dmaengine code) on submission,
+>   - cookie is reset to zero by dma_cookie_complete() (in core dmaengine
+>     code) on completion,
+> 
+> Fix this by removing it from a list if the cookie is not -EBUSY.
+> 
+> FIXME Unfortunately this is racy: the recycled descriptors are not part
+>       of a list while the DMA descriptor callback is running.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+>  drivers/dma/sh/rcar-dmac.c | 12 ++++++++++++
+>  1 file changed, 12 insertions(+)
+> 
+> diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+> index 11e5003a6cc27b40..92a8fddb025e6729 100644
+> --- a/drivers/dma/sh/rcar-dmac.c
+> +++ b/drivers/dma/sh/rcar-dmac.c
+> @@ -437,8 +437,20 @@ static dma_cookie_t rcar_dmac_tx_submit(struct
+> dma_async_tx_descriptor *tx) unsigned long flags;
+>  	dma_cookie_t cookie;
+> 
+> +
+>  	spin_lock_irqsave(&chan->lock, flags);
+> 
+> +	if (desc->async_tx.cookie != -EBUSY) {
+> +		/*
+> +		 * If the descriptor is reused, it's currently part of a list.
+> +		 * Hence it must be removed from that list first, before it can
+> +		 * be added to the list of pending requests.
+> +		 */
+> +		dev_dbg(chan->chan.device->dev, "chan%u: resubmit active desc %p\n",
+> +			chan->index, desc);
+> +		list_del(&desc->node);
+> +	}
+> +
+>  	cookie = dma_cookie_assign(tx);
+> 
+>  	dev_dbg(chan->chan.device->dev, "chan%u: submit #%d@%p\n",
+
+-- 
+Regards,
+
+Laurent Pinchart
