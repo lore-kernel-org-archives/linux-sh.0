@@ -1,70 +1,49 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 11 Aug 2015 08:48:16 +0000
-Subject: renesas-drivers-2015-08-11-v4.2-rc6
-Message-Id: <1439282896-30594-1-git-send-email-geert+renesas@glider.be>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 17 Aug 2015 09:16:48 +0000
+Subject: Re: renesas-drivers-2015-08-11-v4.2-rc6
+Message-Id: <CAMuHMdWRK=cL6iqRpDQE3gDouisEfabxKXdNquALx31S=0bwrw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1439282896-30594-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1439282896-30594-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-I've pushed renesas-drivers-2015-08-11-v4.2-rc6 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+Hi Morimoto-san,
 
-Today's version is based on renesas-devel-20150811-v4.2-rc6.
+On Mon, Aug 17, 2015 at 11:11 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+>> I've pushed renesas-drivers-2015-08-11-v4.2-rc6 to
+>> https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+>> This tree is meant to ease development of platform support and drivers for
+>> Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next
+>> branches of various subsystem trees and (b) branches with driver code
+>> submitted or planned for submission to maintainers into the development
+>> branch of Simon Horman's renesas.git tree.
+>
+> I noticed latest kernel can't use sound.
+> It seems this commit breaks it.
+>
+>         0738e941ed60bf3365cbe92a9eb52198f13c13d8
+>         (Merge branches 'pm-domains', 'pm-sleep' and 'pm-devfreq' into linux-next)
+>
+> This commit was OK
+>
+>         2b8b3834cb7e5b8116993d0b40f33d81f662124f
+>         (Merge branch 'pm-opp' into linux-next)
+>
+> Are we missing something ? or bug ?
 
-Included branches with driver code:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/arm64-rcar-gen3-local-v5
-  - git://linuxtv.org/pinchartl/media#vsp1-kms-gen2-20150811
-
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
+Do you see an informative difference in dmesg?
 
 Gr{oetje,eeting}s,
 
-						Geert
+                        Geert
 
 --
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+                                -- Linus Torvalds
