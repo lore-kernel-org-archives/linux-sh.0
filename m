@@ -1,30 +1,25 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 27 Aug 2015 19:02:28 +0000
-Subject: [PATCH 2/5] clk: shmobile: r8a7795: Document DIV6 clock bindings
-Message-Id: <1440702151-1406-3-git-send-email-geert+renesas@glider.be>
+From: Michael Ellerman <mpe@ellerman.id.au>
+Date: Tue, 18 Aug 2015 10:43:30 +0000
+Subject: Re: [v2, 1/2] Move the pt_regs_offset struct definition from arch to common include file
+Message-Id: <20150818104330.B24DC14032B@ozlabs.org>
 List-Id: <linux-sh.vger.kernel.org>
+In-Reply-To: <1437971974-2434-2-git-send-email-dave.long@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt | 1 +
- 1 file changed, 1 insertion(+)
+On Mon, 2015-27-07 at 04:39:33 UTC, "David A. Long" wrote:
+> From: "David A. Long" <dave.long@linaro.org>
+> 
+> The pt_regs_offset structure is used for the HAVE_REGS_AND_STACK_ACCESS_API
+> feature and has identical definitions in four different arch ptrace.h
+> include files. It seems unlikely that definition would ever need to be
+> changed regardless of architecture so lets move it into
+> include/linux/ptrace.h, along with macros commonly used to access it.
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-index 5ddb68418655d569..a6889fb8a5bd2a48 100644
---- a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-@@ -13,6 +13,7 @@ Required Properties:
-     - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2-W) DIV6 clocks
-     - "renesas,r8a7793-div6-clock" for R8A7793 (R-Car M2-N) DIV6 clocks
-     - "renesas,r8a7794-div6-clock" for R8A7794 (R-Car E2) DIV6 clocks
-+    - "renesas,r8a7795-div6-clock" for R8A7795 (R-Car H3) DIV6 clocks
-     - "renesas,sh73a0-div6-clock" for SH73A0 (SH-Mobile AG5) DIV6 clocks
-     and "renesas,cpg-div6-clock" as a fallback.
-   - reg: Base address and length of the memory resource used by the DIV6 clock
--- 
-1.9.1
+Thanks for cleaning this up. Tested successfully on powerpc.
 
+Acked-by: Michael Ellerman <mpe@ellerman.id.au>
+
+cheers
