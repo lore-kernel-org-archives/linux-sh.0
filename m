@@ -1,95 +1,48 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sat, 29 Aug 2015 10:44:11 +0000
-Subject: Re: [PATCH v4 05/05] clk: shmobile: Make MSTP clock-output-names optional
-Message-Id: <CAMuHMdU0SRV_F4Tk76AkEnVi=JHhxJReCQ_FVQkw2g_xiBtQPA@mail.gmail.com>
+From: Joseph Myers <joseph@codesourcery.com>
+Date: Wed, 19 Aug 2015 14:39:27 +0000
+Subject: Ping Re: [PATCH 0/8] math-emu: Update kernel math-emu code from current glibc soft-fp
+Message-Id: <alpine.DEB.2.10.1508191433380.11312@digraph.polyomino.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150829091323.28546.28287.sendpatchset@little-apple>
-	<20150829091418.28546.8569.sendpatchset@little-apple>
-In-Reply-To: <20150829091418.28546.8569.sendpatchset@little-apple>
+References: <alpine.DEB.2.10.1507021542380.29415@digraph.polyomino.org.uk>
+In-Reply-To: <alpine.DEB.2.10.1507021542380.29415@digraph.polyomino.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-clk@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>, Michael Turquette <mturquette@baylibre.com>, Gaku Inami <gaku.inami.xw@bp.renesas.com>, Stephen Boyd <sboyd@codeaurora.org>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, mpe@ellerman.id.au
 
-On Sat, Aug 29, 2015 at 11:14 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> --- 0001/drivers/clk/shmobile/clk-mstp.c
-> +++ work/drivers/clk/shmobile/clk-mstp.c        2015-08-29 18:01:00.662366518 +0900
-> @@ -199,26 +199,29 @@ static void __init cpg_mstp_clocks_init(
->         for (i = 0; i < MSTP_MAX_CLOCKS; ++i) {
->                 const char *parent_name;
->                 const char *name;
-> +               bool allocated_name;
+I'd like to ping this patch series, not having seen any comments on it.
 
-If you make it "const char *allocated_name = NULL;" ...
+[PATCH 0/8] math-emu: Update kernel math-emu code from current glibc soft-fp
+https://lkml.org/lkml/2015/7/2/394
 
->                 u32 clkidx;
->                 int ret;
->
-> -               /* Skip clocks with no name. */
-> -               ret = of_property_read_string_index(np, "clock-output-names",
-> -                                                   i, &name);
-> -               if (ret < 0 || strlen(name) = 0)
-> -                       continue;
-> -
->                 parent_name = of_clk_get_parent_name(np, i);
->                 ret = of_property_read_u32_index(np, idxname, i, &clkidx);
->                 if (parent_name = NULL || ret < 0)
->                         break;
->
->                 if (clkidx >= MSTP_MAX_CLOCKS) {
-> -                       pr_err("%s: invalid clock %s %s index %u)\n",
-> -                              __func__, np->name, name, clkidx);
-> +                       pr_err("%s: invalid clock %s index %u)\n",
-> +                              __func__, np->name, clkidx);
->                         continue;
->                 }
->
-> +               if (of_property_read_string_index(np, "clock-output-names",
-> +                                                 i, &name) = 0) {
-> +                       allocated_name = false;
+[PATCH 1/8] math-emu: Move math-emu to math-emu-old
+https://lkml.org/lkml/2015/7/2/395
 
-... you can drop this branch...
+[PATCH 2/8] math-emu: Import current glibc soft-fp as include/math-emu
+https://lkml.org/lkml/2015/7/2/398
 
-> +               } else {
-> +                       name = kasprintf(GFP_KERNEL, "%s.%u", np->name, clkidx);
-> +                       allocated_name = true;
+[PATCH 3/8] alpha/math-emu: Move alpha from math-emu-old to math-emu
+https://lkml.org/lkml/2015/7/2/399
 
-... and use "allocated_name = name = kasprintf(...);"
+[PATCH 4/8] powerpc/math-emu: Move powerpc from math-emu-old to math-emu
+https://lkml.org/lkml/2015/7/2/400
 
-> +               }
-> +
->                 clks[clkidx] = cpg_mstp_clock_register(name, parent_name,
->                                                        clkidx, group);
->                 if (!IS_ERR(clks[clkidx])) {
-> @@ -231,12 +234,19 @@ static void __init cpg_mstp_clocks_init(
->                          *
->                          * FIXME: Remove this when all devices that require a
->                          * clock will be instantiated from DT.
-> +                        *
-> +                        * We currently register clkdev only when the DT
-> +                        * property clock-output-names is present.
->                          */
-> -                       clk_register_clkdev(clks[clkidx], name, NULL);
-> +                       if (!allocated_name)
-> +                               clk_register_clkdev(clks[clkidx], name, NULL);
->                 } else {
->                         pr_err("%s: failed to register %s %s clock (%ld)\n",
->                                __func__, np->name, name, PTR_ERR(clks[clkidx]));
->                 }
-> +
-> +               if (allocated_name)
-> +                       kfree(name);
+[PATCH 5/8] s390/math-emu: Move s390 from math-emu-old to math-emu
+https://lkml.org/lkml/2015/7/2/401
 
-... and kfree(allocated_name) unconditionally.
+[PATCH 6/8] sh/math-emu: Move sh from math-emu-old to math-emu
+https://lkml.org/lkml/2015/7/2/402
 
-Gr{oetje,eeting}s,
+[PATCH 7/8] sparc/math-emu: Move sparc from math-emu-old to math-emu
+https://lkml.org/lkml/2015/7/2/404
 
-                        Geert
+[PATCH 8/8] math-emu: Remove math-emu-old
+https://lkml.org/lkml/2015/7/2/405
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+As noted in patch 0, the dependencies are as follows: patch 2 depends on 
+patch 1, patches 3-7 depend on patches 1 and 2 but are independent of each 
+other, patch 8 depends on all the other patches.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+Joseph S. Myers
+joseph@codesourcery.com
