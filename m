@@ -1,30 +1,19 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Tue, 18 Aug 2015 13:12:16 +0000
-Subject: [PATCH 0/2] legacy leftovers cleanup
-Message-Id: <1439903538-19201-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 19 Aug 2015 16:23:56 +0000
+Subject: Re: [PATCH 0/2] legacy leftovers cleanup
+Message-Id: <20150819162356.GA5150@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1439903538-19201-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1439903538-19201-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi!
+On Tue, Aug 18, 2015 at 03:12:16PM +0200, Ulrich Hecht wrote:
+> Hi!
+> 
+> As requested, this incremental series removes the remaining obsolete legacy
+> bits found by Geert.
 
-As requested, this incremental series removes the remaining obsolete legacy
-bits found by Geert.
-
-CU
-Uli
-
-
-Ulrich Hecht (2):
-  ARM: shmobile: bockw: remove legacy DTB build target
-  ARM: shmobile: Kconfig: remove unused SHMOBILE_TIMER_HZ section
-
- arch/arm/boot/dts/Makefile     |  2 --
- arch/arm/mach-shmobile/Kconfig | 20 --------------------
- 2 files changed, 22 deletions(-)
-
--- 
-2.4.6
-
+Thanks, I have queued these up.
