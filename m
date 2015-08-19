@@ -1,76 +1,113 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 10 Aug 2015 14:35:32 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7794: add QSPI DT support
-Message-Id: <CAMuHMdX3F4ecR=BjgUrrEA3P4xpu-Yt_r3qM6SgUdFrYm7h1Rw@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 19 Aug 2015 22:00:09 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7794: add I2C DT support
+Message-Id: <1683106.jUSrvORJGA@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1898263.zrOs5SAUTS@wasted.cogentembedded.com>
- <5339616.vfIYf6AeR8@wasted.cogentembedded.com>
-In-Reply-To: <5339616.vfIYf6AeR8@wasted.cogentembedded.com>
+References: <2390854.nqPs17CVpc@wasted.cogentembedded.com>
+In-Reply-To: <2390854.nqPs17CVpc@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Aug 9, 2015 at 12:26 AM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> Define the generic R8A7794 part of the QSPI device node.
->
-> Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
->
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Define the generic R8A7794 parts of the I2C[0-5] device nodes.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Based on the original patch by Koji Matsuoka <koji.matsuoka.xm@renesas.com>.
 
- arch/arm/boot/dts/r8a7794.dtsi |   18 ++++++++++++++++++
->  1 file changed, 18 insertions(+)
->
-> Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
-> =================================> --- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
-> +++ renesas/arch/arm/boot/dts/r8a7794.dtsi
-> @@ -19,6 +19,10 @@
->         #address-cells = <2>;
->         #size-cells = <2>;
->
-> +       aliases {
-> +               spi0 = &qspi;
-> +       };
-> +
->         cpus {
->                 #address-cells = <1>;
->                 #size-cells = <0>;
-> @@ -537,6 +541,20 @@
->                 status = "disabled";
->         };
->
-> +       qspi: spi@e6b10000 {
-> +               compatible = "renesas,qspi-r8a7794", "renesas,qspi";
-> +               reg = <0 0xe6b10000 0 0x2c>;
-> +               interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
-> +               clocks = <&mstp9_clks R8A7794_CLK_QSPI_MOD>;
-> +               power-domains = <&cpg_clocks>;
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-For consistency with the other nodes, I'd add "power-domains" below the
-DMA-related properties.
+---
+ arch/arm/boot/dts/r8a7794.dtsi |   73 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 73 insertions(+)
 
-> +               dmas = <&dmac0 0x17>, <&dmac0 0x18>;
-> +               dma-names = "tx", "rx";
-> +               num-cs = <1>;
-> +               #address-cells = <1>;
-> +               #size-cells = <0>;
-> +               status = "disabled";
-> +       };
-> +
->         clocks {
->                 #address-cells = <2>;
->                 #size-cells = <2>;
+Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
++++ renesas/arch/arm/boot/dts/r8a7794.dtsi
+@@ -20,6 +20,12 @@
+ 	#size-cells = <2>;
+ 
+ 	aliases {
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2c2 = &i2c2;
++		i2c3 = &i2c3;
++		i2c4 = &i2c4;
++		i2c5 = &i2c5;
+ 		spi0 = &qspi;
+ 	};
+ 
+@@ -500,6 +506,73 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		status = "disabled";
++	};
++
++	/* The memory map in the User's Manual maps the cores to bus numbers */
++	i2c0: i2c@e6508000 {
++		compatible = "renesas,i2c-r8a7794";
++		reg = <0 0xe6508000 0 0x40>;
++		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_I2C0>;
++		power-domains = <&cpg_clocks>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	i2c1: i2c@e6518000 {
++		compatible = "renesas,i2c-r8a7794";
++		reg = <0 0xe6518000 0 0x40>;
++		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_I2C1>;
++		power-domains = <&cpg_clocks>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	i2c2: i2c@e6530000 {
++		compatible = "renesas,i2c-r8a7794";
++		reg = <0 0xe6530000 0 0x40>;
++		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_I2C2>;
++		power-domains = <&cpg_clocks>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	i2c3: i2c@e6540000 {
++		compatible = "renesas,i2c-r8a7794";
++		reg = <0 0xe6540000 0 0x40>;
++		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_I2C3>;
++		power-domains = <&cpg_clocks>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	i2c4: i2c@e6520000 {
++		compatible = "renesas,i2c-r8a7794";
++		reg = <0 0xe6520000 0 0x40>;
++		interrupts = <0 19 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_I2C4>;
++		power-domains = <&cpg_clocks>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	i2c5: i2c@e6528000 {
++		compatible = "renesas,i2c-r8a7794";
++		reg = <0 0xe6528000 0 0x40>;
++		interrupts = <0 20 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_I2C5>;
++		power-domains = <&cpg_clocks>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
+ 	};
+ 
+ 	mmcif0: mmc@ee200000 {
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
