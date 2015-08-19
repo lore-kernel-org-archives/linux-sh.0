@@ -1,51 +1,23 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 13 Aug 2015 09:30:21 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC CPG MSTP Clock Domain Updates for v4.3
-Message-Id: <20150813093021.GG30160@localhost>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 19 Aug 2015 22:20:42 +0000
+Subject: [PATCH 0/2] Add VIN and ADV7180 device tree support for R8A7794/SILK board
+Message-Id: <1750082.WpWf34HsI6@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438911559.git.horms+renesas@verge.net.au>
- <20150811133843.GP30181@localhost>
- <20150812084822.GB16058@verge.net.au>
-In-Reply-To: <20150812084822.GB16058@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Aug 12, 2015 at 05:48:22PM +0900, Simon Horman wrote:
-> On Tue, Aug 11, 2015 at 03:38:43PM +0200, Olof Johansson wrote:
-> > On Fri, Aug 07, 2015 at 11:12:03AM +0900, Simon Horman wrote:
-> > > Hi Olof, Hi Kevin, Hi Arnd,
-> > > 
-> > > Please consider these Renesas ARM based SoC CPG MSTP clock domain updates
-> > > for v4.3.
-> > > 
-> > > This pull request is based on "Third Round of Renesas ARM Based SoC DT
-> > > Updates for v4.3", tagged as renesas-dt3-for-v4.3, which I have also sent a
-> > > pull-request for.
-> > > 
-> > > The reason for that base is that the DT changes in this series update nodes
-> > > added in that tag.
-> > > 
-> > > This series begins with driver changes and follows up with DT changes.
-> > > The latter depend on the former.
-> > 
-> > I see the acked-by tags on the clk patches, but it took some searching to find
-> > the ack email from Stephen.
-> > 
-> > Can you please make our homework a bit easier when providing that in
-> > the future?
-> 
-> Sure, I hadn't realised that you liked to track down Acks to that extent.
-> 
-> As practice for myself I've included some notes in the repost of the
-> patches in question.  Please let me know if you need something different.
+Hello.
 
-It's one of those things that we check in on every now and then, just to make
-sure that there weren't comments from the other maintainer that were missed.
+   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo's
+'renesas-devel-20150819-v4.2-rc7' tag. Here we add the VIN and ADV7180
+video decoder device tree support on the R8A7794/SILK board. The patchset
+requires previously posted SILK SDHI1 support patch in order to apply and 
+R8A7794/SILK I2C1 support in order to apply and build.
 
-We're more likely to do it on pull requests that didn't have the other
-maintainer on Cc, FWIW. :)
+[1/2] ARM: shmobile: r8a7794: add VIN DT support
+[2/2] ARM: shmobile: silk: add VIN0/ADV7180 DT support
 
+MBR, Sergei
 
--Olof
