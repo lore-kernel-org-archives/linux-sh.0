@@ -1,35 +1,81 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 05 Aug 2015 13:18:24 +0000
-Subject: [RFT 0/2] i2c: add support for r8a7795 (RCar H3)
-Message-Id: <1438780706-20945-1-git-send-email-wsa@the-dreams.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 19 Aug 2015 22:24:47 +0000
+Subject: [PATCH 2/2] ARM: shmobile: silk: add VIN0/ADV7180 DT support
+Message-Id: <4017919.utiMzpz6ED@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1750082.WpWf34HsI6@wasted.cogentembedded.com>
+In-Reply-To: <1750082.WpWf34HsI6@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>
+To: linux-arm-kernel@lists.infradead.org
 
-Here are the driver updates to support this new SoC. Since I don't have HW
-access, this is a request for testing. The IP cores are backwards compatible to
-Gen2. So, as long as the clocks are properly setup and the bus speed is OK,
-the rest should work out of the box.
+Define  the  SILK board dependent part of the  VIN0  device  node.
+Add the device node for Analog Devices ADV7180 video decoder to I2C1 bus.
+Add the necessary subnodes to interconnect VIN0 and ADV7180 devices.
 
-Question: Shall I prototype the dtsi additions for these modules? On the one
-hand, this is quite some change for not being able to test. On the other hand,
-other people might be so busy setting up the rest, so it may be useful after
-all.
+Based on the Henninger VIN0/ADV8170 device tree patch by myself.
 
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Wolfram Sang (2):
-  i2c: rcar: add support for r8a7795 (R-Car H3)
-  i2c: sh_mobile: add support for r8a7795 (R-Car H3)
+---
+ arch/arm/boot/dts/r8a7794-silk.dts |   35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
 
- Documentation/devicetree/bindings/i2c/i2c-rcar.txt      | 1 +
- Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt | 1 +
- drivers/i2c/busses/i2c-rcar.c                           | 3 +++
- drivers/i2c/busses/i2c-sh_mobile.c                      | 1 +
- 4 files changed, 6 insertions(+)
-
--- 
-2.1.4
+Index: renesas/arch/arm/boot/dts/r8a7794-silk.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794-silk.dts
++++ renesas/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -104,6 +104,11 @@
+ 		renesas,groups = "qspi_ctrl", "qspi_data4";
+ 		renesas,function = "qspi";
+ 	};
++
++	vin0_pins: vin0 {
++		renesas,groups = "vin0_data8", "vin0_clk";
++		renesas,function = "vin0";
++	};
+ };
+ 
+ &scif2 {
+@@ -135,6 +140,19 @@
+ 
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++
++	composite-in@20 {
++		compatible = "adi,adv7180";
++		reg = <0x20>;
++		remote = <&vin0>;
++
++		port {
++			adv7180: endpoint {
++				bus-width = <8>;
++				remote-endpoint = <&vin0ep>;
++			};
++		};
++	};
+ };
+ 
+ &mmcif0 {
+@@ -193,3 +211,20 @@
+ 		};
+ 	};
+ };
++
++/* composite video input */
++&vin0 {
++	status = "okay";
++	pinctrl-0 = <&vin0_pins>;
++	pinctrl-names = "default";
++
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		vin0ep: endpoint {
++			remote-endpoint = <&adv7180>;
++			bus-width = <8>;
++		};
++	};
++};
 
