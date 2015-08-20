@@ -1,64 +1,53 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:46 +0000
-Subject: [PATCH v3 22/33] serial: sh-sci: Stop acknowledging DMA transmit completions
-Message-Id: <1440180177-6924-23-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 20 Aug 2015 09:29:01 +0000
+Subject: [PATCH 13/17 v6][RFC] Local: Hack: enable CONFIG_ARCH_SHMOBILE_MULTI temporary
+Message-Id: <874mjub9c3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-As dmaengine_prep_slave_sg() is called with the DMA_CTRL_ACK flag set
-for DMA transmit requests, there's no need to explicitly acknowledge DMA
-transmit requests in the DMA transmit completion callback.
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Hence remove the call to async_tx_ack(), and remove the now unused
-dma_async_tx_descriptor pointer in the sci_port structure.
+Since legacy code is not required in arm64, it is not necessary to use
+"CONFIG_ARCH_SHMOBILE_MULTI". But some drivers files have referred to
+this config. Until drivers files are fixed, it will use this config in
+H3 board.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v3:
-  - No changes,
+v5 -> v6
 
-v2:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 5 -----
- 1 file changed, 5 deletions(-)
+ - no change
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 049036dfb6ddf32c..1191a6c486640983 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -104,7 +104,6 @@ struct sci_port {
- 	struct dma_chan			*chan_rx;
+ arch/arm64/Kconfig.platforms | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
+index 8e45879..1e9b0c8 100644
+--- a/arch/arm64/Kconfig.platforms
++++ b/arch/arm64/Kconfig.platforms
+@@ -54,6 +54,7 @@ config ARCH_QCOM
+ config ARCH_RCAR_GEN3
+ 	bool "Renesas R-Car Gen3 SoC Platform"
+ 	select ARCH_SHMOBILE
++	select ARCH_SHMOBILE_MULTI
+ 	help
+ 	  This enables support for Renesas SoC.
  
- #ifdef CONFIG_SERIAL_SH_SCI_DMA
--	struct dma_async_tx_descriptor	*desc_tx;
- 	struct dma_async_tx_descriptor	*desc_rx[2];
- 	dma_cookie_t			cookie_tx;
- 	dma_cookie_t			cookie_rx[2];
-@@ -1285,9 +1284,6 @@ static void sci_dma_tx_complete(void *arg)
+@@ -75,6 +76,9 @@ config ARCH_SEATTLE
+ config ARCH_SHMOBILE
+ 	bool
  
- 	port->icount.tx += s->tx_dma_len;
- 
--	async_tx_ack(s->desc_tx);
--	s->desc_tx = NULL;
--
- 	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
- 		uart_write_wakeup(port);
- 
-@@ -1528,7 +1524,6 @@ static void work_fn_tx(struct work_struct *work)
- 				   DMA_TO_DEVICE);
- 
- 	spin_lock_irq(&port->lock);
--	s->desc_tx = desc;
- 	desc->callback = sci_dma_tx_complete;
- 	desc->callback_param = s;
- 	spin_unlock_irq(&port->lock);
++config ARCH_SHMOBILE_MULTI
++	bool
++
+ config ARCH_TEGRA
+ 	bool "NVIDIA Tegra SoC Family"
+ 	select ARCH_HAS_RESET_CONTROLLER
 -- 
 1.9.1
 
