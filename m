@@ -1,70 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Aug 2015 02:11:34 +0000
-Subject: [PATCH 10/10] ARM: shmobile: sh73a0 dtsi: Add missing "gpio-ranges" to gpio node
-Message-Id: <94bdc48d55ca10f90b4a625f0e443197e0013557.1438911334.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 20 Aug 2015 09:29:57 +0000
+Subject: [PATCH 16/17 v6][RFC] Local: Hack: disable CONFIG_SUSPEND
+Message-Id: <87zj1m9uq1.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438911334.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1438911334.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-If a GPIO driver uses gpiochip_add_pin_range() (which is usually the
-case for GPIO/PFC combos), the GPIO hogging mechanism configured from DT
-doesn't work:
+Since cpu suspend is not supported in R-Car Gen3 initial version,
+disable CONFIG_SUSPEND as interim fix until pcsi is available.
 
-    requesting hog GPIO led1-high (chip sh73a0_pfc, offset 20) failed
-
-The actual error code is -517 = -EPROBE_DEFER.
-
-The problem is that PFC+GPIO registration is handled in multiple steps:
-  1. pinctrl_register(),
-  2. gpiochip_add(),
-  3. gpiochip_add_pin_range().
-
-Configuration of the hogs is handled in gpiochip_add():
-
-    gpiochip_add
-        of_gpiochip_add
-            of_gpiochip_scan_hogs
-                gpiod_hog
-                    gpiochip_request_own_desc
-                        __gpiod_request
-                            chip->request
-                                pinctrl_request_gpio
-                                    pinctrl_get_device_gpio_range
-
-However, at this point the GPIO controller hasn't been added to
-pinctrldev_list yet, so the range can't be found, and the operation fails
-with -EPROBE_DEFER.
-
-To fix this, add a "gpio-ranges" property to the gpio device node, so
-the ranges are added by of_gpiochip_add_pin_range(), which is called by
-of_gpiochip_add() before the call to of_gpiochip_scan_hogs().
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 ---
- arch/arm/boot/dts/sh73a0.dtsi | 3 +++
- 1 file changed, 3 insertions(+)
+v5 -> v6
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 11e17c5f26e2..ff7c8f298f30 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -392,6 +392,9 @@
- 		      <0xe605801c 0x1c>;
- 		gpio-controller;
- 		#gpio-cells = <2>;
-+		gpio-ranges +			<&pfc 0 0 119>, <&pfc 128 128 37>, <&pfc 192 192 91>,
-+			<&pfc 288 288 22>;
- 		interrupts-extended  			<&irqpin0 0 0>, <&irqpin0 1 0>, <&irqpin0 2 0>, <&irqpin0 3 0>,
- 			<&irqpin0 4 0>, <&irqpin0 5 0>, <&irqpin0 6 0>, <&irqpin0 7 0>,
+ - no change
+
+ arch/arm64/configs/defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index f49d044..f4a9ef6 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -59,6 +59,7 @@ CONFIG_CMA=y
+ CONFIG_CMDLINE="console=ttyAMA0"
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ CONFIG_COMPAT=y
++# CONFIG_SUSPEND is not set
+ CONFIG_CPU_IDLE=y
+ CONFIG_ARM_CPUIDLE=y
+ CONFIG_NET=y
 -- 
-2.1.4
+1.9.1
 
