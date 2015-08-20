@@ -1,46 +1,35 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:36 +0000
-Subject: [PATCH v3 12/33] serial: sh-sci: Return IRQ_HANDLED when overrun if detected
-Message-Id: <1440180177-6924-13-git-send-email-geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Thu, 20 Aug 2015 15:45:55 +0000
+Subject: [PATCH v2 2/3] ARM: shmobile: r8a7778: enable IRLM setup via DT
+Message-Id: <1440085556-4340-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Make use of the IRLM setup feature in the renesas-intc-irqpin driver.
 
-This patch fix an issue that the driver may cause "nobody cared" IRQ
-when this driver detects the overrun flag only.
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v3:
-  - Assimilated into my series.
----
- drivers/tty/serial/sh-sci.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7778.dtsi | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 017b33cf5587e809..c4cb7a5a2b110753 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1078,8 +1078,10 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
- 		ret = sci_br_interrupt(irq, ptr);
- 
- 	/* Overrun Interrupt */
--	if (orer_status & s->overrun_mask)
-+	if (orer_status & s->overrun_mask) {
- 		sci_handle_fifo_overrun(port);
-+		ret = IRQ_HANDLED;
-+	}
- 
- 	return ret;
- }
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 4b1fa9f..4b0acae23 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -78,7 +78,8 @@
+ 			<0xfe780010 4>,
+ 			<0xfe780024 4>,
+ 			<0xfe780044 4>,
+-			<0xfe780064 4>;
++			<0xfe780064 4>,
++			<0xfe780000 4>;
+ 		interrupts =   <0 27 IRQ_TYPE_LEVEL_HIGH
+ 				0 28 IRQ_TYPE_LEVEL_HIGH
+ 				0 29 IRQ_TYPE_LEVEL_HIGH
 -- 
-1.9.1
+2.4.6
 
