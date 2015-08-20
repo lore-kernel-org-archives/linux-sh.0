@@ -1,80 +1,88 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:44 +0000
-Subject: [PATCH v3 20/33] serial: sh-sci: Use DMA submission helpers instead of open-coding
-Message-Id: <1440180177-6924-21-git-send-email-geert+renesas@glider.be>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 20 Aug 2015 06:29:11 +0000
+Subject: [PATCH 4/7][RFC] arm64: dts: r8a7795: add device nodes of EHCI and OHCI
+Message-Id: <1440052154-3768-5-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Replace open-coded
-  - calls to dma_async_tx_descriptor.tx_submit() by calls to the
-    dmaengine_submit() helper,
-  - dma_cookie_t comparisons by calls to dma_submit_error().
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
-v3:
-  - No changes,
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 60 ++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
 
-v2:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 4345aa422eed43a1..294b283f5c8535c3 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1407,10 +1407,10 @@ static void sci_submit_rx(struct sci_port *s)
- 			s->desc_rx[i] = desc;
- 			desc->callback = sci_dma_rx_complete;
- 			desc->callback_param = s;
--			s->cookie_rx[i] = desc->tx_submit(desc);
-+			s->cookie_rx[i] = dmaengine_submit(desc);
- 		}
- 
--		if (!desc || s->cookie_rx[i] < 0) {
-+		if (!desc || dma_submit_error(s->cookie_rx[i])) {
- 			if (i) {
- 				async_tx_ack(s->desc_rx[0]);
- 				s->cookie_rx[0] = -EINVAL;
-@@ -1476,8 +1476,8 @@ static void work_fn_rx(struct work_struct *work)
- 		return;
- 	}
- 
--	s->cookie_rx[new] = desc->tx_submit(desc);
--	if (s->cookie_rx[new] < 0) {
-+	s->cookie_rx[new] = dmaengine_submit(desc);
-+	if (dma_submit_error(s->cookie_rx[new])) {
- 		dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
- 		sci_rx_dma_release(s, true);
- 		return;
-@@ -1530,8 +1530,8 @@ static void work_fn_tx(struct work_struct *work)
- 	desc->callback = sci_dma_tx_complete;
- 	desc->callback_param = s;
- 	spin_unlock_irq(&port->lock);
--	s->cookie_tx = desc->tx_submit(desc);
--	if (s->cookie_tx < 0) {
-+	s->cookie_tx = dmaengine_submit(desc);
-+	if (dma_submit_error(s->cookie_tx)) {
- 		dev_warn(port->dev, "Failed submitting Tx DMA descriptor\n");
- 		/* switch to PIO */
- 		sci_tx_dma_release(s, true);
-@@ -1562,7 +1562,7 @@ static void sci_start_tx(struct uart_port *port)
- 	}
- 
- 	if (s->chan_tx && !uart_circ_empty(&s->port.state->xmit) &&
--	    s->cookie_tx < 0) {
-+	    dma_submit_error(s->cookie_tx)) {
- 		s->cookie_tx = 0;
- 		schedule_work(&s->work_tx);
- 	}
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index cd6629c..bb46629 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -160,5 +160,65 @@
+ 			#phy-cells = <0>;
+ 			status = "disabled";
+ 		};
++
++		ehci0: usb@ee080100 {
++			compatible = "renesas,ehci-r8a7795", "generic-ehci";
++			reg = <0 0xee080100 0 0xff>;
++			interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp7_clks R8A7795_CLK_EHCI0>;
++			phys = <&usb2_phy0>;
++			phy-names = "usb";
++			status = "disabled";
++		};
++
++		ehci1: usb@ee0a0100 {
++			compatible = "renesas,ehci-r8a7795", "generic-ehci";
++			reg = <0 0xee0a0100 0 0xff>;
++			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp7_clks R8A7795_CLK_EHCI1>;
++			phys = <&usb2_phy1>;
++			phy-names = "usb";
++			status = "disabled";
++		};
++
++		ehci2: usb@ee0c0100 {
++			compatible = "renesas,ehci-r8a7795", "generic-ehci";
++			reg = <0 0xee0c0100 0 0xff>;
++			interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp7_clks R8A7795_CLK_EHCI2>;
++			phys = <&usb2_phy2>;
++			phy-names = "usb";
++			status = "disabled";
++		};
++
++		ohci0: usb@ee080000 {
++			compatible = "renesas,ohci-r8a7795", "generic-ohci";
++			reg = <0 0xee080000 0 0xff>;
++			interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp7_clks R8A7795_CLK_EHCI0>;
++			phys = <&usb2_phy0>;
++			phy-names = "usb";
++			status = "disabled";
++		};
++
++		ohci1: usb@ee0a0000 {
++			compatible = "renesas,ohci-r8a7795", "generic-ohci";
++			reg = <0 0xee0a0000 0 0xff>;
++			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp7_clks R8A7795_CLK_EHCI1>;
++			phys = <&usb2_phy1>;
++			phy-names = "usb";
++			status = "disabled";
++		};
++
++		ohci2: usb@ee0c0000 {
++			compatible = "renesas,ohci-r8a7795", "generic-ohci";
++			reg = <0 0xee0c0000 0 0xff>;
++			interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp7_clks R8A7795_CLK_EHCI2>;
++			phys = <&usb2_phy2>;
++			phy-names = "usb";
++			status = "disabled";
++		};
+ 	};
+ };
 -- 
 1.9.1
 
