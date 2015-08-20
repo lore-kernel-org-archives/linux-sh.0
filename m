@@ -1,45 +1,50 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sat, 29 Aug 2015 08:33:19 +0000
-Subject: Re: [PATCH v3 01/04] clk: shmobile: Get rid of CONFIG_ARCH_SHMOBILE_MULTI
-Message-Id: <CANqRtoS-rvW5-0aZ+aKwX4Kjnuf9pahGA2jqpjRHK116MZKY1Q@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 20 Aug 2015 03:09:52 +0000
+Subject: [PATCH] ARM: shmobile: lager: use CCF for audio clock
+Message-Id: <87614ad5gc.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150828091550.21731.85227.sendpatchset@little-apple>
-	<20150828091602.21731.21262.sendpatchset@little-apple>
-	<1746913.nJHMkg2anu@avalon>
-In-Reply-To: <1746913.nJHMkg2anu@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-clk <linux-clk@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, SH-Linux <linux-sh@vger.kernel.org>, Michael Turquette <mturquette@baylibre.com>, Gaku Inami <gaku.inami.xw@bp.renesas.com>, Stephen Boyd <sboyd@codeaurora.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>
+To: linux-sh@vger.kernel.org
 
-Hi Laurent,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Sat, Aug 29, 2015 at 4:59 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Magnus,
->
-> Thank you for the patch.
->
-> On Friday 28 August 2015 18:16:02 Magnus Damm wrote:
->> From: Magnus Damm <damm+renesas@opensource.se>
->>
->> Shmobile is all multiplatform these days, so get rid of the
->> reference to CONFIG_ARCH_SHMOBILE_MULTI. Also instead of always
->> enabling DIV6 and MSTP adjust the Makefile to enable DIV6 and
->> MSTP depending on if they are included in the SoC or not.
->>
->> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
->> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> Assuming you have verified that adding the same object file several times to
-> obj-y won't cause any issue,
+Because of historical reason, audio clock didn't use CCF.
+Let's use it now.
 
-Yeah. A good example of such (mis)use is in arch/arm/mach-shmobile/Kconfig.
-I've also built 32-bit shmobile_defconfig and 64-bit defconfig without issues.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 37dec52..6f5d7f5 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -174,6 +174,13 @@
+ 			  1800000 0>;
+ 	};
+ 
++	audio_clock: clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <11289600>;
++		clock-output-names = "audio_clock";
++	};
++
+ 	rsnd_ak4643: sound {
+ 		compatible = "simple-audio-card";
+ 
+@@ -187,7 +194,7 @@
+ 
+ 		sndcodec: simple-audio-card,codec {
+ 			sound-dai = <&ak4643>;
+-			system-clock-frequency = <11289600>;
++			clocks = <&audio_clock>;
+ 		};
+ 	};
+ 
+-- 
+1.9.1
 
-Thanks!
-
-/ magnus
