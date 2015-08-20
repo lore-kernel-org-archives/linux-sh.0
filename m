@@ -1,66 +1,84 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 27 Aug 2015 10:42:50 +0000
-Subject: RE: [PATCH 16/25 v7][RFC] arm64: renesas: salvator-x: add pfc node and subnodes for usb 2.0
-Message-Id: <SG2PR06MB09198E55E57B6E72D0AA5C9DD86F0@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 20 Aug 2015 09:26:47 +0000
+Subject: [PATCH 08/17 v6][RFC] arm64: renesas: r8a7795: Add SCIF2 support
+Message-Id: <87bne2b9fv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <876145776m.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <876145776m.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-SGkgR2VlcnQtc2FuLA0KDQo+IFNlbnQ6IFRodXJzZGF5LCBBdWd1c3QgMjcsIDIwMTUgNTowNyBQ
-TQ0KPiANCj4gSGkgU2hpbW9kYS1zYW4sDQo+IA0KPiBPbiBUaHUsIEF1ZyAyNywgMjAxNSBhdCA1
-OjEzIEFNLCBZb3NoaWhpcm8gU2hpbW9kYQ0KPiA8eW9zaGloaXJvLnNoaW1vZGEudWhAcmVuZXNh
-cy5jb20+IHdyb3RlOg0KPiA+PiBkaWZmIC0tZ2l0IGEvZHJpdmVycy9waW5jdHJsL3NoLXBmYy9w
-ZmMtcjhhNzc5NS5jIGIvZHJpdmVycy9waW5jdHJsL3NoLXBmYy9wZmMtcjhhNzc5NS5jDQo+ID4+
-IGluZGV4IDk0MzdlODcuLjFmNjBmNGMgMTAwNjQ0DQo+ID4+IC0tLSBhL2RyaXZlcnMvcGluY3Ry
-bC9zaC1wZmMvcGZjLXI4YTc3OTUuYw0KPiA+PiArKysgYi9kcml2ZXJzL3BpbmN0cmwvc2gtcGZj
-L3BmYy1yOGE3Nzk1LmMNCj4gPj4gQEAgLTEzMzUsNiArMTMzNSwxOSBAQCBzdGF0aWMgY29uc3Qg
-dTE2IHBpbm11eF9kYXRhW10gPSB7DQo+ID4+ICAgICAgIFBJTk1VWF9JUFNSX0RBVEEoSVAxNV8z
-MV8yOCwgU0NLNSksDQo+ID4+DQo+ID4+ICAgICAgIC8qIElQU1IxNiAqLw0KPiA+PiArICAgICBQ
-SU5NVVhfSVBTUl9EQVRBKElQMTZfMTFfOCwgVVNCMF9QV0VOKSwNCj4gPj4gKyAgICAgUElOTVVY
-X0lQU1JfTU9EU0VMX0RBVEEoSVAxNl8xMV84LCBTSU0wX1JTVF9DLCBTRUxfU0lNQ0FSRF8yKSwN
-Cj4gPj4gKyAgICAgUElOTVVYX0lQU1JfTU9EU0VMX0RBVEEoSVAxNl8xMV84LCBUU19TQ0sxX0Qs
-IFNFTF9UU0lGMV8zKSwNCj4gPj4gKyAgICAgUElOTVVYX0lQU1JfTU9EU0VMX0RBVEEoSVAxNl8x
-MV84LCBTVFBfSVNDTEtfMV9ELCBTRUxfU1NQMV8xXzMpLA0KPiA+PiArICAgICBQSU5NVVhfSVBT
-Ul9NT0RTRUxfREFUQShJUDE2XzExXzgsIEJQRkNMS19CLCBTRUxfRk1fMSksDQo+ID4+ICsgICAg
-IFBJTk1VWF9JUFNSX01PRFNFTF9EQVRBKElQMTZfMTFfOCwgUklGM19DTEtfQiwgU0VMX0RSSUYz
-XzEpLA0KPiA+PiArDQo+ID4+ICsgICAgIFBJTk1VWF9JUFNSX0RBVEEoSVAxNl8xNV8xMiwgVVNC
-MF9PVkMpLA0KPiA+PiArICAgICBQSU5NVVhfSVBTUl9NT0RTRUxfREFUQShJUDE2XzE1XzEyLCBT
-SU0wX0RfQywgU0VMX1NJTUNBUkRfMiksDQo+ID4+ICsgICAgIFBJTk1VWF9JUFNSX01PRFNFTF9E
-QVRBKElQMTZfMTVfMTIsIFRTX1NEQVQxX0QsIFNFTF9UU0lGMV8zKSwNCj4gPj4gKyAgICAgUElO
-TVVYX0lQU1JfTU9EU0VMX0RBVEEoSVAxNl8xNV8xMiwgU1RQX0lTRF8xX0QsIFNFTF9TU1AxXzFf
-MyksDQo+ID4+ICsgICAgIFBJTk1VWF9JUFNSX01PRFNFTF9EQVRBKElQMTZfMTVfMTIsIFJJRjNf
-U1lOQ19CLCBTRUxfRFJJRjNfMSksDQo+ID4+ICsNCj4gPj4gICAgICAgUElOTVVYX0lQU1JfREFU
-QShJUDE2XzE5XzE2LCBVU0IxX1BXRU4pLA0KPiA+PiAgICAgICBQSU5NVVhfSVBTUl9NT0RTRUxf
-REFUQShJUDE2XzE5XzE2LCBTSU0wX0NMS19DLCBTRUxfU0lNQ0FSRF8yKSwNCj4gPj4gICAgICAg
-UElOTVVYX0lQU1JfTU9EU0VMX0RBVEEoSVAxNl8xOV8xNiwgU1NJX1NDSzFfQSwgU0VMX1NTSV8w
-KSwNCj4gPg0KPiA+IFRoYW5rIHlvdSBmb3IgdGhlIHBvaW50IGxvY2FsbHkgOikNCj4gPiBFdmVu
-IGlmIEkgZG9uJ3QgYWRkIGFsbCB0aGUgIlBJTk1VWF9JUFNSX01PRFNFTF9EQVRBIiBvZiB1c2Iw
-LCBpdCB3b3JrcyBjb3JyZWN0bHkuDQo+IA0KPiBCZWNhdXNlIHVzYjAgaXMgdGhlIGRlZmF1bHQg
-ZnVuY3Rpb24gYWZ0ZXIgYm9vdHVwPw0KDQpZZXMsIHVzYiBpcyB0aGUgZGVmYXVsdCBmdW5jdGlv
-bi4NCkFmdGVyIEkgZ290IHRoaXMgZW1haWwsIEkgdGVzdGVkIHRoZSBmb2xsb3dpbmcgY29uZGl0
-aW9uLg0KDQogLSBJIGNoYW5nZWQgdGhlIFVTQjAgcGlucyBhcyBTSU0gb24gdS1ib290LiAoVGhp
-cyBtZWFucyBJUFNSMTYgdmFsdWUgaXMgMHhYWFhYMzNYWC4pDQogIC0gY2FzZTE6IG9yaWdpbmFs
-IFBGQyBkcml2ZXIgb2YgcjhhNzc5NQ0KICAtIGNhc2UyOiBmdWxsIFVTQjAgcGlucw0KICAtIGNh
-c2UzOiBQSU5NVVhfSVBTUl9EQVRBIG9mIFVTQjAgcGlucyBvbmx5DQoNClJlc3VsdDoNCiAtIGNh
-c2UxOiBUaGUgSVBTUjE2IHZhbHVlIGlzIDB4WFhYWDMzWFguDQogLSBjYXNlMjogVGhlIElQU1Ix
-NiB2YWx1ZSBpcyAweFhYWFgwMFhYLg0KIC0gY2FzZTM6IFRoZSBJUFNSMTYgdmFsdWUgaXMgMHhY
-WFhYMDBYWC4NCg0KVGhlIHJlc3VsdCBzZWVtcyB1c2IwIGNhbiB3b3JrIGV2ZW4gaWYgUElOTVVY
-X0lQU1JfREFUQSBvZiBVU0IwIHBpbnMgb25seS4NCg0KPiA+IFNpbmNlIEkgZGlkbid0IHRlc3Qg
-dGhlIHBpbnMgZXhjZXB0IFVTQjBfe09WQyxQV0VOKSwNCj4gPiBhbGwgdGhlICJQSU5NVVhfSVBT
-Ul9NT0RTRUxfREFUQSIgb2YgdXNiMCBzaG91bGQgYmUgcmVtb3ZlZC4NCj4gDQo+IFlvdSBzdGls
-bCB3YW50IHRvIGRlc2NyaWJlIHRoZSBmdWxsIHBpbmN0cmwuIEVsc2UgZHluYW1pYyByZWNvbmZp
-Z3VyYXRpb24NCj4gKGUuZy4gYnkgbG9hZGluZyBhIERUIG92ZXJsYXkpIGZyb20gYW5vdGhlciBm
-dW5jdGlvbiB0byB1c2IwIHdpbGwgbm90IHdvcmsuDQoNCkknbSBub3Qgc3VyZSBhYm91dCBsb2Fk
-aW5nIGEgRFQgb3ZlcmxheS4NCkhvd2V2ZXIsIGFueXdheSwgd2Ugc2hvdWxkIGRlc2NyaWJlIHRo
-ZSBmdWxsIHBpbmN0cmwgb2YgdXNiMD8NCg0KQmVzdCByZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1v
-ZGENCg0KPiBHcntvZXRqZSxlZXRpbmd9cywNCj4gDQo+ICAgICAgICAgICAgICAgICAgICAgICAg
-IEdlZXJ0DQo+IA0KPiAtLQ0KPiBHZWVydCBVeXR0ZXJob2V2ZW4gLS0gVGhlcmUncyBsb3RzIG9m
-IExpbnV4IGJleW9uZCBpYTMyIC0tIGdlZXJ0QGxpbnV4LW02OGsub3JnDQo+IA0KPiBJbiBwZXJz
-b25hbCBjb252ZXJzYXRpb25zIHdpdGggdGVjaG5pY2FsIHBlb3BsZSwgSSBjYWxsIG15c2VsZiBh
-IGhhY2tlci4gQnV0DQo+IHdoZW4gSSdtIHRhbGtpbmcgdG8gam91cm5hbGlzdHMgSSBqdXN0IHNh
-eSAicHJvZ3JhbW1lciIgb3Igc29tZXRoaW5nIGxpa2UgdGhhdC4NCj4gICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAtLSBMaW51cyBUb3J2YWxkcw0K
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+
+This patch enables SCIF2
+Gaku Inami <gaku.inami.xw@bp.renesas.com> created original patch,
+and Kuninori updated DTSI
+
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v5 -> v6
+
+ - cpg has #clock-cells
+
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 21 +++++++++++++++++++++
+ include/dt-bindings/clock/r8a7795-clock.h |  1 +
+ 2 files changed, 22 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index f013814..7bf9f56 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -49,10 +49,23 @@
+ 		};
+ 
+ 		cpg_clocks: cpg_clocks@e6150000 {
++			#address-cells = <2>;
++			#size-cells = <2>;
++			#clock-cells = <1>;
++			ranges;
++
+ 			compatible = "renesas,r8a7795-cpg-clocks",
+ 				     "renesas,rcar-gen3-cpg-clocks";
+ 			reg = <0 0xe6150000 0 0x1000>;
+ 			clocks = <&extal_clk>;
++
++			mstp3_clks: mstp3_clks@e615013c {
++				compatible = "renesas,r8a7795-mstp-clocks",
++				             "renesas,cpg-mstp-clocks";
++				reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
++				clocks =  <&s3d4_clks>;
++				renesas,clock-indices = <R8A7795_CLK_SCIF2>;
++			};
+ 		};
+ 	};
+ 
+@@ -85,5 +98,13 @@
+ 				     <GIC_PPI 10
+ 					(GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>;
+ 		};
++
++		scif2: serial@e6e88000 {
++			compatible = "renesas,scif-r8a7795", "renesas,scif";
++			reg = <0 0xe6e88000 0 64>;
++			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp3_clks R8A7795_CLK_SCIF2>;
++			clock-names = "sci_ick";
++		};
+ 	};
+ };
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+index 334fa13..27b3a29 100644
+--- a/include/dt-bindings/clock/r8a7795-clock.h
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -24,6 +24,7 @@
+ /* MSTP2 */
+ 
+ /* MSTP3 */
++#define R8A7795_CLK_SCIF2		10
+ 
+ /* MSTP5 */
+ 
+-- 
+1.9.1
+
