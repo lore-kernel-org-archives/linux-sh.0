@@ -1,8 +1,10 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 20 Aug 2015 09:25:01 +0000
+Date: Thu, 20 Aug 2015 09:25:27 +0000
 Subject: [PATCH 05/17 v6][RFC] arm64: renesas: Add new Renesas R-Car Gen3 SoC Kconfig
-Message-Id: <87h9nub9io.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87fv3eb9hz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87h9nub9io.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87h9nub9io.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,7 +19,7 @@ Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
 v5 -> v6
 
- - no change
+ - alphabetical order
 
  arch/arm64/Kconfig.platforms | 9 +++++++++
  1 file changed, 9 insertions(+)
