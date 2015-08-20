@@ -1,48 +1,36 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:35 +0000
-Subject: [PATCH v3 11/33] serial: sh-sci: Remove bogus sci_handle_fifo_overrun() call on (H)SCIF
-Message-Id: <1440180177-6924-12-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 20 Aug 2015 09:25:48 +0000
+Subject: [PATCH 06/17 v6][RFC] arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
+Message-Id: <87egiyb9hd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Commit 8b6ff84c2d445a47 ("serial: sh-sci: Fix R-Car SCIF and HSCIF
-overrun handling") added overrun handling for (H)SCIF using the SCLSR
-register, but also accidentally added a bogus call to
-sci_handle_fifo_overrun() in the receive interrupt path.
-
-Remove it again.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v3:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+v5 -> v6
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 59ce9484875b2001..017b33cf5587e809 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1066,11 +1066,8 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
- 	 * DR flags
- 	 */
- 	if (((ssr_status & SCxSR_RDxF(port)) || s->chan_rx) &&
--	    (scr_status & SCSCR_RIE)) {
--		if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
--			sci_handle_fifo_overrun(port);
-+	    (scr_status & SCSCR_RIE))
- 		ret = sci_rx_interrupt(irq, ptr);
--	}
+ - no change
+
+ Documentation/devicetree/bindings/arm/shmobile.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
+index 1d70e78e..10e65d8 100644
+--- a/Documentation/devicetree/bindings/arm/shmobile.txt
++++ b/Documentation/devicetree/bindings/arm/shmobile.txt
+@@ -27,6 +27,8 @@ SoCs:
+     compatible = "renesas,r8a7793"
+   - R-Car E2 (R8A77940)
+     compatible = "renesas,r8a7794"
++  - R-Car H3 (R8A77950)
++    compatible = "renesas,r8a7795"
  
- 	/* Error Interrupt */
- 	if ((ssr_status & SCxSR_ERRORS(port)) && err_enabled)
+ 
+ Boards:
 -- 
 1.9.1
 
