@@ -1,109 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 04 Aug 2015 12:01:41 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: lager dts: Add entries for VIN HDMI input support
-Message-Id: <3911852.kuPGHSpHNa@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 20 Aug 2015 09:30:13 +0000
+Subject: [PATCH 17/17 v6][RFC] Local: Hack: enable Initramfs
+Message-Id: <87y4h69upj.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438100264-17280-1-git-send-email-william.towle@codethink.co.uk> <1438100264-17280-2-git-send-email-william.towle@codethink.co.uk>
-In-Reply-To: <1438100264-17280-2-git-send-email-william.towle@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: William Towle <william.towle@codethink.co.uk>
-Cc: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Hans Verkuil <hverkuil@xs4all.nl>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi William,
+Because SalvatorX can't use network at this point, this patch enables
+Initramfs for booting
 
-Thank you for the patch.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v5 -> v6
 
-On Tuesday 28 July 2015 17:17:43 William Towle wrote:
-> Add DT entries for vin0, vin0_pins, and adv7612
-> 
-> Signed-off-by: William Towle <william.towle@codethink.co.uk>
-> Signed-off-by: Rob Taylor <rob.taylor@codethink.co.uk>
-> ---
->  arch/arm/boot/dts/r8a7790-lager.dts |   41 +++++++++++++++++++++++++++++++-
->  1 file changed, 40 insertions(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/boot/dts/r8a7790-lager.dts
-> b/arch/arm/boot/dts/r8a7790-lager.dts index e02b523..aec7db6 100644
-> --- a/arch/arm/boot/dts/r8a7790-lager.dts
-> +++ b/arch/arm/boot/dts/r8a7790-lager.dts
-> @@ -378,7 +378,12 @@
->  		renesas,function = "usb2";
->  	};
-> 
-> -	vin1_pins: vin {
-> +	vin0_pins: vin0 {
-> +		renesas,groups = "vin0_data24", "vin0_sync", "vin0_field", 
-"vin0_clkenb", "vin0_clk";
+ - no change
 
-If I'm not mistaken the VI0_FIELD pin isn't used on Lager.
+ arch/arm64/configs/defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-> +		renesas,function = "vin0";
-> +	};
-> +
-> +	vin1_pins: vin1 {
->  		renesas,groups = "vin1_data8", "vin1_clk";
->  		renesas,function = "vin1";
->  	};
-> @@ -539,6 +544,18 @@
->  		reg = <0x12>;
->  	};
-> 
-> +	hdmi-in@4c {
-> +		compatible = "adi,adv7612";
-> +		reg = <0x4c>;
-> +		remote = <&vin0>;
-
-There's no remote property documented in the adv7612 bindings as far as I 
-know. And that's good, I don't think there should be one :-)
-
-> +
-> +		port {
-> +			hdmi_in_ep: endpoint {
-> +				remote-endpoint = <&vin0ep0>;
-> +			};
-> +		};
-> +	};
-> +
->  	composite-in@20 {
->  		compatible = "adi,adv7180";
->  		reg = <0x20>;
-> @@ -654,6 +671,28 @@
->  	status = "okay";
->  };
-> 
-> +/* HDMI video input */
-> +&vin0 {
-> +	pinctrl-0 = <&vin0_pins>;
-> +	pinctrl-names = "default";
-> +
-> +	status = "ok";
-> +
-> +	port {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-
-If there's a single endpoint I don't think you need those two properties.
-
-> +
-> +		vin0ep0: endpoint {
-> +			remote-endpoint = <&hdmi_in_ep>;
-> +			bus-width = <24>;
-> +			hsync-active = <0>;
-> +			vsync-active = <0>;
-> +			pclk-sample = <1>;
-> +			data-active = <1>;
-> +		};
-> +	};
-> +};
-> +
->  /* composite video input */
->  &vin1 {
->  	pinctrl-0 = <&vin1_pins>;
-
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index f4a9ef6..0d8e780 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -23,6 +23,7 @@ CONFIG_CGROUP_HUGETLB=y
+ # CONFIG_NET_NS is not set
+ CONFIG_SCHED_AUTOGROUP=y
+ CONFIG_BLK_DEV_INITRD=y
++CONFIG_INITRAMFS_SOURCE="${PATH}/initramfs"
+ CONFIG_KALLSYMS_ALL=y
+ # CONFIG_COMPAT_BRK is not set
+ CONFIG_PROFILING=y
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
