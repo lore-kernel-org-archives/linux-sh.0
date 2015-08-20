@@ -1,114 +1,34 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 31 Aug 2015 06:30:14 +0000
-Subject: [PATCH v8 06/07] arm64: renesas: add Salvator-X board support on DTS
-Message-Id: <20150831063014.24004.39617.sendpatchset@little-apple>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 20 Aug 2015 09:21:19 +0000
+Subject: [PATCH 02/17 v6][RFC] clk: shmobile: Add r8a7795 SoC to MSTP bindings
+Message-Id: <87lhd6b9p0.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Add initial board support for r8a7795 Salvator-X. At this point
-only DEBUG0 and DEBUG1 serial ports are supported.
-
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
+v5 -> v6
 
- Based on:
-  [PATCH 15/25] arm64: renesas: add Salvator-X board support on DTS
-  [PATCH 5/5] arm64: renesas: salvator-x: Update SCIF2 pin group
-  [PATCH 5/6] arm64: renesas: salvator-x: Enable SCIF1 on serial1
+ - no change
 
- Changes: (Magnus Damm <damm+renesas@opensource.se>)
- - Added changelog
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
- Documentation/devicetree/bindings/arm/shmobile.txt |    2 
- arch/arm64/boot/dts/renesas/Makefile               |    2 
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |   58 ++++++++++++++++++++
- 3 files changed, 62 insertions(+)
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 16ed181..4169c76 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -19,6 +19,7 @@ Required Properties:
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2-W) MSTP gate clocks
+     - "renesas,r8a7793-mstp-clocks" for R8A7793 (R-Car M2-N) MSTP gate clocks
+     - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
++    - "renesas,r8a7795-mstp-clocks" for R8A7795 (R-Car H3) MSTP gate clocks
+     - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
+     and "renesas,cpg-mstp-clocks" as a fallback.
+   - reg: Base address and length of the I/O mapped registers used by the MSTP
+-- 
+1.9.1
 
---- 0008/Documentation/devicetree/bindings/arm/shmobile.txt
-+++ work/Documentation/devicetree/bindings/arm/shmobile.txt	2015-08-29 15:41:16.642366518 +0900
-@@ -57,5 +57,7 @@ Boards:
-     compatible = "renesas,lager", "renesas,r8a7790"
-   - Marzen
-     compatible = "renesas,marzen", "renesas,r8a7779"
-+  - Salvator-X
-+    compatible = "renesas,salvator-x", "renesas,r8a7795";
-   - Silk
-     compatible = "renesas,silk", "renesas,r8a7794";
---- 0009/arch/arm64/boot/dts/renesas/Makefile
-+++ work/arch/arm64/boot/dts/renesas/Makefile	2015-08-29 15:42:49.162366518 +0900
-@@ -1,3 +1,5 @@
-+dtb-$(CONFIG_ARCH_R8A7795) += r8a7795-salvator-x.dtb
-+
- always		:= $(dtb-y)
- subdir-y	:= $(dts-dirs)
- clean-files	:= *.dtb
---- /dev/null
-+++ work/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts	2015-08-29 15:45:56.692366518 +0900
-@@ -0,0 +1,58 @@
-+/*
-+ * Device Tree Source for the Salvator-X board
-+ *
-+ * Copyright (C) 2015 Renesas Electronics Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+#include "r8a7795.dtsi"
-+
-+/ {
-+	model = "Renesas Salvator-X board based on r8a7795";
-+	compatible = "renesas,salvator-x", "renesas,r8a7795";
-+
-+	aliases {
-+		serial0 = &scif2;
-+		serial1 = &scif1;
-+	};
-+
-+	chosen {
-+		bootargs = "ignore_loglevel";
-+		stdout-path = &scif2;
-+	};
-+
-+	memory@48000000 {
-+		device_type = "memory";
-+		/* first 128MB is reserved for secure area. */
-+		reg = <0x0 0x48000000 0x0 0x38000000>;
-+	};
-+};
-+
-+&pfc {
-+	scif1_pins: scif1 {
-+		renesas,groups = "scif1_data_a", "scif1_ctrl";
-+		renesas,function = "scif1";
-+	};
-+	scif2_pins: scif2 {
-+		renesas,groups = "scif2_data_a";
-+		renesas,function = "scif2";
-+	};
-+};
-+
-+&scif1 {
-+	pinctrl-0 = <&scif1_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
-+
-+&scif2 {
-+	pinctrl-0 = <&scif2_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
