@@ -1,77 +1,37 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 31 Aug 2015 13:03:45 +0000
-Subject: Re: [PATCH v4 02/05] clk: shmobile: Add Renesas R-Car Gen3 CPG support
-Message-Id: <CAMuHMdW1OJXmT1KS_Ju4KGp6uwSVB-i-pLBGvPCLKd_FaNNN5A@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 20 Aug 2015 01:24:44 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain for sound
+Message-Id: <87d1yidabo.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150829091323.28546.28287.sendpatchset@little-apple>
-	<20150829091346.28546.42552.sendpatchset@little-apple>
-	<CAMuHMdUR7gYXoJMRGXdcReZ4fX+2SQDvTsK8Jny67GcW995_9Q@mail.gmail.com>
-	<CANqRtoSKNBxQRkF5FKXwHTDgfLpvq6U98KqZ_QCH4G9VdMbNAg@mail.gmail.com>
-In-Reply-To: <CANqRtoSKNBxQRkF5FKXwHTDgfLpvq6U98KqZ_QCH4G9VdMbNAg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-clk <linux-clk@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Gaku Inami <gaku.inami.xw@bp.renesas.com>, Michael Turquette <mturquette@baylibre.com>, Linux-sh list <linux-sh@vger.kernel.org>, Stephen Boyd <sboyd@codeaurora.org>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Mon, Aug 31, 2015 at 1:58 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
->>> --- /dev/null
->>> +++ work/drivers/clk/shmobile/clk-rcar-gen3.c   2015-08-29 16:30:59.032366518 +0900
->>> @@ -0,0 +1,249 @@
->>
->>> +#define RCAR_GEN3_CLK_MAIN     0
->>> +#define RCAR_GEN3_CLK_PLL0     1
->>> +#define RCAR_GEN3_CLK_PLL1     2
->>> +#define RCAR_GEN3_CLK_PLL2     3
->>> +#define RCAR_GEN3_CLK_PLL3     4
->>> +#define RCAR_GEN3_CLK_PLL4     5
->>
->> These values are intimately tied to R8A7795_CLK_* in
->> include/dt-bindings/clock/r8a7795-clock.h.
->> Perhaps we can use these instead?
->
-> You are right that they are connected together, but I'm not sure if I
-> prefer to include that file. If we start sharing files between the CPG
-> and the integration code then a dependency hell breaks loose when it
-> comes to merge order. If we want to share the #defines then I propose
-> that we handle that incrementally once all pieces are merged.
+484adb0 ("ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain")
+added CPG/MSTP clock-cells domain support, but it was missing sound
+support. This patch adds it.
 
-OK, we can move them to include/dt-bindings/clock/rcar-gen3-clock.h
-later.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
-> On R-Car Gen2 we have a single CPG driver that is potentially shared
-> across multiple SoCs in the same generation / family. In that case we
-> use strings and the clock-output-names as part of the ABI if I'm not
-> mistaken. On this driver we use clock index numbers instead, so I'd
-> like to see these defines as part of a shared DT binding ABI where new
-> SoCs can simply add new clocks at the end.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a0b2a79..4624d0f 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1627,6 +1627,7 @@
+ 				"mix.0", "mix.1",
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
++		power-domains = <&cpg_clocks>;
+ 
+ 		status = "disabled";
+ 
+-- 
+1.9.1
 
-OK, so rcar_gen3_cpg.clks[] is really intended to be variable-sized.
-
-Hence I suggest to write it that way:
-
-    struct rcar_gen3_cpg {
-            struct clk_onecell_data data;
-            spinlock_t lock;
-            void __iomem *reg;
-            struct clk *clks[0];
-    };
-
-Then you can allocate it with
-
-   kzalloc(sizeof(*cpg) + num_clks * sizeof(rcar_gen3_cpg.clks[0], ...)
-
-and kill RCAR_GEN3_CLK_NR (one less definition that can go out of sync).
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
