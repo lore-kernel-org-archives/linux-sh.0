@@ -1,46 +1,36 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 06 Aug 2015 13:33:09 +0000
-Subject: [PATCH/RFC 2/2] arm64: renesas: r8a7795 dtsi: Add CPG/MSTP Clock Domain
-Message-Id: <1438867989-4942-3-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 20 Aug 2015 09:28:21 +0000
+Subject: [PATCH 11/17 v6][RFC] arm64: defconfig: renesas: Enable Renesas R-Car Gen3 SoC
+Message-Id: <877foqb9d4.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add an appropriate "#power-domain-cells" property to the cpg_clocks
-device node, to create the CPG/MSTP Clock Domain.
+This patch enables Renesas R-Car Gen3 SoCs in the arm64 defconfig.
 
-Add "power-domains" properties to all device nodes for devices that are
-part of the CPG/MSTP Clock Domain and can be power-managed through an
-MSTP clock.  This applies to most on-SoC devices, which have a
-one-to-one mapping from SoC device to DT device node.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 2 ++
- 1 file changed, 2 insertions(+)
+v5 -> v6
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index db0828ad475986c0..25f03049b7d94bbe 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -91,6 +91,7 @@
- 				#clock-cells = <1>;
- 				clock-output-names = "main", "pll0", "pll1","pll2",
- 						     "pll3", "pll4";
-+				#power-domain-cells = <0>;
- 
- 				mstp3_clks: mstp3_clks@e615013c {
- 					compatible = "renesas,r8a7795-mstp-clocks",
-@@ -109,6 +110,7 @@
- 			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
- 			clocks = <&mstp3_clks RCAR_R8A7795_CLK_SCIF2>;
- 			clock-names = "sci_ick";
-+			power-domains = <&cpg_clocks>;
- 		};
- 	};
- };
+ - no change
+
+ arch/arm64/configs/defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 34d71dd..8f35763 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -38,6 +38,7 @@ CONFIG_ARCH_FSL_LS2085A=y
+ CONFIG_ARCH_HISI=y
+ CONFIG_ARCH_MEDIATEK=y
+ CONFIG_ARCH_ROCKCHIP=y
++CONFIG_ARCH_RCAR_GEN3=y
+ CONFIG_ARCH_SEATTLE=y
+ CONFIG_ARCH_TEGRA=y
+ CONFIG_ARCH_TEGRA_132_SOC=y
 -- 
 1.9.1
 
