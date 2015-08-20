@@ -1,53 +1,34 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 17 Aug 2015 13:02:58 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 20 Aug 2015 13:29:47 +0000
 Subject: Re: [PATCH] mmc: sh_mmcif: Silence DMA slave ID compile warnings on 64-bit
-Message-Id: <CAMuHMdWdLXmfwE0qP50cj4d9N6tfTQWxpj9VZWDywJASMewFTw@mail.gmail.com>
+Message-Id: <1781695.TNL8ksnpjB@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439297314-29118-1-git-send-email-geert+renesas@glider.be>
-	<1539991.LpcThZV47z@wuerfel>
-	<CAMuHMdWR0u9X36Dsw0QufmGO0phiY_w-tn1f-EmnL69FZ7NhMQ@mail.gmail.com>
-	<2503249.0HMJqMtNHP@wuerfel>
-In-Reply-To: <2503249.0HMJqMtNHP@wuerfel>
+References: <1439297314-29118-1-git-send-email-geert+renesas@glider.be> <2503249.0HMJqMtNHP@wuerfel> <CAMuHMdVksvUvrzuPH4WqLDxLzpxGDauWW2GYi=ayzyzGmN5R=g@mail.gmail.com>
+In-Reply-To: <CAMuHMdVksvUvrzuPH4WqLDxLzpxGDauWW2GYi=ayzyzGmN5R=g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Ulf Hansson <ulf.hansson@linaro.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux MMC List <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Arnd,
+On Monday 17 August 2015 14:17:25 Geert Uytterhoeven wrote:
+> >> This will break out-of-tree boards at compile-time though. Given the limited
+> >> number of wired up DMA channels under arch/sh/, they may actually be
+> >> more in use out-of-tree than in-tree?
+> >>
+> >> Alternatively, perhaps we should just drop pdata DMA configuration from
+> >> some drivers?
+> >
+> > I think that would be helpful, but it would not work for this driver as
+> > long as we keep arch/sh/boards/board-sh7757lcr.c in the kernel.
+> 
+> No, not for this driver.
+> 
+> But there are several drivers (spi-rspi, spi-sh-msiof, sh-sci, sh_flctl) that
+> have .slave*id* fields in platform data, but no platform code ever sets them.
+> Despite platform code that fills in SHDMA_SLAVE_* values in sh_dmae_chan.
+> These don't work anyway, and I don't think anyone is interested in fixing that.
 
-On Sat, Aug 15, 2015 at 10:26 PM, Arnd Bergmann <arnd@arndb.de> wrote:
->> > How about changing the type of the slave_id_rx/slave_id_tx fields
->> > to void*? That way, the hack can be moved to arch/sh/boards/board-sh7757lcr.c,
->> > which is now the only file passing data this way. Ideally, we'd also
->> > pass the shdma_chan_filter function pointer in pdata to avoid the link
->> > time dependency on a particular dmaengine driver.
->>
->> That's actually more tricky, as a NULL filter function means something
->> completely different, and causes funny failures if the DTS lacks "dmas"
->> properties, cfr. "dmaengine: shdma: Make dummy shdma_chan_filter() always
->> return false".
->> https://git.kernel.org/cgit/linux/kernel/git/vkoul/slave-dma.git/commit/?h=next&id6f6c87028544de934f27caf95aa1545d585767
->
-> Ah, this is nasty, I had not thought of that case. This makes the entire
-> dma_request_slave_channel_compat() interface (which I never liked, fwiw)
-> dangerous to use, because a lot of other drivers will get the filter
-> function pointer from pdata already (any driver that works with more
-> than one dmaengine master has to).
->
-> I wonder if we should enforce this in __dma_request_slave_channel_compat()
-> by checking both the fn and fn_param arguments to ensure they are not
-> NULL before calling the legacy fallback using __dma_request_channel.
+Right, removing pdata support for those would be a useful cleanup.
 
-Thanks, that seems to work fine. Will send a patch...
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+	Arnd
