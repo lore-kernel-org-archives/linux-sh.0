@@ -1,28 +1,50 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Mon, 13 Jul 2015 20:30:31 +0000
-Subject: Re: [PATCH v3 2/3] sh-pfc: r8a7790: remove non-existing GPIO pins
-Message-Id: <CACRpkdbMJSX5B+SOfqBn9PK52g5OX2bToqQTR=BR=zxi69-xTg@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 20 Aug 2015 03:09:30 +0000
+Subject: [PATCH] ARM: shmobile: koelsch: use CCF for audio clock
+Message-Id: <877foqd5gz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1460630.GxHT4lRd7u@wasted.cogentembedded.com>
-	<14360647.s1qTxSuam8@wasted.cogentembedded.com>
-In-Reply-To: <14360647.s1qTxSuam8@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Fri, Jun 26, 2015 at 12:42 AM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
->
-> GPIO banks 1 and 2 are missing pins 30 and 31. Remove them.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Because of historical reason, audio clock didn't use CCF.
+Let's use it now.
 
-Patch applied for next merge window.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
-Yours,
-Linus Walleij
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index dc15884..fc44ea3 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -242,6 +242,13 @@
+ 			  1800000 0>;
+ 	};
+ 
++	audio_clock: clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <11289600>;
++		clock-output-names = "audio_clock";
++	};
++
+ 	rsnd_ak4643: sound {
+ 		compatible = "simple-audio-card";
+ 
+@@ -255,7 +262,7 @@
+ 
+ 		sndcodec: simple-audio-card,codec {
+ 			sound-dai = <&ak4643>;
+-			system-clock-frequency = <11289600>;
++			clocks = <&audio_clock>;
+ 		};
+ 	};
+ 
+-- 
+1.9.1
+
