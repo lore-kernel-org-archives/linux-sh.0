@@ -1,26 +1,51 @@
-From: Vlastimil Babka <vbabka@suse.cz>
-Date: Thu, 06 Aug 2015 14:00:33 +0000
-Subject: Re: [PATCH V6 2/6] mm: mlock: Add new mlock system call
-Message-Id: <55C36881.8050301@suse.cz>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 20 Aug 2015 06:29:08 +0000
+Subject: [PATCH 1/7][RFC] arm64: dts: r8a7795: add mstp7 node and enable HSUSB clock
+Message-Id: <1440052154-3768-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438184575-10537-1-git-send-email-emunson@akamai.com>
- <1438184575-10537-3-git-send-email-emunson@akamai.com>
-In-Reply-To: <1438184575-10537-3-git-send-email-emunson@akamai.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Eric B Munson <emunson@akamai.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Michal Hocko <mhocko@suse.cz>, Heiko Carstens <heiko.carstens@de.ibm.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Catalin Marinas <catalin.marinas@arm.com>, Stephen Rothwell <sfr@canb.auug.org.au>, Guenter Roeck <linux@roeck-us.net>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-cris-kernel@axis.com, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-am33-list@redhat.com, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org
+To: linux-sh@vger.kernel.org
 
-On 07/29/2015 05:42 PM, Eric B Munson wrote:
-> With the refactored mlock code, introduce a new system call for mlock.
-> The new call will allow the user to specify what lock states are being
-> added.  mlock2 is trivial at the moment, but a follow on patch will add
-> a new mlock state making it useful.
->
-> Signed-off-by: Eric B Munson <emunson@akamai.com>
-> Cc: Michal Hocko <mhocko@suse.cz>
-> Cc: Vlastimil Babka <vbabka@suse.cz>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 9 +++++++++
+ include/dt-bindings/clock/r8a7795-clock.h | 1 +
+ 2 files changed, 10 insertions(+)
 
-Acked-by: Vlastimil Babka <vbabka@suse.cz>
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index fd25348..4744f1c 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -101,6 +101,15 @@
+ 					renesas,clock-indices = <R8A7795_CLK_SCIF2>;
+ 					clock-output-names = "scif2";
+ 				};
++				mstp7_clks: mstp7_clks@e615014c {
++					compatible = "renesas,r8a7795-mstp-clocks",
++						     "renesas,cpg-mstp-clocks";
++					reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
++					clocks =  <&p_clk>;
++					#clock-cells = <1>;
++					renesas,clock-indices = <R8A7795_CLK_HSUSB>;
++					clock-output-names = "hsusb";
++				};
+ 			};
+ 		};
+ 
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+index 27b3a29..ffb0b5b 100644
+--- a/include/dt-bindings/clock/r8a7795-clock.h
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -29,6 +29,7 @@
+ /* MSTP5 */
+ 
+ /* MSTP7 */
++#define R8A7795_CLK_HSUSB		4
+ 
+ /* MSTP8 */
+ 
+-- 
+1.9.1
 
