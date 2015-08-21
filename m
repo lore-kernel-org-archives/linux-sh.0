@@ -1,45 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Aug 2015 02:11:27 +0000
-Subject: [PATCH 03/10] ARM: shmobile: r8a7794: add PFC DT support
-Message-Id: <fd1683c18c372d51aeeeb25efa8b451f922c9c52.1438911334.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 21 Aug 2015 18:02:43 +0000
+Subject: [PATCH v3 19/33] serial: sh-sci: Fix TX buffer mapping leak
+Message-Id: <1440180177-6924-20-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438911334.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1438911334.git.horms+renesas@verge.net.au>
+References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+The mapped transmit buffer is never unmapped. This leaks quite some
+mappings, as the mapping is done in uart_ops.startup(), i.e. every time
+the device is opened. Unmap the buffer on device close.
 
-Define the generic R8A7794 part of the PFC device node.
-
-Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7794.dtsi | 6 ++++++
- 1 file changed, 6 insertions(+)
+v3:
+  - Rebased on top of "serial: sh-sci: Switch to dma_map_single() for
+    DMA transmission", and thus converted from scatterlist to buffer.
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 8824dbd5dbb4..51cc2b975c3f 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -108,6 +108,12 @@
- 		clocks = <&mstp4_clks R8A7794_CLK_IRQC>;
- 	};
+v2:
+  - Add TODO.
+---
+ drivers/tty/serial/sh-sci.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 5a528b8985052017..4345aa422eed43a1 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1384,6 +1384,8 @@ static void sci_tx_dma_release(struct sci_port *s, bool enable_pio)
  
-+	pfc: pin-controller@e6060000 {
-+		compatible = "renesas,pfc-r8a7794";
-+		reg = <0 0xe6060000 0 0x11c>;
-+		#gpio-range-cells = <3>;
-+	};
-+
- 	dmac0: dma-controller@e6700000 {
- 		compatible = "renesas,rcar-dmac";
- 		reg = <0 0xe6700000 0 0x20000>;
+ 	s->chan_tx = NULL;
+ 	s->cookie_tx = -EINVAL;
++	dma_unmap_single(chan->device->dev, s->tx_dma_addr, UART_XMIT_SIZE,
++			 DMA_TO_DEVICE);
+ 	dma_release_channel(chan);
+ 	if (enable_pio)
+ 		sci_start_tx(port);
 -- 
-2.1.4
+1.9.1
 
