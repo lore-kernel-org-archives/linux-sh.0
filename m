@@ -1,207 +1,82 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:25 +0000
-Subject: [PATCH v3 01/33] serial: sh-sci: Replace buggy big #ifdef by runtime logic
-Message-Id: <1440180177-6924-2-git-send-email-geert+renesas@glider.be>
+Date: Fri, 21 Aug 2015 18:25:45 +0000
+Subject: [PATCH/RFC v3 3/4] serial: sh-sci: Submit RX DMA from RX interrupt on (H)SCIF
+Message-Id: <1440181546-7334-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+References: <1440181546-7334-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440181546-7334-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The #ifdef logic to clear SCxSR bits using RMW on SCIFA/SCIFB and SCIF
-variants with some SCIFA features (sh7705/SH7720/sh7721) has several
-drawbacks:
-  - It wasn't updated for newer R-Mobile variants (APE6),
-  - It doesn't correctly handle SoCs with both SCIF and SCIFA/B (e.g.
-    R-Car Gen2, but also legacy sh7723/sh7724),
-  - It doesn't play well with ARM multi-platform kernels: on R-Car Gen2,
-    SCIF/SCIFA/SCIFB/HSCIF were handled differently, depending on
-    whether r8a7740 or sh73a0 support was enabled or not,
+For DMA receive requests, the driver is only notified by DMA completion
+after the whole DMA request has been transferred.  If less data is
+received, it will stay stuck until more data arrives.  The driver
+handles this by setting up a timer handler from the receive interrupt,
+after reception of the first character.
 
-Replace the #ifdef logic by runtime logic to fix this.
+Unlike SCIFA and SCIFB, SCIF and HSCIF don't issue receive interrupts on
+reception of individual characters if a receive DMA request is in
+progress, so the timer is never set up.
 
-SCIFA/SCIFB and SCIF on sh7705/sh7720/sh7721 use RMW to clear error
-bits, other variants use plain stores, as before.
-
-Note that this changes behavior for SCIFA on sh7723/sh7724 (these SoCs
-have both SCIF and SCIFA), which didn't use RMW before.
+To fix receive DMA on SCIF and HSCIF, submit the receive DMA request
+from the receive interrupt handler instead.
+In some sense this is similar to the SCIFA/SCIFB behavior, where the
+RDRQE (Rx Data Transfer Request Enable) bit is also set from the receive
+interrupt handler.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Question: Can we simplify the logic and use RMW everywhere?
-We seem to have been using it fine with (H)SCIF on R-Car Gen2 running
-multi-platform kernels.
-
 v3:
-  - No changes,
-
-v2:
-  - No changes.
+  - New, this replaces the one-byte DMA transfer from "[PATCH/RFC v2
+    28/29] serial: sh-sci: Add (H)SCIF DMA support".
 ---
- drivers/tty/serial/sh-sci.c | 36 ++++++++++++++++++++++++++----------
- drivers/tty/serial/sh-sci.h | 33 ++++++++-------------------------
- 2 files changed, 34 insertions(+), 35 deletions(-)
+ drivers/tty/serial/sh-sci.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 1b2f894bdc9e0e6e..b014fce1509d6535 100644
+index 0b6a367ac343221c..b18e2e64f163ca48 100644
 --- a/drivers/tty/serial/sh-sci.c
 +++ b/drivers/tty/serial/sh-sci.c
-@@ -489,6 +489,22 @@ static void sci_port_disable(struct sci_port *sci_port)
- 	pm_runtime_put_sync(sci_port->port.dev);
+@@ -939,6 +939,8 @@ static int sci_handle_breaks(struct uart_port *port)
+ 	return copied;
  }
  
-+static void sci_clear_SCxSR(struct uart_port *port, unsigned int mask)
-+{
-+	if (port->type = PORT_SCI) {
-+		/* Just store the mask */
-+		serial_port_out(port, SCxSR, mask);
-+	} else if (to_sci_port(port)->overrun_mask = SCIFA_ORER) {
-+		/* SCIFA/SCIFB and SCIF on SH7705/SH7720/SH7721 */
-+		/* Only clear the status bits we want to clear */
-+		serial_port_out(port, SCxSR,
-+				serial_port_in(port, SCxSR) & mask);
-+	} else {
-+		/* Store the mask, clear parity/framing errors */
-+		serial_port_out(port, SCxSR, mask & ~(SCIF_FERC | SCIF_PERC));
-+	}
-+}
++static void sci_submit_rx(struct sci_port *s);
 +
- #if defined(CONFIG_CONSOLE_POLL) || defined(CONFIG_SERIAL_SH_SCI_CONSOLE)
- 
- #ifdef CONFIG_CONSOLE_POLL
-@@ -500,7 +516,7 @@ static int sci_poll_get_char(struct uart_port *port)
- 	do {
- 		status = serial_port_in(port, SCxSR);
- 		if (status & SCxSR_ERRORS(port)) {
--			serial_port_out(port, SCxSR, SCxSR_ERROR_CLEAR(port));
-+			sci_clear_SCxSR(port, SCxSR_ERROR_CLEAR(port));
- 			continue;
+ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
+ {
+ #ifdef CONFIG_SERIAL_SH_SCI_DMA
+@@ -955,6 +957,7 @@ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
+ 			scr |= SCSCR_RDRQE;
+ 		} else {
+ 			scr &= ~SCSCR_RIE;
++			sci_submit_rx(s);
  		}
- 		break;
-@@ -513,7 +529,7 @@ static int sci_poll_get_char(struct uart_port *port)
+ 		serial_port_out(port, SCSCR, scr);
+ 		/* Clear current interrupt */
+@@ -1672,7 +1675,8 @@ static void rx_timer_fn(unsigned long arg)
  
- 	/* Dummy read */
- 	serial_port_in(port, SCxSR);
--	serial_port_out(port, SCxSR, SCxSR_RDxF_CLEAR(port));
-+	sci_clear_SCxSR(port, SCxSR_RDxF_CLEAR(port));
+ 	spin_unlock_irqrestore(&port->lock, flags);
  
- 	return c;
+-	sci_submit_rx(s);
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
++		sci_submit_rx(s);
  }
-@@ -528,7 +544,7 @@ static void sci_poll_put_char(struct uart_port *port, unsigned char c)
- 	} while (!(status & SCxSR_TDxE(port)));
  
- 	serial_port_out(port, SCxTDR, c);
--	serial_port_out(port, SCxSR, SCxSR_TDxE_CLEAR(port) & ~SCxSR_TEND(port));
-+	sci_clear_SCxSR(port, SCxSR_TDxE_CLEAR(port) & ~SCxSR_TEND(port));
- }
- #endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
+ static void sci_request_dma(struct uart_port *port)
+@@ -1758,7 +1762,8 @@ static void sci_request_dma(struct uart_port *port)
  
-@@ -655,7 +671,7 @@ static void sci_transmit_chars(struct uart_port *port)
- 		port->icount.tx++;
- 	} while (--count > 0);
+ 		setup_timer(&s->rx_timer, rx_timer_fn, (unsigned long)s);
  
--	serial_port_out(port, SCxSR, SCxSR_TDxE_CLEAR(port));
-+	sci_clear_SCxSR(port, SCxSR_TDxE_CLEAR(port));
- 
- 	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
- 		uart_write_wakeup(port);
-@@ -666,7 +682,7 @@ static void sci_transmit_chars(struct uart_port *port)
- 
- 		if (port->type != PORT_SCI) {
- 			serial_port_in(port, SCxSR); /* Dummy read */
--			serial_port_out(port, SCxSR, SCxSR_TDxE_CLEAR(port));
-+			sci_clear_SCxSR(port, SCxSR_TDxE_CLEAR(port));
- 		}
- 
- 		ctrl |= SCSCR_TIE;
-@@ -750,7 +766,7 @@ static void sci_receive_chars(struct uart_port *port)
- 		}
- 
- 		serial_port_in(port, SCxSR); /* dummy read */
--		serial_port_out(port, SCxSR, SCxSR_RDxF_CLEAR(port));
-+		sci_clear_SCxSR(port, SCxSR_RDxF_CLEAR(port));
- 
- 		copied += count;
- 		port->icount.rx += count;
-@@ -761,7 +777,7 @@ static void sci_receive_chars(struct uart_port *port)
- 		tty_flip_buffer_push(tport);
- 	} else {
- 		serial_port_in(port, SCxSR); /* dummy read */
--		serial_port_out(port, SCxSR, SCxSR_RDxF_CLEAR(port));
-+		sci_clear_SCxSR(port, SCxSR_RDxF_CLEAR(port));
+-		sci_submit_rx(s);
++		if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
++			sci_submit_rx(s);
  	}
  }
  
-@@ -982,14 +998,14 @@ static irqreturn_t sci_er_interrupt(int irq, void *ptr)
- 		if (sci_handle_errors(port)) {
- 			/* discard character in rx buffer */
- 			serial_port_in(port, SCxSR);
--			serial_port_out(port, SCxSR, SCxSR_RDxF_CLEAR(port));
-+			sci_clear_SCxSR(port, SCxSR_RDxF_CLEAR(port));
- 		}
- 	} else {
- 		sci_handle_fifo_overrun(port);
- 		sci_rx_interrupt(irq, ptr);
- 	}
- 
--	serial_port_out(port, SCxSR, SCxSR_ERROR_CLEAR(port));
-+	sci_clear_SCxSR(port, SCxSR_ERROR_CLEAR(port));
- 
- 	/* Kick the transmission */
- 	sci_tx_interrupt(irq, ptr);
-@@ -1003,7 +1019,7 @@ static irqreturn_t sci_br_interrupt(int irq, void *ptr)
- 
- 	/* Handle BREAKs */
- 	sci_handle_breaks(port);
--	serial_port_out(port, SCxSR, SCxSR_BREAK_CLEAR(port));
-+	sci_clear_SCxSR(port, SCxSR_BREAK_CLEAR(port));
- 
- 	return IRQ_HANDLED;
- }
-diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
-index 3393f67b4e843578..1e1edbd152673e8f 100644
---- a/drivers/tty/serial/sh-sci.h
-+++ b/drivers/tty/serial/sh-sci.h
-@@ -119,28 +119,11 @@ enum {
- 
- #define SCxSR_ERRORS(port)	(to_sci_port(port)->error_mask)
- 
--#if defined(CONFIG_CPU_SUBTYPE_SH7705) || \
--    defined(CONFIG_CPU_SUBTYPE_SH7720) || \
--    defined(CONFIG_CPU_SUBTYPE_SH7721) || \
--    defined(CONFIG_ARCH_SH73A0) || \
--    defined(CONFIG_ARCH_R8A7740)
--
--# define SCxSR_RDxF_CLEAR(port) \
--	(serial_port_in(port, SCxSR) & SCIF_RDxF_CLEAR)
--# define SCxSR_ERROR_CLEAR(port) \
--	(serial_port_in(port, SCxSR) & SCIF_ERROR_CLEAR)
--# define SCxSR_TDxE_CLEAR(port) \
--	(serial_port_in(port, SCxSR) & SCIF_TDxE_CLEAR)
--# define SCxSR_BREAK_CLEAR(port) \
--	(serial_port_in(port, SCxSR) & SCIF_BREAK_CLEAR)
--#else
--# define SCxSR_RDxF_CLEAR(port) \
--	((((port)->type = PORT_SCI) ? SCI_RDxF_CLEAR : SCIF_RDxF_CLEAR) & 0xff)
--# define SCxSR_ERROR_CLEAR(port) \
--	((((port)->type = PORT_SCI) ? SCI_ERROR_CLEAR : SCIF_ERROR_CLEAR) & 0xff)
--# define SCxSR_TDxE_CLEAR(port) \
--	((((port)->type = PORT_SCI) ? SCI_TDxE_CLEAR : SCIF_TDxE_CLEAR) & 0xff)
--# define SCxSR_BREAK_CLEAR(port) \
--	((((port)->type = PORT_SCI) ? SCI_BREAK_CLEAR : SCIF_BREAK_CLEAR) & 0xff)
--#endif
--
-+#define SCxSR_RDxF_CLEAR(port) \
-+	(((port)->type = PORT_SCI) ? SCI_RDxF_CLEAR : SCIF_RDxF_CLEAR)
-+#define SCxSR_ERROR_CLEAR(port) \
-+	(((port)->type = PORT_SCI) ? SCI_ERROR_CLEAR : SCIF_ERROR_CLEAR)
-+#define SCxSR_TDxE_CLEAR(port) \
-+	(((port)->type = PORT_SCI) ? SCI_TDxE_CLEAR : SCIF_TDxE_CLEAR)
-+#define SCxSR_BREAK_CLEAR(port) \
-+	(((port)->type = PORT_SCI) ? SCI_BREAK_CLEAR : SCIF_BREAK_CLEAR)
 -- 
 1.9.1
 
