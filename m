@@ -1,41 +1,54 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 31 Aug 2015 23:52:58 +0000
-Subject: Re: [PATCH][resent] PCI: rcar: Add PCIE_CONF_REGNO macro for PCIECAR register
-Message-Id: <87d1y3ggsx.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 21 Aug 2015 18:25:43 +0000
+Subject: [PATCH/RFC v3 1/4] serial: sh-sci: Stop TX and RX on shutdown
+Message-Id: <1440181546-7334-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <HKNPR06MB049BFAE520321568794CA8FC5600@HKNPR06MB049.apcprd06.prod.outlook.com>
-	<874mjlefty.wl%kuninori.morimoto.gx@renesas.com>
-	<8737z5efjt.wl%kuninori.morimoto.gx@renesas.com>
-	<20150831062200.GB27319@verge.net.au>
-In-Reply-To: <20150831062200.GB27319@verge.net.au>
+References: <1440181546-7334-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440181546-7334-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Bjorn Helgaas <bhelgaas@google.com>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, HARUNOBU KUROKAWA <harunobu.kurokawa.dn@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
+Make sure the transmitter and receiver are stopped when shutting down
+the port, to avoid new RX DMA requests to arrive.
 
-Hi Simon
+Inspired by a patch in the BSP by Koji Matsuoka
+<koji.matsuoka.xm@renesas.com>.
 
-Thank you for your feedback
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v3:
+  - No changes,
 
-> > From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> > 
-> > The reg variable used when setting PCIECAR register need to be masked by 0xFC
-> > by restriction of the corresponding register.
-> > This adds PCIE_CONF_REGNO are macros for masking changes that PCIE_CONF_REGNO
-> > is used when setting PCIECAR register.
-> > 
-> > Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> > ---
-(snip)
-> This seems to partially duplicate the following line earlier on
-> in rcar_pcie_config_access().
-> 
-> 	reg = where & ~3;
-> 
-> I wonder if that line could be updated to use the new PCIE_CONF_REGNO()
-> macro. If so it seems that the second hunk of the patch could be dropped.
+v2:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-We double checked this, and yes, you are correct.
-We don't need this patch. Thank you for pointing it.
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index d8b73e791a554823..0622cafaf1c71cab 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1820,12 +1820,16 @@ static void sci_shutdown(struct uart_port *port)
+ {
+ 	struct sci_port *s = to_sci_port(port);
+ 	unsigned long flags;
++	u16 scscr;
+ 
+ 	dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
+ 
+ 	spin_lock_irqsave(&port->lock, flags);
+ 	sci_stop_rx(port);
+ 	sci_stop_tx(port);
++	scscr = serial_port_in(port, SCSCR);
++	scscr &= ~(SCSCR_TE | SCSCR_RE);
++	serial_port_out(port, SCSCR, scscr);
+ 	spin_unlock_irqrestore(&port->lock, flags);
+ 
+ 	sci_free_dma(port);
+-- 
+1.9.1
+
