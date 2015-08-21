@@ -1,68 +1,84 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:25:42 +0000
-Subject: [PATCH/RFC v3 0/4] serial: sh-sci: Add DT DMA support
-Message-Id: <1440181546-7334-1-git-send-email-geert+renesas@glider.be>
+Date: Fri, 21 Aug 2015 18:02:40 +0000
+Subject: [PATCH v3 16/33] serial: sh-sci: Use correct device for DMA mapping with IOMMU
+Message-Id: <1440180177-6924-17-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-	Hi,
+To function correctly in the presence of an IOMMU, the DMA buffers must
+be managed using the DMA channel's device instead of the platform
+device's device.
 
-This patch series adds DT DMA support to the Renesas "SCI" serial driver
-on R-Car Gen2 SoCs.
-It depends on "[PATCH v3 00/33] serial: sh-sci: Miscellaneous
-and DMA Improvements", which contains preparatory patches that are
-considered stable.
+Make sure to free the DMA memory before releasing the channel, not
+after.
 
-Some of these patches have been sent before, cfr.
-  - [PATCH/RFC v2 00/29] serial: sh-sci: Miscellaneous and DMA
-    Improvements (http://www.spinics.net/lists/linux-sh/msg43567.html)
-  - [PATCH/RFC 0/8] serial: sh-sci: Add DT DMA support
-    (http://www.spinics.net/lists/linux-sh/msg42258.html)
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+v3:
+  - Fix call to dma_sync_sg_for_device() which I missed before,
+  - Rebased on top of "serial: sh-sci: Handle DMA init failures inside
+    sci_request_dma()",
 
-Major change is the replacement of the one-byte DMA transfer on (H)SCIF
-by submitting receive DMA requests from the receive interrupt handler.
+v2:
+  - Add Acked-by.
+---
+ drivers/tty/serial/sh-sci.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
 
-This was tested on r8a7791/koelsch, using SCIF, SCIFA, SCIFB, and HSCIF.
-It should work with and without CONFIG_HIGHMEM (thanks to Shimoda-san).
-There are still some known issues in case of overrun errors.
-
-For your convenience, I've also pushed this to
-git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git#scif-dma-v3
-
-While it doesn't seem to be a hard requirement, I included the fixed
-version of "dmaengine: rcar-dmac: Fix residue reporting for pending
-descriptors".
-
-Note that SCI DMA support was originally written for SH-based systems,
-and was never fully wired up in platform code in mainline, so the risk
-for regressions is fairly small.
-
-Thanks for your comments!
-
-Geert Uytterhoeven (4):
-  serial: sh-sci: Stop TX and RX on shutdown
-  serial: sh-sci: Get rid of the workqueue to handle receive DMA
-    requests
-  serial: sh-sci: Submit RX DMA from RX interrupt on (H)SCIF
-  serial: sh-sci: Add DT support to DMA setup
-
- drivers/tty/serial/sh-sci.c | 254 +++++++++++++++++++++++---------------------
- 1 file changed, 133 insertions(+), 121 deletions(-)
-
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index ea6ab6173ce9f239..9aa9720d7f09d10f 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1370,9 +1370,9 @@ static void sci_rx_dma_release(struct sci_port *s, bool enable_pio)
+ 
+ 	s->chan_rx = NULL;
+ 	s->cookie_rx[0] = s->cookie_rx[1] = -EINVAL;
+-	dma_release_channel(chan);
+-	dma_free_coherent(port->dev, s->buf_len_rx * 2,
++	dma_free_coherent(chan->device->dev, s->buf_len_rx * 2,
+ 			  sg_virt(&s->sg_rx[0]), sg_dma_address(&s->sg_rx[0]));
++	dma_release_channel(chan);
+ 	if (enable_pio)
+ 		sci_start_rx(port);
+ }
+@@ -1523,7 +1523,7 @@ static void work_fn_tx(struct work_struct *work)
+ 		return;
+ 	}
+ 
+-	dma_sync_sg_for_device(port->dev, sg, 1, DMA_TO_DEVICE);
++	dma_sync_sg_for_device(chan->device->dev, sg, 1, DMA_TO_DEVICE);
+ 
+ 	spin_lock_irq(&port->lock);
+ 	s->desc_tx = desc;
+@@ -1705,7 +1705,8 @@ static void sci_request_dma(struct uart_port *port)
+ 		sg_set_page(&s->sg_tx, virt_to_page(port->state->xmit.buf),
+ 			    UART_XMIT_SIZE,
+ 			    (uintptr_t)port->state->xmit.buf & ~PAGE_MASK);
+-		nent = dma_map_sg(port->dev, &s->sg_tx, 1, DMA_TO_DEVICE);
++		nent = dma_map_sg(chan->device->dev, &s->sg_tx, 1,
++				  DMA_TO_DEVICE);
+ 		if (!nent) {
+ 			dev_warn(port->dev, "Failed mapping Tx DMA descriptor\n");
+ 			dma_release_channel(chan);
+@@ -1737,8 +1738,9 @@ static void sci_request_dma(struct uart_port *port)
+ 		s->chan_rx = chan;
+ 
+ 		s->buf_len_rx = 2 * max(16, (int)port->fifosize);
+-		buf[0] = dma_alloc_coherent(port->dev, s->buf_len_rx * 2,
+-					    &dma[0], GFP_KERNEL);
++		buf[0] = dma_alloc_coherent(chan->device->dev,
++					    s->buf_len_rx * 2, &dma[0],
++					    GFP_KERNEL);
+ 
+ 		if (!buf[0]) {
+ 			dev_warn(port->dev,
 -- 
 1.9.1
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
