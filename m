@@ -1,36 +1,54 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 20 Aug 2015 09:25:48 +0000
-Subject: [PATCH 06/17 v6][RFC] arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
-Message-Id: <87egiyb9hd.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 21 Aug 2015 18:02:38 +0000
+Subject: [PATCH v3 14/33] serial: sh-sci: Improve comments for DMA timeout calculation
+Message-Id: <1440180177-6924-15-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reformat, grammar improvements, use "ms" instead of "msec".
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v5 -> v6
+v3:
+  - No changes,
 
- - no change
+v2:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
- Documentation/devicetree/bindings/arm/shmobile.txt | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
-index 1d70e78e..10e65d8 100644
---- a/Documentation/devicetree/bindings/arm/shmobile.txt
-+++ b/Documentation/devicetree/bindings/arm/shmobile.txt
-@@ -27,6 +27,8 @@ SoCs:
-     compatible = "renesas,r8a7793"
-   - R-Car E2 (R8A77940)
-     compatible = "renesas,r8a7794"
-+  - R-Car H3 (R8A77950)
-+    compatible = "renesas,r8a7795"
- 
- 
- Boards:
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 340700a11b152952..cfef543df25271f5 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2015,13 +2015,13 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ #ifdef CONFIG_SERIAL_SH_SCI_DMA
+ 	/*
+ 	 * Calculate delay for 2 DMA buffers (4 FIFO).
+-	 * See serial_core.c::uart_update_timeout(). With 10
+-	 * bits (CS8), 250Hz, 115200 baud and 64 bytes FIFO, the above function
+-	 * calculates 1 jiffie for the data plus 5 jiffies for the "slop(e)."
+-	 * Then below we calculate 5 jiffies (20ms) for 2 DMA buffers (4 FIFO
+-	 * sizes), but when performing a faster transfer, value obtained by
+-	 * this formula is may not enough. Therefore, if value is smaller than
+-	 * 20msec, this sets 20msec as timeout of DMA.
++	 * See serial_core.c::uart_update_timeout().
++	 * With 10 bits (CS8), 250Hz, 115200 baud and 64 bytes FIFO, the above
++	 * function calculates 1 jiffie for the data plus 5 jiffies for the
++	 * "slop(e)." Then below we calculate 5 jiffies (20ms) for 2 DMA
++	 * buffers (4 FIFO sizes), but when performing a faster transfer, the
++	 * value obtained by this formula is too small. Therefore, if the value
++	 * is smaller than 20ms, use 20ms as the timeout value for DMA.
+ 	 */
+ 	if (s->chan_rx) {
+ 		unsigned int bits;
 -- 
 1.9.1
 
