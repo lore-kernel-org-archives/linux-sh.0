@@ -1,106 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 12 Aug 2015 08:15:17 +0000
-Subject: [PATCH 3/5] clk: shmobile: r8a7779: Add CPG/MSTP Clock Domain support
-Message-Id: <b31fc90c14d9e584ac19983686cecab3e0764289.1439365731.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 21 Aug 2015 18:25:42 +0000
+Subject: [PATCH/RFC v3 0/4] serial: sh-sci: Add DT DMA support
+Message-Id: <1440181546-7334-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1439365731.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1439365731.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+	Hi,
 
-Add Clock Domain support to the R-Car H1 Clock Pulse Generator (CPG)
-driver using the generic PM Domain.  This allows to power-manage the
-module clocks of SoC devices that are part of the CPG/MSTP Clock Domain
-using Runtime PM, or for system suspend/resume.
+This patch series adds DT DMA support to the Renesas "SCI" serial driver
+on R-Car Gen2 SoCs.
+It depends on "[PATCH v3 00/33] serial: sh-sci: Miscellaneous
+and DMA Improvements", which contains preparatory patches that are
+considered stable.
 
-SoC devices that are part of the CPG/MSTP Clock Domain and can be
-power-managed through an MSTP clock should be tagged in DT with a proper
-"power-domains" property.
+Some of these patches have been sent before, cfr.
+  - [PATCH/RFC v2 00/29] serial: sh-sci: Miscellaneous and DMA
+    Improvements (http://www.spinics.net/lists/linux-sh/msg43567.html)
+  - [PATCH/RFC 0/8] serial: sh-sci: Add DT DMA support
+    (http://www.spinics.net/lists/linux-sh/msg42258.html)
 
-Also update the reg property in the DT binding doc example to match the
-actual dtsi, which uses #address-cells and #size-cells = 1, not 2.
+Major change is the replacement of the one-byte DMA transfer on (H)SCIF
+by submitting receive DMA requests from the receive interrupt handler.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Stephen Boyd <sboyd@codeaurora.org>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- .../bindings/clock/renesas,r8a7779-cpg-clocks.txt  | 30 +++++++++++++++++++---
- drivers/clk/shmobile/clk-r8a7779.c                 |  2 ++
- 2 files changed, 28 insertions(+), 4 deletions(-)
+This was tested on r8a7791/koelsch, using SCIF, SCIFA, SCIFB, and HSCIF.
+It should work with and without CONFIG_HIGHMEM (thanks to Shimoda-san).
+There are still some known issues in case of overrun errors.
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
-index ed3c8cb12f4e..8c81547c29f5 100644
---- a/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,r8a7779-cpg-clocks.txt
-@@ -1,7 +1,9 @@
- * Renesas R8A7779 Clock Pulse Generator (CPG)
- 
- The CPG generates core clocks for the R8A7779. It includes one PLL and
--several fixed ratio dividers
-+several fixed ratio dividers.
-+The CPG also provides a Clock Domain for SoC devices, in combination with the
-+CPG Module Stop (MSTP) Clocks.
- 
- Required Properties:
- 
-@@ -12,16 +14,36 @@ Required Properties:
-   - #clock-cells: Must be 1
-   - clock-output-names: The names of the clocks. Supported clocks are "plla",
-     "z", "zs", "s", "s1", "p", "b", "out".
-+  - #power-domain-cells: Must be 0
- 
-+SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
-+through an MSTP clock should refer to the CPG device node in their
-+"power-domains" property, as documented by the generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
- 
--Example
---------
-+
-+Examples
-+--------
-+
-+  - CPG device node:
- 
- 	cpg_clocks: cpg_clocks@ffc80000 {
- 		compatible = "renesas,r8a7779-cpg-clocks";
--		reg = <0 0xffc80000 0 0x30>;
-+		reg = <0xffc80000 0x30>;
- 		clocks = <&extal_clk>;
- 		#clock-cells = <1>;
- 		clock-output-names = "plla", "z", "zs", "s", "s1", "p",
- 		                     "b", "out";
-+		#power-domain-cells = <0>;
-+	};
-+
-+
-+  - CPG/MSTP Clock Domain member device node:
-+
-+	sata: sata@fc600000 {
-+		compatible = "renesas,sata-r8a7779", "renesas,rcar-sata";
-+		reg = <0xfc600000 0x2000>;
-+		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp1_clks R8A7779_CLK_SATA>;
-+		power-domains = <&cpg_clocks>;
- 	};
-diff --git a/drivers/clk/shmobile/clk-r8a7779.c b/drivers/clk/shmobile/clk-r8a7779.c
-index 652ecacb6daf..e42a63a2ad25 100644
---- a/drivers/clk/shmobile/clk-r8a7779.c
-+++ b/drivers/clk/shmobile/clk-r8a7779.c
-@@ -168,6 +168,8 @@ static void __init r8a7779_cpg_clocks_init(struct device_node *np)
- 	}
- 
- 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-+
-+	cpg_mstp_add_clk_domain(np);
- }
- CLK_OF_DECLARE(r8a7779_cpg_clks, "renesas,r8a7779-cpg-clocks",
- 	       r8a7779_cpg_clocks_init);
+For your convenience, I've also pushed this to
+git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git#scif-dma-v3
+
+While it doesn't seem to be a hard requirement, I included the fixed
+version of "dmaengine: rcar-dmac: Fix residue reporting for pending
+descriptors".
+
+Note that SCI DMA support was originally written for SH-based systems,
+and was never fully wired up in platform code in mainline, so the risk
+for regressions is fairly small.
+
+Thanks for your comments!
+
+Geert Uytterhoeven (4):
+  serial: sh-sci: Stop TX and RX on shutdown
+  serial: sh-sci: Get rid of the workqueue to handle receive DMA
+    requests
+  serial: sh-sci: Submit RX DMA from RX interrupt on (H)SCIF
+  serial: sh-sci: Add DT support to DMA setup
+
+ drivers/tty/serial/sh-sci.c | 254 +++++++++++++++++++++++---------------------
+ 1 file changed, 133 insertions(+), 121 deletions(-)
+
 -- 
-2.1.4
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
