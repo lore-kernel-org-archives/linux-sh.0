@@ -1,96 +1,129 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Sat, 29 Aug 2015 09:13:57 +0000
-Subject: [PATCH v4 03/05] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support
-Message-Id: <20150829091357.28546.72024.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 21 Aug 2015 18:02:37 +0000
+Subject: [PATCH v3 13/33] serial: sh-sci: Improve DMA error messages
+Message-Id: <1440180177-6924-14-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150829091323.28546.28287.sendpatchset@little-apple>
-In-Reply-To: <20150829091323.28546.28287.sendpatchset@little-apple>
+References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-clk@vger.kernel.org
-Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Add Clock Domain support to the R-Car Gen3 Clock Pulse Generator (CPG)
-driver using the generic PM Domain.  This allows to power-manage the
-module clocks of SoC devices that are part of the CPG/MSTP Clock Domain
-using Runtime PM, or for system suspend/resume.
-
-SoC devices that are part of the CPG/MSTP Clock Domain and can be
-power-managed through an MSTP clock should be tagged in DT with a proper
-"power-domains" property.
+Make the life of the driver developer/debugger easier:
+  - Add __func__ prefix to identical messages,
+  - Add DMA directions to messages,
+  - Add TX failure messages,
+  - Always use "cookie %d" for DMA cookies,
+  - "#%d" is reserved for the DMA cookie/descriptor index.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
+v3:
+  - Rebased,
 
- Changes since V3:
- - Fixed so correct file is actually used. =)
- - Took V2 from Geert but filtered out Kconfig.platforms bits
+v2:
+  - Add "cookie %d" and ""#%d" consistency.
+---
+ drivers/tty/serial/sh-sci.c | 27 ++++++++++++++++-----------
+ 1 file changed, 16 insertions(+), 11 deletions(-)
 
- Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt |   26 +++++++++-
- drivers/clk/shmobile/clk-rcar-gen3.c                                     |    2 
- 2 files changed, 26 insertions(+), 2 deletions(-)
-
---- 0011/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
-+++ work/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt	2015-08-29 16:41:04.842366518 +0900
-@@ -2,6 +2,8 @@
- 
- The CPG generates core clocks for the R-Car Gen3 SoCs. It includes three PLLs
- and several fixed ratio dividers.
-+The CPG also provides a Clock Domain for SoC devices, in combination with the
-+CPG Module Stop (MSTP) Clocks.
- 
- Required Properties:
- 
-@@ -15,10 +17,18 @@ Required Properties:
-   - #clock-cells: Must be 1
-   - clock-output-names: The names of the clocks. Supported clocks are
-     "main", "pll0", "pll1", "pll2", "pll3", "pll4"
-+  - #power-domain-cells: Must be 0
- 
-+SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
-+through an MSTP clock should refer to the CPG device node in their
-+"power-domains" property, as documented by the generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
- 
--Example
---------
-+
-+Examples
-+--------
-+
-+  - CPG device node:
- 
- 	cpg_clocks: cpg_clocks@e6150000 {
- 		compatible = "renesas,r8a7795-cpg-clocks",
-@@ -28,4 +38,16 @@ Example
- 		#clock-cells = <1>;
- 		clock-output-names = "main", "pll0", "pll1","pll2",
- 				     "pll3", "pll4";
-+		#power-domain-cells = <0>;
-+	};
-+
-+  - CPG/MSTP Clock Domain member device node:
-+
-+	scif2: serial@e6e88000 {
-+		compatible = "renesas,scif-r8a7795", "renesas,scif";
-+		reg = <0 0xe6e88000 0 64>;
-+		interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks RCAR_R8A7795_CLK_SCIF2>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 	};
---- 0011/drivers/clk/shmobile/clk-rcar-gen3.c
-+++ work/drivers/clk/shmobile/clk-rcar-gen3.c	2015-08-29 16:41:04.842366518 +0900
-@@ -244,6 +244,8 @@ static void __init rcar_gen3_cpg_clocks_
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index c4cb7a5a2b110753..340700a11b152952 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1319,7 +1319,8 @@ static int sci_dma_rx_push(struct sci_port *s, size_t count)
+ 	} else if (s->active_rx = s->cookie_rx[1]) {
+ 		active = 1;
+ 	} else {
+-		dev_err(port->dev, "cookie %d not found!\n", s->active_rx);
++		dev_err(port->dev, "%s: Rx cookie %d not found!\n", __func__,
++			s->active_rx);
+ 		return 0;
  	}
  
- 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-+
-+	cpg_mstp_add_clk_domain(np);
+@@ -1345,8 +1346,8 @@ static void sci_dma_rx_complete(void *arg)
+ 	unsigned long flags;
+ 	int count;
+ 
+-	dev_dbg(port->dev, "%s(%d) active #%d\n",
+-		__func__, port->line, s->active_rx);
++	dev_dbg(port->dev, "%s(%d) active cookie %d\n", __func__, port->line,
++		s->active_rx);
+ 
+ 	spin_lock_irqsave(&port->lock, flags);
+ 
+@@ -1418,12 +1419,12 @@ static void sci_submit_rx(struct sci_port *s)
+ 				s->cookie_rx[i] = -EINVAL;
+ 			}
+ 			dev_warn(s->port.dev,
+-				 "failed to re-start DMA, using PIO\n");
++				 "Failed to re-start Rx DMA, using PIO\n");
+ 			sci_rx_dma_release(s, true);
+ 			return;
+ 		}
+-		dev_dbg(s->port.dev, "%s(): cookie %d to #%d\n",
+-			__func__, s->cookie_rx[i], i);
++		dev_dbg(s->port.dev, "%s(): cookie %d to #%d\n", __func__,
++			s->cookie_rx[i], i);
+ 	}
+ 
+ 	s->active_rx = s->cookie_rx[0];
+@@ -1443,7 +1444,8 @@ static void work_fn_rx(struct work_struct *work)
+ 	} else if (s->active_rx = s->cookie_rx[1]) {
+ 		new = 1;
+ 	} else {
+-		dev_err(port->dev, "cookie %d not found!\n", s->active_rx);
++		dev_err(port->dev, "%s: Rx cookie %d not found!\n", __func__,
++			s->active_rx);
+ 		return;
+ 	}
+ 	desc = s->desc_rx[new];
+@@ -1482,7 +1484,7 @@ static void work_fn_rx(struct work_struct *work)
+ 
+ 	s->active_rx = s->cookie_rx[!new];
+ 
+-	dev_dbg(port->dev, "%s: cookie %d #%d, new active #%d\n",
++	dev_dbg(port->dev, "%s: cookie %d #%d, new active cookie %d\n",
+ 		__func__, s->cookie_rx[new], new, s->active_rx);
  }
- CLK_OF_DECLARE(rcar_gen3_cpg_clks, "renesas,rcar-gen3-cpg-clocks",
- 	       rcar_gen3_cpg_clocks_init);
+ 
+@@ -1516,6 +1518,7 @@ static void work_fn_tx(struct work_struct *work)
+ 			sg, s->sg_len_tx, DMA_MEM_TO_DEV,
+ 			DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+ 	if (!desc) {
++		dev_warn(port->dev, "Failed preparing Tx DMA descriptor\n");
+ 		/* switch to PIO */
+ 		sci_tx_dma_release(s, true);
+ 		return;
+@@ -1704,13 +1707,15 @@ static void sci_request_dma(struct uart_port *port)
+ 			    UART_XMIT_SIZE,
+ 			    (uintptr_t)port->state->xmit.buf & ~PAGE_MASK);
+ 		nent = dma_map_sg(port->dev, &s->sg_tx, 1, DMA_TO_DEVICE);
+-		if (!nent)
++		if (!nent) {
++			dev_warn(port->dev, "Failed mapping Tx DMA descriptor\n");
+ 			sci_tx_dma_release(s, false);
+-		else
++		} else {
+ 			dev_dbg(port->dev, "%s: mapped %d@%p to %pad\n",
+ 				__func__,
+ 				sg_dma_len(&s->sg_tx), port->state->xmit.buf,
+ 				&sg_dma_address(&s->sg_tx));
++		}
+ 
+ 		s->sg_len_tx = nent;
+ 
+@@ -1737,7 +1742,7 @@ static void sci_request_dma(struct uart_port *port)
+ 
+ 		if (!buf[0]) {
+ 			dev_warn(port->dev,
+-				 "failed to allocate dma buffer, using PIO\n");
++				 "Failed to allocate Rx dma buffer, using PIO\n");
+ 			sci_rx_dma_release(s, true);
+ 			return;
+ 		}
+-- 
+1.9.1
+
