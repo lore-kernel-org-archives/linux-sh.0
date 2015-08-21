@@ -1,60 +1,48 @@
-From: Daniel Lezcano <daniel.lezcano@linaro.org>
-Date: Mon, 10 Aug 2015 09:52:25 +0000
-Subject: [PATCH 68/74] sh/localtimer: Migrate to new 'set-state' interface
-Message-Id: <1439200352-26767-68-git-send-email-daniel.lezcano@linaro.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 21 Aug 2015 18:02:35 +0000
+Subject: [PATCH v3 11/33] serial: sh-sci: Remove bogus sci_handle_fifo_overrun() call on (H)SCIF
+Message-Id: <1440180177-6924-12-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <55C87382.4070309@linaro.org>
- <1439200352-26767-1-git-send-email-daniel.lezcano@linaro.org>
-In-Reply-To: <1439200352-26767-1-git-send-email-daniel.lezcano@linaro.org>
+References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: mingo@kernel.org
-Cc: tglx@linutronix.de, linux-kernel@vger.kernel.org, Viresh Kumar <viresh.kumar@linaro.org>, linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Viresh Kumar <viresh.kumar@linaro.org>
+Commit 8b6ff84c2d445a47 ("serial: sh-sci: Fix R-Car SCIF and HSCIF
+overrun handling") added overrun handling for (H)SCIF using the SCLSR
+register, but also accidentally added a bogus call to
+sci_handle_fifo_overrun() in the receive interrupt path.
 
-Migrate sh driver to the new 'set-state' interface provided by
-clockevents core, the earlier 'set-mode' interface is marked obsolete
-now.
+Remove it again.
 
-This also enables us to implement callbacks for new states of clockevent
-devices, for example: ONESHOT_STOPPED.
-
-We weren't doing anything in the ->set_mode() callback. So, this patch
-doesn't provide any set-state callbacks.
-
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
-Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/kernel/localtimer.c | 6 ------
- 1 file changed, 6 deletions(-)
+v3:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-diff --git a/arch/sh/kernel/localtimer.c b/arch/sh/kernel/localtimer.c
-index b880a7e..cbb7d46 100644
---- a/arch/sh/kernel/localtimer.c
-+++ b/arch/sh/kernel/localtimer.c
-@@ -39,11 +39,6 @@ void local_timer_interrupt(void)
- 	irq_exit();
- }
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 59ce9484875b2001..017b33cf5587e809 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1066,11 +1066,8 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ 	 * DR flags
+ 	 */
+ 	if (((ssr_status & SCxSR_RDxF(port)) || s->chan_rx) &&
+-	    (scr_status & SCSCR_RIE)) {
+-		if (port->type = PORT_SCIF || port->type = PORT_HSCIF)
+-			sci_handle_fifo_overrun(port);
++	    (scr_status & SCSCR_RIE))
+ 		ret = sci_rx_interrupt(irq, ptr);
+-	}
  
--static void dummy_timer_set_mode(enum clock_event_mode mode,
--				 struct clock_event_device *clk)
--{
--}
--
- void local_timer_setup(unsigned int cpu)
- {
- 	struct clock_event_device *clk = &per_cpu(local_clockevent, cpu);
-@@ -54,7 +49,6 @@ void local_timer_setup(unsigned int cpu)
- 				  CLOCK_EVT_FEAT_DUMMY;
- 	clk->rating		= 400;
- 	clk->mult		= 1;
--	clk->set_mode		= dummy_timer_set_mode;
- 	clk->broadcast		= smp_timer_broadcast;
- 	clk->cpumask		= cpumask_of(cpu);
- 
+ 	/* Error Interrupt */
+ 	if ((ssr_status & SCxSR_ERRORS(port)) && err_enabled)
 -- 
 1.9.1
 
