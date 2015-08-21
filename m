@@ -1,194 +1,46 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 04 Aug 2015 12:28:07 +0000
-Subject: [PATCH v4 06/16] ARM: shmobile: r7s72100 dtsi: Add CPG/MSTP Clock Domain
-Message-Id: <1438691297-29235-7-git-send-email-geert+renesas@glider.be>
+Date: Fri, 21 Aug 2015 18:02:36 +0000
+Subject: [PATCH v3 12/33] serial: sh-sci: Return IRQ_HANDLED when overrun if detected
+Message-Id: <1440180177-6924-13-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
+References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add an appropriate "#power-domain-cells" property to the cpg_clocks
-device node, to create the CPG/MSTP Clock Domain.
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Add "power-domains" properties to all device nodes for devices that are
-part of the CPG/MSTP Clock Domain and can be power-managed through an
-MSTP clock.  This applies to most on-SoC devices, which have a
-one-to-one mapping from SoC device to DT device node.
+This patch fix an issue that the driver may cause "nobody cared" IRQ
+when this driver detects the overrun flag only.
 
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
-v4:
-  - Add Reviewed-by,
-
 v3:
-  - Use "CPG/MSTP Clock Domain" instead of "CPG Clock Domain",
-
-v2:
-  - New.
+  - Assimilated into my series.
 ---
- arch/arm/boot/dts/r7s72100.dtsi | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
+ drivers/tty/serial/sh-sci.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index 277e73c110e5d40c..060c32cbd66923ed 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -86,6 +86,7 @@
- 			reg = <0xfcfe0000 0x18>;
- 			clocks = <&extal_clk>, <&usb_x1_clk>;
- 			clock-output-names = "pll", "i", "g";
-+			#power-domain-cells = <0>;
- 		};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 017b33cf5587e809..c4cb7a5a2b110753 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1078,8 +1078,10 @@ static irqreturn_t sci_mpxed_interrupt(int irq, void *ptr)
+ 		ret = sci_br_interrupt(irq, ptr);
  
- 		/* MSTP clocks */
-@@ -157,6 +158,7 @@
- 			     <0 189 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF0>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+ 	/* Overrun Interrupt */
+-	if (orer_status & s->overrun_mask)
++	if (orer_status & s->overrun_mask) {
+ 		sci_handle_fifo_overrun(port);
++		ret = IRQ_HANDLED;
++	}
  
-@@ -169,6 +171,7 @@
- 			     <0 193 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF1>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -181,6 +184,7 @@
- 			     <0 197 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF2>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -193,6 +197,7 @@
- 			     <0 201 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF3>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -205,6 +210,7 @@
- 			     <0 205 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF4>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -217,6 +223,7 @@
- 			     <0 209 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF5>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -229,6 +236,7 @@
- 			     <0 213 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF6>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -241,6 +249,7 @@
- 			     <0 217 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF7>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -252,6 +261,7 @@
- 			     <0 240 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
- 		clocks = <&mstp10_clks R7S72100_CLK_SPI0>;
-+		power-domains = <&cpg_clocks>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -266,6 +276,7 @@
- 			     <0 243 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
- 		clocks = <&mstp10_clks R7S72100_CLK_SPI1>;
-+		power-domains = <&cpg_clocks>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -280,6 +291,7 @@
- 			     <0 246 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
- 		clocks = <&mstp10_clks R7S72100_CLK_SPI2>;
-+		power-domains = <&cpg_clocks>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -294,6 +306,7 @@
- 			     <0 249 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
- 		clocks = <&mstp10_clks R7S72100_CLK_SPI3>;
-+		power-domains = <&cpg_clocks>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -308,6 +321,7 @@
- 			     <0 252 IRQ_TYPE_LEVEL_HIGH>;
- 		interrupt-names = "error", "rx", "tx";
- 		clocks = <&mstp10_clks R7S72100_CLK_SPI4>;
-+		power-domains = <&cpg_clocks>;
- 		num-cs = <1>;
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -338,6 +352,7 @@
- 			     <0 164 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R7S72100_CLK_I2C0>;
- 		clock-frequency = <100000>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -356,6 +371,7 @@
- 			     <0 172 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R7S72100_CLK_I2C1>;
- 		clock-frequency = <100000>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -374,6 +390,7 @@
- 			     <0 180 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R7S72100_CLK_I2C2>;
- 		clock-frequency = <100000>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -392,6 +409,7 @@
- 			     <0 188 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp9_clks R7S72100_CLK_I2C3>;
- 		clock-frequency = <100000>;
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -402,6 +420,7 @@
- 		interrupt-names = "tgi0a";
- 		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- };
+ 	return ret;
+ }
 -- 
 1.9.1
 
