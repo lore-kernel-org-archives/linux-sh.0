@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:41 +0000
-Subject: [PATCH v3 17/33] serial: sh-sci: Use min_t()/max_t() instead of casts
-Message-Id: <1440180177-6924-18-git-send-email-geert+renesas@glider.be>
+Date: Fri, 21 Aug 2015 18:02:28 +0000
+Subject: [PATCH v3 04/33] serial: sh-sci: Use SCIF_DR instead of hardcoded literal 1
+Message-Id: <1440180177-6924-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
@@ -10,12 +10,6 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
 Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
-
-When comparing differently sized types, it's better to use
-min_t()/max_t() than adding casts.
-
-Also use "unsigned int" instead of "int", as that's the right type for
-the length of an SG entry.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
@@ -26,32 +20,23 @@ v3:
 v2:
   - Add Acked-by.
 ---
- drivers/tty/serial/sh-sci.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ drivers/tty/serial/sh-sci.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 9aa9720d7f09d10f..cb35c88645bb5784 100644
+index fa26be7f9414dfc2..300f641e730d1ac5 100644
 --- a/drivers/tty/serial/sh-sci.c
 +++ b/drivers/tty/serial/sh-sci.c
-@@ -1507,7 +1507,8 @@ static void work_fn_tx(struct work_struct *work)
- 	sg->offset = xmit->tail & (UART_XMIT_SIZE - 1);
- 	sg_dma_address(sg) = (sg_dma_address(sg) & ~(UART_XMIT_SIZE - 1)) +
- 		sg->offset;
--	sg_dma_len(sg) = min((int)CIRC_CNT(xmit->head, xmit->tail, UART_XMIT_SIZE),
-+	sg_dma_len(sg) = min_t(unsigned int,
-+		CIRC_CNT(xmit->head, xmit->tail, UART_XMIT_SIZE),
- 		CIRC_CNT_TO_END(xmit->head, xmit->tail, UART_XMIT_SIZE));
- 	spin_unlock_irq(&port->lock);
- 
-@@ -1737,7 +1738,7 @@ static void sci_request_dma(struct uart_port *port)
- 
- 		s->chan_rx = chan;
- 
--		s->buf_len_rx = 2 * max(16, (int)port->fifosize);
-+		s->buf_len_rx = 2 * max_t(size_t, 16, port->fifosize);
- 		buf[0] = dma_alloc_coherent(chan->device->dev,
- 					    s->buf_len_rx * 2, &dma[0],
- 					    GFP_KERNEL);
+@@ -960,7 +960,8 @@ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
+ 		}
+ 		serial_port_out(port, SCSCR, scr);
+ 		/* Clear current interrupt */
+-		serial_port_out(port, SCxSR, ssr & ~(1 | SCxSR_RDxF(port)));
++		serial_port_out(port, SCxSR,
++				ssr & ~(SCIF_DR | SCxSR_RDxF(port)));
+ 		dev_dbg(port->dev, "Rx IRQ %lu: setup t-out in %u jiffies\n",
+ 			jiffies, s->rx_timeout);
+ 		mod_timer(&s->rx_timer, jiffies + s->rx_timeout);
 -- 
 1.9.1
 
