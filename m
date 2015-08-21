@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:37 +0000
-Subject: [PATCH v3 13/33] serial: sh-sci: Improve DMA error messages
-Message-Id: <1440180177-6924-14-git-send-email-geert+renesas@glider.be>
+Date: Fri, 21 Aug 2015 18:02:49 +0000
+Subject: [PATCH v3 25/33] serial: sh-sci: Fix exclusion of work_fn_rx and sci_dma_rx_complete
+Message-Id: <1440180177-6924-26-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
@@ -11,119 +11,89 @@ Content-Transfer-Encoding: 7bit
 To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
 Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Make the life of the driver developer/debugger easier:
-  - Add __func__ prefix to identical messages,
-  - Add DMA directions to messages,
-  - Add TX failure messages,
-  - Always use "cookie %d" for DMA cookies,
-  - "#%d" is reserved for the DMA cookie/descriptor index.
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
+There is a problem when the sci_dma_rx_complete() is processed
+before cancel process of work_fn_rx() completes by rx_timer_fn().
+This patch locks work_fn_rx().
+
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
 v3:
   - Rebased,
 
 v2:
-  - Add "cookie %d" and ""#%d" consistency.
+  - Assimilated into my series.
 ---
- drivers/tty/serial/sh-sci.c | 27 ++++++++++++++++-----------
- 1 file changed, 16 insertions(+), 11 deletions(-)
+ drivers/tty/serial/sh-sci.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index c4cb7a5a2b110753..340700a11b152952 100644
+index e318f002da399e70..f6ed203dde41bf83 100644
 --- a/drivers/tty/serial/sh-sci.c
 +++ b/drivers/tty/serial/sh-sci.c
-@@ -1319,7 +1319,8 @@ static int sci_dma_rx_push(struct sci_port *s, size_t count)
+@@ -1433,8 +1433,10 @@ static void work_fn_rx(struct work_struct *work)
+ 	struct dma_async_tx_descriptor *desc;
+ 	struct dma_tx_state state;
+ 	enum dma_status status;
++	unsigned long flags;
+ 	int new;
+ 
++	spin_lock_irqsave(&port->lock, flags);
+ 	if (s->active_rx = s->cookie_rx[0]) {
+ 		new = 0;
  	} else if (s->active_rx = s->cookie_rx[1]) {
- 		active = 1;
+@@ -1442,14 +1444,13 @@ static void work_fn_rx(struct work_struct *work)
  	} else {
--		dev_err(port->dev, "cookie %d not found!\n", s->active_rx);
-+		dev_err(port->dev, "%s: Rx cookie %d not found!\n", __func__,
-+			s->active_rx);
- 		return 0;
+ 		dev_err(port->dev, "%s: Rx cookie %d not found!\n", __func__,
+ 			s->active_rx);
+-		return;
++		goto out;
  	}
  
-@@ -1345,8 +1346,8 @@ static void sci_dma_rx_complete(void *arg)
- 	unsigned long flags;
- 	int count;
+ 	status = dmaengine_tx_status(s->chan_rx, s->active_rx, &state);
+ 	if (status != DMA_COMPLETE) {
+ 		/* Handle incomplete DMA receive */
+ 		struct dma_chan *chan = s->chan_rx;
+-		unsigned long flags;
+ 		unsigned int read;
+ 		int count;
  
--	dev_dbg(port->dev, "%s(%d) active #%d\n",
--		__func__, port->line, s->active_rx);
-+	dev_dbg(port->dev, "%s(%d) active cookie %d\n", __func__, port->line,
-+		s->active_rx);
+@@ -1458,16 +1459,14 @@ static void work_fn_rx(struct work_struct *work)
+ 		dev_dbg(port->dev, "Read %u bytes with cookie %d\n", read,
+ 			s->active_rx);
  
- 	spin_lock_irqsave(&port->lock, flags);
+-		spin_lock_irqsave(&port->lock, flags);
+ 		count = sci_dma_rx_push(s, read);
+-		spin_unlock_irqrestore(&port->lock, flags);
  
-@@ -1418,12 +1419,12 @@ static void sci_submit_rx(struct sci_port *s)
- 				s->cookie_rx[i] = -EINVAL;
- 			}
- 			dev_warn(s->port.dev,
--				 "failed to re-start DMA, using PIO\n");
-+				 "Failed to re-start Rx DMA, using PIO\n");
- 			sci_rx_dma_release(s, true);
- 			return;
- 		}
--		dev_dbg(s->port.dev, "%s(): cookie %d to #%d\n",
--			__func__, s->cookie_rx[i], i);
-+		dev_dbg(s->port.dev, "%s(): cookie %d to #%d\n", __func__,
-+			s->cookie_rx[i], i);
+ 		if (count)
+ 			tty_flip_buffer_push(&port->state->port);
+ 
+ 		sci_submit_rx(s);
+ 
+-		return;
++		goto out;
  	}
  
- 	s->active_rx = s->cookie_rx[0];
-@@ -1443,7 +1444,8 @@ static void work_fn_rx(struct work_struct *work)
- 	} else if (s->active_rx = s->cookie_rx[1]) {
- 		new = 1;
- 	} else {
--		dev_err(port->dev, "cookie %d not found!\n", s->active_rx);
-+		dev_err(port->dev, "%s: Rx cookie %d not found!\n", __func__,
-+			s->active_rx);
- 		return;
- 	}
- 	desc = s->desc_rx[new];
-@@ -1482,7 +1484,7 @@ static void work_fn_rx(struct work_struct *work)
+ 	desc = dmaengine_prep_slave_sg(s->chan_rx, &s->sg_rx[new], 1,
+@@ -1486,11 +1485,14 @@ static void work_fn_rx(struct work_struct *work)
  
- 	s->active_rx = s->cookie_rx[!new];
- 
--	dev_dbg(port->dev, "%s: cookie %d #%d, new active #%d\n",
-+	dev_dbg(port->dev, "%s: cookie %d #%d, new active cookie %d\n",
+ 	dev_dbg(port->dev, "%s: cookie %d #%d, new active cookie %d\n",
  		__func__, s->cookie_rx[new], new, s->active_rx);
++out:
++	spin_unlock_irqrestore(&port->lock, flags);
+ 	return;
+ 
+ fail:
+ 	dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
+ 	sci_rx_dma_release(s, true);
++	spin_unlock_irqrestore(&port->lock, flags);
  }
  
-@@ -1516,6 +1518,7 @@ static void work_fn_tx(struct work_struct *work)
- 			sg, s->sg_len_tx, DMA_MEM_TO_DEV,
- 			DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
- 	if (!desc) {
-+		dev_warn(port->dev, "Failed preparing Tx DMA descriptor\n");
- 		/* switch to PIO */
- 		sci_tx_dma_release(s, true);
- 		return;
-@@ -1704,13 +1707,15 @@ static void sci_request_dma(struct uart_port *port)
- 			    UART_XMIT_SIZE,
- 			    (uintptr_t)port->state->xmit.buf & ~PAGE_MASK);
- 		nent = dma_map_sg(port->dev, &s->sg_tx, 1, DMA_TO_DEVICE);
--		if (!nent)
-+		if (!nent) {
-+			dev_warn(port->dev, "Failed mapping Tx DMA descriptor\n");
- 			sci_tx_dma_release(s, false);
--		else
-+		} else {
- 			dev_dbg(port->dev, "%s: mapped %d@%p to %pad\n",
- 				__func__,
- 				sg_dma_len(&s->sg_tx), port->state->xmit.buf,
- 				&sg_dma_address(&s->sg_tx));
-+		}
- 
- 		s->sg_len_tx = nent;
- 
-@@ -1737,7 +1742,7 @@ static void sci_request_dma(struct uart_port *port)
- 
- 		if (!buf[0]) {
- 			dev_warn(port->dev,
--				 "failed to allocate dma buffer, using PIO\n");
-+				 "Failed to allocate Rx dma buffer, using PIO\n");
- 			sci_rx_dma_release(s, true);
- 			return;
- 		}
+ static void work_fn_tx(struct work_struct *work)
 -- 
 1.9.1
 
