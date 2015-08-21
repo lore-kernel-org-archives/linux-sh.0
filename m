@@ -1,69 +1,92 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 04 Aug 2015 13:55:15 +0000
-Subject: [PATCH v2 2/6] ARM: shmobile: r8a7740 dtsi: Add missing "gpio-ranges" to gpio node
-Message-Id: <1438696519-13727-3-git-send-email-geert+renesas@glider.be>
+Date: Fri, 21 Aug 2015 18:02:47 +0000
+Subject: [PATCH v3 23/33] serial: sh-sci: Simplify sci_submit_rx() error handling
+Message-Id: <1440180177-6924-24-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
+References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-If a GPIO driver uses gpiochip_add_pin_range() (which is usually the
-case for GPIO/PFC combos), the GPIO hogging mechanism configured from DT
-doesn't work:
-
-    requesting hog GPIO lcd0 (chip r8a7740_pfc, offset 176) failed
-
-The actual error code is -517 = -EPROBE_DEFER.
-
-The problem is that PFC+GPIO registration is handled in multiple steps:
-  1. pinctrl_register(),
-  2. gpiochip_add(),
-  3. gpiochip_add_pin_range().
-
-Configuration of the hogs is handled in gpiochip_add():
-
-    gpiochip_add
-        of_gpiochip_add
-            of_gpiochip_scan_hogs
-                gpiod_hog
-                    gpiochip_request_own_desc
-                        __gpiod_request
-                            chip->request
-                                pinctrl_request_gpio
-                                    pinctrl_get_device_gpio_range
-
-However, at this point the GPIO controller hasn't been added to
-pinctrldev_list yet, so the range can't be found, and the operation fails
-with -EPROBE_DEFER.
-
-To fix this, add a "gpio-ranges" property to the gpio device node, so
-the range is added by of_gpiochip_add_pin_range(), which is called by
-of_gpiochip_add() before the call to of_gpiochip_scan_hogs().
+Simplify the error handling in sci_submit_rx() by
+  - Moving it to the end of the function,
+  - Just calling dmaengine_terminate_all() instead of calling
+    async_tx_ack() for all already submitted descriptors.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
-v2:
-  - Add Acked-by.
----
- arch/arm/boot/dts/r8a7740.dtsi | 1 +
- 1 file changed, 1 insertion(+)
+v3:
+  - No changes,
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index d84714468cce18df..e14cb1438216e8df 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -291,6 +291,7 @@
- 		      <0xe605800c 0x20>;
- 		gpio-controller;
- 		#gpio-cells = <2>;
-+		gpio-ranges = <&pfc 0 0 212>;
- 		interrupts-extended  			<&irqpin0 0 0>, <&irqpin0 1 0>, <&irqpin0 2 0>, <&irqpin0 3 0>,
- 			<&irqpin0 4 0>, <&irqpin0 5 0>, <&irqpin0 6 0>, <&irqpin0 7 0>,
+v2:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 40 ++++++++++++++++++++--------------------
+ 1 file changed, 20 insertions(+), 20 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 1191a6c486640983..9c2bc0f23d3af08c 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1398,28 +1398,16 @@ static void sci_submit_rx(struct sci_port *s)
+ 
+ 		desc = dmaengine_prep_slave_sg(chan,
+ 			sg, 1, DMA_DEV_TO_MEM, DMA_PREP_INTERRUPT);
++		if (!desc)
++			goto fail;
+ 
+-		if (desc) {
+-			s->desc_rx[i] = desc;
+-			desc->callback = sci_dma_rx_complete;
+-			desc->callback_param = s;
+-			s->cookie_rx[i] = dmaengine_submit(desc);
+-		}
++		s->desc_rx[i] = desc;
++		desc->callback = sci_dma_rx_complete;
++		desc->callback_param = s;
++		s->cookie_rx[i] = dmaengine_submit(desc);
++		if (dma_submit_error(s->cookie_rx[i]))
++			goto fail;
+ 
+-		if (!desc || dma_submit_error(s->cookie_rx[i])) {
+-			if (i) {
+-				async_tx_ack(s->desc_rx[0]);
+-				s->cookie_rx[0] = -EINVAL;
+-			}
+-			if (desc) {
+-				async_tx_ack(desc);
+-				s->cookie_rx[i] = -EINVAL;
+-			}
+-			dev_warn(s->port.dev,
+-				 "Failed to re-start Rx DMA, using PIO\n");
+-			sci_rx_dma_release(s, true);
+-			return;
+-		}
+ 		dev_dbg(s->port.dev, "%s(): cookie %d to #%d\n", __func__,
+ 			s->cookie_rx[i], i);
+ 	}
+@@ -1427,6 +1415,18 @@ static void sci_submit_rx(struct sci_port *s)
+ 	s->active_rx = s->cookie_rx[0];
+ 
+ 	dma_async_issue_pending(chan);
++	return;
++
++fail:
++	if (i)
++		dmaengine_terminate_all(chan);
++	for (i = 0; i < 2; i++) {
++		s->desc_rx[i] = NULL;
++		s->cookie_rx[i] = -EINVAL;
++	}
++	s->active_rx = -EINVAL;
++	dev_warn(s->port.dev, "Failed to re-start Rx DMA, using PIO\n");
++	sci_rx_dma_release(s, true);
+ }
+ 
+ static void work_fn_rx(struct work_struct *work)
 -- 
 1.9.1
 
