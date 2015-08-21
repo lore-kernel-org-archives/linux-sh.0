@@ -1,136 +1,43 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 26 Aug 2015 18:13:50 +0000
-Subject: [PATCH 4/6] arm64: renesas: r8a7795 dtsi: Add all HSCIF nodes
-Message-Id: <1440612832-17627-5-git-send-email-geert+renesas@glider.be>
+Date: Fri, 21 Aug 2015 18:02:30 +0000
+Subject: [PATCH v3 06/33] serial: sh-sci: Drop path in reference to serial_core.c
+Message-Id: <1440180177-6924-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add the device nodes for all HSCIF serial ports, incl. clocks, clock
-domain, and dma properties.
+serial_core.c was moved from drivers/serial/ to drivers/tty/serial/ a
+while ago. Remove the path to make it move-proof.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 82 +++++++++++++++++++++++++++++++
- include/dt-bindings/clock/r8a7795-clock.h |  5 ++
- 2 files changed, 87 insertions(+)
+v3:
+  - No changes,
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 54cc67ef37c650ca..54f2a2b0e1158335 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -277,6 +277,28 @@
- 					clock-output-names = "scif2";
- 				};
- 
-+				mstp5_clks: mstp5_clks@e6150144 {
-+					compatible +						"renesas,r8a7795-mstp-clocks",
-+						"renesas,cpg-mstp-clocks";
-+					reg = <0 0xe6150144 0 4>,
-+					      <0 0xe615003c 0 4>;
-+					clocks = <&s3d1_clk>, <&s3d1_clk>,
-+						 <&s3d1_clk>, <&s3d1_clk>,
-+						 <&s3d1_clk>;
-+					#clock-cells = <1>;
-+					renesas,clock-indices = <
-+						R8A7795_CLK_HSCIF4
-+						R8A7795_CLK_HSCIF3
-+						R8A7795_CLK_HSCIF2
-+						R8A7795_CLK_HSCIF1
-+						R8A7795_CLK_HSCIF0
-+					>;
-+					clock-output-names +						"hscif4", "hscif3", "hscif2",
-+						"hscif1", "hscif0";
-+				};
-+
- 				mstp7_clks: mstp7_clks@e615014c {
- 					compatible = "renesas,r8a7795-mstp-clocks",
- 						     "renesas,cpg-mstp-clocks";
-@@ -380,6 +402,66 @@
- 			status = "disabled";
- 		};
- 
-+		hscif0: serial@e6540000 {
-+			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
-+			reg = <0 0xe6540000 0 96>;
-+			interrupts = <GIC_SPI 154 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp5_clks R8A7795_CLK_HSCIF0>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac1 0x31>, <&dmac1 0x30>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg_clocks>;
-+			status = "disabled";
-+		};
-+
-+		hscif1: serial@e6550000 {
-+			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
-+			reg = <0 0xe6550000 0 96>;
-+			interrupts = <GIC_SPI 155 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp5_clks R8A7795_CLK_HSCIF1>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac1 0x33>, <&dmac1 0x32>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg_clocks>;
-+			status = "disabled";
-+		};
-+
-+		hscif2: serial@e6560000 {
-+			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
-+			reg = <0 0xe6560000 0 96>;
-+			interrupts = <GIC_SPI 144 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp5_clks R8A7795_CLK_HSCIF2>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac1 0x35>, <&dmac1 0x34>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg_clocks>;
-+			status = "disabled";
-+		};
-+
-+		hscif3: serial@e66a0000 {
-+			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
-+			reg = <0 0xe66a0000 0 96>;
-+			interrupts = <GIC_SPI 145 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp5_clks R8A7795_CLK_HSCIF3>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac0 0x37>, <&dmac0 0x36>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg_clocks>;
-+			status = "disabled";
-+		};
-+
-+		hscif4: serial@e66b0000 {
-+			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
-+			reg = <0 0xe66b0000 0 96>;
-+			interrupts = <GIC_SPI 146 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&mstp5_clks R8A7795_CLK_HSCIF4>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac0 0x39>, <&dmac0 0x38>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg_clocks>;
-+			status = "disabled";
-+		};
-+
- 		usb2_phy0: usb-phy@ee080200 {
- 			compatible = "renesas,usb2-phy-r8a7795";
- 			reg = <0 0xee080200 0 0x6ff>, <0 0xe6590100 0 0x100>;
-diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
-index baf884dad15eaf73..2b8c375eebb6a9d9 100644
---- a/include/dt-bindings/clock/r8a7795-clock.h
-+++ b/include/dt-bindings/clock/r8a7795-clock.h
-@@ -32,6 +32,11 @@
- #define R8A7795_CLK_SCIF2		10
- 
- /* MSTP5 */
-+#define R8A7795_CLK_HSCIF4		16
-+#define R8A7795_CLK_HSCIF3		17
-+#define R8A7795_CLK_HSCIF2		18
-+#define R8A7795_CLK_HSCIF1		19
-+#define R8A7795_CLK_HSCIF0		20
- 
- /* MSTP7 */
- #define R8A7795_CLK_HSUSB		4
+v2:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 206673f44a2943af..dbb4bbdac37ce0d8 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2014,7 +2014,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ #ifdef CONFIG_SERIAL_SH_SCI_DMA
+ 	/*
+ 	 * Calculate delay for 2 DMA buffers (4 FIFO).
+-	 * See drivers/serial/serial_core.c::uart_update_timeout(). With 10
++	 * See serial_core.c::uart_update_timeout(). With 10
+ 	 * bits (CS8), 250Hz, 115200 baud and 64 bytes FIFO, the above function
+ 	 * calculates 1 jiffie for the data plus 5 jiffies for the "slop(e)."
+ 	 * Then below we calculate 5 jiffies (20ms) for 2 DMA buffers (4 FIFO
 -- 
 1.9.1
 
