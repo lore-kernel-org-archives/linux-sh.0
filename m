@@ -1,75 +1,144 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 03 Aug 2015 06:04:55 +0000
-Subject: [PATCH 4/6] ARM: shmobile: r8a7779: Cleanup header file
-Message-Id: <640780efdd97eefd9ee78e1cd03ba97b1a1e1d9a.1438581659.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 21 Aug 2015 18:02:42 +0000
+Subject: [PATCH v3 18/33] serial: sh-sci: Switch to dma_map_single() for DMA transmission
+Message-Id: <1440180177-6924-19-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438581659.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1438581659.git.horms+renesas@verge.net.au>
+References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Simplify the DMA transmit code by using dma_map_single() instead of
+constantly modifying the single-entry scatterlist to match what's
+currently being transmitted.
 
-Remove unused function prototypes from r8a7779.h and
-make the functions static.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c | 2 +-
- arch/arm/mach-shmobile/r8a7779.h       | 2 --
- arch/arm/mach-shmobile/setup-r8a7779.c | 2 +-
- 3 files changed, 2 insertions(+), 4 deletions(-)
+v3:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 50 ++++++++++++++++++---------------------------
+ 1 file changed, 20 insertions(+), 30 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index fa8ab2cc9187..a376ba3b67c0 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -201,7 +201,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("rcar-du-r8a7779", &mstp_clks[MSTP103]), /* DU */
- };
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index cb35c88645bb5784..5a528b8985052017 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -109,8 +109,8 @@ struct sci_port {
+ 	dma_cookie_t			cookie_tx;
+ 	dma_cookie_t			cookie_rx[2];
+ 	dma_cookie_t			active_rx;
+-	struct scatterlist		sg_tx;
+-	unsigned int			sg_len_tx;
++	dma_addr_t			tx_dma_addr;
++	unsigned int			tx_dma_len;
+ 	struct scatterlist		sg_rx[2];
+ 	size_t				buf_len_rx;
+ 	struct sh_dmae_slave		param_tx;
+@@ -1280,10 +1280,10 @@ static void sci_dma_tx_complete(void *arg)
  
--void __init r8a7779_clock_init(void)
-+static void __init r8a7779_clock_init(void)
- {
- 	u32 mode = r8a7779_read_mode_pins();
- 	int k, ret = 0;
-diff --git a/arch/arm/mach-shmobile/r8a7779.h b/arch/arm/mach-shmobile/r8a7779.h
-index 19f97046dd70..f69c7477178b 100644
---- a/arch/arm/mach-shmobile/r8a7779.h
-+++ b/arch/arm/mach-shmobile/r8a7779.h
-@@ -11,7 +11,6 @@ enum {
- };
+ 	spin_lock_irqsave(&port->lock, flags);
  
- extern void r8a7779_init_irq_extpin(int irlm);
--extern void r8a7779_init_irq_extpin_dt(int irlm);
- extern void r8a7779_init_irq_dt(void);
- extern void r8a7779_map_io(void);
- extern void r8a7779_earlytimer_init(void);
-@@ -19,7 +18,6 @@ extern void r8a7779_add_early_devices(void);
- extern void r8a7779_add_standard_devices(void);
- extern void r8a7779_init_late(void);
- extern u32 r8a7779_read_mode_pins(void);
--extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
- extern void r8a7779_pm_init(void);
- extern void r8a7779_register_twd(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 2c3e433f84ca..f436cba958fa 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -99,7 +99,7 @@ static struct resource irqpin0_resources[] __initdata = {
- 	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ3 */
- };
+-	xmit->tail += sg_dma_len(&s->sg_tx);
++	xmit->tail += s->tx_dma_len;
+ 	xmit->tail &= UART_XMIT_SIZE - 1;
  
--void __init r8a7779_init_irq_extpin_dt(int irlm)
-+static void __init r8a7779_init_irq_extpin_dt(int irlm)
- {
- 	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
- 	u32 tmp;
+-	port->icount.tx += sg_dma_len(&s->sg_tx);
++	port->icount.tx += s->tx_dma_len;
+ 
+ 	async_tx_ack(s->desc_tx);
+ 	s->desc_tx = NULL;
+@@ -1494,7 +1494,7 @@ static void work_fn_tx(struct work_struct *work)
+ 	struct dma_chan *chan = s->chan_tx;
+ 	struct uart_port *port = &s->port;
+ 	struct circ_buf *xmit = &port->state->xmit;
+-	struct scatterlist *sg = &s->sg_tx;
++	dma_addr_t buf;
+ 
+ 	/*
+ 	 * DMA is idle now.
+@@ -1504,19 +1504,15 @@ static void work_fn_tx(struct work_struct *work)
+ 	 * consistent xmit buffer state.
+ 	 */
+ 	spin_lock_irq(&port->lock);
+-	sg->offset = xmit->tail & (UART_XMIT_SIZE - 1);
+-	sg_dma_address(sg) = (sg_dma_address(sg) & ~(UART_XMIT_SIZE - 1)) +
+-		sg->offset;
+-	sg_dma_len(sg) = min_t(unsigned int,
++	buf = s->tx_dma_addr + (xmit->tail & (UART_XMIT_SIZE - 1));
++	s->tx_dma_len = min_t(unsigned int,
+ 		CIRC_CNT(xmit->head, xmit->tail, UART_XMIT_SIZE),
+ 		CIRC_CNT_TO_END(xmit->head, xmit->tail, UART_XMIT_SIZE));
+ 	spin_unlock_irq(&port->lock);
+ 
+-	BUG_ON(!sg_dma_len(sg));
+-
+-	desc = dmaengine_prep_slave_sg(chan,
+-			sg, s->sg_len_tx, DMA_MEM_TO_DEV,
+-			DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
++	desc = dmaengine_prep_slave_single(chan, buf, s->tx_dma_len,
++					   DMA_MEM_TO_DEV,
++					   DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+ 	if (!desc) {
+ 		dev_warn(port->dev, "Failed preparing Tx DMA descriptor\n");
+ 		/* switch to PIO */
+@@ -1524,7 +1520,8 @@ static void work_fn_tx(struct work_struct *work)
+ 		return;
+ 	}
+ 
+-	dma_sync_sg_for_device(chan->device->dev, sg, 1, DMA_TO_DEVICE);
++	dma_sync_single_for_device(chan->device->dev, buf, s->tx_dma_len,
++				   DMA_TO_DEVICE);
+ 
+ 	spin_lock_irq(&port->lock);
+ 	s->desc_tx = desc;
+@@ -1680,7 +1677,6 @@ static void sci_request_dma(struct uart_port *port)
+ 	struct sh_dmae_slave *param;
+ 	struct dma_chan *chan;
+ 	dma_cap_mask_t mask;
+-	int nent;
+ 
+ 	dev_dbg(port->dev, "%s: port %d\n", __func__, port->line);
+ 
+@@ -1700,27 +1696,21 @@ static void sci_request_dma(struct uart_port *port)
+ 	dev_dbg(port->dev, "%s: TX: got channel %p\n", __func__, chan);
+ 	if (chan) {
+ 		s->chan_tx = chan;
+-		sg_init_table(&s->sg_tx, 1);
+ 		/* UART circular tx buffer is an aligned page. */
+-		BUG_ON((uintptr_t)port->state->xmit.buf & ~PAGE_MASK);
+-		sg_set_page(&s->sg_tx, virt_to_page(port->state->xmit.buf),
+-			    UART_XMIT_SIZE,
+-			    (uintptr_t)port->state->xmit.buf & ~PAGE_MASK);
+-		nent = dma_map_sg(chan->device->dev, &s->sg_tx, 1,
+-				  DMA_TO_DEVICE);
+-		if (!nent) {
++		s->tx_dma_addr = dma_map_single(chan->device->dev,
++						port->state->xmit.buf,
++						UART_XMIT_SIZE,
++						DMA_TO_DEVICE);
++		if (dma_mapping_error(chan->device->dev, s->tx_dma_addr)) {
+ 			dev_warn(port->dev, "Failed mapping Tx DMA descriptor\n");
+ 			dma_release_channel(chan);
+ 			s->chan_tx = NULL;
+ 		} else {
+-			dev_dbg(port->dev, "%s: mapped %d@%p to %pad\n",
+-				__func__,
+-				sg_dma_len(&s->sg_tx), port->state->xmit.buf,
+-				&sg_dma_address(&s->sg_tx));
++			dev_dbg(port->dev, "%s: mapped %lu@%p to %pad\n",
++				__func__, UART_XMIT_SIZE,
++				port->state->xmit.buf, &s->tx_dma_addr);
+ 		}
+ 
+-		s->sg_len_tx = nent;
+-
+ 		INIT_WORK(&s->work_tx, work_fn_tx);
+ 	}
+ 
 -- 
-2.1.4
+1.9.1
 
