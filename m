@@ -1,35 +1,50 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 24 Aug 2015 16:09:35 +0000
-Subject: [PATCH 1/3] arm64: renesas: r8a7795 dtsi: Rename extal clock node
-Message-Id: <1440432577-9767-2-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sun, 23 Aug 2015 07:25:11 +0000
+Subject: [PATCH v2 04/07] ARM: shmobile: Add APMU nodes to r8a7791 DTSI
+Message-Id: <20150823072511.14156.61411.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150823072427.14156.1960.sendpatchset@little-apple>
+In-Reply-To: <20150823072427.14156.1960.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: mark.rutland@arm.com, devicetree@vger.kernel.org, lorenzo.pieralisi@arm.com, keita.kobayashi.ym@renesas.com, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-As the "extal_clk: node doesn't have a "clock-output-names" property,
-it's name is taken from the device's node. Hence this should not include
-the "_clk" suffix.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Add an APMU DT node for the r8a7791 SoC and use the enable-method to
+point out that the APMU should be used for SMP support.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 5ee10c375190d780..04f0d89fc20aff64 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -28,7 +28,7 @@
+ Changes from V1:
+ - None
+
+ arch/arm/boot/dts/r8a7791.dtsi |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- 0001/arch/arm/boot/dts/r8a7791.dtsi
++++ work/arch/arm/boot/dts/r8a7791.dtsi	2015-08-23 15:42:10.522366518 +0900
+@@ -42,6 +42,7 @@
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		enable-method = "renesas,apmu";
+ 
+ 		cpu0: cpu@0 {
+ 			device_type = "cpu";
+@@ -69,6 +70,12 @@
  		};
  	};
  
--	extal_clk: extal_clk {
-+	extal_clk: extal {
- 		compatible = "fixed-clock";
- 		#clock-cells = <0>;
- 		clock-frequency = <0>;
--- 
-1.9.1
-
++	apmu@e6152000 {
++		compatible = "renesas,apmu-r8a7791", "renesas,apmu";
++		reg = <0 0xe6152000 0 0x188>;
++		cpus = <&cpu0 &cpu1>;
++	};
++
+ 	gic: interrupt-controller@f1001000 {
+ 		compatible = "arm,gic-400";
+ 		#interrupt-cells = <3>;
