@@ -1,67 +1,38 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:39 +0000
-Subject: [PATCH v3 15/33] serial: sh-sci: Handle DMA init failures inside sci_request_dma()
-Message-Id: <1440180177-6924-16-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 24 Aug 2015 02:27:42 +0000
+Subject: [PATCH 07/25 v7][RFC] arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
+Message-Id: <87io8577ba.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Let sci_request_dma() handle failures to initialize DMA itself.
-This way sci_tx_dma_release() and sci_rx_dma_release() don't have to
-consider partial initialization, and thus don't need to reset DMA
-addresses to DMA_ERROR_CODE, which is not 100% portable access
-architectures.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v3:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 12 +++++++-----
- 1 file changed, 7 insertions(+), 5 deletions(-)
+v5 -> v7
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index cfef543df25271f5..ea6ab6173ce9f239 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1371,9 +1371,8 @@ static void sci_rx_dma_release(struct sci_port *s, bool enable_pio)
- 	s->chan_rx = NULL;
- 	s->cookie_rx[0] = s->cookie_rx[1] = -EINVAL;
- 	dma_release_channel(chan);
--	if (sg_dma_address(&s->sg_rx[0]))
--		dma_free_coherent(port->dev, s->buf_len_rx * 2,
--				  sg_virt(&s->sg_rx[0]), sg_dma_address(&s->sg_rx[0]));
-+	dma_free_coherent(port->dev, s->buf_len_rx * 2,
-+			  sg_virt(&s->sg_rx[0]), sg_dma_address(&s->sg_rx[0]));
- 	if (enable_pio)
- 		sci_start_rx(port);
- }
-@@ -1709,7 +1708,8 @@ static void sci_request_dma(struct uart_port *port)
- 		nent = dma_map_sg(port->dev, &s->sg_tx, 1, DMA_TO_DEVICE);
- 		if (!nent) {
- 			dev_warn(port->dev, "Failed mapping Tx DMA descriptor\n");
--			sci_tx_dma_release(s, false);
-+			dma_release_channel(chan);
-+			s->chan_tx = NULL;
- 		} else {
- 			dev_dbg(port->dev, "%s: mapped %d@%p to %pad\n",
- 				__func__,
-@@ -1743,7 +1743,9 @@ static void sci_request_dma(struct uart_port *port)
- 		if (!buf[0]) {
- 			dev_warn(port->dev,
- 				 "Failed to allocate Rx dma buffer, using PIO\n");
--			sci_rx_dma_release(s, true);
-+			dma_release_channel(chan);
-+			s->chan_rx = NULL;
-+			sci_start_rx(port);
- 			return;
- 		}
+ - no change
+
+ Documentation/devicetree/bindings/arm/shmobile.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
+index 1d70e78e..10e65d8 100644
+--- a/Documentation/devicetree/bindings/arm/shmobile.txt
++++ b/Documentation/devicetree/bindings/arm/shmobile.txt
+@@ -27,6 +27,8 @@ SoCs:
+     compatible = "renesas,r8a7793"
+   - R-Car E2 (R8A77940)
+     compatible = "renesas,r8a7794"
++  - R-Car H3 (R8A77950)
++    compatible = "renesas,r8a7795"
  
+ 
+ Boards:
 -- 
 1.9.1
 
