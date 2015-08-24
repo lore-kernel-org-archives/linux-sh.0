@@ -1,43 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 20 Aug 2015 09:29:21 +0000
-Subject: [PATCH 14/17 v6][RFC] Local: Hack: remove pm_sysrq_init
-Message-Id: <8737zeb9bi.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 24 Aug 2015 16:09:35 +0000
+Subject: [PATCH 1/3] arm64: renesas: r8a7795 dtsi: Rename extal clock node
+Message-Id: <1440432577-9767-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+As the "extal_clk: node doesn't have a "clock-output-names" property,
+it's name is taken from the device's node. Hence this should not include
+the "_clk" suffix.
 
-In initial H3 environment, psci/pm/suspend is not supported.
-When primary cpu was booted, pm_sysrq_init() is not initialized.
-So remove this function as temporary fix.
-
-Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v5 -> v6
-
- - no change
-
- kernel/power/poweroff.c | 2 +-
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/kernel/power/poweroff.c b/kernel/power/poweroff.c
-index 7ef6866..3f7ba43 100644
---- a/kernel/power/poweroff.c
-+++ b/kernel/power/poweroff.c
-@@ -39,7 +39,7 @@ static struct sysrq_key_op	sysrq_poweroff_op = {
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 5ee10c375190d780..04f0d89fc20aff64 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -28,7 +28,7 @@
+ 		};
+ 	};
  
- static int __init pm_sysrq_init(void)
- {
--	register_sysrq_key('o', &sysrq_poweroff_op);
-+//	register_sysrq_key('o', &sysrq_poweroff_op);
- 	return 0;
- }
- 
+-	extal_clk: extal_clk {
++	extal_clk: extal {
+ 		compatible = "fixed-clock";
+ 		#clock-cells = <0>;
+ 		clock-frequency = <0>;
 -- 
 1.9.1
 
