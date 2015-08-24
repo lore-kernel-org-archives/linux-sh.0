@@ -1,29 +1,33 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 28 Aug 2015 07:42:33 +0000
-Subject: Re: [PATCH/RFC 05/10] arm64: dts: r8a7795: add clock for EthernetAVB
-Message-Id: <CAMuHMdWM-hf3S06SncW4Fe2zzZGF4BfJwT1TXPrjtQ=STFw6dQ@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 24 Aug 2015 08:27:25 +0000
+Subject: [PATCH] ARM: shmobile: r8a7778: tidyup SSI resource region
+Message-Id: <87oahx5c3a.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440667450-3513-6-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1440667450-3513-6-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Aug 28, 2015 at 1:47 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> Maybe this is my v7 fault, but we need to use "clock-indices" instead of "renesas,clock-indices".
-> I will fix these in next v8
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Woops, and we kept on copying that ;-)
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 4b1fa9f..b317ec8 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -239,7 +239,7 @@
+ 		#sound-dai-cells = <1>;
+ 		compatible = "renesas,rcar_sound-r8a7778", "renesas,rcar_sound-gen1";
+ 		reg =	<0xffd90000 0x1000>,	/* SRU */
+-			<0xffd91000 0x1240>,	/* SSI */
++			<0xffd91000 0x270>,	/* SSI */
+ 			<0xfffe0000 0x24>;	/* ADG */
+ 		clocks = <&mstp3_clks R8A7778_CLK_SSI8>,
+ 			<&mstp3_clks R8A7778_CLK_SSI7>,
+-- 
+1.9.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
