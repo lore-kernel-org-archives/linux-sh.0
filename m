@@ -1,38 +1,40 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 11 Aug 2015 13:32:17 +0000
-Subject: Re: [GIT PULL] Third Round of Renesas ARM Based SoC DT Updates for v4.3
-Message-Id: <20150811133217.GO30181@localhost>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 24 Aug 2015 02:28:33 +0000
+Subject: [PATCH 10/25 v7][RFC] arm64: renesas: r8a7795: enable PFC
+Message-Id: <87egit779u.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438911334.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1438911334.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Aug 07, 2015 at 11:11:31AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these third round of Renesas ARM based SoC DT updates for v4.3.
-> 
-> This pull request is based on the previous round of
-> such requests, tagged as renesas-dt2-for-v4.3,
-> which I have already sent a pull-request for.
-> 
-> 
-> The following changes since commit 7fd6e11dca09b21efbe2b9db4eff08c8f4a16125:
-> 
->   ARM: shmobile: r8a7791: Add Audio MIX support on DTSI (2015-07-22 09:36:49 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt3-for-v4.3
-> 
-> for you to fetch changes up to 94bdc48d55ca10f90b4a625f0e443197e0013557:
-> 
->   ARM: shmobile: sh73a0 dtsi: Add missing "gpio-ranges" to gpio node (2015-08-05 06:39:28 +0900)
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Merged, thanks.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v5 -> v7
 
+ - new patch
 
--Olof
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 150b146..c3421b3 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -103,6 +103,11 @@
+ 			};
+ 		};
+ 
++		pfc: pfc@e6060000 {
++			compatible = "renesas,pfc-r8a7795";
++			reg = <0 0xe6060000 0 0x50c>;
++		};
++
+ 		scif2: serial@e6e88000 {
+ 			compatible = "renesas,scif-r8a7795", "renesas,scif";
+ 			reg = <0 0xe6e88000 0 64>;
+-- 
+1.9.1
+
