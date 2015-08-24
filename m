@@ -1,349 +1,108 @@
-From: Yinghai Lu <yinghai@kernel.org>
-Date: Fri, 14 Aug 2015 04:22:24 +0000
-Subject: [PATCH v2] lib/decompressors: Use real out buf size for gunzip with kernel
-Message-Id: <1439526144-3243-1-git-send-email-yinghai@kernel.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 24 Aug 2015 16:12:13 +0000
+Subject: [PATCH 1/3] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support
+Message-Id: <1440432735-9906-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-When loading x86 64bit kernel above 4GiB with patched grub2, got kernel
-gunzip error.
+Add Clock Domain support to the R-Car Gen3 Clock Pulse Generator (CPG)
+driver using the generic PM Domain.  This allows to power-manage the
+module clocks of SoC devices that are part of the CPG/MSTP Clock Domain
+using Runtime PM, or for system suspend/resume.
 
-| early console in decompress_kernel
-| decompress_kernel:
-|       input: [0x807f2143b4-0x807ff61aee]
-|      output: [0x807cc00000-0x807f3ea29b] 0x027ea29c: output_len
-| boot via startup_64
-| KASLR using RDTSC...
-|  new output: [0x46fe000000-0x470138cfff] 0x0338d000: output_run_size
-|  decompress: [0x46fe000000-0x47007ea29b] <== [0x807f2143b4-0x807ff61aee]
-|
-| Decompressing Linux... gz...
-|
-| uncompression error
-|
-| -- System halted
+SoC devices that are part of the CPG/MSTP Clock Domain and can be
+power-managed through an MSTP clock should be tagged in DT with a proper
+"power-domains" property.
 
-the new buffer is at 0x46fe000000ULL, decompressor_gzip is using
-0xffffffb901ffffff as out_len. gunzip in lib/zlib_inflate/inflate.c
-cap that len to 0x01ffffff and decompress fails later.
-
-We could hit this problem with crashkernel booting that uses kexec
-loading kernel above 4GiB.
-
-We have decompress_* support:
-    1. inbuf[]/outbuf[] for kernel preboot.
-    2. inbuf[]/flush() for initramfs
-    3. fill()/flush() for initrd.
-This bug only affect kernel preboot path that use outbuf[].
-
-Add __decompress and take real out_buf_len for gunzip instead of guessing
-wrong buf size.
-
--v2: fix unused warning on sh/arm/m32r from Fengguang.
-
-Signed-off-by: Yinghai Lu <yinghai@kernel.org>
-Fixes: 1431574a1c4 (lib/decompressors: fix "no limit" output buffer length)
-Cc: Alexandre Courbot <acourbot@nvidia.com>
-Cc: Jon Medhurst <tixy@linaro.org>
-Cc: Stephen Warren <swarren@wwwdotorg.org>
-Cc: "H. Peter Anvin" <hpa@zytor.com>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Russell King <linux@arm.linux.org.uk>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Ralf Baechle <ralf@linux-mips.org>
-Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-Cc: Guan Xuetao <gxt@mprc.pku.edu.cn>
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: uclinux-h8-devel@lists.sourceforge.jp
-Cc: linux-mips@linux-mips.org
-Cc: linux-s390@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: Fengguang Wu <fengguang.wu@intel.com>
-Cc: stable <stable@vger.kernel.org>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/compressed/decompress.c  |    2 +-
- arch/h8300/boot/compressed/misc.c      |    2 +-
- arch/m32r/boot/compressed/misc.c       |    3 ++-
- arch/mips/boot/compressed/decompress.c |    4 ++--
- arch/s390/boot/compressed/misc.c       |    2 +-
- arch/sh/boot/compressed/misc.c         |    2 +-
- arch/unicore32/boot/compressed/misc.c  |    4 ++--
- arch/x86/boot/compressed/misc.c        |    3 ++-
- lib/decompress_bunzip2.c               |    6 +++---
- lib/decompress_inflate.c               |   31 ++++++++++++++++++++++++++-----
- lib/decompress_unlz4.c                 |    6 +++---
- lib/decompress_unlzma.c                |    7 +++----
- lib/decompress_unlzo.c                 |   13 ++++++++++++-
- lib/decompress_unxz.c                  |   12 +++++++++++-
- 14 files changed, 70 insertions(+), 27 deletions(-)
+v2:
+  - No changes.
 
-Index: linux-2.6/arch/arm/boot/compressed/decompress.c
-=================================--- linux-2.6.orig/arch/arm/boot/compressed/decompress.c
-+++ linux-2.6/arch/arm/boot/compressed/decompress.c
-@@ -57,5 +57,5 @@ extern char * strstr(const char * s1, co
+ .../clock/renesas,rcar-gen3-cpg-clocks.txt         | 26 ++++++++++++++++++++--
+ arch/arm64/Kconfig.platforms                       |  1 +
+ drivers/clk/shmobile/clk-rcar-gen3.c               |  2 ++
+ 3 files changed, 27 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
+index b1a7e01fd042c6ce..a46245b834e0477a 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
+@@ -2,6 +2,8 @@
  
- int do_decompress(u8 *input, int len, u8 *output, void (*error)(char *x))
- {
--	return decompress(input, len, NULL, NULL, output, NULL, error);
-+	return __decompress(input, len, NULL, NULL, output, 0, NULL, error);
- }
-Index: linux-2.6/arch/h8300/boot/compressed/misc.c
-=================================--- linux-2.6.orig/arch/h8300/boot/compressed/misc.c
-+++ linux-2.6/arch/h8300/boot/compressed/misc.c
-@@ -70,5 +70,5 @@ void decompress_kernel(void)
- 	free_mem_ptr = (unsigned long)&_end;
- 	free_mem_end_ptr = free_mem_ptr + HEAP_SIZE;
+ The CPG generates core clocks for the R-Car Gen3 SoCs. It includes three PLLs
+ and several fixed ratio dividers.
++The CPG also provides a Clock Domain for SoC devices, in combination with the
++CPG Module Stop (MSTP) Clocks.
  
--	decompress(input_data, input_len, NULL, NULL, output, NULL, error);
-+	__decompress(input_data, input_len, NULL, NULL, output, 0, NULL, error);
- }
-Index: linux-2.6/arch/m32r/boot/compressed/misc.c
-=================================--- linux-2.6.orig/arch/m32r/boot/compressed/misc.c
-+++ linux-2.6/arch/m32r/boot/compressed/misc.c
-@@ -86,6 +86,7 @@ decompress_kernel(int mmu_on, unsigned c
- 	free_mem_end_ptr = free_mem_ptr + BOOT_HEAP_SIZE;
+ Required Properties:
  
- 	puts("\nDecompressing Linux... ");
--	decompress(input_data, input_len, NULL, NULL, output_data, NULL, error);
-+	__decompress(input_data, input_len, NULL, NULL, output_data, 0,
-+			NULL, error);
- 	puts("done.\nBooting the kernel.\n");
- }
-Index: linux-2.6/arch/mips/boot/compressed/decompress.c
-=================================--- linux-2.6.orig/arch/mips/boot/compressed/decompress.c
-+++ linux-2.6/arch/mips/boot/compressed/decompress.c
-@@ -111,8 +111,8 @@ void decompress_kernel(unsigned long boo
- 	puts("\n");
+@@ -15,10 +17,18 @@ Required Properties:
+   - #clock-cells: Must be 1
+   - clock-output-names: The names of the clocks. Supported clocks are
+     "main", "pll0", "pll1", "pll2", "pll3", "pll4"
++  - #power-domain-cells: Must be 0
  
- 	/* Decompress the kernel with according algorithm */
--	decompress((char *)zimage_start, zimage_size, 0, 0,
--		   (void *)VMLINUX_LOAD_ADDRESS_ULL, 0, error);
-+	__decompress((char *)zimage_start, zimage_size, 0, 0,
-+		   (void *)VMLINUX_LOAD_ADDRESS_ULL, 0, 0, error);
++SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
++through an MSTP clock should refer to the CPG device node in their
++"power-domains" property, as documented by the generic PM domain bindings in
++Documentation/devicetree/bindings/power/power_domain.txt.
  
- 	/* FIXME: should we flush cache here? */
- 	puts("Now, booting the kernel...\n");
-Index: linux-2.6/arch/s390/boot/compressed/misc.c
-=================================--- linux-2.6.orig/arch/s390/boot/compressed/misc.c
-+++ linux-2.6/arch/s390/boot/compressed/misc.c
-@@ -167,7 +167,7 @@ unsigned long decompress_kernel(void)
- #endif
+-Example
+--------
++
++Examples
++--------
++
++  - CPG device node:
  
- 	puts("Uncompressing Linux... ");
--	decompress(input_data, input_len, NULL, NULL, output, NULL, error);
-+	__decompress(input_data, input_len, NULL, NULL, output, 0, NULL, error);
- 	puts("Ok, booting the kernel.\n");
- 	return (unsigned long) output;
- }
-Index: linux-2.6/arch/sh/boot/compressed/misc.c
-=================================--- linux-2.6.orig/arch/sh/boot/compressed/misc.c
-+++ linux-2.6/arch/sh/boot/compressed/misc.c
-@@ -132,7 +132,7 @@ void decompress_kernel(void)
+ 	cpg_clocks: cpg_clocks@e6150000 {
+ 		compatible = "renesas,r8a7795-cpg-clocks",
+@@ -28,4 +38,16 @@ Example
+ 		#clock-cells = <1>;
+ 		clock-output-names = "main", "pll0", "pll1","pll2",
+ 				     "pll3", "pll4";
++		#power-domain-cells = <0>;
++	};
++
++  - CPG/MSTP Clock Domain member device node:
++
++	scif2: serial@e6e88000 {
++		compatible = "renesas,scif-r8a7795", "renesas,scif";
++		reg = <0 0xe6e88000 0 64>;
++		interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks RCAR_R8A7795_CLK_SCIF2>;
++		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 	};
+diff --git a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
+index 1e9b0c89fdbc3517..8b47d2bac9018873 100644
+--- a/arch/arm64/Kconfig.platforms
++++ b/arch/arm64/Kconfig.platforms
+@@ -55,6 +55,7 @@ config ARCH_RCAR_GEN3
+ 	bool "Renesas R-Car Gen3 SoC Platform"
+ 	select ARCH_SHMOBILE
+ 	select ARCH_SHMOBILE_MULTI
++	select PM_GENERIC_DOMAINS if PM
+ 	help
+ 	  This enables support for Renesas SoC.
  
- 	puts("Uncompressing Linux... ");
- 	cache_control(CACHE_ENABLE);
--	decompress(input_data, input_len, NULL, NULL, output, NULL, error);
-+	__decompress(input_data, input_len, NULL, NULL, output, 0, NULL, error);
- 	cache_control(CACHE_DISABLE);
- 	puts("Ok, booting the kernel.\n");
- }
-Index: linux-2.6/arch/unicore32/boot/compressed/misc.c
-=================================--- linux-2.6.orig/arch/unicore32/boot/compressed/misc.c
-+++ linux-2.6/arch/unicore32/boot/compressed/misc.c
-@@ -119,8 +119,8 @@ unsigned long decompress_kernel(unsigned
- 	output_ptr = get_unaligned_le32(tmp);
- 
- 	arch_decomp_puts("Uncompressing Linux...");
--	decompress(input_data, input_data_end - input_data, NULL, NULL,
--			output_data, NULL, error);
-+	__decompress(input_data, input_data_end - input_data, NULL, NULL,
-+			output_data, 0, NULL, error);
- 	arch_decomp_puts(" done, booting the kernel.\n");
- 	return output_ptr;
- }
-Index: linux-2.6/arch/x86/boot/compressed/misc.c
-=================================--- linux-2.6.orig/arch/x86/boot/compressed/misc.c
-+++ linux-2.6/arch/x86/boot/compressed/misc.c
-@@ -448,7 +448,8 @@ asmlinkage __visible void *decompress_ke
- #endif
- 
- 	debug_putstr("\nDecompressing Linux... ");
--	decompress(input_data, input_len, NULL, NULL, output, NULL, error);
-+	__decompress(input_data, input_len, NULL, NULL, output, output_len,
-+			NULL, error);
- 	parse_elf(output);
- 	/*
- 	 * 32-bit always performs relocations. 64-bit relocations are only
-Index: linux-2.6/lib/decompress_bunzip2.c
-=================================--- linux-2.6.orig/lib/decompress_bunzip2.c
-+++ linux-2.6/lib/decompress_bunzip2.c
-@@ -743,12 +743,12 @@ exit_0:
- }
- 
- #ifdef PREBOOT
--STATIC int INIT decompress(unsigned char *buf, long len,
-+STATIC int INIT __decompress(unsigned char *buf, long len,
- 			long (*fill)(void*, unsigned long),
- 			long (*flush)(void*, unsigned long),
--			unsigned char *outbuf,
-+			unsigned char *outbuf, long olen,
- 			long *pos,
--			void(*error)(char *x))
-+			void (*error)(char *x))
- {
- 	return bunzip2(buf, len - 4, fill, flush, outbuf, pos, error);
- }
-Index: linux-2.6/lib/decompress_inflate.c
-=================================--- linux-2.6.orig/lib/decompress_inflate.c
-+++ linux-2.6/lib/decompress_inflate.c
-@@ -1,4 +1,5 @@
- #ifdef STATIC
-+#define PREBOOT
- /* Pre-boot environment: included */
- 
- /* prevent inclusion of _LINUX_KERNEL_H in pre-boot environment: lots
-@@ -33,23 +34,23 @@ static long INIT nofill(void *buffer, un
- }
- 
- /* Included from initramfs et al code */
--STATIC int INIT gunzip(unsigned char *buf, long len,
-+STATIC int INIT __gunzip(unsigned char *buf, long len,
- 		       long (*fill)(void*, unsigned long),
- 		       long (*flush)(void*, unsigned long),
--		       unsigned char *out_buf,
-+		       unsigned char *out_buf, long out_len,
- 		       long *pos,
- 		       void(*error)(char *x)) {
- 	u8 *zbuf;
- 	struct z_stream_s *strm;
- 	int rc;
--	size_t out_len;
- 
- 	rc = -1;
- 	if (flush) {
- 		out_len = 0x8000; /* 32 K */
- 		out_buf = malloc(out_len);
- 	} else {
--		out_len = ((size_t)~0) - (size_t)out_buf; /* no limit */
-+		if (!out_len)
-+			out_len = ((size_t)~0) - (size_t)out_buf; /* no limit */
+diff --git a/drivers/clk/shmobile/clk-rcar-gen3.c b/drivers/clk/shmobile/clk-rcar-gen3.c
+index 098caac07bdc2727..80c9b1dfff05990d 100644
+--- a/drivers/clk/shmobile/clk-rcar-gen3.c
++++ b/drivers/clk/shmobile/clk-rcar-gen3.c
+@@ -227,6 +227,8 @@ static void __init rcar_gen3_cpg_clocks_init(struct device_node *np)
  	}
- 	if (!out_buf) {
- 		error("Out of memory while allocating output buffer");
-@@ -181,4 +182,24 @@ gunzip_nomem1:
- 	return rc; /* returns Z_OK (0) if successful */
- }
  
--#define decompress gunzip
-+#ifndef PREBOOT
-+STATIC int INIT gunzip(unsigned char *buf, long len,
-+		       long (*fill)(void*, unsigned long),
-+		       long (*flush)(void*, unsigned long),
-+		       unsigned char *out_buf,
-+		       long *pos,
-+		       void (*error)(char *x))
-+{
-+	return __gunzip(buf, len, fill, flush, out_buf, 0, pos, error);
-+}
-+#else
-+STATIC int INIT __decompress(unsigned char *buf, long len,
-+			   long (*fill)(void*, unsigned long),
-+			   long (*flush)(void*, unsigned long),
-+			   unsigned char *out_buf, long out_len,
-+			   long *pos,
-+			   void (*error)(char *x))
-+{
-+	return __gunzip(buf, len, fill, flush, out_buf, out_len, pos, error);
-+}
-+#endif
-Index: linux-2.6/lib/decompress_unlz4.c
-=================================--- linux-2.6.orig/lib/decompress_unlz4.c
-+++ linux-2.6/lib/decompress_unlz4.c
-@@ -196,12 +196,12 @@ exit_0:
+ 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++
++	cpg_mstp_add_clk_domain(np);
  }
- 
- #ifdef PREBOOT
--STATIC int INIT decompress(unsigned char *buf, long in_len,
-+STATIC int INIT __decompress(unsigned char *buf, long in_len,
- 			      long (*fill)(void*, unsigned long),
- 			      long (*flush)(void*, unsigned long),
--			      unsigned char *output,
-+			      unsigned char *output, long out_len,
- 			      long *posp,
--			      void(*error)(char *x)
-+			      void (*error)(char *x)
- 	)
- {
- 	return unlz4(buf, in_len - 4, fill, flush, output, posp, error);
-Index: linux-2.6/lib/decompress_unlzma.c
-=================================--- linux-2.6.orig/lib/decompress_unlzma.c
-+++ linux-2.6/lib/decompress_unlzma.c
-@@ -667,13 +667,12 @@ exit_0:
- }
- 
- #ifdef PREBOOT
--STATIC int INIT decompress(unsigned char *buf, long in_len,
-+STATIC int INIT __decompress(unsigned char *buf, long in_len,
- 			      long (*fill)(void*, unsigned long),
- 			      long (*flush)(void*, unsigned long),
--			      unsigned char *output,
-+			      unsigned char *output, long out_len,
- 			      long *posp,
--			      void(*error)(char *x)
--	)
-+			      void (*error)(char *x))
- {
- 	return unlzma(buf, in_len - 4, fill, flush, output, posp, error);
- }
-Index: linux-2.6/lib/decompress_unlzo.c
-=================================--- linux-2.6.orig/lib/decompress_unlzo.c
-+++ linux-2.6/lib/decompress_unlzo.c
-@@ -31,6 +31,7 @@
-  */
- 
- #ifdef STATIC
-+#define PREBOOT
- #include "lzo/lzo1x_decompress_safe.c"
- #else
- #include <linux/decompress/unlzo.h>
-@@ -287,4 +288,14 @@ exit:
- 	return ret;
- }
- 
--#define decompress unlzo
-+#ifdef PREBOOT
-+STATIC int INIT __decompress(unsigned char *buf, long len,
-+			   long (*fill)(void*, unsigned long),
-+			   long (*flush)(void*, unsigned long),
-+			   unsigned char *out_buf, long olen,
-+			   long *pos,
-+			   void (*error)(char *x))
-+{
-+	return unlzo(buf, len, fill, flush, out_buf, pos, error);
-+}
-+#endif
-Index: linux-2.6/lib/decompress_unxz.c
-=================================--- linux-2.6.orig/lib/decompress_unxz.c
-+++ linux-2.6/lib/decompress_unxz.c
-@@ -394,4 +394,14 @@ error_alloc_state:
-  * This macro is used by architecture-specific files to decompress
-  * the kernel image.
-  */
--#define decompress unxz
-+#ifdef XZ_PREBOOT
-+STATIC int INIT __decompress(unsigned char *buf, long len,
-+			   long (*fill)(void*, unsigned long),
-+			   long (*flush)(void*, unsigned long),
-+			   unsigned char *out_buf, long olen,
-+			   long *pos,
-+			   void (*error)(char *x))
-+{
-+	return unxz(buf, len, fill, flush, out_buf, pos, error);
-+}
-+#endif
+ CLK_OF_DECLARE(rcar_gen3_cpg_clks, "renesas,rcar-gen3-cpg-clocks",
+ 	       rcar_gen3_cpg_clocks_init);
+-- 
+1.9.1
+
