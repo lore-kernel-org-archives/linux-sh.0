@@ -1,55 +1,38 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Fri, 14 Aug 2015 13:53:08 +0000
-Subject: [PATCH 2/2] ARM: shmobile: bockw dts: enable SMSC interrupt
-Message-Id: <1439560388-5061-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 24 Aug 2015 02:31:41 +0000
+Subject: [PATCH 20/25 v7][RFC] arm64: defconfig: renesas: enable SCIF
+Message-Id: <87zj1h5sk5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Clears bit 4 in IRQMR0 in the FPGA to enable the SMSC interrupt.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+v5 -> v7
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 8a54076..13645db 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -65,6 +65,20 @@
- };
- 
- &bsc {
-+	fpga@18200000 {
-+		compatible = "pinctrl-single";
-+		reg = <0x18200030 2>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		pinctrl-single,bit-per-mux;
-+		pinctrl-single,register-width = <16>;
-+		pinctrl-single,function-mask = <1>;
-+
-+		irq_pins: fpga_irq_pins {
-+			pinctrl-single,bits = <0 0 0x10>;
-+		};
-+	};
-+
- 	ethernet@18300000 {
- 		compatible = "smsc,lan9220", "smsc,lan9115";
- 		reg = <0x18300000 0x1000>;
-@@ -75,6 +89,9 @@
- 		reg-io-width = <4>;
- 		vddvario-supply = <&fixedregulator3v3>;
- 		vdd33a-supply = <&fixedregulator3v3>;
-+
-+		pinctrl-0 = <&irq_pins>;
-+		pinctrl-names = "default";
- 	};
- };
- 
+ - no change
+
+ arch/arm64/configs/defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 8f35763..f49d044 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -110,6 +110,9 @@ CONFIG_SERIAL_8250_DW=y
+ CONFIG_SERIAL_8250_MT6577=y
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_SERIAL_MSM=y
+ CONFIG_SERIAL_MSM_CONSOLE=y
+ CONFIG_SERIAL_OF_PLATFORM=y
 -- 
-2.4.6
+1.9.1
 
