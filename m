@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 24 Aug 2015 09:30:33 +0000
-Subject: Re: [PATCH 11/25 v7][RFC] arm64: renesas: r8a7795: add mstp7 node and enable HSUSB clock
-Message-Id: <CAMuHMdXBbrDouU6GMA6FrsZgQhWBtKp_p4H3exm1rMr7RUtMNw@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 24 Aug 2015 11:08:22 +0000
+Subject: RE: [PATCH 11/25 v7][RFC] arm64: renesas: r8a7795: add mstp7 node and enable HSUSB clock
+Message-Id: <SG2PR06MB0919E6D8EAC4FE77DC592A40D8620@SG2PR06MB0919.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87d1yd7797.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87d1yd7797.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,37 +10,35 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Morimoto-san, Shimoda-san,
-
-On Mon, Aug 24, 2015 at 4:28 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> @@ -100,6 +100,16 @@
->                                         renesas,clock-indices = <R8A7795_CLK_SCIF2>;
->                                         clock-output-names = "scif2";
->                                 };
-> +
-> +                               mstp7_clks: mstp7_clks@e615014c {
-> +                                       compatible = "renesas,r8a7795-mstp-clocks",
-> +                                                    "renesas,cpg-mstp-clocks";
-> +                                       reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
-> +                                       clocks =  <&s3d4_clk>;
-
-Shouldn't this be the "s3d2" clock?
-
-> +                                       #clock-cells = <1>;
-> +                                       renesas,clock-indices = <R8A7795_CLK_HSUSB>;
-> +                                       clock-output-names = "hsusb";
-> +                               };
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR2VlcnQtc2FuLA0KDQo+IFNlbnQ6IE1vbmRheSwgQXVndXN0IDI0LCAyMDE1IDY6MzEgUE0N
+Cj4gDQo+IEhpIE1vcmltb3RvLXNhbiwgU2hpbW9kYS1zYW4sDQo+IA0KPiBPbiBNb24sIEF1ZyAy
+NCwgMjAxNSBhdCA0OjI4IEFNLCBLdW5pbm9yaSBNb3JpbW90bw0KPiA8a3VuaW5vcmkubW9yaW1v
+dG8uZ3hAcmVuZXNhcy5jb20+IHdyb3RlOg0KPiA+IC0tLSBhL2FyY2gvYXJtNjQvYm9vdC9kdHMv
+cmVuZXNhcy9yOGE3Nzk1LmR0c2kNCj4gPiArKysgYi9hcmNoL2FybTY0L2Jvb3QvZHRzL3JlbmVz
+YXMvcjhhNzc5NS5kdHNpDQo+ID4gQEAgLTEwMCw2ICsxMDAsMTYgQEANCj4gPiAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmVuZXNhcyxjbG9jay1pbmRpY2VzID0gPFI4
+QTc3OTVfQ0xLX1NDSUYyPjsNCj4gPiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgY2xvY2stb3V0cHV0LW5hbWVzID0gInNjaWYyIjsNCj4gPiAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgIH07DQo+ID4gKw0KPiA+ICsgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgbXN0cDdfY2xrczogbXN0cDdfY2xrc0BlNjE1MDE0YyB7DQo+ID4gKyAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgIGNvbXBhdGlibGUgPSAicmVuZXNhcyxyOGE3Nzk1
+LW1zdHAtY2xvY2tzIiwNCj4gPiArICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICJyZW5lc2FzLGNwZy1tc3RwLWNsb2NrcyI7DQo+ID4gKyAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJlZyA9IDwwIDB4ZTYxNTAxNGMgMCA0Piwg
+PDAgMHhlNjE1MDFjNCAwIDQ+Ow0KPiA+ICsgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICBjbG9ja3MgPSAgPCZzM2Q0X2Nsaz47DQo+IA0KPiBTaG91bGRuJ3QgdGhpcyBiZSB0
+aGUgInMzZDIiIGNsb2NrPw0KDQpUaGFuayB5b3UgZm9yIHRoZSBwb2ludC4gWWVzLCB0aGlzIHNo
+b3VsZCBiZSB0aGUgInMzZDIiIGNsb2NrLg0KUGVyaGFwcyBNb3JpbW90by1zYW4gd2lsbCBmaXgg
+dGhpcyBpbiB2OC4NCg0KQmVzdCByZWdhcmRzLA0KWW9zaGloaXJvIFNoaW1vZGENCg0KPiA+ICsg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAjY2xvY2stY2VsbHMgPSA8MT47
+DQo+ID4gKyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJlbmVzYXMsY2xv
+Y2staW5kaWNlcyA9IDxSOEE3Nzk1X0NMS19IU1VTQj47DQo+ID4gKyAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgIGNsb2NrLW91dHB1dC1uYW1lcyA9ICJoc3VzYiI7DQo+ID4g
+KyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9Ow0KPiANCj4gR3J7b2V0amUsZWV0aW5n
+fXMsDQo+IA0KPiAgICAgICAgICAgICAgICAgICAgICAgICBHZWVydA0KPiANCj4gLS0NCj4gR2Vl
+cnQgVXl0dGVyaG9ldmVuIC0tIFRoZXJlJ3MgbG90cyBvZiBMaW51eCBiZXlvbmQgaWEzMiAtLSBn
+ZWVydEBsaW51eC1tNjhrLm9yZw0KPiANCj4gSW4gcGVyc29uYWwgY29udmVyc2F0aW9ucyB3aXRo
+IHRlY2huaWNhbCBwZW9wbGUsIEkgY2FsbCBteXNlbGYgYSBoYWNrZXIuIEJ1dA0KPiB3aGVuIEkn
+bSB0YWxraW5nIHRvIGpvdXJuYWxpc3RzIEkganVzdCBzYXkgInByb2dyYW1tZXIiIG9yIHNvbWV0
+aGluZyBsaWtlIHRoYXQuDQo+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLS0gTGlu
+dXMgVG9ydmFsZHMNCg=
