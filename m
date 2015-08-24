@@ -1,40 +1,34 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 31 Aug 2015 15:36:38 +0000
-Subject: [PATCH 0/3] Basic GPIO support for r8a7795
-Message-Id: <1441035401-5843-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 24 Aug 2015 16:09:36 +0000
+Subject: [PATCH 2/3] arm64: renesas: r8a7795 dtsi: Extal clock must be overridden
+Message-Id: <1440432577-9767-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi!
+Add a note that the "extal" clock for the external crystal oscillator
+must be overridden by a board-specific .dts file, else its clock rate
+will be zero.
 
-This has been broken out of horms's GPIO and EthernetAVB RFC (thanks again)
-and has its minor issues fixed, hopefully.  Specifically, it fixes the GPIO
-6 and 7 clock references, dumps the MSTP's "clock-output-names" property,
-and omits the extraneous options in defconfig.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
-CU
-Uli
-
-
-Changes since RFC:
-- fix GPIO6 and GPIO7 clock assignments
-- remove "clock-output-names" property from MSTP
-- do not enable GPIO_SYSFS, LEDS_GPIO in defconfig
-
-
-Takeshi Kihara (3):
-  arm64: dts: r8a7795: add GPIO clocks
-  arm64: dts: r8a7795: add GPIO nodes
-  arm64: defconfig: Enable GPIO of Renesas R-Car Gen3 SoC
-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 128 ++++++++++++++++++++++++++++++
- arch/arm64/configs/defconfig              |   1 +
- include/dt-bindings/clock/r8a7795-clock.h |   8 ++
- 3 files changed, 137 insertions(+)
-
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 04f0d89fc20aff64..46e68c040cc925dd 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -31,6 +31,7 @@
+ 	extal_clk: extal {
+ 		compatible = "fixed-clock";
+ 		#clock-cells = <0>;
++		/* This value must be overridden by the board */
+ 		clock-frequency = <0>;
+ 	};
+ 
 -- 
-2.4.6
+1.9.1
 
