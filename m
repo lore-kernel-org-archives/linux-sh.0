@@ -1,105 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 24 Aug 2015 02:30:10 +0000
-Subject: [PATCH 15/25 v7][RFC] arm64: renesas: add Salvator-X board support on DTS
-Message-Id: <877fol7774.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 24 Aug 2015 12:47:46 +0000
+Subject: Re: [PATCH 15/25 v7][RFC] arm64: renesas: add Salvator-X board support on DTS
+Message-Id: <CAMuHMdXDSq4qcvxu9iBoTb4xjF6=dDT0=vG0Qm2hGhAd39+UHg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <877fol7774.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <877fol7774.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+On Mon, Aug 24, 2015 at 4:30 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> --- /dev/null
+> +++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+> @@ -0,0 +1,46 @@
 
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v5 -> v7
+> +&pfc {
+> +       scif2_pins: scif2 {
+> +               renesas,groups = "scif2_data";
+> +               renesas,function = "scif2";
+> +       };
 
- - add Documentation
- - SCIF uses PFC
- - SalvatorX -> Salvator-X
- - salvatorx -> salvator-x
+The closing brace has 7 spaces instead of 1 TAB.
 
- Documentation/devicetree/bindings/arm/shmobile.txt |  2 +
- arch/arm64/boot/dts/renesas/Makefile               |  2 +-
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 46 ++++++++++++++++++++++
- 3 files changed, 49 insertions(+), 1 deletion(-)
- create mode 100644 arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+Gr{oetje,eeting}s,
 
-diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
-index 10e65d8..dbcc007 100644
---- a/Documentation/devicetree/bindings/arm/shmobile.txt
-+++ b/Documentation/devicetree/bindings/arm/shmobile.txt
-@@ -57,5 +57,7 @@ Boards:
-     compatible = "renesas,lager", "renesas,r8a7790"
-   - Marzen
-     compatible = "renesas,marzen", "renesas,r8a7779"
-+  - Salvator-X
-+    compatible = "renesas,salvator-x", "renesas,r8a7795";
-   - Silk
-     compatible = "renesas,silk", "renesas,r8a7794";
-diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
-index 6aeefd9..dbacc64 100644
---- a/arch/arm64/boot/dts/renesas/Makefile
-+++ b/arch/arm64/boot/dts/renesas/Makefile
-@@ -1,4 +1,4 @@
--dtb-$(CONFIG_ARCH_RCAR_GEN3) ++dtb-$(CONFIG_ARCH_RCAR_GEN3) += r8a7795-salvator-x.dtb
- 
- always		:= $(dtb-y)
- subdir-y	:= $(dts-dirs)
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-new file mode 100644
-index 0000000..cdfc4c9
---- /dev/null
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -0,0 +1,46 @@
-+/*
-+ * Device Tree Source for the Salvator-X board
-+ *
-+ * Copyright (C) 2015 Renesas Electronics Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+#include "r8a7795.dtsi"
-+
-+/ {
-+	model = "Renesas Salvator-X board based on r8a7795";
-+	compatible = "renesas,salvator-x", "renesas,r8a7795";
-+
-+	aliases {
-+		serial0 = &scif2;
-+	};
-+
-+	chosen {
-+		bootargs = "ignore_loglevel";
-+		stdout-path = &scif2;
-+	};
-+
-+	memory@48000000 {
-+		device_type = "memory";
-+		/* first 128MB is reserved for secure area. */
-+		reg = <0x0 0x48000000 0x0 0x38000000>;
-+	};
-+};
-+
-+&pfc {
-+	scif2_pins: scif2 {
-+		renesas,groups = "scif2_data";
-+		renesas,function = "scif2";
-+       };
-+};
-+
-+&scif2 {
-+	pinctrl-0 = <&scif2_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
--- 
-1.9.1
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
