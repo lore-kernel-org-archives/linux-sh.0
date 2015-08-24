@@ -1,115 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Aug 2015 02:12:01 +0000
-Subject: [PATCH 02/12] clk: shmobile: r8a7778: Add CPG/MSTP Clock Domain support
-Message-Id: <790fc2951ca6efff4a9fd9f2f7e6c3fe06053e6c.1438911559.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 24 Aug 2015 16:09:34 +0000
+Subject: [PATCH 0/3] arm64: renesas: r8a7795/salvator-x extal clock override
+Message-Id: <1440432577-9767-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438911559.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1438911559.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+	Hi,
 
-Add Clock Domain support to the R-Car M1A Clock Pulse Generator (CPG)
-driver using the generic PM Domain.  This allows to power-manage the
-module clocks of SoC devices that are part of the CPG/MSTP Clock Domain
-using Runtime PM, or for system suspend/resume.
+This patch series overrides the clock frequency and accuracy of the
+external crystal oscillator. Without this all clocks have a rate of
+zero.  This can be verified using "cat
+/sys/kernel/debug/clk/clk_summary".
 
-SoC devices that are part of the CPG/MSTP Clock Domain and can be
-power-managed through an MSTP clock should be tagged in DT with a proper
-"power-domains" property.
+This is against "[PATCH 00/25 v7][RFC] arm64: Renesas Gen3 initial
+patch".
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Stephen Boyd <sboyd@codeaurora.org>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- .../bindings/clock/renesas,r8a7778-cpg-clocks.txt  | 29 +++++++++++++++++++---
- arch/arm/mach-shmobile/Kconfig                     |  1 +
- drivers/clk/shmobile/clk-r8a7778.c                 |  2 ++
- 3 files changed, 29 insertions(+), 3 deletions(-)
+Geert Uytterhoeven (3):
+  arm64: renesas: r8a7795 dtsi: Rename extal clock node
+  arm64: renesas: r8a7795 dtsi: Extal clock must be overridden
+  arm64: renesas: salvator-x: Add missing extal clock override
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
-index 2f3747fdcf1c..e4cdaf1cb333 100644
---- a/Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,r8a7778-cpg-clocks.txt
-@@ -1,7 +1,9 @@
- * Renesas R8A7778 Clock Pulse Generator (CPG)
- 
- The CPG generates core clocks for the R8A7778. It includes two PLLs and
--several fixed ratio dividers
-+several fixed ratio dividers.
-+The CPG also provides a Clock Domain for SoC devices, in combination with the
-+CPG Module Stop (MSTP) Clocks.
- 
- Required Properties:
- 
-@@ -10,10 +12,18 @@ Required Properties:
-   - #clock-cells: Must be 1
-   - clock-output-names: The names of the clocks. Supported clocks are
-     "plla", "pllb", "b", "out", "p", "s", and "s1".
-+  - #power-domain-cells: Must be 0
- 
-+SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
-+through an MSTP clock should refer to the CPG device node in their
-+"power-domains" property, as documented by the generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
- 
--Example
---------
-+
-+Examples
-+--------
-+
-+  - CPG device node:
- 
- 	cpg_clocks: cpg_clocks@ffc80000 {
- 		compatible = "renesas,r8a7778-cpg-clocks";
-@@ -22,4 +32,17 @@ Example
- 		clocks = <&extal_clk>;
- 		clock-output-names = "plla", "pllb", "b",
- 				     "out", "p", "s", "s1";
-+		#power-domain-cells = <0>;
-+	};
-+
-+
-+  - CPG/MSTP Clock Domain member device node:
-+
-+	sdhi0: sd@ffe4c000 {
-+		compatible = "renesas,sdhi-r8a7778";
-+		reg = <0xffe4c000 0x100>;
-+		interrupts = <0 87 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7778_CLK_SDHI0>;
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
- 	};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 45006479d461..e14fa5e87475 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -4,6 +4,7 @@ config ARCH_SHMOBILE
- 
- config PM_RCAR
- 	bool
-+	select PM_GENERIC_DOMAINS if PM
- 
- config PM_RMOBILE
- 	bool
-diff --git a/drivers/clk/shmobile/clk-r8a7778.c b/drivers/clk/shmobile/clk-r8a7778.c
-index cb33b57274bf..fa45684e220c 100644
---- a/drivers/clk/shmobile/clk-r8a7778.c
-+++ b/drivers/clk/shmobile/clk-r8a7778.c
-@@ -124,6 +124,8 @@ static void __init r8a7778_cpg_clocks_init(struct device_node *np)
- 	}
- 
- 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-+
-+	cpg_mstp_add_clk_domain(np);
- }
- 
- CLK_OF_DECLARE(r8a7778_cpg_clks, "renesas,r8a7778-cpg-clocks",
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 5 +++++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 3 ++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
 -- 
-2.1.4
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
