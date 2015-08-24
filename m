@@ -1,30 +1,53 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 19 Aug 2015 10:11:45 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: Kconfig: remove unused SHMOBILE_TIMER_HZ section
-Message-Id: <CAMuHMdVo9wzf7NXfNwtO74TsYztFTYMzZo_M69gePFPmaopMTA@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 24 Aug 2015 02:30:28 +0000
+Subject: [PATCH 16/25 v7][RFC] arm64: renesas: salvator-x: add pfc node and subnodes for usb 2.0
+Message-Id: <876145776m.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439903538-19201-3-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1439903538-19201-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Aug 18, 2015 at 3:12 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> Obsoleted by removal of legacy platforms.
->
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v5 -> v7
 
-Gr{oetje,eeting}s,
+ - based on Gen3 v7 patch-set
 
-                        Geert
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index cdfc4c9..2742fc2 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -38,6 +38,23 @@
+        };
+ };
+ 
++&pfc {
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb0";
++	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
++
++	usb2_pins: usb2 {
++		renesas,groups = "usb2";
++		renesas,function = "usb2";
++	};
++};
++
+ &scif2 {
+ 	pinctrl-0 = <&scif2_pins>;
+ 	pinctrl-names = "default";
+-- 
+1.9.1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
