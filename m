@@ -1,46 +1,33 @@
-From: David Miller <davem@davemloft.net>
-Date: Tue, 25 Aug 2015 23:04:11 +0000
-Subject: Re: [PATCH repost net-next] net: compile renesas directory if NET_VENDOR_RENESAS is configured
-Message-Id: <20150825.160411.2267064889516069269.davem@davemloft.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 24 Aug 2015 08:27:56 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790: tidyup SSI resource region
+Message-Id: <87mvxh5c2f.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <55DC2899.2050205@cogentembedded.com>
-	<55DCDB0D.8060201@cogentembedded.com>
-	<20150825225539.GA30202@vergenet.net>
-In-Reply-To: <20150825225539.GA30202@vergenet.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au
-Cc: sergei.shtylyov@cogentembedded.com, horms+renesas@verge.net.au, netdev@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com
+To: linux-sh@vger.kernel.org
 
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 26 Aug 2015 08:55:39 +1000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> On Wed, Aug 26, 2015 at 12:15:57AM +0300, Sergei Shtylyov wrote:
->> On 08/25/2015 11:34 AM, Sergei Shtylyov wrote:
->> 
->> >>From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->> >>
->> >>Currently the renesas ethernet driver directory is compiled if SH_ETH is
->> >>configured rather than NET_VENDOR_RENESAS. Although incorrect that was
->> >>quite harmless as until recently as SH_ETH configured the only driver in
->> >>the renesas directory. However, as of c156633f1353 ("Renesas Ethernet AVB
->> >>driver proper") the renesas directory includes another driver, configured
->> >>by RAVB, and it makes little sense for it to have a hidden dependency on
->> >>SH_ETH.
->> >>
->> >>Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->> >>[horms: rewrote changelog]
->> >>Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->> >
->> >    Sorry about missing that when submitting the AVB driver.
->> 
->>    BTW, why against net-next? I consider this a fix.
-> 
-> I wasn't sure which way to go and decided to err on the side of caution with a
-> net-next submission. I have no objections to it being considered for next.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I'll put it in the 'net' tree.
-
-Applied, thanks.
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a0b2a79..ae5eb28 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1599,7 +1599,7 @@
+ 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
+ 			<0 0xec5a0000 0 0x100>,  /* ADG */
+ 			<0 0xec540000 0 0x1000>, /* SSIU */
+-			<0 0xec541000 0 0x1280>, /* SSI */
++			<0 0xec541000 0 0x280>,  /* SSI */
+ 			<0 0xec740000 0 0x200>;  /* Audio DMAC peri peri*/
+ 		reg-names = "scu", "adg", "ssiu", "ssi", "audmapp";
+ 
+-- 
+1.9.1
 
