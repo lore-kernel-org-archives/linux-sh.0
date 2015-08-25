@@ -1,33 +1,44 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 06 Aug 2015 00:43:37 +0000
-Subject: Re: R-Car Gen3 VSP/DU work in progress
-Message-Id: <3785009.kJTWmPSlky@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 25 Aug 2015 07:57:56 +0000
+Subject: [PATCH] net: compile renesas directory if NET_VENDOR_RENESAS is configured
+Message-Id: <1440489476-26700-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms+renesas@verge.net.au>
 
-Hello,
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-The first working prototype of VSP+DU integration for Gen3 is available at
+Currently the renesas ethernet driver directory is compiled if SH_ETH is
+configured rather than NET_VENDOR_RENESAS. Although incorrect that was
+quite harmless as until recently as SH_ETH configured the only driver in
+the renesas directory. However, as of c156633f1353 ("Renesas Ethernet AVB
+driver proper") the renesas directory includes another driver, configured
+by RAVB, and it makes little sense for it to have a hidden dependency on
+SH_ETH.
 
- 	git://linuxtv.org/pinchartl/media.git drm/du/vsp1-kms/gen2
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+[horms: rewrote changelog]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/net/ethernet/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-For background information please see the first mail in this thread (available 
-at http://www.spinics.net/lists/linux-sh/msg43772.html).
-
-The code currently targets the Koelsch board as a test environment as I don't 
-have access to Gen3 hardware yet. No Gen3 code is thus available, this will be 
-my next target.
-
-Please note that this is work in progress. I will tag new versions (possibly 
-using separate branches), but the code will be rebased. In particular Gen2-
-specific testing code, including code in the rcar-du-drm driver, will likely 
-be dropped after completing Gen3 support.
-
+diff --git a/drivers/net/ethernet/Makefile b/drivers/net/ethernet/Makefile
+index f42177b11723..ddfc808110a1 100644
+--- a/drivers/net/ethernet/Makefile
++++ b/drivers/net/ethernet/Makefile
+@@ -65,7 +65,7 @@ obj-$(CONFIG_NET_VENDOR_PASEMI) += pasemi/
+ obj-$(CONFIG_NET_VENDOR_QLOGIC) += qlogic/
+ obj-$(CONFIG_NET_VENDOR_QUALCOMM) += qualcomm/
+ obj-$(CONFIG_NET_VENDOR_REALTEK) += realtek/
+-obj-$(CONFIG_SH_ETH) += renesas/
++obj-$(CONFIG_NET_VENDOR_RENESAS) += renesas/
+ obj-$(CONFIG_NET_VENDOR_RDC) += rdc/
+ obj-$(CONFIG_NET_VENDOR_ROCKER) += rocker/
+ obj-$(CONFIG_NET_VENDOR_SAMSUNG) += samsung/
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.4
 
