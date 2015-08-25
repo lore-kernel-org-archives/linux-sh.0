@@ -1,134 +1,98 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 24 Aug 2015 12:13:17 +0000
-Subject: Re: [PATCH] phy: rcar-gen3-usb2: Add R-Car Gen3 USB2 PHY driver
-Message-Id: <CAMuHMdXshUCWs=sbVA8pBmsdOm3GwkWJ5NN8YCDXYX_6W5QFAg@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 25 Aug 2015 05:48:09 +0000
+Subject: RE: [PATCH] phy: rcar-gen3-usb2: Add R-Car Gen3 USB2 PHY driver
+Message-Id: <SG2PR06MB0919F3509296F9B9CFEF362BD8610@SG2PR06MB0919.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1440052098-4840-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1440052098-4840-1-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+ <CAMuHMdXshUCWs=sbVA8pBmsdOm3GwkWJ5NN8YCDXYX_6W5QFAg@mail.gmail.com>
+In-Reply-To: <CAMuHMdXshUCWs=sbVA8pBmsdOm3GwkWJ5NN8YCDXYX_6W5QFAg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: kishon-l0cyMroinI0@public.gmane.org, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
+Cc: "kishon-l0cyMroinI0@public.gmane.org" <kishon-l0cyMroinI0@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Hi Shimoda-san,
-
-On Thu, Aug 20, 2015 at 8:28 AM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> This patch adds support for R-Car generation 3 USB2 PHY driver.
-> This SoC has 3 EHCI/OHCI channels, and the channel 0 is shared
-> with the HSUSB (USB2.0 peripheral) device.
->
-> So, the purpose of this driver is:
->  1) initializes some registers of SoC specific to use the
->     {ehci,ohci}-platform driver.
->
->  2) detects id pin to select host or peripheral on the channel 0.
->
-> For now, this driver only supports 1) above.
-
-Thanks for your patch!
-
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
-> @@ -0,0 +1,37 @@
-> +* Renesas R-Car generation 3 USB 2.0 PHY
-> +
-> +This file provides information on what the device node for the R-Car generation
-> +3 USB 2.0 PHY contains.
-> +
-> +Required properties:
-> +- compatible: "renesas,usb2-phy-r8a7795" if the device is a part of R8A7795 SoC.
-
-"an R8A7795 SoC".
-
-> +- reg: offset and length of the USB2.0 host register block.
-> +- reg-names: must be "usb2".
-> +- clocks: clock phandle and specifier pair.
-
-"pair(s)."
-
-> +- clock-names: string, clock input name, must be "usb2", and optional "hsusb".
-
-names
-
-> +- #phy-cells: see phy-bindings.txt in the same directory, must be <0>.
-> +
-> +Optional proparies:
-
-properties
-
-> +To use a USB channel which EHCI/OHCI and HSUSB are combined, the device tree
-
-s/which/where/
-
-> +node should set HSUSB proparies to reg and reg-names proparies:
-
-properties (x2)
-
-> +- reg: offset and length of the HSUSB register block.
-> +- reg-names: must be "hsusb".
-> +
-> +Example (R-Car H3):
-> +
-> +       usb-phy@ee080200 {
-> +               compatible = "renesas,usb2-phy-r8a7795";
-> +               reg = <0 0xee080200 0 0x6ff>, <0 0xe6590100 0 0x100>;
-> +               reg-names = "usb2", "hsusb";
-> +               clocks = <&mstp7_clks R8A7795_CLK_EHCI0>,
-> +                        <&mstp7_clks R8A7795_CLK_HSUSB>;
-
-If you ever want to enable Runtime PM, do you want the first MSTP clock to be
-managed automatically?
-What about the second optional clock?
-
-> +               clock-names = "usb2", "hsusb";
-> +       };
-> +
-> +       usb-phy@ee0a0200 {
-> +               compatible = "renesas,usb2-phy-r8a7795";
-> +               reg = <0 0xee0a0200 0 0x6ff>;
-> +               reg-names = "usb2";
-> +               clocks = <&mstp7_clks R8A7795_CLK_EHCI0>;
-> +               clock-names = "usb2";
-> +       };
-
-> --- /dev/null
-> +++ b/drivers/phy/phy-rcar-gen3-usb2.c
-
-> +static int rcar_gen3_phy_usb2_init(struct phy *p)
-> +{
-> +       struct rcar_gen3_phy_usb2_channel *channel = phy_get_drvdata(p);
-> +       unsigned long flags;
-> +       void __iomem *usb2_base = channel->usb2.base;
-> +       void __iomem *hsusb_base = channel->hsusb.base;
-> +       u32 tmp;
-> +
-> +       /* Since ops->init() is called once, this driver enables both clocks */
-> +       clk_prepare_enable(channel->usb2.clk);
-> +       clk_prepare_enable(channel->hsusb.clk);
-
-So this driver manages its clock(s) itself, and doesn't support Runtime PM.
-
-> +static int rcar_gen3_phy_usb2_exit(struct phy *p)
-> +{
-> +       struct rcar_gen3_phy_usb2_channel *channel = phy_get_drvdata(p);
-> +
-> +       writel(0, channel->usb2.base + USB2_INT_ENABLE);
-> +
-> +       clk_disable_unprepare(channel->hsusb.clk);
-> +       clk_disable_unprepare(channel->usb2.clk);
-> +
-> +       return 0;
-> +}
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR2VlcnQtc2FuLA0KDQo+IFNlbnQ6IE1vbmRheSwgQXVndXN0IDI0LCAyMDE1IDk6MTMgUE0N
+Cj4gDQo+IEhpIFNoaW1vZGEtc2FuLA0KPiANCj4gT24gVGh1LCBBdWcgMjAsIDIwMTUgYXQgODoy
+OCBBTSwgWW9zaGloaXJvIFNoaW1vZGENCj4gPHlvc2hpaGlyby5zaGltb2RhLnVoQHJlbmVzYXMu
+Y29tPiB3cm90ZToNCj4gPiBUaGlzIHBhdGNoIGFkZHMgc3VwcG9ydCBmb3IgUi1DYXIgZ2VuZXJh
+dGlvbiAzIFVTQjIgUEhZIGRyaXZlci4NCj4gPiBUaGlzIFNvQyBoYXMgMyBFSENJL09IQ0kgY2hh
+bm5lbHMsIGFuZCB0aGUgY2hhbm5lbCAwIGlzIHNoYXJlZA0KPiA+IHdpdGggdGhlIEhTVVNCIChV
+U0IyLjAgcGVyaXBoZXJhbCkgZGV2aWNlLg0KPiA+DQo+ID4gU28sIHRoZSBwdXJwb3NlIG9mIHRo
+aXMgZHJpdmVyIGlzOg0KPiA+ICAxKSBpbml0aWFsaXplcyBzb21lIHJlZ2lzdGVycyBvZiBTb0Mg
+c3BlY2lmaWMgdG8gdXNlIHRoZQ0KPiA+ICAgICB7ZWhjaSxvaGNpfS1wbGF0Zm9ybSBkcml2ZXIu
+DQo+ID4NCj4gPiAgMikgZGV0ZWN0cyBpZCBwaW4gdG8gc2VsZWN0IGhvc3Qgb3IgcGVyaXBoZXJh
+bCBvbiB0aGUgY2hhbm5lbCAwLg0KPiA+DQo+ID4gRm9yIG5vdywgdGhpcyBkcml2ZXIgb25seSBz
+dXBwb3J0cyAxKSBhYm92ZS4NCj4gDQo+IFRoYW5rcyBmb3IgeW91ciBwYXRjaCENCg0KVGhhbmsg
+eW91IHZlcnkgbXVjaCBmb3IgeW91ciByZXZpZXchDQoNCj4gPiAtLS0gL2Rldi9udWxsDQo+ID4g
+KysrIGIvRG9jdW1lbnRhdGlvbi9kZXZpY2V0cmVlL2JpbmRpbmdzL3BoeS9yY2FyLWdlbjMtcGh5
+LXVzYjIudHh0DQo+ID4gQEAgLTAsMCArMSwzNyBAQA0KPiA+ICsqIFJlbmVzYXMgUi1DYXIgZ2Vu
+ZXJhdGlvbiAzIFVTQiAyLjAgUEhZDQo+ID4gKw0KPiA+ICtUaGlzIGZpbGUgcHJvdmlkZXMgaW5m
+b3JtYXRpb24gb24gd2hhdCB0aGUgZGV2aWNlIG5vZGUgZm9yIHRoZSBSLUNhciBnZW5lcmF0aW9u
+DQo+ID4gKzMgVVNCIDIuMCBQSFkgY29udGFpbnMuDQo+ID4gKw0KPiA+ICtSZXF1aXJlZCBwcm9w
+ZXJ0aWVzOg0KPiA+ICstIGNvbXBhdGlibGU6ICJyZW5lc2FzLHVzYjItcGh5LXI4YTc3OTUiIGlm
+IHRoZSBkZXZpY2UgaXMgYSBwYXJ0IG9mIFI4QTc3OTUgU29DLg0KPiANCj4gImFuIFI4QTc3OTUg
+U29DIi4NCg0KSSB3aWxsIGZpeCB0aGlzIGluIHYyLg0KKEkgd2lsbCBzdWJtaXQgdjIgcGF0Y2gg
+bGF0ZSB0b2RheS4pDQoNCj4gPiArLSByZWc6IG9mZnNldCBhbmQgbGVuZ3RoIG9mIHRoZSBVU0Iy
+LjAgaG9zdCByZWdpc3RlciBibG9jay4NCj4gPiArLSByZWctbmFtZXM6IG11c3QgYmUgInVzYjIi
+Lg0KPiA+ICstIGNsb2NrczogY2xvY2sgcGhhbmRsZSBhbmQgc3BlY2lmaWVyIHBhaXIuDQo+IA0K
+PiAicGFpcihzKS4iDQoNCkkgd2lsbCBmaXggdGhpcy4NCg0KPiA+ICstIGNsb2NrLW5hbWVzOiBz
+dHJpbmcsIGNsb2NrIGlucHV0IG5hbWUsIG11c3QgYmUgInVzYjIiLCBhbmQgb3B0aW9uYWwgImhz
+dXNiIi4NCj4gDQo+IG5hbWVzDQoNClRoYW5rIHlvdSBmb3IgdGhlIHBvaW50Lg0KQXMgeW91IG1l
+bnRpb25lZCBhYm91dCBydW50aW1lIFBNIGJlbG93LCBJIHdpbGwgcmVtb3ZlIHRoaXMgcHJvcGVy
+dHkuDQoNCj4gPiArLSAjcGh5LWNlbGxzOiBzZWUgcGh5LWJpbmRpbmdzLnR4dCBpbiB0aGUgc2Ft
+ZSBkaXJlY3RvcnksIG11c3QgYmUgPDA+Lg0KPiA+ICsNCj4gPiArT3B0aW9uYWwgcHJvcGFyaWVz
+Og0KPiANCj4gcHJvcGVydGllcw0KDQpPb3BzLCBJIHdpbGwgZml4IGl0Lg0KSSBzaG91bGQgaGF2
+ZSBkb25lIGFzcGVsbCBjb21tYW5kIGJlZm9yZSBJIHN1Ym1pdHRlZC4NCklmIEkgZGlkIHRoYXQg
+Y29tbWFuZCwgSSBmb3VuZCBvdGhlciB0eXBvIGluIHRoaXMgcGF0Y2ggOikNCg0KPiA+ICtUbyB1
+c2UgYSBVU0IgY2hhbm5lbCB3aGljaCBFSENJL09IQ0kgYW5kIEhTVVNCIGFyZSBjb21iaW5lZCwg
+dGhlIGRldmljZSB0cmVlDQo+IA0KPiBzL3doaWNoL3doZXJlLw0KPiANCj4gPiArbm9kZSBzaG91
+bGQgc2V0IEhTVVNCIHByb3BhcmllcyB0byByZWcgYW5kIHJlZy1uYW1lcyBwcm9wYXJpZXM6DQo+
+IA0KPiBwcm9wZXJ0aWVzICh4MikNCg0KSSB3aWxsIGZpeCBpdC4NCg0KPiA+ICstIHJlZzogb2Zm
+c2V0IGFuZCBsZW5ndGggb2YgdGhlIEhTVVNCIHJlZ2lzdGVyIGJsb2NrLg0KPiA+ICstIHJlZy1u
+YW1lczogbXVzdCBiZSAiaHN1c2IiLg0KPiA+ICsNCj4gPiArRXhhbXBsZSAoUi1DYXIgSDMpOg0K
+PiA+ICsNCj4gPiArICAgICAgIHVzYi1waHlAZWUwODAyMDAgew0KPiA+ICsgICAgICAgICAgICAg
+ICBjb21wYXRpYmxlID0gInJlbmVzYXMsdXNiMi1waHktcjhhNzc5NSI7DQo+ID4gKyAgICAgICAg
+ICAgICAgIHJlZyA9IDwwIDB4ZWUwODAyMDAgMCAweDZmZj4sIDwwIDB4ZTY1OTAxMDAgMCAweDEw
+MD47DQo+ID4gKyAgICAgICAgICAgICAgIHJlZy1uYW1lcyA9ICJ1c2IyIiwgImhzdXNiIjsNCj4g
+PiArICAgICAgICAgICAgICAgY2xvY2tzID0gPCZtc3RwN19jbGtzIFI4QTc3OTVfQ0xLX0VIQ0kw
+PiwNCj4gPiArICAgICAgICAgICAgICAgICAgICAgICAgPCZtc3RwN19jbGtzIFI4QTc3OTVfQ0xL
+X0hTVVNCPjsNCj4gDQo+IElmIHlvdSBldmVyIHdhbnQgdG8gZW5hYmxlIFJ1bnRpbWUgUE0sIGRv
+IHlvdSB3YW50IHRoZSBmaXJzdCBNU1RQIGNsb2NrIHRvIGJlDQo+IG1hbmFnZWQgYXV0b21hdGlj
+YWxseT8NCj4gV2hhdCBhYm91dCB0aGUgc2Vjb25kIG9wdGlvbmFsIGNsb2NrPw0KDQpUaGFuayB5
+b3UgdmVyeSBtdWNoIGZvciB0aGUgcG9pbnQuDQpJIGRpZG4ndCB0YWtlIGNhcmUgYWJvdXQgUnVu
+dGltZSBQTS4gSG93ZXZlciwgSSB3YW50IHRvIGVuYWJsZSBSdW50aW1lIFBNDQpiZWNhdXNlIHVz
+YiBob3N0IGFuZCBmdW5jdGlvbiBkcml2ZXJzIHN1cHBvcnQgaXQuDQoNCj4gPiArICAgICAgICAg
+ICAgICAgY2xvY2stbmFtZXMgPSAidXNiMiIsICJoc3VzYiI7DQo+ID4gKyAgICAgICB9Ow0KPiA+
+ICsNCj4gPiArICAgICAgIHVzYi1waHlAZWUwYTAyMDAgew0KPiA+ICsgICAgICAgICAgICAgICBj
+b21wYXRpYmxlID0gInJlbmVzYXMsdXNiMi1waHktcjhhNzc5NSI7DQo+ID4gKyAgICAgICAgICAg
+ICAgIHJlZyA9IDwwIDB4ZWUwYTAyMDAgMCAweDZmZj47DQo+ID4gKyAgICAgICAgICAgICAgIHJl
+Zy1uYW1lcyA9ICJ1c2IyIjsNCj4gPiArICAgICAgICAgICAgICAgY2xvY2tzID0gPCZtc3RwN19j
+bGtzIFI4QTc3OTVfQ0xLX0VIQ0kwPjsNCj4gPiArICAgICAgICAgICAgICAgY2xvY2stbmFtZXMg
+PSAidXNiMiI7DQo+ID4gKyAgICAgICB9Ow0KPiANCj4gPiAtLS0gL2Rldi9udWxsDQo+ID4gKysr
+IGIvZHJpdmVycy9waHkvcGh5LXJjYXItZ2VuMy11c2IyLmMNCj4gDQo+ID4gK3N0YXRpYyBpbnQg
+cmNhcl9nZW4zX3BoeV91c2IyX2luaXQoc3RydWN0IHBoeSAqcCkNCj4gPiArew0KPiA+ICsgICAg
+ICAgc3RydWN0IHJjYXJfZ2VuM19waHlfdXNiMl9jaGFubmVsICpjaGFubmVsID0gcGh5X2dldF9k
+cnZkYXRhKHApOw0KPiA+ICsgICAgICAgdW5zaWduZWQgbG9uZyBmbGFnczsNCj4gPiArICAgICAg
+IHZvaWQgX19pb21lbSAqdXNiMl9iYXNlID0gY2hhbm5lbC0+dXNiMi5iYXNlOw0KPiA+ICsgICAg
+ICAgdm9pZCBfX2lvbWVtICpoc3VzYl9iYXNlID0gY2hhbm5lbC0+aHN1c2IuYmFzZTsNCj4gPiAr
+ICAgICAgIHUzMiB0bXA7DQo+ID4gKw0KPiA+ICsgICAgICAgLyogU2luY2Ugb3BzLT5pbml0KCkg
+aXMgY2FsbGVkIG9uY2UsIHRoaXMgZHJpdmVyIGVuYWJsZXMgYm90aCBjbG9ja3MgKi8NCj4gPiAr
+ICAgICAgIGNsa19wcmVwYXJlX2VuYWJsZShjaGFubmVsLT51c2IyLmNsayk7DQo+ID4gKyAgICAg
+ICBjbGtfcHJlcGFyZV9lbmFibGUoY2hhbm5lbC0+aHN1c2IuY2xrKTsNCj4gDQo+IFNvIHRoaXMg
+ZHJpdmVyIG1hbmFnZXMgaXRzIGNsb2NrKHMpIGl0c2VsZiwgYW5kIGRvZXNuJ3Qgc3VwcG9ydCBS
+dW50aW1lIFBNLg0KDQpTbywgSSB3aWxsIHVzZSByZW1vdmUgY2xrIEFQSXMgaW4gdGhpcyBkcml2
+ZXIuDQoNCkJlc3QgcmVnYXJkcywNCllvc2hpaGlybyBTaGltb2RhDQoNCj4gPiArc3RhdGljIGlu
+dCByY2FyX2dlbjNfcGh5X3VzYjJfZXhpdChzdHJ1Y3QgcGh5ICpwKQ0KPiA+ICt7DQo+ID4gKyAg
+ICAgICBzdHJ1Y3QgcmNhcl9nZW4zX3BoeV91c2IyX2NoYW5uZWwgKmNoYW5uZWwgPSBwaHlfZ2V0
+X2RydmRhdGEocCk7DQo+ID4gKw0KPiA+ICsgICAgICAgd3JpdGVsKDAsIGNoYW5uZWwtPnVzYjIu
+YmFzZSArIFVTQjJfSU5UX0VOQUJMRSk7DQo+ID4gKw0KPiA+ICsgICAgICAgY2xrX2Rpc2FibGVf
+dW5wcmVwYXJlKGNoYW5uZWwtPmhzdXNiLmNsayk7DQo+ID4gKyAgICAgICBjbGtfZGlzYWJsZV91
+bnByZXBhcmUoY2hhbm5lbC0+dXNiMi5jbGspOw0KPiA+ICsNCj4gPiArICAgICAgIHJldHVybiAw
+Ow0KPiA+ICt9DQo+IA0KPiBHcntvZXRqZSxlZXRpbmd9cywNCj4gDQo+ICAgICAgICAgICAgICAg
+ICAgICAgICAgIEdlZXJ0DQo+IA0KPiAtLQ0KPiBHZWVydCBVeXR0ZXJob2V2ZW4gLS0gVGhlcmUn
+cyBsb3RzIG9mIExpbnV4IGJleW9uZCBpYTMyIC0tIGdlZXJ0QGxpbnV4LW02OGsub3JnDQo+IA0K
+PiBJbiBwZXJzb25hbCBjb252ZXJzYXRpb25zIHdpdGggdGVjaG5pY2FsIHBlb3BsZSwgSSBjYWxs
+IG15c2VsZiBhIGhhY2tlci4gQnV0DQo+IHdoZW4gSSdtIHRhbGtpbmcgdG8gam91cm5hbGlzdHMg
+SSBqdXN0IHNheSAicHJvZ3JhbW1lciIgb3Igc29tZXRoaW5nIGxpa2UgdGhhdC4NCj4gICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAtLSBMaW51cyBUb3J2YWxkcw0K
