@@ -1,35 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 20 Aug 2015 23:27:44 +0000
-Subject: [PATCH] ARM: shmobile: remove Makefile.boot
-Message-Id: <1440113264-30359-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 25 Aug 2015 12:06:31 +0000
+Subject: Re: [PATCH] ARM: shmobile: remove Makefile.boot
+Message-Id: <CAMuHMdWYM6vVWzUQgR4u8cvoH6Jtq4XerYd2PbpvfUruDPi7-Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1440113264-30359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1440113264-30359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Now that the only multiplatform boot is supported for all
-shmobile platforms Makefile.boot may be removed.
+On Fri, Aug 21, 2015 at 1:27 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> Now that the only multiplatform boot is supported for all
+> shmobile platforms Makefile.boot may be removed.
+>
+> This seems correct to me given:
+> * Setting MACHINE to no value in arch/arm/Makefile
+>   if CONFIG_ARCH_MULTIPLATFORM is set
+> * Not including Makefile.boot in arch/arm/boot/Makefile
+>   if MACHINE has no value
+>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-This seems correct to me given:
-* Setting MACHINE to no value in arch/arm/Makefile
-  if CONFIG_ARCH_MULTIPLATFORM is set
-* Not including Makefile.boot in arch/arm/boot/Makefile
-  if MACHINE has no value
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/Makefile.boot | 0
- 1 file changed, 0 insertions(+), 0 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/Makefile.boot
+Gr{oetje,eeting}s,
 
----
+                        Geert
 
-Based on renesas-devel-20150820v2-v4.2-rc7
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-deleted file mode 100644
-index e69de29bb2d1..000000000000
--- 
-2.1.4
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
