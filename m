@@ -1,35 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 10 Aug 2015 23:20:58 +0000
-Subject: Re: [PATCH v3 2/2] ARM: shmobile: r8a7794: add GPIO DT support
-Message-Id: <20150810232054.GA9484@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 25 Aug 2015 06:49:31 +0000
+Subject: [PATCH] serial: sh-sci: Add device tree support for r8a7795
+Message-Id: <87h9nn7tnt.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2265315.MpjeDzrVz2@wasted.cogentembedded.com>
- <10288801.ZnYt2TD47O@wasted.cogentembedded.com>
- <CAMuHMdVj4_h8LX=XuWSyhGpSZ2BPxuWe_oJQYTRPFfYbuidm4g@mail.gmail.com>
-In-Reply-To: <CAMuHMdVj4_h8LX=XuWSyhGpSZ2BPxuWe_oJQYTRPFfYbuidm4g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Rob Herring <robh+dt@kernel.org>, Greg KH <gregkh@linuxfoundation.org>
+Cc: Simon Horman <horms+renesas@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, Linux-DT <devicetree@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>@vger.kernel.org
 
-On Mon, Aug 10, 2015 at 03:23:54PM +0200, Geert Uytterhoeven wrote:
-> Hi Sergei,
-> 
-> On Sun, Aug 9, 2015 at 12:09 AM, Sergei Shtylyov
-> <sergei.shtylyov@cogentembedded.com> wrote:
-> > Describe GPIO[0-6] controllers in the R8A7794 device tree.
-> >
-> > Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
-> >
-> > Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> > Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >
-> > ---
-> > Changes in version 3:
-> > - added "power-domains" property to the GPIO device nodes.
-> 
-> Thanks, unwithdrawing my ack ;-)
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I have queued these up for v4.4.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+> Greg
+
+Renesas r8a7795 initial SoC/board support patch-set depends on this patch.
+Renesas SoC series maintainer is Simon and Magnus.
+Simon can accept (?) this patch as part of Renesas new SoC if Greg
+can give it Ack. Or Simon can merge/base your branch.
+I'm not sure which one is good choice
+
+ Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index e84b13a..73f825e 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -23,6 +23,8 @@ Required properties:
+     - "renesas,scifa-r8a7794" for R8A7794 (R-Car E2) SCIFA compatible UART.
+     - "renesas,scifb-r8a7794" for R8A7794 (R-Car E2) SCIFB compatible UART.
+     - "renesas,hscif-r8a7794" for R8A7794 (R-Car E2) HSCIF compatible UART.
++    - "renesas,scif-r8a7795" for R8A7795 (R-Car H3) SCIF compatible UART.
++    - "renesas,hscif-r8a7795" for R8A7795 (R-Car H3) HSCIF compatible UART.
+     - "renesas,scifa-sh73a0" for SH73A0 (SH-Mobile AG5) SCIFA compatible UART.
+     - "renesas,scifb-sh73a0" for SH73A0 (SH-Mobile AG5) SCIFB compatible UART.
+     - "renesas,scif" for generic SCIF compatible UART.
+-- 
+1.9.1
+
