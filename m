@@ -1,63 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 31 Aug 2015 10:41:29 +0000
-Subject: Re: [PATCH v8 05/07] arm64: renesas: r8a7795: enable PFC
-Message-Id: <2399717.ikT665G1LV@avalon>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 25 Aug 2015 08:56:45 +0000
+Subject: [PATCH] gpio: rcar: Enable support for ARM64
+Message-Id: <1440493005-6598-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150831063003.24004.42127.sendpatchset@little-apple>
-In-Reply-To: <20150831063003.24004.42127.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus and Morimoto-san,
+From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 
-Thank you for the patch.
+Enables the R-Car GPIO driver on ARM64.
 
-On Monday 31 August 2015 15:30:03 Magnus Damm wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Add a PFC node for the on-chip r8a7795 pin controller.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ drivers/gpio/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-> ---
-> 
->  Based on:
->   [PATCH 10/25 v7][RFC] arm64: renesas: r8a7795: enable PFC
-> 
->  Changes: (Magnus Damm <damm+renesas@opensource.se>)
->  - Added changelog
-> 
->  TODO:
->  - Add Kconfig select bits
-
-Do they belong to this patch ?
-
->  arch/arm64/boot/dts/renesas/r8a7795.dtsi |    5 +++++
->  1 file changed, 5 insertions(+)
-> 
-> --- 0012/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> +++ work/arch/arm64/boot/dts/renesas/r8a7795.dtsi	2015-08-29
-> 15:38:44.152366518 +0900 @@ -278,6 +278,11 @@
->  			};
->  		};
-> 
-> +		pfc: pfc@e6060000 {
-> +			compatible = "renesas,pfc-r8a7795";
-> +			reg = <0 0xe6060000 0 0x50c>;
-> +		};
-> +
->  		dmac0: dma-controller@e6700000 {
->  			/* Empty node for now */
->  		};
-
+diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
+index 8f1fe73..2256b2f 100644
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -356,7 +356,7 @@ config GPIO_PXA
+ 
+ config GPIO_RCAR
+ 	tristate "Renesas R-Car GPIO"
+-	depends on ARM && (ARCH_SHMOBILE || COMPILE_TEST)
++	depends on (ARM || ARM64) && (ARCH_SHMOBILE || COMPILE_TEST)
+ 	select GPIOLIB_IRQCHIP
+ 	help
+ 	  Say yes here to support GPIO on Renesas R-Car SoCs.
 -- 
-Regards,
-
-Laurent Pinchart
+2.4.6
 
