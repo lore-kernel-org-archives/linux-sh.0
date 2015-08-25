@@ -1,98 +1,75 @@
-From: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
-Date: Fri, 21 Aug 2015 20:46:04 +0000
-Subject: Re: [PATCH v6 1/8] [media] media: create a macro to get entity ID
-Message-Id: <20150821174604.3b0d64d3@recife.lan>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Tue, 25 Aug 2015 12:03:44 +0000
+Subject: Re: [PATCH v2] mmc: tmio: Fix timeout value for command request
+Message-Id: <CAPDyKFoO5N20Wiw3GhRMG2WOZ8dfW4esBpdYStfo39otyfohWw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1439981515.git.mchehab@osg.samsung.com>
-	<1504949.EhTF6JoeCK@avalon>
-	<20150821144535.0f75cc92@recife.lan>
-	<7241853.lyNlEo06u5@avalon>
-In-Reply-To: <7241853.lyNlEo06u5@avalon>
+References: <1437323999-7938-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1437323999-7938-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Mauro Carvalho Chehab <mchehab@infradead.org>, linux-sh@vger.kernel.org
+To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Ian Molton <ian.molton@codethink.co.uk>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Em Fri, 21 Aug 2015 21:11:57 +0300
-Laurent Pinchart <laurent.pinchart@ideasonboard.com> escreveu:
+On 19 July 2015 at 18:39, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+>
+> Fix the problem which timeout occurs at the time of command request with
+> several cards.
+>
+> The timeout value was insufficient as a verification of several cards,
+> so it was changed 5 seconds from 2 seconds.
+>
+> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 
-> Hi Mauro,
-> 
-> On Friday 21 August 2015 14:45:35 Mauro Carvalho Chehab wrote:
-> > Em Fri, 21 Aug 2015 20:27:19 +0300 Laurent Pinchart escreveu:
-> > > On Friday 21 August 2015 05:42:29 Mauro Carvalho Chehab wrote:
-> > >> Em Fri, 21 Aug 2015 03:40:48 +0300 Laurent Pinchart escreveu:
-> > >> > On Wednesday 19 August 2015 08:01:48 Mauro Carvalho Chehab wrote:
-> > >>>> Instead of accessing directly entity.id, let's create a macro,
-> > >>>> as this field will be moved into a common struct later on.
-> > >>>> 
-> > >>>> Signed-off-by: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
-> > >>>> Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
-> > >>>> Signed-off-by: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
-> > > 
-> > > [snip]
-> > > 
-> > >>>> diff --git a/drivers/media/platform/vsp1/vsp1_video.c
-> > >>>> b/drivers/media/platform/vsp1/vsp1_video.c index
-> > >>>> 17f08973f835..debe4e539df6
-> > >>>> 100644
-> > >>>> --- a/drivers/media/platform/vsp1/vsp1_video.c
-> > >>>> +++ b/drivers/media/platform/vsp1/vsp1_video.c
-> > >>>> @@ -352,10 +352,10 @@ static int
-> > >>>> vsp1_pipeline_validate_branch(struct
-> > >>>> vsp1_pipeline *pipe,
-> > >>>> 			break;
-> > >>>> 			
-> > >>>>  		/* Ensure the branch has no loop. */
-> > >>>> -		if (entities & (1 << entity->subdev.entity.id))
-> > >>>> +		if (entities & (1 << media_entity_id(&entity->subdevntity)))
-> > >>>>  			return -EPIPE;
-> > >>>> 
-> > >>>> -		entities |= 1 << entity->subdev.entity.id;
-> > >>>> +		entities |= 1 << media_entity_id(&entity->subdev.entity);
-> > >>>> 
-> > >>>>  		/* UDS can't be chained. */
-> > >>>>  		if (entity->type = VSP1_ENTITY_UDS) {
-> > >>> 
-> > >>> I would move the modification of the vsp1 driver to Javier's patch
-> > >>> that modifies the OMAP3 and OMAP4 drivers. Alternatively you could
-> > >>> squash them into this patch, but I believe having a first patch that
-> > >>> adds the inline function and a second patch that modifies all drivers
-> > >>> to use it would be better.
-> > >> 
-> > >> Squashing will lose Javier's authorship. I guess the better is have a
-> > >> first patch with the inline, then my paches and Javier's ones, and
-> > >> latter on the patch removing entity->id.
-> > > 
-> > > What I meant is
-> > > 
-> > > 1. This patch without the VSP1 chunk, with your authorship
-> > > 2. Javier's patches for OMAP3 and OMAP4 + the VSP1 chunk squashed in a
-> > > single patch, with Javier's authorship
-> > > 3. Javier's patch removing entity->id, with Javier's authorship
-> > 
-> > Actually, the removal of entity->id is at the first patch, with my
-> > authorship, but I got the idea ;)
-> 
-> I'm not sure to follow you. The first patch is this one, and it doesn't remove 
-> the id field from struct media_entity.
+Thanks, applied for next!
 
-Sorry, I meant to say "the first patch series I submitted after the workshop",
-e. .g RFC v1.
+Kind regards
+Uffe
 
-> > Btw, this was noticed because Javier is testing the MC new gen on OMAP3.
-> > We should really enforce that all all drivers should compile with
-> > COMPILE_TEST, as otherwise we'll keep having troubles like that.
-> 
-> I agree with that. I've just sent a patch to enable compilation of the 
-> omap3isp driver with COMPILE_TEST. There's still a compile-time dependency on 
-> ARM, as well as a dependency on OMAP_IOMMU which currently depends on OMAP, 
-> but that can be fixed independently.
-
-See the comments for the patch.
-
-Regards,
-Mauro
-
-
+> ---
+>
+> This patch is based on mmc-next branch of Ulf Hansson's mmc tree.
+>
+> v2 [Yoshihiro Kaneko]
+> * As suggested by Wolfram Sang
+> - use a definition instead of a magic value
+>
+>  drivers/mmc/host/tmio_mmc_pio.c | 6 ++++--
+>  1 file changed, 4 insertions(+), 2 deletions(-)
+>
+> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+> index e3dcf31..a10fde4 100644
+> --- a/drivers/mmc/host/tmio_mmc_pio.c
+> +++ b/drivers/mmc/host/tmio_mmc_pio.c
+> @@ -83,6 +83,8 @@ static int tmio_mmc_next_sg(struct tmio_mmc_host *host)
+>         return --host->sg_len;
+>  }
+>
+> +#define CMDREQ_TIMEOUT 5000
+> +
+>  #ifdef CONFIG_MMC_DEBUG
+>
+>  #define STATUS_TO_TEXT(a, status, i) \
+> @@ -230,7 +232,7 @@ static void tmio_mmc_reset_work(struct work_struct *work)
+>          */
+>         if (IS_ERR_OR_NULL(mrq)
+>             || time_is_after_jiffies(host->last_req_ts +
+> -               msecs_to_jiffies(2000))) {
+> +               msecs_to_jiffies(CMDREQ_TIMEOUT))) {
+>                 spin_unlock_irqrestore(&host->lock, flags);
+>                 return;
+>         }
+> @@ -818,7 +820,7 @@ static void tmio_mmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
+>         ret = tmio_mmc_start_command(host, mrq->cmd);
+>         if (!ret) {
+>                 schedule_delayed_work(&host->delayed_reset_work,
+> -                                     msecs_to_jiffies(2000));
+> +                                     msecs_to_jiffies(CMDREQ_TIMEOUT));
+>                 return;
+>         }
+>
+> --
+> 1.9.1
+>
