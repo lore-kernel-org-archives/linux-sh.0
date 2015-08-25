@@ -1,51 +1,35 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 20 Aug 2015 06:29:08 +0000
-Subject: [PATCH 1/7][RFC] arm64: dts: r8a7795: add mstp7 node and enable HSUSB clock
-Message-Id: <1440052154-3768-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 25 Aug 2015 06:43:02 +0000
+Subject: [PATCH 2/2] clk: shmobile: Add r8a7795 SoC to MSTP bindings
+Message-Id: <87io837typ.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87lhcz7u2i.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87lhcz7u2i.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Stephen Boyd <sboyd@codeaurora.org>, Michael Turquette <mturquette@baylibre.com>
+Cc: Simon Horman <horms+renesas@verge.net.au>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>, linux-clk@vger.kernel.org
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 9 +++++++++
- include/dt-bindings/clock/r8a7795-clock.h | 1 +
- 2 files changed, 10 insertions(+)
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index fd25348..4744f1c 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -101,6 +101,15 @@
- 					renesas,clock-indices = <R8A7795_CLK_SCIF2>;
- 					clock-output-names = "scif2";
- 				};
-+				mstp7_clks: mstp7_clks@e615014c {
-+					compatible = "renesas,r8a7795-mstp-clocks",
-+						     "renesas,cpg-mstp-clocks";
-+					reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
-+					clocks =  <&p_clk>;
-+					#clock-cells = <1>;
-+					renesas,clock-indices = <R8A7795_CLK_HSUSB>;
-+					clock-output-names = "hsusb";
-+				};
- 			};
- 		};
- 
-diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
-index 27b3a29..ffb0b5b 100644
---- a/include/dt-bindings/clock/r8a7795-clock.h
-+++ b/include/dt-bindings/clock/r8a7795-clock.h
-@@ -29,6 +29,7 @@
- /* MSTP5 */
- 
- /* MSTP7 */
-+#define R8A7795_CLK_HSUSB		4
- 
- /* MSTP8 */
- 
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+index 16ed181..4169c76 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+@@ -19,6 +19,7 @@ Required Properties:
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2-W) MSTP gate clocks
+     - "renesas,r8a7793-mstp-clocks" for R8A7793 (R-Car M2-N) MSTP gate clocks
+     - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
++    - "renesas,r8a7795-mstp-clocks" for R8A7795 (R-Car H3) MSTP gate clocks
+     - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
+     and "renesas,cpg-mstp-clocks" as a fallback.
+   - reg: Base address and length of the I/O mapped registers used by the MSTP
 -- 
 1.9.1
 
