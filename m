@@ -1,65 +1,97 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 25 Aug 2015 11:21:04 +0000
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Tue, 25 Aug 2015 12:38:00 +0000
 Subject: Re: [PATCH 9/9] ARM: software-based priviledged-no-access support
-Message-Id: <CAMuHMdWCLcDS=64m0J09KJJ4bDtgZ1Yvq8rw7u9FE0vZkKT2cw@mail.gmail.com>
+Message-Id: <20150825123800.GQ7557@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150821133043.GV7557@n2100.arm.linux.org.uk>
  <E1ZSmQG-0002za-E3@rmk-PC.arm.linux.org.uk>
  <CAMuHMdVMka2mt5pFpnXfLRY2M3Sj_71MgEpthOia2C99RaP_DA@mail.gmail.com>
  <20150825104422.GO7557@n2100.arm.linux.org.uk>
-In-Reply-To: <20150825104422.GO7557@n2100.arm.linux.org.uk>
+ <CAMuHMdWCLcDS=64m0J09KJJ4bDtgZ1Yvq8rw7u9FE0vZkKT2cw@mail.gmail.com>
+In-Reply-To: <CAMuHMdWCLcDS=64m0J09KJJ4bDtgZ1Yvq8rw7u9FE0vZkKT2cw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Russell,
+On Tue, Aug 25, 2015 at 01:21:04PM +0200, Geert Uytterhoeven wrote:
+> Hi Russell,
+>=20
+> On Tue, Aug 25, 2015 at 12:44 PM, Russell King - ARM Linux
+> <linux@arm.linux.org.uk> wrote:
+> > On Tue, Aug 25, 2015 at 12:32:51PM +0200, Geert Uytterhoeven wrote:
+> >> This patch, which is now in arm-soc/for-next, breaks shmobile_defconfig
+> >> on r8a7791/koelsch, which has a dual core CA15:
+> >>
+> >>     [ ok ] Configuring network interfaces...done.
+> >>     Unhandled fault: page domain fault (0x01b) at 0xbe8e6120
+> >>     pgd =3D edbb0000
+> >>     [be8e6120] *pgdma77831, *pte=BF4d075f, *ppte=BF4d0c7f
+> >>     Internal error: : 1b [#1] SMP ARM
+> >>     CPU: 1 PID: 1629 Comm: ntpdate Not tainted
+> >> 4.2.0-rc8-06444-g3c24fd89c9421db1 #31
+> >>     9
+> >>     Hardware name: Generic R8A7791 (Flattened Device Tree)
+> >>     task: ed883a80 ti: ed41c000 task.ti: ed41c000
+> >>     PC is at csum_partial_copy_from_user+0x28/0x3d8
+> >>     LR is at csum_and_copy_from_iter+0x334/0x4c0
+> >>     pc : [<c04ba510>]    lr : [<c01c82e8>]    psr: 000f0013
+> >>     sp : ed41db00  ip : 00000020  fp : ed41db6c
+> >>     r10: ed41ddc0  r9 : 00000027  r8 : ed41dc20
+> >>     r7 : 00000027  r6 : eda52653  r5 : ed41dec8  r4 : 00000000
+> >>     r3 : 00000000  r2 : 00000027  r1 : eda5262c  r0 : be8e6120
+> >>     Flags: nzcv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment none
+> >>     Control: 10c5307d  Table: 6dbb006a  DAC: 00000051
+> >>     Process ntpdate (pid: 1629, stack limit =3D 0xed41c210)
+> >
+> > Thanks.  I wonder what's different about your ntpdate that triggers
+> > this, and why all my iMX6 behave fine, which have desktop-like ubuntu
+> > installs on (of two different versions.)
+>=20
+> It's ntpdate 1:4.2.6.p5+dfsg-7 from desktop-like Debian jessie.
 
-On Tue, Aug 25, 2015 at 12:44 PM, Russell King - ARM Linux
-<linux@arm.linux.org.uk> wrote:
-> On Tue, Aug 25, 2015 at 12:32:51PM +0200, Geert Uytterhoeven wrote:
->> This patch, which is now in arm-soc/for-next, breaks shmobile_defconfig
->> on r8a7791/koelsch, which has a dual core CA15:
->>
->>     [ ok ] Configuring network interfaces...done.
->>     Unhandled fault: page domain fault (0x01b) at 0xbe8e6120
->>     pgd =3D edbb0000
->>     [be8e6120] *pgdma77831, *pte=BF4d075f, *ppte=BF4d0c7f
->>     Internal error: : 1b [#1] SMP ARM
->>     CPU: 1 PID: 1629 Comm: ntpdate Not tainted
->> 4.2.0-rc8-06444-g3c24fd89c9421db1 #31
->>     9
->>     Hardware name: Generic R8A7791 (Flattened Device Tree)
->>     task: ed883a80 ti: ed41c000 task.ti: ed41c000
->>     PC is at csum_partial_copy_from_user+0x28/0x3d8
->>     LR is at csum_and_copy_from_iter+0x334/0x4c0
->>     pc : [<c04ba510>]    lr : [<c01c82e8>]    psr: 000f0013
->>     sp : ed41db00  ip : 00000020  fp : ed41db6c
->>     r10: ed41ddc0  r9 : 00000027  r8 : ed41dc20
->>     r7 : 00000027  r6 : eda52653  r5 : ed41dec8  r4 : 00000000
->>     r3 : 00000000  r2 : 00000027  r1 : eda5262c  r0 : be8e6120
->>     Flags: nzcv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment none
->>     Control: 10c5307d  Table: 6dbb006a  DAC: 00000051
->>     Process ntpdate (pid: 1629, stack limit =3D 0xed41c210)
->
-> Thanks.  I wonder what's different about your ntpdate that triggers
-> this, and why all my iMX6 behave fine, which have desktop-like ubuntu
-> installs on (of two different versions.)
+Hmm, I think I tried at one time to install Debian on an iMX6 platform
+and gave up with it after spending 50 minutes with the installer getting
+so far, and then killing the network - it was very repeatable, and always
+happened at the same point in the installation.  I gave up with Debian
+at that point, as I didn't have lots of 50 minutes to babysit the silly
+installer (which can't ask the questions up-front) nor did I want to
+waste my monthly internet allowance on multiple failed install attempts.
 
-It's ntpdate 1:4.2.6.p5+dfsg-7 from desktop-like Debian jessie.
+The reports I was getting from other iMX6 users was that Debian Jessie
+had lots of problems at that time.
 
-But I get similar dumps during boot up from rpc.idmapd (SyS_send),
-rsyslogd (SyS_send), and from sshd (SyS_write) when trying to log in.
+> But I get similar dumps during boot up from rpc.idmapd (SyS_send),
+> rsyslogd (SyS_send), and from sshd (SyS_write) when trying to log in.
 
-Gr{oetje,eeting}s,
+Hmm.
 
-                        Geert
+root       693  0.0  0.1   4944  3196 ?        Ss   01:22   0:00 /usr/sbin/=
+sshd -D
+syslog     720  0.2  0.0  30404  2032 ?        Sl   01:23   1:19 rsyslogd -=
+c5
+root       722  0.0  0.0   2392  1340 ?        Ss   01:23   0:00 rpc.idmapd
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
+So, the question I need to find an answer to is... why hasn't this path
+been exercised on my platforms during my testing.  It's certainly
+compiled into the kernel...
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+Anyway, I've now (hopefully) fixed the bug, but I've nobbled
+csum_partial_copy_from_user to ensure that it will always oops the kernel
+if called:
+
+000000b4 <csum_partial_copy_from_user>:
+  b4:   ee133f10        mrc     15, 0, r3, cr3, cr0, {0}
+  b8:   e92d41fe        push    {r1, r2, r3, r4, r5, r6, r7, r8, lr}
+  bc:   e3a03055        mov     r3, #85 ; 0x55
+  c0:   ee033f10        mcr     15, 0, r3, cr3, cr0, {0}
+  c4:   e7033003        str     r3, [r3, -r3]
+
+and... it doesn't trigger.  I can only assume that this is because the
+iMX6 ethernet interface uses TSO (which implies checksum offload), there's
+no need to use these csum functions - and that would explain why it never
+came up in my local testing.
+
+--=20
+FTTC broadband for 0.8mile line: currently at 10.5Mbps down 400kbps up
+according to speedtest.net.
