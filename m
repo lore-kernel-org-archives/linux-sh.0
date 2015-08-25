@@ -1,55 +1,38 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 21 Aug 2015 22:18:09 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: silk: add SDHI1 DT support
-Message-Id: <55D7A3A1.9020009@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 25 Aug 2015 08:39:38 +0000
+Subject: [PATCH] gpio: rcar: Enable r8a7795 for ARM64
+Message-Id: <8737z77ok8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <10037494.4LD4T2QGPX@wasted.cogentembedded.com>
- <2757472.iuyUyRzJ3z@wasted.cogentembedded.com>
- <20150812012652.GH15957@verge.net.au> <55D790A5.1050008@cogentembedded.com>
-In-Reply-To: <55D790A5.1050008@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon <horms@verge.net.au>, Linus Walleij <linus.walleij@linaro.org>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Alexandre Courbot <gnurou@gmail.com>, linux-gpio@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 08/21/2015 11:57 PM, Sergei Shtylyov wrote:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
->>> Define the SILK board dependent part of the SDHI1 (connected to micro-SD slot)
->>> device nodes along with the necessary voltage regulators.
->>>
->>> Based on the original patch by Vladimir Barinov
->>> <vladimir.barinov@cogentembedded.com>.
->>>
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>>
->>> ---
->>> This patch is against 'renesas-devel-20150810-v4.2-rc6' tag of Simon Horman's
->>> 'renesas.git' repo plus the R8A7794/SILK QSPI patches just re-posted. It needs
->>> the R8A7794 GPIO patches in order to compile.
->>>
->>> Changes in version 2:
->>> - removed not working SDHI0 stuff, renamed the patch;
->>> - replaced SDHI1's "wp-gpios" property with "disable-wp".
->>
->> I am wondering if you could explain the motivation for the "disable-wp"
->> update
->
->     Please see the comment in mmc_sd_get_ro().
->
->> and weather it is appropriate for other r8a779* dts files.
->
->     In case of micro-SD slots, yes.
+8cd1470("gpio: rcar: Add r8a7795 (R-Car H3) support") adds
+GPIO support for r8a7795. r8a7795 based on CONFIG_ARM64.
+This patch enables r8a7795 on ARM64.
 
-    The MMC binding document says it should only be specified if the 
-controller has WP detection logic. We, so far, seem to have been replying on 
-the GPIOs despite this logic is present (according to the R-Car gen2 SDHI 
-manuals I have). The driver will first call mmc_gpio_get_ro() and when that 
-fails due to "wp-gpios" not being specified, it proceeds to reading the 
-register but that is forbidden by TMIO_MMC_WRPROTECT_DISABLE flag set for the 
-R-Car gen1/2 chips, so 0 is always returned from tmio_mmc_get_ro(). There 
-seems to be no point in going that far (and doing the runtime PM dances) --
-and MMC_CAP2_NO_WRITE_PROTECT (set when "disable-wp" is specified) prohibits 
-doing that...
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/gpio/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-MBR, Sergei
+diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
+index b4fc9e4..5d083f7 100644
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -356,7 +356,7 @@ config GPIO_PXA
+ 
+ config GPIO_RCAR
+ 	tristate "Renesas R-Car GPIO"
+-	depends on ARM && (ARCH_SHMOBILE || COMPILE_TEST)
++	depends on (ARM || ARM64) && (ARCH_SHMOBILE || COMPILE_TEST)
+ 	select GPIOLIB_IRQCHIP
+ 	help
+ 	  Say yes here to support GPIO on Renesas R-Car SoCs.
+-- 
+1.9.1
 
