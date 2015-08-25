@@ -1,98 +1,364 @@
 From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 25 Aug 2015 05:48:09 +0000
-Subject: RE: [PATCH] phy: rcar-gen3-usb2: Add R-Car Gen3 USB2 PHY driver
-Message-Id: <SG2PR06MB0919F3509296F9B9CFEF362BD8610@SG2PR06MB0919.apcprd06.prod.outlook.com>
+Date: Tue, 25 Aug 2015 09:10:35 +0000
+Subject: [PATCH] phy: rcar-gen3-usb2: Add R-Car Gen3 USB2 PHY driver
+Message-Id: <1440493835-6732-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1440052098-4840-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <CAMuHMdXshUCWs=sbVA8pBmsdOm3GwkWJ5NN8YCDXYX_6W5QFAg@mail.gmail.com>
-In-Reply-To: <CAMuHMdXshUCWs=sbVA8pBmsdOm3GwkWJ5NN8YCDXYX_6W5QFAg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1440052098-4840-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>
-Cc: "kishon-l0cyMroinI0@public.gmane.org" <kishon-l0cyMroinI0@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: kishon@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-SGkgR2VlcnQtc2FuLA0KDQo+IFNlbnQ6IE1vbmRheSwgQXVndXN0IDI0LCAyMDE1IDk6MTMgUE0N
-Cj4gDQo+IEhpIFNoaW1vZGEtc2FuLA0KPiANCj4gT24gVGh1LCBBdWcgMjAsIDIwMTUgYXQgODoy
-OCBBTSwgWW9zaGloaXJvIFNoaW1vZGENCj4gPHlvc2hpaGlyby5zaGltb2RhLnVoQHJlbmVzYXMu
-Y29tPiB3cm90ZToNCj4gPiBUaGlzIHBhdGNoIGFkZHMgc3VwcG9ydCBmb3IgUi1DYXIgZ2VuZXJh
-dGlvbiAzIFVTQjIgUEhZIGRyaXZlci4NCj4gPiBUaGlzIFNvQyBoYXMgMyBFSENJL09IQ0kgY2hh
-bm5lbHMsIGFuZCB0aGUgY2hhbm5lbCAwIGlzIHNoYXJlZA0KPiA+IHdpdGggdGhlIEhTVVNCIChV
-U0IyLjAgcGVyaXBoZXJhbCkgZGV2aWNlLg0KPiA+DQo+ID4gU28sIHRoZSBwdXJwb3NlIG9mIHRo
-aXMgZHJpdmVyIGlzOg0KPiA+ICAxKSBpbml0aWFsaXplcyBzb21lIHJlZ2lzdGVycyBvZiBTb0Mg
-c3BlY2lmaWMgdG8gdXNlIHRoZQ0KPiA+ICAgICB7ZWhjaSxvaGNpfS1wbGF0Zm9ybSBkcml2ZXIu
-DQo+ID4NCj4gPiAgMikgZGV0ZWN0cyBpZCBwaW4gdG8gc2VsZWN0IGhvc3Qgb3IgcGVyaXBoZXJh
-bCBvbiB0aGUgY2hhbm5lbCAwLg0KPiA+DQo+ID4gRm9yIG5vdywgdGhpcyBkcml2ZXIgb25seSBz
-dXBwb3J0cyAxKSBhYm92ZS4NCj4gDQo+IFRoYW5rcyBmb3IgeW91ciBwYXRjaCENCg0KVGhhbmsg
-eW91IHZlcnkgbXVjaCBmb3IgeW91ciByZXZpZXchDQoNCj4gPiAtLS0gL2Rldi9udWxsDQo+ID4g
-KysrIGIvRG9jdW1lbnRhdGlvbi9kZXZpY2V0cmVlL2JpbmRpbmdzL3BoeS9yY2FyLWdlbjMtcGh5
-LXVzYjIudHh0DQo+ID4gQEAgLTAsMCArMSwzNyBAQA0KPiA+ICsqIFJlbmVzYXMgUi1DYXIgZ2Vu
-ZXJhdGlvbiAzIFVTQiAyLjAgUEhZDQo+ID4gKw0KPiA+ICtUaGlzIGZpbGUgcHJvdmlkZXMgaW5m
-b3JtYXRpb24gb24gd2hhdCB0aGUgZGV2aWNlIG5vZGUgZm9yIHRoZSBSLUNhciBnZW5lcmF0aW9u
-DQo+ID4gKzMgVVNCIDIuMCBQSFkgY29udGFpbnMuDQo+ID4gKw0KPiA+ICtSZXF1aXJlZCBwcm9w
-ZXJ0aWVzOg0KPiA+ICstIGNvbXBhdGlibGU6ICJyZW5lc2FzLHVzYjItcGh5LXI4YTc3OTUiIGlm
-IHRoZSBkZXZpY2UgaXMgYSBwYXJ0IG9mIFI4QTc3OTUgU29DLg0KPiANCj4gImFuIFI4QTc3OTUg
-U29DIi4NCg0KSSB3aWxsIGZpeCB0aGlzIGluIHYyLg0KKEkgd2lsbCBzdWJtaXQgdjIgcGF0Y2gg
-bGF0ZSB0b2RheS4pDQoNCj4gPiArLSByZWc6IG9mZnNldCBhbmQgbGVuZ3RoIG9mIHRoZSBVU0Iy
-LjAgaG9zdCByZWdpc3RlciBibG9jay4NCj4gPiArLSByZWctbmFtZXM6IG11c3QgYmUgInVzYjIi
-Lg0KPiA+ICstIGNsb2NrczogY2xvY2sgcGhhbmRsZSBhbmQgc3BlY2lmaWVyIHBhaXIuDQo+IA0K
-PiAicGFpcihzKS4iDQoNCkkgd2lsbCBmaXggdGhpcy4NCg0KPiA+ICstIGNsb2NrLW5hbWVzOiBz
-dHJpbmcsIGNsb2NrIGlucHV0IG5hbWUsIG11c3QgYmUgInVzYjIiLCBhbmQgb3B0aW9uYWwgImhz
-dXNiIi4NCj4gDQo+IG5hbWVzDQoNClRoYW5rIHlvdSBmb3IgdGhlIHBvaW50Lg0KQXMgeW91IG1l
-bnRpb25lZCBhYm91dCBydW50aW1lIFBNIGJlbG93LCBJIHdpbGwgcmVtb3ZlIHRoaXMgcHJvcGVy
-dHkuDQoNCj4gPiArLSAjcGh5LWNlbGxzOiBzZWUgcGh5LWJpbmRpbmdzLnR4dCBpbiB0aGUgc2Ft
-ZSBkaXJlY3RvcnksIG11c3QgYmUgPDA+Lg0KPiA+ICsNCj4gPiArT3B0aW9uYWwgcHJvcGFyaWVz
-Og0KPiANCj4gcHJvcGVydGllcw0KDQpPb3BzLCBJIHdpbGwgZml4IGl0Lg0KSSBzaG91bGQgaGF2
-ZSBkb25lIGFzcGVsbCBjb21tYW5kIGJlZm9yZSBJIHN1Ym1pdHRlZC4NCklmIEkgZGlkIHRoYXQg
-Y29tbWFuZCwgSSBmb3VuZCBvdGhlciB0eXBvIGluIHRoaXMgcGF0Y2ggOikNCg0KPiA+ICtUbyB1
-c2UgYSBVU0IgY2hhbm5lbCB3aGljaCBFSENJL09IQ0kgYW5kIEhTVVNCIGFyZSBjb21iaW5lZCwg
-dGhlIGRldmljZSB0cmVlDQo+IA0KPiBzL3doaWNoL3doZXJlLw0KPiANCj4gPiArbm9kZSBzaG91
-bGQgc2V0IEhTVVNCIHByb3BhcmllcyB0byByZWcgYW5kIHJlZy1uYW1lcyBwcm9wYXJpZXM6DQo+
-IA0KPiBwcm9wZXJ0aWVzICh4MikNCg0KSSB3aWxsIGZpeCBpdC4NCg0KPiA+ICstIHJlZzogb2Zm
-c2V0IGFuZCBsZW5ndGggb2YgdGhlIEhTVVNCIHJlZ2lzdGVyIGJsb2NrLg0KPiA+ICstIHJlZy1u
-YW1lczogbXVzdCBiZSAiaHN1c2IiLg0KPiA+ICsNCj4gPiArRXhhbXBsZSAoUi1DYXIgSDMpOg0K
-PiA+ICsNCj4gPiArICAgICAgIHVzYi1waHlAZWUwODAyMDAgew0KPiA+ICsgICAgICAgICAgICAg
-ICBjb21wYXRpYmxlID0gInJlbmVzYXMsdXNiMi1waHktcjhhNzc5NSI7DQo+ID4gKyAgICAgICAg
-ICAgICAgIHJlZyA9IDwwIDB4ZWUwODAyMDAgMCAweDZmZj4sIDwwIDB4ZTY1OTAxMDAgMCAweDEw
-MD47DQo+ID4gKyAgICAgICAgICAgICAgIHJlZy1uYW1lcyA9ICJ1c2IyIiwgImhzdXNiIjsNCj4g
-PiArICAgICAgICAgICAgICAgY2xvY2tzID0gPCZtc3RwN19jbGtzIFI4QTc3OTVfQ0xLX0VIQ0kw
-PiwNCj4gPiArICAgICAgICAgICAgICAgICAgICAgICAgPCZtc3RwN19jbGtzIFI4QTc3OTVfQ0xL
-X0hTVVNCPjsNCj4gDQo+IElmIHlvdSBldmVyIHdhbnQgdG8gZW5hYmxlIFJ1bnRpbWUgUE0sIGRv
-IHlvdSB3YW50IHRoZSBmaXJzdCBNU1RQIGNsb2NrIHRvIGJlDQo+IG1hbmFnZWQgYXV0b21hdGlj
-YWxseT8NCj4gV2hhdCBhYm91dCB0aGUgc2Vjb25kIG9wdGlvbmFsIGNsb2NrPw0KDQpUaGFuayB5
-b3UgdmVyeSBtdWNoIGZvciB0aGUgcG9pbnQuDQpJIGRpZG4ndCB0YWtlIGNhcmUgYWJvdXQgUnVu
-dGltZSBQTS4gSG93ZXZlciwgSSB3YW50IHRvIGVuYWJsZSBSdW50aW1lIFBNDQpiZWNhdXNlIHVz
-YiBob3N0IGFuZCBmdW5jdGlvbiBkcml2ZXJzIHN1cHBvcnQgaXQuDQoNCj4gPiArICAgICAgICAg
-ICAgICAgY2xvY2stbmFtZXMgPSAidXNiMiIsICJoc3VzYiI7DQo+ID4gKyAgICAgICB9Ow0KPiA+
-ICsNCj4gPiArICAgICAgIHVzYi1waHlAZWUwYTAyMDAgew0KPiA+ICsgICAgICAgICAgICAgICBj
-b21wYXRpYmxlID0gInJlbmVzYXMsdXNiMi1waHktcjhhNzc5NSI7DQo+ID4gKyAgICAgICAgICAg
-ICAgIHJlZyA9IDwwIDB4ZWUwYTAyMDAgMCAweDZmZj47DQo+ID4gKyAgICAgICAgICAgICAgIHJl
-Zy1uYW1lcyA9ICJ1c2IyIjsNCj4gPiArICAgICAgICAgICAgICAgY2xvY2tzID0gPCZtc3RwN19j
-bGtzIFI4QTc3OTVfQ0xLX0VIQ0kwPjsNCj4gPiArICAgICAgICAgICAgICAgY2xvY2stbmFtZXMg
-PSAidXNiMiI7DQo+ID4gKyAgICAgICB9Ow0KPiANCj4gPiAtLS0gL2Rldi9udWxsDQo+ID4gKysr
-IGIvZHJpdmVycy9waHkvcGh5LXJjYXItZ2VuMy11c2IyLmMNCj4gDQo+ID4gK3N0YXRpYyBpbnQg
-cmNhcl9nZW4zX3BoeV91c2IyX2luaXQoc3RydWN0IHBoeSAqcCkNCj4gPiArew0KPiA+ICsgICAg
-ICAgc3RydWN0IHJjYXJfZ2VuM19waHlfdXNiMl9jaGFubmVsICpjaGFubmVsID0gcGh5X2dldF9k
-cnZkYXRhKHApOw0KPiA+ICsgICAgICAgdW5zaWduZWQgbG9uZyBmbGFnczsNCj4gPiArICAgICAg
-IHZvaWQgX19pb21lbSAqdXNiMl9iYXNlID0gY2hhbm5lbC0+dXNiMi5iYXNlOw0KPiA+ICsgICAg
-ICAgdm9pZCBfX2lvbWVtICpoc3VzYl9iYXNlID0gY2hhbm5lbC0+aHN1c2IuYmFzZTsNCj4gPiAr
-ICAgICAgIHUzMiB0bXA7DQo+ID4gKw0KPiA+ICsgICAgICAgLyogU2luY2Ugb3BzLT5pbml0KCkg
-aXMgY2FsbGVkIG9uY2UsIHRoaXMgZHJpdmVyIGVuYWJsZXMgYm90aCBjbG9ja3MgKi8NCj4gPiAr
-ICAgICAgIGNsa19wcmVwYXJlX2VuYWJsZShjaGFubmVsLT51c2IyLmNsayk7DQo+ID4gKyAgICAg
-ICBjbGtfcHJlcGFyZV9lbmFibGUoY2hhbm5lbC0+aHN1c2IuY2xrKTsNCj4gDQo+IFNvIHRoaXMg
-ZHJpdmVyIG1hbmFnZXMgaXRzIGNsb2NrKHMpIGl0c2VsZiwgYW5kIGRvZXNuJ3Qgc3VwcG9ydCBS
-dW50aW1lIFBNLg0KDQpTbywgSSB3aWxsIHVzZSByZW1vdmUgY2xrIEFQSXMgaW4gdGhpcyBkcml2
-ZXIuDQoNCkJlc3QgcmVnYXJkcywNCllvc2hpaGlybyBTaGltb2RhDQoNCj4gPiArc3RhdGljIGlu
-dCByY2FyX2dlbjNfcGh5X3VzYjJfZXhpdChzdHJ1Y3QgcGh5ICpwKQ0KPiA+ICt7DQo+ID4gKyAg
-ICAgICBzdHJ1Y3QgcmNhcl9nZW4zX3BoeV91c2IyX2NoYW5uZWwgKmNoYW5uZWwgPSBwaHlfZ2V0
-X2RydmRhdGEocCk7DQo+ID4gKw0KPiA+ICsgICAgICAgd3JpdGVsKDAsIGNoYW5uZWwtPnVzYjIu
-YmFzZSArIFVTQjJfSU5UX0VOQUJMRSk7DQo+ID4gKw0KPiA+ICsgICAgICAgY2xrX2Rpc2FibGVf
-dW5wcmVwYXJlKGNoYW5uZWwtPmhzdXNiLmNsayk7DQo+ID4gKyAgICAgICBjbGtfZGlzYWJsZV91
-bnByZXBhcmUoY2hhbm5lbC0+dXNiMi5jbGspOw0KPiA+ICsNCj4gPiArICAgICAgIHJldHVybiAw
-Ow0KPiA+ICt9DQo+IA0KPiBHcntvZXRqZSxlZXRpbmd9cywNCj4gDQo+ICAgICAgICAgICAgICAg
-ICAgICAgICAgIEdlZXJ0DQo+IA0KPiAtLQ0KPiBHZWVydCBVeXR0ZXJob2V2ZW4gLS0gVGhlcmUn
-cyBsb3RzIG9mIExpbnV4IGJleW9uZCBpYTMyIC0tIGdlZXJ0QGxpbnV4LW02OGsub3JnDQo+IA0K
-PiBJbiBwZXJzb25hbCBjb252ZXJzYXRpb25zIHdpdGggdGVjaG5pY2FsIHBlb3BsZSwgSSBjYWxs
-IG15c2VsZiBhIGhhY2tlci4gQnV0DQo+IHdoZW4gSSdtIHRhbGtpbmcgdG8gam91cm5hbGlzdHMg
-SSBqdXN0IHNheSAicHJvZ3JhbW1lciIgb3Igc29tZXRoaW5nIGxpa2UgdGhhdC4NCj4gICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAtLSBMaW51cyBUb3J2YWxkcw0K
+This patch adds support for R-Car generation 3 USB2 PHY driver.
+This SoC has 3 EHCI/OHCI channels, and the channel 0 is shared
+with the HSUSB (USB2.0 peripheral) device.
+
+So, the purpose of this driver is:
+ 1) initializes some registers of SoC specific to use the
+    {ehci,ohci}-platform driver.
+
+ 2) detects id pin to select host or peripheral on the channel 0.
+
+For now, this driver only supports 1) above.
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ This patch is based on the latest linux-phy / next branch.
+ (commit id = cfd093bbb5fe84ec8c7bb069fe618159a8b601f5)
+
+ Changes from v1:
+  - Revise some typos.
+  - Remove using clk API to enable/disable the clocks.
+    (In other words, this driver expects to enable/disable the clocks by
+     Runtime PM API by the phy-core driver.)
+  - Remove an unnecessary header file (asm/cmpxchg.h).
+
+ .../devicetree/bindings/phy/rcar-gen3-phy-usb2.txt |  35 +++
+ drivers/phy/Kconfig                                |   6 +
+ drivers/phy/Makefile                               |   1 +
+ drivers/phy/phy-rcar-gen3-usb2.c                   | 240 +++++++++++++++++++++
+ 4 files changed, 282 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
+ create mode 100644 drivers/phy/phy-rcar-gen3-usb2.c
+
+diff --git a/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
+new file mode 100644
+index 0000000..1d57766
+--- /dev/null
++++ b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
+@@ -0,0 +1,35 @@
++* Renesas R-Car generation 3 USB 2.0 PHY
++
++This file provides information on what the device node for the R-Car generation
++3 USB 2.0 PHY contains.
++
++Required properties:
++- compatible: "renesas,usb2-phy-r8a7795" if the device is a part of an R8A7795
++	      SoC.
++- reg: offset and length of the USB2.0 host register block.
++- reg-names: must be "usb2".
++- clocks: clock phandle and specifier pair(s).
++- #phy-cells: see phy-bindings.txt in the same directory, must be <0>.
++
++Optional properties:
++To use a USB channel where EHCI/OHCI and HSUSB are combined, the device tree
++node should set HSUSB properties to reg and reg-names properties:
++- reg: offset and length of the HSUSB register block.
++- reg-names: must be "hsusb".
++
++Example (R-Car H3):
++
++	usb-phy@ee080200 {
++		compatible = "renesas,usb2-phy-r8a7795";
++		reg = <0 0xee080200 0 0x6ff>, <0 0xe6590100 0 0x100>;
++		reg-names = "usb2", "hsusb";
++		clocks = <&mstp7_clks R8A7795_CLK_EHCI0>,
++			 <&mstp7_clks R8A7795_CLK_HSUSB>;
++	};
++
++	usb-phy@ee0a0200 {
++		compatible = "renesas,usb2-phy-r8a7795";
++		reg = <0 0xee0a0200 0 0x6ff>;
++		reg-names = "usb2";
++		clocks = <&mstp7_clks R8A7795_CLK_EHCI0>;
++	};
+diff --git a/drivers/phy/Kconfig b/drivers/phy/Kconfig
+index 0fe9bff..406dc43 100644
+--- a/drivers/phy/Kconfig
++++ b/drivers/phy/Kconfig
+@@ -116,6 +116,12 @@ config PHY_RCAR_GEN2
+ 	help
+ 	  Support for USB PHY found on Renesas R-Car generation 2 SoCs.
+ 
++config PHY_RCAR_GEN3_USB2
++	tristate "Renesas R-Car generation 3 USB 2.0 PHY driver"
++	depends on GENERIC_PHY
++	help
++	  Support for USB 2.0 PHY found on Renesas R-Car generation 3 SoCs.
++
+ config OMAP_CONTROL_PHY
+ 	tristate "OMAP CONTROL PHY Driver"
+ 	depends on ARCH_OMAP2PLUS || COMPILE_TEST
+diff --git a/drivers/phy/Makefile b/drivers/phy/Makefile
+index a5b18c1..97e83bc 100644
+--- a/drivers/phy/Makefile
++++ b/drivers/phy/Makefile
+@@ -17,6 +17,7 @@ obj-$(CONFIG_PHY_MVEBU_SATA)		+= phy-mvebu-sata.o
+ obj-$(CONFIG_PHY_MIPHY28LP) 		+= phy-miphy28lp.o
+ obj-$(CONFIG_PHY_MIPHY365X)		+= phy-miphy365x.o
+ obj-$(CONFIG_PHY_RCAR_GEN2)		+= phy-rcar-gen2.o
++obj-$(CONFIG_PHY_RCAR_GEN3_USB2)	+= phy-rcar-gen3-usb2.o
+ obj-$(CONFIG_OMAP_CONTROL_PHY)		+= phy-omap-control.o
+ obj-$(CONFIG_OMAP_USB2)			+= phy-omap-usb2.o
+ obj-$(CONFIG_TI_PIPE3)			+= phy-ti-pipe3.o
+diff --git a/drivers/phy/phy-rcar-gen3-usb2.c b/drivers/phy/phy-rcar-gen3-usb2.c
+new file mode 100644
+index 0000000..2c2fcf9
+--- /dev/null
++++ b/drivers/phy/phy-rcar-gen3-usb2.c
+@@ -0,0 +1,240 @@
++/*
++ * Renesas R-Car Gen3 for USB2.0 PHY driver
++ *
++ * Copyright (C) 2015 Renesas Electronics Corporation
++ *
++ * This is based on the phy-rcar-gen2 driver:
++ * Copyright (C) 2014 Renesas Solutions Corp.
++ * Copyright (C) 2014 Cogent Embedded, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/phy/phy.h>
++#include <linux/platform_device.h>
++#include <linux/spinlock.h>
++
++/******* USB2.0 Host registers (original offset is +0x200) *******/
++#define USB2_INT_ENABLE		0x000
++#define USB2_USBCTR		0x00c
++#define USB2_SPD_RSM_TIMSET	0x10c
++#define USB2_OC_TIMSET		0x110
++
++/* INT_ENABLE */
++#define USB2_INT_ENABLE_USBH_INTB_EN	BIT(2)
++#define USB2_INT_ENABLE_USBH_INTA_EN	BIT(1)
++#define USB2_INT_ENABLE_INIT		(USB2_INT_ENABLE_USBH_INTB_EN | \
++					 USB2_INT_ENABLE_USBH_INTA_EN)
++
++/* USBCTR */
++#define USB2_USBCTR_DIRPD	BIT(2)
++#define USB2_USBCTR_PLL_RST	BIT(1)
++
++/* SPD_RSM_TIMSET */
++#define USB2_SPD_RSM_TIMSET_INIT	0x014e029b
++
++/* OC_TIMSET */
++#define USB2_OC_TIMSET_INIT		0x000209ab
++
++/******* HSUSB registers (original offset is +0x100) *******/
++#define HSUSB_LPSTS			0x02
++#define HSUSB_UGCTRL2			0x84
++
++/* Low Power Status register (LPSTS) */
++#define HSUSB_LPSTS_SUSPM		0x4000
++
++/* USB General control register 2 (UGCTRL2) */
++#define HSUSB_UGCTRL2_MASK		0x00000031 /* bit[31:6] should be 0 */
++#define HSUSB_UGCTRL2_USB0SEL		0x00000030
++#define HSUSB_UGCTRL2_USB0SEL_HOST	0x00000010
++#define HSUSB_UGCTRL2_USB0SEL_HS_USB	0x00000020
++#define HSUSB_UGCTRL2_USB0SEL_OTG	0x00000030
++
++struct rcar_gen3_phy_usb2_data {
++	void __iomem *base;
++	struct clk *clk;
++};
++
++struct rcar_gen3_phy_usb2_channel {
++	struct rcar_gen3_phy_usb2_data usb2;
++	struct rcar_gen3_phy_usb2_data hsusb;
++	struct phy *phy;
++	spinlock_t lock;
++};
++
++static int rcar_gen3_phy_usb2_init(struct phy *p)
++{
++	struct rcar_gen3_phy_usb2_channel *channel = phy_get_drvdata(p);
++	unsigned long flags;
++	void __iomem *usb2_base = channel->usb2.base;
++	void __iomem *hsusb_base = channel->hsusb.base;
++	u32 tmp;
++
++	spin_lock_irqsave(&channel->lock, flags);
++
++	/* Initialize USB2 part */
++	writel(USB2_INT_ENABLE_INIT, usb2_base + USB2_INT_ENABLE);
++	writel(USB2_SPD_RSM_TIMSET_INIT, usb2_base + USB2_SPD_RSM_TIMSET);
++	writel(USB2_OC_TIMSET_INIT, usb2_base + USB2_OC_TIMSET);
++
++	/* Initialize HSUSB part */
++	if (hsusb_base) {
++		/* TODO: support "OTG" mode */
++		tmp = readl(hsusb_base + HSUSB_UGCTRL2);
++		tmp = (tmp & ~HSUSB_UGCTRL2_USB0SEL) |
++		      HSUSB_UGCTRL2_USB0SEL_HOST;
++		writel(tmp & HSUSB_UGCTRL2_MASK, hsusb_base + HSUSB_UGCTRL2);
++	}
++
++	spin_unlock_irqrestore(&channel->lock, flags);
++
++	return 0;
++}
++
++static int rcar_gen3_phy_usb2_exit(struct phy *p)
++{
++	struct rcar_gen3_phy_usb2_channel *channel = phy_get_drvdata(p);
++
++	writel(0, channel->usb2.base + USB2_INT_ENABLE);
++
++	return 0;
++}
++
++static int rcar_gen3_phy_usb2_power_on(struct phy *p)
++{
++	struct rcar_gen3_phy_usb2_channel *channel = phy_get_drvdata(p);
++	void __iomem *usb2_base = channel->usb2.base;
++	void __iomem *hsusb_base = channel->hsusb.base;
++	unsigned long flags;
++	u32 tmp;
++
++	spin_lock_irqsave(&channel->lock, flags);
++
++	tmp = readl(usb2_base + USB2_USBCTR);
++	tmp |= USB2_USBCTR_PLL_RST;
++	writel(tmp, usb2_base + USB2_USBCTR);
++	tmp &= ~USB2_USBCTR_PLL_RST;
++	writel(tmp, usb2_base + USB2_USBCTR);
++
++	/*
++	 * TODO: To reduce power consuming, this driver should set the SUSPM
++	 *	after the PHY detects ID pin as peripheral.
++	 */
++	if (hsusb_base) {
++		/* Power on HSUSB PHY */
++		tmp = readw(hsusb_base + HSUSB_LPSTS);
++		tmp |= HSUSB_LPSTS_SUSPM;
++		writew(tmp, hsusb_base + HSUSB_LPSTS);
++	}
++
++	spin_unlock_irqrestore(&channel->lock, flags);
++
++	return 0;
++}
++
++static int rcar_gen3_phy_usb2_power_off(struct phy *p)
++{
++	struct rcar_gen3_phy_usb2_channel *channel = phy_get_drvdata(p);
++	void __iomem *hsusb_base = channel->hsusb.base;
++	unsigned long flags;
++	u32 tmp;
++
++	spin_lock_irqsave(&channel->lock, flags);
++
++	if (hsusb_base) {
++		/* Power off HSUSB PHY */
++		tmp = readw(hsusb_base + HSUSB_LPSTS);
++		tmp &= ~HSUSB_LPSTS_SUSPM;
++		writew(tmp, hsusb_base + HSUSB_LPSTS);
++	}
++
++	spin_unlock_irqrestore(&channel->lock, flags);
++
++	return 0;
++}
++
++static struct phy_ops rcar_gen3_phy_usb2_ops = {
++	.init		= rcar_gen3_phy_usb2_init,
++	.exit		= rcar_gen3_phy_usb2_exit,
++	.power_on	= rcar_gen3_phy_usb2_power_on,
++	.power_off	= rcar_gen3_phy_usb2_power_off,
++	.owner		= THIS_MODULE,
++};
++
++static const struct of_device_id rcar_gen3_phy_usb2_match_table[] = {
++	{ .compatible = "renesas,usb2-phy-r8a7795" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, rcar_gen3_phy_usb2_match_table);
++
++static int rcar_gen3_phy_usb2_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct rcar_gen3_phy_usb2_channel *channel;
++	struct phy_provider *provider;
++	struct resource *res;
++
++	if (!dev->of_node) {
++		dev_err(dev, "This driver needs device tree\n");
++		return -EINVAL;
++	}
++
++	channel = devm_kzalloc(dev, sizeof(*channel), GFP_KERNEL);
++	if (!channel)
++		return -ENOMEM;
++
++	spin_lock_init(&channel->lock);
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "usb2");
++	channel->usb2.base = devm_ioremap_resource(dev, res);
++	if (IS_ERR(channel->usb2.base))
++		return PTR_ERR(channel->usb2.base);
++
++	/* "hsusb" memory resource is optional */
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "hsusb");
++
++	/* To avoid error message by devm_ioremap_resource() */
++	if (res) {
++		channel->hsusb.base = devm_ioremap_resource(dev, res);
++		if (IS_ERR(channel->hsusb.base))
++			channel->hsusb.base = NULL;
++	}
++
++	/* devm_phy_create() will call pm_runtime_enable(dev); */
++	channel->phy = devm_phy_create(dev, NULL, &rcar_gen3_phy_usb2_ops);
++	if (IS_ERR(channel->phy)) {
++		dev_err(dev, "Failed to create USB2 PHY\n");
++		return PTR_ERR(channel->phy);
++	}
++
++	phy_set_drvdata(channel->phy, channel);
++
++	provider = devm_of_phy_provider_register(dev, of_phy_simple_xlate);
++	if (IS_ERR(provider)) {
++		dev_err(dev, "Failed to register PHY provider\n");
++		return PTR_ERR(provider);
++	}
++
++	dev_set_drvdata(dev, channel);
++
++	return 0;
++}
++
++static struct platform_driver rcar_gen3_phy_usb2_driver = {
++	.driver = {
++		.name		= "phy_rcar_gen3_usb2",
++		.of_match_table	= rcar_gen3_phy_usb2_match_table,
++	},
++	.probe	= rcar_gen3_phy_usb2_probe,
++};
++module_platform_driver(rcar_gen3_phy_usb2_driver);
++
++MODULE_LICENSE("GPL v2");
++MODULE_DESCRIPTION("Renesas R-Car Gen3 USB 2.0 PHY");
++MODULE_AUTHOR("Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>");
+-- 
+1.9.1
+
