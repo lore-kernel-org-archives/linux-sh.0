@@ -1,37 +1,30 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 25 Aug 2015 07:14:50 +0000
-Subject: [PATCH v2] ARM: shmobile: r8a7778: tidyup SSI resource region
-Message-Id: <87bndv7shl.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 25 Aug 2015 07:19:28 +0000
+Subject: Re: [PATCH v2] ARM: shmobile: r8a7778: tidyup SSI resource region
+Message-Id: <CAMuHMdWzoA0gNwTXir4s=iQR-gVNBcnZxoVBvUM3BKs4oUE3rA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87bndv7shl.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87bndv7shl.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Tue, Aug 25, 2015 at 9:14 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
- - 0x240
+Gr{oetje,eeting}s,
 
- arch/arm/boot/dts/r8a7778.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+                        Geert
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 4b1fa9f..4f8e078 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -239,7 +239,7 @@
- 		#sound-dai-cells = <1>;
- 		compatible = "renesas,rcar_sound-r8a7778", "renesas,rcar_sound-gen1";
- 		reg =	<0xffd90000 0x1000>,	/* SRU */
--			<0xffd91000 0x1240>,	/* SSI */
-+			<0xffd91000 0x240>,	/* SSI */
- 			<0xfffe0000 0x24>;	/* ADG */
- 		clocks = <&mstp3_clks R8A7778_CLK_SSI8>,
- 			<&mstp3_clks R8A7778_CLK_SSI7>,
--- 
-1.9.1
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
