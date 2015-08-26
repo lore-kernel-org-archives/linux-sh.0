@@ -1,67 +1,59 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 27 Aug 2015 19:43:31 +0000
-Subject: Re: [PATCH/RFC 06/10] arm64: dts: r8a7795: add EthernetAVB device node
-Message-Id: <55DF6863.8020509@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 26 Aug 2015 18:13:46 +0000
+Subject: [PATCH 0/6] arm64: renesas: r8a7795/salvator-x Serial Support
+Message-Id: <1440612832-17627-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440667450-3513-7-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1440667450-3513-7-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 08/27/2015 03:52 PM, Sergei Shtylyov wrote:
+	Hi,
 
->>>>>>> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->>>>>>> b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->>>>>>> index 0b435d8274e4..01502f4d2f5f 100644
->>>>>>> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->>>>>>> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->>>>>>> @@ -263,6 +263,16 @@
->>>>>>>                           reg = <0 0xe6060000 0 0x50c>;
->>>>>>>                   };
->>>>>>>
->>>>>>> +               avb: ethernet@e6800000 {
->>>>>>> +                       compatible = "renesas,etheravb-r8a7795";
->>>>>>> +                       reg = <0 0xe6800000 0 0x800>, <0 0xe6a00000 0
->>>>>>> 0x10000>;
->>>>>>> +                       interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
->>>>>>> <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
->>>>>>
->>>>>>      Two interrupts?
->>>>>
->>>>> There are actually 25, for ch0-ch24.
->>>>> Why does this list the interrupts for ch22 and ch24 only?
->>>>
->>>>     So all these are AVB-DMAC interrupts, not EMAC? I don't have the
->>>> manual...
->>>
->>> The block diagram just shows a line "intreq_avb_p[24:0] (to INTC)", coming
->>> from both AVB-DMAC and E-MAC.
->
->>     Then I'll have to NACK the driver patch.
+This patch series enhances serial port support on r8a7795/Salvator-X:
+  - Add dummy dma-controller nodes, so we can start describing DMA
+    channels for DMA slaves now, leading to less patch conflicts later,
+  - Add all (H)SCIF device nodes (incl. clocks, clock domain, and DMA
+    properties),
+  - Enable SCIF1 on serial1,
+  - Proof-of-concept of using HSCIF1 on serial1 use a DT overlay.
 
-    Yeah, it seems to be total nonsense now... Unless there's some more recent 
-knowledge behind it than Geert's manual has. :-)
+This series depends on "[PATCH 0/3] arm64: renesas: r8a7795 clock
+updates".
 
->> It's interesting that there's 24
+Unlike SCIF1 (on serial1) and SCIF2 (on serial0), HSCIF1 on serial1
+doesn't use the default pinctrl config, hence it's functionality depends
+on enabling CONFIG_PINCTRL and "[PATCH 0/5] pinctrl: sh-pfc: r8a7795:
+(H)SCIF Updates".
 
-    25 even.
+SCIF1 and HSCIF1 were tested on r8a7795/salvator-x.
 
->> IRQs while I remember there were only 15 RX queues on gen2 SoCs.
+Geert Uytterhoeven (6):
+  arm64: renesas: r8a7795 dtsi: Mark scif2 disabled
+  arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
+  arm64: renesas: r8a7795 dtsi: Add all SCIF nodes
+  arm64: renesas: r8a7795 dtsi: Add all HSCIF nodes
+  arm64: renesas: salvator-x: Enable SCIF1 on serial1
+  [POC] arm64: renesas: salvator-x dts: Add overlay for HSCIF1
 
-    Actually, 18.
+ arch/arm64/boot/dts/renesas/Makefile               |   5 +
+ .../dts/renesas/r8a7795-salvator-x-hscif1.dtso     |  57 +++++++
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |  12 ++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 177 +++++++++++++++++++++
+ include/dt-bindings/clock/r8a7795-clock.h          |  10 ++
+ 5 files changed, 261 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/renesas/r8a7795-salvator-x-hscif1.dtso
 
->> That's the only interpretation of the multiple IRQs that comes to mind.
+-- 
+1.9.1
 
->     Oops, I meant the descriptor interrupt #s (not used by the driver now),
-> not the RX queues.
+Gr{oetje,eeting}s,
 
-    After looking thru the gen2 manual, it seems to me that these channels may 
-be representing 4 TX and 21 RX queues.
+						Geert
 
->>> Gr{oetje,eeting}s,
->>>                          Geert
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-MBR, Sergei
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
