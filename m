@@ -1,58 +1,36 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 05 Aug 2015 08:58:09 +0000
-Subject: [PATCH v4 5/6] ARM: shmobile: r8a7740: Migrate to generic l2c OF initialization
-Message-Id: <1438765090-823-6-git-send-email-geert+renesas@glider.be>
+Date: Wed, 26 Aug 2015 18:02:22 +0000
+Subject: [PATCH 3/5] pinctrl: sh-pfc: r8a7795: Fix SCIF5 pin data
+Message-Id: <1440612144-16877-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438765090-823-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1438765090-823-1-git-send-email-geert+renesas@glider.be>
+References: <1440612144-16877-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440612144-16877-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Takeshi Kihara <takeshi.kihara.df@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Migrate the generic r8a7740 platform from calling l2x0_of_init() to the
-generic l2c OF initialization.
+Correct SCIF5 data pin numbers.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v4:
-  - This depends on commit eeedcea69e927857 ("ARM: 8395/1: l2c: Add
-    support for the "arm,shared-override" property"), which is queued
-    for 4.3 in arm/for-next,
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-v3:
-  - Use 0/~0 now DT supports "arm,shared-override",
-
-v2:
-  - Keep only {,~}L2C_AUX_CTRL_SHARED_OVERRIDE.
----
- arch/arm/mach-shmobile/setup-r8a7740.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 0c8f80c5b04df34d..7b16c12e3f816f7f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -110,10 +110,6 @@ static void __init r8a7740_generic_init(void)
- {
- 	r8a7740_meram_workaround();
- 
--#ifdef CONFIG_CACHE_L2X0
--	/* Shared attribute override enable, 32K*8way */
--	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
--#endif
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
-@@ -123,6 +119,8 @@ static const char *const r8a7740_boards_compat_dt[] __initconst = {
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+index 83cce48da9f928b7..52faa7faccdc5488 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+@@ -2405,7 +2405,7 @@ static const unsigned int scif4_ctrl_c_mux[] = {
+ /* - SCIF5 ------------------------------------------------------------------ */
+ static const unsigned int scif5_data_pins[] = {
+ 	/* RX, TX */
+-	RCAR_GP_PIN(2, 19), RCAR_GP_PIN(2, 21),
++	RCAR_GP_PIN(5, 19), RCAR_GP_PIN(5, 21),
  };
- 
- DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
-+	.l2c_aux_val	= 0,
-+	.l2c_aux_mask	= ~0,
- 	.map_io		= r8a7740_map_io,
- 	.init_early	= shmobile_init_delay,
- 	.init_irq	= r8a7740_init_irq_of,
+ static const unsigned int scif5_data_mux[] = {
+ 	RX5_MARK, TX5_MARK,
 -- 
 1.9.1
 
