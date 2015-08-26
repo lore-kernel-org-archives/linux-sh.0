@@ -1,199 +1,143 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 09 Aug 2015 23:31:13 +0000
-Subject: Re: [PATCH] ARM: shmobile: IPMMU and DMAC prototype
-Message-Id: <89949879.QppV1EtK2z@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 26 Aug 2015 18:13:49 +0000
+Subject: [PATCH 3/6] arm64: renesas: r8a7795 dtsi: Add all SCIF nodes
+Message-Id: <1440612832-17627-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+Add the device nodes for all remaining SCIF serial ports, incl. clocks,
+clock domain, and dma properties.
 
-Thank you for the patch.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 82 +++++++++++++++++++++++++++++++
+ include/dt-bindings/clock/r8a7795-clock.h |  5 ++
+ 2 files changed, 87 insertions(+)
 
-On Monday 27 July 2015 21:05:18 Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> This patch is a prototype hack to enable DMA Engine over IPMMU for
-> devices such as QSPI, SDHI and MMCIF. The simple approach taken here
-> is to identity map the DMA Engine slave devices in the IPMMU driver.
-> 
-> As expected this is just a test to see if the actual hardware works.
-> I believe it at least half-works - the IPMMU fault errors go away
-> when I test on r8a7791 Koelsch.
-> 
-> The code is far from ready for upstream merge for various reasons:
->  - The code is one huge layering violation (topology fixes should be
-> elsewhere)
-> - It also clobbers the virtual I/O space without reservation (corruption!)
-> - Moreover, the identity mappings are added for all devices (just plain
-> wrong)
-> 
-> Next step would be to figure out how to fix this properly.
-
-Given that you've yourself identified this approach as being a big layering 
-violation, the proper fix is to move it to a different layer :-)
-
-The DMA engine API currently passes slave addresses as dma_addr_t but slave 
-drivers pass physical addresses instead. There's only two ways to fix that:
-
-(please read the "[periperi] About using IPMMU" mail thread for more 
-information)
-
-- Modify the DMA engine API to pass a phys_addr_t. Slave drivers will then be 
-right, and DMAC drivers will need to map the phys_addr_t to a dma_addr_t 
-(through the IOMMU) using the DMA mapping API.
-
-- Keep the DMA engine API as-is and fix slave drivers to map the physical 
-address to a dma_addr_t using the DMA mapping API.
-
-The struct device used to create the mapping must be the DMAC device as that's 
-the bus master that needs to be translated by the IOMMU. For that reason, and 
-to keep slave drivers simple(r), I believe the first approach should be 
-preferred.
-
-This should of course be discussed on the dma-engine mailing list first. The 
-good news is that the topic has already been discussed, and patches even got 
-sent. See https://lkml.org/lkml/2015/7/10/167 for instance.
-
-> Not-Yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> ---
-> 
->  arch/arm/boot/dts/r8a7791.dtsi |   32 +++++++++++++++++++++-
->  drivers/iommu/ipmmu-vmsa.c     |   57 +++++++++++++++++++++++++++++++++++++
->  2 files changed, 88 insertions(+), 1 deletion(-)
-> 
-> --- 0001/arch/arm/boot/dts/r8a7791.dtsi
-> +++ work/arch/arm/boot/dts/r8a7791.dtsi	2015-07-27 15:15:34.922366518 +0900
-> @@ -270,6 +270,21 @@
->  		clock-names = "fck";
->  		#dma-cells = <1>;
->  		dma-channels = <15>;
-> +		iommus = <&ipmmu_ds 0>,
-> +		       <&ipmmu_ds 1>,
-> +		       <&ipmmu_ds 2>,
-> +		       <&ipmmu_ds 3>,
-> +		       <&ipmmu_ds 4>,
-> +		       <&ipmmu_ds 5>,
-> +		       <&ipmmu_ds 6>,
-> +		       <&ipmmu_ds 7>,
-> +		       <&ipmmu_ds 8>,
-> +		       <&ipmmu_ds 9>,
-> +		       <&ipmmu_ds 10>,
-> +		       <&ipmmu_ds 11>,
-> +		       <&ipmmu_ds 12>,
-> +		       <&ipmmu_ds 13>,
-> +		       <&ipmmu_ds 14>;
->  	};
-> 
->  	dmac1: dma-controller@e6720000 {
-> @@ -300,6 +315,21 @@
->  		clock-names = "fck";
->  		#dma-cells = <1>;
->  		dma-channels = <15>;
-> +		iommus = <&ipmmu_ds 15>,
-> +		       <&ipmmu_ds 16>,
-> +		       <&ipmmu_ds 17>,
-> +		       <&ipmmu_ds 18>,
-> +		       <&ipmmu_ds 19>,
-> +		       <&ipmmu_ds 20>,
-> +		       <&ipmmu_ds 21>,
-> +		       <&ipmmu_ds 22>,
-> +		       <&ipmmu_ds 23>,
-> +		       <&ipmmu_ds 24>,
-> +		       <&ipmmu_ds 25>,
-> +		       <&ipmmu_ds 26>,
-> +		       <&ipmmu_ds 27>,
-> +		       <&ipmmu_ds 28>,
-> +		       <&ipmmu_ds 29>;
->  	};
-> 
->  	audma0: dma-controller@ec700000 {
-> @@ -1522,7 +1552,7 @@
->  		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
->  			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
->  		#iommu-cells = <1>;
-> -		status = "disabled";
-> +		status = "okay";
->  	};
-> 
->  	ipmmu_mp: mmu@ec680000 {
-> --- 0001/drivers/iommu/ipmmu-vmsa.c
-> +++ work/drivers/iommu/ipmmu-vmsa.c	2015-07-27 20:48:02.642366518 +0900
-> @@ -491,6 +491,61 @@ static void ipmmu_domain_free(struct iom
->  	kfree(domain);
->  }
-> 
-> +/* Hack to identity map address ranges needed by the DMAC hardware */
-> +static struct {
-> +	phys_addr_t base;
-> +	size_t size;
-> +} dmac_workaround[] = {
-> +	{
-> +		.base = 0xe6b10000, /* QSPI */
-> +		.size = SZ_4K,
-> +	},
-> +	{
-> +		.base = 0xee100000, /* SDHI0 */
-> +		.size = SZ_16K,
-> +	},
-> +	{
-> +		.base = 0xee120000, /* SDHIx */
-> +		.size = SZ_16K,
-> +	},
-> +	{
-> +		.base = 0xee140000, /* SDHIy */
-> +		.size = SZ_16K,
-> +	},
-> +	{
-> +		.base = 0xee160000, /* SDHIz */
-> +		.size = SZ_16K,
-> +	},
-> +	{
-> +		.base = 0xee200000, /* MMCIF0 */
-> +		.size = SZ_4K,
-> +	},
-> +	{
-> +		.base = 0xee220000, /* MMCIF1 */
-> +		.size = SZ_4K,
-> +	},
-> +};
-> +
-> +static void ipmmu_workaround(struct iommu_domain *domain)
-> +{
-> +	int k;
-> +
-> +	for (k = 0; k < ARRAY_SIZE(dmac_workaround); k++) {
-> +		phys_addr_t phys_addr;
-> +
-> +		printk("xxxx adding workaround for device at %pap\n",
-> +		       &dmac_workaround[k].base);
-> +
-> +		phys_addr = iommu_iova_to_phys(domain, dmac_workaround[k].base);
-> +		if (phys_addr)
-> +			continue;
-> +
-> +		iommu_map(domain, dmac_workaround[k].base,
-> +			  dmac_workaround[k].base, dmac_workaround[k].size,
-> +			  IOMMU_READ | IOMMU_READ);
-> +	}
-> +}
-> +
->  static int ipmmu_attach_device(struct iommu_domain *io_domain,
->  			       struct device *dev)
->  {
-> @@ -530,6 +585,8 @@ static int ipmmu_attach_device(struct io
->  	for (i = 0; i < archdata->num_utlbs; ++i)
->  		ipmmu_utlb_enable(domain, archdata->utlbs[i]);
-> 
-> +	ipmmu_workaround(io_domain);
-> +
->  	return 0;
->  }
-
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 449472c3e5362c0d..54cc67ef37c650ca 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -245,6 +245,28 @@
+ 						     "pll3", "pll4";
+ 				#power-domain-cells = <0>;
+ 
++				mstp2_clks: mstp2_clks@e6150138 {
++					compatible +						"renesas,r8a7795-mstp-clocks",
++						"renesas,cpg-mstp-clocks";
++					reg = <0 0xe6150138 0 4>,
++					      <0 0xe6150040 0 4>;
++					clocks = <&s3d4_clk>, <&s3d4_clk>,
++						 <&s3d4_clk>, <&s3d4_clk>,
++						 <&s3d4_clk>;
++					#clock-cells = <1>;
++					renesas,clock-indices = <
++						R8A7795_CLK_SCIF5
++						R8A7795_CLK_SCIF4
++						R8A7795_CLK_SCIF3
++						R8A7795_CLK_SCIF1
++						R8A7795_CLK_SCIF0
++					>;
++					clock-output-names +						"scif5", "scif4", "scif3",
++						"scif1", "scif0";
++				};
++
+ 				mstp3_clks: mstp3_clks@e615013c {
+ 					compatible = "renesas,r8a7795-mstp-clocks",
+ 					             "renesas,cpg-mstp-clocks";
+@@ -288,6 +310,30 @@
+ 			/* Empty node for now */
+ 		};
+ 
++		scif0: serial@e6e60000 {
++			compatible = "renesas,scif-r8a7795", "renesas,scif";
++			reg = <0 0xe6e60000 0 64>;
++			interrupts = <GIC_SPI 152 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp2_clks R8A7795_CLK_SCIF0>;
++			clock-names = "sci_ick";
++			dmas = <&dmac1 0x51>, <&dmac1 0x50>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		scif1: serial@e6e68000 {
++			compatible = "renesas,scif-r8a7795", "renesas,scif";
++			reg = <0 0xe6e68000 0 64>;
++			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp2_clks R8A7795_CLK_SCIF1>;
++			clock-names = "sci_ick";
++			dmas = <&dmac1 0x53>, <&dmac1 0x52>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
+ 		scif2: serial@e6e88000 {
+ 			compatible = "renesas,scif-r8a7795", "renesas,scif";
+ 			reg = <0 0xe6e88000 0 64>;
+@@ -298,6 +344,42 @@
+ 			status = "disabled";
+ 		};
+ 
++		scif3: serial@e6c50000 {
++			compatible = "renesas,scif-r8a7795", "renesas,scif";
++			reg = <0 0xe6c50000 0 64>;
++			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp2_clks R8A7795_CLK_SCIF3>;
++			clock-names = "sci_ick";
++			dmas = <&dmac0 0x57>, <&dmac0 0x56>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		scif4: serial@e6c40000 {
++			compatible = "renesas,scif-r8a7795", "renesas,scif";
++			reg = <0 0xe6c40000 0 64>;
++			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp2_clks R8A7795_CLK_SCIF4>;
++			clock-names = "sci_ick";
++			dmas = <&dmac0 0x59>, <&dmac0 0x58>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		scif5: serial@e6f30000 {
++			compatible = "renesas,scif-r8a7795", "renesas,scif";
++			reg = <0 0xe6f30000 0 64>;
++			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp2_clks R8A7795_CLK_SCIF5>;
++			clock-names = "sci_ick";
++			dmas = <&dmac1 0x5b>, <&dmac1 0x5a>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
+ 		usb2_phy0: usb-phy@ee080200 {
+ 			compatible = "renesas,usb2-phy-r8a7795";
+ 			reg = <0 0xee080200 0 0x6ff>, <0 0xe6590100 0 0x100>;
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+index 2bd9d934e341ba91..baf884dad15eaf73 100644
+--- a/include/dt-bindings/clock/r8a7795-clock.h
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -22,6 +22,11 @@
+ /* MSTP1 */
+ 
+ /* MSTP2 */
++#define R8A7795_CLK_SCIF5		2
++#define R8A7795_CLK_SCIF4		3
++#define R8A7795_CLK_SCIF3		4
++#define R8A7795_CLK_SCIF1		6
++#define R8A7795_CLK_SCIF0		7
+ 
+ /* MSTP3 */
+ #define R8A7795_CLK_SCIF2		10
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
