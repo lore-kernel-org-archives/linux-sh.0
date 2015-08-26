@@ -1,30 +1,32 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 19 Aug 2015 10:11:22 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: bockw: remove legacy DTB build target
-Message-Id: <CAMuHMdUSjwypOKA-C4QB-CHbXGEeAJhTB0cscY92AtZXFLkq6A@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 26 Aug 2015 18:13:47 +0000
+Subject: [PATCH 1/6] arm64: renesas: r8a7795 dtsi: Mark scif2 disabled
+Message-Id: <1440612832-17627-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438965297-12888-2-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1438965297-12888-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Aug 18, 2015 at 3:12 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> Obsoleted by removal of legacy platform.
->
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+It's enabled by the board-specific .dts.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index f3c30bd51d9a063d..e9ecdf5a136837b3 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -283,6 +283,7 @@
+ 			clocks = <&mstp3_clks R8A7795_CLK_SCIF2>;
+ 			clock-names = "sci_ick";
+ 			power-domains = <&cpg_clocks>;
++			status = "disabled";
+ 		};
+ 
+ 		usb2_phy0: usb-phy@ee080200 {
+-- 
+1.9.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
