@@ -1,92 +1,76 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:47 +0000
-Subject: [PATCH v3 23/33] serial: sh-sci: Simplify sci_submit_rx() error handling
-Message-Id: <1440180177-6924-24-git-send-email-geert+renesas@glider.be>
+Date: Wed, 26 Aug 2015 17:53:58 +0000
+Subject: [PATCH] pinctrl: sh-pfc: r8a7794: Remove bogus SCIF0 SCK pin data
+Message-Id: <1440611638-16256-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Simplify the error handling in sci_submit_rx() by
-  - Moving it to the end of the function,
-  - Just calling dmaengine_terminate_all() instead of calling
-    async_tx_ack() for all already submitted descriptors.
+SCIF0 on R-Car E2 does not have an SCK pin.
+
+"SCIF_CLK" is the (H)SCIF baud rate generation clock pin, which is not
+yet supported.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v3:
-  - No changes,
+ drivers/pinctrl/sh-pfc/pfc-r8a7794.c | 18 ------------------
+ 1 file changed, 18 deletions(-)
 
-v2:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 40 ++++++++++++++++++++--------------------
- 1 file changed, 20 insertions(+), 20 deletions(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 1191a6c486640983..9c2bc0f23d3af08c 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1398,28 +1398,16 @@ static void sci_submit_rx(struct sci_port *s)
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7794.c b/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+index bfdcac4b3bc4a4a0..2f169d5bc230bdcc 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+@@ -2197,13 +2197,6 @@ static const unsigned int scif0_data_pins[] = {
+ static const unsigned int scif0_data_mux[] = {
+ 	SCIF0_RXD_MARK, SCIF0_TXD_MARK,
+ };
+-static const unsigned int scif0_clk_pins[] = {
+-	/* SCK */
+-	RCAR_GP_PIN(1, 23),
+-};
+-static const unsigned int scif0_clk_mux[] = {
+-	SCIF_CLK_MARK,
+-};
+ static const unsigned int scif0_data_b_pins[] = {
+ 	/* RX, TX */
+ 	RCAR_GP_PIN(3, 11), RCAR_GP_PIN(3, 12),
+@@ -2211,13 +2204,6 @@ static const unsigned int scif0_data_b_pins[] = {
+ static const unsigned int scif0_data_b_mux[] = {
+ 	SCIF0_RXD_B_MARK, SCIF0_TXD_B_MARK,
+ };
+-static const unsigned int scif0_clk_b_pins[] = {
+-	/* SCK */
+-	RCAR_GP_PIN(3, 29),
+-};
+-static const unsigned int scif0_clk_b_mux[] = {
+-	SCIF_CLK_B_MARK,
+-};
+ static const unsigned int scif0_data_c_pins[] = {
+ 	/* RX, TX */
+ 	RCAR_GP_PIN(3, 30), RCAR_GP_PIN(3, 31),
+@@ -2866,9 +2852,7 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(qspi_data2),
+ 	SH_PFC_PIN_GROUP(qspi_data4),
+ 	SH_PFC_PIN_GROUP(scif0_data),
+-	SH_PFC_PIN_GROUP(scif0_clk),
+ 	SH_PFC_PIN_GROUP(scif0_data_b),
+-	SH_PFC_PIN_GROUP(scif0_clk_b),
+ 	SH_PFC_PIN_GROUP(scif0_data_c),
+ 	SH_PFC_PIN_GROUP(scif0_data_d),
+ 	SH_PFC_PIN_GROUP(scif1_data),
+@@ -3087,9 +3071,7 @@ static const char * const qspi_groups[] = {
  
- 		desc = dmaengine_prep_slave_sg(chan,
- 			sg, 1, DMA_DEV_TO_MEM, DMA_PREP_INTERRUPT);
-+		if (!desc)
-+			goto fail;
- 
--		if (desc) {
--			s->desc_rx[i] = desc;
--			desc->callback = sci_dma_rx_complete;
--			desc->callback_param = s;
--			s->cookie_rx[i] = dmaengine_submit(desc);
--		}
-+		s->desc_rx[i] = desc;
-+		desc->callback = sci_dma_rx_complete;
-+		desc->callback_param = s;
-+		s->cookie_rx[i] = dmaengine_submit(desc);
-+		if (dma_submit_error(s->cookie_rx[i]))
-+			goto fail;
- 
--		if (!desc || dma_submit_error(s->cookie_rx[i])) {
--			if (i) {
--				async_tx_ack(s->desc_rx[0]);
--				s->cookie_rx[0] = -EINVAL;
--			}
--			if (desc) {
--				async_tx_ack(desc);
--				s->cookie_rx[i] = -EINVAL;
--			}
--			dev_warn(s->port.dev,
--				 "Failed to re-start Rx DMA, using PIO\n");
--			sci_rx_dma_release(s, true);
--			return;
--		}
- 		dev_dbg(s->port.dev, "%s(): cookie %d to #%d\n", __func__,
- 			s->cookie_rx[i], i);
- 	}
-@@ -1427,6 +1415,18 @@ static void sci_submit_rx(struct sci_port *s)
- 	s->active_rx = s->cookie_rx[0];
- 
- 	dma_async_issue_pending(chan);
-+	return;
-+
-+fail:
-+	if (i)
-+		dmaengine_terminate_all(chan);
-+	for (i = 0; i < 2; i++) {
-+		s->desc_rx[i] = NULL;
-+		s->cookie_rx[i] = -EINVAL;
-+	}
-+	s->active_rx = -EINVAL;
-+	dev_warn(s->port.dev, "Failed to re-start Rx DMA, using PIO\n");
-+	sci_rx_dma_release(s, true);
- }
- 
- static void work_fn_rx(struct work_struct *work)
+ static const char * const scif0_groups[] = {
+ 	"scif0_data",
+-	"scif0_clk",
+ 	"scif0_data_b",
+-	"scif0_clk_b",
+ 	"scif0_data_c",
+ 	"scif0_data_d",
+ };
 -- 
 1.9.1
 
