@@ -1,40 +1,39 @@
-From: Vaibhav Hiremath <vaibhav.hiremath@linaro.org>
-Date: Sun, 09 Aug 2015 12:29:14 +0000
-Subject: Re: [PATCH 10/10] i2c: dt: describe generic bindings
-Message-Id: <55C744CA.7080108@linaro.org>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 26 Aug 2015 12:33:28 +0000
+Subject: Re: [PATCH 04/17 v6][RFC] pinctrl: sh-pfc: Add R8A7795 PFC support
+Message-Id: <CACRpkdY9-BO5XMhCmQP9M+9Uzd1r7GfbrA+0OHXxsy51YhCgeg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439066007-13951-1-git-send-email-wsa@the-dreams.de> <1439066007-13951-11-git-send-email-wsa@the-dreams.de> <55C722A5.4020403@linaro.org> <20150809121545.GA1521@katana>
-In-Reply-To: <20150809121545.GA1521@katana>
+References: <87oai2b9rj.wl%kuninori.morimoto.gx@renesas.com>
+	<87io8ab9jj.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87io8ab9jj.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Andrey Danin <danindrey@mail.ru>, Stephen Warren <swarren@wwwdotorg.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, YOSHIYUKI ITO <yoshiyuki.ito.ub@renesas.com>, Hisao Munakata <hisao.munakata.vt@renesas.com>, Yusuke Goda <yusuke.goda.sx@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>, Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
+On Thu, Aug 20, 2015 at 11:24 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
 
-
-On Sunday 09 August 2015 05:45 PM, Wolfram Sang wrote:
+> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 >
->> Thanks for the patch and it looks good to me.
+> Add PFC support for the R8A7795 SoC including pin groups.
+> It is including EthernetAVB, DU, HDMI, MSOIF, SDHI, USB2.0, USB3.0
 >
-> Thanks, I interpret this as an Acked-by :)
+> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+>> Linus W
 >
->> Shouldn't we also update/add other generic optional properties?
->> For example,
->>
->>   - i2c-sclk-low-time-ns
->>   - i2c-sclk-high-time-ns
->>   - etc...
+> Becasue this is very large size patch, Maybe GPIO ML (SH-ARM ML too)
+> can't accept it (?). but please review it.
 >
-> Yes, I will do this as an incremental patch once people are happy with
-> this start. Review is usually easier if done in small chunks.
+> v5 -> v6
 >
+>  - new patch
 
-Agreed.
+I would like Laurent to review it first of all of course, so include him
+on postings.
 
-Feel free to add
-
-Reviewed-by: Vaibhav Hiremath <vaibhav.hiremath@linaro.org>
-
-Thanks,
-Vaibhav
+Yours,
+Linus Walleij
