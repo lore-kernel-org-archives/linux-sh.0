@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 26 Aug 2015 07:48:21 +0000
+Date: Wed, 26 Aug 2015 07:55:32 +0000
 Subject: Re: [PATCH v2] clk: shmobile: Get rid of CONFIG_SHMOBILE_MULTI
-Message-Id: <CAMuHMdVXJ8Te_Rwn2WZCdXdh_+0__S6QEp7ZBzggpY-UgqtqLA@mail.gmail.com>
+Message-Id: <CAMuHMdX9pzpBhOpN8_Cn=kiAHr9vrRP19brc26b+3vUp52QwhA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150826074309.4298.76147.sendpatchset@little-apple>
 In-Reply-To: <20150826074309.4298.76147.sendpatchset@little-apple>
@@ -21,14 +21,10 @@ On Wed, Aug 26, 2015 at 9:43 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
 >
 > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 > Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->
->  Changes since V1:
->  - dropped DIV6 from R-Car Gen1 variants - thanks Geert!
 
-BTW, you forgot to mention, but it's important for Mike and Stephen to
-know that this should not be queued up in a branch that still has
-ARCH_SHMOBILE_LEGACY.
+BTW, the symbol name in the subject lacks an "ARCH_" infix.
+
+Too many replies to the same patch, time for coffee...
 
 Gr{oetje,eeting}s,
 
