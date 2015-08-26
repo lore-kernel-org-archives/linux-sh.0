@@ -1,122 +1,80 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Aug 2015 02:12:04 +0000
-Subject: [PATCH 05/12] clk: shmobile: rz: Add CPG/MSTP Clock Domain support
-Message-Id: <aeea676370b28723183580985bbce54cebadddf7.1438911559.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 26 Aug 2015 18:02:21 +0000
+Subject: [PATCH 2/5] pinctrl: sh-pfc: r8a7795: Extend SCIF2 pin data
+Message-Id: <1440612144-16877-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438911559.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1438911559.git.horms+renesas@verge.net.au>
+References: <1440612144-16877-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440612144-16877-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Takeshi Kihara <takeshi.kihara.df@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Add missing alternative data pins.
 
-Add Clock Domain support to the RZ Clock Pulse Generator (CPG) driver
-using the generic PM Domain.  This allows to power-manage the module
-clocks of SoC devices that are part of the CPG/MSTP Clock Domain using
-Runtime PM, or for system suspend/resume.
-
-SoC devices that are part of the CPG/MSTP Clock Domain and can be
-power-managed through an MSTP clock should be tagged in DT with a proper
-"power-domains" property.
+Note that this renames "scif2_data" to "scif2_data_a", and thus requires
+a DTS update.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Stephen Boyd <sboyd@codeaurora.org>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../bindings/clock/renesas,rz-cpg-clocks.txt       | 29 ++++++++++++++++++++--
- arch/arm/mach-shmobile/Kconfig                     |  1 +
- drivers/clk/shmobile/clk-rz.c                      |  3 +++
- 3 files changed, 31 insertions(+), 2 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
-index b0f7ddb8cdb1..bb51a33a1fbf 100644
---- a/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,rz-cpg-clocks.txt
-@@ -2,6 +2,8 @@
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+index 459929d215f9b8aa..83cce48da9f928b7 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+@@ -2288,11 +2288,11 @@ static const unsigned int scif1_data_b_mux[] = {
+ 	RX1_B_MARK, TX1_B_MARK,
+ };
+ /* - SCIF2 ------------------------------------------------------------------ */
+-static const unsigned int scif2_data_pins[] = {
++static const unsigned int scif2_data_a_pins[] = {
+ 	/* RX, TX */
+ 	RCAR_GP_PIN(5, 11), RCAR_GP_PIN(5, 10),
+ };
+-static const unsigned int scif2_data_mux[] = {
++static const unsigned int scif2_data_a_mux[] = {
+ 	RX2_A_MARK, TX2_A_MARK,
+ };
+ static const unsigned int scif2_clk_pins[] = {
+@@ -2302,6 +2302,13 @@ static const unsigned int scif2_clk_pins[] = {
+ static const unsigned int scif2_clk_mux[] = {
+ 	SCK2_MARK,
+ };
++static const unsigned int scif2_data_b_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(5, 15), RCAR_GP_PIN(5, 16),
++};
++static const unsigned int scif2_data_b_mux[] = {
++	RX2_B_MARK, TX2_B_MARK,
++};
+ /* - SCIF3 ------------------------------------------------------------------ */
+ static const unsigned int scif3_data_a_pins[] = {
+ 	/* RX, TX */
+@@ -2793,8 +2800,9 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(scif1_clk),
+ 	SH_PFC_PIN_GROUP(scif1_ctrl),
+ 	SH_PFC_PIN_GROUP(scif1_data_b),
+-	SH_PFC_PIN_GROUP(scif2_data),
++	SH_PFC_PIN_GROUP(scif2_data_a),
+ 	SH_PFC_PIN_GROUP(scif2_clk),
++	SH_PFC_PIN_GROUP(scif2_data_b),
+ 	SH_PFC_PIN_GROUP(scif3_data_a),
+ 	SH_PFC_PIN_GROUP(scif3_clk),
+ 	SH_PFC_PIN_GROUP(scif3_ctrl),
+@@ -2992,8 +3000,9 @@ static const char * const scif1_groups[] = {
+ };
  
- The CPG generates core clocks for the RZ SoCs. It includes the PLL, variable
- CPU and GPU clocks, and several fixed ratio dividers.
-+The CPG also provides a Clock Domain for SoC devices, in combination with the
-+CPG Module Stop (MSTP) Clocks.
+ static const char * const scif2_groups[] = {
+-	"scif2_data",
++	"scif2_data_a",
+ 	"scif2_clk",
++	"scif2_data_b",
+ };
  
- Required Properties:
- 
-@@ -14,10 +16,18 @@ Required Properties:
-   - #clock-cells: Must be 1
-   - clock-output-names: The names of the clocks. Supported clocks are "pll",
-     "i", and "g"
-+  - #power-domain-cells: Must be 0
- 
-+SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
-+through an MSTP clock should refer to the CPG device node in their
-+"power-domains" property, as documented by the generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
- 
--Example
---------
-+
-+Examples
-+--------
-+
-+  - CPG device node:
- 
- 	cpg_clocks: cpg_clocks@fcfe0000 {
- 		#clock-cells = <1>;
-@@ -26,4 +36,19 @@ Example
- 		reg = <0xfcfe0000 0x18>;
- 		clocks = <&extal_clk>, <&usb_x1_clk>;
- 		clock-output-names = "pll", "i", "g";
-+		#power-domain-cells = <0>;
-+	};
-+
-+
-+  - CPG/MSTP Clock Domain member device node:
-+
-+	mtu2: timer@fcff0000 {
-+		compatible = "renesas,mtu2-r7s72100", "renesas,mtu2";
-+		reg = <0xfcff0000 0x400>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "tgi0a";
-+		clocks = <&mstp3_clks R7S72100_CLK_MTU2>;
-+		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
- 	};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index e14fa5e87475..34eac88a9889 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -51,6 +51,7 @@ config ARCH_EMEV2
- 
- config ARCH_R7S72100
- 	bool "RZ/A1H (R7S72100)"
-+	select PM_GENERIC_DOMAINS if PM
- 	select SYS_SUPPORTS_SH_MTU2
- 
- config ARCH_R8A73A4
-diff --git a/drivers/clk/shmobile/clk-rz.c b/drivers/clk/shmobile/clk-rz.c
-index 7e68e8630962..9766e3cb595f 100644
---- a/drivers/clk/shmobile/clk-rz.c
-+++ b/drivers/clk/shmobile/clk-rz.c
-@@ -10,6 +10,7 @@
-  */
- 
- #include <linux/clk-provider.h>
-+#include <linux/clk/shmobile.h>
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/of.h>
-@@ -99,5 +100,7 @@ static void __init rz_cpg_clocks_init(struct device_node *np)
- 	}
- 
- 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-+
-+	cpg_mstp_add_clk_domain(np);
- }
- CLK_OF_DECLARE(rz_cpg_clks, "renesas,rz-cpg-clocks", rz_cpg_clocks_init);
+ static const char * const scif3_groups[] = {
 -- 
-2.1.4
+1.9.1
 
