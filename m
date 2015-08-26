@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 24 Aug 2015 09:39:33 +0000
+Date: Wed, 26 Aug 2015 14:26:12 +0000
 Subject: Re: [PATCH 16/25 v7][RFC] arm64: renesas: salvator-x: add pfc node and subnodes for usb 2.0
-Message-Id: <CAMuHMdXDCXUOmEUR6nJUTA_O2trm747xqba-ODxooA-NLtw1Aw@mail.gmail.com>
+Message-Id: <CAMuHMdX221P5n_BLrP2OUXtpROqbS_QWGAj8MQhfo_FqzgT9Uw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <876145776m.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <876145776m.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,12 +10,12 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Morimoto-san, Shimoda-san,
+Hi Shimoda-san, Morimoto-san, Kihara-san,
 
 On Mon, Aug 24, 2015 at 4:30 AM, Kuninori Morimoto
 <kuninori.morimoto.gx@renesas.com> wrote:
-> diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-> index cdfc4c9..2742fc2 100644
+> From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+
 > --- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
 > +++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
 > @@ -38,6 +38,23 @@
@@ -23,9 +23,6 @@ On Mon, Aug 24, 2015 at 4:30 AM, Kuninori Morimoto
 >  };
 >
 > +&pfc {
-
-Please merge this with the "&pfc" section above.
-
 > +       usb0_pins: usb0 {
 > +               renesas,groups = "usb0";
 > +               renesas,function = "usb0";
@@ -41,10 +38,21 @@ Please merge this with the "&pfc" section above.
 > +               renesas,function = "usb2";
 > +       };
 > +};
-> +
->  &scif2 {
->         pinctrl-0 = <&scif2_pins>;
->         pinctrl-names = "default";
+
+If CONFIG_PINCTRL=y:
+
+| sh-pfc e6060000.pfc: cannot locate data/mark enum_id for mark 2253
+| phy_rcar_gen3_usb2 ee080200.usb-phy: Error applying setting, reverse
+things back
+
+mark 2253 = USB0_PWEN_MARK
+
+I believe this is due to the IPSR16 section in the pinmux_data[] array in
+drivers/pinctrl/sh-pfc/pfc-r8a7795.c lacking data for IP16_11_8.
+Data for usb1 (IP16_19_16) and usb2 (IP15_3_0) is present.
+
+Unfortunately my pinctrl foo is not strong enough to fill in the missing
+pieces...
 
 Gr{oetje,eeting}s,
 
