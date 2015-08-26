@@ -1,74 +1,62 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 07 Aug 2015 00:34:55 +0000
-Subject: Re: [PATCH v4 0/6] ARM: shmobile: r8a7740/sh73a0 DT Cache Handling
-Message-Id: <20150807003455.GB1145@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 26 Aug 2015 06:33:25 +0000
+Subject: [PATCH] clk: shmobile: Get rid of CONFIG_SHMOBILE_MULTI
+Message-Id: <20150826063325.5381.76761.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438765090-823-1-git-send-email-geert+renesas@glider.be>
- <20150806003511.GB17231@verge.net.au>
- <CAMuHMdW5D2LGA=3+JDiAUhVtPmxk3ZJhAx3=JXFuAHBAgU_NTw@mail.gmail.com>
-In-Reply-To: <CAMuHMdW5D2LGA=3+JDiAUhVtPmxk3ZJhAx3=JXFuAHBAgU_NTw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-On Thu, Aug 06, 2015 at 09:17:38AM +0200, Geert Uytterhoeven wrote:
-> On Thu, Aug 6, 2015 at 2:35 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Wed, Aug 05, 2015 at 10:58:04AM +0200, Geert Uytterhoeven wrote:
-> >> This patch series add L1 and L2 cache descriptions to DT for r8a7740 and
-> >> sh73a0, and migrates the shmobile DT-based generic r8a7740 and
-> >> armadillo legacy platforms from calling l2x0_of_init() to the generic
-> >> l2c OF initialization.
-> 
-> >> Dependencies:
-> >>   - This series applies to renesas-devel-20150805-v4.2-rc5,
-> >>   - Patch 2 depends on patch 1,
-> >>   - Patch 4 depends on patch 2,
-> 
-> Sorry, "... on patch 3".
-> 
-> >>   - Patch 5 depends on patch 1 and on "ARM: 8395/1: l2c: Add support for
-> >>     the "arm,shared-override" property" in arm/for-next,
-> >>   - Patch 6 depends on patch 5.
-> >>
-> >> Given C code patches depending on DT patches in the same branch are
-> >> frowned upon, I think it would be best if patch 1 (and patch 3, if
-> >> anyone thinks we may fix the secondary CPU bringup issue during the next
-> >> 3 months) are queued for v4.3. The other patches can be queued for
-> >> 2016^H^H^H^Hv4.4.
-> >
-> > Sorry for surprising you with that merge-order requirement.
-> 
-> In theory it sounds fine, as DT and code are independent.
-> Moving functionality from C to DT is something different...
+From: Magnus Damm <damm+renesas@opensource.se>
 
-I agree entirely. This is probably something that we should discuss
-with the ARM SoC developers. But my feeling is that there should be
-some scope for flexibility with regards to merge-order in such cases.
+Shmobile is all multiplatform these days, so get rid of the
+reference to CONFIG_ARCH_SHMOBILE_MULTI. Also instead of always
+enabling DIV6 and MSTP adjust the Makefile to enable DIV6 and
+MSTP depending on if they are included in the SoC or not.
 
-By which I mean we should try where possible, not to apply non-DT patches
-on top of DT patches. But if circumstances arise where it seems to
-be the best approach then we should to approach things pragmatically.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-> > Unfortunately I am not comfortable with taking patch 1 for v4.3 because:
-> > 1. Its now very late in the cycle
-> 
-> I understand.
-> 
-> > 2. There now seems to be some discussion around it.
-> 
-> Yeah, that's what v4s are for...
-> 
-> Let's wait and see if/when it settles...
+ drivers/clk/Makefile          |    2 +-
+ drivers/clk/shmobile/Makefile |   22 ++++++++++------------
+ 2 files changed, 11 insertions(+), 13 deletions(-)
 
-Yes, lets.
-
-> > I think I am happy to take the other patches for v4.4, now. But perhaps
-> > I should wait for the discussion around patch 1 to conclude first?
-> 
-> Which other patches? Patch 3 has the same issue as patch 1. And all
-> the rest depends on patch 1 or patch 3... So there's nothing left to
-> apply yet...
-
-Sorry for not being clearer. By other patches I meant patches 2 - 6 of this
-series.  It seems that we should wait and I'm quite happy to do so.
+--- 0001/drivers/clk/Makefile
++++ work/drivers/clk/Makefile	2015-08-26 15:18:22.852366518 +0900
+@@ -66,7 +66,7 @@ obj-$(CONFIG_COMMON_CLK_PXA)		+= pxa/
+ obj-$(CONFIG_COMMON_CLK_QCOM)		+= qcom/
+ obj-$(CONFIG_ARCH_ROCKCHIP)		+= rockchip/
+ obj-$(CONFIG_COMMON_CLK_SAMSUNG)	+= samsung/
+-obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= shmobile/
++obj-$(CONFIG_ARCH_SHMOBILE)		+= shmobile/
+ obj-$(CONFIG_ARCH_SIRF)			+= sirf/
+ obj-$(CONFIG_ARCH_SOCFPGA)		+= socfpga/
+ obj-$(CONFIG_PLAT_SPEAR)		+= spear/
+--- 0001/drivers/clk/shmobile/Makefile
++++ work/drivers/clk/shmobile/Makefile	2015-08-26 15:16:57.742366518 +0900
+@@ -1,13 +1,11 @@
+ obj-$(CONFIG_ARCH_EMEV2)		+= clk-emev2.o
+-obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o
+-obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o
+-obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o
+-obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o
+-obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
+-obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o
+-obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
+-obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-mstp.o
++obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o clk-mstp.o
++obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o clk-mstp.o clk-div6.o
