@@ -1,144 +1,44 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 21 Aug 2015 18:02:42 +0000
-Subject: [PATCH v3 18/33] serial: sh-sci: Switch to dma_map_single() for DMA transmission
-Message-Id: <1440180177-6924-19-git-send-email-geert+renesas@glider.be>
+Date: Wed, 26 Aug 2015 18:13:48 +0000
+Subject: [PATCH 2/6] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
+Message-Id: <1440612832-17627-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440180177-6924-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Simplify the DMA transmit code by using dma_map_single() instead of
-constantly modifying the single-entry scatterlist to match what's
-currently being transmitted.
+Add dummy nodes for the 3 DMA controllers.
+This allows to start describing DMA channels for DMA slaves now.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v3:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 50 ++++++++++++++++++---------------------------
- 1 file changed, 20 insertions(+), 30 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index cb35c88645bb5784..5a528b8985052017 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -109,8 +109,8 @@ struct sci_port {
- 	dma_cookie_t			cookie_tx;
- 	dma_cookie_t			cookie_rx[2];
- 	dma_cookie_t			active_rx;
--	struct scatterlist		sg_tx;
--	unsigned int			sg_len_tx;
-+	dma_addr_t			tx_dma_addr;
-+	unsigned int			tx_dma_len;
- 	struct scatterlist		sg_rx[2];
- 	size_t				buf_len_rx;
- 	struct sh_dmae_slave		param_tx;
-@@ -1280,10 +1280,10 @@ static void sci_dma_tx_complete(void *arg)
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index e9ecdf5a136837b3..449472c3e5362c0d 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -276,6 +276,18 @@
+ 			reg = <0 0xe6060000 0 0x50c>;
+ 		};
  
- 	spin_lock_irqsave(&port->lock, flags);
- 
--	xmit->tail += sg_dma_len(&s->sg_tx);
-+	xmit->tail += s->tx_dma_len;
- 	xmit->tail &= UART_XMIT_SIZE - 1;
- 
--	port->icount.tx += sg_dma_len(&s->sg_tx);
-+	port->icount.tx += s->tx_dma_len;
- 
- 	async_tx_ack(s->desc_tx);
- 	s->desc_tx = NULL;
-@@ -1494,7 +1494,7 @@ static void work_fn_tx(struct work_struct *work)
- 	struct dma_chan *chan = s->chan_tx;
- 	struct uart_port *port = &s->port;
- 	struct circ_buf *xmit = &port->state->xmit;
--	struct scatterlist *sg = &s->sg_tx;
-+	dma_addr_t buf;
- 
- 	/*
- 	 * DMA is idle now.
-@@ -1504,19 +1504,15 @@ static void work_fn_tx(struct work_struct *work)
- 	 * consistent xmit buffer state.
- 	 */
- 	spin_lock_irq(&port->lock);
--	sg->offset = xmit->tail & (UART_XMIT_SIZE - 1);
--	sg_dma_address(sg) = (sg_dma_address(sg) & ~(UART_XMIT_SIZE - 1)) +
--		sg->offset;
--	sg_dma_len(sg) = min_t(unsigned int,
-+	buf = s->tx_dma_addr + (xmit->tail & (UART_XMIT_SIZE - 1));
-+	s->tx_dma_len = min_t(unsigned int,
- 		CIRC_CNT(xmit->head, xmit->tail, UART_XMIT_SIZE),
- 		CIRC_CNT_TO_END(xmit->head, xmit->tail, UART_XMIT_SIZE));
- 	spin_unlock_irq(&port->lock);
- 
--	BUG_ON(!sg_dma_len(sg));
--
--	desc = dmaengine_prep_slave_sg(chan,
--			sg, s->sg_len_tx, DMA_MEM_TO_DEV,
--			DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
-+	desc = dmaengine_prep_slave_single(chan, buf, s->tx_dma_len,
-+					   DMA_MEM_TO_DEV,
-+					   DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
- 	if (!desc) {
- 		dev_warn(port->dev, "Failed preparing Tx DMA descriptor\n");
- 		/* switch to PIO */
-@@ -1524,7 +1520,8 @@ static void work_fn_tx(struct work_struct *work)
- 		return;
- 	}
- 
--	dma_sync_sg_for_device(chan->device->dev, sg, 1, DMA_TO_DEVICE);
-+	dma_sync_single_for_device(chan->device->dev, buf, s->tx_dma_len,
-+				   DMA_TO_DEVICE);
- 
- 	spin_lock_irq(&port->lock);
- 	s->desc_tx = desc;
-@@ -1680,7 +1677,6 @@ static void sci_request_dma(struct uart_port *port)
- 	struct sh_dmae_slave *param;
- 	struct dma_chan *chan;
- 	dma_cap_mask_t mask;
--	int nent;
- 
- 	dev_dbg(port->dev, "%s: port %d\n", __func__, port->line);
- 
-@@ -1700,27 +1696,21 @@ static void sci_request_dma(struct uart_port *port)
- 	dev_dbg(port->dev, "%s: TX: got channel %p\n", __func__, chan);
- 	if (chan) {
- 		s->chan_tx = chan;
--		sg_init_table(&s->sg_tx, 1);
- 		/* UART circular tx buffer is an aligned page. */
--		BUG_ON((uintptr_t)port->state->xmit.buf & ~PAGE_MASK);
--		sg_set_page(&s->sg_tx, virt_to_page(port->state->xmit.buf),
--			    UART_XMIT_SIZE,
--			    (uintptr_t)port->state->xmit.buf & ~PAGE_MASK);
--		nent = dma_map_sg(chan->device->dev, &s->sg_tx, 1,
--				  DMA_TO_DEVICE);
--		if (!nent) {
-+		s->tx_dma_addr = dma_map_single(chan->device->dev,
-+						port->state->xmit.buf,
-+						UART_XMIT_SIZE,
-+						DMA_TO_DEVICE);
-+		if (dma_mapping_error(chan->device->dev, s->tx_dma_addr)) {
- 			dev_warn(port->dev, "Failed mapping Tx DMA descriptor\n");
- 			dma_release_channel(chan);
- 			s->chan_tx = NULL;
- 		} else {
--			dev_dbg(port->dev, "%s: mapped %d@%p to %pad\n",
--				__func__,
--				sg_dma_len(&s->sg_tx), port->state->xmit.buf,
--				&sg_dma_address(&s->sg_tx));
-+			dev_dbg(port->dev, "%s: mapped %lu@%p to %pad\n",
-+				__func__, UART_XMIT_SIZE,
-+				port->state->xmit.buf, &s->tx_dma_addr);
- 		}
- 
--		s->sg_len_tx = nent;
--
- 		INIT_WORK(&s->work_tx, work_fn_tx);
- 	}
- 
++		dmac0: dma-controller@e6700000 {
++			/* Empty node for now */
++		};
++
++		dmac1: dma-controller@e7300000 {
++			/* Empty node for now */
++		};
++
++		dmac2: dma-controller@e7310000 {
++			/* Empty node for now */
++		};
++
+ 		scif2: serial@e6e88000 {
+ 			compatible = "renesas,scif-r8a7795", "renesas,scif";
+ 			reg = <0 0xe6e88000 0 64>;
 -- 
 1.9.1
 
