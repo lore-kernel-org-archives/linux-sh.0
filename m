@@ -1,108 +1,84 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 04 Aug 2015 12:28:17 +0000
-Subject: [PATCH v4 16/16] ARM: shmobile: R-Mobile: Use CPG/MSTP Clock Domain attach/detach helpers
-Message-Id: <1438691297-29235-17-git-send-email-geert+renesas@glider.be>
+Date: Thu, 27 Aug 2015 19:02:26 +0000
+Subject: [PATCH 0/5] arm64: renesas: r8a7795 MSIOF SPI Support
+Message-Id: <1440702151-1406-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The R-Mobile PM Domain driver manages both power domains and a clock
-domain.
+	Hi,
 
-The clock domain part is very similar to the CPG/MSTP Clock Domain,
-which is used on shmobile SoCs without device power domains, except for
-the way how clocks suitable for power management are selected:
-  - The former uses the first clock tied to the device through the NULL
-    con_id, which is a relic from the legacy pm_clk_notifier-based
-    method in drivers/sh/pm_runtime.c,
-  - The latter looks for suitable clocks in DT, which is more
-    future-proof.
+This patch series adds preliminary support for MSIOF on r8a7795/R-Car
+H3:
+  - Update MSIOF DT binding docs,
+  - Add core clocks pll1_div2 and mso, and update the DIV6 DT binding
+    docs,
+  - Add MSIOF nodes.
 
-All platforms using this driver are now supported in DT-based ARM
-multi-platform builds only, hence switch to using the CPG/MSTP Clock
-Domain helpers.
+As there are no SPI devices connected to MSIOF on the Salvator-X
+development board, this wasn't fully tested.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
----
-v4:
-  - Add Reviewed-by,
+To test MSIOF0 on Salvator-X, you can connect an SPI slave to the
+CP[1-4] test pins, and pinctrl and SPI slave nodes to
+arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts like:
 
-v3:
-  - Drop -legacy support, hence this patch depends on r8a7740/sh73a0
-    legacy removal,
-  - Use "CPG/MSTP Clock Domain" instead of "CPG Clock Domain",
+    &pfc {
+	    msiof0_pins: msiof0 {
+		    renesas,groups = "msiof0_clk", "msiof0_sync", "msiof0_rxd",
+				     "msiof0_txd";
+		    renesas,function = "msiof0";
+	    };
+    };
 
-v2:
-  - New.
----
- arch/arm/mach-shmobile/pm-rmobile.c | 35 +++--------------------------------
- 1 file changed, 3 insertions(+), 32 deletions(-)
+    &msiof0 {
+	    pinctrl-0 = <&msiof0_pins>;
+	    pinctrl-names = "default";
 
-diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
-index a5b96b990aea8dfc..89068c8ec50f2c76 100644
---- a/arch/arm/mach-shmobile/pm-rmobile.c
-+++ b/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -12,6 +12,7 @@
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-  */
-+#include <linux/clk/shmobile.h>
- #include <linux/console.h>
- #include <linux/delay.h>
- #include <linux/of.h>
-@@ -124,36 +125,6 @@ static bool rmobile_pd_active_wakeup(struct device *dev)
- 	return true;
- }
- 
--static int rmobile_pd_attach_dev(struct generic_pm_domain *domain,
--				 struct device *dev)
--{
--	int error;
--
--	error = pm_clk_create(dev);
--	if (error) {
--		dev_err(dev, "pm_clk_create failed %d\n", error);
--		return error;
--	}
--
--	error = pm_clk_add(dev, NULL);
--	if (error) {
--		dev_err(dev, "pm_clk_add failed %d\n", error);
--		goto fail;
--	}
--
--	return 0;
--
--fail:
--	pm_clk_destroy(dev);
--	return error;
--}
--
--static void rmobile_pd_detach_dev(struct generic_pm_domain *domain,
--				  struct device *dev)
--{
--	pm_clk_destroy(dev);
--}
--
- static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
- {
- 	struct generic_pm_domain *genpd = &rmobile_pd->genpd;
-@@ -164,8 +135,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
- 	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
- 	genpd->power_off		= rmobile_pd_power_down;
- 	genpd->power_on			= rmobile_pd_power_up;
--	genpd->attach_dev		= rmobile_pd_attach_dev;
--	genpd->detach_dev		= rmobile_pd_detach_dev;
-+	genpd->attach_dev		= cpg_mstp_attach_dev;
-+	genpd->detach_dev		= cpg_mstp_detach_dev;
- 	__rmobile_pd_power_up(rmobile_pd, false);
- }
- 
+	    status = "okay";
+
+	    my-device@0 {
+		    spi-max-frequency = <6000000>;
+		    compatible = "my-compatible";
+		    reg = <0>;
+	    };
+    };
+
+Note that there's an issue with pinctrl on MSIOF0:
+
+    sh-pfc e6060000.pfc: cannot locate data/mark enum_id for mark 1594
+    spi_sh_msiof e6e90000.spi: Error applying setting, reverse things back
+	    
+Mark 1594 is MSIOF0_SCK_MARK.
+
+As the default function for the pins connected to CP[1-4] is MSIOF0, it
+should work regardless of the incomplete pinctrl data.
+
+Geert Uytterhoeven (5):
+  [RFC] spi: sh-msiof: Add support for R-Car H3
+  clk: shmobile: r8a7795: Document DIV6 clock bindings
+  arm64: renesas: r8a7795 dtsi: Add pll1_div2 clock
+  arm64: renesas: r8a7795 dtsi: Add mso MSIOF parent clock
+  arm64: renesas: r8a7795 dtsi: Add all MSIOF nodes
+
+ .../bindings/clock/renesas,cpg-div6-clocks.txt     |  1 +
+ Documentation/devicetree/bindings/spi/sh-msiof.txt |  3 +-
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 83 +++++++++++++++++++++-
+ drivers/spi/spi-sh-msiof.c                         |  1 +
+ include/dt-bindings/clock/r8a7795-clock.h          |  4 ++
+ 5 files changed, 89 insertions(+), 3 deletions(-)
+
 -- 
 1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
