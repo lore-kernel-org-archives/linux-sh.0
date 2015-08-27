@@ -1,38 +1,54 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 31 Aug 2015 15:47:24 +0000
-Subject: [PATCH 3/3] arm64: defconfig: Enable GPIO of Renesas R-Car Gen3 SoC
-Message-Id: <1441036044-6866-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 27 Aug 2015 00:37:00 +0000
+Subject: [PATCH][resent] PCI: rcar: Add PCIE_CONF_REGNO macro for PCIECAR register
+Message-Id: <8737z5efjt.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441035401-5843-4-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1441035401-5843-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <HKNPR06MB049BFAE520321568794CA8FC5600@HKNPR06MB049.apcprd06.prod.outlook.com>
+	<874mjlefty.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <874mjlefty.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
+Cc: linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, HARUNOBU KUROKAWA <harunobu.kurokawa.dn@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, NAOYA SHIIBA <naoya.shiiba.nx@renesas.com>, TOSHIAKI KOMATSU <toshiaki.komatsu.ud@renesas.com>
 
-From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Enable GPIO for  Renesas R-Car Gen3 SoC.
+The reg variable used when setting PCIECAR register need to be masked by 0xFC
+by restriction of the corresponding register.
+This adds PCIE_CONF_REGNO are macros for masking changes that PCIE_CONF_REGNO
+is used when setting PCIECAR register.
 
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-[horms: only enable GPIO_RCAR]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 ---
- arch/arm64/configs/defconfig | 1 +
- 1 file changed, 1 insertion(+)
+This patch was posted to ML, but still no response.
+I re-sent it because original author has gone now.
 
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index dccc685..d994638 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -125,6 +125,7 @@ CONFIG_SPI=y
- CONFIG_SPI_PL022=y
- CONFIG_PINCTRL_MSM8916=y
- CONFIG_GPIO_PL061=y
-+CONFIG_GPIO_RCAR=y
- CONFIG_GPIO_XGENE=y
- CONFIG_POWER_RESET_XGENE=y
- CONFIG_POWER_RESET_SYSCON=y
+ drivers/pci/host/pcie-rcar.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index c086210..9fd39cd8b 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -104,6 +104,7 @@
+ #define  PCIE_CONF_BUS(b)	(((b) & 0xff) << 24)
+ #define  PCIE_CONF_DEV(d)	(((d) & 0x1f) << 19)
+ #define  PCIE_CONF_FUNC(f)	(((f) & 0x7) << 16)
++#define  PCIE_CONF_REGNO(r)	(r & 0xfc)
+ 
+ #define RCAR_PCI_MAX_RESOURCES 4
+ #define MAX_NR_INBOUND_MAPS 6
+@@ -227,7 +228,8 @@ static int rcar_pcie_config_access(struct rcar_pcie *pcie,
+ 
+ 	/* Set the PIO address */
+ 	rcar_pci_write_reg(pcie, PCIE_CONF_BUS(bus->number) |
+-		PCIE_CONF_DEV(dev) | PCIE_CONF_FUNC(func) | reg, PCIECAR);
++		PCIE_CONF_DEV(dev) | PCIE_CONF_FUNC(func) |
++		PCIE_CONF_REGNO(reg), PCIECAR);
+ 
+ 	/* Enable the configuration access */
+ 	if (bus->parent->number = pcie->root_bus_nr)
 -- 
-2.4.6
+1.9.1
 
