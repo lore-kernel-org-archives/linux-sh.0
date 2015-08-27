@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 27 Aug 2015 12:58:24 +0000
+Date: Thu, 27 Aug 2015 13:00:31 +0000
 Subject: Re: [PATCH/RFC 10/10] Local: Hack: arm64: dts: r8a7795: add ravb phy max-speed 100 for Salvator-X bo
-Message-Id: <55DF0970.9000305@cogentembedded.com>
+Message-Id: <55DF09EF.9050102@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1440667450-3513-11-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1440667450-3513-11-git-send-email-horms+renesas@verge.net.au>
@@ -10,36 +10,25 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On 8/27/2015 12:24 PM, Simon Horman wrote:
+On 8/27/2015 3:46 PM, Wolfram Sang wrote:
 
-> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>>>> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>>>>
+>>>> This is a work-around for limitations in the driver implementation.
+>>>
+>>> I know this is marked "local: hack:", still: If this is a driver
+>>> limitation, shouldn't it rather be in the dtsi then?
+>>
+>> You mean, in the driver?
+>>
+>> DT decribes the hardware, not driver limitations.
 >
-> This is a work-around for limitations in the driver implementation.
->
-> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> [horms: updated filename to salvator-x; updated changelog]
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->   arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 1 +
->   1 file changed, 1 insertion(+)
->
-> diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-> index 109261ea60bd..2e2329451791 100644
-> --- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-> +++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-> @@ -134,6 +134,7 @@
->   		reg = <0>;
->   		interrupt-parent = <&gpio2>;
->   		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
+> I wanted to ensure that this workaround goes into all dts files
+> including the r8a7795 dtsi, even custom ones for testing. This is rather
+> SoC than board specific, no?
 
-    Actually, the GPIO interrupt was also used to overcome the driver's 
-limitation. The AVB_PHY_IRQ is directly reflected in the AVB registers, I just 
-didn't want to use a thread in order to call phy_mac_interrupt().
-
-> +		max-speed = <100>;
->   	};
->
->   };
+    I don't think so. BTW, the prop is specified for the PHY device which is 
+not a part of SoC, so your question is pointless.
 
 MBR, Sergei
 
