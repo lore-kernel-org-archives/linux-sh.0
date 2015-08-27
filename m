@@ -1,44 +1,49 @@
-From: Rich Felker <dalias@libc.org>
-Date: Fri, 14 Aug 2015 01:10:27 +0000
-Subject: Re: SH2 kernel fails to build with recent GCC
-Message-Id: <20150814011027.GG31018@brightrain.aerifal.cx>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 27 Aug 2015 09:24:06 +0000
+Subject: [PATCH/RFC 06/10] arm64: dts: r8a7795: add EthernetAVB device node
+Message-Id: <1440667450-3513-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150812015616.GA19843@brightrain.aerifal.cx>
-In-Reply-To: <20150812015616.GA19843@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Aug 12, 2015 at 10:01:49AM -0400, Rich Felker wrote:
-> On Wed, Aug 12, 2015 at 09:34:32AM +0200, Geert Uytterhoeven wrote:
-> > Hi Rich,
-> > 
-> > On Wed, Aug 12, 2015 at 3:56 AM, Rich Felker <dalias@libc.org> wrote:
-> > > The commit that resolved GCC issue #54089 broke building the kernel
-> > > for SH2, by causing GCC to generate calls to new libgcc functions
-> > > which the kernel's fake libgcc does not provide. See the GCC issue
-> > > tracker for details:
-> > >
-> > > https://gcc.gnu.org/bugzilla/show_bug.cgi?idT089
-> > >
-> > > The relevant commit is linked from comment 16; comments 33-43 (and
-> > > perhaps beyond) discuss the issue in detail and possible fixes.
-> > >
-> > > Before I work on a fix, would dropping the kernel's copy of libgcc
-> > > functions for SH and using the real libgcc (like some archs do; see
-> > > comment 43) be acceptable, or do we need to get updated
-> > > libgcc[-compatible] code into the kernel?
-> > 
-> > Which libgcc functions are missing? I couldn't find that list in the bug
-> > report...
-> 
-> At least __ashlsi3_r0 and __lshrsi3_r0. It's been a while since I
-> tried building with an affected GCC (see the dates on the comments I
-> linked) so I don't remember if there were any others. I can try to
-> build again and let you know.
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-I just retried the build and confirmed that these are the only two
-unresolved symbols reported. So just adding them sounds practical.
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+[horms: moved to soc node; updated changelog]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-Rich
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 0b435d8274e4..01502f4d2f5f 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -263,6 +263,16 @@
+ 			reg = <0 0xe6060000 0 0x50c>;
+ 		};
+ 
++		avb: ethernet@e6800000 {
++			compatible = "renesas,etheravb-r8a7795";
++			reg = <0 0xe6800000 0 0x800>, <0 0xe6a00000 0 0x10000>;
++			interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>, <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp8_clks R8A7795_CLK_AVB>;
++			phy-mode = "rgmii-id";
++			#address-cells = <1>;
++			#size-cells = <0>;
++		};
++
+ 		scif2: serial@e6e88000 {
+ 			compatible = "renesas,scif-r8a7795", "renesas,scif";
+ 			reg = <0 0xe6e88000 0 64>;
+@@ -362,5 +372,4 @@
+ 			status = "disabled";
+ 		};
+ 	};
+-
+ };
+-- 
+2.1.4
+
