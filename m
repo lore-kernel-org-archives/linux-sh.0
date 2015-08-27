@@ -1,62 +1,30 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 24 Aug 2015 02:29:16 +0000
-Subject: [PATCH 12/25 v7][RFC] arm64: renesas: r8a7795: add EHCI[012] clocks
-Message-Id: <87bndx778o.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 27 Aug 2015 19:02:28 +0000
+Subject: [PATCH 2/5] clk: shmobile: r8a7795: Document DIV6 clock bindings
+Message-Id: <1440702151-1406-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v5 -> v7
+ Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt | 1 +
+ 1 file changed, 1 insertion(+)
 
- - based on Gen3 v7 patch-set
-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 10 +++++++---
- include/dt-bindings/clock/r8a7795-clock.h |  3 +++
- 2 files changed, 10 insertions(+), 3 deletions(-)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 77cfcea..c62b57b 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -105,10 +105,14 @@
- 					compatible = "renesas,r8a7795-mstp-clocks",
- 						     "renesas,cpg-mstp-clocks";
- 					reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
--					clocks =  <&s3d4_clk>;
-+					clocks =  <&s3d4_clk>, <&s3d4_clk>, <&s3d4_clk>,
-+						  <&s3d4_clk>;
- 					#clock-cells = <1>;
--					renesas,clock-indices = <R8A7795_CLK_HSUSB>;
--					clock-output-names = "hsusb";
-+					renesas,clock-indices = <R8A7795_CLK_HSUSB
-+								 R8A7795_CLK_EHCI0
-+								 R8A7795_CLK_EHCI1
-+								 R8A7795_CLK_EHCI2>;
-+					clock-output-names = "hsusb", "ehci0", "ehci1", "ehci2";
- 				};
- 			};
- 		};
-diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
-index ffb0b5b..2bd9d93 100644
---- a/include/dt-bindings/clock/r8a7795-clock.h
-+++ b/include/dt-bindings/clock/r8a7795-clock.h
-@@ -30,6 +30,9 @@
- 
- /* MSTP7 */
- #define R8A7795_CLK_HSUSB		4
-+#define R8A7795_CLK_EHCI0		3
-+#define R8A7795_CLK_EHCI1		2
-+#define R8A7795_CLK_EHCI2		1
- 
- /* MSTP8 */
- 
+diff --git a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+index 5ddb68418655d569..a6889fb8a5bd2a48 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+@@ -13,6 +13,7 @@ Required Properties:
+     - "renesas,r8a7791-div6-clock" for R8A7791 (R-Car M2-W) DIV6 clocks
+     - "renesas,r8a7793-div6-clock" for R8A7793 (R-Car M2-N) DIV6 clocks
+     - "renesas,r8a7794-div6-clock" for R8A7794 (R-Car E2) DIV6 clocks
++    - "renesas,r8a7795-div6-clock" for R8A7795 (R-Car H3) DIV6 clocks
+     - "renesas,sh73a0-div6-clock" for SH73A0 (SH-Mobile AG5) DIV6 clocks
+     and "renesas,cpg-div6-clock" as a fallback.
+   - reg: Base address and length of the memory resource used by the DIV6 clock
 -- 
 1.9.1
 
