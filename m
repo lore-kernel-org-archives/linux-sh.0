@@ -1,8 +1,10 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 27 Aug 2015 20:03:32 +0000
-Subject: [PATCH] pinctrl: sh-pfc: Get rid of CONFIG_SHMOBILE_LEGACY
-Message-Id: <1440705812-2960-1-git-send-email-geert+renesas@glider.be>
+Date: Thu, 27 Aug 2015 20:07:23 +0000
+Subject: [PATCH] pinctrl: sh-pfc: Get rid of CONFIG_ARCH_SHMOBILE_LEGACY
+Message-Id: <1440706043-3406-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1440705812-2960-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440705812-2960-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,7 +21,7 @@ Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
   - Against renesas-devel-20150826-v4.2-rc8,
   - This must not be applied to a branch that still has
-    CONFIG_SHMOBILE_LEGACY.
+    CONFIG_ARCH_SHMOBILE_LEGACY.
 
  drivers/pinctrl/sh-pfc/gpio.c | 41 +++++++++++++++++++----------------------
  1 file changed, 19 insertions(+), 22 deletions(-)
