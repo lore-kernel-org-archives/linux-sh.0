@@ -1,40 +1,33 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 07 Aug 2015 03:19:27 +0000
-Subject: [PATCH 14/16 v5][RFC] Local: Hack: disable CONFIG_SUSPEND
-Message-Id: <87oaijdc0i.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 27 Aug 2015 09:24:09 +0000
+Subject: [PATCH/RFC 09/10] arm64: defconfig: enable EthernetAVB
+Message-Id: <1440667450-3513-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+This is present on the Renesas r8a7795 SoC and may be
+used by the Salvator-X board.
 
-Since cpu suspend is not supported in R-Car Gen3 initial version,
-disable CONFIG_SUSPEND as interim fix until pcsi is available.
-
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v4 -> v5
-
- - no change
-
  arch/arm64/configs/defconfig | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index 536f836..65b45a8 100644
+index e7b638eb5059..4841bb4d24fd 100644
 --- a/arch/arm64/configs/defconfig
 +++ b/arch/arm64/configs/defconfig
-@@ -58,6 +58,7 @@ CONFIG_CMA=y
- CONFIG_CMDLINE="console=ttyAMA0"
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- CONFIG_COMPAT=y
-+# CONFIG_SUSPEND is not set
- CONFIG_CPU_IDLE=y
- CONFIG_ARM_CPUIDLE=y
- CONFIG_NET=y
+@@ -97,6 +97,7 @@ CONFIG_TUN=y
+ CONFIG_VIRTIO_NET=y
+ CONFIG_NET_XGENE=y
+ CONFIG_SKY2=y
++CONFIG_RAVB=y
+ CONFIG_SMC91X=y
+ CONFIG_SMSC911X=y
+ # CONFIG_WLAN is not set
 -- 
-1.9.1
+2.1.4
 
