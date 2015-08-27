@@ -1,43 +1,33 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 03 Aug 2015 17:20:47 +0000
-Subject: Re: [PATCH v3 00/16] ARM: shmobile: Add CPG/MSTP Clock Domain
-Message-Id: <CAMuHMdUxCgXnF6AM=LefR7ZHX0d8XNcn-O=eA7o4C18O4kJbAg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 27 Aug 2015 09:24:08 +0000
+Subject: [PATCH/RFC 08/10] arm64: dts: r8a7795: enable nfs root on Salvator-X board
+Message-Id: <1440667450-3513-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1435766290-3005-1-git-send-email-geert+renesas@glider.be>
- <CAPDyKFp=zoo1OY9K-dYh9e2OV-OFVp36MbXX83vT19uFWB+0Yg@mail.gmail.com>
-In-Reply-To: <CAPDyKFp=zoo1OY9K-dYh9e2OV-OFVp36MbXX83vT19uFWB+0Yg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Jul 22, 2015 at 3:00 PM, Ulf Hansson <ulf.hansson@linaro.org> wrote:
-> On 1 July 2015 at 17:57, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
->> This patch series adds Clock Domain support to the Clock Pulse Generator
->> (CPG) Module Stop (MSTP) Clocks driver using the generic PM Domain, to
->> be used on shmobile SoCs without device power domains (R-Car Gen1 and
->> Gen2, RZ).  This allows to power-manage the module clocks of SoC devices
->> that are part of the CPG/MSTP Clock Domain using Runtime PM, or for
->> system suspend/resume, similar to SoCs with device power domains
->> (SH-Mobile and R-Mobile).
+As has been the practice for boards for 32bit ARM Renesas SoCs
 
-[...]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> Unless it's too late; for the series - feel free to add:
->
-> Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index e8d940cc831a..109261ea60bd 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -20,7 +20,7 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "ignore_loglevel";
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 		stdout-path = &scif2;
+ 	};
+ 
+-- 
+2.1.4
 
-Thank you.
-
-I have to respin anyway, as new nodes have been added to various .dtsi files.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
