@@ -1,101 +1,76 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 31 Aug 2015 13:08:35 +0000
-Subject: Re: [PATCH v8 04/07] arm64: renesas: r8a7795 dtsi: Add all SCIF nodes
-Message-Id: <CAMuHMdWwy__QpsX+-KT89X+cnrfsjDDqSZsoQOLBkcJ=2Ej2Vw@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Aug 2015 21:37:16 +0000
+Subject: [PATCH 2/3] ARM: shmobile: Remove legacy mach/irqs.h
+Message-Id: <1440797837-25516-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150831062952.24004.17072.sendpatchset@little-apple>
-In-Reply-To: <20150831062952.24004.17072.sendpatchset@little-apple>
+References: <074e25ac68b40603345a257504de0f4a125326e7.1392961497.git.horms+renesas@verge.net.au>
+In-Reply-To: <074e25ac68b40603345a257504de0f4a125326e7.1392961497.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+The header isn't needed anymore now that all SoCs use multiplatform
+kernels. Remove it.
 
-On Mon, Aug 31, 2015 at 2:59 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> On Mon, Aug 31, 2015 at 9:47 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
->> Hi Magnus,
->>
->> On Mon, Aug 31, 2015 at 8:29 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->>> --- 0014/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->>> +++ work/arch/arm64/boot/dts/renesas/r8a7795.dtsi       2015-08-29 18:25:06.922366518 +0900
->>> @@ -241,6 +246,34 @@
->>>                                         R8A7795_CLK_PLL3 R8A7795_CLK_PLL4
->>>                                 >;
->>>                                 #power-domain-cells = <0>;
->>> +
->>> +                               mstp2_clks: mstp2_clks@e6150138 {
->>
->> With the "clock-output-names" dropped, I think the node should be called
->> "mstp2" (without "_clks") suffix.
->
-> Makes sense!
->
->>> +                                       compatible >>> +                                               "renesas,r8a7795-mstp-clocks",
->>> +                                               "renesas,cpg-mstp-clocks";
->>> +                                       reg = <0 0xe6150138 0 4>,
->>> +                                             <0 0xe6150040 0 4>;
->>> +                                       clocks = <&s3d4_clk>, <&s3d4_clk>,
->>> +                                                <&s3d4_clk>, <&s3d4_clk>,
->>> +                                                <&s3d4_clk>;
->>> +                                       #clock-cells = <1>;
->>> +                                       clock-indices = <
->>> +                                               R8A7795_CLK_SCIF5
->>> +                                               R8A7795_CLK_SCIF4
->>> +                                               R8A7795_CLK_SCIF3
->>> +                                               R8A7795_CLK_SCIF1
->>> +                                               R8A7795_CLK_SCIF0
->>> +                                       >;
->>> +                               };
->>> +
->>> +                               mstp3_clks: mstp3_clks@e615013c {
->>
->> Likewise.
->
-> Sure...
->
->>> +                                       compatible = "renesas,r8a7795-mstp-clocks",
->>> +                                                    "renesas,cpg-mstp-clocks";
->
-> But if we're going down that route then may I ask why we have
-> "-clocks" suffix for the MSTP/CPG compat strings? I'd rather make them
-> shorter and more similar to the rest of the compat strings on the SoC.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/include/mach/irqs.h | 10 ----------
+ arch/arm/mach-shmobile/irqs.h              | 15 ---------------
+ arch/arm/mach-shmobile/setup-r8a7778.c     |  1 -
+ 3 files changed, 26 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/irqs.h
+ delete mode 100644 arch/arm/mach-shmobile/irqs.h
 
-It uses plural because CPG and MSTP nodes provide more than one clock.
+diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
+deleted file mode 100644
+index 5aee83f079e2..000000000000
+--- a/arch/arm/mach-shmobile/include/mach/irqs.h
++++ /dev/null
+@@ -1,10 +0,0 @@
+-#ifndef __ASM_MACH_IRQS_H
+-#define __ASM_MACH_IRQS_H
+-
+-/* Stuck here until drivers/pinctl/sh-pfc gets rid of legacy code */
+-
+-/* External IRQ pins */
+-#define IRQPIN_BASE		2000
+-#define irq_pin(nr)		((nr) + IRQPIN_BASE)
+-
+-#endif /* __ASM_MACH_IRQS_H */
+diff --git a/arch/arm/mach-shmobile/irqs.h b/arch/arm/mach-shmobile/irqs.h
+deleted file mode 100644
+index 3070f6d887eb..000000000000
+--- a/arch/arm/mach-shmobile/irqs.h
++++ /dev/null
+@@ -1,15 +0,0 @@
+-#ifndef __SHMOBILE_IRQS_H
+-#define __SHMOBILE_IRQS_H
+-
+-#include "include/mach/irqs.h"
+-
+-/* GIC */
+-#define gic_spi(nr)		((nr) + 32)
+-#define gic_iid(nr)		(nr) /* ICCIAR / interrupt ID */
+-
+-/* GPIO IRQ */
+-#define _GPIO_IRQ_BASE		2500
+-#define GPIO_IRQ_BASE(x)	(_GPIO_IRQ_BASE + (32 * x))
+-#define GPIO_IRQ(x, y)		(_GPIO_IRQ_BASE + (32 * x) + y)
+-
+-#endif /* __SHMOBILE_IRQS_H */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 7de30f6ee9a5..f6404eaa0e91 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -22,7 +22,6 @@
+ #include <asm/mach/arch.h>
+ 
+ #include "common.h"
+-#include "irqs.h"
+ 
+ #define MODEMR 0xffcc0020
+ 
+-- 
+2.4.6
 
-Cfr. DIV6, which provides a single clock, and uses e.g.
-"renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock" (singular).
-
->>> +                                       reg = <0 0xe615013c 0 4>, <0 0xe6150048 0 4>;
->>> +                                       clocks =  <&s3d4_clk>;
->>> +                                       #clock-cells = <1>;
->>> +                                       clock-indices = <R8A7795_CLK_SCIF2>;
->>
->> Sample (part of) /sys/kernel/debug/clk/clk_summary output:
->>
->>  s3                                       1            1           0
->>        0 0
->>     s3d4                                  1            2           0
->>        0 0
->>        mstp3_clks.10                      2            2           0
->>        0 0
->>
->> I think "mstp3.10" looks nicer than "mstp3_clks.10".
->> Note that before we had "scif2".
->
-> It is still possible to add extended information in clock-output-names
-> to the DTS for debugging purpose, right?
-
-Sure, but we can no longer rely on its existence if it's declared optional.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
