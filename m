@@ -1,40 +1,63 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Aug 2015 02:21:56 +0000
-Subject: Re: [PATCH] ARM: shmobile: marzen: Board specific serial port order
-Message-Id: <20150812022155.GI15957@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 28 Aug 2015 05:20:41 +0000
+Subject: [PATCH][RFC] sh-pfc: add new PINMUX_IPSR_MODS() macro
+Message-Id: <87h9nkc7km.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150807024533.25666.34925.sendpatchset@little-apple>
-In-Reply-To: <20150807024533.25666.34925.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-On Fri, Aug 07, 2015 at 01:19:59PM +0300, Laurent Pinchart wrote:
-> On Friday 07 August 2015 09:13:08 Geert Uytterhoeven wrote:
-> > Hi Magnus,
-> > 
-> > On Fri, Aug 7, 2015 at 4:45 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > > From: Magnus Damm <damm+renesas@opensource.se>
-> > > 
-> > > Convert Marzen to use board-specific serial0 and serial1 instead
-> > > of the older shared SoC-specific SCIF index.
-> > 
-> > Thank you for your patch!
-> > 
-> > Please note that this is a user-visible change.
-> > Hardcoded "ttySC2" in e.g. kernel boot command line and /etc/inittab must be
-> > changed to ttySC0.
-> > 
-> > > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> > 
-> > Nevertheless:
-> > Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> And
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> given how long I've been pushing for this :-)
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I have queued this up for v4.4.
+Actually, PINMUX_IPSR_MODS() macro is same as PINMUX_IPSR_MODSEL_DATA().
+Current PFC driver is very difficult to read, because macro names are
+using different lenth. Especially PINMUX_IPSR_MODSEL_DATA() is well
+used macro
+
+	PINMUX_IPSR_NOGP(ispr, ...)
+	PINMUX_IPSR_DATA(ipsr, ...)
+	PINMUX_IPSR_NOGM(ispr, ...)
+	PINMUX_IPSR_NOFN(ipsr, ...)
+	PINMUX_IPSR_MSEL(ipsr, ...)
+	PINMUX_IPSR_MODSEL_DATA(ipsr, ...)
+
+These are readable
+
+	PINMUX_IPSR_NOGP(ispr, ...)
+	PINMUX_IPSR_DATA(ipsr, ...)
+	PINMUX_IPSR_NOGM(ispr, ...)
+	PINMUX_IPSR_NOFN(ipsr, ...)
+	PINMUX_IPSR_MSEL(ipsr, ...)
+	PINMUX_IPSR_MODS(ipsr, ...)
+
+We can replace all PINMUX_IPSR_MODSEL_DATA() to PINMUX_IPSR_MODS(),
+and remove PINMUX_IPSR_MODSEL_DATA() from header.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+> LinusW, Laurent
+
+As I mentioned above, if this patch was accepted, I can replace all PINMUX_IPSR_MODSEL_DATA()
+to PINMUX_IPSR_MODS(). But I didn't it since it is [RFC] now
+
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 0874cfe..40447d54 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -173,6 +173,8 @@ struct sh_pfc_soc_info {
+ 	PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##ms)
+ #define PINMUX_IPSR_MSEL(ipsr, fn, ms)					\
+ 	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ipsr, FN_##ms)
++#define PINMUX_IPSR_MODS(ipsr, fn, ms)			\
++	PINMUX_DATA(fn##_MARK, FN_##ms, FN_##ipsr, FN_##fn)
+ #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms)				\
+ 	PINMUX_DATA(fn##_MARK, FN_##ms, FN_##ipsr, FN_##fn)
+ 
+-- 
+1.9.1
+
