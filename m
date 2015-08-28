@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 28 Aug 2015 10:30:16 +0000
+Date: Fri, 28 Aug 2015 10:51:20 +0000
 Subject: Re: [PATCH/RFC 04/10] ravb: Add support for r8a7795 SoC
-Message-Id: <55E03838.3080604@cogentembedded.com>
+Message-Id: <55E03D28.4090302@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1440667450-3513-5-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1440667450-3513-5-git-send-email-horms+renesas@verge.net.au>
@@ -10,31 +10,54 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+On 8/28/2015 11:35 AM, Geert Uytterhoeven wrote:
 
-On 8/28/2015 5:13 AM, Simon Horman wrote:
+> Thanks for the update!
 
->>>> @@ -1688,6 +1712,16 @@ static int ravb_probe(struct platform_device *pdev)
->>>>   	priv->avb_link_active_low >>>>   		of_property_read_bool(np, "renesas,ether-link-active-low");
->>>>
->>>> +	if (of_device_is_compatible(np,
->>>> +				"renesas,etheravb-r8a7795")) {
->>>
->>>     Please respect the rules. And do you really need the break the line here?
->>>
->>>> +		irq = platform_get_irq(pdev, 1);
->>>> +		if (irq < 0) {
->>>> +			error = -ENODEV;
->>>
->>>     Please propagate the error instead.
+> On Fri, Aug 28, 2015 at 10:27 AM, Simon Horman <horms@verge.net.au> wrote:
+>> --- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
+>> +++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+>> @@ -6,8 +6,12 @@ interface contains.
+>>   Required properties:
+>>   - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
+>>                "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
+>> +             "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
+>>   - reg: offset and length of (1) the register block and (2) the stream buffer.
+>> -- interrupts: interrupt specifier for the sole interrupt.
+>> +- interrupts: interrupt specifiers.
+>> +             One data and one emac interrupt for the R8A7795 SoC;
 
->> Sure, will do.
+    Data?! What the heck does it mean? :-/
 
-> On closer examination the above is consistent with the existing
-> error handling for another call to platform_get_irq() in the same function.
-> Shall we fix that first?
+>> +             these interrupts must be named.
+>> +              One named or unnamed data interrupt otherwise.
+>>   - phy-mode: see ethernet.txt file in the same directory.
+>>   - phy-handle: see ethernet.txt file in the same directory.
+>>   - #address-cells: number of address cells for the MDIO bus, must be equal to 1.
+>> @@ -18,6 +22,12 @@ Required properties:
+>>   Optional properties:
+>>   - interrupt-parent: the phandle for the interrupt controller that services
+>>                      interrupts for this device.
+>> +- interrupt-names: Names of named interrupts.
+>> +                   If the property is present "data" is required.
+>> +                   "emac" is also required for the R8A7795 SoC;
+>> +                  it is prohibited otherwise.
+>> +                  This property is mandatory for the R8A7795 SoC;
+>> +                  optional otherwise.
+>>   - pinctrl-names: pin configuration state name ("default").
+>>   - renesas,no-ether-link: boolean, specify when a board does not provide a proper
+>>                           AVB_LINK signal.
+>
+> What about the 25 channel interrupts?
+> "data" and "emac" seem to use ch22 resp. ch 24 on Gen3.
+>
+> I'm afraid this will bite us one day.
 
-    Yes, and I'll look into that.
+    Me too. We should describe the real hardware, not how the driver uses it. 
+Where does configuring the AVB interrupt mode happen?
 
-WBR, Sergei
+> Gr{oetje,eeting}s,
+>                          Geert
+
+MBR, Sergei
 
