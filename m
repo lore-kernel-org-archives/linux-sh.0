@@ -1,83 +1,47 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 07 Aug 2015 01:01:17 +0000
-Subject: Re: [PATCH 00/13 v4][RFC] arm64: Renesas Gen3 initial patch
-Message-Id: <20150807010115.GE1145@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 28 Aug 2015 09:15:50 +0000
+Subject: [PATCH v3 00/04] Renesas R-Car Gen3 CPG support V3
+Message-Id: <20150828091550.21731.85227.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87wpx8yhhm.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87wpx8yhhm.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-Hi Morimoto-san,
+Renesas R-Car Gen3 CPG support V3
 
-thanks to you and the team for your hard work getting this together before Obon.
+[PATCH v3 01/04] clk: shmobile: Get rid of CONFIG_ARCH_SHMOBILE_MULTI
+[PATCH v3 02/04] clk: shmobile: Make MSTP clock-output-names optional
+[PATCH v3 03/04] clk: shmobile: Add Renesas R-Car Gen3 CPG support
+[PATCH v3 04/04] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support
 
-I have pushed these patches to the renesas tree in topic branches as
-described below.
+This series is the first attempt to take the CCF code from the single patch:
+"[PATCH 1/9] clk: shmobile: add Renesas R-Car Gen3 CPG support"
+to a full series of various CCF related updates related to R-Car Gen3.
 
-To be quite clear none of these patches are queued up for mainline yet and
-as such they are not included in the next or devel branches of the renesas
-tree.
+In this series patch 1 and 2 get rid of CONFIG_ARCH_SHMOBILE_MULTI kconfig
+bits and converts the MSTP CCF driver to not rely on clock-output-names. The
+latter may need a bit more work.
 
-On Thu, Aug 06, 2015 at 08:03:10AM +0000, Kuninori Morimoto wrote:
-> 
-> Hi SH-ML
-> 
-> These are v4 patch set for Gen3 support I tested these patches on Gen3
-> SalvatorX board.
-> Because it is still not full supported patch-set, it needs local hack patches
-> for booting. I added all of them on this series.
-> 
-> I need to add some notes here.
-> 
-> 1) Because there was a bug report which indicated it couldn't boot
->    on renesas-drivers-2015-08-0x-v4.2-rc5 branch,
->    I used renesas-devel-20150803-v4.2-rc5. these patches are based on it.
->    We still don't know why it couldn't boot on renesas-driver branch
-> 
-> 2) Because SalvatorX still doesn't have uboot,
->    we put kernel on memory via JTAG
->    You need to put
-> 	dtb   file on 0x48000000
-> 	Image file on 0x48080000
->    Then, set each registers
-> 	X0 = 0x48000000
-> 	PC = 0x48080000
-> 
-> Because it doesn't support network yet, I used initramfs for booting.
-> 12) added it on defconfig as local hack. you need fix its ${PATH}.
-> you can check attached method if you don't have initramfs environment.
-> 
-> Here, "Local: Hack" are local hack patches. these should be removed/replaced
-> in the future, but is needed at this point.
-> 
-> 	 1) clk: shmobile: add Renesas R-Car Gen3 CPG support
-> 	 2) arm64: renesas: Add new Renesas R-Car Gen3 SoC Kconfig
-> 	 3) arm64: renesas: Add initial r8a7795 SoC support
-> 	 4) arm64: renesas: Enable Renesas R-Car Gen3 SoC in defconfig
-> 	 5) arm64: renesas: Add SCIF2 support on r8a7795
-> 	 6) arm64: renesas: enable SCIF on defconfig
+Patch 3 and 4 introduce an updated R-Car Gen3 CPG driver where I have reworked
+the code to not depend on clock-output-names instead of using strings simply
+rely on RCAR_GEN3_CLK_xxx. Those must match the ABI defined in SoC specific
+indicies such as the ones included in r8a7795-clock.h.
 
-I have pushed the above 6 patches to a new
-topic/arm64-rcar-gen3-v4 branch.
+Patch 3 most likely needs to be reworked further to incorporate earlier
+feedback from CCF maintainers.
 
-As per v3 of this patchset the base of the branch is v4.2-rc1.
+Comments are very welcome!
 
-> 	 7) Local: Hack: enable CONFIG_ARCH_SHMOBILE_MULTI temporary
-> 	 8) Local: Hack: enable SCIF2 without using PFC
-> 	 9) Local: Hack: remove pm_sysrq_init
-> 	10) Local: Hack: of: Limit FDT size for CRC check on arm64
-> 	11) Local: Hack: disable CONFIG_SUSPEND
-> 	12) Local: Hack: enable Initramfs
-> 	13) Local: arm64: renesas: add SalvatorX board support on DTS
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-I have pushed the above 7 "local" patches to a new
-topic/arm64-rcar-gen3-local-v4 branch.
+ Written to be picked up independently from other R-Car Gen3 patches.
 
-The base of that branch is topic/arm64-rcar-gen3-v4.
-And as such the order of your patchset is preserved.
-
-
-I am more than happy to adjust the above branches if needed.
+ Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt |   31 +
+ drivers/clk/Makefile                                                     |    2 
+ drivers/clk/shmobile/Makefile                                            |   23 
+ drivers/clk/shmobile/clk-mstp.c                                          |   15 
+ drivers/clk/shmobile/clk-rcar-gen3.c                                     |  254 ++++++++++
+ 5 files changed, 304 insertions(+), 21 deletions(-)
