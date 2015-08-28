@@ -1,94 +1,326 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 28 Aug 2015 00:38:52 +0000
-Subject: Re: [PATCH/RFC 02/10] arm64: defconfig: Enable GPIO of Renesas R-Car Gen3 SoC
-Message-Id: <20150828003851.GB7357@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 28 Aug 2015 09:16:24 +0000
+Subject: [PATCH v3 03/04] clk: shmobile: Add Renesas R-Car Gen3 CPG support
+Message-Id: <20150828091624.21731.11014.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440667450-3513-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1440667450-3513-3-git-send-email-horms+renesas@verge.net.au>
+References: <20150828091550.21731.85227.sendpatchset@little-apple>
+In-Reply-To: <20150828091550.21731.85227.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-On Thu, Aug 27, 2015 at 12:52:13PM +0200, Geert Uytterhoeven wrote:
-> On Thu, Aug 27, 2015 at 11:24 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-> >
-> > Enable GPIO for  Renesas R-Car Gen3 SoC via the following options:
-> >   - GPIO_SYSFS
-> >   - GPIO_RCAR
-> >   - LEDS_GPIO
-> >
-> > Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-> > [horms: updated changelog]
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> >  arch/arm64/configs/defconfig | 3 +++
-> >  1 file changed, 3 insertions(+)
-> >
-> > diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-> > index a2ddca9c632b..e7b638eb5059 100644
-> > --- a/arch/arm64/configs/defconfig
-> > +++ b/arch/arm64/configs/defconfig
-> > @@ -124,7 +124,9 @@ CONFIG_VIRTIO_CONSOLE=y
-> >  CONFIG_SPI=y
-> >  CONFIG_SPI_PL022=y
-> >  CONFIG_PINCTRL_MSM8916=y
-> > +CONFIG_GPIO_SYSFS=y
-> 
-> Do we really need GPIO_SYSFS?
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Almost certainly not.
+This patch adds very initial CPG support.
+R-Car Gen3 write function should use CPG write protection method
+which is shared with MSTP driver. This patch has it but not used.
 
-Looking over the patch again this morning
-I think we also do not need LEDS_GPIO as the leds do not appear
-to be enabled at this time.
-
-I have revised the local version of this patch to only enable GPIO_RCAR.
-
-My assumption is that Ulrich will take over this (albeit trivial) patch.
-
-For reference this is what I tested just now:
-
-From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-Subject: [PATCH/RFC v1.1] arm64: defconfig: Enable GPIO of Renesas R-Car Gen3 SoC
-
-Enable GPIO_RCAR which is necessary and sufficient to enable
-GPIO for the Renesas R-Car Gen3 r8a7775 SoC
-
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-[horms: only enable GPIO_RCAR]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
 
-v0 [Takeshi Kihara]
+ Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt |   31 +
+ drivers/clk/shmobile/Makefile                                            |    1 
+ drivers/clk/shmobile/clk-rcar-gen3.c                                     |  252 ++++++++++
+ 3 files changed, 284 insertions(+)
 
-v1 [Simon Horman]
-* Reworded patch subject
-
-v1.1 [Simon Horman]
-* As suggested by Geert Uytterhoeven
-  - Do not enable GPIO_SYSFS as it does not appear to be strictly related
-* Dropped enabling LEDS_GPIO as this does not appear to be used at this time
-* Updated changelog
----
- arch/arm64/configs/defconfig | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index a2ddca9c632b..b7f7c5403884 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -125,6 +125,7 @@ CONFIG_SPI=y
- CONFIG_SPI_PL022=y
- CONFIG_PINCTRL_MSM8916=y
- CONFIG_GPIO_PL061=y
-+CONFIG_GPIO_RCAR=y
- CONFIG_GPIO_XGENE=y
- CONFIG_POWER_RESET_XGENE=y
- CONFIG_POWER_RESET_SYSCON=y
--- 
-2.1.4
-
+--- /dev/null
++++ work/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt	2015-08-28 15:04:28.422366518 +0900
+@@ -0,0 +1,31 @@
++* Renesas R-Car Gen3 Clock Pulse Generator (CPG)
++
++The CPG generates core clocks for the R-Car Gen3 SoCs. It includes three PLLs
++and several fixed ratio dividers.
++
++Required Properties:
++
++  - compatible: Must be one of
++    - "renesas,r8a7795-cpg-clocks" for the r8a7795 CPG
++    - "renesas,rcar-gen3-cpg-clocks" for the generic R-Car Gen3 CPG
++
++  - reg: Base address and length of the memory resource used by the CPG
++
++  - clocks: References to the parent clocks: first to the EXTAL clock
++  - #clock-cells: Must be 1
++  - clock-output-names: The names of the clocks. Supported clocks are
++    "main", "pll0", "pll1", "pll2", "pll3", "pll4"
++
++
++Example
++-------
++
++	cpg_clocks: cpg_clocks@e6150000 {
++		compatible = "renesas,r8a7795-cpg-clocks",
++			     "renesas,rcar-gen3-cpg-clocks";
++		reg = <0 0xe6150000 0 0x1000>;
++		clocks = <&extal_clk>;
++		#clock-cells = <1>;
++		clock-output-names = "main", "pll0", "pll1","pll2",
++				     "pll3", "pll4";
++	};
+--- 0003/drivers/clk/shmobile/Makefile
++++ work/drivers/clk/shmobile/Makefile	2015-08-28 15:04:27.402366518 +0900
+@@ -8,4 +8,5 @@ obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-
+ obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
+ obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
+ obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7795)		+= clk-rcar-gen3.o clk-mstp.o clk-div6.o
+ obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o clk-mstp.o clk-div6.o
+--- /dev/null
++++ work/drivers/clk/shmobile/clk-rcar-gen3.c	2015-08-28 15:05:47.202366518 +0900
+@@ -0,0 +1,252 @@
++/*
++ * rcar_gen3 Core CPG Clocks
++ *
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * Based on rcar_gen2 Core CPG Clocks driver.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ */
++
++#include <linux/clk-provider.h>
++#include <linux/clkdev.h>
++#include <linux/clk/shmobile.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/math64.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/spinlock.h>
++
++#define RCAR_GEN3_CLK_MAIN	0
++#define RCAR_GEN3_CLK_PLL0	1
++#define RCAR_GEN3_CLK_PLL1	2
++#define RCAR_GEN3_CLK_PLL2	3
++#define RCAR_GEN3_CLK_PLL3	4
++#define RCAR_GEN3_CLK_PLL4	5
++
++static const char * const rcar_gen3_clk_names[] = {
++	[RCAR_GEN3_CLK_MAIN] = "main",
++	[RCAR_GEN3_CLK_PLL0] = "pll0",
++	[RCAR_GEN3_CLK_PLL1] = "pll1",
++	[RCAR_GEN3_CLK_PLL2] = "pll2",
++	[RCAR_GEN3_CLK_PLL3] = "pll3",
++	[RCAR_GEN3_CLK_PLL4] = "pll4",
++};
++
++struct rcar_gen3_cpg {
++	struct clk_onecell_data data;
++	spinlock_t lock;
++	void __iomem *reg;
++};
++
++#define CPG_PLL0CR	0x00d8
++#define CPG_PLL2CR	0x002c
++
++/*
++ * common function
++ */
++#define rcar_clk_readl(cpg, _reg) clk_readl(cpg->reg + _reg)
++
++/*
++ * Reset register definitions.
++ */
++#define MODEMR 0xe6160060
++
++static u32 rcar_gen3_read_mode_pins(void)
++{
++	static u32 mode;
++	static bool mode_valid;
++
++	if (!mode_valid) {
++		void __iomem *modemr = ioremap_nocache(MODEMR, 4);
++
++		BUG_ON(!modemr);
++		mode = ioread32(modemr);
++		iounmap(modemr);
++		mode_valid = true;
++	}
++
++	return mode;
++}
++
++/* -----------------------------------------------------------------------------
++ * CPG Clock Data
++ */
++
++/*
++ *   MD		EXTAL		PLL0	PLL1	PLL2	PLL3	PLL4
++ * 14 13 19 17	(MHz)		*1	*1	*1
++ *-------------------------------------------------------------------
++ * 0  0  0  0	16.66 x 1	x180/2	x192/2	x144/2	x192	x144
++ * 0  0  0  1	16.66 x 1	x180/2	x192/2	x144/2	x128	x144
++ * 0  0  1  0	Prohibited setting
++ * 0  0  1  1	16.66 x 1	x180/2	x192/2	x144/2	x192	x144
++ * 0  1  0  0	20    x 1	x150/2	x156/2	x120/2	x156	x120
++ * 0  1  0  1	20    x 1	x150/2	x156/2	x120/2	x106	x120
++ * 0  1  1  0	Prohibited setting
++ * 0  1  1  1	20    x 1	x150/2	x156/2	x120/2	x156	x120
++ * 1  0  0  0	25    x 1	x120/2	x128/2	x96/2	x128	x96
++ * 1  0  0  1	25    x 1	x120/2	x128/2	x96/2	x84	x96
++ * 1  0  1  0	Prohibited setting
++ * 1  0  1  1	25    x 1	x120/2	x128/2	x96/2	x128	x96
++ * 1  1  0  0	33.33 / 2	x180/2	x192/2	x144/2	x192	x144
++ * 1  1  0  1	33.33 / 2	x180/2	x192/2	x144/2	x128	x144
++ * 1  1  1  0	Prohibited setting
++ * 1  1  1  1	33.33 / 2	x180/2	x192/2	x144/2	x192	x144
++ *
++ * *1 : datasheet indicates VCO output (PLLx = VCO/2)
++ *
++ */
++#define CPG_PLL_CONFIG_INDEX(md)	((((md) & BIT(14)) >> 11) | \
++					 (((md) & BIT(13)) >> 11) | \
++					 (((md) & BIT(19)) >> 18) | \
++					 (((md) & BIT(17)) >> 17))
++struct cpg_pll_config {
++	unsigned int extal_div;
++	unsigned int pll1_mult;
++	unsigned int pll3_mult;
++	unsigned int pll4_mult;
++};
++
++static const struct cpg_pll_config cpg_pll_configs[16] __initconst = {
++/* EXTAL div	PLL1	PLL3	PLL4 */
++	{ 1,	192,	192,	144, },
++	{ 1,	192,	128,	144, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	192,	192,	144, },
++	{ 1,	156,	156,	120, },
++	{ 1,	156,	106,	120, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	156,	156,	120, },
++	{ 1,	128,	128,	96,  },
++	{ 1,	128,	84,	96,  },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	128,	128,	96,  },
++	{ 2,	192,	192,	144, },
++	{ 2,	192,	128,	144, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 2,	192,	192,	144, },
++};
++
++/* -----------------------------------------------------------------------------
++ * Initialization
++ */
++
++static u32 cpg_mode __initdata;
++
++static struct clk * __init
++rcar_gen3_cpg_register_clock(struct device_node *np, struct rcar_gen3_cpg *cpg,
++			     const struct cpg_pll_config *config,
++			     unsigned int gen3_clk)
++{
++	const char *parent_name = rcar_gen3_clk_names[RCAR_GEN3_CLK_MAIN];
++	unsigned int mult = 1;
++	unsigned int div = 1;
++	u32 value;
++
++	switch (gen3_clk) {
++	case RCAR_GEN3_CLK_MAIN:
++		parent_name = of_clk_get_parent_name(np, 0);
++		div = config->extal_div;
++		break;
++	case RCAR_GEN3_CLK_PLL0:
++		/* PLL0 is a configurable multiplier clock. Register it as a
++		 * fixed factor clock for now as there's no generic multiplier
++		 * clock implementation and we currently have no need to change
++		 * the multiplier value.
++		 */
++		value = rcar_clk_readl(cpg, CPG_PLL0CR);
++		mult = ((value >> 24) & ((1 << 7) - 1)) + 1;
++		break;
++	case RCAR_GEN3_CLK_PLL1:
++		mult = config->pll1_mult / 2;
++		break;
++	case RCAR_GEN3_CLK_PLL2:
++		/* PLL2 is a configurable multiplier clock. Register it as a
++		 * fixed factor clock for now as there's no generic multiplier
++		 * clock implementation and we currently have no need to change
++		 * the multiplier value.
++		 */
++		value = rcar_clk_readl(cpg, CPG_PLL2CR);
++		mult = ((value >> 24) & ((1 << 7) - 1)) + 1;
++		break;
++	case RCAR_GEN3_CLK_PLL3:
++		mult = config->pll3_mult;
++		break;
++	case RCAR_GEN3_CLK_PLL4:
++		mult = config->pll4_mult;
++		break;
++	default:
++		return ERR_PTR(-EINVAL);
++	}
++
++	return clk_register_fixed_factor(NULL, rcar_gen3_clk_names[gen3_clk],
++					 parent_name, 0, mult, div);
++}
++
++static void __init rcar_gen3_cpg_clocks_init(struct device_node *np)
++{
++	const struct cpg_pll_config *config;
++	struct rcar_gen3_cpg *cpg;
++	struct clk **clks;
++	unsigned int i;
++	int num_clks;
++
++	cpg_mode = rcar_gen3_read_mode_pins();
++
++	num_clks = of_property_count_strings(np, "clock-indices");
++	if (num_clks < 0) {
++		pr_err("%s: failed to count clocks\n", __func__);
++		return;
++	}
++
++	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
++	clks = kzalloc((num_clks * sizeof(*clks)), GFP_KERNEL);
++	if (cpg = NULL || clks = NULL) {
++		/* We're leaking memory on purpose, there's no point in cleaning
++		 * up as the system won't boot anyway.
++		 */
++		pr_err("%s: failed to allocate cpg\n", __func__);
++		return;
++	}
++
++	spin_lock_init(&cpg->lock);
++
++	cpg->data.clks = clks;
++	cpg->data.clk_num = num_clks;
++
++	cpg->reg = of_iomap(np, 0);
++	if (WARN_ON(cpg->reg = NULL))
++		return;
++
++	config = &cpg_pll_configs[CPG_PLL_CONFIG_INDEX(cpg_mode)];
++	if (!config->extal_div) {
++		pr_err("%s: Prohibited setting (cpg_mode=0x%x)\n",
++		       __func__, cpg_mode);
++		return;
++	}
++
++	for (i = 0; i < num_clks; ++i) {
++		struct clk *clk;
++		u32 idx;
++		int ret;
++
++		ret = of_property_read_u32_index(np, "clock-indices", i, &idx);
++		if (ret < 0)
++			break;
++
++		clk = rcar_gen3_cpg_register_clock(np, cpg, config, idx);
++		if (IS_ERR(clk))
++			pr_err("%s: failed to register %s %u clock (%ld)\n",
++			       __func__, np->name, idx, PTR_ERR(clk));
++		else
++			cpg->data.clks[idx] = clk;
++	}
++
++	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++}
++CLK_OF_DECLARE(rcar_gen3_cpg_clks, "renesas,rcar-gen3-cpg-clocks",
++	       rcar_gen3_cpg_clocks_init);
