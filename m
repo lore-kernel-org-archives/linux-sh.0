@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 28 Aug 2015 09:09:56 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 28 Aug 2015 10:20:49 +0000
 Subject: Re: [PATCH/RFC 04/10] ravb: Add support for r8a7795 SoC
-Message-Id: <20150828090955.GA10143@verge.net.au>
+Message-Id: <55E03601.2010202@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1440667450-3513-5-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1440667450-3513-5-git-send-email-horms+renesas@verge.net.au>
@@ -10,46 +10,69 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Aug 28, 2015 at 10:35:56AM +0200, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> Thanks for the update!
-> 
-> On Fri, Aug 28, 2015 at 10:27 AM, Simon Horman <horms@verge.net.au> wrote:
-> > --- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
-> > +++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
-> > @@ -6,8 +6,12 @@ interface contains.
-> >  Required properties:
-> >  - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
-> >               "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
-> > +             "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
-> >  - reg: offset and length of (1) the register block and (2) the stream buffer.
-> > -- interrupts: interrupt specifier for the sole interrupt.
-> > +- interrupts: interrupt specifiers.
-> > +             One data and one emac interrupt for the R8A7795 SoC;
-> > +             these interrupts must be named.
-> > +              One named or unnamed data interrupt otherwise.
-> >  - phy-mode: see ethernet.txt file in the same directory.
-> >  - phy-handle: see ethernet.txt file in the same directory.
-> >  - #address-cells: number of address cells for the MDIO bus, must be equal to 1.
-> > @@ -18,6 +22,12 @@ Required properties:
-> >  Optional properties:
-> >  - interrupt-parent: the phandle for the interrupt controller that services
-> >                     interrupts for this device.
-> > +- interrupt-names: Names of named interrupts.
-> > +                   If the property is present "data" is required.
-> > +                   "emac" is also required for the R8A7795 SoC;
-> > +                  it is prohibited otherwise.
-> > +                  This property is mandatory for the R8A7795 SoC;
-> > +                  optional otherwise.
-> >  - pinctrl-names: pin configuration state name ("default").
-> >  - renesas,no-ether-link: boolean, specify when a board does not provide a proper
-> >                          AVB_LINK signal.
-> 
-> What about the 25 channel interrupts?
-> "data" and "emac" seem to use ch22 resp. ch 24 on Gen3.
-> 
-> I'm afraid this will bite us one day.
+On 8/28/2015 5:01 AM, Simon Horman wrote:
 
-Yes, I worry about that too. But perhaps we can disallow the use of
-"data" and "emac" if all (any of) the chXX interrupts are named.
+>>> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>>>
+>>> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>>> [horms: updated changelog]
+>>
+>>     I don't see any. ;-)
+>>
+>>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+>>> ---
+>>>   .../devicetree/bindings/net/renesas,ravb.txt       |  6 ++-
+>>>   drivers/net/ethernet/renesas/ravb.h                |  1 +
+>>>   drivers/net/ethernet/renesas/ravb_main.c           | 47 +++++++++++++++++++---
+>>>   3 files changed, 47 insertions(+), 7 deletions(-)
+>>>
+>>> diff --git a/Documentation/devicetree/bindings/net/renesas,ravb.txt b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+>>> index 1fd8831437bf..0b4ec02c35a4 100644
+>>> --- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
+>>> +++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+[...]
+>>> diff --git a/drivers/net/ethernet/renesas/ravb.h b/drivers/net/ethernet/renesas/ravb.h
+>>> index a157aaaaff6a..1832737063f3 100644
+>>> --- a/drivers/net/ethernet/renesas/ravb.h
+>>> +++ b/drivers/net/ethernet/renesas/ravb.h
+>>> @@ -809,6 +809,7 @@ struct ravb_private {
+>>>
+>>>   	unsigned no_avb_link:1;
+>>>   	unsigned avb_link_active_low:1;
+>>> +	int emac_irq;
+>>>   };
+
+>>     Why not add it above the bit fields?
+
+> Using an int seems reasonable to me as it is used to hold
+> an integer value returned by request_irq().
+
+    No question about the field type, only about its placement.
+
+[...]
+>>> diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+>>> index 026d98435d87..bf604a869458 100644
+>>> --- a/drivers/net/ethernet/renesas/ravb_main.c
+>>> +++ b/drivers/net/ethernet/renesas/ravb_main.c
+>>> @@ -1185,16 +1185,36 @@ static const struct ethtool_ops ravb_ethtool_ops = {
+[...]
+>>> +		if (error) {
+>>> +			netdev_err(ndev, "cannot request IRQ\n");
+>>> +			goto out_napi_off;
+>>> +		}
+>>> +		error = request_irq(priv->emac_irq,
+>>> +				ravb_interrupt,	IRQF_SHARED, ndev->name, ndev);
+>>
+>>     Likewise.
+>>     And using the same handler for both interrupts doesn't look good.
+
+> It does seem a little odd. I will confirm that detail.
+
+    If the EMAC indeed uses a separate interrupt, please specify its handler 
+directly. The same for the separate AVB-DMAC interrupt (I somewhat doubt that 
+we really need it in the current driver though).
+
+[...]
+
+MBR, Sergei
+
