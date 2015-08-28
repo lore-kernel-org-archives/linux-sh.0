@@ -1,50 +1,71 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 18 Aug 2015 20:30:42 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC CPG/MSTP Clock Driver Updates for v4.3
-Message-Id: <20150818203042.GF4732@localhost>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 28 Aug 2015 09:16:36 +0000
+Subject: [PATCH v3 04/04] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support
+Message-Id: <20150828091636.21731.26416.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1439365731.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1439365731.git.horms+renesas@verge.net.au>
+References: <20150828091550.21731.85227.sendpatchset@little-apple>
+In-Reply-To: <20150828091550.21731.85227.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-On Wed, Aug 12, 2015 at 05:15:13PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC CPG/MSTP clock driver updates
-> for v4.3.
-> 
-> As requested by Olof, this is a repost of patches broken out of a now
-> defunct pull-request, "Renesas ARM Based SoC CPG MSTP Clock Domain Updates
-> for v4.3".  The motivation being to have driver changes in a separate
-> branch to DT changes.
-> 
-> * These patches were Acked by Stephen Boyd in a reply to:
->   [PATCH v2 00/14] ARM: shmobile: Add CPG Clock Domains
->   https://lkml.org/lkml/2015/6/8/622
-> * The patch subjects were subsequently updated with other changes in:
->   [PATCH v3 00/16] ARM: shmobile: Add CPG/MSTP Clock Domain
->   https://lkml.org/lkml/2015/7/1/408
-> * And further updates were made in the patchset I queued up:
->   [PATCH v4 00/16] ARM: shmobile: Add CPG/MSTP Clock Domain
->   https://lkml.org/lkml/2015/8/4/389
-> 
-> 
-> The following changes since commit d770e558e21961ad6cfdf0ff7df0eb5d7d4f0754:
-> 
->   Linux 4.2-rc1 (2015-07-05 11:01:52 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clk-for-v4.3
-> 
-> for you to fetch changes up to f04b486d34ac6bab2aaa3988ee098b2bad3950de:
-> 
->   clk: shmobile: rz: Add CPG/MSTP Clock Domain support (2015-08-12 10:31:28 +0900)
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Merged into next/drivers.
+Shmobile is all multiplatform these days, so get rid of the
+reference to CONFIG_ARCH_SHMOBILE_MULTI. Also instead of always
+enabling DIV6 and MSTP adjust the Makefile to enable DIV6 and
+MSTP depending on if they are included in the SoC or not.
 
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
 
--Olof
+ Changes since V2:
+ - Fixed patch subject typo CONFIG_SHMOBILE_MULTI -> CONFIG_ARCH_SHMOBILE_MULTI
+
+ Changes since V1:
+ - dropped DIV6 from R-Car Gen1 variants - thanks Geert!
+
+ drivers/clk/Makefile          |    2 +-
+ drivers/clk/shmobile/Makefile |   22 ++++++++++------------
+ 2 files changed, 11 insertions(+), 13 deletions(-)
+
+--- 0001/drivers/clk/Makefile
++++ work/drivers/clk/Makefile	2015-08-26 16:39:50.052366518 +0900
+@@ -66,7 +66,7 @@ obj-$(CONFIG_COMMON_CLK_PXA)		+= pxa/
+ obj-$(CONFIG_COMMON_CLK_QCOM)		+= qcom/
+ obj-$(CONFIG_ARCH_ROCKCHIP)		+= rockchip/
+ obj-$(CONFIG_COMMON_CLK_SAMSUNG)	+= samsung/
+-obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= shmobile/
++obj-$(CONFIG_ARCH_SHMOBILE)		+= shmobile/
+ obj-$(CONFIG_ARCH_SIRF)			+= sirf/
+ obj-$(CONFIG_ARCH_SOCFPGA)		+= socfpga/
+ obj-$(CONFIG_PLAT_SPEAR)		+= spear/
+--- 0001/drivers/clk/shmobile/Makefile
++++ work/drivers/clk/shmobile/Makefile	2015-08-26 16:40:04.832366518 +0900
+@@ -1,13 +1,11 @@
+ obj-$(CONFIG_ARCH_EMEV2)		+= clk-emev2.o
+-obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o
+-obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o
+-obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o
+-obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o
+-obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
+-obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o
+-obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
+-obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-mstp.o
++obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o clk-mstp.o
++obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o clk-mstp.o
++obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o clk-mstp.o
++obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o clk-mstp.o clk-div6.o
