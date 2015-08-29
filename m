@@ -1,89 +1,45 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 28 Aug 2015 19:59:25 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 29 Aug 2015 08:33:19 +0000
 Subject: Re: [PATCH v3 01/04] clk: shmobile: Get rid of CONFIG_ARCH_SHMOBILE_MULTI
-Message-Id: <1746913.nJHMkg2anu@avalon>
+Message-Id: <CANqRtoS-rvW5-0aZ+aKwX4Kjnuf9pahGA2jqpjRHK116MZKY1Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150828091550.21731.85227.sendpatchset@little-apple> <20150828091602.21731.21262.sendpatchset@little-apple>
-In-Reply-To: <20150828091602.21731.21262.sendpatchset@little-apple>
+References: <20150828091550.21731.85227.sendpatchset@little-apple>
+	<20150828091602.21731.21262.sendpatchset@little-apple>
+	<1746913.nJHMkg2anu@avalon>
+In-Reply-To: <1746913.nJHMkg2anu@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-clk@vger.kernel.org, kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-clk <linux-clk@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, SH-Linux <linux-sh@vger.kernel.org>, Michael Turquette <mturquette@baylibre.com>, Gaku Inami <gaku.inami.xw@bp.renesas.com>, Stephen Boyd <sboyd@codeaurora.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-Hi Magnus,
+Hi Laurent,
 
-Thank you for the patch.
+On Sat, Aug 29, 2015 at 4:59 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Magnus,
+>
+> Thank you for the patch.
+>
+> On Friday 28 August 2015 18:16:02 Magnus Damm wrote:
+>> From: Magnus Damm <damm+renesas@opensource.se>
+>>
+>> Shmobile is all multiplatform these days, so get rid of the
+>> reference to CONFIG_ARCH_SHMOBILE_MULTI. Also instead of always
+>> enabling DIV6 and MSTP adjust the Makefile to enable DIV6 and
+>> MSTP depending on if they are included in the SoC or not.
+>>
+>> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+>> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>
+> Assuming you have verified that adding the same object file several times to
+> obj-y won't cause any issue,
 
-On Friday 28 August 2015 18:16:02 Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Shmobile is all multiplatform these days, so get rid of the
-> reference to CONFIG_ARCH_SHMOBILE_MULTI. Also instead of always
-> enabling DIV6 and MSTP adjust the Makefile to enable DIV6 and
-> MSTP depending on if they are included in the SoC or not.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Yeah. A good example of such (mis)use is in arch/arm/mach-shmobile/Kconfig.
+I've also built 32-bit shmobile_defconfig and 64-bit defconfig without issues.
 
-Assuming you have verified that adding the same object file several times to 
-obj-y won't cause any issue,
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Thanks!
 
-> ---
-> 
->  Changes since V2:
->  - Fixed patch subject typo CONFIG_SHMOBILE_MULTI ->
-> CONFIG_ARCH_SHMOBILE_MULTI
-> 
->  Changes since V1:
->  - dropped DIV6 from R-Car Gen1 variants - thanks Geert!
-> 
->  drivers/clk/Makefile          |    2 +-
->  drivers/clk/shmobile/Makefile |   22 ++++++++++------------
->  2 files changed, 11 insertions(+), 13 deletions(-)
-> 
-> --- 0001/drivers/clk/Makefile
-> +++ work/drivers/clk/Makefile	2015-08-26 16:39:50.052366518 +0900
-> @@ -66,7 +66,7 @@ obj-$(CONFIG_COMMON_CLK_PXA)		+= pxa/
->  obj-$(CONFIG_COMMON_CLK_QCOM)		+= qcom/
->  obj-$(CONFIG_ARCH_ROCKCHIP)		+= rockchip/
->  obj-$(CONFIG_COMMON_CLK_SAMSUNG)	+= samsung/
-> -obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= shmobile/
-> +obj-$(CONFIG_ARCH_SHMOBILE)		+= shmobile/
->  obj-$(CONFIG_ARCH_SIRF)			+= sirf/
->  obj-$(CONFIG_ARCH_SOCFPGA)		+= socfpga/
->  obj-$(CONFIG_PLAT_SPEAR)		+= spear/
-> --- 0001/drivers/clk/shmobile/Makefile
-> +++ work/drivers/clk/shmobile/Makefile	2015-08-26 16:40:04.832366518 +0900
-> @@ -1,13 +1,11 @@
->  obj-$(CONFIG_ARCH_EMEV2)		+= clk-emev2.o
-> -obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o
-> -obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o
-> -obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o
-> -obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o
-> -obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
-> -obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
-> -obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
-> -obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o
-> -obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o
-> -obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o
-> -obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
-> -obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-mstp.o
-> +obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o clk-mstp.o
-> +obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o clk-mstp.o clk-div6.o
-> +obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o clk-mstp.o clk-div6.o
-> +obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o clk-mstp.o
-> +obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o clk-mstp.o
-> +obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
-> +obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
-> +obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
-> +obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
-> +obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o clk-mstp.o clk-div6.o
-
--- 
-Regards,
-
-Laurent Pinchart
-
+/ magnus
