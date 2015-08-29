@@ -1,49 +1,96 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Aug 2015 02:11:30 +0000
-Subject: [PATCH 06/10] ARM: shmobile: r8a7794: add MMCIF DT support
-Message-Id: <6cdf6ba19c8b9a386ef882206b29d97a49271317.1438911334.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 29 Aug 2015 09:13:57 +0000
+Subject: [PATCH v4 03/05] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support
+Message-Id: <20150829091357.28546.72024.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438911334.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1438911334.git.horms+renesas@verge.net.au>
+References: <20150829091323.28546.28287.sendpatchset@little-apple>
+In-Reply-To: <20150829091323.28546.28287.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Define the generic R8A7794 part of the MMCIF0 device node.
+Add Clock Domain support to the R-Car Gen3 Clock Pulse Generator (CPG)
+driver using the generic PM Domain.  This allows to power-manage the
+module clocks of SoC devices that are part of the CPG/MSTP Clock Domain
+using Runtime PM, or for system suspend/resume.
 
-Based on the orginal patch by Shinobu Uehara <shinobu.uehara.xc@renesas.com>.
+SoC devices that are part of the CPG/MSTP Clock Domain and can be
+power-managed through an MSTP clock should be tagged in DT with a proper
+"power-domains" property.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7794.dtsi | 11 +++++++++++
- 1 file changed, 11 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 51cc2b975c3f..43acf185ecc4 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -383,6 +383,17 @@
- 		status = "disabled";
- 	};
+ Changes since V3:
+ - Fixed so correct file is actually used. =)
+ - Took V2 from Geert but filtered out Kconfig.platforms bits
+
+ Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt |   26 +++++++++-
+ drivers/clk/shmobile/clk-rcar-gen3.c                                     |    2 
+ 2 files changed, 26 insertions(+), 2 deletions(-)
+
+--- 0011/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
++++ work/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt	2015-08-29 16:41:04.842366518 +0900
+@@ -2,6 +2,8 @@
  
-+	mmcif0: mmc@ee200000 {
-+		compatible = "renesas,mmcif-r8a7794", "renesas,sh-mmcif";
-+		reg = <0 0xee200000 0 0x80>;
-+		interrupts = <0 169 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7794_CLK_MMCIF0>;
-+		dmas = <&dmac0 0xd1>, <&dmac0 0xd2>;
-+		dma-names = "tx", "rx";
-+		reg-io-width = <4>;
-+		status = "disabled";
+ The CPG generates core clocks for the R-Car Gen3 SoCs. It includes three PLLs
+ and several fixed ratio dividers.
++The CPG also provides a Clock Domain for SoC devices, in combination with the
++CPG Module Stop (MSTP) Clocks.
+ 
+ Required Properties:
+ 
+@@ -15,10 +17,18 @@ Required Properties:
+   - #clock-cells: Must be 1
+   - clock-output-names: The names of the clocks. Supported clocks are
+     "main", "pll0", "pll1", "pll2", "pll3", "pll4"
++  - #power-domain-cells: Must be 0
+ 
++SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
++through an MSTP clock should refer to the CPG device node in their
++"power-domains" property, as documented by the generic PM domain bindings in
++Documentation/devicetree/bindings/power/power_domain.txt.
+ 
+-Example
+--------
++
++Examples
++--------
++
++  - CPG device node:
+ 
+ 	cpg_clocks: cpg_clocks@e6150000 {
+ 		compatible = "renesas,r8a7795-cpg-clocks",
+@@ -28,4 +38,16 @@ Example
+ 		#clock-cells = <1>;
+ 		clock-output-names = "main", "pll0", "pll1","pll2",
+ 				     "pll3", "pll4";
++		#power-domain-cells = <0>;
 +	};
 +
- 	sdhi0: sd@ee100000 {
- 		compatible = "renesas,sdhi-r8a7794";
- 		reg = <0 0xee100000 0 0x200>;
--- 
-2.1.4
-
++  - CPG/MSTP Clock Domain member device node:
++
++	scif2: serial@e6e88000 {
++		compatible = "renesas,scif-r8a7795", "renesas,scif";
++		reg = <0 0xe6e88000 0 64>;
++		interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks RCAR_R8A7795_CLK_SCIF2>;
++		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 	};
+--- 0011/drivers/clk/shmobile/clk-rcar-gen3.c
++++ work/drivers/clk/shmobile/clk-rcar-gen3.c	2015-08-29 16:41:04.842366518 +0900
+@@ -244,6 +244,8 @@ static void __init rcar_gen3_cpg_clocks_
+ 	}
+ 
+ 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++
++	cpg_mstp_add_clk_domain(np);
+ }
+ CLK_OF_DECLARE(rcar_gen3_cpg_clks, "renesas,rcar-gen3-cpg-clocks",
+ 	       rcar_gen3_cpg_clocks_init);
