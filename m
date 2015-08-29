@@ -1,378 +1,349 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Mon, 17 Aug 2015 07:06:55 +0000
-Subject: [PATCH 4/5] dma-mapping: consolidate dma_supported
-Message-Id: <1439795216-32189-5-git-send-email-hch@lst.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 29 Aug 2015 09:13:46 +0000
+Subject: [PATCH v4 02/05] clk: shmobile: Add Renesas R-Car Gen3 CPG support
+Message-Id: <20150829091346.28546.42552.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439795216-32189-1-git-send-email-hch@lst.de>
-In-Reply-To: <1439795216-32189-1-git-send-email-hch@lst.de>
+References: <20150829091323.28546.28287.sendpatchset@little-apple>
+In-Reply-To: <20150829091323.28546.28287.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org
-Cc: arnd@arndb.de, linux@arm.linux.org.uk, catalin.marinas@arm.com, will.deacon@arm.com, ysato@users.sourceforge.jp, monstr@monstr.eu, jonas@southpole.se, cmetcalf@ezchip.com, gxt@mprc.pku.edu.cn, x86@kernel.org, linux-alpha@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-Most architectures just call into ->dma_supported, but some also return 1
-if the method is not present, or 0 if no dma ops are present (although
-that should never happeb). Consolidate this more broad version into
-common code.
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Also fix h8300 which inorrectly always returned 0, which would have been
-a problem if it's dma_set_mask implementation wasn't a similarly buggy
-noop.
+This patch adds initial CPG support for R-Car Generation 3 and in
+particular the R8A7795 SoC.
 
-As a few architectures have much more elaborate implementations, we
-still allow for arch overrides.
+The R-Car Gen3 clock hardware has a register write protection feature that
+needs to be shared between the CPG function needs to be shared between
+the CPG and MSTP hardware somehow. So far this feature is simply ignored.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/alpha/include/asm/dma-mapping.h      |  5 -----
- arch/arm/include/asm/dma-mapping.h        |  6 +++---
- arch/arm64/include/asm/dma-mapping.h      |  6 ------
- arch/h8300/include/asm/dma-mapping.h      |  5 -----
- arch/hexagon/include/asm/dma-mapping.h    |  1 +
- arch/ia64/include/asm/dma-mapping.h       |  6 ------
- arch/microblaze/include/asm/dma-mapping.h | 13 +------------
- arch/mips/include/asm/dma-mapping.h       |  6 ------
- arch/openrisc/include/asm/dma-mapping.h   |  5 +++--
- arch/powerpc/include/asm/dma-mapping.h    | 11 -----------
- arch/s390/include/asm/dma-mapping.h       |  9 ---------
- arch/sh/include/asm/dma-mapping.h         | 10 ----------
- arch/sparc/include/asm/dma-mapping.h      |  1 +
- arch/tile/include/asm/dma-mapping.h       |  6 ------
- arch/unicore32/include/asm/dma-mapping.h  | 10 ----------
- arch/x86/include/asm/dma-mapping.h        |  4 +++-
- include/asm-generic/dma-mapping-common.h  | 13 +++++++++++++
- 17 files changed, 25 insertions(+), 92 deletions(-)
 
-diff --git a/arch/alpha/include/asm/dma-mapping.h b/arch/alpha/include/asm/dma-mapping.h
-index 80ac3e8..9d763e5 100644
---- a/arch/alpha/include/asm/dma-mapping.h
-+++ b/arch/alpha/include/asm/dma-mapping.h
-@@ -12,11 +12,6 @@ static inline struct dma_map_ops *get_dma_ops(struct device *dev)
- 
- #include <asm-generic/dma-mapping-common.h>
- 
--static inline int dma_supported(struct device *dev, u64 mask)
--{
--	return get_dma_ops(dev)->dma_supported(dev, mask);
--}
--
- static inline int dma_set_mask(struct device *dev, u64 mask)
- {
- 	return get_dma_ops(dev)->set_dma_mask(dev, mask);
-diff --git a/arch/arm/include/asm/dma-mapping.h b/arch/arm/include/asm/dma-mapping.h
-index b4f1b6b..199b080 100644
---- a/arch/arm/include/asm/dma-mapping.h
-+++ b/arch/arm/include/asm/dma-mapping.h
-@@ -38,12 +38,14 @@ static inline void set_dma_ops(struct device *dev, struct dma_map_ops *ops)
- 	dev->archdata.dma_ops = ops;
- }
- 
-+#define HAVE_ARCH_DMA_SUPPORTED 1
-+extern int dma_supported(struct device *dev, u64 mask);
+ Changes since V3: (Magnus Damm <damm+renesas@opensource.se>)
+ - Reworked driver to incorporate most feedback from Stephen Boyd - thanks!!
+ - Major things like syscon and driver model require more discussion.
+ - Added hunk to build drivers/clk/shmobile if ARCH_RENESAS is set.
+
+ Changes since V2: (Magnus Damm <damm+renesas@opensource.se>)
+ - Reworked driver to rely on clock index instead of strings.
+ - Dropped use of "clock-output-names".
+
+ Earlier versions: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+ Initial version: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+
+ Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt |   31 +
+ drivers/clk/Makefile                                                     |    1 
+ drivers/clk/shmobile/Makefile                                            |    1 
+ drivers/clk/shmobile/clk-rcar-gen3.c                                     |  249 ++++++++++
+ 4 files changed, 282 insertions(+)
+
+--- /dev/null
++++ work/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt	2015-08-29 16:23:54.982366518 +0900
+@@ -0,0 +1,31 @@
++* Renesas R-Car Gen3 Clock Pulse Generator (CPG)
 +
- /*
-  * Note that while the generic code provides dummy dma_{alloc,free}_noncoherent
-  * implementations, we don't provide a dma_cache_sync function so drivers using
-  * this API are highlighted with build warnings. 
-  */
--
- #include <asm-generic/dma-mapping-common.h>
- 
- static inline int dma_set_mask(struct device *dev, u64 mask)
-@@ -172,8 +174,6 @@ static inline bool dma_capable(struct device *dev, dma_addr_t addr, size_t size)
- 
- static inline void dma_mark_clean(void *addr, size_t size) { }
- 
--extern int dma_supported(struct device *dev, u64 mask);
--
- extern int arm_dma_set_mask(struct device *dev, u64 dma_mask);
- 
- /**
-diff --git a/arch/arm64/include/asm/dma-mapping.h b/arch/arm64/include/asm/dma-mapping.h
-index f45f444..f519a58 100644
---- a/arch/arm64/include/asm/dma-mapping.h
-+++ b/arch/arm64/include/asm/dma-mapping.h
-@@ -84,12 +84,6 @@ static inline phys_addr_t dma_to_phys(struct device *dev, dma_addr_t dev_addr)
- 	return (phys_addr_t)dev_addr;
- }
- 
--static inline int dma_supported(struct device *dev, u64 mask)
--{
--	struct dma_map_ops *ops = get_dma_ops(dev);
--	return ops->dma_supported(dev, mask);
--}
--
- static inline int dma_set_mask(struct device *dev, u64 mask)
- {
- 	if (!dev->dma_mask || !dma_supported(dev, mask))
-diff --git a/arch/h8300/include/asm/dma-mapping.h b/arch/h8300/include/asm/dma-mapping.h
-index 5eef053..48d652e 100644
---- a/arch/h8300/include/asm/dma-mapping.h
-+++ b/arch/h8300/include/asm/dma-mapping.h
-@@ -10,11 +10,6 @@ static inline struct dma_map_ops *get_dma_ops(struct device *dev)
- 
- #include <asm-generic/dma-mapping-common.h>
- 
--static inline int dma_supported(struct device *dev, u64 mask)
--{
--	return 0;
--}
--
- static inline int dma_set_mask(struct device *dev, u64 mask)
- {
- 	return 0;
-diff --git a/arch/hexagon/include/asm/dma-mapping.h b/arch/hexagon/include/asm/dma-mapping.h
-index e661192..36e8de7 100644
---- a/arch/hexagon/include/asm/dma-mapping.h
-+++ b/arch/hexagon/include/asm/dma-mapping.h
-@@ -43,6 +43,7 @@ static inline struct dma_map_ops *get_dma_ops(struct device *dev)
- 	return dma_ops;
- }
- 
-+#define HAVE_ARCH_DMA_SUPPORTED 1
- extern int dma_supported(struct device *dev, u64 mask);
- extern int dma_set_mask(struct device *dev, u64 mask);
- extern int dma_is_consistent(struct device *dev, dma_addr_t dma_handle);
-diff --git a/arch/ia64/include/asm/dma-mapping.h b/arch/ia64/include/asm/dma-mapping.h
-index 27b713d..7982caa 100644
---- a/arch/ia64/include/asm/dma-mapping.h
-+++ b/arch/ia64/include/asm/dma-mapping.h
-@@ -27,12 +27,6 @@ extern void machvec_dma_sync_sg(struct device *, struct scatterlist *, int,
- 
- #include <asm-generic/dma-mapping-common.h>
- 
--static inline int dma_supported(struct device *dev, u64 mask)
--{
--	struct dma_map_ops *ops = platform_dma_get_ops(dev);
--	return ops->dma_supported(dev, mask);
--}
--
- static inline int
- dma_set_mask (struct device *dev, u64 mask)
- {
-diff --git a/arch/microblaze/include/asm/dma-mapping.h b/arch/microblaze/include/asm/dma-mapping.h
-index e5b8438..3b453c5 100644
---- a/arch/microblaze/include/asm/dma-mapping.h
-+++ b/arch/microblaze/include/asm/dma-mapping.h
-@@ -44,16 +44,7 @@ static inline struct dma_map_ops *get_dma_ops(struct device *dev)
- 	return &dma_direct_ops;
- }
- 
--static inline int dma_supported(struct device *dev, u64 mask)
--{
--	struct dma_map_ops *ops = get_dma_ops(dev);
--
--	if (unlikely(!ops))
--		return 0;
--	if (!ops->dma_supported)
--		return 1;
--	return ops->dma_supported(dev, mask);
--}
-+#include <asm-generic/dma-mapping-common.h>
- 
- static inline int dma_set_mask(struct device *dev, u64 dma_mask)
- {
-@@ -69,8 +60,6 @@ static inline int dma_set_mask(struct device *dev, u64 dma_mask)
- 	return 0;
- }
- 
--#include <asm-generic/dma-mapping-common.h>
--
- static inline void __dma_sync(unsigned long paddr,
- 			      size_t size, enum dma_data_direction direction)
- {
-diff --git a/arch/mips/include/asm/dma-mapping.h b/arch/mips/include/asm/dma-mapping.h
-index 158bb36..8bf8ec3 100644
---- a/arch/mips/include/asm/dma-mapping.h
-+++ b/arch/mips/include/asm/dma-mapping.h
-@@ -31,12 +31,6 @@ static inline void dma_mark_clean(void *addr, size_t size) {}
- 
- #include <asm-generic/dma-mapping-common.h>
- 
--static inline int dma_supported(struct device *dev, u64 mask)
--{
--	struct dma_map_ops *ops = get_dma_ops(dev);
--	return ops->dma_supported(dev, mask);
--}
--
- static inline int
- dma_set_mask(struct device *dev, u64 mask)
- {
-diff --git a/arch/openrisc/include/asm/dma-mapping.h b/arch/openrisc/include/asm/dma-mapping.h
-index 7dfe9d5..8fc08b8 100644
---- a/arch/openrisc/include/asm/dma-mapping.h
-+++ b/arch/openrisc/include/asm/dma-mapping.h
-@@ -35,14 +35,15 @@ static inline struct dma_map_ops *get_dma_ops(struct device *dev)
- 	return &or1k_dma_map_ops;
- }
- 
--#include <asm-generic/dma-mapping-common.h>
--
-+#define HAVE_ARCH_DMA_SUPPORTED 1
- static inline int dma_supported(struct device *dev, u64 dma_mask)
- {
- 	/* Support 32 bit DMA mask exclusively */
- 	return dma_mask = DMA_BIT_MASK(32);
- }
- 
-+#include <asm-generic/dma-mapping-common.h>
++The CPG generates core clocks for the R-Car Gen3 SoCs. It includes three PLLs
++and several fixed ratio dividers.
 +
- static inline int dma_set_mask(struct device *dev, u64 dma_mask)
- {
- 	if (!dev->dma_mask || !dma_supported(dev, dma_mask))
-diff --git a/arch/powerpc/include/asm/dma-mapping.h b/arch/powerpc/include/asm/dma-mapping.h
-index 72d05ab..e2ff85c 100644
---- a/arch/powerpc/include/asm/dma-mapping.h
-+++ b/arch/powerpc/include/asm/dma-mapping.h
-@@ -124,17 +124,6 @@ static inline void set_dma_offset(struct device *dev, dma_addr_t off)
- 
- #include <asm-generic/dma-mapping-common.h>
- 
--static inline int dma_supported(struct device *dev, u64 mask)
--{
--	struct dma_map_ops *dma_ops = get_dma_ops(dev);
--
--	if (unlikely(dma_ops = NULL))
--		return 0;
--	if (dma_ops->dma_supported = NULL)
--		return 1;
--	return dma_ops->dma_supported(dev, mask);
--}
--
- extern int dma_set_mask(struct device *dev, u64 dma_mask);
- extern int __dma_set_mask(struct device *dev, u64 dma_mask);
- extern u64 __dma_get_required_mask(struct device *dev);
-diff --git a/arch/s390/include/asm/dma-mapping.h b/arch/s390/include/asm/dma-mapping.h
-index 3c29329..1f42489 100644
---- a/arch/s390/include/asm/dma-mapping.h
-+++ b/arch/s390/include/asm/dma-mapping.h
-@@ -27,15 +27,6 @@ static inline void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
- 
- #include <asm-generic/dma-mapping-common.h>
- 
--static inline int dma_supported(struct device *dev, u64 mask)
--{
--	struct dma_map_ops *dma_ops = get_dma_ops(dev);
--
--	if (dma_ops->dma_supported = NULL)
--		return 1;
--	return dma_ops->dma_supported(dev, mask);
--}
--
- static inline bool dma_capable(struct device *dev, dma_addr_t addr, size_t size)
- {
- 	if (!dev->dma_mask)
-diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
-index 98308c4..088f6e5 100644
---- a/arch/sh/include/asm/dma-mapping.h
-+++ b/arch/sh/include/asm/dma-mapping.h
-@@ -13,16 +13,6 @@ static inline struct dma_map_ops *get_dma_ops(struct device *dev)
- 
- #include <asm-generic/dma-mapping-common.h>
- 
--static inline int dma_supported(struct device *dev, u64 mask)
--{
--	struct dma_map_ops *ops = get_dma_ops(dev);
--
--	if (ops->dma_supported)
--		return ops->dma_supported(dev, mask);
--
--	return 1;
--}
--
- static inline int dma_set_mask(struct device *dev, u64 mask)
- {
- 	struct dma_map_ops *ops = get_dma_ops(dev);
-diff --git a/arch/sparc/include/asm/dma-mapping.h b/arch/sparc/include/asm/dma-mapping.h
-index 5069d13..184651b 100644
---- a/arch/sparc/include/asm/dma-mapping.h
-+++ b/arch/sparc/include/asm/dma-mapping.h
-@@ -7,6 +7,7 @@
- 
- #define DMA_ERROR_CODE	(~(dma_addr_t)0x0)
- 
-+#define HAVE_ARCH_DMA_SUPPORTED 1
- int dma_supported(struct device *dev, u64 mask);
- 
- static inline void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
-diff --git a/arch/tile/include/asm/dma-mapping.h b/arch/tile/include/asm/dma-mapping.h
-index f8f7a05..559ed4a 100644
---- a/arch/tile/include/asm/dma-mapping.h
-+++ b/arch/tile/include/asm/dma-mapping.h
-@@ -75,12 +75,6 @@ static inline bool dma_capable(struct device *dev, dma_addr_t addr, size_t size)
- }
- 
- static inline int
--dma_supported(struct device *dev, u64 mask)
--{
--	return get_dma_ops(dev)->dma_supported(dev, mask);
--}
--
--static inline int
- dma_set_mask(struct device *dev, u64 mask)
- {
- 	struct dma_map_ops *dma_ops = get_dma_ops(dev);
-diff --git a/arch/unicore32/include/asm/dma-mapping.h b/arch/unicore32/include/asm/dma-mapping.h
-index 175d7e3..21231c1 100644
---- a/arch/unicore32/include/asm/dma-mapping.h
-+++ b/arch/unicore32/include/asm/dma-mapping.h
-@@ -28,16 +28,6 @@ static inline struct dma_map_ops *get_dma_ops(struct device *dev)
- 	return &swiotlb_dma_map_ops;
- }
- 
--static inline int dma_supported(struct device *dev, u64 mask)
--{
--	struct dma_map_ops *dma_ops = get_dma_ops(dev);
--
--	if (unlikely(dma_ops = NULL))
--		return 0;
--
--	return dma_ops->dma_supported(dev, mask);
--}
--
- #include <asm-generic/dma-mapping-common.h>
- 
- static inline bool dma_capable(struct device *dev, dma_addr_t addr, size_t size)
-diff --git a/arch/x86/include/asm/dma-mapping.h b/arch/x86/include/asm/dma-mapping.h
-index bbca62e..b1fbf58 100644
---- a/arch/x86/include/asm/dma-mapping.h
-+++ b/arch/x86/include/asm/dma-mapping.h
-@@ -43,9 +43,11 @@ static inline struct dma_map_ops *get_dma_ops(struct device *dev)
- bool arch_dma_alloc_attrs(struct device **dev, gfp_t *gfp);
- #define arch_dma_alloc_attrs arch_dma_alloc_attrs
- 
-+#define HAVE_ARCH_DMA_SUPPORTED 1
-+extern int dma_supported(struct device *hwdev, u64 mask);
++Required Properties:
 +
- #include <asm-generic/dma-mapping-common.h>
- 
--extern int dma_supported(struct device *hwdev, u64 mask);
- extern int dma_set_mask(struct device *dev, u64 mask);
- 
- extern void *dma_generic_alloc_coherent(struct device *dev, size_t size,
-diff --git a/include/asm-generic/dma-mapping-common.h b/include/asm-generic/dma-mapping-common.h
-index cdaa241..67fa6bc 100644
---- a/include/asm-generic/dma-mapping-common.h
-+++ b/include/asm-generic/dma-mapping-common.h
-@@ -327,4 +327,17 @@ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
- #endif
- }
- 
-+#ifndef HAVE_ARCH_DMA_SUPPORTED
-+static inline int dma_supported(struct device *dev, u64 mask)
++  - compatible: Must be one of
++    - "renesas,r8a7795-cpg-clocks" for the r8a7795 CPG
++    - "renesas,rcar-gen3-cpg-clocks" for the generic R-Car Gen3 CPG
++
++  - reg: Base address and length of the memory resource used by the CPG
++
++  - clocks: References to the parent clocks: first to the EXTAL clock
++  - #clock-cells: Must be 1
++  - clock-output-names: The names of the clocks. Supported clocks are
++    "main", "pll0", "pll1", "pll2", "pll3", "pll4"
++
++
++Example
++-------
++
++	cpg_clocks: cpg_clocks@e6150000 {
++		compatible = "renesas,r8a7795-cpg-clocks",
++			     "renesas,rcar-gen3-cpg-clocks";
++		reg = <0 0xe6150000 0 0x1000>;
++		clocks = <&extal_clk>;
++		#clock-cells = <1>;
++		clock-output-names = "main", "pll0", "pll1","pll2",
++				     "pll3", "pll4";
++	};
+--- 0001/drivers/clk/Makefile
++++ work/drivers/clk/Makefile	2015-08-29 16:34:47.652366518 +0900
+@@ -67,6 +67,7 @@ obj-$(CONFIG_COMMON_CLK_QCOM)		+= qcom/
+ obj-$(CONFIG_ARCH_ROCKCHIP)		+= rockchip/
+ obj-$(CONFIG_COMMON_CLK_SAMSUNG)	+= samsung/
+ obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= shmobile/
++obj-$(CONFIG_ARCH_RENESAS)		+= shmobile/
+ obj-$(CONFIG_ARCH_SIRF)			+= sirf/
+ obj-$(CONFIG_ARCH_SOCFPGA)		+= socfpga/
+ obj-$(CONFIG_PLAT_SPEAR)		+= spear/
+--- 0009/drivers/clk/shmobile/Makefile
++++ work/drivers/clk/shmobile/Makefile	2015-08-29 16:23:53.952366518 +0900
+@@ -8,4 +8,5 @@ obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-
+ obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
+ obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
+ obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7795)		+= clk-rcar-gen3.o clk-mstp.o clk-div6.o
+ obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o clk-mstp.o clk-div6.o
+--- /dev/null
++++ work/drivers/clk/shmobile/clk-rcar-gen3.c	2015-08-29 16:30:59.032366518 +0900
+@@ -0,0 +1,249 @@
++/*
++ * rcar_gen3 Core CPG Clocks
++ *
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * Based on rcar_gen2 Core CPG Clocks driver.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ */
++
++#include <linux/clk-provider.h>
++#include <linux/clk/shmobile.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
++
++#define RCAR_GEN3_CLK_MAIN	0
++#define RCAR_GEN3_CLK_PLL0	1
++#define RCAR_GEN3_CLK_PLL1	2
++#define RCAR_GEN3_CLK_PLL2	3
++#define RCAR_GEN3_CLK_PLL3	4
++#define RCAR_GEN3_CLK_PLL4	5
++
++static const char * const rcar_gen3_clk_names[] = {
++	[RCAR_GEN3_CLK_MAIN] = "main",
++	[RCAR_GEN3_CLK_PLL0] = "pll0",
++	[RCAR_GEN3_CLK_PLL1] = "pll1",
++	[RCAR_GEN3_CLK_PLL2] = "pll2",
++	[RCAR_GEN3_CLK_PLL3] = "pll3",
++	[RCAR_GEN3_CLK_PLL4] = "pll4",
++};
++
++struct rcar_gen3_cpg {
++	struct clk_onecell_data data;
++	spinlock_t lock;
++	void __iomem *reg;
++};
++
++#define CPG_PLL0CR	0x00d8
++#define CPG_PLL2CR	0x002c
++
++/*
++ * common function
++ */
++#define rcar_clk_readl(cpg, _reg) readl(cpg->reg + _reg)
++
++/*
++ * Reset register definitions.
++ */
++#define MODEMR 0xe6160060
++
++static u32 rcar_gen3_read_mode_pins(void)
 +{
-+	struct dma_map_ops *ops = get_dma_ops(dev);
++	static u32 mode;
++	static bool mode_valid;
 +
-+	if (!ops)
-+		return 0;
-+	if (!ops->dma_supported)
-+		return 1;
-+	return ops->dma_supported(dev, mask);
++	if (!mode_valid) {
++		void __iomem *modemr = ioremap_nocache(MODEMR, 4);
++
++		BUG_ON(!modemr);
++		mode = ioread32(modemr);
++		iounmap(modemr);
++		mode_valid = true;
++	}
++
++	return mode;
 +}
-+#endif
 +
- #endif
--- 
-1.9.1
-
++/* -----------------------------------------------------------------------------
++ * CPG Clock Data
++ */
++
++/*
++ *   MD		EXTAL		PLL0	PLL1	PLL2	PLL3	PLL4
++ * 14 13 19 17	(MHz)		*1	*1	*1
++ *-------------------------------------------------------------------
++ * 0  0  0  0	16.66 x 1	x180/2	x192/2	x144/2	x192	x144
++ * 0  0  0  1	16.66 x 1	x180/2	x192/2	x144/2	x128	x144
++ * 0  0  1  0	Prohibited setting
++ * 0  0  1  1	16.66 x 1	x180/2	x192/2	x144/2	x192	x144
++ * 0  1  0  0	20    x 1	x150/2	x156/2	x120/2	x156	x120
++ * 0  1  0  1	20    x 1	x150/2	x156/2	x120/2	x106	x120
++ * 0  1  1  0	Prohibited setting
++ * 0  1  1  1	20    x 1	x150/2	x156/2	x120/2	x156	x120
++ * 1  0  0  0	25    x 1	x120/2	x128/2	x96/2	x128	x96
++ * 1  0  0  1	25    x 1	x120/2	x128/2	x96/2	x84	x96
++ * 1  0  1  0	Prohibited setting
++ * 1  0  1  1	25    x 1	x120/2	x128/2	x96/2	x128	x96
++ * 1  1  0  0	33.33 / 2	x180/2	x192/2	x144/2	x192	x144
++ * 1  1  0  1	33.33 / 2	x180/2	x192/2	x144/2	x128	x144
++ * 1  1  1  0	Prohibited setting
++ * 1  1  1  1	33.33 / 2	x180/2	x192/2	x144/2	x192	x144
++ *
++ * *1 : datasheet indicates VCO output (PLLx = VCO/2)
++ *
++ */
++#define CPG_PLL_CONFIG_INDEX(md)	((((md) & BIT(14)) >> 11) | \
++					 (((md) & BIT(13)) >> 11) | \
++					 (((md) & BIT(19)) >> 18) | \
++					 (((md) & BIT(17)) >> 17))
++struct cpg_pll_config {
++	unsigned int extal_div;
++	unsigned int pll1_mult;
++	unsigned int pll3_mult;
++	unsigned int pll4_mult;
++};
++
++static const struct cpg_pll_config cpg_pll_configs[16] __initconst = {
++/* EXTAL div	PLL1	PLL3	PLL4 */
++	{ 1,	192,	192,	144, },
++	{ 1,	192,	128,	144, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	192,	192,	144, },
++	{ 1,	156,	156,	120, },
++	{ 1,	156,	106,	120, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	156,	156,	120, },
++	{ 1,	128,	128,	96,  },
++	{ 1,	128,	84,	96,  },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	128,	128,	96,  },
++	{ 2,	192,	192,	144, },
++	{ 2,	192,	128,	144, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 2,	192,	192,	144, },
++};
++
++/* -----------------------------------------------------------------------------
++ * Initialization
++ */
++
++static struct clk * __init
++rcar_gen3_cpg_register_clock(struct device_node *np, struct rcar_gen3_cpg *cpg,
++			     const struct cpg_pll_config *config,
++			     unsigned int gen3_clk)
++{
++	const char *parent_name = rcar_gen3_clk_names[RCAR_GEN3_CLK_MAIN];
++	unsigned int mult = 1;
++	unsigned int div = 1;
++	u32 value;
++
++	switch (gen3_clk) {
++	case RCAR_GEN3_CLK_MAIN:
++		parent_name = of_clk_get_parent_name(np, 0);
++		div = config->extal_div;
++		break;
++	case RCAR_GEN3_CLK_PLL0:
++		/* PLL0 is a configurable multiplier clock. Register it as a
++		 * fixed factor clock for now as there's no generic multiplier
++		 * clock implementation and we currently have no need to change
++		 * the multiplier value.
++		 */
++		value = rcar_clk_readl(cpg, CPG_PLL0CR);
++		mult = ((value >> 24) & ((1 << 7) - 1)) + 1;
++		break;
++	case RCAR_GEN3_CLK_PLL1:
++		mult = config->pll1_mult / 2;
++		break;
++	case RCAR_GEN3_CLK_PLL2:
++		/* PLL2 is a configurable multiplier clock. Register it as a
++		 * fixed factor clock for now as there's no generic multiplier
++		 * clock implementation and we currently have no need to change
++		 * the multiplier value.
++		 */
++		value = rcar_clk_readl(cpg, CPG_PLL2CR);
++		mult = ((value >> 24) & ((1 << 7) - 1)) + 1;
++		break;
++	case RCAR_GEN3_CLK_PLL3:
++		mult = config->pll3_mult;
++		break;
++	case RCAR_GEN3_CLK_PLL4:
++		mult = config->pll4_mult;
++		break;
++	default:
++		return ERR_PTR(-EINVAL);
++	}
++
++	return clk_register_fixed_factor(NULL, rcar_gen3_clk_names[gen3_clk],
++					 parent_name, 0, mult, div);
++}
++
++static void __init rcar_gen3_cpg_clocks_init(struct device_node *np)
++{
++	const struct cpg_pll_config *config;
++	struct rcar_gen3_cpg *cpg;
++	struct clk **clks;
++	u32 cpg_mode;
++	unsigned int i;
++	int num_clks;
++
++	cpg_mode = rcar_gen3_read_mode_pins();
++
++	num_clks = of_property_count_strings(np, "clock-indices");
++	if (num_clks < 0) {
++		pr_err("%s: failed to count clocks\n", __func__);
++		return;
++	}
++
++	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
++	clks = kcalloc(num_clks, sizeof(*clks), GFP_KERNEL);
++	if (cpg = NULL || clks = NULL) {
++		kfree(cpg);
++		kfree(clks);
++		pr_err("%s: failed to allocate cpg\n", __func__);
++		return;
++	}
++
++	spin_lock_init(&cpg->lock);
++
++	cpg->data.clks = clks;
++	cpg->data.clk_num = num_clks;
++
++	cpg->reg = of_iomap(np, 0);
++	if (WARN_ON(cpg->reg = NULL))
++		return;
++
++	config = &cpg_pll_configs[CPG_PLL_CONFIG_INDEX(cpg_mode)];
++	if (!config->extal_div) {
++		pr_err("%s: Prohibited setting (cpg_mode=0x%x)\n",
++		       __func__, cpg_mode);
++		return;
++	}
++
++	for (i = 0; i < num_clks; ++i) {
++		struct clk *clk;
++		u32 idx;
++		int ret;
++
++		ret = of_property_read_u32_index(np, "clock-indices", i, &idx);
++		if (ret < 0)
++			break;
++
++		clk = rcar_gen3_cpg_register_clock(np, cpg, config, idx);
++		if (IS_ERR(clk))
++			pr_err("%s: failed to register %s %u clock (%ld)\n",
++			       __func__, np->name, idx, PTR_ERR(clk));
++		else
++			cpg->data.clks[idx] = clk;
++	}
++
++	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++}
++CLK_OF_DECLARE(rcar_gen3_cpg_clks, "renesas,rcar-gen3-cpg-clocks",
++	       rcar_gen3_cpg_clocks_init);
