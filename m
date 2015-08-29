@@ -1,45 +1,59 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 26 Aug 2015 23:31:41 +0000
-Subject: Re: [PATCH v2] clk: shmobile: Get rid of CONFIG_SHMOBILE_MULTI
-Message-Id: <20150826233139.GB22263@verge.net.au>
+From: Rob Herring <robh@kernel.org>
+Date: Sat, 29 Aug 2015 23:01:23 +0000
+Subject: [RESEND PATCH v3 3/5] sh: kill off set_irq_flags usage
+Message-Id: <1440889285-5637-4-git-send-email-robh@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150826074309.4298.76147.sendpatchset@little-apple>
- <CAMuHMdVXJ8Te_Rwn2WZCdXdh_+0__S6QEp7ZBzggpY-UgqtqLA@mail.gmail.com>
- <CANqRtoS-OvQKQZE1-wEnweeZaNqXVtQb3atJ1Fy+D1=Tt-b=XQ@mail.gmail.com>
-In-Reply-To: <CANqRtoS-OvQKQZE1-wEnweeZaNqXVtQb3atJ1Fy+D1=Tt-b=XQ@mail.gmail.com>
+References: <1440889285-5637-1-git-send-email-robh@kernel.org>
+In-Reply-To: <1440889285-5637-1-git-send-email-robh@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, linux-clk <linux-clk@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>, Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Aug 26, 2015 at 04:56:47PM +0900, Magnus Damm wrote:
-> Hi Geert,
-> 
-> On Wed, Aug 26, 2015 at 4:48 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
-> > On Wed, Aug 26, 2015 at 9:43 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> >> From: Magnus Damm <damm+renesas@opensource.se>
-> >>
-> >> Shmobile is all multiplatform these days, so get rid of the
-> >> reference to CONFIG_ARCH_SHMOBILE_MULTI. Also instead of always
-> >> enabling DIV6 and MSTP adjust the Makefile to enable DIV6 and
-> >> MSTP depending on if they are included in the SoC or not.
-> >>
-> >> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> >> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >> ---
-> >>
-> >>  Changes since V1:
-> >>  - dropped DIV6 from R-Car Gen1 variants - thanks Geert!
-> >
-> > BTW, you forgot to mention, but it's important for Mike and Stephen to
-> > know that this should not be queued up in a branch that still has
-> > ARCH_SHMOBILE_LEGACY.
-> 
-> Right, we need to sync with the mach-shmobile integration merge order
-> with stuff from Simon. I believe the remaining legacy cleanups are
-> targeted for v4.4. So merging this in v4.4 or later would be good.
+set_irq_flags is ARM specific with custom flags which have genirq
+equivalents. Convert drivers to use the genirq interfaces directly, so we
+can kill off set_irq_flags. The translation of flags is as follows:
 
-Yes, the remaining legacy cleanups are queued up in my renesas tree for
-v4.4.
+IRQF_VALID -> !IRQ_NOREQUEST
+IRQF_PROBE -> !IRQ_NOPROBE
+IRQF_NOAUTOEN -> IRQ_NOAUTOEN
+
+For IRQs managed by an irqdomain, the irqdomain core code handles clearing
+and setting IRQ_NOREQUEST already, so there is no need to do this in
+.map() functions and we can simply remove the set_irq_flags calls. Some
+users also modify IRQ_NOPROBE and this has been maintained although it
+is not clear that is really needed. There appears to be a great deal of
+blind copy and paste of this code.
+
+Signed-off-by: Rob Herring <robh@kernel.org>
+Acked-by: Simon Horman <horms@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org
+---
+ drivers/sh/intc/internals.h | 10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
+
+diff --git a/drivers/sh/intc/internals.h b/drivers/sh/intc/internals.h
+index 7dff08e..6ce7f0d 100644
+--- a/drivers/sh/intc/internals.h
++++ b/drivers/sh/intc/internals.h
+@@ -99,15 +99,7 @@ static inline struct intc_desc_int *get_intc_desc(unsigned int irq)
+  */
+ static inline void activate_irq(int irq)
+ {
+-#ifdef CONFIG_ARM
+-	/* ARM requires an extra step to clear IRQ_NOREQUEST, which it
+-	 * sets on behalf of every irq_chip.  Also sets IRQ_NOPROBE.
+-	 */
+-	set_irq_flags(irq, IRQF_VALID);
+-#else
+-	/* same effect on other architectures */
+-	irq_set_noprobe(irq);
+-#endif
++	irq_modify_status(irq, IRQ_NOREQUEST, IRQ_NOPROBE);
+ }
+ 
+ static inline int intc_handle_int_cmp(const void *a, const void *b)
+-- 
+2.1.4
+
