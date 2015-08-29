@@ -1,86 +1,37 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 25 Aug 2015 07:07:33 +0000
-Subject: Re: [PATCH v2 01/07] devicetree: bindings: Renesas APMU and SMP Enable method
-Message-Id: <CAMuHMdX5Cr0Ck02j=_19oTmdwQtZRu-UFE5PNLP3MHcX0kxg7A@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 29 Aug 2015 09:14:07 +0000
+Subject: [PATCH v4 04/05] clk: shmobile: Add r8a7795 SoC to MSTP bindings
+Message-Id: <20150829091407.28546.23953.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150823072427.14156.1960.sendpatchset@little-apple>
-	<20150823072439.14156.96621.sendpatchset@little-apple>
-	<20008630.OlgzF7YJEU@avalon>
-	<CANqRtoQkmy9JKe6B=QjiNDdFenVukO8zvSDz8NNtWCL-g6zqRQ@mail.gmail.com>
-In-Reply-To: <CANqRtoQkmy9JKe6B=QjiNDdFenVukO8zvSDz8NNtWCL-g6zqRQ@mail.gmail.com>
+References: <20150829091323.28546.28287.sendpatchset@little-apple>
+In-Reply-To: <20150829091323.28546.28287.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Mark Rutland <mark.rutland@arm.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>, =?UTF-8?B?5bCP5p6X5pWs5aSq?= <keita.kobayashi.ym@renesas.com>, "Simon Horman [Horms]" <horms@verge.net.au>
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-Hi Magnus, Laurent,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Tue, Aug 25, 2015 at 6:11 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> On Tue, Aug 25, 2015 at 3:25 AM, Laurent Pinchart
-> <laurent.pinchart@ideasonboard.com> wrote:
->>> --- /dev/null
->>> +++ work/Documentation/devicetree/bindings/power/renesas,apmu.txt
->> 2015-05-20
->>> 22:39:34.872366518 +0900 @@ -0,0 +1,31 @@
->>> +DT bindings for the Renesas Advanced Power Management Unit
->>> +
->>> +Renesas R-Car line of SoCs utilize one or more APMU hardware units
->>> +for CPU core power domain control including SMP boot and CPU Hotplug.
->>> +
->>> +Required properties:
->>> +
->>> +- compatible: Should be "renesas,apmu-<soctype>", "renesas,apmu" as
->>> fallback.
->>> +           Examples with soctypes are:
->>> +             - "renesas,apmu-r8a7790" (R-Car H2)
->>> +             - "renesas,apmu-r8a7791" (R-Car M2-W)
->>> +             - "renesas,apmu-r8a7792" (R-Car V2H)
->>> +             - "renesas,apmu-r8a7793" (R-Car M2-N)
->>> +             - "renesas,apmu-r8a7794" (R-Car E2)
->>> +
->>> +- reg: Base address and length of the I/O registers used by the APMU.
->>> +
->>> +- cpus: This node contains a list of CPU cores, which should match the
->>> order
->>> +  of CPU cores used by the WUPCR and PSTR registers in the Advanced Power
->>> +  Management Until section of the device's datasheet.
->>> +
->>> +
->>> +Example:
->>> +
->>> +This shows the r8a7791 APMU that can control CPU0 and CPU1.
->>> +
->>> +     apmu@e6152000 {
->>> +             compatible = "renesas,apmu-r8a7791", "renesas,apmu";
->>> +             reg = <0 0xe6152000 0 0x188>;
->>
->> Are the CA7 and CA15 APMUs identical ? If not you won't be able to instantiate
->> two APMU nodes, and it might be better to span the whole registers range of
->> both CA7 and CA15.
+Add r8a7795 to the MSTP DT binding documentation.
 
-That complicates the (alternative solution to the) "cpus" property.
-Now you have two of them, in two separate nodes, for CA15 vs. CA7 on H2,
-and CA57 vs. CA53 on H3.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-You can merge the nodes, but you can't easily merge the "cpus" property,
-as they relate to two different registers.
+ Changes since V3: (Magnus Damm <damm+renesas@opensource.se>)
+ - Picked up patch floating around on ML, added change log
 
-> I believe they are identical, but now when you mention it I should
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt |    1 +
+ 1 file changed, 1 insertion(+)
 
-I was also under the impression they're identical...
-
-> really double check!
-
-Let's wait and see...
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--- 0001/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ work/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt	2015-08-29 16:18:30.672366518 +0900
+@@ -19,6 +19,7 @@ Required Properties:
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2-W) MSTP gate clocks
+     - "renesas,r8a7793-mstp-clocks" for R8A7793 (R-Car M2-N) MSTP gate clocks
+     - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
++    - "renesas,r8a7795-mstp-clocks" for R8A7795 (R-Car H3) MSTP gate clocks
+     - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
+     and "renesas,cpg-mstp-clocks" as a fallback.
+   - reg: Base address and length of the I/O mapped registers used by the MSTP
