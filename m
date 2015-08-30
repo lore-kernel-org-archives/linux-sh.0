@@ -1,113 +1,11 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 04 Aug 2015 12:28:05 +0000
-Subject: [PATCH v4 04/16] clk: shmobile: rcar-gen2: Add CPG/MSTP Clock Domain support
-Message-Id: <1438691297-29235-5-git-send-email-geert+renesas@glider.be>
+From: <jerryfunds3@unitedfunds.onmicrosoft.com>
+Date: Sun, 30 Aug 2015 02:12:10 +0000
+Subject: 
+Message-Id: <SG2PR02MB0778E37675138276EDBB7733B86C0@SG2PR02MB0778.apcprd02.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add Clock Domain support to the R-Car Gen2 Clock Pulse Generator (CPG)
-driver using the generic PM Domain.  This allows to power-manage the
-module clocks of SoC devices that are part of the CPG/MSTP Clock Domain
-using Runtime PM, or for system suspend/resume.
-
-SoC devices that are part of the CPG/MSTP Clock Domain and can be
-power-managed through an MSTP clock should be tagged in DT with a proper
-"power-domains" property.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Stephen Boyd <sboyd@codeaurora.org>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
----
-v4:
-  - Add Reviewed-by,
-
-v3:
-  - Add Acked-by,
-  - Use "CPG/MSTP Clock Domain" instead of "CPG Clock Domain",
-
-v2:
-  - Add Acked-by and Reviewed-by,
-  - Move core CPG Clock Domain code from the R-Car Gen2 driver to the
-    CPG MSTP Clocks driver, as it's generic, and can be used on other
-    Renesas SoCs that have a CPG/MSTP block,
-  - Scan for an MSTP clock instead of using the first clock tied to the
-    device (con_id NULL),
-  - Extract R-Car Gen2 specifics from "[PATCH/RFC 1/5] clk: shmobile:
-    rcar-gen2: Add CPG Clock Domain support" into this patch.
----
- .../clock/renesas,rcar-gen2-cpg-clocks.txt         | 26 ++++++++++++++++++++--
- drivers/clk/shmobile/clk-rcar-gen2.c               |  2 ++
- 2 files changed, 26 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-index 56f111bd3e456619..2a9a8edc8f3547b0 100644
---- a/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-+++ b/Documentation/devicetree/bindings/clock/renesas,rcar-gen2-cpg-clocks.txt
-@@ -2,6 +2,8 @@
- 
- The CPG generates core clocks for the R-Car Gen2 SoCs. It includes three PLLs
- and several fixed ratio dividers.
-+The CPG also provides a Clock Domain for SoC devices, in combination with the
-+CPG Module Stop (MSTP) Clocks.
- 
- Required Properties:
- 
-@@ -20,10 +22,18 @@ Required Properties:
-   - clock-output-names: The names of the clocks. Supported clocks are "main",
-     "pll0", "pll1", "pll3", "lb", "qspi", "sdh", "sd0", "sd1", "z", "rcan", and
-     "adsp"
-+  - #power-domain-cells: Must be 0
- 
-+SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
-+through an MSTP clock should refer to the CPG device node in their
-+"power-domains" property, as documented by the generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
- 
--Example
---------
-+
-+Examples
-+--------
-+
-+  - CPG device node:
- 
- 	cpg_clocks: cpg_clocks@e6150000 {
- 		compatible = "renesas,r8a7790-cpg-clocks",
-@@ -34,4 +44,16 @@ Example
- 		clock-output-names = "main", "pll0, "pll1", "pll3",
- 				     "lb", "qspi", "sdh", "sd0", "sd1", "z",
- 				     "rcan", "adsp";
-+		#power-domain-cells = <0>;
-+	};
-+
-+
-+  - CPG/MSTP Clock Domain member device node:
-+
-+	thermal@e61f0000 {
-+		compatible = "renesas,thermal-r8a7790", "renesas,rcar-thermal";
-+		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
-+		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks R8A7790_CLK_THERMAL>;
-+		power-domains = <&cpg_clocks>;
- 	};
-diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
-index 9233ebf8cc49f933..745496f7ee9c7402 100644
---- a/drivers/clk/shmobile/clk-rcar-gen2.c
-+++ b/drivers/clk/shmobile/clk-rcar-gen2.c
-@@ -415,6 +415,8 @@ static void __init rcar_gen2_cpg_clocks_init(struct device_node *np)
- 	}
- 
- 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-+
-+	cpg_mstp_add_clk_domain(np);
- }
- CLK_OF_DECLARE(rcar_gen2_cpg_clks, "renesas,rcar-gen2-cpg-clocks",
- 	       rcar_gen2_cpg_clocks_init);
--- 
-1.9.1
-
+We Give Out Loans For 3% Interest Rate And We Offer Loans From $5,000 To $50,000,000.00, Are You Looking To Buy A House Car Or Company Or Start Up A Truck Company or Buy A Truck Or Personal Loans, Email Us At j.funds2000000@inbox.lv  With Amount Needed And Phone Number.
