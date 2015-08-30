@@ -1,80 +1,119 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 26 Aug 2015 18:02:21 +0000
-Subject: [PATCH 2/5] pinctrl: sh-pfc: r8a7795: Extend SCIF2 pin data
-Message-Id: <1440612144-16877-3-git-send-email-geert+renesas@glider.be>
+From: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
+Date: Sun, 30 Aug 2015 03:06:12 +0000
+Subject: [PATCH v8 01/55] [media] media: create a macro to get entity ID
+Message-Id: <6185117c4ad70fd3e1c780689e0ad2407fdf1294.1440902901.git.mchehab@osg.samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440612144-16877-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440612144-16877-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1440902901.git.mchehab@osg.samsung.com>
+In-Reply-To: <cover.1440902901.git.mchehab@osg.samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Takeshi Kihara <takeshi.kihara.df@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Linux Media Mailing List <linux-media@vger.kernel.org>
+Cc: Mauro Carvalho Chehab <mchehab@osg.samsung.com>, Mauro Carvalho Chehab <mchehab@infradead.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-sh@vger.kernel.org
 
-Add missing alternative data pins.
+Instead of accessing directly entity.id, let's create a macro,
+as this field will be moved into a common struct later on.
 
-Note that this renames "scif2_data" to "scif2_data_a", and thus requires
-a DTS update.
+Signed-off-by: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
+Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 17 +++++++++++++----
- 1 file changed, 13 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-index 459929d215f9b8aa..83cce48da9f928b7 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-@@ -2288,11 +2288,11 @@ static const unsigned int scif1_data_b_mux[] = {
- 	RX1_B_MARK, TX1_B_MARK,
- };
- /* - SCIF2 ------------------------------------------------------------------ */
--static const unsigned int scif2_data_pins[] = {
-+static const unsigned int scif2_data_a_pins[] = {
- 	/* RX, TX */
- 	RCAR_GP_PIN(5, 11), RCAR_GP_PIN(5, 10),
- };
--static const unsigned int scif2_data_mux[] = {
-+static const unsigned int scif2_data_a_mux[] = {
- 	RX2_A_MARK, TX2_A_MARK,
- };
- static const unsigned int scif2_clk_pins[] = {
-@@ -2302,6 +2302,13 @@ static const unsigned int scif2_clk_pins[] = {
- static const unsigned int scif2_clk_mux[] = {
- 	SCK2_MARK,
- };
-+static const unsigned int scif2_data_b_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(5, 15), RCAR_GP_PIN(5, 16),
-+};
-+static const unsigned int scif2_data_b_mux[] = {
-+	RX2_B_MARK, TX2_B_MARK,
-+};
- /* - SCIF3 ------------------------------------------------------------------ */
- static const unsigned int scif3_data_a_pins[] = {
- 	/* RX, TX */
-@@ -2793,8 +2800,9 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(scif1_clk),
- 	SH_PFC_PIN_GROUP(scif1_ctrl),
- 	SH_PFC_PIN_GROUP(scif1_data_b),
--	SH_PFC_PIN_GROUP(scif2_data),
-+	SH_PFC_PIN_GROUP(scif2_data_a),
- 	SH_PFC_PIN_GROUP(scif2_clk),
-+	SH_PFC_PIN_GROUP(scif2_data_b),
- 	SH_PFC_PIN_GROUP(scif3_data_a),
- 	SH_PFC_PIN_GROUP(scif3_clk),
- 	SH_PFC_PIN_GROUP(scif3_ctrl),
-@@ -2992,8 +3000,9 @@ static const char * const scif1_groups[] = {
- };
+diff --git a/drivers/media/media-device.c b/drivers/media/media-device.c
+index c55ab5029323..e429605ca2c3 100644
+--- a/drivers/media/media-device.c
++++ b/drivers/media/media-device.c
+@@ -77,8 +77,8 @@ static struct media_entity *find_entity(struct media_device *mdev, u32 id)
+ 	spin_lock(&mdev->lock);
  
- static const char * const scif2_groups[] = {
--	"scif2_data",
-+	"scif2_data_a",
- 	"scif2_clk",
-+	"scif2_data_b",
- };
+ 	media_device_for_each_entity(entity, mdev) {
+-		if ((entity->id = id && !next) ||
+-		    (entity->id > id && next)) {
++		if (((media_entity_id(entity) = id) && !next) ||
++		    ((media_entity_id(entity) > id) && next)) {
+ 			spin_unlock(&mdev->lock);
+ 			return entity;
+ 		}
+@@ -104,7 +104,7 @@ static long media_device_enum_entities(struct media_device *mdev,
+ 	if (ent = NULL)
+ 		return -EINVAL;
  
- static const char * const scif3_groups[] = {
+-	u_ent.id = ent->id;
++	u_ent.id = media_entity_id(ent);
+ 	if (ent->name)
+ 		strlcpy(u_ent.name, ent->name, sizeof(u_ent.name));
+ 	u_ent.type = ent->type;
+@@ -122,7 +122,7 @@ static long media_device_enum_entities(struct media_device *mdev,
+ static void media_device_kpad_to_upad(const struct media_pad *kpad,
+ 				      struct media_pad_desc *upad)
+ {
+-	upad->entity = kpad->entity->id;
++	upad->entity = media_entity_id(kpad->entity);
+ 	upad->index = kpad->index;
+ 	upad->flags = kpad->flags;
+ }
+diff --git a/drivers/media/media-entity.c b/drivers/media/media-entity.c
+index 949e5f92cbdc..cb0ac4e0dfa5 100644
+--- a/drivers/media/media-entity.c
++++ b/drivers/media/media-entity.c
+@@ -140,10 +140,10 @@ void media_entity_graph_walk_start(struct media_entity_graph *graph,
+ 	graph->stack[graph->top].entity = NULL;
+ 	bitmap_zero(graph->entities, MEDIA_ENTITY_ENUM_MAX_ID);
+ 
+-	if (WARN_ON(entity->id >= MEDIA_ENTITY_ENUM_MAX_ID))
++	if (WARN_ON(media_entity_id(entity) >= MEDIA_ENTITY_ENUM_MAX_ID))
+ 		return;
+ 
+-	__set_bit(entity->id, graph->entities);
++	__set_bit(media_entity_id(entity), graph->entities);
+ 	stack_push(graph, entity);
+ }
+ EXPORT_SYMBOL_GPL(media_entity_graph_walk_start);
+@@ -184,11 +184,11 @@ media_entity_graph_walk_next(struct media_entity_graph *graph)
+ 
+ 		/* Get the entity in the other end of the link . */
+ 		next = media_entity_other(entity, link);
+-		if (WARN_ON(next->id >= MEDIA_ENTITY_ENUM_MAX_ID))
++		if (WARN_ON(media_entity_id(next) >= MEDIA_ENTITY_ENUM_MAX_ID))
+ 			return NULL;
+ 
+ 		/* Has the entity already been visited? */
+-		if (__test_and_set_bit(next->id, graph->entities)) {
++		if (__test_and_set_bit(media_entity_id(next), graph->entities)) {
+ 			link_top(graph)++;
+ 			continue;
+ 		}
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index 17f08973f835..debe4e539df6 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -352,10 +352,10 @@ static int vsp1_pipeline_validate_branch(struct vsp1_pipeline *pipe,
+ 			break;
+ 
+ 		/* Ensure the branch has no loop. */
+-		if (entities & (1 << entity->subdev.entity.id))
++		if (entities & (1 << media_entity_id(&entity->subdev.entity)))
+ 			return -EPIPE;
+ 
+-		entities |= 1 << entity->subdev.entity.id;
++		entities |= 1 << media_entity_id(&entity->subdev.entity);
+ 
+ 		/* UDS can't be chained. */
+ 		if (entity->type = VSP1_ENTITY_UDS) {
+diff --git a/include/media/media-entity.h b/include/media/media-entity.h
+index 8b21a4d920d9..0a66fc225559 100644
+--- a/include/media/media-entity.h
++++ b/include/media/media-entity.h
+@@ -113,6 +113,11 @@ static inline u32 media_entity_subtype(struct media_entity *entity)
+ 	return entity->type & MEDIA_ENT_SUBTYPE_MASK;
+ }
+ 
++static inline u32 media_entity_id(struct media_entity *entity)
++{
++	return entity->id;
++}
++
+ #define MEDIA_ENTITY_ENUM_MAX_DEPTH	16
+ #define MEDIA_ENTITY_ENUM_MAX_ID	64
+ 
 -- 
-1.9.1
+2.4.3
 
