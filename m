@@ -1,42 +1,35 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 24 Aug 2015 16:09:34 +0000
-Subject: [PATCH 0/3] arm64: renesas: r8a7795/salvator-x extal clock override
-Message-Id: <1440432577-9767-1-git-send-email-geert+renesas@glider.be>
+From: <>
+Date: Mon, 31 Aug 2015 19:15:42 +0000
+Subject: Re: Do you need a loan?
+Message-Id: <SIXPR02MB062114AAF7A873FCB8209FC5B86B0@SIXPR02MB0621.apcprd02.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-	Hi,
+We offer private, commercial and personal loans with very low annualinterest rates as low as 2% in one year to 50 years repayment period anywhere in the world. We offer loans ranging from $5000 to $100 million. Our loans are well insured for maximum security is our priority. Are you losing sleep at night worrying how to get a legitimate loan lender? You bite your nails that fast? Instead of beating you, contact JM Financial Services Ltd now, specialists who help stop loans bad credit history to find a solution that victory is our mission. Applicants must fill out a loan application form below:
 
-This patch series overrides the clock frequency and accuracy of the
-external crystal oscillator. Without this all clocks have a rate of
-zero.  This can be verified using "cat
-/sys/kernel/debug/clk/clk_summary".
+FORM credit application
 
-This is against "[PATCH 00/25 v7][RFC] arm64: Renesas Gen3 initial
-patch".
+loan applications
+Your full name *
+Your e-mail *
+Your phone *
+Your address *
+Your city *
+State / Province *
+Country *
+Fax*
+Date of birth *
+Do you have an account? *
+Have you applied before? *
+The loan amount is needed *
+The Loan Duration*
+The life expectancy *
+The purpose of the loan *
+Send me a scanned copy of your passport: *
 
-Geert Uytterhoeven (3):
-  arm64: renesas: r8a7795 dtsi: Rename extal clock node
-  arm64: renesas: r8a7795 dtsi: Extal clock must be overridden
-  arm64: renesas: salvator-x: Add missing extal clock override
-
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 5 +++++
- arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 3 ++-
- 2 files changed, 7 insertions(+), 1 deletion(-)
-
--- 
-1.9.1
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+Creditor: Mr. Prakash Lass Dickson.
+Company: JM Financial Services Ltd.
+Copyright JM Financial Ltd. All rights reserved.
