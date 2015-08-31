@@ -1,51 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 25 Aug 2015 00:13:41 +0000
-Subject: Re: [PATCH 01/25 v7][RFC] clk: shmobile: add Renesas R-Car Gen3 CPG support
-Message-Id: <87twro6xf2.wl%kuninori.morimoto.gx@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 31 Aug 2015 15:36:41 +0000
+Subject: [PATCH 3/3] arm64: defconfig: Enable GPIO of Renesas R-Car Gen3 SoC
+Message-Id: <1441035401-5843-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r3mt77ek.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87r3mt77ek.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 
-Hi Geert
+Enable GPIO for  Renesas R-Car Gen3 SoC.
 
-> > +/*
-> > + *   MD                EXTAL           PLL0    PLL1    PLL2    PLL3    PLL4
-> > + * 14 13 19 17 (MHz)           *1      *1      *1
-> > + *-------------------------------------------------------------------
-> > + * 0  0  0  0  16.66 x 1       x180/2  x192/2  x144/2  x192    x144
-> > + * 0  0  0  1  16.66 x 1       x180/2  x192/2  x144/2  x128    x144
-> > + * 0  0  1  0  Prohibited setting
-> > + * 0  0  1  1  16.66 x 1       x180/2  x192/2  x144/2  x192    x144
-> > + * 0  1  0  0  20    x 1       x150/2  x156/2  x120/2  x156    x120
-> > + * 0  1  0  1  20    x 1       x150/2  x156/2  x120/2  x106    x120
-> > + * 0  1  1  0  Prohibited setting
-> > + * 0  1  1  1  20    x 1       x150/2  x156/2  x120/2  x156    x120
-> > + * 1  0  0  0  25    x 1       x120/2  x128/2  x96/2   x128    x96
-> > + * 1  0  0  1  25    x 1       x120/2  x128/2  x96/2   x84     x96
-> > + * 1  0  1  0  Prohibited setting
-> > + * 1  0  1  1  25    x 1       x120/2  x128/2  x96/2   x128    x96
-> > + * 1  1  0  0  33.33 / 2       x180/2  x192/2  x144/2  x192    x144
-> > + * 1  1  0  1  33.33 / 2       x180/2  x192/2  x144/2  x128    x144
-> > + * 1  1  1  0  Prohibited setting
-> > + * 1  1  1  1  33.33 / 2       x180/2  x192/2  x144/2  x192    x144
-> > + *
-> > + * *1 : datasheet indicates VCO output (PLLx = VCO/2)
-> 
-> Do we want to have "pll1" output half the frequency of "PLL1"?
-> While most dividers are fed by "PLL1/2", "RPCSRC" is fed by "PLL1".
-> 
-> On Gen2 we had "pll1_div2_clk" in DT.
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+[horms: only enable GPIO_RCAR]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm64/configs/defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-This was very un-understandable point of datasheet.
-as *1 mentioned, it is VCO/2, not PLL1/2
-Next datasheet will update this un-understandable explain.
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index dccc685..d994638 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -125,6 +125,7 @@ CONFIG_SPI=y
+ CONFIG_SPI_PL022=y
+ CONFIG_PINCTRL_MSM8916=y
+ CONFIG_GPIO_PL061=y
++CONFIG_GPIO_RCAR=y
+ CONFIG_GPIO_XGENE=y
+ CONFIG_POWER_RESET_XGENE=y
+ CONFIG_POWER_RESET_SYSCON=y
+-- 
+2.4.6
 
-# Because these patch-set are based on this CPG driver,
-# it doesn't indicate "Local" on Subject, but my understanding is that
-# this patch (= CPG + MSTP ?) will be updated by Geert ?
-# This patch is not cleanly created
