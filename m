@@ -1,43 +1,94 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 07 Aug 2015 03:18:44 +0000
-Subject: [PATCH 12/16 v5][RFC] Local: Hack: remove pm_sysrq_init
-Message-Id: <87r3nfdc1j.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 31 Aug 2015 12:49:38 +0000
+Subject: [PATCH v5 05/05] clk: shmobile: Make MSTP clock-output-names optional
+Message-Id: <20150831124938.31057.21553.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150831124842.31057.54534.sendpatchset@little-apple>
+In-Reply-To: <20150831124842.31057.54534.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-From: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-In initial H3 environment, psci/pm/suspend is not supported.
-When primary cpu was booted, pm_sysrq_init() is not initialized.
-So remove this function as temporary fix.
+This patch updates the MSTP driver to make the "clock-output-names"
+DT property optional instead of mandatory. In case the DT property
+is omitted then the function clk_register_clkdev() is skipped.
 
-Signed-off-by: Yoshifumi Hosoya <yoshifumi.hosoya.wj@renesas.com>
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+The default for new SoCs is to not use "clock-output-names".
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-v4 -> v5
 
- - no change
+ Changes since V4:
+ - None
 
- kernel/power/poweroff.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ Changes since V3:
+ - Added support for multiple MSTP bits. =)
 
-diff --git a/kernel/power/poweroff.c b/kernel/power/poweroff.c
-index 7ef6866..3f7ba43 100644
---- a/kernel/power/poweroff.c
-+++ b/kernel/power/poweroff.c
-@@ -39,7 +39,7 @@ static struct sysrq_key_op	sysrq_poweroff_op = {
+ drivers/clk/shmobile/clk-mstp.c |   28 +++++++++++++++++++---------
+ 1 file changed, 19 insertions(+), 9 deletions(-)
+
+--- 0001/drivers/clk/shmobile/clk-mstp.c
++++ work/drivers/clk/shmobile/clk-mstp.c	2015-08-29 18:01:00.662366518 +0900
+@@ -199,26 +199,29 @@ static void __init cpg_mstp_clocks_init(
+ 	for (i = 0; i < MSTP_MAX_CLOCKS; ++i) {
+ 		const char *parent_name;
+ 		const char *name;
++		bool allocated_name;
+ 		u32 clkidx;
+ 		int ret;
  
- static int __init pm_sysrq_init(void)
- {
--	register_sysrq_key('o', &sysrq_poweroff_op);
-+//	register_sysrq_key('o', &sysrq_poweroff_op);
- 	return 0;
- }
+-		/* Skip clocks with no name. */
+-		ret = of_property_read_string_index(np, "clock-output-names",
+-						    i, &name);
+-		if (ret < 0 || strlen(name) = 0)
+-			continue;
+-
+ 		parent_name = of_clk_get_parent_name(np, i);
+ 		ret = of_property_read_u32_index(np, idxname, i, &clkidx);
+ 		if (parent_name = NULL || ret < 0)
+ 			break;
  
--- 
-1.9.1
-
+ 		if (clkidx >= MSTP_MAX_CLOCKS) {
+-			pr_err("%s: invalid clock %s %s index %u)\n",
+-			       __func__, np->name, name, clkidx);
++			pr_err("%s: invalid clock %s index %u)\n",
++			       __func__, np->name, clkidx);
+ 			continue;
+ 		}
+ 
++		if (of_property_read_string_index(np, "clock-output-names",
++						  i, &name) = 0) {
++			allocated_name = false;
++		} else {
++			name = kasprintf(GFP_KERNEL, "%s.%u", np->name, clkidx);
++			allocated_name = true;
++		}
++
+ 		clks[clkidx] = cpg_mstp_clock_register(name, parent_name,
+ 						       clkidx, group);
+ 		if (!IS_ERR(clks[clkidx])) {
+@@ -231,12 +234,19 @@ static void __init cpg_mstp_clocks_init(
+ 			 *
+ 			 * FIXME: Remove this when all devices that require a
+ 			 * clock will be instantiated from DT.
++			 *
++			 * We currently register clkdev only when the DT
++			 * property clock-output-names is present.
+ 			 */
+-			clk_register_clkdev(clks[clkidx], name, NULL);
++			if (!allocated_name)
++				clk_register_clkdev(clks[clkidx], name, NULL);
+ 		} else {
+ 			pr_err("%s: failed to register %s %s clock (%ld)\n",
+ 			       __func__, np->name, name, PTR_ERR(clks[clkidx]));
+ 		}
++
++		if (allocated_name)
++			kfree(name);
+ 	}
+ 
+ 	of_clk_add_provider(np, of_clk_src_onecell_get, &group->data);
