@@ -1,59 +1,114 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 04 Aug 2015 18:03:07 +0000
-Subject: [PATCH 2/7] ARM: shmobile: Remove obsolete sh-gpio.h
-Message-Id: <1438711392-23763-3-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 31 Aug 2015 06:30:14 +0000
+Subject: [PATCH v8 06/07] arm64: renesas: add Salvator-X board support on DTS
+Message-Id: <20150831063014.24004.39617.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438711392-23763-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1438711392-23763-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The last user of "sh-gpio.h" was removed in commit 1fa59bda21c7fa36
-("ARM: shmobile: Remove legacy board code for Armadillo-800 EVA").
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
+Add initial board support for r8a7795 Salvator-X. At this point
+only DEBUG0 and DEBUG1 serial ports are supported.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/mach-shmobile/sh-gpio.h | 29 -----------------------------
- 1 file changed, 29 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/sh-gpio.h
 
-diff --git a/arch/arm/mach-shmobile/sh-gpio.h b/arch/arm/mach-shmobile/sh-gpio.h
-deleted file mode 100644
-index 2c4141413db92ebb..0000000000000000
---- a/arch/arm/mach-shmobile/sh-gpio.h
-+++ /dev/null
-@@ -1,29 +0,0 @@
--/*
-- * Generic GPIO API and pinmux table support
-- *
-- * Copyright (c) 2008  Magnus Damm
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-- */
--#ifndef __ASM_ARCH_GPIO_H
--#define __ASM_ARCH_GPIO_H
--
--#include <linux/kernel.h>
--#include <linux/errno.h>
--#include <linux/io.h>
--
--/*
-- * FIXME !!
-- *
-- * current gpio frame work doesn't have
-- * the method to control only pull up/down/free.
-- * this function should be replaced by correct gpio function
-- */
--static inline void __init gpio_direction_none(void __iomem * addr)
--{
--	__raw_writeb(0x00, addr);
--}
--
--#endif /* __ASM_ARCH_GPIO_H */
--- 
-1.9.1
+ Based on:
+  [PATCH 15/25] arm64: renesas: add Salvator-X board support on DTS
+  [PATCH 5/5] arm64: renesas: salvator-x: Update SCIF2 pin group
+  [PATCH 5/6] arm64: renesas: salvator-x: Enable SCIF1 on serial1
 
+ Changes: (Magnus Damm <damm+renesas@opensource.se>)
+ - Added changelog
+
+ Documentation/devicetree/bindings/arm/shmobile.txt |    2 
+ arch/arm64/boot/dts/renesas/Makefile               |    2 
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |   58 ++++++++++++++++++++
+ 3 files changed, 62 insertions(+)
+
+--- 0008/Documentation/devicetree/bindings/arm/shmobile.txt
++++ work/Documentation/devicetree/bindings/arm/shmobile.txt	2015-08-29 15:41:16.642366518 +0900
+@@ -57,5 +57,7 @@ Boards:
+     compatible = "renesas,lager", "renesas,r8a7790"
+   - Marzen
+     compatible = "renesas,marzen", "renesas,r8a7779"
++  - Salvator-X
++    compatible = "renesas,salvator-x", "renesas,r8a7795";
+   - Silk
+     compatible = "renesas,silk", "renesas,r8a7794";
+--- 0009/arch/arm64/boot/dts/renesas/Makefile
++++ work/arch/arm64/boot/dts/renesas/Makefile	2015-08-29 15:42:49.162366518 +0900
+@@ -1,3 +1,5 @@
++dtb-$(CONFIG_ARCH_R8A7795) += r8a7795-salvator-x.dtb
++
+ always		:= $(dtb-y)
+ subdir-y	:= $(dts-dirs)
+ clean-files	:= *.dtb
+--- /dev/null
++++ work/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts	2015-08-29 15:45:56.692366518 +0900
+@@ -0,0 +1,58 @@
++/*
++ * Device Tree Source for the Salvator-X board
++ *
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/dts-v1/;
++#include "r8a7795.dtsi"
++
++/ {
++	model = "Renesas Salvator-X board based on r8a7795";
++	compatible = "renesas,salvator-x", "renesas,r8a7795";
++
++	aliases {
++		serial0 = &scif2;
++		serial1 = &scif1;
++	};
++
++	chosen {
++		bootargs = "ignore_loglevel";
++		stdout-path = &scif2;
++	};
++
++	memory@48000000 {
++		device_type = "memory";
++		/* first 128MB is reserved for secure area. */
++		reg = <0x0 0x48000000 0x0 0x38000000>;
++	};
++};
++
++&pfc {
++	scif1_pins: scif1 {
++		renesas,groups = "scif1_data_a", "scif1_ctrl";
++		renesas,function = "scif1";
++	};
++	scif2_pins: scif2 {
++		renesas,groups = "scif2_data_a";
++		renesas,function = "scif2";
++	};
++};
++
++&scif1 {
++	pinctrl-0 = <&scif1_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&scif2 {
++	pinctrl-0 = <&scif2_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
