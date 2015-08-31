@@ -1,84 +1,87 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 27 Aug 2015 19:02:26 +0000
-Subject: [PATCH 0/5] arm64: renesas: r8a7795 MSIOF SPI Support
-Message-Id: <1440702151-1406-1-git-send-email-geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 31 Aug 2015 15:36:39 +0000
+Subject: [PATCH 1/3] arm64: dts: r8a7795: add GPIO clocks
+Message-Id: <1441035401-5843-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-	Hi,
+From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 
-This patch series adds preliminary support for MSIOF on r8a7795/R-Car
-H3:
-  - Update MSIOF DT binding docs,
-  - Add core clocks pll1_div2 and mso, and update the DIV6 DT binding
-    docs,
-  - Add MSIOF nodes.
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+[horms: moved into clock node; removed non-clock nodes; updated changelog;
+        used R8A7795 as prefix for clock defines]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+[uli: removed clock-output-names]
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 24 ++++++++++++++++++++++++
+ include/dt-bindings/clock/r8a7795-clock.h |  8 ++++++++
+ 2 files changed, 32 insertions(+)
 
-As there are no SPI devices connected to MSIOF on the Salvator-X
-development board, this wasn't fully tested.
-
-To test MSIOF0 on Salvator-X, you can connect an SPI slave to the
-CP[1-4] test pins, and pinctrl and SPI slave nodes to
-arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts like:
-
-    &pfc {
-	    msiof0_pins: msiof0 {
-		    renesas,groups = "msiof0_clk", "msiof0_sync", "msiof0_rxd",
-				     "msiof0_txd";
-		    renesas,function = "msiof0";
-	    };
-    };
-
-    &msiof0 {
-	    pinctrl-0 = <&msiof0_pins>;
-	    pinctrl-names = "default";
-
-	    status = "okay";
-
-	    my-device@0 {
-		    spi-max-frequency = <6000000>;
-		    compatible = "my-compatible";
-		    reg = <0>;
-	    };
-    };
-
-Note that there's an issue with pinctrl on MSIOF0:
-
-    sh-pfc e6060000.pfc: cannot locate data/mark enum_id for mark 1594
-    spi_sh_msiof e6e90000.spi: Error applying setting, reverse things back
-	    
-Mark 1594 is MSIOF0_SCK_MARK.
-
-As the default function for the pins connected to CP[1-4] is MSIOF0, it
-should work regardless of the incomplete pinctrl data.
-
-Geert Uytterhoeven (5):
-  [RFC] spi: sh-msiof: Add support for R-Car H3
-  clk: shmobile: r8a7795: Document DIV6 clock bindings
-  arm64: renesas: r8a7795 dtsi: Add pll1_div2 clock
-  arm64: renesas: r8a7795 dtsi: Add mso MSIOF parent clock
-  arm64: renesas: r8a7795 dtsi: Add all MSIOF nodes
-
- .../bindings/clock/renesas,cpg-div6-clocks.txt     |  1 +
- Documentation/devicetree/bindings/spi/sh-msiof.txt |  3 +-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 83 +++++++++++++++++++++-
- drivers/spi/spi-sh-msiof.c                         |  1 +
- include/dt-bindings/clock/r8a7795-clock.h          |  4 ++
- 5 files changed, 89 insertions(+), 3 deletions(-)
-
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 0df0dea..ca1970d 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -70,6 +70,14 @@
+ 			#clock-cells = <1>;
+ 			ranges;
+ 
++			cp_clk: cp_clk {
++				compatible = "fixed-factor-clock";
++				clocks = <&extal_clk>;
++				#clock-cells = <0>;
++				clock-div = <2>;
++				clock-mult = <1>;
++			};
++
+ 			zt_clk: zt {
+ 				compatible = "fixed-factor-clock";
+ 				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
+@@ -274,6 +282,22 @@
+ 					#clock-cells = <1>;
+ 					clock-indices = <R8A7795_CLK_SCIF2>;
+ 				};
++
++				mstp9_clks: mstp9_clks@e6150994 {
++					compatible = "renesas,r8a7795-mstp-clocks",
++						     "renesas,cpg-mstp-clocks";
++					reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
++					clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>,
++						 <&cp_clk>, <&cp_clk>, <&cp_clk>,
++						 <&cp_clk>, <&cp_clk>;
++					#clock-cells = <1>;
++					clock-indices = <
++						R8A7795_CLK_GPIO7 R8A7795_CLK_GPIO6
++						R8A7795_CLK_GPIO5 R8A7795_CLK_GPIO4
++						R8A7795_CLK_GPIO3 R8A7795_CLK_GPIO2
++						R8A7795_CLK_GPIO1 R8A7795_CLK_GPIO0
++					>;
++				};
+ 			};
+ 		};
+ 
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+index d661602..bf7fd98 100644
+--- a/include/dt-bindings/clock/r8a7795-clock.h
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -38,6 +38,14 @@
+ /* MSTP8 */
+ 
+ /* MSTP9 */
++#define R8A7795_CLK_GPIO0		12
++#define R8A7795_CLK_GPIO1		11
++#define R8A7795_CLK_GPIO2		10
++#define R8A7795_CLK_GPIO3		9
++#define R8A7795_CLK_GPIO4		8
++#define R8A7795_CLK_GPIO5		7
++#define R8A7795_CLK_GPIO6		6
++#define R8A7795_CLK_GPIO7		5
+ 
+ /* MSTP10 */
+ 
 -- 
-1.9.1
+2.4.6
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
