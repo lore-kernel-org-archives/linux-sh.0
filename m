@@ -1,40 +1,41 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 20 Aug 2015 09:29:57 +0000
-Subject: [PATCH 16/17 v6][RFC] Local: Hack: disable CONFIG_SUSPEND
-Message-Id: <87zj1m9uq1.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 31 Aug 2015 12:49:27 +0000
+Subject: [PATCH v5 04/05] clk: shmobile: Add r8a7795 SoC to MSTP bindings
+Message-Id: <20150831124927.31057.69961.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150831124842.31057.54534.sendpatchset@little-apple>
+In-Reply-To: <20150831124842.31057.54534.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Since cpu suspend is not supported in R-Car Gen3 initial version,
-disable CONFIG_SUSPEND as interim fix until pcsi is available.
+Add r8a7795 to the MSTP DT binding documentation.
 
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-v5 -> v6
 
- - no change
+ Changes since V4: (Magnus Damm <damm+renesas@opensource.se>)
+ - Added Acked-by from Geert
 
- arch/arm64/configs/defconfig | 1 +
+ Changes since V3: (Magnus Damm <damm+renesas@opensource.se>)
+ - Picked up patch floating around on ML, added change log
+
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt |    1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index f49d044..f4a9ef6 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -59,6 +59,7 @@ CONFIG_CMA=y
- CONFIG_CMDLINE="console=ttyAMA0"
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- CONFIG_COMPAT=y
-+# CONFIG_SUSPEND is not set
- CONFIG_CPU_IDLE=y
- CONFIG_ARM_CPUIDLE=y
- CONFIG_NET=y
--- 
-1.9.1
-
+--- 0001/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
++++ work/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt	2015-08-29 16:18:30.672366518 +0900
+@@ -19,6 +19,7 @@ Required Properties:
+     - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2-W) MSTP gate clocks
+     - "renesas,r8a7793-mstp-clocks" for R8A7793 (R-Car M2-N) MSTP gate clocks
+     - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate clocks
++    - "renesas,r8a7795-mstp-clocks" for R8A7795 (R-Car H3) MSTP gate clocks
+     - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP gate clocks
+     and "renesas,cpg-mstp-clocks" as a fallback.
+   - reg: Base address and length of the I/O mapped registers used by the MSTP
