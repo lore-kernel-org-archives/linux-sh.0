@@ -1,75 +1,40 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Tue, 25 Aug 2015 12:03:44 +0000
-Subject: Re: [PATCH v2] mmc: tmio: Fix timeout value for command request
-Message-Id: <CAPDyKFoO5N20Wiw3GhRMG2WOZ8dfW4esBpdYStfo39otyfohWw@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 31 Aug 2015 15:36:38 +0000
+Subject: [PATCH 0/3] Basic GPIO support for r8a7795
+Message-Id: <1441035401-5843-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1437323999-7938-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1437323999-7938-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Ian Molton <ian.molton@codethink.co.uk>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On 19 July 2015 at 18:39, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
-> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
->
-> Fix the problem which timeout occurs at the time of command request with
-> several cards.
->
-> The timeout value was insufficient as a verification of several cards,
-> so it was changed 5 seconds from 2 seconds.
->
-> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Hi!
 
-Thanks, applied for next!
+This has been broken out of horms's GPIO and EthernetAVB RFC (thanks again)
+and has its minor issues fixed, hopefully.  Specifically, it fixes the GPIO
+6 and 7 clock references, dumps the MSTP's "clock-output-names" property,
+and omits the extraneous options in defconfig.
 
-Kind regards
-Uffe
+CU
+Uli
 
-> ---
->
-> This patch is based on mmc-next branch of Ulf Hansson's mmc tree.
->
-> v2 [Yoshihiro Kaneko]
-> * As suggested by Wolfram Sang
-> - use a definition instead of a magic value
->
->  drivers/mmc/host/tmio_mmc_pio.c | 6 ++++--
->  1 file changed, 4 insertions(+), 2 deletions(-)
->
-> diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-> index e3dcf31..a10fde4 100644
-> --- a/drivers/mmc/host/tmio_mmc_pio.c
-> +++ b/drivers/mmc/host/tmio_mmc_pio.c
-> @@ -83,6 +83,8 @@ static int tmio_mmc_next_sg(struct tmio_mmc_host *host)
->         return --host->sg_len;
->  }
->
-> +#define CMDREQ_TIMEOUT 5000
-> +
->  #ifdef CONFIG_MMC_DEBUG
->
->  #define STATUS_TO_TEXT(a, status, i) \
-> @@ -230,7 +232,7 @@ static void tmio_mmc_reset_work(struct work_struct *work)
->          */
->         if (IS_ERR_OR_NULL(mrq)
->             || time_is_after_jiffies(host->last_req_ts +
-> -               msecs_to_jiffies(2000))) {
-> +               msecs_to_jiffies(CMDREQ_TIMEOUT))) {
->                 spin_unlock_irqrestore(&host->lock, flags);
->                 return;
->         }
-> @@ -818,7 +820,7 @@ static void tmio_mmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
->         ret = tmio_mmc_start_command(host, mrq->cmd);
->         if (!ret) {
->                 schedule_delayed_work(&host->delayed_reset_work,
-> -                                     msecs_to_jiffies(2000));
-> +                                     msecs_to_jiffies(CMDREQ_TIMEOUT));
->                 return;
->         }
->
-> --
-> 1.9.1
->
+
+Changes since RFC:
+- fix GPIO6 and GPIO7 clock assignments
+- remove "clock-output-names" property from MSTP
+- do not enable GPIO_SYSFS, LEDS_GPIO in defconfig
+
+
+Takeshi Kihara (3):
+  arm64: dts: r8a7795: add GPIO clocks
+  arm64: dts: r8a7795: add GPIO nodes
+  arm64: defconfig: Enable GPIO of Renesas R-Car Gen3 SoC
+
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 128 ++++++++++++++++++++++++++++++
+ arch/arm64/configs/defconfig              |   1 +
+ include/dt-bindings/clock/r8a7795-clock.h |   8 ++
+ 3 files changed, 137 insertions(+)
+
+-- 
+2.4.6
+
