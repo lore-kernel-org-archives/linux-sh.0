@@ -1,49 +1,48 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 10 Aug 2015 18:52:03 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: silk: add QSPI DT support
-Message-Id: <CAMuHMdVAjsDJ+fFJnG4WAydCgvW=iRDcyXp9R6xBfn3EHU-tbQ@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 31 Aug 2015 06:29:41 +0000
+Subject: [PATCH v8 03/07] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
+Message-Id: <20150831062941.24004.65819.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1898263.zrOs5SAUTS@wasted.cogentembedded.com>
- <1768974.jEFIAaInqd@wasted.cogentembedded.com>
- <CAMuHMdXQJ4Hju477Ys0ujXCNdUjWOa6AuKGzLPc3YFJc_eLz+g@mail.gmail.com>
- <55C8EAF0.7060600@cogentembedded.com>
-In-Reply-To: <55C8EAF0.7060600@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Sergei,
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Mon, Aug 10, 2015 at 8:18 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> On 08/10/2015 05:38 PM, Geert Uytterhoeven wrote:
->>> +&qspi {
->>> +       pinctrl-0 = <&qspi_pins>;
->>> +       pinctrl-names = "default";
->>> +
->>> +       status = "okay";
->>> +
->>> +       flash@0 {
->>> +               #address-cells = <1>;
->>> +               #size-cells = <1>;
->>> +               compatible = "spansion,s25fl512s";
->
->> Please add the "jedec,spi-nor" fallback.
->
->    Hm, spi-nor.c alone can't control this device, it's rather m25p80.c
-> that's the real driver. So if a fallback needs to be added indeed it should
-> be "st,m25p80" I think...
+Add dummy nodes for the 3 DMA controllers.
+This allows to start describing DMA channels for DMA slaves now.
 
-Please have a look at Documentation/devicetree/bindings/mtd/jedec,spi-nor.txt.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-Gr{oetje,eeting}s,
+ Based on:
+  [PATCH 2/6] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
 
-                        Geert
+ Changes: (Magnus Damm <damm+renesas@opensource.se>)
+ - Changed order not to depend on SCIF patch(es)
+ 
+arch/arm64/boot/dts/renesas/r8a7795.dtsi |   12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--- 0010/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ work/arch/arm64/boot/dts/renesas/r8a7795.dtsi	2015-08-29 15:26:42.172366518 +0900
+@@ -239,5 +239,17 @@
+ 						     "pll3", "pll4";
+ 			};
+ 		};
++
++		dmac0: dma-controller@e6700000 {
++			/* Empty node for now */
++		};
++
++		dmac1: dma-controller@e7300000 {
++			/* Empty node for now */
++		};
++
++		dmac2: dma-controller@e7310000 {
++			/* Empty node for now */
++		};
+ 	};
+ };
