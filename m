@@ -1,51 +1,33 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 31 Aug 2015 06:30:25 +0000
-Subject: [PATCH v8 07/07] arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
-Message-Id: <20150831063025.24004.62924.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 31 Aug 2015 09:21:42 +0000
+Subject: Re: [PATCH v8 07/07] arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
+Message-Id: <CAMuHMdWPOF1U1YjdmxxOL4oAh8N5yajAJLo3JYd==EOeVM+EhQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150831063025.24004.62924.sendpatchset@little-apple>
+In-Reply-To: <20150831063025.24004.62924.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Mon, Aug 31, 2015 at 8:30 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> This patch enables the Renesas R-Car H3 SoC together with the
+> SCIF driver in the arm64 defconfig.
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 
-This patch enables the Renesas R-Car H3 SoC together with the
-SCIF driver in the arm64 defconfig.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+Gr{oetje,eeting}s,
 
- Based on:
-  [PATCH 19/25] arm64: defconfig: renesas: Enable Renesas R-Car Gen3 SoC
-  [PATCH 20/25] arm64: defconfig: renesas: enable SCIF
+                        Geert
 
- Changes: (Magnus Damm <damm+renesas@opensource.se>)
- - Updated changelog
- - Use CONFIG_RENESAS and CONFIG_R8A7795
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
- arch/arm64/configs/defconfig |    5 +++++
- 1 file changed, 5 insertions(+)
-
---- 0001/arch/arm64/configs/defconfig
-+++ work/arch/arm64/configs/defconfig	2015-08-29 17:20:25.712366518 +0900
-@@ -39,6 +39,8 @@ CONFIG_ARCH_HISI=y
- CONFIG_ARCH_MEDIATEK=y
- CONFIG_ARCH_ROCKCHIP=y
- CONFIG_ARCH_SEATTLE=y
-+CONFIG_ARCH_RENESAS=y
-+CONFIG_ARCH_R8A7795=y
- CONFIG_ARCH_TEGRA=y
- CONFIG_ARCH_TEGRA_132_SOC=y
- CONFIG_ARCH_QCOM=y
-@@ -109,6 +111,9 @@ CONFIG_SERIAL_8250_DW=y
- CONFIG_SERIAL_8250_MT6577=y
- CONFIG_SERIAL_AMBA_PL011=y
- CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
-+CONFIG_SERIAL_SH_SCI=y
-+CONFIG_SERIAL_SH_SCI_NR_UARTS
-+CONFIG_SERIAL_SH_SCI_CONSOLE=y
- CONFIG_SERIAL_MSM=y
- CONFIG_SERIAL_MSM_CONSOLE=y
- CONFIG_SERIAL_OF_PLATFORM=y
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
