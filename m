@@ -1,92 +1,69 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 07 Aug 2015 02:12:10 +0000
-Subject: [PATCH 11/12] ARM: shmobile: r8a7793 dtsi: Add CPG/MSTP Clock Domain
-Message-Id: <155894880657d77f4d3afdc601108df533a00a63.1438911559.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 31 Aug 2015 12:48:53 +0000
+Subject: [PATCH v5 01/05] clk: shmobile: Rework CONFIG_ARCH_SHMOBILE_MULTI
+Message-Id: <20150831124853.31057.38519.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1438911559.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1438911559.git.horms+renesas@verge.net.au>
+References: <20150831124842.31057.54534.sendpatchset@little-apple>
+In-Reply-To: <20150831124842.31057.54534.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Add an appropriate "#power-domain-cells" property to the cpg_clocks
-device node, to create the CPG/MSTP Clock Domain.
+Shmobile is all multiplatform these days, so in get rid of the
+reference to CONFIG_ARCH_SHMOBILE_MULTI in drivers/clk/shmobile/.
 
-Add "power-domains" properties to all device nodes for devices that are
-part of the CPG/MSTP Clock Domain and can be power-managed through an
-MSTP clock.  This applies to most on-SoC devices, which have a
-one-to-one mapping from SoC device to DT device node.
+Also instead of always enabling DIV6 and MSTP adjust the Makefile
+to enable DIV6 and MSTP depending on if they are included in the
+SoC or not.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index 3355c487d108..c4654047e684 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -68,6 +68,7 @@
- 			     <0 143 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7793_CLK_CMT0>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
- 
- 		renesas,channels-mask = <0x60>;
- 
-@@ -87,6 +88,7 @@
- 			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp3_clks R8A7793_CLK_CMT1>;
- 		clock-names = "fck";
-+		power-domains = <&cpg_clocks>;
- 
- 		renesas,channels-mask = <0xff>;
- 
-@@ -109,6 +111,7 @@
- 			     <0 16 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 17 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R8A7793_CLK_IRQC>;
-+		power-domains = <&cpg_clocks>;
- 	};
- 
- 	scif0: serial@e6e60000 {
-@@ -117,6 +120,7 @@
- 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF0>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -126,6 +130,7 @@
- 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF1>;
- 		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
- 
-@@ -134,6 +139,7 @@
- 		reg = <0 0xee700000 0 0x400>;
- 		interrupts = <0 162 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp8_clks R8A7793_CLK_ETHER>;
-+		power-domains = <&cpg_clocks>;
- 		phy-mode = "rmii";
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -164,6 +170,7 @@
- 			clock-output-names = "main", "pll0", "pll1", "pll3",
- 					     "lb", "qspi", "sdh", "sd0", "z",
- 					     "rcan", "adsp";
-+			#power-domain-cells = <0>;
- 		};
- 
- 		/* Variable factor clocks */
--- 
-2.1.4
+ Earlier known as "clk: shmobile: Get rid of CONFIG_ARCH_SHMOBILE_MULTI"
 
+ Changes since V4:
+ - None
+
+ Changes since V3:
+ - Got rid of hunks that modified drivers/clk/Makefile
+ - This to prevent build issue with non-CCF enabled SH arch
+ - A nice side effect is that this patch now can be merged any time
+
+ Changes since V2:
+ - Fixed patch subject typo CONFIG_SHMOBILE_MULTI -> CONFIG_ARCH_SHMOBILE_MULTI
+
+ drivers/clk/shmobile/Makefile |   22 ++++++++++------------
+ 1 file changed, 10 insertions(+), 12 deletions(-)
+
+--- 0001/drivers/clk/shmobile/Makefile
++++ work/drivers/clk/shmobile/Makefile	2015-08-29 16:14:57.522366518 +0900
+@@ -1,13 +1,11 @@
+ obj-$(CONFIG_ARCH_EMEV2)		+= clk-emev2.o
+-obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o
+-obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o
+-obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o
+-obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o
+-obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
+-obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o
+-obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
+-obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-mstp.o
++obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o clk-mstp.o
++obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o clk-mstp.o
++obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o clk-mstp.o
++obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o clk-mstp.o clk-div6.o
