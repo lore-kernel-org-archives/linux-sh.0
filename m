@@ -1,32 +1,53 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 11 Sep 2015 00:27:17 +0000
-Subject: Re: [PATCH 07/14][RFC] arm64: renesas: salvator-x: enable I2C
-Message-Id: <87a8sthki8.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 01 Sep 2015 01:09:58 +0000
+Subject: Re: [RESEND PATCH v3 3/5] sh: kill off set_irq_flags usage
+Message-Id: <20150901010958.GA29746@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87h9n2n3x1.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87h9n2n3x1.wl%kuninori.morimoto.gx@renesas.com>
+References: <1440889285-5637-1-git-send-email-robh@kernel.org>
+ <1440889285-5637-4-git-send-email-robh@kernel.org>
+ <20150831050104.GA26119@verge.net.au>
+ <CAL_JsqJuPtkvFMFvcSwaFssXoLYrHs9bM3EedXSzj21YAPmwDQ@mail.gmail.com>
+In-Reply-To: <CAL_JsqJuPtkvFMFvcSwaFssXoLYrHs9bM3EedXSzj21YAPmwDQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-
-Hi Wolfram
-
-> > +&i2c2 {
-> > +	pinctrl-0 = <&i2c2_pins>;
-> > +	pinctrl-names = "default";
-> > +
-> > +	status = "okay";
-> > +};
+On Mon, Aug 31, 2015 at 07:52:07AM -0500, Rob Herring wrote:
+> On Mon, Aug 31, 2015 at 12:01 AM, Simon Horman <horms@verge.net.au> wrote:
+> > Hi Rob,
+> >
+> > On Sat, Aug 29, 2015 at 06:01:23PM -0500, Rob Herring wrote:
+> >> set_irq_flags is ARM specific with custom flags which have genirq
+> >> equivalents. Convert drivers to use the genirq interfaces directly, so we
+> >> can kill off set_irq_flags. The translation of flags is as follows:
+> >>
+> >> IRQF_VALID -> !IRQ_NOREQUEST
+> >> IRQF_PROBE -> !IRQ_NOPROBE
+> >> IRQF_NOAUTOEN -> IRQ_NOAUTOEN
+> >>
+> >> For IRQs managed by an irqdomain, the irqdomain core code handles clearing
+> >> and setting IRQ_NOREQUEST already, so there is no need to do this in
+> >> .map() functions and we can simply remove the set_irq_flags calls. Some
+> >> users also modify IRQ_NOPROBE and this has been maintained although it
+> >> is not clear that is really needed. There appears to be a great deal of
+> >> blind copy and paste of this code.
+> >>
+> >> Signed-off-by: Rob Herring <robh@kernel.org>
+> >> Acked-by: Simon Horman <horms@verge.net.au>
+> >> Cc: Magnus Damm <magnus.damm@gmail.com>
+> >> Cc: linux-sh@vger.kernel.org
+> >
+> > I have queued this up. Please let me know if that was not your intent.
+> >
+> > The patch is queued up in the sh-drivers-for-v4.3 branch of my renesas tree.
+> > At this point I plan to send a pull-request once dt changes that other
+> > patches in that branch depend on hit Linus's tree via the ARM SoC tree.
+> > I anticipate that being during the rc1 or rc2 timeframe.
 > 
-> I think we should add the bus speed here explicitly and not rely on a
-> default:
-> 
-> 	clock-frequency = <100000>;
-> 
-> Maybe 400000 if all connected devices support that.
+> This needs to go in before -rc1 so the final 2 patches removing
+> set_irq_flags can go in at the end of the merge window. Given your
+> timeline, I think you can just leave this one for Thomas to apply with
+> those 2.
 
-Thanks, actually I used clock-frequency = <100000> in my test.
-Then, removed it for posting.
-will add it again in v2
+Sure, will do.
