@@ -1,82 +1,58 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 17 Sep 2015 04:30:27 +0000
-Subject: [PATCH 12/20 v2] arm64: renesas: r8a7795: add SSI DMA support
-Message-Id: <87fv2d7jtl.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 01 Sep 2015 06:02:25 +0000
+Subject: Re: [PATCH v5 04/05] clk: shmobile: Add r8a7795 SoC to MSTP bindings
+Message-Id: <2606402.bJ14FcIpy4@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150831124842.31057.54534.sendpatchset@little-apple> <20150831124927.31057.69961.sendpatchset@little-apple>
+In-Reply-To: <20150831124927.31057.69961.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-clk@vger.kernel.org, kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hello,
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+Thank you for the patch.
 
- - no change
+On Monday 31 August 2015 21:49:27 Magnus Damm wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> 
+> Add r8a7795 to the MSTP DT binding documentation.
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 654452d..abe7f08 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -1021,33 +1021,53 @@
- 			rcar_sound,ssi {
- 				ssi0: ssi@0 {
- 					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x01>, <&audma1 0x02>, <&audma0 0x15>, <&audma1 0x16>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi1: ssi@1 {
- 					 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x03>, <&audma1 0x04>, <&audma0 0x49>, <&audma1 0x4a>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi2: ssi@2 {
- 					interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x05>, <&audma1 0x06>, <&audma0 0x63>, <&audma1 0x64>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi3: ssi@3 {
- 					interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x07>, <&audma1 0x08>, <&audma0 0x6f>, <&audma1 0x70>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi4: ssi@4 {
- 					interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x09>, <&audma1 0x0a>, <&audma0 0x71>, <&audma1 0x72>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi5: ssi@5 {
- 					interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0b>, <&audma1 0x0c>, <&audma0 0x73>, <&audma1 0x74>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi6: ssi@6 {
- 					interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0d>, <&audma1 0x0e>, <&audma0 0x75>, <&audma1 0x76>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi7: ssi@7 {
- 					interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0f>, <&audma1 0x10>, <&audma0 0x79>, <&audma1 0x7a>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi8: ssi@8 {
- 					interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x11>, <&audma1 0x12>, <&audma0 0x7b>, <&audma1 0x7c>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi9: ssi@9 {
- 					interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x13>, <&audma1 0x14>, <&audma0 0x7d>, <&audma1 0x7e>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 			};
- 		};
+> ---
+> 
+>  Changes since V4: (Magnus Damm <damm+renesas@opensource.se>)
+>  - Added Acked-by from Geert
+> 
+>  Changes since V3: (Magnus Damm <damm+renesas@opensource.se>)
+>  - Picked up patch floating around on ML, added change log
+> 
+>  Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt |    1
+> + 1 file changed, 1 insertion(+)
+> 
+> --- 0001/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+> +++
+> work/Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt	
+20
+> 15-08-29 16:18:30.672366518 +0900 @@ -19,6 +19,7 @@ Required Properties:
+>      - "renesas,r8a7791-mstp-clocks" for R8A7791 (R-Car M2-W) MSTP gate
+> clocks - "renesas,r8a7793-mstp-clocks" for R8A7793 (R-Car M2-N) MSTP gate
+> clocks - "renesas,r8a7794-mstp-clocks" for R8A7794 (R-Car E2) MSTP gate
+> clocks +    - "renesas,r8a7795-mstp-clocks" for R8A7795 (R-Car H3) MSTP
+> gate clocks - "renesas,sh73a0-mstp-clocks" for SH73A0 (SH-MobileAG5) MSTP
+> gate clocks and "renesas,cpg-mstp-clocks" as a fallback.
+>    - reg: Base address and length of the I/O mapped registers used by the
+> MSTP
+
 -- 
-1.9.1
+Regards,
+
+Laurent Pinchart
 
