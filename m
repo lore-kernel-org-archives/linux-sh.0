@@ -1,54 +1,58 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 18 Sep 2015 01:56:55 +0000
-Subject: [PATCH 2/2 v3] i2c: sh_mobile: add support for r8a7795 (R-Car H3)
-Message-Id: <87k2ro1ok8.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 01 Sep 2015 22:29:01 +0000
+Subject: [PATCH v2] rcar_vin: propagate querystd() error upstream
+Message-Id: <2328024.JIhFUGC0u1@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: g.liakhovetski@gmx.de, mchehab@osg.samsung.com, linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+rcar_vin_set_fmt() defaults to  PAL when the subdevice's querystd() method call
+fails (e.g. due to I2C error).  This doesn't work very well when a camera being
+used  outputs NTSC which has different order of fields and resolution.  Let  us
+stop  pretending and return the actual error except  when the querystd() method
+is not implemented,  in which case  we'll have  to set the 'field' variable  to
+V4L2_FIELD_NONE.
 
-Enable the I2C core for this SoC. It is compitable to Gen2 SoCs, so
-reuse the settings.
+Note that doing this would prevent video capture on at least Renesas Henninger/
+Porter boards where I2C seems particularly buggy.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
-v2 -> v3
+The patch is against the 'media_tree.git' repo's 'fixes' branch.
 
- - add Geert's Acked-by
+Changes in version 2:
+- filter out -ENOIOCTLCMD error code and default 'field' to V4L2_FIELD_NONE in
+  that case.
 
- Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt | 1 +
- drivers/i2c/busses/i2c-sh_mobile.c                      | 1 +
- 2 files changed, 2 insertions(+)
+ drivers/media/platform/soc_camera/rcar_vin.c |   14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt b/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
-index 2bfc6e7..214f94c 100644
---- a/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
-+++ b/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
-@@ -10,6 +10,7 @@ Required properties:
- 			- "renesas,iic-r8a7792" (R-Car V2H)
- 			- "renesas,iic-r8a7793" (R-Car M2-N)
- 			- "renesas,iic-r8a7794" (R-Car E2)
-+			- "renesas,iic-r8a7795" (R-Car H3)
- 			- "renesas,iic-sh73a0" (SH-Mobile AG5)
- - reg             : address start and address range size of device
- - interrupts      : interrupt of device
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index 47659a9..7d2bd3e 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -836,6 +836,7 @@ static const struct of_device_id sh_mobile_i2c_dt_ids[] = {
- 	{ .compatible = "renesas,iic-r8a7792", .data = &fast_clock_dt_config },
- 	{ .compatible = "renesas,iic-r8a7793", .data = &fast_clock_dt_config },
- 	{ .compatible = "renesas,iic-r8a7794", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,iic-r8a7795", .data = &fast_clock_dt_config },
- 	{ .compatible = "renesas,iic-sh73a0", .data = &fast_clock_dt_config },
- 	{},
- };
--- 
-1.9.1
+Index: media_tree/drivers/media/platform/soc_camera/rcar_vin.c
+=================================--- media_tree.orig/drivers/media/platform/soc_camera/rcar_vin.c
++++ media_tree/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -1591,11 +1591,15 @@ static int rcar_vin_set_fmt(struct soc_c
+ 	case V4L2_FIELD_INTERLACED:
+ 		/* Query for standard if not explicitly mentioned _TB/_BT */
+ 		ret = v4l2_subdev_call(sd, video, querystd, &std);
+-		if (ret < 0)
+-			std = V4L2_STD_625_50;
+-
+-		field = std & V4L2_STD_625_50 ? V4L2_FIELD_INTERLACED_TB :
+-						V4L2_FIELD_INTERLACED_BT;
++		if (ret = -ENOIOCTLCMD) {
++			field = V4L2_FIELD_NONE;
++		} else if (ret < 0) {
++			return ret;
++		} else {
++			field = std & V4L2_STD_625_50 ?
++				V4L2_FIELD_INTERLACED_TB :
++				V4L2_FIELD_INTERLACED_BT;
++		}
+ 		break;
+ 	}
+ 
 
