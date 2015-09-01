@@ -1,49 +1,28 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 22 Sep 2015 07:30:32 +0000
-Subject: Re: [PATCH v2 1/2] pinctrl: sh-pfc: Remove hardcoded IRQ numbers
-Message-Id: <CAMuHMdUTzGjEFON+GbQqOwE_BycZh-DOhCp8cSR6TjYeY_4reA@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 01 Sep 2015 01:22:04 +0000
+Subject: Re: [PATCH 0/3] Basic GPIO support for r8a7795
+Message-Id: <20150901012204.GB29746@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442905694-2317-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442905694-2317-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1441035401-5843-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1441035401-5843-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Laurent,
+Hi Ulrich,
 
-On Tue, Sep 22, 2015 at 9:26 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Tuesday 22 September 2015 09:24:16 Geert Uytterhoeven wrote:
->> On Tue, Sep 22, 2015 at 9:12 AM, Geert Uytterhoeven wrote:
->> > On Tue, Sep 22, 2015 at 9:08 AM, Laurent Pinchart wrote:
->> >> Now that all ARM-based Renesas SoCs use multiplatform kernels only the
->> >> hardcoded IRQ numbers can be dropped as they're dynamically allocated.
->> >>
->> >> Signed-off-by: Laurent Pinchart
->> >> <laurent.pinchart+renesas@ideasonboard.com>
->> >
->> > Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
->>
->> Upon closer look, compared to v1, you also dropped the removal of
->>
->>     #ifndef CONFIG_ARCH_MULTIPLATFORM
->>     #include <mach/irqs.h>
->>     #endif
->>
->> for r8a7740/sh73a0, which was probably not intentional?
->
-> That's because it's been removed in Simon's branch already.
+On Mon, Aug 31, 2015 at 05:36:38PM +0200, Ulrich Hecht wrote:
+> Hi!
+> 
+> This has been broken out of horms's GPIO and EthernetAVB RFC (thanks again)
+> and has its minor issues fixed, hopefully.  Specifically, it fixes the GPIO
+> 6 and 7 clock references, dumps the MSTP's "clock-output-names" property,
+> and omits the extraneous options in defconfig.
 
-Right, that's even in v4.3-rc1.
+I have pushed this seris to the renesas tree in the topic/r8a7795-gpio-v1
+branch.  It is based on the topic/arm64-rcar-gen3-v8 branch.
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+To be quite clear none of these patches are queued up for mainline yet and
+as such they are not included in the next or devel branches of the renesas
+tree.
