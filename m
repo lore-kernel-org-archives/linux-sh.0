@@ -1,106 +1,44 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 14 Sep 2015 12:14:29 +0000
-Subject: [PATCH 07/14] ARM: shmobile: r8a7740: Rename the serial port clock to fck
-Message-Id: <1442232876-27629-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 01 Sep 2015 15:12:37 +0000
+Subject: [PATCH 2/6] clk: shmobile: rcar-gen3: Document renesas,modemr
+Message-Id: <1441120361-1232-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The clock is really the device functional clock, not the interface
-clock. Rename it.
+Document the "renesas,modemr" property, which allows the Clock Pulse
+Generator driver to obtain the values of the mode pin using syscon and
+regmap.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7740.dtsi | 18 +++++++++---------
- 1 file changed, 9 insertions(+), 9 deletions(-)
+ .../devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt        | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index e14cb1438216..387aef60c825 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -200,7 +200,7 @@
- 		reg = <0xe6c40000 0x100>;
- 		interrupts = <0 100 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
+diff --git a/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt b/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
+index d282f6441eea5d22..0d50af9be51b3fa3 100644
+--- a/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
++++ b/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
+@@ -17,6 +17,9 @@ Required Properties:
+   - #clock-cells: Must be 1
+   - clock-indices: Indices of the exported clocks
+   - #power-domain-cells: Must be 0
++  - renesas,modemr: Reference to the RST module node, and register offset of
++		    the Mode Monitor Register (MODEMR) inside the RST module
++		    register block.
+ 
+ SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
+ through an MSTP clock should refer to the CPG device node in their
+@@ -40,6 +43,7 @@ Examples
+                              R8A7795_CLK_PLL3 R8A7795_CLK_PLL4
+                 >;
+ 		#power-domain-cells = <0>;
++		renesas,modemr = <&rst 0x60>;
  	};
-@@ -210,7 +210,7 @@
- 		reg = <0xe6c50000 0x100>;
- 		interrupts = <0 101 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -220,7 +220,7 @@
- 		reg = <0xe6c60000 0x100>;
- 		interrupts = <0 102 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA2>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -230,7 +230,7 @@
- 		reg = <0xe6c70000 0x100>;
- 		interrupts = <0 103 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA3>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -240,7 +240,7 @@
- 		reg = <0xe6c80000 0x100>;
- 		interrupts = <0 104 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA4>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -250,7 +250,7 @@
- 		reg = <0xe6cb0000 0x100>;
- 		interrupts = <0 105 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA5>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -260,7 +260,7 @@
- 		reg = <0xe6cc0000 0x100>;
- 		interrupts = <0 106 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA6>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -270,7 +270,7 @@
- 		reg = <0xe6cd0000 0x100>;
- 		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFA7>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
-@@ -280,7 +280,7 @@
- 		reg = <0xe6c30000 0x100>;
- 		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7740_CLK_SCIFB>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&pd_a3sp>;
- 		status = "disabled";
- 	};
+ 
+   - CPG/MSTP Clock Domain member device node:
 -- 
-2.4.6
+1.9.1
 
