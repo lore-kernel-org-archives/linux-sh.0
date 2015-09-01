@@ -1,79 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 14 Sep 2015 12:14:31 +0000
-Subject: [PATCH 09/14] ARM: shmobile: r8a7779: Rename the serial port clock to fck
-Message-Id: <1442232876-27629-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 01 Sep 2015 15:12:39 +0000
+Subject: [PATCH 4/6] arm64: renesas: r8a7795 dtsi: Add device node for RST module
+Message-Id: <1441120361-1232-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The clock is really the device functional clock, not the interface
-clock. Rename it.
+Add a device node for the RST module, which provides reset control.
+Declare it to be a system controller (syscon), so other device nodes can
+refer to its registers.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7779.dtsi | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 6afa909865b5..e4054119ee7c 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -215,7 +215,7 @@
- 		reg = <0xffe40000 0x100>;
- 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -225,7 +225,7 @@
- 		reg = <0xffe41000 0x100>;
- 		interrupts = <0 89 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -235,7 +235,7 @@
- 		reg = <0xffe42000 0x100>;
- 		interrupts = <0 90 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF2>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -245,7 +245,7 @@
- 		reg = <0xffe43000 0x100>;
- 		interrupts = <0 91 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF3>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -255,7 +255,7 @@
- 		reg = <0xffe44000 0x100>;
- 		interrupts = <0 92 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF4>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -265,7 +265,7 @@
- 		reg = <0xffe45000 0x100>;
- 		interrupts = <0 93 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp0_clks R8A7779_CLK_SCIF5>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 4bbf6269c035ec4a..05de9810aef0d569 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -410,6 +410,11 @@
+ 			reg = <0 0xe6060000 0 0x50c>;
+ 		};
+ 
++		rst: reset-controller@e6160000 {
++			compatible = "renesas,rst-r8a7795", "syscon";
++			reg = <0 0xe6160000 0 0x0200>;
++		};
++
+ 		dmac0: dma-controller@e6700000 {
+ 			/* Empty node for now */
+ 		};
 -- 
-2.4.6
+1.9.1
 
