@@ -1,72 +1,75 @@
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 06 Sep 2015 15:42:58 +0000
-Subject: Re: [PATCH repost] mmc: sh_mmcif: Fix suspend process
-Message-Id: <CAH1o70+9ik2vAjZUr9n6jUVJS-XSzco4cA6X53naVHBuKoLEpA@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 02 Sep 2015 07:17:08 +0000
+Subject: [PATCH v6 01/05] clk: shmobile: Rework CONFIG_ARCH_SHMOBILE_MULTI
+Message-Id: <20150902071708.10870.37170.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440334688-20674-1-git-send-email-ykaneko0929@gmail.com>
-	<CAPDyKFoRZ2fns=i7tua+dDjLFeMLxOEkcUB4AOPdFHqXs-eYOw@mail.gmail.com>
-In-Reply-To: <CAPDyKFoRZ2fns=i7tua+dDjLFeMLxOEkcUB4AOPdFHqXs-eYOw@mail.gmail.com>
+References: <20150902071657.10870.37652.sendpatchset@little-apple>
+In-Reply-To: <20150902071657.10870.37652.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-Hello Ulf,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-2015-08-26 0:27 GMT+09:00 Ulf Hansson <ulf.hansson@linaro.org>:
-> On 23 August 2015 at 14:58, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
->> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
->>
->> The clock should be enable when SDHI registers are accessed.
->
-> Yes, correct. But...
->
->>
->> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
->> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
->> ---
->>
->> This patch is based on mmc-next branch of Ulf Hansson's mmc tree.
->>
->> * Perhaps this relates to the need to enhance clock management
->>
->>  drivers/mmc/host/sh_mmcif.c | 2 ++
->>  1 file changed, 2 insertions(+)
->>
->> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
->> index 5a1fdd4..ad9ffea 100644
->> --- a/drivers/mmc/host/sh_mmcif.c
->> +++ b/drivers/mmc/host/sh_mmcif.c
->> @@ -1632,7 +1632,9 @@ static int sh_mmcif_suspend(struct device *dev)
->>  {
->>         struct sh_mmcif_host *host = dev_get_drvdata(dev);
->>
->> +       pm_runtime_get_sync(dev);
->>         sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
->> +       pm_runtime_put(dev);
->
-> ... when will the clock be gated, since the pm_runtime_put() here wont
-> do the trick!
->
-> That's a bit more complicated to deal with, but for now I will apply
-> this patch as is.
+Shmobile is all multiplatform these days, so in get rid of the
+reference to CONFIG_ARCH_SHMOBILE_MULTI in drivers/clk/shmobile/.
 
-Thanks!
-I need to learn more.
+Also instead of always enabling DIV6 and MSTP adjust the Makefile
+to enable DIV6 and MSTP depending on if they are included in the
+SoC or not.
 
-Best Regards,
-Kaneko
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
 
->
->>
->>         return 0;
->>  }
->> --
->> 1.9.1
->>
->
-> Thanks, applied for next!
->
-> Kind regards
-> Uffe
+ Earlier known as "clk: shmobile: Get rid of CONFIG_ARCH_SHMOBILE_MULTI"
+
+ Changes since V5:
+ - None
+
+ Changes since V4:
+ - Added Acked-by from Laurent
+
+ Changes since V3:
+ - Got rid of hunks that modified drivers/clk/Makefile
+ - This to prevent build issue with non-CCF enabled SH arch
+ - A nice side effect is that this patch now can be merged any time
+
+ Changes since V2:
+ - Fixed patch subject typo CONFIG_SHMOBILE_MULTI -> CONFIG_ARCH_SHMOBILE_MULTI
+
+ Changes since V1:
+ - Added Acked-by from Geert
+
+ drivers/clk/shmobile/Makefile |   22 ++++++++++------------
+ 1 file changed, 10 insertions(+), 12 deletions(-)
+
+--- 0001/drivers/clk/shmobile/Makefile
++++ work/drivers/clk/shmobile/Makefile	2015-08-29 16:14:57.522366518 +0900
+@@ -1,13 +1,11 @@
+ obj-$(CONFIG_ARCH_EMEV2)		+= clk-emev2.o
+-obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o
+-obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o
+-obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o
+-obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o
+-obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
+-obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o
+-obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
+-obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-mstp.o
++obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o clk-mstp.o
++obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o clk-mstp.o
++obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o clk-mstp.o
++obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o clk-mstp.o clk-div6.o
