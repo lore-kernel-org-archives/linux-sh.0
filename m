@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 02 Sep 2015 11:23:46 +0000
+Date: Wed, 02 Sep 2015 11:26:07 +0000
 Subject: Re: [PATCH v6 03/05] clk: shmobile: Make MSTP clock-output-names optional
-Message-Id: <55E6DC42.6080201@cogentembedded.com>
+Message-Id: <55E6DCCF.40600@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150902071657.10870.37652.sendpatchset@little-apple>
  <20150902071728.10870.32730.sendpatchset@little-apple>
@@ -11,8 +11,6 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Magnus Damm <magnus.damm@gmail.com>, linux-clk@vger.kernel.org
 Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com
-
-Hello.
 
 On 9/2/2015 10:17 AM, Magnus Damm wrote:
 
@@ -52,17 +50,13 @@ On 9/2/2015 10:17 AM, Magnus Damm wrote:
 > -			pr_err("%s: invalid clock %s %s index %u)\n",
 > -			       __func__, np->name, name, clkidx);
 > +			pr_err("%s: invalid clock %s index %u)\n",
+
+    There's no opening paren in this string.
+
 > +			       __func__, np->name, clkidx);
 >   			continue;
 >   		}
 >
-> +		if (of_property_read_string_index(np, "clock-output-names",
-> +						  i, &name) < 0)
-> +			allocated_name = name = kasprintf(GFP_KERNEL, "%s.%u",
-> +							   np->name, clkidx);
-
-    There's too many spaces on this line, it's a bit over-indented.
-
 [...]
 
 MBR, Sergei
