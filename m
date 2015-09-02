@@ -1,54 +1,60 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 30 Sep 2015 08:49:45 +0000
-Subject: RE: [PATCH v6 2/2] pwm: Add support for R-Car PWM Timer
-Message-Id: <SG2PR06MB091904CF251C9CF1A999C768D84D0@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 02 Sep 2015 18:51:49 +0000
+Subject: [PATCH 1/2] [RFC] pinctrl: sh-pfc: r8a7795: Add pinmux data for single-function pins
+Message-Id: <1441219910-28964-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1439957639-4816-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <1439957639-4816-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <20150819100732.GC26627@ulmo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thierry Reding <thierry.reding@gmail.com>
-Cc: "robh+dt@kernel.org" <robh+dt@kernel.org>, "pawel.moll@arm.com" <pawel.moll@arm.com>, "mark.rutland@arm.com" <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, "galak@codeaurora.org" <galak@codeaurora.org>, "linux-pwm@vger.kernel.org" <linux-pwm@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Thierry,
+Pins that (1) can be configured as either GPIO or a single peripheral
+function, and (2) that don't need configuration in an IPSRx register,
+should still be listed in the pinmux_data[] array.
 
-> Sent: Tuesday, September 15, 2015 7:01 PM
-> 
-> Hi Thierry,
-> 
-> > Sent: Wednesday, August 19, 2015 8:01 PM
-> >
-> > Hi Thierry,
-> >
-> > > Sent: Wednesday, August 19, 2015 7:08 PM
-> > >
-> > > On Wed, Aug 19, 2015 at 01:13:59PM +0900, Yoshihiro Shimoda wrote:
-> > > > This patch adds support for R-Car SoCs PWM Timer. The PWM timer of
-> > > > R-Car H2 has 7 channels. So, we can use the channels if we describe
-> > > > device tree nodes.
-> > > >
-> > > > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> > > > Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
-> > > > ---
-> > > >  drivers/pwm/Kconfig    |  11 ++
-> > > >  drivers/pwm/Makefile   |   1 +
-> > > >  drivers/pwm/pwm-rcar.c | 265 +++++++++++++++++++++++++++++++++++++++++++++++++
-> > > >  3 files changed, 277 insertions(+)
-> > > >  create mode 100644 drivers/pwm/pwm-rcar.c
-> > >
-> > > Found a couple more things. No need to respin for any of these, I can
-> > > make the changes when applying, but I'd like confirmation on a couple
-> > > of things below.
-> >
-> > Thank you!
-> 
-> I could not find this driver in the latest your linux-pwm.git / for-next branch.
-> Should I send v7 patch?
+Else selecting the peripheral function fails with e.g.:
 
-I submitted v7 patch now. So, would you review it?
+    sh-pfc e6060000.pfc: cannot locate data/mark enum_id for mark 1281
 
-Best regards,
-Yoshihiro Shimoda
+(mark 1281 is MSIOF0_SCK_MARK).
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Mechanism derived from looking at pfc-r8a7791.c
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+index 5a709fc82a9fac5a..61e6faf9bf1a4316 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+@@ -581,6 +581,25 @@ enum {
+ static const u16 pinmux_data[] = {
+ 	PINMUX_DATA_GP_ALL(),
+ 
++	PINMUX_DATA(AVS1_MARK, FN_AVS1),
++	PINMUX_DATA(AVS2_MARK, FN_AVS2),
++	PINMUX_DATA(HDMI0_CEC_MARK, FN_HDMI0_CEC),
++	PINMUX_DATA(HDMI1_CEC_MARK, FN_HDMI1_CEC),
++	PINMUX_DATA(MSIOF0_RXD_MARK, FN_MSIOF0_RXD),
++	PINMUX_DATA(MSIOF0_SCK_MARK, FN_MSIOF0_SCK),
++	PINMUX_DATA(MSIOF0_TXD_MARK, FN_MSIOF0_TXD),
++	PINMUX_DATA(SD2_CMD_MARK, FN_SD2_CMD),
++	PINMUX_DATA(SD3_CLK_MARK, FN_SD3_CLK),
++	PINMUX_DATA(SD3_CMD_MARK, FN_SD3_CMD),
++	PINMUX_DATA(SD3_DAT0_MARK, FN_SD3_DAT0),
++	PINMUX_DATA(SD3_DAT1_MARK, FN_SD3_DAT1),
++	PINMUX_DATA(SD3_DAT2_MARK, FN_SD3_DAT2),
++	PINMUX_DATA(SD3_DAT3_MARK, FN_SD3_DAT3),
++	PINMUX_DATA(SD3_DS_MARK, FN_SD3_DS),
++	PINMUX_DATA(SSI_SCK5_MARK, FN_SSI_SCK5),
++	PINMUX_DATA(SSI_SDATA5_MARK, FN_SSI_SDATA5),
++	PINMUX_DATA(SSI_WS5_MARK, FN_SSI_WS5),
++
+ 	/* IPSR0 */
+ 	PINMUX_IPSR_DATA(IP0_3_0,	AVB_MDC),
+ 	PINMUX_IPSR_MSEL(IP0_3_0,	MSIOF2_SS2_C,		SEL_MSIOF2_2),
+-- 
+1.9.1
 
