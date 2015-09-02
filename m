@@ -1,45 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 17 Sep 2015 07:53:06 +0000
-Subject: Re: [PATCH 00/14] SCI clocks cleanup
-Message-Id: <20150917075305.GC5414@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 02 Sep 2015 07:16:57 +0000
+Subject: [PATCH v6 00/05] Renesas R-Car Gen3 CPG support V6
+Message-Id: <20150902071657.10870.37652.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442232876-27629-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442232876-27629-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-On Thu, Sep 17, 2015 at 04:30:06PM +0900, Simon Horman wrote:
-> On Mon, Sep 14, 2015 at 03:14:22PM +0300, Laurent Pinchart wrote:
-> > Hello,
-> > 
-> > The SCI driver currently handles two clocks, an interface clock named sci_ick
-> > and a functional clock named sci_fck. Studying the datasheets of the SH and
-> > ARM SoCs that incorportate (H)SCI(F)([AB]) instances showed (un)surprisingly
-> > that the hardware doesn't have a separate controllable interface clock.
-> > 
-> > All the platforms that declare an interface clock for the SCI set it to the
-> > clock used as the SCI functional clock. The two clocks can thus be merged on
-> > the driver side, which is what this patch series does. The resulting clock is
-> > called "fck", and all SH and ARM users (both DT and non-DT) are fixed to name
-> > their SCI clocks appropriately.
-> > 
-> > Support for the "sci_ick" name is kept in the sh-sci driver to ensure DT
-> > backward compatibility, and support for the "peripheral_clk" clock to not
-> > break SH platforms that don't declare device-specific SCI clocks. The later
-> > can be removed when all SH platforms will declare their SCI clocks properly.
-> > 
-> > The patches have been developed for an ancien (v3.x for those who were born)
-> > kernel and rebased on top of Simon's master branch. I've only compile-tested
-> > them after the rebase. Geert, I believe this series is a good preliminary
-> > cleanup for the SCI baud rate generator clock support. Could you give it a try
-> > as part of your work on that ?
-> 
-> FWIW, given the explanation above, particularly that regarding backwards
-> compatibility for DT, I am comfortable with these changes.
+Renesas R-Car Gen3 CPG support V6
 
-I have now looked over the code and it looks good to me:
+[PATCH v6 01/05] clk: shmobile: Rework CONFIG_ARCH_SHMOBILE_MULTI
+[PATCH v6 02/05] clk: shmobile: Add r8a7795 SoC to MSTP bindings
+[PATCH v6 03/05] clk: shmobile: Make MSTP clock-output-names optional
+[PATCH v6 04/05] clk: shmobile: Add Renesas R-Car Gen3 CPG support
+[PATCH v6 05/05] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+This series is my latest attempt to provide R-Car Gen3 clock support
+through a single "easy to use" patch series for drivers/clk and DT
+documentation bits. New in this version is that the patches have been
+reordered to put the most stable (and acked) patches first. 
 
+This version includes several minor updates for all the patches.
+For details please see each individual patch.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Developed against renesas-drivers-2015-09-01-v4.2 with v5 series reverted.
+
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt      |    1 
+ Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt |   58 ++
+ drivers/clk/Makefile                                                     |    1 
+ drivers/clk/shmobile/Makefile                                            |   23 
+ drivers/clk/shmobile/clk-mstp.c                                          |   24 
+ drivers/clk/shmobile/clk-rcar-gen3.c                                     |  243 ++++++++++
+ 6 files changed, 327 insertions(+), 23 deletions(-)
