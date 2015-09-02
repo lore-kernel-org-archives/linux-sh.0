@@ -1,72 +1,101 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 22:51:04 +0000
-Subject: [PATCH 17/22] drm: rcar-du: Output the DISP signal on the ODDF pin
-Message-Id: <1442184669-30990-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 02 Sep 2015 07:17:50 +0000
+Subject: [PATCH v6 05/05] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support
+Message-Id: <20150902071750.10870.76669.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20150902071657.10870.37652.sendpatchset@little-apple>
+In-Reply-To: <20150902071657.10870.37652.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-The ODDF signal, output by default on the ODDF pin, isn't used on any
-board supported in the kernel. As the Gen3 Salvator-X board uses the
-ODDF pin as a DISP signal, hardcode that configuration in the driver.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Use of the ODDF signal will be implemented later through proper DT-based
-configuration of the DU pins.
+Add Clock Domain support to the R-Car Gen3 Clock Pulse Generator (CPG)
+driver using the generic PM Domain.  This allows to power-manage the
+module clocks of SoC devices that are part of the CPG/MSTP Clock Domain
+using Runtime PM, or for system suspend/resume.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+SoC devices that are part of the CPG/MSTP Clock Domain and can be
+power-managed through an MSTP clock should be tagged in DT with a proper
+"power-domains" property.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_group.c | 12 ++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_regs.h  |  2 +-
- 2 files changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-index 0e2b46dce563..144d1e0a7a4a 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-@@ -44,6 +44,16 @@ void rcar_du_group_write(struct rcar_du_group *rgrp, u32 reg, u32 data)
- 	rcar_du_write(rgrp->dev, rgrp->mmio_offset + reg, data);
+ Changes since V5:
+ - Rebased to fit on top of updated CPG DT binding document
+
+ Changes since V4:
+ - Rebased to fit on top of updated CPG DT binding document
+
+ Changes since V3:
+ - Fixed so correct file is actually used. =)
+ - Took V2 from Geert but filtered out Kconfig.platforms bits
+
+ Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt |   26 +++++++++-
+ drivers/clk/shmobile/clk-rcar-gen3.c                                     |    2 
+ 2 files changed, 26 insertions(+), 2 deletions(-)
+
+--- 0009/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
++++ work/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt	2015-09-02 14:41:32.942366518 +0900
+@@ -2,6 +2,8 @@
+ 
+ The CPG generates core clocks for the R-Car Gen3 SoCs. It includes three PLLs
+ and several fixed ratio dividers.
++The CPG also provides a Clock Domain for SoC devices, in combination with the
++CPG Module Stop (MSTP) Clocks.
+ 
+ Required Properties:
+ 
+@@ -14,9 +16,17 @@ Required Properties:
+   - clocks: References to the parent clocks: first to the EXTAL clock
+   - #clock-cells: Must be 1
+   - clock-indices: Indices of the exported clocks
++  - #power-domain-cells: Must be 0
+ 
+-Example
+--------
++SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
++through an MSTP clock should refer to the CPG device node in their
++"power-domains" property, as documented by the generic PM domain bindings in
++Documentation/devicetree/bindings/power/power_domain.txt.
++
++Examples
++--------
++
++  - CPG device node:
+ 
+ 	cpg_clocks: cpg_clocks@e6150000 {
+ 		compatible = "renesas,r8a7795-cpg-clocks",
+@@ -29,4 +39,16 @@ Example
+ 				R8A7795_CLK_PLL1 R8A7795_CLK_PLL2
+ 				R8A7795_CLK_PLL3 R8A7795_CLK_PLL4
+ 		>;
++		#power-domain-cells = <0>;
++	};
++
++  - CPG/MSTP Clock Domain member device node:
++
++	scif2: serial@e6e88000 {
++		compatible = "renesas,scif-r8a7795", "renesas,scif";
++		reg = <0 0xe6e88000 0 64>;
++		interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks RCAR_R8A7795_CLK_SCIF2>;
++		clock-names = "sci_ick";
++		power-domains = <&cpg_clocks>;
+ 	};
+--- 0009/drivers/clk/shmobile/clk-rcar-gen3.c
++++ work/drivers/clk/shmobile/clk-rcar-gen3.c	2015-09-02 14:39:35.912366518 +0900
+@@ -236,6 +236,8 @@ static void __init rcar_gen3_cpg_clocks_
+ 	}
+ 
+ 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++
++	cpg_mstp_add_clk_domain(np);
  }
- 
-+static void rcar_du_group_setup_pins(struct rcar_du_group *rgrp)
-+{
-+	u32 defr6 = DEFR6_CODE | DEFR6_ODPM12_DISP;
-+
-+	if (rgrp->num_crtcs > 1)
-+		defr6 |= DEFR6_ODPM22_DISP;
-+
-+	rcar_du_group_write(rgrp, DEFR6, defr6);
-+}
-+
- static void rcar_du_group_setup_defr8(struct rcar_du_group *rgrp)
- {
- 	u32 defr8 = DEFR8_CODE | DEFR8_DEFE8;
-@@ -71,6 +81,8 @@ static void rcar_du_group_setup(struct rcar_du_group *rgrp)
- 	rcar_du_group_write(rgrp, DEFR4, DEFR4_CODE);
- 	rcar_du_group_write(rgrp, DEFR5, DEFR5_CODE | DEFR5_DEFE5);
- 
-+	rcar_du_group_setup_pins(rgrp);
-+
- 	if (rcar_du_has(rgrp->dev, RCAR_DU_FEATURE_EXT_CTRL_REGS)) {
- 		rcar_du_group_setup_defr8(rgrp);
- 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_regs.h b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-index 95add71a33c8..2ccb1a241fc4 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-@@ -187,7 +187,7 @@
- 
- #define DEFR6			0x000e8
- #define DEFR6_CODE		(0x7778 << 16)
--#define DEFR6_ODPM22_D2SMR	(0 << 10)
-+#define DEFR6_ODPM22_DSMR	(0 << 10)
- #define DEFR6_ODPM22_DISP	(2 << 10)
- #define DEFR6_ODPM22_CDE	(3 << 10)
- #define DEFR6_ODPM22_MASK	(3 << 10)
--- 
-2.4.6
-
+ CLK_OF_DECLARE(rcar_gen3_cpg_clks, "renesas,rcar-gen3-cpg-clocks",
+ 	       rcar_gen3_cpg_clocks_init);
