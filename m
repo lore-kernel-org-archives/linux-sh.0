@@ -1,37 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 22 Sep 2015 07:32:46 +0000
-Subject: Re: [PATCH v3] pinctrl: sh-pfc: r8a7794: add VIN pin groups
-Message-Id: <CAMuHMdW_Rh7yk9hF8JjQAqq81w8se0CK4xH=dZX=mNjgJ87poQ@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 02 Sep 2015 06:52:45 +0000
+Subject: Re: [PATCH v2] clk: shmobile: Get rid of CONFIG_SHMOBILE_MULTI
+Message-Id: <CANqRtoSccKdT9W_xhJ-xNQjbrJBEfGgn4uHaYM7=ieZt3gTT0g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <13219129.kD4pZSmcAP@wasted.cogentembedded.com>
-	<1628224.IIIbAo3i3M@wasted.cogentembedded.com>
-In-Reply-To: <1628224.IIIbAo3i3M@wasted.cogentembedded.com>
+References: <20150826074309.4298.76147.sendpatchset@little-apple>
+	<CAMuHMdVXJ8Te_Rwn2WZCdXdh_+0__S6QEp7ZBzggpY-UgqtqLA@mail.gmail.com>
+In-Reply-To: <CAMuHMdVXJ8Te_Rwn2WZCdXdh_+0__S6QEp7ZBzggpY-UgqtqLA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Linus Walleij <linus.walleij@linaro.org>, Linux-sh list <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: linux-clk <linux-clk@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>, Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-On Tue, Sep 22, 2015 at 12:00 AM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Hi Geert,
+
+On Wed, Aug 26, 2015 at 4:48 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> On Wed, Aug 26, 2015 at 9:43 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+>> From: Magnus Damm <damm+renesas@opensource.se>
+>>
+>> Shmobile is all multiplatform these days, so get rid of the
+>> reference to CONFIG_ARCH_SHMOBILE_MULTI. Also instead of always
+>> enabling DIV6 and MSTP adjust the Makefile to enable DIV6 and
+>> MSTP depending on if they are included in the SoC or not.
+>>
+>> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+>> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> ---
+>>
+>>  Changes since V1:
+>>  - dropped DIV6 from R-Car Gen1 variants - thanks Geert!
 >
-> Add VIN0/1 pin groups to R8A7794 PFC driver.
->
-> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-> [Sergei: rebased, renamed, added changelog, gathered 12 VIN1 data pins into a
-> single pin group, added "vin1_data10" pin group.]
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> BTW, you forgot to mention, but it's important for Mike and Stephen to
+> know that this should not be queued up in a branch that still has
+> ARCH_SHMOBILE_LEGACY.
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Allow me to clarify one thing.
 
-Gr{oetje,eeting}s,
+Your comment is true for this older version of this patch, but newer
+versions such as:
+[PATCH v5 01/05] clk: shmobile: Rework CONFIG_ARCH_SHMOBILE_MULTI
+and later versions do not have this dependency on ARCH_SHMOBILE_LEGACY cleanups.
 
-                        Geert
+So newer versions can be merged at any time without any special dependencies.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Thanks,
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+/ magnus
