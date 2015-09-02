@@ -1,52 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 24 Sep 2015 05:30:20 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Updates for v4.4
-Message-Id: <cover.1443072491.git.horms+renesas@verge.net.au>
+From: Rob Landley <rob@landley.net>
+Date: Wed, 02 Sep 2015 13:36:20 +0000
+Subject: [PATCH] common checksum code uses post-sh2 instruction
+Message-Id: <55E6FB54.9090800@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1397627619.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1397627619.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+From: Rob Landley <rob@landley.net>
 
-Please consider these Renesas ARM based SoC updates for v4.4.
+The common checksum code uses shld which sh2 hasn't got, so unwind it.
 
-This pull request is based "Renesas ARM Based SoC Clk Updates for v4.4",
-tagged as clk-for-v4.4, which I have also sent a pull-request for.
+Note: http://nommu.org/jcore added SHAD and SHLD, and if anybody's
+building for an actual sh2 they'll either need gcc 4.7 or earlier or
+a fix to https://gcc.gnu.org/bugzilla/show_bug.cgi?idT089 but
+when regression testing against the actual historical hardware,
+you need this.
 
+Signed-off-by: Rob Landley <rob@landley.net>
+---
 
-The following changes since commit e233d74c30f48108b7affb4e76bfc8f3c76b68ce:
+ arch/sh/lib/checksum.S |   10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-  clk: shmobile: mstp: Consider "zb_clk" suitable for power management (2015-09-18 09:11:37 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v4.4
-
-for you to fetch changes up to 8b98d74780ab70147d40400c36059c16c1aea4da:
-
-  ARM: shmobile: R-Mobile: Use CPG/MSTP Clock Domain attach/detach helpers (2015-09-18 09:12:51 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Updates for v4.4
-
-* ARM: shmobile: R-Mobile: Use CPG/MSTP Clock Domain attach/detach helpers
-
-  This part of a multi-stage effort by Geert Uytterhoeven to add:
-
-  "Clock Domain support to the Clock Pulse Generator (CPG) Module Stop
-   (MSTP) Clocks driver using the generic PM Domain, to be used on shmobile
-   SoCs without device power domains (R-Car Gen1 and Gen2, RZ).  This allows
-   to power-manage the module clocks of SoC devices that are part of the
-   CPG/MSTP Clock Domain using Runtime PM, or for system suspend/resume,
-   similar to SoCs with device power domains (SH-Mobile and R-Mobile)."
-
-----------------------------------------------------------------
-Geert Uytterhoeven (1):
-      ARM: shmobile: R-Mobile: Use CPG/MSTP Clock Domain attach/detach helpers
-
- arch/arm/mach-shmobile/pm-rmobile.c | 35 +++--------------------------------
- 1 file changed, 3 insertions(+), 32 deletions(-)
+diff --git a/arch/sh/lib/checksum.S b/arch/sh/lib/checksum.S
+index 356c8ec..7f0fc6b 100644
+--- a/arch/sh/lib/checksum.S
++++ b/arch/sh/lib/checksum.S
+@@ -88,8 +88,9 @@ ENTRY(csum_partial)
+ 2:
+ 	! buf is 4 byte aligned (len could be 0)
+ 	mov	r5, r1
+-	mov	#-5, r0
+-	shld	r0, r1
++	shlr2	r1		! mov	#-5, r0
++	shlr2	r1		! shld	r0, r1
++	shlr	r1
+ 	tst	r1, r1
+ 	bt/s	4f		! if it's =0, go to 4f
+ 	 clrt
+@@ -288,8 +289,9 @@ DST(	mov.w	r0,@r5		)
+ 	addc	r0,r7
+ 2:
+ 	mov	r6,r2
+-	mov	#-5,r0
+-	shld	r0,r6
++	shlr2	r6		! mov	#-5, r0
++	shlr2	r6		! shld	r0, r6
++	shlr	r6
+ 	tst	r6,r6
+ 	bt/s	2f
+ 	 clrt
