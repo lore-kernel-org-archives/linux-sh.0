@@ -1,68 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Sep 2015 08:59:22 +0000
-Subject: [PATCH 06/21] ARM: shmobile: Remove obsolete earlytimer registration
-Message-Id: <93161cb4c3c27517f1b4516a880adaf7df4112e2.1442478814.git.horms+renesas@verge.net.au>
+From: Rob Landley <rob@landley.net>
+Date: Wed, 02 Sep 2015 14:14:36 +0000
+Subject: [PATCH] remove open-coded memset.
+Message-Id: <55E7044C.1050304@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442478814.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442478814.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Rob Landley <rob@landley.net>
 
-The last caller of shmobile_earlytimer_init() was removed in commit
-c99cd90d98a98aa1 ("ARM: shmobile: r8a7779: Remove legacy SoC code").
+Why is the binflt loader open-coding memset?
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Rob Landley <rob@landley.net>
 ---
- arch/arm/mach-shmobile/common.h |  1 -
- arch/arm/mach-shmobile/timer.c  | 21 ---------------------
- 2 files changed, 22 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
-index ee8fe9e473d7..2a350b48b893 100644
---- a/arch/arm/mach-shmobile/common.h
-+++ b/arch/arm/mach-shmobile/common.h
-@@ -1,7 +1,6 @@
- #ifndef __ARCH_MACH_COMMON_H
- #define __ARCH_MACH_COMMON_H
+ arch/sh/include/asm/flat.h |    6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/arch/sh/include/asm/flat.h b/arch/sh/include/asm/flat.h
+index 5d84df5..1feb3da 100644
+--- a/arch/sh/include/asm/flat.h
++++ b/arch/sh/include/asm/flat.h
+@@ -21,10 +21,6 @@
+ #define	flat_set_persistent(relval, p)		({ (void)p; 0; })
  
--extern void shmobile_earlytimer_init(void);
- extern void shmobile_init_delay(void);
- struct twd_local_timer;
- extern void shmobile_boot_vector(void);
-diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
-index f1d027aa7a81..c17d4d3881ff 100644
---- a/arch/arm/mach-shmobile/timer.c
-+++ b/arch/arm/mach-shmobile/timer.c
-@@ -77,24 +77,3 @@ void __init shmobile_init_delay(void)
- 			shmobile_setup_delay_hz(max_freq, 2, 4);
- 	}
- }
--
--static void __init shmobile_late_time_init(void)
--{
--	/*
--	 * Make sure all compiled-in early timers register themselves.
--	 *
--	 * Run probe() for two "earlytimer" devices, these will be the
--	 * clockevents and clocksource devices respectively. In the event
--	 * that only a clockevents device is available, we -ENODEV on the
--	 * clocksource and the jiffies clocksource is used transparently
--	 * instead. No error handling is necessary here.
--	 */
--	early_platform_driver_register_all("earlytimer");
--	early_platform_driver_probe("earlytimer", 2, 0);
--}
--
--void __init shmobile_earlytimer_init(void)
--{
--	late_time_init = shmobile_late_time_init;
--}
--
--- 
-2.1.4
-
+ #define FLAT_PLAT_INIT(_r) \
+-  do { _r->regs[0]=0; _r->regs[1]=0; _r->regs[2]=0; _r->regs[3]=0; \
+-       _r->regs[4]=0; _r->regs[5]=0; _r->regs[6]=0; _r->regs[7]=0; \
+-       _r->regs[8]=0; _r->regs[9]=0; _r->regs[10]=0; _r->regs[11]=0; \
+-       _r->regs[12]=0; _r->regs[13]=0; _r->regs[14]=0; \
+-       _r->sr = SR_FD; } while (0)
++  do { memset(_r->regs, 0, 15*sizeof(*_r->regs)); _r->sr = SR_FD; } while (0)
+ 
+ #endif /* __ASM_SH_FLAT_H */
