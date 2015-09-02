@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 02 Sep 2015 02:13:02 +0000
+Date: Wed, 02 Sep 2015 02:13:09 +0000
 Subject: Re: [PATCH/RFC 04/10] ravb: Add support for r8a7795 SoC
-Message-Id: <20150902021300.GC12080@verge.net.au>
+Message-Id: <20150902021308.GD12080@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1440667450-3513-5-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1440667450-3513-5-git-send-email-horms+renesas@verge.net.au>
@@ -10,214 +10,137 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Aug 28, 2015 at 02:46:30PM +0300, Sergei Shtylyov wrote:
-> On 8/28/2015 11:27 AM, Simon Horman wrote:
+On Fri, Aug 28, 2015 at 01:51:20PM +0300, Sergei Shtylyov wrote:
+> On 8/28/2015 11:35 AM, Geert Uytterhoeven wrote:
 > 
-> >>>>--- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
-> >>>>+++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
-> >>>>@@ -6,8 +6,12 @@ interface contains.
-> >>>>  Required properties:
-> >>>>  - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
-> >>>>               "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
-> >>>>+             "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
-> >>>>  - reg: offset and length of (1) the register block and (2) the stream buffer.
-> >>>>-- interrupts: interrupt specifier for the sole interrupt.
-> >>>>+- interrupts: if the device is a part of R8A7790/R8A7794 SoC
-> >>>>+              interrupt specifier for the sole interrupt.
-> >>>>+              if the device is a part of R8A7795 SoC
-> >>>>+              interrupt specifier for the two interrupts.
-> >>>
-> >>>If there are multiple interrupts, you best make them named interrupts,
-> >>>i.e. requiring "interrupt-names", too.
-> >>
-> >>Thanks, I will look into that.
-> >>
-> >>>Why are there only 2 interrupts? The datasheet mentions 25, for ch0-ch24.
-> >>
-> >>Thanks for bringing that up. I think it has also come up elsewhere in this
-> >>thread. I'd like to focus on addressing it here rather than spreading the
-> >>discussion around any further.
-> >>
-> >>My understanding is that on the R-Car Gen3 r8a7795 SoC
-> >>the EthernetAVB hardware may function in one of two modes.
-> >>
-> >>1. A mode which is "mostly" compatible with R-Car Gen2
-> >>    (e.g. r8a7790, r8a7790).
-> >>
-> >>    In this mode only ch22 and ch24 are used.
+> >Thanks for the update!
 > 
->    But this is *not* really compatible!
-
-Compatible may not have been the wisest choice of wording.
-Regardless, the point is that there are two modes. I will describe
-them more fully in a separate sub-thread.
-
-> >>    I note that the emac interrupt also appears to be documented for Gen-2.
+> >On Fri, Aug 28, 2015 at 10:27 AM, Simon Horman <horms@verge.net.au> wrote:
+> >>--- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
+> >>+++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+> >>@@ -6,8 +6,12 @@ interface contains.
+> >>  Required properties:
+> >>  - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
+> >>               "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
+> >>+             "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
+> >>  - reg: offset and length of (1) the register block and (2) the stream buffer.
+> >>-- interrupts: interrupt specifier for the sole interrupt.
+> >>+- interrupts: interrupt specifiers.
+> >>+             One data and one emac interrupt for the R8A7795 SoC;
 > 
->    Where? I'm looking at the common h/w manual rev1.02 and only seeing IRQ
-> 162 for the normal Ether and IRQ163 for the EtherAVB...
-> 
-> >>    Its not clear to me at this time why it isn't appropriate to use it
-> >>    on those SoCs.
-> 
->    I just never saw it in the manual.
+>    Data?! What the heck does it mean? :-/
 
-Sorry, I was mistaken.
-On closer inspection I don't see it either.
+Perhaps it would be better to refer to them as dmac interrupts.
 
-> >I have confirmed with that the emac interrupt shouldn't be used
-> >on Gen2 SoCs.
-> 
->    Hm... It seems to me from re-reading the driver code, that the current
-> driver only uses the *E-MAC* interrupts and doesn't use the AVB-DMAC
-> interrupts. Maybe I'm over-simplifying though...
+The documentation makes reference to "merged data interrupt", which
+seems to refer to tx and rx interrupts. But this interrupt is also
+used for error and management related interrupts.
 
-I'm not sure that I understand the distinction that you are making there.
+I'm all ears with regards to a good name.
 
-> >>2. A mode which is new in Gen 3.
-> >>
-> >>    In this mode ch0 - ch24 are used.
-> >>    I believe that in this mode there are per DMA queue interrupts.
+With regards to the documentation consistently referring to "E-MAC",
+which you raised elsewhere. Yes I see that too but I'm not sure where
+you are going there. If you would like to tweak the documentation
+or name of the interrupt somehow please spell out your ideas a little
+more clearly.
+
+> >>+             these interrupts must be named.
+> >>+              One named or unnamed data interrupt otherwise.
+> >>  - phy-mode: see ethernet.txt file in the same directory.
+> >>  - phy-handle: see ethernet.txt file in the same directory.
+> >>  - #address-cells: number of address cells for the MDIO bus, must be equal to 1.
+> >>@@ -18,6 +22,12 @@ Required properties:
+> >>  Optional properties:
+> >>  - interrupt-parent: the phandle for the interrupt controller that services
+> >>                     interrupts for this device.
+> >>+- interrupt-names: Names of named interrupts.
+> >>+                   If the property is present "data" is required.
+> >>+                   "emac" is also required for the R8A7795 SoC;
+> >>+                  it is prohibited otherwise.
+> >>+                  This property is mandatory for the R8A7795 SoC;
+> >>+                  optional otherwise.
+> >>  - pinctrl-names: pin configuration state name ("default").
+> >>  - renesas,no-ether-link: boolean, specify when a board does not provide a proper
+> >>                          AVB_LINK signal.
 > >
-> >With regards to named interrupts, and indeed most of the other feedback I
-> >have received for this patch, how about the following?
+> >What about the 25 channel interrupts?
+> >"data" and "emac" seem to use ch22 resp. ch 24 on Gen3.
 > >
-> >I also confirmed with Mizuguchi-san that it is intentional that the same
-> >handler is used for both interrupts.
+> >I'm afraid this will bite us one day.
 > 
->    I don't doubt it was intentional, I just very much doubt that it's correct.
+>    Me too. We should describe the real hardware, not how the driver uses it.
+> Where does configuring the AVB interrupt mode happen?
 
-As mentioned above, I have will describe more fully the interrupts in
-another sub-thread.  I hope that helps clear things up.
+I believe that we all want that. Lets see about making it so :)
 
-My position on using a shared handler is that it is a simple step
-to create a correct implementation. I believe it is correct because
-the existing handler handles a superset of the interrupts from each of the
-two lines hooked up to it will generate.
+As I mentioned above, broadly speaking the interrupts may be configured in
+one of two modes. And the default configuration is to use what I earlier
+described as "compatible". I will now just refer to it as mode 1 with
+the other mode being mode 2.
 
-I believe that it in the longer term it will make for a nicer
-implementation to have specific handlers for each interrupt.
-But it that it makes sense to handle that as incremental updates
-as the driver matures.
+Mode 1.
 
-> 
-> >From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> >Subject: [PATCH/RFC v1.1] ravb: Add support for r8a7795 SoC
-> >
-> >This patch supports the r8a7795 SoC by:
-> >- Adding a compat string for the new hardware
-> >- Support named-interrupts
-> >- Support the E-DMAC interrupt on the new hardware.
-> >   Although also present on Gen2 SoCs my understanding is
-> >   that it can't be used on those SoCs.
-> 
->    No, I don't agree with this description, I don't know where you got this info.
+  ch22 or ch23 is used for:
+   * Merged Data Interrupts (TX and RX)
+   * Error related interrupts
+   * Management related interrupts
 
-Thanks, I withdraw that description.
+  ch24 is used for:
+   * E-MAC interrupts
 
-> >Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> >[horms: updated changelog and cleaned up]
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >
-> >---
-> >
-> >v0 [Kazuya Mizuguchi]
-> >
-> >v1 [Simon Horman]
-> >* Updated patch subject
-> >
-> >v1.1 [Simon Horman]
-> >* As suggested by Sergei Shtylyov
-> >   - Updated changelog
-> >   - Corrected capitalisation in documentation
-> >   - Removed pdev variable from ravb_open()
-> >   - Corrected indentation
-> >   - Leave initialisation and freeing of existing interrupt in common code
-> >* As suggested by Geert Uytterhoeven and Sergei Shtylyov
-> >   - support named interrupts
-> >
-> >TODO:
-> >* Consider propagating error for both new and existing call to
-> >   platform_get_irq().
-> >---
-> >  .../devicetree/bindings/net/renesas,ravb.txt       | 12 ++++++-
-> >  drivers/net/ethernet/renesas/ravb.h                |  1 +
-> >  drivers/net/ethernet/renesas/ravb_main.c           | 38 +++++++++++++++++++---
-> >  3 files changed, 46 insertions(+), 5 deletions(-)
-> >
-> >diff --git a/Documentation/devicetree/bindings/net/renesas,ravb.txt b/Documentation/devicetree/bindings/net/renesas,ravb.txt
-> >index 1fd8831437bf..e2b2a551813a 100644
-> >--- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
-> >+++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
-> >@@ -6,8 +6,12 @@ interface contains.
-> >  Required properties:
-> >  - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
-> >  	      "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
-> >+	      "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
-> >  - reg: offset and length of (1) the register block and (2) the stream buffer.
-> >-- interrupts: interrupt specifier for the sole interrupt.
-> >+- interrupts: interrupt specifiers.
-> >+	      One data and one emac interrupt for the R8A7795 SoC;
-> 
->    No, the "data" doesn't seem a correct name...
+  It seems to me that the above basically splits the single interrupt
+  in Gen2 into two.
 
-I will respond more fully  with regards to the bindings in another
-sub-thread.
+  This is the default mode for the hardware and the mode it ends up
+  in using the current driver implementation (+ this series which doesn't
+  alter the initialisation of the hardware).
 
-> >+	      these interrupts must be named.
-> >+              One named or unnamed data interrupt otherwise.
-> >  - phy-mode: see ethernet.txt file in the same directory.
-> >  - phy-handle: see ethernet.txt file in the same directory.
-> >  - #address-cells: number of address cells for the MDIO bus, must be equal to 1.
-> [...]
-> >diff --git a/drivers/net/ethernet/renesas/ravb.h b/drivers/net/ethernet/renesas/ravb.h
-> >index a157aaaaff6a..1832737063f3 100644
-> >--- a/drivers/net/ethernet/renesas/ravb.h
-> >+++ b/drivers/net/ethernet/renesas/ravb.h
-> >@@ -809,6 +809,7 @@ struct ravb_private {
-> >
-> >  	unsigned no_avb_link:1;
-> >  	unsigned avb_link_active_low:1;
-> >+	int emac_irq;
-> 
->    Please place this somewhere before the bit fields.
+Mode 2.
 
-Will do.
+  ch0 - ch17 are used for:
+  * per-queue Rx interrupts
 
-> [...]
-> >diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
-> >index 026d98435d87..0276707089a5 100644
-> >--- a/drivers/net/ethernet/renesas/ravb_main.c
-> >+++ b/drivers/net/ethernet/renesas/ravb_main.c
-> [...]
-> >@@ -1197,6 +1198,16 @@ static int ravb_open(struct net_device *ndev)
-> >  		goto out_napi_off;
-> >  	}
-> >
-> >+	if (of_device_is_compatible(dev->of_node, "renesas,etheravb-r8a7795")) {
-> >+		error = request_irq(priv->emac_irq, ravb_interrupt,
-> 
->    No, I can't agree to that. You need to clearly separate the interrupt
-> handlers.
-> 
-> >+				    IRQF_SHARED, ndev->name, ndev);
-> >+		if (error) {
-> >+			netdev_err(ndev, "cannot request IRQ\n");
-> >+			free_irq(ndev->irq, ndev);
-> 
->    No, please just add a new label below instead, we already have free_irq()
-> call there.
+  ch18 - ch21 are used for:
+  * per-queue Tx interrupts
 
-Sure, will do.
+  ch22 or ch23 are used for:
+  * Other DMA descriptor interrupts (if enabled)
+  * Error related interrupts 
+  * Management related interrupts
 
-> [...]
-> >@@ -1220,6 +1231,8 @@ out_ptp_stop:
-> >  	ravb_ptp_stop(ndev);
-> >  out_free_irq:
-> >  	free_irq(ndev->irq, ndev);
-> >+	if (of_device_is_compatible(dev->of_node, "renesas,etheravb-r8a7795"))
-> 
->    Repeating this check all over again doesn't look good to me... can you
-> see about adding some data to the 'struct of_device_id' initalizers?
+  ch24 is used for
+  * E-MAC interrupts
 
-Good idea, I'll look into it.
+
+I think it is instructive to examine differences between the modes for
+Each interrupt. And here is how I see that:
+
+  * ch0 - ch21:
+    mode 1: unused
+    mode 2: per queue rx or tx interrupts
+
+  * ch22 or ch23:
+    both mode 1 and 2:
+    + Error related interrupts
+    + Management related interrupts
+    mode 1 only:
+    + Merged Data Interrupts (TX and RX)
+    mode 2 only:
+    + Other DMA descriptor interrupts (if enabled)
+
+  * ch24:
+    mode 1 and 2: E-MAC interrupts
+
+
+So it seems to me that one possibility would be to:
+* Have names for all of the channels, say rx0 - 18, tx0 - 4, data, dataB, emac.
+  - Better names could be found for data and dataB.
+* Allow for properties to describe the mode and possibly which od dataA or B
+  should be used.
+But for now:
+* Only describe the interrupts that are used and default to mode 1 with the
+  data interrupt and;
+* Defer defining properties to switch to combinations
+
+I am all ears for other ideas.
+
