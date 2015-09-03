@@ -1,44 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 20:57:07 +0000
-Subject: [PATCH 29/32] v4l: vsp1: Disconnect unused RPFs from the DRM pipeline
-Message-Id: <1442177830-24536-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 03 Sep 2015 20:20:11 +0000
+Subject: [PATCH 7/9] i2c: rcar: check master irqs before slave irqs
+Message-Id: <1441311613-2681-8-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1441311613-2681-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1441311613-2681-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+
+Due to broken HW design, master IRQs are more timing critical, so give
+them precedence over slave IRQ.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- drivers/media/platform/vsp1/vsp1_drm.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+ drivers/i2c/busses/i2c-rcar.c | 13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_drm.c b/drivers/media/platform/vsp1/vsp1_drm.c
-index 2969d570f462..5cef619b708d 100644
---- a/drivers/media/platform/vsp1/vsp1_drm.c
-+++ b/drivers/media/platform/vsp1/vsp1_drm.c
-@@ -38,13 +38,17 @@ static int vsp1_drm_pipeline_run(struct vsp1_pipeline *pipe)
- 		struct vsp1_entity *entity;
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index dcf9fc77cec7c4..06bd8c45c6af9d 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -435,19 +435,17 @@ static bool rcar_i2c_slave_irq(struct rcar_i2c_priv *priv)
+ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ {
+ 	struct rcar_i2c_priv *priv = ptr;
+-	irqreturn_t result = IRQ_HANDLED;
+ 	u32 msr;
  
- 		list_for_each_entry(entity, &pipe->entities, list_pipe) {
--			/* Skip unused RPFs. */
-+			/* Disconnect unused RPFs from the pipeline. */
- 			if (entity->type = VSP1_ENTITY_RPF) {
- 				struct vsp1_rwpf *rpf  					to_rwpf(&entity->subdev);
+-	if (rcar_i2c_slave_irq(priv))
+-		goto exit;
+-
+ 	msr = rcar_i2c_read(priv, ICMSR);
  
--				if (!pipe->inputs[rpf->entity.index])
-+				if (!pipe->inputs[rpf->entity.index]) {
-+					vsp1_write(entity->vsp1,
-+						   entity->route->reg,
-+						   VI6_DPR_NODE_UNUSED);
- 					continue;
-+				}
- 			}
+ 	/* Only handle interrupts that are currently enabled */
+ 	msr &= rcar_i2c_read(priv, ICMIER);
+ 	if (!msr) {
+-		result = IRQ_NONE;
+-		goto exit;
++		if (rcar_i2c_slave_irq(priv))
++			return IRQ_HANDLED;
++
++		return IRQ_NONE;
+ 	}
  
- 			vsp1_entity_route_setup(entity);
+ 	/* Arbitration lost */
+@@ -484,8 +482,7 @@ out:
+ 		wake_up(&priv->wait);
+ 	}
+ 
+-exit:
+-	return result;
++	return IRQ_HANDLED;
+ }
+ 
+ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
 -- 
-2.4.6
+2.1.4
 
