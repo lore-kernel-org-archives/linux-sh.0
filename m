@@ -1,30 +1,62 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 10 Sep 2015 08:49:41 +0000
-Subject: Re: [PATCH 02/14][RFC] arm64: renesas: r8a7795: add I2C support
-Message-Id: <CAMuHMdVsi0vXAeT0Qqh9_3zF719RsApFOAoVRhYwSt8bp1_OKg@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 03 Sep 2015 20:34:42 +0000
+Subject: Re: [PATCH repost] i2c: rcar: Fix order of restart and clear status
+Message-Id: <20150903203442.GA1574@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="mYCpIKhGyMATD0i+"
 List-Id: <linux-sh.vger.kernel.org>
-References: <87oahan403.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87oahan403.wl%kuninori.morimoto.gx@renesas.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+References: <1439911206-8736-1-git-send-email-ykaneko0929@gmail.com>
+In-Reply-To: <1439911206-8736-1-git-send-email-ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-On Thu, Sep 10, 2015 at 9:14 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+--mYCpIKhGyMATD0i+
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Gr{oetje,eeting}s,
+On Wed, Aug 19, 2015 at 12:20:06AM +0900, Yoshihiro Kaneko wrote:
+> From: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+>=20
+> In case of repeated START condition, the restart has to be kicked
+> before clear status (MSR register). If it is kicked after clear status,
+> R-Car I2C may transfer data (TXD register) or receive data (RXD register)
+> instead of transferring slave address (MAR register).
+>=20
+> Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
 
-                        Geert
+I think I could reproduce the issue but changing the order of clearing
+and kicking did not change anything for me. I have CCed you in my new
+series regarding the i2c-rcar driver. That made the issue for me go
+away. Can you kindly check, too?
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Thanks,
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+   Wolfram
+
+
+--mYCpIKhGyMATD0i+
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJV6K7iAAoJEBQN5MwUoCm2nSUP/1SLuI3WKxLk2SbAS+sVm04n
+I3bWM77Agy9FEOytwoPdOkP/XwUepeeUZ4jKdeZUn+4hvVyK8SUeYqnXP4/SbxwE
+6768VNbImGklrR6WIivPIpsvJ62WnTG6r0ROF5YeS+AH95gb7JvW62BOQ9MEfdlu
+DXN73bdloKH3PMhVTxJy5WwvyosDHToSdzPLVCD1JPfotAtCyl4IfyNJUH10gXQk
+4pxxvwgRze8BnsQvuVs3Urmi1ZhNIaCj5uRLYx02Sx0K7ewvojRIEgJR7pMYdIVy
+RBUOLZojPBGaO5ed3kPLyJD0mGH/mlEVL4YT/IIKBceHrSHjw03XOM98VBZdPuWW
+/VADHLrvc5SAGxkfU4rzMbfvdWpfypHoPyWmN4xaqMT4rCre5OizEsg63WUWu+QQ
+Y6DZVC6EPu1fuw3DU1jLTmjASrVK/y/uCTQUcBZ7FBrUM80qD+6gKphrQTCQIcaZ
+JcxukKCAsSyvf9VS9GQAWep7UtxXfNPXSvTyEG03INi7JMwkPRo7Ns13f7pDSJEh
+/uI86OsXuNa/9SSrw6eCY/fCle3NvDueGNZQvwJCsnxbIOdPqn9SeSTUl+5WZvWF
+jgQF19y5ew2Ez2FN8NjsQkhZ4ZSbCMy4m0IU86jw2xDh4RB0cWKGT0Pd3W4bSWpQ
+qQZMlIwN4gKAjfIEcxAw
+=K6N+
+-----END PGP SIGNATURE-----
+
+--mYCpIKhGyMATD0i+--
