@@ -1,49 +1,51 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 04 Sep 2015 11:36:00 +0000
-Subject: Re: [PATCH 3/3] rcar_vin: call g_std() instead of querystd()
-Message-Id: <55E98220.1080801@xs4all.nl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 03 Sep 2015 02:48:33 +0000
+Subject: [PATCH 0/9 v2] sh-pfc: modify PINMUX_IPSR_MSEL() and r8a7795 support
+Message-Id: <87oahkql0v.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6015647.cjLjRfTWc7@wasted.cogentembedded.com> <2719391.j5OZOaG8ai@wasted.cogentembedded.com>
-In-Reply-To: <2719391.j5OZOaG8ai@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, g.liakhovetski@gmx.de, mchehab@osg.samsung.com, linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-On 09/04/2015 01:18 AM, Sergei Shtylyov wrote:
-> Hans Verkuil says: "The only place querystd can be called  is in the QUERYSTD
-> ioctl, all other ioctls should use the last set standard." So call the g_std()
-> subdevice method instead of querystd() in the driver's set_fmt() method.
-> 
-> Reported-by: Hans Verkuil <hverkuil@xs4all.nl>
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+Hi LinusW, Laurent
 
-> 
-> ---
->  drivers/media/platform/soc_camera/rcar_vin.c |    4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> Index: media_tree/drivers/media/platform/soc_camera/rcar_vin.c
-> =================================> --- media_tree.orig/drivers/media/platform/soc_camera/rcar_vin.c
-> +++ media_tree/drivers/media/platform/soc_camera/rcar_vin.c
-> @@ -1589,8 +1589,8 @@ static int rcar_vin_set_fmt(struct soc_c
->  		field = pix->field;
->  		break;
->  	case V4L2_FIELD_INTERLACED:
-> -		/* Query for standard if not explicitly mentioned _TB/_BT */
-> -		ret = v4l2_subdev_call(sd, video, querystd, &std);
-> +		/* Get the last standard if not explicitly mentioned _TB/_BT */
-> +		ret = v4l2_subdev_call(sd, video, g_std, &std);
->  		if (ret = -ENOIOCTLCMD) {
->  			field = V4L2_FIELD_NONE;
->  		} else if (ret < 0) {
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-media" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+These are v2 of r8a7795 PFC support.
 
+r8a7795 needs 1) 8) 9)
+2) - 7) are cleanup patches, but not related to r8a7795
+
+This time r8a7795 PFC driver is using many macros.
+I took precedence "readable code" more than "80 character".
+These macro are same as "datasheet" style. So, I believe review is easy.
+
+Kuninori Morimoto (9):
+      1) sh-pfc: modify PINMUX_IPSR_MSEL() macro order
+      2) sh-pfc: pfc-sh7734: use PINMUX_IPSR_MSEL()
+      3) sh-pfc: pfc-r8a7794: use PINMUX_IPSR_MSEL()
+      4) sh-pfc: pfc-r8a7791: use PINMUX_IPSR_MSEL()
+      5) sh-pfc: pfc-r8a7790: use PINMUX_IPSR_MSEL()
+      6) sh-pfc: pfc-r8a7779: use PINMUX_IPSR_MSEL()
+      7) sh-pfc: remove unused PINMUX_IPSR_MODSEL_DATA()
+      8) sh-pfc: Initial R8A7795 PFC support
+      9) sh-pfc: r8a7795: add SCIFx support
+
+ Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt |    1 +
+ drivers/pinctrl/sh-pfc/Kconfig                                    |    5 +
+ drivers/pinctrl/sh-pfc/Makefile                                   |    1 +
+ drivers/pinctrl/sh-pfc/core.c                                     |    6 +
+ drivers/pinctrl/sh-pfc/core.h                                     |    1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c                              |  420 +++++++++---------
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c                              | 1038 +++++++++++++++++++++----------------------
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c                              | 1076 ++++++++++++++++++++++----------------------
+ drivers/pinctrl/sh-pfc/pfc-r8a7794.c                              |  828 +++++++++++++++++-----------------
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c                              | 2263 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c                               |  778 ++++++++++++++++----------------
+ drivers/pinctrl/sh-pfc/sh_pfc.h                                   |    2 -
+ 12 files changed, 4347 insertions(+), 2072 deletions(-)
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
