@@ -1,7 +1,7 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 03 Sep 2015 08:28:27 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 03 Sep 2015 11:48:19 +0000
 Subject: Re: [PATCH v8 04/07] arm64: renesas: r8a7795 dtsi: Add all SCIF nodes
-Message-Id: <CANqRtoRKwm5NxVxE2+rx_YJOD8B8ce3jfuUqm0uR+nPi82=EXw@mail.gmail.com>
+Message-Id: <2281844.A8nM2Jgb2C@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150831062952.24004.17072.sendpatchset@little-apple>
 In-Reply-To: <20150831062952.24004.17072.sendpatchset@little-apple>
@@ -12,32 +12,41 @@ To: linux-sh@vger.kernel.org
 
 Hi Geert,
 
-On Thu, Sep 3, 2015 at 5:23 PM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> Hi Magnus,
->
-> On Thu, Sep 3, 2015 at 10:06 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->>> Practically, I need a simple way to identify the clock used by the GIC.
->>> Using the "intc-sys"/"intc-ap" name looked like a good idea.
->>> While it's always MSTP408, MSTP408 is used for other purposes on some SoCs.
->>>
->>> Let's give DT scanning a try...
->>
->> Uhm, sounds a bit overly complicated to me. This has probably been
->> discussed wildly before, but please remind me:
->>
->> What is wrong again with being standard and adding "clocks" and
->> "clock-names" to the GIC node?
->
-> That needs to be done anyway (still have to dive into GIC architecture
-> and come up with bindings the ARM people like).
->
-> But it's not sufficient as:
->   - The GIC driver is not PM Runtime aware. It doesn't even use a platform
->     device,
->   - The GIC is instantiated from IRQCHIP_DECLARE(), which is way before
->     clocks are ready.
+On Thursday 03 September 2015 09:54:17 Geert Uytterhoeven wrote:
+> On Thu, Sep 3, 2015 at 9:41 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> > On Mon, Aug 31, 2015 at 10:08 PM, Geert Uytterhoeven wrote:
+> >> On Mon, Aug 31, 2015 at 2:59 PM, Magnus Damm wrote:
 
-Ouch! Hopefully our CPG hardware does not have interrupts hooked up to
-the GIC. That would make turn this mess into a full circle. =)
+[snip]
 
-/ magnus
+> >>> But if we're going down that route then may I ask why we have
+> >>> "-clocks" suffix for the MSTP/CPG compat strings? I'd rather make them
+> >>> shorter and more similar to the rest of the compat strings on the SoC.
+> >> 
+> >> It uses plural because CPG and MSTP nodes provide more than one clock.
+> >> 
+> >> Cfr. DIV6, which provides a single clock, and uses e.g.
+> >> "renesas,r8a7791-div6-clock", "renesas,cpg-div6-clock" (singular).
+> > 
+> > Ok, thanks but my concern was not about singular vs plural.
+> > Why do we need the "-clocks" suffix?
+> > 
+> > It's a detail, but for me the shorter "renesas,r8a7795-mstp" makes
+> > more sense than "renesas,r8a7795-mstp-clocks"
+> 
+> The MSTP blocks are subsets of the CPG block, and their registers are
+> heavily entangled with other registers inside the CPG and other MSTP blocks.
+> So currently the MSTP nodes don't represent the MSTP blocks, but
+> their clocks only (and not e.g. reset control).
+> 
+> I'm afraid the only sane way to express their full functionality is to have
+> a single cpg_mstp node...
+
+That might be a good idea. We could just use two clock cells and hide all the 
+dirty details in C code. Anyone wants to give it a try ? :-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
