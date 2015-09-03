@@ -1,54 +1,115 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 29 Sep 2015 13:43:37 +0000
-Subject: Re: [PATCH/RFC v2 4/4] clk: shmobile: rcar-gen2: Switch from old MSTP to new MSSR driver
-Message-Id: <CAMuHMdXWONWNBQocy4=PPB93BYvRuz1=3SLH6u6xLOykj+x71w@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 03 Sep 2015 20:20:07 +0000
+Subject: [PATCH 3/9] i2c: rcar: remove spinlock
+Message-Id: <1441311613-2681-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442936646-30362-1-git-send-email-geert+renesas@glider.be>
-	<1442936646-30362-5-git-send-email-geert+renesas@glider.be>
-	<CAMuHMdW3o0WCGCXuyYJtd8nC691N62wK7NNTzTQTM7fAvCn8jg@mail.gmail.com>
-	<CANqRtoTMgZRU6bmp9VoK6O5xDNKc0zkf-xmepgkY2ZyYXW5-mQ@mail.gmail.com>
-In-Reply-To: <CANqRtoTMgZRU6bmp9VoK6O5xDNKc0zkf-xmepgkY2ZyYXW5-mQ@mail.gmail.com>
+References: <1441311613-2681-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1441311613-2681-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Philipp Zabel <p.zabel@pengutronix.de>, linux-clk <linux-clk@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
 
-Hi Magnus,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Tue, Sep 29, 2015 at 3:30 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> On Tue, Sep 29, 2015 at 9:48 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
->> On Tue, Sep 22, 2015 at 5:44 PM, Geert Uytterhoeven
->> <geert+renesas@glider.be> wrote:
->>> --- a/drivers/clk/shmobile/clk-rcar-gen2.c
->>> +++ b/drivers/clk/shmobile/clk-rcar-gen2.c
->>> @@ -431,7 +431,7 @@ static void __init rcar_gen2_cpg_clocks_init(struct device_node *np)
->>>
->>>         of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
->>>
->>> -       cpg_mstp_add_clk_domain(np);
->>> +       cpg_mssr_add_clk_domain(np);
->>
->> Of course this should become conditional on the presence of the new
->> "renesas,r8a7791-cpg-mssr" compatible value, to preserve
->> backwards-compatibility with old DTSes.
->
-> Yeah, and we should probably link in both clk-mstp.o and clk-mssr.o
-> for older SoCs.
+We make sure to reinit the HW in the timeout case; then we know that
+interrupts are always disabled in the sections protected by the
+spinlock. Thus, we can simply remove it which is a preparation for
+further refactoring. While here, rename the timeout variable to
+time_left which is way more readable.
 
-Yep, been there, done that (local code updated and working ;-)
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-rcar.c | 23 ++++-------------------
+ 1 file changed, 4 insertions(+), 19 deletions(-)
 
-The conditional in drivers/sh/pm_runtime.c is getting a bit too gory for my
-appetite. I think we should make PM (and thus PM_GENERIC_DOMAINS) mandatory.
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 3594cdab2573b6..e65418b34d868e 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -34,7 +34,6 @@
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/slab.h>
+-#include <linux/spinlock.h>
+ 
+ /* register offsets */
+ #define ICSCR	0x00	/* slave ctrl */
+@@ -110,7 +109,6 @@ struct rcar_i2c_priv {
+ 	struct i2c_msg	*msg;
+ 	struct clk *clk;
+ 
+-	spinlock_t lock;
+ 	wait_queue_head_t wait;
+ 
+ 	int pos;
+@@ -428,9 +426,6 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ 	irqreturn_t result = IRQ_HANDLED;
+ 	u32 msr;
+ 
+-	/*-------------- spin lock -----------------*/
+-	spin_lock(&priv->lock);
+-
+ 	if (rcar_i2c_slave_irq(priv))
+ 		goto exit;
+ 
+@@ -477,9 +472,6 @@ out:
+ 	}
+ 
+ exit:
+-	spin_unlock(&priv->lock);
+-	/*-------------- spin unlock -----------------*/
+-
+ 	return result;
+ }
+ 
+@@ -489,9 +481,8 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ {
+ 	struct rcar_i2c_priv *priv = i2c_get_adapdata(adap);
+ 	struct device *dev = rcar_i2c_priv_to_dev(priv);
+-	unsigned long flags;
+ 	int i, ret;
+-	long timeout;
++	long time_left;
+ 
+ 	pm_runtime_get_sync(dev);
+ 
+@@ -506,9 +497,6 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 			break;
+ 		}
+ 
+-		/*-------------- spin lock -----------------*/
+-		spin_lock_irqsave(&priv->lock, flags);
+-
+ 		/* init each data */
+ 		priv->msg	= &msgs[i];
+ 		priv->pos	= 0;
+@@ -518,13 +506,11 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 
+ 		rcar_i2c_prepare_msg(priv);
+ 
+-		spin_unlock_irqrestore(&priv->lock, flags);
+-		/*-------------- spin unlock -----------------*/
+-
+-		timeout = wait_event_timeout(priv->wait,
++		time_left = wait_event_timeout(priv->wait,
+ 					     rcar_i2c_flags_has(priv, ID_DONE),
+ 					     adap->timeout);
+-		if (!timeout) {
++		if (!time_left) {
++			rcar_i2c_init(priv);
+ 			ret = -ETIMEDOUT;
+ 			break;
+ 		}
+@@ -658,7 +644,6 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 
+ 	irq = platform_get_irq(pdev, 0);
+ 	init_waitqueue_head(&priv->wait);
+-	spin_lock_init(&priv->lock);
+ 
+ 	adap = &priv->adap;
+ 	adap->nr = pdev->id;
+-- 
+2.1.4
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
