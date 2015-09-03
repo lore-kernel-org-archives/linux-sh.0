@@ -1,88 +1,180 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Sep 2015 08:59:19 +0000
-Subject: [PATCH 03/21] ARM: shmobile: Remove obsolete custom earlyprintk code
-Message-Id: <815fc8c06b57f283f942c6c25e3c58d6e4cb8fd7.1442478814.git.horms+renesas@verge.net.au>
+From: Javier Martinez Canillas <javier@osg.samsung.com>
+Date: Thu, 03 Sep 2015 16:00:34 +0000
+Subject: [PATCH 3/5] [media] v4l: vsp1: separate links creation from entities init
+Message-Id: <1441296036-20727-4-git-send-email-javier@osg.samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442478814.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442478814.git.horms+renesas@verge.net.au>
+References: <1441296036-20727-1-git-send-email-javier@osg.samsung.com>
+In-Reply-To: <1441296036-20727-1-git-send-email-javier@osg.samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Hans Verkuil <hans.verkuil@cisco.com>, Javier Martinez Canillas <javier@osg.samsung.com>, Mauro Carvalho Chehab <mchehab@osg.samsung.com>, linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-media@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The vsp1 driver initializes the entities and creates the pads links
+before the entities are registered with the media device. This doesn't
+work now that object IDs are used to create links so the media_device
+has to be set.
 
-The last caller of shmobile_setup_console() was removed in commit
-44d88c754e57a6d9 ("ARM: shmobile: Remove legacy SoC code for R-Mobile
-A1").
+Split out the pads links creation from the entity initialization so are
+made after the entities registration.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Javier Martinez Canillas <javier@osg.samsung.com>
 ---
- arch/arm/mach-shmobile/Makefile  |  2 +-
- arch/arm/mach-shmobile/common.h  |  1 -
- arch/arm/mach-shmobile/console.c | 27 ---------------------------
- 3 files changed, 1 insertion(+), 29 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/console.c
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 476de30798d7..b02841528e05 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -3,7 +3,7 @@
- #
+ drivers/media/platform/vsp1/vsp1_drv.c  | 14 ++++++++++--
+ drivers/media/platform/vsp1/vsp1_rpf.c  | 29 ++++++++++++++++--------
+ drivers/media/platform/vsp1/vsp1_rwpf.h |  5 +++++
+ drivers/media/platform/vsp1/vsp1_wpf.c  | 40 ++++++++++++++++++++-------------
+ 4 files changed, 62 insertions(+), 26 deletions(-)
+
+diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
+index 2aa427d3ff39..8f995d267646 100644
+--- a/drivers/media/platform/vsp1/vsp1_drv.c
++++ b/drivers/media/platform/vsp1/vsp1_drv.c
+@@ -260,9 +260,19 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
  
- # Common objects
--obj-y				:= timer.o console.o
-+obj-y				:= timer.o
+ 	/* Create links. */
+ 	list_for_each_entry(entity, &vsp1->entities, list_dev) {
+-		if (entity->type = VSP1_ENTITY_LIF ||
+-		    entity->type = VSP1_ENTITY_RPF)
++		if (entity->type = VSP1_ENTITY_LIF) {
++			ret = vsp1_wpf_create_pads_links(vsp1, entity);
++			if (ret < 0)
++				goto done;
++			continue;
++		}
++
++		if (entity->type = VSP1_ENTITY_RPF) {
++			ret = vsp1_rpf_create_pads_links(vsp1, entity);
++			if (ret < 0)
++				goto done;
+ 			continue;
++		}
  
- # CPU objects
- obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o
-diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
-index 8d27ec546a35..ee8fe9e473d7 100644
---- a/arch/arm/mach-shmobile/common.h
-+++ b/arch/arm/mach-shmobile/common.h
-@@ -4,7 +4,6 @@
- extern void shmobile_earlytimer_init(void);
- extern void shmobile_init_delay(void);
- struct twd_local_timer;
--extern void shmobile_setup_console(void);
- extern void shmobile_boot_vector(void);
- extern unsigned long shmobile_boot_fn;
- extern unsigned long shmobile_boot_arg;
-diff --git a/arch/arm/mach-shmobile/console.c b/arch/arm/mach-shmobile/console.c
-deleted file mode 100644
-index e329ccbd0a67..000000000000
---- a/arch/arm/mach-shmobile/console.c
-+++ /dev/null
-@@ -1,27 +0,0 @@
--/*
-- * SH-Mobile Console
-- *
-- * Copyright (C) 2010  Magnus Damm
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- */
--#include <linux/kernel.h>
--#include <linux/init.h>
--#include <linux/platform_device.h>
--#include <asm/mach/map.h>
--#include "common.h"
+ 		ret = vsp1_create_links(vsp1, entity);
+ 		if (ret < 0)
+diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
+index b60a528a8fe8..38aebdf691b5 100644
+--- a/drivers/media/platform/vsp1/vsp1_rpf.c
++++ b/drivers/media/platform/vsp1/vsp1_rpf.c
+@@ -277,18 +277,29 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 
+ 	rpf->entity.video = video;
+ 
+-	/* Connect the video device to the RPF. */
+-	ret = media_create_pad_link(&rpf->video.video.entity, 0,
+-				       &rpf->entity.subdev.entity,
+-				       RWPF_PAD_SINK,
+-				       MEDIA_LNK_FL_ENABLED |
+-				       MEDIA_LNK_FL_IMMUTABLE);
+-	if (ret < 0)
+-		goto error;
 -
--void __init shmobile_setup_console(void)
--{
--	parse_early_param();
+ 	return rpf;
+ 
+ error:
+ 	vsp1_entity_destroy(&rpf->entity);
+ 	return ERR_PTR(ret);
+ }
++
++/*
++ * vsp1_rpf_create_pads_links_create_pads_links() - RPF pads links creation
++ * @vsp1: Pointer to VSP1 device
++ * @entity: Pointer to VSP1 entity
++ *
++ * return negative error code or zero on success
++ */
++int vsp1_rpf_create_pads_links(struct vsp1_device *vsp1,
++			       struct vsp1_entity *entity)
++{
++	struct vsp1_rwpf *rpf = to_rwpf(&entity->subdev);
++
++	/* Connect the video device to the RPF. */
++	return media_create_pad_link(&rpf->video.video.entity, 0,
++				     &rpf->entity.subdev.entity,
++				     RWPF_PAD_SINK,
++				     MEDIA_LNK_FL_ENABLED |
++				     MEDIA_LNK_FL_IMMUTABLE);
++}
+diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
+index f452dce1a931..6638b3587369 100644
+--- a/drivers/media/platform/vsp1/vsp1_rwpf.h
++++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
+@@ -50,6 +50,11 @@ static inline struct vsp1_rwpf *to_rwpf(struct v4l2_subdev *subdev)
+ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index);
+ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index);
+ 
++int vsp1_rpf_create_pads_links(struct vsp1_device *vsp1,
++			       struct vsp1_entity *entity);
++int vsp1_wpf_create_pads_links(struct vsp1_device *vsp1,
++			       struct vsp1_entity *entity);
++
+ int vsp1_rwpf_enum_mbus_code(struct v4l2_subdev *subdev,
+ 			     struct v4l2_subdev_pad_config *cfg,
+ 			     struct v4l2_subdev_mbus_code_enum *code);
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index d39aa4b8aea1..1be363e4f741 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -220,7 +220,6 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 	struct v4l2_subdev *subdev;
+ 	struct vsp1_video *video;
+ 	struct vsp1_rwpf *wpf;
+-	unsigned int flags;
+ 	int ret;
+ 
+ 	wpf = devm_kzalloc(vsp1->dev, sizeof(*wpf), GFP_KERNEL);
+@@ -276,20 +275,6 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 		goto error;
+ 
+ 	wpf->entity.video = video;
 -
--	/* Let earlyprintk output early console messages */
--	early_platform_driver_probe("earlyprintk", 1, 1);
--}
+-	/* Connect the video device to the WPF. All connections are immutable
+-	 * except for the WPF0 source link if a LIF is present.
+-	 */
+-	flags = MEDIA_LNK_FL_ENABLED;
+-	if (!(vsp1->pdata.features & VSP1_HAS_LIF) || index != 0)
+-		flags |= MEDIA_LNK_FL_IMMUTABLE;
+-
+-	ret = media_create_pad_link(&wpf->entity.subdev.entity,
+-				       RWPF_PAD_SOURCE,
+-				       &wpf->video.video.entity, 0, flags);
+-	if (ret < 0)
+-		goto error;
+-
+ 	wpf->entity.sink = &wpf->video.video.entity;
+ 
+ 	return wpf;
+@@ -298,3 +283,28 @@ error:
+ 	vsp1_entity_destroy(&wpf->entity);
+ 	return ERR_PTR(ret);
+ }
++
++/*
++ * vsp1_wpf_create_pads_links_create_pads_links() - RPF pads links creation
++ * @vsp1: Pointer to VSP1 device
++ * @entity: Pointer to VSP1 entity
++ *
++ * return negative error code or zero on success
++ */
++int vsp1_wpf_create_pads_links(struct vsp1_device *vsp1,
++			       struct vsp1_entity *entity)
++{
++	struct vsp1_rwpf *wpf = to_rwpf(&entity->subdev);
++	unsigned int flags;
++
++	/* Connect the video device to the WPF. All connections are immutable
++	 * except for the WPF0 source link if a LIF is present.
++	 */
++	flags = MEDIA_LNK_FL_ENABLED;
++	if (!(vsp1->pdata.features & VSP1_HAS_LIF) || entity->index != 0)
++		flags |= MEDIA_LNK_FL_IMMUTABLE;
++
++	return media_create_pad_link(&wpf->entity.subdev.entity,
++				     RWPF_PAD_SOURCE,
++				     &wpf->video.video.entity, 0, flags);
++}
 -- 
-2.1.4
+2.4.3
 
