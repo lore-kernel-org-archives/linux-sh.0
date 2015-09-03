@@ -1,82 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 20:56:58 +0000
-Subject: [PATCH 20/32] v4l: vsp1: Move entity route setup function to vsp1_entity.c
-Message-Id: <1442177830-24536-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 03 Sep 2015 10:33:39 +0000
+Subject: [PATCH v9 07/07][RFC] arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
+Message-Id: <20150903103339.26791.15995.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The function will be used by the DU code, move it out of vsp1_video.c.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch enables the Renesas R-Car H3 SoC together with the
+SCIF driver in the arm64 defconfig.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/media/platform/vsp1/vsp1_entity.c | 12 ++++++++++++
- drivers/media/platform/vsp1/vsp1_entity.h |  2 ++
- drivers/media/platform/vsp1/vsp1_video.c  | 12 ------------
- 3 files changed, 14 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.c b/drivers/media/platform/vsp1/vsp1_entity.c
-index 0c52e4b71a98..cb9d480d8ee5 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.c
-+++ b/drivers/media/platform/vsp1/vsp1_entity.c
-@@ -58,6 +58,18 @@ int vsp1_entity_set_streaming(struct vsp1_entity *entity, bool streaming)
- 	return ret;
- }
- 
-+void vsp1_entity_route_setup(struct vsp1_entity *source)
-+{
-+	struct vsp1_entity *sink;
-+
-+	if (source->route->reg = 0)
-+		return;
-+
-+	sink = container_of(source->sink, struct vsp1_entity, subdev.entity);
-+	vsp1_write(source->vsp1, source->route->reg,
-+		   sink->route->inputs[source->sink_pad]);
-+}
-+
- /* -----------------------------------------------------------------------------
-  * V4L2 Subdevice Operations
-  */
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.h b/drivers/media/platform/vsp1/vsp1_entity.h
-index 9c95507ec762..9606d0d21263 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.h
-+++ b/drivers/media/platform/vsp1/vsp1_entity.h
-@@ -96,4 +96,6 @@ void vsp1_entity_init_formats(struct v4l2_subdev *subdev,
- bool vsp1_entity_is_streaming(struct vsp1_entity *entity);
- int vsp1_entity_set_streaming(struct vsp1_entity *entity, bool streaming);
- 
-+void vsp1_entity_route_setup(struct vsp1_entity *source);
-+
- #endif /* __VSP1_ENTITY_H__ */
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index c0afbf81d9aa..589ce49e8688 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -657,18 +657,6 @@ static void vsp1_video_buffer_queue(struct vb2_buffer *vb)
- 	spin_unlock_irqrestore(&pipe->irqlock, flags);
- }
- 
--static void vsp1_entity_route_setup(struct vsp1_entity *source)
--{
--	struct vsp1_entity *sink;
--
--	if (source->route->reg = 0)
--		return;
--
--	sink = container_of(source->sink, struct vsp1_entity, subdev.entity);
--	vsp1_write(source->vsp1, source->route->reg,
--		   sink->route->inputs[source->sink_pad]);
--}
--
- static int vsp1_video_start_streaming(struct vb2_queue *vq, unsigned int count)
- {
- 	struct vsp1_video *video = vb2_get_drv_priv(vq);
--- 
-2.4.6
+ Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
+ - Added Acked-by from Geert
 
+ Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
+ - Updated changelog
+ - Use CONFIG_RENESAS and CONFIG_R8A7795
+
+ Based on:
+  [PATCH 19/25] arm64: defconfig: renesas: Enable Renesas R-Car Gen3 SoC
+  [PATCH 20/25] arm64: defconfig: renesas: enable SCIF
+
+ arch/arm64/configs/defconfig |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- 0001/arch/arm64/configs/defconfig
++++ work/arch/arm64/configs/defconfig	2015-08-29 17:20:25.712366518 +0900
+@@ -39,6 +39,8 @@ CONFIG_ARCH_HISI=y
+ CONFIG_ARCH_MEDIATEK=y
+ CONFIG_ARCH_ROCKCHIP=y
+ CONFIG_ARCH_SEATTLE=y
++CONFIG_ARCH_RENESAS=y
++CONFIG_ARCH_R8A7795=y
+ CONFIG_ARCH_TEGRA=y
+ CONFIG_ARCH_TEGRA_132_SOC=y
+ CONFIG_ARCH_QCOM=y
+@@ -109,6 +111,9 @@ CONFIG_SERIAL_8250_DW=y
+ CONFIG_SERIAL_8250_MT6577=y
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_SERIAL_MSM=y
+ CONFIG_SERIAL_MSM_CONSOLE=y
+ CONFIG_SERIAL_OF_PLATFORM=y
