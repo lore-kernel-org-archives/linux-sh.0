@@ -1,47 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 03 Sep 2015 10:33:17 +0000
-Subject: [PATCH v9 05/07][RFC] arm64: renesas: r8a7795: enable PFC
-Message-Id: <20150903103317.26791.23151.sendpatchset@little-apple>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 03 Sep 2015 20:20:10 +0000
+Subject: [PATCH 6/9] i2c: rcar: don't issue stop when HW does it automatically
+Message-Id: <1441311613-2681-7-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1441311613-2681-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1441311613-2681-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Add a PFC node for the on-chip r8a7795 pin controller.
+The manual says (55.4.8.6) that HW does automatically send STOP after
+NACK was received. My measuerments confirm that.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
+ drivers/i2c/busses/i2c-rcar.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
- Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
- - Dropped Kconfig TODO - select PINCTRL happens in patch 1
- - Added Acked-by from Laurent
-
- Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
- - Added changelog
-
- Based on:
-  [PATCH 10/25 v7][RFC] arm64: renesas: r8a7795: enable PFC
-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi |    5 +++++
- 1 file changed, 5 insertions(+)
-
---- 0012/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ work/arch/arm64/boot/dts/renesas/r8a7795.dtsi	2015-08-29 15:38:44.152366518 +0900
-@@ -278,6 +278,11 @@
- 			};
- 		};
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 36c79301044b71..dcf9fc77cec7c4 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -458,8 +458,8 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
  
-+		pfc: pfc@e6060000 {
-+			compatible = "renesas,pfc-r8a7795";
-+			reg = <0 0xe6060000 0 0x50c>;
-+		};
-+
- 		dmac0: dma-controller@e6700000 {
- 			/* Empty node for now */
- 		};
+ 	/* Nack */
+ 	if (msr & MNR) {
+-		/* go to stop phase */
+-		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
++		/* HW automatically sends STOP after received NACK */
++		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
+ 		rcar_i2c_write(priv, ICMIER, RCAR_IRQ_STOP);
+ 		rcar_i2c_flags_set(priv, ID_NACK);
+ 		goto out;
+-- 
+2.1.4
+
