@@ -1,53 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 01 Sep 2015 01:09:58 +0000
-Subject: Re: [RESEND PATCH v3 3/5] sh: kill off set_irq_flags usage
-Message-Id: <20150901010958.GA29746@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 03 Sep 2015 23:14:35 +0000
+Subject: [PATCH 1/3] adv7180: implement g_std() method
+Message-Id: <55445603.CDVZru8CKl@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440889285-5637-1-git-send-email-robh@kernel.org>
- <1440889285-5637-4-git-send-email-robh@kernel.org>
- <20150831050104.GA26119@verge.net.au>
- <CAL_JsqJuPtkvFMFvcSwaFssXoLYrHs9bM3EedXSzj21YAPmwDQ@mail.gmail.com>
-In-Reply-To: <CAL_JsqJuPtkvFMFvcSwaFssXoLYrHs9bM3EedXSzj21YAPmwDQ@mail.gmail.com>
+References: <6015647.cjLjRfTWc7@wasted.cogentembedded.com>
+In-Reply-To: <6015647.cjLjRfTWc7@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: mchehab@osg.samsung.com, linux-media@vger.kernel.org, lars@metafoo.de
+Cc: linux-sh@vger.kernel.org
 
-On Mon, Aug 31, 2015 at 07:52:07AM -0500, Rob Herring wrote:
-> On Mon, Aug 31, 2015 at 12:01 AM, Simon Horman <horms@verge.net.au> wrote:
-> > Hi Rob,
-> >
-> > On Sat, Aug 29, 2015 at 06:01:23PM -0500, Rob Herring wrote:
-> >> set_irq_flags is ARM specific with custom flags which have genirq
-> >> equivalents. Convert drivers to use the genirq interfaces directly, so we
-> >> can kill off set_irq_flags. The translation of flags is as follows:
-> >>
-> >> IRQF_VALID -> !IRQ_NOREQUEST
-> >> IRQF_PROBE -> !IRQ_NOPROBE
-> >> IRQF_NOAUTOEN -> IRQ_NOAUTOEN
-> >>
-> >> For IRQs managed by an irqdomain, the irqdomain core code handles clearing
-> >> and setting IRQ_NOREQUEST already, so there is no need to do this in
-> >> .map() functions and we can simply remove the set_irq_flags calls. Some
-> >> users also modify IRQ_NOPROBE and this has been maintained although it
-> >> is not clear that is really needed. There appears to be a great deal of
-> >> blind copy and paste of this code.
-> >>
-> >> Signed-off-by: Rob Herring <robh@kernel.org>
-> >> Acked-by: Simon Horman <horms@verge.net.au>
-> >> Cc: Magnus Damm <magnus.damm@gmail.com>
-> >> Cc: linux-sh@vger.kernel.org
-> >
-> > I have queued this up. Please let me know if that was not your intent.
-> >
-> > The patch is queued up in the sh-drivers-for-v4.3 branch of my renesas tree.
-> > At this point I plan to send a pull-request once dt changes that other
-> > patches in that branch depend on hit Linus's tree via the ARM SoC tree.
-> > I anticipate that being during the rc1 or rc2 timeframe.
-> 
-> This needs to go in before -rc1 so the final 2 patches removing
-> set_irq_flags can go in at the end of the merge window. Given your
-> timeline, I think you can just leave this one for Thomas to apply with
-> those 2.
+Commit cccb83f7a184 ([media] adv7180: add more subdev video ops) forgot to add
+the g_std() video method. Its implementation seems identical to the querystd()
+method,  so we  can just  point at adv7180_querystd()...
 
-Sure, will do.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+ drivers/media/i2c/adv7180.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+Index: media_tree/drivers/media/i2c/adv7180.c
+=================================--- media_tree.orig/drivers/media/i2c/adv7180.c
++++ media_tree/drivers/media/i2c/adv7180.c
+@@ -717,6 +717,7 @@ static int adv7180_g_mbus_config(struct
+ }
+ 
+ static const struct v4l2_subdev_video_ops adv7180_video_ops = {
++	.g_std = adv7180_querystd,
+ 	.s_std = adv7180_s_std,
+ 	.querystd = adv7180_querystd,
+ 	.g_input_status = adv7180_g_input_status,
+
