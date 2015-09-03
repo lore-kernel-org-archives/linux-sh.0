@@ -1,144 +1,60 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 29 Sep 2015 08:44:54 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: silk: add SDHI1 DT support
-Message-Id: <CANqRtoT40KiX8RQdmCfTu2z4_1H9UH+Kmoe_yOAjZS-hrqssRg@mail.gmail.com>
+Date: Thu, 03 Sep 2015 07:48:00 +0000
+Subject: Re: [PATCH v8 05/07] arm64: renesas: r8a7795: enable PFC
+Message-Id: <CANqRtoT=TJrt9AGrUN4A91ueSL=cxahwK3qX6XSfwKzsBPWbJg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <10037494.4LD4T2QGPX@wasted.cogentembedded.com>
- <2757472.iuyUyRzJ3z@wasted.cogentembedded.com>
- <20150812012652.GH15957@verge.net.au>
- <55D790A5.1050008@cogentembedded.com>
- <55D7A3A1.9020009@cogentembedded.com>
- <20150902022936.GA18115@verge.net.au>
- <55EA2D8D.90004@cogentembedded.com>
- <20150918002122.GC12858@verge.net.au>
- <CANqRtoSRZo_J1kV0EkYdVzg9YRJ5=Ha3eQRVPKeq9M=kAPLwpA@mail.gmail.com>
- <5601E1F7.1060907@cogentembedded.com>
-In-Reply-To: <5601E1F7.1060907@cogentembedded.com>
+References: <20150831063003.24004.42127.sendpatchset@little-apple>
+In-Reply-To: <20150831063003.24004.42127.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Sergei,
+Hi Laurent,
 
-On Wed, Sep 23, 2015 at 8:19 AM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> Hello.
+On Mon, Aug 31, 2015 at 7:41 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Magnus and Morimoto-san,
 >
+> Thank you for the patch.
 >
-> On 09/18/2015 05:56 AM, Magnus Damm wrote:
->
->>>>>>>>> Define the SILK board dependent part of the SDHI1 (connected to
->>>>>>>>> micro-SD slot)
->>>>>>>>> device nodes along with the necessary voltage regulators.
->>>>>>>>>
->>>>>>>>> Based on the original patch by Vladimir Barinov
->>>>>>>>> <vladimir.barinov@cogentembedded.com>.
->>>>>>>>>
->>>>>>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>>>>>>>>
->>>>>>>>> ---
->>>>>>>>> This patch is against 'renesas-devel-20150810-v4.2-rc6' tag of
->>>>>>>>> Simon Horman's
->>>>>>>>> 'renesas.git' repo plus the R8A7794/SILK QSPI patches just
->>>>>>>>> re-posted. It needs
->>>>>>>>> the R8A7794 GPIO patches in order to compile.
->>>>>>>>>
->>>>>>>>> Changes in version 2:
->>>>>>>>> - removed not working SDHI0 stuff, renamed the patch;
->>>>>>>>> - replaced SDHI1's "wp-gpios" property with "disable-wp".
->>>>>>>>
->>>>>>>>
->>>>>>>> I am wondering if you could explain the motivation for the
->>>>>>>> "disable-wp"
->>>>>>>> update
->>>>>>>
->>>>>>>
->>>>>>>     Please see the comment in mmc_sd_get_ro().
->>>>>>>
->>>>>>>> and weather it is appropriate for other r8a779* dts files.
->>>>>>>
->>>>>>>
->>>>>>>     In case of micro-SD slots, yes.
->>>>>>
->>>>>>
->>>>>>     The MMC binding document says it should only be specified if the
->>>>>> controller has WP detection logic. We, so far, seem to have been
->>>>>> replying on
->>>>>> the GPIOs despite this logic is present (according to the R-Car gen2
->>>>>> SDHI
->>>>>> manuals I have). The driver will first call mmc_gpio_get_ro() and when
->>>>>> that
->>>>>> fails due to "wp-gpios" not being specified, it proceeds to reading
->>>>>> the
->>>>>> register but that is forbidden by TMIO_MMC_WRPROTECT_DISABLE flag set
->>>>>> for
->>>>>> the R-Car gen1/2 chips, so 0 is always returned from
->>>>>> tmio_mmc_get_ro().
->>>>>> There seems to be no point in going that far (and doing the runtime PM
->>>>>> dances) --
->>>>
->>>>
->>>>     Alternatively, the driver could be fixed to check the flag before
->>>> the RPM
->>>> call unlike what it does now.
->>>
->>>
->>> If the driver can be updated to do the right thing then that seems
->>> preferable to me. If so would it be the case that the presence of the
->>> "disable-wp" property would not have any run-time effect?
->>>>
->>>>
->>>>>> and MMC_CAP2_NO_WRITE_PROTECT (set when "disable-wp" is specified)
->>>>>> prohibits
->>>>>> doing that...
->>>>>
->>>>>
->>>>> That sounds reasonable to me.
->>>>
->>>>
->>>>     I'm still wondering why TMIO_MMC_WRPROTECT_DISABLE is set for the
->>>> R-Car
->>>> SoCs. Morimoto-san, any comments? Your change logs are too terse. :-)
->>>
->>>
->>> I will follow up on this.
->
->
-> [...]
+> On Monday 31 August 2015 15:30:03 Magnus Damm wrote:
+>> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 >>
->> Now what is the issue that you guys are having?
+>> Add a PFC node for the on-chip r8a7795 pin controller.
+>>
+>> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 >
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+Thanks!
+
+>> ---
+>>
+>>  Based on:
+>>   [PATCH 10/25 v7][RFC] arm64: renesas: r8a7795: enable PFC
+>>
+>>  Changes: (Magnus Damm <damm+renesas@opensource.se>)
+>>  - Added changelog
+>>
+>>  TODO:
+>>  - Add Kconfig select bits
 >
->    My main issue is that I don't understand why checking the write protect
-> bit is always prohibited for the R-Car SoCs (by setting
-> TMIO_MMC_WRPROTECT_DISABLE), i.e. it can only be read via GPIO (though that
-> GPIO is just an alias of the WP signal).
+> Do they belong to this patch ?
 
-I believe the reason is that we decided to keep it simple - so we
-preferred to use GPIO instead of native SDHI signals. So GPIO WP
-instead of the not-always-present SDHI WP signal. Historically CD and
-WP may on some boards be routed on different pins than the SDHI CD and
-WP lines, and if we support both GPIO and native SDHI signals we need
-to handle both cases. With GPIO there is only one case to handle. And
-it is not exactly hot path to handle WP and CD so the overhead must be
-minimal.
+I think they are
+A) related (DTS patch and Kconfig needed for runtime functionality)
+B) enabled in the same subsystem (under arch/arm64)
 
-Historically there have been were cases with people submitting board
-support patches and getting the WP signal wrong. It seems difficult
-for people to understand that the WP signal is missing in case of
-micro-SD sockets. With the incorrect WP signal the cards would end up
-being read only. Combine that with lack of board schematics and it all
-turns into a big mess.
+So because of that I feel it makes sense to keep them together. At the
+same time, Geert asked me to split the following patch:
+[PATCH v8 01/07] arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
 
-The on-chip SoC SDHI devices in DT and the driver on R-Car Gen2
-assumes no WP and CD signals by default. It is up to each board to
-opt-in to add the GPIOs for WP and CD. It is very simple and should
-make it possible to power down the SDHI instances if no cards are
-inserted and let the GPIO IRQ wake up things for us.
+So based on that both you and Geert prefer to separate the Kconfig
+bits then I'll go with that way.
 
-I still don't understand what the real problem is though...
-
-Thanks,
+Cheers,
 
 / magnus
