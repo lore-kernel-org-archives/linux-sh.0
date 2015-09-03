@@ -1,67 +1,204 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 30 Sep 2015 08:47:51 +0000
-Subject: [PATCH v7 0/2] pwm: Add support for R-Car PWM Timer
-Message-Id: <1443602873-4316-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 03 Sep 2015 10:32:40 +0000
+Subject: [PATCH v9 02/07][RFC] arm64: renesas: r8a7795 dtsi: Add all common divider clocks
+Message-Id: <20150903103240.26791.6479.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: thierry.reding@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-sh@vger.kernel.org
 
-This patch set is based on the latest linux-pwm.git / for-next branch.
-(commit id = a83a6a82250fe900be85c8e142f5cb504d9482bd)
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Changes from v6:
- - Modify rcar_pwm_set_counter() to be readable code.
- - Add a condition not to call rcar_pwm_set_clock_control() in rcar_pwm_config.
- - Remove chip.of_xlate setting to use of_pwm_simple_xlate().
+Add all clocks generated from PLL1 by the CPG common divider block.
 
-Changes from v5:
- - Fix coding style and unreadable code in patch 2.
- - Add "Reviewed-by: Simon Horman <horms+renesas@verge.net.au>".
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-Changes from v4:
- - Clean up coding style and typo in patch 2.
- - Change to_rcar_pwm_chip() macro to static inline function in patch 2.
- - Use writel()/readl() instead of iowrite32()/ioread32() in patch 2.
- - Add an error handling in rcar_pwm_config() to avoid silent in patch 2.
- - Remove success message in rcar_pwm_probe() in patch 2.
- - Change rcar_pwm_remove() to always call pm_runtime_disable() in patch 2.
+ TODO:
+ - Figure out how this relates to the PLL1 issue in the CPG patch
 
-Changes from v3:
- - Fix register size in patch 1.
- - Add "Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>" in patch 1
- - Remove an unnecessary definition in patch 2.
- - Use "ULL" to avoid overflow in patch 2.
- - Remove unnecessary casts in patch 2.
+ Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
+ - Updated commit message.
 
-Changes from v2:
- - Add compatible string "renesas,pwm-rcar".
- - Remove compatible strings "renesas,pwm-r8a77xx" in rcar_pwm_of_table.
- - Fix build error.
+ Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
+ - Folded in s3d4_clk
+ - Reordered to apply without SCIF bits
 
-Changes from v1:
- - Change compatible string to SoC-specific compatible values.
- - Fix #pwm-call value to 2 in the device tree document.
- - Fix "depends on" value in Kconfig.
- - Fix help explanation in Kconfig.
- - Remove an unnecessary member in rcar_pwm_chip.
- - Remove hardcoded number of channels and change chip.npwm value to 1.
- - Fix formulas for clock calculation to improve accuracy.
+ Based on:
+  [PATCH 3/3] arm64: renesas: r8a7795 dtsi: Add all common divider clocks
 
-Yoshihiro Shimoda (2):
-  pwm: Add device tree binding document for R-Car PWM Timer
-  pwm: Add support for R-Car PWM Timer
 
- .../devicetree/bindings/pwm/renesas,pwm-rcar.txt   |  27 +++
- drivers/pwm/Kconfig                                |  11 +
- drivers/pwm/Makefile                               |   1 +
- drivers/pwm/pwm-rcar.c                             | 266 +++++++++++++++++++++
- 4 files changed, 305 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
- create mode 100644 drivers/pwm/pwm-rcar.c
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi |  160 ++++++++++++++++++++++++++++++
+ 1 file changed, 160 insertions(+)
 
--- 
-1.9.1
-
+--- 0012/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ work/arch/arm64/boot/dts/renesas/r8a7795.dtsi	2015-08-29 17:10:36.532366518 +0900
+@@ -70,6 +70,166 @@
+ 			#clock-cells = <1>;
+ 			ranges;
+ 
++			zt_clk: zt {
++				compatible = "fixed-factor-clock";
++				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				#clock-cells = <0>;
++				clock-div = <4>;
++				clock-mult = <1>;
++			};
++
++			ztr_clk: ztr {
++				compatible = "fixed-factor-clock";
++				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				#clock-cells = <0>;
++				clock-div = <6>;
++				clock-mult = <1>;
++			};
++
++			ztrd2_clk: ztrd2 {
++				compatible = "fixed-factor-clock";
++				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				#clock-cells = <0>;
++				clock-div = <12>;
++				clock-mult = <1>;
++			};
++
++			zx_clk: zx {
++				compatible = "fixed-factor-clock";
++				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				#clock-cells = <0>;
++				clock-div = <2>;
++				clock-mult = <1>;
++			};
++
++			s0_clk: s0 {
++				compatible = "fixed-factor-clock";
++				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				#clock-cells = <0>;
++				clock-div = <2>;
++				clock-mult = <1>;
++			};
++
++			s0d1_clk: s0d1 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s0_clk>;
++				#clock-cells = <0>;
++				clock-div = <1>;
++				clock-mult = <1>;
++			};
++
++			s0d4_clk: s0d4 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s0_clk>;
++				#clock-cells = <0>;
++				clock-div = <4>;
++				clock-mult = <1>;
++			};
++
++			s1_clk: s1 {
++				compatible = "fixed-factor-clock";
++				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				#clock-cells = <0>;
++				clock-div = <3>;
++				clock-mult = <1>;
++			};
++
++			s1d1_clk: s1d1 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s1_clk>;
++				#clock-cells = <0>;
++				clock-div = <1>;
++				clock-mult = <1>;
++			};
++
++			s1d2_clk: s1d2 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s1_clk>;
++				#clock-cells = <0>;
++				clock-div = <2>;
++				clock-mult = <1>;
++			};
++
++			s1d4_clk: s1d4 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s1_clk>;
++				#clock-cells = <0>;
++				clock-div = <4>;
++				clock-mult = <1>;
++			};
++
++			s2_clk: s2 {
++				compatible = "fixed-factor-clock";
++				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				#clock-cells = <0>;
++				clock-div = <4>;
++				clock-mult = <1>;
++			};
++
++			s2d1_clk: s2d1 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s2_clk>;
++				#clock-cells = <0>;
++				clock-div = <1>;
++				clock-mult = <1>;
++			};
++
++			s2d2_clk: s2d2 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s2_clk>;
++				#clock-cells = <0>;
++				clock-div = <2>;
++				clock-mult = <1>;
++			};
++
++			s2d4_clk: s2d4 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s2_clk>;
++				#clock-cells = <0>;
++				clock-div = <4>;
++				clock-mult = <1>;
++			};
++
++			s3_clk: s3 {
++				compatible = "fixed-factor-clock";
++				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				#clock-cells = <0>;
++				clock-div = <6>;
++				clock-mult = <1>;
++			};
++
++			s3d1_clk: s3d1 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s3_clk>;
++				#clock-cells = <0>;
++				clock-div = <1>;
++				clock-mult = <1>;
++			};
++
++			s3d2_clk: s3d2 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s3_clk>;
++				#clock-cells = <0>;
++				clock-div = <2>;
++				clock-mult = <1>;
++			};
++
++			s3d4_clk: s3d4 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s3_clk>;
++				#clock-cells = <0>;
++				clock-div = <4>;
++				clock-mult = <1>;
++			};
++
++			cl_clk: cl {
++				compatible = "fixed-factor-clock";
++				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				#clock-cells = <0>;
++				clock-div = <48>;
++				clock-mult = <1>;
++			};
++
+ 			cpg_clocks: cpg_clocks@e6150000 {
+ 				compatible = "renesas,r8a7795-cpg-clocks",
+ 					     "renesas,rcar-gen3-cpg-clocks";
