@@ -1,59 +1,72 @@
-From: hamzahfrq.sub@gmail.com
-Date: Tue, 29 Sep 2015 20:44:44 +0000
-Subject: [PATCH v3 2/6] dma: rcar-dma: Added dma_pause operation to rcar_dma driver
-Message-Id: <1443559488-2416-3-git-send-email-hamzahfrq.sub@gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 04 Sep 2015 21:45:47 +0000
+Subject: Re: [PATCH 11/25 v7][RFC] arm64: renesas: r8a7795: add mstp7 node and enable HSUSB clock
+Message-Id: <1497956.raqvHereTr@avalon>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87d1yd7797.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d1yd7797.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Muhammad Hamza Farooq <mfarooq@visteon.com>
+Hello Morimoto-san,
 
-Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
----
- drivers/dma/sh/rcar-dmac.c | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+Thank you for the patch.
 
-diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
-index 2b28291..c7cd4ed 100644
---- a/drivers/dma/sh/rcar-dmac.c
-+++ b/drivers/dma/sh/rcar-dmac.c
-@@ -774,6 +774,26 @@ static void rcar_dmac_chan_reinit(struct rcar_dmac_chan *chan)
- 	}
- }
- 
-+static int rcar_dmac_chan_pause(struct dma_chan *chan)
-+{
-+	u32 chcr;
-+	int ret;
-+	unsigned long flags;
-+	struct rcar_dmac_chan *rchan = to_rcar_dmac_chan(chan);
-+
-+	spin_lock_irqsave(&rchan->lock, flags);
-+
-+	chcr = rcar_dmac_chan_read(rchan, RCAR_DMACHCR);
-+	chcr &= ~RCAR_DMACHCR_DE;
-+	rcar_dmac_chan_write(rchan, RCAR_DMACHCR, chcr);
-+	ret = rcar_dmac_wait_stop(rchan);
-+
-+	spin_unlock_irqrestore(&rchan->lock, flags);
-+
-+	WARN_ON(ret < 0);
-+	return ret;
-+}
-+
- static void rcar_dmac_stop(struct rcar_dmac *dmac)
- {
- 	rcar_dmac_write(dmac, RCAR_DMAOR, 0);
-@@ -1740,6 +1760,7 @@ static int rcar_dmac_probe(struct platform_device *pdev)
- 	engine->device_prep_slave_sg = rcar_dmac_prep_slave_sg;
- 	engine->device_prep_dma_cyclic = rcar_dmac_prep_dma_cyclic;
- 	engine->device_config = rcar_dmac_device_config;
-+	engine->device_pause = rcar_dmac_chan_pause;
- 	engine->device_terminate_all = rcar_dmac_chan_terminate_all;
- 	engine->device_tx_status = rcar_dmac_tx_status;
- 	engine->device_issue_pending = rcar_dmac_issue_pending;
+On Monday 24 August 2015 02:28:56 Kuninori Morimoto wrote:
+> From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> 
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+> v5 -> v7
+> 
+>  - based on Gen3 v7 patch set
+> 
+>  arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 10 ++++++++++
+>  include/dt-bindings/clock/r8a7795-clock.h |  1 +
+>  2 files changed, 11 insertions(+)
+> 
+> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> b/arch/arm64/boot/dts/renesas/r8a7795.dtsi index c3421b3..77cfcea 100644
+> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> @@ -100,6 +100,16 @@
+>  					renesas,clock-indices = <R8A7795_CLK_SCIF2>;
+>  					clock-output-names = "scif2";
+>  				};
+> +
+> +				mstp7_clks: mstp7_clks@e615014c {
+> +					compatible = "renesas,r8a7795-mstp-clocks",
+> +						     "renesas,cpg-mstp-clocks";
+> +					reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
+> +					clocks =  <&s3d4_clk>;
+> +					#clock-cells = <1>;
+> +					renesas,clock-indices = <R8A7795_CLK_HSUSB>;
+
+You should use the standard clock-indices property instead of the Renesas-
+specific version.
+
+> +					clock-output-names = "hsusb";
+> +				};
+>  			};
+>  		};
+> 
+> diff --git a/include/dt-bindings/clock/r8a7795-clock.h
+> b/include/dt-bindings/clock/r8a7795-clock.h index 27b3a29..ffb0b5b 100644
+> --- a/include/dt-bindings/clock/r8a7795-clock.h
+> +++ b/include/dt-bindings/clock/r8a7795-clock.h
+> @@ -29,6 +29,7 @@
+>  /* MSTP5 */
+> 
+>  /* MSTP7 */
+> +#define R8A7795_CLK_HSUSB		4
+> 
+>  /* MSTP8 */
+
 -- 
-1.9.1
+Regards,
+
+Laurent Pinchart
 
