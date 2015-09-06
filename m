@@ -1,53 +1,72 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 21 Sep 2015 00:27:54 +0000
-Subject: Re: [PATCH/RFC net-next v3 3/4] ravb: Document binding for r8a7795 SoC
-Message-Id: <20150921002751.GA24857@verge.net.au>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Sun, 06 Sep 2015 15:42:58 +0000
+Subject: Re: [PATCH repost] mmc: sh_mmcif: Fix suspend process
+Message-Id: <CAH1o70+9ik2vAjZUr9n6jUVJS-XSzco4cA6X53naVHBuKoLEpA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442556203-657-1-git-send-email-horms+renesas@verge.net.au>
- <1442556203-657-4-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdUFMq1szvY=8twhzcM36zyBjDF1fnkNd2kw+s=qxXYVmg@mail.gmail.com>
-In-Reply-To: <CAMuHMdUFMq1szvY=8twhzcM36zyBjDF1fnkNd2kw+s=qxXYVmg@mail.gmail.com>
+References: <1440334688-20674-1-git-send-email-ykaneko0929@gmail.com>
+	<CAPDyKFoRZ2fns=i7tua+dDjLFeMLxOEkcUB4AOPdFHqXs-eYOw@mail.gmail.com>
+In-Reply-To: <CAPDyKFoRZ2fns=i7tua+dDjLFeMLxOEkcUB4AOPdFHqXs-eYOw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Florian Fainelli <f.fainelli@gmail.com>, Magnus Damm <magnus.damm@gmail.com>
+To: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Fri, Sep 18, 2015 at 09:27:11AM +0200, Geert Uytterhoeven wrote:
-> On Fri, Sep 18, 2015 at 8:03 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> >
-> > This patch updates the ravb binding to support the r8a7795 SoC by:
-> > - Adding a compat string for the new hardware
-> > - Adding 25 named interrupts to binding for the new SoC;
-> >   older SoCs continue to use a single multiplexed interrupt
-> >
-> > The example is also updated to reflect the r8a7795 as this is the
-> > more complex case.
-> >
-> > Based on work by Kazuya Mizuguchi and others.
-> >
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> Modulo the minor nit below...
-> 
-> > --- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
-> > +++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
-> 
-> > @@ -18,6 +22,12 @@ Required properties:
-> >  Optional properties:
-> >  - interrupt-parent: the phandle for the interrupt controller that services
-> >                     interrupts for this device.
-> > +- interrupt-names: A list of interrupt names.
-> > +                  For the R8A7795 SoC this property is mandatory;
-> > +                  it should include one entry per channel, named "ch%u",
-> > +                  where %u is the channel number ranging from 0 to 24.
-> > +                  For other SoCs this property is optional; if present
-> > +                  is should contain "mux" for a single muxed interrupt.
-> 
-> it
+Hello Ulf,
 
-Thanks, I will fix that.
+2015-08-26 0:27 GMT+09:00 Ulf Hansson <ulf.hansson@linaro.org>:
+> On 23 August 2015 at 14:58, Yoshihiro Kaneko <ykaneko0929@gmail.com> wrote:
+>> From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+>>
+>> The clock should be enable when SDHI registers are accessed.
+>
+> Yes, correct. But...
+>
+>>
+>> Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+>> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+>> ---
+>>
+>> This patch is based on mmc-next branch of Ulf Hansson's mmc tree.
+>>
+>> * Perhaps this relates to the need to enhance clock management
+>>
+>>  drivers/mmc/host/sh_mmcif.c | 2 ++
+>>  1 file changed, 2 insertions(+)
+>>
+>> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+>> index 5a1fdd4..ad9ffea 100644
+>> --- a/drivers/mmc/host/sh_mmcif.c
+>> +++ b/drivers/mmc/host/sh_mmcif.c
+>> @@ -1632,7 +1632,9 @@ static int sh_mmcif_suspend(struct device *dev)
+>>  {
+>>         struct sh_mmcif_host *host = dev_get_drvdata(dev);
+>>
+>> +       pm_runtime_get_sync(dev);
+>>         sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
+>> +       pm_runtime_put(dev);
+>
+> ... when will the clock be gated, since the pm_runtime_put() here wont
+> do the trick!
+>
+> That's a bit more complicated to deal with, but for now I will apply
+> this patch as is.
+
+Thanks!
+I need to learn more.
+
+Best Regards,
+Kaneko
+
+>
+>>
+>>         return 0;
+>>  }
+>> --
+>> 1.9.1
+>>
+>
+> Thanks, applied for next!
+>
+> Kind regards
+> Uffe
