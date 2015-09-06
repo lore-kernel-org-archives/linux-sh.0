@@ -1,63 +1,45 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 10 Sep 2015 08:57:50 +0000
-Subject: Re: [PATCH 03/14][RFC] arm64: renesas: r8a7795: add MSTP10 support
-Message-Id: <CAMuHMdVaLOg_Y+ipVanyz-U7KbfkxGuPJMbZXQvXv5ni5yd-Fg@mail.gmail.com>
+Date: Sun, 06 Sep 2015 10:11:48 +0000
+Subject: [PATCH] [media] VIDEO_RENESAS_JPU should depend on HAS_DMA
+Message-Id: <1441534308-24662-1-git-send-email-geert@linux-m68k.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mvwun3zh.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87mvwun3zh.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>, Hans Verkuil <hans.verkuil@cisco.com>, Mauro Carvalho Chehab <mchehab@osg.samsung.com>
+Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
 
-Hi Morimoto-san,
+If NO_DMA=y:
 
-On Thu, Sep 10, 2015 at 9:15 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> It is including SSI/SRC/CTU/MIX/DVC
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+    warning: (VIDEO_STI_BDISP && VIDEO_RENESAS_JPU && VIDEO_DM365_VPFE && VIDEO_OMAP4) selects VIDEOBUF2_DMA_CONTIG which has unmet direct dependencies (MEDIA_SUPPORT && HAS_DMA)
 
-I could not verify the parents (s3d4) of the SSI_ALL and SCU_ALL clocks.
-Do you have a pointer?
+    drivers/media/v4l2-core/videobuf2-dma-contig.c: In function ‘vb2_dc_mmap’:
+    drivers/media/v4l2-core/videobuf2-dma-contig.c:207: error: implicit declaration of function ‘dma_mmap_coherent’
+    drivers/media/v4l2-core/videobuf2-dma-contig.c: In function ‘vb2_dc_get_base_sgt’:
+    drivers/media/v4l2-core/videobuf2-dma-contig.c:390: error: implicit declaration of function ‘dma_get_sgtable’
 
-Apart from that:
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+VIDEO_RENESAS_JPU selects VIDEOBUF2_DMA_CONTIG, which bypasses its
+dependency on HAS_DMA.  Make VIDEO_RENESAS_JPU depend on HAS_DMA to fix
+this.
 
->  arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 39 +++++++++++++++++++++++++++++++
->  include/dt-bindings/clock/r8a7795-clock.h | 26 +++++++++++++++++++++
->  2 files changed, 65 insertions(+)
->
-> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> index 969116d..f27b8d2 100644
-> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> @@ -429,6 +429,45 @@
->                                                 R8A7795_CLK_I2C0
->                                         >;
->                                 };
-> +
-> +                               mstp10_clks: mstp10_clks@e6150998 {
-> +                                       compatible = "renesas,r8a7795-mstp-clocks", "renesas,cpg-mstp-clocks";
-> +                                       reg = <0 0xe6150998 0 4>, <0 0xe61509a8 0 4>;
-> +                                       #clock-cells = <1>;
-> +                                       clocks = <&s3d4_clk>,
-> +                                               <&mstp10_clks R8A7795_CLK_SSI_ALL>, <&mstp10_clks R8A7795_CLK_SSI_ALL>,
-> +                                               <&mstp10_clks R8A7795_CLK_SSI_ALL>, <&mstp10_clks R8A7795_CLK_SSI_ALL>,
-> +                                               <&mstp10_clks R8A7795_CLK_SSI_ALL>, <&mstp10_clks R8A7795_CLK_SSI_ALL>,
-> +                                               <&mstp10_clks R8A7795_CLK_SSI_ALL>, <&mstp10_clks R8A7795_CLK_SSI_ALL>,
-> +                                               <&mstp10_clks R8A7795_CLK_SSI_ALL>, <&mstp10_clks R8A7795_CLK_SSI_ALL>,
-> +                                               <&s3d4_clk>,
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ drivers/media/platform/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Gr{oetje,eeting}s,
+diff --git a/drivers/media/platform/Kconfig b/drivers/media/platform/Kconfig
+index dc75694ac12d2d57..ccbc9742cb7aeca4 100644
+--- a/drivers/media/platform/Kconfig
++++ b/drivers/media/platform/Kconfig
+@@ -233,7 +233,7 @@ config VIDEO_SH_VEU
+ 
+ config VIDEO_RENESAS_JPU
+ 	tristate "Renesas JPEG Processing Unit"
+-	depends on VIDEO_DEV && VIDEO_V4L2
++	depends on VIDEO_DEV && VIDEO_V4L2 && HAS_DMA
+ 	depends on ARCH_SHMOBILE || COMPILE_TEST
+ 	select VIDEOBUF2_DMA_CONTIG
+ 	select V4L2_MEM2MEM_DEV
+-- 
+1.9.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
