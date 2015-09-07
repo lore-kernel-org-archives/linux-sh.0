@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 01 Sep 2015 07:01:47 +0000
+Date: Mon, 07 Sep 2015 07:51:26 +0000
 Subject: Re: [PATCH 2/3] arm64: dts: r8a7795: add GPIO nodes
-Message-Id: <CAMuHMdUVZeqXZHOhKu4P8ZuXTr7sCASoqr0VhaqeE5qnJFeZvA@mail.gmail.com>
+Message-Id: <CAMuHMdX-Xu56suRwfBdYntviGbQFmg63F1k7dp+4VPpAnT1mjg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1441035401-5843-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 In-Reply-To: <1441035401-5843-3-git-send-email-ulrich.hecht+renesas@gmail.com>
@@ -10,36 +10,17 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Uli,
-
 On Mon, Aug 31, 2015 at 5:36 PM, Ulrich Hecht
 <ulrich.hecht+renesas@gmail.com> wrote:
-> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> index ca1970d..4bbf626 100644
-> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> @@ -52,6 +52,110 @@
->                                         (GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_HIGH)>;
->                 };
+> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 >
-> +               gpio0: gpio@e6050000 {
-> +                       compatible = "renesas,gpio-r8a7795",
-> +                                    "renesas,gpio-rcar";
-> +                       reg = <0 0xe6050000 0 0x50>;
-> +                       interrupts = <GIC_SPI 4 IRQ_TYPE_LEVEL_HIGH>;
-> +                       #gpio-cells = <2>;
-> +                       gpio-controller;
-> +                       gpio-ranges = <&pfc 0 0 32>;
-> +                       #interrupt-cells = <2>;
-> +                       interrupt-controller;
-> +                       clocks = <&mstp9_clks R8A7795_CLK_GPIO0>;
+> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+> [horms: broken out of a larger patch; moved to soc node]
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> [uli: fixed gpio6/7 clocks]
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Missing (in all nodes) "power-domains = <&cpg_clocks>;"
-With gen3-cpg-v5 it still works without accidentally, because
-drivers/sh/pm_runtime.c falls back to the legacy clock domain if
-CONFIG_ARCH_SHMOBILE_MULTI is not set.
-
-> +               };
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
 Gr{oetje,eeting}s,
 
