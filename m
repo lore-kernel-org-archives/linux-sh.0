@@ -1,40 +1,78 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 22 Sep 2015 07:08:12 +0000
-Subject: [PATCH v2 0/2] ARM: shmobile: Remove legacy leftovers
-Message-Id: <1442905694-2317-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 07 Sep 2015 16:33:03 +0000
+Subject: [PATCH v7 01/05] clk: shmobile: Rework CONFIG_ARCH_SHMOBILE_MULTI
+Message-Id: <20150907163303.475.30983.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150907163252.475.18281.sendpatchset@little-apple>
+In-Reply-To: <20150907163252.475.18281.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-Hello,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This patch series removes legacy leftovers related to IRQ support in
-non-multiplatform kernels. Please see individual patches for details.
+Shmobile is all multiplatform these days, so in get rid of the
+reference to CONFIG_ARCH_SHMOBILE_MULTI in drivers/clk/shmobile/.
 
-The series is based on Simon's renesas-devel-20150914-v4.3-rc1 tag. It should
-be queued up  in a tree that has support for the last non-multiplatform
-kernels removed.
+Also instead of always enabling DIV6 and MSTP adjust the Makefile
+to enable DIV6 and MSTP depending on if they are included in the
+SoC or not.
 
-Laurent Pinchart (2):
-  pinctrl: sh-pfc: Remove hardcoded IRQ numbers
-  ARM: shmobile: Remove legacy mach/irqs.h
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
 
- arch/arm/mach-shmobile/include/mach/irqs.h |  10 ---
- arch/arm/mach-shmobile/irqs.h              |  15 ----
- arch/arm/mach-shmobile/setup-r8a7778.c     |   1 -
- drivers/pinctrl/sh-pfc/gpio.c              |   7 +-
- drivers/pinctrl/sh-pfc/pfc-r8a73a4.c       | 116 ++++++++++++++---------------
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c       |  64 ++++++++--------
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c        |  64 ++++++++--------
- drivers/pinctrl/sh-pfc/sh_pfc.h            |   8 +-
- 8 files changed, 125 insertions(+), 160 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/include/mach/irqs.h
- delete mode 100644 arch/arm/mach-shmobile/irqs.h
+ Earlier known as "clk: shmobile: Get rid of CONFIG_ARCH_SHMOBILE_MULTI"
 
--- 
-Regards,
+ Changes since V6:
+ - None
 
-Laurent Pinchart
+ Changes since V5:
+ - None
 
+ Changes since V4:
+ - Added Acked-by from Laurent
+
+ Changes since V3:
+ - Got rid of hunks that modified drivers/clk/Makefile
+ - This to prevent build issue with non-CCF enabled SH arch
+ - A nice side effect is that this patch now can be merged any time
+
+ Changes since V2:
+ - Fixed patch subject typo CONFIG_SHMOBILE_MULTI -> CONFIG_ARCH_SHMOBILE_MULTI
+
+ Changes since V1:
+ - Added Acked-by from Geert
+
+ drivers/clk/shmobile/Makefile |   22 ++++++++++------------
+ 1 file changed, 10 insertions(+), 12 deletions(-)
+
+--- 0001/drivers/clk/shmobile/Makefile
++++ work/drivers/clk/shmobile/Makefile	2015-08-29 16:14:57.522366518 +0900
+@@ -1,13 +1,11 @@
+ obj-$(CONFIG_ARCH_EMEV2)		+= clk-emev2.o
+-obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o
+-obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o
+-obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o
+-obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o
+-obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
+-obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o
+-obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o
+-obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
+-obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-mstp.o
++obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o clk-mstp.o
++obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o clk-mstp.o
++obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o clk-mstp.o
++obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o clk-mstp.o clk-div6.o
