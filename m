@@ -1,1057 +1,359 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 20:57:10 +0000
-Subject: [PATCH 32/32] v4l: vsp1: Add display list support
-Message-Id: <1442177830-24536-33-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 07 Sep 2015 16:33:35 +0000
+Subject: [PATCH v7 04/05] clk: shmobile: Add Renesas R-Car Gen3 CPG support
+Message-Id: <20150907163335.475.34867.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20150907163252.475.18281.sendpatchset@little-apple>
+In-Reply-To: <20150907163252.475.18281.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-From: Takashi Saito <takashi.saitou.ry@renesas.com>
+From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 
-Display lists contain lists of registers and associated values to be
-applied atomically by the hardware. They lower the pressure on interrupt
-processing delays when reprogramming the device as settings can be
-prepared well in advance and queued to the hardware without waiting for
-the end of the current frame.
+This V7 patch adds initial CPG support for R-Car Generation 3 and in
+particular the R8A7795 SoC.
 
-Display list support is currently limited to the DRM pipeline.
+The R-Car Gen3 clock hardware has a register write protection feature that
+needs to be shared between the CPG function and the MSTP hardware somehow.
+So far this feature is simply ignored.
 
-Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/media/platform/vsp1/Makefile      |   2 +-
- drivers/media/platform/vsp1/vsp1.h        |  17 ++
- drivers/media/platform/vsp1/vsp1_bru.c    |   2 +-
- drivers/media/platform/vsp1/vsp1_dl.c     | 304 ++++++++++++++++++++++++++++++
- drivers/media/platform/vsp1/vsp1_dl.h     |  42 +++++
- drivers/media/platform/vsp1/vsp1_drm.c    | 105 ++++++-----
- drivers/media/platform/vsp1/vsp1_drm.h    |   5 +
- drivers/media/platform/vsp1/vsp1_drv.c    |  76 +++++---
- drivers/media/platform/vsp1/vsp1_entity.c |   4 +-
- drivers/media/platform/vsp1/vsp1_lif.c    |   4 +-
- drivers/media/platform/vsp1/vsp1_pipe.c   |  54 +++++-
- drivers/media/platform/vsp1/vsp1_pipe.h   |   5 +
- drivers/media/platform/vsp1/vsp1_rpf.c    |   4 +-
- drivers/media/platform/vsp1/vsp1_wpf.c    |  13 +-
- 14 files changed, 542 insertions(+), 95 deletions(-)
- create mode 100644 drivers/media/platform/vsp1/vsp1_dl.c
- create mode 100644 drivers/media/platform/vsp1/vsp1_dl.h
 
-diff --git a/drivers/media/platform/vsp1/Makefile b/drivers/media/platform/vsp1/Makefile
-index 447e72a2ef43..95b3ac2ea7ef 100644
---- a/drivers/media/platform/vsp1/Makefile
-+++ b/drivers/media/platform/vsp1/Makefile
-@@ -1,5 +1,5 @@
- vsp1-y					:= vsp1_drv.o vsp1_entity.o vsp1_pipe.o
--vsp1-y					+= vsp1_drm.o vsp1_video.o
-+vsp1-y					+= vsp1_dl.o vsp1_drm.o vsp1_video.o
- vsp1-y					+= vsp1_rpf.o vsp1_rwpf.o vsp1_wpf.o
- vsp1-y					+= vsp1_hsit.o vsp1_lif.o vsp1_lut.o
- vsp1-y					+= vsp1_bru.o vsp1_sru.o vsp1_uds.o
-diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
-index 61a24e4a0848..358018a97827 100644
---- a/drivers/media/platform/vsp1/vsp1.h
-+++ b/drivers/media/platform/vsp1/vsp1.h
-@@ -26,7 +26,9 @@
- struct clk;
- struct device;
- 
-+struct vsp1_dl;
- struct vsp1_drm;
-+struct vsp1_entity;
- struct vsp1_platform_data;
- struct vsp1_bru;
- struct vsp1_hsit;
-@@ -84,12 +86,17 @@ struct vsp1_device {
- 	struct v4l2_device v4l2_dev;
- 	struct media_device media_dev;
- 	struct media_entity_operations media_ops;
-+
- 	struct vsp1_drm *drm;
-+
-+	bool use_dl;
- };
- 
- int vsp1_device_get(struct vsp1_device *vsp1);
- void vsp1_device_put(struct vsp1_device *vsp1);
- 
-+int vsp1_reset_wpf(struct vsp1_device *vsp1, unsigned int index);
-+
- static inline u32 vsp1_read(struct vsp1_device *vsp1, u32 reg)
- {
- 	return ioread32(vsp1->mmio + reg);
-@@ -100,4 +107,14 @@ static inline void vsp1_write(struct vsp1_device *vsp1, u32 reg, u32 data)
- 	iowrite32(data, vsp1->mmio + reg);
- }
- 
-+#include "vsp1_dl.h"
-+
-+static inline void vsp1_mod_write(struct vsp1_entity *e, u32 reg, u32 data)
-+{
-+	if (e->vsp1->use_dl)
-+		vsp1_dl_add(e, reg, data);
-+	else
-+		vsp1_write(e->vsp1, reg, data);
-+}
-+
- #endif /* __VSP1_H__ */
-diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
-index 99b742ff53c9..cb0dbc15ddad 100644
---- a/drivers/media/platform/vsp1/vsp1_bru.c
-+++ b/drivers/media/platform/vsp1/vsp1_bru.c
-@@ -30,7 +30,7 @@
- 
- static inline void vsp1_bru_write(struct vsp1_bru *bru, u32 reg, u32 data)
- {
--	vsp1_write(bru->entity.vsp1, reg, data);
-+	vsp1_mod_write(&bru->entity, reg, data);
- }
- 
- /* -----------------------------------------------------------------------------
-diff --git a/drivers/media/platform/vsp1/vsp1_dl.c b/drivers/media/platform/vsp1/vsp1_dl.c
-new file mode 100644
-index 000000000000..a4dcccf0778b
+ Changes since V6: (Magnus Damm <damm+renesas@opensource.se>)
+ - Moved PLL1 div-by-2 unit to outside of the CPG - thanks Laurent!
+ - Updated table to reflect PLL1 divider move.
+ - Reworked clock registration loop to prevent re-registering clocks.
+
+Changes since V5: (Magnus Damm <damm+renesas@opensource.se>)
+ - Removed unused spinlock, use 0x3f as mask - thanks Laurent!
+ - Fixed space -> tab for DT binding documentation - thanks Geert!
+ - Postponed PLL1 divide-by-2 rewrite - requires a tad more effort.
+ - Updated commit log
+
+ Changes since V4: (Magnus Damm <damm+renesas@opensource.se>)
+ - Simplified clks array handling - thanks Geert!
+ - Updated th DT binding documentation to reflect latest state
+ - of_property_count_strings() -> of_property_count_u32_elems() fix
+
+ Changes since V3: (Magnus Damm <damm+renesas@opensource.se>)
+ - Reworked driver to incorporate most feedback from Stephen Boyd - thanks!!
+ - Major things like syscon and driver model require more discussion.
+ - Added hunk to build drivers/clk/shmobile if ARCH_RENESAS is set.
+
+ Changes since V2: (Magnus Damm <damm+renesas@opensource.se>)
+ - Reworked driver to rely on clock index instead of strings.
+ - Dropped use of "clock-output-names".
+
+ Earlier versions: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+ Initial version: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+
+ Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt |   32 +
+ drivers/clk/Makefile                                                     |    1 
+ drivers/clk/shmobile/Makefile                                            |    1 
+ drivers/clk/shmobile/clk-rcar-gen3.c                                     |  242 ++++++++++
+ 4 files changed, 276 insertions(+)
+
 --- /dev/null
-+++ b/drivers/media/platform/vsp1/vsp1_dl.c
-@@ -0,0 +1,304 @@
++++ work/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt	2015-09-07 20:43:37.672366518 +0900
+@@ -0,0 +1,32 @@
++* Renesas R-Car Gen3 Clock Pulse Generator (CPG)
++
++The CPG generates core clocks for the R-Car Gen3 SoCs. It includes three PLLs
++and several fixed ratio dividers.
++
++Required Properties:
++
++  - compatible: Must be one of
++    - "renesas,r8a7795-cpg-clocks" for the r8a7795 CPG
++    - "renesas,rcar-gen3-cpg-clocks" for the generic R-Car Gen3 CPG
++
++  - reg: Base address and length of the memory resource used by the CPG
++
++  - clocks: References to the parent clocks: first to the EXTAL clock
++  - #clock-cells: Must be 1
++  - clock-indices: Indices of the exported clocks
++
++Example
++-------
++
++	cpg_clocks: cpg_clocks@e6150000 {
++		compatible = "renesas,r8a7795-cpg-clocks",
++			     "renesas,rcar-gen3-cpg-clocks";
++		reg = <0 0xe6150000 0 0x1000>;
++		clocks = <&extal_clk>;
++		#clock-cells = <1>;
++		clock-indices = <
++				R8A7795_CLK_MAIN R8A7795_CLK_PLL0
++				R8A7795_CLK_PLL1 R8A7795_CLK_PLL2
++				R8A7795_CLK_PLL3 R8A7795_CLK_PLL4
++		>;
++	};
+--- 0014/drivers/clk/Makefile
++++ work/drivers/clk/Makefile	2015-09-07 20:43:36.642366518 +0900
+@@ -67,6 +67,7 @@ obj-$(CONFIG_COMMON_CLK_QCOM)		+= qcom/
+ obj-$(CONFIG_ARCH_ROCKCHIP)		+= rockchip/
+ obj-$(CONFIG_COMMON_CLK_SAMSUNG)	+= samsung/
+ obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= shmobile/
++obj-$(CONFIG_ARCH_RENESAS)		+= shmobile/
+ obj-$(CONFIG_ARCH_SIRF)			+= sirf/
+ obj-$(CONFIG_ARCH_SOCFPGA)		+= socfpga/
+ obj-$(CONFIG_PLAT_SPEAR)		+= spear/
+--- 0018/drivers/clk/shmobile/Makefile
++++ work/drivers/clk/shmobile/Makefile	2015-09-07 20:43:36.642366518 +0900
+@@ -8,4 +8,5 @@ obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-
+ obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
+ obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
+ obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7795)		+= clk-rcar-gen3.o clk-mstp.o clk-div6.o
+ obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o clk-mstp.o clk-div6.o
+--- /dev/null
++++ work/drivers/clk/shmobile/clk-rcar-gen3.c	2015-09-07 20:45:30.092366518 +0900
+@@ -0,0 +1,242 @@
 +/*
-+ * vsp1_dl.h  --  R-Car VSP1 Display List
++ * rcar_gen3 Core CPG Clocks
 + *
-+ * Copyright (C) 2015 Renesas Corporation
++ * Copyright (C) 2015 Renesas Electronics Corp.
 + *
-+ * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
++ * Based on rcar_gen2 Core CPG Clocks driver.
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
++ * the Free Software Foundation; version 2 of the License.
 + */
 +
-+#include <linux/device.h>
-+#include <linux/dma-mapping.h>
-+#include <linux/gfp.h>
++#include <linux/clk-provider.h>
++#include <linux/clk/shmobile.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/slab.h>
 +
-+#include "vsp1.h"
-+#include "vsp1_dl.h"
-+#include "vsp1_pipe.h"
++#define RCAR_GEN3_CLK_MAIN	0
++#define RCAR_GEN3_CLK_PLL0	1
++#define RCAR_GEN3_CLK_PLL1	2
++#define RCAR_GEN3_CLK_PLL2	3
++#define RCAR_GEN3_CLK_PLL3	4
++#define RCAR_GEN3_CLK_PLL4	5
++#define RCAR_GEN3_CLK_NR	6
 +
-+/*
-+ * Global resources
-+ *
-+ * - Display-related interrupts (can be used for vblank evasion ?)
-+ * - Display-list enable
-+ * - Header-less for WPF0
-+ * - DL swap
-+ */
-+
-+#define VSP1_DL_BODY_SIZE		(2 * 4 * 256)
-+#define VSP1_DL_NUM_LISTS		3
-+
-+struct vsp1_dl_entry {
-+	u32 addr;
-+	u32 data;
-+} __attribute__((__packed__));
-+
-+struct vsp1_dl_list {
-+	size_t size;
-+	int reg_count;
-+
-+	bool in_use;
-+
-+	struct vsp1_dl_entry *body;
-+	dma_addr_t dma;
++static const char * const rcar_gen3_clk_names[RCAR_GEN3_CLK_NR] = {
++	[RCAR_GEN3_CLK_MAIN] = "main",
++	[RCAR_GEN3_CLK_PLL0] = "pll0",
++	[RCAR_GEN3_CLK_PLL1] = "pll1",
++	[RCAR_GEN3_CLK_PLL2] = "pll2",
++	[RCAR_GEN3_CLK_PLL3] = "pll3",
++	[RCAR_GEN3_CLK_PLL4] = "pll4",
 +};
 +
-+/**
-+ * struct vsp1_dl - Display List manager
-+ * @vsp1: the VSP1 device
-+ * @lock: protects the active, queued and pending lists
-+ * @lists.all: array of all allocate display lists
-+ * @lists.active: list currently being processed (loaded) by hardware
-+ * @lists.queued: list queued to the hardware (written to the DL registers)
-+ * @lists.pending: list waiting to be queued to the hardware
-+ * @lists.write: list being written to by software
++struct rcar_gen3_cpg {
++	struct clk_onecell_data data;
++	void __iomem *reg;
++	struct clk *clks[RCAR_GEN3_CLK_NR];
++};
++
++#define CPG_PLL0CR	0x00d8
++#define CPG_PLL2CR	0x002c
++
++/*
++ * common function
 + */
-+struct vsp1_dl {
-+	struct vsp1_device *vsp1;
++#define rcar_clk_readl(cpg, _reg) readl(cpg->reg + _reg)
 +
-+	spinlock_t lock;
++/*
++ * Reset register definitions.
++ */
++#define MODEMR 0xe6160060
 +
-+	size_t size;
-+	dma_addr_t dma;
-+	void *mem;
++static u32 rcar_gen3_read_mode_pins(void)
++{
++	static u32 mode;
++	static bool mode_valid;
 +
-+	struct {
-+		struct vsp1_dl_list all[VSP1_DL_NUM_LISTS];
++	if (!mode_valid) {
++		void __iomem *modemr = ioremap_nocache(MODEMR, 4);
 +
-+		struct vsp1_dl_list *active;
-+		struct vsp1_dl_list *queued;
-+		struct vsp1_dl_list *pending;
-+		struct vsp1_dl_list *write;
-+	} lists;
++		BUG_ON(!modemr);
++		mode = ioread32(modemr);
++		iounmap(modemr);
++		mode_valid = true;
++	}
++
++	return mode;
++}
++
++/* -----------------------------------------------------------------------------
++ * CPG Clock Data
++ */
++
++/*
++ *   MD		EXTAL		PLL0	PLL1	PLL2	PLL3	PLL4
++ * 14 13 19 17	(MHz)
++ *-------------------------------------------------------------------
++ * 0  0  0  0	16.66 x 1	x180	x192	x144	x192	x144
++ * 0  0  0  1	16.66 x 1	x180	x192	x144	x128	x144
++ * 0  0  1  0	Prohibited setting
++ * 0  0  1  1	16.66 x 1	x180	x192	x144	x192	x144
++ * 0  1  0  0	20    x 1	x150	x156	x120	x156	x120
++ * 0  1  0  1	20    x 1	x150	x156	x120	x106	x120
++ * 0  1  1  0	Prohibited setting
++ * 0  1  1  1	20    x 1	x150	x156	x120	x156	x120
++ * 1  0  0  0	25    x 1	x120	x128	x96	x128	x96
++ * 1  0  0  1	25    x 1	x120	x128	x96	x84	x96
++ * 1  0  1  0	Prohibited setting
++ * 1  0  1  1	25    x 1	x120	x128	x96	x128	x96
++ * 1  1  0  0	33.33 / 2	x180	x192	x144	x192	x144
++ * 1  1  0  1	33.33 / 2	x180	x192	x144	x128	x144
++ * 1  1  1  0	Prohibited setting
++ * 1  1  1  1	33.33 / 2	x180	x192	x144	x192	x144
++ */
++#define CPG_PLL_CONFIG_INDEX(md)	((((md) & BIT(14)) >> 11) | \
++					 (((md) & BIT(13)) >> 11) | \
++					 (((md) & BIT(19)) >> 18) | \
++					 (((md) & BIT(17)) >> 17))
++struct cpg_pll_config {
++	unsigned int extal_div;
++	unsigned int pll1_mult;
++	unsigned int pll3_mult;
++	unsigned int pll4_mult;
++};
++
++static const struct cpg_pll_config cpg_pll_configs[16] __initconst = {
++/* EXTAL div	PLL1	PLL3	PLL4 */
++	{ 1,	192,	192,	144, },
++	{ 1,	192,	128,	144, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	192,	192,	144, },
++	{ 1,	156,	156,	120, },
++	{ 1,	156,	106,	120, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	156,	156,	120, },
++	{ 1,	128,	128,	96,  },
++	{ 1,	128,	84,	96,  },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	128,	128,	96,  },
++	{ 2,	192,	192,	144, },
++	{ 2,	192,	128,	144, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 2,	192,	192,	144, },
 +};
 +
 +/* -----------------------------------------------------------------------------
-+ * Display List Transaction Management
++ * Initialization
 + */
 +
-+static void vsp1_dl_free_list(struct vsp1_dl_list *list)
++static struct clk * __init
++rcar_gen3_cpg_register_clk(struct device_node *np, struct rcar_gen3_cpg *cpg,
++			   const struct cpg_pll_config *config,
++			   unsigned int gen3_clk)
 +{
-+	if (!list)
++	const char *parent_name = rcar_gen3_clk_names[RCAR_GEN3_CLK_MAIN];
++	unsigned int mult = 1;
++	unsigned int div = 1;
++	u32 value;
++
++	switch (gen3_clk) {
++	case RCAR_GEN3_CLK_MAIN:
++		parent_name = of_clk_get_parent_name(np, 0);
++		div = config->extal_div;
++		break;
++	case RCAR_GEN3_CLK_PLL0:
++		/* PLL0 is a configurable multiplier clock. Register it as a
++		 * fixed factor clock for now as there's no generic multiplier
++		 * clock implementation and we currently have no need to change
++		 * the multiplier value.
++		 */
++		value = rcar_clk_readl(cpg, CPG_PLL0CR);
++		mult = ((value >> 24) & 0x3f) + 1;
++		break;
++	case RCAR_GEN3_CLK_PLL1:
++		mult = config->pll1_mult;
++		break;
++	case RCAR_GEN3_CLK_PLL2:
++		/* PLL2 is a configurable multiplier clock. Register it as a
++		 * fixed factor clock for now as there's no generic multiplier
++		 * clock implementation and we currently have no need to change
++		 * the multiplier value.
++		 */
++		value = rcar_clk_readl(cpg, CPG_PLL2CR);
++		mult = ((value >> 24) & 0x3f) + 1;
++		break;
++	case RCAR_GEN3_CLK_PLL3:
++		mult = config->pll3_mult;
++		break;
++	case RCAR_GEN3_CLK_PLL4:
++		mult = config->pll4_mult;
++		break;
++	default:
++		return ERR_PTR(-EINVAL);
++	}
++
++	return clk_register_fixed_factor(NULL, rcar_gen3_clk_names[gen3_clk],
++					 parent_name, 0, mult, div);
++}
++
++static void __init rcar_gen3_cpg_clocks_init(struct device_node *np)
++{
++	const struct cpg_pll_config *config;
++	struct rcar_gen3_cpg *cpg;
++	u32 cpg_mode;
++	unsigned int i;
++
++	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
++	if (!cpg)
 +		return;
 +
-+	list->in_use = false;
-+}
++	cpg->reg = of_iomap(np, 0);
++	if (WARN_ON(cpg->reg = NULL))
++		return;
 +
-+void vsp1_dl_reset(struct vsp1_dl *dl)
-+{
-+	unsigned int i;
++	cpg_mode = rcar_gen3_read_mode_pins();
 +
-+	dl->lists.active = NULL;
-+	dl->lists.queued = NULL;
-+	dl->lists.pending = NULL;
-+	dl->lists.write = NULL;
-+
-+	for (i = 0; i < ARRAY_SIZE(dl->lists.all); ++i)
-+		dl->lists.all[i].in_use = false;
-+}
-+
-+void vsp1_dl_begin(struct vsp1_dl *dl)
-+{
-+	struct vsp1_dl_list *list = NULL;
-+	unsigned long flags;
-+	unsigned int i;
-+
-+	spin_lock_irqsave(&dl->lock, flags);
-+
-+	for (i = 0; i < ARRAY_SIZE(dl->lists.all); ++i) {
-+		if (!dl->lists.all[i].in_use) {
-+			list = &dl->lists.all[i];
-+			break;
-+		}
++	config = &cpg_pll_configs[CPG_PLL_CONFIG_INDEX(cpg_mode)];
++	if (!config->extal_div) {
++		pr_err("%s: Prohibited setting (cpg_mode=0x%x)\n",
++		       __func__, cpg_mode);
++		return;
 +	}
 +
-+	if (!list) {
-+		list = dl->lists.pending;
-+		dl->lists.pending = NULL;
-+	}
++	for (i = 0; i < RCAR_GEN3_CLK_NR; ++i)
++		cpg->clks[i] = ERR_PTR(-ENOENT);
 +
-+	spin_unlock_irqrestore(&dl->lock, flags);
++	for (i = 0; i < RCAR_GEN3_CLK_NR; ++i) {
++		struct clk *clk;
++		u32 idx;
++		int ret;
 +
-+	dl->lists.write = list;
-+
-+	list->in_use = true;
-+	list->reg_count = 0;
-+}
-+
-+void vsp1_dl_add(struct vsp1_entity *e, u32 reg, u32 data)
-+{
-+	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&e->subdev.entity);
-+	struct vsp1_dl *dl = pipe->dl;
-+	struct vsp1_dl_list *list = dl->lists.write;
-+
-+	list->body[list->reg_count].addr = reg;
-+	list->body[list->reg_count].data = data;
-+	list->reg_count++;
-+}
-+
-+void vsp1_dl_commit(struct vsp1_dl *dl)
-+{
-+	struct vsp1_device *vsp1 = dl->vsp1;
-+	struct vsp1_dl_list *list;
-+	unsigned long flags;
-+	bool update;
-+
-+	list = dl->lists.write;
-+	dl->lists.write = NULL;
-+
-+	spin_lock_irqsave(&dl->lock, flags);
-+
-+	/* Once the UPD bit has been set the hardware can start processing the
-+	 * display list at any time and we can't touch the address and size
-+	 * registers. In that case mark the update as pending, it will be
-+	 * queued up to the hardware by the frame end interrupt handler.
-+	 */
-+	update = !!(vsp1_read(vsp1, VI6_DL_BODY_SIZE) & VI6_DL_BODY_SIZE_UPD);
-+	if (update) {
-+		vsp1_dl_free_list(dl->lists.pending);
-+		dl->lists.pending = list;
-+		goto done;
-+	}
-+
-+	/* Program the hardware with the display list body address and size.
-+	 * The UPD bit will be cleared by the device when the display list is
-+	 * processed.
-+	 */
-+	vsp1_write(vsp1, VI6_DL_HDR_ADDR(0), list->dma);
-+	vsp1_write(vsp1, VI6_DL_BODY_SIZE, VI6_DL_BODY_SIZE_UPD |
-+		   (list->reg_count * 8));
-+
-+	vsp1_dl_free_list(dl->lists.queued);
-+	dl->lists.queued = list;
-+
-+done:
-+	spin_unlock_irqrestore(&dl->lock, flags);
-+}
-+
-+/* -----------------------------------------------------------------------------
-+ * Interrupt Handling
-+ */
-+
-+void vsp1_dl_irq_display_start(struct vsp1_dl *dl)
-+{
-+	spin_lock(&dl->lock);
-+
-+	/* The display start interrupt signals the end of the display list
-+	 * processing by the device. The active display list, if any, won't be
-+	 * accessed anymore and can be reused.
-+	 */
-+	if (dl->lists.active) {
-+		vsp1_dl_free_list(dl->lists.active);
-+		dl->lists.active = NULL;
-+	}
-+
-+	spin_unlock(&dl->lock);
-+}
-+
-+void vsp1_dl_irq_frame_end(struct vsp1_dl *dl)
-+{
-+	struct vsp1_device *vsp1 = dl->vsp1;
-+
-+	spin_lock(&dl->lock);
-+
-+	/* The UPD bit set indicates that the commit operation raced with the
-+	 * interrupt and occurred after the frame end event and UPD clear but
-+	 * before interrupt processing. The hardware hasn't taken the update
-+	 * into account yet, we'll thus skip one frame and retry.
-+	 */
-+	if (vsp1_read(vsp1, VI6_DL_BODY_SIZE) & VI6_DL_BODY_SIZE_UPD)
-+		goto done;
-+
-+	/* The device starts processing the queued display list right after the
-+	 * frame end interrupt. The display list thus becomes active.
-+	 */
-+	if (dl->lists.queued) {
-+		WARN_ON(dl->lists.active);
-+		dl->lists.active = dl->lists.queued;
-+		dl->lists.queued = NULL;
-+	}
-+
-+	/* Now that the UPD bit has been cleared we can queue the next display
-+	 * list to the hardware if one has been prepared.
-+	 */
-+	if (dl->lists.pending) {
-+		struct vsp1_dl_list *list = dl->lists.pending;
-+
-+		vsp1_write(vsp1, VI6_DL_HDR_ADDR(0), list->dma);
-+		vsp1_write(vsp1, VI6_DL_BODY_SIZE, VI6_DL_BODY_SIZE_UPD |
-+			   (list->reg_count * 8));
-+
-+		dl->lists.queued = list;
-+		dl->lists.pending = NULL;
-+	}
-+
-+done:
-+	spin_unlock(&dl->lock);
-+}
-+
-+/* -----------------------------------------------------------------------------
-+ * Hardware Setup
-+ */
-+
-+void vsp1_dl_setup(struct vsp1_device *vsp1)
-+{
-+	u32 ctrl = (256 << VI6_DL_CTRL_AR_WAIT_SHIFT)
-+		 | VI6_DL_CTRL_DC2 | VI6_DL_CTRL_DC1 | VI6_DL_CTRL_DC0
-+		 | VI6_DL_CTRL_DLE;
-+
-+	/* The DRM pipeline operates with header-less display lists in
-+	 * Continuous Frame Mode.
-+	 */
-+	if (vsp1->drm)
-+		ctrl |= VI6_DL_CTRL_CFM0 | VI6_DL_CTRL_NH0;
-+
-+	vsp1_write(vsp1, VI6_DL_CTRL, ctrl);
-+	vsp1_write(vsp1, VI6_DL_SWAP, VI6_DL_SWAP_LWS);
-+}
-+
-+/* -----------------------------------------------------------------------------
-+ * Initialization and Cleanup
-+ */
-+
-+struct vsp1_dl *vsp1_dl_create(struct vsp1_device *vsp1)
-+{
-+	struct vsp1_dl *dl;
-+	unsigned int i;
-+
-+	dl = kzalloc(sizeof(*dl), GFP_KERNEL);
-+	if (!dl)
-+		return NULL;
-+
-+	spin_lock_init(&dl->lock);
-+
-+	dl->vsp1 = vsp1;
-+	dl->size = VSP1_DL_BODY_SIZE * ARRAY_SIZE(dl->lists.all);
-+
-+	dl->mem = dma_alloc_writecombine(vsp1->dev, dl->size, &dl->dma,
-+					 GFP_KERNEL);
-+	if (!dl->mem) {
-+		kfree(dl);
-+		return NULL;
-+	}
-+
-+	for (i = 0; i < ARRAY_SIZE(dl->lists.all); ++i) {
-+		struct vsp1_dl_list *list = &dl->lists.all[i];
-+
-+		list->size = VSP1_DL_BODY_SIZE;
-+		list->reg_count = 0;
-+		list->in_use = false;
-+		list->dma = dl->dma + VSP1_DL_BODY_SIZE * i;
-+		list->body = dl->mem + VSP1_DL_BODY_SIZE * i;
-+	}
-+
-+	return dl;
-+}
-+
-+void vsp1_dl_destroy(struct vsp1_dl *dl)
-+{
-+	dma_free_writecombine(dl->vsp1->dev, dl->size, dl->mem, dl->dma);
-+	kfree(dl);
-+}
-diff --git a/drivers/media/platform/vsp1/vsp1_dl.h b/drivers/media/platform/vsp1/vsp1_dl.h
-new file mode 100644
-index 000000000000..448c4250e54c
---- /dev/null
-+++ b/drivers/media/platform/vsp1/vsp1_dl.h
-@@ -0,0 +1,42 @@
-+/*
-+ * vsp1_dl.h  --  R-Car VSP1 Display List
-+ *
-+ * Copyright (C) 2015 Renesas Corporation
-+ *
-+ * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+#ifndef __VSP1_DL_H__
-+#define __VSP1_DL_H__
-+
-+#include "vsp1_entity.h"
-+
-+struct vsp1_device;
-+struct vsp1_dl;
-+
-+struct vsp1_dl *vsp1_dl_create(struct vsp1_device *vsp1);
-+void vsp1_dl_destroy(struct vsp1_dl *dl);
-+
-+void vsp1_dl_setup(struct vsp1_device *vsp1);
-+
-+void vsp1_dl_reset(struct vsp1_dl *dl);
-+void vsp1_dl_begin(struct vsp1_dl *dl);
-+void vsp1_dl_add(struct vsp1_entity *e, u32 reg, u32 data);
-+void vsp1_dl_commit(struct vsp1_dl *dl);
-+
-+void vsp1_dl_irq_display_start(struct vsp1_dl *dl);
-+void vsp1_dl_irq_frame_end(struct vsp1_dl *dl);
-+
-+static inline void vsp1_dl_mod_write(struct vsp1_entity *e, u32 reg, u32 data)
-+{
-+	if (e->vsp1->use_dl)
-+		vsp1_dl_add(e, reg, data);
-+	else
-+		vsp1_write(e->vsp1, reg, data);
-+}
-+
-+#endif /* __VSP1_DL_H__ */
-diff --git a/drivers/media/platform/vsp1/vsp1_drm.c b/drivers/media/platform/vsp1/vsp1_drm.c
-index ef8e91d65209..618e129c9d2b 100644
---- a/drivers/media/platform/vsp1/vsp1_drm.c
-+++ b/drivers/media/platform/vsp1/vsp1_drm.c
-@@ -20,6 +20,7 @@
- 
- #include "vsp1.h"
- #include "vsp1_bru.h"
-+#include "vsp1_dl.h"
- #include "vsp1_drm.h"
- #include "vsp1_lif.h"
- #include "vsp1_pipe.h"
-@@ -29,55 +30,13 @@
-  * Runtime Handling
-  */
- 
--static int vsp1_drm_pipeline_run(struct vsp1_pipeline *pipe)
--{
--	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
--	int ret;
--
--	if (vsp1->drm->update) {
--		struct vsp1_entity *entity;
--
--		list_for_each_entry(entity, &pipe->entities, list_pipe) {
--			/* Disconnect unused RPFs from the pipeline. */
--			if (entity->type = VSP1_ENTITY_RPF) {
--				struct vsp1_rwpf *rpf -					to_rwpf(&entity->subdev);
--
--				if (!pipe->inputs[rpf->entity.index]) {
--					vsp1_write(entity->vsp1,
--						   entity->route->reg,
--						   VI6_DPR_NODE_UNUSED);
--					continue;
--				}
--			}
--
--			vsp1_entity_route_setup(entity);
--
--			ret = v4l2_subdev_call(&entity->subdev, video,
--					       s_stream, 1);
--			if (ret < 0) {
--				dev_err(vsp1->dev,
--					"DRM pipeline start failure on entity %s\n",
--					entity->subdev.name);
--				return ret;
--			}
--		}
--
--		vsp1->drm->update = false;
--	}
--
--	vsp1_pipeline_run(pipe);
--
--	return 0;
--}
--
- static void vsp1_drm_pipeline_frame_end(struct vsp1_pipeline *pipe)
- {
- 	unsigned long flags;
- 
- 	spin_lock_irqsave(&pipe->irqlock, flags);
- 	if (pipe->num_inputs)
--		vsp1_drm_pipeline_run(pipe);
-+		vsp1_pipeline_run(pipe);
- 	spin_unlock_irqrestore(&pipe->irqlock, flags);
- }
- 
-@@ -151,6 +110,8 @@ int vsp1_du_setup_lif(struct device *dev, unsigned int width,
- 		return 0;
- 	}
- 
-+	vsp1_dl_reset(vsp1->drm->dl);
-+
- 	/* Configure the format at the BRU sinks and propagate it through the
- 	 * pipeline.
- 	 */
-@@ -266,7 +227,6 @@ void vsp1_du_atomic_begin(struct device *dev)
- 	spin_lock_irqsave(&pipe->irqlock, flags);
- 
- 	vsp1->drm->num_inputs = pipe->num_inputs;
--	vsp1->drm->update = false;
- 
- 	spin_unlock_irqrestore(&pipe->irqlock, flags);
- }
-@@ -489,23 +449,57 @@ void vsp1_du_atomic_flush(struct device *dev)
- {
- 	struct vsp1_device *vsp1 = dev_get_drvdata(dev);
- 	struct vsp1_pipeline *pipe = &vsp1->drm->pipe;
-+	struct vsp1_entity *entity;
- 	unsigned long flags;
- 	bool stop = false;
-+	int ret;
- 
--	spin_lock_irqsave(&pipe->irqlock, flags);
-+	/* Prepare the display list. */
-+	vsp1_dl_begin(vsp1->drm->dl);
- 
--	vsp1->drm->update = true;
-+	list_for_each_entry(entity, &pipe->entities, list_pipe) {
-+		/* Disconnect unused RPFs from the pipeline. */
-+		if (entity->type = VSP1_ENTITY_RPF) {
-+			struct vsp1_rwpf *rpf = to_rwpf(&entity->subdev);
-+
-+			if (!pipe->inputs[rpf->entity.index]) {
-+				vsp1_mod_write(entity, entity->route->reg,
-+					   VI6_DPR_NODE_UNUSED);
-+				continue;
-+			}
-+		}
-+
-+		vsp1_entity_route_setup(entity);
-+
-+		ret = v4l2_subdev_call(&entity->subdev, video,
-+				       s_stream, 1);
-+		if (ret < 0) {
-+			dev_err(vsp1->dev,
-+				"DRM pipeline start failure on entity %s\n",
-+				entity->subdev.name);
-+			return;
-+		}
-+	}
-+
-+	vsp1_dl_commit(vsp1->drm->dl);
-+
-+	spin_lock_irqsave(&pipe->irqlock, flags);
- 
- 	/* Start or stop the pipeline if needed. */
--	if (!vsp1->drm->num_inputs && pipe->num_inputs)
--		vsp1_drm_pipeline_run(pipe);
--	else if (vsp1->drm->num_inputs && !pipe->num_inputs)
-+	if (!vsp1->drm->num_inputs && pipe->num_inputs) {
-+		vsp1_write(vsp1, VI6_DISP_IRQ_STA, 0);
-+		vsp1_write(vsp1, VI6_DISP_IRQ_ENB, VI6_DISP_IRQ_ENB_DSTE);
-+		vsp1_pipeline_run(pipe);
-+	} else if (vsp1->drm->num_inputs && !pipe->num_inputs) {
- 		stop = true;
-+	}
- 
- 	spin_unlock_irqrestore(&pipe->irqlock, flags);
- 
--	if (stop)
-+	if (stop) {
-+		vsp1_write(vsp1, VI6_DISP_IRQ_ENB, 0);
- 		vsp1_pipeline_stop(pipe);
-+	}
- }
- EXPORT_SYMBOL_GPL(vsp1_du_atomic_flush);
- 
-@@ -566,6 +560,10 @@ int vsp1_drm_init(struct vsp1_device *vsp1)
- 	if (!vsp1->drm)
- 		return -ENOMEM;
- 
-+	vsp1->drm->dl = vsp1_dl_create(vsp1);
-+	if (!vsp1->drm->dl)
-+		return -ENOMEM;
-+
- 	pipe = &vsp1->drm->pipe;
- 
- 	vsp1_pipeline_init(pipe);
-@@ -586,5 +584,12 @@ int vsp1_drm_init(struct vsp1_device *vsp1)
- 	pipe->lif = &vsp1->lif->entity;
- 	pipe->output = vsp1->wpf[0];
- 
-+	pipe->dl = vsp1->drm->dl;
-+
- 	return 0;
- }
-+
-+void vsp1_drm_cleanup(struct vsp1_device *vsp1)
-+{
-+	vsp1_dl_destroy(vsp1->drm->dl);
-+}
-diff --git a/drivers/media/platform/vsp1/vsp1_drm.h b/drivers/media/platform/vsp1/vsp1_drm.h
-index 25d7f017feb4..7704038c3add 100644
---- a/drivers/media/platform/vsp1/vsp1_drm.h
-+++ b/drivers/media/platform/vsp1/vsp1_drm.h
-@@ -15,19 +15,24 @@
- 
- #include "vsp1_pipe.h"
- 
-+struct vsp1_dl;
-+
- /**
-  * vsp1_drm - State for the API exposed to the DRM driver
-+ * @dl: display list for DRM pipeline operation
-  * @pipe: the VSP1 pipeline used for display
-  * @num_inputs: number of active pipeline inputs at the beginning of an update
-  * @update: the pipeline configuration has been updated
-  */
- struct vsp1_drm {
-+	struct vsp1_dl *dl;
- 	struct vsp1_pipeline pipe;
- 	unsigned int num_inputs;
- 	bool update;
- };
- 
- int vsp1_drm_init(struct vsp1_device *vsp1);
-+void vsp1_drm_cleanup(struct vsp1_device *vsp1);
- int vsp1_drm_create_links(struct vsp1_device *vsp1);
- 
- #endif /* __VSP1_DRM_H__ */
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index 75cdf8715d9a..553a70c23356 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -25,6 +25,7 @@
- 
- #include "vsp1.h"
- #include "vsp1_bru.h"
-+#include "vsp1_dl.h"
- #include "vsp1_drm.h"
- #include "vsp1_hsit.h"
- #include "vsp1_lif.h"
-@@ -44,11 +45,11 @@ static irqreturn_t vsp1_irq_handler(int irq, void *data)
- 	struct vsp1_device *vsp1 = data;
- 	irqreturn_t ret = IRQ_NONE;
- 	unsigned int i;
-+	u32 status;
- 
- 	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
- 		struct vsp1_rwpf *wpf = vsp1->wpf[i];
- 		struct vsp1_pipeline *pipe;
--		u32 status;
- 
- 		if (wpf = NULL)
- 			continue;
-@@ -63,6 +64,21 @@ static irqreturn_t vsp1_irq_handler(int irq, void *data)
- 		}
- 	}
- 
-+	status = vsp1_read(vsp1, VI6_DISP_IRQ_STA);
-+	vsp1_write(vsp1, VI6_DISP_IRQ_STA, ~status & VI6_DISP_IRQ_STA_DST);
-+
-+	if (status & VI6_DISP_IRQ_STA_DST) {
-+		struct vsp1_rwpf *wpf = vsp1->wpf[0];
-+		struct vsp1_pipeline *pipe;
-+
-+		if (wpf) {
-+			pipe = to_vsp1_pipeline(&wpf->entity.subdev.entity);
-+			vsp1_pipeline_display_start(pipe);
-+		}
-+
-+		ret = IRQ_HANDLED;
-+	}
-+
- 	return ret;
- }
- 
-@@ -196,6 +212,9 @@ static void vsp1_destroy_entities(struct vsp1_device *vsp1)
- 
- 	v4l2_device_unregister(&vsp1->v4l2_dev);
- 	media_device_unregister(&vsp1->media_dev);
-+
-+	if (!vsp1->info->uapi)
-+		vsp1_drm_cleanup(vsp1);
- }
- 
- static int vsp1_create_entities(struct vsp1_device *vsp1)
-@@ -368,10 +387,13 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
- 			goto done;
- 	}
- 
--	if (vsp1->info->uapi)
-+	if (vsp1->info->uapi) {
-+		vsp1->use_dl = false;
- 		ret = v4l2_device_register_subdev_nodes(&vsp1->v4l2_dev);
--	else
-+	} else {
-+		vsp1->use_dl = true;
- 		ret = vsp1_drm_init(vsp1);
-+	}
- 
- done:
- 	if (ret < 0)
-@@ -380,33 +402,42 @@ done:
- 	return ret;
- }
- 
--static int vsp1_device_init(struct vsp1_device *vsp1)
-+int vsp1_reset_wpf(struct vsp1_device *vsp1, unsigned int index)
- {
--	unsigned int i;
-+	unsigned int timeout;
- 	u32 status;
- 
--	/* Reset any channel that might be running. */
- 	status = vsp1_read(vsp1, VI6_STATUS);
-+	if (!(status & VI6_STATUS_SYS_ACT(index)))
-+		return 0;
- 
--	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
--		unsigned int timeout;
-+	vsp1_write(vsp1, VI6_SRESET, VI6_SRESET_SRTS(index));
-+	for (timeout = 10; timeout > 0; --timeout) {
-+		status = vsp1_read(vsp1, VI6_STATUS);
-+		if (!(status & VI6_STATUS_SYS_ACT(index)))
-+			break;
- 
--		if (!(status & VI6_STATUS_SYS_ACT(i)))
--			continue;
-+		usleep_range(1000, 2000);
-+	}
- 
--		vsp1_write(vsp1, VI6_SRESET, VI6_SRESET_SRTS(i));
--		for (timeout = 10; timeout > 0; --timeout) {
--			status = vsp1_read(vsp1, VI6_STATUS);
--			if (!(status & VI6_STATUS_SYS_ACT(i)))
--				break;
-+	if (!timeout) {
-+		dev_err(vsp1->dev, "failed to reset wpf.%u\n", index);
-+		return -ETIMEDOUT;
-+	}
- 
--			usleep_range(1000, 2000);
--		}
-+	return 0;
-+}
- 
--		if (!timeout) {
--			dev_err(vsp1->dev, "failed to reset wpf.%u\n", i);
--			return -ETIMEDOUT;
--		}
-+static int vsp1_device_init(struct vsp1_device *vsp1)
-+{
-+	unsigned int i;
-+	int ret;
-+
-+	/* Reset any channel that might be running. */
-+	for (i = 0; i < vsp1->pdata.wpf_count; ++i) {
-+		ret = vsp1_reset_wpf(vsp1, i);
++		ret = of_property_read_u32_index(np, "clock-indices", i, &idx);
 +		if (ret < 0)
-+			return ret;
- 	}
- 
- 	vsp1_write(vsp1, VI6_CLK_DCSWT, (8 << VI6_CLK_DCSWT_CSTPW_SHIFT) |
-@@ -430,6 +461,9 @@ static int vsp1_device_init(struct vsp1_device *vsp1)
- 	vsp1_write(vsp1, VI6_DPR_HGT_SMPPT, (7 << VI6_DPR_SMPPT_TGW_SHIFT) |
- 		   (VI6_DPR_NODE_UNUSED << VI6_DPR_SMPPT_PT_SHIFT));
- 
-+	if (vsp1->use_dl)
-+		vsp1_dl_setup(vsp1);
++			break;
 +
- 	return 0;
- }
- 
-diff --git a/drivers/media/platform/vsp1/vsp1_entity.c b/drivers/media/platform/vsp1/vsp1_entity.c
-index 8947c1883bf4..d65cf8035a92 100644
---- a/drivers/media/platform/vsp1/vsp1_entity.c
-+++ b/drivers/media/platform/vsp1/vsp1_entity.c
-@@ -66,8 +66,8 @@ void vsp1_entity_route_setup(struct vsp1_entity *source)
- 		return;
- 
- 	sink = container_of(source->sink, struct vsp1_entity, subdev.entity);
--	vsp1_write(source->vsp1, source->route->reg,
--		   sink->route->inputs[source->sink_pad]);
-+	vsp1_mod_write(source, source->route->reg,
-+		       sink->route->inputs[source->sink_pad]);
- }
- 
- /* -----------------------------------------------------------------------------
-diff --git a/drivers/media/platform/vsp1/vsp1_lif.c b/drivers/media/platform/vsp1/vsp1_lif.c
-index b8e73d32d14d..433853ce8dbf 100644
---- a/drivers/media/platform/vsp1/vsp1_lif.c
-+++ b/drivers/media/platform/vsp1/vsp1_lif.c
-@@ -28,7 +28,7 @@
- 
- static inline void vsp1_lif_write(struct vsp1_lif *lif, u32 reg, u32 data)
- {
--	vsp1_write(lif->entity.vsp1, reg, data);
-+	vsp1_mod_write(&lif->entity, reg, data);
- }
- 
- /* -----------------------------------------------------------------------------
-@@ -44,7 +44,7 @@ static int lif_s_stream(struct v4l2_subdev *subdev, int enable)
- 	unsigned int lbth = 200;
- 
- 	if (!enable) {
--		vsp1_lif_write(lif, VI6_LIF_CTRL, 0);
-+		vsp1_write(lif->entity.vsp1, VI6_LIF_CTRL, 0);
- 		return 0;
- 	}
- 
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c b/drivers/media/platform/vsp1/vsp1_pipe.c
-index d41e4ca94a02..2e4a31072100 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.c
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.c
-@@ -11,6 +11,7 @@
-  * (at your option) any later version.
-  */
- 
-+#include <linux/delay.h>
- #include <linux/list.h>
- #include <linux/wait.h>
- 
-@@ -19,6 +20,7 @@
- 
- #include "vsp1.h"
- #include "vsp1_bru.h"
-+#include "vsp1_dl.h"
- #include "vsp1_entity.h"
- #include "vsp1_pipe.h"
- #include "vsp1_rwpf.h"
-@@ -176,8 +178,12 @@ void vsp1_pipeline_run(struct vsp1_pipeline *pipe)
- {
- 	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
- 
--	vsp1_write(vsp1, VI6_CMD(pipe->output->entity.index), VI6_CMD_STRCMD);
--	pipe->state = VSP1_PIPELINE_RUNNING;
-+	if (pipe->state = VSP1_PIPELINE_STOPPED) {
-+		vsp1_write(vsp1, VI6_CMD(pipe->output->entity.index),
-+			   VI6_CMD_STRCMD);
-+		pipe->state = VSP1_PIPELINE_RUNNING;
-+	}
++		if (idx >= RCAR_GEN3_CLK_NR) {
++			pr_err("%s: skipping unsupported %u\n", __func__, idx);
++		} else if (cpg->clks[idx] != ERR_PTR(-ENOENT)) {
++			pr_err("%s: skipping already registered %u\n",
++			       __func__, idx);
++		} else {
++			clk = rcar_gen3_cpg_register_clk(np, cpg, config, idx);
 +
- 	pipe->buffers_ready = 0;
- }
- 
-@@ -199,14 +205,28 @@ int vsp1_pipeline_stop(struct vsp1_pipeline *pipe)
- 	unsigned long flags;
- 	int ret;
- 
--	spin_lock_irqsave(&pipe->irqlock, flags);
--	if (pipe->state = VSP1_PIPELINE_RUNNING)
--		pipe->state = VSP1_PIPELINE_STOPPING;
--	spin_unlock_irqrestore(&pipe->irqlock, flags);
-+	if (pipe->dl) {
-+		/* When using display lists in continuous frame mode the only
-+		 * way to stop the pipeline is to reset the hardware.
-+		 */
-+		ret = vsp1_reset_wpf(pipe->output->entity.vsp1,
-+				     pipe->output->entity.index);
-+		if (ret = 0) {
-+			spin_lock_irqsave(&pipe->irqlock, flags);
-+			pipe->state = VSP1_PIPELINE_STOPPED;
-+			spin_unlock_irqrestore(&pipe->irqlock, flags);
++			if (IS_ERR(clk))
++				pr_err("%s: unable to register %u (%ld)\n",
++				       __func__, idx, PTR_ERR(clk));
++			else
++				cpg->clks[idx] = clk;
 +		}
-+	} else {
-+		/* Otherwise just request a stop and wait. */
-+		spin_lock_irqsave(&pipe->irqlock, flags);
-+		if (pipe->state = VSP1_PIPELINE_RUNNING)
-+			pipe->state = VSP1_PIPELINE_STOPPING;
-+		spin_unlock_irqrestore(&pipe->irqlock, flags);
- 
--	ret = wait_event_timeout(pipe->wq, vsp1_pipeline_stopped(pipe),
--				 msecs_to_jiffies(500));
--	ret = ret = 0 ? -ETIMEDOUT : 0;
-+		ret = wait_event_timeout(pipe->wq, vsp1_pipeline_stopped(pipe),
-+					 msecs_to_jiffies(500));
-+		ret = ret = 0 ? -ETIMEDOUT : 0;
 +	}
- 
- 	list_for_each_entry(entity, &pipe->entities, list_pipe) {
- 		if (entity->route && entity->route->reg)
-@@ -230,6 +250,12 @@ bool vsp1_pipeline_ready(struct vsp1_pipeline *pipe)
- 	return pipe->buffers_ready = mask;
- }
- 
-+void vsp1_pipeline_display_start(struct vsp1_pipeline *pipe)
-+{
-+	if (pipe->dl)
-+		vsp1_dl_irq_display_start(pipe->dl);
++
++	cpg->data.clks = cpg->clks;
++	cpg->data.clk_num = i;
++
++	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
 +}
-+
- void vsp1_pipeline_frame_end(struct vsp1_pipeline *pipe)
- {
- 	enum vsp1_pipeline_state state;
-@@ -238,13 +264,21 @@ void vsp1_pipeline_frame_end(struct vsp1_pipeline *pipe)
- 	if (pipe = NULL)
- 		return;
- 
-+	if (pipe->dl)
-+		vsp1_dl_irq_frame_end(pipe->dl);
-+
- 	/* Signal frame end to the pipeline handler. */
- 	pipe->frame_end(pipe);
- 
- 	spin_lock_irqsave(&pipe->irqlock, flags);
- 
- 	state = pipe->state;
--	pipe->state = VSP1_PIPELINE_STOPPED;
-+
-+	/* When using display lists in continuous frame mode the pipeline is
-+	 * automatically restarted by the hardware.
-+	 */
-+	if (!pipe->dl)
-+		pipe->state = VSP1_PIPELINE_STOPPED;
- 
- 	/* If a stop has been requested, mark the pipeline as stopped and
- 	 * return.
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.h b/drivers/media/platform/vsp1/vsp1_pipe.h
-index c4c300561c5c..b2f3a8a896c9 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.h
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.h
-@@ -19,6 +19,7 @@
- 
- #include <media/media-entity.h>
- 
-+struct vsp1_dl;
- struct vsp1_rwpf;
- 
- /*
-@@ -73,6 +74,7 @@ enum vsp1_pipeline_state {
-  * @uds: UDS entity, if present
-  * @uds_input: entity at the input of the UDS, if the UDS is present
-  * @entities: list of entities in the pipeline
-+ * @dl: display list associated with the pipeline
-  */
- struct vsp1_pipeline {
- 	struct media_pipeline pipe;
-@@ -97,6 +99,8 @@ struct vsp1_pipeline {
- 	struct vsp1_entity *uds_input;
- 
- 	struct list_head entities;
-+
-+	struct vsp1_dl *dl;
- };
- 
- static inline struct vsp1_pipeline *to_vsp1_pipeline(struct media_entity *e)
-@@ -115,6 +119,7 @@ bool vsp1_pipeline_stopped(struct vsp1_pipeline *pipe);
- int vsp1_pipeline_stop(struct vsp1_pipeline *pipe);
- bool vsp1_pipeline_ready(struct vsp1_pipeline *pipe);
- 
-+void vsp1_pipeline_display_start(struct vsp1_pipeline *pipe);
- void vsp1_pipeline_frame_end(struct vsp1_pipeline *pipe);
- 
- void vsp1_pipeline_propagate_alpha(struct vsp1_pipeline *pipe,
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index 56177628a17c..5bc1d1574a43 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -28,8 +28,8 @@
- 
- static inline void vsp1_rpf_write(struct vsp1_rwpf *rpf, u32 reg, u32 data)
- {
--	vsp1_write(rpf->entity.vsp1,
--		   reg + rpf->entity.index * VI6_RPF_OFFSET, data);
-+	vsp1_mod_write(&rpf->entity, reg + rpf->entity.index * VI6_RPF_OFFSET,
-+		       data);
- }
- 
- /* -----------------------------------------------------------------------------
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index 7d06e84bcb9f..92d53c02ccc2 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -34,8 +34,8 @@ static inline u32 vsp1_wpf_read(struct vsp1_rwpf *wpf, u32 reg)
- 
- static inline void vsp1_wpf_write(struct vsp1_rwpf *wpf, u32 reg, u32 data)
- {
--	vsp1_write(wpf->entity.vsp1,
--		   reg + wpf->entity.index * VI6_WPF_OFFSET, data);
-+	vsp1_mod_write(&wpf->entity,
-+		       reg + wpf->entity.index * VI6_WPF_OFFSET, data);
- }
- 
- /* -----------------------------------------------------------------------------
-@@ -88,7 +88,8 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
- 
- 	if (!enable) {
- 		vsp1_write(vsp1, VI6_WPF_IRQ_ENB(wpf->entity.index), 0);
--		vsp1_wpf_write(wpf, VI6_WPF_SRCRPF, 0);
-+		vsp1_write(vsp1, wpf->entity.index * VI6_WPF_OFFSET +
-+			   VI6_WPF_SRCRPF, 0);
- 		return 0;
- 	}
- 
-@@ -161,10 +162,10 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
- 	if (vsp1->info->uapi)
- 		mutex_unlock(wpf->ctrls.lock);
- 
--	vsp1_write(vsp1, VI6_DPR_WPF_FPORCH(wpf->entity.index),
--		   VI6_DPR_WPF_FPORCH_FP_WPFN);
-+	vsp1_mod_write(&wpf->entity, VI6_DPR_WPF_FPORCH(wpf->entity.index),
-+		       VI6_DPR_WPF_FPORCH_FP_WPFN);
- 
--	vsp1_write(vsp1, VI6_WPF_WRBCK_CTRL, 0);
-+	vsp1_mod_write(&wpf->entity, VI6_WPF_WRBCK_CTRL, 0);
- 
- 	/* Enable interrupts */
- 	vsp1_write(vsp1, VI6_WPF_IRQ_STA(wpf->entity.index), 0);
--- 
-2.4.6
-
++CLK_OF_DECLARE(rcar_gen3_cpg_clks, "renesas,rcar-gen3-cpg-clocks",
++	       rcar_gen3_cpg_clocks_init);
