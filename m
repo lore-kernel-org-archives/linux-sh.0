@@ -1,77 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Sep 2015 09:00:30 +0000
-Subject: [PATCH 2/2] drivers: sh: Disable PM runtime for multi-platform ARM with genpd
-Message-Id: <cbc41d0a761bffb3166a413a3c77100a737c0cd7.1442480237.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 07 Sep 2015 16:32:52 +0000
+Subject: [PATCH v7 00/05] Renesas R-Car Gen3 CPG support V7
+Message-Id: <20150907163252.475.18281.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442480237.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442480237.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Renesas R-Car Gen3 CPG support V7
 
-If the default PM Domain using PM_CLK is used for PM runtime, the real
-Clock Domain cannot be registered from DT later.
+[PATCH v7 01/05] clk: shmobile: Rework CONFIG_ARCH_SHMOBILE_MULTI
+[PATCH v7 02/05] clk: shmobile: Add r8a7795 SoC to MSTP bindings
+[PATCH v7 03/05] clk: shmobile: Make MSTP clock-output-names optional
+[PATCH v7 04/05] clk: shmobile: Add Renesas R-Car Gen3 CPG support
+[PATCH v7 05/05] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support
 
-Hence do not enable it when running a multi-platform kernel with genpd
-support on R-Car or RZ.  The CPG/MSTP Clock Domain driver will take care
-of PM runtime management of the module clocks.
+Here's the latest R-Car Gen3 clock support patch collection through
+a single "easy to use" patch series for drivers/clk and DT documentation
+bits. This version of the series only updates patch 4 with PLL1 divider
+removal changes as well as some clock registration rework.
 
-Now most multi-platform ARM shmobile platforms (SH-Mobile, R-Mobile,
-R-Car, RZ) use DT-based PM Domains to take care of PM runtime management
-of the module clocks, simplify the platform logic by replacing the
-explicit SoC checks by a single check for the presence of MSTP clocks in
-DT.
+For details please see each individual patch.
 
-Backwards-compatiblity with old DTs (mainly for R-Car Gen2) is provided
-by checking for the presence of a "#power-domain-cells" property in DT.
-
-The default PM Domain is still needed for:
-  - backwards-compatibility with old DTs that lack PM Domain properties,
-  - the CONFIG_PM=n case,
-  - legacy (non-DT) ARM/shmobile platforms without genpd support
-    (r8a7778, r8a7779),
-  - legacy SuperH.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- drivers/sh/pm_runtime.c | 18 +++++-------------
- 1 file changed, 5 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index ad9188138ed5..25abd4eb7d10 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -35,19 +35,11 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
- static int __init sh_pm_runtime_init(void)
- {
- 	if (IS_ENABLED(CONFIG_ARCH_SHMOBILE_MULTI)) {
--		if (!of_machine_is_compatible("renesas,r7s72100") &&
--#ifndef CONFIG_PM_GENERIC_DOMAINS_OF
--		    !of_machine_is_compatible("renesas,r8a73a4") &&
--		    !of_machine_is_compatible("renesas,r8a7740") &&
--		    !of_machine_is_compatible("renesas,sh73a0") &&
--#endif
--		    !of_machine_is_compatible("renesas,r8a7778") &&
--		    !of_machine_is_compatible("renesas,r8a7779") &&
--		    !of_machine_is_compatible("renesas,r8a7790") &&
--		    !of_machine_is_compatible("renesas,r8a7791") &&
--		    !of_machine_is_compatible("renesas,r8a7792") &&
--		    !of_machine_is_compatible("renesas,r8a7793") &&
--		    !of_machine_is_compatible("renesas,r8a7794"))
-+		if (!of_find_compatible_node(NULL, NULL,
-+					     "renesas,cpg-mstp-clocks"))
-+			return 0;
-+		if (IS_ENABLED(CONFIG_PM_GENERIC_DOMAINS_OF) &&
-+		    of_find_node_with_property(NULL, "#power-domain-cells"))
- 			return 0;
- 	}
- 
--- 
-2.1.4
+ Developed against e2a147e in renesas-drivers with reverted V6 series
 
+ Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt      |    1 
+ Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt |   58 ++
+ drivers/clk/Makefile                                                     |    1 
+ drivers/clk/shmobile/Makefile                                            |   23 
+ drivers/clk/shmobile/clk-mstp.c                                          |   24 
+ drivers/clk/shmobile/clk-rcar-gen3.c                                     |  244 ++++++++++
+ 6 files changed, 328 insertions(+), 23 deletions(-)
