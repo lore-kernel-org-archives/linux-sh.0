@@ -1,24 +1,48 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 03 Sep 2015 00:11:57 +0000
-Subject: Re: [PATCH 8/9] sh-pfc: Initial R8A7795 PFC support
-Message-Id: <87si6wqs9u.wl%kuninori.morimoto.gx@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 08 Sep 2015 15:42:21 +0000
+Subject: [PATCH v3 0/5] r8a7778/bockw: fix SMSC Ethernet for MP
+Message-Id: <1441726946-30131-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87wpw9jn3i.wl%kuninori.morimoto.gx@renesas.com>
-	<878u8pjmfb.wl%kuninori.morimoto.gx@renesas.com>
-	<CAMuHMdW58Z7BKpADWCz_ofoxn_gtjvaGLCr=9r2-OHzPo=4ugA@mail.gmail.com>
-In-Reply-To: <CAMuHMdW58Z7BKpADWCz_ofoxn_gtjvaGLCr=9r2-OHzPo=4ugA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
+
+Hi!
+
+This series enables the DT-wise IRLM setup in the intc-irqpin driver (same
+as on r8a7779) and configures the FPGA correctly.
+
+This revision adds defconfig updates and Simon's Tested-By.
+
+CU
+Uli
 
 
-Hi Geert
+Changes since v2:
+- added defconfig updates
+- added Tested-By
 
-> > +/* IPSRx */            /* 0 */                 /* 1 */         /* 2 */                 /* 3 */                         /* 4 */         /* 5 */         /* 6 */                 /* 7 */         /* 8 */                 /* 9 */         /* A */         /* B */         /* C - E */
-> > +#define IP0_3_0                FM(AVB_MDC)             F_(0,0)         FM(MSIOF2_SS2_C)        F_(0,0)                         F_(0,0)         F_(0,0)         F_(0,0)                 F_(0,0)         F_(0,0)                 F_(0,0)         F_(0,0)         F_(0,0)         F_(0,0) F_(0,0) F_(0,0)
-> 
-> The 16th column ("F") is missing for all IPx_y_z macros.
+Changes since v1:
+- split IRLM support into C and DT parts
+- added clarifying comment to FPGA description
+- added Acks
 
-Thanks. will fix in v2
+
+Ulrich Hecht (5):
+  irqchip: renesas-intc-irqpin: r8a7778 IRLM setup support
+  ARM: shmobile: r8a7778: enable IRLM setup via DT
+  ARM: shmobile: bockw dts: enable SMSC interrupt
+  ARM: shmobile_defconfig: enable PINCTRL_SINGLE
+  ARM: multi_v7_defconfig: enable PINCTRL_SINGLE
+
+ arch/arm/boot/dts/r8a7778-bockw.dts       | 20 ++++++++++++++++++++
+ arch/arm/boot/dts/r8a7778.dtsi            |  3 ++-
+ arch/arm/configs/multi_v7_defconfig       |  1 +
+ arch/arm/configs/shmobile_defconfig       |  1 +
+ drivers/irqchip/irq-renesas-intc-irqpin.c |  6 ++++--
+ 5 files changed, 28 insertions(+), 3 deletions(-)
+
+-- 
+2.4.6
+
