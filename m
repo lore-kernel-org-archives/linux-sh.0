@@ -1,34 +1,32 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 07 Sep 2015 07:51:26 +0000
-Subject: Re: [PATCH 2/3] arm64: dts: r8a7795: add GPIO nodes
-Message-Id: <CAMuHMdX-Xu56suRwfBdYntviGbQFmg63F1k7dp+4VPpAnT1mjg@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 08 Sep 2015 15:42:26 +0000
+Subject: [PATCH v3 5/5] ARM: multi_v7_defconfig: enable PINCTRL_SINGLE
+Message-Id: <1441726946-30131-6-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441035401-5843-3-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1441035401-5843-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Aug 31, 2015 at 5:36 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
->
-> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-> [horms: broken out of a larger patch; moved to soc node]
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> [uli: fixed gpio6/7 clocks]
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Required to enable SMSC interrupt on shmobile r8a7778 SoC.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/configs/multi_v7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index b9ab5f7..30bd679 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -324,6 +324,7 @@ CONFIG_SPI_TEGRA20_SFLASH=y
+ CONFIG_SPI_TEGRA20_SLINK=y
+ CONFIG_SPI_XILINX=y
+ CONFIG_SPI_SPIDEV=y
++CONFIG_PINCTRL_SINGLE=y
+ CONFIG_PINCTRL_AS3722=y
+ CONFIG_PINCTRL_PALMAS=y
+ CONFIG_PINCTRL_APQ8084=y
+-- 
+2.4.6
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
