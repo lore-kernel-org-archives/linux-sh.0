@@ -1,36 +1,32 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 17 Sep 2015 09:59:38 +0000
-Subject: Re: [PATCH v2 10/11] clocksource: sh_cmt: Remove unused 32-bit CMT bindings
-Message-Id: <CAMuHMdWqk+dYsOPQTGy+WcE8cVSoUD_0dv8YO7m3nEoXLc-EMQ@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 08 Sep 2015 15:42:25 +0000
+Subject: [PATCH v3 4/5] ARM: shmobile_defconfig: enable PINCTRL_SINGLE
+Message-Id: <1441726946-30131-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150917095325.5369.73893.sendpatchset@little-apple>
-	<20150917095501.5369.97124.sendpatchset@little-apple>
-In-Reply-To: <20150917095501.5369.97124.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux-sh list <linux-sh@vger.kernel.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, Simon Horman <horms+renesas@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
+To: linux-sh@vger.kernel.org
 
-On Thu, Sep 17, 2015 at 11:55 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
->
-> Remove the 32-bit CMT compat strings to reduce maintenance burden.
->
-> It should be fine to break DT compatibility because the 32-bit
-> 32-bit CMT DT binding was never part of any upstream DTS file.
->
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Required to enable SMSC interrupt on shmobile r8a7778 SoC.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/configs/shmobile_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 0bdeb49..65e4ff5 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -107,6 +107,7 @@ CONFIG_SPI=y
+ CONFIG_SPI_RSPI=y
+ CONFIG_SPI_SH_MSIOF=y
+ CONFIG_SPI_SH_HSPI=y
++CONFIG_PINCTRL_SINGLE=y
+ CONFIG_GPIO_EM=y
+ CONFIG_GPIO_RCAR=y
+ CONFIG_GPIO_PCF857X=y
+-- 
+2.4.6
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
