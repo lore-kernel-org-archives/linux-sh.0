@@ -1,73 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 04 Sep 2015 21:49:31 +0000
-Subject: Re: [PATCH 12/25 v7][RFC] arm64: renesas: r8a7795: add EHCI[012] clocks
-Message-Id: <6363298.OWXAK0UTR5@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 08 Sep 2015 17:00:36 +0000
+Subject: [PATCH 2/2] irqchip: renesas-irqc: Propagate wake-up settings to parent
+Message-Id: <1441731636-17610-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1441731636-17610-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1441731636-17610-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>
+Cc: Sudeep Holla <sudeep.holla@arm.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hello Morimoto-san,
+The renesas-irqc interrupt controller is cascaded to the GIC, but its
+driver doesn't propagate wake-up settings to the parent interrupt
+controller.
 
-Thank you for the patch.
+Since commit aec89ef72ba6c944 ("irqchip/gic: Enable SKIP_SET_WAKE and
+MASK_ON_SUSPEND"), the GIC driver masks interrupts during suspend, and
+wake-up through gpio-keys now fails on r8a73a4/ape6evm.
 
-On Monday 24 August 2015 02:29:16 Kuninori Morimoto wrote:
-> From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v5 -> v7
-> 
->  - based on Gen3 v7 patch-set
-> 
->  arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 10 +++++++---
->  include/dt-bindings/clock/r8a7795-clock.h |  3 +++
->  2 files changed, 10 insertions(+), 3 deletions(-)
-> 
-> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> b/arch/arm64/boot/dts/renesas/r8a7795.dtsi index 77cfcea..c62b57b 100644
-> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> @@ -105,10 +105,14 @@
->  					compatible = "renesas,r8a7795-mstp-clocks",
->  						     "renesas,cpg-mstp-clocks";
->  					reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
-> -					clocks =  <&s3d4_clk>;
-> +					clocks =  <&s3d4_clk>, <&s3d4_clk>, <&s3d4_clk>,
-> +						  <&s3d4_clk>;
->  					#clock-cells = <1>;
-> -					renesas,clock-indices = <R8A7795_CLK_HSUSB>;
-> -					clock-output-names = "hsusb";
-> +					renesas,clock-indices = <R8A7795_CLK_HSUSB
-> +								 R8A7795_CLK_EHCI0
-> +								 R8A7795_CLK_EHCI1
-> +								 R8A7795_CLK_EHCI2>;
-> +					clock-output-names = "hsusb", "ehci0", "ehci1", "ehci2";
->  				};
->  			};
->  		};
-> diff --git a/include/dt-bindings/clock/r8a7795-clock.h
-> b/include/dt-bindings/clock/r8a7795-clock.h index ffb0b5b..2bd9d93 100644
-> --- a/include/dt-bindings/clock/r8a7795-clock.h
-> +++ b/include/dt-bindings/clock/r8a7795-clock.h
-> @@ -30,6 +30,9 @@
-> 
->  /* MSTP7 */
->  #define R8A7795_CLK_HSUSB		4
-> +#define R8A7795_CLK_EHCI0		3
-> +#define R8A7795_CLK_EHCI1		2
-> +#define R8A7795_CLK_EHCI2		1
+Fix this by propagating wake-up settings to the parent interrupt
+controller. There's no need to handle irq_set_irq_wake() failures, as
+the renesas-irqc interrupt controller is always cascaded to a GIC, and
+the GIC driver always sets SKIP_SET_WAKE since the aforementioned
+commit.
 
-Could you please sort the clocks in ascending order as we do in all the Gen2 
-clock headers ? Same comment for r8a7795.dtsi.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/irqchip/irq-renesas-irqc.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-> 
->  /* MSTP8 */
-
+diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
+index 2aa3add711a6612a..49f6c41d94f91d4d 100644
+--- a/drivers/irqchip/irq-renesas-irqc.c
++++ b/drivers/irqchip/irq-renesas-irqc.c
+@@ -121,6 +121,9 @@ static int irqc_irq_set_type(struct irq_data *d, unsigned int type)
+ static int irqc_irq_set_wake(struct irq_data *d, unsigned int on)
+ {
+ 	struct irqc_priv *p = irq_data_get_irq_chip_data(d);
++	int hw_irq = irqd_to_hwirq(d);
++
++	irq_set_irq_wake(p->irq[hw_irq].requested_irq, on);
+ 
+ 	if (!p->clk)
+ 		return 0;
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
