@@ -1,204 +1,44 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 03 Sep 2015 10:32:40 +0000
-Subject: [PATCH v9 02/07][RFC] arm64: renesas: r8a7795 dtsi: Add all common divider clocks
-Message-Id: <20150903103240.26791.6479.sendpatchset@little-apple>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 08 Sep 2015 15:42:22 +0000
+Subject: [PATCH v3 1/5] irqchip: renesas-intc-irqpin: r8a7778 IRLM setup support
+Message-Id: <1441726946-30131-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Works the same as on r8a7779.
 
-Add all clocks generated from PLL1 by the CPG common divider block.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ drivers/irqchip/irq-renesas-intc-irqpin.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
- TODO:
- - Figure out how this relates to the PLL1 issue in the CPG patch
-
- Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
- - Updated commit message.
-
- Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
- - Folded in s3d4_clk
- - Reordered to apply without SCIF bits
-
- Based on:
-  [PATCH 3/3] arm64: renesas: r8a7795 dtsi: Add all common divider clocks
-
-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi |  160 ++++++++++++++++++++++++++++++
- 1 file changed, 160 insertions(+)
-
---- 0012/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ work/arch/arm64/boot/dts/renesas/r8a7795.dtsi	2015-08-29 17:10:36.532366518 +0900
-@@ -70,6 +70,166 @@
- 			#clock-cells = <1>;
- 			ranges;
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 0670ab4..7f172a0 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -352,14 +352,16 @@ static const struct irq_domain_ops intc_irqpin_irq_domain_ops = {
+ 	.xlate  = irq_domain_xlate_twocell,
+ };
  
-+			zt_clk: zt {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			ztr_clk: ztr {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <6>;
-+				clock-mult = <1>;
-+			};
-+
-+			ztrd2_clk: ztrd2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <12>;
-+				clock-mult = <1>;
-+			};
-+
-+			zx_clk: zx {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
-+			s0_clk: s0 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
-+			s0d1_clk: s0d1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s0_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <1>;
-+				clock-mult = <1>;
-+			};
-+
-+			s0d4_clk: s0d4 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s0_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			s1_clk: s1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <3>;
-+				clock-mult = <1>;
-+			};
-+
-+			s1d1_clk: s1d1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s1_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <1>;
-+				clock-mult = <1>;
-+			};
-+
-+			s1d2_clk: s1d2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s1_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
-+			s1d4_clk: s1d4 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s1_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			s2_clk: s2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			s2d1_clk: s2d1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <1>;
-+				clock-mult = <1>;
-+			};
-+
-+			s2d2_clk: s2d2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
-+			s2d4_clk: s2d4 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			s3_clk: s3 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <6>;
-+				clock-mult = <1>;
-+			};
-+
-+			s3d1_clk: s3d1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s3_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <1>;
-+				clock-mult = <1>;
-+			};
-+
-+			s3d2_clk: s3d2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s3_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
-+			s3d4_clk: s3d4 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s3_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			cl_clk: cl {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <48>;
-+				clock-mult = <1>;
-+			};
-+
- 			cpg_clocks: cpg_clocks@e6150000 {
- 				compatible = "renesas,r8a7795-cpg-clocks",
- 					     "renesas,rcar-gen3-cpg-clocks";
+-static const struct intc_irqpin_irlm_config intc_irqpin_irlm_r8a7779 = {
++static const struct intc_irqpin_irlm_config intc_irqpin_irlm_r8a777x = {
+ 	.irlm_bit = 23, /* ICR0.IRLM0 */
+ };
+ 
+ static const struct of_device_id intc_irqpin_dt_ids[] = {
+ 	{ .compatible = "renesas,intc-irqpin", },
++	{ .compatible = "renesas,intc-irqpin-r8a7778",
++	  .data = &intc_irqpin_irlm_r8a777x },
+ 	{ .compatible = "renesas,intc-irqpin-r8a7779",
+-	  .data = &intc_irqpin_irlm_r8a7779 },
++	  .data = &intc_irqpin_irlm_r8a777x },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, intc_irqpin_dt_ids);
+-- 
+2.4.6
+
