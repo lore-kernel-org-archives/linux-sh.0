@@ -1,48 +1,29 @@
-From: Ross Zwisler <ross.zwisler@linux.intel.com>
-Date: Tue, 22 Sep 2015 21:46:51 +0000
-Subject: [PATCH] sh: add copy_user_page() alias for __copy_user()
-Message-Id: <1442958411-4271-1-git-send-email-ross.zwisler@linux.intel.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 08 Sep 2015 09:01:24 +0000
+Subject: Re: [PATCH] gpio: rcar: GPIO_RCAR doesn't relate to ARM
+Message-Id: <CACRpkdbB6PnRV8mY6NmW9KCUa+TWSEW16hHSQCVWuRAEDkFUPw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442958259-3956-1-git-send-email-ross.zwisler@linux.intel.com>
-In-Reply-To: <1442958259-3956-1-git-send-email-ross.zwisler@linux.intel.com>
+References: <871ter7n17.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <871ter7n17.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-kernel@vger.kernel.org
-Cc: Ross Zwisler <ross.zwisler@linux.intel.com>, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Matthew Wilcox <willy@linux.intel.com>, linux-fsdevel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Simon <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Alexandre Courbot <gnurou@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-copy_user_page() is needed by DAX.  Without this we get a compile error
-for DAX on SH:
+On Tue, Aug 25, 2015 at 11:12 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
 
-fs/dax.c:280:2: error: implicit declaration of function ‘copy_user_page’
-[-Werror=implicit-function-declaration]
-  copy_user_page(vto, (void __force *)vfrom, vaddr, to);
-    ^
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> 8cd1470("gpio: rcar: Add r8a7795 (R-Car H3) support") added
+> GPIO support for r8a7795. r8a7795 based on CONFIG_ARM64.
+> OTOH, GPIO_RCAR driver can be compiled fine on non-ARM.
+> This patch removed ARM dependency for it.
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This was done with a random config that happened to include DAX support.
+Patch applied for fixes.
 
-This patch has only been compile tested.
-
-Signed-off-by: Ross Zwisler <ross.zwisler@linux.intel.com>
-Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
----
-Apologies for the resend, I wanted to add some more recipients.
----
- arch/sh/include/asm/page.h | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/sh/include/asm/page.h b/arch/sh/include/asm/page.h
-index fe20d14..ceb5201 100644
---- a/arch/sh/include/asm/page.h
-+++ b/arch/sh/include/asm/page.h
-@@ -59,6 +59,7 @@ pages_do_alias(unsigned long addr1, unsigned long addr2)
- 
- #define clear_page(page)	memset((void *)(page), 0, PAGE_SIZE)
- extern void copy_page(void *to, void *from);
-+#define copy_user_page(to, from, vaddr, pg)  __copy_user(to, from, PAGE_SIZE)
- 
- struct page;
- struct vm_area_struct;
--- 
-2.1.0
-
+Yours,
+Linus Walleij
