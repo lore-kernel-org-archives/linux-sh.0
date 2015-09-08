@@ -1,83 +1,37 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 08 Sep 2015 12:44:20 +0000
-Subject: renesas-drivers-2015-09-08-v4.2
-Message-Id: <1441716260-10795-1-git-send-email-geert+renesas@glider.be>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 08 Sep 2015 17:09:54 +0000
+Subject: Re: renesas-drivers-2015-09-08-v4.2
+Message-Id: <CAMuHMdVWOpytz3_YWROX9NP1SKetypWZPnZVd6f70WGcmL15CQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1441716260-10795-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1441716260-10795-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-I've pushed renesas-drivers-2015-09-08-v4.2 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+On Tue, Sep 8, 2015 at 2:44 PM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
+> I've pushed renesas-drivers-2015-09-08-v4.2 to
+> https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
 
-Today's version is based on renesas-devel-20150901-v4.2.
+> Included fixes:
+>   - Revert "irqchip/gic: Enable SKIP_SET_WAKE and MASK_ON_SUSPEND"
 
-Included branches with driver code:
-  - topic/gen3-cpg-v7
-  - topic/r8a7795-pfc-v2
-  - topic/r8a7795-scif-v1
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/arm64-rcar-gen3-v9
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-gpio-v1.rebase
-  - topic/rcar-dmac-residue-v1
-  - topic/scif-misc-v3
-  - topic/scif-dma-v3
-  - topic/gen3-modemr-syscon-v1.rebase2
+I've been a bit to eager to revert this: what looked like a regression on
+several boards, turned out to be a bug in 2 irqchip drivers, cfr.
+"[PATCH 0/2] irqchip: renesas: Propagate wake-up settings to parent"
+(http://marc.info/?l=linux-sh&m4173164123429&w=2).
 
-Included fixes:
-  - arm64: renesas: Add EXTAL configuration to Salvator-X
-  - arm64: renesas: r8a7795 dtsi: Update common divider clocks
-  - Revert "irqchip/gic: Enable SKIP_SET_WAKE and MASK_ON_SUSPEND"
-
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
+Anyway, the revert is more or less harmless.
 
 Gr{oetje,eeting}s,
 
-						Geert
+                        Geert
 
 --
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+                                -- Linus Torvalds
