@@ -1,69 +1,140 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 18 Sep 2015 02:07:00 +0000
-Subject: [PATCH 14/18 v3] arm64: renesas: salvator-x: Sound DVC support
-Message-Id: <87si6czdq3.wl%kuninori.morimoto.gx@renesas.com>
+From: Eric B Munson <emunson@akamai.com>
+Date: Tue, 08 Sep 2015 13:58:58 +0000
+Subject: [PATCH v9 2/6] mm: mlock: Add new mlock system call
+Message-Id: <1441720742-7803-3-git-send-email-emunson@akamai.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1441720742-7803-1-git-send-email-emunson@akamai.com>
+In-Reply-To: <1441720742-7803-1-git-send-email-emunson@akamai.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Eric B Munson <emunson@akamai.com>, Michal Hocko <mhocko@suse.cz>, Vlastimil Babka <vbabka@suse.cz>, Heiko Carstens <heiko.carstens@de.ibm.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Catalin Marinas <catalin.marinas@arm.com>, Stephen Rothwell <sfr@canb.auug.org.au>, Guenter Roeck <linux@roeck-us.net>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, adi-buildroot-devel@lists.sourceforge.net, linux-cris-kernel@axis.com, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-am33-list@redhat.com, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org, linux-api@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+With the refactored mlock code, introduce a new system call for mlock.
+The new call will allow the user to specify what lock states are being
+added.  mlock2 is trivial at the moment, but a follow on patch will add
+a new mlock state making it useful.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Eric B Munson <emunson@akamai.com>
+Acked-by: Vlastimil Babka <vbabka@suse.cz>
+Acked-by: Michal Hocko <mhocko@suse.com>
+Cc: Michal Hocko <mhocko@suse.cz>
+Cc: Vlastimil Babka <vbabka@suse.cz>
+Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Stephen Rothwell <sfr@canb.auug.org.au>
+Cc: Guenter Roeck <linux@roeck-us.net>
+Cc: linux-alpha@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: adi-buildroot-devel@lists.sourceforge.net
+Cc: linux-cris-kernel@axis.com
+Cc: linux-ia64@vger.kernel.org
+Cc: linux-m68k@lists.linux-m68k.org
+Cc: linux-am33-list@redhat.com
+Cc: linux-parisc@vger.kernel.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-s390@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: sparclinux@vger.kernel.org
+Cc: linux-xtensa@linux-xtensa.org
+Cc: linux-api@vger.kernel.org
+Cc: linux-arch@vger.kernel.org
+Cc: linux-mm@kvack.org
 ---
-v2 -> v3
+Changes from V8:
+* Update x86[_64] syscall numbers to follow the new userfaultfd syscalls
 
- - new patch
+ arch/x86/entry/syscalls/syscall_32.tbl | 1 +
+ arch/x86/entry/syscalls/syscall_64.tbl | 1 +
+ include/linux/syscalls.h               | 2 ++
+ include/uapi/asm-generic/unistd.h      | 4 +++-
+ kernel/sys_ni.c                        | 1 +
+ mm/mlock.c                             | 8 ++++++++
+ 6 files changed, 16 insertions(+), 1 deletion(-)
 
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 27 ++++++++++++++++++++--
- 1 file changed, 25 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index cc550b3..652e93e 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -8,6 +8,29 @@
-  * kind, whether express or implied.
-  */
+diff --git a/arch/x86/entry/syscalls/syscall_32.tbl b/arch/x86/entry/syscalls/syscall_32.tbl
+index 477bfa6..41e72a5 100644
+--- a/arch/x86/entry/syscalls/syscall_32.tbl
++++ b/arch/x86/entry/syscalls/syscall_32.tbl
+@@ -381,3 +381,4 @@
+ 372	i386	recvmsg			sys_recvmsg			compat_sys_recvmsg
+ 373	i386	shutdown		sys_shutdown
+ 374	i386	userfaultfd		sys_userfaultfd
++375	i386	mlock2			sys_mlock2
+diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
+index 81c4906..2366900 100644
+--- a/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -330,6 +330,7 @@
+ 321	common	bpf			sys_bpf
+ 322	64	execveat		stub_execveat
+ 323	common	userfaultfd		sys_userfaultfd
++324	common	mlock2			sys_mlock2
  
-+/*
-+ * SSI-AK4613
-+ *
-+ * This command is required when Playback/Capture
-+ *
-+ *	amixer set "DVC Out" 100%
-+ *	amixer set "DVC In" 100%
-+ *
-+ * You can use Mute
-+ *
-+ *	amixer set "DVC Out Mute" on
-+ *	amixer set "DVC In Mute" on
-+ *
-+ * You can use Volume Ramp
-+ *
-+ *	amixer set "DVC Out Ramp Up Rate"   "0.125 dB/64 steps"
-+ *	amixer set "DVC Out Ramp Down Rate" "0.125 dB/512 steps"
-+ *	amixer set "DVC Out Ramp" on
-+ *	aplay xxx.wav &
-+ *	amixer set "DVC Out"  80%  // Volume Down
-+ *	amixer set "DVC Out" 100%  // Volume Up
-+ */
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index 0800131..890632c 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -885,4 +885,6 @@ asmlinkage long sys_execveat(int dfd, const char __user *filename,
+ 			const char __user *const __user *argv,
+ 			const char __user *const __user *envp, int flags);
+ 
++asmlinkage long sys_mlock2(unsigned long start, size_t len, int flags);
 +
- /dts-v1/;
- #include "r8a7795.dtsi"
+ #endif
+diff --git a/include/uapi/asm-generic/unistd.h b/include/uapi/asm-generic/unistd.h
+index e016bd9..14a6013 100644
+--- a/include/uapi/asm-generic/unistd.h
++++ b/include/uapi/asm-generic/unistd.h
+@@ -709,9 +709,11 @@ __SYSCALL(__NR_memfd_create, sys_memfd_create)
+ __SYSCALL(__NR_bpf, sys_bpf)
+ #define __NR_execveat 281
+ __SC_COMP(__NR_execveat, sys_execveat, compat_sys_execveat)
++#define __NR_mlock2 282
++__SYSCALL(__NR_mlock2, sys_mlock2)
  
-@@ -219,8 +242,8 @@
+ #undef __NR_syscalls
+-#define __NR_syscalls 282
++#define __NR_syscalls 283
  
- 	rcar_sound,dai {
- 		dai0 {
--			playback = <&ssi0 &src0>;
--			capture  = <&ssi1 &src1>;
-+			playback = <&ssi0 &src0 &dvc0>;
-+			capture  = <&ssi1 &src1 &dvc1>;
- 		};
- 	};
- };
+ /*
+  * All syscalls below here should go away really,
+diff --git a/kernel/sys_ni.c b/kernel/sys_ni.c
+index 03c3875..8de5b26 100644
+--- a/kernel/sys_ni.c
++++ b/kernel/sys_ni.c
+@@ -194,6 +194,7 @@ cond_syscall(sys_mlock);
+ cond_syscall(sys_munlock);
+ cond_syscall(sys_mlockall);
+ cond_syscall(sys_munlockall);
++cond_syscall(sys_mlock2);
+ cond_syscall(sys_mincore);
+ cond_syscall(sys_madvise);
+ cond_syscall(sys_mremap);
+diff --git a/mm/mlock.c b/mm/mlock.c
+index c32ad8f..a23a533 100644
+--- a/mm/mlock.c
++++ b/mm/mlock.c
+@@ -644,6 +644,14 @@ SYSCALL_DEFINE2(mlock, unsigned long, start, size_t, len)
+ 	return do_mlock(start, len, VM_LOCKED);
+ }
+ 
++SYSCALL_DEFINE3(mlock2, unsigned long, start, size_t, len, int, flags)
++{
++	if (flags)
++		return -EINVAL;
++
++	return do_mlock(start, len, VM_LOCKED);
++}
++
+ SYSCALL_DEFINE2(munlock, unsigned long, start, size_t, len)
+ {
+ 	int ret;
 -- 
 1.9.1
 
