@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 08 Sep 2015 06:58:54 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 08 Sep 2015 06:59:01 +0000
 Subject: Re: [PATCH][RFC] arm64: renesas: Add EXTAL configuration to Salvator-X
-Message-Id: <CAMuHMdVTzhNVjkH1B5puEqbomXT9w1oD8kTs4ALLMRjikri3Sg@mail.gmail.com>
+Message-Id: <7037545.Z4NQMM7rZH@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150908044957.4919.98690.sendpatchset@little-apple>
 In-Reply-To: <20150908044957.4919.98690.sendpatchset@little-apple>
@@ -10,26 +10,49 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Sep 8, 2015 at 6:49 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+Hi Magnus,
+
+Thank you for the patch.
+
+On Tuesday 08 September 2015 13:49:57 Magnus Damm wrote:
 > From: Magnus Damm <damm+renesas@opensource.se>
->
+> 
 > Configure EXTAL to 16.666 MHz on Salvator-X.
->
+> 
 > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This looks quite straightforward and good to me. I don't think it requires the 
+RFC status.
 
-Cfr. "[PATCH 3/3] arm64: renesas: salvator-x: Add missing extal clock override"
-http://www.spinics.net/lists/linux-sh/msg44416.html
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+> ---
+> 
+>  This sets the EXTAL frequency for the V9 integration series:
+>  [PATCH v9 00/07][RFC] Renesas R-Car H3 (r8a7795) integration patches V9
+> 
+>  To be used with the V7 CPG:
+>  [PATCH v7 00/05] Renesas R-Car Gen3 CPG support V7
+> 
+>  arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |    4 ++++
+>  1 file changed, 4 insertions(+)
+> 
+> --- 0007/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+> +++ work/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts	2015-09-08
+> 13:44:53.682366518 +0900 @@ -32,6 +32,10 @@
+>  	};
+>  };
+> 
+> +&extal_clk {
+> +	clock-frequency = <16666666>;
+> +};
+> +
+>  &pfc {
+>  	scif1_pins: scif1 {
+>  		renesas,groups = "scif1_data_a", "scif1_ctrl";
 
 -- 
-Gr{oetje,eeting}s,
+Regards,
 
-                        Geert
+Laurent Pinchart
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
