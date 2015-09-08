@@ -1,40 +1,125 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 30 Sep 2015 23:01:38 +0000
-Subject: [PATCH v2 1/2] ARM: shmobile: add Porter board DT bindings
-Message-Id: <1498934.YIZP7CvbA4@wasted.cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 08 Sep 2015 04:43:42 +0000
+Subject: [PATCH][RFC] arm64: renesas: r8a7795 dtsi: Update common divider clocks
+Message-Id: <20150908044342.21900.84407.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add Porter device tree bindings documentation, listing it as a supported board.
-    
-This allows to use checkpatch to validate DTSes referring to the Porter board.
- 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
+Update the r8a7795 CPG DTS to include pll1_div2. In older r8a7795 CPG
+CCF driver implementations the output of PLL1 was divided by two.
+
+To support r8a7795 clocks like RPCSRC the PLL1 has now been converted
+to not divide by two in the V7 CPG series, so when that series is used
+we have to divide by two using a fixed divider outside the CPG.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-This patch is against the 'renesas-devel-20150930-v4.3-rc3' tag of Simon
-Horman's 'renesas.git' repo.
 
-Changes in version 2:
-- new patch.
+ This fixes the PLL1 output in the V9 integration series:
+ [PATCH v9 00/07][RFC] Renesas R-Car H3 (r8a7795) integration patches V9
 
- Documentation/devicetree/bindings/arm/shmobile.txt |    2 ++
- 1 file changed, 2 insertions(+)
+ With this patch V9 integration series below will work with V7 CPG:
+ [PATCH v7 00/05] Renesas R-Car Gen3 CPG support V7
 
-Index: renesas/Documentation/devicetree/bindings/arm/shmobile.txt
-=================================--- renesas.orig/Documentation/devicetree/bindings/arm/shmobile.txt
-+++ renesas/Documentation/devicetree/bindings/arm/shmobile.txt
-@@ -55,5 +55,7 @@ Boards:
-     compatible = "renesas,lager", "renesas,r8a7790"
-   - Marzen
-     compatible = "renesas,marzen", "renesas,r8a7779"
-+  - Porter (M2-LCDP)
-+    compatible = "renesas,porter", "renesas,r8a7791"
-   - Silk
-     compatible = "renesas,silk", "renesas,r8a7794";
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi |   27 ++++++++++++++++++---------
+ 1 file changed, 18 insertions(+), 9 deletions(-)
 
+--- 0006/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ work/arch/arm64/boot/dts/renesas/r8a7795.dtsi	2015-09-08 13:35:42.752366518 +0900
+@@ -70,17 +70,26 @@
+ 			#clock-cells = <1>;
+ 			ranges;
+ 
+-			zt_clk: zt {
++			/* Fixed factor clocks */
++			pll1_div2_clk: pll1_div2 {
+ 				compatible = "fixed-factor-clock";
+ 				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
+ 				#clock-cells = <0>;
++				clock-div = <2>;
++				clock-mult = <1>;
++			};
++
++			zt_clk: zt {
++				compatible = "fixed-factor-clock";
++				clocks = <&pll1_div2_clk>;
++				#clock-cells = <0>;
+ 				clock-div = <4>;
+ 				clock-mult = <1>;
+ 			};
+ 
+ 			ztr_clk: ztr {
+ 				compatible = "fixed-factor-clock";
+-				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				clocks = <&pll1_div2_clk>;
+ 				#clock-cells = <0>;
+ 				clock-div = <6>;
+ 				clock-mult = <1>;
+@@ -88,7 +97,7 @@
+ 
+ 			ztrd2_clk: ztrd2 {
+ 				compatible = "fixed-factor-clock";
+-				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				clocks = <&pll1_div2_clk>;
+ 				#clock-cells = <0>;
+ 				clock-div = <12>;
+ 				clock-mult = <1>;
+@@ -96,7 +105,7 @@
+ 
+ 			zx_clk: zx {
+ 				compatible = "fixed-factor-clock";
+-				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				clocks = <&pll1_div2_clk>;
+ 				#clock-cells = <0>;
+ 				clock-div = <2>;
+ 				clock-mult = <1>;
+@@ -104,7 +113,7 @@
+ 
+ 			s0_clk: s0 {
+ 				compatible = "fixed-factor-clock";
+-				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				clocks = <&pll1_div2_clk>;
+ 				#clock-cells = <0>;
+ 				clock-div = <2>;
+ 				clock-mult = <1>;
+@@ -128,7 +137,7 @@
+ 
+ 			s1_clk: s1 {
+ 				compatible = "fixed-factor-clock";
+-				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				clocks = <&pll1_div2_clk>;
+ 				#clock-cells = <0>;
+ 				clock-div = <3>;
+ 				clock-mult = <1>;
+@@ -160,7 +169,7 @@
+ 
+ 			s2_clk: s2 {
+ 				compatible = "fixed-factor-clock";
+-				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				clocks = <&pll1_div2_clk>;
+ 				#clock-cells = <0>;
+ 				clock-div = <4>;
+ 				clock-mult = <1>;
+@@ -192,7 +201,7 @@
+ 
+ 			s3_clk: s3 {
+ 				compatible = "fixed-factor-clock";
+-				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				clocks = <&pll1_div2_clk>;
+ 				#clock-cells = <0>;
+ 				clock-div = <6>;
+ 				clock-mult = <1>;
+@@ -224,7 +233,7 @@
+ 
+ 			cl_clk: cl {
+ 				compatible = "fixed-factor-clock";
+-				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				clocks = <&pll1_div2_clk>;
+ 				#clock-cells = <0>;
+ 				clock-div = <48>;
+ 				clock-mult = <1>;
