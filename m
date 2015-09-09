@@ -1,53 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Sep 2015 08:59:37 +0000
-Subject: [PATCH 21/21] ARM: shmobile: Remove legacy clock support leftovers
-Message-Id: <04418c23a9411b85b8789eab5f4397bcbd62b7b4.1442478814.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 09 Sep 2015 11:42:52 +0000
+Subject: [PATCH 0/2] irqchip: renesas: Use a separate lockdep classes
+Message-Id: <1441798974-25716-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442478814.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442478814.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
+Cc: Grygorii Strashko <grygorii.strashko@ti.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+	Hi Thomas, Jason,
 
-The shmobile_clk_init() function has been removed and the linux/sh_clk.h
-header doesn't need to be included anymore.
+The renesas-intc-irqpin and renesas-irqc interrupt controllers are
+cascaded to GICs. Hence when propagating wake-up settings to their parent
+interrupt controllers, a lockdep warning is printed.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/common.h  | 2 --
- arch/arm/mach-shmobile/r8a7779.h | 2 --
- 2 files changed, 4 deletions(-)
+Avoid these false positive by using separate lockdep classes for IRQC
+and INTC External IRQ Pin interrupts.
 
-diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
-index 0833a6ed02e4..9cb11215ceba 100644
---- a/arch/arm/mach-shmobile/common.h
-+++ b/arch/arm/mach-shmobile/common.h
-@@ -15,8 +15,6 @@ extern void shmobile_boot_scu(void);
- extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
- extern void shmobile_smp_scu_cpu_die(unsigned int cpu);
- extern int shmobile_smp_scu_cpu_kill(unsigned int cpu);
--struct clk;
--extern int shmobile_clk_init(void);
- extern struct platform_suspend_ops shmobile_suspend_ops;
- 
- #ifdef CONFIG_SUSPEND
-diff --git a/arch/arm/mach-shmobile/r8a7779.h b/arch/arm/mach-shmobile/r8a7779.h
-index db303f76704e..aad833a8f0b8 100644
---- a/arch/arm/mach-shmobile/r8a7779.h
-+++ b/arch/arm/mach-shmobile/r8a7779.h
-@@ -1,8 +1,6 @@
- #ifndef __ASM_R8A7779_H__
- #define __ASM_R8A7779_H__
- 
--#include <linux/sh_clk.h>
--
- extern void r8a7779_pm_init(void);
- 
- #ifdef CONFIG_PM
+This depends on "[PATCH 0/2] irqchip: renesas: Propagate wake-up
+settings to parent". Initially I didn't see the warnings on all
+platforms due to another unrelated lockdep warning.
+
+Thanks!
+
+Geert Uytterhoeven (2):
+  irqchip: renesas-irqc: Use a separate lockdep class
+  irqchip: renesas-intc-irqpin: Use a separate lockdep class
+
+ drivers/irqchip/irq-renesas-intc-irqpin.c | 7 +++++++
+ drivers/irqchip/irq-renesas-irqc.c        | 7 +++++++
+ 2 files changed, 14 insertions(+)
+
 -- 
-2.1.4
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
