@@ -1,38 +1,49 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 03 Aug 2015 01:53:44 +0000
-Subject: [PATCH 4/4 v3][RFC] arm64: defconfig: Enable Renesas R-Car Gen3 SoC in defconfig
-Message-Id: <871tflw36n.wl%kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 09 Sep 2015 17:48:19 +0000
+Subject: [PATCH] ARM: shmobile: r8a7790: lager: add pinmux for iic0
+Message-Id: <1441820899-10457-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-This patch enables Renesas R-Car Gen3 SoCs in the arm64 defconfig.
+It seems we used to rely on the default pinmux setting of this HW, but
+currently we need to explicitly set the pinmux to access this bus. It is
+better style, too.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
 ---
-v2 -> v3
+ arch/arm/boot/dts/r8a7790-lager.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
- - remove SCIF
-
- arch/arm64/configs/defconfig | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index 4e17e7e..fd316b7 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -35,6 +35,7 @@ CONFIG_ARCH_EXYNOS7=y
- CONFIG_ARCH_FSL_LS2085A=y
- CONFIG_ARCH_HISI=y
- CONFIG_ARCH_MEDIATEK=y
-+CONFIG_ARCH_RCAR_GEN3=y
- CONFIG_ARCH_SEATTLE=y
- CONFIG_ARCH_TEGRA=y
- CONFIG_ARCH_TEGRA_132_SOC=y
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 6f5d7f50d5ca09..c553abd711eeb3 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -342,6 +342,11 @@
+ 		renesas,function = "msiof1";
+ 	};
+ 
++	iic0_pins: iic0 {
++		renesas,groups = "iic0";
++		renesas,function = "iic0";
++	};
++
+ 	iic1_pins: iic1 {
+ 		renesas,groups = "iic1";
+ 		renesas,function = "iic1";
+@@ -517,6 +522,8 @@
+ 
+ &iic0	{
+ 	status = "okay";
++	pinctrl-0 = <&iic0_pins>;
++	pinctrl-names = "default";
+ };
+ 
+ &iic1	{
 -- 
-1.9.1
+2.1.4
 
