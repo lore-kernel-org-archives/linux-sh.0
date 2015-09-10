@@ -1,65 +1,66 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 18 Sep 2015 11:08:32 +0000
-Subject: [PATCH v4 09/10] serial: sh-sci: Pause DMA engine and get DMA status again
-Message-Id: <1442574513-20648-10-git-send-email-geert+renesas@glider.be>
+From: Javier Martinez Canillas <javier@osg.samsung.com>
+Date: Thu, 10 Sep 2015 13:03:13 +0000
+Subject: [PATCH 0/2] [media] Fix race between graph enumeration and entities registration
+Message-Id: <1441890195-11650-1-git-send-email-javier@osg.samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Muhammad Hamza Farooq <mfarooq@visteon.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Muhammad Hamza Farooq <mfarooq@visteon.com>
+Hello,
 
-Occasionally, DMA transaction completes _after_ DMA engine is stopped.
-Verify if the transaction has not finished before forcing the engine to
-stop and push the data
+The Media Controller framework has an issue in which the media device node
+is registered before all the media entities and pads links are created so
+if user-space tries to enumerate the graph too early, it may get a partial
+graph since not everything has been registered yet.
 
-Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v4:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+This series fixes the issue by separate the media device registration from
+the initialization so drives can first initialize the media device, create
+the graph and then finally register the media device node once is finished.
+The solution was suggested by Sakari Ailus.
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 9406fe227bc76c96..b1d1ce1986e6c064 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1277,6 +1277,7 @@ static bool filter(struct dma_chan *chan, void *slave)
- static void rx_timer_fn(unsigned long arg)
- {
- 	struct sci_port *s = (struct sci_port *)arg;
-+	struct dma_chan *chan = s->chan_rx;
- 	struct uart_port *port = &s->port;
- 	struct dma_tx_state state;
- 	enum dma_status status;
-@@ -1305,6 +1306,21 @@ static void rx_timer_fn(unsigned long arg)
- 		return;
- 	}
- 
-+	dmaengine_pause(chan);
-+
-+	/*
-+	 * sometimes DMA transfer doesn't stop even if it is stopped and
-+	 * data keeps on coming until transaction is complete so check
-+	 * for DMA_COMPLETE again
-+	 * Let packet complete handler take care of the packet
-+	 */
-+	status = dmaengine_tx_status(s->chan_rx, s->active_rx, &state);
-+	if (status = DMA_COMPLETE) {
-+		spin_unlock_irqrestore(&port->lock, flags);
-+		dev_dbg(port->dev, "Transaction complete after DMA engine was stopped");
-+		return;
-+	}
-+
- 	/* Handle incomplete DMA receive */
- 	dmaengine_terminate_all(s->chan_rx);
- 	read = sg_dma_len(&s->sg_rx[active]) - state.residue;
+Patch #1 adds a check to the media_device_unregister() function to know if
+the media device has been registed yet so calling it will be safe and the
+cleanup functions of the drivers won't need to be changed in case register
+failed.
+
+Patch #2 does the init and registration split, changing all the drivers to
+make the change atomic and also adds a cleanup function for media devices.
+
+The patches are on top of Mauro's "[PATCH v8 00/55] MC next generation" [0]
+but is not a dependency for that series, it was only be based on that patch
+series to avoid conflicts with in-flight patches.
+
+The patches have been tested on an OMAP3 IGEPv2 board that has a OMAP3 ISP
+device and an Exynos5800 Chromebook with a built-in UVC camera.
+
+[0]: http://permalink.gmane.org/gmane.linux.drivers.driver-project.devel/74515
+
+Best regards,
+Javier
+
+
+Javier Martinez Canillas (2):
+  [media] media-device: check before unregister if mdev was registered
+  [media] media-device: split media initialization and registration
+
+ drivers/media/common/siano/smsdvb-main.c      |  1 +
+ drivers/media/media-device.c                  | 44 ++++++++++++++++++++++++---
+ drivers/media/platform/exynos4-is/media-dev.c | 12 +++++---
+ drivers/media/platform/omap3isp/isp.c         | 11 +++++--
+ drivers/media/platform/s3c-camif/camif-core.c | 13 ++++++--
+ drivers/media/platform/vsp1/vsp1_drv.c        | 19 +++++++++---
+ drivers/media/platform/xilinx/xilinx-vipp.c   | 11 +++++--
+ drivers/media/usb/au0828/au0828-core.c        | 26 +++++++++++-----
+ drivers/media/usb/cx231xx/cx231xx-cards.c     | 22 ++++++++++----
+ drivers/media/usb/dvb-usb-v2/dvb_usb_core.c   | 11 +++++--
+ drivers/media/usb/dvb-usb/dvb-usb-dvb.c       | 13 ++++++--
+ drivers/media/usb/siano/smsusb.c              | 14 +++++++--
+ drivers/media/usb/uvc/uvc_driver.c            |  9 ++++--
+ include/media/media-device.h                  |  2 ++
+ 14 files changed, 162 insertions(+), 46 deletions(-)
+
 -- 
-1.9.1
+2.4.3
 
