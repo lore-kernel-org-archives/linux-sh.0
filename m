@@ -1,53 +1,33 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 14 Sep 2015 10:13:38 +0000
-Subject: Re: [PATCH v2] clk: add CS2000 Fractional-N driver
-Message-Id: <CAMuHMdUZ+-7-N7znngJ0Gk9-TX3-dQxDsYc2NjWut426rKjF9Q@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 10 Sep 2015 07:19:17 +0000
+Subject: [PATCH 13/14][RFC] arm64: defconfig: add Renesas R-Car DMAC driver support
+Message-Id: <877fnyn3sx.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87egi1jpz9.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egi1jpz9.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Stephen Boyd <sboyd@codeaurora.org>, Simon <horms@verge.net.au>, Michael Turquette <mturquette@baylibre.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, linux-clk <linux-clk@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Mon, Sep 14, 2015 at 11:47 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> +static int cs2000_ratio_set(struct i2c_client *client,
-> +                           int ch, u32 rate_in, u32 rate_out)
-> +{
-> +       u64 val;
-> +       unsigned int i;
-> +       int ret;
-> +
-> +       if (CH_SIZE_ERR(ch))
-> +               return -EINVAL;
-> +
-> +       /*
-> +        * ratio = rate_out / rate_in * 2^20
-> +        *
-> +        * To avoid over flow, rate_out is u64
-> +        * The result should be u32
-> +        */
-> +
-> +       val = rate_out;
-> +       val *= (1 << 20);
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-val <<= 20
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm64/configs/defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-Or
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 5a92f9d..47f6f07 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -167,6 +167,8 @@ CONFIG_LEDS_TRIGGER_CPU=y
+ CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_EFI=y
+ CONFIG_RTC_DRV_XGENE=y
++CONFIG_DMADEVICES=y
++CONFIG_RCAR_DMAC=y
+ CONFIG_VIRTIO_PCI=y
+ CONFIG_VIRTIO_BALLOON=y
+ CONFIG_VIRTIO_MMIO=y
+-- 
+1.9.1
 
-    val = (u64)rate_out << 20;
-
-> +       do_div(val, rate_in);
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
