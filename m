@@ -1,73 +1,47 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 03 Sep 2015 08:48:02 +0000
-Subject: Re: [PATCH 9/9 v2] sh-pfc: r8a7795: add SCIFx support
-Message-Id: <CAMuHMdUn9q5GD9PbcfEwcnjz5tEiSdmgSsRXHZUGrUPnz56EWQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 10 Sep 2015 12:17:03 +0000
+Subject: [PATCH] pinctrl: sh-pfc: r8a7791/r8a7793: Correct SCIFB1_B SCK MOD_SEL value
+Message-Id: <1441887423-18743-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87oahkql0v.wl%kuninori.morimoto.gx@renesas.com>
-	<87bndkqkuu.wl%kuninori.morimoto.gx@renesas.com>
-	<CANqRtoSg_DcAQ2Z9e-Fd=LxH1qwsyYBx4hDGrkeLDuEKqZfFaw@mail.gmail.com>
-	<87h9nbq4yx.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87h9nbq4yx.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Simon <horms@verge.net.au>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Morimoto-san,
+When using serial port SCIFB1_B, transmit works, but nothing is
+received.
 
-On Thu, Sep 3, 2015 at 10:31 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
->> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->> >
->> > This patch adds SCIF0/1/2/3/4/5
->> >
->> > Original patch was created by Geert,
->> > and Kuninori Morimoto updated it
->> >
->> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->> > Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
->> > ---
->> > v1 -> v2
->> >
->> >  - Add Laurent Acked-by
->>
->> Thanks for your update, Morimoto-san!
->>
->> One quick question from my side: Is it intentional that you have the
->> "From: Kuninori Morimoto.." line at the top?
->>
->> It looks a bit strange to me. Since Geert wrote the patch according to
->> your commit message and his Signed-off-by is at the top, shouldn't the
->> top line also be "From: Geert Uytterhoeven..."?
->
-> 1st SCIF support patch included only SCIF2,
-> and Geert sent updated patch series which included bugfix.
-> And I merged these patches to this patch.
-> So, I kept my "From".
-> but I puted Geert on top of Signed-off-by since
-> non SCIF2 are came from Geert (= big volume)
-> I'm not sure how to do in this case ...
+Receive fails because the SCIFB1_SCK_B settings configure the wrong
+value for the sel_scifb1 field in the Module Select Register (MOD_SEL),
+due to an ambiguity in the R-Car M2-W and M2-N datasheets.
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested on r8a7791/koelsch using pins 53 (TXD) and 72 (RXD) on EXIO
+Connector A.
 
-This patch adds SCIF0/1/2/3/4/5
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[geert: Added SCIF0/1/3/4/5]
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+Against next-20150910.
 
-Note the SoB order, and the "[...]" part.
+s/PINMUX_IPSR_MODSEL_DATA/PINMUX_IPSR_MSEL/ to apply on
+renesas-drivers-2015-09-08-v4.2.
 
-Gr{oetje,eeting}s,
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-                        Geert
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index ee41eb10ef3636d7..622841954f4b9ab4 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -889,7 +889,7 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_IPSR_DATA(IP2_2_0, DACK1),
+ 	PINMUX_IPSR_MODSEL_DATA(IP2_2_0, SCIFA1_TXD_C, SEL_SCIFA1_2),
+ 	PINMUX_IPSR_MODSEL_DATA(IP2_2_0, SCIFB1_TXD_C, SEL_SCIFB1_2),
+-	PINMUX_IPSR_MODSEL_DATA(IP2_2_0, SCIFB1_SCK_B, SEL_SCIFB1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_2_0, SCIFB1_SCK_B, SEL_SCIFB1_1),
+ 	PINMUX_IPSR_DATA(IP2_2_0, A20),
+ 	PINMUX_IPSR_MODSEL_DATA(IP2_4_3, SPCLK, SEL_QSP_0),
+ 	PINMUX_IPSR_DATA(IP2_6_5, A21),
+-- 
+1.9.1
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
