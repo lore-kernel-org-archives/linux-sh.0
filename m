@@ -1,63 +1,78 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 02 Sep 2015 11:26:07 +0000
-Subject: Re: [PATCH v6 03/05] clk: shmobile: Make MSTP clock-output-names optional
-Message-Id: <55E6DCCF.40600@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 10 Sep 2015 07:16:26 +0000
+Subject: [PATCH 06/14][RFC] arm64: renesas: r8a7795: add SSI DMA support
+Message-Id: <87io7in3xo.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150902071657.10870.37652.sendpatchset@little-apple>
- <20150902071728.10870.32730.sendpatchset@little-apple>
-In-Reply-To: <20150902071728.10870.32730.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>, linux-clk@vger.kernel.org
-Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com
+To: linux-sh@vger.kernel.org
 
-On 9/2/2015 10:17 AM, Magnus Damm wrote:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> From: Magnus Damm <damm+renesas@opensource.se>
->
-> This patch updates the MSTP driver to make the "clock-output-names"
-> DT property optional instead of mandatory. In case the DT property
-> is omitted then the function clk_register_clkdev() is skipped.
->
-> The default for new SoCs is to not use "clock-output-names".
->
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> ---
->
->   Changes since V5:
->   - Simplified code using const char *allocated_name - thanks Geert!
->
->   Changes since V4:
->   - None
->
->   Changes since V3:
->   - Added support for multiple MSTP bits. =)
->
->   drivers/clk/shmobile/clk-mstp.c |   24 +++++++++++++++---------
->   1 file changed, 15 insertions(+), 9 deletions(-)
->
-> --- 0001/drivers/clk/shmobile/clk-mstp.c
-> +++ work/drivers/clk/shmobile/clk-mstp.c	2015-09-02 11:52:02.182366518 +0900
-> @@ -193,26 +193,26 @@ static void __init cpg_mstp_clocks_init(
-[...]
->   		parent_name = of_clk_get_parent_name(np, i);
->   		ret = of_property_read_u32_index(np, idxname, i, &clkidx);
->   		if (parent_name = NULL || ret < 0)
->   			break;
->
->   		if (clkidx >= MSTP_MAX_CLOCKS) {
-> -			pr_err("%s: invalid clock %s %s index %u)\n",
-> -			       __func__, np->name, name, clkidx);
-> +			pr_err("%s: invalid clock %s index %u)\n",
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-    There's no opening paren in this string.
-
-> +			       __func__, np->name, clkidx);
->   			continue;
->   		}
->
-[...]
-
-MBR, Sergei
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 4586690..aaafd3a 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -761,33 +761,53 @@
+ 			rcar_sound,ssi {
+ 				ssi0: ssi@0 {
+ 					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x01>, <&audma1 0x02>, <&audma0 0x15>, <&audma1 0x16>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi1: ssi@1 {
+ 					 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x03>, <&audma1 0x04>, <&audma0 0x49>, <&audma1 0x4a>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi2: ssi@2 {
+ 					interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x05>, <&audma1 0x06>, <&audma0 0x63>, <&audma1 0x64>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi3: ssi@3 {
+ 					interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x07>, <&audma1 0x08>, <&audma0 0x6f>, <&audma1 0x70>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi4: ssi@4 {
+ 					interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x09>, <&audma1 0x0a>, <&audma0 0x71>, <&audma1 0x72>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi5: ssi@5 {
+ 					interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x0b>, <&audma1 0x0c>, <&audma0 0x73>, <&audma1 0x74>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi6: ssi@6 {
+ 					interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x0d>, <&audma1 0x0e>, <&audma0 0x75>, <&audma1 0x76>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi7: ssi@7 {
+ 					interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x0f>, <&audma1 0x10>, <&audma0 0x79>, <&audma1 0x7a>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi8: ssi@8 {
+ 					interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x11>, <&audma1 0x12>, <&audma0 0x7b>, <&audma1 0x7c>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi9: ssi@9 {
+ 					interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x13>, <&audma1 0x14>, <&audma0 0x7d>, <&audma1 0x7e>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 			};
+ 		};
+-- 
+1.9.1
 
