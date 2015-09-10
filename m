@@ -1,35 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 03 Sep 2015 07:32:46 +0000
-Subject: Re: [PATCH v6 01/05] clk: shmobile: Rework CONFIG_ARCH_SHMOBILE_MULTI
-Message-Id: <CANqRtoQfC5vFQbuhueU4wgxHKXU5G_d-2YRiT0RHVcizheSTSA@mail.gmail.com>
+From: Rich Felker <dalias@libc.org>
+Date: Thu, 10 Sep 2015 03:34:00 +0000
+Subject: SH FDPIC ABI spec/binutils and kernel conflict on flag definitions
+Message-Id: <20150910033400.GM17773@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150902071657.10870.37652.sendpatchset@little-apple>
-	<20150902071708.10870.37170.sendpatchset@little-apple>
-	<55E6DA68.5070809@cogentembedded.com>
-In-Reply-To: <55E6DA68.5070809@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: linux-clk <linux-clk@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, SH-Linux <linux-sh@vger.kernel.org>, Michael Turquette <mturquette@baylibre.com>, Gaku Inami <gaku.inami.xw@bp.renesas.com>, Stephen Boyd <sboyd@codeaurora.org>, "Simon Horman [Horms]" <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-sh@vger.kernel.org
 
-Hi Sergei,
+In the ELF Header part of the SH FDPIC ABI document, it's stated that
+EF_SH_FDPIC|EF_SH_PIC means each LOAD segment can be independently
+positioned, while EF_SH_FDPIC by itself (without EF_SH_PIC) means the
+relative position of LOAD segments with respect to each other is fixed
+(like in normal ELF usage). This seems to match what binutils outputs.
 
-On Wed, Sep 2, 2015 at 8:15 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> Hello.
->
-> On 9/2/2015 10:17 AM, Magnus Damm wrote:
->
->> From: Magnus Damm <damm+renesas@opensource.se>
->>
->> Shmobile is all multiplatform these days, so in get rid of the
->
->
->    Grammar nit: "in" not needed.
+However the kernel contains the code (arch/sh/include/asm/elf.h):
 
-Thanks, will fix!
+#define elf_check_const_displacement(x) ((x)->e_flags & EF_SH_PIC)
 
-Cheers,
+and (fs/binfmt_elf_fdpic.c):
 
-/ magnus
+	if (elf_check_const_displacement(&exec_params.hdr))
+		exec_params.flags |= ELF_FDPIC_FLAG_CONSTDISP;
+
+which does exactly the opposite: the presence of the EF_SH_PIC flag,
+rather than absence of it, causes the kernel to treat the binary as
+one requiring "constant displacement" between LOAD segments.
+
+If my analysis is correct, how should this be fixed? It seems to me
+the kernel is clearly wrong, but it might also be considered the de
+facto ABI. Is there any way forward that allows fixing this bug (which
+defeats the whole purpose of FDPIC) without breaking existing usage?
+Or is there no existing usage to care about?
+
+Rich
