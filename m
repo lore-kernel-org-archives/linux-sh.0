@@ -1,46 +1,33 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 10 Sep 2015 07:14:37 +0000
-Subject: [PATCH 01/14][RFC] arm64: renesas: tidyup MSTP9 reverse definition order
-Message-Id: <87pp1qn40o.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 10 Sep 2015 08:22:08 +0000
+Subject: Re: [PATCH 01/14][RFC] arm64: renesas: tidyup MSTP9 reverse definition order
+Message-Id: <CAMuHMdXsiB_7QQLzGLKGhyQ-G7o+U3W-V5tJ3d-CwkABvsEz8Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87pp1qn40o.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87pp1qn40o.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Thu, Sep 10, 2015 at 9:14 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- include/dt-bindings/clock/r8a7795-clock.h | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
-index bf7fd98..e28dd97 100644
---- a/include/dt-bindings/clock/r8a7795-clock.h
-+++ b/include/dt-bindings/clock/r8a7795-clock.h
-@@ -38,14 +38,14 @@
- /* MSTP8 */
- 
- /* MSTP9 */
--#define R8A7795_CLK_GPIO0		12
--#define R8A7795_CLK_GPIO1		11
--#define R8A7795_CLK_GPIO2		10
--#define R8A7795_CLK_GPIO3		9
--#define R8A7795_CLK_GPIO4		8
--#define R8A7795_CLK_GPIO5		7
--#define R8A7795_CLK_GPIO6		6
- #define R8A7795_CLK_GPIO7		5
-+#define R8A7795_CLK_GPIO6		6
-+#define R8A7795_CLK_GPIO5		7
-+#define R8A7795_CLK_GPIO4		8
-+#define R8A7795_CLK_GPIO3		9
-+#define R8A7795_CLK_GPIO2		10
-+#define R8A7795_CLK_GPIO1		11
-+#define R8A7795_CLK_GPIO0		12
- 
- /* MSTP10 */
- 
--- 
-1.9.1
+To be folded into "arm64: dts: r8a7795: add GPIO clocks" before submission
+of the latter?
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
