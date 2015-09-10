@@ -1,35 +1,136 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 17 Sep 2015 07:12:57 +0000
-Subject: [PATCH 03/03] irqchip: renesas-irqc: Enable nested lock
-Message-Id: <20150917071257.29299.28172.sendpatchset@little-apple>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 10 Sep 2015 07:17:13 +0000
+Subject: [PATCH 08/14][RFC] arm64: renesas: salvator-x: add PIO sound support
+Message-Id: <87fv2mn3wd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150917071230.29299.32326.sendpatchset@little-apple>
-In-Reply-To: <20150917071230.29299.32326.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: jason@lakedaemon.net, geert+renesas@glider.be, linux-kernel@vger.kernel.org, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Update the IRQC driver to pass the IRQ_GC_INIT_NESTED_LOCK flag
-to enable nested locking using the generic irq chip implementation.
+This patch adds PIO sound support for Salvator-X board.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 91 ++++++++++++++++++++++
+ 1 file changed, 91 insertions(+)
 
- drivers/irqchip/irq-renesas-irqc.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- 0005/drivers/irqchip/irq-renesas-irqc.c
-+++ work/drivers/irqchip/irq-renesas-irqc.c	2015-07-20 18:08:35.792366518 +0900
-@@ -212,7 +212,7 @@ static int irqc_probe(struct platform_de
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index 0599b2b..be045a9 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -30,6 +30,28 @@
+ 		/* first 128MB is reserved for secure area. */
+ 		reg = <0x0 0x48000000 0x0 0x38000000>;
+ 	};
++
++	x12_clk: x12_clk {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <24576000>;
++	};
++
++	rsnd_ak4613: sound {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "left_j";
++		simple-audio-card,bitclock-master = <&sndcpu>;
++		simple-audio-card,frame-master = <&sndcpu>;
++
++		sndcpu: simple-audio-card,cpu {
++			sound-dai = <&rcar_sound>;
++		};
++
++		sndcodec: simple-audio-card,codec {
++			sound-dai = <&ak4613>;
++		};
++	};
+ };
  
- 	ret = irq_alloc_domain_generic_chips(p->irq_domain, p->number_of_irqs,
- 					     1, name, handle_level_irq,
--					     0, 0, 0);
-+					     0, 0, IRQ_GC_INIT_NESTED_LOCK);
- 	if (ret) {
- 		dev_err(&pdev->dev, "cannot allocate generic chip\n");
- 		goto err3;
+ &extal_clk {
+@@ -50,6 +72,16 @@
+ 		renesas,groups = "i2c2_a";
+ 		renesas,function = "i2c2";
+ 	};
++
++	sound_pins: sound {
++		renesas,groups = "ssi01239_ctrl", "ssi0_data", "ssi1_a_data";
++		renesas,function = "ssi";
++	};
++
++	sound_clk_pins: sound_clk {
++		renesas,groups = "audio_clkout3_a";
++		renesas,function = "audio_clk";
++	};
+ };
+ 
+ &scif1 {
+@@ -71,4 +103,63 @@
+ 	pinctrl-names = "default";
+ 
+ 	status = "okay";
++
++	ak4613: codec@0x10 {
++		compatible = "asahi-kasei,ak4613";
++		#sound-dai-cells = <0>;
++		reg = <0x10>;
++		clocks = <&rcar_sound 3>;
++	};
++
++	cs2000: clk_multiplier@0x4f {
++		compatible = "cirrus,cs2000-cp";
++		reg = <0x4f>;
++		clocks = <&rcar_sound 0>, <&x12_clk>;
++		clock-frequency = <24576000>; /* 1/1 divide */
++	};
++};
++
++&rcar_sound {
++	pinctrl-0 = <&sound_pins &sound_clk_pins>;
++	pinctrl-names = "default";
++
++	/* Single DAI */
++	#sound-dai-cells = <0>;
++
++	/* audio_clkout0/1/2/3 */
++	#clock-cells = <1>;
++	clock-frequency = <12288000>;
++
++	status = "okay";
++
++	rcar_sound,dai {
++		dai0 {
++			playback = <&ssi0>;
++			capture  = <&ssi1>;
++		};
++	};
++};
++
++&ssi0 {
++	pio-transfer;
++};
++
++&ssi1 {
++	pio-transfer;
++	shared-pin;
++};
++
++&audio_clk_a {
++	clock-frequency = <22579200>;
++};
++
++&audio_clk_b {
++	/*
++	 * It should be below here, but it will be dead-lock
++	 * since cs2000 requests audio_clkout (= <&rcar_sound 0>)
++	 * and, rcar_sound (= audio_clk_b) requests cs2000.
++	 * Here assumes cs2000 outputs fixed clock-frequency
++	 *      clocks = <&cs2000>;
++	 */
++	clock-frequency = <24576000>;
+ };
+-- 
+1.9.1
+
