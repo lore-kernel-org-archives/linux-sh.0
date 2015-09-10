@@ -1,53 +1,28 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 00:47:14 +0000
-Subject: [PATCH 12/19] ARM: shmobile: koelsch: use CCF for audio clock
-Message-Id: <c19c84ff3ab1280894bb2cdd99027f751922e2ba.1442536920.git.horms+renesas@verge.net.au>
+From: Javier Martinez Canillas <javier@dowhile0.org>
+Date: Thu, 10 Sep 2015 13:58:53 +0000
+Subject: Re: [PATCH v8 01/55] [media] media: create a macro to get entity ID
+Message-Id: <CABxcv=myNegKSr7xtrgV7BHqiTLMFCicLZtr1Md8m_wS8O52og@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442536920.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
+References: <cover.1440902901.git.mchehab@osg.samsung.com>
+	<6185117c4ad70fd3e1c780689e0ad2407fdf1294.1440902901.git.mchehab@osg.samsung.com>
+In-Reply-To: <6185117c4ad70fd3e1c780689e0ad2407fdf1294.1440902901.git.mchehab@osg.samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
+Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Mauro Carvalho Chehab <mchehab@infradead.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Sun, Aug 30, 2015 at 5:06 AM, Mauro Carvalho Chehab
+<mchehab@osg.samsung.com> wrote:
+> Instead of accessing directly entity.id, let's create a macro,
+> as this field will be moved into a common struct later on.
+>
+> Signed-off-by: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
+> Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+>
 
-Because of historical reason, audio clock didn't use CCF.
-Let's use it now.
+Reviewed-by: Javier Martinez Canillas <javier@osg.samsung.com>
+Tested-by: Javier Martinez Canillas <javier@osg.samsung.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791-koelsch.dts | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index dc158845afdc..fc44ea361a4b 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -242,6 +242,13 @@
- 			  1800000 0>;
- 	};
- 
-+	audio_clock: clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <11289600>;
-+		clock-output-names = "audio_clock";
-+	};
-+
- 	rsnd_ak4643: sound {
- 		compatible = "simple-audio-card";
- 
-@@ -255,7 +262,7 @@
- 
- 		sndcodec: simple-audio-card,codec {
- 			sound-dai = <&ak4643>;
--			system-clock-frequency = <11289600>;
-+			clocks = <&audio_clock>;
- 		};
- 	};
- 
--- 
-2.1.4
-
+Best regards,
+Javier
