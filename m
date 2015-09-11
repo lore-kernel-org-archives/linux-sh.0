@@ -1,101 +1,54 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 02 Sep 2015 07:17:50 +0000
-Subject: [PATCH v6 05/05] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support
-Message-Id: <20150902071750.10870.76669.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Sep 2015 02:01:14 +0000
+Subject: [PATCH/RFC v2 net-next 0/4] ravb: Add support for r8a7795 SoC
+Message-Id: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150902071657.10870.37652.sendpatchset@little-apple>
-In-Reply-To: <20150902071657.10870.37652.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-clk@vger.kernel.org
-Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+This series enhances the ravb driver to support the r8a7795 SoC.
 
-Add Clock Domain support to the R-Car Gen3 Clock Pulse Generator (CPG)
-driver using the generic PM Domain.  This allows to power-manage the
-module clocks of SoC devices that are part of the CPG/MSTP Clock Domain
-using Runtime PM, or for system suspend/resume.
+Changes:
 
-SoC devices that are part of the CPG/MSTP Clock Domain and can be
-power-managed through an MSTP clock should be tagged in DT with a proper
-"power-domains" property.
+v1 -> v2
+* Address extensive review from Sergei Shtylyov and  Geert Uytterhoeven
+  - In particular mandate all 25 interrupts in binding
+* Broke brinding change into a separate patch
+* New 100Mbit/s limit implementation in ravb driver using
+  proposed update to phylib
+* Split integration and driver changes into separate patch-sets
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+Base:
 
- Changes since V5:
- - Rebased to fit on top of updated CPG DT binding document
+This is based on net-next/master
 
- Changes since V4:
- - Rebased to fit on top of updated CPG DT binding document
+Availability:
 
- Changes since V3:
- - Fixed so correct file is actually used. =)
- - Took V2 from Geert but filtered out Kconfig.platforms bits
+* I will separately post a series,
+  "[PATCH/RFC v2 0/5] arm64: dts: r8a7795: enable EthernetAVB on Salvator-X",
+  to the linux-sh list to integrate the ravb on the r8a7795/salvatore-x board
+* To aid review I will push the following to the renesas tree:
+  - driver (this series): (me/r8a7795-ravb-driver-v2)
+  - integration: me/r8a7795-ravb-integration-v2
+  - both with runtime dependencies: me/r8a7795-ravb-driver-and-integration-v2.runtime
+  
+Kazuya Mizuguchi (3):
+  ravb: Provide dev parameter to DMA API
+  ravb: Document binding for r8a7795 SoC
+  ravb: Add support for r8a7795 SoC
 
- Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt |   26 +++++++++-
- drivers/clk/shmobile/clk-rcar-gen3.c                                     |    2 
- 2 files changed, 26 insertions(+), 2 deletions(-)
+Simon Horman (1):
+  phylib: Add phy_set_max_speed helper
 
---- 0009/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt
-+++ work/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt	2015-09-02 14:41:32.942366518 +0900
-@@ -2,6 +2,8 @@
- 
- The CPG generates core clocks for the R-Car Gen3 SoCs. It includes three PLLs
- and several fixed ratio dividers.
-+The CPG also provides a Clock Domain for SoC devices, in combination with the
-+CPG Module Stop (MSTP) Clocks.
- 
- Required Properties:
- 
-@@ -14,9 +16,17 @@ Required Properties:
-   - clocks: References to the parent clocks: first to the EXTAL clock
-   - #clock-cells: Must be 1
-   - clock-indices: Indices of the exported clocks
-+  - #power-domain-cells: Must be 0
- 
--Example
---------
-+SoC devices that are part of the CPG/MSTP Clock Domain and can be power-managed
-+through an MSTP clock should refer to the CPG device node in their
-+"power-domains" property, as documented by the generic PM domain bindings in
-+Documentation/devicetree/bindings/power/power_domain.txt.
-+
-+Examples
-+--------
-+
-+  - CPG device node:
- 
- 	cpg_clocks: cpg_clocks@e6150000 {
- 		compatible = "renesas,r8a7795-cpg-clocks",
-@@ -29,4 +39,16 @@ Example
- 				R8A7795_CLK_PLL1 R8A7795_CLK_PLL2
- 				R8A7795_CLK_PLL3 R8A7795_CLK_PLL4
- 		>;
-+		#power-domain-cells = <0>;
-+	};
-+
-+  - CPG/MSTP Clock Domain member device node:
-+
-+	scif2: serial@e6e88000 {
-+		compatible = "renesas,scif-r8a7795", "renesas,scif";
-+		reg = <0 0xe6e88000 0 64>;
-+		interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks RCAR_R8A7795_CLK_SCIF2>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
- 	};
---- 0009/drivers/clk/shmobile/clk-rcar-gen3.c
-+++ work/drivers/clk/shmobile/clk-rcar-gen3.c	2015-09-02 14:39:35.912366518 +0900
-@@ -236,6 +236,8 @@ static void __init rcar_gen3_cpg_clocks_
- 	}
- 
- 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
-+
-+	cpg_mstp_add_clk_domain(np);
- }
- CLK_OF_DECLARE(rcar_gen3_cpg_clks, "renesas,rcar-gen3-cpg-clocks",
- 	       rcar_gen3_cpg_clocks_init);
+ .../devicetree/bindings/net/renesas,ravb.txt       | 65 +++++++++++++--
+ drivers/net/ethernet/renesas/ravb.h                |  7 ++
+ drivers/net/ethernet/renesas/ravb_main.c           | 95 +++++++++++++++-------
+ drivers/net/phy/phy_device.c                       | 52 +++++++-----
+ include/linux/phy.h                                |  1 +
+ 5 files changed, 166 insertions(+), 54 deletions(-)
+
+-- 
+2.1.4
+
