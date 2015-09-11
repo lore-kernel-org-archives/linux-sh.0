@@ -1,100 +1,88 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 04 Sep 2015 12:32:01 +0000
-Subject: Re: [PATCH 1/3] adv7180: implement g_std() method
-Message-Id: <55E98F41.1080705@xs4all.nl>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Sep 2015 02:03:13 +0000
+Subject: [PATCH/RFC v2 2/5] arm64: dts: r8a7795: add EthernetAVB device node
+Message-Id: <1441936996-18437-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6015647.cjLjRfTWc7@wasted.cogentembedded.com> <55445603.CDVZru8CKl@wasted.cogentembedded.com> <55E989CC.60900@xs4all.nl>
-In-Reply-To: <55E989CC.60900@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, mchehab@osg.samsung.com, linux-media@vger.kernel.org, lars@metafoo.de
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On 09/04/2015 02:08 PM, Hans Verkuil wrote:
-> On 09/04/2015 01:14 AM, Sergei Shtylyov wrote:
->> Commit cccb83f7a184 ([media] adv7180: add more subdev video ops) forgot to add
->> the g_std() video method. Its implementation seems identical to the querystd()
->> method,  so we  can just  point at adv7180_querystd()...
->>
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>
->> ---
->>  drivers/media/i2c/adv7180.c |    1 +
->>  1 file changed, 1 insertion(+)
->>
->> Index: media_tree/drivers/media/i2c/adv7180.c
->> =================================>> --- media_tree.orig/drivers/media/i2c/adv7180.c
->> +++ media_tree/drivers/media/i2c/adv7180.c
->> @@ -717,6 +717,7 @@ static int adv7180_g_mbus_config(struct
->>  }
->>  
->>  static const struct v4l2_subdev_video_ops adv7180_video_ops = {
->> +	.g_std = adv7180_querystd,
-> 
-> No, this isn't right. Not your fault, the adv7180 driver is badly coded.
-> 
-> The adv7180 driver implements this 'autodetect' mode which is enabled
-> when s_std is called with V4L2_STD_ALL. This is illegal according to the
-> spec. Digging deeper shows that only the sta2x11_vip.c driver uses this
-> 'feature':
-> 
-> static int vidioc_s_std(struct file *file, void *priv, v4l2_std_id std)
-> {
->         struct sta2x11_vip *vip = video_drvdata(file);
->         v4l2_std_id oldstd = vip->std, newstd;
->         int status;
-> 
->         if (V4L2_STD_ALL = std) {
->                 v4l2_subdev_call(vip->decoder, video, s_std, std);
->                 ssleep(2);
->                 v4l2_subdev_call(vip->decoder, video, querystd, &newstd);
->                 v4l2_subdev_call(vip->decoder, video, g_input_status, &status);
->                 if (status & V4L2_IN_ST_NO_SIGNAL)
->                         return -EIO;
->                 std = vip->std = newstd;
->                 if (oldstd != std) {
->                         if (V4L2_STD_525_60 & std)
->                                 vip->format = formats_60[0];
->                         else
->                                 vip->format = formats_50[0];
->                 }
->                 return 0;
->         }
-> 
->         if (oldstd != std) {
->                 if (V4L2_STD_525_60 & std)
->                         vip->format = formats_60[0];
->                 else
->                         vip->format = formats_50[0];
->         }
-> 
->         return v4l2_subdev_call(vip->decoder, video, s_std, std);
-> }
-> 
-> So it enables the autodetect, queries the standard and uses the resulting
-> standard.
-> 
-> It leaves the autodetect feature on as well which can be very dangerous
-> if it switches from NTSC to PAL since the buffer size increases in that
-> case, potentially leading to buffer overruns.
-> 
-> What you should do is to completely remove the autodetect feature from the
-> adv7180 driver, 
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-A quick follow-up to this: in adv7180_irq it does:
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+[horms: minor updates]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-        if (isr3 & ADV7180_IRQ3_AD_CHANGE && state->autodetect)
-                __adv7180_status(state, NULL, &state->curr_norm);
+---
 
-If we remove the autodetect 'feature', then this would be removed as well,
-however, what would be better is to replace the call to __adv7180_status()
-with generating a V4L2_EVENT_SOURCE_CHANGE event (v4l2_subdev_notify_event).
+v0 [Kazuya Mizuguchi]
 
-That way applications can be informed of source change events (assuming the
-bridge driver will pass it through, but that's not the concern of the
-adv7180 driver).
+v1 [Simon Horman]
+* moved to soc node
+* updated patch subject
 
-Regards,
+v2 [Simon Horman]
+* Specify all interrupts
+* Use named interrupts
+* Rebase
+* Remove spurious whitespace change introduce in v1
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 41 ++++++++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
 
-	Hans
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 92c2b86a498f..a6bb2be1bbf0 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -297,6 +297,47 @@
+ 			/* Empty node for now */
+ 		};
+ 
++		avb: ethernet@e6800000 {
++			compatible = "renesas,etheravb-r8a7795";
++			reg = <0 0xe6800000 0 0x800>, <0 0xe6a00000 0 0x10000>;
++			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "ch0", "ch1", "ch2", "ch3",
++					  "ch4", "ch5", "ch6", "ch7",
++					  "ch8", "ch9", "ch10", "ch11",
++					  "ch12", "ch13", "ch14", "ch15",
++					  "ch16", "ch17", "ch18", "ch19",
++					  "ch20", "ch21", "ch22", "ch23",
++					  "ch24";
++			clocks = <&mstp8_clks R8A7795_CLK_ETHERAVB>;
++			phy-mode = "rgmii-id";
++			#address-cells = <1>;
++			#size-cells = <0>;
++		};
++
+ 		dmac1: dma-controller@e7300000 {
+ 			/* Empty node for now */
+ 		};
+-- 
+2.1.4
+
