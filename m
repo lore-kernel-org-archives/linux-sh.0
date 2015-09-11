@@ -1,92 +1,141 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Sep 2015 07:58:13 +0000
-Subject: Re: [PATCH/RFC v2 1/5] arm64: dts: r8a7795: add clock for EthernetAVB
-Message-Id: <20150911075812.GA2835@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Sep 2015 02:01:17 +0000
+Subject: [PATCH/RFC v2 net-next 3/4] ravb: Document binding for r8a7795 SoC
+Message-Id: <1441936878-18290-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441936996-18437-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1441936996-18437-2-git-send-email-horms+renesas@verge.net.au>
+References: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Sep 11, 2015 at 09:16:21AM +0200, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Fri, Sep 11, 2015 at 4:03 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> >
-> > These clocks will be used by EthernetAVB
-> >
-> > Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> > [horms: use s3d2_clk; other minor updates]
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >
-> > ---
-> >
-> > v0 [Kazuya Mizuguchi]
-> >
-> > v1 [Simon Horman]
-> > * updated p_clk to s3d4_clk
-> > * moved to clock node
-> > * updated patch subject
-> > * use R8A7795 as prefix for clock defines
-> >
-> > v2 [Simon Horman]
-> > * As suggested by Geert Uytterhoeven
-> >   - Use s2d4_clk use it instead: it is now already present in the base
-> 
-> s3d2?
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-There were several changes there. It looks like I failed to keep the
-comment above in sync with the code.
+This patch updates the ravb binding to support the r8a7795 SoC by:
+- Adding a compat string for the new hardware
+- Adding 25 named interrupts to binding for the new SoC;
+  older SoCs continue to use a single multiplexed interrupt
 
-> 
-> >     of this series
-> >   - Use R8A7795_CLK_ETHERAVB instead of R8A7795_CLK_AVB
-> > * As suggested by Kuninori Morimoto and Sergei Shtylyov
-> >   - Use "clock-indices" instead of "renesas,clock-indices"
-> >
-> > TODO:
-> > * Drop clock-output-names from mstp8_clks ?
-> > ---
-> >  arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 12 ++++++++++++
-> >  include/dt-bindings/clock/r8a7795-clock.h |  1 +
-> >  2 files changed, 13 insertions(+)
-> >
-> > diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> > index d7e70f57d165..92c2b86a498f 100644
-> > --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> > +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> > @@ -274,6 +274,17 @@
-> >                                         #clock-cells = <1>;
-> >                                         clock-indices = <R8A7795_CLK_SCIF2>;
-> >                                 };
-> > +
-> > +                               mstp8_clks: mstp8_clks@e6150990 {
-> > +                                       compatible = "renesas,r8a7795-mstp-clocks",
-> > +                                                    "renesas,cpg-mstp-clocks";
-> > +                                       reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
-> > +                                       clocks =  <&s3d2_clk>;
-> > +                                       #clock-cells = <1>;
-> > +                                       clock-indices = <R8A7795_CLK_ETHERAVB>;
-> > +                                       clock-output-names = "avb";
-> 
-> "etheravb", if you intend to keep it?
+The example is also updated to reflect the r8a7795 as this is the
+more complex case.
 
-Sure. But should I keep it?
+Based on work by Kazuya Mizuguchi and others.
 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> 
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+
+v2
+* First post; broken out of a driver update patch
+* As discussed with Geert Uytterhoeven and Sergei Shtylyov
+  - Binding: Make all interrupts mandatory as named-interrupts of
+    the form ch%u
+---
+ .../devicetree/bindings/net/renesas,ravb.txt       | 65 +++++++++++++++++++---
+ 1 file changed, 58 insertions(+), 7 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/net/renesas,ravb.txt b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+index 1fd8831437bf..6c360f993d33 100644
+--- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
++++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+@@ -6,8 +6,11 @@ interface contains.
+ Required properties:
+ - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
+ 	      "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
++	      "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
+ - reg: offset and length of (1) the register block and (2) the stream buffer.
+-- interrupts: interrupt specifier for the sole interrupt.
++- interrupts: interrupt specifiers.
++	      One for each entry in interrupt-names the R8A7795 SoC;
++	      One entry for a multiplexed interrupt otherwise.
+ - phy-mode: see ethernet.txt file in the same directory.
+ - phy-handle: see ethernet.txt file in the same directory.
+ - #address-cells: number of address cells for the MDIO bus, must be equal to 1.
+@@ -18,6 +21,9 @@ Required properties:
+ Optional properties:
+ - interrupt-parent: the phandle for the interrupt controller that services
+ 		    interrupts for this device.
++- interrupt-names: One entry per interrupt named "ch%u".
++		   For the R8A7795 SoC this property is mandatory,
++		   and "ch0" through "ch24" are mandatory.
+ - pinctrl-names: pin configuration state name ("default").
+ - renesas,no-ether-link: boolean, specify when a board does not provide a proper
+ 			 AVB_LINK signal.
+@@ -27,13 +33,46 @@ Optional properties:
+ Example:
+ 
+ 	ethernet@e6800000 {
+-		compatible = "renesas,etheravb-r8a7790";
+-		reg = <0 0xe6800000 0 0x800>, <0 0xee0e8000 0 0x4000>;
++		compatible = "renesas,etheravb-r8a7795";
++		reg = <0 0xe6800000 0 0x800>, <0 0xe6a00000 0 0x10000>;
+ 		interrupt-parent = <&gic>;
+-		interrupts = <0 163 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp8_clks R8A7790_CLK_ETHERAVB>;
+-		phy-mode = "rmii";
++		interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "ch0", "ch1", "ch2", "ch3",
++				  "ch4", "ch5", "ch6", "ch7",
++				  "ch8", "ch9", "ch10", "ch11",
++				  "ch12", "ch13", "ch14", "ch15",
++				  "ch16", "ch17", "ch18", "ch19",
++				  "ch20", "ch21", "ch22", "ch23",
++				  "ch24";
++		clocks = <&mstp8_clks R8A7795_CLK_ETHERAVB>;
++		phy-mode = "rgmii-id";
++		phy-reset-gpio = <&gpio2 10 0>;
+ 		phy-handle = <&phy0>;
++
+ 		pinctrl-0 = <&ether_pins>;
+ 		pinctrl-names = "default";
+ 		renesas,no-ether-link;
+@@ -41,8 +80,20 @@ Example:
+ 		#size-cells = <0>;
+ 
+ 		phy0: ethernet-phy@0 {
++			rxc-skew-ps = <900>;
++			rxdv-skew-ps = <0>;
++			rxd0-skew-ps = <0>;
++			rxd1-skew-ps = <0>;
++			rxd2-skew-ps = <0>;
++			rxd3-skew-ps = <0>;
++			txc-skew-ps = <900>;
++			txen-skew-ps = <0>;
++			txd0-skew-ps = <0>;
++			txd1-skew-ps = <0>;
++			txd2-skew-ps = <0>;
++			txd3-skew-ps = <0>;
+ 			reg = <0>;
+ 			interrupt-parent = <&gpio2>;
+-			interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
++			interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
+ 		};
+ 	};
+-- 
+2.1.4
+
