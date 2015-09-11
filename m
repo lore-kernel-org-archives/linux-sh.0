@@ -1,121 +1,66 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Sep 2015 02:01:15 +0000
-Subject: [PATCH/RFC v2 net-next 1/4] phylib: Add phy_set_max_speed helper
-Message-Id: <1441936878-18290-2-git-send-email-horms+renesas@verge.net.au>
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Fri, 11 Sep 2015 04:14:34 +0000
+Subject: Re: [PATCH/RFC v2 net-next 1/4] phylib: Add phy_set_max_speed helper
+Message-Id: <55F2552A.1010509@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
+ <1441936878-18290-2-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1441936878-18290-2-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-Add a helper to allow ethernet drivers to limit the speed of a phy
-(that they are attached to).
+Le 09/10/15 19:01, Simon Horman a =C3=A9crit :
+> Add a helper to allow ethernet drivers to limit the speed of a phy
+> (that they are attached to).
+>=20
+> This mainly involves factoring out the business-end of
+> of_set_phy_supported() and exporting a new symbol.
+>=20
+> This code seems to be open coded in several places, in several different
+> variants.
+>=20
+> This code is envisaged this will be used in situations where setting
+> the "max-speed" property is not appropriate, e.g. because the maximum
+> speed is not a property of the phy hardware.
 
-This mainly involves factoring out the business-end of
-of_set_phy_supported() and exporting a new symbol.
+This looks good to me, one minor comment, see below:
 
-This code seems to be open coded in several places, in several different
-variants.
+>=20
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+>=20
+> ---
+>=20
+> v2
+> * First post
+> ---
+>  drivers/net/phy/phy_device.c | 52 ++++++++++++++++++++++++++++----------=
+------
+>  include/linux/phy.h          |  1 +
+>  2 files changed, 34 insertions(+), 19 deletions(-)
+>=20
+> diff --git a/drivers/net/phy/phy_device.c b/drivers/net/phy/phy_device.c
+> index c0f211127274..d9a020095972 100644
+> --- a/drivers/net/phy/phy_device.c
+> +++ b/drivers/net/phy/phy_device.c
+> @@ -1205,6 +1205,37 @@ static int gen10g_resume(struct phy_device *phydev)
+>  	return 0;
+>  }
+> =20
+> +static void __set_phy_supported(struct phy_device *phydev, u32 max_speed)
+> +{
+> +	if (!IS_ENABLED(CONFIG_OF_MDIO))
+> +		return;
 
-This code is envisaged this will be used in situations where setting
-the "max-speed" property is not appropriate, e.g. because the maximum
-speed is not a property of the phy hardware.
+I think that part should be moved to of_set_phy_supported(), since your
+are exporting phy_set_max_speed() which should therefore be available
+regardless of whether Device Tree is used.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+While you are it, it might be nice to either warn or return -ENOTSUPP if
+the speed does not match 10, 100 or 1000, but that might be worth a
+second patch.
 
----
-
-v2
-* First post
----
- drivers/net/phy/phy_device.c | 52 ++++++++++++++++++++++++++++----------------
- include/linux/phy.h          |  1 +
- 2 files changed, 34 insertions(+), 19 deletions(-)
-
-diff --git a/drivers/net/phy/phy_device.c b/drivers/net/phy/phy_device.c
-index c0f211127274..d9a020095972 100644
---- a/drivers/net/phy/phy_device.c
-+++ b/drivers/net/phy/phy_device.c
-@@ -1205,6 +1205,37 @@ static int gen10g_resume(struct phy_device *phydev)
- 	return 0;
- }
- 
-+static void __set_phy_supported(struct phy_device *phydev, u32 max_speed)
-+{
-+	if (!IS_ENABLED(CONFIG_OF_MDIO))
-+		return;
-+
-+	/* The default values for phydev->supported are provided by the PHY
-+	 * driver "features" member, we want to reset to sane defaults fist
-+	 * before supporting higher speeds.
-+	 */
-+	phydev->supported &= PHY_DEFAULT_FEATURES;
-+
-+	switch (max_speed) {
-+	default:
-+		return;
-+
-+	case SPEED_1000:
-+		phydev->supported |= PHY_1000BT_FEATURES;
-+	case SPEED_100:
-+		phydev->supported |= PHY_100BT_FEATURES;
-+	case SPEED_10:
-+		phydev->supported |= PHY_10BT_FEATURES;
-+	}
-+}
-+
-+void phy_set_max_speed(struct phy_device *phydev, u32 max_speed)
-+{
-+	__set_phy_supported(phydev, max_speed);
-+	phydev->advertising = phydev->supported;
-+}
-+EXPORT_SYMBOL(phy_set_max_speed);
-+
- static void of_set_phy_supported(struct phy_device *phydev)
- {
- 	struct device_node *node = phydev->dev.of_node;
-@@ -1216,25 +1247,8 @@ static void of_set_phy_supported(struct phy_device *phydev)
- 	if (!node)
- 		return;
- 
--	if (!of_property_read_u32(node, "max-speed", &max_speed)) {
--		/* The default values for phydev->supported are provided by the PHY
--		 * driver "features" member, we want to reset to sane defaults fist
--		 * before supporting higher speeds.
--		 */
--		phydev->supported &= PHY_DEFAULT_FEATURES;
--
--		switch (max_speed) {
--		default:
--			return;
--
--		case SPEED_1000:
--			phydev->supported |= PHY_1000BT_FEATURES;
--		case SPEED_100:
--			phydev->supported |= PHY_100BT_FEATURES;
--		case SPEED_10:
--			phydev->supported |= PHY_10BT_FEATURES;
--		}
--	}
-+	if (!of_property_read_u32(node, "max-speed", &max_speed))
-+		__set_phy_supported(phydev, max_speed);
- }
- 
- /**
-diff --git a/include/linux/phy.h b/include/linux/phy.h
-index 962387a192f1..692b202a52af 100644
---- a/include/linux/phy.h
-+++ b/include/linux/phy.h
-@@ -794,6 +794,7 @@ int phy_mii_ioctl(struct phy_device *phydev, struct ifreq *ifr, int cmd);
- int phy_start_interrupts(struct phy_device *phydev);
- void phy_print_status(struct phy_device *phydev);
- void phy_device_free(struct phy_device *phydev);
-+void phy_set_max_speed(struct phy_device *phydev, u32 max_speed);
- 
- int phy_register_fixup(const char *bus_id, u32 phy_uid, u32 phy_uid_mask,
- 		       int (*run)(struct phy_device *));
--- 
-2.1.4
-
+Thanks!
+--=20
+Florian
