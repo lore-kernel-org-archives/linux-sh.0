@@ -1,39 +1,121 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 09 Sep 2015 00:31:22 +0000
-Subject: Re: [PATCH][RFC] arm64: renesas: Add EXTAL configuration to Salvator-X
-Message-Id: <20150909003121.GA15475@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Sep 2015 02:01:15 +0000
+Subject: [PATCH/RFC v2 net-next 1/4] phylib: Add phy_set_max_speed helper
+Message-Id: <1441936878-18290-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150908044957.4919.98690.sendpatchset@little-apple>
-In-Reply-To: <20150908044957.4919.98690.sendpatchset@little-apple>
+References: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Sep 08, 2015 at 01:49:57PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Configure EXTAL to 16.666 MHz on Salvator-X.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> ---
-> 
->  This sets the EXTAL frequency for the V9 integration series:
->  [PATCH v9 00/07][RFC] Renesas R-Car H3 (r8a7795) integration patches V9
-> 
->  To be used with the V7 CPG:
->  [PATCH v7 00/05] Renesas R-Car Gen3 CPG support V7
+Add a helper to allow ethernet drivers to limit the speed of a phy
+(that they are attached to).
 
-Thanks,
+This mainly involves factoring out the business-end of
+of_set_phy_supported() and exporting a new symbol.
 
-I have pushed this patch to the renesas tree in a new topic branch, 
-topic/arm64-rcar-gen3-v9.plus, which is based on topic/arm64-rcar-gen3-v9.
+This code seems to be open coded in several places, in several different
+variants.
 
-I am assuming you will include this in/squash this into the next posting of
-"Renesas R-Car H3 (r8a7795) integration patches".
+This code is envisaged this will be used in situations where setting
+the "max-speed" property is not appropriate, e.g. because the maximum
+speed is not a property of the phy hardware.
 
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Disclaimer: To be quite clear none of these patches are queued up for
-mainline yet and as such they are not included in the next or devel
-branches of the renesas tree.
+---
+
+v2
+* First post
+---
+ drivers/net/phy/phy_device.c | 52 ++++++++++++++++++++++++++++----------------
+ include/linux/phy.h          |  1 +
+ 2 files changed, 34 insertions(+), 19 deletions(-)
+
+diff --git a/drivers/net/phy/phy_device.c b/drivers/net/phy/phy_device.c
+index c0f211127274..d9a020095972 100644
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -1205,6 +1205,37 @@ static int gen10g_resume(struct phy_device *phydev)
+ 	return 0;
+ }
+ 
++static void __set_phy_supported(struct phy_device *phydev, u32 max_speed)
++{
++	if (!IS_ENABLED(CONFIG_OF_MDIO))
++		return;
++
++	/* The default values for phydev->supported are provided by the PHY
++	 * driver "features" member, we want to reset to sane defaults fist
++	 * before supporting higher speeds.
++	 */
++	phydev->supported &= PHY_DEFAULT_FEATURES;
++
++	switch (max_speed) {
++	default:
++		return;
++
++	case SPEED_1000:
++		phydev->supported |= PHY_1000BT_FEATURES;
++	case SPEED_100:
++		phydev->supported |= PHY_100BT_FEATURES;
++	case SPEED_10:
++		phydev->supported |= PHY_10BT_FEATURES;
++	}
++}
++
++void phy_set_max_speed(struct phy_device *phydev, u32 max_speed)
++{
++	__set_phy_supported(phydev, max_speed);
++	phydev->advertising = phydev->supported;
++}
++EXPORT_SYMBOL(phy_set_max_speed);
++
+ static void of_set_phy_supported(struct phy_device *phydev)
+ {
+ 	struct device_node *node = phydev->dev.of_node;
+@@ -1216,25 +1247,8 @@ static void of_set_phy_supported(struct phy_device *phydev)
+ 	if (!node)
+ 		return;
+ 
+-	if (!of_property_read_u32(node, "max-speed", &max_speed)) {
+-		/* The default values for phydev->supported are provided by the PHY
+-		 * driver "features" member, we want to reset to sane defaults fist
+-		 * before supporting higher speeds.
+-		 */
+-		phydev->supported &= PHY_DEFAULT_FEATURES;
+-
+-		switch (max_speed) {
+-		default:
+-			return;
+-
+-		case SPEED_1000:
+-			phydev->supported |= PHY_1000BT_FEATURES;
+-		case SPEED_100:
+-			phydev->supported |= PHY_100BT_FEATURES;
+-		case SPEED_10:
+-			phydev->supported |= PHY_10BT_FEATURES;
+-		}
+-	}
++	if (!of_property_read_u32(node, "max-speed", &max_speed))
++		__set_phy_supported(phydev, max_speed);
+ }
+ 
+ /**
+diff --git a/include/linux/phy.h b/include/linux/phy.h
+index 962387a192f1..692b202a52af 100644
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -794,6 +794,7 @@ int phy_mii_ioctl(struct phy_device *phydev, struct ifreq *ifr, int cmd);
+ int phy_start_interrupts(struct phy_device *phydev);
+ void phy_print_status(struct phy_device *phydev);
+ void phy_device_free(struct phy_device *phydev);
++void phy_set_max_speed(struct phy_device *phydev, u32 max_speed);
+ 
+ int phy_register_fixup(const char *bus_id, u32 phy_uid, u32 phy_uid_mask,
+ 		       int (*run)(struct phy_device *));
+-- 
+2.1.4
 
