@@ -1,38 +1,30 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Sep 2015 02:03:15 +0000
-Subject: [PATCH/RFC v2 4/5] arm64: dts: r8a7795: enable nfs root on Salvator-X board
-Message-Id: <1441936996-18437-5-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 11 Sep 2015 07:26:44 +0000
+Subject: Re: [PATCH/RFC v2 4/5] arm64: dts: r8a7795: enable nfs root on Salvator-X board
+Message-Id: <CAMuHMdVqLv8u8uMW-2s_Rzjj6b7mjaG3opXO0jdW6BTBwv-7YQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1441936996-18437-5-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1441936996-18437-5-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-As has been the practice for boards for 32bit ARM Renesas SoCs
+On Fri, Sep 11, 2015 at 4:03 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> As has been the practice for boards for 32bit ARM Renesas SoCs
+>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Gr{oetje,eeting}s,
+
+                        Geert
 
 --
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-v2
-* No change
----
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 4fb141230f0c..35980456c21a 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -21,7 +21,7 @@
- 	};
- 
- 	chosen {
--		bootargs = "ignore_loglevel";
-+		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
- 		stdout-path = &scif2;
- 	};
- 
--- 
-2.1.4
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
