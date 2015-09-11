@@ -1,51 +1,86 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 30 Sep 2015 10:02:08 +0000
-Subject: Re: [PATCH v3 0/5] r8a7778/bockw: fix SMSC Ethernet for MP
-Message-Id: <CAMuHMdXd8uHct-gm9M-92Yu9Azt2kJYqpsabMXPzNZ6_nt9Avg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Sep 2015 02:03:12 +0000
+Subject: [PATCH/RFC v2 1/5] arm64: dts: r8a7795: add clock for EthernetAVB
+Message-Id: <1441936996-18437-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441726946-30131-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1441726946-30131-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Sep 30, 2015 at 11:52 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Wed, Sep 9, 2015 at 2:52 AM, Simon Horman <horms@verge.net.au> wrote:
->> On Tue, Sep 08, 2015 at 05:42:21PM +0200, Ulrich Hecht wrote:
->>> This series enables the DT-wise IRLM setup in the intc-irqpin driver (same
->>> as on r8a7779) and configures the FPGA correctly.
->
->>> Ulrich Hecht (5):
->>>   irqchip: renesas-intc-irqpin: r8a7778 IRLM setup support
->>>   ARM: shmobile: r8a7778: enable IRLM setup via DT
->>>   ARM: shmobile: bockw dts: enable SMSC interrupt
->>>   ARM: shmobile_defconfig: enable PINCTRL_SINGLE
->>>   ARM: multi_v7_defconfig: enable PINCTRL_SINGLE
->>
->> Jason,
->>
->> could you consider picking-up the irqchip patch, the first of the series?
->> With that in place I can go ahead and queue up the remaining patches.
->
-> I think you should send it to all of
->
-> IRQCHIP DRIVERS
-> M:      Thomas Gleixner <tglx@linutronix.de>
-> M:      Jason Cooper <jason@lakedaemon.net>
-> M:      Marc Zyngier <marc.zyngier@arm.com>
-> L:      linux-kernel@vger.kernel.org
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Nevermind, I'll forward it myself.
+These clocks will be used by EthernetAVB
 
-Gr{oetje,eeting}s,
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+[horms: use s3d2_clk; other minor updates]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-                        Geert
+---
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+v0 [Kazuya Mizuguchi]
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+v1 [Simon Horman]
+* updated p_clk to s3d4_clk
+* moved to clock node
+* updated patch subject
+* use R8A7795 as prefix for clock defines
+
+v2 [Simon Horman]
+* As suggested by Geert Uytterhoeven
+  - Use s2d4_clk use it instead: it is now already present in the base
+    of this series
+  - Use R8A7795_CLK_ETHERAVB instead of R8A7795_CLK_AVB
+* As suggested by Kuninori Morimoto and Sergei Shtylyov
+  - Use "clock-indices" instead of "renesas,clock-indices"
+
+TODO:
+* Drop clock-output-names from mstp8_clks ?
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 12 ++++++++++++
+ include/dt-bindings/clock/r8a7795-clock.h |  1 +
+ 2 files changed, 13 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index d7e70f57d165..92c2b86a498f 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -274,6 +274,17 @@
+ 					#clock-cells = <1>;
+ 					clock-indices = <R8A7795_CLK_SCIF2>;
+ 				};
++
++				mstp8_clks: mstp8_clks@e6150990 {
++					compatible = "renesas,r8a7795-mstp-clocks",
++						     "renesas,cpg-mstp-clocks";
++					reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
++					clocks =  <&s3d2_clk>;
++					#clock-cells = <1>;
++					clock-indices = <R8A7795_CLK_ETHERAVB>;
++					clock-output-names = "avb";
++				};
++
+ 			};
+ 		};
+ 
+@@ -364,4 +375,5 @@
+ 			status = "disabled";
+ 		};
+ 	};
++
+ };
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+index d661602cb164..fd2514b5d7cc 100644
+--- a/include/dt-bindings/clock/r8a7795-clock.h
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -36,6 +36,7 @@
+ /* MSTP7 */
+ 
+ /* MSTP8 */
++#define R8A7795_CLK_ETHERAVB		12
+ 
+ /* MSTP9 */
+ 
+-- 
+2.1.4
+
