@@ -1,141 +1,56 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Sep 2015 02:01:17 +0000
-Subject: [PATCH/RFC v2 net-next 3/4] ravb: Document binding for r8a7795 SoC
-Message-Id: <1441936878-18290-4-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 11 Sep 2015 07:12:17 +0000
+Subject: Re: [PATCH/RFC v2 net-next 3/4] ravb: Document binding for r8a7795 SoC
+Message-Id: <CAMuHMdWY+8Cv9ZnnzMcSYskFfArues8EnWgMiCMnQ16sN1TW_A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
+ <1441936878-18290-4-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1441936878-18290-4-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Hi Simon,
 
-This patch updates the ravb binding to support the r8a7795 SoC by:
-- Adding a compat string for the new hardware
-- Adding 25 named interrupts to binding for the new SoC;
-  older SoCs continue to use a single multiplexed interrupt
+On Fri, Sep 11, 2015 at 4:01 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> --- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
+> +++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+> @@ -6,8 +6,11 @@ interface contains.
+>  Required properties:
+>  - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
+>               "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
+> +             "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
+>  - reg: offset and length of (1) the register block and (2) the stream buffer.
+> -- interrupts: interrupt specifier for the sole interrupt.
+> +- interrupts: interrupt specifiers.
+> +             One for each entry in interrupt-names the R8A7795 SoC;
 
-The example is also updated to reflect the r8a7795 as this is the
-more complex case.
+... for the R8A7795 SoC
 
-Based on work by Kazuya Mizuguchi and others.
+> +             One entry for a multiplexed interrupt otherwise.
+>  - phy-mode: see ethernet.txt file in the same directory.
+>  - phy-handle: see ethernet.txt file in the same directory.
+>  - #address-cells: number of address cells for the MDIO bus, must be equal to 1.
+> @@ -18,6 +21,9 @@ Required properties:
+>  Optional properties:
+>  - interrupt-parent: the phandle for the interrupt controller that services
+>                     interrupts for this device.
+> +- interrupt-names: One entry per interrupt named "ch%u".
+> +                  For the R8A7795 SoC this property is mandatory,
+> +                  and "ch0" through "ch24" are mandatory.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+This suggests the single multiplexed interrupt on R-Car Gen2 can be called
+"ch0". Is that what you want? I know the driver doesn't care.
 
----
+Gr{oetje,eeting}s,
 
-v2
-* First post; broken out of a driver update patch
-* As discussed with Geert Uytterhoeven and Sergei Shtylyov
-  - Binding: Make all interrupts mandatory as named-interrupts of
-    the form ch%u
----
- .../devicetree/bindings/net/renesas,ravb.txt       | 65 +++++++++++++++++++---
- 1 file changed, 58 insertions(+), 7 deletions(-)
+                        Geert
 
-diff --git a/Documentation/devicetree/bindings/net/renesas,ravb.txt b/Documentation/devicetree/bindings/net/renesas,ravb.txt
-index 1fd8831437bf..6c360f993d33 100644
---- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
-+++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
-@@ -6,8 +6,11 @@ interface contains.
- Required properties:
- - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
- 	      "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
-+	      "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
- - reg: offset and length of (1) the register block and (2) the stream buffer.
--- interrupts: interrupt specifier for the sole interrupt.
-+- interrupts: interrupt specifiers.
-+	      One for each entry in interrupt-names the R8A7795 SoC;
-+	      One entry for a multiplexed interrupt otherwise.
- - phy-mode: see ethernet.txt file in the same directory.
- - phy-handle: see ethernet.txt file in the same directory.
- - #address-cells: number of address cells for the MDIO bus, must be equal to 1.
-@@ -18,6 +21,9 @@ Required properties:
- Optional properties:
- - interrupt-parent: the phandle for the interrupt controller that services
- 		    interrupts for this device.
-+- interrupt-names: One entry per interrupt named "ch%u".
-+		   For the R8A7795 SoC this property is mandatory,
-+		   and "ch0" through "ch24" are mandatory.
- - pinctrl-names: pin configuration state name ("default").
- - renesas,no-ether-link: boolean, specify when a board does not provide a proper
- 			 AVB_LINK signal.
-@@ -27,13 +33,46 @@ Optional properties:
- Example:
- 
- 	ethernet@e6800000 {
--		compatible = "renesas,etheravb-r8a7790";
--		reg = <0 0xe6800000 0 0x800>, <0 0xee0e8000 0 0x4000>;
-+		compatible = "renesas,etheravb-r8a7795";
-+		reg = <0 0xe6800000 0 0x800>, <0 0xe6a00000 0 0x10000>;
- 		interrupt-parent = <&gic>;
--		interrupts = <0 163 IRQ_TYPE_LEVEL_HIGH>;
--		clocks = <&mstp8_clks R8A7790_CLK_ETHERAVB>;
--		phy-mode = "rmii";
-+		interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "ch0", "ch1", "ch2", "ch3",
-+				  "ch4", "ch5", "ch6", "ch7",
-+				  "ch8", "ch9", "ch10", "ch11",
-+				  "ch12", "ch13", "ch14", "ch15",
-+				  "ch16", "ch17", "ch18", "ch19",
-+				  "ch20", "ch21", "ch22", "ch23",
-+				  "ch24";
-+		clocks = <&mstp8_clks R8A7795_CLK_ETHERAVB>;
-+		phy-mode = "rgmii-id";
-+		phy-reset-gpio = <&gpio2 10 0>;
- 		phy-handle = <&phy0>;
-+
- 		pinctrl-0 = <&ether_pins>;
- 		pinctrl-names = "default";
- 		renesas,no-ether-link;
-@@ -41,8 +80,20 @@ Example:
- 		#size-cells = <0>;
- 
- 		phy0: ethernet-phy@0 {
-+			rxc-skew-ps = <900>;
-+			rxdv-skew-ps = <0>;
-+			rxd0-skew-ps = <0>;
-+			rxd1-skew-ps = <0>;
-+			rxd2-skew-ps = <0>;
-+			rxd3-skew-ps = <0>;
-+			txc-skew-ps = <900>;
-+			txen-skew-ps = <0>;
-+			txd0-skew-ps = <0>;
-+			txd1-skew-ps = <0>;
-+			txd2-skew-ps = <0>;
-+			txd3-skew-ps = <0>;
- 			reg = <0>;
- 			interrupt-parent = <&gpio2>;
--			interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
-+			interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
- 		};
- 	};
--- 
-2.1.4
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
