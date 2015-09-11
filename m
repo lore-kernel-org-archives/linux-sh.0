@@ -1,52 +1,43 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Wed, 30 Sep 2015 10:07:08 +0000
-Subject: Re: [PATCH] tmio_mmc_pio: test TMIO_MMC_WRPROTECT_DISABLE earlier
-Message-Id: <CAPDyKFp7JZNfw7BCGSZ07LzJ6iXG_DFZwemZRrGBPo_QPybi6Q@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Sep 2015 02:03:16 +0000
+Subject: [PATCH/RFC v2 5/5] arm64: defconfig: enable EthernetAVB
+Message-Id: <1441936996-18437-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1513691.2yatcrs42i@wasted.cogentembedded.com>
-	<CAPDyKFqt3AygyfXG5M-jTVqdvLi0CxWuyUmPFjg+A0dmz+o7qA@mail.gmail.com>
-	<5605C712.3060400@cogentembedded.com>
-	<CAPDyKFrFfN9ty25=rGrQ_TuaSDG-qtM8Dd_HxhB4oW+mhNM4vQ@mail.gmail.com>
-	<560A9A8D.1080808@cogentembedded.com>
-In-Reply-To: <560A9A8D.1080808@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Ian Molton <ian@mnementh.co.uk>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-[...]
+This is present on the Renesas r8a7795 SoC and may be
+used by the Salvator-X board.
 
->>>     Looking at the code, the following fragment of mmc_attach_sd()
->>> doesn't
->>> make much sense to me:
->>>
->>>          mmc_release_host(host);
->>>          err = mmc_add_card(host->card);
->>>          mmc_claim_host(host);
->>>          if (err)
->>>                  goto remove_card;
->>>
->>>          return 0;
->>>
->>> remove_card:
->>>          mmc_release_host(host);
->>>          mmc_remove_card(host->card);
->>>          host->card = NULL;
->>>          mmc_claim_host(host);
->>>
->>>     Why claim the host and immediately release it on mmc_add_card()
->>> error?
->>> Can we only claim on success and save a call here?
->
->
->> You are right, we can simplify the sequence!
->
->
->    OK, what about calling mmc_remove_card() on mmc_add_card() failure?
-> Isn't it also superfluous?
+Also enable MICREL_PHY which is used on the Salvator-X board.
 
-Nope.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Kind regards
-Uffe
+---
+
+v2
+* Enable MICREL_PHY
+---
+ arch/arm64/configs/defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index dccc685b58ae..79a09de4f52f 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -97,8 +97,10 @@ CONFIG_TUN=y
+ CONFIG_VIRTIO_NET=y
+ CONFIG_NET_XGENE=y
+ CONFIG_SKY2=y
++CONFIG_RAVB=y
+ CONFIG_SMC91X=y
+ CONFIG_SMSC911X=y
++CONFIG_MICREL_PHY=y
+ # CONFIG_WLAN is not set
+ CONFIG_INPUT_EVDEV=y
+ CONFIG_KEYBOARD_GPIO=y
+-- 
+2.1.4
+
