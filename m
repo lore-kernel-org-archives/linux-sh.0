@@ -1,118 +1,72 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 00:47:10 +0000
-Subject: [PATCH 08/19] ARM: shmobile: r8a7794: add I2C DT support
-Message-Id: <5428521ba123dddda4d2ac9ab19d173b692a8acb.1442536920.git.horms+renesas@verge.net.au>
+Date: Fri, 11 Sep 2015 02:03:11 +0000
+Subject: [PATCH/RFC v2 0/5] arm64: dts: r8a7795: enable EthernetAVB on Salvator-X
+Message-Id: <1441936996-18437-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442536920.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Changes:
 
-Define the generic R8A7794 parts of the I2C[0-5] device nodes.
+v1 -> v2
+* Address extensive review from Sergei Shtylyov and  Geert Uytterhoeven
+* Split integration and driver changes into separate patch-sets
 
-Based on the original patch by Koji Matsuoka <koji.matsuoka.xm@renesas.com>.
+Base:
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7794.dtsi | 73 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 73 insertions(+)
+This is based on:
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index e0f32ede2181..7384db2a3992 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -20,6 +20,12 @@
- 	#size-cells = <2>;
- 
- 	aliases {
-+		i2c0 = &i2c0;
-+		i2c1 = &i2c1;
-+		i2c2 = &i2c2;
-+		i2c3 = &i2c3;
-+		i2c4 = &i2c4;
-+		i2c5 = &i2c5;
- 		spi0 = &qspi;
- 	};
- 
-@@ -502,6 +508,73 @@
- 		status = "disabled";
- 	};
- 
-+	/* The memory map in the User's Manual maps the cores to bus numbers */
-+	i2c0: i2c@e6508000 {
-+		compatible = "renesas,i2c-r8a7794";
-+		reg = <0 0xe6508000 0 0x40>;
-+		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7794_CLK_I2C0>;
-+		power-domains = <&cpg_clocks>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	i2c1: i2c@e6518000 {
-+		compatible = "renesas,i2c-r8a7794";
-+		reg = <0 0xe6518000 0 0x40>;
-+		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7794_CLK_I2C1>;
-+		power-domains = <&cpg_clocks>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	i2c2: i2c@e6530000 {
-+		compatible = "renesas,i2c-r8a7794";
-+		reg = <0 0xe6530000 0 0x40>;
-+		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7794_CLK_I2C2>;
-+		power-domains = <&cpg_clocks>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	i2c3: i2c@e6540000 {
-+		compatible = "renesas,i2c-r8a7794";
-+		reg = <0 0xe6540000 0 0x40>;
-+		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7794_CLK_I2C3>;
-+		power-domains = <&cpg_clocks>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	i2c4: i2c@e6520000 {
-+		compatible = "renesas,i2c-r8a7794";
-+		reg = <0 0xe6520000 0 0x40>;
-+		interrupts = <0 19 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7794_CLK_I2C4>;
-+		power-domains = <&cpg_clocks>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
-+	i2c5: i2c@e6528000 {
-+		compatible = "renesas,i2c-r8a7794";
-+		reg = <0 0xe6528000 0 0x40>;
-+		interrupts = <0 20 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7794_CLK_I2C5>;
-+		power-domains = <&cpg_clocks>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
- 	mmcif0: mmc@ee200000 {
- 		compatible = "renesas,mmcif-r8a7794", "renesas,sh-mmcif";
- 		reg = <0 0xee200000 0 0x80>;
+* "[PATCH v9 00/07][RFC] Renesas R-Car H3 (r8a7795) integration patches V9"
+  - topic/r8a7795-gpio-v1.rebase branch of my renesas tree
+
+Runtime Dependencies:
+
+* The base (above)
+
+* "[PATCH/RFC v2 net-next 0/4] ravb: Add support for r8a7795 SoC"
+  - me/r8a7795-ravb-driver-v2 branch of my renesas tree
+
+* "[PATCH] gpio: rcar: GPIO_RCAR doesn't relate to ARM"
+
+* "[PATCH 0/3] Basic GPIO support for r8a7795"
+  - topic/r8a7795-gpio-v1.rebase branch of my renesas tree
+
+* "[PATCH 9/9 v2] sh-pfc: r8a7795: add SCIFx support"
+  - topic/r8a7795-pfc-v2 branch of Geert Uytterhoeven's renesas-drivers tree
+
+* "[PATCH v6 05/05] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support"
+  - topic/gen3-cpg-v6 branch of Geert Uytterhoeven's renesas-drivers tree
+
+Availability:
+
+* To aid review I will push the following to the renesas tree:
+  - integration (this series): me/r8a7795-ravb-integration-v2
+  - driver: me/r8a7795-ravb-driver-v2
+  - both with runtime dependencies: me/r8a7795-ravb-driver-and-integration-v2.runtime
+  
+Kazuya Mizuguchi (3):
+  ravb: Provide dev parameter to DMA API
+  ravb: Document binding for r8a7795 SoC
+  ravb: Add support for r8a7795 SoC
+
+
+Kazuya Mizuguchi (3):
+  arm64: dts: r8a7795: add clock for EthernetAVB
+  arm64: dts: r8a7795: add EthernetAVB device node
+  arm64: dts: r8a7795: enable EthernetAVB on Salvator-X
+
+Simon Horman (2):
+  arm64: dts: r8a7795: enable nfs root on Salvator-X board
+  arm64: defconfig: enable EthernetAVB
+
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 35 +++++++++++++-
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 53 ++++++++++++++++++++++
+ arch/arm64/configs/defconfig                       |  2 +
+ include/dt-bindings/clock/r8a7795-clock.h          |  1 +
+ 4 files changed, 90 insertions(+), 1 deletion(-)
+
 -- 
 2.1.4
 
