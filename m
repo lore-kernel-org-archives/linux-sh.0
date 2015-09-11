@@ -1,66 +1,188 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 22:50:59 +0000
-Subject: [PATCH 12/22] drm: rcar-du: Fix compile warning on 64-bit platforms
-Message-Id: <1442184669-30990-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Sep 2015 02:01:18 +0000
+Subject: [PATCH/RFC v2 net-next 4/4] ravb: Add support for r8a7795 SoC
+Message-Id: <1441936878-18290-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Use %tu instead of %u to print difference between pointers.
+This patch supports the r8a7795 SoC by:
+- Using two interrupts
+  + One for E-MAC
+  + One for everything else
+  + Both can be handled by the existing common interrupt handler, which
+    affords a simpler update to support the new SoC. In future some
+    consideration may be given to implementing multiple interrupt handlers
+- Limiting the phy speed to 100Mbit/s for the new SoC;
+  at this time it is not clear how this restriction may be lifted
+  but I hope it will be possible as more information comes to light
 
-Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+[horms: reworked]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- drivers/gpu/drm/rcar-du/rcar_du_plane.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index 4a38ced4b952..7d2e301df042 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -153,7 +153,7 @@ int rcar_du_atomic_check_planes(struct drm_device *dev,
- 		plane = to_rcar_plane(state->planes[i]);
- 		plane_state = to_rcar_plane_state(state->plane_states[i]);
+v0 [Kazuya Mizuguchi]
+
+v1 [Simon Horman]
+* Updated patch subject
+
+v2 [Simon Horman]
+* Reworked based on extensive feedback from
+  Geert Uytterhoeven and Sergei Shtylyov.
+* Broke binding update out into separate patch
+---
+ drivers/net/ethernet/renesas/ravb.h      |  7 ++++
+ drivers/net/ethernet/renesas/ravb_main.c | 57 +++++++++++++++++++++++++++-----
+ 2 files changed, 55 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/ravb.h b/drivers/net/ethernet/renesas/ravb.h
+index a157aaaaff6a..0623fff932e4 100644
+--- a/drivers/net/ethernet/renesas/ravb.h
++++ b/drivers/net/ethernet/renesas/ravb.h
+@@ -766,6 +766,11 @@ struct ravb_ptp {
+ 	struct ravb_ptp_perout perout[N_PER_OUT];
+ };
  
--		dev_dbg(rcdu->dev, "%s: checking plane (%u,%u)\n", __func__,
-+		dev_dbg(rcdu->dev, "%s: checking plane (%u,%tu)\n", __func__,
- 			plane->group->index, plane - plane->group->planes);
++enum ravb_chip_id {
++	RCAR_GEN2,
++	RCAR_GEN3,
++};
++
+ struct ravb_private {
+ 	struct net_device *ndev;
+ 	struct platform_device *pdev;
+@@ -806,6 +811,8 @@ struct ravb_private {
+ 	int msg_enable;
+ 	int speed;
+ 	int duplex;
++	int emac_irq;
++	enum ravb_chip_id chip_id;
  
- 		/* If the plane is being disabled we don't need to go through
-@@ -221,7 +221,7 @@ int rcar_du_atomic_check_planes(struct drm_device *dev,
- 			 */
- 			if (group_freed_planes[index] & (1 << i)) {
- 				dev_dbg(rcdu->dev,
--					"%s: plane (%u,%u) has been freed, skipping\n",
-+					"%s: plane (%u,%tu) has been freed, skipping\n",
- 					__func__, plane->group->index,
- 					plane - plane->group->planes);
- 				continue;
-@@ -231,7 +231,7 @@ int rcar_du_atomic_check_planes(struct drm_device *dev,
- 			used_planes |= rcar_du_plane_hwmask(plane_state);
+ 	unsigned no_avb_link:1;
+ 	unsigned avb_link_active_low:1;
+diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+index 4ca093d033f8..cc6702e33d65 100644
+--- a/drivers/net/ethernet/renesas/ravb_main.c
++++ b/drivers/net/ethernet/renesas/ravb_main.c
+@@ -889,6 +889,14 @@ static int ravb_phy_init(struct net_device *ndev)
+ 		return -ENOENT;
+ 	}
  
- 			dev_dbg(rcdu->dev,
--				"%s: plane (%u,%u) uses %u hwplanes (index %d)\n",
-+				"%s: plane (%u,%tu) uses %u hwplanes (index %d)\n",
- 				__func__, plane->group->index,
- 				plane - plane->group->planes,
- 				plane_state->format ?
-@@ -260,7 +260,7 @@ int rcar_du_atomic_check_planes(struct drm_device *dev,
- 		plane = to_rcar_plane(state->planes[i]);
- 		plane_state = to_rcar_plane_state(state->plane_states[i]);
++	/* This driver only support 10/100Mbit speeds on Gen3
++	 * at this time.
++	 */
++	if (priv->chip_id = RCAR_GEN3) {
++		netdev_info(ndev, "limiting PHY to 100Mbit/s\n");
++		phy_set_max_speed(phydev, SPEED_100);
++	}
++
+ 	netdev_info(ndev, "attached PHY %d (IRQ %d) to driver %s\n",
+ 		    phydev->addr, phydev->irq, phydev->drv->name);
  
--		dev_dbg(rcdu->dev, "%s: allocating plane (%u,%u)\n", __func__,
-+		dev_dbg(rcdu->dev, "%s: allocating plane (%u,%tu)\n", __func__,
- 			plane->group->index, plane - plane->group->planes);
+@@ -1197,6 +1205,15 @@ static int ravb_open(struct net_device *ndev)
+ 		goto out_napi_off;
+ 	}
  
- 		/* Skip planes that are being disabled or don't need to be
++	if (priv->chip_id = RCAR_GEN3) {
++		error = request_irq(priv->emac_irq, ravb_interrupt,
++				    IRQF_SHARED, ndev->name, ndev);
++		if (error) {
++			netdev_err(ndev, "cannot request IRQ\n");
++			goto out_free_irq;
++		}
++	}
++
+ 	/* Device init */
+ 	error = ravb_dmac_init(ndev);
+ 	if (error)
+@@ -1220,6 +1237,7 @@ out_ptp_stop:
+ 	ravb_ptp_stop(ndev);
+ out_free_irq:
+ 	free_irq(ndev->irq, ndev);
++	free_irq(priv->emac_irq, ndev);
+ out_napi_off:
+ 	napi_disable(&priv->napi[RAVB_NC]);
+ 	napi_disable(&priv->napi[RAVB_BE]);
+@@ -1625,13 +1643,23 @@ static int ravb_mdio_release(struct ravb_private *priv)
+ 	return 0;
+ }
+ 
++static const struct of_device_id ravb_match_table[] = {
++	{ .compatible = "renesas,etheravb-r8a7790", .data = (void *)RCAR_GEN2 },
++	{ .compatible = "renesas,etheravb-r8a7794", .data = (void *)RCAR_GEN2 },
++	{ .compatible = "renesas,etheravb-r8a7795", .data = (void *)RCAR_GEN3 },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, ravb_match_table);
++
+ static int ravb_probe(struct platform_device *pdev)
+ {
+ 	struct device_node *np = pdev->dev.of_node;
++	const struct of_device_id *match;
+ 	struct ravb_private *priv;
++	enum ravb_chip_id chip_id;
+ 	struct net_device *ndev;
+-	int error, irq, q;
+ 	struct resource *res;
++	int error, irq, q;
+ 
+ 	if (!np) {
+ 		dev_err(&pdev->dev,
+@@ -1657,7 +1685,14 @@ static int ravb_probe(struct platform_device *pdev)
+ 	/* The Ether-specific entries in the device structure. */
+ 	ndev->base_addr = res->start;
+ 	ndev->dma = -1;
+-	irq = platform_get_irq(pdev, 0);
++
++	match = of_match_device(of_match_ptr(ravb_match_table), &pdev->dev);
++	chip_id = (enum ravb_chip_id)match->data;
++
++	if (chip_id = RCAR_GEN3)
++		irq = platform_get_irq_byname(pdev, "ch22");
++	else
++		irq = platform_get_irq(pdev, 0);
+ 	if (irq < 0) {
+ 		error = irq;
+ 		goto out_release;
+@@ -1688,6 +1723,17 @@ static int ravb_probe(struct platform_device *pdev)
+ 	priv->avb_link_active_low  		of_property_read_bool(np, "renesas,ether-link-active-low");
+ 
++	if (chip_id = RCAR_GEN3) {
++		irq = platform_get_irq_byname(pdev, "ch24");
++		if (irq < 0) {
++			error = irq;
++			goto out_release;
++		}
++		priv->emac_irq = irq;
++	}
++
++	priv->chip_id = chip_id;
++
+ 	/* Set function */
+ 	ndev->netdev_ops = &ravb_netdev_ops;
+ 	ndev->ethtool_ops = &ravb_ethtool_ops;
+@@ -1818,13 +1864,6 @@ static const struct dev_pm_ops ravb_dev_pm_ops = {
+ #define RAVB_PM_OPS NULL
+ #endif
+ 
+-static const struct of_device_id ravb_match_table[] = {
+-	{ .compatible = "renesas,etheravb-r8a7790" },
+-	{ .compatible = "renesas,etheravb-r8a7794" },
+-	{ }
+-};
+-MODULE_DEVICE_TABLE(of, ravb_match_table);
+-
+ static struct platform_driver ravb_driver = {
+ 	.probe		= ravb_probe,
+ 	.remove		= ravb_remove,
 -- 
-2.4.6
+2.1.4
 
