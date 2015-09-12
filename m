@@ -1,36 +1,21 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 20:56:52 +0000
-Subject: [PATCH 14/32] v4l: vsp1: Reuse local variable instead of recomputing it
-Message-Id: <1442177830-24536-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 12 Sep 2015 22:48:28 +0000
+Subject: [PATCH 0/2] Add USB PHY device tree support for R8A7794/SILK board
+Message-Id: <1442100737.hcefR9HyDq@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-No need to waste CPU cycles when the value we need is already available.
+Hello.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/media/platform/vsp1/vsp1_video.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+   Here's the set of 2 patches against Simon Horman's 'renesas.git' repo's
+'renesas-devel-20150911v2-v4.2' tag plus the PCI USB patches just posted. Here
+we add the USB PHY device tree support on the R8A7794/SILK low cost board.
 
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index ec68890af14b..c0afbf81d9aa 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -416,7 +416,7 @@ static int vsp1_video_pipeline_validate(struct vsp1_pipeline *pipe,
- 			rwpf->video->pipe_index = pipe->num_inputs;
- 		} else if (e->type = VSP1_ENTITY_WPF) {
- 			rwpf = to_rwpf(subdev);
--			pipe->output = to_rwpf(subdev);
-+			pipe->output = rwpf;
- 			rwpf->video->pipe_index = 0;
- 		} else if (e->type = VSP1_ENTITY_LIF) {
- 			pipe->lif = e;
--- 
-2.4.6
+[1/2] ARM: shmobile: r8a7794: add USB PHY DT support
+[2/2] ARM: shmobile: silk: enable USB PHY
+
+WBR, Sergei
 
