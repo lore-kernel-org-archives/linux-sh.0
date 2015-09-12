@@ -1,74 +1,73 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 22 Sep 2015 07:08:14 +0000
-Subject: [PATCH v2 2/2] ARM: shmobile: Remove legacy mach/irqs.h
-Message-Id: <1442905694-2317-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 12 Sep 2015 22:30:05 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7794: add internal PCI bridge nodes
+Message-Id: <3051459.2yiprFO374@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <3151312.grtDDBsSl8@wasted.cogentembedded.com>
+In-Reply-To: <3151312.grtDDBsSl8@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The header isn't needed anymore now that all SoCs use multiplatform
-kernels. Remove it.
+Add device nodes for the R8A7794 internal PCI bridge devices.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/mach-shmobile/include/mach/irqs.h | 10 ----------
- arch/arm/mach-shmobile/irqs.h              | 15 ---------------
- arch/arm/mach-shmobile/setup-r8a7778.c     |  1 -
- 3 files changed, 26 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/include/mach/irqs.h
- delete mode 100644 arch/arm/mach-shmobile/irqs.h
+ arch/arm/boot/dts/r8a7794.dtsi |   42 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
-deleted file mode 100644
-index 5aee83f079e2..000000000000
---- a/arch/arm/mach-shmobile/include/mach/irqs.h
-+++ /dev/null
-@@ -1,10 +0,0 @@
--#ifndef __ASM_MACH_IRQS_H
--#define __ASM_MACH_IRQS_H
--
--/* Stuck here until drivers/pinctl/sh-pfc gets rid of legacy code */
--
--/* External IRQ pins */
--#define IRQPIN_BASE		2000
--#define irq_pin(nr)		((nr) + IRQPIN_BASE)
--
--#endif /* __ASM_MACH_IRQS_H */
-diff --git a/arch/arm/mach-shmobile/irqs.h b/arch/arm/mach-shmobile/irqs.h
-deleted file mode 100644
-index 3070f6d887eb..000000000000
---- a/arch/arm/mach-shmobile/irqs.h
-+++ /dev/null
-@@ -1,15 +0,0 @@
--#ifndef __SHMOBILE_IRQS_H
--#define __SHMOBILE_IRQS_H
--
--#include "include/mach/irqs.h"
--
--/* GIC */
--#define gic_spi(nr)		((nr) + 32)
--#define gic_iid(nr)		(nr) /* ICCIAR / interrupt ID */
--
--/* GPIO IRQ */
--#define _GPIO_IRQ_BASE		2500
--#define GPIO_IRQ_BASE(x)	(_GPIO_IRQ_BASE + (32 * x))
--#define GPIO_IRQ(x, y)		(_GPIO_IRQ_BASE + (32 * x) + y)
--
--#endif /* __SHMOBILE_IRQS_H */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index b0c9986d022d..008ea680fb8a 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -22,7 +22,6 @@
- #include <asm/mach/arch.h>
+Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
++++ renesas/arch/arm/boot/dts/r8a7794.dtsi
+@@ -648,6 +648,48 @@
+ 		status = "disabled";
+ 	};
  
- #include "common.h"
--#include "irqs.h"
- 
- #define MODEMR 0xffcc0020
- 
--- 
-2.4.6
++	pci0: pci@ee090000 {
++		compatible = "renesas,pci-r8a7794";
++		device_type = "pci";
++		reg = <0 0xee090000 0 0xc00>,
++		      <0 0xee080000 0 0x1100>;
++		interrupts = <0 108 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7794_CLK_EHCI>;
++		power-domains = <&cpg_clocks>;
++		status = "disabled";
++
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		ranges = <0x02000000 0 0xee080000 0 0xee080000 0 0x00010000>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++				 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
++				 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
++	pci1: pci@ee0d0000 {
++		compatible = "renesas,pci-r8a7794";
++		device_type = "pci";
++		reg = <0 0xee0d0000 0 0xc00>,
++		      <0 0xee0c0000 0 0x1100>;
++		interrupts = <0 113 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7794_CLK_EHCI>;
++		power-domains = <&cpg_clocks>;
++		status = "disabled";
++
++		bus-range = <1 1>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		ranges = <0x02000000 0 0xee0c0000 0 0xee0c0000 0 0x00010000>;
++		interrupt-map-mask = <0xff00 0 0 0x7>;
++		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
++				 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
++				 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 
