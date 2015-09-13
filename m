@@ -1,58 +1,122 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 17 Sep 2015 06:33:48 +0000
-Subject: [PATCH v3 07/09] ARM: shmobile: Add function to prioritize DT SMP
-Message-Id: <20150917063348.26016.68456.sendpatchset@little-apple>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 22:50:52 +0000
+Subject: [PATCH 05/22] drm: rcar-du: Refactor plane setup
+Message-Id: <1442184669-30990-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150917063240.26016.93772.sendpatchset@little-apple>
-In-Reply-To: <20150917063240.26016.93772.sendpatchset@little-apple>
+References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: mark.rutland@arm.com, devicetree@vger.kernel.org, lorenzo.pieralisi@arm.com, keita.kobayashi.ym@renesas.com, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Rename plane setup functions using more explicit names, and use local
+variables to store intermediate values to increase readability. This
+also prepares for VSP compositor support.
 
-Add a function to check if other DT based method is available, and
-if so return false to not hook up smp_ops from the machine vector.
-
-This results in that DT-based SMP support has priority over older
-C-based smp_ops code, and in case DT-based SMP support code does not
-exist in the DTB then the old smp_ops code will still work as-is.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 39 ++++++++++++++++++---------------
+ 1 file changed, 21 insertions(+), 18 deletions(-)
 
- Changes since V2:
- - None
-
- Changes since V1:
- - Reworked r8a7791-specific version to become reusable function.
-
- arch/arm/mach-shmobile/common.h  |    1 +
- arch/arm/mach-shmobile/platsmp.c |    7 +++++++
- 2 files changed, 8 insertions(+)
-
---- 0001/arch/arm/mach-shmobile/common.h
-+++ work/arch/arm/mach-shmobile/common.h	2015-08-23 15:26:18.722366518 +0900
-@@ -11,6 +11,7 @@ extern void shmobile_smp_sleep(void);
- extern void shmobile_smp_hook(unsigned int cpu, unsigned long fn,
- 			      unsigned long arg);
- extern bool shmobile_smp_cpu_can_disable(unsigned int cpu);
-+extern bool shmobile_smp_init_fallback_ops(void);
- extern void shmobile_boot_scu(void);
- extern void shmobile_smp_scu_prepare_cpus(unsigned int max_cpus);
- extern void shmobile_smp_scu_cpu_die(unsigned int cpu);
---- 0001/arch/arm/mach-shmobile/platsmp.c
-+++ work/arch/arm/mach-shmobile/platsmp.c	2015-08-23 15:26:13.692366518 +0900
-@@ -36,3 +36,10 @@ bool shmobile_smp_cpu_can_disable(unsign
- 	return true; /* Hotplug of any CPU is supported */
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index b20f3ceb55e6..d64b23027749 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -35,7 +35,7 @@ static void rcar_du_plane_write(struct rcar_du_group *rgrp,
+ 		      data);
  }
- #endif
-+
-+bool __init shmobile_smp_init_fallback_ops(void)
-+{
-+	/* fallback on PSCI/smp_ops if no other DT based method is detected */
-+	return platform_can_secondary_boot() ? true : false;
-+}
-+
+ 
+-static void rcar_du_plane_setup_fb(struct rcar_du_plane *plane)
++static void rcar_du_plane_setup_scanout(struct rcar_du_plane *plane)
+ {
+ 	struct rcar_du_plane_state *state  		to_rcar_plane_state(plane->plane.state);
+@@ -45,8 +45,10 @@ static void rcar_du_plane_setup_fb(struct rcar_du_plane *plane)
+ 	unsigned int src_y = state->state.src_y >> 16;
+ 	unsigned int index = state->hwindex;
+ 	struct drm_gem_cma_object *gem;
++	unsigned int pitch;
+ 	bool interlaced;
+-	u32 mwr;
++	unsigned int i;
++	u32 dma[2];
+ 
+ 	interlaced = state->state.crtc->state->adjusted_mode.flags
+ 		   & DRM_MODE_FLAG_INTERLACE;
+@@ -55,14 +57,18 @@ static void rcar_du_plane_setup_fb(struct rcar_du_plane *plane)
+ 	 * operation with 32bpp formats.
+ 	 */
+ 	if (state->format->planes = 2)
+-		mwr = fb->pitches[0];
++		pitch = fb->pitches[0];
+ 	else
+-		mwr = fb->pitches[0] * 8 / state->format->bpp;
++		pitch = fb->pitches[0] * 8 / state->format->bpp;
+ 
+-	if (interlaced && state->format->bpp = 32)
+-		mwr *= 2;
++	for (i = 0; i < state->format->planes; ++i) {
++		gem = drm_fb_cma_get_gem_obj(fb, i);
++		dma[i] = gem->paddr + fb->offsets[i];
++	}
+ 
+-	rcar_du_plane_write(rgrp, index, PnMWR, mwr);
++	rcar_du_plane_write(rgrp, index, PnMWR,
++			    (interlaced && state->format->bpp = 32) ?
++			    pitch * 2 : pitch);
+ 
+ 	/* The Y position is expressed in raster line units and must be doubled
+ 	 * for 32bpp formats, according to the R8A7790 datasheet. No mention of
+@@ -80,21 +86,18 @@ static void rcar_du_plane_setup_fb(struct rcar_du_plane *plane)
+ 	rcar_du_plane_write(rgrp, index, PnSPYR, src_y *
+ 			    (!interlaced && state->format->bpp = 32 ? 2 : 1));
+ 
+-	gem = drm_fb_cma_get_gem_obj(fb, 0);
+-	rcar_du_plane_write(rgrp, index, PnDSA0R, gem->paddr + fb->offsets[0]);
++	rcar_du_plane_write(rgrp, index, PnDSA0R, dma[0]);
+ 
+ 	if (state->format->planes = 2) {
+ 		index = (index + 1) % 8;
+ 
+-		rcar_du_plane_write(rgrp, index, PnMWR, fb->pitches[0]);
++		rcar_du_plane_write(rgrp, index, PnMWR, pitch);
+ 
+ 		rcar_du_plane_write(rgrp, index, PnSPXR, src_x);
+ 		rcar_du_plane_write(rgrp, index, PnSPYR, src_y *
+ 				    (state->format->bpp = 16 ? 2 : 1) / 2);
+ 
+-		gem = drm_fb_cma_get_gem_obj(fb, 1);
+-		rcar_du_plane_write(rgrp, index, PnDSA0R,
+-				    gem->paddr + fb->offsets[1]);
++		rcar_du_plane_write(rgrp, index, PnDSA0R, dma[1]);
+ 	}
+ }
+ 
+@@ -161,8 +164,8 @@ static void rcar_du_plane_setup_mode(struct rcar_du_plane *plane,
+ 	}
+ }
+ 
+-static void __rcar_du_plane_setup(struct rcar_du_plane *plane,
+-				  unsigned int index)
++static void rcar_du_plane_setup_format(struct rcar_du_plane *plane,
++				       unsigned int index)
+ {
+ 	struct rcar_du_plane_state *state  		to_rcar_plane_state(plane->plane.state);
+@@ -217,11 +220,11 @@ void rcar_du_plane_setup(struct rcar_du_plane *plane)
+ 	struct rcar_du_plane_state *state  		to_rcar_plane_state(plane->plane.state);
+ 
+-	__rcar_du_plane_setup(plane, state->hwindex);
++	rcar_du_plane_setup_format(plane, state->hwindex);
+ 	if (state->format->planes = 2)
+-		__rcar_du_plane_setup(plane, (state->hwindex + 1) % 8);
++		rcar_du_plane_setup_format(plane, (state->hwindex + 1) % 8);
+ 
+-	rcar_du_plane_setup_fb(plane);
++	rcar_du_plane_setup_scanout(plane);
+ }
+ 
+ static int rcar_du_plane_atomic_check(struct drm_plane *plane,
+-- 
+2.4.6
+
