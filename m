@@ -1,36 +1,50 @@
-From: hamzahfrq.sub@gmail.com
-Date: Tue, 29 Sep 2015 20:44:42 +0000
-Subject: [PATCH v3 0/6] rcar DMA engine patches
-Message-Id: <1443559488-2416-1-git-send-email-hamzahfrq.sub@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 22:51:08 +0000
+Subject: [PATCH 21/22] drm: rcar-du: lvds: Rename PLLEN bit to PLLON
+Message-Id: <1442184669-30990-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Muhammad Hamza Farooq <mfarooq@visteon.com>
+The bit is named PLLON in the datasheet, rename it.
 
-These patches have been sent after:
--removing parenthesis in 0001-dma-rcar-dma-add-wait-after-stopping-dma-engine.patch
--not fixing indentation in 0001-dma-rcar-dma-add-wait-after-stopping-dma-engine.patch
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c | 2 +-
+ drivers/gpu/drm/rcar-du/rcar_lvds_regs.h  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-This series of patches fixes several issues with the rcar DMA engine
-which were found in the debugging of sh serial DMA driver debugging. The
-fixes involve adding wait to driver after stopping the engine, adding
-pause function, checking for TE bit directly to detect a race condition
-and others
-
-Muhammad Hamza Farooq (6):
-  dma: rcar-dma: add wait after stopping dma engine
-  dma: rcar-dma: Added dma_pause operation to rcar_dma driver
-  dma: rcar-dma: check if complete DMA packet received but not processed
-  dma: rcar-dma: use result of updated get_residue in tx_status
-  dma: rcar-dma: warn if transfer cannot start as TE = 1
-  dma: rcar-dma: Fixed active descriptor initializing
-
- drivers/dma/sh/rcar-dmac.c | 69 ++++++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 66 insertions(+), 3 deletions(-)
-
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
+index e044a17a2a2f..02acebadf7d6 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
+@@ -102,7 +102,7 @@ static int rcar_du_lvdsenc_start(struct rcar_du_lvdsenc *lvds,
+ 	/* Turn the PLL on, wait for the startup delay, and turn the output
+ 	 * on.
+ 	 */
+-	lvdcr0 |= LVDCR0_PLLEN;
++	lvdcr0 |= LVDCR0_PLLON;
+ 	rcar_lvds_write(lvds, LVDCR0, lvdcr0);
+ 
+ 	usleep_range(100, 150);
+diff --git a/drivers/gpu/drm/rcar-du/rcar_lvds_regs.h b/drivers/gpu/drm/rcar-du/rcar_lvds_regs.h
+index 77cf9289ab65..b1eafd097a79 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_lvds_regs.h
++++ b/drivers/gpu/drm/rcar-du/rcar_lvds_regs.h
+@@ -18,7 +18,7 @@
+ #define LVDCR0_DMD			(1 << 12)
+ #define LVDCR0_LVMD_MASK		(0xf << 8)
+ #define LVDCR0_LVMD_SHIFT		8
+-#define LVDCR0_PLLEN			(1 << 4)
++#define LVDCR0_PLLON			(1 << 4)
+ #define LVDCR0_BEN			(1 << 2)
+ #define LVDCR0_LVEN			(1 << 1)
+ #define LVDCR0_LVRES			(1 << 0)
 -- 
-1.9.1
+2.4.6
 
