@@ -1,201 +1,130 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Sep 2015 02:01:16 +0000
-Subject: [PATCH/RFC v2 net-next 2/4] ravb: Provide dev parameter to DMA API
-Message-Id: <1441936878-18290-3-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 20:57:09 +0000
+Subject: [PATCH 31/32] v4l: vsp1: Add support for the R-Car Gen3 VSP2
+Message-Id: <1442177830-24536-32-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
+References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Add DT compatible strings for the VSP2 instances found in the R-Car Gen3
+SoCs and support them in the vsp1 driver.
 
-This patch is in preparation for using this driver on arm64 where the
-implementation of __dma_alloc_coherent fails if a device parameter is not
-provided.
-
-Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
-[horms: squashed into a single patch]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-* [horms]
-  I have only tested this on arm64.
-  It should be tested for regressions on arm hardware.
+ Documentation/devicetree/bindings/media/renesas,vsp1.txt |  5 ++++-
+ drivers/media/platform/vsp1/vsp1_drv.c                   | 12 ++++++++++++
+ drivers/media/platform/vsp1/vsp1_entity.c                |  3 ++-
+ drivers/media/platform/vsp1/vsp1_regs.h                  | 12 ++++++------
+ 4 files changed, 24 insertions(+), 8 deletions(-)
 
-v0 [Kazuya Mizuguchi, Yoshihiro Shimoda, Masaru Nagai]
-
-v1 [Simon Horman]
-* Squashed into a single patch
-
-v2 [Simon Horman]
-* No change
----
- drivers/net/ethernet/renesas/ravb_main.c | 38 ++++++++++++++++----------------
- 1 file changed, 19 insertions(+), 19 deletions(-)
-
-diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
-index 450899e9cea2..4ca093d033f8 100644
---- a/drivers/net/ethernet/renesas/ravb_main.c
-+++ b/drivers/net/ethernet/renesas/ravb_main.c
-@@ -201,7 +201,7 @@ static void ravb_ring_free(struct net_device *ndev, int q)
- 	if (priv->rx_ring[q]) {
- 		ring_size = sizeof(struct ravb_ex_rx_desc) *
- 			    (priv->num_rx_ring[q] + 1);
--		dma_free_coherent(NULL, ring_size, priv->rx_ring[q],
-+		dma_free_coherent(ndev->dev.parent, ring_size, priv->rx_ring[q],
- 				  priv->rx_desc_dma[q]);
- 		priv->rx_ring[q] = NULL;
- 	}
-@@ -209,7 +209,7 @@ static void ravb_ring_free(struct net_device *ndev, int q)
- 	if (priv->tx_ring[q]) {
- 		ring_size = sizeof(struct ravb_tx_desc) *
- 			    (priv->num_tx_ring[q] * NUM_TX_DESC + 1);
--		dma_free_coherent(NULL, ring_size, priv->tx_ring[q],
-+		dma_free_coherent(ndev->dev.parent, ring_size, priv->tx_ring[q],
- 				  priv->tx_desc_dma[q]);
- 		priv->tx_ring[q] = NULL;
- 	}
-@@ -240,13 +240,13 @@ static void ravb_ring_format(struct net_device *ndev, int q)
- 		rx_desc = &priv->rx_ring[q][i];
- 		/* The size of the buffer should be on 16-byte boundary. */
- 		rx_desc->ds_cc = cpu_to_le16(ALIGN(PKT_BUF_SZ, 16));
--		dma_addr = dma_map_single(&ndev->dev, priv->rx_skb[q][i]->data,
-+		dma_addr = dma_map_single(ndev->dev.parent, priv->rx_skb[q][i]->data,
- 					  ALIGN(PKT_BUF_SZ, 16),
- 					  DMA_FROM_DEVICE);
- 		/* We just set the data size to 0 for a failed mapping which
- 		 * should prevent DMA from happening...
- 		 */
--		if (dma_mapping_error(&ndev->dev, dma_addr))
-+		if (dma_mapping_error(ndev->dev.parent, dma_addr))
- 			rx_desc->ds_cc = cpu_to_le16(0);
- 		rx_desc->dptr = cpu_to_le32(dma_addr);
- 		rx_desc->die_dt = DT_FEMPTY;
-@@ -309,7 +309,7 @@ static int ravb_ring_init(struct net_device *ndev, int q)
+diff --git a/Documentation/devicetree/bindings/media/renesas,vsp1.txt b/Documentation/devicetree/bindings/media/renesas,vsp1.txt
+index 766f034c1e45..dc7fc142aada 100644
+--- a/Documentation/devicetree/bindings/media/renesas,vsp1.txt
++++ b/Documentation/devicetree/bindings/media/renesas,vsp1.txt
+@@ -6,7 +6,10 @@ It can be found in the Renesas R-Car second generation SoCs.
  
- 	/* Allocate all RX descriptors. */
- 	ring_size = sizeof(struct ravb_ex_rx_desc) * (priv->num_rx_ring[q] + 1);
--	priv->rx_ring[q] = dma_alloc_coherent(NULL, ring_size,
-+	priv->rx_ring[q] = dma_alloc_coherent(ndev->dev.parent, ring_size,
- 					      &priv->rx_desc_dma[q],
- 					      GFP_KERNEL);
- 	if (!priv->rx_ring[q])
-@@ -320,7 +320,7 @@ static int ravb_ring_init(struct net_device *ndev, int q)
- 	/* Allocate all TX descriptors. */
- 	ring_size = sizeof(struct ravb_tx_desc) *
- 		    (priv->num_tx_ring[q] * NUM_TX_DESC + 1);
--	priv->tx_ring[q] = dma_alloc_coherent(NULL, ring_size,
-+	priv->tx_ring[q] = dma_alloc_coherent(ndev->dev.parent, ring_size,
- 					      &priv->tx_desc_dma[q],
- 					      GFP_KERNEL);
- 	if (!priv->tx_ring[q])
-@@ -443,7 +443,7 @@ static int ravb_tx_free(struct net_device *ndev, int q)
- 		size = le16_to_cpu(desc->ds_tagl) & TX_DS;
- 		/* Free the original skb. */
- 		if (priv->tx_skb[q][entry / NUM_TX_DESC]) {
--			dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
-+			dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
- 					 size, DMA_TO_DEVICE);
- 			/* Last packet descriptor? */
- 			if (entry % NUM_TX_DESC = NUM_TX_DESC - 1) {
-@@ -546,7 +546,7 @@ static bool ravb_rx(struct net_device *ndev, int *quota, int q)
+ Required properties:
  
- 			skb = priv->rx_skb[q][entry];
- 			priv->rx_skb[q][entry] = NULL;
--			dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
-+			dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
- 					 ALIGN(PKT_BUF_SZ, 16),
- 					 DMA_FROM_DEVICE);
- 			get_ts &= (q = RAVB_NC) ?
-@@ -586,14 +586,14 @@ static bool ravb_rx(struct net_device *ndev, int *quota, int q)
- 			if (!skb)
- 				break;	/* Better luck next round. */
- 			ravb_set_buffer_align(skb);
--			dma_addr = dma_map_single(&ndev->dev, skb->data,
-+			dma_addr = dma_map_single(ndev->dev.parent, skb->data,
- 						  le16_to_cpu(desc->ds_cc),
- 						  DMA_FROM_DEVICE);
- 			skb_checksum_none_assert(skb);
- 			/* We just set the data size to 0 for a failed mapping
- 			 * which should prevent DMA  from happening...
- 			 */
--			if (dma_mapping_error(&ndev->dev, dma_addr))
-+			if (dma_mapping_error(ndev->dev.parent, dma_addr))
- 				desc->ds_cc = cpu_to_le16(0);
- 			desc->dptr = cpu_to_le32(dma_addr);
- 			priv->rx_skb[q][entry] = skb;
-@@ -1300,8 +1300,8 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
- 		 entry / NUM_TX_DESC * DPTR_ALIGN;
- 	len = PTR_ALIGN(skb->data, DPTR_ALIGN) - skb->data;
- 	memcpy(buffer, skb->data, len);
--	dma_addr = dma_map_single(&ndev->dev, buffer, len, DMA_TO_DEVICE);
--	if (dma_mapping_error(&ndev->dev, dma_addr))
-+	dma_addr = dma_map_single(ndev->dev.parent, buffer, len, DMA_TO_DEVICE);
-+	if (dma_mapping_error(ndev->dev.parent, dma_addr))
- 		goto drop;
+-  - compatible: Must contain "renesas,vsp1"
++  - compatible: Must contain one of the following values
++    - "renesas,vsp1" for the R-Car Gen2 VSP1
++    - "renesas,vsp2" for the R-Car Gen3 VSP2BC, VSP2BD or VSP2I
++    - "renesas,vsp2d" for the R-Car Gen3 VSP2D
  
- 	desc = &priv->tx_ring[q][entry];
-@@ -1310,8 +1310,8 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+   - reg: Base address and length of the registers block for the VSP1.
+   - interrupts: VSP1 interrupt specifier.
+diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
+index 5d58cad5b125..75cdf8715d9a 100644
+--- a/drivers/media/platform/vsp1/vsp1_drv.c
++++ b/drivers/media/platform/vsp1/vsp1_drv.c
+@@ -648,8 +648,20 @@ static const struct vsp1_device_info vsp1_gen2_info = {
+ 	.uapi = true,
+ };
  
- 	buffer = skb->data + len;
- 	len = skb->len - len;
--	dma_addr = dma_map_single(&ndev->dev, buffer, len, DMA_TO_DEVICE);
--	if (dma_mapping_error(&ndev->dev, dma_addr))
-+	dma_addr = dma_map_single(ndev->dev.parent, buffer, len, DMA_TO_DEVICE);
-+	if (dma_mapping_error(ndev->dev.parent, dma_addr))
- 		goto unmap;
++static const struct vsp1_device_info vsp1_gen3_info = {
++	.num_bru_inputs = 5,
++	.uapi = true,
++};
++
++static const struct vsp1_device_info vsp1_gen3_vspd_info = {
++	.num_bru_inputs = 5,
++	.uapi = false,
++};
++
+ static const struct of_device_id vsp1_of_match[] = {
+ 	{ .compatible = "renesas,vsp1", .data = &vsp1_gen2_info },
++	{ .compatible = "renesas,vsp2", .data = &vsp1_gen3_info },
++	{ .compatible = "renesas,vsp2d", .data = &vsp1_gen3_vspd_info },
+ 	{ },
+ };
  
- 	desc++;
-@@ -1323,7 +1323,7 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
- 		ts_skb = kmalloc(sizeof(*ts_skb), GFP_ATOMIC);
- 		if (!ts_skb) {
- 			desc--;
--			dma_unmap_single(&ndev->dev, dma_addr, len,
-+			dma_unmap_single(ndev->dev.parent, dma_addr, len,
- 					 DMA_TO_DEVICE);
- 			goto unmap;
- 		}
-@@ -1358,7 +1358,7 @@ exit:
- 	return NETDEV_TX_OK;
+diff --git a/drivers/media/platform/vsp1/vsp1_entity.c b/drivers/media/platform/vsp1/vsp1_entity.c
+index 79e05b76d6e3..8947c1883bf4 100644
+--- a/drivers/media/platform/vsp1/vsp1_entity.c
++++ b/drivers/media/platform/vsp1/vsp1_entity.c
+@@ -165,7 +165,8 @@ int vsp1_entity_link_setup(struct media_entity *entity,
+ static const struct vsp1_route vsp1_routes[] = {
+ 	{ VSP1_ENTITY_BRU, 0, VI6_DPR_BRU_ROUTE,
+ 	  { VI6_DPR_NODE_BRU_IN(0), VI6_DPR_NODE_BRU_IN(1),
+-	    VI6_DPR_NODE_BRU_IN(2), VI6_DPR_NODE_BRU_IN(3), } },
++	    VI6_DPR_NODE_BRU_IN(2), VI6_DPR_NODE_BRU_IN(3),
++	    VI6_DPR_NODE_BRU_IN(4) } },
+ 	{ VSP1_ENTITY_HSI, 0, VI6_DPR_HSI_ROUTE, { VI6_DPR_NODE_HSI, } },
+ 	{ VSP1_ENTITY_HST, 0, VI6_DPR_HST_ROUTE, { VI6_DPR_NODE_HST, } },
+ 	{ VSP1_ENTITY_LIF, 0, 0, { VI6_DPR_NODE_LIF, } },
+diff --git a/drivers/media/platform/vsp1/vsp1_regs.h b/drivers/media/platform/vsp1/vsp1_regs.h
+index 8173ceaab9f9..f94050224aa0 100644
+--- a/drivers/media/platform/vsp1/vsp1_regs.h
++++ b/drivers/media/platform/vsp1/vsp1_regs.h
+@@ -322,7 +322,7 @@
+ #define VI6_DPR_NODE_SRU		16
+ #define VI6_DPR_NODE_UDS(n)		(17 + (n))
+ #define VI6_DPR_NODE_LUT		22
+-#define VI6_DPR_NODE_BRU_IN(n)		(23 + (n))
++#define VI6_DPR_NODE_BRU_IN(n)		(((n) <= 3) ? 23 + (n) : 49)
+ #define VI6_DPR_NODE_BRU_OUT		27
+ #define VI6_DPR_NODE_CLU		29
+ #define VI6_DPR_NODE_HST		30
+@@ -504,12 +504,12 @@
+ #define VI6_BRU_VIRRPF_COL_BCB_MASK	(0xff << 0)
+ #define VI6_BRU_VIRRPF_COL_BCB_SHIFT	0
  
- unmap:
--	dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
-+	dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
- 			 le16_to_cpu(desc->ds_tagl), DMA_TO_DEVICE);
- drop:
- 	dev_kfree_skb_any(skb);
-@@ -1708,7 +1708,7 @@ static int ravb_probe(struct platform_device *pdev)
+-#define VI6_BRU_CTRL(n)			(0x2c10 + (n) * 8)
++#define VI6_BRU_CTRL(n)			(0x2c10 + (n) * 8 + ((n) <= 3 ? 0 : 4))
+ #define VI6_BRU_CTRL_RBC		(1 << 31)
+-#define VI6_BRU_CTRL_DSTSEL_BRUIN(n)	((n) << 20)
++#define VI6_BRU_CTRL_DSTSEL_BRUIN(n)	(((n) <= 3 ? (n) : (n)+1) << 20)
+ #define VI6_BRU_CTRL_DSTSEL_VRPF	(4 << 20)
+ #define VI6_BRU_CTRL_DSTSEL_MASK	(7 << 20)
+-#define VI6_BRU_CTRL_SRCSEL_BRUIN(n)	((n) << 16)
++#define VI6_BRU_CTRL_SRCSEL_BRUIN(n)	(((n) <= 3 ? (n) : (n)+1) << 16)
+ #define VI6_BRU_CTRL_SRCSEL_VRPF	(4 << 16)
+ #define VI6_BRU_CTRL_SRCSEL_MASK	(7 << 16)
+ #define VI6_BRU_CTRL_CROP(rop)		((rop) << 4)
+@@ -517,7 +517,7 @@
+ #define VI6_BRU_CTRL_AROP(rop)		((rop) << 0)
+ #define VI6_BRU_CTRL_AROP_MASK		(0xf << 0)
  
- 	/* Allocate descriptor base address table */
- 	priv->desc_bat_size = sizeof(struct ravb_desc) * DBAT_ENTRY_NUM;
--	priv->desc_bat = dma_alloc_coherent(NULL, priv->desc_bat_size,
-+	priv->desc_bat = dma_alloc_coherent(ndev->dev.parent, priv->desc_bat_size,
- 					    &priv->desc_bat_dma, GFP_KERNEL);
- 	if (!priv->desc_bat) {
- 		dev_err(&ndev->dev,
-@@ -1763,7 +1763,7 @@ out_napi_del:
- 	netif_napi_del(&priv->napi[RAVB_BE]);
- 	ravb_mdio_release(priv);
- out_dma_free:
--	dma_free_coherent(NULL, priv->desc_bat_size, priv->desc_bat,
-+	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
- 			  priv->desc_bat_dma);
- out_release:
- 	if (ndev)
-@@ -1779,7 +1779,7 @@ static int ravb_remove(struct platform_device *pdev)
- 	struct net_device *ndev = platform_get_drvdata(pdev);
- 	struct ravb_private *priv = netdev_priv(ndev);
+-#define VI6_BRU_BLD(n)			(0x2c14 + (n) * 8)
++#define VI6_BRU_BLD(n)			(0x2c14 + (n) * 8 + ((n) <= 3 ? 0 : 4))
+ #define VI6_BRU_BLD_CBES		(1 << 31)
+ #define VI6_BRU_BLD_CCMDX_DST_A		(0 << 28)
+ #define VI6_BRU_BLD_CCMDX_255_DST_A	(1 << 28)
+@@ -551,7 +551,7 @@
+ #define VI6_BRU_BLD_COEFY_SHIFT		0
  
--	dma_free_coherent(NULL, priv->desc_bat_size, priv->desc_bat,
-+	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
- 			  priv->desc_bat_dma);
- 	/* Set reset mode */
- 	ravb_write(ndev, CCC_OPC_RESET, CCC);
+ #define VI6_BRU_ROP			0x2c30
+-#define VI6_BRU_ROP_DSTSEL_BRUIN(n)	((n) << 20)
++#define VI6_BRU_ROP_DSTSEL_BRUIN(n)	(((n) <= 3 ? (n) : (n)+1) << 20)
+ #define VI6_BRU_ROP_DSTSEL_VRPF		(4 << 20)
+ #define VI6_BRU_ROP_DSTSEL_MASK		(7 << 20)
+ #define VI6_BRU_ROP_CROP(rop)		((rop) << 4)
 -- 
-2.1.4
+2.4.6
 
