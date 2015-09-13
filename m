@@ -1,92 +1,86 @@
-From: Rob Herring <robh@kernel.org>
-Date: Tue, 15 Sep 2015 18:57:01 +0000
-Subject: Re: [PATCH v2 2/2] irqchip: gic: Document optional Clock and Power Domain properties
-Message-Id: <55F869FD.4090900@kernel.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 22:50:47 +0000
+Subject: [PATCH 00/22] R-Car DU: Add Gen3 support
+Message-Id: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442261204-30931-1-git-send-email-geert+renesas@glider.be>
- <1442261204-30931-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1442261204-30931-3-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-On 09/14/2015 03:06 PM, Geert Uytterhoeven wrote:
-> Depending on the GIC variant, the GIC module has one or more clock
-> inputs. Document the optional "clocks" and "clock-names" properties,
-> and their possible values, based on the Technical Reference Manuals.
-> optional.
-> 
-> Add the optional "power-domains" property.
-> 
-> This will allow to describe in DT the relationship between the GIC and
-> the Clock and/or Power Domain topology on SoCs where this is relevant
-> and needed for proper operation.
-> 
-> Note: As the current GIC driver doesn't support Runtime PM yet, PM
-> Domain constraints must be handled elsewhere in e.g. platform code.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Note: v1 was Acked-by: Rob Herring <robh@kernel.org>, but I didn't add
->       it, due to the addition of clock-names.
+Hello,
 
-For both: ack.
+This patch series adds support for the Display Unit found in the R-Car Gen3
+SoC series.
 
-> 
-> v2:
->   - Add "clock-names",
->   - Document clock inputs on various GIC variants.
-> 
-> Clock inputs are based on the following documentation:
->   - "ARM11 MPCore Processor Technical Reference Manual" (r2p0),
->   - "Cortex-A9 MPCore Technical Reference Manual" (r4p1, r2p0),
->   - "Cortex-A15 Technical Reference Manual" (r4p0, r2p0),
->   - "CoreLink GIC-400 Generic Interrupt Controller Technical Reference
->     Manual" (r0p1, r0p0),
->   - "PrimeCell Generic Interrupt Controller (PL390) Technical Reference
->     Manual" (r0p0).
-> 
-> I could not find clock input information in:
->   - "ARM1176JZF Development Chip Technical Reference Manual" (r0p0),
->   - "Cortex-A7 MPCore processors" (r0p5, r0p3).
-> 
-> Other:
->   - "brcm,brahma-b15-gic" seems to be always used together with
->     "arm,cortex-a15-gic".
-> 
-> No access to datasheets:
->   - "qcom,msm-8660-qgic",
->   - "qcom,msm-qgic2".
-> ---
->  Documentation/devicetree/bindings/arm/gic.txt | 15 +++++++++++++++
->  1 file changed, 15 insertions(+)
-> 
-> diff --git a/Documentation/devicetree/bindings/arm/gic.txt b/Documentation/devicetree/bindings/arm/gic.txt
-> index 24742853ba460223..cc56021eb60babea 100644
-> --- a/Documentation/devicetree/bindings/arm/gic.txt
-> +++ b/Documentation/devicetree/bindings/arm/gic.txt
-> @@ -59,6 +59,21 @@ Optional
->    regions, used when the GIC doesn't have banked registers. The offset is
->    cpu-offset * cpu-nr.
->  
-> +- clocks        : List of phandle and clock-specific pairs, one for each entry
-> +  in clock-names.
-> +- clock-names   : List of names for the GIC clock input(s). Valid clock names
-> +  depend on the GIC variant:
-> +	"ic_clk" (for "arm,arm11mp-gic")
-> +	"PERIPHCLKEN" (for "arm,cortex-a15-gic")
-> +	"PERIPHCLK", "PERIPHCLKEN" (for "arm,cortex-a9-gic")
-> +	"clk" (for "arm,gic-400")
-> +	"gclk" (for "arm,pl390")
-> +
-> +- power-domains : A phandle and PM domain specifier as defined by bindings of
-> +		  the power controller specified by phandle, used when the GIC
-> +		  is part of a Power or Clock Domain.
-> +
-> +
->  Example:
->  
->  	intc: interrupt-controller@fff11000 {
-> 
+The third generation differs significantly from the previous ones in that the
+DU has lost its ability to source data from memory. It must instead use an
+external hardware composer named VSP to read planes from memory and blend
+them.
+
+The VSP has a V4L2 driver in mainline that can be used in conjunction with the
+DU through the live sources API (submitted previously as an RFC). However, as
+VSP usage is mandatory in Gen3 and as no native DU planes are available, we
+have decided that forcing userspace to use both KMS and V4L2 to display any
+content wouldn't be very friendly. Instead the VSP driver has been extended to
+make the device directly controllable by the DU driver ([1]) and this patch
+series builds on top of it.
+
+[1] http://www.spinics.net/lists/linux-media/msg93575.html
+
+Koji Matsuoka (4):
+  drm: rcar-du: Fix compile warning on 64-bit platforms
+  drm: rcar-du: Enable compilation on ARM64
+  drm: rcar-du: Support up to 4 CRTCs
+  drm: rcar-du: lvds: Add R-Car Gen3 support
+
+Laurent Pinchart (18):
+  drm: rcar-du: Don't update planes on disabled CRTCs
+  drm: rcar-du: Add support for the R8A7793 DU
+  drm: rcar-du: Add support for the R8A7794 DU
+  drm: rcar-du: Compute plane DDCR4 register value directly
+  drm: rcar-du: Refactor plane setup
+  drm: rcar-du: Add VSP1 support to the planes allocator
+  drm: rcar-du: Add VSP1 compositor support
+  drm: rcar-du: Restart the DU group when a plane source changes
+  drm: rcar-du: Move plane allocator to rcar_du_plane.c
+  drm: rcar-du: Expose the VSP1 compositor through KMS planes
+  drm: rcar-du: Use the VSP atomic update API
+  drm: rcar-du: Drop LVDS double dependency on OF
+  drm: rcar-du: Output the DISP signal on the DISP pin
+  drm: rcar-du: Output the DISP signal on the ODDF pin
+  drm: rcar-du: Add R8A7795 device support
+  drm: rcar-du: lvds: Avoid duplication of clock clamp code
+  drm: rcar-du: lvds: Fix PLL frequency-related configuration
+  drm: rcar-du: lvds: Rename PLLEN bit to PLLON
+
+ .../devicetree/bindings/video/renesas,du.txt       |  22 +-
+ drivers/gpu/drm/rcar-du/Kconfig                    |  15 +-
+ drivers/gpu/drm/rcar-du/Makefile                   |   2 +
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c             |  63 ++-
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.h             |   2 +
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c              |  58 ++-
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h              |  12 +-
+ drivers/gpu/drm/rcar-du/rcar_du_encoder.c          |   6 +-
+ drivers/gpu/drm/rcar-du/rcar_du_group.c            |  73 +++-
+ drivers/gpu/drm/rcar-du/rcar_du_group.h            |   4 +
+ drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c          |   7 +-
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c              | 273 ++----------
+ drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c          | 142 +++++--
+ drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h          |   6 +
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c            | 465 ++++++++++++++++++---
+ drivers/gpu/drm/rcar-du/rcar_du_plane.h            |  21 +-
+ drivers/gpu/drm/rcar-du/rcar_du_regs.h             |  21 +-
+ drivers/gpu/drm/rcar-du/rcar_du_vsp.c              | 373 +++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_vsp.h              |  76 ++++
+ drivers/gpu/drm/rcar-du/rcar_lvds_regs.h           |  26 +-
+ 20 files changed, 1263 insertions(+), 404 deletions(-)
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vsp.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vsp.h
+
+-- 
+Regards,
+
+Laurent Pinchart
 
