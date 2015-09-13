@@ -1,187 +1,107 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 14 Sep 2015 12:14:33 +0000
-Subject: [PATCH 11/14] ARM: shmobile: r8a7791: Rename the serial port clock to fck
-Message-Id: <1442232876-27629-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 20:56:39 +0000
+Subject: [PATCH 01/32] v4l: vsp1: Change the type of the rwpf field in struct vsp1_video
+Message-Id: <1442177830-24536-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-The clock is really the device functional clock, not the interface
-clock. Rename it.
+The rwpf field contains a pointer to the rpf or wpf associated with the
+video node. Instead of storing it as a vsp1_entity, store the
+corresponding vsp1_rwpf pointer to allow accessing the vsp1_rwpf fields
+directly.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 36 ++++++++++++++++++------------------
- 1 file changed, 18 insertions(+), 18 deletions(-)
+ drivers/media/platform/vsp1/vsp1_rpf.c   | 2 +-
+ drivers/media/platform/vsp1/vsp1_video.c | 4 ++--
+ drivers/media/platform/vsp1/vsp1_video.h | 5 +++--
+ drivers/media/platform/vsp1/vsp1_wpf.c   | 2 +-
+ 4 files changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index 328f48bd15e7..6227d411f526 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -563,7 +563,7 @@
- 		reg = <0 0xe6c40000 0 64>;
- 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_SCIFA0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -575,7 +575,7 @@
- 		reg = <0 0xe6c50000 0 64>;
- 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_SCIFA1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x25>, <&dmac0 0x26>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -587,7 +587,7 @@
- 		reg = <0 0xe6c60000 0 64>;
- 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_SCIFA2>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x27>, <&dmac0 0x28>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -599,7 +599,7 @@
- 		reg = <0 0xe6c70000 0 64>;
- 		interrupts = <0 29 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7791_CLK_SCIFA3>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x1b>, <&dmac0 0x1c>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -611,7 +611,7 @@
- 		reg = <0 0xe6c78000 0 64>;
- 		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7791_CLK_SCIFA4>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x1f>, <&dmac0 0x20>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -623,7 +623,7 @@
- 		reg = <0 0xe6c80000 0 64>;
- 		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7791_CLK_SCIFA5>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x23>, <&dmac0 0x24>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -635,7 +635,7 @@
- 		reg = <0 0xe6c20000 0 64>;
- 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_SCIFB0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x3d>, <&dmac0 0x3e>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -647,7 +647,7 @@
- 		reg = <0 0xe6c30000 0 64>;
- 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_SCIFB1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x19>, <&dmac0 0x1a>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -659,7 +659,7 @@
- 		reg = <0 0xe6ce0000 0 64>;
- 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7791_CLK_SCIFB2>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x1d>, <&dmac0 0x1e>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -671,7 +671,7 @@
- 		reg = <0 0xe6e60000 0 64>;
- 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_SCIF0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -683,7 +683,7 @@
- 		reg = <0 0xe6e68000 0 64>;
- 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_SCIF1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -695,7 +695,7 @@
- 		reg = <0 0xe6e58000 0 64>;
- 		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_SCIF2>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x2b>, <&dmac0 0x2c>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -707,7 +707,7 @@
- 		reg = <0 0xe6ea8000 0 64>;
- 		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_SCIF3>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x2f>, <&dmac0 0x30>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -719,7 +719,7 @@
- 		reg = <0 0xe6ee0000 0 64>;
- 		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_SCIF4>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0xfb>, <&dmac0 0xfc>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -731,7 +731,7 @@
- 		reg = <0 0xe6ee8000 0 64>;
- 		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_SCIF5>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0xfd>, <&dmac0 0xfe>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -743,7 +743,7 @@
- 		reg = <0 0xe62c0000 0 96>;
- 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_HSCIF0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -755,7 +755,7 @@
- 		reg = <0 0xe62c8000 0 96>;
- 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_HSCIF1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
-@@ -767,7 +767,7 @@
- 		reg = <0 0xe62d0000 0 96>;
- 		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7791_CLK_HSCIF2>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		dmas = <&dmac0 0x3b>, <&dmac0 0x3c>;
- 		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
+diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
+index 3294529a3108..a1093cc1b9a1 100644
+--- a/drivers/media/platform/vsp1/vsp1_rpf.c
++++ b/drivers/media/platform/vsp1/vsp1_rpf.c
+@@ -271,7 +271,7 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 	video->vsp1 = vsp1;
+ 	video->ops = &rpf_vdev_ops;
+ 
+-	ret = vsp1_video_init(video, &rpf->entity);
++	ret = vsp1_video_init(video, rpf);
+ 	if (ret < 0)
+ 		goto error;
+ 
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index 3c124c14ce14..48480e66fad6 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -1187,7 +1187,7 @@ static struct v4l2_file_operations vsp1_video_fops = {
+  * Initialization and Cleanup
+  */
+ 
+-int vsp1_video_init(struct vsp1_video *video, struct vsp1_entity *rwpf)
++int vsp1_video_init(struct vsp1_video *video, struct vsp1_rwpf *rwpf)
+ {
+ 	const char *direction;
+ 	int ret;
+@@ -1242,7 +1242,7 @@ int vsp1_video_init(struct vsp1_video *video, struct vsp1_entity *rwpf)
+ 	video->video.v4l2_dev = &video->vsp1->v4l2_dev;
+ 	video->video.fops = &vsp1_video_fops;
+ 	snprintf(video->video.name, sizeof(video->video.name), "%s %s",
+-		 rwpf->subdev.name, direction);
++		 rwpf->entity.subdev.name, direction);
+ 	video->video.vfl_type = VFL_TYPE_GRABBER;
+ 	video->video.release = video_device_release_empty;
+ 	video->video.ioctl_ops = &vsp1_video_ioctl_ops;
+diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
+index 0887a4d2742c..5f48eec5562c 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.h
++++ b/drivers/media/platform/vsp1/vsp1_video.h
+@@ -20,6 +20,7 @@
+ #include <media/media-entity.h>
+ #include <media/videobuf2-core.h>
+ 
++struct vsp1_rwpf;
+ struct vsp1_video;
+ 
+ /*
+@@ -113,7 +114,7 @@ struct vsp1_video_operations {
+ 
+ struct vsp1_video {
+ 	struct vsp1_device *vsp1;
+-	struct vsp1_entity *rwpf;
++	struct vsp1_rwpf *rwpf;
+ 
+ 	const struct vsp1_video_operations *ops;
+ 
+@@ -140,7 +141,7 @@ static inline struct vsp1_video *to_vsp1_video(struct video_device *vdev)
+ 	return container_of(vdev, struct vsp1_video, video);
+ }
+ 
+-int vsp1_video_init(struct vsp1_video *video, struct vsp1_entity *rwpf);
++int vsp1_video_init(struct vsp1_video *video, struct vsp1_rwpf *rwpf);
+ void vsp1_video_cleanup(struct vsp1_video *video);
+ 
+ void vsp1_pipeline_frame_end(struct vsp1_pipeline *pipe);
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index 1d2b3a2f1573..50dfb3060156 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -271,7 +271,7 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 	video->vsp1 = vsp1;
+ 	video->ops = &wpf_vdev_ops;
+ 
+-	ret = vsp1_video_init(video, &wpf->entity);
++	ret = vsp1_video_init(video, wpf);
+ 	if (ret < 0)
+ 		goto error;
+ 
 -- 
 2.4.6
 
