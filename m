@@ -1,82 +1,75 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 18 Sep 2015 02:04:14 +0000
-Subject: [PATCH 05/18 v3] arm64: renesas: r8a7795: Sound SSI DMA support
-Message-Id: <8761381o80.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 20:56:51 +0000
+Subject: [PATCH 13/32] v4l: vsp1: Extract pipeline initialization code into a function
+Message-Id: <1442177830-24536-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The code will be reused outside of vsp1_video.c.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2 -> v3
+ drivers/media/platform/vsp1/vsp1_pipe.c  | 10 ++++++++++
+ drivers/media/platform/vsp1/vsp1_pipe.h  |  1 +
+ drivers/media/platform/vsp1/vsp1_video.c |  6 +-----
+ 3 files changed, 12 insertions(+), 5 deletions(-)
 
- - no change
-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index b7ee56b..bdb0273 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -1010,33 +1010,53 @@
- 			rcar_sound,ssi {
- 				ssi0: ssi@0 {
- 					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x01>, <&audma1 0x02>, <&audma0 0x15>, <&audma1 0x16>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi1: ssi@1 {
- 					 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x03>, <&audma1 0x04>, <&audma0 0x49>, <&audma1 0x4a>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi2: ssi@2 {
- 					interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x05>, <&audma1 0x06>, <&audma0 0x63>, <&audma1 0x64>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi3: ssi@3 {
- 					interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x07>, <&audma1 0x08>, <&audma0 0x6f>, <&audma1 0x70>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi4: ssi@4 {
- 					interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x09>, <&audma1 0x0a>, <&audma0 0x71>, <&audma1 0x72>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi5: ssi@5 {
- 					interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0b>, <&audma1 0x0c>, <&audma0 0x73>, <&audma1 0x74>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi6: ssi@6 {
- 					interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0d>, <&audma1 0x0e>, <&audma0 0x75>, <&audma1 0x76>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi7: ssi@7 {
- 					interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0f>, <&audma1 0x10>, <&audma0 0x79>, <&audma1 0x7a>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi8: ssi@8 {
- 					interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x11>, <&audma1 0x12>, <&audma0 0x7b>, <&audma1 0x7c>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi9: ssi@9 {
- 					interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x13>, <&audma1 0x14>, <&audma0 0x7d>, <&audma1 0x7e>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 			};
- 		};
+diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c b/drivers/media/platform/vsp1/vsp1_pipe.c
+index 199d57f1fe06..524420ed6333 100644
+--- a/drivers/media/platform/vsp1/vsp1_pipe.c
++++ b/drivers/media/platform/vsp1/vsp1_pipe.c
+@@ -48,6 +48,16 @@ void vsp1_pipeline_reset(struct vsp1_pipeline *pipe)
+ 	pipe->uds = NULL;
+ }
+ 
++void vsp1_pipeline_init(struct vsp1_pipeline *pipe)
++{
++	mutex_init(&pipe->lock);
++	spin_lock_init(&pipe->irqlock);
++	init_waitqueue_head(&pipe->wq);
++
++	INIT_LIST_HEAD(&pipe->entities);
++	pipe->state = VSP1_PIPELINE_STOPPED;
++}
++
+ void vsp1_pipeline_run(struct vsp1_pipeline *pipe)
+ {
+ 	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
+diff --git a/drivers/media/platform/vsp1/vsp1_pipe.h b/drivers/media/platform/vsp1/vsp1_pipe.h
+index f8a099fba973..8553d5a03aa3 100644
+--- a/drivers/media/platform/vsp1/vsp1_pipe.h
++++ b/drivers/media/platform/vsp1/vsp1_pipe.h
+@@ -67,6 +67,7 @@ static inline struct vsp1_pipeline *to_vsp1_pipeline(struct media_entity *e)
+ }
+ 
+ void vsp1_pipeline_reset(struct vsp1_pipeline *pipe);
++void vsp1_pipeline_init(struct vsp1_pipeline *pipe);
+ 
+ void vsp1_pipeline_run(struct vsp1_pipeline *pipe);
+ bool vsp1_pipeline_stopped(struct vsp1_pipeline *pipe);
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index 8569836ea51b..ec68890af14b 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -1009,11 +1009,7 @@ struct vsp1_video *vsp1_video_create(struct vsp1_device *vsp1,
+ 	spin_lock_init(&video->irqlock);
+ 	INIT_LIST_HEAD(&video->irqqueue);
+ 
+-	mutex_init(&video->pipe.lock);
+-	spin_lock_init(&video->pipe.irqlock);
+-	INIT_LIST_HEAD(&video->pipe.entities);
+-	init_waitqueue_head(&video->pipe.wq);
+-	video->pipe.state = VSP1_PIPELINE_STOPPED;
++	vsp1_pipeline_init(&video->pipe);
+ 	video->pipe.frame_end = vsp1_video_pipeline_frame_end;
+ 
+ 	/* Initialize the media entity... */
 -- 
-1.9.1
+2.4.6
 
