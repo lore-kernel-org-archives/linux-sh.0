@@ -1,311 +1,742 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 22:50:54 +0000
-Subject: [PATCH 07/22] drm: rcar-du: Add VSP1 compositor support
-Message-Id: <1442184669-30990-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 20:57:06 +0000
+Subject: [PATCH 28/32] v4l: vsp1: Add VSP+DU support
+Message-Id: <1442177830-24536-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
+To: linux-media@vger.kernel.org
 Cc: linux-sh@vger.kernel.org
 
-Configure the plane source at plane setup time to source frames from
-memory or from the VSP1.
+Implement internal control of the VSP pipeline to be used by the DU
+DRM/KMS driver when using the VSP as an internal composer handled
+through DRM/KMS only.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/gpu/drm/rcar-du/rcar_du_drv.h   |  2 +
- drivers/gpu/drm/rcar-du/rcar_du_group.c | 24 +++++----
- drivers/gpu/drm/rcar-du/rcar_du_group.h |  2 +
- drivers/gpu/drm/rcar-du/rcar_du_kms.c   | 16 ++++--
- drivers/gpu/drm/rcar-du/rcar_du_plane.c | 86 +++++++++++++++++++--------------
- drivers/gpu/drm/rcar-du/rcar_du_regs.h  |  1 +
- 6 files changed, 82 insertions(+), 49 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.h b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-index 9f34fc86436a..e10b4f0d8f83 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.h
-@@ -90,6 +90,8 @@ struct rcar_du_device {
- 	} props;
+---
+ drivers/media/platform/vsp1/Makefile   |   2 +-
+ drivers/media/platform/vsp1/vsp1.h     |   3 +-
+ drivers/media/platform/vsp1/vsp1_drm.c | 550 +++++++++++++++++++++++++++++++++
+ drivers/media/platform/vsp1/vsp1_drm.h |  26 ++
+ drivers/media/platform/vsp1/vsp1_drv.c |  13 +-
+ include/media/vsp1.h                   |  30 ++
+ 6 files changed, 617 insertions(+), 7 deletions(-)
+ create mode 100644 drivers/media/platform/vsp1/vsp1_drm.c
+ create mode 100644 drivers/media/platform/vsp1/vsp1_drm.h
+ create mode 100644 include/media/vsp1.h
+
+diff --git a/drivers/media/platform/vsp1/Makefile b/drivers/media/platform/vsp1/Makefile
+index 0ef0b5384125..447e72a2ef43 100644
+--- a/drivers/media/platform/vsp1/Makefile
++++ b/drivers/media/platform/vsp1/Makefile
+@@ -1,5 +1,5 @@
+ vsp1-y					:= vsp1_drv.o vsp1_entity.o vsp1_pipe.o
+-vsp1-y					+= vsp1_video.o
++vsp1-y					+= vsp1_drm.o vsp1_video.o
+ vsp1-y					+= vsp1_rpf.o vsp1_rwpf.o vsp1_wpf.o
+ vsp1-y					+= vsp1_hsit.o vsp1_lif.o vsp1_lut.o
+ vsp1-y					+= vsp1_bru.o vsp1_sru.o vsp1_uds.o
+diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
+index 6102ade125bb..61a24e4a0848 100644
+--- a/drivers/media/platform/vsp1/vsp1.h
++++ b/drivers/media/platform/vsp1/vsp1.h
+@@ -26,6 +26,7 @@
+ struct clk;
+ struct device;
  
- 	unsigned int dpad0_source;
-+	unsigned int vspd1_sink;
++struct vsp1_drm;
+ struct vsp1_platform_data;
+ struct vsp1_bru;
+ struct vsp1_hsit;
+@@ -82,8 +83,8 @@ struct vsp1_device {
+ 
+ 	struct v4l2_device v4l2_dev;
+ 	struct media_device media_dev;
+-
+ 	struct media_entity_operations media_ops;
++	struct vsp1_drm *drm;
+ };
+ 
+ int vsp1_device_get(struct vsp1_device *vsp1);
+diff --git a/drivers/media/platform/vsp1/vsp1_drm.c b/drivers/media/platform/vsp1/vsp1_drm.c
+new file mode 100644
+index 000000000000..2969d570f462
+--- /dev/null
++++ b/drivers/media/platform/vsp1/vsp1_drm.c
+@@ -0,0 +1,550 @@
++/*
++ * vsp1_drm.c  --  R-Car VSP1 DRM API
++ *
++ * Copyright (C) 2015 Renesas Electronics Corporation
++ *
++ * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
 +
- 	struct rcar_du_lvdsenc *lvds[RCAR_DU_MAX_LVDS];
- 
- 	struct {
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.c b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-index 8e2ffe025153..4a44ddd51766 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_group.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_group.c
-@@ -49,11 +49,15 @@ static void rcar_du_group_setup_defr8(struct rcar_du_group *rgrp)
- 	u32 defr8 = DEFR8_CODE | DEFR8_DEFE8;
- 
- 	/* The DEFR8 register for the first group also controls RGB output
--	 * routing to DPAD0 for DU instances that support it.
-+	 * routing to DPAD0 and VSPD1 routing to DU0/1/2 for DU instances that
-+	 * support it.
- 	 */
--	if (rgrp->dev->info->routes[RCAR_DU_OUTPUT_DPAD0].possible_crtcs > 1 &&
--	    rgrp->index = 0)
--		defr8 |= DEFR8_DRGBS_DU(rgrp->dev->dpad0_source);
-+	if (rgrp->index = 0) {
-+		if (rgrp->dev->info->routes[RCAR_DU_OUTPUT_DPAD0].possible_crtcs > 1)
-+			defr8 |= DEFR8_DRGBS_DU(rgrp->dev->dpad0_source);
-+		if (rgrp->dev->vspd1_sink = 2)
-+			defr8 |= DEFR8_VSCS;
-+	}
- 
- 	rcar_du_group_write(rgrp, DEFR8, defr8);
- }
-@@ -162,17 +166,17 @@ void rcar_du_group_restart(struct rcar_du_group *rgrp)
- 	__rcar_du_group_start_stop(rgrp, true);
- }
- 
--static int rcar_du_set_dpad0_routing(struct rcar_du_device *rcdu)
-+int rcar_du_set_dpad0_vsp1_routing(struct rcar_du_device *rcdu)
- {
- 	int ret;
- 
- 	if (!rcar_du_has(rcdu, RCAR_DU_FEATURE_EXT_CTRL_REGS))
- 		return 0;
- 
--	/* RGB output routing to DPAD0 is configured in the DEFR8 register of
--	 * the first group. As this function can be called with the DU0 and DU1
--	 * CRTCs disabled, we need to enable the first group clock before
--	 * accessing the register.
-+	/* RGB output routing to DPAD0 and VSP1D routing to DU0/1/2 are
-+	 * configured in the DEFR8 register of the first group. As this function
-+	 * can be called with the DU0 and DU1 CRTCs disabled, we need to enable
-+	 * the first group clock before accessing the register.
- 	 */
- 	ret = clk_prepare_enable(rcdu->crtcs[0].clock);
- 	if (ret < 0)
-@@ -203,5 +207,5 @@ int rcar_du_group_set_routing(struct rcar_du_group *rgrp)
- 
- 	rcar_du_group_write(rgrp, DORCR, dorcr);
- 
--	return rcar_du_set_dpad0_routing(rgrp->dev);
-+	return rcar_du_set_dpad0_vsp1_routing(rgrp->dev);
- }
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_group.h b/drivers/gpu/drm/rcar-du/rcar_du_group.h
-index d7318e1a6b00..4b1952fd4e7d 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_group.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_group.h
-@@ -58,4 +58,6 @@ void rcar_du_group_start_stop(struct rcar_du_group *rgrp, bool start);
- void rcar_du_group_restart(struct rcar_du_group *rgrp);
- int rcar_du_group_set_routing(struct rcar_du_group *rgrp);
- 
-+int rcar_du_set_dpad0_vsp1_routing(struct rcar_du_device *rcdu);
++#include <linux/device.h>
++#include <linux/slab.h>
++#include <linux/vsp1.h>
 +
- #endif /* __RCAR_DU_GROUP_H__ */
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-index 455f7e466181..ba4e100e5b0f 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
-@@ -217,17 +217,25 @@ static void rcar_du_output_poll_changed(struct drm_device *dev)
-  */
- 
- static bool rcar_du_plane_needs_realloc(struct rcar_du_plane *plane,
--					struct rcar_du_plane_state *state)
-+					struct rcar_du_plane_state *new_state)
- {
--	const struct rcar_du_format_info *cur_format;
-+	struct rcar_du_plane_state *cur_state;
- 
--	cur_format = to_rcar_plane_state(plane->plane.state)->format;
-+	cur_state = to_rcar_plane_state(plane->plane.state);
- 
- 	/* Lowering the number of planes doesn't strictly require reallocation
- 	 * as the extra hardware plane will be freed when committing, but doing
- 	 * so could lead to more fragmentation.
- 	 */
--	return !cur_format || cur_format->planes != state->format->planes;
-+	if (!cur_state->format ||
-+	    cur_state->format->planes != new_state->format->planes)
-+		return true;
++#include <media/media-entity.h>
++#include <media/v4l2-subdev.h>
 +
-+	/* Reallocate hardware planes if the source has changed. */
-+	if (cur_state->source != new_state->source)
-+		return true;
++#include "vsp1.h"
++#include "vsp1_bru.h"
++#include "vsp1_drm.h"
++#include "vsp1_lif.h"
++#include "vsp1_pipe.h"
++#include "vsp1_rwpf.h"
 +
-+	return false;
- }
- 
- static unsigned int rcar_du_plane_hwmask(struct rcar_du_plane_state *state)
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index f301c15934cc..78ca353bfcf0 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -20,6 +20,7 @@
- #include <drm/drm_plane_helper.h>
- 
- #include "rcar_du_drv.h"
-+#include "rcar_du_group.h"
- #include "rcar_du_kms.h"
- #include "rcar_du_plane.h"
- #include "rcar_du_regs.h"
-@@ -35,37 +36,42 @@ static void rcar_du_plane_write(struct rcar_du_group *rgrp,
- 		      data);
- }
- 
--static void rcar_du_plane_setup_scanout(struct rcar_du_plane *plane)
-+static void rcar_du_plane_setup_scanout(struct rcar_du_group *rgrp,
-+					const struct rcar_du_plane_state *state)
- {
--	struct rcar_du_plane_state *state -		to_rcar_plane_state(plane->plane.state);
--	struct drm_framebuffer *fb = plane->plane.state->fb;
--	struct rcar_du_group *rgrp = plane->group;
- 	unsigned int src_x = state->state.src_x >> 16;
- 	unsigned int src_y = state->state.src_y >> 16;
- 	unsigned int index = state->hwindex;
--	struct drm_gem_cma_object *gem;
- 	unsigned int pitch;
- 	bool interlaced;
--	unsigned int i;
- 	u32 dma[2];
- 
- 	interlaced = state->state.crtc->state->adjusted_mode.flags
- 		   & DRM_MODE_FLAG_INTERLACE;
- 
--	/* Memory pitch (expressed in pixels). Must be doubled for interlaced
--	 * operation with 32bpp formats.
--	 */
--	if (state->format->planes = 2)
--		pitch = fb->pitches[0];
--	else
--		pitch = fb->pitches[0] * 8 / state->format->bpp;
-+	if (state->source = RCAR_DU_PLANE_MEMORY) {
-+		struct drm_framebuffer *fb = state->state.fb;
-+		struct drm_gem_cma_object *gem;
-+		unsigned int i;
++/* -----------------------------------------------------------------------------
++ * Runtime Handling
++ */
 +
-+		if (state->format->planes = 2)
-+			pitch = fb->pitches[0];
-+		else
-+			pitch = fb->pitches[0] * 8 / state->format->bpp;
- 
--	for (i = 0; i < state->format->planes; ++i) {
--		gem = drm_fb_cma_get_gem_obj(fb, i);
--		dma[i] = gem->paddr + fb->offsets[i];
-+		for (i = 0; i < state->format->planes; ++i) {
-+			gem = drm_fb_cma_get_gem_obj(fb, i);
-+			dma[i] = gem->paddr + fb->offsets[i];
++static int vsp1_drm_pipeline_run(struct vsp1_pipeline *pipe)
++{
++	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
++	int ret;
++
++	if (vsp1->drm->update) {
++		struct vsp1_entity *entity;
++
++		list_for_each_entry(entity, &pipe->entities, list_pipe) {
++			/* Skip unused RPFs. */
++			if (entity->type = VSP1_ENTITY_RPF) {
++				struct vsp1_rwpf *rpf +					to_rwpf(&entity->subdev);
++
++				if (!pipe->inputs[rpf->entity.index])
++					continue;
++			}
++
++			vsp1_entity_route_setup(entity);
++
++			ret = v4l2_subdev_call(&entity->subdev, video,
++					       s_stream, 1);
++			if (ret < 0) {
++				dev_err(vsp1->dev,
++					"DRM pipeline start failure on entity %s\n",
++					entity->subdev.name);
++				return ret;
++			}
 +		}
-+	} else {
-+		pitch = state->state.src_w >> 16;
-+		dma[0] = 0;
-+		dma[1] = 0;
- 	}
- 
-+	/* Memory pitch (expressed in pixels). Must be doubled for interlaced
-+	 * operation with 32bpp formats.
++
++		vsp1->drm->update = false;
++	}
++
++	vsp1_pipeline_run(pipe);
++
++	return 0;
++}
++
++static void vsp1_drm_pipeline_frame_end(struct vsp1_pipeline *pipe)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&pipe->irqlock, flags);
++	if (pipe->num_inputs)
++		vsp1_drm_pipeline_run(pipe);
++	spin_unlock_irqrestore(&pipe->irqlock, flags);
++}
++
++/* -----------------------------------------------------------------------------
++ * DU Driver API
++ */
++
++int vsp1_du_init(struct device *dev)
++{
++	struct vsp1_device *vsp1 = dev_get_drvdata(dev);
++
++	if (!vsp1)
++		return -EPROBE_DEFER;
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(vsp1_du_init);
++
++/**
++ * vsp1_du_setup_lif - Setup the output part of the VSP pipeline
++ * @dev: the VSP device
++ * @width: output frame width in pixels
++ * @height: output frame height in pixels
++ *
++ * Configure the output part of VSP DRM pipeline for the given frame @width and
++ * @height. This sets up formats on the BRU source pad, the WPF0 sink and source
++ * pads, and the LIF sink pad.
++ *
++ * As the media bus code on the BRU source pad is conditioned by the
++ * configuration of the BRU sink 0 pad, we also set up the formats on all BRU
++ * sinks, even if the configuration will be overwritten later by
++ * vsp1_du_setup_rpf(). This ensures that the BRU configuration is set to a well
++ * defined state.
++ *
++ * Return 0 on success or a negative error code on failure.
++ */
++int vsp1_du_setup_lif(struct device *dev, unsigned int width,
++		      unsigned int height)
++{
++	struct vsp1_device *vsp1 = dev_get_drvdata(dev);
++	struct vsp1_pipeline *pipe = &vsp1->drm->pipe;
++	struct vsp1_bru *bru = vsp1->bru;
++	struct v4l2_subdev_format format;
++	unsigned int i;
++	int ret;
++
++	dev_dbg(vsp1->dev, "%s: configuring LIF with format %ux%u\n",
++		__func__, width, height);
++
++	if (width = 0 || height = 0) {
++		/* Zero width or height means the CRTC is being disabled, stop
++		 * the pipeline and turn the light off.
++		 */
++		ret = vsp1_pipeline_stop(pipe);
++		if (ret = -ETIMEDOUT)
++			dev_err(vsp1->dev, "DRM pipeline stop timeout\n");
++
++		media_entity_pipeline_stop(&pipe->output->entity.subdev.entity);
++
++		for (i = 0; i < bru->entity.source_pad; ++i) {
++			bru->inputs[i].rpf = NULL;
++			pipe->inputs[i] = NULL;
++		}
++
++		pipe->num_inputs = 0;
++
++		vsp1_device_put(vsp1);
++
++		dev_dbg(vsp1->dev, "%s: pipeline disabled\n", __func__);
++
++		return 0;
++	}
++
++	/* Configure the format at the BRU sinks and propagate it through the
++	 * pipeline.
 +	 */
- 	rcar_du_plane_write(rgrp, index, PnMWR,
- 			    (interlaced && state->format->bpp = 32) ?
- 			    pitch * 2 : pitch);
-@@ -101,12 +107,10 @@ static void rcar_du_plane_setup_scanout(struct rcar_du_plane *plane)
- 	}
- }
- 
--static void rcar_du_plane_setup_mode(struct rcar_du_plane *plane,
--				     unsigned int index)
-+static void rcar_du_plane_setup_mode(struct rcar_du_group *rgrp,
-+				     unsigned int index,
-+				     const struct rcar_du_plane_state *state)
- {
--	struct rcar_du_plane_state *state -		to_rcar_plane_state(plane->plane.state);
--	struct rcar_du_group *rgrp = plane->group;
- 	u32 colorkey;
- 	u32 pnmr;
- 
-@@ -164,12 +168,10 @@ static void rcar_du_plane_setup_mode(struct rcar_du_plane *plane,
- 	}
- }
- 
--static void rcar_du_plane_setup_format(struct rcar_du_plane *plane,
--				       unsigned int index)
-+static void rcar_du_plane_setup_format(struct rcar_du_group *rgrp,
-+				       unsigned int index,
-+				       const struct rcar_du_plane_state *state)
- {
--	struct rcar_du_plane_state *state -		to_rcar_plane_state(plane->plane.state);
--	struct rcar_du_group *rgrp = plane->group;
- 	u32 ddcr2 = PnDDCR2_CODE;
- 	u32 ddcr4;
- 
-@@ -179,7 +181,7 @@ static void rcar_du_plane_setup_format(struct rcar_du_plane *plane,
- 	 * field in DDCR4.
- 	 */
- 
--	rcar_du_plane_setup_mode(plane, index);
-+	rcar_du_plane_setup_mode(rgrp, index, state);
- 
- 	if (state->format->planes = 2) {
- 		if (state->hwindex != index) {
-@@ -199,14 +201,16 @@ static void rcar_du_plane_setup_format(struct rcar_du_plane *plane,
- 	rcar_du_plane_write(rgrp, index, PnDDCR2, ddcr2);
- 
- 	ddcr4 = state->format->edf | PnDDCR4_CODE;
-+	if (state->source != RCAR_DU_PLANE_MEMORY)
-+		ddcr4 |= PnDDCR4_VSPS;
- 
- 	rcar_du_plane_write(rgrp, index, PnDDCR4, ddcr4);
- 
- 	/* Destination position and size */
--	rcar_du_plane_write(rgrp, index, PnDSXR, plane->plane.state->crtc_w);
--	rcar_du_plane_write(rgrp, index, PnDSYR, plane->plane.state->crtc_h);
--	rcar_du_plane_write(rgrp, index, PnDPXR, plane->plane.state->crtc_x);
--	rcar_du_plane_write(rgrp, index, PnDPYR, plane->plane.state->crtc_y);
-+	rcar_du_plane_write(rgrp, index, PnDSXR, state->state.crtc_w);
-+	rcar_du_plane_write(rgrp, index, PnDSYR, state->state.crtc_h);
-+	rcar_du_plane_write(rgrp, index, PnDPXR, state->state.crtc_x);
-+	rcar_du_plane_write(rgrp, index, PnDPYR, state->state.crtc_y);
- 
- 	/* Wrap-around and blinking, disabled */
- 	rcar_du_plane_write(rgrp, index, PnWASPR, 0);
-@@ -219,12 +223,24 @@ void rcar_du_plane_setup(struct rcar_du_plane *plane)
- {
- 	struct rcar_du_plane_state *state  		to_rcar_plane_state(plane->plane.state);
-+	struct rcar_du_group *rgrp = plane->group;
- 
--	rcar_du_plane_setup_format(plane, state->hwindex);
-+	rcar_du_plane_setup_format(rgrp, state->hwindex, state);
- 	if (state->format->planes = 2)
--		rcar_du_plane_setup_format(plane, (state->hwindex + 1) % 8);
-+		rcar_du_plane_setup_format(rgrp, (state->hwindex + 1) % 8,
-+					   state);
++	memset(&format, 0, sizeof(format));
++	format.which = V4L2_SUBDEV_FORMAT_ACTIVE;
 +
-+	rcar_du_plane_setup_scanout(rgrp, state);
- 
--	rcar_du_plane_setup_scanout(plane);
-+	if (state->source = RCAR_DU_PLANE_VSPD1) {
-+		unsigned int vspd1_sink = rgrp->index ? 2 : 0;
-+		struct rcar_du_device *rcdu = rgrp->dev;
++	for (i = 0; i < bru->entity.source_pad; ++i) {
++		format.pad = i;
 +
-+		if (rcdu->vspd1_sink != vspd1_sink) {
-+			rcdu->vspd1_sink = vspd1_sink;
-+			rcar_du_set_dpad0_vsp1_routing(rcdu);
-+		}
++		format.format.width = width;
++		format.format.height = height;
++		format.format.code = MEDIA_BUS_FMT_ARGB8888_1X32;
++		format.format.field = V4L2_FIELD_NONE;
++
++		ret = v4l2_subdev_call(&bru->entity.subdev, pad,
++				       set_fmt, NULL, &format);
++		if (ret < 0)
++			return ret;
++
++		dev_dbg(vsp1->dev, "%s: set format %ux%u (%x) on BRU pad %u\n",
++			__func__, format.format.width, format.format.height,
++			format.format.code, i);
 +	}
++
++	format.pad = bru->entity.source_pad;
++	format.format.width = width;
++	format.format.height = height;
++	format.format.code = MEDIA_BUS_FMT_ARGB8888_1X32;
++	format.format.field = V4L2_FIELD_NONE;
++
++	ret = v4l2_subdev_call(&bru->entity.subdev, pad, set_fmt, NULL,
++			       &format);
++	if (ret < 0)
++		return ret;
++
++	dev_dbg(vsp1->dev, "%s: set format %ux%u (%x) on BRU pad %u\n",
++		__func__, format.format.width, format.format.height,
++		format.format.code, i);
++
++	format.pad = RWPF_PAD_SINK;
++	ret = v4l2_subdev_call(&vsp1->wpf[0]->entity.subdev, pad, set_fmt, NULL,
++			       &format);
++	if (ret < 0)
++		return ret;
++
++	dev_dbg(vsp1->dev, "%s: set format %ux%u (%x) on WPF0 sink\n",
++		__func__, format.format.width, format.format.height,
++		format.format.code);
++
++	format.pad = RWPF_PAD_SOURCE;
++	ret = v4l2_subdev_call(&vsp1->wpf[0]->entity.subdev, pad, get_fmt, NULL,
++			       &format);
++	if (ret < 0)
++		return ret;
++
++	dev_dbg(vsp1->dev, "%s: got format %ux%u (%x) on WPF0 source\n",
++		__func__, format.format.width, format.format.height,
++		format.format.code);
++
++	format.pad = LIF_PAD_SINK;
++	ret = v4l2_subdev_call(&vsp1->lif->entity.subdev, pad, set_fmt, NULL,
++			       &format);
++	if (ret < 0)
++		return ret;
++
++	dev_dbg(vsp1->dev, "%s: set format %ux%u (%x) on LIF sink\n",
++		__func__, format.format.width, format.format.height,
++		format.format.code);
++
++	/* Verify that the format at the output of the pipeline matches the
++	 * requested frame size and media bus code.
++	 */
++	if (format.format.width != width || format.format.height != height ||
++	    format.format.code != MEDIA_BUS_FMT_ARGB8888_1X32) {
++		dev_dbg(vsp1->dev, "%s: format mismatch\n", __func__);
++		return -EPIPE;
++	}
++
++	/* Mark the pipeline as streaming and enable the VSP1. This will store
++	 * the pipeline pointer in all entities, which the s_stream handlers
++	 * will need. We don't start the entities themselves right at this point
++	 * as there's no plane configured yet, so we can't start processing
++	 * buffers.
++	 */
++	ret = vsp1_device_get(vsp1);
++	if (ret < 0)
++		return ret;
++
++	ret = media_entity_pipeline_start(&pipe->output->entity.subdev.entity,
++					  &pipe->pipe);
++	if (ret < 0) {
++		dev_dbg(vsp1->dev, "%s: pipeline start failed\n", __func__);
++		vsp1_device_put(vsp1);
++		return ret;
++	}
++
++	dev_dbg(vsp1->dev, "%s: pipeline enabled\n", __func__);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(vsp1_du_setup_lif);
++
++/**
++ * vsp1_du_setup_rpf - Setup one RPF input of the VSP pipeline
++ * @dev: the VSP device
++ * @rpf_index: index of the RPF to setup (0-based)
++ * @pixelformat: V4L2 pixel format for the RPF memory input
++ * @pitch: number of bytes per line in the image stored in memory
++ * @mem: DMA addresses of the memory buffers (one per plane)
++ * @src: the source crop rectangle for the RPF
++ * @dst: the destination compose rectangle for the BRU input
++ *
++ * Configure the VSP to perform composition of the image referenced by @mem
++ * through RPF @rpf_index, using the @src crop rectangle and the @dst
++ * composition rectangle. The Z-order is fixed with RPF 0 at the bottom.
++ *
++ * Image format as stored in memory is expressed as a V4L2 @pixelformat value.
++ * As a special case, setting the pixel format to 0 will disable the RPF. The
++ * @pitch, @mem, @src and @dst parameters are ignored in that case. Calling the
++ * function on a disabled RPF is allowed.
++ *
++ * The memory pitch is configurable to allow for padding at end of lines, or
++ * simple for images that extend beyond the crop rectangle boundaries. The
++ * @pitch value is expressed in bytes and applies to all planes for multiplanar
++ * formats.
++ *
++ * The source memory buffer is referenced by the DMA address of its planes in
++ * the @mem array. Up to two planes are supported. The second plane DMA address
++ * is ignored for formats using a single plane.
++ *
++ * This function isn't reentrant, the caller needs to serialize calls.
++ *
++ * TODO: Implement Z-order control by decoupling the RPF index from the BRU
++ * input index.
++ *
++ * Return 0 on success or a negative error code on failure.
++ */
++int vsp1_du_setup_rpf(struct device *dev, unsigned int rpf_index,
++		      u32 pixelformat, unsigned int pitch,
++		      dma_addr_t mem[2], const struct v4l2_rect *src,
++		      const struct v4l2_rect *dst)
++{
++	struct vsp1_device *vsp1 = dev_get_drvdata(dev);
++	struct vsp1_pipeline *pipe = &vsp1->drm->pipe;
++	const struct vsp1_format_info *fmtinfo;
++	struct v4l2_subdev_selection sel;
++	struct v4l2_subdev_format format;
++	struct vsp1_rwpf_memory memory;
++	struct vsp1_rwpf *rpf;
++	unsigned long flags;
++	bool start_stop = false;
++	int ret;
++
++	if (rpf_index >= vsp1->pdata.rpf_count)
++		return -EINVAL;
++
++	rpf = vsp1->rpf[rpf_index];
++
++	if (pixelformat = 0) {
++		dev_dbg(vsp1->dev, "%s: RPF%u: disable requested\n", __func__,
++			rpf_index);
++
++		spin_lock_irqsave(&pipe->irqlock, flags);
++
++		if (pipe->inputs[rpf_index]) {
++			/* Remove the RPF from the pipeline if it was previously
++			 * enabled.
++			 */
++			vsp1->bru->inputs[rpf_index].rpf = NULL;
++			pipe->inputs[rpf_index] = NULL;
++
++			vsp1->drm->update = true;
++			start_stop = --pipe->num_inputs = 0;
++		}
++
++		spin_unlock_irqrestore(&pipe->irqlock, flags);
++
++		/* Stop the pipeline if we're the last user. */
++		if (start_stop)
++			vsp1_pipeline_stop(pipe);
++
++		return 0;
++	}
++
++	dev_dbg(vsp1->dev,
++		"%s: RPF%u: (%u,%u)/%ux%u -> (%u,%u)/%ux%u (%08x), pitch %u dma { %pad, %pad }\n",
++		__func__, rpf_index,
++		src->left, src->top, src->width, src->height,
++		dst->left, dst->top, dst->width, dst->height,
++		pixelformat, pitch, &mem[0], &mem[1]);
++
++	/* Set the stride at the RPF input. */
++	fmtinfo = vsp1_get_format_info(pixelformat);
++	if (!fmtinfo) {
++		dev_dbg(vsp1->dev, "Unsupport pixel format %08x for RPF\n",
++			pixelformat);
++		return -EINVAL;
++	}
++
++	rpf->fmtinfo = fmtinfo;
++	rpf->format.num_planes = fmtinfo->planes;
++	rpf->format.plane_fmt[0].bytesperline = pitch;
++	rpf->format.plane_fmt[1].bytesperline = pitch;
++
++	/* Configure the format on the RPF sink pad and propagate it up to the
++	 * BRU sink pad.
++	 */
++	memset(&format, 0, sizeof(format));
++	format.which = V4L2_SUBDEV_FORMAT_ACTIVE;
++	format.pad = RWPF_PAD_SINK;
++	format.format.width = src->width + src->left;
++	format.format.height = src->height + src->top;
++	format.format.code = fmtinfo->mbus;
++	format.format.field = V4L2_FIELD_NONE;
++
++	ret = v4l2_subdev_call(&rpf->entity.subdev, pad, set_fmt, NULL,
++			       &format);
++	if (ret < 0)
++		return ret;
++
++	dev_dbg(vsp1->dev,
++		"%s: set format %ux%u (%x) on RPF%u sink\n",
++		__func__, format.format.width, format.format.height,
++		format.format.code, rpf->entity.index);
++
++	memset(&sel, 0, sizeof(sel));
++	sel.which = V4L2_SUBDEV_FORMAT_ACTIVE;
++	sel.pad = RWPF_PAD_SINK;
++	sel.target = V4L2_SEL_TGT_CROP;
++	sel.r = *src;
++
++	ret = v4l2_subdev_call(&rpf->entity.subdev, pad, set_selection, NULL,
++			       &sel);
++	if (ret < 0)
++		return ret;
++
++	dev_dbg(vsp1->dev,
++		"%s: set selection (%u,%u)/%ux%u on RPF%u sink\n",
++		__func__, sel.r.left, sel.r.top, sel.r.width, sel.r.height,
++		rpf->entity.index);
++
++	/* RPF source, hardcode the format to ARGB8888 to turn on format
++	 * conversion if needed.
++	 */
++	format.pad = RWPF_PAD_SOURCE;
++
++	ret = v4l2_subdev_call(&rpf->entity.subdev, pad, get_fmt, NULL,
++			       &format);
++	if (ret < 0)
++		return ret;
++
++	dev_dbg(vsp1->dev,
++		"%s: got format %ux%u (%x) on RPF%u source\n",
++		__func__, format.format.width, format.format.height,
++		format.format.code, rpf->entity.index);
++
++	format.format.code = MEDIA_BUS_FMT_ARGB8888_1X32;
++
++	ret = v4l2_subdev_call(&rpf->entity.subdev, pad, set_fmt, NULL,
++			       &format);
++	if (ret < 0)
++		return ret;
++
++	/* BRU sink, propagate the format from the RPF source. */
++	format.pad = rpf->entity.index;
++
++	ret = v4l2_subdev_call(&vsp1->bru->entity.subdev, pad, set_fmt, NULL,
++			       &format);
++	if (ret < 0)
++		return ret;
++
++	dev_dbg(vsp1->dev, "%s: set format %ux%u (%x) on BRU pad %u\n",
++		__func__, format.format.width, format.format.height,
++		format.format.code, format.pad);
++
++	sel.pad = rpf->entity.index;
++	sel.target = V4L2_SEL_TGT_COMPOSE;
++	sel.r = *dst;
++
++	ret = v4l2_subdev_call(&vsp1->bru->entity.subdev, pad, set_selection,
++			       NULL, &sel);
++	if (ret < 0)
++		return ret;
++
++	dev_dbg(vsp1->dev,
++		"%s: set selection (%u,%u)/%ux%u on BRU pad %u\n",
++		__func__, sel.r.left, sel.r.top, sel.r.width, sel.r.height,
++		sel.pad);
++
++	/* Store the compose rectangle coordinates in the RPF. */
++	rpf->location.left = dst->left;
++	rpf->location.top = dst->top;
++
++	/* Set the memory buffer address. */
++	memory.num_planes = fmtinfo->planes;
++	memory.addr[0] = mem[0];
++	memory.addr[1] = mem[1];
++
++	rpf->ops->set_memory(rpf, &memory);
++
++	spin_lock_irqsave(&pipe->irqlock, flags);
++
++	/* If the RPF was previously stopped set the BRU input to the RPF and
++	 * store the RPF in the pipeline inputs array.
++	 */
++	if (!pipe->inputs[rpf->entity.index]) {
++		vsp1->bru->inputs[rpf_index].rpf = rpf;
++		pipe->inputs[rpf->entity.index] = rpf;
++		start_stop = pipe->num_inputs++ = 0;
++	}
++
++	/* Start the pipeline if it's currently stopped. */
++	vsp1->drm->update = true;
++	if (start_stop)
++		vsp1_drm_pipeline_run(pipe);
++
++	spin_unlock_irqrestore(&pipe->irqlock, flags);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(vsp1_du_setup_rpf);
++
++/* -----------------------------------------------------------------------------
++ * Initialization
++ */
++
++int vsp1_drm_create_links(struct vsp1_device *vsp1)
++{
++	const u32 flags = MEDIA_LNK_FL_ENABLED | MEDIA_LNK_FL_IMMUTABLE;
++	unsigned int i;
++	int ret;
++
++	/* VSPD instances require a BRU to perform composition. */
++	if (!vsp1->bru)
++		return -ENXIO;
++
++	for (i = 0; i < vsp1->pdata.rpf_count; ++i) {
++		struct vsp1_rwpf *rpf = vsp1->rpf[i];
++
++		ret = media_entity_create_link(&rpf->entity.subdev.entity,
++					       RWPF_PAD_SOURCE,
++					       &vsp1->bru->entity.subdev.entity,
++					       i, flags);
++		if (ret < 0)
++			return ret;
++
++		rpf->entity.sink = &vsp1->bru->entity.subdev.entity;
++		rpf->entity.sink_pad = i;
++	}
++
++	ret = media_entity_create_link(&vsp1->bru->entity.subdev.entity,
++				       vsp1->bru->entity.source_pad,
++				       &vsp1->wpf[0]->entity.subdev.entity,
++				       RWPF_PAD_SINK, flags);
++	if (ret < 0)
++		return ret;
++
++	vsp1->bru->entity.sink = &vsp1->wpf[0]->entity.subdev.entity;
++	vsp1->bru->entity.sink_pad = RWPF_PAD_SINK;
++
++	ret = media_entity_create_link(&vsp1->wpf[0]->entity.subdev.entity,
++				       RWPF_PAD_SOURCE,
++				       &vsp1->lif->entity.subdev.entity,
++				       LIF_PAD_SINK, flags);
++	if (ret < 0)
++		return ret;
++
++	return 0;
++}
++
++int vsp1_drm_init(struct vsp1_device *vsp1)
++{
++	struct vsp1_pipeline *pipe;
++	unsigned int i;
++
++	vsp1->drm = devm_kzalloc(vsp1->dev, sizeof(*vsp1->drm), GFP_KERNEL);
++	if (!vsp1->drm)
++		return -ENOMEM;
++
++	pipe = &vsp1->drm->pipe;
++
++	vsp1_pipeline_init(pipe);
++	pipe->frame_end = vsp1_drm_pipeline_frame_end;
++
++	/* The DRM pipeline is static, add entities manually. */
++	for (i = 0; i < vsp1->pdata.rpf_count; ++i) {
++		struct vsp1_rwpf *input = vsp1->rpf[i];
++
++		list_add_tail(&input->entity.list_pipe, &pipe->entities);
++	}
++
++	list_add_tail(&vsp1->bru->entity.list_pipe, &pipe->entities);
++	list_add_tail(&vsp1->wpf[0]->entity.list_pipe, &pipe->entities);
++	list_add_tail(&vsp1->lif->entity.list_pipe, &pipe->entities);
++
++	pipe->bru = &vsp1->bru->entity;
++	pipe->lif = &vsp1->lif->entity;
++	pipe->output = vsp1->wpf[0];
++
++	return 0;
++}
+diff --git a/drivers/media/platform/vsp1/vsp1_drm.h b/drivers/media/platform/vsp1/vsp1_drm.h
+new file mode 100644
+index 000000000000..2ad320ab1e45
+--- /dev/null
++++ b/drivers/media/platform/vsp1/vsp1_drm.h
+@@ -0,0 +1,26 @@
++/*
++ * vsp1_drm.h  --  R-Car VSP1 DRM/KMS Interface
++ *
++ * Copyright (C) 2015 Renesas Electronics Corporation
++ *
++ * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++#ifndef __VSP1_DRM_H__
++#define __VSP1_DRM_H__
++
++#include "vsp1_pipe.h"
++
++struct vsp1_drm {
++	struct vsp1_pipeline pipe;
++	bool update;
++};
++
++int vsp1_drm_init(struct vsp1_device *vsp1);
++int vsp1_drm_create_links(struct vsp1_device *vsp1);
++
++#endif /* __VSP1_DRM_H__ */
+diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
+index fb9c8f59e3b0..5d58cad5b125 100644
+--- a/drivers/media/platform/vsp1/vsp1_drv.c
++++ b/drivers/media/platform/vsp1/vsp1_drv.c
+@@ -25,6 +25,7 @@
+ 
+ #include "vsp1.h"
+ #include "vsp1_bru.h"
++#include "vsp1_drm.h"
+ #include "vsp1_hsit.h"
+ #include "vsp1_lif.h"
+ #include "vsp1_lut.h"
+@@ -120,7 +121,7 @@ static int vsp1_create_sink_links(struct vsp1_device *vsp1,
+ 	return 0;
  }
  
- static int rcar_du_plane_atomic_check(struct drm_plane *plane,
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_regs.h b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-index 70fcbc471ebd..ac9c3e511e79 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_regs.h
-@@ -389,6 +389,7 @@
+-static int vsp1_create_links(struct vsp1_device *vsp1)
++static int vsp1_uapi_create_links(struct vsp1_device *vsp1)
+ {
+ 	struct vsp1_entity *entity;
+ 	unsigned int i;
+@@ -144,9 +145,6 @@ static int vsp1_create_links(struct vsp1_device *vsp1)
+ 			return ret;
+ 	}
  
- #define PnDDCR4			0x00190
- #define PnDDCR4_CODE		(0x7766 << 16)
-+#define PnDDCR4_VSPS		(1 << 13)
- #define PnDDCR4_SDFS_RGB	(0 << 4)
- #define PnDDCR4_SDFS_YC		(5 << 4)
- #define PnDDCR4_SDFS_MASK	(7 << 4)
+-	if (!vsp1->info->uapi)
+-		return 0;
+-
+ 	for (i = 0; i < vsp1->pdata.rpf_count; ++i) {
+ 		struct vsp1_rwpf *rpf = vsp1->rpf[i];
+ 
+@@ -355,7 +353,10 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
+ 	}
+ 
+ 	/* Create links. */
+-	ret = vsp1_create_links(vsp1);
++	if (vsp1->info->uapi)
++		ret = vsp1_uapi_create_links(vsp1);
++	else
++		ret = vsp1_drm_create_links(vsp1);
+ 	if (ret < 0)
+ 		goto done;
+ 
+@@ -369,6 +370,8 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
+ 
+ 	if (vsp1->info->uapi)
+ 		ret = v4l2_device_register_subdev_nodes(&vsp1->v4l2_dev);
++	else
++		ret = vsp1_drm_init(vsp1);
+ 
+ done:
+ 	if (ret < 0)
+diff --git a/include/media/vsp1.h b/include/media/vsp1.h
+new file mode 100644
+index 000000000000..2c1aea7066be
+--- /dev/null
++++ b/include/media/vsp1.h
+@@ -0,0 +1,30 @@
++/*
++ * vsp1.h  --  R-Car VSP1 API
++ *
++ * Copyright (C) 2015 Renesas Electronics Corporation
++ *
++ * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++#ifndef __MEDIA_VSP1_H__
++#define __MEDIA_VSP1_H__
++
++#include <linux/types.h>
++
++struct device;
++struct v4l2_rect;
++
++int vsp1_du_init(struct device *dev);
++
++int vsp1_du_setup_lif(struct device *dev, unsigned int width,
++		      unsigned int height);
++
++int vsp1_du_setup_rpf(struct device *dev, unsigned int rpf, u32 pixelformat,
++		      unsigned int pitch, dma_addr_t mem[2],
++		      const struct v4l2_rect *src, const struct v4l2_rect *dst);
++
++#endif /* __MEDIA_VSP1_H__ */
 -- 
 2.4.6
 
