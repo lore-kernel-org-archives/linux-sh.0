@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 22:51:06 +0000
-Subject: [PATCH 19/22] drm: rcar-du: lvds: Avoid duplication of clock clamp code
-Message-Id: <1442184669-30990-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 22:50:49 +0000
+Subject: [PATCH 02/22] drm: rcar-du: Add support for the R8A7793 DU
+Message-Id: <1442184669-30990-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -9,99 +9,82 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org
 
-Replace the duplicate code by a single central function.
+The R8A7793 DU is identical to the R8A7791 and thus only requires a new
+DT compatible string.
 
+Cc: devicetree@vger.kernel.org
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_encoder.c | 6 +-----
- drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c | 7 ++-----
- drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c | 9 +++++++++
- drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h | 6 ++++++
- 4 files changed, 18 insertions(+), 10 deletions(-)
+ Documentation/devicetree/bindings/video/renesas,du.txt | 12 +++++++-----
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c                  |  4 +++-
+ 2 files changed, 10 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-index d0ae1e8009c6..b7d64336fb3b 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_encoder.c
-@@ -89,12 +89,8 @@ static int rcar_du_encoder_atomic_check(struct drm_encoder *encoder,
- 	/* The flat panel mode is fixed, just copy it to the adjusted mode. */
- 	drm_mode_copy(adjusted_mode, panel_mode);
+diff --git a/Documentation/devicetree/bindings/video/renesas,du.txt b/Documentation/devicetree/bindings/video/renesas,du.txt
+index c902323928f7..d05be121486f 100644
+--- a/Documentation/devicetree/bindings/video/renesas,du.txt
++++ b/Documentation/devicetree/bindings/video/renesas,du.txt
+@@ -5,7 +5,8 @@ Required Properties:
+   - compatible: must be one of the following.
+     - "renesas,du-r8a7779" for R8A7779 (R-Car H1) compatible DU
+     - "renesas,du-r8a7790" for R8A7790 (R-Car H2) compatible DU
+-    - "renesas,du-r8a7791" for R8A7791 (R-Car M2) compatible DU
++    - "renesas,du-r8a7791" for R8A7791 (R-Car M2-W) compatible DU
++    - "renesas,du-r8a7793" for R8A7793 (R-Car M2-N) compatible DU
  
--	/* The internal LVDS encoder has a clock frequency operating range of
--	 * 30MHz to 150MHz. Clamp the clock accordingly.
--	 */
- 	if (renc->lvds)
--		adjusted_mode->clock = clamp(adjusted_mode->clock,
--					     30000, 150000);
-+		rcar_du_lvdsenc_atomic_check(renc->lvds, adjusted_mode);
+   - reg: A list of base address and length of each memory resource, one for
+     each entry in the reg-names property.
+@@ -22,9 +23,9 @@ Required Properties:
+   - clock-names: Name of the clocks. This property is model-dependent.
+     - R8A7779 uses a single functional clock. The clock doesn't need to be
+       named.
+-    - R8A7790 and R8A7791 use one functional clock per channel and one clock
+-      per LVDS encoder. The functional clocks must be named "du.x" with "x"
+-      being the channel numerical index. The LVDS clocks must be named
++    - R8A779[013] use one functional clock per channel and one clock per LVDS
++      encoder (if available). The functional clocks must be named "du.x" with
++      "x" being the channel numerical index. The LVDS clocks must be named
+       "lvds.x" with "x" being the LVDS encoder numerical index.
+     - In addition to the functional and encoder clocks, all DU versions also
+       support externally supplied pixel clocks. Those clocks are optional.
+@@ -43,7 +44,8 @@ corresponding to each DU output.
+ -----------------------------------------------------------------------------
+  R8A7779 (H1)	DPAD 0		DPAD 1		-
+  R8A7790 (H2)	DPAD		LVDS 0		LVDS 1
+- R8A7791 (M2)	DPAD		LVDS 0		-
++ R8A7791 (M2-W)	DPAD		LVDS 0		-
++ R8A7793 (M2-N)	DPAD		LVDS 0		-
  
- 	return 0;
- }
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c b/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
-index 81da8419282b..c45b626c7d66 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_hdmienc.c
-@@ -71,12 +71,9 @@ static int rcar_du_hdmienc_atomic_check(struct drm_encoder *encoder,
- 	struct drm_display_mode *adjusted_mode = &crtc_state->adjusted_mode;
- 	const struct drm_display_mode *mode = &crtc_state->mode;
  
--	/* The internal LVDS encoder has a clock frequency operating range of
--	 * 30MHz to 150MHz. Clamp the clock accordingly.
--	 */
- 	if (hdmienc->renc->lvds)
--		adjusted_mode->clock = clamp(adjusted_mode->clock,
--					     30000, 150000);
-+		rcar_du_lvdsenc_atomic_check(hdmienc->renc->lvds,
-+					     adjusted_mode);
+ Example: R8A7790 (R-Car H2) DU
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index 44879136e933..90d19fb976ab 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -84,12 +84,13 @@ static const struct rcar_du_device_info rcar_du_r8a7790_info = {
+ 	.num_lvds = 2,
+ };
  
- 	if (sfuncs->mode_fixup = NULL)
- 		return 0;
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
-index 85043c5bad03..937b2da98814 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
-@@ -140,6 +140,15 @@ int rcar_du_lvdsenc_enable(struct rcar_du_lvdsenc *lvds, struct drm_crtc *crtc,
- 		return -EINVAL;
- }
++/* M2-W (r8a7791) and M2-N (r8a7793) are identical */
+ static const struct rcar_du_device_info rcar_du_r8a7791_info = {
+ 	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK
+ 		  | RCAR_DU_FEATURE_EXT_CTRL_REGS,
+ 	.num_crtcs = 2,
+ 	.routes = {
+-		/* R8A7791 has one RGB output, one LVDS output and one
++		/* R8A779[13] has one RGB output, one LVDS output and one
+ 		 * (currently unsupported) TCON output.
+ 		 */
+ 		[RCAR_DU_OUTPUT_DPAD0] = {
+@@ -110,6 +111,7 @@ static const struct of_device_id rcar_du_of_table[] = {
+ 	{ .compatible = "renesas,du-r8a7779", .data = &rcar_du_r8a7779_info },
+ 	{ .compatible = "renesas,du-r8a7790", .data = &rcar_du_r8a7790_info },
+ 	{ .compatible = "renesas,du-r8a7791", .data = &rcar_du_r8a7791_info },
++	{ .compatible = "renesas,du-r8a7793", .data = &rcar_du_r8a7791_info },
+ 	{ }
+ };
  
-+void rcar_du_lvdsenc_atomic_check(struct rcar_du_lvdsenc *lvds,
-+				  struct drm_display_mode *mode)
-+{
-+	/* The internal LVDS encoder has a clock frequency operating range of
-+	 * 30MHz to 150MHz. Clamp the clock accordingly.
-+	 */
-+	mode->clock = clamp(mode->clock, 30000, 150000);
-+}
-+
- static int rcar_du_lvdsenc_get_resources(struct rcar_du_lvdsenc *lvds,
- 					 struct platform_device *pdev)
- {
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h
-index 9a6001c07303..dfdba746edf4 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.h
-@@ -30,6 +30,8 @@ enum rcar_lvds_input {
- int rcar_du_lvdsenc_init(struct rcar_du_device *rcdu);
- int rcar_du_lvdsenc_enable(struct rcar_du_lvdsenc *lvds,
- 			   struct drm_crtc *crtc, bool enable);
-+void rcar_du_lvdsenc_atomic_check(struct rcar_du_lvdsenc *lvds,
-+				  struct drm_display_mode *mode);
- #else
- static inline int rcar_du_lvdsenc_init(struct rcar_du_device *rcdu)
- {
-@@ -40,6 +42,10 @@ static inline int rcar_du_lvdsenc_enable(struct rcar_du_lvdsenc *lvds,
- {
- 	return 0;
- }
-+static inline void rcar_du_lvdsenc_atomic_check(struct rcar_du_lvdsenc *lvds,
-+						struct drm_display_mode *mode)
-+{
-+}
- #endif
- 
- #endif /* __RCAR_DU_LVDSENC_H__ */
 -- 
 2.4.6
 
