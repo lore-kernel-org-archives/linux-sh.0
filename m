@@ -1,99 +1,186 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 18 Sep 2015 02:05:10 +0000
-Subject: [PATCH 08/18 v3] arm64: renesas: r8a7795: Sound CTU/MIX support
-Message-Id: <871tdw1o6g.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 20:56:41 +0000
+Subject: [PATCH 03/32] v4l: vsp1: Move video operations to vsp1_rwpf
+Message-Id: <1442177830-24536-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This removes the dependency of vsp1_rpf and vsp1_wpf on vsp1_video,
+making it possible to reuse the operations without a V4L2 video device
+node.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2 -> v3
+ drivers/media/platform/vsp1/vsp1_rpf.c   | 11 +++++------
+ drivers/media/platform/vsp1/vsp1_rwpf.h  |  9 +++++++++
+ drivers/media/platform/vsp1/vsp1_video.c |  4 ++--
+ drivers/media/platform/vsp1/vsp1_video.h |  6 ------
+ drivers/media/platform/vsp1/vsp1_wpf.c   | 12 +++++-------
+ 5 files changed, 21 insertions(+), 21 deletions(-)
 
- - new patch
-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 22 ++++++++++++++++++++++
- include/dt-bindings/clock/r8a7795-clock.h |  2 ++
- 2 files changed, 24 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index b57e81c..1fddf55 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -536,6 +536,7 @@
- 						<&mstp10_clks R8A7795_CLK_SCU_ALL>, <&mstp10_clks R8A7795_CLK_SCU_ALL>,
- 						<&mstp10_clks R8A7795_CLK_SCU_ALL>, <&mstp10_clks R8A7795_CLK_SCU_ALL>,
- 						<&mstp10_clks R8A7795_CLK_SCU_ALL>, <&mstp10_clks R8A7795_CLK_SCU_ALL>,
-+						<&mstp10_clks R8A7795_CLK_SCU_ALL>, <&mstp10_clks R8A7795_CLK_SCU_ALL>,
- 						<&mstp10_clks R8A7795_CLK_SCU_ALL>, <&mstp10_clks R8A7795_CLK_SCU_ALL>;
- 					clock-indices = <
- 						R8A7795_CLK_SSI_ALL
-@@ -543,6 +544,7 @@
- 						R8A7795_CLK_SSI4 R8A7795_CLK_SSI3 R8A7795_CLK_SSI2 R8A7795_CLK_SSI1 R8A7795_CLK_SSI0
- 						R8A7795_CLK_SCU_ALL
- 						R8A7795_CLK_SCU_DVC1 R8A7795_CLK_SCU_DVC0
-+						R8A7795_CLK_SCU_CTU1_MIX1 R8A7795_CLK_SCU_CTU0_MIX0
- 						R8A7795_CLK_SCU_SRC9 R8A7795_CLK_SCU_SRC8 R8A7795_CLK_SCU_SRC7 R8A7795_CLK_SCU_SRC6 R8A7795_CLK_SCU_SRC5
- 						R8A7795_CLK_SCU_SRC4 R8A7795_CLK_SCU_SRC3 R8A7795_CLK_SCU_SRC2 R8A7795_CLK_SCU_SRC1 R8A7795_CLK_SCU_SRC0
- 					>;
-@@ -1015,6 +1017,8 @@
- 				<&mstp10_clks R8A7795_CLK_SCU_SRC5>, <&mstp10_clks R8A7795_CLK_SCU_SRC4>,
- 				<&mstp10_clks R8A7795_CLK_SCU_SRC3>, <&mstp10_clks R8A7795_CLK_SCU_SRC2>,
- 				<&mstp10_clks R8A7795_CLK_SCU_SRC1>, <&mstp10_clks R8A7795_CLK_SCU_SRC0>,
-+				<&mstp10_clks R8A7795_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7795_CLK_SCU_CTU1_MIX1>,
-+				<&mstp10_clks R8A7795_CLK_SCU_CTU0_MIX0>, <&mstp10_clks R8A7795_CLK_SCU_CTU1_MIX1>,
- 				<&mstp10_clks R8A7795_CLK_SCU_DVC0>, <&mstp10_clks R8A7795_CLK_SCU_DVC1>,
- 				<&audio_clk_a>, <&audio_clk_b>, <&audio_clk_c>, <&s0d4_clk>;
- 			clock-names = "ssi-all",
-@@ -1022,6 +1026,8 @@
- 					"ssi.4", "ssi.3", "ssi.2", "ssi.1", "ssi.0",
- 					"src.9", "src.8", "src.7", "src.6", "src.5",
- 					"src.4", "src.3", "src.2", "src.1", "src.0",
-+					"ctu.0", "ctu.1",
-+					"mix.0", "mix.1",
- 					"dvc.0", "dvc.1",
- 					"clk_a", "clk_b", "clk_c", "clk_i";
- 			power-domains = <&cpg_clocks>;
-@@ -1038,6 +1044,22 @@
- 				};
- 			};
+diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
+index 6e0564b5b37b..a17154d98a54 100644
+--- a/drivers/media/platform/vsp1/vsp1_rpf.c
++++ b/drivers/media/platform/vsp1/vsp1_rpf.c
+@@ -186,10 +186,8 @@ static struct v4l2_subdev_ops rpf_ops = {
+  * Video Device Operations
+  */
  
-+			rcar_sound,mix {
-+				mix0: mix@0 { };
-+				mix1: mix@1 { };
-+			};
+-static void rpf_vdev_queue(struct vsp1_video *video,
+-			   struct vsp1_video_buffer *buf)
++static void rpf_buf_queue(struct vsp1_rwpf *rpf, struct vsp1_video_buffer *buf)
+ {
+-	struct vsp1_rwpf *rpf = container_of(video, struct vsp1_rwpf, video);
+ 	unsigned int i;
+ 
+ 	for (i = 0; i < 3; ++i)
+@@ -208,8 +206,8 @@ static void rpf_vdev_queue(struct vsp1_video *video,
+ 			       buf->addr[2] + rpf->offsets[1]);
+ }
+ 
+-static const struct vsp1_video_operations rpf_vdev_ops = {
+-	.queue = rpf_vdev_queue,
++static const struct vsp1_rwpf_operations rpf_vdev_ops = {
++	.queue = rpf_buf_queue,
+ };
+ 
+ /* -----------------------------------------------------------------------------
+@@ -227,6 +225,8 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 	if (rpf = NULL)
+ 		return ERR_PTR(-ENOMEM);
+ 
++	rpf->ops = &rpf_vdev_ops;
 +
-+			rcar_sound,ctu {
-+				ctu00: ctu@0 { };
-+				ctu01: ctu@1 { };
-+				ctu02: ctu@2 { };
-+				ctu03: ctu@3 { };
-+				ctu10: ctu@4 { };
-+				ctu11: ctu@5 { };
-+				ctu12: ctu@6 { };
-+				ctu13: ctu@7 { };
-+			};
+ 	rpf->max_width = RPF_MAX_WIDTH;
+ 	rpf->max_height = RPF_MAX_HEIGHT;
+ 
+@@ -269,7 +269,6 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 
+ 	video->type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+ 	video->vsp1 = vsp1;
+-	video->ops = &rpf_vdev_ops;
+ 
+ 	ret = vsp1_video_init(video, rpf);
+ 	if (ret < 0)
+diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
+index 8609c3d02679..3cc80be03524 100644
+--- a/drivers/media/platform/vsp1/vsp1_rwpf.h
++++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
+@@ -24,11 +24,20 @@
+ #define RWPF_PAD_SINK				0
+ #define RWPF_PAD_SOURCE				1
+ 
++struct vsp1_rwpf;
++struct vsp1_video_buffer;
 +
- 			rcar_sound,src {
- 				src0: src@0 {
- 					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
-diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
-index 74ca804..cc66a06 100644
---- a/include/dt-bindings/clock/r8a7795-clock.h
-+++ b/include/dt-bindings/clock/r8a7795-clock.h
-@@ -90,6 +90,8 @@
- #define R8A7795_CLK_SCU_ALL		17
- #define R8A7795_CLK_SCU_DVC1		18
- #define R8A7795_CLK_SCU_DVC0		19
-+#define R8A7795_CLK_SCU_CTU1_MIX1	20
-+#define R8A7795_CLK_SCU_CTU0_MIX0	21
- #define R8A7795_CLK_SCU_SRC9		22
- #define R8A7795_CLK_SCU_SRC8		23
- #define R8A7795_CLK_SCU_SRC7		24
++struct vsp1_rwpf_operations {
++	void (*queue)(struct vsp1_rwpf *rwpf, struct vsp1_video_buffer *buf);
++};
++
+ struct vsp1_rwpf {
+ 	struct vsp1_entity entity;
+ 	struct vsp1_video video;
+ 	struct v4l2_ctrl_handler ctrls;
+ 
++	const struct vsp1_rwpf_operations *ops;
++
+ 	unsigned int max_width;
+ 	unsigned int max_height;
+ 
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index 90d5791c80b6..2ddbcbaf498f 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -631,7 +631,7 @@ static void vsp1_video_frame_end(struct vsp1_pipeline *pipe,
+ 
+ 	spin_lock_irqsave(&pipe->irqlock, flags);
+ 
+-	video->ops->queue(video, buf);
++	video->rwpf->ops->queue(video->rwpf, buf);
+ 	pipe->buffers_ready |= 1 << video->pipe_index;
+ 
+ 	spin_unlock_irqrestore(&pipe->irqlock, flags);
+@@ -857,7 +857,7 @@ static void vsp1_video_buffer_queue(struct vb2_buffer *vb)
+ 
+ 	spin_lock_irqsave(&pipe->irqlock, flags);
+ 
+-	video->ops->queue(video, buf);
++	video->rwpf->ops->queue(video->rwpf, buf);
+ 	pipe->buffers_ready |= 1 << video->pipe_index;
+ 
+ 	if (vb2_is_streaming(&video->queue) &&
+diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
+index dbcb7b5b6c95..34efc471351c 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.h
++++ b/drivers/media/platform/vsp1/vsp1_video.h
+@@ -108,16 +108,10 @@ to_vsp1_video_buffer(struct vb2_buffer *vb)
+ 	return container_of(vb, struct vsp1_video_buffer, buf);
+ }
+ 
+-struct vsp1_video_operations {
+-	void (*queue)(struct vsp1_video *video, struct vsp1_video_buffer *buf);
+-};
+-
+ struct vsp1_video {
+ 	struct vsp1_device *vsp1;
+ 	struct vsp1_rwpf *rwpf;
+ 
+-	const struct vsp1_video_operations *ops;
+-
+ 	struct video_device video;
+ 	enum v4l2_buf_type type;
+ 	struct media_pad pad;
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index b14070d1e457..f93b545949b6 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -195,11 +195,8 @@ static struct v4l2_subdev_ops wpf_ops = {
+  * Video Device Operations
+  */
+ 
+-static void wpf_vdev_queue(struct vsp1_video *video,
+-			   struct vsp1_video_buffer *buf)
++static void wpf_buf_queue(struct vsp1_rwpf *wpf, struct vsp1_video_buffer *buf)
+ {
+-	struct vsp1_rwpf *wpf = container_of(video, struct vsp1_rwpf, video);
+-
+ 	vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_Y, buf->addr[0]);
+ 	if (buf->buf.num_planes > 1)
+ 		vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_C0, buf->addr[1]);
+@@ -207,8 +204,8 @@ static void wpf_vdev_queue(struct vsp1_video *video,
+ 		vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_C1, buf->addr[2]);
+ }
+ 
+-static const struct vsp1_video_operations wpf_vdev_ops = {
+-	.queue = wpf_vdev_queue,
++static const struct vsp1_rwpf_operations wpf_vdev_ops = {
++	.queue = wpf_buf_queue,
+ };
+ 
+ /* -----------------------------------------------------------------------------
+@@ -227,6 +224,8 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 	if (wpf = NULL)
+ 		return ERR_PTR(-ENOMEM);
+ 
++	wpf->ops = &wpf_vdev_ops;
++
+ 	wpf->max_width = WPF_MAX_WIDTH;
+ 	wpf->max_height = WPF_MAX_HEIGHT;
+ 
+@@ -269,7 +268,6 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
+ 
+ 	video->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+ 	video->vsp1 = vsp1;
+-	video->ops = &wpf_vdev_ops;
+ 
+ 	ret = vsp1_video_init(video, wpf);
+ 	if (ret < 0)
 -- 
-1.9.1
+2.4.6
 
