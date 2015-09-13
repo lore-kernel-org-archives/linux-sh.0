@@ -1,335 +1,179 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 30 Sep 2015 08:47:53 +0000
-Subject: [PATCH v7 2/2] pwm: Add support for R-Car PWM Timer
-Message-Id: <1443602873-4316-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 20:56:42 +0000
+Subject: [PATCH 04/32] v4l: vsp1: Rename vsp1_video_buffer to vsp1_vb2_buffer
+Message-Id: <1442177830-24536-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443602873-4316-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1443602873-4316-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: thierry.reding@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-This patch adds support for R-Car SoCs PWM Timer. The PWM timer of
-R-Car H2 has 7 channels. So, we can use the channels if we describe
-device tree nodes.
+The structure represent a vsp1 videobuf2 buffer, name it accordingly.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pwm/Kconfig    |  11 ++
- drivers/pwm/Makefile   |   1 +
- drivers/pwm/pwm-rcar.c | 266 +++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 278 insertions(+)
- create mode 100644 drivers/pwm/pwm-rcar.c
+ drivers/media/platform/vsp1/vsp1_rpf.c   |  2 +-
+ drivers/media/platform/vsp1/vsp1_rwpf.h  |  4 ++--
+ drivers/media/platform/vsp1/vsp1_video.c | 20 ++++++++++----------
+ drivers/media/platform/vsp1/vsp1_video.h |  7 +++----
+ drivers/media/platform/vsp1/vsp1_wpf.c   |  2 +-
+ 5 files changed, 17 insertions(+), 18 deletions(-)
 
-diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
-index 062630a..5dac49f 100644
---- a/drivers/pwm/Kconfig
-+++ b/drivers/pwm/Kconfig
-@@ -268,6 +268,17 @@ config PWM_PXA
- 	  To compile this driver as a module, choose M here: the module
- 	  will be called pwm-pxa.
+diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
+index a17154d98a54..9c2e34374c60 100644
+--- a/drivers/media/platform/vsp1/vsp1_rpf.c
++++ b/drivers/media/platform/vsp1/vsp1_rpf.c
+@@ -186,7 +186,7 @@ static struct v4l2_subdev_ops rpf_ops = {
+  * Video Device Operations
+  */
  
-+config PWM_RCAR
-+	tristate "Renesas R-Car PWM support"
-+	depends on ARCH_RCAR_GEN1 || ARCH_RCAR_GEN2 || COMPILE_TEST
-+	depends on HAS_IOMEM
-+	help
-+	  This driver exposes the PWM Timer controller found in Renesas
-+	  R-Car chips through the PWM API.
-+
-+	  To compile this driver as a module, choose M here: the module
-+	  will be called pwm-rcar.
-+
- config PWM_RENESAS_TPU
- 	tristate "Renesas TPU PWM support"
- 	depends on ARCH_SHMOBILE || COMPILE_TEST
-diff --git a/drivers/pwm/Makefile b/drivers/pwm/Makefile
-index a0e00c0..9107d65 100644
---- a/drivers/pwm/Makefile
-+++ b/drivers/pwm/Makefile
-@@ -24,6 +24,7 @@ obj-$(CONFIG_PWM_MXS)		+= pwm-mxs.o
- obj-$(CONFIG_PWM_PCA9685)	+= pwm-pca9685.o
- obj-$(CONFIG_PWM_PUV3)		+= pwm-puv3.o
- obj-$(CONFIG_PWM_PXA)		+= pwm-pxa.o
-+obj-$(CONFIG_PWM_RCAR)		+= pwm-rcar.o
- obj-$(CONFIG_PWM_RENESAS_TPU)	+= pwm-renesas-tpu.o
- obj-$(CONFIG_PWM_ROCKCHIP)	+= pwm-rockchip.o
- obj-$(CONFIG_PWM_SAMSUNG)	+= pwm-samsung.o
-diff --git a/drivers/pwm/pwm-rcar.c b/drivers/pwm/pwm-rcar.c
-new file mode 100644
-index 0000000..b641701
---- /dev/null
-+++ b/drivers/pwm/pwm-rcar.c
-@@ -0,0 +1,266 @@
-+/*
-+ * R-Car PWM Timer driver
-+ *
-+ * Copyright (C) 2015 Renesas Electronics Corporation
-+ *
-+ * This is free software; you can redistribute it and/or modify
-+ * it under the terms of version 2 of the GNU General Public License as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#include <linux/clk.h>
-+#include <linux/err.h>
-+#include <linux/io.h>
-+#include <linux/module.h>
-+#include <linux/of.h>
-+#include <linux/platform_device.h>
-+#include <linux/pm_runtime.h>
-+#include <linux/pwm.h>
-+#include <linux/slab.h>
-+
-+#define RCAR_PWM_MAX_DIVISION	24
-+#define RCAR_PWM_MAX_CYCLE	1023
-+
-+#define RCAR_PWMCR		0x00
-+#define RCAR_PWMCNT		0x04
-+
-+#define RCAR_PWMCR_CC0_MASK	0x000f0000
-+#define RCAR_PWMCR_CC0_SHIFT	16
-+#define RCAR_PWMCR_CCMD		BIT(15)
-+#define RCAR_PWMCR_SYNC		BIT(11)
-+#define RCAR_PWMCR_SS0		BIT(4)
-+#define RCAR_PWMCR_EN0		BIT(0)
-+
-+#define RCAR_PWMCNT_CYC0_MASK	0x03ff0000
-+#define RCAR_PWMCNT_CYC0_SHIFT	16
-+#define RCAR_PWMCNT_PH0_MASK	0x000003ff
-+#define RCAR_PWMCNT_PH0_SHIFT	0
-+
-+struct rcar_pwm_chip {
-+	struct pwm_chip chip;
-+	void __iomem *base;
-+	struct clk *clk;
-+};
-+
-+static inline struct rcar_pwm_chip *to_rcar_pwm_chip(struct pwm_chip *chip)
-+{
-+	return container_of(chip, struct rcar_pwm_chip, chip);
-+}
-+
-+static void rcar_pwm_write(struct rcar_pwm_chip *rp, u32 data, u32 reg)
-+{
-+	writel(data, rp->base + reg);
-+}
-+
-+static u32 rcar_pwm_read(struct rcar_pwm_chip *rp, u32 reg)
-+{
-+	return readl(rp->base + reg);
-+}
-+
-+static void rcar_pwm_bit_modify(struct rcar_pwm_chip *rp, u32 mask, u32 data,
-+				u32 reg)
-+{
-+	u32 val = rcar_pwm_read(rp, reg);
-+
-+	val &= ~mask;
-+	val |= data & mask;
-+	rcar_pwm_write(rp, val, reg);
-+}
-+
-+static int rcar_pwm_get_clock_division(struct rcar_pwm_chip *rp, int period_ns)
-+{
-+	unsigned int div;
-+	unsigned long clk_rate = clk_get_rate(rp->clk);
-+	unsigned long long max;	/* max cycle / nanoseconds */
-+
-+	if (clk_rate = 0)
-+		return -EINVAL;
-+
-+	for (div = 0; div <= RCAR_PWM_MAX_DIVISION; div++) {
-+		max = (unsigned long long)NSEC_PER_SEC * RCAR_PWM_MAX_CYCLE *
-+			(1 << div);
-+		do_div(max, clk_rate);
-+		if (period_ns < max)
-+			break;
-+	}
-+
-+	return (div <= RCAR_PWM_MAX_DIVISION) ? div : -ERANGE;
-+}
-+
-+static void rcar_pwm_set_clock_control(struct rcar_pwm_chip *rp, int div)
-+{
-+	u32 val = rcar_pwm_read(rp, RCAR_PWMCR);
-+
-+	val &= ~(RCAR_PWMCR_CCMD | RCAR_PWMCR_CC0_MASK);
-+	if (div & 1)
-+		val |= RCAR_PWMCR_CCMD;
-+	div >>= 1;
-+	val |= div << RCAR_PWMCR_CC0_SHIFT;
-+	rcar_pwm_write(rp, val, RCAR_PWMCR);
-+}
-+
-+static int rcar_pwm_set_counter(struct rcar_pwm_chip *rp, int div, int duty_ns,
-+				int period_ns)
-+{
-+	unsigned long long one_cycle, tmp;	/* 0.01 nanoseconds */
-+	unsigned long clk_rate = clk_get_rate(rp->clk);
-+	u32 cyc, ph;
-+
-+	one_cycle = (unsigned long long)NSEC_PER_SEC * 100ULL * (1 << div);
-+	do_div(one_cycle, clk_rate);
-+
-+	tmp = period_ns * 100ULL;
-+	do_div(tmp, one_cycle);
-+	cyc = (tmp << RCAR_PWMCNT_CYC0_SHIFT) & RCAR_PWMCNT_CYC0_MASK;
-+
-+	tmp = duty_ns * 100ULL;
-+	do_div(tmp, one_cycle);
-+	ph = tmp & RCAR_PWMCNT_PH0_MASK;
-+
-+	/* Avoid prohibited setting */
-+	if (cyc = 0 || ph = 0)
-+		return -EINVAL;
-+
-+	rcar_pwm_write(rp, cyc | ph, RCAR_PWMCNT);
-+
-+	return 0;
-+}
-+
-+static int rcar_pwm_request(struct pwm_chip *chip, struct pwm_device *pwm)
-+{
-+	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
-+
-+	return clk_prepare_enable(rp->clk);
-+}
-+
-+static void rcar_pwm_free(struct pwm_chip *chip, struct pwm_device *pwm)
-+{
-+	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
-+
-+	clk_disable_unprepare(rp->clk);
-+}
-+
-+static int rcar_pwm_config(struct pwm_chip *chip, struct pwm_device *pwm,
-+			   int duty_ns, int period_ns)
-+{
-+	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
-+	int div = rcar_pwm_get_clock_division(rp, period_ns);
-+	int ret;
-+
-+	if (div < 0)
-+		return div;
-+
-+	/* Let the core driver set pwm->period if disabled and duty_ns = 0 */
-+	if (!test_bit(PWMF_ENABLED, &pwm->flags) && !duty_ns)
-+		return 0;
-+
-+	rcar_pwm_bit_modify(rp, RCAR_PWMCR_SYNC, RCAR_PWMCR_SYNC, RCAR_PWMCR);
-+	ret = rcar_pwm_set_counter(rp, div, duty_ns, period_ns);
-+	if (!ret)
-+		rcar_pwm_set_clock_control(rp, div);
-+	/* The SYNC should be set to 0 even if rcar_pwm_set_counter failed */
-+	rcar_pwm_bit_modify(rp, RCAR_PWMCR_SYNC, 0, RCAR_PWMCR);
-+
-+	return ret;
-+}
-+
-+static int rcar_pwm_enable(struct pwm_chip *chip, struct pwm_device *pwm)
-+{
-+	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
-+	u32 pwmcnt;
-+
-+	/* Don't enable the PWM device if CYC0 or PH0 is 0 */
-+	pwmcnt = rcar_pwm_read(rp, RCAR_PWMCNT);
-+	if ((pwmcnt & RCAR_PWMCNT_CYC0_MASK) = 0 ||
-+	    (pwmcnt & RCAR_PWMCNT_PH0_MASK) = 0)
-+		return -EINVAL;
-+
-+	rcar_pwm_bit_modify(rp, RCAR_PWMCR_EN0, RCAR_PWMCR_EN0, RCAR_PWMCR);
-+
-+	return 0;
-+}
-+
-+static void rcar_pwm_disable(struct pwm_chip *chip, struct pwm_device *pwm)
-+{
-+	struct rcar_pwm_chip *rp = to_rcar_pwm_chip(chip);
-+
-+	rcar_pwm_bit_modify(rp, RCAR_PWMCR_EN0, 0, RCAR_PWMCR);
-+}
-+
-+static const struct pwm_ops rcar_pwm_ops = {
-+	.request = rcar_pwm_request,
-+	.free = rcar_pwm_free,
-+	.config = rcar_pwm_config,
-+	.enable = rcar_pwm_enable,
-+	.disable = rcar_pwm_disable,
-+	.owner = THIS_MODULE,
-+};
-+
-+static int rcar_pwm_probe(struct platform_device *pdev)
-+{
-+	struct rcar_pwm_chip *rcar_pwm;
-+	struct resource *res;
-+	int ret;
-+
-+	rcar_pwm = devm_kzalloc(&pdev->dev, sizeof(*rcar_pwm), GFP_KERNEL);
-+	if (rcar_pwm = NULL)
-+		return -ENOMEM;
-+
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	rcar_pwm->base = devm_ioremap_resource(&pdev->dev, res);
-+	if (IS_ERR(rcar_pwm->base))
-+		return PTR_ERR(rcar_pwm->base);
-+
-+	rcar_pwm->clk = devm_clk_get(&pdev->dev, NULL);
-+	if (IS_ERR(rcar_pwm->clk)) {
-+		dev_err(&pdev->dev, "cannot get clock\n");
-+		return PTR_ERR(rcar_pwm->clk);
-+	}
-+
-+	platform_set_drvdata(pdev, rcar_pwm);
-+
-+	rcar_pwm->chip.dev = &pdev->dev;
-+	rcar_pwm->chip.ops = &rcar_pwm_ops;
-+	rcar_pwm->chip.base = -1;
-+	rcar_pwm->chip.npwm = 1;
-+
-+	ret = pwmchip_add(&rcar_pwm->chip);
-+	if (ret < 0) {
-+		dev_err(&pdev->dev, "failed to register PWM chip\n");
-+		return ret;
-+	}
-+
-+	pm_runtime_enable(&pdev->dev);
-+
-+	return 0;
-+}
-+
-+static int rcar_pwm_remove(struct platform_device *pdev)
-+{
-+	struct rcar_pwm_chip *rcar_pwm = platform_get_drvdata(pdev);
-+
-+	pm_runtime_disable(&pdev->dev);
-+
-+	return pwmchip_remove(&rcar_pwm->chip);
-+}
-+
-+static const struct of_device_id rcar_pwm_of_table[] = {
-+	{ .compatible = "renesas,pwm-rcar", },
-+	{ },
-+};
-+MODULE_DEVICE_TABLE(of, rcar_pwm_of_table);
-+
-+static struct platform_driver rcar_pwm_driver = {
-+	.probe = rcar_pwm_probe,
-+	.remove = rcar_pwm_remove,
-+	.driver = {
-+		.name = "pwm-rcar",
-+		.of_match_table = of_match_ptr(rcar_pwm_of_table),
-+	}
-+};
-+module_platform_driver(rcar_pwm_driver);
-+
-+MODULE_AUTHOR("Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>");
-+MODULE_DESCRIPTION("Renesas PWM Timer Driver");
-+MODULE_LICENSE("GPL v2");
-+MODULE_ALIAS("platform:pwm-rcar");
+-static void rpf_buf_queue(struct vsp1_rwpf *rpf, struct vsp1_video_buffer *buf)
++static void rpf_buf_queue(struct vsp1_rwpf *rpf, struct vsp1_vb2_buffer *buf)
+ {
+ 	unsigned int i;
+ 
+diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
+index 3cc80be03524..aa22cc062ff3 100644
+--- a/drivers/media/platform/vsp1/vsp1_rwpf.h
++++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
+@@ -25,10 +25,10 @@
+ #define RWPF_PAD_SOURCE				1
+ 
+ struct vsp1_rwpf;
+-struct vsp1_video_buffer;
++struct vsp1_vb2_buffer;
+ 
+ struct vsp1_rwpf_operations {
+-	void (*queue)(struct vsp1_rwpf *rwpf, struct vsp1_video_buffer *buf);
++	void (*queue)(struct vsp1_rwpf *rwpf, struct vsp1_vb2_buffer *buf);
+ };
+ 
+ struct vsp1_rwpf {
+diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
+index 2ddbcbaf498f..d02cd63a9c5e 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.c
++++ b/drivers/media/platform/vsp1/vsp1_video.c
+@@ -577,12 +577,12 @@ static bool vsp1_pipeline_ready(struct vsp1_pipeline *pipe)
+  *
+  * Return the next queued buffer or NULL if the queue is empty.
+  */
+-static struct vsp1_video_buffer *
++static struct vsp1_vb2_buffer *
+ vsp1_video_complete_buffer(struct vsp1_video *video)
+ {
+ 	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&video->video.entity);
+-	struct vsp1_video_buffer *next = NULL;
+-	struct vsp1_video_buffer *done;
++	struct vsp1_vb2_buffer *next = NULL;
++	struct vsp1_vb2_buffer *done;
+ 	unsigned long flags;
+ 	unsigned int i;
+ 
+@@ -594,7 +594,7 @@ vsp1_video_complete_buffer(struct vsp1_video *video)
+ 	}
+ 
+ 	done = list_first_entry(&video->irqqueue,
+-				struct vsp1_video_buffer, queue);
++				struct vsp1_vb2_buffer, queue);
+ 
+ 	/* In DU output mode reuse the buffer if the list is singular. */
+ 	if (pipe->lif && list_is_singular(&video->irqqueue)) {
+@@ -606,7 +606,7 @@ vsp1_video_complete_buffer(struct vsp1_video *video)
+ 
+ 	if (!list_empty(&video->irqqueue))
+ 		next = list_first_entry(&video->irqqueue,
+-					struct vsp1_video_buffer, queue);
++					struct vsp1_vb2_buffer, queue);
+ 
+ 	spin_unlock_irqrestore(&video->irqlock, flags);
+ 
+@@ -622,7 +622,7 @@ vsp1_video_complete_buffer(struct vsp1_video *video)
+ static void vsp1_video_frame_end(struct vsp1_pipeline *pipe,
+ 				 struct vsp1_video *video)
+ {
+-	struct vsp1_video_buffer *buf;
++	struct vsp1_vb2_buffer *buf;
+ 	unsigned long flags;
+ 
+ 	buf = vsp1_video_complete_buffer(video);
+@@ -821,7 +821,7 @@ vsp1_video_queue_setup(struct vb2_queue *vq, const struct v4l2_format *fmt,
+ static int vsp1_video_buffer_prepare(struct vb2_buffer *vb)
+ {
+ 	struct vsp1_video *video = vb2_get_drv_priv(vb->vb2_queue);
+-	struct vsp1_video_buffer *buf = to_vsp1_video_buffer(vb);
++	struct vsp1_vb2_buffer *buf = to_vsp1_vb2_buffer(vb);
+ 	const struct v4l2_pix_format_mplane *format = &video->rwpf->format;
+ 	unsigned int i;
+ 
+@@ -843,7 +843,7 @@ static void vsp1_video_buffer_queue(struct vb2_buffer *vb)
+ {
+ 	struct vsp1_video *video = vb2_get_drv_priv(vb->vb2_queue);
+ 	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&video->video.entity);
+-	struct vsp1_video_buffer *buf = to_vsp1_video_buffer(vb);
++	struct vsp1_vb2_buffer *buf = to_vsp1_vb2_buffer(vb);
+ 	unsigned long flags;
+ 	bool empty;
+ 
+@@ -935,7 +935,7 @@ static void vsp1_video_stop_streaming(struct vb2_queue *vq)
+ {
+ 	struct vsp1_video *video = vb2_get_drv_priv(vq);
+ 	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&video->video.entity);
+-	struct vsp1_video_buffer *buffer;
++	struct vsp1_vb2_buffer *buffer;
+ 	unsigned long flags;
+ 	int ret;
+ 
+@@ -1260,7 +1260,7 @@ int vsp1_video_init(struct vsp1_video *video, struct vsp1_rwpf *rwpf)
+ 	video->queue.io_modes = VB2_MMAP | VB2_USERPTR | VB2_DMABUF;
+ 	video->queue.lock = &video->lock;
+ 	video->queue.drv_priv = video;
+-	video->queue.buf_struct_size = sizeof(struct vsp1_video_buffer);
++	video->queue.buf_struct_size = sizeof(struct vsp1_vb2_buffer);
+ 	video->queue.ops = &vsp1_video_queue_qops;
+ 	video->queue.mem_ops = &vb2_dma_contig_memops;
+ 	video->queue.timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_COPY;
+diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
+index 34efc471351c..e66ee14c596d 100644
+--- a/drivers/media/platform/vsp1/vsp1_video.h
++++ b/drivers/media/platform/vsp1/vsp1_video.h
+@@ -94,7 +94,7 @@ static inline struct vsp1_pipeline *to_vsp1_pipeline(struct media_entity *e)
+ 		return NULL;
+ }
+ 
+-struct vsp1_video_buffer {
++struct vsp1_vb2_buffer {
+ 	struct vb2_buffer buf;
+ 	struct list_head queue;
+ 
+@@ -102,10 +102,9 @@ struct vsp1_video_buffer {
+ 	unsigned int length[3];
+ };
+ 
+-static inline struct vsp1_video_buffer *
+-to_vsp1_video_buffer(struct vb2_buffer *vb)
++static inline struct vsp1_vb2_buffer *to_vsp1_vb2_buffer(struct vb2_buffer *vb)
+ {
+-	return container_of(vb, struct vsp1_video_buffer, buf);
++	return container_of(vb, struct vsp1_vb2_buffer, buf);
+ }
+ 
+ struct vsp1_video {
+diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
+index f93b545949b6..1bb389529f24 100644
+--- a/drivers/media/platform/vsp1/vsp1_wpf.c
++++ b/drivers/media/platform/vsp1/vsp1_wpf.c
+@@ -195,7 +195,7 @@ static struct v4l2_subdev_ops wpf_ops = {
+  * Video Device Operations
+  */
+ 
+-static void wpf_buf_queue(struct vsp1_rwpf *wpf, struct vsp1_video_buffer *buf)
++static void wpf_buf_queue(struct vsp1_rwpf *wpf, struct vsp1_vb2_buffer *buf)
+ {
+ 	vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_Y, buf->addr[0]);
+ 	if (buf->buf.num_planes > 1)
 -- 
-1.9.1
+2.4.6
 
