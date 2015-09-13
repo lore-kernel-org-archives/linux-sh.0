@@ -1,626 +1,639 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 17 Sep 2015 04:22:09 +0000
-Subject: [PATCH 04/20 v2] clk: add CS2000 Fractional-N driver
-Message-Id: <87pp1h7k7e.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 22:50:56 +0000
+Subject: [PATCH 09/22] drm: rcar-du: Move plane allocator to rcar_du_plane.c
+Message-Id: <1442184669-30990-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The plane allocator is specific to DU planes and won't be used for
+VSP-based planes, move it with the rest of the DU planes code where it
+belongs.
 
-This patch adds CS2000 Fractional-N driver as clock provider.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v1 -> v2
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c   | 276 +-----------------------------
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 286 ++++++++++++++++++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_plane.h |   3 +
+ 3 files changed, 290 insertions(+), 275 deletions(-)
 
- - already posted, not yet merged
-
- .../devicetree/bindings/clock/cs2000-cp.txt        |  24 +
- drivers/clk/Kconfig                                |   6 +
- drivers/clk/Makefile                               |   1 +
- drivers/clk/clk-cs2000-cp.c                        | 530 +++++++++++++++++++++
- 4 files changed, 561 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/clock/cs2000-cp.txt
- create mode 100644 drivers/clk/clk-cs2000-cp.c
-
-diff --git a/Documentation/devicetree/bindings/clock/cs2000-cp.txt b/Documentation/devicetree/bindings/clock/cs2000-cp.txt
-new file mode 100644
-index 0000000..b21033d
---- /dev/null
-+++ b/Documentation/devicetree/bindings/clock/cs2000-cp.txt
-@@ -0,0 +1,24 @@
-+CIRRUS LOGIC Fractional-N Clock Synthesizer & Clock Multiplier
-+
-+Required properties:
-+
-+- compatible:		"cirrus,cs2000-cp"
-+- reg:			The chip select number on the I2C bus
-+- clocks:		common clock binding for CLK_IN, XTI/REF_CLK
-+- clock-names:		CLK_IN : clk_in, XTI/REF_CLK : ref_clk
-+- clock-frequency:	clock frequency of CLK_OUT
-+- #clock-cells:		must be <0>
-+
-+Example:
-+
-+&i2c2 {
-+	...
-+	cs2000: clk_multiplier@4f {
-+		#clock-cells = <0>;
-+		compatible = "cirrus,cs2000-cp";
-+		reg = <0x4f>;
-+		clocks = <&rcar_sound 0>, <&x12_clk>;
-+		clock-names = "clk_in", "ref_clk";
-+		clock-frequency = <24576000>; /* 1/1 divide */
-+	};
-+};
-diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
-index 42f7120..0e961b2 100644
---- a/drivers/clk/Kconfig
-+++ b/drivers/clk/Kconfig
-@@ -95,6 +95,12 @@ config COMMON_CLK_CDCE925
- 	  Given a target output frequency, the driver will set the PLL and
- 	  divider to best approximate the desired output.
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.c b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+index ba4e100e5b0f..6196410b9e98 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_kms.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.c
+@@ -192,290 +192,16 @@ static void rcar_du_output_poll_changed(struct drm_device *dev)
+  * Atomic Check and Update
+  */
  
-+config COMMON_CLK_CS2000_CP
-+	tristate "Clock driver for CS2000 Fractional-N Clock Synthesizer & Clock Multiplier"
-+	depends on I2C
-+	help
-+	  If you say yes here you get support for the CS2000 clock multiplier.
-+
- config COMMON_CLK_S2MPS11
- 	tristate "Clock driver for S2MPS1X/S5M8767 MFD"
- 	depends on MFD_SEC_CORE
-diff --git a/drivers/clk/Makefile b/drivers/clk/Makefile
-index 9d31e2c..2fb77a8 100644
---- a/drivers/clk/Makefile
-+++ b/drivers/clk/Makefile
-@@ -21,6 +21,7 @@ obj-$(CONFIG_COMMON_CLK_AXI_CLKGEN)	+= clk-axi-clkgen.o
- obj-$(CONFIG_ARCH_AXXIA)		+= clk-axm5516.o
- obj-$(CONFIG_ARCH_BCM2835)		+= clk-bcm2835.o
- obj-$(CONFIG_COMMON_CLK_CDCE706)	+= clk-cdce706.o
-+obj-$(CONFIG_COMMON_CLK_CS2000_CP)	+= clk-cs2000-cp.o
- obj-$(CONFIG_ARCH_CLPS711X)		+= clk-clps711x.o
- obj-$(CONFIG_ARCH_EFM32)		+= clk-efm32gg.o
- obj-$(CONFIG_ARCH_HIGHBANK)		+= clk-highbank.o
-diff --git a/drivers/clk/clk-cs2000-cp.c b/drivers/clk/clk-cs2000-cp.c
-new file mode 100644
-index 0000000..ab8360f
---- /dev/null
-+++ b/drivers/clk/clk-cs2000-cp.c
-@@ -0,0 +1,530 @@
-+/*
-+ * CS2000  --  CIRRUS LOGIC Fractional-N Clock Synthesizer & Clock Multiplier
+-/*
+- * Atomic hardware plane allocator
+- *
+- * The hardware plane allocator is solely based on the atomic plane states
+- * without keeping any external state to avoid races between .atomic_check()
+- * and .atomic_commit().
+- *
+- * The core idea is to avoid using a free planes bitmask that would need to be
+- * shared between check and commit handlers with a collective knowledge based on
+- * the allocated hardware plane(s) for each KMS plane. The allocator then loops
+- * over all plane states to compute the free planes bitmask, allocates hardware
+- * planes based on that bitmask, and stores the result back in the plane states.
+- *
+- * For this to work we need to access the current state of planes not touched by
+- * the atomic update. To ensure that it won't be modified, we need to lock all
+- * planes using drm_atomic_get_plane_state(). This effectively serializes atomic
+- * updates from .atomic_check() up to completion (when swapping the states if
+- * the check step has succeeded) or rollback (when freeing the states if the
+- * check step has failed).
+- *
+- * Allocation is performed in the .atomic_check() handler and applied
+- * automatically when the core swaps the old and new states.
+- */
+-
+-static bool rcar_du_plane_needs_realloc(struct rcar_du_plane *plane,
+-					struct rcar_du_plane_state *new_state)
+-{
+-	struct rcar_du_plane_state *cur_state;
+-
+-	cur_state = to_rcar_plane_state(plane->plane.state);
+-
+-	/* Lowering the number of planes doesn't strictly require reallocation
+-	 * as the extra hardware plane will be freed when committing, but doing
+-	 * so could lead to more fragmentation.
+-	 */
+-	if (!cur_state->format ||
+-	    cur_state->format->planes != new_state->format->planes)
+-		return true;
+-
+-	/* Reallocate hardware planes if the source has changed. */
+-	if (cur_state->source != new_state->source)
+-		return true;
+-
+-	return false;
+-}
+-
+-static unsigned int rcar_du_plane_hwmask(struct rcar_du_plane_state *state)
+-{
+-	unsigned int mask;
+-
+-	if (state->hwindex = -1)
+-		return 0;
+-
+-	mask = 1 << state->hwindex;
+-	if (state->format->planes = 2)
+-		mask |= 1 << ((state->hwindex + 1) % 8);
+-
+-	return mask;
+-}
+-
+-/*
+- * The R8A7790 DU can source frames directly from the VSP1 devices VSPD0 and
+- * VSPD1. VSPD0 feeds DU0/1 plane 0, and VSPD1 feeds either DU2 plane 0 or
+- * DU0/1 plane 1.
+- *
+- * Allocate the correct fixed plane when sourcing frames from VSPD0 or VSPD1,
+- * and allocate planes in reverse index order otherwise to ensure maximum
+- * availability of planes 0 and 1.
+- *
+- * The caller is responsible for ensuring that the requested source is
+- * compatible with the DU revision.
+- */
+-static int rcar_du_plane_hwalloc(struct rcar_du_plane *plane,
+-				 struct rcar_du_plane_state *state,
+-				 unsigned int free)
+-{
+-	unsigned int num_planes = state->format->planes;
+-	int fixed = -1;
+-	int i;
+-
+-	if (state->source = RCAR_DU_PLANE_VSPD0) {
+-		/* VSPD0 feeds plane 0 on DU0/1. */
+-		if (plane->group->index != 0)
+-			return -EINVAL;
+-
+-		fixed = 0;
+-	} else if (state->source = RCAR_DU_PLANE_VSPD1) {
+-		/* VSPD1 feeds plane 1 on DU0/1 or plane 0 on DU2. */
+-		fixed = plane->group->index = 0 ? 1 : 0;
+-	}
+-
+-	if (fixed >= 0)
+-		return free & (1 << fixed) ? fixed : -EBUSY;
+-
+-	for (i = RCAR_DU_NUM_HW_PLANES - 1; i >= 0; --i) {
+-		if (!(free & (1 << i)))
+-			continue;
+-
+-		if (num_planes = 1 || free & (1 << ((i + 1) % 8)))
+-			break;
+-	}
+-
+-	return i < 0 ? -EBUSY : i;
+-}
+-
+ static int rcar_du_atomic_check(struct drm_device *dev,
+ 				struct drm_atomic_state *state)
+ {
+-	struct rcar_du_device *rcdu = dev->dev_private;
+-	unsigned int group_freed_planes[RCAR_DU_MAX_GROUPS] = { 0, };
+-	unsigned int group_free_planes[RCAR_DU_MAX_GROUPS] = { 0, };
+-	bool needs_realloc = false;
+-	unsigned int groups = 0;
+-	unsigned int i;
+ 	int ret;
+ 
+ 	ret = drm_atomic_helper_check(dev, state);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	/* Check if hardware planes need to be reallocated. */
+-	for (i = 0; i < dev->mode_config.num_total_plane; ++i) {
+-		struct rcar_du_plane_state *plane_state;
+-		struct rcar_du_plane *plane;
+-		unsigned int index;
+-
+-		if (!state->planes[i])
+-			continue;
+-
+-		plane = to_rcar_plane(state->planes[i]);
+-		plane_state = to_rcar_plane_state(state->plane_states[i]);
+-
+-		dev_dbg(rcdu->dev, "%s: checking plane (%u,%u)\n", __func__,
+-			plane->group->index, plane - plane->group->planes);
+-
+-		/* If the plane is being disabled we don't need to go through
+-		 * the full reallocation procedure. Just mark the hardware
+-		 * plane(s) as freed.
+-		 */
+-		if (!plane_state->format) {
+-			dev_dbg(rcdu->dev, "%s: plane is being disabled\n",
+-				__func__);
+-			index = plane - plane->group->planes;
+-			group_freed_planes[plane->group->index] |= 1 << index;
+-			plane_state->hwindex = -1;
+-			continue;
+-		}
+-
+-		/* If the plane needs to be reallocated mark it as such, and
+-		 * mark the hardware plane(s) as free.
+-		 */
+-		if (rcar_du_plane_needs_realloc(plane, plane_state)) {
+-			dev_dbg(rcdu->dev, "%s: plane needs reallocation\n",
+-				__func__);
+-			groups |= 1 << plane->group->index;
+-			needs_realloc = true;
+-
+-			index = plane - plane->group->planes;
+-			group_freed_planes[plane->group->index] |= 1 << index;
+-			plane_state->hwindex = -1;
+-		}
+-	}
+-
+-	if (!needs_realloc)
+-		return 0;
+-
+-	/* Grab all plane states for the groups that need reallocation to ensure
+-	 * locking and avoid racy updates. This serializes the update operation,
+-	 * but there's not much we can do about it as that's the hardware
+-	 * design.
+-	 *
+-	 * Compute the used planes mask for each group at the same time to avoid
+-	 * looping over the planes separately later.
+-	 */
+-	while (groups) {
+-		unsigned int index = ffs(groups) - 1;
+-		struct rcar_du_group *group = &rcdu->groups[index];
+-		unsigned int used_planes = 0;
+-
+-		dev_dbg(rcdu->dev, "%s: finding free planes for group %u\n",
+-			__func__, index);
+-
+-		for (i = 0; i < group->num_planes; ++i) {
+-			struct rcar_du_plane *plane = &group->planes[i];
+-			struct rcar_du_plane_state *plane_state;
+-			struct drm_plane_state *s;
+-
+-			s = drm_atomic_get_plane_state(state, &plane->plane);
+-			if (IS_ERR(s))
+-				return PTR_ERR(s);
+-
+-			/* If the plane has been freed in the above loop its
+-			 * hardware planes must not be added to the used planes
+-			 * bitmask. However, the current state doesn't reflect
+-			 * the free state yet, as we've modified the new state
+-			 * above. Use the local freed planes list to check for
+-			 * that condition instead.
+-			 */
+-			if (group_freed_planes[index] & (1 << i)) {
+-				dev_dbg(rcdu->dev,
+-					"%s: plane (%u,%u) has been freed, skipping\n",
+-					__func__, plane->group->index,
+-					plane - plane->group->planes);
+-				continue;
+-			}
+-
+-			plane_state = to_rcar_plane_state(plane->plane.state);
+-			used_planes |= rcar_du_plane_hwmask(plane_state);
+-
+-			dev_dbg(rcdu->dev,
+-				"%s: plane (%u,%u) uses %u hwplanes (index %d)\n",
+-				__func__, plane->group->index,
+-				plane - plane->group->planes,
+-				plane_state->format ?
+-				plane_state->format->planes : 0,
+-				plane_state->hwindex);
+-		}
+-
+-		group_free_planes[index] = 0xff & ~used_planes;
+-		groups &= ~(1 << index);
+-
+-		dev_dbg(rcdu->dev, "%s: group %u free planes mask 0x%02x\n",
+-			__func__, index, group_free_planes[index]);
+-	}
+-
+-	/* Reallocate hardware planes for each plane that needs it. */
+-	for (i = 0; i < dev->mode_config.num_total_plane; ++i) {
+-		struct rcar_du_plane_state *plane_state;
+-		struct rcar_du_plane *plane;
+-		unsigned int crtc_planes;
+-		unsigned int free;
+-		int idx;
+-
+-		if (!state->planes[i])
+-			continue;
+-
+-		plane = to_rcar_plane(state->planes[i]);
+-		plane_state = to_rcar_plane_state(state->plane_states[i]);
+-
+-		dev_dbg(rcdu->dev, "%s: allocating plane (%u,%u)\n", __func__,
+-			plane->group->index, plane - plane->group->planes);
+-
+-		/* Skip planes that are being disabled or don't need to be
+-		 * reallocated.
+-		 */
+-		if (!plane_state->format ||
+-		    !rcar_du_plane_needs_realloc(plane, plane_state))
+-			continue;
+-
+-		/* Try to allocate the plane from the free planes currently
+-		 * associated with the target CRTC to avoid restarting the CRTC
+-		 * group and thus minimize flicker. If it fails fall back to
+-		 * allocating from all free planes.
+-		 */
+-		crtc_planes = to_rcar_crtc(plane_state->state.crtc)->index % 2
+-			    ? plane->group->dptsr_planes
+-			    : ~plane->group->dptsr_planes;
+-		free = group_free_planes[plane->group->index];
+-
+-		idx = rcar_du_plane_hwalloc(plane, plane_state,
+-					    free & crtc_planes);
+-		if (idx < 0)
+-			idx = rcar_du_plane_hwalloc(plane, plane_state,
+-						    free);
+-		if (idx < 0) {
+-			dev_dbg(rcdu->dev, "%s: no available hardware plane\n",
+-				__func__);
+-			return idx;
+-		}
+-
+-		dev_dbg(rcdu->dev, "%s: allocated %u hwplanes (index %u)\n",
+-			__func__, plane_state->format->planes, idx);
+-
+-		plane_state->hwindex = idx;
+-
+-		group_free_planes[plane->group->index] &-			~rcar_du_plane_hwmask(plane_state);
+-
+-		dev_dbg(rcdu->dev, "%s: group %u free planes mask 0x%02x\n",
+-			__func__, plane->group->index,
+-			group_free_planes[plane->group->index]);
+-	}
+-
+-	return 0;
++	return rcar_du_atomic_check_planes(dev, state);
+ }
+ 
+ struct rcar_du_commit {
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+index c7e0535c0e77..b868184e8385 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
+@@ -12,6 +12,7 @@
+  */
+ 
+ #include <drm/drmP.h>
++#include <drm/drm_atomic.h>
+ #include <drm/drm_atomic_helper.h>
+ #include <drm/drm_crtc.h>
+ #include <drm/drm_crtc_helper.h>
+@@ -25,6 +26,291 @@
+ #include "rcar_du_plane.h"
+ #include "rcar_du_regs.h"
+ 
++/* -----------------------------------------------------------------------------
++ * Atomic hardware plane allocator
 + *
-+ * Copyright (C) 2015 Renesas Electronics Corporation
-+ * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * The hardware plane allocator is solely based on the atomic plane states
++ * without keeping any external state to avoid races between .atomic_check()
++ * and .atomic_commit().
 + *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
++ * The core idea is to avoid using a free planes bitmask that would need to be
++ * shared between check and commit handlers with a collective knowledge based on
++ * the allocated hardware plane(s) for each KMS plane. The allocator then loops
++ * over all plane states to compute the free planes bitmask, allocates hardware
++ * planes based on that bitmask, and stores the result back in the plane states.
++ *
++ * For this to work we need to access the current state of planes not touched by
++ * the atomic update. To ensure that it won't be modified, we need to lock all
++ * planes using drm_atomic_get_plane_state(). This effectively serializes atomic
++ * updates from .atomic_check() up to completion (when swapping the states if
++ * the check step has succeeded) or rollback (when freeing the states if the
++ * check step has failed).
++ *
++ * Allocation is performed in the .atomic_check() handler and applied
++ * automatically when the core swaps the old and new states.
 + */
-+#include <linux/clk-provider.h>
-+#include <linux/delay.h>
-+#include <linux/clk.h>
-+#include <linux/i2c.h>
-+#include <linux/of_device.h>
-+#include <linux/module.h>
 +
-+#define CH_MAX 4
-+
-+#define DEVICE_ID	0x1
-+#define DEVICE_CTRL	0x2
-+#define DEVICE_CFG1	0x3
-+#define DEVICE_CFG2	0x4
-+#define GLOBAL_CFG	0x5
-+#define Ratio_Add(x, nth)	(6 + (x * 4) + (nth))
-+#define Ratio_Val(x, nth)	((x >> (24 - (8 * nth))) & 0xFF)
-+#define Val_Ratio(x, nth)	((x & 0xFF) << (24 - (8 * nth)))
-+#define FUNC_CFG1	0x16
-+#define FUNC_CFG2	0x17
-+
-+/* DEVICE_CTRL */
-+#define PLL_UNLOCK	(1 << 7)
-+
-+/* DEVICE_CFG1 */
-+#define RSEL(x)		(((x) & 0x3) << 3)
-+#define RSEL_MASK	RSEL(0x3)
-+#define ENDEV1		(0x1)
-+
-+/* GLOBAL_CFG */
-+#define ENDEV2		(0x1)
-+
-+#define CH_SIZE_ERR(ch)		((ch < 0) || (ch >= CH_MAX))
-+#define hw_to_priv(_hw)		container_of(_hw, struct cs2000_priv, hw)
-+#define priv_to_client(priv)	(priv->client)
-+#define priv_to_dev(priv)	(&(priv_to_client(priv)->dev))
-+
-+#define CLK_IN	0
-+#define REF_CLK	1
-+#define CLK_MAX 2
-+
-+struct cs2000_priv {
-+	struct clk_hw hw;
-+	struct i2c_client *client;
-+	struct clk *clk_in;
-+	struct clk *ref_clk;
-+	struct clk *clk_out;
-+};
-+
-+static const struct of_device_id cs2000_of_match[] = {
-+	{ .compatible = "cirrus,cs2000-cp", },
-+	{},
-+};
-+MODULE_DEVICE_TABLE(of, cs2000_of_match);
-+
-+static const struct i2c_device_id cs2000_id[] = {
-+	{ "cs2000-cp", },
-+	{}
-+};
-+MODULE_DEVICE_TABLE(i2c, cs2000_id);
-+
-+#define cs2000_read(priv, addr) \
-+	i2c_smbus_read_byte_data(priv_to_client(priv), addr)
-+#define cs2000_write(priv, addr, val) \
-+	i2c_smbus_write_byte_data(priv_to_client(priv), addr, val)
-+
-+static int cs2000_bset(struct cs2000_priv *priv, u8 addr, u8 mask, u8 val)
++static bool rcar_du_plane_needs_realloc(struct rcar_du_plane *plane,
++					struct rcar_du_plane_state *new_state)
 +{
-+	s32 data;
++	struct rcar_du_plane_state *cur_state;
 +
-+	data = cs2000_read(priv, addr);
-+	if (data < 0)
-+		return data;
++	cur_state = to_rcar_plane_state(plane->plane.state);
 +
-+	data &= ~mask;
-+	data |= (val & mask);
-+
-+	return cs2000_write(priv, addr, data);
-+}
-+
-+static int cs2000_enable_dev_config(struct cs2000_priv *priv, bool enable)
-+{
-+	u32 val;
-+	int ret;
-+
-+	val = enable ? ENDEV1 : 0;
-+	ret = cs2000_bset(priv, DEVICE_CFG1, ENDEV1, val);
-+	if (ret < 0)
-+		return ret;
-+
-+	val = enable ? ENDEV2 : 0;
-+	ret = cs2000_bset(priv, GLOBAL_CFG,  ENDEV2, val);
-+	if (ret < 0)
-+		return ret;
-+
-+	return 0;
-+}
-+
-+static int cs2000_clk_in_bound_rate(struct cs2000_priv *priv,
-+				    u32 rate_in)
-+{
-+	u32 val;
-+
-+	if (rate_in >= 32000000 &&
-+	    rate_in < 56000000)
-+		val = 0x0;
-+	else if (rate_in >= 16000000 &&
-+		 rate_in < 28000000)
-+		val = 0x1;
-+	else if (rate_in >= 8000000 &&
-+		 rate_in < 14000000)
-+		val = 0x2;
-+	else
-+		return -EINVAL;
-+
-+	return cs2000_bset(priv, FUNC_CFG1, 0x3 << 3, val << 3);
-+}
-+
-+static int cs2000_wait_pll_lock(struct cs2000_priv *priv)
-+{
-+	struct device *dev = priv_to_dev(priv);
-+	s32 val;
-+	unsigned int i;
-+
-+	for (i = 0; i < 256; i++) {
-+		val = cs2000_read(priv, DEVICE_CTRL);
-+		if (val < 0)
-+			return val;
-+		if (!(val & PLL_UNLOCK))
-+			return 0;
-+		udelay(1);
-+	}
-+
-+	dev_err(dev, "pll lock failed\n");
-+
-+	return -EIO;
-+}
-+
-+static int cs2000_clk_out_enable(struct cs2000_priv *priv, bool enable)
-+{
-+	u32 val = enable ? 0 : 0x3;
-+
-+	/* enable both AUX_OUT, CLK_OUT */
-+	return cs2000_write(priv, DEVICE_CTRL, val);
-+}
-+
-+static u32 cs2000_rate_to_ratio(u32 rate_in, u32 rate_out)
-+{
-+	u64 ratio;
-+
-+	/*
-+	 * ratio = rate_out / rate_in * 2^20
-+	 *
-+	 * To avoid over flow, rate_out is u64
-+	 * The result should be u32
++	/* Lowering the number of planes doesn't strictly require reallocation
++	 * as the extra hardware plane will be freed when committing, but doing
++	 * so could lead to more fragmentation.
 +	 */
-+	ratio = (u64)rate_out << 20;
-+	do_div(ratio, rate_in);
++	if (!cur_state->format ||
++	    cur_state->format->planes != new_state->format->planes)
++		return true;
 +
-+	return (u32)ratio;
++	/* Reallocate hardware planes if the source has changed. */
++	if (cur_state->source != new_state->source)
++		return true;
++
++	return false;
 +}
 +
-+static unsigned long cs2000_ratio_to_rate(u32 ratio, u32 rate_in)
++static unsigned int rcar_du_plane_hwmask(struct rcar_du_plane_state *state)
 +{
-+	u64 rate_out;
++	unsigned int mask;
 +
-+	/*
-+	 * ratio = rate_out / rate_in * 2^20
-+	 *
-+	 * To avoid over flow, rate_out is u64
-+	 * The result should be u32
-+	 */
-+
-+	rate_out = (u64)ratio * rate_in;
-+	return (unsigned long)(rate_out >> 20);
-+}
-+
-+static int cs2000_ratio_set(struct cs2000_priv *priv,
-+			    int ch, u32 rate_in, u32 rate_out)
-+{
-+	u32 val;
-+	unsigned int i;
-+	int ret;
-+
-+	if (CH_SIZE_ERR(ch))
-+		return -EINVAL;
-+
-+	val = cs2000_rate_to_ratio(rate_in, rate_out);
-+	for (i = 0; i < 4; i++) {
-+		ret = cs2000_write(priv,
-+				   Ratio_Add(ch, i),
-+				   Ratio_Val(val, i));
-+		if (ret < 0)
-+			return ret;
-+	}
-+
-+	return 0;
-+}
-+
-+static u32 cs2000_ratio_get(struct cs2000_priv *priv, int ch)
-+{
-+	u32 tmp, val;
-+	unsigned int i;
-+
-+	val = 0;
-+	for (i = 0; i < 4; i++) {
-+		tmp = cs2000_read(priv,
-+				  Ratio_Add(ch, i));
-+		if (tmp < 0)
-+			return 0;
-+
-+		val |= Val_Ratio(tmp, i);
-+	}
-+
-+	return val;
-+}
-+
-+static int cs2000_ratio_select(struct cs2000_priv *priv, int ch)
-+{
-+	int ret;
-+
-+	if (CH_SIZE_ERR(ch))
-+		return -EINVAL;
-+
-+	/*
-+	 * FIXME
-+	 *
-+	 * this driver supports static ratio mode only
-+	 * at this point
-+	 */
-+	ret = cs2000_bset(priv, DEVICE_CFG1, RSEL_MASK, RSEL(ch));
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = cs2000_write(priv, DEVICE_CFG2, 0x0);
-+	if (ret < 0)
-+		return ret;
-+
-+	return 0;
-+}
-+
-+static unsigned long cs2000_recalc_rate(struct clk_hw *hw,
-+					unsigned long parent_rate)
-+{
-+	struct cs2000_priv *priv = hw_to_priv(hw);
-+	int ch = 0; /* it uses ch0 only at this point */
-+	u32 ratio;
-+
-+	ratio = cs2000_ratio_get(priv, ch);
-+
-+	return cs2000_ratio_to_rate(ratio, parent_rate);
-+}
-+
-+static long cs2000_round_rate(struct clk_hw *hw, unsigned long rate,
-+			      unsigned long *parent_rate)
-+{
-+	u32 ratio;
-+
-+	ratio = cs2000_rate_to_ratio(*parent_rate, rate);
-+
-+	return cs2000_ratio_to_rate(ratio, *parent_rate);
-+}
-+
-+static int __cs2000_set_rate(struct cs2000_priv *priv, int ch,
-+			     unsigned long rate, unsigned long parent_rate)
-+
-+{
-+	int ret;
-+
-+	ret = cs2000_clk_in_bound_rate(priv, parent_rate);
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = cs2000_ratio_set(priv, ch, parent_rate, rate);
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = cs2000_ratio_select(priv, ch);
-+	if (ret < 0)
-+		return ret;
-+
-+	return 0;
-+}
-+
-+static int cs2000_set_rate(struct clk_hw *hw,
-+			   unsigned long rate, unsigned long parent_rate)
-+{
-+	struct cs2000_priv *priv = hw_to_priv(hw);
-+	int ch = 0; /* it uses ch0 only at this point */
-+
-+	return __cs2000_set_rate(priv, ch, rate, parent_rate);
-+}
-+
-+static int __cs2000_enable(struct cs2000_priv *priv)
-+{
-+	int ret;
-+
-+	ret = cs2000_enable_dev_config(priv, true);
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = cs2000_clk_out_enable(priv, true);
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = cs2000_wait_pll_lock(priv);
-+	if (ret < 0)
-+		return ret;
-+
-+	return 0;
-+}
-+
-+static int cs2000_enable(struct clk_hw *hw)
-+{
-+	struct cs2000_priv *priv = hw_to_priv(hw);
-+
-+	return __cs2000_enable(priv);
-+}
-+
-+static void cs2000_disable(struct clk_hw *hw)
-+{
-+	struct cs2000_priv *priv = hw_to_priv(hw);
-+
-+	cs2000_enable_dev_config(priv, false);
-+
-+	cs2000_clk_out_enable(priv, false);
-+}
-+
-+static u8 cs2000_get_parent(struct clk_hw *hw)
-+{
-+	/* always return REF_CLK */
-+	return REF_CLK;
-+}
-+
-+static const struct clk_ops cs2000_ops = {
-+	.get_parent	= cs2000_get_parent,
-+	.recalc_rate	= cs2000_recalc_rate,
-+	.round_rate	= cs2000_round_rate,
-+	.set_rate	= cs2000_set_rate,
-+	.enable		= cs2000_enable,
-+	.disable	= cs2000_disable,
-+};
-+
-+static int cs2000_clk_get(struct cs2000_priv *priv)
-+{
-+	struct i2c_client *client = priv_to_client(priv);
-+	struct device *dev = &client->dev;
-+	struct clk *clk_in, *ref_clk;
-+
-+	clk_in = devm_clk_get(dev, "clk_in");
-+	/* not yet provided */
-+	if (IS_ERR(clk_in))
-+		return -EPROBE_DEFER;
-+
-+	ref_clk = devm_clk_get(dev, "ref_clk");
-+	/* not yet provided */
-+	if (IS_ERR(ref_clk))
-+		return -EPROBE_DEFER;
-+
-+	priv->clk_in	= clk_in;
-+	priv->ref_clk	= ref_clk;
-+
-+	return 0;
-+}
-+
-+static int cs2000_clk_register(struct cs2000_priv *priv)
-+{
-+	struct device *dev = priv_to_dev(priv);
-+	struct device_node *np = dev->of_node;
-+	struct clk_init_data init;
-+	const char *name = np->name;
-+	struct clk *clk;
-+	static const char *parent_names[CLK_MAX];
-+	int ret;
-+
-+	of_property_read_string(np, "clock-output-names", &name);
-+
-+	parent_names[CLK_IN]	= __clk_get_name(priv->clk_in);
-+	parent_names[REF_CLK]	= __clk_get_name(priv->ref_clk);
-+
-+	init.name		= name;
-+	init.ops		= &cs2000_ops;
-+	init.flags		= CLK_IS_BASIC | CLK_SET_RATE_GATE;
-+	init.parent_names	= parent_names;
-+	init.num_parents	= ARRAY_SIZE(parent_names);
-+
-+	priv->hw.init = &init;
-+
-+	clk = clk_register(NULL, &priv->hw);
-+	if (IS_ERR(clk))
-+		return PTR_ERR(clk);
-+
-+	ret = of_clk_add_provider(np, of_clk_src_simple_get, clk);
-+	if (ret < 0) {
-+		clk_unregister(clk);
-+		return ret;
-+	}
-+
-+	priv->clk_out = clk;
-+
-+	return 0;
-+}
-+
-+static int cs2000_clk_init(struct cs2000_priv *priv)
-+{
-+	struct device *dev = priv_to_dev(priv);
-+	struct device_node *np = dev->of_node;
-+	u32 rate;
-+	int ch = 0; /* it uses ch0 only at this point */
-+	int ret;
-+
-+	if (of_property_read_u32(np, "clock-frequency", &rate))
++	if (state->hwindex = -1)
 +		return 0;
 +
-+	ret = __cs2000_set_rate(priv, ch, rate, clk_get_rate(priv->ref_clk));
-+	if (ret < 0)
-+		return ret;
++	mask = 1 << state->hwindex;
++	if (state->format->planes = 2)
++		mask |= 1 << ((state->hwindex + 1) % 8);
 +
-+	ret = __cs2000_enable(priv);
-+	if (ret < 0)
-+		return ret;
-+
-+	return 0;
++	return mask;
 +}
 +
-+static int cs2000_version_print(struct cs2000_priv *priv)
++/*
++ * The R8A7790 DU can source frames directly from the VSP1 devices VSPD0 and
++ * VSPD1. VSPD0 feeds DU0/1 plane 0, and VSPD1 feeds either DU2 plane 0 or
++ * DU0/1 plane 1.
++ *
++ * Allocate the correct fixed plane when sourcing frames from VSPD0 or VSPD1,
++ * and allocate planes in reverse index order otherwise to ensure maximum
++ * availability of planes 0 and 1.
++ *
++ * The caller is responsible for ensuring that the requested source is
++ * compatible with the DU revision.
++ */
++static int rcar_du_plane_hwalloc(struct rcar_du_plane *plane,
++				 struct rcar_du_plane_state *state,
++				 unsigned int free)
 +{
-+	struct i2c_client *client = priv_to_client(priv);
-+	struct device *dev = &client->dev;
-+	s32 val = cs2000_read(priv, DEVICE_ID);
-+	const char *revision;
++	unsigned int num_planes = state->format->planes;
++	int fixed = -1;
++	int i;
 +
-+	if (val < 0)
-+		return val;
++	if (state->source = RCAR_DU_PLANE_VSPD0) {
++		/* VSPD0 feeds plane 0 on DU0/1. */
++		if (plane->group->index != 0)
++			return -EINVAL;
 +
-+	/* CS2000 should be 0x0 */
-+	if (0 != (val >> 3))
-+		return -EIO;
-+
-+	switch (val & 0x7) {
-+	case 0x4:
-+		revision = "B2 / B3";
-+		break;
-+	case 0x6:
-+		revision = "C1";
-+		break;
-+	default:
-+		return -EIO;
++		fixed = 0;
++	} else if (state->source = RCAR_DU_PLANE_VSPD1) {
++		/* VSPD1 feeds plane 1 on DU0/1 or plane 0 on DU2. */
++		fixed = plane->group->index = 0 ? 1 : 0;
 +	}
 +
-+	dev_info(dev, "revision - %s\n", revision);
++	if (fixed >= 0)
++		return free & (1 << fixed) ? fixed : -EBUSY;
 +
-+	return 0;
++	for (i = RCAR_DU_NUM_HW_PLANES - 1; i >= 0; --i) {
++		if (!(free & (1 << i)))
++			continue;
++
++		if (num_planes = 1 || free & (1 << ((i + 1) % 8)))
++			break;
++	}
++
++	return i < 0 ? -EBUSY : i;
 +}
 +
-+static int cs2000_remove(struct i2c_client *client)
++int rcar_du_atomic_check_planes(struct drm_device *dev,
++				struct drm_atomic_state *state)
 +{
-+	struct cs2000_priv *priv = i2c_get_clientdata(client);
-+	struct device *dev = &client->dev;
-+	struct device_node *np = dev->of_node;
++	struct rcar_du_device *rcdu = dev->dev_private;
++	unsigned int group_freed_planes[RCAR_DU_MAX_GROUPS] = { 0, };
++	unsigned int group_free_planes[RCAR_DU_MAX_GROUPS] = { 0, };
++	bool needs_realloc = false;
++	unsigned int groups = 0;
++	unsigned int i;
 +
-+	of_clk_del_provider(np);
++	/* Check if hardware planes need to be reallocated. */
++	for (i = 0; i < dev->mode_config.num_total_plane; ++i) {
++		struct rcar_du_plane_state *plane_state;
++		struct rcar_du_plane *plane;
++		unsigned int index;
 +
-+	clk_unregister(priv->clk_out);
++		if (!state->planes[i])
++			continue;
++
++		plane = to_rcar_plane(state->planes[i]);
++		plane_state = to_rcar_plane_state(state->plane_states[i]);
++
++		dev_dbg(rcdu->dev, "%s: checking plane (%u,%u)\n", __func__,
++			plane->group->index, plane - plane->group->planes);
++
++		/* If the plane is being disabled we don't need to go through
++		 * the full reallocation procedure. Just mark the hardware
++		 * plane(s) as freed.
++		 */
++		if (!plane_state->format) {
++			dev_dbg(rcdu->dev, "%s: plane is being disabled\n",
++				__func__);
++			index = plane - plane->group->planes;
++			group_freed_planes[plane->group->index] |= 1 << index;
++			plane_state->hwindex = -1;
++			continue;
++		}
++
++		/* If the plane needs to be reallocated mark it as such, and
++		 * mark the hardware plane(s) as free.
++		 */
++		if (rcar_du_plane_needs_realloc(plane, plane_state)) {
++			dev_dbg(rcdu->dev, "%s: plane needs reallocation\n",
++				__func__);
++			groups |= 1 << plane->group->index;
++			needs_realloc = true;
++
++			index = plane - plane->group->planes;
++			group_freed_planes[plane->group->index] |= 1 << index;
++			plane_state->hwindex = -1;
++		}
++	}
++
++	if (!needs_realloc)
++		return 0;
++
++	/* Grab all plane states for the groups that need reallocation to ensure
++	 * locking and avoid racy updates. This serializes the update operation,
++	 * but there's not much we can do about it as that's the hardware
++	 * design.
++	 *
++	 * Compute the used planes mask for each group at the same time to avoid
++	 * looping over the planes separately later.
++	 */
++	while (groups) {
++		unsigned int index = ffs(groups) - 1;
++		struct rcar_du_group *group = &rcdu->groups[index];
++		unsigned int used_planes = 0;
++
++		dev_dbg(rcdu->dev, "%s: finding free planes for group %u\n",
++			__func__, index);
++
++		for (i = 0; i < group->num_planes; ++i) {
++			struct rcar_du_plane *plane = &group->planes[i];
++			struct rcar_du_plane_state *plane_state;
++			struct drm_plane_state *s;
++
++			s = drm_atomic_get_plane_state(state, &plane->plane);
++			if (IS_ERR(s))
++				return PTR_ERR(s);
++
++			/* If the plane has been freed in the above loop its
++			 * hardware planes must not be added to the used planes
++			 * bitmask. However, the current state doesn't reflect
++			 * the free state yet, as we've modified the new state
++			 * above. Use the local freed planes list to check for
++			 * that condition instead.
++			 */
++			if (group_freed_planes[index] & (1 << i)) {
++				dev_dbg(rcdu->dev,
++					"%s: plane (%u,%u) has been freed, skipping\n",
++					__func__, plane->group->index,
++					plane - plane->group->planes);
++				continue;
++			}
++
++			plane_state = to_rcar_plane_state(plane->plane.state);
++			used_planes |= rcar_du_plane_hwmask(plane_state);
++
++			dev_dbg(rcdu->dev,
++				"%s: plane (%u,%u) uses %u hwplanes (index %d)\n",
++				__func__, plane->group->index,
++				plane - plane->group->planes,
++				plane_state->format ?
++				plane_state->format->planes : 0,
++				plane_state->hwindex);
++		}
++
++		group_free_planes[index] = 0xff & ~used_planes;
++		groups &= ~(1 << index);
++
++		dev_dbg(rcdu->dev, "%s: group %u free planes mask 0x%02x\n",
++			__func__, index, group_free_planes[index]);
++	}
++
++	/* Reallocate hardware planes for each plane that needs it. */
++	for (i = 0; i < dev->mode_config.num_total_plane; ++i) {
++		struct rcar_du_plane_state *plane_state;
++		struct rcar_du_plane *plane;
++		unsigned int crtc_planes;
++		unsigned int free;
++		int idx;
++
++		if (!state->planes[i])
++			continue;
++
++		plane = to_rcar_plane(state->planes[i]);
++		plane_state = to_rcar_plane_state(state->plane_states[i]);
++
++		dev_dbg(rcdu->dev, "%s: allocating plane (%u,%u)\n", __func__,
++			plane->group->index, plane - plane->group->planes);
++
++		/* Skip planes that are being disabled or don't need to be
++		 * reallocated.
++		 */
++		if (!plane_state->format ||
++		    !rcar_du_plane_needs_realloc(plane, plane_state))
++			continue;
++
++		/* Try to allocate the plane from the free planes currently
++		 * associated with the target CRTC to avoid restarting the CRTC
++		 * group and thus minimize flicker. If it fails fall back to
++		 * allocating from all free planes.
++		 */
++		crtc_planes = to_rcar_crtc(plane_state->state.crtc)->index % 2
++			    ? plane->group->dptsr_planes
++			    : ~plane->group->dptsr_planes;
++		free = group_free_planes[plane->group->index];
++
++		idx = rcar_du_plane_hwalloc(plane, plane_state,
++					    free & crtc_planes);
++		if (idx < 0)
++			idx = rcar_du_plane_hwalloc(plane, plane_state,
++						    free);
++		if (idx < 0) {
++			dev_dbg(rcdu->dev, "%s: no available hardware plane\n",
++				__func__);
++			return idx;
++		}
++
++		dev_dbg(rcdu->dev, "%s: allocated %u hwplanes (index %u)\n",
++			__func__, plane_state->format->planes, idx);
++
++		plane_state->hwindex = idx;
++
++		group_free_planes[plane->group->index] &+			~rcar_du_plane_hwmask(plane_state);
++
++		dev_dbg(rcdu->dev, "%s: group %u free planes mask 0x%02x\n",
++			__func__, plane->group->index,
++			group_free_planes[plane->group->index]);
++	}
 +
 +	return 0;
 +}
 +
-+static int cs2000_probe(struct i2c_client *client,
-+			const struct i2c_device_id *id)
-+{
-+	struct cs2000_priv *priv;
-+	struct device *dev = &client->dev;
-+	int ret;
++/* -----------------------------------------------------------------------------
++ * Plane Setup
++ */
 +
-+	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
-+	if (!priv)
-+		return -ENOMEM;
+ #define RCAR_DU_COLORKEY_NONE		(0 << 24)
+ #define RCAR_DU_COLORKEY_SOURCE		(1 << 24)
+ #define RCAR_DU_COLORKEY_MASK		(1 << 24)
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.h b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+index e24e45828d6a..6a6460dffae4 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_plane.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.h
+@@ -71,6 +71,9 @@ to_rcar_plane_state(struct drm_plane_state *state)
+ 	return container_of(state, struct rcar_du_plane_state, state);
+ }
+ 
++int rcar_du_atomic_check_planes(struct drm_device *dev,
++				struct drm_atomic_state *state);
 +
-+	priv->client = client;
-+	i2c_set_clientdata(client, priv);
-+
-+	ret = cs2000_clk_get(priv);
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = cs2000_clk_register(priv);
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = cs2000_clk_init(priv);
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = cs2000_version_print(priv);
-+	if (ret < 0)
-+		goto probe_err;
-+
-+	return 0;
-+
-+probe_err:
-+	cs2000_remove(client);
-+
-+	return ret;
-+}
-+
-+static struct i2c_driver cs2000_driver = {
-+	.driver = {
-+		.name = "cs2000-cp",
-+		.of_match_table = cs2000_of_match,
-+	},
-+	.probe		= cs2000_probe,
-+	.remove		= cs2000_remove,
-+	.id_table	= cs2000_id,
-+};
-+
-+module_i2c_driver(cs2000_driver);
-+
-+MODULE_DESCRIPTION("CS2000-CP driver");
-+MODULE_AUTHOR("Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>");
-+MODULE_LICENSE("GPL v2");
+ int rcar_du_planes_init(struct rcar_du_group *rgrp);
+ 
+ void rcar_du_plane_setup(struct rcar_du_plane *plane);
 -- 
-1.9.1
+2.4.6
 
