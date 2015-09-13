@@ -1,300 +1,109 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 02 Sep 2015 07:48:03 +0000
-Subject: [PATCH 9/9] sh-pfc: r8a7795: add SCIFx support
-Message-Id: <877fo9jmex.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 22:50:58 +0000
+Subject: [PATCH 11/22] drm: rcar-du: Use the VSP atomic update API
+Message-Id: <1442184669-30990-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87wpw9jn3i.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87wpw9jn3i.wl%kuninori.morimoto.gx@renesas.com>
+References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-This patch adds SCIF0/1/2/3/4/5
-
-This patch is including Geert's SCIF support patch
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 257 +++++++++++++++++++++++++++++++++++
- 1 file changed, 257 insertions(+)
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c |  6 ++++++
+ drivers/gpu/drm/rcar-du/rcar_du_vsp.c  | 18 ++++++++++++++----
+ drivers/gpu/drm/rcar-du/rcar_du_vsp.h  |  4 ++++
+ 3 files changed, 24 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-index 4446b82..7426df7 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-@@ -1427,10 +1427,267 @@ static const struct sh_pfc_pin pinmux_pins[] = {
- 	PINMUX_GPIO_GP_ALL(),
- };
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index 196b940ea8d7..b63bdd12609e 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -538,6 +538,9 @@ static void rcar_du_crtc_atomic_begin(struct drm_crtc *crtc,
+ 		rcrtc->event = event;
+ 		spin_unlock_irqrestore(&dev->event_lock, flags);
+ 	}
++
++	if (rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_VSP1_SOURCE))
++		rcar_du_vsp_atomic_begin(rcrtc);
+ }
  
-+/* - SCIF0 ------------------------------------------------------------------ */
-+static const unsigned int scif0_data_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(5, 1), RCAR_GP_PIN(5, 2),
-+};
-+static const unsigned int scif0_data_mux[] = {
-+	RX0_MARK, TX0_MARK,
-+};
-+static const unsigned int scif0_clk_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(5, 0),
-+};
-+static const unsigned int scif0_clk_mux[] = {
-+	SCK0_MARK,
-+};
-+static const unsigned int scif0_ctrl_pins[] = {
-+	/* RTS, CTS */
-+	RCAR_GP_PIN(5, 4), RCAR_GP_PIN(5, 3),
-+};
-+static const unsigned int scif0_ctrl_mux[] = {
-+	RTS0_N_TANS_MARK, CTS0_N_MARK,
-+};
-+/* - SCIF1 ------------------------------------------------------------------ */
-+static const unsigned int scif1_data_a_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(5, 5), RCAR_GP_PIN(5, 6),
-+};
-+static const unsigned int scif1_data_a_mux[] = {
-+	RX1_A_MARK, TX1_A_MARK,
-+};
-+static const unsigned int scif1_clk_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(6, 21),
-+};
-+static const unsigned int scif1_clk_mux[] = {
-+	SCK1_MARK,
-+};
-+static const unsigned int scif1_ctrl_pins[] = {
-+	/* RTS, CTS */
-+	RCAR_GP_PIN(5, 8), RCAR_GP_PIN(5, 7),
-+};
-+static const unsigned int scif1_ctrl_mux[] = {
-+	RTS1_N_TANS_MARK, CTS1_N_MARK,
-+};
-+
-+static const unsigned int scif1_data_b_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(5, 24), RCAR_GP_PIN(5, 25),
-+};
-+static const unsigned int scif1_data_b_mux[] = {
-+	RX1_B_MARK, TX1_B_MARK,
-+};
-+/* - SCIF2 ------------------------------------------------------------------ */
-+static const unsigned int scif2_data_a_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(5, 11), RCAR_GP_PIN(5, 10),
-+};
-+static const unsigned int scif2_data_a_mux[] = {
-+	RX2_A_MARK, TX2_A_MARK,
-+};
-+static const unsigned int scif2_clk_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(5, 9),
-+};
-+static const unsigned int scif2_clk_mux[] = {
-+	SCK2_MARK,
-+};
-+static const unsigned int scif2_data_b_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(5, 15), RCAR_GP_PIN(5, 16),
-+};
-+static const unsigned int scif2_data_b_mux[] = {
-+	RX2_B_MARK, TX2_B_MARK,
-+};
-+/* - SCIF3 ------------------------------------------------------------------ */
-+static const unsigned int scif3_data_a_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(1, 23), RCAR_GP_PIN(1, 24),
-+};
-+static const unsigned int scif3_data_a_mux[] = {
-+	RX3_A_MARK, TX3_A_MARK,
-+};
-+static const unsigned int scif3_clk_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(1, 22),
-+};
-+static const unsigned int scif3_clk_mux[] = {
-+	SCK3_MARK,
-+};
-+static const unsigned int scif3_ctrl_pins[] = {
-+	/* RTS, CTS */
-+	RCAR_GP_PIN(1, 26), RCAR_GP_PIN(1, 25),
-+};
-+static const unsigned int scif3_ctrl_mux[] = {
-+	RTS3_N_TANS_MARK, CTS3_N_MARK,
-+};
-+static const unsigned int scif3_data_b_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(1, 8), RCAR_GP_PIN(1, 11),
-+};
-+static const unsigned int scif3_data_b_mux[] = {
-+	RX3_B_MARK, TX3_B_MARK,
-+};
-+/* - SCIF4 ------------------------------------------------------------------ */
-+static const unsigned int scif4_data_a_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(2, 11), RCAR_GP_PIN(2, 12),
-+};
-+static const unsigned int scif4_data_a_mux[] = {
-+	RX4_A_MARK, TX4_A_MARK,
-+};
-+static const unsigned int scif4_clk_a_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(2, 10),
-+};
-+static const unsigned int scif4_clk_a_mux[] = {
-+	SCK4_A_MARK,
-+};
-+static const unsigned int scif4_ctrl_a_pins[] = {
-+	/* RTS, CTS */
-+	RCAR_GP_PIN(2, 14), RCAR_GP_PIN(2, 13),
-+};
-+static const unsigned int scif4_ctrl_a_mux[] = {
-+	RTS4_N_TANS_A_MARK, CTS4_N_A_MARK,
-+};
-+static const unsigned int scif4_data_b_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(1, 6), RCAR_GP_PIN(1, 7),
-+};
-+static const unsigned int scif4_data_b_mux[] = {
-+	RX4_B_MARK, TX4_B_MARK,
-+};
-+static const unsigned int scif4_clk_b_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(1, 5),
-+};
-+static const unsigned int scif4_clk_b_mux[] = {
-+	SCK4_B_MARK,
-+};
-+static const unsigned int scif4_ctrl_b_pins[] = {
-+	/* RTS, CTS */
-+	RCAR_GP_PIN(1, 10), RCAR_GP_PIN(1, 9),
-+};
-+static const unsigned int scif4_ctrl_b_mux[] = {
-+	RTS4_N_TANS_B_MARK, CTS4_N_B_MARK,
-+};
-+static const unsigned int scif4_data_c_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(0, 12), RCAR_GP_PIN(0, 13),
-+};
-+static const unsigned int scif4_data_c_mux[] = {
-+	RX4_C_MARK, TX4_C_MARK,
-+};
-+static const unsigned int scif4_clk_c_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(0, 8),
-+};
-+static const unsigned int scif4_clk_c_mux[] = {
-+	SCK4_C_MARK,
-+};
-+static const unsigned int scif4_ctrl_c_pins[] = {
-+	/* RTS, CTS */
-+	RCAR_GP_PIN(0, 11), RCAR_GP_PIN(0, 10),
-+};
-+static const unsigned int scif4_ctrl_c_mux[] = {
-+	RTS4_N_TANS_C_MARK, CTS4_N_C_MARK,
-+};
-+/* - SCIF5 ------------------------------------------------------------------ */
-+static const unsigned int scif5_data_pins[] = {
-+	/* RX, TX */
-+	RCAR_GP_PIN(5, 19), RCAR_GP_PIN(5, 21),
-+};
-+static const unsigned int scif5_data_mux[] = {
-+	RX5_MARK, TX5_MARK,
-+};
-+static const unsigned int scif5_clk_pins[] = {
-+	/* SCK */
-+	RCAR_GP_PIN(6, 21),
-+};
-+static const unsigned int scif5_clk_mux[] = {
-+	SCK5_MARK,
-+};
-+
- static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(scif0_data),
-+	SH_PFC_PIN_GROUP(scif0_clk),
-+	SH_PFC_PIN_GROUP(scif0_ctrl),
-+	SH_PFC_PIN_GROUP(scif1_data_a),
-+	SH_PFC_PIN_GROUP(scif1_clk),
-+	SH_PFC_PIN_GROUP(scif1_ctrl),
-+	SH_PFC_PIN_GROUP(scif1_data_b),
-+	SH_PFC_PIN_GROUP(scif2_data_a),
-+	SH_PFC_PIN_GROUP(scif2_clk),
-+	SH_PFC_PIN_GROUP(scif2_data_b),
-+	SH_PFC_PIN_GROUP(scif3_data_a),
-+	SH_PFC_PIN_GROUP(scif3_clk),
-+	SH_PFC_PIN_GROUP(scif3_ctrl),
-+	SH_PFC_PIN_GROUP(scif3_data_b),
-+	SH_PFC_PIN_GROUP(scif4_data_a),
-+	SH_PFC_PIN_GROUP(scif4_clk_a),
-+	SH_PFC_PIN_GROUP(scif4_ctrl_a),
-+	SH_PFC_PIN_GROUP(scif4_data_b),
-+	SH_PFC_PIN_GROUP(scif4_clk_b),
-+	SH_PFC_PIN_GROUP(scif4_ctrl_b),
-+	SH_PFC_PIN_GROUP(scif4_data_c),
-+	SH_PFC_PIN_GROUP(scif4_clk_c),
-+	SH_PFC_PIN_GROUP(scif4_ctrl_c),
-+	SH_PFC_PIN_GROUP(scif5_data),
-+	SH_PFC_PIN_GROUP(scif5_clk),
-+};
-+
-+static const char * const scif0_groups[] = {
-+	"scif0_data",
-+	"scif0_clk",
-+	"scif0_ctrl",
-+};
-+
-+static const char * const scif1_groups[] = {
-+	"scif1_data_a",
-+	"scif1_clk",
-+	"scif1_ctrl",
-+	"scif1_data_b",
-+};
-+
-+static const char * const scif2_groups[] = {
-+	"scif2_data_a",
-+	"scif2_clk",
-+	"scif2_data_b",
-+};
-+
-+static const char * const scif3_groups[] = {
-+	"scif3_data_a",
-+	"scif3_clk",
-+	"scif3_ctrl",
-+	"scif3_data_b",
-+};
-+
-+static const char * const scif4_groups[] = {
-+	"scif4_data_a",
-+	"scif4_clk_a",
-+	"scif4_ctrl_a",
-+	"scif4_data_b",
-+	"scif4_clk_b",
-+	"scif4_ctrl_b",
-+	"scif4_data_c",
-+	"scif4_clk_c",
-+	"scif4_ctrl_c",
-+};
-+
-+static const char * const scif5_groups[] = {
-+	"scif5_data",
-+	"scif5_clk",
- };
+ static void rcar_du_crtc_atomic_flush(struct drm_crtc *crtc,
+@@ -546,6 +549,9 @@ static void rcar_du_crtc_atomic_flush(struct drm_crtc *crtc,
+ 	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
  
- static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(scif0),
-+	SH_PFC_FUNCTION(scif1),
-+	SH_PFC_FUNCTION(scif2),
-+	SH_PFC_FUNCTION(scif3),
-+	SH_PFC_FUNCTION(scif4),
-+	SH_PFC_FUNCTION(scif5),
- };
+ 	rcar_du_crtc_update_planes(rcrtc);
++
++	if (rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_VSP1_SOURCE))
++		rcar_du_vsp_atomic_flush(rcrtc);
+ }
  
- static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ static const struct drm_crtc_helper_funcs crtc_helper_funcs = {
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vsp.c b/drivers/gpu/drm/rcar-du/rcar_du_vsp.c
+index 6e34dfd0ef42..f01c089881e0 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_vsp.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_vsp.c
+@@ -69,6 +69,16 @@ void rcar_du_vsp_disable(struct rcar_du_crtc *crtc)
+ 	vsp1_du_setup_lif(crtc->vsp->vsp, 0, 0);
+ }
+ 
++void rcar_du_vsp_atomic_begin(struct rcar_du_crtc *crtc)
++{
++	vsp1_du_atomic_begin(crtc->vsp->vsp);
++}
++
++void rcar_du_vsp_atomic_flush(struct rcar_du_crtc *crtc)
++{
++	vsp1_du_atomic_flush(crtc->vsp->vsp);
++}
++
+ /* Keep the two tables in sync. */
+ static const u32 formats_kms[] = {
+ 	DRM_FORMAT_RGB332,
+@@ -155,8 +165,8 @@ static void rcar_du_vsp_plane_setup(struct rcar_du_vsp_plane *plane)
+ 
+ 	WARN_ON(!pixelformat);
+ 
+-	vsp1_du_setup_rpf(plane->vsp->vsp, plane->index, pixelformat,
+-			  fb->pitches[0], paddr, &src, &dst);
++	vsp1_du_atomic_update(plane->vsp->vsp, plane->index, pixelformat,
++			      fb->pitches[0], paddr, &src, &dst);
+ }
+ 
+ static int rcar_du_vsp_plane_atomic_check(struct drm_plane *plane,
+@@ -195,8 +205,8 @@ static void rcar_du_vsp_plane_atomic_update(struct drm_plane *plane,
+ 	if (plane->state->crtc)
+ 		rcar_du_vsp_plane_setup(rplane);
+ 	else
+-		vsp1_du_setup_rpf(rplane->vsp->vsp, rplane->index, 0, 0, 0,
+-				  NULL, NULL);
++		vsp1_du_atomic_update(rplane->vsp->vsp, rplane->index, 0, 0, 0,
++				      NULL, NULL);
+ }
+ 
+ static const struct drm_plane_helper_funcs rcar_du_vsp_plane_helper_funcs = {
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vsp.h b/drivers/gpu/drm/rcar-du/rcar_du_vsp.h
+index 7a6ed21ebcd3..df3bf3805c69 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_vsp.h
++++ b/drivers/gpu/drm/rcar-du/rcar_du_vsp.h
+@@ -63,10 +63,14 @@ to_rcar_vsp_plane_state(struct drm_plane_state *state)
+ int rcar_du_vsp_init(struct rcar_du_vsp *vsp);
+ void rcar_du_vsp_enable(struct rcar_du_crtc *crtc);
+ void rcar_du_vsp_disable(struct rcar_du_crtc *crtc);
++void rcar_du_vsp_atomic_begin(struct rcar_du_crtc *crtc);
++void rcar_du_vsp_atomic_flush(struct rcar_du_crtc *crtc);
+ #else
+ static inline int rcar_du_vsp_init(struct rcar_du_vsp *vsp) { return 0; };
+ static inline void rcar_du_vsp_enable(struct rcar_du_crtc *crtc) { };
+ static inline void rcar_du_vsp_disable(struct rcar_du_crtc *crtc) { };
++static inline void rcar_du_vsp_atomic_begin(struct rcar_du_crtc *crtc) { };
++static inline void rcar_du_vsp_atomic_flush(struct rcar_du_crtc *crtc) { };
+ #endif
+ 
+ #endif /* __RCAR_DU_VSP_H__ */
 -- 
-1.9.1
+2.4.6
 
