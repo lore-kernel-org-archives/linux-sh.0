@@ -1,45 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 03 Sep 2015 02:51:21 +0000
-Subject: [PATCH 7/9 v2] sh-pfc: remove unused PINMUX_IPSR_MODSEL_DATA()
-Message-Id: <87egigqkw6.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 22:51:01 +0000
+Subject: [PATCH 14/22] drm: rcar-du: Drop LVDS double dependency on OF
+Message-Id: <1442184669-30990-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87oahkql0v.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87oahkql0v.wl%kuninori.morimoto.gx@renesas.com>
+References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+LVDS support depends on DRM_RCAR_DU which already depends on OF. Drop
+the explicit dependency.
 
-Now, all PINMUX_IPSR_MODSEL_DATA() are replased to PINMUX_IPSR_MSEL()
-Let's remove unused PINMUX_IPSR_MODSEL_DATA()
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v1 -> v2
+ drivers/gpu/drm/rcar-du/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
- - tidyup log comment for checkpatch
- - Add Laurent Acked-by
-
- drivers/pinctrl/sh-pfc/sh_pfc.h | 2 --
- 1 file changed, 2 deletions(-)
-
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index c8c1d49..d0b6f5c 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -180,8 +180,6 @@ struct sh_pfc_soc_info {
- 	PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##ms)
- #define PINMUX_IPSR_MSEL(ipsr, fn, ms)					\
- 	PINMUX_DATA(fn##_MARK, FN_##ms, FN_##ipsr, FN_##fn)
--#define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms)				\
--	PINMUX_DATA(fn##_MARK, FN_##ms, FN_##ipsr, FN_##fn)
+diff --git a/drivers/gpu/drm/rcar-du/Kconfig b/drivers/gpu/drm/rcar-du/Kconfig
+index 7c465ee7aec3..6c3e49e9e290 100644
+--- a/drivers/gpu/drm/rcar-du/Kconfig
++++ b/drivers/gpu/drm/rcar-du/Kconfig
+@@ -15,7 +15,6 @@ config DRM_RCAR_DU
+ config DRM_RCAR_HDMI
+ 	bool "R-Car DU HDMI Encoder Support"
+ 	depends on DRM_RCAR_DU
+-	depends on OF
+ 	help
+ 	  Enable support for external HDMI encoders.
  
- /*
-  * GP port style (32 ports banks)
 -- 
-1.9.1
+2.4.6
 
