@@ -1,53 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 00:47:15 +0000
-Subject: [PATCH 13/19] ARM: shmobile: lager: use CCF for audio clock
-Message-Id: <6bc651afec2dba4d3e40901a2c5cfc88ad35d97a.1442536920.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 22:51:03 +0000
+Subject: [PATCH 16/22] drm: rcar-du: Output the DISP signal on the DISP pin
+Message-Id: <1442184669-30990-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442536920.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
+References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The DE signal is currently configured to be identical to the DISP
+signal and is used for the same purpose. To make it clearer that the
+DISP pin outputs the DISP signal, select it explicitly.
 
-Because of historical reason, audio clock didn't use CCF.
-Let's use it now.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 37dec5269491..6f5d7f50d5ca 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -174,6 +174,13 @@
- 			  1800000 0>;
- 	};
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+index 9f0d94b3ec10..15bf57de106b 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+@@ -151,7 +151,7 @@ static void rcar_du_crtc_set_display_timing(struct rcar_du_crtc *rcrtc)
+ 	/* Signal polarities */
+ 	value = ((mode->flags & DRM_MODE_FLAG_PVSYNC) ? 0 : DSMR_VSL)
+ 	      | ((mode->flags & DRM_MODE_FLAG_PHSYNC) ? 0 : DSMR_HSL)
+-	      | DSMR_DIPM_DE | DSMR_CSPM;
++	      | DSMR_DIPM_DISP | DSMR_CSPM;
+ 	rcar_du_crtc_write(rcrtc, DSMR, value);
  
-+	audio_clock: clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <11289600>;
-+		clock-output-names = "audio_clock";
-+	};
-+
- 	rsnd_ak4643: sound {
- 		compatible = "simple-audio-card";
- 
-@@ -187,7 +194,7 @@
- 
- 		sndcodec: simple-audio-card,codec {
- 			sound-dai = <&ak4643>;
--			system-clock-frequency = <11289600>;
-+			clocks = <&audio_clock>;
- 		};
- 	};
- 
+ 	/* Display timings */
 -- 
-2.1.4
+2.4.6
 
