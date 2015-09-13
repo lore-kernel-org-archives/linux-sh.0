@@ -1,48 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 00:47:08 +0000
-Subject: [PATCH 06/19] ARM: shmobile: marzen: Board specific serial port order
-Message-Id: <8025e3ff4ca972a0ca2aa898562670a767f79889.1442536920.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 13 Sep 2015 22:51:00 +0000
+Subject: [PATCH 13/22] drm: rcar-du: Enable compilation on ARM64
+Message-Id: <1442184669-30990-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442536920.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
+References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
 
-Convert Marzen to use board-specific serial0 and serial1 instead
-of the older shared SoC-specific SCIF index.
+The R8A7795 SoC is ARM64-based and include a DU. Enable driver
+compilation on ARM64.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7779-marzen.dts | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ drivers/gpu/drm/rcar-du/Kconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
-index 20afea6f06ef..fe396c8d58db 100644
---- a/arch/arm/boot/dts/r8a7779-marzen.dts
-+++ b/arch/arm/boot/dts/r8a7779-marzen.dts
-@@ -19,12 +19,12 @@
- 	compatible = "renesas,marzen", "renesas,r8a7779";
- 
- 	aliases {
--		serial2 = &scif2;
--		serial4 = &scif4;
-+		serial0 = &scif2;
-+		serial1 = &scif4;
- 	};
- 
- 	chosen {
--		bootargs = "console=ttySC2,115200 ignore_loglevel root=/dev/nfs ip=on";
-+		bootargs = "ignore_loglevel root=/dev/nfs ip=on";
- 		stdout-path = &scif2;
- 	};
- 
+diff --git a/drivers/gpu/drm/rcar-du/Kconfig b/drivers/gpu/drm/rcar-du/Kconfig
+index 62650abc3120..7c465ee7aec3 100644
+--- a/drivers/gpu/drm/rcar-du/Kconfig
++++ b/drivers/gpu/drm/rcar-du/Kconfig
+@@ -1,6 +1,7 @@
+ config DRM_RCAR_DU
+ 	tristate "DRM Support for R-Car Display Unit"
+-	depends on DRM && ARM && HAVE_DMA_ATTRS && OF
++	depends on DRM && HAVE_DMA_ATTRS && OF
++	depends on ARM || ARM64
+ 	depends on ARCH_SHMOBILE || COMPILE_TEST
+ 	select DRM_KMS_HELPER
+ 	select DRM_KMS_CMA_HELPER
 -- 
-2.1.4
+2.4.6
 
