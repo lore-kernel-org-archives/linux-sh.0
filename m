@@ -1,91 +1,212 @@
-From: Rich Felker <dalias@libc.org>
-Date: Tue, 15 Sep 2015 04:28:39 +0000
-Subject: Re: [PATCH v2] arch/sh: provide unified syscall trap compatible with all SH models
-Message-Id: <20150915042839.GK17773@brightrain.aerifal.cx>
+From: Hamza Farooq <hamzahfrq.sub@gmail.com>
+Date: Mon, 14 Sep 2015 12:39:23 +0000
+Subject: Re: Issues with rcar-dmac and sh-sci
+Message-Id: <CAJ--JmyBrgC7BWQZENgd3GBu59Cp-+WXa6SzyKE0rXJS9-H_+w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150825030338.GA14922@brightrain.aerifal.cx>
- <20150825212311.GM32742@brightrain.aerifal.cx>
- <55F78DDE.9060409@landley.net>
-In-Reply-To: <55F78DDE.9060409@landley.net>
+References: <alpine.DEB.2.10.1507162026200.821@ayla.of.borg>
+In-Reply-To: <alpine.DEB.2.10.1507162026200.821@ayla.of.borg>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Landley <rob@landley.net>
-Cc: linux-sh@vger.kernel.org, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, shumpei.kawasaki@swhwc.com, Yoshinori Sato <ysato@users.sourceforge.jp>, jeff@uclinux.org, Geert Uytterhoeven <geert@linux-m68k.org>
+To: linux-sh@vger.kernel.org
 
-On Mon, Sep 14, 2015 at 10:17:50PM -0500, Rob Landley wrote:
-> On 08/25/2015 04:23 PM, Rich Felker wrote:
-> > From: Rich Felker <dalias@libc.org>
-> > 
-> > Historically SH-2 Linux (and originally uClinux) used a syscall
-> > calling convention incompatible with the established SH-3/4 Linux ABI.
-> > This choice was made because the trap range used by the existing ABI,
-> > 0x10-0x17, overlaps with the hardware exception/interrupt trap range
-> > reserved by SH-2, and in particular, with the SH-2A divide-by-zero and
-> > division-overflow exceptions.
-> > 
-> > Despite the documented syscall convention using the low bits of the
-> > trap number to signal the number of arguments the kernel should
-> > expect, no version of the kernel has ever used this information, nor
-> > is it useful; all of the registers need to be saved anyway. Therefore,
-> > it is possible to pick a new trap number, 0x1f, that is both supported
-> > by all existing SH-3/4 kernels and unassigned as a hardware trap in
-> > the SH-2 range. This makes it possible to produce SH-2 application
-> > binaries that are forwards-compatible with running on SH-3/4 kernels
-> > and to treat SH as a unified platform with varying ISA support levels
-> > rather than multiple gratuitously-incompatible platforms.
-> > 
-> > This patch adjusts the range checking SH-2 and SH-2A kernels make for
-> > the syscall trap to accept the range 0x1f-0x2f rather than just
-> > 0x20-0x2f. As a result, trap 0x1f now acts as a syscall for all SH
-> > models.
-> 
-> Except that sh2 is a nommu platform, requiring different binary formats.
-> You can't run a standard ELF binary on sh2,
+Hi Laurent,
 
-You can. It's a near-trivial patch to make it work now, though I want
-to polish it more before sending it upstream.
+While using this patch from Geert's scif-dma-v3 branch, I see that it makes the
+rcar_dmac_chan_get_residue method very noisy, because of the WARN_ON in the
+method.
 
-> and sh3/4 usually don't have
-> fdpic or elf loaders configured in.
+I am using sh-sci driver, which inquires the status of a completed
+cookie on time-out.
+The current transaction status is updated in the IRQ thread, which not
+necessarily
+schedules right after the interrupt. Time-out occurs frequently,
+hence, printing out this
+warning on the console. It was so noisy that I had to disable the
+WARN_ON in your
+patch.
 
-The normal ELF loader loads FDPIC just fine; it just doesn't float the
-data segment separately. At first it didn't work for me due to
-limitations in my entry-point code, but now even qemu-sh4eb runs my
-FDPIC binaries fine. Of course it would be really _nice_ to have
-separately floating text/data even on systems with MMU. In theory the
-code in binfmt_elf_fdpic.c supports this, but it's just not enabled in
-kconfig.
+If you want a warning message here, I'd recommend a dev_dbg instead
 
-> Even if you could, basic system calls like fork() don't work on a nommu
-> system.
+Best,
+Hamza
 
-Obviously programs that need fork will not work. But the vast majority
-of software does not need fork -- or if it does need it, is using it
-gratuitously, and should be using posix_spawn which would give you
-both major performance boosts and NOMMU support.
-
-And of course the other direction, which is the interesting one, of
-course works perfectly fine -- software that does not expect fork to
-be available because it was built for NOMMU certainly does not care if
-fork is available on the system it actually runs on.
-
-> I agree it doesn't hurt anything (other than new binaries built to use
-> it not running on old kernels, but that's pretty much the case for fdpic
-> anyway), but what is the actual _advantage_ of this patch?
-
-I've been over this many times, but I can summarize again. The big
-points are:
-
-- Ability to run & debug the exact same binaries you're going to
-  deploy to NOMMU hardware on a much nicer system with memory
-  protection, dev tools, etc. (or qemu-sh4eb).
-
-- Establishing SH as a mature, serious platform with ISA levels and
-  only minimal hard ABI splits (like endianness, hard/soft float,
-  etc.) rather than having each ISA level be its own completely
-  separate and incompatible platform.
-
-Do these seem unreasonable?
-
-Rich
+On Sat, Aug 15, 2015 at 1:42 AM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Geert,
+>
+> On Thursday 16 July 2015 20:36:49 Geert Uytterhoeven wrote:
+>>       Hi Laurent,
+>>
+>> While working on DMA for R-Car Gen2 using the sh-sci serial driver with
+>> rcar-dmac, I ran into two issues:
+>>
+>>   1. Unlike the old shdmac DMA engine driver, the new rcar-dmac DMA
+>>      engine driver does not support resubmitting a DMA descriptor.
+>>      I first tried the patch below, until I ran into the race condition,
+>>      after which I changed sh-sci to not reuse DMA descriptors.
+>
+> Is reusing descriptors something that the DMA engine API explicitly allows ?
+>
+>>   2. rcar_dmac_chan_get_residue() has:
+>>
+>> static unsigned int rcar_dmac_chan_get_residue(struct rcar_dmac_chan *chan,
+>>                                                dma_cookie_t cookie)
+>> {
+>>         struct rcar_dmac_desc *desc = chan->desc.running;
+>>         ...
+>>
+>>         /*
+>>          * If the cookie doesn't correspond to the currently running
+>> transfer * then the descriptor hasn't been processed yet, and the residue
+>> is       * equal to the full descriptor size.
+>>          */
+>>         if (cookie != desc->async_tx.cookie)
+>>                 return desc->size;
+>>
+>>      If the cookie doesn't correspond to the currently running transfer,
+>>      it returns the full descriptor size of the _currently running
+>>      transfer_, not the transfer the cookie corresponds to.
+>
+> How about the following (untested) patch ?
+>
+> From 131968befd5de3400631b879b1574beea27b8239 Mon Sep 17 00:00:00 2001
+> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Date: Sat, 15 Aug 2015 01:28:28 +0300
+> Subject: [PATCH] dmaengine: rcar-dmac: Fix residue reporting for pending
+>  descriptors
+>
+> Cookies corresponding to pending transfers have a residue value equal to
+> the full size of the corresponding descriptor. The driver miscomputes
+> that and uses the size of the active descriptor instead. Fix it.
+>
+> Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  drivers/dma/sh/rcar-dmac.c | 28 ++++++++++++++++++++++++++--
+>  1 file changed, 26 insertions(+), 2 deletions(-)
+>
+> diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+> index 7820d07e7bee..a98596a1f12f 100644
+> --- a/drivers/dma/sh/rcar-dmac.c
+> +++ b/drivers/dma/sh/rcar-dmac.c
+> @@ -1143,19 +1143,43 @@ static unsigned int rcar_dmac_chan_get_residue(struct
+> rcar_dmac_chan *chan,
+>         struct rcar_dmac_desc *desc = chan->desc.running;
+>         struct rcar_dmac_xfer_chunk *running = NULL;
+>         struct rcar_dmac_xfer_chunk *chunk;
+> +       enum dma_status status;
+>         unsigned int residue = 0;
+>         unsigned int dptr = 0;
+>
+>         if (!desc)
+>                 return 0;
+>
+> +
+> +       /*
+> +        * If the cookie corresponds to a descriptor that has been completed
+> +        * there is no residue. The same check has already been performed by the
+> +        * caller but without holding the channel lock, so the descriptor could
+> +        * now be complete.
+> +        */
+> +       status = dma_cookie_status(&chan->chan, cookie, NULL);
+> +       if (status = DMA_COMPLETE)
+> +               return 0;
+> +
+>         /*
+>          * If the cookie doesn't correspond to the currently running transfer
+>          * then the descriptor hasn't been processed yet, and the residue is
+>          * equal to the full descriptor size.
+>          */
+> -       if (cookie != desc->async_tx.cookie)
+> -               return desc->size;
+> +       if (cookie != desc->async_tx.cookie) {
+> +               list_for_each_entry(desc, &chan->desc.pending, node) {
+> +                       if (cookie = desc->async_tx.cookie)
+> +                               return desc->size;
+> +               }
+> +
+> +               /*
+> +                * No descriptor found for the cookie, there's thus no residue.
+> +                * This shouldn't happen if the calling driver passes a correct
+> +                * cookie value.
+> +                */
+> +               WARN(1, "No descriptor for cookie!");
+> +               return 0;
+> +       }
+>
+>         /*
+>          * In descriptor mode the descriptor running pointer is not maintained
+>
+>>      I believe this the reason why the sh-sci driver once thought DMA
+>>      transfered 4294967265 (= -31) bytes (for SCIF, descriptor lengths
+>>      are either 1 or 32 bytes, and (length) 1 - (residue) 32 >>      (transfered) -31).
+>>
+>> Thanks for your comments!
+>>
+>> From 589dbd908a59dba6efc2a78fca24645962235ec2 Mon Sep 17 00:00:00 2001
+>> From: Geert Uytterhoeven <geert+renesas@glider.be>
+>> Date: Tue, 14 Jul 2015 11:27:14 +0200
+>> Subject: [PATCH] [RFC] dmaengine: rcar-dmac: Allow resubmission of DMA
+>>  descriptors
+>>
+>> Unlike the old shdmac DMA engine driver, the new rcar-dmac DMA engine
+>> driver does not support resubmitting a DMA descriptor.  If a DMA slave
+>> resubmits a descriptor, the descriptor will be added to the "pending
+>> list", while it wasn't removed from the "wait" list. This will cause
+>> list corruption, leading to an infinite loop in
+>> rcar_dmac_chan_reinit().
+>>
+>> Find out if the descriptor is reused by looking at the current cookie
+>> valie, and remove it from the other list if needed:
+>>   - cookie is initialized to -EBUSY (by rcar-dma) for fresh and properly
+>>     recycled descriptors,
+>>   - cookie is set to a strict-positive value by dma_cookie_assign() (in
+>>     core dmaengine code) on submission,
+>>   - cookie is reset to zero by dma_cookie_complete() (in core dmaengine
+>>     code) on completion,
+>>
+>> Fix this by removing it from a list if the cookie is not -EBUSY.
+>>
+>> FIXME Unfortunately this is racy: the recycled descriptors are not part
+>>       of a list while the DMA descriptor callback is running.
+>>
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> ---
+>>  drivers/dma/sh/rcar-dmac.c | 12 ++++++++++++
+>>  1 file changed, 12 insertions(+)
+>>
+>> diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+>> index 11e5003a6cc27b40..92a8fddb025e6729 100644
+>> --- a/drivers/dma/sh/rcar-dmac.c
+>> +++ b/drivers/dma/sh/rcar-dmac.c
+>> @@ -437,8 +437,20 @@ static dma_cookie_t rcar_dmac_tx_submit(struct
+>> dma_async_tx_descriptor *tx) unsigned long flags;
+>>       dma_cookie_t cookie;
+>>
+>> +
+>>       spin_lock_irqsave(&chan->lock, flags);
+>>
+>> +     if (desc->async_tx.cookie != -EBUSY) {
+>> +             /*
+>> +              * If the descriptor is reused, it's currently part of a list.
+>> +              * Hence it must be removed from that list first, before it can
+>> +              * be added to the list of pending requests.
+>> +              */
+>> +             dev_dbg(chan->chan.device->dev, "chan%u: resubmit active desc %p\n",
+>> +                     chan->index, desc);
+>> +             list_del(&desc->node);
+>> +     }
+>> +
+>>       cookie = dma_cookie_assign(tx);
+>>
+>>       dev_dbg(chan->chan.device->dev, "chan%u: submit #%d@%p\n",
+>
+> --
+> Regards,
+>
+> Laurent Pinchart
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
