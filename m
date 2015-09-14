@@ -1,57 +1,56 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 17 Sep 2015 06:33:09 +0000
-Subject: [PATCH v3 03/09] ARM: shmobile: Add APMU nodes to r8a7793 DTSI
-Message-Id: <20150917063309.26016.5367.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Sep 2015 20:06:42 +0000
+Subject: [PATCH v2 0/2] ARM: gic: Document optional Clock and Power Domain properties
+Message-Id: <1442261204-30931-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150917063240.26016.93772.sendpatchset@little-apple>
-In-Reply-To: <20150917063240.26016.93772.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: mark.rutland@arm.com, devicetree@vger.kernel.org, lorenzo.pieralisi@arm.com, keita.kobayashi.ym@renesas.com, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+	Hi,
 
-Add an APMU DT node for the r8a7793 SoC and use the enable-method to
-point out that the APMU should be used for SMP support.
+On some SoCs, the GIC may be part of a PM Domain (hardware Power and/or
+Clock Domain).  Document the related optional DT properties.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+This patch series:
+  - Adds support for the PL390 GIC variant, as the PL390 has different
+    clock inputs than the A9 MPCore GIC that is currently (incorrectly)
+    described in various Renesas DTSes instead,
+  - Documents optional Clock and Power Domain properties.
 
- Changes from V2:
- - New patch
+This will allow to properly describe later the relationship between the
+GIC and the Clock and/or Power Domain topology on Renesas SoCs, and
+prevent clocks from being disabled inadvertently.
 
- arch/arm/boot/dts/r8a7793.dtsi |   14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+This is v2 of "[PATCH] ARM: gic: Document Power and Clock Domain optional
+properties" (https://lkml.org/lkml/2015/4/27/401).
 
---- 0001/arch/arm/boot/dts/r8a7793.dtsi
-+++ work/arch/arm/boot/dts/r8a7793.dtsi	2015-09-16 20:53:27.660513000 +0900
-@@ -21,6 +21,7 @@
- 	cpus {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		enable-method = "renesas,apmu";
- 
- 		cpu0: cpu@0 {
- 			device_type = "cpu";
-@@ -39,6 +40,19 @@
- 					   < 750000 1000000>,
- 					   < 375000 1000000>;
- 		};
-+
-+		cpu1: cpu@1 {
-+			device_type = "cpu";
-+			compatible = "arm,cortex-a15";
-+			reg = <1>;
-+			clock-frequency = <1500000000>;
-+		};
-+	};
-+
-+	apmu@e6152000 {
-+		compatible = "renesas,apmu-r8a7793", "renesas,apmu";
-+		reg = <0 0xe6152000 0 0x188>;
-+		cpus = <&cpu0 &cpu1>;
- 	};
- 
- 	gic: interrupt-controller@f1001000 {
+Changes since v1:
+  - Add "arm,pl390",
+  - Add "clock-names" to DT bindings,
+  - Document clock inputs on various GIC variants.
+
+Thanks for your comments!
+
+Geert Uytterhoeven (2):
+  irqchip: gic: Add arm,pl390 support
+  irqchip: gic: Document optional Clock and Power Domain properties
+
+ Documentation/devicetree/bindings/arm/gic.txt | 24 ++++++++++++++++++++----
+ drivers/irqchip/irq-gic.c                     |  1 +
+ 2 files changed, 21 insertions(+), 4 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
