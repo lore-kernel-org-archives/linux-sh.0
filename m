@@ -1,64 +1,187 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 00:47:06 +0000
-Subject: [PATCH 04/19] ARM: shmobile: r8a7794: add QSPI DT support
-Message-Id: <740b4a9f07fe73b5ccd2bc3dc365dc359e1a332d.1442536920.git.horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 14 Sep 2015 12:14:33 +0000
+Subject: [PATCH 11/14] ARM: shmobile: r8a7791: Rename the serial port clock to fck
+Message-Id: <1442232876-27629-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442536920.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+The clock is really the device functional clock, not the interface
+clock. Rename it.
 
-Define the generic R8A7794 part of the QSPI device node.
-
-Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7794.dtsi | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi | 36 ++++++++++++++++++------------------
+ 1 file changed, 18 insertions(+), 18 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index e9fab31e0709..e0f32ede2181 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -19,6 +19,10 @@
- 	#address-cells = <2>;
- 	#size-cells = <2>;
- 
-+	aliases {
-+		spi0 = &qspi;
-+	};
-+
- 	cpus {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -537,6 +541,20 @@
- 		status = "disabled";
- 	};
- 
-+	qspi: spi@e6b10000 {
-+		compatible = "renesas,qspi-r8a7794", "renesas,qspi";
-+		reg = <0 0xe6b10000 0 0x2c>;
-+		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7794_CLK_QSPI_MOD>;
-+		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
-+		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 328f48bd15e7..6227d411f526 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -563,7 +563,7 @@
+ 		reg = <0 0xe6c40000 0 64>;
+ 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7791_CLK_SCIFA0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -575,7 +575,7 @@
+ 		reg = <0 0xe6c50000 0 64>;
+ 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7791_CLK_SCIFA1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x25>, <&dmac0 0x26>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -587,7 +587,7 @@
+ 		reg = <0 0xe6c60000 0 64>;
+ 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7791_CLK_SCIFA2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x27>, <&dmac0 0x28>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -599,7 +599,7 @@
+ 		reg = <0 0xe6c70000 0 64>;
+ 		interrupts = <0 29 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp11_clks R8A7791_CLK_SCIFA3>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x1b>, <&dmac0 0x1c>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -611,7 +611,7 @@
+ 		reg = <0 0xe6c78000 0 64>;
+ 		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp11_clks R8A7791_CLK_SCIFA4>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x1f>, <&dmac0 0x20>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -623,7 +623,7 @@
+ 		reg = <0 0xe6c80000 0 64>;
+ 		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp11_clks R8A7791_CLK_SCIFA5>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x23>, <&dmac0 0x24>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -635,7 +635,7 @@
+ 		reg = <0 0xe6c20000 0 64>;
+ 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7791_CLK_SCIFB0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x3d>, <&dmac0 0x3e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -647,7 +647,7 @@
+ 		reg = <0 0xe6c30000 0 64>;
+ 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7791_CLK_SCIFB1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x19>, <&dmac0 0x1a>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -659,7 +659,7 @@
+ 		reg = <0 0xe6ce0000 0 64>;
+ 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7791_CLK_SCIFB2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x1d>, <&dmac0 0x1e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -671,7 +671,7 @@
+ 		reg = <0 0xe6e60000 0 64>;
+ 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7791_CLK_SCIF0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -683,7 +683,7 @@
+ 		reg = <0 0xe6e68000 0 64>;
+ 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7791_CLK_SCIF1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -695,7 +695,7 @@
+ 		reg = <0 0xe6e58000 0 64>;
+ 		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7791_CLK_SCIF2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x2b>, <&dmac0 0x2c>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -707,7 +707,7 @@
+ 		reg = <0 0xe6ea8000 0 64>;
+ 		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7791_CLK_SCIF3>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x2f>, <&dmac0 0x30>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -719,7 +719,7 @@
+ 		reg = <0 0xe6ee0000 0 64>;
+ 		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7791_CLK_SCIF4>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0xfb>, <&dmac0 0xfc>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -731,7 +731,7 @@
+ 		reg = <0 0xe6ee8000 0 64>;
+ 		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7791_CLK_SCIF5>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0xfd>, <&dmac0 0xfe>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -743,7 +743,7 @@
+ 		reg = <0 0xe62c0000 0 96>;
+ 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7791_CLK_HSCIF0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -755,7 +755,7 @@
+ 		reg = <0 0xe62c8000 0 96>;
+ 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7791_CLK_HSCIF1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -767,7 +767,7 @@
+ 		reg = <0 0xe62d0000 0 96>;
+ 		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7791_CLK_HSCIF2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x3b>, <&dmac0 0x3c>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
 -- 
-2.1.4
+2.4.6
 
