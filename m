@@ -1,71 +1,43 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 03 Sep 2015 20:20:05 +0000
-Subject: [PATCH 1/9] i2c: rcar: rework hw init
-Message-Id: <1441311613-2681-2-git-send-email-wsa@the-dreams.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 14 Sep 2015 12:14:34 +0000
+Subject: [PATCH 12/14] ARM: shmobile: r8a7793: Rename the serial port clock to fck
+Message-Id: <1442232876-27629-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441311613-2681-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1441311613-2681-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+The clock is really the device functional clock, not the interface
+clock. Rename it.
 
-We don't need to init HW before every transfer since we know the HW
-state then. HW init at probe time is enough. While here, add setting the
-clock register which belongs to init HW. Also, set MDBS bit since not
-setting it is prohibited according to the manual.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/i2c/busses/i2c-rcar.c | 17 +++++------------
- 1 file changed, 5 insertions(+), 12 deletions(-)
+ arch/arm/boot/dts/r8a7793.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index d8361dada58455..877ce97ac7a580 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -144,9 +144,10 @@ static void rcar_i2c_init(struct rcar_i2c_priv *priv)
- {
- 	/* reset master mode */
- 	rcar_i2c_write(priv, ICMIER, 0);
--	rcar_i2c_write(priv, ICMCR, 0);
-+	rcar_i2c_write(priv, ICMCR, MDBS);
- 	rcar_i2c_write(priv, ICMSR, 0);
--	rcar_i2c_write(priv, ICMAR, 0);
-+	/* start clock */
-+	rcar_i2c_write(priv, ICCCR, priv->icccr);
- }
- 
- static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
-@@ -495,16 +496,6 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 
- 	pm_runtime_get_sync(dev);
- 
--	/*-------------- spin lock -----------------*/
--	spin_lock_irqsave(&priv->lock, flags);
--
--	rcar_i2c_init(priv);
--	/* start clock */
--	rcar_i2c_write(priv, ICCCR, priv->icccr);
--
--	spin_unlock_irqrestore(&priv->lock, flags);
--	/*-------------- spin unlock -----------------*/
--
- 	ret = rcar_i2c_bus_barrier(priv);
- 	if (ret < 0)
- 		goto out;
-@@ -669,6 +660,8 @@ static int rcar_i2c_probe(struct platform_device *pdev)
- 	if (IS_ERR(priv->io))
- 		return PTR_ERR(priv->io);
- 
-+	rcar_i2c_init(priv);
-+
- 	irq = platform_get_irq(pdev, 0);
- 	init_waitqueue_head(&priv->wait);
- 	spin_lock_init(&priv->lock);
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index c4654047e684..d095dfe51125 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -119,7 +119,7 @@
+ 		reg = <0 0xe6e60000 0 64>;
+ 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_SCIF0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -129,7 +129,7 @@
+ 		reg = <0 0xe6e68000 0 64>;
+ 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_SCIF1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
 -- 
-2.1.4
+2.4.6
 
