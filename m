@@ -1,34 +1,34 @@
-From: hamzahfrq.sub@gmail.com
-Date: Sun, 20 Sep 2015 19:11:01 +0000
-Subject: [RESEND PATCH 5/6] dma: rcar-dma: warn if transfer cannot start as TE = 1
-Message-Id: <1442776262-2503-6-git-send-email-hamzahfrq.sub@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 14 Sep 2015 12:14:25 +0000
+Subject: [PATCH 03/14] sh: Remove sci_ick clock alias
+Message-Id: <1442232876-27629-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Muhammad Hamza Farooq <mfarooq@visteon.com>
+The sh-sci driver falls back to the peripheral clock if the sci_ick
+clock doesn't exist. There's thus no need to create an alias for the
+peripheral clock named sci_ick.
 
-Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/dma/sh/rcar-dmac.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/sh/kernel/cpu/clock-cpg.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
-index ce21575..d007351 100644
---- a/drivers/dma/sh/rcar-dmac.c
-+++ b/drivers/dma/sh/rcar-dmac.c
-@@ -327,7 +327,8 @@ static void rcar_dmac_chan_start_xfer(struct rcar_dmac_chan *chan)
- 	struct rcar_dmac_desc *desc = chan->desc.running;
- 	u32 chcr = desc->chcr;
+diff --git a/arch/sh/kernel/cpu/clock-cpg.c b/arch/sh/kernel/cpu/clock-cpg.c
+index 8525a671266f..786c0769b4c3 100644
+--- a/arch/sh/kernel/cpu/clock-cpg.c
++++ b/arch/sh/kernel/cpu/clock-cpg.c
+@@ -63,7 +63,6 @@ int __init __deprecated cpg_clk_init(void)
+ 	clk_add_alias("fck", "sh-mtu2", "peripheral_clk", NULL);
+ 	clk_add_alias("fck", "sh-cmt-16.0", "peripheral_clk", NULL);
+ 	clk_add_alias("fck", "sh-cmt-32.0", "peripheral_clk", NULL);
+-	clk_add_alias("sci_ick", NULL, "peripheral_clk", NULL);
  
--	WARN_ON_ONCE(rcar_dmac_chan_is_busy(chan));
-+	WARN_ON_ONCE(rcar_dmac_chan_is_busy(chan) ||
-+			rcar_dmac_last_tx_complete(chan));
- 
- 	if (chan->mid_rid >= 0)
- 		rcar_dmac_chan_write(chan, RCAR_DMARS, chan->mid_rid);
+ 	return ret;
+ }
 -- 
-1.9.1
+2.4.6
 
