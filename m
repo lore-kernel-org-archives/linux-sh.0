@@ -1,40 +1,78 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 17 Sep 2015 06:33:58 +0000
-Subject: [PATCH v3 08/09] ARM: shmobile: Prioritize r8a7790 DT APMU support
-Message-Id: <20150917063358.26016.8326.sendpatchset@little-apple>
+From: Javier Martinez Canillas <javier@osg.samsung.com>
+Date: Mon, 14 Sep 2015 12:21:39 +0000
+Subject: [PATCH v2 0/2] [media] Fix race between graph enumeration and entities registration
+Message-Id: <1442233301-25181-1-git-send-email-javier@osg.samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150917063240.26016.93772.sendpatchset@little-apple>
-In-Reply-To: <20150917063240.26016.93772.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: mark.rutland@arm.com, devicetree@vger.kernel.org, lorenzo.pieralisi@arm.com, keita.kobayashi.ym@renesas.com, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Hello,
 
-Adjust the r8a7790 SoC support code to not configure any non-DT SMP code
-in case the DT-based enable-method has been installed already.
+The Media Controller framework has an issue in which the media device node
+is registered before all the media entities and pads links are created so
+if user-space tries to enumerate the graph too early, it may get a partial
+graph since not everything has been registered yet.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+This series fixes the issue by separate the media device registration from
+the initialization so drives can first initialize the media device, create
+the graph and then finally register the media device node once is finished.
+The solution was suggested by Sakari Ailus.
 
- Changes since V2:
- - None
+This is the second version of the series that fixes issues pointed out by
+Sakari Ailus. The first version was [0].
 
- Changes since V1:
- - New patch.
+Patch #1 adds a check to the media_device_unregister() function to know if
+the media device has been registed yet so calling it will be safe and the
+cleanup functions of the drivers won't need to be changed in case register
+failed.
 
- arch/arm/mach-shmobile/setup-r8a7790.c |    1 +
- 1 file changed, 1 insertion(+)
+Patch #2 does the init and registration split, changing all the drivers to
+make the change atomic and also adds a cleanup function for media devices.
 
---- 0001/arch/arm/mach-shmobile/setup-r8a7790.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7790.c	2015-08-23 15:44:29.102366518 +0900
-@@ -28,6 +28,7 @@ static const char * const r8a7790_boards
- };
- 
- DT_MACHINE_START(R8A7790_DT, "Generic R8A7790 (Flattened Device Tree)")
-+	.smp_init	= shmobile_smp_init_fallback_ops,
- 	.smp		= smp_ops(r8a7790_smp_ops),
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
+The patches are on top of Mauro's "[PATCH v8 00/55] MC next generation" [1]
+but is not a dependency for that series, it was only be based on that patch
+series to avoid conflicts with in-flight patches.
+
+The patches have been tested on an OMAP3 IGEPv2 board that has a OMAP3 ISP
+device and an Exynos5800 Chromebook with a built-in UVC camera.
+
+[0]: https://lkml.org/lkml/2015/9/10/311
+[1]: http://permalink.gmane.org/gmane.linux.drivers.driver-project.devel/74515
+
+Best regards,
+Javier
+
+Changes in v2:
+- Reword the documentation for media_device_unregister(). Suggested by Sakari.
+- Added Sakari's Acked-by tag for patch #1.
+- Change media_device_init() to return void instead of an error.
+  Suggested by Sakari Ailus.
+- Remove the error messages when media_device_register() fails.
+  Suggested by Sakari Ailus.
+- Fix typos in commit message of patch #2. Suggested by Sakari Ailus.
+
+Javier Martinez Canillas (2):
+  [media] media-device: check before unregister if mdev was registered
+  [media] media-device: split media initialization and registration
+
+ drivers/media/common/siano/smsdvb-main.c      |  1 +
+ drivers/media/media-device.c                  | 43 ++++++++++++++++++++++-----
+ drivers/media/platform/exynos4-is/media-dev.c | 15 +++++-----
+ drivers/media/platform/omap3isp/isp.c         | 14 ++++-----
+ drivers/media/platform/s3c-camif/camif-core.c | 15 ++++++----
+ drivers/media/platform/vsp1/vsp1_drv.c        | 12 ++++----
+ drivers/media/platform/xilinx/xilinx-vipp.c   | 12 +++-----
+ drivers/media/usb/au0828/au0828-core.c        | 27 ++++++++---------
+ drivers/media/usb/cx231xx/cx231xx-cards.c     | 30 +++++++++----------
+ drivers/media/usb/dvb-usb-v2/dvb_usb_core.c   | 23 +++++++-------
+ drivers/media/usb/dvb-usb/dvb-usb-dvb.c       | 24 ++++++++-------
+ drivers/media/usb/siano/smsusb.c              |  5 ++--
+ drivers/media/usb/uvc/uvc_driver.c            | 10 +++++--
+ include/media/media-device.h                  |  2 ++
+ 14 files changed, 136 insertions(+), 97 deletions(-)
+
+-- 
+2.4.3
+
