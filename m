@@ -1,49 +1,37 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 08 Sep 2015 17:00:36 +0000
-Subject: [PATCH 2/2] irqchip: renesas-irqc: Propagate wake-up settings to parent
-Message-Id: <1441731636-17610-3-git-send-email-geert+renesas@glider.be>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 14 Sep 2015 12:14:36 +0000
+Subject: [PATCH 14/14] serial: sh-sci: Drop the sci_fck clock fallback
+Message-Id: <1442232876-27629-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441731636-17610-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1441731636-17610-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>
-Cc: Sudeep Holla <sudeep.holla@arm.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-The renesas-irqc interrupt controller is cascaded to the GIC, but its
-driver doesn't propagate wake-up settings to the parent interrupt
-controller.
+All platforms that used to define an sci_fck clock have now switched to
+the fck name. Remove the fallback code.
 
-Since commit aec89ef72ba6c944 ("irqchip/gic: Enable SKIP_SET_WAKE and
-MASK_ON_SUSPEND"), the GIC driver masks interrupts during suspend, and
-wake-up through gpio-keys now fails on r8a73a4/ape6evm.
-
-Fix this by propagating wake-up settings to the parent interrupt
-controller. There's no need to handle irq_set_irq_wake() failures, as
-the renesas-irqc interrupt controller is always cascaded to a GIC, and
-the GIC driver always sets SKIP_SET_WAKE since the aforementioned
-commit.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/irqchip/irq-renesas-irqc.c | 3 +++
- 1 file changed, 3 insertions(+)
+ drivers/tty/serial/sh-sci.c | 5 -----
+ 1 file changed, 5 deletions(-)
 
-diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
-index 2aa3add711a6612a..49f6c41d94f91d4d 100644
---- a/drivers/irqchip/irq-renesas-irqc.c
-+++ b/drivers/irqchip/irq-renesas-irqc.c
-@@ -121,6 +121,9 @@ static int irqc_irq_set_type(struct irq_data *d, unsigned int type)
- static int irqc_irq_set_wake(struct irq_data *d, unsigned int on)
- {
- 	struct irqc_priv *p = irq_data_get_irq_chip_data(d);
-+	int hw_irq = irqd_to_hwirq(d);
-+
-+	irq_set_irq_wake(p->irq[hw_irq].requested_irq, on);
- 
- 	if (!p->clk)
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 56e4b2639d99..0d270c93d705 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2192,11 +2192,6 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
+ 	if (!IS_ERR(sci_port->fclk))
  		return 0;
+ 
+-	/* SH has historically named the clock "sci_fck". */
+-	sci_port->fclk = clk_get(dev, "sci_fck");
+-	if (!IS_ERR(sci_port->fclk))
+-		return 0;
+-
+ 	/*
+ 	 * Not all SH platforms declare a clock lookup entry for SCI devices, in
+ 	 * which case we need to get the global "peripheral_clk" clock.
 -- 
-1.9.1
+2.4.6
 
