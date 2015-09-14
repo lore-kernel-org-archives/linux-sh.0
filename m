@@ -1,44 +1,88 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 17 Sep 2015 10:33:37 +0000
-Subject: Re: [PATCH v2 11/11] devicetree: bindings: Remove deprecated properties
-Message-Id: <CANqRtoRMLTrG0n6GJcfA86kBAev2fUesZ_-V=1OMPwOW8XdkUQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 14 Sep 2015 20:06:44 +0000
+Subject: [PATCH v2 2/2] irqchip: gic: Document optional Clock and Power Domain properties
+Message-Id: <1442261204-30931-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150917095325.5369.73893.sendpatchset@little-apple>
-	<20150917095511.5369.41259.sendpatchset@little-apple>
-	<CAMuHMdV5rgk0rcCz-8w6Jmq66iAnbA6RTUoFyXNU9CV6PcU4Dw@mail.gmail.com>
-In-Reply-To: <CAMuHMdV5rgk0rcCz-8w6Jmq66iAnbA6RTUoFyXNU9CV6PcU4Dw@mail.gmail.com>
+References: <1442261204-30931-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1442261204-30931-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux-sh list <linux-sh@vger.kernel.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, Simon Horman <horms+renesas@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Depending on the GIC variant, the GIC module has one or more clock
+inputs. Document the optional "clocks" and "clock-names" properties,
+and their possible values, based on the Technical Reference Manuals.
+optional.
 
-On Thu, Sep 17, 2015 at 7:04 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Thu, Sep 17, 2015 at 11:55 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> From: Magnus Damm <damm+renesas@opensource.se>
->>
->> The deprecated DT properies are part of the GIT history,
->
-> properties
+Add the optional "power-domains" property.
 
-Oops!
+This will allow to describe in DT the relationship between the GIC and
+the Clock and/or Power Domain topology on SoCs where this is relevant
+and needed for proper operation.
 
->> no need to keep them around any longer.
->
-> They're still in the driver because in-the-field R-Car Gen2 DTSes use them,
-> right? You may add a comment in the driver, to prevent a janitor from
-> re-adding them to the bindings.
+Note: As the current GIC driver doesn't support Runtime PM yet, PM
+Domain constraints must be handled elsewhere in e.g. platform code.
 
-Yes, good idea!
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Note: v1 was Acked-by: Rob Herring <robh@kernel.org>, but I didn't add
+      it, due to the addition of clock-names.
 
->> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
->
-> Nevertheless
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+v2:
+  - Add "clock-names",
+  - Document clock inputs on various GIC variants.
 
-Thank you!
+Clock inputs are based on the following documentation:
+  - "ARM11 MPCore Processor Technical Reference Manual" (r2p0),
+  - "Cortex-A9 MPCore Technical Reference Manual" (r4p1, r2p0),
+  - "Cortex-A15 Technical Reference Manual" (r4p0, r2p0),
+  - "CoreLink GIC-400 Generic Interrupt Controller Technical Reference
+    Manual" (r0p1, r0p0),
+  - "PrimeCell Generic Interrupt Controller (PL390) Technical Reference
+    Manual" (r0p0).
 
-/ magnus
+I could not find clock input information in:
+  - "ARM1176JZF Development Chip Technical Reference Manual" (r0p0),
+  - "Cortex-A7 MPCore processors" (r0p5, r0p3).
+
+Other:
+  - "brcm,brahma-b15-gic" seems to be always used together with
+    "arm,cortex-a15-gic".
+
+No access to datasheets:
+  - "qcom,msm-8660-qgic",
+  - "qcom,msm-qgic2".
+---
+ Documentation/devicetree/bindings/arm/gic.txt | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/gic.txt b/Documentation/devicetree/bindings/arm/gic.txt
+index 24742853ba460223..cc56021eb60babea 100644
+--- a/Documentation/devicetree/bindings/arm/gic.txt
++++ b/Documentation/devicetree/bindings/arm/gic.txt
+@@ -59,6 +59,21 @@ Optional
+   regions, used when the GIC doesn't have banked registers. The offset is
+   cpu-offset * cpu-nr.
+ 
++- clocks        : List of phandle and clock-specific pairs, one for each entry
++  in clock-names.
++- clock-names   : List of names for the GIC clock input(s). Valid clock names
++  depend on the GIC variant:
++	"ic_clk" (for "arm,arm11mp-gic")
++	"PERIPHCLKEN" (for "arm,cortex-a15-gic")
++	"PERIPHCLK", "PERIPHCLKEN" (for "arm,cortex-a9-gic")
++	"clk" (for "arm,gic-400")
++	"gclk" (for "arm,pl390")
++
++- power-domains : A phandle and PM domain specifier as defined by bindings of
++		  the power controller specified by phandle, used when the GIC
++		  is part of a Power or Clock Domain.
++
++
+ Example:
+ 
+ 	intc: interrupt-controller@fff11000 {
+-- 
+1.9.1
+
