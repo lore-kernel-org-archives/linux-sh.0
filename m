@@ -1,54 +1,106 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Sep 2015 02:01:14 +0000
-Subject: [PATCH/RFC v2 net-next 0/4] ravb: Add support for r8a7795 SoC
-Message-Id: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 14 Sep 2015 12:14:26 +0000
+Subject: [PATCH 04/14] ARM: shmobile: sh73a0: Rename the serial port clock to fck
+Message-Id: <1442232876-27629-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This series enhances the ravb driver to support the r8a7795 SoC.
+The clock is really the device functional clock, not the interface
+clock. Rename it.
 
-Changes:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
 
-v1 -> v2
-* Address extensive review from Sergei Shtylyov and  Geert Uytterhoeven
-  - In particular mandate all 25 interrupts in binding
-* Broke brinding change into a separate patch
-* New 100Mbit/s limit implementation in ravb driver using
-  proposed update to phylib
-* Split integration and driver changes into separate patch-sets
-
-Base:
-
-This is based on net-next/master
-
-Availability:
-
-* I will separately post a series,
-  "[PATCH/RFC v2 0/5] arm64: dts: r8a7795: enable EthernetAVB on Salvator-X",
-  to the linux-sh list to integrate the ravb on the r8a7795/salvatore-x board
-* To aid review I will push the following to the renesas tree:
-  - driver (this series): (me/r8a7795-ravb-driver-v2)
-  - integration: me/r8a7795-ravb-integration-v2
-  - both with runtime dependencies: me/r8a7795-ravb-driver-and-integration-v2.runtime
-  
-Kazuya Mizuguchi (3):
-  ravb: Provide dev parameter to DMA API
-  ravb: Document binding for r8a7795 SoC
-  ravb: Add support for r8a7795 SoC
-
-Simon Horman (1):
-  phylib: Add phy_set_max_speed helper
-
- .../devicetree/bindings/net/renesas,ravb.txt       | 65 +++++++++++++--
- drivers/net/ethernet/renesas/ravb.h                |  7 ++
- drivers/net/ethernet/renesas/ravb_main.c           | 95 +++++++++++++++-------
- drivers/net/phy/phy_device.c                       | 52 +++++++-----
- include/linux/phy.h                                |  1 +
- 5 files changed, 166 insertions(+), 54 deletions(-)
-
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index ff7c8f298f30..cbc885e46c50 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -301,7 +301,7 @@
+ 		reg = <0xe6c40000 0x100>;
+ 		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFA0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -311,7 +311,7 @@
+ 		reg = <0xe6c50000 0x100>;
+ 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFA1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -321,7 +321,7 @@
+ 		reg = <0xe6c60000 0x100>;
+ 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFA2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -331,7 +331,7 @@
+ 		reg = <0xe6c70000 0x100>;
+ 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFA3>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -341,7 +341,7 @@
+ 		reg = <0xe6c80000 0x100>;
+ 		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFA4>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -351,7 +351,7 @@
+ 		reg = <0xe6cb0000 0x100>;
+ 		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFA5>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -361,7 +361,7 @@
+ 		reg = <0xe6cc0000 0x100>;
+ 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks SH73A0_CLK_SCIFA6>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -371,7 +371,7 @@
+ 		reg = <0xe6cd0000 0x100>;
+ 		interrupts = <0 143 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFA7>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -381,7 +381,7 @@
+ 		reg = <0xe6c30000 0x100>;
+ 		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFB>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
 -- 
-2.1.4
+2.4.6
 
