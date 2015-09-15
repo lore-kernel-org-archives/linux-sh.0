@@ -1,160 +1,102 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 30 Sep 2015 06:15:54 +0000
-Subject: [PATCH net-next 3/4] ravb: Document binding for r8a7795 SoC
-Message-Id: <1443593755-20991-4-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 15 Sep 2015 10:22:58 +0000
+Subject: [PATCH 02/05][RFC] clk: Add parent array to struct clk_init_data
+Message-Id: <20150915102258.15716.22991.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443593755-20991-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1443593755-20991-1-git-send-email-horms+renesas@verge.net.au>
+References: <20150915102238.15716.91170.sendpatchset@little-apple>
+In-Reply-To: <20150915102238.15716.91170.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Florian Fainelli <f.fainelli@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-clk@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, mturquette@baylibre.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This patch updates the ravb binding to support the r8a7795 SoC by:
-- Adding a compat string for the new hardware
-- Adding 25 named interrupts to binding for the new SoC;
-  older SoCs continue to use a single multiplexed interrupt
+Add an optional array of parent clocks to struct clk_init_data
+to allow relying on clock pointers instead of strings during
+registration of clocks. 
 
-The example is also updated to reflect the r8a7795 as this is the
-more complex case.
+Using this parent array the clock providers step over the line to
+become clock consumers since they can use of_clk_get() to get the
+parent clock and pass it during registration. Good or bad.
 
-Based on work by Kazuya Mizuguchi and others.
+Clock providers that register clocks may use the parent array
+pre-populate parent clocks to not have to rely on strings lookup.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This in turn makes it possible to have clock providers using a single
+DT node with several clock-indices but omitting the clock-output-names
+property. As it is today the clock index is not taken into consideration
+when generating a default parent name in case clock-output-names is missing.
 
+TODO: Figure out how to deal with ref counting and if clock providers
+should use clk_put() or not.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-v2
-* First post; broken out of a driver update patch
-* As discussed with Geert Uytterhoeven and Sergei Shtylyov
-  - Binding: Make all interrupts mandatory as named-interrupts of
-    the form ch%u
 
-v3
-* A suggested by Geert Uytterhoeven
-  - Reword description of interrupts and interrupt-names to
-    make things clearer. It is now based to some extent on
-    spi-rspi.txt and renesas,usb-dmac.txt.
-* As suggested by Sergei Shtylyov
-  - Drop phy-reset-gpio from example
-* Added power-domains to example
+ drivers/clk/clk.c            |   14 +++++++++++---
+ include/linux/clk-provider.h |    2 ++
+ 2 files changed, 13 insertions(+), 3 deletions(-)
 
-v4
-* A suggested by Geert Uytterhoeven
-  - grammar fix for interrupt-names description
-* Add ack
----
- .../devicetree/bindings/net/renesas,ravb.txt       | 69 +++++++++++++++++++---
- 1 file changed, 62 insertions(+), 7 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/net/renesas,ravb.txt b/Documentation/devicetree/bindings/net/renesas,ravb.txt
-index 1fd8831437bf..b486f3f5f6a3 100644
---- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
-+++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
-@@ -6,8 +6,12 @@ interface contains.
- Required properties:
- - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
- 	      "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
-+	      "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
- - reg: offset and length of (1) the register block and (2) the stream buffer.
--- interrupts: interrupt specifier for the sole interrupt.
-+- interrupts: A list of interrupt-specifiers, one for each entry in
-+	      interrupt-names.
-+	      If interrupt-names is not present, an interrupt specifier
-+	      for a single muxed interrupt.
- - phy-mode: see ethernet.txt file in the same directory.
- - phy-handle: see ethernet.txt file in the same directory.
- - #address-cells: number of address cells for the MDIO bus, must be equal to 1.
-@@ -18,6 +22,12 @@ Required properties:
- Optional properties:
- - interrupt-parent: the phandle for the interrupt controller that services
- 		    interrupts for this device.
-+- interrupt-names: A list of interrupt names.
-+		   For the R8A7795 SoC this property is mandatory;
-+		   it should include one entry per channel, named "ch%u",
-+		   where %u is the channel number ranging from 0 to 24.
-+		   For other SoCs this property is optional; if present
-+		   it should contain "mux" for a single muxed interrupt.
- - pinctrl-names: pin configuration state name ("default").
- - renesas,no-ether-link: boolean, specify when a board does not provide a proper
- 			 AVB_LINK signal.
-@@ -27,13 +37,46 @@ Optional properties:
- Example:
+--- 0001/drivers/clk/clk.c
++++ work/drivers/clk/clk.c	2015-09-15 18:30:36.390513000 +0900
+@@ -2360,8 +2360,8 @@ static int __clk_init(struct device *dev
+ 		 * for a NULL pointer.  We can always perform lazy lookups for
+ 		 * missing parents later on.
+ 		 */
+-		if (core->parents)
+-			for (i = 0; i < core->num_parents; i++)
++		for (i = 0; i < core->num_parents; i++)
++			if (core->parents && !core->parents[i])
+ 				core->parents[i]  					clk_core_lookup(core->parent_names[i]);
+ 	}
+@@ -2549,7 +2549,9 @@ struct clk *clk_register(struct device *
+ 		ret = -ENOMEM;
+ 		goto fail_parent_names;
+ 	}
+-
++	if (hw->init->parents)
++		core->parents = kcalloc(core->num_parents, sizeof(struct clk *),
++					GFP_KERNEL);
  
- 	ethernet@e6800000 {
--		compatible = "renesas,etheravb-r8a7790";
--		reg = <0 0xe6800000 0 0x800>, <0 0xee0e8000 0 0x4000>;
-+		compatible = "renesas,etheravb-r8a7795";
-+		reg = <0 0xe6800000 0 0x800>, <0 0xe6a00000 0 0x10000>;
- 		interrupt-parent = <&gic>;
--		interrupts = <0 163 IRQ_TYPE_LEVEL_HIGH>;
--		clocks = <&mstp8_clks R8A7790_CLK_ETHERAVB>;
--		phy-mode = "rmii";
-+		interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "ch0", "ch1", "ch2", "ch3",
-+				  "ch4", "ch5", "ch6", "ch7",
-+				  "ch8", "ch9", "ch10", "ch11",
-+				  "ch12", "ch13", "ch14", "ch15",
-+				  "ch16", "ch17", "ch18", "ch19",
-+				  "ch20", "ch21", "ch22", "ch23",
-+				  "ch24";
-+		clocks = <&mstp8_clks R8A7795_CLK_ETHERAVB>;
-+		power-domains = <&cpg_clocks>;
-+		phy-mode = "rgmii-id";
- 		phy-handle = <&phy0>;
+ 	/* copy each string name in case parent_names is __initdata */
+ 	for (i = 0; i < core->num_parents; i++) {
+@@ -2561,6 +2563,11 @@ struct clk *clk_register(struct device *
+ 		}
+ 	}
+ 
++	/* convert each parent pointer to struct clk_core */
++	for (i = 0; i < core->num_parents; i++)
++		if (core->parents && !IS_ERR(hw->init->parents[i]))
++			core->parents[i] = hw->init->parents[i]->core;
 +
- 		pinctrl-0 = <&ether_pins>;
- 		pinctrl-names = "default";
- 		renesas,no-ether-link;
-@@ -41,8 +84,20 @@ Example:
- 		#size-cells = <0>;
+ 	INIT_HLIST_HEAD(&core->clks);
  
- 		phy0: ethernet-phy@0 {
-+			rxc-skew-ps = <900>;
-+			rxdv-skew-ps = <0>;
-+			rxd0-skew-ps = <0>;
-+			rxd1-skew-ps = <0>;
-+			rxd2-skew-ps = <0>;
-+			rxd3-skew-ps = <0>;
-+			txc-skew-ps = <900>;
-+			txen-skew-ps = <0>;
-+			txd0-skew-ps = <0>;
-+			txd1-skew-ps = <0>;
-+			txd2-skew-ps = <0>;
-+			txd3-skew-ps = <0>;
- 			reg = <0>;
- 			interrupt-parent = <&gpio2>;
--			interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
-+			interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
- 		};
- 	};
--- 
-2.1.4
-
+ 	hw->clk = __clk_create_clk(hw, NULL, NULL);
+@@ -2577,6 +2584,7 @@ struct clk *clk_register(struct device *
+ 	hw->clk = NULL;
+ 
+ fail_parent_names_copy:
++	kfree(core->parents);
+ 	while (--i >= 0)
+ 		kfree_const(core->parent_names[i]);
+ 	kfree(core->parent_names);
+--- 0001/include/linux/clk-provider.h
++++ work/include/linux/clk-provider.h	2015-09-15 18:17:15.000000000 +0900
+@@ -222,6 +222,7 @@ struct clk_ops {
+  * @name: clock name
+  * @ops: operations this clock supports
+  * @parent_names: array of string names for all possible parents
++ * @parents: array of pointers to all possible parents
+  * @num_parents: number of possible parents
+  * @flags: framework-level hints and quirks
+  */
+@@ -229,6 +230,7 @@ struct clk_init_data {
+ 	const char		*name;
+ 	const struct clk_ops	*ops;
+ 	const char		* const *parent_names;
++	struct clk		**parents;
+ 	u8			num_parents;
+ 	unsigned long		flags;
+ };
