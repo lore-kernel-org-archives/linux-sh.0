@@ -1,54 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 09 Sep 2015 01:45:10 +0000
-Subject: Re: [PATCH/RFC 04/10] ravb: Add support for r8a7795 SoC
-Message-Id: <20150909014510.GA9291@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 15 Sep 2015 10:00:34 +0000
+Subject: RE: [PATCH v6 2/2] pwm: Add support for R-Car PWM Timer
+Message-Id: <SG2PR06MB0919E0F37382CC1C39586520D85C0@SG2PR06MB0919.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440667450-3513-5-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1440667450-3513-5-git-send-email-horms+renesas@verge.net.au>
+References: <1439957639-4816-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <1439957639-4816-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <20150819100732.GC26627@ulmo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Thierry Reding <thierry.reding@gmail.com>
+Cc: "robh+dt@kernel.org" <robh+dt@kernel.org>, "pawel.moll@arm.com" <pawel.moll@arm.com>, "mark.rutland@arm.com" <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, "galak@codeaurora.org" <galak@codeaurora.org>, "linux-pwm@vger.kernel.org" <linux-pwm@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Hi,
+Hi Thierry,
 
-On Tue, Sep 08, 2015 at 02:06:17AM +0300, Sergei Shtylyov wrote:
-> Hello.
+> Sent: Wednesday, August 19, 2015 8:01 PM
 > 
-> On 09/02/2015 10:26 AM, Geert Uytterhoeven wrote:
-
-[snip]
-
-> >>   It seems to me that the above basically splits the single interrupt
-> >>   in Gen2 into two.
-> >>
-> >>   This is the default mode for the hardware and the mode it ends up
-> >>   in using the current driver implementation (+ this series which doesn't
-> >>   alter the initialisation of the hardware).
+> Hi Thierry,
 > 
->    This is also assuming that the bootloader doesn't change it. Are we sure
-> it doesn't?
-
-If it is important I can check with regards to the current uboot (plans).
-
-From my point of view it is a reasonable assumption to make.
-
-[snip]
-
-> >>But for now:
-> >>* Only describe the interrupts that are used and default to mode 1 with the
-> >>   data interrupt and;
-> >>* Defer defining properties to switch to combinations
-> >>
-> >>I am all ears for other ideas.
+> > Sent: Wednesday, August 19, 2015 7:08 PM
 > >
-> >I think there should be either a single multiplexed interrupt (for Gen2),
-> >or a list of named interrupts ("ch%u"), of which ch22/ch23 and ch24 are
-> >mandatory (for Gen3).
+> > On Wed, Aug 19, 2015 at 01:13:59PM +0900, Yoshihiro Shimoda wrote:
+> > > This patch adds support for R-Car SoCs PWM Timer. The PWM timer of
+> > > R-Car H2 has 7 channels. So, we can use the channels if we describe
+> > > device tree nodes.
+> > >
+> > > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> > > Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+> > > ---
+> > >  drivers/pwm/Kconfig    |  11 ++
+> > >  drivers/pwm/Makefile   |   1 +
+> > >  drivers/pwm/pwm-rcar.c | 265 +++++++++++++++++++++++++++++++++++++++++++++++++
+> > >  3 files changed, 277 insertions(+)
+> > >  create mode 100644 drivers/pwm/pwm-rcar.c
+> >
+> > Found a couple more things. No need to respin for any of these, I can
+> > make the changes when applying, but I'd like confirmation on a couple
+> > of things below.
 > 
->    No, all IRQs should be mandatory. Otherwise we're into describing the
-> config. again, not the real hardware.
+> Thank you!
 
-That is fine by me.
+I could not find this driver in the latest your linux-pwm.git / for-next branch.
+Should I send v7 patch?
 
-[snip]
+Best regards,
+Yoshihiro Shimoda
+
