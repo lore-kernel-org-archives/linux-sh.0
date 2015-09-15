@@ -1,62 +1,63 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 18 Sep 2015 13:00:02 +0000
-Subject: Re: [PATCH/RFC v3 1/5] arm64: dts: r8a7795: add clock for EthernetAVB
-Message-Id: <55FC0AD2.5000807@cogentembedded.com>
+From: Rob Landley <rob@landley.net>
+Date: Tue, 15 Sep 2015 03:17:50 +0000
+Subject: Re: [PATCH v2] arch/sh: provide unified syscall trap compatible with all SH models
+Message-Id: <55F78DDE.9060409@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442556314-10512-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1442556314-10512-2-git-send-email-horms+renesas@verge.net.au>
+References: <20150825030338.GA14922@brightrain.aerifal.cx>
+ <20150825212311.GM32742@brightrain.aerifal.cx>
+In-Reply-To: <20150825212311.GM32742@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, shumpei.kawasaki@swhwc.com, Yoshinori Sato <ysato@users.sourceforge.jp>, jeff@uclinux.org, Geert Uytterhoeven <geert@linux-m68k.org>
 
-On 9/18/2015 9:05 AM, Simon Horman wrote:
+On 08/25/2015 04:23 PM, Rich Felker wrote:
+> From: Rich Felker <dalias@libc.org>
+> 
+> Historically SH-2 Linux (and originally uClinux) used a syscall
+> calling convention incompatible with the established SH-3/4 Linux ABI.
+> This choice was made because the trap range used by the existing ABI,
+> 0x10-0x17, overlaps with the hardware exception/interrupt trap range
+> reserved by SH-2, and in particular, with the SH-2A divide-by-zero and
+> division-overflow exceptions.
+> 
+> Despite the documented syscall convention using the low bits of the
+> trap number to signal the number of arguments the kernel should
+> expect, no version of the kernel has ever used this information, nor
+> is it useful; all of the registers need to be saved anyway. Therefore,
+> it is possible to pick a new trap number, 0x1f, that is both supported
+> by all existing SH-3/4 kernels and unassigned as a hardware trap in
+> the SH-2 range. This makes it possible to produce SH-2 application
+> binaries that are forwards-compatible with running on SH-3/4 kernels
+> and to treat SH as a unified platform with varying ISA support levels
+> rather than multiple gratuitously-incompatible platforms.
+> 
+> This patch adjusts the range checking SH-2 and SH-2A kernels make for
+> the syscall trap to accept the range 0x1f-0x2f rather than just
+> 0x20-0x2f. As a result, trap 0x1f now acts as a syscall for all SH
+> models.
 
-> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
->
-> These clocks will be used by EthernetAVB
->
-> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-> [horms: use s3d2_clk; other minor updates]
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Except that sh2 is a nommu platform, requiring different binary formats.
+You can't run a standard ELF binary on sh2, and sh3/4 usually don't have
+fdpic or elf loaders configured in.
 
-[...]
+Even if you could, basic system calls like fork() don't work on a nommu
+system. The workarounds for fork() not working (re-exec yourself
+signaling that this is the second instance, then have main() detect the
+signal and call a different entry point) are intrusive and cumbersome
+enough that you generally don't want them in programs that _don't_ need
+them. Therefore you historically always distinguish at build time
+whether to include nommu codepaths or not. This is why uClibc doesn't
+include those in nommu builds of the library, so you can easily
+comple-time probe for it even when cross compiling.
 
-> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> index d7e70f57d165..60d64c51b510 100644
-> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> @@ -274,6 +274,17 @@
->   					#clock-cells = <1>;
->   					clock-indices = <R8A7795_CLK_SCIF2>;
->   				};
-> +
-> +				mstp8_clks: mstp8_clks@e6150990 {
-> +					compatible = "renesas,r8a7795-mstp-clocks",
-> +						     "renesas,cpg-mstp-clocks";
-> +					reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
-> +					clocks =  <&s3d2_clk>;
-> +					#clock-cells = <1>;
-> +					clock-indices = <R8A7795_CLK_ETHERAVB>;
-> +					clock-output-names = "etheravb";
-> +				};
-> +
+(Speaking of which, I would very much like to be able to pass a NULL
+exec to signal "re-exec this same program" without relying on /proc to
+be mounted for /proc/self/exe, but alas the kernel can't do that.)
 
-    This empty line is hardly needed.
+I agree it doesn't hurt anything (other than new binaries built to use
+it not running on old kernels, but that's pretty much the case for fdpic
+anyway), but what is the actual _advantage_ of this patch?
 
->   			};
->   		};
->
-> @@ -364,4 +375,5 @@
->   			status = "disabled";
->   		};
->   	};
-> +
-
-   And this too.
-
->   };
-
-MBR, Sergei
-
+Rob
