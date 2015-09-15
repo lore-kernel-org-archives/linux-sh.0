@@ -1,77 +1,84 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 06:05:09 +0000
-Subject: [PATCH/RFC v3 0/5] arm64: dts: r8a7795: enable EthernetAVB on Salvator-X
-Message-Id: <1442556314-10512-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 15 Sep 2015 13:53:51 +0000
+Subject: renesas-drivers-2015-09-15-v4.3-rc1
+Message-Id: <1442325231-23238-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patchset enables the EthernetAVB on the Salvator-X board.
-With it and its dependencies in place I have have successfully
-booted to an nfsroot user-space (arm64 Debian Jessie).
+I've pushed renesas-drivers-2015-09-15-v4.3-rc1 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
+branches of various subsystem trees and (b) branches with driver code
+submitted or planned for submission to maintainers into the development
+branch of Simon Horman's renesas.git tree.
 
-Changes:
+Today's version is based on renesas-devel-20150914-v4.3-rc1.
 
-* See changelog of individual patches
+Included branches with driver code:
+  - topic/gen3-cpg-v7
+  - topic/r8a7795-pfc-v2
+  - topic/r8a7795-scif-v1
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/arm64-rcar-gen3-v9.plus
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-gpio-v1.rebase
+  - topic/rcar-dmac-residue-v1
+  - topic/scif-misc-v3
+  - topic/scif-dma-v3
+  - topic/gen3-modemr-syscon-v1.rebase2
+  - git://linuxtv.org/pinchartl/media#vsp1-kms-gen3-20150913
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#me/r8a7795-ravb-driver-v2
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#me/r8a7795-ravb-integration-v2
 
-Base:
+Included fixes:
+  - ASoC: rsnd: fixup clkout_name[] index error for single AUDIO_CLKOUT SoC
 
-This is based on:
+Included subsystem trees (the last one is new):
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+  - git://people.freedesktop.org/~airlied/linux#drm-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+  - git://linuxtv.org/mchehab/media-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+  - git://git.infradead.org/users/vkoul/slave-dma.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
+  - git://git.infradead.org/battery-2.6.git#master
+  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
+  - git://anongit.freedesktop.org/drm-intel#topic/drm-misc
 
-* "[PATCH v9 00/07][RFC] Renesas R-Car H3 (r8a7795) integration patches V9"
-  - topic/r8a7795-gpio-v1.rebase branch of my renesas tree
+Gr{oetje,eeting}s,
 
-Runtime Dependencies:
+						Geert
 
-* The base (above)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-* "[PATCH/RFC v3 net-next 0/4] ravb: Add support for r8a7795 SoC"
-  and its dependencies
-  - me/r8a7795-ravb-driver-v3 branch of my renesas tree
-
-* gpio-v4.3-2 tag of
-  git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio
-  (for "[PATCH] gpio: rcar: GPIO_RCAR doesn't relate to ARM")
-
-* "[PATCH 0/3] Basic GPIO support for r8a7795"
-  - topic/r8a7795-gpio-v1.rebase branch of my renesas tree
-
-* "[PATCH/RFC v2] sh-pfc: r8a7795: add EtherAVB support"
-  and its dependencies
-  - me/r8a7795-ravb-pfc-v2 branch of my renesas tree
-
-* "[PATCH v7 05/05] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support"
-  - topic/gen3-cpg-v7 branch of Geert Uytterhoeven's renesas-drivers tree
-
-Availability:
-
-To aid review of this and other EtherAVB patches the following branches are
-available in my renesas tree on kernel.org.
-
-* me/r8a7795-ravb-pfc-v2: this patch
-* me/r8a7795-ravb-driver-v3: phylib and EthernetAVB driver update for r8a7795
-* me/r8a7795-ravb-integration-v3: enable EthernetAVB on r8a7795
-* me/r8a7795-ravb-driver-and-integration-v3.runtime:
-      the above three branches with their runtime dependencies
-
-
-Kazuya Mizuguchi (3):
-  arm64: dts: r8a7795: add clock for EthernetAVB
-  arm64: dts: r8a7795: add EthernetAVB device node
-  arm64: dts: r8a7795: enable EthernetAVB on Salvator-X
-
-Simon Horman (2):
-  arm64: dts: r8a7795: enable nfs root on Salvator-X board
-  arm64: defconfig: enable EthernetAVB
-
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 35 +++++++++++++-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 54 ++++++++++++++++++++++
- arch/arm64/configs/defconfig                       |  2 +
- include/dt-bindings/clock/r8a7795-clock.h          |  1 +
- 4 files changed, 91 insertions(+), 1 deletion(-)
-
--- 
-2.1.4
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
