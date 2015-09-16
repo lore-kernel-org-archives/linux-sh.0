@@ -1,71 +1,53 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 15 Sep 2015 10:23:26 +0000
-Subject: [PATCH 05/05][RFC] clk: fixed-factor: Make use of parent array
-Message-Id: <20150915102326.15716.63028.sendpatchset@little-apple>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 16 Sep 2015 15:58:51 +0000
+Subject: [RESEND PATCH v2 3/3] ARM: shmobile: bockw dts: define sdhi0 pins with pull-ups
+Message-Id: <1442419131-14816-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150915102238.15716.91170.sendpatchset@little-apple>
-In-Reply-To: <20150915102238.15716.91170.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-clk@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, mturquette@baylibre.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Ensures that the pull-ups for pins SD0_CD and SD0_WP are enabled.
 
-Extend the fixed-factor-clock code to use the parent array
-to pass in the parent clock instead of relying on string
-lookup.
+This is one of two features from the DT reference platform that are
+still missing in MP.
 
-This replaces of_clk_get_parent_name() with of_clk_get()
-which makes it possible to use a parent clock from a shared DT
-node with multiple clock-indices and without clock-output-names.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
+ arch/arm/boot/dts/r8a7778-bockw.dts | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
- drivers/clk/clk-fixed-factor.c |   16 +++++++++++-----
- 1 file changed, 11 insertions(+), 5 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 90543b1..8a54076 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -137,10 +137,14 @@
+ 	};
+ 
+ 	sdhi0_pins: sd0 {
+-		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
+-				  "sdhi0_cd";
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
+ 		renesas,function = "sdhi0";
+ 	};
++	sdhi0_pup_pins: sd0_pup {
++		renesas,groups = "sdhi0_cd", "sdhi0_wp";
++		renesas,function = "sdhi0";
++		bias-pull-up;
++	};
+ 
+ 	hspi0_pins: hspi0 {
+ 		renesas,groups = "hspi0_a";
+@@ -169,7 +173,7 @@
+ };
+ 
+ &sdhi0 {
+-	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-0 = <&sdhi0_pins>, <&sdhi0_pup_pins>;
+ 	pinctrl-names = "default";
+ 
+ 	vmmc-supply = <&fixedregulator3v3>;
+-- 
+2.4.6
 
---- 0006/drivers/clk/clk-fixed-factor.c
-+++ work/drivers/clk/clk-fixed-factor.c	2015-09-15 18:28:33.410513000 +0900
-@@ -8,6 +8,7 @@
-  * Standard functionality for the common clock API.
-  */
- #include <linux/module.h>
-+#include <linux/clk.h>
- #include <linux/clk-provider.h>
- #include <linux/slab.h>
- #include <linux/err.h>
-@@ -120,10 +121,11 @@ EXPORT_SYMBOL_GPL(clk_register_fixed_fac
-  */
- void __init of_fixed_factor_clk_setup(struct device_node *node)
- {
--	struct clk *clk;
-+	struct clk *clk, *parent;
- 	const char *clk_name = node->name;
--	const char *parent_name;
-+	const char *parent_name = NULL;
- 	u32 div, mult;
-+	struct clk_init_data init = {};
- 
- 	if (of_property_read_u32(node, "clock-div", &div)) {
- 		pr_err("%s Fixed factor clock <%s> must have a clock-div property\n",
-@@ -138,10 +140,14 @@ void __init of_fixed_factor_clk_setup(st
- 	}
- 
- 	of_property_read_string(node, "clock-output-names", &clk_name);
--	parent_name = of_clk_get_parent_name(node, 0);
-+	parent = of_clk_get(node, 0);
-+
-+	init.name = clk_name;
-+	init.parents = &parent;
-+	init.parent_names = &parent_name;
-+
-+	clk = clk_register_fixed_factor_init(NULL, &init, mult, div);
- 
--	clk = clk_register_fixed_factor(NULL, clk_name, parent_name, 0,
--					mult, div);
- 	if (!IS_ERR(clk))
- 		of_clk_add_provider(node, of_clk_src_simple_get, clk);
- }
