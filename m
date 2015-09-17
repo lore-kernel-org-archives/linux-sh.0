@@ -1,433 +1,97 @@
-From: Stephen Boyd <sboyd@codeaurora.org>
-Date: Tue, 15 Sep 2015 00:02:47 +0000
-Subject: Re: [PATCH v3] clk: add CS2000 Fractional-N driver
-Message-Id: <20150915000247.GJ23081@codeaurora.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 17 Sep 2015 09:53:25 +0000
+Subject: [PATCH v2 00/11] clocksource: sh_cmt: DT binding rework V2
+Message-Id: <20150917095325.5369.73893.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d1xljmn7.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d1xljmn7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Simon <horms@verge.net.au>, Michael Turquette <mturquette@baylibre.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-clk@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: devicetree@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-On 09/14, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> This patch adds CS2000 Fractional-N driver as clock provider.
-> It is useful if it supports runtime clock setting, but it supports
-> fixed clock rate only at this point.
+clocksource: sh_cmt: DT binding rework V2
 
-Makes it sound pretty useless!
+[PATCH v2 01/11] devicetree: bindings: Remove sh7372 CMT binding
+[PATCH v2 02/11] clocksource: sh_cmt: Use 0x3f mask for SH_CMT_48BIT case
+[PATCH v2 03/11] devicetree: bindings: R-Car Gen2 CMT0 and CMT1 bindings
+[PATCH v2 04/11] clocksource: sh_cmt: Support separate R-Car Gen2 CMT0/1
+[PATCH v2 05/11] devicetree: bindings: r8a73a4 and R-Car Gen2 CMT bindings
+[PATCH v2 06/11] ARM: shmobile: Update CMT compat string users in DTS
+[PATCH v2 07/11] devicetree: bindings: Deprecate property, update example
+[PATCH v2 08/11] ARM: shmobile: Remove CMT renesas,channels-mask from DTS
+[PATCH v2 09/11] devicetree: bindings: Remove unused 32-bit CMT bindings
+[PATCH v2 10/11] clocksource: sh_cmt: Remove unused 32-bit CMT bindings
+[PATCH v2 11/11] devicetree: bindings: Remove deprecated properties
 
-> 
-> diff --git a/Documentation/devicetree/bindings/clock/cs2000-cp.txt b/Documentation/devicetree/bindings/clock/cs2000-cp.txt
-> new file mode 100644
-> index 0000000..a4479f0
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/clock/cs2000-cp.txt
-> @@ -0,0 +1,22 @@
-> +CIRRUS LOGIC Fractional-N Clock Synthesizer & Clock Multiplier
+This series reworks the CMT DT bindings to try to deal with the following:
+- R-Car Gen2 CMT0 and CMT1 hardware instances are not identical
+- The property renesas,channels-mask is not enough to describe the difference
+- DT should describe the hardware, not the software implementation
+- Not all documented DT bindings are actually used
 
-Is there a public datasheet for this somewhere?
+Without these patches the binding "renesas,cmt-48-gen2" is used for both
+CMT0 and CMT1 on R-Car Gen2 SoCs. CMT0 and CMT1 are currently seen by the
+Linux device driver as compatible hardware, and the device-specific property
+"renesas,channels-mask" is used to point out some of the hardware configuration
+differences. Since the driver is not feature complete only some differences are
+described and when diving into the data sheet we can see that:
 
-> +
-> +Required properties:
-> +
-> +- compatible:		"cirrus,cs2000-cp"
-> +- reg:			The chip select number on the I2C bus
-> +- clocks:		common clock binding for CLK_IN, XTI/REF_CLK
-> +- clock-names:		CLK_IN : clk_in, XTI/REF_CLK : ref_clk
-> +- clock-frequency:	clock frequency of CLK_OUT
+1) CMT0 is not 48-bit at all, instead it only supports 32-bit counters.
+2) Some channels of CMT1 are 48-bit, some 32-bit.
+3) A couple of CMT1 channels have even more features.
 
-Is this an assigned rate for the clock? Why isn't this node a
-clock provider with clock-cells = 0? The code seems to indicate
-that it is, but the binding doesn't.
+It turns out that none of the above differences are described in our current
+DT files. And since we use the same compat string for CMT0 and CMT1 the driver
+itself cannot enable features specific only to CMT1 without first updating
+the DTS. So this series is ground work for future feature patches.
 
-And if it is the assigned rate of the one clock output, why isn't
-that being done through assigned rates, or by whoever the
-consumer is of the clock?
+It seems that we have two choices if we want to support CMT1 features:
+A) Keep existing DT bindings, add more properties for CMT1
+B) Rework the compatible strings and keep configuration in the driver
 
-> +
-> +Example:
-> +
-> +&i2c2 {
-> +	...
-> +	cs2000: clk_multiplier@0x4f {
+Judging by above it seems that DT update is inevitable. In my mind it is
+rather painful to update the DT so I'd like to minimize the number of
+updates and let the majority of the changes only happen in the driver.
+And since we should really describe hardware in DT but driver features tend
+to be implemented incrementally then B) seems like a good fit to me.
 
-Drop the 0x part.
+I wouldn't mind going with A) but to be honest I must say that the existing
+compat string "renesas,cmt-48-gen2" is just too confusing with "48"
+(when CMT0 is 32bit-only) and also "gen2" (used without product line R-Car).
 
-	cs2000: clk_multiplier@4f {
+Because of that I've gone with B) and reworked the bindings to separate
+CMT0 from CMT1 and keep channel configuration in the device driver.
 
-> +		compatible = "cirrus,cs2000-cp";
-> +		reg = <0x4f>;
-> +		clocks = <&rcar_sound 0>, <&x12_clk>;
-> +		clock-names = "clk_in", "ref_clk";
-> +		clock-frequency = <24576000>; /* 1/1 divide */
-> +	};
-> +};
-> diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
-> index 42f7120..5933e5f 100644
-> --- a/drivers/clk/Kconfig
-> +++ b/drivers/clk/Kconfig
-> @@ -95,6 +95,12 @@ config COMMON_CLK_CDCE925
->  	  Given a target output frequency, the driver will set the PLL and
->  	  divider to best approximate the desired output.
->  
-> +config COMMON_CLK_CS2000_CP
-> +	tristate "Clock driver for CS2000 Fractional-N Clock Synthesizer & Clock Multiplier"
-> +	depends on I2C
-> +	help
-> +	  If you say yes here you get support for the CS2000 clock multiplier
+While at it I've deprecated "renesas,channels-mask" and the old DT compat
+strings. Per-SoC compat strings have also been reworked, but are not left
+around documented as deprecated since they were never used by the driver.
 
-Please add a full stop "." here.
+Comments are very welcome! If all are in favor then it would be good to
+merge patch 1-5 first and patch 6-8 later once 1-5 are in. Old DTBs are
+left working but treated as low-feature CMT0. New DTBs including patch 6
+will not work on old kernels.
 
-> diff --git a/drivers/clk/clk-cs2000-cp.c b/drivers/clk/clk-cs2000-cp.c
-> new file mode 100644
-> index 0000000..163b0cb
-> --- /dev/null
-> +++ b/drivers/clk/clk-cs2000-cp.c
-> @@ -0,0 +1,383 @@
-> +/*
-> + * CS2000  --  CIRRUS LOGIC Fractional-N Clock Synthesizer & Clock Multiplier
-> + *
-> + * Copyright (C) 2015 Renesas Electronics Corporation
-> + * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> + *
-> + * This program is free software; you can redistribute it and/or modify
-> + * it under the terms of the GNU General Public License version 2 as
-> + * published by the Free Software Foundation.
-> + */
-> +#include <linux/clk-provider.h>
-> +#include <linux/delay.h>
-> +#include <linux/clk.h>
+V2 patch series fixes patch 1-2 and adds patches 9, 10, 11.
+Patch 9 and 10 cleans up r8a7740 and sh73a0 bindings.
+Patch 11 removes deprecated properties as proposed by Laurent.
 
-Hm... generally we don't want providers doing clk consumer
-things.
+Many thanks to Geert and Laurent for feedback!
 
-> +#include <linux/i2c.h>
-> +#include <linux/of_device.h>
-> +#include <linux/module.h>
-[...]
-> +
-> +static int cs2000_ratio_set(struct i2c_client *client,
-> +			    int ch, u32 rate_in, u32 rate_out)
-> +{
-> +	u64 val;
-> +	unsigned int i;
-> +	int ret;
-> +
-> +	if (CH_SIZE_ERR(ch))
-> +		return -EINVAL;
-> +
-> +	/*
-> +	 * ratio = rate_out / rate_in * 2^20
-> +	 *
-> +	 * To avoid over flow, rate_out is u64
-> +	 * The result should be u32
-> +	 */
-> +	val = (u64)rate_out << 20;
-> +	do_div(val, rate_in);
-> +	for (i = 0; i < 4; i++) {
-> +		ret = cs2000_write(client,
-> +				   Ratio_Add(ch, i),
-> +				   Ratio_Val(val, i));
-> +		if (ret < 0)
-> +			return ret;
-> +	}
-> +
-> +	return 0;
-> +}
-> +
-> +static int cs2000_ratio_select(struct i2c_client *client, int ch)
-> +{
-> +	int ret;
-> +
-> +	if (CH_SIZE_ERR(ch))
-> +		return -EINVAL;
-> +
-> +	/*
-> +	 * FIXME
-> +	 *
-> +	 * this driver supports static ratio mode only
-> +	 * at this point
-> +	 */
-> +	ret = cs2000_bset(client, DEVICE_CFG1, RSEL_MASK, RSEL(ch));
-> +	if (ret < 0)
-> +		return ret;
-> +
-> +	ret = cs2000_write(client, DEVICE_CFG2, 0x0);
-> +	if (ret < 0)
-> +		return ret;
-> +
-> +	return 0;
-> +}
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be> (For patch 1-8)
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be> (For patch 1-8)
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com> (For patch 1-7)
+---
 
-These are close to what would be done for a clk_set_rate()
-implementation so why can't we have real clk_ops?
+ Written against renesas-drivers-2015-09-15-v4.3-rc1
 
-> +
-> +static int cs2000_enable_dev_config(struct i2c_client *client)
-> +{
-> +	int ret;
-> +
-> +	ret = cs2000_bset(client, DEVICE_CFG1, ENDEV1, ENDEV1);
-> +	if (ret < 0)
-> +		return ret;
-> +
-> +	ret = cs2000_bset(client, GLOBAL_CFG,  ENDEV2, ENDEV2);
-> +	if (ret < 0)
-> +		return ret;
-> +
-> +	return 0;
-> +}
-> +
-> +static int cs2000_clk_get(struct i2c_client *client,
-> +			  u32 *rate_in, u32 *rate_out)
-> +{
-> +	struct cs2000_priv *priv = i2c_get_clientdata(client);
-> +	struct device *dev = &client->dev;
-> +	struct device_node *np = dev->of_node;
-> +	struct clk *clk_in, *ref_clk;
-> +
-> +	clk_in = devm_clk_get(dev, "clk_in");
-> +	/* not yet provided */
-> +	if (IS_ERR(clk_in))
-> +		return -EPROBE_DEFER;
-> +
-> +	ref_clk = devm_clk_get(dev, "ref_clk");
-> +	if (IS_ERR(ref_clk))
-> +		return PTR_ERR(ref_clk);
-> +
-> +	*rate_in = clk_get_rate(ref_clk);
-> +
-> +	if (of_property_read_u32(np, "clock-frequency", rate_out))
-> +		return -EINVAL;
-> +
-> +	dev_dbg(dev, "%d -> %d\n",
-> +		*rate_in, *rate_out);
-
-These two lines could fit on one line.
-
-> +
-> +	priv->clk_in	= clk_in;
-> +	priv->ref_clk	= ref_clk;
-> +
-> +	return 0;
-> +}
-> +
-> +static int cs2000_clk_in_bound_rate(struct i2c_client *client,
-> +				    u32 rate_in)
-> +{
-> +	u32 val;
-> +
-> +	if ((32000000 <= rate_in) &&
-> +	    (56000000 >  rate_in))
-> +		val = 0x0;
-
-Please drop useless parentheses.
-
-	if (32000000 <= rate_in && 56000000 > rate_in)
-
-> +	else if ((16000000 <= rate_in) &&
-> +		 (28000000 >  rate_in))
-> +		val = 0x1;
-> +	else if ((8000000 <= rate_in) &&
-> +		 (14000000 > rate_in))
-> +		val = 0x2;
-
-Same for these two.
-
-> +	else
-> +		return -EINVAL;
-> +
-> +	return cs2000_bset(client, FUNC_CFG1, 0x3 << 3, val << 3);
-> +}
-[..]
-> +
-> +static int cs2000_clk_register(struct i2c_client *client)
-> +{
-> +	struct cs2000_priv *priv = i2c_get_clientdata(client);
-> +	struct device *dev = &client->dev;
-> +	struct device_node *np = dev->of_node;
-> +	struct clk *clk;
-> +	const char *parent_clk_name = __clk_get_name(priv->ref_clk);
-> +	u32 rate;
-> +
-> +	if (of_property_read_u32(np, "clock-frequency", &rate))
-> +		return -EINVAL;
-> +
-> +	/*
-> +	 * FIXME
-> +	 *
-> +	 * register this driver as fixed rate clock
-> +	 * at this point
-> +	 */
-> +	clk = clk_register_fixed_rate(dev, "clk_out", parent_clk_name,
-> +				      (parent_clk_name) ? 0 : CLK_IS_ROOT,
-> +				      rate);
-
-So are there consumers for this clock? To keep DT backwards
-compatibility it may be better to use the assigned clock rates
-property, but not register the of_clk_provider until this driver
-is ready to register a proper clock with clk_ops.
-
-> +	if (IS_ERR(clk))
-> +		return PTR_ERR(clk);
-> +
-> +	priv->clk_out = clk;
-> +	of_clk_add_provider(np, of_clk_src_simple_get, clk);
-
-What if of_clk_add_provider() fails?
-
-> +
-> +	return 0;
-> +}
-> +
-> +static void cs2000_clk_unregister(struct i2c_client *client)
-> +{
-> +	struct cs2000_priv *priv = i2c_get_clientdata(client);
-> +	struct device *dev = &client->dev;
-> +	struct device_node *np = dev->of_node;
-> +
-> +	of_clk_del_provider(np);
-> +	clk_put(priv->clk_out);
-
-We never called clk_get() to get this clock, so don't call
-clk_put() on it here. Perhaps you meant clk_unregister()?
-
-> +
-> +	priv->clk_out = NULL;
-
-Is there any use to do this?
-
-> +}
-> +
-> +static int cs2000_version_print(struct i2c_client *client)
-> +{
-> +	struct device *dev = &client->dev;
-> +	s32 val = cs2000_read(client, DEVICE_ID);
-> +	const char *revision;
-> +
-> +	if (val < 0)
-> +		return val;
-> +
-> +	/* CS2000 should be 0x0 */
-> +	if (0 != (val >> 3))
-> +		return -EIO;
-> +
-> +	switch (val & 0x7) {
-> +	case 0x4:
-> +		revision = "B2 / B3";
-> +		break;
-> +	case 0x6:
-> +		revision = "C1";
-> +		break;
-> +	default:
-> +		return -EIO;
-> +	}
-> +
-> +	dev_info(dev, "revision - %s\n", revision);
-> +
-> +	return 0;
-> +}
-> +
-> +static int cs2000_remove(struct i2c_client *client)
-> +{
-> +	cs2000_clk_unregister(client);
-> +
-> +	return 0;
-> +}
-
-What's the point of this function? Just use
-cs2000_clk_unregister() and change the return code of that
-function to return 0?
-
-> +
-> +static int cs2000_probe(struct i2c_client *client,
-> +			const struct i2c_device_id *id)
-> +{
-> +	struct cs2000_priv *priv;
-> +	struct device *dev = &client->dev;
-> +	u32 rate_in = 0;
-> +	u32 rate_out = 0;
-> +	int ret;
-> +	int ch = 0;
-
-Does this ever change?
-
-> +
-> +	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
-> +	if (!priv)
-> +		return -ENOMEM;
-> +
-> +	i2c_set_clientdata(client, priv);
-> +
-> +	ret = cs2000_clk_get(client, &rate_in, &rate_out);
-> +	if (ret < 0)
-> +		return ret;
-> +
-> +	ret = cs2000_enable_dev_config(client);
-> +	if (ret < 0)
-> +		goto probe_err;
-> +
-> +	ret = cs2000_clk_in_bound_rate(client, rate_in);
-> +	if (ret < 0)
-> +		goto probe_err;
-> +
-> +	ret = cs2000_ratio_set(client, ch, rate_in, rate_out);
-> +	if (ret < 0)
-> +		goto probe_err;
-> +
-> +	ret = cs2000_ratio_select(client, ch);
-> +	if (ret < 0)
-> +		goto probe_err;
-> +
-> +	ret = cs2000_wait_pll_lock(client);
-> +	if (ret < 0)
-> +		goto probe_err;
-> +
-> +	ret = cs2000_clk_out_enable(client);
-> +	if (ret < 0)
-> +		goto probe_err;
-> +
-> +	ret = cs2000_clk_register(client);
-> +	if (ret < 0)
-> +		goto probe_err;
-> +
-> +	ret = cs2000_version_print(client);
-> +	if (ret < 0)
-> +		goto probe_err;
-> +
-> +	return 0;
-> +
-> +probe_err:
-> +	cs2000_remove(client);
-
-We don't register the clock and provider until
-cs2000_clk_register() but this remove call undoes those things
-even if there's an error in ratio_set() or earlier.
-
-> +
-> +	return ret;
-> +}
-> +
-> +static struct i2c_driver cs2000_driver = {
-> +	.driver = {
-> +		.name = "cs2000-cp",
-> +		.owner = THIS_MODULE,
-
-This can be dropped. module_i2c_driver() does it already.
-
-> +		.of_match_table = cs2000_of_match,
-> +	},
-> +	.probe		= cs2000_probe,
-> +	.remove		= cs2000_remove,
-> +	.id_table	= cs2000_id,
-> +};
-> +
-> +module_i2c_driver(cs2000_driver);
-
--- 
-Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
-a Linux Foundation Collaborative Project
+ Documentation/devicetree/bindings/timer/renesas,cmt.txt |   85 ++++++---------
+ arch/arm/boot/dts/r8a73a4.dtsi                          |    5 
+ arch/arm/boot/dts/r8a7740.dtsi                          |    3 
+ arch/arm/boot/dts/r8a7790.dtsi                          |   10 -
+ arch/arm/boot/dts/r8a7791.dtsi                          |   10 -
+ arch/arm/boot/dts/r8a7793.dtsi                          |   10 -
+ arch/arm/boot/dts/r8a7794.dtsi                          |   10 -
+ arch/arm/boot/dts/sh73a0.dtsi                           |    3 
+ drivers/clocksource/sh_cmt.c                            |   54 ++++++---
+ 9 files changed, 85 insertions(+), 105 deletions(-)
