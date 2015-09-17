@@ -1,59 +1,67 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 28 Sep 2015 11:48:07 +0000
-Subject: RE: [PATCH] usb: renesas_usbhs: Add support for R-Car H3
-Message-Id: <SG2PR06MB091979AD8228513ABBC0CB1DD84F0@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 17 Sep 2015 08:45:18 +0000
+Subject: Re: [PATCH v4 15/16] clk: shmobile: mstp: Consider "zb_clk" suitable for power management
+Message-Id: <20150917084446.GA8197@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442556232-6564-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <87a8skyw7s.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87a8skyw7s.wl%kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <1438691297-29235-1-git-send-email-geert+renesas@glider.be>
+ <1438691297-29235-16-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1438691297-29235-16-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: "gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org" <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, "balbi-l0cyMroinI0@public.gmane.org" <balbi-l0cyMroinI0@public.gmane.org>, "robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org" <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "pawel.moll-5wv7dgnIgG8@public.gmane.org" <pawel.moll-5wv7dgnIgG8@public.gmane.org>, "mark.rutland-5wv7dgnIgG8@public.gmane.org" <mark.rutland-5wv7dgnIgG8@public.gmane.org>, "ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org" <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, "galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org" <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san,
+Hi Mike, Hi Stephen,
 
-Thank you for the comment.
-And, I'm sorry for the delayed response.
-
-> Sent: Friday, September 18, 2015 5:25 PM
+On Tue, Aug 04, 2015 at 02:28:16PM +0200, Geert Uytterhoeven wrote:
+> Currently the CPG/MSTP Clock Domain code looks for MSTP clocks to power
+> manage a device.
 > 
-> Hi Shimoda-san
+> Unfortunately, on R-Mobile APE6 (r8a73a4) and SH-Mobile AG5 (sh73a0),
+> the Bus State Controller (BSC) is not power-managed by an MSTP clock,
+> but by a plain CPG clock (zb_clk).  Add a special case to handle this,
+> so the clock is properly managed, and devices connected to the BSC work
+> as expected.
 > 
-> > This patch adds a compatible string to support for R-Car H3.
-> >
-> > Since the HS-USB controller of R-Car H3 is almost the same specification
-> > with R-Car Gen2 (these have 16 pipes and usb-dmac), this patch
-> > sets the "type" of renesas_usbhs_driver_param to USBHS_TYPE_RCAR_GEN2.
-> >
-> > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> > ---
-> (snip)
-> > diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
-> > index 7b98e1d..2becd6b 100644
-> > --- a/drivers/usb/renesas_usbhs/common.c
-> > +++ b/drivers/usb/renesas_usbhs/common.c
-> > @@ -476,6 +476,10 @@ static const struct of_device_id usbhs_of_match[] = {
-> >  		.compatible = "renesas,usbhs-r8a7794",
-> >  		.data = (void *)USBHS_TYPE_RCAR_GEN2,
-> >  	},
-> > +	{
-> > +		.compatible = "renesas,usbhs-r8a7795",
-> > +		.data = (void *)USBHS_TYPE_RCAR_GEN2,
-> > +	},
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+
+for one reason or another I seem to have this patch queued up in
+my renesas tree for v4.4, without any Acks.
+
+I think it would be best if one of you took the patch instead.
+Though I'm also happy to take it with Acks.
+
+Let me know how you would like to proceed.
+
+> ---
+> v4:
+>   - Add Reviewed-by,
 > 
-> It is helpful for user if it is indicating Gen2 compatible.
-> Because r8a7795 is Gen3
-
-So, I will add a comment in the code like the followings:
-
-{
-	/* Gen3 is compatible with Gen2 */
-	.compatible = "renesas,usbhs-r8a7795",
-	.data = (void *)USBHS_TYPE_RCAR_GEN2,
-},
-
-Best regards,
-Yoshihiro Shimoda
-
+> v3:
+>   - Use "CPG/MSTP Clock Domain" instead of "CPG Clock Domain",
+> 
+> v2:
+>   - New.
+> ---
+>  drivers/clk/shmobile/clk-mstp.c | 4 ++++
+>  1 file changed, 4 insertions(+)
+> 
+> diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
+> index b1df7b2f1e970adb..a117c3f0f257b5e1 100644
+> --- a/drivers/clk/shmobile/clk-mstp.c
+> +++ b/drivers/clk/shmobile/clk-mstp.c
+> @@ -259,6 +259,10 @@ int cpg_mstp_attach_dev(struct generic_pm_domain *domain, struct device *dev)
+>  					    "renesas,cpg-mstp-clocks"))
+>  			goto found;
+>  
+> +		/* BSC on r8a73a4/sh73a0 uses zb_clk instead of an mstp clock*/
+> +		if (!strcmp(clkspec.np->name, "zb_clk"))
+> +			goto found;
+> +
+>  		of_node_put(clkspec.np);
+>  		i++;
+>  	}
+> -- 
+> 1.9.1
+> 
