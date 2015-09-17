@@ -1,546 +1,570 @@
-From: Jean Delvare <jdelvare@suse.de>
-Date: Fri, 11 Sep 2015 08:42:58 +0000
-Subject: Re: [PATCH 1/2] i2c-tools: add new tool 'i2ctransfer'
-Message-Id: <20150911104258.2563e238@endymion.delvare>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 17 Sep 2015 04:22:42 +0000
+Subject: [PATCH 05/20 v2] ASoC: add ak4613 support
+Message-Id: <87oah17k6j.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1434710432-4182-1-git-send-email-wsa@the-dreams.de>
- <1434710432-4182-2-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1434710432-4182-2-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
-Cc: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-sh@vger.kernel.org
 
-Hi Wolfram,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Fri, 19 Jun 2015 12:40:31 +0200, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> 
-> This tool allows to construct and concat multiple I2C messages into one
-> single transfer. Its aim is to test I2C master controllers, and so there
-> is no SMBus fallback.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-Which is fine. That wouldn't make much sense anyway as not all I2C
-transactions fit into the SMBus set. For SMBus transactions we already
-have i2cdump, i2cget and i2cset.
+ - already posted, not yet merged
 
-> I've been missing such a tool a number of times now, so I finally got
-> around to writing it myself. As with all I2C tools, it can be dangerous,
-> but it can also be very useful when developing. I am not sure if distros
-> should supply it, I'll leave that to Jean's experience. For embedded
-> build systems, I think this should be selectable.
+ Documentation/devicetree/bindings/sound/ak4613.txt |  17 +
+ sound/soc/codecs/Kconfig                           |   5 +
+ sound/soc/codecs/Makefile                          |   2 +
+ sound/soc/codecs/ak4613.c                          | 469 +++++++++++++++++++++
+ 4 files changed, 493 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/sound/ak4613.txt
+ create mode 100644 sound/soc/codecs/ak4613.c
 
-I think it can be included together with the other tools. It's just as
-dangerous a tool as the other ones, not more. The fact that it can't be
-used on SMBus-only controllers even kind of makes it less dangerous.
-
-> Tested with various Renesas I2C IP cores as well as Tegra and AT91.
-> 
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-
-Not needed for i2c-tools contributions.
-
-> ---
->  tools/Module.mk     |   8 +-
->  tools/i2ctransfer.c | 320 ++++++++++++++++++++++++++++++++++++++++++++++++++++
->
->  2 files changed, 327 insertions(+), 1 deletion(-)
->  create mode 100644 tools/i2ctransfer.c
-
-Where is the manual page? We need one, it's mandatory for some
-distributions. And "make install" currently fails because
-tools/i2ctransfer.8 is missing.
-
-While this is not kernel code, I would recommend that you run the
-kernel's scripts/checkpatch.pl on tools/i2ctransfer.c. Most of the
-problems reported are relevant and fixing them would improve
-readability.
-
-Overall it looks really good. I made a lot of comments below but most
-of them only express my preference and you are free to ignore them if
-you disagree.
-
-> diff --git a/tools/Module.mk b/tools/Module.mk
-> index 641ac81..7192361 100644
-> --- a/tools/Module.mk
-> +++ b/tools/Module.mk
-> @@ -18,7 +18,7 @@ else
->  TOOLS_LDFLAGS	+= -Llib -li2c
->  endif
->  
-> -TOOLS_TARGETS	:= i2cdetect i2cdump i2cset i2cget
-> +TOOLS_TARGETS	:= i2cdetect i2cdump i2cset i2cget i2ctransfer
->  
->  #
->  # Programs
-> @@ -36,6 +36,9 @@ $(TOOLS_DIR)/i2cset: $(TOOLS_DIR)/i2cset.o $(TOOLS_DIR)/i2cbusses.o $(TOOLS_DIR)
->  $(TOOLS_DIR)/i2cget: $(TOOLS_DIR)/i2cget.o $(TOOLS_DIR)/i2cbusses.o $(TOOLS_DIR)/util.o
->  	$(CC) $(LDFLAGS) -o $@ $^ $(TOOLS_LDFLAGS)
->  
-> +$(TOOLS_DIR)/i2ctransfer: $(TOOLS_DIR)/i2ctransfer.o $(TOOLS_DIR)/i2cbusses.o $(TOOLS_DIR)/util.o
-> +	$(CC) $(LDFLAGS) -o $@ $^ $(TOOLS_LDFLAGS)
-> +
->  #
->  # Objects
->  #
-> @@ -52,6 +55,9 @@ $(TOOLS_DIR)/i2cset.o: $(TOOLS_DIR)/i2cset.c $(TOOLS_DIR)/i2cbusses.h $(TOOLS_DI
->  $(TOOLS_DIR)/i2cget.o: $(TOOLS_DIR)/i2cget.c $(TOOLS_DIR)/i2cbusses.h $(TOOLS_DIR)/util.h version.h $(INCLUDE_DIR)/i2c/smbus.h
->  	$(CC) $(CFLAGS) $(TOOLS_CFLAGS) -c $< -o $@
->  
-> +$(TOOLS_DIR)/i2ctransfer.o: $(TOOLS_DIR)/i2ctransfer.c $(TOOLS_DIR)/i2cbusses.h $(TOOLS_DIR)/util.h version.h
-> +	$(CC) $(CFLAGS) $(TOOLS_CFLAGS) -c $< -o $@
-> +
->  $(TOOLS_DIR)/i2cbusses.o: $(TOOLS_DIR)/i2cbusses.c $(TOOLS_DIR)/i2cbusses.h
->  	$(CC) $(CFLAGS) $(TOOLS_CFLAGS) -c $< -o $@
->  
-> diff --git a/tools/i2ctransfer.c b/tools/i2ctransfer.c
-> new file mode 100644
-> index 0000000..27f4d7a
-> --- /dev/null
-> +++ b/tools/i2ctransfer.c
-> @@ -0,0 +1,320 @@
-> +/*
-> +    i2ctransfer.c - A user-space program to send concatenated i2c messages
-> +    Copyright (C) 2015 Wolfram Sang <wsa@sang-engineering.com>
-> +    Copyright (C) 2015 Renesas Electronics Corporation
-> +
-> +    Based on i2cget.c:
-> +    Copyright (C) 2005-2012  Jean Delvare <jdelvare@suse.de>
-> +
-> +    which is based on i2cset.c:
-> +    Copyright (C) 2001-2003  Frodo Looijaard <frodol@dds.nl>, and
-> +                             Mark D. Studebaker <mdsxyz123@yahoo.com>
-> +    Copyright (C) 2004-2005  Jean Delvare
-
-I think you can skip this. If anyone really cares, it's already
-mentioned in i2cget.c.
-
-> +
-> +    This program is free software; you can redistribute it and/or modify
-> +    it under the terms of the GNU General Public License as published by
-> +    the Free Software Foundation; either version 2 of the License, or
-> +    (at your option) any later version.
-> +
-> +    This program is distributed in the hope that it will be useful,
-> +    but WITHOUT ANY WARRANTY; without even the implied warranty of
-> +    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> +    GNU General Public License for more details.
-> +*/
-> +
-> +#include <sys/ioctl.h>
-> +#include <errno.h>
-> +#include <string.h>
-> +#include <stdio.h>
-> +#include <stdlib.h>
-> +#include <unistd.h>
-> +#include <linux/i2c.h>
-> +#include <linux/i2c-dev.h>
-> +#include "i2cbusses.h"
-> +#include "util.h"
-> +#include "../version.h"
-> +
-> +enum parse_state {
-> +	PARSE_GET_DESC,
-> +	PARSE_GET_DATA
-
-There should be a trailing comma, in case you ever need to add a state.
-
-> +};
-> +
-> +#define PRINT_STDERR	(1 << 0)
-> +#define PRINT_READ_BUF	(1 << 1)
-> +#define PRINT_WRITE_BUF	(1 << 2)
-> +#define PRINT_HEADER	(1 << 3)
-> +
-> +static void help(void)
-> +{
-> +	fprintf(stderr,
-> +		"Usage: i2ctransfer [-f] [-y] [-v] [-V] I2CBUS DESC [DATA] [DESC [DATA]]...\n"
-> +		"  I2CBUS is an integer or an I2C bus name\n"
-> +		"  DESC describes the transfer in the form: {r|w}LENGTH[@address]\n"
-> +		"    1) read/write-flag 2) LENGTH (range 0-65535) 3) I2C address (use last one if omitted)\n"
-
-Note that the I2C_RDWR ioctl interface currently limits the per-message
-length to 8192 bytes. I can't really think of a good reason for doing
-so, other than the fact that buffers larger than this may be difficult
-to allocate.
-
-> +		"  DATA are LENGTH bytes for a write message. They can be shortened by a suffix:\n"
-> +		"    = (keep value constant until LENGTH)\n"
-> +		"    + (increase value by 1 until LENGTH)\n"
-> +		"    - (decrease value by 1 until LENGTH)\n"
-> +		"\nExample (bus 0, read 8 byte at offset 0x64 from eeprom at 0x50):\n"
-
-The leading newline would rather go at end of previous line IMHO, or on
-a line on its own to make it even clearer what the output will look
-like.
-
-> +		"  # i2ctransfer 0 w1@0x50 0x64 r8\n"
-> +		"Example (same eeprom, at offset 0x42 write 0xff 0xfe .. 0x00 ):\n"
-
-No space before the closing parenthesis. A shorter write would probably
-serve better as an example, as it's unclear what will happen when the
-register offset reaches 0x100.
-
-> +		"  # i2ctransfer 0 w257@0x50 0x42 0xff-\n"
-> +		);
-
-The closing parenthesis can go at the end of the previous line, I think.
-
-> +}
-> +
-> +static int check_funcs(int file)
-> +{
-> +	unsigned long funcs;
-> +
-> +	/* check adapter functionality */
-> +	if (ioctl(file, I2C_FUNCS, &funcs) < 0) {
-> +		fprintf(stderr, "Error: Could not get the adapter "
-> +			"functionality matrix: %s\n", strerror(errno));
-> +		return -1;
-> +	}
-> +
-> +	if (!(funcs & I2C_FUNC_I2C)) {
-> +		fprintf(stderr, MISSING_FUNC_FMT, "I2C transfers");
-> +		return -1;
-> +	}
-> +
-> +	return 0;
-> +}
-> +
-> +static void print_msgs(struct i2c_msg *msgs, __u32 nmsgs, unsigned flags)
-> +{
-> +	__u32 i, j;
-> +	FILE *output = flags & PRINT_STDERR ? stderr : stdout;
-
-Why don't you just pass the FILE * argument as the first parameter of
-this function?
-
-> +
-> +	for (i = 0; i < nmsgs; i++) {
-> +		int read = !!(msgs[i].flags & I2C_M_RD);
-> +		int newline = !!(flags & PRINT_HEADER);
-
-The double negation isn't needed.
-
-> +
-> +		if (flags & PRINT_HEADER)
-> +			fprintf(output, "Msg %u: addr 0x%02x, %s, len %u",
-> +				i, msgs[i].addr, read ? "read" : "write", msgs[i].len);
-> +		if (msgs[i].len &&
-> +		   (read = !!(flags & PRINT_READ_BUF) ||
-> +		   !read = !!(flags & PRINT_WRITE_BUF))) {
-
-Could be indented (aligned) better to improve readability. Also the
-last two statements seems needlessly complex. I'd write:
-
-		if (msgs[i].len &&
-		    (read && (flags & PRINT_READ_BUF) ||
-		     !read && (flags & PRINT_WRITE_BUF))) {
-
-This approach would avoid all the double negations in this function.
-
-> +			if (flags & PRINT_HEADER)
-> +				fprintf(output, ", buf ");
-
-You'd rather drop the trailing white space...
-
-> +			for (j = 0; j < msgs[i].len; j++)
-> +				fprintf(output, "0x%02x ", msgs[i].buf[j]);
-
-... and move the white space at the beginning here. This avoids printing
-a trailing space before the newline (which could cause an extra blank
-line on display if you are unlucky with the terminal width.)
-
-> +			newline = 1;
-> +		}
-> +		if (newline)
-> +			fprintf(output, "\n");
-
-In which case exactly would the newline not be printed? Read of length
-0? I doubt it is worth caring about. I'd even say that printing a blank
-line in this case is preferable, so that the output really corresponds
-to what happened. Otherwise you can't tell the difference between read
-of length 0 followed by read of length 1 and the other way around.
-
-> +	}
-> +}
-> +
-> +static int confirm(const char *filename, struct i2c_msg *msgs, __u32 nmsgs)
-> +{
-> +	fprintf(stderr, "WARNING! This program can confuse your I2C bus, cause data loss and worse!\n");
-> +	fprintf(stderr, "I will send the following messages to device file %s:\n", filename);
-> +	print_msgs(msgs, nmsgs, PRINT_STDERR | PRINT_HEADER | PRINT_WRITE_BUF);
-> +
-> +	fprintf(stderr, "Continue? [y/N] ");
-> +	fflush(stderr);
-> +	if (!user_ack(0)) {
-> +		fprintf(stderr, "Aborting on user request.\n");
-> +		return 0;
-> +	}
-> +
-> +	return 1;
-> +}
-> +
-> +int main(int argc, char *argv[])
-> +{
-> +	char filename[20];
-> +	char *end;
-> +	int i2cbus, address = -1, file, arg_idx = 1, nmsgs = 0, nmsgs_sent;
-> +	int force = 0, yes = 0, version = 0, verbose = 0;
-> +	unsigned buf_idx = 0;
-> +	unsigned long len, raw_data;
-> +	__u8 data;
-> +	__u8 *buf;
-> +	__u16 flags;
-> +	struct i2c_msg msgs[I2C_RDRW_IOCTL_MAX_MSGS];
-> +	struct i2c_rdwr_ioctl_data rdwr;
-> +	enum parse_state state = PARSE_GET_DESC;
-
-That's a lot of local variables. I think some of them could be declared
-inside the state machine. Did you try moving the state machine to a
-separate function? Maybe if would improve readability.
-
-> +
-> +	/* handle (optional) arg_idx first */
-> +	while (arg_idx < argc && argv[arg_idx][0] = '-') {
-> +		switch (argv[arg_idx][1]) {
-> +		case 'V': version = 1; break;
-> +		case 'v': verbose = 1; break;
-> +		case 'f': force = 1; break;
-> +		case 'y': yes = 1; break;
-> +		default:
-> +			fprintf(stderr, "Error: Unsupported option "
-> +				"\"%s\"!\n", argv[arg_idx]);
-> +			help();
-> +			exit(1);
-> +		}
-> +		arg_idx++;
-> +	}
-> +
-> +	if (version) {
-> +		fprintf(stderr, "i2ctransfer version %s\n", VERSION);
-> +		exit(0);
-> +	}
-> +
-> +	if (arg_idx = argc) {
-> +		help();
-> +		exit(0);
-
-I think you want to return an error code here, not 0.
-
-> +	}
-> +
-> +	i2cbus = lookup_i2c_bus(argv[arg_idx++]);
-> +	if (i2cbus < 0)
-> +		exit(1);
-> +
-> +	file = open_i2c_dev(i2cbus, filename, sizeof(filename), 0);
-> +	if (file < 0 || check_funcs(file))
-> +		exit(1);
-> +
-> +	while (arg_idx < argc) {
-> +		char *arg_ptr = argv[arg_idx];
-> +
-> +		if (nmsgs > I2C_RDRW_IOCTL_MAX_MSGS) {
-> +			fprintf(stderr, "Error: Too many messages (max: %d)\n",
-> +				I2C_RDRW_IOCTL_MAX_MSGS);
-> +			exit(1);
-> +		}
-> +
-> +		switch (state) {
-> +		case PARSE_GET_DESC:
-> +			flags = 0;
-> +
-> +			switch (*arg_ptr++) {
-> +			case 'r': flags |= I2C_M_RD; break;
-> +			case 'w': break;
-> +			default:
-> +				fprintf(stderr, "Error: Invalid direction\n");
-> +				goto err_out;
-> +			}
-> +
-> +			len = strtoul(arg_ptr, &end, 0);
-> +			if (len > 65535) {
-
-0xffff would be easier to understand IMHO. Also you must check that
-arg_ptr != end, i.e. you managed to parse anything. Otherwise a faulty
-argument like w@0x50 will be parsed successfully (silently assuming len
-= 0) and odds are that the following argument won't be parsed
-successfully. In that case the error message will point the user to the
-wrong argument.
-
-> +				fprintf(stderr, "Error: Length invalid\n");
-> +				goto err_out;
-> +			}
-> +
-> +			arg_ptr = end;
-> +			if (*arg_ptr) {
-> +				if (*arg_ptr++ != '@') {
-> +					fprintf(stderr, "Error: No '@' after length\n");
-
-No @ after length is actually fine, that's what the "else" branch below
-handles. The problem is no @ before address.
-
-> +					goto err_out;
-> +				}
-> +
-> +				/* We skip 10-bit support for now. If we want it, it
-> +				 * should be marked with a 't' flag before the address
-> +				 * here.
-> +				 */
-> +
-> +				address = parse_i2c_address(arg_ptr);
-> +				if (address < 0)
-> +					goto err_out;
-> +
-> +				if (!force && set_slave_addr(file, address, 0))
-> +					goto err_out;
-
-It took me a while to realize that 1) this was not broken and 2) this
-was actually useful. Please add a comment explaining that the only
-purpose is to check that the slave address isn't busy. You don't
-actually need to set the slave address at this point, the I2C_RDWR
-ioctl doesn't make use of it.
-
-> +
-> +			} else {
-> +				/* Reuse last address if possible */
-> +				if (address < 0) {
-> +					fprintf(stderr, "Error: No address given\n");
-> +					goto err_out;
-> +				}
-> +			}
-> +
-> +			msgs[nmsgs].addr = address;
-> +			msgs[nmsgs].flags = flags;
-> +			msgs[nmsgs].len = len;
-> +
-> +			if (len) {
-> +				buf = malloc(len);
-> +				if (!buf) {
-> +					fprintf(stderr, "Error: No memory for buffer\n");
-> +					goto err_out;
-> +				}
-> +				memset(buf, 0, len);
-> +				msgs[nmsgs].buf = buf;
-> +			}
-
-Else msgs[nmsgs].buf should be set to NULL. Otherwise you're passing a
-random address value to the kernel.
-
-> +
-> +			if (flags & I2C_M_RD || len = 0) {
-> +				nmsgs++;
-> +			} else {
-> +				buf_idx = 0;
-> +				state = PARSE_GET_DATA;
-> +			}
-> +
-> +			break;
-> +
-> +		case PARSE_GET_DATA:
-> +			raw_data = strtoul(arg_ptr, &end, 0);
-> +			if (raw_data > 255) {
-
-0xff would be easier to understand IMHO. Here too you must check that
-end != arg_ptr, otherwise '' or '+' will be parsed successfully
-(assuming raw_data = 0.) 'x' would fail but with a confusing error
-message ("Invalid data byte suffix".)
-
-> +				fprintf(stderr, "Error: Data byte invalid\n");
-
-"Invalid data byte" would sound better and be more consistent with
-other error messages.
-
-> +				goto err_out;
-> +			}
-> +			data = raw_data;
-> +			len = msgs[nmsgs].len;
-> +
-> +			while (buf_idx < len) {
-> +				msgs[nmsgs].buf[buf_idx++] = data;
-> +
-> +				if (!*end)
-> +					break;
-> +
-> +				switch (*end) {
-> +				case '+': data++; break;
-> +				case '-': data--; break;
-> +				case '=': break;
-> +				default:
-> +					fprintf(stderr, "Error: Invalid data byte suffix\n");
-> +					goto err_out;
-> +				}
-> +			}
-> +
-> +			if (buf_idx = len) {
-> +				nmsgs++;
-> +				state = PARSE_GET_DESC;
-> +			}
-> +
-> +			break;
-> +
-> +		default:
-> +			fprintf(stderr, "Error: Unnkown state in state machine!\n");
-
-Typo: Unknown
-
-This can't actually happen, right? A comment saying so would be
-appreciated. And "Internal error" instead of just "Error", so that the
-user understands, if it ever happens.
-
-> +			goto err_out;
-> +		}
-> +
-> +		arg_idx++;
-> +	}
-> +
-> +	if (state != PARSE_GET_DESC || nmsgs = 0) {
-
-I'd be surprised if nmsgs = 0 can actually happen. You checked that at
-least one parameter was left to parse on the command line before
-entering the state machine. If you couldn't parse it then it must have
-triggered some error earlier and you'll never reach this test.
-
-> +		fprintf(stderr, "Error: Incomplete message\n");
-> +		exit(1);
-> +	}
-> +
-> +	if (!yes && !confirm(filename, msgs, nmsgs))
-> +		exit(0);
-> +
-> +	rdwr.msgs = msgs;
-> +	rdwr.nmsgs = nmsgs;
-> +	nmsgs_sent = ioctl(file, I2C_RDWR, &rdwr);
-> +	if (nmsgs_sent < 0) {
-> +		fprintf(stderr, "Error: Sending messages failed: %s\n", strerror(errno));
-> +		exit(errno);
-
-I wouldn't recommend leaking errno back to the caller. Imagine errno is
-EPERM (1), the user couldn't tell the difference with all other error
-cases. IMHO there's no point in returning different error values unless
-1) this is done consistently and 2) this is clearly documented in the
-man page.
-
-> +	} else if (nmsgs_sent < nmsgs) {
-> +		fprintf(stderr, "Warning: only %d/%d messages were sent\n", nmsgs_sent, nmsgs);
-> +	}
-> +
-> +	close(file);
-> +
-> +	print_msgs(msgs, nmsgs_sent, PRINT_READ_BUF | (verbose ? PRINT_HEADER | PRINT_WRITE_BUF : 0));
-> +
-> +	/* let Linux free malloced memory on termination */
-> +	exit(0);
-> +
-> +err_out:
-> +	fprintf(stderr, "Error: faulty argument is '%s'\n", argv[arg_idx]);
-> +	exit(1);
-> +}
-
-
+diff --git a/Documentation/devicetree/bindings/sound/ak4613.txt b/Documentation/devicetree/bindings/sound/ak4613.txt
+new file mode 100644
+index 0000000..15a9195
+--- /dev/null
++++ b/Documentation/devicetree/bindings/sound/ak4613.txt
+@@ -0,0 +1,17 @@
++AK4613 I2C transmitter
++
++This device supports I2C mode only.
++
++Required properties:
++
++- compatible : "asahi-kasei,ak4613"
++- reg : The chip select number on the I2C bus
++
++Example:
++
++&i2c {
++	ak4613: ak4613@0x10 {
++		compatible = "asahi-kasei,ak4613";
++		reg = <0x10>;
++	};
++};
+diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
+index 0c9733e..a92e4d4 100644
+--- a/sound/soc/codecs/Kconfig
++++ b/sound/soc/codecs/Kconfig
+@@ -36,6 +36,7 @@ config SND_SOC_ALL_CODECS
+ 	select SND_SOC_AK4104 if SPI_MASTER
+ 	select SND_SOC_AK4535 if I2C
+ 	select SND_SOC_AK4554
++	select SND_SOC_AK4613 if I2C
+ 	select SND_SOC_AK4641 if I2C
+ 	select SND_SOC_AK4642 if I2C
+ 	select SND_SOC_AK4671 if I2C
+@@ -319,6 +320,10 @@ config SND_SOC_AK4535
+ config SND_SOC_AK4554
+ 	tristate "AKM AK4554 CODEC"
+ 
++config SND_SOC_AK4613
++	tristate "AKM AK4613 CODEC"
++	depends on I2C
++
+ config SND_SOC_AK4641
+ 	tristate
+ 
+diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
+index 4a32077..5b6c8af 100644
+--- a/sound/soc/codecs/Makefile
++++ b/sound/soc/codecs/Makefile
+@@ -26,6 +26,7 @@ snd-soc-ads117x-objs := ads117x.o
+ snd-soc-ak4104-objs := ak4104.o
+ snd-soc-ak4535-objs := ak4535.o
+ snd-soc-ak4554-objs := ak4554.o
++snd-soc-ak4613-objs := ak4613.o
+ snd-soc-ak4641-objs := ak4641.o
+ snd-soc-ak4642-objs := ak4642.o
+ snd-soc-ak4671-objs := ak4671.o
+@@ -216,6 +217,7 @@ obj-$(CONFIG_SND_SOC_ADS117X)	+= snd-soc-ads117x.o
+ obj-$(CONFIG_SND_SOC_AK4104)	+= snd-soc-ak4104.o
+ obj-$(CONFIG_SND_SOC_AK4535)	+= snd-soc-ak4535.o
+ obj-$(CONFIG_SND_SOC_AK4554)	+= snd-soc-ak4554.o
++obj-$(CONFIG_SND_SOC_AK4613)	+= snd-soc-ak4613.o
+ obj-$(CONFIG_SND_SOC_AK4641)	+= snd-soc-ak4641.o
+ obj-$(CONFIG_SND_SOC_AK4642)	+= snd-soc-ak4642.o
+ obj-$(CONFIG_SND_SOC_AK4671)	+= snd-soc-ak4671.o
+diff --git a/sound/soc/codecs/ak4613.c b/sound/soc/codecs/ak4613.c
+new file mode 100644
+index 0000000..fd96a8f
+--- /dev/null
++++ b/sound/soc/codecs/ak4613.c
+@@ -0,0 +1,469 @@
++/*
++ * ak4613.c  --  Asahi Kasei ALSA Soc Audio driver
++ *
++ * Copyright (C) 2015 Renesas Electronics Corporation
++ * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * Based on ak4642.c by Kuninori Morimoto
++ * Based on wm8731.c by Richard Purdie
++ * Based on ak4535.c by Richard Purdie
++ * Based on wm8753.c by Liam Girdwood
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/clk.h>
++#include <linux/i2c.h>
++#include <linux/slab.h>
++#include <linux/of_device.h>
++#include <linux/module.h>
++#include <linux/regmap.h>
++#include <sound/soc.h>
++#include <sound/pcm_params.h>
++
++#define PW_MGMT1	0x00 /* Power Management 1 */
++#define PW_MGMT2	0x01 /* Power Management 2 */
++#define PW_MGMT3	0x02 /* Power Management 3 */
++#define CTRL1		0x03 /* Control 1 */
++#define CTRL2		0x04 /* Control 2 */
++#define DEMP1		0x05 /* De-emphasis1 */
++#define DEMP2		0x06 /* De-emphasis2 */
++#define OFD		0x07 /* Overflow Detect */
++#define ZRD		0x08 /* Zero Detect */
++#define ICTRL		0x09 /* Input Control */
++#define OCTRL		0x0a /* Output Control */
++#define LOUT1		0x0b /* LOUT1 Volume Control */
++#define ROUT1		0x0c /* ROUT1 Volume Control */
++#define LOUT2		0x0d /* LOUT2 Volume Control */
++#define ROUT2		0x0e /* ROUT2 Volume Control */
++#define LOUT3		0x0f /* LOUT3 Volume Control */
++#define ROUT3		0x10 /* ROUT3 Volume Control */
++#define LOUT4		0x11 /* LOUT4 Volume Control */
++#define ROUT4		0x12 /* ROUT4 Volume Control */
++#define LOUT5		0x13 /* LOUT5 Volume Control */
++#define ROUT5		0x14 /* ROUT5 Volume Control */
++#define LOUT6		0x15 /* LOUT6 Volume Control */
++#define ROUT6		0x16 /* ROUT6 Volume Control */
++
++/* PW_MGMT1 */
++#define RSTN		BIT(0)
++#define PMDAC		BIT(1)
++#define PMADC		BIT(2)
++#define PMVR		BIT(3)
++
++/* PW_MGMT2 */
++#define PMAD_ALL	0x7
++
++/* PW_MGMT3 */
++#define PMDA_ALL	0x3f
++
++/* CTRL1 */
++#define DIF0		BIT(3)
++#define DIF1		BIT(4)
++#define DIF2		BIT(5)
++#define TDM0		BIT(6)
++#define TDM1		BIT(7)
++#define NO_FMT		(0xff)
++#define FMT_MASK	(0xf8)
++
++/* CTRL2 */
++#define DFS_NORMAL_SPEED	(0 << 2)
++#define DFS_DOUBLE_SPEED	(1 << 2)
++#define DFS_QUAD_SPEED		(2 << 2)
++
++struct ak4613_priv {
++	struct mutex lock;
++
++	unsigned int fmt;
++	u8 fmt_ctrl;
++	int cnt;
++};
++
++struct ak4613_formats {
++	unsigned int width;
++	unsigned int fmt;
++};
++
++struct ak4613_interface {
++	struct ak4613_formats capture;
++	struct ak4613_formats playback;
++};
++
++static const struct reg_default ak4613_reg[] = {
++	{ 0x0,  0x0f }, { 0x1,  0x07 }, { 0x2,  0x3f }, { 0x3,  0x20 },
++	{ 0x4,  0x20 }, { 0x5,  0x55 }, { 0x6,  0x05 }, { 0x7,  0x07 },
++	{ 0x8,  0x0f }, { 0x9,  0x07 }, { 0xa,  0x3f }, { 0xb,  0x00 },
++	{ 0xc,  0x00 }, { 0xd,  0x00 }, { 0xe,  0x00 }, { 0xf,  0x00 },
++	{ 0x10, 0x00 }, { 0x11, 0x00 }, { 0x12, 0x00 }, { 0x13, 0x00 },
++	{ 0x14, 0x00 }, { 0x15, 0x00 }, { 0x16, 0x00 },
++};
++
++#define AUDIO_IFACE_IDX_TO_VAL(i) (i << 3)
++#define AUDIO_IFACE(b, fmt) { b, SND_SOC_DAIFMT_##fmt }
++static const struct ak4613_interface ak4613_iface[] = {
++	/* capture */				/* playback */
++	[0] = {	AUDIO_IFACE(24, LEFT_J),	AUDIO_IFACE(16, RIGHT_J) },
++	[1] = {	AUDIO_IFACE(24, LEFT_J),	AUDIO_IFACE(20, RIGHT_J) },
++	[2] = {	AUDIO_IFACE(24, LEFT_J),	AUDIO_IFACE(24, RIGHT_J) },
++	[3] = {	AUDIO_IFACE(24, LEFT_J),	AUDIO_IFACE(24, LEFT_J) },
++	[4] = {	AUDIO_IFACE(24, I2S),		AUDIO_IFACE(24, I2S) },
++};
++
++static const struct regmap_config ak4613_regmap_cfg = {
++	.reg_bits		= 8,
++	.val_bits		= 8,
++	.max_register		= 0x16,
++	.reg_defaults		= ak4613_reg,
++	.num_reg_defaults	= ARRAY_SIZE(ak4613_reg),
++};
++
++static const struct of_device_id ak4613_of_match[] = {
++	{ .compatible = "asahi-kasei,ak4613",	.data = &ak4613_regmap_cfg },
++	{},
++};
++MODULE_DEVICE_TABLE(of, ak4613_of_match);
++
++static const struct i2c_device_id ak4613_i2c_id[] = {
++	{ "ak4613", (kernel_ulong_t)&ak4613_regmap_cfg },
++	{ }
++};
++MODULE_DEVICE_TABLE(i2c, ak4613_i2c_id);
++
++static const struct snd_soc_dapm_widget ak4613_dapm_widgets[] = {
++
++	/* Outputs */
++	SND_SOC_DAPM_OUTPUT("LOUT1"),
++	SND_SOC_DAPM_OUTPUT("LOUT2"),
++	SND_SOC_DAPM_OUTPUT("LOUT3"),
++	SND_SOC_DAPM_OUTPUT("LOUT4"),
++	SND_SOC_DAPM_OUTPUT("LOUT5"),
++	SND_SOC_DAPM_OUTPUT("LOUT6"),
++
++	SND_SOC_DAPM_OUTPUT("ROUT1"),
++	SND_SOC_DAPM_OUTPUT("ROUT2"),
++	SND_SOC_DAPM_OUTPUT("ROUT3"),
++	SND_SOC_DAPM_OUTPUT("ROUT4"),
++	SND_SOC_DAPM_OUTPUT("ROUT5"),
++	SND_SOC_DAPM_OUTPUT("ROUT6"),
++
++	/* Inputs */
++	SND_SOC_DAPM_INPUT("LIN1"),
++	SND_SOC_DAPM_INPUT("LIN2"),
++
++	SND_SOC_DAPM_INPUT("RIN1"),
++	SND_SOC_DAPM_INPUT("RIN2"),
++
++	/* DAC */
++	SND_SOC_DAPM_DAC("DAC1", NULL, PW_MGMT3, 0, 0),
++	SND_SOC_DAPM_DAC("DAC2", NULL, PW_MGMT3, 1, 0),
++	SND_SOC_DAPM_DAC("DAC3", NULL, PW_MGMT3, 2, 0),
++	SND_SOC_DAPM_DAC("DAC4", NULL, PW_MGMT3, 3, 0),
++	SND_SOC_DAPM_DAC("DAC5", NULL, PW_MGMT3, 4, 0),
++	SND_SOC_DAPM_DAC("DAC6", NULL, PW_MGMT3, 5, 0),
++
++	/* ADC */
++	SND_SOC_DAPM_ADC("ADC1", NULL, PW_MGMT2, 0, 0),
++	SND_SOC_DAPM_ADC("ADC2", NULL, PW_MGMT2, 1, 0),
++};
++
++static const struct snd_soc_dapm_route ak4613_intercon[] = {
++	{"LOUT1", NULL, "DAC1"},
++	{"LOUT2", NULL, "DAC2"},
++	{"LOUT3", NULL, "DAC3"},
++	{"LOUT4", NULL, "DAC4"},
++	{"LOUT5", NULL, "DAC5"},
++	{"LOUT6", NULL, "DAC6"},
++
++	{"ROUT1", NULL, "DAC1"},
++	{"ROUT2", NULL, "DAC2"},
++	{"ROUT3", NULL, "DAC3"},
++	{"ROUT4", NULL, "DAC4"},
++	{"ROUT5", NULL, "DAC5"},
++	{"ROUT6", NULL, "DAC6"},
++
++	{"DAC1", NULL, "Playback"},
++	{"DAC2", NULL, "Playback"},
++	{"DAC3", NULL, "Playback"},
++	{"DAC4", NULL, "Playback"},
++	{"DAC5", NULL, "Playback"},
++	{"DAC6", NULL, "Playback"},
++
++	{"Capture", NULL, "ADC1"},
++	{"Capture", NULL, "ADC2"},
++
++	{"ADC1", NULL, "LIN1"},
++	{"ADC2", NULL, "LIN2"},
++
++	{"ADC1", NULL, "RIN1"},
++	{"ADC2", NULL, "RIN2"},
++};
++
++static void ak4613_dai_shutdown(struct snd_pcm_substream *substream,
++			       struct snd_soc_dai *dai)
++{
++	struct snd_soc_codec *codec = dai->codec;
++	struct ak4613_priv *priv = snd_soc_codec_get_drvdata(codec);
++	struct device *dev = codec->dev;
++
++	mutex_lock(&priv->lock);
++	priv->cnt--;
++	if (priv->cnt < 0) {
++		dev_err(dev, "unexpected counter error\n");
++		priv->cnt = 0;
++	}
++	if (!priv->cnt)
++		priv->fmt_ctrl = NO_FMT;
++	mutex_unlock(&priv->lock);
++}
++
++static int ak4613_dai_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
++{
++	struct snd_soc_codec *codec = dai->codec;
++	struct ak4613_priv *priv = snd_soc_codec_get_drvdata(codec);
++
++	fmt &= SND_SOC_DAIFMT_FORMAT_MASK;
++
++	switch (fmt) {
++	case SND_SOC_DAIFMT_RIGHT_J:
++	case SND_SOC_DAIFMT_LEFT_J:
++	case SND_SOC_DAIFMT_I2S:
++		priv->fmt = fmt;
++
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int ak4613_dai_hw_params(struct snd_pcm_substream *substream,
++				struct snd_pcm_hw_params *params,
++				struct snd_soc_dai *dai)
++{
++	struct snd_soc_codec *codec = dai->codec;
++	struct ak4613_priv *priv = snd_soc_codec_get_drvdata(codec);
++	const struct ak4613_formats *fmts;
++	struct device *dev = codec->dev;
++	unsigned int width = params_width(params);
++	unsigned int fmt = priv->fmt;
++	unsigned int rate;
++	int is_play = substream->stream = SNDRV_PCM_STREAM_PLAYBACK;
++	int i, ret;
++	u8 fmt_ctrl, ctrl2;
++
++	rate = params_rate(params);
++	switch (rate) {
++	case 32000:
++	case 44100:
++	case 48000:
++		ctrl2 = DFS_NORMAL_SPEED;
++		break;
++	case 88200:
++	case 96000:
++		ctrl2 = DFS_DOUBLE_SPEED;
++		break;
++	case 176400:
++	case 192000:
++		ctrl2 = DFS_QUAD_SPEED;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	/*
++	 * FIXME
++	 *
++	 * It doesn't support TDM at this point
++	 */
++	fmt_ctrl = NO_FMT;
++	for (i = 0; i < ARRAY_SIZE(ak4613_iface); i++) {
++		fmts = (is_play) ?	&ak4613_iface[i].playback :
++					&ak4613_iface[i].capture;
++
++		if (fmts->fmt != fmt)
++			continue;
++
++		if (fmt = SND_SOC_DAIFMT_RIGHT_J) {
++			if (fmts->width != width)
++				continue;
++		} else {
++			if (fmts->width < width)
++				continue;
++		}
++
++		fmt_ctrl = AUDIO_IFACE_IDX_TO_VAL(i);
++		break;
++	}
++
++	ret = -EINVAL;
++	if (fmt_ctrl = NO_FMT)
++		goto hw_params_end;
++
++	mutex_lock(&priv->lock);
++	if ((priv->fmt_ctrl = NO_FMT) ||
++	    (priv->fmt_ctrl = fmt_ctrl)) {
++		priv->fmt_ctrl = fmt_ctrl;
++		priv->cnt++;
++		ret = 0;
++	}
++	mutex_unlock(&priv->lock);
++
++	if (ret < 0)
++		goto hw_params_end;
++
++	snd_soc_update_bits(codec, CTRL1, FMT_MASK, fmt_ctrl);
++	snd_soc_write(codec, CTRL2, ctrl2);
++
++hw_params_end:
++	if (ret < 0)
++		dev_warn(dev, "unsupported data width/format combination\n");
++
++	return ret;
++}
++
++static int ak4613_set_bias_level(struct snd_soc_codec *codec,
++				 enum snd_soc_bias_level level)
++{
++	u8 mgmt1 = 0;
++
++	switch (level) {
++	case SND_SOC_BIAS_ON:
++		mgmt1 |= RSTN;
++		/* fall through */
++	case SND_SOC_BIAS_PREPARE:
++		mgmt1 |= PMADC | PMDAC;
++		/* fall through */
++	case SND_SOC_BIAS_STANDBY:
++		mgmt1 |= PMVR;
++		/* fall through */
++	case SND_SOC_BIAS_OFF:
++	default:
++		break;
++	}
++
++	snd_soc_write(codec, PW_MGMT1, mgmt1);
++
++	return 0;
++}
++
++static const struct snd_soc_dai_ops ak4613_dai_ops = {
++	.shutdown	= ak4613_dai_shutdown,
++	.set_fmt	= ak4613_dai_set_fmt,
++	.hw_params	= ak4613_dai_hw_params,
++};
++
++#define AK4613_PCM_RATE		(SNDRV_PCM_RATE_32000  |\
++				 SNDRV_PCM_RATE_44100  |\
++				 SNDRV_PCM_RATE_48000  |\
++				 SNDRV_PCM_RATE_64000  |\
++				 SNDRV_PCM_RATE_88200  |\
++				 SNDRV_PCM_RATE_96000  |\
++				 SNDRV_PCM_RATE_176400 |\
++				 SNDRV_PCM_RATE_192000)
++#define AK4613_PCM_FMTBIT	(SNDRV_PCM_FMTBIT_S16_LE |\
++				 SNDRV_PCM_FMTBIT_S24_LE)
++
++static struct snd_soc_dai_driver ak4613_dai = {
++	.name = "ak4613-hifi",
++	.playback = {
++		.stream_name	= "Playback",
++		.channels_min	= 2,
++		.channels_max	= 2,
++		.rates		= AK4613_PCM_RATE,
++		.formats	= AK4613_PCM_FMTBIT,
++	},
++	.capture = {
++		.stream_name	= "Capture",
++		.channels_min	= 2,
++		.channels_max	= 2,
++		.rates		= AK4613_PCM_RATE,
++		.formats	= AK4613_PCM_FMTBIT,
++	},
++	.ops = &ak4613_dai_ops,
++	.symmetric_rates = 1,
++};
++
++static int ak4613_resume(struct snd_soc_codec *codec)
++{
++	struct regmap *regmap = dev_get_regmap(codec->dev, NULL);
++
++	regcache_mark_dirty(regmap);
++	return regcache_sync(regmap);
++}
++
++static struct snd_soc_codec_driver soc_codec_dev_ak4613 = {
++	.resume			= ak4613_resume,
++	.set_bias_level		= ak4613_set_bias_level,
++	.dapm_widgets		= ak4613_dapm_widgets,
++	.num_dapm_widgets	= ARRAY_SIZE(ak4613_dapm_widgets),
++	.dapm_routes		= ak4613_intercon,
++	.num_dapm_routes	= ARRAY_SIZE(ak4613_intercon),
++};
++
++static int ak4613_i2c_probe(struct i2c_client *i2c,
++			    const struct i2c_device_id *id)
++{
++	struct device *dev = &i2c->dev;
++	struct device_node *np = dev->of_node;
++	const struct regmap_config *regmap_cfg;
++	struct regmap *regmap;
++	struct ak4613_priv *priv;
++
++	regmap_cfg = NULL;
++	if (np) {
++		const struct of_device_id *of_id;
++
++		of_id = of_match_device(ak4613_of_match, dev);
++		if (of_id)
++			regmap_cfg = of_id->data;
++	} else {
++		regmap_cfg = (const struct regmap_config *)id->driver_data;
++	}
++
++	if (!regmap_cfg)
++		return -EINVAL;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->fmt_ctrl		= NO_FMT;
++	priv->cnt		= 0;
++
++	mutex_init(&priv->lock);
++
++	i2c_set_clientdata(i2c, priv);
++
++	regmap = devm_regmap_init_i2c(i2c, regmap_cfg);
++	if (IS_ERR(regmap))
++		return PTR_ERR(regmap);
++
++	return snd_soc_register_codec(dev, &soc_codec_dev_ak4613,
++				      &ak4613_dai, 1);
++}
++
++static int ak4613_i2c_remove(struct i2c_client *client)
++{
++	snd_soc_unregister_codec(&client->dev);
++	return 0;
++}
++
++static struct i2c_driver ak4613_i2c_driver = {
++	.driver = {
++		.name = "ak4613-codec",
++		.owner = THIS_MODULE,
++		.of_match_table = ak4613_of_match,
++	},
++	.probe		= ak4613_i2c_probe,
++	.remove		= ak4613_i2c_remove,
++	.id_table	= ak4613_i2c_id,
++};
++
++module_i2c_driver(ak4613_i2c_driver);
++
++MODULE_DESCRIPTION("Soc AK4613 driver");
++MODULE_AUTHOR("Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>");
++MODULE_LICENSE("GPL v2");
 -- 
-Jean Delvare
-SUSE L3 Support
+1.9.1
+
