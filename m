@@ -1,47 +1,62 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 09 Sep 2015 11:42:52 +0000
-Subject: [PATCH 0/2] irqchip: renesas: Use a separate lockdep classes
-Message-Id: <1441798974-25716-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Sep 2015 08:59:18 +0000
+Subject: [PATCH 02/21] ARM: shmobile: Remove obsolete sh-gpio.h
+Message-Id: <26449ecc21dd690f5bc686fbee8037587c77ac5e.1442478814.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1442478814.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442478814.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
-Cc: Grygorii Strashko <grygorii.strashko@ti.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-	Hi Thomas, Jason,
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-The renesas-intc-irqpin and renesas-irqc interrupt controllers are
-cascaded to GICs. Hence when propagating wake-up settings to their parent
-interrupt controllers, a lockdep warning is printed.
+The last user of "sh-gpio.h" was removed in commit 1fa59bda21c7fa36
+("ARM: shmobile: Remove legacy board code for Armadillo-800 EVA").
 
-Avoid these false positive by using separate lockdep classes for IRQC
-and INTC External IRQ Pin interrupts.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/sh-gpio.h | 29 -----------------------------
+ 1 file changed, 29 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/sh-gpio.h
 
-This depends on "[PATCH 0/2] irqchip: renesas: Propagate wake-up
-settings to parent". Initially I didn't see the warnings on all
-platforms due to another unrelated lockdep warning.
-
-Thanks!
-
-Geert Uytterhoeven (2):
-  irqchip: renesas-irqc: Use a separate lockdep class
-  irqchip: renesas-intc-irqpin: Use a separate lockdep class
-
- drivers/irqchip/irq-renesas-intc-irqpin.c | 7 +++++++
- drivers/irqchip/irq-renesas-irqc.c        | 7 +++++++
- 2 files changed, 14 insertions(+)
-
+diff --git a/arch/arm/mach-shmobile/sh-gpio.h b/arch/arm/mach-shmobile/sh-gpio.h
+deleted file mode 100644
+index 2c4141413db9..000000000000
+--- a/arch/arm/mach-shmobile/sh-gpio.h
++++ /dev/null
+@@ -1,29 +0,0 @@
+-/*
+- * Generic GPIO API and pinmux table support
+- *
+- * Copyright (c) 2008  Magnus Damm
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- */
+-#ifndef __ASM_ARCH_GPIO_H
+-#define __ASM_ARCH_GPIO_H
+-
+-#include <linux/kernel.h>
+-#include <linux/errno.h>
+-#include <linux/io.h>
+-
+-/*
+- * FIXME !!
+- *
+- * current gpio frame work doesn't have
+- * the method to control only pull up/down/free.
+- * this function should be replaced by correct gpio function
+- */
+-static inline void __init gpio_direction_none(void __iomem * addr)
+-{
+-	__raw_writeb(0x00, addr);
+-}
+-
+-#endif /* __ASM_ARCH_GPIO_H */
 -- 
-1.9.1
+2.1.4
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
