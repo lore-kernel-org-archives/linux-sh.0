@@ -1,70 +1,144 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 18 Sep 2015 01:56:29 +0000
-Subject: [PATCH 1/2 v3] i2c: rcar: add support for r8a7795 (R-Car H3)
-Message-Id: <87lhc41okx.wl%kuninori.morimoto.gx@renesas.com>
+Date: Thu, 17 Sep 2015 04:33:13 +0000
+Subject: [PATCH 14/20 v2] arm64: renesas: salvator-x: add PIO sound support
+Message-Id: <87d1xh7joz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Enable the I2C core for this SoC. I add a new type because this version
-has new features (e.g. DMA) which will be added somewhen later.
+This patch adds PIO sound support for Salvator-X board.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v2 -> v3
+v1 -> v2
 
- - add Geert's Acked-by
+ - i2c has clock-frequency = <>
 
- Documentation/devicetree/bindings/i2c/i2c-rcar.txt | 1 +
- drivers/i2c/busses/i2c-rcar.c                      | 3 +++
- 2 files changed, 4 insertions(+)
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 95 ++++++++++++++++++++++
+ 1 file changed, 95 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/i2c/i2c-rcar.txt b/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
-index 16b3e07..ea406eb2 100644
---- a/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
-+++ b/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
-@@ -10,6 +10,7 @@ Required properties:
- 	"renesas,i2c-r8a7792"
- 	"renesas,i2c-r8a7793"
- 	"renesas,i2c-r8a7794"
-+	"renesas,i2c-r8a7795"
- - reg: physical base address of the controller and length of memory mapped
-   region.
- - interrupts: interrupt specifier.
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index d8361da..3e12565 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -103,6 +103,7 @@
- enum rcar_i2c_type {
- 	I2C_RCAR_GEN1,
- 	I2C_RCAR_GEN2,
-+	I2C_RCAR_GEN3,
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index de7561e5..0a85934 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -62,6 +62,28 @@
+ 			};
+ 		};
+ 	};
++
++	x12_clk: x12_clk {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <24576000>;
++	};
++
++	rsnd_ak4613: sound {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "left_j";
++		simple-audio-card,bitclock-master = <&sndcpu>;
++		simple-audio-card,frame-master = <&sndcpu>;
++
++		sndcpu: simple-audio-card,cpu {
++			sound-dai = <&rcar_sound>;
++		};
++
++		sndcodec: simple-audio-card,codec {
++			sound-dai = <&ak4613>;
++		};
++	};
  };
  
- struct rcar_i2c_priv {
-@@ -178,6 +179,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
- 		cdf_width = 2;
- 		break;
- 	case I2C_RCAR_GEN2:
-+	case I2C_RCAR_GEN3:
- 		cdf_width = 3;
- 		break;
- 	default:
-@@ -625,6 +627,7 @@ static const struct of_device_id rcar_i2c_dt_ids[] = {
- 	{ .compatible = "renesas,i2c-r8a7792", .data = (void *)I2C_RCAR_GEN2 },
- 	{ .compatible = "renesas,i2c-r8a7793", .data = (void *)I2C_RCAR_GEN2 },
- 	{ .compatible = "renesas,i2c-r8a7794", .data = (void *)I2C_RCAR_GEN2 },
-+	{ .compatible = "renesas,i2c-r8a7795", .data = (void *)I2C_RCAR_GEN3 },
- 	{},
+ &du {
+@@ -103,6 +125,16 @@
+ 		renesas,groups = "i2c2_a";
+ 		renesas,function = "i2c2";
+ 	};
++
++	sound_pins: sound {
++		renesas,groups = "ssi01239_ctrl", "ssi0_data", "ssi1_a_data";
++		renesas,function = "ssi";
++	};
++
++	sound_clk_pins: sound_clk {
++		renesas,groups = "audio_clkout3_a";
++		renesas,function = "audio_clk";
++	};
  };
- MODULE_DEVICE_TABLE(of, rcar_i2c_dt_ids);
+ 
+ &scif1 {
+@@ -152,4 +184,67 @@
+ 	pinctrl-names = "default";
+ 
+ 	status = "okay";
++
++	clock-frequency = <100000>;
++
++	ak4613: codec@0x10 {
++		compatible = "asahi-kasei,ak4613";
++		#sound-dai-cells = <0>;
++		reg = <0x10>;
++		clocks = <&rcar_sound 3>;
++	};
++
++	cs2000: clk_multiplier@4f {
++		#clock-cells = <0>;
++		compatible = "cirrus,cs2000-cp";
++		reg = <0x4f>;
++		clocks = <&rcar_sound 0>, <&x12_clk>;
++		clock-names = "clk_in", "ref_clk";
++		clock-frequency = <24576000>; /* 1/1 divide */
++	};
++};
++
++&rcar_sound {
++	pinctrl-0 = <&sound_pins &sound_clk_pins>;
++	pinctrl-names = "default";
++
++	/* Single DAI */
++	#sound-dai-cells = <0>;
++
++	/* audio_clkout0/1/2/3 */
++	#clock-cells = <1>;
++	clock-frequency = <12288000>;
++
++	status = "okay";
++
++	rcar_sound,dai {
++		dai0 {
++			playback = <&ssi0>;
++			capture  = <&ssi1>;
++		};
++	};
++};
++
++&ssi0 {
++	pio-transfer;
++};
++
++&ssi1 {
++	pio-transfer;
++	shared-pin;
++};
++
++&audio_clk_a {
++	clock-frequency = <22579200>;
++};
++
++&audio_clk_b {
++	/*
++	 * It should be below here, but it will be dead-lock
++	 * since cs2000 requests audio_clkout (= <&rcar_sound 0>)
++	 * and, rcar_sound (= audio_clk_b) requests cs2000.
++	 * Here assumes cs2000 outputs fixed clock-frequency
++	 *      clocks = <&cs2000>;
++	 */
++	clock-frequency = <24576000>;
+ };
 -- 
 1.9.1
 
