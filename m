@@ -1,97 +1,166 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 15 Sep 2015 10:23:07 +0000
-Subject: [PATCH 03/05][RFC] clk: Allow NULL as parent names
-Message-Id: <20150915102307.15716.26976.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Sep 2015 08:59:32 +0000
+Subject: [PATCH 16/21] ARM: shmobile: bockw: remove legacy defconfig
+Message-Id: <e12cc06150094d936c955d5fbe8681a0a44b23f8.1442478814.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150915102238.15716.91170.sendpatchset@little-apple>
-In-Reply-To: <20150915102238.15716.91170.sendpatchset@little-apple>
+References: <cover.1442478814.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442478814.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-clk@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, mturquette@baylibre.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Relax the parent name requirement now when struct clk_init_data
-allows passing in an array of parent clocks during registration.
+Obsoleted by removal of legacy platform.
 
-With this patch the parent name pointer can be set to NULL in
-case parent clocks instead are passed in the parent array.
-
-TODO: Check if kfree_const() cleanup code needs to be updated.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/configs/bockw_defconfig | 133 ---------------------------------------
+ 1 file changed, 133 deletions(-)
+ delete mode 100644 arch/arm/configs/bockw_defconfig
 
- drivers/clk/clk.c |   19 +++++++++++++------
- 1 file changed, 13 insertions(+), 6 deletions(-)
+diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
+deleted file mode 100644
+index 3125e00f05ab..000000000000
+--- a/arch/arm/configs/bockw_defconfig
++++ /dev/null
+@@ -1,133 +0,0 @@
+-# CONFIG_ARM_PATCH_PHYS_VIRT is not set
+-CONFIG_KERNEL_LZMA=y
+-CONFIG_NO_HZ=y
+-CONFIG_IKCONFIG=y
+-CONFIG_IKCONFIG_PROC=y
+-CONFIG_LOG_BUF_SHIFT
+-CONFIG_SYSCTL_SYSCALL=y
+-CONFIG_EMBEDDED=y
+-CONFIG_SLAB=y
+-# CONFIG_IOSCHED_CFQ is not set
+-CONFIG_ARCH_SHMOBILE_LEGACY=y
+-CONFIG_ARCH_R8A7778=y
+-CONFIG_MACH_BOCKW=y
+-CONFIG_MEMORY_START=0x60000000
+-CONFIG_MEMORY_SIZE=0x10000000
+-CONFIG_SHMOBILE_TIMER_HZ24
+-# CONFIG_SH_TIMER_CMT is not set
+-# CONFIG_EM_TIMER_STI is not set
+-CONFIG_ARM_ERRATA_430973=y
+-CONFIG_ARM_ERRATA_458693=y
+-CONFIG_ARM_ERRATA_460075=y
+-CONFIG_ARM_ERRATA_743622=y
+-CONFIG_ARM_ERRATA_754322=y
+-CONFIG_AEABI=y
+-# CONFIG_OABI_COMPAT is not set
+-CONFIG_HIGHMEM=y
+-CONFIG_ZBOOT_ROM_TEXT=0x0
+-CONFIG_ZBOOT_ROM_BSS=0x0
+-CONFIG_ARM_APPENDED_DTB=y
+-CONFIG_VFP=y
+-# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+-CONFIG_PM=y
+-CONFIG_NET=y
+-CONFIG_PACKET=y
+-CONFIG_UNIX=y
+-CONFIG_INET=y
+-CONFIG_IP_PNP=y
+-CONFIG_IP_PNP_DHCP=y
+-# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
+-# CONFIG_INET_XFRM_MODE_TUNNEL is not set
+-# CONFIG_INET_XFRM_MODE_BEET is not set
+-# CONFIG_INET_LRO is not set
+-# CONFIG_INET_DIAG is not set
+-# CONFIG_IPV6 is not set
+-CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+-CONFIG_DEVTMPFS=y
+-CONFIG_DEVTMPFS_MOUNT=y
+-# CONFIG_STANDALONE is not set
+-# CONFIG_PREVENT_FIRMWARE_BUILD is not set
+-# CONFIG_FW_LOADER is not set
+-CONFIG_MTD=y
+-CONFIG_MTD_CHAR=y
+-CONFIG_MTD_BLOCK=y
+-CONFIG_MTD_CFI=y
+-CONFIG_MTD_CFI_AMDSTD=y
+-CONFIG_MTD_M25P80=y
+-CONFIG_MTD_SPI_NOR=y
+-CONFIG_SCSI=y
+-CONFIG_BLK_DEV_SD=y
+-CONFIG_NETDEVICES=y
+-# CONFIG_NET_CADENCE is not set
+-# CONFIG_NET_VENDOR_BROADCOM is not set
+-# CONFIG_NET_VENDOR_CIRRUS is not set
+-# CONFIG_NET_VENDOR_FARADAY is not set
+-# CONFIG_NET_VENDOR_INTEL is not set
+-# CONFIG_NET_VENDOR_MARVELL is not set
+-# CONFIG_NET_VENDOR_MICREL is not set
+-# CONFIG_NET_VENDOR_NATSEMI is not set
+-# CONFIG_NET_VENDOR_SEEQ is not set
+-CONFIG_SMSC911X=y
+-# CONFIG_NET_VENDOR_STMICRO is not set
+-# CONFIG_NET_VENDOR_WIZNET is not set
+-# CONFIG_INPUT is not set
+-# CONFIG_SERIO is not set
+-# CONFIG_VT is not set
+-# CONFIG_LEGACY_PTYS is not set
+-# CONFIG_DEVKMEM is not set
+-CONFIG_SERIAL_SH_SCI=y
+-CONFIG_SERIAL_SH_SCI_NR_UARTS=6
+-CONFIG_SERIAL_SH_SCI_CONSOLE=y
+-# CONFIG_HW_RANDOM is not set
+-# CONFIG_HWMON is not set
+-CONFIG_I2C=y
+-CONFIG_I2C_RCAR=y
+-CONFIG_GPIO_RCAR=y
+-CONFIG_REGULATOR=y
+-CONFIG_MEDIA_SUPPORT=y
+-CONFIG_MEDIA_CAMERA_SUPPORT=y
+-CONFIG_V4L_PLATFORM_DRIVERS=y
+-CONFIG_SOC_CAMERA=y
+-CONFIG_VIDEO_RCAR_VIN=y
+-# CONFIG_MEDIA_SUBDRV_AUTOSELECT is not set
+-CONFIG_VIDEO_ML86V7667=y
+-CONFIG_SPI=y
+-CONFIG_SPI_SH_HSPI=y
+-CONFIG_SOUND=y
+-CONFIG_SND=y
+-CONFIG_SND_SOC=y
+-CONFIG_SND_SOC_RCAR=y
+-CONFIG_USB=y
+-CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
+-CONFIG_USB_EHCI_HCD=y
+-CONFIG_USB_OHCI_HCD=y
+-CONFIG_USB_OHCI_HCD_PLATFORM=y
+-CONFIG_USB_EHCI_HCD_PLATFORM=y
+-CONFIG_USB_STORAGE=y
+-CONFIG_USB_RCAR_PHY=y
+-CONFIG_MMC=y
+-CONFIG_MMC_SDHI=y
+-CONFIG_MMC_SH_MMCIF=y
+-CONFIG_RTC_CLASS=y
+-CONFIG_RTC_DRV_RX8581=y
+-CONFIG_DMADEVICES=y
+-CONFIG_RCAR_HPB_DMAE=y
+-CONFIG_UIO=y
+-CONFIG_UIO_PDRV_GENIRQ=y
+-# CONFIG_IOMMU_SUPPORT is not set
+-# CONFIG_DNOTIFY is not set
+-CONFIG_TMPFS=y
+-# CONFIG_MISC_FILESYSTEMS is not set
+-CONFIG_NFS_FS=y
+-CONFIG_NFS_V3_ACL=y
+-CONFIG_NFS_V4=y
+-CONFIG_NFS_SWAP=y
+-CONFIG_NFS_V4_1=y
+-CONFIG_ROOT_NFS=y
+-# CONFIG_ENABLE_WARN_DEPRECATED is not set
+-# CONFIG_ENABLE_MUST_CHECK is not set
+-# CONFIG_SCHED_DEBUG is not set
+-# CONFIG_DEBUG_BUGVERBOSE is not set
+-# CONFIG_FTRACE is not set
+-# CONFIG_ARM_UNWIND is not set
+-CONFIG_AVERAGE=y
+-- 
+2.1.4
 
---- 0003/drivers/clk/clk.c
-+++ work/drivers/clk/clk.c	2015-09-15 18:32:55.420513000 +0900
-@@ -1081,7 +1081,8 @@ static int clk_fetch_parent_index(struct
- 		if (core->parents[i])
- 			continue;
- 
--		if (!strcmp(core->parent_names[i], parent->name)) {
-+		if (core->parent_names[i] && !strcmp(core->parent_names[i],
-+						     parent->name)) {
- 			core->parents[i] = clk_core_lookup(parent->name);
- 			return i;
- 		}
-@@ -1675,7 +1676,7 @@ static struct clk_core *__clk_init_paren
- 
- 	if (core->num_parents = 1) {
- 		if (IS_ERR_OR_NULL(core->parent))
--			core->parent = clk_core_lookup(core->parent_names[0]);
-+			core->parent = clk_core_get_parent_by_index(core, 0);
- 		ret = core->parent;
- 		goto out;
- 	}
-@@ -1749,7 +1750,8 @@ bool clk_has_parent(struct clk *clk, str
- 		return true;
- 
- 	for (i = 0; i < core->num_parents; i++)
--		if (strcmp(core->parent_names[i], parent_core->name) = 0)
-+		if (core->parent_names[i] && strcmp(core->parent_names[i],
-+						    parent_core->name) = 0)
- 			return true;
- 
- 	return false;
-@@ -2337,7 +2339,7 @@ static int __clk_init(struct device *dev
- 
- 	/* throw a WARN if any entries in parent_names are NULL */
- 	for (i = 0; i < core->num_parents; i++)
--		WARN(!core->parent_names[i],
-+		WARN(!core->parents && !core->parent_names[i],
- 				"%s: invalid NULL in %s's .parent_names\n",
- 				__func__, core->name);
- 
-@@ -2437,13 +2439,15 @@ static int __clk_init(struct device *dev
- 	hlist_for_each_entry_safe(orphan, tmp2, &clk_orphan_list, child_node) {
- 		if (orphan->num_parents && orphan->ops->get_parent) {
- 			i = orphan->ops->get_parent(orphan->hw);
--			if (!strcmp(core->name, orphan->parent_names[i]))
-+			if (orphan->parent_names[i] &&
-+			    !strcmp(core->name, orphan->parent_names[i]))
- 				clk_core_reparent(orphan, core);
- 			continue;
- 		}
- 
- 		for (i = 0; i < orphan->num_parents; i++)
--			if (!strcmp(core->name, orphan->parent_names[i])) {
-+			if (orphan->parent_names[i] &&
-+			    !strcmp(core->name, orphan->parent_names[i])) {
- 				clk_core_reparent(orphan, core);
- 				break;
- 			}
-@@ -2555,6 +2559,9 @@ struct clk *clk_register(struct device *
- 
- 	/* copy each string name in case parent_names is __initdata */
- 	for (i = 0; i < core->num_parents; i++) {
-+		if (!hw->init->parent_names[i])
-+			continue;
-+
- 		core->parent_names[i] = kstrdup_const(hw->init->parent_names[i],
- 						GFP_KERNEL);
- 		if (!core->parent_names[i]) {
