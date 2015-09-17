@@ -1,36 +1,32 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 17 Sep 2015 09:59:21 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 17 Sep 2015 12:14:32 +0000
 Subject: Re: [PATCH v2 09/11] devicetree: bindings: Remove unused 32-bit CMT bindings
-Message-Id: <CAMuHMdV-42YpFLgLCxLnuNwussxfWpk3yEdS0R-bGpeF2QMyXw@mail.gmail.com>
+Message-Id: <55FAAEA8.1050102@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150917095325.5369.73893.sendpatchset@little-apple>
-	<20150917095452.5369.320.sendpatchset@little-apple>
+ <20150917095452.5369.320.sendpatchset@little-apple>
 In-Reply-To: <20150917095452.5369.320.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux-sh list <linux-sh@vger.kernel.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, Simon Horman <horms+renesas@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
+To: Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org
+Cc: devicetree@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms+renesas@verge.net.au, tglx@linutronix.de
 
-On Thu, Sep 17, 2015 at 11:54 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+Hello.
+
+On 9/17/2015 12:54 PM, Magnus Damm wrote:
+
 > From: Magnus Damm <damm+renesas@opensource.se>
 >
 > Remove the 32-bit CMT compat strings to reduce maintenance burden.
 >
 > It should be fine to break DT compatibility because the 32-bit
 > 32-bit CMT DT binding was never part of any upstream DTS file.
->
+
+    Nit: "32-bit" repeated twice.
+
 > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+[...]
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+MBR, Sergei
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
