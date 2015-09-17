@@ -1,132 +1,32 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 17 Sep 2015 04:10:19 +0000
-Subject: [PATCH 1/3] pinctrl: sh-pfc: r8a7795: add I2C pin support
-Message-Id: <87zj0l7kr8.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 17 Sep 2015 07:51:07 +0000
+Subject: Re: [PATCH 1/3] pinctrl: sh-pfc: r8a7795: add I2C pin support
+Message-Id: <CAMuHMdUxfP8vsHc_fHb6todaHdPssxM8fSKDw1+rsja=pjH1=A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87mvx4qkzo.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87mvx4qkzo.wl%kuninori.morimoto.gx@renesas.com>
+	<87zj0l7kr8.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87zj0l7kr8.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Linus Walleij <linus.walleij@linaro.org>, Laurent <laurent.pinchart@ideasonboard.com>
-Cc: "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Simon <horms@verge.net.au>, Linus Walleij <linus.walleij@linaro.org>, Laurent <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Thu, Sep 17, 2015 at 6:10 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 77 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 77 insertions(+)
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-index aff3895..f6afe71 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-@@ -1426,6 +1426,57 @@ static const struct sh_pfc_pin pinmux_pins[] = {
- 	PINMUX_GPIO_GP_ALL(),
- };
- 
-+/* - I2C -------------------------------------------------------------------- */
-+static const unsigned int i2c1_a_pins[] = {
-+	/* SDA, SCL */
-+	RCAR_GP_PIN(5, 11), RCAR_GP_PIN(5, 10),
-+};
-+static const unsigned int i2c1_a_mux[] = {
-+	SDA1_A_MARK, SCL1_A_MARK,
-+};
-+static const unsigned int i2c1_b_pins[] = {
-+	/* SDA, SCL */
-+	RCAR_GP_PIN(5, 24), RCAR_GP_PIN(5, 23),
-+};
-+static const unsigned int i2c1_b_mux[] = {
-+	SDA1_B_MARK, SCL1_B_MARK,
-+};
-+static const unsigned int i2c2_a_pins[] = {
-+	/* SDA, SCL */
-+	RCAR_GP_PIN(5, 0), RCAR_GP_PIN(5, 4),
-+};
-+static const unsigned int i2c2_a_mux[] = {
-+	SDA2_A_MARK, SCL2_A_MARK,
-+};
-+static const unsigned int i2c2_b_pins[] = {
-+	/* SDA, SCL */
-+	RCAR_GP_PIN(3, 13), RCAR_GP_PIN(3, 12),
-+};
-+static const unsigned int i2c2_b_mux[] = {
-+	SDA2_B_MARK, SCL2_B_MARK,
-+};
-+static const unsigned int i2c6_a_pins[] = {
-+	/* SDA, SCL */
-+	RCAR_GP_PIN(1, 8), RCAR_GP_PIN(1, 11),
-+};
-+static const unsigned int i2c6_a_mux[] = {
-+	SDA6_A_MARK, SCL6_A_MARK,
-+};
-+static const unsigned int i2c6_b_pins[] = {
-+	/* SDA, SCL */
-+	RCAR_GP_PIN(1, 26), RCAR_GP_PIN(1, 25),
-+};
-+static const unsigned int i2c6_b_mux[] = {
-+	SDA6_B_MARK, SCL6_B_MARK,
-+};
-+static const unsigned int i2c6_c_pins[] = {
-+	/* SDA, SCL */
-+	RCAR_GP_PIN(0, 15), RCAR_GP_PIN(0, 14),
-+};
-+static const unsigned int i2c6_c_mux[] = {
-+	SDA6_C_MARK, SCL6_C_MARK,
-+};
-+
- /* - SCIF0 ------------------------------------------------------------------ */
- static const unsigned int scif0_data_pins[] = {
- 	/* RX, TX */
-@@ -1610,6 +1661,13 @@ static const unsigned int scif5_clk_mux[] = {
- };
- 
- static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(i2c1_a),
-+	SH_PFC_PIN_GROUP(i2c1_b),
-+	SH_PFC_PIN_GROUP(i2c2_a),
-+	SH_PFC_PIN_GROUP(i2c2_b),
-+	SH_PFC_PIN_GROUP(i2c6_a),
-+	SH_PFC_PIN_GROUP(i2c6_b),
-+	SH_PFC_PIN_GROUP(i2c6_c),
- 	SH_PFC_PIN_GROUP(scif0_data),
- 	SH_PFC_PIN_GROUP(scif0_clk),
- 	SH_PFC_PIN_GROUP(scif0_ctrl),
-@@ -1637,6 +1695,22 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(scif5_clk),
- };
- 
-+static const char * const i2c1_groups[] = {
-+	"i2c1_a",
-+	"i2c1_b",
-+};
-+
-+static const char * const i2c2_groups[] = {
-+	"i2c2_a",
-+	"i2c2_b",
-+};
-+
-+static const char * const i2c6_groups[] = {
-+	"i2c6_a",
-+	"i2c6_b",
-+	"i2c6_c",
-+};
-+
- static const char * const scif0_groups[] = {
- 	"scif0_data",
- 	"scif0_clk",
-@@ -1681,6 +1755,9 @@ static const char * const scif5_groups[] = {
- };
- 
- static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(i2c1),
-+	SH_PFC_FUNCTION(i2c2),
-+	SH_PFC_FUNCTION(i2c6),
- 	SH_PFC_FUNCTION(scif0),
- 	SH_PFC_FUNCTION(scif1),
- 	SH_PFC_FUNCTION(scif2),
--- 
-1.9.1
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
