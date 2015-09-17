@@ -1,41 +1,47 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 18 Sep 2015 00:08:56 +0000
-Subject: Re: [PATCH 0/20 v2][RFC] arm64: Salvator-X sound support
-Message-Id: <20150918000854.GA12858@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 17 Sep 2015 09:55:11 +0000
+Subject: [PATCH v2 11/11] devicetree: bindings: Remove deprecated properties
+Message-Id: <20150917095511.5369.41259.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vbb97kci.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbb97kci.wl%kuninori.morimoto.gx@renesas.com>
+References: <20150917095325.5369.73893.sendpatchset@little-apple>
+In-Reply-To: <20150917095325.5369.73893.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: devicetree@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-On Thu, Sep 17, 2015 at 11:43:48PM +0000, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> > > > Do you have any thoughts the above patches going into topic branches?
-> > > > It seems a bit messy but possible from my light analysis so far.
-> > > 
-> > > what does it mean ?
-> > > What/Which is messy ?
-> > 
-> > Sorry for my poor choice of words. I was not referring to the code
-> > itself, rather that the patchset doesn't appear to map well
-> > to a single topic branch.
-> > 
-> > What I see is something like this:
-> > 
-> > 1) dmaengine core topic
-> > 2,3) ak4613 driver topic
-> > 5-18) i2c+sound integration topics
-> > 19,20) i2c driver topic
-> > 
-> > I think the above can be constructed if you think it is worthwhile.
-> > There are of course other possibilities.
-> 
-> Ahh, OK I see
-> I need to send v3 patch-set. Then, I will separate these for each topics
-> Does it clear for you ?
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thanks, I think that would help.
+The deprecated DT properies are part of the GIT history,
+no need to keep them around any longer.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Changes since V1:
+ - New patch
+
+ Documentation/devicetree/bindings/timer/renesas,cmt.txt |    4 ----
+ 1 file changed, 4 deletions(-)
+
+--- 0011/Documentation/devicetree/bindings/timer/renesas,cmt.txt
++++ work/Documentation/devicetree/bindings/timer/renesas,cmt.txt	2015-09-17 18:08:17.000513000 +0900
+@@ -35,8 +35,6 @@ Required Properties:
+     - "renesas,cmt1-rcar-gen2" for 48-bit CMT1 devices included in R-Car Gen2.
+ 		These are fallbacks for r8a73a4 and all the R-Car Gen2
+ 		entries	listed above.
+-
+-    - "renesas,cmt-48-gen2" is <deprecated>, use "renesas,cmt[01]-*" instead.
+     
+   - reg: base address and length of the registers block for the timer module.
+   - interrupts: interrupt-specifier for the timer, one per channel.
+@@ -44,8 +42,6 @@ Required Properties:
+     in clock-names.
+   - clock-names: must contain "fck" for the functional clock.
+ 
+-  - renesas,channels-mask: <deprecated>, information kept in device driver.
+-
+ 
+ Example: R8A7790 (R-Car H2) CMT0 and CMT1 nodes
+ 
