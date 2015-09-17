@@ -1,37 +1,38 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 00:47:16 +0000
-Subject: [PATCH 14/19] ARM: shmobile: r8a7790: tidyup SSI resource region
-Message-Id: <4bc4a2051abe12e6e7521cbabac0048096243094.1442536920.git.horms+renesas@verge.net.au>
+Date: Thu, 17 Sep 2015 08:59:23 +0000
+Subject: [PATCH 07/21] ARM: shmobile: Remove obsolete twd_local_timer declaration
+Message-Id: <b62708ac3f5ebfd3a15bd65fd48ed013c5f166bf.1442478814.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442536920.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
+References: <cover.1442478814.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442478814.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The last user of twd_local_timer was removed in commit c99cd90d98a98aa1
+("ARM: shmobile: r8a7779: Remove legacy SoC code").
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/common.h | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index a0b2a79cbfbd..ae5eb281d43a 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1599,7 +1599,7 @@
- 		reg =	<0 0xec500000 0 0x1000>, /* SCU */
- 			<0 0xec5a0000 0 0x100>,  /* ADG */
- 			<0 0xec540000 0 0x1000>, /* SSIU */
--			<0 0xec541000 0 0x1280>, /* SSI */
-+			<0 0xec541000 0 0x280>,  /* SSI */
- 			<0 0xec740000 0 0x200>;  /* Audio DMAC peri peri*/
- 		reg-names = "scu", "adg", "ssiu", "ssi", "audmapp";
+diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+index 2a350b48b893..0833a6ed02e4 100644
+--- a/arch/arm/mach-shmobile/common.h
++++ b/arch/arm/mach-shmobile/common.h
+@@ -2,7 +2,6 @@
+ #define __ARCH_MACH_COMMON_H
  
+ extern void shmobile_init_delay(void);
+-struct twd_local_timer;
+ extern void shmobile_boot_vector(void);
+ extern unsigned long shmobile_boot_fn;
+ extern unsigned long shmobile_boot_arg;
 -- 
 2.1.4
 
