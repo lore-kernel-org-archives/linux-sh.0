@@ -1,28 +1,286 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 25 Sep 2015 16:14:57 +0000
-Subject: Re: [PATCH] pinctrl: sh-pfc: Get rid of CONFIG_ARCH_SHMOBILE_LEGACY
-Message-Id: <CACRpkdZ5a3tSrvEN=a4=Sjki0_rMAo_AYiQgVCfB1pO9UAhXZQ@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 17 Sep 2015 04:10:56 +0000
+Subject: [PATCH 3/3] pinctrl: sh-pfc: r8a7795: add Audio SSI pin support
+Message-Id: <87wpvp7kq5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440706043-3406-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440706043-3406-1-git-send-email-geert+renesas@glider.be>
+References: <87mvx4qkzo.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87mvx4qkzo.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Simon Horman <horms@verge.net.au>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: Simon <horms@verge.net.au>, Linus Walleij <linus.walleij@linaro.org>, Laurent <laurent.pinchart@ideasonboard.com>
+Cc: "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-On Thu, Aug 27, 2015 at 1:07 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> Shmobile is all multiplatform these days, so get rid of the reference to
-> CONFIG_ARCH_SHMOBILE_LEGACY.
->
-> Move the legacy code to do the non-DT mapping between GPIOs and pins
-> inside the existing #ifdef CONFIG_SUPERH section.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 231 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 231 insertions(+)
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+index 183178d..648fce3 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+@@ -1775,6 +1775,183 @@ static const unsigned int scif5_clk_mux[] = {
+ 	SCK5_MARK,
+ };
+ 
++/* - SSI -------------------------------------------------------------------- */
++static const unsigned int ssi0_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 2),
++};
++static const unsigned int ssi0_data_mux[] = {
++	SSI_SDATA0_MARK,
++};
++static const unsigned int ssi01239_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 0), RCAR_GP_PIN(6, 1),
++};
++static const unsigned int ssi01239_ctrl_mux[] = {
++	SSI_SCK0129_MARK, SSI_WS0129_MARK,
++};
++static const unsigned int ssi1_a_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 3),
++};
++static const unsigned int ssi1_a_data_mux[] = {
++	SSI_SDATA1_A_MARK,
++};
++static const unsigned int ssi1_b_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(5, 12),
++};
++static const unsigned int ssi1_b_data_mux[] = {
++	SSI_SDATA1_B_MARK,
++};
++static const unsigned int ssi1_a_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 26), RCAR_GP_PIN(6, 27),
++};
++static const unsigned int ssi1_a_ctrl_mux[] = {
++	SSI_SCK1_A_MARK, SSI_WS1_A_MARK,
++};
++static const unsigned int ssi1_b_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 4), RCAR_GP_PIN(6, 21),
++};
++static const unsigned int ssi1_b_ctrl_mux[] = {
++	SSI_SCK1_B_MARK, SSI_WS1_B_MARK,
++};
++static const unsigned int ssi2_a_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 4),
++};
++static const unsigned int ssi2_a_data_mux[] = {
++	SSI_SDATA2_A_MARK,
++};
++static const unsigned int ssi2_b_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(5, 13),
++};
++static const unsigned int ssi2_b_data_mux[] = {
++	SSI_SDATA2_B_MARK,
++};
++static const unsigned int ssi2_a_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(5, 19), RCAR_GP_PIN(5, 21),
++};
++static const unsigned int ssi2_a_ctrl_mux[] = {
++	SSI_SCK2_A_MARK, SSI_WS2_A_MARK,
++};
++static const unsigned int ssi2_b_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 28), RCAR_GP_PIN(6, 29),
++};
++static const unsigned int ssi2_b_ctrl_mux[] = {
++	SSI_SCK2_B_MARK, SSI_WS2_B_MARK,
++};
++static const unsigned int ssi3_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 7),
++};
++static const unsigned int ssi3_data_mux[] = {
++	SSI_SDATA3_MARK,
++};
++static const unsigned int ssi34_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 5), RCAR_GP_PIN(6, 6),
++};
++static const unsigned int ssi34_ctrl_mux[] = {
++	SSI_SCK34_MARK, SSI_WS34_MARK,
++};
++static const unsigned int ssi4_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 10),
++};
++static const unsigned int ssi4_data_mux[] = {
++	SSI_SDATA4_MARK,
++};
++static const unsigned int ssi4_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 8), RCAR_GP_PIN(6, 9),
++};
++static const unsigned int ssi4_ctrl_mux[] = {
++	SSI_SCK4_MARK, SSI_WS4_MARK,
++};
++static const unsigned int ssi5_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 13),
++};
++static const unsigned int ssi5_data_mux[] = {
++	SSI_SDATA5_MARK,
++};
++static const unsigned int ssi5_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 11), RCAR_GP_PIN(6, 12),
++};
++static const unsigned int ssi5_ctrl_mux[] = {
++	SSI_SCK5_MARK, SSI_WS5_MARK,
++};
++static const unsigned int ssi6_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 16),
++};
++static const unsigned int ssi6_data_mux[] = {
++	SSI_SDATA6_MARK,
++};
++static const unsigned int ssi6_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 14), RCAR_GP_PIN(6, 15),
++};
++static const unsigned int ssi6_ctrl_mux[] = {
++	SSI_SCK6_MARK, SSI_WS6_MARK,
++};
++static const unsigned int ssi7_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 19),
++};
++static const unsigned int ssi7_data_mux[] = {
++	SSI_SDATA7_MARK,
++};
++static const unsigned int ssi78_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 17), RCAR_GP_PIN(6, 18),
++};
++static const unsigned int ssi78_ctrl_mux[] = {
++	SSI_SCK78_MARK, SSI_WS78_MARK,
++};
++static const unsigned int ssi8_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 20),
++};
++static const unsigned int ssi8_data_mux[] = {
++	SSI_SDATA8_MARK,
++};
++static const unsigned int ssi9_a_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 21),
++};
++static const unsigned int ssi9_a_data_mux[] = {
++	SSI_SDATA9_A_MARK,
++};
++static const unsigned int ssi9_b_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(5, 14),
++};
++static const unsigned int ssi9_b_data_mux[] = {
++	SSI_SDATA9_B_MARK,
++};
++static const unsigned int ssi9_ctrl_a_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(5, 15), RCAR_GP_PIN(5, 16),
++};
++static const unsigned int ssi9_ctrl_a_mux[] = {
++	SSI_SCK9_A_MARK, SSI_WS9_A_MARK,
++};
++static const unsigned int ssi9_ctrl_b_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 30), RCAR_GP_PIN(6, 31),
++};
++static const unsigned int ssi9_ctrl_b_mux[] = {
++	SSI_SCK9_B_MARK, SSI_WS9_B_MARK,
++};
++
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(audio_clk_a_a),
+ 	SH_PFC_PIN_GROUP(audio_clk_a_b),
+@@ -1824,6 +2001,31 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(scif4_ctrl_c),
+ 	SH_PFC_PIN_GROUP(scif5_data),
+ 	SH_PFC_PIN_GROUP(scif5_clk),
++	SH_PFC_PIN_GROUP(ssi0_data),
++	SH_PFC_PIN_GROUP(ssi01239_ctrl),
++	SH_PFC_PIN_GROUP(ssi1_a_data),
++	SH_PFC_PIN_GROUP(ssi1_b_data),
++	SH_PFC_PIN_GROUP(ssi1_a_ctrl),
++	SH_PFC_PIN_GROUP(ssi1_b_ctrl),
++	SH_PFC_PIN_GROUP(ssi2_a_data),
++	SH_PFC_PIN_GROUP(ssi2_b_data),
++	SH_PFC_PIN_GROUP(ssi2_a_ctrl),
++	SH_PFC_PIN_GROUP(ssi2_b_ctrl),
++	SH_PFC_PIN_GROUP(ssi3_data),
++	SH_PFC_PIN_GROUP(ssi34_ctrl),
++	SH_PFC_PIN_GROUP(ssi4_data),
++	SH_PFC_PIN_GROUP(ssi4_ctrl),
++	SH_PFC_PIN_GROUP(ssi5_data),
++	SH_PFC_PIN_GROUP(ssi5_ctrl),
++	SH_PFC_PIN_GROUP(ssi6_data),
++	SH_PFC_PIN_GROUP(ssi6_ctrl),
++	SH_PFC_PIN_GROUP(ssi7_data),
++	SH_PFC_PIN_GROUP(ssi78_ctrl),
++	SH_PFC_PIN_GROUP(ssi8_data),
++	SH_PFC_PIN_GROUP(ssi9_a_data),
++	SH_PFC_PIN_GROUP(ssi9_b_data),
++	SH_PFC_PIN_GROUP(ssi9_ctrl_a),
++	SH_PFC_PIN_GROUP(ssi9_ctrl_b),
+ };
+ 
+ static const char * const audio_clk_groups[] = {
+@@ -1904,6 +2106,34 @@ static const char * const scif5_groups[] = {
+ 	"scif5_clk",
+ };
+ 
++static const char * const ssi_groups[] = {
++	"ssi0_data",
++	"ssi01239_ctrl",
++	"ssi1_a_data",
++	"ssi1_b_data",
++	"ssi1_a_ctrl",
++	"ssi1_b_ctrl",
++	"ssi2_a_data",
++	"ssi2_b_data",
++	"ssi2_a_ctrl",
++	"ssi2_b_ctrl",
++	"ssi3_data",
++	"ssi34_ctrl",
++	"ssi4_data",
++	"ssi4_ctrl",
++	"ssi5_data",
++	"ssi5_ctrl",
++	"ssi6_data",
++	"ssi6_ctrl",
++	"ssi7_data",
++	"ssi78_ctrl",
++	"ssi8_data",
++	"ssi9_a_data",
++	"ssi9_b_data",
++	"ssi9_ctrl_a",
++	"ssi9_ctrl_b",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(audio_clk),
+ 	SH_PFC_FUNCTION(i2c1),
+@@ -1915,6 +2145,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(scif3),
+ 	SH_PFC_FUNCTION(scif4),
+ 	SH_PFC_FUNCTION(scif5),
++	SH_PFC_FUNCTION(ssi),
+ };
+ 
+ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+-- 
+1.9.1
 
-Yours,
-Linus Walleij
