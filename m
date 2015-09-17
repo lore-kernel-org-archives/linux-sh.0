@@ -1,54 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 17 Sep 2015 09:54:52 +0000
-Subject: [PATCH v2 09/11] devicetree: bindings: Remove unused 32-bit CMT bindings
-Message-Id: <20150917095452.5369.320.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 17 Sep 2015 09:59:21 +0000
+Subject: Re: [PATCH v2 09/11] devicetree: bindings: Remove unused 32-bit CMT bindings
+Message-Id: <CAMuHMdV-42YpFLgLCxLnuNwussxfWpk3yEdS0R-bGpeF2QMyXw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150917095325.5369.73893.sendpatchset@little-apple>
-In-Reply-To: <20150917095325.5369.73893.sendpatchset@little-apple>
+	<20150917095452.5369.320.sendpatchset@little-apple>
+In-Reply-To: <20150917095452.5369.320.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: devicetree@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux-sh list <linux-sh@vger.kernel.org>, Daniel Lezcano <daniel.lezcano@linaro.org>, Simon Horman <horms+renesas@verge.net.au>, Thomas Gleixner <tglx@linutronix.de>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+On Thu, Sep 17, 2015 at 11:54 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> From: Magnus Damm <damm+renesas@opensource.se>
+>
+> Remove the 32-bit CMT compat strings to reduce maintenance burden.
+>
+> It should be fine to break DT compatibility because the 32-bit
+> 32-bit CMT DT binding was never part of any upstream DTS file.
+>
+> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 
-Remove the 32-bit CMT compat strings to reduce maintenance burden.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-It should be fine to break DT compatibility because the 32-bit
-32-bit CMT DT binding was never part of any upstream DTS file.
+Gr{oetje,eeting}s,
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+                        Geert
 
- Changes since V1:
- - New patch
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
- Documentation/devicetree/bindings/timer/renesas,cmt.txt |   16 ---------------
- 1 file changed, 16 deletions(-)
-
---- 0008/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-+++ work/Documentation/devicetree/bindings/timer/renesas,cmt.txt	2015-09-17 18:04:35.060513000 +0900
-@@ -12,22 +12,6 @@ datasheets.
- Required Properties:
- 
-   - compatible: must contain one or more of the following:
--    - "renesas,cmt-32-r8a7740" for the r8a7740 32-bit CMT
--		(CMT0)
--    - "renesas,cmt-32-sh73a0" for the sh73a0 32-bit CMT
--		(CMT0)
--    - "renesas,cmt-32" for all 32-bit CMT without fast clock support
--		(CMT0 on sh73a0 and r8a7740)
--		This is a fallback for the above renesas,cmt-32-* entries.
--
--    - "renesas,cmt-32-fast-r8a7740" for the r8a7740 32-bit CMT with fast
--		clock support (CMT[234])
--    - "renesas,cmt-32-fast-sh73a0" for the sh73A0 32-bit CMT with fast
--		clock support (CMT[234])
--    - "renesas,cmt-32-fast" for all 32-bit CMT with fast clock support
--		(CMT[234] on sh73a0 and r8a7740)
--		This is a fallback for the above renesas,cmt-32-fast-* entries.
--
-     - "renesas,cmt-48-sh73a0" for the sh73A0 48-bit CMT
- 		(CMT1)
-     - "renesas,cmt-48-r8a7740" for the r8a7740 48-bit CMT
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
