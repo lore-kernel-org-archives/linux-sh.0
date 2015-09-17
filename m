@@ -1,54 +1,71 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 10 Sep 2015 07:12:00 +0000
-Subject: [PATCH 0/14][RFC] arm64: Salvator-X sound support
-Message-Id: <87si6mn452.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 17 Sep 2015 09:54:33 +0000
+Subject: [PATCH v2 07/11] devicetree: bindings: Deprecate property, update example
+Message-Id: <20150917095433.5369.61472.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20150917095325.5369.73893.sendpatchset@little-apple>
+In-Reply-To: <20150917095325.5369.73893.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: devicetree@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Hi Simon, Wolfram
+Deprecate "renesas,channels-mask" and update the r8a7790 CMT example.
 
-These are Salvator-X sound support patches.
-These are based on renesas-drivers-2015-09-08-v4.2
-But, many necessary patches are lacking on it.
-So, please don't queue these patches on topic branch,
-otherwise it will be compile error
-
-Necessary, but lacking patches
- - OF DMA fixup patch (posted)
- - Renesas sound Gen3 support patches (posting)
- - CS2000 driver (posting)
-
-Thus, These are just information for H3 user at this point.
-I will repost these later as formal patches.
-Main user is I2C I think >> Wolfram ?
-AK4613, and CS2000 driver use I2C
-
-Kuninori Morimoto (14):
-      arm64: renesas: tidyup MSTP9 reverse definition order
-      arm64: renesas: r8a7795: add I2C support
-      arm64: renesas: r8a7795: add MSTP10 support
-      arm64: renesas: r8a7795: add SSI sound support
-      arm64: renesas: r8a7795: add AUDIO-DMAC support
-      arm64: renesas: r8a7795: add SSI DMA support
-      arm64: renesas: salvator-x: enable I2C
-      arm64: renesas: salvator-x: add PIO sound support
-      arm64: renesas: salvator-x: Sound DMA support on DTS
-      arm64: renesas: salvator-x: Sound DMA support via BUSIF on DTS
-      arm64: defconfig: Enable Renesas R-Car I2C Controller
-      arm64: defconfig: add Renesas sound and AK4613 support
-      arm64: defconfig: add Renesas R-Car DMAC driver support
-      arm64: defconfig: add CS2000 driver support
-
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |  98 +++++++++++++++++++++++++++++++++++
- arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 307 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- arch/arm64/configs/defconfig                       |  10 ++++
- include/dt-bindings/clock/r8a7795-clock.h          |  49 +++++++++++++++---
- 4 files changed, 456 insertions(+), 8 deletions(-)
-
-Best regards
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
-Kuninori Morimoto
+
+ Changes since V1:
+ - Added Acked-by and Tested-by from Geert
+ - Added Acked-by from Laurent
+
+ Documentation/devicetree/bindings/timer/renesas,cmt.txt |   24 ++++++++++-----
+ 1 file changed, 17 insertions(+), 7 deletions(-)
+
+--- 0009/Documentation/devicetree/bindings/timer/renesas,cmt.txt
++++ work/Documentation/devicetree/bindings/timer/renesas,cmt.txt	2015-09-17 17:39:47.080513000 +0900
+@@ -60,21 +60,31 @@ Required Properties:
+     in clock-names.
+   - clock-names: must contain "fck" for the functional clock.
+ 
+-  - renesas,channels-mask: bitmask of the available channels.
++  - renesas,channels-mask: <deprecated>, information kept in device driver.
+ 
+ 
+-Example: R8A7790 (R-Car H2) CMT0 node
+-
+-	CMT0 on R8A7790 implements hardware channels 5 and 6 only and names
+-	them channels 0 and 1 in the documentation.
++Example: R8A7790 (R-Car H2) CMT0 and CMT1 nodes
+ 
+ 	cmt0: timer@ffca0000 {
+-		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
++		compatible = "renesas,cmt0-r8a7790", "renesas,cmt0-rcar-gen2";
+ 		reg = <0 0xffca0000 0 0x1004>;
+ 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 142 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7790_CLK_CMT0>;
+ 		clock-names = "fck";
++	};
+ 
+-		renesas,channels-mask = <0x60>;
++	cmt1: timer@e6130000 {
++		compatible = "renesas,cmt1-r8a7790", "renesas,cmt1-rcar-gen2";
++		reg = <0 0xe6130000 0 0x1004>;
++		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 122 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 123 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 124 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 125 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 126 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp3_clks R8A7790_CLK_CMT1>;
++		clock-names = "fck";
+ 	};
