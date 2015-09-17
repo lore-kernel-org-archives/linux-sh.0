@@ -1,165 +1,79 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 18 Sep 2015 11:08:33 +0000
-Subject: [PATCH v4 10/10] serial: sh-sci: Add DT support to DMA setup
-Message-Id: <1442574513-20648-11-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 17 Sep 2015 04:23:17 +0000
+Subject: [PATCH 06/20 v2] ASoC: ak4613: add Digital Playback Volume support
+Message-Id: <87mvwl7k5k.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Muhammad Hamza Farooq <mfarooq@visteon.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-Add support for obtaining DMA channel information from the device tree.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This requires switching from the legacy sh_dmae_slave structures with
-hardcoded channel numbers and the corresponding filter function to:
-  1. dma_request_slave_channel_compat(),
-       - On legacy platforms, dma_request_slave_channel_compat() uses
-	 the passed DMA channel numbers that originate from platform
-	 device data,
-       - On DT-based platforms, dma_request_slave_channel_compat() will
-	 retrieve the information from DT.
-  2. and the generic dmaengine_slave_config() configuration method,
-     which requires filling in DMA register ports and slave bus widths.
+For L/ROUT1 to L/ROUT6
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v4:
-  - Dropped RFC status,
-  - Moved to end of new series,
+v1 -> v2
 
-v3:
-  - Moved to end of series, to avoid enabling broken DMA,
+ - not yet posted
 
-v2:
-  - Add Acked-by.
----
- drivers/tty/serial/sh-sci.c | 78 +++++++++++++++++++++++++++------------------
- 1 file changed, 47 insertions(+), 31 deletions(-)
+ sound/soc/codecs/ak4613.c | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index b1d1ce1986e6c064..960e50a97558cff5 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -112,8 +112,6 @@ struct sci_port {
- 	struct scatterlist		sg_rx[2];
- 	void				*rx_buf[2];
- 	size_t				buf_len_rx;
--	struct sh_dmae_slave		param_tx;
--	struct sh_dmae_slave		param_rx;
- 	struct work_struct		work_tx;
- 	struct timer_list		rx_timer;
- 	unsigned int			rx_timeout;
-@@ -1263,17 +1261,6 @@ static void work_fn_tx(struct work_struct *work)
- 	dma_async_issue_pending(chan);
- }
+diff --git a/sound/soc/codecs/ak4613.c b/sound/soc/codecs/ak4613.c
+index fd96a8f..07a2664 100644
+--- a/sound/soc/codecs/ak4613.c
++++ b/sound/soc/codecs/ak4613.c
+@@ -22,6 +22,7 @@
+ #include <linux/regmap.h>
+ #include <sound/soc.h>
+ #include <sound/pcm_params.h>
++#include <sound/tlv.h>
  
--static bool filter(struct dma_chan *chan, void *slave)
--{
--	struct sh_dmae_slave *param = slave;
--
--	dev_dbg(chan->device->dev, "%s: slave ID %d\n",
--		__func__, param->shdma_slave.slave_id);
--
--	chan->private = &param->shdma_slave;
--	return true;
--}
--
- static void rx_timer_fn(unsigned long arg)
- {
- 	struct sci_port *s = (struct sci_port *)arg;
-@@ -1347,28 +1334,62 @@ static void rx_timer_fn(unsigned long arg)
- 	spin_unlock_irqrestore(&port->lock, flags);
- }
+ #define PW_MGMT1	0x00 /* Power Management 1 */
+ #define PW_MGMT2	0x01 /* Power Management 2 */
+@@ -91,6 +92,31 @@ struct ak4613_interface {
+ 	struct ak4613_formats playback;
+ };
  
-+static struct dma_chan *sci_request_dma_chan(struct uart_port *port,
-+					     enum dma_transfer_direction dir,
-+					     unsigned int id)
-+{
-+	dma_cap_mask_t mask;
-+	struct dma_chan *chan;
-+	struct dma_slave_config cfg;
-+	int ret;
++/*
++ * Playback Volume
++ *
++ * max : 0x00 : 0 dB
++ *       ( 0.5 dB step )
++ * min : 0xFE : -127.0 dB
++ * mute: 0xFF
++ */
++static const DECLARE_TLV_DB_SCALE(out_tlv, -12750, 50, 1);
 +
-+	dma_cap_zero(mask);
-+	dma_cap_set(DMA_SLAVE, mask);
++static const struct snd_kcontrol_new ak4613_snd_controls[] = {
++	SOC_DOUBLE_R_TLV("Digital Playback Volume1", LOUT1, ROUT1,
++			 0, 0xFF, 1, out_tlv),
++	SOC_DOUBLE_R_TLV("Digital Playback Volume2", LOUT2, ROUT2,
++			 0, 0xFF, 1, out_tlv),
++	SOC_DOUBLE_R_TLV("Digital Playback Volume3", LOUT3, ROUT3,
++			 0, 0xFF, 1, out_tlv),
++	SOC_DOUBLE_R_TLV("Digital Playback Volume4", LOUT4, ROUT4,
++			 0, 0xFF, 1, out_tlv),
++	SOC_DOUBLE_R_TLV("Digital Playback Volume5", LOUT5, ROUT5,
++			 0, 0xFF, 1, out_tlv),
++	SOC_DOUBLE_R_TLV("Digital Playback Volume6", LOUT6, ROUT6,
++			 0, 0xFF, 1, out_tlv),
++};
 +
-+	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
-+					(void *)(unsigned long)id, port->dev,
-+					dir = DMA_MEM_TO_DEV ? "tx" : "rx");
-+	if (!chan) {
-+		dev_warn(port->dev,
-+			 "dma_request_slave_channel_compat failed\n");
-+		return NULL;
-+	}
-+
-+	memset(&cfg, 0, sizeof(cfg));
-+	cfg.direction = dir;
-+	if (dir = DMA_MEM_TO_DEV) {
-+		cfg.dst_addr = port->mapbase +
-+			(sci_getreg(port, SCxTDR)->offset << port->regshift);
-+		cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
-+	} else {
-+		cfg.src_addr = port->mapbase +
-+			(sci_getreg(port, SCxRDR)->offset << port->regshift);
-+		cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
-+	}
-+
-+	ret = dmaengine_slave_config(chan, &cfg);
-+	if (ret) {
-+		dev_warn(port->dev, "dmaengine_slave_config failed %d\n", ret);
-+		dma_release_channel(chan);
-+		return NULL;
-+	}
-+
-+	return chan;
-+}
-+
- static void sci_request_dma(struct uart_port *port)
- {
- 	struct sci_port *s = to_sci_port(port);
--	struct sh_dmae_slave *param;
- 	struct dma_chan *chan;
--	dma_cap_mask_t mask;
- 
- 	dev_dbg(port->dev, "%s: port %d\n", __func__, port->line);
- 
--	if (s->cfg->dma_slave_tx <= 0 || s->cfg->dma_slave_rx <= 0)
-+	if (!port->dev->of_node &&
-+	    (s->cfg->dma_slave_tx <= 0 || s->cfg->dma_slave_rx <= 0))
- 		return;
- 
--	dma_cap_zero(mask);
--	dma_cap_set(DMA_SLAVE, mask);
--
--	param = &s->param_tx;
--
--	/* Slave ID, e.g., SHDMA_SLAVE_SCIF0_TX */
--	param->shdma_slave.slave_id = s->cfg->dma_slave_tx;
--
- 	s->cookie_tx = -EINVAL;
--	chan = dma_request_channel(mask, filter, param);
-+	chan = sci_request_dma_chan(port, DMA_MEM_TO_DEV, s->cfg->dma_slave_tx);
- 	dev_dbg(port->dev, "%s: TX: got channel %p\n", __func__, chan);
- 	if (chan) {
- 		s->chan_tx = chan;
-@@ -1390,12 +1411,7 @@ static void sci_request_dma(struct uart_port *port)
- 		INIT_WORK(&s->work_tx, work_fn_tx);
- 	}
- 
--	param = &s->param_rx;
--
--	/* Slave ID, e.g., SHDMA_SLAVE_SCIF0_RX */
--	param->shdma_slave.slave_id = s->cfg->dma_slave_rx;
--
--	chan = dma_request_channel(mask, filter, param);
-+	chan = sci_request_dma_chan(port, DMA_DEV_TO_MEM, s->cfg->dma_slave_rx);
- 	dev_dbg(port->dev, "%s: RX: got channel %p\n", __func__, chan);
- 	if (chan) {
- 		unsigned int i;
+ static const struct reg_default ak4613_reg[] = {
+ 	{ 0x0,  0x0f }, { 0x1,  0x07 }, { 0x2,  0x3f }, { 0x3,  0x20 },
+ 	{ 0x4,  0x20 }, { 0x5,  0x55 }, { 0x6,  0x05 }, { 0x7,  0x07 },
+@@ -397,6 +423,8 @@ static int ak4613_resume(struct snd_soc_codec *codec)
+ static struct snd_soc_codec_driver soc_codec_dev_ak4613 = {
+ 	.resume			= ak4613_resume,
+ 	.set_bias_level		= ak4613_set_bias_level,
++	.controls		= ak4613_snd_controls,
++	.num_controls		= ARRAY_SIZE(ak4613_snd_controls),
+ 	.dapm_widgets		= ak4613_dapm_widgets,
+ 	.num_dapm_widgets	= ARRAY_SIZE(ak4613_dapm_widgets),
+ 	.dapm_routes		= ak4613_intercon,
 -- 
 1.9.1
 
