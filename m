@@ -1,62 +1,172 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 22:50:51 +0000
-Subject: [PATCH 04/22] drm: rcar-du: Compute plane DDCR4 register value directly
-Message-Id: <1442184669-30990-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 17 Sep 2015 04:25:22 +0000
+Subject: [PATCH 08/20 v2] arm64: renesas: r8a7795: add I2C support
+Message-Id: <87k2rp7k24.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-There's no need for a read-modify-write pattern, all register bits can
-be set explicitly.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_plane.c | 13 +++----------
- 1 file changed, 3 insertions(+), 10 deletions(-)
+v1 -> v2
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index ffa583712cd9..b20f3ceb55e6 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -28,13 +28,6 @@
- #define RCAR_DU_COLORKEY_SOURCE		(1 << 24)
- #define RCAR_DU_COLORKEY_MASK		(1 << 24)
+ - use power-domains
+ - add Geert's Reviewed-by
+
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 96 ++++++++++++++++++++++++++++++-
+ include/dt-bindings/clock/r8a7795-clock.h |  7 +++
+ 2 files changed, 102 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 31d05b6..3a82eba 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -16,6 +16,16 @@
+ 	#address-cells = <2>;
+ 	#size-cells = <2>;
  
--static u32 rcar_du_plane_read(struct rcar_du_group *rgrp,
--			      unsigned int index, u32 reg)
--{
--	return rcar_du_read(rgrp->dev,
--			    rgrp->mmio_offset + index * PLANE_OFF + reg);
--}
--
- static void rcar_du_plane_write(struct rcar_du_group *rgrp,
- 				unsigned int index, u32 reg, u32 data)
- {
-@@ -182,9 +175,6 @@ static void __rcar_du_plane_setup(struct rcar_du_plane *plane,
- 	 * The data format is selected by the DDDF field in PnMR and the EDF
- 	 * field in DDCR4.
- 	 */
--	ddcr4 = rcar_du_plane_read(rgrp, index, PnDDCR4);
--	ddcr4 &= ~PnDDCR4_EDF_MASK;
--	ddcr4 |= state->format->edf | PnDDCR4_CODE;
- 
- 	rcar_du_plane_setup_mode(plane, index);
- 
-@@ -204,6 +194,9 @@ static void __rcar_du_plane_setup(struct rcar_du_plane *plane,
- 	}
- 
- 	rcar_du_plane_write(rgrp, index, PnDDCR2, ddcr2);
++	aliases {
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2c2 = &i2c2;
++		i2c3 = &i2c3;
++		i2c4 = &i2c4;
++		i2c5 = &i2c5;
++		i2c6 = &i2c6;
++	};
 +
-+	ddcr4 = state->format->edf | PnDDCR4_CODE;
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -464,13 +474,20 @@
+ 					reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+ 					clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>,
+ 						 <&cp_clk>, <&cp_clk>, <&cp_clk>,
+-						 <&cp_clk>, <&cp_clk>;
++						 <&cp_clk>, <&cp_clk>,
++						 <&s3d2_clk>, <&s3d2_clk>, <&s3d2_clk>,
++						 <&s3d2_clk>, <&s3d2_clk>, <&s3d2_clk>,
++						 <&s3d2_clk>;
+ 					#clock-cells = <1>;
+ 					clock-indices = <
+ 						R8A7795_CLK_GPIO7 R8A7795_CLK_GPIO6
+ 						R8A7795_CLK_GPIO5 R8A7795_CLK_GPIO4
+ 						R8A7795_CLK_GPIO3 R8A7795_CLK_GPIO2
+ 						R8A7795_CLK_GPIO1 R8A7795_CLK_GPIO0
++						R8A7795_CLK_I2C6  R8A7795_CLK_I2C5
++						R8A7795_CLK_I2C4  R8A7795_CLK_I2C3
++						R8A7795_CLK_I2C2  R8A7795_CLK_I2C1
++						R8A7795_CLK_I2C0
+ 					>;
+ 				};
+ 			};
+@@ -767,6 +784,83 @@
+ 				};
+ 			};
+ 		};
 +
- 	rcar_du_plane_write(rgrp, index, PnDDCR4, ddcr4);
++		i2c0: i2c@e6500000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe6500000 0 0x40>;
++			interrupts = <GIC_SPI 287 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp9_clks R8A7795_CLK_I2C0>;
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		i2c1: i2c@e6508000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe6508000 0 0x40>;
++			interrupts = <GIC_SPI 288 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp9_clks R8A7795_CLK_I2C1>;
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		i2c2: i2c@e6510000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe6510000 0 0x40>;
++			interrupts = <GIC_SPI 286 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp9_clks R8A7795_CLK_I2C2>;
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		i2c3: i2c@e66d0000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66d0000 0 0x40>;
++			interrupts = <GIC_SPI 290 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp9_clks R8A7795_CLK_I2C3>;
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		i2c4: i2c@e66d8000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66d8000 0 0x40>;
++			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp9_clks R8A7795_CLK_I2C4>;
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		i2c5: i2c@e66e0000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66e0000 0 0x40>;
++			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp9_clks R8A7795_CLK_I2C5>;
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		i2c6: i2c@e66e8000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66e8000 0 0x40>;
++			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp9_clks R8A7795_CLK_I2C6>;
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
+ 	};
  
- 	/* Destination position and size */
+ };
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+index a310dfa..881788f 100644
+--- a/include/dt-bindings/clock/r8a7795-clock.h
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -65,6 +65,13 @@
+ #define R8A7795_CLK_GPIO2		10
+ #define R8A7795_CLK_GPIO1		11
+ #define R8A7795_CLK_GPIO0		12
++#define R8A7795_CLK_I2C6		18
++#define R8A7795_CLK_I2C5		19
++#define R8A7795_CLK_I2C4		27
++#define R8A7795_CLK_I2C3		28
++#define R8A7795_CLK_I2C2		29
++#define R8A7795_CLK_I2C1		30
++#define R8A7795_CLK_I2C0		31
+ 
+ /* MSTP10 */
+ 
 -- 
-2.4.6
+1.9.1
 
