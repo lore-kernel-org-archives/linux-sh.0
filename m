@@ -1,53 +1,53 @@
-From: Sakari Ailus <sakari.ailus@linux.intel.com>
-Date: Tue, 15 Sep 2015 11:01:54 +0000
-Subject: Re: [PATCH v4 2/2] [media] media-device: split media initialization and registration
-Message-Id: <55F7FAA2.2090605@linux.intel.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 17 Sep 2015 04:20:56 +0000
+Subject: [PATCH 02/20 v2] i2c: sh_mobile: add support for r8a7795 (R-Car H3)
+Message-Id: <87si6d7k9h.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442313147-24566-1-git-send-email-javier@osg.samsung.com>
- <1442313147-24566-3-git-send-email-javier@osg.samsung.com>
-In-Reply-To: <1442313147-24566-3-git-send-email-javier@osg.samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Javier,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Javier Martinez Canillas wrote:
-> The media device node is registered and so made visible to user-space
-> before entities are registered and links created which means that the
-> media graph obtained by user-space could be only partially enumerated
-> if that happens too early before all the graph has been created.
-> 
-> To avoid this race condition, split the media init and registration
-> in separate functions and only register the media device node when
-> all the pending subdevices have been registered, either explicitly
-> by the driver or asynchronously using v4l2_async_register_subdev().
-> 
-> The media_device_register() had a check for drivers not filling dev
-> and model fields but all drivers in mainline set them and not doing
-> it will be a driver bug so change the function return to void and
-> add a BUG_ON() for dev being NULL instead.
-> 
-> Also, add a media_device_cleanup() function that will destroy the
-> graph_mutex that is initialized in media_device_init().
-> 
-> Suggested-by: Sakari Ailus <sakari.ailus@linux.intel.com>
-> Signed-off-by: Javier Martinez Canillas <javier@osg.samsung.com>
+Enable the I2C core for this SoC. It is compitable to Gen2 SoCs, so
+reuse the settings.
 
-Thanks!
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-For drivers/media/media-device.c, drivers/media/platform/omap3isp/isp.c
-and include/media/media-device.h:
+ - no change
 
-Acked-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+ Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt | 1 +
+ drivers/i2c/busses/i2c-sh_mobile.c                      | 1 +
+ 2 files changed, 2 insertions(+)
 
-Laurent, could you ack these if you're fine with them?
-
-They depend on Mauro's patches so they should be applied after them.
-
+diff --git a/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt b/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
+index 2bfc6e7..214f94c 100644
+--- a/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
++++ b/Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt
+@@ -10,6 +10,7 @@ Required properties:
+ 			- "renesas,iic-r8a7792" (R-Car V2H)
+ 			- "renesas,iic-r8a7793" (R-Car M2-N)
+ 			- "renesas,iic-r8a7794" (R-Car E2)
++			- "renesas,iic-r8a7795" (R-Car H3)
+ 			- "renesas,iic-sh73a0" (SH-Mobile AG5)
+ - reg             : address start and address range size of device
+ - interrupts      : interrupt of device
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index 47659a9..7d2bd3e 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -836,6 +836,7 @@ static const struct of_device_id sh_mobile_i2c_dt_ids[] = {
+ 	{ .compatible = "renesas,iic-r8a7792", .data = &fast_clock_dt_config },
+ 	{ .compatible = "renesas,iic-r8a7793", .data = &fast_clock_dt_config },
+ 	{ .compatible = "renesas,iic-r8a7794", .data = &fast_clock_dt_config },
++	{ .compatible = "renesas,iic-r8a7795", .data = &fast_clock_dt_config },
+ 	{ .compatible = "renesas,iic-sh73a0", .data = &fast_clock_dt_config },
+ 	{},
+ };
 -- 
-Kind regards,
+1.9.1
 
-Sakari Ailus
-sakari.ailus@linux.intel.com
