@@ -1,61 +1,65 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 02 Sep 2015 07:30:03 +0000
-Subject: Re: [PATCH v2] clk: shmobile: Get rid of CONFIG_SHMOBILE_MULTI
-Message-Id: <CAMuHMdU9B1pkSLUwW0C9_6z+AWUYEMUrFGd82QSjw6HS8A_PRw@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 17 Sep 2015 04:20:06 +0000
+Subject: [PATCH 01/20] i2c: rcar: add support for r8a7795 (R-Car H3)
+Message-Id: <87twqt7kav.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150826074309.4298.76147.sendpatchset@little-apple>
-	<CAMuHMdVXJ8Te_Rwn2WZCdXdh_+0__S6QEp7ZBzggpY-UgqtqLA@mail.gmail.com>
-	<CANqRtoSccKdT9W_xhJ-xNQjbrJBEfGgn4uHaYM7=ieZt3gTT0g@mail.gmail.com>
-In-Reply-To: <CANqRtoSccKdT9W_xhJ-xNQjbrJBEfGgn4uHaYM7=ieZt3gTT0g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-clk <linux-clk@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-sh list <linux-sh@vger.kernel.org>, Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On Wed, Sep 2, 2015 at 8:52 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> On Wed, Aug 26, 2015 at 4:48 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
->> On Wed, Aug 26, 2015 at 9:43 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->>> From: Magnus Damm <damm+renesas@opensource.se>
->>>
->>> Shmobile is all multiplatform these days, so get rid of the
->>> reference to CONFIG_ARCH_SHMOBILE_MULTI. Also instead of always
->>> enabling DIV6 and MSTP adjust the Makefile to enable DIV6 and
->>> MSTP depending on if they are included in the SoC or not.
->>>
->>> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
->>> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
->>> ---
->>>
->>>  Changes since V1:
->>>  - dropped DIV6 from R-Car Gen1 variants - thanks Geert!
->>
->> BTW, you forgot to mention, but it's important for Mike and Stephen to
->> know that this should not be queued up in a branch that still has
->> ARCH_SHMOBILE_LEGACY.
->
-> Allow me to clarify one thing.
->
-> Your comment is true for this older version of this patch, but newer
-> versions such as:
-> [PATCH v5 01/05] clk: shmobile: Rework CONFIG_ARCH_SHMOBILE_MULTI
-> and later versions do not have this dependency on ARCH_SHMOBILE_LEGACY cleanups.
->
-> So newer versions can be merged at any time without any special dependencies.
+Enable the I2C core for this SoC. I add a new type because this version
+has new features (e.g. DMA) which will be added somewhen later.
 
-That's correct, as they don't get rid of CONFIG_ARCH_SHMOBILE_MULTI in
-drivers/clk/Makefile...
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ Documentation/devicetree/bindings/i2c/i2c-rcar.txt | 1 +
+ drivers/i2c/busses/i2c-rcar.c                      | 3 +++
+ 2 files changed, 4 insertions(+)
 
-Gr{oetje,eeting}s,
+diff --git a/Documentation/devicetree/bindings/i2c/i2c-rcar.txt b/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
+index 16b3e07..ea406eb2 100644
+--- a/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
++++ b/Documentation/devicetree/bindings/i2c/i2c-rcar.txt
+@@ -10,6 +10,7 @@ Required properties:
+ 	"renesas,i2c-r8a7792"
+ 	"renesas,i2c-r8a7793"
+ 	"renesas,i2c-r8a7794"
++	"renesas,i2c-r8a7795"
+ - reg: physical base address of the controller and length of memory mapped
+   region.
+ - interrupts: interrupt specifier.
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index d8361da..3e12565 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -103,6 +103,7 @@
+ enum rcar_i2c_type {
+ 	I2C_RCAR_GEN1,
+ 	I2C_RCAR_GEN2,
++	I2C_RCAR_GEN3,
+ };
+ 
+ struct rcar_i2c_priv {
+@@ -178,6 +179,7 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+ 		cdf_width = 2;
+ 		break;
+ 	case I2C_RCAR_GEN2:
++	case I2C_RCAR_GEN3:
+ 		cdf_width = 3;
+ 		break;
+ 	default:
+@@ -625,6 +627,7 @@ static const struct of_device_id rcar_i2c_dt_ids[] = {
+ 	{ .compatible = "renesas,i2c-r8a7792", .data = (void *)I2C_RCAR_GEN2 },
+ 	{ .compatible = "renesas,i2c-r8a7793", .data = (void *)I2C_RCAR_GEN2 },
+ 	{ .compatible = "renesas,i2c-r8a7794", .data = (void *)I2C_RCAR_GEN2 },
++	{ .compatible = "renesas,i2c-r8a7795", .data = (void *)I2C_RCAR_GEN3 },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, rcar_i2c_dt_ids);
+-- 
+1.9.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
