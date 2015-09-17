@@ -1,312 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 22:51:09 +0000
-Subject: [PATCH 22/22] drm: rcar-du: lvds: Add R-Car Gen3 support
-Message-Id: <1442184669-30990-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Sep 2015 09:00:29 +0000
+Subject: [PATCH 1/2] drivers: sh: Disable legacy default PM Domain on emev2
+Message-Id: <9b302c1acf4114d51b7f0962df0b0ddee0dc75cd.1442480237.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1442480237.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442480237.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
 
-From: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-The LVDS encoder differs slightly in Gen3 SoCs in its PLL configuration.
-Add support for the Gen3 LVDS PLL parameters and startup procedure.
+EMMA Mobile EV2 doesn't have MSTP clocks. All its device drivers manage
+clocks explicitly, without relying on Runtime PM, so it doesn't need the
+legacy default PM Domain.
 
-Signed-off-by: Koji Matsuoka <koji.matsuoka.xm@renesas.com>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/gpu/drm/rcar-du/Kconfig           |   4 +-
- drivers/gpu/drm/rcar-du/rcar_du_drv.c     |  10 ++-
- drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c | 133 ++++++++++++++++++++++--------
- drivers/gpu/drm/rcar-du/rcar_lvds_regs.h  |  24 ++++--
- 4 files changed, 123 insertions(+), 48 deletions(-)
+ drivers/sh/pm_runtime.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/drivers/gpu/drm/rcar-du/Kconfig b/drivers/gpu/drm/rcar-du/Kconfig
-index 6c3e49e9e290..971ab014eee5 100644
---- a/drivers/gpu/drm/rcar-du/Kconfig
-+++ b/drivers/gpu/drm/rcar-du/Kconfig
-@@ -21,10 +21,8 @@ config DRM_RCAR_HDMI
- config DRM_RCAR_LVDS
- 	bool "R-Car DU LVDS Encoder Support"
- 	depends on DRM_RCAR_DU
--	depends on ARCH_R8A7790 || ARCH_R8A7791 || COMPILE_TEST
- 	help
--	  Enable support for the R-Car Display Unit embedded LVDS encoders
--	  (currently only on R8A7790 and R8A7791).
-+	  Enable support for the R-Car Display Unit embedded LVDS encoders.
- 
- config DRM_RCAR_VSP
- 	bool "R-Car DU VSP Compositor Support"
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index 4909db60971a..87eedb7fee28 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -140,15 +140,21 @@ static const struct rcar_du_device_info rcar_du_r8a7795_info = {
- 		  | RCAR_DU_FEATURE_VSP1_SOURCE,
- 	.num_crtcs = 4,
- 	.routes = {
--		/* R8A7795 has one RGB output, and two HDMI and one LVDS
--		 * (currently unsupported) outputs
-+		/* R8A7795 has one RGB output, one LVDS output and two
-+		 * (currently unsupported) HDMI outputs.
- 		 */
- 		[RCAR_DU_OUTPUT_DPAD0] = {
- 			.possible_crtcs = BIT(3),
- 			.encoder_type = DRM_MODE_ENCODER_NONE,
- 			.port = 0,
- 		},
-+		[RCAR_DU_OUTPUT_LVDS0] = {
-+			.possible_crtcs = BIT(0),
-+			.encoder_type = DRM_MODE_ENCODER_LVDS,
-+			.port = 3,
-+		},
- 	},
-+	.num_lvds = 1,
- };
- 
- static const struct of_device_id rcar_du_of_table[] = {
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
-index 02acebadf7d6..ef3a50321ecc 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
-@@ -38,22 +38,13 @@ static void rcar_lvds_write(struct rcar_du_lvdsenc *lvds, u32 reg, u32 data)
- 	iowrite32(data, lvds->mmio + reg);
- }
- 
--static int rcar_du_lvdsenc_start(struct rcar_du_lvdsenc *lvds,
--				 struct rcar_du_crtc *rcrtc)
-+static void rcar_du_lvdsenc_start_gen2(struct rcar_du_lvdsenc *lvds,
-+				       struct rcar_du_crtc *rcrtc)
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index d3d1891cda3c..ad9188138ed5 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -35,8 +35,7 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
+ static int __init sh_pm_runtime_init(void)
  {
- 	const struct drm_display_mode *mode = &rcrtc->crtc.mode;
- 	unsigned int freq = mode->clock;
- 	u32 lvdcr0;
--	u32 lvdhcr;
- 	u32 pllcr;
--	int ret;
--
--	if (lvds->enabled)
--		return 0;
--
--	ret = clk_prepare_enable(lvds->clock);
--	if (ret < 0)
--		return ret;
- 
- 	/* PLL clock configuration */
- 	if (freq < 39000)
-@@ -67,26 +58,6 @@ static int rcar_du_lvdsenc_start(struct rcar_du_lvdsenc *lvds,
- 
- 	rcar_lvds_write(lvds, LVDPLLCR, pllcr);
- 
--	/* Hardcode the channels and control signals routing for now.
--	 *
--	 * HSYNC -> CTRL0
--	 * VSYNC -> CTRL1
--	 * DISP  -> CTRL2
--	 * 0     -> CTRL3
--	 */
--	rcar_lvds_write(lvds, LVDCTRCR, LVDCTRCR_CTR3SEL_ZERO |
--			LVDCTRCR_CTR2SEL_DISP | LVDCTRCR_CTR1SEL_VSYNC |
--			LVDCTRCR_CTR0SEL_HSYNC);
--
--	if (rcar_du_needs(lvds->dev, RCAR_DU_QUIRK_LVDS_LANES))
--		lvdhcr = LVDCHCR_CHSEL_CH(0, 0) | LVDCHCR_CHSEL_CH(1, 3)
--		       | LVDCHCR_CHSEL_CH(2, 2) | LVDCHCR_CHSEL_CH(3, 1);
--	else
--		lvdhcr = LVDCHCR_CHSEL_CH(0, 0) | LVDCHCR_CHSEL_CH(1, 1)
--		       | LVDCHCR_CHSEL_CH(2, 2) | LVDCHCR_CHSEL_CH(3, 3);
--
--	rcar_lvds_write(lvds, LVDCHCR, lvdhcr);
--
- 	/* Select the input, hardcode mode 0, enable LVDS operation and turn
- 	 * bias circuitry on.
- 	 */
-@@ -96,8 +67,10 @@ static int rcar_du_lvdsenc_start(struct rcar_du_lvdsenc *lvds,
- 	rcar_lvds_write(lvds, LVDCR0, lvdcr0);
- 
- 	/* Turn all the channels on. */
--	rcar_lvds_write(lvds, LVDCR1, LVDCR1_CHSTBY(3) | LVDCR1_CHSTBY(2) |
--			LVDCR1_CHSTBY(1) | LVDCR1_CHSTBY(0) | LVDCR1_CLKSTBY);
-+	rcar_lvds_write(lvds, LVDCR1,
-+			LVDCR1_CHSTBY_GEN2(3) | LVDCR1_CHSTBY_GEN2(2) |
-+			LVDCR1_CHSTBY_GEN2(1) | LVDCR1_CHSTBY_GEN2(0) |
-+			LVDCR1_CLKSTBY_GEN2);
- 
- 	/* Turn the PLL on, wait for the startup delay, and turn the output
- 	 * on.
-@@ -109,8 +82,90 @@ static int rcar_du_lvdsenc_start(struct rcar_du_lvdsenc *lvds,
- 
- 	lvdcr0 |= LVDCR0_LVRES;
- 	rcar_lvds_write(lvds, LVDCR0, lvdcr0);
-+}
-+
-+static void rcar_du_lvdsenc_start_gen3(struct rcar_du_lvdsenc *lvds,
-+				       struct rcar_du_crtc *rcrtc)
-+{
-+	const struct drm_display_mode *mode = &rcrtc->crtc.mode;
-+	unsigned int freq = mode->clock;
-+	u32 lvdcr0;
-+	u32 pllcr;
-+
-+	/* PLL clock configuration */
-+	if (freq < 42000)
-+		pllcr = LVDPLLCR_PLLDIVCNT_42M;
-+	else if (freq < 85000)
-+		pllcr = LVDPLLCR_PLLDIVCNT_85M;
-+	else if (freq < 128000)
-+		pllcr = LVDPLLCR_PLLDIVCNT_128M;
-+	else
-+		pllcr = LVDPLLCR_PLLDIVCNT_148M;
-+
-+	rcar_lvds_write(lvds, LVDPLLCR, pllcr);
-+
-+	/* Turn the PLL on, set it to LVDS normal mode, wait for the startup
-+	 * delay and turn the output on.
-+	 */
-+	lvdcr0 = LVDCR0_PLLON;
-+	rcar_lvds_write(lvds, LVDCR0, lvdcr0);
-+
-+	lvdcr0 |= LVDCR0_PWD;
-+	rcar_lvds_write(lvds, LVDCR0, lvdcr0);
-+
-+	usleep_range(100, 150);
-+
-+	lvdcr0 |= LVDCR0_LVRES;
-+	rcar_lvds_write(lvds, LVDCR0, lvdcr0);
-+
-+	/* Turn all the channels on. */
-+	rcar_lvds_write(lvds, LVDCR1,
-+			LVDCR1_CHSTBY_GEN3(3) | LVDCR1_CHSTBY_GEN3(2) |
-+			LVDCR1_CHSTBY_GEN3(1) | LVDCR1_CHSTBY_GEN3(0) |
-+			LVDCR1_CLKSTBY_GEN3);
-+}
-+
-+static int rcar_du_lvdsenc_start(struct rcar_du_lvdsenc *lvds,
-+				 struct rcar_du_crtc *rcrtc)
-+{
-+	u32 lvdhcr;
-+	int ret;
-+
-+	if (lvds->enabled)
-+		return 0;
-+
-+	ret = clk_prepare_enable(lvds->clock);
-+	if (ret < 0)
-+		return ret;
-+
-+	/* Hardcode the channels and control signals routing for now.
-+	 *
-+	 * HSYNC -> CTRL0
-+	 * VSYNC -> CTRL1
-+	 * DISP  -> CTRL2
-+	 * 0     -> CTRL3
-+	 */
-+	rcar_lvds_write(lvds, LVDCTRCR, LVDCTRCR_CTR3SEL_ZERO |
-+			LVDCTRCR_CTR2SEL_DISP | LVDCTRCR_CTR1SEL_VSYNC |
-+			LVDCTRCR_CTR0SEL_HSYNC);
-+
-+	if (rcar_du_needs(lvds->dev, RCAR_DU_QUIRK_LVDS_LANES))
-+		lvdhcr = LVDCHCR_CHSEL_CH(0, 0) | LVDCHCR_CHSEL_CH(1, 3)
-+		       | LVDCHCR_CHSEL_CH(2, 2) | LVDCHCR_CHSEL_CH(3, 1);
-+	else
-+		lvdhcr = LVDCHCR_CHSEL_CH(0, 0) | LVDCHCR_CHSEL_CH(1, 1)
-+		       | LVDCHCR_CHSEL_CH(2, 2) | LVDCHCR_CHSEL_CH(3, 3);
-+
-+	rcar_lvds_write(lvds, LVDCHCR, lvdhcr);
-+
-+	/* Perform generation-specific initialization. */
-+	if (lvds->dev->info->gen < 3)
-+		rcar_du_lvdsenc_start_gen2(lvds, rcrtc);
-+	else
-+		rcar_du_lvdsenc_start_gen3(lvds, rcrtc);
- 
- 	lvds->enabled = true;
-+
- 	return 0;
- }
- 
-@@ -143,10 +198,16 @@ int rcar_du_lvdsenc_enable(struct rcar_du_lvdsenc *lvds, struct drm_crtc *crtc,
- void rcar_du_lvdsenc_atomic_check(struct rcar_du_lvdsenc *lvds,
- 				  struct drm_display_mode *mode)
- {
--	/* The internal LVDS encoder has a clock frequency operating range of
--	 * 30MHz to 150MHz. Clamp the clock accordingly.
-+	struct rcar_du_device *rcdu = lvds->dev;
-+
-+	/* The internal LVDS encoder has a restricted clock frequency operating
-+	 * range (30MHz to 150MHz on Gen2, 25.175MHz to 148.5MHz on Gen3). Clamp
-+	 * the clock accordingly.
- 	 */
--	mode->clock = clamp(mode->clock, 30000, 150000);
-+	if (rcdu->info->gen < 3)
-+		mode->clock = clamp(mode->clock, 30000, 150000);
-+	else
-+		mode->clock = clamp(mode->clock, 25175, 148500);
- }
- 
- static int rcar_du_lvdsenc_get_resources(struct rcar_du_lvdsenc *lvds,
-diff --git a/drivers/gpu/drm/rcar-du/rcar_lvds_regs.h b/drivers/gpu/drm/rcar-du/rcar_lvds_regs.h
-index b1eafd097a79..d7d294ba2dbe 100644
---- a/drivers/gpu/drm/rcar-du/rcar_lvds_regs.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_lvds_regs.h
-@@ -1,7 +1,7 @@
- /*
-  * rcar_lvds_regs.h  --  R-Car LVDS Interface Registers Definitions
-  *
-- * Copyright (C) 2013 Renesas Electronics Corporation
-+ * Copyright (C) 2013-2015 Renesas Electronics Corporation
-  *
-  * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
-  *
-@@ -15,28 +15,38 @@
- 
- #define LVDCR0				0x0000
- #define LVDCR0_DUSEL			(1 << 15)
--#define LVDCR0_DMD			(1 << 12)
-+#define LVDCR0_DMD			(1 << 12)		/* Gen2 only */
- #define LVDCR0_LVMD_MASK		(0xf << 8)
- #define LVDCR0_LVMD_SHIFT		8
- #define LVDCR0_PLLON			(1 << 4)
--#define LVDCR0_BEN			(1 << 2)
--#define LVDCR0_LVEN			(1 << 1)
-+#define LVDCR0_PWD			(1 << 2)		/* Gen3 only */
-+#define LVDCR0_BEN			(1 << 2)		/* Gen2 only */
-+#define LVDCR0_LVEN			(1 << 1)		/* Gen2 only */
- #define LVDCR0_LVRES			(1 << 0)
- 
- #define LVDCR1				0x0004
--#define LVDCR1_CKSEL			(1 << 15)
--#define LVDCR1_CHSTBY(n)		(3 << (2 + (n) * 2))
--#define LVDCR1_CLKSTBY			(3 << 0)
-+#define LVDCR1_CKSEL			(1 << 15)		/* Gen2 only */
-+#define LVDCR1_CHSTBY_GEN2(n)		(3 << (2 + (n) * 2))	/* Gen2 only */
-+#define LVDCR1_CHSTBY_GEN3(n)		(1 << (2 + (n) * 2))	/* Gen3 only */
-+#define LVDCR1_CLKSTBY_GEN2		(3 << 0)		/* Gen2 only */
-+#define LVDCR1_CLKSTBY_GEN3		(1 << 0)		/* Gen3 only */
- 
- #define LVDPLLCR			0x0008
- #define LVDPLLCR_CEEN			(1 << 14)
- #define LVDPLLCR_FBEN			(1 << 13)
- #define LVDPLLCR_COSEL			(1 << 12)
-+/* Gen2 */
- #define LVDPLLCR_PLLDLYCNT_150M		(0x1bf << 0)
- #define LVDPLLCR_PLLDLYCNT_121M		(0x22c << 0)
- #define LVDPLLCR_PLLDLYCNT_60M		(0x77b << 0)
- #define LVDPLLCR_PLLDLYCNT_38M		(0x69a << 0)
- #define LVDPLLCR_PLLDLYCNT_MASK		(0x7ff << 0)
-+/* Gen3 */
-+#define LVDPLLCR_PLLDIVCNT_42M		(0x014cb << 0)
-+#define LVDPLLCR_PLLDIVCNT_85M		(0x00a45 << 0)
-+#define LVDPLLCR_PLLDIVCNT_128M		(0x006c3 << 0)
-+#define LVDPLLCR_PLLDIVCNT_148M		(0x046c1 << 0)
-+#define LVDPLLCR_PLLDIVCNT_MASK		(0x7ffff << 0)
- 
- #define LVDCTRCR			0x000c
- #define LVDCTRCR_CTR3SEL_ZERO		(0 << 12)
+ 	if (IS_ENABLED(CONFIG_ARCH_SHMOBILE_MULTI)) {
+-		if (!of_machine_is_compatible("renesas,emev2") &&
+-		    !of_machine_is_compatible("renesas,r7s72100") &&
++		if (!of_machine_is_compatible("renesas,r7s72100") &&
+ #ifndef CONFIG_PM_GENERIC_DOMAINS_OF
+ 		    !of_machine_is_compatible("renesas,r8a73a4") &&
+ 		    !of_machine_is_compatible("renesas,r8a7740") &&
 -- 
-2.4.6
+2.1.4
 
