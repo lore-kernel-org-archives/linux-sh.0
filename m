@@ -1,140 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 30 Sep 2015 06:15:52 +0000
-Subject: [PATCH net-next 1/4] phylib: Add phy_set_max_speed helper
-Message-Id: <1443593755-20991-2-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 17 Sep 2015 04:35:20 +0000
+Subject: [PATCH 19/20 v2] arm64: defconfig: add Renesas R-Car DMAC driver support
+Message-Id: <8761397jlh.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443593755-20991-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1443593755-20991-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Florian Fainelli <f.fainelli@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Add a helper to allow ethernet drivers to limit the speed of a phy
-(that they are attached to).
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This mainly involves factoring out the business-end of
-of_set_phy_supported() and exporting a new symbol.
-
-This code seems to be open coded in several places, in several different
-variants.
-
-It is is envisaged that this will be used in situations where setting the
-"max-speed" property in DT is not appropriate, e.g. because the maximum
-speed is not a property of the phy hardware.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v2
-* First post
+v1 -> v2
 
-v3
-* As suggested by Florian Fainelli
-  - Do not check for !IS_ENABLED(CONFIG_OF_MDIO) in __set_phy_supported.
-    This is already done in of_set_phy_supported() and is not relevant to
-    phy_set_max_speed)
-  - Return -ENOTSUPP if 'max_speed' is not an unknown value
-* As suggested by Sergei Shtylyov
-  - White-space and comment enhancements.
+ - no change
 
-v4
-* No change
----
- drivers/net/phy/phy_device.c | 59 ++++++++++++++++++++++++++++++--------------
- include/linux/phy.h          |  1 +
- 2 files changed, 41 insertions(+), 19 deletions(-)
+ arch/arm64/configs/defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/drivers/net/phy/phy_device.c b/drivers/net/phy/phy_device.c
-index f761288abe66..383389146099 100644
---- a/drivers/net/phy/phy_device.c
-+++ b/drivers/net/phy/phy_device.c
-@@ -1239,6 +1239,44 @@ static int gen10g_resume(struct phy_device *phydev)
- 	return 0;
- }
- 
-+static int __set_phy_supported(struct phy_device *phydev, u32 max_speed)
-+{
-+	/* The default values for phydev->supported are provided by the PHY
-+	 * driver "features" member, we want to reset to sane defaults first
-+	 * before supporting higher speeds.
-+	 */
-+	phydev->supported &= PHY_DEFAULT_FEATURES;
-+
-+	switch (max_speed) {
-+	default:
-+		return -ENOTSUPP;
-+	case SPEED_1000:
-+		phydev->supported |= PHY_1000BT_FEATURES;
-+		/* fall through */
-+	case SPEED_100:
-+		phydev->supported |= PHY_100BT_FEATURES;
-+		/* fall through */
-+	case SPEED_10:
-+		phydev->supported |= PHY_10BT_FEATURES;
-+	}
-+
-+	return 0;
-+}
-+
-+int phy_set_max_speed(struct phy_device *phydev, u32 max_speed)
-+{
-+	int err;
-+
-+	err = __set_phy_supported(phydev, max_speed);
-+	if (err)
-+		return err;
-+
-+	phydev->advertising = phydev->supported;
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL(phy_set_max_speed);
-+
- static void of_set_phy_supported(struct phy_device *phydev)
- {
- 	struct device_node *node = phydev->dev.of_node;
-@@ -1250,25 +1288,8 @@ static void of_set_phy_supported(struct phy_device *phydev)
- 	if (!node)
- 		return;
- 
--	if (!of_property_read_u32(node, "max-speed", &max_speed)) {
--		/* The default values for phydev->supported are provided by the PHY
--		 * driver "features" member, we want to reset to sane defaults fist
--		 * before supporting higher speeds.
--		 */
--		phydev->supported &= PHY_DEFAULT_FEATURES;
--
--		switch (max_speed) {
--		default:
--			return;
--
--		case SPEED_1000:
--			phydev->supported |= PHY_1000BT_FEATURES;
--		case SPEED_100:
--			phydev->supported |= PHY_100BT_FEATURES;
--		case SPEED_10:
--			phydev->supported |= PHY_10BT_FEATURES;
--		}
--	}
-+	if (!of_property_read_u32(node, "max-speed", &max_speed))
-+		__set_phy_supported(phydev, max_speed);
- }
- 
- /**
-diff --git a/include/linux/phy.h b/include/linux/phy.h
-index 4a4e3a092337..4c477e6ece33 100644
---- a/include/linux/phy.h
-+++ b/include/linux/phy.h
-@@ -798,6 +798,7 @@ int phy_mii_ioctl(struct phy_device *phydev, struct ifreq *ifr, int cmd);
- int phy_start_interrupts(struct phy_device *phydev);
- void phy_print_status(struct phy_device *phydev);
- void phy_device_free(struct phy_device *phydev);
-+int phy_set_max_speed(struct phy_device *phydev, u32 max_speed);
- 
- int phy_register_fixup(const char *bus_id, u32 phy_uid, u32 phy_uid_mask,
- 		       int (*run)(struct phy_device *));
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index e333159..4ffae18 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -169,6 +169,8 @@ CONFIG_LEDS_TRIGGER_CPU=y
+ CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_EFI=y
+ CONFIG_RTC_DRV_XGENE=y
++CONFIG_DMADEVICES=y
++CONFIG_RCAR_DMAC=y
+ CONFIG_VIRTIO_PCI=y
+ CONFIG_VIRTIO_BALLOON=y
+ CONFIG_VIRTIO_MMIO=y
 -- 
-2.1.4
+1.9.1
 
