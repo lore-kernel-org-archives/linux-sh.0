@@ -1,86 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 00:47:13 +0000
-Subject: [PATCH 11/19] ARM: shmobile: silk: add VIN0/ADV7180 DT support
-Message-Id: <8614daf299cbab2bcada922e727fdc9ad45b2412.1442536920.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 17 Sep 2015 06:33:09 +0000
+Subject: [PATCH v3 03/09] ARM: shmobile: Add APMU nodes to r8a7793 DTSI
+Message-Id: <20150917063309.26016.5367.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442536920.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
+References: <20150917063240.26016.93772.sendpatchset@little-apple>
+In-Reply-To: <20150917063240.26016.93772.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: mark.rutland@arm.com, devicetree@vger.kernel.org, lorenzo.pieralisi@arm.com, keita.kobayashi.ym@renesas.com, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Define  the  SILK board dependent part of the  VIN0  device  node.
-Add the device node for Analog Devices ADV7180 video decoder to I2C1 bus.
-Add the necessary subnodes to interconnect VIN0 and ADV7180 devices.
+Add an APMU DT node for the r8a7793 SoC and use the enable-method to
+point out that the APMU should be used for SMP support.
 
-Based on the Henninger VIN0/ADV8170 device tree patch by myself.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7794-silk.dts | 35 +++++++++++++++++++++++++++++++++++
- 1 file changed, 35 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
-index 3f808724106e..bb0a22423dc4 100644
---- a/arch/arm/boot/dts/r8a7794-silk.dts
-+++ b/arch/arm/boot/dts/r8a7794-silk.dts
-@@ -75,6 +75,11 @@
- 		renesas,groups = "qspi_ctrl", "qspi_data4";
- 		renesas,function = "qspi";
- 	};
-+
-+	vin0_pins: vin0 {
-+		renesas,groups = "vin0_data8", "vin0_clk";
-+		renesas,function = "vin0";
-+	};
- };
+ Changes from V2:
+ - New patch
+
+ arch/arm/boot/dts/r8a7793.dtsi |   14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+--- 0001/arch/arm/boot/dts/r8a7793.dtsi
++++ work/arch/arm/boot/dts/r8a7793.dtsi	2015-09-16 20:53:27.660513000 +0900
+@@ -21,6 +21,7 @@
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		enable-method = "renesas,apmu";
  
- &scif2 {
-@@ -106,6 +111,19 @@
- 
- 	status = "okay";
- 	clock-frequency = <400000>;
-+
-+	composite-in@20 {
-+		compatible = "adi,adv7180";
-+		reg = <0x20>;
-+		remote = <&vin0>;
-+
-+		port {
-+			adv7180: endpoint {
-+				bus-width = <8>;
-+				remote-endpoint = <&vin0ep>;
-+			};
-+		};
-+	};
- };
- 
- &mmcif0 {
-@@ -153,3 +171,20 @@
+ 		cpu0: cpu@0 {
+ 			device_type = "cpu";
+@@ -39,6 +40,19 @@
+ 					   < 750000 1000000>,
+ 					   < 375000 1000000>;
  		};
- 	};
- };
 +
-+/* composite video input */
-+&vin0 {
-+	status = "okay";
-+	pinctrl-0 = <&vin0_pins>;
-+	pinctrl-names = "default";
-+
-+	port {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		vin0ep: endpoint {
-+			remote-endpoint = <&adv7180>;
-+			bus-width = <8>;
++		cpu1: cpu@1 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <1>;
++			clock-frequency = <1500000000>;
 +		};
 +	};
-+};
--- 
-2.1.4
-
++
++	apmu@e6152000 {
++		compatible = "renesas,apmu-r8a7793", "renesas,apmu";
++		reg = <0 0xe6152000 0 0x188>;
++		cpus = <&cpu0 &cpu1>;
+ 	};
+ 
+ 	gic: interrupt-controller@f1001000 {
