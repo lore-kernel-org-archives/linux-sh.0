@@ -1,202 +1,133 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 20:56:40 +0000
-Subject: [PATCH 02/32] v4l: vsp1: Store the memory format in struct vsp1_rwpf
-Message-Id: <1442177830-24536-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 17 Sep 2015 09:54:03 +0000
+Subject: [PATCH v2 04/11] clocksource: sh_cmt: Support separate R-Car Gen2 CMT0/1
+Message-Id: <20150917095403.5369.97011.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <20150917095325.5369.73893.sendpatchset@little-apple>
+In-Reply-To: <20150917095325.5369.73893.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: devicetree@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-Move the format from struct vsp1_video to struct vsp1_rwpf to prepare
-for VSPD KMS support that will not instantiate V4L2 video device nodes.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add support for the new R-Car Gen2 CMT0 and CMT1 bindings. Support
+for the old DT binding is still kept around, however devices using
+such binding will be treated as a low-feature CMT0 device. If users
+want to make use of CMT1-specific features then they need to update
+their DTBs. No special CMT1-specific features are however implemented
+by his patch, only DT bindings are redone as groundwork for future
+feature patches.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/media/platform/vsp1/vsp1_bru.c   |  4 ++--
- drivers/media/platform/vsp1/vsp1_rpf.c   |  4 ++--
- drivers/media/platform/vsp1/vsp1_rwpf.h  |  2 ++
- drivers/media/platform/vsp1/vsp1_video.c | 40 ++++++++++++++++----------------
- drivers/media/platform/vsp1/vsp1_video.h |  2 --
- drivers/media/platform/vsp1/vsp1_wpf.c   |  4 ++--
- 6 files changed, 28 insertions(+), 28 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_bru.c b/drivers/media/platform/vsp1/vsp1_bru.c
-index 7dd763311c0f..1308dfef0f92 100644
---- a/drivers/media/platform/vsp1/vsp1_bru.c
-+++ b/drivers/media/platform/vsp1/vsp1_bru.c
-@@ -94,7 +94,7 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
- 	/* Disable dithering and enable color data normalization unless the
- 	 * format at the pipeline output is premultiplied.
- 	 */
--	flags = pipe->output ? pipe->output->video.format.flags : 0;
-+	flags = pipe->output ? pipe->output->format.flags : 0;
- 	vsp1_bru_write(bru, VI6_BRU_INCTRL,
- 		       flags & V4L2_PIX_FMT_FLAG_PREMUL_ALPHA ?
- 		       0 : VI6_BRU_INCTRL_NRM);
-@@ -125,7 +125,7 @@ static int bru_s_stream(struct v4l2_subdev *subdev, int enable)
- 		if (bru->inputs[i].rpf) {
- 			ctrl |= VI6_BRU_CTRL_RBC;
+ Changes since V1:
+ - Added Acked-by and Tested-by from Geert
+ - Added Acked-by from Laurent
+
+ drivers/clocksource/sh_cmt.c |   38 +++++++++++++++++++++++++++-----------
+ 1 file changed, 27 insertions(+), 11 deletions(-)
+
+--- 0003/drivers/clocksource/sh_cmt.c
++++ work/drivers/clocksource/sh_cmt.c	2015-09-17 17:28:33.380513000 +0900
+@@ -39,16 +39,16 @@ struct sh_cmt_device;
+  * SoC but also on the particular instance. The following table lists the main
+  * characteristics of those flavours.
+  *
+- *			16B	32B	32B-F	48B	48B-2
++ *			16B	32B	32B-F	48B	R-Car Gen2
+  * -----------------------------------------------------------------------------
+  * Channels		2	1/4	1	6	2/8
+  * Control Width	16	16	16	16	32
+  * Counter Width	16	32	32	32/48	32/48
+  * Shared Start/Stop	Y	Y	Y	Y	N
+  *
+- * The 48-bit gen2 version has a per-channel start/stop register located in the
+- * channel registers block. All other versions have a shared start/stop register
+- * located in the global space.
++ * The r8a73a4 / R-Car Gen2 version has a per-channel start/stop register
++ * located in the channel registers block. All other versions have a shared
++ * start/stop register located in the global space.
+  *
+  * Channels are indexed from 0 to N-1 in the documentation. The channel index
+  * infers the start/stop bit position in the control register and the channel
+@@ -68,7 +68,8 @@ enum sh_cmt_model {
+ 	SH_CMT_32BIT,
+ 	SH_CMT_32BIT_FAST,
+ 	SH_CMT_48BIT,
+-	SH_CMT_48BIT_GEN2,
++	SH_CMT0_RCAR_GEN2,
++	SH_CMT1_RCAR_GEN2,
+ };
  
--			premultiplied = bru->inputs[i].rpf->video.format.flags
-+			premultiplied = bru->inputs[i].rpf->format.flags
- 				      & V4L2_PIX_FMT_FLAG_PREMUL_ALPHA;
- 		} else {
- 			ctrl |= VI6_BRU_CTRL_CROP(VI6_ROP_NOP)
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index a1093cc1b9a1..6e0564b5b37b 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -75,8 +75,8 @@ static const struct v4l2_ctrl_ops rpf_ctrl_ops = {
- static int rpf_s_stream(struct v4l2_subdev *subdev, int enable)
- {
- 	struct vsp1_rwpf *rpf = to_rwpf(subdev);
--	const struct vsp1_format_info *fmtinfo = rpf->video.fmtinfo;
--	const struct v4l2_pix_format_mplane *format = &rpf->video.format;
-+	const struct vsp1_format_info *fmtinfo = rpf->fmtinfo;
-+	const struct v4l2_pix_format_mplane *format = &rpf->format;
- 	const struct v4l2_rect *crop = &rpf->crop;
- 	u32 pstride;
- 	u32 infmt;
-diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
-index f452dce1a931..8609c3d02679 100644
---- a/drivers/media/platform/vsp1/vsp1_rwpf.h
-+++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
-@@ -32,6 +32,8 @@ struct vsp1_rwpf {
- 	unsigned int max_width;
- 	unsigned int max_height;
+ struct sh_cmt_info {
+@@ -223,8 +224,20 @@ static const struct sh_cmt_info sh_cmt_i
+ 		.read_count = sh_cmt_read32,
+ 		.write_count = sh_cmt_write32,
+ 	},
+-	[SH_CMT_48BIT_GEN2] = {
+-		.model = SH_CMT_48BIT_GEN2,
++	[SH_CMT0_RCAR_GEN2] = {
++		.model = SH_CMT0_RCAR_GEN2,
++		.channels_mask = 0x60,
++		.width = 32,
++		.overflow_bit = SH_CMT32_CMCSR_CMF,
++		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
++		.read_control = sh_cmt_read32,
++		.write_control = sh_cmt_write32,
++		.read_count = sh_cmt_read32,
++		.write_count = sh_cmt_write32,
++	},
++	[SH_CMT1_RCAR_GEN2] = {
++		.model = SH_CMT1_RCAR_GEN2,
++		.channels_mask = 0xff,
+ 		.width = 32,
+ 		.overflow_bit = SH_CMT32_CMCSR_CMF,
+ 		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
+@@ -867,6 +880,7 @@ static int sh_cmt_setup_channel(struct s
+ 	ch->cmt = cmt;
+ 	ch->index = index;
+ 	ch->hwidx = hwidx;
++	ch->timer_bit = hwidx;
  
-+	struct v4l2_pix_format_mplane format;
-+	const struct vsp1_format_info *fmtinfo;
- 	struct {
- 		unsigned int left;
- 		unsigned int top;
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index 48480e66fad6..90d5791c80b6 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -185,9 +185,9 @@ static int vsp1_video_verify_format(struct vsp1_video *video)
- 	if (ret < 0)
- 		return ret = -ENOIOCTLCMD ? -EINVAL : ret;
- 
--	if (video->fmtinfo->mbus != fmt.format.code ||
--	    video->format.height != fmt.format.height ||
--	    video->format.width != fmt.format.width)
-+	if (video->rwpf->fmtinfo->mbus != fmt.format.code ||
-+	    video->rwpf->format.height != fmt.format.height ||
-+	    video->rwpf->format.width != fmt.format.width)
- 		return -EINVAL;
- 
- 	return 0;
-@@ -805,7 +805,7 @@ vsp1_video_queue_setup(struct vb2_queue *vq, const struct v4l2_format *fmt,
- 
- 		format = &pix_mp;
- 	} else {
--		format = &video->format;
-+		format = &video->rwpf->format;
+ 	/*
+ 	 * Compute the address of the channel control register block. For the
+@@ -888,9 +902,11 @@ static int sh_cmt_setup_channel(struct s
+ 		 */
+ 		ch->ioctrl = cmt->mapbase + 0x40;
+ 		break;
+-	case SH_CMT_48BIT_GEN2:
++	case SH_CMT0_RCAR_GEN2:
++	case SH_CMT1_RCAR_GEN2:
+ 		ch->iostart = cmt->mapbase + ch->hwidx * 0x100;
+ 		ch->ioctrl = ch->iostart + 0x10;
++		ch->timer_bit = 0;
+ 		break;
  	}
  
- 	*nplanes = format->num_planes;
-@@ -822,7 +822,7 @@ static int vsp1_video_buffer_prepare(struct vb2_buffer *vb)
- {
- 	struct vsp1_video *video = vb2_get_drv_priv(vb->vb2_queue);
- 	struct vsp1_video_buffer *buf = to_vsp1_video_buffer(vb);
--	const struct v4l2_pix_format_mplane *format = &video->format;
-+	const struct v4l2_pix_format_mplane *format = &video->rwpf->format;
- 	unsigned int i;
+@@ -902,8 +918,6 @@ static int sh_cmt_setup_channel(struct s
+ 	ch->match_value = ch->max_match_value;
+ 	raw_spin_lock_init(&ch->lock);
  
- 	if (vb->num_planes < format->num_planes)
-@@ -904,7 +904,7 @@ static int vsp1_video_start_streaming(struct vb2_queue *vq, unsigned int count)
- 				struct vsp1_rwpf *rpf  					to_rwpf(&pipe->uds_input->subdev);
- 
--				uds->scale_alpha = rpf->video.fmtinfo->alpha;
-+				uds->scale_alpha = rpf->fmtinfo->alpha;
- 			}
- 		}
- 
-@@ -1008,7 +1008,7 @@ vsp1_video_get_format(struct file *file, void *fh, struct v4l2_format *format)
- 		return -EINVAL;
- 
- 	mutex_lock(&video->lock);
--	format->fmt.pix_mp = video->format;
-+	format->fmt.pix_mp = video->rwpf->format;
- 	mutex_unlock(&video->lock);
- 
- 	return 0;
-@@ -1048,8 +1048,8 @@ vsp1_video_set_format(struct file *file, void *fh, struct v4l2_format *format)
- 		goto done;
- 	}
- 
--	video->format = format->fmt.pix_mp;
--	video->fmtinfo = info;
-+	video->rwpf->format = format->fmt.pix_mp;
-+	video->rwpf->fmtinfo = info;
- 
- done:
- 	mutex_unlock(&video->lock);
-@@ -1226,17 +1226,17 @@ int vsp1_video_init(struct vsp1_video *video, struct vsp1_rwpf *rwpf)
- 		return ret;
- 
- 	/* ... and the format ... */
--	video->fmtinfo = vsp1_get_format_info(VSP1_VIDEO_DEF_FORMAT);
--	video->format.pixelformat = video->fmtinfo->fourcc;
--	video->format.colorspace = V4L2_COLORSPACE_SRGB;
--	video->format.field = V4L2_FIELD_NONE;
--	video->format.width = VSP1_VIDEO_DEF_WIDTH;
--	video->format.height = VSP1_VIDEO_DEF_HEIGHT;
--	video->format.num_planes = 1;
--	video->format.plane_fmt[0].bytesperline -		video->format.width * video->fmtinfo->bpp[0] / 8;
--	video->format.plane_fmt[0].sizeimage -		video->format.plane_fmt[0].bytesperline * video->format.height;
-+	rwpf->fmtinfo = vsp1_get_format_info(VSP1_VIDEO_DEF_FORMAT);
-+	rwpf->format.pixelformat = rwpf->fmtinfo->fourcc;
-+	rwpf->format.colorspace = V4L2_COLORSPACE_SRGB;
-+	rwpf->format.field = V4L2_FIELD_NONE;
-+	rwpf->format.width = VSP1_VIDEO_DEF_WIDTH;
-+	rwpf->format.height = VSP1_VIDEO_DEF_HEIGHT;
-+	rwpf->format.num_planes = 1;
-+	rwpf->format.plane_fmt[0].bytesperline +		rwpf->format.width * rwpf->fmtinfo->bpp[0] / 8;
-+	rwpf->format.plane_fmt[0].sizeimage +		rwpf->format.plane_fmt[0].bytesperline * rwpf->format.height;
- 
- 	/* ... and the video node... */
- 	video->video.v4l2_dev = &video->vsp1->v4l2_dev;
-diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
-index 5f48eec5562c..dbcb7b5b6c95 100644
---- a/drivers/media/platform/vsp1/vsp1_video.h
-+++ b/drivers/media/platform/vsp1/vsp1_video.h
-@@ -123,8 +123,6 @@ struct vsp1_video {
- 	struct media_pad pad;
- 
- 	struct mutex lock;
--	struct v4l2_pix_format_mplane format;
--	const struct vsp1_format_info *fmtinfo;
- 
- 	struct vsp1_pipeline pipe;
- 	unsigned int pipe_index;
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index 50dfb3060156..b14070d1e457 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -112,7 +112,7 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
- 
- 	/* Destination stride. */
- 	if (!pipe->lif) {
--		struct v4l2_pix_format_mplane *format = &wpf->video.format;
-+		struct v4l2_pix_format_mplane *format = &wpf->format;
- 
- 		vsp1_wpf_write(wpf, VI6_WPF_DSTM_STRIDE_Y,
- 			       format->plane_fmt[0].bytesperline);
-@@ -130,7 +130,7 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
- 
- 	/* Format */
- 	if (!pipe->lif) {
--		const struct vsp1_format_info *fmtinfo = wpf->video.fmtinfo;
-+		const struct vsp1_format_info *fmtinfo = wpf->fmtinfo;
- 
- 		outfmt = fmtinfo->hwfmt << VI6_WPF_OUTFMT_WRFMT_SHIFT;
- 
--- 
-2.4.6
-
+-	ch->timer_bit = cmt->info->model = SH_CMT_48BIT_GEN2 ? 0 : ch->hwidx;
+-
+ 	ret = sh_cmt_register(ch, dev_name(&cmt->pdev->dev),
+ 			      clockevent, clocksource);
+ 	if (ret) {
+@@ -946,7 +960,9 @@ static const struct of_device_id sh_cmt_
+ 	{ .compatible = "renesas,cmt-32", .data = &sh_cmt_info[SH_CMT_32BIT] },
+ 	{ .compatible = "renesas,cmt-32-fast", .data = &sh_cmt_info[SH_CMT_32BIT_FAST] },
+ 	{ .compatible = "renesas,cmt-48", .data = &sh_cmt_info[SH_CMT_48BIT] },
+-	{ .compatible = "renesas,cmt-48-gen2", .data = &sh_cmt_info[SH_CMT_48BIT_GEN2] },
++	{ .compatible = "renesas,cmt-48-gen2", .data = &sh_cmt_info[SH_CMT0_RCAR_GEN2] },
++	{ .compatible = "renesas,cmt0-rcar-gen2", .data = &sh_cmt_info[SH_CMT0_RCAR_GEN2] },
++	{ .compatible = "renesas,cmt1-rcar-gen2", .data = &sh_cmt_info[SH_CMT1_RCAR_GEN2] },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, sh_cmt_of_table);
