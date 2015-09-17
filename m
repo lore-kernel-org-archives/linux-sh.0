@@ -1,196 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 20:56:44 +0000
-Subject: [PATCH 06/32] v4l: vsp1: Make rwpf operations independent of video device
-Message-Id: <1442177830-24536-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Sep 2015 08:59:21 +0000
+Subject: [PATCH 05/21] ARM: shmobile: Remove obsolete legacy PM Domain leftovers
+Message-Id: <edc77c65df148548bd168fde9607707d81de39ff.1442478814.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1442478814.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442478814.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The rwpf queue operation doesn't queue a buffer but sets the memory
-address for the next run. Rename it to set_memory and pass it a new
-structure independent of the video buffer than only contains memory
-information.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The last users were removed in commit b587288001f05c0e ("ARM: shmobile:
+R-Mobile: Remove legacy PM Domain code").
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/vsp1/vsp1_rpf.c   | 16 ++++++++--------
- drivers/media/platform/vsp1/vsp1_rwpf.h  | 10 ++++++++--
- drivers/media/platform/vsp1/vsp1_video.c | 14 ++++++++------
- drivers/media/platform/vsp1/vsp1_video.h |  7 +++----
- drivers/media/platform/vsp1/vsp1_wpf.c   | 14 +++++++-------
- 5 files changed, 34 insertions(+), 27 deletions(-)
+ arch/arm/mach-shmobile/pm-rmobile.h | 9 ---------
+ 1 file changed, 9 deletions(-)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index ae51c31112aa..c0b7f76cd0b5 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -186,28 +186,28 @@ static struct v4l2_subdev_ops rpf_ops = {
-  * Video Device Operations
-  */
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.h b/arch/arm/mach-shmobile/pm-rmobile.h
+index 30a4a421ee31..8146bb6d7237 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.h
++++ b/arch/arm/mach-shmobile/pm-rmobile.h
+@@ -12,10 +12,6 @@
  
--static void rpf_buf_queue(struct vsp1_rwpf *rpf, struct vsp1_vb2_buffer *buf)
-+static void rpf_set_memory(struct vsp1_rwpf *rpf, struct vsp1_rwpf_memory *mem)
- {
- 	unsigned int i;
+ #include <linux/pm_domain.h>
  
- 	for (i = 0; i < 3; ++i)
--		rpf->buf_addr[i] = buf->addr[i];
-+		rpf->buf_addr[i] = mem->addr[i];
- 
- 	if (!vsp1_entity_is_streaming(&rpf->entity))
- 		return;
- 
- 	vsp1_rpf_write(rpf, VI6_RPF_SRCM_ADDR_Y,
--		       buf->addr[0] + rpf->offsets[0]);
--	if (buf->buf.num_planes > 1)
-+		       mem->addr[0] + rpf->offsets[0]);
-+	if (mem->num_planes > 1)
- 		vsp1_rpf_write(rpf, VI6_RPF_SRCM_ADDR_C0,
--			       buf->addr[1] + rpf->offsets[1]);
--	if (buf->buf.num_planes > 2)
-+			       mem->addr[1] + rpf->offsets[1]);
-+	if (mem->num_planes > 2)
- 		vsp1_rpf_write(rpf, VI6_RPF_SRCM_ADDR_C1,
--			       buf->addr[2] + rpf->offsets[1]);
-+			       mem->addr[2] + rpf->offsets[1]);
- }
- 
- static const struct vsp1_rwpf_operations rpf_vdev_ops = {
--	.queue = rpf_buf_queue,
-+	.set_memory = rpf_set_memory,
- };
- 
- /* -----------------------------------------------------------------------------
-diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
-index ee2a8bf269fa..0076920adb28 100644
---- a/drivers/media/platform/vsp1/vsp1_rwpf.h
-+++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
-@@ -24,10 +24,16 @@
- #define RWPF_PAD_SOURCE				1
- 
- struct vsp1_rwpf;
--struct vsp1_vb2_buffer;
-+
-+struct vsp1_rwpf_memory {
-+	unsigned int num_planes;
-+	dma_addr_t addr[3];
-+	unsigned int length[3];
-+};
- 
- struct vsp1_rwpf_operations {
--	void (*queue)(struct vsp1_rwpf *rwpf, struct vsp1_vb2_buffer *buf);
-+	void (*set_memory)(struct vsp1_rwpf *rwpf,
-+			   struct vsp1_rwpf_memory *mem);
- };
- 
- struct vsp1_rwpf {
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index 216894cee2e7..121f8724bcf6 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -613,7 +613,7 @@ vsp1_video_complete_buffer(struct vsp1_video *video)
- 	done->buf.v4l2_buf.sequence = video->sequence++;
- 	v4l2_get_timestamp(&done->buf.v4l2_buf.timestamp);
- 	for (i = 0; i < done->buf.num_planes; ++i)
--		vb2_set_plane_payload(&done->buf, i, done->length[i]);
-+		vb2_set_plane_payload(&done->buf, i, done->mem.length[i]);
- 	vb2_buffer_done(&done->buf, VB2_BUF_STATE_DONE);
- 
- 	return next;
-@@ -631,7 +631,7 @@ static void vsp1_video_frame_end(struct vsp1_pipeline *pipe,
- 
- 	spin_lock_irqsave(&pipe->irqlock, flags);
- 
--	video->rwpf->ops->queue(video->rwpf, buf);
-+	video->rwpf->ops->set_memory(video->rwpf, &buf->mem);
- 	pipe->buffers_ready |= 1 << video->pipe_index;
- 
- 	spin_unlock_irqrestore(&pipe->irqlock, flags);
-@@ -828,11 +828,13 @@ static int vsp1_video_buffer_prepare(struct vb2_buffer *vb)
- 	if (vb->num_planes < format->num_planes)
- 		return -EINVAL;
- 
-+	buf->mem.num_planes = vb->num_planes;
-+
- 	for (i = 0; i < vb->num_planes; ++i) {
--		buf->addr[i] = vb2_dma_contig_plane_dma_addr(vb, i);
--		buf->length[i] = vb2_plane_size(vb, i);
-+		buf->mem.addr[i] = vb2_dma_contig_plane_dma_addr(vb, i);
-+		buf->mem.length[i] = vb2_plane_size(vb, i);
- 
--		if (buf->length[i] < format->plane_fmt[i].sizeimage)
-+		if (buf->mem.length[i] < format->plane_fmt[i].sizeimage)
- 			return -EINVAL;
- 	}
- 
-@@ -857,7 +859,7 @@ static void vsp1_video_buffer_queue(struct vb2_buffer *vb)
- 
- 	spin_lock_irqsave(&pipe->irqlock, flags);
- 
--	video->rwpf->ops->queue(video->rwpf, buf);
-+	video->rwpf->ops->set_memory(video->rwpf, &buf->mem);
- 	pipe->buffers_ready |= 1 << video->pipe_index;
- 
- 	if (vb2_is_streaming(&video->queue) &&
-diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
-index f75c67976bcd..b7eabe6bab70 100644
---- a/drivers/media/platform/vsp1/vsp1_video.h
-+++ b/drivers/media/platform/vsp1/vsp1_video.h
-@@ -20,7 +20,8 @@
- #include <media/media-entity.h>
- #include <media/videobuf2-core.h>
- 
--struct vsp1_rwpf;
-+#include "vsp1_rwpf.h"
-+
- struct vsp1_video;
- 
- /*
-@@ -97,9 +98,7 @@ static inline struct vsp1_pipeline *to_vsp1_pipeline(struct media_entity *e)
- struct vsp1_vb2_buffer {
- 	struct vb2_buffer buf;
- 	struct list_head queue;
+-#define DEFAULT_DEV_LATENCY_NS	250000
 -
--	dma_addr_t addr[3];
--	unsigned int length[3];
-+	struct vsp1_rwpf_memory mem;
+-struct platform_device;
+-
+ struct rmobile_pm_domain {
+ 	struct generic_pm_domain genpd;
+ 	struct dev_power_governor *gov;
+@@ -26,9 +22,4 @@ struct rmobile_pm_domain {
+ 	bool no_debug;
  };
  
- static inline struct vsp1_vb2_buffer *to_vsp1_vb2_buffer(struct vb2_buffer *vb)
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index 4f0e4ab0f05b..d2537b46fc46 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -195,17 +195,17 @@ static struct v4l2_subdev_ops wpf_ops = {
-  * Video Device Operations
-  */
- 
--static void wpf_buf_queue(struct vsp1_rwpf *wpf, struct vsp1_vb2_buffer *buf)
-+static void wpf_set_memory(struct vsp1_rwpf *wpf, struct vsp1_rwpf_memory *mem)
- {
--	vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_Y, buf->addr[0]);
--	if (buf->buf.num_planes > 1)
--		vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_C0, buf->addr[1]);
--	if (buf->buf.num_planes > 2)
--		vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_C1, buf->addr[2]);
-+	vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_Y, mem->addr[0]);
-+	if (mem->num_planes > 1)
-+		vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_C0, mem->addr[1]);
-+	if (mem->num_planes > 2)
-+		vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_C1, mem->addr[2]);
- }
- 
- static const struct vsp1_rwpf_operations wpf_vdev_ops = {
--	.queue = wpf_buf_queue,
-+	.set_memory = wpf_set_memory,
- };
- 
- /* -----------------------------------------------------------------------------
+-struct pm_domain_device {
+-	const char *domain_name;
+-	struct platform_device *pdev;
+-};
+-
+ #endif /* PM_RMOBILE_H */
 -- 
-2.4.6
+2.1.4
 
