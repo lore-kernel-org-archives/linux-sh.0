@@ -1,94 +1,88 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 06:05:11 +0000
-Subject: [PATCH/RFC v3 2/5] arm64: dts: r8a7795: add EthernetAVB device node
-Message-Id: <1442556314-10512-3-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 17 Sep 2015 08:59:19 +0000
+Subject: [PATCH 03/21] ARM: shmobile: Remove obsolete custom earlyprintk code
+Message-Id: <815fc8c06b57f283f942c6c25e3c58d6e4cb8fd7.1442478814.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1442478814.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442478814.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-[horms: minor updates]
+The last caller of shmobile_setup_console() was removed in commit
+44d88c754e57a6d9 ("ARM: shmobile: Remove legacy SoC code for R-Mobile
+A1").
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
 ---
-v0 [Kazuya Mizuguchi]
+ arch/arm/mach-shmobile/Makefile  |  2 +-
+ arch/arm/mach-shmobile/common.h  |  1 -
+ arch/arm/mach-shmobile/console.c | 27 ---------------------------
+ 3 files changed, 1 insertion(+), 29 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/console.c
 
-v1 [Simon Horman]
-* moved to soc node
-* updated patch subject
-
-v2 [Simon Horman]
-* Specify all interrupts
-* Use named interrupts
-* Rebase
-* Remove spurious whitespace change introduce in v1
-
-v3 [Simon Horman]
-* As suggested by Geert Uytterhoeven
-  - Add power-domains property
-* Added Ack
----
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 42 ++++++++++++++++++++++++++++++++
- 1 file changed, 42 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 60d64c51b510..20130c0a0245 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -297,6 +297,48 @@
- 			/* Empty node for now */
- 		};
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 476de30798d7..b02841528e05 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -3,7 +3,7 @@
+ #
  
-+		avb: ethernet@e6800000 {
-+			compatible = "renesas,etheravb-r8a7795";
-+			reg = <0 0xe6800000 0 0x800>, <0 0xe6a00000 0 0x10000>;
-+			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "ch0", "ch1", "ch2", "ch3",
-+					  "ch4", "ch5", "ch6", "ch7",
-+					  "ch8", "ch9", "ch10", "ch11",
-+					  "ch12", "ch13", "ch14", "ch15",
-+					  "ch16", "ch17", "ch18", "ch19",
-+					  "ch20", "ch21", "ch22", "ch23",
-+					  "ch24";
-+			clocks = <&mstp8_clks R8A7795_CLK_ETHERAVB>;
-+			power-domains = <&cpg_clocks>;
-+			phy-mode = "rgmii-id";
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+		};
-+
- 		dmac1: dma-controller@e7300000 {
- 			/* Empty node for now */
- 		};
+ # Common objects
+-obj-y				:= timer.o console.o
++obj-y				:= timer.o
+ 
+ # CPU objects
+ obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o
+diff --git a/arch/arm/mach-shmobile/common.h b/arch/arm/mach-shmobile/common.h
+index 8d27ec546a35..ee8fe9e473d7 100644
+--- a/arch/arm/mach-shmobile/common.h
++++ b/arch/arm/mach-shmobile/common.h
+@@ -4,7 +4,6 @@
+ extern void shmobile_earlytimer_init(void);
+ extern void shmobile_init_delay(void);
+ struct twd_local_timer;
+-extern void shmobile_setup_console(void);
+ extern void shmobile_boot_vector(void);
+ extern unsigned long shmobile_boot_fn;
+ extern unsigned long shmobile_boot_arg;
+diff --git a/arch/arm/mach-shmobile/console.c b/arch/arm/mach-shmobile/console.c
+deleted file mode 100644
+index e329ccbd0a67..000000000000
+--- a/arch/arm/mach-shmobile/console.c
++++ /dev/null
+@@ -1,27 +0,0 @@
+-/*
+- * SH-Mobile Console
+- *
+- * Copyright (C) 2010  Magnus Damm
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; version 2 of the License.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-#include <linux/kernel.h>
+-#include <linux/init.h>
+-#include <linux/platform_device.h>
+-#include <asm/mach/map.h>
+-#include "common.h"
+-
+-void __init shmobile_setup_console(void)
+-{
+-	parse_early_param();
+-
+-	/* Let earlyprintk output early console messages */
+-	early_platform_driver_probe("earlyprintk", 1, 1);
+-}
 -- 
 2.1.4
 
