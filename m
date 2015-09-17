@@ -1,34 +1,54 @@
-From: "Rafael J. Wysocki" <rjw@rjwysocki.net>
-Date: Wed, 09 Sep 2015 00:47:31 +0000
-Subject: Re: [PATCH v2] staging: board: Migrate away from __pm_genpd_name_add_device()
-Message-Id: <180247016.qMaimhRPpY@vostro.rjw.lan>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 17 Sep 2015 09:54:52 +0000
+Subject: [PATCH v2 09/11] devicetree: bindings: Remove unused 32-bit CMT bindings
+Message-Id: <20150917095452.5369.320.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441731963-18271-1-git-send-email-geert+renesas@glider.be> <20150908190653.GA10156@kroah.com>
-In-Reply-To: <20150908190653.GA10156@kroah.com>
+References: <20150917095325.5369.73893.sendpatchset@little-apple>
+In-Reply-To: <20150917095325.5369.73893.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Ulf Hansson <ulf.hansson@linaro.org>, Kevin Hilman <khilman@kernel.org>, devel@driverdev.osuosl.org, linux-pm@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: devicetree@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-On Tuesday, September 08, 2015 12:06:53 PM Greg Kroah-Hartman wrote:
-> On Tue, Sep 08, 2015 at 07:06:03PM +0200, Geert Uytterhoeven wrote:
-> > The named genpd APIs are deprecated. Hence convert the board staging
-> > code from using genpd names to DT node paths.
-> > 
-> > For now this supports PM domains with "#power-domain-cells = <0>" only.
-> > 
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
-> > ---
-> > Rafael, Greg: If Greg provides his Acked-by, Rafael can apply this patch
-> > to the linux-pm tree as a prerequisite for Ulf's patches to remove the
-> > named genpd APIs.
-> > 
-> 
-> Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Queued up for the next PM pull request, thanks!
+Remove the 32-bit CMT compat strings to reduce maintenance burden.
 
-Rafael
+It should be fine to break DT compatibility because the 32-bit
+32-bit CMT DT binding was never part of any upstream DTS file.
 
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Changes since V1:
+ - New patch
+
+ Documentation/devicetree/bindings/timer/renesas,cmt.txt |   16 ---------------
+ 1 file changed, 16 deletions(-)
+
+--- 0008/Documentation/devicetree/bindings/timer/renesas,cmt.txt
++++ work/Documentation/devicetree/bindings/timer/renesas,cmt.txt	2015-09-17 18:04:35.060513000 +0900
+@@ -12,22 +12,6 @@ datasheets.
+ Required Properties:
+ 
+   - compatible: must contain one or more of the following:
+-    - "renesas,cmt-32-r8a7740" for the r8a7740 32-bit CMT
+-		(CMT0)
+-    - "renesas,cmt-32-sh73a0" for the sh73a0 32-bit CMT
+-		(CMT0)
+-    - "renesas,cmt-32" for all 32-bit CMT without fast clock support
+-		(CMT0 on sh73a0 and r8a7740)
+-		This is a fallback for the above renesas,cmt-32-* entries.
+-
+-    - "renesas,cmt-32-fast-r8a7740" for the r8a7740 32-bit CMT with fast
+-		clock support (CMT[234])
+-    - "renesas,cmt-32-fast-sh73a0" for the sh73A0 32-bit CMT with fast
+-		clock support (CMT[234])
+-    - "renesas,cmt-32-fast" for all 32-bit CMT with fast clock support
+-		(CMT[234] on sh73a0 and r8a7740)
+-		This is a fallback for the above renesas,cmt-32-fast-* entries.
+-
+     - "renesas,cmt-48-sh73a0" for the sh73A0 48-bit CMT
+ 		(CMT1)
+     - "renesas,cmt-48-r8a7740" for the r8a7740 48-bit CMT
