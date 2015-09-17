@@ -1,88 +1,33 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 11 Sep 2015 13:34:58 +0000
-Subject: Re: [PATCH/RFC v2 net-next 1/4] phylib: Add phy_set_max_speed helper
-Message-Id: <55F2D882.20908@cogentembedded.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 17 Sep 2015 07:12:39 +0000
+Subject: [PATCH 01/03] irqchip: renesas-irqc: Add r8a7795 IRQC DT documentation
+Message-Id: <20150917071239.29299.75042.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441936878-18290-1-git-send-email-horms+renesas@verge.net.au>
- <1441936878-18290-2-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1441936878-18290-2-git-send-email-horms+renesas@verge.net.au>
+References: <20150917071230.29299.32326.sendpatchset@little-apple>
+In-Reply-To: <20150917071230.29299.32326.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: jason@lakedaemon.net, geert+renesas@glider.be, linux-kernel@vger.kernel.org, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-Hello.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On 9/11/2015 5:01 AM, Simon Horman wrote:
+Add r8a7795 to the IRQC DT binding document.
 
-> Add a helper to allow ethernet drivers to limit the speed of a phy
-> (that they are attached to).
->
-> This mainly involves factoring out the business-end of
-> of_set_phy_supported() and exporting a new symbol.
->
-> This code seems to be open coded in several places, in several different
-> variants.
->
-> This code is envisaged this will be used in situations where setting
-> the "max-speed" property is not appropriate, e.g. because the maximum
-> speed is not a property of the phy hardware.
->
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->
-> ---
->
-> v2
-> * First post
-> ---
->   drivers/net/phy/phy_device.c | 52 ++++++++++++++++++++++++++++----------------
->   include/linux/phy.h          |  1 +
->   2 files changed, 34 insertions(+), 19 deletions(-)
->
-> diff --git a/drivers/net/phy/phy_device.c b/drivers/net/phy/phy_device.c
-> index c0f211127274..d9a020095972 100644
-> --- a/drivers/net/phy/phy_device.c
-> +++ b/drivers/net/phy/phy_device.c
-> @@ -1205,6 +1205,37 @@ static int gen10g_resume(struct phy_device *phydev)
->   	return 0;
->   }
->
-> +static void __set_phy_supported(struct phy_device *phydev, u32 max_speed)
-> +{
-> +	if (!IS_ENABLED(CONFIG_OF_MDIO))
-> +		return;
-> +
-> +	/* The default values for phydev->supported are provided by the PHY
-> +	 * driver "features" member, we want to reset to sane defaults fist
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-    s/fist/first/.
+ Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt |    1 +
+ 1 file changed, 1 insertion(+)
 
-> +	 * before supporting higher speeds.
-> +	 */
-> +	phydev->supported &= PHY_DEFAULT_FEATURES;
-> +
-> +	switch (max_speed) {
-> +	default:
-> +		return;
-> +
-
-    I don't think empty line is needed here.
-
-> +	case SPEED_1000:
-> +		phydev->supported |= PHY_1000BT_FEATURES;
-
-    Need a comment like /* Fall thru */.
-
-> +	case SPEED_100:
-> +		phydev->supported |= PHY_100BT_FEATURES;
-
-    And here.
-
-> +	case SPEED_10:
-> +		phydev->supported |= PHY_10BT_FEATURES;
-> +	}
-> +}
-[...]
-
-MBR, Sergei
-
+--- 0001/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt
++++ work/Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt	2015-09-15 20:06:50.390513000 +0900
+@@ -10,6 +10,7 @@ Required properties:
+     - "renesas,irqc-r8a7792" (R-Car V2H)
+     - "renesas,irqc-r8a7793" (R-Car M2-N)
+     - "renesas,irqc-r8a7794" (R-Car E2)
++    - "renesas,irqc-r8a7795" (R-Car H3)
+ - #interrupt-cells: has to be <2>: an interrupt index and flags, as defined in
+   interrupts.txt in this directory
+ - clocks: Must contain a reference to the functional clock.
