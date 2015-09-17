@@ -1,50 +1,34 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 22:51:08 +0000
-Subject: [PATCH 21/22] drm: rcar-du: lvds: Rename PLLEN bit to PLLON
-Message-Id: <1442184669-30990-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Sep 2015 08:59:36 +0000
+Subject: [PATCH 20/21] ARM: shmobile: remove Makefile.boot
+Message-Id: <fc22a4d484fafb373c51bb6792bb5a4ef4caae71.1442478814.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1442478814.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442478814.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The bit is named PLLON in the datasheet, rename it.
+Now that the only multiplatform boot is supported for all
+shmobile platforms Makefile.boot may be removed.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This seems correct to me given:
+* Setting MACHINE to no value in arch/arm/Makefile
+  if CONFIG_ARCH_MULTIPLATFORM is set
+* Not including Makefile.boot in arch/arm/boot/Makefile
+  if MACHINE has no value
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c | 2 +-
- drivers/gpu/drm/rcar-du/rcar_lvds_regs.h  | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/Makefile.boot | 0
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/Makefile.boot
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
-index e044a17a2a2f..02acebadf7d6 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdsenc.c
-@@ -102,7 +102,7 @@ static int rcar_du_lvdsenc_start(struct rcar_du_lvdsenc *lvds,
- 	/* Turn the PLL on, wait for the startup delay, and turn the output
- 	 * on.
- 	 */
--	lvdcr0 |= LVDCR0_PLLEN;
-+	lvdcr0 |= LVDCR0_PLLON;
- 	rcar_lvds_write(lvds, LVDCR0, lvdcr0);
- 
- 	usleep_range(100, 150);
-diff --git a/drivers/gpu/drm/rcar-du/rcar_lvds_regs.h b/drivers/gpu/drm/rcar-du/rcar_lvds_regs.h
-index 77cf9289ab65..b1eafd097a79 100644
---- a/drivers/gpu/drm/rcar-du/rcar_lvds_regs.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_lvds_regs.h
-@@ -18,7 +18,7 @@
- #define LVDCR0_DMD			(1 << 12)
- #define LVDCR0_LVMD_MASK		(0xf << 8)
- #define LVDCR0_LVMD_SHIFT		8
--#define LVDCR0_PLLEN			(1 << 4)
-+#define LVDCR0_PLLON			(1 << 4)
- #define LVDCR0_BEN			(1 << 2)
- #define LVDCR0_LVEN			(1 << 1)
- #define LVDCR0_LVRES			(1 << 0)
+diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
+deleted file mode 100644
+index e69de29bb2d1..000000000000
 -- 
-2.4.6
+2.1.4
 
