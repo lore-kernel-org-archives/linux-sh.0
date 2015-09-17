@@ -1,35 +1,44 @@
-From: hamzahfrq.sub@gmail.com
-Date: Tue, 29 Sep 2015 20:44:46 +0000
-Subject: [PATCH v3 4/6] dma: rcar-dma: use result of updated get_residue in tx_status
-Message-Id: <1443559488-2416-5-git-send-email-hamzahfrq.sub@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 17 Sep 2015 09:00:28 +0000
+Subject: [GIT PULL] SH Drivers Updates for v4.3
+Message-Id: <cover.1442480237.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms+renesas@verge.net.au>
 
-From: Muhammad Hamza Farooq <mfarooq@visteon.com>
+Hi Linus,
 
-Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
----
- drivers/dma/sh/rcar-dmac.c | 4 ++++
- 1 file changed, 4 insertions(+)
+Please consider these SH drivers updates for v4.3.
 
-diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
-index 6c806d0..0b5a367 100644
---- a/drivers/dma/sh/rcar-dmac.c
-+++ b/drivers/dma/sh/rcar-dmac.c
-@@ -1258,6 +1258,10 @@ static enum dma_status rcar_dmac_tx_status(struct dma_chan *chan,
- 	residue = rcar_dmac_chan_get_residue(rchan, cookie);
- 	spin_unlock_irqrestore(&rchan->lock, flags);
- 
-+	/* if there's no residue, the cookie is complete */
-+	if (!residue)
-+		return DMA_COMPLETE;
-+
- 	dma_set_residue(txstate, residue);
- 
- 	return status;
--- 
-1.9.1
+I am sending this change after v4.3-rc1 has been released
+as it depends on SoC changes which are present in that rc release.
 
+
+The following changes since commit 6ff33f3902c3b1c5d0db6b1e2c70b6d76fba357f:
+
+  Linux 4.3-rc1 (2015-09-12 16:35:56 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-sh-drivers-for-v4.3
+
+for you to fetch changes up to cbc41d0a761bffb3166a413a3c77100a737c0cd7:
+
+  drivers: sh: Disable PM runtime for multi-platform ARM with genpd (2015-09-14 10:20:23 +0900)
+
+----------------------------------------------------------------
+SH Drivers Updates for v4.3
+
+* Disable PM runtime for multi-platform ARM with genpd
+* Disable legacy default PM Domain on emev2
+
+----------------------------------------------------------------
+Geert Uytterhoeven (2):
+      drivers: sh: Disable legacy default PM Domain on emev2
+      drivers: sh: Disable PM runtime for multi-platform ARM with genpd
+
+ drivers/sh/pm_runtime.c | 19 +++++--------------
+ 1 file changed, 5 insertions(+), 14 deletions(-)
