@@ -1,154 +1,60 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 06:03:22 +0000
-Subject: [PATCH/RFC net-next v3 3/4] ravb: Document binding for r8a7795 SoC
-Message-Id: <1442556203-657-4-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 18 Sep 2015 07:27:11 +0000
+Subject: Re: [PATCH/RFC net-next v3 3/4] ravb: Document binding for r8a7795 SoC
+Message-Id: <CAMuHMdUFMq1szvY=8twhzcM36zyBjDF1fnkNd2kw+s=qxXYVmg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1442556203-657-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1442556203-657-1-git-send-email-horms+renesas@verge.net.au>
+	<1442556203-657-4-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1442556203-657-4-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Florian Fainelli <f.fainelli@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>
+To: Simon Horman <horms+renesas@verge.net.au>
+Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Florian Fainelli <f.fainelli@gmail.com>, Magnus Damm <magnus.damm@gmail.com>
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+On Fri, Sep 18, 2015 at 8:03 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>
+> This patch updates the ravb binding to support the r8a7795 SoC by:
+> - Adding a compat string for the new hardware
+> - Adding 25 named interrupts to binding for the new SoC;
+>   older SoCs continue to use a single multiplexed interrupt
+>
+> The example is also updated to reflect the r8a7795 as this is the
+> more complex case.
+>
+> Based on work by Kazuya Mizuguchi and others.
+>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-This patch updates the ravb binding to support the r8a7795 SoC by:
-- Adding a compat string for the new hardware
-- Adding 25 named interrupts to binding for the new SoC;
-  older SoCs continue to use a single multiplexed interrupt
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-The example is also updated to reflect the r8a7795 as this is the
-more complex case.
+Modulo the minor nit below...
 
-Based on work by Kazuya Mizuguchi and others.
+> --- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
+> +++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> @@ -18,6 +22,12 @@ Required properties:
+>  Optional properties:
+>  - interrupt-parent: the phandle for the interrupt controller that services
+>                     interrupts for this device.
+> +- interrupt-names: A list of interrupt names.
+> +                  For the R8A7795 SoC this property is mandatory;
+> +                  it should include one entry per channel, named "ch%u",
+> +                  where %u is the channel number ranging from 0 to 24.
+> +                  For other SoCs this property is optional; if present
+> +                  is should contain "mux" for a single muxed interrupt.
 
----
-v2
-* First post; broken out of a driver update patch
-* As discussed with Geert Uytterhoeven and Sergei Shtylyov
-  - Binding: Make all interrupts mandatory as named-interrupts of
-    the form ch%u
+it
 
-v3
-* A suggested by Geert Uytterhoeven
-  - Reword description of interrupts and interrupt-names to
-    make things clearer. It is now based to some extent on
-    spi-rspi.txt and renesas,usb-dmac.txt.
-* As suggested by Sergei Shtylyov
-  - Drop phy-reset-gpio from example
-* Added power-domains to example
----
- .../devicetree/bindings/net/renesas,ravb.txt       | 69 +++++++++++++++++++---
- 1 file changed, 62 insertions(+), 7 deletions(-)
+Gr{oetje,eeting}s,
 
-diff --git a/Documentation/devicetree/bindings/net/renesas,ravb.txt b/Documentation/devicetree/bindings/net/renesas,ravb.txt
-index 1fd8831437bf..ae454d9df136 100644
---- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
-+++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
-@@ -6,8 +6,12 @@ interface contains.
- Required properties:
- - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
- 	      "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
-+	      "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
- - reg: offset and length of (1) the register block and (2) the stream buffer.
--- interrupts: interrupt specifier for the sole interrupt.
-+- interrupts: A list of interrupt-specifiers, one for each entry in
-+	      interrupt-names.
-+	      If interrupt-names is not present, an interrupt specifier
-+	      for a single muxed interrupt.
- - phy-mode: see ethernet.txt file in the same directory.
- - phy-handle: see ethernet.txt file in the same directory.
- - #address-cells: number of address cells for the MDIO bus, must be equal to 1.
-@@ -18,6 +22,12 @@ Required properties:
- Optional properties:
- - interrupt-parent: the phandle for the interrupt controller that services
- 		    interrupts for this device.
-+- interrupt-names: A list of interrupt names.
-+		   For the R8A7795 SoC this property is mandatory;
-+		   it should include one entry per channel, named "ch%u",
-+		   where %u is the channel number ranging from 0 to 24.
-+		   For other SoCs this property is optional; if present
-+		   is should contain "mux" for a single muxed interrupt.
- - pinctrl-names: pin configuration state name ("default").
- - renesas,no-ether-link: boolean, specify when a board does not provide a proper
- 			 AVB_LINK signal.
-@@ -27,13 +37,46 @@ Optional properties:
- Example:
- 
- 	ethernet@e6800000 {
--		compatible = "renesas,etheravb-r8a7790";
--		reg = <0 0xe6800000 0 0x800>, <0 0xee0e8000 0 0x4000>;
-+		compatible = "renesas,etheravb-r8a7795";
-+		reg = <0 0xe6800000 0 0x800>, <0 0xe6a00000 0 0x10000>;
- 		interrupt-parent = <&gic>;
--		interrupts = <0 163 IRQ_TYPE_LEVEL_HIGH>;
--		clocks = <&mstp8_clks R8A7790_CLK_ETHERAVB>;
--		phy-mode = "rmii";
-+		interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>,
-+			     <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
-+		interrupt-names = "ch0", "ch1", "ch2", "ch3",
-+				  "ch4", "ch5", "ch6", "ch7",
-+				  "ch8", "ch9", "ch10", "ch11",
-+				  "ch12", "ch13", "ch14", "ch15",
-+				  "ch16", "ch17", "ch18", "ch19",
-+				  "ch20", "ch21", "ch22", "ch23",
-+				  "ch24";
-+		clocks = <&mstp8_clks R8A7795_CLK_ETHERAVB>;
-+		power-domains = <&cpg_clocks>;
-+		phy-mode = "rgmii-id";
- 		phy-handle = <&phy0>;
-+
- 		pinctrl-0 = <&ether_pins>;
- 		pinctrl-names = "default";
- 		renesas,no-ether-link;
-@@ -41,8 +84,20 @@ Example:
- 		#size-cells = <0>;
- 
- 		phy0: ethernet-phy@0 {
-+			rxc-skew-ps = <900>;
-+			rxdv-skew-ps = <0>;
-+			rxd0-skew-ps = <0>;
-+			rxd1-skew-ps = <0>;
-+			rxd2-skew-ps = <0>;
-+			rxd3-skew-ps = <0>;
-+			txc-skew-ps = <900>;
-+			txen-skew-ps = <0>;
-+			txd0-skew-ps = <0>;
-+			txd1-skew-ps = <0>;
-+			txd2-skew-ps = <0>;
-+			txd3-skew-ps = <0>;
- 			reg = <0>;
- 			interrupt-parent = <&gpio2>;
--			interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
-+			interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
- 		};
- 	};
--- 
-2.1.4
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
