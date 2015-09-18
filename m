@@ -1,33 +1,37 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 10 Sep 2015 12:24:44 +0000
-Subject: Re: [PATCH/RFC 08/12] ARM: shmobile: koelsch dts: Add overlay for SCIFB1 on EXIO A
-Message-Id: <CAMuHMdWOB2BeWB4MpxBksg_Sp5Vic0DhQk4dc1aGF9zTeQbo9A@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Sep 2015 00:47:18 +0000
+Subject: [PATCH 16/19] ARM: shmobile: r8a7778: tidyup SSI resource region
+Message-Id: <23640ff2eff0dec2016dd097b1b04c817a4ffd3f.1442536920.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1431452235-11692-1-git-send-email-geert+renesas@glider.be>
-	<1431452235-11692-9-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1431452235-11692-9-git-send-email-geert+renesas@glider.be>
+References: <cover.1442536920.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Pantelis Antoniou <pantelis.antoniou@konsulko.com>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, May 12, 2015 at 7:37 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> Provide access to SCIFB1 on EXIO Connector A.
->
-> FIXME SCIFB1 TX works, RX doesn't.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-FTR, fixed by "[PATCH] pinctrl: sh-pfc: r8a7791/r8a7793: Correct SCIFB1_B SCK
-MOD_SEL value" (http://thread.gmane.org/gmane.linux.kernel.gpio/10523).
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 4b1fa9f42ad5..4f8e07811746 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -239,7 +239,7 @@
+ 		#sound-dai-cells = <1>;
+ 		compatible = "renesas,rcar_sound-r8a7778", "renesas,rcar_sound-gen1";
+ 		reg =	<0xffd90000 0x1000>,	/* SRU */
+-			<0xffd91000 0x1240>,	/* SSI */
++			<0xffd91000 0x240>,	/* SSI */
+ 			<0xfffe0000 0x24>;	/* ADG */
+ 		clocks = <&mstp3_clks R8A7778_CLK_SSI8>,
+ 			<&mstp3_clks R8A7778_CLK_SSI7>,
+-- 
+2.1.4
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
