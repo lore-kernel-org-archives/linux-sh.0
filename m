@@ -1,133 +1,65 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 17 Sep 2015 09:54:03 +0000
-Subject: [PATCH v2 04/11] clocksource: sh_cmt: Support separate R-Car Gen2 CMT0/1
-Message-Id: <20150917095403.5369.97011.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 18 Sep 2015 11:08:32 +0000
+Subject: [PATCH v4 09/10] serial: sh-sci: Pause DMA engine and get DMA status again
+Message-Id: <1442574513-20648-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150917095325.5369.73893.sendpatchset@little-apple>
-In-Reply-To: <20150917095325.5369.73893.sendpatchset@little-apple>
+References: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: devicetree@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Muhammad Hamza Farooq <mfarooq@visteon.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Muhammad Hamza Farooq <mfarooq@visteon.com>
 
-Add support for the new R-Car Gen2 CMT0 and CMT1 bindings. Support
-for the old DT binding is still kept around, however devices using
-such binding will be treated as a low-feature CMT0 device. If users
-want to make use of CMT1-specific features then they need to update
-their DTBs. No special CMT1-specific features are however implemented
-by his patch, only DT bindings are redone as groundwork for future
-feature patches.
+Occasionally, DMA transaction completes _after_ DMA engine is stopped.
+Verify if the transaction has not finished before forcing the engine to
+stop and push the data
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+v4:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
- Changes since V1:
- - Added Acked-by and Tested-by from Geert
- - Added Acked-by from Laurent
-
- drivers/clocksource/sh_cmt.c |   38 +++++++++++++++++++++++++++-----------
- 1 file changed, 27 insertions(+), 11 deletions(-)
-
---- 0003/drivers/clocksource/sh_cmt.c
-+++ work/drivers/clocksource/sh_cmt.c	2015-09-17 17:28:33.380513000 +0900
-@@ -39,16 +39,16 @@ struct sh_cmt_device;
-  * SoC but also on the particular instance. The following table lists the main
-  * characteristics of those flavours.
-  *
-- *			16B	32B	32B-F	48B	48B-2
-+ *			16B	32B	32B-F	48B	R-Car Gen2
-  * -----------------------------------------------------------------------------
-  * Channels		2	1/4	1	6	2/8
-  * Control Width	16	16	16	16	32
-  * Counter Width	16	32	32	32/48	32/48
-  * Shared Start/Stop	Y	Y	Y	Y	N
-  *
-- * The 48-bit gen2 version has a per-channel start/stop register located in the
-- * channel registers block. All other versions have a shared start/stop register
-- * located in the global space.
-+ * The r8a73a4 / R-Car Gen2 version has a per-channel start/stop register
-+ * located in the channel registers block. All other versions have a shared
-+ * start/stop register located in the global space.
-  *
-  * Channels are indexed from 0 to N-1 in the documentation. The channel index
-  * infers the start/stop bit position in the control register and the channel
-@@ -68,7 +68,8 @@ enum sh_cmt_model {
- 	SH_CMT_32BIT,
- 	SH_CMT_32BIT_FAST,
- 	SH_CMT_48BIT,
--	SH_CMT_48BIT_GEN2,
-+	SH_CMT0_RCAR_GEN2,
-+	SH_CMT1_RCAR_GEN2,
- };
- 
- struct sh_cmt_info {
-@@ -223,8 +224,20 @@ static const struct sh_cmt_info sh_cmt_i
- 		.read_count = sh_cmt_read32,
- 		.write_count = sh_cmt_write32,
- 	},
--	[SH_CMT_48BIT_GEN2] = {
--		.model = SH_CMT_48BIT_GEN2,
-+	[SH_CMT0_RCAR_GEN2] = {
-+		.model = SH_CMT0_RCAR_GEN2,
-+		.channels_mask = 0x60,
-+		.width = 32,
-+		.overflow_bit = SH_CMT32_CMCSR_CMF,
-+		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
-+		.read_control = sh_cmt_read32,
-+		.write_control = sh_cmt_write32,
-+		.read_count = sh_cmt_read32,
-+		.write_count = sh_cmt_write32,
-+	},
-+	[SH_CMT1_RCAR_GEN2] = {
-+		.model = SH_CMT1_RCAR_GEN2,
-+		.channels_mask = 0xff,
- 		.width = 32,
- 		.overflow_bit = SH_CMT32_CMCSR_CMF,
- 		.clear_bits = ~(SH_CMT32_CMCSR_CMF | SH_CMT32_CMCSR_OVF),
-@@ -867,6 +880,7 @@ static int sh_cmt_setup_channel(struct s
- 	ch->cmt = cmt;
- 	ch->index = index;
- 	ch->hwidx = hwidx;
-+	ch->timer_bit = hwidx;
- 
- 	/*
- 	 * Compute the address of the channel control register block. For the
-@@ -888,9 +902,11 @@ static int sh_cmt_setup_channel(struct s
- 		 */
- 		ch->ioctrl = cmt->mapbase + 0x40;
- 		break;
--	case SH_CMT_48BIT_GEN2:
-+	case SH_CMT0_RCAR_GEN2:
-+	case SH_CMT1_RCAR_GEN2:
- 		ch->iostart = cmt->mapbase + ch->hwidx * 0x100;
- 		ch->ioctrl = ch->iostart + 0x10;
-+		ch->timer_bit = 0;
- 		break;
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 9406fe227bc76c96..b1d1ce1986e6c064 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1277,6 +1277,7 @@ static bool filter(struct dma_chan *chan, void *slave)
+ static void rx_timer_fn(unsigned long arg)
+ {
+ 	struct sci_port *s = (struct sci_port *)arg;
++	struct dma_chan *chan = s->chan_rx;
+ 	struct uart_port *port = &s->port;
+ 	struct dma_tx_state state;
+ 	enum dma_status status;
+@@ -1305,6 +1306,21 @@ static void rx_timer_fn(unsigned long arg)
+ 		return;
  	}
  
-@@ -902,8 +918,6 @@ static int sh_cmt_setup_channel(struct s
- 	ch->match_value = ch->max_match_value;
- 	raw_spin_lock_init(&ch->lock);
- 
--	ch->timer_bit = cmt->info->model = SH_CMT_48BIT_GEN2 ? 0 : ch->hwidx;
--
- 	ret = sh_cmt_register(ch, dev_name(&cmt->pdev->dev),
- 			      clockevent, clocksource);
- 	if (ret) {
-@@ -946,7 +960,9 @@ static const struct of_device_id sh_cmt_
- 	{ .compatible = "renesas,cmt-32", .data = &sh_cmt_info[SH_CMT_32BIT] },
- 	{ .compatible = "renesas,cmt-32-fast", .data = &sh_cmt_info[SH_CMT_32BIT_FAST] },
- 	{ .compatible = "renesas,cmt-48", .data = &sh_cmt_info[SH_CMT_48BIT] },
--	{ .compatible = "renesas,cmt-48-gen2", .data = &sh_cmt_info[SH_CMT_48BIT_GEN2] },
-+	{ .compatible = "renesas,cmt-48-gen2", .data = &sh_cmt_info[SH_CMT0_RCAR_GEN2] },
-+	{ .compatible = "renesas,cmt0-rcar-gen2", .data = &sh_cmt_info[SH_CMT0_RCAR_GEN2] },
-+	{ .compatible = "renesas,cmt1-rcar-gen2", .data = &sh_cmt_info[SH_CMT1_RCAR_GEN2] },
- 	{ }
- };
- MODULE_DEVICE_TABLE(of, sh_cmt_of_table);
++	dmaengine_pause(chan);
++
++	/*
++	 * sometimes DMA transfer doesn't stop even if it is stopped and
++	 * data keeps on coming until transaction is complete so check
++	 * for DMA_COMPLETE again
++	 * Let packet complete handler take care of the packet
++	 */
++	status = dmaengine_tx_status(s->chan_rx, s->active_rx, &state);
++	if (status = DMA_COMPLETE) {
++		spin_unlock_irqrestore(&port->lock, flags);
++		dev_dbg(port->dev, "Transaction complete after DMA engine was stopped");
++		return;
++	}
++
+ 	/* Handle incomplete DMA receive */
+ 	dmaengine_terminate_all(s->chan_rx);
+ 	read = sg_dma_len(&s->sg_rx[active]) - state.residue;
+-- 
+1.9.1
+
