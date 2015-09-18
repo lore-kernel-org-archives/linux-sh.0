@@ -1,51 +1,41 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 03 Sep 2015 10:32:54 +0000
-Subject: [PATCH v9 03/07][RFC] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
-Message-Id: <20150903103254.26791.81175.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Sep 2015 00:47:20 +0000
+Subject: [PATCH 18/19] ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain for sound
+Message-Id: <ff7273f079953f335cc5a9b3d7b0e7afc586659f.1442536920.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1442536920.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add dummy nodes for the 3 DMA controllers.
-This allows to start describing DMA channels for DMA slaves now.
+484adb005886 ("ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain")
+added CPG/MSTP clock-cells domain support, but it was missing sound
+support. This patch adds it.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[horms: Updated commit id referred to in changelog]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7790.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
- Changes from V8: (Magnus Damm <damm+renesas@opensource.se>)
- - Updated to remove fuzz
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index ae5eb281d43a..e07ae5d45e19 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1627,6 +1627,7 @@
+ 				"mix.0", "mix.1",
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
++		power-domains = <&cpg_clocks>;
  
- Changes from V7: (Magnus Damm <damm+renesas@opensource.se>)
- - Changed order not to depend on SCIF patch(es)
+ 		status = "disabled";
  
- Based on:
-  [PATCH 2/6] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
+-- 
+2.1.4
 
- arch/arm64/boot/dts/renesas/r8a7795.dtsi |   12 ++++++++++++
- 1 file changed, 12 insertions(+)
-
---- 0003/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ work/arch/arm64/boot/dts/renesas/r8a7795.dtsi	2015-09-03 18:11:20.672366518 +0900
-@@ -243,5 +243,17 @@
- 				#power-domain-cells = <0>;
- 			};
- 		};
-+
-+		dmac0: dma-controller@e6700000 {
-+			/* Empty node for now */
-+		};
-+
-+		dmac1: dma-controller@e7300000 {
-+			/* Empty node for now */
-+		};
-+
-+		dmac2: dma-controller@e7310000 {
-+			/* Empty node for now */
-+		};
- 	};
- };
