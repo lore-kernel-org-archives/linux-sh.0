@@ -1,29 +1,51 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 18 Sep 2015 01:59:13 +0000
-Subject: [PATCH 0/1 v3] clk: CS2000 support
-Message-Id: <87fv2c1ogc.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 18 Sep 2015 11:08:28 +0000
+Subject: [PATCH v4 05/10] serial: sh-sci: Remove timer on shutdown of port
+Message-Id: <1442574513-20648-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Muhammad Hamza Farooq <mfarooq@visteon.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Aleksandar Mitev <amitev@visteon.com>, Geert Uytterhoeven <geert+renesas@glider.be>
 
+From: Aleksandar Mitev <amitev@visteon.com>
 
-Hi Simon
+This prevents DMA timer timeout that can trigger after the port has
+been closed.
 
-H3 Salvator-X need to use CS2000 as sound clock
-This patch is already posted, but not yet merged
-http://thread.gmane.org/gmane.linux.kernel.clk/354
-
-Kuninori Morimoto (1):
-      clk: add CS2000 Fractional-N driver
-
- Documentation/devicetree/bindings/clock/cs2000-cp.txt |  24 +++++
- drivers/clk/Kconfig                                   |   6 ++
- drivers/clk/Makefile                                  |   1 +
- drivers/clk/clk-cs2000-cp.c                           | 530 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 561 insertions(+)
-
-Best regards
+Signed-off-by: Aleksandar Mitev <amitev@visteon.com>
+[geert: Move del_timer_sync() outside spinlock to avoid circular locking
+        dependency between rx_timer_fn() and del_timer_sync()]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Kuninori Morimoto
+v4:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index ac9ce8f1ff799a48..36a11110acf4cab5 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1810,6 +1810,14 @@ static void sci_shutdown(struct uart_port *port)
+ 	sci_stop_tx(port);
+ 	spin_unlock_irqrestore(&port->lock, flags);
+ 
++#ifdef CONFIG_SERIAL_SH_SCI_DMA
++	if (s->chan_rx) {
++		dev_dbg(port->dev, "%s(%d) deleting rx_timer\n", __func__,
++			port->line);
++		del_timer_sync(&s->rx_timer);
++	}
++#endif
++
+ 	sci_free_dma(port);
+ 	sci_free_irq(s);
+ }
+-- 
+1.9.1
+
