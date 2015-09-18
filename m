@@ -1,29 +1,137 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 25 Sep 2015 16:07:27 +0000
-Subject: Re: [PATCH 0/5] pinctrl: sh-pfc: r8a7795: (H)SCIF Updates
-Message-Id: <CACRpkdZTp0zCowusWNPXGLD=CstcbH-pGOnoSpg54n4xdSPMeg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Sep 2015 06:03:20 +0000
+Subject: [PATCH/RFC net-next v3 1/4] phylib: Add phy_set_max_speed helper
+Message-Id: <1442556203-657-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1440612144-16877-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1440612144-16877-1-git-send-email-geert+renesas@glider.be>
+References: <1442556203-657-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1442556203-657-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Takeshi Kihara <takeshi.kihara.df@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Florian Fainelli <f.fainelli@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>
 
-On Wed, Aug 26, 2015 at 11:02 AM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+Add a helper to allow ethernet drivers to limit the speed of a phy
+(that they are attached to).
 
-> This series contains (H)SCIF-related updates for the R-Car H3 (r8a7795)
-> pin function controller driver:
->   - Fixes and updates for SCIF pindata (incl. a DTS update),
->   - Addition of HSCIF support.
->
-> This is against "[PATCH] pinctrl: sh-pfc: Add R8A7795 PFC support" and
-> the current state (sic) of the Salvator-X DTS.
+This mainly involves factoring out the business-end of
+of_set_phy_supported() and exporting a new symbol.
 
-The series:
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+This code seems to be open coded in several places, in several different
+variants.
 
-Yours,
-Linus Walleij
+It is is envisaged that this will be used in situations where setting the
+"max-speed" property in DT is not appropriate, e.g. because the maximum
+speed is not a property of the phy hardware.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+v2
+* First post
+
+v3
+* As suggested by Florian Fainelli
+  - Do not check for !IS_ENABLED(CONFIG_OF_MDIO) in __set_phy_supported.
+    This is already done in of_set_phy_supported() and is not relevant to
+    phy_set_max_speed)
+  - Return -ENOTSUPP if 'max_speed' is not an unknown value
+* As suggested by Sergei Shtylyov
+  - White-space and comment enhancements.
+---
+ drivers/net/phy/phy_device.c | 59 ++++++++++++++++++++++++++++++--------------
+ include/linux/phy.h          |  1 +
+ 2 files changed, 41 insertions(+), 19 deletions(-)
+
+diff --git a/drivers/net/phy/phy_device.c b/drivers/net/phy/phy_device.c
+index c0f211127274..a4d40c5d984f 100644
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -1205,6 +1205,44 @@ static int gen10g_resume(struct phy_device *phydev)
+ 	return 0;
+ }
+ 
++static int __set_phy_supported(struct phy_device *phydev, u32 max_speed)
++{
++	/* The default values for phydev->supported are provided by the PHY
++	 * driver "features" member, we want to reset to sane defaults first
++	 * before supporting higher speeds.
++	 */
++	phydev->supported &= PHY_DEFAULT_FEATURES;
++
++	switch (max_speed) {
++	default:
++		return -ENOTSUPP;
++	case SPEED_1000:
++		phydev->supported |= PHY_1000BT_FEATURES;
++		/* fall through */
++	case SPEED_100:
++		phydev->supported |= PHY_100BT_FEATURES;
++		/* fall through */
++	case SPEED_10:
++		phydev->supported |= PHY_10BT_FEATURES;
++	}
++
++	return 0;
++}
++
++int phy_set_max_speed(struct phy_device *phydev, u32 max_speed)
++{
++	int err;
++
++	err = __set_phy_supported(phydev, max_speed);
++	if (err)
++		return err;
++
++	phydev->advertising = phydev->supported;
++
++	return 0;
++}
++EXPORT_SYMBOL(phy_set_max_speed);
++
+ static void of_set_phy_supported(struct phy_device *phydev)
+ {
+ 	struct device_node *node = phydev->dev.of_node;
+@@ -1216,25 +1254,8 @@ static void of_set_phy_supported(struct phy_device *phydev)
+ 	if (!node)
+ 		return;
+ 
+-	if (!of_property_read_u32(node, "max-speed", &max_speed)) {
+-		/* The default values for phydev->supported are provided by the PHY
+-		 * driver "features" member, we want to reset to sane defaults fist
+-		 * before supporting higher speeds.
+-		 */
+-		phydev->supported &= PHY_DEFAULT_FEATURES;
+-
+-		switch (max_speed) {
+-		default:
+-			return;
+-
+-		case SPEED_1000:
+-			phydev->supported |= PHY_1000BT_FEATURES;
+-		case SPEED_100:
+-			phydev->supported |= PHY_100BT_FEATURES;
+-		case SPEED_10:
+-			phydev->supported |= PHY_10BT_FEATURES;
+-		}
+-	}
++	if (!of_property_read_u32(node, "max-speed", &max_speed))
++		__set_phy_supported(phydev, max_speed);
+ }
+ 
+ /**
+diff --git a/include/linux/phy.h b/include/linux/phy.h
+index 962387a192f1..66f8b718396a 100644
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -794,6 +794,7 @@ int phy_mii_ioctl(struct phy_device *phydev, struct ifreq *ifr, int cmd);
+ int phy_start_interrupts(struct phy_device *phydev);
+ void phy_print_status(struct phy_device *phydev);
+ void phy_device_free(struct phy_device *phydev);
++int phy_set_max_speed(struct phy_device *phydev, u32 max_speed);
+ 
+ int phy_register_fixup(const char *bus_id, u32 phy_uid, u32 phy_uid_mask,
+ 		       int (*run)(struct phy_device *));
+-- 
+2.1.4
+
