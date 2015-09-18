@@ -1,67 +1,130 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 17 Sep 2015 06:32:40 +0000
-Subject: [PATCH v3 00/09] ARM: shmobile: APMU DT support via SMP Enable method V3
-Message-Id: <20150917063240.26016.93772.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Sep 2015 00:47:05 +0000
+Subject: [PATCH 03/19] ARM: shmobile: r8a7794: add GPIO DT support
+Message-Id: <e8f5de3bea9e01fd1390d64bc915a11df919b3fe.1442536920.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1442536920.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: mark.rutland@arm.com, devicetree@vger.kernel.org, lorenzo.pieralisi@arm.com, keita.kobayashi.ym@renesas.com, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: APMU DT support via SMP Enable method V3
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-[PATCH v3 01/09] devicetree: bindings: Renesas APMU and SMP Enable method
-[PATCH v3 02/09] ARM: shmobile: Add APMU DT support via Enable method
-[PATCH v3 03/09] ARM: shmobile: Add APMU nodes to r8a7793 DTSI
-[PATCH v3 04/09] ARM: shmobile: r8a7793 boot address update
-[PATCH v3 05/09] ARM: shmobile: Add APMU nodes to r8a7790 DTSI
-[PATCH v3 06/09] ARM: shmobile: Add APMU nodes to r8a7791 DTSI
-[PATCH v3 07/09] ARM: shmobile: Add function to prioritize DT SMP
-[PATCH v3 08/09] ARM: shmobile: Prioritize r8a7790 DT APMU support
-[PATCH v3 09/09] ARM: shmobile: Prioritize r8a7791 DT APMU support
+Describe GPIO[0-6] controllers in the R8A7794 device tree.
 
-These patches add DT support for the APMU hardware commonly found in
-Renesas R-Car Gen2 SoCs. Without these patches the APMU gets configured
-through data expressed in C, and with this series applied it is possible
-to describe the APMU configuration in DT and let the enable method point
-out that the APMU should be used.
+Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
 
-Patch 1 and 2 are Documenting and adding DT support to the APMU driver
-together with enabling use of the enable-method way to describe that
-the APMU hardware is needed for SMP operation.
-
-Patch 3 and 4 add r8a7793 SMP support using this the new APMU DT interface.
-
-Patch 5 and 6 are related to r8a7790/r8a7791 support that get a DTSI update
-to describe the APMU hardware. To avoid breaking support for older DTBs out
-in the wild these patches keep the older existing C code APMU configuration
-as-is. Patch 7-9 make sure that during run-time, if the APMU is installed
-via the DT enable-method then it will not be overriden by older non-DT
-configuration.
-
-I suggest making APMU DT configuration mandatory for SMP operation on
-newer SoCs and that we keep the old APMU support code in place for a
-good number of kernel releases or until we can identify a couple of major
-reasons good enough to force a DTB update on the end users.
-
-In the future r8a7794 support may be added by using code similar to
-patch 3 and 4 - without any C-based SMP code and fallback.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7794.dtsi | 91 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 91 insertions(+)
 
- Written against renesas-drivers-2015-09-15-v4.3-rc1
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index b6db773b9e55..e9fab31e0709 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -50,6 +50,97 @@
+ 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
  
- Documentation/devicetree/bindings/arm/cpus.txt           |    1 
- Documentation/devicetree/bindings/power/renesas,apmu.txt |   31 ++++
- arch/arm/boot/dts/r8a7790.dtsi                           |   13 +
- arch/arm/boot/dts/r8a7791.dtsi                           |    7 +
- arch/arm/boot/dts/r8a7793.dtsi                           |   14 ++
- arch/arm/mach-shmobile/common.h                          |    1 
- arch/arm/mach-shmobile/platsmp-apmu.c                    |   92 +++++++++++++-
- arch/arm/mach-shmobile/platsmp.c                         |    7 +
- arch/arm/mach-shmobile/pm-rcar-gen2.c                    |    5 
- arch/arm/mach-shmobile/setup-r8a7790.c                   |    1 
- arch/arm/mach-shmobile/setup-r8a7791.c                   |    1 
- 11 files changed, 168 insertions(+), 5 deletions(-)
++	gpio0: gpio@e6050000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6050000 0 0x50>;
++		interrupts = <0 4 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO0>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio1: gpio@e6051000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6051000 0 0x50>;
++		interrupts = <0 5 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 26>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO1>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio2: gpio@e6052000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6052000 0 0x50>;
++		interrupts = <0 6 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO2>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio3: gpio@e6053000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6053000 0 0x50>;
++		interrupts = <0 7 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO3>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio4: gpio@e6054000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6054000 0 0x50>;
++		interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO4>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio5: gpio@e6055000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6055000 0 0x50>;
++		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 160 28>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO5>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio6: gpio@e6055400 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6055400 0 0x50>;
++		interrupts = <0 10 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 192 26>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO6>;
++		power-domains = <&cpg_clocks>;
++	};
++
+ 	cmt0: timer@ffca0000 {
+ 		compatible = "renesas,cmt-48-gen2";
+ 		reg = <0 0xffca0000 0 0x1004>;
+-- 
+2.1.4
+
