@@ -1,63 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 00:47:04 +0000
-Subject: [PATCH 02/19] ARM: shmobile: r8a7794: add GPIO clocks
-Message-Id: <3f37e01852a06faf1d5fed30eaee5cae942fc9d5.1442536920.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 18 Sep 2015 02:02:24 +0000
+Subject: [PATCH 01/18 v3] arm64: renesas: tidyup MSTP9 reverse definition order
+Message-Id: <87bnd01ob2.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442536920.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Describe the GPIO clocks in the R8A7794 device tree.
-
-Based on the original patch by Koji Matsuoka <koji.matsuoka.xm@renesas.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/boot/dts/r8a7794.dtsi | 22 ++++++++++++++--------
- 1 file changed, 14 insertions(+), 8 deletions(-)
+v2 -> v3
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 97c8e9ace5eb..b6db773b9e55 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -749,16 +749,22 @@
- 		mstp9_clks: mstp9_clks@e6150994 {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
--			clocks = <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
--				<&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
-+			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
-+				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
-+				 <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
-+				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
- 			#clock-cells = <1>;
--			clock-indices = <
--				R8A7794_CLK_QSPI_MOD R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
--				R8A7794_CLK_I2C3 R8A7794_CLK_I2C2 R8A7794_CLK_I2C1
--				R8A7794_CLK_I2C0
--			>;
-+			clock-indices = <R8A7794_CLK_GPIO6 R8A7794_CLK_GPIO5
-+					 R8A7794_CLK_GPIO4 R8A7794_CLK_GPIO3
-+					 R8A7794_CLK_GPIO2 R8A7794_CLK_GPIO1
-+					 R8A7794_CLK_GPIO0 R8A7794_CLK_QSPI_MOD
-+					 R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
-+					 R8A7794_CLK_I2C3 R8A7794_CLK_I2C2
-+					 R8A7794_CLK_I2C1 R8A7794_CLK_I2C0>;
- 			clock-output-names -				"qspi_mod", "i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
-+				"gpio6", "gpio5", "gpio4", "gpio3", "gpio2",
-+				"gpio1", "gpio0", "qspi_mod",
-+				"i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
- 		};
- 		mstp11_clks: mstp11_clks@e615099c {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ - no change
+
+ include/dt-bindings/clock/r8a7795-clock.h | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+index 7f7bfef..a310dfa 100644
+--- a/include/dt-bindings/clock/r8a7795-clock.h
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -57,14 +57,14 @@
+ #define R8A7795_CLK_ETHERAVB		12
+ 
+ /* MSTP9 */
+-#define R8A7795_CLK_GPIO0		12
+-#define R8A7795_CLK_GPIO1		11
+-#define R8A7795_CLK_GPIO2		10
+-#define R8A7795_CLK_GPIO3		9
+-#define R8A7795_CLK_GPIO4		8
+-#define R8A7795_CLK_GPIO5		7
+-#define R8A7795_CLK_GPIO6		6
+ #define R8A7795_CLK_GPIO7		5
++#define R8A7795_CLK_GPIO6		6
++#define R8A7795_CLK_GPIO5		7
++#define R8A7795_CLK_GPIO4		8
++#define R8A7795_CLK_GPIO3		9
++#define R8A7795_CLK_GPIO2		10
++#define R8A7795_CLK_GPIO1		11
++#define R8A7795_CLK_GPIO0		12
+ 
+ /* MSTP10 */
+ 
 -- 
-2.1.4
+1.9.1
 
