@@ -1,60 +1,67 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 04 Sep 2015 11:35:50 +0000
-Subject: Re: [PATCH 2/3] ml86v7667: implement g_std() method
-Message-Id: <55E98216.3080602@xs4all.nl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 18 Sep 2015 01:51:41 +0000
+Subject: [PATCH 0/25 v3][RFC] arm64: Salvator-X sound support
+Message-Id: <87twqs1osz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6015647.cjLjRfTWc7@wasted.cogentembedded.com> <1725998.gULFgFImHk@wasted.cogentembedded.com>
-In-Reply-To: <1725998.gULFgFImHk@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, mchehab@osg.samsung.com, linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On 09/04/2015 01:16 AM, Sergei Shtylyov wrote:
-> The driver was written with the 'soc_camera' use in mind, however the g_std()
-> video method was forgotten. Implement it at last...
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+Hi Simon
 
-> 
-> ---
->  drivers/media/i2c/ml86v7667.c |   10 ++++++++++
->  1 file changed, 10 insertions(+)
-> 
-> Index: media_tree/drivers/media/i2c/ml86v7667.c
-> =================================> --- media_tree.orig/drivers/media/i2c/ml86v7667.c
-> +++ media_tree/drivers/media/i2c/ml86v7667.c
-> @@ -233,6 +233,15 @@ static int ml86v7667_g_mbus_config(struc
->  	return 0;
->  }
->  
-> +static int ml86v7667_g_std(struct v4l2_subdev *sd, v4l2_std_id *std)
-> +{
-> +	struct ml86v7667_priv *priv = to_ml86v7667(sd);
-> +
-> +	*std = priv->std;
-> +
-> +	return 0;
-> +}
-> +
->  static int ml86v7667_s_std(struct v4l2_subdev *sd, v4l2_std_id std)
->  {
->  	struct ml86v7667_priv *priv = to_ml86v7667(sd);
-> @@ -282,6 +291,7 @@ static const struct v4l2_ctrl_ops ml86v7
->  };
->  
->  static struct v4l2_subdev_video_ops ml86v7667_subdev_video_ops = {
-> +	.g_std = ml86v7667_g_std,
->  	.s_std = ml86v7667_s_std,
->  	.querystd = ml86v7667_querystd,
->  	.g_input_status = ml86v7667_g_input_status,
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-media" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+These are v3 of Salvator-X sound support patches.
 
+These are based on renesas-drivers-2015-09-15-v4.3-rc1
+These is including non SH-ARM patches which are
+posted to other ML, but still not yet merged.
+
+Kuninori Morimoto (23):
+      pinctrl: sh-pfc: r8a7795: add I2C pin support
+      pinctrl: sh-pfc: r8a7795: add Audio clock pin support
+      pinctrl: sh-pfc: r8a7795: add Audio SSI pin support
+      dmaengine: OF DMAEngine API based on CONFIG_DMA_OF instead of CONFIG_OF
+      clk: add CS2000 Fractional-N driver
+      arm64: renesas: tidyup MSTP9 reverse definition order
+      arm64: renesas: r8a7795: add I2C support
+      arm64: renesas: r8a7795: add AUDIO_DMAC support
+      arm64: renesas: r8a7795: Sound SSI PIO support
+      arm64: renesas: r8a7795: Sound SSI DMA support
+      arm64: renesas: r8a7795: Sound SRC support
+      arm64: renesas: r8a7795: Sound DVC support
+      arm64: renesas: r8a7795: Sound CTU/MIX support
+      arm64: renesas: salvator-x: enable I2C
+      arm64: renesas: salvator-x: Sound SSI PIO support
+      arm64: renesas: salvator-x: Sound SSI DMA support
+      arm64: renesas: salvator-x: Sound SSI DMA support via BUSIF
+      arm64: renesas: salvator-x: Sound SRC support
+      arm64: renesas: salvator-x: Sound DVC support
+      arm64: defconfig: Enable Renesas R-Car I2C Controller
+      arm64: defconfig: add Renesas sound and AK4613 support
+      arm64: defconfig: add Renesas R-Car DMAC driver support
+      arm64: defconfig: add CS2000 driver support
+
+Wolfram Sang (2):
+      i2c: rcar: add support for r8a7795 (R-Car H3)
+      i2c: sh_mobile: add support for r8a7795 (R-Car H3)
+
+ Documentation/devicetree/bindings/clock/cs2000-cp.txt   |  24 +++++
+ Documentation/devicetree/bindings/i2c/i2c-rcar.txt      |   1 +
+ Documentation/devicetree/bindings/i2c/i2c-sh_mobile.txt |   1 +
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts      | 125 +++++++++++++++++++++++++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi                | 401 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ arch/arm64/configs/defconfig                            |  10 ++
+ drivers/clk/Kconfig                                     |   6 ++
+ drivers/clk/Makefile                                    |   1 +
+ drivers/clk/clk-cs2000-cp.c                             | 530 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ drivers/i2c/busses/i2c-rcar.c                           |   3 +
+ drivers/i2c/busses/i2c-sh_mobile.c                      |   1 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c                    | 468 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ include/dt-bindings/clock/r8a7795-clock.h               |  49 ++++++++--
+ include/linux/of_dma.h                                  |   2 +-
+ 14 files changed, 1613 insertions(+), 9 deletions(-)
+
+Best regards
+---
+Kuninori Morimoto
