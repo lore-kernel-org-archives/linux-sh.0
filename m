@@ -1,51 +1,64 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 18 Sep 2015 11:08:28 +0000
-Subject: [PATCH v4 05/10] serial: sh-sci: Remove timer on shutdown of port
-Message-Id: <1442574513-20648-6-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Sep 2015 00:47:06 +0000
+Subject: [PATCH 04/19] ARM: shmobile: r8a7794: add QSPI DT support
+Message-Id: <740b4a9f07fe73b5ccd2bc3dc365dc359e1a332d.1442536920.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1442536920.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Muhammad Hamza Farooq <mfarooq@visteon.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Aleksandar Mitev <amitev@visteon.com>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Aleksandar Mitev <amitev@visteon.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-This prevents DMA timer timeout that can trigger after the port has
-been closed.
+Define the generic R8A7794 part of the QSPI device node.
 
-Signed-off-by: Aleksandar Mitev <amitev@visteon.com>
-[geert: Move del_timer_sync() outside spinlock to avoid circular locking
-        dependency between rx_timer_fn() and del_timer_sync()]
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v4:
-  - New.
----
- drivers/tty/serial/sh-sci.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/arm/boot/dts/r8a7794.dtsi | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index ac9ce8f1ff799a48..36a11110acf4cab5 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1810,6 +1810,14 @@ static void sci_shutdown(struct uart_port *port)
- 	sci_stop_tx(port);
- 	spin_unlock_irqrestore(&port->lock, flags);
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index e9fab31e0709..e0f32ede2181 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -19,6 +19,10 @@
+ 	#address-cells = <2>;
+ 	#size-cells = <2>;
  
-+#ifdef CONFIG_SERIAL_SH_SCI_DMA
-+	if (s->chan_rx) {
-+		dev_dbg(port->dev, "%s(%d) deleting rx_timer\n", __func__,
-+			port->line);
-+		del_timer_sync(&s->rx_timer);
-+	}
-+#endif
++	aliases {
++		spi0 = &qspi;
++	};
 +
- 	sci_free_dma(port);
- 	sci_free_irq(s);
- }
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -537,6 +541,20 @@
+ 		status = "disabled";
+ 	};
+ 
++	qspi: spi@e6b10000 {
++		compatible = "renesas,qspi-r8a7794", "renesas,qspi";
++		reg = <0 0xe6b10000 0 0x2c>;
++		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_QSPI_MOD>;
++		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
++		dma-names = "tx", "rx";
++		power-domains = <&cpg_clocks>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-1.9.1
+2.1.4
 
