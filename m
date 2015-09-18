@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 00:47:20 +0000
-Subject: [PATCH 18/19] ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain for sound
-Message-Id: <ff7273f079953f335cc5a9b3d7b0e7afc586659f.1442536920.git.horms+renesas@verge.net.au>
+Date: Fri, 18 Sep 2015 00:47:09 +0000
+Subject: [PATCH 07/19] ARM: shmobile: kzm9g dts: Use adxl345-specific compatible property
+Message-Id: <755252d0e502627df6ddabbb2d628705bc256497.1442536920.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1442536920.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
@@ -12,30 +12,30 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-484adb005886 ("ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain")
-added CPG/MSTP clock-cells domain support, but it was missing sound
-support. This patch adds it.
+Replace the deprecated generic "adi,adxl34x" compatible value by the
+adxl345-specific "adi,adxl345" value, cfr. commit e465bf6fc55d5ce2 ("DT:
+i2c: Deprecate adi,adxl34x compatible string").
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[horms: Updated commit id referred to in changelog]
+Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/sh73a0-kzm9g.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index ae5eb281d43a..e07ae5d45e19 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1627,6 +1627,7 @@
- 				"mix.0", "mix.1",
- 				"dvc.0", "dvc.1",
- 				"clk_a", "clk_b", "clk_c", "clk_i";
-+		power-domains = <&cpg_clocks>;
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 24b4cd24dceb..7fc5602810ad 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -206,7 +206,7 @@
+ 	};
  
- 		status = "disabled";
- 
+ 	accelerometer@1d {
+-		compatible = "adi,adxl34x";
++		compatible = "adi,adxl345";
+ 		reg = <0x1d>;
+ 		interrupt-parent = <&irqpin3>;
+ 		interrupts = <2 IRQ_TYPE_LEVEL_HIGH>,
 -- 
 2.1.4
 
