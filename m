@@ -1,75 +1,96 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 17 Sep 2015 06:32:50 +0000
-Subject: [PATCH v3 01/09] devicetree: bindings: Renesas APMU and SMP Enable method
-Message-Id: <20150917063250.26016.99820.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 18 Sep 2015 11:08:23 +0000
+Subject: [PATCH v4 00/10] serial: sh-sci: Add DT DMA support
+Message-Id: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150917063240.26016.93772.sendpatchset@little-apple>
-In-Reply-To: <20150917063240.26016.93772.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: mark.rutland@arm.com, devicetree@vger.kernel.org, lorenzo.pieralisi@arm.com, keita.kobayashi.ym@renesas.com, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Muhammad Hamza Farooq <mfarooq@visteon.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+	Hi Greg, Jiri,
 
-Add DT binding documentation for the APMU hardware and add "renesas,apmu"
-to the list of enable methods for the ARM cpus.
+This patch series adds DT DMA support to the Renesas "SCI" serial driver
+on R-Car Gen2 SoCs.
+It depends on "[PATCH v3 00/33] serial: sh-sci: Miscellaneous and DMA
+Improvements" [1], which contains preparatory patches that were
+considered stable and safe before.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+Changes compared to "[PATCH/RFC v3 0/4] serial: sh-sci: Add DT DMA
+support" [2]:
+  - Dropped RFC status,
+  - Dropped "serial: sh-sci: Stop TX and RX on shutdown", as it caused
+    serial console output to stop suddenly during halt/reboot on e.g.
+    armadillo and kzm9g,
+  - Added sevaral new fixes, mostly from Muhammad Hamza Farooq and
+    Aleksandar Mitev (thanks a lot!),
+  - Added a first patch to shuffle functions around, to avoid churn in
+    patches making functional changes.
 
- Changes since V2:
- - s/Until/Unit/g - thanks Geert!
+This was tested on r8a7791/koelsch (using SCIF, SCIFA, SCIFB, and
+HSCIF), and received some testing on r8a7795/salvator-x (using SCIF and
+HSCIF).
 
- Changes since V1:
- - None
+While it doesn't matter much at low speeds, reliability at high speeds
+(> 1 Mbps) is improved by applying the following improvements to the
+rcar-dmac driver:
+  - "[PATCH] dmaengine: rcar-dmac: Fix residue reporting for pending
+    descriptors" [3],
+  - Muhammad Hamza Farooq's series "[PATCH 0/6] rcar DMA engine patches"
+    [4].
 
- Documentation/devicetree/bindings/arm/cpus.txt           |    1 
- Documentation/devicetree/bindings/power/renesas,apmu.txt |   31 ++++++++++++++
- 2 files changed, 32 insertions(+)
+Note that SCI DMA support was originally written for SH-based systems,
+and was never fully wired up in platform code in mainline, so the risk
+for regressions is fairly small.
 
---- 0001/Documentation/devicetree/bindings/arm/cpus.txt
-+++ work/Documentation/devicetree/bindings/arm/cpus.txt	2015-09-16 20:32:46.710513000 +0900
-@@ -198,6 +198,7 @@ nodes to be present and contain the prop
- 			    "qcom,gcc-msm8660"
- 			    "qcom,kpss-acc-v1"
- 			    "qcom,kpss-acc-v2"
-+			    "renesas,apmu"
- 			    "rockchip,rk3066-smp"
- 			    "ste,dbx500-smp"
- 
---- /dev/null
-+++ work/Documentation/devicetree/bindings/power/renesas,apmu.txt	2015-09-16 20:42:09.000513000 +0900
-@@ -0,0 +1,31 @@
-+DT bindings for the Renesas Advanced Power Management Unit
-+
-+Renesas R-Car line of SoCs utilize one or more APMU hardware units
-+for CPU core power domain control including SMP boot and CPU Hotplug.
-+
-+Required properties:
-+
-+- compatible: Should be "renesas,apmu-<soctype>", "renesas,apmu" as fallback.
-+	      Examples with soctypes are:
-+		- "renesas,apmu-r8a7790" (R-Car H2)
-+		- "renesas,apmu-r8a7791" (R-Car M2-W)
-+		- "renesas,apmu-r8a7792" (R-Car V2H)
-+		- "renesas,apmu-r8a7793" (R-Car M2-N)
-+		- "renesas,apmu-r8a7794" (R-Car E2)
-+
-+- reg: Base address and length of the I/O registers used by the APMU.
-+
-+- cpus: This node contains a list of CPU cores, which should match the order
-+  of CPU cores used by the WUPCR and PSTR reigsters in the Advanced Power
-+  Management Unit section of the device's datasheet.
-+
-+
-+Example:
-+
-+This shows the r8a7791 APMU that can control CPU0 and CPU1.
-+
-+	apmu@e6152000 {
-+		compatible = "renesas,apmu-r8a7791", "renesas,apmu";
-+		reg = <0 0xe6152000 0 0x188>;
-+		cpus = <&cpu0 &cpu1>;
-+	};
+For testing convenience, I've pushed this and related series to topic
+branches in
+git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git:
+  - topic/scif-misc-v3 [1]
+  - topic/scif-dma-v4
+  - topic/rcar-dmac-residue-v1 [3]
+  - topic/rcar-dmac-hamza-v1 [4]
+
+Thanks!
+
+References:
+  [1] http://www.spinics.net/lists/linux-serial/msg18682.html
+  [2] http://www.spinics.net/lists/linux-sh/msg44347.html
+  [3] http://www.spinics.net/lists/dmaengine/msg05711.html
+  [4] http://www.spinics.net/lists/dmaengine/msg06103.html
+
+Aleksandar Mitev (1):
+  serial: sh-sci: Remove timer on shutdown of port
+
+Geert Uytterhoeven (5):
+  serial: sh-sci: Shuffle functions around
+  serial: sh-sci: Get rid of the workqueue to handle receive DMA
+    requests
+  serial: sh-sci: Submit RX DMA from RX interrupt on (H)SCIF
+  serial: sh-sci: Stop calling sci_start_rx() from sci_request_dma()
+  serial: sh-sci: Add DT support to DMA setup
+
+Muhammad Hamza Farooq (4):
+  serial: sh-sci: Redirect port interrupts to CPU _only_ when DMA stops
+  serial: sh-sci: Call dma_async_issue_pending when transaction
+    completes
+  serial: sh-sci: Do not terminate DMA engine when race condition occurs
+  serial: sh-sci: Pause DMA engine and get DMA status again
+
+ drivers/tty/serial/sh-sci.c | 1364 ++++++++++++++++++++++---------------------
+ 1 file changed, 698 insertions(+), 666 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
