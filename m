@@ -1,39 +1,41 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 02 Sep 2015 07:47:35 +0000
-Subject: [PATCH 7/9] sh-pfc: remove unused PINMUX_IPSR_MODSEL_DATA()
-Message-Id: <87a8t5jmfq.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Sep 2015 00:47:21 +0000
+Subject: [PATCH 19/19] ARM: shmobile: r8a7791 dtsi: Add CPG/MSTP Clock Domain for sound
+Message-Id: <2529493c288c109cf734235d1eb3de1b23d9bcef.1442536920.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87wpw9jn3i.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87wpw9jn3i.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1442536920.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Now, all PINMUX_IPSR_MODSEL_DATA() are replased to PINMUX_IPSR_MSEL()
-Let's remove unused PINMUX_IPSR_MODSEL_DATA()
+797a0626e08c ("ARM: shmobile: r8a7791 dtsi: Add CPG/MSTP Clock Domain")
+added CPG/MSTP clock-cells domain support, but it was missing sound
+support. This patch adds it.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[horms: updated commit id referred to in changelog]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/sh_pfc.h | 2 --
- 1 file changed, 2 deletions(-)
+ arch/arm/boot/dts/r8a7791.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index c8c1d49..d0b6f5c 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -180,8 +180,6 @@ struct sh_pfc_soc_info {
- 	PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##ms)
- #define PINMUX_IPSR_MSEL(ipsr, fn, ms)					\
- 	PINMUX_DATA(fn##_MARK, FN_##ms, FN_##ipsr, FN_##fn)
--#define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms)				\
--	PINMUX_DATA(fn##_MARK, FN_##ms, FN_##ipsr, FN_##fn)
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 3b8e26dde36d..328f48bd15e7 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1677,6 +1677,7 @@
+ 				"mix.0", "mix.1",
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
++		power-domains = <&cpg_clocks>;
  
- /*
-  * GP port style (32 ports banks)
+ 		status = "disabled";
+ 
 -- 
-1.9.1
+2.1.4
 
