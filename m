@@ -1,51 +1,170 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 06:03:19 +0000
-Subject: [PATCH/RFC net-next v3 0/4] ravb: Add support for r8a7795 SoC
-Message-Id: <1442556203-657-1-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 18 Sep 2015 02:02:45 +0000
+Subject: [PATCH 02/18 v3] arm64: renesas: r8a7795: add I2C support
+Message-Id: <87a8sk1oai.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Florian Fainelli <f.fainelli@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-This series enhances the ravb driver to support the r8a7795 SoC.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Changes:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
 
-* Details in changelog of individual patches
+ - no change
 
-Base:
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 96 ++++++++++++++++++++++++++++++-
+ include/dt-bindings/clock/r8a7795-clock.h |  7 +++
+ 2 files changed, 102 insertions(+), 1 deletion(-)
 
-* net-next/master
-
-Availability:
-
-To aid review of this and other EtherAVB the following branches are
-available in my renesas tree on kernel.org.
-
-* me/r8a7795-ravb-driver-v3: this series
-* me/r8a7795-ravb-pfc-v2: r8a7795 sh-pfc update for EthernetAVB
-* me/r8a7795-ravb-integration-v3: enable EthernetAVB on r8a7795
-* me/r8a7795-ravb-driver-and-integration-v3.runtime:
-      the above three branches with their runtime dependencies
-
-
-Kazuya Mizuguchi (3):
-  ravb: Provide dev parameter to DMA API
-  ravb: Document binding for r8a7795 SoC
-  ravb: Add support for r8a7795 SoC
-
-Simon Horman (1):
-  phylib: Add phy_set_max_speed helper
-
- .../devicetree/bindings/net/renesas,ravb.txt       |  69 ++++++++++++--
- drivers/net/ethernet/renesas/ravb.h                |   7 ++
- drivers/net/ethernet/renesas/ravb_main.c           | 101 +++++++++++++++------
- drivers/net/phy/phy_device.c                       |  59 ++++++++----
- include/linux/phy.h                                |   1 +
- 5 files changed, 184 insertions(+), 53 deletions(-)
-
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 31d05b6..3a82eba 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -16,6 +16,16 @@
+ 	#address-cells = <2>;
+ 	#size-cells = <2>;
+ 
++	aliases {
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2c2 = &i2c2;
++		i2c3 = &i2c3;
++		i2c4 = &i2c4;
++		i2c5 = &i2c5;
++		i2c6 = &i2c6;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -464,13 +474,20 @@
+ 					reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+ 					clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>,
+ 						 <&cp_clk>, <&cp_clk>, <&cp_clk>,
+-						 <&cp_clk>, <&cp_clk>;
++						 <&cp_clk>, <&cp_clk>,
++						 <&s3d2_clk>, <&s3d2_clk>, <&s3d2_clk>,
++						 <&s3d2_clk>, <&s3d2_clk>, <&s3d2_clk>,
++						 <&s3d2_clk>;
+ 					#clock-cells = <1>;
+ 					clock-indices = <
+ 						R8A7795_CLK_GPIO7 R8A7795_CLK_GPIO6
+ 						R8A7795_CLK_GPIO5 R8A7795_CLK_GPIO4
+ 						R8A7795_CLK_GPIO3 R8A7795_CLK_GPIO2
+ 						R8A7795_CLK_GPIO1 R8A7795_CLK_GPIO0
++						R8A7795_CLK_I2C6  R8A7795_CLK_I2C5
++						R8A7795_CLK_I2C4  R8A7795_CLK_I2C3
++						R8A7795_CLK_I2C2  R8A7795_CLK_I2C1
++						R8A7795_CLK_I2C0
+ 					>;
+ 				};
+ 			};
+@@ -767,6 +784,83 @@
+ 				};
+ 			};
+ 		};
++
++		i2c0: i2c@e6500000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe6500000 0 0x40>;
++			interrupts = <GIC_SPI 287 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp9_clks R8A7795_CLK_I2C0>;
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		i2c1: i2c@e6508000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe6508000 0 0x40>;
++			interrupts = <GIC_SPI 288 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp9_clks R8A7795_CLK_I2C1>;
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		i2c2: i2c@e6510000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe6510000 0 0x40>;
++			interrupts = <GIC_SPI 286 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp9_clks R8A7795_CLK_I2C2>;
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		i2c3: i2c@e66d0000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66d0000 0 0x40>;
++			interrupts = <GIC_SPI 290 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp9_clks R8A7795_CLK_I2C3>;
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		i2c4: i2c@e66d8000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66d8000 0 0x40>;
++			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp9_clks R8A7795_CLK_I2C4>;
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		i2c5: i2c@e66e0000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66e0000 0 0x40>;
++			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp9_clks R8A7795_CLK_I2C5>;
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
++
++		i2c6: i2c@e66e8000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66e8000 0 0x40>;
++			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&mstp9_clks R8A7795_CLK_I2C6>;
++			power-domains = <&cpg_clocks>;
++			status = "disabled";
++		};
+ 	};
+ 
+ };
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+index a310dfa..881788f 100644
+--- a/include/dt-bindings/clock/r8a7795-clock.h
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -65,6 +65,13 @@
+ #define R8A7795_CLK_GPIO2		10
+ #define R8A7795_CLK_GPIO1		11
+ #define R8A7795_CLK_GPIO0		12
++#define R8A7795_CLK_I2C6		18
++#define R8A7795_CLK_I2C5		19
++#define R8A7795_CLK_I2C4		27
++#define R8A7795_CLK_I2C3		28
++#define R8A7795_CLK_I2C2		29
++#define R8A7795_CLK_I2C1		30
++#define R8A7795_CLK_I2C0		31
+ 
+ /* MSTP10 */
+ 
 -- 
-2.1.4
+1.9.1
 
