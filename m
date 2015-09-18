@@ -1,122 +1,205 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 22:50:52 +0000
-Subject: [PATCH 05/22] drm: rcar-du: Refactor plane setup
-Message-Id: <1442184669-30990-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Sep 2015 06:03:21 +0000
+Subject: [PATCH/RFC net-next v3 2/4] ravb: Provide dev parameter to DMA API
+Message-Id: <1442556203-657-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1442556203-657-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1442556203-657-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Florian Fainelli <f.fainelli@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Rename plane setup functions using more explicit names, and use local
-variables to store intermediate values to increase readability. This
-also prepares for VSP compositor support.
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch is in preparation for using this driver on arm64 where the
+implementation of __dma_alloc_coherent fails if a device parameter is not
+provided.
+
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
+[horms: squashed into a single patch]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- drivers/gpu/drm/rcar-du/rcar_du_plane.c | 39 ++++++++++++++++++---------------
- 1 file changed, 21 insertions(+), 18 deletions(-)
+* [Simon Horman]
+  I have only tested this on arm64.
+  It should be tested for regressions on arm hardware.
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_plane.c b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-index b20f3ceb55e6..d64b23027749 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_plane.c
-@@ -35,7 +35,7 @@ static void rcar_du_plane_write(struct rcar_du_group *rgrp,
- 		      data);
- }
- 
--static void rcar_du_plane_setup_fb(struct rcar_du_plane *plane)
-+static void rcar_du_plane_setup_scanout(struct rcar_du_plane *plane)
- {
- 	struct rcar_du_plane_state *state  		to_rcar_plane_state(plane->plane.state);
-@@ -45,8 +45,10 @@ static void rcar_du_plane_setup_fb(struct rcar_du_plane *plane)
- 	unsigned int src_y = state->state.src_y >> 16;
- 	unsigned int index = state->hwindex;
- 	struct drm_gem_cma_object *gem;
-+	unsigned int pitch;
- 	bool interlaced;
--	u32 mwr;
-+	unsigned int i;
-+	u32 dma[2];
- 
- 	interlaced = state->state.crtc->state->adjusted_mode.flags
- 		   & DRM_MODE_FLAG_INTERLACE;
-@@ -55,14 +57,18 @@ static void rcar_du_plane_setup_fb(struct rcar_du_plane *plane)
- 	 * operation with 32bpp formats.
- 	 */
- 	if (state->format->planes = 2)
--		mwr = fb->pitches[0];
-+		pitch = fb->pitches[0];
- 	else
--		mwr = fb->pitches[0] * 8 / state->format->bpp;
-+		pitch = fb->pitches[0] * 8 / state->format->bpp;
- 
--	if (interlaced && state->format->bpp = 32)
--		mwr *= 2;
-+	for (i = 0; i < state->format->planes; ++i) {
-+		gem = drm_fb_cma_get_gem_obj(fb, i);
-+		dma[i] = gem->paddr + fb->offsets[i];
-+	}
- 
--	rcar_du_plane_write(rgrp, index, PnMWR, mwr);
-+	rcar_du_plane_write(rgrp, index, PnMWR,
-+			    (interlaced && state->format->bpp = 32) ?
-+			    pitch * 2 : pitch);
- 
- 	/* The Y position is expressed in raster line units and must be doubled
- 	 * for 32bpp formats, according to the R8A7790 datasheet. No mention of
-@@ -80,21 +86,18 @@ static void rcar_du_plane_setup_fb(struct rcar_du_plane *plane)
- 	rcar_du_plane_write(rgrp, index, PnSPYR, src_y *
- 			    (!interlaced && state->format->bpp = 32 ? 2 : 1));
- 
--	gem = drm_fb_cma_get_gem_obj(fb, 0);
--	rcar_du_plane_write(rgrp, index, PnDSA0R, gem->paddr + fb->offsets[0]);
-+	rcar_du_plane_write(rgrp, index, PnDSA0R, dma[0]);
- 
- 	if (state->format->planes = 2) {
- 		index = (index + 1) % 8;
- 
--		rcar_du_plane_write(rgrp, index, PnMWR, fb->pitches[0]);
-+		rcar_du_plane_write(rgrp, index, PnMWR, pitch);
- 
- 		rcar_du_plane_write(rgrp, index, PnSPXR, src_x);
- 		rcar_du_plane_write(rgrp, index, PnSPYR, src_y *
- 				    (state->format->bpp = 16 ? 2 : 1) / 2);
- 
--		gem = drm_fb_cma_get_gem_obj(fb, 1);
--		rcar_du_plane_write(rgrp, index, PnDSA0R,
--				    gem->paddr + fb->offsets[1]);
-+		rcar_du_plane_write(rgrp, index, PnDSA0R, dma[1]);
+v0 [Kazuya Mizuguchi, Yoshihiro Shimoda, Masaru Nagai]
+
+v1 [Simon Horman]
+* Squashed into a single patch
+
+v2 [Simon Horman]
+* No change
+
+v2 [Simon Horman]
+* No change
+---
+ drivers/net/ethernet/renesas/ravb_main.c | 38 ++++++++++++++++----------------
+ 1 file changed, 19 insertions(+), 19 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+index 450899e9cea2..4ca093d033f8 100644
+--- a/drivers/net/ethernet/renesas/ravb_main.c
++++ b/drivers/net/ethernet/renesas/ravb_main.c
+@@ -201,7 +201,7 @@ static void ravb_ring_free(struct net_device *ndev, int q)
+ 	if (priv->rx_ring[q]) {
+ 		ring_size = sizeof(struct ravb_ex_rx_desc) *
+ 			    (priv->num_rx_ring[q] + 1);
+-		dma_free_coherent(NULL, ring_size, priv->rx_ring[q],
++		dma_free_coherent(ndev->dev.parent, ring_size, priv->rx_ring[q],
+ 				  priv->rx_desc_dma[q]);
+ 		priv->rx_ring[q] = NULL;
  	}
- }
- 
-@@ -161,8 +164,8 @@ static void rcar_du_plane_setup_mode(struct rcar_du_plane *plane,
+@@ -209,7 +209,7 @@ static void ravb_ring_free(struct net_device *ndev, int q)
+ 	if (priv->tx_ring[q]) {
+ 		ring_size = sizeof(struct ravb_tx_desc) *
+ 			    (priv->num_tx_ring[q] * NUM_TX_DESC + 1);
+-		dma_free_coherent(NULL, ring_size, priv->tx_ring[q],
++		dma_free_coherent(ndev->dev.parent, ring_size, priv->tx_ring[q],
+ 				  priv->tx_desc_dma[q]);
+ 		priv->tx_ring[q] = NULL;
  	}
- }
+@@ -240,13 +240,13 @@ static void ravb_ring_format(struct net_device *ndev, int q)
+ 		rx_desc = &priv->rx_ring[q][i];
+ 		/* The size of the buffer should be on 16-byte boundary. */
+ 		rx_desc->ds_cc = cpu_to_le16(ALIGN(PKT_BUF_SZ, 16));
+-		dma_addr = dma_map_single(&ndev->dev, priv->rx_skb[q][i]->data,
++		dma_addr = dma_map_single(ndev->dev.parent, priv->rx_skb[q][i]->data,
+ 					  ALIGN(PKT_BUF_SZ, 16),
+ 					  DMA_FROM_DEVICE);
+ 		/* We just set the data size to 0 for a failed mapping which
+ 		 * should prevent DMA from happening...
+ 		 */
+-		if (dma_mapping_error(&ndev->dev, dma_addr))
++		if (dma_mapping_error(ndev->dev.parent, dma_addr))
+ 			rx_desc->ds_cc = cpu_to_le16(0);
+ 		rx_desc->dptr = cpu_to_le32(dma_addr);
+ 		rx_desc->die_dt = DT_FEMPTY;
+@@ -309,7 +309,7 @@ static int ravb_ring_init(struct net_device *ndev, int q)
  
--static void __rcar_du_plane_setup(struct rcar_du_plane *plane,
--				  unsigned int index)
-+static void rcar_du_plane_setup_format(struct rcar_du_plane *plane,
-+				       unsigned int index)
- {
- 	struct rcar_du_plane_state *state  		to_rcar_plane_state(plane->plane.state);
-@@ -217,11 +220,11 @@ void rcar_du_plane_setup(struct rcar_du_plane *plane)
- 	struct rcar_du_plane_state *state  		to_rcar_plane_state(plane->plane.state);
+ 	/* Allocate all RX descriptors. */
+ 	ring_size = sizeof(struct ravb_ex_rx_desc) * (priv->num_rx_ring[q] + 1);
+-	priv->rx_ring[q] = dma_alloc_coherent(NULL, ring_size,
++	priv->rx_ring[q] = dma_alloc_coherent(ndev->dev.parent, ring_size,
+ 					      &priv->rx_desc_dma[q],
+ 					      GFP_KERNEL);
+ 	if (!priv->rx_ring[q])
+@@ -320,7 +320,7 @@ static int ravb_ring_init(struct net_device *ndev, int q)
+ 	/* Allocate all TX descriptors. */
+ 	ring_size = sizeof(struct ravb_tx_desc) *
+ 		    (priv->num_tx_ring[q] * NUM_TX_DESC + 1);
+-	priv->tx_ring[q] = dma_alloc_coherent(NULL, ring_size,
++	priv->tx_ring[q] = dma_alloc_coherent(ndev->dev.parent, ring_size,
+ 					      &priv->tx_desc_dma[q],
+ 					      GFP_KERNEL);
+ 	if (!priv->tx_ring[q])
+@@ -443,7 +443,7 @@ static int ravb_tx_free(struct net_device *ndev, int q)
+ 		size = le16_to_cpu(desc->ds_tagl) & TX_DS;
+ 		/* Free the original skb. */
+ 		if (priv->tx_skb[q][entry / NUM_TX_DESC]) {
+-			dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
++			dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
+ 					 size, DMA_TO_DEVICE);
+ 			/* Last packet descriptor? */
+ 			if (entry % NUM_TX_DESC = NUM_TX_DESC - 1) {
+@@ -546,7 +546,7 @@ static bool ravb_rx(struct net_device *ndev, int *quota, int q)
  
--	__rcar_du_plane_setup(plane, state->hwindex);
-+	rcar_du_plane_setup_format(plane, state->hwindex);
- 	if (state->format->planes = 2)
--		__rcar_du_plane_setup(plane, (state->hwindex + 1) % 8);
-+		rcar_du_plane_setup_format(plane, (state->hwindex + 1) % 8);
+ 			skb = priv->rx_skb[q][entry];
+ 			priv->rx_skb[q][entry] = NULL;
+-			dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
++			dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
+ 					 ALIGN(PKT_BUF_SZ, 16),
+ 					 DMA_FROM_DEVICE);
+ 			get_ts &= (q = RAVB_NC) ?
+@@ -586,14 +586,14 @@ static bool ravb_rx(struct net_device *ndev, int *quota, int q)
+ 			if (!skb)
+ 				break;	/* Better luck next round. */
+ 			ravb_set_buffer_align(skb);
+-			dma_addr = dma_map_single(&ndev->dev, skb->data,
++			dma_addr = dma_map_single(ndev->dev.parent, skb->data,
+ 						  le16_to_cpu(desc->ds_cc),
+ 						  DMA_FROM_DEVICE);
+ 			skb_checksum_none_assert(skb);
+ 			/* We just set the data size to 0 for a failed mapping
+ 			 * which should prevent DMA  from happening...
+ 			 */
+-			if (dma_mapping_error(&ndev->dev, dma_addr))
++			if (dma_mapping_error(ndev->dev.parent, dma_addr))
+ 				desc->ds_cc = cpu_to_le16(0);
+ 			desc->dptr = cpu_to_le32(dma_addr);
+ 			priv->rx_skb[q][entry] = skb;
+@@ -1300,8 +1300,8 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ 		 entry / NUM_TX_DESC * DPTR_ALIGN;
+ 	len = PTR_ALIGN(skb->data, DPTR_ALIGN) - skb->data;
+ 	memcpy(buffer, skb->data, len);
+-	dma_addr = dma_map_single(&ndev->dev, buffer, len, DMA_TO_DEVICE);
+-	if (dma_mapping_error(&ndev->dev, dma_addr))
++	dma_addr = dma_map_single(ndev->dev.parent, buffer, len, DMA_TO_DEVICE);
++	if (dma_mapping_error(ndev->dev.parent, dma_addr))
+ 		goto drop;
  
--	rcar_du_plane_setup_fb(plane);
-+	rcar_du_plane_setup_scanout(plane);
- }
+ 	desc = &priv->tx_ring[q][entry];
+@@ -1310,8 +1310,8 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
  
- static int rcar_du_plane_atomic_check(struct drm_plane *plane,
+ 	buffer = skb->data + len;
+ 	len = skb->len - len;
+-	dma_addr = dma_map_single(&ndev->dev, buffer, len, DMA_TO_DEVICE);
+-	if (dma_mapping_error(&ndev->dev, dma_addr))
++	dma_addr = dma_map_single(ndev->dev.parent, buffer, len, DMA_TO_DEVICE);
++	if (dma_mapping_error(ndev->dev.parent, dma_addr))
+ 		goto unmap;
+ 
+ 	desc++;
+@@ -1323,7 +1323,7 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ 		ts_skb = kmalloc(sizeof(*ts_skb), GFP_ATOMIC);
+ 		if (!ts_skb) {
+ 			desc--;
+-			dma_unmap_single(&ndev->dev, dma_addr, len,
++			dma_unmap_single(ndev->dev.parent, dma_addr, len,
+ 					 DMA_TO_DEVICE);
+ 			goto unmap;
+ 		}
+@@ -1358,7 +1358,7 @@ exit:
+ 	return NETDEV_TX_OK;
+ 
+ unmap:
+-	dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
++	dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
+ 			 le16_to_cpu(desc->ds_tagl), DMA_TO_DEVICE);
+ drop:
+ 	dev_kfree_skb_any(skb);
+@@ -1708,7 +1708,7 @@ static int ravb_probe(struct platform_device *pdev)
+ 
+ 	/* Allocate descriptor base address table */
+ 	priv->desc_bat_size = sizeof(struct ravb_desc) * DBAT_ENTRY_NUM;
+-	priv->desc_bat = dma_alloc_coherent(NULL, priv->desc_bat_size,
++	priv->desc_bat = dma_alloc_coherent(ndev->dev.parent, priv->desc_bat_size,
+ 					    &priv->desc_bat_dma, GFP_KERNEL);
+ 	if (!priv->desc_bat) {
+ 		dev_err(&ndev->dev,
+@@ -1763,7 +1763,7 @@ out_napi_del:
+ 	netif_napi_del(&priv->napi[RAVB_BE]);
+ 	ravb_mdio_release(priv);
+ out_dma_free:
+-	dma_free_coherent(NULL, priv->desc_bat_size, priv->desc_bat,
++	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
+ 			  priv->desc_bat_dma);
+ out_release:
+ 	if (ndev)
+@@ -1779,7 +1779,7 @@ static int ravb_remove(struct platform_device *pdev)
+ 	struct net_device *ndev = platform_get_drvdata(pdev);
+ 	struct ravb_private *priv = netdev_priv(ndev);
+ 
+-	dma_free_coherent(NULL, priv->desc_bat_size, priv->desc_bat,
++	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
+ 			  priv->desc_bat_dma);
+ 	/* Set reset mode */
+ 	ravb_write(ndev, CCC_OPC_RESET, CCC);
 -- 
-2.4.6
+2.1.4
 
