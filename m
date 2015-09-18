@@ -1,75 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 20:56:51 +0000
-Subject: [PATCH 13/32] v4l: vsp1: Extract pipeline initialization code into a function
-Message-Id: <1442177830-24536-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 18 Sep 2015 02:06:23 +0000
+Subject: [PATCH 12/18 v3] arm64: renesas: salvator-x: Sound SSI DMA support via BUSIF
+Message-Id: <87vbb8zdr3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The code will be reused outside of vsp1_video.c.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+DMA transfer to/from SSIU
+
+     DMA
+[MEM] -> [SSIU] -> [SSI]
+
+     DMA
+[MEM] <- [SSIU] <- [SSI]
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/media/platform/vsp1/vsp1_pipe.c  | 10 ++++++++++
- drivers/media/platform/vsp1/vsp1_pipe.h  |  1 +
- drivers/media/platform/vsp1/vsp1_video.c |  6 +-----
- 3 files changed, 12 insertions(+), 5 deletions(-)
+v2 -> v3
 
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c b/drivers/media/platform/vsp1/vsp1_pipe.c
-index 199d57f1fe06..524420ed6333 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.c
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.c
-@@ -48,6 +48,16 @@ void vsp1_pipeline_reset(struct vsp1_pipeline *pipe)
- 	pipe->uds = NULL;
- }
+ - no change
+
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index c79432a..dc65b78 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -225,12 +225,7 @@
+ 	};
+ };
  
-+void vsp1_pipeline_init(struct vsp1_pipeline *pipe)
-+{
-+	mutex_init(&pipe->lock);
-+	spin_lock_init(&pipe->irqlock);
-+	init_waitqueue_head(&pipe->wq);
-+
-+	INIT_LIST_HEAD(&pipe->entities);
-+	pipe->state = VSP1_PIPELINE_STOPPED;
-+}
-+
- void vsp1_pipeline_run(struct vsp1_pipeline *pipe)
- {
- 	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.h b/drivers/media/platform/vsp1/vsp1_pipe.h
-index f8a099fba973..8553d5a03aa3 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.h
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.h
-@@ -67,6 +67,7 @@ static inline struct vsp1_pipeline *to_vsp1_pipeline(struct media_entity *e)
- }
+-&ssi0 {
+-	no-busif;
+-};
+-
+ &ssi1 {
+-	no-busif;
+ 	shared-pin;
+ };
  
- void vsp1_pipeline_reset(struct vsp1_pipeline *pipe);
-+void vsp1_pipeline_init(struct vsp1_pipeline *pipe);
- 
- void vsp1_pipeline_run(struct vsp1_pipeline *pipe);
- bool vsp1_pipeline_stopped(struct vsp1_pipeline *pipe);
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index 8569836ea51b..ec68890af14b 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -1009,11 +1009,7 @@ struct vsp1_video *vsp1_video_create(struct vsp1_device *vsp1,
- 	spin_lock_init(&video->irqlock);
- 	INIT_LIST_HEAD(&video->irqqueue);
- 
--	mutex_init(&video->pipe.lock);
--	spin_lock_init(&video->pipe.irqlock);
--	INIT_LIST_HEAD(&video->pipe.entities);
--	init_waitqueue_head(&video->pipe.wq);
--	video->pipe.state = VSP1_PIPELINE_STOPPED;
-+	vsp1_pipeline_init(&video->pipe);
- 	video->pipe.frame_end = vsp1_video_pipeline_frame_end;
- 
- 	/* Initialize the media entity... */
 -- 
-2.4.6
+1.9.1
 
