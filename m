@@ -1,108 +1,85 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 03 Sep 2015 20:20:13 +0000
-Subject: [PATCH 9/9] i2c: rcar: clean up after refactoring
-Message-Id: <1441311613-2681-10-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Sep 2015 00:47:07 +0000
+Subject: [PATCH 05/19] ARM: shmobile: silk: add QSPI DT support
+Message-Id: <0ebdbc505b620ab4397c3105d36a5383fb16b151.1442536920.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441311613-2681-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1441311613-2681-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1442536920.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Update the comments to match current behaviour. Shorten some comments.
-Update copyrights.
+Define the SILK board dependent part of the QSPI device node.
+Add device nodes  for Spansion  S25FL512S SPI flash and MTD partitions on it.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Based on the original patch by Vladimir Barinov
+<vladimir.barinov@cogentembedded.com>.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/busses/i2c-rcar.c | 32 +++++++++-----------------------
- 1 file changed, 9 insertions(+), 23 deletions(-)
+ arch/arm/boot/dts/r8a7794-silk.dts | 40 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 2afa3683a3de4e..dbedbff48b594b 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -1,7 +1,8 @@
- /*
-  * Driver for the Renesas RCar I2C unit
-  *
-- * Copyright (C) 2014 Wolfram Sang <wsa@sang-engineering.com>
-+ * Copyright (C) 2014-15 Wolfram Sang <wsa@sang-engineering.com>
-+ * Copyright (C) 2011-2015 Renesas Electronics Corporation
-  *
-  * Copyright (C) 2012-14 Renesas Solutions Corp.
-  * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-@@ -9,9 +10,6 @@
-  * This file is based on the drivers/i2c/busses/i2c-sh7760.c
-  * (c) 2005-2008 MSC Vertriebsges.m.b.H, Manuel Lauss <mlau@msc-ge.com>
-  *
-- * This file used out-of-tree driver i2c-rcar.c
-- * Copyright (C) 2011-2012 Renesas Electronics Corporation
-- *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation; version 2 of the License.
-@@ -244,9 +242,7 @@ scgd_find:
- 	dev_dbg(dev, "clk %d/%d(%lu), round %u, CDF:0x%x, SCGD: 0x%x\n",
- 		scl, bus_speed, clk_get_rate(priv->clk), round, cdf, scgd);
+diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
+index d4dd5a30ccdf..f49bc00738a3 100644
+--- a/arch/arm/boot/dts/r8a7794-silk.dts
++++ b/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -65,6 +65,11 @@
+ 		renesas,groups = "mmc_data8", "mmc_ctrl";
+ 		renesas,function = "mmc";
+ 	};
++
++	qspi_pins: spi0 {
++		renesas,groups = "qspi_ctrl", "qspi_data4";
++		renesas,function = "qspi";
++	};
+ };
  
--	/*
--	 * keep icccr value
--	 */
-+	/* keep icccr value */
- 	priv->icccr = scgd << cdf_width | cdf;
- 
- 	return 0;
-@@ -281,11 +277,7 @@ static int rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
- {
- 	struct i2c_msg *msg = priv->msg;
- 
--	/*
--	 * FIXME
--	 * sometimes, unknown interrupt happened.
--	 * Do nothing
--	 */
-+	/* FIXME: sometimes, unknown interrupt happened. Do nothing */
- 	if (!(msr & MDE))
- 		return 0;
- 
-@@ -331,28 +323,22 @@ static int rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
- {
- 	struct i2c_msg *msg = priv->msg;
- 
--	/*
--	 * FIXME
--	 * sometimes, unknown interrupt happened.
--	 * Do nothing
--	 */
-+	/* FIXME: sometimes, unknown interrupt happened. Do nothing */
- 	if (!(msr & MDR))
- 		return 0;
- 
- 	if (msr & MAT) {
- 		/* Address transfer phase finished, but no data at this point. */
- 	} else if (priv->pos < msg->len) {
--		/*
--		 * get received data
--		 */
-+		/* get received data */
- 		msg->buf[priv->pos] = rcar_i2c_read(priv, ICRXTX);
- 		priv->pos++;
- 	}
- 
- 	/*
--	 * If next received data is the _LAST_,
--	 * go to STOP phase,
--	 * otherwise, go to DATA phase.
-+	 * If next received data is the _LAST_, go to STOP phase. Might be
-+	 * overwritten by REP START when setting up a new msg. Not elegant
-+	 * but the only stable sequence for REP START I have found so far.
- 	 */
- 	if (priv->pos + 1 >= msg->len)
- 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
+ &scif2 {
+@@ -100,3 +105,38 @@
+ 	non-removable;
+ 	status = "okay";
+ };
++
++&qspi {
++	pinctrl-0 = <&qspi_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl512s", "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <30000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
++		spi-cpol;
++		spi-cpha;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "loader";
++			reg = <0x00000000 0x00040000>;
++			read-only;
++		};
++		partition@40000 {
++			label = "user";
++			reg = <0x00040000 0x00400000>;
++			read-only;
++		};
++		partition@440000 {
++			label = "flash";
++			reg = <0x00440000 0x03bc0000>;
++		};
++	};
++};
 -- 
 2.1.4
 
