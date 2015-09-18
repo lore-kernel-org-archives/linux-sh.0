@@ -1,358 +1,626 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 02 Sep 2015 07:17:39 +0000
-Subject: [PATCH v6 04/05] clk: shmobile: Add Renesas R-Car Gen3 CPG support
-Message-Id: <20150902071739.10870.79280.sendpatchset@little-apple>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 18 Sep 2015 01:59:59 +0000
+Subject: [PATCH 1/1 v3] clk: add CS2000 Fractional-N driver
+Message-Id: <87eghw1of5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150902071657.10870.37652.sendpatchset@little-apple>
-In-Reply-To: <20150902071657.10870.37652.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-clk@vger.kernel.org
-Cc: kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This V6 patch adds initial CPG support for R-Car Generation 3 and in
-particular the R8A7795 SoC.
+This patch adds CS2000 Fractional-N driver as clock provider.
 
-The R-Car Gen3 clock hardware has a register write protection feature that
-needs to be shared between the CPG function and the MSTP hardware somehow.
-So far this feature is simply ignored.
-
-At this point this driver is considered to be in quite early experimental
-state and the inner workings of the code such as boot mode detection as
-well as PLL1 and probably other things need to be updated once the friendly
-hardware documentation becomes more stable.
-
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
+v2 -> v3
 
- Changes since V5: (Magnus Damm <damm+renesas@opensource.se>)
- - Removed unused spinlock, use 0x3f as mask - thanks Laurent!
- - Fixed space -> tab for DT binding documentation - thanks Geert!
- - Postponed PLL1 divide-by-2 rewrite - requires a tad more effort.
- - Updated commit log
+ - no change
 
- Changes since V4: (Magnus Damm <damm+renesas@opensource.se>)
- - Simplified clks array handling - thanks Geert!
- - Updated th DT binding documentation to reflect latest state
- - of_property_count_strings() -> of_property_count_u32_elems() fix
+ .../devicetree/bindings/clock/cs2000-cp.txt        |  24 +
+ drivers/clk/Kconfig                                |   6 +
+ drivers/clk/Makefile                               |   1 +
+ drivers/clk/clk-cs2000-cp.c                        | 530 +++++++++++++++++++++
+ 4 files changed, 561 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/clock/cs2000-cp.txt
+ create mode 100644 drivers/clk/clk-cs2000-cp.c
 
- Changes since V3: (Magnus Damm <damm+renesas@opensource.se>)
- - Reworked driver to incorporate most feedback from Stephen Boyd - thanks!!
- - Major things like syscon and driver model require more discussion.
- - Added hunk to build drivers/clk/shmobile if ARCH_RENESAS is set.
-
- Changes since V2: (Magnus Damm <damm+renesas@opensource.se>)
- - Reworked driver to rely on clock index instead of strings.
- - Dropped use of "clock-output-names".
-
- Earlier versions: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
- Initial version: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-
- Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt |   32 +
- drivers/clk/Makefile                                                     |    1 
- drivers/clk/shmobile/Makefile                                            |    1 
- drivers/clk/shmobile/clk-rcar-gen3.c                                     |  241 ++++++++++
- 4 files changed, 275 insertions(+)
-
+diff --git a/Documentation/devicetree/bindings/clock/cs2000-cp.txt b/Documentation/devicetree/bindings/clock/cs2000-cp.txt
+new file mode 100644
+index 0000000..b21033d
 --- /dev/null
-+++ work/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt	2015-09-02 11:58:06.782366518 +0900
-@@ -0,0 +1,32 @@
-+* Renesas R-Car Gen3 Clock Pulse Generator (CPG)
++++ b/Documentation/devicetree/bindings/clock/cs2000-cp.txt
+@@ -0,0 +1,24 @@
++CIRRUS LOGIC Fractional-N Clock Synthesizer & Clock Multiplier
 +
-+The CPG generates core clocks for the R-Car Gen3 SoCs. It includes three PLLs
-+and several fixed ratio dividers.
++Required properties:
 +
-+Required Properties:
++- compatible:		"cirrus,cs2000-cp"
++- reg:			The chip select number on the I2C bus
++- clocks:		common clock binding for CLK_IN, XTI/REF_CLK
++- clock-names:		CLK_IN : clk_in, XTI/REF_CLK : ref_clk
++- clock-frequency:	clock frequency of CLK_OUT
++- #clock-cells:		must be <0>
 +
-+  - compatible: Must be one of
-+    - "renesas,r8a7795-cpg-clocks" for the r8a7795 CPG
-+    - "renesas,rcar-gen3-cpg-clocks" for the generic R-Car Gen3 CPG
++Example:
 +
-+  - reg: Base address and length of the memory resource used by the CPG
-+
-+  - clocks: References to the parent clocks: first to the EXTAL clock
-+  - #clock-cells: Must be 1
-+  - clock-indices: Indices of the exported clocks
-+
-+Example
-+-------
-+
-+	cpg_clocks: cpg_clocks@e6150000 {
-+		compatible = "renesas,r8a7795-cpg-clocks",
-+			     "renesas,rcar-gen3-cpg-clocks";
-+		reg = <0 0xe6150000 0 0x1000>;
-+		clocks = <&extal_clk>;
-+		#clock-cells = <1>;
-+		clock-indices = <
-+				R8A7795_CLK_MAIN R8A7795_CLK_PLL0
-+				R8A7795_CLK_PLL1 R8A7795_CLK_PLL2
-+				R8A7795_CLK_PLL3 R8A7795_CLK_PLL4
-+		>;
++&i2c2 {
++	...
++	cs2000: clk_multiplier@4f {
++		#clock-cells = <0>;
++		compatible = "cirrus,cs2000-cp";
++		reg = <0x4f>;
++		clocks = <&rcar_sound 0>, <&x12_clk>;
++		clock-names = "clk_in", "ref_clk";
++		clock-frequency = <24576000>; /* 1/1 divide */
 +	};
---- 0001/drivers/clk/Makefile
-+++ work/drivers/clk/Makefile	2015-09-02 11:56:49.942366518 +0900
-@@ -67,6 +67,7 @@ obj-$(CONFIG_COMMON_CLK_QCOM)		+= qcom/
- obj-$(CONFIG_ARCH_ROCKCHIP)		+= rockchip/
- obj-$(CONFIG_COMMON_CLK_SAMSUNG)	+= samsung/
- obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= shmobile/
-+obj-$(CONFIG_ARCH_RENESAS)		+= shmobile/
- obj-$(CONFIG_ARCH_SIRF)			+= sirf/
- obj-$(CONFIG_ARCH_SOCFPGA)		+= socfpga/
- obj-$(CONFIG_PLAT_SPEAR)		+= spear/
---- 0006/drivers/clk/shmobile/Makefile
-+++ work/drivers/clk/shmobile/Makefile	2015-09-02 11:56:49.942366518 +0900
-@@ -8,4 +8,5 @@ obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-
- obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
- obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
- obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
-+obj-$(CONFIG_ARCH_R8A7795)		+= clk-rcar-gen3.o clk-mstp.o clk-div6.o
- obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o clk-mstp.o clk-div6.o
++};
+diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
+index 42f7120..0e961b2 100644
+--- a/drivers/clk/Kconfig
++++ b/drivers/clk/Kconfig
+@@ -95,6 +95,12 @@ config COMMON_CLK_CDCE925
+ 	  Given a target output frequency, the driver will set the PLL and
+ 	  divider to best approximate the desired output.
+ 
++config COMMON_CLK_CS2000_CP
++	tristate "Clock driver for CS2000 Fractional-N Clock Synthesizer & Clock Multiplier"
++	depends on I2C
++	help
++	  If you say yes here you get support for the CS2000 clock multiplier.
++
+ config COMMON_CLK_S2MPS11
+ 	tristate "Clock driver for S2MPS1X/S5M8767 MFD"
+ 	depends on MFD_SEC_CORE
+diff --git a/drivers/clk/Makefile b/drivers/clk/Makefile
+index 9d31e2c..2fb77a8 100644
+--- a/drivers/clk/Makefile
++++ b/drivers/clk/Makefile
+@@ -21,6 +21,7 @@ obj-$(CONFIG_COMMON_CLK_AXI_CLKGEN)	+= clk-axi-clkgen.o
+ obj-$(CONFIG_ARCH_AXXIA)		+= clk-axm5516.o
+ obj-$(CONFIG_ARCH_BCM2835)		+= clk-bcm2835.o
+ obj-$(CONFIG_COMMON_CLK_CDCE706)	+= clk-cdce706.o
++obj-$(CONFIG_COMMON_CLK_CS2000_CP)	+= clk-cs2000-cp.o
+ obj-$(CONFIG_ARCH_CLPS711X)		+= clk-clps711x.o
+ obj-$(CONFIG_ARCH_EFM32)		+= clk-efm32gg.o
+ obj-$(CONFIG_ARCH_HIGHBANK)		+= clk-highbank.o
+diff --git a/drivers/clk/clk-cs2000-cp.c b/drivers/clk/clk-cs2000-cp.c
+new file mode 100644
+index 0000000..ab8360f
 --- /dev/null
-+++ work/drivers/clk/shmobile/clk-rcar-gen3.c	2015-09-02 14:35:06.302366518 +0900
-@@ -0,0 +1,241 @@
++++ b/drivers/clk/clk-cs2000-cp.c
+@@ -0,0 +1,530 @@
 +/*
-+ * rcar_gen3 Core CPG Clocks
++ * CS2000  --  CIRRUS LOGIC Fractional-N Clock Synthesizer & Clock Multiplier
 + *
-+ * Copyright (C) 2015 Renesas Electronics Corp.
-+ *
-+ * Based on rcar_gen2 Core CPG Clocks driver.
++ * Copyright (C) 2015 Renesas Electronics Corporation
++ * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 + *
 + * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
 + */
-+
 +#include <linux/clk-provider.h>
-+#include <linux/clk/shmobile.h>
-+#include <linux/init.h>
-+#include <linux/kernel.h>
-+#include <linux/of.h>
-+#include <linux/of_address.h>
-+#include <linux/slab.h>
++#include <linux/delay.h>
++#include <linux/clk.h>
++#include <linux/i2c.h>
++#include <linux/of_device.h>
++#include <linux/module.h>
 +
-+#define RCAR_GEN3_CLK_MAIN	0
-+#define RCAR_GEN3_CLK_PLL0	1
-+#define RCAR_GEN3_CLK_PLL1	2
-+#define RCAR_GEN3_CLK_PLL2	3
-+#define RCAR_GEN3_CLK_PLL3	4
-+#define RCAR_GEN3_CLK_PLL4	5
-+#define RCAR_GEN3_CLK_NR	6
++#define CH_MAX 4
 +
-+static const char * const rcar_gen3_clk_names[RCAR_GEN3_CLK_NR] = {
-+	[RCAR_GEN3_CLK_MAIN] = "main",
-+	[RCAR_GEN3_CLK_PLL0] = "pll0",
-+	[RCAR_GEN3_CLK_PLL1] = "pll1",
-+	[RCAR_GEN3_CLK_PLL2] = "pll2",
-+	[RCAR_GEN3_CLK_PLL3] = "pll3",
-+	[RCAR_GEN3_CLK_PLL4] = "pll4",
++#define DEVICE_ID	0x1
++#define DEVICE_CTRL	0x2
++#define DEVICE_CFG1	0x3
++#define DEVICE_CFG2	0x4
++#define GLOBAL_CFG	0x5
++#define Ratio_Add(x, nth)	(6 + (x * 4) + (nth))
++#define Ratio_Val(x, nth)	((x >> (24 - (8 * nth))) & 0xFF)
++#define Val_Ratio(x, nth)	((x & 0xFF) << (24 - (8 * nth)))
++#define FUNC_CFG1	0x16
++#define FUNC_CFG2	0x17
++
++/* DEVICE_CTRL */
++#define PLL_UNLOCK	(1 << 7)
++
++/* DEVICE_CFG1 */
++#define RSEL(x)		(((x) & 0x3) << 3)
++#define RSEL_MASK	RSEL(0x3)
++#define ENDEV1		(0x1)
++
++/* GLOBAL_CFG */
++#define ENDEV2		(0x1)
++
++#define CH_SIZE_ERR(ch)		((ch < 0) || (ch >= CH_MAX))
++#define hw_to_priv(_hw)		container_of(_hw, struct cs2000_priv, hw)
++#define priv_to_client(priv)	(priv->client)
++#define priv_to_dev(priv)	(&(priv_to_client(priv)->dev))
++
++#define CLK_IN	0
++#define REF_CLK	1
++#define CLK_MAX 2
++
++struct cs2000_priv {
++	struct clk_hw hw;
++	struct i2c_client *client;
++	struct clk *clk_in;
++	struct clk *ref_clk;
++	struct clk *clk_out;
 +};
 +
-+struct rcar_gen3_cpg {
-+	struct clk_onecell_data data;
-+	void __iomem *reg;
-+	struct clk *clks[RCAR_GEN3_CLK_NR];
++static const struct of_device_id cs2000_of_match[] = {
++	{ .compatible = "cirrus,cs2000-cp", },
++	{},
 +};
++MODULE_DEVICE_TABLE(of, cs2000_of_match);
 +
-+#define CPG_PLL0CR	0x00d8
-+#define CPG_PLL2CR	0x002c
++static const struct i2c_device_id cs2000_id[] = {
++	{ "cs2000-cp", },
++	{}
++};
++MODULE_DEVICE_TABLE(i2c, cs2000_id);
 +
-+/*
-+ * common function
-+ */
-+#define rcar_clk_readl(cpg, _reg) readl(cpg->reg + _reg)
++#define cs2000_read(priv, addr) \
++	i2c_smbus_read_byte_data(priv_to_client(priv), addr)
++#define cs2000_write(priv, addr, val) \
++	i2c_smbus_write_byte_data(priv_to_client(priv), addr, val)
 +
-+/*
-+ * Reset register definitions.
-+ */
-+#define MODEMR 0xe6160060
-+
-+static u32 rcar_gen3_read_mode_pins(void)
++static int cs2000_bset(struct cs2000_priv *priv, u8 addr, u8 mask, u8 val)
 +{
-+	static u32 mode;
-+	static bool mode_valid;
++	s32 data;
 +
-+	if (!mode_valid) {
-+		void __iomem *modemr = ioremap_nocache(MODEMR, 4);
++	data = cs2000_read(priv, addr);
++	if (data < 0)
++		return data;
 +
-+		BUG_ON(!modemr);
-+		mode = ioread32(modemr);
-+		iounmap(modemr);
-+		mode_valid = true;
-+	}
++	data &= ~mask;
++	data |= (val & mask);
 +
-+	return mode;
++	return cs2000_write(priv, addr, data);
 +}
 +
-+/* -----------------------------------------------------------------------------
-+ * CPG Clock Data
-+ */
-+
-+/*
-+ *   MD		EXTAL		PLL0	PLL1	PLL2	PLL3	PLL4
-+ * 14 13 19 17	(MHz)		*1	*1	*1
-+ *-------------------------------------------------------------------
-+ * 0  0  0  0	16.66 x 1	x180/2	x192/2	x144/2	x192	x144
-+ * 0  0  0  1	16.66 x 1	x180/2	x192/2	x144/2	x128	x144
-+ * 0  0  1  0	Prohibited setting
-+ * 0  0  1  1	16.66 x 1	x180/2	x192/2	x144/2	x192	x144
-+ * 0  1  0  0	20    x 1	x150/2	x156/2	x120/2	x156	x120
-+ * 0  1  0  1	20    x 1	x150/2	x156/2	x120/2	x106	x120
-+ * 0  1  1  0	Prohibited setting
-+ * 0  1  1  1	20    x 1	x150/2	x156/2	x120/2	x156	x120
-+ * 1  0  0  0	25    x 1	x120/2	x128/2	x96/2	x128	x96
-+ * 1  0  0  1	25    x 1	x120/2	x128/2	x96/2	x84	x96
-+ * 1  0  1  0	Prohibited setting
-+ * 1  0  1  1	25    x 1	x120/2	x128/2	x96/2	x128	x96
-+ * 1  1  0  0	33.33 / 2	x180/2	x192/2	x144/2	x192	x144
-+ * 1  1  0  1	33.33 / 2	x180/2	x192/2	x144/2	x128	x144
-+ * 1  1  1  0	Prohibited setting
-+ * 1  1  1  1	33.33 / 2	x180/2	x192/2	x144/2	x192	x144
-+ *
-+ * *1 : datasheet indicates VCO output (PLLx = VCO/2)
-+ *
-+ */
-+#define CPG_PLL_CONFIG_INDEX(md)	((((md) & BIT(14)) >> 11) | \
-+					 (((md) & BIT(13)) >> 11) | \
-+					 (((md) & BIT(19)) >> 18) | \
-+					 (((md) & BIT(17)) >> 17))
-+struct cpg_pll_config {
-+	unsigned int extal_div;
-+	unsigned int pll1_mult;
-+	unsigned int pll3_mult;
-+	unsigned int pll4_mult;
-+};
-+
-+static const struct cpg_pll_config cpg_pll_configs[16] __initconst = {
-+/* EXTAL div	PLL1	PLL3	PLL4 */
-+	{ 1,	192,	192,	144, },
-+	{ 1,	192,	128,	144, },
-+	{ 0,	0,	0,	0,   }, /* Prohibited setting */
-+	{ 1,	192,	192,	144, },
-+	{ 1,	156,	156,	120, },
-+	{ 1,	156,	106,	120, },
-+	{ 0,	0,	0,	0,   }, /* Prohibited setting */
-+	{ 1,	156,	156,	120, },
-+	{ 1,	128,	128,	96,  },
-+	{ 1,	128,	84,	96,  },
-+	{ 0,	0,	0,	0,   }, /* Prohibited setting */
-+	{ 1,	128,	128,	96,  },
-+	{ 2,	192,	192,	144, },
-+	{ 2,	192,	128,	144, },
-+	{ 0,	0,	0,	0,   }, /* Prohibited setting */
-+	{ 2,	192,	192,	144, },
-+};
-+
-+/* -----------------------------------------------------------------------------
-+ * Initialization
-+ */
-+
-+static struct clk * __init
-+rcar_gen3_cpg_register_clock(struct device_node *np, struct rcar_gen3_cpg *cpg,
-+			     const struct cpg_pll_config *config,
-+			     unsigned int gen3_clk)
++static int cs2000_enable_dev_config(struct cs2000_priv *priv, bool enable)
 +{
-+	const char *parent_name = rcar_gen3_clk_names[RCAR_GEN3_CLK_MAIN];
-+	unsigned int mult = 1;
-+	unsigned int div = 1;
-+	u32 value;
++	u32 val;
++	int ret;
 +
-+	switch (gen3_clk) {
-+	case RCAR_GEN3_CLK_MAIN:
-+		parent_name = of_clk_get_parent_name(np, 0);
-+		div = config->extal_div;
++	val = enable ? ENDEV1 : 0;
++	ret = cs2000_bset(priv, DEVICE_CFG1, ENDEV1, val);
++	if (ret < 0)
++		return ret;
++
++	val = enable ? ENDEV2 : 0;
++	ret = cs2000_bset(priv, GLOBAL_CFG,  ENDEV2, val);
++	if (ret < 0)
++		return ret;
++
++	return 0;
++}
++
++static int cs2000_clk_in_bound_rate(struct cs2000_priv *priv,
++				    u32 rate_in)
++{
++	u32 val;
++
++	if (rate_in >= 32000000 &&
++	    rate_in < 56000000)
++		val = 0x0;
++	else if (rate_in >= 16000000 &&
++		 rate_in < 28000000)
++		val = 0x1;
++	else if (rate_in >= 8000000 &&
++		 rate_in < 14000000)
++		val = 0x2;
++	else
++		return -EINVAL;
++
++	return cs2000_bset(priv, FUNC_CFG1, 0x3 << 3, val << 3);
++}
++
++static int cs2000_wait_pll_lock(struct cs2000_priv *priv)
++{
++	struct device *dev = priv_to_dev(priv);
++	s32 val;
++	unsigned int i;
++
++	for (i = 0; i < 256; i++) {
++		val = cs2000_read(priv, DEVICE_CTRL);
++		if (val < 0)
++			return val;
++		if (!(val & PLL_UNLOCK))
++			return 0;
++		udelay(1);
++	}
++
++	dev_err(dev, "pll lock failed\n");
++
++	return -EIO;
++}
++
++static int cs2000_clk_out_enable(struct cs2000_priv *priv, bool enable)
++{
++	u32 val = enable ? 0 : 0x3;
++
++	/* enable both AUX_OUT, CLK_OUT */
++	return cs2000_write(priv, DEVICE_CTRL, val);
++}
++
++static u32 cs2000_rate_to_ratio(u32 rate_in, u32 rate_out)
++{
++	u64 ratio;
++
++	/*
++	 * ratio = rate_out / rate_in * 2^20
++	 *
++	 * To avoid over flow, rate_out is u64
++	 * The result should be u32
++	 */
++	ratio = (u64)rate_out << 20;
++	do_div(ratio, rate_in);
++
++	return (u32)ratio;
++}
++
++static unsigned long cs2000_ratio_to_rate(u32 ratio, u32 rate_in)
++{
++	u64 rate_out;
++
++	/*
++	 * ratio = rate_out / rate_in * 2^20
++	 *
++	 * To avoid over flow, rate_out is u64
++	 * The result should be u32
++	 */
++
++	rate_out = (u64)ratio * rate_in;
++	return (unsigned long)(rate_out >> 20);
++}
++
++static int cs2000_ratio_set(struct cs2000_priv *priv,
++			    int ch, u32 rate_in, u32 rate_out)
++{
++	u32 val;
++	unsigned int i;
++	int ret;
++
++	if (CH_SIZE_ERR(ch))
++		return -EINVAL;
++
++	val = cs2000_rate_to_ratio(rate_in, rate_out);
++	for (i = 0; i < 4; i++) {
++		ret = cs2000_write(priv,
++				   Ratio_Add(ch, i),
++				   Ratio_Val(val, i));
++		if (ret < 0)
++			return ret;
++	}
++
++	return 0;
++}
++
++static u32 cs2000_ratio_get(struct cs2000_priv *priv, int ch)
++{
++	u32 tmp, val;
++	unsigned int i;
++
++	val = 0;
++	for (i = 0; i < 4; i++) {
++		tmp = cs2000_read(priv,
++				  Ratio_Add(ch, i));
++		if (tmp < 0)
++			return 0;
++
++		val |= Val_Ratio(tmp, i);
++	}
++
++	return val;
++}
++
++static int cs2000_ratio_select(struct cs2000_priv *priv, int ch)
++{
++	int ret;
++
++	if (CH_SIZE_ERR(ch))
++		return -EINVAL;
++
++	/*
++	 * FIXME
++	 *
++	 * this driver supports static ratio mode only
++	 * at this point
++	 */
++	ret = cs2000_bset(priv, DEVICE_CFG1, RSEL_MASK, RSEL(ch));
++	if (ret < 0)
++		return ret;
++
++	ret = cs2000_write(priv, DEVICE_CFG2, 0x0);
++	if (ret < 0)
++		return ret;
++
++	return 0;
++}
++
++static unsigned long cs2000_recalc_rate(struct clk_hw *hw,
++					unsigned long parent_rate)
++{
++	struct cs2000_priv *priv = hw_to_priv(hw);
++	int ch = 0; /* it uses ch0 only at this point */
++	u32 ratio;
++
++	ratio = cs2000_ratio_get(priv, ch);
++
++	return cs2000_ratio_to_rate(ratio, parent_rate);
++}
++
++static long cs2000_round_rate(struct clk_hw *hw, unsigned long rate,
++			      unsigned long *parent_rate)
++{
++	u32 ratio;
++
++	ratio = cs2000_rate_to_ratio(*parent_rate, rate);
++
++	return cs2000_ratio_to_rate(ratio, *parent_rate);
++}
++
++static int __cs2000_set_rate(struct cs2000_priv *priv, int ch,
++			     unsigned long rate, unsigned long parent_rate)
++
++{
++	int ret;
++
++	ret = cs2000_clk_in_bound_rate(priv, parent_rate);
++	if (ret < 0)
++		return ret;
++
++	ret = cs2000_ratio_set(priv, ch, parent_rate, rate);
++	if (ret < 0)
++		return ret;
++
++	ret = cs2000_ratio_select(priv, ch);
++	if (ret < 0)
++		return ret;
++
++	return 0;
++}
++
++static int cs2000_set_rate(struct clk_hw *hw,
++			   unsigned long rate, unsigned long parent_rate)
++{
++	struct cs2000_priv *priv = hw_to_priv(hw);
++	int ch = 0; /* it uses ch0 only at this point */
++
++	return __cs2000_set_rate(priv, ch, rate, parent_rate);
++}
++
++static int __cs2000_enable(struct cs2000_priv *priv)
++{
++	int ret;
++
++	ret = cs2000_enable_dev_config(priv, true);
++	if (ret < 0)
++		return ret;
++
++	ret = cs2000_clk_out_enable(priv, true);
++	if (ret < 0)
++		return ret;
++
++	ret = cs2000_wait_pll_lock(priv);
++	if (ret < 0)
++		return ret;
++
++	return 0;
++}
++
++static int cs2000_enable(struct clk_hw *hw)
++{
++	struct cs2000_priv *priv = hw_to_priv(hw);
++
++	return __cs2000_enable(priv);
++}
++
++static void cs2000_disable(struct clk_hw *hw)
++{
++	struct cs2000_priv *priv = hw_to_priv(hw);
++
++	cs2000_enable_dev_config(priv, false);
++
++	cs2000_clk_out_enable(priv, false);
++}
++
++static u8 cs2000_get_parent(struct clk_hw *hw)
++{
++	/* always return REF_CLK */
++	return REF_CLK;
++}
++
++static const struct clk_ops cs2000_ops = {
++	.get_parent	= cs2000_get_parent,
++	.recalc_rate	= cs2000_recalc_rate,
++	.round_rate	= cs2000_round_rate,
++	.set_rate	= cs2000_set_rate,
++	.enable		= cs2000_enable,
++	.disable	= cs2000_disable,
++};
++
++static int cs2000_clk_get(struct cs2000_priv *priv)
++{
++	struct i2c_client *client = priv_to_client(priv);
++	struct device *dev = &client->dev;
++	struct clk *clk_in, *ref_clk;
++
++	clk_in = devm_clk_get(dev, "clk_in");
++	/* not yet provided */
++	if (IS_ERR(clk_in))
++		return -EPROBE_DEFER;
++
++	ref_clk = devm_clk_get(dev, "ref_clk");
++	/* not yet provided */
++	if (IS_ERR(ref_clk))
++		return -EPROBE_DEFER;
++
++	priv->clk_in	= clk_in;
++	priv->ref_clk	= ref_clk;
++
++	return 0;
++}
++
++static int cs2000_clk_register(struct cs2000_priv *priv)
++{
++	struct device *dev = priv_to_dev(priv);
++	struct device_node *np = dev->of_node;
++	struct clk_init_data init;
++	const char *name = np->name;
++	struct clk *clk;
++	static const char *parent_names[CLK_MAX];
++	int ret;
++
++	of_property_read_string(np, "clock-output-names", &name);
++
++	parent_names[CLK_IN]	= __clk_get_name(priv->clk_in);
++	parent_names[REF_CLK]	= __clk_get_name(priv->ref_clk);
++
++	init.name		= name;
++	init.ops		= &cs2000_ops;
++	init.flags		= CLK_IS_BASIC | CLK_SET_RATE_GATE;
++	init.parent_names	= parent_names;
++	init.num_parents	= ARRAY_SIZE(parent_names);
++
++	priv->hw.init = &init;
++
++	clk = clk_register(NULL, &priv->hw);
++	if (IS_ERR(clk))
++		return PTR_ERR(clk);
++
++	ret = of_clk_add_provider(np, of_clk_src_simple_get, clk);
++	if (ret < 0) {
++		clk_unregister(clk);
++		return ret;
++	}
++
++	priv->clk_out = clk;
++
++	return 0;
++}
++
++static int cs2000_clk_init(struct cs2000_priv *priv)
++{
++	struct device *dev = priv_to_dev(priv);
++	struct device_node *np = dev->of_node;
++	u32 rate;
++	int ch = 0; /* it uses ch0 only at this point */
++	int ret;
++
++	if (of_property_read_u32(np, "clock-frequency", &rate))
++		return 0;
++
++	ret = __cs2000_set_rate(priv, ch, rate, clk_get_rate(priv->ref_clk));
++	if (ret < 0)
++		return ret;
++
++	ret = __cs2000_enable(priv);
++	if (ret < 0)
++		return ret;
++
++	return 0;
++}
++
++static int cs2000_version_print(struct cs2000_priv *priv)
++{
++	struct i2c_client *client = priv_to_client(priv);
++	struct device *dev = &client->dev;
++	s32 val = cs2000_read(priv, DEVICE_ID);
++	const char *revision;
++
++	if (val < 0)
++		return val;
++
++	/* CS2000 should be 0x0 */
++	if (0 != (val >> 3))
++		return -EIO;
++
++	switch (val & 0x7) {
++	case 0x4:
++		revision = "B2 / B3";
 +		break;
-+	case RCAR_GEN3_CLK_PLL0:
-+		/* PLL0 is a configurable multiplier clock. Register it as a
-+		 * fixed factor clock for now as there's no generic multiplier
-+		 * clock implementation and we currently have no need to change
-+		 * the multiplier value.
-+		 */
-+		value = rcar_clk_readl(cpg, CPG_PLL0CR);
-+		mult = ((value >> 24) & 0x3f) + 1;
-+		break;
-+	case RCAR_GEN3_CLK_PLL1:
-+		mult = config->pll1_mult / 2;
-+		break;
-+	case RCAR_GEN3_CLK_PLL2:
-+		/* PLL2 is a configurable multiplier clock. Register it as a
-+		 * fixed factor clock for now as there's no generic multiplier
-+		 * clock implementation and we currently have no need to change
-+		 * the multiplier value.
-+		 */
-+		value = rcar_clk_readl(cpg, CPG_PLL2CR);
-+		mult = ((value >> 24) & 0x3f) + 1;
-+		break;
-+	case RCAR_GEN3_CLK_PLL3:
-+		mult = config->pll3_mult;
-+		break;
-+	case RCAR_GEN3_CLK_PLL4:
-+		mult = config->pll4_mult;
++	case 0x6:
++		revision = "C1";
 +		break;
 +	default:
-+		return ERR_PTR(-EINVAL);
++		return -EIO;
 +	}
 +
-+	return clk_register_fixed_factor(NULL, rcar_gen3_clk_names[gen3_clk],
-+					 parent_name, 0, mult, div);
++	dev_info(dev, "revision - %s\n", revision);
++
++	return 0;
 +}
 +
-+static void __init rcar_gen3_cpg_clocks_init(struct device_node *np)
++static int cs2000_remove(struct i2c_client *client)
 +{
-+	const struct cpg_pll_config *config;
-+	struct rcar_gen3_cpg *cpg;
-+	u32 cpg_mode;
-+	unsigned int i;
-+	int num_clks;
++	struct cs2000_priv *priv = i2c_get_clientdata(client);
++	struct device *dev = &client->dev;
++	struct device_node *np = dev->of_node;
 +
-+	cpg_mode = rcar_gen3_read_mode_pins();
++	of_clk_del_provider(np);
 +
-+	num_clks = of_property_count_u32_elems(np, "clock-indices");
-+	if (num_clks < 0) {
-+		pr_err("%s: failed to count clocks\n", __func__);
-+		return;
-+	}
++	clk_unregister(priv->clk_out);
 +
-+	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
-+	if (!cpg)
-+		return;
-+
-+	cpg->data.clks = cpg->clks;
-+	cpg->data.clk_num = num_clks;
-+
-+	cpg->reg = of_iomap(np, 0);
-+	if (WARN_ON(cpg->reg = NULL))
-+		return;
-+
-+	config = &cpg_pll_configs[CPG_PLL_CONFIG_INDEX(cpg_mode)];
-+	if (!config->extal_div) {
-+		pr_err("%s: Prohibited setting (cpg_mode=0x%x)\n",
-+		       __func__, cpg_mode);
-+		return;
-+	}
-+
-+	for (i = 0; i < num_clks; ++i) {
-+		struct clk *clk;
-+		u32 idx;
-+		int ret;
-+
-+		ret = of_property_read_u32_index(np, "clock-indices", i, &idx);
-+		if (ret < 0)
-+			break;
-+
-+		clk = rcar_gen3_cpg_register_clock(np, cpg, config, idx);
-+		if (IS_ERR(clk))
-+			pr_err("%s: failed to register %s %u clock (%ld)\n",
-+			       __func__, np->name, idx, PTR_ERR(clk));
-+		else
-+			cpg->data.clks[idx] = clk;
-+	}
-+
-+	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++	return 0;
 +}
-+CLK_OF_DECLARE(rcar_gen3_cpg_clks, "renesas,rcar-gen3-cpg-clocks",
-+	       rcar_gen3_cpg_clocks_init);
++
++static int cs2000_probe(struct i2c_client *client,
++			const struct i2c_device_id *id)
++{
++	struct cs2000_priv *priv;
++	struct device *dev = &client->dev;
++	int ret;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->client = client;
++	i2c_set_clientdata(client, priv);
++
++	ret = cs2000_clk_get(priv);
++	if (ret < 0)
++		return ret;
++
++	ret = cs2000_clk_register(priv);
++	if (ret < 0)
++		return ret;
++
++	ret = cs2000_clk_init(priv);
++	if (ret < 0)
++		return ret;
++
++	ret = cs2000_version_print(priv);
++	if (ret < 0)
++		goto probe_err;
++
++	return 0;
++
++probe_err:
++	cs2000_remove(client);
++
++	return ret;
++}
++
++static struct i2c_driver cs2000_driver = {
++	.driver = {
++		.name = "cs2000-cp",
++		.of_match_table = cs2000_of_match,
++	},
++	.probe		= cs2000_probe,
++	.remove		= cs2000_remove,
++	.id_table	= cs2000_id,
++};
++
++module_i2c_driver(cs2000_driver);
++
++MODULE_DESCRIPTION("CS2000-CP driver");
++MODULE_AUTHOR("Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>");
++MODULE_LICENSE("GPL v2");
+-- 
+1.9.1
+
