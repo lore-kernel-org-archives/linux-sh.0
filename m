@@ -1,53 +1,53 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 17 Sep 2015 06:33:38 +0000
-Subject: [PATCH v3 06/09] ARM: shmobile: Add APMU nodes to r8a7791 DTSI
-Message-Id: <20150917063338.26016.19427.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 18 Sep 2015 11:08:30 +0000
+Subject: [PATCH v4 07/10] serial: sh-sci: Call dma_async_issue_pending when transaction completes
+Message-Id: <1442574513-20648-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150917063240.26016.93772.sendpatchset@little-apple>
-In-Reply-To: <20150917063240.26016.93772.sendpatchset@little-apple>
+References: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: mark.rutland@arm.com, devicetree@vger.kernel.org, lorenzo.pieralisi@arm.com, keita.kobayashi.ym@renesas.com, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Muhammad Hamza Farooq <mfarooq@visteon.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Muhammad Hamza Farooq <mfarooq@visteon.com>
 
-Add an APMU DT node for the r8a7791 SoC and use the enable-method to
-point out that the APMU should be used for SMP support.
+dmaengine_submit() will not start the DMA operation, it merely adds
+it to the pending queue.  If the queue is no longer running, it won't be
+restarted until dma_async_issue_pending() is called.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
+[geert: Add more description]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+v4:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
- Changes from V2:
- - None
-
- Changes from V1:
- - None
-
- arch/arm/boot/dts/r8a7791.dtsi |    7 +++++++
- 1 file changed, 7 insertions(+)
-
---- 0001/arch/arm/boot/dts/r8a7791.dtsi
-+++ work/arch/arm/boot/dts/r8a7791.dtsi	2015-08-23 15:42:10.522366518 +0900
-@@ -42,6 +42,7 @@
- 	cpus {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		enable-method = "renesas,apmu";
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 5dcd8b382e9053f4..84c15152e111b084 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1104,6 +1104,7 @@ static void sci_rx_dma_release(struct sci_port *s, bool enable_pio)
+ static void sci_dma_rx_complete(void *arg)
+ {
+ 	struct sci_port *s = arg;
++	struct dma_chan *chan = s->chan_rx;
+ 	struct uart_port *port = &s->port;
+ 	struct dma_async_tx_descriptor *desc;
+ 	unsigned long flags;
+@@ -1137,6 +1138,8 @@ static void sci_dma_rx_complete(void *arg)
  
- 		cpu0: cpu@0 {
- 			device_type = "cpu";
-@@ -69,6 +70,12 @@
- 		};
- 	};
+ 	s->active_rx = s->cookie_rx[!active];
  
-+	apmu@e6152000 {
-+		compatible = "renesas,apmu-r8a7791", "renesas,apmu";
-+		reg = <0 0xe6152000 0 0x188>;
-+		cpus = <&cpu0 &cpu1>;
-+	};
++	dma_async_issue_pending(chan);
 +
- 	gic: interrupt-controller@f1001000 {
- 		compatible = "arm,gic-400";
- 		#interrupt-cells = <3>;
+ 	dev_dbg(port->dev, "%s: cookie %d #%d, new active cookie %d\n",
+ 		__func__, s->cookie_rx[active], active, s->active_rx);
+ 	spin_unlock_irqrestore(&port->lock, flags);
+-- 
+1.9.1
+
