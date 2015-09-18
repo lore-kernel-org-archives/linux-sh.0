@@ -1,220 +1,37 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 18 Sep 2015 01:54:02 +0000
-Subject: [PATCH 2/3 v2] pinctrl: sh-pfc: r8a7795: add Audio clock pin support
-Message-Id: <87pp1g1op7.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 18 Sep 2015 07:42:12 +0000
+Subject: Re: [PATCH 2/3 v2] pinctrl: sh-pfc: r8a7795: add Audio clock pin support
+Message-Id: <CAMuHMdUa2n+DNZQ87UKDkN2pKrFAGpc=qG5H1gKNUYqnkCE83g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87twqs1osz.wl%kuninori.morimoto.gx@renesas.com>
 	<87si6c1org.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87si6c1org.wl%kuninori.morimoto.gx@renesas.com>
+	<87pp1g1op7.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87pp1g1op7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon <horms@verge.net.au>, Linus Walleij <linus.walleij@linaro.org>, Laurent <laurent.pinchart@ideasonboard.com>
-Cc: "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Simon <horms@verge.net.au>, Linus Walleij <linus.walleij@linaro.org>, Laurent <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Fri, Sep 18, 2015 at 3:54 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+> v1 -> v2
+>
+>  - add missing audio_clkout_d
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
- - add missing audio_clkout_d
+Gr{oetje,eeting}s,
 
- drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 160 +++++++++++++++++++++++++++++++++++
- 1 file changed, 160 insertions(+)
+                        Geert
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-index f6afe71..7ef2f71 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-@@ -1426,6 +1426,128 @@ static const struct sh_pfc_pin pinmux_pins[] = {
- 	PINMUX_GPIO_GP_ALL(),
- };
- 
-+/* - AUDIO CLOCK ------------------------------------------------------------ */
-+static const unsigned int audio_clk_a_a_pins[] = {
-+	/* CLK A */
-+	RCAR_GP_PIN(6, 22),
-+};
-+static const unsigned int audio_clk_a_a_mux[] = {
-+	AUDIO_CLKA_A_MARK,
-+};
-+static const unsigned int audio_clk_a_b_pins[] = {
-+	/* CLK A */
-+	RCAR_GP_PIN(5, 4),
-+};
-+static const unsigned int audio_clk_a_b_mux[] = {
-+	AUDIO_CLKA_B_MARK,
-+};
-+static const unsigned int audio_clk_a_c_pins[] = {
-+	/* CLK A */
-+	RCAR_GP_PIN(5, 19),
-+};
-+static const unsigned int audio_clk_a_c_mux[] = {
-+	AUDIO_CLKA_C_MARK,
-+};
-+static const unsigned int audio_clk_b_a_pins[] = {
-+	/* CLK B */
-+	RCAR_GP_PIN(5, 12),
-+};
-+static const unsigned int audio_clk_b_a_mux[] = {
-+	AUDIO_CLKB_A_MARK,
-+};
-+static const unsigned int audio_clk_b_b_pins[] = {
-+	/* CLK B */
-+	RCAR_GP_PIN(6, 23),
-+};
-+static const unsigned int audio_clk_b_b_mux[] = {
-+	AUDIO_CLKB_B_MARK,
-+};
-+static const unsigned int audio_clk_c_a_pins[] = {
-+	/* CLK C */
-+	RCAR_GP_PIN(5, 21),
-+};
-+static const unsigned int audio_clk_c_a_mux[] = {
-+	AUDIO_CLKC_A_MARK,
-+};
-+static const unsigned int audio_clk_c_b_pins[] = {
-+	/* CLK C */
-+	RCAR_GP_PIN(5, 0),
-+};
-+static const unsigned int audio_clk_c_b_mux[] = {
-+	AUDIO_CLKC_B_MARK,
-+};
-+static const unsigned int audio_clkout_a_pins[] = {
-+	/* CLKOUT */
-+	RCAR_GP_PIN(5, 18),
-+};
-+static const unsigned int audio_clkout_a_mux[] = {
-+	AUDIO_CLKOUT_A_MARK,
-+};
-+static const unsigned int audio_clkout_b_pins[] = {
-+	/* CLKOUT */
-+	RCAR_GP_PIN(6, 28),
-+};
-+static const unsigned int audio_clkout_b_mux[] = {
-+	AUDIO_CLKOUT_B_MARK,
-+};
-+static const unsigned int audio_clkout_c_pins[] = {
-+	/* CLKOUT */
-+	RCAR_GP_PIN(5, 3),
-+};
-+static const unsigned int audio_clkout_c_mux[] = {
-+	AUDIO_CLKOUT_C_MARK,
-+};
-+static const unsigned int audio_clkout_d_pins[] = {
-+	/* CLKOUT */
-+	RCAR_GP_PIN(5, 21),
-+};
-+static const unsigned int audio_clkout_d_mux[] = {
-+	AUDIO_CLKOUT_D_MARK,
-+};
-+static const unsigned int audio_clkout1_a_pins[] = {
-+	/* CLKOUT1 */
-+	RCAR_GP_PIN(5, 15),
-+};
-+static const unsigned int audio_clkout1_a_mux[] = {
-+	AUDIO_CLKOUT1_A_MARK,
-+};
-+static const unsigned int audio_clkout1_b_pins[] = {
-+	/* CLKOUT1 */
-+	RCAR_GP_PIN(6, 29),
-+};
-+static const unsigned int audio_clkout1_b_mux[] = {
-+	AUDIO_CLKOUT1_B_MARK,
-+};
-+static const unsigned int audio_clkout2_a_pins[] = {
-+	/* CLKOUT2 */
-+	RCAR_GP_PIN(5, 16),
-+};
-+static const unsigned int audio_clkout2_a_mux[] = {
-+	AUDIO_CLKOUT2_A_MARK,
-+};
-+static const unsigned int audio_clkout2_b_pins[] = {
-+	/* CLKOUT2 */
-+	RCAR_GP_PIN(6, 30),
-+};
-+static const unsigned int audio_clkout2_b_mux[] = {
-+	AUDIO_CLKOUT2_B_MARK,
-+};
-+
-+static const unsigned int audio_clkout3_a_pins[] = {
-+	/* CLKOUT3 */
-+	RCAR_GP_PIN(5, 19),
-+};
-+static const unsigned int audio_clkout3_a_mux[] = {
-+	AUDIO_CLKOUT3_A_MARK,
-+};
-+static const unsigned int audio_clkout3_b_pins[] = {
-+	/* CLKOUT3 */
-+	RCAR_GP_PIN(6, 31),
-+};
-+static const unsigned int audio_clkout3_b_mux[] = {
-+	AUDIO_CLKOUT3_B_MARK,
-+};
-+
- /* - I2C -------------------------------------------------------------------- */
- static const unsigned int i2c1_a_pins[] = {
- 	/* SDA, SCL */
-@@ -1661,6 +1783,23 @@ static const unsigned int scif5_clk_mux[] = {
- };
- 
- static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(audio_clk_a_a),
-+	SH_PFC_PIN_GROUP(audio_clk_a_b),
-+	SH_PFC_PIN_GROUP(audio_clk_a_c),
-+	SH_PFC_PIN_GROUP(audio_clk_b_a),
-+	SH_PFC_PIN_GROUP(audio_clk_b_b),
-+	SH_PFC_PIN_GROUP(audio_clk_c_a),
-+	SH_PFC_PIN_GROUP(audio_clk_c_b),
-+	SH_PFC_PIN_GROUP(audio_clkout_a),
-+	SH_PFC_PIN_GROUP(audio_clkout_b),
-+	SH_PFC_PIN_GROUP(audio_clkout_c),
-+	SH_PFC_PIN_GROUP(audio_clkout_d),
-+	SH_PFC_PIN_GROUP(audio_clkout1_a),
-+	SH_PFC_PIN_GROUP(audio_clkout1_b),
-+	SH_PFC_PIN_GROUP(audio_clkout2_a),
-+	SH_PFC_PIN_GROUP(audio_clkout2_b),
-+	SH_PFC_PIN_GROUP(audio_clkout3_a),
-+	SH_PFC_PIN_GROUP(audio_clkout3_b),
- 	SH_PFC_PIN_GROUP(i2c1_a),
- 	SH_PFC_PIN_GROUP(i2c1_b),
- 	SH_PFC_PIN_GROUP(i2c2_a),
-@@ -1695,6 +1834,26 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(scif5_clk),
- };
- 
-+static const char * const audio_clk_groups[] = {
-+	"audio_clk_a_a",
-+	"audio_clk_a_b",
-+	"audio_clk_a_c",
-+	"audio_clk_b_a",
-+	"audio_clk_b_b",
-+	"audio_clk_c_a",
-+	"audio_clk_c_b",
-+	"audio_clkout_a",
-+	"audio_clkout_b",
-+	"audio_clkout_c",
-+	"audio_clkout_d",
-+	"audio_clkout1_a",
-+	"audio_clkout1_b",
-+	"audio_clkout2_a",
-+	"audio_clkout2_b",
-+	"audio_clkout3_a",
-+	"audio_clkout3_b",
-+};
-+
- static const char * const i2c1_groups[] = {
- 	"i2c1_a",
- 	"i2c1_b",
-@@ -1755,6 +1914,7 @@ static const char * const scif5_groups[] = {
- };
- 
- static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(audio_clk),
- 	SH_PFC_FUNCTION(i2c1),
- 	SH_PFC_FUNCTION(i2c2),
- 	SH_PFC_FUNCTION(i2c6),
--- 
-1.9.1
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
