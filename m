@@ -1,35 +1,36 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 21 Sep 2015 11:45:20 +0000
-Subject: Re: [PATCH] pinctrl: sh-pfc: r8a779[01]: move 'union vin_data' to shared header file
-Message-Id: <CAMuHMdUDvE0KgR-co50D+Z37i4a9U7kKtqqg-BESOPWMFoOsUw@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 18 Sep 2015 00:26:37 +0000
+Subject: Re: Renesas Lager: Device Tree entries for VIN HDMI input, version 2
+Message-Id: <20150918002636.GE12858@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <13219129.kD4pZSmcAP@wasted.cogentembedded.com>
-	<4177542.1tOnYXlTVP@wasted.cogentembedded.com>
-In-Reply-To: <4177542.1tOnYXlTVP@wasted.cogentembedded.com>
+References: <1439465811-936-1-git-send-email-william.towle@codethink.co.uk>
+In-Reply-To: <1439465811-936-1-git-send-email-william.towle@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Linus Walleij <linus.walleij@linaro.org>, Linux-sh list <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: William Towle <william.towle@codethink.co.uk>
+Cc: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk, linux-sh@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>
 
-On Fri, Aug 28, 2015 at 10:39 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> R8A7790/1 PFC  drivers use almost identical  'union vin_data' and completely
-> identical VIN_DATA_PIN_GROUP() macro; we thus can  move them into the shared
-> header file...
->
-> Suggested-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Hi William,
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On Thu, Aug 13, 2015 at 12:36:48PM +0100, William Towle wrote:
+>   Version 2 ... removes some redundant configuration from device nodes,
+> and provides some supplementary logic for automatic initialisation of
+> state->pdata.default_input based on the hardware present.
+> 
+>   (Obsoletes corresponding parts of "HDMI and Composite capture on
+> Lager...", published previously)
+> 
+> Cheers,
+>   Wills.
+> 
+> To follow:
+> 	[PATCH 1/3] ARM: shmobile: lager dts: Add entries for VIN HDMI input
+> 	[PATCH 2/3] media: adv7604: automatic "default-input" selection
+> 	[PATCH 3/3] ARM: shmobile: lager dts: specify default-input for
 
-Gr{oetje,eeting}s,
+I am wondering about the status of patch 2 of the series,
+is it queued-up anywhere?
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+I am also wondering about the relationship between patch 2 and 3.
+Does 3 work without 2? Does 2 make 3 unnecessary?
