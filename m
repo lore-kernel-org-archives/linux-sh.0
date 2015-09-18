@@ -1,191 +1,138 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 20:57:08 +0000
-Subject: [PATCH 30/32] v4l: vsp1: Implement atomic update for the DRM driver
-Message-Id: <1442177830-24536-31-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 18 Sep 2015 01:53:33 +0000
+Subject: [PATCH 1/3 v2] pinctrl: sh-pfc: r8a7795: add I2C pin support
+Message-Id: <87r3lw1opu.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <87twqs1osz.wl%kuninori.morimoto.gx@renesas.com>
+	<87si6c1org.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87si6c1org.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, Linus Walleij <linus.walleij@linaro.org>, Laurent <laurent.pinchart@ideasonboard.com>
+Cc: "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-Add two API functions named vsp1_du_atomic_begin() and
-vsp1_du_atomic_flush() to signal the start and end of an atomic update.
-The vsp1_du_setup_rpf() function is renamed to vsp1_du_atomic_update()
-for consistency.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-With this new API, the driver will reprogram all modified inputs
-atomically before restarting the video stream.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/media/platform/vsp1/vsp1_drm.c | 70 +++++++++++++++++++++++++---------
- drivers/media/platform/vsp1/vsp1_drm.h |  7 ++++
- include/media/vsp1.h                   |  9 +++--
- 3 files changed, 66 insertions(+), 20 deletions(-)
+v2 -> v3
 
-diff --git a/drivers/media/platform/vsp1/vsp1_drm.c b/drivers/media/platform/vsp1/vsp1_drm.c
-index 5cef619b708d..ef8e91d65209 100644
---- a/drivers/media/platform/vsp1/vsp1_drm.c
-+++ b/drivers/media/platform/vsp1/vsp1_drm.c
-@@ -254,7 +254,26 @@ int vsp1_du_setup_lif(struct device *dev, unsigned int width,
- EXPORT_SYMBOL_GPL(vsp1_du_setup_lif);
- 
- /**
-- * vsp1_du_setup_rpf - Setup one RPF input of the VSP pipeline
-+ * vsp1_du_atomic_begin - Prepare for an atomic update
-+ * @dev: the VSP device
-+ */
-+void vsp1_du_atomic_begin(struct device *dev)
-+{
-+	struct vsp1_device *vsp1 = dev_get_drvdata(dev);
-+	struct vsp1_pipeline *pipe = &vsp1->drm->pipe;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&pipe->irqlock, flags);
-+
-+	vsp1->drm->num_inputs = pipe->num_inputs;
-+	vsp1->drm->update = false;
-+
-+	spin_unlock_irqrestore(&pipe->irqlock, flags);
-+}
-+EXPORT_SYMBOL_GPL(vsp1_du_atomic_begin);
-+
-+/**
-+ * vsp1_du_atomic_update - Setup one RPF input of the VSP pipeline
-  * @dev: the VSP device
-  * @rpf_index: index of the RPF to setup (0-based)
-  * @pixelformat: V4L2 pixel format for the RPF memory input
-@@ -288,10 +307,10 @@ EXPORT_SYMBOL_GPL(vsp1_du_setup_lif);
-  *
-  * Return 0 on success or a negative error code on failure.
-  */
--int vsp1_du_setup_rpf(struct device *dev, unsigned int rpf_index,
--		      u32 pixelformat, unsigned int pitch,
--		      dma_addr_t mem[2], const struct v4l2_rect *src,
--		      const struct v4l2_rect *dst)
-+int vsp1_du_atomic_update(struct device *dev, unsigned int rpf_index,
-+			  u32 pixelformat, unsigned int pitch,
-+			  dma_addr_t mem[2], const struct v4l2_rect *src,
-+			  const struct v4l2_rect *dst)
- {
- 	struct vsp1_device *vsp1 = dev_get_drvdata(dev);
- 	struct vsp1_pipeline *pipe = &vsp1->drm->pipe;
-@@ -301,7 +320,6 @@ int vsp1_du_setup_rpf(struct device *dev, unsigned int rpf_index,
- 	struct vsp1_rwpf_memory memory;
- 	struct vsp1_rwpf *rpf;
- 	unsigned long flags;
--	bool start_stop = false;
- 	int ret;
- 
- 	if (rpf_index >= vsp1->pdata.rpf_count)
-@@ -322,16 +340,11 @@ int vsp1_du_setup_rpf(struct device *dev, unsigned int rpf_index,
- 			vsp1->bru->inputs[rpf_index].rpf = NULL;
- 			pipe->inputs[rpf_index] = NULL;
- 
--			vsp1->drm->update = true;
--			start_stop = --pipe->num_inputs = 0;
-+			pipe->num_inputs--;
- 		}
- 
- 		spin_unlock_irqrestore(&pipe->irqlock, flags);
- 
--		/* Stop the pipeline if we're the last user. */
--		if (start_stop)
--			vsp1_pipeline_stop(pipe);
--
- 		return 0;
- 	}
- 
-@@ -459,19 +472,42 @@ int vsp1_du_setup_rpf(struct device *dev, unsigned int rpf_index,
- 	if (!pipe->inputs[rpf->entity.index]) {
- 		vsp1->bru->inputs[rpf_index].rpf = rpf;
- 		pipe->inputs[rpf->entity.index] = rpf;
--		start_stop = pipe->num_inputs++ = 0;
-+		pipe->num_inputs++;
- 	}
- 
--	/* Start the pipeline if it's currently stopped. */
-+	spin_unlock_irqrestore(&pipe->irqlock, flags);
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL_GPL(vsp1_du_atomic_update);
-+
-+/**
-+ * vsp1_du_atomic_flush - Commit an atomic update
-+ * @dev: the VSP device
-+ */
-+void vsp1_du_atomic_flush(struct device *dev)
-+{
-+	struct vsp1_device *vsp1 = dev_get_drvdata(dev);
-+	struct vsp1_pipeline *pipe = &vsp1->drm->pipe;
-+	unsigned long flags;
-+	bool stop = false;
-+
-+	spin_lock_irqsave(&pipe->irqlock, flags);
-+
- 	vsp1->drm->update = true;
--	if (start_stop)
-+
-+	/* Start or stop the pipeline if needed. */
-+	if (!vsp1->drm->num_inputs && pipe->num_inputs)
- 		vsp1_drm_pipeline_run(pipe);
-+	else if (vsp1->drm->num_inputs && !pipe->num_inputs)
-+		stop = true;
- 
- 	spin_unlock_irqrestore(&pipe->irqlock, flags);
- 
--	return 0;
-+	if (stop)
-+		vsp1_pipeline_stop(pipe);
- }
--EXPORT_SYMBOL_GPL(vsp1_du_setup_rpf);
-+EXPORT_SYMBOL_GPL(vsp1_du_atomic_flush);
- 
- /* -----------------------------------------------------------------------------
-  * Initialization
-diff --git a/drivers/media/platform/vsp1/vsp1_drm.h b/drivers/media/platform/vsp1/vsp1_drm.h
-index 2ad320ab1e45..25d7f017feb4 100644
---- a/drivers/media/platform/vsp1/vsp1_drm.h
-+++ b/drivers/media/platform/vsp1/vsp1_drm.h
-@@ -15,8 +15,15 @@
- 
- #include "vsp1_pipe.h"
- 
-+/**
-+ * vsp1_drm - State for the API exposed to the DRM driver
-+ * @pipe: the VSP1 pipeline used for display
-+ * @num_inputs: number of active pipeline inputs at the beginning of an update
-+ * @update: the pipeline configuration has been updated
-+ */
- struct vsp1_drm {
- 	struct vsp1_pipeline pipe;
-+	unsigned int num_inputs;
- 	bool update;
+ - add Geert's Reviewed-by
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 77 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 77 insertions(+)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+index aff3895..f6afe71 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+@@ -1426,6 +1426,57 @@ static const struct sh_pfc_pin pinmux_pins[] = {
+ 	PINMUX_GPIO_GP_ALL(),
  };
  
-diff --git a/include/media/vsp1.h b/include/media/vsp1.h
-index 2c1aea7066be..cc541753896f 100644
---- a/include/media/vsp1.h
-+++ b/include/media/vsp1.h
-@@ -23,8 +23,11 @@ int vsp1_du_init(struct device *dev);
- int vsp1_du_setup_lif(struct device *dev, unsigned int width,
- 		      unsigned int height);
++/* - I2C -------------------------------------------------------------------- */
++static const unsigned int i2c1_a_pins[] = {
++	/* SDA, SCL */
++	RCAR_GP_PIN(5, 11), RCAR_GP_PIN(5, 10),
++};
++static const unsigned int i2c1_a_mux[] = {
++	SDA1_A_MARK, SCL1_A_MARK,
++};
++static const unsigned int i2c1_b_pins[] = {
++	/* SDA, SCL */
++	RCAR_GP_PIN(5, 24), RCAR_GP_PIN(5, 23),
++};
++static const unsigned int i2c1_b_mux[] = {
++	SDA1_B_MARK, SCL1_B_MARK,
++};
++static const unsigned int i2c2_a_pins[] = {
++	/* SDA, SCL */
++	RCAR_GP_PIN(5, 0), RCAR_GP_PIN(5, 4),
++};
++static const unsigned int i2c2_a_mux[] = {
++	SDA2_A_MARK, SCL2_A_MARK,
++};
++static const unsigned int i2c2_b_pins[] = {
++	/* SDA, SCL */
++	RCAR_GP_PIN(3, 13), RCAR_GP_PIN(3, 12),
++};
++static const unsigned int i2c2_b_mux[] = {
++	SDA2_B_MARK, SCL2_B_MARK,
++};
++static const unsigned int i2c6_a_pins[] = {
++	/* SDA, SCL */
++	RCAR_GP_PIN(1, 8), RCAR_GP_PIN(1, 11),
++};
++static const unsigned int i2c6_a_mux[] = {
++	SDA6_A_MARK, SCL6_A_MARK,
++};
++static const unsigned int i2c6_b_pins[] = {
++	/* SDA, SCL */
++	RCAR_GP_PIN(1, 26), RCAR_GP_PIN(1, 25),
++};
++static const unsigned int i2c6_b_mux[] = {
++	SDA6_B_MARK, SCL6_B_MARK,
++};
++static const unsigned int i2c6_c_pins[] = {
++	/* SDA, SCL */
++	RCAR_GP_PIN(0, 15), RCAR_GP_PIN(0, 14),
++};
++static const unsigned int i2c6_c_mux[] = {
++	SDA6_C_MARK, SCL6_C_MARK,
++};
++
+ /* - SCIF0 ------------------------------------------------------------------ */
+ static const unsigned int scif0_data_pins[] = {
+ 	/* RX, TX */
+@@ -1610,6 +1661,13 @@ static const unsigned int scif5_clk_mux[] = {
+ };
  
--int vsp1_du_setup_rpf(struct device *dev, unsigned int rpf, u32 pixelformat,
--		      unsigned int pitch, dma_addr_t mem[2],
--		      const struct v4l2_rect *src, const struct v4l2_rect *dst);
-+int vsp1_du_atomic_begin(struct device *dev);
-+int vsp1_du_atomic_update(struct device *dev, unsigned int rpf, u32 pixelformat,
-+			  unsigned int pitch, dma_addr_t mem[2],
-+			  const struct v4l2_rect *src,
-+			  const struct v4l2_rect *dst);
-+int vsp1_du_atomic_flush(struct device *dev);
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(i2c1_a),
++	SH_PFC_PIN_GROUP(i2c1_b),
++	SH_PFC_PIN_GROUP(i2c2_a),
++	SH_PFC_PIN_GROUP(i2c2_b),
++	SH_PFC_PIN_GROUP(i2c6_a),
++	SH_PFC_PIN_GROUP(i2c6_b),
++	SH_PFC_PIN_GROUP(i2c6_c),
+ 	SH_PFC_PIN_GROUP(scif0_data),
+ 	SH_PFC_PIN_GROUP(scif0_clk),
+ 	SH_PFC_PIN_GROUP(scif0_ctrl),
+@@ -1637,6 +1695,22 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(scif5_clk),
+ };
  
- #endif /* __MEDIA_VSP1_H__ */
++static const char * const i2c1_groups[] = {
++	"i2c1_a",
++	"i2c1_b",
++};
++
++static const char * const i2c2_groups[] = {
++	"i2c2_a",
++	"i2c2_b",
++};
++
++static const char * const i2c6_groups[] = {
++	"i2c6_a",
++	"i2c6_b",
++	"i2c6_c",
++};
++
+ static const char * const scif0_groups[] = {
+ 	"scif0_data",
+ 	"scif0_clk",
+@@ -1681,6 +1755,9 @@ static const char * const scif5_groups[] = {
+ };
+ 
+ static const struct sh_pfc_function pinmux_functions[] = {
++	SH_PFC_FUNCTION(i2c1),
++	SH_PFC_FUNCTION(i2c2),
++	SH_PFC_FUNCTION(i2c6),
+ 	SH_PFC_FUNCTION(scif0),
+ 	SH_PFC_FUNCTION(scif1),
+ 	SH_PFC_FUNCTION(scif2),
 -- 
-2.4.6
+1.9.1
 
