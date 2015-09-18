@@ -1,38 +1,236 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 30 Sep 2015 15:50:19 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r8a7778: Make r8a7778_init_irq_dt() static
-Message-Id: <1443628220-1352-3-git-send-email-geert+renesas@glider.be>
+Date: Fri, 18 Sep 2015 11:08:25 +0000
+Subject: [PATCH v4 02/10] serial: sh-sci: Get rid of the workqueue to handle receive DMA requests
+Message-Id: <1442574513-20648-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443628220-1352-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1443628220-1352-1-git-send-email-geert+renesas@glider.be>
+References: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Muhammad Hamza Farooq <mfarooq@visteon.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-As of commit 4baadb9e05c68962 ("ARM: shmobile: r8a7778: remove obsolete
-setup code"), r8a7778_init_irq_dt() is no longer used outside
-setup-r8a7778.c.
+The receive DMA workqueue function work_fn_rx() handles two things:
+  1. Reception of a full buffer on completion of a receive DMA request,
+  2. Reception of a partial buffer on receive DMA time-out.
+The workqueue is kicked by both the receive DMA completion handler, and
+by a timer to handle DMA time-out.
+
+As there are always two receive DMA requests active, it's possible that
+the receive DMA completion handler is called a second time before the
+workqueue function runs.
+
+As the time-out handler re-enables the receive interrupt, an interrupt
+may come in before time-out has been fully handled.
+
+Move part 1 into the receive DMA completion handler, and move part 2
+into the receive DMA time-out handler, to fix these race conditions.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+v4:
+  - Dropped RFC status,
+  - Rebased on top of "[PATCH] serial: sh-sci: Shuffle functions
+    around", hence it's no longer needed to move sci_rx_dma_release()
+    up,
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index b0c9986d022d8664..0ab9d32728758a9a 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -42,7 +42,8 @@ static void __init r8a7778_timer_init(void)
- 
- #define INT2NTSR0	0x00018 /* 0xfe700018 */
- #define INT2NTSR1	0x0002c /* 0xfe70002c */
--void __init r8a7778_init_irq_dt(void)
-+
-+static void __init r8a7778_init_irq_dt(void)
+v3:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 135 ++++++++++++++++++++------------------------
+ 1 file changed, 61 insertions(+), 74 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 7d8b2644e06d4b8c..eb2b369b1cf1be0b 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -115,7 +115,6 @@ struct sci_port {
+ 	struct sh_dmae_slave		param_tx;
+ 	struct sh_dmae_slave		param_rx;
+ 	struct work_struct		work_tx;
+-	struct work_struct		work_rx;
+ 	struct timer_list		rx_timer;
+ 	unsigned int			rx_timeout;
+ #endif
+@@ -1106,6 +1105,7 @@ static void sci_dma_rx_complete(void *arg)
  {
- 	void __iomem *base = ioremap_nocache(0xfe700000, 0x00100000);
+ 	struct sci_port *s = arg;
+ 	struct uart_port *port = &s->port;
++	struct dma_async_tx_descriptor *desc;
+ 	unsigned long flags;
+ 	int active, count = 0;
  
+@@ -1120,12 +1120,32 @@ static void sci_dma_rx_complete(void *arg)
+ 
+ 	mod_timer(&s->rx_timer, jiffies + s->rx_timeout);
+ 
+-	spin_unlock_irqrestore(&port->lock, flags);
+-
+ 	if (count)
+ 		tty_flip_buffer_push(&port->state->port);
+ 
+-	schedule_work(&s->work_rx);
++	desc = dmaengine_prep_slave_sg(s->chan_rx, &s->sg_rx[active], 1,
++				       DMA_DEV_TO_MEM,
++				       DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
++	if (!desc)
++		goto fail;
++
++	desc->callback = sci_dma_rx_complete;
++	desc->callback_param = s;
++	s->cookie_rx[active] = dmaengine_submit(desc);
++	if (dma_submit_error(s->cookie_rx[active]))
++		goto fail;
++
++	s->active_rx = s->cookie_rx[!active];
++
++	dev_dbg(port->dev, "%s: cookie %d #%d, new active cookie %d\n",
++		__func__, s->cookie_rx[active], active, s->active_rx);
++	spin_unlock_irqrestore(&port->lock, flags);
++	return;
++
++fail:
++	spin_unlock_irqrestore(&port->lock, flags);
++	dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
++	sci_rx_dma_release(s, true);
+ }
+ 
+ static void sci_tx_dma_release(struct sci_port *s, bool enable_pio)
+@@ -1186,72 +1206,6 @@ fail:
+ 	sci_rx_dma_release(s, true);
+ }
+ 
+-static void work_fn_rx(struct work_struct *work)
+-{
+-	struct sci_port *s = container_of(work, struct sci_port, work_rx);
+-	struct uart_port *port = &s->port;
+-	struct dma_async_tx_descriptor *desc;
+-	struct dma_tx_state state;
+-	enum dma_status status;
+-	unsigned long flags;
+-	int new;
+-
+-	spin_lock_irqsave(&port->lock, flags);
+-	new = sci_dma_rx_find_active(s);
+-	if (new < 0) {
+-		spin_unlock_irqrestore(&port->lock, flags);
+-		return;
+-	}
+-
+-	status = dmaengine_tx_status(s->chan_rx, s->active_rx, &state);
+-	if (status != DMA_COMPLETE) {
+-		/* Handle incomplete DMA receive */
+-		struct dma_chan *chan = s->chan_rx;
+-		unsigned int read;
+-		int count;
+-
+-		dmaengine_terminate_all(chan);
+-		read = sg_dma_len(&s->sg_rx[new]) - state.residue;
+-		dev_dbg(port->dev, "Read %u bytes with cookie %d\n", read,
+-			s->active_rx);
+-
+-		if (read) {
+-			count = sci_dma_rx_push(s, s->rx_buf[new], read);
+-			if (count)
+-				tty_flip_buffer_push(&port->state->port);
+-		}
+-
+-		spin_unlock_irqrestore(&port->lock, flags);
+-
+-		sci_submit_rx(s);
+-		return;
+-	}
+-
+-	desc = dmaengine_prep_slave_sg(s->chan_rx, &s->sg_rx[new], 1,
+-				       DMA_DEV_TO_MEM,
+-				       DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+-	if (!desc)
+-		goto fail;
+-
+-	desc->callback = sci_dma_rx_complete;
+-	desc->callback_param = s;
+-	s->cookie_rx[new] = dmaengine_submit(desc);
+-	if (dma_submit_error(s->cookie_rx[new]))
+-		goto fail;
+-
+-	s->active_rx = s->cookie_rx[!new];
+-
+-	dev_dbg(port->dev, "%s: cookie %d #%d, new active cookie %d\n",
+-		__func__, s->cookie_rx[new], new, s->active_rx);
+-	spin_unlock_irqrestore(&port->lock, flags);
+-	return;
+-
+-fail:
+-	spin_unlock_irqrestore(&port->lock, flags);
+-	dev_warn(port->dev, "Failed submitting Rx DMA descriptor\n");
+-	sci_rx_dma_release(s, true);
+-}
+-
+ static void work_fn_tx(struct work_struct *work)
+ {
+ 	struct sci_port *s = container_of(work, struct sci_port, work_tx);
+@@ -1321,15 +1275,49 @@ static void rx_timer_fn(unsigned long arg)
+ {
+ 	struct sci_port *s = (struct sci_port *)arg;
+ 	struct uart_port *port = &s->port;
+-	u16 scr = serial_port_in(port, SCSCR);
++	struct dma_tx_state state;
++	enum dma_status status;
++	unsigned long flags;
++	unsigned int read;
++	int active, count;
++	u16 scr;
++
++	spin_lock_irqsave(&port->lock, flags);
+ 
++	dev_dbg(port->dev, "DMA Rx timed out\n");
++	scr = serial_port_in(port, SCSCR);
+ 	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+ 		scr &= ~SCSCR_RDRQE;
+ 		enable_irq(s->irqs[SCIx_RXI_IRQ]);
+ 	}
+ 	serial_port_out(port, SCSCR, scr | SCSCR_RIE);
+-	dev_dbg(port->dev, "DMA Rx timed out\n");
+-	schedule_work(&s->work_rx);
++
++	active = sci_dma_rx_find_active(s);
++	if (active < 0) {
++		spin_unlock_irqrestore(&port->lock, flags);
++		return;
++	}
++
++	status = dmaengine_tx_status(s->chan_rx, s->active_rx, &state);
++	if (status = DMA_COMPLETE)
++		dev_dbg(port->dev, "Cookie %d #%d has already completed\n",
++			s->active_rx, active);
++
++	/* Handle incomplete DMA receive */
++	dmaengine_terminate_all(s->chan_rx);
++	read = sg_dma_len(&s->sg_rx[active]) - state.residue;
++	dev_dbg(port->dev, "Read %u bytes with cookie %d\n", read,
++		s->active_rx);
++
++	if (read) {
++		count = sci_dma_rx_push(s, s->rx_buf[active], read);
++		if (count)
++			tty_flip_buffer_push(&port->state->port);
++	}
++
++	spin_unlock_irqrestore(&port->lock, flags);
++
++	sci_submit_rx(s);
+ }
+ 
+ static void sci_request_dma(struct uart_port *port)
+@@ -1413,7 +1401,6 @@ static void sci_request_dma(struct uart_port *port)
+ 			dma += s->buf_len_rx;
+ 		}
+ 
+-		INIT_WORK(&s->work_rx, work_fn_rx);
+ 		setup_timer(&s->rx_timer, rx_timer_fn, (unsigned long)s);
+ 
+ 		sci_submit_rx(s);
 -- 
 1.9.1
 
