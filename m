@@ -1,88 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 00:47:03 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC DT Updates for v4.4
-Message-Id: <cover.1442536920.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 18 Sep 2015 07:16:31 +0000
+Subject: Re: [GIT PULL] Renesas ARM Based SoC DT Updates for v4.4
+Message-Id: <CAMuHMdX41ggvKAKrp3s++UMYidhXuASoMP3xzdtnxjoL=0jpSA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216022.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216022.git.horms+renesas@verge.net.au>
+References: <cover.1442536920.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+Hi Simon,
 
-Please consider these Renesas ARM based SoC DT updates for v4.4.
+On Fri, Sep 18, 2015 at 2:47 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> Renesas ARM Based SoC DT Updates for v4.4
+>
+> * Add missing CPG/MSTP Clock Domain for sound on r8a779[01] SoCs
 
-This pull request is based on
-"Renesas ARM Based SoC Cleanup for v4.4, tagged as renesas-cleanup-for-v4.4,
-which I have also sent a pull-request for.
+>       ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain for sound
+>       ARM: shmobile: r8a7791 dtsi: Add CPG/MSTP Clock Domain for sound
 
+These two should actually go in in v4.3, as they're bugfixes for commits that
+are in v4.3-rc1. That can be done in parallel, though.
 
-The following changes since commit 04418c23a9411b85b8789eab5f4397bcbd62b7b4:
+Sound will stop working in mainline as soon as commit cbc41d0a761bffb3
+("drivers: sh: Disable PM runtime for multi-platform ARM with genpd") in
+sh-drivers-for-v4.3 enters mainline.
 
-  ARM: shmobile: Remove legacy clock support leftovers (2015-09-14 10:06:56 +0900)
+Gr{oetje,eeting}s,
 
-are available in the git repository at:
+                        Geert
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-for-v4.4
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-for you to fetch changes up to 2529493c288c109cf734235d1eb3de1b23d9bcef:
-
-  ARM: shmobile: r8a7791 dtsi: Add CPG/MSTP Clock Domain for sound (2015-09-14 10:25:58 +0900)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC DT Updates for v4.4
-
-* Add missing CPG/MSTP Clock Domain for sound on r8a779[01] SoCs
-* Tidy up SCI resource region on r8a779[018] SoCs
-* Add pinmux for iic0 on Lager board
-* Use CCF for audio clock on Lager and Koelsch boards
-* Use serial0 and 1 as serial ports on Marzen board
-* Use adxl345-specific compatible property for KZM9G board
-* Document compat string for Silk board
-* Enable GPIO, I2C, QSPI and VIN support on r8a7794/Silk
-
-----------------------------------------------------------------
-Geert Uytterhoeven (3):
-      ARM: shmobile: kzm9g dts: Use adxl345-specific compatible property
-      ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain for sound
-      ARM: shmobile: r8a7791 dtsi: Add CPG/MSTP Clock Domain for sound
-
-Kuninori Morimoto (5):
-      ARM: shmobile: koelsch: use CCF for audio clock
-      ARM: shmobile: lager: use CCF for audio clock
-      ARM: shmobile: r8a7790: tidyup SSI resource region
-      ARM: shmobile: r8a7791: tidyup SSI resource region
-      ARM: shmobile: r8a7778: tidyup SSI resource region
-
-Magnus Damm (1):
-      ARM: shmobile: marzen: Board specific serial port order
-
-Sergei Shtylyov (8):
-      ARM: shmobile: r8a7794: add GPIO clocks
-      ARM: shmobile: r8a7794: add GPIO DT support
-      ARM: shmobile: r8a7794: add QSPI DT support
-      ARM: shmobile: silk: add QSPI DT support
-      ARM: shmobile: r8a7794: add I2C DT support
-      ARM: shmobile: silk: add I2C1 DT support
-      ARM: shmobile: r8a7794: add VIN DT support
-      ARM: shmobile: silk: add VIN0/ADV7180 DT support
-
-Simon Horman (1):
-      ARM: shmobile: Add silk device tree bindings documentation
-
-Wolfram Sang (1):
-      ARM: shmobile: r8a7790: lager: add pinmux for iic0
-
- Documentation/devicetree/bindings/arm/shmobile.txt |   2 +
- arch/arm/boot/dts/r8a7778.dtsi                     |   2 +-
- arch/arm/boot/dts/r8a7779-marzen.dts               |   6 +-
- arch/arm/boot/dts/r8a7790-lager.dts                |  16 +-
- arch/arm/boot/dts/r8a7790.dtsi                     |   3 +-
- arch/arm/boot/dts/r8a7791-koelsch.dts              |   9 +-
- arch/arm/boot/dts/r8a7791.dtsi                     |   3 +-
- arch/arm/boot/dts/r8a7794-silk.dts                 |  88 ++++++++
- arch/arm/boot/dts/r8a7794.dtsi                     | 224 ++++++++++++++++++++-
- arch/arm/boot/dts/sh73a0-kzm9g.dts                 |   2 +-
- 10 files changed, 338 insertions(+), 17 deletions(-)
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
