@@ -1,97 +1,80 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 14 Sep 2015 12:14:27 +0000
-Subject: [PATCH 05/14] ARM: shmobile: r7s72100: Rename the serial port clock to fck
-Message-Id: <1442232876-27629-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 18 Sep 2015 11:08:26 +0000
+Subject: [PATCH v4 03/10] serial: sh-sci: Submit RX DMA from RX interrupt on (H)SCIF
+Message-Id: <1442574513-20648-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Muhammad Hamza Farooq <mfarooq@visteon.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The clock is really the device functional clock, not the interface
-clock. Rename it.
+For DMA receive requests, the driver is only notified by DMA completion
+after the whole DMA request has been transferred.  If less data is
+received, it will stay stuck until more data arrives.  The driver
+handles this by setting up a timer handler from the receive interrupt,
+after reception of the first character.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Unlike SCIFA and SCIFB, SCIF and HSCIF don't issue receive interrupts on
+reception of individual characters if a receive DMA request is in
+progress, so the timer is never set up.
+
+To fix receive DMA on SCIF and HSCIF, submit the receive DMA request
+from the receive interrupt handler instead.
+In some sense this is similar to the SCIFA/SCIFB behavior, where the
+RDRQE (Rx Data Transfer Request Enable) bit is also set from the receive
+interrupt handler.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r7s72100.dtsi | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+v4:
+  - Dropped RFC status,
+  - Rebased on top of "[PATCH] serial: sh-sci: Shuffle functions
+    around", hence the forward declaration of sci_submit_rx() is no
+    longer needed, and the declared-but-never-defined compiler warning
+    if CONFIG_SERIAL_SH_SCI_DMA=n is gone.
 
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index 060c32cbd669..5f22d6dcdd14 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -157,7 +157,7 @@
- 			     <0 192 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 189 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -170,7 +170,7 @@
- 			     <0 196 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 193 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -183,7 +183,7 @@
- 			     <0 200 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 197 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF2>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -196,7 +196,7 @@
- 			     <0 204 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 201 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF3>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -209,7 +209,7 @@
- 			     <0 208 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 205 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF4>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -222,7 +222,7 @@
- 			     <0 212 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 209 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF5>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -235,7 +235,7 @@
- 			     <0 216 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 213 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF6>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -248,7 +248,7 @@
- 			     <0 220 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 217 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp4_clks R7S72100_CLK_SCIF7>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+v3:
+  - New, this replaces the one-byte DMA transfer from "[PATCH/RFC v2
+    28/29] serial: sh-sci: Add (H)SCIF DMA support".
+---
+ drivers/tty/serial/sh-sci.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index eb2b369b1cf1be0b..02aaf4d213d9c280 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1317,7 +1317,8 @@ static void rx_timer_fn(unsigned long arg)
+ 
+ 	spin_unlock_irqrestore(&port->lock, flags);
+ 
+-	sci_submit_rx(s);
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
++		sci_submit_rx(s);
+ }
+ 
+ static void sci_request_dma(struct uart_port *port)
+@@ -1403,7 +1404,8 @@ static void sci_request_dma(struct uart_port *port)
+ 
+ 		setup_timer(&s->rx_timer, rx_timer_fn, (unsigned long)s);
+ 
+-		sci_submit_rx(s);
++		if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
++			sci_submit_rx(s);
+ 	}
+ }
+ 
+@@ -1442,6 +1444,7 @@ static irqreturn_t sci_rx_interrupt(int irq, void *ptr)
+ 			scr |= SCSCR_RDRQE;
+ 		} else {
+ 			scr &= ~SCSCR_RIE;
++			sci_submit_rx(s);
+ 		}
+ 		serial_port_out(port, SCSCR, scr);
+ 		/* Clear current interrupt */
 -- 
-2.4.6
+1.9.1
 
