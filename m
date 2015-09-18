@@ -1,36 +1,291 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 29 Sep 2015 09:25:45 +0000
-Subject: Re: [PATCH v2 2/2] usb: renesas_usbhs: Add support for R-Car H3
-Message-Id: <CAMuHMdW-HLyuvTA3WSu39kboj_GLQxNKsRZ4rNzCfxSvzs+Q6w@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 18 Sep 2015 01:54:25 +0000
+Subject: [PATCH 3/3 v2] pinctrl: sh-pfc: r8a7795: add Audio SSI pin support
+Message-Id: <87oah01ooe.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443518479-2864-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-	<1443518479-2864-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1443518479-2864-3-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <87twqs1osz.wl%kuninori.morimoto.gx@renesas.com>
+	<87si6c1org.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87si6c1org.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Felipe Balbi <balbi-l0cyMroinI0@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, USB list <linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Simon <horms@verge.net.au>, Linus Walleij <linus.walleij@linaro.org>, Laurent <laurent.pinchart@ideasonboard.com>
+Cc: "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-On Tue, Sep 29, 2015 at 11:21 AM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> This patch adds a compatible string to support for R-Car H3.
->
-> Since the HS-USB controller of R-Car H3 is almost the same specification
-> with R-Car Gen2 (these have 16 pipes and usb-dmac), this patch
-> sets the "type" of renesas_usbhs_driver_param to USBHS_TYPE_RCAR_GEN2.
->
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-Gr{oetje,eeting}s,
+ - tidyup naming format
 
-                        Geert
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 231 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 231 insertions(+)
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+index 7ef2f71..e9be4ac 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+@@ -1782,6 +1782,183 @@ static const unsigned int scif5_clk_mux[] = {
+ 	SCK5_MARK,
+ };
+ 
++/* - SSI -------------------------------------------------------------------- */
++static const unsigned int ssi0_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 2),
++};
++static const unsigned int ssi0_data_mux[] = {
++	SSI_SDATA0_MARK,
++};
++static const unsigned int ssi01239_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 0), RCAR_GP_PIN(6, 1),
++};
++static const unsigned int ssi01239_ctrl_mux[] = {
++	SSI_SCK0129_MARK, SSI_WS0129_MARK,
++};
++static const unsigned int ssi1_data_a_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 3),
++};
++static const unsigned int ssi1_data_a_mux[] = {
++	SSI_SDATA1_A_MARK,
++};
++static const unsigned int ssi1_data_b_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(5, 12),
++};
++static const unsigned int ssi1_data_b_mux[] = {
++	SSI_SDATA1_B_MARK,
++};
++static const unsigned int ssi1_ctrl_a_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 26), RCAR_GP_PIN(6, 27),
++};
++static const unsigned int ssi1_ctrl_a_mux[] = {
++	SSI_SCK1_A_MARK, SSI_WS1_A_MARK,
++};
++static const unsigned int ssi1_ctrl_b_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 4), RCAR_GP_PIN(6, 21),
++};
++static const unsigned int ssi1_ctrl_b_mux[] = {
++	SSI_SCK1_B_MARK, SSI_WS1_B_MARK,
++};
++static const unsigned int ssi2_data_a_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 4),
++};
++static const unsigned int ssi2_data_a_mux[] = {
++	SSI_SDATA2_A_MARK,
++};
++static const unsigned int ssi2_data_b_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(5, 13),
++};
++static const unsigned int ssi2_data_b_mux[] = {
++	SSI_SDATA2_B_MARK,
++};
++static const unsigned int ssi2_ctrl_a_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(5, 19), RCAR_GP_PIN(5, 21),
++};
++static const unsigned int ssi2_ctrl_a_mux[] = {
++	SSI_SCK2_A_MARK, SSI_WS2_A_MARK,
++};
++static const unsigned int ssi2_ctrl_b_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 28), RCAR_GP_PIN(6, 29),
++};
++static const unsigned int ssi2_ctrl_b_mux[] = {
++	SSI_SCK2_B_MARK, SSI_WS2_B_MARK,
++};
++static const unsigned int ssi3_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 7),
++};
++static const unsigned int ssi3_data_mux[] = {
++	SSI_SDATA3_MARK,
++};
++static const unsigned int ssi34_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 5), RCAR_GP_PIN(6, 6),
++};
++static const unsigned int ssi34_ctrl_mux[] = {
++	SSI_SCK34_MARK, SSI_WS34_MARK,
++};
++static const unsigned int ssi4_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 10),
++};
++static const unsigned int ssi4_data_mux[] = {
++	SSI_SDATA4_MARK,
++};
++static const unsigned int ssi4_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 8), RCAR_GP_PIN(6, 9),
++};
++static const unsigned int ssi4_ctrl_mux[] = {
++	SSI_SCK4_MARK, SSI_WS4_MARK,
++};
++static const unsigned int ssi5_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 13),
++};
++static const unsigned int ssi5_data_mux[] = {
++	SSI_SDATA5_MARK,
++};
++static const unsigned int ssi5_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 11), RCAR_GP_PIN(6, 12),
++};
++static const unsigned int ssi5_ctrl_mux[] = {
++	SSI_SCK5_MARK, SSI_WS5_MARK,
++};
++static const unsigned int ssi6_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 16),
++};
++static const unsigned int ssi6_data_mux[] = {
++	SSI_SDATA6_MARK,
++};
++static const unsigned int ssi6_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 14), RCAR_GP_PIN(6, 15),
++};
++static const unsigned int ssi6_ctrl_mux[] = {
++	SSI_SCK6_MARK, SSI_WS6_MARK,
++};
++static const unsigned int ssi7_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 19),
++};
++static const unsigned int ssi7_data_mux[] = {
++	SSI_SDATA7_MARK,
++};
++static const unsigned int ssi78_ctrl_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 17), RCAR_GP_PIN(6, 18),
++};
++static const unsigned int ssi78_ctrl_mux[] = {
++	SSI_SCK78_MARK, SSI_WS78_MARK,
++};
++static const unsigned int ssi8_data_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 20),
++};
++static const unsigned int ssi8_data_mux[] = {
++	SSI_SDATA8_MARK,
++};
++static const unsigned int ssi9_data_a_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(6, 21),
++};
++static const unsigned int ssi9_data_a_mux[] = {
++	SSI_SDATA9_A_MARK,
++};
++static const unsigned int ssi9_data_b_pins[] = {
++	/* SDATA */
++	RCAR_GP_PIN(5, 14),
++};
++static const unsigned int ssi9_data_b_mux[] = {
++	SSI_SDATA9_B_MARK,
++};
++static const unsigned int ssi9_ctrl_a_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(5, 15), RCAR_GP_PIN(5, 16),
++};
++static const unsigned int ssi9_ctrl_a_mux[] = {
++	SSI_SCK9_A_MARK, SSI_WS9_A_MARK,
++};
++static const unsigned int ssi9_ctrl_b_pins[] = {
++	/* SCK, WS */
++	RCAR_GP_PIN(6, 30), RCAR_GP_PIN(6, 31),
++};
++static const unsigned int ssi9_ctrl_b_mux[] = {
++	SSI_SCK9_B_MARK, SSI_WS9_B_MARK,
++};
++
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(audio_clk_a_a),
+ 	SH_PFC_PIN_GROUP(audio_clk_a_b),
+@@ -1832,6 +2009,31 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(scif4_ctrl_c),
+ 	SH_PFC_PIN_GROUP(scif5_data),
+ 	SH_PFC_PIN_GROUP(scif5_clk),
++	SH_PFC_PIN_GROUP(ssi0_data),
++	SH_PFC_PIN_GROUP(ssi01239_ctrl),
++	SH_PFC_PIN_GROUP(ssi1_data_a),
++	SH_PFC_PIN_GROUP(ssi1_data_b),
++	SH_PFC_PIN_GROUP(ssi1_ctrl_a),
++	SH_PFC_PIN_GROUP(ssi1_ctrl_b),
++	SH_PFC_PIN_GROUP(ssi2_data_a),
++	SH_PFC_PIN_GROUP(ssi2_data_b),
++	SH_PFC_PIN_GROUP(ssi2_ctrl_a),
++	SH_PFC_PIN_GROUP(ssi2_ctrl_b),
++	SH_PFC_PIN_GROUP(ssi3_data),
++	SH_PFC_PIN_GROUP(ssi34_ctrl),
++	SH_PFC_PIN_GROUP(ssi4_data),
++	SH_PFC_PIN_GROUP(ssi4_ctrl),
++	SH_PFC_PIN_GROUP(ssi5_data),
++	SH_PFC_PIN_GROUP(ssi5_ctrl),
++	SH_PFC_PIN_GROUP(ssi6_data),
++	SH_PFC_PIN_GROUP(ssi6_ctrl),
++	SH_PFC_PIN_GROUP(ssi7_data),
++	SH_PFC_PIN_GROUP(ssi78_ctrl),
++	SH_PFC_PIN_GROUP(ssi8_data),
++	SH_PFC_PIN_GROUP(ssi9_data_a),
++	SH_PFC_PIN_GROUP(ssi9_data_b),
++	SH_PFC_PIN_GROUP(ssi9_ctrl_a),
++	SH_PFC_PIN_GROUP(ssi9_ctrl_b),
+ };
+ 
+ static const char * const audio_clk_groups[] = {
+@@ -1913,6 +2115,34 @@ static const char * const scif5_groups[] = {
+ 	"scif5_clk",
+ };
+ 
++static const char * const ssi_groups[] = {
++	"ssi0_data",
++	"ssi01239_ctrl",
++	"ssi1_data_a",
++	"ssi1_data_b",
++	"ssi1_ctrl_a",
++	"ssi1_ctrl_b",
++	"ssi2_data_a",
++	"ssi2_data_b",
++	"ssi2_ctrl_a",
++	"ssi2_ctrl_b",
++	"ssi3_data",
++	"ssi34_ctrl",
++	"ssi4_data",
++	"ssi4_ctrl",
++	"ssi5_data",
++	"ssi5_ctrl",
++	"ssi6_data",
++	"ssi6_ctrl",
++	"ssi7_data",
++	"ssi78_ctrl",
++	"ssi8_data",
++	"ssi9_data_a",
++	"ssi9_data_b",
++	"ssi9_ctrl_a",
++	"ssi9_ctrl_b",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(audio_clk),
+ 	SH_PFC_FUNCTION(i2c1),
+@@ -1924,6 +2154,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(scif3),
+ 	SH_PFC_FUNCTION(scif4),
+ 	SH_PFC_FUNCTION(scif5),
++	SH_PFC_FUNCTION(ssi),
+ };
+ 
+ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+-- 
+1.9.1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
