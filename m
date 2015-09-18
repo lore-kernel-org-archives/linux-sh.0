@@ -1,168 +1,69 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Sep 2015 08:59:25 +0000
-Subject: [PATCH 09/21] ARM: shmobile: bockw: remove "reference" board file and config
-Message-Id: <892b19fe503f5478f14c77d5f14df9f954292baf.1442478814.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 18 Sep 2015 11:08:29 +0000
+Subject: [PATCH v4 06/10] serial: sh-sci: Redirect port interrupts to CPU _only_ when DMA stops
+Message-Id: <1442574513-20648-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442478814.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442478814.git.horms+renesas@verge.net.au>
+References: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Muhammad Hamza Farooq <mfarooq@visteon.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Muhammad Hamza Farooq <mfarooq@visteon.com>
 
-Replaced by multi-platform.
+Since the DMA engine is not stopped everytime rx_timer_fn is called, the
+interrupts have to be redirected back to CPU only when incomplete DMA
+transaction is handled
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/mach-shmobile/Kconfig                 | 13 ----
- arch/arm/mach-shmobile/Makefile                |  1 -
- arch/arm/mach-shmobile/Makefile.boot           |  1 -
- arch/arm/mach-shmobile/board-bockw-reference.c | 86 --------------------------
- 4 files changed, 101 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/board-bockw-reference.c
+v4:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 926e336d6aeb..670dce3953d0 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -126,19 +126,6 @@ config MACH_BOCKW
- 	select SND_SOC_AK4642 if SND_SIMPLE_CARD && I2C
- 	select USE_OF
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 36a11110acf4cab5..5dcd8b382e9053f4 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1285,12 +1285,6 @@ static void rx_timer_fn(unsigned long arg)
+ 	spin_lock_irqsave(&port->lock, flags);
  
--config MACH_BOCKW_REFERENCE
--	bool "BOCK-W  - Reference Device Tree Implementation"
--	depends on ARCH_R8A7778
--	select ARCH_REQUIRE_GPIOLIB
--	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--	select USE_OF
--	---help---
--	   Use reference implementation of BockW board support
--	   which makes use of device tree at the expense
--	   of not supporting a number of devices.
--
--	   This is intended to aid developers
--
- comment "Renesas ARM SoCs System Configuration"
- 
- config CPU_HAS_INTEVT
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index b02841528e05..8f235c5ec28d 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -52,7 +52,6 @@ obj-$(CONFIG_ARCH_RCAR_GEN2)	+= pm-rcar-gen2.o
- # Board objects
- ifndef CONFIG_ARCH_SHMOBILE_MULTI
- obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
--obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
- endif
- 
- # Framework support
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index a489fe9a76cd..1a4ab160e361 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -1,7 +1,6 @@
- # per-board load address for uImage
- loadaddr-y	: loadaddr-$(CONFIG_MACH_BOCKW) += 0x60008000
--loadaddr-$(CONFIG_MACH_BOCKW_REFERENCE) += 0x60008000
- 
- __ZRELADDR	:= $(sort $(loadaddr-y))
-    zreladdr-y   += $(__ZRELADDR)
-diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
-deleted file mode 100644
-index 4f78296f7d04..000000000000
---- a/arch/arm/mach-shmobile/board-bockw-reference.c
-+++ /dev/null
-@@ -1,86 +0,0 @@
--/*
-- * Bock-W board support
-- *
-- * Copyright (C) 2013  Renesas Solutions Corp.
-- * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- */
--
--#include <linux/of_platform.h>
--
--#include <asm/mach/arch.h>
--
--#include "common.h"
--#include "r8a7778.h"
--
--/*
-- *	see board-bock.c for checking detail of dip-switch
-- */
--
--#define FPGA	0x18200000
--#define IRQ0MR	0x30
--#define COMCTLR	0x101c
--
--#define PFC	0xfffc0000
--#define PUPR4	0x110
--static void __init bockw_init(void)
--{
--	void __iomem *fpga;
--	void __iomem *pfc;
--
--#ifndef CONFIG_COMMON_CLK
--	r8a7778_clock_init();
--#endif
--	r8a7778_init_irq_extpin_dt(1);
--	r8a7778_add_dt_devices();
--
--	fpga = ioremap_nocache(FPGA, SZ_1M);
--	if (fpga) {
--		/*
--		 * CAUTION
--		 *
--		 * IRQ0/1 is cascaded interrupt from FPGA.
--		 * it should be cared in the future
--		 * Now, it is assuming IRQ0 was used only from SMSC.
--		 */
--		u16 val = ioread16(fpga + IRQ0MR);
--		val &= ~(1 << 4); /* enable SMSC911x */
--		iowrite16(val, fpga + IRQ0MR);
--
--		iounmap(fpga);
+ 	dev_dbg(port->dev, "DMA Rx timed out\n");
+-	scr = serial_port_in(port, SCSCR);
+-	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
+-		scr &= ~SCSCR_RDRQE;
+-		enable_irq(s->irqs[SCIx_RXI_IRQ]);
 -	}
+-	serial_port_out(port, SCSCR, scr | SCSCR_RIE);
+ 
+ 	active = sci_dma_rx_find_active(s);
+ 	if (active < 0) {
+@@ -1315,10 +1309,18 @@ static void rx_timer_fn(unsigned long arg)
+ 			tty_flip_buffer_push(&port->state->port);
+ 	}
+ 
+-	spin_unlock_irqrestore(&port->lock, flags);
 -
--	pfc = ioremap_nocache(PFC, 0x200);
--	if (pfc) {
--		/*
--		 * FIXME
--		 *
--		 * SDHI CD/WP pin needs pull-up
--		 */
--		iowrite32(ioread32(pfc + PUPR4) | (3 << 26), pfc + PUPR4);
--		iounmap(pfc);
--	}
--
--	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
--}
--
--static const char *const bockw_boards_compat_dt[] __initconst = {
--	"renesas,bockw-reference",
--	NULL,
--};
--
--DT_MACHINE_START(BOCKW_DT, "bockw")
--	.init_early	= shmobile_init_delay,
--	.init_irq	= r8a7778_init_irq_dt,
--	.init_machine	= bockw_init,
--	.init_late	= shmobile_init_late,
--	.dt_compat	= bockw_boards_compat_dt,
--MACHINE_END
+ 	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB)
+ 		sci_submit_rx(s);
++
++	/* Direct new serial port interrupts back to CPU */
++	scr = serial_port_in(port, SCSCR);
++	if (port->type = PORT_SCIFA || port->type = PORT_SCIFB) {
++		scr &= ~SCSCR_RDRQE;
++		enable_irq(s->irqs[SCIx_RXI_IRQ]);
++	}
++	serial_port_out(port, SCSCR, scr | SCSCR_RIE);
++
++	spin_unlock_irqrestore(&port->lock, flags);
+ }
+ 
+ static void sci_request_dma(struct uart_port *port)
 -- 
-2.1.4
+1.9.1
 
