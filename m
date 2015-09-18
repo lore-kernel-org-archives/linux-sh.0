@@ -1,54 +1,30 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 30 Sep 2015 06:15:51 +0000
-Subject: [PATCH net-next 0/4] ravb: Add support for r8a7795 SoC
-Message-Id: <1443593755-20991-1-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 18 Sep 2015 01:52:34 +0000
+Subject: [PATCH 0/3 v2] pinctrl: sh-pfc: r8a7795: add I2C/Audio pin support
+Message-Id: <87si6c1org.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87twqs1osz.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87twqs1osz.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Florian Fainelli <f.fainelli@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>
+To: Simon <horms@verge.net.au>, Linus Walleij <linus.walleij@linaro.org>, Laurent <laurent.pinchart@ideasonboard.com>
+Cc: "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-Dave,
 
-please consider this series for net-next.
-It enhances the ravb driver to support the r8a7795 SoC.
+Hi Linus W
+Cc: Geert, Laurent, Wolfram
 
-Changes:
+These are v2 of I2C / Audio pinchart support for Renesas r8a7795
 
-* Dropped RFC prefix
-* Details in changelog of individual patches
+Kuninori Morimoto (3):
+      pinctrl: sh-pfc: r8a7795: add I2C pin support
+      pinctrl: sh-pfc: r8a7795: add Audio clock pin support
+      pinctrl: sh-pfc: r8a7795: add Audio SSI pin support
 
-Base:
-
-* net-next/master
-
-Availability:
-
-To aid review of this in conjunction with other EtherAVB changes
-the following branches are available in my renesas tree on kernel.org.
-
-* me/r8a7795-ravb-driver-v4: this series
-* me/r8a7795-ravb-pfc-v2: r8a7795 sh-pfc update for EthernetAVB
-* me/r8a7795-ravb-integration-v4: enable EthernetAVB on r8a7795
-* me/r8a7795-ravb-driver-and-integration-v4.runtime:
-      the above three branches with their runtime dependencies
-
-Kazuya Mizuguchi (3):
-  ravb: Provide dev parameter to DMA API
-  ravb: Document binding for r8a7795 SoC
-  ravb: Add support for r8a7795 SoC
-
-Simon Horman (1):
-  phylib: Add phy_set_max_speed helper
-
- .../devicetree/bindings/net/renesas,ravb.txt       |  69 ++++++++++++--
- drivers/net/ethernet/renesas/ravb.h                |   7 ++
- drivers/net/ethernet/renesas/ravb_main.c           | 101 +++++++++++++++------
- drivers/net/phy/phy_device.c                       |  59 ++++++++----
- include/linux/phy.h                                |   1 +
- 5 files changed, 184 insertions(+), 53 deletions(-)
-
--- 
-2.1.4
-
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 459 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 459 insertions(+)
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
