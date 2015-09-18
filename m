@@ -1,48 +1,51 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 16 Sep 2015 23:53:58 +0000
-Subject: [PATCH] ARM: shmobile: r8a7794: add HS-USB DT support
-Message-Id: <49756124.B9jeO4ArbL@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 18 Sep 2015 11:08:31 +0000
+Subject: [PATCH v4 08/10] serial: sh-sci: Do not terminate DMA engine when race condition occurs
+Message-Id: <1442574513-20648-9-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1674850.BZpGW9kEud@wasted.cogentembedded.com>
-In-Reply-To: <1674850.BZpGW9kEud@wasted.cogentembedded.com>
+References: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
+Cc: Muhammad Hamza Farooq <mfarooq@visteon.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Define the R8A7794 generic part of the HS-USB device node.
-It is up to the board file to enable the device.
+From: Muhammad Hamza Farooq <mfarooq@visteon.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+When DMA packet completion and timer expiry take place at the same time,
+do not terminate the DMA engine, leading by submission of new
+descriptors, as the DMA communication hasn't necessarily stopped here.
 
+Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-This patch is against  'renesas-devel-20150914-v4.3-rc1' tag  of Simon Horman's
-'renesas.git' repo plus the R8A7794/ PCI USB and USB PHY support patches posted
-last week.
+v4:
+  - New.
+---
+ drivers/tty/serial/sh-sci.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
- arch/arm/boot/dts/r8a7794.dtsi |   12 ++++++++++++
- 1 file changed, 12 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7794.dtsi
-@@ -718,6 +718,18 @@
- 		};
- 	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 84c15152e111b084..9406fe227bc76c96 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1296,9 +1296,14 @@ static void rx_timer_fn(unsigned long arg)
+ 	}
  
-+	hsusb: usb@e6590000 {
-+		compatible = "renesas,usbhs-r8a7794";
-+		reg = <0 0xe6590000 0 0x100>;
-+		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7794_CLK_HSUSB>;
-+		power-domains = <&cpg_clocks>;
-+		renesas,buswait = <4>;
-+		phys = <&usb0 1>;
-+		phy-names = "usb";
-+		status = "disabled";
-+	};
+ 	status = dmaengine_tx_status(s->chan_rx, s->active_rx, &state);
+-	if (status = DMA_COMPLETE)
++	if (status = DMA_COMPLETE) {
+ 		dev_dbg(port->dev, "Cookie %d #%d has already completed\n",
+ 			s->active_rx, active);
++		spin_unlock_irqrestore(&port->lock, flags);
 +
- 	usbphy: usb-phy@e6590100 {
- 		compatible = "renesas,usb-phy-r8a7794";
- 		reg = <0 0xe6590100 0 0x100>;
++		/* Let packet complete handler take care of the packet */
++		return;
++	}
+ 
+ 	/* Handle incomplete DMA receive */
+ 	dmaengine_terminate_all(s->chan_rx);
+-- 
+1.9.1
 
