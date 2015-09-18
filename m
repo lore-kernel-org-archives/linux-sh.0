@@ -1,38 +1,86 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 20:56:56 +0000
-Subject: [PATCH 18/32] v4l: vsp1: Set the SRU CTRL0 register when starting the stream
-Message-Id: <1442177830-24536-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 18 Sep 2015 00:47:13 +0000
+Subject: [PATCH 11/19] ARM: shmobile: silk: add VIN0/ADV7180 DT support
+Message-Id: <8614daf299cbab2bcada922e727fdc9ad45b2412.1442536920.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <cover.1442536920.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Commit 58f896d859ce ("[media] v4l: vsp1: sru: Make the intensity
-controllable during streaming") refactored the stream start code and
-removed the SRU CTRL0 register write by mistake. Add it back.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Fixes: 58f896d859ce ("[media] v4l: vsp1: sru: Make the intensity controllable during streaming")
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Define  the  SILK board dependent part of the  VIN0  device  node.
+Add the device node for Analog Devices ADV7180 video decoder to I2C1 bus.
+Add the necessary subnodes to interconnect VIN0 and ADV7180 devices.
+
+Based on the Henninger VIN0/ADV8170 device tree patch by myself.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/vsp1/vsp1_sru.c | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7794-silk.dts | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
 
-diff --git a/drivers/media/platform/vsp1/vsp1_sru.c b/drivers/media/platform/vsp1/vsp1_sru.c
-index 6310acab60e7..d41ae950d1a1 100644
---- a/drivers/media/platform/vsp1/vsp1_sru.c
-+++ b/drivers/media/platform/vsp1/vsp1_sru.c
-@@ -154,6 +154,7 @@ static int sru_s_stream(struct v4l2_subdev *subdev, int enable)
- 	mutex_lock(sru->ctrls.lock);
- 	ctrl0 |= vsp1_sru_read(sru, VI6_SRU_CTRL0)
- 	       & (VI6_SRU_CTRL0_PARAM0_MASK | VI6_SRU_CTRL0_PARAM1_MASK);
-+	vsp1_sru_write(sru, VI6_SRU_CTRL0, ctrl0);
- 	mutex_unlock(sru->ctrls.lock);
+diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
+index 3f808724106e..bb0a22423dc4 100644
+--- a/arch/arm/boot/dts/r8a7794-silk.dts
++++ b/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -75,6 +75,11 @@
+ 		renesas,groups = "qspi_ctrl", "qspi_data4";
+ 		renesas,function = "qspi";
+ 	};
++
++	vin0_pins: vin0 {
++		renesas,groups = "vin0_data8", "vin0_clk";
++		renesas,function = "vin0";
++	};
+ };
  
- 	vsp1_sru_write(sru, VI6_SRU_CTRL1, VI6_SRU_CTRL1_PARAM5);
+ &scif2 {
+@@ -106,6 +111,19 @@
+ 
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++
++	composite-in@20 {
++		compatible = "adi,adv7180";
++		reg = <0x20>;
++		remote = <&vin0>;
++
++		port {
++			adv7180: endpoint {
++				bus-width = <8>;
++				remote-endpoint = <&vin0ep>;
++			};
++		};
++	};
+ };
+ 
+ &mmcif0 {
+@@ -153,3 +171,20 @@
+ 		};
+ 	};
+ };
++
++/* composite video input */
++&vin0 {
++	status = "okay";
++	pinctrl-0 = <&vin0_pins>;
++	pinctrl-names = "default";
++
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		vin0ep: endpoint {
++			remote-endpoint = <&adv7180>;
++			bus-width = <8>;
++		};
++	};
++};
 -- 
-2.4.6
+2.1.4
 
