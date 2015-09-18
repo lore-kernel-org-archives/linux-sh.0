@@ -1,109 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 22:50:58 +0000
-Subject: [PATCH 11/22] drm: rcar-du: Use the VSP atomic update API
-Message-Id: <1442184669-30990-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 18 Sep 2015 02:07:18 +0000
+Subject: [PATCH 15/18 v3] arm64: defconfig: Enable Renesas R-Car I2C Controller
+Message-Id: <87r3lwzdpm.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442184669-30990-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c |  6 ++++++
- drivers/gpu/drm/rcar-du/rcar_du_vsp.c  | 18 ++++++++++++++----
- drivers/gpu/drm/rcar-du/rcar_du_vsp.h  |  4 ++++
- 3 files changed, 24 insertions(+), 4 deletions(-)
+v2 -> v3
 
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-index 196b940ea8d7..b63bdd12609e 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_crtc.c
-@@ -538,6 +538,9 @@ static void rcar_du_crtc_atomic_begin(struct drm_crtc *crtc,
- 		rcrtc->event = event;
- 		spin_unlock_irqrestore(&dev->event_lock, flags);
- 	}
-+
-+	if (rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_VSP1_SOURCE))
-+		rcar_du_vsp_atomic_begin(rcrtc);
- }
- 
- static void rcar_du_crtc_atomic_flush(struct drm_crtc *crtc,
-@@ -546,6 +549,9 @@ static void rcar_du_crtc_atomic_flush(struct drm_crtc *crtc,
- 	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
- 
- 	rcar_du_crtc_update_planes(rcrtc);
-+
-+	if (rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_VSP1_SOURCE))
-+		rcar_du_vsp_atomic_flush(rcrtc);
- }
- 
- static const struct drm_crtc_helper_funcs crtc_helper_funcs = {
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vsp.c b/drivers/gpu/drm/rcar-du/rcar_du_vsp.c
-index 6e34dfd0ef42..f01c089881e0 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_vsp.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_vsp.c
-@@ -69,6 +69,16 @@ void rcar_du_vsp_disable(struct rcar_du_crtc *crtc)
- 	vsp1_du_setup_lif(crtc->vsp->vsp, 0, 0);
- }
- 
-+void rcar_du_vsp_atomic_begin(struct rcar_du_crtc *crtc)
-+{
-+	vsp1_du_atomic_begin(crtc->vsp->vsp);
-+}
-+
-+void rcar_du_vsp_atomic_flush(struct rcar_du_crtc *crtc)
-+{
-+	vsp1_du_atomic_flush(crtc->vsp->vsp);
-+}
-+
- /* Keep the two tables in sync. */
- static const u32 formats_kms[] = {
- 	DRM_FORMAT_RGB332,
-@@ -155,8 +165,8 @@ static void rcar_du_vsp_plane_setup(struct rcar_du_vsp_plane *plane)
- 
- 	WARN_ON(!pixelformat);
- 
--	vsp1_du_setup_rpf(plane->vsp->vsp, plane->index, pixelformat,
--			  fb->pitches[0], paddr, &src, &dst);
-+	vsp1_du_atomic_update(plane->vsp->vsp, plane->index, pixelformat,
-+			      fb->pitches[0], paddr, &src, &dst);
- }
- 
- static int rcar_du_vsp_plane_atomic_check(struct drm_plane *plane,
-@@ -195,8 +205,8 @@ static void rcar_du_vsp_plane_atomic_update(struct drm_plane *plane,
- 	if (plane->state->crtc)
- 		rcar_du_vsp_plane_setup(rplane);
- 	else
--		vsp1_du_setup_rpf(rplane->vsp->vsp, rplane->index, 0, 0, 0,
--				  NULL, NULL);
-+		vsp1_du_atomic_update(rplane->vsp->vsp, rplane->index, 0, 0, 0,
-+				      NULL, NULL);
- }
- 
- static const struct drm_plane_helper_funcs rcar_du_vsp_plane_helper_funcs = {
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vsp.h b/drivers/gpu/drm/rcar-du/rcar_du_vsp.h
-index 7a6ed21ebcd3..df3bf3805c69 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_vsp.h
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_vsp.h
-@@ -63,10 +63,14 @@ to_rcar_vsp_plane_state(struct drm_plane_state *state)
- int rcar_du_vsp_init(struct rcar_du_vsp *vsp);
- void rcar_du_vsp_enable(struct rcar_du_crtc *crtc);
- void rcar_du_vsp_disable(struct rcar_du_crtc *crtc);
-+void rcar_du_vsp_atomic_begin(struct rcar_du_crtc *crtc);
-+void rcar_du_vsp_atomic_flush(struct rcar_du_crtc *crtc);
- #else
- static inline int rcar_du_vsp_init(struct rcar_du_vsp *vsp) { return 0; };
- static inline void rcar_du_vsp_enable(struct rcar_du_crtc *crtc) { };
- static inline void rcar_du_vsp_disable(struct rcar_du_crtc *crtc) { };
-+static inline void rcar_du_vsp_atomic_begin(struct rcar_du_crtc *crtc) { };
-+static inline void rcar_du_vsp_atomic_flush(struct rcar_du_crtc *crtc) { };
- #endif
- 
- #endif /* __RCAR_DU_VSP_H__ */
+ - no change
+
+ arch/arm64/configs/defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 60263e8..abb8cdd 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -123,6 +123,8 @@ CONFIG_SERIAL_XILINX_PS_UART=y
+ CONFIG_SERIAL_XILINX_PS_UART_CONSOLE=y
+ CONFIG_VIRTIO_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
++CONFIG_I2C=y
++CONFIG_I2C_RCAR=y
+ CONFIG_SPI=y
+ CONFIG_SPI_PL022=y
+ CONFIG_PINCTRL_MSM8916=y
 -- 
-2.4.6
+1.9.1
 
