@@ -1,55 +1,56 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 28 Sep 2015 10:50:50 +0000
-Subject: Re: [PATCH 00/03] irqchip: renesas-irqc: r8a7795 and generic chip update
-Message-Id: <CANqRtoS_2CaGOPg3=JjnU53xWSuCw+H2TTBqoUupU-1p7dYsHA@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 18 Sep 2015 06:03:52 +0000
+Subject: [PATCH] usb: renesas_usbhs: Add support for R-Car H3
+Message-Id: <1442556232-6564-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150917071230.29299.32326.sendpatchset@little-apple>
-	<20150917075721.GD5414@verge.net.au>
-	<CAMuHMdUdcTGTtkiJhuqiMy_jk9qohyJmQ_y=-JhgoceqgFfdpQ@mail.gmail.com>
-	<alpine.DEB.2.11.1509221256100.5606@nanos>
-In-Reply-To: <alpine.DEB.2.11.1509221256100.5606@nanos>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms@verge.net.au>, Linux-sh list <linux-sh@vger.kernel.org>, Jason Cooper <jason@lakedaemon.net>, Geert Uytterhoeven <geert+renesas@glider.be>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: gregkh@linuxfoundation.org, balbi@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Hi Thomas,
+This patch adds a compatible string to support for R-Car H3.
 
-On Tue, Sep 22, 2015 at 7:56 PM, Thomas Gleixner <tglx@linutronix.de> wrote:
-> On Thu, 17 Sep 2015, Geert Uytterhoeven wrote:
->> On Thu, Sep 17, 2015 at 9:57 AM, Simon Horman <horms@verge.net.au> wrote:
->> > On Thu, Sep 17, 2015 at 04:12:30PM +0900, Magnus Damm wrote:
->> >> irqchip: renesas-irqc: r8a7795 and generic chip update
->> >>
->> >> [PATCH 01/03] irqchip: renesas-irqc: Add r8a7795 IRQC DT documentation
->> >> [PATCH 02/03] irqchip: renesas-irqc: Move over to generic chip
->> >> [PATCH 03/03] irqchip: renesas-irqc: Enable nested lock
->> >>
->> >> This series updates the IRQC driver with generic chip support including
->> >> nested locking. Also the DT documentation is extended with r8a7795
->> >> support.
->> >
->> > Its not entirely clear what the relationship is between these patches
->> > nor what the motivation is for the last two patches.
->>
->> Patch 2 is a cleanup/consolidation.
->>
->> Note that patch 2 will no longer apply, as linux-next now has
->>   - b92f865703e22b42 irqchip: renesas-irqc: Use a separate lockdep class
->>   - 72e56742f6baff5d irqchip: renesas-irqc: Propagate wake-up settings to parent
->>
->> Patch 3 is the irq_chip_generic way of b92f865703e22b42.
->
-> Magnus,
->
-> can you please rebase that series to 4.3-rc2, which has the above
-> commits.
+Since the HS-USB controller of R-Car H3 is almost the same specification
+with R-Car Gen2 (these have 16 pipes and usb-dmac), this patch
+sets the "type" of renesas_usbhs_driver_param to USBHS_TYPE_RCAR_GEN2.
 
-Thanks, I've rebased to v4.3-rc3 and folded together patch 2 and 3 in V2:
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ This patch is based on the latest Felipe's usb.git / testing/next
+branch (The commit id = b1ede0faf6e4961842f80e5e2fc1bf5373fef235).
 
-[PATCH v2 00/02] irqchip: renesas-irqc: r8a7795 and generic chip update V2
+ Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 1 +
+ drivers/usb/renesas_usbhs/common.c                      | 4 ++++
+ 2 files changed, 5 insertions(+)
 
-Cheers,
+diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+index 64a4ca6..7d48f63 100644
+--- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
++++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+@@ -5,6 +5,7 @@ Required properties:
+ 	- "renesas,usbhs-r8a7790"
+ 	- "renesas,usbhs-r8a7791"
+ 	- "renesas,usbhs-r8a7794"
++	- "renesas,usbhs-r8a7795"
+   - reg: Base address and length of the register for the USBHS
+   - interrupts: Interrupt specifier for the USBHS
+   - clocks: A list of phandle + clock specifier pairs
+diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
+index 7b98e1d..2becd6b 100644
+--- a/drivers/usb/renesas_usbhs/common.c
++++ b/drivers/usb/renesas_usbhs/common.c
+@@ -476,6 +476,10 @@ static const struct of_device_id usbhs_of_match[] = {
+ 		.compatible = "renesas,usbhs-r8a7794",
+ 		.data = (void *)USBHS_TYPE_RCAR_GEN2,
+ 	},
++	{
++		.compatible = "renesas,usbhs-r8a7795",
++		.data = (void *)USBHS_TYPE_RCAR_GEN2,
++	},
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, usbhs_of_match);
+-- 
+1.9.1
 
-/ magnus
