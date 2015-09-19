@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 14 Sep 2015 16:03:24 +0000
-Subject: Re: topic/gen3-latest
-Message-Id: <CAMuHMdXopRgP9ES=iKUkOAF5y2xaBTf3oknvQF2fMK+=mP8Rog@mail.gmail.com>
+Date: Sat, 19 Sep 2015 10:08:16 +0000
+Subject: topic/gen3-latest
+Message-Id: <CAMuHMdW4JcsPiRAiZektJDqaLTh2Vasqz5kBE0yEJdQJf9WwGw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <CAMuHMdXLKW4FkwbrhKoToV9BdHruK4VmvnMzofCEUSnuxk-_nQ@mail.gmail.com>
 In-Reply-To: <CAMuHMdXLKW4FkwbrhKoToV9BdHruK4VmvnMzofCEUSnuxk-_nQ@mail.gmail.com>
@@ -10,34 +10,43 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Sep 9, 2015 at 9:38 AM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> On Fri, Sep 4, 2015 at 11:03 AM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
->> On Thu, Sep 3, 2015 at 10:38 AM, Geert Uytterhoeven
->> <geert@linux-m68k.org> wrote:
->>> On Wed, Sep 2, 2015 at 11:32 AM, Geert Uytterhoeven
->>> <geert@linux-m68k.org> wrote:
->>>> I've updated topic/gen3-latest in
->>>> https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git with:
->>>>   - topic/gen3-cpg-v6
->>>>   - topic/r8a7795-pfc-v2
->>>>   - topic/gen3-modemr-syscon-v1
->>>
->>> Updated with the latest "topic/r8a7795-pfc-v2".
->>> Note that I had to rebase topic/gen3-modemr-syscon-v1.
->>
->> Updated with:
->>   - renesas.git#topic/arm64-rcar-gen3-v9
->>   - renesas.git#topic/r8a7795-gpio-v1.rebase
->>   - topic/gen3-modemr-syscon-v1.rebase
->
-> Updated with
->   - topic/gen3-modemr-syscon-v1.rebase2
->   - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/arm64-rcar-gen3-v9.plus
->   - git://linuxtv.org/pinchartl/media#vsp1-kms-gen3-20150909.2
+I've updated topic/gen3-latest in
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+It now contains the following topics:
 
-Updated with:
-  - git://linuxtv.org/pinchartl/media#vsp1-kms-gen3-20150913
+  - Drivers:
+      - topic/gen3-cpg-v7
+      - topic/r8a7795-scif-v1
+      - topic/rcar-dmac-residue-v1
+      - topic/rcar-dmac-hamza-v1
+      - topic/scif-misc-v3
+      - topic/scif-dma-v4
+      - topic/cs2000-v4
+      - topic/r8a7795-i2c-v3
+      - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#me/r8a7795-ravb-driver-v3
+
+  - PFC:
+      - topic/r8a7795-pfc-v2
+      - topic/r8a7795-pfc-i2c-v2
+      - topic/r8a7795-pfc-sound-v2
+      - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#me/r8a7795-ravb-pfc-v2
+
+  - Integration:
+      - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/arm64-rcar-gen3-v9.plus
+      - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-gpio-v1.rebase
+      - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-i2c-v3
+      - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-sound-v3
+      - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#me/r8a7795-ravb-integration-v3
+
+  - Misc:
+      - topic/gen3-modemr-syscon-v1.rebase2
+      - git://linuxtv.org/pinchartl/media#vsp1-kms-gen3-20150913
+
+As I've also updated all included for-next branches due to new dependencies,
+this is more like a new renesas-drivers release, but without testing on
+non-R-Car Gen3 platforms.
+
+Happy consuming ;-)
 
 Gr{oetje,eeting}s,
 
