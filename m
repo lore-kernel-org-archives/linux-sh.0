@@ -1,53 +1,54 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 17 Sep 2015 04:32:00 +0000
-Subject: [PATCH 13/20 v2] arm64: renesas: salvator-x: enable I2C
-Message-Id: <87eghx7jr0.wl%kuninori.morimoto.gx@renesas.com>
+From: hamzahfrq.sub@gmail.com
+Date: Sun, 20 Sep 2015 19:10:59 +0000
+Subject: [RESEND PATCH 3/6] dma: rcar-dma: check if complete DMA packet received but not processed
+Message-Id: <1442776262-2503-4-git-send-email-hamzahfrq.sub@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Muhammad Hamza Farooq <mfarooq@visteon.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+At high speeds, DMA interrupts come very fast. If there's an interrupt
+pending before previous is handled, this method can help return actual
+status of the DMA transaction by reading the hardware flag
+
+Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
 ---
-v1 -> v2
-
- - add Acked-by Geert
- - clock-frequency = <100000> will be added in other patch
-
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 12 ++++++++++++
+ drivers/dma/sh/rcar-dmac.c | 12 ++++++++++++
  1 file changed, 12 insertions(+)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 3f45d56..de7561e5 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -98,6 +98,11 @@
- 		renesas,groups = "avb_mdc";
- 		renesas,function = "avb";
- 	};
-+
-+	i2c2_pins: i2c2 {
-+		renesas,groups = "i2c2_a";
-+		renesas,function = "i2c2";
-+	};
- };
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index c3753e1..668fd2b 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -314,6 +314,14 @@ static bool rcar_dmac_chan_is_busy(struct rcar_dmac_chan *chan)
+ 	return (chcr & (RCAR_DMACHCR_DE | RCAR_DMACHCR_TE)) = RCAR_DMACHCR_DE;
+ }
  
- &scif1 {
-@@ -141,3 +146,10 @@
- 	};
++/* Transfer completed but not yet handled */
++static bool rcar_dmac_last_tx_complete(struct rcar_dmac_chan *chan)
++{
++	u32 chcr = rcar_dmac_chan_read(chan, RCAR_DMACHCR);
++
++	return (chcr & RCAR_DMACHCR_TE) = RCAR_DMACHCR_TE;
++}
++
+ static void rcar_dmac_chan_start_xfer(struct rcar_dmac_chan *chan)
+ {
+ 	struct rcar_dmac_desc *desc = chan->desc.running;
+@@ -1238,6 +1246,10 @@ static enum dma_status rcar_dmac_tx_status(struct dma_chan *chan,
+ 	unsigned long flags;
+ 	unsigned int residue;
  
- };
++	/* Interrupt not yet serviced */
++	if (rcar_dmac_last_tx_complete(rchan))
++		return DMA_COMPLETE;
 +
-+&i2c2 {
-+	pinctrl-0 = <&i2c2_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
+ 	status = dma_cookie_status(chan, cookie, txstate);
+ 	if (status = DMA_COMPLETE || !txstate)
+ 		return status;
 -- 
 1.9.1
 
