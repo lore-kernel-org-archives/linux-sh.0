@@ -1,40 +1,37 @@
-From: Andrzej Hajda <a.hajda@samsung.com>
-Date: Mon, 21 Sep 2015 13:33:45 +0000
-Subject: [PATCH 13/38] ARM: shmobile: apmu: correct type of CPU id
-Message-Id: <1442842450-29769-14-git-send-email-a.hajda@samsung.com>
+From: hamzahfrq.sub@gmail.com
+Date: Sun, 20 Sep 2015 19:10:56 +0000
+Subject: [RESEND PATCH v2 0/6] rcar DMA engine patches
+Message-Id: <1442776262-2503-1-git-send-email-hamzahfrq.sub@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442842450-29769-1-git-send-email-a.hajda@samsung.com>
-In-Reply-To: <1442842450-29769-1-git-send-email-a.hajda@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-CPU id can be negative, so it cannot be assigned to unsigned variable.
+From: Muhammad Hamza Farooq <mfarooq@visteon.com>
 
-The problem has been detected using proposed semantic patch
-scripts/coccinelle/tests/unsigned_lesser_than_zero.cocci [1].
+These patches have been sent after fixing:
+-checkpatch.pl issues
+-adding cpu_relax in 0001-dma-rcar-dma-add-wait-after-stopping-dma-engine.patch
+-minor edits in commit messages
 
-[1]: http://permalink.gmane.org/gmane.linux.kernel/2038576
+This series of patches fixes several issues with the rcar DMA engine
+which were found in the debugging of sh serial DMA driver debugging. The
+fixes involve adding wait to driver after stopping the engine, adding
+pause function, checking for TE bit directly to detect a race condition
+and others
 
-Signed-off-by: Andrzej Hajda <a.hajda@samsung.com>
----
- arch/arm/mach-shmobile/platsmp-apmu.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Muhammad Hamza Farooq (6):
+  dma: rcar-dma: add wait after stopping dma engine
+  dma: rcar-dma: Added dma_pause operation to rcar_dma driver
+  dma: rcar-dma: check if complete DMA packet received but not processed
+  dma: rcar-dma: use result of updated get_residue in tx_status
+  dma: rcar-dma: warn if transfer cannot start as TE = 1
+  dma: rcar-dma: Fixed active descriptor initializing
 
-diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
-index 4e54512..292c67b 100644
---- a/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ b/arch/arm/mach-shmobile/platsmp-apmu.c
-@@ -88,7 +88,7 @@ static void apmu_init_cpu(struct resource *res, int cpu, int bit)
- static void apmu_parse_cfg(void (*fn)(struct resource *res, int cpu, int bit),
- 			   struct rcar_apmu_config *apmu_config, int num)
- {
--	u32 id;
-+	int id;
- 	int k;
- 	int bit, index;
- 	bool is_allowed;
+ drivers/dma/sh/rcar-dmac.c | 71 +++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 67 insertions(+), 4 deletions(-)
+
 -- 
 1.9.1
 
