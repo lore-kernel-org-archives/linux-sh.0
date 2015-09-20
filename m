@@ -1,130 +1,35 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 00:47:05 +0000
-Subject: [PATCH 03/19] ARM: shmobile: r8a7794: add GPIO DT support
-Message-Id: <e8f5de3bea9e01fd1390d64bc915a11df919b3fe.1442536920.git.horms+renesas@verge.net.au>
+From: hamzahfrq.sub@gmail.com
+Date: Sun, 20 Sep 2015 19:11:02 +0000
+Subject: [RESEND PATCH 6/6] dma: rcar-dma: Fixed active descriptor initializing
+Message-Id: <1442776262-2503-7-git-send-email-hamzahfrq.sub@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442536920.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442536920.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Muhammad Hamza Farooq <mfarooq@visteon.com>
 
-Describe GPIO[0-6] controllers in the R8A7794 device tree.
+Running descriptor pointer is set to NULL upon freeing resources. Other-
+wise, rcar_dmac_issue_pending might not start new transfers
 
-Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
 ---
- arch/arm/boot/dts/r8a7794.dtsi | 91 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 91 insertions(+)
+ drivers/dma/sh/rcar-dmac.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index b6db773b9e55..e9fab31e0709 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -50,6 +50,97 @@
- 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
- 	};
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index d007351..39306c9 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -1042,6 +1042,7 @@ static void rcar_dmac_free_chan_resources(struct dma_chan *chan)
+ 	list_splice_init(&rchan->desc.active, &list);
+ 	list_splice_init(&rchan->desc.done, &list);
+ 	list_splice_init(&rchan->desc.wait, &list);
++	rchan->desc.running = NULL;
  
-+	gpio0: gpio@e6050000 {
-+		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
-+		reg = <0 0xe6050000 0 0x50>;
-+		interrupts = <0 4 IRQ_TYPE_LEVEL_HIGH>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 0 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7794_CLK_GPIO0>;
-+		power-domains = <&cpg_clocks>;
-+	};
-+
-+	gpio1: gpio@e6051000 {
-+		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
-+		reg = <0 0xe6051000 0 0x50>;
-+		interrupts = <0 5 IRQ_TYPE_LEVEL_HIGH>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 32 26>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7794_CLK_GPIO1>;
-+		power-domains = <&cpg_clocks>;
-+	};
-+
-+	gpio2: gpio@e6052000 {
-+		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
-+		reg = <0 0xe6052000 0 0x50>;
-+		interrupts = <0 6 IRQ_TYPE_LEVEL_HIGH>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 64 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7794_CLK_GPIO2>;
-+		power-domains = <&cpg_clocks>;
-+	};
-+
-+	gpio3: gpio@e6053000 {
-+		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
-+		reg = <0 0xe6053000 0 0x50>;
-+		interrupts = <0 7 IRQ_TYPE_LEVEL_HIGH>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 96 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7794_CLK_GPIO3>;
-+		power-domains = <&cpg_clocks>;
-+	};
-+
-+	gpio4: gpio@e6054000 {
-+		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
-+		reg = <0 0xe6054000 0 0x50>;
-+		interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 128 32>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7794_CLK_GPIO4>;
-+		power-domains = <&cpg_clocks>;
-+	};
-+
-+	gpio5: gpio@e6055000 {
-+		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
-+		reg = <0 0xe6055000 0 0x50>;
-+		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 160 28>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7794_CLK_GPIO5>;
-+		power-domains = <&cpg_clocks>;
-+	};
-+
-+	gpio6: gpio@e6055400 {
-+		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
-+		reg = <0 0xe6055400 0 0x50>;
-+		interrupts = <0 10 IRQ_TYPE_LEVEL_HIGH>;
-+		#gpio-cells = <2>;
-+		gpio-controller;
-+		gpio-ranges = <&pfc 0 192 26>;
-+		#interrupt-cells = <2>;
-+		interrupt-controller;
-+		clocks = <&mstp9_clks R8A7794_CLK_GPIO6>;
-+		power-domains = <&cpg_clocks>;
-+	};
-+
- 	cmt0: timer@ffca0000 {
- 		compatible = "renesas,cmt-48-gen2";
- 		reg = <0 0xffca0000 0 0x1004>;
+ 	list_for_each_entry(desc, &list, node)
+ 		rcar_dmac_realloc_hwdesc(rchan, desc, 0);
 -- 
-2.1.4
+1.9.1
 
