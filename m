@@ -1,55 +1,35 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 03 Sep 2015 10:33:39 +0000
-Subject: [PATCH v9 07/07][RFC] arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
-Message-Id: <20150903103339.26791.15995.sendpatchset@little-apple>
+From: hamzahfrq.sub@gmail.com
+Date: Sun, 20 Sep 2015 19:11:00 +0000
+Subject: [RESEND PATCH 4/6] dma: rcar-dma: use result of updated get_residue in tx_status
+Message-Id: <1442776262-2503-5-git-send-email-hamzahfrq.sub@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Muhammad Hamza Farooq <mfarooq@visteon.com>
 
-This patch enables the Renesas R-Car H3 SoC together with the
-SCIF driver in the arm64 defconfig.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
 ---
+ drivers/dma/sh/rcar-dmac.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
- Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
- - Added Acked-by from Geert
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index 668fd2b..ce21575 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -1258,6 +1258,10 @@ static enum dma_status rcar_dmac_tx_status(struct dma_chan *chan,
+ 	residue = rcar_dmac_chan_get_residue(rchan, cookie);
+ 	spin_unlock_irqrestore(&rchan->lock, flags);
+ 
++	/* if there's no residue, the cookie is complete */
++	if (!residue)
++		return DMA_COMPLETE;
++
+ 	dma_set_residue(txstate, residue);
+ 
+ 	return status;
+-- 
+1.9.1
 
- Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
- - Updated changelog
- - Use CONFIG_RENESAS and CONFIG_R8A7795
-
- Based on:
-  [PATCH 19/25] arm64: defconfig: renesas: Enable Renesas R-Car Gen3 SoC
-  [PATCH 20/25] arm64: defconfig: renesas: enable SCIF
-
- arch/arm64/configs/defconfig |    5 +++++
- 1 file changed, 5 insertions(+)
-
---- 0001/arch/arm64/configs/defconfig
-+++ work/arch/arm64/configs/defconfig	2015-08-29 17:20:25.712366518 +0900
-@@ -39,6 +39,8 @@ CONFIG_ARCH_HISI=y
- CONFIG_ARCH_MEDIATEK=y
- CONFIG_ARCH_ROCKCHIP=y
- CONFIG_ARCH_SEATTLE=y
-+CONFIG_ARCH_RENESAS=y
-+CONFIG_ARCH_R8A7795=y
- CONFIG_ARCH_TEGRA=y
- CONFIG_ARCH_TEGRA_132_SOC=y
- CONFIG_ARCH_QCOM=y
-@@ -109,6 +111,9 @@ CONFIG_SERIAL_8250_DW=y
- CONFIG_SERIAL_8250_MT6577=y
- CONFIG_SERIAL_AMBA_PL011=y
- CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
-+CONFIG_SERIAL_SH_SCI=y
-+CONFIG_SERIAL_SH_SCI_NR_UARTS
-+CONFIG_SERIAL_SH_SCI_CONSOLE=y
- CONFIG_SERIAL_MSM=y
- CONFIG_SERIAL_MSM_CONSOLE=y
- CONFIG_SERIAL_OF_PLATFORM=y
