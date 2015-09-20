@@ -1,100 +1,34 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 09 Sep 2015 11:42:54 +0000
-Subject: [PATCH 2/2] irqchip: renesas-intc-irqpin: Use a separate lockdep class
-Message-Id: <1441798974-25716-3-git-send-email-geert+renesas@glider.be>
+From: hamzahfrq.sub@gmail.com
+Date: Sun, 20 Sep 2015 19:11:01 +0000
+Subject: [RESEND PATCH 5/6] dma: rcar-dma: warn if transfer cannot start as TE = 1
+Message-Id: <1442776262-2503-6-git-send-email-hamzahfrq.sub@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441798974-25716-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1441798974-25716-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>
-Cc: Grygorii Strashko <grygorii.strashko@ti.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-The renesas-intc-irqpin interrupt controller is cascaded to the GIC.
-Hence when propagating wake-up settings to its parent interrupt
-controller, the following lockdep warning is printed:
+From: Muhammad Hamza Farooq <mfarooq@visteon.com>
 
-    ======================    [ INFO: possible recursive locking detected ]
-    4.2.0-armadillo-10725-g50fcd7643c034198 #781 Not tainted
-    ---------------------------------------------
-    s2ram/1179 is trying to acquire lock:
-    (&irq_desc_lock_class){-.-...}, at: [<c005bb54>] __irq_get_desc_lock+0x78/0x94
-
-    but task is already holding lock:
-    (&irq_desc_lock_class){-.-...}, at: [<c005bb54>] __irq_get_desc_lock+0x78/0x94
-
-    other info that might help us debug this:
-    Possible unsafe locking scenario:
-
-	  CPU0
-	  ----
-     lock(&irq_desc_lock_class);
-     lock(&irq_desc_lock_class);
-
-    *** DEADLOCK ***
-
-    May be due to missing lock nesting notation
-
-    7 locks held by s2ram/1179:
-    #0:  (sb_writers#7){.+.+.+}, at: [<c00c9708>] __sb_start_write+0x64/0xb8
-    #1:  (&of->mutex){+.+.+.}, at: [<c0125a00>] kernfs_fop_write+0x78/0x1a0
-    #2:  (s_active#23){.+.+.+}, at: [<c0125a08>] kernfs_fop_write+0x80/0x1a0
-    #3:  (autosleep_lock){+.+.+.}, at: [<c0058244>] pm_autosleep_lock+0x18/0x20
-    #4:  (pm_mutex){+.+.+.}, at: [<c0057e50>] pm_suspend+0x54/0x248
-    #5:  (&dev->mutex){......}, at: [<c0243a20>] __device_suspend+0xdc/0x240
-    #6:  (&irq_desc_lock_class){-.-...}, at: [<c005bb54>] __irq_get_desc_lock+0x78/0x94
-
-    stack backtrace:
-    CPU: 0 PID: 1179 Comm: s2ram Not tainted 4.2.0-armadillo-10725-g50fcd7643c034198
-
-    Hardware name: Generic R8A7740 (Flattened Device Tree)
-    [<c00129f4>] (dump_backtrace) from [<c0012bec>] (show_stack+0x18/0x1c)
-    [<c0012bd4>] (show_stack) from [<c03f5d94>] (dump_stack+0x20/0x28)
-    [<c03f5d74>] (dump_stack) from [<c00514d4>] (__lock_acquire+0x67c/0x1b88)
-    [<c0050e58>] (__lock_acquire) from [<c0052df8>] (lock_acquire+0x9c/0xbc)
-    [<c0052d5c>] (lock_acquire) from [<c03fb068>] (_raw_spin_lock_irqsave+0x44/0x58)
-    [<c03fb024>] (_raw_spin_lock_irqsave) from [<c005bb54>] (__irq_get_desc_lock+0x78/0x94
-    [<c005badc>] (__irq_get_desc_lock) from [<c005c3d8>] (irq_set_irq_wake+0x28/0x100)
-    [<c005c3b0>] (irq_set_irq_wake) from [<c01e50d0>] (intc_irqpin_irq_set_wake+0x24/0x4c)
-    [<c01e50ac>] (intc_irqpin_irq_set_wake) from [<c005c17c>] (set_irq_wake_real+0x3c/0x50
-    [<c005c140>] (set_irq_wake_real) from [<c005c414>] (irq_set_irq_wake+0x64/0x100)
-    [<c005c3b0>] (irq_set_irq_wake) from [<c02a19b4>] (gpio_keys_suspend+0x60/0xa0)
-    [<c02a1954>] (gpio_keys_suspend) from [<c023b750>] (platform_pm_suspend+0x3c/0x5c)
-
-Avoid this false positive by using a separate lockdep class for INTC
-External IRQ Pin interrupts.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
 ---
- drivers/irqchip/irq-renesas-intc-irqpin.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ drivers/dma/sh/rcar-dmac.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
-index 457d22c09e352d56..d3546a6f49787750 100644
---- a/drivers/irqchip/irq-renesas-intc-irqpin.c
-+++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
-@@ -335,6 +335,12 @@ static irqreturn_t intc_irqpin_shared_irq_handler(int irq, void *dev_id)
- 	return status;
- }
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index ce21575..d007351 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -327,7 +327,8 @@ static void rcar_dmac_chan_start_xfer(struct rcar_dmac_chan *chan)
+ 	struct rcar_dmac_desc *desc = chan->desc.running;
+ 	u32 chcr = desc->chcr;
  
-+/*
-+ * This lock class tells lockdep that INTC External IRQ Pin irqs are in a
-+ * different category than their parents, so it won't report false recursion.
-+ */
-+static struct lock_class_key intc_irqpin_irq_lock_class;
-+
- static int intc_irqpin_irq_domain_map(struct irq_domain *h, unsigned int virq,
- 				      irq_hw_number_t hw)
- {
-@@ -345,6 +351,7 @@ static int intc_irqpin_irq_domain_map(struct irq_domain *h, unsigned int virq,
+-	WARN_ON_ONCE(rcar_dmac_chan_is_busy(chan));
++	WARN_ON_ONCE(rcar_dmac_chan_is_busy(chan) ||
++			rcar_dmac_last_tx_complete(chan));
  
- 	intc_irqpin_dbg(&p->irq[hw], "map");
- 	irq_set_chip_data(virq, h->host_data);
-+	irq_set_lockdep_class(virq, &intc_irqpin_irq_lock_class);
- 	irq_set_chip_and_handler(virq, &p->irq_chip, handle_level_irq);
- 	set_irq_flags(virq, IRQF_VALID); /* kill me now */
- 	return 0;
+ 	if (chan->mid_rid >= 0)
+ 		rcar_dmac_chan_write(chan, RCAR_DMARS, chan->mid_rid);
 -- 
 1.9.1
 
