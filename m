@@ -1,33 +1,50 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 01 Sep 2015 15:12:41 +0000
-Subject: [PATCH 6/6] arm64: renesas: select MFD_SYSCON
-Message-Id: <1441120361-1232-7-git-send-email-geert+renesas@glider.be>
+From: Andrzej Hajda <a.hajda@samsung.com>
+Date: Mon, 21 Sep 2015 13:34:07 +0000
+Subject: [PATCH 35/38] ptrace: remove invalid check
+Message-Id: <1442842450-29769-36-git-send-email-a.hajda@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1442842450-29769-1-git-send-email-a.hajda@samsung.com>
+In-Reply-To: <1442842450-29769-1-git-send-email-a.hajda@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Andrzej Hajda <a.hajda@samsung.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Eric Paris <eparis@redhat.com>, linux-sh@vger.kernel.org
 
-The Clock Pulse Generator (CPG) relies on syscon to obtain the values of
-the mode pins.
+Unsigned values cannot be lesser than zero.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The problem has been detected using proposed semantic patch
+scripts/coccinelle/tests/unsigned_lesser_than_zero.cocci [1].
+
+[1]: http://permalink.gmane.org/gmane.linux.kernel/2038576
+
+Signed-off-by: Andrzej Hajda <a.hajda@samsung.com>
 ---
- arch/arm64/Kconfig.platforms | 1 +
- 1 file changed, 1 insertion(+)
+ arch/sh/kernel/ptrace_64.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
-index 25a90317e8e932cf..7022581cf792d3be 100644
---- a/arch/arm64/Kconfig.platforms
-+++ b/arch/arm64/Kconfig.platforms
-@@ -72,6 +72,7 @@ config ARCH_SHMOBILE
- config ARCH_RENESAS
- 	bool "Renesas SoC Platform"
- 	select ARCH_SHMOBILE
-+	select MFD_SYSCON
- 	select PM_GENERIC_DOMAINS if PM
- 	help
- 	  This enables support for the ARMv8 based Renesas SoCs.
+diff --git a/arch/sh/kernel/ptrace_64.c b/arch/sh/kernel/ptrace_64.c
+index 5cea973..138b2b1 100644
+--- a/arch/sh/kernel/ptrace_64.c
++++ b/arch/sh/kernel/ptrace_64.c
+@@ -395,7 +395,7 @@ long arch_ptrace(struct task_struct *child, long request,
+ 		unsigned long tmp;
+ 
+ 		ret = -EIO;
+-		if ((addr & 3) || addr < 0)
++		if (addr & 3)
+ 			break;
+ 
+ 		if (addr < sizeof(struct pt_regs))
+@@ -423,7 +423,7 @@ long arch_ptrace(struct task_struct *child, long request,
+                    this could crash the kernel or result in a security
+                    loophole. */
+ 		ret = -EIO;
+-		if ((addr & 3) || addr < 0)
++		if (addr & 3)
+ 			break;
+ 
+ 		if (addr < sizeof(struct pt_regs)) {
 -- 
 1.9.1
 
