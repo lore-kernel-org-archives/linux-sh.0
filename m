@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 21 Sep 2015 21:59:42 +0000
+Date: Mon, 21 Sep 2015 22:00:55 +0000
 Subject: [PATCH v3] pinctrl: sh-pfc: r8a7794: add VIN pin groups
-Message-Id: <2210950.JhIO20W3xN@wasted.cogentembedded.com>
+Message-Id: <1628224.IIIbAo3i3M@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <13219129.kD4pZSmcAP@wasted.cogentembedded.com>
 In-Reply-To: <13219129.kD4pZSmcAP@wasted.cogentembedded.com>
@@ -20,6 +20,10 @@ single pin group, added "vin1_data10" pin group.]
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 ---
+The patch  is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git' repo.
+It depends on the patch moving 'union vin_data'  to shared header file in order
+to build.
+
 Changes in version 3:
 - added "vin1_data10" pin group.
 
@@ -32,9 +36,9 @@ Changes in version 2:
  drivers/pinctrl/sh-pfc/pfc-r8a7794.c |  208 +++++++++++++++++++++++++++++++++++
  1 file changed, 208 insertions(+)
 
-Index: renesas/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
-=================================--- renesas.orig/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
-+++ renesas/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
++++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
 @@ -2789,6 +2789,170 @@ static const unsigned int usb1_mux[] = {
  	USB1_OVC_MARK,
  };
