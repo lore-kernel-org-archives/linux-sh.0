@@ -1,71 +1,42 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 17 Sep 2015 09:54:33 +0000
-Subject: [PATCH v2 07/11] devicetree: bindings: Deprecate property, update example
-Message-Id: <20150917095433.5369.61472.sendpatchset@little-apple>
+From: Andrzej Hajda <a.hajda@samsung.com>
+Date: Mon, 21 Sep 2015 13:34:06 +0000
+Subject: [PATCH 34/38] perf: remove invalid check
+Message-Id: <1442842450-29769-35-git-send-email-a.hajda@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150917095325.5369.73893.sendpatchset@little-apple>
-In-Reply-To: <20150917095325.5369.73893.sendpatchset@little-apple>
+References: <1442842450-29769-1-git-send-email-a.hajda@samsung.com>
+In-Reply-To: <1442842450-29769-1-git-send-email-a.hajda@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
-Cc: devicetree@vger.kernel.org, laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, daniel.lezcano@linaro.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+Cc: Andrzej Hajda <a.hajda@samsung.com>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Eric Paris <eparis@redhat.com>, linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Unsigned values cannot be lesser than zero.
 
-Deprecate "renesas,channels-mask" and update the r8a7790 CMT example.
+The problem has been detected using proposed semantic patch
+scripts/coccinelle/tests/unsigned_lesser_than_zero.cocci [1].
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+[1]: http://permalink.gmane.org/gmane.linux.kernel/2038576
+
+Signed-off-by: Andrzej Hajda <a.hajda@samsung.com>
 ---
+ arch/sh/kernel/ptrace_32.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
- Changes since V1:
- - Added Acked-by and Tested-by from Geert
- - Added Acked-by from Laurent
+diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
+index c1a6b89..6125ce9 100644
+--- a/arch/sh/kernel/ptrace_32.c
++++ b/arch/sh/kernel/ptrace_32.c
+@@ -419,8 +419,7 @@ long arch_ptrace(struct task_struct *child, long request,
+ 
+ 	case PTRACE_POKEUSR: /* write the word at location addr in the USER area */
+ 		ret = -EIO;
+-		if ((addr & 3) || addr < 0 ||
+-		    addr > sizeof(struct user) - 3)
++		if ((addr & 3) || addr > sizeof(struct user) - 3)
+ 			break;
+ 
+ 		if (addr < sizeof(struct pt_regs))
+-- 
+1.9.1
 
- Documentation/devicetree/bindings/timer/renesas,cmt.txt |   24 ++++++++++-----
- 1 file changed, 17 insertions(+), 7 deletions(-)
-
---- 0009/Documentation/devicetree/bindings/timer/renesas,cmt.txt
-+++ work/Documentation/devicetree/bindings/timer/renesas,cmt.txt	2015-09-17 17:39:47.080513000 +0900
-@@ -60,21 +60,31 @@ Required Properties:
-     in clock-names.
-   - clock-names: must contain "fck" for the functional clock.
- 
--  - renesas,channels-mask: bitmask of the available channels.
-+  - renesas,channels-mask: <deprecated>, information kept in device driver.
- 
- 
--Example: R8A7790 (R-Car H2) CMT0 node
--
--	CMT0 on R8A7790 implements hardware channels 5 and 6 only and names
--	them channels 0 and 1 in the documentation.
-+Example: R8A7790 (R-Car H2) CMT0 and CMT1 nodes
- 
- 	cmt0: timer@ffca0000 {
--		compatible = "renesas,cmt-48-r8a7790", "renesas,cmt-48-gen2";
-+		compatible = "renesas,cmt0-r8a7790", "renesas,cmt0-rcar-gen2";
- 		reg = <0 0xffca0000 0 0x1004>;
- 		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 142 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp1_clks R8A7790_CLK_CMT0>;
- 		clock-names = "fck";
-+	};
- 
--		renesas,channels-mask = <0x60>;
-+	cmt1: timer@e6130000 {
-+		compatible = "renesas,cmt1-r8a7790", "renesas,cmt1-rcar-gen2";
-+		reg = <0 0xe6130000 0 0x1004>;
-+		interrupts = <0 120 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 121 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 122 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 123 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 124 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 125 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 126 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 127 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp3_clks R8A7790_CLK_CMT1>;
-+		clock-names = "fck";
- 	};
