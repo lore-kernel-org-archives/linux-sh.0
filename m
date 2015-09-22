@@ -1,133 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 18 Sep 2015 02:03:35 +0000
-Subject: [PATCH 03/18 v3] arm64: renesas: r8a7795: add AUDIO_DMAC support
-Message-Id: <878u841o94.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 22 Sep 2015 08:32:52 +0000
+Subject: Re: [PATCH 03/18 v3] arm64: renesas: r8a7795: add AUDIO_DMAC support
+Message-Id: <CAMuHMdVJj9e9Xp05MmebtdE2vc9Xtyo5roxj_=pOHHNWx_OTAQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <878u841o94.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <878u841o94.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Morimoto-san,
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v2 -> v3
+On Fri, Sep 18, 2015 at 4:03 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> --- a/include/dt-bindings/clock/r8a7795-clock.h
+> +++ b/include/dt-bindings/clock/r8a7795-clock.h
+> @@ -32,6 +32,8 @@
+>  #define R8A7795_CLK_SCIF2              10
+>
+>  /* MSTP5 */
+> +#define R8A7795_CLK_AUDIO_DMAC0                2
+> +#define R8A7795_CLK_AUDIO_DMAC1                1
 
- - add power-domains
- - add Geert's Reviewed-by
+Please sort by increasing bit number.
 
- arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 75 +++++++++++++++++++++++++++++++
- include/dt-bindings/clock/r8a7795-clock.h |  2 +
- 2 files changed, 77 insertions(+)
+Sorry for missing this before.
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 3a82eba..a87c4be 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -423,6 +423,17 @@
- 					clock-indices = <R8A7795_CLK_SCIF2>;
- 				};
- 
-+				mstp5_clks: mstp5_clks@e6150144 {
-+					compatible = "renesas,r8a7795-mstp-clocks",
-+						     "renesas,cpg-mstp-clocks";
-+					reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
-+					clocks = <&s3d4_clk>, <&s3d4_clk>;
-+					#clock-cells = <1>;
-+					clock-indices = <
-+						R8A7795_CLK_AUDIO_DMAC0 R8A7795_CLK_AUDIO_DMAC1
-+					>;
-+				};
-+
- 				mstp6_clks: mstp6@e61501c0 {
- 					compatible = "renesas,r8a7795-mstp-clocks",
- 						     "renesas,cpg-mstp-clocks";
-@@ -493,6 +504,70 @@
- 			};
- 		};
- 
-+		audma0: dma-controller@ec700000 {
-+			compatible = "renesas,rcar-dmac";
-+			reg = <0 0xec700000 0 0x10000>;
-+			interrupts =	<0 350 IRQ_TYPE_LEVEL_HIGH
-+					 0 320 IRQ_TYPE_LEVEL_HIGH
-+					 0 321 IRQ_TYPE_LEVEL_HIGH
-+					 0 322 IRQ_TYPE_LEVEL_HIGH
-+					 0 323 IRQ_TYPE_LEVEL_HIGH
-+					 0 324 IRQ_TYPE_LEVEL_HIGH
-+					 0 325 IRQ_TYPE_LEVEL_HIGH
-+					 0 326 IRQ_TYPE_LEVEL_HIGH
-+					 0 327 IRQ_TYPE_LEVEL_HIGH
-+					 0 328 IRQ_TYPE_LEVEL_HIGH
-+					 0 329 IRQ_TYPE_LEVEL_HIGH
-+					 0 330 IRQ_TYPE_LEVEL_HIGH
-+					 0 331 IRQ_TYPE_LEVEL_HIGH
-+					 0 332 IRQ_TYPE_LEVEL_HIGH
-+					 0 333 IRQ_TYPE_LEVEL_HIGH
-+					 0 334 IRQ_TYPE_LEVEL_HIGH
-+					 0 335 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12", "ch13", "ch14", "ch15";
-+			clocks = <&mstp5_clks R8A7795_CLK_AUDIO_DMAC0>;
-+			power-domains = <&cpg_clocks>;
-+			clock-names = "fck";
-+			#dma-cells = <1>;
-+			dma-channels = <16>;
-+		};
-+
-+		audma1: dma-controller@ec720000 {
-+			compatible = "renesas,rcar-dmac";
-+			reg = <0 0xec720000 0 0x10000>;
-+			interrupts =	<0 351 IRQ_TYPE_LEVEL_HIGH
-+					 0 336 IRQ_TYPE_LEVEL_HIGH
-+					 0 337 IRQ_TYPE_LEVEL_HIGH
-+					 0 338 IRQ_TYPE_LEVEL_HIGH
-+					 0 339 IRQ_TYPE_LEVEL_HIGH
-+					 0 340 IRQ_TYPE_LEVEL_HIGH
-+					 0 341 IRQ_TYPE_LEVEL_HIGH
-+					 0 342 IRQ_TYPE_LEVEL_HIGH
-+					 0 343 IRQ_TYPE_LEVEL_HIGH
-+					 0 344 IRQ_TYPE_LEVEL_HIGH
-+					 0 345 IRQ_TYPE_LEVEL_HIGH
-+					 0 346 IRQ_TYPE_LEVEL_HIGH
-+					 0 347 IRQ_TYPE_LEVEL_HIGH
-+					 0 348 IRQ_TYPE_LEVEL_HIGH
-+					 0 349 IRQ_TYPE_LEVEL_HIGH
-+					 0 382 IRQ_TYPE_LEVEL_HIGH
-+					 0 383 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12", "ch13", "ch14", "ch15";
-+			clocks = <&mstp5_clks R8A7795_CLK_AUDIO_DMAC1>;
-+			power-domains = <&cpg_clocks>;
-+			clock-names = "fck";
-+			#dma-cells = <1>;
-+			dma-channels = <16>;
-+		};
-+
- 		pfc: pfc@e6060000 {
- 			compatible = "renesas,pfc-r8a7795";
- 			reg = <0 0xe6060000 0 0x50c>;
-diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
-index 881788f..ca370c7 100644
---- a/include/dt-bindings/clock/r8a7795-clock.h
-+++ b/include/dt-bindings/clock/r8a7795-clock.h
-@@ -32,6 +32,8 @@
- #define R8A7795_CLK_SCIF2		10
- 
- /* MSTP5 */
-+#define R8A7795_CLK_AUDIO_DMAC0		2
-+#define R8A7795_CLK_AUDIO_DMAC1		1
- 
- /* MSTP6 */
- #define R8A7795_CLK_VSPD3		20
--- 
-1.9.1
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
