@@ -1,32 +1,44 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 17 Sep 2015 07:51:07 +0000
-Subject: Re: [PATCH 1/3] pinctrl: sh-pfc: r8a7795: add I2C pin support
-Message-Id: <CAMuHMdUxfP8vsHc_fHb6todaHdPssxM8fSKDw1+rsja=pjH1=A@mail.gmail.com>
+From: Ross Zwisler <ross.zwisler@linux.intel.com>
+Date: Tue, 22 Sep 2015 21:44:19 +0000
+Subject: [PATCH] sh: add copy_user_page() alias for __copy_user()
+Message-Id: <1442958259-3956-1-git-send-email-ross.zwisler@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mvx4qkzo.wl%kuninori.morimoto.gx@renesas.com>
-	<87zj0l7kr8.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zj0l7kr8.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Simon <horms@verge.net.au>, Linus Walleij <linus.walleij@linaro.org>, Laurent <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-kernel@vger.kernel.org
+Cc: Ross Zwisler <ross.zwisler@linux.intel.com>, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
 
-On Thu, Sep 17, 2015 at 6:10 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+copy_user_page() is needed by DAX.  Without this we get a compile error
+for DAX on SH:
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+fs/dax.c:280:2: error: implicit declaration of function ‘copy_user_page’
+[-Werror=implicit-function-declaration]
+  copy_user_page(vto, (void __force *)vfrom, vaddr, to);
+    ^
 
-Gr{oetje,eeting}s,
+This was done with a random config that happened to include DAX support.
 
-                        Geert
+This patch has only been compile tested.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Signed-off-by: Ross Zwisler <ross.zwisler@linux.intel.com>
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+ arch/sh/include/asm/page.h | 1 +
+ 1 file changed, 1 insertion(+)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+diff --git a/arch/sh/include/asm/page.h b/arch/sh/include/asm/page.h
+index fe20d14..ceb5201 100644
+--- a/arch/sh/include/asm/page.h
++++ b/arch/sh/include/asm/page.h
+@@ -59,6 +59,7 @@ pages_do_alias(unsigned long addr1, unsigned long addr2)
+ 
+ #define clear_page(page)	memset((void *)(page), 0, PAGE_SIZE)
+ extern void copy_page(void *to, void *from);
++#define copy_user_page(to, from, vaddr, pg)  __copy_user(to, from, PAGE_SIZE)
+ 
+ struct page;
+ struct vm_area_struct;
+-- 
+2.1.0
+
