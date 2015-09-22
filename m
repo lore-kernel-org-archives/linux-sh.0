@@ -1,46 +1,60 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 10 Sep 2015 07:17:44 +0000
-Subject: [PATCH 09/14][RFC] arm64: renesas: salvator-x: Sound DMA support on DTS
-Message-Id: <87d1xqn3vj.wl%kuninori.morimoto.gx@renesas.com>
+From: William Towle <william.towle@codethink.co.uk>
+Date: Tue, 22 Sep 2015 16:36:48 +0000
+Subject: Re: [Linux-kernel] Renesas Lager: Device Tree entries for VIN HDMI input, version 2
+Message-Id: <alpine.DEB.2.02.1509221642350.6758@xk120.dyn.ducie.codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1439465811-936-1-git-send-email-william.towle@codethink.co.uk>
+In-Reply-To: <1439465811-936-1-git-send-email-william.towle@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: William Towle <william.towle@codethink.co.uk>
+Cc: linux-media@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Hans Verkuil <hverkuil@xs4all.nl>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>, linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Simon,
 
-DMA transfer to/from SSI
+> On Thu, 13 Aug 2015, William Towle wrote:
+> >  (Obsoletes corresponding parts of "HDMI and Composite capture on
+> > Lager...", published previously)
 
-     DMA
-[MEM] -> [SSI]
+> > To follow:
+> > 	[PATCH 1/3] ARM: shmobile: lager dts: Add entries for VIN HDMI input
+> > 	[PATCH 2/3] media: adv7604: automatic "default-input" selection
+> > 	[PATCH 3/3] ARM: shmobile: lager dts: specify default-input for
 
-     DMA
-[MEM] <- [SSI]
+> I am wondering about the status of patch 2 of the series,
+> is it queued-up anywhere?
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+   All of these are effectively new, although the first and third
+debuted in another thread. The patchwork link for the latter (at
+https://patchwork.linuxtv.org/patch/30707/) contains the discussion
+that led to the above being separated out.
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index be045a9..b571527 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -141,11 +141,11 @@
- };
- 
- &ssi0 {
--	pio-transfer;
-+	no-busif;
- };
- 
- &ssi1 {
--	pio-transfer;
-+	no-busif;
- 	shared-pin;
- };
- 
--- 
-1.9.1
 
+> I am also wondering about the relationship between patch 2 and 3.
+> Does 3 work without 2? Does 2 make 3 unnecessary?
+
+   The device tree change in patch 3 is from Ian Molton's original
+submissions, and works regardless of whether patch 2 is alongside it
+or not.
+
+   As far as the automatic port selection goes, patch 2 is related to
+the argument made in commit 7111cdd ("[media] media: adv7604: reduce
+support to first (digital) input") that since cable detect doesn't
+work for port B, the .max_port property for boards using an ADV7612
+should be ADV76XX_PAD_HDMI_PORT_A and we can use this to configure
+port A as the default where there is not also an entry to specify it
+in the device tree.
+   If support for port B were available [in future], no action would
+be taken where an ADV7612 is present and one would need to arrange
+for applications in userland to actively make a choice where the
+device tree does not have an appropriate value. In our particular case
+we don't differentiate between hardware with ADV7611/7612 in the test
+suite, and this necessitates having port selection available in the
+device tree.
+
+   Laurent may wish to comment further; for earlier discussion, see
+https://patchwork.linuxtv.org/patch/30707/
+
+Cheers,
+   Wills.
