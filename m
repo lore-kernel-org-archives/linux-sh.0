@@ -1,13 +1,15 @@
 From: Ross Zwisler <ross.zwisler@linux.intel.com>
-Date: Tue, 22 Sep 2015 21:44:19 +0000
+Date: Tue, 22 Sep 2015 21:46:51 +0000
 Subject: [PATCH] sh: add copy_user_page() alias for __copy_user()
-Message-Id: <1442958259-3956-1-git-send-email-ross.zwisler@linux.intel.com>
+Message-Id: <1442958411-4271-1-git-send-email-ross.zwisler@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1442958259-3956-1-git-send-email-ross.zwisler@linux.intel.com>
+In-Reply-To: <1442958259-3956-1-git-send-email-ross.zwisler@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
 To: linux-kernel@vger.kernel.org
-Cc: Ross Zwisler <ross.zwisler@linux.intel.com>, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Ross Zwisler <ross.zwisler@linux.intel.com>, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Matthew Wilcox <willy@linux.intel.com>, linux-fsdevel@vger.kernel.org
 
 copy_user_page() is needed by DAX.  Without this we get a compile error
 for DAX on SH:
@@ -23,6 +25,8 @@ This patch has only been compile tested.
 
 Signed-off-by: Ross Zwisler <ross.zwisler@linux.intel.com>
 Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+---
+Apologies for the resend, I wanted to add some more recipients.
 ---
  arch/sh/include/asm/page.h | 1 +
  1 file changed, 1 insertion(+)
