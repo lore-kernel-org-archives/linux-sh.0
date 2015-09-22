@@ -1,180 +1,214 @@
-From: Javier Martinez Canillas <javier@osg.samsung.com>
-Date: Thu, 03 Sep 2015 16:00:34 +0000
-Subject: [PATCH 3/5] [media] v4l: vsp1: separate links creation from entities init
-Message-Id: <1441296036-20727-4-git-send-email-javier@osg.samsung.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 22 Sep 2015 15:44:02 +0000
+Subject: [PATCH/RFC v2 0/4] Renesas CPG/MSTP DT Binding Proposal
+Message-Id: <1442936646-30362-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441296036-20727-1-git-send-email-javier@osg.samsung.com>
-In-Reply-To: <1441296036-20727-1-git-send-email-javier@osg.samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Hans Verkuil <hans.verkuil@cisco.com>, Javier Martinez Canillas <javier@osg.samsung.com>, Mauro Carvalho Chehab <mchehab@osg.samsung.com>, linux-sh@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-media@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Philipp Zabel <p.zabel@pengutronix.de>
+Cc: linux-clk@vger.kernel.org, linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The vsp1 driver initializes the entities and creates the pads links
-before the entities are registered with the media device. This doesn't
-work now that object IDs are used to create links so the media_device
-has to be set.
+This is v2 of "Renesas CPG/MSTP DT Binding Proposal"
+(http://www.spinics.net/lists/linux-clk/msg01189.html"), this time
+including some actual patches.
 
-Split out the pads links creation from the entity initialization so are
-made after the entities registration.
 
-Signed-off-by: Javier Martinez Canillas <javier@osg.samsung.com>
----
+Introduction
+------------
 
- drivers/media/platform/vsp1/vsp1_drv.c  | 14 ++++++++++--
- drivers/media/platform/vsp1/vsp1_rpf.c  | 29 ++++++++++++++++--------
- drivers/media/platform/vsp1/vsp1_rwpf.h |  5 +++++
- drivers/media/platform/vsp1/vsp1_wpf.c  | 40 ++++++++++++++++++++-------------
- 4 files changed, 62 insertions(+), 26 deletions(-)
+On Renesas SoCs (SH/R-Mobile, R-Car, RZ), the CPG (Clock Pulse
+Generator), MSSR (Module Standby and Software Reset), and APMU (Advanced
+Power Management Unit for AP-System Core) blocks are very intimately
+tied.
 
-diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
-index 2aa427d3ff39..8f995d267646 100644
---- a/drivers/media/platform/vsp1/vsp1_drv.c
-+++ b/drivers/media/platform/vsp1/vsp1_drv.c
-@@ -260,9 +260,19 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
- 
- 	/* Create links. */
- 	list_for_each_entry(entity, &vsp1->entities, list_dev) {
--		if (entity->type = VSP1_ENTITY_LIF ||
--		    entity->type = VSP1_ENTITY_RPF)
-+		if (entity->type = VSP1_ENTITY_LIF) {
-+			ret = vsp1_wpf_create_pads_links(vsp1, entity);
-+			if (ret < 0)
-+				goto done;
-+			continue;
-+		}
-+
-+		if (entity->type = VSP1_ENTITY_RPF) {
-+			ret = vsp1_rpf_create_pads_links(vsp1, entity);
-+			if (ret < 0)
-+				goto done;
- 			continue;
-+		}
- 
- 		ret = vsp1_create_links(vsp1, entity);
- 		if (ret < 0)
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index b60a528a8fe8..38aebdf691b5 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -277,18 +277,29 @@ struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index)
- 
- 	rpf->entity.video = video;
- 
--	/* Connect the video device to the RPF. */
--	ret = media_create_pad_link(&rpf->video.video.entity, 0,
--				       &rpf->entity.subdev.entity,
--				       RWPF_PAD_SINK,
--				       MEDIA_LNK_FL_ENABLED |
--				       MEDIA_LNK_FL_IMMUTABLE);
--	if (ret < 0)
--		goto error;
--
- 	return rpf;
- 
- error:
- 	vsp1_entity_destroy(&rpf->entity);
- 	return ERR_PTR(ret);
- }
-+
-+/*
-+ * vsp1_rpf_create_pads_links_create_pads_links() - RPF pads links creation
-+ * @vsp1: Pointer to VSP1 device
-+ * @entity: Pointer to VSP1 entity
-+ *
-+ * return negative error code or zero on success
-+ */
-+int vsp1_rpf_create_pads_links(struct vsp1_device *vsp1,
-+			       struct vsp1_entity *entity)
-+{
-+	struct vsp1_rwpf *rpf = to_rwpf(&entity->subdev);
-+
-+	/* Connect the video device to the RPF. */
-+	return media_create_pad_link(&rpf->video.video.entity, 0,
-+				     &rpf->entity.subdev.entity,
-+				     RWPF_PAD_SINK,
-+				     MEDIA_LNK_FL_ENABLED |
-+				     MEDIA_LNK_FL_IMMUTABLE);
-+}
-diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
-index f452dce1a931..6638b3587369 100644
---- a/drivers/media/platform/vsp1/vsp1_rwpf.h
-+++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
-@@ -50,6 +50,11 @@ static inline struct vsp1_rwpf *to_rwpf(struct v4l2_subdev *subdev)
- struct vsp1_rwpf *vsp1_rpf_create(struct vsp1_device *vsp1, unsigned int index);
- struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index);
- 
-+int vsp1_rpf_create_pads_links(struct vsp1_device *vsp1,
-+			       struct vsp1_entity *entity);
-+int vsp1_wpf_create_pads_links(struct vsp1_device *vsp1,
-+			       struct vsp1_entity *entity);
-+
- int vsp1_rwpf_enum_mbus_code(struct v4l2_subdev *subdev,
- 			     struct v4l2_subdev_pad_config *cfg,
- 			     struct v4l2_subdev_mbus_code_enum *code);
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index d39aa4b8aea1..1be363e4f741 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -220,7 +220,6 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
- 	struct v4l2_subdev *subdev;
- 	struct vsp1_video *video;
- 	struct vsp1_rwpf *wpf;
--	unsigned int flags;
- 	int ret;
- 
- 	wpf = devm_kzalloc(vsp1->dev, sizeof(*wpf), GFP_KERNEL);
-@@ -276,20 +275,6 @@ struct vsp1_rwpf *vsp1_wpf_create(struct vsp1_device *vsp1, unsigned int index)
- 		goto error;
- 
- 	wpf->entity.video = video;
--
--	/* Connect the video device to the WPF. All connections are immutable
--	 * except for the WPF0 source link if a LIF is present.
--	 */
--	flags = MEDIA_LNK_FL_ENABLED;
--	if (!(vsp1->pdata.features & VSP1_HAS_LIF) || index != 0)
--		flags |= MEDIA_LNK_FL_IMMUTABLE;
--
--	ret = media_create_pad_link(&wpf->entity.subdev.entity,
--				       RWPF_PAD_SOURCE,
--				       &wpf->video.video.entity, 0, flags);
--	if (ret < 0)
--		goto error;
--
- 	wpf->entity.sink = &wpf->video.video.entity;
- 
- 	return wpf;
-@@ -298,3 +283,28 @@ error:
- 	vsp1_entity_destroy(&wpf->entity);
- 	return ERR_PTR(ret);
- }
-+
-+/*
-+ * vsp1_wpf_create_pads_links_create_pads_links() - RPF pads links creation
-+ * @vsp1: Pointer to VSP1 device
-+ * @entity: Pointer to VSP1 entity
-+ *
-+ * return negative error code or zero on success
-+ */
-+int vsp1_wpf_create_pads_links(struct vsp1_device *vsp1,
-+			       struct vsp1_entity *entity)
-+{
-+	struct vsp1_rwpf *wpf = to_rwpf(&entity->subdev);
-+	unsigned int flags;
-+
-+	/* Connect the video device to the WPF. All connections are immutable
-+	 * except for the WPF0 source link if a LIF is present.
-+	 */
-+	flags = MEDIA_LNK_FL_ENABLED;
-+	if (!(vsp1->pdata.features & VSP1_HAS_LIF) || entity->index != 0)
-+		flags |= MEDIA_LNK_FL_IMMUTABLE;
-+
-+	return media_create_pad_link(&wpf->entity.subdev.entity,
-+				     RWPF_PAD_SOURCE,
-+				     &wpf->video.video.entity, 0, flags);
-+}
+  - The CPG clock generates various clocks for LSI internal generation,
+  - The MSSR block provides two functions:
+      1. Module Standby: "Clock supply to specified modules is stopped
+	 by setting the module stop control register bits."
+         However, the clock supply to a module is not stopped until all
+	 CPUs in the SoC agree.  Indeed, there are separate MSTP
+	 registers for application (Cortex-A) and real-time (SH and/or
+	 Cortex-R) cores.
+      2. Reset Control. to perform a software reset of a specific
+         module.
+  - The APMU controls power and clock supply to the AP-system core (e.g.
+    CA7/CA53, CA15/A57, SCU).
+
+MSTP and CPG registers are mixed in one register block.
+The APMU has one or two separate register blocks.
+
+The current DT bindings are split across 5 different binding documents:
+  1. Renesas SoC-specific "core" CPG clocks that cannot be represented
+     easily in DT in another way (cfr. [1]),
+  2. Renesas-specific MSTP "Module Standby" clocks (cfr. [2]),
+  3. Renesas-specific "DIV6" variable factor clocks, also generated by
+     the CPG (cfr. [3]).
+  4. Generic "fixed-factor-clock" clocks, generated by the CPG, but
+     represented in DT using the generic ""fixed-factor-clock" bindings
+     (cfr. [4]),
+  5. Renesas-specific APMU bindings are under development (cfr. [8]).
+
+Note that currently the Reset Control function of the MSSR block is not
+supported by DT nor Linux, and that there are no DT bindings for the
+APMU block yet.
+
+
+Issues with current bindings
+----------------------------
+
+General:
+  - Tight coupling of CPG and MSTP is not represented in DT:
+      - There's one CPG node, and separate MSTP nodes (one for each
+	block of up to 32 possible MSTP clocks) next to it,
+      - CPG Clock Domain requires "power-domain = <...>" properties
+	linking individual device nodes to the "CPG/MSTP" clock domain
+	provider.
+        For now I use a link to the (single) CPG device node, while the
+	clock provider (mostly) controls the (multiple) MSTP clocks
+	(cfr. [5]).
+      - On R-Car Gen3, any CPG/MSTP (and APMU) register write access
+	requires writing a special value to a specific "Write Protect
+	Register" inside the CPG first. Exact details and impact are
+	still under investigation (cfr. [6]).
+
+MSTP-specific:
+  - The clock hierarchy (parent-child relationship) is represented in a
+    flat structure,
+  - Multiple arrays have to be kept in sync:
+      - "clocks" (parents),
+      - "clock-indices" (sparse bit index inside register),
+      - "clock-output-names",
+  - MSTP clocks are referred to using a reference to a device node and a
+    bit index:
+       - Bit index definitions in
+	 include/dt-bindings/clock/<soc>-clock.h are separated from the
+	 .dtsi file,
+       - There's no protection against using a bit index definition for
+	 a different MSTP register, e.g.
+           - clocks = <&mstp8_clks R8A7791_CLK_QSPI_MOD> (wrong),
+           - clocks = <&mstp9_clks R8A7791_CLK_QSPI_MOD> (correct),
+   - The "reg" properties contain only the SMSTPCRx (control register
+     for System CPU) and MSTPSRx (optional status register) registers
+     only.
+     However, in reality there are many more register sets (up to 10 as
+     of R-Car Gen3):
+       - Separate control registers for application (Cortex-A,
+	 supported) and real-time (SH and/or Cortex-R, not supported)
+	 cores,
+       - various software reset registers (not supported).
+     To make matters more complicated:
+       - Many registers are optional.
+         The current bindings just support one control register and one
+	 optional status register, but this doesn't scale to more
+	 register sets,
+       - Register sets are not linear and not contiguous in the register
+	 space.
+         I.e. it's not possible to derive the address of SMSTPCRx from
+	 the address of SMSTPCRy, or the address of MSTPSRx from the
+	 address of SMSTPCRx.
+
+
+Proposal
+--------
+
+I'd like to propose the following, to resolve (some of) the issues with
+the current bindings:
+
+  - Get rid of the "clocks" node.
+    This is something we already did on r8a7795, and can be done for
+    older SoCs without breaking backwards-compatibility,
+  - Replace the existing MSTP driver by a new MSSR driver, which is
+    planned to be extensible to handle module reset as well,
+  - MSTP clocks:
+      - All MSTP clocks are now grouped inside the CPG node, under a new
+	"mssr" subnode, covering the same register block as the parent
+	CPG node,
+      - The list of available registers is maintained inside the new
+	MSSR driver,
+      - MSTP clocks are still referred to by a one cell clock specifier,
+	but this is now global, and encodes both the MSTP register
+	number and the MSTP register bit, crafted to look like the MSTP
+	numbers in the datasheet,
+  - Reset control:
+     - Added "#reset-cells = 1",
+     - One cell reset specifiers will use the MSTP clock numbers, as
+       these are actually module numbers (hmm, perhaps I should start
+       calling them "module numbers", too)
+     - Reset control support is still to be implemented.
+
+While this is mainly intended for R-Car Gen3 (r8a7795), it was developed
+and tested on r8a7791/koelsch.
+
+
+Changes compared to v1
+----------------------
+
+  - Renamed "mstp" node to "mssr" node, added "reg" and "compatible"
+    properties.
+    While at first I wanted to not put a "reg" nor "compatible" property
+    in the "mssr" node at all, and let the CPG driver handle the
+    registration of the MSTP clocks itself. However, I believe (I
+    haven't tried) that won't work, as some MSTP clocks have a DIV6
+    clock as parent, which isn't instantiated yet (usually the DIV6
+    clock has a CPG clock as parent).
+  - Retained arrays of "clocks", "clock-output-names", and
+    "clock-indices" properties, as this was apparently something the
+    clock maintainer(s) insisted upon when the original bindings were
+    developed.
+  - Replace the existing MSTP driver by a new MSSR driver, preparing for
+    reset control,
+  - Drop changing the compatible value for the CPG node, as everything
+    is now handled in the new MSSR driver,
+  - Working patches are now included (for r8a7791/koelsch only).
+
+
+References
+----------
+
+  [1] Documentation/devicetree/bindings/clock/renesas,<SoC>-cpg-clocks.txt
+      where <SoC> is a single SoC name or a family of SoCs
+  [2] Documentation/devicetree/bindings/clock/renesas,cpg-mstp-clocks.txt
+  [3] Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
+  [4] Documentation/devicetree/bindings/clock/fixed-factor-clock.txt
+  [5] Series "[PATCH v2 00/14] ARM: shmobile: Add CPG Clock Domains"
+      (https://lkml.org/lkml/2015/5/28/590,
+       http://lkml.iu.edu/hypermail/linux/kernel/1505.3/03336.html)
+  [6] Series "[PATCH 0/6][RFC] arm64: Renesas Gen3 initial patch"
+      (http://www.spinics.net/lists/linux-sh/msg42683.html)
+  [7] Series "[PATCH v3 00/09] ARM: shmobile: APMU DT support via SMP
+      Enable method V3"
+      (http://www.spinics.net/lists/devicetree/msg94094.html)
+
+
+Geert Uytterhoeven (4):
+  [RFC] ARM: shmobile: r8a7791 dtsi: Move DIV6 and MSTP clocks under CPG
+  [RFC] ARM: shmobile: r8a7791/koelsch dts(i): Switch from MSTP to MSSR
+  [RFC] clk: shmobile: Add Renesas Module Standby and Software Reset
+    driver
+  [RFC] clk: shmobile: rcar-gen2: Switch from old MSTP to new MSSR
+    driver
+
+ arch/arm/boot/dts/r8a7791-koelsch.dts     |   6 +-
+ arch/arm/boot/dts/r8a7791.dtsi            | 650 ++++++++++++++++--------------
+ drivers/clk/shmobile/Makefile             |   2 +-
+ drivers/clk/shmobile/clk-mssr.c           | 365 +++++++++++++++++
+ drivers/clk/shmobile/clk-rcar-gen2.c      |   2 +-
+ include/dt-bindings/clock/r8a7791-clock.h | 232 +++++------
+ include/linux/clk/shmobile.h              |   2 +
+ 7 files changed, 827 insertions(+), 432 deletions(-)
+ create mode 100644 drivers/clk/shmobile/clk-mssr.c
+
 -- 
-2.4.3
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
