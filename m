@@ -1,59 +1,100 @@
-From: Javier Martinez Canillas <javier@osg.samsung.com>
-Date: Thu, 03 Sep 2015 16:00:31 +0000
-Subject: [PATCH 0/5] [media] Create pads links after entities registration
-Message-Id: <1441296036-20727-1-git-send-email-javier@osg.samsung.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 24 Sep 2015 05:30:20 +0000
+Subject: [PATCH] ARM: shmobile: R-Mobile: Use CPG/MSTP Clock Domain attach/detach helpers
+Message-Id: <8b98d74780ab70147d40400c36059c16c1aea4da.1443072491.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1443072491.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1443072491.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Hans Verkuil <hans.verkuil@cisco.com>, Javier Martinez Canillas <javier@osg.samsung.com>, devel@driverdev.osuosl.org, Sakari Ailus <sakari.ailus@iki.fi>, linux-sh@vger.kernel.org, Mauro Carvalho Chehab <mchehab@osg.samsung.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-media@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-This series changes all the MC media drivers that are currently creating
-pads links before registering the media entities with the media device.
+The R-Mobile PM Domain driver manages both power domains and a clock
+domain.
 
-The patches are similar to the ones posted for the OMAP3 ISP driver [0]
-and depends on Mauro's "[PATCH v8 00/55] MC next generation patches" [1].
+The clock domain part is very similar to the CPG/MSTP Clock Domain,
+which is used on shmobile SoCs without device power domains, except for
+the way how clocks suitable for power management are selected:
+  - The former uses the first clock tied to the device through the NULL
+    con_id, which is a relic from the legacy pm_clk_notifier-based
+    method in drivers/sh/pm_runtime.c,
+  - The latter looks for suitable clocks in DT, which is more
+    future-proof.
 
-The patches just moves the entities registration logic before pads links
-creation and in the case of the vsp1, split the pads links creationg from
-the entities initialization logic as it was made for the OMAP3 ISP driver.
+All platforms using this driver are now supported in DT-based ARM
+multi-platform builds only, hence switch to using the CPG/MSTP Clock
+Domain helpers.
 
-Unfortunately I don't have hardware to test these patches and they were
-only build tested. So testing that I didn't introduce any regression will
-be highly appreciated.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/pm-rmobile.c | 35 +++--------------------------------
+ 1 file changed, 3 insertions(+), 32 deletions(-)
 
-[0]: https://lkml.org/lkml/2015/8/26/453
-[1]: http://www.spinics.net/lists/linux-samsung-soc/msg47089.html
-
-Best regards,
-Javier
-
-
-Javier Martinez Canillas (5):
-  [media] staging: omap4iss: separate links creation from entities init
-  [media] v4l: vsp1: create pad links after subdev registration
-  [media] v4l: vsp1: separate links creation from entities init
-  [media] uvcvideo: create pad links after subdev registration
-  [media] smiapp: create pad links after subdev registration
-
- drivers/media/i2c/smiapp/smiapp-core.c       |  20 +++---
- drivers/media/platform/vsp1/vsp1_drv.c       |  30 +++++---
- drivers/media/platform/vsp1/vsp1_rpf.c       |  29 +++++---
- drivers/media/platform/vsp1/vsp1_rwpf.h      |   5 ++
- drivers/media/platform/vsp1/vsp1_wpf.c       |  40 +++++++----
- drivers/media/usb/uvc/uvc_entity.c           |  16 +++--
- drivers/staging/media/omap4iss/iss.c         | 101 ++++++++++++++++++---------
- drivers/staging/media/omap4iss/iss_csi2.c    |  35 +++++++---
- drivers/staging/media/omap4iss/iss_csi2.h    |   1 +
- drivers/staging/media/omap4iss/iss_ipipeif.c |  29 ++++----
- drivers/staging/media/omap4iss/iss_ipipeif.h |   1 +
- drivers/staging/media/omap4iss/iss_resizer.c |  29 ++++----
- drivers/staging/media/omap4iss/iss_resizer.h |   1 +
- 13 files changed, 224 insertions(+), 113 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index a5b96b990aea..89068c8ec50f 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -12,6 +12,7 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
++#include <linux/clk/shmobile.h>
+ #include <linux/console.h>
+ #include <linux/delay.h>
+ #include <linux/of.h>
+@@ -124,36 +125,6 @@ static bool rmobile_pd_active_wakeup(struct device *dev)
+ 	return true;
+ }
+ 
+-static int rmobile_pd_attach_dev(struct generic_pm_domain *domain,
+-				 struct device *dev)
+-{
+-	int error;
+-
+-	error = pm_clk_create(dev);
+-	if (error) {
+-		dev_err(dev, "pm_clk_create failed %d\n", error);
+-		return error;
+-	}
+-
+-	error = pm_clk_add(dev, NULL);
+-	if (error) {
+-		dev_err(dev, "pm_clk_add failed %d\n", error);
+-		goto fail;
+-	}
+-
+-	return 0;
+-
+-fail:
+-	pm_clk_destroy(dev);
+-	return error;
+-}
+-
+-static void rmobile_pd_detach_dev(struct generic_pm_domain *domain,
+-				  struct device *dev)
+-{
+-	pm_clk_destroy(dev);
+-}
+-
+ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ {
+ 	struct generic_pm_domain *genpd = &rmobile_pd->genpd;
+@@ -164,8 +135,8 @@ static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ 	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
+ 	genpd->power_off		= rmobile_pd_power_down;
+ 	genpd->power_on			= rmobile_pd_power_up;
+-	genpd->attach_dev		= rmobile_pd_attach_dev;
+-	genpd->detach_dev		= rmobile_pd_detach_dev;
++	genpd->attach_dev		= cpg_mstp_attach_dev;
++	genpd->detach_dev		= cpg_mstp_detach_dev;
+ 	__rmobile_pd_power_up(rmobile_pd, false);
+ }
+ 
 -- 
-2.4.3
+2.1.4
 
