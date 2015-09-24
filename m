@@ -1,49 +1,35 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 23 Sep 2015 23:58:23 +0000
-Subject: [PATCH] tmio_mmc_pio: test TMIO_MMC_WRPROTECT_DISABLE earlier
-Message-Id: <1513691.2yatcrs42i@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 24 Sep 2015 07:04:20 +0000
+Subject: Re: [PATCH] tmio_mmc_pio: test TMIO_MMC_WRPROTECT_DISABLE earlier
+Message-Id: <CAMuHMdUicoDv-MROEVGqsM-o7hiCqBdkjK3Tn45zE0r5Z1hofQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1513691.2yatcrs42i@wasted.cogentembedded.com>
+In-Reply-To: <1513691.2yatcrs42i@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org, ulf.hansson@linaro.org, ian@mnementh.co.uk
-Cc: linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Linux MMC List <linux-mmc@vger.kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>, Ian Molton <ian@mnementh.co.uk>, Linux-sh list <linux-sh@vger.kernel.org>
 
-There seems  to be no sense in the runtime PM calls when the actual register
-read is suppressed by the TMIO_MMC_WRPROTECT_DISABLE flag.  Check that flag
-before trying to read the register and  thus doing the runtime PM dance...
+On Thu, Sep 24, 2015 at 1:58 AM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> There seems  to be no sense in the runtime PM calls when the actual register
+> read is suppressed by the TMIO_MMC_WRPROTECT_DISABLE flag.  Check that flag
+> before trying to read the register and  thus doing the runtime PM dance...
+>
+> While at it, kill useless local variable and add empty line after declarations.
+>
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-While at it, kill useless local variable and add empty line after declarations.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Gr{oetje,eeting}s,
 
----
-The patch is against Ulf Hansson's 'mmc.git' repo's 'next' branch.
+                        Geert
 
- drivers/mmc/host/tmio_mmc_pio.c |    8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-Index: mmc/drivers/mmc/host/tmio_mmc_pio.c
-=================================--- mmc.orig/drivers/mmc/host/tmio_mmc_pio.c
-+++ mmc/drivers/mmc/host/tmio_mmc_pio.c
-@@ -988,14 +988,16 @@ static void tmio_mmc_set_ios(struct mmc_
- static int tmio_mmc_get_ro(struct mmc_host *mmc)
- {
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
--	struct tmio_mmc_data *pdata = host->pdata;
- 	int ret = mmc_gpio_get_ro(mmc);
-+
- 	if (ret >= 0)
- 		return ret;
- 
-+	if (host->pdata->flags & TMIO_MMC_WRPROTECT_DISABLE)
-+		return 0;
-+
- 	pm_runtime_get_sync(mmc_dev(mmc));
--	ret = !((pdata->flags & TMIO_MMC_WRPROTECT_DISABLE) ||
--		(sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT));
-+	ret = !(sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT);
- 	pm_runtime_mark_last_busy(mmc_dev(mmc));
- 	pm_runtime_put_autosuspend(mmc_dev(mmc));
- 
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
