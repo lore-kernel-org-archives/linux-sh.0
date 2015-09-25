@@ -1,36 +1,30 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 28 Sep 2015 13:28:03 +0000
-Subject: [PATCH] spi: sh-msiof: Match renesas,rx-fifo-size in DT bindings doc with driver
-Message-Id: <1443446883-4189-1-git-send-email-geert+renesas@glider.be>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 25 Sep 2015 16:06:46 +0000
+Subject: Re: [PATCH] pinctrl: sh-pfc: r8a7794: Remove bogus SCIF0 SCK pin data
+Message-Id: <CACRpkdZEOnBp7HkmU0XaB2ybxvF5XbKoYkC0UW0KTwcjGzrDtw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1440611638-16256-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1440611638-16256-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Koji Matsuoka <koji.matsuoka.xm-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
 
-Commit fe78d0b7691c0274 ("spi: sh-msiof: Fix FIFO size to 64 word from
-256 word") changed the default RX FIFO size on R-Car Gen2 SoCs in the
-driver code, but forgot to update the DT bindings documentation.
+On Wed, Aug 26, 2015 at 10:53 AM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- Documentation/devicetree/bindings/spi/sh-msiof.txt | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+> SCIF0 on R-Car E2 does not have an SCK pin.
+>
+> "SCIF_CLK" is the (H)SCIF baud rate generation clock pin, which is not
+> yet supported.
+>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
-index 8f771441be60556a..705075da2f10156e 100644
---- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
-+++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
-@@ -51,7 +51,7 @@ Optional properties, deprecated for soctype-specific bindings:
- - renesas,tx-fifo-size : Overrides the default tx fifo size given in words
- 			 (default is 64)
- - renesas,rx-fifo-size : Overrides the default rx fifo size given in words
--			 (default is 64, or 256 on R-Car Gen2)
-+			 (default is 64)
- 
- Pinctrl properties might be needed, too.  See
- Documentation/devicetree/bindings/pinctrl/renesas,*.
--- 
-1.9.1
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
+This goes for the rest of the PFC patches as well, I'll just
+glance over it and trust you to pile up the stuff nicely.
+
+Yours,
+Linus Walleij
