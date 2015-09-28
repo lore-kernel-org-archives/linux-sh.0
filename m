@@ -1,40 +1,36 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 17 Sep 2015 06:34:07 +0000
-Subject: [PATCH v3 09/09] ARM: shmobile: Prioritize r8a7791 DT APMU support
-Message-Id: <20150917063407.26016.22959.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 28 Sep 2015 13:28:03 +0000
+Subject: [PATCH] spi: sh-msiof: Match renesas,rx-fifo-size in DT bindings doc with driver
+Message-Id: <1443446883-4189-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150917063240.26016.93772.sendpatchset@little-apple>
-In-Reply-To: <20150917063240.26016.93772.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: mark.rutland-5wv7dgnIgG8@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lorenzo.pieralisi-5wv7dgnIgG8@public.gmane.org, keita.kobayashi.ym-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org, horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org, laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Mark Brown <broonie-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Koji Matsuoka <koji.matsuoka.xm-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-spi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Commit fe78d0b7691c0274 ("spi: sh-msiof: Fix FIFO size to 64 word from
+256 word") changed the default RX FIFO size on R-Car Gen2 SoCs in the
+driver code, but forgot to update the DT bindings documentation.
 
-Adjust the r8a7791 SoC support code to not configure any non-DT SMP code
-in case the DT-based enable-method has been installed already.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
+ Documentation/devicetree/bindings/spi/sh-msiof.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- Changes since V2:
- - None
-
- Changes since V1:
- - Broke out bits from former r8a7791-specific patch.
-
- arch/arm/mach-shmobile/setup-r8a7791.c |    1 +
- 1 file changed, 1 insertion(+)
-
---- 0001/arch/arm/mach-shmobile/setup-r8a7791.c
-+++ work/arch/arm/mach-shmobile/setup-r8a7791.c	2015-08-23 15:46:53.002366518 +0900
-@@ -29,6 +29,7 @@ static const char *const r8a7791_boards_
- };
+diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+index 8f771441be60556a..705075da2f10156e 100644
+--- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
++++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+@@ -51,7 +51,7 @@ Optional properties, deprecated for soctype-specific bindings:
+ - renesas,tx-fifo-size : Overrides the default tx fifo size given in words
+ 			 (default is 64)
+ - renesas,rx-fifo-size : Overrides the default rx fifo size given in words
+-			 (default is 64, or 256 on R-Car Gen2)
++			 (default is 64)
  
- DT_MACHINE_START(R8A7791_DT, "Generic R8A7791 (Flattened Device Tree)")
-+	.smp_init	= shmobile_smp_init_fallback_ops,
- 	.smp		= smp_ops(r8a7791_smp_ops),
- 	.init_early	= shmobile_init_delay,
- 	.init_time	= rcar_gen2_timer_init,
+ Pinctrl properties might be needed, too.  See
+ Documentation/devicetree/bindings/pinctrl/renesas,*.
+-- 
+1.9.1
+
