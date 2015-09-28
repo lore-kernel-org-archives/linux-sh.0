@@ -1,34 +1,28 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Sep 2015 08:59:36 +0000
-Subject: [PATCH 20/21] ARM: shmobile: remove Makefile.boot
-Message-Id: <fc22a4d484fafb373c51bb6792bb5a4ef4caae71.1442478814.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 28 Sep 2015 09:42:19 +0000
+Subject: [PATCH v2 00/02] irqchip: renesas-irqc: r8a7795 and generic chip update V2
+Message-Id: <20150928094219.32552.18778.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442478814.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442478814.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: jason@lakedaemon.net, geert+renesas@glider.be, linux-kernel@vger.kernel.org, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-Now that the only multiplatform boot is supported for all
-shmobile platforms Makefile.boot may be removed.
+irqchip: renesas-irqc: r8a7795 and generic chip update V2
 
-This seems correct to me given:
-* Setting MACHINE to no value in arch/arm/Makefile
-  if CONFIG_ARCH_MULTIPLATFORM is set
-* Not including Makefile.boot in arch/arm/boot/Makefile
-  if MACHINE has no value
+[PATCH v2 01/02] irqchip: renesas-irqc: Add r8a7795 INTC-EX DT documentation
+[PATCH v2 02/02] irqchip: renesas-irqc: Move over to nested generic chip
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This series updates the IRQC driver with generic chip support including
+nested locking. Also the DT documentation is extended with r8a7795
+support.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/mach-shmobile/Makefile.boot | 0
- 1 file changed, 0 insertions(+), 0 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/Makefile.boot
 
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-deleted file mode 100644
-index e69de29bb2d1..000000000000
--- 
-2.1.4
+ Written against v4.3-rc3, thanks to Geert and Tglx for their help!
 
+ Documentation/devicetree/bindings/interrupt-controller/renesas,irqc.txt |    1 
+ drivers/irqchip/Kconfig                                                 |    1 
+ drivers/irqchip/irq-renesas-irqc.c                                      |   86 +++-------
