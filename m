@@ -1,50 +1,97 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 30 Sep 2015 11:11:56 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7794: add USB PHY DT support
-Message-Id: <560BC37C.2040306@cogentembedded.com>
+Date: Tue, 29 Sep 2015 23:26:08 +0000
+Subject: [PATCH] ARM: shmobile: porter: initial device tree
+Message-Id: <2022535.FYlSB7sRz4@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442100737.hcefR9HyDq@wasted.cogentembedded.com>
- <1590842.9hQm6l1zli@wasted.cogentembedded.com>
- <55F9F82E.4000809@cogentembedded.com> <20150930083324.GA3426@verge.net.au>
-In-Reply-To: <20150930083324.GA3426@verge.net.au>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Add the initial device tree for the R8A7791 SoC based Porter low cost board
+(which  is a  slightly modified version  of the Henninger board).
 
-On 9/30/2015 11:33 AM, Simon Horman wrote:
+SCIF0 serial port support is included, so that the serial console can work. 
 
->>> Define the R8A7794 generic part of the USB PHY device node. It is up to the
->>> board file to enable the device.
->>>
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>>
->>> ---
->>>   arch/arm/boot/dts/r8a7794.dtsi |   19 +++++++++++++++++++
->>>   1 file changed, 19 insertions(+)
->>>
->>> Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
->>> =================================>>> --- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
->>> +++ renesas/arch/arm/boot/dts/r8a7794.dtsi
->>> @@ -690,6 +690,25 @@
->>>   				 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
->>>   	};
->>>
->>> +	usbphy: usb-phy@e6590100 {
->>> +		compatible = "renesas,usb-phy-r8a7794";
->>> +		reg = <0 0xe6590100 0 0x100>;
->>> +		#address-cells = <1>;
->>> +		#size-cells = <0>;
->>> +		clocks = <&mstp7_clks R8A7794_CLK_HSUSB>;
->>> +		clock-names = "usbhs";
->>
->>     Forgot to add "power-domains" prop here. :-(
->
-> Are you planning to repost this?
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-    Yes.
+---
+This patch is against the 'renesas-devel-20150928-v4.3-rc3' tag of Simon
+Horman's 'renesas.git' repo.
 
-MBR, Sergei
+ arch/arm/boot/dts/Makefile           |    1 
+ arch/arm/boot/dts/r8a7791-porter.dts |   54 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 55 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/Makefile
+=================================--- renesas.orig/arch/arm/boot/dts/Makefile
++++ renesas/arch/arm/boot/dts/Makefile
+@@ -532,6 +532,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	r8a7790-lager.dtb \
+ 	r8a7791-henninger.dtb \
+ 	r8a7791-koelsch.dtb \
++	r8a7791-porter.dtb \
+ 	r8a7793-gose.dtb \
+ 	r8a7794-alt.dtb \
+ 	r8a7794-silk.dtb \
+Index: renesas/arch/arm/boot/dts/r8a7791-porter.dts
+=================================--- /dev/null
++++ renesas/arch/arm/boot/dts/r8a7791-porter.dts
+@@ -0,0 +1,54 @@
++/*
++ * Device Tree Source for the Porter board
++ *
++ * Copyright (C) 2015 Cogent Embedded, Inc.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/dts-v1/;
++#include "r8a7791.dtsi"
++
++/ {
++	model = "Porter";
++	compatible = "renesas,porter", "renesas,r8a7791";
++
++	aliases {
++		serial0 = &scif0;
++	};
++
++	chosen {
++		bootargs = "console=ttySC0,115200 ignore_loglevel";
++		stdout-path = &scif0;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0 0x40000000 0 0x40000000>;
++	};
++
++	memory@200000000 {
++		device_type = "memory";
++		reg = <2 0x00000000 0 0x40000000>;
++	};
++};
++
++&extal_clk {
++	clock-frequency = <20000000>;
++};
++
++&pfc {
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data_d";
++		renesas,function = "scif0";
++	};
++};
++
++&scif0 {
++	pinctrl-0 = <&scif0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
 
