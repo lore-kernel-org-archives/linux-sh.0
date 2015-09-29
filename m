@@ -1,48 +1,39 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 22 Sep 2015 15:44:06 +0000
-Subject: [PATCH/RFC v2 4/4] clk: shmobile: rcar-gen2: Switch from old MSTP to new MSSR driver
-Message-Id: <1442936646-30362-5-git-send-email-geert+renesas@glider.be>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 29 Sep 2015 12:48:20 +0000
+Subject: Re: [PATCH/RFC v2 4/4] clk: shmobile: rcar-gen2: Switch from old MSTP to new MSSR driver
+Message-Id: <CAMuHMdW3o0WCGCXuyYJtd8nC691N62wK7NNTzTQTM7fAvCn8jg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1442936646-30362-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1442936646-30362-1-git-send-email-geert+renesas@glider.be>
+	<1442936646-30362-5-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1442936646-30362-5-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Philipp Zabel <p.zabel@pengutronix.de>
-Cc: linux-clk@vger.kernel.org, linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Philipp Zabel <p.zabel@pengutronix.de>, linux-clk <linux-clk@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/clk/shmobile/Makefile        | 2 +-
- drivers/clk/shmobile/clk-rcar-gen2.c | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+On Tue, Sep 22, 2015 at 5:44 PM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
+> --- a/drivers/clk/shmobile/clk-rcar-gen2.c
+> +++ b/drivers/clk/shmobile/clk-rcar-gen2.c
+> @@ -431,7 +431,7 @@ static void __init rcar_gen2_cpg_clocks_init(struct device_node *np)
+>
+>         of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
+>
+> -       cpg_mstp_add_clk_domain(np);
+> +       cpg_mssr_add_clk_domain(np);
 
-diff --git a/drivers/clk/shmobile/Makefile b/drivers/clk/shmobile/Makefile
-index 2525ba9608b69732..f595a028a581a271 100644
---- a/drivers/clk/shmobile/Makefile
-+++ b/drivers/clk/shmobile/Makefile
-@@ -5,7 +5,7 @@ obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o clk-mstp.o clk-div6.o
- obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o clk-mstp.o
- obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o clk-mstp.o
- obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
--obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
-+obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o clk-mssr.o clk-div6.o
- obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
- obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
- obj-$(CONFIG_ARCH_R8A7795)		+= clk-rcar-gen3.o clk-mstp.o clk-div6.o
-diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
-index 3f02b40b4911831c..a237d63af1ede4f6 100644
---- a/drivers/clk/shmobile/clk-rcar-gen2.c
-+++ b/drivers/clk/shmobile/clk-rcar-gen2.c
-@@ -431,7 +431,7 @@ static void __init rcar_gen2_cpg_clocks_init(struct device_node *np)
- 
- 	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
- 
--	cpg_mstp_add_clk_domain(np);
-+	cpg_mssr_add_clk_domain(np);
- }
- CLK_OF_DECLARE(rcar_gen2_cpg_clks, "renesas,rcar-gen2-cpg-clocks",
- 	       rcar_gen2_cpg_clocks_init);
--- 
-1.9.1
+Of course this should become conditional on the presence of the new
+"renesas,r8a7791-cpg-mssr" compatible value, to preserve
+backwards-compatibility with old DTSes.
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
