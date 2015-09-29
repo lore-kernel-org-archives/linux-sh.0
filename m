@@ -1,72 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 04 Sep 2015 21:45:47 +0000
-Subject: Re: [PATCH 11/25 v7][RFC] arm64: renesas: r8a7795: add mstp7 node and enable HSUSB clock
-Message-Id: <1497956.raqvHereTr@avalon>
+From: hamzahfrq.sub@gmail.com
+Date: Tue, 29 Sep 2015 20:44:45 +0000
+Subject: [PATCH v3 3/6] dma: rcar-dma: check if complete DMA packet received but not processed
+Message-Id: <1443559488-2416-4-git-send-email-hamzahfrq.sub@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87d1yd7797.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87d1yd7797.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello Morimoto-san,
+From: Muhammad Hamza Farooq <mfarooq@visteon.com>
 
-Thank you for the patch.
+At high speeds, DMA interrupts come very fast. If there's an interrupt
+pending before previous is handled, this method can help return actual
+status of the DMA transaction by reading the hardware flag
 
-On Monday 24 August 2015 02:28:56 Kuninori Morimoto wrote:
-> From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
-> v5 -> v7
-> 
->  - based on Gen3 v7 patch set
-> 
->  arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 10 ++++++++++
->  include/dt-bindings/clock/r8a7795-clock.h |  1 +
->  2 files changed, 11 insertions(+)
-> 
-> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> b/arch/arm64/boot/dts/renesas/r8a7795.dtsi index c3421b3..77cfcea 100644
-> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> @@ -100,6 +100,16 @@
->  					renesas,clock-indices = <R8A7795_CLK_SCIF2>;
->  					clock-output-names = "scif2";
->  				};
-> +
-> +				mstp7_clks: mstp7_clks@e615014c {
-> +					compatible = "renesas,r8a7795-mstp-clocks",
-> +						     "renesas,cpg-mstp-clocks";
-> +					reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
-> +					clocks =  <&s3d4_clk>;
-> +					#clock-cells = <1>;
-> +					renesas,clock-indices = <R8A7795_CLK_HSUSB>;
+Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
+---
+ drivers/dma/sh/rcar-dmac.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-You should use the standard clock-indices property instead of the Renesas-
-specific version.
-
-> +					clock-output-names = "hsusb";
-> +				};
->  			};
->  		};
-> 
-> diff --git a/include/dt-bindings/clock/r8a7795-clock.h
-> b/include/dt-bindings/clock/r8a7795-clock.h index 27b3a29..ffb0b5b 100644
-> --- a/include/dt-bindings/clock/r8a7795-clock.h
-> +++ b/include/dt-bindings/clock/r8a7795-clock.h
-> @@ -29,6 +29,7 @@
->  /* MSTP5 */
-> 
->  /* MSTP7 */
-> +#define R8A7795_CLK_HSUSB		4
-> 
->  /* MSTP8 */
-
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index c7cd4ed..6c806d0 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -314,6 +314,14 @@ static bool rcar_dmac_chan_is_busy(struct rcar_dmac_chan *chan)
+ 	return (chcr & (RCAR_DMACHCR_DE | RCAR_DMACHCR_TE)) = RCAR_DMACHCR_DE;
+ }
+ 
++/* Transfer completed but not yet handled */
++static bool rcar_dmac_last_tx_complete(struct rcar_dmac_chan *chan)
++{
++	u32 chcr = rcar_dmac_chan_read(chan, RCAR_DMACHCR);
++
++	return (chcr & RCAR_DMACHCR_TE) = RCAR_DMACHCR_TE;
++}
++
+ static void rcar_dmac_chan_start_xfer(struct rcar_dmac_chan *chan)
+ {
+ 	struct rcar_dmac_desc *desc = chan->desc.running;
+@@ -1238,6 +1246,10 @@ static enum dma_status rcar_dmac_tx_status(struct dma_chan *chan,
+ 	unsigned long flags;
+ 	unsigned int residue;
+ 
++	/* Interrupt not yet serviced */
++	if (rcar_dmac_last_tx_complete(rchan))
++		return DMA_COMPLETE;
++
+ 	status = dma_cookie_status(chan, cookie, txstate);
+ 	if (status = DMA_COMPLETE || !txstate)
+ 		return status;
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
