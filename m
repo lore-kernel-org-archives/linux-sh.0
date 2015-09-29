@@ -1,23 +1,27 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 12 Sep 2015 22:33:52 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 29 Sep 2015 00:36:00 +0000
 Subject: Re: [PATCH 0/2] Add R8A7794/SILK board PCI USB DT support
-Message-Id: <55F4A850.3050806@cogentembedded.com>
+Message-Id: <20150929003600.GA20067@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <3151312.grtDDBsSl8@wasted.cogentembedded.com>
-In-Reply-To: <3151312.grtDDBsSl8@wasted.cogentembedded.com>
+ <55F4A850.3050806@cogentembedded.com>
+In-Reply-To: <55F4A850.3050806@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 09/13/2015 01:28 AM, Sergei Shtylyov wrote:
+Hi Sergei,
 
->     Here's the set of 2 patches against Simon Horman's 'renesas.git' repo's
-> 'renesas-devel-20150911v2-v4.2' tag. Here we add PCI USB device tree support
-> for the R8A7794-based SILK board.
+On Sun, Sep 13, 2015 at 01:33:52AM +0300, Sergei Shtylyov wrote:
+> On 09/13/2015 01:28 AM, Sergei Shtylyov wrote:
+> 
+> >    Here's the set of 2 patches against Simon Horman's 'renesas.git' repo's
+> >'renesas-devel-20150911v2-v4.2' tag. Here we add PCI USB device tree support
+> >for the R8A7794-based SILK board.
+> 
+>    Oops, forgot to say that the patches need the 'pci-rcar-gen2' driver
+> patch posted yesterday in order to work.
 
-    Oops, forgot to say that the patches need the 'pci-rcar-gen2' driver patch 
-posted yesterday in order to work.
-
-WBR, Sergei
-
+Am I correct in thinking that patch has been accepted and
+that therefore I can now pick up this series?
