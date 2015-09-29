@@ -1,133 +1,110 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 20:57:03 +0000
-Subject: [PATCH 25/32] v4l: vsp1: Make pipeline inputs array index by RPF index
-Message-Id: <1442177830-24536-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 29 Sep 2015 09:19:42 +0000
+Subject: renesas-drivers-2015-09-29-v4.3-rc3
+Message-Id: <1443518382-28359-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The pipeline inputs array stores pointers to all RPFs contained in the
-pipeline. It's currently indexed contiguously by adding RPFs in the
-order they are found during graph walk. This can't easily support
-dynamic addition and removal of RPFs while streaming, which will be
-required for combined VSP+DU support.
+I've pushed renesas-drivers-2015-09-29-v4.3-rc3 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
+branches of various subsystem trees and (b) branches with driver code
+submitted or planned for submission to maintainers into the development
+branch of Simon Horman's renesas.git tree.
 
-Make the array indexed by RPF index instead and skip NULL elements when
-iterating over RPFs.
+Today's version is based on renesas-devel-20150928-v4.3-rc3.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/media/platform/vsp1/vsp1_pipe.c  |  6 +++++-
- drivers/media/platform/vsp1/vsp1_pipe.h  |  2 +-
- drivers/media/platform/vsp1/vsp1_video.c | 16 ++++++++++++----
- drivers/media/platform/vsp1/vsp1_wpf.c   |  5 ++++-
- 4 files changed, 22 insertions(+), 7 deletions(-)
+Included branches with driver code:
+  - sh-pfc-for-v4.4
+      - pinctrl: sh-pfc: Stop calling gpiochip_add_pin_range() on DT platforms
+      - pinctrl: sh-pfc: Remove empty gpio_function_free()
+      - pinctrl: sh-pfc: Confine legacy function GPIOs to SH
+      - pinctrl: sh-pfc: r8a7794: Remove bogus SCIF0 SCK pin data
+      - pinctrl: sh-pfc: r8a7791/r8a7793: Correct SCIFB1_B SCK MOD_SEL value
+      - pinctrl: sh-pfc: add macros defining GP ports with config flags
+      - pinctrl: sh-pfc: r8a7778: Add bias (pull-up) pinconf support
+      - pinctrl: sh-pfc: r8a779[01]: move 'union vin_data' to shared header file
+      - pinctrl: sh-pfc: r8a7794: add VIN pin groups
+      - pinctrl: sh-pfc: Get rid of CONFIG_ARCH_SHMOBILE_LEGACY
+      - pinctrl: sh-pfc: Remove hardcoded IRQ numbers
+      - pinctrl: sh-pfc: modify PINMUX_IPSR_MSEL() macro order
+      - pinctrl: sh-pfc: sh7734: use PINMUX_IPSR_MSEL()
+      - pinctrl: sh-pfc: r8a7794: use PINMUX_IPSR_MSEL()
+      - pinctrl: sh-pfc: r8a7791: use PINMUX_IPSR_MSEL()
+      - pinctrl: sh-pfc: r8a7790: use PINMUX_IPSR_MSEL()
+      - pinctrl: sh-pfc: r8a7779: use PINMUX_IPSR_MSEL()
+      - pinctrl: sh-pfc: remove unused PINMUX_IPSR_MODSEL_DATA()
+      - pinctrl: sh-pfc: Initial R8A7795 PFC support
+      - pinctrl: sh-pfc: r8a7795: add SCIFx support
+      - pinctrl: sh-pfc: r8a7795: add I2C pin support
+      - pinctrl: sh-pfc: r8a7795: add Audio clock pin support
+      - pinctrl: sh-pfc: r8a7795: add Audio SSI pin support
+      - pinctrl: sh-pfc: r8a7795: add EtherAVB support
+  - topic/gen3-cpg-v7
+  - topic/r8a7795-scif-v1
+  - topic/rcar-dmac-residue-v1
+  - topic/rcar-dmac-hamza-v2
+  - topic/scif-misc-v3
+  - topic/scif-dma-v4
+  - topic/cs2000-v4
+  - topic/r8a7795-i2c-v3
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#me/r8a7795-ravb-driver-v3
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/arm64-rcar-gen3-v9.plus
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-gpio-v1.rebase
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-i2c-v3
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-sound-v3.update
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#me/r8a7795-ravb-integration-v3
+  - topic/gen3-modemr-syscon-v1.rebase2
+  - git://linuxtv.org/pinchartl/media#vsp1-kms-gen3-20150913
 
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c b/drivers/media/platform/vsp1/vsp1_pipe.c
-index df11259dcc0a..d41e4ca94a02 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.c
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.c
-@@ -140,14 +140,18 @@ const struct vsp1_format_info *vsp1_get_format_info(u32 fourcc)
- 
- void vsp1_pipeline_reset(struct vsp1_pipeline *pipe)
- {
-+	unsigned int i;
-+
- 	if (pipe->bru) {
- 		struct vsp1_bru *bru = to_bru(&pipe->bru->subdev);
--		unsigned int i;
- 
- 		for (i = 0; i < ARRAY_SIZE(bru->inputs); ++i)
- 			bru->inputs[i].rpf = NULL;
- 	}
- 
-+	for (i = 0; i < ARRAY_SIZE(pipe->inputs); ++i)
-+		pipe->inputs[i] = NULL;
-+
- 	INIT_LIST_HEAD(&pipe->entities);
- 	pipe->state = VSP1_PIPELINE_STOPPED;
- 	pipe->buffers_ready = 0;
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.h b/drivers/media/platform/vsp1/vsp1_pipe.h
-index f9035c739e9a..c4c300561c5c 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.h
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.h
-@@ -66,7 +66,7 @@ enum vsp1_pipeline_state {
-  * @stream_count: number of streaming video nodes
-  * @buffers_ready: bitmask of RPFs and WPFs with at least one buffer available
-  * @num_inputs: number of RPFs
-- * @inputs: array of RPFs in the pipeline
-+ * @inputs: array of RPFs in the pipeline (indexed by RPF index)
-  * @output: WPF at the output of the pipeline
-  * @bru: BRU entity, if present
-  * @lif: LIF entity, if present
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index e0d4f84bc26d..78926c9f4125 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -305,8 +305,8 @@ static int vsp1_video_pipeline_validate(struct vsp1_pipeline *pipe,
- 
- 		if (e->type = VSP1_ENTITY_RPF) {
- 			rwpf = to_rwpf(subdev);
--			pipe->inputs[pipe->num_inputs++] = rwpf;
--			rwpf->video->pipe_index = pipe->num_inputs;
-+			pipe->inputs[rwpf->entity.index] = rwpf;
-+			rwpf->video->pipe_index = ++pipe->num_inputs;
- 		} else if (e->type = VSP1_ENTITY_WPF) {
- 			rwpf = to_rwpf(subdev);
- 			pipe->output = rwpf;
-@@ -329,7 +329,10 @@ static int vsp1_video_pipeline_validate(struct vsp1_pipeline *pipe,
- 	/* Follow links downstream for each input and make sure the graph
- 	 * contains no loop and that all branches end at the output WPF.
- 	 */
--	for (i = 0; i < pipe->num_inputs; ++i) {
-+	for (i = 0; i < video->vsp1->pdata.rpf_count; ++i) {
-+		if (!pipe->inputs[i])
-+			continue;
-+
- 		ret = vsp1_video_pipeline_validate_branch(pipe, pipe->inputs[i],
- 							  pipe->output);
- 		if (ret < 0)
-@@ -453,11 +456,16 @@ static void vsp1_video_frame_end(struct vsp1_pipeline *pipe,
- 
- static void vsp1_video_pipeline_frame_end(struct vsp1_pipeline *pipe)
- {
-+	struct vsp1_device *vsp1 = pipe->output->entity.vsp1;
- 	unsigned int i;
- 
- 	/* Complete buffers on all video nodes. */
--	for (i = 0; i < pipe->num_inputs; ++i)
-+	for (i = 0; i < vsp1->pdata.rpf_count; ++i) {
-+		if (!pipe->inputs[i])
-+			continue;
-+
- 		vsp1_video_frame_end(pipe, pipe->inputs[i]);
-+	}
- 
- 	if (!pipe->lif)
- 		vsp1_video_frame_end(pipe, pipe->output);
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index 451ca37930e0..5996a35143b8 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -97,9 +97,12 @@ static int wpf_s_stream(struct v4l2_subdev *subdev, int enable)
- 	 * inputs as sub-layers and select the virtual RPF as the master
- 	 * layer.
- 	 */
--	for (i = 0; i < pipe->num_inputs; ++i) {
-+	for (i = 0; i < vsp1->pdata.rpf_count; ++i) {
- 		struct vsp1_rwpf *input = pipe->inputs[i];
- 
-+		if (!input)
-+			continue;
-+
- 		srcrpf |= (!pipe->bru && pipe->num_inputs = 1)
- 			? VI6_WPF_SRCRPF_RPF_ACT_MST(input->entity.index)
- 			: VI6_WPF_SRCRPF_RPF_ACT_SUB(input->entity.index);
--- 
-2.4.6
+Included subsystem trees:
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+  - git://people.freedesktop.org/~airlied/linux#drm-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+  - git://linuxtv.org/mchehab/media-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+  - git://git.infradead.org/users/vkoul/slave-dma.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
+  - git://git.infradead.org/battery-2.6.git#master
+  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
+  - git://anongit.freedesktop.org/drm-intel#topic/drm-misc
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
