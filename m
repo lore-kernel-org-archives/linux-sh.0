@@ -1,28 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 18 Sep 2015 01:57:53 +0000
-Subject: [PATCH 0/1 v3] dmaengine: fixup DMA OF issue
-Message-Id: <87io781oim.wl%kuninori.morimoto.gx@renesas.com>
+From: hamzahfrq.sub@gmail.com
+Date: Tue, 29 Sep 2015 20:44:48 +0000
+Subject: [PATCH v3 6/6] dma: rcar-dma: Fixed active descriptor initializing
+Message-Id: <1443559488-2416-7-git-send-email-hamzahfrq.sub@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+From: Muhammad Hamza Farooq <mfarooq@visteon.com>
 
-Hi Simon
+Running descriptor pointer is set to NULL upon freeing resources. Other-
+wise, rcar_dmac_issue_pending might not start new transfers
 
-This patch is already posted to ML, and maintainer will merge it.
-but, not yet happened
-http://thread.gmane.org/gmane.linux.kernel/2023889
-
-H3 Salvator-X might have compile issue if try sound
-
-Kuninori Morimoto (1):
-      dmaengine: OF DMAEngine API based on CONFIG_DMA_OF instead of CONFIG_OF
-
- include/linux/of_dma.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-Best regards
+Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
 ---
-Kuninori Morimoto
+ drivers/dma/sh/rcar-dmac.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+index 6eec878..db97f7b 100644
+--- a/drivers/dma/sh/rcar-dmac.c
++++ b/drivers/dma/sh/rcar-dmac.c
+@@ -1042,6 +1042,7 @@ static void rcar_dmac_free_chan_resources(struct dma_chan *chan)
+ 	list_splice_init(&rchan->desc.active, &list);
+ 	list_splice_init(&rchan->desc.done, &list);
+ 	list_splice_init(&rchan->desc.wait, &list);
++	rchan->desc.running = NULL;
+ 
+ 	list_for_each_entry(desc, &list, node)
+ 		rcar_dmac_realloc_hwdesc(rchan, desc, 0);
+-- 
+1.9.1
+
