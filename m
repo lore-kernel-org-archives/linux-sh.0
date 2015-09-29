@@ -1,35 +1,30 @@
-From: hamzahfrq.sub@gmail.com
-Date: Sun, 20 Sep 2015 19:11:02 +0000
-Subject: [RESEND PATCH 6/6] dma: rcar-dma: Fixed active descriptor initializing
-Message-Id: <1442776262-2503-7-git-send-email-hamzahfrq.sub@gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 29 Sep 2015 09:21:17 +0000
+Subject: [PATCH v2 0/2] usb: renesas_usbhs: Add support for R-Car H3
+Message-Id: <1443518479-2864-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: gregkh@linuxfoundation.org, balbi@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Muhammad Hamza Farooq <mfarooq@visteon.com>
+ This patch is based on the latest Felipe's usb.git / testing/next
+branch (The commit id = f3a464c9f5be1bb93a4355bd5a433dbc2c0bf7fd).
 
-Running descriptor pointer is set to NULL upon freeing resources. Other-
-wise, rcar_dmac_issue_pending might not start new transfers
+Changes from v1:
+ - Add a patch to fix build warning if 64-bit environment as patch 1/2
+ - Add a comment in patch 2/2
 
-Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
----
- drivers/dma/sh/rcar-dmac.c | 1 +
- 1 file changed, 1 insertion(+)
+Yoshihiro Shimoda (2):
+  usb: renesas_usbhs: fix build warning if 64-bit architecture
+  usb: renesas_usbhs: Add support for R-Car H3
 
-diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
-index d007351..39306c9 100644
---- a/drivers/dma/sh/rcar-dmac.c
-+++ b/drivers/dma/sh/rcar-dmac.c
-@@ -1042,6 +1042,7 @@ static void rcar_dmac_free_chan_resources(struct dma_chan *chan)
- 	list_splice_init(&rchan->desc.active, &list);
- 	list_splice_init(&rchan->desc.done, &list);
- 	list_splice_init(&rchan->desc.wait, &list);
-+	rchan->desc.running = NULL;
- 
- 	list_for_each_entry(desc, &list, node)
- 		rcar_dmac_realloc_hwdesc(rchan, desc, 0);
+ Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 1 +
+ drivers/usb/renesas_usbhs/common.c                      | 7 ++++++-
+ include/linux/usb/renesas_usbhs.h                       | 2 +-
+ 3 files changed, 8 insertions(+), 2 deletions(-)
+
 -- 
 1.9.1
 
