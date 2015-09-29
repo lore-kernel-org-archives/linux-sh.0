@@ -1,84 +1,56 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 14 Sep 2015 09:44:13 +0000
-Subject: Re: [PATCH] clk: add CS2000 Fractional-N driver
-Message-Id: <87fv2hjq4y.wl%kuninori.morimoto.gx@renesas.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 29 Sep 2015 09:21:19 +0000
+Subject: [PATCH v2 2/2] usb: renesas_usbhs: Add support for R-Car H3
+Message-Id: <1443518479-2864-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87twqxk92u.wl%kuninori.morimoto.gx@renesas.com>
-	<CAMuHMdX=vDeUSWy2sOmLQxOSGLJ7REXEAAdXO-p4pLT5zdf7EA@mail.gmail.com>
-In-Reply-To: <CAMuHMdX=vDeUSWy2sOmLQxOSGLJ7REXEAAdXO-p4pLT5zdf7EA@mail.gmail.com>
+References: <1443518479-2864-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1443518479-2864-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Simon <horms@verge.net.au>, Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, linux-clk <linux-clk@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Magnus <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: gregkh@linuxfoundation.org, balbi@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-usb@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
+This patch adds a compatible string to support for R-Car H3.
 
-Hi Geert
+Since the HS-USB controller of R-Car H3 is almost the same specification
+with R-Car Gen2 (these have 16 pipes and usb-dmac), this patch
+sets the "type" of renesas_usbhs_driver_param to USBHS_TYPE_RCAR_GEN2.
 
-Thank you for your review
-
-> > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >
-> > This patch adds CS2000 Fractional-N driver as clock provider.
-> > It is useful if it supports runtime clock setting, but it supports
-> > fixed clock rate only at this point.
-> >
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Thanks for your patch!
-
-> As you have multiple inputs, I think it makes sense to use "clock-names".
-(snip)
-> Why do you call them differently from the datasheet?
-> Especially the different CLK_IN can be confusing.
-(snip)
-> This can fail, so the error should be propagated, and checked in all
-> callers of cs2000_write().
-(snip)
-> i2c_smbus_read_byte_data returns s32, and the return value will be
-> negative in case of a failure.
-(snip)
-> Should check for failure.
-(snip)
-> unsigned int i
-(snip)
-> Please use do_div() for 64-by-32 divides, as full 64-bit divisions are
-> usually not available on 32-bit architectures.
-> "s32 val", and please check for failures.
-(snip)
-> const char *revision;
-
-Thanks
-will be fiex in v2
-
-> > +       clk_main = of_clk_get(np, CLK_MAIN);
-> > +       /* not yet provided */
-> > +       if (IS_ERR(clk_main))
-> > +               return -EPROBE_DEFER;
-> > +
-> > +       clk_in = of_clk_get(np, CLK_IN);
-> > +       if (IS_ERR(clk_in))
-> > +               return PTR_ERR(clk_in);
-> 
-> Named clk_get(), for both?
-
-Thanks
-I will use devm_clk_get() to avoid clk_put()
-
->> +       if (CH_ERR(ch))
->>
->> I think it's more readable to drop the CH_ERR() macro, and open code
->> "(ch < 0) || (ch >= CH_MAX)" (also in cs2000_ratio_select()).
-
-In my opinion, complex judgment should use same method (= macro)
-Current driver is using this macro only 2 places, so,
-not a big deal at this point.
-But someone might add mistake in additional patch if it was opened code,
-and it exists in many places.
-So, I would like to keep this macro in v2.
-But, CH_ERR() is a littile bit ununderstandable naming.
-it will be CH_SIZE_ERR()
-
-Best regards
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
-Kuninori Morimoto
+ Documentation/devicetree/bindings/usb/renesas_usbhs.txt | 1 +
+ drivers/usb/renesas_usbhs/common.c                      | 5 +++++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+index 64a4ca6..7d48f63 100644
+--- a/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
++++ b/Documentation/devicetree/bindings/usb/renesas_usbhs.txt
+@@ -5,6 +5,7 @@ Required properties:
+ 	- "renesas,usbhs-r8a7790"
+ 	- "renesas,usbhs-r8a7791"
+ 	- "renesas,usbhs-r8a7794"
++	- "renesas,usbhs-r8a7795"
+   - reg: Base address and length of the register for the USBHS
+   - interrupts: Interrupt specifier for the USBHS
+   - clocks: A list of phandle + clock specifier pairs
+diff --git a/drivers/usb/renesas_usbhs/common.c b/drivers/usb/renesas_usbhs/common.c
+index 0ce398c..d82fa36 100644
+--- a/drivers/usb/renesas_usbhs/common.c
++++ b/drivers/usb/renesas_usbhs/common.c
+@@ -476,6 +476,11 @@ static const struct of_device_id usbhs_of_match[] = {
+ 		.compatible = "renesas,usbhs-r8a7794",
+ 		.data = (void *)USBHS_TYPE_RCAR_GEN2,
+ 	},
++	{
++		/* Gen3 is compatible with Gen2 */
++		.compatible = "renesas,usbhs-r8a7795",
++		.data = (void *)USBHS_TYPE_RCAR_GEN2,
++	},
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, usbhs_of_match);
+-- 
+1.9.1
+
