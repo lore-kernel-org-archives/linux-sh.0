@@ -1,154 +1,59 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 03 Sep 2015 20:20:09 +0000
-Subject: [PATCH 5/9] i2c: rcar: init new messages in irq
-Message-Id: <1441311613-2681-6-git-send-email-wsa@the-dreams.de>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 30 Sep 2015 08:47:52 +0000
+Subject: [PATCH v7 1/2] pwm: Add device tree binding document for R-Car PWM Timer
+Message-Id: <1443602873-4316-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441311613-2681-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1441311613-2681-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
+References: <1443602873-4316-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1443602873-4316-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
+To: thierry.reding@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Add binding document for Renesas PWM Timer on R-Car SoCs.
 
-Setting up new messages was done in process context while handling a
-message was in interrupt context. Because of the HW design, this IP core
-is sensitive to timing, so the context switches were too expensive. Move
-this setup to interrupt context as well.
-
-In my test setup, this fixed the occasional 'data byte sent twice' issue
-which a number of people have seen. It also fixes to send REP_START
-after a read message which was wrongly send as a STOP + START sequence
-before.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/busses/i2c-rcar.c | 74 +++++++++++++++++++++----------------------
- 1 file changed, 37 insertions(+), 37 deletions(-)
+ .../devicetree/bindings/pwm/renesas,pwm-rcar.txt   | 27 ++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 6e459a338ccc75..36c79301044b71 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -266,6 +266,13 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
- 	rcar_i2c_write(priv, ICMIER, read ? RCAR_IRQ_RECV : RCAR_IRQ_SEND);
- }
- 
-+static void rcar_i2c_next_msg(struct rcar_i2c_priv *priv)
-+{
-+	priv->msg++;
-+	priv->msgs_left--;
-+	rcar_i2c_prepare_msg(priv);
-+}
+diff --git a/Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt b/Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
+new file mode 100644
+index 0000000..ea0a27b
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
+@@ -0,0 +1,27 @@
++* Renesas R-Car PWM Timer Controller
 +
- /*
-  *		interrupt functions
-  */
-@@ -308,21 +315,17 @@ static int rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
- 		 * [ICRXTX] -> [SHIFT] -> [I2C bus]
- 		 */
- 
--		if (priv->flags & ID_LAST_MSG)
-+		if (priv->flags & ID_LAST_MSG) {
- 			/*
- 			 * If current msg is the _LAST_ msg,
- 			 * prepare stop condition here.
- 			 * ID_DONE will be set on STOP irq.
- 			 */
- 			rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
--		else
--			/*
--			 * If current msg is _NOT_ last msg,
--			 * it doesn't call stop phase.
--			 * thus, there is no STOP irq.
--			 * return ID_DONE here.
--			 */
--			return ID_DONE;
-+		} else {
-+			rcar_i2c_next_msg(priv);
-+			return 0;
-+		}
- 	}
- 
- 	rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
-@@ -366,7 +369,10 @@ static int rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
- 	else
- 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
- 
--	rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_RECV);
-+	if (priv->pos = msg->len && !(priv->flags & ID_LAST_MSG))
-+		rcar_i2c_next_msg(priv);
-+	else
-+		rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_RECV);
- 
- 	return 0;
- }
-@@ -461,6 +467,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
- 
- 	/* Stop */
- 	if (msr & MST) {
-+		priv->msgs_left--; /* The last message also made it */
- 		rcar_i2c_flags_set(priv, ID_DONE);
- 		goto out;
- 	}
-@@ -500,35 +507,28 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 		/* This HW can't send STOP after address phase */
- 		if (msgs[i].len = 0) {
- 			ret = -EOPNOTSUPP;
--			break;
--		}
--
--		/* init each data */
--		priv->msg = &msgs[i];
--		priv->msgs_left = num - i;
--
--		rcar_i2c_prepare_msg(priv);
--
--		time_left = wait_event_timeout(priv->wait,
--					     rcar_i2c_flags_has(priv, ID_DONE),
--					     adap->timeout);
--		if (!time_left) {
--			rcar_i2c_init(priv);
--			ret = -ETIMEDOUT;
--			break;
--		}
--
--		if (rcar_i2c_flags_has(priv, ID_NACK)) {
--			ret = -ENXIO;
--			break;
--		}
--
--		if (rcar_i2c_flags_has(priv, ID_ARBLOST)) {
--			ret = -EAGAIN;
--			break;
-+			goto out;
- 		}
-+	}
- 
--		ret = i + 1; /* The number of transfer */
-+	/* init data */
-+	priv->msg = msgs;
-+	priv->msgs_left = num;
++Required Properties:
++- compatible: should be one of the following.
++ - "renesas,pwm-rcar": for generic R-Car compatible PWM Timer
++ - "renesas,pwm-r8a7778": for R-Car M1A
++ - "renesas,pwm-r8a7779": for R-Car H1
++ - "renesas,pwm-r8a7790": for R-Car H2
++ - "renesas,pwm-r8a7791": for R-Car M2-W
++ - "renesas,pwm-r8a7794": for R-Car E2
++- reg: base address and length of the registers block for the PWM.
++- #pwm-cells: should be 2. See pwm.txt in this directory for a description of
++  the cells format.
++- clocks: clock phandle and specifier pair.
++- pinctrl-0: phandle, referring to a default pin configuration node.
++- pinctrl-names: Set to "default".
 +
-+	rcar_i2c_prepare_msg(priv);
++Example: R8A7790 (R-Car H2) PWM Timer node
 +
-+	time_left = wait_event_timeout(priv->wait,
-+				     rcar_i2c_flags_has(priv, ID_DONE),
-+				     num * adap->timeout);
-+	if (!time_left) {
-+		rcar_i2c_init(priv);
-+		ret = -ETIMEDOUT;
-+	} else if (rcar_i2c_flags_has(priv, ID_NACK)) {
-+		ret = -ENXIO;
-+	} else if (rcar_i2c_flags_has(priv, ID_ARBLOST)) {
-+		ret = -EAGAIN;
-+	} else {
-+		ret = num - priv->msgs_left; /* The number of transfer */
- 	}
- out:
- 	pm_runtime_put(dev);
++	pwm0: pwm@e6e30000 {
++		compatible = "renesas,pwm-r8a7790", "renesas,pwm-rcar";
++		reg = <0 0xe6e30000 0 0x8>;
++		#pwm-cells = <2>;
++		clocks = <&mstp5_clks R8A7790_CLK_PWM>;
++		pinctrl-0 = <&pwm0_pins>;
++		pinctrl-names = "default";
++	};
 -- 
-2.1.4
+1.9.1
 
