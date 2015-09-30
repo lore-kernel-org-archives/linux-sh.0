@@ -1,38 +1,44 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 17 Sep 2015 08:59:26 +0000
-Subject: [PATCH 10/21] ARM: shmobile: remove paragraph on DT reference platforms
-Message-Id: <c2c7375ba2dfcce3dfc9ecf4b3e44b975fb139fc.1442478814.git.horms+renesas@verge.net.au>
+Date: Wed, 30 Sep 2015 06:16:26 +0000
+Subject: [PATCH 4/5] arm64: dts: r8a7795: enable nfs root on Salvator-X board
+Message-Id: <1443593787-21224-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442478814.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442478814.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+As has been the practice for boards for 32bit ARM Renesas SoCs
 
-They have all been eliminated now.
-
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- Documentation/devicetree/bindings/arm/shmobile.txt | 4 ----
- 1 file changed, 4 deletions(-)
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
-index eed7eb78a22e..2b9cb62838f2 100644
---- a/Documentation/devicetree/bindings/arm/shmobile.txt
-+++ b/Documentation/devicetree/bindings/arm/shmobile.txt
-@@ -55,7 +55,3 @@ Boards:
-     compatible = "renesas,lager", "renesas,r8a7790"
-   - Marzen
-     compatible = "renesas,marzen", "renesas,r8a7779"
--
--Note: Reference Device Tree Implementations are temporary implementations
--      to ease the migration from platform devices to Device Tree, and are
--      intended to be removed in the future.
+--
+v2
+* No change
+
+v3
+* Added Ack
+
+v4
+* No change
+---
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index d73b46e9673e..48856acc70e0 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -21,7 +21,7 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "ignore_loglevel";
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 		stdout-path = &scif2;
+ 	};
+ 
 -- 
 2.1.4
 
