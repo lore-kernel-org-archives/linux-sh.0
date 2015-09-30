@@ -1,50 +1,97 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 18 Sep 2015 02:02:24 +0000
-Subject: [PATCH 01/18 v3] arm64: renesas: tidyup MSTP9 reverse definition order
-Message-Id: <87bnd01ob2.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 30 Sep 2015 06:16:24 +0000
+Subject: [PATCH 2/5] arm64: dts: r8a7795: add EthernetAVB device node
+Message-Id: <1443593787-21224-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+[horms: minor updates]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
 ---
-v2 -> v3
+v0 [Kazuya Mizuguchi]
 
- - no change
+v1 [Simon Horman]
+* moved to soc node
+* updated patch subject
 
- include/dt-bindings/clock/r8a7795-clock.h | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+v2 [Simon Horman]
+* Specify all interrupts
+* Use named interrupts
+* Rebase
+* Remove spurious whitespace change introduce in v1
 
-diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
-index 7f7bfef..a310dfa 100644
---- a/include/dt-bindings/clock/r8a7795-clock.h
-+++ b/include/dt-bindings/clock/r8a7795-clock.h
-@@ -57,14 +57,14 @@
- #define R8A7795_CLK_ETHERAVB		12
+v3 [Simon Horman]
+* As suggested by Geert Uytterhoeven
+  - Add power-domains property
+* Added Ack
+
+v4
+* No change
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 42 ++++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 60d64c51b510..20130c0a0245 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -297,6 +297,48 @@
+ 			/* Empty node for now */
+ 		};
  
- /* MSTP9 */
--#define R8A7795_CLK_GPIO0		12
--#define R8A7795_CLK_GPIO1		11
--#define R8A7795_CLK_GPIO2		10
--#define R8A7795_CLK_GPIO3		9
--#define R8A7795_CLK_GPIO4		8
--#define R8A7795_CLK_GPIO5		7
--#define R8A7795_CLK_GPIO6		6
- #define R8A7795_CLK_GPIO7		5
-+#define R8A7795_CLK_GPIO6		6
-+#define R8A7795_CLK_GPIO5		7
-+#define R8A7795_CLK_GPIO4		8
-+#define R8A7795_CLK_GPIO3		9
-+#define R8A7795_CLK_GPIO2		10
-+#define R8A7795_CLK_GPIO1		11
-+#define R8A7795_CLK_GPIO0		12
- 
- /* MSTP10 */
- 
++		avb: ethernet@e6800000 {
++			compatible = "renesas,etheravb-r8a7795";
++			reg = <0 0xe6800000 0 0x800>, <0 0xe6a00000 0 0x10000>;
++			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "ch0", "ch1", "ch2", "ch3",
++					  "ch4", "ch5", "ch6", "ch7",
++					  "ch8", "ch9", "ch10", "ch11",
++					  "ch12", "ch13", "ch14", "ch15",
++					  "ch16", "ch17", "ch18", "ch19",
++					  "ch20", "ch21", "ch22", "ch23",
++					  "ch24";
++			clocks = <&mstp8_clks R8A7795_CLK_ETHERAVB>;
++			power-domains = <&cpg_clocks>;
++			phy-mode = "rgmii-id";
++			#address-cells = <1>;
++			#size-cells = <0>;
++		};
++
+ 		dmac1: dma-controller@e7300000 {
+ 			/* Empty node for now */
+ 		};
 -- 
-1.9.1
+2.1.4
 
