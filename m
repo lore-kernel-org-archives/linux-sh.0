@@ -1,205 +1,91 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 18 Sep 2015 06:03:21 +0000
-Subject: [PATCH/RFC net-next v3 2/4] ravb: Provide dev parameter to DMA API
-Message-Id: <1442556203-657-3-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 30 Sep 2015 06:16:23 +0000
+Subject: [PATCH 1/5] arm64: dts: r8a7795: add clock for EthernetAVB
+Message-Id: <1443593787-21224-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442556203-657-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1442556203-657-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Florian Fainelli <f.fainelli@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
 From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-This patch is in preparation for using this driver on arm64 where the
-implementation of __dma_alloc_coherent fails if a device parameter is not
-provided.
+These clocks will be used by EthernetAVB
 
 Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
-[horms: squashed into a single patch]
+[horms: use s3d2_clk; other minor updates]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
 ---
-* [Simon Horman]
-  I have only tested this on arm64.
-  It should be tested for regressions on arm hardware.
-
-v0 [Kazuya Mizuguchi, Yoshihiro Shimoda, Masaru Nagai]
+v0 [Kazuya Mizuguchi]
 
 v1 [Simon Horman]
-* Squashed into a single patch
+* updated p_clk to s3d4_clk
+* moved to clock node
+* updated patch subject
+* use R8A7795 as prefix for clock defines
 
 v2 [Simon Horman]
-* No change
+* As suggested by Geert Uytterhoeven
+  - Use s3d2_clk use it instead: it is now already present in the base
+    of this series
+  - Use R8A7795_CLK_ETHERAVB instead of R8A7795_CLK_AVB
+* As suggested by Kuninori Morimoto and Sergei Shtylyov
+  - Use "clock-indices" instead of "renesas,clock-indices"
 
-v2 [Simon Horman]
+v3 [Simon Horman]
+* As suggested by Geert Uytterhoeven
+  - Name clock "etheravb"
+* Add Ack
+
+v4
 * No change
 ---
- drivers/net/ethernet/renesas/ravb_main.c | 38 ++++++++++++++++----------------
- 1 file changed, 19 insertions(+), 19 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 12 ++++++++++++
+ include/dt-bindings/clock/r8a7795-clock.h |  1 +
+ 2 files changed, 13 insertions(+)
 
-diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
-index 450899e9cea2..4ca093d033f8 100644
---- a/drivers/net/ethernet/renesas/ravb_main.c
-+++ b/drivers/net/ethernet/renesas/ravb_main.c
-@@ -201,7 +201,7 @@ static void ravb_ring_free(struct net_device *ndev, int q)
- 	if (priv->rx_ring[q]) {
- 		ring_size = sizeof(struct ravb_ex_rx_desc) *
- 			    (priv->num_rx_ring[q] + 1);
--		dma_free_coherent(NULL, ring_size, priv->rx_ring[q],
-+		dma_free_coherent(ndev->dev.parent, ring_size, priv->rx_ring[q],
- 				  priv->rx_desc_dma[q]);
- 		priv->rx_ring[q] = NULL;
- 	}
-@@ -209,7 +209,7 @@ static void ravb_ring_free(struct net_device *ndev, int q)
- 	if (priv->tx_ring[q]) {
- 		ring_size = sizeof(struct ravb_tx_desc) *
- 			    (priv->num_tx_ring[q] * NUM_TX_DESC + 1);
--		dma_free_coherent(NULL, ring_size, priv->tx_ring[q],
-+		dma_free_coherent(ndev->dev.parent, ring_size, priv->tx_ring[q],
- 				  priv->tx_desc_dma[q]);
- 		priv->tx_ring[q] = NULL;
- 	}
-@@ -240,13 +240,13 @@ static void ravb_ring_format(struct net_device *ndev, int q)
- 		rx_desc = &priv->rx_ring[q][i];
- 		/* The size of the buffer should be on 16-byte boundary. */
- 		rx_desc->ds_cc = cpu_to_le16(ALIGN(PKT_BUF_SZ, 16));
--		dma_addr = dma_map_single(&ndev->dev, priv->rx_skb[q][i]->data,
-+		dma_addr = dma_map_single(ndev->dev.parent, priv->rx_skb[q][i]->data,
- 					  ALIGN(PKT_BUF_SZ, 16),
- 					  DMA_FROM_DEVICE);
- 		/* We just set the data size to 0 for a failed mapping which
- 		 * should prevent DMA from happening...
- 		 */
--		if (dma_mapping_error(&ndev->dev, dma_addr))
-+		if (dma_mapping_error(ndev->dev.parent, dma_addr))
- 			rx_desc->ds_cc = cpu_to_le16(0);
- 		rx_desc->dptr = cpu_to_le32(dma_addr);
- 		rx_desc->die_dt = DT_FEMPTY;
-@@ -309,7 +309,7 @@ static int ravb_ring_init(struct net_device *ndev, int q)
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index d7e70f57d165..60d64c51b510 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -274,6 +274,17 @@
+ 					#clock-cells = <1>;
+ 					clock-indices = <R8A7795_CLK_SCIF2>;
+ 				};
++
++				mstp8_clks: mstp8_clks@e6150990 {
++					compatible = "renesas,r8a7795-mstp-clocks",
++						     "renesas,cpg-mstp-clocks";
++					reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
++					clocks =  <&s3d2_clk>;
++					#clock-cells = <1>;
++					clock-indices = <R8A7795_CLK_ETHERAVB>;
++					clock-output-names = "etheravb";
++				};
++
+ 			};
+ 		};
  
- 	/* Allocate all RX descriptors. */
- 	ring_size = sizeof(struct ravb_ex_rx_desc) * (priv->num_rx_ring[q] + 1);
--	priv->rx_ring[q] = dma_alloc_coherent(NULL, ring_size,
-+	priv->rx_ring[q] = dma_alloc_coherent(ndev->dev.parent, ring_size,
- 					      &priv->rx_desc_dma[q],
- 					      GFP_KERNEL);
- 	if (!priv->rx_ring[q])
-@@ -320,7 +320,7 @@ static int ravb_ring_init(struct net_device *ndev, int q)
- 	/* Allocate all TX descriptors. */
- 	ring_size = sizeof(struct ravb_tx_desc) *
- 		    (priv->num_tx_ring[q] * NUM_TX_DESC + 1);
--	priv->tx_ring[q] = dma_alloc_coherent(NULL, ring_size,
-+	priv->tx_ring[q] = dma_alloc_coherent(ndev->dev.parent, ring_size,
- 					      &priv->tx_desc_dma[q],
- 					      GFP_KERNEL);
- 	if (!priv->tx_ring[q])
-@@ -443,7 +443,7 @@ static int ravb_tx_free(struct net_device *ndev, int q)
- 		size = le16_to_cpu(desc->ds_tagl) & TX_DS;
- 		/* Free the original skb. */
- 		if (priv->tx_skb[q][entry / NUM_TX_DESC]) {
--			dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
-+			dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
- 					 size, DMA_TO_DEVICE);
- 			/* Last packet descriptor? */
- 			if (entry % NUM_TX_DESC = NUM_TX_DESC - 1) {
-@@ -546,7 +546,7 @@ static bool ravb_rx(struct net_device *ndev, int *quota, int q)
+@@ -364,4 +375,5 @@
+ 			status = "disabled";
+ 		};
+ 	};
++
+ };
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+index d661602cb164..fd2514b5d7cc 100644
+--- a/include/dt-bindings/clock/r8a7795-clock.h
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -36,6 +36,7 @@
+ /* MSTP7 */
  
- 			skb = priv->rx_skb[q][entry];
- 			priv->rx_skb[q][entry] = NULL;
--			dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
-+			dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
- 					 ALIGN(PKT_BUF_SZ, 16),
- 					 DMA_FROM_DEVICE);
- 			get_ts &= (q = RAVB_NC) ?
-@@ -586,14 +586,14 @@ static bool ravb_rx(struct net_device *ndev, int *quota, int q)
- 			if (!skb)
- 				break;	/* Better luck next round. */
- 			ravb_set_buffer_align(skb);
--			dma_addr = dma_map_single(&ndev->dev, skb->data,
-+			dma_addr = dma_map_single(ndev->dev.parent, skb->data,
- 						  le16_to_cpu(desc->ds_cc),
- 						  DMA_FROM_DEVICE);
- 			skb_checksum_none_assert(skb);
- 			/* We just set the data size to 0 for a failed mapping
- 			 * which should prevent DMA  from happening...
- 			 */
--			if (dma_mapping_error(&ndev->dev, dma_addr))
-+			if (dma_mapping_error(ndev->dev.parent, dma_addr))
- 				desc->ds_cc = cpu_to_le16(0);
- 			desc->dptr = cpu_to_le32(dma_addr);
- 			priv->rx_skb[q][entry] = skb;
-@@ -1300,8 +1300,8 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
- 		 entry / NUM_TX_DESC * DPTR_ALIGN;
- 	len = PTR_ALIGN(skb->data, DPTR_ALIGN) - skb->data;
- 	memcpy(buffer, skb->data, len);
--	dma_addr = dma_map_single(&ndev->dev, buffer, len, DMA_TO_DEVICE);
--	if (dma_mapping_error(&ndev->dev, dma_addr))
-+	dma_addr = dma_map_single(ndev->dev.parent, buffer, len, DMA_TO_DEVICE);
-+	if (dma_mapping_error(ndev->dev.parent, dma_addr))
- 		goto drop;
+ /* MSTP8 */
++#define R8A7795_CLK_ETHERAVB		12
  
- 	desc = &priv->tx_ring[q][entry];
-@@ -1310,8 +1310,8 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ /* MSTP9 */
  
- 	buffer = skb->data + len;
- 	len = skb->len - len;
--	dma_addr = dma_map_single(&ndev->dev, buffer, len, DMA_TO_DEVICE);
--	if (dma_mapping_error(&ndev->dev, dma_addr))
-+	dma_addr = dma_map_single(ndev->dev.parent, buffer, len, DMA_TO_DEVICE);
-+	if (dma_mapping_error(ndev->dev.parent, dma_addr))
- 		goto unmap;
- 
- 	desc++;
-@@ -1323,7 +1323,7 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
- 		ts_skb = kmalloc(sizeof(*ts_skb), GFP_ATOMIC);
- 		if (!ts_skb) {
- 			desc--;
--			dma_unmap_single(&ndev->dev, dma_addr, len,
-+			dma_unmap_single(ndev->dev.parent, dma_addr, len,
- 					 DMA_TO_DEVICE);
- 			goto unmap;
- 		}
-@@ -1358,7 +1358,7 @@ exit:
- 	return NETDEV_TX_OK;
- 
- unmap:
--	dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
-+	dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
- 			 le16_to_cpu(desc->ds_tagl), DMA_TO_DEVICE);
- drop:
- 	dev_kfree_skb_any(skb);
-@@ -1708,7 +1708,7 @@ static int ravb_probe(struct platform_device *pdev)
- 
- 	/* Allocate descriptor base address table */
- 	priv->desc_bat_size = sizeof(struct ravb_desc) * DBAT_ENTRY_NUM;
--	priv->desc_bat = dma_alloc_coherent(NULL, priv->desc_bat_size,
-+	priv->desc_bat = dma_alloc_coherent(ndev->dev.parent, priv->desc_bat_size,
- 					    &priv->desc_bat_dma, GFP_KERNEL);
- 	if (!priv->desc_bat) {
- 		dev_err(&ndev->dev,
-@@ -1763,7 +1763,7 @@ out_napi_del:
- 	netif_napi_del(&priv->napi[RAVB_BE]);
- 	ravb_mdio_release(priv);
- out_dma_free:
--	dma_free_coherent(NULL, priv->desc_bat_size, priv->desc_bat,
-+	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
- 			  priv->desc_bat_dma);
- out_release:
- 	if (ndev)
-@@ -1779,7 +1779,7 @@ static int ravb_remove(struct platform_device *pdev)
- 	struct net_device *ndev = platform_get_drvdata(pdev);
- 	struct ravb_private *priv = netdev_priv(ndev);
- 
--	dma_free_coherent(NULL, priv->desc_bat_size, priv->desc_bat,
-+	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
- 			  priv->desc_bat_dma);
- 	/* Set reset mode */
- 	ravb_write(ndev, CCC_OPC_RESET, CCC);
 -- 
 2.1.4
 
