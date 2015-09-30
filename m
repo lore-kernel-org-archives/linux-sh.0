@@ -1,349 +1,204 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 20:57:01 +0000
-Subject: [PATCH 23/32] v4l: vsp1: Move format info to vsp1_pipe.c
-Message-Id: <1442177830-24536-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 30 Sep 2015 06:15:53 +0000
+Subject: [PATCH net-next 2/4] ravb: Provide dev parameter to DMA API
+Message-Id: <1443593755-20991-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1443593755-20991-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1443593755-20991-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: David Miller <davem@davemloft.net>
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Florian Fainelli <f.fainelli@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Format information and the related helper function are not specific to
-the V4L2 API, move them from vsp1_video.c to vsp1_pipe.c.
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch is in preparation for using this driver on arm64 where the
+implementation of __dma_alloc_coherent fails if a device parameter is not
+provided.
+
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
+[horms: squashed into a single patch]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- drivers/media/platform/vsp1/vsp1_pipe.c  | 110 +++++++++++++++++++++++++++++++
- drivers/media/platform/vsp1/vsp1_pipe.h  |  29 ++++++++
- drivers/media/platform/vsp1/vsp1_video.c | 107 ------------------------------
- drivers/media/platform/vsp1/vsp1_video.h |  27 --------
- 4 files changed, 139 insertions(+), 134 deletions(-)
+* [horms]
+  I have only tested this on arm64 using r8a7795/salvator-x.
 
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.c b/drivers/media/platform/vsp1/vsp1_pipe.c
-index 524420ed6333..df11259dcc0a 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.c
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.c
-@@ -25,6 +25,116 @@
- #include "vsp1_uds.h"
+v0 [Kazuya Mizuguchi, Yoshihiro Shimoda, Masaru Nagai]
+
+v1 [Simon Horman]
+* Squashed into a single patch
+
+v2 [Simon Horman]
+* No change
+
+v4
+* No change
+---
+ drivers/net/ethernet/renesas/ravb_main.c | 38 ++++++++++++++++----------------
+ 1 file changed, 19 insertions(+), 19 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+index 450899e9cea2..4ca093d033f8 100644
+--- a/drivers/net/ethernet/renesas/ravb_main.c
++++ b/drivers/net/ethernet/renesas/ravb_main.c
+@@ -201,7 +201,7 @@ static void ravb_ring_free(struct net_device *ndev, int q)
+ 	if (priv->rx_ring[q]) {
+ 		ring_size = sizeof(struct ravb_ex_rx_desc) *
+ 			    (priv->num_rx_ring[q] + 1);
+-		dma_free_coherent(NULL, ring_size, priv->rx_ring[q],
++		dma_free_coherent(ndev->dev.parent, ring_size, priv->rx_ring[q],
+ 				  priv->rx_desc_dma[q]);
+ 		priv->rx_ring[q] = NULL;
+ 	}
+@@ -209,7 +209,7 @@ static void ravb_ring_free(struct net_device *ndev, int q)
+ 	if (priv->tx_ring[q]) {
+ 		ring_size = sizeof(struct ravb_tx_desc) *
+ 			    (priv->num_tx_ring[q] * NUM_TX_DESC + 1);
+-		dma_free_coherent(NULL, ring_size, priv->tx_ring[q],
++		dma_free_coherent(ndev->dev.parent, ring_size, priv->tx_ring[q],
+ 				  priv->tx_desc_dma[q]);
+ 		priv->tx_ring[q] = NULL;
+ 	}
+@@ -240,13 +240,13 @@ static void ravb_ring_format(struct net_device *ndev, int q)
+ 		rx_desc = &priv->rx_ring[q][i];
+ 		/* The size of the buffer should be on 16-byte boundary. */
+ 		rx_desc->ds_cc = cpu_to_le16(ALIGN(PKT_BUF_SZ, 16));
+-		dma_addr = dma_map_single(&ndev->dev, priv->rx_skb[q][i]->data,
++		dma_addr = dma_map_single(ndev->dev.parent, priv->rx_skb[q][i]->data,
+ 					  ALIGN(PKT_BUF_SZ, 16),
+ 					  DMA_FROM_DEVICE);
+ 		/* We just set the data size to 0 for a failed mapping which
+ 		 * should prevent DMA from happening...
+ 		 */
+-		if (dma_mapping_error(&ndev->dev, dma_addr))
++		if (dma_mapping_error(ndev->dev.parent, dma_addr))
+ 			rx_desc->ds_cc = cpu_to_le16(0);
+ 		rx_desc->dptr = cpu_to_le32(dma_addr);
+ 		rx_desc->die_dt = DT_FEMPTY;
+@@ -309,7 +309,7 @@ static int ravb_ring_init(struct net_device *ndev, int q)
  
- /* -----------------------------------------------------------------------------
-+ * Helper Functions
-+ */
-+
-+static const struct vsp1_format_info vsp1_video_formats[] = {
-+	{ V4L2_PIX_FMT_RGB332, MEDIA_BUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_RGB_332, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  1, { 8, 0, 0 }, false, false, 1, 1, false },
-+	{ V4L2_PIX_FMT_ARGB444, MEDIA_BUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_ARGB_4444, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS,
-+	  1, { 16, 0, 0 }, false, false, 1, 1, true },
-+	{ V4L2_PIX_FMT_XRGB444, MEDIA_BUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_XRGB_4444, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS,
-+	  1, { 16, 0, 0 }, false, false, 1, 1, true },
-+	{ V4L2_PIX_FMT_ARGB555, MEDIA_BUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_ARGB_1555, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS,
-+	  1, { 16, 0, 0 }, false, false, 1, 1, true },
-+	{ V4L2_PIX_FMT_XRGB555, MEDIA_BUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_XRGB_1555, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS,
-+	  1, { 16, 0, 0 }, false, false, 1, 1, false },
-+	{ V4L2_PIX_FMT_RGB565, MEDIA_BUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_RGB_565, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS,
-+	  1, { 16, 0, 0 }, false, false, 1, 1, false },
-+	{ V4L2_PIX_FMT_BGR24, MEDIA_BUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_BGR_888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  1, { 24, 0, 0 }, false, false, 1, 1, false },
-+	{ V4L2_PIX_FMT_RGB24, MEDIA_BUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_RGB_888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  1, { 24, 0, 0 }, false, false, 1, 1, false },
-+	{ V4L2_PIX_FMT_ABGR32, MEDIA_BUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS,
-+	  1, { 32, 0, 0 }, false, false, 1, 1, true },
-+	{ V4L2_PIX_FMT_XBGR32, MEDIA_BUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS,
-+	  1, { 32, 0, 0 }, false, false, 1, 1, false },
-+	{ V4L2_PIX_FMT_ARGB32, MEDIA_BUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  1, { 32, 0, 0 }, false, false, 1, 1, true },
-+	{ V4L2_PIX_FMT_XRGB32, MEDIA_BUS_FMT_ARGB8888_1X32,
-+	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  1, { 32, 0, 0 }, false, false, 1, 1, false },
-+	{ V4L2_PIX_FMT_UYVY, MEDIA_BUS_FMT_AYUV8_1X32,
-+	  VI6_FMT_YUYV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  1, { 16, 0, 0 }, false, false, 2, 1, false },
-+	{ V4L2_PIX_FMT_VYUY, MEDIA_BUS_FMT_AYUV8_1X32,
-+	  VI6_FMT_YUYV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  1, { 16, 0, 0 }, false, true, 2, 1, false },
-+	{ V4L2_PIX_FMT_YUYV, MEDIA_BUS_FMT_AYUV8_1X32,
-+	  VI6_FMT_YUYV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  1, { 16, 0, 0 }, true, false, 2, 1, false },
-+	{ V4L2_PIX_FMT_YVYU, MEDIA_BUS_FMT_AYUV8_1X32,
-+	  VI6_FMT_YUYV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  1, { 16, 0, 0 }, true, true, 2, 1, false },
-+	{ V4L2_PIX_FMT_NV12M, MEDIA_BUS_FMT_AYUV8_1X32,
-+	  VI6_FMT_Y_UV_420, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  2, { 8, 16, 0 }, false, false, 2, 2, false },
-+	{ V4L2_PIX_FMT_NV21M, MEDIA_BUS_FMT_AYUV8_1X32,
-+	  VI6_FMT_Y_UV_420, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  2, { 8, 16, 0 }, false, true, 2, 2, false },
-+	{ V4L2_PIX_FMT_NV16M, MEDIA_BUS_FMT_AYUV8_1X32,
-+	  VI6_FMT_Y_UV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  2, { 8, 16, 0 }, false, false, 2, 1, false },
-+	{ V4L2_PIX_FMT_NV61M, MEDIA_BUS_FMT_AYUV8_1X32,
-+	  VI6_FMT_Y_UV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  2, { 8, 16, 0 }, false, true, 2, 1, false },
-+	{ V4L2_PIX_FMT_YUV420M, MEDIA_BUS_FMT_AYUV8_1X32,
-+	  VI6_FMT_Y_U_V_420, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
-+	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
-+	  3, { 8, 8, 8 }, false, false, 2, 2, false },
-+};
-+
-+/*
-+ * vsp1_get_format_info - Retrieve format information for a 4CC
-+ * @fourcc: the format 4CC
-+ *
-+ * Return a pointer to the format information structure corresponding to the
-+ * given V4L2 format 4CC, or NULL if no corresponding format can be found.
-+ */
-+const struct vsp1_format_info *vsp1_get_format_info(u32 fourcc)
-+{
-+	unsigned int i;
-+
-+	for (i = 0; i < ARRAY_SIZE(vsp1_video_formats); ++i) {
-+		const struct vsp1_format_info *info = &vsp1_video_formats[i];
-+
-+		if (info->fourcc = fourcc)
-+			return info;
-+	}
-+
-+	return NULL;
-+}
-+
-+/* -----------------------------------------------------------------------------
-  * Pipeline Management
-  */
+ 	/* Allocate all RX descriptors. */
+ 	ring_size = sizeof(struct ravb_ex_rx_desc) * (priv->num_rx_ring[q] + 1);
+-	priv->rx_ring[q] = dma_alloc_coherent(NULL, ring_size,
++	priv->rx_ring[q] = dma_alloc_coherent(ndev->dev.parent, ring_size,
+ 					      &priv->rx_desc_dma[q],
+ 					      GFP_KERNEL);
+ 	if (!priv->rx_ring[q])
+@@ -320,7 +320,7 @@ static int ravb_ring_init(struct net_device *ndev, int q)
+ 	/* Allocate all TX descriptors. */
+ 	ring_size = sizeof(struct ravb_tx_desc) *
+ 		    (priv->num_tx_ring[q] * NUM_TX_DESC + 1);
+-	priv->tx_ring[q] = dma_alloc_coherent(NULL, ring_size,
++	priv->tx_ring[q] = dma_alloc_coherent(ndev->dev.parent, ring_size,
+ 					      &priv->tx_desc_dma[q],
+ 					      GFP_KERNEL);
+ 	if (!priv->tx_ring[q])
+@@ -443,7 +443,7 @@ static int ravb_tx_free(struct net_device *ndev, int q)
+ 		size = le16_to_cpu(desc->ds_tagl) & TX_DS;
+ 		/* Free the original skb. */
+ 		if (priv->tx_skb[q][entry / NUM_TX_DESC]) {
+-			dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
++			dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
+ 					 size, DMA_TO_DEVICE);
+ 			/* Last packet descriptor? */
+ 			if (entry % NUM_TX_DESC = NUM_TX_DESC - 1) {
+@@ -546,7 +546,7 @@ static bool ravb_rx(struct net_device *ndev, int *quota, int q)
  
-diff --git a/drivers/media/platform/vsp1/vsp1_pipe.h b/drivers/media/platform/vsp1/vsp1_pipe.h
-index 9c8ded1c29f6..f9035c739e9a 100644
---- a/drivers/media/platform/vsp1/vsp1_pipe.h
-+++ b/drivers/media/platform/vsp1/vsp1_pipe.h
-@@ -21,6 +21,33 @@
+ 			skb = priv->rx_skb[q][entry];
+ 			priv->rx_skb[q][entry] = NULL;
+-			dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
++			dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
+ 					 ALIGN(PKT_BUF_SZ, 16),
+ 					 DMA_FROM_DEVICE);
+ 			get_ts &= (q = RAVB_NC) ?
+@@ -586,14 +586,14 @@ static bool ravb_rx(struct net_device *ndev, int *quota, int q)
+ 			if (!skb)
+ 				break;	/* Better luck next round. */
+ 			ravb_set_buffer_align(skb);
+-			dma_addr = dma_map_single(&ndev->dev, skb->data,
++			dma_addr = dma_map_single(ndev->dev.parent, skb->data,
+ 						  le16_to_cpu(desc->ds_cc),
+ 						  DMA_FROM_DEVICE);
+ 			skb_checksum_none_assert(skb);
+ 			/* We just set the data size to 0 for a failed mapping
+ 			 * which should prevent DMA  from happening...
+ 			 */
+-			if (dma_mapping_error(&ndev->dev, dma_addr))
++			if (dma_mapping_error(ndev->dev.parent, dma_addr))
+ 				desc->ds_cc = cpu_to_le16(0);
+ 			desc->dptr = cpu_to_le32(dma_addr);
+ 			priv->rx_skb[q][entry] = skb;
+@@ -1300,8 +1300,8 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ 		 entry / NUM_TX_DESC * DPTR_ALIGN;
+ 	len = PTR_ALIGN(skb->data, DPTR_ALIGN) - skb->data;
+ 	memcpy(buffer, skb->data, len);
+-	dma_addr = dma_map_single(&ndev->dev, buffer, len, DMA_TO_DEVICE);
+-	if (dma_mapping_error(&ndev->dev, dma_addr))
++	dma_addr = dma_map_single(ndev->dev.parent, buffer, len, DMA_TO_DEVICE);
++	if (dma_mapping_error(ndev->dev.parent, dma_addr))
+ 		goto drop;
  
- struct vsp1_rwpf;
+ 	desc = &priv->tx_ring[q][entry];
+@@ -1310,8 +1310,8 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
  
-+/*
-+ * struct vsp1_format_info - VSP1 video format description
-+ * @mbus: media bus format code
-+ * @fourcc: V4L2 pixel format FCC identifier
-+ * @planes: number of planes
-+ * @bpp: bits per pixel
-+ * @hwfmt: VSP1 hardware format
-+ * @swap_yc: the Y and C components are swapped (Y comes before C)
-+ * @swap_uv: the U and V components are swapped (V comes before U)
-+ * @hsub: horizontal subsampling factor
-+ * @vsub: vertical subsampling factor
-+ * @alpha: has an alpha channel
-+ */
-+struct vsp1_format_info {
-+	u32 fourcc;
-+	unsigned int mbus;
-+	unsigned int hwfmt;
-+	unsigned int swap;
-+	unsigned int planes;
-+	unsigned int bpp[3];
-+	bool swap_yc;
-+	bool swap_uv;
-+	unsigned int hsub;
-+	unsigned int vsub;
-+	bool alpha;
-+};
-+
- enum vsp1_pipeline_state {
- 	VSP1_PIPELINE_STOPPED,
- 	VSP1_PIPELINE_RUNNING,
-@@ -97,4 +124,6 @@ void vsp1_pipeline_propagate_alpha(struct vsp1_pipeline *pipe,
- void vsp1_pipelines_suspend(struct vsp1_device *vsp1);
- void vsp1_pipelines_resume(struct vsp1_device *vsp1);
+ 	buffer = skb->data + len;
+ 	len = skb->len - len;
+-	dma_addr = dma_map_single(&ndev->dev, buffer, len, DMA_TO_DEVICE);
+-	if (dma_mapping_error(&ndev->dev, dma_addr))
++	dma_addr = dma_map_single(ndev->dev.parent, buffer, len, DMA_TO_DEVICE);
++	if (dma_mapping_error(ndev->dev.parent, dma_addr))
+ 		goto unmap;
  
-+const struct vsp1_format_info *vsp1_get_format_info(u32 fourcc);
-+
- #endif /* __VSP1_PIPE_H__ */
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index 589ce49e8688..e0d4f84bc26d 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -48,113 +48,6 @@
-  * Helper functions
-  */
+ 	desc++;
+@@ -1323,7 +1323,7 @@ static netdev_tx_t ravb_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ 		ts_skb = kmalloc(sizeof(*ts_skb), GFP_ATOMIC);
+ 		if (!ts_skb) {
+ 			desc--;
+-			dma_unmap_single(&ndev->dev, dma_addr, len,
++			dma_unmap_single(ndev->dev.parent, dma_addr, len,
+ 					 DMA_TO_DEVICE);
+ 			goto unmap;
+ 		}
+@@ -1358,7 +1358,7 @@ exit:
+ 	return NETDEV_TX_OK;
  
--static const struct vsp1_format_info vsp1_video_formats[] = {
--	{ V4L2_PIX_FMT_RGB332, MEDIA_BUS_FMT_ARGB8888_1X32,
--	  VI6_FMT_RGB_332, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 8, 0, 0 }, false, false, 1, 1, false },
--	{ V4L2_PIX_FMT_ARGB444, MEDIA_BUS_FMT_ARGB8888_1X32,
--	  VI6_FMT_ARGB_4444, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS,
--	  1, { 16, 0, 0 }, false, false, 1, 1, true },
--	{ V4L2_PIX_FMT_XRGB444, MEDIA_BUS_FMT_ARGB8888_1X32,
--	  VI6_FMT_XRGB_4444, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS,
--	  1, { 16, 0, 0 }, false, false, 1, 1, true },
--	{ V4L2_PIX_FMT_ARGB555, MEDIA_BUS_FMT_ARGB8888_1X32,
--	  VI6_FMT_ARGB_1555, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS,
--	  1, { 16, 0, 0 }, false, false, 1, 1, true },
--	{ V4L2_PIX_FMT_XRGB555, MEDIA_BUS_FMT_ARGB8888_1X32,
--	  VI6_FMT_XRGB_1555, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS,
--	  1, { 16, 0, 0 }, false, false, 1, 1, false },
--	{ V4L2_PIX_FMT_RGB565, MEDIA_BUS_FMT_ARGB8888_1X32,
--	  VI6_FMT_RGB_565, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS,
--	  1, { 16, 0, 0 }, false, false, 1, 1, false },
--	{ V4L2_PIX_FMT_BGR24, MEDIA_BUS_FMT_ARGB8888_1X32,
--	  VI6_FMT_BGR_888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 24, 0, 0 }, false, false, 1, 1, false },
--	{ V4L2_PIX_FMT_RGB24, MEDIA_BUS_FMT_ARGB8888_1X32,
--	  VI6_FMT_RGB_888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 24, 0, 0 }, false, false, 1, 1, false },
--	{ V4L2_PIX_FMT_ABGR32, MEDIA_BUS_FMT_ARGB8888_1X32,
--	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS,
--	  1, { 32, 0, 0 }, false, false, 1, 1, true },
--	{ V4L2_PIX_FMT_XBGR32, MEDIA_BUS_FMT_ARGB8888_1X32,
--	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS,
--	  1, { 32, 0, 0 }, false, false, 1, 1, false },
--	{ V4L2_PIX_FMT_ARGB32, MEDIA_BUS_FMT_ARGB8888_1X32,
--	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 32, 0, 0 }, false, false, 1, 1, true },
--	{ V4L2_PIX_FMT_XRGB32, MEDIA_BUS_FMT_ARGB8888_1X32,
--	  VI6_FMT_ARGB_8888, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 32, 0, 0 }, false, false, 1, 1, false },
--	{ V4L2_PIX_FMT_UYVY, MEDIA_BUS_FMT_AYUV8_1X32,
--	  VI6_FMT_YUYV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 16, 0, 0 }, false, false, 2, 1, false },
--	{ V4L2_PIX_FMT_VYUY, MEDIA_BUS_FMT_AYUV8_1X32,
--	  VI6_FMT_YUYV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 16, 0, 0 }, false, true, 2, 1, false },
--	{ V4L2_PIX_FMT_YUYV, MEDIA_BUS_FMT_AYUV8_1X32,
--	  VI6_FMT_YUYV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 16, 0, 0 }, true, false, 2, 1, false },
--	{ V4L2_PIX_FMT_YVYU, MEDIA_BUS_FMT_AYUV8_1X32,
--	  VI6_FMT_YUYV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  1, { 16, 0, 0 }, true, true, 2, 1, false },
--	{ V4L2_PIX_FMT_NV12M, MEDIA_BUS_FMT_AYUV8_1X32,
--	  VI6_FMT_Y_UV_420, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  2, { 8, 16, 0 }, false, false, 2, 2, false },
--	{ V4L2_PIX_FMT_NV21M, MEDIA_BUS_FMT_AYUV8_1X32,
--	  VI6_FMT_Y_UV_420, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  2, { 8, 16, 0 }, false, true, 2, 2, false },
--	{ V4L2_PIX_FMT_NV16M, MEDIA_BUS_FMT_AYUV8_1X32,
--	  VI6_FMT_Y_UV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  2, { 8, 16, 0 }, false, false, 2, 1, false },
--	{ V4L2_PIX_FMT_NV61M, MEDIA_BUS_FMT_AYUV8_1X32,
--	  VI6_FMT_Y_UV_422, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  2, { 8, 16, 0 }, false, true, 2, 1, false },
--	{ V4L2_PIX_FMT_YUV420M, MEDIA_BUS_FMT_AYUV8_1X32,
--	  VI6_FMT_Y_U_V_420, VI6_RPF_DSWAP_P_LLS | VI6_RPF_DSWAP_P_LWS |
--	  VI6_RPF_DSWAP_P_WDS | VI6_RPF_DSWAP_P_BTS,
--	  3, { 8, 8, 8 }, false, false, 2, 2, false },
--};
--
--/*
-- * vsp1_get_format_info - Retrieve format information for a 4CC
-- * @fourcc: the format 4CC
-- *
-- * Return a pointer to the format information structure corresponding to the
-- * given V4L2 format 4CC, or NULL if no corresponding format can be found.
-- */
--static const struct vsp1_format_info *vsp1_get_format_info(u32 fourcc)
--{
--	unsigned int i;
--
--	for (i = 0; i < ARRAY_SIZE(vsp1_video_formats); ++i) {
--		const struct vsp1_format_info *info = &vsp1_video_formats[i];
--
--		if (info->fourcc = fourcc)
--			return info;
--	}
--
--	return NULL;
--}
--
--
- static struct v4l2_subdev *
- vsp1_video_remote_subdev(struct media_pad *local, u32 *pad)
- {
-diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
-index f89590b83080..9624f952e095 100644
---- a/drivers/media/platform/vsp1/vsp1_video.h
-+++ b/drivers/media/platform/vsp1/vsp1_video.h
-@@ -21,33 +21,6 @@
- #include "vsp1_pipe.h"
- #include "vsp1_rwpf.h"
+ unmap:
+-	dma_unmap_single(&ndev->dev, le32_to_cpu(desc->dptr),
++	dma_unmap_single(ndev->dev.parent, le32_to_cpu(desc->dptr),
+ 			 le16_to_cpu(desc->ds_tagl), DMA_TO_DEVICE);
+ drop:
+ 	dev_kfree_skb_any(skb);
+@@ -1708,7 +1708,7 @@ static int ravb_probe(struct platform_device *pdev)
  
--/*
-- * struct vsp1_format_info - VSP1 video format description
-- * @mbus: media bus format code
-- * @fourcc: V4L2 pixel format FCC identifier
-- * @planes: number of planes
-- * @bpp: bits per pixel
-- * @hwfmt: VSP1 hardware format
-- * @swap_yc: the Y and C components are swapped (Y comes before C)
-- * @swap_uv: the U and V components are swapped (V comes before U)
-- * @hsub: horizontal subsampling factor
-- * @vsub: vertical subsampling factor
-- * @alpha: has an alpha channel
-- */
--struct vsp1_format_info {
--	u32 fourcc;
--	unsigned int mbus;
--	unsigned int hwfmt;
--	unsigned int swap;
--	unsigned int planes;
--	unsigned int bpp[3];
--	bool swap_yc;
--	bool swap_uv;
--	unsigned int hsub;
--	unsigned int vsub;
--	bool alpha;
--};
--
- struct vsp1_vb2_buffer {
- 	struct vb2_buffer buf;
- 	struct list_head queue;
+ 	/* Allocate descriptor base address table */
+ 	priv->desc_bat_size = sizeof(struct ravb_desc) * DBAT_ENTRY_NUM;
+-	priv->desc_bat = dma_alloc_coherent(NULL, priv->desc_bat_size,
++	priv->desc_bat = dma_alloc_coherent(ndev->dev.parent, priv->desc_bat_size,
+ 					    &priv->desc_bat_dma, GFP_KERNEL);
+ 	if (!priv->desc_bat) {
+ 		dev_err(&ndev->dev,
+@@ -1763,7 +1763,7 @@ out_napi_del:
+ 	netif_napi_del(&priv->napi[RAVB_BE]);
+ 	ravb_mdio_release(priv);
+ out_dma_free:
+-	dma_free_coherent(NULL, priv->desc_bat_size, priv->desc_bat,
++	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
+ 			  priv->desc_bat_dma);
+ out_release:
+ 	if (ndev)
+@@ -1779,7 +1779,7 @@ static int ravb_remove(struct platform_device *pdev)
+ 	struct net_device *ndev = platform_get_drvdata(pdev);
+ 	struct ravb_private *priv = netdev_priv(ndev);
+ 
+-	dma_free_coherent(NULL, priv->desc_bat_size, priv->desc_bat,
++	dma_free_coherent(ndev->dev.parent, priv->desc_bat_size, priv->desc_bat,
+ 			  priv->desc_bat_dma);
+ 	/* Set reset mode */
+ 	ravb_write(ndev, CCC_OPC_RESET, CCC);
 -- 
-2.4.6
+2.1.4
 
