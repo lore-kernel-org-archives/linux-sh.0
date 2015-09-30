@@ -1,40 +1,75 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 17 Sep 2015 04:34:56 +0000
-Subject: [PATCH 18/20 v2] arm64: defconfig: add Renesas sound and AK4613 support
-Message-Id: <877fnp7jm4.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 30 Sep 2015 12:19:34 +0000
+Subject: Re: ARM64: renesas: r8a7795: Add graphics-related MSTP clocks
+Message-Id: <CAMuHMdUReY_-UgL4QkTErF9byaEy-sTAtH_zqTbZRVk+n5vPBA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Laurent,
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+http://git.linuxtv.org/cgit.cgi/pinchartl/media.git/commit/?h=vsp1-kms-gen3-20150929&id12906b34fe88e4eceface078af9cd6b2fa0955e:
+> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> index ed192d480e355e11..bcba6b4b86f8e24f 100644
+> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> @@ -413,6 +413,41 @@
+>                                       clock-indices = <R8A7795_CLK_SCIF2>;
+>                               };
+>
+> +                             mstp6_clks: mstp6@e61501c0 {
+> +                                     compatible = "renesas,r8a7795-mstp-clocks",
+> +                                                  "renesas,cpg-mstp-clocks";
+> +                                     reg = <0 0xe6150148 0 4>, <0 0xe61501c0 0 4>;
+> +                                     clocks =  <
+> +                                             &s2d1_clk &s2d1_clk &s2d1_clk &s2d1_clk
+> +                                             &s2d1_clk &s2d1_clk &s2d1_clk &s2d1_clk
+> +                                             &s2d1_clk
+> +                                     >;
+> +                                     #clock-cells = <1>;
+> +                                     clock-indices = <
+> +                                             R8A7795_CLK_VSPD3 R8A7795_CLK_VSPD2
+> +                                             R8A7795_CLK_VSPD1 R8A7795_CLK_VSPD0
+> +                                             R8A7795_CLK_VSPBC R8A7795_CLK_VSPBD
+> +                                             R8A7795_CLK_VSPI2 R8A7795_CLK_VSPI1
+> +                                             R8A7795_CLK_VSPI0
+> +                                     >;
+> +                             };
+> +
+> +                             mstp7_clks: mstp7@e615014c {
+> +                                     compatible = "renesas,r8a7795-mstp-clocks",
+> +                                                  "renesas,cpg-mstp-clocks";
+> +                                     reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
+> +                                     clocks =  <&s2d1_clk>, <&s2d1_clk>, <&s2d1_clk>,
+> +                                               <&s2d1_clk>, <&s2d1_clk>, <&s2d1_clk>,
+> +                                               <&lvds_clk>, <&hdmi_clk>, <&hdmi_clk>;
 
- - no change
+This property counts 9 parent clocks...
 
- arch/arm64/configs/defconfig | 5 +++++
- 1 file changed, 5 insertions(+)
+> +                                     #clock-cells = <1>;
+> +                                     clock-indices = <
+> +                                             R8A7795_CLK_DU3 R8A7795_CLK_DU2
+> +                                             R8A7795_CLK_DU1 R8A7795_CLK_DU0
+> +                                             R8A7795_CLK_LVDS R8A7795_CLK_HDMI1
+> +                                             R8A7795_CLK_HDMI0
 
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index abb8cdd..e333159 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -142,6 +142,11 @@ CONFIG_FRAMEBUFFER_CONSOLE=y
- CONFIG_LOGO=y
- # CONFIG_LOGO_LINUX_MONO is not set
- # CONFIG_LOGO_LINUX_VGA16 is not set
-+CONFIG_SOUND=y
-+CONFIG_SND=y
-+CONFIG_SND_SOC=y
-+CONFIG_SND_SOC_RCAR=y
-+CONFIG_SND_SOC_AK4613=y
- CONFIG_USB=y
- CONFIG_USB_EHCI_HCD=y
- CONFIG_USB_EHCI_HCD_PLATFORM=y
+... while this property counts only 7 indices.
+
+I guess the first two parent clocks should be removed?
+
+> +                                     >;
+> +                             };
+
 -- 
-1.9.1
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
