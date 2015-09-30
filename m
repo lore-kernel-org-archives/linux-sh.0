@@ -1,65 +1,86 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 03 Sep 2015 20:20:08 +0000
-Subject: [PATCH 4/9] i2c: rcar: refactor setup of a msg
-Message-Id: <1441311613-2681-5-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 30 Sep 2015 06:16:25 +0000
+Subject: [PATCH 3/5] arm64: dts: r8a7795: enable EthernetAVB on Salvator-X
+Message-Id: <1443593787-21224-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441311613-2681-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1441311613-2681-1-git-send-email-wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Kuninori Morimoto <kuninori.morimoto.gx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Yoshihiro Kaneko <ykaneko0929-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-We want to reuse this function later.
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+[horms: minor updates]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- drivers/i2c/busses/i2c-rcar.c | 15 +++++++++------
- 1 file changed, 9 insertions(+), 6 deletions(-)
+v0 [Kazuya Mizuguchi]
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index e65418b34d868e..6e459a338ccc75 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -106,7 +106,8 @@ enum rcar_i2c_type {
- struct rcar_i2c_priv {
- 	void __iomem *io;
- 	struct i2c_adapter adap;
--	struct i2c_msg	*msg;
-+	struct i2c_msg *msg;
-+	int msgs_left;
- 	struct clk *clk;
- 
- 	wait_queue_head_t wait;
-@@ -254,6 +255,11 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
- {
- 	int read = !!rcar_i2c_is_recv(priv);
- 
-+	priv->pos = 0;
-+	priv->flags = 0;
-+	if (priv->msgs_left = 1)
-+		rcar_i2c_flags_set(priv, ID_LAST_MSG);
+v1 [Simon Horman]
+* updated filename to salvator-x
+* updated patch subject
+
+v2 [Simon Horman]
+* Removed spurious update to r8a7795.dtsi introduced in v1
+* Removed unused renesas,phy property
+
+v3 [Simon Horman]
+* No change but provided PFC driver update in separate patch(set)
+
+v4 [Simon Horman]
+* As suggested by Sergei Shtylyov
+  - Removed unused phy-reset-gpio property
+---
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 31 ++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index 5bae2cc0c61e..d73b46e9673e 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -41,6 +41,11 @@
+ 		renesas,groups = "scif2_data_a";
+ 		renesas,function = "scif2";
+ 	};
 +
- 	rcar_i2c_write(priv, ICMAR, (priv->msg->addr << 1) | read);
- 	rcar_i2c_write(priv, ICMSR, 0);
- 	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
-@@ -498,11 +504,8 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 		}
++	avb_pins: avb {
++		renesas,groups = "avb_mdc";
++		renesas,function = "avb";
++	};
+ };
  
- 		/* init each data */
--		priv->msg	= &msgs[i];
--		priv->pos	= 0;
--		priv->flags	= 0;
--		if (i = num - 1)
--			rcar_i2c_flags_set(priv, ID_LAST_MSG);
-+		priv->msg = &msgs[i];
-+		priv->msgs_left = num - i;
+ &scif1 {
+@@ -56,3 +61,29 @@
  
- 		rcar_i2c_prepare_msg(priv);
- 
+ 	status = "okay";
+ };
++
++&avb {
++	pinctrl-0 = <&avb_pins>;
++	pinctrl-names = "default";
++	renesas,no-ether-link;
++	phy-handle = <&phy0>;
++	status = "okay";
++
++	phy0: ethernet-phy@0 {
++		rxc-skew-ps = <900>;
++		rxdv-skew-ps = <0>;
++		rxd0-skew-ps = <0>;
++		rxd1-skew-ps = <0>;
++		rxd2-skew-ps = <0>;
++		rxd3-skew-ps = <0>;
++		txc-skew-ps = <900>;
++		txen-skew-ps = <0>;
++		txd0-skew-ps = <0>;
++		txd1-skew-ps = <0>;
++		txd2-skew-ps = <0>;
++		txd3-skew-ps = <0>;
++		reg = <0>;
++		interrupt-parent = <&gpio2>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++	};
++};
 -- 
 2.1.4
 
