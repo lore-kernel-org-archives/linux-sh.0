@@ -1,29 +1,40 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 08 Sep 2015 09:01:24 +0000
-Subject: Re: [PATCH] gpio: rcar: GPIO_RCAR doesn't relate to ARM
-Message-Id: <CACRpkdbB6PnRV8mY6NmW9KCUa+TWSEW16hHSQCVWuRAEDkFUPw@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 30 Sep 2015 23:01:38 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: add Porter board DT bindings
+Message-Id: <1498934.YIZP7CvbA4@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <871ter7n17.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <871ter7n17.wl%kuninori.morimoto.gx@renesas.com>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Simon <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus <magnus.damm@gmail.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Alexandre Courbot <gnurou@gmail.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Aug 25, 2015 at 11:12 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
+Add Porter device tree bindings documentation, listing it as a supported board.
+    
+This allows to use checkpatch to validate DTSes referring to the Porter board.
+ 
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> 8cd1470("gpio: rcar: Add r8a7795 (R-Car H3) support") added
-> GPIO support for r8a7795. r8a7795 based on CONFIG_ARM64.
-> OTOH, GPIO_RCAR driver can be compiled fine on non-ARM.
-> This patch removed ARM dependency for it.
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+This patch is against the 'renesas-devel-20150930-v4.3-rc3' tag of Simon
+Horman's 'renesas.git' repo.
 
-Patch applied for fixes.
+Changes in version 2:
+- new patch.
 
-Yours,
-Linus Walleij
+ Documentation/devicetree/bindings/arm/shmobile.txt |    2 ++
+ 1 file changed, 2 insertions(+)
+
+Index: renesas/Documentation/devicetree/bindings/arm/shmobile.txt
+=================================--- renesas.orig/Documentation/devicetree/bindings/arm/shmobile.txt
++++ renesas/Documentation/devicetree/bindings/arm/shmobile.txt
+@@ -55,5 +55,7 @@ Boards:
+     compatible = "renesas,lager", "renesas,r8a7790"
+   - Marzen
+     compatible = "renesas,marzen", "renesas,r8a7779"
++  - Porter (M2-LCDP)
++    compatible = "renesas,porter", "renesas,r8a7791"
+   - Silk
+     compatible = "renesas,silk", "renesas,r8a7794";
+
