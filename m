@@ -1,33 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 11 Sep 2015 07:27:02 +0000
-Subject: Re: [PATCH/RFC v2 5/5] arm64: defconfig: enable EthernetAVB
-Message-Id: <CAMuHMdXL--wqHXbi70R4DSVaC0y53w62XNW3LwV2h4tn-m8=4w@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 30 Sep 2015 10:03:07 +0000
+Subject: [PATCH] irqchip: renesas-intc-irqpin: r8a7778 IRLM setup support
+Message-Id: <1443607387-19147-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441936996-18437-6-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1441936996-18437-6-git-send-email-horms+renesas@verge.net.au>
+References: <20141215050920.533.20169.sendpatchset@w520>
+In-Reply-To: <20141215050920.533.20169.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Fri, Sep 11, 2015 at 4:03 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> This is present on the Renesas r8a7795 SoC and may be
-> used by the Salvator-X board.
->
-> Also enable MICREL_PHY which is used on the Salvator-X board.
->
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Works the same as on r8a7779.
 
-Gr{oetje,eeting}s,
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/irqchip/irq-renesas-intc-irqpin.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-                        Geert
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 1b4e5cc9f7df9a0c..7f6cf19aa6ac00d7 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -359,14 +359,16 @@ static const struct irq_domain_ops intc_irqpin_irq_domain_ops = {
+ 	.xlate  = irq_domain_xlate_twocell,
+ };
+ 
+-static const struct intc_irqpin_irlm_config intc_irqpin_irlm_r8a7779 = {
++static const struct intc_irqpin_irlm_config intc_irqpin_irlm_r8a777x = {
+ 	.irlm_bit = 23, /* ICR0.IRLM0 */
+ };
+ 
+ static const struct of_device_id intc_irqpin_dt_ids[] = {
+ 	{ .compatible = "renesas,intc-irqpin", },
++	{ .compatible = "renesas,intc-irqpin-r8a7778",
++	  .data = &intc_irqpin_irlm_r8a777x },
+ 	{ .compatible = "renesas,intc-irqpin-r8a7779",
+-	  .data = &intc_irqpin_irlm_r8a7779 },
++	  .data = &intc_irqpin_irlm_r8a777x },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, intc_irqpin_dt_ids);
+-- 
+1.9.1
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
