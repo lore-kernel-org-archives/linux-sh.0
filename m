@@ -1,96 +1,140 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 18 Sep 2015 11:08:23 +0000
-Subject: [PATCH v4 00/10] serial: sh-sci: Add DT DMA support
-Message-Id: <1442574513-20648-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 30 Sep 2015 06:15:52 +0000
+Subject: [PATCH net-next 1/4] phylib: Add phy_set_max_speed helper
+Message-Id: <1443593755-20991-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1443593755-20991-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1443593755-20991-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>
-Cc: Muhammad Hamza Farooq <mfarooq@visteon.com>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>, Koji Matsuoka <koji.matsuoka.xm@renesas.com>, Wolfram Sang <wsa@the-dreams.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: David Miller <davem@davemloft.net>
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Florian Fainelli <f.fainelli@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>
 
-	Hi Greg, Jiri,
+Add a helper to allow ethernet drivers to limit the speed of a phy
+(that they are attached to).
 
-This patch series adds DT DMA support to the Renesas "SCI" serial driver
-on R-Car Gen2 SoCs.
-It depends on "[PATCH v3 00/33] serial: sh-sci: Miscellaneous and DMA
-Improvements" [1], which contains preparatory patches that were
-considered stable and safe before.
+This mainly involves factoring out the business-end of
+of_set_phy_supported() and exporting a new symbol.
 
-Changes compared to "[PATCH/RFC v3 0/4] serial: sh-sci: Add DT DMA
-support" [2]:
-  - Dropped RFC status,
-  - Dropped "serial: sh-sci: Stop TX and RX on shutdown", as it caused
-    serial console output to stop suddenly during halt/reboot on e.g.
-    armadillo and kzm9g,
-  - Added sevaral new fixes, mostly from Muhammad Hamza Farooq and
-    Aleksandar Mitev (thanks a lot!),
-  - Added a first patch to shuffle functions around, to avoid churn in
-    patches making functional changes.
+This code seems to be open coded in several places, in several different
+variants.
 
-This was tested on r8a7791/koelsch (using SCIF, SCIFA, SCIFB, and
-HSCIF), and received some testing on r8a7795/salvator-x (using SCIF and
-HSCIF).
+It is is envisaged that this will be used in situations where setting the
+"max-speed" property in DT is not appropriate, e.g. because the maximum
+speed is not a property of the phy hardware.
 
-While it doesn't matter much at low speeds, reliability at high speeds
-(> 1 Mbps) is improved by applying the following improvements to the
-rcar-dmac driver:
-  - "[PATCH] dmaengine: rcar-dmac: Fix residue reporting for pending
-    descriptors" [3],
-  - Muhammad Hamza Farooq's series "[PATCH 0/6] rcar DMA engine patches"
-    [4].
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Note that SCI DMA support was originally written for SH-based systems,
-and was never fully wired up in platform code in mainline, so the risk
-for regressions is fairly small.
+---
+v2
+* First post
 
-For testing convenience, I've pushed this and related series to topic
-branches in
-git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git:
-  - topic/scif-misc-v3 [1]
-  - topic/scif-dma-v4
-  - topic/rcar-dmac-residue-v1 [3]
-  - topic/rcar-dmac-hamza-v1 [4]
+v3
+* As suggested by Florian Fainelli
+  - Do not check for !IS_ENABLED(CONFIG_OF_MDIO) in __set_phy_supported.
+    This is already done in of_set_phy_supported() and is not relevant to
+    phy_set_max_speed)
+  - Return -ENOTSUPP if 'max_speed' is not an unknown value
+* As suggested by Sergei Shtylyov
+  - White-space and comment enhancements.
 
-Thanks!
+v4
+* No change
+---
+ drivers/net/phy/phy_device.c | 59 ++++++++++++++++++++++++++++++--------------
+ include/linux/phy.h          |  1 +
+ 2 files changed, 41 insertions(+), 19 deletions(-)
 
-References:
-  [1] http://www.spinics.net/lists/linux-serial/msg18682.html
-  [2] http://www.spinics.net/lists/linux-sh/msg44347.html
-  [3] http://www.spinics.net/lists/dmaengine/msg05711.html
-  [4] http://www.spinics.net/lists/dmaengine/msg06103.html
-
-Aleksandar Mitev (1):
-  serial: sh-sci: Remove timer on shutdown of port
-
-Geert Uytterhoeven (5):
-  serial: sh-sci: Shuffle functions around
-  serial: sh-sci: Get rid of the workqueue to handle receive DMA
-    requests
-  serial: sh-sci: Submit RX DMA from RX interrupt on (H)SCIF
-  serial: sh-sci: Stop calling sci_start_rx() from sci_request_dma()
-  serial: sh-sci: Add DT support to DMA setup
-
-Muhammad Hamza Farooq (4):
-  serial: sh-sci: Redirect port interrupts to CPU _only_ when DMA stops
-  serial: sh-sci: Call dma_async_issue_pending when transaction
-    completes
-  serial: sh-sci: Do not terminate DMA engine when race condition occurs
-  serial: sh-sci: Pause DMA engine and get DMA status again
-
- drivers/tty/serial/sh-sci.c | 1364 ++++++++++++++++++++++---------------------
- 1 file changed, 698 insertions(+), 666 deletions(-)
-
+diff --git a/drivers/net/phy/phy_device.c b/drivers/net/phy/phy_device.c
+index f761288abe66..383389146099 100644
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -1239,6 +1239,44 @@ static int gen10g_resume(struct phy_device *phydev)
+ 	return 0;
+ }
+ 
++static int __set_phy_supported(struct phy_device *phydev, u32 max_speed)
++{
++	/* The default values for phydev->supported are provided by the PHY
++	 * driver "features" member, we want to reset to sane defaults first
++	 * before supporting higher speeds.
++	 */
++	phydev->supported &= PHY_DEFAULT_FEATURES;
++
++	switch (max_speed) {
++	default:
++		return -ENOTSUPP;
++	case SPEED_1000:
++		phydev->supported |= PHY_1000BT_FEATURES;
++		/* fall through */
++	case SPEED_100:
++		phydev->supported |= PHY_100BT_FEATURES;
++		/* fall through */
++	case SPEED_10:
++		phydev->supported |= PHY_10BT_FEATURES;
++	}
++
++	return 0;
++}
++
++int phy_set_max_speed(struct phy_device *phydev, u32 max_speed)
++{
++	int err;
++
++	err = __set_phy_supported(phydev, max_speed);
++	if (err)
++		return err;
++
++	phydev->advertising = phydev->supported;
++
++	return 0;
++}
++EXPORT_SYMBOL(phy_set_max_speed);
++
+ static void of_set_phy_supported(struct phy_device *phydev)
+ {
+ 	struct device_node *node = phydev->dev.of_node;
+@@ -1250,25 +1288,8 @@ static void of_set_phy_supported(struct phy_device *phydev)
+ 	if (!node)
+ 		return;
+ 
+-	if (!of_property_read_u32(node, "max-speed", &max_speed)) {
+-		/* The default values for phydev->supported are provided by the PHY
+-		 * driver "features" member, we want to reset to sane defaults fist
+-		 * before supporting higher speeds.
+-		 */
+-		phydev->supported &= PHY_DEFAULT_FEATURES;
+-
+-		switch (max_speed) {
+-		default:
+-			return;
+-
+-		case SPEED_1000:
+-			phydev->supported |= PHY_1000BT_FEATURES;
+-		case SPEED_100:
+-			phydev->supported |= PHY_100BT_FEATURES;
+-		case SPEED_10:
+-			phydev->supported |= PHY_10BT_FEATURES;
+-		}
+-	}
++	if (!of_property_read_u32(node, "max-speed", &max_speed))
++		__set_phy_supported(phydev, max_speed);
+ }
+ 
+ /**
+diff --git a/include/linux/phy.h b/include/linux/phy.h
+index 4a4e3a092337..4c477e6ece33 100644
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -798,6 +798,7 @@ int phy_mii_ioctl(struct phy_device *phydev, struct ifreq *ifr, int cmd);
+ int phy_start_interrupts(struct phy_device *phydev);
+ void phy_print_status(struct phy_device *phydev);
+ void phy_device_free(struct phy_device *phydev);
++int phy_set_max_speed(struct phy_device *phydev, u32 max_speed);
+ 
+ int phy_register_fixup(const char *bus_id, u32 phy_uid, u32 phy_uid_mask,
+ 		       int (*run)(struct phy_device *));
 -- 
-1.9.1
+2.1.4
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
