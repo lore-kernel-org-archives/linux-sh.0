@@ -1,97 +1,39 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 29 Sep 2015 23:26:08 +0000
-Subject: [PATCH] ARM: shmobile: porter: initial device tree
-Message-Id: <2022535.FYlSB7sRz4@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 30 Sep 2015 06:51:38 +0000
+Subject: Re: [PATCH] ARM: shmobile: porter: initial device tree
+Message-Id: <CAMuHMdV9HXHiRPWMKW_c2mHinjuvioRxU2aq7202H+_X4TFTpg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+ <2022535.FYlSB7sRz4@wasted.cogentembedded.com>
+In-Reply-To: <2022535.FYlSB7sRz4@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add the initial device tree for the R8A7791 SoC based Porter low cost board
-(which  is a  slightly modified version  of the Henninger board).
+Hi Sergei,
 
-SCIF0 serial port support is included, so that the serial console can work. 
+On Wed, Sep 30, 2015 at 1:26 AM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> Add the initial device tree for the R8A7791 SoC based Porter low cost board
+> (which  is a  slightly modified version  of the Henninger board).
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Can you please tell us more about the differences?
+It will help us reviewing future DTS updates.
 
----
-This patch is against the 'renesas-devel-20150928-v4.3-rc3' tag of Simon
-Horman's 'renesas.git' repo.
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
- arch/arm/boot/dts/Makefile           |    1 
- arch/arm/boot/dts/r8a7791-porter.dts |   54 +++++++++++++++++++++++++++++++++++
- 2 files changed, 55 insertions(+)
+If you update Documentation/devicetree/bindings/arm/shmobile.txt, you can
+add my
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Index: renesas/arch/arm/boot/dts/Makefile
-=================================--- renesas.orig/arch/arm/boot/dts/Makefile
-+++ renesas/arch/arm/boot/dts/Makefile
-@@ -532,6 +532,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
- 	r8a7790-lager.dtb \
- 	r8a7791-henninger.dtb \
- 	r8a7791-koelsch.dtb \
-+	r8a7791-porter.dtb \
- 	r8a7793-gose.dtb \
- 	r8a7794-alt.dtb \
- 	r8a7794-silk.dtb \
-Index: renesas/arch/arm/boot/dts/r8a7791-porter.dts
-=================================--- /dev/null
-+++ renesas/arch/arm/boot/dts/r8a7791-porter.dts
-@@ -0,0 +1,54 @@
-+/*
-+ * Device Tree Source for the Porter board
-+ *
-+ * Copyright (C) 2015 Cogent Embedded, Inc.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+#include "r8a7791.dtsi"
-+
-+/ {
-+	model = "Porter";
-+	compatible = "renesas,porter", "renesas,r8a7791";
-+
-+	aliases {
-+		serial0 = &scif0;
-+	};
-+
-+	chosen {
-+		bootargs = "console=ttySC0,115200 ignore_loglevel";
-+		stdout-path = &scif0;
-+	};
-+
-+	memory@40000000 {
-+		device_type = "memory";
-+		reg = <0 0x40000000 0 0x40000000>;
-+	};
-+
-+	memory@200000000 {
-+		device_type = "memory";
-+		reg = <2 0x00000000 0 0x40000000>;
-+	};
-+};
-+
-+&extal_clk {
-+	clock-frequency = <20000000>;
-+};
-+
-+&pfc {
-+	scif0_pins: serial0 {
-+		renesas,groups = "scif0_data_d";
-+		renesas,function = "scif0";
-+	};
-+};
-+
-+&scif0 {
-+	pinctrl-0 = <&scif0_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
