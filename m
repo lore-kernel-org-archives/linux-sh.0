@@ -1,179 +1,160 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 13 Sep 2015 20:56:42 +0000
-Subject: [PATCH 04/32] v4l: vsp1: Rename vsp1_video_buffer to vsp1_vb2_buffer
-Message-Id: <1442177830-24536-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 30 Sep 2015 06:15:54 +0000
+Subject: [PATCH net-next 3/4] ravb: Document binding for r8a7795 SoC
+Message-Id: <1443593755-20991-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442177830-24536-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1443593755-20991-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1443593755-20991-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: David Miller <davem@davemloft.net>
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Florian Fainelli <f.fainelli@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>
 
-The structure represent a vsp1 videobuf2 buffer, name it accordingly.
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch updates the ravb binding to support the r8a7795 SoC by:
+- Adding a compat string for the new hardware
+- Adding 25 named interrupts to binding for the new SoC;
+  older SoCs continue to use a single multiplexed interrupt
+
+The example is also updated to reflect the r8a7795 as this is the
+more complex case.
+
+Based on work by Kazuya Mizuguchi and others.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
 ---
- drivers/media/platform/vsp1/vsp1_rpf.c   |  2 +-
- drivers/media/platform/vsp1/vsp1_rwpf.h  |  4 ++--
- drivers/media/platform/vsp1/vsp1_video.c | 20 ++++++++++----------
- drivers/media/platform/vsp1/vsp1_video.h |  7 +++----
- drivers/media/platform/vsp1/vsp1_wpf.c   |  2 +-
- 5 files changed, 17 insertions(+), 18 deletions(-)
+v2
+* First post; broken out of a driver update patch
+* As discussed with Geert Uytterhoeven and Sergei Shtylyov
+  - Binding: Make all interrupts mandatory as named-interrupts of
+    the form ch%u
 
-diff --git a/drivers/media/platform/vsp1/vsp1_rpf.c b/drivers/media/platform/vsp1/vsp1_rpf.c
-index a17154d98a54..9c2e34374c60 100644
---- a/drivers/media/platform/vsp1/vsp1_rpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_rpf.c
-@@ -186,7 +186,7 @@ static struct v4l2_subdev_ops rpf_ops = {
-  * Video Device Operations
-  */
+v3
+* A suggested by Geert Uytterhoeven
+  - Reword description of interrupts and interrupt-names to
+    make things clearer. It is now based to some extent on
+    spi-rspi.txt and renesas,usb-dmac.txt.
+* As suggested by Sergei Shtylyov
+  - Drop phy-reset-gpio from example
+* Added power-domains to example
+
+v4
+* A suggested by Geert Uytterhoeven
+  - grammar fix for interrupt-names description
+* Add ack
+---
+ .../devicetree/bindings/net/renesas,ravb.txt       | 69 +++++++++++++++++++---
+ 1 file changed, 62 insertions(+), 7 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/net/renesas,ravb.txt b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+index 1fd8831437bf..b486f3f5f6a3 100644
+--- a/Documentation/devicetree/bindings/net/renesas,ravb.txt
++++ b/Documentation/devicetree/bindings/net/renesas,ravb.txt
+@@ -6,8 +6,12 @@ interface contains.
+ Required properties:
+ - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
+ 	      "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
++	      "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
+ - reg: offset and length of (1) the register block and (2) the stream buffer.
+-- interrupts: interrupt specifier for the sole interrupt.
++- interrupts: A list of interrupt-specifiers, one for each entry in
++	      interrupt-names.
++	      If interrupt-names is not present, an interrupt specifier
++	      for a single muxed interrupt.
+ - phy-mode: see ethernet.txt file in the same directory.
+ - phy-handle: see ethernet.txt file in the same directory.
+ - #address-cells: number of address cells for the MDIO bus, must be equal to 1.
+@@ -18,6 +22,12 @@ Required properties:
+ Optional properties:
+ - interrupt-parent: the phandle for the interrupt controller that services
+ 		    interrupts for this device.
++- interrupt-names: A list of interrupt names.
++		   For the R8A7795 SoC this property is mandatory;
++		   it should include one entry per channel, named "ch%u",
++		   where %u is the channel number ranging from 0 to 24.
++		   For other SoCs this property is optional; if present
++		   it should contain "mux" for a single muxed interrupt.
+ - pinctrl-names: pin configuration state name ("default").
+ - renesas,no-ether-link: boolean, specify when a board does not provide a proper
+ 			 AVB_LINK signal.
+@@ -27,13 +37,46 @@ Optional properties:
+ Example:
  
--static void rpf_buf_queue(struct vsp1_rwpf *rpf, struct vsp1_video_buffer *buf)
-+static void rpf_buf_queue(struct vsp1_rwpf *rpf, struct vsp1_vb2_buffer *buf)
- {
- 	unsigned int i;
+ 	ethernet@e6800000 {
+-		compatible = "renesas,etheravb-r8a7790";
+-		reg = <0 0xe6800000 0 0x800>, <0 0xee0e8000 0 0x4000>;
++		compatible = "renesas,etheravb-r8a7795";
++		reg = <0 0xe6800000 0 0x800>, <0 0xe6a00000 0 0x10000>;
+ 		interrupt-parent = <&gic>;
+-		interrupts = <0 163 IRQ_TYPE_LEVEL_HIGH>;
+-		clocks = <&mstp8_clks R8A7790_CLK_ETHERAVB>;
+-		phy-mode = "rmii";
++		interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>,
++			     <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "ch0", "ch1", "ch2", "ch3",
++				  "ch4", "ch5", "ch6", "ch7",
++				  "ch8", "ch9", "ch10", "ch11",
++				  "ch12", "ch13", "ch14", "ch15",
++				  "ch16", "ch17", "ch18", "ch19",
++				  "ch20", "ch21", "ch22", "ch23",
++				  "ch24";
++		clocks = <&mstp8_clks R8A7795_CLK_ETHERAVB>;
++		power-domains = <&cpg_clocks>;
++		phy-mode = "rgmii-id";
+ 		phy-handle = <&phy0>;
++
+ 		pinctrl-0 = <&ether_pins>;
+ 		pinctrl-names = "default";
+ 		renesas,no-ether-link;
+@@ -41,8 +84,20 @@ Example:
+ 		#size-cells = <0>;
  
-diff --git a/drivers/media/platform/vsp1/vsp1_rwpf.h b/drivers/media/platform/vsp1/vsp1_rwpf.h
-index 3cc80be03524..aa22cc062ff3 100644
---- a/drivers/media/platform/vsp1/vsp1_rwpf.h
-+++ b/drivers/media/platform/vsp1/vsp1_rwpf.h
-@@ -25,10 +25,10 @@
- #define RWPF_PAD_SOURCE				1
- 
- struct vsp1_rwpf;
--struct vsp1_video_buffer;
-+struct vsp1_vb2_buffer;
- 
- struct vsp1_rwpf_operations {
--	void (*queue)(struct vsp1_rwpf *rwpf, struct vsp1_video_buffer *buf);
-+	void (*queue)(struct vsp1_rwpf *rwpf, struct vsp1_vb2_buffer *buf);
- };
- 
- struct vsp1_rwpf {
-diff --git a/drivers/media/platform/vsp1/vsp1_video.c b/drivers/media/platform/vsp1/vsp1_video.c
-index 2ddbcbaf498f..d02cd63a9c5e 100644
---- a/drivers/media/platform/vsp1/vsp1_video.c
-+++ b/drivers/media/platform/vsp1/vsp1_video.c
-@@ -577,12 +577,12 @@ static bool vsp1_pipeline_ready(struct vsp1_pipeline *pipe)
-  *
-  * Return the next queued buffer or NULL if the queue is empty.
-  */
--static struct vsp1_video_buffer *
-+static struct vsp1_vb2_buffer *
- vsp1_video_complete_buffer(struct vsp1_video *video)
- {
- 	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&video->video.entity);
--	struct vsp1_video_buffer *next = NULL;
--	struct vsp1_video_buffer *done;
-+	struct vsp1_vb2_buffer *next = NULL;
-+	struct vsp1_vb2_buffer *done;
- 	unsigned long flags;
- 	unsigned int i;
- 
-@@ -594,7 +594,7 @@ vsp1_video_complete_buffer(struct vsp1_video *video)
- 	}
- 
- 	done = list_first_entry(&video->irqqueue,
--				struct vsp1_video_buffer, queue);
-+				struct vsp1_vb2_buffer, queue);
- 
- 	/* In DU output mode reuse the buffer if the list is singular. */
- 	if (pipe->lif && list_is_singular(&video->irqqueue)) {
-@@ -606,7 +606,7 @@ vsp1_video_complete_buffer(struct vsp1_video *video)
- 
- 	if (!list_empty(&video->irqqueue))
- 		next = list_first_entry(&video->irqqueue,
--					struct vsp1_video_buffer, queue);
-+					struct vsp1_vb2_buffer, queue);
- 
- 	spin_unlock_irqrestore(&video->irqlock, flags);
- 
-@@ -622,7 +622,7 @@ vsp1_video_complete_buffer(struct vsp1_video *video)
- static void vsp1_video_frame_end(struct vsp1_pipeline *pipe,
- 				 struct vsp1_video *video)
- {
--	struct vsp1_video_buffer *buf;
-+	struct vsp1_vb2_buffer *buf;
- 	unsigned long flags;
- 
- 	buf = vsp1_video_complete_buffer(video);
-@@ -821,7 +821,7 @@ vsp1_video_queue_setup(struct vb2_queue *vq, const struct v4l2_format *fmt,
- static int vsp1_video_buffer_prepare(struct vb2_buffer *vb)
- {
- 	struct vsp1_video *video = vb2_get_drv_priv(vb->vb2_queue);
--	struct vsp1_video_buffer *buf = to_vsp1_video_buffer(vb);
-+	struct vsp1_vb2_buffer *buf = to_vsp1_vb2_buffer(vb);
- 	const struct v4l2_pix_format_mplane *format = &video->rwpf->format;
- 	unsigned int i;
- 
-@@ -843,7 +843,7 @@ static void vsp1_video_buffer_queue(struct vb2_buffer *vb)
- {
- 	struct vsp1_video *video = vb2_get_drv_priv(vb->vb2_queue);
- 	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&video->video.entity);
--	struct vsp1_video_buffer *buf = to_vsp1_video_buffer(vb);
-+	struct vsp1_vb2_buffer *buf = to_vsp1_vb2_buffer(vb);
- 	unsigned long flags;
- 	bool empty;
- 
-@@ -935,7 +935,7 @@ static void vsp1_video_stop_streaming(struct vb2_queue *vq)
- {
- 	struct vsp1_video *video = vb2_get_drv_priv(vq);
- 	struct vsp1_pipeline *pipe = to_vsp1_pipeline(&video->video.entity);
--	struct vsp1_video_buffer *buffer;
-+	struct vsp1_vb2_buffer *buffer;
- 	unsigned long flags;
- 	int ret;
- 
-@@ -1260,7 +1260,7 @@ int vsp1_video_init(struct vsp1_video *video, struct vsp1_rwpf *rwpf)
- 	video->queue.io_modes = VB2_MMAP | VB2_USERPTR | VB2_DMABUF;
- 	video->queue.lock = &video->lock;
- 	video->queue.drv_priv = video;
--	video->queue.buf_struct_size = sizeof(struct vsp1_video_buffer);
-+	video->queue.buf_struct_size = sizeof(struct vsp1_vb2_buffer);
- 	video->queue.ops = &vsp1_video_queue_qops;
- 	video->queue.mem_ops = &vb2_dma_contig_memops;
- 	video->queue.timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_COPY;
-diff --git a/drivers/media/platform/vsp1/vsp1_video.h b/drivers/media/platform/vsp1/vsp1_video.h
-index 34efc471351c..e66ee14c596d 100644
---- a/drivers/media/platform/vsp1/vsp1_video.h
-+++ b/drivers/media/platform/vsp1/vsp1_video.h
-@@ -94,7 +94,7 @@ static inline struct vsp1_pipeline *to_vsp1_pipeline(struct media_entity *e)
- 		return NULL;
- }
- 
--struct vsp1_video_buffer {
-+struct vsp1_vb2_buffer {
- 	struct vb2_buffer buf;
- 	struct list_head queue;
- 
-@@ -102,10 +102,9 @@ struct vsp1_video_buffer {
- 	unsigned int length[3];
- };
- 
--static inline struct vsp1_video_buffer *
--to_vsp1_video_buffer(struct vb2_buffer *vb)
-+static inline struct vsp1_vb2_buffer *to_vsp1_vb2_buffer(struct vb2_buffer *vb)
- {
--	return container_of(vb, struct vsp1_video_buffer, buf);
-+	return container_of(vb, struct vsp1_vb2_buffer, buf);
- }
- 
- struct vsp1_video {
-diff --git a/drivers/media/platform/vsp1/vsp1_wpf.c b/drivers/media/platform/vsp1/vsp1_wpf.c
-index f93b545949b6..1bb389529f24 100644
---- a/drivers/media/platform/vsp1/vsp1_wpf.c
-+++ b/drivers/media/platform/vsp1/vsp1_wpf.c
-@@ -195,7 +195,7 @@ static struct v4l2_subdev_ops wpf_ops = {
-  * Video Device Operations
-  */
- 
--static void wpf_buf_queue(struct vsp1_rwpf *wpf, struct vsp1_video_buffer *buf)
-+static void wpf_buf_queue(struct vsp1_rwpf *wpf, struct vsp1_vb2_buffer *buf)
- {
- 	vsp1_wpf_write(wpf, VI6_WPF_DSTM_ADDR_Y, buf->addr[0]);
- 	if (buf->buf.num_planes > 1)
+ 		phy0: ethernet-phy@0 {
++			rxc-skew-ps = <900>;
++			rxdv-skew-ps = <0>;
++			rxd0-skew-ps = <0>;
++			rxd1-skew-ps = <0>;
++			rxd2-skew-ps = <0>;
++			rxd3-skew-ps = <0>;
++			txc-skew-ps = <900>;
++			txen-skew-ps = <0>;
++			txd0-skew-ps = <0>;
++			txd1-skew-ps = <0>;
++			txd2-skew-ps = <0>;
++			txd3-skew-ps = <0>;
+ 			reg = <0>;
+ 			interrupt-parent = <&gpio2>;
+-			interrupts = <15 IRQ_TYPE_LEVEL_LOW>;
++			interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
+ 		};
+ 	};
 -- 
-2.4.6
+2.1.4
 
