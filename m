@@ -1,35 +1,49 @@
-From: hamzahfrq.sub@gmail.com
-Date: Sun, 20 Sep 2015 19:11:00 +0000
-Subject: [RESEND PATCH 4/6] dma: rcar-dma: use result of updated get_residue in tx_status
-Message-Id: <1442776262-2503-5-git-send-email-hamzahfrq.sub@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 30 Sep 2015 06:16:27 +0000
+Subject: [PATCH 5/5] arm64: defconfig: enable EthernetAVB
+Message-Id: <1443593787-21224-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Muhammad Hamza Farooq <mfarooq@visteon.com>
+This is present on the Renesas r8a7795 SoC and may be
+used by the Salvator-X board.
 
-Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
+Also enable MICREL_PHY which is used on the Salvator-X board.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
 ---
- drivers/dma/sh/rcar-dmac.c | 4 ++++
- 1 file changed, 4 insertions(+)
+v2
+* Enable MICREL_PHY
 
-diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
-index 668fd2b..ce21575 100644
---- a/drivers/dma/sh/rcar-dmac.c
-+++ b/drivers/dma/sh/rcar-dmac.c
-@@ -1258,6 +1258,10 @@ static enum dma_status rcar_dmac_tx_status(struct dma_chan *chan,
- 	residue = rcar_dmac_chan_get_residue(rchan, cookie);
- 	spin_unlock_irqrestore(&rchan->lock, flags);
- 
-+	/* if there's no residue, the cookie is complete */
-+	if (!residue)
-+		return DMA_COMPLETE;
-+
- 	dma_set_residue(txstate, residue);
- 
- 	return status;
+v3
+* Added Ack
+
+v4
+* No change
+---
+ arch/arm64/configs/defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index dccc685b58ae..79a09de4f52f 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -97,8 +97,10 @@ CONFIG_TUN=y
+ CONFIG_VIRTIO_NET=y
+ CONFIG_NET_XGENE=y
+ CONFIG_SKY2=y
++CONFIG_RAVB=y
+ CONFIG_SMC91X=y
+ CONFIG_SMSC911X=y
++CONFIG_MICREL_PHY=y
+ # CONFIG_WLAN is not set
+ CONFIG_INPUT_EVDEV=y
+ CONFIG_KEYBOARD_GPIO=y
 -- 
-1.9.1
+2.1.4
 
