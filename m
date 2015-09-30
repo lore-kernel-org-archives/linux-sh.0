@@ -1,12 +1,11 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 30 Sep 2015 13:33:17 +0000
+Date: Wed, 30 Sep 2015 19:08:33 +0000
 Subject: Re: [PATCH] ARM: shmobile: porter: initial device tree
-Message-Id: <560BE49D.4010706@cogentembedded.com>
+Message-Id: <560C3331.3030606@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
  <2022535.FYlSB7sRz4@wasted.cogentembedded.com>
- <CAMuHMdV9HXHiRPWMKW_c2mHinjuvioRxU2aq7202H+_X4TFTpg@mail.gmail.com>
-In-Reply-To: <CAMuHMdV9HXHiRPWMKW_c2mHinjuvioRxU2aq7202H+_X4TFTpg@mail.gmail.com>
+In-Reply-To: <2022535.FYlSB7sRz4@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -14,31 +13,51 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hello.
 
-On 9/30/2015 9:51 AM, Geert Uytterhoeven wrote:
+On 09/30/2015 02:26 AM, Sergei Shtylyov wrote:
 
->> Add the initial device tree for the R8A7791 SoC based Porter low cost board
->> (which  is a  slightly modified version  of the Henninger board).
-
-> Can you please tell us more about the differences?
-> It will help us reviewing future DTS updates.
-
-    Sorry, I don't have such list handy. I'll be going thru the Henninger 
-patches one by one and look if they'd need any changes for Porter...
-
->> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
-> If you update Documentation/devicetree/bindings/arm/shmobile.txt, you can
-
-    Sorry, forgot about this one for the moment, will do.
-
-> add my
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-    Thank you!
-
-> Gr{oetje,eeting}s,
+> Add the initial device tree for the R8A7791 SoC based Porter low cost board
+> (which  is a  slightly modified version  of the Henninger board).
 >
->                          Geert
+> SCIF0 serial port support is included, so that the serial console can work.
+>
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>
+> ---
+> This patch is against the 'renesas-devel-20150928-v4.3-rc3' tag of Simon
+> Horman's 'renesas.git' repo.
+
+    Forgot to mention I had to disable USB-DMAC.
+
+> Index: renesas/arch/arm/boot/dts/r8a7791-porter.dts
+> =================================> --- /dev/null
+> +++ renesas/arch/arm/boot/dts/r8a7791-porter.dts
+> @@ -0,0 +1,54 @@
+> +/*
+> + * Device Tree Source for the Porter board
+> + *
+> + * Copyright (C) 2015 Cogent Embedded, Inc.
+> + *
+> + * This file is licensed under the terms of the GNU General Public License
+> + * version 2.  This program is licensed "as is" without any warranty of any
+> + * kind, whether express or implied.
+> + */
+> +
+> +/dts-v1/;
+> +#include "r8a7791.dtsi"
+> +
+> +/ {
+> +	model = "Porter";
+> +	compatible = "renesas,porter", "renesas,r8a7791";
+> +
+> +	aliases {
+> +		serial0 = &scif0;
+> +	};
+> +
+> +	chosen {
+> +		bootargs = "console=ttySC0,115200 ignore_loglevel";
+
+    Oops, scratch that. I thought I removed console= but I forgot to refresh 
+the patch. :-/
 
 MBR, Sergei
 
