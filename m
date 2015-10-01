@@ -1,90 +1,128 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 02 Oct 2015 10:54:25 +0000
-Subject: Re: [PATCH 1/2] dmaengine: usb-dmac: Fix crash on runtime suspend
-Message-Id: <560E6261.3010208@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Oct 2015 15:59:14 +0000
+Subject: Re: [RESEND PATCH v2 1/3] pinctrl: sh-pfc: add macros defining GP ports with config flags
+Message-Id: <27766115.dQkNT2W8Iz@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443684138-32252-1-git-send-email-geert+renesas@glider.be>
- <1443684138-32252-2-git-send-email-geert+renesas@glider.be>
- <SG2PR06MB091969749911331385AB7E83D84C0@SG2PR06MB0919.apcprd06.prod.outlook.com>
- <560D268F.8090705@cogentembedded.com>
- <SG2PR06MB0919E72456F1D40BA6E4CB04D84B0@SG2PR06MB0919.apcprd06.prod.outlook.com>
-In-Reply-To: <SG2PR06MB0919E72456F1D40BA6E4CB04D84B0@SG2PR06MB0919.apcprd06.prod.outlook.com>
+References: <1442419131-14816-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1442419131-14816-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Vinod Koul <vinod.koul@intel.com>
-Cc: "dmaengine@vger.kernel.org" <dmaengine@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-Hello.
+Hi Ulrich,
 
-On 10/2/2015 4:00 AM, Yoshihiro Shimoda wrote:
+Thank you for the patch.
 
->>>> If CONFIG_PREEMPT=3Dy:
->>
->>      Actually, it happens even with CONFIG_PREEMPT_VOLUNTARY=3Dy.
->>
->>>>       Unable to handle kernel NULL pointer dereference at virtual addr=
-ess 00000014
->>>>       pgd =3D c0003000
->>>>       [00000014] *pgd=80000040004003, *pmd=00000000
->>>>       Internal error: Oops: 206 [#1] PREEMPT SMP ARM
->>>>       Modules linked in:
->>>>       CPU: 0 PID: 17 Comm: kworker/0:1 Tainted: G        W       4.3.0=
--rc3-koelsch-022
->>>>       71-g705498fc5e6a5da8-dirty #1789
->>>>       Hardware name: Generic R8A7791 (Flattened Device Tree)
->>>>       Workqueue: pm pm_runtime_work
->>>>       task: ef578e40 ti: ef57a000 task.ti: ef57a000
->>>>       PC is at usb_dmac_chan_halt+0xc/0xc0
->>>>       LR is at usb_dmac_runtime_suspend+0x28/0x38
->>>>       pc : [<c023c880>]    lr : [<c023c95c>]    psr: 80000113
->>>>       sp : ef57bdf8  ip : 00000008  fp : 00000003
->>>>       r10: 00000008  r9 : c06ab928  r8 : ef49e810
->>>>       r7 : 00000000  r6 : 000000ac  r5 : ef770010  r4 : 00000000
->>>>       r3 : 00000000  r2 : 8ffc2b84  r1 : 00000000  r0 : ef770010
->>>>       Flags: Nzcv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment ker=
-nel
->>>>       Control: 30c5307d  Table: 40003000  DAC: fffffffd
->>>>       Process kworker/0:1 (pid: 17, stack limit =3D 0xef57a210)
->>>>       Stack: (0xef57bdf8 to 0xef57c000)
->>>>
->>>>       [...
->>>>
->>>>       [<c023c880>] (usb_dmac_chan_halt) from [<c023c95c>] (usb_dmac_ru=
-ntime_suspend+0x28/0x38)
->>>>       [<c023c95c>] (usb_dmac_runtime_suspend) from [<c027b25c>] (pm_ge=
-npd_runtime_suspend+0x74/0x23c)
->>>>
->>>> This happens because usb_dmac_probe() calls pm_runtime_put() before
->>>> usb_dmac_chan_probe(), leading to the device being suspended before the
->>>> DMA channels are initialized, causing a NULL pointer dereference.
->>>>
->>>> Move the call to pm_runtime_put() to the end of usb_dmac_probe() to fix
->>>> this.
->>>>
->>>> Add a check to usb_dmac_runtime_suspend() to prevent the crash from
->>>> happening in the error path.
->>>>
->>>> Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->>>
->>> I could not duplicate this issue completely on Lager.
->>> Even if I enabled ealyprintk, I didn't see the panic log.
->>> (Several kernel message appeared, and then the kernel hung.)
->>
->>      I guess you also need to specify console=3D. The device tree console
->> assignment (from the "stdout-path" prop) happens too late, the console g=
-ets
->> switched to /dev/tty0 first. I forgot to mention that the pseudo-console
->> (CONFIG_VT) should be disabled as well.
->
-> Thank you for your comment!
-> I was able to look the panic log if I added specify console=3D in the boo=
-targs.
-> (Even if CONFIG_VT=3Dy, the log appeared.)
+On Wednesday 16 September 2015 17:58:49 Ulrich Hecht wrote:
+> PORT_GP_CFG_1 and PORT_GP_CFG_32 work like their non-CFG counterparts
+> but accept an extra argument with config flags.
+> 
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-    Yeah, I got things somewhat mixed up, specifying console=3D alone shoul=
-d help.
+Provided you still need this after reading my comments about patch 2/3,
 
-MBR, Sergei
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
+> ---
+>  drivers/pinctrl/sh-pfc/sh_pfc.h | 47 +++++++++++++++++++++-----------------
+>  1 file changed, 25 insertions(+), 22 deletions(-)
+> 
+> diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h
+> b/drivers/pinctrl/sh-pfc/sh_pfc.h index 7cb1ed6..a3c08e2 100644
+> --- a/drivers/pinctrl/sh-pfc/sh_pfc.h
+> +++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+> @@ -187,25 +187,27 @@ struct sh_pfc_soc_info {
+>   * GP port style (32 ports banks)
+>   */
+> 
+> -#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
+> -
+> -#define PORT_GP_32(bank, fn, sfx)					\
+> -	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
+> -	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
+> -	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
+> -	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
+> -	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
+> -	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
+> -	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
+> -	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
+> -	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
+> -	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
+> -	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
+> -	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
+> -	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
+> -	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
+> -	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
+> -	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
+> +#define PORT_GP_CFG_1(bank, pin, fn, sfx, cfg) fn(bank, pin,
+> GP_##bank##_##pin, sfx, cfg)
+> +#define PORT_GP_1(bank, pin, fn, sfx)	PORT_GP_CFG_1(bank, pin, fn, sfx, 0)
+> +
+> +#define PORT_GP_CFG_32(bank, fn, sfx, cfg)				\
+> +	PORT_GP_CFG_1(bank, 0,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 1,  fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 2,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 3,  fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 4,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 5,  fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 6,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 7,  fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 8,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 9,  fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 10, fn, sfx, cfg), PORT_GP_CFG_1(bank, 11, fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 12, fn, sfx, cfg), PORT_GP_CFG_1(bank, 13, fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 14, fn, sfx, cfg), PORT_GP_CFG_1(bank, 15, fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 16, fn, sfx, cfg), PORT_GP_CFG_1(bank, 17, fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 18, fn, sfx, cfg), PORT_GP_CFG_1(bank, 19, fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 20, fn, sfx, cfg), PORT_GP_CFG_1(bank, 21, fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 22, fn, sfx, cfg), PORT_GP_CFG_1(bank, 23, fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 24, fn, sfx, cfg), PORT_GP_CFG_1(bank, 25, fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 26, fn, sfx, cfg), PORT_GP_CFG_1(bank, 27, fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 28, fn, sfx, cfg), PORT_GP_CFG_1(bank, 29, fn, sfx,
+> cfg),	\
+> +	PORT_GP_CFG_1(bank, 30, fn, sfx, cfg), PORT_GP_CFG_1(bank, 31, fn, sfx,
+> cfg)
+> +#define PORT_GP_32(bank, fn, sfx)	PORT_GP_CFG_32(bank, fn, sfx, 0)
+> 
+>  #define PORT_GP_32_REV(bank, fn, sfx)					\
+>  	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
+> @@ -226,20 +228,21 @@ struct sh_pfc_soc_info {
+>  	PORT_GP_1(bank, 1,  fn, sfx), PORT_GP_1(bank, 0,  fn, sfx)
+> 
+>  /* GP_ALL(suffix) - Expand to a list of GP_#_#_suffix */
+> -#define _GP_ALL(bank, pin, name, sfx)	name##_##sfx
+> +#define _GP_ALL(bank, pin, name, sfx, cfg)	name##_##sfx
+>  #define GP_ALL(str)			CPU_ALL_PORT(_GP_ALL, str)
+> 
+>  /* PINMUX_GPIO_GP_ALL - Expand to a list of sh_pfc_pin entries */
+> -#define _GP_GPIO(bank, _pin, _name, sfx)				\
+> +#define _GP_GPIO(bank, _pin, _name, sfx, cfg)				\
+>  	{								\
+>  		.pin = (bank * 32) + _pin,				\
+>  		.name = __stringify(_name),				\
+>  		.enum_id = _name##_DATA,				\
+> +		.configs = cfg,						\
+>  	}
+>  #define PINMUX_GPIO_GP_ALL()		CPU_ALL_PORT(_GP_GPIO, unused)
+> 
+>  /* PINMUX_DATA_GP_ALL -  Expand to a list of name_DATA, name_FN marks */
+> -#define _GP_DATA(bank, pin, name, sfx)	PINMUX_DATA(name##_DATA, name##_FN)
+> +#define _GP_DATA(bank, pin, name, sfx, cfg)	PINMUX_DATA(name##_DATA,
+> name##_FN) #define PINMUX_DATA_GP_ALL()		CPU_ALL_PORT(_GP_DATA, unused)
+> 
+>  /*
+
+-- 
+Regards,
+
+Laurent Pinchart
