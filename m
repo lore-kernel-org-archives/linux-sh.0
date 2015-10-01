@@ -1,232 +1,363 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 07 Oct 2015 08:23:45 +0000
-Subject: [PATCH 3/3] gpio: rcar: Remove obsolete platform data support
-Message-Id: <1444206225-25664-4-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 01 Oct 2015 14:37:38 +0000
+Subject: [PATCH v8 02/05] clk: shmobile: Add Renesas R-Car Gen3 CPG support
+Message-Id: <20151001143738.20618.81835.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444206225-25664-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1444206225-25664-1-git-send-email-geert+renesas@glider.be>
+References: <20151001143717.20618.26365.sendpatchset@little-apple>
+In-Reply-To: <20151001143717.20618.26365.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>
-Cc: linux-usb@vger.kernel.org, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-Since commit 4baadb9e05c68962 ("ARM: shmobile: r8a7778: remove obsolete
-setup code"), Renesas R-Car SoCs are only supported in generic DT-only
-ARM multi-platform builds.  The driver doesn't need to use platform data
-anymore, hence remove platform data configuration.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Move gpio_rcar_priv.irq_parent down while we're at it, to prevent gaps
-on 64-bit.
+This V8 patch adds initial CPG support for R-Car Generation 3 and in
+particular the R8A7795 SoC.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+The R-Car Gen3 clock hardware has a register write protection feature that
+needs to be shared between the CPG function and the MSTP hardware somehow.
+So far this feature is simply ignored.
+
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-Commit 4baadb9e05c68962 is now in arm-soc/for-next.
----
- drivers/gpio/gpio-rcar.c                | 77 +++++++++++----------------------
- include/linux/platform_data/gpio-rcar.h | 29 -------------
- 2 files changed, 26 insertions(+), 80 deletions(-)
- delete mode 100644 include/linux/platform_data/gpio-rcar.h
 
-diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
-index 2a8122444614..bb6e363d5178 100644
---- a/drivers/gpio/gpio-rcar.c
-+++ b/drivers/gpio/gpio-rcar.c
-@@ -25,7 +25,6 @@
- #include <linux/module.h>
- #include <linux/of.h>
- #include <linux/pinctrl/consumer.h>
--#include <linux/platform_data/gpio-rcar.h>
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
- #include <linux/spinlock.h>
-@@ -34,12 +33,12 @@
- struct gpio_rcar_priv {
- 	void __iomem *base;
- 	spinlock_t lock;
--	struct gpio_rcar_config config;
- 	struct platform_device *pdev;
- 	struct gpio_chip gpio_chip;
- 	struct irq_chip irq_chip;
--	unsigned int irq_parent;
- 	struct clk *clk;
-+	unsigned int irq_parent;
-+	unsigned has_both_edge_trigger:1;
- };
- 
- #define IOINTSEL 0x00	/* General IO/Interrupt Switching Register */
-@@ -121,7 +120,7 @@ static void gpio_rcar_config_interrupt_input_mode(struct gpio_rcar_priv *p,
- 	gpio_rcar_modify_bit(p, EDGLEVEL, hwirq, !level_trigger);
- 
- 	/* Select one edge or both edges in BOTHEDGE */
--	if (p->config.has_both_edge_trigger)
-+	if (p->has_both_edge_trigger)
- 		gpio_rcar_modify_bit(p, BOTHEDGE, hwirq, both);
- 
- 	/* Select "Interrupt Input Mode" in IOINTSEL */
-@@ -161,7 +160,7 @@ static int gpio_rcar_irq_set_type(struct irq_data *d, unsigned int type)
- 						      false);
- 		break;
- 	case IRQ_TYPE_EDGE_BOTH:
--		if (!p->config.has_both_edge_trigger)
-+		if (!p->has_both_edge_trigger)
- 			return -EINVAL;
- 		gpio_rcar_config_interrupt_input_mode(p, hwirq, true, false,
- 						      true);
-@@ -355,39 +354,29 @@ static const struct of_device_id gpio_rcar_of_table[] = {
- 
- MODULE_DEVICE_TABLE(of, gpio_rcar_of_table);
- 
--static int gpio_rcar_parse_pdata(struct gpio_rcar_priv *p)
-+static int gpio_rcar_parse_dt(struct gpio_rcar_priv *p, unsigned int *npins)
- {
--	struct gpio_rcar_config *pdata = dev_get_platdata(&p->pdev->dev);
- 	struct device_node *np = p->pdev->dev.of_node;
-+	const struct of_device_id *match;
-+	const struct gpio_rcar_info *info;
- 	struct of_phandle_args args;
- 	int ret;
- 
--	if (pdata) {
--		p->config = *pdata;
--	} else if (IS_ENABLED(CONFIG_OF) && np) {
--		const struct of_device_id *match;
--		const struct gpio_rcar_info *info;
--
--		match = of_match_node(gpio_rcar_of_table, np);
--		if (!match)
--			return -EINVAL;
-+	match = of_match_node(gpio_rcar_of_table, np);
-+	if (!match)
-+		return -EINVAL;
- 
--		info = match->data;
-+	info = match->data;
- 
--		ret = of_parse_phandle_with_fixed_args(np, "gpio-ranges", 3, 0,
--						       &args);
--		p->config.number_of_pins = ret = 0 ? args.args[2]
--					 : RCAR_MAX_GPIO_PER_BANK;
--		p->config.gpio_base = -1;
--		p->config.has_both_edge_trigger = info->has_both_edge_trigger;
--	}
-+	ret = of_parse_phandle_with_fixed_args(np, "gpio-ranges", 3, 0, &args);
-+	*npins = ret = 0 ? args.args[2] : RCAR_MAX_GPIO_PER_BANK;
-+	p->has_both_edge_trigger = info->has_both_edge_trigger;
- 
--	if (p->config.number_of_pins = 0 ||
--	    p->config.number_of_pins > RCAR_MAX_GPIO_PER_BANK) {
-+	if (*npins = 0 || *npins > RCAR_MAX_GPIO_PER_BANK) {
- 		dev_warn(&p->pdev->dev,
--			 "Invalid number of gpio lines %u, using %u\n",
--			 p->config.number_of_pins, RCAR_MAX_GPIO_PER_BANK);
--		p->config.number_of_pins = RCAR_MAX_GPIO_PER_BANK;
-+			 "Invalid number of gpio lines %u, using %u\n", *npins,
-+			 RCAR_MAX_GPIO_PER_BANK);
-+		*npins = RCAR_MAX_GPIO_PER_BANK;
- 	}
- 
- 	return 0;
-@@ -401,6 +390,7 @@ static int gpio_rcar_probe(struct platform_device *pdev)
- 	struct irq_chip *irq_chip;
- 	struct device *dev = &pdev->dev;
- 	const char *name = dev_name(dev);
-+	unsigned int npins;
- 	int ret;
- 
- 	p = devm_kzalloc(dev, sizeof(*p), GFP_KERNEL);
-@@ -410,8 +400,8 @@ static int gpio_rcar_probe(struct platform_device *pdev)
- 	p->pdev = pdev;
- 	spin_lock_init(&p->lock);
- 
--	/* Get device configuration from DT node or platform data. */
--	ret = gpio_rcar_parse_pdata(p);
-+	/* Get device configuration from DT node */
-+	ret = gpio_rcar_parse_dt(p, &npins);
- 	if (ret < 0)
- 		return ret;
- 
-@@ -451,8 +441,8 @@ static int gpio_rcar_probe(struct platform_device *pdev)
- 	gpio_chip->label = name;
- 	gpio_chip->dev = dev;
- 	gpio_chip->owner = THIS_MODULE;
--	gpio_chip->base = p->config.gpio_base;
--	gpio_chip->ngpio = p->config.number_of_pins;
-+	gpio_chip->base = -1;
-+	gpio_chip->ngpio = npins;
- 
- 	irq_chip = &p->irq_chip;
- 	irq_chip->name = name;
-@@ -468,8 +458,8 @@ static int gpio_rcar_probe(struct platform_device *pdev)
- 		goto err0;
- 	}
- 
--	ret = gpiochip_irqchip_add(gpio_chip, irq_chip, p->config.irq_base,
--				   handle_level_irq, IRQ_TYPE_NONE);
-+	ret = gpiochip_irqchip_add(gpio_chip, irq_chip, 0, handle_level_irq,
-+				   IRQ_TYPE_NONE);
- 	if (ret) {
- 		dev_err(dev, "cannot add irqchip\n");
- 		goto err1;
-@@ -483,22 +473,7 @@ static int gpio_rcar_probe(struct platform_device *pdev)
- 		goto err1;
- 	}
- 
--	dev_info(dev, "driving %d GPIOs\n", p->config.number_of_pins);
--
--	/* warn in case of mismatch if irq base is specified */
--	if (p->config.irq_base) {
--		ret = irq_find_mapping(gpio_chip->irqdomain, 0);
--		if (p->config.irq_base != ret)
--			dev_warn(dev, "irq base mismatch (%u/%u)\n",
--				 p->config.irq_base, ret);
--	}
--
--	if (p->config.pctl_name) {
--		ret = gpiochip_add_pin_range(gpio_chip, p->config.pctl_name, 0,
--					     gpio_chip->base, gpio_chip->ngpio);
--		if (ret < 0)
--			dev_warn(dev, "failed to add pin range\n");
--	}
-+	dev_info(dev, "driving %d GPIOs\n", npins);
- 
- 	return 0;
- 
-diff --git a/include/linux/platform_data/gpio-rcar.h b/include/linux/platform_data/gpio-rcar.h
-deleted file mode 100644
-index 2d8d69432813..000000000000
---- a/include/linux/platform_data/gpio-rcar.h
-+++ /dev/null
-@@ -1,29 +0,0 @@
--/*
-- * Renesas R-Car GPIO Support
-- *
-- *  Copyright (C) 2013 Magnus Damm
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- */
--
--#ifndef __GPIO_RCAR_H__
--#define __GPIO_RCAR_H__
--
--struct gpio_rcar_config {
--	int gpio_base;
--	unsigned int irq_base;
--	unsigned int number_of_pins;
--	const char *pctl_name;
--	unsigned has_both_edge_trigger:1;
--};
--
--#define RCAR_GP_PIN(bank, pin)		(((bank) * 32) + (pin))
--
--#endif /* __GPIO_RCAR_H__ */
--- 
-1.9.1
+ Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
+ - Removed clk-mstp.o from r8a7795 Makefile
+ - Moved to earlier in the series
 
+ Changes since V6: (Magnus Damm <damm+renesas@opensource.se>)
+ - Moved PLL1 div-by-2 unit to outside of the CPG - thanks Laurent!
+ - Updated table to reflect PLL1 divider move.
+ - Reworked clock registration loop to prevent re-registering clocks.
+
+ Changes since V5: (Magnus Damm <damm+renesas@opensource.se>)
+ - Removed unused spinlock, use 0x3f as mask - thanks Laurent!
+ - Fixed space -> tab for DT binding documentation - thanks Geert!
+ - Postponed PLL1 divide-by-2 rewrite - requires a tad more effort.
+ - Updated commit log
+
+ Changes since V4: (Magnus Damm <damm+renesas@opensource.se>)
+ - Simplified clks array handling - thanks Geert!
+ - Updated th DT binding documentation to reflect latest state
+ - of_property_count_strings() -> of_property_count_u32_elems() fix
+
+ Changes since V3: (Magnus Damm <damm+renesas@opensource.se>)
+ - Reworked driver to incorporate most feedback from Stephen Boyd - thanks!!
+ - Major things like syscon and driver model require more discussion.
+ - Added hunk to build drivers/clk/shmobile if ARCH_RENESAS is set.
+
+ Changes since V2: (Magnus Damm <damm+renesas@opensource.se>)
+ - Reworked driver to rely on clock index instead of strings.
+ - Dropped use of "clock-output-names".
+
+ Earlier versions: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+ Initial version: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+
+ Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt |   32 +
+ drivers/clk/Makefile                                                     |    1 
+ drivers/clk/shmobile/Makefile                                            |    1 
+ drivers/clk/shmobile/clk-rcar-gen3.c                                     |  242 ++++++++++
+ 4 files changed, 276 insertions(+)
+
+--- /dev/null
++++ work/Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt	2015-10-01 18:42:49.020513000 +0900
+@@ -0,0 +1,32 @@
++* Renesas R-Car Gen3 Clock Pulse Generator (CPG)
++
++The CPG generates core clocks for the R-Car Gen3 SoCs. It includes three PLLs
++and several fixed ratio dividers.
++
++Required Properties:
++
++  - compatible: Must be one of
++    - "renesas,r8a7795-cpg-clocks" for the r8a7795 CPG
++    - "renesas,rcar-gen3-cpg-clocks" for the generic R-Car Gen3 CPG
++
++  - reg: Base address and length of the memory resource used by the CPG
++
++  - clocks: References to the parent clocks: first to the EXTAL clock
++  - #clock-cells: Must be 1
++  - clock-indices: Indices of the exported clocks
++
++Example
++-------
++
++	cpg_clocks: cpg_clocks@e6150000 {
++		compatible = "renesas,r8a7795-cpg-clocks",
++			     "renesas,rcar-gen3-cpg-clocks";
++		reg = <0 0xe6150000 0 0x1000>;
++		clocks = <&extal_clk>;
++		#clock-cells = <1>;
++		clock-indices = <
++				R8A7795_CLK_MAIN R8A7795_CLK_PLL0
++				R8A7795_CLK_PLL1 R8A7795_CLK_PLL2
++				R8A7795_CLK_PLL3 R8A7795_CLK_PLL4
++		>;
++	};
+--- 0001/drivers/clk/Makefile
++++ work/drivers/clk/Makefile	2015-10-01 18:42:48.000513000 +0900
+@@ -67,6 +67,7 @@ obj-$(CONFIG_COMMON_CLK_QCOM)		+= qcom/
+ obj-$(CONFIG_ARCH_ROCKCHIP)		+= rockchip/
+ obj-$(CONFIG_COMMON_CLK_SAMSUNG)	+= samsung/
+ obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= shmobile/
++obj-$(CONFIG_ARCH_RENESAS)		+= shmobile/
+ obj-$(CONFIG_ARCH_SIRF)			+= sirf/
+ obj-$(CONFIG_ARCH_SOCFPGA)		+= socfpga/
+ obj-$(CONFIG_PLAT_SPEAR)		+= spear/
+--- 0002/drivers/clk/shmobile/Makefile
++++ work/drivers/clk/shmobile/Makefile	2015-10-01 18:42:59.670513000 +0900
+@@ -8,4 +8,5 @@ obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-
+ obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
+ obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
+ obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
++obj-$(CONFIG_ARCH_R8A7795)		+= clk-rcar-gen3.o clk-div6.o
+ obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o clk-mstp.o clk-div6.o
+--- /dev/null
++++ work/drivers/clk/shmobile/clk-rcar-gen3.c	2015-10-01 18:42:49.020513000 +0900
+@@ -0,0 +1,242 @@
++/*
++ * rcar_gen3 Core CPG Clocks
++ *
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * Based on rcar_gen2 Core CPG Clocks driver.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ */
++
++#include <linux/clk-provider.h>
++#include <linux/clk/shmobile.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/slab.h>
++
++#define RCAR_GEN3_CLK_MAIN	0
++#define RCAR_GEN3_CLK_PLL0	1
++#define RCAR_GEN3_CLK_PLL1	2
++#define RCAR_GEN3_CLK_PLL2	3
++#define RCAR_GEN3_CLK_PLL3	4
++#define RCAR_GEN3_CLK_PLL4	5
++#define RCAR_GEN3_CLK_NR	6
++
++static const char * const rcar_gen3_clk_names[RCAR_GEN3_CLK_NR] = {
++	[RCAR_GEN3_CLK_MAIN] = "main",
++	[RCAR_GEN3_CLK_PLL0] = "pll0",
++	[RCAR_GEN3_CLK_PLL1] = "pll1",
++	[RCAR_GEN3_CLK_PLL2] = "pll2",
++	[RCAR_GEN3_CLK_PLL3] = "pll3",
++	[RCAR_GEN3_CLK_PLL4] = "pll4",
++};
++
++struct rcar_gen3_cpg {
++	struct clk_onecell_data data;
++	void __iomem *reg;
++	struct clk *clks[RCAR_GEN3_CLK_NR];
++};
++
++#define CPG_PLL0CR	0x00d8
++#define CPG_PLL2CR	0x002c
++
++/*
++ * common function
++ */
++#define rcar_clk_readl(cpg, _reg) readl(cpg->reg + _reg)
++
++/*
++ * Reset register definitions.
++ */
++#define MODEMR 0xe6160060
++
++static u32 rcar_gen3_read_mode_pins(void)
++{
++	static u32 mode;
++	static bool mode_valid;
++
++	if (!mode_valid) {
++		void __iomem *modemr = ioremap_nocache(MODEMR, 4);
++
++		BUG_ON(!modemr);
++		mode = ioread32(modemr);
++		iounmap(modemr);
++		mode_valid = true;
++	}
++
++	return mode;
++}
++
++/* -----------------------------------------------------------------------------
++ * CPG Clock Data
++ */
++
++/*
++ *   MD		EXTAL		PLL0	PLL1	PLL2	PLL3	PLL4
++ * 14 13 19 17	(MHz)
++ *-------------------------------------------------------------------
++ * 0  0  0  0	16.66 x 1	x180	x192	x144	x192	x144
++ * 0  0  0  1	16.66 x 1	x180	x192	x144	x128	x144
++ * 0  0  1  0	Prohibited setting
++ * 0  0  1  1	16.66 x 1	x180	x192	x144	x192	x144
++ * 0  1  0  0	20    x 1	x150	x156	x120	x156	x120
++ * 0  1  0  1	20    x 1	x150	x156	x120	x106	x120
++ * 0  1  1  0	Prohibited setting
++ * 0  1  1  1	20    x 1	x150	x156	x120	x156	x120
++ * 1  0  0  0	25    x 1	x120	x128	x96	x128	x96
++ * 1  0  0  1	25    x 1	x120	x128	x96	x84	x96
++ * 1  0  1  0	Prohibited setting
++ * 1  0  1  1	25    x 1	x120	x128	x96	x128	x96
++ * 1  1  0  0	33.33 / 2	x180	x192	x144	x192	x144
++ * 1  1  0  1	33.33 / 2	x180	x192	x144	x128	x144
++ * 1  1  1  0	Prohibited setting
++ * 1  1  1  1	33.33 / 2	x180	x192	x144	x192	x144
++ */
++#define CPG_PLL_CONFIG_INDEX(md)	((((md) & BIT(14)) >> 11) | \
++					 (((md) & BIT(13)) >> 11) | \
++					 (((md) & BIT(19)) >> 18) | \
++					 (((md) & BIT(17)) >> 17))
++struct cpg_pll_config {
++	unsigned int extal_div;
++	unsigned int pll1_mult;
++	unsigned int pll3_mult;
++	unsigned int pll4_mult;
++};
++
++static const struct cpg_pll_config cpg_pll_configs[16] __initconst = {
++/* EXTAL div	PLL1	PLL3	PLL4 */
++	{ 1,	192,	192,	144, },
++	{ 1,	192,	128,	144, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	192,	192,	144, },
++	{ 1,	156,	156,	120, },
++	{ 1,	156,	106,	120, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	156,	156,	120, },
++	{ 1,	128,	128,	96,  },
++	{ 1,	128,	84,	96,  },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 1,	128,	128,	96,  },
++	{ 2,	192,	192,	144, },
++	{ 2,	192,	128,	144, },
++	{ 0,	0,	0,	0,   }, /* Prohibited setting */
++	{ 2,	192,	192,	144, },
++};
++
++/* -----------------------------------------------------------------------------
++ * Initialization
++ */
++
++static struct clk * __init
++rcar_gen3_cpg_register_clk(struct device_node *np, struct rcar_gen3_cpg *cpg,
++			   const struct cpg_pll_config *config,
++			   unsigned int gen3_clk)
++{
++	const char *parent_name = rcar_gen3_clk_names[RCAR_GEN3_CLK_MAIN];
++	unsigned int mult = 1;
++	unsigned int div = 1;
++	u32 value;
++
++	switch (gen3_clk) {
++	case RCAR_GEN3_CLK_MAIN:
++		parent_name = of_clk_get_parent_name(np, 0);
++		div = config->extal_div;
++		break;
++	case RCAR_GEN3_CLK_PLL0:
++		/* PLL0 is a configurable multiplier clock. Register it as a
++		 * fixed factor clock for now as there's no generic multiplier
++		 * clock implementation and we currently have no need to change
++		 * the multiplier value.
++		 */
++		value = rcar_clk_readl(cpg, CPG_PLL0CR);
++		mult = ((value >> 24) & 0x3f) + 1;
++		break;
++	case RCAR_GEN3_CLK_PLL1:
++		mult = config->pll1_mult;
++		break;
++	case RCAR_GEN3_CLK_PLL2:
++		/* PLL2 is a configurable multiplier clock. Register it as a
++		 * fixed factor clock for now as there's no generic multiplier
++		 * clock implementation and we currently have no need to change
++		 * the multiplier value.
++		 */
++		value = rcar_clk_readl(cpg, CPG_PLL2CR);
++		mult = ((value >> 24) & 0x3f) + 1;
++		break;
++	case RCAR_GEN3_CLK_PLL3:
++		mult = config->pll3_mult;
++		break;
++	case RCAR_GEN3_CLK_PLL4:
++		mult = config->pll4_mult;
++		break;
++	default:
++		return ERR_PTR(-EINVAL);
++	}
++
++	return clk_register_fixed_factor(NULL, rcar_gen3_clk_names[gen3_clk],
++					 parent_name, 0, mult, div);
++}
++
++static void __init rcar_gen3_cpg_clocks_init(struct device_node *np)
++{
++	const struct cpg_pll_config *config;
++	struct rcar_gen3_cpg *cpg;
++	u32 cpg_mode;
++	unsigned int i;
++
++	cpg = kzalloc(sizeof(*cpg), GFP_KERNEL);
++	if (!cpg)
++		return;
++
++	cpg->reg = of_iomap(np, 0);
++	if (WARN_ON(cpg->reg = NULL))
++		return;
++
++	cpg_mode = rcar_gen3_read_mode_pins();
++
++	config = &cpg_pll_configs[CPG_PLL_CONFIG_INDEX(cpg_mode)];
++	if (!config->extal_div) {
++		pr_err("%s: Prohibited setting (cpg_mode=0x%x)\n",
++		       __func__, cpg_mode);
++		return;
++	}
++
++	for (i = 0; i < RCAR_GEN3_CLK_NR; ++i)
++		cpg->clks[i] = ERR_PTR(-ENOENT);
++
++	for (i = 0; i < RCAR_GEN3_CLK_NR; ++i) {
++		struct clk *clk;
++		u32 idx;
++		int ret;
++
++		ret = of_property_read_u32_index(np, "clock-indices", i, &idx);
++		if (ret < 0)
++			break;
++
++		if (idx >= RCAR_GEN3_CLK_NR) {
++			pr_err("%s: skipping unsupported %u\n", __func__, idx);
++		} else if (cpg->clks[idx] != ERR_PTR(-ENOENT)) {
++			pr_err("%s: skipping already registered %u\n",
++			       __func__, idx);
++		} else {
++			clk = rcar_gen3_cpg_register_clk(np, cpg, config, idx);
++
++			if (IS_ERR(clk))
++				pr_err("%s: unable to register %u (%ld)\n",
++				       __func__, idx, PTR_ERR(clk));
++			else
++				cpg->clks[idx] = clk;
++		}
++	}
++
++	cpg->data.clks = cpg->clks;
++	cpg->data.clk_num = i;
++
++	of_clk_add_provider(np, of_clk_src_onecell_get, &cpg->data);
++}
++CLK_OF_DECLARE(rcar_gen3_cpg_clks, "renesas,rcar-gen3-cpg-clocks",
++	       rcar_gen3_cpg_clocks_init);
