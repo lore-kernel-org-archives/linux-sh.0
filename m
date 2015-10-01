@@ -1,41 +1,54 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 29 Oct 2015 12:44:57 +0000
-Subject: Re: [PATCH/RFC] drivers: sh: Handle PM_GENERIC_DOMAINS_OF=n with new r8a7795 CPG/MSSR driver
-Message-Id: <CANqRtoRgiUFAPKRQtBWBCHUS0c=puJS+3w9DHuuL9dUXKzVQtw@mail.gmail.com>
+Date: Thu, 01 Oct 2015 14:37:17 +0000
+Subject: [PATCH v8 00/05] Renesas R-Car Gen3 CPG support V8
+Message-Id: <20151001143717.20618.26365.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446117914-6392-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1446117914-6392-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <damm+renesas@opensource.se>, linux-clk <linux-clk@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-Hi Geert,
+Renesas R-Car Gen3 CPG support V8
 
-On Thu, Oct 29, 2015 at 8:25 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> If CONFIG_PM=n (and thus PM_GENERIC_DOMAINS_OF=n), the CPG/MSSR driver
-> doesn't install its Clock Domain. Make sure the needed module clocks are
-> still enabled by using the Legacy Clock Domain.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> I'd be happy to make CONFIG_PM=y mandatory for new SoCs/DTS, so we can
-> drop this patch.
->
-> Thoughts?
+[PATCH v8 01/05] clk: shmobile: Rework CONFIG_ARCH_SHMOBILE_MULTI
+[PATCH v8 02/05] clk: shmobile: Add Renesas R-Car Gen3 CPG support
+[PATCH v8 03/05] clk: shmobile: Add Renesas Module Standby and Reset driver
+[PATCH v8 04/05] clk: shmobile: Add r8a7795 MSSR support
+[PATCH v8 05/05] drivers: sh: Handle PM_GENERIC_DOMAINS_OF=n with r8a7795 MSSR
 
-Yeah, making CONFIG_PM=y mandatory must be the right way forward for new SoCs.
+Here's an updated R-Car Gen3 clock support patch collection through
+a single "easy to use" patch series for drivers/clk and DT documentation
+bits. This version of the series moves over from MSTP to MSSR so the
+patches below are replaced with patch 3-5 above:
 
-> For your convenience, I have push this patch to the
-> topic/r8a7795-drivers-sh-v1 branch of my renesas-drivers repository.  A
-> full integration for R-Car Gen3 is available in the topic/gen3-latest
-> branch.
+[PATCH v7 02/05] clk: shmobile: Add r8a7795 SoC to MSTP bindings
+[PATCH v7 03/05] clk: shmobile: Make MSTP clock-output-names optional
+[PATCH v7 05/05] clk: shmobile: rcar-gen3: Add CPG/MSTP Clock Domain support
 
-Thanks for your help! So shall we work towards dropping your
-workaround and fix CONFIG_PM=y for r8a7795 and newer SoCs?
+With this V8 series the integration DT bits for MSTP need to be converted
+into MSSR format, an updated integration series will be posted sometime soon.
 
-Cheers,
+Apart from MSSR conversion this series requires "clock-output-names" however
+patch 2/5 still needs to be updated. Patch 3/5 and/or patch 4/5 also need
+to be extended to include DT binding information. Apart from lacking DT
+binding documentation I would say that the DT interface is becoming more
+and more stable, so soon it should be possible to fix the integration bits.
 
-/ magnus
+For more details please see each individual patch.
+
+Thanks to Geert for doing the heavy lifting with the MSSR driver.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Developed against 61a7cf8 in renesas-drivers:
+
+Documentation/devicetree/bindings/clock/renesas,rcar-gen3-cpg-clocks.txt |   58 +
+ drivers/clk/Makefile                                                     |    1 
+ drivers/clk/shmobile/Makefile                                            |   25 
+ drivers/clk/shmobile/clk-mssr.c                                          |  393 ++++++++++
+ drivers/clk/shmobile/clk-rcar-gen3.c                                     |  244 ++++++
+ drivers/sh/pm_runtime.c                                                  |    5 
+ include/linux/clk/shmobile.h                                             |    2 
+ 7 files changed, 712 insertions(+), 16 deletions(-)
