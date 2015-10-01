@@ -1,224 +1,211 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Oct 2015 14:21:37 +0000
-Subject: Re: [PATCH] [RFC] pinctrl: sh-pfc: Improve pinmux macros documentation
-Message-Id: <2076556.DQZeNT6qkv@avalon>
+Date: Thu, 01 Oct 2015 14:30:24 +0000
+Subject: Re: [PATCH] Gen2 IPMMU and DU prototype
+Message-Id: <4286267.yRqW5QN1c3@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443017673-12311-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1443017673-12311-1-git-send-email-geert+renesas@glider.be>
+References: <20150930142242.25755.81946.sendpatchset@little-apple>
+In-Reply-To: <20150930142242.25755.81946.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Niklas =?ISO-8859-1?Q?S=F6derlund?= <niso@kth.se>, Koji Matsuoka <koji.matsuoka.xm@rms.renesas.com>, Magnus Damm <damm@opensource.se>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Geert,
+Hi Magnus,
 
-Thank you for the patch. This was much needed.
+Thank you for the patch.
 
-On Wednesday 23 September 2015 16:14:33 Geert Uytterhoeven wrote:
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On Wednesday 30 September 2015 23:22:42 Magnus Damm wrote:
+> From: Magnus Damm <damm+renesas@opensource.se>
+> 
+> Here is a simple hack to enable the IPMMU on R-Car Gen2.
+> 
+> The VGA port on r8a7790 Lager may be driven by the DU
+> and the IPMMU via the modetest utility to output some
+> test image.
+> 
+> Actually the r8a7790 DU device is connected to the
+> IPMMU using two separate uTLBs, but the DU driver
+> is currently supporting all DU instances using a
+> single device. To make testing easily the r8a7790 DU
+> driver code is with this patch hacked to just cover
+> a single DU instance with a single IPMMU uTLB.
+
+You can reference multiple uTLBs in the DT ipmmus property. The ipmmu-vmsa 
+driver currently requires all uTLBs to belong to the same IPMMU instance, 
+which shouldn't be an issue here.
+
+> The map/umap debug printk() will show you if the IPMMU
+> is used or not. Another way could be to XOR the physical
+> address in the map routine to adjust the test image.
+> 
+> Several sources have told me that the DU on Lager is not
+> working as expected. With this hack (with or without IPMMU)
+> at least the VGA output seems fine. So it would be good
+> to look into HDMI and LVDS as well as unmodified VGA
+> support for the DU on the Lager board.
+> 
+> Also, we need to figure out how to modify the DU driver
+> to support multiple uTLBs.
+> 
+> Not for upstream merge.
+> 
+> Not-Yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 > ---
-> Please review and comment!
 > 
->   - I still have a hard time understanding the subtilties of the various
->     PINMUX_IPSR_*() macros,
-
-So do we all :-)
-
->   - Which macro is most appropriate for describing single-function pins:
->     PINMUX_DATA() or PINMUX_IPSR_NOGP()?
->     (cfr. "[RFC] pinctrl: sh-pfc: r8a7795: Add pinmux data for
->      single-function pins",
->      http://www.spinics.net/lists/linux-sh/msg44823.html)
+>  arch/arm/boot/dts/r8a7790.dtsi        |    3 ++-
+>  arch/arm/boot/dts/r8a7791.dtsi        |    3 ++-
+>  arch/arm/mm/dma-mapping.c             |    4 ++--
+>  drivers/gpu/drm/rcar-du/rcar_du_drv.c |    6 +++---
+>  drivers/iommu/ipmmu-vmsa.c            |    8 ++++++--
+>  drivers/of/device.c                   |    6 +++---
+>  6 files changed, 18 insertions(+), 12 deletions(-)
 > 
-> Thanks!
-> ---
->  drivers/pinctrl/sh-pfc/sh_pfc.h | 77 +++++++++++++++++++++++++++++++++++++-
->  1 file changed, 76 insertions(+), 1 deletion(-)
+> --- 0001/arch/arm/boot/dts/r8a7790.dtsi
+> +++ work/arch/arm/boot/dts/r8a7790.dtsi	2015-09-29 15:04:37.540513000 +0900
+> @@ -882,6 +882,7 @@
+>  			 <&mstp7_clks R8A7790_CLK_LVDS0>,
+>  			 <&mstp7_clks R8A7790_CLK_LVDS1>;
+>  		clock-names = "du.0", "du.1", "du.2", "lvds.0", "lvds.1";
+> +		iommus = <&ipmmu_mx 15>;
+>  		status = "disabled";
 > 
-> diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h
-> b/drivers/pinctrl/sh-pfc/sh_pfc.h index e18e306b4ac276c7..434209c8e22e72fc
-> 100644
-> --- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-> +++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-> @@ -95,10 +95,31 @@ struct pinmux_cfg_reg {
->  	const u8 *var_field_width;
->  };
+>  		ports {
+> @@ -1805,7 +1806,7 @@
+>  		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
+>  			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
+>  		#iommu-cells = <1>;
+> -		status = "disabled";
+> +		status = "okay";
+>  	};
 > 
-> +/*
-> + * Describe a config register consisting of multiple fixed-width fields
-
-Slightly nitpicking: instead of fixed-width I'd say
-
-"Describe a config register consisting of several fields of the same width"
-
-This is more important for the variable-width fields in the documentation of 
-the PINMUX_CFG_REG_VAR macro, as variable-width could be understood as fields 
-which length varies at runtime. For that register I would say
-
-"Describe a config register consisting of several fields of different widths"
-
-Feel free to ignore this comment if you think it's overkill.
-
-> + *   - name: Register name (unused, for documentation purposes only)
-> + *   - r: Physical register address
-> + *   - r_width: Width of the register (in bits)
-> + *   - f_width: Width of the fixed-width register fields (in bits)
-> + * This macro must be followed by initialization data: For each register
-> field
-> + * (from left to right, i.e. MSB to LSB), 2^f_width enum IDs must be
-> specified,
-> + * one for each possible combination of the register field bit values.
-> + */
->  #define PINMUX_CFG_REG(name, r, r_width, f_width) \
->  	.reg = r, .reg_width = r_width, .field_width = f_width,		\
->  	.enum_ids = (const u16 [(r_width / f_width) * (1 << f_width)])
+>  	ipmmu_rt: mmu@ffc80000 {
+> --- 0001/arch/arm/boot/dts/r8a7791.dtsi
+> +++ work/arch/arm/boot/dts/r8a7791.dtsi	2015-09-29 14:15:26.610513000 +0900
+> @@ -919,6 +919,7 @@
+>  			 <&mstp7_clks R8A7791_CLK_DU1>,
+>  			 <&mstp7_clks R8A7791_CLK_LVDS0>;
+>  		clock-names = "du.0", "du.1", "lvds.0";
+> +		iommus = <&ipmmu_mx 15>;
+>  		status = "disabled";
 > 
-> +/*
-> + * Describe a config register consisting of multiple variable-width fields
-> + *   - name: Register name (unused, for documentation purposes only)
-> + *   - r: Physical register address
-> + *   - r_width: Width of the register (in bits)
-> + *   - var_fw0, var_fwn...: List of widths of the register fields (in
-> bits),
-> + *                          From left to right (i.e. MSB to LSB)
-> + * This macro must be followed by initialization data: For each register
-> field
-> + * (from left to right, i.e. MSB to LSB), 2^var_fwi enum IDs must be
-> specified,
-> + * one for each possible combination of the register field bit values.
-> + */
->  #define PINMUX_CFG_REG_VAR(name, r, r_width, var_fw0, var_fwn...) \
->  	.reg = r, .reg_width = r_width,	\
->  	.var_field_width = (const u8 [r_width]) \
-> @@ -111,6 +132,14 @@ struct pinmux_data_reg {
->  	const u16 *enum_ids;
->  };
+>  		ports {
+> @@ -1618,7 +1619,7 @@
+>  		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
+>  			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
+>  		#iommu-cells = <1>;
+> -		status = "disabled";
+> +		status = "okay";
+>  	};
 > 
-> +/*
-> + * Describe a data register
-> + *   - name: Register name (unused, for documentation purposes only)
-> + *   - r: Physical register address
-> + *   - r_width: Width of the register (in bits)
-> + * This macro must be followed by initialization data: For each register
-> bit
-> + * (from left to right, i.e. MSB to LSB), one enum ID must be specified.
-> + */
->  #define PINMUX_DATA_REG(name, r, r_width) \
->  	.reg = r, .reg_width = r_width,	\
->  	.enum_ids = (const u16 [r_width]) \
-> @@ -119,6 +148,10 @@ struct pinmux_irq {
->  	const short *gpios;
->  };
+>  	ipmmu_rt: mmu@ffc80000 {
+> --- 0001/arch/arm/mm/dma-mapping.c
+> +++ work/arch/arm/mm/dma-mapping.c	2015-09-29 14:58:51.150513000 +0900
+> @@ -1998,7 +1998,7 @@ static int __arm_iommu_attach_device(str
+>  	kref_get(&mapping->kref);
+>  	to_dma_iommu_mapping(dev) = mapping;
 > 
-> +/*
-> + * Describe the mapping from GPIOs to a single IRQ
-> + *   - ids...: List of GPIOs that are mapped to the same IRQ
-> + */
->  #define PINMUX_IRQ(ids...)			   \
->  	{ .gpios = (const short []) { ids, -1 } }
+> -	pr_debug("Attached IOMMU controller to %s device.\n", dev_name(dev));
+> +	pr_info("Attached IOMMU controller to %s device.\n", dev_name(dev));
+>  	return 0;
+>  }
 > 
-> @@ -180,16 +213,58 @@ struct sh_pfc_soc_info {
->   * sh_pfc_soc_info pinmux_data array macros
+> @@ -2043,7 +2043,7 @@ static void __arm_iommu_detach_device(st
+>  	kref_put(&mapping->kref, release_iommu_mapping);
+>  	to_dma_iommu_mapping(dev) = NULL;
+> 
+> -	pr_debug("Detached IOMMU controller from %s device.\n", dev_name(dev));
+> +	pr_info("Detached IOMMU controller from %s device.\n", dev_name(dev));
+>  }
+> 
+>  /**
+> --- 0001/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+> +++ work/drivers/gpu/drm/rcar-du/rcar_du_drv.c	2015-09-29 
+15:05:31.520513000
+> +0900 @@ -60,13 +60,13 @@ static const struct rcar_du_device_info
+>  	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK
+> 
+>  		  | RCAR_DU_FEATURE_EXT_CTRL_REGS,
+> 
+>  	.quirks = RCAR_DU_QUIRK_ALIGN_128B | RCAR_DU_QUIRK_LVDS_LANES,
+> -	.num_crtcs = 3,
+> +	.num_crtcs = 2,
+>  	.routes = {
+>  		/* R8A7790 has one RGB output, two LVDS outputs and one
+>  		 * (currently unsupported) TCON output.
+>  		 */
+>  		[RCAR_DU_OUTPUT_DPAD0] = {
+> -			.possible_crtcs = BIT(2) | BIT(1) | BIT(0),
+> +			.possible_crtcs = BIT(1) | BIT(0),
+>  			.encoder_type = DRM_MODE_ENCODER_NONE,
+>  			.port = 0,
+>  		},
+> @@ -76,7 +76,7 @@ static const struct rcar_du_device_info
+>  			.port = 1,
+>  		},
+>  		[RCAR_DU_OUTPUT_LVDS1] = {
+> -			.possible_crtcs = BIT(2) | BIT(1),
+> +			.possible_crtcs = BIT(1),
+>  			.encoder_type = DRM_MODE_ENCODER_LVDS,
+>  			.port = 2,
+>  		},
+> --- 0001/drivers/iommu/ipmmu-vmsa.c
+> +++ work/drivers/iommu/ipmmu-vmsa.c	2015-09-29 15:12:31.610513000 +0900
+> @@ -7,7 +7,7 @@
+>   * it under the terms of the GNU General Public License as published by
+>   * the Free Software Foundation; version 2 of the License.
 >   */
+> -
+> +#define DEBUG
+>  #include <linux/delay.h>
+>  #include <linux/dma-mapping.h>
+>  #include <linux/err.h>
+> @@ -544,9 +544,11 @@ static int ipmmu_map(struct iommu_domain
+>  {
+>  	struct ipmmu_vmsa_domain *domain = to_vmsa_domain(io_domain);
 > 
-> +/*
-> + * Describe generic pinmux data
-> + *   - data_or_mark: *_DATA or *_MARK enum ID
-> + *   - ids...: List of enum IDs to associate with data_or_mark
-> + */
->  #define PINMUX_DATA(data_or_mark, ids...)	data_or_mark, ids, 0
-> 
-> +/*
-> + * Describe a pinmux configuration without GPIO function that needs
-> + * configuration in a Peripheral Function Select Register (IPSR)
-> + *   - ipsr: IPSR field (unused, for documentation purposes only)
-> + *   - fn: Function name
-> + */
->  #define PINMUX_IPSR_NOGP(ispr, fn)					\
-
-While you're at it, could you s/ispr/ipsr/ ?
-
->  	PINMUX_DATA(fn##_MARK, FN_##fn)
+> +	printk("xxx map 0x%08lx <-> %pad %zu\n", iova, &paddr, size);
 > +
-> +/*
-> + * Describe a pinmux configuration with GPIO function that needs
-> configuration
-> + * in a Peripheral Function Select Register (IPSR)
-> + *   - ipsr: IPSR field
-> + *   - fn: Function name
-> + */
->  #define PINMUX_IPSR_DATA(ipsr, fn)					\
->  	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ipsr)
-
-This one is confusing. While ipsr refers to the name of an IPSR field, that's 
-for documentation purpose only (the IPSR fields are not named in the code but 
-they're mentioned in comments in the IPSR register definitions). After 
-expansion FN_##ipsr refers to a field value of a GSPR register. For instance
-
-	PINMUX_IPSR_DATA(IP0_0, D0)
-
-will expand to
-
-	D0_MARK, FN_D0, FN_IP0_0
-
-When applying that configuration FN_D0 will set the IPSR bits to select the D0 
-function, while FN_IP0_0 will set the GSPR bits to set the pin mux to function 
-instead of GPIO.
-
-I wonder whether we should rename the macros to make their purpose clearer. 
-This one should really convey the above meaning explicitly using a name that 
-shows that both a GPIO/function mux and a function selector mux are used.
-
+>  	if (!domain)
+>  		return -ENODEV;
+> -
 > +
-> +/*
-> + * Describe a pinmux configuration where ???
-> + *   - ipsr: IPSR field
-> + *   - fn: Function name
-> + *   - ms: Configuration register selector
-> + */
->  #define PINMUX_IPSR_NOGM(ispr, fn, ms)					\
->  	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ms)
-
-MSEL adds another muxing level that muxes modules as a whole instead of 
-individual pins. I'm not sure exactly how it's wired up at the hardware level. 
-It would be interesting to find out the exact hardware structure of the pin 
-muxes to hopefully better name (and possibly structure) the driver constructs.
-
-PINMUX_IPSR_NOGM really means PINMUX_IPSR_NOGP_MSEL, but that would be longer.
-
-> +/*
-> + * Describe a pinmux configuration where the pinmux function has no
-> + * representation in the configuration registers but instead solely
-> + * depends on a group selection.
-> + *   - ipsr: IPSR field
-> + *   - fn: Function name
-> + *   - ms: Group selector
-> + */
->  #define PINMUX_IPSR_NOFN(ipsr, fn, ms)					\
->  	PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##ms)
-
-That macro is used by EMEV2 only. Maybe we could move it there.
-
-> +/*
-> + * Describe a pinmux configuration where the pinmux function has a
-> + * representation in a configuration register.
-> + *   - ipsr: IPSR field
-> + *   - fn: Function name
-> + *   - ms: Configuration register selector
-> + */
->  #define PINMUX_IPSR_MSEL(ipsr, fn, ms)					\
->  	PINMUX_DATA(fn##_MARK, FN_##ms, FN_##ipsr, FN_##fn)
+>  	return domain->iop->map(domain->iop, iova, paddr, size, prot);
+>  }
 > 
-> @@ -322,7 +397,7 @@ struct sh_pfc_soc_info {
->  	PINMUX_GPIO_FN(GPIO_FN_##str, PINMUX_FN_BASE, str##_MARK)
+> @@ -555,6 +557,8 @@ static size_t ipmmu_unmap(struct iommu_d
+>  {
+>  	struct ipmmu_vmsa_domain *domain = to_vmsa_domain(io_domain);
 > 
->  /*
-> - * PORTnCR macro
-> + * PORTnCR helper macro for SH-Mobile/R-Mobile
->   */
->  #define PORTCR(nr, reg)							\
->  	{								\
+> +	printk("xxx unmap 0x%08lx %zu\n", iova, size);
+> +
+>  	return domain->iop->unmap(domain->iop, iova, size);
+>  }
+> 
+> --- 0001/drivers/of/device.c
+> +++ work/drivers/of/device.c	2015-09-29 15:00:10.680513000 +0900
+> @@ -124,7 +124,7 @@ void of_dma_configure(struct device *dev
+>  			dev_err(dev, "Adjusted size 0x%llx invalid\n", size);
+>  			return;
+>  		}
+> -		dev_dbg(dev, "dma_pfn_offset(%#08lx)\n", offset);
+> +		dev_info(dev, "dma_pfn_offset(%#08lx)\n", offset);
+>  	}
+> 
+>  	dev->dma_pfn_offset = offset;
+> @@ -139,11 +139,11 @@ void of_dma_configure(struct device *dev
+>  			     DMA_BIT_MASK(ilog2(dma_addr + size)));
+> 
+>  	coherent = of_dma_is_coherent(np);
+> -	dev_dbg(dev, "device is%sdma coherent\n",
+> +	dev_info(dev, "device is%sdma coherent\n",
+>  		coherent ? " " : " not ");
+> 
+>  	iommu = of_iommu_configure(dev, np);
+> -	dev_dbg(dev, "device is%sbehind an iommu\n",
+> +	dev_info(dev, "device is%sbehind an iommu\n",
+>  		iommu ? " " : " not ");
+> 
+>  	arch_setup_dma_ops(dev, dma_addr, size, iommu, coherent);
 
 -- 
 Regards,
