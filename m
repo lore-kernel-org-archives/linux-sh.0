@@ -1,30 +1,56 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 06 Oct 2015 14:47:09 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Clk Updates for v4.4
-Message-Id: <4977830.HvfsxT5pKz@wuerfel>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 01 Oct 2015 10:01:29 +0000
+Subject: RE: [PATCH] phy: rcar-gen3-usb2: Add R-Car Gen3 USB2 PHY driver
+Message-Id: <SG2PR06MB09198E86925430DC0D500B59D84C0@SG2PR06MB0919.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1443072085.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1443072085.git.horms+renesas@verge.net.au>
+References: <1440493835-6732-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <55FBAA4D.3000704@ti.com> <56000DB2.5010004@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Rob Herring <robh@kernel.org>, Kishon Vijay Abraham I <kishon@ti.com>
+Cc: "robh+dt@kernel.org" <robh+dt@kernel.org>, "pawel.moll@arm.com" <pawel.moll@arm.com>, "mark.rutland@arm.com" <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, "galak@codeaurora.org" <galak@codeaurora.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-On Thursday 24 September 2015 14:29:59 Simon Horman wrote:
-> Renesas ARM Based SoC Clk Updates for v4.4
-> 
-> * Consider "zb_clk" suitable for power management
-> 
->   This part of a multi-stage effort by Geert Uytterhoeven to add:
-> 
->   "Clock Domain support to the Clock Pulse Generator (CPG) Module Stop
->    (MSTP) Clocks driver using the generic PM Domain, to be used on shmobile
->    SoCs without device power domains (R-Car Gen1 and Gen2, RZ).  This allows
->    to power-manage the module clocks of SoC devices that are part of the
->    CPG/MSTP Clock Domain using Runtime PM, or for system suspend/resume,
->    similar to SoCs with device power domains (SH-Mobile and R-Mobile)."
-> 
+Hi Rob,
 
-Pulled into next/drivers, thanks!
+> Sent: Friday, September 25, 2015 9:42 PM
+> 
+> Hi Rob,
+> 
+> Thank you for your comment!
+> And, I'm sorry for the delayed response.
+> 
+> > Sent: Monday, September 21, 2015 11:01 PM
+> >
+> > On 09/18/2015 01:08 AM, Kishon Vijay Abraham I wrote:
+< snip >
+> > >> +Example (R-Car H3):
+> > >> +
+> > >> +	usb-phy@ee080200 {
+> > >> +		compatible = "renesas,usb2-phy-r8a7795";
+> > >> +		reg = <0 0xee080200 0 0x6ff>, <0 0xe6590100 0 0x100>;
+> > >> +		reg-names = "usb2", "hsusb";
+> > >
+> > > hsusb is missing in Documentation.
+> >
+> > usb2 is the host controller? It is questionable that these should be
+> > combined. Does this appear under another node? If so, don't overlap
+> > resources in the DT.
+> 
+> Thank you for the point.
+> I don't think that this appears under another node.
+> However, to avoid such a situation, I should change the name somehow.
 
-	Arnd
+Perhaps I misunderstood your point. So, let me comment below again:
+
+- This "usb2" means the partial registers of USB 2.0 host block.
+  That host registers can control the USB2.0 PHY.
+  This "hsusb" means the partial registers of USB 2.0 peripheral block.
+  That peripheral registers can control the selector (host or peripheral).
+  So, these should be combined in this driver.
+
+- These resources don't appear under another nodes.
+
+Best regards,
+Yoshihiro Shimoda
+
