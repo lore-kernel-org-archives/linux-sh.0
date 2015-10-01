@@ -1,22 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 23 Oct 2015 00:24:17 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7794: Disable all IPMMU nodes by default
-Message-Id: <20151023002417.GE15844@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 01 Oct 2015 22:05:12 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: r8a7794: add USB PHY DT support
+Message-Id: <4141247.ev8chFQgXD@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151018052656.3608.65682.sendpatchset@little-apple>
-In-Reply-To: <20151018052656.3608.65682.sendpatchset@little-apple>
+References: <4938706.NQELE8A71r@wasted.cogentembedded.com>
+In-Reply-To: <4938706.NQELE8A71r@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Oct 18, 2015 at 02:26:56PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> The r8a7794 IPMMU nodes for MX and DS are currently lacking
-> a line containing 'status = "disabled"', fix this by
-> making sure they are disabled like all other IPMMU nodes.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Define the R8A7794 generic part of the USB PHY device node. It is up to the
+board file to enable the device.
 
-Thanks, I have queued this up for v4.5.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+Changes in version 2:
+- added the "power-domains" property.
+
+ arch/arm/boot/dts/r8a7794.dtsi |   20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7794.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7794.dtsi
++++ renesas/arch/arm/boot/dts/r8a7794.dtsi
+@@ -690,6 +690,26 @@
+ 				 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
++	usbphy: usb-phy@e6590100 {
++		compatible = "renesas,usb-phy-r8a7794";
++		reg = <0 0xe6590100 0 0x100>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		clocks = <&mstp7_clks R8A7794_CLK_HSUSB>;
++		clock-names = "usbhs";
++		power-domains = <&cpg_clocks>;
++		status = "disabled";
++
++		usb0: usb-channel@0 {
++			reg = <0>;
++			#phy-cells = <1>;
++		};
++		usb2: usb-channel@2 {
++			reg = <2>;
++			#phy-cells = <1>;
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+
