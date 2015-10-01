@@ -1,57 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 30 Oct 2015 00:03:10 +0000
-Subject: Re: [PATCH] i2c: rcar: make sure clocks are on when doing hw init
-Message-Id: <87io5pgrcr.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 01 Oct 2015 07:22:16 +0000
+Subject: [PATCH 0/2] dmaengine: usb-dmac: Runtime PM Related Fixes
+Message-Id: <1443684138-32252-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446146356-26166-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1446146356-26166-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>
+To: Vinod Koul <vinod.koul@intel.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
+	Hi Vinod, Shimoda-san,
 
-Hi, Wolfram
+This series fixes a crash and an imbalance in the usb-dmac driver.
 
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> 
-> Reported-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> ---
->  drivers/i2c/busses/i2c-rcar.c | 4 +++-
->  1 file changed, 3 insertions(+), 1 deletion(-)
-> 
-> diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-> index 616433d387cdb2..ef26e933b1e9cb 100644
-> --- a/drivers/i2c/busses/i2c-rcar.c
-> +++ b/drivers/i2c/busses/i2c-rcar.c
-> @@ -612,7 +612,10 @@ static int rcar_i2c_probe(struct platform_device *pdev)
->  	if (IS_ERR(priv->io))
->  		return PTR_ERR(priv->io);
->  
-> +	pm_runtime_enable(dev);
-> +	pm_runtime_get_sync(dev);
->  	rcar_i2c_init(priv);
-> +	pm_runtime_put(dev);
+Geert Uytterhoeven (2):
+  dmaengine: usb-dmac: Fix crash on runtime suspend
+  dmaengine: usb-dmac: Fix pm_runtime_{enable,disable}() imbalance
 
-Please correct me if I'm misunderstanding, but in my experience,
-above rcar_i2c_init() result can be removed if SoC has power-off feature,
-and if IP doesn't keep register value power-off case ?
-This case register doesn't keep myfunc_A's setting,
-because it calls pm_runtime_put()
+ drivers/dma/sh/usb-dmac.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
-     pm_runtime_get_sync()
-     myfunc_A()
-     pm_runtime_put()
-     ...
-     pm_runtime_get_sync()
-     myfunc_B()
-     pm_runtime_put()
+-- 
+1.9.1
 
-It should be this ?
+Gr{oetje,eeting}s,
 
-     pm_runtime_get_sync()
-     myfunc_A()
-     myfunc_B()
-     pm_runtime_put()
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
