@@ -1,53 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Oct 2015 01:57:49 +0000
-Subject: [PATCH 12/28] ARM: shmobile: koelsch: use CCF for audio clock
-Message-Id: <c19c84ff3ab1280894bb2cdd99027f751922e2ba.1444182812.git.horms+renesas@verge.net.au>
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Date: Thu, 01 Oct 2015 12:03:31 +0000
+Subject: [PATCH 1/2] V4L2: platform: rcar_jpu: remove redundant code
+Message-Id: <1443701012-20730-2-git-send-email-mikhail.ulyanov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444182812.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
+References: <1443701012-20730-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
+In-Reply-To: <1443701012-20730-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: hverkuil@xs4all.nl, horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, mchehab@osg.samsung.com
+Cc: laurent.pinchart@ideasonboard.com, j.anaszewski@samsung.com, kamil@wypas.org, sergei.shtylyov@cogentembedded.com, devicetree@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Remove redundant code. Following code line do what we want.
 
-Because of historical reason, audio clock didn't use CCF.
-Let's use it now.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+ drivers/media/platform/rcar_jpu.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index dc158845afdc..fc44ea361a4b 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -242,6 +242,13 @@
- 			  1800000 0>;
- 	};
- 
-+	audio_clock: clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <11289600>;
-+		clock-output-names = "audio_clock";
-+	};
-+
- 	rsnd_ak4643: sound {
- 		compatible = "simple-audio-card";
- 
-@@ -255,7 +262,7 @@
- 
- 		sndcodec: simple-audio-card,codec {
- 			sound-dai = <&ak4643>;
--			system-clock-frequency = <11289600>;
-+			clocks = <&audio_clock>;
- 		};
- 	};
- 
+diff --git a/drivers/media/platform/rcar_jpu.c b/drivers/media/platform/rcar_jpu.c
+index 2973f07..039bbbc 100644
+--- a/drivers/media/platform/rcar_jpu.c
++++ b/drivers/media/platform/rcar_jpu.c
+@@ -1555,9 +1555,6 @@ static irqreturn_t jpu_irq_handler(int irq, void *dev_id)
+ 		dst_buf->v4l2_buf.timestamp = src_buf->v4l2_buf.timestamp;
+ 		if (src_buf->v4l2_buf.flags & V4L2_BUF_FLAG_TIMECODE)
+ 			dst_buf->v4l2_buf.timecode = src_buf->v4l2_buf.timecode;
+-		dst_buf->v4l2_buf.flags &= ~V4L2_BUF_FLAG_TSTAMP_SRC_MASK;
+-		dst_buf->v4l2_buf.flags |= src_buf->v4l2_buf.flags &
+-					V4L2_BUF_FLAG_TSTAMP_SRC_MASK;
+ 		dst_buf->v4l2_buf.flags = src_buf->v4l2_buf.flags &
+ 			(V4L2_BUF_FLAG_TIMECODE | V4L2_BUF_FLAG_KEYFRAME |
+ 			 V4L2_BUF_FLAG_PFRAME | V4L2_BUF_FLAG_BFRAME |
 -- 
-2.1.4
+2.5.1
 
