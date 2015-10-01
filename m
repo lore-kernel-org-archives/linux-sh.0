@@ -1,39 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 29 Oct 2015 23:27:58 +0000
-Subject: [PATCH v5 12/14] arm64: defconfig: add Renesas sound and AK4613 support
-Message-Id: <1446161280-23097-13-git-send-email-horms+renesas@verge.net.au>
+From: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
+Date: Thu, 01 Oct 2015 12:03:32 +0000
+Subject: [PATCH 2/2] V4L2: platform: rcar_jpu: switch off clock on release later
+Message-Id: <1443701012-20730-3-git-send-email-mikhail.ulyanov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
+References: <1443701012-20730-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
+In-Reply-To: <1443701012-20730-1-git-send-email-mikhail.ulyanov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: hverkuil@xs4all.nl, horms@verge.net.au, magnus.damm@gmail.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, mchehab@osg.samsung.com
+Cc: laurent.pinchart@ideasonboard.com, j.anaszewski@samsung.com, kamil@wypas.org, sergei.shtylyov@cogentembedded.com, devicetree@vger.kernel.org, linux-media@vger.kernel.org, linux-sh@vger.kernel.org, Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Give JPU peripheral chance to finish current job.
+Don't switch off clock until context release.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Mikhail Ulyanov <mikhail.ulyanov@cogentembedded.com>
 ---
- arch/arm64/configs/defconfig | 5 +++++
- 1 file changed, 5 insertions(+)
+ drivers/media/platform/rcar_jpu.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index 618f156fb90b..d037aaaa3e02 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -139,6 +139,11 @@ CONFIG_FRAMEBUFFER_CONSOLE=y
- CONFIG_LOGO=y
- # CONFIG_LOGO_LINUX_MONO is not set
- # CONFIG_LOGO_LINUX_VGA16 is not set
-+CONFIG_SOUND=y
-+CONFIG_SND=y
-+CONFIG_SND_SOC=y
-+CONFIG_SND_SOC_RCAR=y
-+CONFIG_SND_SOC_AK4613=y
- CONFIG_USB=y
- CONFIG_USB_EHCI_HCD=y
- CONFIG_USB_EHCI_HCD_PLATFORM=y
+diff --git a/drivers/media/platform/rcar_jpu.c b/drivers/media/platform/rcar_jpu.c
+index 039bbbc..aa327e6 100644
+--- a/drivers/media/platform/rcar_jpu.c
++++ b/drivers/media/platform/rcar_jpu.c
+@@ -1296,17 +1296,17 @@ static int jpu_release(struct file *file)
+ 	struct jpu *jpu = video_drvdata(file);
+ 	struct jpu_ctx *ctx = fh_to_ctx(file->private_data);
+ 
+-	mutex_lock(&jpu->mutex);
+-	if (--jpu->ref_count = 0)
+-		clk_disable_unprepare(jpu->clk);
+-	mutex_unlock(&jpu->mutex);
+-
+ 	v4l2_m2m_ctx_release(ctx->fh.m2m_ctx);
+ 	v4l2_ctrl_handler_free(&ctx->ctrl_handler);
+ 	v4l2_fh_del(&ctx->fh);
+ 	v4l2_fh_exit(&ctx->fh);
+ 	kfree(ctx);
+ 
++	mutex_lock(&jpu->mutex);
++	if (--jpu->ref_count = 0)
++		clk_disable_unprepare(jpu->clk);
++	mutex_unlock(&jpu->mutex);
++
+ 	return 0;
+ }
+ 
 -- 
-2.1.4
+2.5.1
 
