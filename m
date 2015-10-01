@@ -1,28 +1,22 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 08 Oct 2015 15:21:05 +0000
-Subject: Re: [GIT PULL v2] Renesas ARM Based SoC DT Updates for v4.4
-Message-Id: <6703006.5arY5jeCbV@wuerfel>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Oct 2015 05:06:15 +0000
+Subject: Re: [PATCH] irqchip: renesas-intc-irqpin: r8a7778 IRLM setup support
+Message-Id: <20151001050614.GB15910@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444182812.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
+References: <1443607387-19147-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1443607387-19147-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-On Wednesday 07 October 2015 10:58:00 Simon Horman wrote:
-> The main differences since v1 of this pull-request are:
+On Wed, Sep 30, 2015 at 12:03:07PM +0200, Geert Uytterhoeven wrote:
+> From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 > 
-> * Removed "Add missing CPG/MSTP Clock Domain for sound "* patches
->   which are fixes now present in the ARM SoC fixes branch
->   via the renesas-fixes-for-v4.3 tag of the renesas tree.
-> * Enable more hardware via DT
->   + Enable PCI, USB PHY and HS, and VIN support on r8a7794/Silk
->   + Add initial support for r8a7791/porter
->   + Add common file for AA121TD01 panel
+> Works the same as on r8a7779.
 > 
-> 
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Merged into next/dt, thanks!
-
-	Arnd
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
