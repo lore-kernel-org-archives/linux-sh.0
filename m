@@ -1,124 +1,89 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 01 Oct 2015 10:53:22 +0000
-Subject: RE: [PATCH 1/2] dmaengine: usb-dmac: Fix crash on runtime suspend
-Message-Id: <SG2PR06MB091969749911331385AB7E83D84C0@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 01 Oct 2015 12:26:55 +0000
+Subject: Re: [PATCH 1/2] dmaengine: usb-dmac: Fix crash on runtime suspend
+Message-Id: <560D268F.8090705@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1443684138-32252-1-git-send-email-geert+renesas@glider.be>
  <1443684138-32252-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1443684138-32252-2-git-send-email-geert+renesas@glider.be>
+ <SG2PR06MB091969749911331385AB7E83D84C0@SG2PR06MB0919.apcprd06.prod.outlook.com>
+In-Reply-To: <SG2PR06MB091969749911331385AB7E83D84C0@SG2PR06MB0919.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
-To: Geert Uytterhoeven <geert+renesas@glider.be>, Vinod Koul <vinod.koul@intel.com>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, "dmaengine@vger.kernel.org" <dmaengine@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Vinod Koul <vinod.koul@intel.com>
+Cc: "dmaengine@vger.kernel.org" <dmaengine@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>
 
-Hi Geert-san,
+Hello.
 
-> Sent: Thursday, October 01, 2015 4:22 PM
->=20
-> If CONFIG_PREEMPT=3Dy:
->=20
->     Unable to handle kernel NULL pointer dereference at virtual address 0=
-0000014
->     pgd =3D c0003000
->     [00000014] *pgd=80000040004003, *pmd=00000000
->     Internal error: Oops: 206 [#1] PREEMPT SMP ARM
->     Modules linked in:
->     CPU: 0 PID: 17 Comm: kworker/0:1 Tainted: G        W       4.3.0-rc3-=
-koelsch-022
->     71-g705498fc5e6a5da8-dirty #1789
->     Hardware name: Generic R8A7791 (Flattened Device Tree)
->     Workqueue: pm pm_runtime_work
->     task: ef578e40 ti: ef57a000 task.ti: ef57a000
->     PC is at usb_dmac_chan_halt+0xc/0xc0
->     LR is at usb_dmac_runtime_suspend+0x28/0x38
->     pc : [<c023c880>]    lr : [<c023c95c>]    psr: 80000113
->     sp : ef57bdf8  ip : 00000008  fp : 00000003
->     r10: 00000008  r9 : c06ab928  r8 : ef49e810
->     r7 : 00000000  r6 : 000000ac  r5 : ef770010  r4 : 00000000
->     r3 : 00000000  r2 : 8ffc2b84  r1 : 00000000  r0 : ef770010
->     Flags: Nzcv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment kernel
->     Control: 30c5307d  Table: 40003000  DAC: fffffffd
->     Process kworker/0:1 (pid: 17, stack limit =3D 0xef57a210)
->     Stack: (0xef57bdf8 to 0xef57c000)
->=20
->     [...
->=20
->     [<c023c880>] (usb_dmac_chan_halt) from [<c023c95c>] (usb_dmac_runtime=
-_suspend+0x28/0x38)
->     [<c023c95c>] (usb_dmac_runtime_suspend) from [<c027b25c>] (pm_genpd_r=
-untime_suspend+0x74/0x23c)
->=20
-> This happens because usb_dmac_probe() calls pm_runtime_put() before
-> usb_dmac_chan_probe(), leading to the device being suspended before the
-> DMA channels are initialized, causing a NULL pointer dereference.
->=20
-> Move the call to pm_runtime_put() to the end of usb_dmac_probe() to fix
-> this.
->=20
-> Add a check to usb_dmac_runtime_suspend() to prevent the crash from
-> happening in the error path.
->=20
-> Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On 10/1/2015 1:53 PM, Yoshihiro Shimoda wrote:
 
-I could not duplicate this issue completely on Lager.
-Even if I enabled ealyprintk, I didn't see the panic log.
-(Several kernel message appeared, and then the kernel hung.)
+>> If CONFIG_PREEMPT=3Dy:
 
-Anyway, I tested this patch that kernel could boot correctly even if CONFIG=
-_PREEMPT=3Dy.
-So,
-Tested-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+    Actually, it happens even with CONFIG_PREEMPT_VOLUNTARY=3Dy.
 
-Best regards,
-Yoshihiro Shimoda
+>>      Unable to handle kernel NULL pointer dereference at virtual address=
+ 00000014
+>>      pgd =3D c0003000
+>>      [00000014] *pgd=80000040004003, *pmd=00000000
+>>      Internal error: Oops: 206 [#1] PREEMPT SMP ARM
+>>      Modules linked in:
+>>      CPU: 0 PID: 17 Comm: kworker/0:1 Tainted: G        W       4.3.0-rc=
+3-koelsch-022
+>>      71-g705498fc5e6a5da8-dirty #1789
+>>      Hardware name: Generic R8A7791 (Flattened Device Tree)
+>>      Workqueue: pm pm_runtime_work
+>>      task: ef578e40 ti: ef57a000 task.ti: ef57a000
+>>      PC is at usb_dmac_chan_halt+0xc/0xc0
+>>      LR is at usb_dmac_runtime_suspend+0x28/0x38
+>>      pc : [<c023c880>]    lr : [<c023c95c>]    psr: 80000113
+>>      sp : ef57bdf8  ip : 00000008  fp : 00000003
+>>      r10: 00000008  r9 : c06ab928  r8 : ef49e810
+>>      r7 : 00000000  r6 : 000000ac  r5 : ef770010  r4 : 00000000
+>>      r3 : 00000000  r2 : 8ffc2b84  r1 : 00000000  r0 : ef770010
+>>      Flags: Nzcv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment kernel
+>>      Control: 30c5307d  Table: 40003000  DAC: fffffffd
+>>      Process kworker/0:1 (pid: 17, stack limit =3D 0xef57a210)
+>>      Stack: (0xef57bdf8 to 0xef57c000)
+>>
+>>      [...
+>>
+>>      [<c023c880>] (usb_dmac_chan_halt) from [<c023c95c>] (usb_dmac_runti=
+me_suspend+0x28/0x38)
+>>      [<c023c95c>] (usb_dmac_runtime_suspend) from [<c027b25c>] (pm_genpd=
+_runtime_suspend+0x74/0x23c)
+>>
+>> This happens because usb_dmac_probe() calls pm_runtime_put() before
+>> usb_dmac_chan_probe(), leading to the device being suspended before the
+>> DMA channels are initialized, causing a NULL pointer dereference.
+>>
+>> Move the call to pm_runtime_put() to the end of usb_dmac_probe() to fix
+>> this.
+>>
+>> Add a check to usb_dmac_runtime_suspend() to prevent the crash from
+>> happening in the error path.
+>>
+>> Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>
+> I could not duplicate this issue completely on Lager.
+> Even if I enabled ealyprintk, I didn't see the panic log.
+> (Several kernel message appeared, and then the kernel hung.)
 
-> ---
->  drivers/dma/sh/usb-dmac.c | 8 ++++++--
->  1 file changed, 6 insertions(+), 2 deletions(-)
->=20
-> diff --git a/drivers/dma/sh/usb-dmac.c b/drivers/dma/sh/usb-dmac.c
-> index ebd8a5f398b08ee2..f305738b5adf8cc9 100644
-> --- a/drivers/dma/sh/usb-dmac.c
-> +++ b/drivers/dma/sh/usb-dmac.c
-> @@ -679,8 +679,11 @@ static int usb_dmac_runtime_suspend(struct device *d=
-ev)
->  	struct usb_dmac *dmac =3D dev_get_drvdata(dev);
->  	int i;
->=20
-> -	for (i =3D 0; i < dmac->n_channels; ++i)
-> +	for (i =3D 0; i < dmac->n_channels; ++i) {
-> +		if (!dmac->channels[i].iomem)
-> +			break;
->  		usb_dmac_chan_halt(&dmac->channels[i]);
-> +	}
->=20
->  	return 0;
->  }
-> @@ -803,7 +806,6 @@ static int usb_dmac_probe(struct platform_device *pde=
-v)
->  	}
->=20
->  	ret =3D usb_dmac_init(dmac);
-> -	pm_runtime_put(&pdev->dev);
->=20
->  	if (ret) {
->  		dev_err(&pdev->dev, "failed to reset device\n");
-> @@ -851,10 +853,12 @@ static int usb_dmac_probe(struct platform_device *p=
-dev)
->  	if (ret < 0)
->  		goto error;
->=20
-> +	pm_runtime_put(&pdev->dev);
->  	return 0;
->=20
->  error:
->  	of_dma_controller_free(pdev->dev.of_node);
-> +	pm_runtime_put(&pdev->dev);
->  	pm_runtime_disable(&pdev->dev);
->  	return ret;
->  }
-> --
-> 1.9.1
+    I guess you also need to specify console=3D. The device tree console=20
+assignment (from the "stdout-path" prop) happens too late, the console gets=
+=20
+switched to /dev/tty0 first. I forgot to mention that the pseudo-console=20
+(CONFIG_VT) should be disabled as well.
+
+> Anyway, I tested this patch that kernel could boot correctly even if CONF=
+IG_PREEMPT=3Dy.
+> So,
+> Tested-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+
+    Thank you. :-)
+
+> Best regards,
+> Yoshihiro Shimoda
+
+MBR, Sergei
 
