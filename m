@@ -1,48 +1,34 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 02 Oct 2015 11:29:50 +0000
+Date: Fri, 02 Oct 2015 11:32:49 +0000
 Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain for sound
-Message-Id: <560E6AAE.9080605@cogentembedded.com>
+Message-Id: <560E6B61.5000509@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1443752733.git.horms+renesas@verge.net.au>
  <6507c4efd2ca4a3dccedbc5b4724f9faabf97fca.1443752733.git.horms+renesas@verge.net.au>
-In-Reply-To: <6507c4efd2ca4a3dccedbc5b4724f9faabf97fca.1443752733.git.horms+renesas@verge.net.au>
+ <560E6AAE.9080605@cogentembedded.com>
+In-Reply-To: <560E6AAE.9080605@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+On 10/2/2015 2:29 PM, Sergei Shtylyov wrote:
 
-On 10/2/2015 5:29 AM, Simon Horman wrote:
+>> From: Geert Uytterhoeven <geert+renesas@glider.be>
+>>
+>> 484adb005886 ("ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain")
+>> added CPG/MSTP clock-cells domain support, but it was missing sound
+>> support. This patch adds it.
+>
+>     Really? I'm only seeing "power-domains" prop added...
 
-> From: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> 484adb005886 ("ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain")
-> added CPG/MSTP clock-cells domain support, but it was missing sound
-> support. This patch adds it.
+    Oh, I understand now. The log seems somewhat poorly worded though...
 
-    Really? I'm only seeing "power-domains" prop added...
-
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> [horms: Updated commit id referred to in changelog]
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->   arch/arm/boot/dts/r8a7790.dtsi | 1 +
->   1 file changed, 1 insertion(+)
->
-> diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-> index a0b2a79cbfbd..4624d0f2a754 100644
-> --- a/arch/arm/boot/dts/r8a7790.dtsi
-> +++ b/arch/arm/boot/dts/r8a7790.dtsi
-> @@ -1627,6 +1627,7 @@
->   				"mix.0", "mix.1",
->   				"dvc.0", "dvc.1",
->   				"clk_a", "clk_b", "clk_c", "clk_i";
-> +		power-domains = <&cpg_clocks>;
->
->   		status = "disabled";
->
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>> [horms: Updated commit id referred to in changelog]
+>> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+[...]
 
 MBR, Sergei
 
