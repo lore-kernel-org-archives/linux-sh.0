@@ -1,41 +1,29 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 00:34:13 +0000
-Subject: [PATCH 2/7] ARM: shmobile: porter: enable SATA0
-Message-Id: <efbb05c2c00231d73393390db2156046bda787de.1444868963.git.horms+renesas@verge.net.au>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 02 Oct 2015 10:24:09 +0000
+Subject: Re: [PATCH 0/3] sh-pfc: r8a7795: add I2C/Audio pin support
+Message-Id: <CACRpkdaDsvPhM59yi5mvHbcu5_r=EcYus8KgZVc-ZsfLCcUGAQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444868963.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444868963.git.horms+renesas@verge.net.au>
+References: <87mvx4qkzo.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87mvx4qkzo.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+On Wed, Sep 16, 2015 at 9:09 PM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
 
-Enable SATA0 device for the Porter board.
+> These are I2C / Audio pinchart support for Renesas r8a7795
+>
+> Kuninori Morimoto (3):
+>       pinctrl: sh-pfc: r8a7795: add I2C pin support
+>       pinctrl: sh-pfc: r8a7795: add Audio clock pin support
+>       pinctrl: sh-pfc: r8a7795: add Audio SSI pin support
 
-This patch is analogous to the commit 5a62ec57004f ("ARM: shmobile:
-henninger: enable SATA0") as there are no differences between the boards
-in this respect.
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7791-porter.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+Geert will handle these.
 
-diff --git a/arch/arm/boot/dts/r8a7791-porter.dts b/arch/arm/boot/dts/r8a7791-porter.dts
-index 5bc4d23c1edb..7f46980ffd12 100644
---- a/arch/arm/boot/dts/r8a7791-porter.dts
-+++ b/arch/arm/boot/dts/r8a7791-porter.dts
-@@ -154,3 +154,7 @@
- 	cd-gpios = <&gpio6 22 GPIO_ACTIVE_LOW>;
- 	status = "okay";
- };
-+
-+&sata0 {
-+	status = "okay";
-+};
--- 
-2.1.4
-
+Yours,
+Linus Walleij
