@@ -1,47 +1,88 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 30 Oct 2015 14:19:49 +0000
-Subject: Re: [PATCH v2] i2c: rcar: make sure clocks are on when doing hw init
-Message-Id: <2651660.Ax9kPbc9xQ@avalon>
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Fri, 02 Oct 2015 00:38:51 +0000
+Subject: Re: [PATCH v4] clk: add CS2000 Fractional-N driver
+Message-Id: <20151002003851.GH12338@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446158791-29682-1-git-send-email-wsa@the-dreams.de> <1726774.W1OrN54TP1@avalon> <CAMuHMdV0_ej3z1EQ=1Q+XRc53CX5H=8Oa3sNjUwkfO62KfTpHA@mail.gmail.com>
-In-Reply-To: <CAMuHMdV0_ej3z1EQ=1Q+XRc53CX5H=8Oa3sNjUwkfO62KfTpHA@mail.gmail.com>
+References: <871te03x17.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <871te03x17.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Simon <horms@verge.net.au>, Michael Turquette <mturquette@baylibre.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, linux-clk@vger.kernel.org
 
-Hi Geert,
+On 09/15, Kuninori Morimoto wrote:
+> +
+> +static int cs2000_clk_register(struct cs2000_priv *priv)
+> +{
+> +	struct device *dev = priv_to_dev(priv);
+> +	struct device_node *np = dev->of_node;
+> +	struct clk_init_data init;
+> +	const char *name = np->name;
+> +	struct clk *clk;
+> +	static const char *parent_names[CLK_MAX];
+> +	int ret;
+> +
+> +	of_property_read_string(np, "clock-output-names", &name);
+> +
+> +	parent_names[CLK_IN]	= __clk_get_name(priv->clk_in);
+> +	parent_names[REF_CLK]	= __clk_get_name(priv->ref_clk);
+> +
+> +	init.name		= name;
+> +	init.ops		= &cs2000_ops;
+> +	init.flags		= CLK_IS_BASIC | CLK_SET_RATE_GATE;
 
-On Friday 30 October 2015 09:16:40 Geert Uytterhoeven wrote:
-> On Fri, Oct 30, 2015 at 5:35 AM, Laurent Pinchart wrote:
-> > [    9.641533] Unable to handle kernel paging request at virtual address
-> > ffffffff
-> > [    9.648927] pgd =3D eb2adf40
-> > [    9.651695] [ffffffff] *pgd=80000040007003, *pmdkfde003,
-> > *pte=00000000
-> > [    9.658579] Internal error: Oops: a07 [#1] SMP ARM
-> > [    9.663475] Modules linked in: rcar_thermal adv7180(+) phy_rcar_gen2
-> > soundcore udc_core
-> > [    9.671719] CPU: 0 PID: 552 Comm: udevd Not tainted 4.3.0-rc7-07332-
-> > gfb990fd3ff96 #114
-> > [    9.679811] Hardware name: Generic R8A7791 (Flattened Device Tree)
-> > [    9.686125] task: eb11f400 ti: ea92e000 task.ti: ea92e000
-> > [    9.691653] PC is at rcar_i2c_irq+0xd4/0x3e4
-> > [    9.696018] LR is at rcar_i2c_write+0x28/0x38
-> > [    9.700471] pc : [<c0324588>]    lr : [<c0323cf0>]    psr: 80000193
-> >=20
-> > This only occurred once, I don't know how to reproduce it.
->=20
-> Do you still have the kernel binary, so you can see where exactly the cra=
-sh
-> happened?
+It's not basic.
 
-I haven't kept it, but I'm pretty sure I was using renesas-devel-20151026-
-v4.3-rc7 without any additional patch applied.
+> +	init.parent_names	= parent_names;
+> +	init.num_parents	= ARRAY_SIZE(parent_names);
+> +
+> +	priv->hw.init = &init;
+> +
+> +	clk = clk_register(NULL, &priv->hw);
 
---=20
-Regards,
+How about using devm_clk_register() and passing the i2c device
+down to this function?
 
-Laurent Pinchart
+> +	if (IS_ERR(clk))
+> +		return PTR_ERR(clk);
+> +
+> +	ret = of_clk_add_provider(np, of_clk_src_simple_get, clk);
+> +	if (ret < 0) {
+> +		clk_unregister(clk);
+> +		return ret;
+> +	}
+> +
+> +	priv->clk_out = clk;
+> +
+> +	return 0;
+> +}
+> +
+> +static int cs2000_clk_init(struct cs2000_priv *priv)
+> +{
+> +	struct device *dev = priv_to_dev(priv);
+> +	struct device_node *np = dev->of_node;
+> +	u32 rate;
+> +	int ch = 0; /* it uses ch0 only at this point */
+> +	int ret;
+> +
+> +	if (of_property_read_u32(np, "clock-frequency", &rate))
 
+Why can't we do this with DT assigned rates?
+
+> +		return 0;
+> +
+> +	ret = __cs2000_set_rate(priv, ch, rate, clk_get_rate(priv->ref_clk));
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	ret = __cs2000_enable(priv);
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	return 0;
+> +}
+
+-- 
+Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
+a Linux Foundation Collaborative Project
