@@ -1,27 +1,36 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 12 Oct 2015 00:08:23 +0000
-Subject: Re: [PATCH] ARM: shmobile: porter: enable PCIe
-Message-Id: <20151012000823.GD20025@verge.net.au>
+Date: Fri, 02 Oct 2015 01:21:33 +0000
+Subject: Re: [PATCH 03/18 v3] arm64: renesas: r8a7795: add AUDIO_DMAC support
+Message-Id: <20151002012131.GD22640@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <13633423.im5T5IW5o3@wasted.cogentembedded.com>
-In-Reply-To: <13633423.im5T5IW5o3@wasted.cogentembedded.com>
+References: <878u841o94.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <878u841o94.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Sat, Oct 10, 2015 at 12:41:26AM +0300, Sergei Shtylyov wrote:
-> Enable the PCIe controller and clock for the Porter board.
+On Thu, Sep 24, 2015 at 07:18:42AM +0000, Kuninori Morimoto wrote:
 > 
-> This patch is analogous to the commit 485f3ce67c11 ("ARM: shmobile:
-> henninger: Enable PCIe Controller & PCIe bus clock") as there are no
-> differences between the boards in this respect.
+> Hi Simon
 > 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> > > If you only wish to change this one patch then I'm happy to try
+> > > to update just one patch.
+> > 
+> > Yes, I would like to just 1 patch replace
+> > I will send this patch again
+> (snip)
+> > > topic/r8a7795-sound-v3
 > 
-> ---
-> This patch is against 'renesas-devel-20151008-v4.3-rc4' tag  of Simon Horman's
-> 'renesas.git' repo plus the Porter I2C2, VIN0/ADV7180, and QSPI patches posted
-> earlier.
+> Next v4 patch will fixup MSTP5 definition order.
+> It is queued as below on your topic/r8a7795-sound-v3 branch
+> 
+> 	e073032d19ba2c49eb588e98bd1cf21b876e2beb
+> 	("arm64: renesas: r8a7795: add AUDIO_DMAC support")
+> 
+> Please replace it
 
-Thanks, I have queued this up for v4.4.
+Done.
+
+I have left the topic/r8a7795-sound-v3 branch unchanged.
+The update is present in the new topic/r8a7795-sound-v3.update branch.
