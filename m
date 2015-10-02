@@ -1,145 +1,62 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 20 Oct 2015 08:57:50 +0000
-Subject: [PATCH v5 3/4] phy: rcar-gen3-usb2: add runtime ID/VBUS pin detection
-Message-Id: <1445331471-5028-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Fri, 02 Oct 2015 10:25:07 +0000
+Subject: [PATCH 4/4] PCI: rcar-pcie: Fix IO offset for multiple instances
+Message-Id: <1443781507-5011-5-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445331471-5028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1445331471-5028-1-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+References: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: kishon-l0cyMroinI0@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+To: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-This patch adds support for runtime ID/VBUS pin detection if
-the channel 0 of R-Car gen3 is used. So, we are able to use
-the channel as both host and peripheral.
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- .../devicetree/bindings/phy/rcar-gen3-phy-usb2.txt |  2 +
- drivers/phy/phy-rcar-gen3-usb2.c                   | 43 +++++++++++++++++++++-
- 2 files changed, 44 insertions(+), 1 deletion(-)
+ drivers/pci/host/pcie-rcar.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
-index affa0f7..2390e4e 100644
---- a/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
-+++ b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
-@@ -18,6 +18,7 @@ properties. This is because HSUSB has registers to select USB 2.0 host or
- peripheral at that channel:
- - reg: offset and length of the partial HSUSB register block.
- - reg-names: must be "hsusb".
-+- interrupts: interrupt specifier for the PHY.
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index 8e583c2..f4fa6c5 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -108,6 +108,8 @@
+ #define RCAR_PCI_MAX_RESOURCES 4
+ #define MAX_NR_INBOUND_MAPS 6
  
- Example (R-Car H3):
- 
-@@ -25,6 +26,7 @@ Example (R-Car H3):
- 		compatible = "renesas,usb2-phy-r8a7795";
- 		reg = <0 0xee080200 0 0x700>, <0 0xe6590100 0 0x100>;
- 		reg-names = "usb2_host", "hsusb";
-+		interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7795_CLK_EHCI0>,
- 			 <&mstp7_clks R8A7795_CLK_HSUSB>;
- 	};
-diff --git a/drivers/phy/phy-rcar-gen3-usb2.c b/drivers/phy/phy-rcar-gen3-usb2.c
-index cf91f9f..3c6805c 100644
---- a/drivers/phy/phy-rcar-gen3-usb2.c
-+++ b/drivers/phy/phy-rcar-gen3-usb2.c
-@@ -12,6 +12,7 @@
-  * published by the Free Software Foundation.
-  */
- 
-+#include <linux/interrupt.h>
- #include <linux/io.h>
- #include <linux/module.h>
- #include <linux/of.h>
-@@ -25,14 +26,18 @@
- #define USB2_SPD_RSM_TIMSET	0x10c
- #define USB2_OC_TIMSET		0x110
- #define USB2_COMMCTRL		0x600
-+#define USB2_OBINTSTA		0x604
-+#define USB2_OBINTEN		0x608
- #define USB2_VBCTRL		0x60c
- #define USB2_LINECTRL1		0x610
- #define USB2_ADPCTRL		0x630
- 
- /* INT_ENABLE */
-+#define USB2_INT_ENABLE_UCOM_INTEN	BIT(3)
- #define USB2_INT_ENABLE_USBH_INTB_EN	BIT(2)
- #define USB2_INT_ENABLE_USBH_INTA_EN	BIT(1)
--#define USB2_INT_ENABLE_INIT		(USB2_INT_ENABLE_USBH_INTB_EN | \
-+#define USB2_INT_ENABLE_INIT		(USB2_INT_ENABLE_UCOM_INTEN | \
-+					 USB2_INT_ENABLE_USBH_INTB_EN | \
- 					 USB2_INT_ENABLE_USBH_INTA_EN)
- 
- /* USBCTR */
-@@ -48,6 +53,12 @@
- /* COMMCTRL */
- #define USB2_COMMCTRL_OTG_PERI		BIT(31)	/* 1 = Peripheral mode */
- 
-+/* OBINTSTA and OBINTEN */
-+#define USB2_OBINT_SESSVLDCHG		BIT(12)
-+#define USB2_OBINT_IDDIGCHG		BIT(11)
-+#define USB2_OBINT_BITS			(USB2_OBINT_SESSVLDCHG | \
-+					 USB2_OBINT_IDDIGCHG)
++static unsigned long global_io_offset;
 +
- /* VBCTRL */
- #define USB2_VBCTRL_DRVVBUSSEL		BIT(8)
+ struct rcar_msi {
+ 	DECLARE_BITMAP(used, INT_PCI_MSI_NR);
+ 	struct irq_domain *domain;
+@@ -357,7 +359,7 @@ static void rcar_pcie_setup_window(int win, struct rcar_pcie *pcie)
+ 	rcar_pci_write_reg(pcie, mask, PCIEPTCTLR(win));
+ }
  
-@@ -174,6 +185,9 @@ static void rcar_gen3_init_otg(struct rcar_gen3_chan *ch)
+-static int rcar_pcie_setup(int nr, struct list_head *resource, struct rcar_pcie *pcie)
++static int rcar_pcie_setup(struct list_head *resource, struct rcar_pcie *pcie)
+ {
+ 	struct resource *res;
+ 	int i;
+@@ -375,7 +377,8 @@ static int rcar_pcie_setup(int nr, struct list_head *resource, struct rcar_pcie
  
- 	val = readl(usb2_base + USB2_VBCTRL);
- 	writel(val | USB2_VBCTRL_DRVVBUSSEL, usb2_base + USB2_VBCTRL);
-+	writel(USB2_OBINT_BITS, usb2_base + USB2_OBINTSTA);
-+	val = readl(usb2_base + USB2_OBINTEN);
-+	writel(val | USB2_OBINT_BITS, usb2_base + USB2_OBINTEN);
- 	val = readl(usb2_base + USB2_ADPCTRL);
- 	writel(val | USB2_ADPCTRL_IDPULLUP, usb2_base + USB2_ADPCTRL);
- 	val = readl(usb2_base + USB2_LINECTRL1);
-@@ -270,6 +284,23 @@ static struct phy_ops rcar_gen3_phy_usb2_ops = {
- 	.owner		= THIS_MODULE,
- };
+ 		if (res->flags & IORESOURCE_IO) {
+ 			phys_addr_t io_start = pci_pio_to_address(res->start);
+-			pci_ioremap_io(nr * SZ_64K, io_start);
++			pci_ioremap_io(global_io_offset, io_start);
++			global_io_offset += SZ_64K;
+ 		}
  
-+static irqreturn_t rcar_gen3_phy_usb2_irq(int irq, void *_ch)
-+{
-+	struct rcar_gen3_chan *ch = _ch;
-+	void __iomem *usb2_base = ch->usb2.base;
-+	u32 status = readl(usb2_base + USB2_OBINTSTA);
-+	irqreturn_t ret = IRQ_NONE;
-+
-+	if (status & USB2_OBINT_BITS) {
-+		dev_vdbg(&ch->phy->dev, "%s: %08x\n", __func__, status);
-+		writel(USB2_OBINT_BITS, usb2_base + USB2_OBINTSTA);
-+		rcar_gen3_device_recognition(ch);
-+		ret = IRQ_HANDLED;
-+	}
-+
-+	return ret;
-+}
-+
- static const struct of_device_id rcar_gen3_phy_usb2_match_table[] = {
- 	{ .compatible = "renesas,usb2-phy-r8a7795" },
- 	{ }
-@@ -302,9 +333,19 @@ static int rcar_gen3_phy_usb2_probe(struct platform_device *pdev)
+ 		pci_add_resource(resource, res);
+@@ -390,7 +393,7 @@ static int rcar_pcie_enable(struct rcar_pcie *pcie)
+ 	struct pci_bus *bus, *child;
+ 	LIST_HEAD(res);
  
- 	/* To avoid error message by devm_ioremap_resource() */
- 	if (res) {
-+		int irq;
-+
- 		channel->hsusb.base = devm_ioremap_resource(dev, res);
- 		if (IS_ERR(channel->hsusb.base))
- 			channel->hsusb.base = NULL;
-+		/* call request_irq for OTG */
-+		irq = platform_get_irq(pdev, 0);
-+		if (irq >= 0)
-+			irq = devm_request_irq(dev, irq, rcar_gen3_phy_usb2_irq,
-+					       IRQF_SHARED, dev_name(dev),
-+					       channel);
-+		if (irq < 0)
-+			dev_err(dev, "No irq handler (%d)\n", irq);
- 	}
+-	rcar_pcie_setup(1, &res, pcie);
++	rcar_pcie_setup(&res, pcie);
  
- 	/* devm_phy_create() will call pm_runtime_enable(dev); */
+ 	/* Do not reassign resources if probe only */
+ 	if (!pci_has_flag(PCI_PROBE_ONLY))
 -- 
 1.9.1
 
