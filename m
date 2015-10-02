@@ -1,42 +1,30 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 26 Oct 2015 04:34:35 +0000
-Subject: Re: [PATCH/RFC 4/6] arm: shmobile: r8a7791: Obtain MD pin value using boot-mode-reg
-Message-Id: <20151026043435.GD2411@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Fri, 02 Oct 2015 10:25:03 +0000
+Subject: [PATCH 0/4] PCI: rcar: Add support for ARM64 and multiple instances
+Message-Id: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444892377-10170-5-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1444892377-10170-5-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-On Thu, Oct 15, 2015 at 02:06:49PM +0300, Sergei Shtylyov wrote:
-> On 10/15/2015 9:59 AM, Simon Horman wrote:
-> 
-> >Use new boot mode reg infrastructure to obtain the mode pin
-> >value when initialising SMP for r8a7791 SoC.
-> >
-> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >---
-> >  arch/arm/mach-shmobile/smp-r8a7791.c | 13 ++++++++++++-
-> >  1 file changed, 12 insertions(+), 1 deletion(-)
-> >
-> >diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
-> >index b2508c0d276b..595499834293 100644
-> >--- a/arch/arm/mach-shmobile/smp-r8a7791.c
-> >+++ b/arch/arm/mach-shmobile/smp-r8a7791.c
-> [...]
-> >@@ -45,8 +47,17 @@ static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
-> >  static int r8a7791_smp_boot_secondary(unsigned int cpu,
-> >  				      struct task_struct *idle)
-> >  {
-> >+	int err;
-> >+	u32 mode;
-> >+
-> >+	err = boot_mode_reg_get(&mode);
-> >+	if (err) {
-> >+		pr_warn("Unable retrieve boot mode register\n");
-> 
->    There's "to" missing in this string.
+Fixes and changes to get PCIe working on ARM64 with mulitple instances.
 
-Thanks, I'll fix that.
+I've tested these on ARM (Koelsch board), and it works fine.
+I've also tested on ARM64 (Salvator-X board), but I currently have an issue
+with inbound PCI accesses. I am reasonably sure that this problem is hardware
+related.
+
+Phil Edworthy (4):
+  PCI: rcar-pcie: Make PCI aware of the IO resources
+  PCI: rcar-pcie: Remove dependency on ARM-specific struct hw_pci
+  PCI: rcar-pcie: Set root bus nr to that provided in DT
+  PCI: rcar-pcie: Fix IO offset for multiple instances
+
+ drivers/pci/host/pcie-rcar.c | 86 ++++++++++++++++++++++++++++----------------
+ 1 file changed, 55 insertions(+), 31 deletions(-)
+
+-- 
+1.9.1
+
