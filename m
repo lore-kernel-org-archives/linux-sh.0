@@ -1,103 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Oct 2015 01:57:58 +0000
-Subject: [PATCH 21/28] ARM: shmobile: porter: initial device tree
-Message-Id: <f138e54c4525fa789b556909c00359fea3c21a6c.1444182812.git.horms+renesas@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Fri, 02 Oct 2015 10:25:06 +0000
+Subject: [PATCH 3/4] PCI: rcar-pcie: Set root bus nr to that provided in DT
+Message-Id: <1443781507-5011-4-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444182812.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
+References: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+On ARM64, setting the root bus number to -1 causes probe failure.
+Moreover, we should use the bus number specified in the DT as we
+could have multiple PCIe controllers with different bus ranges.
 
-Add the initial device tree for the R8A7791 SoC based Porter low cost board
-(which  is a  slightly modified version  of the Henninger board).
-
-SCIF0 serial port support is included, so that the serial console can work.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- arch/arm/boot/dts/Makefile           |  1 +
- arch/arm/boot/dts/r8a7791-porter.dts | 54 ++++++++++++++++++++++++++++++++++++
- 2 files changed, 55 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7791-porter.dts
+ drivers/pci/host/pcie-rcar.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 08f85bcc7da7..d285d9816d9d 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -532,6 +532,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
- 	r8a7790-lager.dtb \
- 	r8a7791-henninger.dtb \
- 	r8a7791-koelsch.dtb \
-+	r8a7791-porter.dtb \
- 	r8a7793-gose.dtb \
- 	r8a7794-alt.dtb \
- 	r8a7794-silk.dtb \
-diff --git a/arch/arm/boot/dts/r8a7791-porter.dts b/arch/arm/boot/dts/r8a7791-porter.dts
-new file mode 100644
-index 000000000000..b5670dd388e6
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7791-porter.dts
-@@ -0,0 +1,54 @@
-+/*
-+ * Device Tree Source for the Porter board
-+ *
-+ * Copyright (C) 2015 Cogent Embedded, Inc.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+#include "r8a7791.dtsi"
-+
-+/ {
-+	model = "Porter";
-+	compatible = "renesas,porter", "renesas,r8a7791";
-+
-+	aliases {
-+		serial0 = &scif0;
-+	};
-+
-+	chosen {
-+		bootargs = "ignore_loglevel";
-+		stdout-path = &scif0;
-+	};
-+
-+	memory@40000000 {
-+		device_type = "memory";
-+		reg = <0 0x40000000 0 0x40000000>;
-+	};
-+
-+	memory@200000000 {
-+		device_type = "memory";
-+		reg = <2 0x00000000 0 0x40000000>;
-+	};
-+};
-+
-+&extal_clk {
-+	clock-frequency = <20000000>;
-+};
-+
-+&pfc {
-+	scif0_pins: serial0 {
-+		renesas,groups = "scif0_data_d";
-+		renesas,function = "scif0";
-+	};
-+};
-+
-+&scif0 {
-+	pinctrl-0 = <&scif0_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index 6057e31..8e583c2 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -362,7 +362,7 @@ static int rcar_pcie_setup(int nr, struct list_head *resource, struct rcar_pcie
+ 	struct resource *res;
+ 	int i;
+ 
+-	pcie->root_bus_nr = -1;
++	pcie->root_bus_nr = pcie->busn.start;
+ 
+ 	/* Setup PCI resources */
+ 	for (i = 0; i < RCAR_PCI_MAX_RESOURCES; i++) {
 -- 
-2.1.4
+1.9.1
 
