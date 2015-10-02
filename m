@@ -1,93 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Oct 2015 16:04:51 +0000
-Subject: Re: [PATCH v2 4/6] pinctrl: sh-pfc: Stop calling gpiochip_add_pin_range() on DT platforms
-Message-Id: <1907000.EBhLlX2sDO@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 02 Oct 2015 01:57:55 +0000
+Subject: [PATCH] clk: shmobile: Fix r8a7795 MSSR support
+Message-Id: <20151002015755.7116.10457.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438696519-13727-1-git-send-email-geert+renesas@glider.be>
- <1438696519-13727-5-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1438696519-13727-5-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-clk@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-Hi Geert,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thank you for the patch.
+This is an incremental fix for the series posted yesterday:
+[PATCH v8 00/05] Renesas R-Car Gen3 CPG support V8
 
-On Tuesday 04 August 2015 15:55:17 Geert Uytterhoeven wrote:
-> On platforms where the PFC/GPIO controller is instantiated from DT, the
-> mapping between GPIOs and pins is set up using the "gpio-ranges"
-> property in DT.
-> 
-> Hence stop setting up the mapping from C code on DT platforms.
-> This code is still used for SH or ARM-legacy platforms.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Acked-by: Linus Walleij <linus.walleij@linaro.org>
+As pointed out by Geert, I missed one r8a7791 instance
+when doing manual search-and-replace. This fix will in
+the future be folded into patch 3/5 and 4/5, but for
+now this incremental patch will have to do.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Thanks to Geert for keeping his eyes open!
 
-> ---
-> v2:
->   - Add Acked-by,
->   - Add check for CONFIG_OF and pfc->dev->of_node.
-> ---
->  drivers/pinctrl/sh-pfc/gpio.c | 37 ++++++++++++++++++++++---------------
->  1 file changed, 22 insertions(+), 15 deletions(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-> index ba353735ecf2be9a..b380e3f17b121bbb 100644
-> --- a/drivers/pinctrl/sh-pfc/gpio.c
-> +++ b/drivers/pinctrl/sh-pfc/gpio.c
-> @@ -379,22 +379,29 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
-> 
->  	pfc->gpio = chip;
-> 
-> -	/* Register the GPIO to pin mappings. As pins with GPIO ports must come
-> -	 * first in the ranges, skip the pins without GPIO ports by stopping at
-> -	 * the first range that contains such a pin.
-> -	 */
-> -	for (i = 0; i < pfc->nr_ranges; ++i) {
-> -		const struct sh_pfc_pin_range *range = &pfc->ranges[i];
-> -
-> -		if (range->start >= pfc->nr_gpio_pins)
-> -			break;
-> +	if (IS_ENABLED(CONFIG_OF) && pfc->dev->of_node)
-> +		return 0;
-> 
-> -		ret = gpiochip_add_pin_range(&chip->gpio_chip,
-> -					     dev_name(pfc->dev),
-> -					     range->start, range->start,
-> -					     range->end - range->start + 1);
-> -		if (ret < 0)
-> -			return ret;
-> +	if (IS_ENABLED(CONFIG_SUPERH) ||
-> +	    IS_ENABLED(CONFIG_ARCH_SHMOBILE_LEGACY)) {
-> +		/*
-> +		 * Register the GPIO to pin mappings. As pins with GPIO ports
-> +		 * must come first in the ranges, skip the pins without GPIO
-> +		 * ports by stopping at the first range that contains such a
-> +		 * pin.
-> +		 */
-> +		for (i = 0; i < pfc->nr_ranges; ++i) {
-> +			const struct sh_pfc_pin_range *range = &pfc->ranges[i];
-> +
-> +			if (range->start >= pfc->nr_gpio_pins)
-> +				break;
-> +
-> +			ret = gpiochip_add_pin_range(&chip->gpio_chip,
-> +				dev_name(pfc->dev), range->start, range->start,
-> +				range->end - range->start + 1);
-> +			if (ret < 0)
-> +				return ret;
-> +		}
->  	}
-> 
->  	/* Register the function GPIOs chip. */
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
--- 
-Regards,
+ drivers/clk/shmobile/clk-mssr.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Laurent Pinchart
-
+--- 0005/drivers/clk/shmobile/clk-mssr.c
++++ work/drivers/clk/shmobile/clk-mssr.c	2015-10-02 10:48:27.560513000 +0900
+@@ -323,7 +323,7 @@ static int cpg_mssr_attach_dev(struct ge
+ 	while (!of_parse_phandle_with_args(np, "clocks", "#clock-cells", i,
+ 					   &clkspec)) {
+ 		if (of_device_is_compatible(clkspec.np,
+-					    "renesas,r8a7791-cpg-mssr"))
++					    "renesas,r8a7795-cpg-mssr"))
+ 			goto found;
+ 
+ 		of_node_put(clkspec.np);
