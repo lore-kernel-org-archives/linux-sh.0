@@ -1,64 +1,26 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Oct 2015 01:57:41 +0000
-Subject: [PATCH 04/28] ARM: shmobile: r8a7794: add QSPI DT support
-Message-Id: <740b4a9f07fe73b5ccd2bc3dc365dc359e1a332d.1444182812.git.horms+renesas@verge.net.au>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 02 Oct 2015 08:59:26 +0000
+Subject: Re: [RESEND PATCH v2 0/3] bockw SD pull-ups
+Message-Id: <CACRpkdZnGEAnHR0atkH1e-eOfcdmEedVS4B=iRRiAjUa9sSbKw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444182812.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+On Wed, Sep 16, 2015 at 8:58 AM, Ulrich Hecht
+<ulrich.hecht+renesas@gmail.com> wrote:
 
-Define the generic R8A7794 part of the QSPI device node.
+> This series implements pull-up configuration in the r8a7778 PFC driver
+> and sets the SD0_WP and SD0_CD pull-ups on the Bock-W board correctly,
+> replacing the hack that is used in the legacy platforms.
+>
+> This has been rebased and is otherwise identical to the previously posted
+> v2.  Linus was going to pick up the PFC parts pending a review by Laurent.
 
-Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
+Geert is picking stuff up now, as I needed help with SH PFC.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7794.dtsi | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+Acked-by for this series, Geert is gateway maintainer.
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index e9fab31e0709..e0f32ede2181 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -19,6 +19,10 @@
- 	#address-cells = <2>;
- 	#size-cells = <2>;
- 
-+	aliases {
-+		spi0 = &qspi;
-+	};
-+
- 	cpus {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -537,6 +541,20 @@
- 		status = "disabled";
- 	};
- 
-+	qspi: spi@e6b10000 {
-+		compatible = "renesas,qspi-r8a7794", "renesas,qspi";
-+		reg = <0 0xe6b10000 0 0x2c>;
-+		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7794_CLK_QSPI_MOD>;
-+		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
-+		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
--- 
-2.1.4
-
+Yours,
+Linus Walleij
