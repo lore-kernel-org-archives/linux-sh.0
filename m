@@ -1,50 +1,41 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 01 Oct 2015 07:24:15 +0000
-Subject: Re: [PATCH 30/31] ARM: shmobile: r8a7791: add USB-DMAC device nodes
-Message-Id: <CAMuHMdVfmOifVdW2a4Ai2-T4WZPFd5d+OtNHhVhD9g+CF1zgxA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 02 Oct 2015 02:29:38 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7791 dtsi: Add CPG/MSTP Clock Domain for sound
+Message-Id: <56e86dd4bbeb66a7ad67e20fa045c6f51b4da571.1443752733.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1431565427.git.horms+renesas@verge.net.au>
- <e3e25edc1116ebf44b1813aff03b02b7737d41ca.1431565427.git.horms+renesas@verge.net.au>
- <560B11FF.3010305@cogentembedded.com>
- <SG2PR06MB0919932925BB68EC82538044D84D0@SG2PR06MB0919.apcprd06.prod.outlook.com>
-In-Reply-To: <SG2PR06MB0919932925BB68EC82538044D84D0@SG2PR06MB0919.apcprd06.prod.outlook.com>
+References: <cover.1443752733.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1443752733.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Shimoda-san,
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Wed, Sep 30, 2015 at 11:06 AM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
->> Sent: Wednesday, September 30, 2015 7:35 AM
->>     When the USB-DMAC driver is enabled, this causes kernel oops on at least
->> the R8A7791 Henninger/Porter boards (haven't checked the others yet) with
->> renesas-devel-20150928-v4.3-rc3 and even earlier tag. The oops can only be
->> seen with the earlyprintk=serial kernel parameter, otherwise the kernel just
->> hangs with a blank console.
->>
->> Unable to handle kernel NULL pointer dereference at virtual address 00000014
+797a0626e08c ("ARM: shmobile: r8a7791 dtsi: Add CPG/MSTP Clock Domain")
+added CPG/MSTP clock-cells domain support, but it was missing sound
+support. This patch adds it.
 
->> [<c027f0cc>] (usb_dmac_chan_halt) from [<c027f1c8>] (usb_dmac_runtime_suspend+0)
->>   r5:eebdaf50 r4:00000001
->> [<c027f19c>] (usb_dmac_runtime_suspend) from [<c02d60e0>] (pm_generic_runtime_s)
->>   r6:00000000 r5:c02ddfc4 r4:ee93d810 r3:c027f19c
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[horms: updated commit id referred to in changelog]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
-> I'm not sure but I am guessing this issue related runtime PM? (suspend)
-> I checked the usb-dmac driver roughly, and if the usb_dmac_runtime_suspend()
-> is called before usb_dmac_chan_probe() runs, it might happen because dmac->iomem is NULL.
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 831525dd39a6..1666c8a6b143 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1677,6 +1677,7 @@
+ 				"mix.0", "mix.1",
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
++		power-domains = <&cpg_clocks>;
+ 
+ 		status = "disabled";
+ 
+-- 
+2.1.4
 
-That's exactly what's happening. Reproduced with CONFIG_PREEMPT=y (thanks
-Sergei), and patch sent.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
