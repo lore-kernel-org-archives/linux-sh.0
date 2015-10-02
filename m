@@ -1,47 +1,70 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Fri, 09 Oct 2015 11:31:08 +0000
-Subject: Re: [PATCH 4/4] spi: spi-coldfire-qspi: enable RuntimePM before registering to the core
-Message-Id: <20151009113108.GA1542@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="EVF5PPMfhYS0aIcm"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 02 Oct 2015 02:55:09 +0000
+Subject: [PATCH v10 00/07] Renesas R-Car H3 (r8a7795) integration patches V10
+Message-Id: <20151002025509.28158.23176.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444373693-2372-1-git-send-email-wsa@the-dreams.de>
- <1444373693-2372-4-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1444373693-2372-4-git-send-email-wsa@the-dreams.de>
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-sh@vger.kernel.org, linux-spi@vger.kernel.org, linux-kernel@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+Renesas R-Car H3 (r8a7795) integration patches V10
 
---EVF5PPMfhYS0aIcm
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+[PATCH v10 01/07] arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
+[PATCH v10 02/07] arm64: renesas: r8a7795 dtsi: Add all common divider clocks
+[PATCH v10 03/07] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
+[PATCH v10 04/07] arm64: renesas: r8a7795 dtsi: Add all SCIF nodes
+[PATCH v10 05/07] arm64: renesas: r8a7795: enable PFC
+[PATCH v10 06/07] arm64: renesas: add Salvator-X board support on DTS
+[PATCH v10 07/07] arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
 
-On Fri, Oct 09, 2015 at 07:54:53AM +0100, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
-> The core may register clients attached to this master which may use
-> funtionality from the master. So, RuntimePM must be enabled before, other=
-wise
-> this will fail.
+This is V10 of the R-Car H3 SoC support which contains a simplified
+series of initial r8a7795 support including:
+- Single CPU core, Arch timer, GIC
+- CPG and MSTP
+- r8a7795 SCIF0->SCIF6
+- PFC
+- Salvator-X DEBUG0 and DEBUG1 serial ports.
 
-I'm missing patches 1-3 and the cover letter - what's going on with
-dependencies here?
+Compared to V9 this V10 series is updated in a couple of ways:
+- [RFC] is dropped since PFC DT is stable and CPG DT at least semi-stable
+- For CCF the DT property clock-output-names is now included - thanks Geert!
+- SCIF ports are updated to include DMAC and depend on MSSR in Patch 4/7
+- Fixes for PLL1 and EXTAL are folded in
 
---EVF5PPMfhYS0aIcm
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Regarding dependencies, for build time there are no special dependencies.
+As for runtime this V10 integration series depends on the following:
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+CPG:
+  [PATCH v8 00/05] Renesas R-Car Gen3 CPG support V8
+  [PATCH] clk: shmobile: Fix r8a7795 MSSR support
 
-iQEcBAEBCAAGBQJWF6V4AAoJECTWi3JdVIfQkK8H/1WjOx33gPtzJpaObrl7XB59
-y4XjcBpM4mfE+u41PlO+l8BFyen0rZVMxBW9tRaL5Ol39i9k2R4zEtdYp5nltlAd
-jRfdv4Y10MelWG1X+vZCBEQDYL4EqaD3GASoYlvvDXJcjdZlmfuko4ZfdA4Jxl4f
-5CT5aQU4/Yyes872cFuZYb32+hqH3DJebbgQF1ucTCFZwhw30ErwPHCo5e+uT0lY
-v4EMCq2+PNlhfP0aMihmB6iwoAg5uRlABuza2ZrSwwRZS2xq6IQ+8NL+PKarGShH
-kWGFLhWbd2vUhhGNtycsPCqoy7Bo4PF1iUFshrzUMrxehD10phja1Aokf7BxcW0=
-=vcm3
------END PGP SIGNATURE-----
+PFC:
+  Patches queued up for upstream merge renesas-drivers branch sh-pfc-for-v4.4:
+  d109e2a pinctrl: sh-pfc: r8a7795: add EtherAVB support
 
---EVF5PPMfhYS0aIcm--
+SCIF:
+  [PATCH] serial: sh-sci: Add device tree support for r8a7795
+
+For information about changes since latest version please see
+the change log in each patch.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Written against 61a7cf8 of renesas-drivers
+ Above includes PFC but the CPG series was added locally
+
+ Documentation/devicetree/bindings/arm/shmobile.txt |    4 
+ arch/arm64/Kconfig.platforms                       |   17 
+ arch/arm64/boot/dts/Makefile                       |    1 
+ arch/arm64/boot/dts/renesas/Makefile               |    4 
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |   62 +++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           |  384 ++++++++++++++++++++
+ arch/arm64/configs/defconfig                       |    5 
+ include/dt-bindings/clock/r8a7795-clock.h          |   44 ++
+ 8 files changed, 521 insertions(+)
