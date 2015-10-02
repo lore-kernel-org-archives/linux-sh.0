@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 02 Oct 2015 11:32:38 +0000
+Date: Fri, 02 Oct 2015 12:02:06 +0000
 Subject: Re: [PATCH v3 02/09] ARM: shmobile: Add APMU DT support via Enable method
-Message-Id: <CAMuHMdVzau7LJiy3W+KrxhR3rU+4kXa6hCt5o4aowYLMfU8Wyg@mail.gmail.com>
+Message-Id: <CAMuHMdUYNRuPnm=U3S1XTLKwQ5XMOBj9_r5YoEZ1iem25PhNyg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20150917063240.26016.93772.sendpatchset@little-apple>
 	<20150917063300.26016.23728.sendpatchset@little-apple>
@@ -9,97 +9,51 @@ In-Reply-To: <20150917063300.26016.23728.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Mark Rutland <mark.rutland@arm.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>, =?UTF-8?B?5bCP5p6X5pWs5aSq?= <keita.kobayashi.ym@renesas.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Lorenzo Pieralisi <lorenzo.pieralisi-5wv7dgnIgG8@public.gmane.org>, =?UTF-8?B?5bCP5p6X5pWs5aSq?= <keita.kobayashi.ym-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
 
 Hi Magnus,
 
 On Thu, Sep 17, 2015 at 8:33 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
 > --- 0001/arch/arm/mach-shmobile/platsmp-apmu.c
 > +++ work/arch/arm/mach-shmobile/platsmp-apmu.c  2015-09-16 20:46:23.400513000 +0900
-> @@ -24,6 +24,7 @@
->  #include <asm/suspend.h>
->  #include "common.h"
->  #include "platsmp-apmu.h"
-> +#include "rcar-gen2.h"
->
->  static struct {
->         void __iomem *iomem;
-> @@ -117,15 +118,67 @@ static void apmu_parse_cfg(void (*fn)(st
->         }
->  }
->
-> -void __init shmobile_smp_apmu_prepare_cpus(unsigned int max_cpus,
-> -                                          struct rcar_apmu_config *apmu_config,
-> -                                          int num)
-> +static const struct of_device_id apmu_ids[] = {
-> +       { .compatible = "renesas,apmu" },
-> +       { /*sentinel*/ }
-> +};
-> +
-> +static void apmu_parse_dt(void (*fn)(struct resource *res, int cpu, int bit))
+
+> +static void __init shmobile_smp_apmu_prepare_cpus_dt(unsigned int max_cpus)
 > +{
-> +       struct device_node *np_apmu, *np_cpu;
-> +       struct resource res;
-> +       u32 id;
-> +       int bit, index;
-> +
-> +       for_each_matching_node(np_apmu, apmu_ids) {
-> +               /* only enable the cluster that includes the boot CPU */
-> +               bool is_allowed = false;
-> +               for (bit = 0; bit < CONFIG_NR_CPUS; bit++) {
-> +                       np_cpu = of_parse_phandle(np_apmu, "cpus", bit);
-> +                       if (np_cpu) {
-> +                               if (!of_property_read_u32(np_cpu, "reg", &id)) {
-> +                                       if (id = cpu_logical_map(0)) {
-> +                                               is_allowed = true;
-> +                                               of_node_put(np_cpu);
-> +                                               break;
-> +                                       }
-> +
+> +       shmobile_smp_apmu_setup_boot();
+> +       apmu_parse_dt(apmu_init_cpu);
+> +       rcar_gen2_pm_init();
+> +}
 
-Trailing whitespace (thanks, checkpatch.pl!)
+The non-DT code in arch/arm/mach-shmobile/smp-r8a7790.c has two calls to
+rcar_sysc_power_up() here, cfr.:
 
-> +                               }
-> +                               of_node_put(np_cpu);
-> +                       }
-> +               }
-> +               if (!is_allowed)
-> +                       continue;
-> +
-> +               for (bit = 0; bit < CONFIG_NR_CPUS; bit++) {
-> +                       np_cpu = of_parse_phandle(np_apmu, "cpus", bit);
-> +                       if (np_cpu) {
-> +                               if (!of_property_read_u32(np_cpu, "reg", &id)) {
-> +                                       index = get_logical_index(id);
-> +                                       if ((index >= 0) &&
-> +                                           !of_address_to_resource(np_apmu,
-> +                                                                   0, &res))
-> +                                               fn(&res, index, bit);
-> +                               }
-> +                               of_node_put(np_cpu);
-> +                       }
-> +               }
-> +               of_node_put(np_apmu);
+        static void __init r8a7790_smp_prepare_cpus(unsigned int max_cpus)
+        {
+               /* let APMU code install data related to shmobile_boot_vector */
+               shmobile_smp_apmu_prepare_cpus(max_cpus,
+                                              r8a7790_apmu_config,
+                                              ARRAY_SIZE(r8a7790_apmu_config));
 
-ERROR: Bad of_node_put() on /apmu@e6152000
-CPU: 0 PID: 1 Comm: swapper/0 Not tainted
-4.3.0-rc3-koelsch-02290-gca074b0726212a2f #1797
-Hardware name: Generic R8A7791 (Flattened Device Tree)
-[<c0017e9c>] (unwind_backtrace) from [<c00139f8>] (show_stack+0x10/0x14)
-[<c00139f8>] (show_stack) from [<c01efd24>] (dump_stack+0x70/0x8c)
-[<c01efd24>] (dump_stack) from [<c01f1eec>] (kobject_release+0x12c/0x19c)
-[<c01f1eec>] (kobject_release) from [<c032a89c>]
-(of_find_matching_node_and_match+0x78/0x90)
-[<c032a89c>] (of_find_matching_node_and_match) from [<c062e424>]
-(shmobile_smp_apmu_prepare_cpus_dt+0x150/0x178)
-[<c062e424>] (shmobile_smp_apmu_prepare_cpus_dt) from [<c0626c98>]
-(kernel_init_freeable+0x60/0x1e4)
+                /* turn on power to SCU */
+                rcar_gen2_pm_init();
+==>            rcar_sysc_power_up(&r8a7790_ca15_scu);
+==>            rcar_sysc_power_up(&r8a7790_ca7_scu);
+        }
 
-for_each_matching_node() takes care of calling of_node_put() on each
-element iterated over, cfr. of_find_matching_node_and_match().
+The non-DT code in arch/arm/mach-shmobile/smp-r8a7791.c does not have such
+a call for its CA15 cluster.
 
-> +       }
+Does that mean they're not needed on Gen2 in general, and that they can be
+removed? I'd be happy to hear a confirming answer, as it's one less
+dependency on SYSC PM Domains in early SMP code ;-)
+
+Ah, this is because r8a7790 can boot from either CA15 or CA7, and only the
+SCU for the boot CPU is powered up (r8a7791 has only one cluster/SCU, so it's
+always the one with the boot CPU)?
+
+Note that on r8a7779 we're also stuck with this dependency, as r8a7779 uses
+SYSC instead of APMU for secondary core control.
 
 Gr{oetje,eeting}s,
 
