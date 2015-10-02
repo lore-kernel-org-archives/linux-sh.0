@@ -1,93 +1,41 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 21 Oct 2015 16:46:35 +0000
-Subject: Re: [PATCH RFC RFT 2/3] clk: clk_put WARNs if user has not disabled clk
-Message-Id: <CAMuHMdWgf8DOhaDLcQ=qJx0r7G0zK_yfWRpVOPBV--SW2Rw1kA@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 02 Oct 2015 02:00:23 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7794: link PCI USB devices to USB PHY
+Message-Id: <20151002020021.GF22640@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438974570-20812-1-git-send-email-mturquette@baylibre.com>
- <1438974570-20812-3-git-send-email-mturquette@baylibre.com>
- <CAMuHMdX8Fq3AfxuZMLe4-CYFzrDiQcwnREQhX5fSGXzYNSkKsA@mail.gmail.com>
- <20151020124000.20687.60752@quantum>
- <CAMuHMdWd9LxrSWO5snriW+fb_d8FtMeXUBjp3M-Oeahh+FzJcw@mail.gmail.com>
- <20151021105932.GP32536@n2100.arm.linux.org.uk>
- <20151021155057.20687.14055@quantum>
-In-Reply-To: <20151021155057.20687.14055@quantum>
+References: <10927620.1TFu7PRvi4@wasted.cogentembedded.com>
+ <20150929003751.GB20067@verge.net.au>
+ <560A8997.8090301@cogentembedded.com>
+In-Reply-To: <560A8997.8090301@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Mike,
+Hi Sergei,
 
-On Wed, Oct 21, 2015 at 5:50 PM, Michael Turquette
-<mturquette@baylibre.com> wrote:
-> Quoting Russell King - ARM Linux (2015-10-21 03:59:32)
->> On Wed, Oct 21, 2015 at 11:50:07AM +0200, Geert Uytterhoeven wrote:
->> > On Tue, Oct 20, 2015 at 2:40 PM, Michael Turquette
->> > <mturquette@baylibre.com> wrote:
->> > > Why not keep the reference to the struct clk after get'ing it the first
->> > > time?
->> >
->> > And store it where?
->>
->> Not my problem :)
->>
->> Users are supposed to hold on to the reference obtained via clk_get()
->> while they're making use of the clock: in some implementations, this
->> increments the module use count if the clock driver is a module, and
->> may have other effects too.
->>
->> Dropping that while you're still requiring the clock to be enabled is
->> unsafe: if it is provided by a module, then removing and reinserting
->> the module may very well change the enabled state of the clock, it
->> most certainly will disrupt the enable count.
->>
->> It's always been this way, right from the outset, and when I've seen
->> people doing this bollocks, I've always pointed out that it's wrong.
->> Generally, people will fix it once they become aware of it, so it's
->> really that people just don't like reading and conforming to published
->> API requirements.
->>
->> I think the root cause is that people just don't like reading what
->> other people write in terms of documentation, and they prefer to go
->> off and do their own thing, provided it works for them.
->
-> Right, so in other words this problem must be solved by the caller of
-> clk_get, as it should be. I have never much looked at the pm clk code in
-> question, but I gave it a quick look and came up with some example code
-> that does not compile, in an effort to be as helpful as possible.
->
-> Basically I added a flex array to struct pm_clk_notifier_block, so that
-> now there are two flex arrays which is stupid. But I am too lazy to
-> replace the nbclk->clks thing with a malloc after walking all of the
-> clk_id's to figure out the number of clocks. Or we could just add
-> .num_clk to the struct, fix up all 4 users of it and drop the NULL
-> sentinel used the .clk_id's... Hmm that would have been better.
+On Tue, Sep 29, 2015 at 03:52:39PM +0300, Sergei Shtylyov wrote:
+> Hello.
+> 
+> On 9/29/2015 3:37 AM, Simon Horman wrote:
+> 
+> >>Describe the PCI USB devices that are behind the PCI bridges, adding necessary
+> >>links to the USB PHY device.
+> >>
+> >>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> >>
+> >>---
+> >>This patch is against 'renesas-devel-20150911v2-v4.2' tag of Simon Horman's
+> >>'renesas.git' repo plus the R8A7794/SILK PCI USB and USB PHY support patches
+> >>just posted.
+> 
+> >Does this series have any dependencies (e.g. bindings) other
+> 
+>    This patch, you mean?
+> 
+> >than the aforementioned R8A7794/SILK PCI USB and USB PHY support patches?
 
-Thanks for trying.
+Thanks, I have queued this up for v4.4.
 
-> index 25266c6..45e58fe 100644
-> --- a/include/linux/pm_clock.h
-> +++ b/include/linux/pm_clock.h
-> @@ -16,6 +16,7 @@ struct pm_clk_notifier_block {
->         struct notifier_block nb;
->         struct dev_pm_domain *pm_domain;
->         char *con_ids[];
-> +       struct clk *clks[];
->  };
->
->  struct clk;
-
-Unfortunately that won't work: while the .con_ids[] array is per-platform,
-the .clks[] array should be per-device. I.e. it should be tied to the struct
-device, not to the struct pm_clk_notifier_block.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+I think I have got everything now but please let me know if you have any
+shmobile DT patches outstanding which are ready to be queued-up.
