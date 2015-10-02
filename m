@@ -1,25 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 02 Oct 2015 01:25:41 +0000
-Subject: Re: [PATCH v2 0/2] Add USB PHY device tree support for R8A7794/SILK board
-Message-Id: <20151002012541.GE22640@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 02 Oct 2015 02:56:22 +0000
+Subject: [PATCH v10 07/07] arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
+Message-Id: <20151002025622.28158.98392.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4938706.NQELE8A71r@wasted.cogentembedded.com>
-In-Reply-To: <4938706.NQELE8A71r@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Sergei,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Fri, Oct 02, 2015 at 01:03:41AM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
->    Here's the set of 2 patches against Simon Horman's 'renesas.git' repo's
-> 'renesas-devel-20151001-v4.3-rc3' tag. Here we add the USB PHY device tree
-> support on the R8A7794/SILK low cost board.
-> 
-> [1/2] ARM: shmobile: r8a7794: add USB PHY DT support
-> [2/2] ARM: shmobile: silk: enable USB PHY
+This patch enables the Renesas R-Car H3 SoC together with the
+SCIF driver in the arm64 defconfig.
 
-Thanks, I have queued these up for v4.4.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
+ - None
+
+ Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
+ - Added Acked-by from Geert
+
+ Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
+ - Updated changelog
+ - Use CONFIG_RENESAS and CONFIG_R8A7795
+
+ Based on:
+  [PATCH 19/25] arm64: defconfig: renesas: Enable Renesas R-Car Gen3 SoC
+  [PATCH 20/25] arm64: defconfig: renesas: enable SCIF
+
+ arch/arm64/configs/defconfig |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- 0001/arch/arm64/configs/defconfig
++++ work/arch/arm64/configs/defconfig	2015-08-29 17:20:25.712366518 +0900
+@@ -39,6 +39,8 @@ CONFIG_ARCH_HISI=y
+ CONFIG_ARCH_MEDIATEK=y
+ CONFIG_ARCH_ROCKCHIP=y
+ CONFIG_ARCH_SEATTLE=y
++CONFIG_ARCH_RENESAS=y
++CONFIG_ARCH_R8A7795=y
+ CONFIG_ARCH_TEGRA=y
+ CONFIG_ARCH_TEGRA_132_SOC=y
+ CONFIG_ARCH_QCOM=y
+@@ -109,6 +111,9 @@ CONFIG_SERIAL_8250_DW=y
+ CONFIG_SERIAL_8250_MT6577=y
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_SERIAL_MSM=y
+ CONFIG_SERIAL_MSM_CONSOLE=y
+ CONFIG_SERIAL_OF_PLATFORM=y
