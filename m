@@ -1,57 +1,25 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 02 Oct 2015 02:55:40 +0000
-Subject: [PATCH v10 03/07] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
-Message-Id: <20151002025540.28158.93971.sendpatchset@little-apple>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 02 Oct 2015 01:25:41 +0000
+Subject: Re: [PATCH v2 0/2] Add USB PHY device tree support for R8A7794/SILK board
+Message-Id: <20151002012541.GE22640@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <4938706.NQELE8A71r@wasted.cogentembedded.com>
+In-Reply-To: <4938706.NQELE8A71r@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Hi Sergei,
 
-Add dummy nodes for the 3 DMA controllers.
-This allows to start describing DMA channels for DMA slaves now.
+On Fri, Oct 02, 2015 at 01:03:41AM +0300, Sergei Shtylyov wrote:
+> Hello.
+> 
+>    Here's the set of 2 patches against Simon Horman's 'renesas.git' repo's
+> 'renesas-devel-20151001-v4.3-rc3' tag. Here we add the USB PHY device tree
+> support on the R8A7794/SILK low cost board.
+> 
+> [1/2] ARM: shmobile: r8a7794: add USB PHY DT support
+> [2/2] ARM: shmobile: silk: enable USB PHY
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
-
- Changes from V9: (Magnus Damm <damm+renesas@opensource.se>)
- - Updated to remove fuzz
-
-Changes from V8: (Magnus Damm <damm+renesas@opensource.se>)
- - Updated to remove fuzz
- 
- Changes from V7: (Magnus Damm <damm+renesas@opensource.se>)
- - Changed order not to depend on SCIF patch(es)
- 
- Based on:
-  [PATCH 2/6] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi |   12 ++++++++++++
- 1 file changed, 12 insertions(+)
-
---- 0009/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ work/arch/arm64/boot/dts/renesas/r8a7795.dtsi	2015-10-01 19:06:49.670513000 +0900
-@@ -245,5 +245,17 @@
- 				#power-domain-cells = <0>;
- 			};
- 		};
-+
-+		dmac0: dma-controller@e6700000 {
-+			/* Empty node for now */
-+		};
-+
-+		dmac1: dma-controller@e7300000 {
-+			/* Empty node for now */
-+		};
-+
-+		dmac2: dma-controller@e7310000 {
-+			/* Empty node for now */
-+		};
- 	};
- };
+Thanks, I have queued these up for v4.4.
