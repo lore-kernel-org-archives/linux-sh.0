@@ -1,21 +1,27 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 23 Oct 2015 00:24:34 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7793: Add IPMMU nodes
-Message-Id: <20151023002434.GF15844@verge.net.au>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 02 Oct 2015 10:58:05 +0000
+Subject: Re: [PATCH] pinctrl: sh-pfc: Rename .gpio_data[] to .pinmux_data[]
+Message-Id: <CACRpkdYL575BdfuQgkBv_XVP8a1CKAUBQU1r=Jt4tx7NDpDkHw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151018053541.26392.44581.sendpatchset@little-apple>
-In-Reply-To: <20151018053541.26392.44581.sendpatchset@little-apple>
+References: <1443016754-24203-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1443016754-24203-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
 
-On Sun, Oct 18, 2015 at 02:35:41PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Add IPMMU nodes for the r8a7793 SoC. The IPMMU configuration for r8a7793
-> is identical to r8a7791 and includes SY0, SY1, DS, MP, MX, RT and GP.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+On Wed, Sep 23, 2015 at 6:59 AM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
 
-Thanks, I have queued this one up for v4.5 too.
+> The sh_pfc_soc_info.gpio_data[] array contains not only GPIO data, but
+> also various other pinmux-related data (functions and marks).
+> Every single driver already calls its local array pinmux_data[].
+> Hence rename the sh_pfc_soc_info member to "pinmux_data".
+>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+
+Yours,
+Linus Walleij
