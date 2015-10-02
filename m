@@ -1,28 +1,41 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Mon, 26 Oct 2015 13:50:43 +0000
-Subject: Re: [git pull] pinctrl: sh-pfc: Updates for v4.4 (take two)
-Message-Id: <CACRpkdavXPN2O1X6-WBxzP948CgQuCoGTn3bLfyk4N-aienRHw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 02 Oct 2015 02:29:37 +0000
+Subject: [PATCH 1/2] ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain for sound
+Message-Id: <6507c4efd2ca4a3dccedbc5b4724f9faabf97fca.1443752733.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445367712-12253-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1445367712-12253-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1443752733.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1443752733.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Oct 20, 2015 at 9:01 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
->         Hi Linus,
->
-> The following changes since commit 819fd4bfcc84805c48291de511c917596e911ffa:
->
->   pinctrl: sh-pfc: r8a7795: add EtherAVB support (2015-10-02 09:54:41 +0200)
+484adb005886 ("ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain")
+added CPG/MSTP clock-cells domain support, but it was missing sound
+support. This patch adds it.
 
-I've pulled this in and pushed to the kernel autobuilders.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[horms: Updated commit id referred to in changelog]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
-Thanks a lot for your efforts Geert!
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a0b2a79cbfbd..4624d0f2a754 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1627,6 +1627,7 @@
+ 				"mix.0", "mix.1",
+ 				"dvc.0", "dvc.1",
+ 				"clk_a", "clk_b", "clk_c", "clk_i";
++		power-domains = <&cpg_clocks>;
+ 
+ 		status = "disabled";
+ 
+-- 
+2.1.4
 
-Yours,
-Linus Walleij
