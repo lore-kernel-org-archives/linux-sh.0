@@ -1,44 +1,54 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 29 Oct 2015 19:54:03 +0000
-Subject: [PATCH] [trivial] clk: shmobile: rcar-gen2: Spelling/Grammar: dependant of, ouput
-Message-Id: <1446148443-20414-1-git-send-email-geert+renesas@glider.be>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 05 Oct 2015 14:55:55 +0000
+Subject: [PATCH v3 3/3] ARM: shmobile: bockw dts: define sdhi0 pins with pull-ups
+Message-Id: <1444056955-8836-4-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Jiri Kosina <trivial@kernel.org>
-Cc: linux-clk@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-s/dependant of/dependent on/
-s/ouput/output/
+Ensures that the pull-ups for pins SD0_CD and SD0_WP are enabled.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This is one of two features from the DT reference platform that are
+still missing in MP.
+
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/clk/shmobile/clk-rcar-gen2.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7778-bockw.dts | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/clk/shmobile/clk-rcar-gen2.c b/drivers/clk/shmobile/clk-rcar-gen2.c
-index 3f02b40b4911831c..5928d8480db90061 100644
---- a/drivers/clk/shmobile/clk-rcar-gen2.c
-+++ b/drivers/clk/shmobile/clk-rcar-gen2.c
-@@ -117,7 +117,7 @@ static int cpg_z_clk_set_rate(struct clk_hw *hw, unsigned long rate,
- 	 *
- 	 * Using experimental measurements, it seems that no more than
- 	 * ~10 iterations are needed, independently of the CPU rate.
--	 * Since this value might be dependant of external xtal rate, pll1
-+	 * Since this value might be dependent on external xtal rate, pll1
- 	 * rate or even the other emulation clocks rate, use 1000 as a
- 	 * "super" safe value.
- 	 */
-@@ -264,7 +264,7 @@ static struct clk * __init cpg_adsp_clk_register(struct rcar_gen2_cpg *cpg)
-  * 1  1  0	30 / 2		x172/2	x208/2	x106
-  * 1  1  1	30 / 2		x172/2	x208/2	x88
-  *
-- * *1 :	Table 7.6 indicates VCO ouput (PLLx = VCO/2)
-+ * *1 :	Table 7.6 indicates VCO output (PLLx = VCO/2)
-  */
- #define CPG_PLL_CONFIG_INDEX(md)	((((md) & BIT(14)) >> 12) | \
- 					 (((md) & BIT(13)) >> 12) | \
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 90543b1..8a54076 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -137,10 +137,14 @@
+ 	};
+ 
+ 	sdhi0_pins: sd0 {
+-		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
+-				  "sdhi0_cd";
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
+ 		renesas,function = "sdhi0";
+ 	};
++	sdhi0_pup_pins: sd0_pup {
++		renesas,groups = "sdhi0_cd", "sdhi0_wp";
++		renesas,function = "sdhi0";
++		bias-pull-up;
++	};
+ 
+ 	hspi0_pins: hspi0 {
+ 		renesas,groups = "hspi0_a";
+@@ -169,7 +173,7 @@
+ };
+ 
+ &sdhi0 {
+-	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-0 = <&sdhi0_pins>, <&sdhi0_pup_pins>;
+ 	pinctrl-names = "default";
+ 
+ 	vmmc-supply = <&fixedregulator3v3>;
 -- 
-1.9.1
+2.6.0
 
