@@ -1,24 +1,37 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 02 Oct 2015 01:57:13 +0000
-Subject: Re: [PATCH 13/38] ARM: shmobile: apmu: correct type of CPU id
-Message-Id: <20151002015713.GA7043@verge.net.au>
+Date: Mon, 05 Oct 2015 02:29:57 +0000
+Subject: Re: [PATCH 08/18 v3] arm64: renesas: r8a7795: Sound CTU/MIX support
+Message-Id: <20151005022955.GF25427@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442842450-29769-1-git-send-email-a.hajda@samsung.com>
- <1442842450-29769-14-git-send-email-a.hajda@samsung.com>
-In-Reply-To: <1442842450-29769-14-git-send-email-a.hajda@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Sep 21, 2015 at 03:33:45PM +0200, Andrzej Hajda wrote:
-> CPU id can be negative, so it cannot be assigned to unsigned variable.
+On Fri, Sep 18, 2015 at 02:05:10AM +0000, Kuninori Morimoto wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 > 
-> The problem has been detected using proposed semantic patch
-> scripts/coccinelle/tests/unsigned_lesser_than_zero.cocci [1].
-> 
-> [1]: http://permalink.gmane.org/gmane.linux.kernel/2038576
-> 
-> Signed-off-by: Andrzej Hajda <a.hajda@samsung.com>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I have queued this up as a cleanup for v4.4.
+Hi,
+
+I have taken the liberty of updating this patch with the following
+incremental change from Geert. The result can be found in the
+topic/r8a7795-sound-v3.update.rebase branch of my renesas tree.
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index dc01c62822848475..99ca341e32f78ba0 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -575,6 +575,8 @@
+ 						"ssi1", "ssi0",
+ 						"scu-all",
+ 						"scu-dvc1", "scu-dvc0",
++						"scu-ctu1-mix1",
++						"scu-ctu0-mix0",
+ 						"scu-src9", "scu-src8",
+ 						"scu-src7", "scu-src6",
+ 						"scu-src5", "scu-src4",
+-- 
+1.9.1
+
