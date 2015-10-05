@@ -1,52 +1,31 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Oct 2015 01:57:54 +0000
-Subject: [PATCH 17/28] ARM: shmobile: r8a7790: lager: add pinmux for iic0
-Message-Id: <535118cac9e0705bf58de0604060f644bee7472d.1444182812.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 05 Oct 2015 12:06:26 +0000
+Subject: [PATCH 0/4] usb: host: xhci-plat: add support for the R-Car M2-N and H3 xHCI controllers
+Message-Id: <1444046790-5804-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444182812.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa@sang-engineering.com>
+This patch set adds support for R-Car M2-N (r8a7793) and H3 (r8a7795) xHCI
+controllers. To add support these new SoCs, this patch set modify some codes.
 
-It seems we used to rely on the default pinmux setting of this HW, but
-currently we need to explicitly set the pinmux to access this bus. It is
-better style, too.
+This patch is based on the latest usb.git / usb-next branch.
+(The commit id = 07294cc2ea3000da706fd88c8ec7dcfadc715e14.)
 
-Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7790-lager.dts | 7 +++++++
- 1 file changed, 7 insertions(+)
+Yoshihiro Shimoda (4):
+  usb: host: xhci-rcar: add xhci_rcar_is_compatible() function
+  usb: host: xhci-plat: add support for the R-Car M2-N xHCI controller
+  usb: host: xhci-rcar: Change code for new SoCs
+  usb: host: xhci-plat: add support for the R-Car H3 xHCI controllers
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index 6f5d7f50d5ca..c553abd711ee 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -342,6 +342,11 @@
- 		renesas,function = "msiof1";
- 	};
- 
-+	iic0_pins: iic0 {
-+		renesas,groups = "iic0";
-+		renesas,function = "iic0";
-+	};
-+
- 	iic1_pins: iic1 {
- 		renesas,groups = "iic1";
- 		renesas,function = "iic1";
-@@ -517,6 +522,8 @@
- 
- &iic0	{
- 	status = "okay";
-+	pinctrl-0 = <&iic0_pins>;
-+	pinctrl-names = "default";
- };
- 
- &iic1	{
+ Documentation/devicetree/bindings/usb/usb-xhci.txt |  4 +-
+ drivers/usb/host/xhci-plat.c                       | 11 ++-
+ drivers/usb/host/xhci-rcar.c                       | 83 ++++++++++++++++++----
+ drivers/usb/host/xhci-rcar.h                       |  6 ++
+ 4 files changed, 81 insertions(+), 23 deletions(-)
+
 -- 
-2.1.4
+1.9.1
 
