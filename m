@@ -1,51 +1,54 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 02 Oct 2015 07:24:25 +0000
-Subject: Re: [PATCH v10 00/07] Renesas R-Car H3 (r8a7795) integration patches V10
-Message-Id: <20151002072423.GA15552@verge.net.au>
+Date: Mon, 05 Oct 2015 02:27:21 +0000
+Subject: Re: [PATCH 0/3] Basic GPIO support for r8a7795
+Message-Id: <20151005022721.GA25427@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151002025509.28158.23176.sendpatchset@little-apple>
-In-Reply-To: <20151002025509.28158.23176.sendpatchset@little-apple>
+References: <1441035401-5843-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1441035401-5843-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+Hi Ulrich,
 
-I have pushed these patches to the renesas tree in a topic branch as
-described below.
+On Mon, Aug 31, 2015 at 05:36:38PM +0200, Ulrich Hecht wrote:
+> Hi!
+> 
+> This has been broken out of horms's GPIO and EthernetAVB RFC (thanks again)
+> and has its minor issues fixed, hopefully.  Specifically, it fixes the GPIO
+> 6 and 7 clock references, dumps the MSTP's "clock-output-names" property,
+> and omits the extraneous options in defconfig.
 
-To be quite clear none of these patches are queued up for mainline yet and
-as such they are not included in the next or devel branches of the renesas
-tree.
+I have taken the liberty of:
 
-On Fri, Oct 02, 2015 at 11:55:09AM +0900, Magnus Damm wrote:
-> Renesas R-Car H3 (r8a7795) integration patches V10
-> 
-> [PATCH v10 01/07] arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
-> [PATCH v10 02/07] arm64: renesas: r8a7795 dtsi: Add all common divider clocks
-> [PATCH v10 03/07] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
-> [PATCH v10 04/07] arm64: renesas: r8a7795 dtsi: Add all SCIF nodes
-> [PATCH v10 05/07] arm64: renesas: r8a7795: enable PFC
-> [PATCH v10 06/07] arm64: renesas: add Salvator-X board support on DTS
-> [PATCH v10 07/07] arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
-> 
-> This is V10 of the R-Car H3 SoC support which contains a simplified
-> series of initial r8a7795 support including:
-> - Single CPU core, Arch timer, GIC
-> - CPG and MSTP
-> - r8a7795 SCIF0->SCIF6
-> - PFC
-> - Salvator-X DEBUG0 and DEBUG1 serial ports.
-> 
-> Compared to V9 this V10 series is updated in a couple of ways:
-> - [RFC] is dropped since PFC DT is stable and CPG DT at least semi-stable
-> - For CCF the DT property clock-output-names is now included - thanks Geert!
-> - SCIF ports are updated to include DMAC and depend on MSSR in Patch 4/7
-> - Fixes for PLL1 and EXTAL are folded in
-> 
-> Regarding dependencies, for build time there are no special dependencies.
-> As for runtime this V10 integration series depends on the following:
+* rebasing and updating this patch set on top of
+  "[PATCH v10 00/07] Renesas R-Car H3 (r8a7795) integration patches V10"
+* Updating the patch set to to once again have clock-output-names using the
+  following update below provided to me by Geert - hopefully that
+  merry-go-round has now paused for v4.4.
+* Updating the clock definition order by folding in
+  "arm64: dts: r8a7795: add GPIO clocks"
 
-I have pushed this series to a new topic/arm64-rcar-gen3-v10 branch
-which is based on v4.3-rc1.
+I would greatly appreciate if you and any other interested parties could
+review the result which can be found in the topic/r8a7795-gpio-v1.rebase2
+branch of the renesas tree.  If you find any problems please repost the
+patch set at your earliest convenience.
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index f1c47ad3ea7fc781..8ce92db14c8bd101 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -530,6 +530,10 @@
+ 						R8A7795_CLK_I2C2  R8A7795_CLK_I2C1
+ 						R8A7795_CLK_I2C0
+ 					>;
++					clock-output-names +						"gpio7", "gpio6", "gpio5",
++						"gpio4", "gpio3", "gpio2",
++						"gpio1", "gpio0";
+ 				};
+ 
+ 				mstp10_clks: mstp10_clks@e6150998 {
+-- 
+1.9.1
+
