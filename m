@@ -1,63 +1,100 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 06:59:37 +0000
-Subject: [PATCH/RFC 6/6] arm: shmobile: rcar-gen2: Remove unused rcar_gen2_read_mode_pins()
-Message-Id: <1444892377-10170-7-git-send-email-horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 05 Oct 2015 14:55:53 +0000
+Subject: [PATCH v3 1/3] pinctrl: sh-pfc: add macros defining GP ports with config flags
+Message-Id: <1444056955-8836-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The new boot mode reg infrastructure is now used in
-place of rcar_gen2_read_mode_pins so the latter may now be removed.
+PORT_GP_CFG_1 and PORT_GP_CFG_32 work like their non-CFG counterparts
+but accept an extra argument with config flags.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/rcar-gen2.h       |  1 -
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 18 ------------------
- 2 files changed, 19 deletions(-)
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 47 ++++++++++++++++++++++-------------------
+ 1 file changed, 25 insertions(+), 22 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/rcar-gen2.h b/arch/arm/mach-shmobile/rcar-gen2.h
-index 8a66b4aae035..4c4ec37edc03 100644
---- a/arch/arm/mach-shmobile/rcar-gen2.h
-+++ b/arch/arm/mach-shmobile/rcar-gen2.h
-@@ -3,7 +3,6 @@
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 7cb1ed6..a3c08e2 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -187,25 +187,27 @@ struct sh_pfc_soc_info {
+  * GP port style (32 ports banks)
+  */
  
- void rcar_gen2_timer_init(void);
- #define MD(nr) BIT(nr)
--u32 rcar_gen2_read_mode_pins(void);
- void rcar_gen2_reserve(void);
- void rcar_gen2_pm_init(void);
+-#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
+-
+-#define PORT_GP_32(bank, fn, sfx)					\
+-	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
+-	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
+-	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
+-	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
+-	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
+-	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
+-	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
+-	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
+-	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
+-	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
+-	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
+-	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
+-	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
+-	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
+-	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
+-	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
++#define PORT_GP_CFG_1(bank, pin, fn, sfx, cfg) fn(bank, pin, GP_##bank##_##pin, sfx, cfg)
++#define PORT_GP_1(bank, pin, fn, sfx)	PORT_GP_CFG_1(bank, pin, fn, sfx, 0)
++
++#define PORT_GP_CFG_32(bank, fn, sfx, cfg)				\
++	PORT_GP_CFG_1(bank, 0,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 1,  fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 2,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 3,  fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 4,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 5,  fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 6,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 7,  fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 8,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 9,  fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 10, fn, sfx, cfg), PORT_GP_CFG_1(bank, 11, fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 12, fn, sfx, cfg), PORT_GP_CFG_1(bank, 13, fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 14, fn, sfx, cfg), PORT_GP_CFG_1(bank, 15, fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 16, fn, sfx, cfg), PORT_GP_CFG_1(bank, 17, fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 18, fn, sfx, cfg), PORT_GP_CFG_1(bank, 19, fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 20, fn, sfx, cfg), PORT_GP_CFG_1(bank, 21, fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 22, fn, sfx, cfg), PORT_GP_CFG_1(bank, 23, fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 24, fn, sfx, cfg), PORT_GP_CFG_1(bank, 25, fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 26, fn, sfx, cfg), PORT_GP_CFG_1(bank, 27, fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 28, fn, sfx, cfg), PORT_GP_CFG_1(bank, 29, fn, sfx, cfg),	\
++	PORT_GP_CFG_1(bank, 30, fn, sfx, cfg), PORT_GP_CFG_1(bank, 31, fn, sfx, cfg)
++#define PORT_GP_32(bank, fn, sfx)	PORT_GP_CFG_32(bank, fn, sfx, 0)
  
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index 81a446bf1702..403ee0ede379 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -29,24 +29,6 @@
- #include "common.h"
- #include "rcar-gen2.h"
+ #define PORT_GP_32_REV(bank, fn, sfx)					\
+ 	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
+@@ -226,20 +228,21 @@ struct sh_pfc_soc_info {
+ 	PORT_GP_1(bank, 1,  fn, sfx), PORT_GP_1(bank, 0,  fn, sfx)
  
--#define MODEMR 0xe6160060
--
--u32 rcar_gen2_read_mode_pins(void)
--{
--	static u32 mode;
--	static bool mode_valid;
--
--	if (!mode_valid) {
--		void __iomem *modemr = ioremap_nocache(MODEMR, 4);
--		BUG_ON(!modemr);
--		mode = ioread32(modemr);
--		iounmap(modemr);
--		mode_valid = true;
--	}
--
--	return mode;
--}
--
- #define CNTCR 0
- #define CNTFID0 0x20
+ /* GP_ALL(suffix) - Expand to a list of GP_#_#_suffix */
+-#define _GP_ALL(bank, pin, name, sfx)	name##_##sfx
++#define _GP_ALL(bank, pin, name, sfx, cfg)	name##_##sfx
+ #define GP_ALL(str)			CPU_ALL_PORT(_GP_ALL, str)
  
+ /* PINMUX_GPIO_GP_ALL - Expand to a list of sh_pfc_pin entries */
+-#define _GP_GPIO(bank, _pin, _name, sfx)				\
++#define _GP_GPIO(bank, _pin, _name, sfx, cfg)				\
+ 	{								\
+ 		.pin = (bank * 32) + _pin,				\
+ 		.name = __stringify(_name),				\
+ 		.enum_id = _name##_DATA,				\
++		.configs = cfg,						\
+ 	}
+ #define PINMUX_GPIO_GP_ALL()		CPU_ALL_PORT(_GP_GPIO, unused)
+ 
+ /* PINMUX_DATA_GP_ALL -  Expand to a list of name_DATA, name_FN marks */
+-#define _GP_DATA(bank, pin, name, sfx)	PINMUX_DATA(name##_DATA, name##_FN)
++#define _GP_DATA(bank, pin, name, sfx, cfg)	PINMUX_DATA(name##_DATA, name##_FN)
+ #define PINMUX_DATA_GP_ALL()		CPU_ALL_PORT(_GP_DATA, unused)
+ 
+ /*
 -- 
-2.1.4
+2.6.0
 
