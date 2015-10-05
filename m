@@ -1,60 +1,58 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 29 Oct 2015 19:23:14 +0000
-Subject: Re: [PATCH 5/9] i2c: rcar: init new messages in irq
-Message-Id: <20151029192314.GD8992@katana>
+From: Thierry Reding <thierry.reding@gmail.com>
+Date: Mon, 05 Oct 2015 14:42:13 +0000
+Subject: Re: [PATCH v7 1/2] pwm: Add device tree binding document for R-Car PWM Timer
+Message-Id: <20151005144213.GC27759@ulmo>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="veXX9dWIonWZEC6h"
+Content-Type: multipart/mixed; boundary="XMCwj5IQnwKtuyBG"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1441311613-2681-1-git-send-email-wsa@the-dreams.de>
- <36149610.Eic43bQLgJ@avalon>
- <20151023121439.GK13380@katana>
- <3725918.YSMPQz70Zm@avalon>
-In-Reply-To: <3725918.YSMPQz70Zm@avalon>
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+References: <1443602873-4316-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <1443602873-4316-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1443602873-4316-2-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+Cc: robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-pwm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
 
---veXX9dWIonWZEC6h
+--XMCwj5IQnwKtuyBG
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-Laurent,
-
-> RTPORC7791SEB00010S
-> KOELSCH SN.057
+On Wed, Sep 30, 2015 at 05:47:52PM +0900, Yoshihiro Shimoda wrote:
+> Add binding document for Renesas PWM Timer on R-Car SoCs.
 >=20
-> I'm not sure if that tells anything about the board revision.
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>  .../devicetree/bindings/pwm/renesas,pwm-rcar.txt   | 27 ++++++++++++++++=
+++++++
+>  1 file changed, 27 insertions(+)
+>  create mode 100644 Documentation/devicetree/bindings/pwm/renesas,pwm-rca=
+r.txt
 
-Can you try this patch I just sent out?
+Applied, thanks.
 
-"i2c: rcar: make sure clocks are on when doing hw init"
+Thierry
 
-We know that Koelsch boards have different bootloaders leaving the
-clocks in different states. What you see could be the result of a
-disabled clock.
-
-
---veXX9dWIonWZEC6h
+--XMCwj5IQnwKtuyBG
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Version: GnuPG v2
 
-iQIcBAEBAgAGBQJWMnIiAAoJEBQN5MwUoCm2WIIP/235pQyuj/HWFETG+kB9z6lx
-+d6Rz83ezgT4a5VV1Wbgm8n9nSxSB2lCVz2GnOnjvhB95dX4P+NRYAD9QjeLvEsx
-YJiTCmMBEoMgT5lf2qxswSMKcrrf/4jN3Q7zqwZrNkgHGnciKaYIkW+x35HGBygm
-AIUDh4xJjm16jcvxKhKgnnlAYQevx6A4iYyWTzv1iamXAk+2bDc5EKku1yIRjxn9
-3hLRAlCqOOj3dFa6VliSyQbVJFRDC0dt5qIkh2vCaHJdJ57ElC6ifE8vZiAVEyWV
-NBrzxjgWQusxJ9PoNlHXE+rIRaNkEoJzXB0zmgRcX8FaFuLBeASViz8XYRGT6S/t
-s+ly4y0jRAkNkxLJg43DUYDnuo/LMHPlx6EqKtB4ixkhJvVqp/aEFE+iZyBu5Qqe
-Aqjqxj9lLyB1LVTT3v6MbzalbXZmw36ID+SY38IIYgTzX4WmKs+PfyomMOrWOMYK
-QU5LhpTt8tPB2Ffniq1YNBCgQmQol8bHJWGk2x4CM2ugSW58kkr+DI8JVa79cO9M
-01anquxxVcw0I3ij8iWbTCFNw8GwJ3ZKBhA1IfTgKP9g9NTalyG4tPihyK32Sm3F
-RE6KV9QZU3u+FbZ96+jQMGk+ci11pOrjmx5EzFASKLi4qxDzaE0WuRcvmEqztL5c
-MKQXZJ8LgVbaQa/PiOM/
-=L2NW
+iQIcBAABCAAGBQJWEoxCAAoJEN0jrNd/PrOhiFcQAIUV92snHh/05oXVCGap1Bn1
+VgXgyyC+wIWXvgZTBMjG7pkkM67OLB7w0aME6S1CABptYXPx9FiNzeah3f/LVG6J
+WOB2dCs+2uopZDZ9OCHPg8AdfP2/UKSodGvPkFa/3542PcKQf+N7bPkRoq23vc+V
+146b2nsP9GDh5BxLw9h14LxRRAtBWfMYm2FUgX0wHO/EfTGO+BiEjWnOlgUB1Qmz
+bUNOc5s/evRi3r9VsV1CmjLTOTA+s1ZB83ioZ7lUe7sZ3aWFTaBTGCTgN5gn8C/1
+d6o+6u11/d4MBU7qrBeSvg1Si2ItmrodslXMwOsXhSncjIV01/B6X62dW0LIRU0J
+XjhEvvyAJEvTHJuWJNfu3XU4vRcawqgKS2g3UJ47AlqJqZ0YJgRSx7a3lxcfCeu6
+7Ymol3s+YxwqWsxgM4+ThuRRF6GDvE7/y8eFZPSzsUy/NwtQTBv4oFUFU13oo+6k
+rUtP4BwvCk90w2rfBe39uRoMulqoPDvyLx9/JU5V27+Jo2iKbLs1HX3IBs6Wi3oG
+wkjY3qDMayfigd69+BNIgY+JiEdwjPXHAXNGBQxWNJTq2cjHSlUOvgHwrRGVI+vx
+9uqq4MhVXO61Yn3ScoUPZ/p3NwcCtob0VjWqso3SMOSr/k5QFJ/g5KolKn+M1dAU
+XdGWepFDjOcszur7vBfb
+=jMuN
 -----END PGP SIGNATURE-----
 
---veXX9dWIonWZEC6h--
+--XMCwj5IQnwKtuyBG--
