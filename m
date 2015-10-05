@@ -1,80 +1,60 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Mon, 12 Oct 2015 00:42:08 +0000
-Subject: Re: Code execution in suid binaries via FDPIC_FUNCPTRS personality inheritance, affects at least SH
-Message-Id: <CA+55aFwi4sLPmeNKycJ3KXBT1Ycx8gfS06SSPqzA8EzhLnCvmQ@mail.gmail.com>
+From: Thierry Reding <thierry.reding@gmail.com>
+Date: Mon, 05 Oct 2015 14:42:55 +0000
+Subject: Re: [PATCH v7 2/2] pwm: Add support for R-Car PWM Timer
+Message-Id: <20151005144255.GD27759@ulmo>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="3Pql8miugIZX0722"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+References: <1443602873-4316-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <1443602873-4316-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1443602873-4316-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
 
-On Sun, Oct 11, 2015 at 9:46 AM, Rich Felker <dalias@libc.org> wrote:
-> By causing a non-FDPIC-ABI program to inherit the FDPIC_FUNCPTRS
-> personality on archs where FDPIC is supported (SuperH, FRV, Blackfin),
-> an attacker can cause the kernel to interpret function pointers passed
-> to sigaction as function descriptors, and thereby set the program
-> counter to an address determined by the program text at the start of
-> the signal handling function. FRV and Blackbin are generally NOMMU
-> architectures anyway where local security cannot be expected since
-> memory protection does not exist, but most modern SuperH models have
-> MMU and users have a legitimate expectation of privilege enforcement
 
-I doubt there is any SH/FRV/BlackFin people on the security list.
+--3Pql8miugIZX0722
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-And since I also suspect those architectures aren't all that critical
-for security issues, I'd suggest just posting this to the relevant
-people directly. So
+On Wed, Sep 30, 2015 at 05:47:53PM +0900, Yoshihiro Shimoda wrote:
+> This patch adds support for R-Car SoCs PWM Timer. The PWM timer of
+> R-Car H2 has 7 channels. So, we can use the channels if we describe
+> device tree nodes.
+>=20
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>  drivers/pwm/Kconfig    |  11 ++
+>  drivers/pwm/Makefile   |   1 +
+>  drivers/pwm/pwm-rcar.c | 266 +++++++++++++++++++++++++++++++++++++++++++=
+++++++
+>  3 files changed, 278 insertions(+)
+>  create mode 100644 drivers/pwm/pwm-rcar.c
 
- - Andrew Morton and linux-sh@vger.kernel.org for SuperH
- - David Howells for FRV
- - Steven Miao for blackfin.
+Applied (with some bikeshedding changes squashed in), thanks.
 
-I'm quoting the rest of the email for the new people, but my guess is
-that FDPIC_FUNCPTRS should just be part of PER_MASK, and I doubt it
-really affects existing programs or that we care. But the actual
-people involved may have different opinions.
+Thierry
 
-                    Linus
+--3Pql8miugIZX0722
+Content-Type: application/pgp-signature; name="signature.asc"
 
--- snip snip --
->
-> For reference, here is the code affected by the setting of this
-> personality bit:
->
-> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/arch/sh/kernel/signal_32.c?idJ06c8ac2fb3ef484579ce44f9b809bd310fad48#n313
-> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/arch/frv/kernel/signal.c?idJ06c8ac2fb3ef484579ce44f9b809bd310fad48#n217
-> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/arch/blackfin/kernel/signal.c?idJ06c8ac2fb3ef484579ce44f9b809bd310fad48#n171
->
-> Allocation of the value for FDPIC_FUNCPTRS outside of PER_MASK was a
-> mistake; this bit is an ABI switch rather than a mere tweak, and
-> should never be inherited across exec. This bug can be triggered even
-> in non-malicious settings simply by executing a non-FDPIC program from
-> one that's running as FDPIC.
->
-> Really, signal handlers as function descriptors should have been done
-> with a SA_FUNCDESC flag in sa_flags, not as a personality, but sadly
-> that ship has already sailed; fixing it would break all existing
-> binaries for these platforms which would be unaware of a newly-added
-> flag.
->
-> The fix which most respects compatibility with stable userspace ABI is
-> to simply change PER_MASK to 0x00800ff so that FDPIC_FUNCPTRS is
-> cleared on exec. However non-ELF binary formats are still affected
-> since their loaders do no properly call SET_PERSONALITY at exec time.
-> At least binfmt_aout.c and binfmt_flat.c should be fixed to clear the
-> bit as well, either by calling SET_PERSONALITY or in some other
-> manner.
->
-> Alternatively, the value of FDPIC_FUNCPTRS could be changed to put it
-> in the existing PER_MASK space, but this would violate the principle
-> of not breaking userspace: Since FDPIC ELF files get loaded with the
-> normal ELF loader when CONFIG_MMU is set, their entry point code
-> should call personality() explicitly to setup the correct ABI, and
-> thus userspace has to be aware of, and use, the existing
-> FDPIC_FUNCPTRS value. I suspect very few such binaries (FDPIC but
-> compatible with being loaded by the normal ELF loader) exist at this
-> point, though, and the need for this could be eliminated if the normal
-> ELF loader also detected the FDPIC ELF headers bits and set the
-> FDPIC_FUNCPTRS personality accordingly.
->
-> Rich
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAABCAAGBQJWEoxvAAoJEN0jrNd/PrOhsnIP/2CXmF6Y1u326gTyl77w9BG/
+godw6Py+huXzSe/g7GFGJ71CaxzDiIjAO7yX1Y8xJudIYkN+/SCxhFOkNXRkV3G2
+tDJ3RIwXHsS8RZrCpTSVZIPHPgB4HYtYVKzF4lwkl+w7hTiGiGiLlhkb8PAIODCI
+vr5ep5UX/x17YyNULk+O4JhYOiT+8Ri9n7iXW/KP6k28U9vFfVIGoK3syu/JsAfM
+tGeEk4An2LVZzOrhKHP6saZlu/VrgD+z1qzUuhwiK950XIDVg3mZQ7BGdZ5AJQn1
+vlqqDD6kveqDtU7oD4jla7aeo3IgkCcMjb/xmeU1MWxQ+iPVz6fFwNpNubmUiV04
+RRzjgEhknsSs3EybAp37e5WEVIvPY3F/RFi/7mmmu1RBqwNMyHl84uoIU2nrXNrS
+63kTbjZZEmWvIhg2SFHohV6BhTA4zIKHIwGgADGdgFfTrwkTyykNZWWWrff0jKk7
+i7JiG1ok/gN1KKJq6saQXbdOQYiJt6LJgk+c96r2VcOLXk6T7ck7+NPzrMxjJig9
+XgJKIfn4nY1OjuvmPqh5G1pCOYD2aqpGNPcbGX7yMOBm30e3gp2LSKsmQgCbFV6f
+cWmtxnL8ib2QWYBC8hqOb4RfZiH6XKdFY4gmykssmbXBnc2e5qlIFRRJw7133UL+
+EmUrjW/qznHK3vzc6UDG
+=6udF
+-----END PGP SIGNATURE-----
+
+--3Pql8miugIZX0722--
