@@ -1,58 +1,65 @@
-From: Thierry Reding <thierry.reding@gmail.com>
-Date: Mon, 05 Oct 2015 14:42:13 +0000
+From: Rob Herring <robherring2@gmail.com>
+Date: Mon, 05 Oct 2015 15:38:59 +0000
 Subject: Re: [PATCH v7 1/2] pwm: Add device tree binding document for R-Car PWM Timer
-Message-Id: <20151005144213.GC27759@ulmo>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="XMCwj5IQnwKtuyBG"
+Message-Id: <CAL_JsqJqwk6W5psXY9BZXwm4GwhG1Dr44Xq-7tf-MmSAtqpnzA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1443602873-4316-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
  <1443602873-4316-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1443602873-4316-2-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, linux-pwm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+In-Reply-To: <1443602873-4316-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: Thierry Reding <thierry.reding@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Linux PWM List <linux-pwm@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-
---XMCwj5IQnwKtuyBG
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Wed, Sep 30, 2015 at 05:47:52PM +0900, Yoshihiro Shimoda wrote:
+On Wed, Sep 30, 2015 at 3:47 AM, Yoshihiro Shimoda
+<yoshihiro.shimoda.uh@renesas.com> wrote:
 > Add binding document for Renesas PWM Timer on R-Car SoCs.
->=20
+>
 > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 > Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
 > ---
->  .../devicetree/bindings/pwm/renesas,pwm-rcar.txt   | 27 ++++++++++++++++=
-++++++
+>  .../devicetree/bindings/pwm/renesas,pwm-rcar.txt   | 27 ++++++++++++++++++++++
 >  1 file changed, 27 insertions(+)
->  create mode 100644 Documentation/devicetree/bindings/pwm/renesas,pwm-rca=
-r.txt
+>  create mode 100644 Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
+>
+> diff --git a/Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt b/Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
+> new file mode 100644
+> index 0000000..ea0a27b
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt
+> @@ -0,0 +1,27 @@
+> +* Renesas R-Car PWM Timer Controller
+> +
+> +Required Properties:
+> +- compatible: should be one of the following.
+> + - "renesas,pwm-rcar": for generic R-Car compatible PWM Timer
 
-Applied, thanks.
+Should be this one and one of the following? That is what the example shows.
 
-Thierry
-
---XMCwj5IQnwKtuyBG
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAABCAAGBQJWEoxCAAoJEN0jrNd/PrOhiFcQAIUV92snHh/05oXVCGap1Bn1
-VgXgyyC+wIWXvgZTBMjG7pkkM67OLB7w0aME6S1CABptYXPx9FiNzeah3f/LVG6J
-WOB2dCs+2uopZDZ9OCHPg8AdfP2/UKSodGvPkFa/3542PcKQf+N7bPkRoq23vc+V
-146b2nsP9GDh5BxLw9h14LxRRAtBWfMYm2FUgX0wHO/EfTGO+BiEjWnOlgUB1Qmz
-bUNOc5s/evRi3r9VsV1CmjLTOTA+s1ZB83ioZ7lUe7sZ3aWFTaBTGCTgN5gn8C/1
-d6o+6u11/d4MBU7qrBeSvg1Si2ItmrodslXMwOsXhSncjIV01/B6X62dW0LIRU0J
-XjhEvvyAJEvTHJuWJNfu3XU4vRcawqgKS2g3UJ47AlqJqZ0YJgRSx7a3lxcfCeu6
-7Ymol3s+YxwqWsxgM4+ThuRRF6GDvE7/y8eFZPSzsUy/NwtQTBv4oFUFU13oo+6k
-rUtP4BwvCk90w2rfBe39uRoMulqoPDvyLx9/JU5V27+Jo2iKbLs1HX3IBs6Wi3oG
-wkjY3qDMayfigd69+BNIgY+JiEdwjPXHAXNGBQxWNJTq2cjHSlUOvgHwrRGVI+vx
-9uqq4MhVXO61Yn3ScoUPZ/p3NwcCtob0VjWqso3SMOSr/k5QFJ/g5KolKn+M1dAU
-XdGWepFDjOcszur7vBfb
-=jMuN
------END PGP SIGNATURE-----
-
---XMCwj5IQnwKtuyBG--
+> + - "renesas,pwm-r8a7778": for R-Car M1A
+> + - "renesas,pwm-r8a7779": for R-Car H1
+> + - "renesas,pwm-r8a7790": for R-Car H2
+> + - "renesas,pwm-r8a7791": for R-Car M2-W
+> + - "renesas,pwm-r8a7794": for R-Car E2
+> +- reg: base address and length of the registers block for the PWM.
+> +- #pwm-cells: should be 2. See pwm.txt in this directory for a description of
+> +  the cells format.
+> +- clocks: clock phandle and specifier pair.
+> +- pinctrl-0: phandle, referring to a default pin configuration node.
+> +- pinctrl-names: Set to "default".
+> +
+> +Example: R8A7790 (R-Car H2) PWM Timer node
+> +
+> +       pwm0: pwm@e6e30000 {
+> +               compatible = "renesas,pwm-r8a7790", "renesas,pwm-rcar";
+> +               reg = <0 0xe6e30000 0 0x8>;
+> +               #pwm-cells = <2>;
+> +               clocks = <&mstp5_clks R8A7790_CLK_PWM>;
+> +               pinctrl-0 = <&pwm0_pins>;
+> +               pinctrl-names = "default";
+> +       };
+> --
+> 1.9.1
+>
