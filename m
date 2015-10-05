@@ -1,34 +1,21 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 02 Oct 2015 21:53:38 +0000
-Subject: [PATCH] ARM: shmobile: fix SILK board name
-Message-Id: <6818713.ulHphNVRsJ@wasted.cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 05 Oct 2015 03:03:55 +0000
+Subject: Re: [PATCH] ARM: shmobile: fix SILK board name
+Message-Id: <20151005030355.GD29979@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+ <6818713.ulHphNVRsJ@wasted.cogentembedded.com>
+In-Reply-To: <6818713.ulHphNVRsJ@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Unfortunately, the SILK board bindings were not quite correct, as the  board
-name should be all caps.  Fix that,  adding the board model #  in parens and
-removing stray semicolon.
+On Sat, Oct 03, 2015 at 12:53:38AM +0300, Sergei Shtylyov wrote:
+> Unfortunately, the SILK board bindings were not quite correct, as the  board
+> name should be all caps.  Fix that,  adding the board model #  in parens and
+> removing stray semicolon.
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
----
- Documentation/devicetree/bindings/arm/shmobile.txt |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-Index: renesas/Documentation/devicetree/bindings/arm/shmobile.txt
-=================================--- renesas.orig/Documentation/devicetree/bindings/arm/shmobile.txt
-+++ renesas/Documentation/devicetree/bindings/arm/shmobile.txt
-@@ -57,5 +57,5 @@ Boards:
-     compatible = "renesas,marzen", "renesas,r8a7779"
-   - Porter (M2-LCDP)
-     compatible = "renesas,porter", "renesas,r8a7791"
--  - Silk
--    compatible = "renesas,silk", "renesas,r8a7794";
-+  - SILK (RTP0RC7794LCB00011S)
-+    compatible = "renesas,silk", "renesas,r8a7794"
-
+Thanks, I have queued this up.
