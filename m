@@ -1,173 +1,133 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 30 Oct 2015 13:30:07 +0000
-Subject: Re: [PATCH v4 1/5] [RFC] clk: shmobile: Add new Renesas CPG/MSSR DT bindings
-Message-Id: <1920967.qVOrUj488P@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 06 Oct 2015 23:05:41 +0000
+Subject: [PATCH] ARM: shmobile: porter: add SDHI0/2 DT support
+Message-Id: <2228837.DO5U5OvRSi@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444999760-15750-1-git-send-email-geert+renesas@glider.be> <8712490.dkvmK3avmY@avalon> <CAMuHMdWg9sQAKcSSO-EJzy-BjxGbm_PsYugY62xvDeXtonTf-A@mail.gmail.com>
-In-Reply-To: <CAMuHMdWg9sQAKcSSO-EJzy-BjxGbm_PsYugY62xvDeXtonTf-A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms+renesas@verge.net.au>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, linux-clk <linux-clk@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+Define the Porter board dependent part of the SDHI0/2 device nodes along with
+the  necessary  voltage regulators (note that the Vcc regulators are dummy --
+they are required but don't actually exist on the board). Also, GPIOs have to
+be used for the CD and WP signals due to the SDHI driver constraints...
 
-On Tuesday 27 October 2015 09:14:15 Geert Uytterhoeven wrote:
-> On Tue, Oct 27, 2015 at 2:34 AM, Laurent Pinchart wrote:
-> > On Monday 26 October 2015 20:02:45 Geert Uytterhoeven wrote:
-> >> On Fri, Oct 23, 2015 at 1:10 PM, Laurent Pinchart wrote:
-> >>> On Friday 16 October 2015 14:49:16 Geert Uytterhoeven wrote:
-> >>>> On Renesas ARM SoCs (SH/R-Mobile, R-Car, RZ), the CPG (Clock Pulse
-> >>>> Generator) and MSSR (Module Standby and Software Reset) blocks are
-> >>>> intimately connected, and share the same register block.
-> >>>> 
-> >>>> Hence it makes sense to describe these two blocks using a
-> >>>> single device node in DT, instead of using a hierarchical structure
-> >>>> with multiple nodes, using a mix of generic and SoC-specific bindings.
-> >>>> 
-> >>>> These new DT bindings are intended to replace the existing DT bindings
-> >>>> for CPG core clocks ("renesas,*-cpg-clocks", "renesas,cpg-div6-clock")
-> >>>> and module clocks ("renesas,*-mstp-clocks"), at least for new SoCs.
-> >>>> 
-> >>>> This will make it easier to add module reset support later, which is
-> >>>> currently not implemented, and difficult to achieve using the existing
-> >>>> bindings due to the intertwined register layout.
-> >>>> 
-> >>>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >>>> 
-> >>>> --- /dev/null
-> >>>> +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-mssr.txt
-> >>>> @@ -0,0 +1,71 @@
-> >>>> +* Renesas Clock Pulse Generator / Module Standby and Software Reset
-> >>>> +
-> >>>> +On Renesas ARM SoCs (SH/R-Mobile, R-Car, RZ), the CPG (Clock Pulse
-> >>>> Generator)
-> >>>> +and MSSR (Module Standby and Software Reset) blocks are intimately
-> >>>> connected,
-> >>>> +and share the same register block.
-> >>>> +
-> >>>> +They provide the following functionalities:
-> >>>> +  - The CPG block generates various core clocks,
-> >>>> +  - The MSSR block provides two functions:
-> >>>> +      1. Module Standby, providing a Clock Domain to control the
-> >>>> clock supply
-> >>>> +      to individual SoC devices,
-> >>>> +      2. Reset Control, to perform a software reset of individual SoC
-> >>>> devices.
-> >> 
-> >> [...]
-> >> 
-> >>>> +  - #power-domain-cells: Must be 0
-> >>>> +      - SoC devices that are part of the CPG/MSSR Clock Domain and
-> >>>> can be
-> >>>> +     power-managed through Module Standby should refer to the CPG
-> >>>> device
-> >>>> +     node in their "power-domains" property, as documented by the
-> >>>> generic PM
-> >>>> +     Domain bindings in
-> >>>> +     Documentation/devicetree/bindings/power/power_domain.txt.
-> >>>> +
-> >>>> +
-> >>>> +Examples
-> >>>> +--------
-> >>>> +
-> >>>> +  - CPG device node:
-> >>>> +
-> >>>> +     cpg: clock-controller@e6150000 {
-> >>>> +             compatible = "renesas,r8a7795-cpg-mssr";
-> >>>> +             reg = <0 0xe6150000 0 0x1000>;
-> >>>> +             clocks = <&extal_clk>, <&extalr_clk>;
-> >>>> +             clock-names = "extal", "extalr";
-> >>>> +             #clock-cells = <2>;
-> >>>> +             #power-domain-cells = <0>;
-> >>>> +     };
-> >> >> +
-> >> >> +
-> >> > 
-> >> >> +  - CPG/MSSR Clock Domain member device node:
-> >>>
-> >>> Would it make sense to show two examples, one for a device whose driver
-> >>> manages the MSTP clock manually, and another one for a device whose
-> >>> driver delegates that to the power domain ?
-> >>> 
-> >>> I hate using the word driver in DT bindings, but unfortunately that's
-> >>> essentially what it boils down to here as the decision to specify the
-> >>> power domain is really based on the driver, not on the hardware.
-> >> 
-> >> IMHO it's not the driver, but the on-SoC module and its representation in
-> >> DT. Cfr. commit 797a0626e08ca4af ("ARM: shmobile: r8a7791 dtsi: Add
-> >> 
-> >> CPG/MSTP Clock Domain", which states:
-> >> |   Add "power-domains" properties to all device nodes for devices that
-> >> |   are part of the CPG/MSTP Clock Domain and can be power-managed
-> >> |   through an MSTP clock.  This applies to most on-SoC devices, which
-> >> |   have a one-to-one mapping from SoC device to DT device node.  Notable
-> >> |   exceptions are the "display" and "sound" nodes, which represent
-> >> |   multiple SoC devices, each having their own MSTP clocks.
-> > 
-> > You're quoting your own documentation to support your point, that's not
-> > fair :-)
-> 
-> I quoted it because it explains what was done.
-> 
-> > We're using power domains to gate clocks. The fact that it's not related
-> > to power supplies can already be borderline, but I can buy the argument
-> > that clocks relate to power consumption here. However, where the power
-> > domain abstraction is really abused is that we're adding all kind of
-> > devices to a single power domain while they're controlled by one clock
-> > gate each. That's a software hack, and we're using DT to tell whether our
-> > core code should control clock gating or not. That's not a hardware
-> > description, sorry.
-> 
-> IMHO the "power-domains" property naming is wrong: it should have been
-> "pm-domains", as it's following the spirit of the Linux PM Domain
-> abstraction.
-> 
-> PM Domain = Collection of devices treated similarly w.r.t. power management
+This patch is analogous to the commit 1299df03d719 (ARM: shmobile: henninger:
+add SDHI0/2 DT support) as there  are no differences between those boards in
+this respect.
 
-Doesn't treated refer to how the Linux kernel software implementation treats 
-the devices ?
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> "similarly" here means "using module clocks". And yes the datasheet states
-> that's what the module clocks do: control supply of the clock signal to the
-> module.
-> 
-> >> If a single device block (sharing the same register space), represented
-> >> in DT as a single device node, actually represents multiple modules,
-> >> there's no one-to-one mapping from SoC device to DT device node.
-> >> 
-> >> Hence the device node will have multiple module clocks, and the driver
-> >> will have to take care of managing them explicitly.
-> > 
-> > There can be other reasons why the clocks need to be controlled explicitly
-> > by the driver. At the end of the end it's a per-driver decision whether
-> > it wants to delegate clock management to runtime PM (which will be the
-> > default cause) or handle it itself.
-> 
-> The driver can still override if it feels the need.
+---
+This patch is against the 'renesas-devel-20151006-v4.3-rc4' tag of Simon
+Horman's 'renesas.git' repo.
 
-How should it do so by the way ?
+ arch/arm/boot/dts/r8a7791-porter.dts |   76 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
 
-> >> The register space sharing is an SoC-specific issue.
-> >> The single device node is a DT binding issue.
-> >> 
-> >> Perhaps such devices should use subnodes, so each of them can represent a
-> >> module, each with its own module clock.
-> > 
-> > I'm not sure to see how that would help, as we'd have a single struct
-> > device in that case (associated with the top-level DT node), so runtime
-> > PM couldn't be used to manage clocks independently.
-> 
-> The driver for the subnode device can still create child devices, can't it?
-
-I think it could, yes, but I'm not sure if that would really simplify much 
-compared to having three independent DT nodes. It could be experimented 
-though. The LVDS transmitter in particular should probably be a separate DT 
-node, linked to the DU using phandles.
-
--- 
-Regards,
-
-Laurent Pinchart
+Index: renesas/arch/arm/boot/dts/r8a7791-porter.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-porter.dts
++++ renesas/arch/arm/boot/dts/r8a7791-porter.dts
+@@ -10,6 +10,7 @@
+ 
+ /dts-v1/;
+ #include "r8a7791.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "Porter";
+@@ -33,6 +34,50 @@
+ 		device_type = "memory";
+ 		reg = <2 0x00000000 0 0x40000000>;
+ 	};
++
++	vcc_sdhi0: regulator@0 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI0 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++
++	vccq_sdhi0: regulator@1 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI0 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio2 12 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
++
++	vcc_sdhi2: regulator@2 {
++		compatible = "regulator-fixed";
++
++		regulator-name = "SDHI2 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++
++	vccq_sdhi2: regulator@3 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI2 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio2 26 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
+ };
+ 
+ &extal_clk {
+@@ -54,6 +99,16 @@
+ 		renesas,groups = "intc_irq0";
+ 		renesas,function = "intc";
+ 	};
++
++	sdhi0_pins: sd0 {
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
++		renesas,function = "sdhi0";
++	};
++
++	sdhi2_pins: sd2 {
++		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
++		renesas,function = "sdhi2";
++	};
+ };
+ 
+ &scif0 {
+@@ -78,3 +133,24 @@
+ 		micrel,led-mode = <1>;
+ 	};
+ };
++
++&sdhi0 {
++	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi0>;
++	vqmmc-supply = <&vccq_sdhi0>;
++	cd-gpios = <&gpio6 6 GPIO_ACTIVE_LOW>;
++	wp-gpios = <&gpio6 7 GPIO_ACTIVE_HIGH>;
++	status = "okay";
++};
++
++&sdhi2 {
++	pinctrl-0 = <&sdhi2_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi2>;
++	vqmmc-supply = <&vccq_sdhi2>;
++	cd-gpios = <&gpio6 22 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
 
