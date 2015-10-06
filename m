@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 05 Oct 2015 20:55:14 +0000
-Subject: Re: [PATCH 1/4] usb: host: xhci-rcar: add xhci_rcar_is_compatible() function
-Message-Id: <CAMuHMdXEbEwgNgu6qbEhPXoikneVeHN4Qw_gAzwO445hQy291w@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 06 Oct 2015 08:22:56 +0000
+Subject: RE: [PATCH 1/4] usb: host: xhci-rcar: add xhci_rcar_is_compatible() function
+Message-Id: <TY1PR06MB09283886BE01D0B4FC54ED5AD8370@TY1PR06MB0928.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1444046790-5804-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 In-Reply-To: <1444046790-5804-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
@@ -10,30 +10,25 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Shimoda-san,
-
-On Mon, Oct 5, 2015 at 2:06 PM, Yoshihiro Shimoda
-<yoshihiro.shimoda.uh@renesas.com> wrote:
-> +bool xhci_rcar_is_compatible(struct usb_hcd *hcd)
-> +{
-> +       struct device_node *of_node = hcd->self.controller->of_node;
-> +
-> +       if (of_device_is_compatible(of_node, "renesas,xhci-r8a7790") ||
-> +           of_device_is_compatible(of_node, "renesas,xhci-r8a7791"))
-> +               return true;
-
-If you want to match against multiple compatible values, you may be better
-off with of_match_node().
-This may also simplify the code to match specific firmware paths to the
-various compatible entries.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR2VlcnQtc2FuLA0KDQo+IFNlbnQ6IFR1ZXNkYXksIE9jdG9iZXIgMDYsIDIwMTUgNTo1NSBB
+TQ0KPiANCj4gSGkgU2hpbW9kYS1zYW4sDQo+IA0KPiBPbiBNb24sIE9jdCA1LCAyMDE1IGF0IDI6
+MDYgUE0sIFlvc2hpaGlybyBTaGltb2RhDQo+IDx5b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2Fz
+LmNvbT4gd3JvdGU6DQo+ID4gK2Jvb2wgeGhjaV9yY2FyX2lzX2NvbXBhdGlibGUoc3RydWN0IHVz
+Yl9oY2QgKmhjZCkNCj4gPiArew0KPiA+ICsgICAgICAgc3RydWN0IGRldmljZV9ub2RlICpvZl9u
+b2RlID0gaGNkLT5zZWxmLmNvbnRyb2xsZXItPm9mX25vZGU7DQo+ID4gKw0KPiA+ICsgICAgICAg
+aWYgKG9mX2RldmljZV9pc19jb21wYXRpYmxlKG9mX25vZGUsICJyZW5lc2FzLHhoY2ktcjhhNzc5
+MCIpIHx8DQo+ID4gKyAgICAgICAgICAgb2ZfZGV2aWNlX2lzX2NvbXBhdGlibGUob2Zfbm9kZSwg
+InJlbmVzYXMseGhjaS1yOGE3NzkxIikpDQo+ID4gKyAgICAgICAgICAgICAgIHJldHVybiB0cnVl
+Ow0KPiANCj4gSWYgeW91IHdhbnQgdG8gbWF0Y2ggYWdhaW5zdCBtdWx0aXBsZSBjb21wYXRpYmxl
+IHZhbHVlcywgeW91IG1heSBiZSBiZXR0ZXINCj4gb2ZmIHdpdGggb2ZfbWF0Y2hfbm9kZSgpLg0K
+PiBUaGlzIG1heSBhbHNvIHNpbXBsaWZ5IHRoZSBjb2RlIHRvIG1hdGNoIHNwZWNpZmljIGZpcm13
+YXJlIHBhdGhzIHRvIHRoZQ0KPiB2YXJpb3VzIGNvbXBhdGlibGUgZW50cmllcy4NCg0KVGhhbmsg
+eW91IGZvciB0aGUgY29tbWVudC4NCkkgd2lsbCBtb2RpZnkgdGhlIGNvZGUgdXNpbmcgb2ZfbWF0
+Y2hfbm9kZSgpLg0KDQpCZXN0IHJlZ2FyZHMsDQpZb3NoaWhpcm8gU2hpbW9kYQ0KDQo+IEdye29l
+dGplLGVldGluZ31zLA0KPiANCj4gICAgICAgICAgICAgICAgICAgICAgICAgR2VlcnQNCj4gDQo+
+IC0tDQo+IEdlZXJ0IFV5dHRlcmhvZXZlbiAtLSBUaGVyZSdzIGxvdHMgb2YgTGludXggYmV5b25k
+IGlhMzIgLS0gZ2VlcnRAbGludXgtbTY4ay5vcmcNCj4gDQo+IEluIHBlcnNvbmFsIGNvbnZlcnNh
+dGlvbnMgd2l0aCB0ZWNobmljYWwgcGVvcGxlLCBJIGNhbGwgbXlzZWxmIGEgaGFja2VyLiBCdXQN
+Cj4gd2hlbiBJJ20gdGFsa2luZyB0byBqb3VybmFsaXN0cyBJIGp1c3Qgc2F5ICJwcm9ncmFtbWVy
+IiBvciBzb21ldGhpbmcgbGlrZSB0aGF0Lg0KPiAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgIC0tIExpbnVzIFRvcnZhbGRzDQo
