@@ -1,78 +1,26 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 05 Oct 2015 22:51:01 +0000
-Subject: [PATCH] ARM: shmobile: porter: add Ether DT support
-Message-Id: <1507520.6rxyDiKYNB@wasted.cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 06 Oct 2015 00:45:02 +0000
+Subject: Re: [PATCH] ARM: shmobile: porter: add Ether DT support
+Message-Id: <20151006004502.GC12506@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+ <1507520.6rxyDiKYNB@wasted.cogentembedded.com>
+In-Reply-To: <1507520.6rxyDiKYNB@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Define  the Porter board dependent part of  the Ether device node.
-Enable DHCP and NFS root for the kernel booting.
+On Tue, Oct 06, 2015 at 01:51:01AM +0300, Sergei Shtylyov wrote:
+> Define  the Porter board dependent part of  the Ether device node.
+> Enable DHCP and NFS root for the kernel booting.
+> 
+> This  patch  is analogous to the commit 26b0d2cf73cb (ARM: shmobile: henninger:
+> add Ether DT support)  as there  are no differences between those boards in this
+> respect.
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> 
+> ---
 
-This  patch  is analogous to the commit 26b0d2cf73cb (ARM: shmobile: henninger:
-add Ether DT support)  as there  are no differences between those boards in this
-respect.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
----
-This patch is against the 'renesas-devel-20151005-v4.3-rc4' tag of Simon
-Horman's 'renesas.git' repo.
-
- arch/arm/boot/dts/r8a7791-porter.dts |   28 +++++++++++++++++++++++++++-
- 1 file changed, 27 insertions(+), 1 deletion(-)
-
-Index: renesas/arch/arm/boot/dts/r8a7791-porter.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-porter.dts
-+++ renesas/arch/arm/boot/dts/r8a7791-porter.dts
-@@ -20,7 +20,7 @@
- 	};
- 
- 	chosen {
--		bootargs = "ignore_loglevel";
-+		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
- 		stdout-path = &scif0;
- 	};
- 
-@@ -44,6 +44,16 @@
- 		renesas,groups = "scif0_data_d";
- 		renesas,function = "scif0";
- 	};
-+
-+	ether_pins: ether {
-+		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
-+		renesas,function = "eth";
-+	};
-+
-+	phy1_pins: phy1 {
-+		renesas,groups = "intc_irq0";
-+		renesas,function = "intc";
-+	};
- };
- 
- &scif0 {
-@@ -52,3 +62,19 @@
- 
- 	status = "okay";
- };
-+
-+&ether {
-+	pinctrl-0 = <&ether_pins &phy1_pins>;
-+	pinctrl-names = "default";
-+
-+	phy-handle = <&phy1>;
-+	renesas,ether-link-active-low;
-+	status = "ok";
-+
-+	phy1: ethernet-phy@1 {
-+		reg = <1>;
-+		interrupt-parent = <&irqc0>;
-+		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
-+		micrel,led-mode = <1>;
-+	};
-+};
-
+Thanks, I have queued this up.
