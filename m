@@ -1,52 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 02 Oct 2015 06:12:09 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: dts: Add common file for AA121TD01 panel
-Message-Id: <20151002061205.GB15481@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 07 Oct 2015 10:51:32 +0000
+Subject: [PATCH 0/2] irqchip/renesas-intc-irqpin: Remove obsolete platform data support
+Message-Id: <1444215094-27159-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87vbd4227u.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87vbd4227u.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Fri, Oct 02, 2015 at 02:05:53PM +0900, Magnus Damm wrote:
-> Hi Simon,
-> 
-> On Thu, Aug 13, 2015 at 9:02 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Wed, Aug 05, 2015 at 09:52:57AM +0900, Magnus Damm wrote:
-> >> Hi Laurent,
-> >>
-> >> On Wed, Aug 5, 2015 at 7:48 AM, Laurent Pinchart
-> >> <laurent.pinchart@ideasonboard.com> wrote:
-> >> > On Monday 03 August 2015 17:38:37 Magnus Damm wrote:
-> >> >> On Mon, Aug 3, 2015 at 5:34 PM, Kuninori Morimoto wrote:
-> >> >> > Hi Wolfram
-> >> >> >
-> >> >> >> > I tested this panel on Koelsch board (with I2C fixup local patch),
-> >> >> >>
-> >> >> >> I2C fixup? The NACK issue?
-> >> >> >
-> >> >> > I don't know detail.
-> >> >> > But, I need to use gpio-i2c to use HDMI, otherwise it doesn't work.
-> >> >>
-> >> >> I wonder if it is possible to use the "I2C master" bind/unbind code
-> >> >> developed by Wolfram to switch to GPIO bit-bang at run-time?
-> >> >
-> >> > Or to fix the hardware I2C controller driver ? :-)
-> >>
-> >> That would be the best way forward yes. I suspect that it may take
-> >> quite some time to do so, so until then it would be nice to not have
-> >> to carry local patches to get basic stuff working...
-> >
-> > I am marking this patch as deferred for now.
-> > If you feel that is not appropriate please don't hesitate to let me know.
-> > Alternatively, please feel free to repost this patch when you
-> > feel it is appropriate.
-> 
-> I don't think this patch should be deferred. The I2C issue discussed
-> in this thread has little to do with the new panel definition. So
-> please consider picking up this patch so we can support the new LVDS
-> panel.
+	Hi Thomas, Jason, Marc,
 
-Sure, done.
+Since commit 4baadb9e05c68962 ("ARM: shmobile: r8a7778: remove obsolete
+setup code"), which is now in arm-soc/for-next, all Renesas SoCs with a
+renesas-intc-irqpin module are only supported in generic DT-only ARM
+multi-platform builds.  The driver doesn't need to use platform data
+anymore, hence this series removes platform data configuration, and does
+a small cleanup.
+
+Thanks!
+
+Geert Uytterhoeven (2):
+  irqchip/renesas-intc-irqpin: Remove obsolete platform data support
+  irqchip/renesas-intc-irqpin: Remove intc_irqpin_priv.number_of_irqs
+
+ drivers/irqchip/irq-renesas-intc-irqpin.c          | 51 ++++++++--------------
+ .../linux/platform_data/irq-renesas-intc-irqpin.h  | 29 ------------
+ 2 files changed, 18 insertions(+), 62 deletions(-)
+ delete mode 100644 include/linux/platform_data/irq-renesas-intc-irqpin.h
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
