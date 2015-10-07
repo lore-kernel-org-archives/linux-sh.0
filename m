@@ -1,104 +1,72 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 29 Oct 2015 23:27:47 +0000
-Subject: [PATCH v5 01/14] arm64: renesas: r8a7795: add AUDIO_DMAC support
-Message-Id: <1446161280-23097-2-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:58:01 +0000
+Subject: [PATCH 24/28] ARM: shmobile: r8a7794: link PCI USB devices to USB PHY
+Message-Id: <45cb0bd77a85ee53234968109909654415479558.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Describe the PCI USB devices that are behind the PCI bridges, adding necessary
+links to the USB PHY device.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
 ---
+ arch/arm/boot/dts/r8a7794.dtsi | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
-v5 [Simon Horman]
-* Update for new CPG/MSSR bindings via Geert Uytterhoeven
----
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 64 ++++++++++++++++++++++++++++++++
- 1 file changed, 64 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index bccb49d9fb02..9668adce81e7 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -90,6 +90,70 @@
- 			#power-domain-cells = <0>;
- 		};
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 6ba0fa4890d0..efc3548511c4 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -667,6 +667,20 @@
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+ 				 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+ 				 0x1000 0 0 2 &gic 0 108 IRQ_TYPE_LEVEL_HIGH>;
++
++		usb@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb0 0>;
++			phy-names = "usb";
++		};
++
++		usb@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb0 0>;
++			phy-names = "usb";
++		};
+ 	};
  
-+		audma0: dma-controller@ec700000 {
-+			compatible = "renesas,rcar-dmac";
-+			reg = <0 0xec700000 0 0x10000>;
-+			interrupts =	<0 350 IRQ_TYPE_LEVEL_HIGH
-+					 0 320 IRQ_TYPE_LEVEL_HIGH
-+					 0 321 IRQ_TYPE_LEVEL_HIGH
-+					 0 322 IRQ_TYPE_LEVEL_HIGH
-+					 0 323 IRQ_TYPE_LEVEL_HIGH
-+					 0 324 IRQ_TYPE_LEVEL_HIGH
-+					 0 325 IRQ_TYPE_LEVEL_HIGH
-+					 0 326 IRQ_TYPE_LEVEL_HIGH
-+					 0 327 IRQ_TYPE_LEVEL_HIGH
-+					 0 328 IRQ_TYPE_LEVEL_HIGH
-+					 0 329 IRQ_TYPE_LEVEL_HIGH
-+					 0 330 IRQ_TYPE_LEVEL_HIGH
-+					 0 331 IRQ_TYPE_LEVEL_HIGH
-+					 0 332 IRQ_TYPE_LEVEL_HIGH
-+					 0 333 IRQ_TYPE_LEVEL_HIGH
-+					 0 334 IRQ_TYPE_LEVEL_HIGH
-+					 0 335 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12", "ch13", "ch14", "ch15";
-+			clocks = <&cpg CPG_MOD 502>;
-+			clock-names = "fck";
-+			power-domains = <&cpg>;
-+			#dma-cells = <1>;
-+			dma-channels = <16>;
+ 	pci1: pci@ee0d0000 {
+@@ -688,6 +702,20 @@
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
+ 				 0x0800 0 0 1 &gic 0 113 IRQ_TYPE_LEVEL_HIGH
+ 				 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
++
++		usb@0,1 {
++			reg = <0x800 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb2 0>;
++			phy-names = "usb";
 +		};
 +
-+		audma1: dma-controller@ec720000 {
-+			compatible = "renesas,rcar-dmac";
-+			reg = <0 0xec720000 0 0x10000>;
-+			interrupts =	<0 351 IRQ_TYPE_LEVEL_HIGH
-+					 0 336 IRQ_TYPE_LEVEL_HIGH
-+					 0 337 IRQ_TYPE_LEVEL_HIGH
-+					 0 338 IRQ_TYPE_LEVEL_HIGH
-+					 0 339 IRQ_TYPE_LEVEL_HIGH
-+					 0 340 IRQ_TYPE_LEVEL_HIGH
-+					 0 341 IRQ_TYPE_LEVEL_HIGH
-+					 0 342 IRQ_TYPE_LEVEL_HIGH
-+					 0 343 IRQ_TYPE_LEVEL_HIGH
-+					 0 344 IRQ_TYPE_LEVEL_HIGH
-+					 0 345 IRQ_TYPE_LEVEL_HIGH
-+					 0 346 IRQ_TYPE_LEVEL_HIGH
-+					 0 347 IRQ_TYPE_LEVEL_HIGH
-+					 0 348 IRQ_TYPE_LEVEL_HIGH
-+					 0 349 IRQ_TYPE_LEVEL_HIGH
-+					 0 382 IRQ_TYPE_LEVEL_HIGH
-+					 0 383 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12", "ch13", "ch14", "ch15";
-+			clocks = <&cpg CPG_MOD 501>;
-+			clock-names = "fck";
-+			power-domains = <&cpg>;
-+			#dma-cells = <1>;
-+			dma-channels = <16>;
++		usb@0,2 {
++			reg = <0x1000 0 0 0 0>;
++			device_type = "pci";
++			phys = <&usb2 0>;
++			phy-names = "usb";
 +		};
-+
- 		pfc: pfc@e6060000 {
- 			compatible = "renesas,pfc-r8a7795";
- 			reg = <0 0xe6060000 0 0x50c>;
+ 	};
+ 
+ 	usbphy: usb-phy@e6590100 {
 -- 
 2.1.4
 
