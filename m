@@ -1,51 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 06:48:18 +0000
-Subject: [PATCH v5 5/5] arm64: defconfig: enable EthernetAVB
-Message-Id: <1444891698-8780-6-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 07 Oct 2015 10:39:35 +0000
+Subject: [PATCH v2 1/2] [media] rcar_vin: Remove obsolete r8a779x-vin platform_device_id entries
+Message-Id: <1444214376-26931-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444891698-8780-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1444891698-8780-1-git-send-email-horms+renesas@verge.net.au>
+References: <1444214376-26931-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1444214376-26931-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Mauro Carvalho Chehab <mchehab@osg.samsung.com>, linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-This is present on the Renesas r8a7795 SoC and may be
-used by the Salvator-X board.
+Since commit a483dcbfa21f919c ("ARM: shmobile: lager: Remove legacy
+board support"), R-Car Gen2 SoCs are only supported in generic DT-only
+ARM multi-platform builds.  The driver doesn't need to match platform
+devices by name anymore, hence remove the corresponding
+platform_device_id entry.
 
-Also enable MICREL_PHY which is used on the Salvator-X board.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2
-* Enable MICREL_PHY
-
-v3
-* Added Ack
-
-v4, v5
-* No change
+v2:
+  - Add Acked-by.
 ---
- arch/arm64/configs/defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+ drivers/media/platform/soc_camera/rcar_vin.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index dccc685b58ae..79a09de4f52f 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -97,8 +97,10 @@ CONFIG_TUN=y
- CONFIG_VIRTIO_NET=y
- CONFIG_NET_XGENE=y
- CONFIG_SKY2=y
-+CONFIG_RAVB=y
- CONFIG_SMC91X=y
- CONFIG_SMSC911X=y
-+CONFIG_MICREL_PHY=y
- # CONFIG_WLAN is not set
- CONFIG_INPUT_EVDEV=y
- CONFIG_KEYBOARD_GPIO=y
+diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
+index 71dd71c0bd1f..4069587ae8b6 100644
+--- a/drivers/media/platform/soc_camera/rcar_vin.c
++++ b/drivers/media/platform/soc_camera/rcar_vin.c
+@@ -1846,8 +1846,6 @@ MODULE_DEVICE_TABLE(of, rcar_vin_of_table);
+ #endif
+ 
+ static struct platform_device_id rcar_vin_id_table[] = {
+-	{ "r8a7791-vin",  RCAR_GEN2 },
+-	{ "r8a7790-vin",  RCAR_GEN2 },
+ 	{ "r8a7779-vin",  RCAR_H1 },
+ 	{ "r8a7778-vin",  RCAR_M1 },
+ 	{ "uPD35004-vin", RCAR_E1 },
 -- 
-2.1.4
+1.9.1
 
