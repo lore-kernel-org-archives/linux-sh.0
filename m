@@ -1,45 +1,118 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 27 Oct 2015 16:58:42 +0000
-Subject: Re: [PATCH v3] DT: mmc: sh_mmcif: document R8A779[34] support
-Message-Id: <CAMuHMdXjwyqzWJGkPh4FTSsDeWCe3fs55y8gVG6BqyyXfY96ZA@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 07 Oct 2015 08:23:44 +0000
+Subject: [PATCH 2/3] pinctrl: sh-pfc: Stop including <linux/platform_data/gpio-rcar.h>
+Message-Id: <1444206225-25664-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
-	<2657565.2y8qYzu3eL@wasted.cogentembedded.com>
-	<CAPDyKFqLuH9u2n1EKSc-89E6iDR8JH0A+5c=wn8g3THPKvDX7A@mail.gmail.com>
-	<5626A1CF.9050309@cogentembedded.com>
-In-Reply-To: <5626A1CF.9050309@cogentembedded.com>
+References: <1444206225-25664-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1444206225-25664-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, Rob Herring <robh+dt@kernel.org>, =?UTF-8?Q?Pawe=C5=82_Moll?= <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, linux-mmc <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>
+Cc: linux-usb@vger.kernel.org, linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Sergei,
+This header file will be removed soon.
 
-On Tue, Oct 20, 2015 at 10:19 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> On 10/16/2015 04:07 PM, Ulf Hansson wrote:
->>> Renesas R8A7794 SoC also has the MMCIF controller...
->>>
->>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->
->> Thanks, applied for next.
->
->    Oops, just noticed the subject was stale. I wasn't adding R8A7793 support
-> in that version. Is it possible to fix?
+Copy the helper macro RCAR_GP_PIN(), which is used by the pinctrl
+drivers only, to sh_pfc.h, and drop the #include.
 
-Hah, and that made me mark Ulrich's patch for r8a7793 as obsolete in
-patchwork :-(
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 1 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 1 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 1 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 1 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7794.c | 1 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 1 -
+ drivers/pinctrl/sh-pfc/sh_pfc.h      | 5 +++++
+ 7 files changed, 5 insertions(+), 6 deletions(-)
 
-Picked up and sent out.
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+index 581d3c44aa4a..ff0077d7869b 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
+@@ -23,7 +23,6 @@
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+ #include <linux/pinctrl/pinconf-generic.h>
+-#include <linux/platform_data/gpio-rcar.h>
+ #include "core.h"
+ #include "sh_pfc.h"
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 4be082e6a02e..63e22303b934 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -20,7 +20,6 @@
+  */
+ 
+ #include <linux/kernel.h>
+-#include <linux/platform_data/gpio-rcar.h>
+ 
+ #include "sh_pfc.h"
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index 8e45e30252bc..79b08ecc10be 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -22,7 +22,6 @@
+  */
+ 
+ #include <linux/kernel.h>
+-#include <linux/platform_data/gpio-rcar.h>
+ 
+ #include "core.h"
+ #include "sh_pfc.h"
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index a58a0dec6994..e67f82a44b95 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -9,7 +9,6 @@
+  */
+ 
+ #include <linux/kernel.h>
+-#include <linux/platform_data/gpio-rcar.h>
+ 
+ #include "core.h"
+ #include "sh_pfc.h"
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7794.c b/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+index 185554e15099..bc570d72285e 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+@@ -11,7 +11,6 @@
+  */
+ 
+ #include <linux/kernel.h>
+-#include <linux/platform_data/gpio-rcar.h>
+ 
+ #include "core.h"
+ #include "sh_pfc.h"
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+index dce06ed02090..446a37d900c8 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+@@ -9,7 +9,6 @@
+  */
+ 
+ #include <linux/kernel.h>
+-#include <linux/platform_data/gpio-rcar.h>
+ 
+ #include "core.h"
+ #include "sh_pfc.h"
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 12bfb706845e..a6c9bf23371f 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -341,4 +341,9 @@ struct sh_pfc_soc_info {
+ 		}							\
+ 	}
+ 
++/*
++ * GPIO number helper macro for R-Car
++ */
++#define RCAR_GP_PIN(bank, pin)		(((bank) * 32) + (pin))
++
+ #endif /* __SH_PFC_H */
+-- 
+1.9.1
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
