@@ -1,95 +1,103 @@
-From: ahaslam@baylibre.com
-Date: Mon, 12 Oct 2015 17:41:11 +0000
-Subject: [RFC/RFT 3/6] ARM: shmobile: check if cpu is allowed on power on
-Message-Id: <1444671674-19275-4-git-send-email-ahaslam@baylibre.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:57:58 +0000
+Subject: [PATCH 21/28] ARM: shmobile: porter: initial device tree
+Message-Id: <f138e54c4525fa789b556909c00359fea3c21a6c.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Axel Haslam <ahaslam@baylibre.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-To decide if we can boot cpus that are not part of the boot cluster,
-we should check if cci and mcpm were correctly enabled and probed.
-But, mcpm_init is called with an early_init call which is
-later than apmu_parse_cfg.
+Add the initial device tree for the R8A7791 SoC based Porter low cost board
+(which  is a  slightly modified version  of the Henninger board).
 
-So, check if a cpu should be allowed to boot direcly from the
-the power_on function as this will happen after early_init and allow
-us to check if mcpm and cci are enabled.
+SCIF0 serial port support is included, so that the serial console can work.
 
-We use the fact that the boot cpu will always be logical cpu0 to compare
-each cpus physical cluster and decide if can be turned on or not.
-
-Signed-off-by: Axel Haslam <ahaslam@baylibre.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/platsmp-apmu.c | 28 ++++++++++++++--------------
- 1 file changed, 14 insertions(+), 14 deletions(-)
+ arch/arm/boot/dts/Makefile           |  1 +
+ arch/arm/boot/dts/r8a7791-porter.dts | 54 ++++++++++++++++++++++++++++++++++++
+ 2 files changed, 55 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a7791-porter.dts
 
-diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
-index d2ff5af..b88d97c 100644
---- a/arch/arm/mach-shmobile/platsmp-apmu.c
-+++ b/arch/arm/mach-shmobile/platsmp-apmu.c
-@@ -28,6 +28,8 @@
- static struct {
- 	void __iomem *iomem;
- 	int bit;
-+	unsigned int pcpu;
-+	unsigned int pcluster;
- } apmu_cpus[NR_CPUS];
- 
- #define WUPCR_OFFS 0x10
-@@ -37,11 +39,17 @@ static struct {
- int __maybe_unused apmu_power_on(unsigned int cpu)
- {
- 	void __iomem *p = apmu_cpus[cpu].iomem;
-+	unsigned int pcluster = apmu_cpus[cpu].pcluster;
-+	unsigned int boot_pcluster = apmu_cpus[0].pcluster;
- 	int bit =  apmu_cpus[cpu].bit;
- 
- 	if (!p)
- 		return -EINVAL;
- 
-+	if (pcluster != boot_pcluster) {
-+		pr_err("Requested to boot cpu %d on non-boot cluster!\n", cpu);
-+		return -EINVAL;
-+	}
- 	/* request power on */
- 	writel_relaxed(BIT(bit), p + WUPCR_OFFS);
- 
-@@ -101,27 +109,19 @@ static void apmu_parse_cfg(void (*fn)(struct resource *res, int cpu, int bit),
- 	u32 id;
- 	int k;
- 	int bit, index;
--	bool is_allowed;
- 
- 	for (k = 0; k < num; k++) {
--		/* only enable the cluster that includes the boot CPU */
--		is_allowed = false;
--		for (bit = 0; bit < ARRAY_SIZE(apmu_config[k].cpus); bit++) {
--			id = apmu_config[k].cpus[bit];
--			if (id >= 0) {
--				if (id = cpu_logical_map(0))
--					is_allowed = true;
--			}
--		}
--		if (!is_allowed)
--			continue;
--
- 		for (bit = 0; bit < ARRAY_SIZE(apmu_config[k].cpus); bit++) {
- 			id = apmu_config[k].cpus[bit];
- 			if (id >= 0) {
- 				index = get_logical_index(id);
--				if (index >= 0)
-+				if (index >= 0) {
- 					fn(&apmu_config[k].iomem, index, bit);
-+					apmu_cpus[index].pcpu +						MPIDR_AFFINITY_LEVEL(id, 0);
-+					apmu_cpus[index].pcluster +						MPIDR_AFFINITY_LEVEL(id, 1);
-+				}
- 			}
- 		}
- 	}
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 08f85bcc7da7..d285d9816d9d 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -532,6 +532,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	r8a7790-lager.dtb \
+ 	r8a7791-henninger.dtb \
+ 	r8a7791-koelsch.dtb \
++	r8a7791-porter.dtb \
+ 	r8a7793-gose.dtb \
+ 	r8a7794-alt.dtb \
+ 	r8a7794-silk.dtb \
+diff --git a/arch/arm/boot/dts/r8a7791-porter.dts b/arch/arm/boot/dts/r8a7791-porter.dts
+new file mode 100644
+index 000000000000..b5670dd388e6
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a7791-porter.dts
+@@ -0,0 +1,54 @@
++/*
++ * Device Tree Source for the Porter board
++ *
++ * Copyright (C) 2015 Cogent Embedded, Inc.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/dts-v1/;
++#include "r8a7791.dtsi"
++
++/ {
++	model = "Porter";
++	compatible = "renesas,porter", "renesas,r8a7791";
++
++	aliases {
++		serial0 = &scif0;
++	};
++
++	chosen {
++		bootargs = "ignore_loglevel";
++		stdout-path = &scif0;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0 0x40000000 0 0x40000000>;
++	};
++
++	memory@200000000 {
++		device_type = "memory";
++		reg = <2 0x00000000 0 0x40000000>;
++	};
++};
++
++&extal_clk {
++	clock-frequency = <20000000>;
++};
++
++&pfc {
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data_d";
++		renesas,function = "scif0";
++	};
++};
++
++&scif0 {
++	pinctrl-0 = <&scif0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
 -- 
-2.4.5
+2.1.4
 
