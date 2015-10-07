@@ -1,33 +1,48 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 07 Oct 2015 11:38:55 +0000
-Subject: [PATCH v2 3/6] usb: host: xhci-plat: add firmware_name in xhci_plat_priv
-Message-Id: <1444217938-4668-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:57:43 +0000
+Subject: [PATCH 06/28] ARM: shmobile: marzen: Board specific serial port order
+Message-Id: <8025e3ff4ca972a0ca2aa898562670a767f79889.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds a member "firmware_name" in struct xhci_plat_priv
-to simplify the code to match specific firmware name.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Convert Marzen to use board-specific serial0 and serial1 instead
+of the older shared SoC-specific SCIF index.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/usb/host/xhci-plat.h | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/r8a7779-marzen.dts | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/usb/host/xhci-plat.h b/drivers/usb/host/xhci-plat.h
-index 4479869..20b32a7 100644
---- a/drivers/usb/host/xhci-plat.h
-+++ b/drivers/usb/host/xhci-plat.h
-@@ -20,6 +20,7 @@ enum xhci_plat_type {
+diff --git a/arch/arm/boot/dts/r8a7779-marzen.dts b/arch/arm/boot/dts/r8a7779-marzen.dts
+index 20afea6f06ef..fe396c8d58db 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen.dts
+@@ -19,12 +19,12 @@
+ 	compatible = "renesas,marzen", "renesas,r8a7779";
  
- struct xhci_plat_priv {
- 	enum xhci_plat_type type;
-+	const char *firmware_name;
- };
+ 	aliases {
+-		serial2 = &scif2;
+-		serial4 = &scif4;
++		serial0 = &scif2;
++		serial1 = &scif4;
+ 	};
  
- #define hcd_to_xhci_priv(h) ((struct xhci_plat_priv *)hcd_to_xhci(h)->priv)
+ 	chosen {
+-		bootargs = "console=ttySC2,115200 ignore_loglevel root=/dev/nfs ip=on";
++		bootargs = "ignore_loglevel root=/dev/nfs ip=on";
+ 		stdout-path = &scif2;
+ 	};
+ 
 -- 
-1.9.1
+2.1.4
 
