@@ -1,55 +1,63 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Oct 2015 23:09:17 +0000
-Subject: [PATCH v3 0/2] Basic GPIO support for r8a7795
-Message-Id: <1446073759-10569-1-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:57:56 +0000
+Subject: [PATCH 19/28] ARM: shmobile: silk: enable internal PCI
+Message-Id: <f409ed0f4915c00e93ca21d1aea24e9aa2dedaf2.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-this is an update of work by Takeshi Kihara, posted by me, then Ulrich
-Hecht and now me again.  Ulrich, I would be most grateful if you could look
-over this and repost if there are problems.
+Enable internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached to
+them.
 
-Changes:
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7794-silk.dts | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
-* v3
-  - Correction to gpio-ranges as suggested by Geert Uytterhoeven
-* v2
-  - Update to new CPG/MSSR bindings via Geert Uytterhoeven
-
-Base:
-
-* "[PATCH v12 0/7] arm64: renesas: Add Renesas R8A7795 SoC support".
-  This can be found in the topic/arm64-rcar-gen3-v12 branch of
-  my renesas tree on kernel.org.
-
-Run-time dependencies:
-
-* The base
-* The new GPG driver
-  "[PATCH/RFC v4 0/5] clk: shmobile: Add new Renesas CPG/MSSR DT bindings"
-  and its dependencies. This may be found in the
-  topic/cpg-mssr-v4 branch of
-  git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers
-  along with an earlier version of this patchset which updates applied.
-
-Availability:
-* This patchset is available in the topic/r8a7795-gpio-v3 branch of my
-  renesas tree on kernel.org
-
-
-Takeshi Kihara (2):
-  arm64: dts: r8a7795: add GPIO nodes
-  arm64: defconfig: Enable GPIO of Renesas R-Car Gen3 SoC
-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 112 +++++++++++++++++++++++++++++++
- arch/arm64/configs/defconfig             |   1 +
- 2 files changed, 113 insertions(+)
-
+diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
+index bb0a22423dc4..71bb56fef7e5 100644
+--- a/arch/arm/boot/dts/r8a7794-silk.dts
++++ b/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -80,6 +80,16 @@
+ 		renesas,groups = "vin0_data8", "vin0_clk";
+ 		renesas,function = "vin0";
+ 	};
++
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb0";
++	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
+ };
+ 
+ &scif2 {
+@@ -188,3 +198,15 @@
+ 		};
+ 	};
+ };
++
++&pci0 {
++	status = "okay";
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++};
++
++&pci1 {
++	status = "okay";
++	pinctrl-0 = <&usb1_pins>;
++	pinctrl-names = "default";
++};
 -- 
 2.1.4
 
