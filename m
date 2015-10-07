@@ -1,91 +1,130 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 06:48:16 +0000
-Subject: [PATCH v5 3/5] arm64: dts: r8a7795: enable EthernetAVB on Salvator-X
-Message-Id: <1444891698-8780-4-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:57:40 +0000
+Subject: [PATCH 03/28] ARM: shmobile: r8a7794: add GPIO DT support
+Message-Id: <e8f5de3bea9e01fd1390d64bc915a11df919b3fe.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444891698-8780-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1444891698-8780-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-[horms: minor updates]
+Describe GPIO[0-6] controllers in the R8A7794 device tree.
+
+Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
 ---
-v0 [Kazuya Mizuguchi]
+ arch/arm/boot/dts/r8a7794.dtsi | 91 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 91 insertions(+)
 
-v1 [Simon Horman]
-* updated filename to salvator-x
-* updated patch subject
-
-v2 [Simon Horman]
-* Removed spurious update to r8a7795.dtsi introduced in v1
-* Removed unused renesas,phy property
-
-v3 [Simon Horman]
-* No change but provided PFC driver update in separate patch(set)
-
-v4 [Simon Horman]
-* As suggested by Sergei Shtylyov
-  - Removed unused phy-reset-gpio property
-
-v5
-* No change
----
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 31 ++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index f522fda7843a..4fb120d8e7e8 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -45,6 +45,11 @@
- 		renesas,groups = "scif2_data_a";
- 		renesas,function = "scif2";
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index b6db773b9e55..e9fab31e0709 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -50,6 +50,97 @@
+ 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
  	};
-+
-+	avb_pins: avb {
-+		renesas,groups = "avb_mdc";
-+		renesas,function = "avb";
-+	};
- };
  
- &scif1 {
-@@ -60,3 +65,29 @@
- 
- 	status = "okay";
- };
-+
-+&avb {
-+	pinctrl-0 = <&avb_pins>;
-+	pinctrl-names = "default";
-+	renesas,no-ether-link;
-+	phy-handle = <&phy0>;
-+	status = "okay";
-+
-+	phy0: ethernet-phy@0 {
-+		rxc-skew-ps = <900>;
-+		rxdv-skew-ps = <0>;
-+		rxd0-skew-ps = <0>;
-+		rxd1-skew-ps = <0>;
-+		rxd2-skew-ps = <0>;
-+		rxd3-skew-ps = <0>;
-+		txc-skew-ps = <900>;
-+		txen-skew-ps = <0>;
-+		txd0-skew-ps = <0>;
-+		txd1-skew-ps = <0>;
-+		txd2-skew-ps = <0>;
-+		txd3-skew-ps = <0>;
-+		reg = <0>;
-+		interrupt-parent = <&gpio2>;
-+		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++	gpio0: gpio@e6050000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6050000 0 0x50>;
++		interrupts = <0 4 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO0>;
++		power-domains = <&cpg_clocks>;
 +	};
-+};
++
++	gpio1: gpio@e6051000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6051000 0 0x50>;
++		interrupts = <0 5 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 26>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO1>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio2: gpio@e6052000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6052000 0 0x50>;
++		interrupts = <0 6 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO2>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio3: gpio@e6053000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6053000 0 0x50>;
++		interrupts = <0 7 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO3>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio4: gpio@e6054000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6054000 0 0x50>;
++		interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO4>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio5: gpio@e6055000 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6055000 0 0x50>;
++		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 160 28>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO5>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio6: gpio@e6055400 {
++		compatible = "renesas,gpio-r8a7794", "renesas,gpio-rcar";
++		reg = <0 0xe6055400 0 0x50>;
++		interrupts = <0 10 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 192 26>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7794_CLK_GPIO6>;
++		power-domains = <&cpg_clocks>;
++	};
++
+ 	cmt0: timer@ffca0000 {
+ 		compatible = "renesas,cmt-48-gen2";
+ 		reg = <0 0xffca0000 0 0x1004>;
 -- 
 2.1.4
 
