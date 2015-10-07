@@ -1,38 +1,37 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Fri, 02 Oct 2015 10:25:06 +0000
-Subject: [PATCH 3/4] PCI: rcar-pcie: Set root bus nr to that provided in DT
-Message-Id: <1443781507-5011-4-git-send-email-phil.edworthy@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:57:53 +0000
+Subject: [PATCH 16/28] ARM: shmobile: r8a7778: tidyup SSI resource region
+Message-Id: <23640ff2eff0dec2016dd097b1b04c817a4ffd3f.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <bhelgaas@google.com>
-Cc: Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On ARM64, setting the root bus number to -1 causes probe failure.
-Moreover, we should use the bus number specified in the DT as we
-could have multiple PCIe controllers with different bus ranges.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pci/host/pcie-rcar.c | 2 +-
+ arch/arm/boot/dts/r8a7778.dtsi | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-index 6057e31..8e583c2 100644
---- a/drivers/pci/host/pcie-rcar.c
-+++ b/drivers/pci/host/pcie-rcar.c
-@@ -362,7 +362,7 @@ static int rcar_pcie_setup(int nr, struct list_head *resource, struct rcar_pcie
- 	struct resource *res;
- 	int i;
- 
--	pcie->root_bus_nr = -1;
-+	pcie->root_bus_nr = pcie->busn.start;
- 
- 	/* Setup PCI resources */
- 	for (i = 0; i < RCAR_PCI_MAX_RESOURCES; i++) {
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 4b1fa9f42ad5..4f8e07811746 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -239,7 +239,7 @@
+ 		#sound-dai-cells = <1>;
+ 		compatible = "renesas,rcar_sound-r8a7778", "renesas,rcar_sound-gen1";
+ 		reg =	<0xffd90000 0x1000>,	/* SRU */
+-			<0xffd91000 0x1240>,	/* SSI */
++			<0xffd91000 0x240>,	/* SSI */
+ 			<0xfffe0000 0x24>;	/* ADG */
+ 		clocks = <&mstp3_clks R8A7778_CLK_SSI8>,
+ 			<&mstp3_clks R8A7778_CLK_SSI7>,
 -- 
-1.9.1
+2.1.4
 
