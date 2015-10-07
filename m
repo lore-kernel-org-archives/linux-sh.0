@@ -1,96 +1,56 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 06:48:14 +0000
-Subject: [PATCH v5 1/5] arm64: dts: r8a7795: add clock for EthernetAVB
-Message-Id: <1444891698-8780-2-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:57:46 +0000
+Subject: [PATCH 09/28] ARM: shmobile: silk: add I2C1 DT support
+Message-Id: <fa070791c1e7df91ca07fc7c9a431fac0d7d2832.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444891698-8780-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1444891698-8780-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-These clocks will be used by EthernetAVB
+Define the SILK board dependent part of the I2C1 device node.
 
-Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
-[horms: use s3d2_clk; other minor updates]
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
 ---
-v0 [Kazuya Mizuguchi]
+ arch/arm/boot/dts/r8a7794-silk.dts | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-v1 [Simon Horman]
-* updated p_clk to s3d4_clk
-* moved to clock node
-* updated patch subject
-* use R8A7795 as prefix for clock defines
-
-v2 [Simon Horman]
-* As suggested by Geert Uytterhoeven
-  - Use s3d2_clk use it instead: it is now already present in the base
-    of this series
-  - Use R8A7795_CLK_ETHERAVB instead of R8A7795_CLK_AVB
-* As suggested by Kuninori Morimoto and Sergei Shtylyov
-  - Use "clock-indices" instead of "renesas,clock-indices"
-
-v3 [Simon Horman]
-* As suggested by Geert Uytterhoeven
-  - Name clock "etheravb"
-* Add Ack
-
-v4, v5
-* No change
-
-TODO:
-* Drop clock-output-names from mstp8_clks ?
----
- arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 12 ++++++++++++
- include/dt-bindings/clock/r8a7795-clock.h |  1 +
- 2 files changed, 13 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index e2cc40fa5aa3..6efa49f97e07 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -289,6 +289,17 @@
- 						"scif2";
- 					#reset-cells = <1>;
- 				};
-+
-+				mstp8_clks: mstp8_clks@e6150990 {
-+					compatible = "renesas,r8a7795-mstp-clocks",
-+						     "renesas,cpg-mstp-clocks";
-+					reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
-+					clocks =  <&s3d2_clk>;
-+					#clock-cells = <1>;
-+					clock-indices = <R8A7795_CLK_ETHERAVB>;
-+					clock-output-names = "etheravb";
-+				};
-+
- 			};
- 		};
- 
-@@ -381,4 +392,5 @@
- 			status = "disabled";
- 		};
+diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
+index f49bc00738a3..3f808724106e 100644
+--- a/arch/arm/boot/dts/r8a7794-silk.dts
++++ b/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -61,6 +61,11 @@
+ 		renesas,function = "intc";
  	};
+ 
++	i2c1_pins: i2c1 {
++		renesas,groups = "i2c1";
++		renesas,function = "i2c1";
++	};
 +
+ 	mmcif0_pins: mmcif0 {
+ 		renesas,groups = "mmc_data8", "mmc_ctrl";
+ 		renesas,function = "mmc";
+@@ -95,6 +100,14 @@
+ 	};
  };
-diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
-index 51048d79f80d..be8d8192720e 100644
---- a/include/dt-bindings/clock/r8a7795-clock.h
-+++ b/include/dt-bindings/clock/r8a7795-clock.h
-@@ -36,6 +36,7 @@
- /* MSTP7 */
  
- /* MSTP8 */
-+#define R8A7795_CLK_ETHERAVB		12
- 
- /* MSTP9 */
- 
++&i2c1 {
++	pinctrl-0 = <&i2c1_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++	clock-frequency = <400000>;
++};
++
+ &mmcif0 {
+ 	pinctrl-0 = <&mmcif0_pins>;
+ 	pinctrl-names = "default";
 -- 
 2.1.4
 
