@@ -1,37 +1,67 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Oct 2015 01:57:53 +0000
-Subject: [PATCH 16/28] ARM: shmobile: r8a7778: tidyup SSI resource region
-Message-Id: <23640ff2eff0dec2016dd097b1b04c817a4ffd3f.1444182812.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 07 Oct 2015 08:14:15 +0000
+Subject: [PATCH v2 2/4] sh_eth: Remove obsolete r8a779x-ether platform_device_id entries
+Message-Id: <1444205657-25314-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444182812.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
+References: <1444205657-25314-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1444205657-25314-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "David S. Miller" <davem@davemloft.net>
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Since commit a483dcbfa21f919c ("ARM: shmobile: lager: Remove legacy
+board support"), R-Car Gen2 SoCs are only supported in generic DT-only
+ARM multi-platform builds.  The driver doesn't need to match platform
+devices by name anymore, hence remove the corresponding
+platform_device_id entry.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Protect r8a779x_data by #ifdef CONFIG_OF as it's now referenced on DT
+platforms only.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7778.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v2:
+  - Add Acked-by,
+  - Protect r8a779x_data by #ifdef CONFIG_OF to silence a compiler
+    warning on SH.
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-index 4b1fa9f42ad5..4f8e07811746 100644
---- a/arch/arm/boot/dts/r8a7778.dtsi
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -239,7 +239,7 @@
- 		#sound-dai-cells = <1>;
- 		compatible = "renesas,rcar_sound-r8a7778", "renesas,rcar_sound-gen1";
- 		reg =	<0xffd90000 0x1000>,	/* SRU */
--			<0xffd91000 0x1240>,	/* SSI */
-+			<0xffd91000 0x240>,	/* SSI */
- 			<0xfffe0000 0x24>;	/* ADG */
- 		clocks = <&mstp3_clks R8A7778_CLK_SSI8>,
- 			<&mstp3_clks R8A7778_CLK_SSI7>,
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 1bff9e21d920..029ea449f901 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -531,6 +531,7 @@ static struct sh_eth_cpu_data r8a777x_data = {
+ 	.hw_swap	= 1,
+ };
+ 
++#ifdef CONFIG_OF
+ /* R8A7790/1 */
+ static struct sh_eth_cpu_data r8a779x_data = {
+ 	.set_duplex	= sh_eth_set_duplex,
+@@ -556,6 +557,7 @@ static struct sh_eth_cpu_data r8a779x_data = {
+ 	.hw_swap	= 1,
+ 	.rmiimode	= 1,
+ };
++#endif /* CONFIG_OF */
+ 
+ static void sh_eth_set_rate_sh7724(struct net_device *ndev)
+ {
+@@ -3305,10 +3307,6 @@ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
+ 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
+ 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
+-	{ "r8a7790-ether", (kernel_ulong_t)&r8a779x_data },
+-	{ "r8a7791-ether", (kernel_ulong_t)&r8a779x_data },
+-	{ "r8a7793-ether", (kernel_ulong_t)&r8a779x_data },
+-	{ "r8a7794-ether", (kernel_ulong_t)&r8a779x_data },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
 -- 
-2.1.4
+1.9.1
 
