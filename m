@@ -1,204 +1,45 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 26 Oct 2015 08:12:31 +0000
-Subject: [PATCH v3 3/7] usb: host: xhci-plat: add struct xhci_plat_priv
-Message-Id: <1445847155-5468-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 07 Oct 2015 10:39:34 +0000
+Subject: [PATCH v2 0/2] [media] rcar_vin: Remove obsolete platform data support
+Message-Id: <1444214376-26931-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mauro Carvalho Chehab <mchehab@osg.samsung.com>, linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-This patch adds struct xhci_plat_priv to simplify the code to match
-platform specific variables. For now, this patch adds a member "type"
-in the structure.
+	Hi,
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/usb/host/xhci-plat.c | 73 +++++++++++++++++++++++++++++---------------
- drivers/usb/host/xhci-plat.h | 37 ++++++++++++++++++++++
- 2 files changed, 85 insertions(+), 25 deletions(-)
- create mode 100644 drivers/usb/host/xhci-plat.h
+Since commit 3d7608e4c169af03 ("ARM: shmobile: bockw: remove legacy
+board file and config"), Renesas R-Car SoCs are only supported in
+generic DT-only ARM multi-platform builds.  The driver doesn't need to
+use platform data anymore, hence this series remove platform data
+configuration.
 
-diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
-index 4699c1e..083e77b 100644
---- a/drivers/usb/host/xhci-plat.c
-+++ b/drivers/usb/host/xhci-plat.c
-@@ -22,6 +22,7 @@
- #include <linux/acpi.h>
- 
- #include "xhci.h"
-+#include "xhci-plat.h"
- #include "xhci-mvebu.h"
- #include "xhci-rcar.h"
- 
-@@ -31,6 +32,7 @@ static int xhci_plat_setup(struct usb_hcd *hcd);
- static int xhci_plat_start(struct usb_hcd *hcd);
- 
- static const struct xhci_driver_overrides xhci_plat_overrides __initconst = {
-+	.extra_priv_size = sizeof(struct xhci_plat_priv),
- 	.reset = xhci_plat_setup,
- 	.start = xhci_plat_start,
- };
-@@ -48,11 +50,9 @@ static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
- /* called during probe() after chip reset completes */
- static int xhci_plat_setup(struct usb_hcd *hcd)
- {
--	struct device_node *of_node = hcd->self.controller->of_node;
- 	int ret;
- 
--	if (of_device_is_compatible(of_node, "renesas,xhci-r8a7790") ||
--	    of_device_is_compatible(of_node, "renesas,xhci-r8a7791")) {
-+	if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2)) {
- 		ret = xhci_rcar_init_quirk(hcd);
- 		if (ret)
- 			return ret;
-@@ -63,19 +63,49 @@ static int xhci_plat_setup(struct usb_hcd *hcd)
- 
- static int xhci_plat_start(struct usb_hcd *hcd)
- {
--	struct device_node *of_node = hcd->self.controller->of_node;
--
--	if (of_device_is_compatible(of_node, "renesas,xhci-r8a7790") ||
--	    of_device_is_compatible(of_node, "renesas,xhci-r8a7791"))
-+	if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2))
- 		xhci_rcar_start(hcd);
- 
- 	return xhci_run(hcd);
- }
- 
-+#ifdef CONFIG_OF
-+static const struct xhci_plat_priv xhci_plat_marvell_armada = {
-+	.type = XHCI_PLAT_TYPE_MARVELL_ARMADA,
-+};
-+
-+static const struct xhci_plat_priv xhci_plat_renesas_rcar_gen2 = {
-+	.type = XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2,
-+};
-+
-+static const struct of_device_id usb_xhci_of_match[] = {
-+	{
-+		.compatible = "generic-xhci",
-+	}, {
-+		.compatible = "xhci-platform",
-+	}, {
-+		.compatible = "marvell,armada-375-xhci",
-+		.data = &xhci_plat_marvell_armada,
-+	}, {
-+		.compatible = "marvell,armada-380-xhci",
-+		.data = &xhci_plat_marvell_armada,
-+	}, {
-+		.compatible = "renesas,xhci-r8a7790",
-+		.data = &xhci_plat_renesas_rcar_gen2,
-+	}, {
-+		.compatible = "renesas,xhci-r8a7791",
-+		.data = &xhci_plat_renesas_rcar_gen2,
-+	}, {
-+	},
-+};
-+MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
-+#endif
-+
- static int xhci_plat_probe(struct platform_device *pdev)
- {
- 	struct device_node	*node = pdev->dev.of_node;
- 	struct usb_xhci_pdata	*pdata = dev_get_platdata(&pdev->dev);
-+	const struct of_device_id *match;
- 	const struct hc_driver	*driver;
- 	struct xhci_hcd		*xhci;
- 	struct resource         *res;
-@@ -133,10 +163,17 @@ static int xhci_plat_probe(struct platform_device *pdev)
- 			goto put_hcd;
- 	}
- 
--	if (of_device_is_compatible(pdev->dev.of_node,
--				    "marvell,armada-375-xhci") ||
--	    of_device_is_compatible(pdev->dev.of_node,
--				    "marvell,armada-380-xhci")) {
-+	xhci = hcd_to_xhci(hcd);
-+	match = of_match_node(usb_xhci_of_match, node);
-+	if (match) {
-+		const struct xhci_plat_priv *priv_match = match->data;
-+		struct xhci_plat_priv *priv = hcd_to_xhci_priv(hcd);
-+
-+		/* Just copy data for now */
-+		*priv = *priv_match;
-+	}
-+
-+	if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_MARVELL_ARMADA)) {
- 		ret = xhci_mvebu_mbus_init_quirk(pdev);
- 		if (ret)
- 			goto disable_clk;
-@@ -144,7 +181,6 @@ static int xhci_plat_probe(struct platform_device *pdev)
- 
- 	device_wakeup_enable(hcd->self.controller);
- 
--	xhci = hcd_to_xhci(hcd);
- 	xhci->clk = clk;
- 	xhci->main_hcd = hcd;
- 	xhci->shared_hcd = usb_create_shared_hcd(driver, &pdev->dev,
-@@ -255,19 +291,6 @@ static const struct dev_pm_ops xhci_plat_pm_ops = {
- #define DEV_PM_OPS	NULL
- #endif /* CONFIG_PM */
- 
--#ifdef CONFIG_OF
--static const struct of_device_id usb_xhci_of_match[] = {
--	{ .compatible = "generic-xhci" },
--	{ .compatible = "xhci-platform" },
--	{ .compatible = "marvell,armada-375-xhci"},
--	{ .compatible = "marvell,armada-380-xhci"},
--	{ .compatible = "renesas,xhci-r8a7790"},
--	{ .compatible = "renesas,xhci-r8a7791"},
--	{ },
--};
--MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
--#endif
--
- static const struct acpi_device_id usb_xhci_acpi_match[] = {
- 	/* XHCI-compliant USB Controller */
- 	{ "PNP0D10", },
-diff --git a/drivers/usb/host/xhci-plat.h b/drivers/usb/host/xhci-plat.h
-new file mode 100644
-index 0000000..4479869
---- /dev/null
-+++ b/drivers/usb/host/xhci-plat.h
-@@ -0,0 +1,37 @@
-+/*
-+ * xhci-plat.h - xHCI host controller driver platform Bus Glue.
-+ *
-+ * Copyright (C) 2015 Renesas Electronics Corporation
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * version 2 as published by the Free Software Foundation.
-+ */
-+
-+#ifndef _XHCI_PLAT_H
-+#define _XHCI_PLAT_H
-+
-+#include "xhci.h"	/* for hcd_to_xhci() */
-+
-+enum xhci_plat_type {
-+	XHCI_PLAT_TYPE_MARVELL_ARMADA,
-+	XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2,
-+};
-+
-+struct xhci_plat_priv {
-+	enum xhci_plat_type type;
-+};
-+
-+#define hcd_to_xhci_priv(h) ((struct xhci_plat_priv *)hcd_to_xhci(h)->priv)
-+
-+static inline bool xhci_plat_type_is(struct usb_hcd *hcd,
-+				     enum xhci_plat_type type)
-+{
-+	struct xhci_plat_priv *priv = hcd_to_xhci_priv(hcd);
-+
-+	if (priv && priv->type = type)
-+		return true;
-+	else
-+		return false;
-+}
-+#endif	/* _XHCI_PLAT_H */
+Changes compared to v1:
+  - Added patch 2.
+
+Geert Uytterhoeven (2):
+  [media] rcar_vin: Remove obsolete r8a779x-vin platform_device_id
+    entries
+  [media] rcar_vin: Remove obsolete platform data support
+
+ drivers/media/platform/soc_camera/rcar_vin.c | 77 +++++++++++-----------------
+ include/linux/platform_data/camera-rcar.h    | 25 ---------
+ 2 files changed, 29 insertions(+), 73 deletions(-)
+ delete mode 100644 include/linux/platform_data/camera-rcar.h
+
 -- 
 1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
