@@ -1,18 +1,118 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 12 Oct 2015 00:37:49 +0000
-Subject: [ANNOUNCE] Renesas tree closing for v4.4
-Message-Id: <20151012003749.GI20025@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:57:45 +0000
+Subject: [PATCH 08/28] ARM: shmobile: r8a7794: add I2C DT support
+Message-Id: <5428521ba123dddda4d2ac9ab19d173b692a8acb.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-I would like to wind down accepting non-bug-fix patches for v4.4 and get
-the last pull requests posted by the end of this week.  This is in order
-for them to be sent before the release of v4.3-rc6, the deadline set by the
-ARM SoC maintainers.  As patches should ideally progress from the renesas
-tree into linux-next before sending pull requests there is a few days lead
-time involved.
+Define the generic R8A7794 parts of the I2C[0-5] device nodes.
+
+Based on the original patch by Koji Matsuoka <koji.matsuoka.xm@renesas.com>.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7794.dtsi | 73 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 73 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index e0f32ede2181..7384db2a3992 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -20,6 +20,12 @@
+ 	#size-cells = <2>;
+ 
+ 	aliases {
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2c2 = &i2c2;
++		i2c3 = &i2c3;
++		i2c4 = &i2c4;
++		i2c5 = &i2c5;
+ 		spi0 = &qspi;
+ 	};
+ 
+@@ -502,6 +508,73 @@
+ 		status = "disabled";
+ 	};
+ 
++	/* The memory map in the User's Manual maps the cores to bus numbers */
++	i2c0: i2c@e6508000 {
++		compatible = "renesas,i2c-r8a7794";
++		reg = <0 0xe6508000 0 0x40>;
++		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_I2C0>;
++		power-domains = <&cpg_clocks>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	i2c1: i2c@e6518000 {
++		compatible = "renesas,i2c-r8a7794";
++		reg = <0 0xe6518000 0 0x40>;
++		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_I2C1>;
++		power-domains = <&cpg_clocks>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	i2c2: i2c@e6530000 {
++		compatible = "renesas,i2c-r8a7794";
++		reg = <0 0xe6530000 0 0x40>;
++		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_I2C2>;
++		power-domains = <&cpg_clocks>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	i2c3: i2c@e6540000 {
++		compatible = "renesas,i2c-r8a7794";
++		reg = <0 0xe6540000 0 0x40>;
++		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_I2C3>;
++		power-domains = <&cpg_clocks>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	i2c4: i2c@e6520000 {
++		compatible = "renesas,i2c-r8a7794";
++		reg = <0 0xe6520000 0 0x40>;
++		interrupts = <0 19 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_I2C4>;
++		power-domains = <&cpg_clocks>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	i2c5: i2c@e6528000 {
++		compatible = "renesas,i2c-r8a7794";
++		reg = <0 0xe6528000 0 0x40>;
++		interrupts = <0 20 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_I2C5>;
++		power-domains = <&cpg_clocks>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	mmcif0: mmc@ee200000 {
+ 		compatible = "renesas,mmcif-r8a7794", "renesas,sh-mmcif";
+ 		reg = <0 0xee200000 0 0x80>;
+-- 
+2.1.4
+
