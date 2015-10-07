@@ -1,36 +1,64 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 26 Oct 2015 08:12:30 +0000
-Subject: [PATCH v3 2/7] usb: host: xhci: add a platform-private field
-Message-Id: <1445847155-5468-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:57:41 +0000
+Subject: [PATCH 04/28] ARM: shmobile: r8a7794: add QSPI DT support
+Message-Id: <740b4a9f07fe73b5ccd2bc3dc365dc359e1a332d.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds an xhci->priv field for private use by
-XHCI platform drivers. Until now none of the platform drivers
-has used this private space.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Define the generic R8A7794 part of the QSPI device node.
+
+Based on original patch by Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/usb/host/xhci.h | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/boot/dts/r8a7794.dtsi | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-diff --git a/drivers/usb/host/xhci.h b/drivers/usb/host/xhci.h
-index be9048e..05f4a73 100644
---- a/drivers/usb/host/xhci.h
-+++ b/drivers/usb/host/xhci.h
-@@ -1657,6 +1657,9 @@ struct xhci_hcd {
- 	u32			port_status_u0;
- /* Compliance Mode Timer Triggered every 2 seconds */
- #define COMP_MODE_RCVRY_MSECS 2000
-+
-+	/* platform-specific data -- must come last */
-+	unsigned long		priv[0] __aligned(sizeof(s64));
- };
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index e9fab31e0709..e0f32ede2181 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -19,6 +19,10 @@
+ 	#address-cells = <2>;
+ 	#size-cells = <2>;
  
- /* Platform specific overrides to generic XHCI hc_driver ops */
++	aliases {
++		spi0 = &qspi;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -537,6 +541,20 @@
+ 		status = "disabled";
+ 	};
+ 
++	qspi: spi@e6b10000 {
++		compatible = "renesas,qspi-r8a7794", "renesas,qspi";
++		reg = <0 0xe6b10000 0 0x2c>;
++		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp9_clks R8A7794_CLK_QSPI_MOD>;
++		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
++		dma-names = "tx", "rx";
++		power-domains = <&cpg_clocks>;
++		num-cs = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
-1.9.1
+2.1.4
 
