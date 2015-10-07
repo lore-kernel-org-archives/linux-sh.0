@@ -1,58 +1,86 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 02 Oct 2015 02:56:22 +0000
-Subject: [PATCH v10 07/07] arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
-Message-Id: <20151002025622.28158.98392.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:57:48 +0000
+Subject: [PATCH 11/28] ARM: shmobile: silk: add VIN0/ADV7180 DT support
+Message-Id: <8614daf299cbab2bcada922e727fdc9ad45b2412.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-This patch enables the Renesas R-Car H3 SoC together with the
-SCIF driver in the arm64 defconfig.
+Define  the  SILK board dependent part of the  VIN0  device  node.
+Add the device node for Analog Devices ADV7180 video decoder to I2C1 bus.
+Add the necessary subnodes to interconnect VIN0 and ADV7180 devices.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Based on the Henninger VIN0/ADV8170 device tree patch by myself.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7794-silk.dts | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
 
- Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
- - None
+diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
+index 3f808724106e..bb0a22423dc4 100644
+--- a/arch/arm/boot/dts/r8a7794-silk.dts
++++ b/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -75,6 +75,11 @@
+ 		renesas,groups = "qspi_ctrl", "qspi_data4";
+ 		renesas,function = "qspi";
+ 	};
++
++	vin0_pins: vin0 {
++		renesas,groups = "vin0_data8", "vin0_clk";
++		renesas,function = "vin0";
++	};
+ };
+ 
+ &scif2 {
+@@ -106,6 +111,19 @@
+ 
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++
++	composite-in@20 {
++		compatible = "adi,adv7180";
++		reg = <0x20>;
++		remote = <&vin0>;
++
++		port {
++			adv7180: endpoint {
++				bus-width = <8>;
++				remote-endpoint = <&vin0ep>;
++			};
++		};
++	};
+ };
+ 
+ &mmcif0 {
+@@ -153,3 +171,20 @@
+ 		};
+ 	};
+ };
++
++/* composite video input */
++&vin0 {
++	status = "okay";
++	pinctrl-0 = <&vin0_pins>;
++	pinctrl-names = "default";
++
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		vin0ep: endpoint {
++			remote-endpoint = <&adv7180>;
++			bus-width = <8>;
++		};
++	};
++};
+-- 
+2.1.4
 
- Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
- - Added Acked-by from Geert
-
- Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
- - Updated changelog
- - Use CONFIG_RENESAS and CONFIG_R8A7795
-
- Based on:
-  [PATCH 19/25] arm64: defconfig: renesas: Enable Renesas R-Car Gen3 SoC
-  [PATCH 20/25] arm64: defconfig: renesas: enable SCIF
-
- arch/arm64/configs/defconfig |    5 +++++
- 1 file changed, 5 insertions(+)
-
---- 0001/arch/arm64/configs/defconfig
-+++ work/arch/arm64/configs/defconfig	2015-08-29 17:20:25.712366518 +0900
-@@ -39,6 +39,8 @@ CONFIG_ARCH_HISI=y
- CONFIG_ARCH_MEDIATEK=y
- CONFIG_ARCH_ROCKCHIP=y
- CONFIG_ARCH_SEATTLE=y
-+CONFIG_ARCH_RENESAS=y
-+CONFIG_ARCH_R8A7795=y
- CONFIG_ARCH_TEGRA=y
- CONFIG_ARCH_TEGRA_132_SOC=y
- CONFIG_ARCH_QCOM=y
-@@ -109,6 +111,9 @@ CONFIG_SERIAL_8250_DW=y
- CONFIG_SERIAL_8250_MT6577=y
- CONFIG_SERIAL_AMBA_PL011=y
- CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
-+CONFIG_SERIAL_SH_SCI=y
-+CONFIG_SERIAL_SH_SCI_NR_UARTS
-+CONFIG_SERIAL_SH_SCI_CONSOLE=y
- CONFIG_SERIAL_MSM=y
- CONFIG_SERIAL_MSM_CONSOLE=y
- CONFIG_SERIAL_OF_PLATFORM=y
