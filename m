@@ -1,45 +1,53 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Sun, 25 Oct 2015 10:09:34 +0000
-Subject: [PATCH v2 2/2] dmaengine: sh: usb-dmac: Fix pm_runtime_{enable,disable}() imbalance
-Message-Id: <1445767774-24001-3-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:57:50 +0000
+Subject: [PATCH 13/28] ARM: shmobile: lager: use CCF for audio clock
+Message-Id: <6bc651afec2dba4d3e40901a2c5cfc88ad35d97a.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-If the call to pm_runtime_get_sync() failed, Runtime PM was left
-enabled.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Because of historical reason, audio clock didn't use CCF.
+Let's use it now.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - No changes.
+ arch/arm/boot/dts/r8a7790-lager.dts | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
- drivers/dma/sh/usb-dmac.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/drivers/dma/sh/usb-dmac.c b/drivers/dma/sh/usb-dmac.c
-index f305738b5adf8cc9..f1bcc2a163b30cef 100644
---- a/drivers/dma/sh/usb-dmac.c
-+++ b/drivers/dma/sh/usb-dmac.c
-@@ -802,7 +802,7 @@ static int usb_dmac_probe(struct platform_device *pdev)
- 	ret = pm_runtime_get_sync(&pdev->dev);
- 	if (ret < 0) {
- 		dev_err(&pdev->dev, "runtime PM get sync failed (%d)\n", ret);
--		return ret;
-+		goto error_pm;
- 	}
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 37dec5269491..6f5d7f50d5ca 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -174,6 +174,13 @@
+ 			  1800000 0>;
+ 	};
  
- 	ret = usb_dmac_init(dmac);
-@@ -859,6 +859,7 @@ static int usb_dmac_probe(struct platform_device *pdev)
- error:
- 	of_dma_controller_free(pdev->dev.of_node);
- 	pm_runtime_put(&pdev->dev);
-+error_pm:
- 	pm_runtime_disable(&pdev->dev);
- 	return ret;
- }
++	audio_clock: clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <11289600>;
++		clock-output-names = "audio_clock";
++	};
++
+ 	rsnd_ak4643: sound {
+ 		compatible = "simple-audio-card";
+ 
+@@ -187,7 +194,7 @@
+ 
+ 		sndcodec: simple-audio-card,codec {
+ 			sound-dai = <&ak4643>;
+-			system-clock-frequency = <11289600>;
++			clocks = <&audio_clock>;
+ 		};
+ 	};
+ 
 -- 
-1.9.1
+2.1.4
 
