@@ -1,44 +1,63 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 02 Oct 2015 11:25:40 +0000
-Subject: Re: [PATCH v3 00/09] ARM: shmobile: APMU DT support via SMP Enable method V3
-Message-Id: <CAMuHMdV7WkVKjP59DjrGULF=-uBiirKUwVSAfREO6sNC+_1jUQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:57:39 +0000
+Subject: [PATCH 02/28] ARM: shmobile: r8a7794: add GPIO clocks
+Message-Id: <3f37e01852a06faf1d5fed30eaee5cae942fc9d5.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20150917063240.26016.93772.sendpatchset@little-apple>
-In-Reply-To: <20150917063240.26016.93772.sendpatchset@little-apple>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Lorenzo Pieralisi <lorenzo.pieralisi-5wv7dgnIgG8@public.gmane.org>, =?UTF-8?B?5bCP5p6X5pWs5aSq?= <keita.kobayashi.ym-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-On Thu, Sep 17, 2015 at 8:32 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> ARM: shmobile: APMU DT support via SMP Enable method V3
->
-> [PATCH v3 01/09] devicetree: bindings: Renesas APMU and SMP Enable method
-> [PATCH v3 02/09] ARM: shmobile: Add APMU DT support via Enable method
-> [PATCH v3 03/09] ARM: shmobile: Add APMU nodes to r8a7793 DTSI
-> [PATCH v3 04/09] ARM: shmobile: r8a7793 boot address update
-> [PATCH v3 05/09] ARM: shmobile: Add APMU nodes to r8a7790 DTSI
-> [PATCH v3 06/09] ARM: shmobile: Add APMU nodes to r8a7791 DTSI
-> [PATCH v3 07/09] ARM: shmobile: Add function to prioritize DT SMP
-> [PATCH v3 08/09] ARM: shmobile: Prioritize r8a7790 DT APMU support
-> [PATCH v3 09/09] ARM: shmobile: Prioritize r8a7791 DT APMU support
+Describe the GPIO clocks in the R8A7794 device tree.
 
-Thanks for your series!
+Based on the original patch by Koji Matsuoka <koji.matsuoka.xm@renesas.com>.
 
-> via the DT enable-method then it will not be overriden by older non-DT
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7794.dtsi | 22 ++++++++++++++--------
+ 1 file changed, 14 insertions(+), 8 deletions(-)
 
-overridden (thanks, checkpatch.pl!)
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 97c8e9ace5eb..b6db773b9e55 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -749,16 +749,22 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
+-				<&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
++			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&cpg_clocks R8A7794_CLK_QSPI>, <&hp_clk>, <&hp_clk>,
++				 <&hp_clk>, <&hp_clk>, <&hp_clk>, <&hp_clk>;
+ 			#clock-cells = <1>;
+-			clock-indices = <
+-				R8A7794_CLK_QSPI_MOD R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
+-				R8A7794_CLK_I2C3 R8A7794_CLK_I2C2 R8A7794_CLK_I2C1
+-				R8A7794_CLK_I2C0
+-			>;
++			clock-indices = <R8A7794_CLK_GPIO6 R8A7794_CLK_GPIO5
++					 R8A7794_CLK_GPIO4 R8A7794_CLK_GPIO3
++					 R8A7794_CLK_GPIO2 R8A7794_CLK_GPIO1
++					 R8A7794_CLK_GPIO0 R8A7794_CLK_QSPI_MOD
++					 R8A7794_CLK_I2C5 R8A7794_CLK_I2C4
++					 R8A7794_CLK_I2C3 R8A7794_CLK_I2C2
++					 R8A7794_CLK_I2C1 R8A7794_CLK_I2C0>;
+ 			clock-output-names -				"qspi_mod", "i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
++				"gpio6", "gpio5", "gpio4", "gpio3", "gpio2",
++				"gpio1", "gpio0", "qspi_mod",
++				"i2c5", "i2c4", "i2c3", "i2c2", "i2c1", "i2c0";
+ 		};
+ 		mstp11_clks: mstp11_clks@e615099c {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+-- 
+2.1.4
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
