@@ -1,100 +1,154 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 05 Oct 2015 14:55:53 +0000
-Subject: [PATCH v3 1/3] pinctrl: sh-pfc: add macros defining GP ports with config flags
-Message-Id: <1444056955-8836-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 07 Oct 2015 08:14:14 +0000
+Subject: [PATCH v2 1/4] sh_eth: Remove obsolete r7s72100-ether platform_device_id entry
+Message-Id: <1444205657-25314-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1444205657-25314-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1444205657-25314-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "David S. Miller" <davem@davemloft.net>
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-PORT_GP_CFG_1 and PORT_GP_CFG_32 work like their non-CFG counterparts
-but accept an extra argument with config flags.
+Since commit 05104c266ae9a167 ("ARM: shmobile: r7s72100: genmai: Remove
+legacy board file"), r7s72100 is only supported in generic DT-only ARM
+multi-platform builds.  The driver doesn't need to match platform
+devices by name anymore, hence remove the corresponding
+platform_device_id entry.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Protect r7s72100_data by #ifdef CONFIG_OF as it's now referenced on DT
+platforms only. Move it to a more logical position, in front of the
+r8a777x support, so we can have a single #ifdef covering all r7s* and
+r8a* support soon. This requires moving a helper function, too.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/sh_pfc.h | 47 ++++++++++++++++++++++-------------------
- 1 file changed, 25 insertions(+), 22 deletions(-)
+v2:
+  - Add Acked-by,
+  - Protect r7s72100_data by #ifdef CONFIG_OF to silence a compiler
+    warning on SH,
+  - Move r7s72100_data.
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 83 ++++++++++++++++++-----------------
+ 1 file changed, 42 insertions(+), 41 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 7cb1ed6..a3c08e2 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -187,25 +187,27 @@ struct sh_pfc_soc_info {
-  * GP port style (32 ports banks)
-  */
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 257ea713b4c1..1bff9e21d920 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -449,6 +449,48 @@ static void sh_eth_set_duplex(struct net_device *ndev)
+ 		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
+ }
  
--#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
--
--#define PORT_GP_32(bank, fn, sfx)					\
--	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
--	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
--	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
--	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
--	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
--	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
--	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
--	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
--	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
--	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
--	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
--	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
--	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
--	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
--	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
--	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
-+#define PORT_GP_CFG_1(bank, pin, fn, sfx, cfg) fn(bank, pin, GP_##bank##_##pin, sfx, cfg)
-+#define PORT_GP_1(bank, pin, fn, sfx)	PORT_GP_CFG_1(bank, pin, fn, sfx, 0)
++static void sh_eth_chip_reset(struct net_device *ndev)
++{
++	struct sh_eth_private *mdp = netdev_priv(ndev);
 +
-+#define PORT_GP_CFG_32(bank, fn, sfx, cfg)				\
-+	PORT_GP_CFG_1(bank, 0,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 1,  fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 2,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 3,  fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 4,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 5,  fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 6,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 7,  fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 8,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 9,  fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 10, fn, sfx, cfg), PORT_GP_CFG_1(bank, 11, fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 12, fn, sfx, cfg), PORT_GP_CFG_1(bank, 13, fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 14, fn, sfx, cfg), PORT_GP_CFG_1(bank, 15, fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 16, fn, sfx, cfg), PORT_GP_CFG_1(bank, 17, fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 18, fn, sfx, cfg), PORT_GP_CFG_1(bank, 19, fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 20, fn, sfx, cfg), PORT_GP_CFG_1(bank, 21, fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 22, fn, sfx, cfg), PORT_GP_CFG_1(bank, 23, fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 24, fn, sfx, cfg), PORT_GP_CFG_1(bank, 25, fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 26, fn, sfx, cfg), PORT_GP_CFG_1(bank, 27, fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 28, fn, sfx, cfg), PORT_GP_CFG_1(bank, 29, fn, sfx, cfg),	\
-+	PORT_GP_CFG_1(bank, 30, fn, sfx, cfg), PORT_GP_CFG_1(bank, 31, fn, sfx, cfg)
-+#define PORT_GP_32(bank, fn, sfx)	PORT_GP_CFG_32(bank, fn, sfx, 0)
++	/* reset device */
++	sh_eth_tsu_write(mdp, ARSTR_ARSTR, ARSTR);
++	mdelay(1);
++}
++
++#ifdef CONFIG_OF
++/* R7S72100 */
++static struct sh_eth_cpu_data r7s72100_data = {
++	.chip_reset	= sh_eth_chip_reset,
++	.set_duplex	= sh_eth_set_duplex,
++
++	.register_type	= SH_ETH_REG_FAST_RZ,
++
++	.ecsr_value	= ECSR_ICD,
++	.ecsipr_value	= ECSIPR_ICDIP,
++	.eesipr_value	= 0xff7f009f,
++
++	.tx_check	= EESR_TC1 | EESR_FTC,
++	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT |
++			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
++			  EESR_TDE | EESR_ECI,
++	.fdr_value	= 0x0000070f,
++
++	.no_psr		= 1,
++	.apr		= 1,
++	.mpr		= 1,
++	.tpauser	= 1,
++	.hw_swap	= 1,
++	.rpadir		= 1,
++	.rpadir_value   = 2 << 16,
++	.no_trimd	= 1,
++	.no_ade		= 1,
++	.hw_crc		= 1,
++	.tsu		= 1,
++	.shift_rd0	= 1,
++};
++#endif /* CONFIG_OF */
++
+ /* There is CPU dependent code */
+ static void sh_eth_set_rate_r8a777x(struct net_device *ndev)
+ {
+@@ -671,15 +713,6 @@ static struct sh_eth_cpu_data sh7757_data_giga = {
+ 	.tsu		= 1,
+ };
  
- #define PORT_GP_32_REV(bank, fn, sfx)					\
- 	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
-@@ -226,20 +228,21 @@ struct sh_pfc_soc_info {
- 	PORT_GP_1(bank, 1,  fn, sfx), PORT_GP_1(bank, 0,  fn, sfx)
+-static void sh_eth_chip_reset(struct net_device *ndev)
+-{
+-	struct sh_eth_private *mdp = netdev_priv(ndev);
+-
+-	/* reset device */
+-	sh_eth_tsu_write(mdp, ARSTR_ARSTR, ARSTR);
+-	mdelay(1);
+-}
+-
+ static void sh_eth_set_rate_gether(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+@@ -799,37 +832,6 @@ static struct sh_eth_cpu_data r8a7740_data = {
+ 	.shift_rd0	= 1,
+ };
  
- /* GP_ALL(suffix) - Expand to a list of GP_#_#_suffix */
--#define _GP_ALL(bank, pin, name, sfx)	name##_##sfx
-+#define _GP_ALL(bank, pin, name, sfx, cfg)	name##_##sfx
- #define GP_ALL(str)			CPU_ALL_PORT(_GP_ALL, str)
+-/* R7S72100 */
+-static struct sh_eth_cpu_data r7s72100_data = {
+-	.chip_reset	= sh_eth_chip_reset,
+-	.set_duplex	= sh_eth_set_duplex,
+-
+-	.register_type	= SH_ETH_REG_FAST_RZ,
+-
+-	.ecsr_value	= ECSR_ICD,
+-	.ecsipr_value	= ECSIPR_ICDIP,
+-	.eesipr_value	= 0xff7f009f,
+-
+-	.tx_check	= EESR_TC1 | EESR_FTC,
+-	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT |
+-			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
+-			  EESR_TDE | EESR_ECI,
+-	.fdr_value	= 0x0000070f,
+-
+-	.no_psr		= 1,
+-	.apr		= 1,
+-	.mpr		= 1,
+-	.tpauser	= 1,
+-	.hw_swap	= 1,
+-	.rpadir		= 1,
+-	.rpadir_value   = 2 << 16,
+-	.no_trimd	= 1,
+-	.no_ade		= 1,
+-	.hw_crc		= 1,
+-	.tsu		= 1,
+-	.shift_rd0	= 1,
+-};
+-
+ static struct sh_eth_cpu_data sh7619_data = {
+ 	.register_type	= SH_ETH_REG_FAST_SH3_SH2,
  
- /* PINMUX_GPIO_GP_ALL - Expand to a list of sh_pfc_pin entries */
--#define _GP_GPIO(bank, _pin, _name, sfx)				\
-+#define _GP_GPIO(bank, _pin, _name, sfx, cfg)				\
- 	{								\
- 		.pin = (bank * 32) + _pin,				\
- 		.name = __stringify(_name),				\
- 		.enum_id = _name##_DATA,				\
-+		.configs = cfg,						\
- 	}
- #define PINMUX_GPIO_GP_ALL()		CPU_ALL_PORT(_GP_GPIO, unused)
- 
- /* PINMUX_DATA_GP_ALL -  Expand to a list of name_DATA, name_FN marks */
--#define _GP_DATA(bank, pin, name, sfx)	PINMUX_DATA(name##_DATA, name##_FN)
-+#define _GP_DATA(bank, pin, name, sfx, cfg)	PINMUX_DATA(name##_DATA, name##_FN)
- #define PINMUX_DATA_GP_ALL()		CPU_ALL_PORT(_GP_DATA, unused)
- 
- /*
+@@ -3301,7 +3303,6 @@ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "sh7757-ether", (kernel_ulong_t)&sh7757_data },
+ 	{ "sh7757-gether", (kernel_ulong_t)&sh7757_data_giga },
+ 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
+-	{ "r7s72100-ether", (kernel_ulong_t)&r7s72100_data },
+ 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
+ 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
+ 	{ "r8a7790-ether", (kernel_ulong_t)&r8a779x_data },
 -- 
-2.6.0
+1.9.1
 
