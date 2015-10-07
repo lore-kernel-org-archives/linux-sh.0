@@ -1,48 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 29 Oct 2015 23:27:55 +0000
-Subject: [PATCH v5 09/14] arm64: renesas: salvator-x: Sound SSI DMA support via BUSIF
-Message-Id: <1446161280-23097-10-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:58:04 +0000
+Subject: [PATCH 27/28] ARM: shmobile: fix SILK board name
+Message-Id: <7265405f74b33f256073ea233690b6ee866c252c.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-DMA transfer to/from SSIU
+Unfortunately, the SILK board bindings were not quite correct, as the  board
+name should be all caps.  Fix that,  adding the board model #  in parens and
+removing stray semicolon.
 
-     DMA
-[MEM] -> [SSIU] -> [SSI]
-
-     DMA
-[MEM] <- [SSIU] <- [SSI]
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 5 -----
- 1 file changed, 5 deletions(-)
+ Documentation/devicetree/bindings/arm/shmobile.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 167c62eb3794..a8615b7e671a 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -144,12 +144,7 @@
- 	};
- };
- 
--&ssi0 {
--	no-busif;
--};
--
- &ssi1 {
--	no-busif;
- 	shared-pin;
- };
- 
+diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
+index a9148b1dcd96..40bb9007cd0d 100644
+--- a/Documentation/devicetree/bindings/arm/shmobile.txt
++++ b/Documentation/devicetree/bindings/arm/shmobile.txt
+@@ -57,5 +57,5 @@ Boards:
+     compatible = "renesas,marzen", "renesas,r8a7779"
+   - Porter (M2-LCDP)
+     compatible = "renesas,porter", "renesas,r8a7791"
+-  - Silk
+-    compatible = "renesas,silk", "renesas,r8a7794";
++  - SILK (RTP0RC7794LCB00011S)
++    compatible = "renesas,silk", "renesas,r8a7794"
 -- 
 2.1.4
 
