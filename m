@@ -1,53 +1,63 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 15 Oct 2015 16:49:15 +0000
-Subject: Re: [PATCH v3 4/6] dma: rcar-dma: use result of updated get_residue in tx_status
-Message-Id: <12352025.ijSEGDcSkl@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 07 Oct 2015 08:14:17 +0000
+Subject: [PATCH v2 4/4] sh_eth: Remove obsolete r8a777x-ether platform_device_id entry
+Message-Id: <1444205657-25314-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443559488-2416-5-git-send-email-hamzahfrq.sub@gmail.com>
-In-Reply-To: <1443559488-2416-5-git-send-email-hamzahfrq.sub@gmail.com>
+References: <1444205657-25314-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1444205657-25314-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "David S. Miller" <davem@davemloft.net>
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Vinod,
+Since commit 3d7608e4c169af03 ("ARM: shmobile: bockw: remove legacy
+board file and config"), R-Car Gen1 SoCs are only supported in generic
+DT-only ARM multi-platform builds.  The driver doesn't need to match
+platform devices by name anymore, hence remove the corresponding
+platform_device_id entry.
 
-On Monday 12 October 2015 20:42:32 Vinod Koul wrote:
-> On Tue, Sep 29, 2015 at 10:44:46PM +0200, hamzahfrq.sub@gmail.com wrote:
-> > From: Muhammad Hamza Farooq <mfarooq@visteon.com>
-> > 
-> > Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
-> > ---
-> > 
-> >  drivers/dma/sh/rcar-dmac.c | 4 ++++
-> >  1 file changed, 4 insertions(+)
-> > 
-> > diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
-> > index 6c806d0..0b5a367 100644
-> > --- a/drivers/dma/sh/rcar-dmac.c
-> > +++ b/drivers/dma/sh/rcar-dmac.c
-> > @@ -1258,6 +1258,10 @@ static enum dma_status rcar_dmac_tx_status(struct
-> > dma_chan *chan,> 
-> >  	residue = rcar_dmac_chan_get_residue(rchan, cookie);
-> >  	spin_unlock_irqrestore(&rchan->lock, flags);
-> > 
-> > +	/* if there's no residue, the cookie is complete */
-> > +	if (!residue)
-> > +		return DMA_COMPLETE;
-> > +
-> 
-> why would we get this, you should not be here if the status is complete and
-> exited before you checked the status
+Protect sh_eth_set_rate_r8a777x() and r8a777x_data by #ifdef CONFIG_OF,
+as they're now referenced on DT platforms only.
 
-The status check is a software check, while the residue check reads hardware 
-registers. The hardware might have complete the transfer but the interrupt 
-handler might not have had a chance to run yet.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Commit 3d7608e4c169af03 is now in arm-soc/for-next.
 
-Is it valid from a DMA engine API point of view to return a DMA_IN_PROGRESS 
-status with a 0 residue ?
+v2:
+  - New.
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 6395d2fc2bd8..48a3192f4af2 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -551,7 +551,6 @@ static struct sh_eth_cpu_data r8a7740_data = {
+ 	.select_mii	= 1,
+ 	.shift_rd0	= 1,
+ };
+-#endif /* CONFIG_OF */
+ 
+ /* There is CPU dependent code */
+ static void sh_eth_set_rate_r8a777x(struct net_device *ndev)
+@@ -593,7 +592,6 @@ static struct sh_eth_cpu_data r8a777x_data = {
+ 	.hw_swap	= 1,
+ };
+ 
+-#ifdef CONFIG_OF
+ /* R8A7790/1 */
+ static struct sh_eth_cpu_data r8a779x_data = {
+ 	.set_duplex	= sh_eth_set_duplex,
+@@ -3305,7 +3303,6 @@ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "sh7757-ether", (kernel_ulong_t)&sh7757_data },
+ 	{ "sh7757-gether", (kernel_ulong_t)&sh7757_data_giga },
+ 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
+-	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
