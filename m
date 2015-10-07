@@ -1,40 +1,52 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 02 Oct 2015 01:57:55 +0000
-Subject: [PATCH] clk: shmobile: Fix r8a7795 MSSR support
-Message-Id: <20151002015755.7116.10457.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:57:54 +0000
+Subject: [PATCH 17/28] ARM: shmobile: r8a7790: lager: add pinmux for iic0
+Message-Id: <535118cac9e0705bf58de0604060f644bee7472d.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-clk@vger.kernel.org
-Cc: kuninori.morimoto.gx@renesas.com, gaku.inami.xw@bp.renesas.com, mturquette@baylibre.com, linux-sh@vger.kernel.org, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Wolfram Sang <wsa@sang-engineering.com>
 
-This is an incremental fix for the series posted yesterday:
-[PATCH v8 00/05] Renesas R-Car Gen3 CPG support V8
+It seems we used to rely on the default pinmux setting of this HW, but
+currently we need to explicitly set the pinmux to access this bus. It is
+better style, too.
 
-As pointed out by Geert, I missed one r8a7791 instance
-when doing manual search-and-replace. This fix will in
-the future be folded into patch 3/5 and 4/5, but for
-now this incremental patch will have to do.
-
-Thanks to Geert for keeping his eyes open!
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wolfram Sang <wsa@sang-engineering.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7790-lager.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
- drivers/clk/shmobile/clk-mssr.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- 0005/drivers/clk/shmobile/clk-mssr.c
-+++ work/drivers/clk/shmobile/clk-mssr.c	2015-10-02 10:48:27.560513000 +0900
-@@ -323,7 +323,7 @@ static int cpg_mssr_attach_dev(struct ge
- 	while (!of_parse_phandle_with_args(np, "clocks", "#clock-cells", i,
- 					   &clkspec)) {
- 		if (of_device_is_compatible(clkspec.np,
--					    "renesas,r8a7791-cpg-mssr"))
-+					    "renesas,r8a7795-cpg-mssr"))
- 			goto found;
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 6f5d7f50d5ca..c553abd711ee 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -342,6 +342,11 @@
+ 		renesas,function = "msiof1";
+ 	};
  
- 		of_node_put(clkspec.np);
++	iic0_pins: iic0 {
++		renesas,groups = "iic0";
++		renesas,function = "iic0";
++	};
++
+ 	iic1_pins: iic1 {
+ 		renesas,groups = "iic1";
+ 		renesas,function = "iic1";
+@@ -517,6 +522,8 @@
+ 
+ &iic0	{
+ 	status = "okay";
++	pinctrl-0 = <&iic0_pins>;
++	pinctrl-names = "default";
+ };
+ 
+ &iic1	{
+-- 
+2.1.4
+
