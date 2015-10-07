@@ -1,60 +1,80 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 26 Oct 2015 06:01:49 +0000
-Subject: [PATCH v12 4/7] arm64: renesas: r8a7795: enable PFC
-Message-Id: <1445839312-8874-5-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:58:05 +0000
+Subject: [PATCH 28/28] ARM: shmobile: porter: add Ether DT support
+Message-Id: <0877098d82fd1823878534b116a4a725e729701f.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Add a PFC node for the on-chip r8a7795 pin controller.
+Define  the Porter board dependent part of the Ether device node.
+Enable DHCP and NFS root for the kernel booting.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+This  patch  is analogous to the commit 26b0d2cf73cb ("ARM: shmobile:
+henninger: add Ether DT support") as there  are no differences between
+those boards in this respect.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since v10:
-- None
+ arch/arm/boot/dts/r8a7791-porter.dts | 28 +++++++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
 
-Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
-- None
-
-Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
-- Dropped Kconfig TODO - select PINCTRL happens in patch 1
-- Added Acked-by from Laurent
-
-Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
-- Added changelog
-
-Based on:
- [PATCH 10/25 v7][RFC] arm64: renesas: r8a7795: enable PFC
----
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 5 +++++
- 1 file changed, 5 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 3e5539cceeec..b94e5a9e2c3b 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -80,6 +80,11 @@
- 			#power-domain-cells = <0>;
- 		};
+diff --git a/arch/arm/boot/dts/r8a7791-porter.dts b/arch/arm/boot/dts/r8a7791-porter.dts
+index b5670dd388e6..ca59ff861923 100644
+--- a/arch/arm/boot/dts/r8a7791-porter.dts
++++ b/arch/arm/boot/dts/r8a7791-porter.dts
+@@ -20,7 +20,7 @@
+ 	};
  
-+		pfc: pfc@e6060000 {
-+			compatible = "renesas,pfc-r8a7795";
-+			reg = <0 0xe6060000 0 0x50c>;
-+		};
+ 	chosen {
+-		bootargs = "ignore_loglevel";
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 		stdout-path = &scif0;
+ 	};
+ 
+@@ -44,6 +44,16 @@
+ 		renesas,groups = "scif0_data_d";
+ 		renesas,function = "scif0";
+ 	};
 +
- 		dmac0: dma-controller@e6700000 {
- 			/* Empty node for now */
- 		};
++	ether_pins: ether {
++		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
++		renesas,function = "eth";
++	};
++
++	phy1_pins: phy1 {
++		renesas,groups = "intc_irq0";
++		renesas,function = "intc";
++	};
+ };
+ 
+ &scif0 {
+@@ -52,3 +62,19 @@
+ 
+ 	status = "okay";
+ };
++
++&ether {
++	pinctrl-0 = <&ether_pins &phy1_pins>;
++	pinctrl-names = "default";
++
++	phy-handle = <&phy1>;
++	renesas,ether-link-active-low;
++	status = "ok";
++
++	phy1: ethernet-phy@1 {
++		reg = <1>;
++		interrupt-parent = <&irqc0>;
++		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
++		micrel,led-mode = <1>;
++	};
++};
 -- 
 2.1.4
 
