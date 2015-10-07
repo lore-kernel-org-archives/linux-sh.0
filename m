@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Oct 2015 01:58:04 +0000
-Subject: [PATCH 27/28] ARM: shmobile: fix SILK board name
-Message-Id: <7265405f74b33f256073ea233690b6ee866c252c.1444182812.git.horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:57:59 +0000
+Subject: [PATCH 22/28] ARM: shmobile: r8a7794: add USB PHY DT support
+Message-Id: <74ef4572004fc2abf5951a07aab36600a17b3a48.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1444182812.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
@@ -12,28 +12,46 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Unfortunately, the SILK board bindings were not quite correct, as the  board
-name should be all caps.  Fix that,  adding the board model #  in parens and
-removing stray semicolon.
+Define the R8A7794 generic part of the USB PHY device node. It is up to the
+board file to enable the device.
 
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Documentation/devicetree/bindings/arm/shmobile.txt | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7794.dtsi | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
-index a9148b1dcd96..40bb9007cd0d 100644
---- a/Documentation/devicetree/bindings/arm/shmobile.txt
-+++ b/Documentation/devicetree/bindings/arm/shmobile.txt
-@@ -57,5 +57,5 @@ Boards:
-     compatible = "renesas,marzen", "renesas,r8a7779"
-   - Porter (M2-LCDP)
-     compatible = "renesas,porter", "renesas,r8a7791"
--  - Silk
--    compatible = "renesas,silk", "renesas,r8a7794";
-+  - SILK (RTP0RC7794LCB00011S)
-+    compatible = "renesas,silk", "renesas,r8a7794"
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index a0747d749bb1..6ba0fa4890d0 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -690,6 +690,26 @@
+ 				 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
++	usbphy: usb-phy@e6590100 {
++		compatible = "renesas,usb-phy-r8a7794";
++		reg = <0 0xe6590100 0 0x100>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		clocks = <&mstp7_clks R8A7794_CLK_HSUSB>;
++		clock-names = "usbhs";
++		power-domains = <&cpg_clocks>;
++		status = "disabled";
++
++		usb0: usb-channel@0 {
++			reg = <0>;
++			#phy-cells = <1>;
++		};
++		usb2: usb-channel@2 {
++			reg = <2>;
++			#phy-cells = <1>;
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 -- 
 2.1.4
 
