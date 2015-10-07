@@ -1,37 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 30 Oct 2015 13:37:26 +0000
-Subject: Re: [PATCH] arm64: renesas: salvator-x: Setup ethernet0 alias for U-Boot
-Message-Id: <7457617.F4Cc6TXnNy@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 07 Oct 2015 10:28:38 +0000
+Subject: [PATCH 0/2] pinctrl: sh-pfc: Remove obsolete platform_device_id entries
+Message-Id: <1444213720-26770-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446197120-4640-1-git-send-email-geert+renesas@glider.be> <5186464.J3dvUFu6c7@avalon> <CAMuHMdXUyL=v2wv8-zfOi0bH6fbs5bnHvDKE2yeaAi-6Ltz1Vg@mail.gmail.com>
-In-Reply-To: <CAMuHMdXUyL=v2wv8-zfOi0bH6fbs5bnHvDKE2yeaAi-6Ltz1Vg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Wolfram Sang <wsa@the-dreams.de>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Geert,
+	Hi Linus, Laurent,
 
-On Friday 30 October 2015 14:16:03 Geert Uytterhoeven wrote:
-> On Fri, Oct 30, 2015 at 2:06 PM, Laurent Pinchart wrote:
-> > On Friday 30 October 2015 10:25:20 Geert Uytterhoeven wrote:
-> >> Add an ethernet0 alias for the wired network card so that U-Boot can
-> >> find the device-node and add an appropriate "local-mac-address"
-> >> property.
-> > 
-> > I like that :-) Can U-Boot add the property ? I thought it needed a
-> > placeholder.
-> 
-> At least for Salvator-X it does. See also the thread at
-> http://www.spinics.net/lists/arm-kernel/msg456841.html
+Since the removal of the r8a7778 legacy SoC code in commit
+4baadb9e05c68962 ("ARM: shmobile: r8a7778: remove obsolete setup code"),
+which is now in arm-soc/for-next, Renesas R-Car Gen1 SoCs are only
+supported in generic DT-only ARM multi-platform builds.
+The driver doesn't need to match platform devices by name anymore, hence
+this series removes the corresponding platform_device_id entries.
 
-Cool :-)
+Geert Uytterhoeven (2):
+  pinctrl: sh-pfc: Remove obsolete r8a7779 platform_device_id entry
+  pinctrl: sh-pfc: Remove obsolete r8a7778 platform_device_id entry
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+ drivers/pinctrl/sh-pfc/core.c | 6 ------
+ 1 file changed, 6 deletions(-)
 
 -- 
-Regards,
+1.9.1
 
-Laurent Pinchart
+Gr{oetje,eeting}s,
 
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
