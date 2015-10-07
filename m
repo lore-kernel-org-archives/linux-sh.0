@@ -1,7 +1,7 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 07 Oct 2015 11:02:11 +0000
+Date: Wed, 07 Oct 2015 19:34:48 +0000
 Subject: Re: [PATCH] ARM: shmobile: porter: add SDHI0/2 DT support
-Message-Id: <5614FBB3.5060806@cogentembedded.com>
+Message-Id: <561573D8.6060203@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <2228837.DO5U5OvRSi@wasted.cogentembedded.com>
  <20151007033957.GA30650@verge.net.au>
@@ -11,9 +11,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello.
-
-On 10/7/2015 6:39 AM, Simon Horman wrote:
+On 10/07/2015 06:39 AM, Simon Horman wrote:
 
 >> Define the Porter board dependent part of the SDHI0/2 device nodes along with
 >> the  necessary  voltage regulators (note that the Vcc regulators are dummy --
@@ -32,20 +30,11 @@ On 10/7/2015 6:39 AM, Simon Horman wrote:
 >
 > Thanks I have queued this up after addressing some issues
 > in the changelog that checkpatch complained about:
->
+
 > * text > 75 characters wide
 > * Missing '"' around name of patch referred to
->
-> Its looking like there is already quite a log shared between
 
-    Lot?
-
-> r8a7791-porter.dts and r8a7791-henninger.dts. Do you have any
-> thoughts on consolidating or sharing common elements between
-> them somehow?
-
-    I'm still planning to remove the Henninger's .dts for good. It was never 
-sold and so had no users outside Renesas (and Cogent Embedded), I was told.
+    Sorry about that, forgot to run thru checkpatch.pl (as usual :-).
 
 MBR, Sergei
 
