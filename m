@@ -1,48 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 05 Oct 2015 02:30:02 +0000
-Subject: Re: [PATCH 08/20 v2] arm64: renesas: r8a7795: add I2C support
-Message-Id: <20151005023000.GG25427@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 07 Oct 2015 11:38:52 +0000
+Subject: [PATCH v2 0/6] usb: host: xhci-plat: add support for the R-Car M2-N and H3 xHCI controllers
+Message-Id: <1444217938-4668-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Sep 17, 2015 at 04:25:22AM +0000, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> v1 -> v2
-> 
->  - use power-domains
->  - add Geert's Reviewed-by
-> 
->  arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 96 ++++++++++++++++++++++++++++++-
->  include/dt-bindings/clock/r8a7795-clock.h |  7 +++
->  2 files changed, 102 insertions(+), 1 deletion(-)
+This patch set adds support for R-Car M2-N (r8a7793) and H3 (r8a7795) xHCI
+controllers. To add support these new SoCs, this patch set adds a new member
+"priv" in struct xhci_hcd.
 
-Hi,
+This patch is based on the latest usb.git / usb-next branch.
+(The commit id = d5f9e73309b774dd9d86428edd7958b0960bcb85.)
 
-I have taken the liberty of updating this patch with the following
-incremental change from Geert. The result can be found in the
-topic/r8a7795-i2c-v3.rebase branch of my renesas tree.
+Changes from v1:
+ - Add "const void *priv" in struct xhci_hcd to simplify the code to match
+   platform specific variables using of_device_id.data.
+   To achieve this purpose, this patch set made patch 1 to 3.
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 8ce92db14c8bd101..16abf8956c68cb00 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -533,7 +533,9 @@
- 					clock-output-names  						"gpio7", "gpio6", "gpio5",
- 						"gpio4", "gpio3", "gpio2",
--						"gpio1", "gpio0";
-+						"gpio1", "gpio0", "i2c6",
-+						"i2c5", "i2c4", "i2c3", "i2c2",
-+						"i2c1", "i2c0";
- 				};
- 
- 				mstp10_clks: mstp10_clks@e6150998 {
+Yoshihiro Shimoda (6):
+  usb: host: xhci: add a platform-private pointer field
+  usb: host: xhci-plat: add struct xhci_plat_priv
+  usb: host: xhci-plat: add firmware_name in xhci_plat_priv
+  usb: host: xhci-rcar: Change code for new SoCs
+  usb: host: xhci-plat: add support for the R-Car M2-N xHCI controller
+  usb: host: xhci-plat: add support for the R-Car H3 xHCI controllers
+
+ Documentation/devicetree/bindings/usb/usb-xhci.txt |  4 +-
+ drivers/usb/host/xhci-plat.c                       | 80 +++++++++++++++-------
+ drivers/usb/host/xhci-plat.h                       | 39 +++++++++++
+ drivers/usb/host/xhci-rcar.c                       | 44 ++++++++----
+ drivers/usb/host/xhci-rcar.h                       |  3 +
+ drivers/usb/host/xhci.h                            |  3 +
+ 6 files changed, 132 insertions(+), 41 deletions(-)
+ create mode 100644 drivers/usb/host/xhci-plat.h
+
 -- 
 1.9.1
 
