@@ -1,68 +1,49 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 06:23:55 +0000
-Subject: [PATCH v11 0/8] arm64: renesas: Add Renesas R8A7795 SoC support
-Message-Id: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 07 Oct 2015 01:58:03 +0000
+Subject: [PATCH 26/28] ARM: shmobile: r8a7794: add HS-USB DT support
+Message-Id: <2f33b9f796ce6ebb00f6e8238fba07149c5264f2.1444182812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1444182812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-this pathcset adds basic support for the Renesas R-Car H3 (R8A7795) SoC
-and its Saovator-X board.
+Define the R8A7794 generic part of the HS-USB device node.
+It is up to the board file to enable the device.
 
-This series has undergone a number of rounds of development and review
-on the linux-sh mailing list. This is the first posting to a wider audience
-from which we are now seeking review.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7794.dtsi | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-It is anticpated that the CPG bindings used this patchset will be
-changed before they hit mainline and thus this patchset will need
-to be updated accordinly. Reviwers are advised to skip over that portion
-of this patchset unless they have a particlar interest in that discussion.
-
-
-Based on v4.3-rc1.
-
-Further run-time dependencies are included in the
-topic/gen3-latest branch of Geert Uytterhoeven's renesas-drivers tree.
-which currently includes these patches less the MAINTAINERS update.
-
-To aid review (and Geert's branch preparation) this series is available in
-the topic/arm64-rcar-gen3-v11 branch of the my renesas tree.
-
-Gaku Inami (1):
-  arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
-
-Geert Uytterhoeven (3):
-  arm64: renesas: r8a7795 dtsi: Add all common divider clocks
-  arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
-  arm64: renesas: r8a7795 dtsi: Add all SCIF nodes
-
-Kuninori Morimoto (3):
-  arm64: renesas: r8a7795: enable PFC
-  arm64: renesas: add Salvator-X board support on DTS
-  arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
-
-Simon Horman (1):
-  MAINTAINERS: Add entry Renesas arm64 architecture
-
- Documentation/devicetree/bindings/arm/shmobile.txt |   4 +
- MAINTAINERS                                        |  10 +
- arch/arm64/Kconfig.platforms                       |  17 +
- arch/arm64/boot/dts/Makefile                       |   1 +
- arch/arm64/boot/dts/renesas/Makefile               |   4 +
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |  62 ++++
- arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 384 +++++++++++++++++++++
- arch/arm64/configs/defconfig                       |   5 +
- include/dt-bindings/clock/r8a7795-clock.h          |  44 +++
- 9 files changed, 531 insertions(+)
- create mode 100644 arch/arm64/boot/dts/renesas/Makefile
- create mode 100644 arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
- create mode 100644 arch/arm64/boot/dts/renesas/r8a7795.dtsi
- create mode 100644 include/dt-bindings/clock/r8a7795-clock.h
-
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index efc3548511c4..a9977d6ee81a 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -718,6 +718,18 @@
+ 		};
+ 	};
+ 
++	hsusb: usb@e6590000 {
++		compatible = "renesas,usbhs-r8a7794";
++		reg = <0 0xe6590000 0 0x100>;
++		interrupts = <0 107 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7794_CLK_HSUSB>;
++		power-domains = <&cpg_clocks>;
++		renesas,buswait = <4>;
++		phys = <&usb0 1>;
++		phy-names = "usb";
++		status = "disabled";
++	};
++
+ 	usbphy: usb-phy@e6590100 {
+ 		compatible = "renesas,usb-phy-r8a7794";
+ 		reg = <0 0xe6590100 0 0x100>;
 -- 
 2.1.4
 
