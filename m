@@ -1,63 +1,27 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 07 Oct 2015 08:14:17 +0000
-Subject: [PATCH v2 4/4] sh_eth: Remove obsolete r8a777x-ether platform_device_id entry
-Message-Id: <1444205657-25314-5-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 08 Oct 2015 02:07:34 +0000
+Subject: Re: [PATCH v2 4/4] sh_eth: Remove obsolete r8a777x-ether platform_device_id entry
+Message-Id: <20151008020731.GA8756@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1444205657-25314-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1444205657-25314-1-git-send-email-geert+renesas@glider.be>
+ <1444205657-25314-5-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1444205657-25314-5-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "David S. Miller" <davem@davemloft.net>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-Since commit 3d7608e4c169af03 ("ARM: shmobile: bockw: remove legacy
-board file and config"), R-Car Gen1 SoCs are only supported in generic
-DT-only ARM multi-platform builds.  The driver doesn't need to match
-platform devices by name anymore, hence remove the corresponding
-platform_device_id entry.
+On Wed, Oct 07, 2015 at 10:14:17AM +0200, Geert Uytterhoeven wrote:
+> Since commit 3d7608e4c169af03 ("ARM: shmobile: bockw: remove legacy
+> board file and config"), R-Car Gen1 SoCs are only supported in generic
+> DT-only ARM multi-platform builds.  The driver doesn't need to match
+> platform devices by name anymore, hence remove the corresponding
+> platform_device_id entry.
+> 
+> Protect sh_eth_set_rate_r8a777x() and r8a777x_data by #ifdef CONFIG_OF,
+> as they're now referenced on DT platforms only.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Protect sh_eth_set_rate_r8a777x() and r8a777x_data by #ifdef CONFIG_OF,
-as they're now referenced on DT platforms only.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-Commit 3d7608e4c169af03 is now in arm-soc/for-next.
-
-v2:
-  - New.
----
- drivers/net/ethernet/renesas/sh_eth.c | 3 ---
- 1 file changed, 3 deletions(-)
-
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index 6395d2fc2bd8..48a3192f4af2 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -551,7 +551,6 @@ static struct sh_eth_cpu_data r8a7740_data = {
- 	.select_mii	= 1,
- 	.shift_rd0	= 1,
- };
--#endif /* CONFIG_OF */
- 
- /* There is CPU dependent code */
- static void sh_eth_set_rate_r8a777x(struct net_device *ndev)
-@@ -593,7 +592,6 @@ static struct sh_eth_cpu_data r8a777x_data = {
- 	.hw_swap	= 1,
- };
- 
--#ifdef CONFIG_OF
- /* R8A7790/1 */
- static struct sh_eth_cpu_data r8a779x_data = {
- 	.set_duplex	= sh_eth_set_duplex,
-@@ -3305,7 +3303,6 @@ static struct platform_device_id sh_eth_id_table[] = {
- 	{ "sh7757-ether", (kernel_ulong_t)&sh7757_data },
- 	{ "sh7757-gether", (kernel_ulong_t)&sh7757_data_giga },
- 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
--	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
- 	{ }
- };
- MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
--- 
-1.9.1
-
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
