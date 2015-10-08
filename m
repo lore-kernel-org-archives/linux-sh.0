@@ -1,34 +1,48 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 06 Oct 2015 08:22:56 +0000
-Subject: RE: [PATCH 1/4] usb: host: xhci-rcar: add xhci_rcar_is_compatible() function
-Message-Id: <TY1PR06MB09283886BE01D0B4FC54ED5AD8370@TY1PR06MB0928.apcprd06.prod.outlook.com>
+From: Ross Zwisler <ross.zwisler@linux.intel.com>
+Date: Thu, 08 Oct 2015 23:07:34 +0000
+Subject: Re: [PATCH] sh: add copy_user_page() alias for __copy_user()
+Message-Id: <20151008230734.GB19399@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444046790-5804-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1444046790-5804-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1442958411-4271-1-git-send-email-ross.zwisler@linux.intel.com>
+In-Reply-To: <1442958411-4271-1-git-send-email-ross.zwisler@linux.intel.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Ross Zwisler <ross.zwisler@linux.intel.com>
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Matthew Wilcox <willy@linux.intel.com>, linux-fsdevel@vger.kernel.org
 
-SGkgR2VlcnQtc2FuLA0KDQo+IFNlbnQ6IFR1ZXNkYXksIE9jdG9iZXIgMDYsIDIwMTUgNTo1NSBB
-TQ0KPiANCj4gSGkgU2hpbW9kYS1zYW4sDQo+IA0KPiBPbiBNb24sIE9jdCA1LCAyMDE1IGF0IDI6
-MDYgUE0sIFlvc2hpaGlybyBTaGltb2RhDQo+IDx5b3NoaWhpcm8uc2hpbW9kYS51aEByZW5lc2Fz
-LmNvbT4gd3JvdGU6DQo+ID4gK2Jvb2wgeGhjaV9yY2FyX2lzX2NvbXBhdGlibGUoc3RydWN0IHVz
-Yl9oY2QgKmhjZCkNCj4gPiArew0KPiA+ICsgICAgICAgc3RydWN0IGRldmljZV9ub2RlICpvZl9u
-b2RlID0gaGNkLT5zZWxmLmNvbnRyb2xsZXItPm9mX25vZGU7DQo+ID4gKw0KPiA+ICsgICAgICAg
-aWYgKG9mX2RldmljZV9pc19jb21wYXRpYmxlKG9mX25vZGUsICJyZW5lc2FzLHhoY2ktcjhhNzc5
-MCIpIHx8DQo+ID4gKyAgICAgICAgICAgb2ZfZGV2aWNlX2lzX2NvbXBhdGlibGUob2Zfbm9kZSwg
-InJlbmVzYXMseGhjaS1yOGE3NzkxIikpDQo+ID4gKyAgICAgICAgICAgICAgIHJldHVybiB0cnVl
-Ow0KPiANCj4gSWYgeW91IHdhbnQgdG8gbWF0Y2ggYWdhaW5zdCBtdWx0aXBsZSBjb21wYXRpYmxl
-IHZhbHVlcywgeW91IG1heSBiZSBiZXR0ZXINCj4gb2ZmIHdpdGggb2ZfbWF0Y2hfbm9kZSgpLg0K
-PiBUaGlzIG1heSBhbHNvIHNpbXBsaWZ5IHRoZSBjb2RlIHRvIG1hdGNoIHNwZWNpZmljIGZpcm13
-YXJlIHBhdGhzIHRvIHRoZQ0KPiB2YXJpb3VzIGNvbXBhdGlibGUgZW50cmllcy4NCg0KVGhhbmsg
-eW91IGZvciB0aGUgY29tbWVudC4NCkkgd2lsbCBtb2RpZnkgdGhlIGNvZGUgdXNpbmcgb2ZfbWF0
-Y2hfbm9kZSgpLg0KDQpCZXN0IHJlZ2FyZHMsDQpZb3NoaWhpcm8gU2hpbW9kYQ0KDQo+IEdye29l
-dGplLGVldGluZ31zLA0KPiANCj4gICAgICAgICAgICAgICAgICAgICAgICAgR2VlcnQNCj4gDQo+
-IC0tDQo+IEdlZXJ0IFV5dHRlcmhvZXZlbiAtLSBUaGVyZSdzIGxvdHMgb2YgTGludXggYmV5b25k
-IGlhMzIgLS0gZ2VlcnRAbGludXgtbTY4ay5vcmcNCj4gDQo+IEluIHBlcnNvbmFsIGNvbnZlcnNh
-dGlvbnMgd2l0aCB0ZWNobmljYWwgcGVvcGxlLCBJIGNhbGwgbXlzZWxmIGEgaGFja2VyLiBCdXQN
-Cj4gd2hlbiBJJ20gdGFsa2luZyB0byBqb3VybmFsaXN0cyBJIGp1c3Qgc2F5ICJwcm9ncmFtbWVy
-IiBvciBzb21ldGhpbmcgbGlrZSB0aGF0Lg0KPiAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgIC0tIExpbnVzIFRvcnZhbGRzDQo
+On Tue, Sep 22, 2015 at 03:46:51PM -0600, Ross Zwisler wrote:
+> copy_user_page() is needed by DAX.  Without this we get a compile error
+> for DAX on SH:
+> 
+> fs/dax.c:280:2: error: implicit declaration of function ‘copy_user_page’
+> [-Werror=implicit-function-declaration]
+>   copy_user_page(vto, (void __force *)vfrom, vaddr, to);
+>     ^
+> 
+> This was done with a random config that happened to include DAX support.
+> 
+> This patch has only been compile tested.
+> 
+> Signed-off-by: Ross Zwisler <ross.zwisler@linux.intel.com>
+> Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+> ---
+> Apologies for the resend, I wanted to add some more recipients.
+> ---
+>  arch/sh/include/asm/page.h | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/arch/sh/include/asm/page.h b/arch/sh/include/asm/page.h
+> index fe20d14..ceb5201 100644
+> --- a/arch/sh/include/asm/page.h
+> +++ b/arch/sh/include/asm/page.h
+> @@ -59,6 +59,7 @@ pages_do_alias(unsigned long addr1, unsigned long addr2)
+>  
+>  #define clear_page(page)	memset((void *)(page), 0, PAGE_SIZE)
+>  extern void copy_page(void *to, void *from);
+> +#define copy_user_page(to, from, vaddr, pg)  __copy_user(to, from, PAGE_SIZE)
+>  
+>  struct page;
+>  struct vm_area_struct;
+
+Ping?
