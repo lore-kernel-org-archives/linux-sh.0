@@ -1,60 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 09 Oct 2015 08:45:56 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 09 Oct 2015 09:21:36 +0000
 Subject: Re: [PATCH 2/4] i2c: rcar: enable RuntimePM before registering to the core
-Message-Id: <CAMuHMdWaeuxxuWOvEUbyBC3QOEH4rFS9ah=WnZWJVv330gDGMw@mail.gmail.com>
+Message-Id: <20151009092136.GB3834@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="FkmkrVfFsRoUs1wW"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1444373693-2372-1-git-send-email-wsa@the-dreams.de>
-	<1444373693-2372-2-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1444373693-2372-2-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
+ <1444373693-2372-2-git-send-email-wsa@the-dreams.de>
+ <CAMuHMdWaeuxxuWOvEUbyBC3QOEH4rFS9ah=WnZWJVv330gDGMw@mail.gmail.com>
+In-Reply-To: <CAMuHMdWaeuxxuWOvEUbyBC3QOEH4rFS9ah=WnZWJVv330gDGMw@mail.gmail.com>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Linux-sh list <linux-sh@vger.kernel.org>, Linux I2C <linux-i2c@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-Hi Wolfram,
 
-On Fri, Oct 9, 2015 at 8:54 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> The core may register clients attached to this master which may use
-> funtionality from the master. So, RuntimePM must be enabled before, otherwise
-> this will fail. While here, move drvdata, too.
+--FkmkrVfFsRoUs1wW
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Thanks for your patch!
 
-> Reported-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> ---
->  drivers/i2c/busses/i2c-rcar.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
->
-> diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-> index d8361dada58455..3d7536d78cb366 100644
-> --- a/drivers/i2c/busses/i2c-rcar.c
-> +++ b/drivers/i2c/busses/i2c-rcar.c
-> @@ -690,15 +690,15 @@ static int rcar_i2c_probe(struct platform_device *pdev)
->                 return ret;
->         }
->
-> +       pm_runtime_enable(dev);
-> +       platform_set_drvdata(pdev, priv);
-> +
->         ret = i2c_add_numbered_adapter(adap);
->         if (ret < 0) {
->                 dev_err(dev, "reg adap failed: %d\n", ret);
+> You forgot to call pm_runtime_disable() in the error path.
+> I think some of your other patches suffer from the same issue.
 
-You forgot to call pm_runtime_disable() in the error path.
-I think some of your other patches suffer from the same issue.
+Ouch! Thanks a lot, Geert!
 
->                 return ret;
->         }
 
-Gr{oetje,eeting}s,
+--FkmkrVfFsRoUs1wW
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-                        Geert
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+iQIcBAEBAgAGBQJWF4cfAAoJEBQN5MwUoCm2LbMP/RI1Y62KD5EltjbpVrUzEl1N
+8rhmHngen2rjWvzl/k/gu6Tb+rvivUeYC6H2wMW0QPslvOL1rdIhT2ZQaX8kiSiK
+LS9hqP+yfuE8ifvZKG3UojYbvKA1iVrt8lKrnebBUTuZqMU75UZehaFKq4Gn3Cdq
+gjE4O28f+RFqQ+MYJhpE5ersgnp7py2/xJx2ufgRk4movecpdSuNkbfQHxiWjAhA
+cDogubX1ZM3NGOctaegMTDQvW9BJ9e3S8uz849S9W3Z1djHkjXisSCguKQs4BjzL
+roOjayacnh7/wd9ByS+dvaHpMZ2Cn0QmW32bAGyC48sTk44gby1um/Eu7Yxs6wpi
+cb4V2Ua0p8PJ7fCmxuy/hZnwmecytxGthguKjz7pqUwLin0Rp+VChROSmIW3WURE
+bGXrdBBMxRO2qI8By4iPGA18NSnaui9kbSLYN/OzlYDQrlyr9il9gd+hCmr8GVum
+dapR3FagkDY9UXh98hMuXhflg9LtlfYUHT4tv1uvTc0fjuyxybFre3G0tGVfrQKJ
+0rlLtSBAw5UVi6UY2QuHLZT4fOwigL3FFFEmB3wXcmoNixeIcidHV+AGEwV8UeCb
+dlu8djIKMBl4fCsOZGyd+G8wcSJy0fXNLH2SPwpYJ37Dg/13ZcLHxmOZBfB1PAoB
+kkD23kW+tZj2tMBGkZ18
+=q311
+-----END PGP SIGNATURE-----
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--FkmkrVfFsRoUs1wW--
