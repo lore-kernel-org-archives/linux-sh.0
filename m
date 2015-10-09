@@ -1,40 +1,56 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Tue, 27 Oct 2015 09:22:08 +0000
-Subject: Re: [PATCH/RFT 0/7] HDMI capture on Lager
-Message-Id: <CAO3366ykhg7PJAy5CJSyhOts8-i2gOjnU6AEiK3QTwf2D_pvUQ@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 09 Oct 2015 09:39:24 +0000
+Subject: [PATCH v2 1/4] i2c: designware-platdrv: enable RuntimePM before registering to the core
+Message-Id: <1444383567-18113-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445263660-6945-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-	<5625043D.5010007@cisco.com>
-In-Reply-To: <5625043D.5010007@cisco.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Hans Verkuil <hansverk@cisco.com>
-Cc: SH-Linux <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Laurent <laurent.pinchart@ideasonboard.com>, William Towle <william.towle@codethink.co.uk>, Robert Taylor <rob.taylor@codethink.co.uk>, hans.verkuil@cisco.com, ian.molton@codethink.co.uk, linux-media@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-i2c@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Mon, Oct 19, 2015 at 4:54 PM, Hans Verkuil <hansverk@cisco.com> wrote:
-> On 10/19/2015 04:07 PM, Ulrich Hecht wrote:
->> This series is supposed to serve as a basis for testing the HDMI input on
->> the Lager board.  It is based on the series by William Towle, dropping the
->> patches that have since been merged, and adding the interrupt to the
->> adv7612
->> DT description.
->>
->> The base of this series, Laurent's "pad config allocator" patch, had been
->> deferred pending a retooling of the media controller framework.  I could
->> not, however, find significant activity in that area (read: the patch
->> still
->> applies)...
-> Please cross-post this to the linux-media mailinglist, otherwise it will
-> likely be lost.
->
-> BTW a lot of work is being done in the media controller framework, but
-> nothing has been merged yet. It looks likely to be merged for kernel 4.5.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Could you point me to that work?  I have checked out the master and
-media-controller branches of the media tree, but the patch series
-still applies (and works) there, so I'm wondering if I'm looking in
-the wrong places.  Thank you.
+The core may register clients attached to this master which may use
+funtionality from the master. So, RuntimePM must be enabled before, otherwise
+this will fail.
 
-CU
-Uli
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-designware-platdrv.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-designware-platdrv.c b/drivers/i2c/busses/i2c-designware-platdrv.c
+index 3dd2de31a2f8d3..73d58415bbc100 100644
+--- a/drivers/i2c/busses/i2c-designware-platdrv.c
++++ b/drivers/i2c/busses/i2c-designware-platdrv.c
+@@ -253,12 +253,6 @@ static int dw_i2c_probe(struct platform_device *pdev)
+ 	adap->dev.parent = &pdev->dev;
+ 	adap->dev.of_node = pdev->dev.of_node;
+ 
+-	r = i2c_add_numbered_adapter(adap);
+-	if (r) {
+-		dev_err(&pdev->dev, "failure adding adapter\n");
+-		return r;
+-	}
+-
+ 	if (dev->pm_runtime_disabled) {
+ 		pm_runtime_forbid(&pdev->dev);
+ 	} else {
+@@ -268,6 +262,13 @@ static int dw_i2c_probe(struct platform_device *pdev)
+ 		pm_runtime_enable(&pdev->dev);
+ 	}
+ 
++	r = i2c_add_numbered_adapter(adap);
++	if (r) {
++		dev_err(&pdev->dev, "failure adding adapter\n");
++		pm_runtime_disable(&pdev->dev);
++		return r;
++	}
++
+ 	return 0;
+ }
+ 
+-- 
+2.1.4
+
