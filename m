@@ -1,39 +1,53 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 27 Oct 2015 10:41:05 +0000
-Subject: Re: [PATCH v5 0/5] arm64: dts: r8a7795: enable EthernetAVB on Salvator-X
-Message-Id: <CAMuHMdWUwMk0U176rq1ax+j=mrnWkPrw9eWPVHnzHHLAJY86pw@mail.gmail.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 09 Oct 2015 09:39:27 +0000
+Subject: [PATCH v2 4/4] spi: spi-coldfire-qspi: enable RuntimePM before registering to the core
+Message-Id: <1444383567-18113-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444891698-8780-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1444891698-8780-1-git-send-email-horms+renesas@verge.net.au>
+References: <1444383567-18113-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1444383567-18113-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Thu, Oct 15, 2015 at 8:48 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> This patchset enables the EthernetAVB on the Salvator-X board.
-> With it and its dependencies in place I have have successfully
-> booted to an nfsroot user-space (arm64 Debian Jessie).
->
-> In order to achieve that I used the following command line set from u-boot.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-> root=/dev/nfs ip=dhcp nfsroot.3.3.135:/srv/nfs/salvator-x-arm64
+The core may register clients attached to this master which may use
+funtionality from the master. So, RuntimePM must be enabled before, otherwise
+this will fail.
 
-For people who want to try this: you probably want to add a line specifying
-the MAC address
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/spi/spi-coldfire-qspi.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-        local-mac-address = [ XX XX XX XX XX XX ];
+diff --git a/drivers/spi/spi-coldfire-qspi.c b/drivers/spi/spi-coldfire-qspi.c
+index 688956ff5095c2..23f6fffd75e111 100644
+--- a/drivers/spi/spi-coldfire-qspi.c
++++ b/drivers/spi/spi-coldfire-qspi.c
+@@ -420,19 +420,20 @@ static int mcfqspi_probe(struct platform_device *pdev)
+ 	master->auto_runtime_pm = true;
+ 
+ 	platform_set_drvdata(pdev, master);
++	pm_runtime_enable(&pdev->dev);
+ 
+ 	status = devm_spi_register_master(&pdev->dev, master);
+ 	if (status) {
+ 		dev_dbg(&pdev->dev, "spi_register_master failed\n");
+ 		goto fail2;
+ 	}
+-	pm_runtime_enable(&pdev->dev);
+ 
+ 	dev_info(&pdev->dev, "Coldfire QSPI bus driver\n");
+ 
+ 	return 0;
+ 
+ fail2:
++	pm_runtime_disable(&pdev->dev);
+ 	mcfqspi_cs_teardown(mcfqspi);
+ fail1:
+ 	clk_disable(mcfqspi->clk);
+-- 
+2.1.4
 
-to the avb node in arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
