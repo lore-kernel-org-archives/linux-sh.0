@@ -1,49 +1,47 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 09 Oct 2015 06:54:53 +0000
-Subject: [PATCH 4/4] spi: spi-coldfire-qspi: enable RuntimePM before registering to the core
-Message-Id: <1444373693-2372-4-git-send-email-wsa@the-dreams.de>
+From: Mark Brown <broonie@kernel.org>
+Date: Fri, 09 Oct 2015 11:31:08 +0000
+Subject: Re: [PATCH 4/4] spi: spi-coldfire-qspi: enable RuntimePM before registering to the core
+Message-Id: <20151009113108.GA1542@sirena.org.uk>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="EVF5PPMfhYS0aIcm"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1444373693-2372-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1444373693-2372-1-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org, linux-kernel@vger.kernel.org
+ <1444373693-2372-4-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1444373693-2372-4-git-send-email-wsa@the-dreams.de>
+To: Wolfram Sang <wsa@the-dreams.de>
+Cc: linux-sh@vger.kernel.org, linux-spi@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-The core may register clients attached to this master which may use
-funtionality from the master. So, RuntimePM must be enabled before, otherwise
-this will fail.
+--EVF5PPMfhYS0aIcm
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
----
+On Fri, Oct 09, 2015 at 07:54:53AM +0100, Wolfram Sang wrote:
+> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+>=20
+> The core may register clients attached to this master which may use
+> funtionality from the master. So, RuntimePM must be enabled before, other=
+wise
+> this will fail.
 
-Not tested on HW. Found by code review.
+I'm missing patches 1-3 and the cover letter - what's going on with
+dependencies here?
 
- drivers/spi/spi-coldfire-qspi.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+--EVF5PPMfhYS0aIcm
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-diff --git a/drivers/spi/spi-coldfire-qspi.c b/drivers/spi/spi-coldfire-qspi.c
-index 688956ff5095c2..2c5fe795bb5e59 100644
---- a/drivers/spi/spi-coldfire-qspi.c
-+++ b/drivers/spi/spi-coldfire-qspi.c
-@@ -420,13 +420,13 @@ static int mcfqspi_probe(struct platform_device *pdev)
- 	master->auto_runtime_pm = true;
- 
- 	platform_set_drvdata(pdev, master);
-+	pm_runtime_enable(&pdev->dev);
- 
- 	status = devm_spi_register_master(&pdev->dev, master);
- 	if (status) {
- 		dev_dbg(&pdev->dev, "spi_register_master failed\n");
- 		goto fail2;
- 	}
--	pm_runtime_enable(&pdev->dev);
- 
- 	dev_info(&pdev->dev, "Coldfire QSPI bus driver\n");
- 
--- 
-2.1.4
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
+iQEcBAEBCAAGBQJWF6V4AAoJECTWi3JdVIfQkK8H/1WjOx33gPtzJpaObrl7XB59
+y4XjcBpM4mfE+u41PlO+l8BFyen0rZVMxBW9tRaL5Ol39i9k2R4zEtdYp5nltlAd
+jRfdv4Y10MelWG1X+vZCBEQDYL4EqaD3GASoYlvvDXJcjdZlmfuko4ZfdA4Jxl4f
+5CT5aQU4/Yyes872cFuZYb32+hqH3DJebbgQF1ucTCFZwhw30ErwPHCo5e+uT0lY
+v4EMCq2+PNlhfP0aMihmB6iwoAg5uRlABuza2ZrSwwRZS2xq6IQ+8NL+PKarGShH
+kWGFLhWbd2vUhhGNtycsPCqoy7Bo4PF1iUFshrzUMrxehD10phja1Aokf7BxcW0=
+=vcm3
+-----END PGP SIGNATURE-----
+
+--EVF5PPMfhYS0aIcm--
