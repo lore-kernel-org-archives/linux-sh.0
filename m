@@ -1,31 +1,57 @@
-From: David Miller <davem@davemloft.net>
-Date: Fri, 30 Oct 2015 09:02:54 +0000
-Subject: Re: [PATCH RFT v2] sh_eth: fix kernel oops in skb_put()
-Message-Id: <20151030.180254.1737762744569865912.davem@davemloft.net>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 09 Oct 2015 09:39:26 +0000
+Subject: [PATCH v2 3/4] i2c: s3c2410: enable RuntimePM before registering to the core
+Message-Id: <1444383567-18113-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2611049.bTOQ0T0Nsl@wasted.cogentembedded.com>
-In-Reply-To: <2611049.bTOQ0T0Nsl@wasted.cogentembedded.com>
+References: <1444383567-18113-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1444383567-18113-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, yashi@atmark-techno.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 25 Oct 2015 01:42:33 +0300
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-> In a low memory situation the following kernel oops occurs:
- ...
-> This is because netdev_alloc_skb() fails and 'mdp->rx_skbuff[entry]' is left
-> NULL but sh_eth_rx() later uses it without checking. Add such check...
-> 
-> Reported-by: Yasushi SHOJI <yashi@atmark-techno.com>
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+The core may register clients attached to this master which may use
+funtionality from the master. So, RuntimePM must be enabled before, otherwise
+this will fail. While here, move drvdata, too.
 
-This seems to need more investigation and work, therefore I am
-not applying this at this time.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-s3c2410.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
 
-When a final version is available (or even if this one is deemed
-appropriate as-is) please resubmit it withut RFT in the Subject.
+diff --git a/drivers/i2c/busses/i2c-s3c2410.c b/drivers/i2c/busses/i2c-s3c2410.c
+index 50bfd8cef5f224..336e34e1ca597d 100644
+--- a/drivers/i2c/busses/i2c-s3c2410.c
++++ b/drivers/i2c/busses/i2c-s3c2410.c
+@@ -1243,19 +1243,21 @@ static int s3c24xx_i2c_probe(struct platform_device *pdev)
+ 	i2c->adap.nr = i2c->pdata->bus_num;
+ 	i2c->adap.dev.of_node = pdev->dev.of_node;
+ 
++	platform_set_drvdata(pdev, i2c);
++
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_enable(&i2c->adap.dev);
++
+ 	ret = i2c_add_numbered_adapter(&i2c->adap);
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "failed to add bus to i2c core\n");
++		pm_runtime_disable(&i2c->adap.dev);
++		pm_runtime_disable(&pdev->dev);
+ 		s3c24xx_i2c_deregister_cpufreq(i2c);
+ 		clk_unprepare(i2c->clk);
+ 		return ret;
+ 	}
+ 
+-	platform_set_drvdata(pdev, i2c);
+-
+-	pm_runtime_enable(&pdev->dev);
+-	pm_runtime_enable(&i2c->adap.dev);
+-
+ 	dev_info(&pdev->dev, "%s: S3C I2C adapter\n", dev_name(&i2c->adap.dev));
+ 	return 0;
+ }
+-- 
+2.1.4
 
-Thanks.
