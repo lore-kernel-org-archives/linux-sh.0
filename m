@@ -1,56 +1,24 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 08 Oct 2015 21:44:18 +0000
-Subject: [PATCH] ARM: shmobile: porter: add I2C2 DT support
-Message-Id: <84974694.25bFZffQKN@wasted.cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 09 Oct 2015 01:13:36 +0000
+Subject: Re: [PATCH] ARM: shmobile: porter: add I2C2 DT support
+Message-Id: <20151009011336.GB14231@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <84974694.25bFZffQKN@wasted.cogentembedded.com>
+In-Reply-To: <84974694.25bFZffQKN@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Define the Porter board dependent part of the I2C2 device node.
+On Fri, Oct 09, 2015 at 12:44:18AM +0300, Sergei Shtylyov wrote:
+> Define the Porter board dependent part of the I2C2 device node.
+> 
+> This patch is  analogous to the commit 29a647c396a0 ("ARM: shmobile:
+> henninger: add I2C2 DT support") as there are no differences between
+> the boards in this respect.
+> 
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-This patch is  analogous to the commit 29a647c396a0 ("ARM: shmobile:
-henninger: add I2C2 DT support") as there are no differences between
-the boards in this respect.
+Thanks Sergei,
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
----
-This patch is against 'renesas-devel-20151008-v4.3-rc4' tag of Simon Horman's
-'renesas.git' repo.
-
- arch/arm/boot/dts/r8a7791-porter.dts |   13 +++++++++++++
- 1 file changed, 13 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7791-porter.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-porter.dts
-+++ renesas/arch/arm/boot/dts/r8a7791-porter.dts
-@@ -109,6 +109,11 @@
- 		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
- 		renesas,function = "sdhi2";
- 	};
-+
-+	i2c2_pins: i2c2 {
-+		renesas,groups = "i2c2";
-+		renesas,function = "i2c2";
-+	};
- };
- 
- &scif0 {
-@@ -155,6 +160,14 @@
- 	status = "okay";
- };
- 
-+&i2c2 {
-+	pinctrl-0 = <&i2c2_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+	clock-frequency = <400000>;
-+};
-+
- &sata0 {
- 	status = "okay";
- };
-
+I have queued this up for v4.4.
