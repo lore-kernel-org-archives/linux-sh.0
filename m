@@ -1,78 +1,42 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 19 Oct 2015 22:23:57 +0000
-Subject: Re: [PATCH/RFT 6/7] media: adv7604: automatic "default-input" selection
-Message-Id: <56256D7D.7040309@cogentembedded.com>
+Date: Fri, 09 Oct 2015 21:41:26 +0000
+Subject: [PATCH] ARM: shmobile: porter: enable PCIe
+Message-Id: <13633423.im5T5IW5o3@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445263660-6945-7-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1445263660-6945-7-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+Enable the PCIe controller and clock for the Porter board.
 
-On 10/19/2015 05:07 PM, Ulrich Hecht wrote:
+This patch is analogous to the commit 485f3ce67c11 ("ARM: shmobile:
+henninger: Enable PCIe Controller & PCIe bus clock") as there are no
+differences between the boards in this respect.
 
-> From: William Towle <william.towle@codethink.co.uk>
->
-> Add logic such that the "default-input" property becomes unnecessary
-> for chips that only have one suitable input (ADV7611 by design, and
-> ADV7612 due to commit 7111cddd "[media] media: adv7604: reduce support
-> to first (digital) input").
->
-> Additionally, Ian's documentation in commit bf9c8227 ("[media] media:
-> adv7604: ability to read default input port from DT") states that the
-> "default-input" property should reside directly in the node for
-> adv7612. Hence, also adjust the parsing to make the implementation
-> consistent with this.
->
-> Signed-off-by: William Towle <william.towle@codethink.co.uk>
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> ---
->   drivers/media/i2c/adv7604.c | 25 ++++++++++++++++++-------
->   1 file changed, 18 insertions(+), 7 deletions(-)
->
-> diff --git a/drivers/media/i2c/adv7604.c b/drivers/media/i2c/adv7604.c
-> index 5631ec0..5bd81bd 100644
-> --- a/drivers/media/i2c/adv7604.c
-> +++ b/drivers/media/i2c/adv7604.c
-> @@ -2799,7 +2799,7 @@ static int adv76xx_parse_dt(struct adv76xx_state *state)
->   	struct device_node *endpoint;
->   	struct device_node *np;
->   	unsigned int flags;
-> -	u32 v;
-> +	u32 v= -1;
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-    Nit: need spaces on both sides of =. :-)
+---
+This patch is against 'renesas-devel-20151008-v4.3-rc4' tag  of Simon Horman's
+'renesas.git' repo plus the Porter I2C2, VIN0/ADV7180, and QSPI patches posted
+earlier.
 
-[...]
-> @@ -2809,14 +2809,25 @@ static int adv76xx_parse_dt(struct adv76xx_state *state)
->   		return -EINVAL;
->
->   	v4l2_of_parse_endpoint(endpoint, &bus_cfg);
-> -
-> -	if (!of_property_read_u32(endpoint, "default-input", &v))
-> -		state->pdata.default_input = v;
-> -	else
-> -		state->pdata.default_input = -1;
-> -
->   	of_node_put(endpoint);
->
-> +	if (of_property_read_u32(np, "default-input", &v)) {
-> +		/* not specified ... can we choose automatically? */
-> +		switch (state->info->type) {
-> +		case ADV7611:
-> +			v = 0;
-> +			break;
-> +		case ADV7612:
-> +			if (state->info->max_port
-> +					= ADV76XX_PAD_HDMI_PORT_A)
+ arch/arm/boot/dts/r8a7791-porter.dts |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-    Hm, doubtful line breaking style -- I'd prefer having = on the first line.
-Maybe it contradicts to this driver's style, though...
-
-[...]
-
-MBR, Sergei
+Index: renesas/arch/arm/boot/dts/r8a7791-porter.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-porter.dts
++++ renesas/arch/arm/boot/dts/r8a7791-porter.dts
+@@ -244,3 +244,11 @@
+ 		};
+ 	};
+ };
++
++&pcie_bus_clk {
++	status = "okay";
++};
++
++&pciec {
++	status = "okay";
++};
 
