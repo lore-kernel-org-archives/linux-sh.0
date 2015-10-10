@@ -1,57 +1,60 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 29 Oct 2015 08:31:57 +0000
-Subject: Re: Salvator-X I2C is working on HI speed on renesas-drivers-2015-10-27-v4.3-rc7
-Message-Id: <87si4uyta0.wl%kuninori.morimoto.gx@renesas.com>
+From: Julia Lawall <Julia.Lawall@lip6.fr>
+Date: Sat, 10 Oct 2015 12:30:52 +0000
+Subject: [PATCH 3/5] ARM: shmobile: R-Mobile: add missing of_node_put
+Message-Id: <1444480254-14399-4-git-send-email-Julia.Lawall@lip6.fr>
 List-Id: <linux-sh.vger.kernel.org>
-References: <877fm61988.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <877fm61988.wl%kuninori.morimoto.gx@renesas.com>
+References: <1444480254-14399-1-git-send-email-Julia.Lawall@lip6.fr>
+In-Reply-To: <1444480254-14399-1-git-send-email-Julia.Lawall@lip6.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+for_each_child_of_node performs an of_node_get on each iteration, so
+a break out of the loop requires an of_node_put.
 
-Hi Geert, Wolfram
+The semantic patch that fixes this problem is as follows
+(http://coccinelle.lip6.fr):
 
-> > If /sys/kernel/debug/clk/clk_summary doesn't show differences (it
-> > shouldn't ;-), please try reverting more i2c commits.
-> > 
-> > git log --oneline
-> > renesas-drivers-2015-09-29-v4.3-rc3..renesas-drivers-2015-10-27-v4.3-rc7
-> > -- drivers/i2c/busses/i2c-rcar.c | tac
-> > 93c659d820ef291f i2c: rcar: rework hw init
-> > 59daef909d9ac2ca i2c: rcar: remove unused IOERROR state
-> > 738206dec9354817 i2c: rcar: remove spinlock
-> > 344beeb23bfc1150 i2c: rcar: refactor setup of a msg
-> > 2bc3c5a8631db6d8 i2c: rcar: init new messages in irq
-> > 315a1736a2f2d9ad i2c: rcar: don't issue stop when HW does it automatically
-> > 2151ba7584b73255 i2c: rcar: check master irqs before slave irqs
-> > e5a7effa09e25743 i2c: rcar: revoke START request early
-> > 708ca40841266927 i2c: rcar: clean up after refactoring
-> > 4f7effddf4549d57 i2c: rcar: enable RuntimePM before registering to the core
-> > ecc749660556e02a Merge branch 'i2c/for-current' into i2c/for-next
-> > e7db0d34b38d56bb i2c: rcar: add support for r8a7795 (R-Car H3)
-> > c6f1891323e6a259 i2c: rcar: Remove obsolete platform data support
-> > 6e82f74d11c8c33d Merge branch 'i2c/for-4.4' into i2c/for-next
-> 
-> Oops, I thought that there is no difference between 09-29 <-> 10-27.
-> OK, I will try
+// <smpl>
+@@
+expression root,e;
+local idexpression child;
+@@
 
-Thanks!!
+ for_each_child_of_node(root, child) {
+   ... when != of_node_put(child)
+       when != e = child
+(
+   return child;
+|
++  of_node_put(child);
+?  return ...;
+)
+   ...
+ }
+// </smpl>
 
-I2C clock can be sane if I reverted this commit (= oops, 1st patch).
-Correct speed is 100kHz, broken speed was 1.5MHz
+Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
 
-commit 93c659d820ef291f6ca5e628f44b26cfb2226aba
-Author: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Date:   Thu Sep 3 22:20:05 2015 +0200
+---
+ arch/arm/mach-shmobile/pm-rmobile.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-    i2c: rcar: rework hw init
-    
-    We don't need to init HW before every transfer since we know the HW
-    state then. HW init at probe time is enough. While here, add setting the
-    clock register which belongs to init HW. Also, set MDBS bit since not
-    setting it is prohibited according to the manual.
-    
-    Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-    Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index 89068c8..46d0a1d 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -313,8 +313,10 @@ static int __init rmobile_add_pm_domains(void __iomem *base,
+ 		}
+ 
+ 		pd = kzalloc(sizeof(*pd), GFP_KERNEL);
+-		if (!pd)
++		if (!pd) {
++			of_node_put(np);
+ 			return -ENOMEM;
++		}
+ 
+ 		pd->genpd.name = np->name;
+ 		pd->base = base;
+
