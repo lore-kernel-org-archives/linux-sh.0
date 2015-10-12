@@ -1,50 +1,35 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 12 Oct 2015 07:26:29 +0000
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Mon, 12 Oct 2015 07:29:10 +0000
 Subject: Re: [PATCH 3/5] ARM: shmobile: R-Mobile: add missing of_node_put
-Message-Id: <CAMuHMdW0Bs3FVHk8T8kTPYxA4SwEb3PNMn7dZ2BiTD5crs5PrQ@mail.gmail.com>
+Message-Id: <20151012092910.7580c2b9@free-electrons.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1444480254-14399-1-git-send-email-Julia.Lawall@lip6.fr>
  <1444480254-14399-4-git-send-email-Julia.Lawall@lip6.fr>
  <CAMuHMdUVraBT+s1e-m89KmjbZnEQjBaSz+c93rCOWPMnT5CVPA@mail.gmail.com>
- <alpine.DEB.2.10.1510120923130.2652@hadrien>
-In-Reply-To: <alpine.DEB.2.10.1510120923130.2652@hadrien>
+In-Reply-To: <CAMuHMdUVraBT+s1e-m89KmjbZnEQjBaSz+c93rCOWPMnT5CVPA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Julia,
+Dear Geert Uytterhoeven,
 
-On Mon, Oct 12, 2015 at 9:24 AM, Julia Lawall <julia.lawall@lip6.fr> wrote:
-> On Mon, 12 Oct 2015, Geert Uytterhoeven wrote:
->> On Sat, Oct 10, 2015 at 2:30 PM, Julia Lawall <Julia.Lawall@lip6.fr> wrote:
->> > --- a/arch/arm/mach-shmobile/pm-rmobile.c
->> > +++ b/arch/arm/mach-shmobile/pm-rmobile.c
->> > @@ -313,8 +313,10 @@ static int __init rmobile_add_pm_domains(void __iomem *base,
->> >                 }
->> >
->> >                 pd = kzalloc(sizeof(*pd), GFP_KERNEL);
->> > -               if (!pd)
->> > +               if (!pd) {
->> > +                       of_node_put(np);
->> >                         return -ENOMEM;
->> > +               }
->>
->> While technically this patch is correct, the system will be dead anyway if it
->> ever goes OOM at core_initcall() time.
->
-> Maybe it would be better for the code to be correct to serve as an example
-> (or to avoid serving as a bad example) for others?
+On Mon, 12 Oct 2015 09:18:52 +0200, Geert Uytterhoeven wrote:
 
-Sure, as it's only a single call, that's fine for me.
+> >                 pd = kzalloc(sizeof(*pd), GFP_KERNEL);
+> > -               if (!pd)
+> > +               if (!pd) {
+> > +                       of_node_put(np);
+> >                         return -ENOMEM;
+> > +               }
+> 
+> While technically this patch is correct, the system will be dead anyway if it
+> ever goes OOM at core_initcall() time.
 
-Gr{oetje,eeting}s,
+Then BUG_ON(!pd); ?
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Thomas
+-- 
+Thomas Petazzoni, CTO, Free Electrons
+Embedded Linux, Kernel and Android engineering
+http://free-electrons.com
