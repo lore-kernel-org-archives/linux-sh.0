@@ -1,32 +1,19 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 06 Oct 2015 12:32:22 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Fixes for v4.3
-Message-Id: <16886284.6TliZiZDrK@wuerfel>
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Mon, 12 Oct 2015 15:25:10 +0000
+Subject: Re: [PATCH v3 5/6] dma: rcar-dma: warn if transfer cannot start as TE = 1
+Message-Id: <20151012151309.GE27370@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1443752733.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1443752733.git.horms+renesas@verge.net.au>
+References: <1443559488-2416-6-git-send-email-hamzahfrq.sub@gmail.com>
+In-Reply-To: <1443559488-2416-6-git-send-email-hamzahfrq.sub@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Friday 02 October 2015 11:29:28 Simon Horman wrote:
-> 
-> Please consider these Renesas ARM based SoC fixes for v4.3.
-> 
-> These changes are required to restore working sound for the r8a779[01] SoCs
-> in v4.3.
-> 
-> My understanding is that with the inclusion of
-> "drivers: sh: Disable PM runtime for multi-platform ARM with genpd"
-> in v4.3-rc3 sound stopped working for the SoCs in question.
-> 
-> These patches were previously posted as part of
-> "Renesas ARM Based SoC DT Updates for v4.4".
-> I have withdrawn that pull request.
-> 
-> 
+On Tue, Sep 29, 2015 at 10:44:47PM +0200, hamzahfrq.sub@gmail.com wrote:
+> From: Muhammad Hamza Farooq <mfarooq@visteon.com>
 
-Merged into fixes, thanks!
+Pls add why this is helpful
 
-	Arnd
+-- 
+~Vinod
