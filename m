@@ -1,36 +1,83 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 02 Oct 2015 01:21:33 +0000
-Subject: Re: [PATCH 03/18 v3] arm64: renesas: r8a7795: add AUDIO_DMAC support
-Message-Id: <20151002012131.GD22640@verge.net.au>
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Mon, 12 Oct 2015 14:56:01 +0000
+Subject: Re: [PATCH 1/6] dma: rcar-dma: add wait after stopping dma engine
+Message-Id: <20151012145904.GB27370@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878u841o94.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878u841o94.wl%kuninori.morimoto.gx@renesas.com>
+References: <1443559488-2416-2-git-send-email-hamzahfrq.sub@gmail.com>
+In-Reply-To: <1443559488-2416-2-git-send-email-hamzahfrq.sub@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Sep 24, 2015 at 07:18:42AM +0000, Kuninori Morimoto wrote:
+On Tue, Sep 29, 2015 at 10:44:43PM +0200, hamzahfrq.sub@gmail.com wrote:
+> From: Muhammad Hamza Farooq <mfarooq@visteon.com>
 > 
-> Hi Simon
-> 
-> > > If you only wish to change this one patch then I'm happy to try
-> > > to update just one patch.
-> > 
-> > Yes, I would like to just 1 patch replace
-> > I will send this patch again
-> (snip)
-> > > topic/r8a7795-sound-v3
-> 
-> Next v4 patch will fixup MSTP5 definition order.
-> It is queued as below on your topic/r8a7795-sound-v3 branch
-> 
-> 	e073032d19ba2c49eb588e98bd1cf21b876e2beb
-> 	("arm64: renesas: r8a7795: add AUDIO_DMAC support")
-> 
-> Please replace it
+> DMA engine does not stop instantaneously when transaction is going on
+> (see datasheet). Wait has been added
 
-Done.
+Hmmm, why is threading broken in this series?
+Also why is this PATCH 1/6 whereas the rest of series is v3!
 
-I have left the topic/r8a7795-sound-v3 branch unchanged.
-The update is present in the new topic/r8a7795-sound-v3.update branch.
+Right way is to let git do this for you and use git format-patch
+--subject-prefix="PATCH v3"...
+
+You don't do these things manually, that would be terrible waste of time
+
+Also use git send-email to keep threading
+
+> Signed-off-by: Muhammad Hamza Farooq <mfarooq@visteon.com>
+> ---
+>  drivers/dma/sh/rcar-dmac.c | 28 ++++++++++++++++++++++++++--
+>  1 file changed, 26 insertions(+), 2 deletions(-)
+> 
+> diff --git a/drivers/dma/sh/rcar-dmac.c b/drivers/dma/sh/rcar-dmac.c
+> index 7820d07..2b28291 100644
+> --- a/drivers/dma/sh/rcar-dmac.c
+> +++ b/drivers/dma/sh/rcar-dmac.c
+> @@ -716,14 +716,38 @@ static int rcar_dmac_fill_hwdesc(struct rcar_dmac_chan *chan,
+>  /* -----------------------------------------------------------------------------
+>   * Stop and reset
+>   */
+> +#define NR_READS_TO_WAIT 5 /* number of times to check if DE = 0 */
+> +static inline int rcar_dmac_wait_stop(struct rcar_dmac_chan *chan)
+> +{
+> +	unsigned int i = 0;
+> +
+> +	do {
+> +		u32 chcr = rcar_dmac_chan_read(chan, RCAR_DMACHCR);
+> +
+> +		if (!(chcr & RCAR_DMACHCR_DE))
+> +			return 0;
+> +		cpu_relax();
+> +		dev_dbg(chan->chan.device->dev, "DMA xfer couldn't be stopped");
+
+And user has no way of knowing this on production system
+
+> +	} while (++i < NR_READS_TO_WAIT);
+>  
+> -static void rcar_dmac_chan_halt(struct rcar_dmac_chan *chan)
+> +	return -EBUSY;
+> +}
+> +
+> +/* Called with chan lock held */
+> +static int rcar_dmac_chan_halt(struct rcar_dmac_chan *chan)
+>  {
+> -	u32 chcr = rcar_dmac_chan_read(chan, RCAR_DMACHCR);
+> +	u32 chcr;
+> +	int ret;
+>  
+> +	chcr = rcar_dmac_chan_read(chan, RCAR_DMACHCR);
+>  	chcr &= ~(RCAR_DMACHCR_DSE | RCAR_DMACHCR_DSIE | RCAR_DMACHCR_IE |
+>  		  RCAR_DMACHCR_TE | RCAR_DMACHCR_DE);
+>  	rcar_dmac_chan_write(chan, RCAR_DMACHCR, chcr);
+> +	ret = rcar_dmac_wait_stop(chan);
+> +
+> +	WARN_ON(ret < 0);
+
+What if we have broken board and will see dmesg storm for this, perhaps
+WARN_ON_ONCE and also would be helpful to use the verbose version and print
+some meaningful message
+
+-- 
+~Vinod
