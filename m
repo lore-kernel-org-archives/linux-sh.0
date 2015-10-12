@@ -1,64 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 26 Oct 2015 06:01:47 +0000
-Subject: [PATCH v12 2/7] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
-Message-Id: <1445839312-8874-3-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 12 Oct 2015 11:37:43 +0000
+Subject: [PATCH/POC v3 3/3] clk: shmobile: Add r8a7795 CPG Core Clock Definitions
+Message-Id: <1444649863-17796-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
+References: <1444649863-17796-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1444649863-17796-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms+renesas@verge.net.au>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>
+Cc: linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Add dummy nodes for the 3 DMA controllers.
-This allows to start describing DMA channels for DMA slaves now.
+Add the R-Car H3 CPG Core Clocks that are currently needed by the DTS.
+More will be added when needed.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since v10:
-- None
+This is a Proof-of-Concept. Final definitions and values may be
+different.
 
-Changes from V9: (Magnus Damm <damm+renesas@opensource.se>)
-- Updated to remove fuzz
+ include/dt-bindings/clock/r8a7795-cpg-mssr.h | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+ create mode 100644 include/dt-bindings/clock/r8a7795-cpg-mssr.h
 
-Changes from V8: (Magnus Damm <damm+renesas@opensource.se>)
-- Updated to remove fuzz
-
-Changes from V7: (Magnus Damm <damm+renesas@opensource.se>)
-- Changed order not to depend on SCIF patch(es)
-
-Based on:
- [PATCH 2/6] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
----
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index aa13115387a6..020207e1afe6 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -78,5 +78,17 @@
- 			#clock-cells = <2>;
- 			#power-domain-cells = <0>;
- 		};
+diff --git a/include/dt-bindings/clock/r8a7795-cpg-mssr.h b/include/dt-bindings/clock/r8a7795-cpg-mssr.h
+new file mode 100644
+index 0000000000000000..c277eb2f48df22ec
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a7795-cpg-mssr.h
+@@ -0,0 +1,17 @@
++/*
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++#ifndef __DT_BINDINGS_CLOCK_R8A7795_CPG_MSSR_H__
++#define __DT_BINDINGS_CLOCK_R8A7795_CPG_MSSR_H__
 +
-+		dmac0: dma-controller@e6700000 {
-+			/* Empty node for now */
-+		};
++#include <dt-bindings/clock/renesas-cpg-mssr.h>
 +
-+		dmac1: dma-controller@e7300000 {
-+			/* Empty node for now */
-+		};
++/* r8a7795 CPG Core Clocks */
++#define R8A7795_CLK_S0D4		0
 +
-+		dmac2: dma-controller@e7310000 {
-+			/* Empty node for now */
-+		};
- 	};
- };
++#endif /* __DT_BINDINGS_CLOCK_R8A7795_CPG_MSSR_H__ */
 -- 
-2.1.4
+1.9.1
 
