@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 12 Oct 2015 00:16:34 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 12 Oct 2015 07:18:52 +0000
 Subject: Re: [PATCH 3/5] ARM: shmobile: R-Mobile: add missing of_node_put
-Message-Id: <20151012001634.GE20025@verge.net.au>
+Message-Id: <CAMuHMdUVraBT+s1e-m89KmjbZnEQjBaSz+c93rCOWPMnT5CVPA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1444480254-14399-1-git-send-email-Julia.Lawall@lip6.fr>
  <1444480254-14399-4-git-send-email-Julia.Lawall@lip6.fr>
@@ -11,32 +11,31 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Oct 10, 2015 at 02:30:52PM +0200, Julia Lawall wrote:
-> for_each_child_of_node performs an of_node_get on each iteration, so
-> a break out of the loop requires an of_node_put.
-> 
-> The semantic patch that fixes this problem is as follows
-> (http://coccinelle.lip6.fr):
-> 
-> // <smpl>
-> @@
-> expression root,e;
-> local idexpression child;
-> @@
-> 
->  for_each_child_of_node(root, child) {
->    ... when != of_node_put(child)
->        when != e = child
-> (
->    return child;
-> |
-> +  of_node_put(child);
-> ?  return ...;
-> )
->    ...
->  }
-> // </smpl>
-> 
-> Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
+Hi Julia,
 
-Thanks, I have queued this up as a cleanup for v4.4.
+On Sat, Oct 10, 2015 at 2:30 PM, Julia Lawall <Julia.Lawall@lip6.fr> wrote:
+> --- a/arch/arm/mach-shmobile/pm-rmobile.c
+> +++ b/arch/arm/mach-shmobile/pm-rmobile.c
+> @@ -313,8 +313,10 @@ static int __init rmobile_add_pm_domains(void __iomem *base,
+>                 }
+>
+>                 pd = kzalloc(sizeof(*pd), GFP_KERNEL);
+> -               if (!pd)
+> +               if (!pd) {
+> +                       of_node_put(np);
+>                         return -ENOMEM;
+> +               }
+
+While technically this patch is correct, the system will be dead anyway if it
+ever goes OOM at core_initcall() time.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
