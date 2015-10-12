@@ -1,21 +1,18 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 29 Oct 2015 21:50:47 +0000
-Subject: [PATCH 0/2] sh_eth: fix bugs in sh_eth_ring_init()
-Message-Id: <5844359.Wmo6777QiE@wasted.cogentembedded.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 12 Oct 2015 00:37:49 +0000
+Subject: [ANNOUNCE] Renesas tree closing for v4.4
+Message-Id: <20151012003749.GI20025@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+Hi,
 
-   Here's a set of 2 patches against DaveM's 'net.git' repo which fix couple of
-bugs in the sh_eth_ring_init() function.
-
-[1/2] sh_eth: fix uninitialized arrays in sh_eth_ring_init()
-[2/2] sh_eth: fix WARNING in dma_free_coherent()
-
-MBR, Sergei
-
+I would like to wind down accepting non-bug-fix patches for v4.4 and get
+the last pull requests posted by the end of this week.  This is in order
+for them to be sent before the release of v4.3-rc6, the deadline set by the
+ARM SoC maintainers.  As patches should ideally progress from the renesas
+tree into linux-next before sending pull requests there is a few days lead
+time involved.
