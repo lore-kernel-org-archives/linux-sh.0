@@ -1,47 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 27 Oct 2015 23:05:26 +0000
-Subject: [PATCH v4 0/3] arm64: renesas: r8a7795: add I2C support
-Message-Id: <1445987129-13496-1-git-send-email-horms+renesas@verge.net.au>
+From: ahaslam@baylibre.com
+Date: Mon, 12 Oct 2015 17:41:09 +0000
+Subject: [RFC/RFT 1/6] ARM: shmobile: r8a7790: configure arch timer at boot
+Message-Id: <1444671674-19275-2-git-send-email-ahaslam@baylibre.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi,
+From: Axel Haslam <ahaslam@baylibre.com>
 
-these patches add i2c support to the r8a7795/Salvator-X.
+it seems that the A7 arch timer is incorrectly configured and gives
+wrong random timestamps at boot. This can be seen by enabling kernel
+timestamps for dmesg. By adding the cpu-registers-not-fw-configured
+property on the device tree for the arch timer, only the physical arch
+timer is used and configured giving coherent timestamps for all cpu's.
 
-These patches are an update of work by Kuninori Morimoto,
-broken out of a larger patchset posted by him.
+Signed-off-by: Axel Haslam <ahaslam@baylibre.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
-The main change to the patches themselves since Morimoto-san's v3
-posting is to update to new CPG/MSSR bindings via Geert Uytterhoeven.
-
-Morimoto-san, I would be most grateful if you could look over this and repost
-if there are problems.
-
-Base:
-
-* "[PATCH v12 0/7] arm64: renesas: Add Renesas R8A7795 SoC support".
-  This can be found in the topic/arm64-rcar-gen3-v12 branch of
-  my renesas tree on kernel.org.
-
-Availability:
-* This patchset is available in the  topic/r8a7795-i2c-v4 branch of my
-  renesas tree on kernel.org
-
-
-Kuninori Morimoto (3):
-  arm64: renesas: r8a7795: add I2C support
-  arm64: renesas: salvator-x: enable I2C
-  arm64: defconfig: Enable Renesas R-Car I2C Controller
-
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 12 +++
- arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 87 ++++++++++++++++++++++
- arch/arm64/configs/defconfig                       |  2 +
- 3 files changed, 101 insertions(+)
-
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a0b2a79..91b0eb0 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -212,6 +212,7 @@
+ 
+ 	timer {
+ 		compatible = "arm,armv7-timer";
++		arm,cpu-registers-not-fw-configured;
+ 		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+ 			     <1 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+ 			     <1 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
 -- 
-2.1.4
+2.4.5
 
