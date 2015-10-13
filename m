@@ -1,148 +1,359 @@
-From: Daniel Vetter <daniel@ffwll.ch>
-Date: Tue, 20 Oct 2015 07:25:23 +0000
-Subject: Re: [PATCH] drm: rcar-du: Fix plane state free in plane reset handler
-Message-Id: <20151020072523.GN13786@phenom.ffwll.local>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 13 Oct 2015 10:22:04 +0000
+Subject: [PATCH v4 1/3] phy: rcar-gen3-usb2: Add R-Car Gen3 USB2 PHY driver
+Message-Id: <1444731726-5328-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1438820580-14301-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <19460030.7jS9GcTr8h@avalon>
- <20150825071516.GI20434@phenom.ffwll.local>
- <1571374.qXLWBxx5CE@avalon>
-In-Reply-To: <1571374.qXLWBxx5CE@avalon>
+References: <1444731726-5328-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1444731726-5328-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Daniel Vetter <daniel@ffwll.ch>, Thierry Reding <thierry.reding@gmail.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org, Daniel Vetter <daniel.vetter@ffwll.ch>
+To: kishon@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-On Tue, Oct 20, 2015 at 01:40:39AM +0300, Laurent Pinchart wrote:
-> Hi Daniel,
-> 
-> On Tuesday 25 August 2015 09:15:16 Daniel Vetter wrote:
-> > On Tue, Aug 18, 2015 at 09:35:44AM +0300, Laurent Pinchart wrote:
-> > > On Friday 14 August 2015 09:30:15 Daniel Vetter wrote:
-> > > > On Fri, Aug 14, 2015 at 12:19:03AM +0300, Laurent Pinchart wrote:
-> > > > > On Friday 07 August 2015 17:30:08 Laurent Pinchart wrote:
-> > > > > > On Friday 07 August 2015 14:53:22 Thierry Reding wrote:
-> > > > > > > On Thu, Aug 06, 2015 at 03:23:00AM +0300, Laurent Pinchart wrote:
-> > > > > > > > The plane reset handler frees the plane state and allocates a
-> > > > > > > > new default state, but when doing so attempt to free the plane
-> > > > > > > > state using the base plane state pointer instead of casting it
-> > > > > > > > to the driver-specific state object that has been allocated. Fix
-> > > > > > > > it by using the rcar_du_plane_atomic_destroy_state() function to
-> > > > > > > > destroy the plane state instead of duplicating the code.
-> > > > > > > > 
-> > > > > > > > Signed-off-by: Laurent Pinchart
-> > > > > > > > <laurent.pinchart+renesas@ideasonboard.com>
-> > > > > > > > ---
-> > > > > > > > 
-> > > > > > > >  drivers/gpu/drm/rcar-du/rcar_du_plane.c | 45 +++++++++---------
-> > > > > > > >  1 file changed, 22 insertions(+), 23 deletions(-)
-> > > > > > > > 
-> > > > > > > > Should the DRM core free the atomic state before calling the
-> > > > > > > > reset operation ? That would simplify drivers.
-> > > > > > > 
-> > > > > > > The core can't do that because drivers might have subclassed the
-> > > > > > > state.
-> > > > > > 
-> > > > > > But the core can call the .atomic_destroy_state() operation, can't
-> > > > > > it ?
-> > > > > 
-> > > > > Thierry, Daniel, any comment on this ?
-> > > > 
-> > > > Doesn't really help you since the kzalloc is still in the helper. Btw
-> > > > this is all helper code, core won't do here anything at all ;-)
-> > > 
-> > > Is it ? The .reset() and .atomic_destroy_state() are core plane
-> > > operations, not helper operations.
-> > 
-> > Reset not being a helper func is an accident of history I think, it should
-> > be moved.
-> 
-> Fine with me.
-> 
-> > > My point is that, as .reset() needs to allocate the state if no state
-> > > exists, I'm wondering whether it wouldn't be simpler for drivers to free
-> > > the state in the core using .atomic_destroy_state() before calling
-> > > .reset() and always allocate a state in the driver's .reset()
-> > > implementation.
-> > > 
-> > > In peudo-code, drivers currently do (or at least should do)
-> > > 
-> > > atomic_destroy_state(state)
-> > > {
-> > > 	driver_state = cast_to_driver_state(state);
-> > > 	
-> > > 	clean up driver_state;
-> > > 	kfree(driver_state);
-> > > }
-> > > 
-> > > reset()
-> > > {
-> > > 	if (state) {
-> > > 		driver_state = cast_to_driver_state(state);
-> > > 		
-> > > 		clean up driver_state;
-> > 
-> > Why not call destroy_state here and make the kzalloc unconditional?
-> > Simpler and with that not much point in removing copypasting ...
-> 
-> So all drivers would have to unconditionally call their atomic_destroy_state() 
-> handler at the beginning of reset() ? Wouldn't it be simpler to move that call 
-> in the helpers before calling reset() ?
+This patch adds support for R-Car generation 3 USB2 PHY driver.
+This SoC has 3 EHCI/OHCI channels, and the channel 0 is shared
+with the HSUSB (USB2.0 peripheral) device. And each channel has
+independent registers about the PHYs.
 
-The sequence is roughly:
-- Destroy old state if there is one
-- kzalloce new one
-- init the new state (either with hw state readout or resetting)
+So, the purpose of this driver is:
+ 1) initializes some registers of SoC specific to use the
+    {ehci,ohci}-platform driver.
 
-First step is fully generic, and parts of the last step (all the core
-state) can be reset in a generic way. Problem is the kzalloc in the
-middle, which needs to know the allocation size, and that's driver
-specific. At that point it gets complicated imo and copypasting is ok.
+ 2) detects id pin to select host or peripheral on the channel 0.
 
-Adding a call to atomic_destroy_state in the overall reset helper will
-likely screw up old drivers using reset for other purposes. And i915,
-where we use reset helpers to reset some hw state before we do the atomic
-state restore with different means.
+For now, this driver only supports 1) above.
 
-There _is_ room though for better reset helpers, but for those I think a
-better plan is go right ahead and implement fastboot. I guess we could do
-that, but I think shoehorning that into the ->reset callbacks won't work
-too well.
--Daniel
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ .../devicetree/bindings/phy/rcar-gen3-phy-usb2.txt |  37 ++++
+ drivers/phy/Kconfig                                |   8 +
+ drivers/phy/Makefile                               |   1 +
+ drivers/phy/phy-rcar-gen3-usb2.c                   | 240 +++++++++++++++++++++
+ 4 files changed, 286 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
+ create mode 100644 drivers/phy/phy-rcar-gen3-usb2.c
 
-> 
-> > > 	} else {
-> > > 		driver_state = kzalloc(...);
-> > > 	}
-> > > 	
-> > > 	set all fields of driver_state to default values;
-> > > }
-> > > 
-> > > Wouldn't it be simpler to have the core call .atomic_destroy_state()
-> > > before .reset() and implement .reset() as
-> > > 
-> > > reset()
-> > > 	driver_state = kzalloc(...);
-> > > 	
-> > > 	set all fields of driver_state to default values;
-> > > }
-> > > 
-> > > ?
-> > 
-> > Well all the reset stuff was pretty much stop-gap, ->reset really
-> > shouldn't be a core op. What I eventually wanted to do is lift the hw
-> > state readout logic from i915 as the proper way to do this, since without
-> > this you can't do fastboot. Eric is interested in fastboot for vc4, so we
-> > discussed this a bit at lpc.
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-
+diff --git a/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
+new file mode 100644
+index 0000000..589f5c0
+--- /dev/null
++++ b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
+@@ -0,0 +1,37 @@
++* Renesas R-Car generation 3 USB 2.0 PHY
++
++This file provides information on what the device node for the R-Car generation
++3 USB 2.0 PHY contains.
++
++Required properties:
++- compatible: "renesas,usb2-phy-r8a7795" if the device is a part of an R8A7795
++	      SoC.
++- reg: offset and length of the partial USB 2.0 Host register block.
++- reg-names: must be "usb2_host".
++- clocks: clock phandle and specifier pair(s).
++- #phy-cells: see phy-bindings.txt in the same directory, must be <0>.
++
++Optional properties:
++To use a USB channel where USB 2.0 Host and HSUSB (USB 2.0 Peripheral) are
++combined, the device tree node should set HSUSB properties to reg and reg-names
++properties. This is because HSUSB has registers to select USB 2.0 host or
++peripheral at that channel:
++- reg: offset and length of the partial HSUSB register block.
++- reg-names: must be "hsusb".
++
++Example (R-Car H3):
++
++	usb-phy@ee080200 {
++		compatible = "renesas,usb2-phy-r8a7795";
++		reg = <0 0xee080200 0 0x700>, <0 0xe6590100 0 0x100>;
++		reg-names = "usb2_host", "hsusb";
++		clocks = <&mstp7_clks R8A7795_CLK_EHCI0>,
++			 <&mstp7_clks R8A7795_CLK_HSUSB>;
++	};
++
++	usb-phy@ee0a0200 {
++		compatible = "renesas,usb2-phy-r8a7795";
++		reg = <0 0xee0a0200 0 0x6ff>;
++		reg-names = "usb2_host";
++		clocks = <&mstp7_clks R8A7795_CLK_EHCI0>;
++	};
+diff --git a/drivers/phy/Kconfig b/drivers/phy/Kconfig
+index 7eb5859d..45c6131 100644
+--- a/drivers/phy/Kconfig
++++ b/drivers/phy/Kconfig
+@@ -118,6 +118,14 @@ config PHY_RCAR_GEN2
+ 	help
+ 	  Support for USB PHY found on Renesas R-Car generation 2 SoCs.
+ 
++config PHY_RCAR_GEN3_USB2
++	tristate "Renesas R-Car generation 3 USB 2.0 PHY driver"
++	depends on OF
++	depends on ARCH_SHMOBILE
++	depends on GENERIC_PHY
++	help
++	  Support for USB 2.0 PHY found on Renesas R-Car generation 3 SoCs.
++
+ config OMAP_CONTROL_PHY
+ 	tristate "OMAP CONTROL PHY Driver"
+ 	depends on ARCH_OMAP2PLUS || COMPILE_TEST
+diff --git a/drivers/phy/Makefile b/drivers/phy/Makefile
+index 075db1a..91d7a62 100644
+--- a/drivers/phy/Makefile
++++ b/drivers/phy/Makefile
+@@ -17,6 +17,7 @@ obj-$(CONFIG_PHY_MVEBU_SATA)		+= phy-mvebu-sata.o
+ obj-$(CONFIG_PHY_MIPHY28LP) 		+= phy-miphy28lp.o
+ obj-$(CONFIG_PHY_MIPHY365X)		+= phy-miphy365x.o
+ obj-$(CONFIG_PHY_RCAR_GEN2)		+= phy-rcar-gen2.o
++obj-$(CONFIG_PHY_RCAR_GEN3_USB2)	+= phy-rcar-gen3-usb2.o
+ obj-$(CONFIG_OMAP_CONTROL_PHY)		+= phy-omap-control.o
+ obj-$(CONFIG_OMAP_USB2)			+= phy-omap-usb2.o
+ obj-$(CONFIG_TI_PIPE3)			+= phy-ti-pipe3.o
+diff --git a/drivers/phy/phy-rcar-gen3-usb2.c b/drivers/phy/phy-rcar-gen3-usb2.c
+new file mode 100644
+index 0000000..d90dfcf
+--- /dev/null
++++ b/drivers/phy/phy-rcar-gen3-usb2.c
+@@ -0,0 +1,240 @@
++/*
++ * Renesas R-Car Gen3 for USB2.0 PHY driver
++ *
++ * Copyright (C) 2015 Renesas Electronics Corporation
++ *
++ * This is based on the phy-rcar-gen2 driver:
++ * Copyright (C) 2014 Renesas Solutions Corp.
++ * Copyright (C) 2014 Cogent Embedded, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/phy/phy.h>
++#include <linux/platform_device.h>
++#include <linux/spinlock.h>
++
++/******* USB2.0 Host registers (original offset is +0x200) *******/
++#define USB2_INT_ENABLE		0x000
++#define USB2_USBCTR		0x00c
++#define USB2_SPD_RSM_TIMSET	0x10c
++#define USB2_OC_TIMSET		0x110
++
++/* INT_ENABLE */
++#define USB2_INT_ENABLE_USBH_INTB_EN	BIT(2)
++#define USB2_INT_ENABLE_USBH_INTA_EN	BIT(1)
++#define USB2_INT_ENABLE_INIT		(USB2_INT_ENABLE_USBH_INTB_EN | \
++					 USB2_INT_ENABLE_USBH_INTA_EN)
++
++/* USBCTR */
++#define USB2_USBCTR_DIRPD	BIT(2)
++#define USB2_USBCTR_PLL_RST	BIT(1)
++
++/* SPD_RSM_TIMSET */
++#define USB2_SPD_RSM_TIMSET_INIT	0x014e029b
++
++/* OC_TIMSET */
++#define USB2_OC_TIMSET_INIT		0x000209ab
++
++/******* HSUSB registers (original offset is +0x100) *******/
++#define HSUSB_LPSTS			0x02
++#define HSUSB_UGCTRL2			0x84
++
++/* Low Power Status register (LPSTS) */
++#define HSUSB_LPSTS_SUSPM		0x4000
++
++/* USB General control register 2 (UGCTRL2) */
++#define HSUSB_UGCTRL2_MASK		0x00000031 /* bit[31:6] should be 0 */
++#define HSUSB_UGCTRL2_USB0SEL		0x00000030
++#define HSUSB_UGCTRL2_USB0SEL_HOST	0x00000010
++#define HSUSB_UGCTRL2_USB0SEL_HS_USB	0x00000020
++#define HSUSB_UGCTRL2_USB0SEL_OTG	0x00000030
++
++struct rcar_gen3_data {
++	void __iomem *base;
++	struct clk *clk;
++};
++
++struct rcar_gen3_chan {
++	struct rcar_gen3_data usb2;
++	struct rcar_gen3_data hsusb;
++	struct phy *phy;
++	spinlock_t lock;
++};
++
++static int rcar_gen3_phy_usb2_init(struct phy *p)
++{
++	struct rcar_gen3_chan *channel = phy_get_drvdata(p);
++	unsigned long flags;
++	void __iomem *usb2_base = channel->usb2.base;
++	void __iomem *hsusb_base = channel->hsusb.base;
++	u32 tmp;
++
++	spin_lock_irqsave(&channel->lock, flags);
++
++	/* Initialize USB2 part */
++	writel(USB2_INT_ENABLE_INIT, usb2_base + USB2_INT_ENABLE);
++	writel(USB2_SPD_RSM_TIMSET_INIT, usb2_base + USB2_SPD_RSM_TIMSET);
++	writel(USB2_OC_TIMSET_INIT, usb2_base + USB2_OC_TIMSET);
++
++	/* Initialize HSUSB part */
++	if (hsusb_base) {
++		/* TODO: support "OTG" mode */
++		tmp = readl(hsusb_base + HSUSB_UGCTRL2);
++		tmp = (tmp & ~HSUSB_UGCTRL2_USB0SEL) |
++		      HSUSB_UGCTRL2_USB0SEL_HOST;
++		writel(tmp & HSUSB_UGCTRL2_MASK, hsusb_base + HSUSB_UGCTRL2);
++	}
++
++	spin_unlock_irqrestore(&channel->lock, flags);
++
++	return 0;
++}
++
++static int rcar_gen3_phy_usb2_exit(struct phy *p)
++{
++	struct rcar_gen3_chan *channel = phy_get_drvdata(p);
++
++	writel(0, channel->usb2.base + USB2_INT_ENABLE);
++
++	return 0;
++}
++
++static int rcar_gen3_phy_usb2_power_on(struct phy *p)
++{
++	struct rcar_gen3_chan *channel = phy_get_drvdata(p);
++	void __iomem *usb2_base = channel->usb2.base;
++	void __iomem *hsusb_base = channel->hsusb.base;
++	unsigned long flags;
++	u32 tmp;
++
++	spin_lock_irqsave(&channel->lock, flags);
++
++	tmp = readl(usb2_base + USB2_USBCTR);
++	tmp |= USB2_USBCTR_PLL_RST;
++	writel(tmp, usb2_base + USB2_USBCTR);
++	tmp &= ~USB2_USBCTR_PLL_RST;
++	writel(tmp, usb2_base + USB2_USBCTR);
++
++	/*
++	 * TODO: To reduce power consuming, this driver should set the SUSPM
++	 *	after the PHY detects ID pin as peripheral.
++	 */
++	if (hsusb_base) {
++		/* Power on HSUSB PHY */
++		tmp = readw(hsusb_base + HSUSB_LPSTS);
++		tmp |= HSUSB_LPSTS_SUSPM;
++		writew(tmp, hsusb_base + HSUSB_LPSTS);
++	}
++
++	spin_unlock_irqrestore(&channel->lock, flags);
++
++	return 0;
++}
++
++static int rcar_gen3_phy_usb2_power_off(struct phy *p)
++{
++	struct rcar_gen3_chan *channel = phy_get_drvdata(p);
++	void __iomem *hsusb_base = channel->hsusb.base;
++	unsigned long flags;
++	u32 tmp;
++
++	spin_lock_irqsave(&channel->lock, flags);
++
++	if (hsusb_base) {
++		/* Power off HSUSB PHY */
++		tmp = readw(hsusb_base + HSUSB_LPSTS);
++		tmp &= ~HSUSB_LPSTS_SUSPM;
++		writew(tmp, hsusb_base + HSUSB_LPSTS);
++	}
++
++	spin_unlock_irqrestore(&channel->lock, flags);
++
++	return 0;
++}
++
++static struct phy_ops rcar_gen3_phy_usb2_ops = {
++	.init		= rcar_gen3_phy_usb2_init,
++	.exit		= rcar_gen3_phy_usb2_exit,
++	.power_on	= rcar_gen3_phy_usb2_power_on,
++	.power_off	= rcar_gen3_phy_usb2_power_off,
++	.owner		= THIS_MODULE,
++};
++
++static const struct of_device_id rcar_gen3_phy_usb2_match_table[] = {
++	{ .compatible = "renesas,usb2-phy-r8a7795" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, rcar_gen3_phy_usb2_match_table);
++
++static int rcar_gen3_phy_usb2_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct rcar_gen3_chan *channel;
++	struct phy_provider *provider;
++	struct resource *res;
++
++	if (!dev->of_node) {
++		dev_err(dev, "This driver needs device tree\n");
++		return -EINVAL;
++	}
++
++	channel = devm_kzalloc(dev, sizeof(*channel), GFP_KERNEL);
++	if (!channel)
++		return -ENOMEM;
++
++	spin_lock_init(&channel->lock);
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "usb2_host");
++	channel->usb2.base = devm_ioremap_resource(dev, res);
++	if (IS_ERR(channel->usb2.base))
++		return PTR_ERR(channel->usb2.base);
++
++	/* "hsusb" memory resource is optional */
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "hsusb");
++
++	/* To avoid error message by devm_ioremap_resource() */
++	if (res) {
++		channel->hsusb.base = devm_ioremap_resource(dev, res);
++		if (IS_ERR(channel->hsusb.base))
++			channel->hsusb.base = NULL;
++	}
++
++	/* devm_phy_create() will call pm_runtime_enable(dev); */
++	channel->phy = devm_phy_create(dev, NULL, &rcar_gen3_phy_usb2_ops);
++	if (IS_ERR(channel->phy)) {
++		dev_err(dev, "Failed to create USB2 PHY\n");
++		return PTR_ERR(channel->phy);
++	}
++
++	phy_set_drvdata(channel->phy, channel);
++
++	provider = devm_of_phy_provider_register(dev, of_phy_simple_xlate);
++	if (IS_ERR(provider)) {
++		dev_err(dev, "Failed to register PHY provider\n");
++		return PTR_ERR(provider);
++	}
++
++	dev_set_drvdata(dev, channel);
++
++	return 0;
++}
++
++static struct platform_driver rcar_gen3_phy_usb2_driver = {
++	.driver = {
++		.name		= "phy_rcar_gen3_usb2",
++		.of_match_table	= rcar_gen3_phy_usb2_match_table,
++	},
++	.probe	= rcar_gen3_phy_usb2_probe,
++};
++module_platform_driver(rcar_gen3_phy_usb2_driver);
++
++MODULE_LICENSE("GPL v2");
++MODULE_DESCRIPTION("Renesas R-Car Gen3 USB 2.0 PHY");
++MODULE_AUTHOR("Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>");
 -- 
-Daniel Vetter
-Software Engineer, Intel Corporation
-http://blog.ffwll.ch
+1.9.1
+
