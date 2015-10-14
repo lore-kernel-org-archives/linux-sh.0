@@ -1,51 +1,21 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 07 Oct 2015 11:38:57 +0000
-Subject: [PATCH v2 5/6] usb: host: xhci-plat: add support for the R-Car M2-N xHCI controller
-Message-Id: <1444217938-4668-6-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 14 Oct 2015 00:32:14 +0000
+Subject: [ANNOUNCE] renesas tree closed for v4.4
+Message-Id: <20151014003214.GC24693@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch adds support for R-Car M2-N (r8a7793) xHCI controller.
-This SoC is compatible with R-Car H2 (r8a7790) and R-Car M2-W (r8a7791).
+Hi,
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- Documentation/devicetree/bindings/usb/usb-xhci.txt | 4 ++--
- drivers/usb/host/xhci-plat.c                       | 3 +++
- 2 files changed, 5 insertions(+), 2 deletions(-)
+As v4.3-rc6 is looming, which is my deadline for pull-request submissions
+to ARM SoC, I am no longer taking any non-fix patches for v4.4.
 
-diff --git a/Documentation/devicetree/bindings/usb/usb-xhci.txt b/Documentation/devicetree/bindings/usb/usb-xhci.txt
-index 86f67f0..106299a 100644
---- a/Documentation/devicetree/bindings/usb/usb-xhci.txt
-+++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
-@@ -3,8 +3,8 @@ USB xHCI controllers
- Required properties:
-   - compatible: should be one of "generic-xhci",
-     "marvell,armada-375-xhci", "marvell,armada-380-xhci",
--    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791" (deprecated:
--    "xhci-platform").
-+    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791", "renesas,xhci-r8a7793"
-+    (deprecated: "xhci-platform").
-   - reg: should contain address and length of the standard XHCI
-     register set for the device.
-   - interrupts: one XHCI interrupt should be described here.
-diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
-index 4cdf60b..dd63f3b 100644
---- a/drivers/usb/host/xhci-plat.c
-+++ b/drivers/usb/host/xhci-plat.c
-@@ -96,6 +96,9 @@ static const struct of_device_id usb_xhci_of_match[] = {
- 		.compatible = "renesas,xhci-r8a7791",
- 		.data = &xhci_plat_renesas_rcar_gen2,
- 	}, {
-+		.compatible = "renesas,xhci-r8a7793",
-+		.data = &xhci_plat_renesas_rcar_gen2,
-+	}, {
- 	},
- };
- MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
--- 
-1.9.1
+I have already started queuing-up patches for v4.4.  These appear in
+the devel branch of the renesas tree and migrate over to the next branch
+after being rebased on v4.4-rc1 once it has been released.
 
+The next branch is merged into the devel branch so patches available in the
+next branch are also available in the devel branch.
