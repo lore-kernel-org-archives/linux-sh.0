@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 13 Oct 2015 01:03:43 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 14 Oct 2015 01:09:04 +0000
 Subject: Re: [PATCH] ARM: shmobile: defconfig: enable HDMI output for RCar
-Message-Id: <20151013010342.GB4836@verge.net.au>
+Message-Id: <51623901.1pCD85Uvbl@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1407974835-11064-1-git-send-email-khilman@linaro.org>
 In-Reply-To: <1407974835-11064-1-git-send-email-khilman@linaro.org>
@@ -10,10 +10,57 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Oct 12, 2015 at 07:38:06AM +0100, Wolfram Sang wrote:
-> > Is a similar change appropriate for multi_v7_defconfig?
-> 
-> As modules, I'd assume. I'll cook something.
+Hi Wolfram,
 
-Yes, I think that would be best; thanks!
+Thank you for the patch.
+
+On Saturday 10 October 2015 20:14:45 Wolfram Sang wrote:
+> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> 
+> Actviate HDMI output of the RCar DU (and LVDS while we are here).
+> Enable the HDMI encoder chip found on Lager/Koelsch boards.
+> 
+> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> ---
+> 
+> This is the final bit needed to get HDMI output with an shmobile_defconfig
+> built kernel. The other bits were renesas-devel-20151008-v4.3-rc4 plus some
+> I2C patches, which are already in my for-next or soon in my for-current
+> branches. The complete branch can be found here:
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git
+> renesas/rcar-hdmi-output
+> 
+> Tested with a Lager board and using both I2C/IIC. Based on my testings in
+> Dublin with a Koelsch board, I'd be very surprised if it fails with Koelsch.
+> Laurent may prove me wrong ;)
+
+I've tried to reproduce the problem tonight and couldn't, even without your 
+recent i2c-rcar patches :-/ I'll keep running tests on Koelsch with that 
+configuration and make sure to report any issue I can find.
+
+>  arch/arm/configs/shmobile_defconfig | 3 +++
+>  1 file changed, 3 insertions(+)
+> 
+> diff --git a/arch/arm/configs/shmobile_defconfig
+> b/arch/arm/configs/shmobile_defconfig index 0bdeb4925be477..3aef019c0de789
+> 100644
+> --- a/arch/arm/configs/shmobile_defconfig
+> +++ b/arch/arm/configs/shmobile_defconfig
+> @@ -140,7 +140,10 @@ CONFIG_VIDEO_RENESAS_VSP1=y
+>  CONFIG_VIDEO_ADV7180=y
+>  CONFIG_VIDEO_ML86V7667=y
+>  CONFIG_DRM=y
+> +CONFIG_DRM_I2C_ADV7511=y
+>  CONFIG_DRM_RCAR_DU=y
+> +CONFIG_DRM_RCAR_HDMI=y
+> +CONFIG_DRM_RCAR_LVDS=y
+>  CONFIG_FB_SH_MOBILE_LCDC=y
+>  CONFIG_FB_SH_MOBILE_MERAM=y
+>  # CONFIG_LCD_CLASS_DEVICE is not set
+
+-- 
+Regards,
+
+Laurent Pinchart
 
