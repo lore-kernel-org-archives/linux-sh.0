@@ -1,40 +1,48 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 14 Oct 2015 08:22:41 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Wed, 14 Oct 2015 08:25:49 +0000
 Subject: Re: [PATCH] ARM: shmobile: defconfig: enable HDMI output for RCar
-Message-Id: <CAMuHMdVY5dxg=ExsGMhh0utz9S23ME_NDQpUs1h5u=-cZmMugw@mail.gmail.com>
+Message-Id: <20151014082549.GA28435@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="M9NhX3UHpAaciwkO"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1407974835-11064-1-git-send-email-khilman@linaro.org>
 In-Reply-To: <1407974835-11064-1-git-send-email-khilman@linaro.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus,
 
-On Wed, Oct 14, 2015 at 10:09 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> Or do you mean disabling them upfront?
->> There are some clocks that must not be disabled. Some of them are not
->> documented.
->
-> Disabling them upfront with sparse documentation seems fun, but also a
-> bit like asking for trouble. =)
+--M9NhX3UHpAaciwkO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-I have hackish code that does it for all boards I have, and use it actively.
 
-> So disabling clocks upfront may be a troublesome but good way to
-> trigger incorrect dependencies, and unless I'm mistaken it should give
-> the same behaviour as the updated u-boot version, right?
+> The Koelsch that failed has a much newer U-Boot (b653737dfca2), which
+> only enables the MSTP clocks that are really needed, while you and I have
+> much older versions (I have b6af5fcc8dfc).
 
-More or less (U-Boot still keeps a few enabled for its own use, e.g. Ethernet).
+What Laurent saw was a 1 byte shift in the transferreed EDID data. So,
+most likely not a MSTP clock related problem ;)
 
-Gr{oetje,eeting}s,
 
-                        Geert
+--M9NhX3UHpAaciwkO
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+iQIcBAEBAgAGBQJWHhGMAAoJEBQN5MwUoCm2QZoP/RYIYwro0h2Lk7+j0+tlIdof
+rjg9NuvRxR6WE3dusopPq3Ue9xZyJYAxeu88713SvvSLHf5XrJb3HukOJwggUDzs
+j1zx2EyCBsgjFyQ9QUJUkq2LUxbFsBI/zlPcaBOfmktkrpeR0mB8BiImkfQf2iN2
+H71KV3zw4h8mO1hJkXIIn4usAE25kK4G3ZnW7XbS4hupVrrCQDY7hZKXQ9qGfvMr
+s1o64MhP0jqzYf5jSjStvmlTMmWGSsY7OIo+mlNYH4hU1syQ8HQJq/STqLAMgOGY
+D8yQyp66rsEX/LiTdMFdvyFSB/WMEMREmjLgxsaqldxcJAAm9ZeIl2HYR8CdtWdl
+twMEPpIvf7ygs+bg/ZfE1gx6jwnNXlfiXX8Z1AdyTNzOI24qh/ECSxmOBPdzPztF
+7OO/NEKVGefacV/1+3Ozcpg0r74cwbl2reYfRnoO4Dv5oLq4zhsIzFfKh/3x7Y81
+p2wBwoo86XBNuaNxKwUyUZzNiReFb6u9D/BobPsvc1xERE9pqaJtFiuJm6SNAHOb
+OZfI80HlNyxvkbZ/HLI0NgHCtoWWL+dMfZS34SLxeZo39KBijpzH228YTVZxtqpZ
+DVfJd2G6kqwntbJxC3bSChatV8QVjyNK/A885mY58VOtKSbRSBajW1Ad1RmgiCxQ
+0IH68GhatbtUBSWvJ0/A
+=pZ7x
+-----END PGP SIGNATURE-----
+
+--M9NhX3UHpAaciwkO--
