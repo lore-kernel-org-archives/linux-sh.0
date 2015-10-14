@@ -1,81 +1,55 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 01 Oct 2015 14:37:27 +0000
-Subject: [PATCH v8 01/05] clk: shmobile: Rework CONFIG_ARCH_SHMOBILE_MULTI
-Message-Id: <20151001143727.20618.78251.sendpatchset@little-apple>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 14 Oct 2015 08:56:07 +0000
+Subject: [PATCH] ASoC: rsnd: Announce for removing Gen1 SRU support
+Message-Id: <87eggxn88u.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151001143717.20618.26365.sendpatchset@little-apple>
-In-Reply-To: <20151001143717.20618.26365.sendpatchset@little-apple>
+References: <87r3ldswdb.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87r3ldswdb.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-clk@vger.kernel.org
-Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: Mark Brown <broonie@kernel.org>
+Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lgirdwood@gmail.com>
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Shmobile is all multiplatform these days, so in get rid of the
-reference to CONFIG_ARCH_SHMOBILE_MULTI in drivers/clk/shmobile/.
+Gen1 SRU support was created for preparation of Gen2 SRC support,
+but no-one is using this feature (sampling rate convert) on Gen1.
+BockW had used SRU before, but it was pass through mode.
+This means it is same as SSI. And BockW "platform base" code was
+removed from upstream code. It is now supported via DT, but it doesn't
+use SRU. More detail, r8a7778.dtsi has "rcar_sound,src" entry, but
+no-one is using this feature today. SRU probing has no relation to this
+removing. This means there is no effect for DT compatibility, no issues
+on upstream kernel.
 
-Also instead of always enabling DIV6 and MSTP adjust the Makefile
-to enable DIV6 and MSTP depending on if they are included in the
-SoC or not.
+Gen2 SRC was created from Gen1 SRU, these are similar but not same IP.
+Keeping Gen1 SRU in current driver is a little bit difficult,
+and no-one is using it today. Gen1 sound is still supported via SSI.
+Gen1 SRU support will be removed in the next kernel version.
+This patch announces it.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ sound/soc/sh/rcar/src.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
- Earlier known as "clk: shmobile: Get rid of CONFIG_ARCH_SHMOBILE_MULTI"
+diff --git a/sound/soc/sh/rcar/src.c b/sound/soc/sh/rcar/src.c
+index 4507743..3fce97e 100644
+--- a/sound/soc/sh/rcar/src.c
++++ b/sound/soc/sh/rcar/src.c
+@@ -920,8 +920,10 @@ int rsnd_src_probe(struct platform_device *pdev,
+ 	int i, nr, ret;
+ 
+ 	ops = NULL;
+-	if (rsnd_is_gen1(priv))
++	if (rsnd_is_gen1(priv)) {
+ 		ops = &rsnd_src_gen1_ops;
++		dev_warn(dev, "Gen1 support will be removed soon\n");
++	}
+ 	if (rsnd_is_gen2(priv))
+ 		ops = &rsnd_src_gen2_ops;
+ 	if (!ops) {
+-- 
+1.9.1
 
- Changes since V7:
- - None
-
-Changes since V6:
- - None
-
- Changes since V5:
- - None
-
- Changes since V4:
- - Added Acked-by from Laurent
-
- Changes since V3:
- - Got rid of hunks that modified drivers/clk/Makefile
- - This to prevent build issue with non-CCF enabled SH arch
- - A nice side effect is that this patch now can be merged any time
-
- Changes since V2:
- - Fixed patch subject typo CONFIG_SHMOBILE_MULTI -> CONFIG_ARCH_SHMOBILE_MULTI
-
- Changes since V1:
- - Added Acked-by from Geert
-
- drivers/clk/shmobile/Makefile |   22 ++++++++++------------
- 1 file changed, 10 insertions(+), 12 deletions(-)
-
---- 0001/drivers/clk/shmobile/Makefile
-+++ work/drivers/clk/shmobile/Makefile	2015-08-29 16:14:57.522366518 +0900
-@@ -1,13 +1,11 @@
- obj-$(CONFIG_ARCH_EMEV2)		+= clk-emev2.o
--obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o
--obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o
--obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o
--obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o
--obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o
--obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o
--obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o
--obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o
--obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o
--obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o
--obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-div6.o
--obj-$(CONFIG_ARCH_SHMOBILE_MULTI)	+= clk-mstp.o
-+obj-$(CONFIG_ARCH_R7S72100)		+= clk-rz.o clk-mstp.o
-+obj-$(CONFIG_ARCH_R8A73A4)		+= clk-r8a73a4.o clk-mstp.o clk-div6.o
-+obj-$(CONFIG_ARCH_R8A7740)		+= clk-r8a7740.o clk-mstp.o clk-div6.o
-+obj-$(CONFIG_ARCH_R8A7778)		+= clk-r8a7778.o clk-mstp.o
-+obj-$(CONFIG_ARCH_R8A7779)		+= clk-r8a7779.o clk-mstp.o
-+obj-$(CONFIG_ARCH_R8A7790)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
-+obj-$(CONFIG_ARCH_R8A7791)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
-+obj-$(CONFIG_ARCH_R8A7793)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
-+obj-$(CONFIG_ARCH_R8A7794)		+= clk-rcar-gen2.o clk-mstp.o clk-div6.o
-+obj-$(CONFIG_ARCH_SH73A0)		+= clk-sh73a0.o clk-mstp.o clk-div6.o
