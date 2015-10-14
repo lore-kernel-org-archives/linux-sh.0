@@ -1,48 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 05 Oct 2015 03:02:52 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7794: link PCI USB devices to USB PHY
-Message-Id: <20151005030252.GC29979@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 14 Oct 2015 19:35:46 +0000
+Subject: [PATCH] ARM: shmobile: porter: add HS-USB DT support
+Message-Id: <80272771.MSjafmr6yE@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <10927620.1TFu7PRvi4@wasted.cogentembedded.com>
- <20150929003751.GB20067@verge.net.au>
- <560A8997.8090301@cogentembedded.com>
- <20151002020021.GF22640@verge.net.au>
- <560EFA6C.4090404@cogentembedded.com>
-In-Reply-To: <560EFA6C.4090404@cogentembedded.com>
+References: <1674850.BZpGW9kEud@wasted.cogentembedded.com>
+In-Reply-To: <1674850.BZpGW9kEud@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Oct 03, 2015 at 12:43:08AM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 10/02/2015 05:00 AM, Simon Horman wrote:
-> 
-> >>>>Describe the PCI USB devices that are behind the PCI bridges, adding necessary
-> >>>>links to the USB PHY device.
-> >>>>
-> >>>>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >>>>
-> >>>>---
-> >>>>This patch is against 'renesas-devel-20150911v2-v4.2' tag of Simon Horman's
-> >>>>'renesas.git' repo plus the R8A7794/SILK PCI USB and USB PHY support patches
-> >>>>just posted.
-> >>
-> >>>Does this series have any dependencies (e.g. bindings) other
-> >>
-> >>    This patch, you mean?
-> >>
-> >>>than the aforementioned R8A7794/SILK PCI USB and USB PHY support patches?
-> 
-> >Thanks, I have queued this up for v4.4.
-> 
->    Thank you!
-> 
-> >I think I have got everything now but please let me know if you have any
-> >shmobile DT patches outstanding which are ready to be queued-up.
-> 
->    Yes, the R8A7794 HS-USB patch.
+Enable HS-USB device  for the Porter board, defining the GPIO that the
+driver should check  when probing (which is the ID output from MAX3355
+OTG chip).
 
-Thanks, I have now queued up
-"ARM: shmobile: r8a7794: add HS-USB DT support".
+Note that there  will be pinctrl-related error messages if both internal
+PCI  and  HS-USB drivers are enabled but they should be just ignored.
+
+This patch is  analogous  to the commit 6f4f7156e0e6 (ARM: shmobile:
+henninger: enable HS-USB) as there  are no differences between the
+boards in this respect.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+This patch is against 'renesas-devel-20151013v2-v4.3-rc5' tag of Simon Horman's
+'renesas.git' repo.
+
+ arch/arm/boot/dts/r8a7791-porter.dts |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+Index: renesas/arch/arm/boot/dts/r8a7791-porter.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-porter.dts
++++ renesas/arch/arm/boot/dts/r8a7791-porter.dts
+@@ -269,6 +269,14 @@
+ 	status = "okay";
+ };
+ 
++&hsusb {
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++	renesas,enable-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
++};
++
+ &usbphy {
+ 	status = "okay";
+ };
+
