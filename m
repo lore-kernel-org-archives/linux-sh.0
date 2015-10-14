@@ -1,42 +1,187 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Wed, 28 Oct 2015 23:59:46 +0000
-Subject: Re: [PATCH] [RFC] ASoC: rsnd: Add missing initialization of ADG req_rate
-Message-Id: <20151028235946.GH28319@sirena.org.uk>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="OWym5pP/pDvoNOpg"
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 14 Oct 2015 00:13:51 +0000
+Subject: Re: [PATCH 1/2] ARM: dts: fix gpio-keys wakeup-source property
+Message-Id: <20151014001351.GB24693@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446044628-16924-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1446044628-16924-1-git-send-email-geert+renesas@glider.be>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Liam Girdwood <lgirdwood@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org
+References: <1444743164-17735-1-git-send-email-sudeep.holla@arm.com>
+In-Reply-To: <1444743164-17735-1-git-send-email-sudeep.holla@arm.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+[cc linux-sh]
 
---OWym5pP/pDvoNOpg
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On Tue, Oct 13, 2015 at 02:32:43PM +0100, Sudeep Holla wrote:
+> The keyboard driver for GPIO buttons(gpio-keys) checks for one of the
+> two boolean properties to enable gpio buttons as wakeup source:
+> 1. "wakeup-source" or
+> 2. the legacy "gpio-key,wakeup"
+> 
+> However juno, ste-snowball and emev2-kzm9d dts file have a undetected
+> "wakeup" property to indictate the wakeup source.
+> 
+> This patch fixes it by making use of "wakeup-source" property.
+> 
+> Cc: Simon Horman <horms@verge.net.au>
+> Cc: Magnus Damm <magnus.damm@gmail.com>
+> Cc: Linus Walleij <linus.walleij@linaro.org>
+> Signed-off-by: Sudeep Holla <sudeep.holla@arm.com>
+> ---
+>  arch/arm/boot/dts/emev2-kzm9d.dts             |  8 ++++----
+>  arch/arm/boot/dts/ste-snowball.dts            | 10 +++++-----
+>  arch/arm64/boot/dts/arm/juno-motherboard.dtsi | 12 ++++++------
+>  3 files changed, 15 insertions(+), 15 deletions(-)
 
-On Wed, Oct 28, 2015 at 04:03:48PM +0100, Geert Uytterhoeven wrote:
+emev2-kzm9d portion:
 
-> If the "clock-frequency" DT property is not found, req_rate is used
-> uninitialized, and the "audio_clkout" clock will be created with an
-> arbitrary clock rate.
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 
-I'd expect that if we support a missing clock frequency property we'd
-read the state back from the hardware.
+My preferred course of action would be to take that portion through the
+renesas tree if it was broken out into a separate patch. But I won't
+object if someone wants to take the whole patch/series.
 
---OWym5pP/pDvoNOpg
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBCAAGBQJWMWFyAAoJECTWi3JdVIfQev8H/10Xgh+OuWlXpMRdwhDQx7+D
-9uwUhznhR8lZnMeSkIhUnqPP255FqGbaVNPc/0txbhmCKbbcdM87GYl5TjRfc/Ko
-WkThmpIV0vEysTLTlyA8YYRAsH/vtyI5KVv41kXVxZujC9ExKr8oeVul2NRkmqtX
-Pip9eAsKlurtEgF/rmA+UNYz42DTikAtFQHZTcv6bOoNxvndI1EkpdmWuCBCNEJ+
-QCscQxBLmT7R4Y16tFuWwPQ/AUYyETMvLHYz/fkF02Z6op0qqUtwJdvhF6Km51OD
-eRMOxeT+sKsF/v0TKg59sYUCB2NipONJ2sc9KU7so8N+852nUN2BqTwiQmcApI0=
-=f9CS
------END PGP SIGNATURE-----
-
---OWym5pP/pDvoNOpg--
+> diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
+> index 955c24ee4a8c..8c24975e8f9d 100644
+> --- a/arch/arm/boot/dts/emev2-kzm9d.dts
+> +++ b/arch/arm/boot/dts/emev2-kzm9d.dts
+> @@ -35,28 +35,28 @@
+>  
+>  		button@1 {
+>  			debounce_interval = <50>;
+> -			wakeup = <1>;
+> +			wakeup-source;
+>  			label = "DSW2-1";
+>  			linux,code = <KEY_1>;
+>  			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+>  		};
+>  		button@2 {
+>  			debounce_interval = <50>;
+> -			wakeup = <1>;
+> +			wakeup-source;
+>  			label = "DSW2-2";
+>  			linux,code = <KEY_2>;
+>  			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+>  		};
+>  		button@3 {
+>  			debounce_interval = <50>;
+> -			wakeup = <1>;
+> +			wakeup-source;
+>  			label = "DSW2-3";
+>  			linux,code = <KEY_3>;
+>  			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+>  		};
+>  		button@4 {
+>  			debounce_interval = <50>;
+> -			wakeup = <1>;
+> +			wakeup-source;
+>  			label = "DSW2-4";
+>  			linux,code = <KEY_4>;
+>  			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+> diff --git a/arch/arm/boot/dts/ste-snowball.dts b/arch/arm/boot/dts/ste-snowball.dts
+> index 32a5ccb14e7e..e80e42163883 100644
+> --- a/arch/arm/boot/dts/ste-snowball.dts
+> +++ b/arch/arm/boot/dts/ste-snowball.dts
+> @@ -47,35 +47,35 @@
+>  
+>  		button@1 {
+>  			debounce_interval = <50>;
+> -			wakeup = <1>;
+> +			wakeup-source;
+>  			linux,code = <2>;
+>  			label = "userpb";
+>  			gpios = <&gpio1 0 0x4>;
+>  		};
+>  		button@2 {
+>  			debounce_interval = <50>;
+> -			wakeup = <1>;
+> +			wakeup-source;
+>  			linux,code = <3>;
+>  			label = "extkb1";
+>  			gpios = <&gpio4 23 0x4>;
+>  		};
+>  		button@3 {
+>  			debounce_interval = <50>;
+> -			wakeup = <1>;
+> +			wakeup-source;
+>  			linux,code = <4>;
+>  			label = "extkb2";
+>  			gpios = <&gpio4 24 0x4>;
+>  		};
+>  		button@4 {
+>  			debounce_interval = <50>;
+> -			wakeup = <1>;
+> +			wakeup-source;
+>  			linux,code = <5>;
+>  			label = "extkb3";
+>  			gpios = <&gpio5 1 0x4>;
+>  		};
+>  		button@5 {
+>  			debounce_interval = <50>;
+> -			wakeup = <1>;
+> +			wakeup-source;
+>  			linux,code = <6>;
+>  			label = "extkb4";
+>  			gpios = <&gpio5 2 0x4>;
+> diff --git a/arch/arm64/boot/dts/arm/juno-motherboard.dtsi b/arch/arm64/boot/dts/arm/juno-motherboard.dtsi
+> index 05e461dc6c1f..a15e1fb4d192 100644
+> --- a/arch/arm64/boot/dts/arm/juno-motherboard.dtsi
+> +++ b/arch/arm64/boot/dts/arm/juno-motherboard.dtsi
+> @@ -61,42 +61,42 @@
+>  
+>  				button@1 {
+>  					debounce_interval = <50>;
+> -					wakeup = <1>;
+> +					wakeup-source;
+>  					linux,code = <116>;
+>  					label = "POWER";
+>  					gpios = <&iofpga_gpio0 0 0x4>;
+>  				};
+>  				button@2 {
+>  					debounce_interval = <50>;
+> -					wakeup = <1>;
+> +					wakeup-source;
+>  					linux,code = <102>;
+>  					label = "HOME";
+>  					gpios = <&iofpga_gpio0 1 0x4>;
+>  				};
+>  				button@3 {
+>  					debounce_interval = <50>;
+> -					wakeup = <1>;
+> +					wakeup-source;
+>  					linux,code = <152>;
+>  					label = "RLOCK";
+>  					gpios = <&iofpga_gpio0 2 0x4>;
+>  				};
+>  				button@4 {
+>  					debounce_interval = <50>;
+> -					wakeup = <1>;
+> +					wakeup-source;
+>  					linux,code = <115>;
+>  					label = "VOL+";
+>  					gpios = <&iofpga_gpio0 3 0x4>;
+>  				};
+>  				button@5 {
+>  					debounce_interval = <50>;
+> -					wakeup = <1>;
+> +					wakeup-source;
+>  					linux,code = <114>;
+>  					label = "VOL-";
+>  					gpios = <&iofpga_gpio0 4 0x4>;
+>  				};
+>  				button@6 {
+>  					debounce_interval = <50>;
+> -					wakeup = <1>;
+> +					wakeup-source;
+>  					linux,code = <99>;
+>  					label = "NMI";
+>  					gpios = <&iofpga_gpio0 5 0x4>;
+> -- 
+> 1.9.1
+> 
+> 
+> _______________________________________________
+> linux-arm-kernel mailing list
+> linux-arm-kernel@lists.infradead.org
+> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
+> 
