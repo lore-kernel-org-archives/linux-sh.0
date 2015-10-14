@@ -1,102 +1,49 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 13 Oct 2015 10:28:45 +0000
-Subject: renesas-drivers-2015-10-13-v4.3-rc5
-Message-Id: <1444732125-12741-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 14 Oct 2015 00:39:46 +0000
+Subject: Re: renesas-drivers-2015-10-13-v4.3-rc5
+Message-Id: <20151014003946.GD24693@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1444732125-12741-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1444732125-12741-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-I've pushed renesas-drivers-2015-10-13-v4.3-rc5 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+On Tue, Oct 13, 2015 at 12:28:45PM +0200, Geert Uytterhoeven wrote:
+> I've pushed renesas-drivers-2015-10-13-v4.3-rc5 to
+> https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+> This tree is meant to ease development of platform support and drivers for
+> Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
+> branches of various subsystem trees and (b) branches with driver code
+> submitted or planned for submission to maintainers into the development
+> branch of Simon Horman's renesas.git tree.
+> 
+> Today's version is based on renesas-devel-20151013v2-v4.3-rc5.
+> 
+> Notes:
+>   - As topic/gen3-cpg-v8+fix and topic/arm64-rcar-gen3-v10.1 started
+>     using the cpg-mssr driver instead of the cpg-mstp driver, while
+>     later integration topic branches still used cpg-mstp bindings,
+>     several drivers (e.g. gpio, but that should affect wake-up-by-gpio
+>     only) cannot get their module clocks, or their module clocks are not
+>     managed correctly (e.g. ravb, which still works despite this).
+>     There are 3 ways to fix this:
+>       - Convert your dtsi blocks to the cpg-mssr bindings (best),
+>       - Re-add clk-mstp.o for CONFIG_ARCH_R8A7795 in
+> 	drivers/clk/shmobile/Makefile, and make sure CONFIG_PM=n
+> 	(untested),
+>       - Use renesas-drivers-2015-09-29-v4.3-rc3 (for the lazy consumer).
+>     However, in the light of "[PATCH/RFC v3 0/3] clk: shmobile: Add new
+>     Renesas CPG/MSSR DT bindings"
+>     (http://www.spinics.net/lists/devicetree/msg97237.html), all of the
+>     above are temporary solutions.
 
-Today's version is based on renesas-devel-20151013v2-v4.3-rc5.
+I would like to update topic/arm64-rcar-gen3-v10.1 and post
+as v11 for further review both here and in the broader Linux ARM community
+at linux-arm-kernel@lists.infradead.org.
 
-Notes:
-  - As topic/gen3-cpg-v8+fix and topic/arm64-rcar-gen3-v10.1 started
-    using the cpg-mssr driver instead of the cpg-mstp driver, while
-    later integration topic branches still used cpg-mstp bindings,
-    several drivers (e.g. gpio, but that should affect wake-up-by-gpio
-    only) cannot get their module clocks, or their module clocks are not
-    managed correctly (e.g. ravb, which still works despite this).
-    There are 3 ways to fix this:
-      - Convert your dtsi blocks to the cpg-mssr bindings (best),
-      - Re-add clk-mstp.o for CONFIG_ARCH_R8A7795 in
-	drivers/clk/shmobile/Makefile, and make sure CONFIG_PM=n
-	(untested),
-      - Use renesas-drivers-2015-09-29-v4.3-rc3 (for the lazy consumer).
-    However, in the light of "[PATCH/RFC v3 0/3] clk: shmobile: Add new
-    Renesas CPG/MSSR DT bindings"
-    (http://www.spinics.net/lists/devicetree/msg97237.html), all of the
-    above are temporary solutions.
-  - I dropped git://linuxtv.org/pinchartl/media#vsp1-kms-gen3-20150929,
-    as it's based on a very old version of renesas-drivers
-    (renesas-drivers-2015-09-08-v4.2), and causes too many merge
-    conflicts.
+Do you recommend updating that patchset for the above? If so in
+which way do you recommend updating it?
 
-Included branches with driver code:
-  - topic/gen3-cpg-v8+fix
-  - topic/rcar-dmac-residue-v1
-  - topic/rcar-dmac-hamza-v3
-  - topic/cs2000-v4
-  - topic/r8a7795-i2c-v3
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/arm64-rcar-gen3-v10.1
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-gpio-v1.rebase2
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-i2c-v3.rebase
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-sound-v3.update.rebase
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#me/r8a7795-ravb-integration-v4
-  - topic/gen3-modemr-syscon-v1.rebase3
-
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
-  - git://anongit.freedesktop.org/drm-intel#topic/drm-misc
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+[snip]
