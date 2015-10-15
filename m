@@ -1,64 +1,43 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 06:23:58 +0000
-Subject: [PATCH v11 3/8] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
-Message-Id: <1444890243-6978-4-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 00:33:52 +0000
+Subject: [PATCH 4/6] ARM: shmobile: apmu: correct type of CPU id
+Message-Id: <6e67d2ccb8b5ac6dbc6a0cfdf8320d68fa289193.1444868660.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1444868660.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444868660.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Andrzej Hajda <a.hajda@samsung.com>
 
-Add dummy nodes for the 3 DMA controllers.
-This allows to start describing DMA channels for DMA slaves now.
+CPU id can be negative, so it cannot be assigned to unsigned variable.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+The problem has been detected using proposed semantic patch
+scripts/coccinelle/tests/unsigned_lesser_than_zero.cocci [1].
+
+[1]: http://permalink.gmane.org/gmane.linux.kernel/2038576
+
+Signed-off-by: Andrzej Hajda <a.hajda@samsung.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since v10:
-- None
+ arch/arm/mach-shmobile/platsmp-apmu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Changes from V9: (Magnus Damm <damm+renesas@opensource.se>)
-- Updated to remove fuzz
-
-Changes from V8: (Magnus Damm <damm+renesas@opensource.se>)
-- Updated to remove fuzz
-
-Changes from V7: (Magnus Damm <damm+renesas@opensource.se>)
-- Changed order not to depend on SCIF patch(es)
-
-Based on:
- [PATCH 2/6] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
----
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 77f93a77aa79..3d97a089e8be 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -254,5 +254,17 @@
- 				#power-domain-cells = <0>;
- 			};
- 		};
-+
-+		dmac0: dma-controller@e6700000 {
-+			/* Empty node for now */
-+		};
-+
-+		dmac1: dma-controller@e7300000 {
-+			/* Empty node for now */
-+		};
-+
-+		dmac2: dma-controller@e7310000 {
-+			/* Empty node for now */
-+		};
- 	};
- };
+diff --git a/arch/arm/mach-shmobile/platsmp-apmu.c b/arch/arm/mach-shmobile/platsmp-apmu.c
+index bcf4cc51b926..911884f7e28b 100644
+--- a/arch/arm/mach-shmobile/platsmp-apmu.c
++++ b/arch/arm/mach-shmobile/platsmp-apmu.c
+@@ -88,7 +88,7 @@ static void apmu_init_cpu(struct resource *res, int cpu, int bit)
+ static void apmu_parse_cfg(void (*fn)(struct resource *res, int cpu, int bit),
+ 			   struct rcar_apmu_config *apmu_config, int num)
+ {
+-	u32 id;
++	int id;
+ 	int k;
+ 	int bit, index;
+ 	bool is_allowed;
 -- 
 2.1.4
 
