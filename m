@@ -1,118 +1,223 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Oct 2015 01:57:45 +0000
-Subject: [PATCH 08/28] ARM: shmobile: r8a7794: add I2C DT support
-Message-Id: <5428521ba123dddda4d2ac9ab19d173b692a8acb.1444182812.git.horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 06:23:57 +0000
+Subject: [PATCH v11 2/8] arm64: renesas: r8a7795 dtsi: Add all common divider clocks
+Message-Id: <1444890243-6978-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444182812.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
+References: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Define the generic R8A7794 parts of the I2C[0-5] device nodes.
+Add all clocks generated from PLL1 by the CPG common divider block.
 
-Based on the original patch by Koji Matsuoka <koji.matsuoka.xm@renesas.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7794.dtsi | 73 ++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 73 insertions(+)
+Changes since v10:
+- None
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index e0f32ede2181..7384db2a3992 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -20,6 +20,12 @@
- 	#size-cells = <2>;
+Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
+- Introduce pll1_div2 by folding in earlier posted patch:
+ [PATCH][RFC] arm64: renesas: r8a7795 dtsi: Update common divider clocks
+
+Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
+- Updated commit message.
+
+Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
+- Folded in s3d4_clk
+- Reordered to apply without SCIF bits
+
+Based on:
+ [PATCH 3/3] arm64: renesas: r8a7795 dtsi: Add all common divider clocks
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 169 +++++++++++++++++++++++++++++++
+ 1 file changed, 169 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index ff6e0e98664a..77f93a77aa79 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -70,6 +70,175 @@
+ 			#clock-cells = <1>;
+ 			ranges;
  
- 	aliases {
-+		i2c0 = &i2c0;
-+		i2c1 = &i2c1;
-+		i2c2 = &i2c2;
-+		i2c3 = &i2c3;
-+		i2c4 = &i2c4;
-+		i2c5 = &i2c5;
- 		spi0 = &qspi;
- 	};
- 
-@@ -502,6 +508,73 @@
- 		status = "disabled";
- 	};
- 
-+	/* The memory map in the User's Manual maps the cores to bus numbers */
-+	i2c0: i2c@e6508000 {
-+		compatible = "renesas,i2c-r8a7794";
-+		reg = <0 0xe6508000 0 0x40>;
-+		interrupts = <0 287 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7794_CLK_I2C0>;
-+		power-domains = <&cpg_clocks>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
++			/* Fixed factor clocks */
++			pll1_div2_clk: pll1_div2 {
++				compatible = "fixed-factor-clock";
++				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
++				#clock-cells = <0>;
++				clock-div = <2>;
++				clock-mult = <1>;
++			};
 +
-+	i2c1: i2c@e6518000 {
-+		compatible = "renesas,i2c-r8a7794";
-+		reg = <0 0xe6518000 0 0x40>;
-+		interrupts = <0 288 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7794_CLK_I2C1>;
-+		power-domains = <&cpg_clocks>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
++			zt_clk: zt {
++				compatible = "fixed-factor-clock";
++				clocks = <&pll1_div2_clk>;
++				#clock-cells = <0>;
++				clock-div = <4>;
++				clock-mult = <1>;
++			};
 +
-+	i2c2: i2c@e6530000 {
-+		compatible = "renesas,i2c-r8a7794";
-+		reg = <0 0xe6530000 0 0x40>;
-+		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7794_CLK_I2C2>;
-+		power-domains = <&cpg_clocks>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
++			ztr_clk: ztr {
++				compatible = "fixed-factor-clock";
++				clocks = <&pll1_div2_clk>;
++				#clock-cells = <0>;
++				clock-div = <6>;
++				clock-mult = <1>;
++			};
 +
-+	i2c3: i2c@e6540000 {
-+		compatible = "renesas,i2c-r8a7794";
-+		reg = <0 0xe6540000 0 0x40>;
-+		interrupts = <0 290 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7794_CLK_I2C3>;
-+		power-domains = <&cpg_clocks>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
++			ztrd2_clk: ztrd2 {
++				compatible = "fixed-factor-clock";
++				clocks = <&pll1_div2_clk>;
++				#clock-cells = <0>;
++				clock-div = <12>;
++				clock-mult = <1>;
++			};
 +
-+	i2c4: i2c@e6520000 {
-+		compatible = "renesas,i2c-r8a7794";
-+		reg = <0 0xe6520000 0 0x40>;
-+		interrupts = <0 19 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7794_CLK_I2C4>;
-+		power-domains = <&cpg_clocks>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
++			zx_clk: zx {
++				compatible = "fixed-factor-clock";
++				clocks = <&pll1_div2_clk>;
++				#clock-cells = <0>;
++				clock-div = <2>;
++				clock-mult = <1>;
++			};
 +
-+	i2c5: i2c@e6528000 {
-+		compatible = "renesas,i2c-r8a7794";
-+		reg = <0 0xe6528000 0 0x40>;
-+		interrupts = <0 20 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7794_CLK_I2C5>;
-+		power-domains = <&cpg_clocks>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
++			s0_clk: s0 {
++				compatible = "fixed-factor-clock";
++				clocks = <&pll1_div2_clk>;
++				#clock-cells = <0>;
++				clock-div = <2>;
++				clock-mult = <1>;
++			};
 +
- 	mmcif0: mmc@ee200000 {
- 		compatible = "renesas,mmcif-r8a7794", "renesas,sh-mmcif";
- 		reg = <0 0xee200000 0 0x80>;
++			s0d1_clk: s0d1 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s0_clk>;
++				#clock-cells = <0>;
++				clock-div = <1>;
++				clock-mult = <1>;
++			};
++
++			s0d4_clk: s0d4 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s0_clk>;
++				#clock-cells = <0>;
++				clock-div = <4>;
++				clock-mult = <1>;
++			};
++
++			s1_clk: s1 {
++				compatible = "fixed-factor-clock";
++				clocks = <&pll1_div2_clk>;
++				#clock-cells = <0>;
++				clock-div = <3>;
++				clock-mult = <1>;
++			};
++
++			s1d1_clk: s1d1 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s1_clk>;
++				#clock-cells = <0>;
++				clock-div = <1>;
++				clock-mult = <1>;
++			};
++
++			s1d2_clk: s1d2 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s1_clk>;
++				#clock-cells = <0>;
++				clock-div = <2>;
++				clock-mult = <1>;
++			};
++
++			s1d4_clk: s1d4 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s1_clk>;
++				#clock-cells = <0>;
++				clock-div = <4>;
++				clock-mult = <1>;
++			};
++
++			s2_clk: s2 {
++				compatible = "fixed-factor-clock";
++				clocks = <&pll1_div2_clk>;
++				#clock-cells = <0>;
++				clock-div = <4>;
++				clock-mult = <1>;
++			};
++
++			s2d1_clk: s2d1 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s2_clk>;
++				#clock-cells = <0>;
++				clock-div = <1>;
++				clock-mult = <1>;
++			};
++
++			s2d2_clk: s2d2 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s2_clk>;
++				#clock-cells = <0>;
++				clock-div = <2>;
++				clock-mult = <1>;
++			};
++
++			s2d4_clk: s2d4 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s2_clk>;
++				#clock-cells = <0>;
++				clock-div = <4>;
++				clock-mult = <1>;
++			};
++
++			s3_clk: s3 {
++				compatible = "fixed-factor-clock";
++				clocks = <&pll1_div2_clk>;
++				#clock-cells = <0>;
++				clock-div = <6>;
++				clock-mult = <1>;
++			};
++
++			s3d1_clk: s3d1 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s3_clk>;
++				#clock-cells = <0>;
++				clock-div = <1>;
++				clock-mult = <1>;
++			};
++
++			s3d2_clk: s3d2 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s3_clk>;
++				#clock-cells = <0>;
++				clock-div = <2>;
++				clock-mult = <1>;
++			};
++
++			s3d4_clk: s3d4 {
++				compatible = "fixed-factor-clock";
++				clocks = <&s3_clk>;
++				#clock-cells = <0>;
++				clock-div = <4>;
++				clock-mult = <1>;
++			};
++
++			cl_clk: cl {
++				compatible = "fixed-factor-clock";
++				clocks = <&pll1_div2_clk>;
++				#clock-cells = <0>;
++				clock-div = <48>;
++				clock-mult = <1>;
++			};
++
+ 			cpg_clocks: cpg_clocks@e6150000 {
+ 				compatible = "renesas,r8a7795-cpg-clocks",
+ 					     "renesas,rcar-gen3-cpg-clocks";
 -- 
 2.1.4
 
