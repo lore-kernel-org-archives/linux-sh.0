@@ -1,94 +1,141 @@
-From: Bjorn Helgaas <helgaas@kernel.org>
-Date: Fri, 30 Oct 2015 13:31:51 +0000
-Subject: Re: [PATCH 0/4] PCI: rcar: Add support for ARM64 and multiple instances
-Message-Id: <20151030133150.GA17889@localhost>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 06:24:01 +0000
+Subject: [PATCH v11 6/8] arm64: renesas: add Salvator-X board support on DTS
+Message-Id: <1444890243-6978-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
- <20151029123755.GC2351@katana>
- <PS1PR06MB118061CA5128E4C1A2C70A18F5200@PS1PR06MB1180.apcprd06.prod.outlook.com>
- <20151029163930.GC22218@katana>
- <PS1PR06MB11804B39B09D6FCAA9B3D9DCF5200@PS1PR06MB1180.apcprd06.prod.outlook.com>
- <20151029184800.GB8992@katana>
- <20151029230314.GA11994@localhost>
- <PS1PR06MB1180BAA32BDBEE6BFD8229C3F52F0@PS1PR06MB1180.apcprd06.prod.outlook.com>
- <PS1PR06MB11807765B8231D1DD01B05ADF52F0@PS1PR06MB1180.apcprd06.prod.outlook.com>
-In-Reply-To: <PS1PR06MB11807765B8231D1DD01B05ADF52F0@PS1PR06MB1180.apcprd06.prod.outlook.com>
+References: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Oct 30, 2015 at 09:00:20AM +0000, Phil Edworthy wrote:
-> Hi Bjorn,
-> 
-> On 30 October 2015 07:24, Phil wrote:
-> > On 30 October 2015 07:19, Phil wrote
-> > > On 29 October 2015 23:03, Bjorn wrote:
-> > > > On Thu, Oct 29, 2015 at 07:48:00PM +0100, Wolfram Sang wrote:
-> > > > > On Thu, Oct 29, 2015 at 04:44:06PM +0000, Phil Edworthy wrote:
-> > > > > > Hi Wolfram,
-> > > > > >
-> > > > > > On 29 October 2015 16:40, Wolfram wrote:
-> > > > > > > > Ouch, my bad. I have been working with our out-of-tree BSP for the
-> > > > Salvator-X
-> > > > > > > board on
-> > > > > > > > http://git.kernel.org/cgit/linux/kernel/git/horms/renesas-bsp.git,
-> > rcar-
-> > > > 3.0.2
-> > > > > > > tag along
-> > > > > > > > with some patches from colleagues. I hadn't noticed this patch:
-> > > > > > >
-> > > > > > > Thanks! Any plans for pushing this upstream? We will have the build
-> > error
-> > > > > > > otherwise...
-> > > > > > After some digging, that patch won't be accepted upstream. I'm looking
-> > into
-> > > > how the
-> > > > > > driver can be modified so it doesn't need to call this, but I don't expect a
-> > > small
-> > > > or
-> > > > > > imminent fix.
-> > > > >
-> > > > > Yes, I'd think so, too. However, a fix for 4.4 would be needed to
-> > > > > prevent having a final release with a build error.
-> > > >
-> > > > I'm thinking I should drop my pci/host-rcar branch until we
-> > > > have a fix for this.  It currently contains:
-> > > >
-> > > >   9ac724f20774 PCI: rcar: Fix I/O offset for multiple host bridges
-> > > >   7d75b413f5c6 PCI: rcar: Set root bus nr to that provided in DT
-> > > >   4c22eab88c68 PCI: rcar: Remove dependency on ARM-specific struct hw_pci
-> > > >   ef18d2e55ea0 PCI: rcar: Make PCI aware of the I/O resources
-> > > >
-> > > > Is that right?  Last I heard, Linus expects to release v4.3 on Sunday,
-> > > > so we really don't have much time to sort this out.
-> > > The simple thing is to re-add Geert's patch to stop this driver being built for
-> > > arm64.
-> > Btw, it's this one: https://patchwork.ozlabs.org/patch/512040/
-> It's worth mentioning that Geert's patch stops both the rcar-pcie driver and the
-> rcar-pci-gen2 driver from being built on arm64 due to build failures for both of
-> them. The rcar-pci-gen2 driver is not for R-Car Gen3 devices, and so should not
-> be built for arm64. The rcar-pcie driver will be used on R-Car Gen3 devices.
-> 
-> So if we don't use Geert's patch, I need to fix the rcar-pcie driver so it doesn't
-> use pci_ioremap_io(), _and_ fix Kconfig so that the rcar-pci-gen2 driver doesn't
-> get built on arm64. 
-> Let's just use Geert's patch for now.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-OK, I re-added Geert's patch.  I split it into two, one for
-rcar-pci-gen2 and another for rcar-pcie, to help me keep things
-straight.  If I understand correctly,
+Add initial board support for r8a7795 Salvator-X. At this point
+only DEBUG0 and DEBUG1 serial ports are supported.
 
-  - rcar-pci-gen2 depends on the ARM-specific pci_sys_data, and I
-    don't have anything queued to address that.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+Changes since v10:
+- None
 
-  - rcar-pcie depended on the ARM-specific pci_sys_data and
-    pci_ioremap_io().  Your patches remove the pci_sys_data
-    dependency, and it sounds like future changes will remove the
-    pci_ioremap_io() dependency.
+Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
+ - Added board specific EXTAL information by folding in:
+  [PATCH][RFC] arm64: renesas: Add EXTAL configuration to Salvator-X
 
-The result is in my pci/host-rcar branch:
-https://git.kernel.org/cgit/linux/kernel/git/helgaas/pci.git/log/?h=pci/host-rcar
+Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
+- None
 
-Bjorn
+Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
+- Added changelog
+
+Based on:
+ [PATCH 15/25] arm64: renesas: add Salvator-X board support on DTS
+ [PATCH 5/5] arm64: renesas: salvator-x: Update SCIF2 pin group
+ [PATCH 5/6] arm64: renesas: salvator-x: Enable SCIF1 on serial1
+---
+ Documentation/devicetree/bindings/arm/shmobile.txt |  2 +
+ arch/arm64/boot/dts/renesas/Makefile               |  2 +
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 62 ++++++++++++++++++++++
+ 3 files changed, 66 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+
+diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
+index 8d696a0d62b3..95d0aea4c701 100644
+--- a/Documentation/devicetree/bindings/arm/shmobile.txt
++++ b/Documentation/devicetree/bindings/arm/shmobile.txt
+@@ -59,6 +59,8 @@ Boards:
+     compatible = "renesas,lager", "renesas,r8a7790"
+   - Marzen
+     compatible = "renesas,marzen", "renesas,r8a7779"
++  - Salvator-X
++    compatible = "renesas,salvator-x", "renesas,r8a7795";
+ 
+ Note: Reference Device Tree Implementations are temporary implementations
+       to ease the migration from platform devices to Device Tree, and are
+diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
+index fec69f46d65b..9ce1890a650e 100644
+--- a/arch/arm64/boot/dts/renesas/Makefile
++++ b/arch/arm64/boot/dts/renesas/Makefile
+@@ -1,2 +1,4 @@
++dtb-$(CONFIG_ARCH_R8A7795) += r8a7795-salvator-x.dtb
++
+ always		:= $(dtb-y)
+ clean-files	:= *.dtb
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+new file mode 100644
+index 000000000000..f522fda7843a
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -0,0 +1,62 @@
++/*
++ * Device Tree Source for the Salvator-X board
++ *
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/dts-v1/;
++#include "r8a7795.dtsi"
++
++/ {
++	model = "Renesas Salvator-X board based on r8a7795";
++	compatible = "renesas,salvator-x", "renesas,r8a7795";
++
++	aliases {
++		serial0 = &scif2;
++		serial1 = &scif1;
++	};
++
++	chosen {
++		bootargs = "ignore_loglevel";
++		stdout-path = &scif2;
++	};
++
++	memory@48000000 {
++		device_type = "memory";
++		/* first 128MB is reserved for secure area. */
++		reg = <0x0 0x48000000 0x0 0x38000000>;
++	};
++};
++
++&extal_clk {
++	clock-frequency = <16666666>;
++};
++
++&pfc {
++	scif1_pins: scif1 {
++		renesas,groups = "scif1_data_a", "scif1_ctrl";
++		renesas,function = "scif1";
++	};
++	scif2_pins: scif2 {
++		renesas,groups = "scif2_data_a";
++		renesas,function = "scif2";
++	};
++};
++
++&scif1 {
++	pinctrl-0 = <&scif1_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&scif2 {
++	pinctrl-0 = <&scif2_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
+-- 
+2.1.4
+
