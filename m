@@ -1,60 +1,65 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 08 Oct 2015 11:08:31 +0000
-Subject: Re: [PATCH] ARM: shmobile: porter: add SDHI0/2 DT support
-Message-Id: <20151008110831.GC4961@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 00:33:02 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Cleanup for v4.4
+Message-Id: <cover.1444868660.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2228837.DO5U5OvRSi@wasted.cogentembedded.com>
- <20151007033957.GA30650@verge.net.au>
- <5614FBB3.5060806@cogentembedded.com>
- <20151008021247.GD8756@verge.net.au>
- <56164B48.6050300@cogentembedded.com>
-In-Reply-To: <56164B48.6050300@cogentembedded.com>
+References: <cover.1381222967.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 08, 2015 at 01:54:00PM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 10/8/2015 5:12 AM, Simon Horman wrote:
-> 
-> >>>>Define the Porter board dependent part of the SDHI0/2 device nodes along with
-> >>>>the  necessary  voltage regulators (note that the Vcc regulators are dummy --
-> >>>>they are required but don't actually exist on the board). Also, GPIOs have to
-> >>>>be used for the CD and WP signals due to the SDHI driver constraints...
-> >>>>
-> >>>>This patch is analogous to the commit 1299df03d719 (ARM: shmobile: henninger:
-> >>>>add SDHI0/2 DT support) as there  are no differences between those boards in
-> >>>>this respect.
-> >>>>
-> >>>>Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> >>>>
-> >>>>---
-> >>>>This patch is against the 'renesas-devel-20151006-v4.3-rc4' tag of Simon
-> >>>>Horman's 'renesas.git' repo.
-> >>>
-> >>>Thanks I have queued this up after addressing some issues
-> >>>in the changelog that checkpatch complained about:
-> >>>
-> >>>* text > 75 characters wide
-> >>>* Missing '"' around name of patch referred to
-> >>>
-> >>>Its looking like there is already quite a log shared between
-> >>
-> >>    Lot?
-> >>
-> >>>r8a7791-porter.dts and r8a7791-henninger.dts. Do you have any
-> >>>thoughts on consolidating or sharing common elements between
-> >>>them somehow?
-> >>
-> >>    I'm still planning to remove the Henninger's .dts for good. It was never
-> >>sold and so had no users outside Renesas (and Cogent Embedded), I was told.
-> >
-> >Thanks, that sounds like a good plan to me.
-> >Do you have any thoughts on when?
-> 
->    Well, I was going to reach the feature parity between these 2 boards,
-> i.e. to support all devices on Porter that are supported on Henninger...
+Hi Olof, Hi Kevin, Hi Arnd,
 
-THanks, that sounds like an entirely reasonable plan to me.
+Please consider these second round of Renesas ARM based SoC cleanup for v4.4.
+
+This pull request is based on the previous round of
+such requests, tagged as renesas-cleanup-for-v4.4,
+which you have already pulled.
+
+
+The following changes since commit 04418c23a9411b85b8789eab5f4397bcbd62b7b4:
+
+  ARM: shmobile: Remove legacy clock support leftovers (2015-09-14 10:06:56 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup2-for-v4.4
+
+for you to fetch changes up to 1fd377b3fc1e071702e27b2f828e3abd8b31c74d:
+
+  ARM: shmobile: R-Mobile: add missing of_node_put (2015-10-12 09:15:29 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM Based SoC Cleanup for v4.4
+
+* Remove now unused legacy pm domain code
+* Add missing of_node_put to pm-rmobile
+* Corresct spelling of interrupt-names in renesas-memory-controller binding
+  documentation
+* Correct signdness of CPU id in shmobile apmu implementation
+* Make some functions static as appropriate
+
+----------------------------------------------------------------
+Andrzej Hajda (1):
+      ARM: shmobile: apmu: correct type of CPU id
+
+Geert Uytterhoeven (3):
+      ARM: shmobile: smp: Make shmobile_smp_apmu_cpu_shutdown() static
+      ARM: shmobile: r8a7778: Make r8a7778_init_irq_dt() static
+      ARM: shmobile: r8a7779: Remove legacy PM Domain remainings
+
+Julia Lawall (1):
+      ARM: shmobile: R-Mobile: add missing of_node_put
+
+Lee Jones (1):
+      ARM: shmobile: dt: Rename incorrect interrupt related binding
+
+ .../renesas-memory-controllers.txt                 |  6 +-
+ arch/arm/mach-shmobile/platsmp-apmu.c              |  4 +-
+ arch/arm/mach-shmobile/pm-r8a7779.c                | 99 ----------------------
+ arch/arm/mach-shmobile/pm-rmobile.c                |  4 +-
+ arch/arm/mach-shmobile/r8a7779.h                   |  6 --
+ arch/arm/mach-shmobile/setup-r8a7778.c             |  3 +-
+ 6 files changed, 10 insertions(+), 112 deletions(-)
