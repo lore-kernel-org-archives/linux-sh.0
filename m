@@ -1,29 +1,53 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 16 Oct 2015 15:06:27 +0000
-Subject: Re: [PATCH 0/2] pinctrl: sh-pfc: Remove obsolete platform_device_id entries
-Message-Id: <CACRpkdYP_NODbDEweLRksiJ9wmVPMewewm7rGiEfRueKCN0KDQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 06:59:35 +0000
+Subject: [PATCH/RFC 4/6] arm: shmobile: r8a7791: Obtain MD pin value using boot-mode-reg
+Message-Id: <1444892377-10170-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444213720-26770-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1444213720-26770-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Wed, Oct 7, 2015 at 12:28 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+Use new boot mode reg infrastructure to obtain the mode pin
+value when initialising SMP for r8a7791 SoC.
 
-> Since the removal of the r8a7778 legacy SoC code in commit
-> 4baadb9e05c68962 ("ARM: shmobile: r8a7778: remove obsolete setup code"),
-> which is now in arm-soc/for-next, Renesas R-Car Gen1 SoCs are only
-> supported in generic DT-only ARM multi-platform builds.
-> The driver doesn't need to match platform devices by name anymore, hence
-> this series removes the corresponding platform_device_id entries.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/smp-r8a7791.c | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+diff --git a/arch/arm/mach-shmobile/smp-r8a7791.c b/arch/arm/mach-shmobile/smp-r8a7791.c
+index b2508c0d276b..595499834293 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7791.c
++++ b/arch/arm/mach-shmobile/smp-r8a7791.c
+@@ -20,6 +20,8 @@
+ 
+ #include <asm/smp_plat.h>
+ 
++#include <misc/boot-mode-reg.h>
++
+ #include "common.h"
+ #include "platsmp-apmu.h"
+ #include "r8a7791.h"
+@@ -45,8 +47,17 @@ static void __init r8a7791_smp_prepare_cpus(unsigned int max_cpus)
+ static int r8a7791_smp_boot_secondary(unsigned int cpu,
+ 				      struct task_struct *idle)
+ {
++	int err;
++	u32 mode;
++
++	err = boot_mode_reg_get(&mode);
++	if (err) {
++		pr_warn("Unable retrieve boot mode register\n");
++		return err;
++	}
++
+ 	/* Error out when hardware debug mode is enabled */
+-	if (rcar_gen2_read_mode_pins() & BIT(21)) {
++	if (mode & BIT(21)) {
+ 		pr_warn("Unable to boot CPU%u when MD21 is set\n", cpu);
+ 		return -ENOTSUPP;
+ 	}
+-- 
+2.1.4
 
-Add to your pull request...
-
-Yours,
-Linus Walleij
