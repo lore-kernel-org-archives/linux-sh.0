@@ -1,62 +1,135 @@
-From: Vinod Koul <vinod.koul@intel.com>
-Date: Mon, 26 Oct 2015 00:30:27 +0000
-Subject: Re: [PATCH v2 1/2] dmaengine: sh: usb-dmac: Fix crash on runtime suspend
-Message-Id: <20151026001825.GA3690@vkoul-mobl.iind.intel.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 06:59:33 +0000
+Subject: [PATCH/RFC 2/6] boot-mode-reg: Add R-Car Gen2 driver
+Message-Id: <1444892377-10170-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445767774-24001-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1445767774-24001-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sun, Oct 25, 2015 at 11:09:33AM +0100, Geert Uytterhoeven wrote:
-> If CONFIG_PREEMPT=3Dy:
->=20
->     Unable to handle kernel NULL pointer dereference at virtual address 0=
-0000014
->     pgd =3D c0003000
->     [00000014] *pgd=80000040004003, *pmd=00000000
->     Internal error: Oops: 206 [#1] PREEMPT SMP ARM
->     Modules linked in:
->     CPU: 0 PID: 17 Comm: kworker/0:1 Tainted: G        W       4.3.0-rc3-=
-koelsch-022
->     71-g705498fc5e6a5da8-dirty #1789
->     Hardware name: Generic R8A7791 (Flattened Device Tree)
->     Workqueue: pm pm_runtime_work
->     task: ef578e40 ti: ef57a000 task.ti: ef57a000
->     PC is at usb_dmac_chan_halt+0xc/0xc0
->     LR is at usb_dmac_runtime_suspend+0x28/0x38
->     pc : [<c023c880>]    lr : [<c023c95c>]    psr: 80000113
->     sp : ef57bdf8  ip : 00000008  fp : 00000003
->     r10: 00000008  r9 : c06ab928  r8 : ef49e810
->     r7 : 00000000  r6 : 000000ac  r5 : ef770010  r4 : 00000000
->     r3 : 00000000  r2 : 8ffc2b84  r1 : 00000000  r0 : ef770010
->     Flags: Nzcv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment kernel
->     Control: 30c5307d  Table: 40003000  DAC: fffffffd
->     Process kworker/0:1 (pid: 17, stack limit =3D 0xef57a210)
->     Stack: (0xef57bdf8 to 0xef57c000)
->=20
->     [...
->=20
->     [<c023c880>] (usb_dmac_chan_halt) from [<c023c95c>] (usb_dmac_runtime=
-_suspend+0x28/0x38)
->     [<c023c95c>] (usb_dmac_runtime_suspend) from [<c027b25c>] (pm_genpd_r=
-untime_suspend+0x74/0x23c)
->=20
-> This happens because usb_dmac_probe() calls pm_runtime_put() before
-> usb_dmac_chan_probe(), leading to the device being suspended before the
-> DMA channels are initialized, causing a NULL pointer dereference.
->=20
-> Move the call to pm_runtime_put() to the end of usb_dmac_probe() to fix
-> this.
->=20
-> Add a check to usb_dmac_runtime_suspend() to prevent the crash from
-> happening in the error path.
+Boot mode register driver for R-Car Gen2.
 
-This worked, applied both now
+If running on a supported platform it reads the boot mode register and
+records it using the boot mode register infrastructure established by an
+earlier patch.
 
-Thanks
+rcar_gen2_init_boot_mode() is exported allow it to be explicitly called in
+cases where the boot mode register is needed before init calls are made.
 
---=20
-~Vinod
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/misc/boot-mode-reg/Kconfig     |  8 +++++
+ drivers/misc/boot-mode-reg/Makefile    |  1 +
+ drivers/misc/boot-mode-reg/rcar-gen2.c | 61 ++++++++++++++++++++++++++++++++++
+ include/misc/boot-mode-reg.h           |  3 ++
+ 4 files changed, 73 insertions(+)
+ create mode 100644 drivers/misc/boot-mode-reg/rcar-gen2.c
+
+diff --git a/drivers/misc/boot-mode-reg/Kconfig b/drivers/misc/boot-mode-reg/Kconfig
+index 806eba24238f..4731edf8a9db 100644
+--- a/drivers/misc/boot-mode-reg/Kconfig
++++ b/drivers/misc/boot-mode-reg/Kconfig
+@@ -9,3 +9,11 @@ config BOOT_MODE_REG_CORE
+ 	help
+ 	  Say Y here to allow support for drivers to read boot mode
+ 	  registers and make the value available to other subsystems.
++
++config BOOT_MODE_REG_RCAR_GEN2
++	tristate "Boot Mode Register Driver for Renesas R-Car Gen2 SoCs"
++	default n
++	select BOOT_MODE_REG_CORE
++	help
++	  Say Y here to allow support for reading the boot mode register
++	  on Renesas R-Car Gen2 SoCs.
+diff --git a/drivers/misc/boot-mode-reg/Makefile b/drivers/misc/boot-mode-reg/Makefile
+index 19134b20a7f1..d097fd0164aa 100644
+--- a/drivers/misc/boot-mode-reg/Makefile
++++ b/drivers/misc/boot-mode-reg/Makefile
+@@ -4,3 +4,4 @@
+ #
+ 
+ obj-$(CONFIG_BOOT_MODE_REG_CORE)	+= core.o
++obj-$(CONFIG_BOOT_MODE_REG_RCAR_GEN2)	+= rcar-gen2.o
+diff --git a/drivers/misc/boot-mode-reg/rcar-gen2.c b/drivers/misc/boot-mode-reg/rcar-gen2.c
+new file mode 100644
+index 000000000000..0f1a06fcf094
+--- /dev/null
++++ b/drivers/misc/boot-mode-reg/rcar-gen2.c
+@@ -0,0 +1,61 @@
++/*
++ * R-Car Gen2 Boot Mode Register Driver
++ *
++ * Copyright (C) 2015 Simon Horman
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/of.h>
++
++#include <misc/boot-mode-reg.h>
++
++#define MODEMR 0xe6160060
++
++static int __init rcar_gen2_read_mode_pins(void)
++{
++	void __iomem *modemr;
++	int err = -ENOMEM;
++	static u32 mode;
++
++	modemr = ioremap_nocache(MODEMR, 4);
++	if (!modemr) {
++		pr_err("failed to map boot mode register");
++		goto err;
++	}
++	mode = ioread32(modemr);
++	iounmap(modemr);
++
++	err = boot_mode_reg_set(mode);
++err:
++	if (err)
++		pr_err("failed to initialise boot mode");
++	return err;
++}
++
++int __init rcar_gen2_init_boot_mode(void)
++{
++	if (of_machine_is_compatible("renesas,r8a7790") ||
++	    of_machine_is_compatible("renesas,r8a7791") ||
++	    of_machine_is_compatible("renesas,r8a7792") ||
++	    of_machine_is_compatible("renesas,r8a7793") ||
++	    of_machine_is_compatible("renesas,r8a7794"))
++		return rcar_gen2_read_mode_pins();
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(boot_mode_set);
++early_initcall(rcar_gen2_init_boot_mode);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Simon Horman <horms@verge.net.au>");
++MODULE_DESCRIPTION("R-Car Gen2 Boot Mode Register Driver");
+diff --git a/include/misc/boot-mode-reg.h b/include/misc/boot-mode-reg.h
+index 34ee653279a4..f8fea0ea5a3e 100644
+--- a/include/misc/boot-mode-reg.h
++++ b/include/misc/boot-mode-reg.h
+@@ -21,4 +21,7 @@
+ int boot_mode_reg_get(u32 *mode);
+ int boot_mode_reg_set(u32 mode);
+ 
++/* Allow explicit initialisation before initcalls */
++int rcar_gen2_init_boot_mode(void);
++
+ #endif
+-- 
+2.1.4
+
