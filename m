@@ -1,44 +1,74 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 07 Oct 2015 10:39:35 +0000
-Subject: [PATCH v2 1/2] [media] rcar_vin: Remove obsolete r8a779x-vin platform_device_id entries
-Message-Id: <1444214376-26931-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 00:34:18 +0000
+Subject: [PATCH 7/7] ARM: shmobile: porter: enable internal PCI and USB PHY
+Message-Id: <99f7445ea41c0187cd2e78bcb58cdd9e6c1756e5.1444868963.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444214376-26931-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1444214376-26931-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1444868963.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444868963.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mauro Carvalho Chehab <mchehab@osg.samsung.com>, linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Since commit a483dcbfa21f919c ("ARM: shmobile: lager: Remove legacy
-board support"), R-Car Gen2 SoCs are only supported in generic DT-only
-ARM multi-platform builds.  The driver doesn't need to match platform
-devices by name anymore, hence remove the corresponding
-platform_device_id entry.
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Enable  internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached
+to them and also enable  USB PHY device  for the Porter board.  We have to
+enable  everything in one patch since EHCI/OHCI devices are already linked
+to the USB PHY device.
+
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - Add Acked-by.
----
- drivers/media/platform/soc_camera/rcar_vin.c | 2 --
- 1 file changed, 2 deletions(-)
+ arch/arm/boot/dts/r8a7791-porter.dts | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
-diff --git a/drivers/media/platform/soc_camera/rcar_vin.c b/drivers/media/platform/soc_camera/rcar_vin.c
-index 71dd71c0bd1f..4069587ae8b6 100644
---- a/drivers/media/platform/soc_camera/rcar_vin.c
-+++ b/drivers/media/platform/soc_camera/rcar_vin.c
-@@ -1846,8 +1846,6 @@ MODULE_DEVICE_TABLE(of, rcar_vin_of_table);
- #endif
+diff --git a/arch/arm/boot/dts/r8a7791-porter.dts b/arch/arm/boot/dts/r8a7791-porter.dts
+index c46aad3954f4..fe0f12fc02a1 100644
+--- a/arch/arm/boot/dts/r8a7791-porter.dts
++++ b/arch/arm/boot/dts/r8a7791-porter.dts
+@@ -120,6 +120,16 @@
+ 		renesas,function = "i2c2";
+ 	};
  
- static struct platform_device_id rcar_vin_id_table[] = {
--	{ "r8a7791-vin",  RCAR_GEN2 },
--	{ "r8a7790-vin",  RCAR_GEN2 },
- 	{ "r8a7779-vin",  RCAR_H1 },
- 	{ "r8a7778-vin",  RCAR_M1 },
- 	{ "uPD35004-vin", RCAR_E1 },
++	usb0_pins: usb0 {
++		renesas,groups = "usb0";
++		renesas,function = "usb0";
++	};
++
++	usb1_pins: usb1 {
++		renesas,groups = "usb1";
++		renesas,function = "usb1";
++	};
++
+ 	vin0_pins: vin0 {
+ 		renesas,groups = "vin0_data8", "vin0_clk";
+ 		renesas,function = "vin0";
+@@ -245,6 +255,24 @@
+ 	};
+ };
+ 
++&pci0 {
++	pinctrl-0 = <&usb0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&pci1 {
++	pinctrl-0 = <&usb1_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&usbphy {
++	status = "okay";
++};
++
+ &pcie_bus_clk {
+ 	status = "okay";
+ };
 -- 
-1.9.1
+2.1.4
 
