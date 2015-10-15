@@ -1,86 +1,68 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 00:34:15 +0000
-Subject: [PATCH 4/7] ARM: shmobile: porter: add VIN0/ADV7180 DT support
-Message-Id: <778f2e7a7b75e643fb56151797b7d950305b48ea.1444868963.git.horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 06:24:02 +0000
+Subject: [PATCH v11 7/8] arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
+Message-Id: <1444890243-6978-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444868963.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444868963.git.horms+renesas@verge.net.au>
+References: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Define the  Porter board dependent part of the VIN0 device node.
-Add the device node for Analog Devices  ADV7180 video decoder to I2C2 bus.
-Add the necessary subnodes to interconnect VIN0 and ADV7180 devices.
+This patch enables the Renesas R-Car H3 SoC together with the
+SCIF driver in the arm64 defconfig.
 
-This patch is  analogous to the commit 8d62f4f75320 ("ARM: shmobile:
-henninger: add VIN0/ADV7180 DT support") as there are no differences
-between the boards in this respect.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-porter.dts | 35 +++++++++++++++++++++++++++++++++++
- 1 file changed, 35 insertions(+)
+Changes since v10:
+- None
 
-diff --git a/arch/arm/boot/dts/r8a7791-porter.dts b/arch/arm/boot/dts/r8a7791-porter.dts
-index 03edb8424ef5..b7fa8261e02f 100644
---- a/arch/arm/boot/dts/r8a7791-porter.dts
-+++ b/arch/arm/boot/dts/r8a7791-porter.dts
-@@ -114,6 +114,11 @@
- 		renesas,groups = "i2c2";
- 		renesas,function = "i2c2";
- 	};
-+
-+	vin0_pins: vin0 {
-+		renesas,groups = "vin0_data8", "vin0_clk";
-+		renesas,function = "vin0";
-+	};
- };
- 
- &scif0 {
-@@ -166,8 +171,38 @@
- 
- 	status = "okay";
- 	clock-frequency = <400000>;
-+
-+	composite-in@20 {
-+		compatible = "adi,adv7180";
-+		reg = <0x20>;
-+		remote = <&vin0>;
-+
-+		port {
-+			adv7180: endpoint {
-+				bus-width = <8>;
-+				remote-endpoint = <&vin0ep>;
-+			};
-+		};
-+	};
- };
- 
- &sata0 {
- 	status = "okay";
- };
-+
-+/* composite video input */
-+&vin0 {
-+	status = "ok";
-+	pinctrl-0 = <&vin0_pins>;
-+	pinctrl-names = "default";
-+
-+	port {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		vin0ep: endpoint {
-+			remote-endpoint = <&adv7180>;
-+			bus-width = <8>;
-+		};
-+	};
-+};
+Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
+- None
+
+Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
+- Added Acked-by from Geert
+
+Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
+- Updated changelog
+- Use CONFIG_RENESAS and CONFIG_R8A7795
+
+Based on:
+ [PATCH 19/25] arm64: defconfig: renesas: Enable Renesas R-Car Gen3 SoC
+ [PATCH 20/25] arm64: defconfig: renesas: enable SCIF
+---
+ arch/arm64/configs/defconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 34d71dd86781..dccc685b58ae 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -39,6 +39,8 @@ CONFIG_ARCH_HISI=y
+ CONFIG_ARCH_MEDIATEK=y
+ CONFIG_ARCH_ROCKCHIP=y
+ CONFIG_ARCH_SEATTLE=y
++CONFIG_ARCH_RENESAS=y
++CONFIG_ARCH_R8A7795=y
+ CONFIG_ARCH_TEGRA=y
+ CONFIG_ARCH_TEGRA_132_SOC=y
+ CONFIG_ARCH_QCOM=y
+@@ -109,6 +111,9 @@ CONFIG_SERIAL_8250_DW=y
+ CONFIG_SERIAL_8250_MT6577=y
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_SERIAL_MSM=y
+ CONFIG_SERIAL_MSM_CONSOLE=y
+ CONFIG_SERIAL_OF_PLATFORM=y
 -- 
 2.1.4
 
