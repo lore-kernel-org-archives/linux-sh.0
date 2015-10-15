@@ -1,63 +1,72 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 29 Oct 2015 23:27:51 +0000
-Subject: [PATCH v5 05/14] arm64: renesas: r8a7795: Sound DVC support
-Message-Id: <1446161280-23097-6-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 06:59:31 +0000
+Subject: [PATCH/RFC 0/6] boot-mode-reg: Add core
+Message-Id: <1444892377-10170-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The motivation for this new module is to add a small frame work to allow
+kernel subsystems to obtain boot mode information from a centralised
+source using a new, and hopefully soon well-known, API.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The new API consists of two function calls and nothing more:
 
----
+boot_mode_reg_set: Should be called by platform-specific drivers
+                   to register the boot mode register value which
+                   they obtain from hardware or otherwise.
 
-v5 [Simon Horman]
-* Update for new CPG/MSSR bindings via Geert Uytterhoeven
----
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+boot_mode_reg_get: Should be called by consumers; subsystems that
+                   wish to know he boot mode register.
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 618989528b67..03690b12f44b 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -375,6 +375,7 @@
- 				 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
- 				 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
- 				 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
-+				 <&cpg CPG_MOD 1019>, <&cpg CPG_MOD 1018>,
- 				 <&audio_clk_a>, <&audio_clk_b>,
- 				 <&audio_clk_c>,
- 				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
-@@ -385,10 +386,22 @@
- 				      "src.9", "src.8", "src.7", "src.6",
- 				      "src.5", "src.4", "src.3", "src.2",
- 				      "src.1", "src.0",
-+				      "dvc.0", "dvc.1",
- 				      "clk_a", "clk_b", "clk_c", "clk_i";
- 			power-domains = <&cpg>;
- 			status = "disabled";
- 
-+			rcar_sound,dvc {
-+				dvc0: dvc@0 {
-+					dmas = <&audma0 0xbc>;
-+					dma-names = "tx";
-+				};
-+				dvc1: dvc@1 {
-+					dmas = <&audma0 0xbe>;
-+					dma-names = "tx";
-+				};
-+			};
-+
- 			rcar_sound,src {
- 				src0: src@0 {
- 					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
+The boot mode register is a 32bit unsigned entity,
+the meaning of its values are implementation dependent.
+
+
+This patchset:
+* Adds the API described above
+* Implements the API for Renesas R-Car Gen2 SoCs
+* Uses the implementation for Renesas R-Car Gen2 SoCs
+
+Laurent, this is my interpretation of your ideas in this area.
+In particular I'd value feedback from you on the implementation
+before taking it to a wider audience.
+
+
+Tested on an r8a7791/Koelsch applied on top of
+renesas-devel-20151015-v4.3-rc5
+
+Simon Horman (6):
+  boot-mode-reg: Add core
+  boot-mode-reg: Add R-Car Gen2 driver
+  arm: shmobile: rcar-gen2: Obtain MD pin value using boot-mode-reg
+  arm: shmobile: r8a7791: Obtain MD pin value using boot-mode-reg
+  clk: shmobile: rcar-gen2: Obtain MD pin value using boot-mode-reg
+  arm: shmobile: rcar-gen2: Remove unused rcar_gen2_read_mode_pins()
+
+ MAINTAINERS                              |  1 +
+ arch/arm/mach-shmobile/Kconfig           |  1 +
+ arch/arm/mach-shmobile/rcar-gen2.h       |  1 -
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 43 +++++++++---------
+ arch/arm/mach-shmobile/smp-r8a7791.c     | 13 +++++-
+ drivers/clk/shmobile/clk-rcar-gen2.c     | 12 ++++-
+ drivers/misc/Kconfig                     |  1 +
+ drivers/misc/Makefile                    |  1 +
+ drivers/misc/boot-mode-reg/Kconfig       | 19 ++++++++
+ drivers/misc/boot-mode-reg/Makefile      |  7 +++
+ drivers/misc/boot-mode-reg/core.c        | 78 ++++++++++++++++++++++++++++++++
+ drivers/misc/boot-mode-reg/rcar-gen2.c   | 61 +++++++++++++++++++++++++
+ include/linux/clk/shmobile.h             |  2 +-
+ include/misc/boot-mode-reg.h             | 27 +++++++++++
+ 14 files changed, 240 insertions(+), 27 deletions(-)
+ create mode 100644 drivers/misc/boot-mode-reg/Kconfig
+ create mode 100644 drivers/misc/boot-mode-reg/Makefile
+ create mode 100644 drivers/misc/boot-mode-reg/core.c
+ create mode 100644 drivers/misc/boot-mode-reg/rcar-gen2.c
+ create mode 100644 include/misc/boot-mode-reg.h
+
 -- 
 2.1.4
 
