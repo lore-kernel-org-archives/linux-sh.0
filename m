@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 00:33:02 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Cleanup for v4.4
-Message-Id: <cover.1444868660.git.horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 00:34:02 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC Defconfig Updates for v4.4
+Message-Id: <cover.1444869086.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1381222967.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
@@ -12,54 +12,36 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these second round of Renesas ARM based SoC cleanup for v4.4.
+Please consider these second round of Renesas ARM based SoC defconfig
+updates for v4.4.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-cleanup-for-v4.4,
-which you have already pulled.
+such requests, tagged as renesas-defconfig-for-v4.4,
+which I have already sent a pull-request for.
 
 
-The following changes since commit 04418c23a9411b85b8789eab5f4397bcbd62b7b4:
+The following changes since commit 0a8b0695f4c490c349ee12956d6946576c44a419:
 
-  ARM: shmobile: Remove legacy clock support leftovers (2015-09-14 10:06:56 +0900)
+  ARM: multi_v7_defconfig: Remove Marzen (2015-09-14 10:12:59 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup2-for-v4.4
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig2-for-v4.4
 
-for you to fetch changes up to 1fd377b3fc1e071702e27b2f828e3abd8b31c74d:
+for you to fetch changes up to fec3fb4734b4d2c33975077c250ebd4a3a9f8e34:
 
-  ARM: shmobile: R-Mobile: add missing of_node_put (2015-10-12 09:15:29 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC Cleanup for v4.4
-
-* Remove now unused legacy pm domain code
-* Add missing of_node_put to pm-rmobile
-* Corresct spelling of interrupt-names in renesas-memory-controller binding
-  documentation
-* Correct signdness of CPU id in shmobile apmu implementation
-* Make some functions static as appropriate
+  ARM: multi_v7_defconfig: enable HDMI output for Renesas RCar (2015-10-13 10:42:17 +0900)
 
 ----------------------------------------------------------------
-Andrzej Hajda (1):
-      ARM: shmobile: apmu: correct type of CPU id
+Second Round of Renesas ARM Based SoC Defconfig Updates for v4.4
 
-Geert Uytterhoeven (3):
-      ARM: shmobile: smp: Make shmobile_smp_apmu_cpu_shutdown() static
-      ARM: shmobile: r8a7778: Make r8a7778_init_irq_dt() static
-      ARM: shmobile: r8a7779: Remove legacy PM Domain remainings
+* Enable HDMI output for Renesas RCar
 
-Julia Lawall (1):
-      ARM: shmobile: R-Mobile: add missing of_node_put
+----------------------------------------------------------------
+Wolfram Sang (2):
+      ARM: shmobile: defconfig: enable HDMI output for RCar
+      ARM: multi_v7_defconfig: enable HDMI output for Renesas RCar
 
-Lee Jones (1):
-      ARM: shmobile: dt: Rename incorrect interrupt related binding
-
- .../renesas-memory-controllers.txt                 |  6 +-
- arch/arm/mach-shmobile/platsmp-apmu.c              |  4 +-
- arch/arm/mach-shmobile/pm-r8a7779.c                | 99 ----------------------
- arch/arm/mach-shmobile/pm-rmobile.c                |  4 +-
- arch/arm/mach-shmobile/r8a7779.h                   |  6 --
- arch/arm/mach-shmobile/setup-r8a7778.c             |  3 +-
- 6 files changed, 10 insertions(+), 112 deletions(-)
+ arch/arm/configs/multi_v7_defconfig | 3 +++
+ arch/arm/configs/shmobile_defconfig | 3 +++
+ 2 files changed, 6 insertions(+)
