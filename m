@@ -1,51 +1,64 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 27 Oct 2015 01:18:29 +0000
-Subject: [PATCH v4 6/7] usb: host: xhci-plat: add support for the R-Car M2-N xHCI controller
-Message-Id: <1445908710-5812-7-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 00:33:54 +0000
+Subject: [PATCH 6/6] ARM: shmobile: R-Mobile: add missing of_node_put
+Message-Id: <1fd377b3fc1e071702e27b2f828e3abd8b31c74d.1444868660.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1444868660.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444868660.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds support for R-Car M2-N (r8a7793) xHCI controller.
-This SoC is compatible with R-Car H2 (r8a7790) and R-Car M2-W (r8a7791).
+From: Julia Lawall <Julia.Lawall@lip6.fr>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+for_each_child_of_node performs an of_node_get on each iteration, so
+a break out of the loop requires an of_node_put.
+
+The semantic patch that fixes this problem is as follows
+(http://coccinelle.lip6.fr):
+
+// <smpl>
+@@
+expression root,e;
+local idexpression child;
+@@
+
+ for_each_child_of_node(root, child) {
+   ... when != of_node_put(child)
+       when != e = child
+(
+   return child;
+|
++  of_node_put(child);
+?  return ...;
+)
+   ...
+ }
+// </smpl>
+
+Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Documentation/devicetree/bindings/usb/usb-xhci.txt | 4 ++--
- drivers/usb/host/xhci-plat.c                       | 3 +++
- 2 files changed, 5 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/pm-rmobile.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/usb/usb-xhci.txt b/Documentation/devicetree/bindings/usb/usb-xhci.txt
-index 86f67f0..106299a 100644
---- a/Documentation/devicetree/bindings/usb/usb-xhci.txt
-+++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
-@@ -3,8 +3,8 @@ USB xHCI controllers
- Required properties:
-   - compatible: should be one of "generic-xhci",
-     "marvell,armada-375-xhci", "marvell,armada-380-xhci",
--    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791" (deprecated:
--    "xhci-platform").
-+    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791", "renesas,xhci-r8a7793"
-+    (deprecated: "xhci-platform").
-   - reg: should contain address and length of the standard XHCI
-     register set for the device.
-   - interrupts: one XHCI interrupt should be described here.
-diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
-index a471f12..0113e79 100644
---- a/drivers/usb/host/xhci-plat.c
-+++ b/drivers/usb/host/xhci-plat.c
-@@ -97,6 +97,9 @@ static const struct of_device_id usb_xhci_of_match[] = {
- 		.compatible = "renesas,xhci-r8a7791",
- 		.data = &xhci_plat_renesas_rcar_gen2,
- 	}, {
-+		.compatible = "renesas,xhci-r8a7793",
-+		.data = &xhci_plat_renesas_rcar_gen2,
-+	}, {
- 	},
- };
- MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+index a5b96b990aea..424155b0cfe9 100644
+--- a/arch/arm/mach-shmobile/pm-rmobile.c
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -342,8 +342,10 @@ static int __init rmobile_add_pm_domains(void __iomem *base,
+ 		}
+ 
+ 		pd = kzalloc(sizeof(*pd), GFP_KERNEL);
+-		if (!pd)
++		if (!pd) {
++			of_node_put(np);
+ 			return -ENOMEM;
++		}
+ 
+ 		pd->genpd.name = np->name;
+ 		pd->base = base;
 -- 
-1.9.1
+2.1.4
 
