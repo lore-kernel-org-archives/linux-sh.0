@@ -1,41 +1,53 @@
 From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 30 Oct 2015 23:09:15 +0000
-Subject: Re: [PATCH] sh_eth: move inline functions to the header file
-Message-Id: <5633F89B.6000702@cogentembedded.com>
+Date: Thu, 15 Oct 2015 22:39:39 +0000
+Subject: [PATCH v3] DT: mmc: sh_mmcif: fix "compatible" property text
+Message-Id: <2188985.g7lrY44qCa@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4254119.qJUdUQCUqs@wasted.cogentembedded.com>
- <20150407.152249.360575010614186977.davem@davemloft.net>
- <55242F5F.2060409@cogentembedded.com>
- <20150407.153337.1789757717574323514.davem@davemloft.net>
-In-Reply-To: <20150407.153337.1789757717574323514.davem@davemloft.net>
+References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org, ulf.hansson@linaro.org, linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Hello.
+The "compatible" property text contradicts even the example given in the MMCIF
+binding document itself;  moreover, the Renesas MMCIF driver only matches  on
+the generic "compatible" string and doesn't look for the SoC specific strings
+at all. Thus describe "renesas,sh-mmcif" as a fallback value.
 
-On 04/07/2015 10:33 PM, David Miller wrote:
+Fixes: b4c27763d749 ("mmc: sh_mmcif: Document DT bindings")
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
->>>> The explicitly inline functions belong to the header files, so move
->>>> cpu_to_edmac() and edmac_to_cpu() into the driver header.
->>
->>>> While at it, make these functions return 'u32' instead of '__u32'.
->>
->>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>
->>> Then... ummm... remove the inline keyword?
->>
->>> If it's not used anywhere else, that's the thing to do.
->>
->>     Results in more code, as I noted in the patch posting that you skipped
->>     when replying. At least with gcc 4.7.
->
-> That's a compiler bug.
+---
+The patch is against Ulf Hansson's 'mmc.git' repo's 'fixes' or 'next' branches.
 
-    Even worse, these functions support the BE mode which never was used and 
-never worked correctly. I'll just try to remove them altogether.
+Changes in version 3:
+- reworded the "compatible" property description to look like the majority of
+  the Renesas bindings.
 
-MBR, Sergei
+Changes in version 2:
+- kept the SoC specific "compatible" property values mandatory and made the
+  generic string a fallback.
+
+ Documentation/devicetree/bindings/mmc/renesas,mmcif.txt |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+Index: mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+=================================--- mmc.orig/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
++++ mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+@@ -6,11 +6,11 @@ and the properties used by the MMCIF dev
+ 
+ Required properties:
+ 
+-- compatible: must contain one of the following
++- compatible: should be "renesas,mmcif-<soctype>", "renesas,sh-mmcif" as a
++  fallback. Examples with <soctype> are:
+ 	- "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
+ 	- "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
+ 	- "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
+-	- "renesas,sh-mmcif" for the generic MMCIF
+ 
+ - clocks: reference to the functional clock
+ 
 
