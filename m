@@ -1,135 +1,67 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 06:59:33 +0000
-Subject: [PATCH/RFC 2/6] boot-mode-reg: Add R-Car Gen2 driver
-Message-Id: <1444892377-10170-3-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 15 Oct 2015 07:09:13 +0000
+Subject: Re: [PATCH/RFC 2/6] boot-mode-reg: Add R-Car Gen2 driver
+Message-Id: <CAMuHMdWtQ30WrbG89TKRfw7x0gU7UEQXJMvTrqc01h2Ui9L=9Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1444892377-10170-3-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1444892377-10170-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Boot mode register driver for R-Car Gen2.
+On Thu, Oct 15, 2015 at 8:59 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> --- /dev/null
+> +++ b/drivers/misc/boot-mode-reg/rcar-gen2.c
+> @@ -0,0 +1,61 @@
+> +/*
+> + * R-Car Gen2 Boot Mode Register Driver
 
-If running on a supported platform it reads the boot mode register and
-records it using the boot mode register infrastructure established by an
-earlier patch.
+> +#define MODEMR 0xe6160060
 
-rcar_gen2_init_boot_mode() is exported allow it to be explicitly called in
-cases where the boot mode register is needed before init calls are made.
+Shouldn't this come from DT?
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/misc/boot-mode-reg/Kconfig     |  8 +++++
- drivers/misc/boot-mode-reg/Makefile    |  1 +
- drivers/misc/boot-mode-reg/rcar-gen2.c | 61 ++++++++++++++++++++++++++++++++++
- include/misc/boot-mode-reg.h           |  3 ++
- 4 files changed, 73 insertions(+)
- create mode 100644 drivers/misc/boot-mode-reg/rcar-gen2.c
+> +static int __init rcar_gen2_read_mode_pins(void)
+> +{
+> +       void __iomem *modemr;
+> +       int err = -ENOMEM;
+> +       static u32 mode;
+> +
+> +       modemr = ioremap_nocache(MODEMR, 4);
+> +       if (!modemr) {
+> +               pr_err("failed to map boot mode register");
+> +               goto err;
+> +       }
+> +       mode = ioread32(modemr);
+> +       iounmap(modemr);
+> +
+> +       err = boot_mode_reg_set(mode);
+> +err:
+> +       if (err)
+> +               pr_err("failed to initialise boot mode");
+> +       return err;
+> +}
 
-diff --git a/drivers/misc/boot-mode-reg/Kconfig b/drivers/misc/boot-mode-reg/Kconfig
-index 806eba24238f..4731edf8a9db 100644
---- a/drivers/misc/boot-mode-reg/Kconfig
-+++ b/drivers/misc/boot-mode-reg/Kconfig
-@@ -9,3 +9,11 @@ config BOOT_MODE_REG_CORE
- 	help
- 	  Say Y here to allow support for drivers to read boot mode
- 	  registers and make the value available to other subsystems.
-+
-+config BOOT_MODE_REG_RCAR_GEN2
-+	tristate "Boot Mode Register Driver for Renesas R-Car Gen2 SoCs"
-+	default n
-+	select BOOT_MODE_REG_CORE
-+	help
-+	  Say Y here to allow support for reading the boot mode register
-+	  on Renesas R-Car Gen2 SoCs.
-diff --git a/drivers/misc/boot-mode-reg/Makefile b/drivers/misc/boot-mode-reg/Makefile
-index 19134b20a7f1..d097fd0164aa 100644
---- a/drivers/misc/boot-mode-reg/Makefile
-+++ b/drivers/misc/boot-mode-reg/Makefile
-@@ -4,3 +4,4 @@
- #
- 
- obj-$(CONFIG_BOOT_MODE_REG_CORE)	+= core.o
-+obj-$(CONFIG_BOOT_MODE_REG_RCAR_GEN2)	+= rcar-gen2.o
-diff --git a/drivers/misc/boot-mode-reg/rcar-gen2.c b/drivers/misc/boot-mode-reg/rcar-gen2.c
-new file mode 100644
-index 000000000000..0f1a06fcf094
---- /dev/null
-+++ b/drivers/misc/boot-mode-reg/rcar-gen2.c
-@@ -0,0 +1,61 @@
-+/*
-+ * R-Car Gen2 Boot Mode Register Driver
-+ *
-+ * Copyright (C) 2015 Simon Horman
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#include <linux/io.h>
-+#include <linux/module.h>
-+#include <linux/of.h>
-+
-+#include <misc/boot-mode-reg.h>
-+
-+#define MODEMR 0xe6160060
-+
-+static int __init rcar_gen2_read_mode_pins(void)
-+{
-+	void __iomem *modemr;
-+	int err = -ENOMEM;
-+	static u32 mode;
-+
-+	modemr = ioremap_nocache(MODEMR, 4);
-+	if (!modemr) {
-+		pr_err("failed to map boot mode register");
-+		goto err;
-+	}
-+	mode = ioread32(modemr);
-+	iounmap(modemr);
-+
-+	err = boot_mode_reg_set(mode);
-+err:
-+	if (err)
-+		pr_err("failed to initialise boot mode");
-+	return err;
-+}
-+
-+int __init rcar_gen2_init_boot_mode(void)
-+{
-+	if (of_machine_is_compatible("renesas,r8a7790") ||
-+	    of_machine_is_compatible("renesas,r8a7791") ||
-+	    of_machine_is_compatible("renesas,r8a7792") ||
-+	    of_machine_is_compatible("renesas,r8a7793") ||
-+	    of_machine_is_compatible("renesas,r8a7794"))
-+		return rcar_gen2_read_mode_pins();
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL_GPL(boot_mode_set);
-+early_initcall(rcar_gen2_init_boot_mode);
-+
-+MODULE_LICENSE("GPL");
-+MODULE_AUTHOR("Simon Horman <horms@verge.net.au>");
-+MODULE_DESCRIPTION("R-Car Gen2 Boot Mode Register Driver");
-diff --git a/include/misc/boot-mode-reg.h b/include/misc/boot-mode-reg.h
-index 34ee653279a4..f8fea0ea5a3e 100644
---- a/include/misc/boot-mode-reg.h
-+++ b/include/misc/boot-mode-reg.h
-@@ -21,4 +21,7 @@
- int boot_mode_reg_get(u32 *mode);
- int boot_mode_reg_set(u32 mode);
- 
-+/* Allow explicit initialisation before initcalls */
-+int rcar_gen2_init_boot_mode(void);
-+
- #endif
--- 
-2.1.4
+> --- a/include/misc/boot-mode-reg.h
+> +++ b/include/misc/boot-mode-reg.h
+> @@ -21,4 +21,7 @@
+>  int boot_mode_reg_get(u32 *mode);
+>  int boot_mode_reg_set(u32 mode);
+>
+> +/* Allow explicit initialisation before initcalls */
+> +int rcar_gen2_init_boot_mode(void);
 
+When using explicit initialisation before initcalls, the second call will
+trigger a new ioremap/ioread32/iounmap cycle.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
