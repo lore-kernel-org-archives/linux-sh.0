@@ -1,68 +1,41 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 26 Oct 2015 06:01:51 +0000
-Subject: [PATCH v12 6/7] arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
-Message-Id: <1445839312-8874-7-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 00:34:02 +0000
+Subject: [PATCH 1/2] ARM: shmobile: defconfig: enable HDMI output for RCar
+Message-Id: <687dfe660a3eddbd40335694beb0896e26b5bbd9.1444869086.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1444869086.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444869086.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-This patch enables the Renesas R-Car H3 SoC together with the
-SCIF driver in the arm64 defconfig.
+Actviate HDMI output of the RCar DU (and LVDS while we are here).
+Enable the HDMI encoder chip found on Lager/Koelsch boards.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since v10:
-- None
+ arch/arm/configs/shmobile_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
 
-Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
-- None
-
-Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
-- Added Acked-by from Geert
-
-Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
-- Updated changelog
-- Use CONFIG_RENESAS and CONFIG_R8A7795
-
-Based on:
- [PATCH 19/25] arm64: defconfig: renesas: Enable Renesas R-Car Gen3 SoC
- [PATCH 20/25] arm64: defconfig: renesas: enable SCIF
----
- arch/arm64/configs/defconfig | 5 +++++
- 1 file changed, 5 insertions(+)
-
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index 34d71dd86781..dccc685b58ae 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -39,6 +39,8 @@ CONFIG_ARCH_HISI=y
- CONFIG_ARCH_MEDIATEK=y
- CONFIG_ARCH_ROCKCHIP=y
- CONFIG_ARCH_SEATTLE=y
-+CONFIG_ARCH_RENESAS=y
-+CONFIG_ARCH_R8A7795=y
- CONFIG_ARCH_TEGRA=y
- CONFIG_ARCH_TEGRA_132_SOC=y
- CONFIG_ARCH_QCOM=y
-@@ -109,6 +111,9 @@ CONFIG_SERIAL_8250_DW=y
- CONFIG_SERIAL_8250_MT6577=y
- CONFIG_SERIAL_AMBA_PL011=y
- CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
-+CONFIG_SERIAL_SH_SCI=y
-+CONFIG_SERIAL_SH_SCI_NR_UARTS
-+CONFIG_SERIAL_SH_SCI_CONSOLE=y
- CONFIG_SERIAL_MSM=y
- CONFIG_SERIAL_MSM_CONSOLE=y
- CONFIG_SERIAL_OF_PLATFORM=y
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 0bdeb4925be4..3aef019c0de7 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -140,7 +140,10 @@ CONFIG_VIDEO_RENESAS_VSP1=y
+ CONFIG_VIDEO_ADV7180=y
+ CONFIG_VIDEO_ML86V7667=y
+ CONFIG_DRM=y
++CONFIG_DRM_I2C_ADV7511=y
+ CONFIG_DRM_RCAR_DU=y
++CONFIG_DRM_RCAR_HDMI=y
++CONFIG_DRM_RCAR_LVDS=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
+ CONFIG_FB_SH_MOBILE_MERAM=y
+ # CONFIG_LCD_CLASS_DEVICE is not set
 -- 
 2.1.4
 
