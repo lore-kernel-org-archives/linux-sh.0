@@ -1,52 +1,68 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 30 Oct 2015 23:05:56 +0000
-Subject: [PATCH v2 1/2] sh_eth: fix uninitialized arrays in sh_eth_ring_init()
-Message-Id: <3283850.HAForN0Wed@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 06:23:55 +0000
+Subject: [PATCH v11 0/8] arm64: renesas: Add Renesas R8A7795 SoC support
+Message-Id: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <3291270.dPgp9opalf@wasted.cogentembedded.com>
-In-Reply-To: <3291270.dPgp9opalf@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-sh_eth_ring_free()  called in the sh_eth_ring_init()'s error path expects
-the arrays pointed  to  by 'sh_eth_private::[rt]x_skbuff' to be initialized
-with NULLs but they are allocated with just kmalloc_array() and so are left
-filled with random data. Use kcalloc() instead.
+Hi,
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+this pathcset adds basic support for the Renesas R-Car H3 (R8A7795) SoC
+and its Saovator-X board.
 
----
-Changes in version 2:
-- fixed grammar in the change log reformatting it.
+This series has undergone a number of rounds of development and review
+on the linux-sh mailing list. This is the first posting to a wider audience
+from which we are now seeking review.
 
-drivers/net/ethernet/renesas/sh_eth.c |    8 ++++----
- drivers/net/ethernet/renesas/sh_eth.c |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+It is anticpated that the CPG bindings used this patchset will be
+changed before they hit mainline and thus this patchset will need
+to be updated accordinly. Reviwers are advised to skip over that portion
+of this patchset unless they have a particlar interest in that discussion.
 
-Index: net/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1212,15 +1212,15 @@ static int sh_eth_ring_init(struct net_d
- 		mdp->rx_buf_sz += NET_IP_ALIGN;
- 
- 	/* Allocate RX and TX skb rings */
--	mdp->rx_skbuff = kmalloc_array(mdp->num_rx_ring,
--				       sizeof(*mdp->rx_skbuff), GFP_KERNEL);
-+	mdp->rx_skbuff = kcalloc(mdp->num_rx_ring, sizeof(*mdp->rx_skbuff),
-+				 GFP_KERNEL);
- 	if (!mdp->rx_skbuff) {
- 		ret = -ENOMEM;
- 		return ret;
- 	}
- 
--	mdp->tx_skbuff = kmalloc_array(mdp->num_tx_ring,
--				       sizeof(*mdp->tx_skbuff), GFP_KERNEL);
-+	mdp->tx_skbuff = kcalloc(mdp->num_tx_ring, sizeof(*mdp->tx_skbuff),
-+				 GFP_KERNEL);
- 	if (!mdp->tx_skbuff) {
- 		ret = -ENOMEM;
- 		goto skb_ring_free;
+
+Based on v4.3-rc1.
+
+Further run-time dependencies are included in the
+topic/gen3-latest branch of Geert Uytterhoeven's renesas-drivers tree.
+which currently includes these patches less the MAINTAINERS update.
+
+To aid review (and Geert's branch preparation) this series is available in
+the topic/arm64-rcar-gen3-v11 branch of the my renesas tree.
+
+Gaku Inami (1):
+  arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
+
+Geert Uytterhoeven (3):
+  arm64: renesas: r8a7795 dtsi: Add all common divider clocks
+  arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
+  arm64: renesas: r8a7795 dtsi: Add all SCIF nodes
+
+Kuninori Morimoto (3):
+  arm64: renesas: r8a7795: enable PFC
+  arm64: renesas: add Salvator-X board support on DTS
+  arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
+
+Simon Horman (1):
+  MAINTAINERS: Add entry Renesas arm64 architecture
+
+ Documentation/devicetree/bindings/arm/shmobile.txt |   4 +
+ MAINTAINERS                                        |  10 +
+ arch/arm64/Kconfig.platforms                       |  17 +
+ arch/arm64/boot/dts/Makefile                       |   1 +
+ arch/arm64/boot/dts/renesas/Makefile               |   4 +
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |  62 ++++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 384 +++++++++++++++++++++
+ arch/arm64/configs/defconfig                       |   5 +
+ include/dt-bindings/clock/r8a7795-clock.h          |  44 +++
+ 9 files changed, 531 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/renesas/Makefile
+ create mode 100644 arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+ create mode 100644 arch/arm64/boot/dts/renesas/r8a7795.dtsi
+ create mode 100644 include/dt-bindings/clock/r8a7795-clock.h
+
+-- 
+2.1.4
 
