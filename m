@@ -1,45 +1,95 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 01 Oct 2015 07:22:18 +0000
-Subject: [PATCH 2/2] dmaengine: usb-dmac: Fix pm_runtime_{enable,disable}() imbalance
-Message-Id: <1443684138-32252-3-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 06:59:34 +0000
+Subject: [PATCH/RFC 3/6] arm: shmobile: rcar-gen2: Obtain MD pin value using boot-mode-reg
+Message-Id: <1444892377-10170-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443684138-32252-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1443684138-32252-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, dmaengine@vger.kernel.org, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-If the call to pm_runtime_get_sync() failed, Runtime PM was left
-enabled.
+Use new boot mode reg infrastructure to obtain the mode pin
+value for initialising arch timer for R-Car Gen2 SoCs.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Subsequent patches will remove other calls to rcar_gen2_read_mode_pins()
+and in turn that function.
+
+rcar_gen2_init_boot_mode() is called to implicitly initialise
+the R-Car Gen2 boot mod register driver as rcar_gen2_timer_init()
+is run before initcalls.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/dma/sh/usb-dmac.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/Kconfig           |  1 +
+ arch/arm/mach-shmobile/setup-rcar-gen2.c | 24 +++++++++++++++++++++---
+ 2 files changed, 22 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/dma/sh/usb-dmac.c b/drivers/dma/sh/usb-dmac.c
-index f305738b5adf8cc9..f1bcc2a163b30cef 100644
---- a/drivers/dma/sh/usb-dmac.c
-+++ b/drivers/dma/sh/usb-dmac.c
-@@ -802,7 +802,7 @@ static int usb_dmac_probe(struct platform_device *pdev)
- 	ret = pm_runtime_get_sync(&pdev->dev);
- 	if (ret < 0) {
- 		dev_err(&pdev->dev, "runtime PM get sync failed (%d)\n", ret);
--		return ret;
-+		goto error_pm;
- 	}
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 88734a5e10ca..79b7db5f6417 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -22,6 +22,7 @@ config ARCH_RCAR_GEN2
+ 	select RENESAS_IRQC
+ 	select SYS_SUPPORTS_SH_CMT
+ 	select PCI_DOMAINS if PCI
++	select BOOT_MODE_REG_RCAR_GEN2
  
- 	ret = usb_dmac_init(dmac);
-@@ -859,6 +859,7 @@ static int usb_dmac_probe(struct platform_device *pdev)
- error:
- 	of_dma_controller_free(pdev->dev.of_node);
- 	pm_runtime_put(&pdev->dev);
-+error_pm:
- 	pm_runtime_disable(&pdev->dev);
- 	return ret;
+ config ARCH_RMOBILE
+ 	bool
+diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+index aa3339258d9c..3a2bffd4c1cf 100644
+--- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
++++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+@@ -24,6 +24,7 @@
+ #include <linux/memblock.h>
+ #include <linux/of.h>
+ #include <linux/of_fdt.h>
++#include <misc/boot-mode-reg.h>
+ #include <asm/mach/arch.h>
+ #include "common.h"
+ #include "rcar-gen2.h"
+@@ -49,13 +50,19 @@ u32 rcar_gen2_read_mode_pins(void)
+ #define CNTCR 0
+ #define CNTFID0 0x20
+ 
+-void __init rcar_gen2_timer_init(void)
++void __init rcar_gen2_timer_init_for_arch_timer(void)
+ {
+-	u32 mode = rcar_gen2_read_mode_pins();
+ #ifdef CONFIG_ARM_ARCH_TIMER
+ 	void __iomem *base;
+ 	int extal_mhz = 0;
+-	u32 freq;
++	u32 freq, mode;
++	int err;
++
++	err = boot_mode_reg_get(&mode);
++	if (err) {
++		pr_err("%s: failed obtain boot mode\n", __func__);
++		return;
++	}
+ 
+ 	if (of_machine_is_compatible("renesas,r8a7794")) {
+ 		freq = 260000000 / 8;	/* ZS / 8 */
+@@ -126,7 +133,18 @@ void __init rcar_gen2_timer_init(void)
+ 
+ 	iounmap(base);
+ #endif /* CONFIG_ARM_ARCH_TIMER */
++}
++
++void __init rcar_gen2_timer_init(void)
++{
++	int err;
++	u32 mode = rcar_gen2_read_mode_pins();
++
++	err = rcar_gen2_init_boot_mode();
++	if (err)
++		pr_err("Could not initialise boot mode register driver\n");
+ 
++	rcar_gen2_timer_init_for_arch_timer();
+ 	rcar_gen2_clocks_init(mode);
+ 	clocksource_of_init();
  }
 -- 
-1.9.1
+2.1.4
 
