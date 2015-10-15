@@ -1,107 +1,96 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 07 Oct 2015 10:51:34 +0000
-Subject: [PATCH 2/2] irqchip/renesas-intc-irqpin: Remove intc_irqpin_priv.number_of_irqs
-Message-Id: <1444215094-27159-3-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 06:48:14 +0000
+Subject: [PATCH v5 1/5] arm64: dts: r8a7795: add clock for EthernetAVB
+Message-Id: <1444891698-8780-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444215094-27159-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1444215094-27159-1-git-send-email-geert+renesas@glider.be>
+References: <1444891698-8780-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1444891698-8780-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-intc_irqpin_priv.number_of_irqs is used inside intc_irqpin_probe() only,
-so it can just become a local variable.
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+These clocks will be used by EthernetAVB
+
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+[horms: use s3d2_clk; other minor updates]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
 ---
- drivers/irqchip/irq-renesas-intc-irqpin.c | 21 ++++++++++-----------
- 1 file changed, 10 insertions(+), 11 deletions(-)
+v0 [Kazuya Mizuguchi]
 
-diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
-index 75285ba0edee..1b4e5cc9f7df 100644
---- a/drivers/irqchip/irq-renesas-intc-irqpin.c
-+++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
-@@ -75,7 +75,6 @@ struct intc_irqpin_priv {
- 	struct intc_irqpin_iomem iomem[INTC_IRQPIN_REG_NR];
- 	struct intc_irqpin_irq irq[INTC_IRQPIN_MAX];
- 	unsigned int sense_bitfield_width;
--	unsigned int number_of_irqs;
- 	struct platform_device *pdev;
- 	struct irq_chip irq_chip;
- 	struct irq_domain *irq_domain;
-@@ -385,6 +384,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	void (*disable_fn)(struct irq_data *d);
- 	const char *name = dev_name(dev);
- 	bool control_parent;
-+	unsigned int nirqs;
- 	int ref_irq;
- 	int ret;
- 	int k;
-@@ -435,8 +435,8 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 		p->irq[k].requested_irq = irq->start;
- 	}
+v1 [Simon Horman]
+* updated p_clk to s3d4_clk
+* moved to clock node
+* updated patch subject
+* use R8A7795 as prefix for clock defines
+
+v2 [Simon Horman]
+* As suggested by Geert Uytterhoeven
+  - Use s3d2_clk use it instead: it is now already present in the base
+    of this series
+  - Use R8A7795_CLK_ETHERAVB instead of R8A7795_CLK_AVB
+* As suggested by Kuninori Morimoto and Sergei Shtylyov
+  - Use "clock-indices" instead of "renesas,clock-indices"
+
+v3 [Simon Horman]
+* As suggested by Geert Uytterhoeven
+  - Name clock "etheravb"
+* Add Ack
+
+v4, v5
+* No change
+
+TODO:
+* Drop clock-output-names from mstp8_clks ?
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi  | 12 ++++++++++++
+ include/dt-bindings/clock/r8a7795-clock.h |  1 +
+ 2 files changed, 13 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index e2cc40fa5aa3..6efa49f97e07 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -289,6 +289,17 @@
+ 						"scif2";
+ 					#reset-cells = <1>;
+ 				};
++
++				mstp8_clks: mstp8_clks@e6150990 {
++					compatible = "renesas,r8a7795-mstp-clocks",
++						     "renesas,cpg-mstp-clocks";
++					reg = <0 0xe6150990 0 4>, <0 0xe61509a0 0 4>;
++					clocks =  <&s3d2_clk>;
++					#clock-cells = <1>;
++					clock-indices = <R8A7795_CLK_ETHERAVB>;
++					clock-output-names = "etheravb";
++				};
++
+ 			};
+ 		};
  
--	p->number_of_irqs = k;
--	if (p->number_of_irqs < 1) {
-+	nirqs = k;
-+	if (nirqs < 1) {
- 		dev_err(dev, "not enough IRQ resources\n");
- 		ret = -EINVAL;
- 		goto err0;
-@@ -490,7 +490,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	}
+@@ -381,4 +392,5 @@
+ 			status = "disabled";
+ 		};
+ 	};
++
+ };
+diff --git a/include/dt-bindings/clock/r8a7795-clock.h b/include/dt-bindings/clock/r8a7795-clock.h
+index 51048d79f80d..be8d8192720e 100644
+--- a/include/dt-bindings/clock/r8a7795-clock.h
++++ b/include/dt-bindings/clock/r8a7795-clock.h
+@@ -36,6 +36,7 @@
+ /* MSTP7 */
  
- 	/* mask all interrupts using priority */
--	for (k = 0; k < p->number_of_irqs; k++)
-+	for (k = 0; k < nirqs; k++)
- 		intc_irqpin_mask_unmask_prio(p, k, 1);
+ /* MSTP8 */
++#define R8A7795_CLK_ETHERAVB		12
  
- 	/* clear all pending interrupts */
-@@ -499,7 +499,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	/* scan for shared interrupt lines */
- 	ref_irq = p->irq[0].requested_irq;
- 	p->shared_irqs = true;
--	for (k = 1; k < p->number_of_irqs; k++) {
-+	for (k = 1; k < nirqs; k++) {
- 		if (ref_irq != p->irq[k].requested_irq) {
- 			p->shared_irqs = false;
- 			break;
-@@ -526,9 +526,8 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	irq_chip->irq_set_wake = intc_irqpin_irq_set_wake;
- 	irq_chip->flags	= IRQCHIP_MASK_ON_SUSPEND;
- 
--	p->irq_domain = irq_domain_add_simple(dev->of_node, p->number_of_irqs,
--					      0, &intc_irqpin_irq_domain_ops,
--					      p);
-+	p->irq_domain = irq_domain_add_simple(dev->of_node, nirqs, 0,
-+					      &intc_irqpin_irq_domain_ops, p);
- 	if (!p->irq_domain) {
- 		ret = -ENXIO;
- 		dev_err(dev, "cannot initialize irq domain\n");
-@@ -546,7 +545,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 		}
- 	} else {
- 		/* request interrupts one by one */
--		for (k = 0; k < p->number_of_irqs; k++) {
-+		for (k = 0; k < nirqs; k++) {
- 			if (devm_request_irq(dev, p->irq[k].requested_irq,
- 					     intc_irqpin_irq_handler, 0, name,
- 					     &p->irq[k])) {
-@@ -558,10 +557,10 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	}
- 
- 	/* unmask all interrupts on prio level */
--	for (k = 0; k < p->number_of_irqs; k++)
-+	for (k = 0; k < nirqs; k++)
- 		intc_irqpin_mask_unmask_prio(p, k, 0);
- 
--	dev_info(dev, "driving %d irqs\n", p->number_of_irqs);
-+	dev_info(dev, "driving %d irqs\n", nirqs);
- 
- 	return 0;
+ /* MSTP9 */
  
 -- 
-1.9.1
+2.1.4
 
