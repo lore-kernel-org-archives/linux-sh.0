@@ -1,47 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 02 Oct 2015 02:20:23 +0000
-Subject: Re: [PATCH] ARM: shmobile: dt: Rename incorrect interrupt related binding
-Message-Id: <20151002022023.GA13404@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 00:33:50 +0000
+Subject: [PATCH 2/6] ARM: shmobile: r8a7778: Make r8a7778_init_irq_dt() static
+Message-Id: <20e73335dc35bf5e200173e6ed99f6a2b32f8857.1444868660.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443516188-3308-1-git-send-email-lee.jones@linaro.org>
-In-Reply-To: <1443516188-3308-1-git-send-email-lee.jones@linaro.org>
+References: <cover.1444868660.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444868660.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-[CCed linux-sh, Magnus]
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Tue, Sep 29, 2015 at 09:43:08AM +0100, Lee Jones wrote:
-> interrupts-names => interrupt-names
-> 
-> Other line changes are re-aligning.
-> 
-> Signed-off-by: Lee Jones <lee.jones@linaro.org>
+As of commit 4baadb9e05c68962 ("ARM: shmobile: r8a7778: remove obsolete
+setup code"), r8a7778_init_irq_dt() is no longer used outside
+setup-r8a7778.c.
 
-Thanks, I have queued this up as a cleanup for v4.4.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7778.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-> ---
->  .../bindings/memory-controllers/renesas-memory-controllers.txt      | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/Documentation/devicetree/bindings/memory-controllers/renesas-memory-controllers.txt b/Documentation/devicetree/bindings/memory-controllers/renesas-memory-controllers.txt
-> index c64b792..9f78e6c 100644
-> --- a/Documentation/devicetree/bindings/memory-controllers/renesas-memory-controllers.txt
-> +++ b/Documentation/devicetree/bindings/memory-controllers/renesas-memory-controllers.txt
-> @@ -24,9 +24,9 @@ Required properties:
->  Optional properties:
->    - interrupts: Must contain a list of interrupt specifiers for memory
->  		controller interrupts, if available.
-> -  - interrupts-names: Must contain a list of interrupt names corresponding to
-> -		      the interrupts in the interrupts property, if available.
-> -		      Valid interrupt names are:
-> +  - interrupt-names: Must contain a list of interrupt names corresponding to
-> +		     the interrupts in the interrupts property, if available.
-> +		     Valid interrupt names are:
->  			- "sec" (secure interrupt)
->  			- "temp" (normal (temperature) interrupt)
->    - power-domains: Must contain a reference to the PM domain that the memory
-> -- 
-> 1.9.1
-> 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index b0c9986d022d..0ab9d3272875 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -42,7 +42,8 @@ static void __init r8a7778_timer_init(void)
+ 
+ #define INT2NTSR0	0x00018 /* 0xfe700018 */
+ #define INT2NTSR1	0x0002c /* 0xfe70002c */
+-void __init r8a7778_init_irq_dt(void)
++
++static void __init r8a7778_init_irq_dt(void)
+ {
+ 	void __iomem *base = ioremap_nocache(0xfe700000, 0x00100000);
+ 
+-- 
+2.1.4
+
