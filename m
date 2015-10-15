@@ -1,61 +1,99 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 23 Oct 2015 00:18:51 +0000
-Subject: Re: [PATCH 14/19] ARM: dts: shmobile/r8a7xxx: replace gpio-key,wakeup with wakeup-source property
-Message-Id: <20151023001851.GA15844@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 06:48:15 +0000
+Subject: [PATCH v5 2/5] arm64: dts: r8a7795: add EthernetAVB device node
+Message-Id: <1444891698-8780-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445422216-29375-1-git-send-email-sudeep.holla@arm.com>
- <1445422216-29375-15-git-send-email-sudeep.holla@arm.com>
- <CAMuHMdXpY7gSOPAGxh9Z_LurpL392y7Vx0pBe-FqfauXjVnMFQ@mail.gmail.com>
- <56276787.6090900@arm.com> <20151022005051.GD8879@verge.net.au>
- <5628AE72.3020809@arm.com>
-In-Reply-To: <5628AE72.3020809@arm.com>
+References: <1444891698-8780-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1444891698-8780-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 22, 2015 at 10:37:54AM +0100, Sudeep Holla wrote:
-> 
-> 
-> On 22/10/15 01:50, Simon Horman wrote:
-> >On Wed, Oct 21, 2015 at 11:23:03AM +0100, Sudeep Holla wrote:
-> >>
-> >>
-> >>On 21/10/15 11:18, Geert Uytterhoeven wrote:
-> >>>On Wed, Oct 21, 2015 at 12:10 PM, Sudeep Holla <sudeep.holla@arm.com> wrote:
-> >>>>Though the keyboard driver for GPIO buttons(gpio-keys) will continue to
-> >>>>check for/support the legacy "gpio-key,wakeup" boolean property to
-> >>>>enable gpio buttons as wakeup source, "wakeup-source" is the new
-> >>>>standard binding.
-> >>>>
-> >>>>This patch replaces the legacy "gpio-key,wakeup" with the unified
-> >>>>"wakeup-source" property in order to avoid any futher copy-paste
-> >>>>duplication.
-> >>>
-> >>>Thanks!
-> >>>
-> >>>I made the same changes to my local tree a few weeks ago, but never found
-> >>>time to send them out...
-> >>>
-> >>
-> >>Ah OK, even I had these changes for long. I waited until I fixed all the
-> >>binding documents(which was boring ;))
-> >>
-> >>>>Cc: Simon Horman <horms@verge.net.au>
-> >>>>Cc: Magnus Damm <magnus.damm@gmail.com>
-> >>>>Cc: linux-sh@vger.kernel.org
-> >>>>Signed-off-by: Sudeep Holla <sudeep.holla@arm.com>
-> >>>
-> >>>Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >
-> >Can I clarify that you would like me to pick up this patch?
-> >If so I'm happy to do so.
-> >
-> 
-> Yes you can pick up this patch as it has no dependency on driver changes.
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Thanks, I have queued this up for v4.5.
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+[horms: minor updates]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-It should appear in the devel branch of the renesas tree some time today.
-I will include it in the next branch, which is included in the linux-next
-tree, once v4.4-rc1 has been released.
+---
+v0 [Kazuya Mizuguchi]
+
+v1 [Simon Horman]
+* moved to soc node
+* updated patch subject
+
+v2 [Simon Horman]
+* Specify all interrupts
+* Use named interrupts
+* Rebase
+* Remove spurious whitespace change introduce in v1
+
+v3 [Simon Horman]
+* As suggested by Geert Uytterhoeven
+  - Add power-domains property
+* Added Ack
+
+v4, v5
+* No change
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 42 ++++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 6efa49f97e07..63bc74e89fa4 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -312,6 +312,48 @@
+ 			/* Empty node for now */
+ 		};
+ 
++		avb: ethernet@e6800000 {
++			compatible = "renesas,etheravb-r8a7795";
++			reg = <0 0xe6800000 0 0x800>, <0 0xe6a00000 0 0x10000>;
++			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 54 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "ch0", "ch1", "ch2", "ch3",
++					  "ch4", "ch5", "ch6", "ch7",
++					  "ch8", "ch9", "ch10", "ch11",
++					  "ch12", "ch13", "ch14", "ch15",
++					  "ch16", "ch17", "ch18", "ch19",
++					  "ch20", "ch21", "ch22", "ch23",
++					  "ch24";
++			clocks = <&mstp8_clks R8A7795_CLK_ETHERAVB>;
++			power-domains = <&cpg_clocks>;
++			phy-mode = "rgmii-id";
++			#address-cells = <1>;
++			#size-cells = <0>;
++		};
++
+ 		dmac1: dma-controller@e7300000 {
+ 			/* Empty node for now */
+ 		};
+-- 
+2.1.4
+
