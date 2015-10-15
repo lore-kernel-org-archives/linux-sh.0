@@ -1,12 +1,16 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 09 Oct 2015 21:40:31 +0000
-Subject: [PATCH v2] ARM: shmobile: porter: add QSPI DT support
-Message-Id: <2106212.7FLXjWMUMh@wasted.cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 00:34:16 +0000
+Subject: [PATCH 5/7] ARM: shmobile: porter: add QSPI DT support
+Message-Id: <2685a2cefe6bcd17e6b407799f41369c7dad422d.1444868963.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1444868963.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444868963.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
+
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 Define the Porter board dependent part of the QSPI device node.
 Add device nodes  for Spansion  S25FL512S SPI flash and the MTD partitions
@@ -17,20 +21,15 @@ shmobile: henninger: add QSPI DT support")  as there are no differences
 between the boards in this respect.
 
 Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-This patch is against 'renesas-devel-20151008-v4.3-rc4' tag of Simon Horman's
-'renesas.git' repo plus the Porter I2C2 and VIN0/ADV7180 patches posted earlier.
-
-Changes in version 2:
-- fixed the commit citing style and reformatted that whole paragraph.
-
- arch/arm/boot/dts/r8a7791-porter.dts |   38 +++++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7791-porter.dts | 38 ++++++++++++++++++++++++++++++++++++
  1 file changed, 38 insertions(+)
 
-Index: renesas/arch/arm/boot/dts/r8a7791-porter.dts
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-porter.dts
-+++ renesas/arch/arm/boot/dts/r8a7791-porter.dts
+diff --git a/arch/arm/boot/dts/r8a7791-porter.dts b/arch/arm/boot/dts/r8a7791-porter.dts
+index b7fa8261e02f..4eebc67773d2 100644
+--- a/arch/arm/boot/dts/r8a7791-porter.dts
++++ b/arch/arm/boot/dts/r8a7791-porter.dts
 @@ -110,6 +110,11 @@
  		renesas,function = "sdhi2";
  	};
@@ -83,4 +82,6 @@ Index: renesas/arch/arm/boot/dts/r8a7791-porter.dts
  &i2c2 {
  	pinctrl-0 = <&i2c2_pins>;
  	pinctrl-names = "default";
+-- 
+2.1.4
 
