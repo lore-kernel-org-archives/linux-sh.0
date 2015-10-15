@@ -1,53 +1,45 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 12 Oct 2015 06:54:31 +0000
-Subject: [RFC v2 0/5] RCLK watchdog driver
-Message-Id: <1444632876-2672-1-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 15 Oct 2015 00:34:17 +0000
+Subject: [PATCH 6/7] ARM: shmobile: porter: enable PCIe
+Message-Id: <f9953c5e2a84ffc309ca5f6a281528907a3c8a39.1444868963.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1444868963.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1444868963.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Okay, here is my recent version of the RCLK watchdog driver. It still works for
-me only in UP on a r8a7790 ES1 Lager Board. So, this is why it is RFC only. The
-complete branch with DTS updates can be found in this branch:
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/wdt-on-4.3
+Enable the PCIe controller and clock for the Porter board.
 
-I'll do another version with proper timeout handling. And then I'll investigate
-what it needs to reuse this driver on r7s72100 Genmai. Maybe we can get this
-driver upstream via this way.
+This patch is analogous to the commit 485f3ce67c11 ("ARM: shmobile:
+henninger: Enable PCIe Controller & PCIe bus clock") as there are no
+differences between the boards in this respect.
 
-Changes since last version:
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7791-porter.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-* rebase to renesas-devel-20151008-v4.3-rc4
-* populate timeout value for read
-* use 0xffff to trigger reset
-* properly populate parent device
-
-Cheers,
-
-   Wolfram
-
-
-Wolfram Sang (5):
-  ARM: shmobile: r8a7790: add mstp4 and rwdt clock
-  ARM: shmobile: r8a7790: add node for rwdt
-  ARM: shmobile: r8a7790: lager: enable rwdt
-  ARM: shmobile: r8a7790: let rst module allow watchdog resets if
-    desired
-  watchdog: sh_mobile: add driver
-
- arch/arm/boot/dts/r8a7790-lager.dts       |   4 +
- arch/arm/boot/dts/r8a7790.dtsi            |  16 ++-
- arch/arm/mach-shmobile/setup-rcar-gen2.c  |  17 ++-
- drivers/watchdog/Kconfig                  |   8 ++
- drivers/watchdog/Makefile                 |   1 +
- drivers/watchdog/sh_mobile_wdt.c          | 187 ++++++++++++++++++++++++++++++
- include/dt-bindings/clock/r8a7790-clock.h |   1 +
- 7 files changed, 230 insertions(+), 4 deletions(-)
- create mode 100644 drivers/watchdog/sh_mobile_wdt.c
-
+diff --git a/arch/arm/boot/dts/r8a7791-porter.dts b/arch/arm/boot/dts/r8a7791-porter.dts
+index 4eebc67773d2..c46aad3954f4 100644
+--- a/arch/arm/boot/dts/r8a7791-porter.dts
++++ b/arch/arm/boot/dts/r8a7791-porter.dts
+@@ -244,3 +244,11 @@
+ 		};
+ 	};
+ };
++
++&pcie_bus_clk {
++	status = "okay";
++};
++
++&pciec {
++	status = "okay";
++};
 -- 
 2.1.4
 
