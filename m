@@ -1,26 +1,43 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 02 Oct 2015 08:59:26 +0000
-Subject: Re: [RESEND PATCH v2 0/3] bockw SD pull-ups
-Message-Id: <CACRpkdZnGEAnHR0atkH1e-eOfcdmEedVS4B=iRRiAjUa9sSbKw@mail.gmail.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 16 Oct 2015 20:27:29 +0000
+Subject: [PATCH] [media] sh-vou: clarify videobuf2 dependency
+Message-Id: <9667468.98avsAXYlo@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 16, 2015 at 8:58 AM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
+The sh-vou driver has been converted from videobuf to videobuf2, but
+the Kconfig file still lists VIDEOBUF_DMA_CONTIG as a dependency.
+Consequently we can build the driver without VIDEOBUF2_DMA_CONTIG
+and get a link error:
 
-> This series implements pull-up configuration in the r8a7778 PFC driver
-> and sets the SD0_WP and SD0_CD pull-ups on the Bock-W board correctly,
-> replacing the hack that is used in the legacy platforms.
->
-> This has been rebased and is otherwise identical to the previously posted
-> v2.  Linus was going to pick up the PFC parts pending a review by Laurent.
+drivers/built-in.o: In function `sh_vou_probe':
+vf610-ocotp.c:(.text+0x2dbf5c): undefined reference to `vb2_dma_contig_init_ctx'
+vf610-ocotp.c:(.text+0x2dc0b4): undefined reference to `vb2_dma_contig_cleanup_ctx'
+vf610-ocotp.c:(.text+0x2dc144): undefined reference to `vb2_dma_contig_memops'
+drivers/built-in.o: In function `sh_vou_remove':
+vf610-ocotp.c:(.text+0x2dc190): undefined reference to `vb2_dma_contig_cleanup_ctx'
 
-Geert is picking stuff up now, as I needed help with SH PFC.
+This changes the dependency to VIDEOBUF2_DMA_CONTIG instead.
 
-Acked-by for this series, Geert is gateway maintainer.
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Fixes: 57af3ad59d95 ("[media] sh-vou: convert to vb2")
+---
+Found on ARM randconfig tests
 
-Yours,
-Linus Walleij
+diff --git a/drivers/media/platform/Kconfig b/drivers/media/platform/Kconfig
+index f88a6cfb7086..3ddf72f2d844 100644
+--- a/drivers/media/platform/Kconfig
++++ b/drivers/media/platform/Kconfig
+@@ -38,7 +38,7 @@ config VIDEO_SH_VOU
+ 	depends on MEDIA_CAMERA_SUPPORT
+ 	depends on VIDEO_DEV && I2C && HAS_DMA
+ 	depends on ARCH_SHMOBILE || COMPILE_TEST
+-	select VIDEOBUF_DMA_CONTIG
++	select VIDEOBUF2_DMA_CONTIG
+ 	help
+ 	  Support for the Video Output Unit (VOU) on SuperH SoCs.
+ 
+
