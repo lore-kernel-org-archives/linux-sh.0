@@ -1,53 +1,36 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 15 Oct 2015 22:39:39 +0000
-Subject: [PATCH v3] DT: mmc: sh_mmcif: fix "compatible" property text
-Message-Id: <2188985.g7lrY44qCa@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 16 Oct 2015 06:42:14 +0000
+Subject: Re: [PATCH v3] DT: mmc: sh_mmcif: fix "compatible" property text
+Message-Id: <CAMuHMdXoXQKFS4Z6k4n6dfhgLbMzzVhURyZ=HxVoQFZRaeZu5w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
+	<2188985.g7lrY44qCa@wasted.cogentembedded.com>
+In-Reply-To: <2188985.g7lrY44qCa@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org, ulf.hansson@linaro.org, linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>, Linux MMC List <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-The "compatible" property text contradicts even the example given in the MMCIF
-binding document itself;  moreover, the Renesas MMCIF driver only matches  on
-the generic "compatible" string and doesn't look for the SoC specific strings
-at all. Thus describe "renesas,sh-mmcif" as a fallback value.
+On Fri, Oct 16, 2015 at 12:39 AM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> The "compatible" property text contradicts even the example given in the MMCIF
+> binding document itself;  moreover, the Renesas MMCIF driver only matches  on
+> the generic "compatible" string and doesn't look for the SoC specific strings
+> at all. Thus describe "renesas,sh-mmcif" as a fallback value.
+>
+> Fixes: b4c27763d749 ("mmc: sh_mmcif: Document DT bindings")
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Fixes: b4c27763d749 ("mmc: sh_mmcif: Document DT bindings")
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
----
-The patch is against Ulf Hansson's 'mmc.git' repo's 'fixes' or 'next' branches.
+Gr{oetje,eeting}s,
 
-Changes in version 3:
-- reworded the "compatible" property description to look like the majority of
-  the Renesas bindings.
+                        Geert
 
-Changes in version 2:
-- kept the SoC specific "compatible" property values mandatory and made the
-  generic string a fallback.
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
- Documentation/devicetree/bindings/mmc/renesas,mmcif.txt |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-Index: mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-=================================--- mmc.orig/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-+++ mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-@@ -6,11 +6,11 @@ and the properties used by the MMCIF dev
- 
- Required properties:
- 
--- compatible: must contain one of the following
-+- compatible: should be "renesas,mmcif-<soctype>", "renesas,sh-mmcif" as a
-+  fallback. Examples with <soctype> are:
- 	- "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
- 	- "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
- 	- "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
--	- "renesas,sh-mmcif" for the generic MMCIF
- 
- - clocks: reference to the functional clock
- 
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
