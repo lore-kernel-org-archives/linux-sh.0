@@ -1,31 +1,32 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Tue, 27 Oct 2015 10:18:33 +0000
-Subject: Re: [PATCH v2] pinctrl: sh-pfc: Improve pinmux macros documentation
-Message-Id: <CACRpkdYDZ9SZ8qTx4Ly3QtnKfwkxJc-yRHPeWaGjVE0Nqpy12Q@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 16 Oct 2015 15:18:27 +0000
+Subject: [PATCH] clk: shmobile: mstp: Drop bogus closing parenthesis in error message
+Message-Id: <1445008707-27922-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445368482-24278-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1445368482-24278-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, =?UTF-8?Q?Niklas_S=C3=B6derlund?= <niso@kth.se>, Koji Matsuoka <koji.matsuoka.xm@rms.renesas.com>, Magnus Damm <damm@opensource.se>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+To: Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-clk@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Tue, Oct 20, 2015 at 9:14 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/clk/shmobile/clk-mstp.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> Fix some s/ispr/ipsr/ typos in macro parameters while we're at it.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> v2:
->   - Clarify same width vs. different widths,
->   - Mention GPSR for PINMUX_IPSR_DATA(),
->   - Document NOGM (= NOGP + MSEL),
->   - Fix s/ispr/ipsr/ typos.
+diff --git a/drivers/clk/shmobile/clk-mstp.c b/drivers/clk/shmobile/clk-mstp.c
+index a0a56e99882ac9ab..3b09716ebda28227 100644
+--- a/drivers/clk/shmobile/clk-mstp.c
++++ b/drivers/clk/shmobile/clk-mstp.c
+@@ -214,7 +214,7 @@ static void __init cpg_mstp_clocks_init(struct device_node *np)
+ 			break;
+ 
+ 		if (clkidx >= MSTP_MAX_CLOCKS) {
+-			pr_err("%s: invalid clock %s %s index %u)\n",
++			pr_err("%s: invalid clock %s %s index %u\n",
+ 			       __func__, np->name, name, clkidx);
+ 			continue;
+ 		}
+-- 
+1.9.1
 
-Acked-by, I guess you're continuing to collect patches. This one
-could use Lauren'ts ACK.
-
-Yours,
-Linus Walleij
