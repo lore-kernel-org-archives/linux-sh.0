@@ -1,31 +1,40 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Thu, 29 Oct 2015 19:58:11 +0000
-Subject: Re: [PATCH 0/2] sh_eth: RX buffer alignment fixes
-Message-Id: <56327A53.5050307@cogentembedded.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 16 Oct 2015 14:34:20 +0000
+Subject: Re: [PATCH/RFC v2] sh-pfc: r8a7795: add EtherAVB support
+Message-Id: <CACRpkdbAU10yAeZPgrXdxHQuyviXs55LWAsa54M9jDMmObM-5A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2249923.hKhT9K6gME@wasted.cogentembedded.com>
- <20151026.183250.557722955674085633.davem@davemloft.net>
-In-Reply-To: <20151026.183250.557722955674085633.davem@davemloft.net>
+References: <1442556001-7041-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1442556001-7041-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: Simon Horman <horms+renesas@verge.net.au>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Hello.
+On Fri, Sep 18, 2015 at 8:00 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
 
-On 10/27/2015 04:32 AM, David Miller wrote:
-
->>     Here's a set of 2 patches against DaveM's 'net.git' repo which are the fixes
->> to the RX buffer size calculation.
->>
->> [1/2] sh_eth: fix RX buffer size alignment
->> [2/2] sh_eth: fix RX buffer size calculation
+> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 >
-> Series applied, thanks.
+> This patch adds EthernetAVB
+>
+> Based on a much lager patch by Takeshi Kihara which was
+> originally posted by Kuninori Morimoto.
+>
+> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> [horms: extracted from a larger patch;
+>         corrected swapped {MATCH,CAPTURE_A} pins]
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>
+> ---
+> v2
+> * Added Reviewed-by
 
-    Will you queue these for stable?
-    (I have some more fixes brewing...) :-)
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
-MBR, Sergei
+I assume Geert will send me this as a pull request.
 
+Yours,
+Linus Walleij
