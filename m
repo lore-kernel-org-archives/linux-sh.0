@@ -1,34 +1,32 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 30 Oct 2015 02:29:36 +0000
-Subject: [PATCH] arm64: renesas: salvator-x: add missing AUDIO_CLKx/AUDIO_CLKOUTx
-Message-Id: <87a8r1gkkk.wl%kuninori.morimoto.gx@renesas.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 16 Oct 2015 14:36:08 +0000
+Subject: Re: [PATCH 3/3 v2] pinctrl: sh-pfc: r8a7795: add Audio SSI pin support
+Message-Id: <CACRpkdY42J5AcPx1W52vWAcp9f1w0UA3K+Neoa-SwdrO7FwEQw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87twqs1osz.wl%kuninori.morimoto.gx@renesas.com>
+	<87si6c1org.wl%kuninori.morimoto.gx@renesas.com>
+	<87oah01ooe.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87oah01ooe.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Simon <horms@verge.net.au>, Laurent <laurent.pinchart@ideasonboard.com>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Fri, Sep 18, 2015 at 3:54 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+> v1 -> v2
+>
+>  - tidyup naming format
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index ba31bdc..f3b8dbf 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -102,7 +102,8 @@
- 	};
- 
- 	sound_clk_pins: sound_clk {
--		renesas,groups = "audio_clkout3_a";
-+		renesas,groups = "audio_clk_a_a", "audio_clk_b_a", "audio_clk_c_a",
-+				 "audio_clkout_a", "audio_clkout3_a";
- 		renesas,function = "audio_clk";
- 	};
- 
--- 
-1.9.1
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
+Geert will bring this to me.
+
+Yours,
+Linus Walleij
