@@ -1,67 +1,99 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 30 Oct 2015 15:47:51 +0000
-Subject: Re: [PATCH/RFC 2/6] boot-mode-reg: Add R-Car Gen2 driver
-Message-Id: <1457864.DILdaN6aDz@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 16 Oct 2015 12:49:17 +0000
+Subject: [PATCH v4 2/5] [RFC] clk: shmobile: Add r8a7795 CPG Core Clock Definitions
+Message-Id: <1444999760-15750-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444892377-10170-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1444892377-10170-3-git-send-email-horms+renesas@verge.net.au>
+References: <1444999760-15750-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1444999760-15750-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms+renesas@verge.net.au>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>
+Cc: linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Simon,
+Add all R-Car H3 CPG Core Clock Outputs defined in the datasheet.
 
-On Monday 26 October 2015 14:50:08 Simon Horman wrote:
-> On Fri, Oct 23, 2015 at 03:37:46PM +0300, Laurent Pinchart wrote:
-> > On Thursday 15 October 2015 16:59:18 Simon Horman wrote:
-> >> On Thu, Oct 15, 2015 at 09:09:13AM +0200, Geert Uytterhoeven wrote:
-> >>> On Thu, Oct 15, 2015 at 8:59 AM, Simon Horman wrote:
-> >>>> --- /dev/null
-> >>>> +++ b/drivers/misc/boot-mode-reg/rcar-gen2.c
-> >>>> @@ -0,0 +1,61 @@
-> >>>> +/*
-> >>>> + * R-Car Gen2 Boot Mode Register Driver
-> >>>> 
-> >>>> +#define MODEMR 0xe6160060
-> >>> 
-> >>> Shouldn't this come from DT?
-> >> 
-> >> If its a property of the SoC then I'm not sure that it needs to as its a
-> >> known value for the supported SoCs.
-> > 
-> > Hypervisors (at least Xen) use DT to initialize memory mappings. I believe
-> > we should thus describe the RST IP in DT and create an rcar-rst driver
-> > that includes the code from this patch.
-> 
-> So we would add a binding, say a compat string and a register range.
-> That might look like this:
-> 
-> 	rst: reset-controller@e6160000 {
-> 		compatible = "renesas,rst-r8a7795", "syscon";
-> 		reg = <0 0xe6160000 0 0x0200>;
-> 	};
-> 
-> The above is copped from Geerts earlier work
-> "[PATCH 1/6]  reset: Add renesas,rst DT bindings"
-> 
-> http://www.spinics.net/lists/linux-sh/msg44800.html:
-> 
-> Is that binding what we are after?
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v4:
+  - Add all clocks instead of just the ones used by the current DTS.
 
-That's exactly it, except that as we'll have a proper API to retrieve the boot 
-mode we won't need the "syscon" compatible string.
+v3:
+  - New.
+---
+ include/dt-bindings/clock/r8a7795-cpg-mssr.h | 63 ++++++++++++++++++++++++++++
+ 1 file changed, 63 insertions(+)
+ create mode 100644 include/dt-bindings/clock/r8a7795-cpg-mssr.h
 
-> Would the driver do anything beyond what it currently does + using an offset
-> to the base of its register range instead of the hardcoded MODEMR value (and
-> changes discussed elswhere in this thread, e.g. to use soemthing like
-> CLK_OF_DECLARE) ?
-
-It should handle CPU reset in the future, but for now your description is all 
-that would need to be implemented.
-
+diff --git a/include/dt-bindings/clock/r8a7795-cpg-mssr.h b/include/dt-bindings/clock/r8a7795-cpg-mssr.h
+new file mode 100644
+index 0000000000000000..e864aae0a2561c4b
+--- /dev/null
++++ b/include/dt-bindings/clock/r8a7795-cpg-mssr.h
+@@ -0,0 +1,63 @@
++/*
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++#ifndef __DT_BINDINGS_CLOCK_R8A7795_CPG_MSSR_H__
++#define __DT_BINDINGS_CLOCK_R8A7795_CPG_MSSR_H__
++
++#include <dt-bindings/clock/renesas-cpg-mssr.h>
++
++/* r8a7795 CPG Core Clocks */
++#define R8A7795_CLK_Z			0
++#define R8A7795_CLK_Z2			1
++#define R8A7795_CLK_ZR			2
++#define R8A7795_CLK_ZG			3
++#define R8A7795_CLK_ZTR			4
++#define R8A7795_CLK_ZTRD2		5
++#define R8A7795_CLK_ZT			6
++#define R8A7795_CLK_ZX			7
++#define R8A7795_CLK_S0D1		8
++#define R8A7795_CLK_S0D4		9
++#define R8A7795_CLK_S1D1		10
++#define R8A7795_CLK_S1D2		11
++#define R8A7795_CLK_S1D4		12
++#define R8A7795_CLK_S2D1		13
++#define R8A7795_CLK_S2D2		14
++#define R8A7795_CLK_S2D4		15
++#define R8A7795_CLK_S3D1		16
++#define R8A7795_CLK_S3D2		17
++#define R8A7795_CLK_S3D4		18
++#define R8A7795_CLK_LB			19
++#define R8A7795_CLK_CL			20
++#define R8A7795_CLK_ZB3			21
++#define R8A7795_CLK_ZB3D2		22
++#define R8A7795_CLK_CR			23
++#define R8A7795_CLK_CRD2		24
++#define R8A7795_CLK_SD0H		25
++#define R8A7795_CLK_SD0			26
++#define R8A7795_CLK_SD1H		27
++#define R8A7795_CLK_SD1			28
++#define R8A7795_CLK_SD2H		29
++#define R8A7795_CLK_SD2			30
++#define R8A7795_CLK_SD3H		31
++#define R8A7795_CLK_SD3			32
++#define R8A7795_CLK_SSP2		33
++#define R8A7795_CLK_SSP1		34
++#define R8A7795_CLK_SSPRS		35
++#define R8A7795_CLK_RPC			36
++#define R8A7795_CLK_RPCD2		37
++#define R8A7795_CLK_MSO			38
++#define R8A7795_CLK_CANFD		39
++#define R8A7795_CLK_HDMI		40
++#define R8A7795_CLK_CSI0		41
++#define R8A7795_CLK_CSIREF		42
++#define R8A7795_CLK_CP			43
++#define R8A7795_CLK_CPEX		44
++#define R8A7795_CLK_R			45
++#define R8A7795_CLK_OSC			46
++
++#endif /* __DT_BINDINGS_CLOCK_R8A7795_CPG_MSSR_H__ */
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
