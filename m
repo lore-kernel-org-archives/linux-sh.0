@@ -1,93 +1,52 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 30 Oct 2015 11:19:34 +0000
-Subject: Re: [PATCH v12 1/7] arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
-Message-Id: <CAMuHMdWD0CXSoSgqzuDU7sdyqaBFWb3wQSPOxYxSvwJbhwRhwQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 16 Oct 2015 15:14:55 +0000
+Subject: [PATCH] clk: shmobile: r8a7778: Make r8a7778_rates[] and r8a7778_divs[] static const
+Message-Id: <1445008495-27708-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
- <1445839312-8874-2-git-send-email-horms+renesas@verge.net.au>
- <20151028184504.GG8899@e104818-lin.cambridge.arm.com>
- <CANqRtoT-7hhAN907KQFYwrP7+B7tVZdDEpp0SPrnXG3YrDbKoQ@mail.gmail.com>
- <20151030110835.GB2854@e104818-lin.cambridge.arm.com>
-In-Reply-To: <20151030110835.GB2854@e104818-lin.cambridge.arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>
+Cc: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, linux-clk@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Catalin,
+r8a7778_rates[] and r8a7778_divs[] are only used in clk-r8a7778.c, and
+never modified.
 
-On Fri, Oct 30, 2015 at 12:08 PM, Catalin Marinas
-<catalin.marinas@arm.com> wrote:
-> On Thu, Oct 29, 2015 at 02:15:19PM +0900, Magnus Damm wrote:
->> On Thu, Oct 29, 2015 at 3:45 AM, Catalin Marinas
->> <catalin.marinas@arm.com> wrote:
->> > On Mon, Oct 26, 2015 at 03:01:46PM +0900, Simon Horman wrote:
->> >> --- a/arch/arm64/Kconfig.platforms
->> >> +++ b/arch/arm64/Kconfig.platforms
->> >> @@ -66,6 +66,23 @@ config ARCH_SEATTLE
->> >>       help
->> >>         This enables support for AMD Seattle SOC Family
->> >>
->> >> +config ARCH_SHMOBILE
->> >> +     bool
->> >> +
->> >> +config ARCH_RENESAS
->> >> +     bool "Renesas SoC Platforms"
->> >> +     select ARCH_SHMOBILE
->> >> +     select PINCTRL
->> >> +     select PM_GENERIC_DOMAINS if PM
->> >> +     help
->> >> +       This enables support for the ARMv8 based Renesas SoCs.
->> >> +
->> >> +config ARCH_R8A7795
->> >> +     bool "Renesas R-Car H3 SoC Platform"
->> >> +     depends on ARCH_RENESAS
->> >> +     help
->> >> +       This enables support for the Renesas R-Car H3 SoC.
->> >
->> > Do you need such fine-grained configuration? I'd really like to avoid
->> > individual SoC Kconfig entries and only include SoC families (like
->> > ARCH_RENESAS). There are some which I didn't spot at the time
->> > (ARCH_FSL_LS2085A and ARCH_TEGRA_132_SOC) but we shouldn't continue this
->> > trend any further.
->>
->> I agree with you about coarse grained configuration in general. I am
->> also wondering how to handle cases where IP varies with SoC version.
->> =)
->
-> The code should cope with multiple drivers built into the kernel anyway,
-> single Image is a hard requirement. If you want to trim down an image
-> for a specific SoC (production kernel), just use individual Kconfig
-> entries for drivers that may depend on ARCH_RENESAS but not an
-> ARCH_R8A7795 which is used in drivers/ Makefiles.
->
->> The two most common cases with SoC-specific IP for Renesas SoCs tend
->> to be Pinctrl which is using rather large tables to support the PFC
->> hardware and also the clocks (CCF) that drives the SoC specific CPG
->> hardware. For the PFC and CPG I think it makes sense to enable build
->> based on SoC model like we do already, but for the Kconfig bits in
->> arch/arm64 perhaps ARCH_RENESAS can simply select ARCH_R8A7795?
->
-> I'm suggesting the other way around: CONFIG_PINCTRL_R8A7795 which
-> depends on ARCH_RENESAS, default y. Similarly for clocks and other
-> drivers.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/clk/shmobile/clk-r8a7778.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-For drivers in general I agree.
+diff --git a/drivers/clk/shmobile/clk-r8a7778.c b/drivers/clk/shmobile/clk-r8a7778.c
+index 87c1d2f2fb57a46c..b1741551fff2a6c9 100644
+--- a/drivers/clk/shmobile/clk-r8a7778.c
++++ b/drivers/clk/shmobile/clk-r8a7778.c
+@@ -20,10 +20,10 @@ struct r8a7778_cpg {
+ };
+ 
+ /* PLL multipliers per bits 11, 12, and 18 of MODEMR */
+-struct {
++static const struct {
+ 	unsigned long plla_mult;
+ 	unsigned long pllb_mult;
+-} r8a7778_rates[] __initdata = {
++} r8a7778_rates[] __initconst = {
+ 	[0] = { 21, 21 },
+ 	[1] = { 24, 24 },
+ 	[2] = { 28, 28 },
+@@ -34,10 +34,10 @@ struct {
+ };
+ 
+ /* Clock dividers per bits 1 and 2 of MODEMR */
+-struct {
++static const struct {
+ 	const char *name;
+ 	unsigned int div[4];
+-} r8a7778_divs[6] __initdata = {
++} r8a7778_divs[6] __initconst = {
+ 	{ "b",   { 12, 12, 16, 18 } },
+ 	{ "out", { 12, 12, 16, 18 } },
+ 	{ "p",   { 16, 12, 16, 12 } },
+-- 
+1.9.1
 
-Pinctrl and clocks (and perhaps a few others we haven't implemented support
-for yet) are special, as they are core SoC-support: either you want all of it,
-or nothing.
-
-E.g. a kernel with CONFIG_PINCTRL_R8A7795=y but CONFIG_CLK_R8A7795=n
-won't get you far.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
