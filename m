@@ -1,67 +1,37 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 19 Oct 2015 08:54:17 +0000
-Subject: RE: [PATCH 2/4] PCI: rcar-pcie: Remove dependency on ARM-specific struct hw_pci
-Message-Id: <SIXPR06MB0415009813059B03D363F41BF53A0@SIXPR06MB0415.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 16 Oct 2015 14:05:14 +0000
+Subject: [PATCH 0/2] ARM: shmobile: rcar-gen2 dtsi: Remove bogus imp_clk nodes
+Message-Id: <1445004316-17235-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
- <1443781507-5011-3-git-send-email-phil.edworthy@renesas.com>
- <20151016213400.GC21346@localhost>
-In-Reply-To: <20151016213400.GC21346@localhost>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <helgaas@kernel.org>
-Cc: Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Bjorn,
+	Hi Simon, Magnus,
 
-Thanks for the review.
+In the R-Car Gen2 family, only R-Car H2 and V2H have an IMP core and an
+IMP clock. Hence remove the bogus imp_clk nodes from the R-Car M2-W and
+E2 DTSes.
 
-On 16 October 2015 22:34, Bjorn wrote:
-> On Fri, Oct 02, 2015 at 11:25:05AM +0100, Phil Edworthy wrote:
-> > The R-Car PCIe host controller driver uses pci_common_init_dev(),
-> > which is ARM-specific and requires the ARM struct hw_pci. The part of
-> > pci_common_init_dev() that is needed is limited and can be done here
-> > without using hw_pci.
-> >
-> > Note that the ARM pcibios functions expect the PCI sysdata to be a pointer
-> > to a struct pci_sys_data. Add a struct pci_sys_data as the first element
-> > in struct gen_pci so that when we use a gen_pci pointer as sysdata, it is
-> > also a pointer to a struct pci_sys_data.
-> >
-> > Create and scan the root bus directly without using the ARM
-> > pci_common_init_dev() interface.
-> >
-> > This change is based on commit
-> <499733e0cc1a00523c5056a690f65dea7b9da140>
-> > "PCI: generic: Remove dependency on ARM-specific struct hw_pci".
-> >
-> > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> > ---
-<snip>
+Geert Uytterhoeven (2):
+  ARM: shmobile: r8a7794 dtsi: Remove bogus imp_clk node
+  ARM: shmobile: r8a7791 dtsi: Remove bogus imp_clk node
 
-> > +
-> > +	if (!pci_has_flag(PCI_PROBE_ONLY)) {
-> > +		pci_bus_size_bridges(bus);
-> > +		pci_bus_assign_resources(bus);
-> >
-> > -	pci_common_init_dev(&pdev->dev, &rcar_pci);
-> > +		list_for_each_entry(child, &bus->children, node)
-> > +			pcie_bus_configure_settings(child);
-> 
-> I see this is exactly the same in 499733e0cc1a ("PCI: generic: Remove
-> dependency on ARM-specific struct hw_pci").  But it seems like we should do
-> pcie_bus_configure_settings() (MPS configuration) *always*, even if
-> PCI_PROBE_ONLY.  I expected PCI_PROBE_ONLY to mean "don't change any
-> BARs"
-> but I don't think it means we have to preserve *everything*.
-I guess it could be interpreted both ways.
+ arch/arm/boot/dts/r8a7791.dtsi | 8 --------
+ arch/arm/boot/dts/r8a7794.dtsi | 8 --------
+ 2 files changed, 16 deletions(-)
 
-At the moment, we don't have any need for PCI_PROBE_ONLY as we always
-probe. However, I purposely used the same code as the generic driver so as
-to make any future refactoring easier to identify.
+-- 
+1.9.1
 
-I'm happy to change it or leave it the same, your call.
+Gr{oetje,eeting}s,
 
-Thanks
-Phil
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
