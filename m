@@ -1,60 +1,100 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 20 Oct 2015 08:57:47 +0000
-Subject: [PATCH v5 0/4] phy: rcar-gen3-usb2: Add R-Car Gen3 USB2 PHY driver
-Message-Id: <1445331471-5028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sun, 18 Oct 2015 05:13:37 +0000
+Subject: [PATCH 02/02] ARM: shmobile: r8a7794: alt: Enable VGA port
+Message-Id: <20151018051337.746.64604.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: kishon@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-sh@vger.kernel.org
 
-This patch is based on the latest linux-phy / next branch.
-(commit id = 0f8669e343982ac66f4420335777cb5456b8abb0)
+From: Magnus Damm <damm+renesas@opensource.se>
 
- Changes from v4:
-  - Modify Kconfig to "depends on OF && ARCH_SHMOBILE".
-  - Modify Kconfig to "select GENERIC_PHY" instead of "depends on GENERIC_PHY".
-  - Modify device tree documentation about "reg" of example.
-  - Remove spinlock handling because phy-core driver calls mutex_lock().
-  - Change valiable name to val instead of tmp.
-  - Remove dev_set_drvdata.
-  - Use dev_vdbg() instead of dev_dbg().
-  - Change rcar_gen3_device_recognition()'s condition as one line.
-  - Remove unnecessary value in rcar_gen3_phy_usb2_probe().
-  - Modify MAINTAINERS about this driver.
+Enable the DU device and the VGA port available on the r8a7794
+ALT board. The VGA portion of the ALT board is somewhat similar
+to the Lager board but in case of ALT the DU1 pins are used
+and the X2 clock has a reduced frequency.
 
- Changes from v3:
-  - Shorten structure names to avoid new line if we add a long function name.
-  - Add ID/VBUS pin detection for peripheral mode.
+This patch does not include any pinctrl (PFC) settings due to lack
+of PFC DT integration on r8a7794. At this point the default state
+of the boot loader is enough to keep the VGA port working without
+changing any pinctrl settings.
 
- Changes from v2:
-  - Modify Kconfig to add "depends on OF" and "depends on ARCH_SHMOBILE".
-  - Add more information in the dt document.
-  - Change reg-names from "usb2" to "usb2_host".
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
- Changes from v1:
-  - Revise some typos.
-  - Remove using clk API to enable/disable the clocks.
-    (In other words, this driver expects to enable/disable the clocks by
-     Runtime PM API by the phy-core driver.)
-  - Remove an unnecessary header file (asm/cmpxchg.h).
+ Written against renesas-devel-20151015-v4.3-rc5
 
-Yoshihiro Shimoda (4):
-  phy: rcar-gen3-usb2: Add R-Car Gen3 USB2 PHY driver
-  phy: rcar-gen3-usb2: change the mode to OTG on the combined channel
-  phy: rcar-gen3-usb2: add runtime ID/VBUS pin detection
-  MAINTAINERS: add Renesas usb2 phy driver
+ arch/arm/boot/dts/r8a7794-alt.dts |   61 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
 
- .../devicetree/bindings/phy/rcar-gen3-phy-usb2.txt |  39 +++
- MAINTAINERS                                        |   6 +
- drivers/phy/Kconfig                                |   7 +
- drivers/phy/Makefile                               |   1 +
- drivers/phy/phy-rcar-gen3-usb2.c                   | 380 +++++++++++++++++++++
- 5 files changed, 433 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
- create mode 100644 drivers/phy/phy-rcar-gen3-usb2.c
-
--- 
-1.9.1
-
+--- 0001/arch/arm/boot/dts/r8a7794-alt.dts
++++ work/arch/arm/boot/dts/r8a7794-alt.dts	2015-10-18 13:48:24.230513000 +0900
+@@ -33,6 +33,67 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 	};
++
++	vga-encoder {
++		compatible = "adi,adv7123";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				adv7123_in: endpoint {
++					remote-endpoint = <&du_out_rgb1>;
++				};
++			};
++			port@1 {
++				reg = <1>;
++				adv7123_out: endpoint {
++					remote-endpoint = <&vga_in>;
++				};
++			};
++		};
++	};
++
++	vga {
++		compatible = "vga-connector";
++
++		port {
++			vga_in: endpoint {
++				remote-endpoint = <&adv7123_out>;
++			};
++		};
++	};
++
++	x2_clk: x2-clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <74250000>;
++	};
++
++	x13_clk: x13-clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <148500000>;
++	};
++};
++
++&du {
++	status = "okay";
++
++	clocks = <&mstp7_clks R8A7794_CLK_DU0>,
++		 <&mstp7_clks R8A7794_CLK_DU1>,
++		 <&x13_clk>, <&x2_clk>;
++	clock-names = "du.0", "du.1", "dclkin.0", "dclkin.1";
++
++	ports {
++		port@1 {
++			endpoint {
++				remote-endpoint = <&adv7123_in>;
++			};
++		};
++	};
+ };
+ 
+ &extal_clk {
