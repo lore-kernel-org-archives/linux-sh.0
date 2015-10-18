@@ -1,109 +1,100 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 30 Oct 2015 14:24:57 +0000
-Subject: Re: [PATCH] pinctrl: sh-pfc: r8a7795: Make PORT_GP_x() macros consistent
-Message-Id: <13270943.yfEHAtTNEp@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sun, 18 Oct 2015 05:13:28 +0000
+Subject: [PATCH 01/02] ARM: shmobile: r8a7794: Add DU device and MSTP clocks
+Message-Id: <20151018051328.746.54581.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446147587-20216-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1446147587-20216-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Linus Walleij <linus.walleij@linaro.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Geert,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thank you for the patch.
+Add a DU device tree node for the r8a7794 SoC and hook it up
+to the required MSTP clocks. As usual the device is disabled
+by default and we rely on the board specific code to provide
+more board specific details and enable the device.
 
-On Thursday 29 October 2015 20:39:47 Geert Uytterhoeven wrote:
-> On r8a7795, PORT_GP_x() is a macro for defining GPIOs 0..x.
-> In all other sh-pfc code, PORT_GP_x() is a macro for defining GPIOs
-> 0..(x-1).
-> 
-> Make the r8a7795 macro definitions consistent with the rest of the
-> sh-pfc codebase.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+ Written against renesas-devel-20151015-v4.3-rc5
+ No special compile time dependencies.
+ Run time dependency on "drm: rcar-du: Add support for the R8A7794 DU"
 
-> ---
->  drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 36 +++++++++++++++++----------------
->  1 file changed, 18 insertions(+), 18 deletions(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-> b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c index
-> 7ddb2adfc5a53d7b..29d001b8a727e154 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-> @@ -13,12 +13,12 @@
->  #include "core.h"
->  #include "sh_pfc.h"
-> 
-> -#define PORT_GP_3(bank, fn, sfx)					\
-> +#define PORT_GP_4(bank, fn, sfx)					\
->  	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
->  	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx)
-> 
-> -#define PORT_GP_14(bank, fn, sfx)					\
-> -	PORT_GP_3(bank, fn, sfx),					\
-> +#define PORT_GP_15(bank, fn, sfx)					\
-> +	PORT_GP_4(bank, fn, sfx),					\
->  	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
->  	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
->  	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
-> @@ -26,33 +26,33 @@
->  	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
->  	PORT_GP_1(bank, 14, fn, sfx)
-> 
-> -#define PORT_GP_15(bank, fn, sfx)					\
-> -	PORT_GP_14(bank, fn, sfx),   PORT_GP_1(bank, 15, fn, sfx)
-> +#define PORT_GP_16(bank, fn, sfx)					\
-> +	PORT_GP_15(bank, fn, sfx),   PORT_GP_1(bank, 15, fn, sfx)
-> 
-> -#define PORT_GP_17(bank, fn, sfx)					\
-> -	PORT_GP_15(bank, fn, sfx),					\
-> +#define PORT_GP_18(bank, fn, sfx)					\
-> +	PORT_GP_16(bank, fn, sfx),					\
->  	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx)
-> 
-> -#define PORT_GP_25(bank, fn, sfx)					\
-> -	PORT_GP_17(bank, fn, sfx),					\
-> +#define PORT_GP_26(bank, fn, sfx)					\
-> +	PORT_GP_18(bank, fn, sfx),					\
->  	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
->  	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
->  	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
->  	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx)
-> 
-> -#define PORT_GP_27(bank, fn, sfx)					\
-> -	PORT_GP_25(bank, fn, sfx),					\
-> +#define PORT_GP_28(bank, fn, sfx)					\
-> +	PORT_GP_26(bank, fn, sfx),					\
->  	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx)
-> 
->  #define CPU_ALL_PORT(fn, sfx)						\
-> -	PORT_GP_15(0, fn, sfx),						\
-> -	PORT_GP_27(1, fn, sfx),						\
-> -	PORT_GP_14(2, fn, sfx),						\
-> -	PORT_GP_15(3, fn, sfx),						\
-> -	PORT_GP_17(4, fn, sfx),						\
-> -	PORT_GP_25(5, fn, sfx),						\
-> +	PORT_GP_16(0, fn, sfx),						\
-> +	PORT_GP_28(1, fn, sfx),						\
-> +	PORT_GP_15(2, fn, sfx),						\
-> +	PORT_GP_16(3, fn, sfx),						\
-> +	PORT_GP_18(4, fn, sfx),						\
-> +	PORT_GP_26(5, fn, sfx),						\
->  	PORT_GP_32(6, fn, sfx),						\
-> -	PORT_GP_3(7, fn, sfx)
-> +	PORT_GP_4(7, fn, sfx)
->  /*
->   * F_() : just information
->   * FM() : macro for FN_xxx / xxx_MARK
+ arch/arm/boot/dts/r8a7794.dtsi            |   36 ++++++++++++++++++++++++++---
+ include/dt-bindings/clock/r8a7794-clock.h |    2 +
+ 2 files changed, 35 insertions(+), 3 deletions(-)
 
--- 
-Regards,
-
-Laurent Pinchart
-
+--- 0001/arch/arm/boot/dts/r8a7794.dtsi
++++ work/arch/arm/boot/dts/r8a7794.dtsi	2015-10-18 13:44:22.130513000 +0900
+@@ -750,6 +750,34 @@
+ 		};
+ 	};
+ 
++	du: display@feb00000 {
++		compatible = "renesas,du-r8a7794";
++		reg = <0 0xfeb00000 0 0x40000>;
++		reg-names = "du";
++		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 268 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7794_CLK_DU0>,
++			 <&mstp7_clks R8A7794_CLK_DU1>;
++		clock-names = "du.0", "du.1";
++		status = "disabled";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				du_out_rgb0: endpoint {
++				};
++			};
++			port@1 {
++				reg = <1>;
++				du_out_rgb1: endpoint {
++				};
++			};
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+@@ -1025,19 +1053,21 @@
+ 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>,
+ 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
+-				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
++				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
++				 <&p_clk>, <&zx_clk>, <&zx_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+ 				R8A7794_CLK_EHCI R8A7794_CLK_HSUSB
+ 				R8A7794_CLK_HSCIF2 R8A7794_CLK_SCIF5
+ 				R8A7794_CLK_SCIF4 R8A7794_CLK_HSCIF1 R8A7794_CLK_HSCIF0
+ 				R8A7794_CLK_SCIF3 R8A7794_CLK_SCIF2 R8A7794_CLK_SCIF1
+-				R8A7794_CLK_SCIF0
++				R8A7794_CLK_SCIF0 R8A7794_CLK_DU1 R8A7794_CLK_DU0
+ 			>;
+ 			clock-output-names  				"ehci", "hsusb",
+ 				"hscif2", "scif5", "scif4", "hscif1", "hscif0",
+-				"scif3", "scif2", "scif1", "scif0";
++				"scif3", "scif2", "scif1", "scif0",
++				"du2", "du1";
+ 		};
+ 		mstp8_clks: mstp8_clks@e6150990 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+--- 0001/include/dt-bindings/clock/r8a7794-clock.h
++++ work/include/dt-bindings/clock/r8a7794-clock.h	2015-10-18 13:44:22.130513000 +0900
+@@ -79,6 +79,8 @@
+ #define R8A7794_CLK_SCIF2		19
+ #define R8A7794_CLK_SCIF1		20
+ #define R8A7794_CLK_SCIF0		21
++#define R8A7794_CLK_DU1			23
++#define R8A7794_CLK_DU0			24
+ 
+ /* MSTP8 */
+ #define R8A7794_CLK_VIN1		10
