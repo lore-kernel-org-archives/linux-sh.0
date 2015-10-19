@@ -1,37 +1,20 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 16 Oct 2015 14:05:14 +0000
-Subject: [PATCH 0/2] ARM: shmobile: rcar-gen2 dtsi: Remove bogus imp_clk nodes
-Message-Id: <1445004316-17235-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 19 Oct 2015 00:30:45 +0000
+Subject: Re: [PATCH 0/2] ARM: shmobile: rcar-gen2 dtsi: Remove bogus imp_clk nodes
+Message-Id: <20151019003042.GC20599@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1445004316-17235-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1445004316-17235-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-	Hi Simon, Magnus,
+On Fri, Oct 16, 2015 at 04:05:14PM +0200, Geert Uytterhoeven wrote:
+> 	Hi Simon, Magnus,
+> 
+> In the R-Car Gen2 family, only R-Car H2 and V2H have an IMP core and an
+> IMP clock. Hence remove the bogus imp_clk nodes from the R-Car M2-W and
+> E2 DTSes.
 
-In the R-Car Gen2 family, only R-Car H2 and V2H have an IMP core and an
-IMP clock. Hence remove the bogus imp_clk nodes from the R-Car M2-W and
-E2 DTSes.
-
-Geert Uytterhoeven (2):
-  ARM: shmobile: r8a7794 dtsi: Remove bogus imp_clk node
-  ARM: shmobile: r8a7791 dtsi: Remove bogus imp_clk node
-
- arch/arm/boot/dts/r8a7791.dtsi | 8 --------
- arch/arm/boot/dts/r8a7794.dtsi | 8 --------
- 2 files changed, 16 deletions(-)
-
--- 
-1.9.1
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+Thanks, I have queued these up for v4.5.
