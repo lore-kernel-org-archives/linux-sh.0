@@ -1,32 +1,36 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 28 Oct 2015 09:36:04 +0000
-Subject: Re: [PATCH v4 2/3] arm64: renesas: salvator-x: enable I2C
-Message-Id: <CAMuHMdX6nJFUcPij7hmcRGFvc=1c3eK+4DzFiGbfZofUSgE9nQ@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 19 Oct 2015 03:02:53 +0000
+Subject: [PATCH] iommu/ipmmu-vmsa: Drop LPAE Kconfig dependency
+Message-Id: <20151019030253.6274.46547.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445987129-13496-1-git-send-email-horms+renesas@verge.net.au>
- <1445987129-13496-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1445987129-13496-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: iommu@lists.linux-foundation.org
+Cc: laurent.pinchart+renesas@ideasonboard.com, geert+renesas@glider.be, linux-sh@vger.kernel.org, joro@8bytes.org, linux-kernel@vger.kernel.org, horms+renesas@verge.net.au, Magnus Damm <magnus.damm@gmail.com>
 
-On Wed, Oct 28, 2015 at 12:05 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Neither the ARM page table code enabled by IOMMU_IO_PGTABLE_LPAE
+nor the IPMMU_VMSA driver actually depends on ARM_LPAE, so get
+rid of the dependency.
 
-Gr{oetje,eeting}s,
+Tested with ipmmu-vmsa on r8a7794 ALT and a kernel config using:
+ # CONFIG_ARM_LPAE is not set
 
-                        Geert
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+ drivers/iommu/Kconfig |    1 -
+ 1 file changed, 1 deletion(-)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--- 0001/drivers/iommu/Kconfig
++++ work/drivers/iommu/Kconfig	2015-10-18 14:58:09.080513000 +0900
+@@ -324,7 +324,6 @@ config SHMOBILE_IOMMU_L1SIZE
+ 
+ config IPMMU_VMSA
+ 	bool "Renesas VMSA-compatible IPMMU"
+-	depends on ARM_LPAE
+ 	depends on ARCH_SHMOBILE || COMPILE_TEST
+ 	select IOMMU_API
+ 	select IOMMU_IO_PGTABLE_LPAE
