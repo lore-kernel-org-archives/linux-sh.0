@@ -1,34 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 19 Oct 2015 00:24:22 +0000
+From: Bjorn Helgaas <helgaas@kernel.org>
+Date: Mon, 19 Oct 2015 23:16:34 +0000
 Subject: Re: [PATCH 0/4] PCI: rcar: Add support for ARM64 and multiple instances
-Message-Id: <20151019002422.GB20599@verge.net.au>
+Message-Id: <20151019231634.GA13841@localhost>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
- <20151016213443.GD21346@localhost>
-In-Reply-To: <20151016213443.GD21346@localhost>
+In-Reply-To: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <helgaas@kernel.org>
-Cc: Phil Edworthy <phil.edworthy@renesas.com>, Bjorn Helgaas <bhelgaas@google.com>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Phil Edworthy <phil.edworthy@renesas.com>
+Cc: Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Fri, Oct 16, 2015 at 04:34:43PM -0500, Bjorn Helgaas wrote:
-> On Fri, Oct 02, 2015 at 11:25:03AM +0100, Phil Edworthy wrote:
-> > Fixes and changes to get PCIe working on ARM64 with mulitple instances.
-> > 
-> > I've tested these on ARM (Koelsch board), and it works fine.
-> > I've also tested on ARM64 (Salvator-X board), but I currently have an issue
-> > with inbound PCI accesses. I am reasonably sure that this problem is hardware
-> > related.
-> > 
-> > Phil Edworthy (4):
-> >   PCI: rcar-pcie: Make PCI aware of the IO resources
-> >   PCI: rcar-pcie: Remove dependency on ARM-specific struct hw_pci
-> >   PCI: rcar-pcie: Set root bus nr to that provided in DT
-> >   PCI: rcar-pcie: Fix IO offset for multiple instances
+[+cc Geert]
+
+On Fri, Oct 02, 2015 at 11:25:03AM +0100, Phil Edworthy wrote:
+> Fixes and changes to get PCIe working on ARM64 with mulitple instances.
 > 
-> This all looks pretty reasonable to me, but I'm waiting for an ack from
-> Simon before merging it.
+> I've tested these on ARM (Koelsch board), and it works fine.
+> I've also tested on ARM64 (Salvator-X board), but I currently have an issue
+> with inbound PCI accesses. I am reasonably sure that this problem is hardware
+> related.
+> 
+> Phil Edworthy (4):
+>   PCI: rcar-pcie: Make PCI aware of the IO resources
+>   PCI: rcar-pcie: Remove dependency on ARM-specific struct hw_pci
+>   PCI: rcar-pcie: Set root bus nr to that provided in DT
+>   PCI: rcar-pcie: Fix IO offset for multiple instances
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+I applied these with Simon's ack to pci/host-rcar for v4.4.
 
+Note that these are on top of Geert's patch to make rcar build only
+for ARM, which is probably not necessary after you remove the struct
+hw_pci dependency.  I can drop Geert's patch if you want.
+
+Bjorn
