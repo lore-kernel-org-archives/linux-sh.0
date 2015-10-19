@@ -1,45 +1,61 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 02 Oct 2015 07:43:06 +0000
-Subject: Re: [PATCH v8 00/05] Renesas R-Car Gen3 CPG support V8
-Message-Id: <CAMuHMdWxViP-f5hWEVoBY5ZSWtjSfoZ5zmqF0phq+VbFQ3PL7Q@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 19 Oct 2015 14:07:33 +0000
+Subject: [PATCH/RFT 0/7] HDMI capture on Lager
+Message-Id: <1445263660-6945-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151001143717.20618.26365.sendpatchset@little-apple>
-In-Reply-To: <20151001143717.20618.26365.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-clk <linux-clk@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Gaku Inami <gaku.inami.xw@bp.renesas.com>, Michael Turquette <mturquette@baylibre.com>, Linux-sh list <linux-sh@vger.kernel.org>, Stephen Boyd <sboyd@codeaurora.org>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+Hi!
 
-On Thu, Oct 1, 2015 at 4:37 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> Renesas R-Car Gen3 CPG support V8
->
-> [PATCH v8 01/05] clk: shmobile: Rework CONFIG_ARCH_SHMOBILE_MULTI
-> [PATCH v8 02/05] clk: shmobile: Add Renesas R-Car Gen3 CPG support
-> [PATCH v8 03/05] clk: shmobile: Add Renesas Module Standby and Reset driver
-> [PATCH v8 04/05] clk: shmobile: Add r8a7795 MSSR support
-> [PATCH v8 05/05] drivers: sh: Handle PM_GENERIC_DOMAINS_OF=n with r8a7795 MSSR
+This series is supposed to serve as a basis for testing the HDMI input on
+the Lager board.  It is based on the series by William Towle, dropping the
+patches that have since been merged, and adding the interrupt to the adv7612
+DT description.
 
-I have pushed this series (incl. "[PATCH] clk: shmobile: Fix r8a7795 MSSR
-support") to a new topic/gen3-cpg-v8+fix branch, which is based on v4.3-rc3.
+The base of this series, Laurent's "pad config allocator" patch, had been
+deferred pending a retooling of the media controller framework.  I could
+not, however, find significant activity in that area (read: the patch still
+applies)...
 
-I would have preferred to base it on v4.3-rc1, but the drivers/sh patch depends
-on an important change that went into v4.3-rc3. Still, it didn't apply cleanly
-as we have more cleanups queued.
+With this series applied I was able to capture the top left quarter of the
+output of my Raspberry Pi.  Whether this meager result is caused by the
+input device, the output device, the userland software, or me, I have yet to
+find out.  I suspect the latter, as I have last used VIN on Linux with an
+Iomega Buz...
 
-Hence for next submission I suggest to split it in two (clk/shmobile and
-drivers/sh) parts, so the clk/shmobile part can be applied to v4.3-rc1 by
-the clk maintainer.
+CU
+Uli
 
-Gr{oetje,eeting}s,
 
-                        Geert
+Ian Molton (1):
+  ARM: shmobile: lager dts: specify default-input for ADV7612
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Laurent Pinchart (1):
+  v4l: subdev: Add pad config allocator and init
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Rob Taylor (1):
+  media: soc_camera: soc_scale_crop: Use correct pad number in try_fmt
+
+William Towle (4):
+  media: soc_camera pad-aware driver initialisation
+  media: rcar_vin: Use correct pad number in try_fmt
+  ARM: shmobile: lager dts: Add entries for VIN HDMI input support
+  media: adv7604: automatic "default-input" selection
+
+ arch/arm/boot/dts/r8a7790-lager.dts                | 41 +++++++++++++++++++++-
+ drivers/media/i2c/adv7604.c                        | 25 +++++++++----
+ drivers/media/platform/soc_camera/Kconfig          |  1 +
+ drivers/media/platform/soc_camera/rcar_vin.c       | 18 +++++++---
+ drivers/media/platform/soc_camera/soc_camera.c     | 20 ++++++++++-
+ drivers/media/platform/soc_camera/soc_scale_crop.c |  1 +
+ drivers/media/v4l2-core/v4l2-subdev.c              | 19 +++++++++-
+ include/media/soc_camera.h                         |  1 +
+ include/media/v4l2-subdev.h                        | 10 ++++++
+ 9 files changed, 121 insertions(+), 15 deletions(-)
+
+-- 
+2.6.1
+
