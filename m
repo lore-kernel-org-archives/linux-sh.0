@@ -1,49 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 29 Oct 2015 23:27:54 +0000
-Subject: [PATCH v5 08/14] arm64: renesas: salvator-x: Sound SSI DMA support
-Message-Id: <1446161280-23097-9-git-send-email-horms+renesas@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Mon, 19 Oct 2015 14:07:37 +0000
+Subject: [PATCH/RFT 4/7] media: soc_camera: soc_scale_crop: Use correct pad number in try_fmt
+Message-Id: <1445263660-6945-5-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Rob Taylor <rob.taylor@codethink.co.uk>
 
-DMA transfer to/from SSI
+Fix calls to subdev try_fmt function to use valid pad numbers, fixing
+the case where subdevs (eg. ADV7612) have valid pad numbers that are
+non-zero.
 
-     DMA
-[MEM] -> [SSI]
-
-     DMA
-[MEM] <- [SSI]
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: William Towle <william.towle@codethink.co.uk>
+Reviewed-by: Rob Taylor <rob.taylor@codethink.co.uk>
+Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
 ---
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/media/platform/soc_camera/soc_scale_crop.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 6a7df7e0ef7a..167c62eb3794 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -145,11 +145,11 @@
- };
+diff --git a/drivers/media/platform/soc_camera/soc_scale_crop.c b/drivers/media/platform/soc_camera/soc_scale_crop.c
+index bda29bc..2772215 100644
+--- a/drivers/media/platform/soc_camera/soc_scale_crop.c
++++ b/drivers/media/platform/soc_camera/soc_scale_crop.c
+@@ -225,6 +225,7 @@ static int client_set_fmt(struct soc_camera_device *icd,
+ 	bool host_1to1;
+ 	int ret;
  
- &ssi0 {
--	pio-transfer;
-+	no-busif;
- };
- 
- &ssi1 {
--	pio-transfer;
-+	no-busif;
- 	shared-pin;
- };
- 
++	format->pad = icd->src_pad_idx;
+ 	ret = v4l2_device_call_until_err(sd->v4l2_dev,
+ 					 soc_camera_grp_id(icd), pad,
+ 					 set_fmt, NULL, format);
 -- 
-2.1.4
+2.6.1
 
