@@ -1,230 +1,354 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 23 Oct 2015 11:28:43 +0000
-Subject: Re: [PATCH v4 3/5] [RFC] clk: shmobile: div6: Extract cpg_div6_register()
-Message-Id: <12260553.nd9Kq07kR3@avalon>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 19 Oct 2015 22:51:54 +0000
+Subject: [PATCH] drm: rcar-du: Perform initialization/cleanup at probe/remove time
+Message-Id: <1445295114-20921-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444999760-15750-1-git-send-email-geert+renesas@glider.be> <1444999760-15750-4-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1444999760-15750-4-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms+renesas@verge.net.au>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org
 
-Hi Geert,
+The drm driver .load() operation is prone to race conditions as it
+initializes the driver after registering the device nodes. Its usage is
+deprecated, inline it in the probe function and call drm_dev_alloc() and
+drm_dev_register() explicitly.
 
-Thank you for the patch.
+For consistency inline the .unload() handler in the remove function as
+well.
 
-On Friday 16 October 2015 14:49:18 Geert Uytterhoeven wrote:
-> Extract cpg_div6_register(), to allow registering div6 clocks from
-> another clock driver.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> v4:
->   - New.
-> ---
->  drivers/clk/shmobile/clk-div6.c | 119 +++++++++++++++++++++++-------------
->  drivers/clk/shmobile/clk-div6.h |   3 +
->  2 files changed, 77 insertions(+), 45 deletions(-)
->  create mode 100644 drivers/clk/shmobile/clk-div6.h
-> 
-> diff --git a/drivers/clk/shmobile/clk-div6.c
-> b/drivers/clk/shmobile/clk-div6.c index 57016ff9c585fc6e..5e8525fc60427229
-> 100644
-> --- a/drivers/clk/shmobile/clk-div6.c
-> +++ b/drivers/clk/shmobile/clk-div6.c
-> @@ -18,6 +18,8 @@
->  #include <linux/of_address.h>
->  #include <linux/slab.h>
-> 
-> +#include "clk-div6.h"
-> +
->  #define CPG_DIV6_CKSTP		BIT(8)
->  #define CPG_DIV6_DIV(d)		((d) & 0x3f)
->  #define CPG_DIV6_DIV_MASK	0x3f
-> @@ -172,60 +174,34 @@ static const struct clk_ops cpg_div6_clock_ops = {
->  	.set_rate = cpg_div6_clock_set_rate,
->  };
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c     | 184 ++++++++++++++++--------------
+ drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c |  11 +-
+ drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c |  11 +-
+ drivers/gpu/drm/rcar-du/rcar_du_vgacon.c  |  11 +-
+ 4 files changed, 104 insertions(+), 113 deletions(-)
 
-Non-static functions deserve a bit of documentation :-)
-
-> -static void __init cpg_div6_clock_init(struct device_node *np)
-> +struct clk * __init cpg_div6_register(const char *name,
-> +				      unsigned int num_parents,
-> +				      const char **parent_names,
-> +				      void __iomem *reg)
->  {
-> -	unsigned int num_parents, valid_parents;
-> -	const char **parent_names;
-> +	unsigned int valid_parents;
->  	struct clk_init_data init;
->  	struct div6_clock *clock;
-> -	const char *clk_name = np->name;
->  	struct clk *clk;
->  	unsigned int i;
-> 
->  	clock = kzalloc(sizeof(*clock), GFP_KERNEL);
->  	if (!clock)
-> -		return;
-> -
-> -	num_parents = of_clk_get_parent_count(np);
-> -	if (num_parents < 1) {
-> -		pr_err("%s: no parent found for %s DIV6 clock\n",
-> -		       __func__, np->name);
-> -		return;
-> -	}
-> +		return ERR_PTR(-ENOMEM);
-> 
->  	clock->parents = kmalloc_array(num_parents, sizeof(*clock->parents),
-> -		GFP_KERNEL);
-> -	parent_names = kmalloc_array(num_parents, sizeof(*parent_names),
-> -				GFP_KERNEL);
-> -	if (!parent_names)
-> -		return;
-> +				       GFP_KERNEL);
-> +	if (!clock->parents)
-> +		return ERR_PTR(-ENOMEM);
-> 
-> -	/* Remap the clock register and read the divisor. Disabling the
-> -	 * clock overwrites the divisor, so we need to cache its value for the
-> -	 * enable operation.
-> -	 */
-> -	clock->reg = of_iomap(np, 0);
-> -	if (clock->reg = NULL) {
-> -		pr_err("%s: failed to map %s DIV6 clock register\n",
-> -		       __func__, np->name);
-> -		goto error;
-> -	}
-> +	clock->reg = reg;
-> 
-> +	/*
-> +	 * Read the divisor. Disabling the clock overwrites the divisor, so we
-> +	 * need to cache its value for the enable operation.
-> +	 */
->  	clock->div = (clk_readl(clock->reg) & CPG_DIV6_DIV_MASK) + 1;
-> 
-> -	/* Parse the DT properties. */
-> -	of_property_read_string(np, "clock-output-names", &clk_name);
-> -
-> -	for (i = 0, valid_parents = 0; i < num_parents; i++) {
-> -		const char *name = of_clk_get_parent_name(np, i);
-> -
-> -		if (name) {
-> -			parent_names[valid_parents] = name;
-> -			clock->parents[valid_parents] = i;
-> -			valid_parents++;
-> -		}
-> -	}
-> -
->  	switch (num_parents) {
->  	case 1:
->  		/* fixed parent clock */
-> @@ -243,12 +219,22 @@ static void __init cpg_div6_clock_init(struct
-> device_node *np) break;
->  	default:
->  		pr_err("%s: invalid number of parents for DIV6 clock %s\n",
-> -		       __func__, np->name);
-> +		       __func__, name);
-> +		clk = ERR_PTR(-EINVAL);
->  		goto error;
->  	}
-> 
-> +	/* Filter out invalid parents */
-> +	for (i = 0, valid_parents = 0; i < num_parents; i++) {
-> +		if (parent_names[i]) {
-> +			parent_names[valid_parents] = parent_names[i];
-> +			clock->parents[valid_parents] = i;
-> +			valid_parents++;
-> +		}
-> +	}
-> +
->  	/* Register the clock. */
-> -	init.name = clk_name;
-> +	init.name = name;
->  	init.ops = &cpg_div6_clock_ops;
->  	init.flags = CLK_IS_BASIC;
->  	init.parent_names = parent_names;
-> @@ -257,6 +243,50 @@ static void __init cpg_div6_clock_init(struct
-> device_node *np) clock->hw.init = &init;
-> 
->  	clk = clk_register(NULL, &clock->hw);
-> +	if (!IS_ERR(clk))
-> +		return clk;
-> +
-> +error:
-> +	kfree(clock->parents);
-> +	kfree(clock);
-
-If you think that errors when registering the DIV6 clock are not fatal enough 
-to not have to care about memory leakage, you should kfree(clock) when the 
-kmalloc_array() above fails.
-
-> +	return clk;
-> +}
-> +
-> +static void __init cpg_div6_clock_init(struct device_node *np)
-> +{
-> +	unsigned int num_parents;
-> +	const char **parent_names;
-> +	const char *clk_name = np->name;
-> +	void __iomem *reg;
-> +	struct clk *clk;
-> +	unsigned int i;
-> +
-> +	num_parents = of_clk_get_parent_count(np);
-> +	if (num_parents < 1) {
-> +		pr_err("%s: no parent found for %s DIV6 clock\n",
-> +		       __func__, np->name);
-> +		return;
-> +	}
-> +
-> +	parent_names = kmalloc_array(num_parents, sizeof(*parent_names),
-> +				GFP_KERNEL);
-> +	if (!parent_names)
-> +		return;
-> +
-> +	reg = of_iomap(np, 0);
-> +	if (reg = NULL) {
-> +		pr_err("%s: failed to map %s DIV6 clock register\n",
-> +		       __func__, np->name);
-> +		goto error;
-> +	}
-> +
-> +	/* Parse the DT properties. */
-> +	of_property_read_string(np, "clock-output-names", &clk_name);
-> +
-> +	for (i = 0; i < num_parents; i++)
-> +		parent_names[i] = of_clk_get_parent_name(np, i);
-> +
-> +	clk = cpg_div6_register(clk_name, num_parents, parent_names, reg);
->  	if (IS_ERR(clk)) {
->  		pr_err("%s: failed to register %s DIV6 clock (%ld)\n",
->  		       __func__, np->name, PTR_ERR(clk));
-> @@ -269,9 +299,8 @@ static void __init cpg_div6_clock_init(struct
-> device_node *np) return;
-> 
->  error:
-> -	if (clock->reg)
-> -		iounmap(clock->reg);
-> +	if (reg)
-> +		iounmap(reg);
->  	kfree(parent_names);
-> -	kfree(clock);
->  }
->  CLK_OF_DECLARE(cpg_div6_clk, "renesas,cpg-div6-clock",
-> cpg_div6_clock_init); diff --git a/drivers/clk/shmobile/clk-div6.h
-> b/drivers/clk/shmobile/clk-div6.h new file mode 100644
-> index 0000000000000000..d19531f42953c83f
-> --- /dev/null
-> +++ b/drivers/clk/shmobile/clk-div6.h
-> @@ -0,0 +1,3 @@
-> +
-> +struct clk *cpg_div6_register(const char *name, unsigned int num_parents,
-> +			      const char **parent_names, void __iomem *reg);
-
-Could you please add #ifdef include guard macros ?
-
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+index bebcc97db5e5..46d628752371 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
+@@ -119,82 +119,6 @@ MODULE_DEVICE_TABLE(of, rcar_du_of_table);
+  * DRM operations
+  */
+ 
+-static int rcar_du_unload(struct drm_device *dev)
+-{
+-	struct rcar_du_device *rcdu = dev->dev_private;
+-
+-	if (rcdu->fbdev)
+-		drm_fbdev_cma_fini(rcdu->fbdev);
+-
+-	drm_kms_helper_poll_fini(dev);
+-	drm_mode_config_cleanup(dev);
+-	drm_vblank_cleanup(dev);
+-
+-	dev->irq_enabled = 0;
+-	dev->dev_private = NULL;
+-
+-	return 0;
+-}
+-
+-static int rcar_du_load(struct drm_device *dev, unsigned long flags)
+-{
+-	struct platform_device *pdev = dev->platformdev;
+-	struct device_node *np = pdev->dev.of_node;
+-	struct rcar_du_device *rcdu;
+-	struct resource *mem;
+-	int ret;
+-
+-	if (np = NULL) {
+-		dev_err(dev->dev, "no platform data\n");
+-		return -ENODEV;
+-	}
+-
+-	rcdu = devm_kzalloc(&pdev->dev, sizeof(*rcdu), GFP_KERNEL);
+-	if (rcdu = NULL) {
+-		dev_err(dev->dev, "failed to allocate private data\n");
+-		return -ENOMEM;
+-	}
+-
+-	init_waitqueue_head(&rcdu->commit.wait);
+-
+-	rcdu->dev = &pdev->dev;
+-	rcdu->info = of_match_device(rcar_du_of_table, rcdu->dev)->data;
+-	rcdu->ddev = dev;
+-	dev->dev_private = rcdu;
+-
+-	/* I/O resources */
+-	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	rcdu->mmio = devm_ioremap_resource(&pdev->dev, mem);
+-	if (IS_ERR(rcdu->mmio))
+-		return PTR_ERR(rcdu->mmio);
+-
+-	/* Initialize vertical blanking interrupts handling. Start with vblank
+-	 * disabled for all CRTCs.
+-	 */
+-	ret = drm_vblank_init(dev, (1 << rcdu->info->num_crtcs) - 1);
+-	if (ret < 0) {
+-		dev_err(&pdev->dev, "failed to initialize vblank\n");
+-		goto done;
+-	}
+-
+-	/* DRM/KMS objects */
+-	ret = rcar_du_modeset_init(rcdu);
+-	if (ret < 0) {
+-		dev_err(&pdev->dev, "failed to initialize DRM/KMS (%d)\n", ret);
+-		goto done;
+-	}
+-
+-	dev->irq_enabled = 1;
+-
+-	platform_set_drvdata(pdev, rcdu);
+-
+-done:
+-	if (ret)
+-		rcar_du_unload(dev);
+-
+-	return ret;
+-}
+-
+ static void rcar_du_preclose(struct drm_device *dev, struct drm_file *file)
+ {
+ 	struct rcar_du_device *rcdu = dev->dev_private;
+@@ -244,8 +168,6 @@ static const struct file_operations rcar_du_fops = {
+ static struct drm_driver rcar_du_driver = {
+ 	.driver_features	= DRIVER_GEM | DRIVER_MODESET | DRIVER_PRIME
+ 				| DRIVER_ATOMIC,
+-	.load			= rcar_du_load,
+-	.unload			= rcar_du_unload,
+ 	.preclose		= rcar_du_preclose,
+ 	.lastclose		= rcar_du_lastclose,
+ 	.set_busid		= drm_platform_set_busid,
+@@ -308,18 +230,114 @@ static const struct dev_pm_ops rcar_du_pm_ops = {
+  * Platform driver
+  */
+ 
+-static int rcar_du_probe(struct platform_device *pdev)
++static int rcar_du_remove(struct platform_device *pdev)
+ {
+-	return drm_platform_init(&rcar_du_driver, pdev);
++	struct rcar_du_device *rcdu = platform_get_drvdata(pdev);
++	struct drm_device *ddev = rcdu->ddev;
++
++	mutex_lock(&ddev->mode_config.mutex);
++	drm_connector_unplug_all(ddev);
++	mutex_unlock(&ddev->mode_config.mutex);
++
++	drm_dev_unregister(ddev);
++
++	if (rcdu->fbdev)
++		drm_fbdev_cma_fini(rcdu->fbdev);
++
++	drm_kms_helper_poll_fini(ddev);
++	drm_mode_config_cleanup(ddev);
++	drm_vblank_cleanup(ddev);
++
++	drm_dev_unref(ddev);
++
++	return 0;
+ }
+ 
+-static int rcar_du_remove(struct platform_device *pdev)
++static int rcar_du_probe(struct platform_device *pdev)
+ {
+-	struct rcar_du_device *rcdu = platform_get_drvdata(pdev);
++	struct device_node *np = pdev->dev.of_node;
++	struct rcar_du_device *rcdu;
++	struct drm_connector *connector;
++	struct drm_device *ddev;
++	struct resource *mem;
++	int ret;
++
++	if (np = NULL) {
++		dev_err(&pdev->dev, "no device tree node\n");
++		return -ENODEV;
++	}
++
++	/* Allocate and initialize the DRM and R-Car device structures. */
++	rcdu = devm_kzalloc(&pdev->dev, sizeof(*rcdu), GFP_KERNEL);
++	if (rcdu = NULL)
++		return -ENOMEM;
++
++	init_waitqueue_head(&rcdu->commit.wait);
+ 
+-	drm_put_dev(rcdu->ddev);
++	rcdu->dev = &pdev->dev;
++	rcdu->info = of_match_device(rcar_du_of_table, rcdu->dev)->data;
++
++	ddev = drm_dev_alloc(&rcar_du_driver, &pdev->dev);
++	if (!ddev)
++		return -ENOMEM;
++
++	rcdu->ddev = ddev;
++	ddev->dev_private = rcdu;
++
++	platform_set_drvdata(pdev, rcdu);
++
++	/* I/O resources */
++	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	rcdu->mmio = devm_ioremap_resource(&pdev->dev, mem);
++	if (IS_ERR(rcdu->mmio)) {
++		ret = PTR_ERR(rcdu->mmio);
++		goto error;
++	}
++
++	/* Initialize vertical blanking interrupts handling. Start with vblank
++	 * disabled for all CRTCs.
++	 */
++	ret = drm_vblank_init(ddev, (1 << rcdu->info->num_crtcs) - 1);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "failed to initialize vblank\n");
++		goto error;
++	}
++
++	/* DRM/KMS objects */
++	ret = rcar_du_modeset_init(rcdu);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "failed to initialize DRM/KMS (%d)\n", ret);
++		goto error;
++	}
++
++	ddev->irq_enabled = 1;
++
++	/* Register the DRM device with the core and the connectors with
++	 * sysfs.
++	 */
++	ret = drm_dev_register(ddev, 0);
++	if (ret)
++		goto error;
++
++	mutex_lock(&ddev->mode_config.mutex);
++	drm_for_each_connector(connector, ddev) {
++		ret = drm_connector_register(connector);
++		if (ret < 0)
++			break;
++	}
++	mutex_unlock(&ddev->mode_config.mutex);
++
++	if (ret < 0)
++		goto error;
++
++	DRM_INFO("Device %s probed\n", dev_name(&pdev->dev));
+ 
+ 	return 0;
++
++error:
++	rcar_du_remove(pdev);
++
++	return ret;
+ }
+ 
+ static struct platform_driver rcar_du_platform_driver = {
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
+index 96f2eb43713c..6038be93c58d 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
+@@ -55,12 +55,6 @@ static const struct drm_connector_helper_funcs connector_helper_funcs = {
+ 	.best_encoder = rcar_du_connector_best_encoder,
+ };
+ 
+-static void rcar_du_hdmi_connector_destroy(struct drm_connector *connector)
+-{
+-	drm_connector_unregister(connector);
+-	drm_connector_cleanup(connector);
+-}
+-
+ static enum drm_connector_status
+ rcar_du_hdmi_connector_detect(struct drm_connector *connector, bool force)
+ {
+@@ -79,7 +73,7 @@ static const struct drm_connector_funcs connector_funcs = {
+ 	.reset = drm_atomic_helper_connector_reset,
+ 	.detect = rcar_du_hdmi_connector_detect,
+ 	.fill_modes = drm_helper_probe_single_connector_modes,
+-	.destroy = rcar_du_hdmi_connector_destroy,
++	.destroy = drm_connector_cleanup,
+ 	.atomic_duplicate_state = drm_atomic_helper_connector_duplicate_state,
+ 	.atomic_destroy_state = drm_atomic_helper_connector_destroy_state,
+ };
+@@ -108,9 +102,6 @@ int rcar_du_hdmi_connector_init(struct rcar_du_device *rcdu,
+ 		return ret;
+ 
+ 	drm_connector_helper_add(connector, &connector_helper_funcs);
+-	ret = drm_connector_register(connector);
+-	if (ret < 0)
+-		return ret;
+ 
+ 	connector->dpms = DRM_MODE_DPMS_OFF;
+ 	drm_object_property_set_value(&connector->base,
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
+index 0c43032fc693..e905f5da7aaa 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
+@@ -62,12 +62,6 @@ static const struct drm_connector_helper_funcs connector_helper_funcs = {
+ 	.best_encoder = rcar_du_connector_best_encoder,
+ };
+ 
+-static void rcar_du_lvds_connector_destroy(struct drm_connector *connector)
+-{
+-	drm_connector_unregister(connector);
+-	drm_connector_cleanup(connector);
+-}
+-
+ static enum drm_connector_status
+ rcar_du_lvds_connector_detect(struct drm_connector *connector, bool force)
+ {
+@@ -79,7 +73,7 @@ static const struct drm_connector_funcs connector_funcs = {
+ 	.reset = drm_atomic_helper_connector_reset,
+ 	.detect = rcar_du_lvds_connector_detect,
+ 	.fill_modes = drm_helper_probe_single_connector_modes,
+-	.destroy = rcar_du_lvds_connector_destroy,
++	.destroy = drm_connector_cleanup,
+ 	.atomic_duplicate_state = drm_atomic_helper_connector_duplicate_state,
+ 	.atomic_destroy_state = drm_atomic_helper_connector_destroy_state,
+ };
+@@ -117,9 +111,6 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
+ 		return ret;
+ 
+ 	drm_connector_helper_add(connector, &connector_helper_funcs);
+-	ret = drm_connector_register(connector);
+-	if (ret < 0)
+-		return ret;
+ 
+ 	connector->dpms = DRM_MODE_DPMS_OFF;
+ 	drm_object_property_set_value(&connector->base,
+diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
+index e0a5d8f93963..9d7e5c99caf6 100644
+--- a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
++++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
+@@ -31,12 +31,6 @@ static const struct drm_connector_helper_funcs connector_helper_funcs = {
+ 	.best_encoder = rcar_du_connector_best_encoder,
+ };
+ 
+-static void rcar_du_vga_connector_destroy(struct drm_connector *connector)
+-{
+-	drm_connector_unregister(connector);
+-	drm_connector_cleanup(connector);
+-}
+-
+ static enum drm_connector_status
+ rcar_du_vga_connector_detect(struct drm_connector *connector, bool force)
+ {
+@@ -48,7 +42,7 @@ static const struct drm_connector_funcs connector_funcs = {
+ 	.reset = drm_atomic_helper_connector_reset,
+ 	.detect = rcar_du_vga_connector_detect,
+ 	.fill_modes = drm_helper_probe_single_connector_modes,
+-	.destroy = rcar_du_vga_connector_destroy,
++	.destroy = drm_connector_cleanup,
+ 	.atomic_duplicate_state = drm_atomic_helper_connector_duplicate_state,
+ 	.atomic_destroy_state = drm_atomic_helper_connector_destroy_state,
+ };
+@@ -76,9 +70,6 @@ int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
+ 		return ret;
+ 
+ 	drm_connector_helper_add(connector, &connector_helper_funcs);
+-	ret = drm_connector_register(connector);
+-	if (ret < 0)
+-		return ret;
+ 
+ 	connector->dpms = DRM_MODE_DPMS_OFF;
+ 	drm_object_property_set_value(&connector->base,
 -- 
 Regards,
 
