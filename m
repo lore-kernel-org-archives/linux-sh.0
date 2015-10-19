@@ -1,71 +1,127 @@
-From: ahaslam@baylibre.com
-Date: Mon, 12 Oct 2015 17:41:08 +0000
-Subject: [RFC/RFT 0/6] Add basic mcpm support for shmobile
-Message-Id: <1444671674-19275-1-git-send-email-ahaslam@baylibre.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Mon, 19 Oct 2015 20:09:53 +0000
+Subject: [PATCH] i2c: slave: add 8 bit seconds counter backend
+Message-Id: <1445285393-3478-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org
 
-From: Axel Haslam <ahaslam@baylibre.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-This patch series enables CCI support and implements the basic mcpm
-backend to allow for multi-cluster boot on renesas platforms.
-To enable 8 core boot on r8a7790 the CONFIG_MCPM option should be enabled.
+Something simple to show and explain at ELCE15. Not for inclusion!
 
-Additionally, the last patch adds the option to use the generic
-big little cpuidle driver for r8a7790. 
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
 
-These patches were inspired by the mcpm implementations in:
-arch/arm/mach-exynos/mcpm-exynos.c
-arch/arm/mach-vexpress/tc2_pm.c
+As promised, here is the driver from my talk. Educational only!
 
-The baseline for these patches was: Linux 4.3-rc4
-and was tested using a lager board (r8a7790)
+ drivers/i2c/Kconfig                |  3 ++
+ drivers/i2c/Makefile               |  1 +
+ drivers/i2c/i2c-slave-8bitseccnt.c | 66 ++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 70 insertions(+)
+ create mode 100644 drivers/i2c/i2c-slave-8bitseccnt.c
 
-Unfortunately, when cpuidle is enabled and programed to hit core standby
-mode, i am experiencing CPU stalls. This happens with all 8 cores, but
-also only with a single core on the A15 cluster.
-
-Initially i thought it might be something missing on the mcpm implementation,
-but then i tested the "single-cluster" cpudile patches posted by
-Kobayashi-San[1] and i also get cpu stalls even with a *single* A15 cpu (maxcpus=1).
-It seems that after some idle time, the cpu cores are not woken up by
-interrupts anymore(APMU?). 
-
-The stress test i run to reproduce the issue:
-"while true; do cat /proc/cpuinfo; done"
+diff --git a/drivers/i2c/Kconfig b/drivers/i2c/Kconfig
+index 78fbee46362828..c43e00e88b86a3 100644
+--- a/drivers/i2c/Kconfig
++++ b/drivers/i2c/Kconfig
+@@ -118,6 +118,9 @@ if I2C_SLAVE
+ config I2C_SLAVE_EEPROM
+ 	tristate "I2C eeprom slave driver"
  
-To avoid the issue all is needed is to comment out programing the
-APMU for corestandby. (apmu_power_off(cpu);)
-
-I would really appreciate any suggestions and would be glad to implement or try
-out any ideas on to how to avoid or start investigating the reason why cpus
-may be stalling!
-
-1. https://www.marc.info/?l=linux-pm&m2918169627459&w=1
-
-Axel Haslam (6):
-  ARM: shmobile: r8a7790: configure arch timer at boot
-  ARM: shmobile: export apmu_power_* functions
-  ARM: shmobile: check if cpu is allowed on power on
-  ARM: dts: add CCI node for r8a7790
-  ARM: shmobile: Add MCPM back end functions
-  cpuidle: big.LITTLE: Add ARCH_SHMOBILE and r8a7790
-
- arch/arm/boot/dts/r8a7790.dtsi         |  30 ++++++-
- arch/arm/mach-shmobile/Kconfig         |   9 ++
- arch/arm/mach-shmobile/Makefile        |   1 +
- arch/arm/mach-shmobile/common.h        |   6 ++
- arch/arm/mach-shmobile/mcpm-shmobile.c | 155 +++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/platsmp-apmu.c  |  64 ++++++++------
- arch/arm/mach-shmobile/platsmp-apmu.h  |   4 +-
- drivers/cpuidle/Kconfig.arm            |   2 +-
- drivers/cpuidle/cpuidle-big_little.c   |   1 +
- 9 files changed, 242 insertions(+), 30 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/mcpm-shmobile.c
-
++config I2C_SLAVE_8BIT_SEC_CNT
++	tristate "I2C 8 bit second counter slave driver"
++
+ endif
+ 
+ config I2C_DEBUG_CORE
+diff --git a/drivers/i2c/Makefile b/drivers/i2c/Makefile
+index 45095b3d16a914..19e8be1020865a 100644
+--- a/drivers/i2c/Makefile
++++ b/drivers/i2c/Makefile
+@@ -9,6 +9,7 @@ obj-$(CONFIG_I2C_CHARDEV)	+= i2c-dev.o
+ obj-$(CONFIG_I2C_MUX)		+= i2c-mux.o
+ obj-y				+= algos/ busses/ muxes/
+ obj-$(CONFIG_I2C_STUB)		+= i2c-stub.o
++obj-$(CONFIG_I2C_SLAVE_8BIT_SEC_CNT)	+= i2c-slave-8bitseccnt.o
+ obj-$(CONFIG_I2C_SLAVE_EEPROM)	+= i2c-slave-eeprom.o
+ 
+ ccflags-$(CONFIG_I2C_DEBUG_CORE) := -DDEBUG
+diff --git a/drivers/i2c/i2c-slave-8bitseccnt.c b/drivers/i2c/i2c-slave-8bitseccnt.c
+new file mode 100644
+index 00000000000000..6049989523de6c
+--- /dev/null
++++ b/drivers/i2c/i2c-slave-8bitseccnt.c
+@@ -0,0 +1,66 @@
++/*
++ * I2C slave mode 8 bit seconds counter backend :)
++ *
++ * Copyright (C) 2015 by Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
++ * Copyright (C) 2015 by Renesas Electronics Corporation
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the
++ * Free Software Foundation; version 2 of the License.
++ */
++
++#include <linux/i2c.h>
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/timekeeping.h>
++
++static int i2c_slave_8bit_seconds_slave_cb(struct i2c_client *client,
++				     enum i2c_slave_event event, u8 *val)
++{
++	switch (event) {
++	case I2C_SLAVE_READ_REQUESTED:
++	case I2C_SLAVE_READ_PROCESSED:
++		/* Always get the most recent value */
++		*val = get_seconds() & 0xff;
++		break;
++
++	case I2C_SLAVE_WRITE_REQUESTED:
++	case I2C_SLAVE_WRITE_RECEIVED:
++	case I2C_SLAVE_STOP:
++	default:
++		break;
++	}
++
++	return 0;
++}
++
++static int i2c_slave_8bit_seconds_probe(struct i2c_client *client, const struct i2c_device_id *id)
++{
++	return i2c_slave_register(client, i2c_slave_8bit_seconds_slave_cb);
++};
++
++static int i2c_slave_8bit_seconds_remove(struct i2c_client *client)
++{
++	i2c_slave_unregister(client);
++	return 0;
++}
++
++static const struct i2c_device_id i2c_slave_8bit_seconds_id[] = {
++	{ "slave-8bit_seconds", 0 },
++	{ }
++};
++MODULE_DEVICE_TABLE(i2c, i2c_slave_8bit_seconds_id);
++
++static struct i2c_driver i2c_slave_8bit_seconds_driver = {
++	.driver = {
++		.name = "i2c-slave-8bit_seconds",
++	},
++	.probe = i2c_slave_8bit_seconds_probe,
++	.remove = i2c_slave_8bit_seconds_remove,
++	.id_table = i2c_slave_8bit_seconds_id,
++};
++module_i2c_driver(i2c_slave_8bit_seconds_driver);
++
++MODULE_AUTHOR("Wolfram Sang <wsa@sang-engineering.com>");
++MODULE_DESCRIPTION("I2C slave mode 8 bit seconds counter backend");
++MODULE_LICENSE("GPL v2");
 -- 
-2.4.5
+2.1.4
 
