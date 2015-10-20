@@ -1,57 +1,76 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 23 Oct 2015 21:46:03 +0000
-Subject: [PATCH 1/2] sh_eth: fix RX buffer size alignment
-Message-Id: <1685698.osUG5igxWz@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 20 Oct 2015 19:26:35 +0000
+Subject: [PATCH/RFC 4/4] pinctrl: sh-pfc: r8a7794: Use PINMUX_SINGLE() instead of raw PINMUX_DATA()
+Message-Id: <1445369195-25117-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2249923.hKhT9K6gME@wasted.cogentembedded.com>
-In-Reply-To: <2249923.hKhT9K6gME@wasted.cogentembedded.com>
+References: <1445369195-25117-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1445369195-25117-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Both  Renesas R-Car and RZ/A1 manuals state that RX buffer  length must be
-a multiple of 32 bytes, while the driver  only uses 16 byte granularity...
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/net/ethernet/renesas/sh_eth.c |   10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7794.c | 44 ++++++++++++++++++------------------
+ 1 file changed, 22 insertions(+), 22 deletions(-)
 
-Index: net/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1148,8 +1148,8 @@ static void sh_eth_ring_format(struct ne
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7794.c b/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+index 086f6798b1294564..3324ee75e71c69b5 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+@@ -618,28 +618,28 @@ enum {
+ static const u16 pinmux_data[] = {
+ 	PINMUX_DATA_GP_ALL(), /* PINMUX_DATA(GP_M_N_DATA, GP_M_N_FN...), */
  
- 		/* RX descriptor */
- 		rxdesc = &mdp->rx_ring[i];
--		/* The size of the buffer is a multiple of 16 bytes. */
--		rxdesc->buffer_length = ALIGN(mdp->rx_buf_sz, 16);
-+		/* The size of the buffer is a multiple of 32 bytes. */
-+		rxdesc->buffer_length = ALIGN(mdp->rx_buf_sz, 32);
- 		dma_addr = dma_map_single(&ndev->dev, skb->data,
- 					  rxdesc->buffer_length,
- 					  DMA_FROM_DEVICE);
-@@ -1506,7 +1506,7 @@ static int sh_eth_rx(struct net_device *
- 			if (mdp->cd->rpadir)
- 				skb_reserve(skb, NET_IP_ALIGN);
- 			dma_unmap_single(&ndev->dev, rxdesc->addr,
--					 ALIGN(mdp->rx_buf_sz, 16),
-+					 ALIGN(mdp->rx_buf_sz, 32),
- 					 DMA_FROM_DEVICE);
- 			skb_put(skb, pkt_len);
- 			skb->protocol = eth_type_trans(skb, ndev);
-@@ -1524,8 +1524,8 @@ static int sh_eth_rx(struct net_device *
- 	for (; mdp->cur_rx - mdp->dirty_rx > 0; mdp->dirty_rx++) {
- 		entry = mdp->dirty_rx % mdp->num_rx_ring;
- 		rxdesc = &mdp->rx_ring[entry];
--		/* The size of the buffer is 16 byte boundary. */
--		rxdesc->buffer_length = ALIGN(mdp->rx_buf_sz, 16);
-+		/* The size of the buffer is 32 byte boundary. */
-+		rxdesc->buffer_length = ALIGN(mdp->rx_buf_sz, 32);
+-	PINMUX_DATA(A2_MARK, FN_A2),
+-	PINMUX_DATA(WE0_N_MARK, FN_WE0_N),
+-	PINMUX_DATA(WE1_N_MARK, FN_WE1_N),
+-	PINMUX_DATA(DACK0_MARK, FN_DACK0),
+-	PINMUX_DATA(USB0_PWEN_MARK, FN_USB0_PWEN),
+-	PINMUX_DATA(USB0_OVC_MARK, FN_USB0_OVC),
+-	PINMUX_DATA(USB1_PWEN_MARK, FN_USB1_PWEN),
+-	PINMUX_DATA(USB1_OVC_MARK, FN_USB1_OVC),
+-	PINMUX_DATA(SD0_CLK_MARK, FN_SD0_CLK),
+-	PINMUX_DATA(SD0_CMD_MARK, FN_SD0_CMD),
+-	PINMUX_DATA(SD0_DATA0_MARK, FN_SD0_DATA0),
+-	PINMUX_DATA(SD0_DATA1_MARK, FN_SD0_DATA1),
+-	PINMUX_DATA(SD0_DATA2_MARK, FN_SD0_DATA2),
+-	PINMUX_DATA(SD0_DATA3_MARK, FN_SD0_DATA3),
+-	PINMUX_DATA(SD0_CD_MARK, FN_SD0_CD),
+-	PINMUX_DATA(SD0_WP_MARK, FN_SD0_WP),
+-	PINMUX_DATA(SD1_CLK_MARK, FN_SD1_CLK),
+-	PINMUX_DATA(SD1_CMD_MARK, FN_SD1_CMD),
+-	PINMUX_DATA(SD1_DATA0_MARK, FN_SD1_DATA0),
+-	PINMUX_DATA(SD1_DATA1_MARK, FN_SD1_DATA1),
+-	PINMUX_DATA(SD1_DATA2_MARK, FN_SD1_DATA2),
+-	PINMUX_DATA(SD1_DATA3_MARK, FN_SD1_DATA3),
++	PINMUX_SINGLE(A2),
++	PINMUX_SINGLE(WE0_N),
++	PINMUX_SINGLE(WE1_N),
++	PINMUX_SINGLE(DACK0),
++	PINMUX_SINGLE(USB0_PWEN),
++	PINMUX_SINGLE(USB0_OVC),
++	PINMUX_SINGLE(USB1_PWEN),
++	PINMUX_SINGLE(USB1_OVC),
++	PINMUX_SINGLE(SD0_CLK),
++	PINMUX_SINGLE(SD0_CMD),
++	PINMUX_SINGLE(SD0_DATA0),
++	PINMUX_SINGLE(SD0_DATA1),
++	PINMUX_SINGLE(SD0_DATA2),
++	PINMUX_SINGLE(SD0_DATA3),
++	PINMUX_SINGLE(SD0_CD),
++	PINMUX_SINGLE(SD0_WP),
++	PINMUX_SINGLE(SD1_CLK),
++	PINMUX_SINGLE(SD1_CMD),
++	PINMUX_SINGLE(SD1_DATA0),
++	PINMUX_SINGLE(SD1_DATA1),
++	PINMUX_SINGLE(SD1_DATA2),
++	PINMUX_SINGLE(SD1_DATA3),
  
- 		if (mdp->rx_skbuff[entry] = NULL) {
- 			skb = netdev_alloc_skb(ndev, skbuff_size);
+ 	/* IPSR0 */
+ 	PINMUX_IPSR_DATA(IP0_0, SD1_CD),
+-- 
+1.9.1
 
