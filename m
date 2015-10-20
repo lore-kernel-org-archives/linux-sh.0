@@ -1,556 +1,337 @@
-From: Yinghai Lu <yinghai@kernel.org>
-Date: Thu, 08 Oct 2015 21:39:17 +0000
-Subject: [PATCH v7 58/60] PCI: Introduce resource_disabled()
-Message-Id: <1444340359-8011-59-git-send-email-yinghai@kernel.org>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 20 Oct 2015 08:57:48 +0000
+Subject: [PATCH v5 1/4] phy: rcar-gen3-usb2: Add R-Car Gen3 USB2 PHY driver
+Message-Id: <1445331471-5028-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444340359-8011-1-git-send-email-yinghai@kernel.org>
-In-Reply-To: <1444340359-8011-1-git-send-email-yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+References: <1445331471-5028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1445331471-5028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <bhelgaas-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Benjamin Herrenschmidt <benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org>, Wei Yang <weiyang-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, TJ <linux-7m3hRoVZU5A@public.gmane.org>, Yijing Wang <wangyijing-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, Khalid Aziz <khalid.aziz-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Cc: linux-s390-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-am33-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-xtensa-PjhNF2WwrV/0Sa2dR60CXw@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-pci-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linuxppc-dev-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, sparclinux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: kishon@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Current is using !flags, and we are going to use
-IORESOURCE_DISABLED instead of clearing resource flags.
+This patch adds support for R-Car generation 3 USB2 PHY driver.
+This SoC has 3 EHCI/OHCI channels, and the channel 0 is shared
+with the HSUSB (USB2.0 peripheral) device. And each channel has
+independent registers about the PHYs.
 
-Let's convert all !flags to helper function resource_disabled().
-resource_disabled will check !flags and IORESOURCE_DISABLED both.
+So, the purpose of this driver is:
+ 1) initializes some registers of SoC specific to use the
+    {ehci,ohci}-platform driver.
 
-Cc: linux-alpha@vger.kernel.org
-Cc: linux-ia64@vger.kernel.org
-Cc: linux-am33-list@redhat.com
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-s390@vger.kernel.org
-Cc: sparclinux@vger.kernel.org
-Cc: linux-pci@vger.kernel.org
-Cc: linux-xtensa@linux-xtensa.org
-Cc: iommu@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Yinghai Lu <yinghai@kernel.org>
+ 2) detects id pin to select host or peripheral on the channel 0.
+
+For now, this driver only supports 1) above.
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/alpha/kernel/pci.c                   |  2 +-
- arch/ia64/pci/pci.c                       |  4 ++--
- arch/microblaze/pci/pci-common.c          | 15 ++++++++-------
- arch/mn10300/unit-asb2305/pci-asb2305.c   |  4 ++--
- arch/mn10300/unit-asb2305/pci.c           |  4 ++--
- arch/powerpc/kernel/pci-common.c          | 16 +++++++++-------
- arch/powerpc/platforms/powernv/pci-ioda.c | 12 ++++++------
- arch/s390/pci/pci.c                       |  2 +-
- arch/sparc/kernel/pci.c                   |  2 +-
- arch/x86/pci/i386.c                       |  4 ++--
- arch/xtensa/kernel/pci.c                  |  4 ++--
- drivers/iommu/intel-iommu.c               |  3 ++-
- drivers/pci/host/pcie-rcar.c              |  2 +-
- drivers/pci/iov.c                         |  2 +-
- drivers/pci/probe.c                       |  2 +-
- drivers/pci/quirks.c                      |  4 ++--
- drivers/pci/rom.c                         |  2 +-
- drivers/pci/setup-bus.c                   |  8 ++++----
- drivers/pci/setup-res.c                   |  2 +-
- include/linux/ioport.h                    |  4 ++++
- 20 files changed, 53 insertions(+), 45 deletions(-)
+ .../devicetree/bindings/phy/rcar-gen3-phy-usb2.txt |  37 ++++
+ drivers/phy/Kconfig                                |   7 +
+ drivers/phy/Makefile                               |   1 +
+ drivers/phy/phy-rcar-gen3-usb2.c                   | 219 +++++++++++++++++++++
+ 4 files changed, 264 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
+ create mode 100644 drivers/phy/phy-rcar-gen3-usb2.c
 
-diff --git a/arch/alpha/kernel/pci.c b/arch/alpha/kernel/pci.c
-index 5f387ee..c89c8ef 100644
---- a/arch/alpha/kernel/pci.c
-+++ b/arch/alpha/kernel/pci.c
-@@ -282,7 +282,7 @@ pcibios_claim_one_bus(struct pci_bus *b)
- 		for (i = 0; i < PCI_NUM_RESOURCES; i++) {
- 			struct resource *r = &dev->resource[i];
+diff --git a/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
+new file mode 100644
+index 0000000..affa0f7
+--- /dev/null
++++ b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
+@@ -0,0 +1,37 @@
++* Renesas R-Car generation 3 USB 2.0 PHY
++
++This file provides information on what the device node for the R-Car generation
++3 USB 2.0 PHY contains.
++
++Required properties:
++- compatible: "renesas,usb2-phy-r8a7795" if the device is a part of an R8A7795
++	      SoC.
++- reg: offset and length of the partial USB 2.0 Host register block.
++- reg-names: must be "usb2_host".
++- clocks: clock phandle and specifier pair(s).
++- #phy-cells: see phy-bindings.txt in the same directory, must be <0>.
++
++Optional properties:
++To use a USB channel where USB 2.0 Host and HSUSB (USB 2.0 Peripheral) are
++combined, the device tree node should set HSUSB properties to reg and reg-names
++properties. This is because HSUSB has registers to select USB 2.0 host or
++peripheral at that channel:
++- reg: offset and length of the partial HSUSB register block.
++- reg-names: must be "hsusb".
++
++Example (R-Car H3):
++
++	usb-phy@ee080200 {
++		compatible = "renesas,usb2-phy-r8a7795";
++		reg = <0 0xee080200 0 0x700>, <0 0xe6590100 0 0x100>;
++		reg-names = "usb2_host", "hsusb";
++		clocks = <&mstp7_clks R8A7795_CLK_EHCI0>,
++			 <&mstp7_clks R8A7795_CLK_HSUSB>;
++	};
++
++	usb-phy@ee0a0200 {
++		compatible = "renesas,usb2-phy-r8a7795";
++		reg = <0 0xee0a0200 0 0x700>;
++		reg-names = "usb2_host";
++		clocks = <&mstp7_clks R8A7795_CLK_EHCI0>;
++	};
+diff --git a/drivers/phy/Kconfig b/drivers/phy/Kconfig
+index 7eb5859d..e9ab088 100644
+--- a/drivers/phy/Kconfig
++++ b/drivers/phy/Kconfig
+@@ -118,6 +118,13 @@ config PHY_RCAR_GEN2
+ 	help
+ 	  Support for USB PHY found on Renesas R-Car generation 2 SoCs.
  
--			if (r->parent || !r->start || !r->flags)
-+			if (r->parent || !r->start || resource_disabled(r))
- 				continue;
- 			if (pci_has_flag(PCI_PROBE_ONLY) ||
- 			    (r->flags & IORESOURCE_PCI_FIXED)) {
-diff --git a/arch/ia64/pci/pci.c b/arch/ia64/pci/pci.c
-index 7cc3be9..cc293ea 100644
---- a/arch/ia64/pci/pci.c
-+++ b/arch/ia64/pci/pci.c
-@@ -501,7 +501,7 @@ void pcibios_fixup_device_resources(struct pci_dev *dev)
- 	for (idx = 0; idx < PCI_BRIDGE_RESOURCES; idx++) {
- 		struct resource *r = &dev->resource[idx];
- 
--		if (!r->flags || r->parent || !r->start)
-+		if (resource_disabled(r) || r->parent || !r->start)
- 			continue;
- 
- 		pci_claim_resource(dev, idx);
-@@ -519,7 +519,7 @@ static void pcibios_fixup_bridge_resources(struct pci_dev *dev)
- 	for (idx = PCI_BRIDGE_RESOURCES; idx < PCI_NUM_RESOURCES; idx++) {
- 		struct resource *r = &dev->resource[idx];
- 
--		if (!r->flags || r->parent || !r->start)
-+		if (resource_disabled(r) || r->parent || !r->start)
- 			continue;
- 
- 		pci_claim_bridge_resource(dev, idx);
-diff --git a/arch/microblaze/pci/pci-common.c b/arch/microblaze/pci/pci-common.c
-index 09b1af6..c123d3c 100644
---- a/arch/microblaze/pci/pci-common.c
-+++ b/arch/microblaze/pci/pci-common.c
-@@ -705,7 +705,7 @@ static void pcibios_fixup_resources(struct pci_dev *dev)
- 	}
- 	for (i = 0; i < DEVICE_COUNT_RESOURCE; i++) {
- 		struct resource *res = dev->resource + i;
--		if (!res->flags)
-+		if (resource_disabled(res))
- 			continue;
- 		if (res->start = 0) {
- 			pr_debug("PCI:%s Resource %d %016llx-%016llx [%x]",
-@@ -806,7 +806,7 @@ static void pcibios_fixup_bridge(struct pci_bus *bus)
- 	pci_bus_for_each_resource(bus, res, i) {
- 		if (!res)
- 			continue;
--		if (!res->flags)
-+		if (resource_disabled(res))
- 			continue;
- 		if (i >= 3 && bus->self->transparent)
- 			continue;
-@@ -985,7 +985,7 @@ static void pcibios_allocate_bus_resources(struct pci_bus *bus)
- 		 pci_domain_nr(bus), bus->number);
- 
- 	pci_bus_for_each_resource(bus, res, i) {
--		if (!res || !res->flags
-+		if (!res || resource_disabled(res)
- 		    || res->start > res->end || res->parent)
- 			continue;
- 		if (bus->parent = NULL)
-@@ -1087,7 +1087,8 @@ static void __init pcibios_allocate_resources(int pass)
- 			r = &dev->resource[idx];
- 			if (r->parent)		/* Already allocated */
- 				continue;
--			if (!r->flags || (r->flags & IORESOURCE_UNSET))
-+			if (resource_disabled(r) ||
-+			    (r->flags & IORESOURCE_UNSET))
- 				continue;	/* Not assigned at all */
- 			/* We only allocate ROMs on pass 1 just in case they
- 			 * have been screwed up by firmware
-@@ -1218,7 +1219,7 @@ void pcibios_claim_one_bus(struct pci_bus *bus)
- 		for (i = 0; i < PCI_NUM_RESOURCES; i++) {
- 			struct resource *r = &dev->resource[i];
- 
--			if (r->parent || !r->start || !r->flags)
-+			if (r->parent || !r->start || resource_disabled(r))
- 				continue;
- 
- 			pr_debug("PCI: Claiming %s: ", pci_name(dev));
-@@ -1278,7 +1279,7 @@ static void pcibios_setup_phb_resources(struct pci_controller *hose,
- 	res->start = (res->start + io_offset) & 0xffffffffu;
- 	res->end = (res->end + io_offset) & 0xffffffffu;
- 
--	if (!res->flags) {
-+	if (resource_disabled(res)) {
- 		pr_warn("PCI: I/O resource not set for host ");
- 		pr_cont("bridge %s (domain %d)\n",
- 			hose->dn->full_name, hose->global_number);
-@@ -1298,7 +1299,7 @@ static void pcibios_setup_phb_resources(struct pci_controller *hose,
- 	/* Hookup PHB Memory resources */
- 	for (i = 0; i < 3; ++i) {
- 		res = &hose->mem_resources[i];
--		if (!res->flags) {
-+		if (resource_disabled(res)) {
- 			if (i > 0)
- 				continue;
- 			pr_err("PCI: Memory resource 0 not set for ");
-diff --git a/arch/mn10300/unit-asb2305/pci-asb2305.c b/arch/mn10300/unit-asb2305/pci-asb2305.c
-index b7ab837..7e70e51 100644
---- a/arch/mn10300/unit-asb2305/pci-asb2305.c
-+++ b/arch/mn10300/unit-asb2305/pci-asb2305.c
-@@ -103,7 +103,7 @@ static void __init pcibios_allocate_bus_resources(struct list_head *bus_list)
- 			     idx < PCI_NUM_RESOURCES;
- 			     idx++) {
- 				r = &dev->resource[idx];
--				if (!r->flags)
-+				if (resource_disabled(r))
- 					continue;
- 				if (!r->start ||
- 				    pci_claim_bridge_resource(dev, idx) < 0) {
-@@ -188,7 +188,7 @@ static int __init pcibios_assign_resources(void)
- 	   addresses. */
- 	for_each_pci_dev(dev) {
- 		r = &dev->resource[PCI_ROM_RESOURCE];
--		if (!r->flags || !r->start)
-+		if (resource_disabled(r) || !r->start)
- 			continue;
- 		if (pci_claim_resource(dev, PCI_ROM_RESOURCE) < 0) {
- 			r->end -= r->start;
-diff --git a/arch/mn10300/unit-asb2305/pci.c b/arch/mn10300/unit-asb2305/pci.c
-index 3dfe2d3..ad77b18 100644
---- a/arch/mn10300/unit-asb2305/pci.c
-+++ b/arch/mn10300/unit-asb2305/pci.c
-@@ -291,7 +291,7 @@ static void pcibios_fixup_device_resources(struct pci_dev *dev)
- 	for (idx = 0; idx < PCI_BRIDGE_RESOURCES; idx++) {
- 		struct resource *r = &dev->resource[idx];
- 
--		if (!r->flags || r->parent || !r->start)
-+		if (resource_disabled(r) || r->parent || !r->start)
- 			continue;
- 
- 		pci_claim_resource(dev, idx);
-@@ -308,7 +308,7 @@ static void pcibios_fixup_bridge_resources(struct pci_dev *dev)
- 	for (idx = PCI_BRIDGE_RESOURCES; idx < PCI_NUM_RESOURCES; idx++) {
- 		struct resource *r = &dev->resource[idx];
- 
--		if (!r->flags || r->parent || !r->start)
-+		if (resource_disabled(r) || r->parent || !r->start)
- 			continue;
- 
- 		pci_claim_bridge_resource(dev, idx);
-diff --git a/arch/powerpc/kernel/pci-common.c b/arch/powerpc/kernel/pci-common.c
-index 8853667..a830e0c 100644
---- a/arch/powerpc/kernel/pci-common.c
-+++ b/arch/powerpc/kernel/pci-common.c
-@@ -810,7 +810,7 @@ static void pcibios_fixup_resources(struct pci_dev *dev)
- 	for (i = 0; i < DEVICE_COUNT_RESOURCE; i++) {
- 		struct resource *res = dev->resource + i;
- 		struct pci_bus_region reg;
--		if (!res->flags)
-+		if (resource_disabled(res))
- 			continue;
- 
- 		/* If we're going to re-assign everything, we mark all resources
-@@ -919,7 +919,7 @@ static void pcibios_fixup_bridge(struct pci_bus *bus)
- 	struct pci_dev *dev = bus->self;
- 
- 	pci_bus_for_each_resource(bus, res, i) {
--		if (!res || !res->flags)
-+		if (!res || resource_disabled(res))
- 			continue;
- 		if (i >= 3 && bus->self->transparent)
- 			continue;
-@@ -1160,7 +1160,8 @@ static void pcibios_allocate_bus_resources(struct pci_bus *bus)
- 		 pci_domain_nr(bus), bus->number);
- 
- 	pci_bus_for_each_resource(bus, res, i) {
--		if (!res || !res->flags || res->start > res->end || res->parent)
-+		if (!res || resource_disabled(res) ||
-+		    res->start > res->end || res->parent)
- 			continue;
- 
- 		/* If the resource was left unset at this point, we clear it */
-@@ -1255,7 +1256,8 @@ static void __init pcibios_allocate_resources(int pass)
- 			r = &dev->resource[idx];
- 			if (r->parent)		/* Already allocated */
- 				continue;
--			if (!r->flags || (r->flags & IORESOURCE_UNSET))
-+			if (resource_disabled(r) ||
-+			    (r->flags & IORESOURCE_UNSET))
- 				continue;	/* Not assigned at all */
- 			/* We only allocate ROMs on pass 1 just in case they
- 			 * have been screwed up by firmware
-@@ -1393,7 +1395,7 @@ void pcibios_claim_one_bus(struct pci_bus *bus)
- 		for (i = 0; i < PCI_NUM_RESOURCES; i++) {
- 			struct resource *r = &dev->resource[i];
- 
--			if (r->parent || !r->start || !r->flags)
-+			if (r->parent || !r->start || resource_disabled(r))
- 				continue;
- 
- 			pr_debug("PCI: Claiming %s: Resource %d: %pR\n",
-@@ -1474,7 +1476,7 @@ static void pcibios_setup_phb_resources(struct pci_controller *hose,
- 	/* Hookup PHB IO resource */
- 	res = &hose->io_resource;
- 
--	if (!res->flags) {
-+	if (resource_disabled(res)) {
- 		pr_info("PCI: I/O resource not set for host"
- 		       " bridge %s (domain %d)\n",
- 		       hose->dn->full_name, hose->global_number);
-@@ -1489,7 +1491,7 @@ static void pcibios_setup_phb_resources(struct pci_controller *hose,
- 	/* Hookup PHB Memory resources */
- 	for (i = 0; i < 3; ++i) {
- 		res = &hose->mem_resources[i];
--		if (!res->flags) {
-+		if (resource_disabled(res)) {
- 			if (i = 0)
- 				printk(KERN_ERR "PCI: Memory resource 0 not set for "
- 				       "host bridge %s (domain %d)\n",
-diff --git a/arch/powerpc/platforms/powernv/pci-ioda.c b/arch/powerpc/platforms/powernv/pci-ioda.c
-index 414fd1a..81484c1 100644
---- a/arch/powerpc/platforms/powernv/pci-ioda.c
-+++ b/arch/powerpc/platforms/powernv/pci-ioda.c
-@@ -874,7 +874,7 @@ static int pnv_pci_vf_resource_shift(struct pci_dev *dev, int offset)
- 	num_vfs = pdn->num_vfs;
- 	for (i = 0; i < PCI_SRIOV_NUM_BARS; i++) {
- 		res = &dev->resource[i + PCI_IOV_RESOURCES];
--		if (!res->flags || !res->parent)
-+		if (resource_disabled(res) || !res->parent)
- 			continue;
- 
- 		if (!pnv_pci_is_mem_pref_64(res->flags))
-@@ -905,7 +905,7 @@ static int pnv_pci_vf_resource_shift(struct pci_dev *dev, int offset)
- 	 */
- 	for (i = 0; i < PCI_SRIOV_NUM_BARS; i++) {
- 		res = &dev->resource[i + PCI_IOV_RESOURCES];
--		if (!res->flags || !res->parent)
-+		if (resource_disabled(res) || !res->parent)
- 			continue;
- 
- 		if (!pnv_pci_is_mem_pref_64(res->flags))
-@@ -1188,7 +1188,7 @@ static int pnv_pci_vf_assign_m64(struct pci_dev *pdev, u16 num_vfs)
- 
- 	for (i = 0; i < PCI_SRIOV_NUM_BARS; i++) {
- 		res = &pdev->resource[i + PCI_IOV_RESOURCES];
--		if (!res->flags || !res->parent)
-+		if (resource_disabled(res) || !res->parent)
- 			continue;
- 
- 		if (!pnv_pci_is_mem_pref_64(res->flags))
-@@ -2757,7 +2757,7 @@ static void pnv_pci_ioda_fixup_iov_resources(struct pci_dev *pdev)
- 
- 	for (i = 0; i < PCI_SRIOV_NUM_BARS; i++) {
- 		res = &pdev->resource[i + PCI_IOV_RESOURCES];
--		if (!res->flags || res->parent)
-+		if (resource_disabled(res) || res->parent)
- 			continue;
- 		if (!pnv_pci_is_mem_pref_64(res->flags)) {
- 			dev_warn(&pdev->dev, " non M64 VF BAR%d: %pR\n",
-@@ -2779,7 +2779,7 @@ static void pnv_pci_ioda_fixup_iov_resources(struct pci_dev *pdev)
- 
- 	for (i = 0; i < PCI_SRIOV_NUM_BARS; i++) {
- 		res = &pdev->resource[i + PCI_IOV_RESOURCES];
--		if (!res->flags || res->parent)
-+		if (resource_disabled(res) || res->parent)
- 			continue;
- 		if (!pnv_pci_is_mem_pref_64(res->flags)) {
- 			dev_warn(&pdev->dev, "Skipping expanding VF BAR%d: %pR\n",
-@@ -2820,7 +2820,7 @@ static void pnv_ioda_setup_pe_seg(struct pci_controller *hose,
- 	BUG_ON(!(pe->flags & (PNV_IODA_PE_BUS | PNV_IODA_PE_BUS_ALL)));
- 
- 	pci_bus_for_each_resource(pe->pbus, res, i) {
--		if (!res || !res->flags ||
-+		if (!res || resource_disabled(res) ||
- 		    res->start > res->end)
- 			continue;
- 
-diff --git a/arch/s390/pci/pci.c b/arch/s390/pci/pci.c
-index 7ef12a3..72c4676 100644
---- a/arch/s390/pci/pci.c
-+++ b/arch/s390/pci/pci.c
-@@ -653,7 +653,7 @@ int pcibios_add_device(struct pci_dev *pdev)
- 
- 	for (i = 0; i < PCI_BAR_COUNT; i++) {
- 		res = &pdev->resource[i];
--		if (res->parent || !res->flags)
-+		if (res->parent || resource_disabled(res))
- 			continue;
- 		pci_claim_resource(pdev, i);
- 	}
-diff --git a/arch/sparc/kernel/pci.c b/arch/sparc/kernel/pci.c
-index 4113922..069e7ee 100644
---- a/arch/sparc/kernel/pci.c
-+++ b/arch/sparc/kernel/pci.c
-@@ -631,7 +631,7 @@ static void pci_claim_bus_resources(struct pci_bus *bus)
- 		for (i = 0; i < PCI_NUM_RESOURCES; i++) {
- 			struct resource *r = &dev->resource[i];
- 
--			if (r->parent || !r->start || !r->flags)
-+			if (r->parent || !r->start || resource_disabled(r))
- 				continue;
- 
- 			if (ofpci_verbose)
-diff --git a/arch/x86/pci/i386.c b/arch/x86/pci/i386.c
-index 6f27780..48c367c 100644
---- a/arch/x86/pci/i386.c
-+++ b/arch/x86/pci/i386.c
-@@ -224,7 +224,7 @@ static void pcibios_allocate_bridge_resources(struct pci_dev *dev)
- 
- 	for (idx = PCI_BRIDGE_RESOURCES; idx < PCI_NUM_RESOURCES; idx++) {
- 		r = &dev->resource[idx];
--		if (!r->flags)
-+		if (resource_disabled(r))
- 			continue;
- 		if (r->parent)	/* Already allocated */
- 			continue;
-@@ -353,7 +353,7 @@ static void pcibios_allocate_dev_rom_resource(struct pci_dev *dev)
- 	 * addresses.
- 	 */
- 	r = &dev->resource[PCI_ROM_RESOURCE];
--	if (!r->flags || !r->start)
-+	if (resource_disabled(r) || !r->start)
- 		return;
- 	if (r->parent) /* Already allocated */
- 		return;
-diff --git a/arch/xtensa/kernel/pci.c b/arch/xtensa/kernel/pci.c
-index b848cc3..f34d061 100644
---- a/arch/xtensa/kernel/pci.c
-+++ b/arch/xtensa/kernel/pci.c
-@@ -142,7 +142,7 @@ static void __init pci_controller_apertures(struct pci_controller *pci_ctrl,
- 
- 	io_offset = (unsigned long)pci_ctrl->io_space.base;
- 	res = &pci_ctrl->io_resource;
--	if (!res->flags) {
-+	if (resource_disabled(res)) {
- 		if (io_offset)
- 			printk (KERN_ERR "I/O resource not set for host"
- 				" bridge %d\n", pci_ctrl->index);
-@@ -156,7 +156,7 @@ static void __init pci_controller_apertures(struct pci_controller *pci_ctrl,
- 
- 	for (i = 0; i < 3; i++) {
- 		res = &pci_ctrl->mem_resources[i];
--		if (!res->flags) {
-+		if (resource_disabled(res)) {
- 			if (i > 0)
- 				continue;
- 			printk(KERN_ERR "Memory resource not set for "
-diff --git a/drivers/iommu/intel-iommu.c b/drivers/iommu/intel-iommu.c
-index 041bc18..d4a06d2 100644
---- a/drivers/iommu/intel-iommu.c
-+++ b/drivers/iommu/intel-iommu.c
-@@ -1771,7 +1771,8 @@ static int dmar_init_reserved_ranges(void)
- 
- 		for (i = 0; i < PCI_NUM_RESOURCES; i++) {
- 			r = &pdev->resource[i];
--			if (!r->flags || !(r->flags & IORESOURCE_MEM))
-+			if (resource_disabled(r) ||
-+			    !(r->flags & IORESOURCE_MEM))
- 				continue;
- 			iova = reserve_iova(&reserved_iova_list,
- 					    IOVA_PFN(r->start),
-diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-index 7678fe0..3f307a3 100644
---- a/drivers/pci/host/pcie-rcar.c
-+++ b/drivers/pci/host/pcie-rcar.c
-@@ -365,7 +365,7 @@ static int rcar_pcie_setup(int nr, struct pci_sys_data *sys)
- 	for (i = 0; i < RCAR_PCI_MAX_RESOURCES; i++) {
- 
- 		res = &pcie->res[i];
--		if (!res->flags)
-+		if (resource_disabled(res))
- 			continue;
- 
- 		rcar_pcie_setup_window(i, pcie);
-diff --git a/drivers/pci/iov.c b/drivers/pci/iov.c
-index ee0ebff..808d08b 100644
---- a/drivers/pci/iov.c
-+++ b/drivers/pci/iov.c
-@@ -438,7 +438,7 @@ found:
- 		res = &dev->resource[i + PCI_IOV_RESOURCES];
- 		bar64 = __pci_read_base(dev, pci_bar_unknown, res,
- 					pos + PCI_SRIOV_BAR + i * 4);
--		if (!res->flags)
-+		if (resource_disabled(res))
- 			continue;
- 		if (resource_size(res) & (PAGE_SIZE - 1)) {
- 			rc = -EIO;
-diff --git a/drivers/pci/probe.c b/drivers/pci/probe.c
-index edc8d08..f9589d9 100644
---- a/drivers/pci/probe.c
-+++ b/drivers/pci/probe.c
-@@ -2203,7 +2203,7 @@ void pci_bus_release_busn_res(struct pci_bus *b)
- 	struct resource *res = &b->busn_res;
- 	int ret;
- 
--	if (!res->flags || !res->parent)
-+	if (resource_disabled(res) || !res->parent)
- 		return;
- 
- 	ret = release_resource(res);
-diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
-index 6fe342c..f0f9873 100644
---- a/drivers/pci/quirks.c
-+++ b/drivers/pci/quirks.c
-@@ -336,7 +336,7 @@ static void quirk_bar_fixed(struct pci_dev *dev)
- 	for (i = 0; i < PCI_STD_RESOURCE_END; i++) {
- 		struct resource *r = &dev->resource[i];
- 
--		if (!r->start || !r->flags)
-+		if (!r->start || resource_disabled(r))
- 			continue;
- 		r->flags |= IORESOURCE_PCI_FIXED;
- 	}
-@@ -350,7 +350,7 @@ static void quirk_allocate_fixed(struct pci_dev *dev)
- 	for (i = 0; i < PCI_NUM_RESOURCES; i++) {
- 		struct resource *r = &dev->resource[i];
- 
--		if (r->parent ||
-+		if (r->parent || resource_disabled(r) ||
- 		    !(r->flags & IORESOURCE_PCI_FIXED) ||
- 		    !(r->flags & (IORESOURCE_IO | IORESOURCE_MEM)))
- 			continue;
-diff --git a/drivers/pci/rom.c b/drivers/pci/rom.c
-index eb0ad53..585a9d3 100644
---- a/drivers/pci/rom.c
-+++ b/drivers/pci/rom.c
-@@ -28,7 +28,7 @@ int pci_enable_rom(struct pci_dev *pdev)
- 	struct pci_bus_region region;
- 	u32 rom_addr;
- 
--	if (!res->flags)
-+	if (resource_disabled(res))
- 		return -1;
- 
- 	pcibios_resource_to_bus(pdev->bus, &region, res);
-diff --git a/drivers/pci/setup-bus.c b/drivers/pci/setup-bus.c
-index 673778c..23318bd 100644
---- a/drivers/pci/setup-bus.c
-+++ b/drivers/pci/setup-bus.c
-@@ -223,7 +223,7 @@ static void pdev_assign_resources_prepare(struct pci_dev *dev,
- 		if (r->flags & IORESOURCE_PCI_FIXED)
- 			continue;
- 
--		if (!(r->flags) || r->parent)
-+		if (resource_disabled(r) || r->parent)
- 			continue;
- 
- 		r_align = __pci_resource_alignment(dev, r, realloc_head);
-@@ -319,7 +319,7 @@ static void reassign_resources_sorted(struct list_head *realloc_head,
- 	list_for_each_entry_safe(add_res, tmp, realloc_head, list) {
- 		res = add_res->res;
- 		/* skip resource that has been reset */
--		if (!res->flags)
-+		if (resource_disabled(res))
- 			goto out;
- 
- 		/* skip this resource if not found in head list */
-@@ -2124,7 +2124,7 @@ static void pci_bus_dump_res(struct pci_bus *bus)
- 	int i;
- 
- 	pci_bus_for_each_resource(bus, res, i) {
--		if (!res || !res->end || !res->flags)
-+		if (!res || !res->end || resource_disabled(res))
- 			continue;
- 
- 		dev_printk(KERN_DEBUG, &bus->dev, "resource %d %pR\n", i, res);
-@@ -2207,7 +2207,7 @@ static int iov_resources_unassigned(struct pci_dev *dev, void *data)
- 		struct pci_bus_region region;
- 
- 		/* Not assigned or rejected by kernel? */
--		if (!r->flags)
-+		if (resource_disabled(r))
- 			continue;
- 
- 		pcibios_resource_to_bus(dev->bus, &region, r);
-diff --git a/drivers/pci/setup-res.c b/drivers/pci/setup-res.c
-index 26aedde..55caf7a 100644
---- a/drivers/pci/setup-res.c
-+++ b/drivers/pci/setup-res.c
-@@ -40,7 +40,7 @@ void pci_update_resource(struct pci_dev *dev, int resno)
- 	 * Ignore resources for unimplemented BARs and unused resource slots
- 	 * for 64 bit BARs.
- 	 */
--	if (!res->flags)
-+	if (resource_disabled(res))
- 		return;
- 
- 	if (res->flags & IORESOURCE_UNSET)
-diff --git a/include/linux/ioport.h b/include/linux/ioport.h
-index 27dbb18..fb21179 100644
---- a/include/linux/ioport.h
-+++ b/include/linux/ioport.h
-@@ -179,6 +179,10 @@ static inline bool resource_contains(struct resource *r1, struct resource *r2)
- 	return r1->start <= r2->start && r1->end >= r2->end;
- }
- 
-+static inline bool resource_disabled(struct resource *r)
++config PHY_RCAR_GEN3_USB2
++	tristate "Renesas R-Car generation 3 USB 2.0 PHY driver"
++	depends on OF && ARCH_SHMOBILE
++	select GENERIC_PHY
++	help
++	  Support for USB 2.0 PHY found on Renesas R-Car generation 3 SoCs.
++
+ config OMAP_CONTROL_PHY
+ 	tristate "OMAP CONTROL PHY Driver"
+ 	depends on ARCH_OMAP2PLUS || COMPILE_TEST
+diff --git a/drivers/phy/Makefile b/drivers/phy/Makefile
+index 075db1a..91d7a62 100644
+--- a/drivers/phy/Makefile
++++ b/drivers/phy/Makefile
+@@ -17,6 +17,7 @@ obj-$(CONFIG_PHY_MVEBU_SATA)		+= phy-mvebu-sata.o
+ obj-$(CONFIG_PHY_MIPHY28LP) 		+= phy-miphy28lp.o
+ obj-$(CONFIG_PHY_MIPHY365X)		+= phy-miphy365x.o
+ obj-$(CONFIG_PHY_RCAR_GEN2)		+= phy-rcar-gen2.o
++obj-$(CONFIG_PHY_RCAR_GEN3_USB2)	+= phy-rcar-gen3-usb2.o
+ obj-$(CONFIG_OMAP_CONTROL_PHY)		+= phy-omap-control.o
+ obj-$(CONFIG_OMAP_USB2)			+= phy-omap-usb2.o
+ obj-$(CONFIG_TI_PIPE3)			+= phy-ti-pipe3.o
+diff --git a/drivers/phy/phy-rcar-gen3-usb2.c b/drivers/phy/phy-rcar-gen3-usb2.c
+new file mode 100644
+index 0000000..9d9cf26
+--- /dev/null
++++ b/drivers/phy/phy-rcar-gen3-usb2.c
+@@ -0,0 +1,219 @@
++/*
++ * Renesas R-Car Gen3 for USB2.0 PHY driver
++ *
++ * Copyright (C) 2015 Renesas Electronics Corporation
++ *
++ * This is based on the phy-rcar-gen2 driver:
++ * Copyright (C) 2014 Renesas Solutions Corp.
++ * Copyright (C) 2014 Cogent Embedded, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/phy/phy.h>
++#include <linux/platform_device.h>
++
++/******* USB2.0 Host registers (original offset is +0x200) *******/
++#define USB2_INT_ENABLE		0x000
++#define USB2_USBCTR		0x00c
++#define USB2_SPD_RSM_TIMSET	0x10c
++#define USB2_OC_TIMSET		0x110
++
++/* INT_ENABLE */
++#define USB2_INT_ENABLE_USBH_INTB_EN	BIT(2)
++#define USB2_INT_ENABLE_USBH_INTA_EN	BIT(1)
++#define USB2_INT_ENABLE_INIT		(USB2_INT_ENABLE_USBH_INTB_EN | \
++					 USB2_INT_ENABLE_USBH_INTA_EN)
++
++/* USBCTR */
++#define USB2_USBCTR_DIRPD	BIT(2)
++#define USB2_USBCTR_PLL_RST	BIT(1)
++
++/* SPD_RSM_TIMSET */
++#define USB2_SPD_RSM_TIMSET_INIT	0x014e029b
++
++/* OC_TIMSET */
++#define USB2_OC_TIMSET_INIT		0x000209ab
++
++/******* HSUSB registers (original offset is +0x100) *******/
++#define HSUSB_LPSTS			0x02
++#define HSUSB_UGCTRL2			0x84
++
++/* Low Power Status register (LPSTS) */
++#define HSUSB_LPSTS_SUSPM		0x4000
++
++/* USB General control register 2 (UGCTRL2) */
++#define HSUSB_UGCTRL2_MASK		0x00000031 /* bit[31:6] should be 0 */
++#define HSUSB_UGCTRL2_USB0SEL		0x00000030
++#define HSUSB_UGCTRL2_USB0SEL_HOST	0x00000010
++#define HSUSB_UGCTRL2_USB0SEL_HS_USB	0x00000020
++#define HSUSB_UGCTRL2_USB0SEL_OTG	0x00000030
++
++struct rcar_gen3_data {
++	void __iomem *base;
++	struct clk *clk;
++};
++
++struct rcar_gen3_chan {
++	struct rcar_gen3_data usb2;
++	struct rcar_gen3_data hsusb;
++	struct phy *phy;
++};
++
++static int rcar_gen3_phy_usb2_init(struct phy *p)
 +{
-+	return !r->flags || (r->flags & IORESOURCE_DISABLED);
++	struct rcar_gen3_chan *channel = phy_get_drvdata(p);
++	void __iomem *usb2_base = channel->usb2.base;
++	void __iomem *hsusb_base = channel->hsusb.base;
++	u32 val;
++
++	/* Initialize USB2 part */
++	writel(USB2_INT_ENABLE_INIT, usb2_base + USB2_INT_ENABLE);
++	writel(USB2_SPD_RSM_TIMSET_INIT, usb2_base + USB2_SPD_RSM_TIMSET);
++	writel(USB2_OC_TIMSET_INIT, usb2_base + USB2_OC_TIMSET);
++
++	/* Initialize HSUSB part */
++	if (hsusb_base) {
++		/* TODO: support "OTG" mode */
++		val = readl(hsusb_base + HSUSB_UGCTRL2);
++		val = (val & ~HSUSB_UGCTRL2_USB0SEL) |
++		      HSUSB_UGCTRL2_USB0SEL_HOST;
++		writel(val & HSUSB_UGCTRL2_MASK, hsusb_base + HSUSB_UGCTRL2);
++	}
++
++	return 0;
 +}
- 
- /* Convenience shorthand with allocation */
- #define request_region(start,n,name)		__request_region(&ioport_resource, (start), (n), (name), 0)
++
++static int rcar_gen3_phy_usb2_exit(struct phy *p)
++{
++	struct rcar_gen3_chan *channel = phy_get_drvdata(p);
++
++	writel(0, channel->usb2.base + USB2_INT_ENABLE);
++
++	return 0;
++}
++
++static int rcar_gen3_phy_usb2_power_on(struct phy *p)
++{
++	struct rcar_gen3_chan *channel = phy_get_drvdata(p);
++	void __iomem *usb2_base = channel->usb2.base;
++	void __iomem *hsusb_base = channel->hsusb.base;
++	u32 val;
++
++	val = readl(usb2_base + USB2_USBCTR);
++	val |= USB2_USBCTR_PLL_RST;
++	writel(val, usb2_base + USB2_USBCTR);
++	val &= ~USB2_USBCTR_PLL_RST;
++	writel(val, usb2_base + USB2_USBCTR);
++
++	/*
++	 * TODO: To reduce power consuming, this driver should set the SUSPM
++	 *	after the PHY detects ID pin as peripheral.
++	 */
++	if (hsusb_base) {
++		/* Power on HSUSB PHY */
++		val = readw(hsusb_base + HSUSB_LPSTS);
++		val |= HSUSB_LPSTS_SUSPM;
++		writew(val, hsusb_base + HSUSB_LPSTS);
++	}
++
++	return 0;
++}
++
++static int rcar_gen3_phy_usb2_power_off(struct phy *p)
++{
++	struct rcar_gen3_chan *channel = phy_get_drvdata(p);
++	void __iomem *hsusb_base = channel->hsusb.base;
++	u32 val;
++
++	if (hsusb_base) {
++		/* Power off HSUSB PHY */
++		val = readw(hsusb_base + HSUSB_LPSTS);
++		val &= ~HSUSB_LPSTS_SUSPM;
++		writew(val, hsusb_base + HSUSB_LPSTS);
++	}
++
++	return 0;
++}
++
++static struct phy_ops rcar_gen3_phy_usb2_ops = {
++	.init		= rcar_gen3_phy_usb2_init,
++	.exit		= rcar_gen3_phy_usb2_exit,
++	.power_on	= rcar_gen3_phy_usb2_power_on,
++	.power_off	= rcar_gen3_phy_usb2_power_off,
++	.owner		= THIS_MODULE,
++};
++
++static const struct of_device_id rcar_gen3_phy_usb2_match_table[] = {
++	{ .compatible = "renesas,usb2-phy-r8a7795" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, rcar_gen3_phy_usb2_match_table);
++
++static int rcar_gen3_phy_usb2_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct rcar_gen3_chan *channel;
++	struct phy_provider *provider;
++	struct resource *res;
++
++	if (!dev->of_node) {
++		dev_err(dev, "This driver needs device tree\n");
++		return -EINVAL;
++	}
++
++	channel = devm_kzalloc(dev, sizeof(*channel), GFP_KERNEL);
++	if (!channel)
++		return -ENOMEM;
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "usb2_host");
++	channel->usb2.base = devm_ioremap_resource(dev, res);
++	if (IS_ERR(channel->usb2.base))
++		return PTR_ERR(channel->usb2.base);
++
++	/* "hsusb" memory resource is optional */
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "hsusb");
++
++	/* To avoid error message by devm_ioremap_resource() */
++	if (res) {
++		channel->hsusb.base = devm_ioremap_resource(dev, res);
++		if (IS_ERR(channel->hsusb.base))
++			channel->hsusb.base = NULL;
++	}
++
++	/* devm_phy_create() will call pm_runtime_enable(dev); */
++	channel->phy = devm_phy_create(dev, NULL, &rcar_gen3_phy_usb2_ops);
++	if (IS_ERR(channel->phy)) {
++		dev_err(dev, "Failed to create USB2 PHY\n");
++		return PTR_ERR(channel->phy);
++	}
++
++	phy_set_drvdata(channel->phy, channel);
++
++	provider = devm_of_phy_provider_register(dev, of_phy_simple_xlate);
++	if (IS_ERR(provider)) {
++		dev_err(dev, "Failed to register PHY provider\n");
++		return PTR_ERR(provider);
++	}
++
++	return 0;
++}
++
++static struct platform_driver rcar_gen3_phy_usb2_driver = {
++	.driver = {
++		.name		= "phy_rcar_gen3_usb2",
++		.of_match_table	= rcar_gen3_phy_usb2_match_table,
++	},
++	.probe	= rcar_gen3_phy_usb2_probe,
++};
++module_platform_driver(rcar_gen3_phy_usb2_driver);
++
++MODULE_LICENSE("GPL v2");
++MODULE_DESCRIPTION("Renesas R-Car Gen3 USB 2.0 PHY");
++MODULE_AUTHOR("Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>");
 -- 
-1.8.4.5
+1.9.1
 
