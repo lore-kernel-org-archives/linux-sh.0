@@ -1,127 +1,145 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 19 Oct 2015 20:09:53 +0000
-Subject: [PATCH] i2c: slave: add 8 bit seconds counter backend
-Message-Id: <1445285393-3478-1-git-send-email-wsa@the-dreams.de>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 20 Oct 2015 08:57:50 +0000
+Subject: [PATCH v5 3/4] phy: rcar-gen3-usb2: add runtime ID/VBUS pin detection
+Message-Id: <1445331471-5028-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1445331471-5028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1445331471-5028-1-git-send-email-yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org
+To: kishon-l0cyMroinI0@public.gmane.org, robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, pawel.moll-5wv7dgnIgG8@public.gmane.org, mark.rutland-5wv7dgnIgG8@public.gmane.org, ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+This patch adds support for runtime ID/VBUS pin detection if
+the channel 0 of R-Car gen3 is used. So, we are able to use
+the channel as both host and peripheral.
 
-Something simple to show and explain at ELCE15. Not for inclusion!
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
+ .../devicetree/bindings/phy/rcar-gen3-phy-usb2.txt |  2 +
+ drivers/phy/phy-rcar-gen3-usb2.c                   | 43 +++++++++++++++++++++-
+ 2 files changed, 44 insertions(+), 1 deletion(-)
 
-As promised, here is the driver from my talk. Educational only!
-
- drivers/i2c/Kconfig                |  3 ++
- drivers/i2c/Makefile               |  1 +
- drivers/i2c/i2c-slave-8bitseccnt.c | 66 ++++++++++++++++++++++++++++++++++++++
- 3 files changed, 70 insertions(+)
- create mode 100644 drivers/i2c/i2c-slave-8bitseccnt.c
-
-diff --git a/drivers/i2c/Kconfig b/drivers/i2c/Kconfig
-index 78fbee46362828..c43e00e88b86a3 100644
---- a/drivers/i2c/Kconfig
-+++ b/drivers/i2c/Kconfig
-@@ -118,6 +118,9 @@ if I2C_SLAVE
- config I2C_SLAVE_EEPROM
- 	tristate "I2C eeprom slave driver"
+diff --git a/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
+index affa0f7..2390e4e 100644
+--- a/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
++++ b/Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
+@@ -18,6 +18,7 @@ properties. This is because HSUSB has registers to select USB 2.0 host or
+ peripheral at that channel:
+ - reg: offset and length of the partial HSUSB register block.
+ - reg-names: must be "hsusb".
++- interrupts: interrupt specifier for the PHY.
  
-+config I2C_SLAVE_8BIT_SEC_CNT
-+	tristate "I2C 8 bit second counter slave driver"
-+
- endif
+ Example (R-Car H3):
  
- config I2C_DEBUG_CORE
-diff --git a/drivers/i2c/Makefile b/drivers/i2c/Makefile
-index 45095b3d16a914..19e8be1020865a 100644
---- a/drivers/i2c/Makefile
-+++ b/drivers/i2c/Makefile
-@@ -9,6 +9,7 @@ obj-$(CONFIG_I2C_CHARDEV)	+= i2c-dev.o
- obj-$(CONFIG_I2C_MUX)		+= i2c-mux.o
- obj-y				+= algos/ busses/ muxes/
- obj-$(CONFIG_I2C_STUB)		+= i2c-stub.o
-+obj-$(CONFIG_I2C_SLAVE_8BIT_SEC_CNT)	+= i2c-slave-8bitseccnt.o
- obj-$(CONFIG_I2C_SLAVE_EEPROM)	+= i2c-slave-eeprom.o
+@@ -25,6 +26,7 @@ Example (R-Car H3):
+ 		compatible = "renesas,usb2-phy-r8a7795";
+ 		reg = <0 0xee080200 0 0x700>, <0 0xe6590100 0 0x100>;
+ 		reg-names = "usb2_host", "hsusb";
++		interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7795_CLK_EHCI0>,
+ 			 <&mstp7_clks R8A7795_CLK_HSUSB>;
+ 	};
+diff --git a/drivers/phy/phy-rcar-gen3-usb2.c b/drivers/phy/phy-rcar-gen3-usb2.c
+index cf91f9f..3c6805c 100644
+--- a/drivers/phy/phy-rcar-gen3-usb2.c
++++ b/drivers/phy/phy-rcar-gen3-usb2.c
+@@ -12,6 +12,7 @@
+  * published by the Free Software Foundation.
+  */
  
- ccflags-$(CONFIG_I2C_DEBUG_CORE) := -DDEBUG
-diff --git a/drivers/i2c/i2c-slave-8bitseccnt.c b/drivers/i2c/i2c-slave-8bitseccnt.c
-new file mode 100644
-index 00000000000000..6049989523de6c
---- /dev/null
-+++ b/drivers/i2c/i2c-slave-8bitseccnt.c
-@@ -0,0 +1,66 @@
-+/*
-+ * I2C slave mode 8 bit seconds counter backend :)
-+ *
-+ * Copyright (C) 2015 by Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
-+ * Copyright (C) 2015 by Renesas Electronics Corporation
-+ *
-+ * This program is free software; you can redistribute it and/or modify it
-+ * under the terms of the GNU General Public License as published by the
-+ * Free Software Foundation; version 2 of the License.
-+ */
++#include <linux/interrupt.h>
+ #include <linux/io.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
+@@ -25,14 +26,18 @@
+ #define USB2_SPD_RSM_TIMSET	0x10c
+ #define USB2_OC_TIMSET		0x110
+ #define USB2_COMMCTRL		0x600
++#define USB2_OBINTSTA		0x604
++#define USB2_OBINTEN		0x608
+ #define USB2_VBCTRL		0x60c
+ #define USB2_LINECTRL1		0x610
+ #define USB2_ADPCTRL		0x630
+ 
+ /* INT_ENABLE */
++#define USB2_INT_ENABLE_UCOM_INTEN	BIT(3)
+ #define USB2_INT_ENABLE_USBH_INTB_EN	BIT(2)
+ #define USB2_INT_ENABLE_USBH_INTA_EN	BIT(1)
+-#define USB2_INT_ENABLE_INIT		(USB2_INT_ENABLE_USBH_INTB_EN | \
++#define USB2_INT_ENABLE_INIT		(USB2_INT_ENABLE_UCOM_INTEN | \
++					 USB2_INT_ENABLE_USBH_INTB_EN | \
+ 					 USB2_INT_ENABLE_USBH_INTA_EN)
+ 
+ /* USBCTR */
+@@ -48,6 +53,12 @@
+ /* COMMCTRL */
+ #define USB2_COMMCTRL_OTG_PERI		BIT(31)	/* 1 = Peripheral mode */
+ 
++/* OBINTSTA and OBINTEN */
++#define USB2_OBINT_SESSVLDCHG		BIT(12)
++#define USB2_OBINT_IDDIGCHG		BIT(11)
++#define USB2_OBINT_BITS			(USB2_OBINT_SESSVLDCHG | \
++					 USB2_OBINT_IDDIGCHG)
 +
-+#include <linux/i2c.h>
-+#include <linux/init.h>
-+#include <linux/module.h>
-+#include <linux/timekeeping.h>
-+
-+static int i2c_slave_8bit_seconds_slave_cb(struct i2c_client *client,
-+				     enum i2c_slave_event event, u8 *val)
+ /* VBCTRL */
+ #define USB2_VBCTRL_DRVVBUSSEL		BIT(8)
+ 
+@@ -174,6 +185,9 @@ static void rcar_gen3_init_otg(struct rcar_gen3_chan *ch)
+ 
+ 	val = readl(usb2_base + USB2_VBCTRL);
+ 	writel(val | USB2_VBCTRL_DRVVBUSSEL, usb2_base + USB2_VBCTRL);
++	writel(USB2_OBINT_BITS, usb2_base + USB2_OBINTSTA);
++	val = readl(usb2_base + USB2_OBINTEN);
++	writel(val | USB2_OBINT_BITS, usb2_base + USB2_OBINTEN);
+ 	val = readl(usb2_base + USB2_ADPCTRL);
+ 	writel(val | USB2_ADPCTRL_IDPULLUP, usb2_base + USB2_ADPCTRL);
+ 	val = readl(usb2_base + USB2_LINECTRL1);
+@@ -270,6 +284,23 @@ static struct phy_ops rcar_gen3_phy_usb2_ops = {
+ 	.owner		= THIS_MODULE,
+ };
+ 
++static irqreturn_t rcar_gen3_phy_usb2_irq(int irq, void *_ch)
 +{
-+	switch (event) {
-+	case I2C_SLAVE_READ_REQUESTED:
-+	case I2C_SLAVE_READ_PROCESSED:
-+		/* Always get the most recent value */
-+		*val = get_seconds() & 0xff;
-+		break;
++	struct rcar_gen3_chan *ch = _ch;
++	void __iomem *usb2_base = ch->usb2.base;
++	u32 status = readl(usb2_base + USB2_OBINTSTA);
++	irqreturn_t ret = IRQ_NONE;
 +
-+	case I2C_SLAVE_WRITE_REQUESTED:
-+	case I2C_SLAVE_WRITE_RECEIVED:
-+	case I2C_SLAVE_STOP:
-+	default:
-+		break;
++	if (status & USB2_OBINT_BITS) {
++		dev_vdbg(&ch->phy->dev, "%s: %08x\n", __func__, status);
++		writel(USB2_OBINT_BITS, usb2_base + USB2_OBINTSTA);
++		rcar_gen3_device_recognition(ch);
++		ret = IRQ_HANDLED;
 +	}
 +
-+	return 0;
++	return ret;
 +}
 +
-+static int i2c_slave_8bit_seconds_probe(struct i2c_client *client, const struct i2c_device_id *id)
-+{
-+	return i2c_slave_register(client, i2c_slave_8bit_seconds_slave_cb);
-+};
+ static const struct of_device_id rcar_gen3_phy_usb2_match_table[] = {
+ 	{ .compatible = "renesas,usb2-phy-r8a7795" },
+ 	{ }
+@@ -302,9 +333,19 @@ static int rcar_gen3_phy_usb2_probe(struct platform_device *pdev)
+ 
+ 	/* To avoid error message by devm_ioremap_resource() */
+ 	if (res) {
++		int irq;
 +
-+static int i2c_slave_8bit_seconds_remove(struct i2c_client *client)
-+{
-+	i2c_slave_unregister(client);
-+	return 0;
-+}
-+
-+static const struct i2c_device_id i2c_slave_8bit_seconds_id[] = {
-+	{ "slave-8bit_seconds", 0 },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(i2c, i2c_slave_8bit_seconds_id);
-+
-+static struct i2c_driver i2c_slave_8bit_seconds_driver = {
-+	.driver = {
-+		.name = "i2c-slave-8bit_seconds",
-+	},
-+	.probe = i2c_slave_8bit_seconds_probe,
-+	.remove = i2c_slave_8bit_seconds_remove,
-+	.id_table = i2c_slave_8bit_seconds_id,
-+};
-+module_i2c_driver(i2c_slave_8bit_seconds_driver);
-+
-+MODULE_AUTHOR("Wolfram Sang <wsa@sang-engineering.com>");
-+MODULE_DESCRIPTION("I2C slave mode 8 bit seconds counter backend");
-+MODULE_LICENSE("GPL v2");
+ 		channel->hsusb.base = devm_ioremap_resource(dev, res);
+ 		if (IS_ERR(channel->hsusb.base))
+ 			channel->hsusb.base = NULL;
++		/* call request_irq for OTG */
++		irq = platform_get_irq(pdev, 0);
++		if (irq >= 0)
++			irq = devm_request_irq(dev, irq, rcar_gen3_phy_usb2_irq,
++					       IRQF_SHARED, dev_name(dev),
++					       channel);
++		if (irq < 0)
++			dev_err(dev, "No irq handler (%d)\n", irq);
+ 	}
+ 
+ 	/* devm_phy_create() will call pm_runtime_enable(dev); */
 -- 
-2.1.4
+1.9.1
 
