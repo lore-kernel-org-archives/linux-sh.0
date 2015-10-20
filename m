@@ -1,54 +1,41 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 20 Oct 2015 07:37:09 +0000
-Subject: Re: [PATCH 0/4] PCI: rcar: Add support for ARM64 and multiple instances
-Message-Id: <CAMuHMdWiH4ZUSmKQ01qQYvXcjb_3K4XBFLjVGSe1dUoKi=Jb_Q@mail.gmail.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 20 Oct 2015 08:00:10 +0000
+Subject: RE: [PATCH 0/4] PCI: rcar: Add support for ARM64 and multiple instances
+Message-Id: <SIXPR06MB04158545EDCA19F6C66A6783F5390@SIXPR06MB0415.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
-	<20151019231634.GA13841@localhost>
-	<20151020013650.GA13721@verge.net.au>
-In-Reply-To: <20151020013650.GA13721@verge.net.au>
+	<20151019231634.GA13841@localhost>	<20151020013650.GA13721@verge.net.au>
+ <CAMuHMdWiH4ZUSmKQ01qQYvXcjb_3K4XBFLjVGSe1dUoKi=Jb_Q@mail.gmail.com>
+In-Reply-To: <CAMuHMdWiH4ZUSmKQ01qQYvXcjb_3K4XBFLjVGSe1dUoKi=Jb_Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Bjorn Helgaas <helgaas@kernel.org>, Phil Edworthy <phil.edworthy@renesas.com>, Bjorn Helgaas <bhelgaas@google.com>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, linux-pci <linux-pci@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms@verge.net.au>
+Cc: Bjorn Helgaas <helgaas@kernel.org>, Bjorn Helgaas <bhelgaas@google.com>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, linux-pci <linux-pci@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Tue, Oct 20, 2015 at 3:36 AM, Simon Horman <horms@verge.net.au> wrote:
-> On Mon, Oct 19, 2015 at 06:16:34PM -0500, Bjorn Helgaas wrote:
->> [+cc Geert]
->>
->> On Fri, Oct 02, 2015 at 11:25:03AM +0100, Phil Edworthy wrote:
->> > Fixes and changes to get PCIe working on ARM64 with mulitple instances.
->> >
->> > I've tested these on ARM (Koelsch board), and it works fine.
->> > I've also tested on ARM64 (Salvator-X board), but I currently have an issue
->> > with inbound PCI accesses. I am reasonably sure that this problem is hardware
->> > related.
->> >
->> > Phil Edworthy (4):
->> >   PCI: rcar-pcie: Make PCI aware of the IO resources
->> >   PCI: rcar-pcie: Remove dependency on ARM-specific struct hw_pci
->> >   PCI: rcar-pcie: Set root bus nr to that provided in DT
->> >   PCI: rcar-pcie: Fix IO offset for multiple instances
->>
->> I applied these with Simon's ack to pci/host-rcar for v4.4.
->>
->> Note that these are on top of Geert's patch to make rcar build only
->> for ARM, which is probably not necessary after you remove the struct
->> hw_pci dependency.  I can drop Geert's patch if you want.
->
-> I'm happy with that if Geert is.
-
-Iff the driver compiles/works on arm64 now, my patch should/must be
-dropped/reverted.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR2VlcnQsDQoNCk9uIDIwIE9jdG9iZXIgMjAxNSAwODozNywgR2VlcnQgd3JvdGU6DQo+IE9u
+IFR1ZSwgT2N0IDIwLCAyMDE1IGF0IDM6MzYgQU0sIFNpbW9uIEhvcm1hbiA8aG9ybXNAdmVyZ2Uu
+bmV0LmF1PiB3cm90ZToNCj4gPiBPbiBNb24sIE9jdCAxOSwgMjAxNSBhdCAwNjoxNjozNFBNIC0w
+NTAwLCBCam9ybiBIZWxnYWFzIHdyb3RlOg0KPiA+PiBbK2NjIEdlZXJ0XQ0KPiA+Pg0KPiA+PiBP
+biBGcmksIE9jdCAwMiwgMjAxNSBhdCAxMToyNTowM0FNICswMTAwLCBQaGlsIEVkd29ydGh5IHdy
+b3RlOg0KPiA+PiA+IEZpeGVzIGFuZCBjaGFuZ2VzIHRvIGdldCBQQ0llIHdvcmtpbmcgb24gQVJN
+NjQgd2l0aCBtdWxpdHBsZSBpbnN0YW5jZXMuDQo+ID4+ID4NCj4gPj4gPiBJJ3ZlIHRlc3RlZCB0
+aGVzZSBvbiBBUk0gKEtvZWxzY2ggYm9hcmQpLCBhbmQgaXQgd29ya3MgZmluZS4NCj4gPj4gPiBJ
+J3ZlIGFsc28gdGVzdGVkIG9uIEFSTTY0IChTYWx2YXRvci1YIGJvYXJkKSwgYnV0IEkgY3VycmVu
+dGx5IGhhdmUgYW4gaXNzdWUNCj4gPj4gPiB3aXRoIGluYm91bmQgUENJIGFjY2Vzc2VzLiBJIGFt
+IHJlYXNvbmFibHkgc3VyZSB0aGF0IHRoaXMgcHJvYmxlbSBpcw0KPiBoYXJkd2FyZQ0KPiA+PiA+
+IHJlbGF0ZWQuDQo+ID4+ID4NCj4gPj4gPiBQaGlsIEVkd29ydGh5ICg0KToNCj4gPj4gPiAgIFBD
+STogcmNhci1wY2llOiBNYWtlIFBDSSBhd2FyZSBvZiB0aGUgSU8gcmVzb3VyY2VzDQo+ID4+ID4g
+ICBQQ0k6IHJjYXItcGNpZTogUmVtb3ZlIGRlcGVuZGVuY3kgb24gQVJNLXNwZWNpZmljIHN0cnVj
+dCBod19wY2kNCj4gPj4gPiAgIFBDSTogcmNhci1wY2llOiBTZXQgcm9vdCBidXMgbnIgdG8gdGhh
+dCBwcm92aWRlZCBpbiBEVA0KPiA+PiA+ICAgUENJOiByY2FyLXBjaWU6IEZpeCBJTyBvZmZzZXQg
+Zm9yIG11bHRpcGxlIGluc3RhbmNlcw0KPiA+Pg0KPiA+PiBJIGFwcGxpZWQgdGhlc2Ugd2l0aCBT
+aW1vbidzIGFjayB0byBwY2kvaG9zdC1yY2FyIGZvciB2NC40Lg0KPiA+Pg0KPiA+PiBOb3RlIHRo
+YXQgdGhlc2UgYXJlIG9uIHRvcCBvZiBHZWVydCdzIHBhdGNoIHRvIG1ha2UgcmNhciBidWlsZCBv
+bmx5DQo+ID4+IGZvciBBUk0sIHdoaWNoIGlzIHByb2JhYmx5IG5vdCBuZWNlc3NhcnkgYWZ0ZXIg
+eW91IHJlbW92ZSB0aGUgc3RydWN0DQo+ID4+IGh3X3BjaSBkZXBlbmRlbmN5LiAgSSBjYW4gZHJv
+cCBHZWVydCdzIHBhdGNoIGlmIHlvdSB3YW50Lg0KPiA+DQo+ID4gSSdtIGhhcHB5IHdpdGggdGhh
+dCBpZiBHZWVydCBpcy4NCj4gDQo+IElmZiB0aGUgZHJpdmVyIGNvbXBpbGVzL3dvcmtzIG9uIGFy
+bTY0IG5vdywgbXkgcGF0Y2ggc2hvdWxkL211c3QgYmUNCj4gZHJvcHBlZC9yZXZlcnRlZC4NClll
+cywgdGhlIGRyaXZlciB3b3JrcyBvbiB0aGUgQVJNNjQgU2FsdmF0b3ItWCBib2FyZC4gDQoNClRo
+YW5rcw0KUGhpbA0K
