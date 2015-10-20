@@ -1,54 +1,40 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Mon, 05 Oct 2015 14:55:55 +0000
-Subject: [PATCH v3 3/3] ARM: shmobile: bockw dts: define sdhi0 pins with pull-ups
-Message-Id: <1444056955-8836-4-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 20 Oct 2015 08:57:51 +0000
+Subject: [PATCH v5 4/4] MAINTAINERS: add Renesas usb2 phy driver
+Message-Id: <1445331471-5028-5-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1445331471-5028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1445331471-5028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: kishon@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Ensures that the pull-ups for pins SD0_CD and SD0_WP are enabled.
+Add Renesas usb2 phy driver to maintainer entry.
 
-This is one of two features from the DT reference platform that are
-still missing in MP.
-
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 10 +++++++---
- 1 file changed, 7 insertions(+), 3 deletions(-)
+ MAINTAINERS | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 90543b1..8a54076 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -137,10 +137,14 @@
- 	};
+diff --git a/MAINTAINERS b/MAINTAINERS
+index be0055c..ecff678 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -8742,6 +8742,12 @@ F:	drivers/rpmsg/
+ F:	Documentation/rpmsg.txt
+ F:	include/linux/rpmsg.h
  
- 	sdhi0_pins: sd0 {
--		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
--				  "sdhi0_cd";
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
- 		renesas,function = "sdhi0";
- 	};
-+	sdhi0_pup_pins: sd0_pup {
-+		renesas,groups = "sdhi0_cd", "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+		bias-pull-up;
-+	};
- 
- 	hspi0_pins: hspi0 {
- 		renesas,groups = "hspi0_a";
-@@ -169,7 +173,7 @@
- };
- 
- &sdhi0 {
--	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-0 = <&sdhi0_pins>, <&sdhi0_pup_pins>;
- 	pinctrl-names = "default";
- 
- 	vmmc-supply = <&fixedregulator3v3>;
++RENESAS USB2 PHY DRIVER
++M:	Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
++L:	linux-sh@vger.kernel.org
++S:	Maintained
++F:	drivers/phy/phy-rcar-gen3-usb2.c
++
+ RESET CONTROLLER FRAMEWORK
+ M:	Philipp Zabel <p.zabel@pengutronix.de>
+ S:	Maintained
 -- 
-2.6.0
+1.9.1
 
