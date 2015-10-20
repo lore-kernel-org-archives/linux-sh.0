@@ -1,70 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 30 Oct 2015 07:51:53 +0000
-Subject: Re: [PATCH v11 6/8] arm64: renesas: add Salvator-X board support on DTS
-Message-Id: <20151030075152.GE31252@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 20 Oct 2015 19:26:32 +0000
+Subject: [PATCH/RFC 1/4] pinctrl: sh-pfc: Add PINMUX_SINGLE()
+Message-Id: <1445369195-25117-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
- <1444890243-6978-7-git-send-email-horms+renesas@verge.net.au>
- <20151015110139.GG8825@leverpostej>
- <20151023070032.GA4502@verge.net.au>
- <CAMuHMdVzUPyhkfPy3s+jBK1gQ-kZqYfrQZ8Bww-iFxGOPVZn2w@mail.gmail.com>
-In-Reply-To: <CAMuHMdVzUPyhkfPy3s+jBK1gQ-kZqYfrQZ8Bww-iFxGOPVZn2w@mail.gmail.com>
+References: <1445369195-25117-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1445369195-25117-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Oct 29, 2015 at 08:52:12AM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Fri, Oct 23, 2015 at 9:00 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Thu, Oct 15, 2015 at 12:01:40PM +0100, Mark Rutland wrote:
-> >> > +           stdout-path = &scif2;
-> >>
-> >> No rate? It would be better to be explicit here; you should be able to
-> >> have:
-> >>
-> >>       stdout-path = "serial0:115200n8"
-> >>
-> >> Where "115200n8" is replaced with whatever configuration this board
-> >> actually has.
-> >
-> > I think that we have had this discussion before in relation to
-> > a different board for a different Renesas SoC but I could be mistaken.
-> 
-> IIRC, at that time the code to parse the options wasn't upstream yet, so
-> adding the options would have broken the serial console.
-> 
-> I can confirm it works fine on Salvator-X with
-> 
->         stdout-path = "serial0:115200n8";
+Add a macro to describe a pinmux configuration for a single-function
+pin.
 
-Thanks.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-Is this considered to be best practice?
-If so I am of a mind to update the patch.
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 63e6cd050d0fb7d2..932fbef8bad400dd 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -277,6 +277,13 @@ struct sh_pfc_soc_info {
+ 	PINMUX_DATA(fn##_MARK, FN_##ms, FN_##ipsr, FN_##fn)
+ 
+ /*
++ * Describe a pinmux configuration for a single-function pin.
++ *   - fn: Function name
++ */
++#define PINMUX_SINGLE(fn)						\
++	PINMUX_DATA(fn##_MARK, FN_##fn)
++
++/*
+  * GP port style (32 ports banks)
+  */
+ 
+-- 
+1.9.1
 
-> > The r8a7795 uses the sh-sci serial driver for which the default rate is
-> > 115200. It is hard for me to conceive of a situation where that would
-> > change without due consideration being given to the implications for DT
-> > files.
-> >
-> > Not specifying the baud here is consistent with what we have
-> > been doing for ARM32 Renesas SoCs for some time.
-> 
-> FWIW, I have updated all ARM32 Renesas DTSes locally:
->   1. Use alias in and add serial options to stdout-path,
->   2. Drop superfluous console= from bootargs (shmobile-legacy is gone,
->      and it works fine on boards with both fbdev and serial consoles).
-> 
-> And everything looks fine on the boards I could try it on (sh73a0/kzm9g,
-> r8a73a4/ape6evm, r8a7740/armadillo, r8a7791/koelsch).
-> 
-> Hence if you're open for this change, I can submit patches (or a single patch,
-> up to your preference).
-
-Sure, I'm happy to consider that (I slightly prefer per-board patches) if:
-
-* That is now considered best practice and;
-* Due consideration is given to backwards compatibility
-  (I suspect it is new DTs work with old kernels so its a non-issue)
