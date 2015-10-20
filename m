@@ -1,44 +1,66 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 23 Oct 2015 21:46:40 +0000
-Subject: [PATCH 2/2] sh_eth: fix RX buffer size calculation
-Message-Id: <1571476.HbCo5gVB8j@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 20 Oct 2015 19:26:34 +0000
+Subject: [PATCH/RFC 3/4] pinctrl: sh-pfc: r8a7791: Use PINMUX_SINGLE() instead of raw PINMUX_DATA()
+Message-Id: <1445369195-25117-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <2249923.hKhT9K6gME@wasted.cogentembedded.com>
-In-Reply-To: <2249923.hKhT9K6gME@wasted.cogentembedded.com>
+References: <1445369195-25117-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1445369195-25117-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The RX buffer size calulation failed to account for the length granularity
-(which is now 32 bytes)...
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/net/ethernet/renesas/sh_eth.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 34 +++++++++++++++++-----------------
+ 1 file changed, 17 insertions(+), 17 deletions(-)
 
-Index: net/drivers/net/ethernet/renesas/sh_eth.c
-=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
-+++ net/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1127,7 +1127,7 @@ static void sh_eth_ring_format(struct ne
- 	struct sh_eth_txdesc *txdesc = NULL;
- 	int rx_ringsize = sizeof(*rxdesc) * mdp->num_rx_ring;
- 	int tx_ringsize = sizeof(*txdesc) * mdp->num_tx_ring;
--	int skbuff_size = mdp->rx_buf_sz + SH_ETH_RX_ALIGN - 1;
-+	int skbuff_size = mdp->rx_buf_sz + SH_ETH_RX_ALIGN + 32 - 1;
- 	dma_addr_t dma_addr;
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index 87a4f44147c1d5bc..ebadd2816b7b5dcf 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -787,23 +787,23 @@ enum {
+ static const u16 pinmux_data[] = {
+ 	PINMUX_DATA_GP_ALL(), /* PINMUX_DATA(GP_M_N_DATA, GP_M_N_FN...), */
  
- 	mdp->cur_rx = 0;
-@@ -1450,7 +1450,7 @@ static int sh_eth_rx(struct net_device *
- 	struct sk_buff *skb;
- 	u16 pkt_len = 0;
- 	u32 desc_status;
--	int skbuff_size = mdp->rx_buf_sz + SH_ETH_RX_ALIGN - 1;
-+	int skbuff_size = mdp->rx_buf_sz + SH_ETH_RX_ALIGN + 32 - 1;
- 	dma_addr_t dma_addr;
+-	PINMUX_DATA(EX_CS0_N_MARK, FN_EX_CS0_N),
+-	PINMUX_DATA(RD_N_MARK, FN_RD_N),
+-	PINMUX_DATA(AUDIO_CLKA_MARK, FN_AUDIO_CLKA),
+-	PINMUX_DATA(VI0_CLK_MARK, FN_VI0_CLK),
+-	PINMUX_DATA(VI0_DATA0_VI0_B0_MARK, FN_VI0_DATA0_VI0_B0),
+-	PINMUX_DATA(VI0_DATA1_VI0_B1_MARK, FN_VI0_DATA1_VI0_B1),
+-	PINMUX_DATA(VI0_DATA2_VI0_B2_MARK, FN_VI0_DATA2_VI0_B2),
+-	PINMUX_DATA(VI0_DATA4_VI0_B4_MARK, FN_VI0_DATA4_VI0_B4),
+-	PINMUX_DATA(VI0_DATA5_VI0_B5_MARK, FN_VI0_DATA5_VI0_B5),
+-	PINMUX_DATA(VI0_DATA6_VI0_B6_MARK, FN_VI0_DATA6_VI0_B6),
+-	PINMUX_DATA(VI0_DATA7_VI0_B7_MARK, FN_VI0_DATA7_VI0_B7),
+-	PINMUX_DATA(USB0_PWEN_MARK, FN_USB0_PWEN),
+-	PINMUX_DATA(USB0_OVC_MARK, FN_USB0_OVC),
+-	PINMUX_DATA(USB1_PWEN_MARK, FN_USB1_PWEN),
+-	PINMUX_DATA(USB1_OVC_MARK, FN_USB1_OVC),
+-	PINMUX_DATA(DU0_DOTCLKIN_MARK, FN_DU0_DOTCLKIN),
+-	PINMUX_DATA(SD1_CLK_MARK, FN_SD1_CLK),
++	PINMUX_SINGLE(EX_CS0_N),
++	PINMUX_SINGLE(RD_N),
++	PINMUX_SINGLE(AUDIO_CLKA),
++	PINMUX_SINGLE(VI0_CLK),
++	PINMUX_SINGLE(VI0_DATA0_VI0_B0),
++	PINMUX_SINGLE(VI0_DATA1_VI0_B1),
++	PINMUX_SINGLE(VI0_DATA2_VI0_B2),
++	PINMUX_SINGLE(VI0_DATA4_VI0_B4),
++	PINMUX_SINGLE(VI0_DATA5_VI0_B5),
++	PINMUX_SINGLE(VI0_DATA6_VI0_B6),
++	PINMUX_SINGLE(VI0_DATA7_VI0_B7),
++	PINMUX_SINGLE(USB0_PWEN),
++	PINMUX_SINGLE(USB0_OVC),
++	PINMUX_SINGLE(USB1_PWEN),
++	PINMUX_SINGLE(USB1_OVC),
++	PINMUX_SINGLE(DU0_DOTCLKIN),
++	PINMUX_SINGLE(SD1_CLK),
  
- 	boguscnt = min(boguscnt, *quota);
+ 	/* IPSR0 */
+ 	PINMUX_IPSR_DATA(IP0_0, D0),
+-- 
+1.9.1
 
