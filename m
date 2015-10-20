@@ -1,71 +1,53 @@
-From: Lars-Peter Clausen <lars@metafoo.de>
-Date: Fri, 16 Oct 2015 13:47:54 +0000
-Subject: Re: [PATCH] dmaengine: rcar-dmac: Wait for IRQs completion when freeing channel
-Message-Id: <5621000A.90708@metafoo.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 20 Oct 2015 18:49:58 +0000
+Subject: [git pull] clk: shmobile: Add new Renesas CPG/MSSR DT bindings for
+Message-Id: <1445367000-11525-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442233573-26684-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1442233573-26684-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>
+Cc: Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms+renesas@verge.net.au>, linux-clk@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 10/15/2015 07:09 PM, Laurent Pinchart wrote:
-> Hi Lars,
-> 
-> On Thursday 15 October 2015 09:35:31 Lars-Peter Clausen wrote:
->> On 10/15/2015 05:56 AM, Vinod Koul wrote:
->>> On Wed, Oct 14, 2015 at 01:02:22PM +0200, Lars-Peter Clausen wrote:
->>>> On 10/14/2015 12:50 PM, Vinod Koul wrote:
->>>>> On Thu, Oct 08, 2015 at 04:51:30PM +0200, Lars-Peter Clausen wrote:
->>>>>>> The DMA engine API states that
->>>>>>>
->>>>>>>    * device_terminate_all
->>>>>>>    
->>>>>>>      - Aborts all the pending and ongoing transfers on the channel
->>>>>>>      - This command should operate synchronously on the channel,
->>>>>>>        terminating right away all the channels
->>>>>>>
->>>>>>> I wonder how to interpret "synchronously" here, should terminate_all()
->>>>>>> wait for termination to be complete ? In that case it wouldn't be
->>>>>>> valid to call it from non-sleepable context.
->>>>>>
->>>>>> We need to extend the DMAengine API to allow synchronization. The issue
->>>>>> is not only the IRQ itself but also the tasklet that can be scheduled
->>>>>> from the IRQ. Since we in some cases (e.g. audio underrun) call
->>>>>> terminate_all() from within the completion callback that runs in the in
->>>>>> the tasklet we can't synchronize to the tasklet in
->>>>>> dmaengine_terminate_all(). We need a separate API call to handle this.
->>>>>> And then maybe have a helper like dmaengine_terminate_all_sync() that
->>>>>> terminates and synchronizes. And in cases where terminate_all is called
->>>>>> from a context where it can't synchronize the new API needs to be
->>>>>> called separately before freeing the resources.
->>>>>
->>>>> Right now the terminate_all() is intended for syncronous behaviour which
->>>>> prevents it from being invoked in the callback.
->>>>
->>>> That does not match reality though. Which means the documentation is
->>>> wrong. Pretty much all drivers implement a non-synchronous terminate
->>>> function and there are users that rely on this.
->>>
->>> Lets fix that then :)
->>>
->>> We should have both option IMHO, as I think we have both types of
->>> usages... Care to send a patch?
->>
->> Yeah, it's on my TODO list for the next month, since I need the synchronous
->> terminate elsewhere as well.
-> 
-> The DMA engine API needs lots of love. Should we try to synchronize on all the 
-> open issues to define a coherent direction ?
+	Hi Mike, Stephen,
 
-Sure. Stuff I have on my wish list:
- * Better status reporting on completed transfers. Errors,
-underflow/overflow, number of bytes transferred.
- * Support for making all transfers cyclic. Most controllers support this
-but it is currently not exposed through the API. This is e.g. useful for
-video (cyclic 2d transfers) as well as audio when we do not want to or can
-not use a continuous buffer.
+The following changes since commit 64291f7db5bd8150a74ad2036f1037e6a0428df2:
 
-- Lars
+  Linux 4.2 (2015-08-30 11:34:09 -0700)
 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git clk-shmobile-for-v4.4
+
+for you to fetch changes up to 9d0c3c682033d3f10ac1ad8e72ca0c1b48063409:
+
+  clk: shmobile: Add r8a7795 CPG Core Clock Definitions (2015-10-20 20:36:00 +0200)
+
+Summary:
+  - clk: shmobile: Add new Renesas CPG/MSSR DT bindings for r8a7795
+
+Thanks for pulling!
+
+----------------------------------------------------------------
+Geert Uytterhoeven (2):
+      clk: shmobile: Add new Renesas CPG/MSSR DT bindings
+      clk: shmobile: Add r8a7795 CPG Core Clock Definitions
+
+ .../devicetree/bindings/clock/renesas,cpg-mssr.txt | 69 ++++++++++++++++++++++
+ include/dt-bindings/clock/r8a7795-cpg-mssr.h       | 63 ++++++++++++++++++++
+ include/dt-bindings/clock/renesas-cpg-mssr.h       | 15 +++++
+ 3 files changed, 147 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/clock/renesas,cpg-mssr.txt
+ create mode 100644 include/dt-bindings/clock/r8a7795-cpg-mssr.h
+ create mode 100644 include/dt-bindings/clock/renesas-cpg-mssr.h
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
