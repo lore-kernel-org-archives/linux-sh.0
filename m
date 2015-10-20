@@ -1,30 +1,57 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 06 Oct 2015 12:37:51 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain for sound
-Message-Id: <5814245.0FrCevzbqn@wuerfel>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 20 Oct 2015 19:26:31 +0000
+Subject: [PATCH/RFC 0/4] pinctrl: sh-pfc: Add PINMUX_SINGLE()
+Message-Id: <1445369195-25117-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1443752733.git.horms+renesas@verge.net.au>
- <560E6AAE.9080605@cogentembedded.com> <560E6B61.5000509@cogentembedded.com>
-In-Reply-To: <560E6B61.5000509@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Friday 02 October 2015 14:32:49 Sergei Shtylyov wrote:
-> On 10/2/2015 2:29 PM, Sergei Shtylyov wrote:
-> 
-> >> From: Geert Uytterhoeven <geert+renesas@glider.be>
-> >>
-> >> 484adb005886 ("ARM: shmobile: r8a7790 dtsi: Add CPG/MSTP Clock Domain")
-> >> added CPG/MSTP clock-cells domain support, but it was missing sound
-> >> support. This patch adds it.
-> >
-> >     Really? I'm only seeing "power-domains" prop added...
-> 
->     Oh, I understand now. The log seems somewhat poorly worded though...
+	Hi,
 
-I understood it right and merged it as is, but I agree this could
-have been clearer.
+Currently single-function pins are described using the raw PINMUX_DATA()
+macro.
 
-	Arnd
+Morimoto-san doesn't like that. He proposed to use the existing
+PINMUX_IPSR_NOGP() macro instead (cfr. "[RFC] pinctrl: sh-pfc: r8a7795:
+Add pinmux data for single-function pins",
+http://www.spinics.net/lists/linux-sh/msg44823.html).
+However, that macro is intended to describe a pinmux configuration
+without GPIO function, which feels wrong to me.
+
+This patch series proposes an alternative, introducing a new macro
+PINMUX_SINGLE() to describe a pinmux configuration for a single-function
+pin. It also converts the existing single-function pin descriptions.
+
+Thanks for your comments!
+
+Geert Uytterhoeven (4):
+  pinctrl: sh-pfc: Add PINMUX_SINGLE()
+  pinctrl: sh-pfc: r8a7790: Use PINMUX_SINGLE() instead of raw
+    PINMUX_DATA()
+  pinctrl: sh-pfc: r8a7791: Use PINMUX_SINGLE() instead of raw
+    PINMUX_DATA()
+  pinctrl: sh-pfc: r8a7794: Use PINMUX_SINGLE() instead of raw
+    PINMUX_DATA()
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 18 +++++++--------
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 34 ++++++++++++++--------------
+ drivers/pinctrl/sh-pfc/pfc-r8a7794.c | 44 ++++++++++++++++++------------------
+ drivers/pinctrl/sh-pfc/sh_pfc.h      |  7 ++++++
+ 4 files changed, 55 insertions(+), 48 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
