@@ -1,22 +1,37 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 06 Oct 2015 14:03:24 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC Defconfig Updates for v4.4
-Message-Id: <8599667.VsjTy3CzNn@wuerfel>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 21 Oct 2015 23:05:19 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7791: fix "gpio-ranges" props
+Message-Id: <5904216.pOYUtEytKc@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1442479800.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1442479800.git.horms+renesas@verge.net.au>
+References: <10037494.4LD4T2QGPX@wasted.cogentembedded.com>
+In-Reply-To: <10037494.4LD4T2QGPX@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thursday 17 September 2015 17:59:53 Simon Horman wrote:
-> Please consider these Renesas ARM based SoC defconfig updates for v4.4.
-> 
-> This is a minor cleanup of defconfigs after reshuffling to
-> remove legacy board code.
-> 
-> 
-Merged into next/defconfig, thanks!
+On R8A7791, GPIO banks 1 and 7  are missing  pins 26 to 31.  Correct the
+"gpio-ranges" properties of the GPIO1 node (GPIO7 is already correct).
 
-	Arnd
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
+---
+This patch is against the 'renesas-devel-20151019-v4.3-rc6' of Simon Horman's
+'renesas.git' repo.
+
+ arch/arm/boot/dts/r8a7791.dtsi |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Index: renesas/arch/arm/boot/dts/r8a7791.dtsi
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791.dtsi
++++ renesas/arch/arm/boot/dts/r8a7791.dtsi
+@@ -100,7 +100,7 @@
+ 		interrupts = <0 5 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+ 		gpio-controller;
+-		gpio-ranges = <&pfc 0 32 32>;
++		gpio-ranges = <&pfc 0 32 26>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+ 		clocks = <&mstp9_clks R8A7791_CLK_GPIO1>;
+
