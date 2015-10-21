@@ -1,52 +1,81 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 30 Oct 2015 08:27:49 +0000
-Subject: Re: [PATCH v5 5/5] clk: shmobile: r8a7795: Add new CPG/MSSR driver
-Message-Id: <CAMuHMdVDb-7AbCLJJAPGPY-dEVPbcevL3K8eA4eQpHL8_3pAOQ@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 21 Oct 2015 21:41:49 +0000
+Subject: Re: ARM64: renesas: r8a7795: Add graphics-related MSTP clocks
+Message-Id: <28354162.n5AJuuLfzM@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446117664-6037-1-git-send-email-geert+renesas@glider.be>
-	<1446117664-6037-6-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1446117664-6037-6-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms+renesas@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-clk <linux-clk@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Thu, Oct 29, 2015 at 12:21 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> Add a new R-Car H3 Clock Pulse Generator / Module Standby and Software
-> Reset driver, using the new CPG/MSSR driver core.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> v5:
+Hi Geert,
 
->   - Enter shmobile subdir if CONFIG_ARCH_RENESAS=y,
+On Wednesday 30 September 2015 14:19:34 Geert Uytterhoeven wrote:
+> Hi Laurent,
+> 
+> http://git.linuxtv.org/cgit.cgi/pinchartl/media.git/commit/?h=vsp1-kms-gen3-20150929&id12906b34fe88e4eceface078af9cd6b2fa0955e:
+> > diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> > b/arch/arm64/boot/dts/renesas/r8a7795.dtsi index
+> > ed192d480e355e11..bcba6b4b86f8e24f 100644
+> > --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> > +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+> > @@ -413,6 +413,41 @@
+> > 
+> >                                       clock-indices = <R8A7795_CLK_SCIF2>;
+> >                               
+> >                               };
+> > 
+> > +                             mstp6_clks: mstp6@e61501c0 {
+> > +                                     compatible > > "renesas,r8a7795-mstp-clocks", +                                         
+> >         "renesas,cpg-mstp-clocks"; +                                    
+> > reg = <0 0xe6150148 0 4>, <0 0xe61501c0 0 4>; +                          
+> >           clocks =  <
+> > +                                             &s2d1_clk &s2d1_clk
+> > &s2d1_clk &s2d1_clk +                                            
+> > &s2d1_clk &s2d1_clk &s2d1_clk &s2d1_clk +                                
+> >             &s2d1_clk
+> > +                                     >;
+> > +                                     #clock-cells = <1>;
+> > +                                     clock-indices = <
+> > +                                             R8A7795_CLK_VSPD3
+> > R8A7795_CLK_VSPD2 +                                            
+> > R8A7795_CLK_VSPD1 R8A7795_CLK_VSPD0 +                                    
+> >         R8A7795_CLK_VSPBC R8A7795_CLK_VSPBD +                            
+> >                 R8A7795_CLK_VSPI2 R8A7795_CLK_VSPI1 +                    
+> >                         R8A7795_CLK_VSPI0
+> > +                                     >;
+> > +                             };
+> > +
+> > +                             mstp7_clks: mstp7@e615014c {
+> > +                                     compatible > > "renesas,r8a7795-mstp-clocks", +                                         
+> >         "renesas,cpg-mstp-clocks"; +                                    
+> > reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>; +                          
+> >           clocks =  <&s2d1_clk>, <&s2d1_clk>, <&s2d1_clk>, +             
+> >                                  <&s2d1_clk>, <&s2d1_clk>, <&s2d1_clk>, +
+> >                                               <&lvds_clk>, <&hdmi_clk>,
+> > <&hdmi_clk>;
+> This property counts 9 parent clocks...
+> 
+> > +                                     #clock-cells = <1>;
+> > +                                     clock-indices = <
+> > +                                             R8A7795_CLK_DU3
+> > R8A7795_CLK_DU2 +                                            
+> > R8A7795_CLK_DU1 R8A7795_CLK_DU0 +                                        
+> >     R8A7795_CLK_LVDS R8A7795_CLK_HDMI1 +                                 
+> >            R8A7795_CLK_HDMI0
+> 
+> ... while this property counts only 7 indices.
+> 
+> I guess the first two parent clocks should be removed?
 
-BTW, I kept wondering how I had forgotten that in v4.
+Oops :-) Yes, they should. I'll make sure to drop them when porting the patch 
+to the mssr DT bindings.
 
-Found it: "[PATCH v3 01/04] clk: shmobile: Get rid of
-CONFIG_ARCH_SHMOBILE_MULTI" did ...
+> > +                                     >;
+> > +                             };
 
-> --- a/drivers/clk/Makefile
-> +++ b/drivers/clk/Makefile
-> @@ -67,6 +67,7 @@ obj-$(CONFIG_COMMON_CLK_QCOM)         += qcom/
->  obj-$(CONFIG_ARCH_ROCKCHIP)            += rockchip/
->  obj-$(CONFIG_COMMON_CLK_SAMSUNG)       += samsung/
->  obj-$(CONFIG_ARCH_SHMOBILE_MULTI)      += shmobile/
+-- 
+Regards,
 
-... s/CONFIG_ARCH_SHMOBILE_MULTI/CONFIG_ARCH_SHMOBILE/,
-which is IMHO a better solution, but that disappeared in v4 and later.
+Laurent Pinchart
 
-> +obj-$(CONFIG_ARCH_RENESAS)             += shmobile/
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
