@@ -1,42 +1,34 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 22 Oct 2015 06:41:26 +0000
-Subject: [PATCH] serial: sh-sci: Fix length of scatterlist
-Message-Id: <1445496086-5972-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 22 Oct 2015 11:06:42 +0000
+Subject: Re: [PATCH] serial: sh-sci: Fix length of scatterlist
+Message-Id: <CAMuHMdVwiHP+B40CxDzJJ8T=QGwcXtm0o80=OnpZHd+xiscmbw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445343502-4436-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1445343502-4436-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1445496086-5972-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1445496086-5972-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: gregkh@linuxfoundation.org, jslaby@suse.com, linux-serial@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: Greg KH <gregkh@linuxfoundation.org>, jslaby@suse.com, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-This patch fixes an issue that the "length" of scatterlist should be
-set using sg_dma_len(). Otherwise, a dmaengine driver cannot work
-correctly if CONFIG_NEED_SG_DMA_LENGTH=y.
+On Thu, Oct 22, 2015 at 8:41 AM, Yoshihiro Shimoda
+<yoshihiro.shimoda.uh@renesas.com> wrote:
+> This patch fixes an issue that the "length" of scatterlist should be
+> set using sg_dma_len(). Otherwise, a dmaengine driver cannot work
+> correctly if CONFIG_NEED_SG_DMA_LENGTH=y.
+>
+> Fixes: 7b39d90184 (serial: sh-sci: Fix NULL pointer dereference if HIGHMEM is enabled)
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Fixes: 7b39d90184 (serial: sh-sci: Fix NULL pointer dereference if HIGHMEM is enabled)
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- Changes from v1:
-  - Fix using implicit declaration of function "sg_dma_length".
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
- drivers/tty/serial/sh-sci.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Gr{oetje,eeting}s,
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 960e50a..51c7507 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1437,7 +1437,7 @@ static void sci_request_dma(struct uart_port *port)
- 			sg_init_table(sg, 1);
- 			s->rx_buf[i] = buf;
- 			sg_dma_address(sg) = dma;
--			sg->length = s->buf_len_rx;
-+			sg_dma_len(sg) = s->buf_len_rx;
- 
- 			buf += s->buf_len_rx;
- 			dma += s->buf_len_rx;
--- 
-1.9.1
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
