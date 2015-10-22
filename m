@@ -1,92 +1,63 @@
-From: Yang Yingliang <yangyingliang@huawei.com>
-Date: Thu, 22 Oct 2015 10:56:29 +0000
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Thu, 22 Oct 2015 11:13:07 +0000
 Subject: Re: [RFC PATCH v6 3/3] arm: fix a migrating irq bug when hotplug cpu
-Message-Id: <5628C0DD.50900@huawei.com>
+Message-Id: <20151022111307.GS32532@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1443087135-17044-1-git-send-email-yangyingliang@huawei.com>
  <1443087135-17044-4-git-send-email-yangyingliang@huawei.com>
  <CAMuHMdWyvaecQHOzFnxVZus_Pfkxjw1XfkGdcLK=D2ThaoJMzA@mail.gmail.com>
  <20151021202907.GN32532@n2100.arm.linux.org.uk>
  <20151022092629.GQ32532@n2100.arm.linux.org.uk>
-In-Reply-To: <20151022092629.GQ32532@n2100.arm.linux.org.uk>
+ <5628C0DD.50900@huawei.com>
+In-Reply-To: <5628C0DD.50900@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+On Thu, Oct 22, 2015 at 06:56:29PM +0800, Yang Yingliang wrote:
+> I described it in v2 cover letter and kept the change history in v6
+> cover letter. There is no comment on the change when patch the was
+> reviewing in v2, so I thought it's ok and I kept the change in the
+> next versions.
 
+Cover letters don't always get read, neither do changelogs.
 
-On 2015/10/22 17:26, Russell King - ARM Linux wrote:
-> On Wed, Oct 21, 2015 at 09:29:08PM +0100, Russell King - ARM Linux wrote:
->> On Wed, Oct 21, 2015 at 01:47:49PM +0200, Geert Uytterhoeven wrote:
->>> On Thu, Sep 24, 2015 at 11:32 AM, Yang Yingliang
->>> <yangyingliang@huawei.com> wrote:
->>>> When cpu is disabled, all irqs will be migratged to another cpu.
->>>> In some cases, a new affinity is different, the old affinity need
->>>> to be updated and if irq_set_affinity's return value is IRQ_SET_MASK_OK_DONE,
->>>> the old affinity can not be updated. Fix it by using irq_do_set_affinity.
->>>>
->>>> And migrating interrupts is a core code matter, so use the generic
->>>> function irq_migrate_all_off_this_cpu() to migrate interrupts in
->>>> kernel/irq/migration.c.
->>>>
->>>> Cc: Jiang Liu <jiang.liu@linux.intel.com>
->>>> Cc: Thomas Gleixner <tglx@linutronix.de>
->>>> Cc: Marc Zyngier <marc.zyngier@arm.com>
->>>> Cc: Mark Rutland <mark.rutland@arm.com>
->>>> Cc: Will Deacon <will.deacon@arm.com>
->>>> Cc: Russell King - ARM Linux <linux@arm.linux.org.uk>
->>>> Cc: Hanjun Guo <hanjun.guo@linaro.org>
->>>> Signed-off-by: Yang Yingliang <yangyingliang@huawei.com>
->>>> ---
->>>>   arch/arm/Kconfig           |  1 +
->>>>   arch/arm/include/asm/irq.h |  1 -
->>>>   arch/arm/kernel/irq.c      | 62 ----------------------------------------------
->>>>   arch/arm/kernel/smp.c      |  2 +-
->>>>   4 files changed, 2 insertions(+), 64 deletions(-)
->>>>
->>>> diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
->>>> index 72ad724..bffba78 100644
->>>> --- a/arch/arm/Kconfig
->>>> +++ b/arch/arm/Kconfig
->>>> @@ -1492,6 +1492,7 @@ config NR_CPUS
->>>>   config HOTPLUG_CPU
->>>>          bool "Support for hot-pluggable CPUs"
->>>>          depends on SMP
->>>> +       select GENERIC_IRQ_MIGRATION
->>>
->>> This causes the following warnings during s2ram on r8a7791/koelsch
->>> (dual-core CA15):
->>
->> Thanks for the report.  I'll see what tonight's boot run says for my
->> platforms.  Hopefully, the author of these changes can help debug
->> this.
->
-> What's happened is that:
->
-> -	c = irq_data_get_irq_chip(d);
-> -	if (!c->irq_set_affinity)
-> -		pr_debug("IRQ%u: unable to set affinity\n", d->irq);
->
-> has become:
->
-> +	c = irq_data_get_irq_chip(d);
-> +	if (!c->irq_set_affinity) {
-> +		pr_warn_ratelimited("IRQ%u: unable to set affinity\n", d->irq);
->
-> which makes things more noisy.
->
-> This is a change that was not described in the commit message for the
-> patch Thomas merged.
+However, there's a principle here: never mix moving code around with
+changes to that code.  Always move code with as few changes as possible
+in one patch, and then make changes in a subsequent patch.
 
-I described it in v2 cover letter and kept the change history in v6
-cover letter. There is no comment on the change when patch the was
-reviewing in v2, so I thought it's ok and I kept the change in the
-next versions.
+The "few changes as possible" means that if you need to make changes
+for it to end up building in its new location, such as removing a
+'static' or adding an 'EXPORT_SYMBOL' then those are fine, but the
+main body of the code should remain identical, even down to style.
 
-Need I send a patch to the Thomas branch to revert the change ?
+Any changes (such as, in this case, replacing pr_debug with pr_warn)
+should be done as a distinctly separate patch so that such changes
+are immediately obvious to reviewers.
 
-Thanks,
-Yang
+> Need I send a patch to the Thomas branch to revert the change ?
 
+I think wait for Thomas and Catalin to reply.  Your patch series is
+currently merged into two different trees (Thomas' and Catalin's
+trees) and what action is needed depends on how they want to handle
+it.
 
+The solutions are:
+* A patch to restore the pr_debug() which Thomas applies, and Catalin
+  and myself then pull Thomas' tree again, which potentially creates
+  a messier history.
+
+* Catalin drops the ARM64 change and Thomas' tree from the ARM64 tree,
+  Thomas drops the original commit, and we start again doing it
+  correctly.
+
+Which is up to Catalin and Thomas.
+
+I've dropped it from my tree as an easy way to fix the regression
+on ARM for the time being, pending the outcome of deciding how to
+fix this.
+
+-- 
+FTTC broadband for 0.8mile line: currently at 9.6Mbps down 400kbps up
+according to speedtest.net.
