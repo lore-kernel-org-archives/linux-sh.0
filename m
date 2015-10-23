@@ -1,45 +1,44 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 01 Oct 2015 14:38:07 +0000
-Subject: [PATCH v8 05/05] drivers: sh: Handle PM_GENERIC_DOMAINS_OF=n with r8a7795 MSSR
-Message-Id: <20151001143807.20618.67920.sendpatchset@little-apple>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 23 Oct 2015 21:46:40 +0000
+Subject: [PATCH 2/2] sh_eth: fix RX buffer size calculation
+Message-Id: <1571476.HbCo5gVB8j@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151001143717.20618.26365.sendpatchset@little-apple>
-In-Reply-To: <20151001143717.20618.26365.sendpatchset@little-apple>
+References: <2249923.hKhT9K6gME@wasted.cogentembedded.com>
+In-Reply-To: <2249923.hKhT9K6gME@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-clk@vger.kernel.org
-Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, mturquette@baylibre.com, gaku.inami.xw@bp.renesas.com, sboyd@codeaurora.org, horms@verge.net.au, geert@linux-m68k.org, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The RX buffer size calulation failed to account for the length granularity
+(which is now 32 bytes)...
 
-If the new CPG/MSSR device node is present, but
-CONFIG_PM_GENERIC_DOMAINS_OF=n, the legacy clock domain should be
-enabled. Else the module clocks are not properly enabled when needed.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
+ drivers/net/ethernet/renesas/sh_eth.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
- Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
- - New patch, based on local r8a7791 patch from Geert
-   "drivers: sh: Handle CONFIG_PM_GENERIC_DOMAINS_OF=n with new CPG/MSSR"
- - Modified to match on r8a7795
+Index: net/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1127,7 +1127,7 @@ static void sh_eth_ring_format(struct ne
+ 	struct sh_eth_txdesc *txdesc = NULL;
+ 	int rx_ringsize = sizeof(*rxdesc) * mdp->num_rx_ring;
+ 	int tx_ringsize = sizeof(*txdesc) * mdp->num_tx_ring;
+-	int skbuff_size = mdp->rx_buf_sz + SH_ETH_RX_ALIGN - 1;
++	int skbuff_size = mdp->rx_buf_sz + SH_ETH_RX_ALIGN + 32 - 1;
+ 	dma_addr_t dma_addr;
+ 
+ 	mdp->cur_rx = 0;
+@@ -1450,7 +1450,7 @@ static int sh_eth_rx(struct net_device *
+ 	struct sk_buff *skb;
+ 	u16 pkt_len = 0;
+ 	u32 desc_status;
+-	int skbuff_size = mdp->rx_buf_sz + SH_ETH_RX_ALIGN - 1;
++	int skbuff_size = mdp->rx_buf_sz + SH_ETH_RX_ALIGN + 32 - 1;
+ 	dma_addr_t dma_addr;
+ 
+ 	boguscnt = min(boguscnt, *quota);
 
- drivers/sh/pm_runtime.c |    5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
---- 0001/drivers/sh/pm_runtime.c
-+++ work/drivers/sh/pm_runtime.c	2015-10-01 18:51:47.280513000 +0900
-@@ -36,7 +36,10 @@ static int __init sh_pm_runtime_init(voi
- {
- 	if (IS_ENABLED(CONFIG_ARCH_SHMOBILE)) {
- 		if (!of_find_compatible_node(NULL, NULL,
--					     "renesas,cpg-mstp-clocks"))
-+					     "renesas,cpg-mstp-clocks") &&
-+		    (IS_ENABLED(CONFIG_PM_GENERIC_DOMAINS_OF) ||
-+		     !of_find_compatible_node(NULL, NULL,
-+					     "renesas,r8a7795-cpg-mssr")))
- 			return 0;
- 		if (IS_ENABLED(CONFIG_PM_GENERIC_DOMAINS_OF) &&
- 		    of_find_node_with_property(NULL, "#power-domain-cells"))
