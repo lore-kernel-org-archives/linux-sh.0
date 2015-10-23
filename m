@@ -1,74 +1,70 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 23 Oct 2015 12:24:34 +0000
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 23 Oct 2015 12:28:35 +0000
 Subject: Re: [RFC v2 4/5] ARM: shmobile: r8a7790: let rst module allow watchdog resets if desired
-Message-Id: <1650574.GugTO9so7a@avalon>
+Message-Id: <20151023122835.GM13380@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="yklP1rR72f9kjNtc"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1444632876-2672-5-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1444632876-2672-5-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Wolfram,
 
-Thank you for the patch.
+--yklP1rR72f9kjNtc
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Monday 12 October 2015 07:54:35 Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> 
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-> ---
->  arch/arm/mach-shmobile/setup-rcar-gen2.c | 17 ++++++++++++++++-
->  1 file changed, 16 insertions(+), 1 deletion(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> b/arch/arm/mach-shmobile/setup-rcar-gen2.c index
-> aa3339258d9c02..39976ae23a3df2 100644
-> --- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> +++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-> @@ -28,7 +28,18 @@
->  #include "common.h"
->  #include "rcar-gen2.h"
-> 
-> -#define MODEMR 0xe6160060
-> +#define WDTRSTCR	0xe6160054
-> +#define MODEMR		0xe6160060
-> +
-> +void __init rcar_gen2_wdt_rst_init(void)
-> +{
-> +#if defined(CONFIG_WATCHDOG)
-> +	void __iomem *p = ioremap_nocache(WDTRSTCR, 4);
-> +	BUG_ON(!p);
-> +	iowrite32(0xa55a0000, p);
-> +	iounmap(p);
-> +#endif
 
-That's a bit of a hack. We should aim at removing code from mach-shmobile, not 
-adding new code :-) Furthermore it will cause issues with virtualization as 
-hypervisors commonly map memory based on DT, the above code will thus generate 
-a write access to an unmapped piece of memory as there's no corresponding DT 
-node.
+> > +#if defined(CONFIG_WATCHDOG)
+> > +	void __iomem *p =3D ioremap_nocache(WDTRSTCR, 4);
+> > +	BUG_ON(!p);
+> > +	iowrite32(0xa55a0000, p);
+> > +	iounmap(p);
+> > +#endif
+>=20
+> That's a bit of a hack. We should aim at removing code from mach-shmobile=
+, not=20
+> adding new code :-) Furthermore it will cause issues with virtualization =
+as=20
+> hypervisors commonly map memory based on DT, the above code will thus gen=
+erate=20
+> a write access to an unmapped piece of memory as there's no corresponding=
+ DT=20
+> node.
 
-Time for a reset driver it seems ;-)
+I know. As I said in the cover letter (hint! ;)) it only works for me with
+UP on Lager. These arch patches are only to be able to test the driver.
+Totally not to be upstreamed.
 
-> +}
-> 
->  u32 rcar_gen2_read_mode_pins(void)
->  {
-> @@ -128,6 +139,10 @@ void __init rcar_gen2_timer_init(void)
->  #endif /* CONFIG_ARM_ARCH_TIMER */
-> 
->  	rcar_gen2_clocks_init(mode);
-> +
-> +	/* allow watchdog timers to trigger reset */
-> +	rcar_gen2_wdt_rst_init();
-> +
->  	clocksource_of_init();
->  }
+> Time for a reset driver it seems ;-)
 
--- 
-Regards,
+Can of worms for Gen2...
 
-Laurent Pinchart
+Let's hope it will be easier on Gen3 and we can submit the main driver
+upstream this way.
 
+
+--yklP1rR72f9kjNtc
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJWKifyAAoJEBQN5MwUoCm2PTwP/AnNDzxYgj1yeYccfEkIxH7J
+cyZ9XRKZ6pfekvQtLaU3CDz4bzGSQ7HFMiizl95GuvOQjyEOCkvVI7Y4OC+o7B3C
+D3B0+l89RJ/aq8kJf/ZWVdGhR0797Q3ZKZiHU5x5qzAE4cc0hqFJ47c1+iwhesh3
+ipKZ+QRFYjxyODF1Vl2fGe95djMiKuxWYNR+8rfQ1sNMAom4yqWgG5fIGIOQsWSI
+gQjCg5+XvHxtxRnMxN+1S/rYxoyNQuE6bZa1tOp5W1le/0wZYyjkeHV56a/WYNWW
+oIoq0+X/c7lQVftxfEl+mwlCm5pyslN2N6QE/lvKz6tWnaV9U0cK4IK2NOuWWm1i
+hERffqEFfR6ZeRc9EpWW8IoMTqlCep/YvaA5Lkl7yblyCd5jj4DbU+XYULzrF+RW
+1IMEjRJXu+21jbQLs1F0s9rzrMl5y6Vj9gAAqM7VOgxUyNFgsC3F34iFH36GTezb
+o3vaAWgF1DsdV4YyWk6EUDQp2TtA5PQO6qjkwGCT8IbCt7kOqXYY3WyvFM0pz5RQ
+an2ITpiCl07YYL+nugay91HMQLtAuVq/971mxQuipCfZDP4UvHm+NX20K6GtKtSk
+gSmUCnRd0iQjlldpDHL+K65R63NOzNmlpqUQCl0LuhlxqDvOAUsVy9O+hgpVvzH9
+VqiQx2z20+uKB5LoA88j
+=x0kZ
+-----END PGP SIGNATURE-----
+
+--yklP1rR72f9kjNtc--
