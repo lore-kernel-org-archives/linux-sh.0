@@ -1,39 +1,60 @@
-From: Mark Rutland <mark.rutland@arm.com>
-Date: Thu, 15 Oct 2015 11:01:40 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 23 Oct 2015 07:00:34 +0000
 Subject: Re: [PATCH v11 6/8] arm64: renesas: add Salvator-X board support on DTS
-Message-Id: <20151015110139.GG8825@leverpostej>
+Message-Id: <20151023070032.GA4502@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
  <1444890243-6978-7-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1444890243-6978-7-git-send-email-horms+renesas@verge.net.au>
+ <20151015110139.GG8825@leverpostej>
+In-Reply-To: <20151015110139.GG8825@leverpostej>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-> +/ {
-> +	model = "Renesas Salvator-X board based on r8a7795";
-> +	compatible = "renesas,salvator-x", "renesas,r8a7795";
-> +
-> +	aliases {
-> +		serial0 = &scif2;
-> +		serial1 = &scif1;
-> +	};
-> +
-> +	chosen {
-> +		bootargs = "ignore_loglevel";
+On Thu, Oct 15, 2015 at 12:01:40PM +0100, Mark Rutland wrote:
+> > +/ {
+> > +	model = "Renesas Salvator-X board based on r8a7795";
+> > +	compatible = "renesas,salvator-x", "renesas,r8a7795";
+> > +
+> > +	aliases {
+> > +		serial0 = &scif2;
+> > +		serial1 = &scif1;
+> > +	};
+> > +
+> > +	chosen {
+> > +		bootargs = "ignore_loglevel";
+> 
+> Do we really need this kind of thing in the kernel DTs?
 
-Do we really need this kind of thing in the kernel DTs?
+I agree this looks a bit lonely by itself, and I'm not entirely
+opposed to removing it. However, I do seek consistency between
+the renesas ARM and ARM64 SoCs where possible.
 
-> +		stdout-path = &scif2;
+Further work[1] on this file outside of this series adds
+"rw root=/dev/nfs ip=dhcp" to bootargs, the result being consistent
+with Renesas ARM32 SoCs.
 
-No rate? It would be better to be explicit here; you should be able to
-have:
+[1] [PATCH v5 4/5] arm64: dts: r8a7795: enable nfs root on Salvator-X board
+    http://www.spinics.net/lists/arm-kernel/msg452743.html
 
-	stdout-path = "serial0:115200n8"
+> > +		stdout-path = &scif2;
+> 
+> No rate? It would be better to be explicit here; you should be able to
+> have:
+> 
+> 	stdout-path = "serial0:115200n8"
+> 
+> Where "115200n8" is replaced with whatever configuration this board
+> actually has.
 
-Where "115200n8" is replaced with whatever configuration this board
-actually has.
+I think that we have had this discussion before in relation to
+a different board for a different Renesas SoC but I could be mistaken.
 
-Thanks,
-Mark.
+The r8a7795 uses the sh-sci serial driver for which the default rate is
+115200. It is hard for me to conceive of a situation where that would
+change without due consideration being given to the implications for DT
+files.
+
+Not specifying the baud here is consistent with what we have
+been doing for ARM32 Renesas SoCs for some time.
