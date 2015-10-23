@@ -1,46 +1,57 @@
-From: ahaslam@baylibre.com
-Date: Mon, 12 Oct 2015 17:41:14 +0000
-Subject: [RFC/RFT 6/6] cpuidle: big.LITTLE: Add ARCH_SHMOBILE and r8a7790
-Message-Id: <1444671674-19275-7-git-send-email-ahaslam@baylibre.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 23 Oct 2015 21:46:03 +0000
+Subject: [PATCH 1/2] sh_eth: fix RX buffer size alignment
+Message-Id: <1685698.osUG5igxWz@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <2249923.hKhT9K6gME@wasted.cogentembedded.com>
+In-Reply-To: <2249923.hKhT9K6gME@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Axel Haslam <ahaslam@baylibre.com>
+Both  Renesas R-Car and RZ/A1 manuals state that RX buffer  length must be
+a multiple of 32 bytes, while the driver  only uses 16 byte granularity...
 
-Signed-off-by: Axel Haslam <ahaslam@baylibre.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/cpuidle/Kconfig.arm          | 2 +-
- drivers/cpuidle/cpuidle-big_little.c | 1 +
- 2 files changed, 2 insertions(+), 1 deletion(-)
+ drivers/net/ethernet/renesas/sh_eth.c |   10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/cpuidle/Kconfig.arm b/drivers/cpuidle/Kconfig.arm
-index 21340e0..1583469 100644
---- a/drivers/cpuidle/Kconfig.arm
-+++ b/drivers/cpuidle/Kconfig.arm
-@@ -13,7 +13,7 @@ config ARM_CPUIDLE
+Index: net/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1148,8 +1148,8 @@ static void sh_eth_ring_format(struct ne
  
- config ARM_BIG_LITTLE_CPUIDLE
- 	bool "Support for ARM big.LITTLE processors"
--	depends on ARCH_VEXPRESS_TC2_PM || ARCH_EXYNOS
-+	depends on ARCH_VEXPRESS_TC2_PM || ARCH_EXYNOS || ARCH_SHMOBILE
- 	depends on MCPM && !ARM64
- 	select ARM_CPU_SUSPEND
- 	select CPU_IDLE_MULTIPLE_DRIVERS
-diff --git a/drivers/cpuidle/cpuidle-big_little.c b/drivers/cpuidle/cpuidle-big_little.c
-index db2ede5..4b87357 100644
---- a/drivers/cpuidle/cpuidle-big_little.c
-+++ b/drivers/cpuidle/cpuidle-big_little.c
-@@ -160,6 +160,7 @@ static const struct of_device_id compatible_machine_match[] = {
- 	{ .compatible = "arm,vexpress,v2p-ca15_a7" },
- 	{ .compatible = "samsung,exynos5420" },
- 	{ .compatible = "samsung,exynos5800" },
-+	{ .compatible = "renesas,r8a7790" },
- 	{},
- };
+ 		/* RX descriptor */
+ 		rxdesc = &mdp->rx_ring[i];
+-		/* The size of the buffer is a multiple of 16 bytes. */
+-		rxdesc->buffer_length = ALIGN(mdp->rx_buf_sz, 16);
++		/* The size of the buffer is a multiple of 32 bytes. */
++		rxdesc->buffer_length = ALIGN(mdp->rx_buf_sz, 32);
+ 		dma_addr = dma_map_single(&ndev->dev, skb->data,
+ 					  rxdesc->buffer_length,
+ 					  DMA_FROM_DEVICE);
+@@ -1506,7 +1506,7 @@ static int sh_eth_rx(struct net_device *
+ 			if (mdp->cd->rpadir)
+ 				skb_reserve(skb, NET_IP_ALIGN);
+ 			dma_unmap_single(&ndev->dev, rxdesc->addr,
+-					 ALIGN(mdp->rx_buf_sz, 16),
++					 ALIGN(mdp->rx_buf_sz, 32),
+ 					 DMA_FROM_DEVICE);
+ 			skb_put(skb, pkt_len);
+ 			skb->protocol = eth_type_trans(skb, ndev);
+@@ -1524,8 +1524,8 @@ static int sh_eth_rx(struct net_device *
+ 	for (; mdp->cur_rx - mdp->dirty_rx > 0; mdp->dirty_rx++) {
+ 		entry = mdp->dirty_rx % mdp->num_rx_ring;
+ 		rxdesc = &mdp->rx_ring[entry];
+-		/* The size of the buffer is 16 byte boundary. */
+-		rxdesc->buffer_length = ALIGN(mdp->rx_buf_sz, 16);
++		/* The size of the buffer is 32 byte boundary. */
++		rxdesc->buffer_length = ALIGN(mdp->rx_buf_sz, 32);
  
--- 
-2.4.5
+ 		if (mdp->rx_skbuff[entry] = NULL) {
+ 			skb = netdev_alloc_skb(ndev, skbuff_size);
 
