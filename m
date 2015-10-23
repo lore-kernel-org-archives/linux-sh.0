@@ -1,77 +1,93 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 23 Oct 2015 08:06:02 +0000
+Date: Fri, 23 Oct 2015 09:45:00 +0000
 Subject: Re: [PATCH 5/9] i2c: rcar: init new messages in irq
-Message-Id: <20151023080601.GC1642@katana>
+Message-Id: <20151023094500.GD13380@katana>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="iVCmgExH7+hIHJ1A"
+Content-Type: multipart/mixed; boundary="NklN7DEeGtkPCoo3"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1441311613-2681-1-git-send-email-wsa@the-dreams.de>
- <131418014.1WnDGNUZcn@avalon>
- <20151022110505.GB1572@katana>
  <1917001.aD8sIkvx7f@avalon>
-In-Reply-To: <1917001.aD8sIkvx7f@avalon>
+ <20151023080601.GC1642@katana>
+ <2048622.tkxROUAu7P@avalon>
+In-Reply-To: <2048622.tkxROUAu7P@avalon>
 To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Kaneko <ykaneko0929@gmail.com>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
 
---iVCmgExH7+hIHJ1A
+--NklN7DEeGtkPCoo3
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
 
-> Do you have a Koelsch board now ? Could you try=20
+> I had CONFIG_DRM_FBDEV_EMULATION disabled. I've then enabled it but also=
+=20
+> merged git://people.freedesktop.org/~airlied/linux next in my branch, whi=
+ch=20
+> probably fixes the problem.
 
-Nope, I only have Lager. I'd be surprised if it really was a Koelsch
-only issue, though...
+So, your tree is not strictly renesas-drivers-2015-10-13-v4.3-rc5?
 
-> b9653e9c000dc2ebd9c8712442c659ccd1586e22 from Geert's drivers tree ? On m=
-y=20
+> > I fixed it locally and will see if I see ADV7511 problems. I cannot
+> > fully test HDMI probably, because it seems that this HDMI->DVI chain I
+> > have does not work.
+>=20
+> It's supposed to be supported, so that might be something we need to fix.=
+ More=20
+> work for me \o/ :-)
 
-Does that build for you?
+:/ Let me know if I can send you debug output.
 
-drivers/gpu/drm/drm_fb_helper.c: In function 'restore_fbdev_mode':
-drivers/gpu/drm/drm_fb_helper.c:448:5: error: 'error' undeclared (first use=
- in this function)
+> > Okay, so before any 'modetest' activity. Which kernelconfig?
+> > shmobile_defconfig?
+>=20
+> .config attached.
 
-??
+That one also probes for me... I only disabled DHCP and added my
+initramfs. I patched the fbdev build error out and changed Lager dts to
+use i2c-rcar (instead of i2c-sh_mobile).
 
-I fixed it locally and will see if I see ADV7511 problems. I cannot
-fully test HDMI probably, because it seems that this HDMI->DVI chain I
-have does not work. Tested that with a kernel which used to work in
-Dublin. Need to get another HDMI device.
-
-> board the adv7511 fails to probe completely due to the regmap_read() fail=
-ure.
-
-Okay, so before any 'modetest' activity. Which kernelconfig?
-shmobile_defconfig?
+Can you enable CONFIG_I2C_DEBUG_CORE in the config, apply this patch,
+and send me the trace output and bootlog?
 
 Thanks,
 
    Wolfram
 
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 1921294afc87ce..cd56f77550cac1 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -418,6 +418,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ 	rcar_i2c_write(priv, ICMCR, val & RCAR_BUS_MASK_DATA);
+=20
+ 	msr =3D rcar_i2c_read(priv, ICMSR);
++trace_printk("msr %08x\n", msr);
+=20
+ 	/* Only handle interrupts that are currently enabled */
+ 	msr &=3D rcar_i2c_read(priv, ICMIER);
 
---iVCmgExH7+hIHJ1A
+
+--NklN7DEeGtkPCoo3
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1
 
-iQIcBAEBAgAGBQJWKeppAAoJEBQN5MwUoCm2UqwP+gPFo1x8R8dVwyQeZ/iCP6q5
-0S7xpBKtjHWL7Xzhsw5sRhjZKIHF4UBjdOVCUHFlXCrRsSfEdv2/Vjx1AgVm0SQg
-EBl+4PhnrSk0QI257AZx9Kx73u/tNgmu4ctf5mBwaRDQhENVa2do6Q0NgJu7oOPN
-zamHAS2Ct/oWHTQPfJfs0vzKSE/IO8sCS7wjC0Beym40Rzw3Yedt+LaQryxfLeWn
-IH5+lkiJpcHJU66TsVDkNrqpvcvGPbFV+RDNFhcZdFnSFvmSoZ2vN6behZ02Ga/l
-yds6Uja4ZwMs0Ss67L6WhQlLJ6XLF3DQxIg6/hTmY8bv6Zdh4Cv6L94wiFgoCJQK
-qw9OJCXwcVtQWW10pbcVMCKmGU83VCtptMeYFiPtRk5L0Gaegdd7A3IWz8t9oMoz
-cuCFONC70UMtvM3tN3BZe17mUfydI+5WfqlgsqrThlWJ/inIR7OV+6z++INZSl2B
-IC/B34klBeG/mmrUD0ZJdlSQ6RXfKVaGerKmLm17rxoQDTzlIYNO3dGvs8lXALbW
-tVuRkWQ1530bFBzhQ9ZnUux9gAbEAB/2fmsozoq1NU8NZC+Oagv4PNRBfZSefXcJ
-/XenkDv9Ol+ntBSUb+NYXtUkGo3zcYtO+Al+qVIZHSdnsyUpuF2bivhfhyeN/Ho4
-HxTpuHydbu9DD3s5W9vC
-=9kB6
+iQIcBAEBAgAGBQJWKgGcAAoJEBQN5MwUoCm24MgQAIWgg5KLZWW2sql/4owbaYRm
+Lv71sZ8kEFz+qo3ZmdZx1rIYXJUbTLlhe8IJsTbOfbzn7Yg6EE3M+qWuFG4lMBzu
+sE8NDRV0PE/mA/oFQoZ1yp5X5Wkq0p6U1VygTd3Gc/lHKFJN4bO7GX3YHSbe1UZo
++hsZF43BRDj+V870bx8D38PMIY4nQ6UsiRveXVh+qBZuDaZe6fwfYHAiqLKMEetg
+TuDJdu5U7wTmz3XQifalLTqNOLJo5skCdq1IWhzeuAhZq2wy4K906afeYaXDe/R2
+8XLVjAUi9TkuCbKZEhkx4ViJGYYoltqGpNGL2y8ilKi24hiz9QZFBOEF2pRPqVyk
++wdA/khRVBC9y+hMiFeYrfOgSNvxpkmvftGnGJIKIlABptGvhh92a35PPCg2abSf
+05n3TBerR5y3UuhZN2XUoKAwDoExl9L4edRdgCKwJ9+9Ve/7xqLpnGWW3tcNIepB
+kopRYJ6fCiMbBVJNBvyj2vlnaIDdQfRAa6YpzJJJ1Xruik2qaPhcJr1rhaHwWwAM
+oTOmvEWblWRxO4dAzL4h5xU+aIy5MkTl4XT6517GUs7s5gUhOq+itXPlahI1ok3W
+hBLckTSwyOQ7LXCzmBlZuodK++7vvNyy2npb0Z6+AzNa8Wae1a56cnh24d45ZYzT
+ewIdY421MgNSgO4LzeWt
+=ulWa
 -----END PGP SIGNATURE-----
 
---iVCmgExH7+hIHJ1A--
+--NklN7DEeGtkPCoo3--
