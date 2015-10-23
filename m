@@ -1,62 +1,21 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Fri, 16 Oct 2015 13:07:17 +0000
-Subject: Re: [PATCH v3] DT: mmc: sh_mmcif: fix "compatible" property text
-Message-Id: <CAPDyKFpFXd82VvutZzud+VVzxEbk6+tzeH9ef65oWgmaSJGyHA@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Fri, 23 Oct 2015 21:44:27 +0000
+Subject: [PATCH 0/2] sh_eth: RX buffer alignment fixes
+Message-Id: <2249923.hKhT9K6gME@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
-	<2188985.g7lrY44qCa@wasted.cogentembedded.com>
-In-Reply-To: <2188985.g7lrY44qCa-gHKXc3Y1Z8zGSmamagVegGFoWSdPRAKMAL8bYrjMMd8@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
-Cc: Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, =?UTF-8?Q?Pawe=C5=82_Moll?= <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-mmc <linux-mmc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On 16 October 2015 at 00:39, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> The "compatible" property text contradicts even the example given in the MMCIF
-> binding document itself;  moreover, the Renesas MMCIF driver only matches  on
-> the generic "compatible" string and doesn't look for the SoC specific strings
-> at all. Thus describe "renesas,sh-mmcif" as a fallback value.
->
-> Fixes: b4c27763d749 ("mmc: sh_mmcif: Document DT bindings")
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Hello.
 
-Thanks, applied for next.
+   Here's a set of 2 patches against DaveM's 'net.git' repo which are the fixes
+to the RX buffer size calculation.
 
-Kind regards
-Uffe
+[1/2] sh_eth: fix RX buffer size alignment
+[2/2] sh_eth: fix RX buffer size calculation
 
->
-> ---
-> The patch is against Ulf Hansson's 'mmc.git' repo's 'fixes' or 'next' branches.
->
-> Changes in version 3:
-> - reworded the "compatible" property description to look like the majority of
->   the Renesas bindings.
->
-> Changes in version 2:
-> - kept the SoC specific "compatible" property values mandatory and made the
->   generic string a fallback.
->
->  Documentation/devicetree/bindings/mmc/renesas,mmcif.txt |    4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
->
-> Index: mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> =================================> --- mmc.orig/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> +++ mmc/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> @@ -6,11 +6,11 @@ and the properties used by the MMCIF dev
->
->  Required properties:
->
-> -- compatible: must contain one of the following
-> +- compatible: should be "renesas,mmcif-<soctype>", "renesas,sh-mmcif" as a
-> +  fallback. Examples with <soctype> are:
->         - "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
->         - "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
->         - "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
-> -       - "renesas,sh-mmcif" for the generic MMCIF
->
->  - clocks: reference to the functional clock
->
->
+MBR, Sergei
+
