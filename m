@@ -1,70 +1,82 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 23 Oct 2015 12:28:35 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sat, 24 Oct 2015 17:42:56 +0000
 Subject: Re: [RFC v2 4/5] ARM: shmobile: r8a7790: let rst module allow watchdog resets if desired
-Message-Id: <20151023122835.GM13380@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="yklP1rR72f9kjNtc"
+Message-Id: <CAMuHMdVn5GYV0s2xPDpnikeKK8qdmMOHbvk-DcuotUKtgv+Qpg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1444632876-2672-5-git-send-email-wsa@the-dreams.de>
 In-Reply-To: <1444632876-2672-5-git-send-email-wsa@the-dreams.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Hi Wolfram,
 
---yklP1rR72f9kjNtc
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+On Mon, Oct 12, 2015 at 8:54 AM, Wolfram Sang <wsa@the-dreams.de> wrote:
+> diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+> index aa3339258d9c02..39976ae23a3df2 100644
+> --- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
+> +++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
+> @@ -28,7 +28,18 @@
+>  #include "common.h"
+>  #include "rcar-gen2.h"
+>
+> -#define MODEMR 0xe6160060
+> +#define WDTRSTCR       0xe6160054
+> +#define MODEMR         0xe6160060
+> +
+> +void __init rcar_gen2_wdt_rst_init(void)
+> +{
+> +#if defined(CONFIG_WATCHDOG)
+> +       void __iomem *p = ioremap_nocache(WDTRSTCR, 4);
+> +       BUG_ON(!p);
+> +       iowrite32(0xa55a0000, p);
+> +       iounmap(p);
+> +#endif
 
+I think (most of) my comments from "Re: [RFC 4/5] ARM: shmobile: r8a7790: let
+rst module allow watchdog resets if desired" are still valid
+(http://www.spinics.net/lists/linux-sh/msg39799.html):
 
-> > +#if defined(CONFIG_WATCHDOG)
-> > +	void __iomem *p =3D ioremap_nocache(WDTRSTCR, 4);
-> > +	BUG_ON(!p);
-> > +	iowrite32(0xa55a0000, p);
-> > +	iounmap(p);
-> > +#endif
->=20
-> That's a bit of a hack. We should aim at removing code from mach-shmobile=
-, not=20
-> adding new code :-) Furthermore it will cause issues with virtualization =
-as=20
-> hypervisors commonly map memory based on DT, the above code will thus gen=
-erate=20
-> a write access to an unmapped piece of memory as there's no corresponding=
- DT=20
-> node.
+| This is dangerous. If the xWDT was left running, the system will be
+| restarted soon.
+|
+| I think clearing the xWDT reset mask should be handled in the WDT driver
+| itself, when enabling the watchdog.
+|
+| As the wiring between WDT and reset controller differs on the various SoCs
+| (R-Car Gen2 uses the RST module, R-Mobile APE6 uses the SYSC module),
+| I was thinking about representing this into DT, e.g. adding a node
+for the RST:
+|
+|        rst: reset-controller@e6160000 {
+|                compatible = "renesas,rst-r8a7791", "syscon";
+|                reg = <0 0xe6160000 0 0x64>;
+|        };
+|
+| and adding a link to the RST to the wdt node:
+|
+|        syscon = <&rst 0>; /* 0 for RWDT, 1 for SWDT */
+|
+| On APE6 it can become a link to the SYSC instead.
+| [...]
+| On older SH-Mobile / R-Mobile, the link can be left out, as the reset is
+| not configurable on these SoCs, I think.
 
-I know. As I said in the cover letter (hint! ;)) it only works for me with
-UP on Lager. These arch patches are only to be able to test the driver.
-Totally not to be upstreamed.
+However, the below is no longer true, as syscon no longer interferes with
+another driver for the same device:
 
-> Time for a reset driver it seems ;-)
+| It's slightly more complicated there, as we already have a driver for the
+| SYSC on R-Mobile (rmobile-reset), and a device node can't be bound
+| by both the syscon and the rmobile-reset driver.
 
-Can of worms for Gen2...
+Gr{oetje,eeting}s,
 
-Let's hope it will be easier on Gen3 and we can submit the main driver
-upstream this way.
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
---yklP1rR72f9kjNtc
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWKifyAAoJEBQN5MwUoCm2PTwP/AnNDzxYgj1yeYccfEkIxH7J
-cyZ9XRKZ6pfekvQtLaU3CDz4bzGSQ7HFMiizl95GuvOQjyEOCkvVI7Y4OC+o7B3C
-D3B0+l89RJ/aq8kJf/ZWVdGhR0797Q3ZKZiHU5x5qzAE4cc0hqFJ47c1+iwhesh3
-ipKZ+QRFYjxyODF1Vl2fGe95djMiKuxWYNR+8rfQ1sNMAom4yqWgG5fIGIOQsWSI
-gQjCg5+XvHxtxRnMxN+1S/rYxoyNQuE6bZa1tOp5W1le/0wZYyjkeHV56a/WYNWW
-oIoq0+X/c7lQVftxfEl+mwlCm5pyslN2N6QE/lvKz6tWnaV9U0cK4IK2NOuWWm1i
-hERffqEFfR6ZeRc9EpWW8IoMTqlCep/YvaA5Lkl7yblyCd5jj4DbU+XYULzrF+RW
-1IMEjRJXu+21jbQLs1F0s9rzrMl5y6Vj9gAAqM7VOgxUyNFgsC3F34iFH36GTezb
-o3vaAWgF1DsdV4YyWk6EUDQp2TtA5PQO6qjkwGCT8IbCt7kOqXYY3WyvFM0pz5RQ
-an2ITpiCl07YYL+nugay91HMQLtAuVq/971mxQuipCfZDP4UvHm+NX20K6GtKtSk
-gSmUCnRd0iQjlldpDHL+K65R63NOzNmlpqUQCl0LuhlxqDvOAUsVy9O+hgpVvzH9
-VqiQx2z20+uKB5LoA88j
-=x0kZ
------END PGP SIGNATURE-----
-
---yklP1rR72f9kjNtc--
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
