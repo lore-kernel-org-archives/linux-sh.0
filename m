@@ -1,64 +1,58 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 26 Oct 2015 08:12:29 +0000
-Subject: [PATCH v3 1/7] usb: host: xhci: fix hcd private size
-Message-Id: <1445847155-5468-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Felipe Balbi <balbi@ti.com>
+Date: Mon, 26 Oct 2015 14:26:35 +0000
+Subject: Re: [PATCH v3 1/7] usb: host: xhci: fix hcd private size
+Message-Id: <87a8r5bt9g.fsf@saruman.tx.rr.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="=-=-="
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1445847155-5468-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1445847155-5468-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 To: linux-sh@vger.kernel.org
 
-This patch fixes the hcd private size to sutabile size.
-The previous code has "sizeof(struct xhci_hcd *)" in xhci_hc_driver
-as hcd_priv_size and sizeof(struct xhci_hcd) in xhci_plat_overrides
-or xhci_pci_overrides as extra_priv_size. However, the xhci driver
-uses a "sizeof(struct xhcd_hcd)" memory space in each hcd
-(main_hcd and shared_hcd) actually.
+--=-=-=
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/usb/host/xhci-pci.c  | 1 -
- drivers/usb/host/xhci-plat.c | 1 -
- drivers/usb/host/xhci.c      | 2 +-
- 3 files changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/drivers/usb/host/xhci-pci.c b/drivers/usb/host/xhci-pci.c
-index 17f6897..b51ac63 100644
---- a/drivers/usb/host/xhci-pci.c
-+++ b/drivers/usb/host/xhci-pci.c
-@@ -53,7 +53,6 @@ static struct hc_driver __read_mostly xhci_pci_hc_driver;
- static int xhci_pci_setup(struct usb_hcd *hcd);
- 
- static const struct xhci_driver_overrides xhci_pci_overrides __initconst = {
--	.extra_priv_size = sizeof(struct xhci_hcd),
- 	.reset = xhci_pci_setup,
- };
- 
-diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
-index 05647e6..4699c1e 100644
---- a/drivers/usb/host/xhci-plat.c
-+++ b/drivers/usb/host/xhci-plat.c
-@@ -31,7 +31,6 @@ static int xhci_plat_setup(struct usb_hcd *hcd);
- static int xhci_plat_start(struct usb_hcd *hcd);
- 
- static const struct xhci_driver_overrides xhci_plat_overrides __initconst = {
--	.extra_priv_size = sizeof(struct xhci_hcd),
- 	.reset = xhci_plat_setup,
- 	.start = xhci_plat_start,
- };
-diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
-index 6e7dc6f..c295785 100644
---- a/drivers/usb/host/xhci.c
-+++ b/drivers/usb/host/xhci.c
-@@ -4942,7 +4942,7 @@ EXPORT_SYMBOL_GPL(xhci_gen_setup);
- static const struct hc_driver xhci_hc_driver = {
- 	.description =		"xhci-hcd",
- 	.product_desc =		"xHCI Host Controller",
--	.hcd_priv_size =	sizeof(struct xhci_hcd *),
-+	.hcd_priv_size =	sizeof(struct xhci_hcd),
- 
- 	/*
- 	 * generic hardware linkage
--- 
-1.9.1
+Hi,
 
+Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com> writes:
+> This patch fixes the hcd private size to sutabile size.
+                                           ^^^^^^^^
+                                           suitable
+
+> The previous code has "sizeof(struct xhci_hcd *)" in xhci_hc_driver
+> as hcd_priv_size and sizeof(struct xhci_hcd) in xhci_plat_overrides
+> or xhci_pci_overrides as extra_priv_size. However, the xhci driver
+> uses a "sizeof(struct xhcd_hcd)" memory space in each hcd
+> (main_hcd and shared_hcd) actually.
+
+Nothing against the patch itself, but you're describing what exactly
+you're fixing. Did you find a bug because of this or is this basically a
+cleanup ? Your subject says you're "fixing" hcd private size, but I
+don't how this could be fixing anything. Care to explain ?
+
+=2D-=20
+balbi
+
+--=-=-=
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJWLjgcAAoJEIaOsuA1yqREhigQAIrKzlgQ8kk4EN6dR/T7k+Wu
+X8aMrG9hjxSO/uZKwjVtl1OQwWxM3hEKCFHmvgEefj8GUALXC1WHSRxwD8kpAGNW
+BZDxl6Wrh2bmkk3FY1XmVO1XgPFU6I9JTh6zn233aIGPwNmrUJmXO3HT+1fNeilE
+x1MW452oZiM88xJU6z3a2eJ58liWG6xit7Ba/e9tNbNjSB7UooRSeYFw+M652eWH
+wih5aT96ZuRwAocPG/gb5sXvpjQwQ94cXIP5TgIOGnWocXN1K+Y1mQFKc3g1WMxL
+tNrITlMSqU9J+vv0gLEQULjffRJNonKSf7C0x0PiGVReCKc9qbKEyOitSFvjG36l
+T6GJa7rLSS1bdUqtHkMm/Bce0J0MkLy4IaNjeRMpMmgHseBrQT6ZQkm+hreOiYxp
+kjOloIbWA3NBaRTChqdn2hcx95sCOtDZ+OR9F2LeTfI9pZzg7jWGP+5jgRNp0NW/
+/hjDSLWc50JWrYUJZtPM2rNve6sJXcFwhBBnoyt1vD0I5LGiEH9uVgmG0LcaorU5
+YcWvH/bFi68HOoYsbMzAOnroVCx20/TTMtIGfReAyzrbIHMApK9K7AG7zQI8l/Ae
+M2149SipCPuSVDuqmG85a/+WxjoILZADUUr0KYlnJhKrG1J6MrP1uzJLrQd8x6Ly
+sbJLjX6G0FnpNUPTdxem
+=X0LR
+-----END PGP SIGNATURE-----
+--=-=-=--
