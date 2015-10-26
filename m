@@ -1,95 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 06:59:34 +0000
-Subject: [PATCH/RFC 3/6] arm: shmobile: rcar-gen2: Obtain MD pin value using boot-mode-reg
-Message-Id: <1444892377-10170-4-git-send-email-horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 26 Oct 2015 08:12:28 +0000
+Subject: [PATCH v3 0/7] usb: host: xhci-plat: add support for the R-Car M2-N and H3 xHCI controllers
+Message-Id: <1445847155-5468-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Use new boot mode reg infrastructure to obtain the mode pin
-value for initialising arch timer for R-Car Gen2 SoCs.
+This patch set adds support for R-Car M2-N (r8a7793) and H3 (r8a7795) xHCI
+controllers. To add support these new SoCs, this patch set adds a new member
+"priv" in struct xhci_hcd.
 
-Subsequent patches will remove other calls to rcar_gen2_read_mode_pins()
-and in turn that function.
+This patch is based on the latest usb.git / usb-next branch.
+(The commit id = 0bbc367e21bfeea33230d893be4fa3a3ff9bcb48)
 
-rcar_gen2_init_boot_mode() is called to implicitly initialise
-the R-Car Gen2 boot mod register driver as rcar_gen2_timer_init()
-is run before initcalls.
+Changes from v2:
+ - Rebase the latest usb-next branch (commit id = 0bbc367e21bfeea33230d)
+ - Modify hcd_priv_size and extra_priv_size in xhci.c and xhci-{plat,pci}.c
+   as a clean-up patch.
+ - Change "priv" of struct xhci_hcd from const pointer to priv[0].
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/Kconfig           |  1 +
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 24 +++++++++++++++++++++---
- 2 files changed, 22 insertions(+), 3 deletions(-)
+Changes from v1:
+ - Add "const void *priv" in struct xhci_hcd to simplify the code to match
+   platform specific variables using of_device_id.data.
+   To achieve this purpose, this patch set made patch 1 to 3.
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 88734a5e10ca..79b7db5f6417 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -22,6 +22,7 @@ config ARCH_RCAR_GEN2
- 	select RENESAS_IRQC
- 	select SYS_SUPPORTS_SH_CMT
- 	select PCI_DOMAINS if PCI
-+	select BOOT_MODE_REG_RCAR_GEN2
- 
- config ARCH_RMOBILE
- 	bool
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index aa3339258d9c..3a2bffd4c1cf 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -24,6 +24,7 @@
- #include <linux/memblock.h>
- #include <linux/of.h>
- #include <linux/of_fdt.h>
-+#include <misc/boot-mode-reg.h>
- #include <asm/mach/arch.h>
- #include "common.h"
- #include "rcar-gen2.h"
-@@ -49,13 +50,19 @@ u32 rcar_gen2_read_mode_pins(void)
- #define CNTCR 0
- #define CNTFID0 0x20
- 
--void __init rcar_gen2_timer_init(void)
-+void __init rcar_gen2_timer_init_for_arch_timer(void)
- {
--	u32 mode = rcar_gen2_read_mode_pins();
- #ifdef CONFIG_ARM_ARCH_TIMER
- 	void __iomem *base;
- 	int extal_mhz = 0;
--	u32 freq;
-+	u32 freq, mode;
-+	int err;
-+
-+	err = boot_mode_reg_get(&mode);
-+	if (err) {
-+		pr_err("%s: failed obtain boot mode\n", __func__);
-+		return;
-+	}
- 
- 	if (of_machine_is_compatible("renesas,r8a7794")) {
- 		freq = 260000000 / 8;	/* ZS / 8 */
-@@ -126,7 +133,18 @@ void __init rcar_gen2_timer_init(void)
- 
- 	iounmap(base);
- #endif /* CONFIG_ARM_ARCH_TIMER */
-+}
-+
-+void __init rcar_gen2_timer_init(void)
-+{
-+	int err;
-+	u32 mode = rcar_gen2_read_mode_pins();
-+
-+	err = rcar_gen2_init_boot_mode();
-+	if (err)
-+		pr_err("Could not initialise boot mode register driver\n");
- 
-+	rcar_gen2_timer_init_for_arch_timer();
- 	rcar_gen2_clocks_init(mode);
- 	clocksource_of_init();
- }
+
+Yoshihiro Shimoda (7):
+  usb: host: xhci: fix hcd private size
+  usb: host: xhci: add a platform-private field
+  usb: host: xhci-plat: add struct xhci_plat_priv
+  usb: host: xhci-plat: add firmware_name in xhci_plat_priv
+  usb: host: xhci-rcar: Change code for new SoCs
+  usb: host: xhci-plat: add support for the R-Car M2-N xHCI controller
+  usb: host: xhci-plat: add support for the R-Car H3 xHCI controllers
+
+ Documentation/devicetree/bindings/usb/usb-xhci.txt |  4 +-
+ drivers/usb/host/xhci-pci.c                        |  1 -
+ drivers/usb/host/xhci-plat.c                       | 88 +++++++++++++++-------
+ drivers/usb/host/xhci-plat.h                       | 39 ++++++++++
+ drivers/usb/host/xhci-rcar.c                       | 44 +++++++----
+ drivers/usb/host/xhci-rcar.h                       |  3 +
+ drivers/usb/host/xhci.c                            |  2 +-
+ drivers/usb/host/xhci.h                            |  3 +
+ 8 files changed, 140 insertions(+), 44 deletions(-)
+ create mode 100644 drivers/usb/host/xhci-plat.h
+
 -- 
-2.1.4
+1.9.1
 
