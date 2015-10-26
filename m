@@ -1,105 +1,62 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Sun, 25 Oct 2015 10:09:33 +0000
-Subject: [PATCH v2 1/2] dmaengine: sh: usb-dmac: Fix crash on runtime suspend
-Message-Id: <1445767774-24001-2-git-send-email-geert+renesas@glider.be>
+From: Vinod Koul <vinod.koul@intel.com>
+Date: Mon, 26 Oct 2015 00:30:27 +0000
+Subject: Re: [PATCH v2 1/2] dmaengine: sh: usb-dmac: Fix crash on runtime suspend
+Message-Id: <20151026001825.GA3690@vkoul-mobl.iind.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1445767774-24001-2-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1445767774-24001-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-If CONFIG_PREEMPT=3Dy:
+On Sun, Oct 25, 2015 at 11:09:33AM +0100, Geert Uytterhoeven wrote:
+> If CONFIG_PREEMPT=3Dy:
+>=20
+>     Unable to handle kernel NULL pointer dereference at virtual address 0=
+0000014
+>     pgd =3D c0003000
+>     [00000014] *pgd=80000040004003, *pmd=00000000
+>     Internal error: Oops: 206 [#1] PREEMPT SMP ARM
+>     Modules linked in:
+>     CPU: 0 PID: 17 Comm: kworker/0:1 Tainted: G        W       4.3.0-rc3-=
+koelsch-022
+>     71-g705498fc5e6a5da8-dirty #1789
+>     Hardware name: Generic R8A7791 (Flattened Device Tree)
+>     Workqueue: pm pm_runtime_work
+>     task: ef578e40 ti: ef57a000 task.ti: ef57a000
+>     PC is at usb_dmac_chan_halt+0xc/0xc0
+>     LR is at usb_dmac_runtime_suspend+0x28/0x38
+>     pc : [<c023c880>]    lr : [<c023c95c>]    psr: 80000113
+>     sp : ef57bdf8  ip : 00000008  fp : 00000003
+>     r10: 00000008  r9 : c06ab928  r8 : ef49e810
+>     r7 : 00000000  r6 : 000000ac  r5 : ef770010  r4 : 00000000
+>     r3 : 00000000  r2 : 8ffc2b84  r1 : 00000000  r0 : ef770010
+>     Flags: Nzcv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment kernel
+>     Control: 30c5307d  Table: 40003000  DAC: fffffffd
+>     Process kworker/0:1 (pid: 17, stack limit =3D 0xef57a210)
+>     Stack: (0xef57bdf8 to 0xef57c000)
+>=20
+>     [...
+>=20
+>     [<c023c880>] (usb_dmac_chan_halt) from [<c023c95c>] (usb_dmac_runtime=
+_suspend+0x28/0x38)
+>     [<c023c95c>] (usb_dmac_runtime_suspend) from [<c027b25c>] (pm_genpd_r=
+untime_suspend+0x74/0x23c)
+>=20
+> This happens because usb_dmac_probe() calls pm_runtime_put() before
+> usb_dmac_chan_probe(), leading to the device being suspended before the
+> DMA channels are initialized, causing a NULL pointer dereference.
+>=20
+> Move the call to pm_runtime_put() to the end of usb_dmac_probe() to fix
+> this.
+>=20
+> Add a check to usb_dmac_runtime_suspend() to prevent the crash from
+> happening in the error path.
 
-    Unable to handle kernel NULL pointer dereference at virtual address 000=
-00014
-    pgd =3D c0003000
-    [00000014] *pgd=80000040004003, *pmd=00000000
-    Internal error: Oops: 206 [#1] PREEMPT SMP ARM
-    Modules linked in:
-    CPU: 0 PID: 17 Comm: kworker/0:1 Tainted: G        W       4.3.0-rc3-ko=
-elsch-022
-    71-g705498fc5e6a5da8-dirty #1789
-    Hardware name: Generic R8A7791 (Flattened Device Tree)
-    Workqueue: pm pm_runtime_work
-    task: ef578e40 ti: ef57a000 task.ti: ef57a000
-    PC is at usb_dmac_chan_halt+0xc/0xc0
-    LR is at usb_dmac_runtime_suspend+0x28/0x38
-    pc : [<c023c880>]    lr : [<c023c95c>]    psr: 80000113
-    sp : ef57bdf8  ip : 00000008  fp : 00000003
-    r10: 00000008  r9 : c06ab928  r8 : ef49e810
-    r7 : 00000000  r6 : 000000ac  r5 : ef770010  r4 : 00000000
-    r3 : 00000000  r2 : 8ffc2b84  r1 : 00000000  r0 : ef770010
-    Flags: Nzcv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment kernel
-    Control: 30c5307d  Table: 40003000  DAC: fffffffd
-    Process kworker/0:1 (pid: 17, stack limit =3D 0xef57a210)
-    Stack: (0xef57bdf8 to 0xef57c000)
+This worked, applied both now
 
-    [...
+Thanks
 
-    [<c023c880>] (usb_dmac_chan_halt) from [<c023c95c>] (usb_dmac_runtime_s=
-uspend+0x28/0x38)
-    [<c023c95c>] (usb_dmac_runtime_suspend) from [<c027b25c>] (pm_genpd_run=
-time_suspend+0x74/0x23c)
-
-This happens because usb_dmac_probe() calls pm_runtime_put() before
-usb_dmac_chan_probe(), leading to the device being suspended before the
-DMA channels are initialized, causing a NULL pointer dereference.
-
-Move the call to pm_runtime_put() to the end of usb_dmac_probe() to fix
-this.
-
-Add a check to usb_dmac_runtime_suspend() to prevent the crash from
-happening in the error path.
-
-Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
-v2:
-  - Add Tested-by.
-
- drivers/dma/sh/usb-dmac.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/dma/sh/usb-dmac.c b/drivers/dma/sh/usb-dmac.c
-index ebd8a5f398b08ee2..f305738b5adf8cc9 100644
---- a/drivers/dma/sh/usb-dmac.c
-+++ b/drivers/dma/sh/usb-dmac.c
-@@ -679,8 +679,11 @@ static int usb_dmac_runtime_suspend(struct device *dev)
- 	struct usb_dmac *dmac =3D dev_get_drvdata(dev);
- 	int i;
-=20
--	for (i =3D 0; i < dmac->n_channels; ++i)
-+	for (i =3D 0; i < dmac->n_channels; ++i) {
-+		if (!dmac->channels[i].iomem)
-+			break;
- 		usb_dmac_chan_halt(&dmac->channels[i]);
-+	}
-=20
- 	return 0;
- }
-@@ -803,7 +806,6 @@ static int usb_dmac_probe(struct platform_device *pdev)
- 	}
-=20
- 	ret =3D usb_dmac_init(dmac);
--	pm_runtime_put(&pdev->dev);
-=20
- 	if (ret) {
- 		dev_err(&pdev->dev, "failed to reset device\n");
-@@ -851,10 +853,12 @@ static int usb_dmac_probe(struct platform_device *pde=
-v)
- 	if (ret < 0)
- 		goto error;
-=20
-+	pm_runtime_put(&pdev->dev);
- 	return 0;
-=20
- error:
- 	of_dma_controller_free(pdev->dev.of_node);
-+	pm_runtime_put(&pdev->dev);
- 	pm_runtime_disable(&pdev->dev);
- 	return ret;
- }
 --=20
-1.9.1
-
+~Vinod
