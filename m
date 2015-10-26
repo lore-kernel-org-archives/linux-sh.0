@@ -1,49 +1,68 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 28 Oct 2015 23:09:19 +0000
-Subject: [PATCH v3 2/2] arm64: defconfig: Enable GPIO of Renesas R-Car Gen3 SoC
-Message-Id: <1446073759-10569-3-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 26 Oct 2015 06:01:51 +0000
+Subject: [PATCH v12 6/7] arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
+Message-Id: <1445839312-8874-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446073759-10569-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1446073759-10569-1-git-send-email-horms+renesas@verge.net.au>
+References: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Enable GPIO for  Renesas R-Car Gen3 SoC.
+This patch enables the Renesas R-Car H3 SoC together with the
+SCIF driver in the arm64 defconfig.
 
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+Changes since v10:
+- None
 
-v3 [Simon Horman]
-* Added Ack from Geert Uytterhoeven
+Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
+- None
 
-v2
-* No change
+Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
+- Added Acked-by from Geert
 
-v0 [Simon Horman]
-* Only enable GPIO_RCAR
+Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
+- Updated changelog
+- Use CONFIG_RENESAS and CONFIG_R8A7795
+
+Based on:
+ [PATCH 19/25] arm64: defconfig: renesas: Enable Renesas R-Car Gen3 SoC
+ [PATCH 20/25] arm64: defconfig: renesas: enable SCIF
 ---
- arch/arm64/configs/defconfig | 1 +
- 1 file changed, 1 insertion(+)
+ arch/arm64/configs/defconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
 
 diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index dccc685b58ae..d9946384f102 100644
+index 34d71dd86781..dccc685b58ae 100644
 --- a/arch/arm64/configs/defconfig
 +++ b/arch/arm64/configs/defconfig
-@@ -125,6 +125,7 @@ CONFIG_SPI=y
- CONFIG_SPI_PL022=y
- CONFIG_PINCTRL_MSM8916=y
- CONFIG_GPIO_PL061=y
-+CONFIG_GPIO_RCAR=y
- CONFIG_GPIO_XGENE=y
- CONFIG_POWER_RESET_XGENE=y
- CONFIG_POWER_RESET_SYSCON=y
+@@ -39,6 +39,8 @@ CONFIG_ARCH_HISI=y
+ CONFIG_ARCH_MEDIATEK=y
+ CONFIG_ARCH_ROCKCHIP=y
+ CONFIG_ARCH_SEATTLE=y
++CONFIG_ARCH_RENESAS=y
++CONFIG_ARCH_R8A7795=y
+ CONFIG_ARCH_TEGRA=y
+ CONFIG_ARCH_TEGRA_132_SOC=y
+ CONFIG_ARCH_QCOM=y
+@@ -109,6 +111,9 @@ CONFIG_SERIAL_8250_DW=y
+ CONFIG_SERIAL_8250_MT6577=y
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_SERIAL_MSM=y
+ CONFIG_SERIAL_MSM_CONSOLE=y
+ CONFIG_SERIAL_OF_PLATFORM=y
 -- 
 2.1.4
 
