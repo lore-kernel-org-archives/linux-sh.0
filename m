@@ -1,127 +1,204 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 02 Oct 2015 23:21:15 +0000
-Subject: [PATCH v3] pinctrl: sh-pfc: r8a779[01]: move 'union vin_data' to shared header file
-Message-Id: <5498069.3NrXYzuRL0@wasted.cogentembedded.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 26 Oct 2015 08:12:31 +0000
+Subject: [PATCH v3 3/7] usb: host: xhci-plat: add struct xhci_plat_priv
+Message-Id: <1445847155-5468-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <13219129.kD4pZSmcAP@wasted.cogentembedded.com>
-In-Reply-To: <13219129.kD4pZSmcAP@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linus.walleij@linaro.org, linux-sh@vger.kernel.org, laurent.pinchart@ideasonboard.com, linux-gpio@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-R8A7790/1 PFC  drivers use almost identical  'union vin_data' and completely
-identical VIN_DATA_PIN_GROUP() macro; we thus can  move them into the shared
-header file...
+This patch adds struct xhci_plat_priv to simplify the code to match
+platform specific variables. For now, this patch adds a member "type"
+in the structure.
 
-Suggested-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
-The patch is against the 'devel' branch of Linus W.'s 'linux-pinctrl.git' repo.
+ drivers/usb/host/xhci-plat.c | 73 +++++++++++++++++++++++++++++---------------
+ drivers/usb/host/xhci-plat.h | 37 ++++++++++++++++++++++
+ 2 files changed, 85 insertions(+), 25 deletions(-)
+ create mode 100644 drivers/usb/host/xhci-plat.h
 
-Changes in version 3:
-- added a comment to the common header file;
-- added Laurent's ACK.
-
-Changes in version 2:
-- removed leftover empty line from the R8A7790 driver;
-- added Geert's ACK.
-
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c |   19 -------------------
- drivers/pinctrl/sh-pfc/pfc-r8a7791.c |   18 ------------------
- drivers/pinctrl/sh-pfc/sh_pfc.h      |   23 +++++++++++++++++++++++
- 3 files changed, 23 insertions(+), 37 deletions(-)
-
-Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-+++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
-@@ -3624,25 +3624,6 @@ static const unsigned int usb2_pins[]  static const unsigned int usb2_mux[] = {
- 	USB2_PWEN_MARK, USB2_OVC_MARK,
- };
--
--union vin_data {
--	unsigned int data24[24];
--	unsigned int data20[20];
--	unsigned int data16[16];
--	unsigned int data12[12];
--	unsigned int data10[10];
--	unsigned int data8[8];
--	unsigned int data4[4];
--};
--
--#define VIN_DATA_PIN_GROUP(n, s)				\
--	{							\
--		.name = #n#s,					\
--		.pins = n##_pins.data##s,			\
--		.mux = n##_mux.data##s,				\
--		.nr_pins = ARRAY_SIZE(n##_pins.data##s),	\
--	}
--
- /* - VIN0 ------------------------------------------------------------------- */
- static const union vin_data vin0_data_pins = {
- 	.data24 = {
-Index: linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-+++ linux-pinctrl/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
-@@ -3986,24 +3986,6 @@ static const unsigned int usb1_mux[] = {
- 	USB1_PWEN_MARK,
- 	USB1_OVC_MARK,
- };
--
--union vin_data {
--	unsigned int data24[24];
--	unsigned int data20[20];
--	unsigned int data16[16];
--	unsigned int data12[12];
--	unsigned int data10[10];
--	unsigned int data8[8];
--};
--
--#define VIN_DATA_PIN_GROUP(n, s)				\
--	{							\
--		.name = #n#s,					\
--		.pins = n##_pins.data##s,			\
--		.mux = n##_mux.data##s,				\
--		.nr_pins = ARRAY_SIZE(n##_pins.data##s),	\
--	}
--
- /* - VIN0 ------------------------------------------------------------------- */
- static const union vin_data vin0_data_pins = {
- 	.data24 = {
-Index: linux-pinctrl/drivers/pinctrl/sh-pfc/sh_pfc.h
-=================================--- linux-pinctrl.orig/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ linux-pinctrl/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -52,6 +52,29 @@ struct sh_pfc_pin_group {
- 	unsigned int nr_pins;
- };
+diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
+index 4699c1e..083e77b 100644
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -22,6 +22,7 @@
+ #include <linux/acpi.h>
  
-+/*
-+ * Using union vin_data saves memory occupied by the VIN data pins.
-+ * VIN_DATA_PIN_GROUP() is  a macro  used  to describe the VIN pin groups
-+ * in this case.
-+ */
-+#define VIN_DATA_PIN_GROUP(n, s)				\
-+	{							\
-+		.name = #n#s,					\
-+		.pins = n##_pins.data##s,			\
-+		.mux = n##_mux.data##s,				\
-+		.nr_pins = ARRAY_SIZE(n##_pins.data##s),	\
-+	}
-+
-+union vin_data {
-+	unsigned int data24[24];
-+	unsigned int data20[20];
-+	unsigned int data16[16];
-+	unsigned int data12[12];
-+	unsigned int data10[10];
-+	unsigned int data8[8];
-+	unsigned int data4[4];
+ #include "xhci.h"
++#include "xhci-plat.h"
+ #include "xhci-mvebu.h"
+ #include "xhci-rcar.h"
+ 
+@@ -31,6 +32,7 @@ static int xhci_plat_setup(struct usb_hcd *hcd);
+ static int xhci_plat_start(struct usb_hcd *hcd);
+ 
+ static const struct xhci_driver_overrides xhci_plat_overrides __initconst = {
++	.extra_priv_size = sizeof(struct xhci_plat_priv),
+ 	.reset = xhci_plat_setup,
+ 	.start = xhci_plat_start,
+ };
+@@ -48,11 +50,9 @@ static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
+ /* called during probe() after chip reset completes */
+ static int xhci_plat_setup(struct usb_hcd *hcd)
+ {
+-	struct device_node *of_node = hcd->self.controller->of_node;
+ 	int ret;
+ 
+-	if (of_device_is_compatible(of_node, "renesas,xhci-r8a7790") ||
+-	    of_device_is_compatible(of_node, "renesas,xhci-r8a7791")) {
++	if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2)) {
+ 		ret = xhci_rcar_init_quirk(hcd);
+ 		if (ret)
+ 			return ret;
+@@ -63,19 +63,49 @@ static int xhci_plat_setup(struct usb_hcd *hcd)
+ 
+ static int xhci_plat_start(struct usb_hcd *hcd)
+ {
+-	struct device_node *of_node = hcd->self.controller->of_node;
+-
+-	if (of_device_is_compatible(of_node, "renesas,xhci-r8a7790") ||
+-	    of_device_is_compatible(of_node, "renesas,xhci-r8a7791"))
++	if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2))
+ 		xhci_rcar_start(hcd);
+ 
+ 	return xhci_run(hcd);
+ }
+ 
++#ifdef CONFIG_OF
++static const struct xhci_plat_priv xhci_plat_marvell_armada = {
++	.type = XHCI_PLAT_TYPE_MARVELL_ARMADA,
 +};
 +
- #define SH_PFC_FUNCTION(n)				\
- 	{						\
- 		.name = #n,				\
++static const struct xhci_plat_priv xhci_plat_renesas_rcar_gen2 = {
++	.type = XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2,
++};
++
++static const struct of_device_id usb_xhci_of_match[] = {
++	{
++		.compatible = "generic-xhci",
++	}, {
++		.compatible = "xhci-platform",
++	}, {
++		.compatible = "marvell,armada-375-xhci",
++		.data = &xhci_plat_marvell_armada,
++	}, {
++		.compatible = "marvell,armada-380-xhci",
++		.data = &xhci_plat_marvell_armada,
++	}, {
++		.compatible = "renesas,xhci-r8a7790",
++		.data = &xhci_plat_renesas_rcar_gen2,
++	}, {
++		.compatible = "renesas,xhci-r8a7791",
++		.data = &xhci_plat_renesas_rcar_gen2,
++	}, {
++	},
++};
++MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
++#endif
++
+ static int xhci_plat_probe(struct platform_device *pdev)
+ {
+ 	struct device_node	*node = pdev->dev.of_node;
+ 	struct usb_xhci_pdata	*pdata = dev_get_platdata(&pdev->dev);
++	const struct of_device_id *match;
+ 	const struct hc_driver	*driver;
+ 	struct xhci_hcd		*xhci;
+ 	struct resource         *res;
+@@ -133,10 +163,17 @@ static int xhci_plat_probe(struct platform_device *pdev)
+ 			goto put_hcd;
+ 	}
+ 
+-	if (of_device_is_compatible(pdev->dev.of_node,
+-				    "marvell,armada-375-xhci") ||
+-	    of_device_is_compatible(pdev->dev.of_node,
+-				    "marvell,armada-380-xhci")) {
++	xhci = hcd_to_xhci(hcd);
++	match = of_match_node(usb_xhci_of_match, node);
++	if (match) {
++		const struct xhci_plat_priv *priv_match = match->data;
++		struct xhci_plat_priv *priv = hcd_to_xhci_priv(hcd);
++
++		/* Just copy data for now */
++		*priv = *priv_match;
++	}
++
++	if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_MARVELL_ARMADA)) {
+ 		ret = xhci_mvebu_mbus_init_quirk(pdev);
+ 		if (ret)
+ 			goto disable_clk;
+@@ -144,7 +181,6 @@ static int xhci_plat_probe(struct platform_device *pdev)
+ 
+ 	device_wakeup_enable(hcd->self.controller);
+ 
+-	xhci = hcd_to_xhci(hcd);
+ 	xhci->clk = clk;
+ 	xhci->main_hcd = hcd;
+ 	xhci->shared_hcd = usb_create_shared_hcd(driver, &pdev->dev,
+@@ -255,19 +291,6 @@ static const struct dev_pm_ops xhci_plat_pm_ops = {
+ #define DEV_PM_OPS	NULL
+ #endif /* CONFIG_PM */
+ 
+-#ifdef CONFIG_OF
+-static const struct of_device_id usb_xhci_of_match[] = {
+-	{ .compatible = "generic-xhci" },
+-	{ .compatible = "xhci-platform" },
+-	{ .compatible = "marvell,armada-375-xhci"},
+-	{ .compatible = "marvell,armada-380-xhci"},
+-	{ .compatible = "renesas,xhci-r8a7790"},
+-	{ .compatible = "renesas,xhci-r8a7791"},
+-	{ },
+-};
+-MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
+-#endif
+-
+ static const struct acpi_device_id usb_xhci_acpi_match[] = {
+ 	/* XHCI-compliant USB Controller */
+ 	{ "PNP0D10", },
+diff --git a/drivers/usb/host/xhci-plat.h b/drivers/usb/host/xhci-plat.h
+new file mode 100644
+index 0000000..4479869
+--- /dev/null
++++ b/drivers/usb/host/xhci-plat.h
+@@ -0,0 +1,37 @@
++/*
++ * xhci-plat.h - xHCI host controller driver platform Bus Glue.
++ *
++ * Copyright (C) 2015 Renesas Electronics Corporation
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ */
++
++#ifndef _XHCI_PLAT_H
++#define _XHCI_PLAT_H
++
++#include "xhci.h"	/* for hcd_to_xhci() */
++
++enum xhci_plat_type {
++	XHCI_PLAT_TYPE_MARVELL_ARMADA,
++	XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2,
++};
++
++struct xhci_plat_priv {
++	enum xhci_plat_type type;
++};
++
++#define hcd_to_xhci_priv(h) ((struct xhci_plat_priv *)hcd_to_xhci(h)->priv)
++
++static inline bool xhci_plat_type_is(struct usb_hcd *hcd,
++				     enum xhci_plat_type type)
++{
++	struct xhci_plat_priv *priv = hcd_to_xhci_priv(hcd);
++
++	if (priv && priv->type = type)
++		return true;
++	else
++		return false;
++}
++#endif	/* _XHCI_PLAT_H */
+-- 
+1.9.1
 
