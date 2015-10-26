@@ -1,52 +1,60 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 26 Oct 2015 08:12:28 +0000
-Subject: [PATCH v3 0/7] usb: host: xhci-plat: add support for the R-Car M2-N and H3 xHCI controllers
-Message-Id: <1445847155-5468-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 26 Oct 2015 06:01:49 +0000
+Subject: [PATCH v12 4/7] arm64: renesas: r8a7795: enable PFC
+Message-Id: <1445839312-8874-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch set adds support for R-Car M2-N (r8a7793) and H3 (r8a7795) xHCI
-controllers. To add support these new SoCs, this patch set adds a new member
-"priv" in struct xhci_hcd.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This patch is based on the latest usb.git / usb-next branch.
-(The commit id = 0bbc367e21bfeea33230d893be4fa3a3ff9bcb48)
+Add a PFC node for the on-chip r8a7795 pin controller.
 
-Changes from v2:
- - Rebase the latest usb-next branch (commit id = 0bbc367e21bfeea33230d)
- - Modify hcd_priv_size and extra_priv_size in xhci.c and xhci-{plat,pci}.c
-   as a clean-up patch.
- - Change "priv" of struct xhci_hcd from const pointer to priv[0].
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+Changes since v10:
+- None
 
-Changes from v1:
- - Add "const void *priv" in struct xhci_hcd to simplify the code to match
-   platform specific variables using of_device_id.data.
-   To achieve this purpose, this patch set made patch 1 to 3.
+Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
+- None
 
+Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
+- Dropped Kconfig TODO - select PINCTRL happens in patch 1
+- Added Acked-by from Laurent
 
-Yoshihiro Shimoda (7):
-  usb: host: xhci: fix hcd private size
-  usb: host: xhci: add a platform-private field
-  usb: host: xhci-plat: add struct xhci_plat_priv
-  usb: host: xhci-plat: add firmware_name in xhci_plat_priv
-  usb: host: xhci-rcar: Change code for new SoCs
-  usb: host: xhci-plat: add support for the R-Car M2-N xHCI controller
-  usb: host: xhci-plat: add support for the R-Car H3 xHCI controllers
+Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
+- Added changelog
 
- Documentation/devicetree/bindings/usb/usb-xhci.txt |  4 +-
- drivers/usb/host/xhci-pci.c                        |  1 -
- drivers/usb/host/xhci-plat.c                       | 88 +++++++++++++++-------
- drivers/usb/host/xhci-plat.h                       | 39 ++++++++++
- drivers/usb/host/xhci-rcar.c                       | 44 +++++++----
- drivers/usb/host/xhci-rcar.h                       |  3 +
- drivers/usb/host/xhci.c                            |  2 +-
- drivers/usb/host/xhci.h                            |  3 +
- 8 files changed, 140 insertions(+), 44 deletions(-)
- create mode 100644 drivers/usb/host/xhci-plat.h
+Based on:
+ [PATCH 10/25 v7][RFC] arm64: renesas: r8a7795: enable PFC
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
 
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 3e5539cceeec..b94e5a9e2c3b 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -80,6 +80,11 @@
+ 			#power-domain-cells = <0>;
+ 		};
+ 
++		pfc: pfc@e6060000 {
++			compatible = "renesas,pfc-r8a7795";
++			reg = <0 0xe6060000 0 0x50c>;
++		};
++
+ 		dmac0: dma-controller@e6700000 {
+ 			/* Empty node for now */
+ 		};
 -- 
-1.9.1
+2.1.4
 
