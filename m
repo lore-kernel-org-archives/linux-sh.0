@@ -1,46 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 06:48:17 +0000
-Subject: [PATCH v5 4/5] arm64: dts: r8a7795: enable nfs root on Salvator-X board
-Message-Id: <1444891698-8780-5-git-send-email-horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 26 Oct 2015 08:12:30 +0000
+Subject: [PATCH v3 2/7] usb: host: xhci: add a platform-private field
+Message-Id: <1445847155-5468-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444891698-8780-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1444891698-8780-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-As has been the practice for boards for 32bit ARM Renesas SoCs
+This patch adds an xhci->priv field for private use by
+XHCI platform drivers. Until now none of the platform drivers
+has used this private space.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
---
-v2
-* No change
-
-v3
-* Added Ack
-
-v4, v5
-* No change
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/usb/host/xhci.h | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 4fb120d8e7e8..d1c2fea8bebc 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -21,7 +21,7 @@
- 	};
+diff --git a/drivers/usb/host/xhci.h b/drivers/usb/host/xhci.h
+index be9048e..05f4a73 100644
+--- a/drivers/usb/host/xhci.h
++++ b/drivers/usb/host/xhci.h
+@@ -1657,6 +1657,9 @@ struct xhci_hcd {
+ 	u32			port_status_u0;
+ /* Compliance Mode Timer Triggered every 2 seconds */
+ #define COMP_MODE_RCVRY_MSECS 2000
++
++	/* platform-specific data -- must come last */
++	unsigned long		priv[0] __aligned(sizeof(s64));
+ };
  
- 	chosen {
--		bootargs = "ignore_loglevel";
-+		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
- 		stdout-path = &scif2;
- 	};
- 
+ /* Platform specific overrides to generic XHCI hc_driver ops */
 -- 
-2.1.4
+1.9.1
 
