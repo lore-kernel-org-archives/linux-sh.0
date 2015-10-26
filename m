@@ -1,213 +1,130 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 02 Oct 2015 02:55:30 +0000
-Subject: [PATCH v10 02/07] arm64: renesas: r8a7795 dtsi: Add all common divider clocks
-Message-Id: <20151002025530.28158.35032.sendpatchset@little-apple>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 26 Oct 2015 08:12:35 +0000
+Subject: [PATCH v3 7/7] usb: host: xhci-plat: add support for the R-Car H3 xHCI controllers
+Message-Id: <1445847155-5468-8-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+The R-Car H3 has two xHCI controllers. This SoC is compatible with
+R-Car Gen2 SoCs, however this SoC doesn't need some specific registers
+setting, and need a new firmware.
 
-Add all clocks generated from PLL1 by the CPG common divider block.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
+ Documentation/devicetree/bindings/usb/usb-xhci.txt |  4 ++--
+ drivers/usb/host/xhci-plat.c                       | 14 ++++++++++++--
+ drivers/usb/host/xhci-plat.h                       |  1 +
+ drivers/usb/host/xhci-rcar.c                       |  7 +++++++
+ drivers/usb/host/xhci-rcar.h                       |  1 +
+ 5 files changed, 23 insertions(+), 4 deletions(-)
 
- Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
- - Introduce pll1_div2 by folding in earlier posted patch:
-  [PATCH][RFC] arm64: renesas: r8a7795 dtsi: Update common divider clocks
-
- Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
- - Updated commit message.
-
- Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
- - Folded in s3d4_clk
- - Reordered to apply without SCIF bits
-
- Based on:
-  [PATCH 3/3] arm64: renesas: r8a7795 dtsi: Add all common divider clocks
-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi |  169 ++++++++++++++++++++++++++++++
- 1 file changed, 169 insertions(+)
-
---- 0008/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ work/arch/arm64/boot/dts/renesas/r8a7795.dtsi	2015-10-01 22:59:10.390513000 +0900
-@@ -70,6 +70,175 @@
- 			#clock-cells = <1>;
- 			ranges;
+diff --git a/Documentation/devicetree/bindings/usb/usb-xhci.txt b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+index 106299a..0825732 100644
+--- a/Documentation/devicetree/bindings/usb/usb-xhci.txt
++++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+@@ -3,8 +3,8 @@ USB xHCI controllers
+ Required properties:
+   - compatible: should be one of "generic-xhci",
+     "marvell,armada-375-xhci", "marvell,armada-380-xhci",
+-    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791", "renesas,xhci-r8a7793"
+-    (deprecated: "xhci-platform").
++    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791", "renesas,xhci-r8a7793",
++    "renesas,xhci-r8a7795" (deprecated: "xhci-platform").
+   - reg: should contain address and length of the standard XHCI
+     register set for the device.
+   - interrupts: one XHCI interrupt should be described here.
+diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
+index 0113e79..770b6b0 100644
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -52,7 +52,8 @@ static int xhci_plat_setup(struct usb_hcd *hcd)
+ {
+ 	int ret;
  
-+			/* Fixed factor clocks */
-+			pll1_div2_clk: pll1_div2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&cpg_clocks R8A7795_CLK_PLL1>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
+-	if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2)) {
++	if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2) ||
++	    xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN3)) {
+ 		ret = xhci_rcar_init_quirk(hcd);
+ 		if (ret)
+ 			return ret;
+@@ -63,7 +64,8 @@ static int xhci_plat_setup(struct usb_hcd *hcd)
+ 
+ static int xhci_plat_start(struct usb_hcd *hcd)
+ {
+-	if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2))
++	if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2) ||
++	    xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN3))
+ 		xhci_rcar_start(hcd);
+ 
+ 	return xhci_run(hcd);
+@@ -79,6 +81,11 @@ static const struct xhci_plat_priv xhci_plat_renesas_rcar_gen2 = {
+ 	.firmware_name = XHCI_RCAR_FIRMWARE_NAME_V1,
+ };
+ 
++static const struct xhci_plat_priv xhci_plat_renesas_rcar_gen3 = {
++	.type = XHCI_PLAT_TYPE_RENESAS_RCAR_GEN3,
++	.firmware_name = XHCI_RCAR_FIRMWARE_NAME_V2,
++};
 +
-+			zt_clk: zt {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&pll1_div2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			ztr_clk: ztr {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&pll1_div2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <6>;
-+				clock-mult = <1>;
-+			};
-+
-+			ztrd2_clk: ztrd2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&pll1_div2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <12>;
-+				clock-mult = <1>;
-+			};
-+
-+			zx_clk: zx {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&pll1_div2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
-+			s0_clk: s0 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&pll1_div2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
-+			s0d1_clk: s0d1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s0_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <1>;
-+				clock-mult = <1>;
-+			};
-+
-+			s0d4_clk: s0d4 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s0_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			s1_clk: s1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&pll1_div2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <3>;
-+				clock-mult = <1>;
-+			};
-+
-+			s1d1_clk: s1d1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s1_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <1>;
-+				clock-mult = <1>;
-+			};
-+
-+			s1d2_clk: s1d2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s1_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
-+			s1d4_clk: s1d4 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s1_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			s2_clk: s2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&pll1_div2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			s2d1_clk: s2d1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <1>;
-+				clock-mult = <1>;
-+			};
-+
-+			s2d2_clk: s2d2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
-+			s2d4_clk: s2d4 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			s3_clk: s3 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&pll1_div2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <6>;
-+				clock-mult = <1>;
-+			};
-+
-+			s3d1_clk: s3d1 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s3_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <1>;
-+				clock-mult = <1>;
-+			};
-+
-+			s3d2_clk: s3d2 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s3_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <2>;
-+				clock-mult = <1>;
-+			};
-+
-+			s3d4_clk: s3d4 {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&s3_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <4>;
-+				clock-mult = <1>;
-+			};
-+
-+			cl_clk: cl {
-+				compatible = "fixed-factor-clock";
-+				clocks = <&pll1_div2_clk>;
-+				#clock-cells = <0>;
-+				clock-div = <48>;
-+				clock-mult = <1>;
-+			};
-+
- 			cpg_clocks: cpg_clocks@e6150000 {
- 				compatible = "renesas,r8a7795-cpg-clocks",
- 					     "renesas,rcar-gen3-cpg-clocks";
+ static const struct of_device_id usb_xhci_of_match[] = {
+ 	{
+ 		.compatible = "generic-xhci",
+@@ -100,6 +107,9 @@ static const struct of_device_id usb_xhci_of_match[] = {
+ 		.compatible = "renesas,xhci-r8a7793",
+ 		.data = &xhci_plat_renesas_rcar_gen2,
+ 	}, {
++		.compatible = "renesas,xhci-r8a7795",
++		.data = &xhci_plat_renesas_rcar_gen3,
++	}, {
+ 	},
+ };
+ MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
+diff --git a/drivers/usb/host/xhci-plat.h b/drivers/usb/host/xhci-plat.h
+index 20b32a7..5a2e2e3 100644
+--- a/drivers/usb/host/xhci-plat.h
++++ b/drivers/usb/host/xhci-plat.h
+@@ -16,6 +16,7 @@
+ enum xhci_plat_type {
+ 	XHCI_PLAT_TYPE_MARVELL_ARMADA,
+ 	XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2,
++	XHCI_PLAT_TYPE_RENESAS_RCAR_GEN3,
+ };
+ 
+ struct xhci_plat_priv {
+diff --git a/drivers/usb/host/xhci-rcar.c b/drivers/usb/host/xhci-rcar.c
+index 010a24f..623100e 100644
+--- a/drivers/usb/host/xhci-rcar.c
++++ b/drivers/usb/host/xhci-rcar.c
+@@ -17,7 +17,14 @@
+ #include "xhci-plat.h"
+ #include "xhci-rcar.h"
+ 
++/*
++* - The V2 firmware is possible to use on R-Car Gen2. However, the V2 causes
++*   performance degradation. So, this driver continues to use the V1 if R-Car
++*   Gen2.
++* - The V1 firmware is impossible to use on R-Car Gen3.
++*/
+ MODULE_FIRMWARE(XHCI_RCAR_FIRMWARE_NAME_V1);
++MODULE_FIRMWARE(XHCI_RCAR_FIRMWARE_NAME_V2);
+ 
+ /*** Register Offset ***/
+ #define RCAR_USB3_INT_ENA	0x224	/* Interrupt Enable */
+diff --git a/drivers/usb/host/xhci-rcar.h b/drivers/usb/host/xhci-rcar.h
+index ba3ad31..2941a25 100644
+--- a/drivers/usb/host/xhci-rcar.h
++++ b/drivers/usb/host/xhci-rcar.h
+@@ -12,6 +12,7 @@
+ #define _XHCI_RCAR_H
+ 
+ #define XHCI_RCAR_FIRMWARE_NAME_V1	"r8a779x_usb3_v1.dlmem"
++#define XHCI_RCAR_FIRMWARE_NAME_V2	"r8a779x_usb3_v2.dlmem"
+ 
+ #if IS_ENABLED(CONFIG_USB_XHCI_RCAR)
+ void xhci_rcar_start(struct usb_hcd *hcd);
+-- 
+1.9.1
+
