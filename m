@@ -1,111 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 29 Oct 2015 23:27:50 +0000
-Subject: [PATCH v5 04/14] arm64: renesas: r8a7795: Sound SRC support
-Message-Id: <1446161280-23097-5-git-send-email-horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 26 Oct 2015 08:12:34 +0000
+Subject: [PATCH v3 6/7] usb: host: xhci-plat: add support for the R-Car M2-N xHCI controller
+Message-Id: <1445847155-5468-7-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This patch adds support for R-Car M2-N (r8a7793) xHCI controller.
+This SoC is compatible with R-Car H2 (r8a7790) and R-Car M2-W (r8a7791).
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
+ Documentation/devicetree/bindings/usb/usb-xhci.txt | 4 ++--
+ drivers/usb/host/xhci-plat.c                       | 3 +++
+ 2 files changed, 5 insertions(+), 2 deletions(-)
 
-v5 [Simon Horman]
-* Update for new CPG/MSSR bindings via Geert Uytterhoeven
----
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 61 ++++++++++++++++++++++++++++++++
- 1 file changed, 61 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 60d8813c092c..618989528b67 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -370,6 +370,11 @@
- 				 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
- 				 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
- 				 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
-+				 <&cpg CPG_MOD 1022>, <&cpg CPG_MOD 1023>,
-+				 <&cpg CPG_MOD 1024>, <&cpg CPG_MOD 1025>,
-+				 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
-+				 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
-+				 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
- 				 <&audio_clk_a>, <&audio_clk_b>,
- 				 <&audio_clk_c>,
- 				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
-@@ -377,10 +382,66 @@
- 				      "ssi.9", "ssi.8", "ssi.7", "ssi.6",
- 				      "ssi.5", "ssi.4", "ssi.3", "ssi.2",
- 				      "ssi.1", "ssi.0",
-+				      "src.9", "src.8", "src.7", "src.6",
-+				      "src.5", "src.4", "src.3", "src.2",
-+				      "src.1", "src.0",
- 				      "clk_a", "clk_b", "clk_c", "clk_i";
- 			power-domains = <&cpg>;
- 			status = "disabled";
- 
-+			rcar_sound,src {
-+				src0: src@0 {
-+					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x85>, <&audma1 0x9a>;
-+					dma-names = "rx", "tx";
-+				};
-+				src1: src@1 {
-+					interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x87>, <&audma1 0x9c>;
-+					dma-names = "rx", "tx";
-+				};
-+				src2: src@2 {
-+					interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x89>, <&audma1 0x9e>;
-+					dma-names = "rx", "tx";
-+				};
-+				src3: src@3 {
-+					interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x8b>, <&audma1 0xa0>;
-+					dma-names = "rx", "tx";
-+				};
-+				src4: src@4 {
-+					interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x8d>, <&audma1 0xb0>;
-+					dma-names = "rx", "tx";
-+				};
-+				src5: src@5 {
-+					interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x8f>, <&audma1 0xb2>;
-+					dma-names = "rx", "tx";
-+				};
-+				src6: src@6 {
-+					interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x91>, <&audma1 0xb4>;
-+					dma-names = "rx", "tx";
-+				};
-+				src7: src@7 {
-+					interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x93>, <&audma1 0xb6>;
-+					dma-names = "rx", "tx";
-+				};
-+				src8: src@8 {
-+					interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x95>, <&audma1 0xb8>;
-+					dma-names = "rx", "tx";
-+				};
-+				src9: src@9 {
-+					interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x97>, <&audma1 0xba>;
-+					dma-names = "rx", "tx";
-+				};
-+			};
-+
- 			rcar_sound,ssi {
- 				ssi0: ssi@0 {
- 					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/Documentation/devicetree/bindings/usb/usb-xhci.txt b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+index 86f67f0..106299a 100644
+--- a/Documentation/devicetree/bindings/usb/usb-xhci.txt
++++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+@@ -3,8 +3,8 @@ USB xHCI controllers
+ Required properties:
+   - compatible: should be one of "generic-xhci",
+     "marvell,armada-375-xhci", "marvell,armada-380-xhci",
+-    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791" (deprecated:
+-    "xhci-platform").
++    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791", "renesas,xhci-r8a7793"
++    (deprecated: "xhci-platform").
+   - reg: should contain address and length of the standard XHCI
+     register set for the device.
+   - interrupts: one XHCI interrupt should be described here.
+diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
+index a471f12..0113e79 100644
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -97,6 +97,9 @@ static const struct of_device_id usb_xhci_of_match[] = {
+ 		.compatible = "renesas,xhci-r8a7791",
+ 		.data = &xhci_plat_renesas_rcar_gen2,
+ 	}, {
++		.compatible = "renesas,xhci-r8a7793",
++		.data = &xhci_plat_renesas_rcar_gen2,
++	}, {
+ 	},
+ };
+ MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
 -- 
-2.1.4
+1.9.1
 
