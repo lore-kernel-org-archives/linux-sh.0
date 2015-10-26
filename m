@@ -1,35 +1,52 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 02 Oct 2015 10:27:22 +0000
-Subject: Re: [PATCH] sh-pfc: r8a7795: add EtherAVB support
-Message-Id: <CACRpkdYiPRGVCSUho+QJ38F0w87cJ0opu3-rjLO8mNYCErtSPQ@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 26 Oct 2015 06:01:52 +0000
+Subject: [PATCH v12 7/7] MAINTAINERS: Add entry Renesas arm64 architecture
+Message-Id: <1445839312-8874-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442471136-31894-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1442471136-31894-1-git-send-email-horms+renesas@verge.net.au>
+References: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms+renesas@verge.net.au>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 16, 2015 at 11:25 PM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
+Initial Renesas arm64 architecture support will be for the R-Car H3,
+r8a7795, SoC and its Salvator-X board.
 
-> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
->
-> This patch adds EthernetAVB
->
-> Based on a much lager patch by Takeshi Kihara which was
-> originally posted by Kuninori Morimoto.
->
-> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> [horms: extracted from a larger patch;
->         corrected swapped {MATCH,CAPTURE_A} pins]
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+---
 
-Geert will handle this patch.
+Changes since v11:
+- As suggested by Khiem Nguyen:
+  + Removed reference to http://oss.renesas.com as that web site is closed
 
-Yours,
-Linus Walleij
+Changes since v10:
+- New Patch
+---
+ MAINTAINERS | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 7ba7ab749c85..e35134f7d128 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -1392,6 +1392,15 @@ M:	Lennert Buytenhek <kernel@wantstofly.org>
+ L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+ S:	Maintained
+ 
++ARM/RENESAS ARM64 ARCHITECTURE
++M:	Simon Horman <horms@verge.net.au>
++M:	Magnus Damm <magnus.damm@gmail.com>
++L:	linux-sh@vger.kernel.org
++Q:	http://patchwork.kernel.org/project/linux-sh/list/
++T:	git git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git next
++S:	Supported
++F:	arch/arm64/boot/dts/renesas/
++
+ ARM/RISCPC ARCHITECTURE
+ M:	Russell King <linux@arm.linux.org.uk>
+ L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+-- 
+2.1.4
+
