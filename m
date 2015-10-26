@@ -1,32 +1,64 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Mon, 12 Oct 2015 06:54:34 +0000
-Subject: [RFC v2 3/5] ARM: shmobile: r8a7790: lager: enable rwdt
-Message-Id: <1444632876-2672-4-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 26 Oct 2015 06:01:47 +0000
+Subject: [PATCH v12 2/7] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
+Message-Id: <1445839312-8874-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Add dummy nodes for the 3 DMA controllers.
+This allows to start describing DMA channels for DMA slaves now.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790-lager.dts | 4 ++++
- 1 file changed, 4 insertions(+)
+Changes since v10:
+- None
 
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index c553abd711eeb3..40a97b6226c62e 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -698,3 +698,7 @@
- &ssi1 {
- 	shared-pin;
- };
+Changes from V9: (Magnus Damm <damm+renesas@opensource.se>)
+- Updated to remove fuzz
+
+Changes from V8: (Magnus Damm <damm+renesas@opensource.se>)
+- Updated to remove fuzz
+
+Changes from V7: (Magnus Damm <damm+renesas@opensource.se>)
+- Changed order not to depend on SCIF patch(es)
+
+Based on:
+ [PATCH 2/6] arm64: renesas: r8a7795 dtsi: Add dummy dma-controller nodes
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index aa13115387a6..020207e1afe6 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -78,5 +78,17 @@
+ 			#clock-cells = <2>;
+ 			#power-domain-cells = <0>;
+ 		};
 +
-+&wdt0 {
-+	status = "okay";
-+};
++		dmac0: dma-controller@e6700000 {
++			/* Empty node for now */
++		};
++
++		dmac1: dma-controller@e7300000 {
++			/* Empty node for now */
++		};
++
++		dmac2: dma-controller@e7310000 {
++			/* Empty node for now */
++		};
+ 	};
+ };
 -- 
 2.1.4
 
