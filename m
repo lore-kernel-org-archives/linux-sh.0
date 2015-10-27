@@ -1,21 +1,134 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 05 Oct 2015 03:03:55 +0000
-Subject: Re: [PATCH] ARM: shmobile: fix SILK board name
-Message-Id: <20151005030355.GD29979@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 27 Oct 2015 23:05:27 +0000
+Subject: [PATCH v4 1/3] arm64: renesas: r8a7795: add I2C support
+Message-Id: <1445987129-13496-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201404250239.39150.sergei.shtylyov@cogentembedded.com>
- <6818713.ulHphNVRsJ@wasted.cogentembedded.com>
-In-Reply-To: <6818713.ulHphNVRsJ@wasted.cogentembedded.com>
+References: <1445987129-13496-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1445987129-13496-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Oct 03, 2015 at 12:53:38AM +0300, Sergei Shtylyov wrote:
-> Unfortunately, the SILK board bindings were not quite correct, as the  board
-> name should be all caps.  Fix that,  adding the board model #  in parens and
-> removing stray semicolon.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I have queued this up.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[geert: aAdd clock-output-names properties]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+
+v4 [Simon Horman]
+* Update for new CPG/MSSR bindings via Geert Uytterhoeven
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 87 ++++++++++++++++++++++++++++++++
+ 1 file changed, 87 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index b94e5a9e2c3b..bccb49d9fb02 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -16,6 +16,16 @@
+ 	#address-cells = <2>;
+ 	#size-cells = <2>;
+ 
++	aliases {
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2c2 = &i2c2;
++		i2c3 = &i2c3;
++		i2c4 = &i2c4;
++		i2c5 = &i2c5;
++		i2c6 = &i2c6;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -168,5 +178,82 @@
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
+ 		};
++
++		i2c0: i2c@e6500000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe6500000 0 0x40>;
++			interrupts = <GIC_SPI 287 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 931>;
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		i2c1: i2c@e6508000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe6508000 0 0x40>;
++			interrupts = <GIC_SPI 288 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 930>;
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		i2c2: i2c@e6510000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe6510000 0 0x40>;
++			interrupts = <GIC_SPI 286 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 929>;
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		i2c3: i2c@e66d0000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66d0000 0 0x40>;
++			interrupts = <GIC_SPI 290 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 928>;
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		i2c4: i2c@e66d8000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66d8000 0 0x40>;
++			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 927>;
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		i2c5: i2c@e66e0000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66e0000 0 0x40>;
++			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 919>;
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		i2c6: i2c@e66e8000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66e8000 0 0x40>;
++			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 918>;
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
+ 	};
+ };
+-- 
+2.1.4
+
