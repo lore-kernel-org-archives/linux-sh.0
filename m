@@ -1,38 +1,35 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 27 Oct 2015 01:42:06 +0000
-Subject: [PATCH v2 2/2] arm64: defconfig: Enable GPIO of Renesas R-Car Gen3 SoC
-Message-Id: <1445910126-14097-3-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 27 Oct 2015 09:26:36 +0000
+Subject: Re: [PATCH v2 2/2] arm64: defconfig: Enable GPIO of Renesas R-Car Gen3 SoC
+Message-Id: <CAMuHMdXUf5V-PH-5XeQkH0TFZPK_o2MTj6S+z2fXe++g-cQYfg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1445910126-14097-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1445910126-14097-1-git-send-email-horms+renesas@verge.net.au>
+ <1445910126-14097-3-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1445910126-14097-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+On Tue, Oct 27, 2015 at 2:42 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+>
+> Enable GPIO for  Renesas R-Car Gen3 SoC.
+>
+> Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+> [horms: only enable GPIO_RCAR]
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Enable GPIO for  Renesas R-Car Gen3 SoC.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-[horms: only enable GPIO_RCAR]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm64/configs/defconfig | 1 +
- 1 file changed, 1 insertion(+)
+Gr{oetje,eeting}s,
 
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index dccc685b58ae..d9946384f102 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -125,6 +125,7 @@ CONFIG_SPI=y
- CONFIG_SPI_PL022=y
- CONFIG_PINCTRL_MSM8916=y
- CONFIG_GPIO_PL061=y
-+CONFIG_GPIO_RCAR=y
- CONFIG_GPIO_XGENE=y
- CONFIG_POWER_RESET_XGENE=y
- CONFIG_POWER_RESET_SYSCON=y
--- 
-2.1.4
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
