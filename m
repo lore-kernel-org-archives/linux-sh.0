@@ -1,63 +1,83 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Oct 2015 01:57:56 +0000
-Subject: [PATCH 19/28] ARM: shmobile: silk: enable internal PCI
-Message-Id: <f409ed0f4915c00e93ca21d1aea24e9aa2dedaf2.1444182812.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 27 Oct 2015 10:35:49 +0000
+Subject: renesas-drivers-2015-10-27-v4.3-rc7
+Message-Id: <1445942149-14748-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444182812.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+I've pushed renesas-drivers-2015-10-27-v4.3-rc7 to
+https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
+This tree is meant to ease development of platform support and drivers for
+Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
+branches of various subsystem trees and (b) branches with driver code
+submitted or planned for submission to maintainers into the development
+branch of Simon Horman's renesas.git tree.
 
-Enable internal AHB-PCI bridges for the USB EHCI/OHCI controllers attached to
-them.
+Today's version is based on renesas-devel-20151026-v4.3-rc7.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7794-silk.dts | 22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+Included branches with driver code:
+  - sh-pfc-for-v4.4
+  - topic/rcar-dmac-residue-v1
+  - topic/rcar-dmac-hamza-v3
+  - topic/cpg-mssr-v5pre
+  - topic/cs2000-v5
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/arm64-rcar-gen3-v12
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-gpio-v2
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-i2c-v3.rebase2
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-sound-v3.update.rebase2
+  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#me/r8a7795-ravb-integration-v5
 
-diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
-index bb0a22423dc4..71bb56fef7e5 100644
---- a/arch/arm/boot/dts/r8a7794-silk.dts
-+++ b/arch/arm/boot/dts/r8a7794-silk.dts
-@@ -80,6 +80,16 @@
- 		renesas,groups = "vin0_data8", "vin0_clk";
- 		renesas,function = "vin0";
- 	};
-+
-+	usb0_pins: usb0 {
-+		renesas,groups = "usb0";
-+		renesas,function = "usb0";
-+	};
-+
-+	usb1_pins: usb1 {
-+		renesas,groups = "usb1";
-+		renesas,function = "usb1";
-+	};
- };
- 
- &scif2 {
-@@ -188,3 +198,15 @@
- 		};
- 	};
- };
-+
-+&pci0 {
-+	status = "okay";
-+	pinctrl-0 = <&usb0_pins>;
-+	pinctrl-names = "default";
-+};
-+
-+&pci1 {
-+	status = "okay";
-+	pinctrl-0 = <&usb1_pins>;
-+	pinctrl-names = "default";
-+};
--- 
-2.1.4
+Included fixes:
+  - [WIP] clk: Include shmobile subdir if CONFIG_ARCH_RENESAS=y
+  - [WIP] arm64: renesas: r8a7795: Convert to new CPG/MSSR bindings
 
+Included subsystem trees:
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
+  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
+  - git://people.freedesktop.org/~airlied/linux#drm-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
+  - git://linuxtv.org/mchehab/media-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
+  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
+  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
+  - git://git.infradead.org/users/vkoul/slave-dma.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
+  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
+  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
+  - git://git.infradead.org/battery-2.6.git#master
+  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
+  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
+  - git://anongit.freedesktop.org/drm-intel#topic/drm-misc
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
