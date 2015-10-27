@@ -1,41 +1,50 @@
-From: Catalin Marinas <catalin.marinas@arm.com>
-Date: Thu, 22 Oct 2015 16:34:27 +0000
-Subject: Re: [RFC PATCH v6 3/3] arm: fix a migrating irq bug when hotplug cpu
-Message-Id: <20151022163427.GG26603@e104818-lin.cambridge.arm.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 27 Oct 2015 23:05:28 +0000
+Subject: [PATCH v4 2/3] arm64: renesas: salvator-x: enable I2C
+Message-Id: <1445987129-13496-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443087135-17044-1-git-send-email-yangyingliang@huawei.com>
- <1443087135-17044-4-git-send-email-yangyingliang@huawei.com>
- <CAMuHMdWyvaecQHOzFnxVZus_Pfkxjw1XfkGdcLK=D2ThaoJMzA@mail.gmail.com>
- <20151021202907.GN32532@n2100.arm.linux.org.uk>
- <20151022092629.GQ32532@n2100.arm.linux.org.uk>
- <5628C0DD.50900@huawei.com>
- <20151022111307.GS32532@n2100.arm.linux.org.uk>
- <alpine.DEB.2.11.1510221429300.7380@nanos>
-In-Reply-To: <alpine.DEB.2.11.1510221429300.7380@nanos>
+References: <1445987129-13496-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1445987129-13496-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 22, 2015 at 02:43:34PM +0200, Thomas Gleixner wrote:
-> On Thu, 22 Oct 2015, Russell King - ARM Linux wrote:
-> > The solutions are:
-> > * A patch to restore the pr_debug() which Thomas applies, and Catalin
-> >   and myself then pull Thomas' tree again, which potentially creates
-> >   a messier history.
-> > 
-> > * Catalin drops the ARM64 change and Thomas' tree from the ARM64 tree,
-> >   Thomas drops the original commit, and we start again doing it
-> >   correctly.
-> > 
-> > Which is up to Catalin and Thomas.
-> 
-> I'd have to do a revert as it's in the middle of other changes. So I
-> prefer to do an incremental fix.
-> 
-> I committed the change into the irq/for-arm branch and pushed it out.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I pulled the branch again into arm64 for-next/core. Thanks.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index f522fda7843a..0599b2be90ab 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -45,6 +45,11 @@
+ 		renesas,groups = "scif2_data_a";
+ 		renesas,function = "scif2";
+ 	};
++
++	i2c2_pins: i2c2 {
++		renesas,groups = "i2c2_a";
++		renesas,function = "i2c2";
++	};
+ };
+ 
+ &scif1 {
+@@ -60,3 +65,10 @@
+ 
+ 	status = "okay";
+ };
++
++&i2c2 {
++	pinctrl-0 = <&i2c2_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
 -- 
-Catalin
+2.1.4
+
