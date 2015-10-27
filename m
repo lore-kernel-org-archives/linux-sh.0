@@ -1,80 +1,126 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Oct 2015 01:58:05 +0000
-Subject: [PATCH 28/28] ARM: shmobile: porter: add Ether DT support
-Message-Id: <0877098d82fd1823878534b116a4a725e729701f.1444182812.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 27 Oct 2015 01:18:28 +0000
+Subject: [PATCH v4 5/7] usb: host: xhci-rcar: Change code for new SoCs
+Message-Id: <1445908710-5812-6-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444182812.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This patch changes code to ease the addition of next generation SoCs.
 
-Define  the Porter board dependent part of the Ether device node.
-Enable DHCP and NFS root for the kernel booting.
-
-This  patch  is analogous to the commit 26b0d2cf73cb ("ARM: shmobile:
-henninger: add Ether DT support") as there  are no differences between
-those boards in this respect.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7791-porter.dts | 28 +++++++++++++++++++++++++++-
- 1 file changed, 27 insertions(+), 1 deletion(-)
+ drivers/usb/host/xhci-plat.c |  1 +
+ drivers/usb/host/xhci-rcar.c | 37 +++++++++++++++++++++++--------------
+ drivers/usb/host/xhci-rcar.h |  2 ++
+ 3 files changed, 26 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-porter.dts b/arch/arm/boot/dts/r8a7791-porter.dts
-index b5670dd388e6..ca59ff861923 100644
---- a/arch/arm/boot/dts/r8a7791-porter.dts
-+++ b/arch/arm/boot/dts/r8a7791-porter.dts
-@@ -20,7 +20,7 @@
- 	};
+diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
+index 083e77b..a471f12 100644
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -76,6 +76,7 @@ static const struct xhci_plat_priv xhci_plat_marvell_armada = {
  
- 	chosen {
--		bootargs = "ignore_loglevel";
-+		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
- 		stdout-path = &scif0;
- 	};
- 
-@@ -44,6 +44,16 @@
- 		renesas,groups = "scif0_data_d";
- 		renesas,function = "scif0";
- 	};
-+
-+	ether_pins: ether {
-+		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
-+		renesas,function = "eth";
-+	};
-+
-+	phy1_pins: phy1 {
-+		renesas,groups = "intc_irq0";
-+		renesas,function = "intc";
-+	};
+ static const struct xhci_plat_priv xhci_plat_renesas_rcar_gen2 = {
+ 	.type = XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2,
++	.firmware_name = XHCI_RCAR_FIRMWARE_NAME_V1,
  };
  
- &scif0 {
-@@ -52,3 +62,19 @@
+ static const struct of_device_id usb_xhci_of_match[] = {
+diff --git a/drivers/usb/host/xhci-rcar.c b/drivers/usb/host/xhci-rcar.c
+index ff0d1b4..010a24f 100644
+--- a/drivers/usb/host/xhci-rcar.c
++++ b/drivers/usb/host/xhci-rcar.c
+@@ -14,10 +14,10 @@
+ #include <linux/usb/phy.h>
  
- 	status = "okay";
- };
+ #include "xhci.h"
++#include "xhci-plat.h"
+ #include "xhci-rcar.h"
+ 
+-#define FIRMWARE_NAME		"r8a779x_usb3_v1.dlmem"
+-MODULE_FIRMWARE(FIRMWARE_NAME);
++MODULE_FIRMWARE(XHCI_RCAR_FIRMWARE_NAME_V1);
+ 
+ /*** Register Offset ***/
+ #define RCAR_USB3_INT_ENA	0x224	/* Interrupt Enable */
+@@ -56,6 +56,19 @@ MODULE_FIRMWARE(FIRMWARE_NAME);
+ #define RCAR_USB3_RX_POL_VAL	BIT(21)
+ #define RCAR_USB3_TX_POL_VAL	BIT(4)
+ 
++static void xhci_rcar_start_gen2(struct usb_hcd *hcd)
++{
++	/* LCLK Select */
++	writel(RCAR_USB3_LCLK_ENA_VAL, hcd->regs + RCAR_USB3_LCLK);
++	/* USB3.0 Configuration */
++	writel(RCAR_USB3_CONF1_VAL, hcd->regs + RCAR_USB3_CONF1);
++	writel(RCAR_USB3_CONF2_VAL, hcd->regs + RCAR_USB3_CONF2);
++	writel(RCAR_USB3_CONF3_VAL, hcd->regs + RCAR_USB3_CONF3);
++	/* USB3.0 Polarity */
++	writel(RCAR_USB3_RX_POL_VAL, hcd->regs + RCAR_USB3_RX_POL);
++	writel(RCAR_USB3_TX_POL_VAL, hcd->regs + RCAR_USB3_TX_POL);
++}
 +
-+&ether {
-+	pinctrl-0 = <&ether_pins &phy1_pins>;
-+	pinctrl-names = "default";
+ void xhci_rcar_start(struct usb_hcd *hcd)
+ {
+ 	u32 temp;
+@@ -65,27 +78,23 @@ void xhci_rcar_start(struct usb_hcd *hcd)
+ 		temp = readl(hcd->regs + RCAR_USB3_INT_ENA);
+ 		temp |= RCAR_USB3_INT_ENA_VAL;
+ 		writel(temp, hcd->regs + RCAR_USB3_INT_ENA);
+-		/* LCLK Select */
+-		writel(RCAR_USB3_LCLK_ENA_VAL, hcd->regs + RCAR_USB3_LCLK);
+-		/* USB3.0 Configuration */
+-		writel(RCAR_USB3_CONF1_VAL, hcd->regs + RCAR_USB3_CONF1);
+-		writel(RCAR_USB3_CONF2_VAL, hcd->regs + RCAR_USB3_CONF2);
+-		writel(RCAR_USB3_CONF3_VAL, hcd->regs + RCAR_USB3_CONF3);
+-		/* USB3.0 Polarity */
+-		writel(RCAR_USB3_RX_POL_VAL, hcd->regs + RCAR_USB3_RX_POL);
+-		writel(RCAR_USB3_TX_POL_VAL, hcd->regs + RCAR_USB3_TX_POL);
++		if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2))
++			xhci_rcar_start_gen2(hcd);
+ 	}
+ }
+ 
+-static int xhci_rcar_download_firmware(struct device *dev, void __iomem *regs)
++static int xhci_rcar_download_firmware(struct usb_hcd *hcd)
+ {
++	struct device *dev = hcd->self.controller;
++	void __iomem *regs = hcd->regs;
++	struct xhci_plat_priv *priv = hcd_to_xhci_priv(hcd);
+ 	const struct firmware *fw;
+ 	int retval, index, j, time;
+ 	int timeout = 10000;
+ 	u32 data, val, temp;
+ 
+ 	/* request R-Car USB3.0 firmware */
+-	retval = request_firmware(&fw, FIRMWARE_NAME, dev);
++	retval = request_firmware(&fw, priv->firmware_name, dev);
+ 	if (retval)
+ 		return retval;
+ 
+@@ -144,5 +153,5 @@ int xhci_rcar_init_quirk(struct usb_hcd *hcd)
+ 	if (!hcd->regs)
+ 		return 0;
+ 
+-	return xhci_rcar_download_firmware(hcd->self.controller, hcd->regs);
++	return xhci_rcar_download_firmware(hcd);
+ }
+diff --git a/drivers/usb/host/xhci-rcar.h b/drivers/usb/host/xhci-rcar.h
+index 5850125..ba3ad31 100644
+--- a/drivers/usb/host/xhci-rcar.h
++++ b/drivers/usb/host/xhci-rcar.h
+@@ -11,6 +11,8 @@
+ #ifndef _XHCI_RCAR_H
+ #define _XHCI_RCAR_H
+ 
++#define XHCI_RCAR_FIRMWARE_NAME_V1	"r8a779x_usb3_v1.dlmem"
 +
-+	phy-handle = <&phy1>;
-+	renesas,ether-link-active-low;
-+	status = "ok";
-+
-+	phy1: ethernet-phy@1 {
-+		reg = <1>;
-+		interrupt-parent = <&irqc0>;
-+		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
-+		micrel,led-mode = <1>;
-+	};
-+};
+ #if IS_ENABLED(CONFIG_USB_XHCI_RCAR)
+ void xhci_rcar_start(struct usb_hcd *hcd);
+ int xhci_rcar_init_quirk(struct usb_hcd *hcd);
 -- 
-2.1.4
+1.9.1
 
