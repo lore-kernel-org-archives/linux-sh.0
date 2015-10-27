@@ -1,91 +1,54 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 21 Oct 2015 13:34:39 +0000
-Subject: Re: [PATCH v11 1/8] arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
-Message-Id: <CAMuHMdU00wJcrb7EsFjkKMw-gy04tXdGoyzPRNL-cjYZH8zneA@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 27 Oct 2015 21:03:22 +0000
+Subject: [PATCH] ARM: shmobile: porter: add CAN0 DT support
+Message-Id: <5706086.RKBCVZugI4@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
- <1444890243-6978-2-git-send-email-horms+renesas@verge.net.au>
- <20151015105820.GF8825@leverpostej>
-In-Reply-To: <20151015105820.GF8825@leverpostej>
+References: <1674850.BZpGW9kEud@wasted.cogentembedded.com>
+In-Reply-To: <1674850.BZpGW9kEud@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Mark,
+Define the Porter board dependent part of the CAN0 device node.
 
-On Thu, Oct 15, 2015 at 12:58 PM, Mark Rutland <mark.rutland@arm.com> wrote:
->> > +           gic: interrupt-controller@0xf1010000 {
->> +                     compatible = "arm,gic-400";
->> +                     #interrupt-cells = <3>;
->> +                     #address-cells = <0>;
->> +                     interrupt-controller;
->> +                     reg = <0x0 0xf1010000 0 0x1000>,
->> +                           <0x0 0xf1020000 0 0x2000>;
->> +                     interrupts = <GIC_PPI 9
->> +                                     (GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_HIGH)>;
->> +             };
->
-> No GICH and GICV?
+This patch is  analogous to the commit 457acc4a6ce8 (ARM: shmobile:
+henninger: add CAN0 DT support) as there are no differences between the
+boards in this respect.
 
-These seem to be defined in the "arm,gic-v3" DT bindings only, while this is
-an "arm,gic-400" (GICD_IIDR 0x0200043b)?
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-I did notice hi6220.dtsi does have GICH and GICV, while it also claims
-to be an "arm,gic-400"...
+---
+This patch is against 'renesas-devel-20151026-v4.3-rc7' tag of Simon Horman's
+'renesas.git' repo.
 
-> Which exception level do CPUs boot at?
+ arch/arm/boot/dts/r8a7791-porter.dts |   12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-No idea.
+Index: renesas/arch/arm/boot/dts/r8a7791-porter.dts
+=================================--- renesas.orig/arch/arm/boot/dts/r8a7791-porter.dts
++++ renesas/arch/arm/boot/dts/r8a7791-porter.dts
+@@ -134,6 +134,11 @@
+ 		renesas,groups = "vin0_data8", "vin0_clk";
+ 		renesas,function = "vin0";
+ 	};
++
++	can0_pins: can0 {
++		renesas,groups = "can0_data";
++		renesas,function = "can0";
++	};
+ };
+ 
+ &scif0 {
+@@ -288,3 +293,10 @@
+ &pciec {
+ 	status = "okay";
+ };
++
++&can0 {
++	pinctrl-0 = <&can0_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
 
->> +             clock {
->> +                     #address-cells = <2>;
->> +                     #size-cells = <2>;
->> +                     #clock-cells = <1>;
->> +                     ranges;
->> +
->> +                     cpg_clocks: cpg_clocks@e6150000 {
->> +                             compatible = "renesas,r8a7795-cpg-clocks",
->> +                                          "renesas,rcar-gen3-cpg-clocks";
->> +                             reg = <0 0xe6150000 0 0x1000>;
->> +                             clocks = <&extal_clk>;
->> +                             clock-indices = <
->> +                                     R8A7795_CLK_MAIN R8A7795_CLK_PLL0
->> +                                     R8A7795_CLK_PLL1 R8A7795_CLK_PLL2
->> +                                     R8A7795_CLK_PLL3 R8A7795_CLK_PLL4
->> +                             >;
->> +                             clock-output-names = "main", "pll0", "pll1",
->> +                                                  "pll2", "pll3", "pll4";
->> +                             #power-domain-cells = <0>;
->> +                     };
->> +             };
->
-> This clock node makes no sense. It's not compatible with anything and
-> doesn't provide clocks itself, so #clock-cells is meaningless, and
-> nothing underneath it is guaranteed to be probed.
->
-> Please get rid of the clock node. It is a cargo-culted piece of magic
-> that shouldn't exist.
-
-The "clock" node is planned to be removed.
-
-> Also, cpg_clocks node is missing #clock-cells, given it has
-> clock-output-names I assume it is itself a clock provider, and
-> presumably should have #clock-cells = <1>.
-
-Indeed.
-
-Note that the final CPG node will be the one from "[PATCH/RFC v4 0/5] clk:
-shmobile: Add new Renesas CPG/MSSR DT bindings", cfr. the example in
-https://patchwork.ozlabs.org/patch/531300/.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
