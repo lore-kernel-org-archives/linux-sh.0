@@ -1,187 +1,55 @@
 From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 20 Oct 2015 08:57:49 +0000
-Subject: [PATCH v5 2/4] phy: rcar-gen3-usb2: change the mode to OTG on the combined channel
-Message-Id: <1445331471-5028-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 27 Oct 2015 01:18:23 +0000
+Subject: [PATCH v4 0/7] usb: host: xhci-plat: add support for the R-Car M2-N and H3 xHCI controllers
+Message-Id: <1445908710-5812-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445331471-5028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1445331471-5028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: kishon@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-sh@vger.kernel.org
 
-To use the channel 0 of R-Car gen3 as periperal mode, This patch changes
-the mode to OTG instead of HOST. Then, this driver needs to set some
-registers to enable host mode and detects ID pin and VBUS pin at
-phy_init() timing.
+This patch set adds support for R-Car M2-N (r8a7793) and H3 (r8a7795) xHCI
+controllers. To add support these new SoCs, this patch set adds a new member
+"priv" in struct xhci_hcd.
 
-For now, the channel 0 can be used as host mode only.
+This patch is based on the latest usb.git / usb-next branch.
+(The commit id = 0bbc367e21bfeea33230d893be4fa3a3ff9bcb48)
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/phy/phy-rcar-gen3-usb2.c | 124 ++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 122 insertions(+), 2 deletions(-)
+Changes from v3:
+ - Fix subject and description in patch 1.
 
-diff --git a/drivers/phy/phy-rcar-gen3-usb2.c b/drivers/phy/phy-rcar-gen3-usb2.c
-index 9d9cf26..cf91f9f 100644
---- a/drivers/phy/phy-rcar-gen3-usb2.c
-+++ b/drivers/phy/phy-rcar-gen3-usb2.c
-@@ -24,6 +24,10 @@
- #define USB2_USBCTR		0x00c
- #define USB2_SPD_RSM_TIMSET	0x10c
- #define USB2_OC_TIMSET		0x110
-+#define USB2_COMMCTRL		0x600
-+#define USB2_VBCTRL		0x60c
-+#define USB2_LINECTRL1		0x610
-+#define USB2_ADPCTRL		0x630
- 
- /* INT_ENABLE */
- #define USB2_INT_ENABLE_USBH_INTB_EN	BIT(2)
-@@ -41,6 +45,24 @@
- /* OC_TIMSET */
- #define USB2_OC_TIMSET_INIT		0x000209ab
- 
-+/* COMMCTRL */
-+#define USB2_COMMCTRL_OTG_PERI		BIT(31)	/* 1 = Peripheral mode */
-+
-+/* VBCTRL */
-+#define USB2_VBCTRL_DRVVBUSSEL		BIT(8)
-+
-+/* LINECTRL1 */
-+#define USB2_LINECTRL1_DPRPD_EN		BIT(19)
-+#define USB2_LINECTRL1_DP_RPD		BIT(18)
-+#define USB2_LINECTRL1_DMRPD_EN		BIT(17)
-+#define USB2_LINECTRL1_DM_RPD		BIT(16)
-+
-+/* ADPCTRL */
-+#define USB2_ADPCTRL_OTGSESSVLD		BIT(20)
-+#define USB2_ADPCTRL_IDDIG		BIT(19)
-+#define USB2_ADPCTRL_IDPULLUP		BIT(5)	/* 1 = ID sampling is enabled */
-+#define USB2_ADPCTRL_DRVVBUS		BIT(4)
-+
- /******* HSUSB registers (original offset is +0x100) *******/
- #define HSUSB_LPSTS			0x02
- #define HSUSB_UGCTRL2			0x84
-@@ -66,6 +88,102 @@ struct rcar_gen3_chan {
- 	struct phy *phy;
- };
- 
-+static void rcar_gen3_set_host_mode(struct rcar_gen3_chan *ch, int host)
-+{
-+	void __iomem *usb2_base = ch->usb2.base;
-+	u32 val = readl(usb2_base + USB2_COMMCTRL);
-+
-+	dev_vdbg(&ch->phy->dev, "%s: %08x, %d\n", __func__, val, host);
-+	if (host)
-+		val &= ~USB2_COMMCTRL_OTG_PERI;
-+	else
-+		val |= USB2_COMMCTRL_OTG_PERI;
-+	writel(val, usb2_base + USB2_COMMCTRL);
-+}
-+
-+static void rcar_gen3_set_linectrl(struct rcar_gen3_chan *ch, int dp, int dm)
-+{
-+	void __iomem *usb2_base = ch->usb2.base;
-+	u32 val = readl(usb2_base + USB2_LINECTRL1);
-+
-+	dev_vdbg(&ch->phy->dev, "%s: %08x, %d, %d\n", __func__, val, dp, dm);
-+	val &= ~(USB2_LINECTRL1_DP_RPD | USB2_LINECTRL1_DM_RPD);
-+	if (dp)
-+		val |= USB2_LINECTRL1_DP_RPD;
-+	if (dm)
-+		val |= USB2_LINECTRL1_DM_RPD;
-+	writel(val, usb2_base + USB2_LINECTRL1);
-+}
-+
-+static void rcar_gen3_enable_vbus_ctrl(struct rcar_gen3_chan *ch, int vbus)
-+{
-+	void __iomem *usb2_base = ch->usb2.base;
-+	u32 val = readl(usb2_base + USB2_ADPCTRL);
-+
-+	dev_vdbg(&ch->phy->dev, "%s: %08x, %d\n", __func__, val, vbus);
-+	if (vbus)
-+		val |= USB2_ADPCTRL_DRVVBUS;
-+	else
-+		val &= ~USB2_ADPCTRL_DRVVBUS;
-+	writel(val, usb2_base + USB2_ADPCTRL);
-+}
-+
-+static void rcar_gen3_init_for_host(struct rcar_gen3_chan *ch)
-+{
-+	rcar_gen3_set_linectrl(ch, 1, 1);
-+	rcar_gen3_set_host_mode(ch, 1);
-+	rcar_gen3_enable_vbus_ctrl(ch, 1);
-+}
-+
-+static void rcar_gen3_init_for_peri(struct rcar_gen3_chan *ch)
-+{
-+	rcar_gen3_set_linectrl(ch, 0, 1);
-+	rcar_gen3_set_host_mode(ch, 0);
-+	rcar_gen3_enable_vbus_ctrl(ch, 0);
-+}
-+
-+static bool rcar_gen3_check_vbus(struct rcar_gen3_chan *ch)
-+{
-+	return !!(readl(ch->usb2.base + USB2_ADPCTRL) &
-+		  USB2_ADPCTRL_OTGSESSVLD);
-+}
-+
-+static bool rcar_gen3_check_id(struct rcar_gen3_chan *ch)
-+{
-+	return !!(readl(ch->usb2.base + USB2_ADPCTRL) & USB2_ADPCTRL_IDDIG);
-+}
-+
-+static void rcar_gen3_device_recognition(struct rcar_gen3_chan *ch)
-+{
-+	bool is_host = true;
-+
-+	/* B-device? */
-+	if (rcar_gen3_check_id(ch) && rcar_gen3_check_vbus(ch))
-+		is_host = false;
-+
-+	if (is_host)
-+		rcar_gen3_init_for_host(ch);
-+	else
-+		rcar_gen3_init_for_peri(ch);
-+}
-+
-+static void rcar_gen3_init_otg(struct rcar_gen3_chan *ch)
-+{
-+	void __iomem *usb2_base = ch->usb2.base;
-+	u32 val;
-+
-+	val = readl(usb2_base + USB2_VBCTRL);
-+	writel(val | USB2_VBCTRL_DRVVBUSSEL, usb2_base + USB2_VBCTRL);
-+	val = readl(usb2_base + USB2_ADPCTRL);
-+	writel(val | USB2_ADPCTRL_IDPULLUP, usb2_base + USB2_ADPCTRL);
-+	val = readl(usb2_base + USB2_LINECTRL1);
-+	rcar_gen3_set_linectrl(ch, 0, 0);
-+	writel(val | USB2_LINECTRL1_DPRPD_EN | USB2_LINECTRL1_DMRPD_EN,
-+	       usb2_base + USB2_LINECTRL1);
-+
-+	rcar_gen3_device_recognition(ch);
-+}
-+
- static int rcar_gen3_phy_usb2_init(struct phy *p)
- {
- 	struct rcar_gen3_chan *channel = phy_get_drvdata(p);
-@@ -80,11 +198,13 @@ static int rcar_gen3_phy_usb2_init(struct phy *p)
- 
- 	/* Initialize HSUSB part */
- 	if (hsusb_base) {
--		/* TODO: support "OTG" mode */
- 		val = readl(hsusb_base + HSUSB_UGCTRL2);
- 		val = (val & ~HSUSB_UGCTRL2_USB0SEL) |
--		      HSUSB_UGCTRL2_USB0SEL_HOST;
-+		      HSUSB_UGCTRL2_USB0SEL_OTG;
- 		writel(val & HSUSB_UGCTRL2_MASK, hsusb_base + HSUSB_UGCTRL2);
-+
-+		/* Initialize otg part */
-+		rcar_gen3_init_otg(channel);
- 	}
- 
- 	return 0;
+Changes from v2:
+ - Rebase the latest usb-next branch (commit id = 0bbc367e21bfeea33230d)
+ - Modify hcd_priv_size and extra_priv_size in xhci.c and xhci-{plat,pci}.c
+   as a clean-up patch.
+ - Change "priv" of struct xhci_hcd from const pointer to priv[0].
+
+Changes from v1:
+ - Add "const void *priv" in struct xhci_hcd to simplify the code to match
+   platform specific variables using of_device_id.data.
+   To achieve this purpose, this patch set made patch 1 to 3.
+
+
+Yoshihiro Shimoda (7):
+  usb: host: xhci: cleanup hcd private size
+  usb: host: xhci: add a platform-private field
+  usb: host: xhci-plat: add struct xhci_plat_priv
+  usb: host: xhci-plat: add firmware_name in xhci_plat_priv
+  usb: host: xhci-rcar: Change code for new SoCs
+  usb: host: xhci-plat: add support for the R-Car M2-N xHCI controller
+  usb: host: xhci-plat: add support for the R-Car H3 xHCI controllers
+
+ Documentation/devicetree/bindings/usb/usb-xhci.txt |  4 +-
+ drivers/usb/host/xhci-pci.c                        |  1 -
+ drivers/usb/host/xhci-plat.c                       | 88 +++++++++++++++-------
+ drivers/usb/host/xhci-plat.h                       | 39 ++++++++++
+ drivers/usb/host/xhci-rcar.c                       | 44 +++++++----
+ drivers/usb/host/xhci-rcar.h                       |  3 +
+ drivers/usb/host/xhci.c                            |  2 +-
+ drivers/usb/host/xhci.h                            |  3 +
+ 8 files changed, 140 insertions(+), 44 deletions(-)
+ create mode 100644 drivers/usb/host/xhci-plat.h
+
 -- 
 1.9.1
 
