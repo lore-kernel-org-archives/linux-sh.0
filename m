@@ -1,56 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Oct 2015 01:57:46 +0000
-Subject: [PATCH 09/28] ARM: shmobile: silk: add I2C1 DT support
-Message-Id: <fa070791c1e7df91ca07fc7c9a431fac0d7d2832.1444182812.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 27 Oct 2015 01:18:25 +0000
+Subject: [PATCH v4 2/7] usb: host: xhci: add a platform-private field
+Message-Id: <1445908710-5812-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444182812.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This patch adds an xhci->priv field for private use by
+XHCI platform drivers. Until now none of the platform drivers
+has used this private space.
 
-Define the SILK board dependent part of the I2C1 device node.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7794-silk.dts | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ drivers/usb/host/xhci.h | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
-index f49bc00738a3..3f808724106e 100644
---- a/arch/arm/boot/dts/r8a7794-silk.dts
-+++ b/arch/arm/boot/dts/r8a7794-silk.dts
-@@ -61,6 +61,11 @@
- 		renesas,function = "intc";
- 	};
- 
-+	i2c1_pins: i2c1 {
-+		renesas,groups = "i2c1";
-+		renesas,function = "i2c1";
-+	};
+diff --git a/drivers/usb/host/xhci.h b/drivers/usb/host/xhci.h
+index be9048e..05f4a73 100644
+--- a/drivers/usb/host/xhci.h
++++ b/drivers/usb/host/xhci.h
+@@ -1657,6 +1657,9 @@ struct xhci_hcd {
+ 	u32			port_status_u0;
+ /* Compliance Mode Timer Triggered every 2 seconds */
+ #define COMP_MODE_RCVRY_MSECS 2000
 +
- 	mmcif0_pins: mmcif0 {
- 		renesas,groups = "mmc_data8", "mmc_ctrl";
- 		renesas,function = "mmc";
-@@ -95,6 +100,14 @@
- 	};
++	/* platform-specific data -- must come last */
++	unsigned long		priv[0] __aligned(sizeof(s64));
  };
  
-+&i2c1 {
-+	pinctrl-0 = <&i2c1_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+	clock-frequency = <400000>;
-+};
-+
- &mmcif0 {
- 	pinctrl-0 = <&mmcif0_pins>;
- 	pinctrl-names = "default";
+ /* Platform specific overrides to generic XHCI hc_driver ops */
 -- 
-2.1.4
+1.9.1
 
