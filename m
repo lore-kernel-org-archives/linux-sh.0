@@ -1,46 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 20 Oct 2015 10:27:47 +0000
-Subject: Re: [PATCH] iommu/ipmmu-vmsa: Include SoC part number in DT binding docs
-Message-Id: <1833179.ksYYvY8Qgn@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 27 Oct 2015 23:05:29 +0000
+Subject: [PATCH v4 3/3] arm64: defconfig: Enable Renesas R-Car I2C Controller
+Message-Id: <1445987129-13496-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151019031003.7878.28510.sendpatchset@little-apple> <9833652.FLB0aRvpVP@avalon> <CANqRtoQ=nBpWX_eMUM9-febZ-cCAFayEGoUjMSpAXHaw3kekqQ@mail.gmail.com>
-In-Reply-To: <CANqRtoQ=nBpWX_eMUM9-febZ-cCAFayEGoUjMSpAXHaw3kekqQ@mail.gmail.com>
+References: <1445987129-13496-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1445987129-13496-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Mark Rutland <mark.rutland@arm.com>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Pawel Moll <pawel.moll@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, joro <joro@8bytes.org>, SH-Linux <linux-sh@vger.kernel.org>, iommu@lists.linux-foundation.org, Rob Herring <robh+dt@kernel.org>, Kumar Gala <galak@codeaurora.org>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Tuesday 20 October 2015 17:58:17 Magnus Damm wrote:
-> On Mon, Oct 19, 2015 at 3:44 PM, Laurent Pinchart wrote:
-> > On Monday 19 October 2015 12:10:03 Magnus Damm wrote:
-> >> From: Magnus Damm <damm+renesas@opensource.se>
-> >> 
-> >> Add part numbers for APE6 and current set of R-Car Gen2 SoCs to the
-> >> IPMMU DT binding documentation. The example is also updated to show
-> >> how the generic compatible string may be used as fallback.
-> > 
-> > I'd use a wording stronger than "may" here, as the generic compatible
-> > value is required. I would also explicitly state that in the bindings
-> > documentation.
->
-> I don't mind using a different wording, but it becomes a bit difficult
-> to describe exactly when to use the generic compatible string and when
-> not to. Is it always required, or does it depend on the hardware?
-> 
->  "For compatible hardware please use the generic compat string."
-> Compatible with what? =)
-> 
-> Any ideas how to describe it correctly in the binding documentation?
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm64/configs/defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-Given that the generic compat string is always required I'd just say so. We 
-can then update the DT bindings later when we'll introduce the first SoC not 
-compatible with the generic compat string.
-
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index dccc685b58ae..618f156fb90b 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -121,6 +121,8 @@ CONFIG_SERIAL_XILINX_PS_UART=y
+ CONFIG_SERIAL_XILINX_PS_UART_CONSOLE=y
+ CONFIG_VIRTIO_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
++CONFIG_I2C=y
++CONFIG_I2C_RCAR=y
+ CONFIG_SPI=y
+ CONFIG_SPI_PL022=y
+ CONFIG_PINCTRL_MSM8916=y
 -- 
-Regards,
-
-Laurent Pinchart
+2.1.4
 
