@@ -1,85 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Oct 2015 01:57:42 +0000
-Subject: [PATCH 05/28] ARM: shmobile: silk: add QSPI DT support
-Message-Id: <0ebdbc505b620ab4397c3105d36a5383fb16b151.1444182812.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 27 Oct 2015 01:18:29 +0000
+Subject: [PATCH v4 6/7] usb: host: xhci-plat: add support for the R-Car M2-N xHCI controller
+Message-Id: <1445908710-5812-7-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444182812.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+This patch adds support for R-Car M2-N (r8a7793) xHCI controller.
+This SoC is compatible with R-Car H2 (r8a7790) and R-Car M2-W (r8a7791).
 
-Define the SILK board dependent part of the QSPI device node.
-Add device nodes  for Spansion  S25FL512S SPI flash and MTD partitions on it.
-
-Based on the original patch by Vladimir Barinov
-<vladimir.barinov@cogentembedded.com>.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7794-silk.dts | 40 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 40 insertions(+)
+ Documentation/devicetree/bindings/usb/usb-xhci.txt | 4 ++--
+ drivers/usb/host/xhci-plat.c                       | 3 +++
+ 2 files changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
-index d4dd5a30ccdf..f49bc00738a3 100644
---- a/arch/arm/boot/dts/r8a7794-silk.dts
-+++ b/arch/arm/boot/dts/r8a7794-silk.dts
-@@ -65,6 +65,11 @@
- 		renesas,groups = "mmc_data8", "mmc_ctrl";
- 		renesas,function = "mmc";
- 	};
-+
-+	qspi_pins: spi0 {
-+		renesas,groups = "qspi_ctrl", "qspi_data4";
-+		renesas,function = "qspi";
-+	};
+diff --git a/Documentation/devicetree/bindings/usb/usb-xhci.txt b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+index 86f67f0..106299a 100644
+--- a/Documentation/devicetree/bindings/usb/usb-xhci.txt
++++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
+@@ -3,8 +3,8 @@ USB xHCI controllers
+ Required properties:
+   - compatible: should be one of "generic-xhci",
+     "marvell,armada-375-xhci", "marvell,armada-380-xhci",
+-    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791" (deprecated:
+-    "xhci-platform").
++    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791", "renesas,xhci-r8a7793"
++    (deprecated: "xhci-platform").
+   - reg: should contain address and length of the standard XHCI
+     register set for the device.
+   - interrupts: one XHCI interrupt should be described here.
+diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
+index a471f12..0113e79 100644
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -97,6 +97,9 @@ static const struct of_device_id usb_xhci_of_match[] = {
+ 		.compatible = "renesas,xhci-r8a7791",
+ 		.data = &xhci_plat_renesas_rcar_gen2,
+ 	}, {
++		.compatible = "renesas,xhci-r8a7793",
++		.data = &xhci_plat_renesas_rcar_gen2,
++	}, {
+ 	},
  };
- 
- &scif2 {
-@@ -100,3 +105,38 @@
- 	non-removable;
- 	status = "okay";
- };
-+
-+&qspi {
-+	pinctrl-0 = <&qspi_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+
-+	flash@0 {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		compatible = "spansion,s25fl512s", "jedec,spi-nor";
-+		reg = <0>;
-+		spi-max-frequency = <30000000>;
-+		spi-tx-bus-width = <4>;
-+		spi-rx-bus-width = <4>;
-+		spi-cpol;
-+		spi-cpha;
-+		m25p,fast-read;
-+
-+		partition@0 {
-+			label = "loader";
-+			reg = <0x00000000 0x00040000>;
-+			read-only;
-+		};
-+		partition@40000 {
-+			label = "user";
-+			reg = <0x00040000 0x00400000>;
-+			read-only;
-+		};
-+		partition@440000 {
-+			label = "flash";
-+			reg = <0x00440000 0x03bc0000>;
-+		};
-+	};
-+};
+ MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
 -- 
-2.1.4
+1.9.1
 
