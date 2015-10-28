@@ -1,43 +1,49 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 12 Oct 2015 07:30:38 +0000
-Subject: Re: [PATCH 3/5] ARM: shmobile: R-Mobile: add missing of_node_put
-Message-Id: <CAMuHMdWxZG0tyESgGe=Ze_nrH8oHq1vW3xUBBnc8eNSMUUCExQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 28 Oct 2015 15:03:48 +0000
+Subject: [PATCH] [RFC] ASoC: rsnd: Add missing initialization of ADG req_rate
+Message-Id: <1446044628-16924-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444480254-14399-1-git-send-email-Julia.Lawall@lip6.fr>
- <1444480254-14399-4-git-send-email-Julia.Lawall@lip6.fr>
- <CAMuHMdUVraBT+s1e-m89KmjbZnEQjBaSz+c93rCOWPMnT5CVPA@mail.gmail.com>
- <20151012092910.7580c2b9@free-electrons.com>
-In-Reply-To: <20151012092910.7580c2b9@free-electrons.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Mon, Oct 12, 2015 at 9:29 AM, Thomas Petazzoni
-<thomas.petazzoni@free-electrons.com> wrote:
-> On Mon, 12 Oct 2015 09:18:52 +0200, Geert Uytterhoeven wrote:
->
->> >                 pd = kzalloc(sizeof(*pd), GFP_KERNEL);
->> > -               if (!pd)
->> > +               if (!pd) {
->> > +                       of_node_put(np);
->> >                         return -ENOMEM;
->> > +               }
->>
->> While technically this patch is correct, the system will be dead anyway if it
->> ever goes OOM at core_initcall() time.
->
-> Then BUG_ON(!pd); ?
+If the "clock-frequency" DT property is not found, req_rate is used
+uninitialized, and the "audio_clkout" clock will be created with an
+arbitrary clock rate.
 
-kzalloc() will scream anyway.
+This uninitialized kernel stack data may leak to userspace through
+/sys/kernel/debug/clk/clk_summary, cfr. the value in the "rate" column:
 
-Gr{oetje,eeting}s,
+       clock     enable_cnt  prepare_cnt        rate   accuracy   phase
+    --------------------------------------------------------------------
+     audio_clkout         0            0  4001836240          0 0
 
-                        Geert
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Should the absence of this property be considered an error?
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Documentation/devicetree/bindings/sound/renesas,rsnd.txt states that
+both "#clock-cells" and "clock-frequency" are required properties, but
+none of the R-Car Gen1 and Gen2 DTSes seem to have them?
+---
+ sound/soc/sh/rcar/adg.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+diff --git a/sound/soc/sh/rcar/adg.c b/sound/soc/sh/rcar/adg.c
+index 2a5b3a293cd243db..b123734f9fbdabd9 100644
+--- a/sound/soc/sh/rcar/adg.c
++++ b/sound/soc/sh/rcar/adg.c
+@@ -437,7 +437,7 @@ static void rsnd_adg_get_clkout(struct rsnd_priv *priv,
+ 	struct device *dev = rsnd_priv_to_dev(priv);
+ 	struct device_node *np = dev->of_node;
+ 	u32 ckr, rbgx, rbga, rbgb;
+-	u32 rate, req_rate, div;
++	u32 rate, req_rate = 0, div;
+ 	uint32_t count = 0;
+ 	unsigned long req_48kHz_rate, req_441kHz_rate;
+ 	int i;
+-- 
+1.9.1
+
