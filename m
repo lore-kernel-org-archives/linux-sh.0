@@ -1,50 +1,32 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 27 Oct 2015 23:05:28 +0000
-Subject: [PATCH v4 2/3] arm64: renesas: salvator-x: enable I2C
-Message-Id: <1445987129-13496-3-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 28 Oct 2015 09:36:04 +0000
+Subject: Re: [PATCH v4 2/3] arm64: renesas: salvator-x: enable I2C
+Message-Id: <CAMuHMdX6nJFUcPij7hmcRGFvc=1c3eK+4DzFiGbfZofUSgE9nQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1445987129-13496-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1445987129-13496-1-git-send-email-horms+renesas@verge.net.au>
+ <1445987129-13496-3-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1445987129-13496-3-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Wed, Oct 28, 2015 at 12:05 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index f522fda7843a..0599b2be90ab 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -45,6 +45,11 @@
- 		renesas,groups = "scif2_data_a";
- 		renesas,function = "scif2";
- 	};
-+
-+	i2c2_pins: i2c2 {
-+		renesas,groups = "i2c2_a";
-+		renesas,function = "i2c2";
-+	};
- };
- 
- &scif1 {
-@@ -60,3 +65,10 @@
- 
- 	status = "okay";
- };
-+
-+&i2c2 {
-+	pinctrl-0 = <&i2c2_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
--- 
-2.1.4
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
