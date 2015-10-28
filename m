@@ -1,36 +1,32 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 27 Oct 2015 23:05:29 +0000
-Subject: [PATCH v4 3/3] arm64: defconfig: Enable Renesas R-Car I2C Controller
-Message-Id: <1445987129-13496-4-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 28 Oct 2015 09:36:33 +0000
+Subject: Re: [PATCH v4 3/3] arm64: defconfig: Enable Renesas R-Car I2C Controller
+Message-Id: <CAMuHMdVmYw7Sx1L5SuPoDz_Grruz=CjWQxsLb5O7qtkre3502Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1445987129-13496-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1445987129-13496-1-git-send-email-horms+renesas@verge.net.au>
+ <1445987129-13496-4-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1445987129-13496-4-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Wed, Oct 28, 2015 at 12:05 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm64/configs/defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index dccc685b58ae..618f156fb90b 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -121,6 +121,8 @@ CONFIG_SERIAL_XILINX_PS_UART=y
- CONFIG_SERIAL_XILINX_PS_UART_CONSOLE=y
- CONFIG_VIRTIO_CONSOLE=y
- # CONFIG_HW_RANDOM is not set
-+CONFIG_I2C=y
-+CONFIG_I2C_RCAR=y
- CONFIG_SPI=y
- CONFIG_SPI_PL022=y
- CONFIG_PINCTRL_MSM8916=y
--- 
-2.1.4
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
