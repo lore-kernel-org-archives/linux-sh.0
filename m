@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 28 Oct 2015 08:22:34 +0000
+From: Catalin Marinas <catalin.marinas@arm.com>
+Date: Wed, 28 Oct 2015 18:45:04 +0000
 Subject: Re: [PATCH v12 1/7] arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
-Message-Id: <CAMuHMdWrR0it7pgxQr1e+55GwuXszh8kNUQ3+dyy6WjVJe2+9Q@mail.gmail.com>
+Message-Id: <20151028184504.GG8899@e104818-lin.cambridge.arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
  <1445839312-8874-2-git-send-email-horms+renesas@verge.net.au>
@@ -11,50 +11,35 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Oct 26, 2015 at 7:01 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
->
-> Initial version of Renesas R-Car H3 support (V10)
->
-> Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
-> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> new file mode 100644
-> index 000000000000..aa13115387a6
-> --- /dev/null
-> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-
-> +       extal_clk: extal {
-> +               compatible = "fixed-clock";
-> +               #clock-cells = <0>;
-
-I would add the same override comment as for extalr here, too.
-
-> +               clock-frequency = <0>;
-> +       };
+On Mon, Oct 26, 2015 at 03:01:46PM +0900, Simon Horman wrote:
+> --- a/arch/arm64/Kconfig.platforms
+> +++ b/arch/arm64/Kconfig.platforms
+> @@ -66,6 +66,23 @@ config ARCH_SEATTLE
+>  	help
+>  	  This enables support for AMD Seattle SOC Family
+>  
+> +config ARCH_SHMOBILE
+> +	bool
 > +
-> +       extalr_clk: extalr {
-> +               compatible = "fixed-clock";
-> +               #clock-cells = <0>;
-> +               /* This value must be overridden by the board */
-> +               clock-frequency = <0>;
-> +       };
+> +config ARCH_RENESAS
+> +	bool "Renesas SoC Platforms"
+> +	select ARCH_SHMOBILE
+> +	select PINCTRL
+> +	select PM_GENERIC_DOMAINS if PM
+> +	help
+> +	  This enables support for the ARMv8 based Renesas SoCs.
+> +
+> +config ARCH_R8A7795
+> +	bool "Renesas R-Car H3 SoC Platform"
+> +	depends on ARCH_RENESAS
+> +	help
+> +	  This enables support for the Renesas R-Car H3 SoC.
 
-Nevertheless:
+Do you need such fine-grained configuration? I'd really like to avoid
+individual SoC Kconfig entries and only include SoC families (like
+ARCH_RENESAS). There are some which I didn't spot at the time
+(ARCH_FSL_LS2085A and ARCH_TEGRA_132_SOC) but we shouldn't continue this
+trend any further.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+Catalin
