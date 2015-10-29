@@ -1,64 +1,104 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 29 Oct 2015 12:37:55 +0000
-Subject: Re: [PATCH 0/4] PCI: rcar: Add support for ARM64 and multiple instances
-Message-Id: <20151029123755.GC2351@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="c3bfwLpm8qysLVxt"
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Thu, 29 Oct 2015 13:00:22 +0000
+Subject: RE: [PATCH 0/4] PCI: rcar: Add support for ARM64 and multiple instances
+Message-Id: <PS1PR06MB118061CA5128E4C1A2C70A18F5200@PS1PR06MB1180.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
-To: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+ <20151029123755.GC2351@katana>
+In-Reply-To: <20151029123755.GC2351@katana>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Wolfram Sang <wsa@the-dreams.de>
+Cc: Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+
+Hi Wolfram,
+
+On 29 October 2015 12:38, Wolfram wrote:
+> > Fixes and changes to get PCIe working on ARM64 with mulitple instances.
+> 
+> > I've tested these on ARM (Koelsch board), and it works fine.
+> > I've also tested on ARM64 (Salvator-X board), but I currently have an issue
+> 
+> I wanted to test these patches on arm64 as well, but even after merging
+> pci-next, I still get:
+> 
+> drivers/pci/host/pcie-rcar.c: In function 'rcar_pcie_setup':
+> drivers/pci/host/pcie-rcar.c:380:4: error: implicit declaration of function
+> 'pci_ioremap_io' [-Werror=implicit-function-declaration]
+> 
+> So, what do I miss?
+Ouch, my bad. I have been working with our out-of-tree BSP for the Salvator-X board on
+http://git.kernel.org/cgit/linux/kernel/git/horms/renesas-bsp.git,  rcar-3.0.2 tag along
+with some patches from colleagues. I hadn't noticed this patch:
+
+From 913ff73dcf19bb57b0a7ad69e51105560d69fa9b Mon Sep 17 00:00:00 2001
+From: Harunobu Kurokawa <harunobu.kurokawa.dn@renesas.com>
+Date: Thu, 24 Sep 2015 22:55:58 +0900
+Subject: [PATCH 03/15] arm64: PCI(e) arch support for ioremap function
+
+Refered the followings patch:
+http://lists.infradead.org/pipermail/linux-arm-kernel/2014-July/269206.html
+
+Signed-off-by: Harunobu Kurokawa <harunobu.kurokawa.dn@renesas.com>
+---
+ arch/arm64/include/asm/io.h |    2 ++
+ arch/arm64/mm/ioremap.c     |   13 +++++++++++++
+ 2 files changed, 15 insertions(+)
+
+diff --git a/arch/arm64/include/asm/io.h b/arch/arm64/include/asm/io.h
+index 44be1e0..cea3651 100644
+--- a/arch/arm64/include/asm/io.h
++++ b/arch/arm64/include/asm/io.h
+@@ -149,6 +149,8 @@ static inline u64 __raw_readq(const volatile void __iomem *addr)
+ #define IO_SPACE_LIMIT		(PCI_IO_SIZE - 1)
+ #define PCI_IOBASE		((void __iomem *)PCI_IO_START)
+ 
++extern int pci_ioremap_io(unsigned int offset, phys_addr_t phys_addr);
++
+ /*
+  * String version of I/O memory access operations.
+  */
+diff --git a/arch/arm64/mm/ioremap.c b/arch/arm64/mm/ioremap.c
+index 01e88c8..34f09a6 100644
+--- a/arch/arm64/mm/ioremap.c
++++ b/arch/arm64/mm/ioremap.c
+@@ -104,6 +104,19 @@ void __iomem *ioremap_cache(phys_addr_t phys_addr, size_t size)
+ }
+ EXPORT_SYMBOL(ioremap_cache);
+ 
++#ifdef CONFIG_PCI
++int pci_ioremap_io(unsigned int offset, phys_addr_t phys_addr)
++{
++	BUG_ON(offset + SZ_64K > IO_SPACE_LIMIT);
++
++	return ioremap_page_range((unsigned long)PCI_IOBASE + offset,
++				  (unsigned long)PCI_IOBASE + offset + SZ_64K,
++				  phys_addr,
++				  __pgprot(PROT_NORMAL_NC));
++}
++EXPORT_SYMBOL_GPL(pci_ioremap_io);
++#endif
++
+ /*
+  * Must be called after early_fixmap_init
+  */
+-- 
+1.7.9.5
+
+Additionally, I have found out that MSI on R-Car PCIe upstream is broken. You can
+workaround this by reverting f075915ac0b11847fcfc8c4d55526a317e71c4d1 and
+f075915ac0b11847fcfc8c4d55526a317e71c4d1 until we fix this.
 
 
---c3bfwLpm8qysLVxt
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+> > with inbound PCI accesses. I am reasonably sure that this problem is hardware
+> > related.
+> 
+> Any news if this is really HW related?
+I found out that the PCIe controller HW only supports 32-bit AXI bus addresses, so it
+works fine if you limit the available memory. The driver will need some work to use
+the IPMMU at some point.
 
+Thanks
+Phil
 
-> Fixes and changes to get PCIe working on ARM64 with mulitple instances.
-
-> I've tested these on ARM (Koelsch board), and it works fine.
-> I've also tested on ARM64 (Salvator-X board), but I currently have an issue
-
-I wanted to test these patches on arm64 as well, but even after merging
-pci-next, I still get:
-
-drivers/pci/host/pcie-rcar.c: In function 'rcar_pcie_setup':
-drivers/pci/host/pcie-rcar.c:380:4: error: implicit declaration of function 'pci_ioremap_io' [-Werror=implicit-function-declaration]
-
-So, what do I miss?
-
-> with inbound PCI accesses. I am reasonably sure that this problem is hardware
-> related.
-
-Any news if this is really HW related?
-
-Thanks,
-
-   Wolfram
-
-
---c3bfwLpm8qysLVxt
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWMhMjAAoJEBQN5MwUoCm2oAYQAIHPhVSAZD5qIKRRl8Aa7rtv
-vN6/V3/CfZsgHYmfpcb/luW8O+Nc3AN0xqgN6kOpHjvd5e62BKJ1WsU5g3k8gh8G
-HT4mxsw5Fga+McNoGr4XN0qCbZzBluzVc8ZjAb7HBax8AGtRgXNC2TgDvRo/ckth
-V7dAb6U3fl5feQCoXznD/S2qBjUJzi9IkpLfjL2zDf28HRgmYFC0miF8PdCvLx+x
-16+WOZBtS2v3Wyh+IpppLW/36Uym/Ye3BuEnK5W4RNyDkjUjGeQl6xk2K3JqH+lN
-slUflW1G0gaWevAst8DUx3qYIgDzauo+mxMMY8bz1wix5PWdeZVJLrP89SGuSpmG
-yZHp/zS6+lNpErqypSr71lmhH1EIZ2ohj1d2xDClDAgP+9vVMumulbM4TMWyHMXI
-wwFnj94jFIaC5fDuQxljZHC8SuATouuiSpThDVt3JI+SfqjwFbaUxKfSKhq07l3u
-QgrAeC75gE7T6ekHSeJTmZqEMe93LpsUJ+L4KzI9r6QTCDioIvFDrsaRgR7ssATZ
-7QtR9XE3vfiUqhfjdf1OoEilEghoV/MNV59d812kO0RKbj4CvUzwjPM3Bi9lMHzP
-XzLeGCaN5qqYypUZYCmCBnIjHpREEYhmR7CmDn8Yuw/QmOmmK8iqqsBiqqP5NHFa
-mYZWeenPaRTVZb7WAeuE
-=dTwf
------END PGP SIGNATURE-----
-
---c3bfwLpm8qysLVxt--
