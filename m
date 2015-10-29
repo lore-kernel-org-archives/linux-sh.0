@@ -1,54 +1,39 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 26 Oct 2015 08:03:44 +0000
+Date: Thu, 29 Oct 2015 14:03:51 +0000
 Subject: Re: [PATCH v4 5/5] [RFC] clk: shmobile: r8a7795: Add new CPG/MSSR driver
-Message-Id: <CAMuHMdU-TpPcdi_H6bwAxipv8rtC7Njos_49hsEmJCcSCHR_Pw@mail.gmail.com>
+Message-Id: <CAMuHMdX1AeBJdF1RBeByHKPVonXmdZiE-ZumphR2RLmJ+4wUzg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1444999760-15750-1-git-send-email-geert+renesas@glider.be>
-	<20151024011003.GE19782@codeaurora.org>
-	<CAMuHMdUyu6w0LAoH78H2+VHczrWwozDKMX2j8_A4V=jgz0snwA@mail.gmail.com>
-	<1577230.N3FJlP7ehB@avalon>
-In-Reply-To: <1577230.N3FJlP7ehB@avalon>
+	<1444999760-15750-6-git-send-email-geert+renesas@glider.be>
+	<20151020122448.20687.11926@quantum>
+	<CAMuHMdUT=fZKCOCdkn+=grZ0wYATghQhmbX-Y6WJ9+ViZ0cidA@mail.gmail.com>
+	<20151020130004.20687.91058@quantum>
+	<CAMuHMdU8TqCpOskWXGPvwrejfEWSw8Fu4FjkWAKyTc0f_MuWzw@mail.gmail.com>
+	<CAMuHMdW4wo0VR2GKeeXhcqwzDF7udkXapFF9fGfEQuh_vSsyoQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdW4wo0VR2GKeeXhcqwzDF7udkXapFF9fGfEQuh_vSsyoQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Stephen Boyd <sboyd@codeaurora.org>, Michael Turquette <mturquette@baylibre.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms+renesas@verge.net.au>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, linux-clk <linux-clk@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Michael Turquette <mturquette@baylibre.com>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Stephen Boyd <sboyd@codeaurora.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms+renesas@verge.net.au>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, linux-clk <linux-clk@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi Laurent,
+On Thu, Oct 22, 2015 at 2:58 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+>   - Calling platform_driver_probe() from arch_initcall() is too late, as the
+>     IRQC is initialized first (it's located before the CPG in .dtsi).
+>     Hence the IRQC can't find it's Clock Domain, and its probe is deferred.
+>     IRQC will be reprobed later, but in the mean time the Ethernet PHY can't
+>     find its IRQ, as the of_mdio code uses irq_of_parse_and_map(), which
+>     plainly ignores EPROBE_DEFER :-(
+>     Nevertheless, Ethernet works...
 
-On Mon, Oct 26, 2015 at 3:25 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Saturday 24 October 2015 19:34:03 Geert Uytterhoeven wrote:
->> On Sat, Oct 24, 2015 at 3:10 AM, Stephen Boyd <sboyd@codeaurora.org> wrote:
->> > On 10/22, Geert Uytterhoeven wrote:
->> >> As I want to have as much clock data/code __init as possible (think
->> >> multi-platform kernels --- pinmux data is a disaster here), I have to use
->> >> platform_driver_probe().
->
-> That sounds like an __init issue, doesn't it ? The CPG driver will always be
-> builtin and probed during the init process, what's preventing us from using
-> normal driver probing ?
+To correct myself: renesas-irqc is initialized first because it uses
+postcore_initcall().
 
-When using platform_driver_register(), the tables cannot be __init, as that
-would cause a section type mismatch. Remember, the driver core handles
-platform devices appearing later, so .probe() should continue to be available.
-
-Note: in theory it should be possible to compile the CPG/MSSR driver as a
-module, and have the module in your initramfs. But I don't think anyone
-really wants to do that?
-
->> For new SoCs like r8a7795 we can probably just make it a real platform
->> driver, and make sure the irqc node is located after the cpg node in the
->> .dtsi.
->
-> That's another hack :-) We really shouldn't depend on DT nodes order.
-
-I agree. But if there's an unfixed bug somewhere else, we cannot introduce
-regressions (for already supported SoCs).
-
-> I'm all for getting rid of CLK_OF_DECLARE
-
-Me too.
+The of_mdio issue on R-Car Gen2 boards can be worked around by changing that
+to device_initcall(). That would cause a few more probe deferrals on R-Mobile
+APE6 (r8a73a4), where IRQC is not only the external interrupt controller,
+but also the parent interrupt controller of the PFC/GPIO combo.
 
 Gr{oetje,eeting}s,
 
