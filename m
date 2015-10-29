@@ -1,130 +1,142 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 27 Oct 2015 01:18:30 +0000
-Subject: [PATCH v4 7/7] usb: host: xhci-plat: add support for the R-Car H3 xHCI controllers
-Message-Id: <1445908710-5812-8-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 29 Oct 2015 23:27:48 +0000
+Subject: [PATCH v5 02/14] arm64: renesas: r8a7795: Sound SSI PIO support
+Message-Id: <1446161280-23097-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The R-Car H3 has two xHCI controllers. This SoC is compatible with
-R-Car Gen2 SoCs, however this SoC doesn't need some specific registers
-setting, and need a new firmware.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+This patch adds SSI for PIO sound support
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- Documentation/devicetree/bindings/usb/usb-xhci.txt |  4 ++--
- drivers/usb/host/xhci-plat.c                       | 14 ++++++++++++--
- drivers/usb/host/xhci-plat.h                       |  1 +
- drivers/usb/host/xhci-rcar.c                       |  7 +++++++
- drivers/usb/host/xhci-rcar.h                       |  1 +
- 5 files changed, 23 insertions(+), 4 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/usb/usb-xhci.txt b/Documentation/devicetree/bindings/usb/usb-xhci.txt
-index 106299a..0825732 100644
---- a/Documentation/devicetree/bindings/usb/usb-xhci.txt
-+++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
-@@ -3,8 +3,8 @@ USB xHCI controllers
- Required properties:
-   - compatible: should be one of "generic-xhci",
-     "marvell,armada-375-xhci", "marvell,armada-380-xhci",
--    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791", "renesas,xhci-r8a7793"
--    (deprecated: "xhci-platform").
-+    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791", "renesas,xhci-r8a7793",
-+    "renesas,xhci-r8a7795" (deprecated: "xhci-platform").
-   - reg: should contain address and length of the standard XHCI
-     register set for the device.
-   - interrupts: one XHCI interrupt should be described here.
-diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
-index 0113e79..770b6b0 100644
---- a/drivers/usb/host/xhci-plat.c
-+++ b/drivers/usb/host/xhci-plat.c
-@@ -52,7 +52,8 @@ static int xhci_plat_setup(struct usb_hcd *hcd)
- {
- 	int ret;
+v5 [Simon Horman]
+* Update for new CPG/MSSR bindings via Geert Uytterhoeven
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 95 ++++++++++++++++++++++++++++++++
+ 1 file changed, 95 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 9668adce81e7..928976be06f0 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -51,6 +51,29 @@
+ 		clock-frequency = <0>;
+ 	};
  
--	if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2)) {
-+	if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2) ||
-+	    xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN3)) {
- 		ret = xhci_rcar_init_quirk(hcd);
- 		if (ret)
- 			return ret;
-@@ -63,7 +64,8 @@ static int xhci_plat_setup(struct usb_hcd *hcd)
- 
- static int xhci_plat_start(struct usb_hcd *hcd)
- {
--	if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2))
-+	if (xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2) ||
-+	    xhci_plat_type_is(hcd, XHCI_PLAT_TYPE_RENESAS_RCAR_GEN3))
- 		xhci_rcar_start(hcd);
- 
- 	return xhci_run(hcd);
-@@ -79,6 +81,11 @@ static const struct xhci_plat_priv xhci_plat_renesas_rcar_gen2 = {
- 	.firmware_name = XHCI_RCAR_FIRMWARE_NAME_V1,
- };
- 
-+static const struct xhci_plat_priv xhci_plat_renesas_rcar_gen3 = {
-+	.type = XHCI_PLAT_TYPE_RENESAS_RCAR_GEN3,
-+	.firmware_name = XHCI_RCAR_FIRMWARE_NAME_V2,
-+};
++	/*
++	 * The external audio clocks are configured as 0 Hz fixed frequency
++	 * clocks by default.
++	 * Boards that provide audio clocks should override them.
++	 */
++	audio_clk_a: audio_clk_a {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <0>;
++	};
 +
- static const struct of_device_id usb_xhci_of_match[] = {
- 	{
- 		.compatible = "generic-xhci",
-@@ -100,6 +107,9 @@ static const struct of_device_id usb_xhci_of_match[] = {
- 		.compatible = "renesas,xhci-r8a7793",
- 		.data = &xhci_plat_renesas_rcar_gen2,
- 	}, {
-+		.compatible = "renesas,xhci-r8a7795",
-+		.data = &xhci_plat_renesas_rcar_gen3,
-+	}, {
- 	},
++	audio_clk_b: audio_clk_b {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <0>;
++	};
++
++	audio_clk_c: audio_clk_c {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <0>;
++	};
++
+ 	soc {
+ 		compatible = "simple-bus";
+ 		interrupt-parent = <&gic>;
+@@ -319,5 +342,77 @@
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
+ 		};
++
++		rcar_sound: sound@ec500000 {
++			/*
++			 * #sound-dai-cells is required
++			 *
++			 * Single DAI : #sound-dai-cells = <0>;	<&rcar_sound>;
++			 * Multi  DAI : #sound-dai-cells = <1>;	<&rcar_sound N>;
++			 */
++			/*
++			 * #clock-cells is required for audio_clkout0/1/2/3
++			 *
++			 * clkout	: #clock-cells = <0>;	<&rcar_sound>;
++			 * clkout0/1/2/3: #clock-cells = <1>;	<&rcar_sound N>;
++			 */
++			compatible =  "renesas,rcar_sound-r8a7795", "renesas,rcar_sound-gen3";
++			reg =	<0 0xec500000 0 0x1000>, /* SCU */
++				<0 0xec5a0000 0 0x100>,  /* ADG */
++				<0 0xec540000 0 0x1000>, /* SSIU */
++				<0 0xec541000 0 0x280>,  /* SSI */
++				<0 0xec740000 0 0x200>;  /* Audio DMAC peri peri*/
++			reg-names = "scu", "adg", "ssiu", "ssi", "audmapp";
++
++			clocks = <&cpg CPG_MOD 1005>,
++				 <&cpg CPG_MOD 1006>, <&cpg CPG_MOD 1007>,
++				 <&cpg CPG_MOD 1008>, <&cpg CPG_MOD 1009>,
++				 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
++				 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
++				 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
++				 <&audio_clk_a>, <&audio_clk_b>,
++				 <&audio_clk_c>,
++				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
++			clock-names = "ssi-all",
++				      "ssi.9", "ssi.8", "ssi.7", "ssi.6",
++				      "ssi.5", "ssi.4", "ssi.3", "ssi.2",
++				      "ssi.1", "ssi.0",
++				      "clk_a", "clk_b", "clk_c", "clk_i";
++			power-domains = <&cpg>;
++			status = "disabled";
++
++			rcar_sound,ssi {
++				ssi0: ssi@0 {
++					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi1: ssi@1 {
++					 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi2: ssi@2 {
++					interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi3: ssi@3 {
++					interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi4: ssi@4 {
++					interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi5: ssi@5 {
++					interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi6: ssi@6 {
++					interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi7: ssi@7 {
++					interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi8: ssi@8 {
++					interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi9: ssi@9 {
++					interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
++				};
++			};
++		};
+ 	};
  };
- MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
-diff --git a/drivers/usb/host/xhci-plat.h b/drivers/usb/host/xhci-plat.h
-index 20b32a7..5a2e2e3 100644
---- a/drivers/usb/host/xhci-plat.h
-+++ b/drivers/usb/host/xhci-plat.h
-@@ -16,6 +16,7 @@
- enum xhci_plat_type {
- 	XHCI_PLAT_TYPE_MARVELL_ARMADA,
- 	XHCI_PLAT_TYPE_RENESAS_RCAR_GEN2,
-+	XHCI_PLAT_TYPE_RENESAS_RCAR_GEN3,
- };
- 
- struct xhci_plat_priv {
-diff --git a/drivers/usb/host/xhci-rcar.c b/drivers/usb/host/xhci-rcar.c
-index 010a24f..623100e 100644
---- a/drivers/usb/host/xhci-rcar.c
-+++ b/drivers/usb/host/xhci-rcar.c
-@@ -17,7 +17,14 @@
- #include "xhci-plat.h"
- #include "xhci-rcar.h"
- 
-+/*
-+* - The V2 firmware is possible to use on R-Car Gen2. However, the V2 causes
-+*   performance degradation. So, this driver continues to use the V1 if R-Car
-+*   Gen2.
-+* - The V1 firmware is impossible to use on R-Car Gen3.
-+*/
- MODULE_FIRMWARE(XHCI_RCAR_FIRMWARE_NAME_V1);
-+MODULE_FIRMWARE(XHCI_RCAR_FIRMWARE_NAME_V2);
- 
- /*** Register Offset ***/
- #define RCAR_USB3_INT_ENA	0x224	/* Interrupt Enable */
-diff --git a/drivers/usb/host/xhci-rcar.h b/drivers/usb/host/xhci-rcar.h
-index ba3ad31..2941a25 100644
---- a/drivers/usb/host/xhci-rcar.h
-+++ b/drivers/usb/host/xhci-rcar.h
-@@ -12,6 +12,7 @@
- #define _XHCI_RCAR_H
- 
- #define XHCI_RCAR_FIRMWARE_NAME_V1	"r8a779x_usb3_v1.dlmem"
-+#define XHCI_RCAR_FIRMWARE_NAME_V2	"r8a779x_usb3_v2.dlmem"
- 
- #if IS_ENABLED(CONFIG_USB_XHCI_RCAR)
- void xhci_rcar_start(struct usb_hcd *hcd);
 -- 
-1.9.1
+2.1.4
 
