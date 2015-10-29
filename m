@@ -1,39 +1,50 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 18 Sep 2015 02:06:43 +0000
-Subject: [PATCH 13/18 v3] arm64: renesas: salvator-x: Sound SRC support
-Message-Id: <87twqszdqj.wl%kuninori.morimoto.gx@renesas.com>
+Date: Thu, 29 Oct 2015 09:37:20 +0000
+Subject: [PATCH] i2c: rcar: call rcar_i2c_init() after pm_runtime_get_sync()
+Message-Id: <87oafiyq8y.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon <horms@verge.net.au>, linux-i2c@vger.kernel.org, Wolfram Sang <wsa@the-dreams.de>
+Cc: Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
+rcar_i2c_init() initializes I2C device, but it should be called
+*after* pm_runtime_get_sync(). Otherwise it outputs very hi speed
+clock. This patch solved this issue, 
+This patch also removes pointless rcar_i2c_init()
+from rcar_i2c_probe()
+
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v2 -> v3
-
- - new patch
-
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 4 ++--
+ drivers/i2c/busses/i2c-rcar.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index dc65b78..cc550b3 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -219,8 +219,8 @@
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 616433d..edbfefc 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -474,6 +474,8 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
  
- 	rcar_sound,dai {
- 		dai0 {
--			playback = <&ssi0>;
--			capture  = <&ssi1>;
-+			playback = <&ssi0 &src0>;
-+			capture  = <&ssi1 &src1>;
- 		};
- 	};
- };
+ 	pm_runtime_get_sync(dev);
+ 
++	rcar_i2c_init(priv);
++
+ 	ret = rcar_i2c_bus_barrier(priv);
+ 	if (ret < 0)
+ 		goto out;
+@@ -612,8 +614,6 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 	if (IS_ERR(priv->io))
+ 		return PTR_ERR(priv->io);
+ 
+-	rcar_i2c_init(priv);
+-
+ 	irq = platform_get_irq(pdev, 0);
+ 	init_waitqueue_head(&priv->wait);
+ 
 -- 
 1.9.1
 
