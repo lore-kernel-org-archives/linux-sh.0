@@ -1,47 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 00:34:03 +0000
-Subject: [PATCH 2/2] ARM: multi_v7_defconfig: enable HDMI output for Renesas RCar
-Message-Id: <fec3fb4734b4d2c33975077c250ebd4a3a9f8e34.1444869086.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 29 Oct 2015 19:59:55 +0000
+Subject: [PATCH] ASoC: rsrc-card: Clarify compatible value
+Message-Id: <1446148795-20629-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444869086.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444869086.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Liam Girdwood <lgirdwood@gmail.com>, Mark Brown <broonie@kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: linux-sh@vger.kernel.org, alsa-devel@alsa-project.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+The compatible value can be board-specific, not SoC-specific.
+Add curly braces to indicate that the board type is optional.
 
-Actviate HDMI output of the RCar DU (and LVDS while we are here).
-Enable the HDMI encoder chip found on Lager/Koelsch boards.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/configs/multi_v7_defconfig | 3 +++
- 1 file changed, 3 insertions(+)
+ Documentation/devicetree/bindings/sound/renesas,rsrc-card.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
-index e682da3f9d42..a5c6ebf39b0a 100644
---- a/arch/arm/configs/multi_v7_defconfig
-+++ b/arch/arm/configs/multi_v7_defconfig
-@@ -440,6 +440,7 @@ CONFIG_VIDEO_RENESAS_VSP1=m
- CONFIG_VIDEO_ADV7180=m
- CONFIG_VIDEO_ML86V7667=m
- CONFIG_DRM=y
-+CONFIG_DRM_I2C_ADV7511=m
- # CONFIG_DRM_I2C_CH7006 is not set
- # CONFIG_DRM_I2C_SIL164 is not set
- CONFIG_DRM_NXP_PTN3460=m
-@@ -450,6 +451,8 @@ CONFIG_DRM_EXYNOS_DSI=y
- CONFIG_DRM_EXYNOS_FIMD=y
- CONFIG_DRM_EXYNOS_HDMI=y
- CONFIG_DRM_RCAR_DU=m
-+CONFIG_DRM_RCAR_HDMI=y
-+CONFIG_DRM_RCAR_LVDS=y
- CONFIG_DRM_TEGRA=y
- CONFIG_DRM_PANEL_SAMSUNG_S6E8AA0=m
- CONFIG_DRM_PANEL_SIMPLE=y
+diff --git a/Documentation/devicetree/bindings/sound/renesas,rsrc-card.txt b/Documentation/devicetree/bindings/sound/renesas,rsrc-card.txt
+index 962748a8d9194dee..2b2caa281ce38abc 100644
+--- a/Documentation/devicetree/bindings/sound/renesas,rsrc-card.txt
++++ b/Documentation/devicetree/bindings/sound/renesas,rsrc-card.txt
+@@ -4,8 +4,8 @@ Renesas Sampling Rate Convert Sound Card specifies audio DAI connections of SoC
+ 
+ Required properties:
+ 
+-- compatible				: "renesas,rsrc-card,<board>"
+-					  Examples with soctypes are:
++- compatible				: "renesas,rsrc-card{,<board>}"
++					  Examples with boards are:
+ 					    - "renesas,rsrc-card"
+ 					    - "renesas,rsrc-card,lager"
+ 					    - "renesas,rsrc-card,koelsch"
 -- 
-2.1.4
+1.9.1
 
