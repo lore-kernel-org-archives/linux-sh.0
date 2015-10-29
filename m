@@ -1,47 +1,73 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Sun, 25 Oct 2015 10:09:32 +0000
-Subject: [git pull] dmaengine: sh: usb-dmac: Runtime PM related fixes for v4.3
-Message-Id: <1445767774-24001-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 29 Oct 2015 23:27:52 +0000
+Subject: [PATCH v5 06/14] arm64: renesas: r8a7795: Sound CTU/MIX support
+Message-Id: <1446161280-23097-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-	Hi Vinod,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The following changes since commit 6ff33f3902c3b1c5d0db6b1e2c70b6d76fba357f:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-  Linux 4.3-rc1 (2015-09-12 16:35:56 -0700)
+---
 
-are available in the git repository at:
+v5 [Simon Horman]
+* Update for new CPG/MSSR bindings via Geert Uytterhoeven
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git shdma-usb-dmac-for-v4.3
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 03690b12f44b..774bdf84709a 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -375,6 +375,8 @@
+ 				 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
+ 				 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
+ 				 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
++				 <&cpg CPG_MOD 1021>, <&cpg CPG_MOD 1020>,
++				 <&cpg CPG_MOD 1021>, <&cpg CPG_MOD 1020>,
+ 				 <&cpg CPG_MOD 1019>, <&cpg CPG_MOD 1018>,
+ 				 <&audio_clk_a>, <&audio_clk_b>,
+ 				 <&audio_clk_c>,
+@@ -386,6 +388,8 @@
+ 				      "src.9", "src.8", "src.7", "src.6",
+ 				      "src.5", "src.4", "src.3", "src.2",
+ 				      "src.1", "src.0",
++				      "ctu.0", "ctu.1",
++				      "mix.0", "mix.1",
+ 				      "dvc.0", "dvc.1",
+ 				      "clk_a", "clk_b", "clk_c", "clk_i";
+ 			power-domains = <&cpg>;
+@@ -402,6 +406,22 @@
+ 				};
+ 			};
+ 
++			rcar_sound,mix {
++				mix0: mix@0 { };
++				mix1: mix@1 { };
++			};
++
++			rcar_sound,ctu {
++				ctu00: ctu@0 { };
++				ctu01: ctu@1 { };
++				ctu02: ctu@2 { };
++				ctu03: ctu@3 { };
++				ctu10: ctu@4 { };
++				ctu11: ctu@5 { };
++				ctu12: ctu@6 { };
++				ctu13: ctu@7 { };
++			};
++
+ 			rcar_sound,src {
+ 				src0: src@0 {
+ 					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
+-- 
+2.1.4
 
-for you to fetch changes up to 6d4b4788c75c62fbc3c85d7a079376294665973d:
-
-  dmaengine: sh: usb-dmac: Fix pm_runtime_{enable,disable}() imbalance (2015-10-25 10:58:18 +0100)
-
-Summary:
-  - dmaengine: sh: usb-dmac: Runtime PM related fixes
-
-Thanks for pulling!
-
-----------------------------------------------------------------
-Geert Uytterhoeven (2):
-      dmaengine: sh: usb-dmac: Fix crash on runtime suspend
-      dmaengine: sh: usb-dmac: Fix pm_runtime_{enable,disable}() imbalance
-
- drivers/dma/sh/usb-dmac.c | 11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
