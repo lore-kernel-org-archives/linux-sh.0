@@ -1,30 +1,66 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 08 Oct 2015 02:07:49 +0000
-Subject: Re: [PATCH v2 3/4] sh_eth: Remove obsolete r8a7740-gether platform_device_id entry
-Message-Id: <20151008020748.GB8756@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 29 Oct 2015 22:46:31 +0000
+Subject: [PATCH v2] i2c: rcar: make sure clocks are on when doing hw init
+Message-Id: <1446158791-29682-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444205657-25314-1-git-send-email-geert+renesas@glider.be>
- <1444205657-25314-4-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1444205657-25314-4-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: "David S. Miller" <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Wed, Oct 07, 2015 at 10:14:16AM +0200, Geert Uytterhoeven wrote:
-> Since commit 1fa59bda21c7fa36 ("ARM: shmobile: Remove legacy board code
-> for Armadillo-800 EVA"), r8a7740 is only supported in generic DT-only
-> ARM multi-platform builds.  The driver doesn't need to match platform
-> devices by name anymore, hence remove the corresponding
-> platform_device_id entry.
-> 
-> Protect r8a7740_data by #ifdef CONFIG_OF as it's now referenced on DT
-> platforms only. Move it to a more logical position, in front of the
-> r8a777x support, so we can have a single #ifdef covering all r7s* and
-> r8a* support soon. This requires moving a few helper functions, too.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Reported-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-rcar.c | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 616433d387cdb2..58dbd30c24d1cc 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -612,7 +612,10 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 	if (IS_ERR(priv->io))
+ 		return PTR_ERR(priv->io);
+ 
++	pm_runtime_enable(dev);
++	pm_runtime_get_sync(dev);
+ 	rcar_i2c_init(priv);
++	pm_runtime_put(dev);
+ 
+ 	irq = platform_get_irq(pdev, 0);
+ 	init_waitqueue_head(&priv->wait);
+@@ -631,22 +634,24 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 			       dev_name(dev), priv);
+ 	if (ret < 0) {
+ 		dev_err(dev, "cannot get irq %d\n", irq);
+-		return ret;
++		goto out_pm_disable;
+ 	}
+ 
+-	pm_runtime_enable(dev);
+ 	platform_set_drvdata(pdev, priv);
+ 
+ 	ret = i2c_add_numbered_adapter(adap);
+ 	if (ret < 0) {
+ 		dev_err(dev, "reg adap failed: %d\n", ret);
+-		pm_runtime_disable(dev);
+-		return ret;
++		goto out_pm_disable;
+ 	}
+ 
+ 	dev_info(dev, "probed\n");
+ 
+ 	return 0;
++
++ out_pm_disable:
++	pm_runtime_disable(dev);
++	return ret;
+ }
+ 
+ static int rcar_i2c_remove(struct platform_device *pdev)
+-- 
+2.1.4
 
