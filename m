@@ -1,39 +1,30 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 22 Oct 2015 16:48:39 +0000
-Subject: Re: [GIT PULL] Second Round of Renesas ARM Based SoC Cleanup for v4.4
-Message-Id: <20151022164839.GB19953@localhost>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 29 Oct 2015 06:31:22 +0000
+Subject: Salvator-X I2C is working on HI speed on renesas-drivers-2015-10-27-v4.3-rc7
+Message-Id: <877fm61988.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444868660.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444868660.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
-
-On Thu, Oct 15, 2015 at 09:33:02AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these second round of Renesas ARM based SoC cleanup for v4.4.
-> 
-> This pull request is based on the previous round of
-> such requests, tagged as renesas-cleanup-for-v4.4,
-> which you have already pulled.
-> 
-> 
-> The following changes since commit 04418c23a9411b85b8789eab5f4397bcbd62b7b4:
-> 
->   ARM: shmobile: Remove legacy clock support leftovers (2015-09-14 10:06:56 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup2-for-v4.4
-> 
-> for you to fetch changes up to 1fd377b3fc1e071702e27b2f828e3abd8b31c74d:
-> 
->   ARM: shmobile: R-Mobile: add missing of_node_put (2015-10-12 09:15:29 +0900)
-
-Merged, thanks!
+To: linux-sh@vger.kernel.org
 
 
--Olof
+Hi Geert, Wolfram
 
+I'm debugging renesas-drivers-2015-10-27-v4.3-rc7 yesterday/today
+and I noticed that I2C doesn't work on Salvator-X
+
+Sound needs Codec/CS2000, these both needs I2C access.
+But, it gets -ENXIO from bus.
+At least it works on renesas-drivers-2015-09-29-v4.3-rc3.
+
+In my debug, it seems I2C SCL/SDA speed on 10-27 is very HI.
+(I checked this via CN27 73/74pin)
+But, i2c clock on /sys/kernel/debug/clk/clk_summary in 09-29 <-> 10-27
+seems same value.
+
+Where should I check ?
+
+Best regards
+---
+Kuninori Morimoto
