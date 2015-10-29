@@ -1,60 +1,68 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 23 Oct 2015 07:00:34 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 29 Oct 2015 07:52:12 +0000
 Subject: Re: [PATCH v11 6/8] arm64: renesas: add Salvator-X board support on DTS
-Message-Id: <20151023070032.GA4502@verge.net.au>
+Message-Id: <CAMuHMdVzUPyhkfPy3s+jBK1gQ-kZqYfrQZ8Bww-iFxGOPVZn2w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
  <1444890243-6978-7-git-send-email-horms+renesas@verge.net.au>
  <20151015110139.GG8825@leverpostej>
-In-Reply-To: <20151015110139.GG8825@leverpostej>
+ <20151023070032.GA4502@verge.net.au>
+In-Reply-To: <20151023070032.GA4502@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Oct 15, 2015 at 12:01:40PM +0100, Mark Rutland wrote:
-> > +/ {
-> > +	model = "Renesas Salvator-X board based on r8a7795";
-> > +	compatible = "renesas,salvator-x", "renesas,r8a7795";
-> > +
-> > +	aliases {
-> > +		serial0 = &scif2;
-> > +		serial1 = &scif1;
-> > +	};
-> > +
-> > +	chosen {
-> > +		bootargs = "ignore_loglevel";
-> 
-> Do we really need this kind of thing in the kernel DTs?
+Hi Simon,
 
-I agree this looks a bit lonely by itself, and I'm not entirely
-opposed to removing it. However, I do seek consistency between
-the renesas ARM and ARM64 SoCs where possible.
+On Fri, Oct 23, 2015 at 9:00 AM, Simon Horman <horms@verge.net.au> wrote:
+> On Thu, Oct 15, 2015 at 12:01:40PM +0100, Mark Rutland wrote:
+>> > +           stdout-path = &scif2;
+>>
+>> No rate? It would be better to be explicit here; you should be able to
+>> have:
+>>
+>>       stdout-path = "serial0:115200n8"
+>>
+>> Where "115200n8" is replaced with whatever configuration this board
+>> actually has.
+>
+> I think that we have had this discussion before in relation to
+> a different board for a different Renesas SoC but I could be mistaken.
 
-Further work[1] on this file outside of this series adds
-"rw root=/dev/nfs ip=dhcp" to bootargs, the result being consistent
-with Renesas ARM32 SoCs.
+IIRC, at that time the code to parse the options wasn't upstream yet, so
+adding the options would have broken the serial console.
 
-[1] [PATCH v5 4/5] arm64: dts: r8a7795: enable nfs root on Salvator-X board
-    http://www.spinics.net/lists/arm-kernel/msg452743.html
+I can confirm it works fine on Salvator-X with
 
-> > +		stdout-path = &scif2;
-> 
-> No rate? It would be better to be explicit here; you should be able to
-> have:
-> 
-> 	stdout-path = "serial0:115200n8"
-> 
-> Where "115200n8" is replaced with whatever configuration this board
-> actually has.
+        stdout-path = "serial0:115200n8";
 
-I think that we have had this discussion before in relation to
-a different board for a different Renesas SoC but I could be mistaken.
+> The r8a7795 uses the sh-sci serial driver for which the default rate is
+> 115200. It is hard for me to conceive of a situation where that would
+> change without due consideration being given to the implications for DT
+> files.
+>
+> Not specifying the baud here is consistent with what we have
+> been doing for ARM32 Renesas SoCs for some time.
 
-The r8a7795 uses the sh-sci serial driver for which the default rate is
-115200. It is hard for me to conceive of a situation where that would
-change without due consideration being given to the implications for DT
-files.
+FWIW, I have updated all ARM32 Renesas DTSes locally:
+  1. Use alias in and add serial options to stdout-path,
+  2. Drop superfluous console= from bootargs (shmobile-legacy is gone,
+     and it works fine on boards with both fbdev and serial consoles).
 
-Not specifying the baud here is consistent with what we have
-been doing for ARM32 Renesas SoCs for some time.
+And everything looks fine on the boards I could try it on (sh73a0/kzm9g,
+r8a73a4/ape6evm, r8a7740/armadillo, r8a7791/koelsch).
+
+Hence if you're open for this change, I can submit patches (or a single patch,
+up to your preference).
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
