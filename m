@@ -1,53 +1,79 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 08 Oct 2015 13:49:05 +0000
-Subject: Re: [PATCH v2 0/4] sh_eth: Remove obsolete platform_device_id entries
-Message-Id: <CAMuHMdUsB+9v6T=p0FivcymVFTFtOR8-tf2sOpOMBgV_CH7Hfw@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 29 Oct 2015 21:52:45 +0000
+Subject: [PATCH 2/2] sh_eth: fix WARNING in dma_free_coherent()
+Message-Id: <1503970.kr1SvaSeoy@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444205657-25314-1-git-send-email-geert+renesas@glider.be>
-	<20151008.051023.991121515814557831.davem@davemloft.net>
-In-Reply-To: <20151008.051023.991121515814557831.davem@davemloft.net>
+References: <5844359.Wmo6777QiE@wasted.cogentembedded.com>
+In-Reply-To: <5844359.Wmo6777QiE@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Hi David,
+Iff the first dma_alloc_coherent()  call fails in sh_eth_ring_init(), the
+following  is printed to the kernel console:
 
-[CC Arnd wearing the arm-soc merge hat]
+WARNING: CPU: 0 PID: 1 at drivers/base/dma-mapping.c:334 dma_common_free_remap+0x48/0x6c()
+trying to free invalid coherent area:   (null)
+Modules linked in:
+CPU: 0 PID: 1 Comm: swapper/0 Not tainted 4.3.0-rc7-dirty #969
+Hardware name: Generic R8A7791 (Flattened Device Tree)
+Backtrace:
+[<c0013820>] (dump_backtrace) from [<c00139bc>] (show_stack+0x18/0x1c)
+ r6:c0662856 r5:00000009 r4:00000000 r3:00204140
+[<c00139a4>] (show_stack) from [<c0227510>] (dump_stack+0x74/0x90)
+[<c022749c>] (dump_stack) from [<c0026ef4>] (warn_slowpath_common+0x8c/0xb8)
+ r4:ee84dce0 r3:c0712774
+[<c0026e68>] (warn_slowpath_common) from [<c0026fc4>] (warn_slowpath_fmt+0x38/0x40)
+ r8:ee7f8000 r7:c0734520 r6:00001000 r5:20000008 r4:00000000
+[<c0026f90>] (warn_slowpath_fmt) from [<c02df404>] (dma_common_free_remap+0x48/0x6c)
+ r3:00000000 r2:c0662871
+[<c02df3bc>] (dma_common_free_remap) from [<c001b9fc>] (__arm_dma_free+0xb8/0xd4)
+r6:00000001 r5:00000000 r4:00001000 r3:ee8c5584
+[<c001b944>] (__arm_dma_free) from [<c001ba68>] (arm_dma_free+0x24/0x2c)
+ r10:0000016b r8:00000000 r7:ee9bc830 r6:00000000 r5:00000400 r4:ee9bc800
+[<c001ba44>] (arm_dma_free) from [<c032ebf0>] (sh_eth_ring_init+0x110/0x138)
+[<c032eae0>] (sh_eth_ring_init) from [<c033179c>] (sh_eth_open+0x94/0x1f4)
+ r6:00000000 r5:ee9bcd18 r4:ee9bc800
+[<c0331708>] (sh_eth_open) from [<c041bf7c>] (__dev_open+0x84/0x104)
+ r6:c0565c50 r5:00000000 r4:ee9bc800
+[<c041bef8>] (__dev_open) from [<c041c208>] (__dev_change_flags+0x94/0x13c)
+ r7:00001002 r6:00000001 r5:00001003 r4:ee9bc800
+[<c041c174>] (__dev_change_flags) from [<c041c2e8>] (dev_change_flags+0x20/0x50)
+ r7:c072c8a0 r6:00000138 r5:00001002 r4:ee9bc800
+[<c041c2c8>] (dev_change_flags) from [<c06e8d4c>] (ip_auto_config+0x174/0xf7c)
+ r8:00001002 r7:c072c8a0 r6:c0700040 r5:00000001 r4:ee9bc800 r3:00000101
+[<c06e8bd8>] (ip_auto_config) from [<c000a810>] (do_one_initcall+0x100/0x1c8)
+ r10:c06f883c r9:00000000 r8:c06e8bd8 r7:c0734000 r6:c070e918 r5:c070e918
+ r4:ee083640
+[<c000a710>] (do_one_initcall) from [<c06c9ddc>] (kernel_init_freeable+0x11c/0x1ec)
+ r10:c06f883c r9:00000000 r8:00000099 r7:c0734000 r6:c070372c r5:c06f8834
+ r4:00000007
+[<c06c9cc0>] (kernel_init_freeable) from [<c0514d78>] (kernel_init+0x14/0xec)
+ r10:00000000 r8:00000000 r7:00000000 r6:00000000 r5:c0514d64 r4:c0734000
+[<c0514d64>] (kernel_init) from [<c0010458>] (ret_from_fork+0x14/0x3c)
+ r4:00000000 r3:ee84c000
 
-On Thu, Oct 8, 2015 at 2:10 PM, David Miller <davem@davemloft.net> wrote:
-> From: Geert Uytterhoeven <geert+renesas@glider.be>
-> Date: Wed,  7 Oct 2015 10:14:13 +0200
->
->> Since commit 3d7608e4c169af03 ("ARM: shmobile: bockw: remove legacy
->> board file and config"), which is now in arm-soc/for-next, shmobile SoCs
->> are only supported in generic DT-only ARM multi-platform builds.
->> The sh_eth driver doesn't need to match platform devices by name
->> anymore, hence this series removes the corresponding platform_device_id
->> entries.
->>
->> Changes since v1:
->>   - Protect some data and functions by #ifdef CONFIG_OF to silence
->>     unused compiler warnings on SH,
->>   - New patches 3 and 4.
->
-> Since that commit isn't in any of my trees why don't you merge this
-> via arm-soc/for-next?
+This is because the code jumps to a wrong label and so tries to free yet
+unallocated coherent memory.  Fix the *goto* in question.
 
-This series just changes the sh_eth driver. There's  no direct dependency on
-the arm-soc changes. Hence I think the sh_eth changes should go in through
-the netdev tree.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Thanks!
+---
+ drivers/net/ethernet/renesas/sh_eth.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Gr{oetje,eeting}s,
+Index: net/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1232,7 +1232,7 @@ static int sh_eth_ring_init(struct net_d
+ 					  GFP_KERNEL);
+ 	if (!mdp->rx_ring) {
+ 		ret = -ENOMEM;
+-		goto desc_ring_free;
++		goto skb_ring_free;
+ 	}
+ 
+ 	mdp->dirty_rx = 0;
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
