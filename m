@@ -1,81 +1,143 @@
-From: Felipe Balbi <balbi@ti.com>
-Date: Mon, 19 Oct 2015 14:21:50 +0000
-Subject: Re: [PATCH 1/3] usb: renesas_usbhs: Remove unneeded #include <linux/platform_data/gpio-rcar.h>
-Message-Id: <87io63j5vl.fsf@saruman.tx.rr.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=-=-="
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 29 Oct 2015 23:27:53 +0000
+Subject: [PATCH v5 07/14] arm64: renesas: salvator-x: Sound SSI PIO support
+Message-Id: <1446161280-23097-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444206225-25664-1-git-send-email-geert+renesas@glider.be> <1444206225-25664-2-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1444206225-25664-2-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
-To: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linus Walleij <linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Alexandre Courbot <gnurou-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-gpio-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+References: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
---=-=-=
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
+This patch adds PIO sound support for Salvator-X board.
 
-Hi,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 95 ++++++++++++++++++++++
+ 1 file changed, 95 insertions(+)
 
-Geert Uytterhoeven <geert+renesas@glider.be> writes:
-> This header file will be removed soon.
->
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index 0599b2be90ab..6a7df7e0ef7a 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -30,6 +30,28 @@
+ 		/* first 128MB is reserved for secure area. */
+ 		reg = <0x0 0x48000000 0x0 0x38000000>;
+ 	};
++
++	x12_clk: x12_clk {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <24576000>;
++	};
++
++	rsnd_ak4613: sound {
++		compatible = "simple-audio-card";
++
++		simple-audio-card,format = "left_j";
++		simple-audio-card,bitclock-master = <&sndcpu>;
++		simple-audio-card,frame-master = <&sndcpu>;
++
++		sndcpu: simple-audio-card,cpu {
++			sound-dai = <&rcar_sound>;
++		};
++
++		sndcodec: simple-audio-card,codec {
++			sound-dai = <&ak4613>;
++		};
++	};
+ };
+ 
+ &extal_clk {
+@@ -50,6 +72,16 @@
+ 		renesas,groups = "i2c2_a";
+ 		renesas,function = "i2c2";
+ 	};
++
++	sound_pins: sound {
++		renesas,groups = "ssi01239_ctrl", "ssi0_data", "ssi1_data_a";
++		renesas,function = "ssi";
++	};
++
++	sound_clk_pins: sound_clk {
++		renesas,groups = "audio_clkout3_a";
++		renesas,function = "audio_clk";
++	};
+ };
+ 
+ &scif1 {
+@@ -71,4 +103,67 @@
+ 	pinctrl-names = "default";
+ 
+ 	status = "okay";
++
++	clock-frequency = <100000>;
++
++	ak4613: codec@0x10 {
++		compatible = "asahi-kasei,ak4613";
++		#sound-dai-cells = <0>;
++		reg = <0x10>;
++		clocks = <&rcar_sound 3>;
++	};
++
++	cs2000: clk_multiplier@4f {
++		#clock-cells = <0>;
++		compatible = "cirrus,cs2000-cp";
++		reg = <0x4f>;
++		clocks = <&rcar_sound 0>, <&x12_clk>;
++		clock-names = "clk_in", "ref_clk";
++		clock-frequency = <24576000>; /* 1/1 divide */
++	};
++};
++
++&rcar_sound {
++	pinctrl-0 = <&sound_pins &sound_clk_pins>;
++	pinctrl-names = "default";
++
++	/* Single DAI */
++	#sound-dai-cells = <0>;
++
++	/* audio_clkout0/1/2/3 */
++	#clock-cells = <1>;
++	clock-frequency = <12288000>;
++
++	status = "okay";
++
++	rcar_sound,dai {
++		dai0 {
++			playback = <&ssi0>;
++			capture  = <&ssi1>;
++		};
++	};
++};
++
++&ssi0 {
++	pio-transfer;
++};
++
++&ssi1 {
++	pio-transfer;
++	shared-pin;
++};
++
++&audio_clk_a {
++	clock-frequency = <22579200>;
++};
++
++&audio_clk_b {
++	/*
++	 * It should be below here, but it will be dead-lock
++	 * since cs2000 requests audio_clkout (= <&rcar_sound 0>)
++	 * and, rcar_sound (= audio_clk_b) requests cs2000.
++	 * Here assumes cs2000 outputs fixed clock-frequency
++	 *      clocks = <&cs2000>;
++	 */
++	clock-frequency = <24576000>;
+ };
+-- 
+2.1.4
 
-do you wanna take this with the other patches in the series ? I'm fine
-with that:
-
-Acked-by: Felipe Balbi <balbi@ti.com>
-
-> ---
-> Please schedule for v4.3, or provide an Ack, so it can go in through the
-> GPIO tree. Thanks!
-> ---
->  drivers/usb/renesas_usbhs/rcar2.c | 1 -
->  1 file changed, 1 deletion(-)
->
-> diff --git a/drivers/usb/renesas_usbhs/rcar2.c b/drivers/usb/renesas_usbh=
-s/rcar2.c
-> index 8fc15c0ba339..277160bc6f25 100644
-> --- a/drivers/usb/renesas_usbhs/rcar2.c
-> +++ b/drivers/usb/renesas_usbhs/rcar2.c
-> @@ -13,7 +13,6 @@
->  #include <linux/gpio.h>
->  #include <linux/of_gpio.h>
->  #include <linux/phy/phy.h>
-> -#include <linux/platform_data/gpio-rcar.h>
->  #include <linux/usb/phy.h>
->  #include "common.h"
->  #include "rcar2.h"
-> --=20
-> 1.9.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-usb" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-=2D-=20
-balbi
-
---=-=-=
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWJPyAAAoJEIaOsuA1yqREUq0P/ie/Xh89SR2C3qoLs5uzGE6c
-y/tvZVKctR1gVKLlapZyhMb8iF96YhEsqL4i/zoIPrnQ3I1elQkb18VzINfAthrH
-qQrQeEthf9R7d1vyBJxF3BoKunAi8eRe/lFt6GMbcDfv6CX7UMPk2GQ4uWuuraMa
-GShySln2OX5G8iLOzxxCHq/oz20jWv4hXCOaTtuyDA0O3dgYvxpE1RJLH6x1fZ39
-5oOSk6Lyq1Ei2vOKA5nTHDB5nqwcycxrvhAm8MRiODvfj6UcXHH4grcnNGVbYyb6
-ZWvnJNj+OHrbdf35KQT6PUOp/0+wf+31isriCatjR0Yc8Vv1NaLoXz+cpoVt3IEJ
-6eiCPRfjPb7pioeX7Ajl6U+WU/yAsqGInbQixw9CIecsrKnChQuCsOgpJ68gzK4W
-WBI1XfYPbMi4mSmNQw4yYqCJAuriUCAS8uE4GUKwni7vtWxFW1MgGbD3C1iUQcea
-RwNSoZoPsP5GwBPAzv6ZU8Fpd87s92ury9+0D3i0mQd2J9kJ8vAbwlQBVattJrio
-AO2pBNax2vV5BlMH3SZg5lleKjdlU+f/a+ugpd+l2bxdekOEJjC9iAs4CHGbgXds
-zBb6r77qdjFVaQ07K2DkR0P8XLh8OoMx+ieYym/lZdnboZP+tTX5vYL7DERsXTZp
-+/l41TYLgppWn4cqdUAb
-=/HOU
------END PGP SIGNATURE-----
---=-=-=--
