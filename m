@@ -1,72 +1,104 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 06:59:31 +0000
-Subject: [PATCH/RFC 0/6] boot-mode-reg: Add core
-Message-Id: <1444892377-10170-1-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 29 Oct 2015 23:27:47 +0000
+Subject: [PATCH v5 01/14] arm64: renesas: r8a7795: add AUDIO_DMAC support
+Message-Id: <1446161280-23097-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The motivation for this new module is to add a small frame work to allow
-kernel subsystems to obtain boot mode information from a centralised
-source using a new, and hopefully soon well-known, API.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The new API consists of two function calls and nothing more:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-boot_mode_reg_set: Should be called by platform-specific drivers
-                   to register the boot mode register value which
-                   they obtain from hardware or otherwise.
+---
 
-boot_mode_reg_get: Should be called by consumers; subsystems that
-                   wish to know he boot mode register.
+v5 [Simon Horman]
+* Update for new CPG/MSSR bindings via Geert Uytterhoeven
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 64 ++++++++++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
 
-The boot mode register is a 32bit unsigned entity,
-the meaning of its values are implementation dependent.
-
-
-This patchset:
-* Adds the API described above
-* Implements the API for Renesas R-Car Gen2 SoCs
-* Uses the implementation for Renesas R-Car Gen2 SoCs
-
-Laurent, this is my interpretation of your ideas in this area.
-In particular I'd value feedback from you on the implementation
-before taking it to a wider audience.
-
-
-Tested on an r8a7791/Koelsch applied on top of
-renesas-devel-20151015-v4.3-rc5
-
-Simon Horman (6):
-  boot-mode-reg: Add core
-  boot-mode-reg: Add R-Car Gen2 driver
-  arm: shmobile: rcar-gen2: Obtain MD pin value using boot-mode-reg
-  arm: shmobile: r8a7791: Obtain MD pin value using boot-mode-reg
-  clk: shmobile: rcar-gen2: Obtain MD pin value using boot-mode-reg
-  arm: shmobile: rcar-gen2: Remove unused rcar_gen2_read_mode_pins()
-
- MAINTAINERS                              |  1 +
- arch/arm/mach-shmobile/Kconfig           |  1 +
- arch/arm/mach-shmobile/rcar-gen2.h       |  1 -
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 43 +++++++++---------
- arch/arm/mach-shmobile/smp-r8a7791.c     | 13 +++++-
- drivers/clk/shmobile/clk-rcar-gen2.c     | 12 ++++-
- drivers/misc/Kconfig                     |  1 +
- drivers/misc/Makefile                    |  1 +
- drivers/misc/boot-mode-reg/Kconfig       | 19 ++++++++
- drivers/misc/boot-mode-reg/Makefile      |  7 +++
- drivers/misc/boot-mode-reg/core.c        | 78 ++++++++++++++++++++++++++++++++
- drivers/misc/boot-mode-reg/rcar-gen2.c   | 61 +++++++++++++++++++++++++
- include/linux/clk/shmobile.h             |  2 +-
- include/misc/boot-mode-reg.h             | 27 +++++++++++
- 14 files changed, 240 insertions(+), 27 deletions(-)
- create mode 100644 drivers/misc/boot-mode-reg/Kconfig
- create mode 100644 drivers/misc/boot-mode-reg/Makefile
- create mode 100644 drivers/misc/boot-mode-reg/core.c
- create mode 100644 drivers/misc/boot-mode-reg/rcar-gen2.c
- create mode 100644 include/misc/boot-mode-reg.h
-
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index bccb49d9fb02..9668adce81e7 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -90,6 +90,70 @@
+ 			#power-domain-cells = <0>;
+ 		};
+ 
++		audma0: dma-controller@ec700000 {
++			compatible = "renesas,rcar-dmac";
++			reg = <0 0xec700000 0 0x10000>;
++			interrupts =	<0 350 IRQ_TYPE_LEVEL_HIGH
++					 0 320 IRQ_TYPE_LEVEL_HIGH
++					 0 321 IRQ_TYPE_LEVEL_HIGH
++					 0 322 IRQ_TYPE_LEVEL_HIGH
++					 0 323 IRQ_TYPE_LEVEL_HIGH
++					 0 324 IRQ_TYPE_LEVEL_HIGH
++					 0 325 IRQ_TYPE_LEVEL_HIGH
++					 0 326 IRQ_TYPE_LEVEL_HIGH
++					 0 327 IRQ_TYPE_LEVEL_HIGH
++					 0 328 IRQ_TYPE_LEVEL_HIGH
++					 0 329 IRQ_TYPE_LEVEL_HIGH
++					 0 330 IRQ_TYPE_LEVEL_HIGH
++					 0 331 IRQ_TYPE_LEVEL_HIGH
++					 0 332 IRQ_TYPE_LEVEL_HIGH
++					 0 333 IRQ_TYPE_LEVEL_HIGH
++					 0 334 IRQ_TYPE_LEVEL_HIGH
++					 0 335 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12", "ch13", "ch14", "ch15";
++			clocks = <&cpg CPG_MOD 502>;
++			clock-names = "fck";
++			power-domains = <&cpg>;
++			#dma-cells = <1>;
++			dma-channels = <16>;
++		};
++
++		audma1: dma-controller@ec720000 {
++			compatible = "renesas,rcar-dmac";
++			reg = <0 0xec720000 0 0x10000>;
++			interrupts =	<0 351 IRQ_TYPE_LEVEL_HIGH
++					 0 336 IRQ_TYPE_LEVEL_HIGH
++					 0 337 IRQ_TYPE_LEVEL_HIGH
++					 0 338 IRQ_TYPE_LEVEL_HIGH
++					 0 339 IRQ_TYPE_LEVEL_HIGH
++					 0 340 IRQ_TYPE_LEVEL_HIGH
++					 0 341 IRQ_TYPE_LEVEL_HIGH
++					 0 342 IRQ_TYPE_LEVEL_HIGH
++					 0 343 IRQ_TYPE_LEVEL_HIGH
++					 0 344 IRQ_TYPE_LEVEL_HIGH
++					 0 345 IRQ_TYPE_LEVEL_HIGH
++					 0 346 IRQ_TYPE_LEVEL_HIGH
++					 0 347 IRQ_TYPE_LEVEL_HIGH
++					 0 348 IRQ_TYPE_LEVEL_HIGH
++					 0 349 IRQ_TYPE_LEVEL_HIGH
++					 0 382 IRQ_TYPE_LEVEL_HIGH
++					 0 383 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12", "ch13", "ch14", "ch15";
++			clocks = <&cpg CPG_MOD 501>;
++			clock-names = "fck";
++			power-domains = <&cpg>;
++			#dma-cells = <1>;
++			dma-channels = <16>;
++		};
++
+ 		pfc: pfc@e6060000 {
+ 			compatible = "renesas,pfc-r8a7795";
+ 			reg = <0 0xe6060000 0 0x50c>;
 -- 
 2.1.4
 
