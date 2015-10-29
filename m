@@ -1,59 +1,45 @@
-From: Matt Fleming <matt@codeblueprint.co.uk>
-Date: Mon, 12 Oct 2015 08:56:16 +0000
-Subject: Re: [PATCH] sh: add copy_user_page() alias for __copy_user()
-Message-Id: <20151012085616.GA2579@codeblueprint.co.uk>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 29 Oct 2015 19:19:16 +0000
+Subject: [PATCH] i2c: rcar: make sure clocks are on when doing hw init
+Message-Id: <1446146356-26166-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1442958411-4271-1-git-send-email-ross.zwisler@linux.intel.com>
- <20151008230734.GB19399@linux.intel.com>
-In-Reply-To: <20151008230734.GB19399@linux.intel.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Ross Zwisler <ross.zwisler@linux.intel.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, Matthew Wilcox <willy@linux.intel.com>, linux-fsdevel@vger.kernel.org
-Cc: Andrew Morton <akpm@linux-foundation.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Thu, 08 Oct, at 05:07:34PM, Ross Zwisler wrote:
-> On Tue, Sep 22, 2015 at 03:46:51PM -0600, Ross Zwisler wrote:
-> > copy_user_page() is needed by DAX.  Without this we get a compile error
-> > for DAX on SH:
-> > 
-> > fs/dax.c:280:2: error: implicit declaration of function ‘copy_user_page’
-> > [-Werror=implicit-function-declaration]
-> >   copy_user_page(vto, (void __force *)vfrom, vaddr, to);
-> >     ^
-> > 
-> > This was done with a random config that happened to include DAX support.
-> > 
-> > This patch has only been compile tested.
-> > 
-> > Signed-off-by: Ross Zwisler <ross.zwisler@linux.intel.com>
-> > Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> > ---
-> > Apologies for the resend, I wanted to add some more recipients.
-> > ---
-> >  arch/sh/include/asm/page.h | 1 +
-> >  1 file changed, 1 insertion(+)
-> > 
-> > diff --git a/arch/sh/include/asm/page.h b/arch/sh/include/asm/page.h
-> > index fe20d14..ceb5201 100644
-> > --- a/arch/sh/include/asm/page.h
-> > +++ b/arch/sh/include/asm/page.h
-> > @@ -59,6 +59,7 @@ pages_do_alias(unsigned long addr1, unsigned long addr2)
-> >  
-> >  #define clear_page(page)	memset((void *)(page), 0, PAGE_SIZE)
-> >  extern void copy_page(void *to, void *from);
-> > +#define copy_user_page(to, from, vaddr, pg)  __copy_user(to, from, PAGE_SIZE)
-> >  
-> >  struct page;
-> >  struct vm_area_struct;
-> 
-> Ping?
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Your best bet is probably to Cc Andrew (now Cc'd).
+Reported-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-rcar.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-Andrew, original patch is here,
-
-  https://lkml.kernel.org/r/1442958411-4271-1-git-send-email-ross.zwisler@linux.intel.com
-
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 616433d387cdb2..ef26e933b1e9cb 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -612,7 +612,10 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 	if (IS_ERR(priv->io))
+ 		return PTR_ERR(priv->io);
+ 
++	pm_runtime_enable(dev);
++	pm_runtime_get_sync(dev);
+ 	rcar_i2c_init(priv);
++	pm_runtime_put(dev);
+ 
+ 	irq = platform_get_irq(pdev, 0);
+ 	init_waitqueue_head(&priv->wait);
+@@ -634,7 +637,6 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 		return ret;
+ 	}
+ 
+-	pm_runtime_enable(dev);
+ 	platform_set_drvdata(pdev, priv);
+ 
+ 	ret = i2c_add_numbered_adapter(adap);
 -- 
-Matt Fleming, Intel Open Source Technology Center
+2.1.4
+
