@@ -1,18 +1,63 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Oct 2015 05:10:53 +0000
-Subject: Re: [PATCH 0/3] ARM: shmobile: Misc Cleanups
-Message-Id: <20151001051052.GC15910@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 29 Oct 2015 23:27:51 +0000
+Subject: [PATCH v5 05/14] arm64: renesas: r8a7795: Sound DVC support
+Message-Id: <1446161280-23097-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443628220-1352-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1443628220-1352-1-git-send-email-geert+renesas@glider.be>
+References: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 30, 2015 at 05:50:17PM +0200, Geert Uytterhoeven wrote:
-> 	Hi Simon, Magnus,
-> 
-> This patch series contains a few cleanups.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I have queued these up.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+
+v5 [Simon Horman]
+* Update for new CPG/MSSR bindings via Geert Uytterhoeven
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 618989528b67..03690b12f44b 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -375,6 +375,7 @@
+ 				 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
+ 				 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
+ 				 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
++				 <&cpg CPG_MOD 1019>, <&cpg CPG_MOD 1018>,
+ 				 <&audio_clk_a>, <&audio_clk_b>,
+ 				 <&audio_clk_c>,
+ 				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
+@@ -385,10 +386,22 @@
+ 				      "src.9", "src.8", "src.7", "src.6",
+ 				      "src.5", "src.4", "src.3", "src.2",
+ 				      "src.1", "src.0",
++				      "dvc.0", "dvc.1",
+ 				      "clk_a", "clk_b", "clk_c", "clk_i";
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
+ 
++			rcar_sound,dvc {
++				dvc0: dvc@0 {
++					dmas = <&audma0 0xbc>;
++					dma-names = "tx";
++				};
++				dvc1: dvc@1 {
++					dmas = <&audma0 0xbe>;
++					dma-names = "tx";
++				};
++			};
++
+ 			rcar_sound,src {
+ 				src0: src@0 {
+ 					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
+-- 
+2.1.4
+
