@@ -1,41 +1,81 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 15 Oct 2015 00:33:50 +0000
-Subject: [PATCH 2/6] ARM: shmobile: r8a7778: Make r8a7778_init_irq_dt() static
-Message-Id: <20e73335dc35bf5e200173e6ed99f6a2b32f8857.1444868660.git.horms+renesas@verge.net.au>
+Date: Thu, 29 Oct 2015 23:27:49 +0000
+Subject: [PATCH v5 03/14] arm64: renesas: r8a7795: Sound SSI DMA support
+Message-Id: <1446161280-23097-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444868660.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444868660.git.horms+renesas@verge.net.au>
+References: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-As of commit 4baadb9e05c68962 ("ARM: shmobile: r8a7778: remove obsolete
-setup code"), r8a7778_init_irq_dt() is no longer used outside
-setup-r8a7778.c.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7778.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index b0c9986d022d..0ab9d3272875 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -42,7 +42,8 @@ static void __init r8a7778_timer_init(void)
- 
- #define INT2NTSR0	0x00018 /* 0xfe700018 */
- #define INT2NTSR1	0x0002c /* 0xfe70002c */
--void __init r8a7778_init_irq_dt(void)
-+
-+static void __init r8a7778_init_irq_dt(void)
- {
- 	void __iomem *base = ioremap_nocache(0xfe700000, 0x00100000);
- 
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 928976be06f0..60d8813c092c 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -384,33 +384,53 @@
+ 			rcar_sound,ssi {
+ 				ssi0: ssi@0 {
+ 					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x01>, <&audma1 0x02>, <&audma0 0x15>, <&audma1 0x16>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi1: ssi@1 {
+ 					 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x03>, <&audma1 0x04>, <&audma0 0x49>, <&audma1 0x4a>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi2: ssi@2 {
+ 					interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x05>, <&audma1 0x06>, <&audma0 0x63>, <&audma1 0x64>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi3: ssi@3 {
+ 					interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x07>, <&audma1 0x08>, <&audma0 0x6f>, <&audma1 0x70>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi4: ssi@4 {
+ 					interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x09>, <&audma1 0x0a>, <&audma0 0x71>, <&audma1 0x72>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi5: ssi@5 {
+ 					interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x0b>, <&audma1 0x0c>, <&audma0 0x73>, <&audma1 0x74>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi6: ssi@6 {
+ 					interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x0d>, <&audma1 0x0e>, <&audma0 0x75>, <&audma1 0x76>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi7: ssi@7 {
+ 					interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x0f>, <&audma1 0x10>, <&audma0 0x79>, <&audma1 0x7a>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi8: ssi@8 {
+ 					interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x11>, <&audma1 0x12>, <&audma0 0x7b>, <&audma1 0x7c>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi9: ssi@9 {
+ 					interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x13>, <&audma1 0x14>, <&audma0 0x7d>, <&audma1 0x7e>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 			};
+ 		};
 -- 
 2.1.4
 
