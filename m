@@ -1,51 +1,59 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 26 Oct 2015 08:12:34 +0000
-Subject: [PATCH v3 6/7] usb: host: xhci-plat: add support for the R-Car M2-N xHCI controller
-Message-Id: <1445847155-5468-7-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 29 Oct 2015 23:27:46 +0000
+Subject: [PATCH v5 00/14] arm64: renesas: add sound support
+Message-Id: <1446161280-23097-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds support for R-Car M2-N (r8a7793) xHCI controller.
-This SoC is compatible with R-Car H2 (r8a7790) and R-Car M2-W (r8a7791).
+Hi,
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- Documentation/devicetree/bindings/usb/usb-xhci.txt | 4 ++--
- drivers/usb/host/xhci-plat.c                       | 3 +++
- 2 files changed, 5 insertions(+), 2 deletions(-)
+these patches add sound support to the r8a7795/Salvator-X.
 
-diff --git a/Documentation/devicetree/bindings/usb/usb-xhci.txt b/Documentation/devicetree/bindings/usb/usb-xhci.txt
-index 86f67f0..106299a 100644
---- a/Documentation/devicetree/bindings/usb/usb-xhci.txt
-+++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
-@@ -3,8 +3,8 @@ USB xHCI controllers
- Required properties:
-   - compatible: should be one of "generic-xhci",
-     "marvell,armada-375-xhci", "marvell,armada-380-xhci",
--    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791" (deprecated:
--    "xhci-platform").
-+    "renesas,xhci-r8a7790", "renesas,xhci-r8a7791", "renesas,xhci-r8a7793"
-+    (deprecated: "xhci-platform").
-   - reg: should contain address and length of the standard XHCI
-     register set for the device.
-   - interrupts: one XHCI interrupt should be described here.
-diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
-index a471f12..0113e79 100644
---- a/drivers/usb/host/xhci-plat.c
-+++ b/drivers/usb/host/xhci-plat.c
-@@ -97,6 +97,9 @@ static const struct of_device_id usb_xhci_of_match[] = {
- 		.compatible = "renesas,xhci-r8a7791",
- 		.data = &xhci_plat_renesas_rcar_gen2,
- 	}, {
-+		.compatible = "renesas,xhci-r8a7793",
-+		.data = &xhci_plat_renesas_rcar_gen2,
-+	}, {
- 	},
- };
- MODULE_DEVICE_TABLE(of, usb_xhci_of_match);
+These patches are an update of work by Kuninori Morimoto,
+broken out of a larger patchset posted by him.
+
+The main change to the patches themselves since Morimoto-san's v3 posting
+and v4 updates to that posting is to update to new CPG/MSSR bindings via
+Geert Uytterhoeven.
+
+Morimoto-san, I would be most grateful if you could look over this and repost
+if there are problems.
+
+Base:
+
+* "[PATCH v4 0/3] arm64: renesas: r8a7795: add I2C support"
+  This can be found in the topic/r8a7795-i2c-v4 branch of
+  my renesas tree on kernel.org.
+
+Availability:
+* This patchset is available in the  topic/r8a7795-sound-v5 branch of my
+  renesas tree on kernel.org
+
+
+Kuninori Morimoto (14):
+  arm64: renesas: r8a7795: add AUDIO_DMAC support
+  arm64: renesas: r8a7795: Sound SSI PIO support
+  arm64: renesas: r8a7795: Sound SSI DMA support
+  arm64: renesas: r8a7795: Sound SRC support
+  arm64: renesas: r8a7795: Sound DVC support
+  arm64: renesas: r8a7795: Sound CTU/MIX support
+  arm64: renesas: salvator-x: Sound SSI PIO support
+  arm64: renesas: salvator-x: Sound SSI DMA support
+  arm64: renesas: salvator-x: Sound SSI DMA support via BUSIF
+  arm64: renesas: salvator-x: Sound SRC support
+  arm64: renesas: salvator-x: Sound DVC support
+  arm64: defconfig: add Renesas sound and AK4613 support
+  arm64: defconfig: add Renesas R-Car DMAC driver support
+  arm64: defconfig: add CS2000 driver support
+
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 113 +++++++++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 273 +++++++++++++++++++++
+ arch/arm64/configs/defconfig                       |   8 +
+ 3 files changed, 394 insertions(+)
+
 -- 
-1.9.1
+2.1.4
 
