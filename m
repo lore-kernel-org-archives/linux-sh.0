@@ -1,7 +1,7 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 30 Oct 2015 14:07:44 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 30 Oct 2015 14:24:57 +0000
 Subject: Re: [PATCH] pinctrl: sh-pfc: r8a7795: Make PORT_GP_x() macros consistent
-Message-Id: <CACRpkdZ=xher-CLsNWaTCbrVyp61rQ1vXjB60B5Pi0_77-6idQ@mail.gmail.com>
+Message-Id: <13270943.yfEHAtTNEp@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1446147587-20216-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1446147587-20216-1-git-send-email-geert+renesas@glider.be>
@@ -9,24 +9,101 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
 
-On Thu, Oct 29, 2015 at 8:39 PM, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+Hi Geert,
 
+Thank you for the patch.
+
+On Thursday 29 October 2015 20:39:47 Geert Uytterhoeven wrote:
 > On r8a7795, PORT_GP_x() is a macro for defining GPIOs 0..x.
 > In all other sh-pfc code, PORT_GP_x() is a macro for defining GPIOs
 > 0..(x-1).
->
+> 
 > Make the r8a7795 macro definitions consistent with the rest of the
 > sh-pfc codebase.
->
+> 
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Counting on you to stack this up again, but let's save the next pull
-request until after the merge window.
+> ---
+>  drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 36 +++++++++++++++++----------------
+>  1 file changed, 18 insertions(+), 18 deletions(-)
+> 
+> diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+> b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c index
+> 7ddb2adfc5a53d7b..29d001b8a727e154 100644
+> --- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+> +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+> @@ -13,12 +13,12 @@
+>  #include "core.h"
+>  #include "sh_pfc.h"
+> 
+> -#define PORT_GP_3(bank, fn, sfx)					\
+> +#define PORT_GP_4(bank, fn, sfx)					\
+>  	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
+>  	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx)
+> 
+> -#define PORT_GP_14(bank, fn, sfx)					\
+> -	PORT_GP_3(bank, fn, sfx),					\
+> +#define PORT_GP_15(bank, fn, sfx)					\
+> +	PORT_GP_4(bank, fn, sfx),					\
+>  	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
+>  	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
+>  	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
+> @@ -26,33 +26,33 @@
+>  	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
+>  	PORT_GP_1(bank, 14, fn, sfx)
+> 
+> -#define PORT_GP_15(bank, fn, sfx)					\
+> -	PORT_GP_14(bank, fn, sfx),   PORT_GP_1(bank, 15, fn, sfx)
+> +#define PORT_GP_16(bank, fn, sfx)					\
+> +	PORT_GP_15(bank, fn, sfx),   PORT_GP_1(bank, 15, fn, sfx)
+> 
+> -#define PORT_GP_17(bank, fn, sfx)					\
+> -	PORT_GP_15(bank, fn, sfx),					\
+> +#define PORT_GP_18(bank, fn, sfx)					\
+> +	PORT_GP_16(bank, fn, sfx),					\
+>  	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx)
+> 
+> -#define PORT_GP_25(bank, fn, sfx)					\
+> -	PORT_GP_17(bank, fn, sfx),					\
+> +#define PORT_GP_26(bank, fn, sfx)					\
+> +	PORT_GP_18(bank, fn, sfx),					\
+>  	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
+>  	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
+>  	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
+>  	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx)
+> 
+> -#define PORT_GP_27(bank, fn, sfx)					\
+> -	PORT_GP_25(bank, fn, sfx),					\
+> +#define PORT_GP_28(bank, fn, sfx)					\
+> +	PORT_GP_26(bank, fn, sfx),					\
+>  	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx)
+> 
+>  #define CPU_ALL_PORT(fn, sfx)						\
+> -	PORT_GP_15(0, fn, sfx),						\
+> -	PORT_GP_27(1, fn, sfx),						\
+> -	PORT_GP_14(2, fn, sfx),						\
+> -	PORT_GP_15(3, fn, sfx),						\
+> -	PORT_GP_17(4, fn, sfx),						\
+> -	PORT_GP_25(5, fn, sfx),						\
+> +	PORT_GP_16(0, fn, sfx),						\
+> +	PORT_GP_28(1, fn, sfx),						\
+> +	PORT_GP_15(2, fn, sfx),						\
+> +	PORT_GP_16(3, fn, sfx),						\
+> +	PORT_GP_18(4, fn, sfx),						\
+> +	PORT_GP_26(5, fn, sfx),						\
+>  	PORT_GP_32(6, fn, sfx),						\
+> -	PORT_GP_3(7, fn, sfx)
+> +	PORT_GP_4(7, fn, sfx)
+>  /*
+>   * F_() : just information
+>   * FM() : macro for FN_xxx / xxx_MARK
 
-Yours,
-Linus Walleij
+-- 
+Regards,
+
+Laurent Pinchart
+
