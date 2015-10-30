@@ -1,104 +1,45 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 30 Oct 2015 13:47:25 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 30 Oct 2015 13:57:14 +0000
 Subject: Re: [PATCH v5 2/5] clk: shmobile: div6: Make clock-output-names optional
-Message-Id: <5167960.XIHmLIjGds@avalon>
+Message-Id: <CAMuHMdWkxzCommSv1UNY=LesAER_uFfkPfbuG3JLHYUtf2-mwg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446117664-6037-1-git-send-email-geert+renesas@glider.be> <1446117664-6037-3-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1446117664-6037-3-git-send-email-geert+renesas@glider.be>
+References: <1446117664-6037-1-git-send-email-geert+renesas@glider.be>
+	<1446117664-6037-3-git-send-email-geert+renesas@glider.be>
+	<5167960.XIHmLIjGds@avalon>
+In-Reply-To: <5167960.XIHmLIjGds@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms+renesas@verge.net.au>, linux-clk@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms+renesas@verge.net.au>, linux-clk <linux-clk@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-Hi Geert,
+On Fri, Oct 30, 2015 at 2:47 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Thursday 29 October 2015 12:21:01 Geert Uytterhoeven wrote:
+>> Renesas DIV6 clocks provide a single clock output.  Hence make the
+>> "clock-output-names" DT property optional instead of mandatory. In case
+>> the DT property is omitted the DT node name will be used.
+>>
+>> Rename the variable "name" to "clk_name" to make the code more similar
+>> with fixed-factor-clock.c, and to avoid a conflict with a nested local
+>> variable while we're at it.
+>>
+>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>> ---
+>> v5:
+>>   - Integrated in this series as a dependency.
+>
+> The patch looks sane, by why is it a dependency ?
 
-Thank you for the patch.
+Sorry, the cover letter is clearer about this: "contextual dependency".
 
-On Thursday 29 October 2015 12:21:01 Geert Uytterhoeven wrote:
-> Renesas DIV6 clocks provide a single clock output.  Hence make the
-> "clock-output-names" DT property optional instead of mandatory. In case
-> the DT property is omitted the DT node name will be used.
-> 
-> Rename the variable "name" to "clk_name" to make the code more similar
-> with fixed-factor-clock.c, and to avoid a conflict with a nested local
-> variable while we're at it.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> v5:
->   - Integrated in this series as a dependency.
+Gr{oetje,eeting}s,
 
-The patch looks sane, by why is it a dependency ?
+                        Geert
 
-> ---
->  .../devicetree/bindings/clock/renesas,cpg-div6-clocks.txt   |  4 ++++
->  drivers/clk/shmobile/clk-div6.c                             | 13
->  +++----------
->  2 files changed, 7 insertions(+), 10 deletions(-)
-> 
-> diff --git
-> a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-> b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt index
-> 5ddb68418655d569..86008ad354cf4bbd 100644
-> --- a/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-> +++ b/Documentation/devicetree/bindings/clock/renesas,cpg-div6-clocks.txt
-> @@ -20,6 +20,10 @@ Required Properties:
->      clocks must be specified.  For clocks with multiple parents, invalid
->      settings must be specified as "<0>".
->    - #clock-cells: Must be 0
-> +
-> +
-> +Optional Properties:
-> +
->    - clock-output-names: The name of the clock as a free-form string
-> 
-> 
-> diff --git a/drivers/clk/shmobile/clk-div6.c
-> b/drivers/clk/shmobile/clk-div6.c index 036a692c72195db9..c89566a918290246
-> 100644
-> --- a/drivers/clk/shmobile/clk-div6.c
-> +++ b/drivers/clk/shmobile/clk-div6.c
-> @@ -178,10 +178,9 @@ static void __init cpg_div6_clock_init(struct
-> device_node *np) const char **parent_names;
->  	struct clk_init_data init;
->  	struct div6_clock *clock;
-> -	const char *name;
-> +	const char *clk_name = np->name;
->  	struct clk *clk;
->  	unsigned int i;
-> -	int ret;
-> 
->  	clock = kzalloc(sizeof(*clock), GFP_KERNEL);
->  	if (!clock)
-> @@ -215,13 +214,7 @@ static void __init cpg_div6_clock_init(struct
-> device_node *np) clock->div = (clk_readl(clock->reg) & CPG_DIV6_DIV_MASK) +
-> 1;
-> 
->  	/* Parse the DT properties. */
-> -	ret = of_property_read_string(np, "clock-output-names", &name);
-> -	if (ret < 0) {
-> -		pr_err("%s: failed to get %s DIV6 clock output name\n",
-> -		       __func__, np->name);
-> -		goto error;
-> -	}
-> -
-> +	of_property_read_string(np, "clock-output-names", &clk_name);
-> 
->  	for (i = 0, valid_parents = 0; i < num_parents; i++) {
->  		const char *name = of_clk_get_parent_name(np, i);
-> @@ -255,7 +248,7 @@ static void __init cpg_div6_clock_init(struct
-> device_node *np) }
-> 
->  	/* Register the clock. */
-> -	init.name = name;
-> +	init.name = clk_name;
->  	init.ops = &cpg_div6_clock_ops;
->  	init.flags = CLK_IS_BASIC;
->  	init.parent_names = parent_names;
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
--- 
-Regards,
-
-Laurent Pinchart
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
