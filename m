@@ -1,51 +1,35 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 14 Oct 2015 07:12:26 +0000
-Subject: Re: renesas-drivers-2015-10-13-v4.3-rc5
-Message-Id: <CAMuHMdUPjA2TKBjN=X_Kgft0G+iG1yhdSsXB3PMmBODwYhQYDw@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 30 Oct 2015 09:25:20 +0000
+Subject: [PATCH] arm64: renesas: salvator-x: Setup ethernet0 alias for U-Boot
+Message-Id: <1446197120-4640-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444732125-12741-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1444732125-12741-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Laurent Pinchart <Laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-Hi Simon,
+Add an ethernet0 alias for the wired network card so that U-Boot can
+find the device-node and add an appropriate "local-mac-address"
+property.
 
-On Wed, Oct 14, 2015 at 9:09 AM, Simon Horman <horms@verge.net.au> wrote:
->> >>     However, in the light of "[PATCH/RFC v3 0/3] clk: shmobile: Add new
->> >>     Renesas CPG/MSSR DT bindings"
->> >>     (http://www.spinics.net/lists/devicetree/msg97237.html), all of the
->> >>     above are temporary solutions.
->> >
->> > I would like to update topic/arm64-rcar-gen3-v10.1 and post
->> > as v11 for further review both here and in the broader Linux ARM community
->> > at linux-arm-kernel@lists.infradead.org.
->> >
->> > Do you recommend updating that patchset for the above? If so in
->> > which way do you recommend updating it?
->>
->> I'm afraid there's not much you can do before I have a new CPG/MSSR
->> driver that works.
->>
->> You can start updating the dtsi, but you can't test it, and I had to do the same
->> updates to test my driver anyway.
->
-> My motivation for posting v11 is to get more eyes on the code.
-> I think its fine to state that the CPG bindings are expected to
-> change. With that in mind I think it would be best not to make any changes
-> to topic/arm64-rcar-gen3-v10.1 in that regard for v11. Does that sound
-> sensible?
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 1 +
+ 1 file changed, 1 insertion(+)
 
-Yes, that's fine. Thanks!
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index 86b70ce3d0599d6e..d16506338f020427 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -41,6 +41,7 @@
+ 	aliases {
+ 		serial0 = &scif2;
+ 		serial1 = &scif1;
++		ethernet0 = &avb;
+ 	};
+ 
+ 	chosen {
+-- 
+1.9.1
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
