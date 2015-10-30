@@ -1,60 +1,34 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 23 Oct 2015 07:38:33 +0000
-Subject: Re: of_mdiobus_register_phy() and deferred probe
-Message-Id: <CAMuHMdUpeHXze=BMRsafWbzHT8WL9L+WO5xbO7niqk0wi_eRJQ@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 30 Oct 2015 02:29:36 +0000
+Subject: [PATCH] arm64: renesas: salvator-x: add missing AUDIO_CLKx/AUDIO_CLKOUTx
+Message-Id: <87a8r1gkkk.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAMuHMdX+_0Cf0VwmKDtcfMNwaPEN5jvjZQUXg6MKMJa+cvYz3w@mail.gmail.com>
-	<56294202.5020507@cogentembedded.com>
-In-Reply-To: <56294202.5020507-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
-Cc: Florian Fainelli <f.fainelli-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Frank Rowand <frowand.list-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Grant Likely <grant.likely-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, "netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-Hi Sergei,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Thu, Oct 22, 2015 at 10:07 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> On 10/22/2015 04:31 PM, Geert Uytterhoeven wrote:
->
->> Due to a probe deferral of an interrupt controller[1], the Micrel
->> Ethernet PHY on
->> r8a7791/koelsch started failing to get its IRQ:
->>
->>      no irq domain found for /interrupt-controller@e61c0000 !
->>
->> However, of_mdiobus_register_phy() uses irq_of_parse_and_map(), which
->> plainly
->> ignores EPROBE_DEFER, and it just continues.
->>
->> Later I get:
->>
->>      sh-eth ee700000.ethernet eth0: attached PHY 1 (IRQ -1) to driver
->> Micrel KSZ8041RNLI
->>
->> instead of
->>
->>      sh-eth ee700000.ethernet eth0: attached PHY 1 (IRQ 408) to driver
->> Micrel KSZ8041RNLI
->>
->> Ethernet still works, as the interrupt seems to be unneeded(?).
->
->    Yes, the phylib uses PHY polling anyway, IRQ isn't strictly necessary.
->
->> Has anyone already looked into fixing of_mdio to handle deferred probing?
->
->    It's the first time I hear about that. Will have to look into this...
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-Thanks a lot!
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index ba31bdc..f3b8dbf 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -102,7 +102,8 @@
+ 	};
+ 
+ 	sound_clk_pins: sound_clk {
+-		renesas,groups = "audio_clkout3_a";
++		renesas,groups = "audio_clk_a_a", "audio_clk_b_a", "audio_clk_c_a",
++				 "audio_clkout_a", "audio_clkout3_a";
+ 		renesas,function = "audio_clk";
+ 	};
+ 
+-- 
+1.9.1
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
