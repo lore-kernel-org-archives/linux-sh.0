@@ -1,55 +1,71 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 30 Oct 2015 07:31:47 +0000
+From: Catalin Marinas <catalin.marinas@arm.com>
+Date: Fri, 30 Oct 2015 11:08:35 +0000
 Subject: Re: [PATCH v12 1/7] arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
-Message-Id: <20151030073146.GD31252@verge.net.au>
+Message-Id: <20151030110835.GB2854@e104818-lin.cambridge.arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1445839312-8874-1-git-send-email-horms+renesas@verge.net.au>
  <1445839312-8874-2-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdWrR0it7pgxQr1e+55GwuXszh8kNUQ3+dyy6WjVJe2+9Q@mail.gmail.com>
-In-Reply-To: <CAMuHMdWrR0it7pgxQr1e+55GwuXszh8kNUQ3+dyy6WjVJe2+9Q@mail.gmail.com>
+ <20151028184504.GG8899@e104818-lin.cambridge.arm.com>
+ <CANqRtoT-7hhAN907KQFYwrP7+B7tVZdDEpp0SPrnXG3YrDbKoQ@mail.gmail.com>
+In-Reply-To: <CANqRtoT-7hhAN907KQFYwrP7+B7tVZdDEpp0SPrnXG3YrDbKoQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Oct 28, 2015 at 09:22:34AM +0100, Geert Uytterhoeven wrote:
-> On Mon, Oct 26, 2015 at 7:01 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > From: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+On Thu, Oct 29, 2015 at 02:15:19PM +0900, Magnus Damm wrote:
+> On Thu, Oct 29, 2015 at 3:45 AM, Catalin Marinas
+> <catalin.marinas@arm.com> wrote:
+> > On Mon, Oct 26, 2015 at 03:01:46PM +0900, Simon Horman wrote:
+> >> --- a/arch/arm64/Kconfig.platforms
+> >> +++ b/arch/arm64/Kconfig.platforms
+> >> @@ -66,6 +66,23 @@ config ARCH_SEATTLE
+> >>       help
+> >>         This enables support for AMD Seattle SOC Family
+> >>
+> >> +config ARCH_SHMOBILE
+> >> +     bool
+> >> +
+> >> +config ARCH_RENESAS
+> >> +     bool "Renesas SoC Platforms"
+> >> +     select ARCH_SHMOBILE
+> >> +     select PINCTRL
+> >> +     select PM_GENERIC_DOMAINS if PM
+> >> +     help
+> >> +       This enables support for the ARMv8 based Renesas SoCs.
+> >> +
+> >> +config ARCH_R8A7795
+> >> +     bool "Renesas R-Car H3 SoC Platform"
+> >> +     depends on ARCH_RENESAS
+> >> +     help
+> >> +       This enables support for the Renesas R-Car H3 SoC.
 > >
-> > Initial version of Renesas R-Car H3 support (V10)
-> >
-> > Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> > Do you need such fine-grained configuration? I'd really like to avoid
+> > individual SoC Kconfig entries and only include SoC families (like
+> > ARCH_RENESAS). There are some which I didn't spot at the time
+> > (ARCH_FSL_LS2085A and ARCH_TEGRA_132_SOC) but we shouldn't continue this
+> > trend any further.
 > 
-> > diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> > new file mode 100644
-> > index 000000000000..aa13115387a6
-> > --- /dev/null
-> > +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> 
-> > +       extal_clk: extal {
-> > +               compatible = "fixed-clock";
-> > +               #clock-cells = <0>;
-> 
-> I would add the same override comment as for extalr here, too.
+> I agree with you about coarse grained configuration in general. I am
+> also wondering how to handle cases where IP varies with SoC version.
+> =)
 
-Thanks, I will fix that.
+The code should cope with multiple drivers built into the kernel anyway,
+single Image is a hard requirement. If you want to trim down an image
+for a specific SoC (production kernel), just use individual Kconfig
+entries for drivers that may depend on ARCH_RENESAS but not an
+ARCH_R8A7795 which is used in drivers/ Makefiles.
 
-> > +               clock-frequency = <0>;
-> > +       };
-> > +
-> > +       extalr_clk: extalr {
-> > +               compatible = "fixed-clock";
-> > +               #clock-cells = <0>;
-> > +               /* This value must be overridden by the board */
-> > +               clock-frequency = <0>;
-> > +       };
-> 
-> Nevertheless:
-> 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> The two most common cases with SoC-specific IP for Renesas SoCs tend
+> to be Pinctrl which is using rather large tables to support the PFC
+> hardware and also the clocks (CCF) that drives the SoC specific CPG
+> hardware. For the PFC and CPG I think it makes sense to enable build
+> based on SoC model like we do already, but for the Kconfig bits in
+> arch/arm64 perhaps ARCH_RENESAS can simply select ARCH_R8A7795?
 
-Thanks!
+I'm suggesting the other way around: CONFIG_PINCTRL_R8A7795 which
+depends on ARCH_RENESAS, default y. Similarly for clocks and other
+drivers.
+
+-- 
+Catalin
