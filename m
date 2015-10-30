@@ -1,49 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 30 Oct 2015 13:06:48 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 30 Oct 2015 13:16:03 +0000
 Subject: Re: [PATCH] arm64: renesas: salvator-x: Setup ethernet0 alias for U-Boot
-Message-Id: <5186464.J3dvUFu6c7@avalon>
+Message-Id: <CAMuHMdXUyL=v2wv8-zfOi0bH6fbs5bnHvDKE2yeaAi-6Ltz1Vg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1446197120-4640-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1446197120-4640-1-git-send-email-geert+renesas@glider.be>
+	<5186464.J3dvUFu6c7@avalon>
+In-Reply-To: <5186464.J3dvUFu6c7@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Wolfram Sang <wsa@the-dreams.de>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Wolfram Sang <wsa@the-dreams.de>, Linux-sh list <linux-sh@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Hi Geert,
+On Fri, Oct 30, 2015 at 2:06 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> On Friday 30 October 2015 10:25:20 Geert Uytterhoeven wrote:
+>> Add an ethernet0 alias for the wired network card so that U-Boot can
+>> find the device-node and add an appropriate "local-mac-address"
+>> property.
+>
+> I like that :-) Can U-Boot add the property ? I thought it needed a
+> placeholder.
 
-Thank you for the patch.
+At least for Salvator-X it does. See also the thread at
+http://www.spinics.net/lists/arm-kernel/msg456841.html
 
-On Friday 30 October 2015 10:25:20 Geert Uytterhoeven wrote:
-> Add an ethernet0 alias for the wired network card so that U-Boot can
-> find the device-node and add an appropriate "local-mac-address"
-> property.
+Gr{oetje,eeting}s,
 
-I like that :-) Can U-Boot add the property ? I thought it needed a 
-placeholder.
+                        Geert
 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-> b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts index
-> 86b70ce3d0599d6e..d16506338f020427 100644
-> --- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-> +++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-> @@ -41,6 +41,7 @@
->  	aliases {
->  		serial0 = &scif2;
->  		serial1 = &scif1;
-> +		ethernet0 = &avb;
->  	};
-> 
->  	chosen {
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
--- 
-Regards,
-
-Laurent Pinchart
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
