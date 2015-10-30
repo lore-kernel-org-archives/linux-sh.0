@@ -1,7 +1,9 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Fri, 30 Oct 2015 11:51:47 +0000
-Subject: RE: [PATCH 0/4] PCI: rcar: Add support for ARM64 and multiple instances
-Message-Id: <PS1PR06MB11805309BF760C14F4894EAEF52F0@PS1PR06MB1180.apcprd06.prod.outlook.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Fri, 30 Oct 2015 12:04:08 +0000
+Subject: Re: [PATCH 0/4] PCI: rcar: Add support for ARM64 and multiple instances
+Message-Id: <20151030120408.GE25117@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="a+b56+3nqLzpiR9O"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
  <20151029123755.GC2351@katana>
@@ -9,68 +11,62 @@ References: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
  <20151029163930.GC22218@katana>
  <PS1PR06MB11804B39B09D6FCAA9B3D9DCF5200@PS1PR06MB1180.apcprd06.prod.outlook.com>
  <20151029184800.GB8992@katana>
-In-Reply-To: <20151029184800.GB8992@katana>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
+ <PS1PR06MB11805309BF760C14F4894EAEF52F0@PS1PR06MB1180.apcprd06.prod.outlook.com>
+In-Reply-To: <PS1PR06MB11805309BF760C14F4894EAEF52F0@PS1PR06MB1180.apcprd06.prod.outlook.com>
+To: Phil Edworthy <phil.edworthy@renesas.com>
 Cc: Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-Hi Wolfram,
 
-On 29 October 2015 18:48, Wolfram wrote:
-> On Thu, Oct 29, 2015 at 04:44:06PM +0000, Phil Edworthy wrote:
-> > Hi Wolfram,
-> >
-> > On 29 October 2015 16:40, Wolfram wrote:
-> > > > Ouch, my bad. I have been working with our out-of-tree BSP for the
-> Salvator-X
-> > > board on
-> > > > http://git.kernel.org/cgit/linux/kernel/git/horms/renesas-bsp.git,  rcar-
-> 3.0.2
-> > > tag along
-> > > > with some patches from colleagues. I hadn't noticed this patch:
-> > >
-> > > Thanks! Any plans for pushing this upstream? We will have the build error
-> > > otherwise...
-> > After some digging, that patch won't be accepted upstream. I'm looking into
-> how the
-> > driver can be modified so it doesn't need to call this, but I don't expect a small
-> or
-> > imminent fix.
-> 
-> Yes, I'd think so, too. However, a fix for 4.4 would be needed to
-> prevent having a final release with a build error.
-Hopefully, Geert's patch will be applied to avoid build errors in both the
-rcar-pcie and rcar-pci-gen2 (internal USB bridge) drivers. Meanwhile I'll fix
-the rcar-pcie driver properly for arm64.
+--a+b56+3nqLzpiR9O
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
 
-> > > > > Any news if this is really HW related?
-> > > > I found out that the PCIe controller HW only supports 32-bit AXI bus
-> addresses,
-> > > so it
-> > > > works fine if you limit the available memory. The driver will need some work
-> to
-> > > use
-> > > > the IPMMU at some point.
-> > >
-> > > Ah, okay.
-> > >
-> > > Can you send the dts patches, too? I checked the BSP this time, but to
-> > > no avail...
-> > I will once I sort out the arm64 IO resources problem and the MSI problem.
-> 
-> What MSI problem?
-I was told that rcar pcie on v4.3-rc5 had an issue with MSI. I've since checked
-That both v4.3-rc7 and next work ok out of the box on the Koelsch board.
-There are some problems with next (mstp related), but it doesn't stop the
-board booting and being able to test pcie. Since shmobile arm64 is not in
-next yet, I have not checked this.
- 
-> And can't you send the DTS patches as RFC so I can add some testing?
-Sure, though what tree? As I mentioned above, next doesn't have
-shmobile arm64 yet.
+> Hopefully, Geert's patch will be applied to avoid build errors in both the
+> rcar-pcie and rcar-pci-gen2 (internal USB bridge) drivers. Meanwhile I'll fix
+> the rcar-pcie driver properly for arm64.
 
-Thanks
-Phil
+Thanks for taking care.
+
+> > What MSI problem?
+> I was told that rcar pcie on v4.3-rc5 had an issue with MSI.
+
+Okay, we'll see. I only have remote access to a Koelsch board, but my
+own Salvator. And a USB3 PCIE card. That would be my primary test setup.
+
+> > And can't you send the DTS patches as RFC so I can add some testing?
+> Sure, though what tree? As I mentioned above, next doesn't have
+> shmobile arm64 yet.
+
+I use renesas-drivers:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git renesas-drivers-2015-10-27-v4.3-rc7
+
+Thanks,
+
+   Wolfram
+
+
+--a+b56+3nqLzpiR9O
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJWM1y4AAoJEBQN5MwUoCm2g4YP+gNg09/8VHAE4OpROqXRm5fw
+Ni0FuaeMdaUH57LHy/pGWaFXzoROgqqiPC2Nou6zdNY1kD2Wkklj8mF9x5HbIi9b
+VXR5BTZZ04y6mmlgIFrXi2bpN1XGnfUhwvqD9SILM9n1BFRS2IAH1XkG3qJ6XjUZ
+0E7see8ffbUW6oHKLuTvJo3PcN74XOd+/3DKcPqONOa1BzhllCyCMQ+RbMSA9gNn
+58ISZwFgGkM29yqfNS5tzIcWqNARR+SNZBDC1iWZ+OufKPvj4fZFAZjMBQad0Gfm
+OyCMRmBP8+g8u1lXBqRaH9LFDy4xLEnnHO0UrPECL/tkENqMCkT2upew3ClEsD2M
+eB7aOkUPMtjhGiMor5NqofnuifUPVFGBp3tYXN18Yz12FyytFKVrxiCBZ5EXAf6I
+S7E7KS//JaCO6cZ5ousw5POQSiPFgtH4mkz8FFSoNpm+Fsde7mfhBEhr26E1wJwx
+JBhoAFEU6oE+FRHnWorwv5lTWsTFp82eF/rbrr1Bz2zugo+RXnOtOcEQA5h2bhwf
+eJPWDVT8U9QJppkxv3mc/nMWerPHOOE/xmZ2DYo4CRwLW0IT/GuGDG5rntlYl4Xs
+4ZD0XLpDvRm54Qjq1mi+PCyd/vKFpZYVDvYlCxiBDWtNpu59Ee/Xqas+nyuH4VRY
+FlBD6AfmqI0enGAs7//v
+=j/UL
+-----END PGP SIGNATURE-----
+
+--a+b56+3nqLzpiR9O--
