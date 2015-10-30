@@ -1,9 +1,7 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Fri, 30 Oct 2015 12:04:08 +0000
+From: Bjorn Helgaas <helgaas@kernel.org>
+Date: Fri, 30 Oct 2015 13:31:51 +0000
 Subject: Re: [PATCH 0/4] PCI: rcar: Add support for ARM64 and multiple instances
-Message-Id: <20151030120408.GE25117@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="a+b56+3nqLzpiR9O"
+Message-Id: <20151030133150.GA17889@localhost>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
  <20151029123755.GC2351@katana>
@@ -11,62 +9,86 @@ References: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
  <20151029163930.GC22218@katana>
  <PS1PR06MB11804B39B09D6FCAA9B3D9DCF5200@PS1PR06MB1180.apcprd06.prod.outlook.com>
  <20151029184800.GB8992@katana>
- <PS1PR06MB11805309BF760C14F4894EAEF52F0@PS1PR06MB1180.apcprd06.prod.outlook.com>
-In-Reply-To: <PS1PR06MB11805309BF760C14F4894EAEF52F0@PS1PR06MB1180.apcprd06.prod.outlook.com>
+ <20151029230314.GA11994@localhost>
+ <PS1PR06MB1180BAA32BDBEE6BFD8229C3F52F0@PS1PR06MB1180.apcprd06.prod.outlook.com>
+ <PS1PR06MB11807765B8231D1DD01B05ADF52F0@PS1PR06MB1180.apcprd06.prod.outlook.com>
+In-Reply-To: <PS1PR06MB11807765B8231D1DD01B05ADF52F0@PS1PR06MB1180.apcprd06.prod.outlook.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: Wolfram Sang <wsa@the-dreams.de>, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
+On Fri, Oct 30, 2015 at 09:00:20AM +0000, Phil Edworthy wrote:
+> Hi Bjorn,
+> 
+> On 30 October 2015 07:24, Phil wrote:
+> > On 30 October 2015 07:19, Phil wrote
+> > > On 29 October 2015 23:03, Bjorn wrote:
+> > > > On Thu, Oct 29, 2015 at 07:48:00PM +0100, Wolfram Sang wrote:
+> > > > > On Thu, Oct 29, 2015 at 04:44:06PM +0000, Phil Edworthy wrote:
+> > > > > > Hi Wolfram,
+> > > > > >
+> > > > > > On 29 October 2015 16:40, Wolfram wrote:
+> > > > > > > > Ouch, my bad. I have been working with our out-of-tree BSP for the
+> > > > Salvator-X
+> > > > > > > board on
+> > > > > > > > http://git.kernel.org/cgit/linux/kernel/git/horms/renesas-bsp.git,
+> > rcar-
+> > > > 3.0.2
+> > > > > > > tag along
+> > > > > > > > with some patches from colleagues. I hadn't noticed this patch:
+> > > > > > >
+> > > > > > > Thanks! Any plans for pushing this upstream? We will have the build
+> > error
+> > > > > > > otherwise...
+> > > > > > After some digging, that patch won't be accepted upstream. I'm looking
+> > into
+> > > > how the
+> > > > > > driver can be modified so it doesn't need to call this, but I don't expect a
+> > > small
+> > > > or
+> > > > > > imminent fix.
+> > > > >
+> > > > > Yes, I'd think so, too. However, a fix for 4.4 would be needed to
+> > > > > prevent having a final release with a build error.
+> > > >
+> > > > I'm thinking I should drop my pci/host-rcar branch until we
+> > > > have a fix for this.  It currently contains:
+> > > >
+> > > >   9ac724f20774 PCI: rcar: Fix I/O offset for multiple host bridges
+> > > >   7d75b413f5c6 PCI: rcar: Set root bus nr to that provided in DT
+> > > >   4c22eab88c68 PCI: rcar: Remove dependency on ARM-specific struct hw_pci
+> > > >   ef18d2e55ea0 PCI: rcar: Make PCI aware of the I/O resources
+> > > >
+> > > > Is that right?  Last I heard, Linus expects to release v4.3 on Sunday,
+> > > > so we really don't have much time to sort this out.
+> > > The simple thing is to re-add Geert's patch to stop this driver being built for
+> > > arm64.
+> > Btw, it's this one: https://patchwork.ozlabs.org/patch/512040/
+> It's worth mentioning that Geert's patch stops both the rcar-pcie driver and the
+> rcar-pci-gen2 driver from being built on arm64 due to build failures for both of
+> them. The rcar-pci-gen2 driver is not for R-Car Gen3 devices, and so should not
+> be built for arm64. The rcar-pcie driver will be used on R-Car Gen3 devices.
+> 
+> So if we don't use Geert's patch, I need to fix the rcar-pcie driver so it doesn't
+> use pci_ioremap_io(), _and_ fix Kconfig so that the rcar-pci-gen2 driver doesn't
+> get built on arm64. 
+> Let's just use Geert's patch for now.
 
---a+b56+3nqLzpiR9O
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+OK, I re-added Geert's patch.  I split it into two, one for
+rcar-pci-gen2 and another for rcar-pcie, to help me keep things
+straight.  If I understand correctly,
 
+  - rcar-pci-gen2 depends on the ARM-specific pci_sys_data, and I
+    don't have anything queued to address that.
 
-> Hopefully, Geert's patch will be applied to avoid build errors in both the
-> rcar-pcie and rcar-pci-gen2 (internal USB bridge) drivers. Meanwhile I'll fix
-> the rcar-pcie driver properly for arm64.
+  - rcar-pcie depended on the ARM-specific pci_sys_data and
+    pci_ioremap_io().  Your patches remove the pci_sys_data
+    dependency, and it sounds like future changes will remove the
+    pci_ioremap_io() dependency.
 
-Thanks for taking care.
+The result is in my pci/host-rcar branch:
+https://git.kernel.org/cgit/linux/kernel/git/helgaas/pci.git/log/?h=pci/host-rcar
 
-> > What MSI problem?
-> I was told that rcar pcie on v4.3-rc5 had an issue with MSI.
-
-Okay, we'll see. I only have remote access to a Koelsch board, but my
-own Salvator. And a USB3 PCIE card. That would be my primary test setup.
-
-> > And can't you send the DTS patches as RFC so I can add some testing?
-> Sure, though what tree? As I mentioned above, next doesn't have
-> shmobile arm64 yet.
-
-I use renesas-drivers:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git renesas-drivers-2015-10-27-v4.3-rc7
-
-Thanks,
-
-   Wolfram
-
-
---a+b56+3nqLzpiR9O
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWM1y4AAoJEBQN5MwUoCm2g4YP+gNg09/8VHAE4OpROqXRm5fw
-Ni0FuaeMdaUH57LHy/pGWaFXzoROgqqiPC2Nou6zdNY1kD2Wkklj8mF9x5HbIi9b
-VXR5BTZZ04y6mmlgIFrXi2bpN1XGnfUhwvqD9SILM9n1BFRS2IAH1XkG3qJ6XjUZ
-0E7see8ffbUW6oHKLuTvJo3PcN74XOd+/3DKcPqONOa1BzhllCyCMQ+RbMSA9gNn
-58ISZwFgGkM29yqfNS5tzIcWqNARR+SNZBDC1iWZ+OufKPvj4fZFAZjMBQad0Gfm
-OyCMRmBP8+g8u1lXBqRaH9LFDy4xLEnnHO0UrPECL/tkENqMCkT2upew3ClEsD2M
-eB7aOkUPMtjhGiMor5NqofnuifUPVFGBp3tYXN18Yz12FyytFKVrxiCBZ5EXAf6I
-S7E7KS//JaCO6cZ5ousw5POQSiPFgtH4mkz8FFSoNpm+Fsde7mfhBEhr26E1wJwx
-JBhoAFEU6oE+FRHnWorwv5lTWsTFp82eF/rbrr1Bz2zugo+RXnOtOcEQA5h2bhwf
-eJPWDVT8U9QJppkxv3mc/nMWerPHOOE/xmZ2DYo4CRwLW0IT/GuGDG5rntlYl4Xs
-4ZD0XLpDvRm54Qjq1mi+PCyd/vKFpZYVDvYlCxiBDWtNpu59Ee/Xqas+nyuH4VRY
-FlBD6AfmqI0enGAs7//v
-=j/UL
------END PGP SIGNATURE-----
-
---a+b56+3nqLzpiR9O--
+Bjorn
