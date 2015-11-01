@@ -1,75 +1,56 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 26 Nov 2015 22:59:16 +0000
-Subject: [RFC 8/9] ARM: shmobile: r8a7794: dtsi: add internal delay for i2c IPs
-Message-Id: <1448578757-12613-9-git-send-email-wsa@the-dreams.de>
+Date: Sun, 01 Nov 2015 19:19:35 +0000
+Subject: [RFC v3 1/5] ARM: shmobile: r8a7790: add mstp4 and rwdt clock
+Message-Id: <1446405579-5367-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-sh@vger.kernel.org
 
 From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
+Just for testing, not for upstream!
+
 Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7794.dtsi | 6 ++++++
- 1 file changed, 6 insertions(+)
+ arch/arm/boot/dts/r8a7790.dtsi            | 9 ++++++---
+ include/dt-bindings/clock/r8a7790-clock.h | 1 +
+ 2 files changed, 7 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 018ff56470b6da..a6a97c2197c814 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -520,6 +520,7 @@
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-+		i2c-scl-internal-delay-ns = <6>;
- 	};
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 0612502b4a6d67..e39beeefdf594b 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -1284,10 +1284,13 @@
+ 		mstp4_clks: mstp4_clks@e6150140 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
+-			clocks = <&cp_clk>;
++			clocks = <&cp_clk>, <&rclk_clk>;
+ 			#clock-cells = <1>;
+-			clock-indices = <R8A7790_CLK_IRQC>;
+-			clock-output-names = "irqc";
++			clock-indices = <
++				R8A7790_CLK_IRQC
++				R8A7790_CLK_RWDT
++			>;
++			clock-output-names = "irqc", "rwdt";
+ 		};
+ 		mstp5_clks: mstp5_clks@e6150144 {
+ 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
+index 7b1ad8922eecdc..35ee24486ff124 100644
+--- a/include/dt-bindings/clock/r8a7790-clock.h
++++ b/include/dt-bindings/clock/r8a7790-clock.h
+@@ -80,6 +80,7 @@
+ #define R8A7790_CLK_USBDMAC1		31
  
- 	i2c1: i2c@e6518000 {
-@@ -531,6 +532,7 @@
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-+		i2c-scl-internal-delay-ns = <6>;
- 	};
+ /* MSTP4 */
++#define R8A7790_CLK_RWDT		2
+ #define R8A7790_CLK_IRQC		7
  
- 	i2c2: i2c@e6530000 {
-@@ -542,6 +544,7 @@
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-+		i2c-scl-internal-delay-ns = <6>;
- 	};
- 
- 	i2c3: i2c@e6540000 {
-@@ -553,6 +556,7 @@
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-+		i2c-scl-internal-delay-ns = <6>;
- 	};
- 
- 	i2c4: i2c@e6520000 {
-@@ -564,6 +568,7 @@
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-+		i2c-scl-internal-delay-ns = <6>;
- 	};
- 
- 	i2c5: i2c@e6528000 {
-@@ -575,6 +580,7 @@
- 		#address-cells = <1>;
- 		#size-cells = <0>;
- 		status = "disabled";
-+		i2c-scl-internal-delay-ns = <6>;
- 	};
- 
- 	mmcif0: mmc@ee200000 {
+ /* MSTP5 */
 -- 
 2.1.4
 
