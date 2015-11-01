@@ -1,124 +1,287 @@
-From: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
-Date: Fri, 13 Nov 2015 22:57:28 +0000
-Subject: Re: [PATCH 2/2] [media] include/media: move platform driver headers to a separate dir
-Message-Id: <20151113205728.39c12b7b@recife.lan>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sun, 01 Nov 2015 19:19:39 +0000
+Subject: [RFC v3 5/5] watchdog: renesas-rwdt: add driver
+Message-Id: <1446405579-5367-6-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <413d2bb0b813a7e62867de7a94b0ab61e16cb1cb.1447261977.git.mchehab@osg.samsung.com>
- <4220808.QEkJDXYE1T@wuerfel> <20151113171341.0972ef7a@recife.lan>
- <4273019.OjrpsKyH2t@wuerfel>
-In-Reply-To: <4273019.OjrpsKyH2t@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Em Fri, 13 Nov 2015 22:31:15 +0100
-Arnd Bergmann <arnd@arndb.de> escreveu:
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-> On Friday 13 November 2015 17:13:41 Mauro Carvalho Chehab wrote:
-> > Em Wed, 11 Nov 2015 21:26:31 +0100
-> > Arnd Bergmann <arnd@arndb.de> escreveu:
-> > 
-> 
-> >  include/media/{ => drv-intf}/cx2341x.h                   | 0
-> >  include/media/{ => drv-intf}/cx25840.h                   | 0
-> >  include/media/{ => drv-intf}/exynos-fimc.h               | 0
-> >  include/media/{ => drv-intf}/msp3400.h                   | 0
-> >  include/media/{ => drv-intf}/s3c_camif.h                 | 0
-> >  include/media/{ => drv-intf}/saa7146.h                   | 0
-> >  include/media/{ => drv-intf}/saa7146_vv.h                | 2 +-
-> >  include/media/{ => drv-intf}/sh_mobile_ceu.h             | 0
-> >  include/media/{ => drv-intf}/sh_mobile_csi2.h            | 0
-> >  include/media/{ => drv-intf}/sh_vou.h                    | 0
-> >  include/media/{ => drv-intf}/si476x.h                    | 0
-> >  include/media/{ => drv-intf}/soc_mediabus.h              | 0
-> >  include/media/{ => drv-intf}/tea575x.h                   | 0
-> >  include/media/i2c/tw9910.h                               | 2 +-
-> >  include/media/{ => platform_data}/gpio-ir-recv.h         | 0
-> >  include/media/{ => platform_data}/ir-rx51.h              | 0
-> >  include/media/{ => platform_data}/mmp-camera.h           | 0
-> >  include/media/{ => platform_data}/omap1_camera.h         | 0
-> >  include/media/{ => platform_data}/omap4iss.h             | 0
-> >  include/media/{ => platform_data}/s5p_hdmi.h             | 0
-> >  include/media/{ => platform_data}/si4713.h               | 0
-> >  include/media/{ => platform_data}/sii9234.h              | 0
-> >  include/media/{ => platform_data}/smiapp.h               | 0
-> >  include/media/{ => platform_data}/soc_camera.h           | 0
-> >  include/media/{ => platform_data}/soc_camera_platform.h  | 2 +-
-> >  include/media/{ => platform_data}/timb_radio.h           | 0
-> >  include/media/{ => platform_data}/timb_video.h           | 0
-> >  sound/pci/es1968.c                                       | 2 +-
-> >  sound/pci/fm801.c                                        | 2 +-
-> >  155 files changed, 158 insertions(+), 158 deletions(-)
-> 
-> As Geert said, include/linux/platform_data/media/ would be nicer for
-> consistency with other subsystems.
+Add support for an RCLK watchdog found in at least all RCar Gen2 and
+Gen3 based SoCs from Renesas. It probably works even for the "Secure
+watchdog" of some of those SoCs according to the specs I have. A restart
+handler is in place, too.
 
-OK! I have a new series of patches almost ready. I'll be sending it
-tomorrow, after addressing your concerns.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/watchdog/Kconfig        |   8 ++
+ drivers/watchdog/Makefile       |   1 +
+ drivers/watchdog/renesas_rwdt.c | 222 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 231 insertions(+)
+ create mode 100644 drivers/watchdog/renesas_rwdt.c
 
-> 
-> > diff --git a/arch/arm/mach-imx/mach-imx27_visstrim_m10.c b/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
-> > index ede2bdbb5dd5..44ba1f28bb34 100644
-> > --- a/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
-> > +++ b/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
-> > @@ -33,7 +33,7 @@
-> >  #include <linux/dma-mapping.h>
-> >  #include <linux/leds.h>
-> >  #include <linux/platform_data/asoc-mx27vis.h>
-> > -#include <media/soc_camera.h>
-> > +#include <media/platform_data/soc_camera.h>
-> >  #include <sound/tlv320aic32x4.h>
-> >  #include <asm/mach-types.h>
-> >  #include <asm/mach/arch.h>
-> 
-> This looks like a mistake: the header contains the string 'platform_data',
-> but it is not actually a platform data header file in the sense
-> that it defines the interface between platform and driver.
-> 
-> Maybe soc_camera.h is important enough to still leave it as a core
-> file in the existing location? Or possibly a separate directory for
-> media/soc_camera/*.h
+diff --git a/drivers/watchdog/Kconfig b/drivers/watchdog/Kconfig
+index 79e1aa1b0959f1..58c4cd875c48d7 100644
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -578,6 +578,14 @@ config LPC18XX_WATCHDOG
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called lpc18xx_wdt.
+ 
++config RENESAS_RWDT
++	tristate "Renesas RWDT Watchdog"
++	depends on ARCH_SHMOBILE || COMPILE_TEST
++	select WATCHDOG_CORE
++	help
++	  This driver adds watchdog support for the integrated watchdog in the
++	  Renesas RCar and other SH Mobile SoCs.
++
+ # AVR32 Architecture
+ 
+ config AT32AP700X_WDT
+diff --git a/drivers/watchdog/Makefile b/drivers/watchdog/Makefile
+index 0c616e3f67bb57..9ea88b1115af11 100644
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -68,6 +68,7 @@ obj-$(CONFIG_MESON_WATCHDOG) += meson_wdt.o
+ obj-$(CONFIG_MEDIATEK_WATCHDOG) += mtk_wdt.o
+ obj-$(CONFIG_DIGICOLOR_WATCHDOG) += digicolor_wdt.o
+ obj-$(CONFIG_LPC18XX_WATCHDOG) += lpc18xx_wdt.o
++obj-$(CONFIG_RENESAS_RWDT) += renesas_rwdt.o
+ 
+ # AVR32 Architecture
+ obj-$(CONFIG_AT32AP700X_WDT) += at32ap700x_wdt.o
+diff --git a/drivers/watchdog/renesas_rwdt.c b/drivers/watchdog/renesas_rwdt.c
+new file mode 100644
+index 00000000000000..a6644cb88e4e88
+--- /dev/null
++++ b/drivers/watchdog/renesas_rwdt.c
+@@ -0,0 +1,222 @@
++/*
++ * Watchdog driver for Renesas RWDT watchdog
++ *
++ * Copyright (C) 2015 Wolfram Sang, Sang Engineering <wsa@sang-engineering.com>
++ * Copyright (C) 2015 Renesas Electronics Corporation
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published by
++ * the Free Software Foundation.
++ */
++#include <linux/clk.h>
++#include <linux/io.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/reboot.h>
++#include <linux/watchdog.h>
++
++#define RWTCNT		0
++#define RWTCSRA		4
++#define RWTCSRA_WOVF	BIT(4)
++#define RWTCSRA_WRFLG	BIT(5)
++#define RWTCSRA_TME	BIT(7)
++
++#define RWDT_DEFAULT_TIMEOUT 60
++
++static const unsigned clk_divs[] = { 1, 4, 16, 32, 64, 128, 1024 };
++
++static bool nowayout = WATCHDOG_NOWAYOUT;
++module_param(nowayout, bool, S_IRUGO);
++MODULE_PARM_DESC(nowayout, "Watchdog cannot be stopped once started (default="
++				__MODULE_STRING(WATCHDOG_NOWAYOUT) ")");
++
++static unsigned timeout = RWDT_DEFAULT_TIMEOUT;
++module_param(timeout, uint, 0);
++MODULE_PARM_DESC(timeout, "Watchdog timeout in seconds (default="
++				__MODULE_STRING(RWDT_DEFAULT_TIMEOUT) ")");
++
++struct rwdt_priv {
++	void __iomem *base;
++	struct watchdog_device wdev;
++	struct clk *clk;
++	struct notifier_block restart_handler;
++	unsigned clks_per_sec;
++	u8 cks;
++};
++
++static void rwdt_write(struct rwdt_priv *priv, u32 val, unsigned reg)
++{
++	if (reg = RWTCNT)
++		val |= 0x5a5a0000;
++	else
++		val |= 0xa5a5a500;
++
++	writel_relaxed(val, priv->base + reg);
++}
++
++static int rwdt_init_timeout(struct watchdog_device *wdev)
++{
++	struct rwdt_priv *priv = watchdog_get_drvdata(wdev);
++
++	rwdt_write(priv, 65536 - wdev->timeout * priv->clks_per_sec, RWTCNT);
++
++	return 0;
++}
++
++static int rwdt_set_timeout(struct watchdog_device *wdev, unsigned new_timeout)
++{
++	wdev->timeout = new_timeout;
++	rwdt_init_timeout(wdev);
++
++	return 0;
++}
++
++static int rwdt_start(struct watchdog_device *wdev)
++{
++	struct rwdt_priv *priv = watchdog_get_drvdata(wdev);
++
++	clk_prepare_enable(priv->clk);
++
++	rwdt_write(priv, priv->cks, RWTCSRA);
++	rwdt_init_timeout(wdev);
++
++	while (readb_relaxed(priv->base + RWTCSRA) & RWTCSRA_WRFLG)
++		cpu_relax();
++
++	rwdt_write(priv, priv->cks | RWTCSRA_TME, RWTCSRA);
++
++	return 0;
++}
++
++static int rwdt_stop(struct watchdog_device *wdev)
++{
++	struct rwdt_priv *priv = watchdog_get_drvdata(wdev);
++
++	rwdt_write(priv, priv->cks, RWTCSRA);
++	clk_disable_unprepare(priv->clk);
++
++	return 0;
++}
++
++static const struct watchdog_info rwdt_ident = {
++	.options = WDIOF_MAGICCLOSE | WDIOF_KEEPALIVEPING | WDIOF_SETTIMEOUT,
++	.identity = "Renesas RWDT Watchdog",
++};
++
++static const struct watchdog_ops rwdt_ops = {
++	.owner = THIS_MODULE,
++	.start = rwdt_start,
++	.stop = rwdt_stop,
++	.ping = rwdt_init_timeout,
++	.set_timeout = rwdt_set_timeout,
++};
++
++static int rwdt_restart_handler(struct notifier_block *nb, unsigned long mode, void *cmd)
++{
++	struct rwdt_priv *priv = container_of(nb, struct rwdt_priv, restart_handler);
++
++	rwdt_start(&priv->wdev);
++	rwdt_write(priv, 0xffff, RWTCNT);
++
++	return NOTIFY_DONE;
++}
++
++static int rwdt_probe(struct platform_device *pdev)
++{
++	struct rwdt_priv *priv;
++	struct resource *res;
++	unsigned long rate;
++	unsigned clks_per_sec;
++	int ret, i;
++
++	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	priv->base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(priv->base))
++		return PTR_ERR(priv->base);
++
++	priv->clk = devm_clk_get(&pdev->dev, NULL);
++	if (IS_ERR(priv->clk))
++		return PTR_ERR(priv->clk);
++
++	clk_prepare_enable(priv->clk);
++	rate = clk_get_rate(priv->clk);
++	clk_disable_unprepare(priv->clk);
++
++	if (!rate)
++		return -ENOENT;
++
++	for (i = ARRAY_SIZE(clk_divs); i >= 0; i--) {
++		clks_per_sec = rate / clk_divs[i];
++		if (clks_per_sec) {
++			priv->clks_per_sec = clks_per_sec;
++			priv->cks = i;
++			break;
++		}
++	}
++
++	if (!clks_per_sec) {
++		dev_err(&pdev->dev, "Can't find suitable clock divider!\n");
++		return -ERANGE;
++	}
++
++	priv->wdev.info = &rwdt_ident,
++	priv->wdev.ops = &rwdt_ops,
++	priv->wdev.parent = &pdev->dev;
++	priv->wdev.min_timeout = 1;
++	priv->wdev.max_timeout = 65536 / clks_per_sec;
++	priv->wdev.timeout = min(priv->wdev.max_timeout, (unsigned)RWDT_DEFAULT_TIMEOUT);
++
++	platform_set_drvdata(pdev, priv);
++	watchdog_set_drvdata(&priv->wdev, priv);
++	watchdog_set_nowayout(&priv->wdev, nowayout);
++	ret = watchdog_init_timeout(&priv->wdev, timeout, &pdev->dev);
++	if (ret)
++		dev_warn(&pdev->dev, "Specified timeout value invalid, using default\n");
++
++	ret = watchdog_register_device(&priv->wdev);
++	if (ret < 0)
++		return ret;
++
++	priv->restart_handler.notifier_call = rwdt_restart_handler;
++	priv->restart_handler.priority = 192;
++	ret = register_restart_handler(&priv->restart_handler);
++	if (ret)
++		dev_warn(&pdev->dev, "Failed to register restart handler (err = %d)\n", ret);
++
++	return 0;
++}
++
++static int rwdt_remove(struct platform_device *pdev)
++{
++	struct rwdt_priv *priv = platform_get_drvdata(pdev);
++
++	unregister_restart_handler(&priv->restart_handler);
++	watchdog_unregister_device(&priv->wdev);
++	return 0;
++}
++
++static const struct of_device_id rwdt_ids[] = {
++	{ .compatible = "renesas,rwdt", },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, rwdt_ids);
++
++static struct platform_driver rwdt_driver = {
++	.driver = {
++		.name = "renesas_rwdt",
++		.of_match_table = rwdt_ids,
++	},
++	.probe = rwdt_probe,
++	.remove = rwdt_remove,
++};
++module_platform_driver(rwdt_driver);
++
++MODULE_DESCRIPTION("Renesas RWDT Watchdog Driver");
++MODULE_LICENSE("GPL v2");
++MODULE_AUTHOR("Wolfram Sang <wsa@sang-engineering.com>");
+-- 
+2.1.4
 
-Ok, I'll fix it. 
-
-> 
-> > @@ -24,7 +24,7 @@
-> >  #include <linux/slab.h>
-> >  #include <linux/kfifo.h>
-> >  #include <linux/module.h>
-> > -#include <media/cx25840.h>
-> > +#include <media/drv-intf/cx25840.h>
-> >  #include <media/rc-core.h>
-> >  
-> >  #include "cx25840-core.h"
-> 
-> For this case, I think the original patch to move it into include/media/i2c
-> was more logical as it mirrors the file structure. I was mainly talking
-> about the platform_data being different from the rest.
-
-cx25840 is not (always) an I2C. On most devices, this is actually an IP
-block inside the bridge chipset. 
-
-That's why I didn't include it on patch 1/1. There's one thing to
-notice about that, though: while most of the header is describing
-the driver interface, it does contain one platform_data in the end:
-
-/* pvr150_workaround activates a workaround for a hardware bug that is
-   present in Hauppauge PVR-150 (and possibly PVR-500) cards that have
-   certain NTSC tuners (tveeprom tuner model numbers 85, 99 and 112). The
-   audio autodetect fails on some channels for these models and the workaround
-   is to select the audio standard explicitly. Many thanks to Hauppauge for
-   providing this information.
-   This platform data only needs to be supplied by the ivtv driver. */
-struct cx25840_platform_data {
-	int pvr150_workaround;
-};
-
-While we might split it, I guess it is not worth, specially since
-I don't think we'll see any new driver using it.
-
-Also, this is actually a hack used only by the ivtv driver.
-
-Regards,
-Mauro
