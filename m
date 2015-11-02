@@ -1,191 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:52:46 +0000
-Subject: [PATCH 2/2] ARM: shmobile: r8a7793: Describe DMA for the serial ports
-Message-Id: <1448589166-11612-3-git-send-email-horms+renesas@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 02 Nov 2015 16:36:15 +0000
+Subject: [PATCH 3/3] PCI: pcie-rcar: Add support for R-Car H3.
+Message-Id: <1446482175-26507-4-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448589166-11612-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1448589166-11612-1-git-send-email-horms+renesas@verge.net.au>
+References: <1446482175-26507-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1446482175-26507-1-git-send-email-phil.edworthy-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Bjorn Helgaas <bhelgaas-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Wolfram Sang <wsa-z923LK4zBo2bacvFa/9K2g@public.gmane.org>, Geert Uytterhoeven <geert-Td1EMuHUCqxL1ZNQvxDV9g@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, linux-pci-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Harunobu Kurokawa <harunobu.kurokawa.dn-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Add DMA properties to all SCIF, SCIFA, SCIFB, and HSCIF device nodes.
+From: Harunobu Kurokawa <harunobu.kurokawa.dn@renesas.com>
 
-Based on similar work for the r8a7791 by Geert Uytterhoeven.
+R-Car H3 device is r8a7795
 
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Harunobu Kurokawa <harunobu.kurokawa.dn@renesas.com>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+ Documentation/devicetree/bindings/pci/rcar-pci.txt | 3 ++-
+ drivers/pci/host/pcie-rcar.c                       | 1 +
+ 2 files changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index 3ac2ec0414a0..8d5cbdfc3d5d 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -304,6 +304,8 @@
- 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7793_CLK_SCIFA0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -314,6 +316,8 @@
- 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7793_CLK_SCIFA1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x25>, <&dmac0 0x26>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -324,6 +328,8 @@
- 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7793_CLK_SCIFA2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x27>, <&dmac0 0x28>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -334,6 +340,8 @@
- 		interrupts = <0 29 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7793_CLK_SCIFA3>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x1b>, <&dmac0 0x1c>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -344,6 +352,8 @@
- 		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7793_CLK_SCIFA4>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x1f>, <&dmac0 0x20>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -354,6 +364,8 @@
- 		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp11_clks R8A7793_CLK_SCIFA5>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x23>, <&dmac0 0x24>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -364,6 +376,8 @@
- 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7793_CLK_SCIFB0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x3d>, <&dmac0 0x3e>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -374,6 +388,8 @@
- 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7793_CLK_SCIFB1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x19>, <&dmac0 0x1a>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -384,6 +400,8 @@
- 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp2_clks R8A7793_CLK_SCIFB2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x1d>, <&dmac0 0x1e>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -394,6 +412,8 @@
- 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -404,6 +424,8 @@
- 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -414,6 +436,8 @@
- 		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x2b>, <&dmac0 0x2c>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -424,6 +448,8 @@
- 		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF3>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x2f>, <&dmac0 0x30>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -434,6 +460,8 @@
- 		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF4>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0xfb>, <&dmac0 0xfc>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -444,6 +472,8 @@
- 		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF5>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0xfd>, <&dmac0 0xfe>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -454,6 +484,8 @@
- 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_HSCIF0>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -464,6 +496,8 @@
- 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_HSCIF1>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -474,6 +508,8 @@
- 		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_HSCIF2>;
- 		clock-names = "sci_ick";
-+		dmas = <&dmac0 0x3b>, <&dmac0 0x3c>;
-+		dma-names = "tx", "rx";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+index 29d3b98..ab2e75f 100644
+--- a/Documentation/devicetree/bindings/pci/rcar-pci.txt
++++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
+@@ -2,7 +2,8 @@
+ 
+ Required properties:
+ - compatible: should contain one of the following
+-	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791"
++	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791",
++	"renesas,pcie-r8a7795"
+ - reg: base address and length of the pcie controller registers.
+ - #address-cells: set to <3>
+ - #size-cells: set to <2>
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index 27c0521..2377bf0 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -917,6 +917,7 @@ static const struct of_device_id rcar_pcie_of_match[] = {
+ 	{ .compatible = "renesas,pcie-r8a7779", .data = rcar_pcie_hw_init_h1 },
+ 	{ .compatible = "renesas,pcie-r8a7790", .data = rcar_pcie_hw_init },
+ 	{ .compatible = "renesas,pcie-r8a7791", .data = rcar_pcie_hw_init },
++	{ .compatible = "renesas,pcie-r8a7795", .data = rcar_pcie_hw_init },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, rcar_pcie_of_match);
 -- 
-2.1.4
+1.9.1
 
