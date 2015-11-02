@@ -1,8 +1,10 @@
 From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 02 Nov 2015 17:08:38 +0000
+Date: Mon, 02 Nov 2015 17:31:36 +0000
 Subject: [RFC PATCH 0/3] Add PCIe to r8a7795 & Salvator-X
-Message-Id: <1446484121-26682-1-git-send-email-phil.edworthy@renesas.com>
+Message-Id: <1446485499-26733-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1446484121-26682-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1446484121-26682-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
