@@ -1,98 +1,46 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 26 Nov 2015 22:59:11 +0000
-Subject: [RFC 3/9] i2c: rcar: refactor probe function a little
-Message-Id: <1448578757-12613-4-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 02 Nov 2015 04:31:46 +0000
+Subject: [PATCH v6 3/5] arm64: dts: r8a7795: enable nfs root on Salvator-X board
+Message-Id: <1446438708-22433-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
+References: <1446438708-22433-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1446438708-22433-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+As has been the practice for boards for 32bit ARM Renesas SoCs
 
-The probe function is a little bit messy, something here, something
-there. Rework it so that there is some order: first init the private
-structure, then the adapter, then do HW init. This also allows us to
-remove the device argument of the clock calculation function, because it
-now can be deduced from the private structure. Also, shorten some lines
-where possible. This is a preparation for further refactoring.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+--
+v2
+* No change
+
+v3
+* Added Ack
+
+v4 - v6
+* No change
 ---
- drivers/i2c/busses/i2c-rcar.c | 40 +++++++++++++++++-----------------------
- 1 file changed, 17 insertions(+), 23 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 3ed1f0aa5eeb16..d4322a9096786f 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -162,15 +162,11 @@ static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
- 	return -EBUSY;
- }
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index 4fb120d8e7e8..d1c2fea8bebc 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -21,7 +21,7 @@
+ 	};
  
--static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
--				    u32 bus_speed,
--				    struct device *dev)
-+static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, u32 bus_speed)
- {
--	u32 scgd, cdf;
--	u32 round, ick;
--	u32 scl;
--	u32 cdf_width;
-+	u32 scgd, cdf, round, ick, scl, cdf_width;
- 	unsigned long rate;
-+	struct device *dev = rcar_i2c_priv_to_dev(priv);
+ 	chosen {
+-		bootargs = "ignore_loglevel";
++		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+ 		stdout-path = &scif2;
+ 	};
  
- 	switch (priv->devtype) {
- 	case I2C_RCAR_GEN1:
-@@ -610,21 +606,7 @@ static int rcar_i2c_probe(struct platform_device *pdev)
- 	if (IS_ERR(priv->io))
- 		return PTR_ERR(priv->io);
- 
--	bus_speed = 100000; /* default 100 kHz */
--	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
--
- 	priv->devtype = (enum rcar_i2c_type)of_match_device(rcar_i2c_dt_ids, dev)->data;
--
--	pm_runtime_enable(dev);
--	pm_runtime_get_sync(dev);
--	ret = rcar_i2c_clock_calculate(priv, bus_speed, dev);
--	if (ret < 0)
--		goto out_pm_put;
--
--	rcar_i2c_init(priv);
--	pm_runtime_put(dev);
--
--	irq = platform_get_irq(pdev, 0);
- 	init_waitqueue_head(&priv->wait);
- 
- 	adap = &priv->adap;
-@@ -637,8 +619,20 @@ static int rcar_i2c_probe(struct platform_device *pdev)
- 	i2c_set_adapdata(adap, priv);
- 	strlcpy(adap->name, pdev->name, sizeof(adap->name));
- 
--	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0,
--			       dev_name(dev), priv);
-+	bus_speed = 100000; /* default 100 kHz */
-+	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
-+
-+	pm_runtime_enable(dev);
-+	pm_runtime_get_sync(dev);
-+	ret = rcar_i2c_clock_calculate(priv, bus_speed);
-+	if (ret < 0)
-+		goto out_pm_put;
-+
-+	rcar_i2c_init(priv);
-+	pm_runtime_put(dev);
-+
-+	irq = platform_get_irq(pdev, 0);
-+	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0, dev_name(dev), priv);
- 	if (ret < 0) {
- 		dev_err(dev, "cannot get irq %d\n", irq);
- 		goto out_pm_disable;
 -- 
 2.1.4
 
