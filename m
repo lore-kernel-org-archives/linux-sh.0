@@ -1,38 +1,90 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:06:00 +0000
-Subject: [GIT PULL] Renesas ARM64 Based SoC Defconfig Updates for v4.5
-Message-Id: <cover.1447980456.git.horms+renesas@verge.net.au>
+Date: Mon, 02 Nov 2015 04:31:45 +0000
+Subject: [PATCH v6 2/5] arm64: dts: r8a7795: enable EthernetAVB on Salvator-X
+Message-Id: <1446438708-22433-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1446438708-22433-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1446438708-22433-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
 
-Please consider these Renesas ARM64 based SoC defconfig updates for v4.5.
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
+---
+v0 [Kazuya Mizuguchi]
 
-The following changes since commit 8005c49d9aea74d382f474ce11afbbc7d7130bec:
+v1 [Simon Horman]
+* updated filename to salvator-x
+* updated patch subject
 
-  Linux 4.4-rc1 (2015-11-15 17:00:27 -0800)
+v2 [Simon Horman]
+* Removed spurious update to r8a7795.dtsi introduced in v1
+* Removed unused renesas,phy property
 
-are available in the git repository at:
+v3 [Simon Horman]
+* No change but provided PFC driver update in separate patch(set)
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-arm64-defconfig-for-v4.5
+v4 [Simon Horman]
+* As suggested by Sergei Shtylyov
+  - Removed unused phy-reset-gpio property
 
-for you to fetch changes up to 727e8d0126e3ecafce3ebc43eaa5a7d61af3bef0:
+v5, v6
+* No change
+---
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 31 ++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
 
-  arm64: defconfig: renesas: Enable Renesas r8a7795 SoC (2015-11-17 02:50:29 +0900)
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index f522fda7843a..4fb120d8e7e8 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -45,6 +45,11 @@
+ 		renesas,groups = "scif2_data_a";
+ 		renesas,function = "scif2";
+ 	};
++
++	avb_pins: avb {
++		renesas,groups = "avb_mdc";
++		renesas,function = "avb";
++	};
+ };
+ 
+ &scif1 {
+@@ -60,3 +65,29 @@
+ 
+ 	status = "okay";
+ };
++
++&avb {
++	pinctrl-0 = <&avb_pins>;
++	pinctrl-names = "default";
++	renesas,no-ether-link;
++	phy-handle = <&phy0>;
++	status = "okay";
++
++	phy0: ethernet-phy@0 {
++		rxc-skew-ps = <900>;
++		rxdv-skew-ps = <0>;
++		rxd0-skew-ps = <0>;
++		rxd1-skew-ps = <0>;
++		rxd2-skew-ps = <0>;
++		rxd3-skew-ps = <0>;
++		txc-skew-ps = <900>;
++		txen-skew-ps = <0>;
++		txd0-skew-ps = <0>;
++		txd1-skew-ps = <0>;
++		txd2-skew-ps = <0>;
++		txd3-skew-ps = <0>;
++		reg = <0>;
++		interrupt-parent = <&gpio2>;
++		interrupts = <11 IRQ_TYPE_LEVEL_LOW>;
++	};
++};
+-- 
+2.1.4
 
-----------------------------------------------------------------
-Renesas ARM64 Based SoC Defconfig Updates for v4.5
-
-* Enable Renesas r8a7795 SoC
-
-----------------------------------------------------------------
-Kuninori Morimoto (1):
-      arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
-
- arch/arm64/configs/defconfig | 5 +++++
- 1 file changed, 5 insertions(+)
