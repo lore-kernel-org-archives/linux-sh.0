@@ -1,7 +1,7 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 03 Nov 2015 07:48:54 +0000
-Subject: Re: [PATCH 1/3] clk: shmobile: r8a7795: Add PCIe clocks
-Message-Id: <CAMuHMdUK_mKF+MBooEM6g2PtzpEu8eXGdU5J58Dz4m7vKJNrjg@mail.gmail.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 03 Nov 2015 09:05:03 +0000
+Subject: RE: [PATCH 1/3] clk: shmobile: r8a7795: Add PCIe clocks
+Message-Id: <PS1PR06MB118095FBF358D6C84C5DAC3FF52B0@PS1PR06MB1180.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1446485499-26733-2-git-send-email-phil.edworthy@renesas.com>
 In-Reply-To: <1446485499-26733-2-git-send-email-phil.edworthy@renesas.com>
@@ -10,30 +10,21 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Phil,
-
-On Mon, Nov 2, 2015 at 6:31 PM, Phil Edworthy <phil.edworthy@renesas.com> wrote:
-> --- a/drivers/clk/shmobile/clk-r8a7795-cpg-mssr.c
-> +++ b/drivers/clk/shmobile/clk-r8a7795-cpg-mssr.c
-> @@ -120,6 +120,8 @@ static const struct mssr_mod_clk r8a7795_mod_clks[] __initconst = {
->         { "sys-dmac1",          218,    R8A7795_CLK_S3D1        },
->         { "sys-dmac0",          219,    R8A7795_CLK_S3D1        },
->         { "scif2",              310,    R8A7795_CLK_S3D4        },
-> +       { "pcie0",              318,    R8A7795_CLK_S3D1        },
-
-"pcie1"
-
-> +       { "pcie1",              319,    R8A7795_CLK_S3D1        },
-
-"pcie0"
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+SGkgR2VlcnQsDQoNCk9uIDAzIE5vdmVtYmVyIDIwMTUgMDc6NDksIEdlZXJ0IHdyb3RlOg0KPiBP
+biBNb24sIE5vdiAyLCAyMDE1IGF0IDY6MzEgUE0sIFBoaWwgRWR3b3J0aHkgPHBoaWwuZWR3b3J0
+aHlAcmVuZXNhcy5jb20+DQo+IHdyb3RlOg0KPiA+IC0tLSBhL2RyaXZlcnMvY2xrL3NobW9iaWxl
+L2Nsay1yOGE3Nzk1LWNwZy1tc3NyLmMNCj4gPiArKysgYi9kcml2ZXJzL2Nsay9zaG1vYmlsZS9j
+bGstcjhhNzc5NS1jcGctbXNzci5jDQo+ID4gQEAgLTEyMCw2ICsxMjAsOCBAQCBzdGF0aWMgY29u
+c3Qgc3RydWN0IG1zc3JfbW9kX2NsayByOGE3Nzk1X21vZF9jbGtzW10NCj4gX19pbml0Y29uc3Qg
+PSB7DQo+ID4gICAgICAgICB7ICJzeXMtZG1hYzEiLCAgICAgICAgICAyMTgsICAgIFI4QTc3OTVf
+Q0xLX1MzRDEgICAgICAgIH0sDQo+ID4gICAgICAgICB7ICJzeXMtZG1hYzAiLCAgICAgICAgICAy
+MTksICAgIFI4QTc3OTVfQ0xLX1MzRDEgICAgICAgIH0sDQo+ID4gICAgICAgICB7ICJzY2lmMiIs
+ICAgICAgICAgICAgICAzMTAsICAgIFI4QTc3OTVfQ0xLX1MzRDQgICAgICAgIH0sDQo+ID4gKyAg
+ICAgICB7ICJwY2llMCIsICAgICAgICAgICAgICAzMTgsICAgIFI4QTc3OTVfQ0xLX1MzRDEgICAg
+ICAgIH0sDQo+IA0KPiAicGNpZTEiDQo+IA0KPiA+ICsgICAgICAgeyAicGNpZTEiLCAgICAgICAg
+ICAgICAgMzE5LCAgICBSOEE3Nzk1X0NMS19TM0QxICAgICAgICB9LA0KPiANCj4gInBjaWUwIg0K
+DQpUaGFua3MgZm9yIGZpbmRpbmcgdGhpcywgdGhvdWdoIEkgYW0gbm90IHN1cmUgd2hvIHRoaXMg
+cGF0Y2ggc2hvdWxkIGJlIHNlbnQgdG8NCmFzIHRoZSByOGE3Nzk1IGNwZyBtc3NyIGRyaXZlciBo
+YXMgbm90IGJlZW4gYWNjZXB0ZWQgeWV0IGFmYWlrLiBGb3IgdGhlDQptb21lbnQgSSd2ZSBzZW50
+IGl0IHRvIHRoZSBzaC1tbCBzbyB0aGF0IHBlb3BsZSBjYW4gdGVzdCBQQ0llLg0KDQpUaGFua3MN
+ClBoaWwNCg=
