@@ -1,108 +1,65 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 02 Nov 2015 10:56:39 +0000
-Subject: RE: [PATCH 0/4] PCI: rcar: Add support for ARM64 and multiple instances
-Message-Id: <PS1PR06MB11807DB6AC86EC5218436CC0F52C0@PS1PR06MB1180.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 03 Nov 2015 14:24:06 +0000
+Subject: Re: [PATCH v11 6/8] arm64: renesas: add Salvator-X board support on DTS
+Message-Id: <CAMuHMdX=LS2sLqtgBUYeWjVkUVZE2WQwsWhbvK+wmdfZ0ycrjg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1443781507-5011-1-git-send-email-phil.edworthy@renesas.com>
- <20151029123755.GC2351@katana>
- <PS1PR06MB118061CA5128E4C1A2C70A18F5200@PS1PR06MB1180.apcprd06.prod.outlook.com>
- <20151029163930.GC22218@katana>
- <PS1PR06MB11804B39B09D6FCAA9B3D9DCF5200@PS1PR06MB1180.apcprd06.prod.outlook.com>
- <20151029184800.GB8992@katana> <20151029230314.GA11994@localhost>
- <PS1PR06MB1180BAA32BDBEE6BFD8229C3F52F0@PS1PR06MB1180.apcprd06.prod.outlook.com>
- <PS1PR06MB11807765B8231D1DD01B05ADF52F0@PS1PR06MB1180.apcprd06.prod.outlook.com>
- <20151030133150.GA17889@localhost>
-In-Reply-To: <20151030133150.GA17889@localhost>
+References: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
+ <1444890243-6978-7-git-send-email-horms+renesas@verge.net.au>
+ <20151015110139.GG8825@leverpostej>
+ <20151023070032.GA4502@verge.net.au>
+ <CAMuHMdVzUPyhkfPy3s+jBK1gQ-kZqYfrQZ8Bww-iFxGOPVZn2w@mail.gmail.com>
+In-Reply-To: <CAMuHMdVzUPyhkfPy3s+jBK1gQ-kZqYfrQZ8Bww-iFxGOPVZn2w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <helgaas@kernel.org>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Bjorn,
+Hi Mark, Rob,
 
-On 30 October 2015 13:32, Bjorn wrote:
-> On Fri, Oct 30, 2015 at 09:00:20AM +0000, Phil Edworthy wrote:
-> > Hi Bjorn,
-> >
-> > On 30 October 2015 07:24, Phil wrote:
-> > > On 30 October 2015 07:19, Phil wrote
-> > > > On 29 October 2015 23:03, Bjorn wrote:
-> > > > > On Thu, Oct 29, 2015 at 07:48:00PM +0100, Wolfram Sang wrote:
-> > > > > > On Thu, Oct 29, 2015 at 04:44:06PM +0000, Phil Edworthy wrote:
-> > > > > > > Hi Wolfram,
-> > > > > > >
-> > > > > > > On 29 October 2015 16:40, Wolfram wrote:
-> > > > > > > > > Ouch, my bad. I have been working with our out-of-tree BSP for
-> the
-> > > > > Salvator-X
-> > > > > > > > board on
-> > > > > > > > > http://git.kernel.org/cgit/linux/kernel/git/horms/renesas-bsp.git,
-> > > rcar-
-> > > > > 3.0.2
-> > > > > > > > tag along
-> > > > > > > > > with some patches from colleagues. I hadn't noticed this patch:
-> > > > > > > >
-> > > > > > > > Thanks! Any plans for pushing this upstream? We will have the build
-> > > error
-> > > > > > > > otherwise...
-> > > > > > > After some digging, that patch won't be accepted upstream. I'm
-> looking
-> > > into
-> > > > > how the
-> > > > > > > driver can be modified so it doesn't need to call this, but I don't expect
-> a
-> > > > small
-> > > > > or
-> > > > > > > imminent fix.
-> > > > > >
-> > > > > > Yes, I'd think so, too. However, a fix for 4.4 would be needed to
-> > > > > > prevent having a final release with a build error.
-> > > > >
-> > > > > I'm thinking I should drop my pci/host-rcar branch until we
-> > > > > have a fix for this.  It currently contains:
-> > > > >
-> > > > >   9ac724f20774 PCI: rcar: Fix I/O offset for multiple host bridges
-> > > > >   7d75b413f5c6 PCI: rcar: Set root bus nr to that provided in DT
-> > > > >   4c22eab88c68 PCI: rcar: Remove dependency on ARM-specific struct
-> hw_pci
-> > > > >   ef18d2e55ea0 PCI: rcar: Make PCI aware of the I/O resources
-> > > > >
-> > > > > Is that right?  Last I heard, Linus expects to release v4.3 on Sunday,
-> > > > > so we really don't have much time to sort this out.
-> > > > The simple thing is to re-add Geert's patch to stop this driver being built for
-> > > > arm64.
-> > > Btw, it's this one: https://patchwork.ozlabs.org/patch/512040/
-> > It's worth mentioning that Geert's patch stops both the rcar-pcie driver and the
-> > rcar-pci-gen2 driver from being built on arm64 due to build failures for both of
-> > them. The rcar-pci-gen2 driver is not for R-Car Gen3 devices, and so should not
-> > be built for arm64. The rcar-pcie driver will be used on R-Car Gen3 devices.
-> >
-> > So if we don't use Geert's patch, I need to fix the rcar-pcie driver so it doesn't
-> > use pci_ioremap_io(), _and_ fix Kconfig so that the rcar-pci-gen2 driver doesn't
-> > get built on arm64.
-> > Let's just use Geert's patch for now.
-> 
-> OK, I re-added Geert's patch.  I split it into two, one for
-> rcar-pci-gen2 and another for rcar-pcie, to help me keep things
-> straight.  If I understand correctly,
-> 
->   - rcar-pci-gen2 depends on the ARM-specific pci_sys_data, and I
->     don't have anything queued to address that.
-Correct, but you don't need anything other than Geert's patch to
-ensure it's not built for arm64.
+On Thu, Oct 29, 2015 at 8:52 AM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> On Fri, Oct 23, 2015 at 9:00 AM, Simon Horman <horms@verge.net.au> wrote:
+>> On Thu, Oct 15, 2015 at 12:01:40PM +0100, Mark Rutland wrote:
+>>> > +           stdout-path = &scif2;
+>>>
+>>> No rate? It would be better to be explicit here; you should be able to
+>>> have:
+>>>
+>>>       stdout-path = "serial0:115200n8"
+>>>
+>>> Where "115200n8" is replaced with whatever configuration this board
+>>> actually has.
+>>
+>> I think that we have had this discussion before in relation to
+>> a different board for a different Renesas SoC but I could be mistaken.
+>
+> IIRC, at that time the code to parse the options wasn't upstream yet, so
+> adding the options would have broken the serial console.
+>
+> I can confirm it works fine on Salvator-X with
+>
+>         stdout-path = "serial0:115200n8";
 
->   - rcar-pcie depended on the ARM-specific pci_sys_data and
->     pci_ioremap_io().  Your patches remove the pci_sys_data
->     dependency, and it sounds like future changes will remove the
->     pci_ioremap_io() dependency.
-That's correct, hopefully I'll have a patch shortly.
-Thanks for taking care of this.
+Unfortunately this breaks earlycon support:
 
- 
-> The result is in my pci/host-rcar branch:
-> https://git.kernel.org/cgit/linux/kernel/git/helgaas/pci.git/log/?h=pci/host-rcar
-I haven't tested this yet, but I have looked them over and they look ok.
+        Malformed early option 'earlycon'
 
-Thanks
-Phil
+The call to fdt_getprop() in early_init_dt_scan_chosen_serial() fails.
+I guess that unlike the standard console handling code, the fdt code can't
+handle aliases yet?
+
+P.S. SCIF earlycon support is not yet upstream, as it still doesn't work on
+arm32 (I discovered today it does on arm64 ;-): it pretends to work, but
+nothing is output to the serial port (until the normal serial console kicks
+in).
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
