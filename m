@@ -1,117 +1,148 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 24 Nov 2015 03:02:46 +0000
-Subject: Re: [GIT PULL] Renesas ARM Based SoC DT Updates for v4.5
-Message-Id: <20151124030246.GL21853@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 03 Nov 2015 21:55:13 +0000
+Subject: [PATCH] sh_eth: merge sh_eth_free_dma_buffer() into sh_eth_ring_free()
+Message-Id: <6672379.kyQ5eFYq8y@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1447981420.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On Thu, Nov 19, 2015 at 05:05:25PM -0800, Simon Horman wrote:
-> Hi Olof, Hi Kevin, Hi Arnd,
-> 
-> Please consider these Renesas ARM based SoC DT updates for v4.5.
-> 
-> 
-> The following changes since commit 99f7445ea41c0187cd2e78bcb58cdd9e6c1756e5:
-> 
->   ARM: shmobile: porter: enable internal PCI and USB PHY (2015-10-13 10:00:12 +0900)
-> 
-> are available in the git repository at:
+While the ring allocation is done by a single function, sh_eth_ring_init(),
+the ring deallocation was split into two functions (almost always called
+one after the other) for no good reason. Merge  sh_eth_free_dma_buffer()
+into sh_eth_ring_free() which allows us  to save space not only on the
+direct calls  of the former function but also on the sh_eth_ring_init()'s
+simplified error path...
 
-The above is commit is the head of the last pull request I sent for
-Renesas DT updates for v4.4, taged as renesas-dt2-for-v4.4. Someohow it
-was not rebased on top of v4.4-rc1 although that was my intention.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-I don't think it should make any difference but if you would like me to
-rebase and repost please let me know.
+---
+The patch is against DaveM's 'net-next.git' repo plus the patch just posted.
 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt-for-v4.5
-> 
-> for you to fetch changes up to d537543b3948bc3bc9dede248fa455493e055457:
-> 
->   ARM: shmobile: alt: add VIN0, ADV7180 DT support (2015-11-18 09:10:38 -0800)
-> 
-> ----------------------------------------------------------------
-> Renesas ARM Based SoC DT Updates for v4.5
-> 
-> * henninger: Remove as it is now replaced by silk
-> * koelsch: Move SPI partitions to subnode
-> * porter: Add CAN0 and HS-USB support
-> * r8a7793/gose: Add QSPI, PFC support
-> * r8a7793: Add GPIO, DMAC, theral, IPMMU support
-> * r8a7794/alt: Add DU support
-> * r8a7794: Disable all IPMMU nodes by default
-> * r8a779[0134]: Use Use SoC specific binding for rcar-dmac
-> * r8a779[01], r8a73a4, r8a7740, sh73a0: replace gpio-key, wakeup with
->   wakeup-source property
-> * r8a779[14]: Correct "gpio-ranges" properties
-> * r8a779[14]: Remove bogus imp_clk node
-> * silk: Add SDHI1 support
-> 
-> ----------------------------------------------------------------
-> Geert Uytterhoeven (3):
->       ARM: shmobile: r8a7794 dtsi: Remove bogus imp_clk node
->       ARM: shmobile: r8a7791 dtsi: Remove bogus imp_clk node
->       ARM: shmobile: koelsch: Move SPI FLASH partitions to subnode
-> 
-> Laurent Pinchart (2):
->       ARM: shmobile: r8a7794: Add DU0 clock
->       ARM: shmobile: r8a7794: Add DU node to device tree
-> 
-> Magnus Damm (4):
->       ARM: shmobile: r8a7794: Disable all IPMMU nodes by default
->       ARM: shmobile: r8a7793: Add IPMMU nodes
->       ARM: shmobile: r8a7794: alt: Enable VGA port
->       ARM: shmobile: r8a7793: Add GPIO nodes to device tree
-> 
-> Sergei Shtylyov (6):
->       ARM: shmobile: porter: add HS-USB DT support
->       ARM: shmobile: silk: add SDHI1 DT support
->       ARM: shmobile: r8a7790: fix "gpio-ranges" props
->       ARM: shmobile: r8a7791: fix "gpio-ranges" props
->       ARM: shmobile: porter: add CAN0 DT support
->       ARM: shmobile: henninger: remove board DT
-> 
-> Simon Horman (11):
->       ARM: shmobile: r8a7793: Add thermal device to DT
->       ARM: shmobile: r8a7793: Add PFC to DT
->       ARM: shmobile: gose: Configure PFC in DT
->       ARM: shmobile: r8a7793: Add DMAC devices to DT
->       ARM: shmobile: r8a7793: Add QSPI device to DT
->       ARM: shmobile: gose: Add QSPI device to DT
->       ARM: shmobile: r8a7790: Use SoC specific binding for rcar-dmac nodes
->       ARM: shmobile: r8a7791: Use SoC specific binding for rcar-dmac nodes
->       ARM: shmobile: r8a7793: Use SoC specific binding for rcar-dmac nodes
->       ARM: shmobile: r8a7794: Use SoC specific binding for rcar-dmac nodes
->       ARM: shmobile: alt: Add pfc pins to DT
-> 
-> Sudeep Holla (1):
->       ARM: dts: shmobile/r8a7xxx: replace gpio-key, wakeup with wakeup-source property
-> 
-> Ulrich Hecht (2):
->       ARM: shmobile: alt: add I2C1 DT support
->       ARM: shmobile: alt: add VIN0, ADV7180 DT support
-> 
->  arch/arm/boot/dts/Makefile                    |   1 -
->  arch/arm/boot/dts/r8a73a4-ape6evm.dts         |   2 +-
->  arch/arm/boot/dts/r8a7740-armadillo800eva.dts |   2 +-
->  arch/arm/boot/dts/r8a7790-lager.dts           |   8 +-
->  arch/arm/boot/dts/r8a7790.dtsi                |  12 +-
->  arch/arm/boot/dts/r8a7791-henninger.dts       | 320 --------------------------
->  arch/arm/boot/dts/r8a7791-koelsch.dts         |  55 ++---
->  arch/arm/boot/dts/r8a7791-porter.dts          |  20 ++
->  arch/arm/boot/dts/r8a7791.dtsi                |  18 +-
->  arch/arm/boot/dts/r8a7793-gose.dts            |  74 ++++++
->  arch/arm/boot/dts/r8a7793.dtsi                | 294 +++++++++++++++++++++++
->  arch/arm/boot/dts/r8a7794-alt.dts             | 125 ++++++++++
->  arch/arm/boot/dts/r8a7794-silk.dts            |  40 ++++
->  arch/arm/boot/dts/r8a7794.dtsi                |  49 ++--
->  arch/arm/boot/dts/sh73a0-kzm9g.dts            |   2 +-
->  include/dt-bindings/clock/r8a7794-clock.h     |   1 +
->  16 files changed, 637 insertions(+), 386 deletions(-)
->  delete mode 100644 arch/arm/boot/dts/r8a7791-henninger.dts
-> 
+ drivers/net/ethernet/renesas/sh_eth.c |   60 ++++++++++++----------------------
+ 1 file changed, 22 insertions(+), 38 deletions(-)
+
+Index: net-next/drivers/net/ethernet/renesas/sh_eth.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/sh_eth.c
++++ net-next/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1098,7 +1098,7 @@ static struct mdiobb_ops bb_ops = {
+ static void sh_eth_ring_free(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+-	int i;
++	int ringsize, i;
+ 
+ 	/* Free Rx skb ringbuffer */
+ 	if (mdp->rx_skbuff) {
+@@ -1115,6 +1115,20 @@ static void sh_eth_ring_free(struct net_
+ 	}
+ 	kfree(mdp->tx_skbuff);
+ 	mdp->tx_skbuff = NULL;
++
++	if (mdp->rx_ring) {
++		ringsize = sizeof(struct sh_eth_rxdesc) * mdp->num_rx_ring;
++		dma_free_coherent(NULL, ringsize, mdp->rx_ring,
++				  mdp->rx_desc_dma);
++		mdp->rx_ring = NULL;
++	}
++
++	if (mdp->tx_ring) {
++		ringsize = sizeof(struct sh_eth_txdesc) * mdp->num_tx_ring;
++		dma_free_coherent(NULL, ringsize, mdp->tx_ring,
++				  mdp->tx_desc_dma);
++		mdp->tx_ring = NULL;
++	}
+ }
+ 
+ /* format skb and descriptor buffer */
+@@ -1220,14 +1234,14 @@ static int sh_eth_ring_init(struct net_d
+ 	mdp->tx_skbuff = kcalloc(mdp->num_tx_ring, sizeof(*mdp->tx_skbuff),
+ 				 GFP_KERNEL);
+ 	if (!mdp->tx_skbuff)
+-		goto skb_ring_free;
++		goto ring_free;
+ 
+ 	/* Allocate all Rx descriptors. */
+ 	rx_ringsize = sizeof(struct sh_eth_rxdesc) * mdp->num_rx_ring;
+ 	mdp->rx_ring = dma_alloc_coherent(NULL, rx_ringsize, &mdp->rx_desc_dma,
+ 					  GFP_KERNEL);
+ 	if (!mdp->rx_ring)
+-		goto skb_ring_free;
++		goto ring_free;
+ 
+ 	mdp->dirty_rx = 0;
+ 
+@@ -1236,41 +1250,16 @@ static int sh_eth_ring_init(struct net_d
+ 	mdp->tx_ring = dma_alloc_coherent(NULL, tx_ringsize, &mdp->tx_desc_dma,
+ 					  GFP_KERNEL);
+ 	if (!mdp->tx_ring)
+-		goto desc_ring_free;
++		goto ring_free;
+ 	return 0;
+ 
+-desc_ring_free:
+-	/* free DMA buffer */
+-	dma_free_coherent(NULL, rx_ringsize, mdp->rx_ring, mdp->rx_desc_dma);
+-
+-skb_ring_free:
+-	/* Free Rx and Tx skb ring buffer */
++ring_free:
++	/* Free Rx and Tx skb ring buffer and DMA buffer */
+ 	sh_eth_ring_free(ndev);
+-	mdp->tx_ring = NULL;
+-	mdp->rx_ring = NULL;
+ 
+ 	return -ENOMEM;
+ }
+ 
+-static void sh_eth_free_dma_buffer(struct sh_eth_private *mdp)
+-{
+-	int ringsize;
+-
+-	if (mdp->rx_ring) {
+-		ringsize = sizeof(struct sh_eth_rxdesc) * mdp->num_rx_ring;
+-		dma_free_coherent(NULL, ringsize, mdp->rx_ring,
+-				  mdp->rx_desc_dma);
+-		mdp->rx_ring = NULL;
+-	}
+-
+-	if (mdp->tx_ring) {
+-		ringsize = sizeof(struct sh_eth_txdesc) * mdp->num_tx_ring;
+-		dma_free_coherent(NULL, ringsize, mdp->tx_ring,
+-				  mdp->tx_desc_dma);
+-		mdp->tx_ring = NULL;
+-	}
+-}
+-
+ static int sh_eth_dev_init(struct net_device *ndev, bool start)
+ {
+ 	int ret = 0;
+@@ -2231,10 +2220,8 @@ static int sh_eth_set_ringparam(struct n
+ 
+ 		sh_eth_dev_exit(ndev);
+ 
+-		/* Free all the skbuffs in the Rx queue. */
++		/* Free all the skbuffs in the Rx queue and the DMA buffers. */
+ 		sh_eth_ring_free(ndev);
+-		/* Free DMA buffer */
+-		sh_eth_free_dma_buffer(mdp);
+ 	}
+ 
+ 	/* Set new parameters */
+@@ -2479,12 +2466,9 @@ static int sh_eth_close(struct net_devic
+ 
+ 	free_irq(ndev->irq, ndev);
+ 
+-	/* Free all the skbuffs in the Rx queue. */
++	/* Free all the skbuffs in the Rx queue and the DMA buffer. */
+ 	sh_eth_ring_free(ndev);
+ 
+-	/* free DMA buffer */
+-	sh_eth_free_dma_buffer(mdp);
+-
+ 	pm_runtime_put_sync(&mdp->pdev->dev);
+ 
+ 	mdp->is_opened = 0;
+
