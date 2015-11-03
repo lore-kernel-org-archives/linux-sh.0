@@ -1,58 +1,176 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:47 +0000
-Subject: [GIT PULL] Renesas ARM Based SoC Cleanup for v4.5
-Message-Id: <cover.1448585673.git.horms+renesas@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 03 Nov 2015 16:19:26 +0000
+Subject: [PATCH] PCI: rcar (usb): DT can override default window settings
+Message-Id: <1446567566-10952-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1398216284.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Bjorn Helgaas <bhelgaas@google.com>
+Cc: Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-Hi Olof, Hi Kevin, Hi Arnd,
+If the dtb specifies dma-ranges, we use those values. Otherwise, we
+default to the values that were previously hardcoded into the driver.
 
-Please consider these Renesas ARM based SoC cleanup for v4.5.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ .../devicetree/bindings/pci/pci-rcar-gen2.txt      |  6 ++
+ drivers/pci/host/pci-rcar-gen2.c                   | 76 +++++++++++++++++++++-
+ 2 files changed, 79 insertions(+), 3 deletions(-)
 
-This pull request includes some minor cleanups and
-introduces ARCH_RENESAS as a firs step to migrating away
-from ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI.
+diff --git a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
+index 7fab84b..891463c 100644
+--- a/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
++++ b/Documentation/devicetree/bindings/pci/pci-rcar-gen2.txt
+@@ -24,6 +24,11 @@ Required properties:
+ - interrupt-map-mask: standard property that helps to define the interrupt
+   mapping.
+ 
++Optional properties:
++- dma-ranges: a single range for the inbound memory region. If not supplied,
++  defaults to 1GiB at 0x40000000. Note there are hardware restrictions on the
++  allowed combinations of address and size.
++
+ Example SoC configuration:
+ 
+ 	pci0: pci@ee090000  {
+@@ -38,6 +43,7 @@ Example SoC configuration:
+ 		#address-cells = <3>;
+ 		#size-cells = <2>;
+ 		#interrupt-cells = <1>;
++		dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x40000000>;
+ 		interrupt-map-mask = <0xff00 0 0 0x7>;
+ 		interrupt-map = <0x0000 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+ 				 0x0800 0 0 1 &gic 0 108 IRQ_TYPE_LEVEL_HIGH
+diff --git a/drivers/pci/host/pci-rcar-gen2.c b/drivers/pci/host/pci-rcar-gen2.c
+index c4f64bf..6295116 100644
+--- a/drivers/pci/host/pci-rcar-gen2.c
++++ b/drivers/pci/host/pci-rcar-gen2.c
+@@ -15,6 +15,7 @@
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
++#include <linux/of_address.h>
+ #include <linux/of_pci.h>
+ #include <linux/pci.h>
+ #include <linux/platform_device.h>
+@@ -102,6 +103,8 @@ struct rcar_pci_priv {
+ 	unsigned busnr;
+ 	int irq;
+ 	unsigned long window_size;
++	unsigned long window_addr;
++	unsigned long window_pci;
+ };
+ 
+ /* PCI configuration space operations */
+@@ -239,8 +242,8 @@ static int rcar_pci_setup(int nr, struct pci_sys_data *sys)
+ 	       RCAR_PCI_ARBITER_PCIBP_MODE;
+ 	iowrite32(val, reg + RCAR_PCI_ARBITER_CTR_REG);
+ 
+-	/* PCI-AHB mapping: 0x40000000 base */
+-	iowrite32(0x40000000 | RCAR_PCIAHB_PREFETCH16,
++	/* PCI-AHB mapping */
++	iowrite32(priv->window_addr | RCAR_PCIAHB_PREFETCH16,
+ 		  reg + RCAR_PCIAHB_WIN1_CTR_REG);
+ 
+ 	/* AHB-PCI mapping: OHCI/EHCI registers */
+@@ -251,7 +254,7 @@ static int rcar_pci_setup(int nr, struct pci_sys_data *sys)
+ 	iowrite32(RCAR_AHBPCI_WIN1_HOST | RCAR_AHBPCI_WIN_CTR_CFG,
+ 		  reg + RCAR_AHBPCI_WIN1_CTR_REG);
+ 	/* Set PCI-AHB Window1 address */
+-	iowrite32(0x40000000 | PCI_BASE_ADDRESS_MEM_PREFETCH,
++	iowrite32(priv->window_pci | PCI_BASE_ADDRESS_MEM_PREFETCH,
+ 		  reg + PCI_BASE_ADDRESS_1);
+ 	/* Set AHB-PCI bridge PCI communication area address */
+ 	val = priv->cfg_res->start + RCAR_AHBPCI_PCICOM_OFFSET;
+@@ -284,6 +287,64 @@ static struct pci_ops rcar_pci_ops = {
+ 	.write	= pci_generic_config_write,
+ };
+ 
++static int pci_dma_range_parser_init(struct of_pci_range_parser *parser,
++				     struct device_node *node)
++{
++	const int na = 3, ns = 2;
++	int rlen;
++
++	parser->node = node;
++	parser->pna = of_n_addr_cells(node);
++	parser->np = parser->pna + na + ns;
++
++	parser->range = of_get_property(node, "dma-ranges", &rlen);
++	if (!parser->range)
++		return -ENOENT;
++
++	parser->end = parser->range + rlen / sizeof(__be32);
++	return 0;
++}
++
++static int rcar_pci_parse_map_dma_ranges(struct rcar_pci_priv *pci,
++					 struct device_node *np)
++{
++	struct of_pci_range range;
++	struct of_pci_range_parser parser;
++	int index = 0;
++
++	/* Failure to parse is ok as we fall back to defaults */
++	if (pci_dma_range_parser_init(&parser, np))
++		return 0;
++
++	/* Get the dma-ranges from DT */
++	for_each_of_pci_range(&parser, &range) {
++		/* Hardware only allows one inbound 32-bit range */
++		if (index)
++			return -EINVAL;
++
++		pci->window_addr = (unsigned long)range.cpu_addr;
++		pci->window_pci = (unsigned long)range.pci_addr;
++		pci->window_size = (unsigned long)range.size;
++
++		/* Catch HW limitations */
++		if (!(range.flags & IORESOURCE_PREFETCH)) {
++			dev_err(pci->dev, "window must be prefetchable\n");
++			return -EINVAL;
++		}
++		if (pci->window_addr) {
++			u32 lowaddr = 1 << (ffs(pci->window_addr) - 1);
++
++			if (lowaddr < pci->window_size) {
++				dev_err(pci->dev, "invalid window size/addr\n");
++				return -EINVAL;
++			}
++		}
++		index++;
++	}
++
++	return 0;
++}
++
+ static int rcar_pci_probe(struct platform_device *pdev)
+ {
+ 	struct resource *cfg_res, *mem_res;
+@@ -329,6 +390,9 @@ static int rcar_pci_probe(struct platform_device *pdev)
+ 		return priv->irq;
+ 	}
+ 
++	/* default window addr and size if not specified in DT */
++	priv->window_addr = 0x40000000;
++	priv->window_pci = 0x40000000;
+ 	priv->window_size = SZ_1G;
+ 
+ 	if (pdev->dev.of_node) {
+@@ -344,6 +408,12 @@ static int rcar_pci_probe(struct platform_device *pdev)
+ 		priv->busnr = busnr.start;
+ 		if (busnr.end != busnr.start)
+ 			dev_warn(&pdev->dev, "only one bus number supported\n");
++
++		ret = rcar_pci_parse_map_dma_ranges(priv, pdev->dev.of_node);
++		if (ret < 0) {
++			dev_err(&pdev->dev, "failed to parse dma-range\n");
++			return ret;
++		}
+ 	} else {
+ 		priv->busnr = pdev->id;
+ 	}
+-- 
+1.9.1
 
-
-The following changes since commit 8005c49d9aea74d382f474ce11afbbc7d7130bec:
-
-  Linux 4.4-rc1 (2015-11-15 17:00:27 -0800)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v4.5
-
-for you to fetch changes up to c8cd74a1468ffe20db3ddc6e6f408d5377f9be43:
-
-  ARM: shmobile: Remove legacy mach/irqs.h (2015-11-19 16:28:01 -0800)
-
-----------------------------------------------------------------
-Renesas ARM Based SoC Cleanup for v4.5
-
-* Remove now unnecessary header
-* Introduce ARCH_RENESAS
-* Remove unmaintened URL from MAINTAINERS
-
-----------------------------------------------------------------
-Laurent Pinchart (1):
-      ARM: shmobile: Remove legacy mach/irqs.h
-
-Simon Horman (2):
-      MAINTAINERS: Remove link to oss.renesas.com which is closed
-      ARM: shmobile: Introduce ARCH_RENESAS
-
- MAINTAINERS                                |  1 -
- arch/arm/configs/multi_v7_defconfig        |  2 +-
- arch/arm/configs/shmobile_defconfig        |  2 +-
- arch/arm/mach-shmobile/Kconfig             | 10 +++++++---
- arch/arm/mach-shmobile/include/mach/irqs.h | 10 ----------
- arch/arm/mach-shmobile/irqs.h              | 15 ---------------
- arch/arm/mach-shmobile/setup-r8a7778.c     |  1 -
- 7 files changed, 9 insertions(+), 32 deletions(-)
- delete mode 100644 arch/arm/mach-shmobile/include/mach/irqs.h
- delete mode 100644 arch/arm/mach-shmobile/irqs.h
