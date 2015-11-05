@@ -1,84 +1,103 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:56 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM Based SoC DT Updates for v4.5
-Message-Id: <cover.1448586938.git.horms+renesas@verge.net.au>
+Date: Thu, 05 Nov 2015 05:46:37 +0000
+Subject: [PATCH/RFC] ARM: shmobile: Introduce ARCH_RENESAS
+Message-Id: <1446702397-24078-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1381222967.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+The purpose of this patch is to start the process of replacing both
+ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI with ARCH_RENESAS. The motivation
+being that as time has moved on Renesas has become a name than shmobile for
+the majority Renesas 32-bit ARM based SoCs. The name is, conveniently, also
+applicable to (older) Renesas SH based SoCs and (newer) ARM64 based SoCs
+although this patch only addresses 32-bit ARM.
 
-Please consider these second round of Renesas ARM based SoC DT updates for v4.5.
+It is envisaged that follow up work may address migrating both
+SH SoCs and drivers from ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI to
+ARCH_RENESAS.
 
-This pull request extends support for Renesas ARM Based SoCs via DT
-and includes several minor fixes and cleanups.
+Proposed support for the r8a7795 ARM64 based SoC already uses ARCH_RENESAS
+which selects ARCH_SHMOBILE.
 
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-The following changes since commit 998f468f34f41905051556a9897dbc204b1b75b4:
+---
+* ARM64 patch is
+  "[PATCH v12 1/7] arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support"
+  http://www.spinics.net/lists/arm-kernel/msg455822.html
+---
+ arch/arm/configs/multi_v7_defconfig |  2 +-
+ arch/arm/configs/shmobile_defconfig |  2 +-
+ arch/arm/mach-shmobile/Kconfig      | 10 +++++++---
+ 3 files changed, 9 insertions(+), 5 deletions(-)
 
-  Merge tag 'v4.4-rc1' into HEAD (2015-11-24 12:00:02 +0900)
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index a5c6ebf39b0a..dc4a216e2e41 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -73,7 +73,7 @@ CONFIG_MACH_SPEAR1340=y
+ CONFIG_ARCH_STI=y
+ CONFIG_ARCH_EXYNOS=y
+ CONFIG_EXYNOS5420_MCPM=y
+-CONFIG_ARCH_SHMOBILE_MULTI=y
++CONFIG_ARCH_RENESAS=y
+ CONFIG_ARCH_EMEV2=y
+ CONFIG_ARCH_R7S72100=y
+ CONFIG_ARCH_R8A73A4=y
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 3aef019c0de7..cc8ece33a7e3 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -9,7 +9,7 @@ CONFIG_SYSCTL_SYSCALL=y
+ CONFIG_EMBEDDED=y
+ CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+-CONFIG_ARCH_SHMOBILE_MULTI=y
++CONFIG_ARCH_RENESAS=y
+ CONFIG_ARCH_EMEV2=y
+ CONFIG_ARCH_R7S72100=y
+ CONFIG_ARCH_R8A73A4=y
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 88734a5e10ca..676e11d44e41 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -1,6 +1,8 @@
+ config ARCH_SHMOBILE
+ 	bool
+-	select ZONE_DMA if ARM_LPAE
++
++config ARCH_SHMOBILE_MULTI
++	bool
+ 
+ config PM_RCAR
+ 	bool
+@@ -29,10 +31,11 @@ config ARCH_RMOBILE
+ 	select SYS_SUPPORTS_SH_CMT
+ 	select SYS_SUPPORTS_SH_TMU
+ 
+-menuconfig ARCH_SHMOBILE_MULTI
++config ARCH_RENESAS
+ 	bool "Renesas ARM SoCs" if ARCH_MULTI_V7
+ 	depends on MMU
+ 	select ARCH_SHMOBILE
++	select ARCH_SHMOBILE_MULTI
+ 	select HAVE_ARM_SCU if SMP
+ 	select HAVE_ARM_TWD if SMP
+ 	select ARM_GIC
+@@ -40,8 +43,9 @@ menuconfig ARCH_SHMOBILE_MULTI
+ 	select NO_IOPORT_MAP
+ 	select PINCTRL
+ 	select ARCH_REQUIRE_GPIOLIB
++	select ZONE_DMA if ARM_LPAE
+ 
+-if ARCH_SHMOBILE_MULTI
++if ARCH_RENESAS
+ 
+ #comment "Renesas ARM SoCs System Type"
+ 
+-- 
+2.1.4
 
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt2-for-v4.5
-
-for you to fetch changes up to c8d9fdbe2d648caaa510d45dc13eba2e9957140b:
-
-  ARM: shmobile: sh73a0 dtsi: Add L2 cache-controller node (2015-11-25 10:42:38 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM Based SoC DT Updates for v4.5
-
-* sh73a0, r8a7740: Add L2 cache-controller node
-* r8a7791, r8a7794: remove deprecated #gpio-range-cells
-* r8a7793: Add DU support and enable for VGA port
-* r8a7790: switch console back to scif0
-* alt: Correct ether and scif2 pinmux
-* koelsch: Correct hdmi pinmux
-* silk, lager, porter, bockw: Move SPI FLASH partitions to subnode
-* bockw: Add schi0 pinmux
-
-----------------------------------------------------------------
-Geert Uytterhoeven (6):
-      ARM: shmobile: bockw: Move SPI FLASH partition to subnode
-      ARM: shmobile: porter: Move SPI FLASH partitions to subnode
-      ARM: shmobile: lager: Move SPI FLASH partitions to subnode
-      ARM: shmobile: silk: Move SPI FLASH partitions to subnode
-      ARM: shmobile: r8a7740 dtsi: Add L2 cache-controller node
-      ARM: shmobile: sh73a0 dtsi: Add L2 cache-controller node
-
-Laurent Pinchart (2):
-      ARM: shmobile: r8a7793: Add DU node to device tree
-      ARM: shmobile: r8a7791: koelsch: Fix pinmux for HDMI
-
-Magnus Damm (1):
-      ARM: shmobile: r8a7794: alt: Enable PFC DU for the VGA port
-
-Simon Horman (2):
-      ARM: shmobile: alt: Correct scif2 pfc
-      ARM: shmobile: alt: Correct ether pfc
-
-Ulrich Hecht (2):
-      ARM: shmobile: r8a7790: switch console back to scif0
-      ARM: shmobile: bockw dts: define sdhi0 pins with pull-ups
-
-Wolfram Sang (2):
-      ARM: shmobile: r8a7791: remove deprecated #gpio-range-cells from dtsi
-      ARM: shmobile: r8a7794: remove deprecated #gpio-range-cells from dtsi
-
- arch/arm/boot/dts/r8a7740.dtsi        | 13 ++++++++++
- arch/arm/boot/dts/r8a7778-bockw.dts   | 23 +++++++++++------
- arch/arm/boot/dts/r8a7790-lager.dts   | 47 +++++++++++++++++++----------------
- arch/arm/boot/dts/r8a7791-koelsch.dts |  2 +-
- arch/arm/boot/dts/r8a7791-porter.dts  | 33 +++++++++++++-----------
- arch/arm/boot/dts/r8a7791.dtsi        |  1 -
- arch/arm/boot/dts/r8a7793.dtsi        | 30 ++++++++++++++++++++++
- arch/arm/boot/dts/r8a7794-alt.dts     | 19 +++++++++++---
- arch/arm/boot/dts/r8a7794-silk.dts    | 33 +++++++++++++-----------
- arch/arm/boot/dts/r8a7794.dtsi        |  1 -
- arch/arm/boot/dts/sh73a0.dtsi         | 14 +++++++++++
- 11 files changed, 150 insertions(+), 66 deletions(-)
