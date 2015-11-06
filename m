@@ -1,41 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:54:59 +0000
-Subject: [PATCH 2/5] arm64: defconfig: enable EthernetAVB
-Message-Id: <0dc18e252b5341edc2770f0a9a8ce4554a86a73a.1448588763.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 06 Nov 2015 06:38:32 +0000
+Subject: [PATCH 07/12 v6] arm64: renesas: salvator-x: Sound SSI DMA support
+Message-Id: <874mgzk577.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448588763.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448588763.git.horms+renesas@verge.net.au>
+References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This is present on the Renesas r8a7795 SoC and may be
-used by the Salvator-X board.
 
-Also enable MICREL_PHY which is used on the Salvator-X board.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
+DMA transfer to/from SSI
+
+     DMA
+[MEM] -> [SSI]
+
+     DMA
+[MEM] <- [SSI]
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm64/configs/defconfig | 2 ++
- 1 file changed, 2 insertions(+)
+v5 -> v6
 
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index 206dfd99295c..a7776cd9ffca 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -100,8 +100,10 @@ CONFIG_TUN=y
- CONFIG_VIRTIO_NET=y
- CONFIG_NET_XGENE=y
- CONFIG_SKY2=y
-+CONFIG_RAVB=y
- CONFIG_SMC91X=y
- CONFIG_SMSC911X=y
-+CONFIG_MICREL_PHY=y
- # CONFIG_WLAN is not set
- CONFIG_INPUT_EVDEV=y
- CONFIG_KEYBOARD_GPIO=y
+ - no change
+
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index da2d2d7..6f4217f 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -143,11 +143,11 @@
+ };
+ 
+ &ssi0 {
+-	pio-transfer;
++	no-busif;
+ };
+ 
+ &ssi1 {
+-	pio-transfer;
++	no-busif;
+ 	shared-pin;
+ };
+ 
 -- 
-2.1.4
+1.9.1
 
