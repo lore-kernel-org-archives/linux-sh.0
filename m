@@ -1,52 +1,54 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 27 Nov 2015 08:04:07 +0000
-Subject: Re: [RFC 5/9] i2c: rcar: honor additional i2c timings from DT
-Message-Id: <CAMuHMdU1fWjH2Lv00W2uxRW7-XGp1YaEoA4Ftq5o6yk6WamCBQ@mail.gmail.com>
+From: Thierry Reding <thierry.reding@gmail.com>
+Date: Fri, 06 Nov 2015 14:18:18 +0000
+Subject: Re: [PATCH] pwm: pwm-rcar: Revise the device tree binding document about compatible
+Message-Id: <20151106141818.GA4988@ulmo>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="bp/iNruPH9dso1Pn"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
-	<1448578757-12613-6-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1448578757-12613-6-git-send-email-wsa@the-dreams.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+References: <1444130908-8180-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1444130908-8180-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
 
-On Thu, Nov 26, 2015 at 11:59 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> --- a/drivers/i2c/busses/i2c-rcar.c
-> +++ b/drivers/i2c/busses/i2c-rcar.c
-> @@ -211,12 +214,12 @@ static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, struct i2c_timin
->          * it is impossible to calculate large scale
->          * number on u32. separate it
->          *
-> -        * F[(ticf + tr + intd) * ick]
-> -        *  = F[(35 + 200 + 50)ns * ick]
-> -        *  = F[285 * ick / 1000000000]
-> -        *  = F[(ick / 1000000) * 285 / 1000]
-> +        * F[(ticf + tr + intd) * ick] with sum = (ticf + tr + intd)
-> +        *  = F[sum * ick / 1000000000]
-> +        *  = F[(ick / 1000000) * sum / 1000]
->          */
-> -       round = (ick + 500000) / 1000000 * 285;
-> +       sum = t->scl_fall_ns + t->scl_rise_ns + t->scl_int_delay_ns;
-> +       round = (ick + 500000) / 1000000 * sum;
 
-If you're sure it cannot overflow, doing the "* sum" before the division
-improves accuracy.
+--bp/iNruPH9dso1Pn
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
->         round = (round + 500) / 1000;
+On Tue, Oct 06, 2015 at 08:28:28PM +0900, Yoshihiro Shimoda wrote:
+> The compatible should be "renesas,pwm-rcar", and one the the SoC
+> specific string. So, this patch revises the documentation.
+>=20
+> Reported-by: Rob Herring <robh+dt@kernel.org>
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> ---
+>  Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
 
-You can use DIV_ROUND_CLOSEST everywhere, e.g.
+Applied, thanks.
 
-    round = DIV_ROUND_CLOSEST(round, 1000)
+Thierry
 
-Gr{oetje,eeting}s,
+--bp/iNruPH9dso1Pn
+Content-Type: application/pgp-signature; name="signature.asc"
 
-                        Geert
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+iQIcBAABCAAGBQJWPLaoAAoJEN0jrNd/PrOhRl0QAKwhgNrFcoxkgzj28F9fMUO0
+wmq30941HLS33kPxky9D/6u8D4pbBJmk58OM3meQ6XdkTFhhlIGE/BzlizsP/EjU
+8TWzvy7ViOnYp3J/jyK9FuGpaGsL8wRqBCTdG92ElaW4gpvdrmivCZze41XQ1PAD
+nQC+/fr/TK7dA55NNiIwMfwvhkVEXCYPuRWXNNyre3Fbly88lV7LaekpQccTsglO
+fL4z4CEnmW3IhUFm3/hXwncRSjs9YaPT3ZPNOAMWCnGLIc5O8HdEvg1hc7TK83YA
+yJoRERTN+dHr6ZDxgO6Uzdk6VnzKYCzpY4rAMjZTdIQOQO2pDWSBBJjJkCKefFAB
+ZJm5vbrzWe0UdBFzhlIcN95VXypLoR8nuz4aX86w+yH6pvrb6chkeKfX7aUhZyWd
+8Pc91edQaKNmp53JJEL16rPKAhoW4mOHth9LJCYpCHyUHjIdHw61hCYzegMGritn
+JcF/cCkuK7fBfZmFow7UeYGTxSbbZiAZB1p5UJGSJN1QW+gToutlB2N7sE5Ws1r8
+drJmJDcq1ThRRj8RhXVZFcJCZWH8lhBWXpueefcuLNLYObkw/0HIendBn0qFnDUk
+ijA6OlSlGQ516xJhjRPsom2PcR6JdxMH5g71BsORCewmVnC9BSxXQESmvY+ZEQBO
+hVvmd9QIFBTa6gdbcaZb
+=PAHa
+-----END PGP SIGNATURE-----
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--bp/iNruPH9dso1Pn--
