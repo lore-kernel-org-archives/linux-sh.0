@@ -1,38 +1,104 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Nov 2015 12:36:56 +0000
-Subject: [PATCH 5/6] staging: board: kzm9d: Use "arm,pl390"
-Message-Id: <1448023017-21816-6-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 06 Nov 2015 06:29:20 +0000
+Subject: [PATCH 01/12 v6] arm64: renesas: r8a7795: add AUDIO_DMAC support
+Message-Id: <87d1vnk5dr.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448023017-21816-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448023017-21816-1-git-send-email-geert+renesas@glider.be>
+References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-Must be applied together with "ARM: shmobile: emev2 dtsi: Use
-"arm,pl390" for GIC"!
 
-Greg: Can you please provide your ack? Thanks!
----
- drivers/staging/board/kzm9d.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-diff --git a/drivers/staging/board/kzm9d.c b/drivers/staging/board/kzm9d.c
-index 8d1eb09bc66ef413..05a6d434d307fe0f 100644
---- a/drivers/staging/board/kzm9d.c
-+++ b/drivers/staging/board/kzm9d.c
-@@ -11,7 +11,7 @@ static struct resource usbs1_res[] __initdata = {
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+v5 -> v6
+
+ - no change
+
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 64 ++++++++++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index fc76934..e419163 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -202,6 +202,70 @@
+ 			#power-domain-cells = <0>;
+ 		};
  
- static void __init kzm9d_init(void)
- {
--	board_staging_gic_setup_xlate("arm,cortex-a9-gic", 32);
-+	board_staging_gic_setup_xlate("arm,pl390", 32);
- 
- 	if (!board_staging_dt_node_available(usbs1_res,
- 					     ARRAY_SIZE(usbs1_res))) {
++		audma0: dma-controller@ec700000 {
++			compatible = "renesas,rcar-dmac";
++			reg = <0 0xec700000 0 0x10000>;
++			interrupts =	<0 350 IRQ_TYPE_LEVEL_HIGH
++					 0 320 IRQ_TYPE_LEVEL_HIGH
++					 0 321 IRQ_TYPE_LEVEL_HIGH
++					 0 322 IRQ_TYPE_LEVEL_HIGH
++					 0 323 IRQ_TYPE_LEVEL_HIGH
++					 0 324 IRQ_TYPE_LEVEL_HIGH
++					 0 325 IRQ_TYPE_LEVEL_HIGH
++					 0 326 IRQ_TYPE_LEVEL_HIGH
++					 0 327 IRQ_TYPE_LEVEL_HIGH
++					 0 328 IRQ_TYPE_LEVEL_HIGH
++					 0 329 IRQ_TYPE_LEVEL_HIGH
++					 0 330 IRQ_TYPE_LEVEL_HIGH
++					 0 331 IRQ_TYPE_LEVEL_HIGH
++					 0 332 IRQ_TYPE_LEVEL_HIGH
++					 0 333 IRQ_TYPE_LEVEL_HIGH
++					 0 334 IRQ_TYPE_LEVEL_HIGH
++					 0 335 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12", "ch13", "ch14", "ch15";
++			clocks = <&cpg CPG_MOD 502>;
++			clock-names = "fck";
++			power-domains = <&cpg>;
++			#dma-cells = <1>;
++			dma-channels = <16>;
++		};
++
++		audma1: dma-controller@ec720000 {
++			compatible = "renesas,rcar-dmac";
++			reg = <0 0xec720000 0 0x10000>;
++			interrupts =	<0 351 IRQ_TYPE_LEVEL_HIGH
++					 0 336 IRQ_TYPE_LEVEL_HIGH
++					 0 337 IRQ_TYPE_LEVEL_HIGH
++					 0 338 IRQ_TYPE_LEVEL_HIGH
++					 0 339 IRQ_TYPE_LEVEL_HIGH
++					 0 340 IRQ_TYPE_LEVEL_HIGH
++					 0 341 IRQ_TYPE_LEVEL_HIGH
++					 0 342 IRQ_TYPE_LEVEL_HIGH
++					 0 343 IRQ_TYPE_LEVEL_HIGH
++					 0 344 IRQ_TYPE_LEVEL_HIGH
++					 0 345 IRQ_TYPE_LEVEL_HIGH
++					 0 346 IRQ_TYPE_LEVEL_HIGH
++					 0 347 IRQ_TYPE_LEVEL_HIGH
++					 0 348 IRQ_TYPE_LEVEL_HIGH
++					 0 349 IRQ_TYPE_LEVEL_HIGH
++					 0 382 IRQ_TYPE_LEVEL_HIGH
++					 0 383 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12", "ch13", "ch14", "ch15";
++			clocks = <&cpg CPG_MOD 501>;
++			clock-names = "fck";
++			power-domains = <&cpg>;
++			#dma-cells = <1>;
++			dma-channels = <16>;
++		};
++
+ 		pfc: pfc@e6060000 {
+ 			compatible = "renesas,pfc-r8a7795";
+ 			reg = <0 0xe6060000 0 0x50c>;
 -- 
 1.9.1
 
