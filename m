@@ -1,154 +1,86 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 12 Nov 2015 14:31:51 +0000
-Subject: [PATCH v2 06/10] i2c: rcar: init new messages in irq
-Message-Id: <1447338715-9955-7-git-send-email-wsa@the-dreams.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 06 Nov 2015 06:35:51 +0000
+Subject: [PATCH 03/12 v6] arm64: renesas: r8a7795: Sound SSI DMA support
+Message-Id: <87a8qrk5bp.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447338715-9955-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1447338715-9955-1-git-send-email-wsa@the-dreams.de>
+References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Setting up new messages was done in process context while handling a
-message was in interrupt context. Because of the HW design, this IP core
-is sensitive to timing, so the context switches were too expensive. Move
-this setup to interrupt context as well.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-In my test setup, this fixed the occasional 'data byte sent twice' issue
-which a number of people have seen. It also fixes to send REP_START
-after a read message which was wrongly send as a STOP + START sequence
-before.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/busses/i2c-rcar.c | 74 +++++++++++++++++++++----------------------
- 1 file changed, 37 insertions(+), 37 deletions(-)
+v5 -> v6
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 4bd3099865b485..316de40fa4dc69 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -267,6 +267,13 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
- 	rcar_i2c_write(priv, ICMIER, read ? RCAR_IRQ_RECV : RCAR_IRQ_SEND);
- }
- 
-+static void rcar_i2c_next_msg(struct rcar_i2c_priv *priv)
-+{
-+	priv->msg++;
-+	priv->msgs_left--;
-+	rcar_i2c_prepare_msg(priv);
-+}
-+
- /*
-  *		interrupt functions
-  */
-@@ -309,21 +316,17 @@ static int rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
- 		 * [ICRXTX] -> [SHIFT] -> [I2C bus]
- 		 */
- 
--		if (priv->flags & ID_LAST_MSG)
-+		if (priv->flags & ID_LAST_MSG) {
- 			/*
- 			 * If current msg is the _LAST_ msg,
- 			 * prepare stop condition here.
- 			 * ID_DONE will be set on STOP irq.
- 			 */
- 			rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
--		else
--			/*
--			 * If current msg is _NOT_ last msg,
--			 * it doesn't call stop phase.
--			 * thus, there is no STOP irq.
--			 * return ID_DONE here.
--			 */
--			return ID_DONE;
-+		} else {
-+			rcar_i2c_next_msg(priv);
-+			return 0;
-+		}
- 	}
- 
- 	rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
-@@ -367,7 +370,10 @@ static int rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
- 	else
- 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
- 
--	rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_RECV);
-+	if (priv->pos = msg->len && !(priv->flags & ID_LAST_MSG))
-+		rcar_i2c_next_msg(priv);
-+	else
-+		rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_RECV);
- 
- 	return 0;
- }
-@@ -462,6 +468,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
- 
- 	/* Stop */
- 	if (msr & MST) {
-+		priv->msgs_left--; /* The last message also made it */
- 		rcar_i2c_flags_set(priv, ID_DONE);
- 		goto out;
- 	}
-@@ -501,35 +508,28 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 		/* This HW can't send STOP after address phase */
- 		if (msgs[i].len = 0) {
- 			ret = -EOPNOTSUPP;
--			break;
--		}
--
--		/* init each data */
--		priv->msg = &msgs[i];
--		priv->msgs_left = num - i;
--
--		rcar_i2c_prepare_msg(priv);
--
--		time_left = wait_event_timeout(priv->wait,
--					     rcar_i2c_flags_has(priv, ID_DONE),
--					     adap->timeout);
--		if (!time_left) {
--			rcar_i2c_init(priv);
--			ret = -ETIMEDOUT;
--			break;
--		}
--
--		if (rcar_i2c_flags_has(priv, ID_NACK)) {
--			ret = -ENXIO;
--			break;
--		}
--
--		if (rcar_i2c_flags_has(priv, ID_ARBLOST)) {
--			ret = -EAGAIN;
--			break;
-+			goto out;
- 		}
-+	}
- 
--		ret = i + 1; /* The number of transfer */
-+	/* init data */
-+	priv->msg = msgs;
-+	priv->msgs_left = num;
-+
-+	rcar_i2c_prepare_msg(priv);
-+
-+	time_left = wait_event_timeout(priv->wait,
-+				     rcar_i2c_flags_has(priv, ID_DONE),
-+				     num * adap->timeout);
-+	if (!time_left) {
-+		rcar_i2c_init(priv);
-+		ret = -ETIMEDOUT;
-+	} else if (rcar_i2c_flags_has(priv, ID_NACK)) {
-+		ret = -ENXIO;
-+	} else if (rcar_i2c_flags_has(priv, ID_ARBLOST)) {
-+		ret = -EAGAIN;
-+	} else {
-+		ret = num - priv->msgs_left; /* The number of transfer */
- 	}
- out:
- 	pm_runtime_put(dev);
+ - no change
+
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index e5d3719..17ced05 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -538,33 +538,53 @@
+ 			rcar_sound,ssi {
+ 				ssi0: ssi@0 {
+ 					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x01>, <&audma1 0x02>, <&audma0 0x15>, <&audma1 0x16>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi1: ssi@1 {
+ 					 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x03>, <&audma1 0x04>, <&audma0 0x49>, <&audma1 0x4a>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi2: ssi@2 {
+ 					interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x05>, <&audma1 0x06>, <&audma0 0x63>, <&audma1 0x64>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi3: ssi@3 {
+ 					interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x07>, <&audma1 0x08>, <&audma0 0x6f>, <&audma1 0x70>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi4: ssi@4 {
+ 					interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x09>, <&audma1 0x0a>, <&audma0 0x71>, <&audma1 0x72>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi5: ssi@5 {
+ 					interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x0b>, <&audma1 0x0c>, <&audma0 0x73>, <&audma1 0x74>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi6: ssi@6 {
+ 					interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x0d>, <&audma1 0x0e>, <&audma0 0x75>, <&audma1 0x76>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi7: ssi@7 {
+ 					interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x0f>, <&audma1 0x10>, <&audma0 0x79>, <&audma1 0x7a>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi8: ssi@8 {
+ 					interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x11>, <&audma1 0x12>, <&audma0 0x7b>, <&audma1 0x7c>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 				ssi9: ssi@9 {
+ 					interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x13>, <&audma1 0x14>, <&audma0 0x7d>, <&audma1 0x7e>;
++					dma-names = "rx", "tx", "rxu", "txu";
+ 				};
+ 			};
+ 		};
 -- 
-2.1.4
+1.9.1
 
