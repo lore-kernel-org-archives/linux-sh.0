@@ -1,50 +1,85 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 24 Nov 2015 23:50:09 +0000
-Subject: Re: [PATCH 0/4] VSP1: Add support for lookup tables
-Message-Id: <4999881.SYOHnPD9Ad@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 06 Nov 2015 07:53:19 +0000
+Subject: [PATCH] ARM: proc-v7: Put stack in data section, handle XIP case
+Message-Id: <20151106075319.19378.64286.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447649205-1560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <20151124024151.GC21853@verge.net.au>
-In-Reply-To: <20151124024151.GC21853@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-media@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On Tuesday 24 November 2015 11:41:52 Simon Horman wrote:
-> On Mon, Nov 16, 2015 at 06:46:41AM +0200, Laurent Pinchart wrote:
-> > Hello,
-> > 
-> > The VSP1 includes two lookup table modules, a 1D LUT and a 3D cubic lookup
-> > table (CLU). This patch series fixes the LUT implementation and adds
-> > support for the CLU.
-> > 
-> > The patches are based on top of
-> > 
-> > 	git://linuxtv.org/media_tree.git master
-> > 
-> > and have been tested on a Koelsch board.
-> > 
-> > Laurent Pinchart (4):
-> >   v4l: vsp1: Fix LUT format setting
-> >   v4l: vsp1: Add Cubic Look Up Table (CLU) support
-> >   ARM: Renesas: r8a7790: Enable CLU support in VSPS
-> >   ARM: Renesas: r8a7791: Enable CLU support in VSPS
-> 
-> I marked the "ARM: Renesas:" patches as deferred pending the binding
-> being accepted.
+Adjust the ARM v7 setup code to put the temporary stack in the
+data section and also use PLAT_PHYS_OFFSET to handle the XIP case.
 
-I'll resend the patches once the dependencies will be accepted.
+The common case of XIP=n the code is considered to be position
+independent while for XIP=y PLAT_PHYS_OFFSET is fixed. This
+is based on that early code in head.S invoking PROCINFO_INITFUNC
+seems position independent.
 
-> I know we are moving towards "Renesas:" but could you stick to "shmobile"
-> for now?
+At this point two places in proc-v7.S make use of the temporary
+stack so the PLAT_PHYS_OFFSET calculation is duplicated.
 
-Sure.
+The XIP=n case has been tested with CPU Hotplug on r8a7779
+(Cortex A9 Quad) and Chris [CCed] has tested the XIP=y
+case.
 
--- 
-Regards,
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Tested-by: Chris.Brandt@renesas.com
+---
 
-Laurent Pinchart
+ Please let me know if considering XIP=y position independent
+ is overkill, or if it is better to share code somehow.
 
+ arch/arm/mm/proc-v7.S |   25 +++++++++++++++++++++++--
+ 1 file changed, 23 insertions(+), 2 deletions(-)
+
+--- 0001/arch/arm/mm/proc-v7.S
++++ work/arch/arm/mm/proc-v7.S	2015-11-06 16:32:13.370513000 +0900
+@@ -274,7 +274,15 @@ __v7_ca15mp_setup:
+ __v7_b15mp_setup:
+ __v7_ca17mp_setup:
+ 	mov	r10, #0
+-1:	adr	r12, __v7_setup_stack		@ the local stack
++1:	adr	r11, __v7_setup_stack_ptr	@ pointer to local stack
++	ldmia	r11, {r0, r12}
++#ifdef CONFIG_XIP_KERNEL
++	ldr	r11, =PLAT_PHYS_OFFSET		@ fixed address
++#else
++	sub	r11, r11, r0			@ position independent offset
++#endif
++	add	r12, r12, r11			@ phys address
++	sub	r12, #PAGE_OFFSET
+ 	stmia	r12, {r0-r5, lr}		@ v7_invalidate_l1 touches r0-r6
+ 	bl      v7_invalidate_l1
+ 	ldmia	r12, {r0-r5, lr}
+@@ -415,7 +423,15 @@ __v7_pj4b_setup:
+ #endif /* CONFIG_CPU_PJ4B */
+ 
+ __v7_setup:
+-	adr	r12, __v7_setup_stack		@ the local stack
++	adr	r11, __v7_setup_stack_ptr	@ pointer to local stack
++	ldmia	r11, {r0, r12}
++#ifdef CONFIG_XIP_KERNEL
++	ldr	r11, =PLAT_PHYS_OFFSET		@ fixed address
++#else
++	sub	r11, r11, r0			@ position independent offset
++#endif
++	add	r12, r12, r11			@ phys address
++	sub	r12, #PAGE_OFFSET
+ 	stmia	r12, {r0-r5, lr}		@ v7_invalidate_l1 touches r0-r6
+ 	bl      v7_invalidate_l1
+ 	ldmia	r12, {r0-r5, lr}
+@@ -482,6 +498,11 @@ __errata_finish:
+ 	ret	lr				@ return to head.S:__ret
+ ENDPROC(__v7_setup)
+ 
++__v7_setup_stack_ptr:
++	.long	.
++	.long	__v7_setup_stack
++
++	.data
+ 	.align	2
+ __v7_setup_stack:
+ 	.space	4 * 7				@ 12 registers
