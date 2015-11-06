@@ -1,83 +1,111 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:05:22 +0000
-Subject: [PATCH 15/29] ARM: shmobile: koelsch: Move SPI FLASH partitions to subnode
-Message-Id: <27fa0a6c55537f8d8656b9e59ae584b0b427232a.1447981420.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 06 Nov 2015 06:36:25 +0000
+Subject: [PATCH 04/12 v6] arm64: renesas: r8a7795: Sound SRC support
+Message-Id: <878u6bk5ar.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1447981420.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
+References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-As of commits 5cfdedb7b9a0fe38 ("mtd: ofpart: move ofpart partitions to a
-dedicated dt node") and fe2585e9c29a650a ("doc: dt: mtd: support
-partitions in a special 'partitions' subnode"), having partitions as
-direct subnodes of an mtd device is discouraged:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-    spi0.0: 'partitions' subnode not found on /spi@e6b10000/flash@0. Trying to parse direct subnodes as partitions.
-
-Hence move the SPI FLASH partitions to a "partitions" subnode.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 33 ++++++++++++++++++---------------
- 1 file changed, 18 insertions(+), 15 deletions(-)
+v5 -> v6
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index 98da99d1b7dc..4ec2d1fba7c9 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -479,8 +479,6 @@
- 	status = "okay";
+ - no change
+
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 61 ++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 17ced05..4cceb93 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -524,6 +524,11 @@
+ 				 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
+ 				 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
+ 				 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
++				 <&cpg CPG_MOD 1022>, <&cpg CPG_MOD 1023>,
++				 <&cpg CPG_MOD 1024>, <&cpg CPG_MOD 1025>,
++				 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
++				 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
++				 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
+ 				 <&audio_clk_a>, <&audio_clk_b>,
+ 				 <&audio_clk_c>,
+ 				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
+@@ -531,10 +536,66 @@
+ 				      "ssi.9", "ssi.8", "ssi.7", "ssi.6",
+ 				      "ssi.5", "ssi.4", "ssi.3", "ssi.2",
+ 				      "ssi.1", "ssi.0",
++				      "src.9", "src.8", "src.7", "src.6",
++				      "src.5", "src.4", "src.3", "src.2",
++				      "src.1", "src.0",
+ 				      "clk_a", "clk_b", "clk_c", "clk_i";
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
  
- 	flash: flash@0 {
--		#address-cells = <1>;
--		#size-cells = <1>;
- 		compatible = "spansion,s25fl512s", "jedec,spi-nor";
- 		reg = <0>;
- 		spi-max-frequency = <30000000>;
-@@ -490,19 +488,24 @@
- 		spi-cpol;
- 		m25p,fast-read;
- 
--		partition@0 {
--			label = "loader";
--			reg = <0x00000000 0x00080000>;
--			read-only;
--		};
--		partition@80000 {
--			label = "user";
--			reg = <0x00080000 0x00580000>;
--			read-only;
--		};
--		partition@600000 {
--			label = "flash";
--			reg = <0x00600000 0x03a00000>;
-+		partitions {
-+			#address-cells = <1>;
-+			#size-cells = <1>;
++			rcar_sound,src {
++				src0: src@0 {
++					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x85>, <&audma1 0x9a>;
++					dma-names = "rx", "tx";
++				};
++				src1: src@1 {
++					interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x87>, <&audma1 0x9c>;
++					dma-names = "rx", "tx";
++				};
++				src2: src@2 {
++					interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x89>, <&audma1 0x9e>;
++					dma-names = "rx", "tx";
++				};
++				src3: src@3 {
++					interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x8b>, <&audma1 0xa0>;
++					dma-names = "rx", "tx";
++				};
++				src4: src@4 {
++					interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x8d>, <&audma1 0xb0>;
++					dma-names = "rx", "tx";
++				};
++				src5: src@5 {
++					interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x8f>, <&audma1 0xb2>;
++					dma-names = "rx", "tx";
++				};
++				src6: src@6 {
++					interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x91>, <&audma1 0xb4>;
++					dma-names = "rx", "tx";
++				};
++				src7: src@7 {
++					interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x93>, <&audma1 0xb6>;
++					dma-names = "rx", "tx";
++				};
++				src8: src@8 {
++					interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x95>, <&audma1 0xb8>;
++					dma-names = "rx", "tx";
++				};
++				src9: src@9 {
++					interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x97>, <&audma1 0xba>;
++					dma-names = "rx", "tx";
++				};
++			};
 +
-+			partition@0 {
-+				label = "loader";
-+				reg = <0x00000000 0x00080000>;
-+				read-only;
-+			};
-+			partition@80000 {
-+				label = "user";
-+				reg = <0x00080000 0x00580000>;
-+				read-only;
-+			};
-+			partition@600000 {
-+				label = "flash";
-+				reg = <0x00600000 0x03a00000>;
-+			};
- 		};
- 	};
- };
+ 			rcar_sound,ssi {
+ 				ssi0: ssi@0 {
+ 					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-2.1.4
+1.9.1
 
