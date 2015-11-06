@@ -1,77 +1,40 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Wed, 18 Nov 2015 12:51:07 +0000
-Subject: [PATCH 2/2] ARM: shmobile: alt: add VIN0, ADV7180 DT support
-Message-Id: <1447851067-8214-3-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 06 Nov 2015 06:40:44 +0000
+Subject: [PATCH 11/12 v6] arm64: defconfig: add Renesas R-Car DMAC driver support
+Message-Id: <87y4ebiqj4.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447851067-8214-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1447851067-8214-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Adds the device board-dependent part of the VIN0 device and its ADV7180
-video decoder on I2C1, and the interconnection between them.
 
-Based on silk patch by Sergei Shtylyov.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7794-alt.dts | 34 ++++++++++++++++++++++++++++++++++
- 1 file changed, 34 insertions(+)
+v5 -> v6
 
-diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
-index 88ed017..fd1cfcd 100644
---- a/arch/arm/boot/dts/r8a7794-alt.dts
-+++ b/arch/arm/boot/dts/r8a7794-alt.dts
-@@ -120,6 +120,11 @@
- 		renesas,groups = "i2c1";
- 		renesas,function = "i2c1";
- 	};
-+
-+	vin0_pins: vin0 {
-+		renesas,groups = "vin0_data8", "vin0_clk";
-+		renesas,function = "vin0";
-+	};
- };
- 
- &cmt0 {
-@@ -145,6 +150,35 @@
- 
- 	status = "okay";
- 	clock-frequency = <400000>;
-+
-+	composite-in@20 {
-+		compatible = "adi,adv7180";
-+		reg = <0x20>;
-+		remote = <&vin0>;
-+
-+		port {
-+			adv7180: endpoint {
-+				bus-width = <8>;
-+				remote-endpoint = <&vin0ep>;
-+			};
-+		};
-+	};
-+};
-+
-+&vin0 {
-+	status = "okay";
-+	pinctrl-0 = <&vin0_pins>;
-+	pinctrl-names = "default";
-+
-+	port {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		vin0ep: endpoint {
-+			remote-endpoint = <&adv7180>;
-+			bus-width = <8>;
-+		};
-+	};
- };
- 
- &scif2 {
+ - no change
+
+ arch/arm64/configs/defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 2f38277..d014f9f 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -180,6 +180,7 @@ CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_EFI=y
+ CONFIG_RTC_DRV_XGENE=y
+ CONFIG_DMADEVICES=y
++CONFIG_RCAR_DMAC=y
+ CONFIG_QCOM_BAM_DMA=y
+ CONFIG_VIRTIO_PCI=y
+ CONFIG_VIRTIO_BALLOON=y
 -- 
-2.6.1
+1.9.1
 
