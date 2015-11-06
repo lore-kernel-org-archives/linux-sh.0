@@ -1,53 +1,58 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sat, 07 Nov 2015 13:29:55 +0000
-Subject: Re: [PATCH 3/3] PCI: pcie-rcar: Add support for R-Car H3.
-Message-Id: <20151107132955.GB21726@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="O5XBE6gyVG5Rl6Rj"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 06 Nov 2015 07:30:48 +0000
+Subject: [PATCH] ARM: shmobile: r8a7793: Add thermal device to DT
+Message-Id: <1446795048-29767-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446482175-26507-1-git-send-email-phil.edworthy@renesas.com>
- <1446482175-26507-4-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1446482175-26507-4-git-send-email-phil.edworthy@renesas.com>
-To: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Bjorn Helgaas <bhelgaas@google.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms@verge.net.au>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Harunobu Kurokawa <harunobu.kurokawa.dn@renesas.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, devicetree@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+Instantiate the thermal sensor in the r8a7793 device tree.
 
---O5XBE6gyVG5Rl6Rj
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Based on very similar work for the r8a7790 by Magnus Damm.
 
-On Mon, Nov 02, 2015 at 04:36:15PM +0000, Phil Edworthy wrote:
-> From: Harunobu Kurokawa <harunobu.kurokawa.dn@renesas.com>
->=20
-> R-Car H3 device is r8a7795
->=20
-> Signed-off-by: Harunobu Kurokawa <harunobu.kurokawa.dn@renesas.com>
+Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Tested-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ arch/arm/boot/dts/r8a7793.dtsi | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index fcafa87616fa..6c7bae4318c9 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -53,6 +53,14 @@
+ 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
+ 
++	thermal@e61f0000 {
++		compatible = "renesas,thermal-r8a7793", "renesas,rcar-thermal";
++		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
++		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks R8A7793_CLK_THERMAL>;
++		power-domains = <&cpg_clocks>;
++	};
++
+ 	timer {
+ 		compatible = "arm,armv7-timer";
+ 		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
+@@ -329,6 +337,14 @@
+ 			clock-indices = <R8A7793_CLK_IRQC>;
+ 			clock-output-names = "irqc";
+ 		};
++		mstp5_clks: mstp5_clks@e6150144 {
++			compatible = "renesas,r8a7793-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
++			clocks = <&extal_clk>;
++			#clock-cells = <1>;
++			clock-indices = <R8A7793_CLK_THERMAL>;
++			clock-output-names = "thermal";
++		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7793-mstp-clocks",
+ 				     "renesas,cpg-mstp-clocks";
+-- 
+2.1.4
 
---O5XBE6gyVG5Rl6Rj
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWPfzSAAoJEBQN5MwUoCm2+KcQAIBiwBnJFAwCjWPDggwNyvUQ
-ME02Do0BZKdxBBZwkYyoK/U51Rb9quRWX0ceNkYJ+wYKh0gkHg6/AZzEmDrs0nUA
-xWMCodnB2669smGmLr5aEwy+fmFSlC9HR6m7s8gHoxGJVHedT9scycHzGm3pz3d3
-OoyrGW5KPNHdCHMJOy3I887k/YfCY514AoHy0zhDFvbgDedhg3zIcw53aP1/Ycbg
-Qy0gmrRugecdRz1s8Q+NjmjfKRg3bKH3H+ffTM7T51XBy+2pslCEwrKx77yikexA
-VocmfMNJtitZNYFQAKxfltaUpfPgwDeHNaVYhpl2gtzwUTTxjAImbbyv/vo7zKG5
-1vNZfQ6rW/8ozbZYe7YsF8cWBVB2adHXu3tOwSmheuobVl7WkYnZNCl5D8Nfl9Jj
-Yo7ANPC6mjZUsljtmxv84n8XJhnx4XZ23Zl274LrFOdGADB097irmLAnz+CHZ3pP
-UmPcPVgZFcU/oN6a1LL0f4/zBaHGw8LhlNMBYhJUsGhQGtHR1CKrRVj63AUuoceH
-d2tUO7iDpE72K99m/ZwQCqGrVv5GMBytXlVwqn886NML+TuX92fqo9s/BXlx+YZO
-2IOLIiL9riSyXbAT8KQAwCe89O+MUlbzwG3IkdcYMQ1SUfa4c9bdihX0JQxV9mLT
-1X/JNwTeEvsqFT/NS4v7
-=Kzlj
------END PGP SIGNATURE-----
-
---O5XBE6gyVG5Rl6Rj--
