@@ -1,70 +1,73 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 25 Nov 2015 12:52:13 +0000
-Subject: [PATCH] pinctrl: sh-pfc: sh7734: Add missing cfg macro parameter to fix build
-Message-Id: <1448455933-20276-1-git-send-email-geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 06 Nov 2015 06:40:15 +0000
+Subject: [PATCH 10/12 v6] arm64: renesas: salvator-x: Sound DVC support
+Message-Id: <87ziyriqjz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-When building for SH7734:
 
-    drivers/pinctrl/sh-pfc/pfc-sh7734.c:586:1: error: macro "_GP_DATA" passed 5 arguments, but takes just 4
-    drivers/pinctrl/sh-pfc/pfc-sh7734.c:586:2: error: '_GP_DATA' undeclared here (not in a function)
-    drivers/pinctrl/sh-pfc/pfc-sh7734.c:586:1: error: macro "_GP_DATA" passed 5 arguments, but takes just 4
-    drivers/pinctrl/sh-pfc/pfc-sh7734.c:586:1: error: macro "_GP_DATA" passed 5 arguments, but takes just 4
-    ...
-    drivers/pinctrl/sh-pfc/pfc-sh7734.c:2389:1: error: macro "_GP_INOUTSEL" passed 5 arguments, but takes just 4
-    drivers/pinctrl/sh-pfc/pfc-sh7734.c:2389:53: error: '_GP_INOUTSEL' undeclared here (not in a function)
-    drivers/pinctrl/sh-pfc/pfc-sh7734.c:2389:2: warning: initialization makes integer from pointer without a cast [enabled by default]
-    drivers/pinctrl/sh-pfc/pfc-sh7734.c:2389:2: warning: (near initialization for '(anonymous)[0]') [enabled by default]
-    ...
-    drivers/pinctrl/sh-pfc/pfc-sh7734.c:2416:1: error: macro "_GP_INDT" passed 5 arguments, but takes just 4
-    drivers/pinctrl/sh-pfc/pfc-sh7734.c:2416:47: error: '_GP_INDT' undeclared here (not in a function)
-    drivers/pinctrl/sh-pfc/pfc-sh7734.c:2416:2: warning: initialization makes integer from pointer without a cast [enabled by default]
-    drivers/pinctrl/sh-pfc/pfc-sh7734.c:2416:2: warning: (near initialization for '(anonymous)[0]') [enabled by default]
-    ...
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Add the missing "cfg" macro parameters to the sh7734-specific
-_GP_DATA(), _GP_INOUTSEL(), and _GP_INDT() macros to fix this.
-
-Fixes: 22768fc60abbf58b ("pinctrl: sh-pfc: Add macros defining GP ports with config flags")
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Hi Linus,
+v5 -> v6
 
-This is a regression introduced in v4.4-rc1.
-Thanks for applying directly!
+ - no change
 
-How to trigger (there's no sh7734 defconfig):
-  - make ARCH=sh se7724_defconfig
-  - enable CONFIG_CPU_SUBTYPE_SH7734
-  - make drivers/pinctrl/sh-pfc/pfc-sh7734.o
----
- drivers/pinctrl/sh-pfc/pfc-sh7734.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 27 ++++++++++++++++++++--
+ 1 file changed, 25 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-index e7deb51de7dc4fd4..9842bb1067969701 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-@@ -31,11 +31,11 @@
- 	PORT_GP_12(5, fn, sfx)
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index a238fa2..bb255f53 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -8,6 +8,29 @@
+  * kind, whether express or implied.
+  */
  
- #undef _GP_DATA
--#define _GP_DATA(bank, pin, name, sfx)					\
-+#define _GP_DATA(bank, pin, name, sfx, cfg)				\
- 	PINMUX_DATA(name##_DATA, name##_FN, name##_IN, name##_OUT)
++/*
++ * SSI-AK4613
++ *
++ * This command is required when Playback/Capture
++ *
++ *	amixer set "DVC Out" 100%
++ *	amixer set "DVC In" 100%
++ *
++ * You can use Mute
++ *
++ *	amixer set "DVC Out Mute" on
++ *	amixer set "DVC In Mute" on
++ *
++ * You can use Volume Ramp
++ *
++ *	amixer set "DVC Out Ramp Up Rate"   "0.125 dB/64 steps"
++ *	amixer set "DVC Out Ramp Down Rate" "0.125 dB/512 steps"
++ *	amixer set "DVC Out Ramp" on
++ *	aplay xxx.wav &
++ *	amixer set "DVC Out"  80%  // Volume Down
++ *	amixer set "DVC Out" 100%  // Volume Up
++ */
++
+ /dts-v1/;
+ #include "r8a7795.dtsi"
  
--#define _GP_INOUTSEL(bank, pin, name, sfx)	name##_IN, name##_OUT
--#define _GP_INDT(bank, pin, name, sfx)		name##_DATA
-+#define _GP_INOUTSEL(bank, pin, name, sfx, cfg)	name##_IN, name##_OUT
-+#define _GP_INDT(bank, pin, name, sfx, cfg)	name##_DATA
- #define GP_INOUTSEL(bank)	PORT_GP_32_REV(bank, _GP_INOUTSEL, unused)
- #define GP_INDT(bank)		PORT_GP_32_REV(bank, _GP_INDT, unused)
+@@ -136,8 +159,8 @@
  
+ 	rcar_sound,dai {
+ 		dai0 {
+-			playback = <&ssi0 &src0>;
+-			capture  = <&ssi1 &src1>;
++			playback = <&ssi0 &src0 &dvc0>;
++			capture  = <&ssi1 &src1 &dvc1>;
+ 		};
+ 	};
+ };
 -- 
 1.9.1
 
