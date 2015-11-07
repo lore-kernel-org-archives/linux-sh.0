@@ -1,39 +1,57 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Tue, 03 Nov 2015 09:28:19 +0000
-Subject: [PATCH] PCI: pcie-rcar: Fix OF node passed to MSI irq domain
-Message-Id: <1446542899-25137-1-git-send-email-phil.edworthy@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Sat, 07 Nov 2015 13:59:51 +0000
+Subject: Re: [PATCH] PCI: pcie-rcar: Fix OF node passed to MSI irq domain
+Message-Id: <20151107135951.GD21726@katana>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="lc9FT7cWel8HagAv"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <bhelgaas@google.com>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms@verge.net.au>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
+References: <1446542899-25137-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1446542899-25137-1-git-send-email-phil.edworthy@renesas.com>
+To: Phil Edworthy <phil.edworthy@renesas.com>
+Cc: Bjorn Helgaas <bhelgaas@google.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms@verge.net.au>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-The OF node passed to irq_domain_add_linear() should be a
-pointer to interrupt controller's device tree node, or NULL,
-but not the PCI controller's node.
 
-This fixes an oops in msi_domain_alloc_irqs() when it tries
-to call msi_check().
+--lc9FT7cWel8HagAv
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
----
- drivers/pci/host/pcie-rcar.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+On Tue, Nov 03, 2015 at 09:28:19AM +0000, Phil Edworthy wrote:
+> The OF node passed to irq_domain_add_linear() should be a
+> pointer to interrupt controller's device tree node, or NULL,
+> but not the PCI controller's node.
+>=20
+> This fixes an oops in msi_domain_alloc_irqs() when it tries
+> to call msi_check().
+>=20
+> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 
-diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-index 2377bf0..c6fa562 100644
---- a/drivers/pci/host/pcie-rcar.c
-+++ b/drivers/pci/host/pcie-rcar.c
-@@ -709,7 +709,7 @@ static int rcar_pcie_enable_msi(struct rcar_pcie *pcie)
- 	msi->chip.setup_irq = rcar_msi_setup_irq;
- 	msi->chip.teardown_irq = rcar_msi_teardown_irq;
- 
--	msi->domain = irq_domain_add_linear(pcie->dev->of_node, INT_PCI_MSI_NR,
-+	msi->domain = irq_domain_add_linear(NULL, INT_PCI_MSI_NR,
- 					    &msi_domain_ops, &msi->chip);
- 	if (!msi->domain) {
- 		dev_err(&pdev->dev, "failed to create IRQ domain\n");
--- 
-1.9.1
+Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Tested-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
+Was this the MSI problem you were talking about?
+
+
+--lc9FT7cWel8HagAv
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJWPgPXAAoJEBQN5MwUoCm2gFgP/j8ZdlaKNF7ELXJzjiL0MS04
+/t297zuot0yngIsHYD4/lcpZ9T0mcSTdsFAWcJ4GldGUEHWxsrh/Dy4QZP1a9l+b
+bPPdFwZOFE5hZRMWAXv2LX+YyMCXeoHufnHs/UM6Ofs3i+gwVlAEP2ARc8MkffZt
+yjTBg3sr+iJTCk+8i0rEhkyFPo7WINvzZnLr9Sibe7wOUXEnupeSSGiMuKUKRWbz
+K2OnJr6x35APIxjxySyaphdmMfzt4Uzy3r9JPDc5zoXVoNpSqY7aZvWSDGYjfo97
+mwdEttUV+s05/Z/LGNJigRrJQ5sAg96PbYoliSa7n1JFePgjwAvu4U7Q7FUGyFNN
+IL0LhFK8YqFoBXy8cLmfXcx024PdVxuqabsUQ4HgqWJ5ScZVZ4G5BQoenFe57Sy/
+N31hPd85twTo6TXd0PS6c1e5VIWoNNclWhSI0R3JivH8DS4kDXOXt9+sHuNg3l+w
+DdNQRzSF6r1ZtnQGrRZhw9kXrLc8mFVPvYa2s9uzzvrsAD/ByIaWc2/3JtVCdO13
+jIRC3z7CvIGFU+sus/mf6OxiFI/zgC/Sptj5eAT9XF/QPKlJrSeVNHy2Nt/9+mBO
+KIy79VngjJSJTIulZG8+1ohcqDQ+8IuEbGLZUtJzmNFk5x7qPevdiO/WDFID8Ebr
+sbWzmylX0ulDFm/y5cMk
+=mGqx
+-----END PGP SIGNATURE-----
+
+--lc9FT7cWel8HagAv--
