@@ -1,33 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 19:38:51 +0000
-Subject: [PATCH 0/4] ARM: shmobile: Move SPI FLASH partition to subnode
-Message-Id: <1448048335-23927-1-git-send-email-horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 09 Nov 2015 00:42:25 +0000
+Subject: [PATCH] pwm: rcar: Improve accuracy of frequency division setting
+Message-Id: <1447029745-3648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: thierry.reding@gmail.com
+Cc: ryo.kodama.vz@renesas.com, linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-As of commits 5cfdedb7b9a0fe38 ("mtd: ofpart: move ofpart partitions to a
-dedicated dt node") and fe2585e9c29a650a ("doc: dt: mtd: support partitions
-in a special 'partitions' subnode"), having partitions as direct subnodes
-of an mtd device is discouraged. Hence move the SPI FLASH partition to a
-"partitions" subnode.
+From: Ryo Kodama <ryo.kodama.vz@renesas.com>
 
-Based on renesas-devel-20151120-v4.4-rc1
+From: Ryo Kodama <ryo.kodama.vz@renesas.com>
 
-Geert Uytterhoeven (4):
-  ARM: shmobile: bockw: Move SPI FLASH partition to subnode
-  ARM: shmobile: lager: Move SPI FLASH partitions to subnode
-  ARM: shmobile: porter: Move SPI FLASH partitions to subnode
-  ARM: shmobile: silk: Move SPI FLASH partitions to subnode
+When period_ns is set to the same value of RCAR_PWM_MAX_CYCLE in
+rcar_pwm_get_clock_division(), this function should allow such value
+for improving accuracy of frequency division setting.
 
- arch/arm/boot/dts/r8a7778-bockw.dts  | 13 ++++++++-----
- arch/arm/boot/dts/r8a7790-lager.dts  | 33 ++++++++++++++++++---------------
- arch/arm/boot/dts/r8a7791-porter.dts | 33 ++++++++++++++++++---------------
- arch/arm/boot/dts/r8a7794-silk.dts   | 33 ++++++++++++++++++---------------
- 4 files changed, 62 insertions(+), 50 deletions(-)
+Signed-off-by: Ryo Kodama <ryo.kodama.vz@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/pwm/pwm-rcar.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/drivers/pwm/pwm-rcar.c b/drivers/pwm/pwm-rcar.c
+index 6e99a63..7b8ac06 100644
+--- a/drivers/pwm/pwm-rcar.c
++++ b/drivers/pwm/pwm-rcar.c
+@@ -81,7 +81,7 @@ static int rcar_pwm_get_clock_division(struct rcar_pwm_chip *rp, int period_ns)
+ 		max = (unsigned long long)NSEC_PER_SEC * RCAR_PWM_MAX_CYCLE *
+ 			(1 << div);
+ 		do_div(max, clk_rate);
+-		if (period_ns < max)
++		if (period_ns <= max)
+ 			break;
+ 	}
+ 
 -- 
-2.1.4
+1.9.1
 
