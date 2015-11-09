@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 09 Nov 2015 02:31:21 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 09 Nov 2015 08:08:08 +0000
 Subject: Re: [PATCH v6 00/12] arm64: renesas: add sound support
-Message-Id: <20151109023118.GA11532@verge.net.au>
+Message-Id: <CAMuHMdXBQNCibJU4EDuFZX0zRzUZfC_4KTyXFNVLL81a51Q4RA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
  <20151109012943.GF4832@verge.net.au>
@@ -11,72 +11,26 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Nov 09, 2015 at 10:29:46AM +0900, Simon Horman wrote:
-> On Fri, Nov 06, 2015 at 06:33:10AM +0000, Kuninori Morimoto wrote:
-> > Hi,
-> > 
-> > these are v2 patches which add sound support to the r8a7795/Salvator-X.
-> > 
-> > These patches are an update of Simon's v5 patch-set
-> > 
-> > The main change to the patches themselves since Morimoto-san's v3 posting
-> > and v4 updates to that posting is to update to new CPG/MSSR bindings via
-> > Geert Uytterhoeven.
-> > 
-> > It doesn't include cs2000 support since it is not accepted yet.
-> > I will send additional patch if it was accepted.
-> > This patches doesn't include CTU/MIX support either,
-> > because it is too advanced feature at this point.
-> > 
-> > Base:
-> > 
-> > * "[PATCH v4 0/3] arm64: renesas: r8a7795: add I2C support"
-> >   This can be found in the topic/r8a7795-i2c-v4 branch of
-> >   my renesas tree on kernel.org.
-> 
-> Thanks.
-> 
-> In order to aid review I have made this patchset available in
-> the topic/r8a7795-sound-v6 branch of my renesas tree on kernel.org.
-> The topic/r8a7795-i2c-v4 branch is there too.
+Hi Simon,
 
-I have also pushed topic/r8a7795-sound-v6.runtime which
-is a merge of topic/r8a7795-sound-v6 with its run-time dependencies
-that I am aware of.
-
-> > Kuninori Morimoto (12):
-> >       arm64: renesas: r8a7795: add AUDIO_DMAC support
-> >       arm64: renesas: r8a7795: Sound SSI PIO support
-> >       arm64: renesas: r8a7795: Sound SSI DMA support
-> >       arm64: renesas: r8a7795: Sound SRC support
-> >       arm64: renesas: r8a7795: Sound DVC support
-> >       arm64: renesas: salvator-x: Sound SSI PIO support
-> 
+On Mon, Nov 9, 2015 at 2:29 AM, Simon Horman <horms@verge.net.au> wrote:
+>>       arm64: renesas: salvator-x: Sound SSI PIO support
+>
 > The above patch seemed to have some fuzz. Please check that
 > I resolved that correctly.
-> 
-> >       arm64: renesas: salvator-x: Sound SSI DMA support
-> >       arm64: renesas: salvator-x: Sound SSI DMA support via BUSIF
-> >       arm64: renesas: salvator-x: Sound SRC support
-> >       arm64: renesas: salvator-x: Sound DVC support
-> >       arm64: defconfig: add Renesas R-Car DMAC driver support
-> 
-> The above patch did not apply cleanly. I have fixed that and also I
-> modified the patch to enable CONFIG_DMADEVICES as well as CONFIG_RCAR_DMAC.
-> Please check this e.g. using make savedefconfig.
-> 
-> >       arm64: defconfig: add Renesas sound and AK4613 support
-> > 
-> >  arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |  94 +++++++++++++++++++++++++++++++++++++++++
-> >  arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 253 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-> >  arch/arm64/configs/defconfig                       |   6 +++
-> >  3 files changed, 353 insertions(+)
-> > 
-> > -- 
-> > 2.1.4
-> > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+
+The ak4613 node is now a child node of scif2 instead of i2c2, which is
+definitely not correct.
+
+"git diff topic/r8a7795-sound-v5..topic/r8a7795-sound-v6" will show you.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
