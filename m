@@ -1,76 +1,216 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 25 Nov 2015 23:54:31 +0000
-Subject: Re: [PATCH v6 00/12] arm64: renesas: add sound support
-Message-Id: <20151125235430.GA7668@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 09 Nov 2015 10:26:39 +0000
+Subject: [PATCH 1/3 v2] PCI: pcie-rcar: Convert to DT resource parsing API
+Message-Id: <PS1PR06MB11801A23491F06B6BE81DB6AF5150@PS1PR06MB1180.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151109012943.GF4832@verge.net.au>
- <CAMuHMdXBQNCibJU4EDuFZX0zRzUZfC_4KTyXFNVLL81a51Q4RA@mail.gmail.com>
- <20151109090139.GM4832@verge.net.au>
- <CAMuHMdWv1Ae1JTDyN2JkuHC1Fmfw25gtmmUkSMUitrUQnv82Ug@mail.gmail.com>
- <20151110001111.GB1040@verge.net.au>
- <20151124023025.GA21853@verge.net.au>
- <87k2p7yjbl.wl%kuninori.morimoto.gx@renesas.com>
- <20151125002752.GH20596@verge.net.au>
- <877fl68uqh.wl%kuninori.morimoto.gx@renesas.com>
- <CAMuHMdV7FZmSU8oK0N_BCAWj5Li_y3NBUeMyCW=5Gu7j1e7T6w@mail.gmail.com>
-In-Reply-To: <CAMuHMdV7FZmSU8oK0N_BCAWj5Li_y3NBUeMyCW=5Gu7j1e7T6w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Bjorn Helgaas <bhelgaas@google.com>, Simon Horman <horms@verge.net.au>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>
 
-On Wed, Nov 25, 2015 at 09:48:35AM +0100, Geert Uytterhoeven wrote:
-> Hi Morimoto-san, Simon,
-> 
-> On Wed, Nov 25, 2015 at 7:27 AM, Kuninori Morimoto
-> <kuninori.morimoto.gx@renesas.com> wrote:
-> >> > I would like to check latest version.
-> >> > Which branch/tag can I check ?
-> >>
-> >> If you want to check for apply-time and compile-time dependencies use
-> >> the latest renesas-devel tag in my renesas tree.
-> >>
-> >> If you want to check run-time you may need to pull in some dependencies,
-> >> especially the cpg-mssr-v6 branch of Geert's renesas-drivers tree.  A
-> >> sledge-hammer approach would be to pull in the latest renesas-drivers tag
-> >> of that tree.
-> >>
-> >> In any case I'll need to know what run-time dependencies, other than
-> >> cpg-mssr, are missing from renesas-next and/or renesas-devel so we can
-> >> sensibly decide what to queue up.
-> 
-> This is about DT, which is independent from code? ;-)
+The main purpose of this change is to avoid calling pci_ioremap_io() as
+this is not available on arm64. However, instead of doing the range passing
+in this driver we can utilise of_pci_get_host_bridge_resources().
 
-Yes, I agree.
+This is similar to changes made to the generic PCI host driver in commit
+dbf9826d "PCI: generic: Convert to DT resource parsing API".
 
-But I would at least like to get a handle on what the dependencies are.
-To make sure the bindings are on track. And to make sure there is some
-way to test the code.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+v2:
+ - Remove incorrect res_valid check
+---
+ drivers/pci/host/pcie-rcar.c | 116 +++++++++++++++++++++++++++----------------
+ 1 file changed, 73 insertions(+), 43 deletions(-)
 
-> > Recent renesas-drivers sound has many conflicts, and sound
-> > has strange behavior. I had tried it before and noticed.
-> > I'm not sure latest one, but it has conflict log.
-> > I'm using a littile older kernel, because of above reason.
-> 
-> You mean the conflict when merging vsp1-kms-20151112~4?
-> As that branch is based on a very old renesas-drivers release, I made
-> sure that merging it doesn't impact any sound driver. I.e. I reverted
-> all changes not related to rcar-du and vsp1.
-> 
-> You can verify using git diff 38f5d0b6..1f9e8ee5
-> 
-> > Anyway, I tried below, and I could get sound.
-> 
-> Good, thanks for checking!
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-> 
+diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
+index 6a3a612..c977fa6 100644
+--- a/drivers/pci/host/pcie-rcar.c
++++ b/drivers/pci/host/pcie-rcar.c
+@@ -108,8 +108,6 @@
+ #define RCAR_PCI_MAX_RESOURCES 4
+ #define MAX_NR_INBOUND_MAPS 6
+ 
+-static unsigned long global_io_offset;
+-
+ struct rcar_msi {
+ 	DECLARE_BITMAP(used, INT_PCI_MSI_NR);
+ 	struct irq_domain *domain;
+@@ -138,8 +136,7 @@ struct rcar_pcie {
+ #endif
+ 	struct device		*dev;
+ 	void __iomem		*base;
+-	struct resource		res[RCAR_PCI_MAX_RESOURCES];
+-	struct resource		busn;
++	struct list_head	resources;
+ 	int			root_bus_nr;
+ 	struct clk		*clk;
+ 	struct clk		*bus_clk;
+@@ -323,10 +320,9 @@ static struct pci_ops rcar_pcie_ops = {
+ 	.write	= rcar_pcie_write_conf,
+ };
+ 
+-static void rcar_pcie_setup_window(int win, struct rcar_pcie *pcie)
++static void rcar_pcie_setup_window(int win, struct rcar_pcie *pcie,
++				   struct resource *res)
+ {
+-	struct resource *res = &pcie->res[win];
+-
+ 	/* Setup PCIe address space mappings for each resource */
+ 	resource_size_t size;
+ 	resource_size_t res_start;
+@@ -359,31 +355,33 @@ static void rcar_pcie_setup_window(int win, struct rcar_pcie *pcie)
+ 	rcar_pci_write_reg(pcie, mask, PCIEPTCTLR(win));
+ }
+ 
+-static int rcar_pcie_setup(struct list_head *resource, struct rcar_pcie *pcie)
++static int rcar_pcie_setup(struct list_head *resource, struct rcar_pcie *pci)
+ {
+-	struct resource *res;
+-	int i;
+-
+-	pcie->root_bus_nr = pcie->busn.start;
++	struct resource_entry *win;
++	int i = 0;
+ 
+ 	/* Setup PCI resources */
+-	for (i = 0; i < RCAR_PCI_MAX_RESOURCES; i++) {
++	resource_list_for_each_entry(win, &pci->resources) {
++		struct resource *res = win->res;
+ 
+-		res = &pcie->res[i];
+ 		if (!res->flags)
+ 			continue;
+ 
+-		rcar_pcie_setup_window(i, pcie);
+-
+-		if (res->flags & IORESOURCE_IO) {
+-			phys_addr_t io_start = pci_pio_to_address(res->start);
+-			pci_ioremap_io(global_io_offset, io_start);
+-			global_io_offset += SZ_64K;
++		switch (resource_type(res)) {
++		case IORESOURCE_IO:
++		case IORESOURCE_MEM:
++			rcar_pcie_setup_window(i, pci, res);
++			i++;
++			break;
++		case IORESOURCE_BUS:
++			pci->root_bus_nr = res->start;
++			break;
++		default:
++			continue;
+ 		}
+ 
+ 		pci_add_resource(resource, res);
+ 	}
+-	pci_add_resource(resource, &pcie->busn);
+ 
+ 	return 1;
+ }
+@@ -923,14 +921,63 @@ static const struct of_device_id rcar_pcie_of_match[] = {
+ };
+ MODULE_DEVICE_TABLE(of, rcar_pcie_of_match);
+ 
++static void rcar_pcie_release_of_pci_ranges(struct rcar_pcie *pci)
++{
++	pci_free_resource_list(&pci->resources);
++}
++
++static int rcar_pcie_parse_request_of_pci_ranges(struct rcar_pcie *pci)
++{
++	int err;
++	struct device *dev = pci->dev;
++	struct device_node *np = dev->of_node;
++	resource_size_t iobase;
++	struct resource_entry *win;
++
++	err = of_pci_get_host_bridge_resources(np, 0, 0xff, &pci->resources, &iobase);
++	if (err)
++		return err;
++
++	resource_list_for_each_entry(win, &pci->resources) {
++		struct resource *parent, *res = win->res;
++
++		switch (resource_type(res)) {
++		case IORESOURCE_IO:
++			parent = &ioport_resource;
++			err = pci_remap_iospace(res, iobase);
++			if (err) {
++				dev_warn(dev, "error %d: failed to map resource %pR\n",
++					 err, res);
++				continue;
++			}
++			break;
++		case IORESOURCE_MEM:
++			parent = &iomem_resource;
++			break;
++
++		case IORESOURCE_BUS:
++		default:
++			continue;
++		}
++
++		err = devm_request_resource(dev, parent, res);
++		if (err)
++			goto out_release_res;
++	}
++
++	return 0;
++
++out_release_res:
++	rcar_pcie_release_of_pci_ranges(pci);
++	return err;
++}
++
+ static int rcar_pcie_probe(struct platform_device *pdev)
+ {
+ 	struct rcar_pcie *pcie;
+ 	unsigned int data;
+-	struct of_pci_range range;
+-	struct of_pci_range_parser parser;
+ 	const struct of_device_id *of_id;
+-	int err, win = 0;
++	int err;
+ 	int (*hw_init_fn)(struct rcar_pcie *);
+ 
+ 	pcie = devm_kzalloc(&pdev->dev, sizeof(*pcie), GFP_KERNEL);
+@@ -940,16 +987,9 @@ static int rcar_pcie_probe(struct platform_device *pdev)
+ 	pcie->dev = &pdev->dev;
+ 	platform_set_drvdata(pdev, pcie);
+ 
+-	/* Get the bus range */
+-	if (of_pci_parse_bus_range(pdev->dev.of_node, &pcie->busn)) {
+-		dev_err(&pdev->dev, "failed to parse bus-range property\n");
+-		return -EINVAL;
+-	}
++	INIT_LIST_HEAD(&pcie->resources);
+ 
+-	if (of_pci_range_parser_init(&parser, pdev->dev.of_node)) {
+-		dev_err(&pdev->dev, "missing ranges property\n");
+-		return -EINVAL;
+-	}
++	rcar_pcie_parse_request_of_pci_ranges(pcie);
+ 
+ 	err = rcar_pcie_get_resources(pdev, pcie);
+ 	if (err < 0) {
+@@ -957,16 +997,6 @@ static int rcar_pcie_probe(struct platform_device *pdev)
+ 		return err;
+ 	}
+ 
+-	for_each_of_pci_range(&parser, &range) {
+-		err = of_pci_range_to_resource(&range, pdev->dev.of_node,
+-						&pcie->res[win++]);
+-		if (err < 0)
+-			return err;
+-
+-		if (win > RCAR_PCI_MAX_RESOURCES)
+-			break;
+-	}
+-
+ 	 err = rcar_pcie_parse_map_dma_ranges(pcie, pdev->dev.of_node);
+ 	 if (err)
+ 		return err;
+-- 
+1.9.1
+
