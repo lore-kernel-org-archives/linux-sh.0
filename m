@@ -1,47 +1,81 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Mon, 16 Nov 2015 04:27:46 +0000
-Subject: [PATCH] sh: sh-sci build failure fix.
-Message-Id: <1447648066-1761-1-git-send-email-ysato@users.sourceforge.jp>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 09 Nov 2015 01:33:19 +0000
+Subject: [PATCH 2/2] ARM: shmobile: gose: Configure PFC in DT
+Message-Id: <1447032799-13155-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1447032799-13155-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1447032799-13155-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-We need little update.
+Configure PFC for the already enabled scif and ethernet devices
+in the device tree for the gose board.
 
-Build failed on CONFIG_SERIAL_EARLYCON=y and CONFIG_SERIAL_SH_SCI=m.
-I think it only COMPILE_TEST.
+Based on similar work for the koelsch board by Laurent Pinchart and
+Sergei Shtylyov.
 
-earlycon code depend on CONFIG_SERIAL_SH_SCI_EARLYCON
-
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7793-gose.dts | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 39e5358..9078443 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2412,7 +2412,7 @@ static void sci_cleanup_single(struct sci_port *port)
- 	pm_runtime_disable(port->port.dev);
- }
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+index 96443ec5f6ab..1575ef759047 100644
+--- a/arch/arm/boot/dts/r8a7793-gose.dts
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -37,7 +37,32 @@
+ 	clock-frequency = <20000000>;
+ };
  
--#if defined(CONFIG_SERIAL_SH_SCI_CONSOLE) || defined(CONFIG_SERIAL_EARLYCON)
-+#if defined(CONFIG_SERIAL_SH_SCI_CONSOLE) || defined(CONFIG_SERIAL_SH_SCI_EARLYCON)
- static void serial_console_putchar(struct uart_port *port, int ch)
- {
- 	sci_poll_put_char(port, ch);
-@@ -2793,7 +2793,7 @@ static void __exit sci_exit(void)
- early_platform_init_buffer("earlyprintk", &sci_driver,
- 			   early_serial_buf, ARRAY_SIZE(early_serial_buf));
- #endif
--#ifdef CONFIG_SERIAL_EARLYCON
-+#ifdef CONFIG_SERIAL_SH_SCI_EARLYCON
- static struct __init plat_sci_port port_cfg;
++&pfc {
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data_d";
++		renesas,function = "scif0";
++	};
++
++	scif1_pins: serial1 {
++		renesas,groups = "scif1_data_d";
++		renesas,function = "scif1";
++	};
++
++	ether_pins: ether {
++		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
++		renesas,function = "eth";
++	};
++
++	phy1_pins: phy1 {
++		renesas,groups = "intc_irq0";
++		renesas,function = "intc";
++	};
++};
++
+ &ether {
++	pinctrl-0 = <&ether_pins &phy1_pins>;
++	pinctrl-names = "default";
++
+ 	phy-handle = <&phy1>;
+ 	renesas,ether-link-active-low;
+ 	status = "okay";
+@@ -55,9 +80,15 @@
+ };
  
- static int __init early_console_setup(struct earlycon_device *device,
+ &scif0 {
++	pinctrl-0 = <&scif0_pins>;
++	pinctrl-names = "default";
++
+ 	status = "okay";
+ };
+ 
+ &scif1 {
++	pinctrl-0 = <&scif1_pins>;
++	pinctrl-names = "default";
++
+ 	status = "okay";
+ };
 -- 
-2.6.1
+2.1.4
 
