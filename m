@@ -1,64 +1,30 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 12 Nov 2015 14:42:51 +0000
-Subject: [PATCH v2 08/10] i2c: rcar: check master irqs before slave irqs
-Message-Id: <1447339372-10060-2-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 10 Nov 2015 07:13:58 +0000
+Subject: [PATCH 0/3] gose: Enable QSPI
+Message-Id: <1447139641-11480-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447339372-10060-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1447339372-10060-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Hi,
 
-Due to the HW design, master IRQs are timing critical, so give them
-precedence over slave IRQ.
+this short series adds QSPI to the r8a7793 and gose device tree.
+DMA is enabled for QSPI and accordingly DMAC nodes are also added
+to the r8a7793 device tree.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
----
- drivers/i2c/busses/i2c-rcar.c | 13 +++++--------
- 1 file changed, 5 insertions(+), 8 deletions(-)
+Based on renesas-devel-20151110-v4.3.
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 3880293edc3c72..8ad4c7d1ad8654 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -436,19 +436,17 @@ static bool rcar_i2c_slave_irq(struct rcar_i2c_priv *priv)
- static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
- {
- 	struct rcar_i2c_priv *priv = ptr;
--	irqreturn_t result = IRQ_HANDLED;
- 	u32 msr;
- 
--	if (rcar_i2c_slave_irq(priv))
--		goto exit;
--
- 	msr = rcar_i2c_read(priv, ICMSR);
- 
- 	/* Only handle interrupts that are currently enabled */
- 	msr &= rcar_i2c_read(priv, ICMIER);
- 	if (!msr) {
--		result = IRQ_NONE;
--		goto exit;
-+		if (rcar_i2c_slave_irq(priv))
-+			return IRQ_HANDLED;
-+
-+		return IRQ_NONE;
- 	}
- 
- 	/* Arbitration lost */
-@@ -485,8 +483,7 @@ out:
- 		wake_up(&priv->wait);
- 	}
- 
--exit:
--	return result;
-+	return IRQ_HANDLED;
- }
- 
- static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+Simon Horman (3):
+  ARM: shmobile: r8a7793: Add DMAC devices to DT
+  ARM: shmobile: r8a7793: Add QSPI device to DT
+  ARM: shmobile: gose: Add QSPI device to DT
+
+ arch/arm/boot/dts/r8a7793-gose.dts | 40 ++++++++++++++++
+ arch/arm/boot/dts/r8a7793.dtsi     | 98 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 138 insertions(+)
+
 -- 
 2.1.4
 
