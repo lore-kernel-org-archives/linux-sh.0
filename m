@@ -1,29 +1,85 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 06 Nov 2015 01:41:38 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: Introduce ARCH_RENESAS
-Message-Id: <20151106014137.GA17493@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 10 Nov 2015 07:14:01 +0000
+Subject: [PATCH 3/3] ARM: shmobile: gose: Add QSPI device to DT
+Message-Id: <1447139641-11480-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446702397-24078-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdXQ5tvWu4dizhpkAx1Uhq9cSM8mj2JhWJUSxDx+Jyk2tQ@mail.gmail.com>
-In-Reply-To: <CAMuHMdXQ5tvWu4dizhpkAx1Uhq9cSM8mj2JhWJUSxDx+Jyk2tQ@mail.gmail.com>
+References: <1447139641-11480-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1447139641-11480-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 05, 2015 at 07:58:46PM +0100, Geert Uytterhoeven wrote:
-> On Thu, Nov 5, 2015 at 6:46 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
-> > The purpose of this patch is to start the process of replacing both
-> > ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI with ARCH_RENESAS. The motivation
-> > being that as time has moved on Renesas has become a name than shmobile for
-> > the majority Renesas 32-bit ARM based SoCs. The name is, conveniently, also
-> > applicable to (older) Renesas SH based SoCs and (newer) ARM64 based SoCs
-> > although this patch only addresses 32-bit ARM.
-> 
-> Is this supposed to include H8/300 and m32r in the future?
+Enable the QSPI controller in the gose device tree.
 
-Hi Geert,
+Based similar work for the silk board by by Vladimir Barinov and
+Sergei Shtylyov.
 
-my main aim is to replace ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI with
-ARCH_RENESAS. I don't believe that would cover H8/300 and m32r,
-though I am happy to stand corrected.
+Cc: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+Tested: Read /dev/mtd0 with 512K blocks at 1.7MB/s
+---
+ arch/arm/boot/dts/r8a7793-gose.dts | 40 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+index 1575ef759047..3bc4230aa2b5 100644
+--- a/arch/arm/boot/dts/r8a7793-gose.dts
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -57,6 +57,11 @@
+ 		renesas,groups = "intc_irq0";
+ 		renesas,function = "intc";
+ 	};
++
++	qspi_pins: spi0 {
++		renesas,groups = "qspi_ctrl", "qspi_data4";
++		renesas,function = "qspi";
++	};
+ };
+ 
+ &ether {
+@@ -92,3 +97,38 @@
+ 
+ 	status = "okay";
+ };
++
++&qspi {
++	pinctrl-0 = <&qspi_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "spansion,s25fl512s", "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <30000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
++		spi-cpol;
++		spi-cpha;
++		m25p,fast-read;
++
++		partition@0 {
++			label = "loader";
++			reg = <0x00000000 0x00040000>;
++			read-only;
++		};
++		partition@40000 {
++			label = "user";
++			reg = <0x00040000 0x00400000>;
++			read-only;
++		};
++		partition@440000 {
++			label = "flash";
++			reg = <0x00440000 0x03bc0000>;
++		};
++	};
++};
+-- 
+2.1.4
+
