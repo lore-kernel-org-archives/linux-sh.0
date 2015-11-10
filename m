@@ -1,22 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 25 Nov 2015 00:14:52 +0000
-Subject: Re: [PATCH 01/02] ARM: shmobile: r8a7793: Add DU node to device tree
-Message-Id: <20151125001451.GD20596@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 10 Nov 2015 02:12:34 +0000
+Subject: [PATCH 2/2] thermal: rcar_thermal: use pm_runtime_put_sync()
+Message-Id: <87d1vili9c.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151116091523.20711.53542.sendpatchset@little-apple>
-In-Reply-To: <20151116091523.20711.53542.sendpatchset@little-apple>
+References: <87h9kulkfg.wl%kuninori.morimoto.gx@renesas.com>
+	<87fv0elibh.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fv0elibh.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, linux-pm@vger.kernel.org, cm-hiep@jinso.co.jp, nv-dung@jinso.co.jp
 
-On Mon, Nov 16, 2015 at 06:15:23PM +0900, Magnus Damm wrote:
-> From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> Add the DU device with a disabled state. Boards that want to enable the
-> DU need to specify the output topology.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, I have queued this up for v4.5.
+It is using pm_runtime_get_sync() on probe(). Let's use
+pm_runtime_put_sync() instead of pm_runtime_put(). Otherwise thermal
+sensor doesn't work after unbind/re-bind
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/thermal/rcar_thermal.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 13d01ed..f7cf2d7 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -373,7 +373,7 @@ static int rcar_thermal_remove(struct platform_device *pdev)
+ 		thermal_zone_device_unregister(priv->zone);
+ 	}
+ 
+-	pm_runtime_put(dev);
++	pm_runtime_put_sync(dev);
+ 	pm_runtime_disable(dev);
+ 
+ 	return 0;
+-- 
+1.9.1
+
