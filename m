@@ -1,43 +1,270 @@
-From: Rob Herring <robh@kernel.org>
-Date: Mon, 30 Nov 2015 15:57:18 +0000
-Subject: Re: [PATCH] spi: sh-msiof: Add support for SH-Mobile AG5
-Message-Id: <20151130155718.GA2805@rob-hp-laptop>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 10 Nov 2015 08:56:45 +0000
+Subject: [PATCH][RFC] pinctrl: sh-pfc: share/reuse same PORT_GP_x() macros
+Message-Id: <87io5ajkz9.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448892840-8195-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448892840-8195-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Mark Brown <broonie@kernel.org>, linux-spi@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Mon, Nov 30, 2015 at 03:14:00PM +0100, Geert Uytterhoeven wrote:
-> MSIOF in SH-Mobile AG5 (sh73a0) is handled fine by the existing driver.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Acked-by: Rob Herring <robh@kernel.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> ---
->  Documentation/devicetree/bindings/spi/sh-msiof.txt | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
-> index 705075da2f10156e..aa005c1d10d95756 100644
-> --- a/Documentation/devicetree/bindings/spi/sh-msiof.txt
-> +++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
-> @@ -10,6 +10,7 @@ Required properties:
->  			 "renesas,msiof-r8a7792" (R-Car V2H)
->  			 "renesas,msiof-r8a7793" (R-Car M2-N)
->  			 "renesas,msiof-r8a7794" (R-Car E2)
-> +			 "renesas,msiof-sh73a0" (SH-Mobile AG5)
->  - reg                  : A list of offsets and lengths of the register sets for
->  			 the device.
->  			 If only one register set is present, it is to be used
-> -- 
-> 1.9.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe devicetree" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Many SoC needs each PORT_GP_x() macros, but we can share/reuse
+same macro.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+This patch is based on Geert's
+	Date: Thu, 29 Oct 2015 20:39:47 +0100
+	Subject: [PATCH] pinctrl: sh-pfc: r8a7795: Make PORT_GP_x() macros consistent
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |  7 -----
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 17 ------------
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 15 ----------
+ drivers/pinctrl/sh-pfc/pfc-r8a7794.c | 19 -------------
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 31 ---------------------
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c  |  8 ------
+ drivers/pinctrl/sh-pfc/sh_pfc.h      | 54 +++++++++++++++++++++++++++++++++++-
+ 7 files changed, 53 insertions(+), 98 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index ed4e078..7293e37 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -23,13 +23,6 @@
+ 
+ #include "sh_pfc.h"
+ 
+-#define PORT_GP_9(bank, fn, sfx)					\
+-	PORT_GP_1(bank, 0, fn, sfx), PORT_GP_1(bank, 1, fn, sfx),	\
+-	PORT_GP_1(bank, 2, fn, sfx), PORT_GP_1(bank, 3, fn, sfx),	\
+-	PORT_GP_1(bank, 4, fn, sfx), PORT_GP_1(bank, 5, fn, sfx),	\
+-	PORT_GP_1(bank, 6, fn, sfx), PORT_GP_1(bank, 7, fn, sfx),	\
+-	PORT_GP_1(bank, 8, fn, sfx)
+-
+ #define CPU_ALL_PORT(fn, sfx)						\
+ 	PORT_GP_32(0, fn, sfx),						\
+ 	PORT_GP_32(1, fn, sfx),						\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+index d9924b0..bc8e400 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+@@ -26,23 +26,6 @@
+ #include "core.h"
+ #include "sh_pfc.h"
+ 
+-#define PORT_GP_30(bank, fn, sfx)					\
+-	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
+-	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
+-	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
+-	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
+-	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
+-	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
+-	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
+-	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
+-	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
+-	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
+-	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
+-	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
+-	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
+-	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
+-	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx)
+-
+ #define CPU_ALL_PORT(fn, sfx)						\
+ 	PORT_GP_32(0, fn, sfx),						\
+ 	PORT_GP_30(1, fn, sfx),						\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+index 87a4f44..119e1aa 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7791.c
+@@ -13,21 +13,6 @@
+ #include "core.h"
+ #include "sh_pfc.h"
+ 
+-#define PORT_GP_26(bank, fn, sfx)					\
+-	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
+-	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
+-	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
+-	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
+-	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
+-	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
+-	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
+-	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
+-	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
+-	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
+-	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
+-	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
+-	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx)
+-
+ #define CPU_ALL_PORT(fn, sfx)						\
+ 	PORT_GP_32(0, fn, sfx),						\
+ 	PORT_GP_26(1, fn, sfx),						\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7794.c b/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+index 086f679..533cb8a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
+@@ -15,25 +15,6 @@
+ #include "core.h"
+ #include "sh_pfc.h"
+ 
+-#define PORT_GP_26(bank, fn, sfx)					\
+-	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
+-	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
+-	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
+-	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
+-	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
+-	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
+-	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
+-	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
+-	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
+-	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
+-	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
+-	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
+-	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx)
+-
+-#define PORT_GP_28(bank, fn, sfx)					\
+-	PORT_GP_26(bank, fn, sfx),					\
+-	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx)
+-
+ #define CPU_ALL_PORT(fn, sfx)						\
+ 	PORT_GP_32(0, fn, sfx),						\
+ 	PORT_GP_26(1, fn, sfx),						\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+index 29d001b..d977e21 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+@@ -13,37 +13,6 @@
+ #include "core.h"
+ #include "sh_pfc.h"
+ 
+-#define PORT_GP_4(bank, fn, sfx)					\
+-	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
+-	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx)
+-
+-#define PORT_GP_15(bank, fn, sfx)					\
+-	PORT_GP_4(bank, fn, sfx),					\
+-	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
+-	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
+-	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
+-	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
+-	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
+-	PORT_GP_1(bank, 14, fn, sfx)
+-
+-#define PORT_GP_16(bank, fn, sfx)					\
+-	PORT_GP_15(bank, fn, sfx),   PORT_GP_1(bank, 15, fn, sfx)
+-
+-#define PORT_GP_18(bank, fn, sfx)					\
+-	PORT_GP_16(bank, fn, sfx),					\
+-	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx)
+-
+-#define PORT_GP_26(bank, fn, sfx)					\
+-	PORT_GP_18(bank, fn, sfx),					\
+-	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
+-	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
+-	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
+-	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx)
+-
+-#define PORT_GP_28(bank, fn, sfx)					\
+-	PORT_GP_26(bank, fn, sfx),					\
+-	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx)
+-
+ #define CPU_ALL_PORT(fn, sfx)						\
+ 	PORT_GP_16(0, fn, sfx),						\
+ 	PORT_GP_28(1, fn, sfx),						\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
+index e7deb51..9d66865 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
+@@ -14,14 +14,6 @@
+ 
+ #include "sh_pfc.h"
+ 
+-#define PORT_GP_12(bank, fn, sfx)					\
+-	PORT_GP_1(bank, 0, fn, sfx),  PORT_GP_1(bank, 1, fn, sfx),	\
+-	PORT_GP_1(bank, 2, fn, sfx),  PORT_GP_1(bank, 3, fn, sfx),	\
+-	PORT_GP_1(bank, 4, fn, sfx),  PORT_GP_1(bank, 5, fn, sfx),	\
+-	PORT_GP_1(bank, 6, fn, sfx),  PORT_GP_1(bank, 7, fn, sfx),	\
+-	PORT_GP_1(bank, 8, fn, sfx),  PORT_GP_1(bank, 9, fn, sfx),	\
+-	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx)
+-
+ #define CPU_ALL_PORT(fn, sfx)						\
+ 	PORT_GP_32(0, fn, sfx),						\
+ 	PORT_GP_32(1, fn, sfx),						\
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 7b373d4..47d0d83a4 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -205,6 +205,59 @@ struct sh_pfc_soc_info {
+ #define PORT_GP_CFG_1(bank, pin, fn, sfx, cfg) fn(bank, pin, GP_##bank##_##pin, sfx, cfg)
+ #define PORT_GP_1(bank, pin, fn, sfx)	PORT_GP_CFG_1(bank, pin, fn, sfx, 0)
+ 
++#define PORT_GP_4(bank, fn, sfx)					\
++	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
++	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx)
++
++#define PORT_GP_8(bank, fn, sfx)					\
++	PORT_GP_4(bank, fn, sfx),					\
++	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
++	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx)
++
++#define PORT_GP_9(bank, fn, sfx)					\
++	PORT_GP_8(bank, fn, sfx),					\
++	PORT_GP_1(bank, 8,  fn, sfx)
++
++#define PORT_GP_12(bank, fn, sfx)					\
++	PORT_GP_8(bank, fn, sfx),					\
++	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
++	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx)
++
++#define PORT_GP_14(bank, fn, sfx)					\
++	PORT_GP_12(bank, fn, sfx),					\
++	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx)
++
++#define PORT_GP_15(bank, fn, sfx)					\
++	PORT_GP_14(bank, fn, sfx),					\
++	PORT_GP_1(bank, 14, fn, sfx)
++
++#define PORT_GP_16(bank, fn, sfx)					\
++	PORT_GP_14(bank, fn, sfx),					\
++	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx)
++
++#define PORT_GP_18(bank, fn, sfx)					\
++	PORT_GP_16(bank, fn, sfx),					\
++	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx)
++
++#define PORT_GP_26(bank, fn, sfx)					\
++	PORT_GP_18(bank, fn, sfx),					\
++	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
++	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
++	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
++	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx)
++
++#define PORT_GP_28(bank, fn, sfx)					\
++	PORT_GP_26(bank, fn, sfx),					\
++	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx)
++
++#define PORT_GP_30(bank, fn, sfx)					\
++	PORT_GP_28(bank, fn, sfx),					\
++	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx)
++
++#define PORT_GP_32(bank, fn, sfx)					\
++	PORT_GP_30(bank, fn, sfx),					\
++	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
++
+ #define PORT_GP_CFG_32(bank, fn, sfx, cfg)				\
+ 	PORT_GP_CFG_1(bank, 0,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 1,  fn, sfx, cfg),	\
+ 	PORT_GP_CFG_1(bank, 2,  fn, sfx, cfg), PORT_GP_CFG_1(bank, 3,  fn, sfx, cfg),	\
+@@ -222,7 +275,6 @@ struct sh_pfc_soc_info {
+ 	PORT_GP_CFG_1(bank, 26, fn, sfx, cfg), PORT_GP_CFG_1(bank, 27, fn, sfx, cfg),	\
+ 	PORT_GP_CFG_1(bank, 28, fn, sfx, cfg), PORT_GP_CFG_1(bank, 29, fn, sfx, cfg),	\
+ 	PORT_GP_CFG_1(bank, 30, fn, sfx, cfg), PORT_GP_CFG_1(bank, 31, fn, sfx, cfg)
+-#define PORT_GP_32(bank, fn, sfx)	PORT_GP_CFG_32(bank, fn, sfx, 0)
+ 
+ #define PORT_GP_32_REV(bank, fn, sfx)					\
+ 	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
+-- 
+1.9.1
+
