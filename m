@@ -1,57 +1,79 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 30 Nov 2015 10:50:03 +0000
-Subject: Re: [PATCH] arm: renesas: select PINCTRL for Renesas SoC
-Message-Id: <CAMuHMdVEqbvNhVTbNbwbfXFVu4AyhkdV7RGiVJhfG9XydVN+3Q@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 10 Nov 2015 08:35:06 +0000
+Subject: [PATCH] ARM: shmobile: koelsch: Move SPI FLASH partitions to subnode
+Message-Id: <1447144506-20336-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448648871-15008-1-git-send-email-ben.dooks@codethink.co.uk>
- <CAMuHMdVNDWSehXpuBANFCN4HWx7H6ms9o-Ru-nZ7u9QJiUSNbw@mail.gmail.com>
- <565C2635.3090907@codethink.co.uk>
-In-Reply-To: <565C2635.3090907@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mtd-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-Hi Ben,
+As of commits 5cfdedb7b9a0fe38 ("mtd: ofpart: move ofpart partitions to a
+dedicated dt node") and fe2585e9c29a650a ("doc: dt: mtd: support
+partitions in a special 'partitions' subnode"), having partitions as
+direct subnodes of an mtd device is discouraged:
 
-On Mon, Nov 30, 2015 at 11:34 AM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
-> On 28/11/15 09:15, Geert Uytterhoeven wrote:
->> On Fri, Nov 27, 2015 at 7:27 PM, Ben Dooks <ben.dooks@codethink.co.uk> wrote:
->>> If Renesas SoCs are the only devices selected then the
->>> pinctrl core is not selected and the renesas pfc controller
->>> will not get included in the kernel.
->>>
->>> Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
->>> ---
->>>  arch/arm64/Kconfig.platforms | 1 +
->>>  1 file changed, 1 insertion(+)
->>>
->>> diff --git a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
->>> index 25a9031..fc3d692 100644
->>> --- a/arch/arm64/Kconfig.platforms
->>> +++ b/arch/arm64/Kconfig.platforms
->>> @@ -72,6 +72,7 @@ config ARCH_SHMOBILE
->>>  config ARCH_RENESAS
->>>         bool "Renesas SoC Platform"
->>>         select ARCH_SHMOBILE
->>> +       select PINCTRL
->>
->> This was added quite a while ago. renesas-devel-20151123-v4.4-rc2 has it.
->
-> Hi, where is the tree?
+    spi0.0: 'partitions' subnode not found on /spi@e6b10000/flash@0. Trying to parse direct subnodes as partitions.
 
-As usual, Simon's Renesas tree:
-git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
+Hence move the SPI FLASH partitions to a "partitions" subnode.
 
-Which tree are you looking at?
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 33 ++++++++++++++++++---------------
+ 1 file changed, 18 insertions(+), 15 deletions(-)
 
-Gr{oetje,eeting}s,
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index f63338ba3599ebc0..2cbd5e330c032533 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -490,8 +490,6 @@
+ 	status = "okay";
+ 
+ 	flash: flash@0 {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+ 		compatible = "spansion,s25fl512s", "jedec,spi-nor";
+ 		reg = <0>;
+ 		spi-max-frequency = <30000000>;
+@@ -501,19 +499,24 @@
+ 		spi-cpol;
+ 		m25p,fast-read;
+ 
+-		partition@0 {
+-			label = "loader";
+-			reg = <0x00000000 0x00080000>;
+-			read-only;
+-		};
+-		partition@80000 {
+-			label = "user";
+-			reg = <0x00080000 0x00580000>;
+-			read-only;
+-		};
+-		partition@600000 {
+-			label = "flash";
+-			reg = <0x00600000 0x03a00000>;
++		partitions {
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "loader";
++				reg = <0x00000000 0x00080000>;
++				read-only;
++			};
++			partition@80000 {
++				label = "user";
++				reg = <0x00080000 0x00580000>;
++				read-only;
++			};
++			partition@600000 {
++				label = "flash";
++				reg = <0x00600000 0x03a00000>;
++			};
+ 		};
+ 	};
+ };
+-- 
+1.9.1
 
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
