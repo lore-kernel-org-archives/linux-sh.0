@@ -1,72 +1,110 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 02 Nov 2015 11:06:51 +0000
-Subject: Re: [PATCH] i2c: rcar: Revert the latest refactoring series
-Message-Id: <CAMuHMdU9ozDLRvTKOHgA8tKJeLnbd9aMWmPFrjO7pWEgDursTA@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 10 Nov 2015 02:12:06 +0000
+Subject: [PATCH 1/2] thermal: rcar_thermal: remove redundant operation
+Message-Id: <87egfylia4.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446204606-25541-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1446204606-25541-1-git-send-email-wsa@the-dreams.de>
+References: <87h9kulkfg.wl%kuninori.morimoto.gx@renesas.com>
+	<87fv0elibh.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fv0elibh.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: Linux I2C <linux-i2c@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>
+Cc: Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, linux-pm@vger.kernel.org, cm-hiep@jinso.co.jp, nv-dung@jinso.co.jp
 
-On Fri, Oct 30, 2015 at 12:30 PM, Wolfram Sang <wsa@the-dreams.de> wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->
-> This whole series caused sometimes timeouts and even OOPSes on some
-> r8a7791 Koelsch boards. We need to understand and fix those first.
->
-> Revert "i2c: rcar: clean up after refactoring"
-> Revert "i2c: rcar: revoke START request early"
-> Revert "i2c: rcar: check master irqs before slave irqs"
-> Revert "i2c: rcar: don't issue stop when HW does it automatically"
-> Revert "i2c: rcar: init new messages in irq"
-> Revert "i2c: rcar: refactor setup of a msg"
-> Revert "i2c: rcar: remove spinlock"
-> Revert "i2c: rcar: remove unused IOERROR state"
-> Revert "i2c: rcar: rework hw init"
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I can confirm this gets rid of the following error messages on koelsch:
+Probe error operation and remove operation are same.
+Let's use same function.
 
--i2c-rcar e6530000.i2c: error -16 : 0
--adv7511: probe of 2-0039 failed with error -16
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/thermal/rcar_thermal.c | 49 ++++++++++++++++++------------------------
+ 1 file changed, 21 insertions(+), 28 deletions(-)
 
-(2-0039 = adv7511)
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 5d4ae7d..13d01ed 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -361,6 +361,24 @@ static irqreturn_t rcar_thermal_irq(int irq, void *data)
+ /*
+  *		platform functions
+  */
++static int rcar_thermal_remove(struct platform_device *pdev)
++{
++	struct rcar_thermal_common *common = platform_get_drvdata(pdev);
++	struct device *dev = &pdev->dev;
++	struct rcar_thermal_priv *priv;
++
++	rcar_thermal_for_each_priv(priv, common) {
++		if (rcar_has_irq_support(priv))
++			rcar_thermal_irq_disable(priv);
++		thermal_zone_device_unregister(priv->zone);
++	}
++
++	pm_runtime_put(dev);
++	pm_runtime_disable(dev);
++
++	return 0;
++}
++
+ static int rcar_thermal_probe(struct platform_device *pdev)
+ {
+ 	struct rcar_thermal_common *common;
+@@ -377,6 +395,8 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 	if (!common)
+ 		return -ENOMEM;
+ 
++	platform_set_drvdata(pdev, common);
++
+ 	INIT_LIST_HEAD(&common->head);
+ 	spin_lock_init(&common->lock);
+ 	common->dev = dev;
+@@ -454,43 +474,16 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 		rcar_thermal_common_write(common, ENR, enr_bits);
+ 	}
+ 
+-	platform_set_drvdata(pdev, common);
+-
+ 	dev_info(dev, "%d sensor probed\n", i);
+ 
+ 	return 0;
+ 
+ error_unregister:
+-	rcar_thermal_for_each_priv(priv, common) {
+-		if (rcar_has_irq_support(priv))
+-			rcar_thermal_irq_disable(priv);
+-		thermal_zone_device_unregister(priv->zone);
+-	}
+-
+-	pm_runtime_put(dev);
+-	pm_runtime_disable(dev);
++	rcar_thermal_remove(pdev);
+ 
+ 	return ret;
+ }
+ 
+-static int rcar_thermal_remove(struct platform_device *pdev)
+-{
+-	struct rcar_thermal_common *common = platform_get_drvdata(pdev);
+-	struct device *dev = &pdev->dev;
+-	struct rcar_thermal_priv *priv;
+-
+-	rcar_thermal_for_each_priv(priv, common) {
+-		if (rcar_has_irq_support(priv))
+-			rcar_thermal_irq_disable(priv);
+-		thermal_zone_device_unregister(priv->zone);
+-	}
+-
+-	pm_runtime_put(dev);
+-	pm_runtime_disable(dev);
+-
+-	return 0;
+-}
+-
+ static const struct of_device_id rcar_thermal_dt_ids[] = {
+ 	{ .compatible = "renesas,rcar-thermal", },
+ 	{},
+-- 
+1.9.1
 
--i2c-rcar e6530000.i2c: error -16 : 0
--i2c-rcar e6530000.i2c: error -16 : 0
--i2c-rcar e6530000.i2c: pm_clk_suspend()
--i2c-rcar e6530000.i2c: pm_clk_resume()
--i2c-rcar e6530000.i2c: error -16 : 0
--adv7180: probe of 2-0020 failed with error -16
-
-(2-0020 = adv7180)
-
--i2c-rcar e6530000.i2c: pm_clk_resume()
--i2c-rcar e6530000.i2c: error -16 : 0
--i2c-rcar e6530000.i2c: error -16 : 0
--i2c-rcar e6530000.i2c: error -16 : 0
--i2c-rcar e6530000.i2c: error -16 : 0
--i2c-rcar e6530000.i2c: error -16 : 0
--i2c-rcar e6530000.i2c: error -16 : 0
-
--i2c-rcar e6530000.i2c: error -16 : 0
--i2c-rcar e6530000.i2c: error -16 : 0
--i2c-rcar e6530000.i2c: error -16 : 0
--i2c-rcar e6530000.i2c: error -16 : 0
--i2c-rcar e6530000.i2c: error -16 : 0
--i2c-rcar e6530000.i2c: error -16 : 0
-
-(related to ak4642, I think)
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
