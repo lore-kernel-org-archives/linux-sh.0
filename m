@@ -1,39 +1,40 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 13 Nov 2015 02:12:19 +0000
-Subject: Re: [PATCH v2 00/10] i2c: rcar: tackle race conditions in the driver
-Message-Id: <878u62k5z4.wl%kuninori.morimoto.gx@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Tue, 10 Nov 2015 13:39:00 +0000
+Subject: [PATCH] media: adv7180: increase delay after reset to 5ms
+Message-Id: <1447162740-28096-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447338715-9955-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1447338715-9955-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
+Initialization of the ADV7180 chip fails on the Renesas R8A7790-based
+Lager board about 50% of the time.  This patch resolves the issue by
+increasing the minimum delay after reset from 2 ms to 5 ms, following the
+recommendation in the ADV7180 datasheet:
 
-Hi
+"Executing a software reset takes approximately 2 ms. However, it is
+recommended to wait 5 ms before any further I2C writes are performed."
 
-> Hello RCar Fans!
-> 
-> So, here is V2 of this series. Thanks to Geert's MSTP clock manipulation
-> series, I could finally reproduce something which looks like the issues Laurent
-> was seeing with his Koelsch board. The outcome is Patch 1/10 which fixes also
-> issues reported by Morimoto-san using a Salvator board. I tested these patches
-> with my Lager and Salvator board (latter one with scope) and Magnus' Koelsch
-> via remote connection. A branch for testing can be found here:
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/rcar-i2c-rework-v2
-
-I tested this branch on Lagar and Salvator-X with Sound.
-(Sound uses I2C for ak4642, ak4613, and CS2000)
-Actually, above branch is missing some necessary sound patch,
-but anyway, I2C works good for sound.
-
-For all patches
-
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Best regards
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
-Kuninori Morimoto
+ drivers/media/i2c/adv7180.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/i2c/adv7180.c b/drivers/media/i2c/adv7180.c
+index f82c8aa..3c3c4bf 100644
+--- a/drivers/media/i2c/adv7180.c
++++ b/drivers/media/i2c/adv7180.c
+@@ -1112,7 +1112,7 @@ static int init_device(struct adv7180_state *state)
+ 	mutex_lock(&state->mutex);
+ 
+ 	adv7180_write(state, ADV7180_REG_PWR_MAN, ADV7180_PWR_MAN_RES);
+-	usleep_range(2000, 10000);
++	usleep_range(5000, 10000);
+ 
+ 	ret = state->chip_info->init(state);
+ 	if (ret)
+-- 
+2.6.1
+
