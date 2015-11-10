@@ -1,76 +1,92 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:05:24 +0000
-Subject: [PATCH 17/29] ARM: shmobile: r8a7793: Add QSPI device to DT
-Message-Id: <469352ad3c43e689c15cd396cbb750ee831ab63e.1447981420.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 10 Nov 2015 13:43:47 +0000
+Subject: Re: [PATCH] staging: board: Set PM domain before probe
+Message-Id: <CAMuHMdVz1UuPLuC=qFOEUtw3zdjvWsn7-VvYAXbh8hWjJ4przg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1447981420.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
+References: <1445956046-4248-1-git-send-email-tomeu.vizoso@collabora.com>
+	<CAMuHMdXTGDFwxrY3rcTaZMuFv-LJuC=uUoORLyrHuQGpcQPy9g@mail.gmail.com>
+In-Reply-To: <CAMuHMdXTGDFwxrY3rcTaZMuFv-LJuC=uUoORLyrHuQGpcQPy9g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Tomeu Vizoso <tomeu.vizoso@collabora.com>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, driverdevel <devel@driverdev.osuosl.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Linux-sh list <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Ulf Hansson <ulf.hansson@linaro.org>
 
-Instantiate the QSPI controller in the r8a7793 device tree.
+Hi Tomeu,
 
-Based on similar work for the r8a7794 by Hisashi Nakamura and
-Sergei Shtylyov.
+On Tue, Oct 27, 2015 at 3:55 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> On Tue, Oct 27, 2015 at 3:27 PM, Tomeu Vizoso
+> <tomeu.vizoso@collabora.com> wrote:
+>> PM domains shouldn't be modified after a device is probed, so set it
+>> before device registration to be sure of that.
+>>
+>> In the future the PM domain pointer will be set through a setter that
+>> will WARN if the device has been probed already.
+>>
+>> Signed-off-by: Tomeu Vizoso <tomeu.vizoso@collabora.com>
+>> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7793.dtsi | 26 ++++++++++++++++++++++++++
- 1 file changed, 26 insertions(+)
+This is now commit 2b18a0eb107677d4 ("staging: board: Set PM domain before
+probe").
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index 187a82dc7d9f..aa9b64c14a09 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -18,6 +18,10 @@
- 	#address-cells = <2>;
- 	#size-cells = <2>;
- 
-+	aliases {
-+		spi0 = &qspi;
-+	};
-+
- 	cpus {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-@@ -222,6 +226,20 @@
- 		status = "disabled";
- 	};
- 
-+	qspi: spi@e6b10000 {
-+		compatible = "renesas,qspi-r8a7793", "renesas,qspi";
-+		reg = <0 0xe6b10000 0 0x2c>;
-+		interrupts = <0 184 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp9_clks R8A7793_CLK_QSPI_MOD>;
-+		dmas = <&dmac0 0x17>, <&dmac0 0x18>;
-+		dma-names = "tx", "rx";
-+		power-domains = <&cpg_clocks>;
-+		num-cs = <1>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		status = "disabled";
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
-@@ -463,6 +481,14 @@
- 				"ipmmu_sgx", "vin2", "vin1", "vin0", "ether",
- 				"sata1", "sata0";
- 		};
-+		mstp9_clks: mstp9_clks@e6150994 {
-+			compatible = "renesas,r8a7793-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
-+			clocks = <&cpg_clocks R8A7793_CLK_QSPI>;
-+			#clock-cells = <1>;
-+			clock-indices = <R8A7793_CLK_QSPI_MOD>;
-+			clock-output-names = "qspi_mod";
-+		};
- 	};
- 
- 	ipmmu_sy0: mmu@e6280000 {
--- 
-2.1.4
+> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
+I seem to have missed this introduces the following BUG on r8a7740/armadillo:
+
+    BUG: spinlock lockup suspected on CPU#0, swapper/1
+     lock: lcdc0_device+0xa0/0x258, .magic: 00000000, .owner:
+<none>/-1, .owner_cpu: 0
+    CPU: 0 PID: 1 Comm: swapper Tainted: G        W
+4.3.0-armadillo-12036-gb7051e9de565aaa8-dirty #836
+    Hardware name: Generic R8A7740 (Flattened Device Tree)
+    [<c0014c20>] (unwind_backtrace) from [<c00127cc>] (show_stack+0x10/0x14)
+    [<c00127cc>] (show_stack) from [<c0053fac>] (do_raw_spin_lock+0xd4/0x118)
+    [<c0053fac>] (do_raw_spin_lock) from [<c022a298>]
+(dev_pm_get_subsys_data+0x2c/0x9c)
+    [<c022a298>] (dev_pm_get_subsys_data) from [<c0233bd4>]
+(__pm_genpd_add_device+0x84/0x260)
+    [<c0233bd4>] (__pm_genpd_add_device) from [<c05927bc>]
+(board_staging_register_device+0xd4/0x110)
+    [<c05927bc>] (board_staging_register_device) from [<c059281c>]
+(board_staging_register_devices+0x24/0x2c)
+    [<c059281c>] (board_staging_register_devices) from [<c0592850>]
+(runtime_board_check+0x2c/0x40)
+    [<c0592850>] (runtime_board_check) from [<c0009734>]
+(do_one_initcall+0x100/0x1b8)
+    [<c0009734>] (do_one_initcall) from [<c057bce4>]
+(kernel_init_freeable+0xfc/0x1c0)
+    [<c057bce4>] (kernel_init_freeable) from [<c03e121c>] (kernel_init+0x8/0xe4)
+    [<c03e121c>] (kernel_init) from [<c000ebf0>] (ret_from_fork+0x14/0x24)
+
+The boot just continues and the display still works, and I guess that's why I
+didn't notice before; sorry for that.
+
+__pm_genpd_add_device() is now called before platform_device_register(),
+at which time "dev->power.lock" hasn't been initialized yet, as
+device_initialize() is only called from platform_device_register().
+
+I can kill the warning by #including "../../base/power/power.h" and calling
+pm_runtime_early_init(&pdev->dev) before pm_genpd_add_device(), but that's
+a bit hacky.
+
+When the PM domain is added in some other way (e.g. based on the
+"power-domains" property in DT), this is done through
+dev_pm_domain_attach() -> genpd_dev_pm_attach() ->
+pm_genpd_add_device(), which is called from platform_drv_probe(), i.e.
+after the device was registered, but before a driver is bound.
+
+Thoughts?
+
+Thanks, and sorry again for not noticing before.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
