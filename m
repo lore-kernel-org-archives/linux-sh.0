@@ -1,59 +1,40 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 26 Nov 2015 22:59:14 +0000
-Subject: [RFC 6/9] ARM: shmobile: r8a7790: dtsi: add internal delay for i2c IPs
-Message-Id: <1448578757-12613-7-git-send-email-wsa@the-dreams.de>
+From: Chris Brandt <chris.brandt@renesas.com>
+Date: Wed, 11 Nov 2015 14:31:09 +0000
+Subject: [PATCH] ARM: xip: Fix module loading
+Message-Id: <1447252269-22864-1-git-send-email-chris.brandt@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+For an XIP kernel, RAM start at _sdata instead of _stext. This fixes an
+issue where when you load a module, vmalloc would return virtual memory
+that the MMU has incorrectly mapped to non-RAM physical addresses.
+This fix is similar to what is already done in arm_memblock_init().
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Chris Brandt <chris.brandt@renesas.com>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 4 ++++
+ arch/arm/mm/mmu.c |    4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 0612502b4a6d67..cdbebc329cff9a 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -418,6 +418,7 @@
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C0>;
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
-+		i2c-scl-internal-delay-ns = <110>;
- 	};
+diff --git a/arch/arm/mm/mmu.c b/arch/arm/mm/mmu.c
+index dd5a56b..d60cb8c 100644
+--- a/arch/arm/mm/mmu.c
++++ b/arch/arm/mm/mmu.c
+@@ -1383,7 +1383,11 @@ static void __init kmap_init(void)
+ static void __init map_lowmem(void)
+ {
+ 	struct memblock_region *reg;
++#ifdef CONFIG_XIP_KERNEL
++	phys_addr_t kernel_x_start = round_down(__pa(_sdata), SECTION_SIZE);
++#else
+ 	phys_addr_t kernel_x_start = round_down(__pa(_stext), SECTION_SIZE);
++#endif
+ 	phys_addr_t kernel_x_end = round_up(__pa(__init_end), SECTION_SIZE);
  
- 	i2c1: i2c@e6518000 {
-@@ -429,6 +430,7 @@
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C1>;
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
-+		i2c-scl-internal-delay-ns = <6>;
- 	};
- 
- 	i2c2: i2c@e6530000 {
-@@ -440,6 +442,7 @@
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C2>;
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
-+		i2c-scl-internal-delay-ns = <6>;
- 	};
- 
- 	i2c3: i2c@e6540000 {
-@@ -451,6 +454,7 @@
- 		clocks = <&mstp9_clks R8A7790_CLK_I2C3>;
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
-+		i2c-scl-internal-delay-ns = <110>;
- 	};
- 
- 	iic0: i2c@e6500000 {
+ 	/* Map all the lowmem memory banks. */
 -- 
-2.1.4
+1.7.9.5
+
 
