@@ -1,243 +1,67 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 24 Nov 2015 23:47:32 +0000
-Subject: Re: [PATCH 02/02] ARM: shmobile: r8a7793: gose: HDMI prototype hack
-Message-Id: <10978162.zZNVfJVt6m@avalon>
+From: Chris Brandt <chris.brandt@renesas.com>
+Date: Wed, 11 Nov 2015 14:17:35 +0000
+Subject: [PATCH] ARM: xip: Use correct symbol for end of ROM marker
+Message-Id: <1447251455-22731-1-git-send-email-chris.brandt@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151116091532.20711.41502.sendpatchset@little-apple>
-In-Reply-To: <20151116091532.20711.41502.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus,
+For an XIP build, _edata_loc, not _etext, represents the end of the
+binary image that will be programmed into ROM and mapped into the
+MODULES_VADDR area.
+With an XIP kernel, nothing is loaded into RAM before boot, meaning
+you have to take into account the size of the entire binary image
+that was programmed, including the init data values that will be copied
+to RAM during kernel boot.
 
-Thank you for the patch.
+This fixes the bug where you might lose the end of your kernel area
+after page table setup is complete.
 
-On Monday 16 November 2015 18:15:32 Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> This prototype patch adds r8a7793 GOSE HDMI video out support.
-> 
-> The r8a7793 GOSE board is similar to r8a7791 Koelsch. For those
-> boards an on-board HDMI encoder chip drives an HDMI port and
-> also a LVDS port is available for external LCD panels.
-> 
-> Basic testing with modetest seems to work well, but due to the
-> current state of r8a7793 SoC support all the dependencies are
-> not yet in place. In particular I2C and GPIO are lacking.
-> 
-> To check if the DU and HDMI drivers and hardware are working this
-> patch simply ties together I2C2 and GPIO3 with the DU and HDMI
-> devices. Once I2C and GPIO is enabled in upstream for r8a7793 and
-> GOSE then this patch can easily be reworked into something more
-> suitable for upstream.
-> 
-> Not-yet-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> ---
-> 
->  arch/arm/boot/dts/r8a7793-gose.dts |   98 +++++++++++++++++++++++++++++++++
->  arch/arm/boot/dts/r8a7793.dtsi     |   33 +++++++++++-
->  2 files changed, 128 insertions(+), 3 deletions(-)
-> 
-> --- 0001/arch/arm/boot/dts/r8a7793-gose.dts
-> +++ work/arch/arm/boot/dts/r8a7793-gose.dts	2015-11-16 15:31:42.150513000
-> +0900 @@ -31,6 +31,54 @@
->  		device_type = "memory";
->  		reg = <0 0x40000000 0 0x40000000>;
->  	};
-> +
-> +	hdmi-out {
-> +		compatible = "hdmi-connector";
-> +		type = "a";
-> +
-> +		port {
-> +			hdmi_con: endpoint {
-> +				remote-endpoint = <&adv7511_out>;
-> +			};
-> +		};
-> +	};
-> +
-> +	x2_clk: x2-clock {
-> +		compatible = "fixed-clock";
-> +		#clock-cells = <0>;
-> +		clock-frequency = <74250000>;
-> +	};
-> +
-> +	x13_clk: x13-clock {
-> +		compatible = "fixed-clock";
-> +		#clock-cells = <0>;
-> +		clock-frequency = <148500000>;
-> +	};
-> +};
-> +
-> +&du {
-> +	pinctrl-0 = <&du_pins>;
-> +	pinctrl-names = "default";
-> +	status = "okay";
-> +
-> +	clocks = <&mstp7_clks R8A7793_CLK_DU0>,
-> +		 <&mstp7_clks R8A7793_CLK_DU1>,
-> +		 <&mstp7_clks R8A7793_CLK_LVDS0>,
-> +		 <&x13_clk>, <&x2_clk>;
-> +	clock-names = "du.0", "du.1", "lvds.0",
-> +		      "dclkin.0", "dclkin.1";
-> +
-> +	ports {
-> +		port@0 {
-> +			endpoint {
-> +				remote-endpoint = <&adv7511_in>;
-> +			};
-> +		};
-> +		port@1 {
-> +			lvds_connector: endpoint {
-> +			};
-> +		};
-> +	};
->  };
-> 
->  &extal_clk {
-> @@ -38,6 +86,16 @@
->  };
-> 
->  &pfc {
-> +	i2c2_pins: i2c2 {
-> +		renesas,groups = "i2c2";
-> +		renesas,function = "i2c2";
-> +	};
-> +
-> +	du_pins: du {
-> +		renesas,groups = "du_rgb666", "du_sync", "du_disp", "du_clk_out_0";
 
-Blatant copy & paste of a Koelsch bug :-) You should use du_rgb888 here as the 
-DU RGB output has all 24 data bits connected to the HDMI transmitter. I'll 
-send a fix for Koelsch that itself copied the pin group from Lager for which 
-only 18 data pins are connected.
+Signed-off-by: Chris Brandt <chris.brandt@renesas.com>
+---
+ arch/arm/mm/mmu.c              |    4 ++--
+ include/asm-generic/sections.h |    2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-Apart from that the DU section looks good. Feel free to add my
-
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-when you'll resend the DU portion with the above problem fixed.
-
-> +		renesas,function = "du";
-> +	};
-> +
->  	scif0_pins: serial0 {
->  		renesas,groups = "scif0_data_d";
->  		renesas,function = "scif0";
-> @@ -134,4 +192,44 @@
->  			};
->  		};
->  	};
-> +};
-> +
-> +&i2c2 {
-> +	pinctrl-0 = <&i2c2_pins>;
-> +	pinctrl-names = "default";
-> +
-> +	status = "okay";
-> +	clock-frequency = <100000>;
-> +
-> +	hdmi@39 {
-> +		compatible = "adi,adv7511w";
-> +		reg = <0x39>;
-> +		interrupt-parent = <&gpio3>;
-> +		interrupts = <29 IRQ_TYPE_LEVEL_LOW>;
-> +
-> +		adi,input-depth = <8>;
-> +		adi,input-colorspace = "rgb";
-> +		adi,input-clock = "1x";
-> +		adi,input-style = <1>;
-> +		adi,input-justification = "evenly";
-> +
-> +		ports {
-> +			#address-cells = <1>;
-> +			#size-cells = <0>;
-> +
-> +			port@0 {
-> +				reg = <0>;
-> +				adv7511_in: endpoint {
-> +					remote-endpoint = <&du_out_rgb>;
-> +				};
-> +			};
-> +
-> +			port@1 {
-> +				reg = <1>;
-> +				adv7511_out: endpoint {
-> +					remote-endpoint = <&hdmi_con>;
-> +				};
-> +			};
-> +		};
-> +	};
->  };
-> --- 0013/arch/arm/boot/dts/r8a7793.dtsi
-> +++ work/arch/arm/boot/dts/r8a7793.dtsi	2015-11-16 15:34:33.710513000 +0900
-> @@ -19,6 +19,7 @@
->  	#size-cells = <2>;
-> 
->  	aliases {
-> +		i2c2 = &i2c2;
->  		spi0 = &qspi;
->  	};
-> 
-> @@ -57,6 +58,19 @@
->  		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
->  	};
-> 
-> +	gpio3: gpio@e6053000 {
-> +		compatible = "renesas,gpio-r8a7793", "renesas,gpio-rcar";
-> +		reg = <0 0xe6053000 0 0x50>;
-> +		interrupts = <0 7 IRQ_TYPE_LEVEL_HIGH>;
-> +		#gpio-cells = <2>;
-> +		gpio-controller;
-> +		gpio-ranges = <&pfc 0 96 32>;
-> +		#interrupt-cells = <2>;
-> +		interrupt-controller;
-> +		clocks = <&mstp9_clks R8A7793_CLK_GPIO3>;
-> +		power-domains = <&cpg_clocks>;
-> +	};
-> +
->  	thermal@e61f0000 {
->  		compatible = "renesas,thermal-r8a7793", "renesas,rcar-thermal";
->  		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
-> @@ -194,6 +208,17 @@
->  		dma-channels = <15>;
->  	};
-> 
-> +	i2c2: i2c@e6530000 {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		compatible = "renesas,i2c-r8a7793";
-> +		reg = <0 0xe6530000 0 0x40>;
-> +		interrupts = <0 286 IRQ_TYPE_LEVEL_HIGH>;
-> +		clocks = <&mstp9_clks R8A7793_CLK_I2C2>;
-> +		power-domains = <&cpg_clocks>;
-> +		status = "disabled";
-> +	};
-> +
->  	scif0: serial@e6e60000 {
->  		compatible = "renesas,scif-r8a7793", "renesas,scif";
->  		reg = <0 0xe6e60000 0 64>;
-> @@ -514,10 +539,12 @@
->  		mstp9_clks: mstp9_clks@e6150994 {
->  			compatible = "renesas,r8a7793-mstp-clocks", "renesas,cpg-mstp-
-clocks";
->  			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
-> -			clocks = <&cpg_clocks R8A7793_CLK_QSPI>;
-> +			clocks = <&cp_clk>, <&cpg_clocks R8A7793_CLK_QSPI>,
-> +			       <&hp_clk>;
->  			#clock-cells = <1>;
-> -			clock-indices = <R8A7793_CLK_QSPI_MOD>;
-> -			clock-output-names = "qspi_mod";
-> +			clock-indices = <R8A7793_CLK_GPIO3 R8A7793_CLK_QSPI_MOD
-> +				      R8A7793_CLK_I2C2>;
-> +			clock-output-names = "gpio3", "qspi_mod", "i2c2";
->  		};
->  	};
-
+diff --git a/arch/arm/mm/mmu.c b/arch/arm/mm/mmu.c
+index 4867f5d..dd5a56b 100644
+--- a/arch/arm/mm/mmu.c
++++ b/arch/arm/mm/mmu.c
+@@ -1210,7 +1210,7 @@ static inline void prepare_page_table(void)
+ 
+ #ifdef CONFIG_XIP_KERNEL
+ 	/* The XIP kernel is mapped in the module area -- skip over it */
+-	addr = ((unsigned long)_etext + PMD_SIZE - 1) & PMD_MASK;
++	addr = ((unsigned long)_edata_loc + PMD_SIZE - 1) & PMD_MASK;
+ #endif
+ 	for ( ; addr < PAGE_OFFSET; addr += PMD_SIZE)
+ 		pmd_clear(pmd_off_k(addr));
+@@ -1292,7 +1292,7 @@ static void __init devicemaps_init(const struct machine_desc *mdesc)
+ #ifdef CONFIG_XIP_KERNEL
+ 	map.pfn = __phys_to_pfn(CONFIG_XIP_PHYS_ADDR & SECTION_MASK);
+ 	map.virtual = MODULES_VADDR;
+-	map.length = ((unsigned long)_etext - map.virtual + ~SECTION_MASK) & SECTION_MASK;
++	map.length = ((unsigned long)_edata_loc - map.virtual + ~SECTION_MASK) & SECTION_MASK;
+ 	map.type = MT_ROM;
+ 	create_mapping(&map);
+ #endif
+diff --git a/include/asm-generic/sections.h b/include/asm-generic/sections.h
+index b58fd66..195554d 100644
+--- a/include/asm-generic/sections.h
++++ b/include/asm-generic/sections.h
+@@ -26,7 +26,7 @@
+  *	__ctors_start, __ctors_end
+  */
+ extern char _text[], _stext[], _etext[];
+-extern char _data[], _sdata[], _edata[];
++extern char _data[], _sdata[], _edata[], _edata_loc[];
+ extern char __bss_start[], __bss_stop[];
+ extern char __init_begin[], __init_end[];
+ extern char _sinittext[], _einittext[];
 -- 
-Regards,
+1.7.9.5
 
-Laurent Pinchart
 
