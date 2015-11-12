@@ -1,20 +1,70 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 20 Nov 2015 01:13:13 +0000
-Subject: Re: [PATCH v3 0/2] Basic GPIO support for r8a7795
-Message-Id: <20151120011312.GA29534@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 12 Nov 2015 14:31:47 +0000
+Subject: [PATCH v2 02/10] i2c: rcar: rework hw init
+Message-Id: <1447338715-9955-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446073759-10569-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1446073759-10569-1-git-send-email-horms+renesas@verge.net.au>
+References: <1447338715-9955-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1447338715-9955-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-On Thu, Oct 29, 2015 at 08:09:17AM +0900, Simon Horman wrote:
-> Hi,
-> 
-> this is an update of work by Takeshi Kihara, posted by me, then Ulrich
-> Hecht and now me again.  Ulrich, I would be most grateful if you could look
-> over this and repost if there are problems.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-I have queued this up for v4.5.
+We don't need to init HW before every transfer since we know the HW
+state then. HW init at probe time is enough. While here, add setting the
+clock register which belongs to init HW. Also, set MDBS bit since not
+setting it is prohibited according to the manual.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-rcar.c | 16 ++++------------
+ 1 file changed, 4 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index dac0f5d1945341..efc8de6cc8a2f9 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -144,9 +144,10 @@ static void rcar_i2c_init(struct rcar_i2c_priv *priv)
+ {
+ 	/* reset master mode */
+ 	rcar_i2c_write(priv, ICMIER, 0);
+-	rcar_i2c_write(priv, ICMCR, 0);
++	rcar_i2c_write(priv, ICMCR, MDBS);
+ 	rcar_i2c_write(priv, ICMSR, 0);
+-	rcar_i2c_write(priv, ICMAR, 0);
++	/* start clock */
++	rcar_i2c_write(priv, ICCCR, priv->icccr);
+ }
+ 
+ static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
+@@ -496,16 +497,6 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 
+ 	pm_runtime_get_sync(dev);
+ 
+-	/*-------------- spin lock -----------------*/
+-	spin_lock_irqsave(&priv->lock, flags);
+-
+-	rcar_i2c_init(priv);
+-	/* start clock */
+-	rcar_i2c_write(priv, ICCCR, priv->icccr);
+-
+-	spin_unlock_irqrestore(&priv->lock, flags);
+-	/*-------------- spin unlock -----------------*/
+-
+ 	ret = rcar_i2c_bus_barrier(priv);
+ 	if (ret < 0)
+ 		goto out;
+@@ -666,6 +657,7 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 	if (ret < 0)
+ 		goto out_pm_put;
+ 
++	rcar_i2c_init(priv);
+ 	pm_runtime_put(dev);
+ 
+ 	irq = platform_get_irq(pdev, 0);
+-- 
+2.1.4
+
