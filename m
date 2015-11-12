@@ -1,161 +1,96 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 19 Nov 2015 18:38:59 +0000
-Subject: [PATCH 20/25] serial: sh-sci: Add support for optional BRG on (H)SCIF
-Message-Id: <1447958344-836-21-git-send-email-geert+renesas@glider.be>
+From: Jerome Marchand <jmarchan@redhat.com>
+Date: Thu, 12 Nov 2015 16:28:46 +0000
+Subject: Re: [PATCH] mm: vmalloc: don't remove inexistent guard hole in remove_vm_area()
+Message-Id: <5644BE3E.7010708@redhat.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="gqqIdGCaXdtJMGiBHV7IvAAvr2EAt2BPw"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+References: <1447341424-11466-1-git-send-email-jmarchan@redhat.com>
+ <CAPAsAGxNWhHSNHZWfaOb3NmbubSBGRd8O81L5rw1wMs-n_UgmA@mail.gmail.com>
+In-Reply-To: <CAPAsAGxNWhHSNHZWfaOb3NmbubSBGRd8O81L5rw1wMs-n_UgmA@mail.gmail.com>
+To: Andrey Ryabinin <ryabinin.a.a@gmail.com>
+Cc: "linux-mm@kvack.org" <linux-mm@kvack.org>, LKML <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org
 
-Add support for the Baud Rate Generator for External Clock (BRG), as
-found on some SCIF and HSCIF variants, which can improve baud rate range
-and accuracy.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--gqqIdGCaXdtJMGiBHV7IvAAvr2EAt2BPw
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/tty/serial/sh-sci.c | 82 ++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 77 insertions(+), 5 deletions(-)
+On 11/12/2015 04:55 PM, Andrey Ryabinin wrote:
+> 2015-11-12 18:17 GMT+03:00 Jerome Marchand <jmarchan@redhat.com>:
+>> Commit 71394fe50146 ("mm: vmalloc: add flag preventing guard hole
+>> allocation") missed a spot. Currently remove_vm_area() decreases
+>> vm->size to remove the guard hole page, even when it isn't present.
+>> This patch only decreases vm->size when VM_NO_GUARD isn't set.
+>>
+>> Signed-off-by: Jerome Marchand <jmarchan@redhat.com>
+>> ---
+>>  mm/vmalloc.c | 3 ++-
+>>  1 file changed, 2 insertions(+), 1 deletion(-)
+>>
+>> diff --git a/mm/vmalloc.c b/mm/vmalloc.c
+>> index d045634..1388c3d 100644
+>> --- a/mm/vmalloc.c
+>> +++ b/mm/vmalloc.c
+>> @@ -1443,7 +1443,8 @@ struct vm_struct *remove_vm_area(const void *add=
+r)
+>>                 vmap_debug_free_range(va->va_start, va->va_end);
+>>                 kasan_free_shadow(vm);
+>>                 free_unmap_vmap_area(va);
+>> -               vm->size -=3D PAGE_SIZE;
+>> +               if (!(vm->flags & VM_NO_GUARD))
+>> +                       vm->size -=3D PAGE_SIZE;
+>>
+>=20
+> I'd fix this in another way. I think that remove_vm_area() shouldn't
+> change vm's size, IMO it doesn't make sense.
+> The only caller who cares about vm's size after removing is __vunmap():=
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index f88aac684ed1e3b6..6b8f1675b9f6fadb 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -80,6 +80,8 @@ enum {
- enum SCI_CLKS {
- 	SCI_FCK,		/* Functional Clock */
- 	SCI_SCK,		/* Optional External Clock */
-+	SCI_INT_CLK,		/* Optional BRG Internal Clock Source */
-+	SCI_SCIF_CLK,		/* Optional BRG External Clock Source */
- 	SCI_NUM_CLKS
- };
- 
-@@ -1955,6 +1957,40 @@ static int sci_sck_calc(struct sci_port *s, unsigned int bps,
- 	return min_err;
- }
- 
-+static int sci_brg_calc(struct sci_port *s, unsigned int bps,
-+			unsigned long freq, unsigned int *dlr,
-+			unsigned int *srr)
-+{
-+	unsigned int min_sr, max_sr, sr, dl;
-+	int err, min_err = INT_MAX;
-+
-+	if (s->sampling_rate) {
-+		/* SCIF has a fixed sampling rate */
-+		min_sr = max_sr = s->sampling_rate / 2;
-+	} else {
-+		/* HSCIF has a variable 1/(8..32) sampling rate */
-+		min_sr = 8;
-+		max_sr = 32;
-+	}
-+
-+	for (sr = max_sr; sr >= min_sr; sr--) {
-+		dl = DIV_ROUND_CLOSEST(freq, sr * bps);
-+		dl = clamp(dl, 1U, 65535U);
-+
-+		err = DIV_ROUND_CLOSEST(freq, sr * dl) - bps;
-+		if (abs(err) >= abs(min_err))
-+			continue;
-+
-+		min_err = err;
-+		*dlr = dl;
-+		*srr = sr - 1;
-+	}
-+
-+	dev_dbg(s->port.dev, "BRG: %u%+d bps using DL %u SR %u\n", bps,
-+		min_err, *dlr, *srr + 1);
-+	return min_err;
-+}
-+
- /* calculate sample rate, BRR, and clock select */
- static int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
- 			  unsigned int *brr, unsigned int *srr,
-@@ -2036,8 +2072,8 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 			    struct ktermios *old)
- {
- 	unsigned int baud, smr_val = 0, scr_val = 0, i;
--	unsigned int brr = 255, cks = 0, srr = 15, sccks = 0;
--	unsigned int brr1 = 255, cks1 = 0, srr1 = 15;
-+	unsigned int brr = 255, cks = 0, srr = 15, dl = 0, sccks = 0;
-+	unsigned int brr1 = 255, cks1 = 0, srr1 = 15, dl1 = 0;
- 	struct sci_port *s = to_sci_port(port);
- 	const struct plat_sci_reg *reg;
- 	int min_err = INT_MAX, err;
-@@ -2089,6 +2125,38 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 		}
- 	}
- 
-+	/* Optional BRG External Clock Source */
-+	if (s->clk_rates[SCI_SCIF_CLK] && sci_getreg(port, SCDL)->size) {
-+		err = sci_brg_calc(s, baud, s->clk_rates[SCI_SCIF_CLK], &dl1,
-+				   &srr1);
-+		if (abs(err) < abs(min_err)) {
-+			best_clk = SCI_SCIF_CLK;
-+			scr_val = SCSCR_CKE1;
-+			sccks = 0;
-+			min_err = err;
-+			dl = dl1;
-+			srr = srr1;
-+			if (!err)
-+				goto done;
-+		}
-+	}
-+
-+	/* Optional BRG Internal Clock Source */
-+	if (s->clk_rates[SCI_INT_CLK] && sci_getreg(port, SCDL)->size) {
-+		err = sci_brg_calc(s, baud, s->clk_rates[SCI_INT_CLK], &dl1,
-+				   &srr1);
-+		if (abs(err) < abs(min_err)) {
-+			best_clk = SCI_INT_CLK;
-+			scr_val = SCSCR_CKE1;
-+			sccks = SCCKS_XIN;
-+			min_err = err;
-+			dl = dl1;
-+			srr = srr1;
-+			if (!min_err)
-+				goto done;
-+		}
-+	}
-+
- 	/* Functional Clock and standard Bit Rate Register */
- 	err = sci_scbrr_calc(s, baud, &brr1, &srr1, &cks1);
- 	if (abs(err) < abs(min_err)) {
-@@ -2108,8 +2176,10 @@ done:
- 	sci_port_enable(s);
- 
- 	/* Program the optional External Baud Rate Generator (BRG) first */
--	if (best_clk >= 0 && sci_getreg(port, SCCKS)->size)
-+	if (best_clk >= 0 && sci_getreg(port, SCCKS)->size) {
-+		serial_port_out(port, SCDL, dl);
- 		serial_port_out(port, SCCKS, sccks);
-+	}
- 
- 	sci_reset(port);
- 
-@@ -2118,8 +2188,8 @@ done:
- 	if (best_clk >= 0) {
- 		smr_val |= cks;
- 		dev_dbg(port->dev,
--			 "SCR 0x%x SMR 0x%x BRR %u CKS 0x%x SRR %u\n",
--			 scr_val, smr_val, brr, sccks, srr);
-+			 "SCR 0x%x SMR 0x%x BRR %u CKS 0x%x DL %u SRR %u\n",
-+			 scr_val, smr_val, brr, sccks, dl, srr);
- 		serial_port_out(port, SCSCR, scr_val);
- 		serial_port_out(port, SCSMR, smr_val);
- 		serial_port_out(port, SCBRR, brr);
-@@ -2357,6 +2427,8 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
- 	const char *clk_names[] = {
- 		[SCI_FCK] = "fck",
- 		[SCI_SCK] = "sck",
-+		[SCI_INT_CLK] = "int_clk",
-+		[SCI_SCIF_CLK] = "scif_clk",
- 	};
- 	struct clk *clk;
- 	unsigned int i;
--- 
-1.9.1
+>          area =3D remove_vm_area(addr);
+>          ....
+>          debug_check_no_locks_freed(addr, area->size);
+>          debug_check_no_obj_freed(addr, area->size);
+>=20
+> We already have proper get_vm_area_size() helper which takes
+> VM_NO_GUARD into account.
+> So I think we should use that helper for debug_check_no_*() and just
+> remove 'vm->size -=3D PAGE_SIZE;' line
+> from remove_vm_area()
 
+Sure, that would be cleaner.
+
+Btw, there might be a leak in sq_unmap() (arch/sh/kernel/cpu/sh4/sq.c)
+as the vm_struct doesn't seem to be freed. CCed the SuperH folks.
+
+Thanks,
+Jerome
+
+>=20
+>=20
+>=20
+>>                 return vm;
+>>         }
+>> --
+>> 2.4.3
+>>
+
+
+
+--gqqIdGCaXdtJMGiBHV7IvAAvr2EAt2BPw
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBCAAGBQJWRL4+AAoJEHTzHJCtsuoCZlgH/0CJ5pcOXspQy8GGVnMaDFn+
+CA2dc661YpyTb7BN3LeqLa9Eidx3/3QFARmRdKetyUWh8wQZqy9QLpjesJrgyRz9
++yCVikMQemMChbAVRtDJ7FPY1jupVMfO5oqufc1maeRk5KYIz0bmfcUYxPqdnh+6
+9L7pBzbMx6jyE/wNjyiUq6Xh1xG6Pj4UzSCD1YpcveW5QE2IAtIMXsMeFh/b34Fg
+MkSNP010rFKb2kHLGBpu+5RUeS1dIHOZ9lA6BSv5iYQ9NhVmiFX8vqBryMRnRIde
+5S+dOkytVEvfvBTZmV6M42hSA+LME8jbU0reSLVQUbyuyylCx4A7yCmaohuzW3k=
+=XIS2
+-----END PGP SIGNATURE-----
+
+--gqqIdGCaXdtJMGiBHV7IvAAvr2EAt2BPw--
