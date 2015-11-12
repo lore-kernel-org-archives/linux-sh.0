@@ -1,66 +1,241 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 30 Nov 2015 13:49:38 +0000
-Subject: [PATCH v2 1/2] pinctrl: sh-pfc: r8a7795: Add pinmux data for single-function pins
-Message-Id: <1448891379-2457-2-git-send-email-geert+renesas@glider.be>
+Date: Thu, 12 Nov 2015 15:54:44 +0000
+Subject: [PATCH v6 3/5] clk: shmobile: div6: Extract cpg_div6_register()
+Message-Id: <1447343686-2038-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448891379-2457-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448891379-2457-1-git-send-email-geert+renesas@glider.be>
+References: <1447343686-2038-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447343686-2038-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms+renesas@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-clk@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Pins that (1) can be configured as either GPIO or a single peripheral
-function, and (2) that don't need configuration in an IPSRx register,
-should still be listed in the pinmux_data[] array.
-
-Else selecting the peripheral function fails with e.g.:
-
-    sh-pfc e6060000.pfc: cannot locate data/mark enum_id for mark 1281
-
-(mark 1281 is MSIOF0_SCK_MARK).
+Extract cpg_div6_register(), to allow registering div6 clocks from
+another clock driver.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
-This depends on "pinctrl: sh-pfc: Add PINMUX_SINGLE()".
+v6:
+  - Add Acked-by,
 
-v2:
-  - Use PINMUX_SINGLE() instead of raw PINMUX_DATA().
+v5:
+  - Document cpg_div6_register(),
+  - Free clock on clock->parents allocation failure,
+  - Add include guards to clk-div6.h,
+  - Drop RFC state,
+
+v4:
+  - New.
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
+ drivers/clk/shmobile/clk-div6.c | 132 ++++++++++++++++++++++++++--------------
+ drivers/clk/shmobile/clk-div6.h |   7 +++
+ 2 files changed, 94 insertions(+), 45 deletions(-)
+ create mode 100644 drivers/clk/shmobile/clk-div6.h
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-index 678c3801e999453c..e9dafe3d3320eb9f 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
-@@ -580,6 +580,25 @@ enum {
- static const u16 pinmux_data[] = {
- 	PINMUX_DATA_GP_ALL(),
+diff --git a/drivers/clk/shmobile/clk-div6.c b/drivers/clk/shmobile/clk-div6.c
+index 57016ff9c585fc6e..9999947694509d58 100644
+--- a/drivers/clk/shmobile/clk-div6.c
++++ b/drivers/clk/shmobile/clk-div6.c
+@@ -18,6 +18,8 @@
+ #include <linux/of_address.h>
+ #include <linux/slab.h>
  
-+	PINMUX_SINGLE(AVS1),
-+	PINMUX_SINGLE(AVS2),
-+	PINMUX_SINGLE(HDMI0_CEC),
-+	PINMUX_SINGLE(HDMI1_CEC),
-+	PINMUX_SINGLE(MSIOF0_RXD),
-+	PINMUX_SINGLE(MSIOF0_SCK),
-+	PINMUX_SINGLE(MSIOF0_TXD),
-+	PINMUX_SINGLE(SD2_CMD),
-+	PINMUX_SINGLE(SD3_CLK),
-+	PINMUX_SINGLE(SD3_CMD),
-+	PINMUX_SINGLE(SD3_DAT0),
-+	PINMUX_SINGLE(SD3_DAT1),
-+	PINMUX_SINGLE(SD3_DAT2),
-+	PINMUX_SINGLE(SD3_DAT3),
-+	PINMUX_SINGLE(SD3_DS),
-+	PINMUX_SINGLE(SSI_SCK5),
-+	PINMUX_SINGLE(SSI_SDATA5),
-+	PINMUX_SINGLE(SSI_WS5),
++#include "clk-div6.h"
 +
- 	/* IPSR0 */
- 	PINMUX_IPSR_GPSR(IP0_3_0,	AVB_MDC),
- 	PINMUX_IPSR_MSEL(IP0_3_0,	MSIOF2_SS2_C,		SEL_MSIOF2_2),
+ #define CPG_DIV6_CKSTP		BIT(8)
+ #define CPG_DIV6_DIV(d)		((d) & 0x3f)
+ #define CPG_DIV6_DIV_MASK	0x3f
+@@ -172,60 +174,44 @@ static const struct clk_ops cpg_div6_clock_ops = {
+ 	.set_rate = cpg_div6_clock_set_rate,
+ };
+ 
+-static void __init cpg_div6_clock_init(struct device_node *np)
++
++/**
++ * cpg_div6_register - Register a DIV6 clock
++ * @name: Name of the DIV6 clock
++ * @num_parents: Number of parent clocks of the DIV6 clock (1, 4, or 8)
++ * @parent_names: Array containing the names of the parent clocks
++ * @reg: Mapped register used to control the DIV6 clock
++ */
++struct clk * __init cpg_div6_register(const char *name,
++				      unsigned int num_parents,
++				      const char **parent_names,
++				      void __iomem *reg)
+ {
+-	unsigned int num_parents, valid_parents;
+-	const char **parent_names;
++	unsigned int valid_parents;
+ 	struct clk_init_data init;
+ 	struct div6_clock *clock;
+-	const char *clk_name = np->name;
+ 	struct clk *clk;
+ 	unsigned int i;
+ 
+ 	clock = kzalloc(sizeof(*clock), GFP_KERNEL);
+ 	if (!clock)
+-		return;
++		return ERR_PTR(-ENOMEM);
+ 
+-	num_parents = of_clk_get_parent_count(np);
+-	if (num_parents < 1) {
+-		pr_err("%s: no parent found for %s DIV6 clock\n",
+-		       __func__, np->name);
+-		return;
++	clock->parents = kmalloc_array(num_parents, sizeof(*clock->parents),
++				       GFP_KERNEL);
++	if (!clock->parents) {
++		clk = ERR_PTR(-ENOMEM);
++		goto free_clock;
+ 	}
+ 
+-	clock->parents = kmalloc_array(num_parents, sizeof(*clock->parents),
+-		GFP_KERNEL);
+-	parent_names = kmalloc_array(num_parents, sizeof(*parent_names),
+-				GFP_KERNEL);
+-	if (!parent_names)
+-		return;
++	clock->reg = reg;
+ 
+-	/* Remap the clock register and read the divisor. Disabling the
+-	 * clock overwrites the divisor, so we need to cache its value for the
+-	 * enable operation.
++	/*
++	 * Read the divisor. Disabling the clock overwrites the divisor, so we
++	 * need to cache its value for the enable operation.
+ 	 */
+-	clock->reg = of_iomap(np, 0);
+-	if (clock->reg = NULL) {
+-		pr_err("%s: failed to map %s DIV6 clock register\n",
+-		       __func__, np->name);
+-		goto error;
+-	}
+-
+ 	clock->div = (clk_readl(clock->reg) & CPG_DIV6_DIV_MASK) + 1;
+ 
+-	/* Parse the DT properties. */
+-	of_property_read_string(np, "clock-output-names", &clk_name);
+-
+-	for (i = 0, valid_parents = 0; i < num_parents; i++) {
+-		const char *name = of_clk_get_parent_name(np, i);
+-
+-		if (name) {
+-			parent_names[valid_parents] = name;
+-			clock->parents[valid_parents] = i;
+-			valid_parents++;
+-		}
+-	}
+-
+ 	switch (num_parents) {
+ 	case 1:
+ 		/* fixed parent clock */
+@@ -243,12 +229,22 @@ static void __init cpg_div6_clock_init(struct device_node *np)
+ 		break;
+ 	default:
+ 		pr_err("%s: invalid number of parents for DIV6 clock %s\n",
+-		       __func__, np->name);
+-		goto error;
++		       __func__, name);
++		clk = ERR_PTR(-EINVAL);
++		goto free_parents;
++	}
++
++	/* Filter out invalid parents */
++	for (i = 0, valid_parents = 0; i < num_parents; i++) {
++		if (parent_names[i]) {
++			parent_names[valid_parents] = parent_names[i];
++			clock->parents[valid_parents] = i;
++			valid_parents++;
++		}
+ 	}
+ 
+ 	/* Register the clock. */
+-	init.name = clk_name;
++	init.name = name;
+ 	init.ops = &cpg_div6_clock_ops;
+ 	init.flags = CLK_IS_BASIC;
+ 	init.parent_names = parent_names;
+@@ -257,6 +253,53 @@ static void __init cpg_div6_clock_init(struct device_node *np)
+ 	clock->hw.init = &init;
+ 
+ 	clk = clk_register(NULL, &clock->hw);
++	if (IS_ERR(clk))
++		goto free_parents;
++
++	return clk;
++
++free_parents:
++	kfree(clock->parents);
++free_clock:
++	kfree(clock);
++	return clk;
++}
++
++static void __init cpg_div6_clock_init(struct device_node *np)
++{
++	unsigned int num_parents;
++	const char **parent_names;
++	const char *clk_name = np->name;
++	void __iomem *reg;
++	struct clk *clk;
++	unsigned int i;
++
++	num_parents = of_clk_get_parent_count(np);
++	if (num_parents < 1) {
++		pr_err("%s: no parent found for %s DIV6 clock\n",
++		       __func__, np->name);
++		return;
++	}
++
++	parent_names = kmalloc_array(num_parents, sizeof(*parent_names),
++				GFP_KERNEL);
++	if (!parent_names)
++		return;
++
++	reg = of_iomap(np, 0);
++	if (reg = NULL) {
++		pr_err("%s: failed to map %s DIV6 clock register\n",
++		       __func__, np->name);
++		goto error;
++	}
++
++	/* Parse the DT properties. */
++	of_property_read_string(np, "clock-output-names", &clk_name);
++
++	for (i = 0; i < num_parents; i++)
++		parent_names[i] = of_clk_get_parent_name(np, i);
++
++	clk = cpg_div6_register(clk_name, num_parents, parent_names, reg);
+ 	if (IS_ERR(clk)) {
+ 		pr_err("%s: failed to register %s DIV6 clock (%ld)\n",
+ 		       __func__, np->name, PTR_ERR(clk));
+@@ -269,9 +312,8 @@ static void __init cpg_div6_clock_init(struct device_node *np)
+ 	return;
+ 
+ error:
+-	if (clock->reg)
+-		iounmap(clock->reg);
++	if (reg)
++		iounmap(reg);
+ 	kfree(parent_names);
+-	kfree(clock);
+ }
+ CLK_OF_DECLARE(cpg_div6_clk, "renesas,cpg-div6-clock", cpg_div6_clock_init);
+diff --git a/drivers/clk/shmobile/clk-div6.h b/drivers/clk/shmobile/clk-div6.h
+new file mode 100644
+index 0000000000000000..9a85a95188daa813
+--- /dev/null
++++ b/drivers/clk/shmobile/clk-div6.h
+@@ -0,0 +1,7 @@
++#ifndef __SHMOBILE_CLK_DIV6_H__
++#define __SHMOBILE_CLK_DIV6_H__
++
++struct clk *cpg_div6_register(const char *name, unsigned int num_parents,
++			      const char **parent_names, void __iomem *reg);
++
++#endif
 -- 
 1.9.1
 
