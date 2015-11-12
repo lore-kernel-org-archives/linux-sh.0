@@ -1,20 +1,92 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 24 Nov 2015 02:50:45 +0000
-Subject: Re: [PATCH v3] arm64: renesas: r8a7795 dtsi: Add all HSCIF nodes
-Message-Id: <20151124025045.GH21853@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 12 Nov 2015 01:29:23 +0000
+Subject: [PATCH v2 3/3] ARM: shmobile: gose: Add QSPI device to DT
+Message-Id: <1447291763-27527-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447957751-32554-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447957751-32554-1-git-send-email-geert+renesas@glider.be>
+References: <1447291763-27527-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1447291763-27527-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 19, 2015 at 07:29:11PM +0100, Geert Uytterhoeven wrote:
-> Add the device nodes for all HSCIF serial ports, incl. clocks, clock
-> domain, and dma properties.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Enable the QSPI controller in the gose device tree.
 
-Thanks, I have queued this up.
+Based similar work for the silk board by by Vladimir Barinov and
+Sergei Shtylyov.
+
+Cc: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+Tested: Read /dev/mtd0 with 512K blocks at 1.7MB/s
+
+v2
+* Move partitions into partitions subnode
+  as suggested by Geert Uytterhoeven.
+---
+ arch/arm/boot/dts/r8a7793-gose.dts | 43 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+index 1575ef759047..79be514d3a1c 100644
+--- a/arch/arm/boot/dts/r8a7793-gose.dts
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -57,6 +57,11 @@
+ 		renesas,groups = "intc_irq0";
+ 		renesas,function = "intc";
+ 	};
++
++	qspi_pins: spi0 {
++		renesas,groups = "qspi_ctrl", "qspi_data4";
++		renesas,function = "qspi";
++	};
+ };
+ 
+ &ether {
+@@ -92,3 +97,41 @@
+ 
+ 	status = "okay";
+ };
++
++&qspi {
++	pinctrl-0 = <&qspi_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	flash@0 {
++		compatible = "spansion,s25fl512s", "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <30000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
++		spi-cpol;
++		spi-cpha;
++		m25p,fast-read;
++
++		partitions{
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "loader";
++				reg = <0x00000000 0x00040000>;
++				read-only;
++			};
++			partition@40000 {
++				label = "user";
++				reg = <0x00040000 0x00400000>;
++				read-only;
++			};
++			partition@440000 {
++				label = "flash";
++				reg = <0x00440000 0x03bc0000>;
++			};
++		};
++	};
++};
+-- 
+2.1.4
+
