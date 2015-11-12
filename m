@@ -1,58 +1,112 @@
-From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
-Date: Tue, 17 Nov 2015 01:35:56 +0000
-Subject: Re: PM: after suspend/resume the system,can not suspends again
-Message-Id: <564A847C.1090406@jinso.co.jp>
+From: =?UTF-8?B?7KGw7LC97ZmY?= <charlescho64@gmail.com>
+Date: Thu, 12 Nov 2015 07:59:54 +0000
+Subject: Re: [R-CAR][Lager Board - Bringup with linux kernel4.3]
+Message-Id: <CANi_qo3_YPLBNghrqu0JvQfyRTXJc5bUGhh-No9Dn2djgUoqMQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87h9kulkfg.wl%kuninori.morimoto.gx@renesas.com>	<87fv0elibh.wl%kuninori.morimoto.gx@renesas.com>	<56417D61.80407@jinso.co.jp>	<56499E53.2050905@jinso.co.jp> <CAPDyKForCz9MjwYUvMdmR1hJD_+rA9Be09sMPyxfAZsE_HuT2g@mail.gmail.com>
-In-Reply-To: <CAPDyKForCz9MjwYUvMdmR1hJD_+rA9Be09sMPyxfAZsE_HuT2g@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Nguyen Viet Dung <nv-dung@jinso.co.jp>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, Sakato Ryusuke <ryusuke.sakato.bx@renesas.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-Dear Ulf Hansson
-Thanks for your feedback!
+ Hello...
 
-On 2015年11月17日 06:12, Ulf Hansson wrote:
-> On 16 November 2015 at 10:13, Cao Minh Hiep <cm-hiep@jinso.co.jp> wrote:
->> Dear Ulf Hansson,
->>
->> I am Hiep from Jinzai Solution (a Japanese Company)
->> We have tested PM driver on Rcar-Gen2 (Lager, Koelsch Board) at Linux v4.3.
->>
->> I would like to contact you because we found a patch that relate to a PM bug
->> :
->>
->> After Suspend/resume system one time, we can not suspend the system again!.
->> (I attach the test log file)
->>
->> The patch is show as below:
->> a98f1b7 PM / Domains: Fix validation of latency constraints in genpd
->> governor
->>
->> Tested-by: Harunaga <nx-truong@jinso.co.jp>
->> Reported-by: Cao Minh Hiep <cm-hiep@jinso.co.jp>
->>
->> This problem disapeared if revert this patch.
->> Please review it, when you have time!
-> Thanks for reporting and bisecting!
->
-> I had a look and I believe have found the cause of the problem, though
-> I will need a few days to post a fix for it.
->
-> The problem is actually in genpd's ->runtime_suspend() callback, as it
-> validates PM QoS latencies even when it's being invoked from the
-> system PM path.
-> I will post a fixup to genpd in the next couple of days. I would
-> appreciate if you could help out in testing it.
-Please let me know when you post the fixup. I will test it.
+ I have problem during bring up R-CAR H2 Lager Board with linux4.3.
+
+ The step I did is below
+
+ 1) downloaded linux and uboot from below link.
+
+ In kernel,
+  git clone -b devel
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
+
+ In u-boot
+ git clone -b renesas/bsp/rcar-gen2-1.8.0  git://git.denx.de/u-boot-sh.git
+
+ 2) build
+ In kernel,  I used kernel config file as "shmobile_defconfig" and
+enable "DEBUG_LL"
+ with cross-compiler
+"gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf" ( cross_compiler
+download site :
+https://releases.linaro.org/15.02/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf.tar.xz)
+
+ Build it  like below command and got zImage and dtb file(r8a7790-lager.dtb)
+
+ $make ARH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j10
+
+ In u-boot, I used config file as "lager_config" and build with
+compiler used in kernel build like below. And then got "u-boot.srec"
+
+ $ make ARH=arm lager_config
+ $ make ARH=arm CROSS_COMPILE=arm-linux-gnueabihf- all
+
+ 3) Setting the environment for booting
+
+ The environment have been loading kernel via TFTP and rootfs via NFS.
+And U-boot command are set with below.
+
+ > setenv bootcmd 'tftp 0x40007fc0 zImage; tftp 0x4f000000
+r8a7790-lager.dtb; bootz 0x40007fc0 - 0x4f000000'
+ > setenv bootargs 'console=ttySC6,38400 ignore_loglevel psci=enable
+rw root=/dev/nfs rw nfsroot2.168.0.228:/nfsroot/lager,nfsvers=3
+ip2.168.0.91:192.168.0.228:192.168.0.1:255.255.255.0:lager:eth0:::
+vmalloc84M'
 
 
-Thank you!
-Jinso/Cao Minh Hiep.
+ 4) power on "R-CAR LAGER Board"
 
-> Kind regards
-> Uffe
->
+ Lager board had hang before booting linux kernel with message "
+Starting kernel ... " and "Uncompressing Linux... done, booting the
+kernel."
 
+ -----------------------------------------------------------------------------------------------------------------------
+ sh_eth Waiting for PHY auto negotiation to complete.. done
+ sh_eth: 100Base/Full
+ Using sh_eth device
+ TFTP from server 192.168.0.228; our IP address is 192.168.0.91
+ Filename 'zImage'.
+ Load address: 0x40007fc0
+ Loading: #################################################################
+          #################################################################
+          #################################################################
+          #################################################################
+          #################################################################
+          #################################################################
+          #################################################################
+          #################################################################
+          #################################################################
+          #################################################################
+          #
+          1.4 MiB/s
+ done
+ Bytes transferred = 3332784 (32dab0 hex)
+ sh_eth:1 is connected to sh_eth.  Reconnecting to sh_eth
+ sh_eth Waiting for PHY auto negotiation to complete.. done
+ sh_eth: 100Base/Full
+ Using sh_eth device
+ TFTP from server 192.168.0.228; our IP address is 192.168.0.91
+ Filename 'r8a7790-lager.dtb'.
+ Load address: 0x4f000000
+ Loading: #########
+          1.3 MiB/s
+ done
+ Bytes transferred = 44077 (ac2d hex)
+ ## Flattened Device Tree blob at 4f000000
+    Booting using the fdt blob at 0x4f000000
+    Loading Device Tree to 40ef2000, end 40effc2c ... OK
+
+ Starting kernel ...
+
+ Uncompressing Linux... done, booting the kernel.
+ ------------------------------------------------------------------------------------------------
+
+ Anybody help me to bring up "Lager board"
+
+ Thanks.
+
+ BR
+
+ --
+ Happy Virus....
+ Chang Hwan, Cho
