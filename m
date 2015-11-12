@@ -1,72 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 26 Nov 2015 04:09:06 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7779: Add L2 cache-controller node
-Message-Id: <20151126040905.GB1198@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 12 Nov 2015 14:12:12 +0000
+Subject: [PATCH] pinctrl: sh-pfc: r8a7795: Rename SEL_SCIF to SEL_SATA
+Message-Id: <1447337532-18258-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448416683-1411-1-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdVTdPocWCnzE8v-O_rpNJR=0mO23jeG8ejYzL0REtQb+g@mail.gmail.com>
-In-Reply-To: <CAMuHMdVTdPocWCnzE8v-O_rpNJR=0mO23jeG8ejYzL0REtQb+g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Wed, Nov 25, 2015 at 09:41:42AM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
-> 
-> On Wed, Nov 25, 2015 at 2:58 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > Add the missing L2 cache-controller node, and link the CPU nodes to it.
-> >
-> > The L2 cache is an ARM L2C-310 (r3p2), of size 1 MB (64 KiB x 16 ways).
-> >
-> > Based on work for the r8a7740 by Geert Uytterhoeven.
-> >
-> > Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Thanks for your patch!
-> 
-> > ---
-> >  arch/arm/boot/dts/r8a7779.dtsi | 15 +++++++++++++++
-> >  1 file changed, 15 insertions(+)
-> >
-> > diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-> > index 6afa909865b5..f27fa2db16ee 100644
-> > --- a/arch/arm/boot/dts/r8a7779.dtsi
-> > +++ b/arch/arm/boot/dts/r8a7779.dtsi
-> 
-> > @@ -63,6 +67,17 @@
-> >                       <0xf0000100 0x100>;
-> >         };
-> >
-> > +       L2: cache-controller {
-> > +               compatible = "arm,pl310-cache";
-> > +               reg = <0xf0100000 0x1000>;
-> > +               interrupts = <0 122 IRQ_TYPE_LEVEL_HIGH>;
-> 
-> 40?
-> 
-> Comparing to other devices, you have to subtract 32 from 0x5a, not
-> add 32?
+Cfr. Manual Errata for Rev 0.50 of the R-Car Gen3 datasheet.
 
-Thanks for pointing that out. I will update this to 0x5a - 32 = 58
+This has no user-visible impact.
 
-> > +               arm,data-latency = <3 3 3>;
-> > +               arm,tag-latency = <2 2 2>;
-> 
-> Table 9.5 says 2 resp. 1 instead of 3 resp. 2?
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-Thanks.
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+index 29d001b8a727e154..bb5f37cbb9502d5f 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+@@ -495,7 +495,7 @@ FM(IP16_31_28)	IP16_31_28
+ #define MOD_SEL1_13		FM(SEL_SCIF3_0)		FM(SEL_SCIF3_1)
+ #define MOD_SEL1_12		FM(SEL_SCIF2_0)		FM(SEL_SCIF2_1)
+ #define MOD_SEL1_11		FM(SEL_SCIF1_0)		FM(SEL_SCIF1_1)
+-#define MOD_SEL1_10		FM(SEL_SCIF_0)		FM(SEL_SCIF_1)
++#define MOD_SEL1_10		FM(SEL_SATA_0)		FM(SEL_SATA_1)
+ #define MOD_SEL1_9		FM(SEL_REMOCON_0)	FM(SEL_REMOCON_1)
+ #define MOD_SEL1_6		FM(SEL_RCAN0_0)		FM(SEL_RCAN0_1)
+ #define MOD_SEL1_5		FM(SEL_PWM6_0)		FM(SEL_PWM6_1)
+@@ -1033,7 +1033,7 @@ static const u16 pinmux_data[] = {
+ 	PINMUX_IPSR_DATA(IP9_19_16,	SD2_DAT3),
+ 
+ 	PINMUX_IPSR_DATA(IP9_23_20,	SD2_DS),
+-	PINMUX_IPSR_MSEL(IP9_23_20,	SATA_DEVSLP_B,		SEL_SCIF_1),
++	PINMUX_IPSR_MSEL(IP9_23_20,	SATA_DEVSLP_B,		SEL_SATA_1),
+ 
+ 	PINMUX_IPSR_DATA(IP9_27_24,	SD3_DAT4),
+ 	PINMUX_IPSR_MSEL(IP9_27_24,	SD2_CD_A,		SEL_SDHI2_0),
+@@ -1293,7 +1293,7 @@ static const u16 pinmux_data[] = {
+ 
+ 	PINMUX_IPSR_DATA(IP15_11_8,	SSI_SDATA6),
+ 	PINMUX_IPSR_MSEL(IP15_11_8,	SIM0_CLK_D,		SEL_SIMCARD_3),
+-	PINMUX_IPSR_MSEL(IP15_11_8,	SATA_DEVSLP_A,		SEL_SCIF_0),
++	PINMUX_IPSR_MSEL(IP15_11_8,	SATA_DEVSLP_A,		SEL_SATA_0),
+ 
+ 	PINMUX_IPSR_DATA(IP15_15_12,	SSI_SCK78),
+ 	PINMUX_IPSR_MSEL(IP15_15_12,	HRX2_B,			SEL_HSCIF2_1),
+-- 
+1.9.1
 
-> However:
-> 
-> "The TAG and data RAM latency can be set in the reg1_tag_ram_control and
->  reg1_data_ram_control registers. However, since values to be set are
->  hardware-dependent, the default values should not be modified."
-> 
-> Perhaps we should just omit these values?
-
-I see also see remarks regarding the values not being configurable
-for the r8a7740 (section 2.7.1) and sh73a0 (section 6.10.1) so perhaps we
-should remove the values from the dts files of those SoCs too?
