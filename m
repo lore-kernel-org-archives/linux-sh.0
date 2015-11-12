@@ -1,128 +1,80 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 25 Nov 2015 06:37:49 +0000
-Subject: [PATCH 06/12] arm64: renesas: salvator-x: Sound SSI PIO support
-Message-Id: <87twoa7fo5.wl%kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 12 Nov 2015 17:36:29 +0000
+Subject: [PATCH] i2c: rcar: handle difference in setting up non-first message
+Message-Id: <1447349789-24252-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-This patch adds PIO sound support for Salvator-X board.
-It can use 44.1kHz base sound only at this point, since 48kHz base
-sound needs CS2000, but it is not yet upstreamed.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+Signed-off-by: Hiromitsu Yamasaki <hiromitsu.yamasaki.ym@renesas.com>
+Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
 ---
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 76 ++++++++++++++++++++++
- 1 file changed, 76 insertions(+)
+ drivers/i2c/busses/i2c-rcar.c | 21 ++++++++++++++++-----
+ 1 file changed, 16 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index d829fda..90ca7fa 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -31,6 +31,28 @@
- 		/* first 128MB is reserved for secure area. */
- 		reg = <0x0 0x48000000 0x0 0x38000000>;
- 	};
-+
-+	x12_clk: x12_clk {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <24576000>;
-+	};
-+
-+	rsnd_ak4613: sound {
-+		compatible = "simple-audio-card";
-+
-+		simple-audio-card,format = "left_j";
-+		simple-audio-card,bitclock-master = <&sndcpu>;
-+		simple-audio-card,frame-master = <&sndcpu>;
-+
-+		sndcpu: simple-audio-card,cpu {
-+			sound-dai = <&rcar_sound>;
-+		};
-+
-+		sndcodec: simple-audio-card,codec {
-+			sound-dai = <&ak4613>;
-+		};
-+	};
- };
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index ef963d195a4eb9..b1aea21755f84d 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -92,6 +92,7 @@
+ #define RCAR_IRQ_ACK_RECV	(~(MAT | MDR) & 0xFF)
  
- &extal_clk {
-@@ -56,6 +78,17 @@
- 		renesas,groups = "avb_mdc";
- 		renesas,function = "avb";
- 	};
-+
-+	sound_pins: sound {
-+		renesas,groups = "ssi01239_ctrl", "ssi0_data", "ssi1_data_a";
-+		renesas,function = "ssi";
-+	};
-+
-+	sound_clk_pins: sound_clk {
-+		renesas,groups = "audio_clk_a_a", "audio_clk_b_a", "audio_clk_c_a",
-+				 "audio_clkout_a", "audio_clkout3_a";
-+		renesas,function = "audio_clk";
-+	};
- };
+ #define ID_LAST_MSG	(1 << 0)
++#define ID_FIRST_MSG	(1 << 1)
+ #define ID_DONE		(1 << 2)
+ #define ID_ARBLOST	(1 << 3)
+ #define ID_NACK		(1 << 4)
+@@ -254,13 +255,22 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
+ 	int read = !!rcar_i2c_is_recv(priv);
  
- &scif1 {
-@@ -77,6 +110,49 @@
- 	pinctrl-names = "default";
+ 	priv->pos = 0;
+-	priv->flags = 0;
+ 	if (priv->msgs_left = 1)
+ 		rcar_i2c_flags_set(priv, ID_LAST_MSG);
  
- 	status = "okay";
-+
-+	clock-frequency = <100000>;
-+
-+	ak4613: codec@10 {
-+		compatible = "asahi-kasei,ak4613";
-+		#sound-dai-cells = <0>;
-+		reg = <0x10>;
-+		clocks = <&rcar_sound 3>;
-+	};
-+};
-+
-+&rcar_sound {
-+	pinctrl-0 = <&sound_pins &sound_clk_pins>;
-+	pinctrl-names = "default";
-+
-+	/* Single DAI */
-+	#sound-dai-cells = <0>;
-+
-+	/* audio_clkout0/1/2/3 */
-+	#clock-cells = <1>;
-+	clock-frequency = <11289600>;
-+
-+	status = "okay";
-+
-+	rcar_sound,dai {
-+		dai0 {
-+			playback = <&ssi0>;
-+			capture  = <&ssi1>;
-+		};
-+	};
-+};
-+
-+&ssi0 {
-+	pio-transfer;
-+};
-+
-+&ssi1 {
-+	pio-transfer;
-+	shared-pin;
-+};
-+
-+&audio_clk_a {
-+	clock-frequency = <22579200>;
- };
+ 	rcar_i2c_write(priv, ICMAR, (priv->msg->addr << 1) | read);
+-	rcar_i2c_write(priv, ICMSR, 0);
+-	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
++	/*
++	 * We don't have a testcase but the HW engineers say that the write order
++	 * of ICMSR and ICMCR depends on whether we issue START or REP_START. Since
++	 * it didn't cause a drawback for me, let's rather be safe than sorry.
++	 */
++	if (rcar_i2c_flags_has(priv, ID_FIRST_MSG)) {
++		rcar_i2c_write(priv, ICMSR, 0);
++		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
++	} else {
++		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
++		rcar_i2c_write(priv, ICMSR, 0);
++	}
+ 	rcar_i2c_write(priv, ICMIER, read ? RCAR_IRQ_RECV : RCAR_IRQ_SEND);
+ }
  
- &avb {
+@@ -268,6 +278,7 @@ static void rcar_i2c_next_msg(struct rcar_i2c_priv *priv)
+ {
+ 	priv->msg++;
+ 	priv->msgs_left--;
++	priv->flags = 0;
+ 	rcar_i2c_prepare_msg(priv);
+ }
+ 
+@@ -486,10 +497,10 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 		}
+ 	}
+ 
+-	/* init data */
++	/* init first message */
+ 	priv->msg = msgs;
+ 	priv->msgs_left = num;
+-
++	priv->flags = ID_FIRST_MSG;
+ 	rcar_i2c_prepare_msg(priv);
+ 
+ 	time_left = wait_event_timeout(priv->wait,
 -- 
-1.9.1
+2.1.4
 
