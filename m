@@ -1,51 +1,95 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 24 Nov 2015 02:55:28 +0000
-Subject: Re: [PATCH] ARM: shmobile: bockw dts: define sdhi0 pins with pull-ups
-Message-Id: <20151124025527.GK21853@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 12 Nov 2015 14:31:46 +0000
+Subject: [PATCH v2 01/10] i2c: rcar: make sure clocks are on when doing clock calculation
+Message-Id: <1447338715-9955-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446148654-20551-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1446148654-20551-1-git-send-email-geert+renesas@glider.be>
+References: <1447338715-9955-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1447338715-9955-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Sat, Oct 31, 2015 at 04:24:30PM +0900, Simon Horman wrote:
-> On 金, 10月 30, 2015 at 09:11:49午前 +0100, Geert Uytterhoeven wrote:
-> > Hi Simon,
-> > 
-> > On Fri, Oct 30, 2015 at 8:55 AM, Simon Horman <horms@verge.net.au> wrote:
-> > > On Thu, Oct 29, 2015 at 08:57:34PM +0100, Geert Uytterhoeven wrote:
-> > >> From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> > >>
-> > >> Ensures that the pull-ups for pins SD0_CD and SD0_WP are enabled.
-> > >>
-> > >> This is one of two features from the DT reference platform that are
-> > >> still missing in MP.
-> > >>
-> > >> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> > >> Acked-by: Linus Walleij <linus.walleij@linaro.org>
-> > >> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > >> ---
-> > >> The dependencies are now in pinctrl/for-next:
-> > >> ae7465a0972aee88 pinctrl: sh-pfc: r8a7778: Add bias (pull-up) pinconf support
-> > >> 22768fc60abbf58b pinctrl: sh-pfc: Add macros defining GP ports with config flags
-> > >
-> > > Am I correct in thinking that it is safe for me to apply this patch
-> > > without those dependencies present in my dt-for-v4.5 branch?
-> > 
-> > Pinctrl may fail in that branch, and device probing may fail due to that
-> > (still puzzled about when pinctrl failures are hard vs. soft).
-> > But you will rebase the *-for-v4.5 branches on top of v4.4-rc1 later, right?
-> > Then that problem will be resolved.
-> 
-> Ok. I think it would be best if I queued up these patches after I rebase
-> dt-for-v4.5 on top of v4.4-rca (once the latter has been released). Could
-> you repost this patch then?
-> 
-> > Note that not having this patch in v4.4 may be considered a regression
-> > compared to bockw-legacy...
-> 
-> Understood.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-I have now queued up the patch for v4.5.
+When calculating the bus speed, the clock should be on, of course. Most
+bootloaders left them on, so this went unnoticed so far.
+
+Move the ioremapping out of this clock-enabled-block and prepare for
+adding hw initialization there, too.
+
+Reported-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Reported-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-rcar.c | 26 +++++++++++++++++---------
+ 1 file changed, 17 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index b0ae560b38c308..dac0f5d1945341 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -650,19 +650,23 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 		return PTR_ERR(priv->clk);
+ 	}
+ 
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	priv->io = devm_ioremap_resource(dev, res);
++	if (IS_ERR(priv->io))
++		return PTR_ERR(priv->io);
++
+ 	bus_speed = 100000; /* default 100 kHz */
+ 	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
+ 
+ 	priv->devtype = (enum rcar_i2c_type)of_match_device(rcar_i2c_dt_ids, dev)->data;
+ 
++	pm_runtime_enable(dev);
++	pm_runtime_get_sync(dev);
+ 	ret = rcar_i2c_clock_calculate(priv, bus_speed, dev);
+ 	if (ret < 0)
+-		return ret;
++		goto out_pm_put;
+ 
+-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	priv->io = devm_ioremap_resource(dev, res);
+-	if (IS_ERR(priv->io))
+-		return PTR_ERR(priv->io);
++	pm_runtime_put(dev);
+ 
+ 	irq = platform_get_irq(pdev, 0);
+ 	init_waitqueue_head(&priv->wait);
+@@ -682,22 +686,26 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 			       dev_name(dev), priv);
+ 	if (ret < 0) {
+ 		dev_err(dev, "cannot get irq %d\n", irq);
+-		return ret;
++		goto out_pm_disable;
+ 	}
+ 
+-	pm_runtime_enable(dev);
+ 	platform_set_drvdata(pdev, priv);
+ 
+ 	ret = i2c_add_numbered_adapter(adap);
+ 	if (ret < 0) {
+ 		dev_err(dev, "reg adap failed: %d\n", ret);
+-		pm_runtime_disable(dev);
+-		return ret;
++		goto out_pm_disable;
+ 	}
+ 
+ 	dev_info(dev, "probed\n");
+ 
+ 	return 0;
++
++ out_pm_put:
++	pm_runtime_put(dev);
++ out_pm_disable:
++	pm_runtime_disable(dev);
++	return ret;
+ }
+ 
+ static int rcar_i2c_remove(struct platform_device *pdev)
+-- 
+2.1.4
+
