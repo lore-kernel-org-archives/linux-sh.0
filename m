@@ -1,101 +1,102 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 12 Nov 2015 15:54:41 +0000
-Subject: [PATCH v6 0/5] clk: shmobile: Add new CPG/MSSR driver
-Message-Id: <1447343686-2038-1-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 12 Nov 2015 14:42:52 +0000
+Subject: [PATCH v2 09/10] i2c: rcar: revoke START request early
+Message-Id: <1447339372-10060-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1447339372-10060-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1447339372-10060-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@codeaurora.org>, Magnus Damm <damm+renesas@opensource.se>, Simon Horman <horms+renesas@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-clk@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-	Hi Mike, Stephen, et al.,
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-This series adds a new driver for the Renesas CPG (Clock Pulse
-Generator) and MSSR (Module Standby and Software Reset) blocks for R-Car
-H3 (r8a7795).  This is supposed to be more in-line with current CCF best
-practices, and allows expansion to cover the module reset functionality
-in the future. This drivers follows the DT bindings in
-Documentation/devicetree/bindings/clock/renesas,cpg-mssr.txt, which have
-been accepted in clk/clk-next.
-Support for other SoCs may be added later.
+If we don't clear START generation as soon as possible, it may cause
+another message to be generated, e.g. when receiving NACK in address
+phase. To keep the race window as small as possible, we clear it right
+at the beginning of the interrupt. We don't need any checks since we
+always want to stop START and STOP generation on the next occasion after
+we started it.
 
-  - Patch 1 reworks configuration after the removal of shmobile-legacy,
-    and prepares for the advent of arm64 support, where
-    CONFIG_ARCH_SHMOBILE_MULTI is not defined.
-  - Patch 2 makes clock-output-names optional in the DIV6 driver.
-    This is a bit unrelated, but I had sent this patch before, and
-    there's a contextual dependency,
-  - Patch 3 prepares the existing DIV6 driver for reuse,
-  - Patch 4 introduces the new CPG/MSSR driver core, to be used by
-    several SoC-specific drivers,
-  - Patch 5 introduces the new r8a7795-specific driver.
+This patch improves the situation but sadly does not completely fix it.
+It is still to be researched if we can do better given this HW design.
 
-Compared to v5, only the r8a7795-specific driver (patch 5) received a
-few bug fixes and enhancements.  More detailed changelog information is
-available in the individual patches.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-rcar.c | 23 +++++++----------------
+ 1 file changed, 7 insertions(+), 16 deletions(-)
 
-For your convenience, I pushed these patches and its dependencies to the
-topic/cpg-mssr-v6 branch of my renesas-drivers repository at
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git/log/=
-?h=3Dtopic/cpg-mssr-v6.
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 8ad4c7d1ad8654..64a01c0177463a 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -83,6 +83,7 @@
+ 
+ #define RCAR_BUS_PHASE_START	(MDBS | MIE | ESG)
+ #define RCAR_BUS_PHASE_DATA	(MDBS | MIE)
++#define RCAR_BUS_MASK_DATA	(~(ESG | FSB) & 0xFF)
+ #define RCAR_BUS_PHASE_STOP	(MDBS | MIE | FSB)
+ 
+ #define RCAR_IRQ_SEND	(MNR | MAL | MST | MAT | MDE)
+@@ -289,13 +290,6 @@ static int rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
+ 	if (!(msr & MDE))
+ 		return 0;
+ 
+-	/*
+-	 * If address transfer phase finished,
+-	 * goto data phase.
+-	 */
+-	if (msr & MAT)
+-		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
+-
+ 	if (priv->pos < msg->len) {
+ 		/*
+ 		 * Prepare next data to ICRXTX register.
+@@ -347,11 +341,7 @@ static int rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
+ 		return 0;
+ 
+ 	if (msr & MAT) {
+-		/*
+-		 * Address transfer phase finished,
+-		 * but, there is no data at this point.
+-		 * Do nothing.
+-		 */
++		/* Address transfer phase finished, but no data at this point. */
+ 	} else if (priv->pos < msg->len) {
+ 		/*
+ 		 * get received data
+@@ -367,8 +357,6 @@ static int rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
+ 	 */
+ 	if (priv->pos + 1 >= msg->len)
+ 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
+-	else
+-		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
+ 
+ 	if (priv->pos = msg->len && !(priv->flags & ID_LAST_MSG))
+ 		rcar_i2c_next_msg(priv);
+@@ -436,7 +424,11 @@ static bool rcar_i2c_slave_irq(struct rcar_i2c_priv *priv)
+ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ {
+ 	struct rcar_i2c_priv *priv = ptr;
+-	u32 msr;
++	u32 msr, val;
++
++	/* Clear START or STOP as soon as we can */
++	val = rcar_i2c_read(priv, ICMCR);
++	rcar_i2c_write(priv, ICMCR, val & RCAR_BUS_MASK_DATA);
+ 
+ 	msr = rcar_i2c_read(priv, ICMSR);
+ 
+@@ -458,7 +450,6 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ 	/* Nack */
+ 	if (msr & MNR) {
+ 		/* HW automatically sends STOP after received NACK */
+-		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
+ 		rcar_i2c_write(priv, ICMIER, RCAR_IRQ_STOP);
+ 		rcar_i2c_flags_set(priv, ID_NACK);
+ 		goto out;
+-- 
+2.1.4
 
-A full integration for R-Car Gen3 is available in the topic/gen3-latest
-branch.
-
-Thanks!
-
-References:
-  - v5 =3D "[PATCH v5 0/5] clk: shmobile: Add new CPG/MSSR driver"
-    (https://lkml.org/lkml/2015/10/29/198)
-  - v4 =3D "[PATCH/RFC v4 0/5] clk: shmobile: Add new Renesas CPG/MSSR DT
-    bindings" (http://www.spinics.net/lists/devicetree/msg98342.html)
-  - v3 =3D "[PATCH/RFC v3 0/3] clk: shmobile: Add new Renesas CPG/MSSR DT
-    bindings" (http://www.spinics.net/lists/linux-sh/msg45870.html)
-  - v2+ =E2=89=88 "[PATCH v8 00/05] Renesas R-Car Gen3 CPG support V8"
-    (http://www.spinics.net/lists/linux-clk/msg03288.html)
-  - v2 =3D "[PATCH/RFC v2 0/4] Renesas CPG/MSTP DT Binding Proposal"
-    (http://www.spinics.net/lists/linux-clk/msg03132.html)
-  - v1 =3D "Renesas CPG/MSTP DT Binding Proposal"
-    (http://www.spinics.net/lists/linux-clk/msg01189.html)
-
-
-Geert Uytterhoeven (4):
-  clk: shmobile: div6: Make clock-output-names optional
-  clk: shmobile: div6: Extract cpg_div6_register()
-  clk: shmobile: Add new CPG/MSSR driver core
-  clk: shmobile: r8a7795: Add new CPG/MSSR driver
-
-Magnus Damm (1):
-  clk: shmobile: Rework CONFIG_ARCH_SHMOBILE_MULTI
-
- .../bindings/clock/renesas,cpg-div6-clocks.txt     |   4 +
- drivers/clk/Makefile                               |   1 +
- drivers/clk/shmobile/Makefile                      |  24 +-
- drivers/clk/shmobile/clk-div6.c                    | 137 +++--
- drivers/clk/shmobile/clk-div6.h                    |   7 +
- drivers/clk/shmobile/r8a7795-cpg-mssr.c            | 382 +++++++++++++
- drivers/clk/shmobile/renesas-cpg-mssr.c            | 593 +++++++++++++++++=
-++++
- drivers/clk/shmobile/renesas-cpg-mssr.h            | 132 +++++
- 8 files changed, 1217 insertions(+), 63 deletions(-)
- create mode 100644 drivers/clk/shmobile/clk-div6.h
- create mode 100644 drivers/clk/shmobile/r8a7795-cpg-mssr.c
- create mode 100644 drivers/clk/shmobile/renesas-cpg-mssr.c
- create mode 100644 drivers/clk/shmobile/renesas-cpg-mssr.h
-
---=20
-1.9.1
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-							    -- Linus Torvalds
