@@ -1,23 +1,34 @@
-From: Chris Brandt <Chris.Brandt@renesas.com>
-Date: Thu, 12 Nov 2015 13:15:46 +0000
-Subject: RE: [PATCH] ARM: xip: Use correct symbol for end of ROM marker
-Message-Id: <HK2PR06MB0561F3180FECBCEA5B9D670C8A120@HK2PR06MB0561.apcprd06.prod.outlook.com>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Thu, 12 Nov 2015 16:32:23 +0000
+Subject: Re: [PATCH] ARM: xip: Use correct symbol for end of ROM marker
+Message-Id: <20151112163222.GK8644@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447251455-22731-1-git-send-email-chris.brandt@renesas.com>
- <5644836B.2050608@hurleysoftware.com>
-In-Reply-To: <5644836B.2050608@hurleysoftware.com>
+In-Reply-To: <1447251455-22731-1-git-send-email-chris.brandt@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-PiBJIHRoaW5rIGJlbG93IGlzIHJlcXVpcmVkIGFzIHdlbGwuDQo+DQo+IC0tLSBhL2FyY2gvYXJt
-L2tlcm5lbC9tb2R1bGUuYw0KPiArKysgYi9hcmNoL2FybS9rZXJuZWwvbW9kdWxlLmMNCj4gQEAg
-LTM0LDcgKzM2LDcgQEANCj4gICAqIHJlY29tcGlsaW5nIHRoZSB3aG9sZSBrZXJuZWwgd2hlbiBD
-T05GSUdfWElQX0tFUk5FTCBpcyB0dXJuZWQgb24vb2ZmLg0KPiAgICovDQo+ICAjdW5kZWYgTU9E
-VUxFU19WQUREUg0KPiAtI2RlZmluZSBNT0RVTEVTX1ZBRERSCSgoKHVuc2lnbmVkIGxvbmcpX2V0
-ZXh0ICsgflBNRF9NQVNLKSAmIFBNRF9NQVNLKQ0KPiArI2RlZmluZSBNT0RVTEVTX1ZBRERSCSgo
-KHVuc2lnbmVkIGxvbmcpX2VkYXRhX2xvYyArIH5QTURfTUFTSykgJiBQTURfTUFTSykNCj4gICNl
-bmRpZg0KDQoNClRoYW5rIHlvdSENClNvbWVob3cgSSBtaXNzZWQgdGhhdCBmaWxlIHdoZW4gSSB3
-YXMgbW92aW5nIGZyb20gb25lIHRyZWUgdG8gYW5vdGhlciB3aGVuIHByZXBhcmluZyBteSBjb21t
-aXRzLg0KDQpJJ2xsIHVwZGF0ZSBhbmQgcmVzdWJtaXQgdGhlIHBhdGNoLg0KDQpDaHJpcw0KDQo
+On Wed, Nov 11, 2015 at 09:17:35AM -0500, Chris Brandt wrote:
+> diff --git a/include/asm-generic/sections.h b/include/asm-generic/sections.h
+> index b58fd66..195554d 100644
+> --- a/include/asm-generic/sections.h
+> +++ b/include/asm-generic/sections.h
+> @@ -26,7 +26,7 @@
+>   *	__ctors_start, __ctors_end
+>   */
+>  extern char _text[], _stext[], _etext[];
+> -extern char _data[], _sdata[], _edata[];
+> +extern char _data[], _sdata[], _edata[], _edata_loc[];
+
+It's not good practice to put non-generic symbols in generic header files.
+_edata_loc is an ARM specific symbol which no other architecture defines.
+Please create an ARM private asm/sections.h header, which should include
+the asm-generic version, and also declare the additional symbol.
+
+Thanks.
+
+-- 
+FTTC broadband for 0.8mile line: currently at 9.6Mbps down 400kbps up
+according to speedtest.net.
