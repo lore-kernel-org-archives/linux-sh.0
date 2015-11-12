@@ -1,198 +1,57 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 19 Nov 2015 15:56:46 +0000
-Subject: [PATCH v3 06/11] i2c: rcar: init new messages in irq
-Message-Id: <1447948611-2615-7-git-send-email-wsa@the-dreams.de>
+From: Mathias Nyman <mathias.nyman@linux.intel.com>
+Date: Thu, 12 Nov 2015 14:57:03 +0000
+Subject: Re: [PATCH v4 0/7] usb: host: xhci-plat: add support for the R-Car M2-N and H3 xHCI controllers
+Message-Id: <5644A8BF.1060805@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+On 27.10.2015 03:18, Yoshihiro Shimoda wrote:
+> This patch set adds support for R-Car M2-N (r8a7793) and H3 (r8a7795) xHCI
+> controllers. To add support these new SoCs, this patch set adds a new member
+> "priv" in struct xhci_hcd.
+>
+> This patch is based on the latest usb.git / usb-next branch.
+> (The commit id = 0bbc367e21bfeea33230d893be4fa3a3ff9bcb48)
+>
+> Changes from v3:
+>   - Fix subject and description in patch 1.
+>
+> Changes from v2:
+>   - Rebase the latest usb-next branch (commit id = 0bbc367e21bfeea33230d)
+>   - Modify hcd_priv_size and extra_priv_size in xhci.c and xhci-{plat,pci}.c
+>     as a clean-up patch.
+>   - Change "priv" of struct xhci_hcd from const pointer to priv[0].
+>
+> Changes from v1:
+>   - Add "const void *priv" in struct xhci_hcd to simplify the code to match
+>     platform specific variables using of_device_id.data.
+>     To achieve this purpose, this patch set made patch 1 to 3.
+>
+>
+> Yoshihiro Shimoda (7):
+>    usb: host: xhci: cleanup hcd private size
+>    usb: host: xhci: add a platform-private field
+>    usb: host: xhci-plat: add struct xhci_plat_priv
+>    usb: host: xhci-plat: add firmware_name in xhci_plat_priv
+>    usb: host: xhci-rcar: Change code for new SoCs
+>    usb: host: xhci-plat: add support for the R-Car M2-N xHCI controller
+>    usb: host: xhci-plat: add support for the R-Car H3 xHCI controllers
+>
+>   Documentation/devicetree/bindings/usb/usb-xhci.txt |  4 +-
+>   drivers/usb/host/xhci-pci.c                        |  1 -
+>   drivers/usb/host/xhci-plat.c                       | 88 +++++++++++++++-------
+>   drivers/usb/host/xhci-plat.h                       | 39 ++++++++++
+>   drivers/usb/host/xhci-rcar.c                       | 44 +++++++----
+>   drivers/usb/host/xhci-rcar.h                       |  3 +
+>   drivers/usb/host/xhci.c                            |  2 +-
+>   drivers/usb/host/xhci.h                            |  3 +
+>   8 files changed, 140 insertions(+), 44 deletions(-)
+>   create mode 100644 drivers/usb/host/xhci-plat.h
+>
 
-Setting up new messages was done in process context while handling a
-message was in interrupt context. Because of the HW design, this IP core
-is sensitive to timing, so the context switches were too expensive. Move
-this setup to interrupt context as well.
+Thanks, I'll send this series forward after rc1 is out
 
-In my test setup, this fixed the occasional 'data byte sent twice' issue
-which a number of people have seen. It also fixes to send REP_START
-after a read message which was wrongly send as a STOP + START sequence
-before.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
----
- drivers/i2c/busses/i2c-rcar.c | 90 +++++++++++++++++++++----------------------
- 1 file changed, 43 insertions(+), 47 deletions(-)
-
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 4bd3099865b485..d91acc11631554 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -267,10 +267,17 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
- 	rcar_i2c_write(priv, ICMIER, read ? RCAR_IRQ_RECV : RCAR_IRQ_SEND);
- }
- 
-+static void rcar_i2c_next_msg(struct rcar_i2c_priv *priv)
-+{
-+	priv->msg++;
-+	priv->msgs_left--;
-+	rcar_i2c_prepare_msg(priv);
-+}
-+
- /*
-  *		interrupt functions
-  */
--static int rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
-+static void rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
- {
- 	struct i2c_msg *msg = priv->msg;
- 
-@@ -280,7 +287,7 @@ static int rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
- 	 * Do nothing
- 	 */
- 	if (!(msr & MDE))
--		return 0;
-+		return;
- 
- 	/*
- 	 * If address transfer phase finished,
-@@ -309,29 +316,23 @@ static int rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
- 		 * [ICRXTX] -> [SHIFT] -> [I2C bus]
- 		 */
- 
--		if (priv->flags & ID_LAST_MSG)
-+		if (priv->flags & ID_LAST_MSG) {
- 			/*
- 			 * If current msg is the _LAST_ msg,
- 			 * prepare stop condition here.
- 			 * ID_DONE will be set on STOP irq.
- 			 */
- 			rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
--		else
--			/*
--			 * If current msg is _NOT_ last msg,
--			 * it doesn't call stop phase.
--			 * thus, there is no STOP irq.
--			 * return ID_DONE here.
--			 */
--			return ID_DONE;
-+		} else {
-+			rcar_i2c_next_msg(priv);
-+			return;
-+		}
- 	}
- 
- 	rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
--
--	return 0;
- }
- 
--static int rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
-+static void rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
- {
- 	struct i2c_msg *msg = priv->msg;
- 
-@@ -341,7 +342,7 @@ static int rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
- 	 * Do nothing
- 	 */
- 	if (!(msr & MDR))
--		return 0;
-+		return;
- 
- 	if (msr & MAT) {
- 		/*
-@@ -367,9 +368,10 @@ static int rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
- 	else
- 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
- 
--	rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_RECV);
--
--	return 0;
-+	if (priv->pos = msg->len && !(priv->flags & ID_LAST_MSG))
-+		rcar_i2c_next_msg(priv);
-+	else
-+		rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_RECV);
- }
- 
- static bool rcar_i2c_slave_irq(struct rcar_i2c_priv *priv)
-@@ -462,14 +464,15 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
- 
- 	/* Stop */
- 	if (msr & MST) {
-+		priv->msgs_left--; /* The last message also made it */
- 		rcar_i2c_flags_set(priv, ID_DONE);
- 		goto out;
- 	}
- 
- 	if (rcar_i2c_is_recv(priv))
--		rcar_i2c_flags_set(priv, rcar_i2c_irq_recv(priv, msr));
-+		rcar_i2c_irq_recv(priv, msr);
- 	else
--		rcar_i2c_flags_set(priv, rcar_i2c_irq_send(priv, msr));
-+		rcar_i2c_irq_send(priv, msr);
- 
- out:
- 	if (rcar_i2c_flags_has(priv, ID_DONE)) {
-@@ -501,35 +504,28 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 		/* This HW can't send STOP after address phase */
- 		if (msgs[i].len = 0) {
- 			ret = -EOPNOTSUPP;
--			break;
--		}
--
--		/* init each data */
--		priv->msg = &msgs[i];
--		priv->msgs_left = num - i;
--
--		rcar_i2c_prepare_msg(priv);
--
--		time_left = wait_event_timeout(priv->wait,
--					     rcar_i2c_flags_has(priv, ID_DONE),
--					     adap->timeout);
--		if (!time_left) {
--			rcar_i2c_init(priv);
--			ret = -ETIMEDOUT;
--			break;
--		}
--
--		if (rcar_i2c_flags_has(priv, ID_NACK)) {
--			ret = -ENXIO;
--			break;
--		}
--
--		if (rcar_i2c_flags_has(priv, ID_ARBLOST)) {
--			ret = -EAGAIN;
--			break;
-+			goto out;
- 		}
-+	}
- 
--		ret = i + 1; /* The number of transfer */
-+	/* init data */
-+	priv->msg = msgs;
-+	priv->msgs_left = num;
-+
-+	rcar_i2c_prepare_msg(priv);
-+
-+	time_left = wait_event_timeout(priv->wait,
-+				     rcar_i2c_flags_has(priv, ID_DONE),
-+				     num * adap->timeout);
-+	if (!time_left) {
-+		rcar_i2c_init(priv);
-+		ret = -ETIMEDOUT;
-+	} else if (rcar_i2c_flags_has(priv, ID_NACK)) {
-+		ret = -ENXIO;
-+	} else if (rcar_i2c_flags_has(priv, ID_ARBLOST)) {
-+		ret = -EAGAIN;
-+	} else {
-+		ret = num - priv->msgs_left; /* The number of transfer */
- 	}
- out:
- 	pm_runtime_put(dev);
--- 
-2.1.4
-
+-Mathias  
