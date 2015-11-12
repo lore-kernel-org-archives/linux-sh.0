@@ -1,60 +1,65 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 19:38:52 +0000
-Subject: [PATCH 1/4] ARM: shmobile: bockw: Move SPI FLASH partition to subnode
-Message-Id: <1448048335-23927-2-git-send-email-horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 12 Nov 2015 05:45:30 +0000
+Subject: [PATCH 3/3] usb: renesas_usbhs: Modify ep.caps.type_xxx and usb_ep_maxpacket_limit()
+Message-Id: <1447307130-6072-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448048335-23927-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1448048335-23927-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+This patch modifies the ep.caps.type_{iso,bulk,int} setting and
+the second argument of usb_ep_maxpacket_limit() using
+the dparam.pipe_configs.
 
-As of commits 5cfdedb7b9a0fe38 ("mtd: ofpart: move ofpart partitions to a
-dedicated dt node") and fe2585e9c29a650a ("doc: dt: mtd: support partitions
-in a special 'partitions' subnode"), having partitions as direct subnodes
-of an mtd device is discouraged. Hence move the SPI FLASH partition to a
-"partitions" subnode.
+In the previous code, all the type_{iso,bulk,int} were set to true.
+However, to avoid waste time for finding suitable pipe in usb_ep_enable(),
+this driver should set correct type.
+Also the second argument of usb_ep_maxpacket_limit() was set to 512
+even if the pipe is isochronous or interrupt. So, this driver could
+not bind a gadget driver like the g_audio driver.
 
-Based on similar work for the koelsch board by Geert Uytterhoeven.
-
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ drivers/usb/renesas_usbhs/mod_gadget.c | 19 ++++++++++++-------
+ 1 file changed, 12 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 90543b12d7e2..bf77ff569ca1 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -184,16 +184,19 @@
- 	status = "okay";
- 
- 	flash: flash@0 {
--		#address-cells = <1>;
--		#size-cells = <1>;
- 		compatible = "spansion,s25fl008k", "jedec,spi-nor";
- 		reg = <0>;
- 		spi-max-frequency = <104000000>;
- 		m25p,fast-read;
- 
--		partition@0 {
--			label = "data(spi)";
--			reg = <0x00000000 0x00100000>;
-+		partitions {
-+			#address-cells = <1>;
-+			#size-cells = <1>;
-+
-+			partition@0 {
-+				label = "data(spi)";
-+				reg = <0x00000000 0x00100000>;
-+			};
- 		};
- 	};
- };
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index 8f7a78e..657f967 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -1042,6 +1042,8 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
+ 	struct usbhsg_gpriv *gpriv;
+ 	struct usbhsg_uep *uep;
+ 	struct device *dev = usbhs_priv_to_dev(priv);
++	struct renesas_usbhs_driver_pipe_config *pipe_configs +					usbhs_get_dparam(priv, pipe_configs);
+ 	int pipe_size = usbhs_get_dparam(priv, pipe_size);
+ 	int i;
+ 	int ret;
+@@ -1111,13 +1113,16 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
+ 			gpriv->gadget.ep0 = &uep->ep;
+ 			usb_ep_set_maxpacket_limit(&uep->ep, 64);
+ 			uep->ep.caps.type_control = true;
+-		}
+-		/* init normal pipe */
+-		else {
+-			usb_ep_set_maxpacket_limit(&uep->ep, 512);
+-			uep->ep.caps.type_iso = true;
+-			uep->ep.caps.type_bulk = true;
+-			uep->ep.caps.type_int = true;
++		} else {
++			/* init normal pipe */
++			if (pipe_configs[i].type = USB_ENDPOINT_XFER_ISOC)
++				uep->ep.caps.type_iso = true;
++			if (pipe_configs[i].type = USB_ENDPOINT_XFER_BULK)
++				uep->ep.caps.type_bulk = true;
++			if (pipe_configs[i].type = USB_ENDPOINT_XFER_INT)
++				uep->ep.caps.type_int = true;
++			usb_ep_set_maxpacket_limit(&uep->ep,
++						   pipe_configs[i].bufsize);
+ 			list_add_tail(&uep->ep.ep_list, &gpriv->gadget.ep_list);
+ 		}
+ 		uep->ep.caps.dir_in = true;
 -- 
-2.1.4
+1.9.1
 
