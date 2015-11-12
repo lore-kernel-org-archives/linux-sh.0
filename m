@@ -1,83 +1,23 @@
-From: Peter Hurley <peter@hurleysoftware.com>
-Date: Thu, 12 Nov 2015 12:17:47 +0000
-Subject: Re: [PATCH] ARM: xip: Use correct symbol for end of ROM marker
-Message-Id: <5644836B.2050608@hurleysoftware.com>
+From: Chris Brandt <Chris.Brandt@renesas.com>
+Date: Thu, 12 Nov 2015 13:15:46 +0000
+Subject: RE: [PATCH] ARM: xip: Use correct symbol for end of ROM marker
+Message-Id: <HK2PR06MB0561F3180FECBCEA5B9D670C8A120@HK2PR06MB0561.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447251455-22731-1-git-send-email-chris.brandt@renesas.com>
-In-Reply-To: <1447251455-22731-1-git-send-email-chris.brandt@renesas.com>
+ <5644836B.2050608@hurleysoftware.com>
+In-Reply-To: <5644836B.2050608@hurleysoftware.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 11/11/2015 09:17 AM, Chris Brandt wrote:
-> For an XIP build, _edata_loc, not _etext, represents the end of the
-> binary image that will be programmed into ROM and mapped into the
-> MODULES_VADDR area.
-> With an XIP kernel, nothing is loaded into RAM before boot, meaning
-> you have to take into account the size of the entire binary image
-> that was programmed, including the init data values that will be copied
-> to RAM during kernel boot.
-> 
-> This fixes the bug where you might lose the end of your kernel area
-> after page table setup is complete.
-> 
-> 
-> Signed-off-by: Chris Brandt <chris.brandt@renesas.com>
-> ---
->  arch/arm/mm/mmu.c              |    4 ++--
->  include/asm-generic/sections.h |    2 +-
->  2 files changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/arch/arm/mm/mmu.c b/arch/arm/mm/mmu.c
-> index 4867f5d..dd5a56b 100644
-> --- a/arch/arm/mm/mmu.c
-> +++ b/arch/arm/mm/mmu.c
-> @@ -1210,7 +1210,7 @@ static inline void prepare_page_table(void)
->  
->  #ifdef CONFIG_XIP_KERNEL
->  	/* The XIP kernel is mapped in the module area -- skip over it */
-> -	addr = ((unsigned long)_etext + PMD_SIZE - 1) & PMD_MASK;
-> +	addr = ((unsigned long)_edata_loc + PMD_SIZE - 1) & PMD_MASK;
->  #endif
->  	for ( ; addr < PAGE_OFFSET; addr += PMD_SIZE)
->  		pmd_clear(pmd_off_k(addr));
-> @@ -1292,7 +1292,7 @@ static void __init devicemaps_init(const struct machine_desc *mdesc)
->  #ifdef CONFIG_XIP_KERNEL
->  	map.pfn = __phys_to_pfn(CONFIG_XIP_PHYS_ADDR & SECTION_MASK);
->  	map.virtual = MODULES_VADDR;
-> -	map.length = ((unsigned long)_etext - map.virtual + ~SECTION_MASK) & SECTION_MASK;
-> +	map.length = ((unsigned long)_edata_loc - map.virtual + ~SECTION_MASK) & SECTION_MASK;
->  	map.type = MT_ROM;
->  	create_mapping(&map);
->  #endif
-> diff --git a/include/asm-generic/sections.h b/include/asm-generic/sections.h
-> index b58fd66..195554d 100644
-> --- a/include/asm-generic/sections.h
-> +++ b/include/asm-generic/sections.h
-> @@ -26,7 +26,7 @@
->   *	__ctors_start, __ctors_end
->   */
->  extern char _text[], _stext[], _etext[];
-> -extern char _data[], _sdata[], _edata[];
-> +extern char _data[], _sdata[], _edata[], _edata_loc[];
->  extern char __bss_start[], __bss_stop[];
->  extern char __init_begin[], __init_end[];
->  extern char _sinittext[], _einittext[];
-> 
-
-I think below is required as well.
-
---- a/arch/arm/kernel/module.c
-+++ b/arch/arm/kernel/module.c
-@@ -34,7 +36,7 @@
-  * recompiling the whole kernel when CONFIG_XIP_KERNEL is turned on/off.
-  */
- #undef MODULES_VADDR
--#define MODULES_VADDR	(((unsigned long)_etext + ~PMD_MASK) & PMD_MASK)
-+#define MODULES_VADDR	(((unsigned long)_edata_loc + ~PMD_MASK) & PMD_MASK)
- #endif
- 
-Regards,
-Peter Hurley
-
+PiBJIHRoaW5rIGJlbG93IGlzIHJlcXVpcmVkIGFzIHdlbGwuDQo+DQo+IC0tLSBhL2FyY2gvYXJt
+L2tlcm5lbC9tb2R1bGUuYw0KPiArKysgYi9hcmNoL2FybS9rZXJuZWwvbW9kdWxlLmMNCj4gQEAg
+LTM0LDcgKzM2LDcgQEANCj4gICAqIHJlY29tcGlsaW5nIHRoZSB3aG9sZSBrZXJuZWwgd2hlbiBD
+T05GSUdfWElQX0tFUk5FTCBpcyB0dXJuZWQgb24vb2ZmLg0KPiAgICovDQo+ICAjdW5kZWYgTU9E
+VUxFU19WQUREUg0KPiAtI2RlZmluZSBNT0RVTEVTX1ZBRERSCSgoKHVuc2lnbmVkIGxvbmcpX2V0
+ZXh0ICsgflBNRF9NQVNLKSAmIFBNRF9NQVNLKQ0KPiArI2RlZmluZSBNT0RVTEVTX1ZBRERSCSgo
+KHVuc2lnbmVkIGxvbmcpX2VkYXRhX2xvYyArIH5QTURfTUFTSykgJiBQTURfTUFTSykNCj4gICNl
+bmRpZg0KDQoNClRoYW5rIHlvdSENClNvbWVob3cgSSBtaXNzZWQgdGhhdCBmaWxlIHdoZW4gSSB3
+YXMgbW92aW5nIGZyb20gb25lIHRyZWUgdG8gYW5vdGhlciB3aGVuIHByZXBhcmluZyBteSBjb21t
+aXRzLg0KDQpJJ2xsIHVwZGF0ZSBhbmQgcmVzdWJtaXQgdGhlIHBhdGNoLg0KDQpDaHJpcw0KDQo
