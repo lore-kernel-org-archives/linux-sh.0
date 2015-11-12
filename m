@@ -1,53 +1,154 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 30 Nov 2015 13:41:05 +0000
-Subject: [PATCH 4/4] pinctrl: sh-pfc: sh7734: Use PINMUX_SINGLE() instead of raw PINMUX_DATA()
-Message-Id: <1448890865-1856-5-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 12 Nov 2015 14:31:51 +0000
+Subject: [PATCH v2 06/10] i2c: rcar: init new messages in irq
+Message-Id: <1447338715-9955-7-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448890865-1856-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448890865-1856-1-git-send-email-geert+renesas@glider.be>
+References: <1447338715-9955-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1447338715-9955-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+
+Setting up new messages was done in process context while handling a
+message was in interrupt context. Because of the HW design, this IP core
+is sensitive to timing, so the context switches were too expensive. Move
+this setup to interrupt context as well.
+
+In my test setup, this fixed the occasional 'data byte sent twice' issue
+which a number of people have seen. It also fixes to send REP_START
+after a read message which was wrongly send as a STOP + START sequence
+before.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7734.c | 21 ++++++++++++---------
- 1 file changed, 12 insertions(+), 9 deletions(-)
+ drivers/i2c/busses/i2c-rcar.c | 74 +++++++++++++++++++++----------------------
+ 1 file changed, 37 insertions(+), 37 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-index 5243da3564c84a1a..9e5212fb49fa516c 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-@@ -585,15 +585,18 @@ enum {
- static const u16 pinmux_data[] = {
- 	PINMUX_DATA_GP_ALL(), /* PINMUX_DATA(GP_M_N_DATA, GP_M_N_FN...), */
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 4bd3099865b485..316de40fa4dc69 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -267,6 +267,13 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
+ 	rcar_i2c_write(priv, ICMIER, read ? RCAR_IRQ_RECV : RCAR_IRQ_SEND);
+ }
  
--	PINMUX_DATA(CLKOUT_MARK, FN_CLKOUT),
--	PINMUX_DATA(BS_MARK, FN_BS), PINMUX_DATA(CS0_MARK, FN_CS0),
--	PINMUX_DATA(EX_CS0_MARK, FN_EX_CS0),
--	PINMUX_DATA(RD_MARK, FN_RD), PINMUX_DATA(WE0_MARK, FN_WE0),
--	PINMUX_DATA(WE1_MARK, FN_WE1),
--	PINMUX_DATA(SCL0_MARK, FN_SCL0), PINMUX_DATA(PENC0_MARK, FN_PENC0),
--	PINMUX_DATA(USB_OVC0_MARK, FN_USB_OVC0),
--	PINMUX_DATA(IRQ2_B_MARK, FN_IRQ2_B),
--		PINMUX_DATA(IRQ3_B_MARK, FN_IRQ3_B),
-+	PINMUX_SINGLE(CLKOUT),
-+	PINMUX_SINGLE(BS),
-+	PINMUX_SINGLE(CS0),
-+	PINMUX_SINGLE(EX_CS0),
-+	PINMUX_SINGLE(RD),
-+	PINMUX_SINGLE(WE0),
-+	PINMUX_SINGLE(WE1),
-+	PINMUX_SINGLE(SCL0),
-+	PINMUX_SINGLE(PENC0),
-+	PINMUX_SINGLE(USB_OVC0),
-+	PINMUX_SINGLE(IRQ2_B),
-+	PINMUX_SINGLE(IRQ3_B),
++static void rcar_i2c_next_msg(struct rcar_i2c_priv *priv)
++{
++	priv->msg++;
++	priv->msgs_left--;
++	rcar_i2c_prepare_msg(priv);
++}
++
+ /*
+  *		interrupt functions
+  */
+@@ -309,21 +316,17 @@ static int rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
+ 		 * [ICRXTX] -> [SHIFT] -> [I2C bus]
+ 		 */
  
- 	/* IPSR0 */
- 	PINMUX_IPSR_GPSR(IP0_1_0, A0),
+-		if (priv->flags & ID_LAST_MSG)
++		if (priv->flags & ID_LAST_MSG) {
+ 			/*
+ 			 * If current msg is the _LAST_ msg,
+ 			 * prepare stop condition here.
+ 			 * ID_DONE will be set on STOP irq.
+ 			 */
+ 			rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
+-		else
+-			/*
+-			 * If current msg is _NOT_ last msg,
+-			 * it doesn't call stop phase.
+-			 * thus, there is no STOP irq.
+-			 * return ID_DONE here.
+-			 */
+-			return ID_DONE;
++		} else {
++			rcar_i2c_next_msg(priv);
++			return 0;
++		}
+ 	}
+ 
+ 	rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_SEND);
+@@ -367,7 +370,10 @@ static int rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
+ 	else
+ 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
+ 
+-	rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_RECV);
++	if (priv->pos = msg->len && !(priv->flags & ID_LAST_MSG))
++		rcar_i2c_next_msg(priv);
++	else
++		rcar_i2c_write(priv, ICMSR, RCAR_IRQ_ACK_RECV);
+ 
+ 	return 0;
+ }
+@@ -462,6 +468,7 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ 
+ 	/* Stop */
+ 	if (msr & MST) {
++		priv->msgs_left--; /* The last message also made it */
+ 		rcar_i2c_flags_set(priv, ID_DONE);
+ 		goto out;
+ 	}
+@@ -501,35 +508,28 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 		/* This HW can't send STOP after address phase */
+ 		if (msgs[i].len = 0) {
+ 			ret = -EOPNOTSUPP;
+-			break;
+-		}
+-
+-		/* init each data */
+-		priv->msg = &msgs[i];
+-		priv->msgs_left = num - i;
+-
+-		rcar_i2c_prepare_msg(priv);
+-
+-		time_left = wait_event_timeout(priv->wait,
+-					     rcar_i2c_flags_has(priv, ID_DONE),
+-					     adap->timeout);
+-		if (!time_left) {
+-			rcar_i2c_init(priv);
+-			ret = -ETIMEDOUT;
+-			break;
+-		}
+-
+-		if (rcar_i2c_flags_has(priv, ID_NACK)) {
+-			ret = -ENXIO;
+-			break;
+-		}
+-
+-		if (rcar_i2c_flags_has(priv, ID_ARBLOST)) {
+-			ret = -EAGAIN;
+-			break;
++			goto out;
+ 		}
++	}
+ 
+-		ret = i + 1; /* The number of transfer */
++	/* init data */
++	priv->msg = msgs;
++	priv->msgs_left = num;
++
++	rcar_i2c_prepare_msg(priv);
++
++	time_left = wait_event_timeout(priv->wait,
++				     rcar_i2c_flags_has(priv, ID_DONE),
++				     num * adap->timeout);
++	if (!time_left) {
++		rcar_i2c_init(priv);
++		ret = -ETIMEDOUT;
++	} else if (rcar_i2c_flags_has(priv, ID_NACK)) {
++		ret = -ENXIO;
++	} else if (rcar_i2c_flags_has(priv, ID_ARBLOST)) {
++		ret = -EAGAIN;
++	} else {
++		ret = num - priv->msgs_left; /* The number of transfer */
+ 	}
+ out:
+ 	pm_runtime_put(dev);
 -- 
-1.9.1
+2.1.4
 
