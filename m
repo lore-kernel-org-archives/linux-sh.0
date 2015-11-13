@@ -1,56 +1,74 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sun, 01 Nov 2015 19:19:38 +0000
-Subject: [RFC v3 4/5] ARM: shmobile: r8a7790: let rst module allow watchdog resets if desired
-Message-Id: <1446405579-5367-5-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Nov 2015 02:23:48 +0000
+Subject: [PATCH 1/4] ARM: shmobile: r8a7790: Use SoC specific binding for rcar-dmac nodes
+Message-Id: <1447381431-2255-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1447381431-2255-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1447381431-2255-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Use the new SoC specific binding for rcar-dmac and the generic
+binding as a fall-back in the r8a7790 device tree.
 
-Just for testing, not for upstream!
+In general Renesas hardware is not documented to the extent where the
+relationship between IP blocks on different SoCs can be assumed although
+they may appear to operate the same way. Furthermore the documentation
+typically does not specify a version for individual IP blocks. For these
+reasons a convention of using the SoC name in place of a version and
+providing SoC-specific compat strings has been adopted.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Although not universally liked this convention is used in the bindings for
+most drivers for Renesas hardware. The purpose of this patch is to
+update the Renesas R-Car DMA Controller nodes to follow this convention.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-rcar-gen2.c | 16 +++++++++++++++-
- 1 file changed, 15 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-rcar-gen2.c b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-index 9eccde3c7b1371..cb55b627cd8a0c 100644
---- a/arch/arm/mach-shmobile/setup-rcar-gen2.c
-+++ b/arch/arm/mach-shmobile/setup-rcar-gen2.c
-@@ -28,7 +28,18 @@
- #include "common.h"
- #include "rcar-gen2.h"
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 0612502b4a6d..9f3036b80c0e 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -266,7 +266,7 @@
+ 	};
  
--#define MODEMR 0xe6160060
-+#define WDTRSTCR	0xe6160054
-+#define MODEMR		0xe6160060
-+
-+void __init rcar_gen2_wdt_rst_init(void)
-+{
-+#if defined(CONFIG_WATCHDOG)
-+	void __iomem *p = ioremap_nocache(WDTRSTCR, 4);
-+	BUG_ON(!p);
-+	iowrite32(0xa55a0000, p);
-+	iounmap(p);
-+#endif
-+}
+ 	dmac0: dma-controller@e6700000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7790", "renesas,rcar-dmac";
+ 		reg = <0 0xe6700000 0 0x20000>;
+ 		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
+ 			      0 200 IRQ_TYPE_LEVEL_HIGH
+@@ -297,7 +297,7 @@
+ 	};
  
- u32 rcar_gen2_read_mode_pins(void)
- {
-@@ -129,6 +140,9 @@ void __init rcar_gen2_timer_init(void)
+ 	dmac1: dma-controller@e6720000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7790", "renesas,rcar-dmac";
+ 		reg = <0 0xe6720000 0 0x20000>;
+ 		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
+ 			      0 216 IRQ_TYPE_LEVEL_HIGH
+@@ -328,7 +328,7 @@
+ 	};
  
- 	rcar_gen2_clocks_init(mode);
- 	clocksource_probe();
-+
-+	/* allow watchdog timers to trigger reset */
-+	rcar_gen2_wdt_rst_init();
- }
+ 	audma0: dma-controller@ec700000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7790", "renesas,rcar-dmac";
+ 		reg = <0 0xec700000 0 0x10000>;
+ 		interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH
+ 				 0 320 IRQ_TYPE_LEVEL_HIGH
+@@ -357,7 +357,7 @@
+ 	};
  
- struct memory_reserve_config {
+ 	audma1: dma-controller@ec720000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7790", "renesas,rcar-dmac";
+ 		reg = <0 0xec720000 0 0x10000>;
+ 		interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH
+ 				 0 333 IRQ_TYPE_LEVEL_HIGH
 -- 
 2.1.4
 
