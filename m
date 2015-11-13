@@ -1,56 +1,152 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:05:34 +0000
-Subject: [PATCH 27/29] ARM: shmobile: alt: Add pfc pins to DT
-Message-Id: <22b160713cb6944450dad0abd18d8929f60500dc.1447981420.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Nov 2015 10:10:21 +0000
+Subject: [PATCH v13 3/7] arm64: renesas: r8a7795 dtsi: Add all SCIF nodes
+Message-Id: <1447409425-14831-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1447981420.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
+References: <1447409425-14831-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1447409425-14831-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-PFC is already enabled on the r8a7794.
-This adds pins for devices already enabled in DT on
-the r8a7794 based alt board.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Based on work by Mitsuhiro Kimura and Hisashi Nakamura.
+Add the device nodes for all R-Car H3 SCIF serial ports, incl. clocks,
+clock domain, and dma properties.
 
-Cc: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
-Cc: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
----
- arch/arm/boot/dts/r8a7794-alt.dts | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
-index a548007b9b10..e7c94554d847 100644
---- a/arch/arm/boot/dts/r8a7794-alt.dts
-+++ b/arch/arm/boot/dts/r8a7794-alt.dts
-@@ -100,6 +100,23 @@
- 	clock-frequency = <20000000>;
- };
+---
+Changes since V11 (Simon Horman <horms+renesas@verge.net.au>)
+- Update for new CPG/MSSR bindings via Geert Uytterhoeven
+
+Changes since V10 (Simon Horman <horms+renesas@verge.net.au>)
+- As suggested by Geert Uyterhoven
+  + R8A7795_CLK_SCIF2  is 310 not 210
+
+Changes since V10 (Simon Horman <horms+renesas@verge.net.au>)
+- As suggested by Geert Uyterhoven
+  + R8A7795_CLK_SCIF2  is 310 not 210
+
+Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
+- Added SCIF2 DMA bits again
+- Converted DT nodes for MSTP to MSSR, adjusted r8a7795-clock.h
+- Include clock-output-names
+
+Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
+- Dropped SCIF2 DMA bits - thanks Laurent!
+- Changed name of mstp2 and mstp3 nodes - thanks Geert!
+- Added Acked-by from Laurent
+
+Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
+- Folded together above SCIF2 patches
+- Added SCIF2 DMA bits
+- Got rid of clock-output-names
+- Replaced renesas,clock-indices with clock-indices
+
+Based on:
+ [PATCH 9/25] arm64: renesas: r8a7795: Add SCIF2 support
+ [PATCH 1/6] arm64: renesas: r8a7795 dtsi: Mark scif2 disabled
+ [PATCH 3/6] arm64: renesas: r8a7795 dtsi: Add all SCIF nodes
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 73 ++++++++++++++++++++++++++++++++
+ 1 file changed, 73 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 9e1de4d6615c..002b828e8230 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -8,6 +8,7 @@
+  * kind, whether express or implied.
+  */
  
-+&pfc {
-+	scif2_pins: serial2 {
-+		renesas,groups = "scif2_data";
-+		renesas,function = "scif2";
-+	};
++#include <dt-bindings/clock/r8a7795-cpg-mssr.h>
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ 
+ / {
+@@ -91,5 +92,77 @@
+ 		dmac2: dma-controller@e7310000 {
+ 			/* Empty node for now */
+ 		};
 +
-+	ether_pins: ether {
-+		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
-+		renesas,function = "eth";
-+	};
++		scif0: serial@e6e60000 {
++			compatible = "renesas,scif-r8a7795", "renesas,scif";
++			reg = <0 0xe6e60000 0 64>;
++			interrupts = <GIC_SPI 152 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 207>;
++			clock-names = "sci_ick";
++			dmas = <&dmac1 0x51>, <&dmac1 0x50>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
 +
-+	ether_b_pins: ether {
-+		renesas,groups = "eth_link_b", "eth_mdio_b", "eth_rmii_b";
-+		renesas,function = "eth";
-+	};
-+};
++		scif1: serial@e6e68000 {
++			compatible = "renesas,scif-r8a7795", "renesas,scif";
++			reg = <0 0xe6e68000 0 64>;
++			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 206>;
++			clock-names = "sci_ick";
++			dmas = <&dmac1 0x53>, <&dmac1 0x52>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
 +
- &cmt0 {
- 	status = "okay";
++		scif2: serial@e6e88000 {
++			compatible = "renesas,scif-r8a7795", "renesas,scif";
++			reg = <0 0xe6e88000 0 64>;
++			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 310>;
++			clock-names = "sci_ick";
++			dmas = <&dmac1 0x13>, <&dmac1 0x12>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		scif3: serial@e6c50000 {
++			compatible = "renesas,scif-r8a7795", "renesas,scif";
++			reg = <0 0xe6c50000 0 64>;
++			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 204>;
++			clock-names = "sci_ick";
++			dmas = <&dmac0 0x57>, <&dmac0 0x56>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		scif4: serial@e6c40000 {
++			compatible = "renesas,scif-r8a7795", "renesas,scif";
++			reg = <0 0xe6c40000 0 64>;
++			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 203>;
++			clock-names = "sci_ick";
++			dmas = <&dmac0 0x59>, <&dmac0 0x58>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		scif5: serial@e6f30000 {
++			compatible = "renesas,scif-r8a7795", "renesas,scif";
++			reg = <0 0xe6f30000 0 64>;
++			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 202>;
++			clock-names = "sci_ick";
++			dmas = <&dmac1 0x5b>, <&dmac1 0x5a>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
+ 	};
  };
 -- 
 2.1.4
