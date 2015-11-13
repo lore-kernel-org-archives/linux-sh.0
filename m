@@ -1,46 +1,67 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 13 Nov 2015 00:51:58 +0000
+Date: Fri, 13 Nov 2015 01:11:23 +0000
 Subject: Re: [PATCH v2 3/3] ARM: shmobile: gose: Add QSPI device to DT
-Message-Id: <20151113005157.GF20462@verge.net.au>
+Message-Id: <20151113011123.GI20462@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447291763-27527-1-git-send-email-horms+renesas@verge.net.au>
  <1447291763-27527-4-git-send-email-horms+renesas@verge.net.au>
- <CAMuHMdWi=uTAtNvhSA54JDms_pLW0zjKQ_VH8xU3eY6BGiwV5A@mail.gmail.com>
-In-Reply-To: <CAMuHMdWi=uTAtNvhSA54JDms_pLW0zjKQ_VH8xU3eY6BGiwV5A@mail.gmail.com>
+ <56447D49.6060907@cogentembedded.com>
+In-Reply-To: <56447D49.6060907@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 12, 2015 at 11:44:15AM +0100, Geert Uytterhoeven wrote:
-> Hi Simon,
+On Thu, Nov 12, 2015 at 02:51:37PM +0300, Sergei Shtylyov wrote:
+> On 11/12/2015 4:29 AM, Simon Horman wrote:
 > 
-> On Thu, Nov 12, 2015 at 2:29 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > Enable the QSPI controller in the gose device tree.
+> >Enable the QSPI controller in the gose device tree.
 > >
-> > Based similar work for the silk board by by Vladimir Barinov and
-> > Sergei Shtylyov.
+> >Based similar work for the silk board by by Vladimir Barinov and
+> >Sergei Shtylyov.
 > >
-> > Cc: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> > Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> >Cc: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> >Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+> >Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> >
+> >---
+> >Tested: Read /dev/mtd0 with 512K blocks at 1.7MB/s
+> >
+> >v2
+> >* Move partitions into partitions subnode
+> >   as suggested by Geert Uytterhoeven.
+> >---
+> >  arch/arm/boot/dts/r8a7793-gose.dts | 43 ++++++++++++++++++++++++++++++++++++++
+> >  1 file changed, 43 insertions(+)
+> >
+> >diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+> >index 1575ef759047..79be514d3a1c 100644
+> >--- a/arch/arm/boot/dts/r8a7793-gose.dts
+> >+++ b/arch/arm/boot/dts/r8a7793-gose.dts
+> [...]
+> >@@ -92,3 +97,41 @@
+> >
+> >  	status = "okay";
+> >  };
+> >+
+> >+&qspi {
+> >+	pinctrl-0 = <&qspi_pins>;
+> >+	pinctrl-names = "default";
+> >+
+> >+	status = "okay";
+> >+
+> >+	flash@0 {
+> >+		compatible = "spansion,s25fl512s", "jedec,spi-nor";
+> >+		reg = <0>;
+> >+		spi-max-frequency = <30000000>;
+> >+		spi-tx-bus-width = <4>;
+> >+		spi-rx-bus-width = <4>;
+> >+		spi-cpol;
+> >+		spi-cpha;
+> >+		m25p,fast-read;
+> >+
+> >+		partitions{
 > 
-> Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> > ---
-> > Tested: Read /dev/mtd0 with 512K blocks at 1.7MB/s
-> 
-> That's slow: I get 6.7 MB/s on koelsch (69.9 Mbps for Quad Read according
-> to my in-kernel QSPI debug code). Is this with SYS-DMAC enabled?
+>    Need space before {.
 
-Yes it does seem very small.
-
-I think that the problem is that /dev/mtd0 is very small, only 262kB.
-And I do not see any interrupts for dma-controllers when reading from hit.
-
-/dev/mdt1 is much later, 4.2MB.
-dd reads that at ~7MB/s using 512kB blocks.
-In that test I see interrupts for one of the dma-controllers.
-
-I plan to go ahead and apply this series.
+Thanks, I have corrected that and queued this up for v4.5.
