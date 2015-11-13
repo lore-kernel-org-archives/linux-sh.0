@@ -1,69 +1,144 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 19 Nov 2015 18:39:03 +0000
-Subject: [PATCH 24/25] arm64: renesas: salvator-x dts: Enable SCIF_CLK frequency and pins
-Message-Id: <1447958344-836-25-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Nov 2015 10:10:23 +0000
+Subject: [PATCH v13 5/7] arm64: renesas: add Salvator-X board support on DTS
+Message-Id: <1447409425-14831-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+References: <1447409425-14831-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1447409425-14831-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Add and enable the external crystal for the SCIF_CLK and its pinctrl, to
-be used by the Baud Rate Generator for External Clock (BRG) on (H)SCIF.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This increases the range and accuracy of supported baud rates:
-  - SCIF:
-      - Supports now 50, 230400, 460800, 500000, and 921600 bps,
-      - Perfect match for standard 50-460800, and 9216000 bps.
-  - HSCIF:
-      - Supports now 50, 75, and 110 bps,
-      - Perfect match for standard 50-460800, and 9216000 bps.
+Add initial board support for r8a7795 Salvator-X. At this point
+only DEBUG0 and DEBUG1 serial ports are supported.
 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+Changes since v12:
+- Include rate in stdout-path, as suggested by Mark Rutland.
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index afbd5256806e7014..0b38fecb1c5d75e9 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -127,6 +127,9 @@
- };
+Changes since v10:
+- None
+
+Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
+ - Added board specific EXTAL information by folding in:
+  [PATCH][RFC] arm64: renesas: Add EXTAL configuration to Salvator-X
+
+Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
+- None
+
+Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
+- Added changelog
+
+Based on:
+ [PATCH 15/25] arm64: renesas: add Salvator-X board support on DTS
+ [PATCH 5/5] arm64: renesas: salvator-x: Update SCIF2 pin group
+ [PATCH 5/6] arm64: renesas: salvator-x: Enable SCIF1 on serial1
+---
+ Documentation/devicetree/bindings/arm/shmobile.txt |  2 +
+ arch/arm64/boot/dts/renesas/Makefile               |  2 +
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 62 ++++++++++++++++++++++
+ 3 files changed, 66 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+
+diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
+index 8d696a0d62b3..95d0aea4c701 100644
+--- a/Documentation/devicetree/bindings/arm/shmobile.txt
++++ b/Documentation/devicetree/bindings/arm/shmobile.txt
+@@ -59,6 +59,8 @@ Boards:
+     compatible = "renesas,lager", "renesas,r8a7790"
+   - Marzen
+     compatible = "renesas,marzen", "renesas,r8a7779"
++  - Salvator-X
++    compatible = "renesas,salvator-x", "renesas,r8a7795";
  
- &pfc {
-+	pinctrl-0 = <&scif_clk_pins>;
+ Note: Reference Device Tree Implementations are temporary implementations
+       to ease the migration from platform devices to Device Tree, and are
+diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
+index fec69f46d65b..9ce1890a650e 100644
+--- a/arch/arm64/boot/dts/renesas/Makefile
++++ b/arch/arm64/boot/dts/renesas/Makefile
+@@ -1,2 +1,4 @@
++dtb-$(CONFIG_ARCH_R8A7795) += r8a7795-salvator-x.dtb
++
+ always		:= $(dtb-y)
+ clean-files	:= *.dtb
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+new file mode 100644
+index 000000000000..a3db98384e53
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -0,0 +1,62 @@
++/*
++ * Device Tree Source for the Salvator-X board
++ *
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/dts-v1/;
++#include "r8a7795.dtsi"
++
++/ {
++	model = "Renesas Salvator-X board based on r8a7795";
++	compatible = "renesas,salvator-x", "renesas,r8a7795";
++
++	aliases {
++		serial0 = &scif2;
++		serial1 = &scif1;
++	};
++
++	chosen {
++		bootargs = "ignore_loglevel";
++		stdout-path = "serial0:115200n8";
++	};
++
++	memory@48000000 {
++		device_type = "memory";
++		/* first 128MB is reserved for secure area. */
++		reg = <0x0 0x48000000 0x0 0x38000000>;
++	};
++};
++
++&extal_clk {
++	clock-frequency = <16666666>;
++};
++
++&pfc {
++	scif1_pins: scif1 {
++		renesas,groups = "scif1_data_a", "scif1_ctrl";
++		renesas,function = "scif1";
++	};
++	scif2_pins: scif2 {
++		renesas,groups = "scif2_data_a";
++		renesas,function = "scif2";
++	};
++};
++
++&scif1 {
++	pinctrl-0 = <&scif1_pins>;
 +	pinctrl-names = "default";
 +
- 	scif1_pins: scif1 {
- 		renesas,groups = "scif1_data_a", "scif1_ctrl";
- 		renesas,function = "scif1";
-@@ -135,6 +138,10 @@
- 		renesas,groups = "scif2_data_a";
- 		renesas,function = "scif2";
- 	};
-+	scif_clk_pins: scif_clk {
-+		renesas,groups = "scif_clk_a";
-+		renesas,function = "scif_clk";
-+	};
- 
- 	i2c2_pins: i2c2 {
- 		renesas,groups = "i2c2_a";
-@@ -172,6 +179,11 @@
- 	status = "okay";
- };
- 
-+&scif_clk {
-+	clock-frequency = <14745600>;
 +	status = "okay";
 +};
 +
- &rcar_sound {
- 	pinctrl-0 = <&sound_pins &sound_clk_pins>;
- 	pinctrl-names = "default";
++&scif2 {
++	pinctrl-0 = <&scif2_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
 -- 
-1.9.1
+2.1.4
 
