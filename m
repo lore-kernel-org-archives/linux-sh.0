@@ -1,70 +1,67 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 10 Nov 2015 00:26:31 +0000
-Subject: Re: [PATCH v5] clk: add CS2000 Fractional-N driver
-Message-Id: <87mvumln67.wl%kuninori.morimoto.gx@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 13 Nov 2015 16:22:23 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7790: switch console back to scif0
+Message-Id: <1447431743-16376-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874mhmuyg8.wl%kuninori.morimoto.gx@renesas.com>
-	<CAHp75VcKnJr2zaFky9_G-qetdiuB8fS=r8r7hQTbYPUwEZ7n4g@mail.gmail.com>
-	<877flsknmk.wl%kuninori.morimoto.gx@renesas.com>
-	<CAHp75VdYL_fjvcG3Ss=yk=E1i5JKox9-sTaFzKjG8O1Osez5tQ@mail.gmail.com>
-In-Reply-To: <CAHp75VdYL_fjvcG3Ss=yk=E1i5JKox9-sTaFzKjG8O1Osez5tQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-2022-jp"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andy Shevchenko <andy.shevchenko@gmail.com>
-Cc: Stephen Boyd <sboyd@codeaurora.org>, Simon <horms@verge.net.au>, Michael Turquette <mturquette@baylibre.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, linux-clk@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
+The boot loader uses scif0, and so must we if we want earlycon to work.
 
-Hi Andy
+Partially reverts 7c0558941 ("ARM: shmobile: r8a7790: switch from scif
+to scifa").
 
-> >> > +static int cs2000_wait_pll_lock(struct cs2000_priv *priv)
-> >> > +{
-> >> > +       struct device *dev = priv_to_dev(priv);
-> >> > +       s32 val;
-> >> > +       unsigned int i;
-> >> > +
-> >> > +       for (i = 0; i < 256; i++) {
-> >> > +               val = cs2000_read(priv, DEVICE_CTRL);
-> >> > +               if (val < 0)
-> >> > +                       return val;
-> >> > +               if (!(val & PLL_UNLOCK))
-> >> > +                       return 0;
-> >> > +               udelay(1);
-> >> > +       }
-> >>
-> >> unsigned int i = 256;
-> >>
-> >> do {
-> >> val = read();
-> >> …
-> >> while ((val & PLL_UNLOCK) && --i);
-> >>
-> >> if (!i) {
-> >>  …
-> >>  return -EIO;
-> >>
-> >> Actually -ETIMEDOUT ?
-> >>
-> >> }
-> >
-> > What is the motivation of above ?
-> > It needs "i" anyway ? it needs to check (val < 0) anyway ?
-> > what is the difference between do {} while <-> for(xxx)
-> 
-> Just a style.
-> Still the question about error code.
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ arch/arm/boot/dts/r8a7790-lager.dts | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-OK. do {} while is not bad, but for () loop
-can avoid pointless check I think. I would like to use it.
-And yes, next version will use -ETIMEDOUT
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index e2174d8..79f1411 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -47,13 +47,13 @@
+ 	compatible = "renesas,lager", "renesas,r8a7790";
+ 
+ 	aliases {
+-		serial0 = &scifa0;
++		serial0 = &scif0;
+ 		serial1 = &scifa1;
+ 	};
+ 
+ 	chosen {
+ 		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
+-		stdout-path = &scifa0;
++		stdout-path = &scif0;
+ 	};
+ 
+ 	memory@40000000 {
+@@ -296,9 +296,9 @@
+ 		renesas,function = "du";
+ 	};
+ 
+-	scifa0_pins: serial0 {
+-		renesas,groups = "scifa0_data";
+-		renesas,function = "scifa0";
++	scif0_pins: serial0 {
++		renesas,groups = "scif0_data";
++		renesas,function = "scif0";
+ 	};
+ 
+ 	ether_pins: ether {
+@@ -467,8 +467,8 @@
+ 	};
+ };
+ 
+-&scifa0 {
+-	pinctrl-0 = <&scifa0_pins>;
++&scif0 {
++	pinctrl-0 = <&scif0_pins>;
+ 	pinctrl-names = "default";
+ 
+ 	status = "okay";
+-- 
+2.6.1
 
-> >> > +       of_property_read_string(np, "clock-output-names", &name);
-> >>
-> >> What about device property API?
-> >
-> > Sorry, which API ?
-> > Many other clk-xxx.c are using this style ?
-> 
-> Never mind then.
-
-Thanks
