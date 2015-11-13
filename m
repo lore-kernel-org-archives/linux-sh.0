@@ -1,89 +1,124 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 13 Nov 2015 21:31:15 +0000
+From: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
+Date: Fri, 13 Nov 2015 22:57:28 +0000
 Subject: Re: [PATCH 2/2] [media] include/media: move platform driver headers to a separate dir
-Message-Id: <4273019.OjrpsKyH2t@wuerfel>
+Message-Id: <20151113205728.39c12b7b@recife.lan>
 List-Id: <linux-sh.vger.kernel.org>
 References: <413d2bb0b813a7e62867de7a94b0ab61e16cb1cb.1447261977.git.mchehab@osg.samsung.com>
  <4220808.QEkJDXYE1T@wuerfel> <20151113171341.0972ef7a@recife.lan>
-In-Reply-To: <20151113171341.0972ef7a@recife.lan>
+ <4273019.OjrpsKyH2t@wuerfel>
+In-Reply-To: <4273019.OjrpsKyH2t@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Friday 13 November 2015 17:13:41 Mauro Carvalho Chehab wrote:
-> Em Wed, 11 Nov 2015 21:26:31 +0100
-> Arnd Bergmann <arnd@arndb.de> escreveu:
+Em Fri, 13 Nov 2015 22:31:15 +0100
+Arnd Bergmann <arnd@arndb.de> escreveu:
+
+> On Friday 13 November 2015 17:13:41 Mauro Carvalho Chehab wrote:
+> > Em Wed, 11 Nov 2015 21:26:31 +0100
+> > Arnd Bergmann <arnd@arndb.de> escreveu:
+> > 
 > 
+> >  include/media/{ => drv-intf}/cx2341x.h                   | 0
+> >  include/media/{ => drv-intf}/cx25840.h                   | 0
+> >  include/media/{ => drv-intf}/exynos-fimc.h               | 0
+> >  include/media/{ => drv-intf}/msp3400.h                   | 0
+> >  include/media/{ => drv-intf}/s3c_camif.h                 | 0
+> >  include/media/{ => drv-intf}/saa7146.h                   | 0
+> >  include/media/{ => drv-intf}/saa7146_vv.h                | 2 +-
+> >  include/media/{ => drv-intf}/sh_mobile_ceu.h             | 0
+> >  include/media/{ => drv-intf}/sh_mobile_csi2.h            | 0
+> >  include/media/{ => drv-intf}/sh_vou.h                    | 0
+> >  include/media/{ => drv-intf}/si476x.h                    | 0
+> >  include/media/{ => drv-intf}/soc_mediabus.h              | 0
+> >  include/media/{ => drv-intf}/tea575x.h                   | 0
+> >  include/media/i2c/tw9910.h                               | 2 +-
+> >  include/media/{ => platform_data}/gpio-ir-recv.h         | 0
+> >  include/media/{ => platform_data}/ir-rx51.h              | 0
+> >  include/media/{ => platform_data}/mmp-camera.h           | 0
+> >  include/media/{ => platform_data}/omap1_camera.h         | 0
+> >  include/media/{ => platform_data}/omap4iss.h             | 0
+> >  include/media/{ => platform_data}/s5p_hdmi.h             | 0
+> >  include/media/{ => platform_data}/si4713.h               | 0
+> >  include/media/{ => platform_data}/sii9234.h              | 0
+> >  include/media/{ => platform_data}/smiapp.h               | 0
+> >  include/media/{ => platform_data}/soc_camera.h           | 0
+> >  include/media/{ => platform_data}/soc_camera_platform.h  | 2 +-
+> >  include/media/{ => platform_data}/timb_radio.h           | 0
+> >  include/media/{ => platform_data}/timb_video.h           | 0
+> >  sound/pci/es1968.c                                       | 2 +-
+> >  sound/pci/fm801.c                                        | 2 +-
+> >  155 files changed, 158 insertions(+), 158 deletions(-)
+> 
+> As Geert said, include/linux/platform_data/media/ would be nicer for
+> consistency with other subsystems.
 
->  include/media/{ => drv-intf}/cx2341x.h                   | 0
->  include/media/{ => drv-intf}/cx25840.h                   | 0
->  include/media/{ => drv-intf}/exynos-fimc.h               | 0
->  include/media/{ => drv-intf}/msp3400.h                   | 0
->  include/media/{ => drv-intf}/s3c_camif.h                 | 0
->  include/media/{ => drv-intf}/saa7146.h                   | 0
->  include/media/{ => drv-intf}/saa7146_vv.h                | 2 +-
->  include/media/{ => drv-intf}/sh_mobile_ceu.h             | 0
->  include/media/{ => drv-intf}/sh_mobile_csi2.h            | 0
->  include/media/{ => drv-intf}/sh_vou.h                    | 0
->  include/media/{ => drv-intf}/si476x.h                    | 0
->  include/media/{ => drv-intf}/soc_mediabus.h              | 0
->  include/media/{ => drv-intf}/tea575x.h                   | 0
->  include/media/i2c/tw9910.h                               | 2 +-
->  include/media/{ => platform_data}/gpio-ir-recv.h         | 0
->  include/media/{ => platform_data}/ir-rx51.h              | 0
->  include/media/{ => platform_data}/mmp-camera.h           | 0
->  include/media/{ => platform_data}/omap1_camera.h         | 0
->  include/media/{ => platform_data}/omap4iss.h             | 0
->  include/media/{ => platform_data}/s5p_hdmi.h             | 0
->  include/media/{ => platform_data}/si4713.h               | 0
->  include/media/{ => platform_data}/sii9234.h              | 0
->  include/media/{ => platform_data}/smiapp.h               | 0
->  include/media/{ => platform_data}/soc_camera.h           | 0
->  include/media/{ => platform_data}/soc_camera_platform.h  | 2 +-
->  include/media/{ => platform_data}/timb_radio.h           | 0
->  include/media/{ => platform_data}/timb_video.h           | 0
->  sound/pci/es1968.c                                       | 2 +-
->  sound/pci/fm801.c                                        | 2 +-
->  155 files changed, 158 insertions(+), 158 deletions(-)
+OK! I have a new series of patches almost ready. I'll be sending it
+tomorrow, after addressing your concerns.
 
-As Geert said, include/linux/platform_data/media/ would be nicer for
-consistency with other subsystems.
+> 
+> > diff --git a/arch/arm/mach-imx/mach-imx27_visstrim_m10.c b/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
+> > index ede2bdbb5dd5..44ba1f28bb34 100644
+> > --- a/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
+> > +++ b/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
+> > @@ -33,7 +33,7 @@
+> >  #include <linux/dma-mapping.h>
+> >  #include <linux/leds.h>
+> >  #include <linux/platform_data/asoc-mx27vis.h>
+> > -#include <media/soc_camera.h>
+> > +#include <media/platform_data/soc_camera.h>
+> >  #include <sound/tlv320aic32x4.h>
+> >  #include <asm/mach-types.h>
+> >  #include <asm/mach/arch.h>
+> 
+> This looks like a mistake: the header contains the string 'platform_data',
+> but it is not actually a platform data header file in the sense
+> that it defines the interface between platform and driver.
+> 
+> Maybe soc_camera.h is important enough to still leave it as a core
+> file in the existing location? Or possibly a separate directory for
+> media/soc_camera/*.h
 
-> diff --git a/arch/arm/mach-imx/mach-imx27_visstrim_m10.c b/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
-> index ede2bdbb5dd5..44ba1f28bb34 100644
-> --- a/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
-> +++ b/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
-> @@ -33,7 +33,7 @@
->  #include <linux/dma-mapping.h>
->  #include <linux/leds.h>
->  #include <linux/platform_data/asoc-mx27vis.h>
-> -#include <media/soc_camera.h>
-> +#include <media/platform_data/soc_camera.h>
->  #include <sound/tlv320aic32x4.h>
->  #include <asm/mach-types.h>
->  #include <asm/mach/arch.h>
+Ok, I'll fix it. 
 
-This looks like a mistake: the header contains the string 'platform_data',
-but it is not actually a platform data header file in the sense
-that it defines the interface between platform and driver.
+> 
+> > @@ -24,7 +24,7 @@
+> >  #include <linux/slab.h>
+> >  #include <linux/kfifo.h>
+> >  #include <linux/module.h>
+> > -#include <media/cx25840.h>
+> > +#include <media/drv-intf/cx25840.h>
+> >  #include <media/rc-core.h>
+> >  
+> >  #include "cx25840-core.h"
+> 
+> For this case, I think the original patch to move it into include/media/i2c
+> was more logical as it mirrors the file structure. I was mainly talking
+> about the platform_data being different from the rest.
 
-Maybe soc_camera.h is important enough to still leave it as a core
-file in the existing location? Or possibly a separate directory for
-media/soc_camera/*.h
+cx25840 is not (always) an I2C. On most devices, this is actually an IP
+block inside the bridge chipset. 
 
-> @@ -24,7 +24,7 @@
->  #include <linux/slab.h>
->  #include <linux/kfifo.h>
->  #include <linux/module.h>
-> -#include <media/cx25840.h>
-> +#include <media/drv-intf/cx25840.h>
->  #include <media/rc-core.h>
->  
->  #include "cx25840-core.h"
+That's why I didn't include it on patch 1/1. There's one thing to
+notice about that, though: while most of the header is describing
+the driver interface, it does contain one platform_data in the end:
 
-For this case, I think the original patch to move it into include/media/i2c
-was more logical as it mirrors the file structure. I was mainly talking
-about the platform_data being different from the rest.
+/* pvr150_workaround activates a workaround for a hardware bug that is
+   present in Hauppauge PVR-150 (and possibly PVR-500) cards that have
+   certain NTSC tuners (tveeprom tuner model numbers 85, 99 and 112). The
+   audio autodetect fails on some channels for these models and the workaround
+   is to select the audio standard explicitly. Many thanks to Hauppauge for
+   providing this information.
+   This platform data only needs to be supplied by the ivtv driver. */
+struct cx25840_platform_data {
+	int pvr150_workaround;
+};
 
-	Arnd
+While we might split it, I guess it is not worth, specially since
+I don't think we'll see any new driver using it.
+
+Also, this is actually a hack used only by the ivtv driver.
+
+Regards,
+Mauro
