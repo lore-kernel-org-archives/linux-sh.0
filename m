@@ -1,10 +1,9 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 13 Nov 2015 20:15:49 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 13 Nov 2015 21:31:15 +0000
 Subject: Re: [PATCH 2/2] [media] include/media: move platform driver headers to a separate dir
-Message-Id: <CAMuHMdUBmMOHZ1mo3S5_K0B=0YywA3Xm5VyZ1Kk1UOsLUt_fPQ@mail.gmail.com>
+Message-Id: <4273019.OjrpsKyH2t@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 References: <413d2bb0b813a7e62867de7a94b0ab61e16cb1cb.1447261977.git.mchehab@osg.samsung.com>
- <09e182fa61a7122356b790cd2a4a7f622dabb4ce.1447261977.git.mchehab@osg.samsung.com>
  <4220808.QEkJDXYE1T@wuerfel> <20151113171341.0972ef7a@recife.lan>
 In-Reply-To: <20151113171341.0972ef7a@recife.lan>
 MIME-Version: 1.0
@@ -12,37 +11,79 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Nov 13, 2015 at 8:13 PM, Mauro Carvalho Chehab
-<mchehab@osg.samsung.com> wrote:
->> I think the latter should go into include/linux/platform_data/media/*.h instead.
->
-> Agreed.
->
-> Please see the enclosed patch:
->
->
-> Subject: [PATCH] [media] include/media: move platform driver headers to a
->  separate dirs
->
-> Let's not mix headers used by the core with those headers that
-> are needed by some specific platform drivers or by platform data.
->
-> This patch was made via this script:
->         mkdir include/media/platform mkdir include/media/platform_data
->         (cd include/media/; git mv $(grep -l platform_data *.h|grep -v v4l2)
+On Friday 13 November 2015 17:13:41 Mauro Carvalho Chehab wrote:
+> Em Wed, 11 Nov 2015 21:26:31 +0100
+> Arnd Bergmann <arnd@arndb.de> escreveu:
+> 
 
-I think include/linux/platform_data/media/, like Arnd suggested,
-would be better.
+>  include/media/{ => drv-intf}/cx2341x.h                   | 0
+>  include/media/{ => drv-intf}/cx25840.h                   | 0
+>  include/media/{ => drv-intf}/exynos-fimc.h               | 0
+>  include/media/{ => drv-intf}/msp3400.h                   | 0
+>  include/media/{ => drv-intf}/s3c_camif.h                 | 0
+>  include/media/{ => drv-intf}/saa7146.h                   | 0
+>  include/media/{ => drv-intf}/saa7146_vv.h                | 2 +-
+>  include/media/{ => drv-intf}/sh_mobile_ceu.h             | 0
+>  include/media/{ => drv-intf}/sh_mobile_csi2.h            | 0
+>  include/media/{ => drv-intf}/sh_vou.h                    | 0
+>  include/media/{ => drv-intf}/si476x.h                    | 0
+>  include/media/{ => drv-intf}/soc_mediabus.h              | 0
+>  include/media/{ => drv-intf}/tea575x.h                   | 0
+>  include/media/i2c/tw9910.h                               | 2 +-
+>  include/media/{ => platform_data}/gpio-ir-recv.h         | 0
+>  include/media/{ => platform_data}/ir-rx51.h              | 0
+>  include/media/{ => platform_data}/mmp-camera.h           | 0
+>  include/media/{ => platform_data}/omap1_camera.h         | 0
+>  include/media/{ => platform_data}/omap4iss.h             | 0
+>  include/media/{ => platform_data}/s5p_hdmi.h             | 0
+>  include/media/{ => platform_data}/si4713.h               | 0
+>  include/media/{ => platform_data}/sii9234.h              | 0
+>  include/media/{ => platform_data}/smiapp.h               | 0
+>  include/media/{ => platform_data}/soc_camera.h           | 0
+>  include/media/{ => platform_data}/soc_camera_platform.h  | 2 +-
+>  include/media/{ => platform_data}/timb_radio.h           | 0
+>  include/media/{ => platform_data}/timb_video.h           | 0
+>  sound/pci/es1968.c                                       | 2 +-
+>  sound/pci/fm801.c                                        | 2 +-
+>  155 files changed, 158 insertions(+), 158 deletions(-)
 
-Then we can make it a common goal to empty include/linux/platform_data/ ;-)
+As Geert said, include/linux/platform_data/media/ would be nicer for
+consistency with other subsystems.
 
-Gr{oetje,eeting}s,
+> diff --git a/arch/arm/mach-imx/mach-imx27_visstrim_m10.c b/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
+> index ede2bdbb5dd5..44ba1f28bb34 100644
+> --- a/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
+> +++ b/arch/arm/mach-imx/mach-imx27_visstrim_m10.c
+> @@ -33,7 +33,7 @@
+>  #include <linux/dma-mapping.h>
+>  #include <linux/leds.h>
+>  #include <linux/platform_data/asoc-mx27vis.h>
+> -#include <media/soc_camera.h>
+> +#include <media/platform_data/soc_camera.h>
+>  #include <sound/tlv320aic32x4.h>
+>  #include <asm/mach-types.h>
+>  #include <asm/mach/arch.h>
 
-                        Geert
+This looks like a mistake: the header contains the string 'platform_data',
+but it is not actually a platform data header file in the sense
+that it defines the interface between platform and driver.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Maybe soc_camera.h is important enough to still leave it as a core
+file in the existing location? Or possibly a separate directory for
+media/soc_camera/*.h
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+> @@ -24,7 +24,7 @@
+>  #include <linux/slab.h>
+>  #include <linux/kfifo.h>
+>  #include <linux/module.h>
+> -#include <media/cx25840.h>
+> +#include <media/drv-intf/cx25840.h>
+>  #include <media/rc-core.h>
+>  
+>  #include "cx25840-core.h"
+
+For this case, I think the original patch to move it into include/media/i2c
+was more logical as it mirrors the file structure. I was mainly talking
+about the platform_data being different from the rest.
+
+	Arnd
