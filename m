@@ -1,88 +1,58 @@
-From: Chris Brandt <chris.brandt@renesas.com>
-Date: Thu, 12 Nov 2015 21:01:48 +0000
-Subject: [PATCH v2] ARM: xip: Use correct symbol for end of ROM marker
-Message-Id: <1447362108-4333-1-git-send-email-chris.brandt@renesas.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 13 Nov 2015 07:46:24 +0000
+Subject: Re: [PATCH v2] ARM: xip: Use correct symbol for end of ROM marker
+Message-Id: <CAMuHMdXsw8BBCY5-fxWLvF1vxh83DhhKGD113LTBu-8ZFV68gw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447251455-22731-1-git-send-email-chris.brandt@renesas.com>
-In-Reply-To: <1447251455-22731-1-git-send-email-chris.brandt@renesas.com>
+ <1447362108-4333-1-git-send-email-chris.brandt@renesas.com>
+In-Reply-To: <1447362108-4333-1-git-send-email-chris.brandt@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-For an XIP build, _edata_loc, not _etext, represents the end of the
-binary image that will be programmed into ROM and mapped into the
-MODULES_VADDR area.
-With an XIP kernel, nothing is loaded into RAM before boot, meaning
-you have to take into account the size of the entire binary image
-that was programmed, including the init data values that will be copied
-to RAM during kernel boot.
+Hi Chris,
 
-This fixes the bug where you might lose the end of your kernel area
-after page table setup is complete.
+On Thu, Nov 12, 2015 at 10:01 PM, Chris Brandt <chris.brandt@renesas.com> wrote:
+> For an XIP build, _edata_loc, not _etext, represents the end of the
+> binary image that will be programmed into ROM and mapped into the
+> MODULES_VADDR area.
+> With an XIP kernel, nothing is loaded into RAM before boot, meaning
+> you have to take into account the size of the entire binary image
+> that was programmed, including the init data values that will be copied
+> to RAM during kernel boot.
+>
+> This fixes the bug where you might lose the end of your kernel area
+> after page table setup is complete.
 
-Signed-off-by: Chris Brandt <chris.brandt@renesas.com>
----
-v2
-* Added change for MODULES_VADDR
-* Moved extern to new file asm/sections.h
----
- arch/arm/include/asm/sections.h |    8 ++++++++
- arch/arm/kernel/module.c        |    2 +-
- arch/arm/mm/mmu.c               |    4 ++--
- 3 files changed, 11 insertions(+), 3 deletions(-)
- create mode 100644 arch/arm/include/asm/sections.h
+Thanks for your patch!
 
-diff --git a/arch/arm/include/asm/sections.h b/arch/arm/include/asm/sections.h
-new file mode 100644
-index 0000000..401eb3c2
---- /dev/null
-+++ b/arch/arm/include/asm/sections.h
-@@ -0,0 +1,8 @@
-+#ifndef _ASM_ARM_SECTIONS_H
-+#define _ASM_ARM_SECTIONS_H
-+
-+#include <asm-generic/sections.h>
-+
-+extern char _edata_loc[];
-+
-+#endif	/* _ASM_ARM_SECTIONS_H */
-diff --git a/arch/arm/kernel/module.c b/arch/arm/kernel/module.c
-index efdddcb..41ae2cc 100644
---- a/arch/arm/kernel/module.c
-+++ b/arch/arm/kernel/module.c
-@@ -34,7 +34,7 @@
-  * recompiling the whole kernel when CONFIG_XIP_KERNEL is turned on/off.
-  */
- #undef MODULES_VADDR
--#define MODULES_VADDR	(((unsigned long)_etext + ~PMD_MASK) & PMD_MASK)
-+#define MODULES_VADDR	(((unsigned long)_edata_loc + ~PMD_MASK) & PMD_MASK)
- #endif
- 
- #ifdef CONFIG_MMU
-diff --git a/arch/arm/mm/mmu.c b/arch/arm/mm/mmu.c
-index 4867f5d..dd5a56b 100644
---- a/arch/arm/mm/mmu.c
-+++ b/arch/arm/mm/mmu.c
-@@ -1210,7 +1210,7 @@ static inline void prepare_page_table(void)
- 
- #ifdef CONFIG_XIP_KERNEL
- 	/* The XIP kernel is mapped in the module area -- skip over it */
--	addr = ((unsigned long)_etext + PMD_SIZE - 1) & PMD_MASK;
-+	addr = ((unsigned long)_edata_loc + PMD_SIZE - 1) & PMD_MASK;
- #endif
- 	for ( ; addr < PAGE_OFFSET; addr += PMD_SIZE)
- 		pmd_clear(pmd_off_k(addr));
-@@ -1292,7 +1292,7 @@ static void __init devicemaps_init(const struct machine_desc *mdesc)
- #ifdef CONFIG_XIP_KERNEL
- 	map.pfn = __phys_to_pfn(CONFIG_XIP_PHYS_ADDR & SECTION_MASK);
- 	map.virtual = MODULES_VADDR;
--	map.length = ((unsigned long)_etext - map.virtual + ~SECTION_MASK) & SECTION_MASK;
-+	map.length = ((unsigned long)_edata_loc - map.virtual + ~SECTION_MASK) & SECTION_MASK;
- 	map.type = MT_ROM;
- 	create_mapping(&map);
- #endif
--- 
-1.7.9.5
+> Signed-off-by: Chris Brandt <chris.brandt@renesas.com>
+> ---
+> v2
+> * Added change for MODULES_VADDR
+> * Moved extern to new file asm/sections.h
+> ---
+>  arch/arm/include/asm/sections.h |    8 ++++++++
+>  arch/arm/kernel/module.c        |    2 +-
+>  arch/arm/mm/mmu.c               |    4 ++--
+>  3 files changed, 11 insertions(+), 3 deletions(-)
+>  create mode 100644 arch/arm/include/asm/sections.h
 
+If you create an arm-specific <asm/sections.h>, you also have to remove the
+line
 
+        generic-y += sections.h
+
+from arch/arm/include/asm/Kbuild.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
