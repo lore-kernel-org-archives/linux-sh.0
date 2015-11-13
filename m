@@ -1,79 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 21 Nov 2015 00:40:35 +0000
-Subject: Re: [PATCH] ARM: shmobile: alt: Add pfc pins to DT
-Message-Id: <20151121004035.GA24496@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Nov 2015 10:10:25 +0000
+Subject: [PATCH v13 7/7] MAINTAINERS: Add entry Renesas arm64 architecture
+Message-Id: <1447409425-14831-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447787440-11080-1-git-send-email-horms+renesas@verge.net.au>
- <564F0DE5.6040100@cogentembedded.com>
- <20151120183451.GD29534@verge.net.au>
- <564F6B60.60405@cogentembedded.com>
-In-Reply-To: <564F6B60.60405@cogentembedded.com>
+References: <1447409425-14831-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1447409425-14831-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Nov 20, 2015 at 09:50:08PM +0300, Sergei Shtylyov wrote:
-> On 11/20/2015 09:34 PM, Simon Horman wrote:
-> 
-> >>>PFC is already enabled on the r8a7794.
-> >>>This adds pins for devices already enabled in DT on
-> >>>the r8a7794 based alt board.
-> >>>
-> >>>Based on work by Mitsuhiro Kimura and Hisashi Nakamura.
-> >>>
-> >>>Cc: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
-> >>>Cc: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
-> >>>Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> >>>
-> >>>---
-> >>>Tested
-> >>>---
-> >>>  arch/arm/boot/dts/r8a7794-alt.dts | 17 +++++++++++++++++
-> >>>  1 file changed, 17 insertions(+)
-> >>>
-> >>>diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
-> >>>index 928cfa641475..2e889991ce8f 100644
-> >>>--- a/arch/arm/boot/dts/r8a7794-alt.dts
-> >>>+++ b/arch/arm/boot/dts/r8a7794-alt.dts
-> >>>@@ -39,6 +39,23 @@
-> >>>  	clock-frequency = <20000000>;
-> >>>  };
-> >>>
-> >>>+&pfc {
-> >>>+	scif2_pins: serial2 {
-> >>>+		renesas,groups = "scif2_data";
-> >>>+		renesas,function = "scif2";
-> >>>+	};
-> >>>+
-> >>>+	ether_pins: ether {
-> >>>+		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
-> >>>+		renesas,function = "eth";
-> >>>+	};
-> >>>+
-> >>>+	ether_b_pins: ether {
-> >>>+		renesas,groups = "eth_link_b", "eth_mdio_b", "eth_rmii_b";
-> >>>+		renesas,function = "eth";
-> >>>+	};
-> >>>+};
-> >>>+
-> >>>  &cmt0 {
-> >>>  	status = "okay";
-> >>>  };
-> >>
-> >>    Why add unreferenced pins? How have you tested this?
-> >
-> >Thanks for pointing out that oversight. I'll see about filling in the gaps.
-> 
->    Sorry for noticing this too late, only when you were pushing your
-> branches upstream...
+Initial Renesas arm64 architecture support will be for the R-Car H3,
+r8a7795, SoC and its Salvator-X board.
 
-No problem, thanks for noticing at all.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-FYI:
+---
+Changes since v12:
+- Added Ack from Geert Uytterhoeven
 
-It looks like things work well when using the scif2
-but not the ether pins. I suspect the latter is due to the lack
-of phy pin support both above and by inspection in the pfc driver.
+Changes since v11:
+- As suggested by Khiem Nguyen:
+  + Removed reference to http://oss.renesas.com as that web site is closed
 
-I will investigate further.
+Changes since v10:
+- New Patch
+---
+ MAINTAINERS | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 7ba7ab749c85..e35134f7d128 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -1392,6 +1392,15 @@ M:	Lennert Buytenhek <kernel@wantstofly.org>
+ L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+ S:	Maintained
+ 
++ARM/RENESAS ARM64 ARCHITECTURE
++M:	Simon Horman <horms@verge.net.au>
++M:	Magnus Damm <magnus.damm@gmail.com>
++L:	linux-sh@vger.kernel.org
++Q:	http://patchwork.kernel.org/project/linux-sh/list/
++T:	git git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git next
++S:	Supported
++F:	arch/arm64/boot/dts/renesas/
++
+ ARM/RISCPC ARCHITECTURE
+ M:	Russell King <linux@arm.linux.org.uk>
+ L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+-- 
+2.1.4
+
