@@ -1,97 +1,56 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:47 +0000
-Subject: [PATCH 2/3] ARM: shmobile: Introduce ARCH_RENESAS
-Message-Id: <9b5ba0df4ea4f94072f3e0d6064ab59607112e53.1448585673.git.horms+renesas@verge.net.au>
+Date: Fri, 13 Nov 2015 02:23:51 +0000
+Subject: [PATCH 4/4] ARM: shmobile: r8a7794: Use SoC specific binding for rcar-dmac nodes
+Message-Id: <1447381431-2255-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448585673.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448585673.git.horms+renesas@verge.net.au>
+References: <1447381431-2255-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1447381431-2255-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The purpose of this patch is to start the process of replacing both
-ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI with ARCH_RENESAS.
+Use the new SoC specific binding for rcar-dmac and the generic
+binding as a fall-back in the r8a7794 device tree.
 
-RENESAS seems to be a more appropriate name than SHMOBILE for the majority
-of Renesas 32-bit ARM based SoCs. The name is conveniently also (newer)
-ARM64 based SoCs.
+In general Renesas hardware is not documented to the extent where the
+relationship between IP blocks on different SoCs can be assumed although
+they may appear to operate the same way. Furthermore the documentation
+typically does not specify a version for individual IP blocks. For these
+reasons a convention of using the SoC name in place of a version and
+providing SoC-specific compat strings has been adopted.
 
-This patches only addresses 32-bit ARM based SoCs.  Proposed support for
-the ARM64 based r8a7795 SoC already uses ARCH_RENESAS which selects
-ARCH_SHMOBILE.
+Although not universally liked this convention is used in the bindings for
+most drivers for Renesas hardware. The purpose of this patch is to
+update the Renesas R-Car DMA Controller nodes to follow this convention.
 
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/multi_v7_defconfig |  2 +-
- arch/arm/configs/shmobile_defconfig |  2 +-
- arch/arm/mach-shmobile/Kconfig      | 10 +++++++---
- 3 files changed, 9 insertions(+), 5 deletions(-)
+ arch/arm/boot/dts/r8a7794.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
-index 69a22fdb52a5..2735bc73b285 100644
---- a/arch/arm/configs/multi_v7_defconfig
-+++ b/arch/arm/configs/multi_v7_defconfig
-@@ -75,7 +75,7 @@ CONFIG_MACH_SPEAR1340=y
- CONFIG_ARCH_STI=y
- CONFIG_ARCH_EXYNOS=y
- CONFIG_EXYNOS5420_MCPM=y
--CONFIG_ARCH_SHMOBILE_MULTI=y
-+CONFIG_ARCH_RENESAS=y
- CONFIG_ARCH_EMEV2=y
- CONFIG_ARCH_R7S72100=y
- CONFIG_ARCH_R8A73A4=y
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index 3aef019c0de7..cc8ece33a7e3 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -9,7 +9,7 @@ CONFIG_SYSCTL_SYSCALL=y
- CONFIG_EMBEDDED=y
- CONFIG_PERF_EVENTS=y
- CONFIG_SLAB=y
--CONFIG_ARCH_SHMOBILE_MULTI=y
-+CONFIG_ARCH_RENESAS=y
- CONFIG_ARCH_EMEV2=y
- CONFIG_ARCH_R7S72100=y
- CONFIG_ARCH_R8A73A4=y
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 88734a5e10ca..4ed72b124235 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -1,6 +1,8 @@
- config ARCH_SHMOBILE
- 	bool
--	select ZONE_DMA if ARM_LPAE
-+
-+config ARCH_SHMOBILE_MULTI
-+	bool
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 018ff56470b6..33af10f2230f 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -221,7 +221,7 @@
+ 	};
  
- config PM_RCAR
- 	bool
-@@ -29,10 +31,11 @@ config ARCH_RMOBILE
- 	select SYS_SUPPORTS_SH_CMT
- 	select SYS_SUPPORTS_SH_TMU
+ 	dmac0: dma-controller@e6700000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7794", "renesas,rcar-dmac";
+ 		reg = <0 0xe6700000 0 0x20000>;
+ 		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
+ 			      0 200 IRQ_TYPE_LEVEL_HIGH
+@@ -252,7 +252,7 @@
+ 	};
  
--menuconfig ARCH_SHMOBILE_MULTI
-+menuconfig ARCH_RENESAS
- 	bool "Renesas ARM SoCs" if ARCH_MULTI_V7
- 	depends on MMU
- 	select ARCH_SHMOBILE
-+	select ARCH_SHMOBILE_MULTI
- 	select HAVE_ARM_SCU if SMP
- 	select HAVE_ARM_TWD if SMP
- 	select ARM_GIC
-@@ -40,8 +43,9 @@ menuconfig ARCH_SHMOBILE_MULTI
- 	select NO_IOPORT_MAP
- 	select PINCTRL
- 	select ARCH_REQUIRE_GPIOLIB
-+	select ZONE_DMA if ARM_LPAE
- 
--if ARCH_SHMOBILE_MULTI
-+if ARCH_RENESAS
- 
- #comment "Renesas ARM SoCs System Type"
- 
+ 	dmac1: dma-controller@e6720000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7794", "renesas,rcar-dmac";
+ 		reg = <0 0xe6720000 0 0x20000>;
+ 		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
+ 			      0 216 IRQ_TYPE_LEVEL_HIGH
 -- 
 2.1.4
 
