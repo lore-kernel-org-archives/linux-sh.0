@@ -1,49 +1,39 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 30 Nov 2015 13:41:01 +0000
-Subject: [PATCH 0/4] pinctrl: sh-pfc: More PINMUX_SINGLE() conversions
-Message-Id: <1448890865-1856-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Nov 2015 02:23:47 +0000
+Subject: [PATCH 0/4] ARM: shmobile: Use SoC specific binding for rcar-dmac nodes
+Message-Id: <1447381431-2255-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-	Hi Laurent, Linus,
+Use the new SoC specific binding for rcar-dmac and the generic
+binding as a fall-back in the r8a779[0134] device trees.
 
-This patch series converts pin control data for a few more Renesas SoCs
-to the recently-introduced PINMUX_SINGLE() macro.
-As such this series depends on "[PATCH/RFC 0/4] pinctrl: sh-pfc: Add
-PINMUX_SINGLE()".
+In general Renesas hardware is not documented to the extent where the
+relationship between IP blocks on different SoCs can be assumed although
+they may appear to operate the same way. Furthermore the documentation
+typically does not specify a version for individual IP blocks. For these
+reasons a convention of using the SoC name in place of a version and
+providing SoC-specific compat strings has been adopted.
 
-Thanks!
+Although not universally liked this convention is used in the bindings for
+most drivers for Renesas hardware. The purpose of this patch is to
+update the Renesas R-Car DMA Controller nodes to follow this convention.
 
-Geert Uytterhoeven (4):
-  pinctrl: sh-pfc: emev2: Use PINMUX_SINGLE() instead of raw
-    PINMUX_DATA()
-  pinctrl: sh-pfc: r8a7778: Use PINMUX_SINGLE() instead of raw
-    PINMUX_DATA()
-  pinctrl: sh-pfc: r8a7779: Use PINMUX_SINGLE() instead of raw
-    PINMUX_DATA()
-  pinctrl: sh-pfc: sh7734: Use PINMUX_SINGLE() instead of raw
-    PINMUX_DATA()
+Simon Horman (4):
+  ARM: shmobile: r8a7790: Use SoC specific binding for rcar-dmac nodes
+  ARM: shmobile: r8a7791: Use SoC specific binding for rcar-dmac nodes
+  ARM: shmobile: r8a7793: Use SoC specific binding for rcar-dmac nodes
+  ARM: shmobile: r8a7794: Use SoC specific binding for rcar-dmac nodes
 
- drivers/pinctrl/sh-pfc/pfc-emev2.c   | 134 +++++++++++++++++------------------
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c |  22 +++---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |  16 ++---
- drivers/pinctrl/sh-pfc/pfc-sh7734.c  |  21 +++---
- 4 files changed, 98 insertions(+), 95 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 8 ++++----
+ arch/arm/boot/dts/r8a7791.dtsi | 8 ++++----
+ arch/arm/boot/dts/r8a7793.dtsi | 4 ++--
+ arch/arm/boot/dts/r8a7794.dtsi | 4 ++--
+ 4 files changed, 12 insertions(+), 12 deletions(-)
 
 -- 
-1.9.1
+2.1.4
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
