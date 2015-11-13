@@ -1,231 +1,220 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 10 Nov 2015 00:46:19 +0000
-Subject: Re: [PATCH 1/3 v2] PCI: pcie-rcar: Convert to DT resource parsing API
-Message-Id: <20151110004619.GE1040@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 13 Nov 2015 08:38:20 +0000
+Subject: Re: [PATCH v4 2/8] pinctrl: sh-pfc: r8a7790: Implement voltage switching for SDHI
+Message-Id: <878u62jo3s.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <PS1PR06MB11801A23491F06B6BE81DB6AF5150@PS1PR06MB1180.apcprd06.prod.outlook.com>
-In-Reply-To: <PS1PR06MB11801A23491F06B6BE81DB6AF5150@PS1PR06MB1180.apcprd06.prod.outlook.com>
+References: <1435683177.23818.60.camel@codethink.co.uk>
+	<1435683249.23818.62.camel@codethink.co.uk>
+	<6355006.FnTDFbP0bb@avalon>
+	<1435879310.7541.2.camel@codethink.co.uk>
+	<1436445274.25102.0.camel@codethink.co.uk>
+In-Reply-To: <1436445274.25102.0.camel@codethink.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Bjorn Helgaas <bhelgaas@google.com>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Wolfram Sang <wsa@the-dreams.de>
+To: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ian Molton <ian@mnementh.co.uk>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, linux-kernel@lists.codethink.co.uk, Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, Simon Horman <horms@verge.net.au>
 
-On Mon, Nov 09, 2015 at 10:26:39AM +0000, Phil Edworthy wrote:
-> The main purpose of this change is to avoid calling pci_ioremap_io() as
-> this is not available on arm64. However, instead of doing the range passing
-> in this driver we can utilise of_pci_get_host_bridge_resources().
+
+Hi Laurent
+
+Sorry for replying to old patch.
+But, it seems Ben is waiting your answer about this patch
+(This patch-set is not yet upstreamed)
+
+> On Fri, 2015-07-03 at 00:21 +0100, Ben Hutchings wrote:
+> > On Wed, 2015-07-01 at 10:37 +0300, Laurent Pinchart wrote:
+> > [...]
+> > > > +#define PIN_IO_VOLTAGE(bank, _pin, _name, sfx)		\
+> > > > +	[RCAR_GP_PIN(bank, _pin)].configs = SH_PFC_PIN_CFG_IO_VOLTAGE
+> > > > +
+> > > >  static const struct sh_pfc_pin pinmux_pins[] = {
+> > > >  	PINMUX_GPIO_GP_ALL(),
+> > > > 
+> > > > -	/* Pins not associated with a GPIO port */
+> > > > +	/*
+> > > > +	 * All pins assigned to GPIO bank 3 can be used for SD interfaces
+> > > > +	 * in which case they support both 3.3V and 1.8V signalling.
+> > > > +	 */
+> > > > +	PORT_GP_32(3, PIN_IO_VOLTAGE, unused),
+> > > > +
+> > > > +	/* Pins not associated with a GPIO port, placed after all the GPIOs */
+> > > > +	[RCAR_GP_PIN(5, 31) + 1] > > > 
+> > > I'm sorry but I still don't like this. gcc outputs a warning when overriding 
+> > > an initializer if you enable -Wextra, which leads me to believe this construct 
+> > > is dubious. It should at least be tested with LLVM.
+> > > 
+> > > I'd much prefer replacing PINMUX_GPIO_GP_ALL() with a version that will 
+> > > initialize the pins correctly right away.
+> > [...]
+> > 
+> > Something like this?
 > 
-> This is similar to changes made to the generic PCI host driver in commit
-> dbf9826d "PCI: generic: Convert to DT resource parsing API".
+> Laurent, please can you answer whether this is the right way to go.
 > 
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-
-I think the following should be carried over from v1:
-
-Reported-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Tested-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-
-Bjorn, I know there have been a few false starts with regards
-to recent pcie-rcar changes. But some more rigor has been applied to this
-one. Please consider applying it.
-
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-
-> ---
-> v2:
->  - Remove incorrect res_valid check
-> ---
->  drivers/pci/host/pcie-rcar.c | 116 +++++++++++++++++++++++++++----------------
->  1 file changed, 73 insertions(+), 43 deletions(-)
+> Ben.
 > 
-> diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-> index 6a3a612..c977fa6 100644
-> --- a/drivers/pci/host/pcie-rcar.c
-> +++ b/drivers/pci/host/pcie-rcar.c
-> @@ -108,8 +108,6 @@
->  #define RCAR_PCI_MAX_RESOURCES 4
->  #define MAX_NR_INBOUND_MAPS 6
->  
-> -static unsigned long global_io_offset;
-> -
->  struct rcar_msi {
->  	DECLARE_BITMAP(used, INT_PCI_MSI_NR);
->  	struct irq_domain *domain;
-> @@ -138,8 +136,7 @@ struct rcar_pcie {
->  #endif
->  	struct device		*dev;
->  	void __iomem		*base;
-> -	struct resource		res[RCAR_PCI_MAX_RESOURCES];
-> -	struct resource		busn;
-> +	struct list_head	resources;
->  	int			root_bus_nr;
->  	struct clk		*clk;
->  	struct clk		*bus_clk;
-> @@ -323,10 +320,9 @@ static struct pci_ops rcar_pcie_ops = {
->  	.write	= rcar_pcie_write_conf,
->  };
->  
-> -static void rcar_pcie_setup_window(int win, struct rcar_pcie *pcie)
-> +static void rcar_pcie_setup_window(int win, struct rcar_pcie *pcie,
-> +				   struct resource *res)
->  {
-> -	struct resource *res = &pcie->res[win];
-> -
->  	/* Setup PCIe address space mappings for each resource */
->  	resource_size_t size;
->  	resource_size_t res_start;
-> @@ -359,31 +355,33 @@ static void rcar_pcie_setup_window(int win, struct rcar_pcie *pcie)
->  	rcar_pci_write_reg(pcie, mask, PCIEPTCTLR(win));
->  }
->  
-> -static int rcar_pcie_setup(struct list_head *resource, struct rcar_pcie *pcie)
-> +static int rcar_pcie_setup(struct list_head *resource, struct rcar_pcie *pci)
->  {
-> -	struct resource *res;
-> -	int i;
-> -
-> -	pcie->root_bus_nr = pcie->busn.start;
-> +	struct resource_entry *win;
-> +	int i = 0;
->  
->  	/* Setup PCI resources */
-> -	for (i = 0; i < RCAR_PCI_MAX_RESOURCES; i++) {
-> +	resource_list_for_each_entry(win, &pci->resources) {
-> +		struct resource *res = win->res;
->  
-> -		res = &pcie->res[i];
->  		if (!res->flags)
->  			continue;
->  
-> -		rcar_pcie_setup_window(i, pcie);
-> -
-> -		if (res->flags & IORESOURCE_IO) {
-> -			phys_addr_t io_start = pci_pio_to_address(res->start);
-> -			pci_ioremap_io(global_io_offset, io_start);
-> -			global_io_offset += SZ_64K;
-> +		switch (resource_type(res)) {
-> +		case IORESOURCE_IO:
-> +		case IORESOURCE_MEM:
-> +			rcar_pcie_setup_window(i, pci, res);
-> +			i++;
-> +			break;
-> +		case IORESOURCE_BUS:
-> +			pci->root_bus_nr = res->start;
-> +			break;
-> +		default:
-> +			continue;
->  		}
->  
->  		pci_add_resource(resource, res);
->  	}
-> -	pci_add_resource(resource, &pcie->busn);
->  
->  	return 1;
->  }
-> @@ -923,14 +921,63 @@ static const struct of_device_id rcar_pcie_of_match[] = {
->  };
->  MODULE_DEVICE_TABLE(of, rcar_pcie_of_match);
->  
-> +static void rcar_pcie_release_of_pci_ranges(struct rcar_pcie *pci)
-> +{
-> +	pci_free_resource_list(&pci->resources);
-> +}
-> +
-> +static int rcar_pcie_parse_request_of_pci_ranges(struct rcar_pcie *pci)
-> +{
-> +	int err;
-> +	struct device *dev = pci->dev;
-> +	struct device_node *np = dev->of_node;
-> +	resource_size_t iobase;
-> +	struct resource_entry *win;
-> +
-> +	err = of_pci_get_host_bridge_resources(np, 0, 0xff, &pci->resources, &iobase);
-> +	if (err)
-> +		return err;
-> +
-> +	resource_list_for_each_entry(win, &pci->resources) {
-> +		struct resource *parent, *res = win->res;
-> +
-> +		switch (resource_type(res)) {
-> +		case IORESOURCE_IO:
-> +			parent = &ioport_resource;
-> +			err = pci_remap_iospace(res, iobase);
-> +			if (err) {
-> +				dev_warn(dev, "error %d: failed to map resource %pR\n",
-> +					 err, res);
-> +				continue;
-> +			}
-> +			break;
-> +		case IORESOURCE_MEM:
-> +			parent = &iomem_resource;
-> +			break;
-> +
-> +		case IORESOURCE_BUS:
-> +		default:
-> +			continue;
-> +		}
-> +
-> +		err = devm_request_resource(dev, parent, res);
-> +		if (err)
-> +			goto out_release_res;
-> +	}
-> +
-> +	return 0;
-> +
-> +out_release_res:
-> +	rcar_pcie_release_of_pci_ranges(pci);
-> +	return err;
-> +}
-> +
->  static int rcar_pcie_probe(struct platform_device *pdev)
->  {
->  	struct rcar_pcie *pcie;
->  	unsigned int data;
-> -	struct of_pci_range range;
-> -	struct of_pci_range_parser parser;
->  	const struct of_device_id *of_id;
-> -	int err, win = 0;
-> +	int err;
->  	int (*hw_init_fn)(struct rcar_pcie *);
->  
->  	pcie = devm_kzalloc(&pdev->dev, sizeof(*pcie), GFP_KERNEL);
-> @@ -940,16 +987,9 @@ static int rcar_pcie_probe(struct platform_device *pdev)
->  	pcie->dev = &pdev->dev;
->  	platform_set_drvdata(pdev, pcie);
->  
-> -	/* Get the bus range */
-> -	if (of_pci_parse_bus_range(pdev->dev.of_node, &pcie->busn)) {
-> -		dev_err(&pdev->dev, "failed to parse bus-range property\n");
-> -		return -EINVAL;
-> -	}
-> +	INIT_LIST_HEAD(&pcie->resources);
->  
-> -	if (of_pci_range_parser_init(&parser, pdev->dev.of_node)) {
-> -		dev_err(&pdev->dev, "missing ranges property\n");
-> -		return -EINVAL;
-> -	}
-> +	rcar_pcie_parse_request_of_pci_ranges(pcie);
->  
->  	err = rcar_pcie_get_resources(pdev, pcie);
->  	if (err < 0) {
-> @@ -957,16 +997,6 @@ static int rcar_pcie_probe(struct platform_device *pdev)
->  		return err;
->  	}
->  
-> -	for_each_of_pci_range(&parser, &range) {
-> -		err = of_pci_range_to_resource(&range, pdev->dev.of_node,
-> -						&pcie->res[win++]);
-> -		if (err < 0)
-> -			return err;
-> -
-> -		if (win > RCAR_PCI_MAX_RESOURCES)
-> -			break;
-> -	}
-> -
->  	 err = rcar_pcie_parse_map_dma_ranges(pcie, pdev->dev.of_node);
->  	 if (err)
->  		return err;
-> -- 
-> 1.9.1
+> > diff --git a/drivers/pinctrl/sh-pfc/pfc-emev2.c b/drivers/pinctrl/sh-pfc/pfc-emev2.c
+> > index 849c6943ed30..ad1a8281a91b 100644
+> > --- a/drivers/pinctrl/sh-pfc/pfc-emev2.c
+> > +++ b/drivers/pinctrl/sh-pfc/pfc-emev2.c
+> > @@ -228,7 +228,7 @@ enum {
+> >  
+> >  /* Expand to a list of sh_pfc_pin entries (named PORT#).
+> >   * NOTE: No config are recorded since the driver do not handle pinconf. */
+> > -#define __PIN_CFG(pn, pfx, sfx)  SH_PFC_PIN_CFG(pfx, 0)
+> > +#define __PIN_CFG(pn, pfx, sfx)  SH_PFC_PORT_CFG(pfx, 0)
+> >  #define PINMUX_EMEV_GPIO_ALL()	  CPU_ALL_PORT(__PIN_CFG, , unused)
+> >  
+> >  static const struct sh_pfc_pin pinmux_pins[] = {
+> > diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+> > index 280a56f97786..ca1538371563 100644
+> > --- a/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+> > +++ b/drivers/pinctrl/sh-pfc/pfc-r8a73a4.c
+> > @@ -1272,8 +1272,8 @@ static const u16 pinmux_data[] = {
+> >  #define __IO	(SH_PFC_PIN_CFG_INPUT | SH_PFC_PIN_CFG_OUTPUT)
+> >  #define __PUD	(SH_PFC_PIN_CFG_PULL_DOWN | SH_PFC_PIN_CFG_PULL_UP)
+> >  
+> > -#define R8A73A4_PIN_IO_PU_PD(pin)       SH_PFC_PIN_CFG(pin, __IO | __PUD)
+> > -#define R8A73A4_PIN_O(pin)              SH_PFC_PIN_CFG(pin, __O)
+> > +#define R8A73A4_PIN_IO_PU_PD(pin)       SH_PFC_PORT_CFG(pin, __IO | __PUD)
+> > +#define R8A73A4_PIN_O(pin)              SH_PFC_PORT_CFG(pin, __O)
+> >  
+> >  static const struct sh_pfc_pin pinmux_pins[] = {
+> >  	R8A73A4_PIN_IO_PU_PD(0), R8A73A4_PIN_IO_PU_PD(1),
+> > diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+> > index b486e9d20cc2..92939cbd7ad0 100644
+> > --- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+> > +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+> > @@ -1535,15 +1535,15 @@ static const u16 pinmux_data[] = {
+> >  #define __PU		(SH_PFC_PIN_CFG_PULL_UP)
+> >  #define __PUD		(SH_PFC_PIN_CFG_PULL_DOWN | SH_PFC_PIN_CFG_PULL_UP)
+> >  
+> > -#define R8A7740_PIN_I_PD(pin)		SH_PFC_PIN_CFG(pin, __I | __PD)
+> > -#define R8A7740_PIN_I_PU(pin)		SH_PFC_PIN_CFG(pin, __I | __PU)
+> > -#define R8A7740_PIN_I_PU_PD(pin)	SH_PFC_PIN_CFG(pin, __I | __PUD)
+> > -#define R8A7740_PIN_IO(pin)		SH_PFC_PIN_CFG(pin, __IO)
+> > -#define R8A7740_PIN_IO_PD(pin)		SH_PFC_PIN_CFG(pin, __IO | __PD)
+> > -#define R8A7740_PIN_IO_PU(pin)		SH_PFC_PIN_CFG(pin, __IO | __PU)
+> > -#define R8A7740_PIN_IO_PU_PD(pin)	SH_PFC_PIN_CFG(pin, __IO | __PUD)
+> > -#define R8A7740_PIN_O(pin)		SH_PFC_PIN_CFG(pin, __O)
+> > -#define R8A7740_PIN_O_PU_PD(pin)	SH_PFC_PIN_CFG(pin, __O | __PUD)
+> > +#define R8A7740_PIN_I_PD(pin)		SH_PFC_PORT_CFG(pin, __I | __PD)
+> > +#define R8A7740_PIN_I_PU(pin)		SH_PFC_PORT_CFG(pin, __I | __PU)
+> > +#define R8A7740_PIN_I_PU_PD(pin)	SH_PFC_PORT_CFG(pin, __I | __PUD)
+> > +#define R8A7740_PIN_IO(pin)		SH_PFC_PORT_CFG(pin, __IO)
+> > +#define R8A7740_PIN_IO_PD(pin)		SH_PFC_PORT_CFG(pin, __IO | __PD)
+> > +#define R8A7740_PIN_IO_PU(pin)		SH_PFC_PORT_CFG(pin, __IO | __PU)
+> > +#define R8A7740_PIN_IO_PU_PD(pin)	SH_PFC_PORT_CFG(pin, __IO | __PUD)
+> > +#define R8A7740_PIN_O(pin)		SH_PFC_PORT_CFG(pin, __O)
+> > +#define R8A7740_PIN_O_PU_PD(pin)	SH_PFC_PORT_CFG(pin, __O | __PUD)
+> >  
+> >  static const struct sh_pfc_pin pinmux_pins[] = {
+> >  	/* Table 56-1 (I/O and Pull U/D) */
+> > diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+> > index 1137bbc810cd..1e59e1775374 100644
+> > --- a/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+> > +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7790.c
+> > @@ -1740,20 +1740,23 @@ static const u16 pinmux_data[] = {
+> >  #define PIN_NUMBER(r, c) (((r) - 'A') * 31 + (c) + 200)
+> >  #define PIN_A_NUMBER(r, c) PIN_NUMBER(ROW_GROUP_A(r), c)
+> >  
+> > -#define PIN_IO_VOLTAGE(bank, _pin, _name, sfx)		\
+> > -	[RCAR_GP_PIN(bank, _pin)].configs = SH_PFC_PIN_CFG_IO_VOLTAGE
+> > +/*
+> > + * All pins assigned to GPIO bank 3 can be used for SD interfaces in
+> > + * which case they support both 3.3V and 1.8V signalling.
+> > + */
+> > +#define GP_GPIO_IO_VOLTAGE(bank, _pin, _name, sfx)			\
+> > +	[RCAR_GP_PIN(bank, _pin)] =					\
+> > +		SH_PFC_GPIO_CFG(bank, _pin, _name, SH_PFC_PIN_CFG_IO_VOLTAGE)
+> >  
+> >  static const struct sh_pfc_pin pinmux_pins[] = {
+> > -	PINMUX_GPIO_GP_ALL(),
+> > -
+> > -	/*
+> > -	 * All pins assigned to GPIO bank 3 can be used for SD interfaces
+> > -	 * in which case they support both 3.3V and 1.8V signalling.
+> > -	 */
+> > -	PORT_GP_32(3, PIN_IO_VOLTAGE, unused),
+> > +	PORT_GP_32(0, _GP_GPIO, unused),
+> > +	PORT_GP_32(1, _GP_GPIO, unused),
+> > +	PORT_GP_32(2, _GP_GPIO, unused),
+> > +	PORT_GP_32(3, GP_GPIO_IO_VOLTAGE, unused),
+> > +	PORT_GP_32(4, _GP_GPIO, unused),
+> > +	PORT_GP_32(5, _GP_GPIO, unused),
+> >  
+> >  	/* Pins not associated with a GPIO port, placed after all the GPIOs */
+> > -	[RCAR_GP_PIN(5, 31) + 1] > >  	SH_PFC_PIN_NAMED(ROW_GROUP_A('F'), 15, AF15),
+> >  	SH_PFC_PIN_NAMED(ROW_GROUP_A('G'), 15, AG15),
+> >  	SH_PFC_PIN_NAMED(ROW_GROUP_A('H'), 15, AH15),
+> > diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+> > index d2efbfb776ac..2c798550cd8c 100644
+> > --- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+> > +++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+> > @@ -1166,14 +1166,14 @@ static const u16 pinmux_data[] = {
+> >  #define __PU		(SH_PFC_PIN_CFG_PULL_UP)
+> >  #define __PUD		(SH_PFC_PIN_CFG_PULL_DOWN | SH_PFC_PIN_CFG_PULL_UP)
+> >  
+> > -#define SH73A0_PIN_I_PD(pin)		SH_PFC_PIN_CFG(pin, __I | __PD)
+> > -#define SH73A0_PIN_I_PU(pin)		SH_PFC_PIN_CFG(pin, __I | __PU)
+> > -#define SH73A0_PIN_I_PU_PD(pin)		SH_PFC_PIN_CFG(pin, __I | __PUD)
+> > -#define SH73A0_PIN_IO(pin)		SH_PFC_PIN_CFG(pin, __IO)
+> > -#define SH73A0_PIN_IO_PD(pin)		SH_PFC_PIN_CFG(pin, __IO | __PD)
+> > -#define SH73A0_PIN_IO_PU(pin)		SH_PFC_PIN_CFG(pin, __IO | __PU)
+> > -#define SH73A0_PIN_IO_PU_PD(pin)	SH_PFC_PIN_CFG(pin, __IO | __PUD)
+> > -#define SH73A0_PIN_O(pin)		SH_PFC_PIN_CFG(pin, __O)
+> > +#define SH73A0_PIN_I_PD(pin)		SH_PFC_PORT_CFG(pin, __I | __PD)
+> > +#define SH73A0_PIN_I_PU(pin)		SH_PFC_PORT_CFG(pin, __I | __PU)
+> > +#define SH73A0_PIN_I_PU_PD(pin)		SH_PFC_PORT_CFG(pin, __I | __PUD)
+> > +#define SH73A0_PIN_IO(pin)		SH_PFC_PORT_CFG(pin, __IO)
+> > +#define SH73A0_PIN_IO_PD(pin)		SH_PFC_PORT_CFG(pin, __IO | __PD)
+> > +#define SH73A0_PIN_IO_PU(pin)		SH_PFC_PORT_CFG(pin, __IO | __PU)
+> > +#define SH73A0_PIN_IO_PU_PD(pin)	SH_PFC_PORT_CFG(pin, __IO | __PUD)
+> > +#define SH73A0_PIN_O(pin)		SH_PFC_PORT_CFG(pin, __O)
+> >  
+> >  /* Pin numbers for pins without a corresponding GPIO port number are computed
+> >   * from the row and column numbers with a 1000 offset to avoid collisions with
+> > diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+> > index 734f7a92229c..3eca740bba02 100644
+> > --- a/drivers/pinctrl/sh-pfc/sh_pfc.h
+> > +++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+> > @@ -272,14 +272,18 @@ struct sh_pfc_soc_info {
+> >  		.enum_id = _pin##_DATA,					\
+> >  	}
+> >  
+> > -/* SH_PFC_PIN_CFG - Expand to a sh_pfc_pin entry (named PORT#) with config */
+> > -#define SH_PFC_PIN_CFG(_pin, cfgs)					\
+> > +/* SH_PFC_{PORT,GPIO}_CFG - Expand to a sh_pfc_pin entry with config */
+> > +#define _SH_PFC_PIN_CFG(_pin, _name, cfgs)				\
+> >  	{								\
+> >  		.pin = _pin,						\
+> > -		.name = __stringify(PORT##_pin),			\
+> > -		.enum_id = PORT##_pin##_DATA,				\
+> > +		.name = __stringify(_name),				\
+> > +		.enum_id = _name##_DATA,				\
+> >  		.configs = cfgs,					\
+> >  	}
+> > +#define SH_PFC_PORT_CFG(_pin, cfgs)				\
+> > +	_SH_PFC_PIN_CFG(PORT##_pin, PORT##_pin, cfgs)
+> > +#define SH_PFC_GPIO_CFG(bank, _pin, _name, cfgs)		\
+> > +	_SH_PFC_PIN_CFG((bank * 32) + _pin, _name, cfgs)
+> >  
+> >  /* SH_PFC_PIN_NAMED - Expand to a sh_pfc_pin entry with the given name */
+> >  #define SH_PFC_PIN_NAMED(row, col, _name)				\
+> > --- END ---
+> > 
+> > If you're happy with that, I'll re-send the series (hopefully for the
+> > last time!) with the r8a7790 changes squashed into "pinctrl: sh-pfc:
+> > r8a7790: Implement voltage switching for SDHI" and the SH_PFC_PIN_CFG
+> > macro change as a new patch before it.
+> > 
+> > Ben.
+> > 
 > 
+> 
+
+
+Best regards
+---
+Kuninori Morimoto
