@@ -1,61 +1,60 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 23 Nov 2015 13:56:01 +0000
-Subject: [PATCH v5 3/4] ARM: shmobile: r8a7740: Migrate to generic l2c OF initialization
-Message-Id: <1448286962-16897-4-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Nov 2015 10:10:22 +0000
+Subject: [PATCH v13 4/7] arm64: renesas: r8a7795: enable PFC
+Message-Id: <1447409425-14831-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448286962-16897-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448286962-16897-1-git-send-email-geert+renesas@glider.be>
+References: <1447409425-14831-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1447409425-14831-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Migrate the generic r8a7740 platform from calling l2x0_of_init() to the
-generic l2c OF initialization.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Add a PFC node for the on-chip r8a7795 pin controller.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v5:
-  - No changes,
+Changes since v10:
+- None
 
-v4:
-  - This depends on commit eeedcea69e927857 ("ARM: 8395/1: l2c: Add
-    support for the "arm,shared-override" property"), which is queued
-    for 4.3 in arm/for-next,
+Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
+- None
 
-v3:
-  - Use 0/~0 now DT supports "arm,shared-override",
+Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
+- Dropped Kconfig TODO - select PINCTRL happens in patch 1
+- Added Acked-by from Laurent
 
-v2:
-  - Keep only {,~}L2C_AUX_CTRL_SHARED_OVERRIDE.
+Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
+- Added changelog
+
+Based on:
+ [PATCH 10/25 v7][RFC] arm64: renesas: r8a7795: enable PFC
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 0c8f80c5b04df34d..7b16c12e3f816f7f 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -110,10 +110,6 @@ static void __init r8a7740_generic_init(void)
- {
- 	r8a7740_meram_workaround();
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 002b828e8230..e26eecf1230f 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -81,6 +81,11 @@
+ 			#power-domain-cells = <0>;
+ 		};
  
--#ifdef CONFIG_CACHE_L2X0
--	/* Shared attribute override enable, 32K*8way */
--	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
--#endif
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- }
- 
-@@ -123,6 +119,8 @@ static const char *const r8a7740_boards_compat_dt[] __initconst = {
- };
- 
- DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
-+	.l2c_aux_val	= 0,
-+	.l2c_aux_mask	= ~0,
- 	.map_io		= r8a7740_map_io,
- 	.init_early	= shmobile_init_delay,
- 	.init_irq	= r8a7740_init_irq_of,
++		pfc: pfc@e6060000 {
++			compatible = "renesas,pfc-r8a7795";
++			reg = <0 0xe6060000 0 0x50c>;
++		};
++
+ 		dmac0: dma-controller@e6700000 {
+ 			/* Empty node for now */
+ 		};
 -- 
-1.9.1
+2.1.4
 
