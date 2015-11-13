@@ -1,90 +1,148 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 10 Nov 2015 08:37:43 +0000
-Subject: Re: [PATCH 3/3] ARM: shmobile: gose: Add QSPI device to DT
-Message-Id: <CAMuHMdWUgzJR1c9EAnjV5J0J8W1Mfga9Lx7SuUw02QjLuyQPGw@mail.gmail.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Fri, 13 Nov 2015 16:22:22 +0000
+Subject: [PATCH 1/2] sh-sci: Add CONFIG_SERIAL_EARLYCON support
+Message-Id: <1447431743-16376-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447139641-11480-1-git-send-email-horms+renesas@verge.net.au>
- <1447139641-11480-4-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1447139641-11480-4-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Simon,
+Hello.
 
-On Tue, Nov 10, 2015 at 8:14 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> Enable the QSPI controller in the gose device tree.
->
-> Based similar work for the silk board by by Vladimir Barinov and
-> Sergei Shtylyov.
->
-> Cc: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
->
-> ---
-> Tested: Read /dev/mtd0 with 512K blocks at 1.7MB/s
-> ---
->  arch/arm/boot/dts/r8a7793-gose.dts | 40 ++++++++++++++++++++++++++++++++++++++
->  1 file changed, 40 insertions(+)
->
-> diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
-> index 1575ef759047..3bc4230aa2b5 100644
-> --- a/arch/arm/boot/dts/r8a7793-gose.dts
-> +++ b/arch/arm/boot/dts/r8a7793-gose.dts
+"earlyprintk" is architecture specific option.
+I think general "earlycon" option support more better.
 
-> @@ -92,3 +97,38 @@
->
->         status = "okay";
->  };
-> +
-> +&qspi {
-> +       pinctrl-0 = <&qspi_pins>;
-> +       pinctrl-names = "default";
-> +
-> +       status = "okay";
-> +
-> +       flash@0 {
-> +               #address-cells = <1>;
-> +               #size-cells = <1>;
-> +               compatible = "spansion,s25fl512s", "jedec,spi-nor";
-> +               reg = <0>;
-> +               spi-max-frequency = <30000000>;
-> +               spi-tx-bus-width = <4>;
-> +               spi-rx-bus-width = <4>;
-> +               spi-cpol;
-> +               spi-cpha;
-> +               m25p,fast-read;
-> +
-> +               partition@0 {
-> +                       label = "loader";
-> +                       reg = <0x00000000 0x00040000>;
-> +                       read-only;
-> +               };
-> +               partition@40000 {
-> +                       label = "user";
-> +                       reg = <0x00040000 0x00400000>;
-> +                       read-only;
-> +               };
-> +               partition@440000 {
-> +                       label = "flash";
-> +                       reg = <0x00440000 0x03bc0000>;
-> +               };
-> +       };
+Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+[uli: preserve other SCSCR bits when asserting RE and TE]
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+---
+ drivers/tty/serial/Kconfig  |  6 ++++
+ drivers/tty/serial/sh-sci.c | 71 +++++++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 74 insertions(+), 3 deletions(-)
 
-Please move the partitions inside a "partitions" subnode, cfr. the patch
-I've just sent for Koelsch ("[PATCH] ARM: shmobile: koelsch: Move SPI FLASH
-partitions to subnode"). I haven't updated the other DTSes yet.
+diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
+index 687b1ea..3326357 100644
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -741,6 +741,12 @@ config SERIAL_SH_SCI_CONSOLE
+ 	depends on SERIAL_SH_SCI=y
+ 	select SERIAL_CORE_CONSOLE
+ 
++config SERIAL_SH_SCI_EARLYCON
++	bool "Support for early console on SuperH SCI(F)"
++	depends on SERIAL_SH_SCI=y
++	select SERIAL_CORE_CONSOLE
++	select SERIAL_EARLYCON
++
+ config SERIAL_SH_SCI_DMA
+ 	bool "DMA support"
+ 	depends on SERIAL_SH_SCI && SH_DMAE
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 1b2f894..da4300b 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -489,7 +489,8 @@ static void sci_port_disable(struct sci_port *sci_port)
+ 	pm_runtime_put_sync(sci_port->port.dev);
+ }
+ 
+-#if defined(CONFIG_CONSOLE_POLL) || defined(CONFIG_SERIAL_SH_SCI_CONSOLE)
++#if defined(CONFIG_CONSOLE_POLL) || defined(CONFIG_SERIAL_SH_SCI_CONSOLE) \
++	|| defined(CONFIG_SERIAL_EARLYCON)
+ 
+ #ifdef CONFIG_CONSOLE_POLL
+ static int sci_poll_get_char(struct uart_port *port)
+@@ -2345,7 +2346,7 @@ static void sci_cleanup_single(struct sci_port *port)
+ 	pm_runtime_disable(port->port.dev);
+ }
+ 
+-#ifdef CONFIG_SERIAL_SH_SCI_CONSOLE
++#if defined(CONFIG_SERIAL_SH_SCI_CONSOLE) || defined(CONFIG_SERIAL_EARLYCON)
+ static void serial_console_putchar(struct uart_port *port, int ch)
+ {
+ 	sci_poll_put_char(port, ch);
+@@ -2365,9 +2366,12 @@ static void serial_console_write(struct console *co, const char *s,
+ 	int locked = 1;
+ 
+ 	local_irq_save(flags);
++#if defined(SUPPORT_SYSRQ)
+ 	if (port->sysrq)
+ 		locked = 0;
+-	else if (oops_in_progress)
++	else
++#endif
++	if (oops_in_progress)
+ 		locked = spin_trylock(&port->lock);
+ 	else
+ 		spin_lock(&port->lock);
+@@ -2725,6 +2729,67 @@ static void __exit sci_exit(void)
+ early_platform_init_buffer("earlyprintk", &sci_driver,
+ 			   early_serial_buf, ARRAY_SIZE(early_serial_buf));
+ #endif
++#ifdef CONFIG_SERIAL_EARLYCON
++static struct __init plat_sci_port port_cfg;
++
++static int __init early_console_setup(struct earlycon_device *device,
++				      int type)
++{
++	if (!device->port.membase)
++		return -ENODEV;
++
++	device->port.serial_in = sci_serial_in;
++	device->port.serial_out	= sci_serial_out;
++	device->port.type = type;
++	memcpy(&sci_ports[0].port, &device->port, sizeof(struct uart_port));
++	sci_ports[0].cfg = &port_cfg;
++	sci_ports[0].cfg->type = type;
++	sci_probe_regmap(sci_ports[0].cfg);
++	port_cfg.scscr = sci_serial_in(&sci_ports[0].port, SCSCR) |
++			 SCSCR_RE | SCSCR_TE;
++	sci_serial_out(&sci_ports[0].port, SCSCR, port_cfg.scscr);
++
++	device->con->write = serial_console_write;
++	return 0;
++}
++static int __init sci_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_SCI);
++}
++static int __init scif_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_SCIF);
++}
++static int __init scifa_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_SCIFA);
++}
++static int __init scifb_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_SCIFB);
++}
++static int __init hscif_early_console_setup(struct earlycon_device *device,
++					  const char *opt)
++{
++	return early_console_setup(device, PORT_HSCIF);
++}
++
++EARLYCON_DECLARE(sci, sci_early_console_setup);
++OF_EARLYCON_DECLARE(sci, "renesas,sci", sci_early_console_setup);
++EARLYCON_DECLARE(scif, scif_early_console_setup);
++OF_EARLYCON_DECLARE(scif, "renesas,scif", scif_early_console_setup);
++EARLYCON_DECLARE(scifa, scifa_early_console_setup);
++OF_EARLYCON_DECLARE(scifa, "renesas,scifa", scifa_early_console_setup);
++EARLYCON_DECLARE(scifb, scifb_early_console_setup);
++OF_EARLYCON_DECLARE(scifb, "renesas,scifb", scifb_early_console_setup);
++EARLYCON_DECLARE(hscif, hscif_early_console_setup);
++OF_EARLYCON_DECLARE(hscif, "renesas,hscif", hscif_early_console_setup);
++#endif
++
+ module_init(sci_init);
+ module_exit(sci_exit);
+ 
+-- 
+2.6.1
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
