@@ -1,36 +1,56 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 30 Nov 2015 13:59:56 +0000
-Subject: [PATCH 3/3] pinctrl: sh-pfc: sh73a0: Correct comment for LCD2 data pins
-Message-Id: <1448891996-5263-4-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 13 Nov 2015 02:23:50 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7793: Use SoC specific binding for rcar-dmac nodes
+Message-Id: <1447381431-2255-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448891996-5263-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448891996-5263-1-git-send-email-geert+renesas@glider.be>
+References: <1447381431-2255-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1447381431-2255-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-The 12 data pins of LCD2 are numbered 0..11, not 0..12.
+Use the new SoC specific binding for rcar-dmac and the generic
+binding as a fall-back in the r8a7793 device tree.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+In general Renesas hardware is not documented to the extent where the
+relationship between IP blocks on different SoCs can be assumed although
+they may appear to operate the same way. Furthermore the documentation
+typically does not specify a version for individual IP blocks. For these
+reasons a convention of using the SoC name in place of a version and
+providing SoC-specific compat strings has been adopted.
+
+Although not universally liked this convention is used in the bindings for
+most drivers for Renesas hardware. The purpose of this patch is to
+update the Renesas R-Car DMA Controller nodes to follow this convention.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7793.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index cd7c6645f7a47df1..d25e6f674d0aba84 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -2059,7 +2059,7 @@ static const unsigned int lcd2_data9_mux[] = {
- 	LCD2D8_MARK,
- };
- static const unsigned int lcd2_data12_pins[] = {
--	/* D[0:12] */
-+	/* D[0:11] */
- 	128, 129, 142, 143, 144, 145, 138, 139,
- 	140, 141, 130, 131,
- };
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index aa9b64c14a09..51099fe6f8db 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -133,7 +133,7 @@
+ 	};
+ 
+ 	dmac0: dma-controller@e6700000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7793", "renesas,rcar-dmac";
+ 		reg = <0 0xe6700000 0 0x20000>;
+ 		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
+ 			      0 200 IRQ_TYPE_LEVEL_HIGH
+@@ -164,7 +164,7 @@
+ 	};
+ 
+ 	dmac1: dma-controller@e6720000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7793", "renesas,rcar-dmac";
+ 		reg = <0 0xe6720000 0 0x20000>;
+ 		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
+ 			      0 216 IRQ_TYPE_LEVEL_HIGH
 -- 
-1.9.1
+2.1.4
 
