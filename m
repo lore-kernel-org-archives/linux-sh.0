@@ -1,54 +1,158 @@
-From: Thierry Reding <thierry.reding@gmail.com>
-Date: Fri, 06 Nov 2015 14:18:18 +0000
-Subject: Re: [PATCH] pwm: pwm-rcar: Revise the device tree binding document about compatible
-Message-Id: <20151106141818.GA4988@ulmo>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="bp/iNruPH9dso1Pn"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 16 Nov 2015 13:49:12 +0000
+Subject: [PATCH] ARM: shmobile: r8a7793: Add GPIO nodes to device tree
+Message-Id: <20151116134912.885.1958.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444130908-8180-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1444130908-8180-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+From: Magnus Damm <damm+renesas@opensource.se>
 
---bp/iNruPH9dso1Pn
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Add r8a7793 GPIO device nodes that are assumed to be identical
+to r8a7791. This matches the data sheet for GPIO and MSTP bits.
 
-On Tue, Oct 06, 2015 at 08:28:28PM +0900, Yoshihiro Shimoda wrote:
-> The compatible should be "renesas,pwm-rcar", and one the the SoC
-> specific string. So, this patch revises the documentation.
->=20
-> Reported-by: Rob Herring <robh+dt@kernel.org>
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
->  Documentation/devicetree/bindings/pwm/renesas,pwm-rcar.txt | 3 +--
->  1 file changed, 1 insertion(+), 2 deletions(-)
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-Applied, thanks.
+ arch/arm/boot/dts/r8a7793.dtsi |  121 +++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 118 insertions(+), 3 deletions(-)
 
-Thierry
-
---bp/iNruPH9dso1Pn
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAABCAAGBQJWPLaoAAoJEN0jrNd/PrOhRl0QAKwhgNrFcoxkgzj28F9fMUO0
-wmq30941HLS33kPxky9D/6u8D4pbBJmk58OM3meQ6XdkTFhhlIGE/BzlizsP/EjU
-8TWzvy7ViOnYp3J/jyK9FuGpaGsL8wRqBCTdG92ElaW4gpvdrmivCZze41XQ1PAD
-nQC+/fr/TK7dA55NNiIwMfwvhkVEXCYPuRWXNNyre3Fbly88lV7LaekpQccTsglO
-fL4z4CEnmW3IhUFm3/hXwncRSjs9YaPT3ZPNOAMWCnGLIc5O8HdEvg1hc7TK83YA
-yJoRERTN+dHr6ZDxgO6Uzdk6VnzKYCzpY4rAMjZTdIQOQO2pDWSBBJjJkCKefFAB
-ZJm5vbrzWe0UdBFzhlIcN95VXypLoR8nuz4aX86w+yH6pvrb6chkeKfX7aUhZyWd
-8Pc91edQaKNmp53JJEL16rPKAhoW4mOHth9LJCYpCHyUHjIdHw61hCYzegMGritn
-JcF/cCkuK7fBfZmFow7UeYGTxSbbZiAZB1p5UJGSJN1QW+gToutlB2N7sE5Ws1r8
-drJmJDcq1ThRRj8RhXVZFcJCZWH8lhBWXpueefcuLNLYObkw/0HIendBn0qFnDUk
-ijA6OlSlGQ516xJhjRPsom2PcR6JdxMH5g71BsORCewmVnC9BSxXQESmvY+ZEQBO
-hVvmd9QIFBTa6gdbcaZb
-=PAHa
------END PGP SIGNATURE-----
-
---bp/iNruPH9dso1Pn--
+--- 0001/arch/arm/boot/dts/r8a7793.dtsi
++++ work/arch/arm/boot/dts/r8a7793.dtsi	2015-11-16 20:37:27.720513000 +0900
+@@ -57,6 +57,110 @@
+ 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
+ 
++	gpio0: gpio@e6050000 {
++		compatible = "renesas,gpio-r8a7793", "renesas,gpio-rcar";
++		reg = <0 0xe6050000 0 0x50>;
++		interrupts = <0 4 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 0 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7793_CLK_GPIO0>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio1: gpio@e6051000 {
++		compatible = "renesas,gpio-r8a7793", "renesas,gpio-rcar";
++		reg = <0 0xe6051000 0 0x50>;
++		interrupts = <0 5 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 32 26>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7793_CLK_GPIO1>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio2: gpio@e6052000 {
++		compatible = "renesas,gpio-r8a7793", "renesas,gpio-rcar";
++		reg = <0 0xe6052000 0 0x50>;
++		interrupts = <0 6 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 64 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7793_CLK_GPIO2>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio3: gpio@e6053000 {
++		compatible = "renesas,gpio-r8a7793", "renesas,gpio-rcar";
++		reg = <0 0xe6053000 0 0x50>;
++		interrupts = <0 7 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 96 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7793_CLK_GPIO3>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio4: gpio@e6054000 {
++		compatible = "renesas,gpio-r8a7793", "renesas,gpio-rcar";
++		reg = <0 0xe6054000 0 0x50>;
++		interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 128 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7793_CLK_GPIO4>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio5: gpio@e6055000 {
++		compatible = "renesas,gpio-r8a7793", "renesas,gpio-rcar";
++		reg = <0 0xe6055000 0 0x50>;
++		interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 160 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7793_CLK_GPIO5>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio6: gpio@e6055400 {
++		compatible = "renesas,gpio-r8a7793", "renesas,gpio-rcar";
++		reg = <0 0xe6055400 0 0x50>;
++		interrupts = <0 10 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 192 32>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7793_CLK_GPIO6>;
++		power-domains = <&cpg_clocks>;
++	};
++
++	gpio7: gpio@e6055800 {
++		compatible = "renesas,gpio-r8a7793", "renesas,gpio-rcar";
++		reg = <0 0xe6055800 0 0x50>;
++		interrupts = <0 11 IRQ_TYPE_LEVEL_HIGH>;
++		#gpio-cells = <2>;
++		gpio-controller;
++		gpio-ranges = <&pfc 0 224 26>;
++		#interrupt-cells = <2>;
++		interrupt-controller;
++		clocks = <&mstp9_clks R8A7793_CLK_GPIO7>;
++		power-domains = <&cpg_clocks>;
++	};
++
+ 	thermal@e61f0000 {
+ 		compatible = "renesas,thermal-r8a7793", "renesas,rcar-thermal";
+ 		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
+@@ -484,10 +588,21 @@
+ 		mstp9_clks: mstp9_clks@e6150994 {
+ 			compatible = "renesas,r8a7793-mstp-clocks", "renesas,cpg-mstp-clocks";
+ 			reg = <0 0xe6150994 0 4>, <0 0xe61509a4 0 4>;
+-			clocks = <&cpg_clocks R8A7793_CLK_QSPI>;
++			clocks = <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&cp_clk>, <&cp_clk>, <&cp_clk>, <&cp_clk>,
++				 <&cpg_clocks R8A7793_CLK_QSPI>;
+ 			#clock-cells = <1>;
+-			clock-indices = <R8A7793_CLK_QSPI_MOD>;
+-			clock-output-names = "qspi_mod";
++			clock-indices = <
++				R8A7793_CLK_GPIO7 R8A7793_CLK_GPIO6
++				R8A7793_CLK_GPIO5 R8A7793_CLK_GPIO4
++				R8A7793_CLK_GPIO3 R8A7793_CLK_GPIO2
++				R8A7793_CLK_GPIO1 R8A7793_CLK_GPIO0
++				R8A7793_CLK_QSPI_MOD
++			>;
++			clock-output-names +				"gpio7", "gpio6", "gpio5", "gpio4",
++				"gpio3", "gpio2", "gpio1", "gpio0",
++				"qspi_mod";
+ 		};
+ 	};
+ 
