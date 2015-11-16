@@ -1,83 +1,68 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 26 Nov 2015 22:59:17 +0000
-Subject: [RFC 9/9] arm64: renesas: r8a7795: add internal delay for i2c IPs
-Message-Id: <1448578757-12613-10-git-send-email-wsa@the-dreams.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 16 Nov 2015 08:57:20 +0000
+Subject: [PATCH v2 02/03] ARM: shmobile: r8a7794: Add DU node to device tree
+Message-Id: <20151116085720.7119.57488.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Add the DU device with a disabled state. Boards that want to enable the
+DU need to specify the output topology.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 7 +++++++
- 1 file changed, 7 insertions(+)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index e786343d97e709..08262402fe606f 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -429,6 +429,7 @@
- 			clocks = <&cpg CPG_MOD 931>;
- 			power-domains = <&cpg>;
- 			status = "disabled";
-+			i2c-scl-internal-delay-ns = <110>;
- 		};
+Previously part of the following series:
+ [PATCH 0/5] R-Car DU: Add support for R8A7793 and R8A7794
+
+ Changes since V1:
+ - None
+
+arch/arm/boot/dts/r8a7794.dtsi | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 2a0d375e45b3..409f6c4b1044 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -401,6 +401,34 @@
+ 		status = "disabled";
+ 	};
  
- 		i2c1: i2c@e6508000 {
-@@ -440,6 +441,7 @@
- 			clocks = <&cpg CPG_MOD 930>;
- 			power-domains = <&cpg>;
- 			status = "disabled";
-+			i2c-scl-internal-delay-ns = <6>;
- 		};
- 
- 		i2c2: i2c@e6510000 {
-@@ -451,6 +453,7 @@
- 			clocks = <&cpg CPG_MOD 929>;
- 			power-domains = <&cpg>;
- 			status = "disabled";
-+			i2c-scl-internal-delay-ns = <6>;
- 		};
- 
- 		i2c3: i2c@e66d0000 {
-@@ -462,6 +465,7 @@
- 			clocks = <&cpg CPG_MOD 928>;
- 			power-domains = <&cpg>;
- 			status = "disabled";
-+			i2c-scl-internal-delay-ns = <110>;
- 		};
- 
- 		i2c4: i2c@e66d8000 {
-@@ -473,6 +477,7 @@
- 			clocks = <&cpg CPG_MOD 927>;
- 			power-domains = <&cpg>;
- 			status = "disabled";
-+			i2c-scl-internal-delay-ns = <110>;
- 		};
- 
- 		i2c5: i2c@e66e0000 {
-@@ -484,6 +489,7 @@
- 			clocks = <&cpg CPG_MOD 919>;
- 			power-domains = <&cpg>;
- 			status = "disabled";
-+			i2c-scl-internal-delay-ns = <110>;
- 		};
- 
- 		i2c6: i2c@e66e8000 {
-@@ -495,6 +501,7 @@
- 			clocks = <&cpg CPG_MOD 918>;
- 			power-domains = <&cpg>;
- 			status = "disabled";
-+			i2c-scl-internal-delay-ns = <6>;
- 		};
- 
- 		rcar_sound: sound@ec500000 {
--- 
-2.1.4
++	du: display@feb00000 {
++		compatible = "renesas,du-r8a7794";
++		reg = <0 0xfeb00000 0 0x40000>;
++		reg-names = "du";
++		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 268 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7794_CLK_DU0>,
++			 <&mstp7_clks R8A7794_CLK_DU0>;
++		clock-names = "du.0", "du.1";
++		status = "disabled";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				du_out_rgb0: endpoint {
++				};
++			};
++			port@1 {
++				reg = <1>;
++				du_out_rgb1: endpoint {
++				};
++			};
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
 
