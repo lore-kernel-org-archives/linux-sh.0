@@ -1,70 +1,76 @@
-From: <yamada.masahiro@socionext.com>
-Date: Mon, 16 Nov 2015 10:32:51 +0000
-Subject: RE: [PATCH] ARM: use "depends on" for SoC configs instead of "if" after prompt
-Message-Id: <d5271606263b496c841abd62647f9db0@SOC-EX02V.e01.socionext.com>
+From: Russell King - ARM Linux <linux@arm.linux.org.uk>
+Date: Mon, 16 Nov 2015 11:06:22 +0000
+Subject: Re: [PATCH] ARM: use "depends on" for SoC configs instead of "if" after prompt
+Message-Id: <20151116110622.GL8644@n2100.arm.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447643170-23773-1-git-send-email-yamada.masahiro@socionext.com>
  <4171977.M1BLuS2ZzP@wuerfel>
-In-Reply-To: <4171977.M1BLuS2ZzP@wuerfel>
+ <d5271606263b496c841abd62647f9db0@SOC-EX02V.e01.socionext.com>
+In-Reply-To: <d5271606263b496c841abd62647f9db0@SOC-EX02V.e01.socionext.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: arnd-r2nGTMty4D4@public.gmane.org
-Cc: linux-arm-kernel-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, arm-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, mmarek-IBi9RG/b67k@public.gmane.org, olof-nZhT3qVonbNeoWH0uzbU5w@public.gmane.org, linux-kbuild-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jamie-wmLquQDDieKakBO8gow8eQ@public.gmane.org, agross-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, kernel-bIcnvbaLZ9MEGnE8C9+IrQ@public.gmane.org, gregory.clement-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tsahee-IEYhy/pPZWng2XuLRlxkFAC/G2K4zDHf@public.gmane.org, linux-arm-msm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linus.walleij-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org, galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, plagnioj-sclMFOaUSTBWk0Htik3J/w@public.gmane.org, dinguyen-yzvPICuk2ABMcg4IHK0kFoH6Mc4MB0Vx@public.gmane.org, baohua-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, shiraz.linux.kernel-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, rjui-dY08KVG/lbpWk0Htik3J/w@public.gmane.org, patrice.chotard-qxv4g6HH51o@public.gmane.org, kernel-F5mvAk5X5gdBDgjK7y7TUQ@public.gmane.org, soren.brinkmann-gjFFaj9aHVfQT0dZR+AlfA@public.gmane.org, horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, michal.simek-gjFFaj9aHVfQT0dZR+AlfA@public.gmane.org, heiko-4mtYJXux2i+zQB+pC5nmwQ@public.gmane.org, linux-rockchip-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, linux-soc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, davidb-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org, sbranden-dY08KVG/lbpWk0Htik3J/w@public.gmane.org, vireshk-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, alexandre.belloni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org, kyungmin.park-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org, mappyland78@g
+To: yamada.masahiro@socionext.com
+Cc: arnd@arndb.de, linux-arm-kernel@lists.infradead.org, arm@kernel.org, mmarek@suse.com, olof@lixom.net, linux-kbuild@vger.kernel.org, jamie@jamieiles.com, agross@codeaurora.org, kernel@pengutronix.de, gregory.clement@free-electrons.com, linux-sh@vger.kernel.org, tsahee@annapurnalabs.com, linux-arm-msm@vger.kernel.org, linus.walleij@linaro.org, galak@codeaurora.org, plagnioj@jcrosoft.com, dinguyen@opensource.altera.com, baohua@kernel.org, shiraz.linux.kernel@gmail.com, rjui@broadcom.com, patrice.chotard@st.com, kernel@stlinux.com, soren.brinkmann@xilinx.com, horms@verge.net.au, michal.simek@xilinx.com, heiko@sntech.de, linux-rockchip@lists.infradead.org, linux-soc@vger.kernel.org, davidb@codeaurora.org, sbranden@broadcom.com, vireshk@kernel.org, alexandre.belloni@free-electrons.com, kyungmin.park@samsung.com, mappyland78@gmail.com, k.kozlowski@samsung.com, bcm-kernel-fee
 
-SGkgQXJuZCwNCg0KIA0KPiBPbiBNb25kYXkgMTYgTm92ZW1iZXIgMjAxNSAxMjowNjoxMCBNYXNh
-aGlybyBZYW1hZGEgd3JvdGU6DQo+ID4gTWFueSBBUk0gc3ViLWFyY2hpdGVjdHVyZXMgdXNlIHBy
-b21wdHMgZm9sbG93ZWQgYnkgImlmIiBjb25kaXRpb25hbCwNCj4gPiBidXQgaXQgaXMgd3Jvbmcu
-DQo+ID4NCj4gPiBQbGVhc2Ugbm90aWNlIHRoZSBkaWZmZXJlbmNlIGJldHdlZW4NCj4gPg0KPiA+
-ICAgICBjb25maWcgQVJDSF9GT08NCj4gPiAgICAgICAgICAgICBib29sICJGb28gU29DcyIgaWYg
-QVJDSF9NVUxUSV9WNw0KPiA+DQo+ID4gYW5kDQo+ID4NCj4gPiAgICAgY29uZmlnIEFSQ0hfRk9P
-DQo+ID4gICAgICAgICAgICAgYm9vbCAiRm9vIFNvQ3MiDQo+ID4gICAgICAgICAgICAgZGVwZW5k
-cyBvbiBBUkNIX01VTFRJX1Y3DQo+ID4NCj4gPiBUaGVzZSB0d28gYXJlICpub3QqIGVxdWl2YWxl
-bnQhDQo+ID4NCj4gPiBJbiB0aGUgZm9ybWVyIHN0YXRlbWVudCwgaXQgaXMgbm90IEFSQ0hfRk9P
-LCBidXQgaXRzIHByb21wdCB0aGF0DQo+ID4gZGVwZW5kcyBvbiBBUkNIX01VTFRJX1Y3LiAgU28s
-IGl0IGlzIGNvbXBsZXRlbHkgdmFsaWQgdGhhdCBBUkNIX0ZPTyBpcw0KPiA+IHNlbGVjdGVkIGJ5
-IGFub3RoZXIsIGJ1dCBBUkNIX01VTFRJX1Y3IGlzIHN0aWxsIGRpc2FibGVkLiBBcyBpdCBpcyBu
-b3QNCj4gPiB1bm1ldCBkZXBlbmRlbmN5LCBLY29uZmlnIG5ldmVyIHdhcm5zLiAgVGhpcyBpcyBw
-cm9iYWJseSBub3Qgd2hhdCB5b3UNCj4gPiB3YW50Lg0KPiANCj4gRGlkIHlvdSBlbmNvdW50ZXIg
-YSBjYXNlIHdoZXJlIHNvbWVvbmUgYWN0dWFsbHkgZGlkIGEgJ3NlbGVjdCcgb24gb25lIG9mDQo+
-IHRob3NlIHN5bWJvbHM/IEkgcHJvYmFibHkgaW50cm9kdWNlZCBhIGxvdCBvZiB0aGVtIGFuZCBk
-aWQgbm90IGV4cGVjdCB0aGF0DQo+IHRvIGhhcHBlbi4NCg0KTm8sIGZvciBBUk0gc3ViLWFyY2hp
-dGVjdHVyZXMuDQpCdXQsIHllcyBmb3IgdGhlIEFSTSBjb3JlIHBhcnQuDQoNCg0KRm9yIGV4YW1w
-bGUsIHRoZSBmb2xsb3dpbmcgZW50cnkgaW4gYXJjaC9hcm0vS2NvbmZpZyBpcyBzdXNwaWNvdXMu
-DQoNCmNvbmZpZyBQQ0kNCiAgICAgICAgYm9vbCAiUENJIHN1cHBvcnQiIGlmIE1JR0hUX0hBVkVf
-UENJDQogICAgICAgIGhlbHANCiAgICAgICAgICBGaW5kIG91dCB3aGV0aGVyIHlvdSBoYXZlIGEg
-UENJIG1vdGhlcmJvYXJkLiBQQ0kgaXMgdGhlIG5hbWUgb2YgYQ0KICAgICAgICAgIGJ1cyBzeXN0
-ZW0sIGkuZS4gdGhlIHdheSB0aGUgQ1BVIHRhbGtzIHRvIHRoZSBvdGhlciBzdHVmZiBpbnNpZGUN
-CiAgICAgICAgICB5b3VyIGJveC4gT3RoZXIgYnVzIHN5c3RlbXMgYXJlIElTQSwgRUlTQSwgTWlj
-cm9DaGFubmVsIChNQ0EpIG9yDQogICAgICAgICAgVkVTQS4gSWYgeW91IGhhdmUgUENJLCBzYXkg
-WSwgb3RoZXJ3aXNlIE4uDQoNCg0KDQoNClRyeSAibWFrZSBBUkNIPWFybSBmb290YnJpZGdlX2Rl
-ZmNvbmZpZyIgYW5kIGNoZWNrIHRoZSAuY29uZmlnIGZpbGUuDQoNCkl0IGRlZmluZXMgQ09ORklH
-X1BDST15LCBidXQgbm90IENPTkZJR19NSUdIVF9IQVZFX1BDSS4NCkkgYW0gbm90IHN1cmUgdGhp
-cyBpcyBhIHNhbmUgLmNvbmZpZyBvciBub3QuDQoNCkJ1dCwgYW55d2F5LCBLY29uZmlnIGRvZXMg
-bm90IGNvbXBsYWluIGFib3V0IGl0Lg0KDQoNCldlIGhhdmUgc2ltaWxhciBpc3N1ZXMgZm9yIENQ
-VV9WNiwgQ1BVX1Y2SywgQ1BVX1Y3LCBldGMuDQpUaGUgY29uZmlnIGlzIHNlbGVjdGVkLCBidXQg
-dGhlICJpZiIgY29uZGl0aW9uYWwgaXMgdW5tZXQuDQooSSBkZWNpZGVkIHRvIHBvc3Rwb25lIHRo
-aXMgcHJvYmxlbSBiZWNhdXNlIGl0IHdvdWxkIHRha2Ugc29tZSB0aW1lIHRvIHVuZGVyc3RhbmQN
-CmNvbXBsaWNhdGVkIGRlcGVuZGVuY3kuKQ0KDQpUaGUgdXNlIG9mIGEgcHJvbXB0IGZvbGxvd2Vk
-IGJ5ICJpZiIgd2l0aG91dCBjb3JyZWN0IHVuZGVyc3RhbmRpbmcgaXMgZGFuZ2Vyb3VzDQpiZWNh
-dXNlIGl0IGNvdWxkIGhpZGUgdGhlIHVubWV0IGRlcGVuZGVuY3kgcHJvYmxlbS4NCg0KSSB3YW50
-IHRvIGVsaW1pbmF0ZSB0aGUgcG90ZW50aWFsIHByb2JsZW0gYnkgdGhpcyBwYXRjaA0KYmVmb3Jl
-IHNvbWVib2R5IGludHJvZHVjZSBpbnNhbmUgZGVwZW5kZW5jeS4NCg0KDQo+IA0KPiA+IGRpZmYg
-LS1naXQgYS9hcmNoL2FybS9tYWNoLWludGVncmF0b3IvS2NvbmZpZw0KPiA+IGIvYXJjaC9hcm0v
-bWFjaC1pbnRlZ3JhdG9yL0tjb25maWcNCj4gPiBpbmRleCAwMmQwODM0Li4yZmE5ZDExIDEwMDY0
-NA0KPiA+IC0tLSBhL2FyY2gvYXJtL21hY2gtaW50ZWdyYXRvci9LY29uZmlnDQo+ID4gKysrIGIv
-YXJjaC9hcm0vbWFjaC1pbnRlZ3JhdG9yL0tjb25maWcNCj4gPiBAQCAtMSw1ICsxLDYgQEANCj4g
-PiAgY29uZmlnIEFSQ0hfSU5URUdSQVRPUg0KPiA+IC0JYm9vbCAiQVJNIEx0ZC4gSW50ZWdyYXRv
-ciBmYW1pbHkiIGlmIChBUkNIX01VTFRJX1Y0VCB8fA0KPiBBUkNIX01VTFRJX1Y1IHx8IEFSQ0hf
-TVVMVElfVjYpDQo+ID4gKwlib29sICJBUk0gTHRkLiBJbnRlZ3JhdG9yIGZhbWlseSINCj4gPiAr
-CWRlcGVuZHMgb24gQVJDSF9NVUxUSV9WNFQgfHwgQVJDSF9NVUxUSV9WNSB8fCBBUkNIX01VTFRJ
-X1Y2DQo+ID4gIAlzZWxlY3QgQVJNX0FNQkENCj4gPiAgCXNlbGVjdCBBUk1fUEFUQ0hfUEhZU19W
-SVJUIGlmIE1NVQ0KPiA+ICAJc2VsZWN0IEFVVE9fWlJFTEFERFINCj4gDQo+IFRoZXJlIGlzIG9u
-ZSByZWxhdGVkIGNoYW5nZSB0aGF0IEkgd291bGQgbGlrZSB0byBzZWUsIGFuZCB0aGF0IGlzIHRv
-IGNvbnZlcnQNCj4gYWxsIHRvcC1sZXZlbCAnY29uZmlnJyBzdGF0ZW1lbnRzIHRoYXQgaGF2ZSBz
-dWItb3B0aW9ucyBpbnRvICdtZW51Y29uZmlnJw0KPiBzdGF0ZW1lbnRzIGZvciBjb25zaXN0ZW5j
-eS4gQXQgdGhlIG1vbWVudCwgdGhlIHBsYXRmb3JtIG1lbnUgaGFzIGEgbWl4IG9mDQo+IHBsYXRm
-b3JtLXNlbGVjdGlvbiBhbmQgcGxhdGZvcm0tc3BlY2lmaWMgb3B0aW9ucywgYW5kIEknZCBsaWtl
-IHRvIG1ha2UgdGhhdA0KPiBtb3JlIGNvbnNpc3RlbnQuDQoNCkkgYWdyZWUsIGJ1dCBpbiBhbm90
-aGVyIHBhdGNoIChvciBzZXJpZXMpPw0KDQoNCg0KQmVzdCBSZWdhcmRzDQpNYXNoYWlybyBZYW1h
-ZGENCg0K
+On Mon, Nov 16, 2015 at 10:32:51AM +0000, yamada.masahiro@socionext.com wrote:
+> Hi Arnd,
+> 
+>  
+> > On Monday 16 November 2015 12:06:10 Masahiro Yamada wrote:
+> > > Many ARM sub-architectures use prompts followed by "if" conditional,
+> > > but it is wrong.
+> > >
+> > > Please notice the difference between
+> > >
+> > >     config ARCH_FOO
+> > >             bool "Foo SoCs" if ARCH_MULTI_V7
+> > >
+> > > and
+> > >
+> > >     config ARCH_FOO
+> > >             bool "Foo SoCs"
+> > >             depends on ARCH_MULTI_V7
+> > >
+> > > These two are *not* equivalent!
+> > >
+> > > In the former statement, it is not ARCH_FOO, but its prompt that
+> > > depends on ARCH_MULTI_V7.  So, it is completely valid that ARCH_FOO is
+> > > selected by another, but ARCH_MULTI_V7 is still disabled. As it is not
+> > > unmet dependency, Kconfig never warns.  This is probably not what you
+> > > want.
+> > 
+> > Did you encounter a case where someone actually did a 'select' on one of
+> > those symbols? I probably introduced a lot of them and did not expect that
+> > to happen.
+> 
+> No, for ARM sub-architectures.
+> But, yes for the ARM core part.
+> 
+> 
+> For example, the following entry in arch/arm/Kconfig is suspicous.
+> 
+> config PCI
+>         bool "PCI support" if MIGHT_HAVE_PCI
+>         help
+>           Find out whether you have a PCI motherboard. PCI is the name of a
+>           bus system, i.e. the way the CPU talks to the other stuff inside
+>           your box. Other bus systems are ISA, EISA, MicroChannel (MCA) or
+>           VESA. If you have PCI, say Y, otherwise N.
+> 
+> 
+> 
+> 
+> Try "make ARCH=arm footbridge_defconfig" and check the .config file.
+> 
+> It defines CONFIG_PCI=y, but not CONFIG_MIGHT_HAVE_PCI.
+> I am not sure this is a sane .config or not.
+
+It's correct.  "MIGHT_HAVE_PCI" is used by platforms which _might_ _have_
+_PCI_, not by platforms which _do_ _have_ _PCI_.  Platforms which _do_
+_have_ _PCI_ select PCI directly, and because "MIGHT_HAVE_PCI" is not
+set, users are not offered an option that they can never disable.
+
+-- 
+FTTC broadband for 0.8mile line: currently at 9.6Mbps down 400kbps up
+according to speedtest.net.
