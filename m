@@ -1,57 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 07 Oct 2015 01:57:59 +0000
-Subject: [PATCH 22/28] ARM: shmobile: r8a7794: add USB PHY DT support
-Message-Id: <74ef4572004fc2abf5951a07aab36600a17b3a48.1444182812.git.horms+renesas@verge.net.au>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 16 Nov 2015 21:12:59 +0000
+Subject: Re: PM: after suspend/resume the system,can not suspends again
+Message-Id: <CAPDyKForCz9MjwYUvMdmR1hJD_+rA9Be09sMPyxfAZsE_HuT2g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1444182812.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1444182812.git.horms+renesas@verge.net.au>
+References: <87h9kulkfg.wl%kuninori.morimoto.gx@renesas.com>
+	<87fv0elibh.wl%kuninori.morimoto.gx@renesas.com>
+	<56417D61.80407@jinso.co.jp>
+	<56499E53.2050905@jinso.co.jp>
+In-Reply-To: <56499E53.2050905@jinso.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Cc: Nguyen Viet Dung <nv-dung@jinso.co.jp>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, Sakato Ryusuke <ryusuke.sakato.bx@renesas.com>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+On 16 November 2015 at 10:13, Cao Minh Hiep <cm-hiep@jinso.co.jp> wrote:
+> Dear Ulf Hansson,
+>
+> I am Hiep from Jinzai Solution (a Japanese Company)
+> We have tested PM driver on Rcar-Gen2 (Lager, Koelsch Board) at Linux v4.3.
+>
+> I would like to contact you because we found a patch that relate to a PM bug
+> :
+>
+> After Suspend/resume system one time, we can not suspend the system again!.
+> (I attach the test log file)
+>
+> The patch is show as below:
+> a98f1b7 PM / Domains: Fix validation of latency constraints in genpd
+> governor
+>
+> Tested-by: Harunaga <nx-truong@jinso.co.jp>
+> Reported-by: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+>
+> This problem disapeared if revert this patch.
+> Please review it, when you have time!
 
-Define the R8A7794 generic part of the USB PHY device node. It is up to the
-board file to enable the device.
+Thanks for reporting and bisecting!
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7794.dtsi | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+I had a look and I believe have found the cause of the problem, though
+I will need a few days to post a fix for it.
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index a0747d749bb1..6ba0fa4890d0 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -690,6 +690,26 @@
- 				 0x1000 0 0 2 &gic 0 113 IRQ_TYPE_LEVEL_HIGH>;
- 	};
- 
-+	usbphy: usb-phy@e6590100 {
-+		compatible = "renesas,usb-phy-r8a7794";
-+		reg = <0 0xe6590100 0 0x100>;
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		clocks = <&mstp7_clks R8A7794_CLK_HSUSB>;
-+		clock-names = "usbhs";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+
-+		usb0: usb-channel@0 {
-+			reg = <0>;
-+			#phy-cells = <1>;
-+		};
-+		usb2: usb-channel@2 {
-+			reg = <2>;
-+			#phy-cells = <1>;
-+		};
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
--- 
-2.1.4
+The problem is actually in genpd's ->runtime_suspend() callback, as it
+validates PM QoS latencies even when it's being invoked from the
+system PM path.
+I will post a fixup to genpd in the next couple of days. I would
+appreciate if you could help out in testing it.
 
+Kind regards
+Uffe
