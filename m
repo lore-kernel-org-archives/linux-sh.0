@@ -1,57 +1,35 @@
-From: Mathias Nyman <mathias.nyman@linux.intel.com>
-Date: Thu, 12 Nov 2015 14:57:03 +0000
-Subject: Re: [PATCH v4 0/7] usb: host: xhci-plat: add support for the R-Car M2-N and H3 xHCI controllers
-Message-Id: <5644A8BF.1060805@linux.intel.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Nov 2015 04:46:44 +0000
+Subject: [PATCH 3/4] ARM: Renesas: r8a7790: Enable CLU support in VSPS
+Message-Id: <1447649205-1560-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1447649205-1560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1447649205-1560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On 27.10.2015 03:18, Yoshihiro Shimoda wrote:
-> This patch set adds support for R-Car M2-N (r8a7793) and H3 (r8a7795) xHCI
-> controllers. To add support these new SoCs, this patch set adds a new member
-> "priv" in struct xhci_hcd.
->
-> This patch is based on the latest usb.git / usb-next branch.
-> (The commit id = 0bbc367e21bfeea33230d893be4fa3a3ff9bcb48)
->
-> Changes from v3:
->   - Fix subject and description in patch 1.
->
-> Changes from v2:
->   - Rebase the latest usb-next branch (commit id = 0bbc367e21bfeea33230d)
->   - Modify hcd_priv_size and extra_priv_size in xhci.c and xhci-{plat,pci}.c
->     as a clean-up patch.
->   - Change "priv" of struct xhci_hcd from const pointer to priv[0].
->
-> Changes from v1:
->   - Add "const void *priv" in struct xhci_hcd to simplify the code to match
->     platform specific variables using of_device_id.data.
->     To achieve this purpose, this patch set made patch 1 to 3.
->
->
-> Yoshihiro Shimoda (7):
->    usb: host: xhci: cleanup hcd private size
->    usb: host: xhci: add a platform-private field
->    usb: host: xhci-plat: add struct xhci_plat_priv
->    usb: host: xhci-plat: add firmware_name in xhci_plat_priv
->    usb: host: xhci-rcar: Change code for new SoCs
->    usb: host: xhci-plat: add support for the R-Car M2-N xHCI controller
->    usb: host: xhci-plat: add support for the R-Car H3 xHCI controllers
->
->   Documentation/devicetree/bindings/usb/usb-xhci.txt |  4 +-
->   drivers/usb/host/xhci-pci.c                        |  1 -
->   drivers/usb/host/xhci-plat.c                       | 88 +++++++++++++++-------
->   drivers/usb/host/xhci-plat.h                       | 39 ++++++++++
->   drivers/usb/host/xhci-rcar.c                       | 44 +++++++----
->   drivers/usb/host/xhci-rcar.h                       |  3 +
->   drivers/usb/host/xhci.c                            |  2 +-
->   drivers/usb/host/xhci.h                            |  3 +
->   8 files changed, 140 insertions(+), 44 deletions(-)
->   create mode 100644 drivers/usb/host/xhci-plat.h
->
+The VSPS includes a CLU module, describe it in DT.
 
-Thanks, I'll send this series forward after rc1 is out
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
--Mathias  
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index a0b2a79cbfbd..4e75b8df09e3 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -832,6 +832,7 @@
+ 		clocks = <&mstp1_clks R8A7790_CLK_VSP1_S>;
+ 		power-domains = <&cpg_clocks>;
+ 
++		renesas,has-clu;
+ 		renesas,has-lut;
+ 		renesas,has-sru;
+ 		renesas,#rpf = <5>;
+-- 
+2.4.10
+
