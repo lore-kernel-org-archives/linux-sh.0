@@ -1,129 +1,163 @@
-From: Petr Mladek <pmladek@suse.com>
-Date: Fri, 27 Nov 2015 11:09:30 +0000
-Subject: [PATCH v2 3/5] printk/nmi: Try hard to print Oops message in NMI context
-Message-Id: <1448622572-16900-4-git-send-email-pmladek@suse.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 16 Nov 2015 16:08:41 +0000
+Subject: [PATCH] mmc: sh_mmcif: rework dma channel handling
+Message-Id: <5324212.8m5CM0vuVo@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448622572-16900-1-git-send-email-pmladek@suse.com>
-In-Reply-To: <1448622572-16900-1-git-send-email-pmladek@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Oops messages are important for debugging. We should try hard to get
-them directly into the ring buffer and print them to the console
-even in NMI context. This is problematic because the needed locks
-might already be taken.
+When compiling the sh_mmcif driver for ARM64, we currently
+get a harmless build warning:
 
-What we can do, though, is to zap all printk locks. We already do this
-when a printk recursion is detected. This should be safe because
-the system is crashing and there shouldn't be any printk caller
-that would cause the deadlock.
+../drivers/mmc/host/sh_mmcif.c: In function 'sh_mmcif_request_dma_one':
+../drivers/mmc/host/sh_mmcif.c:417:4: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
+    (void *)pdata->slave_id_tx :
+    ^
+../drivers/mmc/host/sh_mmcif.c:418:4: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
+    (void *)pdata->slave_id_rx;
 
-We should also flush the printk NMI buffers when Oops begins.
-bust_spinlocks() might sound like a bad location but
-it already does several other printk-related operations.
+This could be worked around by adding another cast to uintptr_t, but
+I decided to simplify the code a little more to avoid that. This
+splits out the platform data using code into a separate function
+and builds that only for CONFIG_SUPERH. This part still has a typecast
+but does not need a second one. The SH platform code could be further
+modified to pass a pointer directly as we do on other architectures
+when we have a filter function.
 
-Finally, we have to serialize the printing to do not mix backtraces
-from different CPUs. A simple spinlock is enough. It has already been
-used for this purpose, see the commit a9edc88093287183a ("x86/nmi:
-Perform a safe NMI stack trace on all CPUs").
+The normal case is simplified further and now just calls
+dma_request_slave_channel() directly without going through the
+compat handling.
 
-Signed-off-by: Petr Mladek <pmladek@suse.cz>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- arch/s390/mm/fault.c   | 1 +
- kernel/printk/nmi.c    | 6 +++++-
- kernel/printk/printk.c | 7 +++++++
- lib/bust_spinlocks.c   | 1 +
- lib/nmi_backtrace.c    | 8 ++++++++
- 5 files changed, 22 insertions(+), 1 deletion(-)
+ drivers/mmc/host/sh_mmcif.c | 80 +++++++++++++++++---------------------------------
+ 1 file changed, 34 insertions(+), 46 deletions(-)
 
-diff --git a/arch/s390/mm/fault.c b/arch/s390/mm/fault.c
-index ec1a30d0d11a..6566344db263 100644
---- a/arch/s390/mm/fault.c
-+++ b/arch/s390/mm/fault.c
-@@ -80,6 +80,7 @@ void bust_spinlocks(int yes)
- {
- 	if (yes) {
- 		oops_in_progress = 1;
-+		printk_nmi_flush();
- 	} else {
- 		int loglevel_save = console_loglevel;
- 		console_unblank();
-diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
-index 05b4c09110f9..34ba760ae794 100644
---- a/kernel/printk/nmi.c
-+++ b/kernel/printk/nmi.c
-@@ -202,7 +202,11 @@ void __init printk_nmi_init(void)
- 
- void printk_nmi_enter(void)
- {
--	this_cpu_write(printk_func, vprintk_nmi);
-+	/*
-+	 * We try hard to print the messages directly when Oops is in progress.
-+	 */
-+	if (!oops_in_progress)
-+		this_cpu_write(printk_func, vprintk_nmi);
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index ad9ffea7d659..d964c99f3a30 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -397,38 +397,26 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
  }
  
- void printk_nmi_exit(void)
-diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 88641c74163d..e970b623ae26 100644
---- a/kernel/printk/printk.c
-+++ b/kernel/printk/printk.c
-@@ -1705,6 +1705,13 @@ asmlinkage int vprintk_emit(int facility, int level,
+ static struct dma_chan *
+-sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+-			 struct sh_mmcif_plat_data *pdata,
+-			 enum dma_transfer_direction direction)
++sh_mmcif_request_dma_pdata(struct sh_mmcif_host *host, uintptr_t slave_id)
+ {
+-	struct dma_slave_config cfg = { 0, };
+-	struct dma_chan *chan;
+-	void *slave_data = NULL;
+-	struct resource *res;
+-	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	dma_cap_mask_t mask;
+-	int ret;
+ 
+ 	dma_cap_zero(mask);
+ 	dma_cap_set(DMA_SLAVE, mask);
++	if (slave_id <= 0)
++		return NULL;
+ 
+-	if (pdata)
+-		slave_data = direction = DMA_MEM_TO_DEV ?
+-			(void *)pdata->slave_id_tx :
+-			(void *)pdata->slave_id_rx;
+-
+-	chan = dma_request_slave_channel_compat(mask, shdma_chan_filter,
+-				slave_data, dev,
+-				direction = DMA_MEM_TO_DEV ? "tx" : "rx");
+-
+-	dev_dbg(dev, "%s: %s: got channel %p\n", __func__,
+-		direction = DMA_MEM_TO_DEV ? "TX" : "RX", chan);
++	return dma_request_channel(mask, shdma_chan_filter, (void *)slave_id);
++}
+ 
+-	if (!chan)
+-		return NULL;
++static int sh_mmcif_dma_slave_config(struct sh_mmcif_host *host,
++				     struct dma_chan *chan,
++				     enum dma_transfer_direction direction)
++{
++	struct resource *res;
++	struct dma_slave_config cfg = { 0, };
+ 
+ 	res = platform_get_resource(host->pd, IORESOURCE_MEM, 0);
+-
+ 	cfg.direction = direction;
+ 
+ 	if (direction = DMA_DEV_TO_MEM) {
+@@ -439,38 +427,38 @@ sh_mmcif_request_dma_one(struct sh_mmcif_host *host,
+ 		cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
  	}
  
- 	lockdep_off();
-+	/*
-+	 * Messages are passed from NMI context using an extra buffer.
-+	 * The only exception is when Oops is in progress. In this case
-+	 * we try hard to get them out directly.
-+	 */
-+	if (unlikely(oops_in_progress && in_nmi()))
-+		zap_locks();
- 	raw_spin_lock(&logbuf_lock);
- 	logbuf_cpu = this_cpu;
+-	ret = dmaengine_slave_config(chan, &cfg);
+-	if (ret < 0) {
+-		dma_release_channel(chan);
+-		return NULL;
+-	}
+-
+-	return chan;
++	return dmaengine_slave_config(chan, &cfg);
+ }
  
-diff --git a/lib/bust_spinlocks.c b/lib/bust_spinlocks.c
-index f8e0e5367398..7a98098b0fef 100644
---- a/lib/bust_spinlocks.c
-+++ b/lib/bust_spinlocks.c
-@@ -20,6 +20,7 @@ void __attribute__((weak)) bust_spinlocks(int yes)
+-static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
+-				 struct sh_mmcif_plat_data *pdata)
++static void sh_mmcif_request_dma(struct sh_mmcif_host *host)
  {
- 	if (yes) {
- 		++oops_in_progress;
-+		printk_nmi_flush();
- 	} else {
- #ifdef CONFIG_VT
- 		unblank_screen();
-diff --git a/lib/nmi_backtrace.c b/lib/nmi_backtrace.c
-index 26caf51cc238..026e9f16e742 100644
---- a/lib/nmi_backtrace.c
-+++ b/lib/nmi_backtrace.c
-@@ -74,14 +74,22 @@ void nmi_trigger_all_cpu_backtrace(bool include_self,
+ 	struct device *dev = sh_mmcif_host_to_dev(host);
+ 	host->dma_active = false;
  
- bool nmi_cpu_backtrace(struct pt_regs *regs)
- {
-+	static arch_spinlock_t lock = __ARCH_SPIN_LOCK_UNLOCKED;
- 	int cpu = smp_processor_id();
- 
- 	if (cpumask_test_cpu(cpu, to_cpumask(backtrace_mask))) {
-+		/* Serialize backtraces when printing directly. */
-+		if (unlikely(oops_in_progress))
-+			arch_spin_lock(&lock);
-+
- 		pr_warn("NMI backtrace for cpu %d\n", cpu);
- 		if (regs)
- 			show_regs(regs);
- 		else
- 			dump_stack();
-+
-+		if (unlikely(oops_in_progress))
-+			arch_spin_unlock(&lock);
- 		cpumask_clear_cpu(cpu, to_cpumask(backtrace_mask));
- 		return true;
+-	if (pdata) {
+-		if (pdata->slave_id_tx <= 0 || pdata->slave_id_rx <= 0)
+-			return;
+-	} else if (!dev->of_node) {
+-		return;
++	/* We can only either use DMA for both Tx and Rx or not use it at all */
++	if (IS_ENABLED(CONFIG_SUPERH) && dev->platform_data) {
++		struct sh_mmcif_plat_data *pdata = dev->platform_data;
++		host->chan_tx = sh_mmcif_request_dma_pdata(host, pdata->slave_id_tx);
++		host->chan_rx = sh_mmcif_request_dma_pdata(host, pdata->slave_id_rx);
++	} else {
++		host->chan_tx = dma_request_slave_channel(dev, "tx");
++		host->chan_tx = dma_request_slave_channel(dev, "rx");
  	}
--- 
-1.8.5.6
++	dev_dbg(dev, "%s: got channel TX %p RX %p\n", __func__, host->chan_tx, host->chan_rx);
+ 
+-	/* We can only either use DMA for both Tx and Rx or not use it at all */
+-	host->chan_tx = sh_mmcif_request_dma_one(host, pdata, DMA_MEM_TO_DEV);
+-	if (!host->chan_tx)
+-		return;
++	if (!host->chan_tx || !host->chan_rx ||
++	    sh_mmcif_dma_slave_config(host, host->chan_tx, DMA_MEM_TO_DEV) ||
++	    sh_mmcif_dma_slave_config(host, host->chan_rx, DMA_DEV_TO_MEM))
++		goto error;
+ 
+-	host->chan_rx = sh_mmcif_request_dma_one(host, pdata, DMA_DEV_TO_MEM);
+-	if (!host->chan_rx) {
++	return;
++
++error:
++	if (host->chan_tx)
+ 		dma_release_channel(host->chan_tx);
+-		host->chan_tx = NULL;
+-	}
++	if (host->chan_rx)
++		dma_release_channel(host->chan_rx);
++	host->chan_tx = host->chan_rx = NULL;
+ }
+ 
+ static void sh_mmcif_release_dma(struct sh_mmcif_host *host)
+@@ -1102,7 +1090,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	if (ios->power_mode = MMC_POWER_UP) {
+ 		if (!host->card_present) {
+ 			/* See if we also get DMA */
+-			sh_mmcif_request_dma(host, dev->platform_data);
++			sh_mmcif_request_dma(host);
+ 			host->card_present = true;
+ 		}
+ 		sh_mmcif_set_power(host, ios);
 
