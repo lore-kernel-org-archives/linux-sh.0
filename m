@@ -1,115 +1,35 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 03 Nov 2015 06:07:27 +0000
-Subject: [PATCH/RFC v2] ravb: use clock rate as basis for GTI.TIV
-Message-Id: <1446530847-8699-1-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Nov 2015 04:46:45 +0000
+Subject: [PATCH 4/4] ARM: Renesas: r8a7791: Enable CLU support in VSPS
+Message-Id: <1447649205-1560-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1447649205-1560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1447649205-1560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-The GTI.TIV may be set to 2GHz^2 / rate, where rate is
-that of the clock of the device. Rather than assuming a
-rate of 130MHz use the actual rate of the clock.
+The VSPS includes a CLU module, describe it in DT.
 
-The motivation for this is to use the correct rate on
-the r8a7795/Salvator-X which is advertised as 133MHz but
-may differ depending on the extal present on the Salvator-X.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Tested on the topic/gen3-latest branch of Geert Uytterhoeven's
-renesas-drivers tree on kernel.org: 3f5a88be9fea ("[WIP] arm64: renesas:
-r8a7795: Convert to new CPG/MSSR bindings")
+ arch/arm/boot/dts/r8a7791.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
 
-v2
-* Corrected typos in changelog, as pointed out by Geert Uytterhoeven
-* Use do_div() rather than 64-bit division to allow compilation on
-  32-bit ARM
----
- drivers/net/ethernet/renesas/ravb.h      |  3 +++
- drivers/net/ethernet/renesas/ravb_main.c | 38 +++++++++++++++++++++++++++++++-
- 2 files changed, 40 insertions(+), 1 deletion(-)
-
-diff --git a/drivers/net/ethernet/renesas/ravb.h b/drivers/net/ethernet/renesas/ravb.h
-index 0623fff932e4..f9dee7436e81 100644
---- a/drivers/net/ethernet/renesas/ravb.h
-+++ b/drivers/net/ethernet/renesas/ravb.h
-@@ -576,6 +576,9 @@ enum GTI_BIT {
- 	GTI_TIV		= 0x0FFFFFFF,
- };
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 831525dd39a6..fc2a1b10c1af 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -873,6 +873,7 @@
+ 		clocks = <&mstp1_clks R8A7791_CLK_VSP1_S>;
+ 		power-domains = <&cpg_clocks>;
  
-+#define GTI_TIV_MAX	GTI_TIV
-+#define GTI_TIV_MIN	0x20
-+
- /* GIC */
- enum GIC_BIT {
- 	GIC_PTCE	= 0x00000001,	/* Undocumented? */
-diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
-index aa7b2083cb53..599334d68afe 100644
---- a/drivers/net/ethernet/renesas/ravb_main.c
-+++ b/drivers/net/ethernet/renesas/ravb_main.c
-@@ -32,6 +32,8 @@
- #include <linux/slab.h>
- #include <linux/spinlock.h>
- 
-+#include <asm/div64.h>
-+
- #include "ravb.h"
- 
- #define RAVB_DEF_MSG_ENABLE \
-@@ -1659,6 +1661,38 @@ static const struct of_device_id ravb_match_table[] = {
- };
- MODULE_DEVICE_TABLE(of, ravb_match_table);
- 
-+static int ravb_set_gti(struct net_device *ndev)
-+{
-+
-+	struct device *dev = ndev->dev.parent;
-+	struct device_node *np = dev->of_node;
-+	unsigned long rate;
-+	struct clk *clk;
-+	uint64_t inc;
-+
-+	clk = of_clk_get(np, 0);
-+	if (IS_ERR(clk)) {
-+		dev_err(dev, "could not get clock\n");
-+		return PTR_ERR(clk);
-+	}
-+
-+	rate = clk_get_rate(clk);
-+	clk_put(clk);
-+
-+	inc = 1000000000ULL << 20;
-+	do_div(inc, rate);
-+
-+	if (inc < GTI_TIV_MIN || inc > GTI_TIV_MAX) {
-+		dev_err(dev, "gti.tiv increment 0x%llx is outside the range 0x%x - 0x%x\n",
-+			inc, GTI_TIV_MIN, GTI_TIV_MAX);
-+		return -EINVAL;
-+	}
-+
-+	ravb_write(ndev, inc, GTI);
-+
-+	return 0;
-+}
-+
- static int ravb_probe(struct platform_device *pdev)
- {
- 	struct device_node *np = pdev->dev.of_node;
-@@ -1755,7 +1789,9 @@ static int ravb_probe(struct platform_device *pdev)
- 		   CCC);
- 
- 	/* Set GTI value */
--	ravb_write(ndev, ((1000 << 20) / 130) & GTI_TIV, GTI);
-+	error = ravb_set_gti(ndev);
-+	if (error)
-+		goto out_release;
- 
- 	/* Request GTI loading */
- 	ravb_write(ndev, ravb_read(ndev, GCCR) | GCCR_LTI, GCCR);
++		renesas,has-clu;
+ 		renesas,has-lut;
+ 		renesas,has-sru;
+ 		renesas,#rpf = <5>;
 -- 
-2.1.4
+2.4.10
 
