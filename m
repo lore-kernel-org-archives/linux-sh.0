@@ -1,46 +1,55 @@
-From: Nicolas Pitre <nico@fluxnic.net>
-Date: Mon, 16 Nov 2015 20:57:36 +0000
-Subject: Re: [PATCH v3] ARM: xip: Use correct symbol for end of ROM marker
-Message-Id: <alpine.LFD.2.20.1511161550370.5826@knanqh.ubzr>
+From: Chris Brandt <Chris.Brandt@renesas.com>
+Date: Mon, 16 Nov 2015 21:02:59 +0000
+Subject: RE: [PATCH v3] ARM: xip: Use correct symbol for end of ROM marker
+Message-Id: <HK2PR06MB05619FACB3725B6F5B2299718A1E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447362108-4333-1-git-send-email-chris.brandt@renesas.com>
  <1447697140-4099-1-git-send-email-chris.brandt@renesas.com>
- <20151116181718.GW8644@n2100.arm.linux.org.uk>
-In-Reply-To: <20151116181718.GW8644@n2100.arm.linux.org.uk>
+ <alpine.LFD.2.20.1511161515100.5826@knanqh.ubzr>
+In-Reply-To: <alpine.LFD.2.20.1511161515100.5826@knanqh.ubzr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, 16 Nov 2015, Russell King - ARM Linux wrote:
+>> For an XIP build, _edata_loc, not _etext, represents the end of the 
+>> binary image that will be programmed into ROM and mapped into the 
+>> MODULES_VADDR area.
+>
+> This statement is wrong.  The kernel data is copied to RAM before the
+> MMU is turned on and that's the copy that the kernel must use.  There
+> is no reason having anything past _etext accessible from ROM.
 
-> Nico,
-> 
-> As you originally created the XIP stuff, I hope you can remember
-> the details - can you check this patch please?
-> 
-> I'm thinking that we need a new symbol around here:
-> 
-> #ifdef CONFIG_XIP_KERNEL
->         __data_loc = ALIGN(4);          /* location in binary */
-> 					<== here
->         . = PAGE_OFFSET + TEXT_OFFSET;
-> #else
-> 
-> to denote the end of the XIP kernel image which must remain
-> accessible after boot.  We don't need the data sections because
-> they will have been copied to RAM, and we probably don't want to
-> keep those exposed (it's potentially useful for attackers.)
+If I remember correctly, when I first ran into an issue was my
+initramfs got cut off because it spanned the 1MB boundary after
+_etext.
 
-The _etext symbol is already used for that purpose.
-
-Now we round it up to the next section mapping which might leave quite a 
-lot of data content exposed in ROM.  But given it is more or less the 
-same data present in RAM except for those bits that are modified at run 
-time, I don't see what an attacker would gain from the data in ROM   
-that cannot already be obtained from kernel RAM.  If the section mapping 
-extends to part of the ROM that is no longer kernel data then maybe this 
-would expose sensitive data.  Is that what you're worried about?
+Also, your init code resides after _etext, so that get cut off
+too.
 
 
-Nicolas
+>> With an XIP kernel, nothing is loaded into RAM before boot, meaning 
+>> you have to take into account the size of the entire binary image that 
+>> was programmed, including the init data values that will be copied to 
+>> RAM during kernel boot.
+>
+> But this is done way before the code you're modifying is executed.
+
+If the MMU is set up to cut everything off after _etext early on, then
+anything in the init section gets blown away, and there are lots
+of init functions in the kernel that get run at various times during
+boot.
+
+
+>> This fixes the bug where you might lose the end of your kernel area 
+>> after page table setup is complete.
+>
+>Could you elaborate about a possible bug please?
+
+During boot, the kernel attempts to execute code that is not mapped
+anywhere, and hence crashes.
+
+
+
+-Chris
+
