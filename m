@@ -1,73 +1,561 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 26 Nov 2015 13:51:02 +0000
-Subject: Re: [PATCH] drm: adv7511: really enable interrupts for EDID detection
-Message-Id: <20151126135102.GA537@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="xHFwDpU9dbj6ez1V"
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Mon, 16 Nov 2015 04:46:43 +0000
+Subject: [PATCH 2/4] v4l: vsp1: Add Cubic Look Up Table (CLU) support
+Message-Id: <1447649205-1560-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448376627-12255-1-git-send-email-wsa@the-dreams.de>
- <20151124210501.GA1584@katana>
- <CANqRtoTAPU3zni__J2MQR+KK=SUUGYLgHz5j9s04CjEq55s3hg@mail.gmail.com>
- <20151125064851.GA1511@tetsubishi>
- <CANqRtoQMSoydbmj8W7Vjc7r-sFo5iz3_5dA2MVipsaec+BRebQ@mail.gmail.com>
- <20151125082736.GA1526@katana>
- <5656FE75.5080207@metafoo.de>
-In-Reply-To: <5656FE75.5080207@metafoo.de>
-To: Lars-Peter Clausen <lars@metafoo.de>
-Cc: Magnus Damm <magnus.damm@gmail.com>, dri-devel@lists.freedesktop.org, SH-Linux <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+References: <1447649205-1560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1447649205-1560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-media@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
+The CLU processing block is a 3D lookup table that converts the input
+three color component data into desired three color components using a
+lookup table.
 
---xHFwDpU9dbj6ez1V
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ .../devicetree/bindings/media/renesas,vsp1.txt     |   3 +
+ drivers/media/platform/vsp1/Makefile               |   3 +-
+ drivers/media/platform/vsp1/vsp1.h                 |   3 +
+ drivers/media/platform/vsp1/vsp1_clu.c             | 288 +++++++++++++++++++++
+ drivers/media/platform/vsp1/vsp1_clu.h             |  38 +++
+ drivers/media/platform/vsp1/vsp1_drv.c             |  13 +
+ drivers/media/platform/vsp1/vsp1_entity.c          |   1 +
+ drivers/media/platform/vsp1/vsp1_entity.h          |   1 +
+ drivers/media/platform/vsp1/vsp1_regs.h            |   9 +
+ include/uapi/linux/vsp1.h                          |  25 ++
+ 10 files changed, 383 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/media/platform/vsp1/vsp1_clu.c
+ create mode 100644 drivers/media/platform/vsp1/vsp1_clu.h
 
-On Thu, Nov 26, 2015 at 01:43:33PM +0100, Lars-Peter Clausen wrote:
-> On 11/25/2015 09:27 AM, Wolfram Sang wrote:
-> >=20
-> >> I guess you mean that the GPIO callbacks include Runtime PM handling
-> >> however for irq_chip Runtime PM may not be hooked up so the GPIO block
-> >> is in such case is not powered on / get clock enabled?
-> >=20
-> > Yes. There is another drawback when GPIOs are not properly requested. It
-> > is still possible to request them from userspace although a kernel
-> > driver is using them. I am playing with the idea that the GPIO core
-> > auto-requests GPIOs which are not already requested but still set up as
-> > interrupts.
->=20
-> I think the GPIO core already reserves the pins that are requested as IRQ=
-s.
-> See gpiochip_lock_as_irq().
+diff --git a/Documentation/devicetree/bindings/media/renesas,vsp1.txt b/Documentation/devicetree/bindings/media/renesas,vsp1.txt
+index 87fe08abf36d..72708515a9a6 100644
+--- a/Documentation/devicetree/bindings/media/renesas,vsp1.txt
++++ b/Documentation/devicetree/bindings/media/renesas,vsp1.txt
+@@ -19,6 +19,8 @@ Required properties:
+ 
+ Optional properties:
+ 
++  - renesas,has-clu: Boolean, indicates that the Cubic Look Up Table (CLU)
++    module is available.
+   - renesas,has-lif: Boolean, indicates that the LCD Interface (LIF) module is
+     available.
+   - renesas,has-lut: Boolean, indicates that the Look Up Table (LUT) module is
+@@ -35,6 +37,7 @@ Example: R8A7790 (R-Car H2) VSP1-S node
+ 		interrupts = <0 267 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp1_clks R8A7790_CLK_VSP1_S>;
+ 
++		renesas,has-clu;
+ 		renesas,has-lut;
+ 		renesas,has-sru;
+ 		renesas,#rpf = <5>;
+diff --git a/drivers/media/platform/vsp1/Makefile b/drivers/media/platform/vsp1/Makefile
+index 6a93f928dfde..ca79d37c160a 100644
+--- a/drivers/media/platform/vsp1/Makefile
++++ b/drivers/media/platform/vsp1/Makefile
+@@ -1,6 +1,7 @@
+ vsp1-y					:= vsp1_drv.o vsp1_entity.o vsp1_video.o
+ vsp1-y					+= vsp1_rpf.o vsp1_rwpf.o vsp1_wpf.o
+-vsp1-y					+= vsp1_hsit.o vsp1_lif.o vsp1_lut.o
++vsp1-y					+= vsp1_clu.o vsp1_hsit.o vsp1_lut.o
+ vsp1-y					+= vsp1_bru.o vsp1_sru.o vsp1_uds.o
++vsp1-y					+= vsp1_lif.o
+ 
+ obj-$(CONFIG_VIDEO_RENESAS_VSP1)	+= vsp1.o
+diff --git a/drivers/media/platform/vsp1/vsp1.h b/drivers/media/platform/vsp1/vsp1.h
+index 989e96f7e360..be434b046107 100644
+--- a/drivers/media/platform/vsp1/vsp1.h
++++ b/drivers/media/platform/vsp1/vsp1.h
+@@ -28,6 +28,7 @@ struct device;
+ 
+ struct vsp1_platform_data;
+ struct vsp1_bru;
++struct vsp1_clu;
+ struct vsp1_hsit;
+ struct vsp1_lif;
+ struct vsp1_lut;
+@@ -42,6 +43,7 @@ struct vsp1_uds;
+ #define VSP1_HAS_LIF		(1 << 0)
+ #define VSP1_HAS_LUT		(1 << 1)
+ #define VSP1_HAS_SRU		(1 << 2)
++#define VSP1_HAS_CLU		(1 << 3)
+ 
+ struct vsp1_platform_data {
+ 	unsigned int features;
+@@ -61,6 +63,7 @@ struct vsp1_device {
+ 	int ref_count;
+ 
+ 	struct vsp1_bru *bru;
++	struct vsp1_clu *clu;
+ 	struct vsp1_hsit *hsi;
+ 	struct vsp1_hsit *hst;
+ 	struct vsp1_lif *lif;
+diff --git a/drivers/media/platform/vsp1/vsp1_clu.c b/drivers/media/platform/vsp1/vsp1_clu.c
+new file mode 100644
+index 000000000000..87226059be65
+--- /dev/null
++++ b/drivers/media/platform/vsp1/vsp1_clu.c
+@@ -0,0 +1,288 @@
++/*
++ * vsp1_clu.c  --  R-Car VSP1 Cubic Look-Up Table
++ *
++ * Copyright (C) 2015 Renesas Corporation
++ *
++ * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#include <linux/device.h>
++#include <linux/gfp.h>
++#include <linux/vsp1.h>
++
++#include <media/v4l2-subdev.h>
++
++#include "vsp1.h"
++#include "vsp1_clu.h"
++
++#define CLU_MIN_SIZE				4U
++#define CLU_MAX_SIZE				8190U
++
++/* -----------------------------------------------------------------------------
++ * Device Access
++ */
++
++static inline void vsp1_clu_write(struct vsp1_clu *clu, u32 reg, u32 data)
++{
++	vsp1_write(clu->entity.vsp1, reg, data);
++}
++
++/* -----------------------------------------------------------------------------
++ * V4L2 Subdevice Core Operations
++ */
++
++static int clu_configure(struct vsp1_clu *clu, struct vsp1_clu_config *config)
++{
++	struct vsp1_clu_entry *entries;
++	unsigned int i;
++	int ret;
++
++	if (config->nentries > 17*17*17)
++		return -EINVAL;
++
++	entries = kcalloc(config->nentries, sizeof(*entries), GFP_KERNEL);
++	if (!entries)
++		return -ENOMEM;
++
++	ret = copy_from_user(entries, config->entries,
++			     config->nentries * sizeof(*entries));
++	if (ret) {
++		ret = -EFAULT;
++		goto done;
++	}
++
++	for (i = 0; i < config->nentries; ++i) {
++		u32 addr = entries[i].addr;
++		u32 value = entries[i].value;
++
++		if (((addr >> 0) & 0xff) >= 17 ||
++		    ((addr >> 8) & 0xff) >= 17 ||
++		    ((addr >> 16) & 0xff) >= 17 ||
++		    ((addr >> 24) & 0xff) != 0 ||
++		    (value & 0xff000000) != 0) {
++			ret = -EINVAL;
++			goto done;
++		}
++
++		vsp1_clu_write(clu, VI6_CLU_ADDR, addr);
++		vsp1_clu_write(clu, VI6_CLU_DATA, value);
++	}
++
++done:
++	kfree(entries);
++	return ret;
++}
++
++static long clu_ioctl(struct v4l2_subdev *subdev, unsigned int cmd, void *arg)
++{
++	struct vsp1_clu *clu = to_clu(subdev);
++
++	switch (cmd) {
++	case VIDIOC_VSP1_CLU_CONFIG:
++		return clu_configure(clu, arg);
++
++	default:
++		return -ENOIOCTLCMD;
++	}
++}
++
++/* -----------------------------------------------------------------------------
++ * V4L2 Subdevice Video Operations
++ */
++
++static int clu_s_stream(struct v4l2_subdev *subdev, int enable)
++{
++	struct vsp1_clu *clu = to_clu(subdev);
++
++	if (!enable)
++		return 0;
++
++	vsp1_clu_write(clu, VI6_CLU_CTRL, VI6_CLU_CTRL_MVS | VI6_CLU_CTRL_EN);
++
++	return 0;
++}
++
++/* -----------------------------------------------------------------------------
++ * V4L2 Subdevice Pad Operations
++ */
++
++static int clu_enum_mbus_code(struct v4l2_subdev *subdev,
++			      struct v4l2_subdev_pad_config *cfg,
++			      struct v4l2_subdev_mbus_code_enum *code)
++{
++	static const unsigned int codes[] = {
++		MEDIA_BUS_FMT_ARGB8888_1X32,
++		MEDIA_BUS_FMT_AHSV8888_1X32,
++		MEDIA_BUS_FMT_AYUV8_1X32,
++	};
++	struct vsp1_clu *clu = to_clu(subdev);
++	struct v4l2_mbus_framefmt *format;
++
++	if (code->pad = CLU_PAD_SINK) {
++		if (code->index >= ARRAY_SIZE(codes))
++			return -EINVAL;
++
++		code->code = codes[code->index];
++	} else {
++		/* The CLU can't perform format conversion, the sink format is
++		 * always identical to the source format.
++		 */
++		if (code->index)
++			return -EINVAL;
++
++		format = vsp1_entity_get_pad_format(&clu->entity, cfg,
++						    CLU_PAD_SINK, code->which);
++		code->code = format->code;
++	}
++
++	return 0;
++}
++
++static int clu_enum_frame_size(struct v4l2_subdev *subdev,
++			       struct v4l2_subdev_pad_config *cfg,
++			       struct v4l2_subdev_frame_size_enum *fse)
++{
++	struct vsp1_clu *clu = to_clu(subdev);
++	struct v4l2_mbus_framefmt *format;
++
++	format = vsp1_entity_get_pad_format(&clu->entity, cfg,
++					    fse->pad, fse->which);
++
++	if (fse->index || fse->code != format->code)
++		return -EINVAL;
++
++	if (fse->pad = CLU_PAD_SINK) {
++		fse->min_width = CLU_MIN_SIZE;
++		fse->max_width = CLU_MAX_SIZE;
++		fse->min_height = CLU_MIN_SIZE;
++		fse->max_height = CLU_MAX_SIZE;
++	} else {
++		/* The size on the source pad are fixed and always identical to
++		 * the size on the sink pad.
++		 */
++		fse->min_width = format->width;
++		fse->max_width = format->width;
++		fse->min_height = format->height;
++		fse->max_height = format->height;
++	}
++
++	return 0;
++}
++
++static int clu_get_format(struct v4l2_subdev *subdev,
++			  struct v4l2_subdev_pad_config *cfg,
++			  struct v4l2_subdev_format *fmt)
++{
++	struct vsp1_clu *clu = to_clu(subdev);
++
++	fmt->format = *vsp1_entity_get_pad_format(&clu->entity, cfg, fmt->pad,
++						  fmt->which);
++
++	return 0;
++}
++
++static int clu_set_format(struct v4l2_subdev *subdev,
++			  struct v4l2_subdev_pad_config *cfg,
++			  struct v4l2_subdev_format *fmt)
++{
++	struct vsp1_clu *clu = to_clu(subdev);
++	struct v4l2_mbus_framefmt *format;
++
++	/* Default to YUV if the requested format is not supported. */
++	if (fmt->format.code != MEDIA_BUS_FMT_ARGB8888_1X32 &&
++	    fmt->format.code != MEDIA_BUS_FMT_AHSV8888_1X32 &&
++	    fmt->format.code != MEDIA_BUS_FMT_AYUV8_1X32)
++		fmt->format.code = MEDIA_BUS_FMT_AYUV8_1X32;
++
++	format = vsp1_entity_get_pad_format(&clu->entity, cfg, fmt->pad,
++					    fmt->which);
++
++	if (fmt->pad = CLU_PAD_SOURCE) {
++		/* The CLU output format can't be modified. */
++		fmt->format = *format;
++		return 0;
++	}
++
++	format->code = fmt->format.code;
++	format->width = clamp_t(unsigned int, fmt->format.width,
++				CLU_MIN_SIZE, CLU_MAX_SIZE);
++	format->height = clamp_t(unsigned int, fmt->format.height,
++				 CLU_MIN_SIZE, CLU_MAX_SIZE);
++	format->field = V4L2_FIELD_NONE;
++	format->colorspace = V4L2_COLORSPACE_SRGB;
++
++	fmt->format = *format;
++
++	/* Propagate the format to the source pad. */
++	format = vsp1_entity_get_pad_format(&clu->entity, cfg, CLU_PAD_SOURCE,
++					    fmt->which);
++	*format = fmt->format;
++
++	return 0;
++}
++
++/* -----------------------------------------------------------------------------
++ * V4L2 Subdevice Operations
++ */
++
++static struct v4l2_subdev_core_ops clu_core_ops = {
++	.ioctl = clu_ioctl,
++};
++
++static struct v4l2_subdev_video_ops clu_video_ops = {
++	.s_stream = clu_s_stream,
++};
++
++static struct v4l2_subdev_pad_ops clu_pad_ops = {
++	.enum_mbus_code = clu_enum_mbus_code,
++	.enum_frame_size = clu_enum_frame_size,
++	.get_fmt = clu_get_format,
++	.set_fmt = clu_set_format,
++};
++
++static struct v4l2_subdev_ops clu_ops = {
++	.core	= &clu_core_ops,
++	.video	= &clu_video_ops,
++	.pad    = &clu_pad_ops,
++};
++
++/* -----------------------------------------------------------------------------
++ * Initialization and Cleanup
++ */
++
++struct vsp1_clu *vsp1_clu_create(struct vsp1_device *vsp1)
++{
++	struct v4l2_subdev *subdev;
++	struct vsp1_clu *clu;
++	int ret;
++
++	clu = devm_kzalloc(vsp1->dev, sizeof(*clu), GFP_KERNEL);
++	if (clu = NULL)
++		return ERR_PTR(-ENOMEM);
++
++	clu->entity.type = VSP1_ENTITY_CLU;
++
++	ret = vsp1_entity_init(vsp1, &clu->entity, 2);
++	if (ret < 0)
++		return ERR_PTR(ret);
++
++	/* Initialize the V4L2 subdev. */
++	subdev = &clu->entity.subdev;
++	v4l2_subdev_init(subdev, &clu_ops);
++
++	subdev->entity.ops = &vsp1_media_ops;
++	subdev->internal_ops = &vsp1_subdev_internal_ops;
++	snprintf(subdev->name, sizeof(subdev->name), "%s clu",
++		 dev_name(vsp1->dev));
++	v4l2_set_subdevdata(subdev, clu);
++	subdev->flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
++
++	vsp1_entity_init_formats(subdev, NULL);
++
++	return clu;
++}
+diff --git a/drivers/media/platform/vsp1/vsp1_clu.h b/drivers/media/platform/vsp1/vsp1_clu.h
+new file mode 100644
+index 000000000000..4b69b7418c69
+--- /dev/null
++++ b/drivers/media/platform/vsp1/vsp1_clu.h
+@@ -0,0 +1,38 @@
++/*
++ * vsp1_clu.h  --  R-Car VSP1 Cubic Look-Up Table
++ *
++ * Copyright (C) 2015 Renesas Corporation
++ *
++ * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++#ifndef __VSP1_CLU_H__
++#define __VSP1_CLU_H__
++
++#include <media/media-entity.h>
++#include <media/v4l2-subdev.h>
++
++#include "vsp1_entity.h"
++
++struct vsp1_device;
++
++#define CLU_PAD_SINK				0
++#define CLU_PAD_SOURCE				1
++
++struct vsp1_clu {
++	struct vsp1_entity entity;
++	u32 clu[256];
++};
++
++static inline struct vsp1_clu *to_clu(struct v4l2_subdev *subdev)
++{
++	return container_of(subdev, struct vsp1_clu, entity.subdev);
++}
++
++struct vsp1_clu *vsp1_clu_create(struct vsp1_device *vsp1);
++
++#endif /* __VSP1_CLU_H__ */
+diff --git a/drivers/media/platform/vsp1/vsp1_drv.c b/drivers/media/platform/vsp1/vsp1_drv.c
+index 4e61886384e3..d0c8812fbb7a 100644
+--- a/drivers/media/platform/vsp1/vsp1_drv.c
++++ b/drivers/media/platform/vsp1/vsp1_drv.c
+@@ -22,6 +22,7 @@
+ 
+ #include "vsp1.h"
+ #include "vsp1_bru.h"
++#include "vsp1_clu.h"
+ #include "vsp1_hsit.h"
+ #include "vsp1_lif.h"
+ #include "vsp1_lut.h"
+@@ -165,6 +166,16 @@ static int vsp1_create_entities(struct vsp1_device *vsp1)
+ 
+ 	list_add_tail(&vsp1->bru->entity.list_dev, &vsp1->entities);
+ 
++	if (vsp1->pdata.features & VSP1_HAS_CLU) {
++		vsp1->clu = vsp1_clu_create(vsp1);
++		if (IS_ERR(vsp1->clu)) {
++			ret = PTR_ERR(vsp1->clu);
++			goto done;
++		}
++
++		list_add_tail(&vsp1->clu->entity.list_dev, &vsp1->entities);
++	}
++
+ 	vsp1->hsi = vsp1_hsit_create(vsp1, true);
+ 	if (IS_ERR(vsp1->hsi)) {
+ 		ret = PTR_ERR(vsp1->hsi);
+@@ -440,6 +451,8 @@ static int vsp1_parse_dt(struct vsp1_device *vsp1)
+ 	struct device_node *np = vsp1->dev->of_node;
+ 	struct vsp1_platform_data *pdata = &vsp1->pdata;
+ 
++	if (of_property_read_bool(np, "renesas,has-clu"))
++		pdata->features |= VSP1_HAS_CLU;
+ 	if (of_property_read_bool(np, "renesas,has-lif"))
+ 		pdata->features |= VSP1_HAS_LIF;
+ 	if (of_property_read_bool(np, "renesas,has-lut"))
+diff --git a/drivers/media/platform/vsp1/vsp1_entity.c b/drivers/media/platform/vsp1/vsp1_entity.c
+index fd95a75b04f4..08cc6caec047 100644
+--- a/drivers/media/platform/vsp1/vsp1_entity.c
++++ b/drivers/media/platform/vsp1/vsp1_entity.c
+@@ -160,6 +160,7 @@ static const struct vsp1_route vsp1_routes[] = {
+ 	{ VSP1_ENTITY_BRU, 0, VI6_DPR_BRU_ROUTE,
+ 	  { VI6_DPR_NODE_BRU_IN(0), VI6_DPR_NODE_BRU_IN(1),
+ 	    VI6_DPR_NODE_BRU_IN(2), VI6_DPR_NODE_BRU_IN(3), } },
++	{ VSP1_ENTITY_CLU, 0, VI6_DPR_CLU_ROUTE, { VI6_DPR_NODE_CLU, } },
+ 	{ VSP1_ENTITY_HSI, 0, VI6_DPR_HSI_ROUTE, { VI6_DPR_NODE_HSI, } },
+ 	{ VSP1_ENTITY_HST, 0, VI6_DPR_HST_ROUTE, { VI6_DPR_NODE_HST, } },
+ 	{ VSP1_ENTITY_LIF, 0, 0, { VI6_DPR_NODE_LIF, } },
+diff --git a/drivers/media/platform/vsp1/vsp1_entity.h b/drivers/media/platform/vsp1/vsp1_entity.h
+index 8867a5787c28..f2f8fc7f32dc 100644
+--- a/drivers/media/platform/vsp1/vsp1_entity.h
++++ b/drivers/media/platform/vsp1/vsp1_entity.h
+@@ -23,6 +23,7 @@ struct vsp1_video;
+ 
+ enum vsp1_entity_type {
+ 	VSP1_ENTITY_BRU,
++	VSP1_ENTITY_CLU,
+ 	VSP1_ENTITY_HSI,
+ 	VSP1_ENTITY_HST,
+ 	VSP1_ENTITY_LIF,
+diff --git a/drivers/media/platform/vsp1/vsp1_regs.h b/drivers/media/platform/vsp1/vsp1_regs.h
+index 25b48738b147..57c66bd95bbf 100644
+--- a/drivers/media/platform/vsp1/vsp1_regs.h
++++ b/drivers/media/platform/vsp1/vsp1_regs.h
+@@ -434,6 +434,15 @@
+  */
+ 
+ #define VI6_CLU_CTRL			0x2900
++#define VI6_CLU_CTRL_AAI		(1 << 28)
++#define VI6_CLU_CTRL_MVS		(1 << 24)
++#define VI6_CLU_CTRL_AX1I_2D		(3 << 14)
++#define VI6_CLU_CTRL_AX2I_2D		(1 << 12)
++#define VI6_CLU_CTRL_OS0_2D		(3 << 8)
++#define VI6_CLU_CTRL_OS1_2D		(1 << 6)
++#define VI6_CLU_CTRL_OS2_2D		(3 << 4)
++#define VI6_CLU_CTRL_M2D		(1 << 1)
++#define VI6_CLU_CTRL_EN			(1 << 0)
+ 
+ /* -----------------------------------------------------------------------------
+  * HST Control Registers
+diff --git a/include/uapi/linux/vsp1.h b/include/uapi/linux/vsp1.h
+index 9a823696d816..f8360dca0769 100644
+--- a/include/uapi/linux/vsp1.h
++++ b/include/uapi/linux/vsp1.h
+@@ -22,13 +22,38 @@
+  * Private IOCTLs
+  *
+  * VIDIOC_VSP1_LUT_CONFIG - Configure the lookup table
++ *
++ * VIDIOC_VSP1_CLU_CONFIG - Configure the 3D lookup table
++ * @nentries: number of entries in the entries array
++ * @entries: CLU entries
++ *
++ * Each CLU entry is identified by an address and has a value. The address is
++ * split in 4 bytes ; the MSB must be set to 0 and all 3 other bytes set to
++ * values between 0 and 16 inclusive. The value must be in the range 0x00000000
++ * to 0x00ffffff.
++ *
++ * The number of entries is limited to 17*17*17. If the number of entries or the
++ * address or value of an entry is invalid the ioctl will return -EINVAL.
++ * Otherwise it will program the hardware with the entries and return 0.
+  */
+ 
+ #define VIDIOC_VSP1_LUT_CONFIG \
+ 	_IOWR('V', BASE_VIDIOC_PRIVATE + 1, struct vsp1_lut_config)
++#define VIDIOC_VSP1_CLU_CONFIG \
++	_IOWR('V', BASE_VIDIOC_PRIVATE + 2, struct vsp1_clu_config)
+ 
+ struct vsp1_lut_config {
+ 	__u32 lut[256];
+ };
+ 
++struct vsp1_clu_entry {
++	__u32 addr;
++	__u32 value;
++};
++
++struct vsp1_clu_config {
++	__u32 nentries;
++	struct vsp1_clu_entry __user *entries;
++};
++
+ #endif	/* __VSP1_USER_H__ */
+-- 
+2.4.10
 
-I could still export them via sysfs. They were also not showing up in
-/sys/kernel/debug/gpio.
-
-> As for PM see this discussion
-> http://lkml.iu.edu/hypermail/linux/kernel/1511.1/01645.html
-
-Nice! Thanks for this pointer.
-
-
---xHFwDpU9dbj6ez1V
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWVw5GAAoJEBQN5MwUoCm2SrsP/3Pi+i6qNlezrGqdTe690yjB
-lozmxSMCGPOsgSGEAMTrrTyv7S22gsYXymv7CEw/iasHUIYwqbdTn0RDEVXtzbVH
-VO2s8JA9luGQZ4xVJNEEAZ72pHLwPySvyyAFLx0ALMXrm3UBxc2y0jy/qOgPWyFc
-ZKVND1s+RNTgpzQlAkoE0r+iIQ/9kbHVbgdQIkXE/0kkYrBogaYagPyKQLQsbB+M
-POFIduAVnmAVzaby1FqYk+bSU/c9Q5DklemFQwM8uNloMeX3f1x9nvRNKkfEgU33
-fFkngcgHxcjka36d/YooP5XRsF71hBYQYbMTbhTTKlY7ldh+7z5yqnsS3HHb7ohS
-CUH3Fb3JxVwF3nsQa3LZ28Cby4SUsbjfLGXCb36X8GHks7hbXT4wy3BcvDLX6Lfr
-r+YmCN1oI/ynM2PF+bYNrLDpJCpBoApOkLa/JzUU9rconkpeior3dg1lZivJrc18
-b40oA8mcx6awE+UyCb5DUfEb91e5OGLiMhUUrlr4KZ9l6lGjXbD+9pLOYNMhsoC2
-IqSviHaVFgawJnf0VohNt0wQ783VcvpUS6uysgB7UvdwPbBM7hmZMVap+/K47jvw
-ZMwnTggLCRPodqhMKQ2sBXW6Si7rmgWk6Po3fuy0lYXUi5ProN+MGpvt0kg3nneY
-PdGzhtRl7EeLr0TehVqs
-=fxdO
------END PGP SIGNATURE-----
-
---xHFwDpU9dbj6ez1V--
