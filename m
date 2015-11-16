@@ -1,56 +1,69 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:05:32 +0000
-Subject: [PATCH 25/29] ARM: shmobile: r8a7793: Use SoC specific binding for rcar-dmac nodes
-Message-Id: <061c6c624b2f356a0d02b137ae4f46825ddd44d1.1447981420.git.horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 16 Nov 2015 08:57:11 +0000
+Subject: [PATCH v2 01/03] ARM: shmobile: r8a7794: Add DU0 clock
+Message-Id: <20151116085711.7119.45579.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1447981420.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Use the new SoC specific binding for rcar-dmac and the generic
-binding as a fall-back in the r8a7793 device tree.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-In general Renesas hardware is not documented to the extent where the
-relationship between IP blocks on different SoCs can be assumed although
-they may appear to operate the same way. Furthermore the documentation
-typically does not specify a version for individual IP blocks. For these
-reasons a convention of using the SoC name in place of a version and
-providing SoC-specific compat strings has been adopted.
+The DU0 clock is an MSTP clock, child of the CPG ZX clock.
 
-Although not universally liked this convention is used in the bindings for
-most drivers for Renesas hardware. The purpose of this patch is to
-update the Renesas R-Car DMA Controller nodes to follow this convention.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index 36b6d4e67f34..2378df52aa32 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -237,7 +237,7 @@
- 	};
+ Previously part of the following series:
+ [PATCH 0/5] R-Car DU: Add support for R8A7793 and R8A7794
+
+ Changes since V1:
+ - None
+
+arch/arm/boot/dts/r8a7794.dtsi            | 7 ++++---
+ include/dt-bindings/clock/r8a7794-clock.h | 1 +
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index b73819423311..2a0d375e45b3 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -675,19 +675,20 @@
+ 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>,
+ 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
+-				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
++				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
++				 <&zx_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+ 				R8A7794_CLK_EHCI R8A7794_CLK_HSUSB
+ 				R8A7794_CLK_HSCIF2 R8A7794_CLK_SCIF5
+ 				R8A7794_CLK_SCIF4 R8A7794_CLK_HSCIF1 R8A7794_CLK_HSCIF0
+ 				R8A7794_CLK_SCIF3 R8A7794_CLK_SCIF2 R8A7794_CLK_SCIF1
+-				R8A7794_CLK_SCIF0
++				R8A7794_CLK_SCIF0 R8A7794_CLK_DU0
+ 			>;
+ 			clock-output-names  				"ehci", "hsusb",
+ 				"hscif2", "scif5", "scif4", "hscif1", "hscif0",
+-				"scif3", "scif2", "scif1", "scif0";
++				"scif3", "scif2", "scif1", "scif0", "du0";
+ 		};
+ 		mstp8_clks: mstp8_clks@e6150990 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index 09da38a58776..a7a7e0370968 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -79,6 +79,7 @@
+ #define R8A7794_CLK_SCIF2		19
+ #define R8A7794_CLK_SCIF1		20
+ #define R8A7794_CLK_SCIF0		21
++#define R8A7794_CLK_DU0			24
  
- 	dmac0: dma-controller@e6700000 {
--		compatible = "renesas,rcar-dmac";
-+		compatible = "renesas,dmac-r8a7793", "renesas,rcar-dmac";
- 		reg = <0 0xe6700000 0 0x20000>;
- 		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
- 			      0 200 IRQ_TYPE_LEVEL_HIGH
-@@ -268,7 +268,7 @@
- 	};
- 
- 	dmac1: dma-controller@e6720000 {
--		compatible = "renesas,rcar-dmac";
-+		compatible = "renesas,dmac-r8a7793", "renesas,rcar-dmac";
- 		reg = <0 0xe6720000 0 0x20000>;
- 		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
- 			      0 216 IRQ_TYPE_LEVEL_HIGH
--- 
-2.1.4
+ /* MSTP8 */
+ #define R8A7794_CLK_VIN1		10
 
