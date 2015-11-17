@@ -1,15 +1,19 @@
 From: Nicolas Pitre <nico@fluxnic.net>
-Date: Tue, 17 Nov 2015 16:57:31 +0000
+Date: Tue, 17 Nov 2015 17:24:15 +0000
 Subject: RE: [PATCH v3] ARM: xip: Use correct symbol for end of ROM marker
-Message-Id: <alpine.LFD.2.20.1511171155240.5826@knanqh.ubzr>
+Message-Id: <alpine.LFD.2.20.1511171200400.5826@knanqh.ubzr>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447362108-4333-1-git-send-email-chris.brandt@renesas.com>
  <1447697140-4099-1-git-send-email-chris.brandt@renesas.com>
  <alpine.LFD.2.20.1511161515100.5826@knanqh.ubzr>
  <HK2PR06MB05619FACB3725B6F5B2299718A1E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <alpine.LFD.2.20.1511161605070.5826@knanqh.ubzr>
- <HK2PR06MB056196B2E169A504A16ED9738A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
-In-Reply-To: <HK2PR06MB056196B2E169A504A16ED9738A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <HK2PR06MB056142FFDA4E99A764DF9ECB8A1E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <alpine.LFD.2.20.1511161730030.5826@knanqh.ubzr>
+ <HK2PR06MB05614D47A9C35ECB4CA72D3F8A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <alpine.LFD.2.20.1511162127180.5826@knanqh.ubzr>
+ <HK2PR06MB056175E6E4356DD8C3566D758A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+In-Reply-To: <HK2PR06MB056175E6E4356DD8C3566D758A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,78 +21,34 @@ To: linux-arm-kernel@lists.infradead.org
 
 On Tue, 17 Nov 2015, Chris Brandt wrote:
 
-> > The old method with conditional placement in the linker script is
-> > broken beyond repair.  There is simply way too much stuff these days
-> > to do this sanely.  I think the only way to fix it properly is to
-> > have a separate linker script for XIP usage with proper (and obvious)
-> > section placement.
+> > Absolutely.  I'll be glad to review your patches.
 > 
+> What do you think about this submission?
+> I think it still holds true regardless of the incorrect sectioning.
 > 
+> http://lists.infradead.org/pipermail/linux-arm-kernel/2015-November/384354.html
+
+This patch is correct.
+
+> >> Of course, there are still some other XIP patches needed (like you
+> >> can't use text areas as a temporary stack on boot), but the sections
+> >> are a pretty logical place to start.
+> >
+> > Maybe this can be prevented automatically by the linker with some
+> > read-only memory regions or the like.
 > 
-> Step 1: Change the Makefiles to select an alternative linker script.
+> I think this one is more of a coding issue.
+> These were the attempts to fix the temporary stack issue:
 > 
-> What do you think about doing the following?
+> My first patch:
+> http://lists.infradead.org/pipermail/linux-arm-kernel/2015-July/357106.html
+
+I think this ought to be fixed regardless of the XIP issue.
+
+> Magnus's try:
+> http://lists.infradead.org/pipermail/linux-arm-kernel/2015-November/383394.html
+
+This one is wrong as it clobbers r11.
 
 
-
-
-That's fine.  Obviously this is the first step when developing this, but 
-logically this will have to be the last patch in the series when you're 
-done.
-
-> 
-> 
-> diff --git a/Makefile b/Makefile
-> index fd46821..956ad21 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -898,7 +898,11 @@ libs-y		:= $(libs-y1) $(libs-y2)
->  # Externally visible symbols (used by link-vmlinux.sh)
->  export KBUILD_VMLINUX_INIT := $(head-y) $(init-y)
->  export KBUILD_VMLINUX_MAIN := $(core-y) $(libs-y) $(drivers-y) $(net-y)
-> +ifdef CONFIG_XIP_KERNEL
-> +export KBUILD_LDS          := arch/$(SRCARCH)/kernel/vmlinux-xip.lds
-> +else
->  export KBUILD_LDS          := arch/$(SRCARCH)/kernel/vmlinux.lds
-> +endif
->  export LDFLAGS_vmlinux
->  # used by scripts/pacmage/Makefile
->  export KBUILD_ALLDIRS := $(sort $(filter-out arch/%,$(vmlinux-alldirs)) arch Documentation include samples scripts tools virt)
->  
->  
-> 
-> diff --git a/arch/arm/kernel/Makefile b/arch/arm/kernel/Makefile
-> index af9e59b..d97fc2e 100644
-> --- a/arch/arm/kernel/Makefile
-> +++ b/arch/arm/kernel/Makefile
-> @@ -3,6 +3,7 @@
->  #
->  
->  CPPFLAGS_vmlinux.lds := -DTEXT_OFFSET=$(TEXT_OFFSET)
-> +CPPFLAGS_vmlinux-xip.lds := -DTEXT_OFFSET=$(TEXT_OFFSET)
->  AFLAGS_head.o        := -DTEXT_OFFSET=$(TEXT_OFFSET)
->  
->  ifdef CONFIG_FUNCTION_TRACER
-> @@ -92,4 +93,8 @@ obj-y				+= psci-call.o
->  obj-$(CONFIG_SMP)		+= psci_smp.o
->  endif
->  
-> +ifdef CONFIG_XIP_KERNEL
-> +extra-y := $(head-y) vmlinux-xip.lds
-> +else
->  extra-y := $(head-y) vmlinux.lds
-> +endif
-> 
-> 
-> 
-> 
-> 
-> 
-> Chris
-> 
-> _______________________________________________
-> linux-arm-kernel mailing list
-> linux-arm-kernel@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
-> 
-> 
+Nicolas
