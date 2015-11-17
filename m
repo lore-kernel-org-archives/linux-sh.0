@@ -1,51 +1,58 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Mon, 16 Nov 2015 21:12:59 +0000
+From: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Date: Tue, 17 Nov 2015 01:35:56 +0000
 Subject: Re: PM: after suspend/resume the system,can not suspends again
-Message-Id: <CAPDyKForCz9MjwYUvMdmR1hJD_+rA9Be09sMPyxfAZsE_HuT2g@mail.gmail.com>
+Message-Id: <564A847C.1090406@jinso.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87h9kulkfg.wl%kuninori.morimoto.gx@renesas.com>
-	<87fv0elibh.wl%kuninori.morimoto.gx@renesas.com>
-	<56417D61.80407@jinso.co.jp>
-	<56499E53.2050905@jinso.co.jp>
-In-Reply-To: <56499E53.2050905@jinso.co.jp>
+References: <87h9kulkfg.wl%kuninori.morimoto.gx@renesas.com>	<87fv0elibh.wl%kuninori.morimoto.gx@renesas.com>	<56417D61.80407@jinso.co.jp>	<56499E53.2050905@jinso.co.jp> <CAPDyKForCz9MjwYUvMdmR1hJD_+rA9Be09sMPyxfAZsE_HuT2g@mail.gmail.com>
+In-Reply-To: <CAPDyKForCz9MjwYUvMdmR1hJD_+rA9Be09sMPyxfAZsE_HuT2g@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Ulf Hansson <ulf.hansson@linaro.org>
 Cc: Nguyen Viet Dung <nv-dung@jinso.co.jp>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, Sakato Ryusuke <ryusuke.sakato.bx@renesas.com>
 
-On 16 November 2015 at 10:13, Cao Minh Hiep <cm-hiep@jinso.co.jp> wrote:
-> Dear Ulf Hansson,
->
-> I am Hiep from Jinzai Solution (a Japanese Company)
-> We have tested PM driver on Rcar-Gen2 (Lager, Koelsch Board) at Linux v4.3.
->
-> I would like to contact you because we found a patch that relate to a PM bug
-> :
->
-> After Suspend/resume system one time, we can not suspend the system again!.
-> (I attach the test log file)
->
-> The patch is show as below:
-> a98f1b7 PM / Domains: Fix validation of latency constraints in genpd
-> governor
->
-> Tested-by: Harunaga <nx-truong@jinso.co.jp>
-> Reported-by: Cao Minh Hiep <cm-hiep@jinso.co.jp>
->
-> This problem disapeared if revert this patch.
-> Please review it, when you have time!
+Dear Ulf Hansson
+Thanks for your feedback!
 
-Thanks for reporting and bisecting!
+On 2015年11月17日 06:12, Ulf Hansson wrote:
+> On 16 November 2015 at 10:13, Cao Minh Hiep <cm-hiep@jinso.co.jp> wrote:
+>> Dear Ulf Hansson,
+>>
+>> I am Hiep from Jinzai Solution (a Japanese Company)
+>> We have tested PM driver on Rcar-Gen2 (Lager, Koelsch Board) at Linux v4.3.
+>>
+>> I would like to contact you because we found a patch that relate to a PM bug
+>> :
+>>
+>> After Suspend/resume system one time, we can not suspend the system again!.
+>> (I attach the test log file)
+>>
+>> The patch is show as below:
+>> a98f1b7 PM / Domains: Fix validation of latency constraints in genpd
+>> governor
+>>
+>> Tested-by: Harunaga <nx-truong@jinso.co.jp>
+>> Reported-by: Cao Minh Hiep <cm-hiep@jinso.co.jp>
+>>
+>> This problem disapeared if revert this patch.
+>> Please review it, when you have time!
+> Thanks for reporting and bisecting!
+>
+> I had a look and I believe have found the cause of the problem, though
+> I will need a few days to post a fix for it.
+>
+> The problem is actually in genpd's ->runtime_suspend() callback, as it
+> validates PM QoS latencies even when it's being invoked from the
+> system PM path.
+> I will post a fixup to genpd in the next couple of days. I would
+> appreciate if you could help out in testing it.
+Please let me know when you post the fixup. I will test it.
 
-I had a look and I believe have found the cause of the problem, though
-I will need a few days to post a fix for it.
 
-The problem is actually in genpd's ->runtime_suspend() callback, as it
-validates PM QoS latencies even when it's being invoked from the
-system PM path.
-I will post a fixup to genpd in the next couple of days. I would
-appreciate if you could help out in testing it.
+Thank you!
+Jinso/Cao Minh Hiep.
 
-Kind regards
-Uffe
+> Kind regards
+> Uffe
+>
+
