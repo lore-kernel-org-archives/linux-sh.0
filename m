@@ -1,157 +1,100 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 24 Nov 2015 14:40:57 +0000
-Subject: [PATCH v3 1/4] sh_eth: Remove obsolete r7s72100-ether platform_device_id entry
-Message-Id: <1448376060-7803-2-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Nov 2015 03:18:51 +0000
+Subject: [PATCH 02/04] pinctrl: sh-pfc: r8a7794: Separate DU CDE and DISP
+Message-Id: <20151117031851.24924.18884.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
+References: <20151117031832.24924.60685.sendpatchset@little-apple>
+In-Reply-To: <20151117031832.24924.60685.sendpatchset@little-apple>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "David S. Miller" <davem@davemloft.net>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
+Cc: linus.walleij@linaro.org, linux-kernel@vger.kernel.org, koji.matsuoka.xm@renesas.com, linux-gpio@vger.kernel.org, horms@verge.net.au, geert@glider.be, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-Since commit 05104c266ae9a167 ("ARM: shmobile: r7s72100: genmai: Remove
-legacy board file"), r7s72100 is only supported in generic DT-only ARM
-multi-platform builds.  The driver doesn't need to match platform
-devices by name anymore, hence remove the corresponding
-platform_device_id entry.
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Protect r7s72100_data by #ifdef CONFIG_OF as it's now referenced on DT
-platforms only. Move it to a more logical position, in front of the
-r8a777x support, so we can have a single #ifdef covering all r7s* and
-r8a* support soon. This requires moving a helper function, too.
+Separate DU CDE and DISP signals to let the r8a7794 ALT
+board that lacks CDE handle the DISP signal by itself.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+The groups "du0_cde_disp" and "du1_cde_disp" are replaced
+by "du0_cde", "du1_cde", "du0_disp" and "du1_disp".
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 ---
-v3:
-  - No changes,
 
-v2:
-  - Add Acked-by,
-  - Protect r7s72100_data by #ifdef CONFIG_OF to silence a compiler
-    warning on SH,
-  - Move r7s72100_data.
----
- drivers/net/ethernet/renesas/sh_eth.c | 83 ++++++++++++++++++-----------------
- 1 file changed, 42 insertions(+), 41 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7794.c |   50 +++++++++++++++++++++++-----------
+ 1 file changed, 34 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index e7bab7909ed9e186..fca688fbefc1c49d 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -449,6 +449,48 @@ static void sh_eth_set_duplex(struct net_device *ndev)
- 		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
- }
- 
-+static void sh_eth_chip_reset(struct net_device *ndev)
-+{
-+	struct sh_eth_private *mdp = netdev_priv(ndev);
-+
-+	/* reset device */
-+	sh_eth_tsu_write(mdp, ARSTR_ARSTR, ARSTR);
-+	mdelay(1);
-+}
-+
-+#ifdef CONFIG_OF
-+/* R7S72100 */
-+static struct sh_eth_cpu_data r7s72100_data = {
-+	.chip_reset	= sh_eth_chip_reset,
-+	.set_duplex	= sh_eth_set_duplex,
-+
-+	.register_type	= SH_ETH_REG_FAST_RZ,
-+
-+	.ecsr_value	= ECSR_ICD,
-+	.ecsipr_value	= ECSIPR_ICDIP,
-+	.eesipr_value	= 0xff7f009f,
-+
-+	.tx_check	= EESR_TC1 | EESR_FTC,
-+	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT |
-+			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
-+			  EESR_TDE | EESR_ECI,
-+	.fdr_value	= 0x0000070f,
-+
-+	.no_psr		= 1,
-+	.apr		= 1,
-+	.mpr		= 1,
-+	.tpauser	= 1,
-+	.hw_swap	= 1,
-+	.rpadir		= 1,
-+	.rpadir_value   = 2 << 16,
-+	.no_trimd	= 1,
-+	.no_ade		= 1,
-+	.hw_crc		= 1,
-+	.tsu		= 1,
-+	.shift_rd0	= 1,
-+};
-+#endif /* CONFIG_OF */
-+
- /* There is CPU dependent code */
- static void sh_eth_set_rate_r8a777x(struct net_device *ndev)
- {
-@@ -671,15 +713,6 @@ static struct sh_eth_cpu_data sh7757_data_giga = {
- 	.tsu		= 1,
+--- 0008/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
++++ work/drivers/pinctrl/sh-pfc/pfc-r8a7794.c	2015-11-16 15:04:00.760513000 +0900
+@@ -1616,19 +1616,33 @@ static const unsigned int du1_sync_mux[]
+ 	DU1_EXODDF_DU1_ODDF_DISP_CDE_MARK,
+ 	DU1_EXVSYNC_DU1_VSYNC_MARK, DU1_EXHSYNC_DU1_HSYNC_MARK
  };
- 
--static void sh_eth_chip_reset(struct net_device *ndev)
--{
--	struct sh_eth_private *mdp = netdev_priv(ndev);
--
--	/* reset device */
--	sh_eth_tsu_write(mdp, ARSTR_ARSTR, ARSTR);
--	mdelay(1);
--}
--
- static void sh_eth_set_rate_gether(struct net_device *ndev)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
-@@ -799,37 +832,6 @@ static struct sh_eth_cpu_data r8a7740_data = {
- 	.shift_rd0	= 1,
- };
- 
--/* R7S72100 */
--static struct sh_eth_cpu_data r7s72100_data = {
--	.chip_reset	= sh_eth_chip_reset,
--	.set_duplex	= sh_eth_set_duplex,
--
--	.register_type	= SH_ETH_REG_FAST_RZ,
--
--	.ecsr_value	= ECSR_ICD,
--	.ecsipr_value	= ECSIPR_ICDIP,
--	.eesipr_value	= 0xff7f009f,
--
--	.tx_check	= EESR_TC1 | EESR_FTC,
--	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT |
--			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
--			  EESR_TDE | EESR_ECI,
--	.fdr_value	= 0x0000070f,
--
--	.no_psr		= 1,
--	.apr		= 1,
--	.mpr		= 1,
--	.tpauser	= 1,
--	.hw_swap	= 1,
--	.rpadir		= 1,
--	.rpadir_value   = 2 << 16,
--	.no_trimd	= 1,
--	.no_ade		= 1,
--	.hw_crc		= 1,
--	.tsu		= 1,
--	.shift_rd0	= 1,
+-static const unsigned int du0_cde_disp_pins[] = {
+-	/* CDE DISP */
+-	RCAR_GP_PIN(2, 31), RCAR_GP_PIN(2, 30),
 -};
--
- static struct sh_eth_cpu_data sh7619_data = {
- 	.register_type	= SH_ETH_REG_FAST_SH3_SH2,
+-static const unsigned int du0_cde_disp_mux[] = {
+-	DU0_CDE_MARK, DU0_DISP_MARK
+-};
+-static const unsigned int du1_cde_disp_pins[] = {
+-	/* CDE DISP */
+-	RCAR_GP_PIN(4, 31), RCAR_GP_PIN(4, 30),
++static const unsigned int du0_cde_pins[] = {
++	/* CDE */
++	RCAR_GP_PIN(2, 31),
+ };
+-static const unsigned int du1_cde_disp_mux[] = {
+-	DU1_CDE_MARK, DU1_DISP_MARK
++static const unsigned int du0_cde_mux[] = {
++	DU0_CDE_MARK,
++};
++static const unsigned int du1_cde_pins[] = {
++	/* CDE */
++	RCAR_GP_PIN(4, 31),
++};
++static const unsigned int du1_cde_mux[] = {
++	DU1_CDE_MARK
++};
++static const unsigned int du0_disp_pins[] = {
++	/* DISP */
++	RCAR_GP_PIN(2, 30),
++};
++static const unsigned int du0_disp_mux[] = {
++	DU0_DISP_MARK
++};
++static const unsigned int du1_disp_pins[] = {
++	/* DISP */
++	RCAR_GP_PIN(4, 30),
++};
++static const unsigned int du1_disp_mux[] = {
++	DU1_DISP_MARK
+ };
+ static const unsigned int du0_clk_in_pins[] = {
+ 	/* CLKIN */
+@@ -2932,8 +2946,10 @@ static const struct sh_pfc_pin_group pin
+ 	SH_PFC_PIN_GROUP(du1_clk_out),
+ 	SH_PFC_PIN_GROUP(du0_sync),
+ 	SH_PFC_PIN_GROUP(du1_sync),
+-	SH_PFC_PIN_GROUP(du0_cde_disp),
+-	SH_PFC_PIN_GROUP(du1_cde_disp),
++	SH_PFC_PIN_GROUP(du0_cde),
++	SH_PFC_PIN_GROUP(du1_cde),
++	SH_PFC_PIN_GROUP(du0_disp),
++	SH_PFC_PIN_GROUP(du1_disp),
+ 	SH_PFC_PIN_GROUP(du0_clk_in),
+ 	SH_PFC_PIN_GROUP(du1_clk_in),
+ 	SH_PFC_PIN_GROUP(eth_link),
+@@ -3122,8 +3138,10 @@ static const char * const du_groups[]  	"du1_clk_out",
+ 	"du0_sync",
+ 	"du1_sync",
+-	"du0_cde_disp",
+-	"du1_cde_disp",
++	"du0_cde",
++	"du1_cde",
++	"du0_disp",
++	"du1_disp",
+ };
  
-@@ -3277,7 +3279,6 @@ static struct platform_device_id sh_eth_id_table[] = {
- 	{ "sh7757-ether", (kernel_ulong_t)&sh7757_data },
- 	{ "sh7757-gether", (kernel_ulong_t)&sh7757_data_giga },
- 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
--	{ "r7s72100-ether", (kernel_ulong_t)&r7s72100_data },
- 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
- 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
- 	{ "r8a7790-ether", (kernel_ulong_t)&r8a779x_data },
--- 
-1.9.1
-
+ static const char * const du0_groups[] = {
