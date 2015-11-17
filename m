@@ -1,52 +1,79 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 30 Nov 2015 13:32:10 +0000
-Subject: [PATCH v3 0/2] pinctrl: sh-pfc: Improve pinmux macros documentation
-Message-Id: <1448890332-773-1-git-send-email-geert+renesas@glider.be>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Nov 2015 04:31:22 +0000
+Subject: [PATCH 04/04] ARM: shmobile: r8a7794: IPMMU compat string SoC part number update
+Message-Id: <20151117043122.4521.13958.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niklas.soderlund@ragnatech.se>, Magnus Damm <damm@opensource.se>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-sh@vger.kernel.org
 
-	Hi Laurent, Linus,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This patch series improves the documentation for the various macros used
-to decribe pinmux configuration on Renesas SoCs.
+Update IPMMU compat strings to include SoC part number.
 
-Apart from more improvements, v3 renames the PINMUX_IPSR_DATA() macro to
-PINMUX_IPSR_GPSR(). As this is a big changes in (LoD), I did that in a
-separate patch.
+By specifying SoC part number in DT it becomes possible 
+to implement SoC specific features in the IPMMU driver.
 
-You can find more detailed changelog information in the individual
-patches.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
 
-Thanks!
+ arch/arm/boot/dts/r8a7794.dtsi |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-Geert Uytterhoeven (2):
-  pinctrl: sh-pfc: Improve pinmux macros documentation
-  pinctrl: sh-pfc: Rename PINMUX_IPSR_DATA() to PINMUX_IPSR_GPSR()
-
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c |  690 ++++++++++-----------
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 1136 +++++++++++++++++-----------------
- drivers/pinctrl/sh-pfc/pfc-r8a7790.c |  774 +++++++++++------------
- drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  624 +++++++++----------
- drivers/pinctrl/sh-pfc/pfc-r8a7794.c |  844 ++++++++++++-------------
- drivers/pinctrl/sh-pfc/pfc-r8a7795.c |  554 ++++++++---------
- drivers/pinctrl/sh-pfc/pfc-sh7734.c  |  412 ++++++------
- drivers/pinctrl/sh-pfc/sh_pfc.h      |   96 ++-
- 8 files changed, 2604 insertions(+), 2526 deletions(-)
-
--- 
-1.9.1
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+--- 0003/arch/arm/boot/dts/r8a7794.dtsi
++++ work/arch/arm/boot/dts/r8a7794.dtsi	2015-11-17 13:12:59.540513000 +0900
+@@ -1104,7 +1104,7 @@
+ 	};
+ 
+ 	ipmmu_sy0: mmu@e6280000 {
+-		compatible = "renesas,ipmmu-vmsa";
++		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
+ 		reg = <0 0xe6280000 0 0x1000>;
+ 		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
+@@ -1113,7 +1113,7 @@
+ 	};
+ 
+ 	ipmmu_sy1: mmu@e6290000 {
+-		compatible = "renesas,ipmmu-vmsa";
++		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
+ 		reg = <0 0xe6290000 0 0x1000>;
+ 		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
+ 		#iommu-cells = <1>;
+@@ -1121,7 +1121,7 @@
+ 	};
+ 
+ 	ipmmu_ds: mmu@e6740000 {
+-		compatible = "renesas,ipmmu-vmsa";
++		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
+ 		reg = <0 0xe6740000 0 0x1000>;
+ 		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
+@@ -1130,7 +1130,7 @@
+ 	};
+ 
+ 	ipmmu_mp: mmu@ec680000 {
+-		compatible = "renesas,ipmmu-vmsa";
++		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
+ 		reg = <0 0xec680000 0 0x1000>;
+ 		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
+ 		#iommu-cells = <1>;
+@@ -1138,7 +1138,7 @@
+ 	};
+ 
+ 	ipmmu_mx: mmu@fe951000 {
+-		compatible = "renesas,ipmmu-vmsa";
++		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
+ 		reg = <0 0xfe951000 0 0x1000>;
+ 		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
+@@ -1147,7 +1147,7 @@
+ 	};
+ 
+ 	ipmmu_gp: mmu@e62a0000 {
+-		compatible = "renesas,ipmmu-vmsa";
++		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
+ 		reg = <0 0xe62a0000 0 0x1000>;
+ 		interrupts = <0 260 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 261 IRQ_TYPE_LEVEL_HIGH>;
