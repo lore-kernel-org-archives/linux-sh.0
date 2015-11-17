@@ -1,31 +1,38 @@
-From: David Miller <davem@davemloft.net>
-Date: Mon, 02 Nov 2015 21:32:53 +0000
-Subject: Re: [PATCH net-next] ravb: use pdev rather than ndev for error messages
-Message-Id: <20151102.163253.1073537023536414920.davem@davemloft.net>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Nov 2015 04:30:47 +0000
+Subject: [PATCH 00/04] ARM: shmobile: IPMMU compat string SoC part number update
+Message-Id: <20151117043047.4521.84234.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446428417-10895-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1446428417-10895-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms+renesas@verge.net.au
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com
+To: linux-sh@vger.kernel.org
 
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon,  2 Nov 2015 10:40:17 +0900
+ARM: shmobile: IPMMU compat string SoC part number update
 
-> This corrects what appear to be typos, making the code consistent with
-> itself, and allowing meaningful prefixes to be displayed with the errors in
-> question.
-> 
-> Before:
->  (null): failed to initialize MDIO
->  (null): Cannot allocate desc base address table (size 176 bytes)
-> 
-> After:
-> ravb e6800000.ethernet: failed to initialize MDIO
-> ravb e6800000.ethernet: Cannot allocate desc base address table (size 176 bytes)
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+[PATCH 01/04] ARM: shmobile: r8a7790: IPMMU compat string SoC part number update
+[PATCH 02/04] ARM: shmobile: r8a7791: IPMMU compat string SoC part number update
+[PATCH 03/04] ARM: shmobile: r8a7793: IPMMU compat string SoC part number update
+[PATCH 04/04] ARM: shmobile: r8a7794: IPMMU compat string SoC part number update
 
-Applied.
+Update R-Car Gen2 DT compat strings for IPMMU devices to follow the updated
+DT binding documentation included in:
+"[PATCH v2] iommu/ipmmu-vmsa: Include SoC part number in DT binding docs"
+
+With this compat string change we may in the future add SoC-specific features
+such as IPMMU performance counters that only exist on some SoCs.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Written on top of "renesas-devel-20151113-v4.3" together with
+ "[PATCH v2 00/03] ARM: shmobile: r8a7794 ALT board DU VGA port enablement V2"
+ "[PATCH] ARM: shmobile: r8a7794: alt: Enable PFC DU for the VGA port"
+ "[PATCH 01/02] ARM: shmobile: r8a7793: Add DU node to device tree"
+ "[PATCH] ARM: shmobile: r8a7793: Add GPIO nodes to device tree"
+
+ arch/arm/boot/dts/r8a7790.dtsi |   12 ++++++------
+ arch/arm/boot/dts/r8a7791.dtsi |   14 +++++++-------
+ arch/arm/boot/dts/r8a7793.dtsi |   14 +++++++-------
+ arch/arm/boot/dts/r8a7794.dtsi |   12 ++++++------
+ 4 files changed, 26 insertions(+), 26 deletions(-)
