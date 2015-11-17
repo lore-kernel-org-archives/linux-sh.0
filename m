@@ -1,119 +1,41 @@
-From: Eduardo Valentin <edubezval@gmail.com>
-Date: Mon, 16 Nov 2015 18:42:44 +0000
-Subject: Re: [PATCH 1/2] thermal: rcar_thermal: remove redundant operation
-Message-Id: <20151116184242.GA6349@localhost.localdomain>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 17 Nov 2015 03:18:32 +0000
+Subject: [PATCH 00/04] pinctrl: sh-pfc: r8a7794: DU support
+Message-Id: <20151117031832.24924.60685.sendpatchset@little-apple>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87h9kulkfg.wl%kuninori.morimoto.gx@renesas.com>
- <87fv0elibh.wl%kuninori.morimoto.gx@renesas.com>
- <87egfylia4.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egfylia4.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Zhang Rui <rui.zhang@intel.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Kernel <linux-kernel@vger.kernel.org>, linux-pm@vger.kernel.org, cm-hiep@jinso.co.jp, nv-dung@jinso.co.jp
+To: linux-sh@vger.kernel.org
+Cc: linus.walleij@linaro.org, linux-kernel@vger.kernel.org, koji.matsuoka.xm@renesas.com, linux-gpio@vger.kernel.org, horms@verge.net.au, geert@glider.be, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-On Tue, Nov 10, 2015 at 02:12:06AM +0000, Kuninori Morimoto wrote:
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Probe error operation and remove operation are same.
-> Let's use same function.
+pinctrl: sh-pfc: r8a7794: DU support
 
-I am picking this one and sending for next rc cycle. The second  patch
-is still under discussion and the issue may be solved differently,
-so for now I wont get that. 
+[PATCH 01/04] pinctrl: sh-pfc: r8a7794: Add DU pin groups
+[PATCH 02/04] pinctrl: sh-pfc: r8a7794: Separate DU CDE and DISP
+[PATCH 03/04] pinctrl: sh-pfc: r8a7794: Add missing dot clock signals
+[PATCH 04/04] pinctrl: sh-pfc: r8a7794: Break out ODDF from sync
 
-BR,
+These patches take the r8a7794 PFC DU support code from the BSP
+and reworks it to fit the r8a7794 ALT board. Tested with the ALT
+VGA port - by default PFC is not used however enabling PFC using
+an incremental (yet to be posted) patch works well.
 
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  drivers/thermal/rcar_thermal.c | 49 ++++++++++++++++++------------------------
->  1 file changed, 21 insertions(+), 28 deletions(-)
-> 
-> diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-> index 5d4ae7d..13d01ed 100644
-> --- a/drivers/thermal/rcar_thermal.c
-> +++ b/drivers/thermal/rcar_thermal.c
-> @@ -361,6 +361,24 @@ static irqreturn_t rcar_thermal_irq(int irq, void *data)
->  /*
->   *		platform functions
->   */
-> +static int rcar_thermal_remove(struct platform_device *pdev)
-> +{
-> +	struct rcar_thermal_common *common = platform_get_drvdata(pdev);
-> +	struct device *dev = &pdev->dev;
-> +	struct rcar_thermal_priv *priv;
-> +
-> +	rcar_thermal_for_each_priv(priv, common) {
-> +		if (rcar_has_irq_support(priv))
-> +			rcar_thermal_irq_disable(priv);
-> +		thermal_zone_device_unregister(priv->zone);
-> +	}
-> +
-> +	pm_runtime_put(dev);
-> +	pm_runtime_disable(dev);
-> +
-> +	return 0;
-> +}
-> +
->  static int rcar_thermal_probe(struct platform_device *pdev)
->  {
->  	struct rcar_thermal_common *common;
-> @@ -377,6 +395,8 @@ static int rcar_thermal_probe(struct platform_device *pdev)
->  	if (!common)
->  		return -ENOMEM;
->  
-> +	platform_set_drvdata(pdev, common);
-> +
->  	INIT_LIST_HEAD(&common->head);
->  	spin_lock_init(&common->lock);
->  	common->dev = dev;
-> @@ -454,43 +474,16 @@ static int rcar_thermal_probe(struct platform_device *pdev)
->  		rcar_thermal_common_write(common, ENR, enr_bits);
->  	}
->  
-> -	platform_set_drvdata(pdev, common);
-> -
->  	dev_info(dev, "%d sensor probed\n", i);
->  
->  	return 0;
->  
->  error_unregister:
-> -	rcar_thermal_for_each_priv(priv, common) {
-> -		if (rcar_has_irq_support(priv))
-> -			rcar_thermal_irq_disable(priv);
-> -		thermal_zone_device_unregister(priv->zone);
-> -	}
-> -
-> -	pm_runtime_put(dev);
-> -	pm_runtime_disable(dev);
-> +	rcar_thermal_remove(pdev);
->  
->  	return ret;
->  }
->  
-> -static int rcar_thermal_remove(struct platform_device *pdev)
-> -{
-> -	struct rcar_thermal_common *common = platform_get_drvdata(pdev);
-> -	struct device *dev = &pdev->dev;
-> -	struct rcar_thermal_priv *priv;
-> -
-> -	rcar_thermal_for_each_priv(priv, common) {
-> -		if (rcar_has_irq_support(priv))
-> -			rcar_thermal_irq_disable(priv);
-> -		thermal_zone_device_unregister(priv->zone);
-> -	}
-> -
-> -	pm_runtime_put(dev);
-> -	pm_runtime_disable(dev);
-> -
-> -	return 0;
-> -}
-> -
->  static const struct of_device_id rcar_thermal_dt_ids[] = {
->  	{ .compatible = "renesas,rcar-thermal", },
->  	{},
-> -- 
-> 1.9.1
-> 
+It is worth noting that patch 2-4 modifies the pin groups. This
+means that the upstream DT ABI for PFC DU will differ compared
+to the unreviewed BSP code.
+
+In general it is not considered good practice to change the pin
+groups and break compatibility since they are part of the DT ABI.
+
+For this particular case upstream never have had PFC DU support
+for r8a7794, so treating the BSP bindings as experimental and
+migrate away seems reasonable.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+---
+
+ Written against v4.4-rc1
+
+ drivers/pinctrl/sh-pfc/pfc-r8a7794.c |  282 ++++++++++++++++++++++++++++++----
+ 1 file changed, 252 insertions(+), 30 deletions(-)
