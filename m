@@ -1,55 +1,57 @@
-From: Guenter Roeck <linux@roeck-us.net>
-Date: Tue, 03 Nov 2015 14:48:21 +0000
-Subject: Re: [PATCH 2/2] watchdog: include: add units for timeout values in kerneldoc
-Message-Id: <5638C935.60601@roeck-us.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 17 Nov 2015 19:10:40 +0000
+Subject: [PATCH] ARM: shmobile: alt: Add pfc pins to DT
+Message-Id: <1447787440-11080-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446537616-3452-1-git-send-email-wsa@the-dreams.de>
- <1446537616-3452-2-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1446537616-3452-2-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>, linux-watchdog@vger.kernel.org
-Cc: Wim Van Sebroeck <wim@iguana.be>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 11/03/2015 12:00 AM, Wolfram Sang wrote:
-> From: Wolfram Sang <wsa+renesas@sang-engineering.com>
->
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+PFC is already enabled on the r8a7794.
+This adds pins for devices already enabled in DT on
+the r8a7794 based alt board.
 
-Reviewed-by: Guenter Roeck <linux@roeck-us.net>
+Based on work by Mitsuhiro Kimura and Hisashi Nakamura.
 
-> ---
->   include/linux/watchdog.h | 10 +++++-----
->   1 file changed, 5 insertions(+), 5 deletions(-)
->
-> diff --git a/include/linux/watchdog.h b/include/linux/watchdog.h
-> index fbd752de3a24d5..4e99a267878d21 100644
-> --- a/include/linux/watchdog.h
-> +++ b/include/linux/watchdog.h
-> @@ -24,8 +24,8 @@ struct watchdog_device;
->    * @stop:	The routine for stopping the watchdog device.
->    * @ping:	The routine that sends a keepalive ping to the watchdog device.
->    * @status:	The routine that shows the status of the watchdog device.
-> - * @set_timeout:The routine for setting the watchdog devices timeout value.
-> - * @get_timeleft:The routine that gets the time left before a reset.
-> + * @set_timeout:The routine for setting the watchdog devices timeout value (in seconds).
-> + * @get_timeleft:The routine that gets the time left before a reset (in seconds).
->    * @ref:	The ref operation for dyn. allocated watchdog_device structs
->    * @unref:	The unref operation for dyn. allocated watchdog_device structs
->    * @ioctl:	The routines that handles extra ioctl calls.
-> @@ -59,9 +59,9 @@ struct watchdog_ops {
->    * @info:	Pointer to a watchdog_info structure.
->    * @ops:	Pointer to the list of watchdog operations.
->    * @bootstatus:	Status of the watchdog device at boot.
-> - * @timeout:	The watchdog devices timeout value.
-> - * @min_timeout:The watchdog devices minimum timeout value.
-> - * @max_timeout:The watchdog devices maximum timeout value.
-> + * @timeout:	The watchdog devices timeout value (in seconds).
-> + * @min_timeout:The watchdog devices minimum timeout value (in seconds).
-> + * @max_timeout:The watchdog devices maximum timeout value (in seconds).
->    * @driver-data:Pointer to the drivers private data.
->    * @lock:	Lock for watchdog core internal use only.
->    * @status:	Field that contains the devices internal status bits.
->
+Cc: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+Cc: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+Tested
+---
+ arch/arm/boot/dts/r8a7794-alt.dts | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index 928cfa641475..2e889991ce8f 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -39,6 +39,23 @@
+ 	clock-frequency = <20000000>;
+ };
+ 
++&pfc {
++	scif2_pins: serial2 {
++		renesas,groups = "scif2_data";
++		renesas,function = "scif2";
++	};
++
++	ether_pins: ether {
++		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
++		renesas,function = "eth";
++	};
++
++	ether_b_pins: ether {
++		renesas,groups = "eth_link_b", "eth_mdio_b", "eth_rmii_b";
++		renesas,function = "eth";
++	};
++};
++
+ &cmt0 {
+ 	status = "okay";
+ };
+-- 
+2.1.4
 
