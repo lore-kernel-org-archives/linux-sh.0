@@ -1,79 +1,36 @@
 From: Chris Brandt <Chris.Brandt@renesas.com>
-Date: Wed, 18 Nov 2015 19:12:53 +0000
+Date: Wed, 18 Nov 2015 19:36:05 +0000
 Subject: RE: [PATCH v3] ARM: xip: Use correct symbol for end of ROM marker
-Message-Id: <HK2PR06MB0561CA7E856CEAA89D0752488A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+Message-Id: <HK2PR06MB0561BAC75F605C9C51966B948A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447362108-4333-1-git-send-email-chris.brandt@renesas.com>
  <1447697140-4099-1-git-send-email-chris.brandt@renesas.com>
  <alpine.LFD.2.20.1511161515100.5826@knanqh.ubzr>
  <HK2PR06MB05619FACB3725B6F5B2299718A1E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <alpine.LFD.2.20.1511161605070.5826@knanqh.ubzr>
- <HK2PR06MB056142FFDA4E99A764DF9ECB8A1E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <alpine.LFD.2.20.1511161730030.5826@knanqh.ubzr>
- <HK2PR06MB05614D47A9C35ECB4CA72D3F8A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <alpine.LFD.2.20.1511162127180.5826@knanqh.ubzr>
- <HK2PR06MB056175E6E4356DD8C3566D758A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <alpine.LFD.2.20.1511172255410.22569@knanqh.ubzr>
- <CANqRtoTkHecGEsbi3EtM8dkHQ=V0RGm7iZcU_igMqLE7Od=xBA@mail.gmail.com>
- <alpine.LFD.2.20.1511180841000.22569@knanqh.ubzr>
- <alpine.LFD.2.20.1511181156250.22569@knanqh.ubzr>
-In-Reply-To: <alpine.LFD.2.20.1511181156250.22569@knanqh.ubzr>
+ <HK2PR06MB056196B2E169A504A16ED9738A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <alpine.LFD.2.20.1511171155240.5826@knanqh.ubzr>
+ <HK2PR06MB0561B7675F17A81B54A65CA28A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <alpine.LFD.2.20.1511172129060.22569@knanqh.ubzr>
+ <HK2PR06MB0561077CA74074E175561D7F8A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <alpine.LFD.2.20.1511181204240.22569@knanqh.ubzr>
+In-Reply-To: <alpine.LFD.2.20.1511181204240.22569@knanqh.ubzr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Nicolas,
+> Sure.  You should start by splitting the XIP stuff out to a separate
+> script so functionally it is the same (broken) end result.  And from
+> there adding incremental fixes to the XIP script.
 
-> Here's the patch with proper changelog, etc.  I don't have XIP
-> capable hardware to test it with though.
+More or less that's what I'm doing now on my system. You can diff the 2 in order to see what I've removed.
 
-
-I'm testing it now...but it's crashing.
-
-I fired up GDB, so here the reason:
+But wait...you said 'the last step' was to add a 2nd linker file and change the Makefiles to use it.
 
 
-__v7_ca17mp_setup:
-	mov	r10, #0
-1:	adr	r0, __v7_setup_stack_ptr
-r0=0x18213df4
-
-	ldr	r12, [r0]
-r12=0x10174cc
-
-	add	r12, r12, r0			@ the local stack
-r12=0x1922b2c0
-
-	stmia	r12, {r1-r6, lr}		@ v7_invalidate_l1 touches r0-r6
-	bl      v7_invalidate_l1
-
-
-0x1922b2c0 is NOT RAM....it's nothing.
-
-
-As point of reference, here's the memory map of my XIP system:
-  Physical ROM address: 0x18000000 (I have my XIP kernel starting at 0x18200000)
-  Physical RAM address: 0x20000000
-  Virtual ROM  address: 0xBF0000000
-  Virtual RAM  address: 0xC00000000
-
-
-Basically, you made the same mistake that Magnus first did: You can't rely on the current PC address to obtain an address in physical RAM because the ROM virt-to-phys relationship is different than the RAM virt-to-phys relationship.
-
-No matter how you look at it, this early in boot, the only 'thing' that really knows where physical RAM is located is PLAT_PHYS_OFFSET.
-
-That's why both Magnus's an my patches (that I both tested) contain PLAT_PHYS_OFFSET.
-
-
-The only other 'slight' piece of info would be the DTB pointer is still sitting in R2 from boot, and at least for my system, that is in RAM. However, the DTB could be in ROM if the user wanted it to be, and I also think that this code might run twice in a SMP system...so even R2 would not be reliable. So...forget I mentioned it...
-
-
-I don't see any way around not having a "#ifdef XIP_KERNEL" statement in order to expose PLAT_PHYS_OFFSET so you can properly do your translation math.
-
+Are you saying I should first submit a patch that simply adds the new file, but not hook it up to any Makefiles yet?
+Then, once it has been updated a few times and is in better shape, I submit another patch that hooks it up with the Makefiles so I can then finally remove the XIP_KERNEL parts from the current vmlinux.lds.S?
 
 Chris
-
-
-ps, I will add that I appreciate your efforts with this.
 
