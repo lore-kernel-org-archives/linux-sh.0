@@ -1,7 +1,7 @@
-From: Nicolas Pitre <nico@fluxnic.net>
-Date: Wed, 18 Nov 2015 19:44:10 +0000
+From: Chris Brandt <Chris.Brandt@renesas.com>
+Date: Wed, 18 Nov 2015 20:00:05 +0000
 Subject: RE: [PATCH v3] ARM: xip: Use correct symbol for end of ROM marker
-Message-Id: <alpine.LFD.2.20.1511181437030.22569@knanqh.ubzr>
+Message-Id: <HK2PR06MB0561A83E36C90DA0E29FC3478A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447362108-4333-1-git-send-email-chris.brandt@renesas.com>
  <1447697140-4099-1-git-send-email-chris.brandt@renesas.com>
@@ -15,32 +15,30 @@ References: <1447362108-4333-1-git-send-email-chris.brandt@renesas.com>
  <HK2PR06MB0561077CA74074E175561D7F8A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <alpine.LFD.2.20.1511181204240.22569@knanqh.ubzr>
  <HK2PR06MB0561BAC75F605C9C51966B948A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
-In-Reply-To: <HK2PR06MB0561BAC75F605C9C51966B948A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <alpine.LFD.2.20.1511181437030.22569@knanqh.ubzr>
+In-Reply-To: <alpine.LFD.2.20.1511181437030.22569@knanqh.ubzr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, 18 Nov 2015, Chris Brandt wrote:
+>> Are you saying I should first submit a patch that simply adds the
+>> new file, but not hook it up to any Makefiles yet?
+>> Then, once it has been updated a few times and is in better shape,
+>> I submit another patch that hooks it up with the Makefiles so I can
+>> then finally remove the XIP_KERNEL parts from the current
+>> vmlinux.lds.S?
+>
+> Well... I'm of the opinion now that the first patch should be the
+> creation of the new script being a copy of the original with the
+> XIP conditionals removed from both, plus the makefile changes. That
+> should be easy to verify that nothing changed result wise, and then
+> additional patches could bring XIP efinements on top without
+> disturbing the non-XIP case.
+>
+> Nicolas
 
-> > Sure.  You should start by splitting the XIP stuff out to a separate
-> > script so functionally it is the same (broken) end result.  And from
-> > there adding incremental fixes to the XIP script.
-> 
-> More or less that's what I'm doing now on my system. You can diff the 2 in order to see what I've removed.
-> 
-> But wait...you said 'the last step' was to add a 2nd linker file and change the Makefiles to use it.
-> 
-> 
-> Are you saying I should first submit a patch that simply adds the new file, but not hook it up to any Makefiles yet?
-> Then, once it has been updated a few times and is in better shape, I submit another patch that hooks it up with the Makefiles so I can then finally remove the XIP_KERNEL parts from the current vmlinux.lds.S?
+OK. I'm good with that. I'll submit a patch and see what happens.
 
-Well... I'm of the opinion now that the first patch should be the 
-creation of the new script being a copy of the original with the XIP 
-conditionals removed from both, plus the makefile changes. That should 
-be easy to verify that nothing changed result wise, and then additional 
-patches could bring XIP efinements on top without disturbing the non-XIP 
-case.
+Chris
 
-
-Nicolas
