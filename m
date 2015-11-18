@@ -1,80 +1,61 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 18 Nov 2015 05:12:01 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 18 Nov 2015 08:30:04 +0000
 Subject: Re: [PATCH v3] ARM: xip: Use correct symbol for end of ROM marker
-Message-Id: <CANqRtoTkHecGEsbi3EtM8dkHQ=V0RGm7iZcU_igMqLE7Od=xBA@mail.gmail.com>
+Message-Id: <5236157.AUJjCLOEeJ@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447362108-4333-1-git-send-email-chris.brandt@renesas.com>
- <1447697140-4099-1-git-send-email-chris.brandt@renesas.com>
- <alpine.LFD.2.20.1511161515100.5826@knanqh.ubzr>
- <HK2PR06MB05619FACB3725B6F5B2299718A1E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <alpine.LFD.2.20.1511161605070.5826@knanqh.ubzr>
- <HK2PR06MB056142FFDA4E99A764DF9ECB8A1E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <alpine.LFD.2.20.1511161730030.5826@knanqh.ubzr>
- <HK2PR06MB05614D47A9C35ECB4CA72D3F8A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <alpine.LFD.2.20.1511162127180.5826@knanqh.ubzr>
- <HK2PR06MB056175E6E4356DD8C3566D758A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <alpine.LFD.2.20.1511172255410.22569@knanqh.ubzr>
-In-Reply-To: <alpine.LFD.2.20.1511172255410.22569@knanqh.ubzr>
+ <HK2PR06MB0561B7675F17A81B54A65CA28A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+ <alpine.LFD.2.20.1511172129060.22569@knanqh.ubzr>
+In-Reply-To: <alpine.LFD.2.20.1511172129060.22569@knanqh.ubzr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Nicolas,
+On Tuesday 17 November 2015 22:17:41 Nicolas Pitre wrote:
+> On Wed, 18 Nov 2015, Chris Brandt wrote:
+> 
+> > It sounds like there would still be a request to split up the linker 
+> > scripts in order to remove the 6 XIP_KERNEL references scattered 
+> > throughout vmlinux.lds.S. However, it would still be nice to keep the 
+> > two versions looking as close as they can to each other with only the 
+> > obvious changes (like removing XIP_KERNEL from the non-XIP version, 
+> > and removing SMP_ON_UP from the XIP version)
+> 
+> I don't think so. XIP and non-XIP are fundamentally looking different 
+> these days.  Trying to keep them as similar as possible is rather an 
+> impediment to both cases and brings no real benefits.
+> 
+> Not only should .init.smpalt be gone from the XIP version, but it might 
+> be safer to put that into a special "should_be_empty" section and bail 
+> out with ASSERT() if that section size isn't zero. Same thing for 
+> pv_table. This way we'll be sure that nothing in the kernel config 
+> expects self-modified code to be present.
+> 
+> With XIP there is still an init section, but it is pointless to store 
+> .init.text stuff in there. That should instead stay in ROM and never be 
+> discarded (obviously). No need to page align it either at that point 
+> which should save some ROM space.
+> 
+> Things like .kprobes.text should be in ROM, but the entire executable in 
+> ROM should be surrounded by __kprobes_text_start and __kprobes_text_end 
+> to prevent any attempt to put kprobes there. This way, kprobes could 
+> still work for modules.
+> 
+> Etc. Etc.
+> 
+> There are simply too many things these days that require special 
+> considerations with XIP. And freeing the main script from XIP 
+> considerations will ease maintenance as well, more than the added 
+> maintenance from the duplicated parts.
 
-On Wed, Nov 18, 2015 at 12:58 PM, Nicolas Pitre <nico@fluxnic.net> wrote:
-> On Tue, 17 Nov 2015, Chris Brandt wrote:
->
->> I think this one is more of a coding issue.
->> These were the attempts to fix the temporary stack issue:
->>
->> My first patch:
->> http://lists.infradead.org/pipermail/linux-arm-kernel/2015-July/357106.html
->>
->> Magnus's try:
->> http://lists.infradead.org/pipermail/linux-arm-kernel/2015-November/383394.html
->
-> Here's my proposal:
->
-> diff --git a/arch/arm/mm/proc-v7.S b/arch/arm/mm/proc-v7.S
-> index de2b246fed..2d0ac32320 100644
-> --- a/arch/arm/mm/proc-v7.S
-> +++ b/arch/arm/mm/proc-v7.S
-> @@ -274,10 +274,12 @@ __v7_ca15mp_setup:
->  __v7_b15mp_setup:
->  __v7_ca17mp_setup:
->         mov     r10, #0
-> -1:     adr     r12, __v7_setup_stack           @ the local stack
-> -       stmia   r12, {r0-r5, lr}                @ v7_invalidate_l1 touches r0-r6
-> +1:     adr     r0, __v7_setup_stack_ptr
-> +       ldr     r12, [r0]
-> +       add     r12, r12, r0                    @ the local stack
-> +       stmia   r12, {r1-r6, lr}                @ v7_invalidate_l1 touches r0-r6
->         bl      v7_invalidate_l1
-> -       ldmia   r12, {r0-r5, lr}
-> +       ldmia   r12, {r1-r6, lr}
->  #ifdef CONFIG_SMP
->         ALT_SMP(mrc     p15, 0, r0, c1, c0, 1)
->         ALT_UP(mov      r0, #(1 << 6))          @ fake it for UP
+[Adding Uwe and Maxime to Cc]
 
-[snip]
+I believe Uwe has been running XIP_KERNEL on efm32 for a while now,
+but he also mentioned that he needed some extra hacks in the linker
+script and elsewhere to get it to work.
 
-> @@ -480,11 +484,16 @@ __errata_finish:
->         orr     r0, r0, r6                      @ set them
->   THUMB(        orr     r0, r0, #1 << 30        )       @ Thumb exceptions
->         ret     lr                              @ return to head.S:__ret
-> +
-> +       .align  2
-> +__v7_setup_stack_ptr:
-> +       .word   __v7_setup_stack - .
->  ENDPROC(__v7_setup)
+It would be good to coordinate this, he may have found additional
+problems, or he can maybe help test the new approach on his hardware.
 
-Thanks for your take on this. I did a couple of local implementations
-before submitting, and one of the issues I ran into was the need to
-get rid of PAGE_OFFSET due to the code running without MMU enabled. I
-suppose that is taken care of the "__v7_setup_stack - ." calculation
-above?
-
-Cheers,
-
-/ magnus
+	Arnd
