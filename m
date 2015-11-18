@@ -1,33 +1,23 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Wed, 18 Nov 2015 12:51:05 +0000
-Subject: [PATCH 0/2] VIN, ADV7180 for r8a7794/alt
-Message-Id: <1447851067-8214-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 18 Nov 2015 20:52:55 +0000
+Subject: Re: [PATCH 0/2] VIN, ADV7180 for r8a7794/alt
+Message-Id: <20151118205255.GB10471@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1447851067-8214-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1447851067-8214-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi!
+On Wed, Nov 18, 2015 at 01:51:05PM +0100, Ulrich Hecht wrote:
+> Hi!
+> 
+> This series adds VIN support for the Alt board.  The hardware configuration
+> for I2C1 and the video decoder of Alt is exactly identical to that of Silk,
+> so these are largely identical to Sergei's Silk definitions.
+> 
+> To be applied on top of Horms's "ARM: shmobile: alt: Add pfc pins to DT"
+> patch.
 
-This series adds VIN support for the Alt board.  The hardware configuration
-for I2C1 and the video decoder of Alt is exactly identical to that of Silk,
-so these are largely identical to Sergei's Silk definitions.
-
-To be applied on top of Horms's "ARM: shmobile: alt: Add pfc pins to DT"
-patch.
-
-CU
-Uli
-
-
-Ulrich Hecht (2):
-  ARM: shmobile: alt: add I2C1 DT support
-  ARM: shmobile: alt: add VIN0, ADV7180 DT support
-
- arch/arm/boot/dts/r8a7794-alt.dts | 47 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 47 insertions(+)
-
--- 
-2.6.1
-
+Thanks, I have queued-up this series on top of the patch mentioned above.
