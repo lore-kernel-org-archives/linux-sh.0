@@ -1,115 +1,77 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 19 Nov 2015 15:56:44 +0000
-Subject: [PATCH v3 04/11] i2c: rcar: remove spinlock
-Message-Id: <1447948611-2615-5-git-send-email-wsa@the-dreams.de>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 18 Nov 2015 12:51:07 +0000
+Subject: [PATCH 2/2] ARM: shmobile: alt: add VIN0, ADV7180 DT support
+Message-Id: <1447851067-8214-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
+References: <1447851067-8214-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1447851067-8214-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Adds the device board-dependent part of the VIN0 device and its ADV7180
+video decoder on I2C1, and the interconnection between them.
 
-After making sure to reinit the HW and clear interrupts in the timeout
-case, we know that interrupts are always disabled in the sections
-protected by the spinlock. Thus, we can simply remove it which is a
-preparation for further refactoring. While here, rename the timeout
-variable to time_left which is way more readable.
+Based on silk patch by Sergei Shtylyov.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- drivers/i2c/busses/i2c-rcar.c | 23 ++++-------------------
- 1 file changed, 4 insertions(+), 19 deletions(-)
+ arch/arm/boot/dts/r8a7794-alt.dts | 34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 746406923a5825..0f2dc74ab8bcc1 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -33,7 +33,6 @@
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
- #include <linux/slab.h>
--#include <linux/spinlock.h>
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index 88ed017..fd1cfcd 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -120,6 +120,11 @@
+ 		renesas,groups = "i2c1";
+ 		renesas,function = "i2c1";
+ 	};
++
++	vin0_pins: vin0 {
++		renesas,groups = "vin0_data8", "vin0_clk";
++		renesas,function = "vin0";
++	};
+ };
  
- /* register offsets */
- #define ICSCR	0x00	/* slave ctrl */
-@@ -110,7 +109,6 @@ struct rcar_i2c_priv {
- 	struct i2c_msg	*msg;
- 	struct clk *clk;
+ &cmt0 {
+@@ -145,6 +150,35 @@
  
--	spinlock_t lock;
- 	wait_queue_head_t wait;
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++
++	composite-in@20 {
++		compatible = "adi,adv7180";
++		reg = <0x20>;
++		remote = <&vin0>;
++
++		port {
++			adv7180: endpoint {
++				bus-width = <8>;
++				remote-endpoint = <&vin0ep>;
++			};
++		};
++	};
++};
++
++&vin0 {
++	status = "okay";
++	pinctrl-0 = <&vin0_pins>;
++	pinctrl-names = "default";
++
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		vin0ep: endpoint {
++			remote-endpoint = <&adv7180>;
++			bus-width = <8>;
++		};
++	};
+ };
  
- 	int pos;
-@@ -429,9 +427,6 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
- 	irqreturn_t result = IRQ_HANDLED;
- 	u32 msr;
- 
--	/*-------------- spin lock -----------------*/
--	spin_lock(&priv->lock);
--
- 	if (rcar_i2c_slave_irq(priv))
- 		goto exit;
- 
-@@ -478,9 +473,6 @@ out:
- 	}
- 
- exit:
--	spin_unlock(&priv->lock);
--	/*-------------- spin unlock -----------------*/
--
- 	return result;
- }
- 
-@@ -490,9 +482,8 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- {
- 	struct rcar_i2c_priv *priv = i2c_get_adapdata(adap);
- 	struct device *dev = rcar_i2c_priv_to_dev(priv);
--	unsigned long flags;
- 	int i, ret;
--	long timeout;
-+	long time_left;
- 
- 	pm_runtime_get_sync(dev);
- 
-@@ -507,9 +498,6 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 			break;
- 		}
- 
--		/*-------------- spin lock -----------------*/
--		spin_lock_irqsave(&priv->lock, flags);
--
- 		/* init each data */
- 		priv->msg	= &msgs[i];
- 		priv->pos	= 0;
-@@ -519,13 +507,11 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 
- 		rcar_i2c_prepare_msg(priv);
- 
--		spin_unlock_irqrestore(&priv->lock, flags);
--		/*-------------- spin unlock -----------------*/
--
--		timeout = wait_event_timeout(priv->wait,
-+		time_left = wait_event_timeout(priv->wait,
- 					     rcar_i2c_flags_has(priv, ID_DONE),
- 					     adap->timeout);
--		if (!timeout) {
-+		if (!time_left) {
-+			rcar_i2c_init(priv);
- 			ret = -ETIMEDOUT;
- 			break;
- 		}
-@@ -656,7 +642,6 @@ static int rcar_i2c_probe(struct platform_device *pdev)
- 
- 	irq = platform_get_irq(pdev, 0);
- 	init_waitqueue_head(&priv->wait);
--	spin_lock_init(&priv->lock);
- 
- 	adap = &priv->adap;
- 	adap->nr = pdev->id;
+ &scif2 {
 -- 
-2.1.4
+2.6.1
 
