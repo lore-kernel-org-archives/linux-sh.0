@@ -1,56 +1,64 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 25 Nov 2015 15:30:39 +0000
-Subject: [PATCH v2 3/3] PCI: pcie-rcar: Add support for R-Car H3.
-Message-Id: <1448465439-2132-4-git-send-email-phil.edworthy@renesas.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 18 Nov 2015 05:33:35 +0000
+Subject: [PATCH v2] usb: renesas_usbhs: gadget: Fix NULL pointer dereference in usbhsg_ep_dequeue()
+Message-Id: <1447824815-4080-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448465439-2132-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1448465439-2132-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <bhelgaas@google.com>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms@verge.net.au>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Harunobu Kurokawa <harunobu.kurokawa.dn@renesas.com>
+To: linux-sh@vger.kernel.org
 
-From: Harunobu Kurokawa <harunobu.kurokawa.dn@renesas.com>
+This patch fixes an issue that NULL pointer dereference happens when
+a gadget driver calls usb_ep_dequeue() for ep0 after disconnected
+a usb cable. This is because that usbhsg_try_stop() will call
+usbhsg_ep_disable(&dcp->ep) when a usb cable is disconnected and
+the pipe of dcp (ep0) is set to NULL.
 
-R-Car H3 device is r8a7795
-
-Signed-off-by: Harunobu Kurokawa <harunobu.kurokawa.dn@renesas.com>
-Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Tested-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
-v2: No changes
----
- Documentation/devicetree/bindings/pci/rcar-pci.txt | 3 ++-
- drivers/pci/host/pcie-rcar.c                       | 1 +
- 2 files changed, 3 insertions(+), 1 deletion(-)
+ This patch is based on the latest Felipe's usb.git / testing/fixes branch.
+ (commit id = 455bfac5ad0a6394835ab10fad68f5ce3053160b)
 
-diff --git a/Documentation/devicetree/bindings/pci/rcar-pci.txt b/Documentation/devicetree/bindings/pci/rcar-pci.txt
-index 29d3b98..ab2e75f 100644
---- a/Documentation/devicetree/bindings/pci/rcar-pci.txt
-+++ b/Documentation/devicetree/bindings/pci/rcar-pci.txt
-@@ -2,7 +2,8 @@
+ Perhaps this issue has existed from the first gadget support in this driver...
+
+ Changes from v1:
+  - Rebase the latest testing/fixes branch.
+  - Revise the commit log.
+  - Separate other two patches.
+    (In other words, this is not related to isochronous support)
+
+ drivers/usb/renesas_usbhs/mod_gadget.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index de4f97d..8f7a78e 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -131,7 +131,8 @@ static void __usbhsg_queue_pop(struct usbhsg_uep *uep,
+ 	struct device *dev = usbhsg_gpriv_to_dev(gpriv);
+ 	struct usbhs_priv *priv = usbhsg_gpriv_to_priv(gpriv);
  
- Required properties:
- - compatible: should contain one of the following
--	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791"
-+	"renesas,pcie-r8a7779", "renesas,pcie-r8a7790", "renesas,pcie-r8a7791",
-+	"renesas,pcie-r8a7795"
- - reg: base address and length of the pcie controller registers.
- - #address-cells: set to <3>
- - #size-cells: set to <2>
-diff --git a/drivers/pci/host/pcie-rcar.c b/drivers/pci/host/pcie-rcar.c
-index d12faf4..0c819a00 100644
---- a/drivers/pci/host/pcie-rcar.c
-+++ b/drivers/pci/host/pcie-rcar.c
-@@ -917,6 +917,7 @@ static const struct of_device_id rcar_pcie_of_match[] = {
- 	{ .compatible = "renesas,pcie-r8a7779", .data = rcar_pcie_hw_init_h1 },
- 	{ .compatible = "renesas,pcie-r8a7790", .data = rcar_pcie_hw_init },
- 	{ .compatible = "renesas,pcie-r8a7791", .data = rcar_pcie_hw_init },
-+	{ .compatible = "renesas,pcie-r8a7795", .data = rcar_pcie_hw_init },
- 	{},
- };
- MODULE_DEVICE_TABLE(of, rcar_pcie_of_match);
+-	dev_dbg(dev, "pipe %d : queue pop\n", usbhs_pipe_number(pipe));
++	if (pipe)
++		dev_dbg(dev, "pipe %d : queue pop\n", usbhs_pipe_number(pipe));
+ 
+ 	ureq->req.status = status;
+ 	spin_unlock(usbhs_priv_to_lock(priv));
+@@ -685,7 +686,13 @@ static int usbhsg_ep_dequeue(struct usb_ep *ep, struct usb_request *req)
+ 	struct usbhsg_request *ureq = usbhsg_req_to_ureq(req);
+ 	struct usbhs_pipe *pipe = usbhsg_uep_to_pipe(uep);
+ 
+-	usbhs_pkt_pop(pipe, usbhsg_ureq_to_pkt(ureq));
++	if (pipe)
++		usbhs_pkt_pop(pipe, usbhsg_ureq_to_pkt(ureq));
++
++	/*
++	 * To dequeue a request, this driver should call the usbhsg_queue_pop()
++	 * even if the pipe is NULL.
++	 */
+ 	usbhsg_queue_pop(uep, ureq, -ECONNRESET);
+ 
+ 	return 0;
 -- 
-2.5.0
+1.9.1
 
