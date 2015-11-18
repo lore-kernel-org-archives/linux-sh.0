@@ -1,56 +1,54 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Nov 2015 02:23:50 +0000
-Subject: [PATCH 3/4] ARM: shmobile: r8a7793: Use SoC specific binding for rcar-dmac nodes
-Message-Id: <1447381431-2255-4-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 18 Nov 2015 22:20:35 +0000
+Subject: [PATCH 2/2] ARM: shmobile: gose: Add GPIO leds to DT
+Message-Id: <1447885235-17858-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447381431-2255-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1447381431-2255-1-git-send-email-horms+renesas@verge.net.au>
+References: <1447885235-17858-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1447885235-17858-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Use the new SoC specific binding for rcar-dmac and the generic
-binding as a fall-back in the r8a7793 device tree.
+Instantiate the GPIO leds in the gose device tree.
 
-In general Renesas hardware is not documented to the extent where the
-relationship between IP blocks on different SoCs can be assumed although
-they may appear to operate the same way. Furthermore the documentation
-typically does not specify a version for individual IP blocks. For these
-reasons a convention of using the SoC name in place of a version and
-providing SoC-specific compat strings has been adopted.
+Based on similar work for the koelsch board by Magnus Damm.
 
-Although not universally liked this convention is used in the bindings for
-most drivers for Renesas hardware. The purpose of this patch is to
-update the Renesas R-Car DMA Controller nodes to follow this convention.
-
+Cc: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+* Compile Tested Only
+---
+ arch/arm/boot/dts/r8a7793-gose.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index aa9b64c14a09..51099fe6f8db 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -133,7 +133,7 @@
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+index ff391d2fb767..7e1794736aa9 100644
+--- a/arch/arm/boot/dts/r8a7793-gose.dts
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -113,6 +113,22 @@
+ 		        debounce-interval = <20>;
+ 		};
  	};
++
++	leds {
++		compatible = "gpio-leds";
++		led6 {
++			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
++			label = "LED6";
++		};
++		led7 {
++			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
++			label = "LED7";
++		};
++		led8 {
++			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
++			label = "LED8";
++		};
++	};
+ };
  
- 	dmac0: dma-controller@e6700000 {
--		compatible = "renesas,rcar-dmac";
-+		compatible = "renesas,dmac-r8a7793", "renesas,rcar-dmac";
- 		reg = <0 0xe6700000 0 0x20000>;
- 		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
- 			      0 200 IRQ_TYPE_LEVEL_HIGH
-@@ -164,7 +164,7 @@
- 	};
- 
- 	dmac1: dma-controller@e6720000 {
--		compatible = "renesas,rcar-dmac";
-+		compatible = "renesas,dmac-r8a7793", "renesas,rcar-dmac";
- 		reg = <0 0xe6720000 0 0x20000>;
- 		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
- 			      0 216 IRQ_TYPE_LEVEL_HIGH
+ &extal_clk {
 -- 
 2.1.4
 
