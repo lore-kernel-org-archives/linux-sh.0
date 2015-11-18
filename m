@@ -1,55 +1,55 @@
 From: Wolfram Sang <wsa@the-dreams.de>
-Date: Wed, 18 Nov 2015 07:31:07 +0000
+Date: Wed, 18 Nov 2015 08:07:36 +0000
 Subject: Re: [PATCH v2 05/10] i2c: rcar: refactor setup of a msg
-Message-Id: <20151118073107.GB1047@tetsubishi>
+Message-Id: <20151118080736.GA1528@katana>
 MIME-Version: 1
-Content-Type: multipart/mixed; boundary="TRYliJ5NKNqkz5bu"
+Content-Type: multipart/mixed; boundary="wRRV7LY7NUeQGEoC"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447338715-9955-1-git-send-email-wsa@the-dreams.de>
+ <1447338715-9955-6-git-send-email-wsa@the-dreams.de>
  <2420286.JI0i0lloO0@avalon>
  <20151117070053.GA952@tetsubishi>
- <2998465.01LOgISn2O@avalon>
-In-Reply-To: <2998465.01LOgISn2O@avalon>
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+ <CANqRtoS0tFtjNcB=gP5xKNzMW2_41rxAydOcZM1+fOSjfCaM7w@mail.gmail.com>
+In-Reply-To: <CANqRtoS0tFtjNcB=gP5xKNzMW2_41rxAydOcZM1+fOSjfCaM7w@mail.gmail.com>
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linux-I2C <linux-i2c@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Geert Uytterhoeven <geert@linux-m68k.org>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
 
---TRYliJ5NKNqkz5bu
+--wRRV7LY7NUeQGEoC
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
 
-> can continue that on Lager. In the meantime I could also capture I2C trac=
-es=20
-> using a scope and send them to you.
+> On Lager it seems that the GP5_5/GP_6 pins with the I2C2 bus for the
+> ADV7511 chip has more flexible configuration, so using either IIC or
+> I2C should be possible. You can sample those pins on EXIO_A with the
+> ZEBAX break out adapter.
 
-Cool, thanks! I think I'll start with sending you another trace-printk
-patch soon.
-
-And can you push the branch you were using somewhere? With the config as
-an additional commit?
+Yes, that's what I basically did here for developing the whole patch
+series and for the recent testing. A simple 's/iic2/i2c2/g' on the Lager
+DTS does the trick.
 
 
---TRYliJ5NKNqkz5bu
+--wRRV7LY7NUeQGEoC
 Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1
 
-iQIcBAEBAgAGBQJWTCk7AAoJEBQN5MwUoCm2vcwP/1SVZglEhr/Ic+YcIamkOEQY
-Od93G2zCrCEIXl0RpPjgBdWK9cxido3lmConWyTqO37+/16xdpRD6zjJYmgpX1sl
-sp+Sbj5lVDGhvJEoeTQU18gvgpxxKdkWNU6YP3Bym9Qsj/vETVCB/mFB7Ul3kATX
-flSpYGtn5H1ABcdstNAuvfxaYFDKABBwYR60UteJznGB+4ByIx1i+m7UglWqO+dF
-IR2ikvNrJkJI8Xl0n4VvylY0t2YyhI5BHYLsbOWxRH2OKZJO1U2YiTztlxFubRDe
-BZlrvXmKe18Ju03dkiHfLXrITpeRij8mhBhE1rZdaKVE/3MEXrx7gR2+dhn6Qy6Z
-y+3ADrN/zrzCKhd+epPiI9ASUH/NLqJ5gpOOLdvb9DxOtH3W6Wep1GrB00toao9C
-IpIEuEPvj6jll0mLEagYPk5zfaOvNdj+YuS27MwyoZ2MXvcibYU1/j/pwrRqbrRc
-s9cwbaPGiyAtEUa1MUYdqKEOv0lsboZP2UUDqxdw7+wlL7T4pfd49wm3r+Gg26EP
-64M3EBebL6Xa+wJFmBlUUlH+p56WSB6/uAD5d50X7Uy4OMYZ4QiwTTD9yGwlnklO
-Kc/AmI4wsgMPhzlU8LSOKlAf1/MWvUApT/dCCewzC4anbvL6skrsd78+Ze3QqNUh
-MxmPyjRxCrO03ftYpDX+
-=VE6K
+iQIcBAEBAgAGBQJWTDHIAAoJEBQN5MwUoCm2zs8P/iCy437lwf9/JoQDBvWsNmiL
+Cx7/RWC6XG504FVzrhGdgzDsmLhDXKZsi2+Tntnjja9Zhl6AlGEDjVpyiAU8xbNi
+2nglKMtiOEkrJtbGhXyJksH05A62zVrb4VBXfBA0KHtQvfPULJxqm/UMraq/2N0P
+yaLC184IeS/Ti0ewP6nuM4fqCIQRJupQKmnbnrJ3NnY4TUxG3Vyceaon+VyTk8O7
+GnxNK683UHpYUahsaNPtRylVw9WsxJV2EXvJd83OlGx/meHRbaSSRxrbbgFoFDmg
+lOzVxuHpk01bvS2n8gbRhUUxjVXBDFN8W7HonQC0XkWVazXl2Xd0FCFroBB59U1i
+IN6y+7aTVzFi79V6HYcZC+NoA0fNJvVSaUmQe5SYeMZbJEalIUAY1RvFbGfQYJIg
+annsY5n7IYeUvMTcCaY5BVx83A1gFtSvtldB2QYq3UTsZrwO2DDxOd9Auof6X2FQ
+jMkuG3EkhIeFQeK692R1Rd4lAj6Q5NP2hE04t5qf5QMYJ8yKtgzEExVOvS56wPPm
+WiN2PSfySJfdrLyhGpvLd8FVw+aiVCtNZiMIHUZ8CBmAG/UtBqM59z0sED+uenTc
+yAAn4+z65VKr+P4sI7uOyGLu9FNWT1Gxr5YfikGKRngB28XznDFuVSxAOgBUs1Dn
+UVDt3xCebqZsPyDG0pz1
+=ISsI
 -----END PGP SIGNATURE-----
 
---TRYliJ5NKNqkz5bu--
+--wRRV7LY7NUeQGEoC--
