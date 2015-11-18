@@ -1,73 +1,118 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 23 Nov 2015 13:55:59 +0000
-Subject: [PATCH v5 1/4] ARM: shmobile: r8a7740 dtsi: Add L2 cache-controller node
-Message-Id: <1448286962-16897-2-git-send-email-geert+renesas@glider.be>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 18 Nov 2015 13:29:18 +0000
+Subject: Re: [PATCH net-next 4/4] ravb: Add support for r8a7795 SoC
+Message-Id: <564C7D2E.4030608@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448286962-16897-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448286962-16897-1-git-send-email-geert+renesas@glider.be>
+References: <1443593755-20991-1-git-send-email-horms+renesas@verge.net.au>
+ <1443593755-20991-5-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1443593755-20991-5-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms+renesas@verge.net.au>, David Miller <davem@davemloft.net>
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, Florian Fainelli <f.fainelli@gmail.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Add the missing L2 cache-controller node, and link the CPU node to it.
-This will allow migration to the generic l2c OF initialization.
+Hello.
 
-The L2 cache is an ARM L2C-310 (r3p1-150rel0), of size 256 KiB (32 KiB x
-8 ways).
+On 9/30/2015 9:15 AM, Simon Horman wrote:
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-v5:
-  - Drop optional cache-{size,sets,{block,line}-size} properties, as
-    this information is auto-detected,
-  - Integrate adding the link from CPU to L2 cache into this patch,
+> From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+>
+> This patch supports the r8a7795 SoC by:
+> - Using two interrupts
+>    + One for E-MAC
+>    + One for everything else
+>    + Both can be handled by the existing common interrupt handler, which
+>      affords a simpler update to support the new SoC. In future some
+>      consideration may be given to implementing multiple interrupt handlers
+> - Limiting the phy speed to 100Mbit/s for the new SoC;
+>    at this time it is not clear how this restriction may be lifted
+>    but I hope it will be possible as more information comes to light
+>
+> Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+> [horms: reworked]
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+>
+> ---
+> v0 [Kazuya Mizuguchi]
+>
+> v1 [Simon Horman]
+> * Updated patch subject
+>
+> v2 [Simon Horman]
+> * Reworked based on extensive feedback from
+>    Geert Uytterhoeven and Sergei Shtylyov.
+> * Broke binding update out into separate patch
+>
+> v3 [Simon Horman]
+> * Check new return value of phy_set_max_speed()
+>
+> v4
+> * No change
+> ---
+>   drivers/net/ethernet/renesas/ravb.h      |  7 ++++
+>   drivers/net/ethernet/renesas/ravb_main.c | 63 ++++++++++++++++++++++++++++----
+>   2 files changed, 62 insertions(+), 8 deletions(-)
+>
+> diff --git a/drivers/net/ethernet/renesas/ravb.h b/drivers/net/ethernet/renesas/ravb.h
+> index a157aaaaff6a..0623fff932e4 100644
+> --- a/drivers/net/ethernet/renesas/ravb.h
+> +++ b/drivers/net/ethernet/renesas/ravb.h
+> @@ -766,6 +766,11 @@ struct ravb_ptp {
+>   	struct ravb_ptp_perout perout[N_PER_OUT];
+>   };
+>
+> +enum ravb_chip_id {
+> +	RCAR_GEN2,
+> +	RCAR_GEN3,
+> +};
+> +
+>   struct ravb_private {
+>   	struct net_device *ndev;
+>   	struct platform_device *pdev;
+> @@ -806,6 +811,8 @@ struct ravb_private {
+>   	int msg_enable;
+>   	int speed;
+>   	int duplex;
+> +	int emac_irq;
+> +	enum ravb_chip_id chip_id;
+>
+>   	unsigned no_avb_link:1;
+>   	unsigned avb_link_active_low:1;
+> diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+> index 4ca093d033f8..8cc5ec5ed19a 100644
+> --- a/drivers/net/ethernet/renesas/ravb_main.c
+> +++ b/drivers/net/ethernet/renesas/ravb_main.c
+[...]
+> @@ -1197,6 +1213,15 @@ static int ravb_open(struct net_device *ndev)
+>   		goto out_napi_off;
+>   	}
+>
+> +	if (priv->chip_id = RCAR_GEN3) {
+> +		error = request_irq(priv->emac_irq, ravb_interrupt,
+> +				    IRQF_SHARED, ndev->name, ndev);
+> +		if (error) {
+> +			netdev_err(ndev, "cannot request IRQ\n");
+> +			goto out_free_irq;
+> +		}
+> +	}
+> +
+>   	/* Device init */
+>   	error = ravb_dmac_init(ndev);
+>   	if (error)
+> @@ -1220,6 +1245,7 @@ out_ptp_stop:
+>   	ravb_ptp_stop(ndev);
+>   out_free_irq:
+>   	free_irq(ndev->irq, ndev);
+> +	free_irq(priv->emac_irq, ndev);
 
-v4:
-  - Commit eeedcea69e927857 ("ARM: 8395/1: l2c: Add support for the
-    "arm,shared-override" property") is queued for 4.3 in arm/for-next,
+    Grr, this sloppy code causes WARNING in __free_irq() on gen2 SoCs. I'll 
+deal with it...
 
-v3:
-  - Add "arm,shared-override",
+>   out_napi_off:
+>   	napi_disable(&priv->napi[RAVB_NC]);
+>   	napi_disable(&priv->napi[RAVB_BE]);
+[...]
 
-v2:
-  - Fix interrupt (should be 3 cells, not 1),
-  - Describe cache better.
----
- arch/arm/boot/dts/r8a7740.dtsi | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
-
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 387aef60c825bc24..ff3dedb63ef48ea7 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -26,6 +26,7 @@
- 			reg = <0x0>;
- 			clock-frequency = <800000000>;
- 			power-domains = <&pd_a3sm>;
-+			next-level-cache = <&L2>;
- 		};
- 	};
- 
-@@ -37,6 +38,18 @@
- 		      <0xc2000000 0x1000>;
- 	};
- 
-+	L2: cache-controller {
-+		compatible = "arm,pl310-cache";
-+		reg = <0xf0100000 0x1000>;
-+		interrupts = <0 84 IRQ_TYPE_LEVEL_HIGH>;
-+		power-domains = <&pd_a3sm>;
-+		arm,data-latency = <3 3 3>;
-+		arm,tag-latency = <2 2 2>;
-+		arm,shared-override;
-+		cache-unified;
-+		cache-level = <2>;
-+	};
-+
- 	dbsc3: memory-controller@fe400000 {
- 		compatible = "renesas,dbsc3-r8a7740";
- 		reg = <0xfe400000 0x400>;
--- 
-1.9.1
+MBR, Sergei
 
