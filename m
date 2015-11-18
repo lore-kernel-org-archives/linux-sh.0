@@ -1,34 +1,32 @@
 From: Chris Brandt <Chris.Brandt@renesas.com>
-Date: Wed, 18 Nov 2015 15:16:58 +0000
+Date: Wed, 18 Nov 2015 15:28:46 +0000
 Subject: RE: [PATCH v3] ARM: xip: Use correct symbol for end of ROM marker
-Message-Id: <HK2PR06MB0561077CA74074E175561D7F8A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+Message-Id: <HK2PR06MB0561DABA3F9198803825E80F8A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447362108-4333-1-git-send-email-chris.brandt@renesas.com>
- <1447697140-4099-1-git-send-email-chris.brandt@renesas.com>
- <alpine.LFD.2.20.1511161515100.5826@knanqh.ubzr>
- <HK2PR06MB05619FACB3725B6F5B2299718A1E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <alpine.LFD.2.20.1511161605070.5826@knanqh.ubzr>
- <HK2PR06MB056196B2E169A504A16ED9738A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <alpine.LFD.2.20.1511171155240.5826@knanqh.ubzr>
  <HK2PR06MB0561B7675F17A81B54A65CA28A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <alpine.LFD.2.20.1511172129060.22569@knanqh.ubzr>
-In-Reply-To: <alpine.LFD.2.20.1511172129060.22569@knanqh.ubzr>
+ <5236157.AUJjCLOEeJ@wuerfel>
+In-Reply-To: <5236157.AUJjCLOEeJ@wuerfel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-> With XIP there is still an init section, [snip]
-> No need to page align it either at that point which should save some
-> ROM space.
+> [Adding Uwe and Maxime to Cc]
+> 
+> I believe Uwe has been running XIP_KERNEL on efm32 for a while now,
+> but he also mentioned that he needed some extra hacks in the linker
+> script and elsewhere to get it to work.
 
-Good point.
 
-> Things like .kprobes.text should be in ROM, [snip]
->
-> Etc. Etc.
+Yes, Maxime got the XIP fix for scripts/link-vmlinux.sh into the kernel ([PATCH v6 01/15] scripts: link-vmlinux: Don't pass page offset to kallsyms if XIP Kernel), which of course made one less file I have to patch.
 
-Here's the thing...I'm probably out of my depth on most of this. But, I'd be happy to post up a RFC patch and then start collecting the feedback on what can be removed. I can at least test it on a real XIP system.
+
+> It would be good to coordinate this, he may have found additional
+> problems, or he can maybe help test the new approach on his hardware.
+
+The part I'm using (RZ/A1H) is a Cortex A9 and the EFM32 is a Cortex M3, so we'd be able to test both MMU and non-MMU XIP systems.
 
 
 Chris
