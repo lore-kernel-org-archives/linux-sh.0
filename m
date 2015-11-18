@@ -1,30 +1,33 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 26 Nov 2015 02:17:36 +0000
-Subject: Re: [PATCH] ASoC: rcar: remove unused variable
-Message-Id: <87r3jdcxw4.wl%kuninori.morimoto.gx@renesas.com>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 18 Nov 2015 12:51:05 +0000
+Subject: [PATCH 0/2] VIN, ADV7180 for r8a7794/alt
+Message-Id: <1447851067-8214-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4929159.b95vLdVRYU@wuerfel>
-	<878u5m8ut0.wl%kuninori.morimoto.gx@renesas.com>
-	<4083363.2bJPz8BMy4@wuerfel>
-	<87ziy1d4j8.wl%kuninori.morimoto.gx@renesas.com>
-	<20151126010558.GX1929@sirena.org.uk>
-In-Reply-To: <20151126010558.GX1929@sirena.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, alsa-devel@alsa-project.org, Mengdong Lin <mengdong.lin@linux.intel.com>, linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, Liam Girdwood <lgirdwood@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
+
+Hi!
+
+This series adds VIN support for the Alt board.  The hardware configuration
+for I2C1 and the video decoder of Alt is exactly identical to that of Silk,
+so these are largely identical to Sergei's Silk definitions.
+
+To be applied on top of Horms's "ARM: shmobile: alt: Add pfc pins to DT"
+patch.
+
+CU
+Uli
 
 
-Hi
+Ulrich Hecht (2):
+  ARM: shmobile: alt: add I2C1 DT support
+  ARM: shmobile: alt: add VIN0, ADV7180 DT support
 
-> > It is possible to remove this patch from topic/rcar,
-> > and, apply it to topic/pcm-list ?
-> 
-> > ccae40fa973f5b0eec5d5ad27e81c5a2b95f7b7c
-> > (" ASoC: rcar: remove unused variable")
-> 
-> I did that already.
+ arch/arm/boot/dts/r8a7794-alt.dts | 47 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 47 insertions(+)
 
-Thanks !
+-- 
+2.6.1
 
