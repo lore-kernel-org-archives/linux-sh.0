@@ -1,25 +1,36 @@
-From: David Miller <davem@davemloft.net>
-Date: Mon, 16 Nov 2015 20:12:42 +0000
-Subject: Re: [PATCH net] ravb: remove unhandle int cause
-Message-Id: <20151116.151242.944204466671951295.davem@davemloft.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 18 Nov 2015 22:20:33 +0000
+Subject: [PATCH 0/2] ARM: shmobile: gose: Add GPIO keys and leds to DT
+Message-Id: <1447885235-17858-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447590882-20742-1-git-send-email-ykaneko0929@gmail.com>
-In-Reply-To: <1447590882-20742-1-git-send-email-ykaneko0929@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: ykaneko0929@gmail.com
-Cc: netdev@vger.kernel.org, horms@verge.net.au, magnus.damm@gmail.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
-Date: Sun, 15 Nov 2015 21:34:42 +0900
+Hi,
 
-> From: Masaru Nagai <masaru.nagai.vx@renesas.com>
-> 
-> This driver does not handle the AVB-DMAC Receive FIFO Warning interrupt
-> now, so the interrupt should not be enabled.
-> 
-> Signed-off-by: Masaru Nagai <masaru.nagai.vx@renesas.com>
-> Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+this short series adds GPIO keys and leds to the device tree
+of the r8a7793 based Gose board.
 
-Applied, thanks.
+It uses the makes use of the recently addition of GPIO devices
+to the device tree of the r8a7793. Thanks Magnus!
+
+I have booted a system with these changes and verified that the
+relevant entries appear to be present in sysfs.
+
+I have not tested button press events or illumination of the leds
+as I do not currently have physical access to a Gose board.
+
+Based on renesas-devel-20151118-v4.4-rc1
+
+Simon Horman (2):
+  ARM: shmobile: gose: Add GPIO keys to DT
+  ARM: shmobile: gose: Add GPIO leds to DT
+
+ arch/arm/boot/dts/r8a7793-gose.dts | 98 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 98 insertions(+)
+
+-- 
+2.1.4
+
