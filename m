@@ -1,79 +1,53 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Nov 2015 04:31:22 +0000
-Subject: [PATCH 04/04] ARM: shmobile: r8a7794: IPMMU compat string SoC part number update
-Message-Id: <20151117043122.4521.13958.sendpatchset@little-apple>
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Date: Wed, 18 Nov 2015 12:51:06 +0000
+Subject: [PATCH 1/2] ARM: shmobile: alt: add I2C1 DT support
+Message-Id: <1447851067-8214-2-git-send-email-ulrich.hecht+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1447851067-8214-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+In-Reply-To: <1447851067-8214-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Defines the board-dependent part of the I2C1 device.
 
-Update IPMMU compat strings to include SoC part number.
-
-By specifying SoC part number in DT it becomes possible 
-to implement SoC specific features in the IPMMU driver.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
+ arch/arm/boot/dts/r8a7794-alt.dts | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
- arch/arm/boot/dts/r8a7794.dtsi |   12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index e7c9455..88ed017 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -115,6 +115,11 @@
+ 		renesas,groups = "eth_link_b", "eth_mdio_b", "eth_rmii_b";
+ 		renesas,function = "eth";
+ 	};
++
++	i2c1_pins: i2c1 {
++		renesas,groups = "i2c1";
++		renesas,function = "i2c1";
++	};
+ };
+ 
+ &cmt0 {
+@@ -134,6 +139,14 @@
+ 	};
+ };
+ 
++&i2c1 {
++	pinctrl-0 = <&i2c1_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++	clock-frequency = <400000>;
++};
++
+ &scif2 {
+ 	status = "okay";
+ };
+-- 
+2.6.1
 
---- 0003/arch/arm/boot/dts/r8a7794.dtsi
-+++ work/arch/arm/boot/dts/r8a7794.dtsi	2015-11-17 13:12:59.540513000 +0900
-@@ -1104,7 +1104,7 @@
- 	};
- 
- 	ipmmu_sy0: mmu@e6280000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6280000 0 0x1000>;
- 		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1113,7 +1113,7 @@
- 	};
- 
- 	ipmmu_sy1: mmu@e6290000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6290000 0 0x1000>;
- 		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -1121,7 +1121,7 @@
- 	};
- 
- 	ipmmu_ds: mmu@e6740000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6740000 0 0x1000>;
- 		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1130,7 +1130,7 @@
- 	};
- 
- 	ipmmu_mp: mmu@ec680000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
- 		reg = <0 0xec680000 0 0x1000>;
- 		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -1138,7 +1138,7 @@
- 	};
- 
- 	ipmmu_mx: mmu@fe951000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
- 		reg = <0 0xfe951000 0 0x1000>;
- 		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1147,7 +1147,7 @@
- 	};
- 
- 	ipmmu_gp: mmu@e62a0000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7794", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe62a0000 0 0x1000>;
- 		interrupts = <0 260 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 261 IRQ_TYPE_LEVEL_HIGH>;
