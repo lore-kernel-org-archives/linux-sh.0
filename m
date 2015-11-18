@@ -1,92 +1,65 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 02 Nov 2015 13:56:13 +0000
-Subject: Re: [PATCH 3/3] serial: sh-sci: Add calculation recive margin for HSCIF
-Message-Id: <CAMuHMdUmChU0G1RcDOtSbCwzRZ9LTcQfZwjiSKBKVGhiAqjn1w@mail.gmail.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 18 Nov 2015 05:34:10 +0000
+Subject: [PATCH v2 2/2] usb: renesas_usbhs: Modify ep.caps.type_xxx and usb_ep_maxpacket_limit()
+Message-Id: <1447824850-6296-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1405321800-18114-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-	<1405321800-18114-3-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1405321800-18114-3-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Greg KH <gregkh@linuxfoundation.org>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Simon Horman <horms+renesas@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Hi Iwamatsu-san,
+This patch modifies the ep.caps.type_{iso,bulk,int} setting and
+the second argument of usb_ep_maxpacket_limit() using
+the dparam.pipe_configs.
 
-On Mon, Jul 14, 2014 at 9:10 AM, Nobuhiro Iwamatsu
-<nobuhiro.iwamatsu.yj@renesas.com> wrote:
-> When the error of the same bit rate is detected, we will need to select
-> the recive margin is large. Current code holds the minimum error, it does
-> not have to check the recive margin. This adds this calculation.
->
-> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+In the previous code, all the type_{iso,bulk,int} were set to true.
+However, to avoid waste time for finding suitable pipe in usb_ep_enable(),
+this driver should set correct type.
+Also the second argument of usb_ep_maxpacket_limit() was set to 512
+even if the pipe is isochronous or interrupt. So, this driver could
+not bind a gadget driver like the g_audio driver.
 
-I know this patch was applied a while ago.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/usb/renesas_usbhs/mod_gadget.c | 19 ++++++++++++-------
+ 1 file changed, 12 insertions(+), 7 deletions(-)
 
-> ---
->  drivers/tty/serial/sh-sci.c | 77 ++++++++++++++++++++++++++++++++++-----------
->  1 file changed, 59 insertions(+), 18 deletions(-)
->
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index 7f571a8..d879c0c 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -1783,13 +1783,30 @@ static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
->         return ((freq + 16 * bps) / (32 * bps) - 1);
->  }
->
-> +/* calculate frame length from SMR */
-> +static int sci_baud_calc_frame_len(unsigned int smr_val)
-> +{
-> +       int len = 10;
-> +
-> +       if (smr_val & SCSMR_CHR)
-> +               len--;
-> +       if (smr_val & SCSMR_PE)
-> +               len++;
-> +       if (smr_val & SCSMR_STOP)
-> +               len++;
-> +
-> +       return len;
-> +}
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index de4f97d..d45a2c7 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -1035,6 +1035,8 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
+ 	struct usbhsg_gpriv *gpriv;
+ 	struct usbhsg_uep *uep;
+ 	struct device *dev = usbhs_priv_to_dev(priv);
++	struct renesas_usbhs_driver_pipe_config *pipe_configs +					usbhs_get_dparam(priv, pipe_configs);
+ 	int pipe_size = usbhs_get_dparam(priv, pipe_size);
+ 	int i;
+ 	int ret;
+@@ -1104,13 +1106,16 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
+ 			gpriv->gadget.ep0 = &uep->ep;
+ 			usb_ep_set_maxpacket_limit(&uep->ep, 64);
+ 			uep->ep.caps.type_control = true;
+-		}
+-		/* init normal pipe */
+-		else {
+-			usb_ep_set_maxpacket_limit(&uep->ep, 512);
+-			uep->ep.caps.type_iso = true;
+-			uep->ep.caps.type_bulk = true;
+-			uep->ep.caps.type_int = true;
++		} else {
++			/* init normal pipe */
++			if (pipe_configs[i].type = USB_ENDPOINT_XFER_ISOC)
++				uep->ep.caps.type_iso = true;
++			if (pipe_configs[i].type = USB_ENDPOINT_XFER_BULK)
++				uep->ep.caps.type_bulk = true;
++			if (pipe_configs[i].type = USB_ENDPOINT_XFER_INT)
++				uep->ep.caps.type_int = true;
++			usb_ep_set_maxpacket_limit(&uep->ep,
++						   pipe_configs[i].bufsize);
+ 			list_add_tail(&uep->ep.ep_list, &gpriv->gadget.ep_list);
+ 		}
+ 		uep->ep.caps.dir_in = true;
+-- 
+1.9.1
 
-The above function isn't needed...
-
->  /* calculate sample rate, BRR, and clock select for HSCIF */
->  static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq,
->                                 int *brr, unsigned int *srr,
-> -                               unsigned int *cks)
-> +                               unsigned int *cks, int frame_len)
-
-... because the new "frame_len" parameter is unused...
-
-> @@ -1858,8 +1907,9 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
->         baud = uart_get_baud_rate(port, termios, old, 0, max_baud);
->         if (likely(baud && port->uartclk)) {
->                 if (s->cfg->type = PORT_HSCIF) {
-> +                       int frame_len = sci_baud_calc_frame_len(smr_val);
-
-... hence calculating this isn't needed.
-
->                         sci_baud_calc_hscif(baud, port->uartclk, &t, &srr,
-> -                                           &cks);
-> +                                           &cks, frame_len);
->                 } else {
->                         t = sci_scbrr_calc(s, baud, port->uartclk);
->                         for (cks = 0; t >= 256 && cks <= 3; cks++)
-
-Is there some follow-up patch missing?
-
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
