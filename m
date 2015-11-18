@@ -1,7 +1,7 @@
-From: Chris Brandt <Chris.Brandt@renesas.com>
-Date: Wed, 18 Nov 2015 02:09:04 +0000
+From: Nicolas Pitre <nico@fluxnic.net>
+Date: Wed, 18 Nov 2015 03:17:41 +0000
 Subject: RE: [PATCH v3] ARM: xip: Use correct symbol for end of ROM marker
-Message-Id: <HK2PR06MB0561B7675F17A81B54A65CA28A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+Message-Id: <alpine.LFD.2.20.1511172129060.22569@knanqh.ubzr>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447362108-4333-1-git-send-email-chris.brandt@renesas.com>
  <1447697140-4099-1-git-send-email-chris.brandt@renesas.com>
@@ -10,36 +10,48 @@ References: <1447362108-4333-1-git-send-email-chris.brandt@renesas.com>
  <alpine.LFD.2.20.1511161605070.5826@knanqh.ubzr>
  <HK2PR06MB056196B2E169A504A16ED9738A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
  <alpine.LFD.2.20.1511171155240.5826@knanqh.ubzr>
-In-Reply-To: <alpine.LFD.2.20.1511171155240.5826@knanqh.ubzr>
+ <HK2PR06MB0561B7675F17A81B54A65CA28A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
+In-Reply-To: <HK2PR06MB0561B7675F17A81B54A65CA28A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-So after looking back in history, I think I now understand how/when the XIP stuff broke.
+On Wed, 18 Nov 2015, Chris Brandt wrote:
 
-It looks like originally, the init section came first, followed by text and data.
+> It sounds like there would still be a request to split up the linker 
+> scripts in order to remove the 6 XIP_KERNEL references scattered 
+> throughout vmlinux.lds.S. However, it would still be nice to keep the 
+> two versions looking as close as they can to each other with only the 
+> obvious changes (like removing XIP_KERNEL from the non-XIP version, 
+> and removing SMP_ON_UP from the XIP version)
 
-This is why all the XIP code used _etext as its marker for the end of what needed to be mapped.
-Like you said, the initialized data values get copied from ROM to RAM early in boot so it's not an issue if the data section (that comes after text) gets blown away when the full MMU setup is done.
+I don't think so. XIP and non-XIP are fundamentally looking different 
+these days.  Trying to keep them as similar as possible is rather an 
+impediment to both cases and brings no real benefits.
+
+Not only should .init.smpalt be gone from the XIP version, but it might 
+be safer to put that into a special "should_be_empty" section and bail 
+out with ASSERT() if that section size isn't zero. Same thing for 
+pv_table. This way we'll be sure that nothing in the kernel config 
+expects self-modified code to be present.
+
+With XIP there is still an init section, but it is pointless to store 
+.init.text stuff in there. That should instead stay in ROM and never be 
+discarded (obviously). No need to page align it either at that point 
+which should save some ROM space.
+
+Things like .kprobes.text should be in ROM, but the entire executable in 
+ROM should be surrounded by __kprobes_text_start and __kprobes_text_end 
+to prevent any attempt to put kprobes there. This way, kprobes could 
+still work for modules.
+
+Etc. Etc.
+
+There are simply too many things these days that require special 
+considerations with XIP. And freeing the main script from XIP 
+considerations will ease maintenance as well, more than the added 
+maintenance from the duplicated parts.
 
 
-However, after the init section was moved from the first section to almost the last, all the _etext references scatter through the kernel were never updated.
-
-
-So basically, even though I've now got a separate linker script for XIP builds, it really hasn't changed much because the real issue all along was that the XIP_KERNEL references to _etext should have been changed to _data_loc.
-
-With that said, I still think the correct way to fix this issue is to export _data_loc and use that as the end marker. (notice I changed my mind and now say _data_loc instead of _edata_loc because there's no reason to map the full data section anymore).
-
-The other option, if we really wanted to keep the references to _etext as they are, is to simply move the one line " _etext = .;" to the bottom of the file....right before _data_loc is declared.
-But...that would be a bit misleading if you ask me.
-
-
-It sounds like there would still be a request to split up the linker scripts in order to remove the 6 XIP_KERNEL references scattered  throughout vmlinux.lds.S. However, it would still be nice to keep the two versions looking as close as they can to each other with only the obvious changes (like removing XIP_KERNEL from the non-XIP version, and removing SMP_ON_UP from the XIP version)
-
-
-Thoughts?
-
-
-Chris
-
+Nicolas
