@@ -1,44 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:05:09 +0000
-Subject: [PATCH 02/29] ARM: shmobile: r8a7794 dtsi: Remove bogus imp_clk node
-Message-Id: <b6be6b2f3be270cbd53fb13706c32500f6cd1432.1447981420.git.horms+renesas@verge.net.au>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 18 Nov 2015 21:16:48 +0000
+Subject: [PATCH] ASoC: sh: fix fsi build warnings for 64 bit
+Message-Id: <4237757.xIRJLSDgsa@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1447981420.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: broonie@kernel.org
+Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, linux-kernel@vger.kernel.org, horms+renesas@verge.net.au, linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+As this driver can now be compiled for ARM64, we get a new warning
+as a result of passing a DMA filter data pointer through an 'int':
 
-R-Car E2 does not have an IMP core or an IMP clock.
+sound/soc/sh/fsi.c: In function 'fsi_dma_probe':
+sound/soc/sh/fsi.c:1372:24: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
+     shdma_chan_filter, (void *)io->dma_id,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7794.dtsi | 8 --------
- 1 file changed, 8 deletions(-)
+We already know that we only need the legacy filter function on
+arch/sh, so we can hide the legacy DMA interface function
+behind an #ifdef. This has the other advantage of no longer
+depending on the shdma_chan_filter function to be visible.
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index a9977d6ee81a..6fc1acff507f 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -879,14 +879,6 @@
- 			clock-mult = <1>;
- 			clock-output-names = "m2";
- 		};
--		imp_clk: imp_clk {
--			compatible = "fixed-factor-clock";
--			clocks = <&cpg_clocks R8A7794_CLK_PLL1>;
--			#clock-cells = <0>;
--			clock-div = <4>;
--			clock-mult = <1>;
--			clock-output-names = "imp";
--		};
- 		rclk_clk: rclk_clk {
- 			compatible = "fixed-factor-clock";
- 			clocks = <&cpg_clocks R8A7794_CLK_PLL1>;
--- 
-2.1.4
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+
+diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
+index 0215c78cbddf..ead520182e26 100644
+--- a/sound/soc/sh/fsi.c
++++ b/sound/soc/sh/fsi.c
+@@ -1362,15 +1362,18 @@ static int fsi_dma_push_start_stop(struct fsi_priv *fsi, struct fsi_stream *io,
+ 
+ static int fsi_dma_probe(struct fsi_priv *fsi, struct fsi_stream *io, struct device *dev)
+ {
+-	dma_cap_mask_t mask;
+ 	int is_play = fsi_stream_is_play(fsi, io);
+ 
++#ifdef CONFIG_SUPERH
++	dma_cap_mask_t mask;
+ 	dma_cap_zero(mask);
+ 	dma_cap_set(DMA_SLAVE, mask);
+ 
+-	io->chan = dma_request_slave_channel_compat(mask,
+-				shdma_chan_filter, (void *)io->dma_id,
+-				dev, is_play ? "tx" : "rx");
++	io->chan = dma_request_channel(mask, shdma_chan_filter,
++				       (void *)io->dma_id);
++#else
++	io->chan = dma_request_slave_channel(dev, is_play ? "tx" : "rx");
++#endif
+ 	if (io->chan) {
+ 		struct dma_slave_config cfg = {};
+ 		int ret;
 
