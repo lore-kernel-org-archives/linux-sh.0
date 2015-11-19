@@ -1,53 +1,43 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 26 Nov 2015 09:00:55 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7793: remove deprecated #gpio-range-cells
-Message-Id: <20151126090055.GA1531@katana>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="AqsLC8rIMeq19msA"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:38:41 +0000
+Subject: [PATCH 02/25] serial: sh-sci: Update DT binding documentation for BRG support
+Message-Id: <1447958344-836-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448511980-12173-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1448511980-12173-1-git-send-email-horms+renesas@verge.net.au>
-To: linux-arm-kernel@lists.infradead.org
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>, Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+Cc: linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
+Amend the DT bindings to include the optional clock sources for the Baud
+Rate Generator for External Clock (BRG), as found on some SCIF variants
+and on HSCIF.
 
---AqsLC8rIMeq19msA
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: devicetree@vger.kernel.org
+---
+ Documentation/devicetree/bindings/serial/renesas,sci-serial.txt | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-On Thu, Nov 26, 2015 at 01:26:20PM +0900, Simon Horman wrote:
-> Commit a1bc260bb5f5d9 ("gpio: clean up gpio-ranges documentation")
-> declares the above property deprecated. That was more than 2 years ago.
-> Remove it, so it doesn't get copied around needlessly.
->=20
-> Based on similar work for the r8a7791 and r8a7794 by Wolfram Sang.
->=20
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index 8efc9b6f35637fbb..ae907e39b11c2a5a 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -46,6 +46,12 @@ Required properties:
+     On (H)SCI(F) and some SCIFA, an additional clock may be specified:
+       - "hsck" for the optional external clock input (on HSCIF),
+       - "sck" for the optional external clock input (on other variants).
++    On UARTs equipped with a Baud Rate Generator for External Clock (BRG)
++    (some SCIF and HSCIF), additional clocks may be specified:
++      - "int_clk" for the optional internal clock source for the frequency
++	divider (typically the (AXI or SHwy) bus clock),
++      - "scif_clk" for the optional external clock source for the frequency
++	divider (SCIF_CLK).
+ 
+ Note: Each enabled SCIx UART should have an alias correctly numbered in the
+ "aliases" node.
+-- 
+1.9.1
 
-Reported-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
-
-
---AqsLC8rIMeq19msA
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBAgAGBQJWVspHAAoJEBQN5MwUoCm2T68P/2I5sTK0FOAAKX2SisrTili9
-qn2GIeUacZz+n4HexuP8qGAlRL6/4BJkJHbLi4KjAKYSDyllHAHF3O5mnE7hEPJ9
-ZKh/h07iCf5oHgLpGZMUZn9EhTWlXvgz9IkyOZaFGBWnDpICWgNXLyl/gc1v+Vas
-L/CiQia5RbkPY9jWa7k6HSzxJ99/MEu3aeAdLsfGG6DI0Me/18mIyERfi1iTerNX
-oQNGVrPu8YIZdLqHW1mayQUhz8k64dW5NHLFdAHYh+M55lS+G0WCFpEjs+DBcFS4
-td0Y47jkoati7L+YfbmsPM0KXpQjxT8pdBWUDvS+IwJAyY5Ycn6GKoRkgrVOrZ1R
-wub0v8aEYp/UbFsp3Z8ru9a2JgVQzRBlcyBKu+cKy16V6vw5ouYwTjI2xr1KlC+G
-lM4+7BUIjaHW6bVlsQAOuS4FQyp/aVeH4uXN5fQvmfJTTDIHlEan30rhSui/kOB3
-0Ne6oAy16MEHh4ySu35490PY0KcZeQWsIC38m6QlhvGTyI0L/q3higEw8zHWyogG
-+Rr196bHfVPxjKQLnzMdo8jCTXUEhUE+DLLfnfecWSqBgZOMWeDm1BnJILx4GbWx
-XCHfjwYURkJeqq6fHmGLwj1qClzWj2PoSFxj4A8gUyihwOvlxHRRYQ0ZyIFDqEdy
-m6EpiVdQ7YuPNa8iuhs3
-=wR3Q
------END PGP SIGNATURE-----
-
---AqsLC8rIMeq19msA--
