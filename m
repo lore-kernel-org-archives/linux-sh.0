@@ -1,35 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:46 +0000
-Subject: [PATCH 1/3] MAINTAINERS: Remove link to oss.renesas.com which is closed
-Message-Id: <804b0d7011ee464d8ca8c52dc38525572e526ab4.1448585673.git.horms+renesas@verge.net.au>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Thu, 19 Nov 2015 11:32:51 +0000
+Subject: Re: [PATCH] mmc: sh_mmcif: Document r8a7793 DT bindings
+Message-Id: <CAPDyKFqcxQtE=d=kGVgf5KLbCss7r9CuFv0d+GB-dR9Rgvm53Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448585673.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448585673.git.horms+renesas@verge.net.au>
+References: <1445964991-7825-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1445964991-7825-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: linux-mmc <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-There doesn't seem much value in keeping this link listed
-in the MAINTAINERS file any more.
+On 27 October 2015 at 17:56, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
+> From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+>
+> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+> Acked-by: Simon Horman <horms+renesas@verge.net.au>
+> [geert: Rebased]
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- MAINTAINERS | 1 -
- 1 file changed, 1 deletion(-)
+Thanks, applied for next!
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index e9caa4b28828..bea4c8ba7a80 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -1517,7 +1517,6 @@ ARM/SHMOBILE ARM ARCHITECTURE
- M:	Simon Horman <horms@verge.net.au>
- M:	Magnus Damm <magnus.damm@gmail.com>
- L:	linux-sh@vger.kernel.org
--W:	http://oss.renesas.com
- Q:	http://patchwork.kernel.org/project/linux-sh/list/
- T:	git git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git next
- S:	Supported
--- 
-2.1.4
+Kind regards
+Uffe
 
+> ---
+>  Documentation/devicetree/bindings/mmc/renesas,mmcif.txt | 1 +
+>  1 file changed, 1 insertion(+)
+>
+> diff --git a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+> index cae29eb5733d8a52..ff611fa66871dec9 100644
+> --- a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+> +++ b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
+> @@ -11,6 +11,7 @@ Required properties:
+>         - "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
+>         - "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
+>         - "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
+> +       - "renesas,mmcif-r8a7793" for the MMCIF found in r8a7793 SoCs
+>         - "renesas,mmcif-r8a7794" for the MMCIF found in r8a7794 SoCs
+>
+>  - clocks: reference to the functional clock
+> --
+> 1.9.1
+>
