@@ -1,76 +1,69 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 19 Nov 2015 18:32:06 +0000
-Subject: [PATCH 1/2] drivers: sh: clk: Avoid crashes when passing NULL clocks
-Message-Id: <1447957927-32738-2-git-send-email-geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:38:44 +0000
+Subject: [PATCH 05/25] serial: sh-sci: Drop unused frame_len parameter for sci_baud_calc_hscif()
+Message-Id: <1447958344-836-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447957927-32738-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447957927-32738-1-git-send-email-geert+renesas@glider.be>
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, linux-clk@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Several clock API functions handle NULL clocks when the Common Clock
-Framework is used, while their legacy SH counterparts don't, and would
-just crash when a NULL clock is passed.
-
-Add NULL checks to clk_get_rate(), clk_set_rate(), clk_get_parent(), and
-clk_round_rate(), to avoid different behavior in drivers shared between
-legacy and CCF-based platforms.
+As F is assumed to be zero in the receive margin formula, frame_len is
+not used. Remove it, together with the sci_baud_calc_frame_len() helper
+function.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-Note that there are still differences in return values (e.g. zero vs. an
-error code). These are not changed, as callers in legacy code may depend
-on specific values.
----
- drivers/sh/clk/core.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ drivers/tty/serial/sh-sci.c | 24 +++---------------------
+ 1 file changed, 3 insertions(+), 21 deletions(-)
 
-diff --git a/drivers/sh/clk/core.c b/drivers/sh/clk/core.c
-index be56b22ca941..c9afc5681474 100644
---- a/drivers/sh/clk/core.c
-+++ b/drivers/sh/clk/core.c
-@@ -469,6 +469,9 @@ void clk_enable_init_clocks(void)
- 
- unsigned long clk_get_rate(struct clk *clk)
- {
-+	if (!clk)
-+		return 0;
-+
- 	return clk->rate;
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 676f9d1354943a1b..7c7dfbce54ed9c19 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1866,26 +1866,9 @@ static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ 	return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
  }
- EXPORT_SYMBOL_GPL(clk_get_rate);
-@@ -478,6 +481,9 @@ int clk_set_rate(struct clk *clk, unsigned long rate)
- 	int ret = -EOPNOTSUPP;
- 	unsigned long flags;
  
-+	if (!clk)
-+		return 0;
-+
- 	spin_lock_irqsave(&clock_lock, flags);
- 
- 	if (likely(clk->ops && clk->ops->set_rate)) {
-@@ -535,12 +541,18 @@ EXPORT_SYMBOL_GPL(clk_set_parent);
- 
- struct clk *clk_get_parent(struct clk *clk)
+-/* calculate frame length from SMR */
+-static int sci_baud_calc_frame_len(unsigned int smr_val)
+-{
+-	int len = 10;
+-
+-	if (smr_val & SCSMR_CHR)
+-		len--;
+-	if (smr_val & SCSMR_PE)
+-		len++;
+-	if (smr_val & SCSMR_STOP)
+-		len++;
+-
+-	return len;
+-}
+-
+-
+ /* calculate sample rate, BRR, and clock select for HSCIF */
+-static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq,
+-				int *brr, unsigned int *srr,
+-				unsigned int *cks, int frame_len)
++static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq, int *brr,
++				unsigned int *srr, unsigned int *cks)
  {
-+	if (!clk)
-+		return NULL;
-+
- 	return clk->parent;
- }
- EXPORT_SYMBOL_GPL(clk_get_parent);
- 
- long clk_round_rate(struct clk *clk, unsigned long rate)
- {
-+	if (!clk)
-+		return 0;
-+
- 	if (likely(clk->ops && clk->ops->round_rate)) {
- 		unsigned long flags, rounded;
- 
+ 	int sr, c, br, err, recv_margin;
+ 	int min_err = 1000; /* 100% */
+@@ -1987,9 +1970,8 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	baud = uart_get_baud_rate(port, termios, old, 0, max_baud);
+ 	if (likely(baud && port->uartclk)) {
+ 		if (s->cfg->type = PORT_HSCIF) {
+-			int frame_len = sci_baud_calc_frame_len(smr_val);
+ 			sci_baud_calc_hscif(baud, port->uartclk, &t, &srr,
+-					    &cks, frame_len);
++					    &cks);
+ 		} else {
+ 			t = sci_scbrr_calc(s, baud, port->uartclk);
+ 			for (cks = 0; t >= 256 && cks <= 3; cks++)
 -- 
 1.9.1
 
