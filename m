@@ -1,56 +1,65 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:05:17 +0000
-Subject: [PATCH 10/29] ARM: shmobile: porter: add CAN0 DT support
-Message-Id: <0768fbad7fba1d2793cb4b57e30786e32d203948.1447981420.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 19 Nov 2015 15:56:45 +0000
+Subject: [PATCH v3 05/11] i2c: rcar: refactor setup of a msg
+Message-Id: <1447948611-2615-6-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1447981420.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
+References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Define the Porter board dependent part of the CAN0 device node.
+We want to reuse this function later.
 
-This patch is  analogous to the commit 457acc4a6ce8 ("ARM: shmobile:
-henninger: add CAN0 DT support") as there are no differences between the
-boards in this respect.
-
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7791-porter.dts | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ drivers/i2c/busses/i2c-rcar.c | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-porter.dts b/arch/arm/boot/dts/r8a7791-porter.dts
-index 9f9ffe322d17..3e198e7b3ee4 100644
---- a/arch/arm/boot/dts/r8a7791-porter.dts
-+++ b/arch/arm/boot/dts/r8a7791-porter.dts
-@@ -134,6 +134,11 @@
- 		renesas,groups = "vin0_data8", "vin0_clk";
- 		renesas,function = "vin0";
- 	};
-+
-+	can0_pins: can0 {
-+		renesas,groups = "can0_data";
-+		renesas,function = "can0";
-+	};
- };
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 0f2dc74ab8bcc1..4bd3099865b485 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -106,7 +106,8 @@ enum rcar_i2c_type {
+ struct rcar_i2c_priv {
+ 	void __iomem *io;
+ 	struct i2c_adapter adap;
+-	struct i2c_msg	*msg;
++	struct i2c_msg *msg;
++	int msgs_left;
+ 	struct clk *clk;
  
- &scif0 {
-@@ -288,3 +293,10 @@
- &pciec {
- 	status = "okay";
- };
+ 	wait_queue_head_t wait;
+@@ -255,6 +256,11 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
+ {
+ 	int read = !!rcar_i2c_is_recv(priv);
+ 
++	priv->pos = 0;
++	priv->flags = 0;
++	if (priv->msgs_left = 1)
++		rcar_i2c_flags_set(priv, ID_LAST_MSG);
 +
-+&can0 {
-+	pinctrl-0 = <&can0_pins>;
-+	pinctrl-names = "default";
-+
-+	status = "okay";
-+};
+ 	rcar_i2c_write(priv, ICMAR, (priv->msg->addr << 1) | read);
+ 	rcar_i2c_write(priv, ICMSR, 0);
+ 	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
+@@ -499,11 +505,8 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 		}
+ 
+ 		/* init each data */
+-		priv->msg	= &msgs[i];
+-		priv->pos	= 0;
+-		priv->flags	= 0;
+-		if (i = num - 1)
+-			rcar_i2c_flags_set(priv, ID_LAST_MSG);
++		priv->msg = &msgs[i];
++		priv->msgs_left = num - i;
+ 
+ 		rcar_i2c_prepare_msg(priv);
+ 
 -- 
 2.1.4
 
