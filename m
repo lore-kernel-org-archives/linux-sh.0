@@ -1,56 +1,116 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Sun, 01 Nov 2015 19:19:35 +0000
-Subject: [RFC v3 1/5] ARM: shmobile: r8a7790: add mstp4 and rwdt clock
-Message-Id: <1446405579-5367-2-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:36:01 +0000
+Subject: [PATCH v2 04/16] ARM: shmobile: sh73a0 dtsi: Rename the serial port clock to fck
+Message-Id: <1447958173-543-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Just for testing, not for upstream!
+The clock is really the device functional clock, not the interface
+clock. Rename it.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7790.dtsi            | 9 ++++++---
- include/dt-bindings/clock/r8a7790-clock.h | 1 +
- 2 files changed, 7 insertions(+), 3 deletions(-)
+v2:
+  - Add Acked-by.
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 0612502b4a6d67..e39beeefdf594b 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -1284,10 +1284,13 @@
- 		mstp4_clks: mstp4_clks@e6150140 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150140 0 4>, <0 0xe615004c 0 4>;
--			clocks = <&cp_clk>;
-+			clocks = <&cp_clk>, <&rclk_clk>;
- 			#clock-cells = <1>;
--			clock-indices = <R8A7790_CLK_IRQC>;
--			clock-output-names = "irqc";
-+			clock-indices = <
-+				R8A7790_CLK_IRQC
-+				R8A7790_CLK_RWDT
-+			>;
-+			clock-output-names = "irqc", "rwdt";
- 		};
- 		mstp5_clks: mstp5_clks@e6150144 {
- 			compatible = "renesas,r8a7790-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7790-clock.h b/include/dt-bindings/clock/r8a7790-clock.h
-index 7b1ad8922eecdc..35ee24486ff124 100644
---- a/include/dt-bindings/clock/r8a7790-clock.h
-+++ b/include/dt-bindings/clock/r8a7790-clock.h
-@@ -80,6 +80,7 @@
- #define R8A7790_CLK_USBDMAC1		31
- 
- /* MSTP4 */
-+#define R8A7790_CLK_RWDT		2
- #define R8A7790_CLK_IRQC		7
- 
- /* MSTP5 */
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index ff7c8f298f30a58d..cbc885e46c504f56 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -301,7 +301,7 @@
+ 		reg = <0xe6c40000 0x100>;
+ 		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFA0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -311,7 +311,7 @@
+ 		reg = <0xe6c50000 0x100>;
+ 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFA1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -321,7 +321,7 @@
+ 		reg = <0xe6c60000 0x100>;
+ 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFA2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -331,7 +331,7 @@
+ 		reg = <0xe6c70000 0x100>;
+ 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFA3>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -341,7 +341,7 @@
+ 		reg = <0xe6c80000 0x100>;
+ 		interrupts = <0 78 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFA4>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -351,7 +351,7 @@
+ 		reg = <0xe6cb0000 0x100>;
+ 		interrupts = <0 79 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFA5>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -361,7 +361,7 @@
+ 		reg = <0xe6cc0000 0x100>;
+ 		interrupts = <0 156 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp3_clks SH73A0_CLK_SCIFA6>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -371,7 +371,7 @@
+ 		reg = <0xe6cd0000 0x100>;
+ 		interrupts = <0 143 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFA7>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
+@@ -381,7 +381,7 @@
+ 		reg = <0xe6c30000 0x100>;
+ 		interrupts = <0 80 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks SH73A0_CLK_SCIFB>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&pd_a3sp>;
+ 		status = "disabled";
+ 	};
 -- 
-2.1.4
+1.9.1
 
