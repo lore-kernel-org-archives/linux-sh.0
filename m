@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 19 Nov 2015 18:38:58 +0000
-Subject: [PATCH 19/25] serial: sh-sci: Add support for optional external (H)SCK input
-Message-Id: <1447958344-836-20-git-send-email-geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:38:45 +0000
+Subject: [PATCH 06/25] serial: sh-sci: Don't overwrite clock selection in serial_console_write()
+Message-Id: <1447958344-836-7-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
@@ -11,143 +11,45 @@ Content-Transfer-Encoding: 7bit
 To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add support for using the SCIx clock pin "(H)SCK" as an external clock
-input on (H)SCI(F).
+Blindly writing the default configuration value into the SCSCR register
+may change the clock selection bits, breaking the serial console if the
+current driver settings differ from the default settings.
 
-Note that this feature is not yet supported on the select SCIFA variants
-that also have it (e.g. sh7723, sh7724, and r8a7740).
-
-On (H)SCIF variants with an External Baud Rate Generator (BRG), the
-BRG Clock Select Register must be configured for the external clock.
+Keep the current clock selection bits to prevent this from happening
+on e.g. r8a7791/koelsch when support for the BRG will be added.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/tty/serial/sh-sci.c | 63 ++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 60 insertions(+), 3 deletions(-)
+ drivers/tty/serial/sh-sci.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 12800e52f41953dc..f88aac684ed1e3b6 100644
+index 7c7dfbce54ed9c19..cba51da604253db6 100644
 --- a/drivers/tty/serial/sh-sci.c
 +++ b/drivers/tty/serial/sh-sci.c
-@@ -79,6 +79,7 @@ enum {
- 
- enum SCI_CLKS {
- 	SCI_FCK,		/* Functional Clock */
-+	SCI_SCK,		/* Optional External Clock */
- 	SCI_NUM_CLKS
- };
- 
-@@ -1924,6 +1925,36 @@ static void sci_shutdown(struct uart_port *port)
- 	sci_free_irq(s);
- }
- 
-+static int sci_sck_calc(struct sci_port *s, unsigned int bps,
-+			unsigned int *srr)
-+{
-+	unsigned long freq = s->clk_rates[SCI_SCK];
-+	unsigned int min_sr, max_sr, sr;
-+	int err, min_err = INT_MAX;
-+
-+	if (s->sampling_rate) {
-+		/* SCI(F) has a fixed sampling rate */
-+		min_sr = max_sr = s->sampling_rate / 2;
-+	} else {
-+		/* HSCIF has a variable 1/(8..32) sampling rate */
-+		min_sr = 8;
-+		max_sr = 32;
-+	}
-+
-+	for (sr = max_sr; sr >= min_sr; sr--) {
-+		err = DIV_ROUND_CLOSEST(freq, sr) - bps;
-+		if (abs(err) >= abs(min_err))
-+			continue;
-+
-+		min_err = err;
-+		*srr = sr - 1;
-+	}
-+
-+	dev_dbg(s->port.dev, "SCK: %u%+d bps using SR %u\n", bps, min_err,
-+		*srr + 1);
-+	return min_err;
-+}
-+
- /* calculate sample rate, BRR, and clock select */
- static int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
- 			  unsigned int *brr, unsigned int *srr,
-@@ -2005,7 +2036,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 			    struct ktermios *old)
+@@ -2415,7 +2415,7 @@ static void serial_console_write(struct console *co, const char *s,
  {
- 	unsigned int baud, smr_val = 0, scr_val = 0, i;
--	unsigned int brr = 255, cks = 0, srr = 15;
-+	unsigned int brr = 255, cks = 0, srr = 15, sccks = 0;
- 	unsigned int brr1 = 255, cks1 = 0, srr1 = 15;
- 	struct sci_port *s = to_sci_port(port);
- 	const struct plat_sci_reg *reg;
-@@ -2043,10 +2074,26 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 	if (!baud)
- 		goto done;
+ 	struct sci_port *sci_port = &sci_ports[co->index];
+ 	struct uart_port *port = &sci_port->port;
+-	unsigned short bits, ctrl;
++	unsigned short bits, ctrl, ctrl_temp;
+ 	unsigned long flags;
+ 	int locked = 1;
  
-+	/* Optional External Clock */
-+	if (s->clk_rates[SCI_SCK] && port->type != PORT_SCIFA &&
-+	    port->type != PORT_SCIFB) {
-+		err = sci_sck_calc(s, baud, &srr1);
-+		if (abs(err) < abs(min_err)) {
-+			best_clk = SCI_SCK;
-+			scr_val = SCSCR_CKE1;
-+			sccks = SCCKS_CKS;
-+			min_err = err;
-+			srr = srr1;
-+			if (!err)
-+				goto done;
-+		}
-+	}
-+
- 	/* Functional Clock and standard Bit Rate Register */
- 	err = sci_scbrr_calc(s, baud, &brr1, &srr1, &cks1);
- 	if (abs(err) < abs(min_err)) {
- 		best_clk = SCI_FCK;
-+		scr_val = 0;
- 		min_err = err;
- 		brr = brr1;
- 		srr = srr1;
-@@ -2060,14 +2107,20 @@ done:
+@@ -2427,9 +2427,11 @@ static void serial_console_write(struct console *co, const char *s,
+ 	else
+ 		spin_lock(&port->lock);
  
- 	sci_port_enable(s);
+-	/* first save the SCSCR then disable the interrupts */
++	/* first save SCSCR then disable interrupts, keep clock source */
+ 	ctrl = serial_port_in(port, SCSCR);
+-	serial_port_out(port, SCSCR, sci_port->cfg->scscr);
++	ctrl_temp = (sci_port->cfg->scscr & ~(SCSCR_CKE1 | SCSCR_CKE0)) |
++		    (ctrl & (SCSCR_CKE1 | SCSCR_CKE0));
++	serial_port_out(port, SCSCR, ctrl_temp);
  
-+	/* Program the optional External Baud Rate Generator (BRG) first */
-+	if (best_clk >= 0 && sci_getreg(port, SCCKS)->size)
-+		serial_port_out(port, SCCKS, sccks);
-+
- 	sci_reset(port);
+ 	uart_console_write(port, s, count, serial_console_putchar);
  
- 	uart_update_timeout(port, termios->c_cflag, baud);
- 
- 	if (best_clk >= 0) {
- 		smr_val |= cks;
--		dev_dbg(port->dev, "SMR 0x%x BRR %u SRR %u\n", smr_val, brr,
--			srr);
-+		dev_dbg(port->dev,
-+			 "SCR 0x%x SMR 0x%x BRR %u CKS 0x%x SRR %u\n",
-+			 scr_val, smr_val, brr, sccks, srr);
-+		serial_port_out(port, SCSCR, scr_val);
- 		serial_port_out(port, SCSMR, smr_val);
- 		serial_port_out(port, SCBRR, brr);
- 		if (sci_getreg(port, HSSRR)->size)
-@@ -2303,10 +2356,14 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
- {
- 	const char *clk_names[] = {
- 		[SCI_FCK] = "fck",
-+		[SCI_SCK] = "sck",
- 	};
- 	struct clk *clk;
- 	unsigned int i;
- 
-+	if (sci_port->cfg->type = PORT_HSCIF)
-+		clk_names[SCI_SCK] = "hsck";
-+
- 	for (i = 0; i < SCI_NUM_CLKS; i++) {
- 		clk = devm_clk_get(dev, clk_names[i]);
- 		if (PTR_ERR(clk) = -EPROBE_DEFER)
 -- 
 1.9.1
 
