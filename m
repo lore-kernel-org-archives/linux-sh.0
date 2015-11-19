@@ -1,54 +1,153 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 18 Nov 2015 22:20:35 +0000
-Subject: [PATCH 2/2] ARM: shmobile: gose: Add GPIO leds to DT
-Message-Id: <1447885235-17858-3-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:38:58 +0000
+Subject: [PATCH 19/25] serial: sh-sci: Add support for optional external (H)SCK input
+Message-Id: <1447958344-836-20-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447885235-17858-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1447885235-17858-1-git-send-email-horms+renesas@verge.net.au>
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Instantiate the GPIO leds in the gose device tree.
+Add support for using the SCIx clock pin "(H)SCK" as an external clock
+input on (H)SCI(F).
 
-Based on similar work for the koelsch board by Magnus Damm.
+Note that this feature is not yet supported on the select SCIFA variants
+that also have it (e.g. sh7723, sh7724, and r8a7740).
 
-Cc: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+On (H)SCIF variants with an External Baud Rate Generator (BRG), the
+BRG Clock Select Register must be configured for the external clock.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-* Compile Tested Only
----
- arch/arm/boot/dts/r8a7793-gose.dts | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ drivers/tty/serial/sh-sci.c | 63 ++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 60 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
-index ff391d2fb767..7e1794736aa9 100644
---- a/arch/arm/boot/dts/r8a7793-gose.dts
-+++ b/arch/arm/boot/dts/r8a7793-gose.dts
-@@ -113,6 +113,22 @@
- 		        debounce-interval = <20>;
- 		};
- 	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led6 {
-+			gpios = <&gpio2 19 GPIO_ACTIVE_HIGH>;
-+			label = "LED6";
-+		};
-+		led7 {
-+			gpios = <&gpio2 20 GPIO_ACTIVE_HIGH>;
-+			label = "LED7";
-+		};
-+		led8 {
-+			gpios = <&gpio2 21 GPIO_ACTIVE_HIGH>;
-+			label = "LED8";
-+		};
-+	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 12800e52f41953dc..f88aac684ed1e3b6 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -79,6 +79,7 @@ enum {
+ 
+ enum SCI_CLKS {
+ 	SCI_FCK,		/* Functional Clock */
++	SCI_SCK,		/* Optional External Clock */
+ 	SCI_NUM_CLKS
  };
  
- &extal_clk {
+@@ -1924,6 +1925,36 @@ static void sci_shutdown(struct uart_port *port)
+ 	sci_free_irq(s);
+ }
+ 
++static int sci_sck_calc(struct sci_port *s, unsigned int bps,
++			unsigned int *srr)
++{
++	unsigned long freq = s->clk_rates[SCI_SCK];
++	unsigned int min_sr, max_sr, sr;
++	int err, min_err = INT_MAX;
++
++	if (s->sampling_rate) {
++		/* SCI(F) has a fixed sampling rate */
++		min_sr = max_sr = s->sampling_rate / 2;
++	} else {
++		/* HSCIF has a variable 1/(8..32) sampling rate */
++		min_sr = 8;
++		max_sr = 32;
++	}
++
++	for (sr = max_sr; sr >= min_sr; sr--) {
++		err = DIV_ROUND_CLOSEST(freq, sr) - bps;
++		if (abs(err) >= abs(min_err))
++			continue;
++
++		min_err = err;
++		*srr = sr - 1;
++	}
++
++	dev_dbg(s->port.dev, "SCK: %u%+d bps using SR %u\n", bps, min_err,
++		*srr + 1);
++	return min_err;
++}
++
+ /* calculate sample rate, BRR, and clock select */
+ static int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ 			  unsigned int *brr, unsigned int *srr,
+@@ -2005,7 +2036,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 			    struct ktermios *old)
+ {
+ 	unsigned int baud, smr_val = 0, scr_val = 0, i;
+-	unsigned int brr = 255, cks = 0, srr = 15;
++	unsigned int brr = 255, cks = 0, srr = 15, sccks = 0;
+ 	unsigned int brr1 = 255, cks1 = 0, srr1 = 15;
+ 	struct sci_port *s = to_sci_port(port);
+ 	const struct plat_sci_reg *reg;
+@@ -2043,10 +2074,26 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	if (!baud)
+ 		goto done;
+ 
++	/* Optional External Clock */
++	if (s->clk_rates[SCI_SCK] && port->type != PORT_SCIFA &&
++	    port->type != PORT_SCIFB) {
++		err = sci_sck_calc(s, baud, &srr1);
++		if (abs(err) < abs(min_err)) {
++			best_clk = SCI_SCK;
++			scr_val = SCSCR_CKE1;
++			sccks = SCCKS_CKS;
++			min_err = err;
++			srr = srr1;
++			if (!err)
++				goto done;
++		}
++	}
++
+ 	/* Functional Clock and standard Bit Rate Register */
+ 	err = sci_scbrr_calc(s, baud, &brr1, &srr1, &cks1);
+ 	if (abs(err) < abs(min_err)) {
+ 		best_clk = SCI_FCK;
++		scr_val = 0;
+ 		min_err = err;
+ 		brr = brr1;
+ 		srr = srr1;
+@@ -2060,14 +2107,20 @@ done:
+ 
+ 	sci_port_enable(s);
+ 
++	/* Program the optional External Baud Rate Generator (BRG) first */
++	if (best_clk >= 0 && sci_getreg(port, SCCKS)->size)
++		serial_port_out(port, SCCKS, sccks);
++
+ 	sci_reset(port);
+ 
+ 	uart_update_timeout(port, termios->c_cflag, baud);
+ 
+ 	if (best_clk >= 0) {
+ 		smr_val |= cks;
+-		dev_dbg(port->dev, "SMR 0x%x BRR %u SRR %u\n", smr_val, brr,
+-			srr);
++		dev_dbg(port->dev,
++			 "SCR 0x%x SMR 0x%x BRR %u CKS 0x%x SRR %u\n",
++			 scr_val, smr_val, brr, sccks, srr);
++		serial_port_out(port, SCSCR, scr_val);
+ 		serial_port_out(port, SCSMR, smr_val);
+ 		serial_port_out(port, SCBRR, brr);
+ 		if (sci_getreg(port, HSSRR)->size)
+@@ -2303,10 +2356,14 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
+ {
+ 	const char *clk_names[] = {
+ 		[SCI_FCK] = "fck",
++		[SCI_SCK] = "sck",
+ 	};
+ 	struct clk *clk;
+ 	unsigned int i;
+ 
++	if (sci_port->cfg->type = PORT_HSCIF)
++		clk_names[SCI_SCK] = "hsck";
++
+ 	for (i = 0; i < SCI_NUM_CLKS; i++) {
+ 		clk = devm_clk_get(dev, clk_names[i]);
+ 		if (PTR_ERR(clk) = -EPROBE_DEFER)
 -- 
-2.1.4
+1.9.1
 
