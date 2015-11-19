@@ -1,52 +1,47 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 19 Nov 2015 18:38:55 +0000
-Subject: [PATCH 16/25] serial: sh-sci: Correct SCIF type on RZ/A1H
-Message-Id: <1447958344-836-17-git-send-email-geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:36:13 +0000
+Subject: [PATCH v2 16/16] serial: sh-sci: Drop the sci_fck clock fallback
+Message-Id: <1447958173-543-17-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+References: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The "renesas,scif" compatible value is currently used for the SCIF
-variant in all Renesas SoCs of the R-Car and RZ families.  However, the
-variant used in the RZ family is not the common "SH-4(A)" variant, but
-the "SH-2(A) with FIFO data count register" variant, as it has the
-"Serial Extension Mode Register" (SCEMR), just like on sh7203, sh7263,
-sh7264, and sh7269.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Use the (already documented) SoC-specific "renesas,scif-r7s72100"
-compatible value to differentiate.  The "renesas,scif" compatible value
-can still be used as a common denominator for SCIF variants with the
-"SH-4(A)" register layout (i.e. ignoring the SCEMR register).
-Note that currently both variants are treated the same, but this may
-change if support for the SCEMR register is ever added.
+All platforms that used to define an sci_fck clock have now switched to
+the fck name. Remove the fallback code.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/tty/serial/sh-sci.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+v2:
+  - Add Acked-by.
+---
+ drivers/tty/serial/sh-sci.c | 5 -----
+ 1 file changed, 5 deletions(-)
 
 diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 41351ae055de661f..b0127f38af744fcf 100644
+index 3c908804cab1c88c..bee5b7025adf45a2 100644
 --- a/drivers/tty/serial/sh-sci.c
 +++ b/drivers/tty/serial/sh-sci.c
-@@ -2601,6 +2601,12 @@ static int sci_remove(struct platform_device *dev)
- #define SCI_OF_REGTYPE(data)		((unsigned long)(data) & 0xffff)
+@@ -2256,11 +2256,6 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
+ 	if (!IS_ERR(sci_port->fclk))
+ 		return 0;
  
- static const struct of_device_id of_sci_match[] = {
-+	/* SoC-specific types */
-+	{
-+		.compatible = "renesas,scif-r7s72100",
-+		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH2_SCIF_FIFODATA_REGTYPE),
-+	},
-+	/* Generic types */
- 	{
- 		.compatible = "renesas,scif",
- 		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_REGTYPE),
+-	/* SH has historically named the clock "sci_fck". */
+-	sci_port->fclk = clk_get(dev, "sci_fck");
+-	if (!IS_ERR(sci_port->fclk))
+-		return 0;
+-
+ 	/*
+ 	 * Not all SH platforms declare a clock lookup entry for SCI devices,
+ 	 * in which case we need to get the global "peripheral_clk" clock.
 -- 
 1.9.1
 
