@@ -1,96 +1,89 @@
-From: Jerome Marchand <jmarchan@redhat.com>
-Date: Thu, 12 Nov 2015 16:28:46 +0000
-Subject: Re: [PATCH] mm: vmalloc: don't remove inexistent guard hole in remove_vm_area()
-Message-Id: <5644BE3E.7010708@redhat.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="gqqIdGCaXdtJMGiBHV7IvAAvr2EAt2BPw"
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:36:05 +0000
+Subject: [PATCH v2 08/16] ARM: shmobile: r8a7778 dtsi: Rename the serial port clock to fck
+Message-Id: <1447958173-543-9-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447341424-11466-1-git-send-email-jmarchan@redhat.com>
- <CAPAsAGxNWhHSNHZWfaOb3NmbubSBGRd8O81L5rw1wMs-n_UgmA@mail.gmail.com>
-In-Reply-To: <CAPAsAGxNWhHSNHZWfaOb3NmbubSBGRd8O81L5rw1wMs-n_UgmA@mail.gmail.com>
-To: Andrey Ryabinin <ryabinin.a.a@gmail.com>
-Cc: "linux-mm@kvack.org" <linux-mm@kvack.org>, LKML <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org
+References: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---gqqIdGCaXdtJMGiBHV7IvAAvr2EAt2BPw
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-On 11/12/2015 04:55 PM, Andrey Ryabinin wrote:
-> 2015-11-12 18:17 GMT+03:00 Jerome Marchand <jmarchan@redhat.com>:
->> Commit 71394fe50146 ("mm: vmalloc: add flag preventing guard hole
->> allocation") missed a spot. Currently remove_vm_area() decreases
->> vm->size to remove the guard hole page, even when it isn't present.
->> This patch only decreases vm->size when VM_NO_GUARD isn't set.
->>
->> Signed-off-by: Jerome Marchand <jmarchan@redhat.com>
->> ---
->>  mm/vmalloc.c | 3 ++-
->>  1 file changed, 2 insertions(+), 1 deletion(-)
->>
->> diff --git a/mm/vmalloc.c b/mm/vmalloc.c
->> index d045634..1388c3d 100644
->> --- a/mm/vmalloc.c
->> +++ b/mm/vmalloc.c
->> @@ -1443,7 +1443,8 @@ struct vm_struct *remove_vm_area(const void *add=
-r)
->>                 vmap_debug_free_range(va->va_start, va->va_end);
->>                 kasan_free_shadow(vm);
->>                 free_unmap_vmap_area(va);
->> -               vm->size -=3D PAGE_SIZE;
->> +               if (!(vm->flags & VM_NO_GUARD))
->> +                       vm->size -=3D PAGE_SIZE;
->>
->=20
-> I'd fix this in another way. I think that remove_vm_area() shouldn't
-> change vm's size, IMO it doesn't make sense.
-> The only caller who cares about vm's size after removing is __vunmap():=
+The clock is really the device functional clock, not the interface
+clock. Rename it.
 
->          area =3D remove_vm_area(addr);
->          ....
->          debug_check_no_locks_freed(addr, area->size);
->          debug_check_no_obj_freed(addr, area->size);
->=20
-> We already have proper get_vm_area_size() helper which takes
-> VM_NO_GUARD into account.
-> So I think we should use that helper for debug_check_no_*() and just
-> remove 'vm->size -=3D PAGE_SIZE;' line
-> from remove_vm_area()
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - Add Acked-by.
+---
+ arch/arm/boot/dts/r8a7778.dtsi | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-Sure, that would be cleaner.
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+index 4f8e0781174642a3..da76f5d95875ce11 100644
+--- a/arch/arm/boot/dts/r8a7778.dtsi
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -295,7 +295,7 @@
+ 		reg = <0xffe40000 0x100>;
+ 		interrupts = <0 70 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -305,7 +305,7 @@
+ 		reg = <0xffe41000 0x100>;
+ 		interrupts = <0 71 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -315,7 +315,7 @@
+ 		reg = <0xffe42000 0x100>;
+ 		interrupts = <0 72 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -325,7 +325,7 @@
+ 		reg = <0xffe43000 0x100>;
+ 		interrupts = <0 73 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF3>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -335,7 +335,7 @@
+ 		reg = <0xffe44000 0x100>;
+ 		interrupts = <0 74 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF4>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -345,7 +345,7 @@
+ 		reg = <0xffe45000 0x100>;
+ 		interrupts = <0 75 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7778_CLK_SCIF5>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+-- 
+1.9.1
 
-Btw, there might be a leak in sq_unmap() (arch/sh/kernel/cpu/sh4/sq.c)
-as the vm_struct doesn't seem to be freed. CCed the SuperH folks.
-
-Thanks,
-Jerome
-
->=20
->=20
->=20
->>                 return vm;
->>         }
->> --
->> 2.4.3
->>
-
-
-
---gqqIdGCaXdtJMGiBHV7IvAAvr2EAt2BPw
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBCAAGBQJWRL4+AAoJEHTzHJCtsuoCZlgH/0CJ5pcOXspQy8GGVnMaDFn+
-CA2dc661YpyTb7BN3LeqLa9Eidx3/3QFARmRdKetyUWh8wQZqy9QLpjesJrgyRz9
-+yCVikMQemMChbAVRtDJ7FPY1jupVMfO5oqufc1maeRk5KYIz0bmfcUYxPqdnh+6
-9L7pBzbMx6jyE/wNjyiUq6Xh1xG6Pj4UzSCD1YpcveW5QE2IAtIMXsMeFh/b34Fg
-MkSNP010rFKb2kHLGBpu+5RUeS1dIHOZ9lA6BSv5iYQ9NhVmiFX8vqBryMRnRIde
-5S+dOkytVEvfvBTZmV6M42hSA+LME8jbU0reSLVQUbyuyylCx4A7yCmaohuzW3k=
-=XIS2
------END PGP SIGNATURE-----
-
---gqqIdGCaXdtJMGiBHV7IvAAvr2EAt2BPw--
