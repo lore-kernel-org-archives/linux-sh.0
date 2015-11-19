@@ -1,48 +1,81 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 30 Nov 2015 14:16:50 +0000
-Subject: [PATCH 0/2] ARM: shmobile: sh73a0: Add MSIOF support
-Message-Id: <1448893012-8465-1-git-send-email-geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:30:27 +0000
+Subject: [PATCH 2/2] pinctrl: sh-pfc: r8a7795: Add SCIF_CLK support
+Message-Id: <1447957827-32637-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1447957827-32637-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447957827-32637-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-	Hi Simon, Magnus,
+Add pins, groups, and a function for SCIF_CLK, which is the external
+clock source for the Baud Rate Generator for External Clock (BRG) on
+(H)SCIF.
 
-This patch series adds support for the 4 MSIOF channels on SH-Mobile
-AG5.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
-It has been tested (TX only) using MSIOF1 on the CN21 test connector.
-RX hasn't been tested, as there are one-directional buffers between the
-real MSIOF interface on high-density connector CN8 and the CN21 test
-connector.
-
-Functionality-wise, this depends on the bindings in "[PATCH] spi:
-sh-msiof: Add support for SH-Mobile AG5", and pinctrl in "[PATCH]
-pinctrl: sh-pfc: sh73a0: Add MSIOF support".
-
-Thanks!
-
-Geert Uytterhoeven (2):
-  ARM: shmobile: sh73a0: Add MSIOF clocks
-  ARM: shmobile: sh73a0: Add MSIOF device nodes
-
- arch/arm/boot/dts/sh73a0.dtsi            | 72 ++++++++++++++++++++++++++------
- include/dt-bindings/clock/sh73a0-clock.h |  6 ++-
- 2 files changed, 65 insertions(+), 13 deletions(-)
-
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+index 2538ea4d6a81..44c5fa511ed5 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+@@ -2031,6 +2031,22 @@ static const unsigned int scif5_clk_mux[] = {
+ 	SCK5_MARK,
+ };
+ 
++/* - SCIF Clock ------------------------------------------------------------- */
++static const unsigned int scif_clk_a_pins[] = {
++	/* SCIF_CLK */
++	RCAR_GP_PIN(6, 23),
++};
++static const unsigned int scif_clk_a_mux[] = {
++	SCIF_CLK_A_MARK,
++};
++static const unsigned int scif_clk_b_pins[] = {
++	/* SCIF_CLK */
++	RCAR_GP_PIN(5, 9),
++};
++static const unsigned int scif_clk_b_mux[] = {
++	SCIF_CLK_B_MARK,
++};
++
+ /* - SSI -------------------------------------------------------------------- */
+ static const unsigned int ssi0_data_pins[] = {
+ 	/* SDATA */
+@@ -2292,6 +2308,8 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(scif4_ctrl_c),
+ 	SH_PFC_PIN_GROUP(scif5_data),
+ 	SH_PFC_PIN_GROUP(scif5_clk),
++	SH_PFC_PIN_GROUP(scif_clk_a),
++	SH_PFC_PIN_GROUP(scif_clk_b),
+ 	SH_PFC_PIN_GROUP(ssi0_data),
+ 	SH_PFC_PIN_GROUP(ssi01239_ctrl),
+ 	SH_PFC_PIN_GROUP(ssi1_data_a),
+@@ -2450,6 +2468,11 @@ static const char * const scif5_groups[] = {
+ 	"scif5_clk",
+ };
+ 
++static const char * const scif_clk_groups[] = {
++	"scif_clk_a",
++	"scif_clk_b",
++};
++
+ static const char * const ssi_groups[] = {
+ 	"ssi0_data",
+ 	"ssi01239_ctrl",
+@@ -2495,6 +2518,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(scif3),
+ 	SH_PFC_FUNCTION(scif4),
+ 	SH_PFC_FUNCTION(scif5),
++	SH_PFC_FUNCTION(scif_clk),
+ 	SH_PFC_FUNCTION(ssi),
+ };
+ 
 -- 
 1.9.1
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
