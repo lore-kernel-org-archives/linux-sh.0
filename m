@@ -1,60 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:45 +0000
-Subject: [PATCH 02/15] ARM: shmobile: bockw dts: define sdhi0 pins with pull-ups
-Message-Id: <781f278a16fbd74ffa2acf3f14134953631f076d.1448586938.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 19 Nov 2015 15:56:43 +0000
+Subject: [PATCH v3 03/11] i2c: rcar: remove unused IOERROR state
+Message-Id: <1447948611-2615-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448586938.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448586938.git.horms+renesas@verge.net.au>
+References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Ensures that the pull-ups for pins SD0_CD and SD0_WP are enabled.
-
-This is one of two features from the DT reference platform that are
-still missing in MP.
-
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 10 +++++++---
- 1 file changed, 7 insertions(+), 3 deletions(-)
+ drivers/i2c/busses/i2c-rcar.c | 6 ------
+ 1 file changed, 6 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 90543b12d7e2..8a5407678717 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -137,10 +137,14 @@
- 	};
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index efc8de6cc8a2f9..746406923a5825 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -94,7 +94,6 @@
+ #define RCAR_IRQ_ACK_RECV	(~(MAT | MDR) & 0xFF)
  
- 	sdhi0_pins: sd0 {
--		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
--				  "sdhi0_cd";
-+		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
- 		renesas,function = "sdhi0";
- 	};
-+	sdhi0_pup_pins: sd0_pup {
-+		renesas,groups = "sdhi0_cd", "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+		bias-pull-up;
-+	};
+ #define ID_LAST_MSG	(1 << 0)
+-#define ID_IOERROR	(1 << 1)
+ #define ID_DONE		(1 << 2)
+ #define ID_ARBLOST	(1 << 3)
+ #define ID_NACK		(1 << 4)
+@@ -541,11 +540,6 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 			break;
+ 		}
  
- 	hspi0_pins: hspi0 {
- 		renesas,groups = "hspi0_a";
-@@ -169,7 +173,7 @@
- };
- 
- &sdhi0 {
--	pinctrl-0 = <&sdhi0_pins>;
-+	pinctrl-0 = <&sdhi0_pins>, <&sdhi0_pup_pins>;
- 	pinctrl-names = "default";
- 
- 	vmmc-supply = <&fixedregulator3v3>;
+-		if (rcar_i2c_flags_has(priv, ID_IOERROR)) {
+-			ret = -EIO;
+-			break;
+-		}
+-
+ 		ret = i + 1; /* The number of transfer */
+ 	}
+ out:
 -- 
 2.1.4
 
