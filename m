@@ -1,38 +1,60 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Tue, 03 Nov 2015 09:52:18 +0000
-Subject: RE: [PATCH 1/3] clk: shmobile: r8a7795: Add PCIe clocks
-Message-Id: <PS1PR06MB1180FA0D515EBB13AA361FA4F52B0@PS1PR06MB1180.apcprd06.prod.outlook.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:38:48 +0000
+Subject: [PATCH 09/25] serial: sh-sci: Avoid overflow in sci_baud_calc_hscif()
+Message-Id: <1447958344-836-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446485499-26733-2-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1446485499-26733-2-git-send-email-phil.edworthy@renesas.com>
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-SGkgR2VlcnQsDQoNCk9uIDAzIE5vdmVtYmVyIDIwMTUgMDk6MjcsIEdlZXJ0IHdyb3RlOg0KPiBP
-biBUdWUsIE5vdiAzLCAyMDE1IGF0IDEwOjA1IEFNLCBQaGlsIEVkd29ydGh5DQo+IDxwaGlsLmVk
-d29ydGh5QHJlbmVzYXMuY29tPiB3cm90ZToNCj4gPiBPbiAwMyBOb3ZlbWJlciAyMDE1IDA3OjQ5
-LCBHZWVydCB3cm90ZToNCj4gPj4gT24gTW9uLCBOb3YgMiwgMjAxNSBhdCA2OjMxIFBNLCBQaGls
-IEVkd29ydGh5DQo+IDxwaGlsLmVkd29ydGh5QHJlbmVzYXMuY29tPg0KPiA+PiB3cm90ZToNCj4g
-Pj4gPiAtLS0gYS9kcml2ZXJzL2Nsay9zaG1vYmlsZS9jbGstcjhhNzc5NS1jcGctbXNzci5jDQo+
-ID4+ID4gKysrIGIvZHJpdmVycy9jbGsvc2htb2JpbGUvY2xrLXI4YTc3OTUtY3BnLW1zc3IuYw0K
-PiA+PiA+IEBAIC0xMjAsNiArMTIwLDggQEAgc3RhdGljIGNvbnN0IHN0cnVjdCBtc3NyX21vZF9j
-bGsgcjhhNzc5NV9tb2RfY2xrc1tdDQo+ID4+IF9faW5pdGNvbnN0ID0gew0KPiA+PiA+ICAgICAg
-ICAgeyAic3lzLWRtYWMxIiwgICAgICAgICAgMjE4LCAgICBSOEE3Nzk1X0NMS19TM0QxICAgICAg
-ICB9LA0KPiA+PiA+ICAgICAgICAgeyAic3lzLWRtYWMwIiwgICAgICAgICAgMjE5LCAgICBSOEE3
-Nzk1X0NMS19TM0QxICAgICAgICB9LA0KPiA+PiA+ICAgICAgICAgeyAic2NpZjIiLCAgICAgICAg
-ICAgICAgMzEwLCAgICBSOEE3Nzk1X0NMS19TM0Q0ICAgICAgICB9LA0KPiA+PiA+ICsgICAgICAg
-eyAicGNpZTAiLCAgICAgICAgICAgICAgMzE4LCAgICBSOEE3Nzk1X0NMS19TM0QxICAgICAgICB9
-LA0KPiA+Pg0KPiA+PiAicGNpZTEiDQo+ID4+DQo+ID4+ID4gKyAgICAgICB7ICJwY2llMSIsICAg
-ICAgICAgICAgICAzMTksICAgIFI4QTc3OTVfQ0xLX1MzRDEgICAgICAgIH0sDQo+ID4+DQo+ID4+
-ICJwY2llMCINCj4gPg0KPiA+IFRoYW5rcyBmb3IgZmluZGluZyB0aGlzLCB0aG91Z2ggSSBhbSBu
-b3Qgc3VyZSB3aG8gdGhpcyBwYXRjaCBzaG91bGQgYmUgc2VudCB0bw0KPiA+IGFzIHRoZSByOGE3
-Nzk1IGNwZyBtc3NyIGRyaXZlciBoYXMgbm90IGJlZW4gYWNjZXB0ZWQgeWV0IGFmYWlrLiBGb3Ig
-dGhlDQo+ID4gbW9tZW50IEkndmUgc2VudCBpdCB0byB0aGUgc2gtbWwgc28gdGhhdCBwZW9wbGUg
-Y2FuIHRlc3QgUENJZS4NCj4gDQo+IElmIHlvdSBkb24ndCBtaW5kLCBJIGNvdWxkIGludGVncmF0
-ZSBpdCBpbiB2NiBvZiB0aGUgcjhhNzc5NSBjcGcgbXNzciBkcml2ZXIuDQpUaGF0IHdvdWxkIGJl
-IHNpbXBsZXN0Lg0KIA0KPiBOb3RlIHRoYXQgdGhlcmUgYXJlIG1vcmUgYWRkaXRpb25zIHRvIHI4
-YTc3OTVfbW9kX2Nsa3NbXSBpbiB0aGUgcGlwZWxpbmUuDQo+IE9uY2UgdGhlIGRyaXZlciBoYXMg
-YmVlbiBhY2NlcHRlZCwgdGhlc2Ugc2hvdWxkIGdvIGluIHRocm91Z2ggdGhlIGNsb2NrDQo+IG1h
-aW50YWluZXJzLg0KT2YgY291cnNlLCBubyBwcm9ibGVtLg0KDQpUaGFua3MNClBoaWwNCg=
+If bps >= 1048576, the multiplication of "(sr * (1 << (2 * c + 1))" and
+"bps" will overflow, and both br and err will contain bogus values.
+Skip the current and all higher clock select predividers when overflow
+is detected.  Simplify the calculations using intermediates while we're
+at it.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/tty/serial/sh-sci.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index fba1e1eea15dc3a1..97a0f8ef5adc55a2 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1870,7 +1870,7 @@ static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq, int *brr,
+ 				unsigned int *srr, unsigned int *cks)
+ {
+-	unsigned int sr, br, c;
++	unsigned int sr, br, a, b, c;
+ 	int err, recv_margin;
+ 	int min_err = 1000; /* 100% */
+ 	int recv_max_margin = 0;
+@@ -1880,12 +1880,14 @@ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq, int *brr,
+ 	for (sr = 8; sr <= 32; sr++) {
+ 		for (c = 0; c <= 3; c++) {
+ 			/* integerized formulas from HSCIF documentation */
+-			br = DIV_ROUND_CLOSEST(freq, (sr *
+-					      (1 << (2 * c + 1)) * bps));
++			a = sr * (1 << (2 * c + 1));
++			if (bps > UINT_MAX / a)
++				break;
++
++			b = a * bps;
++			br = DIV_ROUND_CLOSEST(freq, b);
+ 			br = clamp(br, 1U, 256U);
+-			err = DIV_ROUND_CLOSEST(freq, (br * bps * sr *
+-					       (1 << (2 * c + 1)) / 1000)) -
+-					       1000;
++			err = DIV_ROUND_CLOSEST(freq, (br * b) / 1000) - 1000;
+ 			/* Calc recv margin
+ 			 * M: Receive margin (%)
+ 			 * N: Ratio of bit rate to clock (N = sampling rate)
+-- 
+1.9.1
+
