@@ -1,147 +1,78 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 20 Nov 2015 15:31:24 +0000
-Subject: Re: [PATCH 18/25] serial: sh-sci: Prepare for multiple clocks and baud rate generators
-Message-Id: <2211094.l2Gf8f78vv@avalon>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 19 Nov 2015 17:53:39 +0000
+Subject: Re: [PATCH RFT v2] sh_eth: fix kernel oops in skb_put()
+Message-Id: <564E0CA3.3020304@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be> <2396575.drsjxiqpHR@avalon> <CAMuHMdX8_nPwmH_i71yhEGzA1vGUfOEu7Da=i44iZKfaNcNb-Q@mail.gmail.com>
-In-Reply-To: <CAMuHMdX8_nPwmH_i71yhEGzA1vGUfOEu7Da=i44iZKfaNcNb-Q@mail.gmail.com>
+References: <2611049.bTOQ0T0Nsl@wasted.cogentembedded.com>
+ <87pp01jl9g.wl@dns1.atmark-techno.com>
+In-Reply-To: <87pp01jl9g.wl@dns1.atmark-techno.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset="windows-1254"
+Content-Transfer-Encoding: base64
+To: Yasushi SHOJI <yashi@atmark-techno.com>
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Friday 20 November 2015 16:17:13 Geert Uytterhoeven wrote:
-> On Fri, Nov 20, 2015 at 3:47 PM, Laurent Pinchart wrote:
-> > On Friday 20 November 2015 08:52:19 Geert Uytterhoeven wrote:
-> >> On Thu, Nov 19, 2015 at 10:04 PM, Laurent Pinchart wrote:
-> >> > On Thursday 19 November 2015 19:38:57 Geert Uytterhoeven wrote:
-> >> >> Refactor the clock and baud rate parameter code to ease adding support
-> >> >> for multiple clocks and baud rate generators later.
-> >> >> sci_scbrr_calc() now returns the bit rate error, so it can be compared
-> >> >> to the bit rate error for other baud rate generators.
-> >> >> 
-> >> >> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >> >> ---
-> >> >> 
-> >> >>  drivers/tty/serial/sh-sci.c | 176
-> >> >>  +++++++++++++++++++++++++-------------
-> >> >>  1 file changed, 120 insertions(+), 56 deletions(-)
-> >> >> 
-> >> >> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> >> >> index 726c96d5a511c222..12800e52f41953dc 100644
-> >> >> --- a/drivers/tty/serial/sh-sci.c
-> >> >> +++ b/drivers/tty/serial/sh-sci.c
-> >> >> @@ -2252,33 +2301,48 @@ static struct uart_ops sci_uart_ops = {
-> >> >> 
-> >> >>  static int sci_init_clocks(struct sci_port *sci_port, struct device
-> >> >>  *dev)
-> >> >>  {
-> >> >> 
-> >> >> -     /* Get the SCI functional clock. It's called "fck" on ARM. */
-> >> >> -     sci_port->fclk = devm_clk_get(dev, "fck");
-> >> >> -     if (PTR_ERR(sci_port->fclk) = -EPROBE_DEFER)
-> >> >> -             return -EPROBE_DEFER;
-> >> >> -     if (!IS_ERR(sci_port->fclk))
-> >> >> -             return 0;
-> >> >> +     const char *clk_names[] = {
-> >> >> +             [SCI_FCK] = "fck",
-> >> >> +     };
-> >> >> +     struct clk *clk;
-> >> >> +     unsigned int i;
-> >> >> 
-> >> >> -     /*
-> >> >> -      * But it used to be called "sci_ick", and we need to maintain
-> >> >> DT
-> >> >> -      * backward compatibility.
-> >> >> -      */
-> >> >> -     sci_port->fclk = devm_clk_get(dev, "sci_ick");
-> >> >> -     if (PTR_ERR(sci_port->fclk) = -EPROBE_DEFER)
-> >> >> -             return -EPROBE_DEFER;
-> >> >> -     if (!IS_ERR(sci_port->fclk))
-> >> >> -             return 0;
-> >> >> +     for (i = 0; i < SCI_NUM_CLKS; i++) {
-> >> >> +             clk = devm_clk_get(dev, clk_names[i]);
-> >> >> +             if (PTR_ERR(clk) = -EPROBE_DEFER)
-> >> >> +                     return -EPROBE_DEFER;
-> >> >> 
-> >> >> -     /*
-> >> >> -      * Not all SH platforms declare a clock lookup entry for SCI
-> >> >> devices,
-> >> >> -      * in which case we need to get the global "peripheral_clk"
-> >> >> clock.
-> >> >> -      */
-> >> >> -     sci_port->fclk = devm_clk_get(dev, "peripheral_clk");
-> >> >> -     if (!IS_ERR(sci_port->fclk))
-> >> >> -             return 0;
-> >> >> +             if (IS_ERR(clk) && i = SCI_FCK) {
-> >> >> +                     /*
-> >> >> +                      * "fck" used to be called "sci_ick", and we
-> >> >> need
-> >> >> to
-> >> >> +                      * maintain DT backward compatibility.
-> >> >> +                      */
-> >> >> +                     clk = devm_clk_get(dev, "sci_ick");
-> >> >> +                     if (PTR_ERR(clk) = -EPROBE_DEFER)
-> >> >> +                             return -EPROBE_DEFER;
-> >> >> +
-> >> >> +                     if (!IS_ERR(clk))
-> >> >> +                             goto found;
-> >> >> +
-> >> >> +                     /*
-> >> >> +                      * Not all SH platforms declare a clock lookup
-> >> >> entry
-> >> >> +                      * for SCI devices, in which case we need to get
-> >> >> the
-> >> >> +                      * global "peripheral_clk" clock.
-> >> >> +                      */
-> >> >> +                     clk = devm_clk_get(dev, "peripheral_clk");
-> >> >> +                     if (!IS_ERR(clk))
-> >> >> +                             goto found;
-> >> >> +
-> >> >> +                     dev_err(dev, "failed to get functional
-> >> >> clock\n");
-> >> >> +                     return PTR_ERR(clk);
-> >> >> +             }
-> >> >> 
-> >> >> -     dev_err(dev, "failed to get functional clock\n");
-> >> >> -     return PTR_ERR(sci_port->fclk);
-> >> >> +found:
-> >> >> +             if (!IS_ERR(clk))
-> >> >> +                     dev_dbg(dev, "clk %u is %pC rate %pCr\n", i,
-> >> >> clk,
-> >> >> clk);
-> >> >> +             sci_port->clks[i] = IS_ERR(clk) ? NULL : clk;
-> >> > 
-> >> > Isn't it an issue that we can't tell apart the case where there is no
-> >> > clock specified in DT and the case where we can't get the clock due to
-> >> > another error ?
-> >> 
-> >> All failures here are for optional clocks.
-> >> If the real failure is that the clock wasn't specified (or misspelled) in
-> >> DT, it should have been detected during the integration phase.
-> > 
-> > There could be cases where the clock is correctly specified in DT but
-> > can't be retrieved due to a runtime error. I suppose that's mostly
-> > theoretical in our case though. Maybe a dev_dbg for the error case could
-> > be useful too ? Can we tell the case where the clock is not specified in
-> > DT apart from other errors (-EPROBE_DEFER aside as that case is already
-> > handled) ?
-> 
-> If the clock is not in clock/clock-names in DT, the error is definitely
-> -ENOENT.
-> 
-> If the clock is specified in DT, it has a phandle to a clock node. If that
-> clock hasn't been instantiated yet, the error is EPROBE_DEFER.
-> Which means there are no other possible error values, right?
-
-There could be other errors returned from __of_clk_get_from_provider if the 
-clock provider get method returns an error or if __clk_create_clk() fails. The 
-latter only returns -ENOMEM so we'd have worse issues anyway. I agree that a 
-clock provider get failure shouldn't be a common case.
-
--- 
-Regards,
-
-Laurent Pinchart
-
+SGVsbG8uCgpPbiAxMC8yNy8yMDE1IDAxOjUyIEFNLCBZYXN1c2hpIFNIT0pJIHdyb3RlOgoKPj4g
+SW4gYSBsb3cgbWVtb3J5IHNpdHVhdGlvbiB0aGUgZm9sbG93aW5nIGtlcm5lbCBvb3BzIG9jY3Vy
+czoKPj4KPj4gVW5hYmxlIHRvIGhhbmRsZSBrZXJuZWwgTlVMTCBwb2ludGVyIGRlcmVmZXJlbmNl
+IGF0IHZpcnR1YWwgYWRkcmVzcyAwMDAwMDA1MAo+PiBwZ2QgPSA4NDkwYzAwMAo+PiBbMDAwMDAw
+NTBdICpwZ2RGNTFlODMxLCAqcHRlADAwMDAwMCwgKnBwdGUAMDAwMDAwCj4+IEludGVybmFsIGVy
+cm9yOiBPb3BzOiAxNyBbIzFdIFBSRUVNUFQgQVJNCj4+IE1vZHVsZXMgbGlua2VkIGluOgo+PiBD
+UFU6IDAgICAgTm90IHRhaW50ZWQgICgzLjQtYXQxNiAjOSkKPj4gUEMgaXMgYXQgc2tiX3B1dCsw
+eDEwLzB4OTgKPj4gTFIgaXMgYXQgc2hfZXRoX3BvbGwrMHgyYzgvMHhhMTAKPj4gcGMgOiBbPDgw
+MzVmNzgwPl0gICAgbHIgOiBbPDgwMjhiZjUwPl0gICAgcHNyOiA2MDAwMDExMwo+PiBzcCA6IDg0
+ZWIxYTkwICBpcCA6IDg0ZWIxYWM4ICBmcCA6IDg0ZWIxYWM0Cj4+IHIxMDogMDAwMDAwM2YgIHI5
+IDogMDAwMDA1ZWEgIHI4IDogMDAwMDAwMDAKPj4gcjcgOiAwMDAwMDAwMCAgcjYgOiA5NDA0NTNi
+MCAgcjUgOiAwMDAzMDAwMCAgcjQgOiA5MzgxYjE4MAo+PiByMyA6IDAwMDAwMDAwICByMiA6IDAw
+MDAwMDAwICByMSA6IDAwMDAwNWVhICByMCA6IDAwMDAwMDAwCj4+IEZsYWdzOiBuWkN2ICBJUlFz
+IG9uICBGSVFzIG9uICBNb2RlIFNWQ18zMiAgSVNBIEFSTSAgU2VnbWVudCB1c2VyCj4+IENvbnRy
+b2w6IDEwYzUzYzdkICBUYWJsZTogNDI0OGMwNTkgIERBQzogMDAwMDAwMTUKPj4gUHJvY2VzcyBr
+bG9nZCAocGlkOiAyMDQ2LCBzdGFjayBsaW1pdCA9IDB4ODRlYjAyZTgpCj4+IFsuLi5dCj4+Cj4+
+IFRoaXMgaXMgYmVjYXVzZSBuZXRkZXZfYWxsb2Nfc2tiKCkgZmFpbHMgYW5kICdtZHAtPnJ4X3Nr
+YnVmZltlbnRyeV0nIGlzIGxlZnQKPj4gTlVMTCBidXQgc2hfZXRoX3J4KCkgbGF0ZXIgdXNlcyBp
+dCB3aXRob3V0IGNoZWNraW5nLiBBZGQgc3VjaCBjaGVjay4uLgo+Pgo+PiBSZXBvcnRlZC1ieTog
+WWFzdXNoaSBTSE9KSSA8eWFzaGlAYXRtYXJrLXRlY2huby5jb20+Cj4+IFNpZ25lZC1vZmYtYnk6
+IFNlcmdlaSBTaHR5bHlvdiA8c2VyZ2VpLnNodHlseW92QGNvZ2VudGVtYmVkZGVkLmNvbT4KPj4K
+Pj4gLS0tCj4+IFRoaXMgcGF0Y2ggaXMgYWdhaW5zdCBEYXZlTSdzICduZXQuZ2l0JyByZXBvLgo+
+Pgo+PiAgIGRyaXZlcnMvbmV0L2V0aGVybmV0L3JlbmVzYXMvc2hfZXRoLmMgfCAgICA0ICsrLS0K
+Pj4gICAxIGZpbGUgY2hhbmdlZCwgMiBpbnNlcnRpb25zKCspLCAyIGRlbGV0aW9ucygtKQo+Pgo+
+PiBJbmRleDogbmV0L2RyaXZlcnMvbmV0L2V0aGVybmV0L3JlbmVzYXMvc2hfZXRoLmMKPj4gPT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09Pj4gLS0tIG5ldC5vcmlnL2RyaXZlcnMvbmV0
+L2V0aGVybmV0L3JlbmVzYXMvc2hfZXRoLmMKPj4gKysrIG5ldC9kcml2ZXJzL25ldC9ldGhlcm5l
+dC9yZW5lc2FzL3NoX2V0aC5jCj4+IEBAIC0xNDgxLDYgKzE0ODEsNyBAQCBzdGF0aWMgaW50IHNo
+X2V0aF9yeChzdHJ1Y3QgbmV0X2RldmljZSAqCj4+ICAgCQlpZiAobWRwLT5jZC0+c2hpZnRfcmQw
+KQo+PiAgIAkJCWRlc2Nfc3RhdHVzID4+PSAxNjsKPj4KPj4gKwkJc2tiID0gbWRwLT5yeF9za2J1
+ZmZbZW50cnldOwo+PiAgIAkJaWYgKGRlc2Nfc3RhdHVzICYgKFJEX1JGUzEgfCBSRF9SRlMyIHwg
+UkRfUkZTMyB8IFJEX1JGUzQgfAo+PiAgIAkJCQkgICBSRF9SRlM1IHwgUkRfUkZTNiB8IFJEX1JG
+UzEwKSkgewo+PiAgIAkJCW5kZXYtPnN0YXRzLnJ4X2Vycm9ycysrOwo+PiBAQCAtMTQ5NiwxMiAr
+MTQ5NywxMSBAQCBzdGF0aWMgaW50IHNoX2V0aF9yeChzdHJ1Y3QgbmV0X2RldmljZSAqCj4+ICAg
+CQkJCW5kZXYtPnN0YXRzLnJ4X21pc3NlZF9lcnJvcnMrKzsKPj4gICAJCQlpZiAoZGVzY19zdGF0
+dXMgJiBSRF9SRlMxMCkKPj4gICAJCQkJbmRldi0+c3RhdHMucnhfb3Zlcl9lcnJvcnMrKzsKPj4g
+LQkJfSBlbHNlIHsKPj4gKwkJfSBlbHNlCWlmIChza2IpIHsKPj4gICAJCQlpZiAoIW1kcC0+Y2Qt
+Pmh3X3N3YXApCj4+ICAgCQkJCXNoX2V0aF9zb2Z0X3N3YXAoCj4+ICAgCQkJCQlwaHlzX3RvX3Zp
+cnQoQUxJR04ocnhkZXNjLT5hZGRyLCA0KSksCj4+ICAgCQkJCQlwa3RfbGVuICsgMik7Cj4+IC0J
+CQlza2IgPSBtZHAtPnJ4X3NrYnVmZltlbnRyeV07Cj4+ICAgCQkJbWRwLT5yeF9za2J1ZmZbZW50
+cnldID0gTlVMTDsKPj4gICAJCQlpZiAobWRwLT5jZC0+cnBhZGlyKQo+PiAgIAkJCQlza2JfcmVz
+ZXJ2ZShza2IsIE5FVF9JUF9BTElHTik7Cj4+Cj4KPiBUaGlzIGNlcnRhaW5seSBwcmV2ZW50cyBm
+cm9tIGEgYmFkIGFjY2VzcywgaG93ZXZlciwgc29tZSBvZGQgdGhpbmcgaXMKPiBnb2luZyBvbi4g
+IE9uY2UgSSBoaXQgYSBsb3cgbWVtb3J5IHNpdHVhdGlvbiB3aXRoIHRoaXMgcGF0Y2gsIG5ldHdv
+cmsKPiB0aG9yb3VnaC1wdXQgYW5kIHJlc3BvbnNlIGlzIHZlcnkgYmFkLgoKPiB0ZWxuZXQsIHBp
+bmcsIHdnZXQgdGFrZXMgbG9vbmcgdGltZS4KPgo+IFBJTkcgMTcyLjE2LjIuMTMgKDE3Mi4xNi4y
+LjEzKSA1Nig4NCkgYnl0ZXMgb2YgZGF0YS4KPiA2NCBieXRlcyBmcm9tIDE3Mi4xNi4yLjEzOiBp
+Y21wX3NlcT01IHR0bGQgdGltZT0wLjIyMyBtcwo+IDY0IGJ5dGVzIGZyb20gMTcyLjE2LjIuMTM6
+IGljbXBfc2VxPTYgdHRsZCB0aW1lPTAuMTk1IG1zCj4gNjQgYnl0ZXMgZnJvbSAxNzIuMTYuMi4x
+MzogaWNtcF9zZXE9NyB0dGxkIHRpbWU9MC4yMDMgbXMKPiA2NCBieXRlcyBmcm9tIDE3Mi4xNi4y
+LjEzOiBpY21wX3NlcT04IHR0bGQgdGltZT0wLjIxOSBtcwo+IDY0IGJ5dGVzIGZyb20gMTcyLjE2
+LjIuMTM6IGljbXBfc2VxPTkgdHRsZCB0aW1lPTAuMTY1IG1zCj4gNjQgYnl0ZXMgZnJvbSAxNzIu
+MTYuMi4xMzogaWNtcF9zZXEQIHR0bGQgdGltZT0wLjE3MSBtcwo+IDY0IGJ5dGVzIGZyb20gMTcy
+LjE2LjIuMTM6IGljbXBfc2VxPTEgdHRsZCB0aW1lkDIzIG1zCj4gNjQgYnl0ZXMgZnJvbSAxNzIu
+MTYuMi4xMzogaWNtcF9zZXE9MiB0dGxkIHRpbWWAMjIgbXMKPiA2NCBieXRlcyBmcm9tIDE3Mi4x
+Ni4yLjEzOiBpY21wX3NlcT0zIHR0bGQgdGltZXAxNCBtcwo+IDY0IGJ5dGVzIGZyb20gMTcyLjE2
+LjIuMTM6IGljbXBfc2VxPTQgdHRsZCB0aW1lYDA2IG1zCj4KPiBJJ2xsIGludmVzdGlnYXRlIGl0
+LgoKICAgIFNob2ppLXNhbiwgY2FuIEkgcHVzaCB0aGlzIHBhdGNoIHRvIG5ldC5naXQ/IEkgZG91
+YnQgdGhhdCBpdCBoYXMgaWxsIAplZmZlY3RzIGluIGl0c2VsZiAtLSB0aGUgcmVhc29uIG9mIHRo
+ZSBzbG93ZG93biB5b3UncmUgc2VlaW5nIHNob3VsZCBiZSAKc29tZXdoZXJlIGVsc2UuLi4KCk1C
+UiwgU2VyZ2VpCgotLQpUbyB1bnN1YnNjcmliZSBmcm9tIHRoaXMgbGlzdDogc2VuZCB0aGUgbGlu
+ZSAidW5zdWJzY3JpYmUgbGludXgtc2giIGluCnRoZSBib2R5IG9mIGEgbWVzc2FnZSB0byBtYWpv
+cmRvbW9Admdlci5rZXJuZWwub3JnCk1vcmUgbWFqb3Jkb21vIGluZm8gYXQgIGh0dHA6Ly92Z2Vy
+Lmtlcm5lbC5vcmcvbWFqb3Jkb21vLWluZm8uaHRtbA==
