@@ -1,52 +1,107 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 06 Nov 2015 06:39:02 +0000
-Subject: [PATCH 08/12 v6] arm64: renesas: salvator-x: Sound SSI DMA support via BUSIF
-Message-Id: <8737wjk56d.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:36:02 +0000
+Subject: [PATCH v2 05/16] ARM: shmobile: r7s72100 dtsi: Rename the serial port clock to fck
+Message-Id: <1447958173-543-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
+References: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-DMA transfer to/from SSIU
+The clock is really the device functional clock, not the interface
+clock. Rename it.
 
-     DMA
-[MEM] -> [SSIU] -> [SSI]
-
-     DMA
-[MEM] <- [SSIU] <- [SSI]
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v5 -> v6
+v2:
+  - Add Acked-by.
+---
+ arch/arm/boot/dts/r7s72100.dtsi | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
- - no change
-
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 5 -----
- 1 file changed, 5 deletions(-)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 6f4217f..e57a9e5 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -142,12 +142,7 @@
+diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
+index 060c32cbd66923ed..5f22d6dcdd141f9c 100644
+--- a/arch/arm/boot/dts/r7s72100.dtsi
++++ b/arch/arm/boot/dts/r7s72100.dtsi
+@@ -157,7 +157,7 @@
+ 			     <0 192 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 189 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
  	};
- };
- 
--&ssi0 {
--	no-busif;
--};
--
- &ssi1 {
--	no-busif;
- 	shared-pin;
- };
- 
+@@ -170,7 +170,7 @@
+ 			     <0 196 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 193 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -183,7 +183,7 @@
+ 			     <0 200 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 197 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -196,7 +196,7 @@
+ 			     <0 204 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 201 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF3>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -209,7 +209,7 @@
+ 			     <0 208 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 205 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF4>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -222,7 +222,7 @@
+ 			     <0 212 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 209 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF5>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -235,7 +235,7 @@
+ 			     <0 216 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 213 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF6>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -248,7 +248,7 @@
+ 			     <0 220 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 217 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp4_clks R7S72100_CLK_SCIF7>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
 -- 
 1.9.1
 
