@@ -1,72 +1,58 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 19 Nov 2015 20:37:19 +0000
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 19 Nov 2015 20:50:10 +0000
 Subject: Re: [PATCH 09/25] serial: sh-sci: Avoid overflow in sci_baud_calc_hscif()
-Message-Id: <4295635.bqyeD1RN5z@avalon>
+Message-Id: <CAMuHMdX5d4NinK7sK7bFtKFOj_JEp8NCnd-60dJ=UE+Sny77Pg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be> <1447958344-836-10-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958344-836-10-git-send-email-geert+renesas@glider.be>
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+	<1447958344-836-10-git-send-email-geert+renesas@glider.be>
+	<4295635.bqyeD1RN5z@avalon>
+In-Reply-To: <4295635.bqyeD1RN5z@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-Hi Geert,
+On Thu, Nov 19, 2015 at 9:37 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+>> --- a/drivers/tty/serial/sh-sci.c
+>> +++ b/drivers/tty/serial/sh-sci.c
+>> @@ -1870,7 +1870,7 @@ static unsigned int sci_scbrr_calc(struct sci_port *s,
+>> unsigned int bps, static void sci_baud_calc_hscif(unsigned int bps,
+>> unsigned long freq, int *brr, unsigned int *srr, unsigned int *cks)
+>>  {
+>> -     unsigned int sr, br, c;
+>> +     unsigned int sr, br, a, b, c;
+>>       int err, recv_margin;
+>>       int min_err = 1000; /* 100% */
+>>       int recv_max_margin = 0;
+>> @@ -1880,12 +1880,14 @@ static void sci_baud_calc_hscif(unsigned int bps,
+>> unsigned long freq, int *brr, for (sr = 8; sr <= 32; sr++) {
+>>               for (c = 0; c <= 3; c++) {
+>>                       /* integerized formulas from HSCIF documentation */
+>> -                     br = DIV_ROUND_CLOSEST(freq, (sr *
+>> -                                           (1 << (2 * c + 1)) * bps));
+>> +                     a = sr * (1 << (2 * c + 1));
+>> +                     if (bps > UINT_MAX / a)
+>> +                             break;
+>> +
+>> +                     b = a * bps;
+>
+> This is becoming unreadable. Could you please use proper variable names ? A
 
-Thank you for the patch.
+Sometimes it's different to find good variable names ("t1" and "t2"?).
 
-On Thursday 19 November 2015 19:38:48 Geert Uytterhoeven wrote:
-> If bps >= 1048576, the multiplication of "(sr * (1 << (2 * c + 1))" and
-> "bps" will overflow, and both br and err will contain bogus values.
-> Skip the current and all higher clock select predividers when overflow
-> is detected.  Simplify the calculations using intermediates while we're
-> at it.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  drivers/tty/serial/sh-sci.c | 14 ++++++++------
->  1 file changed, 8 insertions(+), 6 deletions(-)
-> 
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index fba1e1eea15dc3a1..97a0f8ef5adc55a2 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -1870,7 +1870,7 @@ static unsigned int sci_scbrr_calc(struct sci_port *s,
-> unsigned int bps, static void sci_baud_calc_hscif(unsigned int bps,
-> unsigned long freq, int *brr, unsigned int *srr, unsigned int *cks)
->  {
-> -	unsigned int sr, br, c;
-> +	unsigned int sr, br, a, b, c;
->  	int err, recv_margin;
->  	int min_err = 1000; /* 100% */
->  	int recv_max_margin = 0;
-> @@ -1880,12 +1880,14 @@ static void sci_baud_calc_hscif(unsigned int bps,
-> unsigned long freq, int *brr, for (sr = 8; sr <= 32; sr++) {
->  		for (c = 0; c <= 3; c++) {
->  			/* integerized formulas from HSCIF documentation */
-> -			br = DIV_ROUND_CLOSEST(freq, (sr *
-> -					      (1 << (2 * c + 1)) * bps));
-> +			a = sr * (1 << (2 * c + 1));
-> +			if (bps > UINT_MAX / a)
-> +				break;
-> +
-> +			b = a * bps;
+> comment that explains the calculation would also be useful.
 
-This is becoming unreadable. Could you please use proper variable names ? A 
-comment that explains the calculation would also be useful.
+Thanks, that would indeed help.
 
-> +			br = DIV_ROUND_CLOSEST(freq, b);
->  			br = clamp(br, 1U, 256U);
-> -			err = DIV_ROUND_CLOSEST(freq, (br * bps * sr *
-> -					       (1 << (2 * c + 1)) / 1000)) -
-> -					       1000;
-> +			err = DIV_ROUND_CLOSEST(freq, (br * b) / 1000) - 1000;
->  			/* Calc recv margin
->  			 * M: Receive margin (%)
->  			 * N: Ratio of bit rate to clock (N = sampling rate)
+Gr{oetje,eeting}s,
 
--- 
-Regards,
+                        Geert
 
-Laurent Pinchart
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
