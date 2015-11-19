@@ -1,106 +1,197 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:29 +0000
-Subject: [PATCH 12/18] arm64: renesas: r8a7795: Sound SRC support
-Message-Id: <b868ff51d5625a28a50ce8d40992d562535d3972.1448587800.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:36:10 +0000
+Subject: [PATCH v2 13/16] ARM: shmobile: r8a7794 dtsi: Rename the serial port clock to fck
+Message-Id: <1447958173-543-14-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448587800.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448587800.git.horms+renesas@verge.net.au>
+References: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The clock is really the device functional clock, not the interface
+clock. Rename it.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 61 ++++++++++++++++++++++++++++++++
- 1 file changed, 61 insertions(+)
+v2:
+  - Add Acked-by.
+---
+ arch/arm/boot/dts/r8a7794.dtsi | 36 ++++++++++++++++++------------------
+ 1 file changed, 18 insertions(+), 18 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 5d684e961675..c3b2089de531 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -585,6 +585,11 @@
- 				 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
- 				 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
- 				 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
-+				 <&cpg CPG_MOD 1022>, <&cpg CPG_MOD 1023>,
-+				 <&cpg CPG_MOD 1024>, <&cpg CPG_MOD 1025>,
-+				 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
-+				 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
-+				 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
- 				 <&audio_clk_a>, <&audio_clk_b>,
- 				 <&audio_clk_c>,
- 				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
-@@ -592,10 +597,66 @@
- 				      "ssi.9", "ssi.8", "ssi.7", "ssi.6",
- 				      "ssi.5", "ssi.4", "ssi.3", "ssi.2",
- 				      "ssi.1", "ssi.0",
-+				      "src.9", "src.8", "src.7", "src.6",
-+				      "src.5", "src.4", "src.3", "src.2",
-+				      "src.1", "src.0",
- 				      "clk_a", "clk_b", "clk_c", "clk_i";
- 			power-domains = <&cpg>;
- 			status = "disabled";
- 
-+			rcar_sound,src {
-+				src0: src@0 {
-+					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x85>, <&audma1 0x9a>;
-+					dma-names = "rx", "tx";
-+				};
-+				src1: src@1 {
-+					interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x87>, <&audma1 0x9c>;
-+					dma-names = "rx", "tx";
-+				};
-+				src2: src@2 {
-+					interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x89>, <&audma1 0x9e>;
-+					dma-names = "rx", "tx";
-+				};
-+				src3: src@3 {
-+					interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x8b>, <&audma1 0xa0>;
-+					dma-names = "rx", "tx";
-+				};
-+				src4: src@4 {
-+					interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x8d>, <&audma1 0xb0>;
-+					dma-names = "rx", "tx";
-+				};
-+				src5: src@5 {
-+					interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x8f>, <&audma1 0xb2>;
-+					dma-names = "rx", "tx";
-+				};
-+				src6: src@6 {
-+					interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x91>, <&audma1 0xb4>;
-+					dma-names = "rx", "tx";
-+				};
-+				src7: src@7 {
-+					interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x93>, <&audma1 0xb6>;
-+					dma-names = "rx", "tx";
-+				};
-+				src8: src@8 {
-+					interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x95>, <&audma1 0xb8>;
-+					dma-names = "rx", "tx";
-+				};
-+				src9: src@9 {
-+					interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x97>, <&audma1 0xba>;
-+					dma-names = "rx", "tx";
-+				};
-+			};
-+
- 			rcar_sound,ssi {
- 				ssi0: ssi@0 {
- 					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 018ff56470b6dab3..53e229a9b57d63bb 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -287,7 +287,7 @@
+ 		reg = <0 0xe6c40000 0 64>;
+ 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7794_CLK_SCIFA0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -299,7 +299,7 @@
+ 		reg = <0 0xe6c50000 0 64>;
+ 		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7794_CLK_SCIFA1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x25>, <&dmac0 0x26>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -311,7 +311,7 @@
+ 		reg = <0 0xe6c60000 0 64>;
+ 		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7794_CLK_SCIFA2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x27>, <&dmac0 0x28>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -323,7 +323,7 @@
+ 		reg = <0 0xe6c70000 0 64>;
+ 		interrupts = <0 29 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp11_clks R8A7794_CLK_SCIFA3>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x1b>, <&dmac0 0x1c>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -335,7 +335,7 @@
+ 		reg = <0 0xe6c78000 0 64>;
+ 		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp11_clks R8A7794_CLK_SCIFA4>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x1f>, <&dmac0 0x20>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -347,7 +347,7 @@
+ 		reg = <0 0xe6c80000 0 64>;
+ 		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp11_clks R8A7794_CLK_SCIFA5>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x23>, <&dmac0 0x24>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -359,7 +359,7 @@
+ 		reg = <0 0xe6c20000 0 64>;
+ 		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7794_CLK_SCIFB0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x3d>, <&dmac0 0x3e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -371,7 +371,7 @@
+ 		reg = <0 0xe6c30000 0 64>;
+ 		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7794_CLK_SCIFB1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x19>, <&dmac0 0x1a>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -383,7 +383,7 @@
+ 		reg = <0 0xe6ce0000 0 64>;
+ 		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7794_CLK_SCIFB2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x1d>, <&dmac0 0x1e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -395,7 +395,7 @@
+ 		reg = <0 0xe6e60000 0 64>;
+ 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7794_CLK_SCIF0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x29>, <&dmac0 0x2a>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -407,7 +407,7 @@
+ 		reg = <0 0xe6e68000 0 64>;
+ 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7794_CLK_SCIF1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x2d>, <&dmac0 0x2e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -419,7 +419,7 @@
+ 		reg = <0 0xe6e58000 0 64>;
+ 		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7794_CLK_SCIF2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x2b>, <&dmac0 0x2c>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -431,7 +431,7 @@
+ 		reg = <0 0xe6ea8000 0 64>;
+ 		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7794_CLK_SCIF3>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x2f>, <&dmac0 0x30>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -443,7 +443,7 @@
+ 		reg = <0 0xe6ee0000 0 64>;
+ 		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7794_CLK_SCIF4>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0xfb>, <&dmac0 0xfc>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -455,7 +455,7 @@
+ 		reg = <0 0xe6ee8000 0 64>;
+ 		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7794_CLK_SCIF5>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0xfd>, <&dmac0 0xfe>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -467,7 +467,7 @@
+ 		reg = <0 0xe62c0000 0 96>;
+ 		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7794_CLK_HSCIF0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x39>, <&dmac0 0x3a>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -479,7 +479,7 @@
+ 		reg = <0 0xe62c8000 0 96>;
+ 		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7794_CLK_HSCIF1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x4d>, <&dmac0 0x4e>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
+@@ -491,7 +491,7 @@
+ 		reg = <0 0xe62d0000 0 96>;
+ 		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7794_CLK_HSCIF2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x3b>, <&dmac0 0x3c>;
+ 		dma-names = "tx", "rx";
+ 		power-domains = <&cpg_clocks>;
 -- 
-2.1.4
+1.9.1
 
