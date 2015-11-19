@@ -1,43 +1,52 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 06 Nov 2015 06:39:39 +0000
-Subject: [PATCH 09/12 v6] arm64: renesas: salvator-x: Sound SRC support
-Message-Id: <871tc3k55g.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:38:55 +0000
+Subject: [PATCH 16/25] serial: sh-sci: Correct SCIF type on RZ/A1H
+Message-Id: <1447958344-836-17-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
+The "renesas,scif" compatible value is currently used for the SCIF
+variant in all Renesas SoCs of the R-Car and RZ families.  However, the
+variant used in the RZ family is not the common "SH-4(A)" variant, but
+the "SH-2(A) with FIFO data count register" variant, as it has the
+"Serial Extension Mode Register" (SCEMR), just like on sh7203, sh7263,
+sh7264, and sh7269.
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Use the (already documented) SoC-specific "renesas,scif-r7s72100"
+compatible value to differentiate.  The "renesas,scif" compatible value
+can still be used as a common denominator for SCIF variants with the
+"SH-4(A)" register layout (i.e. ignoring the SCEMR register).
+Note that currently both variants are treated the same, but this may
+change if support for the SCEMR register is ever added.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v5 -> v6
+ drivers/tty/serial/sh-sci.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
- - no change
-
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index e57a9e5..a238fa2 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -136,8 +136,8 @@
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 41351ae055de661f..b0127f38af744fcf 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2601,6 +2601,12 @@ static int sci_remove(struct platform_device *dev)
+ #define SCI_OF_REGTYPE(data)		((unsigned long)(data) & 0xffff)
  
- 	rcar_sound,dai {
- 		dai0 {
--			playback = <&ssi0>;
--			capture  = <&ssi1>;
-+			playback = <&ssi0 &src0>;
-+			capture  = <&ssi1 &src1>;
- 		};
- 	};
- };
+ static const struct of_device_id of_sci_match[] = {
++	/* SoC-specific types */
++	{
++		.compatible = "renesas,scif-r7s72100",
++		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH2_SCIF_FIFODATA_REGTYPE),
++	},
++	/* Generic types */
+ 	{
+ 		.compatible = "renesas,scif",
+ 		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_REGTYPE),
 -- 
 1.9.1
 
