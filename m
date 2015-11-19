@@ -1,46 +1,61 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 30 Nov 2015 13:35:34 +0000
-Subject: [PATCH] ARM: shmobile: defconfig: Enable CONFIG_PRINTK_TIME
-Message-Id: <1448890534-1430-1-git-send-email-geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:38:47 +0000
+Subject: [PATCH 08/25] serial: sh-sci: Make unsigned values in sci_baud_calc_hscif() unsigned
+Message-Id: <1447958344-836-9-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1407974835-11064-1-git-send-email-khilman@linaro.org>
-In-Reply-To: <1407974835-11064-1-git-send-email-khilman@linaro.org>
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Enable timestamps for kernel log output to improve debugging.
-You can always use "dmesg -t" to strip the timestamps.
-
-Don't specify CONFIG_LOG_BUF_SHIFT while we're at it.  There's a
-reason the default in Kconfig is higher ;-)
+Move the -1 offset of br to the assignment to *brr, so br cannot become
+negative anymore, and update the clamp() call. Now all unsigned values
+in sci_baud_calc_hscif() can become unsigned.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/configs/shmobile_defconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/tty/serial/sh-sci.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
-index cc8ece33a7e38796..70d718e088a65fed 100644
---- a/arch/arm/configs/shmobile_defconfig
-+++ b/arch/arm/configs/shmobile_defconfig
-@@ -2,7 +2,6 @@ CONFIG_SYSVIPC=y
- CONFIG_NO_HZ=y
- CONFIG_IKCONFIG=y
- CONFIG_IKCONFIG_PROC=y
--CONFIG_LOG_BUF_SHIFT
- CONFIG_BLK_DEV_INITRD=y
- CONFIG_CC_OPTIMIZE_FOR_SIZE=y
- CONFIG_SYSCTL_SYSCALL=y
-@@ -199,6 +198,7 @@ CONFIG_NFS_V4_1=y
- CONFIG_ROOT_NFS=y
- CONFIG_NLS_CODEPAGE_437=y
- CONFIG_NLS_ISO8859_1=y
-+CONFIG_PRINTK_TIME=y
- # CONFIG_ENABLE_WARN_DEPRECATED is not set
- # CONFIG_ENABLE_MUST_CHECK is not set
- # CONFIG_ARM_UNWIND is not set
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 9442961a198378c7..fba1e1eea15dc3a1 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1870,7 +1870,8 @@ static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq, int *brr,
+ 				unsigned int *srr, unsigned int *cks)
+ {
+-	int sr, c, br, err, recv_margin;
++	unsigned int sr, br, c;
++	int err, recv_margin;
+ 	int min_err = 1000; /* 100% */
+ 	int recv_max_margin = 0;
+ 
+@@ -1880,9 +1881,9 @@ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq, int *brr,
+ 		for (c = 0; c <= 3; c++) {
+ 			/* integerized formulas from HSCIF documentation */
+ 			br = DIV_ROUND_CLOSEST(freq, (sr *
+-					      (1 << (2 * c + 1)) * bps)) - 1;
+-			br = clamp(br, 0, 255);
+-			err = DIV_ROUND_CLOSEST(freq, ((br + 1) * bps * sr *
++					      (1 << (2 * c + 1)) * bps));
++			br = clamp(br, 1U, 256U);
++			err = DIV_ROUND_CLOSEST(freq, (br * bps * sr *
+ 					       (1 << (2 * c + 1)) / 1000)) -
+ 					       1000;
+ 			/* Calc recv margin
+@@ -1908,7 +1909,7 @@ static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq, int *brr,
+ 			else
+ 				continue;
+ 
+-			*brr = br;
++			*brr = br - 1;
+ 			*srr = sr - 1;
+ 			*cks = c;
+ 		}
 -- 
 1.9.1
 
