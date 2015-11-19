@@ -1,37 +1,75 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 02 Nov 2015 16:36:14 +0000
-Subject: [PATCH 2/3] Revert "PCI: rcar: Build pcie-rcar.c only on ARM"
-Message-Id: <1446482175-26507-3-git-send-email-phil.edworthy@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:32:06 +0000
+Subject: [PATCH 1/2] drivers: sh: clk: Avoid crashes when passing NULL clocks
+Message-Id: <1447957927-32738-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446482175-26507-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1446482175-26507-1-git-send-email-phil.edworthy@renesas.com>
+References: <1447957927-32738-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447957927-32738-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bjorn Helgaas <bhelgaas@google.com>
-Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms@verge.net.au>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, linux-clk@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Now that we can build on arm64, revert commit 7c537c67d2e4
-("PCI: rcar: Build pcie-rcar.c only on ARM").
+Several clock API functions handle NULL clocks when the Common Clock
+Framework is used, while their legacy SH counterparts don't, and would
+just crash when a NULL clock is passed.
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Add NULL checks to clk_get_rate(), clk_set_rate(), clk_get_parent(), and
+clk_round_rate(), to avoid different behavior in drivers shared between
+legacy and CCF-based platforms.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/pci/host/Kconfig | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+Note that there are still differences in return values (e.g. zero vs. an
+error code). These are not changed, as callers in legacy code may depend
+on specific values.
+---
+ drivers/sh/clk/core.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/drivers/pci/host/Kconfig b/drivers/pci/host/Kconfig
-index 2af0571..ad27664 100644
---- a/drivers/pci/host/Kconfig
-+++ b/drivers/pci/host/Kconfig
-@@ -48,8 +48,7 @@ config PCI_RCAR_GEN2
+diff --git a/drivers/sh/clk/core.c b/drivers/sh/clk/core.c
+index be56b22ca941..c9afc5681474 100644
+--- a/drivers/sh/clk/core.c
++++ b/drivers/sh/clk/core.c
+@@ -469,6 +469,9 @@ void clk_enable_init_clocks(void)
  
- config PCI_RCAR_GEN2_PCIE
- 	bool "Renesas R-Car PCIe controller"
--	depends on ARM
--	depends on ARCH_SHMOBILE || COMPILE_TEST
-+	depends on ARCH_SHMOBILE || (ARM && COMPILE_TEST)
- 	help
- 	  Say Y here if you want PCIe controller support on R-Car Gen2 SoCs.
+ unsigned long clk_get_rate(struct clk *clk)
+ {
++	if (!clk)
++		return 0;
++
+ 	return clk->rate;
+ }
+ EXPORT_SYMBOL_GPL(clk_get_rate);
+@@ -478,6 +481,9 @@ int clk_set_rate(struct clk *clk, unsigned long rate)
+ 	int ret = -EOPNOTSUPP;
+ 	unsigned long flags;
+ 
++	if (!clk)
++		return 0;
++
+ 	spin_lock_irqsave(&clock_lock, flags);
+ 
+ 	if (likely(clk->ops && clk->ops->set_rate)) {
+@@ -535,12 +541,18 @@ EXPORT_SYMBOL_GPL(clk_set_parent);
+ 
+ struct clk *clk_get_parent(struct clk *clk)
+ {
++	if (!clk)
++		return NULL;
++
+ 	return clk->parent;
+ }
+ EXPORT_SYMBOL_GPL(clk_get_parent);
+ 
+ long clk_round_rate(struct clk *clk, unsigned long rate)
+ {
++	if (!clk)
++		return 0;
++
+ 	if (likely(clk->ops && clk->ops->round_rate)) {
+ 		unsigned long flags, rounded;
  
 -- 
 1.9.1
