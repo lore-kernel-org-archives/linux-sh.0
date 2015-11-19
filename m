@@ -1,70 +1,314 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 24 Nov 2015 14:40:58 +0000
-Subject: [PATCH v3 2/4] sh_eth: Remove obsolete r8a779x-ether platform_device_id entries
-Message-Id: <1448376060-7803-3-git-send-email-geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:26:13 +0000
+Subject: [PATCH] pinctrl: sh-pfc: r8a7795: Add HSCIF pins, groups, and functions
+Message-Id: <1447957573-32180-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "David S. Miller" <davem@davemloft.net>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
-
-Since commit a483dcbfa21f919c ("ARM: shmobile: lager: Remove legacy
-board support"), R-Car Gen2 SoCs are only supported in generic DT-only
-ARM multi-platform builds.  The driver doesn't need to match platform
-devices by name anymore, hence remove the corresponding
-platform_device_id entry.
-
-Protect r8a779x_data by #ifdef CONFIG_OF as it's now referenced on DT
-platforms only.
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
 v3:
-  - No changes,
+  - Add Acked-by,
+  - Rebased,
 
 v2:
-  - Add Acked-by,
-  - Protect r8a779x_data by #ifdef CONFIG_OF to silence a compiler
-    warning on SH.
+  - Rebased.
 ---
- drivers/net/ethernet/renesas/sh_eth.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 255 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 255 insertions(+)
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index fca688fbefc1c49d..1af07f9de243d613 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -531,6 +531,7 @@ static struct sh_eth_cpu_data r8a777x_data = {
- 	.hw_swap	= 1,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+index 7ddb2adfc5a5..2538ea4d6a81 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7795.c
+@@ -1612,6 +1612,191 @@ static const unsigned int avb_avtp_capture_b_mux[] = {
+ 	AVB_AVTP_CAPTURE_B_MARK,
  };
  
-+#ifdef CONFIG_OF
- /* R8A7790/1 */
- static struct sh_eth_cpu_data r8a779x_data = {
- 	.set_duplex	= sh_eth_set_duplex,
-@@ -556,6 +557,7 @@ static struct sh_eth_cpu_data r8a779x_data = {
- 	.hw_swap	= 1,
- 	.rmiimode	= 1,
++/* - HSCIF0 ----------------------------------------------------------------- */
++static const unsigned int hscif0_data_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(5, 13), RCAR_GP_PIN(5, 14),
++};
++static const unsigned int hscif0_data_mux[] = {
++	HRX0_MARK, HTX0_MARK,
++};
++static const unsigned int hscif0_clk_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(5, 12),
++};
++static const unsigned int hscif0_clk_mux[] = {
++	HSCK0_MARK,
++};
++static const unsigned int hscif0_ctrl_pins[] = {
++	/* RTS, CTS */
++	RCAR_GP_PIN(5, 16), RCAR_GP_PIN(5, 15),
++};
++static const unsigned int hscif0_ctrl_mux[] = {
++	HRTS0_N_MARK, HCTS0_N_MARK,
++};
++/* - HSCIF1 ----------------------------------------------------------------- */
++static const unsigned int hscif1_data_a_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(5, 5), RCAR_GP_PIN(5, 6),
++};
++static const unsigned int hscif1_data_a_mux[] = {
++	HRX1_A_MARK, HTX1_A_MARK,
++};
++static const unsigned int hscif1_clk_a_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(6, 21),
++};
++static const unsigned int hscif1_clk_a_mux[] = {
++	HSCK1_A_MARK,
++};
++static const unsigned int hscif1_ctrl_a_pins[] = {
++	/* RTS, CTS */
++	RCAR_GP_PIN(5, 8), RCAR_GP_PIN(5, 7),
++};
++static const unsigned int hscif1_ctrl_a_mux[] = {
++	HRTS1_N_A_MARK, HCTS1_N_A_MARK,
++};
++
++static const unsigned int hscif1_data_b_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(5, 1), RCAR_GP_PIN(5, 2),
++};
++static const unsigned int hscif1_data_b_mux[] = {
++	HRX1_B_MARK, HTX1_B_MARK,
++};
++static const unsigned int hscif1_clk_b_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(5, 0),
++};
++static const unsigned int hscif1_clk_b_mux[] = {
++	HSCK1_B_MARK,
++};
++static const unsigned int hscif1_ctrl_b_pins[] = {
++	/* RTS, CTS */
++	RCAR_GP_PIN(5, 4), RCAR_GP_PIN(5, 3),
++};
++static const unsigned int hscif1_ctrl_b_mux[] = {
++	HRTS1_N_B_MARK, HCTS1_N_B_MARK,
++};
++/* - HSCIF2 ----------------------------------------------------------------- */
++static const unsigned int hscif2_data_a_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(6, 8), RCAR_GP_PIN(6, 9),
++};
++static const unsigned int hscif2_data_a_mux[] = {
++	HRX2_A_MARK, HTX2_A_MARK,
++};
++static const unsigned int hscif2_clk_a_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(6, 10),
++};
++static const unsigned int hscif2_clk_a_mux[] = {
++	HSCK2_A_MARK,
++};
++static const unsigned int hscif2_ctrl_a_pins[] = {
++	/* RTS, CTS */
++	RCAR_GP_PIN(6, 7), RCAR_GP_PIN(6, 6),
++};
++static const unsigned int hscif2_ctrl_a_mux[] = {
++	HRTS2_N_A_MARK, HCTS2_N_A_MARK,
++};
++
++static const unsigned int hscif2_data_b_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(6, 17), RCAR_GP_PIN(6, 18),
++};
++static const unsigned int hscif2_data_b_mux[] = {
++	HRX2_B_MARK, HTX2_B_MARK,
++};
++static const unsigned int hscif2_clk_b_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(6, 21),
++};
++static const unsigned int hscif2_clk_b_mux[] = {
++	HSCK1_B_MARK,
++};
++static const unsigned int hscif2_ctrl_b_pins[] = {
++	/* RTS, CTS */
++	RCAR_GP_PIN(6, 20), RCAR_GP_PIN(6, 19),
++};
++static const unsigned int hscif2_ctrl_b_mux[] = {
++	HRTS2_N_B_MARK, HCTS2_N_B_MARK,
++};
++/* - HSCIF3 ----------------------------------------------------------------- */
++static const unsigned int hscif3_data_a_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(1, 23), RCAR_GP_PIN(1, 24),
++};
++static const unsigned int hscif3_data_a_mux[] = {
++	HRX3_A_MARK, HTX3_A_MARK,
++};
++static const unsigned int hscif3_clk_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(1, 22),
++};
++static const unsigned int hscif3_clk_mux[] = {
++	HSCK3_MARK,
++};
++static const unsigned int hscif3_ctrl_pins[] = {
++	/* RTS, CTS */
++	RCAR_GP_PIN(1, 26), RCAR_GP_PIN(1, 25),
++};
++static const unsigned int hscif3_ctrl_mux[] = {
++	HRTS3_N_MARK, HCTS3_N_MARK,
++};
++
++static const unsigned int hscif3_data_b_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(0, 10), RCAR_GP_PIN(0, 11),
++};
++static const unsigned int hscif3_data_b_mux[] = {
++	HRX3_B_MARK, HTX3_B_MARK,
++};
++static const unsigned int hscif3_data_c_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(0, 14), RCAR_GP_PIN(0, 15),
++};
++static const unsigned int hscif3_data_c_mux[] = {
++	HRX3_C_MARK, HTX3_C_MARK,
++};
++static const unsigned int hscif3_data_d_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(2, 7), RCAR_GP_PIN(2, 8),
++};
++static const unsigned int hscif3_data_d_mux[] = {
++	HRX3_D_MARK, HTX3_D_MARK,
++};
++/* - HSCIF4 ----------------------------------------------------------------- */
++static const unsigned int hscif4_data_a_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(1, 12), RCAR_GP_PIN(1, 13),
++};
++static const unsigned int hscif4_data_a_mux[] = {
++	HRX4_A_MARK, HTX4_A_MARK,
++};
++static const unsigned int hscif4_clk_pins[] = {
++	/* SCK */
++	RCAR_GP_PIN(1, 11),
++};
++static const unsigned int hscif4_clk_mux[] = {
++	HSCK4_MARK,
++};
++static const unsigned int hscif4_ctrl_pins[] = {
++	/* RTS, CTS */
++	RCAR_GP_PIN(1, 15), RCAR_GP_PIN(1, 14),
++};
++static const unsigned int hscif4_ctrl_mux[] = {
++	HRTS4_N_MARK, HCTS3_N_MARK,
++};
++
++static const unsigned int hscif4_data_b_pins[] = {
++	/* RX, TX */
++	RCAR_GP_PIN(1, 8), RCAR_GP_PIN(1, 11),
++};
++static const unsigned int hscif4_data_b_mux[] = {
++	HRX4_B_MARK, HTX4_B_MARK,
++};
++
+ /* - I2C -------------------------------------------------------------------- */
+ static const unsigned int i2c1_a_pins[] = {
+ 	/* SDA, SCL */
+@@ -2050,6 +2235,31 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(avb_avtp_capture_a),
+ 	SH_PFC_PIN_GROUP(avb_avtp_match_b),
+ 	SH_PFC_PIN_GROUP(avb_avtp_capture_b),
++	SH_PFC_PIN_GROUP(hscif0_data),
++	SH_PFC_PIN_GROUP(hscif0_clk),
++	SH_PFC_PIN_GROUP(hscif0_ctrl),
++	SH_PFC_PIN_GROUP(hscif1_data_a),
++	SH_PFC_PIN_GROUP(hscif1_clk_a),
++	SH_PFC_PIN_GROUP(hscif1_ctrl_a),
++	SH_PFC_PIN_GROUP(hscif1_data_b),
++	SH_PFC_PIN_GROUP(hscif1_clk_b),
++	SH_PFC_PIN_GROUP(hscif1_ctrl_b),
++	SH_PFC_PIN_GROUP(hscif2_data_a),
++	SH_PFC_PIN_GROUP(hscif2_clk_a),
++	SH_PFC_PIN_GROUP(hscif2_ctrl_a),
++	SH_PFC_PIN_GROUP(hscif2_data_b),
++	SH_PFC_PIN_GROUP(hscif2_clk_b),
++	SH_PFC_PIN_GROUP(hscif2_ctrl_b),
++	SH_PFC_PIN_GROUP(hscif3_data_a),
++	SH_PFC_PIN_GROUP(hscif3_clk),
++	SH_PFC_PIN_GROUP(hscif3_ctrl),
++	SH_PFC_PIN_GROUP(hscif3_data_b),
++	SH_PFC_PIN_GROUP(hscif3_data_c),
++	SH_PFC_PIN_GROUP(hscif3_data_d),
++	SH_PFC_PIN_GROUP(hscif4_data_a),
++	SH_PFC_PIN_GROUP(hscif4_clk),
++	SH_PFC_PIN_GROUP(hscif4_ctrl),
++	SH_PFC_PIN_GROUP(hscif4_data_b),
+ 	SH_PFC_PIN_GROUP(i2c1_a),
+ 	SH_PFC_PIN_GROUP(i2c1_b),
+ 	SH_PFC_PIN_GROUP(i2c2_a),
+@@ -2141,6 +2351,46 @@ static const char * const avb_groups[] = {
+ 	"avb_avtp_capture_b",
  };
-+#endif /* CONFIG_OF */
  
- static void sh_eth_set_rate_sh7724(struct net_device *ndev)
- {
-@@ -3281,10 +3283,6 @@ static struct platform_device_id sh_eth_id_table[] = {
- 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
- 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
- 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
--	{ "r8a7790-ether", (kernel_ulong_t)&r8a779x_data },
--	{ "r8a7791-ether", (kernel_ulong_t)&r8a779x_data },
--	{ "r8a7793-ether", (kernel_ulong_t)&r8a779x_data },
--	{ "r8a7794-ether", (kernel_ulong_t)&r8a779x_data },
- 	{ }
- };
- MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
++static const char * const hscif0_groups[] = {
++	"hscif0_data",
++	"hscif0_clk",
++	"hscif0_ctrl",
++};
++
++static const char * const hscif1_groups[] = {
++	"hscif1_data_a",
++	"hscif1_clk_a",
++	"hscif1_ctrl_a",
++	"hscif1_data_b",
++	"hscif1_clk_b",
++	"hscif1_ctrl_b",
++};
++
++static const char * const hscif2_groups[] = {
++	"hscif2_data_a",
++	"hscif2_clk_a",
++	"hscif2_ctrl_a",
++	"hscif2_data_b",
++	"hscif2_clk_b",
++	"hscif2_ctrl_b",
++};
++
++static const char * const hscif3_groups[] = {
++	"hscif3_data_a",
++	"hscif3_clk",
++	"hscif3_ctrl",
++	"hscif3_data_b",
++	"hscif3_data_c",
++	"hscif3_data_d",
++};
++
++static const char * const hscif4_groups[] = {
++	"hscif4_data_a",
++	"hscif4_clk",
++	"hscif4_ctrl",
++	"hscif4_data_b",
++};
++
+ static const char * const i2c1_groups[] = {
+ 	"i2c1_a",
+ 	"i2c1_b",
+@@ -2231,6 +2481,11 @@ static const char * const ssi_groups[] = {
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(audio_clk),
+ 	SH_PFC_FUNCTION(avb),
++	SH_PFC_FUNCTION(hscif0),
++	SH_PFC_FUNCTION(hscif1),
++	SH_PFC_FUNCTION(hscif2),
++	SH_PFC_FUNCTION(hscif3),
++	SH_PFC_FUNCTION(hscif4),
+ 	SH_PFC_FUNCTION(i2c1),
+ 	SH_PFC_FUNCTION(i2c2),
+ 	SH_PFC_FUNCTION(i2c6),
 -- 
 1.9.1
 
