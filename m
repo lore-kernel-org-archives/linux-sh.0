@@ -1,7 +1,7 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 19 Nov 2015 18:36:00 +0000
-Subject: [PATCH v2 03/16] sh: Remove sci_ick clock alias
-Message-Id: <1447958173-543-4-git-send-email-geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:36:06 +0000
+Subject: [PATCH v2 09/16] ARM: shmobile: r8a7779 dtsi: Rename the serial port clock to fck
+Message-Id: <1447958173-543-10-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
@@ -13,9 +13,8 @@ Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The sh-sci driver falls back to the peripheral clock if the sci_ick
-clock doesn't exist. There's thus no need to create an alias for the
-peripheral clock named sci_ick.
+The clock is really the device functional clock, not the interface
+clock. Rename it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Simon Horman <horms+renesas@verge.net.au>
@@ -24,21 +23,67 @@ Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 v2:
   - Add Acked-by.
 ---
- arch/sh/kernel/cpu/clock-cpg.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7779.dtsi | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/clock-cpg.c b/arch/sh/kernel/cpu/clock-cpg.c
-index 8525a671266fe149..786c0769b4c393b5 100644
---- a/arch/sh/kernel/cpu/clock-cpg.c
-+++ b/arch/sh/kernel/cpu/clock-cpg.c
-@@ -63,7 +63,6 @@ int __init __deprecated cpg_clk_init(void)
- 	clk_add_alias("fck", "sh-mtu2", "peripheral_clk", NULL);
- 	clk_add_alias("fck", "sh-cmt-16.0", "peripheral_clk", NULL);
- 	clk_add_alias("fck", "sh-cmt-32.0", "peripheral_clk", NULL);
--	clk_add_alias("sci_ick", NULL, "peripheral_clk", NULL);
- 
- 	return ret;
- }
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 6afa909865b52b71..e4054119ee7c5aa9 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -215,7 +215,7 @@
+ 		reg = <0xffe40000 0x100>;
+ 		interrupts = <0 88 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -225,7 +225,7 @@
+ 		reg = <0xffe41000 0x100>;
+ 		interrupts = <0 89 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -235,7 +235,7 @@
+ 		reg = <0xffe42000 0x100>;
+ 		interrupts = <0 90 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF2>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -245,7 +245,7 @@
+ 		reg = <0xffe43000 0x100>;
+ 		interrupts = <0 91 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF3>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -255,7 +255,7 @@
+ 		reg = <0xffe44000 0x100>;
+ 		interrupts = <0 92 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF4>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -265,7 +265,7 @@
+ 		reg = <0xffe45000 0x100>;
+ 		interrupts = <0 93 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp0_clks R8A7779_CLK_SCIF5>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
 -- 
 1.9.1
 
