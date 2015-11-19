@@ -1,142 +1,61 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 19 Nov 2015 18:43:41 +0000
-Subject: Re: [PATCH v2 14/16] arm64: renesas: r8a7795 dtsi: Rename the serial port clock to fck
-Message-Id: <3581988.PotbngBeSg@avalon>
+From: Michael =?UTF-8?B?QsO8c2No?= <m@bues.ch>
+Date: Thu, 19 Nov 2015 20:12:28 +0000
+Subject: [PATCH] m32r: Fix clearing of thread info fault code
+Message-Id: <20151119211228.396fd228@wiggum>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Sig_/S9V7nTxLEjVfjm5ZZ9NDql3"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958173-543-1-git-send-email-geert+renesas@glider.be> <1447958173-543-15-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958173-543-15-git-send-email-geert+renesas@glider.be>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org
+References: <20150618204518.02c852e0@wiggum>
+In-Reply-To: <20150618204518.02c852e0@wiggum>
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
+Cc: Ilia Mirkin <imirkin@alum.mit.edu>
 
-Hi Geert,
+--Sig_/S9V7nTxLEjVfjm5ZZ9NDql3
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Thank you for the patch.
+The expression (~0 >> x) will always yield all-ones, because the right
+shift is an arithmetic right shift that will always shift ones in.
+Hence the old fault code bits will not be cleared before being ORed
+with the new fault code.
 
-On Thursday 19 November 2015 19:36:11 Geert Uytterhoeven wrote:
-> The clock is really the device functional clock, not the interface
-> clock. Rename it.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Fix this by forcing a logical right shift instead of an arithmetic
+right shift by using an unsigned long constant.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Reported-by: Ilia Mirkin <imirkin@alum.mit.edu>
+Signed-off-by: Michael Buesch <m@bues.ch>
 
-> ---
-> v2:
->   - New.
-> ---
->  arch/arm64/boot/dts/renesas/r8a7795.dtsi | 22 +++++++++++-----------
->  1 file changed, 11 insertions(+), 11 deletions(-)
-> 
-> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> b/arch/arm64/boot/dts/renesas/r8a7795.dtsi index
-> 979a087d2b596c03..53a2a8fb42b7480c 100644
-> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-> @@ -363,7 +363,7 @@
->  			reg = <0 0xe6540000 0 96>;
->  			interrupts = <GIC_SPI 154 IRQ_TYPE_LEVEL_HIGH>;
->  			clocks = <&cpg CPG_MOD 520>;
-> -			clock-names = "sci_ick";
-> +			clock-names = "fck";
->  			dmas = <&dmac1 0x31>, <&dmac1 0x30>;
->  			dma-names = "tx", "rx";
->  			power-domains = <&cpg>;
-> @@ -375,7 +375,7 @@
->  			reg = <0 0xe6550000 0 96>;
->  			interrupts = <GIC_SPI 155 IRQ_TYPE_LEVEL_HIGH>;
->  			clocks = <&cpg CPG_MOD 519>;
-> -			clock-names = "sci_ick";
-> +			clock-names = "fck";
->  			dmas = <&dmac1 0x33>, <&dmac1 0x32>;
->  			dma-names = "tx", "rx";
->  			power-domains = <&cpg>;
-> @@ -387,7 +387,7 @@
->  			reg = <0 0xe6560000 0 96>;
->  			interrupts = <GIC_SPI 144 IRQ_TYPE_LEVEL_HIGH>;
->  			clocks = <&cpg CPG_MOD 518>;
-> -			clock-names = "sci_ick";
-> +			clock-names = "fck";
->  			dmas = <&dmac1 0x35>, <&dmac1 0x34>;
->  			dma-names = "tx", "rx";
->  			power-domains = <&cpg>;
-> @@ -399,7 +399,7 @@
->  			reg = <0 0xe66a0000 0 96>;
->  			interrupts = <GIC_SPI 145 IRQ_TYPE_LEVEL_HIGH>;
->  			clocks = <&cpg CPG_MOD 517>;
-> -			clock-names = "sci_ick";
-> +			clock-names = "fck";
->  			dmas = <&dmac0 0x37>, <&dmac0 0x36>;
->  			dma-names = "tx", "rx";
->  			power-domains = <&cpg>;
-> @@ -411,7 +411,7 @@
->  			reg = <0 0xe66b0000 0 96>;
->  			interrupts = <GIC_SPI 146 IRQ_TYPE_LEVEL_HIGH>;
->  			clocks = <&cpg CPG_MOD 516>;
-> -			clock-names = "sci_ick";
-> +			clock-names = "fck";
->  			dmas = <&dmac0 0x39>, <&dmac0 0x38>;
->  			dma-names = "tx", "rx";
->  			power-domains = <&cpg>;
-> @@ -423,7 +423,7 @@
->  			reg = <0 0xe6e60000 0 64>;
->  			interrupts = <GIC_SPI 152 IRQ_TYPE_LEVEL_HIGH>;
->  			clocks = <&cpg CPG_MOD 207>;
-> -			clock-names = "sci_ick";
-> +			clock-names = "fck";
->  			dmas = <&dmac1 0x51>, <&dmac1 0x50>;
->  			dma-names = "tx", "rx";
->  			power-domains = <&cpg>;
-> @@ -435,7 +435,7 @@
->  			reg = <0 0xe6e68000 0 64>;
->  			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL_HIGH>;
->  			clocks = <&cpg CPG_MOD 206>;
-> -			clock-names = "sci_ick";
-> +			clock-names = "fck";
->  			dmas = <&dmac1 0x53>, <&dmac1 0x52>;
->  			dma-names = "tx", "rx";
->  			power-domains = <&cpg>;
-> @@ -447,7 +447,7 @@
->  			reg = <0 0xe6e88000 0 64>;
->  			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
->  			clocks = <&cpg CPG_MOD 310>;
-> -			clock-names = "sci_ick";
-> +			clock-names = "fck";
->  			dmas = <&dmac1 0x13>, <&dmac1 0x12>;
->  			dma-names = "tx", "rx";
->  			power-domains = <&cpg>;
-> @@ -459,7 +459,7 @@
->  			reg = <0 0xe6c50000 0 64>;
->  			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
->  			clocks = <&cpg CPG_MOD 204>;
-> -			clock-names = "sci_ick";
-> +			clock-names = "fck";
->  			dmas = <&dmac0 0x57>, <&dmac0 0x56>;
->  			dma-names = "tx", "rx";
->  			power-domains = <&cpg>;
-> @@ -471,7 +471,7 @@
->  			reg = <0 0xe6c40000 0 64>;
->  			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
->  			clocks = <&cpg CPG_MOD 203>;
-> -			clock-names = "sci_ick";
-> +			clock-names = "fck";
->  			dmas = <&dmac0 0x59>, <&dmac0 0x58>;
->  			dma-names = "tx", "rx";
->  			power-domains = <&cpg>;
-> @@ -483,7 +483,7 @@
->  			reg = <0 0xe6f30000 0 64>;
->  			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
->  			clocks = <&cpg CPG_MOD 202>;
-> -			clock-names = "sci_ick";
-> +			clock-names = "fck";
->  			dmas = <&dmac1 0x5b>, <&dmac1 0x5a>;
->  			dma-names = "tx", "rx";
->  			power-domains = <&cpg>;
+---
 
--- 
-Regards,
+The code also assumes sizeof(ti->flags) =3D=3D 4. But that probably is ok
+for this arch.
 
-Laurent Pinchart
+This patch is untested, because I do not have the hardware.
 
+Resend: Patch was originally sent on Wed, 18 Jun 2015.
+
+
+
+--Sig_/S9V7nTxLEjVfjm5ZZ9NDql3
+Content-Type: application/pgp-signature
+Content-Description: OpenPGP digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBCAAGBQJWTi0sAAoJEPUyvh2QjYsOiM4QAJ2n0diUjamrG4fjNZaRrs7e
+sZ+eSSyoPGqisnXZUR84jQC2ydesrkapqcBmiprY17eIm2v5r3Oa+RtyxpEJOhgJ
+k8mc4fqDrgVRAJ0To6Q+UiUkq80S3tR2W6LGSlfAPKZmGiaOJuQLCoFNOf88+fqW
+pk3/Y87klRrGpyuIRVFs1Zmp+ugfWeqpyVsX0D6PnGeEYMGP9rt+bgcQ1E/Rpa4y
+e5nNv4XVT2IgJ6X1ETPw8Qb3VFupKpUG+I2+GM3qrHAEhlRYePUaKz5K0pQ5uPJl
+vyVo44qHPRIb9Jw/2c1NdvPqY6fW2yqb87ivKhwKyVSZVKS5nej4GKWKI8y2sGIS
+iIAuG2YYYDqGG90Y4NJeexKESOv7WoohX6pK0Sv2SGCivRW2zw5yySLLTjah3Whi
+Nu9PRzasGruTV24r4uywbiP39fyqvoAafyH0ioZFhR42Kgq2RKTCPN6SuFCkcYPc
+7Em629PfhRWTsKhP17Qipz8jMRQJtqt25O+AW9we6C/8OpTUeKXvJxLYnG9u4gAb
+3E/ljgpa70bC0GS6xVGgIux+Yvz0XEZ/nuC6ddVckiR5tnY/E4JZ8rHy628Do+nC
+wVmF5u0fja06pXieRbvXGzRAQTI4LxksZj1Lm3/XBacDISUtBRCi6lYAw8R2DBNt
+iUkW8xqW4FBHV8Q8OzKf
+=cq+K
+-----END PGP SIGNATURE-----
+
+--Sig_/S9V7nTxLEjVfjm5ZZ9NDql3--
