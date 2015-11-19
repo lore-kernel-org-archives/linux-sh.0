@@ -1,82 +1,53 @@
-From: Petr Mladek <pmladek@suse.com>
-Date: Fri, 27 Nov 2015 11:09:27 +0000
-Subject: [PATCH v2 0/5] Cleaning printk stuff in NMI context
-Message-Id: <1448622572-16900-1-git-send-email-pmladek@suse.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:36:09 +0000
+Subject: [PATCH v2 12/16] ARM: shmobile: r8a7793 dtsi: Rename the serial port clock to fck
+Message-Id: <1447958173-543-13-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-This patch set generalizes the already existing solution for
-printing NMI messages. The main idea comes from Peter Zijlstra.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This second version has only few changes in compare with v1, see
-below. Peter Zijlstra suggested to improve also handling of
-the serial console. I looked into tit and it seems to be
-a rather huge task. It might need to review all console
-implementations and avoid a deadlock in the locally used locks.
-It would be nice but I would move this to another season.
+The clock is really the device functional clock, not the interface
+clock. Rename it.
 
-I think that this patchset makes sense as is. It definitely
-improves the situation. It allows to put all messages into
-the ring buffer so that they are available in the crashdump.
-We have had a similar solution in SLE for years and customers
-stopped complaining about the deadlock.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - Add Acked-by.
+---
+ arch/arm/boot/dts/r8a7793.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Changes against v1:
-
-  + rebased on top of 4.4-rc2; there the old implementation was
-    moved to lib/nmi_backtrace.c and used also on arm; I hope that
-    I got the arm side correctly; I was not able to test on arm :-(
-
-  + defined HAVE_NMI on arm for !CPU_V7M instead of !CPU_V7;
-    handle_fiq_as_nmi() is called from entry-armv.S that
-    is compiled when !CPU_V7M
-
-  + defined HAVE_NMI also on mips; it calls nmi_enter() and
-    seems to have real NMIs (or am I wrong?)
-
-  + serialized backtraces when printing directly
-    (oops_in_progress)
-
-Petr Mladek (5):
-  printk/nmi: Generic solution for safe printk in NMI
-  printk/nmi: Use IRQ work only when ready
-  printk/nmi: Try hard to print Oops message in NMI context
-  printk/nmi: Warn when some message has been lost in NMI context
-  printk/nmi: Increase the size of the temporary buffer
-
- arch/Kconfig                  |   7 ++
- arch/arm/Kconfig              |   2 +
- arch/arm/kernel/smp.c         |   2 +
- arch/avr32/Kconfig            |   1 +
- arch/blackfin/Kconfig         |   1 +
- arch/cris/Kconfig             |   1 +
- arch/mips/Kconfig             |   1 +
- arch/powerpc/Kconfig          |   1 +
- arch/s390/Kconfig             |   1 +
- arch/s390/mm/fault.c          |   1 +
- arch/sh/Kconfig               |   1 +
- arch/sparc/Kconfig            |   1 +
- arch/tile/Kconfig             |   1 +
- arch/x86/Kconfig              |   1 +
- arch/x86/kernel/apic/hw_nmi.c |   1 -
- include/linux/hardirq.h       |   2 +
- include/linux/percpu.h        |   3 -
- include/linux/printk.h        |  12 ++-
- init/Kconfig                  |   5 +
- init/main.c                   |   1 +
- kernel/printk/Makefile        |   1 +
- kernel/printk/nmi.c           | 218 ++++++++++++++++++++++++++++++++++++++++++
- kernel/printk/printk.c        |  36 +++----
- kernel/printk/printk.h        |  55 +++++++++++
- lib/bust_spinlocks.c          |   1 +
- lib/nmi_backtrace.c           |  93 +++---------------
- 26 files changed, 345 insertions(+), 105 deletions(-)
- create mode 100644 kernel/printk/nmi.c
- create mode 100644 kernel/printk/printk.h
-
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index aa9b64c14a09e7f7..f1018b55e4cb2491 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -199,7 +199,7 @@
+ 		reg = <0 0xe6e60000 0 64>;
+ 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_SCIF0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
+@@ -209,7 +209,7 @@
+ 		reg = <0 0xe6e68000 0 64>;
+ 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp7_clks R8A7793_CLK_SCIF1>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
+ 	};
 -- 
-1.8.5.6
+1.9.1
 
