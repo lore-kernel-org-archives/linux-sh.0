@@ -1,89 +1,63 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 20 Nov 2015 08:17:11 +0000
-Subject: Re: [PATCH 23/25] arm64: renesas: r8a7795 dtsi: Add BRG support for (H)SCIF
-Message-Id: <CAMuHMdXVuaWj_y6mLMi7+r5yXO2dn4i3k+Vr5qPrNc36sHWsWg@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:38:46 +0000
+Subject: [PATCH 07/25] serial: sh-sci: Convert from clk_get() to devm_clk_get()
+Message-Id: <1447958344-836-8-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
-	<1447958344-836-24-git-send-email-geert+renesas@glider.be>
-	<6606020.G1vmRDrqTj@avalon>
-In-Reply-To: <6606020.G1vmRDrqTj@avalon>
+In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Laurent,
+Transfer clock cleanup handling to the core device management code.
 
-On Thu, Nov 19, 2015 at 10:07 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Thursday 19 November 2015 19:39:02 Geert Uytterhoeven wrote:
->> Add the device node for the external SCIF_CLK.
->> The presence of the SCIF_CLK crystal and its clock frequency depend on
->> the actual board.
->>
->> Add the two optional clock sources (ZS_CLK and SCIF_CLK for the internal
->> resp. external clock) for the Baud Rate Generator for External Clock
->> (BRG) to all SCIF and HSCIF device nodes.
->>
->> This increases the range and accuracy of supported baud rates on
->> (H)SCIF.
->>
->> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->> ---
->>  arch/arm64/boot/dts/renesas/r8a7795.dtsi | 74 +++++++++++++++++++----------
->>  1 file changed, 52 insertions(+), 22 deletions(-)
->>
->> diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->> b/arch/arm64/boot/dts/renesas/r8a7795.dtsi index
->> 53a2a8fb42b7480c..25900761cfde201e 100644
->> --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->> +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
->> @@ -84,6 +84,14 @@
->>               status = "disabled";
->>       };
->>
->> +     /* External SCIF clock - to be overridden by boards that provide it */
->> +     scif_clk: scif {
->> +             compatible = "fixed-clock";
->> +             #clock-cells = <0>;
->> +             clock-frequency = <0>;
->> +             status = "disabled";
->> +     };
->
-> I have mixed feelings about this. Defining an external clock that isn't
-> present on the board isn't very clean, even more so when the clock has such a
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/tty/serial/sh-sci.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
-We have precedence of optional external clocks (can_clk, audio_clk_*).
-The SoC datasheet clearly calls it "scif_clk", so that makes it an ABI, IMHO.
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index cba51da604253db6..9442961a198378c7 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2216,7 +2216,7 @@ static struct uart_ops sci_uart_ops = {
+ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
+ {
+ 	/* Get the SCI functional clock. It's called "fck" on ARM. */
+-	sci_port->fclk = clk_get(dev, "fck");
++	sci_port->fclk = devm_clk_get(dev, "fck");
+ 	if (PTR_ERR(sci_port->fclk) = -EPROBE_DEFER)
+ 		return -EPROBE_DEFER;
+ 	if (!IS_ERR(sci_port->fclk))
+@@ -2226,7 +2226,7 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
+ 	 * But it used to be called "sci_ick", and we need to maintain DT
+ 	 * backward compatibility.
+ 	 */
+-	sci_port->fclk = clk_get(dev, "sci_ick");
++	sci_port->fclk = devm_clk_get(dev, "sci_ick");
+ 	if (PTR_ERR(sci_port->fclk) = -EPROBE_DEFER)
+ 		return -EPROBE_DEFER;
+ 	if (!IS_ERR(sci_port->fclk))
+@@ -2236,7 +2236,7 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
+ 	 * Not all SH platforms declare a clock lookup entry for SCI devices,
+ 	 * in which case we need to get the global "peripheral_clk" clock.
+ 	 */
+-	sci_port->fclk = clk_get(dev, "peripheral_clk");
++	sci_port->fclk = devm_clk_get(dev, "peripheral_clk");
+ 	if (!IS_ERR(sci_port->fclk))
+ 		return 0;
+ 
+@@ -2395,8 +2395,6 @@ static int sci_init_single(struct platform_device *dev,
+ 
+ static void sci_cleanup_single(struct sci_port *port)
+ {
+-	clk_put(port->fclk);
+-
+ 	pm_runtime_disable(port->port.dev);
+ }
+ 
+-- 
+1.9.1
 
-> generic name. Wouldn't it be better to let board files define the clock when
-> they need it ? I know it would require board files to override the clocks and
-> clock-names property too. Maybe we need to extend the DTS syntax to allow
-> extending list properties instead of overriding them completely ?
-
-As scif_clk is shared between all (H)SCIF instances, that would mean overriding
-the clock and clock-names for all of them, which is quite a tedious task.
-Most boards seem to provide a SCIF_CLK, to allow having "perfect" standard
-baud rates.
-
-Combined all of the above, I think it's sufficiently generic to keep
-it that way.
-
-Note that it's different for (H)SCK: these are per-(H)SCIF inputs, and depend
-even more on board layout. Adding individual zero-frequency clock nodes for
-them would preclude e.g. connecting all (H)SCK inputs to the same crystal.
-Hence I didn't add them, and you do have to override all clocks and
-clock-names of a node if you want to add an (H)SCK clock input (been there,
-done that for testing; long live DT overlays).
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
