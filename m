@@ -1,62 +1,102 @@
-From: SF Markus Elfring <elfring@users.sourceforge.net>
-Date: Mon, 16 Nov 2015 07:28:55 +0000
-Subject: [PATCH] sh-DWARF: Delete unnecessary checks before the function call "mempool_destroy"
-Message-Id: <564985B7.3080806@users.sourceforge.net>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:29:11 +0000
+Subject: [PATCH v3] arm64: renesas: r8a7795 dtsi: Add all HSCIF nodes
+Message-Id: <1447957751-32554-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5307CAA2.8060406@users.sourceforge.net>
- <alpine.DEB.2.02.1402212321410.2043@localhost6.localdomain6>
- <530A086E.8010901@users.sourceforge.net>
- <alpine.DEB.2.02.1402231635510.1985@localhost6.localdomain6>
- <530A72AA.3000601@users.sourceforge.net>
- <alpine.DEB.2.02.1402240658210.2090@localhost6.localdomain6>
- <530B5FB6.6010207@users.sourceforge.net>
- <alpine.DEB.2.10.1402241710370.2074@hadrien>
- <530C5E18.1020800@users.sourceforge.net>
- <alpine.DEB.2.10.1402251014170.2080@hadrien>
- <530CD2C4.4050903@users.sourceforge.net>
- <alpine.DEB.2.10.1402251840450.7035@hadrien>
- <530CF8FF.8080600@users.sourceforge.net>
- <alpine.DEB.2.02.1402252117150.2047@localhost6.localdomain6>
- <530DD06F.4090703@users.sourceforge.net>
- <alpine.DEB.2.02.1402262129250.2221@localhost6.localdomain6>
- <5317A59D.4@users.sourceforge.net>
-In-Reply-To: <5317A59D.4@users.sourceforge.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
-Cc: kernel-janitors@vger.kernel.org, Julia Lawall <julia.lawall@lip6.fr>
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Markus Elfring <elfring@users.sourceforge.net>
-Date: Mon, 16 Nov 2015 08:20:36 +0100
+Add the device nodes for all HSCIF serial ports, incl. clocks, clock
+domain, and dma properties.
 
-The mempool_destroy() function tests whether its argument is NULL
-and then returns immediately. Thus the test around the calls is not needed.
-
-This issue was detected by using the Coccinelle software.
-
-Signed-off-by: Markus Elfring <elfring@users.sourceforge.net>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/kernel/dwarf.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+v3:
+  - Switch to final CPG/MSSR bindings,
 
-diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
-index 9d209a0..e1d751a 100644
---- a/arch/sh/kernel/dwarf.c
-+++ b/arch/sh/kernel/dwarf.c
-@@ -1009,10 +1009,8 @@ static void __init dwarf_unwinder_cleanup(void)
- 	rbtree_postorder_for_each_entry_safe(cie, next_cie, &cie_root, node)
- 		kfree(cie);
+v2:
+  - Drop obsolete vendor prefix from "renesas,clock-indices" property,
+  - Move HSCIF nodes before SCIF nodes to preserve alphabetical sort
+    order,
+  - Switch from cpg-mstp to cpg-mssr.
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 60 ++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 2ae303843ec8..979a087d2b59 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -358,6 +358,66 @@
+ 			#size-cells = <0>;
+ 		};
  
--	if (dwarf_reg_pool)
--		mempool_destroy(dwarf_reg_pool);
--	if (dwarf_frame_pool)
--		mempool_destroy(dwarf_frame_pool);
-+	mempool_destroy(dwarf_reg_pool);
-+	mempool_destroy(dwarf_frame_pool);
- 	kmem_cache_destroy(dwarf_reg_cachep);
- 	kmem_cache_destroy(dwarf_frame_cachep);
- }
++		hscif0: serial@e6540000 {
++			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
++			reg = <0 0xe6540000 0 96>;
++			interrupts = <GIC_SPI 154 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 520>;
++			clock-names = "sci_ick";
++			dmas = <&dmac1 0x31>, <&dmac1 0x30>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		hscif1: serial@e6550000 {
++			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
++			reg = <0 0xe6550000 0 96>;
++			interrupts = <GIC_SPI 155 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 519>;
++			clock-names = "sci_ick";
++			dmas = <&dmac1 0x33>, <&dmac1 0x32>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		hscif2: serial@e6560000 {
++			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
++			reg = <0 0xe6560000 0 96>;
++			interrupts = <GIC_SPI 144 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 518>;
++			clock-names = "sci_ick";
++			dmas = <&dmac1 0x35>, <&dmac1 0x34>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		hscif3: serial@e66a0000 {
++			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
++			reg = <0 0xe66a0000 0 96>;
++			interrupts = <GIC_SPI 145 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 517>;
++			clock-names = "sci_ick";
++			dmas = <&dmac0 0x37>, <&dmac0 0x36>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		hscif4: serial@e66b0000 {
++			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
++			reg = <0 0xe66b0000 0 96>;
++			interrupts = <GIC_SPI 146 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 516>;
++			clock-names = "sci_ick";
++			dmas = <&dmac0 0x39>, <&dmac0 0x38>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
+ 		scif0: serial@e6e60000 {
+ 			compatible = "renesas,scif-r8a7795", "renesas,scif";
+ 			reg = <0 0xe6e60000 0 64>;
 -- 
-2.6.2
+1.9.1
 
