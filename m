@@ -1,109 +1,85 @@
-From: =?UTF-8?B?7KGw7LC97ZmY?= <charlescho64@gmail.com>
-Date: Mon, 16 Nov 2015 06:58:55 +0000
-Subject: Re: [R-CAR][Lager Board - Bringup with linux kernel4.3]
-Message-Id: <CANi_qo1S7OHbRsCCpAn6ceoK+4e6Sn25nUBHG7mnHeb=3Kqqmg@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 19 Nov 2015 14:41:49 +0000
+Subject: Re: [PATCH v2 2/2] ARM: shmobile: Remove legacy mach/irqs.h
+Message-Id: <2647438.xf6dR3XLDG@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CANi_qo3_YPLBNghrqu0JvQfyRTXJc5bUGhh-No9Dn2djgUoqMQ@mail.gmail.com>
-In-Reply-To: <CANi_qo3_YPLBNghrqu0JvQfyRTXJc5bUGhh-No9Dn2djgUoqMQ@mail.gmail.com>
+References: <1442905694-2317-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1442905694-2317-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello,
+Hi Simon,
 
-Thank you so much. I fixed with your advice.
-I set console port as ttySC6 following with renesas's document about booting.
-Anyway I got success booting and rootfs with NFS.
+Now that patch 1/2 has been merged in v4.4-rc1, could you merge this one in 
+your tree ?
 
-
-
-2015-11-12 19:35 GMT+09:00 Geert Uytterhoeven <geert@linux-m68k.org>:
-> On Thu, Nov 12, 2015 at 8:59 AM, 조창환 <charlescho64@gmail.com> wrote:
->>  I have problem during bring up R-CAR H2 Lager Board with linux4.3.
->>
->>  The step I did is below
->>
->>  1) downloaded linux and uboot from below link.
->>
->>  In kernel,
->>   git clone -b devel
->> git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
->>
->>  In u-boot
->>  git clone -b renesas/bsp/rcar-gen2-1.8.0  git://git.denx.de/u-boot-sh.git
->>
->>  2) build
->>  In kernel,  I used kernel config file as "shmobile_defconfig" and
->> enable "DEBUG_LL"
->>  with cross-compiler
->> "gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf" ( cross_compiler
->> download site :
->> https://releases.linaro.org/15.02/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2015.02-3-x86_64_arm-linux-gnueabihf.tar.xz)
->>
->>  Build it  like below command and got zImage and dtb file(r8a7790-lager.dtb)
->>
->>  $make ARH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j10
->>
->>  In u-boot, I used config file as "lager_config" and build with
->> compiler used in kernel build like below. And then got "u-boot.srec"
->>
->>  $ make ARH=arm lager_config
->>  $ make ARH=arm CROSS_COMPILE=arm-linux-gnueabihf- all
->>
->>  3) Setting the environment for booting
->>
->>  The environment have been loading kernel via TFTP and rootfs via NFS.
->> And U-boot command are set with below.
->>
->>  > setenv bootcmd 'tftp 0x40007fc0 zImage; tftp 0x4f000000
->> r8a7790-lager.dtb; bootz 0x40007fc0 - 0x4f000000'
->>  > setenv bootargs 'console=ttySC6,38400 ignore_loglevel psci=enable
->> rw root=/dev/nfs rw nfsroot2.168.0.228:/nfsroot/lager,nfsvers=3
->> ip2.168.0.91:192.168.0.228:192.168.0.1:255.255.255.0:lager:eth0:::
->> vmalloc84M'
->
-> The console device should be ttySC0, not ttySC6.
-> Furthermore, is 38400 correct for your configuration? I'd expect 115200.
->
-> Note that with Simon's current tree, there should be no need to specify
-> a "console" parameter, unless you really want ttySC6 or 38400 baud.
->
-> What does "psci=enable" do?
->
-> Does the kernel boot with the default kernel command line?
->
->>  4) power on "R-CAR LAGER Board"
->>
->>  Lager board had hang before booting linux kernel with message "
->> Starting kernel ... " and "Uncompressing Linux... done, booting the
->> kernel."
->
-> You said you are using "CONFIG_DEBUG_LL=y". Are the other config
-> settings for early debugging correct?
->
-> CONFIG_DEBUG_RCAR_GEN2_SCIF0=y
-> CONFIG_DEBUG_LL_INCLUDE="debug/renesas-scif.S"
-> CONFIG_DEBUG_UART_PHYS=0xe6e60000
->
-> BTW, arch/arm/Kconfig.debug still assumes SCIF0 for debugging on r8a7790,
-> while the console uses SCIFA0 these days. However, changing that makes sense
-> only if U-Boot is also changed to uses SCIFA0, else pinctrl is not set up
-> correctly. Perhaps U-Boot has been changed, and that's why it doesn't work?
->
-> Gr{oetje,eeting}s,
->
->                         Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-
-
+On Tuesday 22 September 2015 10:08:14 Laurent Pinchart wrote:
+> The header isn't needed anymore now that all SoCs use multiplatform
+> kernels. Remove it.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> ---
+>  arch/arm/mach-shmobile/include/mach/irqs.h | 10 ----------
+>  arch/arm/mach-shmobile/irqs.h              | 15 ---------------
+>  arch/arm/mach-shmobile/setup-r8a7778.c     |  1 -
+>  3 files changed, 26 deletions(-)
+>  delete mode 100644 arch/arm/mach-shmobile/include/mach/irqs.h
+>  delete mode 100644 arch/arm/mach-shmobile/irqs.h
+> 
+> diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h
+> b/arch/arm/mach-shmobile/include/mach/irqs.h deleted file mode 100644
+> index 5aee83f079e2..000000000000
+> --- a/arch/arm/mach-shmobile/include/mach/irqs.h
+> +++ /dev/null
+> @@ -1,10 +0,0 @@
+> -#ifndef __ASM_MACH_IRQS_H
+> -#define __ASM_MACH_IRQS_H
+> -
+> -/* Stuck here until drivers/pinctl/sh-pfc gets rid of legacy code */
+> -
+> -/* External IRQ pins */
+> -#define IRQPIN_BASE		2000
+> -#define irq_pin(nr)		((nr) + IRQPIN_BASE)
+> -
+> -#endif /* __ASM_MACH_IRQS_H */
+> diff --git a/arch/arm/mach-shmobile/irqs.h b/arch/arm/mach-shmobile/irqs.h
+> deleted file mode 100644
+> index 3070f6d887eb..000000000000
+> --- a/arch/arm/mach-shmobile/irqs.h
+> +++ /dev/null
+> @@ -1,15 +0,0 @@
+> -#ifndef __SHMOBILE_IRQS_H
+> -#define __SHMOBILE_IRQS_H
+> -
+> -#include "include/mach/irqs.h"
+> -
+> -/* GIC */
+> -#define gic_spi(nr)		((nr) + 32)
+> -#define gic_iid(nr)		(nr) /* ICCIAR / interrupt ID */
+> -
+> -/* GPIO IRQ */
+> -#define _GPIO_IRQ_BASE		2500
+> -#define GPIO_IRQ_BASE(x)	(_GPIO_IRQ_BASE + (32 * x))
+> -#define GPIO_IRQ(x, y)		(_GPIO_IRQ_BASE + (32 * x) + y)
+> -
+> -#endif /* __SHMOBILE_IRQS_H */
+> diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c
+> b/arch/arm/mach-shmobile/setup-r8a7778.c index b0c9986d022d..008ea680fb8a
+> 100644
+> --- a/arch/arm/mach-shmobile/setup-r8a7778.c
+> +++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+> @@ -22,7 +22,6 @@
+>  #include <asm/mach/arch.h>
+> 
+>  #include "common.h"
+> -#include "irqs.h"
+> 
+>  #define MODEMR 0xffcc0020
 
 -- 
-Happy Virus....
-Chang Hwan, Cho
+Regards,
+
+Laurent Pinchart
+
