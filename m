@@ -1,54 +1,74 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 30 Nov 2015 13:41:03 +0000
-Subject: [PATCH 2/4] pinctrl: sh-pfc: r8a7778: Use PINMUX_SINGLE() instead of raw PINMUX_DATA()
-Message-Id: <1448890865-1856-3-git-send-email-geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:39:01 +0000
+Subject: [PATCH 22/25] ARM: shmobile: koelsch dts: Enable SCIF_CLK frequency and pins
+Message-Id: <1447958344-836-23-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448890865-1856-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448890865-1856-1-git-send-email-geert+renesas@glider.be>
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+
+Add and enable the external crystal for the SCIF_CLK and its pinctrl, to
+be used by the Baud Rate Generator for External Clock (BRG) on (H)SCIF.
+
+This increases the range and accuracy of supported baud rates:
+  - SCIF:
+      - Supports now 50, 75, 110, 1152000, 1500000, 2000000, and
+        4000000 bps,
+      - Perfect match for standard 50-460800, and 9216000 bps.
+      - More accurate 576000 bps.
+  - HSCIF:
+      - Supports now 50, 75, 110, 134, 150, and 200 bps,
+      - Perfect match for standard 50-460800, and 9216000 bps.
+      - More accurate 576000, 1152000, 3000000, 3500000, and 4000000
+	bps.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7778.c | 22 +++++++++++-----------
- 1 file changed, 11 insertions(+), 11 deletions(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-index 6b6e5aa2db0d7d10..411d0887ba19bae6 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7778.c
-@@ -548,17 +548,17 @@ enum {
- static const u16 pinmux_data[] = {
- 	PINMUX_DATA_GP_ALL(), /* PINMUX_DATA(GP_M_N_DATA, GP_M_N_FN...), */
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index da263dbb126db78c..9c3bc94791fc932a 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -320,6 +320,9 @@
+ };
  
--	PINMUX_DATA(PENC0_MARK,		FN_PENC0),
--	PINMUX_DATA(PENC1_MARK,		FN_PENC1),
--	PINMUX_DATA(A1_MARK,		FN_A1),
--	PINMUX_DATA(A2_MARK,		FN_A2),
--	PINMUX_DATA(A3_MARK,		FN_A3),
--	PINMUX_DATA(WE0_MARK,		FN_WE0),
--	PINMUX_DATA(AUDIO_CLKA_MARK,	FN_AUDIO_CLKA),
--	PINMUX_DATA(AUDIO_CLKB_MARK,	FN_AUDIO_CLKB),
--	PINMUX_DATA(SSI_SCK34_MARK,	FN_SSI_SCK34),
--	PINMUX_DATA(AVS1_MARK,		FN_AVS1),
--	PINMUX_DATA(AVS2_MARK,		FN_AVS2),
-+	PINMUX_SINGLE(PENC0),
-+	PINMUX_SINGLE(PENC1),
-+	PINMUX_SINGLE(A1),
-+	PINMUX_SINGLE(A2),
-+	PINMUX_SINGLE(A3),
-+	PINMUX_SINGLE(WE0),
-+	PINMUX_SINGLE(AUDIO_CLKA),
-+	PINMUX_SINGLE(AUDIO_CLKB),
-+	PINMUX_SINGLE(SSI_SCK34),
-+	PINMUX_SINGLE(AVS1),
-+	PINMUX_SINGLE(AVS2),
+ &pfc {
++	pinctrl-0 = <&scif_clk_pins>;
++	pinctrl-names = "default";
++
+ 	i2c2_pins: i2c2 {
+ 		renesas,groups = "i2c2";
+ 		renesas,function = "i2c2";
+@@ -340,6 +343,11 @@
+ 		renesas,function = "scif1";
+ 	};
  
- 	/* IPSR0 */
- 	PINMUX_IPSR_GPSR(IP0_1_0,	PRESETOUT),
++	scif_clk_pins: scif_clk {
++		renesas,groups = "scif_clk";
++		renesas,function = "scif_clk";
++	};
++
+ 	ether_pins: ether {
+ 		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
+ 		renesas,function = "eth";
+@@ -440,6 +448,11 @@
+ 	status = "okay";
+ };
+ 
++&scif_clk {
++	clock-frequency = <14745600>;
++	status = "okay";
++};
++
+ &sdhi0 {
+ 	pinctrl-0 = <&sdhi0_pins>;
+ 	pinctrl-names = "default";
 -- 
 1.9.1
 
