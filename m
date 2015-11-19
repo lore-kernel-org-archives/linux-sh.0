@@ -1,123 +1,102 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 10 Nov 2015 11:03:21 +0000
-Subject: Re: [PATCH] extcon: add MAX3355 driver
-Message-Id: <5641CEF9.60103@cogentembedded.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 19 Nov 2015 15:56:49 +0000
+Subject: [PATCH v3 09/11] i2c: rcar: revoke START request early
+Message-Id: <1447948611-2615-10-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <14631865.01KLlU2iKL@wasted.cogentembedded.com>
- <5490CEE2.1030900@samsung.com> <5491FC69.7090203@cogentembedded.com>
- <562685EF.7010504@cogentembedded.com> <5629CBFA.4020605@samsung.com>
- <5640E4D5.4020001@cogentembedded.com> <564131BA.9010809@samsung.com>
-In-Reply-To: <564131BA.9010809@samsung.com>
+References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chanwoo Choi <cw00.choi@samsung.com>
-Cc: robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, myungjoo.ham@samsung.com, grant.likely@linaro.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-usb@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Hello.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-On 11/10/2015 2:52 AM, Chanwoo Choi wrote:
+If we don't clear START generation as soon as possible, it may cause
+another message to be generated, e.g. when receiving NACK in address
+phase. To keep the race window as small as possible, we clear it right
+at the beginning of the interrupt. We don't need any checks since we
+always want to stop START and STOP generation on the next occasion after
+we started it.
 
-> I received the reply from you after too long time (17~18day).
-> You better to reply it more a little more quickly
-> if you have the question or new patches.
+This patch improves the situation but sadly does not completely fix it.
+It is still to be researched if we can do better given this HW design.
 
-    I've replied as soon as I had my new idea.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ drivers/i2c/busses/i2c-rcar.c | 23 +++++++----------------
+ 1 file changed, 7 insertions(+), 16 deletions(-)
 
->>>>>>> MAX3355E chip integrates a charge pump and comparators to enable a system with
->>>>>>> an integrated USB OTG dual-role transceiver to function as a USB OTG dual-role
->>>>>>> device. In addition to sensing/controlling Vbus, the chip also passes thru the
->>>>>>> ID signal from the USB OTG connector.  On some Renesas boards, this signal  is
->>>>>>> just  fed into the SoC thru a GPIO pin -- there's no real OTG controller, only
->>>>>>> host and gadget USB controllers sharing the same USB bus; however,  we'd  like
->>>>>>> to allow host or gadget drivers to be loaded depending on the cable type,
->>>>>>> hence
->>>>>>> the need for the MAX3355 extcon driver. The Vbus status signals are also wired
->>>>>>> to GPIOs (however, we're not currently intested in them), the  OFFVBUS# signal
->>>>>>> is controlled  by the host controllers, there's also the SHDN# signal wired to
->>>>>>> GPIO, which should be high for normal operation.
->>>>>
->>>>>>> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
->>>>>
->>>>>>> ---
->>>>>>> The patch is against the 'extcon-next' branch of the 'extcon.git' repo.
->>>>>
->>>>>>>     Documentation/devicetree/bindings/extcon/extcon-max3355.txt |   21 ++
->>>>>>>     drivers/extcon/Kconfig                                      |    6
->>>>>>>     drivers/extcon/Makefile                                     |    1
->>>>>>>     drivers/extcon/extcon-max3355.c                             |  122
->>>>>>> ++++++++++++
->>>>>>>     4 files changed, 150 insertions(+)
->>>>>
->>>>>>> Index: extcon/Documentation/devicetree/bindings/extcon/extcon-max3355.txt
->>>>>>> =================================>>>>>>> --- /dev/null
->>>>>>> +++ extcon/Documentation/devicetree/bindings/extcon/extcon-max3355.txt
->>>>>>> @@ -0,0 +1,21 @@
->>>>>>> +MAX3355 USB OTG chip
->>>>>
->>>>>> Need manufactor information as following :
->>>>>>      -> Maxim MAX3355
->>>>>
->>>>>       Would be Maxim enough? Or perhaps I should use Maxim Integrated [Products]?
->>>>
->>>>      You haven't replied to my questions.
->>>>
->>>>>>> +--------------------
->>>>>>> +
->>>>>>> +MAX3355 integrates a charge pump and comparators to enable a system with an
->>>>>>> +integrated USB OTG dual-role transceiver to function as a USB OTG dual-role
->>>>>>> +device.
->>>>>>> +
->>>>>>> +Required properties:
->>>>>>> +- compatible: should be "maxim,max3355";
->>>>>>> +- maxim,shdn-gpio: should contain a phandle and GPIO specifier for the
->>>>>>> GPIO pin
->>>>>>> +  connected to the MAX3355's SHDN# pin;
->>>>>>> +- maxim,id-gpio: should contain a phandle and GPIO specifier for the GPIO pin
->>>>>>> +  connected to the MAX3355's ID_OUT pin.
->>>>>>> +
->>>>>>> +Example (Koelsch board):
->>>>>>> +
->>>>>>> +    usb-otg {
->>>>>>> +        compatible = "maxim,max3355";
->>>>>>> +        maxim,shdn-gpio = <&gpio2 4 GPIO_ACTIVE_LOW>;
->>>>>>> +        maxim,id-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
->>>>>
->>>>>> Kernel already supported the gpio helper function to get gpio from devicetree.
->>>>>> I prefer use follwoing style by using of_get_gpio()/of_get_gpio_flags() in
->>>>>> include/linux/of_gpio.h.
->>>>>
->>>>>>           gpios = <&gpio2 4 GPIO_ACTIVE_LOW>, <&gpio5 31 GPIO_ACTIVE_HIGH>;
->>>>>
->>>>>       OK, though Documentation/devicetree/bindings/gpio/gpio.txt does not seem
->>>>> to insist on using this one...
->>>>
->>>>      Moreover, it now says "gpios" isn't allowed for the new bindings. So I have to strongly disagree here...
->>>
->>> OK. But, I recommend you use the 'gpiod' with devm_gpiod_get
->>> instead of using devm_gpio_request_one() directly as following:
->>> You can refer drivers/extcon/extcon-usb-gpio.c about using gpiod.
->>>
->>> For example,
->>>      data->shdn_gpiod = devm_gpiod_get(dev, "maxim,shdn", GPIOD_IN);
->>>      data->id_gpiod = devm_gpiod_get(dev, "maxim,id", GPIOD_IN);
->>
->>     Thanks, done now. I just had another idea: how about I add an optional "enable-gpio" property to the 'extcon-usb-gpio' driver? I wouldn't need my own driver then at all... :-)
->
-> What is meaning of 'enable-gpio' property?
-> You better to explain your goal about 'enable-gpio' property
-
-    This optional property would serve for enabling the valid signal on the ID 
-GPIO, the same way I'm using the SHDN# GPIO in the MAX3355 driver.
-
-> Also, If you think that it is generic way about
-> adding 'enable-gpio' property to extcon-usb-gpio.c,
-> you can try it.
-
-    Yes, I think it would be generic enough.
-
-> Thanks,
-> Chanwoo Choi
-
-MBR, Sergei
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index f237b4fc5b5e55..40979130200935 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -83,6 +83,7 @@
+ 
+ #define RCAR_BUS_PHASE_START	(MDBS | MIE | ESG)
+ #define RCAR_BUS_PHASE_DATA	(MDBS | MIE)
++#define RCAR_BUS_MASK_DATA	(~(ESG | FSB) & 0xFF)
+ #define RCAR_BUS_PHASE_STOP	(MDBS | MIE | FSB)
+ 
+ #define RCAR_IRQ_SEND	(MNR | MAL | MST | MAT | MDE)
+@@ -289,13 +290,6 @@ static void rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
+ 	if (!(msr & MDE))
+ 		return;
+ 
+-	/*
+-	 * If address transfer phase finished,
+-	 * goto data phase.
+-	 */
+-	if (msr & MAT)
+-		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
+-
+ 	if (priv->pos < msg->len) {
+ 		/*
+ 		 * Prepare next data to ICRXTX register.
+@@ -345,11 +339,7 @@ static void rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
+ 		return;
+ 
+ 	if (msr & MAT) {
+-		/*
+-		 * Address transfer phase finished,
+-		 * but, there is no data at this point.
+-		 * Do nothing.
+-		 */
++		/* Address transfer phase finished, but no data at this point. */
+ 	} else if (priv->pos < msg->len) {
+ 		/*
+ 		 * get received data
+@@ -365,8 +355,6 @@ static void rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
+ 	 */
+ 	if (priv->pos + 1 >= msg->len)
+ 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
+-	else
+-		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
+ 
+ 	if (priv->pos = msg->len && !(priv->flags & ID_LAST_MSG))
+ 		rcar_i2c_next_msg(priv);
+@@ -432,7 +420,11 @@ static bool rcar_i2c_slave_irq(struct rcar_i2c_priv *priv)
+ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ {
+ 	struct rcar_i2c_priv *priv = ptr;
+-	u32 msr;
++	u32 msr, val;
++
++	/* Clear START or STOP as soon as we can */
++	val = rcar_i2c_read(priv, ICMCR);
++	rcar_i2c_write(priv, ICMCR, val & RCAR_BUS_MASK_DATA);
+ 
+ 	msr = rcar_i2c_read(priv, ICMSR);
+ 
+@@ -454,7 +446,6 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+ 	/* Nack */
+ 	if (msr & MNR) {
+ 		/* HW automatically sends STOP after received NACK */
+-		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
+ 		rcar_i2c_write(priv, ICMIER, RCAR_IRQ_STOP);
+ 		rcar_i2c_flags_set(priv, ID_NACK);
+ 		goto out;
+-- 
+2.1.4
 
