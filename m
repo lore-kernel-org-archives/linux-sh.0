@@ -1,71 +1,98 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 24 Nov 2015 02:44:05 +0000
-Subject: Re: [PATCH v2 00/16] serial: sh-sci: Clock Cleanups
-Message-Id: <20151124024405.GE21853@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:36:12 +0000
+Subject: [PATCH v2 15/16] h8300: dts: Rename the serial port clock to fck
+Message-Id: <1447958173-543-16-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
 In-Reply-To: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Nov 19, 2015 at 07:35:57PM +0100, Geert Uytterhoeven wrote:
-> 	Hi,
-> 
-> The SCI driver currently handles two clocks, an interface clock named
-> sci_ick and a functional clock named sci_fck. Studying the datasheets of
-> the SH and ARM SoCs that incorportate (H)SCI(F)([AB]) instances showed
-> (un)surprisingly that the hardware doesn't have a separate controllable
-> interface clock.
-> 
-> All the platforms that declare an interface clock for the SCI set it to
-> the clock used as the SCI functional clock. The two clocks can thus be
-> merged on the driver side, which is what this patch series does. The
-> resulting clock is called "fck", and all H8/300, SH and ARM users (both
-> DT and non-DT) are fixed to name their SCI clocks appropriately.
-> 
-> Support for the "sci_ick" name is kept in the sh-sci driver to ensure DT
-> backward compatibility, and support for the "peripheral_clk" clock to
-> not break SH platforms that don't declare device-specific SCI clocks.
-> The latter can be removed when all SH platforms will declare their SCI
-> clocks properly.
-> 
-> This series serves as a preparatory clock cleanup for the SCI baud rate
-> generator clock support series. I decided to keep it separate as this
-> series has more stringent internal dependencies:
->   - The SH patches 2-3 depend on patch 1,
->   - The DT patches 4-15 depend on patch 1,
->   - Cleanup patch 16 depends on SH patch 2.
-> 
-> Thanks for your comments!
-> 
-> Changes compared to v1:
->   - Take over the patches from Laurent,
->   - Add Acked-by,
->   - Handle EPROBE_DEFER,
->   - Add missing patches to convert r8a7795 and h8300.
-> 
-> Geert Uytterhoeven (2):
->   arm64: renesas: r8a7795 dtsi: Rename the serial port clock to fck
->   h8300: dts: Rename the serial port clock to fck
-> 
-> Laurent Pinchart (14):
->   serial: sh-sci: Drop the interface clock
->   sh: Rename sci_ick and sci_fck clock to fck
->   sh: Remove sci_ick clock alias
->   ARM: shmobile: sh73a0 dtsi: Rename the serial port clock to fck
->   ARM: shmobile: r7s72100 dtsi: Rename the serial port clock to fck
->   ARM: shmobile: r8a73a4 dtsi: Rename the serial port clock to fck
->   ARM: shmobile: r8a7740 dtsi: Rename the serial port clock to fck
->   ARM: shmobile: r8a7778 dtsi: Rename the serial port clock to fck
->   ARM: shmobile: r8a7779 dtsi: Rename the serial port clock to fck
->   ARM: shmobile: r8a7790 dtsi: Rename the serial port clock to fck
->   ARM: shmobile: r8a7791 dtsi: Rename the serial port clock to fck
->   ARM: shmobile: r8a7793 dtsi: Rename the serial port clock to fck
->   ARM: shmobile: r8a7794 dtsi: Rename the serial port clock to fck
->   serial: sh-sci: Drop the sci_fck clock fallback
+The clock is really the device functional clock, not the interface
+clock. Rename it.
 
-I have marked the above shmobile patches as deferred pending
-the binding changes being accepted.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - New.
+---
+ arch/h8300/boot/dts/edosk2674.dts  | 6 +++---
+ arch/h8300/boot/dts/h8300h_sim.dts | 4 ++--
+ arch/h8300/boot/dts/h8s_sim.dts    | 4 ++--
+ 3 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/arch/h8300/boot/dts/edosk2674.dts b/arch/h8300/boot/dts/edosk2674.dts
+index 4ce9fa874a577e55..6ae884bf66a5268c 100644
+--- a/arch/h8300/boot/dts/edosk2674.dts
++++ b/arch/h8300/boot/dts/edosk2674.dts
+@@ -88,20 +88,20 @@
+ 		reg = <0xffff78 8>;
+ 		interrupts = <88 0>, <89 0>, <90 0>, <91 0>;
+ 		clocks = <&fclk>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 	};
+ 	sci1: serial@ffff80 {
+ 		compatible = "renesas,sci";
+ 		reg = <0xffff80 8>;
+ 		interrupts = <92 0>, <93 0>, <94 0>, <95 0>;
+ 		clocks = <&fclk>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 	};
+ 	sci2: serial@ffff88 {
+ 		compatible = "renesas,sci";
+ 		reg = <0xffff88 8>;
+ 		interrupts = <96 0>, <97 0>, <98 0>, <99 0>;
+ 		clocks = <&fclk>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 	};
+ };
+diff --git a/arch/h8300/boot/dts/h8300h_sim.dts b/arch/h8300/boot/dts/h8300h_sim.dts
+index 545bfb57af9a9f2e..9c733d920f1f0dc3 100644
+--- a/arch/h8300/boot/dts/h8300h_sim.dts
++++ b/arch/h8300/boot/dts/h8300h_sim.dts
+@@ -83,7 +83,7 @@
+ 		reg = <0xffffb0 8>;
+ 		interrupts = <52 0>, <53 0>, <54 0>, <55 0>;
+ 		clocks = <&fclk>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 	};
+ 
+ 	sci1: serial@ffffb8 {
+@@ -91,6 +91,6 @@
+ 		reg = <0xffffb8 8>;
+ 		interrupts = <56 0>, <57 0>, <58 0>, <59 0>;
+ 		clocks = <&fclk>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 	};
+ };
+diff --git a/arch/h8300/boot/dts/h8s_sim.dts b/arch/h8300/boot/dts/h8s_sim.dts
+index bcedba5a3ce7e8ae..97e1f4b17ef067d5 100644
+--- a/arch/h8300/boot/dts/h8s_sim.dts
++++ b/arch/h8300/boot/dts/h8s_sim.dts
+@@ -87,13 +87,13 @@
+ 		reg = <0xffff78 8>;
+ 		interrupts = <88 0>, <89 0>, <90 0>, <91 0>;
+ 		clocks = <&fclk>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 	};
+ 	sci1: serial@ffff80 {
+ 		compatible = "renesas,sci";
+ 		reg = <0xffff80 8>;
+ 		interrupts = <92 0>, <93 0>, <94 0>, <95 0>;
+ 		clocks = <&fclk>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 	};
+ };
+-- 
+1.9.1
+
