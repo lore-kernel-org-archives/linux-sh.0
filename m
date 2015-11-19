@@ -1,56 +1,106 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:05:33 +0000
-Subject: [PATCH 26/29] ARM: shmobile: r8a7794: Use SoC specific binding for rcar-dmac nodes
-Message-Id: <0a3d058b8ae857d270a0d34081554192f3e2e566.1447981420.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:38:51 +0000
+Subject: [PATCH 12/25] serial: sh-sci: Merge sci_scbrr_calc() and sci_baud_calc_hscif()
+Message-Id: <1447958344-836-13-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1447981420.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Use the new SoC specific binding for rcar-dmac and the generic
-binding as a fall-back in the r8a7794 device tree.
+For low bit rates, the for-loop that reduces the divider returned by
+sci_scbrr_calc() and picks the clock select value may terminate without
+finding suitable values, leading to out-of-range divider and clock
+select values.
+sci_baud_calc_hscif() doesn't suffer from this problem, as it correctly
+uses clamp().
 
-In general Renesas hardware is not documented to the extent where the
-relationship between IP blocks on different SoCs can be assumed although
-they may appear to operate the same way. Furthermore the documentation
-typically does not specify a version for individual IP blocks. For these
-reasons a convention of using the SoC name in place of a version and
-providing SoC-specific compat strings has been adopted.
+Since there are only two relevant differences between HSCIF and other
+variants w.r.t. bit rate configuration (fixed vs. variable sample rate,
+and an additional factor of two), sci_scbrr_calc() and
+sci_baud_calc_hscif() can be merged, fixing the issue with out-of-range
+values.
 
-Although not universally liked this convention is used in the bindings for
-most drivers for Renesas hardware. The purpose of this patch is to
-update the Renesas R-Car DMA Controller nodes to follow this convention.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7794.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/tty/serial/sh-sci.c | 42 +++++++++++++++++++-----------------------
+ 1 file changed, 19 insertions(+), 23 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 4075a0a3d5c1..57d188c2bf6d 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -221,7 +221,7 @@
- 	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index c2ab29ddedbc26a2..dccea5df5355076a 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1860,20 +1860,24 @@ static void sci_shutdown(struct uart_port *port)
+ 	sci_free_irq(s);
+ }
  
- 	dmac0: dma-controller@e6700000 {
--		compatible = "renesas,rcar-dmac";
-+		compatible = "renesas,dmac-r8a7794", "renesas,rcar-dmac";
- 		reg = <0 0xe6700000 0 0x20000>;
- 		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
- 			      0 200 IRQ_TYPE_LEVEL_HIGH
-@@ -252,7 +252,7 @@
- 	};
+-static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+-				   unsigned long freq)
++/* calculate sample rate, BRR, and clock select */
++static void sci_scbrr_calc(struct sci_port *s, unsigned int bps,
++			   unsigned long freq, int *brr, unsigned int *srr,
++			   unsigned int *cks)
+ {
+-	return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
+-}
+-
+-/* calculate sample rate, BRR, and clock select for HSCIF */
+-static void sci_baud_calc_hscif(struct sci_port *s, unsigned int bps,
+-				unsigned long freq, int *brr,
+-				unsigned int *srr, unsigned int *cks)
+-{
+-	unsigned int sr, br, a, b, c;
++	unsigned int min_sr, max_sr, shift, sr, br, a, b, c;
+ 	int err, min_err = INT_MAX;
  
- 	dmac1: dma-controller@e6720000 {
--		compatible = "renesas,rcar-dmac";
-+		compatible = "renesas,dmac-r8a7794", "renesas,rcar-dmac";
- 		reg = <0 0xe6720000 0 0x20000>;
- 		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
- 			      0 216 IRQ_TYPE_LEVEL_HIGH
++	if (s->sampling_rate) {
++		min_sr = max_sr = s->sampling_rate;
++		shift = 0;
++	} else {
++		/* HSCIF has a variable sample rate */
++		min_sr = 8;
++		max_sr = 32;
++		shift = 1;
++	}
++
+ 	/*
+ 	 * Find the combination of sample rate and clock select with the
+ 	 * smallest deviation from the desired baud rate.
+@@ -1889,10 +1893,10 @@ static void sci_baud_calc_hscif(struct sci_port *s, unsigned int bps,
+ 	 *      (|D - 0.5| / N * (1 + F))|
+ 	 *  NOTE: Usually, treat D for 0.5, F is 0 by this calculation.
+ 	 */
+-	for (sr = 32; sr >= 8; sr--) {
++	for (sr = max_sr; sr >= min_sr; sr--) {
+ 		for (c = 0; c <= 3; c++) {
+ 			/* integerized formulas from HSCIF documentation */
+-			a = sr * (1 << (2 * c + 1));
++			a = sr * (1 << (2 * c + shift));
+ 			if (bps > UINT_MAX / a)
+ 				break;
+ 
+@@ -1960,16 +1964,8 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	max_baud = port->uartclk ? port->uartclk / 16 : 115200;
+ 
+ 	baud = uart_get_baud_rate(port, termios, old, 0, max_baud);
+-	if (likely(baud && port->uartclk)) {
+-		if (s->cfg->type = PORT_HSCIF) {
+-			sci_baud_calc_hscif(s, baud, port->uartclk, &t, &srr,
+-					    &cks);
+-		} else {
+-			t = sci_scbrr_calc(s, baud, port->uartclk);
+-			for (cks = 0; t >= 256 && cks <= 3; cks++)
+-				t >>= 2;
+-		}
+-	}
++	if (likely(baud && port->uartclk))
++		sci_scbrr_calc(s, baud, port->uartclk, &t, &srr, &cks);
+ 
+ 	sci_port_enable(s);
+ 
 -- 
-2.1.4
+1.9.1
 
