@@ -1,47 +1,69 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 12 Nov 2015 14:31:48 +0000
-Subject: [PATCH v2 03/10] i2c: rcar: remove unused IOERROR state
-Message-Id: <1447338715-9955-4-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:39:03 +0000
+Subject: [PATCH 24/25] arm64: renesas: salvator-x dts: Enable SCIF_CLK frequency and pins
+Message-Id: <1447958344-836-25-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447338715-9955-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1447338715-9955-1-git-send-email-wsa@the-dreams.de>
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Add and enable the external crystal for the SCIF_CLK and its pinctrl, to
+be used by the Baud Rate Generator for External Clock (BRG) on (H)SCIF.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+This increases the range and accuracy of supported baud rates:
+  - SCIF:
+      - Supports now 50, 230400, 460800, 500000, and 921600 bps,
+      - Perfect match for standard 50-460800, and 9216000 bps.
+  - HSCIF:
+      - Supports now 50, 75, and 110 bps,
+      - Perfect match for standard 50-460800, and 9216000 bps.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/i2c/busses/i2c-rcar.c | 6 ------
- 1 file changed, 6 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index efc8de6cc8a2f9..746406923a5825 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -94,7 +94,6 @@
- #define RCAR_IRQ_ACK_RECV	(~(MAT | MDR) & 0xFF)
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index afbd5256806e7014..0b38fecb1c5d75e9 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -127,6 +127,9 @@
+ };
  
- #define ID_LAST_MSG	(1 << 0)
--#define ID_IOERROR	(1 << 1)
- #define ID_DONE		(1 << 2)
- #define ID_ARBLOST	(1 << 3)
- #define ID_NACK		(1 << 4)
-@@ -541,11 +540,6 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 			break;
- 		}
+ &pfc {
++	pinctrl-0 = <&scif_clk_pins>;
++	pinctrl-names = "default";
++
+ 	scif1_pins: scif1 {
+ 		renesas,groups = "scif1_data_a", "scif1_ctrl";
+ 		renesas,function = "scif1";
+@@ -135,6 +138,10 @@
+ 		renesas,groups = "scif2_data_a";
+ 		renesas,function = "scif2";
+ 	};
++	scif_clk_pins: scif_clk {
++		renesas,groups = "scif_clk_a";
++		renesas,function = "scif_clk";
++	};
  
--		if (rcar_i2c_flags_has(priv, ID_IOERROR)) {
--			ret = -EIO;
--			break;
--		}
--
- 		ret = i + 1; /* The number of transfer */
- 	}
- out:
+ 	i2c2_pins: i2c2 {
+ 		renesas,groups = "i2c2_a";
+@@ -172,6 +179,11 @@
+ 	status = "okay";
+ };
+ 
++&scif_clk {
++	clock-frequency = <14745600>;
++	status = "okay";
++};
++
+ &rcar_sound {
+ 	pinctrl-0 = <&sound_pins &sound_clk_pins>;
+ 	pinctrl-names = "default";
 -- 
-2.1.4
+1.9.1
 
