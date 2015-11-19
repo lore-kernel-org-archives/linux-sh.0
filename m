@@ -1,33 +1,41 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 18 Nov 2015 05:34:08 +0000
-Subject: [PATCH v2 0/3] usb: renesas_usbhs: gadget: modifications for g_audio
-Message-Id: <1447824850-6296-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:38:52 +0000
+Subject: [PATCH 13/25] serial: sh-sci: Take into account sampling rate for max baud rate
+Message-Id: <1447958344-836-14-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-This patch is based on the latest Felipe's usb.git / testing/next branch.
-(The commit id = 81e9d14a53eb1abfbe6ac828a87a2deb4702b5f1)
+The maximum baud rate depends on the sampling rate.
+HSCIF has a variable sampling rate and sets s->sampling_rate to zero,
+hence use the minimum sampling rate of 8.
 
-Changes from v1:
- - Rebase the latest usb.git testing/next branch.
- - Separate other one patch. (In other words, that patch is for bugfix.)
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/tty/serial/sh-sci.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-Yoshihiro Shimoda (2):
-  usb: renesas_usbhs: Modify pipe configuration
-  usb: renesas_usbhs: Modify ep.caps.type_xxx and
-    usb_ep_maxpacket_limit()
-
- drivers/usb/renesas_usbhs/common.c     |  69 ++++++++++----------
- drivers/usb/renesas_usbhs/mod_gadget.c |  19 +++---
- drivers/usb/renesas_usbhs/mod_host.c   |  11 ++--
- drivers/usb/renesas_usbhs/pipe.c       | 112 ++++++++-------------------------
- drivers/usb/renesas_usbhs/pipe.h       |   1 -
- include/linux/usb/renesas_usbhs.h      |  18 +++++-
- 6 files changed, 94 insertions(+), 136 deletions(-)
-
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index dccea5df5355076a..d82735dd62ae38d8 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1961,7 +1961,10 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	 * that the previous boot loader has enabled required clocks and
+ 	 * setup the baud rate generator hardware for us already.
+ 	 */
+-	max_baud = port->uartclk ? port->uartclk / 16 : 115200;
++	if (port->uartclk)
++		max_baud = port->uartclk / max(s->sampling_rate, 8U);
++	else
++		max_baud = 115200;
+ 
+ 	baud = uart_get_baud_rate(port, termios, old, 0, max_baud);
+ 	if (likely(baud && port->uartclk))
 -- 
 1.9.1
 
