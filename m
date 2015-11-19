@@ -1,81 +1,108 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:28 +0000
-Subject: [PATCH 11/18] arm64: renesas: r8a7795: Sound SSI DMA support
-Message-Id: <10d18ab8392bb6e81224f37054693a0ea4366a0c.1448587800.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 19 Nov 2015 15:56:50 +0000
+Subject: [PATCH v3 10/11] i2c: rcar: clean up after refactoring
+Message-Id: <1447948611-2615-11-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448587800.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448587800.git.horms+renesas@verge.net.au>
+References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Update the comments to match current behaviour. Shorten some comments.
+Update copyrights.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ drivers/i2c/busses/i2c-rcar.c | 32 +++++++++-----------------------
+ 1 file changed, 9 insertions(+), 23 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 15753f4dcf4e..5d684e961675 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -599,33 +599,53 @@
- 			rcar_sound,ssi {
- 				ssi0: ssi@0 {
- 					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x01>, <&audma1 0x02>, <&audma0 0x15>, <&audma1 0x16>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi1: ssi@1 {
- 					 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x03>, <&audma1 0x04>, <&audma0 0x49>, <&audma1 0x4a>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi2: ssi@2 {
- 					interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x05>, <&audma1 0x06>, <&audma0 0x63>, <&audma1 0x64>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi3: ssi@3 {
- 					interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x07>, <&audma1 0x08>, <&audma0 0x6f>, <&audma1 0x70>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi4: ssi@4 {
- 					interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x09>, <&audma1 0x0a>, <&audma0 0x71>, <&audma1 0x72>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi5: ssi@5 {
- 					interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0b>, <&audma1 0x0c>, <&audma0 0x73>, <&audma1 0x74>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi6: ssi@6 {
- 					interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0d>, <&audma1 0x0e>, <&audma0 0x75>, <&audma1 0x76>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi7: ssi@7 {
- 					interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0f>, <&audma1 0x10>, <&audma0 0x79>, <&audma1 0x7a>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi8: ssi@8 {
- 					interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x11>, <&audma1 0x12>, <&audma0 0x7b>, <&audma1 0x7c>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi9: ssi@9 {
- 					interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x13>, <&audma1 0x14>, <&audma0 0x7d>, <&audma1 0x7e>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 			};
- 		};
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 40979130200935..e71fd4090247aa 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -1,7 +1,8 @@
+ /*
+  * Driver for the Renesas RCar I2C unit
+  *
+- * Copyright (C) 2014 Wolfram Sang <wsa@sang-engineering.com>
++ * Copyright (C) 2014-15 Wolfram Sang <wsa@sang-engineering.com>
++ * Copyright (C) 2011-2015 Renesas Electronics Corporation
+  *
+  * Copyright (C) 2012-14 Renesas Solutions Corp.
+  * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+@@ -9,9 +10,6 @@
+  * This file is based on the drivers/i2c/busses/i2c-sh7760.c
+  * (c) 2005-2008 MSC Vertriebsges.m.b.H, Manuel Lauss <mlau@msc-ge.com>
+  *
+- * This file used out-of-tree driver i2c-rcar.c
+- * Copyright (C) 2011-2012 Renesas Electronics Corporation
+- *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation; version 2 of the License.
+@@ -245,9 +243,7 @@ scgd_find:
+ 	dev_dbg(dev, "clk %d/%d(%lu), round %u, CDF:0x%x, SCGD: 0x%x\n",
+ 		scl, bus_speed, clk_get_rate(priv->clk), round, cdf, scgd);
+ 
+-	/*
+-	 * keep icccr value
+-	 */
++	/* keep icccr value */
+ 	priv->icccr = scgd << cdf_width | cdf;
+ 
+ 	return 0;
+@@ -282,11 +278,7 @@ static void rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
+ {
+ 	struct i2c_msg *msg = priv->msg;
+ 
+-	/*
+-	 * FIXME
+-	 * sometimes, unknown interrupt happened.
+-	 * Do nothing
+-	 */
++	/* FIXME: sometimes, unknown interrupt happened. Do nothing */
+ 	if (!(msr & MDE))
+ 		return;
+ 
+@@ -330,28 +322,22 @@ static void rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
+ {
+ 	struct i2c_msg *msg = priv->msg;
+ 
+-	/*
+-	 * FIXME
+-	 * sometimes, unknown interrupt happened.
+-	 * Do nothing
+-	 */
++	/* FIXME: sometimes, unknown interrupt happened. Do nothing */
+ 	if (!(msr & MDR))
+ 		return;
+ 
+ 	if (msr & MAT) {
+ 		/* Address transfer phase finished, but no data at this point. */
+ 	} else if (priv->pos < msg->len) {
+-		/*
+-		 * get received data
+-		 */
++		/* get received data */
+ 		msg->buf[priv->pos] = rcar_i2c_read(priv, ICRXTX);
+ 		priv->pos++;
+ 	}
+ 
+ 	/*
+-	 * If next received data is the _LAST_,
+-	 * go to STOP phase,
+-	 * otherwise, go to DATA phase.
++	 * If next received data is the _LAST_, go to STOP phase. Might be
++	 * overwritten by REP START when setting up a new msg. Not elegant
++	 * but the only stable sequence for REP START I have found so far.
+ 	 */
+ 	if (priv->pos + 1 >= msg->len)
+ 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
 -- 
 2.1.4
 
