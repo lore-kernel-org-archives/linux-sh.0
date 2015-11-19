@@ -1,62 +1,69 @@
-From: Lars-Peter Clausen <lars@metafoo.de>
-Date: Thu, 12 Nov 2015 10:21:31 +0000
-Subject: Re: [PATCH] media: adv7180: increase delay after reset to 5ms
-Message-Id: <5644682B.1000303@metafoo.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:38:56 +0000
+Subject: [PATCH 17/25] serial: sh-sci: Correct SCIF type on R-Car for BRG
+Message-Id: <1447958344-836-18-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447162740-28096-1-git-send-email-ulrich.hecht+renesas@gmail.com> <1743324.8Mae4aQqGO@avalon>
-In-Reply-To: <1743324.8Mae4aQqGO@avalon>
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Cc: linux-media@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com, Hans Verkuil <hverkuil@xs4all.nl>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 11/12/2015 12:10 AM, Laurent Pinchart wrote:
-> Hi Ulrich,
-> 
-> (CC'ing Lars-Peter Clausen)
-> 
-> Thank you for the patch.
-> 
-> On Tuesday 10 November 2015 14:39:00 Ulrich Hecht wrote:
->> Initialization of the ADV7180 chip fails on the Renesas R8A7790-based
->> Lager board about 50% of the time.  This patch resolves the issue by
->> increasing the minimum delay after reset from 2 ms to 5 ms, following the
->> recommendation in the ADV7180 datasheet:
->>
->> "Executing a software reset takes approximately 2 ms. However, it is
->> recommended to wait 5 ms before any further I2C writes are performed."
->>
->> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> 
-> Lars, would you like to take this in your tree with other Analog Devices 
-> patches, or should I take it ?
+The "renesas,scif" compatible value is currently used for the SCIF
+variant in all Renesas SoCs of the R-Car family.  However, the variant
+used in the R-Car family is not the common "SH-4(A)" variant, but a
+derivative with added "Baud Rate Generator for External Clock" (BRG),
+which is also present in sh7734.
 
-I don't have a tree, usually Hans applies the patches directly.
+Use the (already documented) SoC-specific SCIF compatible values for all
+supported R-Car Gen1, Gen2, and Gen3 SoCs to differentiate.  The
+"renesas,scif" compatible value can still be used as a common
+denominator for SCIF variants with the "SH-4(A)" register layout (i.e.
+ignoring the "Serial Extension Mode Register" (SCEMR) and the new
+BRG-specific registers).
 
-Patch looks good, thanks.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/tty/serial/sh-sci.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
-Acked-by: Lars-Peter Clausen <lars@metafoo.de>
-
-> 
->> ---
->>  drivers/media/i2c/adv7180.c | 2 +-
->>  1 file changed, 1 insertion(+), 1 deletion(-)
->>
->> diff --git a/drivers/media/i2c/adv7180.c b/drivers/media/i2c/adv7180.c
->> index f82c8aa..3c3c4bf 100644
->> --- a/drivers/media/i2c/adv7180.c
->> +++ b/drivers/media/i2c/adv7180.c
->> @@ -1112,7 +1112,7 @@ static int init_device(struct adv7180_state *state)
->>  	mutex_lock(&state->mutex);
->>
->>  	adv7180_write(state, ADV7180_REG_PWR_MAN, ADV7180_PWR_MAN_RES);
->> -	usleep_range(2000, 10000);
->> +	usleep_range(5000, 10000);
->>
->>  	ret = state->chip_info->init(state);
->>  	if (ret)
-> 
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index b0127f38af744fcf..726c96d5a511c222 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2605,6 +2605,30 @@ static const struct of_device_id of_sci_match[] = {
+ 	{
+ 		.compatible = "renesas,scif-r7s72100",
+ 		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH2_SCIF_FIFODATA_REGTYPE),
++	}, {
++		.compatible = "renesas,scif-r8a7778",
++		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_BRG_REGTYPE),
++	}, {
++		.compatible = "renesas,scif-r8a7779",
++		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_BRG_REGTYPE),
++	}, {
++		.compatible = "renesas,scif-r8a7790",
++		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_BRG_REGTYPE),
++	}, {
++		.compatible = "renesas,scif-r8a7791",
++		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_BRG_REGTYPE),
++	}, {
++		.compatible = "renesas,scif-r8a7792",
++		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_BRG_REGTYPE),
++	}, {
++		.compatible = "renesas,scif-r8a7793",
++		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_BRG_REGTYPE),
++	}, {
++		.compatible = "renesas,scif-r8a7794",
++		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_BRG_REGTYPE),
++	}, {
++		.compatible = "renesas,scif-r8a7795",
++		.data = SCI_OF_DATA(PORT_SCIF, SCIx_SH4_SCIF_BRG_REGTYPE),
+ 	},
+ 	/* Generic types */
+ 	{
+-- 
+1.9.1
 
