@@ -1,206 +1,82 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:05:12 +0000
-Subject: [PATCH 05/29] ARM: dts: shmobile/r8a7xxx: replace gpio-key, wakeup with wakeup-source property
-Message-Id: <0cc16889e77a95568806b1e45af104f75547eac9.1447981420.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 19 Nov 2015 15:56:51 +0000
+Subject: [PATCH v3 11/11] i2c: rcar: handle difference in setting up non-first message
+Message-Id: <1447948611-2615-12-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1447981420.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
+References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Sudeep Holla <Sudeep.Holla@arm.com>
-
-Though the keyboard driver for GPIO buttons(gpio-keys) will continue to
-check for/support the legacy "gpio-key,wakeup" boolean property to
-enable gpio buttons as wakeup source, "wakeup-source" is the new
-standard binding.
-
-This patch replaces the legacy "gpio-key,wakeup" with the unified
-"wakeup-source" property in order to avoid any futher copy-paste
-duplication.
-
-Signed-off-by: Sudeep Holla <sudeep.holla@arm.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
+Signed-off-by: Hiromitsu Yamasaki <hiromitsu.yamasaki.ym@renesas.com>
+Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
 ---
- arch/arm/boot/dts/r8a73a4-ape6evm.dts         |  2 +-
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts |  2 +-
- arch/arm/boot/dts/r8a7790-lager.dts           |  8 ++++----
- arch/arm/boot/dts/r8a7791-koelsch.dts         | 22 +++++++++++-----------
- arch/arm/boot/dts/sh73a0-kzm9g.dts            |  2 +-
- 5 files changed, 18 insertions(+), 18 deletions(-)
+ drivers/i2c/busses/i2c-rcar.c | 21 ++++++++++++++++-----
+ 1 file changed, 16 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-index a4c425923c05..9b7eabd3eba3 100644
---- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-@@ -110,7 +110,7 @@
- 			gpios = <&pfc 324 GPIO_ACTIVE_LOW>;
- 			linux,code = <KEY_0>;
- 			label = "S16";
--			gpio-key,wakeup;
-+			wakeup-source;
- 		};
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index e71fd4090247aa..3ed1f0aa5eeb16 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -92,6 +92,7 @@
+ #define RCAR_IRQ_ACK_RECV	(~(MAT | MDR) & 0xFF)
  
- 		menu-key {
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-index 105d9c95de4a..78a21f2828df 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-@@ -85,7 +85,7 @@
- 			gpios = <&pfc 99 GPIO_ACTIVE_LOW>;
- 			linux,code = <KEY_POWER>;
- 			label = "SW3";
--			gpio-key,wakeup;
-+			wakeup-source;
- 		};
+ #define ID_LAST_MSG	(1 << 0)
++#define ID_FIRST_MSG	(1 << 1)
+ #define ID_DONE		(1 << 2)
+ #define ID_ARBLOST	(1 << 3)
+ #define ID_NACK		(1 << 4)
+@@ -254,13 +255,22 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
+ 	int read = !!rcar_i2c_is_recv(priv);
  
- 		back-key {
-diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
-index c553abd711ee..e2174d816e78 100644
---- a/arch/arm/boot/dts/r8a7790-lager.dts
-+++ b/arch/arm/boot/dts/r8a7790-lager.dts
-@@ -77,28 +77,28 @@
- 		button@1 {
- 			linux,code = <KEY_1>;
- 			label = "SW2-1";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
- 		};
- 		button@2 {
- 			linux,code = <KEY_2>;
- 			label = "SW2-2";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 			gpios = <&gpio1 24 GPIO_ACTIVE_LOW>;
- 		};
- 		button@3 {
- 			linux,code = <KEY_3>;
- 			label = "SW2-3";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 			gpios = <&gpio1 26 GPIO_ACTIVE_LOW>;
- 		};
- 		button@4 {
- 			linux,code = <KEY_4>;
- 			label = "SW2-4";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 			gpios = <&gpio1 28 GPIO_ACTIVE_LOW>;
- 		};
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index fc44ea361a4b..98da99d1b7dc 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -79,77 +79,77 @@
- 			gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
- 			linux,code = <KEY_1>;
- 			label = "SW2-1";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 		};
- 		key-2 {
- 			gpios = <&gpio5 1 GPIO_ACTIVE_LOW>;
- 			linux,code = <KEY_2>;
- 			label = "SW2-2";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 		};
- 		key-3 {
- 			gpios = <&gpio5 2 GPIO_ACTIVE_LOW>;
- 			linux,code = <KEY_3>;
- 			label = "SW2-3";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 		};
- 		key-4 {
- 			gpios = <&gpio5 3 GPIO_ACTIVE_LOW>;
- 			linux,code = <KEY_4>;
- 			label = "SW2-4";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 		};
- 		key-a {
- 			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
- 			linux,code = <KEY_A>;
- 			label = "SW30";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 		};
- 		key-b {
- 			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
- 			linux,code = <KEY_B>;
- 			label = "SW31";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 		};
- 		key-c {
- 			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
- 			linux,code = <KEY_C>;
- 			label = "SW32";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 		};
- 		key-d {
- 			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
- 			linux,code = <KEY_D>;
- 			label = "SW33";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 		};
- 		key-e {
- 			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
- 			linux,code = <KEY_E>;
- 			label = "SW34";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 		};
- 		key-f {
- 			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
- 			linux,code = <KEY_F>;
- 			label = "SW35";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 		};
- 		key-g {
- 			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
- 			linux,code = <KEY_G>;
- 			label = "SW36";
--			gpio-key,wakeup;
-+			wakeup-source;
- 			debounce-interval = <20>;
- 		};
- 	};
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index 7fc5602810ad..aa8bae3b8fcf 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -147,7 +147,7 @@
- 			gpios = <&pcf8575 14 GPIO_ACTIVE_LOW>;
- 			linux,code = <KEY_HOME>;
- 			label = "SW1";
--			gpio-key,wakeup;
-+			wakeup-source;
- 		};
- 	};
+ 	priv->pos = 0;
+-	priv->flags = 0;
+ 	if (priv->msgs_left = 1)
+ 		rcar_i2c_flags_set(priv, ID_LAST_MSG);
  
+ 	rcar_i2c_write(priv, ICMAR, (priv->msg->addr << 1) | read);
+-	rcar_i2c_write(priv, ICMSR, 0);
+-	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
++	/*
++	 * We don't have a testcase but the HW engineers say that the write order
++	 * of ICMSR and ICMCR depends on whether we issue START or REP_START. Since
++	 * it didn't cause a drawback for me, let's rather be safe than sorry.
++	 */
++	if (rcar_i2c_flags_has(priv, ID_FIRST_MSG)) {
++		rcar_i2c_write(priv, ICMSR, 0);
++		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
++	} else {
++		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
++		rcar_i2c_write(priv, ICMSR, 0);
++	}
+ 	rcar_i2c_write(priv, ICMIER, read ? RCAR_IRQ_RECV : RCAR_IRQ_SEND);
+ }
+ 
+@@ -268,6 +278,7 @@ static void rcar_i2c_next_msg(struct rcar_i2c_priv *priv)
+ {
+ 	priv->msg++;
+ 	priv->msgs_left--;
++	priv->flags = 0;
+ 	rcar_i2c_prepare_msg(priv);
+ }
+ 
+@@ -482,10 +493,10 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
+ 		}
+ 	}
+ 
+-	/* init data */
++	/* init first message */
+ 	priv->msg = msgs;
+ 	priv->msgs_left = num;
+-
++	priv->flags = ID_FIRST_MSG;
+ 	rcar_i2c_prepare_msg(priv);
+ 
+ 	time_left = wait_event_timeout(priv->wait,
 -- 
 2.1.4
 
