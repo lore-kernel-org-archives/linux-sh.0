@@ -1,59 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:51 +0000
-Subject: [PATCH 08/15] ARM: shmobile: bockw: Move SPI FLASH partition to subnode
-Message-Id: <a7d57eec21d06cae06f03bd5ae47080a3dc3e898.1448586938.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:38:42 +0000
+Subject: [PATCH 03/25] serial: sh-sci: Drop useless check for zero sampling_rate
+Message-Id: <1447958344-836-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448586938.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448586938.git.horms+renesas@verge.net.au>
+References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+sci_port.sampling_rate is always non-zero, except for HSCIF, which uses
+sci_baud_calc_hscif() instead of sci_scbrr_calc().
 
-As of commits 5cfdedb7b9a0fe38 ("mtd: ofpart: move ofpart partitions to a
-dedicated dt node") and fe2585e9c29a650a ("doc: dt: mtd: support partitions
-in a special 'partitions' subnode"), having partitions as direct subnodes
-of an mtd device is discouraged. Hence move the SPI FLASH partition to a
-"partitions" subnode.
-
-Based on similar work for the koelsch board by Geert Uytterhoeven.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7778-bockw.dts | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ drivers/tty/serial/sh-sci.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 8a5407678717..3c03e6b8261e 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -188,16 +188,19 @@
- 	status = "okay";
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index bee5b7025adf45a2..ae136a1632e6298d 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1863,13 +1863,7 @@ static void sci_shutdown(struct uart_port *port)
+ static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
+ 				   unsigned long freq)
+ {
+-	if (s->sampling_rate)
+-		return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
+-
+-	/* Warn, but use a safe default */
+-	WARN_ON(1);
+-
+-	return ((freq + 16 * bps) / (32 * bps) - 1);
++	return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
+ }
  
- 	flash: flash@0 {
--		#address-cells = <1>;
--		#size-cells = <1>;
- 		compatible = "spansion,s25fl008k", "jedec,spi-nor";
- 		reg = <0>;
- 		spi-max-frequency = <104000000>;
- 		m25p,fast-read;
- 
--		partition@0 {
--			label = "data(spi)";
--			reg = <0x00000000 0x00100000>;
-+		partitions {
-+			#address-cells = <1>;
-+			#size-cells = <1>;
-+
-+			partition@0 {
-+				label = "data(spi)";
-+				reg = <0x00000000 0x00100000>;
-+			};
- 		};
- 	};
- };
+ /* calculate frame length from SMR */
 -- 
-2.1.4
+1.9.1
 
