@@ -1,74 +1,184 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:32 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM64 Based SoC DT Updates for v4.5
-Message-Id: <cover.1448587800.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 19 Nov 2015 18:35:58 +0000
+Subject: [PATCH v2 01/16] serial: sh-sci: Drop the interface clock
+Message-Id: <1447958173-543-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448588763.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448588763.git.horms+renesas@verge.net.au>
+References: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447958173-543-1-git-send-email-geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Yoshinori Sato <ysato-Rn4VEauK+AKRv+LV9MX5uooqe+aC9MnS@public.gmane.org>, Laurent Pinchart <laurent.pinchart+renesas-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>
+Cc: linux-serial-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Geert Uytterhoeven <geert+renesas-gXvu3+zWzMSzQB+pC5nmwQ@public.gmane.org>
 
-Hi Olof, Hi Kevin, Hi Arnd,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Please consider these second round of Renesas ARM64 based SoC DT updates
-for v4.5.
+As no platform defines an interface clock the SCI driver always falls
+back to a clock named "peripheral_clk".
+  - On SH platforms that clock is the base clock for the SCI functional
+    clock and has the same frequency,
+  - On ARM platforms that clock doesn't exist, and clk_get() will return
+    the default clock for the device.
+We can thus make the functional clock mandatory and drop the interface
+clock.
 
-This pull request enables GPIO, EthernetAVB, I2C and Sound on
-r8a7795/salvator-x.
+EPROBE_DEFER is handled for clocks that may be referenced from DT (i.e.
+"fck" and deprecated "sci_ick").
 
-This pull request is based on the previous round of
-such requests, tagged as renesas-arm64-dt-for-v4.5,
-which I have already sent a pull-request for.
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+[geert: Handle EPROBE_DEFER, reformat description, break long comment line]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - Add Acked-by,
+  - Amendment by geert.
+---
+ .../bindings/serial/renesas,sci-serial.txt         |  4 +-
+ drivers/tty/serial/sh-sci.c                        | 64 ++++++++++++++--------
+ 2 files changed, 43 insertions(+), 25 deletions(-)
 
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index 73f825e5e6448815..2c9e6b8477e92792 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -42,7 +42,7 @@ Required properties:
+ 
+   - clocks: Must contain a phandle and clock-specifier pair for each entry
+     in clock-names.
+-  - clock-names: Must contain "sci_ick" for the SCIx UART interface clock.
++  - clock-names: Must contain "fck" for the SCIx UART functional clock.
+ 
+ Note: Each enabled SCIx UART should have an alias correctly numbered in the
+ "aliases" node.
+@@ -63,7 +63,7 @@ Example:
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&mstp2_clks R8A7790_CLK_SCIFA0>;
+-		clock-names = "sci_ick";
++		clock-names = "fck";
+ 		dmas = <&dmac0 0x21>, <&dmac0 0x22>;
+ 		dma-names = "tx", "rx";
+ 	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 51c7507b0444957b..3c908804cab1c88c 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -92,8 +92,6 @@ struct sci_port {
+ 	struct timer_list	break_timer;
+ 	int			break_flag;
+ 
+-	/* Interface clock */
+-	struct clk		*iclk;
+ 	/* Function clock */
+ 	struct clk		*fclk;
+ 
+@@ -457,9 +455,8 @@ static void sci_port_enable(struct sci_port *sci_port)
+ 
+ 	pm_runtime_get_sync(sci_port->port.dev);
+ 
+-	clk_prepare_enable(sci_port->iclk);
+-	sci_port->port.uartclk = clk_get_rate(sci_port->iclk);
+ 	clk_prepare_enable(sci_port->fclk);
++	sci_port->port.uartclk = clk_get_rate(sci_port->fclk);
+ }
+ 
+ static void sci_port_disable(struct sci_port *sci_port)
+@@ -476,7 +473,6 @@ static void sci_port_disable(struct sci_port *sci_port)
+ 	sci_port->break_flag = 0;
+ 
+ 	clk_disable_unprepare(sci_port->fclk);
+-	clk_disable_unprepare(sci_port->iclk);
+ 
+ 	pm_runtime_put_sync(sci_port->port.dev);
+ }
+@@ -1622,7 +1618,7 @@ static int sci_notifier(struct notifier_block *self,
+ 		struct uart_port *port = &sci_port->port;
+ 
+ 		spin_lock_irqsave(&port->lock, flags);
+-		port->uartclk = clk_get_rate(sci_port->iclk);
++		port->uartclk = clk_get_rate(sci_port->fclk);
+ 		spin_unlock_irqrestore(&port->lock, flags);
+ 	}
+ 
+@@ -2241,6 +2237,42 @@ static struct uart_ops sci_uart_ops = {
+ #endif
+ };
+ 
++static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
++{
++	/* Get the SCI functional clock. It's called "fck" on ARM. */
++	sci_port->fclk = clk_get(dev, "fck");
++	if (PTR_ERR(sci_port->fclk) = -EPROBE_DEFER)
++		return -EPROBE_DEFER;
++	if (!IS_ERR(sci_port->fclk))
++		return 0;
++
++	/*
++	 * But it used to be called "sci_ick", and we need to maintain DT
++	 * backward compatibility.
++	 */
++	sci_port->fclk = clk_get(dev, "sci_ick");
++	if (PTR_ERR(sci_port->fclk) = -EPROBE_DEFER)
++		return -EPROBE_DEFER;
++	if (!IS_ERR(sci_port->fclk))
++		return 0;
++
++	/* SH has historically named the clock "sci_fck". */
++	sci_port->fclk = clk_get(dev, "sci_fck");
++	if (!IS_ERR(sci_port->fclk))
++		return 0;
++
++	/*
++	 * Not all SH platforms declare a clock lookup entry for SCI devices,
++	 * in which case we need to get the global "peripheral_clk" clock.
++	 */
++	sci_port->fclk = clk_get(dev, "peripheral_clk");
++	if (!IS_ERR(sci_port->fclk))
++		return 0;
++
++	dev_err(dev, "failed to get functional clock\n");
++	return PTR_ERR(sci_port->fclk);
++}
++
+ static int sci_init_single(struct platform_device *dev,
+ 			   struct sci_port *sci_port, unsigned int index,
+ 			   struct plat_sci_port *p, bool early)
+@@ -2333,22 +2365,9 @@ static int sci_init_single(struct platform_device *dev,
+ 		sci_port->sampling_rate = p->sampling_rate;
+ 
+ 	if (!early) {
+-		sci_port->iclk = clk_get(&dev->dev, "sci_ick");
+-		if (IS_ERR(sci_port->iclk)) {
+-			sci_port->iclk = clk_get(&dev->dev, "peripheral_clk");
+-			if (IS_ERR(sci_port->iclk)) {
+-				dev_err(&dev->dev, "can't get iclk\n");
+-				return PTR_ERR(sci_port->iclk);
+-			}
+-		}
+-
+-		/*
+-		 * The function clock is optional, ignore it if we can't
+-		 * find it.
+-		 */
+-		sci_port->fclk = clk_get(&dev->dev, "sci_fck");
+-		if (IS_ERR(sci_port->fclk))
+-			sci_port->fclk = NULL;
++		ret = sci_init_clocks(sci_port, &dev->dev);
++		if (ret < 0)
++			return ret;
+ 
+ 		port->dev = &dev->dev;
+ 
+@@ -2405,7 +2424,6 @@ static int sci_init_single(struct platform_device *dev,
+ 
+ static void sci_cleanup_single(struct sci_port *port)
+ {
+-	clk_put(port->iclk);
+ 	clk_put(port->fclk);
+ 
+ 	pm_runtime_disable(port->port.dev);
+-- 
+1.9.1
 
-The following changes since commit b138e11931f2fe25cf188ed62b54bc36f59a25ce:
-
-  MAINTAINERS: Add entry for Renesas arm64 architecture (2015-11-17 02:55:03 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-arm64-dt2-for-v4.5
-
-for you to fetch changes up to 672b79312c04016481a11d4b996b4512207ffbd3:
-
-  arm64: renesas: salvator-x: Sound DVC support (2015-11-26 11:31:43 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM64 Based SoC DT Updates for v4.5
-
-* Enable GPIO, EthernetAVB, I2C and Sound on r8a7795/salvator-x
-
-----------------------------------------------------------------
-Geert Uytterhoeven (2):
-      arm64: renesas: salvator-x: Setup ethernet0 alias for U-Boot
-      arm64: renesas: r8a7795 dtsi: Add all HSCIF nodes
-
-Kazuya Mizuguchi (2):
-      arm64: dts: r8a7795: add EthernetAVB device node
-      arm64: dts: r8a7795: enable EthernetAVB on Salvator-X
-
-Kuninori Morimoto (12):
-      arm64: renesas: r8a7795: add I2C support
-      arm64: renesas: salvator-x: enable I2C
-      arm64: renesas: r8a7795: add AUDIO_DMAC support
-      arm64: renesas: r8a7795: Sound SSI PIO support
-      arm64: renesas: r8a7795: Sound SSI DMA support
-      arm64: renesas: r8a7795: Sound SRC support
-      arm64: renesas: r8a7795: Sound DVC support
-      arm64: renesas: salvator-x: Sound SSI PIO support
-      arm64: renesas: salvator-x: Sound SSI DMA support
-      arm64: renesas: salvator-x: Sound SSI DMA support via BUSIF
-      arm64: renesas: salvator-x: Sound SRC support
-      arm64: renesas: salvator-x: Sound DVC support
-
-Simon Horman (1):
-      arm64: dts: r8a7795: enable nfs root on Salvator-X board
-
-Takeshi Kihara (1):
-      arm64: dts: r8a7795: add GPIO nodes
-
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 140 +++++-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 554 +++++++++++++++++++++
- 2 files changed, 693 insertions(+), 1 deletion(-)
