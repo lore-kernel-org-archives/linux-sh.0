@@ -1,46 +1,67 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 30 Nov 2015 13:49:37 +0000
-Subject: [PATCH v2 0/2] pinctrl: sh-pfc: r8a7795: Add MSIOF support
-Message-Id: <1448891379-2457-1-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:26 +0000
+Subject: [PATCH 19/29] ARM: shmobile: r8a7794: Add DU0 clock
+Message-Id: <9859cd3b1582cbe39f969a500d8b7fc87c4b87b8.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-	Hi Laurent, Linus,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-This patch series adds MSIOF pinctrl support for the Renesas R-Car H3
-(r8a7795) SoC.
+The DU0 clock is an MSTP clock, child of the CPG ZX clock.
 
-Please note that there's a timing issue when using the current
-spi-sh-msiof driver on r8a7795.  However, pinctrl functionality has been
-verified using MSIOF2.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7794.dtsi            | 7 ++++---
+ include/dt-bindings/clock/r8a7794-clock.h | 1 +
+ 2 files changed, 5 insertions(+), 3 deletions(-)
 
-Changes since v1:
-  - Use PINMUX_SINGLE() instead of raw PINMUX_DATA(),
-  - Rebased.
-
-Thanks!
-
-Geert Uytterhoeven (2):
-  pinctrl: sh-pfc: r8a7795: Add pinmux data for single-function pins
-  pinctrl: sh-pfc: r8a7795: Add MSIOF pins, groups, and functions
-
- drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 877 +++++++++++++++++++++++++++++++++++
- 1 file changed, 877 insertions(+)
-
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 018ff56470b6..b70e4061d8b1 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -1017,19 +1017,20 @@
+ 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
+ 			clocks = <&mp_clk>, <&mp_clk>,
+ 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
+-				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
++				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
++				 <&zx_clk>;
+ 			#clock-cells = <1>;
+ 			clock-indices = <
+ 				R8A7794_CLK_EHCI R8A7794_CLK_HSUSB
+ 				R8A7794_CLK_HSCIF2 R8A7794_CLK_SCIF5
+ 				R8A7794_CLK_SCIF4 R8A7794_CLK_HSCIF1 R8A7794_CLK_HSCIF0
+ 				R8A7794_CLK_SCIF3 R8A7794_CLK_SCIF2 R8A7794_CLK_SCIF1
+-				R8A7794_CLK_SCIF0
++				R8A7794_CLK_SCIF0 R8A7794_CLK_DU0
+ 			>;
+ 			clock-output-names  				"ehci", "hsusb",
+ 				"hscif2", "scif5", "scif4", "hscif1", "hscif0",
+-				"scif3", "scif2", "scif1", "scif0";
++				"scif3", "scif2", "scif1", "scif0", "du0";
+ 		};
+ 		mstp8_clks: mstp8_clks@e6150990 {
+ 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
+diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
+index 09da38a58776..a7a7e0370968 100644
+--- a/include/dt-bindings/clock/r8a7794-clock.h
++++ b/include/dt-bindings/clock/r8a7794-clock.h
+@@ -79,6 +79,7 @@
+ #define R8A7794_CLK_SCIF2		19
+ #define R8A7794_CLK_SCIF1		20
+ #define R8A7794_CLK_SCIF0		21
++#define R8A7794_CLK_DU0			24
+ 
+ /* MSTP8 */
+ #define R8A7794_CLK_VIN1		10
 -- 
-1.9.1
+2.1.4
 
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
