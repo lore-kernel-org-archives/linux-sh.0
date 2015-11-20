@@ -1,73 +1,105 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 06 Nov 2015 06:40:15 +0000
-Subject: [PATCH 10/12 v6] arm64: renesas: salvator-x: Sound DVC support
-Message-Id: <87ziyriqjz.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:28 +0000
+Subject: [PATCH 21/29] ARM: shmobile: r8a7794: alt: Enable VGA port
+Message-Id: <876e7fb9f418fd86719af345febf8656c47e833c.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+From: Magnus Damm <damm+renesas@opensource.se>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Enable the DU device and the VGA port available on the r8a7794
+ALT board. The VGA portion of the ALT board is somewhat similar
+to the Lager board but in case of ALT the DU1 pins are used
+and the X2 clock has a reduced frequency.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This patch does not include any pinctrl (PFC) settings due to lack
+of PFC DT integration on r8a7794. At this point the default state
+of the boot loader is enough to keep the VGA port working without
+changing any pinctrl settings.
+
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v5 -> v6
+ arch/arm/boot/dts/r8a7794-alt.dts | 61 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
 
- - no change
-
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 27 ++++++++++++++++++++--
- 1 file changed, 25 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index a238fa2..bb255f53 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -8,6 +8,29 @@
-  * kind, whether express or implied.
-  */
- 
-+/*
-+ * SSI-AK4613
-+ *
-+ * This command is required when Playback/Capture
-+ *
-+ *	amixer set "DVC Out" 100%
-+ *	amixer set "DVC In" 100%
-+ *
-+ * You can use Mute
-+ *
-+ *	amixer set "DVC Out Mute" on
-+ *	amixer set "DVC In Mute" on
-+ *
-+ * You can use Volume Ramp
-+ *
-+ *	amixer set "DVC Out Ramp Up Rate"   "0.125 dB/64 steps"
-+ *	amixer set "DVC Out Ramp Down Rate" "0.125 dB/512 steps"
-+ *	amixer set "DVC Out Ramp" on
-+ *	aplay xxx.wav &
-+ *	amixer set "DVC Out"  80%  // Volume Down
-+ *	amixer set "DVC Out" 100%  // Volume Up
-+ */
-+
- /dts-v1/;
- #include "r8a7795.dtsi"
- 
-@@ -136,8 +159,8 @@
- 
- 	rcar_sound,dai {
- 		dai0 {
--			playback = <&ssi0 &src0>;
--			capture  = <&ssi1 &src1>;
-+			playback = <&ssi0 &src0 &dvc0>;
-+			capture  = <&ssi1 &src1 &dvc1>;
- 		};
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index 928cfa641475..a548007b9b10 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -33,6 +33,67 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
  	};
++
++	vga-encoder {
++		compatible = "adi,adv7123";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				adv7123_in: endpoint {
++					remote-endpoint = <&du_out_rgb1>;
++				};
++			};
++			port@1 {
++				reg = <1>;
++				adv7123_out: endpoint {
++					remote-endpoint = <&vga_in>;
++				};
++			};
++		};
++	};
++
++	vga {
++		compatible = "vga-connector";
++
++		port {
++			vga_in: endpoint {
++				remote-endpoint = <&adv7123_out>;
++			};
++		};
++	};
++
++	x2_clk: x2-clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <74250000>;
++	};
++
++	x13_clk: x13-clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <148500000>;
++	};
++};
++
++&du {
++	status = "okay";
++
++	clocks = <&mstp7_clks R8A7794_CLK_DU0>,
++		 <&mstp7_clks R8A7794_CLK_DU0>,
++		 <&x13_clk>, <&x2_clk>;
++	clock-names = "du.0", "du.1", "dclkin.0", "dclkin.1";
++
++	ports {
++		port@1 {
++			endpoint {
++				remote-endpoint = <&adv7123_in>;
++			};
++		};
++	};
  };
+ 
+ &extal_clk {
 -- 
-1.9.1
+2.1.4
 
