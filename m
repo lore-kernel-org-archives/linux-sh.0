@@ -1,45 +1,94 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Nov 2015 12:36:52 +0000
-Subject: [PATCH 1/6] ARM: shmobile: r7s72100 dtsi: Use "arm,pl390" for GIC
-Message-Id: <1448023017-21816-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:16 +0000
+Subject: [PATCH 09/29] ARM: shmobile: r8a7793: Add IPMMU nodes
+Message-Id: <098cb3a601e6a6afcf1d0c15bc939a57732242a4.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448023017-21816-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448023017-21816-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Replace the "arm,cortex-a9-gic" compatible value for the GIC by
-"arm,pl390", as the documentation states it is a PL390.
-This has been confirmed (thanks Chris, Wolfram!) by reading the
-GICD_IIDR register, which reports 0x0000043b (PL390 = 0x00, ARM 0x43b).
+From: Magnus Damm <damm+renesas@opensource.se>
 
-This has no effect on runtime behavior, as currently the GIC driver
-treats both compatible values the same.
+Add IPMMU nodes for the r8a7793 SoC. The IPMMU configuration for r8a7793
+is identical to r8a7791 and includes SY0, SY1, DS, MP, MX, RT and GP.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-You can read the GICD_IIDR register from U-Boot using
+ arch/arm/boot/dts/r8a7793.dtsi | 59 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 59 insertions(+)
 
-    md 0xe8201008 1
----
- arch/arm/boot/dts/r7s72100.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/r7s72100.dtsi b/arch/arm/boot/dts/r7s72100.dtsi
-index 5f22d6dcdd141f9c..0c3b9e341ce7fd8e 100644
---- a/arch/arm/boot/dts/r7s72100.dtsi
-+++ b/arch/arm/boot/dts/r7s72100.dtsi
-@@ -329,7 +329,7 @@
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index c4654047e684..fcafa87616fa 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -371,4 +371,63 @@
+ 		};
  	};
  
- 	gic: interrupt-controller@e8201000 {
--		compatible = "arm,cortex-a9-gic";
-+		compatible = "arm,pl390";
- 		#interrupt-cells = <3>;
- 		#address-cells = <0>;
- 		interrupt-controller;
++	ipmmu_sy0: mmu@e6280000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6280000 0 0x1000>;
++		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_sy1: mmu@e6290000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6290000 0 0x1000>;
++		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_ds: mmu@e6740000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe6740000 0 0x1000>;
++		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_mp: mmu@ec680000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xec680000 0 0x1000>;
++		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_mx: mmu@fe951000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xfe951000 0 0x1000>;
++		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_rt: mmu@ffc80000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xffc80000 0 0x1000>;
++		interrupts = <0 307 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
++
++	ipmmu_gp: mmu@e62a0000 {
++		compatible = "renesas,ipmmu-vmsa";
++		reg = <0 0xe62a0000 0 0x1000>;
++		interrupts = <0 260 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 261 IRQ_TYPE_LEVEL_HIGH>;
++		#iommu-cells = <1>;
++		status = "disabled";
++	};
+ };
 -- 
-1.9.1
+2.1.4
 
