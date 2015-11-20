@@ -1,53 +1,368 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 19 Nov 2015 18:36:09 +0000
-Subject: [PATCH v2 12/16] ARM: shmobile: r8a7793 dtsi: Rename the serial port clock to fck
-Message-Id: <1447958173-543-13-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:18 +0000
+Subject: [PATCH 11/29] ARM: shmobile: henninger: remove board DT
+Message-Id: <2b06f1087062c516ac2851ce5038fdb035b19d4d.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958173-543-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-The clock is really the device functional clock, not the interface
-clock. Rename it.
+The Henninger low cost board was never sold and so  had  no  users outside
+Renesas (and Cogent Embedded). Instead Renesas  has made the Porter  board
+which has mostly similar hardware. Now that the Porter board support is on
+par with Henninger, we can remove  the Henninger's device tree file.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - Add Acked-by.
----
- arch/arm/boot/dts/r8a7793.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/Makefile              |   1 -
+ arch/arm/boot/dts/r8a7791-henninger.dts | 320 --------------------------------
+ 2 files changed, 321 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/r8a7791-henninger.dts
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index aa9b64c14a09e7f7..f1018b55e4cb2491 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -199,7 +199,7 @@
- 		reg = <0 0xe6e60000 0 64>;
- 		interrupts = <0 152 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF0>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
-@@ -209,7 +209,7 @@
- 		reg = <0 0xe6e68000 0 64>;
- 		interrupts = <0 153 IRQ_TYPE_LEVEL_HIGH>;
- 		clocks = <&mstp7_clks R8A7793_CLK_SCIF1>;
--		clock-names = "sci_ick";
-+		clock-names = "fck";
- 		power-domains = <&cpg_clocks>;
- 		status = "disabled";
- 	};
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index d285d9816d9d..d3de3a447d72 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -530,7 +530,6 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
+ 	r8a7778-bockw.dtb \
+ 	r8a7779-marzen.dtb \
+ 	r8a7790-lager.dtb \
+-	r8a7791-henninger.dtb \
+ 	r8a7791-koelsch.dtb \
+ 	r8a7791-porter.dtb \
+ 	r8a7793-gose.dtb \
+diff --git a/arch/arm/boot/dts/r8a7791-henninger.dts b/arch/arm/boot/dts/r8a7791-henninger.dts
+deleted file mode 100644
+index 655d1804e5e9..000000000000
+--- a/arch/arm/boot/dts/r8a7791-henninger.dts
++++ /dev/null
+@@ -1,320 +0,0 @@
+-/*
+- * Device Tree Source for the Henninger board
+- *
+- * Copyright (C) 2014 Renesas Solutions Corp.
+- * Copyright (C) 2014 Cogent Embedded, Inc.
+- *
+- * This file is licensed under the terms of the GNU General Public License
+- * version 2.  This program is licensed "as is" without any warranty of any
+- * kind, whether express or implied.
+- */
+-
+-/dts-v1/;
+-#include "r8a7791.dtsi"
+-#include <dt-bindings/gpio/gpio.h>
+-
+-/ {
+-	model = "Henninger";
+-	compatible = "renesas,henninger", "renesas,r8a7791";
+-
+-	aliases {
+-		serial0 = &scif0;
+-	};
+-
+-	chosen {
+-		bootargs = "console=ttySC0,38400 ignore_loglevel rw root=/dev/nfs ip=dhcp";
+-		stdout-path = &scif0;
+-	};
+-
+-	memory@40000000 {
+-		device_type = "memory";
+-		reg = <0 0x40000000 0 0x40000000>;
+-	};
+-
+-	memory@200000000 {
+-		device_type = "memory";
+-		reg = <2 0x00000000 0 0x40000000>;
+-	};
+-
+-	vcc_sdhi0: regulator@0 {
+-		compatible = "regulator-fixed";
+-
+-		regulator-name = "SDHI0 Vcc";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		regulator-always-on;
+-	};
+-
+-	vccq_sdhi0: regulator@1 {
+-		compatible = "regulator-gpio";
+-
+-		regulator-name = "SDHI0 VccQ";
+-		regulator-min-microvolt = <1800000>;
+-		regulator-max-microvolt = <3300000>;
+-
+-		gpios = <&gpio2 12 GPIO_ACTIVE_HIGH>;
+-		gpios-states = <1>;
+-		states = <3300000 1
+-			  1800000 0>;
+-	};
+-
+-	vcc_sdhi2: regulator@2 {
+-		compatible = "regulator-fixed";
+-
+-		regulator-name = "SDHI2 Vcc";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		regulator-always-on;
+-	};
+-
+-	vccq_sdhi2: regulator@3 {
+-		compatible = "regulator-gpio";
+-
+-		regulator-name = "SDHI2 VccQ";
+-		regulator-min-microvolt = <1800000>;
+-		regulator-max-microvolt = <3300000>;
+-
+-		gpios = <&gpio2 26 GPIO_ACTIVE_HIGH>;
+-		gpios-states = <1>;
+-		states = <3300000 1
+-			  1800000 0>;
+-	};
+-};
+-
+-&extal_clk {
+-	clock-frequency = <20000000>;
+-};
+-
+-&pfc {
+-	scif0_pins: serial0 {
+-		renesas,groups = "scif0_data_d";
+-		renesas,function = "scif0";
+-	};
+-
+-	ether_pins: ether {
+-		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
+-		renesas,function = "eth";
+-	};
+-
+-	phy1_pins: phy1 {
+-		renesas,groups = "intc_irq0";
+-		renesas,function = "intc";
+-	};
+-
+-	sdhi0_pins: sd0 {
+-		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
+-		renesas,function = "sdhi0";
+-	};
+-
+-	sdhi2_pins: sd2 {
+-		renesas,groups = "sdhi2_data4", "sdhi2_ctrl";
+-		renesas,function = "sdhi2";
+-	};
+-
+-	i2c2_pins: i2c2 {
+-		renesas,groups = "i2c2";
+-		renesas,function = "i2c2";
+-	};
+-
+-	qspi_pins: spi0 {
+-		renesas,groups = "qspi_ctrl", "qspi_data4";
+-		renesas,function = "qspi";
+-	};
+-
+-	msiof0_pins: spi1 {
+-		renesas,groups = "msiof0_clk", "msiof0_sync", "msiof0_rx",
+-				 "msiof0_tx";
+-		renesas,function = "msiof0";
+-	};
+-
+-	usb0_pins: usb0 {
+-		renesas,groups = "usb0";
+-		renesas,function = "usb0";
+-	};
+-
+-	usb1_pins: usb1 {
+-		renesas,groups = "usb1";
+-		renesas,function = "usb1";
+-	};
+-
+-	vin0_pins: vin0 {
+-		renesas,groups = "vin0_data8", "vin0_clk";
+-		renesas,function = "vin0";
+-	};
+-
+-	can0_pins: can0 {
+-		renesas,groups = "can0_data";
+-		renesas,function = "can0";
+-	};
+-};
+-
+-&scif0 {
+-	pinctrl-0 = <&scif0_pins>;
+-	pinctrl-names = "default";
+-
+-	status = "okay";
+-};
+-
+-&ether {
+-	pinctrl-0 = <&ether_pins &phy1_pins>;
+-	pinctrl-names = "default";
+-
+-	phy-handle = <&phy1>;
+-	renesas,ether-link-active-low;
+-	status = "okay";
+-
+-	phy1: ethernet-phy@1 {
+-		reg = <1>;
+-		interrupt-parent = <&irqc0>;
+-		interrupts = <0 IRQ_TYPE_LEVEL_LOW>;
+-		micrel,led-mode = <1>;
+-	};
+-};
+-
+-&sata0 {
+-	status = "okay";
+-};
+-
+-&sdhi0 {
+-	pinctrl-0 = <&sdhi0_pins>;
+-	pinctrl-names = "default";
+-
+-	vmmc-supply = <&vcc_sdhi0>;
+-	vqmmc-supply = <&vccq_sdhi0>;
+-	cd-gpios = <&gpio6 6 GPIO_ACTIVE_LOW>;
+-	wp-gpios = <&gpio6 7 GPIO_ACTIVE_HIGH>;
+-	status = "okay";
+-};
+-
+-&sdhi2 {
+-	pinctrl-0 = <&sdhi2_pins>;
+-	pinctrl-names = "default";
+-
+-	vmmc-supply = <&vcc_sdhi2>;
+-	vqmmc-supply = <&vccq_sdhi2>;
+-	cd-gpios = <&gpio6 22 GPIO_ACTIVE_LOW>;
+-	status = "okay";
+-};
+-
+-&i2c2 {
+-	pinctrl-0 = <&i2c2_pins>;
+-	pinctrl-names = "default";
+-
+-	status = "okay";
+-	clock-frequency = <400000>;
+-
+-	composite-in@20 {
+-		compatible = "adi,adv7180";
+-		reg = <0x20>;
+-		remote = <&vin0>;
+-
+-		port {
+-			adv7180: endpoint {
+-				bus-width = <8>;
+-				remote-endpoint = <&vin0ep>;
+-			};
+-		};
+-	};
+-};
+-
+-&qspi {
+-	pinctrl-0 = <&qspi_pins>;
+-	pinctrl-names = "default";
+-
+-	status = "okay";
+-
+-	flash@0 {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-		compatible = "spansion,s25fl512s", "jedec,spi-nor";
+-		reg = <0>;
+-		spi-max-frequency = <30000000>;
+-		spi-tx-bus-width = <4>;
+-		spi-rx-bus-width = <4>;
+-		m25p,fast-read;
+-
+-		partition@0 {
+-			label = "loader_prg";
+-			reg = <0x00000000 0x00040000>;
+-			read-only;
+-		};
+-		partition@40000 {
+-			label = "user_prg";
+-			reg = <0x00040000 0x00400000>;
+-			read-only;
+-		};
+-		partition@440000 {
+-			label = "flash_fs";
+-			reg = <0x00440000 0x03bc0000>;
+-		};
+-	};
+-};
+-
+-&msiof0 {
+-	pinctrl-0 = <&msiof0_pins>;
+-	pinctrl-names = "default";
+-
+-	status = "okay";
+-
+-	pmic@0 {
+-		compatible = "renesas,r2a11302ft";
+-		reg = <0>;
+-		spi-max-frequency = <6000000>;
+-		spi-cpol;
+-		spi-cpha;
+-	};
+-};
+-
+-&pci0 {
+-	status = "okay";
+-	pinctrl-0 = <&usb0_pins>;
+-	pinctrl-names = "default";
+-};
+-
+-&pci1 {
+-	status = "okay";
+-	pinctrl-0 = <&usb1_pins>;
+-	pinctrl-names = "default";
+-};
+-
+-&hsusb {
+-	status = "okay";
+-	pinctrl-0 = <&usb0_pins>;
+-	pinctrl-names = "default";
+-	renesas,enable-gpio = <&gpio5 31 GPIO_ACTIVE_HIGH>;
+-};
+-
+-&usbphy {
+-	status = "okay";
+-};
+-
+-&pcie_bus_clk {
+-	status = "okay";
+-};
+-
+-&pciec {
+-	status = "okay";
+-};
+-
+-/* composite video input */
+-&vin0 {
+-	status = "okay";
+-	pinctrl-0 = <&vin0_pins>;
+-	pinctrl-names = "default";
+-
+-	port {
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-
+-		vin0ep: endpoint {
+-			remote-endpoint = <&adv7180>;
+-			bus-width = <8>;
+-		};
+-	};
+-};
+-
+-&can0 {
+-	pinctrl-0 = <&can0_pins>;
+-	pinctrl-names = "default";
+-	status = "okay";
+-};
 -- 
-1.9.1
+2.1.4
 
