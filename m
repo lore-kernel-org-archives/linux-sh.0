@@ -1,56 +1,44 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:05:35 +0000
-Subject: [PATCH 28/29] ARM: shmobile: alt: add I2C1 DT support
-Message-Id: <7f81bf72c67fbd225adfc0d5f6df0f674d08d757.1447981420.git.horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:50 +0000
+Subject: [PATCH 6/6] MAINTAINERS: Add entry for Renesas arm64 architecture
+Message-Id: <b138e11931f2fe25cf188ed62b54bc36f59a25ce.1447980335.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1447981420.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
+References: <cover.1447980335.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447980335.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Initial Renesas arm64 architecture support will be for the R-Car H3,
+r8a7795, SoC and its Salvator-X board.
 
-Defines the board-dependent part of the I2C1 device.
-
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7794-alt.dts | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ MAINTAINERS | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
-index e7c94554d847..88ed017495e9 100644
---- a/arch/arm/boot/dts/r8a7794-alt.dts
-+++ b/arch/arm/boot/dts/r8a7794-alt.dts
-@@ -115,6 +115,11 @@
- 		renesas,groups = "eth_link_b", "eth_mdio_b", "eth_rmii_b";
- 		renesas,function = "eth";
- 	};
-+
-+	i2c1_pins: i2c1 {
-+		renesas,groups = "i2c1";
-+		renesas,function = "i2c1";
-+	};
- };
+diff --git a/MAINTAINERS b/MAINTAINERS
+index e9caa4b28828..2cf10697da29 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -1420,6 +1420,15 @@ M:	Lennert Buytenhek <kernel@wantstofly.org>
+ L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+ S:	Maintained
  
- &cmt0 {
-@@ -134,6 +139,14 @@
- 	};
- };
- 
-+&i2c1 {
-+	pinctrl-0 = <&i2c1_pins>;
-+	pinctrl-names = "default";
++ARM/RENESAS ARM64 ARCHITECTURE
++M:	Simon Horman <horms@verge.net.au>
++M:	Magnus Damm <magnus.damm@gmail.com>
++L:	linux-sh@vger.kernel.org
++Q:	http://patchwork.kernel.org/project/linux-sh/list/
++T:	git git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git next
++S:	Supported
++F:	arch/arm64/boot/dts/renesas/
 +
-+	status = "okay";
-+	clock-frequency = <400000>;
-+};
-+
- &scif2 {
- 	status = "okay";
- };
+ ARM/RISCPC ARCHITECTURE
+ M:	Russell King <linux@arm.linux.org.uk>
+ L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
 -- 
 2.1.4
 
