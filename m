@@ -1,100 +1,74 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Nov 2015 03:18:51 +0000
-Subject: [PATCH 02/04] pinctrl: sh-pfc: r8a7794: Separate DU CDE and DISP
-Message-Id: <20151117031851.24924.18884.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:31 +0000
+Subject: [PATCH 24/29] ARM: shmobile: r8a7791: Use SoC specific binding for rcar-dmac nodes
+Message-Id: <e6d12b4990e79ecb0d39736df5d1877ad69fab4c.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151117031832.24924.60685.sendpatchset@little-apple>
-In-Reply-To: <20151117031832.24924.60685.sendpatchset@little-apple>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linus.walleij@linaro.org, linux-kernel@vger.kernel.org, koji.matsuoka.xm@renesas.com, linux-gpio@vger.kernel.org, horms@verge.net.au, geert@glider.be, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+Use the new SoC specific binding for rcar-dmac and the generic
+binding as a fall-back in the r8a7791 device tree.
 
-Separate DU CDE and DISP signals to let the r8a7794 ALT
-board that lacks CDE handle the DISP signal by itself.
+In general Renesas hardware is not documented to the extent where the
+relationship between IP blocks on different SoCs can be assumed although
+they may appear to operate the same way. Furthermore the documentation
+typically does not specify a version for individual IP blocks. For these
+reasons a convention of using the SoC name in place of a version and
+providing SoC-specific compat strings has been adopted.
 
-The groups "du0_cde_disp" and "du1_cde_disp" are replaced
-by "du0_cde", "du1_cde", "du0_disp" and "du1_disp".
+Although not universally liked this convention is used in the bindings for
+most drivers for Renesas hardware. The purpose of this patch is to
+update the Renesas R-Car DMA Controller nodes to follow this convention.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/r8a7791.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
- drivers/pinctrl/sh-pfc/pfc-r8a7794.c |   50 +++++++++++++++++++++++-----------
- 1 file changed, 34 insertions(+), 16 deletions(-)
-
---- 0008/drivers/pinctrl/sh-pfc/pfc-r8a7794.c
-+++ work/drivers/pinctrl/sh-pfc/pfc-r8a7794.c	2015-11-16 15:04:00.760513000 +0900
-@@ -1616,19 +1616,33 @@ static const unsigned int du1_sync_mux[]
- 	DU1_EXODDF_DU1_ODDF_DISP_CDE_MARK,
- 	DU1_EXVSYNC_DU1_VSYNC_MARK, DU1_EXHSYNC_DU1_HSYNC_MARK
- };
--static const unsigned int du0_cde_disp_pins[] = {
--	/* CDE DISP */
--	RCAR_GP_PIN(2, 31), RCAR_GP_PIN(2, 30),
--};
--static const unsigned int du0_cde_disp_mux[] = {
--	DU0_CDE_MARK, DU0_DISP_MARK
--};
--static const unsigned int du1_cde_disp_pins[] = {
--	/* CDE DISP */
--	RCAR_GP_PIN(4, 31), RCAR_GP_PIN(4, 30),
-+static const unsigned int du0_cde_pins[] = {
-+	/* CDE */
-+	RCAR_GP_PIN(2, 31),
- };
--static const unsigned int du1_cde_disp_mux[] = {
--	DU1_CDE_MARK, DU1_DISP_MARK
-+static const unsigned int du0_cde_mux[] = {
-+	DU0_CDE_MARK,
-+};
-+static const unsigned int du1_cde_pins[] = {
-+	/* CDE */
-+	RCAR_GP_PIN(4, 31),
-+};
-+static const unsigned int du1_cde_mux[] = {
-+	DU1_CDE_MARK
-+};
-+static const unsigned int du0_disp_pins[] = {
-+	/* DISP */
-+	RCAR_GP_PIN(2, 30),
-+};
-+static const unsigned int du0_disp_mux[] = {
-+	DU0_DISP_MARK
-+};
-+static const unsigned int du1_disp_pins[] = {
-+	/* DISP */
-+	RCAR_GP_PIN(4, 30),
-+};
-+static const unsigned int du1_disp_mux[] = {
-+	DU1_DISP_MARK
- };
- static const unsigned int du0_clk_in_pins[] = {
- 	/* CLKIN */
-@@ -2932,8 +2946,10 @@ static const struct sh_pfc_pin_group pin
- 	SH_PFC_PIN_GROUP(du1_clk_out),
- 	SH_PFC_PIN_GROUP(du0_sync),
- 	SH_PFC_PIN_GROUP(du1_sync),
--	SH_PFC_PIN_GROUP(du0_cde_disp),
--	SH_PFC_PIN_GROUP(du1_cde_disp),
-+	SH_PFC_PIN_GROUP(du0_cde),
-+	SH_PFC_PIN_GROUP(du1_cde),
-+	SH_PFC_PIN_GROUP(du0_disp),
-+	SH_PFC_PIN_GROUP(du1_disp),
- 	SH_PFC_PIN_GROUP(du0_clk_in),
- 	SH_PFC_PIN_GROUP(du1_clk_in),
- 	SH_PFC_PIN_GROUP(eth_link),
-@@ -3122,8 +3138,10 @@ static const char * const du_groups[]  	"du1_clk_out",
- 	"du0_sync",
- 	"du1_sync",
--	"du0_cde_disp",
--	"du1_cde_disp",
-+	"du0_cde",
-+	"du1_cde",
-+	"du0_disp",
-+	"du1_disp",
- };
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 2bc54e359768..9f5f30e714c5 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -255,7 +255,7 @@
+ 	};
  
- static const char * const du0_groups[] = {
+ 	dmac0: dma-controller@e6700000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7791", "renesas,rcar-dmac";
+ 		reg = <0 0xe6700000 0 0x20000>;
+ 		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
+ 			      0 200 IRQ_TYPE_LEVEL_HIGH
+@@ -286,7 +286,7 @@
+ 	};
+ 
+ 	dmac1: dma-controller@e6720000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7791", "renesas,rcar-dmac";
+ 		reg = <0 0xe6720000 0 0x20000>;
+ 		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
+ 			      0 216 IRQ_TYPE_LEVEL_HIGH
+@@ -317,7 +317,7 @@
+ 	};
+ 
+ 	audma0: dma-controller@ec700000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7791", "renesas,rcar-dmac";
+ 		reg = <0 0xec700000 0 0x10000>;
+ 		interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH
+ 				 0 320 IRQ_TYPE_LEVEL_HIGH
+@@ -346,7 +346,7 @@
+ 	};
+ 
+ 	audma1: dma-controller@ec720000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7791", "renesas,rcar-dmac";
+ 		reg = <0 0xec720000 0 0x10000>;
+ 		interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH
+ 				 0 333 IRQ_TYPE_LEVEL_HIGH
+-- 
+2.1.4
+
