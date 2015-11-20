@@ -1,82 +1,44 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 25 Nov 2015 06:36:48 +0000
-Subject: [PATCH 03/12] arm64: renesas: r8a7795: Sound SSI DMA support
-Message-Id: <87y4dm7fpv.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:09 +0000
+Subject: [PATCH 02/29] ARM: shmobile: r8a7794 dtsi: Remove bogus imp_clk node
+Message-Id: <b6be6b2f3be270cbd53fb13706c32500f6cd1432.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+R-Car E2 does not have an IMP core or an IMP clock.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ arch/arm/boot/dts/r8a7794.dtsi | 8 --------
+ 1 file changed, 8 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 6fff49c..26ae5eb 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -539,33 +539,53 @@
- 			rcar_sound,ssi {
- 				ssi0: ssi@0 {
- 					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x01>, <&audma1 0x02>, <&audma0 0x15>, <&audma1 0x16>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi1: ssi@1 {
- 					 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x03>, <&audma1 0x04>, <&audma0 0x49>, <&audma1 0x4a>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi2: ssi@2 {
- 					interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x05>, <&audma1 0x06>, <&audma0 0x63>, <&audma1 0x64>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi3: ssi@3 {
- 					interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x07>, <&audma1 0x08>, <&audma0 0x6f>, <&audma1 0x70>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi4: ssi@4 {
- 					interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x09>, <&audma1 0x0a>, <&audma0 0x71>, <&audma1 0x72>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi5: ssi@5 {
- 					interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0b>, <&audma1 0x0c>, <&audma0 0x73>, <&audma1 0x74>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi6: ssi@6 {
- 					interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0d>, <&audma1 0x0e>, <&audma0 0x75>, <&audma1 0x76>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi7: ssi@7 {
- 					interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0f>, <&audma1 0x10>, <&audma0 0x79>, <&audma1 0x7a>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi8: ssi@8 {
- 					interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x11>, <&audma1 0x12>, <&audma0 0x7b>, <&audma1 0x7c>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi9: ssi@9 {
- 					interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x13>, <&audma1 0x14>, <&audma0 0x7d>, <&audma1 0x7e>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 			};
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index a9977d6ee81a..6fc1acff507f 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -879,14 +879,6 @@
+ 			clock-mult = <1>;
+ 			clock-output-names = "m2";
  		};
+-		imp_clk: imp_clk {
+-			compatible = "fixed-factor-clock";
+-			clocks = <&cpg_clocks R8A7794_CLK_PLL1>;
+-			#clock-cells = <0>;
+-			clock-div = <4>;
+-			clock-mult = <1>;
+-			clock-output-names = "imp";
+-		};
+ 		rclk_clk: rclk_clk {
+ 			compatible = "fixed-factor-clock";
+ 			clocks = <&cpg_clocks R8A7794_CLK_PLL1>;
 -- 
-1.9.1
+2.1.4
 
