@@ -1,203 +1,122 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 24 Nov 2015 14:40:59 +0000
-Subject: [PATCH v3 3/4] sh_eth: Remove obsolete r8a7740-gether platform_device_id entry
-Message-Id: <1448376060-7803-4-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:49 +0000
+Subject: [PATCH 5/6] arm64: renesas: add Salvator-X board support
+Message-Id: <1950fab0789111de4ba3406c6e93dc57e345d32c.1447980335.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1447980335.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447980335.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "David S. Miller" <davem@davemloft.net>
-Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Since commit 1fa59bda21c7fa36 ("ARM: shmobile: Remove legacy board code
-for Armadillo-800 EVA"), r8a7740 is only supported in generic DT-only
-ARM multi-platform builds.  The driver doesn't need to match platform
-devices by name anymore, hence remove the corresponding
-platform_device_id entry.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Protect r8a7740_data by #ifdef CONFIG_OF as it's now referenced on DT
-platforms only. Move it to a more logical position, in front of the
-r8a777x support, so we can have a single #ifdef covering all r7s* and
-r8a* support soon. This requires moving a few helper functions, too.
+Add initial board support for r8a7795 Salvator-X. At this point
+only DEBUG0 and DEBUG1 serial ports are supported.
 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
+Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3:
-  - Add Acked-by,
+ Documentation/devicetree/bindings/arm/shmobile.txt |  2 +
+ arch/arm64/boot/dts/renesas/Makefile               |  2 +
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 62 ++++++++++++++++++++++
+ 3 files changed, 66 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
 
-v2:
-  - New.
----
- drivers/net/ethernet/renesas/sh_eth.c | 125 +++++++++++++++++-----------------
- 1 file changed, 62 insertions(+), 63 deletions(-)
-
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index 1af07f9de243d613..99618bf513b26184 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -458,6 +458,25 @@ static void sh_eth_chip_reset(struct net_device *ndev)
- 	mdelay(1);
- }
- 
-+static void sh_eth_set_rate_gether(struct net_device *ndev)
-+{
-+	struct sh_eth_private *mdp = netdev_priv(ndev);
+diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
+index 6712ebbe5f49..678a8184da24 100644
+--- a/Documentation/devicetree/bindings/arm/shmobile.txt
++++ b/Documentation/devicetree/bindings/arm/shmobile.txt
+@@ -59,5 +59,7 @@ Boards:
+     compatible = "renesas,marzen", "renesas,r8a7779"
+   - Porter (M2-LCDP)
+     compatible = "renesas,porter", "renesas,r8a7791"
++  - Salvator-X
++    compatible = "renesas,salvator-x", "renesas,r8a7795";
+   - SILK (RTP0RC7794LCB00011S)
+     compatible = "renesas,silk", "renesas,r8a7794"
+diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
+index fec69f46d65b..9ce1890a650e 100644
+--- a/arch/arm64/boot/dts/renesas/Makefile
++++ b/arch/arm64/boot/dts/renesas/Makefile
+@@ -1,2 +1,4 @@
++dtb-$(CONFIG_ARCH_R8A7795) += r8a7795-salvator-x.dtb
 +
-+	switch (mdp->speed) {
-+	case 10: /* 10BASE */
-+		sh_eth_write(ndev, GECMR_10, GECMR);
-+		break;
-+	case 100:/* 100BASE */
-+		sh_eth_write(ndev, GECMR_100, GECMR);
-+		break;
-+	case 1000: /* 1000BASE */
-+		sh_eth_write(ndev, GECMR_1000, GECMR);
-+		break;
-+	default:
-+		break;
-+	}
-+}
+ always		:= $(dtb-y)
+ clean-files	:= *.dtb
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+new file mode 100644
+index 000000000000..a3db98384e53
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -0,0 +1,62 @@
++/*
++ * Device Tree Source for the Salvator-X board
++ *
++ * Copyright (C) 2015 Renesas Electronics Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
 +
- #ifdef CONFIG_OF
- /* R7S72100 */
- static struct sh_eth_cpu_data r7s72100_data = {
-@@ -489,6 +508,49 @@ static struct sh_eth_cpu_data r7s72100_data = {
- 	.tsu		= 1,
- 	.shift_rd0	= 1,
- };
++/dts-v1/;
++#include "r8a7795.dtsi"
 +
-+static void sh_eth_chip_reset_r8a7740(struct net_device *ndev)
-+{
-+	struct sh_eth_private *mdp = netdev_priv(ndev);
++/ {
++	model = "Renesas Salvator-X board based on r8a7795";
++	compatible = "renesas,salvator-x", "renesas,r8a7795";
 +
-+	/* reset device */
-+	sh_eth_tsu_write(mdp, ARSTR_ARSTR, ARSTR);
-+	mdelay(1);
++	aliases {
++		serial0 = &scif2;
++		serial1 = &scif1;
++	};
 +
-+	sh_eth_select_mii(ndev);
-+}
++	chosen {
++		bootargs = "ignore_loglevel";
++		stdout-path = "serial0:115200n8";
++	};
 +
-+/* R8A7740 */
-+static struct sh_eth_cpu_data r8a7740_data = {
-+	.chip_reset	= sh_eth_chip_reset_r8a7740,
-+	.set_duplex	= sh_eth_set_duplex,
-+	.set_rate	= sh_eth_set_rate_gether,
-+
-+	.register_type	= SH_ETH_REG_GIGABIT,
-+
-+	.ecsr_value	= ECSR_ICD | ECSR_MPD,
-+	.ecsipr_value	= ECSIPR_LCHNGIP | ECSIPR_ICDIP | ECSIPR_MPDIP,
-+	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x003fffff,
-+
-+	.tx_check	= EESR_TC1 | EESR_FTC,
-+	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT |
-+			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
-+			  EESR_TDE | EESR_ECI,
-+	.fdr_value	= 0x0000070f,
-+
-+	.apr		= 1,
-+	.mpr		= 1,
-+	.tpauser	= 1,
-+	.bculr		= 1,
-+	.hw_swap	= 1,
-+	.rpadir		= 1,
-+	.rpadir_value   = 2 << 16,
-+	.no_trimd	= 1,
-+	.no_ade		= 1,
-+	.tsu		= 1,
-+	.select_mii	= 1,
-+	.shift_rd0	= 1,
++	memory@48000000 {
++		device_type = "memory";
++		/* first 128MB is reserved for secure area. */
++		reg = <0x0 0x48000000 0x0 0x38000000>;
++	};
 +};
- #endif /* CONFIG_OF */
- 
- /* There is CPU dependent code */
-@@ -715,25 +777,6 @@ static struct sh_eth_cpu_data sh7757_data_giga = {
- 	.tsu		= 1,
- };
- 
--static void sh_eth_set_rate_gether(struct net_device *ndev)
--{
--	struct sh_eth_private *mdp = netdev_priv(ndev);
--
--	switch (mdp->speed) {
--	case 10: /* 10BASE */
--		sh_eth_write(ndev, GECMR_10, GECMR);
--		break;
--	case 100:/* 100BASE */
--		sh_eth_write(ndev, GECMR_100, GECMR);
--		break;
--	case 1000: /* 1000BASE */
--		sh_eth_write(ndev, GECMR_1000, GECMR);
--		break;
--	default:
--		break;
--	}
--}
--
- /* SH7734 */
- static struct sh_eth_cpu_data sh7734_data = {
- 	.chip_reset	= sh_eth_chip_reset,
-@@ -791,49 +834,6 @@ static struct sh_eth_cpu_data sh7763_data = {
- 	.irq_flags	= IRQF_SHARED,
- };
- 
--static void sh_eth_chip_reset_r8a7740(struct net_device *ndev)
--{
--	struct sh_eth_private *mdp = netdev_priv(ndev);
--
--	/* reset device */
--	sh_eth_tsu_write(mdp, ARSTR_ARSTR, ARSTR);
--	mdelay(1);
--
--	sh_eth_select_mii(ndev);
--}
--
--/* R8A7740 */
--static struct sh_eth_cpu_data r8a7740_data = {
--	.chip_reset	= sh_eth_chip_reset_r8a7740,
--	.set_duplex	= sh_eth_set_duplex,
--	.set_rate	= sh_eth_set_rate_gether,
--
--	.register_type	= SH_ETH_REG_GIGABIT,
--
--	.ecsr_value	= ECSR_ICD | ECSR_MPD,
--	.ecsipr_value	= ECSIPR_LCHNGIP | ECSIPR_ICDIP | ECSIPR_MPDIP,
--	.eesipr_value	= DMAC_M_RFRMER | DMAC_M_ECI | 0x003fffff,
--
--	.tx_check	= EESR_TC1 | EESR_FTC,
--	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT |
--			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
--			  EESR_TDE | EESR_ECI,
--	.fdr_value	= 0x0000070f,
--
--	.apr		= 1,
--	.mpr		= 1,
--	.tpauser	= 1,
--	.bculr		= 1,
--	.hw_swap	= 1,
--	.rpadir		= 1,
--	.rpadir_value   = 2 << 16,
--	.no_trimd	= 1,
--	.no_ade		= 1,
--	.tsu		= 1,
--	.select_mii	= 1,
--	.shift_rd0	= 1,
--};
--
- static struct sh_eth_cpu_data sh7619_data = {
- 	.register_type	= SH_ETH_REG_FAST_SH3_SH2,
- 
-@@ -3281,7 +3281,6 @@ static struct platform_device_id sh_eth_id_table[] = {
- 	{ "sh7757-ether", (kernel_ulong_t)&sh7757_data },
- 	{ "sh7757-gether", (kernel_ulong_t)&sh7757_data_giga },
- 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
--	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
- 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
- 	{ }
- };
++
++&extal_clk {
++	clock-frequency = <16666666>;
++};
++
++&pfc {
++	scif1_pins: scif1 {
++		renesas,groups = "scif1_data_a", "scif1_ctrl";
++		renesas,function = "scif1";
++	};
++	scif2_pins: scif2 {
++		renesas,groups = "scif2_data_a";
++		renesas,function = "scif2";
++	};
++};
++
++&scif1 {
++	pinctrl-0 = <&scif1_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&scif2 {
++	pinctrl-0 = <&scif2_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
 -- 
-1.9.1
+2.1.4
 
