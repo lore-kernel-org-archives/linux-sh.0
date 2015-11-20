@@ -1,59 +1,115 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 25 Nov 2015 06:37:29 +0000
-Subject: [PATCH 05/12] arm64: renesas: r8a7795: Sound DVC support
-Message-Id: <87vb8q7foq.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:23 +0000
+Subject: [PATCH 16/29] ARM: shmobile: r8a7793: Add DMAC devices to DT
+Message-Id: <38eb6a3aaf08cc8a70ef3d6a767521e2831a8a4c.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Instantiate the two system DMA controllers in the r8a7793 device tree.
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Based on similar work for the r8a7793 by Laurent Pinchart.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Reviewed-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ arch/arm/boot/dts/r8a7793.dtsi | 72 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 72 insertions(+)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 17b8e82..9a1dabd 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -530,6 +530,7 @@
- 				 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
- 				 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
- 				 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
-+				 <&cpg CPG_MOD 1019>, <&cpg CPG_MOD 1018>,
- 				 <&audio_clk_a>, <&audio_clk_b>,
- 				 <&audio_clk_c>,
- 				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
-@@ -540,10 +541,22 @@
- 				      "src.9", "src.8", "src.7", "src.6",
- 				      "src.5", "src.4", "src.3", "src.2",
- 				      "src.1", "src.0",
-+				      "dvc.0", "dvc.1",
- 				      "clk_a", "clk_b", "clk_c", "clk_i";
- 			power-domains = <&cpg>;
- 			status = "disabled";
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index 4f6480f8845f..187a82dc7d9f 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -128,6 +128,68 @@
+ 		#gpio-range-cells = <3>;
+ 	};
  
-+			rcar_sound,dvc {
-+				dvc0: dvc@0 {
-+					dmas = <&audma0 0xbc>;
-+					dma-names = "tx";
-+				};
-+				dvc1: dvc@1 {
-+					dmas = <&audma0 0xbe>;
-+					dma-names = "tx";
-+				};
-+			};
++	dmac0: dma-controller@e6700000 {
++		compatible = "renesas,rcar-dmac";
++		reg = <0 0xe6700000 0 0x20000>;
++		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
++			      0 200 IRQ_TYPE_LEVEL_HIGH
++			      0 201 IRQ_TYPE_LEVEL_HIGH
++			      0 202 IRQ_TYPE_LEVEL_HIGH
++			      0 203 IRQ_TYPE_LEVEL_HIGH
++			      0 204 IRQ_TYPE_LEVEL_HIGH
++			      0 205 IRQ_TYPE_LEVEL_HIGH
++			      0 206 IRQ_TYPE_LEVEL_HIGH
++			      0 207 IRQ_TYPE_LEVEL_HIGH
++			      0 208 IRQ_TYPE_LEVEL_HIGH
++			      0 209 IRQ_TYPE_LEVEL_HIGH
++			      0 210 IRQ_TYPE_LEVEL_HIGH
++			      0 211 IRQ_TYPE_LEVEL_HIGH
++			      0 212 IRQ_TYPE_LEVEL_HIGH
++			      0 213 IRQ_TYPE_LEVEL_HIGH
++			      0 214 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12", "ch13", "ch14";
++		clocks = <&mstp2_clks R8A7793_CLK_SYS_DMAC0>;
++		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
++		#dma-cells = <1>;
++		dma-channels = <15>;
++	};
 +
- 			rcar_sound,src {
- 				src0: src@0 {
- 					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
++	dmac1: dma-controller@e6720000 {
++		compatible = "renesas,rcar-dmac";
++		reg = <0 0xe6720000 0 0x20000>;
++		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
++			      0 216 IRQ_TYPE_LEVEL_HIGH
++			      0 217 IRQ_TYPE_LEVEL_HIGH
++			      0 218 IRQ_TYPE_LEVEL_HIGH
++			      0 219 IRQ_TYPE_LEVEL_HIGH
++			      0 308 IRQ_TYPE_LEVEL_HIGH
++			      0 309 IRQ_TYPE_LEVEL_HIGH
++			      0 310 IRQ_TYPE_LEVEL_HIGH
++			      0 311 IRQ_TYPE_LEVEL_HIGH
++			      0 312 IRQ_TYPE_LEVEL_HIGH
++			      0 313 IRQ_TYPE_LEVEL_HIGH
++			      0 314 IRQ_TYPE_LEVEL_HIGH
++			      0 315 IRQ_TYPE_LEVEL_HIGH
++			      0 316 IRQ_TYPE_LEVEL_HIGH
++			      0 317 IRQ_TYPE_LEVEL_HIGH
++			      0 318 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-names = "error",
++				"ch0", "ch1", "ch2", "ch3",
++				"ch4", "ch5", "ch6", "ch7",
++				"ch8", "ch9", "ch10", "ch11",
++				"ch12", "ch13", "ch14";
++		clocks = <&mstp2_clks R8A7793_CLK_SYS_DMAC1>;
++		clock-names = "fck";
++		power-domains = <&cpg_clocks>;
++		#dma-cells = <1>;
++		dma-channels = <15>;
++	};
++
+ 	scif0: serial@e6e60000 {
+ 		compatible = "renesas,scif-r8a7793", "renesas,scif";
+ 		reg = <0 0xe6e60000 0 64>;
+@@ -313,6 +375,16 @@
+ 				"tmu3", "tmu2", "cmt0", "tmu0", "vsp1-du1",
+ 				"vsp1-du0", "vsps";
+ 		};
++		mstp2_clks: mstp2_clks@e6150138 {
++			compatible = "renesas,r8a7793-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
++			clocks = <&zs_clk>, <&zs_clk>;
++			#clock-cells = <1>;
++			clock-indices = <
++				R8A7793_CLK_SYS_DMAC1 R8A7793_CLK_SYS_DMAC0
++			>;
++			clock-output-names = "sys-dmac1", "sys-dmac0";
++		};
+ 		mstp3_clks: mstp3_clks@e615013c {
+ 			compatible = "renesas,r8a7793-mstp-clocks",
+ 				     "renesas,cpg-mstp-clocks";
 -- 
-1.9.1
+2.1.4
 
