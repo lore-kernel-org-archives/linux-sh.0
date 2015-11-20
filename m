@@ -1,57 +1,80 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:05:48 +0000
-Subject: [GIT PULL] Renesas ARM64 Based SoC DT Updates for v4.5
-Message-Id: <cover.1447980335.git.horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:36 +0000
+Subject: [PATCH 29/29] ARM: shmobile: alt: add VIN0, ADV7180 DT support
+Message-Id: <d537543b3948bc3bc9dede248fa455493e055457.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Kevin, Hi Arnd,
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-Please consider these Renesas ARM64 based SoC DT updates for v4.5.
+Adds the device board-dependent part of the VIN0 device and its ADV7180
+video decoder on I2C1, and the interconnection between them.
 
+Based on silk patch by Sergei Shtylyov.
 
-The following changes since commit 8005c49d9aea74d382f474ce11afbbc7d7130bec:
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7794-alt.dts | 34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
 
-  Linux 4.4-rc1 (2015-11-15 17:00:27 -0800)
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index 88ed017495e9..fd1cfcdd65ef 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -120,6 +120,11 @@
+ 		renesas,groups = "i2c1";
+ 		renesas,function = "i2c1";
+ 	};
++
++	vin0_pins: vin0 {
++		renesas,groups = "vin0_data8", "vin0_clk";
++		renesas,function = "vin0";
++	};
+ };
+ 
+ &cmt0 {
+@@ -145,6 +150,35 @@
+ 
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++
++	composite-in@20 {
++		compatible = "adi,adv7180";
++		reg = <0x20>;
++		remote = <&vin0>;
++
++		port {
++			adv7180: endpoint {
++				bus-width = <8>;
++				remote-endpoint = <&vin0ep>;
++			};
++		};
++	};
++};
++
++&vin0 {
++	status = "okay";
++	pinctrl-0 = <&vin0_pins>;
++	pinctrl-names = "default";
++
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		vin0ep: endpoint {
++			remote-endpoint = <&adv7180>;
++			bus-width = <8>;
++		};
++	};
+ };
+ 
+ &scif2 {
+-- 
+2.1.4
 
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-arm64-dt-for-v4.5
-
-for you to fetch changes up to b138e11931f2fe25cf188ed62b54bc36f59a25ce:
-
-  MAINTAINERS: Add entry for Renesas arm64 architecture (2015-11-17 02:55:03 +0900)
-
-----------------------------------------------------------------
-Renesas ARM64 Based SoC DT Updates for v4.5
-
-* Initial support for Renesas ARM64 Based r8a7795 SoC and
-  Salvator-X board
-
-----------------------------------------------------------------
-Geert Uytterhoeven (2):
-      arm64: renesas: r8a7795: Add dummy dma-controller nodes
-      arm64: renesas: r8a7795: Add all SCIF nodes
-
-Kuninori Morimoto (2):
-      arm64: renesas: r8a7795: enable PFC
-      arm64: renesas: add Salvator-X board support
-
-Simon Horman (2):
-      arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
-      MAINTAINERS: Add entry for Renesas arm64 architecture
-
- Documentation/devicetree/bindings/arm/shmobile.txt |   4 +
- MAINTAINERS                                        |   9 ++
- arch/arm64/Kconfig.platforms                       |  17 ++
- arch/arm64/boot/dts/Makefile                       |   1 +
- arch/arm64/boot/dts/renesas/Makefile               |   4 +
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |  62 ++++++++
- arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 173 +++++++++++++++++++++
- 7 files changed, 270 insertions(+)
- create mode 100644 arch/arm64/boot/dts/renesas/Makefile
- create mode 100644 arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
- create mode 100644 arch/arm64/boot/dts/renesas/r8a7795.dtsi
