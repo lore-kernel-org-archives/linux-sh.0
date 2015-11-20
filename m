@@ -1,74 +1,44 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 19 Nov 2015 18:39:01 +0000
-Subject: [PATCH 22/25] ARM: shmobile: koelsch dts: Enable SCIF_CLK frequency and pins
-Message-Id: <1447958344-836-23-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:10 +0000
+Subject: [PATCH 03/29] ARM: shmobile: r8a7791 dtsi: Remove bogus imp_clk node
+Message-Id: <5d2ac865a609ff1c5a5228c8721e7ae06f5f7b72.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Add and enable the external crystal for the SCIF_CLK and its pinctrl, to
-be used by the Baud Rate Generator for External Clock (BRG) on (H)SCIF.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-This increases the range and accuracy of supported baud rates:
-  - SCIF:
-      - Supports now 50, 75, 110, 1152000, 1500000, 2000000, and
-        4000000 bps,
-      - Perfect match for standard 50-460800, and 9216000 bps.
-      - More accurate 576000 bps.
-  - HSCIF:
-      - Supports now 50, 75, 110, 134, 150, and 200 bps,
-      - Perfect match for standard 50-460800, and 9216000 bps.
-      - More accurate 576000, 1152000, 3000000, 3500000, and 4000000
-	bps.
+R-Car M2-W does not have an IMP core or an IMP clock.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7791-koelsch.dts | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ arch/arm/boot/dts/r8a7791.dtsi | 8 --------
+ 1 file changed, 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
-index da263dbb126db78c..9c3bc94791fc932a 100644
---- a/arch/arm/boot/dts/r8a7791-koelsch.dts
-+++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
-@@ -320,6 +320,9 @@
- };
- 
- &pfc {
-+	pinctrl-0 = <&scif_clk_pins>;
-+	pinctrl-names = "default";
-+
- 	i2c2_pins: i2c2 {
- 		renesas,groups = "i2c2";
- 		renesas,function = "i2c2";
-@@ -340,6 +343,11 @@
- 		renesas,function = "scif1";
- 	};
- 
-+	scif_clk_pins: scif_clk {
-+		renesas,groups = "scif_clk";
-+		renesas,function = "scif_clk";
-+	};
-+
- 	ether_pins: ether {
- 		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
- 		renesas,function = "eth";
-@@ -440,6 +448,11 @@
- 	status = "okay";
- };
- 
-+&scif_clk {
-+	clock-frequency = <14745600>;
-+	status = "okay";
-+};
-+
- &sdhi0 {
- 	pinctrl-0 = <&sdhi0_pins>;
- 	pinctrl-names = "default";
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 3b8e26dde36d..57029d3fe1e5 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -1163,14 +1163,6 @@
+ 			clock-mult = <1>;
+ 			clock-output-names = "m2";
+ 		};
+-		imp_clk: imp_clk {
+-			compatible = "fixed-factor-clock";
+-			clocks = <&cpg_clocks R8A7791_CLK_PLL1>;
+-			#clock-cells = <0>;
+-			clock-div = <4>;
+-			clock-mult = <1>;
+-			clock-output-names = "imp";
+-		};
+ 		rclk_clk: rclk_clk {
+ 			compatible = "fixed-factor-clock";
+ 			clocks = <&cpg_clocks R8A7791_CLK_PLL1>;
 -- 
-1.9.1
+2.1.4
 
