@@ -1,41 +1,40 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 30 Nov 2015 08:34:10 +0000
-Subject: Re: [PATCH] ARM: shmobile: alt: Add QSPI device to DT
-Message-Id: <CAMuHMdWnyZbHiLEPn-6dEweBEXHzWr6o2KF2iCpzg2-OhZRVSw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 00:39:10 +0000
+Subject: [PATCH] drivers: sh: Get rid of CONFIG_ARCH_SHMOBILE_MULTI
+Message-Id: <0ba58de231066e47de87ccc4d61c5e396fe9bd27.1447979812.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448863990-16276-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1448863990-16276-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1447979812.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447979812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
 
-On Mon, Nov 30, 2015 at 7:13 AM, Simon Horman
-<horms+renesas@verge.net.au> wrote:
-> Enable the QSPI controller in the alt device tree.
->
-> Based similar work for the silk board by by Vladimir Barinov and
-> Sergei Shtylyov.
->
-> Cc: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-> Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Verified against Alt schematics and r8a7794 datasheet.
+Shmobile is all multiplatform these days, so get rid of the reference to
+CONFIG_ARCH_SHMOBILE_MULTI.
 
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/sh/pm_runtime.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I can't verify the FLASH layout. Note that p.11 of
-ALT_MiniMonitor_Manual(SPI_Boot)_Rev0.01_e.pdf shows a different
-FLASH layout for the second and third partition.
+diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
+index 25abd4eb7d10..91a003011acf 100644
+--- a/drivers/sh/pm_runtime.c
++++ b/drivers/sh/pm_runtime.c
+@@ -34,7 +34,7 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
+ 
+ static int __init sh_pm_runtime_init(void)
+ {
+-	if (IS_ENABLED(CONFIG_ARCH_SHMOBILE_MULTI)) {
++	if (IS_ENABLED(CONFIG_ARCH_SHMOBILE)) {
+ 		if (!of_find_compatible_node(NULL, NULL,
+ 					     "renesas,cpg-mstp-clocks"))
+ 			return 0;
+-- 
+2.1.4
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
