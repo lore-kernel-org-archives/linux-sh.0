@@ -1,55 +1,44 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 19 Nov 2015 18:38:45 +0000
-Subject: [PATCH 06/25] serial: sh-sci: Don't overwrite clock selection in serial_console_write()
-Message-Id: <1447958344-836-7-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:48 +0000
+Subject: [PATCH 4/6] arm64: renesas: r8a7795: enable PFC
+Message-Id: <9241844a2d3312f3984aacd16ad25fda6e83fc13.1447980335.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1447980335.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447980335.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-Blindly writing the default configuration value into the SCSCR register
-may change the clock selection bits, breaking the serial console if the
-current driver settings differ from the default settings.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Keep the current clock selection bits to prevent this from happening
-on e.g. r8a7791/koelsch when support for the BRG will be added.
+Add a PFC node for the on-chip r8a7795 pin controller.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 7c7dfbce54ed9c19..cba51da604253db6 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2415,7 +2415,7 @@ static void serial_console_write(struct console *co, const char *s,
- {
- 	struct sci_port *sci_port = &sci_ports[co->index];
- 	struct uart_port *port = &sci_port->port;
--	unsigned short bits, ctrl;
-+	unsigned short bits, ctrl, ctrl_temp;
- 	unsigned long flags;
- 	int locked = 1;
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 002b828e8230..e26eecf1230f 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -81,6 +81,11 @@
+ 			#power-domain-cells = <0>;
+ 		};
  
-@@ -2427,9 +2427,11 @@ static void serial_console_write(struct console *co, const char *s,
- 	else
- 		spin_lock(&port->lock);
- 
--	/* first save the SCSCR then disable the interrupts */
-+	/* first save SCSCR then disable interrupts, keep clock source */
- 	ctrl = serial_port_in(port, SCSCR);
--	serial_port_out(port, SCSCR, sci_port->cfg->scscr);
-+	ctrl_temp = (sci_port->cfg->scscr & ~(SCSCR_CKE1 | SCSCR_CKE0)) |
-+		    (ctrl & (SCSCR_CKE1 | SCSCR_CKE0));
-+	serial_port_out(port, SCSCR, ctrl_temp);
- 
- 	uart_console_write(port, s, count, serial_console_putchar);
- 
++		pfc: pfc@e6060000 {
++			compatible = "renesas,pfc-r8a7795";
++			reg = <0 0xe6060000 0 0x50c>;
++		};
++
+ 		dmac0: dma-controller@e6700000 {
+ 			/* Empty node for now */
+ 		};
 -- 
-1.9.1
+2.1.4
 
