@@ -1,39 +1,85 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:49 +0000
-Subject: [PATCH 06/15] ARM: shmobile: r8a7794: remove deprecated #gpio-range-cells from dtsi
-Message-Id: <369d4933db6a515b90d153767159918845eb4f5f.1448586938.git.horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 19:38:55 +0000
+Subject: [PATCH 4/4] ARM: shmobile: silk: Move SPI FLASH partitions to subnode
+Message-Id: <1448048335-23927-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448586938.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448586938.git.horms+renesas@verge.net.au>
+References: <1448048335-23927-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1448048335-23927-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Commit a1bc260bb5f5d9 ("gpio: clean up gpio-ranges documentation")
-declares the above property deprecated. That was more than 2 years ago.
-Remove it, so it doesn't get copied around needlessly.
+As of commits 5cfdedb7b9a0fe38 ("mtd: ofpart: move ofpart partitions to a
+dedicated dt node") and fe2585e9c29a650a ("doc: dt: mtd: support partitions
+in a special 'partitions' subnode"), having partitions as direct subnodes
+of an mtd device is discouraged. Hence move the SPI FLASH partitions to a
+"partitions" subnode.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Based on similar work for the koelsch board by Geert Uytterhoeven.
+
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7794.dtsi | 1 -
- 1 file changed, 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 57d188c2bf6d..89e914f2a2cf 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -217,7 +217,6 @@
- 	pfc: pin-controller@e6060000 {
- 		compatible = "renesas,pfc-r8a7794";
- 		reg = <0 0xe6060000 0 0x11c>;
--		#gpio-range-cells = <3>;
- 	};
+---
+* Compile tested only
+---
+ arch/arm/boot/dts/r8a7794-silk.dts | 33 ++++++++++++++++++---------------
+ 1 file changed, 18 insertions(+), 15 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
+index a49942b626c8..58f0ddf21c17 100644
+--- a/arch/arm/boot/dts/r8a7794-silk.dts
++++ b/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -194,8 +194,6 @@
+ 	status = "okay";
  
- 	dmac0: dma-controller@e6700000 {
+ 	flash@0 {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+ 		compatible = "spansion,s25fl512s", "jedec,spi-nor";
+ 		reg = <0>;
+ 		spi-max-frequency = <30000000>;
+@@ -205,19 +203,24 @@
+ 		spi-cpha;
+ 		m25p,fast-read;
+ 
+-		partition@0 {
+-			label = "loader";
+-			reg = <0x00000000 0x00040000>;
+-			read-only;
+-		};
+-		partition@40000 {
+-			label = "user";
+-			reg = <0x00040000 0x00400000>;
+-			read-only;
+-		};
+-		partition@440000 {
+-			label = "flash";
+-			reg = <0x00440000 0x03bc0000>;
++		partitions {
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "loader";
++				reg = <0x00000000 0x00040000>;
++				read-only;
++			};
++			partition@40000 {
++				label = "user";
++				reg = <0x00040000 0x00400000>;
++				read-only;
++			};
++			partition@440000 {
++				label = "flash";
++				reg = <0x00440000 0x03bc0000>;
++			};
+ 		};
+ 	};
+ };
 -- 
 2.1.4
 
