@@ -1,34 +1,66 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Mon, 16 Nov 2015 12:30:19 +0000
-Subject: Re: [PATCH v2 2/3] [media] include/media: move driver interface headers to a separate dir
-Message-Id: <11305053.FloWFxl3Yn@wuerfel>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:27 +0000
+Subject: [PATCH 20/29] ARM: shmobile: r8a7794: Add DU node to device tree
+Message-Id: <46c4f13d04d729fa79f7df2dd1978f9fc0ee6d6a.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <013152dcb3d4eaddd39aa4a37868430567bdc2d6.1447671420.git.mchehab@osg.samsung.com> <23e53dd0223c40ecf7128e0b270fcfbea8e1c43b.1447671420.git.mchehab@osg.samsung.com>
-In-Reply-To: <23e53dd0223c40ecf7128e0b270fcfbea8e1c43b.1447671420.git.mchehab@osg.samsung.com>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Mauro Carvalho Chehab <mchehab@infradead.org>, Hans Verkuil <hverkuil@xs4all.nl>, Kyungmin Park <kyungmin.park@samsung.com>, Heungjun Kim <riverful.kim@samsung.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Andy Walls <awalls@md.metrocast.net>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Kukjin Kim <kgene@kernel.org>, Krzysztof Kozlowski <k.kozlowski@samsung.com>, Josh Wu <josh.wu@atmel.com>, Hans de Goede <hdegoede@redhat.com>, Mike Isely <isely@pobox.com>, Jaroslav Kysela <perex@perex.cz>, Takashi Iwai <tiwai@suse.com>, Andrew Morton <akpm@linux-foundation.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "David S. Miller" <davem@davemloft.net>, Joe Perches <joe@perches.com>, Jiri Slaby <jslaby@suse.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Vinod Koul <vinod.koul@intel.com>, Ul
+To: linux-arm-kernel@lists.infradead.org
 
-On Monday 16 November 2015 09:00:44 Mauro Carvalho Chehab wrote:
-> Let's not mix headers used by the core with those headers that
-> are needed by some driver-specific interface header.
-> 
-> The headers used on drivers were manually moved using:
->     mkdir include/media/drv-intf/
->     git mv include/media/cx2341x.h include/media/cx25840.h \
-> 	include/media/exynos-fimc.h include/media/msp3400.h \
-> 	include/media/s3c_camif.h include/media/saa7146.h \
-> 	include/media/saa7146_vv.h  include/media/sh_mobile_ceu.h \
-> 	include/media/sh_mobile_csi2.h include/media/sh_vou.h \
-> 	include/media/si476x.h include/media/soc_mediabus.h \
-> 	include/media/tea575x.h include/media/drv-intf/
-> 
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Add the DU device with a disabled state. Boards that want to enable the
+DU need to specify the output topology.
 
-I probably would have left soc_mediabus.h where it is, but I can
-see there are reasons to move it.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7794.dtsi | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
-	Arnd
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index b70e4061d8b1..4075a0a3d5c1 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -750,6 +750,34 @@
+ 		};
+ 	};
+ 
++	du: display@feb00000 {
++		compatible = "renesas,du-r8a7794";
++		reg = <0 0xfeb00000 0 0x40000>;
++		reg-names = "du";
++		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
++			     <0 268 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp7_clks R8A7794_CLK_DU0>,
++			 <&mstp7_clks R8A7794_CLK_DU0>;
++		clock-names = "du.0", "du.1";
++		status = "disabled";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				du_out_rgb0: endpoint {
++				};
++			};
++			port@1 {
++				reg = <1>;
++				du_out_rgb1: endpoint {
++				};
++			};
++		};
++	};
++
+ 	clocks {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+-- 
+2.1.4
+
