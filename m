@@ -1,32 +1,45 @@
-From: =?UTF-8?B?7KGw7LC97ZmY?= <charlescho64@gmail.com>
-Date: Mon, 23 Nov 2015 02:23:04 +0000
-Subject: [Renesas-Lager][How to use IOMMU Hardware and test?]
-Message-Id: <CANi_qo2amjsbU=i_ZAQkWMecSVkpA6A=KBBL6tYAmcVumiiiKg@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 20 Nov 2015 12:36:54 +0000
+Subject: [PATCH 3/6] ARM: shmobile: emev2 dtsi: Use "arm,pl390" for GIC
+Message-Id: <1448023017-21816-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1448023017-21816-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448023017-21816-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+Replace the "arm,cortex-a9-gic" compatible value for the GIC by
+"arm,pl390", as the documentation states it is a PL390.
+This has been confirmed (thanks Simon!) by reading the GICD_IIDR
+register, which reports 0x0000043b (PL390 = 0x00, ARM = 0x43b).
 
-Now I am researching how to use renesas lager board for IVI(In vehicle
-Infortainments) based on XEN.  Especially I am wondering how to assign
-some device to special guest and got the method that
-passthrough(Direct IO) is right.
+This has no effect on runtime behavior, as currently the GIC driver
+treats both compatible values the same.
 
-This method need hardware with IOMMU(SMMUv1 and SMMUv2 supported).
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+You can read the GICD_IIDR register from U-Boot using
 
-1. Is Renesas R-CAR Lager board supporting IOMMU?
-2. If use this IOMMU, what should be configured? only kernel configure
-file is changed with enabling "shmobile_iommu and
-shmobile_iommu_addrsize_xxMB" in shmobile_defconfig file?
-3. finally How to test the system with IOMMU enable or disable for performance ?
+    md 0xe0028008 1
+---
+ arch/arm/boot/dts/emev2.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-BR
-
-Thanks
-
+diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
+index edad0c4eea3505b7..57795da616cb4085 100644
+--- a/arch/arm/boot/dts/emev2.dtsi
++++ b/arch/arm/boot/dts/emev2.dtsi
+@@ -44,7 +44,7 @@
+ 	};
+ 
+ 	gic: interrupt-controller@e0020000 {
+-		compatible = "arm,cortex-a9-gic";
++		compatible = "arm,pl390";
+ 		interrupt-controller;
+ 		#interrupt-cells = <3>;
+ 		reg = <0xe0028000 0x1000>,
 -- 
-Happy Virus....
-Chang Hwan, Cho
+1.9.1
+
