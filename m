@@ -1,59 +1,114 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 25 Nov 2015 00:21:25 +0000
-Subject: Re: [PATCH] dmaengine: usb-dmac: Document SoC specific bindings
-Message-Id: <20151125002125.GG20596@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 19:29:39 +0000
+Subject: [PATCH v3 net-next] ravb: use clock rate as basis for GTI.TIV
+Message-Id: <1448047779-21242-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448331641-21758-1-git-send-email-horms+renesas@verge.net.au>
- <SG2PR06MB09198719427CB3F4FE532834D8060@SG2PR06MB0919.apcprd06.prod.outlook.com>
-In-Reply-To: <SG2PR06MB09198719427CB3F4FE532834D8060-ESzmfEwOt/zNQ8RBPPB5A20DtJ1/0DrXvxpqHgZTriW3zl9H0oFU5g@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
-Cc: Vinod Koul <vinod.koul-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, "dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>
 
-On Tue, Nov 24, 2015 at 05:49:05AM +0000, Yoshihiro Shimoda wrote:
-> Hi Simon-san,
-> 
-> > From: Simon Horman [mailto:horms+renesas@verge.net.au]
-> > Sent: Tuesday, November 24, 2015 11:21 AM
-> > 
-> > In general Renesas hardware is not documented to the extent where the
-> > relationship between IP blocks on different SoCs can be assumed although
-> > they may appear to operate the same way. Furthermore the documentation
-> > typically does not specify a version for individual IP blocks. For these
-> > reasons a convention of using the SoC name in place of a version and
-> > providing SoC-specific compat strings has been adopted.
-> > 
-> > Although not universally liked this convention is used in the bindings for
-> > most drivers for Renesas hardware. The purpose of this patch is to
-> > update the Renesas USB DMA Controller driver to follow this convention.
-> > 
-> > Cc: devicetree@vger.kernel.org
-> > Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> 
-> Thank you for the patch!
-> 
-> > ---
-> > * r8a7792 (R-Car V2H) is omitted as my reading of the documentation
-> >   is that Renesas USB-DMAC does not exist on that SoC
-> 
-> I agree with you.
-> 
-> > * r8a7795 (R-Car H2) is omitted as its unclear to me on the compatibility
-> >   of USB-DMAC that SoC
-> 
-> I think this is R-Car H3, not H2.
+The GTI.TIV may be set to 2GHz^2 / rate, where rate is
+that of the clock of the device. Rather than assuming a
+rate of 130MHz use the actual rate of the clock.
 
-Yes, H3. Sorry about that.
+The motivation for this is to use the correct rate on
+the r8a7795/Salvator-X which is advertised as 133MHz but
+may differ depending on the extal present on the Salvator-X.
 
-> Since R-Car H3's USB-DMAC is compatible with other SoCs,
-> would you add the R-Car H3's compatible string, if possible?
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Sure, will do.
+---
+v2
+* Corrected typos in changelog, as pointed out by Geert Uytterhoeven
+* Use do_div() rather than 64-bit division to allow compilation on
+  32-bit ARM
 
-> Anyway,
-> Acked-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+v3
+* Dropped RFC prefix
+---
+ drivers/net/ethernet/renesas/ravb.h      |  3 +++
+ drivers/net/ethernet/renesas/ravb_main.c | 38 +++++++++++++++++++++++++++++++-
+ 2 files changed, 40 insertions(+), 1 deletion(-)
 
-Thanks!
+diff --git a/drivers/net/ethernet/renesas/ravb.h b/drivers/net/ethernet/renesas/ravb.h
+index 0623fff932e4..f9dee7436e81 100644
+--- a/drivers/net/ethernet/renesas/ravb.h
++++ b/drivers/net/ethernet/renesas/ravb.h
+@@ -576,6 +576,9 @@ enum GTI_BIT {
+ 	GTI_TIV		= 0x0FFFFFFF,
+ };
+ 
++#define GTI_TIV_MAX	GTI_TIV
++#define GTI_TIV_MIN	0x20
++
+ /* GIC */
+ enum GIC_BIT {
+ 	GIC_PTCE	= 0x00000001,	/* Undocumented? */
+diff --git a/drivers/net/ethernet/renesas/ravb_main.c b/drivers/net/ethernet/renesas/ravb_main.c
+index ee8d1ec61fab..990dc55cdada 100644
+--- a/drivers/net/ethernet/renesas/ravb_main.c
++++ b/drivers/net/ethernet/renesas/ravb_main.c
+@@ -32,6 +32,8 @@
+ #include <linux/slab.h>
+ #include <linux/spinlock.h>
+ 
++#include <asm/div64.h>
++
+ #include "ravb.h"
+ 
+ #define RAVB_DEF_MSG_ENABLE \
+@@ -1659,6 +1661,38 @@ static const struct of_device_id ravb_match_table[] = {
+ };
+ MODULE_DEVICE_TABLE(of, ravb_match_table);
+ 
++static int ravb_set_gti(struct net_device *ndev)
++{
++
++	struct device *dev = ndev->dev.parent;
++	struct device_node *np = dev->of_node;
++	unsigned long rate;
++	struct clk *clk;
++	uint64_t inc;
++
++	clk = of_clk_get(np, 0);
++	if (IS_ERR(clk)) {
++		dev_err(dev, "could not get clock\n");
++		return PTR_ERR(clk);
++	}
++
++	rate = clk_get_rate(clk);
++	clk_put(clk);
++
++	inc = 1000000000ULL << 20;
++	do_div(inc, rate);
++
++	if (inc < GTI_TIV_MIN || inc > GTI_TIV_MAX) {
++		dev_err(dev, "gti.tiv increment 0x%llx is outside the range 0x%x - 0x%x\n",
++			inc, GTI_TIV_MIN, GTI_TIV_MAX);
++		return -EINVAL;
++	}
++
++	ravb_write(ndev, inc, GTI);
++
++	return 0;
++}
++
+ static int ravb_probe(struct platform_device *pdev)
+ {
+ 	struct device_node *np = pdev->dev.of_node;
+@@ -1755,7 +1789,9 @@ static int ravb_probe(struct platform_device *pdev)
+ 		   CCC);
+ 
+ 	/* Set GTI value */
+-	ravb_write(ndev, ((1000 << 20) / 130) & GTI_TIV, GTI);
++	error = ravb_set_gti(ndev);
++	if (error)
++		goto out_release;
+ 
+ 	/* Request GTI loading */
+ 	ravb_write(ndev, ravb_read(ndev, GCCR) | GCCR_LTI, GCCR);
+-- 
+2.1.4
+
