@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:05:26 +0000
-Subject: [PATCH 19/29] ARM: shmobile: r8a7794: Add DU0 clock
-Message-Id: <9859cd3b1582cbe39f969a500d8b7fc87c4b87b8.1447981420.git.horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:13 +0000
+Subject: [PATCH 06/29] ARM: shmobile: r8a7790: fix "gpio-ranges" props
+Message-Id: <56a2182f6ada123759041bf28d066bb509fe358b.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1447981420.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
@@ -10,58 +10,39 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-The DU0 clock is an MSTP clock, child of the CPG ZX clock.
+On R8A7790, GPIO banks 1 and 2 are missing  pins 30 and 31.  Correct the
+"gpio-ranges" properties of the corresponding device nodes.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7794.dtsi            | 7 ++++---
- include/dt-bindings/clock/r8a7794-clock.h | 1 +
- 2 files changed, 5 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index 018ff56470b6..b70e4061d8b1 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -1017,19 +1017,20 @@
- 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
- 			clocks = <&mp_clk>, <&mp_clk>,
- 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
--				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
-+				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
-+				 <&zx_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
- 				R8A7794_CLK_EHCI R8A7794_CLK_HSUSB
- 				R8A7794_CLK_HSCIF2 R8A7794_CLK_SCIF5
- 				R8A7794_CLK_SCIF4 R8A7794_CLK_HSCIF1 R8A7794_CLK_HSCIF0
- 				R8A7794_CLK_SCIF3 R8A7794_CLK_SCIF2 R8A7794_CLK_SCIF1
--				R8A7794_CLK_SCIF0
-+				R8A7794_CLK_SCIF0 R8A7794_CLK_DU0
- 			>;
- 			clock-output-names  				"ehci", "hsusb",
- 				"hscif2", "scif5", "scif4", "hscif1", "hscif0",
--				"scif3", "scif2", "scif1", "scif0";
-+				"scif3", "scif2", "scif1", "scif0", "du0";
- 		};
- 		mstp8_clks: mstp8_clks@e6150990 {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-index 09da38a58776..a7a7e0370968 100644
---- a/include/dt-bindings/clock/r8a7794-clock.h
-+++ b/include/dt-bindings/clock/r8a7794-clock.h
-@@ -79,6 +79,7 @@
- #define R8A7794_CLK_SCIF2		19
- #define R8A7794_CLK_SCIF1		20
- #define R8A7794_CLK_SCIF0		21
-+#define R8A7794_CLK_DU0			24
- 
- /* MSTP8 */
- #define R8A7794_CLK_VIN1		10
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index ae5eb281d43a..b545fef3f7db 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -143,7 +143,7 @@
+ 		interrupts = <0 5 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+ 		gpio-controller;
+-		gpio-ranges = <&pfc 0 32 32>;
++		gpio-ranges = <&pfc 0 32 30>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+ 		clocks = <&mstp9_clks R8A7790_CLK_GPIO1>;
+@@ -156,7 +156,7 @@
+ 		interrupts = <0 6 IRQ_TYPE_LEVEL_HIGH>;
+ 		#gpio-cells = <2>;
+ 		gpio-controller;
+-		gpio-ranges = <&pfc 0 64 32>;
++		gpio-ranges = <&pfc 0 64 30>;
+ 		#interrupt-cells = <2>;
+ 		interrupt-controller;
+ 		clocks = <&mstp9_clks R8A7790_CLK_GPIO2>;
 -- 
 2.1.4
 
