@@ -1,47 +1,57 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 19 Nov 2015 15:56:43 +0000
-Subject: [PATCH v3 03/11] i2c: rcar: remove unused IOERROR state
-Message-Id: <1447948611-2615-4-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:34 +0000
+Subject: [PATCH 27/29] ARM: shmobile: alt: Add pfc pins to DT
+Message-Id: <22b160713cb6944450dad0abd18d8929f60500dc.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+PFC is already enabled on the r8a7794.
+This adds pins for devices already enabled in DT on
+the r8a7794 based alt board.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Based on work by Mitsuhiro Kimura and Hisashi Nakamura.
+
+Cc: Mitsuhiro Kimura <mitsuhiro.kimura.kc@renesas.com>
+Cc: Hisashi Nakamura <hisashi.nakamura.ak@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 ---
- drivers/i2c/busses/i2c-rcar.c | 6 ------
- 1 file changed, 6 deletions(-)
+ arch/arm/boot/dts/r8a7794-alt.dts | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index efc8de6cc8a2f9..746406923a5825 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -94,7 +94,6 @@
- #define RCAR_IRQ_ACK_RECV	(~(MAT | MDR) & 0xFF)
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index a548007b9b10..e7c94554d847 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -100,6 +100,23 @@
+ 	clock-frequency = <20000000>;
+ };
  
- #define ID_LAST_MSG	(1 << 0)
--#define ID_IOERROR	(1 << 1)
- #define ID_DONE		(1 << 2)
- #define ID_ARBLOST	(1 << 3)
- #define ID_NACK		(1 << 4)
-@@ -541,11 +540,6 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 			break;
- 		}
- 
--		if (rcar_i2c_flags_has(priv, ID_IOERROR)) {
--			ret = -EIO;
--			break;
--		}
--
- 		ret = i + 1; /* The number of transfer */
- 	}
- out:
++&pfc {
++	scif2_pins: serial2 {
++		renesas,groups = "scif2_data";
++		renesas,function = "scif2";
++	};
++
++	ether_pins: ether {
++		renesas,groups = "eth_link", "eth_mdio", "eth_rmii";
++		renesas,function = "eth";
++	};
++
++	ether_b_pins: ether {
++		renesas,groups = "eth_link_b", "eth_mdio_b", "eth_rmii_b";
++		renesas,function = "eth";
++	};
++};
++
+ &cmt0 {
+ 	status = "okay";
+ };
 -- 
 2.1.4
 
