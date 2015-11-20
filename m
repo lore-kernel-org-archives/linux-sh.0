@@ -1,137 +1,84 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:27 +0000
-Subject: [PATCH 10/18] arm64: renesas: r8a7795: Sound SSI PIO support
-Message-Id: <623197b90c7aa97c0626b0aec06f95d05666b3e0.1448587800.git.horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:25 +0000
+Subject: [PATCH 18/29] ARM: shmobile: gose: Add QSPI device to DT
+Message-Id: <6380d62a1b1ca498f2187c9702f1dec00ad527e0.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448587800.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448587800.git.horms+renesas@verge.net.au>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Enable the QSPI controller in the gose device tree.
 
-This patch adds SSI for PIO sound support
+Based on similar work for the silk board by Vladimir Barinov and
+Sergei Shtylyov.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 95 ++++++++++++++++++++++++++++++++
- 1 file changed, 95 insertions(+)
+ arch/arm/boot/dts/r8a7793-gose.dts | 43 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 2cc58114d1ef..15753f4dcf4e 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -52,6 +52,29 @@
- 		clock-frequency = <0>;
+diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
+index 1575ef759047..d842ce77b7c8 100644
+--- a/arch/arm/boot/dts/r8a7793-gose.dts
++++ b/arch/arm/boot/dts/r8a7793-gose.dts
+@@ -57,6 +57,11 @@
+ 		renesas,groups = "intc_irq0";
+ 		renesas,function = "intc";
  	};
++
++	qspi_pins: spi0 {
++		renesas,groups = "qspi_ctrl", "qspi_data4";
++		renesas,function = "qspi";
++	};
+ };
  
-+	/*
-+	 * The external audio clocks are configured as 0 Hz fixed frequency
-+	 * clocks by default.
-+	 * Boards that provide audio clocks should override them.
-+	 */
-+	audio_clk_a: audio_clk_a {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <0>;
-+	};
+ &ether {
+@@ -92,3 +97,41 @@
+ 
+ 	status = "okay";
+ };
 +
-+	audio_clk_b: audio_clk_b {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <0>;
-+	};
++&qspi {
++	pinctrl-0 = <&qspi_pins>;
++	pinctrl-names = "default";
 +
-+	audio_clk_c: audio_clk_c {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <0>;
-+	};
++	status = "okay";
 +
- 	soc {
- 		compatible = "simple-bus";
- 		interrupt-parent = <&gic>;
-@@ -534,5 +557,77 @@
- 			power-domains = <&cpg>;
- 			status = "disabled";
- 		};
++	flash@0 {
++		compatible = "spansion,s25fl512s", "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <30000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
++		spi-cpol;
++		spi-cpha;
++		m25p,fast-read;
 +
-+		rcar_sound: sound@ec500000 {
-+			/*
-+			 * #sound-dai-cells is required
-+			 *
-+			 * Single DAI : #sound-dai-cells = <0>;	<&rcar_sound>;
-+			 * Multi  DAI : #sound-dai-cells = <1>;	<&rcar_sound N>;
-+			 */
-+			/*
-+			 * #clock-cells is required for audio_clkout0/1/2/3
-+			 *
-+			 * clkout	: #clock-cells = <0>;	<&rcar_sound>;
-+			 * clkout0/1/2/3: #clock-cells = <1>;	<&rcar_sound N>;
-+			 */
-+			compatible =  "renesas,rcar_sound-r8a7795", "renesas,rcar_sound-gen3";
-+			reg =	<0 0xec500000 0 0x1000>, /* SCU */
-+				<0 0xec5a0000 0 0x100>,  /* ADG */
-+				<0 0xec540000 0 0x1000>, /* SSIU */
-+				<0 0xec541000 0 0x280>,  /* SSI */
-+				<0 0xec740000 0 0x200>;  /* Audio DMAC peri peri*/
-+			reg-names = "scu", "adg", "ssiu", "ssi", "audmapp";
++		partitions {
++			#address-cells = <1>;
++			#size-cells = <1>;
 +
-+			clocks = <&cpg CPG_MOD 1005>,
-+				 <&cpg CPG_MOD 1006>, <&cpg CPG_MOD 1007>,
-+				 <&cpg CPG_MOD 1008>, <&cpg CPG_MOD 1009>,
-+				 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
-+				 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
-+				 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
-+				 <&audio_clk_a>, <&audio_clk_b>,
-+				 <&audio_clk_c>,
-+				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
-+			clock-names = "ssi-all",
-+				      "ssi.9", "ssi.8", "ssi.7", "ssi.6",
-+				      "ssi.5", "ssi.4", "ssi.3", "ssi.2",
-+				      "ssi.1", "ssi.0",
-+				      "clk_a", "clk_b", "clk_c", "clk_i";
-+			power-domains = <&cpg>;
-+			status = "disabled";
-+
-+			rcar_sound,ssi {
-+				ssi0: ssi@0 {
-+					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi1: ssi@1 {
-+					 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi2: ssi@2 {
-+					interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi3: ssi@3 {
-+					interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi4: ssi@4 {
-+					interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi5: ssi@5 {
-+					interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi6: ssi@6 {
-+					interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi7: ssi@7 {
-+					interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi8: ssi@8 {
-+					interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
-+				};
-+				ssi9: ssi@9 {
-+					interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
-+				};
++			partition@0 {
++				label = "loader";
++				reg = <0x00000000 0x00040000>;
++				read-only;
++			};
++			partition@40000 {
++				label = "user";
++				reg = <0x00040000 0x00400000>;
++				read-only;
++			};
++			partition@440000 {
++				label = "flash";
++				reg = <0x00440000 0x03bc0000>;
 +			};
 +		};
- 	};
- };
++	};
++};
 -- 
 2.1.4
 
