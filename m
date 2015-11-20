@@ -1,94 +1,101 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 19 Nov 2015 15:56:41 +0000
-Subject: [PATCH v3 01/11] i2c: rcar: make sure clocks are on when doing clock calculation
-Message-Id: <1447948611-2615-2-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:11 +0000
+Subject: [PATCH 04/29] ARM: shmobile: silk: add SDHI1 DT support
+Message-Id: <761b11e141366743a5c179a0f94c237d0ba9667c.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-When calculating the bus speed, the clock should be on, of course. Most
-bootloaders left them on, so this went unnoticed so far.
+Define the SILK board dependent part of the SDHI1 (connected to micro-SD
+slot) device nodes along with the necessary voltage regulators.
 
-Move the ioremapping out of this clock-enabled-block and prepare for
-adding hw initialization there, too.
+Based on the original patch by Vladimir Barinov
+<vladimir.barinov@cogentembedded.com>.
 
-Reported-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/busses/i2c-rcar.c | 26 +++++++++++++++++---------
- 1 file changed, 17 insertions(+), 9 deletions(-)
+ arch/arm/boot/dts/r8a7794-silk.dts | 40 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index b0ae560b38c308..dac0f5d1945341 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -650,19 +650,23 @@ static int rcar_i2c_probe(struct platform_device *pdev)
- 		return PTR_ERR(priv->clk);
- 	}
+diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
+index 48ff3e2958ae..a49942b626c8 100644
+--- a/arch/arm/boot/dts/r8a7794-silk.dts
++++ b/arch/arm/boot/dts/r8a7794-silk.dts
+@@ -12,6 +12,7 @@
  
-+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	priv->io = devm_ioremap_resource(dev, res);
-+	if (IS_ERR(priv->io))
-+		return PTR_ERR(priv->io);
+ /dts-v1/;
+ #include "r8a7794.dtsi"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "SILK";
+@@ -39,6 +40,30 @@
+ 		regulator-boot-on;
+ 		regulator-always-on;
+ 	};
 +
- 	bus_speed = 100000; /* default 100 kHz */
- 	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
- 
- 	priv->devtype = (enum rcar_i2c_type)of_match_device(rcar_i2c_dt_ids, dev)->data;
- 
-+	pm_runtime_enable(dev);
-+	pm_runtime_get_sync(dev);
- 	ret = rcar_i2c_clock_calculate(priv, bus_speed, dev);
- 	if (ret < 0)
--		return ret;
-+		goto out_pm_put;
- 
--	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	priv->io = devm_ioremap_resource(dev, res);
--	if (IS_ERR(priv->io))
--		return PTR_ERR(priv->io);
-+	pm_runtime_put(dev);
- 
- 	irq = platform_get_irq(pdev, 0);
- 	init_waitqueue_head(&priv->wait);
-@@ -682,22 +686,26 @@ static int rcar_i2c_probe(struct platform_device *pdev)
- 			       dev_name(dev), priv);
- 	if (ret < 0) {
- 		dev_err(dev, "cannot get irq %d\n", irq);
--		return ret;
-+		goto out_pm_disable;
- 	}
- 
--	pm_runtime_enable(dev);
- 	platform_set_drvdata(pdev, priv);
- 
- 	ret = i2c_add_numbered_adapter(adap);
- 	if (ret < 0) {
- 		dev_err(dev, "reg adap failed: %d\n", ret);
--		pm_runtime_disable(dev);
--		return ret;
-+		goto out_pm_disable;
- 	}
- 
- 	dev_info(dev, "probed\n");
- 
- 	return 0;
++	vcc_sdhi1: regulator@3 {
++		compatible = "regulator-fixed";
 +
-+ out_pm_put:
-+	pm_runtime_put(dev);
-+ out_pm_disable:
-+	pm_runtime_disable(dev);
-+	return ret;
- }
++		regulator-name = "SDHI1 Vcc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpio = <&gpio4 26 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	vccq_sdhi1: regulator@4 {
++		compatible = "regulator-gpio";
++
++		regulator-name = "SDHI1 VccQ";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&gpio4 29 GPIO_ACTIVE_HIGH>;
++		gpios-states = <1>;
++		states = <3300000 1
++			  1800000 0>;
++	};
+ };
  
- static int rcar_i2c_remove(struct platform_device *pdev)
+ &extal_clk {
+@@ -71,6 +96,11 @@
+ 		renesas,function = "mmc";
+ 	};
+ 
++	sdhi1_pins: sd1 {
++		renesas,groups = "sdhi1_data4", "sdhi1_ctrl";
++		renesas,function = "sdhi1";
++	};
++
+ 	qspi_pins: spi0 {
+ 		renesas,groups = "qspi_ctrl", "qspi_data4";
+ 		renesas,function = "qspi";
+@@ -147,6 +177,16 @@
+ 	status = "okay";
+ };
+ 
++&sdhi1 {
++	pinctrl-0 = <&sdhi1_pins>;
++	pinctrl-names = "default";
++
++	vmmc-supply = <&vcc_sdhi1>;
++	vqmmc-supply = <&vccq_sdhi1>;
++	cd-gpios = <&gpio6 14 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
++
+ &qspi {
+ 	pinctrl-0 = <&qspi_pins>;
+ 	pinctrl-names = "default";
 -- 
 2.1.4
 
