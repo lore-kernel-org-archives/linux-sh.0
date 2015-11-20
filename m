@@ -1,69 +1,38 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 19 Nov 2015 18:38:44 +0000
-Subject: [PATCH 05/25] serial: sh-sci: Drop unused frame_len parameter for sci_baud_calc_hscif()
-Message-Id: <1447958344-836-6-git-send-email-geert+renesas@glider.be>
+Date: Fri, 20 Nov 2015 12:36:56 +0000
+Subject: [PATCH 5/6] staging: board: kzm9d: Use "arm,pl390"
+Message-Id: <1448023017-21816-6-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+References: <1448023017-21816-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448023017-21816-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
-
-As F is assumed to be zero in the receive margin formula, frame_len is
-not used. Remove it, together with the sci_baud_calc_frame_len() helper
-function.
+To: linux-arm-kernel@lists.infradead.org
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/tty/serial/sh-sci.c | 24 +++---------------------
- 1 file changed, 3 insertions(+), 21 deletions(-)
+Must be applied together with "ARM: shmobile: emev2 dtsi: Use
+"arm,pl390" for GIC"!
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 676f9d1354943a1b..7c7dfbce54ed9c19 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1866,26 +1866,9 @@ static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
- 	return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
- }
+Greg: Can you please provide your ack? Thanks!
+---
+ drivers/staging/board/kzm9d.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/staging/board/kzm9d.c b/drivers/staging/board/kzm9d.c
+index 8d1eb09bc66ef413..05a6d434d307fe0f 100644
+--- a/drivers/staging/board/kzm9d.c
++++ b/drivers/staging/board/kzm9d.c
+@@ -11,7 +11,7 @@ static struct resource usbs1_res[] __initdata = {
  
--/* calculate frame length from SMR */
--static int sci_baud_calc_frame_len(unsigned int smr_val)
--{
--	int len = 10;
--
--	if (smr_val & SCSMR_CHR)
--		len--;
--	if (smr_val & SCSMR_PE)
--		len++;
--	if (smr_val & SCSMR_STOP)
--		len++;
--
--	return len;
--}
--
--
- /* calculate sample rate, BRR, and clock select for HSCIF */
--static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq,
--				int *brr, unsigned int *srr,
--				unsigned int *cks, int frame_len)
-+static void sci_baud_calc_hscif(unsigned int bps, unsigned long freq, int *brr,
-+				unsigned int *srr, unsigned int *cks)
+ static void __init kzm9d_init(void)
  {
- 	int sr, c, br, err, recv_margin;
- 	int min_err = 1000; /* 100% */
-@@ -1987,9 +1970,8 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 	baud = uart_get_baud_rate(port, termios, old, 0, max_baud);
- 	if (likely(baud && port->uartclk)) {
- 		if (s->cfg->type = PORT_HSCIF) {
--			int frame_len = sci_baud_calc_frame_len(smr_val);
- 			sci_baud_calc_hscif(baud, port->uartclk, &t, &srr,
--					    &cks, frame_len);
-+					    &cks);
- 		} else {
- 			t = sci_scbrr_calc(s, baud, port->uartclk);
- 			for (cks = 0; t >= 256 && cks <= 3; cks++)
+-	board_staging_gic_setup_xlate("arm,cortex-a9-gic", 32);
++	board_staging_gic_setup_xlate("arm,pl390", 32);
+ 
+ 	if (!board_staging_dt_node_available(usbs1_res,
+ 					     ARRAY_SIZE(usbs1_res))) {
 -- 
 1.9.1
 
