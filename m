@@ -1,83 +1,57 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Nov 2015 04:31:43 +0000
-Subject: [PATCH v6 0/5] arm64: dts: r8a7795: enable EthernetAVB on Salvator-X
-Message-Id: <1446438708-22433-1-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:48 +0000
+Subject: [GIT PULL] Renesas ARM64 Based SoC DT Updates for v4.5
+Message-Id: <cover.1447980335.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hi Olof, Hi Kevin, Hi Arnd,
 
-This patchset enables the EthernetAVB on the Salvator-X board.
-With it and its dependencies in place I have have successfully
-booted to an nfsroot user-space (arm64 Debian Jessie).
-
-In order to achieve that I used the following command line set from u-boot.
-
-root=/dev/nfs ip=dhcp nfsroot.3.3.135:/srv/nfs/salvator-x-arm64
+Please consider these Renesas ARM64 based SoC DT updates for v4.5.
 
 
-Changes:
+The following changes since commit 8005c49d9aea74d382f474ce11afbbc7d7130bec:
 
-* Update for new CPG/MSSR bindings via Geert Uytterhoeven
-* New patch to add ethernet0 alias
-* See changelog of individual patches for more details
+  Linux 4.4-rc1 (2015-11-15 17:00:27 -0800)
 
+are available in the git repository at:
 
-Base:
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-arm64-dt-for-v4.5
 
-This is based on:
+for you to fetch changes up to b138e11931f2fe25cf188ed62b54bc36f59a25ce:
 
-* "[PATCH v12 0/7] arm64: renesas: Add Renesas R8A7795 SoC support"
-  - topic/r8a7795-gpio-v3 branch of my renesas tree
+  MAINTAINERS: Add entry for Renesas arm64 architecture (2015-11-17 02:55:03 +0900)
 
+----------------------------------------------------------------
+Renesas ARM64 Based SoC DT Updates for v4.5
 
-Runtime Dependencies:
+* Initial support for Renesas ARM64 Based r8a7795 SoC and
+  Salvator-X board
 
-* The base (above)
+----------------------------------------------------------------
+Geert Uytterhoeven (2):
+      arm64: renesas: r8a7795: Add dummy dma-controller nodes
+      arm64: renesas: r8a7795: Add all SCIF nodes
 
-* "[PATCH/RFC v3 net-next 0/4] ravb: Add support for r8a7795 SoC"
-  and its dependencies
-  - David Miller's net-next tree
-
-* v4.3-rc2 for "[PATCH] gpio: rcar: GPIO_RCAR doesn't relate to ARM"
-  - Included in net-next
-
-* "[PATCH/RFC v2] sh-pfc: r8a7795: add EtherAVB support"
-  and its dependencies
-  - for-next branch of Linus Walleij's pinctl tree
-
-* "[PATCH v5 0/5] clk: shmobile: Add new CPG/MSSR driver"
-  - topic/cpg-mssr-v5 branch of Geert Uytterhoeven's renesas-drivers tree
-
-
-Availability:
-
-To aid review of this and other EtherAVB patches the following branches are
-available in my renesas tree on kernel.org.
-
-* topic/r8a7795-ravb-v6: this patchset
-* topic/r8a7795-ravb-v6.runtime:
-      the above branch and its runtime dependencies
-
-
-Geert Uytterhoeven (1):
-  arm64: renesas: salvator-x: Setup ethernet0 alias for U-Boot
-
-Kazuya Mizuguchi (2):
-  arm64: dts: r8a7795: add EthernetAVB device node
-  arm64: dts: r8a7795: enable EthernetAVB on Salvator-X
+Kuninori Morimoto (2):
+      arm64: renesas: r8a7795: enable PFC
+      arm64: renesas: add Salvator-X board support
 
 Simon Horman (2):
-  arm64: dts: r8a7795: enable nfs root on Salvator-X board
-  arm64: defconfig: enable EthernetAVB
+      arm64: renesas: r8a7795: Add Renesas R8A7795 SoC support
+      MAINTAINERS: Add entry for Renesas arm64 architecture
 
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 34 +++++++++++++++++-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 42 ++++++++++++++++++++++
- arch/arm64/configs/defconfig                       |  2 ++
- 3 files changed, 77 insertions(+), 1 deletion(-)
-
--- 
-2.1.4
-
+ Documentation/devicetree/bindings/arm/shmobile.txt |   4 +
+ MAINTAINERS                                        |   9 ++
+ arch/arm64/Kconfig.platforms                       |  17 ++
+ arch/arm64/boot/dts/Makefile                       |   1 +
+ arch/arm64/boot/dts/renesas/Makefile               |   4 +
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |  62 ++++++++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 173 +++++++++++++++++++++
+ 7 files changed, 270 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/renesas/Makefile
+ create mode 100644 arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+ create mode 100644 arch/arm64/boot/dts/renesas/r8a7795.dtsi
