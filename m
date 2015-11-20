@@ -1,40 +1,57 @@
-From: Chris Brandt <chris.brandt@renesas.com>
-Date: Wed, 11 Nov 2015 14:31:09 +0000
-Subject: [PATCH] ARM: xip: Fix module loading
-Message-Id: <1447252269-22864-1-git-send-email-chris.brandt@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 20 Nov 2015 12:36:51 +0000
+Subject: [PATCH 0/6] ARM: shmobile: Use "arm,pl390" for GIC where appropriate
+Message-Id: <1448023017-21816-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-For an XIP kernel, RAM start at _sdata instead of _stext. This fixes an
-issue where when you load a module, vmalloc would return virtual memory
-that the MMU has incorrectly mapped to non-RAM physical addresses.
-This fix is similar to what is already done in arm_memblock_init().
+	Hi Simon, Magnus, Greg,
 
-Signed-off-by: Chris Brandt <chris.brandt@renesas.com>
----
- arch/arm/mm/mmu.c |    4 ++++
- 1 file changed, 4 insertions(+)
+On several Renesas ARM SoCs, the GIC is described in DT as being a
+Cortex A9 GIC, while it's actually a PL390. This is not only stated in
+the documentation, but has been verified by reading the GICD_IIDR
+register.
 
-diff --git a/arch/arm/mm/mmu.c b/arch/arm/mm/mmu.c
-index dd5a56b..d60cb8c 100644
---- a/arch/arm/mm/mmu.c
-+++ b/arch/arm/mm/mmu.c
-@@ -1383,7 +1383,11 @@ static void __init kmap_init(void)
- static void __init map_lowmem(void)
- {
- 	struct memblock_region *reg;
-+#ifdef CONFIG_XIP_KERNEL
-+	phys_addr_t kernel_x_start = round_down(__pa(_sdata), SECTION_SIZE);
-+#else
- 	phys_addr_t kernel_x_start = round_down(__pa(_stext), SECTION_SIZE);
-+#endif
- 	phys_addr_t kernel_x_end = round_up(__pa(__init_end), SECTION_SIZE);
- 
- 	/* Map all the lowmem memory banks. */
+This series
+  1. Corrects the DT compatible value to match reality,
+  2. Updates the board staging drivers to match the above.
+
+As both parts impact each other, I think it's best that all patches go
+in through Simon's ARM/SHMOBILE tree.
+
+Greg: can you please provide your ack for the last two patches?
+
+Thanks!
+
+Geert Uytterhoeven (6):
+  ARM: shmobile: r7s72100 dtsi: Use "arm,pl390" for GIC
+  ARM: shmobile: r8a7740 dtsi: Use "arm,pl390" for GIC
+  ARM: shmobile: emev2 dtsi: Use "arm,pl390" for GIC
+  ARM: shmobile: r8a7778 dtsi: Use "arm,pl390" for GIC
+  staging: board: kzm9d: Use "arm,pl390"
+  staging: board: armadillo800eva: Use "arm,pl390"
+
+ arch/arm/boot/dts/emev2.dtsi            | 2 +-
+ arch/arm/boot/dts/r7s72100.dtsi         | 2 +-
+ arch/arm/boot/dts/r8a7740.dtsi          | 2 +-
+ arch/arm/boot/dts/r8a7778.dtsi          | 2 +-
+ drivers/staging/board/armadillo800eva.c | 2 +-
+ drivers/staging/board/kzm9d.c           | 2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
+
 -- 
-1.7.9.5
+1.9.1
 
+Gr{oetje,eeting}s,
 
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
