@@ -1,7 +1,7 @@
 From: Marc Zyngier <marc.zyngier@arm.com>
-Date: Fri, 20 Nov 2015 09:38:19 +0000
+Date: Fri, 20 Nov 2015 09:49:29 +0000
 Subject: Re: [PATCH] PCI: pcie-rcar: Fix OF node passed to MSI irq domain
-Message-Id: <564EEA0B.5000408@arm.com>
+Message-Id: <564EECA9.9070400@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1446542899-25137-1-git-send-email-phil.edworthy@renesas.com>	<PS1PR06MB11804ED428472FC1FD776F6EF5150@PS1PR06MB1180.apcprd06.prod.outlook.com>	<20151109161115.GA13870@ulmo.nvidia.com>	<PS1PR06MB1180111D6423287273B64B0FF5150@PS1PR06MB1180.apcprd06.prod.outlook.com>	<20151110155232.GA25368@ulmo.nvidia.com>	<20151111163802.3a96080c@arm.com>	<PS1PR06MB11806B2B906CABB553B94442F5120@PS1PR06MB1180.apcprd06.prod.outlook.com> <20151112203100.2e91da2a@arm.com> <PS1PR06MB11800B547C8957B226077B83F5110@PS1PR06MB1180.apcprd06.prod.outlook.com> <564A2101.90600@arm.com> <PS1PR06MB11804FF05BBF30F2CA2083FCF51C0@PS1PR06MB1180.apcprd06.prod.outlook.com>
 In-Reply-To: <PS1PR06MB11804FF05BBF30F2CA2083FCF51C0@PS1PR06MB1180.apcprd06.prod.outlook.com>
@@ -58,10 +58,35 @@ On 18/11/15 18:01, Phil Edworthy wrote:
 > It seems that a number of other pci host drivers do the same, so I am
 > surprised that no one else has seen this.
 
-Yup, me too. Feels like a massive blunder. I'll cook something.
+Can you please give this hack a go and let me know if that helps?
 
-Thanks a lot for tracking this.
+Thanks,
 
 	M.
+
+diff --git a/drivers/pci/msi.c b/drivers/pci/msi.c
+index 53e4632..7eaa4c8 100644
+--- a/drivers/pci/msi.c
++++ b/drivers/pci/msi.c
+@@ -54,7 +54,7 @@ static int pci_msi_setup_msi_irqs(struct pci_dev *dev, in=
+t nvec, int type)
+ 	struct irq_domain *domain;
+=20
+ 	domain =3D pci_msi_get_domain(dev);
+-	if (domain)
++	if (domain && irq_domain_is_hierarchy(domain))
+ 		return pci_msi_domain_alloc_irqs(domain, dev, nvec, type);
+=20
+ 	return arch_setup_msi_irqs(dev, nvec, type);
+@@ -65,7 +65,7 @@ static void pci_msi_teardown_msi_irqs(struct pci_dev *dev)
+ 	struct irq_domain *domain;
+=20
+ 	domain =3D pci_msi_get_domain(dev);
+-	if (domain)
++	if (domain && irq_domain_is_hierarchy(domain))
+ 		pci_msi_domain_free_irqs(domain, dev);
+ 	else
+ 		arch_teardown_msi_irqs(dev);
+
 --=20
 Jazz is not dead. It just smells funny...
