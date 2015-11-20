@@ -1,65 +1,47 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 27 Nov 2015 05:53:26 +0000
-Subject: RE: [PATCH v5 1/4] phy: rcar-gen3-usb2: Add R-Car Gen3 USB2 PHY driver
-Message-Id: <SG2PR06MB09194141EF1D644C6C000805D8030@SG2PR06MB0919.apcprd06.prod.outlook.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:15 +0000
+Subject: [PATCH 08/29] ARM: shmobile: r8a7794: Disable all IPMMU nodes by default
+Message-Id: <832d3e4c823be3c09e20b33793ac668c77ea5bd6.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445331471-5028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <1445331471-5028-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
- <5657E84C.5010800@ti.com>
-In-Reply-To: <5657E84C.5010800@ti.com>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kishon Vijay Abraham I <kishon@ti.com>, "robh+dt@kernel.org" <robh+dt@kernel.org>, "pawel.moll@arm.com" <pawel.moll@arm.com>, "mark.rutland@arm.com" <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, "galak@codeaurora.org" <galak@codeaurora.org>
-Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+From: Magnus Damm <damm+renesas@opensource.se>
 
-Thank you for the review!
+The r8a7794 IPMMU nodes for MX and DS are currently lacking
+a line containing 'status = "disabled"', fix this by
+making sure they are disabled like all other IPMMU nodes.
 
-> From: Kishon Vijay Abraham I [mailto:kishon@ti.com]
-> Sent: Friday, November 27, 2015 2:21 PM
-> 
-> Hi,
-> 
-> On Tuesday 20 October 2015 02:27 PM, Yoshihiro Shimoda wrote:
-> > This patch adds support for R-Car generation 3 USB2 PHY driver.
-> > This SoC has 3 EHCI/OHCI channels, and the channel 0 is shared
-> > with the HSUSB (USB2.0 peripheral) device. And each channel has
-> > independent registers about the PHYs.
-> >
-> > So, the purpose of this driver is:
-> >  1) initializes some registers of SoC specific to use the
-> >     {ehci,ohci}-platform driver.
-> >
-> >  2) detects id pin to select host or peripheral on the channel 0.
-> >
-> > For now, this driver only supports 1) above.
-> 
-> When you do 2), make sure to use the extcon framework.
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7794.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
 
-Thank you for your proposal! I will use the extcon framework for it.
+diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
+index 6fc1acff507f..018ff56470b6 100644
+--- a/arch/arm/boot/dts/r8a7794.dtsi
++++ b/arch/arm/boot/dts/r8a7794.dtsi
+@@ -1097,6 +1097,7 @@
+ 		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
+ 		#iommu-cells = <1>;
++		status = "disabled";
+ 	};
+ 
+ 	ipmmu_mp: mmu@ec680000 {
+@@ -1113,6 +1114,7 @@
+ 		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
+ 			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
+ 		#iommu-cells = <1>;
++		status = "disabled";
+ 	};
+ 
+ 	ipmmu_gp: mmu@e62a0000 {
+-- 
+2.1.4
 
-> One minor comment below and then I can queue it for 4.5.
-
-Thank you!
-
-< snip >
-> > +	provider = devm_of_phy_provider_register(dev, of_phy_simple_xlate);
-> > +	if (IS_ERR(provider)) {
-> > +		dev_err(dev, "Failed to register PHY provider\n");
-> > +		return PTR_ERR(provider);
-> > +	}
-> > +
-> > +	return 0;
-> 
-> This can simply be replaced with return PTR_ERR_OR_ZERO(provider);
-
-Yes, I tested that this could simply be replaced with "return PTR_ERR_OR_ZERO(provider);".
-So, should I send v6 patch?
-
-Best regards,
-Yoshihiro Shimoda
-
-> Thanks
-> Kishon
