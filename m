@@ -1,36 +1,38 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 30 Nov 2015 13:59:55 +0000
-Subject: [PATCH 2/3] pinctrl: sh-pfc: r8a7740: Correct comment for LCD1 data pins
-Message-Id: <1448891996-5263-3-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:06:00 +0000
+Subject: [GIT PULL] Renesas ARM64 Based SoC Defconfig Updates for v4.5
+Message-Id: <cover.1447980456.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448891996-5263-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448891996-5263-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-The 12 data pins of LCD1 are numbered 0..11, not 0..12.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Please consider these Renesas ARM64 based SoC defconfig updates for v4.5.
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index 279e9dd442e44729..7f7c8a6e76e88f29 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -2214,7 +2214,7 @@ static const unsigned int lcd1_data9_mux[] = {
- 	LCD1_D8_MARK,
- };
- static const unsigned int lcd1_data12_pins[] = {
--	/* D[0:12] */
-+	/* D[0:11] */
- 	4, 3, 2, 1, 0, 91, 92, 23,
- 	93, 94, 21, 201,
- };
--- 
-1.9.1
 
+The following changes since commit 8005c49d9aea74d382f474ce11afbbc7d7130bec:
+
+  Linux 4.4-rc1 (2015-11-15 17:00:27 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-arm64-defconfig-for-v4.5
+
+for you to fetch changes up to 727e8d0126e3ecafce3ebc43eaa5a7d61af3bef0:
+
+  arm64: defconfig: renesas: Enable Renesas r8a7795 SoC (2015-11-17 02:50:29 +0900)
+
+----------------------------------------------------------------
+Renesas ARM64 Based SoC Defconfig Updates for v4.5
+
+* Enable Renesas r8a7795 SoC
+
+----------------------------------------------------------------
+Kuninori Morimoto (1):
+      arm64: defconfig: renesas: Enable Renesas r8a7795 SoC
+
+ arch/arm64/configs/defconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
