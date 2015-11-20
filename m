@@ -1,45 +1,59 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Nov 2015 12:36:54 +0000
-Subject: [PATCH 3/6] ARM: shmobile: emev2 dtsi: Use "arm,pl390" for GIC
-Message-Id: <1448023017-21816-4-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:19 +0000
+Subject: [PATCH 12/29] ARM: shmobile: r8a7793: Add thermal device to DT
+Message-Id: <0fddfb5b609f3b037006bcd467c540a7968a2dc7.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448023017-21816-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448023017-21816-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Replace the "arm,cortex-a9-gic" compatible value for the GIC by
-"arm,pl390", as the documentation states it is a PL390.
-This has been confirmed (thanks Simon!) by reading the GICD_IIDR
-register, which reports 0x0000043b (PL390 = 0x00, ARM = 0x43b).
+Instantiate the thermal sensor in the r8a7793 device tree.
 
-This has no effect on runtime behavior, as currently the GIC driver
-treats both compatible values the same.
+Based on very similar work for the r8a7790 by Magnus Damm.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-You can read the GICD_IIDR register from U-Boot using
+ arch/arm/boot/dts/r8a7793.dtsi | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-    md 0xe0028008 1
----
- arch/arm/boot/dts/emev2.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/emev2.dtsi b/arch/arm/boot/dts/emev2.dtsi
-index edad0c4eea3505b7..57795da616cb4085 100644
---- a/arch/arm/boot/dts/emev2.dtsi
-+++ b/arch/arm/boot/dts/emev2.dtsi
-@@ -44,7 +44,7 @@
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index fcafa87616fa..6c7bae4318c9 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -53,6 +53,14 @@
+ 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
  	};
  
- 	gic: interrupt-controller@e0020000 {
--		compatible = "arm,cortex-a9-gic";
-+		compatible = "arm,pl390";
- 		interrupt-controller;
- 		#interrupt-cells = <3>;
- 		reg = <0xe0028000 0x1000>,
++	thermal@e61f0000 {
++		compatible = "renesas,thermal-r8a7793", "renesas,rcar-thermal";
++		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
++		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp5_clks R8A7793_CLK_THERMAL>;
++		power-domains = <&cpg_clocks>;
++	};
++
+ 	timer {
+ 		compatible = "arm,armv7-timer";
+ 		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
+@@ -329,6 +337,14 @@
+ 			clock-indices = <R8A7793_CLK_IRQC>;
+ 			clock-output-names = "irqc";
+ 		};
++		mstp5_clks: mstp5_clks@e6150144 {
++			compatible = "renesas,r8a7793-mstp-clocks", "renesas,cpg-mstp-clocks";
++			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
++			clocks = <&extal_clk>;
++			#clock-cells = <1>;
++			clock-indices = <R8A7793_CLK_THERMAL>;
++			clock-output-names = "thermal";
++		};
+ 		mstp7_clks: mstp7_clks@e615014c {
+ 			compatible = "renesas,r8a7793-mstp-clocks",
+ 				     "renesas,cpg-mstp-clocks";
 -- 
-1.9.1
+2.1.4
 
