@@ -1,46 +1,83 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 02 Nov 2015 04:31:46 +0000
-Subject: [PATCH v6 3/5] arm64: dts: r8a7795: enable nfs root on Salvator-X board
-Message-Id: <1446438708-22433-4-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:22 +0000
+Subject: [PATCH 15/29] ARM: shmobile: koelsch: Move SPI FLASH partitions to subnode
+Message-Id: <27fa0a6c55537f8d8656b9e59ae584b0b427232a.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446438708-22433-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1446438708-22433-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-As has been the practice for boards for 32bit ARM Renesas SoCs
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
+As of commits 5cfdedb7b9a0fe38 ("mtd: ofpart: move ofpart partitions to a
+dedicated dt node") and fe2585e9c29a650a ("doc: dt: mtd: support
+partitions in a special 'partitions' subnode"), having partitions as
+direct subnodes of an mtd device is discouraged:
+
+    spi0.0: 'partitions' subnode not found on /spi@e6b10000/flash@0. Trying to parse direct subnodes as partitions.
+
+Hence move the SPI FLASH partitions to a "partitions" subnode.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
---
-v2
-* No change
-
-v3
-* Added Ack
-
-v4 - v6
-* No change
 ---
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 33 ++++++++++++++++++---------------
+ 1 file changed, 18 insertions(+), 15 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 4fb120d8e7e8..d1c2fea8bebc 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -21,7 +21,7 @@
- 	};
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 98da99d1b7dc..4ec2d1fba7c9 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -479,8 +479,6 @@
+ 	status = "okay";
  
- 	chosen {
--		bootargs = "ignore_loglevel";
-+		bootargs = "ignore_loglevel rw root=/dev/nfs ip=dhcp";
- 		stdout-path = &scif2;
- 	};
+ 	flash: flash@0 {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+ 		compatible = "spansion,s25fl512s", "jedec,spi-nor";
+ 		reg = <0>;
+ 		spi-max-frequency = <30000000>;
+@@ -490,19 +488,24 @@
+ 		spi-cpol;
+ 		m25p,fast-read;
  
+-		partition@0 {
+-			label = "loader";
+-			reg = <0x00000000 0x00080000>;
+-			read-only;
+-		};
+-		partition@80000 {
+-			label = "user";
+-			reg = <0x00080000 0x00580000>;
+-			read-only;
+-		};
+-		partition@600000 {
+-			label = "flash";
+-			reg = <0x00600000 0x03a00000>;
++		partitions {
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "loader";
++				reg = <0x00000000 0x00080000>;
++				read-only;
++			};
++			partition@80000 {
++				label = "user";
++				reg = <0x00080000 0x00580000>;
++				read-only;
++			};
++			partition@600000 {
++				label = "flash";
++				reg = <0x00600000 0x03a00000>;
++			};
+ 		};
+ 	};
+ };
 -- 
 2.1.4
 
