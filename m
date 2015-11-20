@@ -1,43 +1,55 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 18 Nov 2015 02:30:46 +0000
-Subject: RE: [PATCH 1/3] usb: renesas_usbhs: gadget: Fix NULL pointer dereference in usbhsg_ep_dequeue()
-Message-Id: <TY1PR06MB0928099452BF6A9F55E52343D81C0@TY1PR06MB0928.apcprd06.prod.outlook.com>
+From: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+Date: Fri, 20 Nov 2015 12:33:02 +0000
+Subject: [PATCH] sata_rcar: Add compatible string for r8a7795
+Message-Id: <1448022782-24231-1-git-send-email-ykaneko0929@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447307130-6072-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1447307130-6072-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-ide@vger.kernel.org
+Cc: Tejun Heo <tj@kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi,
+From: Kouei Abe <kouei.abe.cp@renesas.com>
 
-> From: Felipe Balbi [mailto:balbi@ti.com]
-> Sent: Wednesday, November 18, 2015 12:32 AM
-> 
-> Hi,
-> 
-> Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com> writes:
-> > This patch fixes an issue that NULL pointer dereference happens when
-> > a gadget driver calls usb_ep_dequeue() after usb_ep_disable().
-> >
-> > Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> 
-> and which gadget driver is that ? Let's fix it. We should _not_ call
-> usb_ep_dequeue() after usb_ep_disable().
+R-Car H3 SoC has compatible SATA controller with R-Car Gen2 SoCs.
 
-Thank you for your comment.
-I assumed that a gadget driver called usb_ep_dequeue() after usb_ep_disable().
-However, it was wrong. This driver will call usbhsg_ep_dequeue() in usbhsg_try_stop().
-So, if I disconnect a usb cable, and I uninstall a gadget driver, this issue happens
-because the dcp->pipe is NULL after disconnected a usb cable.
+Signed-off-by: Kouei Abe <kouei.abe.cp@renesas.com>
+Signed-off-by: Yoshihiro Kaneko <ykaneko0929@gmail.com>
+---
 
-So, I will revise the commit log as v2.
-(Also I would like to fix this issue fundamentally, but it is tough because behavior of
- start/stop and connect/disconnect in this driver is complicated.)
+This patch is based on the for-next branch of Tejun's libata tree.
 
-Best regards,
-Yoshihiro Shimoda
+ Documentation/devicetree/bindings/ata/sata_rcar.txt | 1 +
+ drivers/ata/sata_rcar.c                             | 4 ++++
+ 2 files changed, 5 insertions(+)
 
-> --
-> balbi
+diff --git a/Documentation/devicetree/bindings/ata/sata_rcar.txt b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+index 2493a5a3..0764f9a 100644
+--- a/Documentation/devicetree/bindings/ata/sata_rcar.txt
++++ b/Documentation/devicetree/bindings/ata/sata_rcar.txt
+@@ -8,6 +8,7 @@ Required properties:
+ 			  - "renesas,sata-r8a7790" for R-Car H2 other than ES1
+ 			  - "renesas,sata-r8a7791" for R-Car M2-W
+ 			  - "renesas,sata-r8a7793" for R-Car M2-N
++			  - "renesas,sata-r8a7795" for R-Car H3
+ - reg			: address and length of the SATA registers;
+ - interrupts		: must consist of one interrupt specifier.
+ - clocks		: must contain a reference to the functional clock.
+diff --git a/drivers/ata/sata_rcar.c b/drivers/ata/sata_rcar.c
+index 8804127..2b20b31 100644
+--- a/drivers/ata/sata_rcar.c
++++ b/drivers/ata/sata_rcar.c
+@@ -854,6 +854,10 @@ static struct of_device_id sata_rcar_match[] = {
+ 		.compatible = "renesas,sata-r8a7793",
+ 		.data = (void *)RCAR_GEN2_SATA
+ 	},
++	{
++		.compatible = "renesas,sata-r8a7795",
++		.data = (void *)RCAR_GEN2_SATA
++	},
+ 	{ },
+ };
+ MODULE_DEVICE_TABLE(of, sata_rcar_match);
+-- 
+1.9.1
+
