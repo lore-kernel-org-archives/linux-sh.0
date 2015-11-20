@@ -1,112 +1,206 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 24 Nov 2015 14:49:41 +0000
-Subject: [PATCH v2 2/2] irqchip/renesas-intc-irqpin: Remove intc_irqpin_priv.number_of_irqs
-Message-Id: <1448376581-9202-3-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:12 +0000
+Subject: [PATCH 05/29] ARM: dts: shmobile/r8a7xxx: replace gpio-key, wakeup with wakeup-source property
+Message-Id: <0cc16889e77a95568806b1e45af104f75547eac9.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448376581-9202-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448376581-9202-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-intc_irqpin_priv.number_of_irqs is used inside intc_irqpin_probe() only,
-so it can just become a local variable.
+From: Sudeep Holla <Sudeep.Holla@arm.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Marc Zyngier <marc.zyngier@arm.com>
-Acked-by: Thomas Gleixner <tglx@linutronix.de>
+Though the keyboard driver for GPIO buttons(gpio-keys) will continue to
+check for/support the legacy "gpio-key,wakeup" boolean property to
+enable gpio buttons as wakeup source, "wakeup-source" is the new
+standard binding.
+
+This patch replaces the legacy "gpio-key,wakeup" with the unified
+"wakeup-source" property in order to avoid any futher copy-paste
+duplication.
+
+Signed-off-by: Sudeep Holla <sudeep.holla@arm.com>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v2:
-  - Add Acked-by.
----
- drivers/irqchip/irq-renesas-intc-irqpin.c | 21 ++++++++++-----------
- 1 file changed, 10 insertions(+), 11 deletions(-)
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts         |  2 +-
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts |  2 +-
+ arch/arm/boot/dts/r8a7790-lager.dts           |  8 ++++----
+ arch/arm/boot/dts/r8a7791-koelsch.dts         | 22 +++++++++++-----------
+ arch/arm/boot/dts/sh73a0-kzm9g.dts            |  2 +-
+ 5 files changed, 18 insertions(+), 18 deletions(-)
 
-diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
-index 7aefa500d210bf5e..7f6cf19aa6ac00d7 100644
---- a/drivers/irqchip/irq-renesas-intc-irqpin.c
-+++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
-@@ -75,7 +75,6 @@ struct intc_irqpin_priv {
- 	struct intc_irqpin_iomem iomem[INTC_IRQPIN_REG_NR];
- 	struct intc_irqpin_irq irq[INTC_IRQPIN_MAX];
- 	unsigned int sense_bitfield_width;
--	unsigned int number_of_irqs;
- 	struct platform_device *pdev;
- 	struct irq_chip irq_chip;
- 	struct irq_domain *irq_domain;
-@@ -387,6 +386,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	void (*disable_fn)(struct irq_data *d);
- 	const char *name = dev_name(dev);
- 	bool control_parent;
-+	unsigned int nirqs;
- 	int ref_irq;
- 	int ret;
- 	int k;
-@@ -437,8 +437,8 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 		p->irq[k].requested_irq = irq->start;
- 	}
+diff --git a/arch/arm/boot/dts/r8a73a4-ape6evm.dts b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+index a4c425923c05..9b7eabd3eba3 100644
+--- a/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ b/arch/arm/boot/dts/r8a73a4-ape6evm.dts
+@@ -110,7 +110,7 @@
+ 			gpios = <&pfc 324 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_0>;
+ 			label = "S16";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 		};
  
--	p->number_of_irqs = k;
--	if (p->number_of_irqs < 1) {
-+	nirqs = k;
-+	if (nirqs < 1) {
- 		dev_err(dev, "not enough IRQ resources\n");
- 		ret = -EINVAL;
- 		goto err0;
-@@ -492,7 +492,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	}
+ 		menu-key {
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+index 105d9c95de4a..78a21f2828df 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+@@ -85,7 +85,7 @@
+ 			gpios = <&pfc 99 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_POWER>;
+ 			label = "SW3";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 		};
  
- 	/* mask all interrupts using priority */
--	for (k = 0; k < p->number_of_irqs; k++)
-+	for (k = 0; k < nirqs; k++)
- 		intc_irqpin_mask_unmask_prio(p, k, 1);
- 
- 	/* clear all pending interrupts */
-@@ -501,7 +501,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	/* scan for shared interrupt lines */
- 	ref_irq = p->irq[0].requested_irq;
- 	p->shared_irqs = true;
--	for (k = 1; k < p->number_of_irqs; k++) {
-+	for (k = 1; k < nirqs; k++) {
- 		if (ref_irq != p->irq[k].requested_irq) {
- 			p->shared_irqs = false;
- 			break;
-@@ -528,9 +528,8 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	irq_chip->irq_set_wake = intc_irqpin_irq_set_wake;
- 	irq_chip->flags	= IRQCHIP_MASK_ON_SUSPEND;
- 
--	p->irq_domain = irq_domain_add_simple(dev->of_node, p->number_of_irqs,
--					      0, &intc_irqpin_irq_domain_ops,
--					      p);
-+	p->irq_domain = irq_domain_add_simple(dev->of_node, nirqs, 0,
-+					      &intc_irqpin_irq_domain_ops, p);
- 	if (!p->irq_domain) {
- 		ret = -ENXIO;
- 		dev_err(dev, "cannot initialize irq domain\n");
-@@ -548,7 +547,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 		}
- 	} else {
- 		/* request interrupts one by one */
--		for (k = 0; k < p->number_of_irqs; k++) {
-+		for (k = 0; k < nirqs; k++) {
- 			if (devm_request_irq(dev, p->irq[k].requested_irq,
- 					     intc_irqpin_irq_handler, 0, name,
- 					     &p->irq[k])) {
-@@ -560,10 +559,10 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	}
- 
- 	/* unmask all interrupts on prio level */
--	for (k = 0; k < p->number_of_irqs; k++)
-+	for (k = 0; k < nirqs; k++)
- 		intc_irqpin_mask_unmask_prio(p, k, 0);
- 
--	dev_info(dev, "driving %d irqs\n", p->number_of_irqs);
-+	dev_info(dev, "driving %d irqs\n", nirqs);
- 
- 	return 0;
+ 		back-key {
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index c553abd711ee..e2174d816e78 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -77,28 +77,28 @@
+ 		button@1 {
+ 			linux,code = <KEY_1>;
+ 			label = "SW2-1";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+ 		};
+ 		button@2 {
+ 			linux,code = <KEY_2>;
+ 			label = "SW2-2";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 			gpios = <&gpio1 24 GPIO_ACTIVE_LOW>;
+ 		};
+ 		button@3 {
+ 			linux,code = <KEY_3>;
+ 			label = "SW2-3";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 			gpios = <&gpio1 26 GPIO_ACTIVE_LOW>;
+ 		};
+ 		button@4 {
+ 			linux,code = <KEY_4>;
+ 			label = "SW2-4";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 			gpios = <&gpio1 28 GPIO_ACTIVE_LOW>;
+ 		};
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index fc44ea361a4b..98da99d1b7dc 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -79,77 +79,77 @@
+ 			gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_1>;
+ 			label = "SW2-1";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-2 {
+ 			gpios = <&gpio5 1 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_2>;
+ 			label = "SW2-2";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-3 {
+ 			gpios = <&gpio5 2 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_3>;
+ 			label = "SW2-3";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-4 {
+ 			gpios = <&gpio5 3 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_4>;
+ 			label = "SW2-4";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-a {
+ 			gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_A>;
+ 			label = "SW30";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-b {
+ 			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_B>;
+ 			label = "SW31";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-c {
+ 			gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_C>;
+ 			label = "SW32";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-d {
+ 			gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_D>;
+ 			label = "SW33";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-e {
+ 			gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_E>;
+ 			label = "SW34";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-f {
+ 			gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_F>;
+ 			label = "SW35";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 		};
+ 		key-g {
+ 			gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_G>;
+ 			label = "SW36";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 			debounce-interval = <20>;
+ 		};
+ 	};
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 7fc5602810ad..aa8bae3b8fcf 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -147,7 +147,7 @@
+ 			gpios = <&pcf8575 14 GPIO_ACTIVE_LOW>;
+ 			linux,code = <KEY_HOME>;
+ 			label = "SW1";
+-			gpio-key,wakeup;
++			wakeup-source;
+ 		};
+ 	};
  
 -- 
-1.9.1
+2.1.4
 
