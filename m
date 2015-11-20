@@ -1,62 +1,74 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Nov 2015 02:16:05 +0000
-Subject: [PATCH v2 2/2] ARM: shmobile: alt: Correct ether pfc
-Message-Id: <1448331365-21388-3-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 20 Nov 2015 01:05:30 +0000
+Subject: [PATCH 23/29] ARM: shmobile: r8a7790: Use SoC specific binding for rcar-dmac nodes
+Message-Id: <4af0a6640cb536cd66ecff1bb7827c76d2475bd9.1447981420.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448331365-21388-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1448331365-21388-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1447981420.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-22b160713cb6 ("ARM: shmobile: alt: Add pfc pins to DT") introduced pfc pins
-to the alt device tree but did not reference them. This patch fixes ether
-pfc by:
+Use the new SoC specific binding for rcar-dmac and the generic
+binding as a fall-back in the r8a7790 device tree.
 
-* Referencing ether pins
-* Adding and referencing phy1 pins
-* Removing ether b pins. These are not used in the configuration
-  of the alt board used for testing and empirically their presence
-  prevents ethernet from functioning correctly in that environment.
+In general Renesas hardware is not documented to the extent where the
+relationship between IP blocks on different SoCs can be assumed although
+they may appear to operate the same way. Furthermore the documentation
+typically does not specify a version for individual IP blocks. For these
+reasons a convention of using the SoC name in place of a version and
+providing SoC-specific compat strings has been adopted.
 
-Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Although not universally liked this convention is used in the bindings for
+most drivers for Renesas hardware. The purpose of this patch is to
+update the Renesas R-Car DMA Controller nodes to follow this convention.
+
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
 ---
-v2
-* Corrected commit referenced in changelog
----
- arch/arm/boot/dts/r8a7794-alt.dts | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+ arch/arm/boot/dts/r8a7790.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
-index 412eb7ad86db..7c72494f51b0 100644
---- a/arch/arm/boot/dts/r8a7794-alt.dts
-+++ b/arch/arm/boot/dts/r8a7794-alt.dts
-@@ -111,9 +111,9 @@
- 		renesas,function = "eth";
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index b545fef3f7db..105bf9ae18cb 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -266,7 +266,7 @@
  	};
  
--	ether_b_pins: ether {
--		renesas,groups = "eth_link_b", "eth_mdio_b", "eth_rmii_b";
--		renesas,function = "eth";
-+	phy1_pins: phy1 {
-+		renesas,groups = "intc_irq8";
-+		renesas,function = "intc";
+ 	dmac0: dma-controller@e6700000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7790", "renesas,rcar-dmac";
+ 		reg = <0 0xe6700000 0 0x20000>;
+ 		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
+ 			      0 200 IRQ_TYPE_LEVEL_HIGH
+@@ -297,7 +297,7 @@
  	};
  
- 	i2c1_pins: i2c1 {
-@@ -132,6 +132,9 @@
- };
+ 	dmac1: dma-controller@e6720000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7790", "renesas,rcar-dmac";
+ 		reg = <0 0xe6720000 0 0x20000>;
+ 		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
+ 			      0 216 IRQ_TYPE_LEVEL_HIGH
+@@ -328,7 +328,7 @@
+ 	};
  
- &ether {
-+	pinctrl-0 = <&ether_pins &phy1_pins>;
-+	pinctrl-names = "default";
-+
- 	phy-handle = <&phy1>;
- 	renesas,ether-link-active-low;
- 	status = "okay";
+ 	audma0: dma-controller@ec700000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7790", "renesas,rcar-dmac";
+ 		reg = <0 0xec700000 0 0x10000>;
+ 		interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH
+ 				 0 320 IRQ_TYPE_LEVEL_HIGH
+@@ -357,7 +357,7 @@
+ 	};
+ 
+ 	audma1: dma-controller@ec720000 {
+-		compatible = "renesas,rcar-dmac";
++		compatible = "renesas,dmac-r8a7790", "renesas,rcar-dmac";
+ 		reg = <0 0xec720000 0 0x10000>;
+ 		interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH
+ 				 0 333 IRQ_TYPE_LEVEL_HIGH
 -- 
 2.1.4
 
