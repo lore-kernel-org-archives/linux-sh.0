@@ -1,108 +1,59 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 19 Nov 2015 15:56:50 +0000
-Subject: [PATCH v3 10/11] i2c: rcar: clean up after refactoring
-Message-Id: <1447948611-2615-11-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 23 Nov 2015 13:56:02 +0000
+Subject: [PATCH v5 4/4] ARM: shmobile: r8a7740: Remove mapping of L2 cache controller registers
+Message-Id: <1448286962-16897-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
+References: <1448286962-16897-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448286962-16897-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Now all r8a7740-based platforms have been migrated to the generic l2c OF
+initialization, it's no longer needed to map the L2 cache controller
+registers from .map_io().
 
-Update the comments to match current behaviour. Shorten some comments.
-Update copyrights.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/i2c/busses/i2c-rcar.c | 32 +++++++++-----------------------
- 1 file changed, 9 insertions(+), 23 deletions(-)
+v5:
+  - No changes,
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 40979130200935..e71fd4090247aa 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -1,7 +1,8 @@
- /*
-  * Driver for the Renesas RCar I2C unit
-  *
-- * Copyright (C) 2014 Wolfram Sang <wsa@sang-engineering.com>
-+ * Copyright (C) 2014-15 Wolfram Sang <wsa@sang-engineering.com>
-+ * Copyright (C) 2011-2015 Renesas Electronics Corporation
-  *
-  * Copyright (C) 2012-14 Renesas Solutions Corp.
-  * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-@@ -9,9 +10,6 @@
-  * This file is based on the drivers/i2c/busses/i2c-sh7760.c
-  * (c) 2005-2008 MSC Vertriebsges.m.b.H, Manuel Lauss <mlau@msc-ge.com>
-  *
-- * This file used out-of-tree driver i2c-rcar.c
-- * Copyright (C) 2011-2012 Renesas Electronics Corporation
-- *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation; version 2 of the License.
-@@ -245,9 +243,7 @@ scgd_find:
- 	dev_dbg(dev, "clk %d/%d(%lu), round %u, CDF:0x%x, SCGD: 0x%x\n",
- 		scl, bus_speed, clk_get_rate(priv->clk), round, cdf, scgd);
- 
+v4:
+  - No changes,
+
+v3:
+  - No changes,
+
+v2:
+  - No changes.
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c | 12 ------------
+ 1 file changed, 12 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 7b16c12e3f816f7f..496569f9d578b863 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -38,18 +38,6 @@ static struct map_desc r8a7740_io_desc[] __initdata = {
+ 		.length		= 160 << 20,
+ 		.type		= MT_DEVICE_NONSHARED
+ 	},
+-#ifdef CONFIG_CACHE_L2X0
 -	/*
--	 * keep icccr value
+-	 * for l2x0_init()
+-	 * 0xf0100000-0xf0101000 -> 0xf0002000-0xf0003000
 -	 */
-+	/* keep icccr value */
- 	priv->icccr = scgd << cdf_width | cdf;
+-	{
+-		.virtual	= 0xf0002000,
+-		.pfn		= __phys_to_pfn(0xf0100000),
+-		.length		= PAGE_SIZE,
+-		.type		= MT_DEVICE_NONSHARED
+-	},
+-#endif
+ };
  
- 	return 0;
-@@ -282,11 +278,7 @@ static void rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
- {
- 	struct i2c_msg *msg = priv->msg;
- 
--	/*
--	 * FIXME
--	 * sometimes, unknown interrupt happened.
--	 * Do nothing
--	 */
-+	/* FIXME: sometimes, unknown interrupt happened. Do nothing */
- 	if (!(msr & MDE))
- 		return;
- 
-@@ -330,28 +322,22 @@ static void rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
- {
- 	struct i2c_msg *msg = priv->msg;
- 
--	/*
--	 * FIXME
--	 * sometimes, unknown interrupt happened.
--	 * Do nothing
--	 */
-+	/* FIXME: sometimes, unknown interrupt happened. Do nothing */
- 	if (!(msr & MDR))
- 		return;
- 
- 	if (msr & MAT) {
- 		/* Address transfer phase finished, but no data at this point. */
- 	} else if (priv->pos < msg->len) {
--		/*
--		 * get received data
--		 */
-+		/* get received data */
- 		msg->buf[priv->pos] = rcar_i2c_read(priv, ICRXTX);
- 		priv->pos++;
- 	}
- 
- 	/*
--	 * If next received data is the _LAST_,
--	 * go to STOP phase,
--	 * otherwise, go to DATA phase.
-+	 * If next received data is the _LAST_, go to STOP phase. Might be
-+	 * overwritten by REP START when setting up a new msg. Not elegant
-+	 * but the only stable sequence for REP START I have found so far.
- 	 */
- 	if (priv->pos + 1 >= msg->len)
- 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
+ static void __init r8a7740_map_io(void)
 -- 
-2.1.4
+1.9.1
 
