@@ -1,240 +1,58 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:52:45 +0000
-Subject: [PATCH 1/2] ARM: shmobile: r8a7793: Add missing serial devices to DT
-Message-Id: <1448589166-11612-2-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 23 Nov 2015 07:16:44 +0000
+Subject: [PATCH 2/2] ARM: shmobile: alt: Correct ether pfc
+Message-Id: <1448263004-14548-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448589166-11612-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1448589166-11612-1-git-send-email-horms+renesas@verge.net.au>
+References: <1448263004-14548-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1448263004-14548-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Instantiate all serial devices in r8a7793 device tree
-and set them as disabled by default.
+0c9400fab882 ("Merge branch 'heads/dt-for-v4.5' into next") introduced
+pfc pins to the alt device tree but did not reference them. This patch
+fixes ether pfc by:
 
-Based on similar work for the r8a7791 by Laurent Pinchart.
+* Referencing ether pins
+* Adding and referencing phy1 pins
+* Removing ether b pins. These are not used in the configuration
+  of the alt board used for testing and their presence prevents
+  ethernet from functioning correctly in that environment.
 
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 179 ++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 177 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7794-alt.dts | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index cbcda80f4658..3ac2ec0414a0 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -298,6 +298,96 @@
- 		dma-channels = <15>;
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index 412eb7ad86db..7c72494f51b0 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -111,9 +111,9 @@
+ 		renesas,function = "eth";
  	};
  
-+	scifa0: serial@e6c40000 {
-+		compatible = "renesas,scifa-r8a7793", "renesas,scifa";
-+		reg = <0 0xe6c40000 0 64>;
-+		interrupts = <0 144 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7793_CLK_SCIFA0>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
-+	scifa1: serial@e6c50000 {
-+		compatible = "renesas,scifa-r8a7793", "renesas,scifa";
-+		reg = <0 0xe6c50000 0 64>;
-+		interrupts = <0 145 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7793_CLK_SCIFA1>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
-+	scifa2: serial@e6c60000 {
-+		compatible = "renesas,scifa-r8a7793", "renesas,scifa";
-+		reg = <0 0xe6c60000 0 64>;
-+		interrupts = <0 151 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7793_CLK_SCIFA2>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
-+	scifa3: serial@e6c70000 {
-+		compatible = "renesas,scifa-r8a7793", "renesas,scifa";
-+		reg = <0 0xe6c70000 0 64>;
-+		interrupts = <0 29 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp11_clks R8A7793_CLK_SCIFA3>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
-+	scifa4: serial@e6c78000 {
-+		compatible = "renesas,scifa-r8a7793", "renesas,scifa";
-+		reg = <0 0xe6c78000 0 64>;
-+		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp11_clks R8A7793_CLK_SCIFA4>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
-+	scifa5: serial@e6c80000 {
-+		compatible = "renesas,scifa-r8a7793", "renesas,scifa";
-+		reg = <0 0xe6c80000 0 64>;
-+		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp11_clks R8A7793_CLK_SCIFA5>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
-+	scifb0: serial@e6c20000 {
-+		compatible = "renesas,scifb-r8a7793", "renesas,scifb";
-+		reg = <0 0xe6c20000 0 64>;
-+		interrupts = <0 148 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7793_CLK_SCIFB0>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
-+	scifb1: serial@e6c30000 {
-+		compatible = "renesas,scifb-r8a7793", "renesas,scifb";
-+		reg = <0 0xe6c30000 0 64>;
-+		interrupts = <0 149 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7793_CLK_SCIFB1>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
-+	scifb2: serial@e6ce0000 {
-+		compatible = "renesas,scifb-r8a7793", "renesas,scifb";
-+		reg = <0 0xe6ce0000 0 64>;
-+		interrupts = <0 150 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp2_clks R8A7793_CLK_SCIFB2>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
- 	scif0: serial@e6e60000 {
- 		compatible = "renesas,scif-r8a7793", "renesas,scif";
- 		reg = <0 0xe6e60000 0 64>;
-@@ -318,6 +408,76 @@
- 		status = "disabled";
+-	ether_b_pins: ether {
+-		renesas,groups = "eth_link_b", "eth_mdio_b", "eth_rmii_b";
+-		renesas,function = "eth";
++	phy1_pins: phy1 {
++		renesas,groups = "intc_irq8";
++		renesas,function = "intc";
  	};
  
-+	scif2: serial@e6e58000 {
-+		compatible = "renesas,scif-r8a7793", "renesas,scif";
-+		reg = <0 0xe6e58000 0 64>;
-+		interrupts = <0 22 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7793_CLK_SCIF2>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
-+	scif3: serial@e6ea8000 {
-+		compatible = "renesas,scif-r8a7793", "renesas,scif";
-+		reg = <0 0xe6ea8000 0 64>;
-+		interrupts = <0 23 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7793_CLK_SCIF3>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
-+	scif4: serial@e6ee0000 {
-+		compatible = "renesas,scif-r8a7793", "renesas,scif";
-+		reg = <0 0xe6ee0000 0 64>;
-+		interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7793_CLK_SCIF4>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
-+	scif5: serial@e6ee8000 {
-+		compatible = "renesas,scif-r8a7793", "renesas,scif";
-+		reg = <0 0xe6ee8000 0 64>;
-+		interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7793_CLK_SCIF5>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
-+	hscif0: serial@e62c0000 {
-+		compatible = "renesas,hscif-r8a7793", "renesas,hscif";
-+		reg = <0 0xe62c0000 0 96>;
-+		interrupts = <0 154 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7793_CLK_HSCIF0>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
-+	hscif1: serial@e62c8000 {
-+		compatible = "renesas,hscif-r8a7793", "renesas,hscif";
-+		reg = <0 0xe62c8000 0 96>;
-+		interrupts = <0 155 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7793_CLK_HSCIF1>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
-+	hscif2: serial@e62d0000 {
-+		compatible = "renesas,hscif-r8a7793", "renesas,hscif";
-+		reg = <0 0xe62d0000 0 96>;
-+		interrupts = <0 21 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7793_CLK_HSCIF2>;
-+		clock-names = "sci_ick";
-+		power-domains = <&cpg_clocks>;
-+		status = "disabled";
-+	};
-+
- 	ether: ethernet@ee700000 {
- 		compatible = "renesas,ether-r8a7793";
- 		reg = <0 0xee700000 0 0x400>;
-@@ -530,12 +690,17 @@
- 		mstp2_clks: mstp2_clks@e6150138 {
- 			compatible = "renesas,r8a7793-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0 0xe6150138 0 4>, <0 0xe6150040 0 4>;
--			clocks = <&zs_clk>, <&zs_clk>;
-+			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>, <&mp_clk>,
-+				 <&mp_clk>, <&mp_clk>, <&zs_clk>, <&zs_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
-+				R8A7793_CLK_SCIFA2 R8A7793_CLK_SCIFA1 R8A7793_CLK_SCIFA0
-+				R8A7793_CLK_SCIFB0 R8A7793_CLK_SCIFB1 R8A7793_CLK_SCIFB2
- 				R8A7793_CLK_SYS_DMAC1 R8A7793_CLK_SYS_DMAC0
- 			>;
--			clock-output-names = "sys-dmac1", "sys-dmac0";
-+			clock-output-names +				"scifa2", "scifa1", "scifa0", "scifb0",
-+				"scifb1", "scifb2", "sys-dmac1", "sys-dmac0";
- 		};
- 		mstp3_clks: mstp3_clks@e615013c {
- 			compatible = "renesas,r8a7793-mstp-clocks",
-@@ -634,6 +799,16 @@
- 				"gpio3", "gpio2", "gpio1", "gpio0",
- 				"qspi_mod";
- 		};
-+		mstp11_clks: mstp11_clks@e615099c {
-+			compatible = "renesas,r8a7793-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe615099c 0 4>, <0 0xe61509ac 0 4>;
-+			clocks = <&mp_clk>, <&mp_clk>, <&mp_clk>;
-+			#clock-cells = <1>;
-+			clock-indices = <
-+				R8A7793_CLK_SCIFA3 R8A7793_CLK_SCIFA4 R8A7793_CLK_SCIFA5
-+			>;
-+			clock-output-names = "scifa3", "scifa4", "scifa5";
-+		};
- 	};
+ 	i2c1_pins: i2c1 {
+@@ -132,6 +132,9 @@
+ };
  
- 	ipmmu_sy0: mmu@e6280000 {
+ &ether {
++	pinctrl-0 = <&ether_pins &phy1_pins>;
++	pinctrl-names = "default";
++
+ 	phy-handle = <&phy1>;
+ 	renesas,ether-link-active-low;
+ 	status = "okay";
 -- 
 2.1.4
 
