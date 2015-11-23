@@ -1,112 +1,98 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 19 Nov 2015 18:43:39 +0000
-Subject: Re: [PATCH v2 15/16] h8300: dts: Rename the serial port clock to fck
-Message-Id: <17900383.erPJcilB2V@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 23 Nov 2015 13:55:58 +0000
+Subject: [PATCH v5 0/4] ARM: shmobile: r8a7740/sh73a0 DT Cache Handling
+Message-Id: <1448286962-16897-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958173-543-1-git-send-email-geert+renesas@glider.be> <1447958173-543-16-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958173-543-16-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Geert,
+	Hi Simon, Magnus,
 
-Thank you for the patch.
+This patch series add minimal L1 and L2 cache descriptions to DT for
+r8a7740 and sh73a0, and migrates the shmobile DT-based generic r8a7740
+platform from calling l2x0_of_init() to the generic l2c OF
+initialization.
 
-On Thursday 19 November 2015 19:36:12 Geert Uytterhoeven wrote:
-> The clock is really the device functional clock, not the interface
-> clock. Rename it.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Note that the conversion to the generic l2c OF initialization is not
+done yet for sh73a0, as this initializes the L2 cache earlier, breaking
+the (fragile) sh73a0 secondary CPU bringup code.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Also note that this conversion should be done on r8a7778, and r8a7779,
+too.
 
-> ---
-> v2:
->   - New.
-> ---
->  arch/h8300/boot/dts/edosk2674.dts  | 6 +++---
->  arch/h8300/boot/dts/h8300h_sim.dts | 4 ++--
->  arch/h8300/boot/dts/h8s_sim.dts    | 4 ++--
->  3 files changed, 7 insertions(+), 7 deletions(-)
-> 
-> diff --git a/arch/h8300/boot/dts/edosk2674.dts
-> b/arch/h8300/boot/dts/edosk2674.dts index
-> 4ce9fa874a577e55..6ae884bf66a5268c 100644
-> --- a/arch/h8300/boot/dts/edosk2674.dts
-> +++ b/arch/h8300/boot/dts/edosk2674.dts
-> @@ -88,20 +88,20 @@
->  		reg = <0xffff78 8>;
->  		interrupts = <88 0>, <89 0>, <90 0>, <91 0>;
->  		clocks = <&fclk>;
-> -		clock-names = "sci_ick";
-> +		clock-names = "fck";
->  	};
->  	sci1: serial@ffff80 {
->  		compatible = "renesas,sci";
->  		reg = <0xffff80 8>;
->  		interrupts = <92 0>, <93 0>, <94 0>, <95 0>;
->  		clocks = <&fclk>;
-> -		clock-names = "sci_ick";
-> +		clock-names = "fck";
->  	};
->  	sci2: serial@ffff88 {
->  		compatible = "renesas,sci";
->  		reg = <0xffff88 8>;
->  		interrupts = <96 0>, <97 0>, <98 0>, <99 0>;
->  		clocks = <&fclk>;
-> -		clock-names = "sci_ick";
-> +		clock-names = "fck";
->  	};
->  };
-> diff --git a/arch/h8300/boot/dts/h8300h_sim.dts
-> b/arch/h8300/boot/dts/h8300h_sim.dts index
-> 545bfb57af9a9f2e..9c733d920f1f0dc3 100644
-> --- a/arch/h8300/boot/dts/h8300h_sim.dts
-> +++ b/arch/h8300/boot/dts/h8300h_sim.dts
-> @@ -83,7 +83,7 @@
->  		reg = <0xffffb0 8>;
->  		interrupts = <52 0>, <53 0>, <54 0>, <55 0>;
->  		clocks = <&fclk>;
-> -		clock-names = "sci_ick";
-> +		clock-names = "fck";
->  	};
-> 
->  	sci1: serial@ffffb8 {
-> @@ -91,6 +91,6 @@
->  		reg = <0xffffb8 8>;
->  		interrupts = <56 0>, <57 0>, <58 0>, <59 0>;
->  		clocks = <&fclk>;
-> -		clock-names = "sci_ick";
-> +		clock-names = "fck";
->  	};
->  };
-> diff --git a/arch/h8300/boot/dts/h8s_sim.dts
-> b/arch/h8300/boot/dts/h8s_sim.dts index bcedba5a3ce7e8ae..97e1f4b17ef067d5
-> 100644
-> --- a/arch/h8300/boot/dts/h8s_sim.dts
-> +++ b/arch/h8300/boot/dts/h8s_sim.dts
-> @@ -87,13 +87,13 @@
->  		reg = <0xffff78 8>;
->  		interrupts = <88 0>, <89 0>, <90 0>, <91 0>;
->  		clocks = <&fclk>;
-> -		clock-names = "sci_ick";
-> +		clock-names = "fck";
->  	};
->  	sci1: serial@ffff80 {
->  		compatible = "renesas,sci";
->  		reg = <0xffff80 8>;
->  		interrupts = <92 0>, <93 0>, <94 0>, <95 0>;
->  		clocks = <&fclk>;
-> -		clock-names = "sci_ick";
-> +		clock-names = "fck";
->  	};
->  };
+Changes compared to v4 ("[PATCH v4 0/6] ARM: shmobile: r8a7740/sh73a0 DT
+Cache Handling",
+http://lists.infradead.org/pipermail/linux-arm-kernel/2015-May/340636.html):
+  - Drop optional cache-{size,sets,{block,line}-size} properties, as
+    this information is auto-detected (I verified this for both L1 and
+    L2 cache properties),
+  - Merge the L1 patches into the L2 patches, as the only part left from
+    the L1 patches was adding the links from CPU to L2 cache nodes.
+
+Changes compared to v3 ("[PATCH v3 0/6] ARM: l2c / shmobile: r8a7740 :
+Shared Override",
+http://lists.infradead.org/pipermail/linux-arm-kernel/2015-May/340636.html):
+  - "l2c: Add support for the "arm,shared-override" property" was split
+    off into an independent patch, and is now queued for v4.3 in
+    arm/for-next,
+  - Dropped armadillo legacy migration, as it no longer exists,
+  - Added sh73a0 L1 and L2 DT cache description.
+
+Changes compared to v2 ("[PATCH v2 0/5] ARM: shmobile: r8a7740/armadillo:
+Migrate to generic l2c OF",
+http://www.spinics.net/lists/devicetree/msg68176.html):
+  - Add DT support for Shared Override,
+  - Setting Shared Override is done only if CMA is not available (as
+    Russell claims it's not needed if CMA is available),
+  - Use 0/~0 in machine_desc.l2c_aux_{val,mask}, as DT now supports
+    "arm,shared-override".
+
+Changes compared to v1:
+  - Fix interrupt reference in DT,
+  - Describe L2 better in DT,
+  - Keep only {,~}L2C_AUX_CTRL_SHARED_OVERRIDE in
+    machine_desc.l2c_aux_{val,mask}, as there's no DT property for
+    this.
+  - Add L1 cache to DT.
+
+Dependencies:
+  - This series applies to renesas-devel-20151123-v4.4-rc2,
+  - Patch 3 depends on patch 1,
+  - Patch 4 depends on patch 3.
+
+Given C code changesets depending on DT changesets in the same branch
+are frowned upon, you may want to postpone patches 3 and 4 to v4.6.
+Of course I'll sleep better if you just apply all 4 of them now ;-)
+
+I've been running this on r8a7740/armadillo and sh73a0/kzm9g for more
+than a year.
+
+Thanks for applying!
+
+Geert Uytterhoeven (4):
+  ARM: shmobile: r8a7740 dtsi: Add L2 cache-controller node
+  ARM: shmobile: sh73a0 dtsi: Add L2 cache-controller node
+  ARM: shmobile: r8a7740: Migrate to generic l2c OF initialization
+  ARM: shmobile: r8a7740: Remove mapping of L2 cache controller
+    registers
+
+ arch/arm/boot/dts/r8a7740.dtsi         | 13 +++++++++++++
+ arch/arm/boot/dts/sh73a0.dtsi          | 14 ++++++++++++++
+ arch/arm/mach-shmobile/setup-r8a7740.c | 18 ++----------------
+ 3 files changed, 29 insertions(+), 16 deletions(-)
 
 -- 
-Regards,
+1.9.1
 
-Laurent Pinchart
+Gr{oetje,eeting}s,
 
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
