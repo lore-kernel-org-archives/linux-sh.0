@@ -1,36 +1,32 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Tue, 24 Nov 2015 15:00:44 +0000
-Subject: [PATCH] drm: adv7511: mark ADV7511_REG_EDID_READ_CTRL volatile
-Message-Id: <1448377244-15888-1-git-send-email-wsa@the-dreams.de>
+From: =?UTF-8?B?7KGw7LC97ZmY?= <charlescho64@gmail.com>
+Date: Mon, 23 Nov 2015 02:23:04 +0000
+Subject: [Renesas-Lager][How to use IOMMU Hardware and test?]
+Message-Id: <CANi_qo2amjsbU=i_ZAQkWMecSVkpA6A=KBBL6tYAmcVumiiiKg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Lars-Peter Clausen <lars@metafoo.de>
+To: linux-sh@vger.kernel.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Hello,
 
-This register includes a counter which is decremented by the chip on I2C
-failures. Also, it is reset when powering down.
+Now I am researching how to use renesas lager board for IVI(In vehicle
+Infortainments) based on XEN.  Especially I am wondering how to assign
+some device to special guest and got the method that
+passthrough(Direct IO) is right.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
----
- drivers/gpu/drm/i2c/adv7511.c | 1 +
- 1 file changed, 1 insertion(+)
+This method need hardware with IOMMU(SMMUv1 and SMMUv2 supported).
 
-diff --git a/drivers/gpu/drm/i2c/adv7511.c b/drivers/gpu/drm/i2c/adv7511.c
-index 85e994796d96a4..50a861b12346c4 100644
---- a/drivers/gpu/drm/i2c/adv7511.c
-+++ b/drivers/gpu/drm/i2c/adv7511.c
-@@ -136,6 +136,7 @@ static bool adv7511_register_volatile(struct device *dev, unsigned int reg)
- 	case ADV7511_REG_BKSV(3):
- 	case ADV7511_REG_BKSV(4):
- 	case ADV7511_REG_DDC_STATUS:
-+	case ADV7511_REG_EDID_READ_CTRL:
- 	case ADV7511_REG_BSTATUS(0):
- 	case ADV7511_REG_BSTATUS(1):
- 	case ADV7511_REG_CHIP_ID_HIGH:
+1. Is Renesas R-CAR Lager board supporting IOMMU?
+2. If use this IOMMU, what should be configured? only kernel configure
+file is changed with enabling "shmobile_iommu and
+shmobile_iommu_addrsize_xxMB" in shmobile_defconfig file?
+3. finally How to test the system with IOMMU enable or disable for performance ?
+
+BR
+
+Thanks
+
 -- 
-2.1.4
-
+Happy Virus....
+Chang Hwan, Cho
