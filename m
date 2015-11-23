@@ -1,81 +1,61 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:54 +0000
-Subject: [PATCH 11/15] ARM: shmobile: silk: Move SPI FLASH partitions to subnode
-Message-Id: <99e14b36594cb6d6fb59aa44999c1f72508af348.1448586938.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 23 Nov 2015 13:56:01 +0000
+Subject: [PATCH v5 3/4] ARM: shmobile: r8a7740: Migrate to generic l2c OF initialization
+Message-Id: <1448286962-16897-4-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448586938.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448586938.git.horms+renesas@verge.net.au>
+References: <1448286962-16897-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448286962-16897-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Migrate the generic r8a7740 platform from calling l2x0_of_init() to the
+generic l2c OF initialization.
 
-As of commits 5cfdedb7b9a0fe38 ("mtd: ofpart: move ofpart partitions to a
-dedicated dt node") and fe2585e9c29a650a ("doc: dt: mtd: support partitions
-in a special 'partitions' subnode"), having partitions as direct subnodes
-of an mtd device is discouraged. Hence move the SPI FLASH partitions to a
-"partitions" subnode.
-
-Based on similar work for the koelsch board by Geert Uytterhoeven.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm/boot/dts/r8a7794-silk.dts | 33 ++++++++++++++++++---------------
- 1 file changed, 18 insertions(+), 15 deletions(-)
+v5:
+  - No changes,
 
-diff --git a/arch/arm/boot/dts/r8a7794-silk.dts b/arch/arm/boot/dts/r8a7794-silk.dts
-index a49942b626c8..58f0ddf21c17 100644
---- a/arch/arm/boot/dts/r8a7794-silk.dts
-+++ b/arch/arm/boot/dts/r8a7794-silk.dts
-@@ -194,8 +194,6 @@
- 	status = "okay";
+v4:
+  - This depends on commit eeedcea69e927857 ("ARM: 8395/1: l2c: Add
+    support for the "arm,shared-override" property"), which is queued
+    for 4.3 in arm/for-next,
+
+v3:
+  - Use 0/~0 now DT supports "arm,shared-override",
+
+v2:
+  - Keep only {,~}L2C_AUX_CTRL_SHARED_OVERRIDE.
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 0c8f80c5b04df34d..7b16c12e3f816f7f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -110,10 +110,6 @@ static void __init r8a7740_generic_init(void)
+ {
+ 	r8a7740_meram_workaround();
  
- 	flash@0 {
--		#address-cells = <1>;
--		#size-cells = <1>;
- 		compatible = "spansion,s25fl512s", "jedec,spi-nor";
- 		reg = <0>;
- 		spi-max-frequency = <30000000>;
-@@ -205,19 +203,24 @@
- 		spi-cpha;
- 		m25p,fast-read;
+-#ifdef CONFIG_CACHE_L2X0
+-	/* Shared attribute override enable, 32K*8way */
+-	l2x0_init(IOMEM(0xf0002000), 0x00400000, 0xc20f0fff);
+-#endif
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ }
  
--		partition@0 {
--			label = "loader";
--			reg = <0x00000000 0x00040000>;
--			read-only;
--		};
--		partition@40000 {
--			label = "user";
--			reg = <0x00040000 0x00400000>;
--			read-only;
--		};
--		partition@440000 {
--			label = "flash";
--			reg = <0x00440000 0x03bc0000>;
-+		partitions {
-+			#address-cells = <1>;
-+			#size-cells = <1>;
-+
-+			partition@0 {
-+				label = "loader";
-+				reg = <0x00000000 0x00040000>;
-+				read-only;
-+			};
-+			partition@40000 {
-+				label = "user";
-+				reg = <0x00040000 0x00400000>;
-+				read-only;
-+			};
-+			partition@440000 {
-+				label = "flash";
-+				reg = <0x00440000 0x03bc0000>;
-+			};
- 		};
- 	};
+@@ -123,6 +119,8 @@ static const char *const r8a7740_boards_compat_dt[] __initconst = {
  };
+ 
+ DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
++	.l2c_aux_val	= 0,
++	.l2c_aux_mask	= ~0,
+ 	.map_io		= r8a7740_map_io,
+ 	.init_early	= shmobile_init_delay,
+ 	.init_irq	= r8a7740_init_irq_of,
 -- 
-2.1.4
+1.9.1
 
