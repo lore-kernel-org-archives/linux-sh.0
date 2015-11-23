@@ -1,38 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 25 Nov 2015 23:49:03 +0000
-Subject: Re: [PATCH] thermal: rcar: enable to set tripN-temp via DT
-Message-Id: <871tbdejc5.wl%kuninori.morimoto.gx@renesas.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 23 Nov 2015 09:35:54 +0000
+Subject: [PATCH] ASoC: rcar: remove unused variable
+Message-Id: <4929159.b95vLdVRYU@wuerfel>
 List-Id: <linux-sh.vger.kernel.org>
-References: <HK2PR04MB0804B55DC6CE36094AEF5162BC1C0@HK2PR04MB0804.apcprd04.prod.outlook.com>
-	<564D14A1.70806@renesas.com>
-	<87h9kiilbe.wl%kuninori.morimoto.gx@renesas.com>
-	<56545CE5.3040502@renesas.com>
-	<87mvu37wv2.wl%kuninori.morimoto.gx@renesas.com>
-	<5655059C.40509@renesas.com>
-	<87io4q97s7.wl%kuninori.morimoto.gx@renesas.com>
-	<20151125034320.GA14278@localhost.localdomain>
-	<87bnai8xnx.wl%kuninori.morimoto.gx@renesas.com>
-	<CAMuHMdVeDz0ECBM7H2b-GKJyY0NuEJBwoRpM0vE7f-Rkq1R3Dg@mail.gmail.com>
-In-Reply-To: <CAMuHMdVeDz0ECBM7H2b-GKJyY0NuEJBwoRpM0vE7f-Rkq1R3Dg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Mark Rutland <mark.rutland@arm.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, Pawel Moll <pawel.moll@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Linux-sh list <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Ryusuke Sakato <ryusuke.sakato.bx@renesas.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Eduardo Valentin <edubezval@gmail.com>, Rob Herring <robh+dt@kernel.org>, "osd2@lm.renesas.com" <osd2@lm.renesas.com>, Kumar Gala <galak@codeaurora.org>, Zhang Rui <rui.zhang@intel.com>
+To: Mark Brown <broonie@kernel.org>, alsa-devel@alsa-project.org
+Cc: Mengdong Lin <mengdong.lin@linux.intel.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, linux-sh@vger.kernel.org, Liam Girdwood <lgirdwood@gmail.com>, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org
 
+After a recent cleanup, the soc_card variable became unused
+and now produces a warning:
 
-Hi Geert
+soc/sh/rcar/core.c: In function '__rsnd_kctrl_new':
+soc/sh/rcar/core.c:801:23: warning: unused variable 'soc_card' [-Wunused-variable]
 
-> <kuninori.morimoto.gx@renesas.com> wrote:
-> >> Besides, your property is already covered by of-thermal. Please convert
-> >> your driver to use of-thermal, this way it will give you the flexibility
-> >> to configure thermal data in DT.
-> >
-> > I see, but we need to keep compatibility for non-DT SoC.
-> > (This driver is used from both DT, non-DT SoC)
-> 
-> Which SoCs with non-DT support use this driver in mainline?
+This removes the variable.
 
-Oops, my bad.
-I thought that this driver was used from SH too, but it didn't.
+Fixes: 1a497983a5ae ("ASoC: Change the PCM runtime array to a list")
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+
+diff --git a/sound/soc/sh/rcar/core.c b/sound/soc/sh/rcar/core.c
+index c6685f14b9cb..90b244c1f526 100644
+--- a/sound/soc/sh/rcar/core.c
++++ b/sound/soc/sh/rcar/core.c
+@@ -798,7 +798,6 @@ static int __rsnd_kctrl_new(struct rsnd_mod *mod,
+ 			    void (*update)(struct rsnd_dai_stream *io,
+ 					   struct rsnd_mod *mod))
+ {
+-	struct snd_soc_card *soc_card = rtd->card;
+ 	struct snd_card *card = rtd->card->snd_card;
+ 	struct snd_kcontrol *kctrl;
+ 	struct snd_kcontrol_new knew = {
 
