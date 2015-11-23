@@ -1,40 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:22 +0000
-Subject: [PATCH 05/18] arm64: renesas: salvator-x: Setup ethernet0 alias for U-Boot
-Message-Id: <10ca6db79ab07021e74aad99631a276b954a554e.1448587800.git.horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 23 Nov 2015 01:11:05 +0000
+Subject: Re: [PATCH] mach-shmobile/setup-r8a7793.c: proper constness with __initconst
+Message-Id: <20151123011105.GF29534@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448587800.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448587800.git.horms+renesas@verge.net.au>
+References: <alpine.LFD.2.20.1511212036580.22569@knanqh.ubzr>
+In-Reply-To: <alpine.LFD.2.20.1511212036580.22569@knanqh.ubzr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+[CC: linux-sh]
 
-Add an ethernet0 alias for the wired network card so that U-Boot can
-find the device-node and add an appropriate "local-mac-address"
-property.
+On Sat, Nov 21, 2015 at 08:41:07PM -0500, Nicolas Pitre wrote:
+> Both the pointer array and the pointed data have to be const when using
+> __initconst to be correct.  This also fixes LTO builds that otherwise
+> fail with section mismatch errors.
+> 
+> Signed-off-by: Nicolas Pitre <nico@linaro.org>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 1 +
- 1 file changed, 1 insertion(+)
+Thanks, I have queued this up as a fix for v4.4 with the following tag:
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 548f93f983a2..35ebb063bff6 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -18,6 +18,7 @@
- 	aliases {
- 		serial0 = &scif2;
- 		serial1 = &scif1;
-+		ethernet0 = &avb;
- 	};
- 
- 	chosen {
--- 
-2.1.4
+Fixes: ec60d95b4fac ("ARM: shmobile: Basic r8a7793 SoC support")
 
+> diff --git a/arch/arm/mach-shmobile/setup-r8a7793.c b/arch/arm/mach-shmobile/setup-r8a7793.c
+> index 1d2825cb7a..5fce87f7f2 100644
+> --- a/arch/arm/mach-shmobile/setup-r8a7793.c
+> +++ b/arch/arm/mach-shmobile/setup-r8a7793.c
+> @@ -19,7 +19,7 @@
+>  #include "common.h"
+>  #include "rcar-gen2.h"
+>  
+> -static const char *r8a7793_boards_compat_dt[] __initconst = {
+> +static const char * const r8a7793_boards_compat_dt[] __initconst = {
+>  	"renesas,r8a7793",
+>  	NULL,
+>  };
+> 
