@@ -1,63 +1,73 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 06 Nov 2015 06:36:54 +0000
-Subject: [PATCH 05/12 v6] arm64: renesas: r8a7795: Sound DVC support
-Message-Id: <877flvk59y.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 23 Nov 2015 13:56:00 +0000
+Subject: [PATCH v5 2/4] ARM: shmobile: sh73a0 dtsi: Add L2 cache-controller node
+Message-Id: <1448286962-16897-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
+References: <1448286962-16897-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448286962-16897-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Add the missing L2 cache-controller node, and link the CPU nodes to it.
+This will allow migration to the generic l2c OF initialization.
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The L2 cache is an ARM L2C-310 (r3p1), of size 512 KiB (64 KiB x 8
+ways).
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v5 -> v6
+v5:
+  - Drop optional cache-{size,sets,{block,line}-size} properties, as
+    this information is auto-detected,
+  - Integrate linking CPUs to L2 cache into this patch,
 
- - no change
+v4:
+  - New.
+---
+ arch/arm/boot/dts/sh73a0.dtsi | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 4cceb93..0272c8c 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -529,6 +529,7 @@
- 				 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
- 				 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
- 				 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
-+				 <&cpg CPG_MOD 1019>, <&cpg CPG_MOD 1018>,
- 				 <&audio_clk_a>, <&audio_clk_b>,
- 				 <&audio_clk_c>,
- 				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
-@@ -539,10 +540,22 @@
- 				      "src.9", "src.8", "src.7", "src.6",
- 				      "src.5", "src.4", "src.3", "src.2",
- 				      "src.1", "src.0",
-+				      "dvc.0", "dvc.1",
- 				      "clk_a", "clk_b", "clk_c", "clk_i";
- 			power-domains = <&cpg>;
- 			status = "disabled";
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index cbc885e46c504f56..f90ef9c93d3df3aa 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -28,6 +28,7 @@
+ 			reg = <0>;
+ 			clock-frequency = <1196000000>;
+ 			power-domains = <&pd_a2sl>;
++			next-level-cache = <&L2>;
+ 		};
+ 		cpu@1 {
+ 			device_type = "cpu";
+@@ -35,6 +36,7 @@
+ 			reg = <1>;
+ 			clock-frequency = <1196000000>;
+ 			power-domains = <&pd_a2sl>;
++			next-level-cache = <&L2>;
+ 		};
+ 	};
  
-+			rcar_sound,dvc {
-+				dvc0: dvc@0 {
-+					dmas = <&audma0 0xbc>;
-+					dma-names = "tx";
-+				};
-+				dvc1: dvc@1 {
-+					dmas = <&audma0 0xbe>;
-+					dma-names = "tx";
-+				};
-+			};
+@@ -53,6 +55,18 @@
+ 		      <0xf0000100 0x100>;
+ 	};
+ 
++	L2: cache-controller {
++		compatible = "arm,pl310-cache";
++		reg = <0xf0100000 0x1000>;
++		interrupts = <0 44 IRQ_TYPE_LEVEL_HIGH>;
++		power-domains = <&pd_a3sm>;
++		arm,data-latency = <3 3 3>;
++		arm,tag-latency = <2 2 2>;
++		arm,shared-override;
++		cache-unified;
++		cache-level = <2>;
++	};
 +
- 			rcar_sound,src {
- 				src0: src@0 {
- 					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
+ 	sbsc2: memory-controller@fb400000 {
+ 		compatible = "renesas,sbsc-sh73a0";
+ 		reg = <0xfb400000 0x400>;
 -- 
 1.9.1
 
