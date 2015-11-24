@@ -1,43 +1,62 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 19 Nov 2015 18:38:42 +0000
-Subject: [PATCH 03/25] serial: sh-sci: Drop useless check for zero sampling_rate
-Message-Id: <1447958344-836-4-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Nov 2015 02:16:05 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: alt: Correct ether pfc
+Message-Id: <1448331365-21388-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
+References: <1448331365-21388-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1448331365-21388-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-sci_port.sampling_rate is always non-zero, except for HSCIF, which uses
-sci_baud_calc_hscif() instead of sci_scbrr_calc().
+22b160713cb6 ("ARM: shmobile: alt: Add pfc pins to DT") introduced pfc pins
+to the alt device tree but did not reference them. This patch fixes ether
+pfc by:
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+* Referencing ether pins
+* Adding and referencing phy1 pins
+* Removing ether b pins. These are not used in the configuration
+  of the alt board used for testing and empirically their presence
+  prevents ethernet from functioning correctly in that environment.
+
+Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- drivers/tty/serial/sh-sci.c | 8 +-------
- 1 file changed, 1 insertion(+), 7 deletions(-)
+v2
+* Corrected commit referenced in changelog
+---
+ arch/arm/boot/dts/r8a7794-alt.dts | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index bee5b7025adf45a2..ae136a1632e6298d 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1863,13 +1863,7 @@ static void sci_shutdown(struct uart_port *port)
- static unsigned int sci_scbrr_calc(struct sci_port *s, unsigned int bps,
- 				   unsigned long freq)
- {
--	if (s->sampling_rate)
--		return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
--
--	/* Warn, but use a safe default */
--	WARN_ON(1);
--
--	return ((freq + 16 * bps) / (32 * bps) - 1);
-+	return DIV_ROUND_CLOSEST(freq, s->sampling_rate * bps) - 1;
- }
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index 412eb7ad86db..7c72494f51b0 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -111,9 +111,9 @@
+ 		renesas,function = "eth";
+ 	};
  
- /* calculate frame length from SMR */
+-	ether_b_pins: ether {
+-		renesas,groups = "eth_link_b", "eth_mdio_b", "eth_rmii_b";
+-		renesas,function = "eth";
++	phy1_pins: phy1 {
++		renesas,groups = "intc_irq8";
++		renesas,function = "intc";
+ 	};
+ 
+ 	i2c1_pins: i2c1 {
+@@ -132,6 +132,9 @@
+ };
+ 
+ &ether {
++	pinctrl-0 = <&ether_pins &phy1_pins>;
++	pinctrl-names = "default";
++
+ 	phy-handle = <&phy1>;
+ 	renesas,ether-link-active-low;
+ 	status = "okay";
 -- 
-1.9.1
+2.1.4
 
