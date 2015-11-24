@@ -1,102 +1,155 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 19 Nov 2015 15:56:49 +0000
-Subject: [PATCH v3 09/11] i2c: rcar: revoke START request early
-Message-Id: <1447948611-2615-10-git-send-email-wsa@the-dreams.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 24 Nov 2015 15:08:13 +0000
+Subject: [PATCH] irqchip/renesas-intc-irqpin: Improve clock error handling and reporting
+Message-Id: <1448377693-19597-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+If the Renesas External IRQ Pin driver cannot find a functional clock,
+it prints a warning, .e.g.
 
-If we don't clear START generation as soon as possible, it may cause
-another message to be generated, e.g. when receiving NACK in address
-phase. To keep the race window as small as possible, we clear it right
-at the beginning of the interrupt. We don't need any checks since we
-always want to stop START and STOP generation on the next occasion after
-we started it.
+    renesas_intc_irqpin fe78001c.interrupt-controller: unable to get clock
 
-This patch improves the situation but sadly does not completely fix it.
-It is still to be researched if we can do better given this HW design.
+and continues, as the clock is optional, depending on the SoC type.
+This warning may confuse users.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+To fix this, add a flag to indicate that the clock is mandatory or
+optional, and add a few more compatible entries:
+  - If the clock is mandatory (on R-Mobile A1 or SH-Mobile AG5), a
+    missing clock is now treated as a fatal error,
+  - If the clock is optional (on R-Car Gen1, or using the generic
+    "renesas,intc-irqpin" compatible value), the warning is no longer
+    printed.
+
+This requires making struct intc_irqpin_irlm_config more generic by
+renaming it to intc_irqpin_config, and adding a flag to indicate if IRLM
+is needed.
+The new clock flag is merged with the existing shared_irqs boolean into
+a bitfield to save space.
+
+Suggested-by: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- drivers/i2c/busses/i2c-rcar.c | 23 +++++++----------------
- 1 file changed, 7 insertions(+), 16 deletions(-)
+Tested on
+  - r8a7779/marzen (no functional clock),
+  - r8a7740/armadillo (with and without mandatory functional clock),
+  - sh73a0/kzm9g (with and without mandatory functional clock).
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index f237b4fc5b5e55..40979130200935 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -83,6 +83,7 @@
+ drivers/irqchip/irq-renesas-intc-irqpin.c | 45 ++++++++++++++++++++++---------
+ 1 file changed, 33 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 7f6cf19aa6ac00d7..713177d97c7aa0b6 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -79,12 +79,15 @@ struct intc_irqpin_priv {
+ 	struct irq_chip irq_chip;
+ 	struct irq_domain *irq_domain;
+ 	struct clk *clk;
+-	bool shared_irqs;
++	unsigned shared_irqs:1;
++	unsigned needs_clk:1;
+ 	u8 shared_irq_mask;
+ };
  
- #define RCAR_BUS_PHASE_START	(MDBS | MIE | ESG)
- #define RCAR_BUS_PHASE_DATA	(MDBS | MIE)
-+#define RCAR_BUS_MASK_DATA	(~(ESG | FSB) & 0xFF)
- #define RCAR_BUS_PHASE_STOP	(MDBS | MIE | FSB)
+-struct intc_irqpin_irlm_config {
++struct intc_irqpin_config {
+ 	unsigned int irlm_bit;
++	unsigned needs_irlm:1;
++	unsigned needs_clk:1;
+ };
  
- #define RCAR_IRQ_SEND	(MNR | MAL | MST | MAT | MDE)
-@@ -289,13 +290,6 @@ static void rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
- 	if (!(msr & MDE))
- 		return;
+ static unsigned long intc_irqpin_read32(void __iomem *iomem)
+@@ -359,8 +362,15 @@ static const struct irq_domain_ops intc_irqpin_irq_domain_ops = {
+ 	.xlate  = irq_domain_xlate_twocell,
+ };
  
--	/*
--	 * If address transfer phase finished,
--	 * goto data phase.
--	 */
--	if (msr & MAT)
--		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
--
- 	if (priv->pos < msg->len) {
- 		/*
- 		 * Prepare next data to ICRXTX register.
-@@ -345,11 +339,7 @@ static void rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
- 		return;
- 
- 	if (msr & MAT) {
--		/*
--		 * Address transfer phase finished,
--		 * but, there is no data at this point.
--		 * Do nothing.
--		 */
-+		/* Address transfer phase finished, but no data at this point. */
- 	} else if (priv->pos < msg->len) {
- 		/*
- 		 * get received data
-@@ -365,8 +355,6 @@ static void rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
- 	 */
- 	if (priv->pos + 1 >= msg->len)
- 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
--	else
--		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
- 
- 	if (priv->pos = msg->len && !(priv->flags & ID_LAST_MSG))
- 		rcar_i2c_next_msg(priv);
-@@ -432,7 +420,11 @@ static bool rcar_i2c_slave_irq(struct rcar_i2c_priv *priv)
- static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
- {
- 	struct rcar_i2c_priv *priv = ptr;
--	u32 msr;
-+	u32 msr, val;
+-static const struct intc_irqpin_irlm_config intc_irqpin_irlm_r8a777x = {
++static const struct intc_irqpin_config intc_irqpin_irlm_r8a777x = {
+ 	.irlm_bit = 23, /* ICR0.IRLM0 */
++	.needs_irlm = 1,
++	.needs_clk = 0,
++};
 +
-+	/* Clear START or STOP as soon as we can */
-+	val = rcar_i2c_read(priv, ICMCR);
-+	rcar_i2c_write(priv, ICMCR, val & RCAR_BUS_MASK_DATA);
++static const struct intc_irqpin_config intc_irqpin_rmobile = {
++	.needs_irlm = 0,
++	.needs_clk = 1,
+ };
  
- 	msr = rcar_i2c_read(priv, ICMSR);
+ static const struct of_device_id intc_irqpin_dt_ids[] = {
+@@ -369,12 +379,17 @@ static const struct of_device_id intc_irqpin_dt_ids[] = {
+ 	  .data = &intc_irqpin_irlm_r8a777x },
+ 	{ .compatible = "renesas,intc-irqpin-r8a7779",
+ 	  .data = &intc_irqpin_irlm_r8a777x },
++	{ .compatible = "renesas,intc-irqpin-r8a7740",
++	  .data = &intc_irqpin_rmobile },
++	{ .compatible = "renesas,intc-irqpin-sh73a0",
++	  .data = &intc_irqpin_rmobile },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, intc_irqpin_dt_ids);
  
-@@ -454,7 +446,6 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
- 	/* Nack */
- 	if (msr & MNR) {
- 		/* HW automatically sends STOP after received NACK */
--		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
- 		rcar_i2c_write(priv, ICMIER, RCAR_IRQ_STOP);
- 		rcar_i2c_flags_set(priv, ID_NACK);
- 		goto out;
+ static int intc_irqpin_probe(struct platform_device *pdev)
+ {
++	const struct intc_irqpin_config *config = NULL;
+ 	struct device *dev = &pdev->dev;
+ 	const struct of_device_id *of_id;
+ 	struct intc_irqpin_priv *p;
+@@ -407,9 +422,19 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	p->pdev = pdev;
+ 	platform_set_drvdata(pdev, p);
+ 
++	of_id = of_match_device(intc_irqpin_dt_ids, dev);
++	if (of_id && of_id->data) {
++		config = of_id->data;
++		p->needs_clk = config->needs_clk;
++	}
++
+ 	p->clk = devm_clk_get(dev, NULL);
+ 	if (IS_ERR(p->clk)) {
+-		dev_warn(dev, "unable to get clock\n");
++		if (p->needs_clk) {
++			dev_err(dev, "unable to get clock\n");
++			ret = PTR_ERR(p->clk);
++			goto err0;
++		}
+ 		p->clk = NULL;
+ 	}
+ 
+@@ -479,14 +504,10 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	/* configure "individual IRQ mode" where needed */
+-	of_id = of_match_device(intc_irqpin_dt_ids, dev);
+-	if (of_id && of_id->data) {
+-		const struct intc_irqpin_irlm_config *irlm_config = of_id->data;
+-
++	if (config && config->needs_irlm) {
+ 		if (io[INTC_IRQPIN_REG_IRLM])
+ 			intc_irqpin_read_modify_write(p, INTC_IRQPIN_REG_IRLM,
+-						      irlm_config->irlm_bit,
+-						      1, 1);
++						      config->irlm_bit, 1, 1);
+ 		else
+ 			dev_warn(dev, "unable to select IRLM mode\n");
+ 	}
+@@ -500,10 +521,10 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 
+ 	/* scan for shared interrupt lines */
+ 	ref_irq = p->irq[0].requested_irq;
+-	p->shared_irqs = true;
++	p->shared_irqs = 1;
+ 	for (k = 1; k < nirqs; k++) {
+ 		if (ref_irq != p->irq[k].requested_irq) {
+-			p->shared_irqs = false;
++			p->shared_irqs = 0;
+ 			break;
+ 		}
+ 	}
 -- 
-2.1.4
+1.9.1
 
