@@ -1,68 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Nov 2015 02:20:41 +0000
-Subject: [PATCH] dmaengine: usb-dmac: Document SoC specific bindings
-Message-Id: <1448331641-21758-1-git-send-email-horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 24 Nov 2015 05:49:05 +0000
+Subject: RE: [PATCH] dmaengine: usb-dmac: Document SoC specific bindings
+Message-Id: <SG2PR06MB09198719427CB3F4FE532834D8060@SG2PR06MB0919.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1448331641-21758-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1448331641-21758-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Cc: dmaengine-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms+renesas-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>
+To: Simon Horman <horms+renesas@verge.net.au>, Vinod Koul <vinod.koul@intel.com>
+Cc: "dmaengine@vger.kernel.org" <dmaengine@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-In general Renesas hardware is not documented to the extent where the
-relationship between IP blocks on different SoCs can be assumed although
-they may appear to operate the same way. Furthermore the documentation
-typically does not specify a version for individual IP blocks. For these
-reasons a convention of using the SoC name in place of a version and
-providing SoC-specific compat strings has been adopted.
+Hi Simon-san,
 
-Although not universally liked this convention is used in the bindings for
-most drivers for Renesas hardware. The purpose of this patch is to
-update the Renesas USB DMA Controller driver to follow this convention.
+> From: Simon Horman [mailto:horms+renesas@verge.net.au]
+> Sent: Tuesday, November 24, 2015 11:21 AM
+> 
+> In general Renesas hardware is not documented to the extent where the
+> relationship between IP blocks on different SoCs can be assumed although
+> they may appear to operate the same way. Furthermore the documentation
+> typically does not specify a version for individual IP blocks. For these
+> reasons a convention of using the SoC name in place of a version and
+> providing SoC-specific compat strings has been adopted.
+> 
+> Although not universally liked this convention is used in the bindings for
+> most drivers for Renesas hardware. The purpose of this patch is to
+> update the Renesas USB DMA Controller driver to follow this convention.
+> 
+> Cc: devicetree@vger.kernel.org
+> Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Cc: devicetree@vger.kernel.org
-Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Thank you for the patch!
 
----
-* r8a7792 (R-Car V2H) is omitted as my reading of the documentation
-  is that Renesas USB-DMAC does not exist on that SoC
-* r8a7795 (R-Car H2) is omitted as its unclear to me on the compatibility
-  of USB-DMAC that SoC
+> ---
+> * r8a7792 (R-Car V2H) is omitted as my reading of the documentation
+>   is that Renesas USB-DMAC does not exist on that SoC
 
-* Once this has been merged I intend to provide follow-up patches
-  to use these new compat strings in the relevant dtsi files.
----
- Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+I agree with you.
 
-diff --git a/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt b/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
-index 040f365954cc..3bb624e10615 100644
---- a/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
-+++ b/Documentation/devicetree/bindings/dma/renesas,usb-dmac.txt
-@@ -1,7 +1,12 @@
- * Renesas USB DMA Controller Device Tree bindings
- 
- Required Properties:
--- compatible: must contain "renesas,usb-dmac"
-+- compatible: "renesas,usb-dmac-<soctype>", "renesas,usb-dmac" as fallback.
-+	      Examples with soctypes are:
-+		- "renesas,usb-dmac-r8a7790" (R-Car H2)
-+		- "renesas,usb-dmac-r8a7791" (R-Car M2-W)
-+		- "renesas,usb-dmac-r8a7793" (R-Car M2-N)
-+		- "renesas,usb-dmac-r8a7794" (R-Car E2)
- - reg: base address and length of the registers block for the DMAC
- - interrupts: interrupt specifiers for the DMAC, one for each entry in
-   interrupt-names.
-@@ -15,7 +20,7 @@ Required Properties:
- Example: R8A7790 (R-Car H2) USB-DMACs
- 
- 	usb_dmac0: dma-controller@e65a0000 {
--		compatible = "renesas,usb-dmac";
-+		compatible = "renesas,usb-dmac-r8a7790", "renesas,usb-dmac";
- 		reg = <0 0xe65a0000 0 0x100>;
- 		interrupts = <0 109 IRQ_TYPE_LEVEL_HIGH
- 			      0 109 IRQ_TYPE_LEVEL_HIGH>;
--- 
-2.1.4
+> * r8a7795 (R-Car H2) is omitted as its unclear to me on the compatibility
+>   of USB-DMAC that SoC
+
+I think this is R-Car H3, not H2.
+Since R-Car H3's USB-DMAC is compatible with other SoCs,
+would you add the R-Car H3's compatible string, if possible?
+
+Anyway,
+Acked-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+
+Best regards,
+Yoshihiro Shimoda
 
