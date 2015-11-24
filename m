@@ -1,48 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 25 Nov 2015 06:38:31 +0000
-Subject: [PATCH 08/12] arm64: renesas: salvator-x: Sound SSI DMA support via BUSIF
-Message-Id: <87r3je7fn2.wl%kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Tue, 24 Nov 2015 15:00:44 +0000
+Subject: [PATCH] drm: adv7511: mark ADV7511_REG_EDID_READ_CTRL volatile
+Message-Id: <1448377244-15888-1-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: dri-devel@lists.freedesktop.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Lars-Peter Clausen <lars@metafoo.de>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-DMA transfer to/from SSIU
+This register includes a counter which is decremented by the chip on I2C
+failures. Also, it is reset when powering down.
 
-     DMA
-[MEM] -> [SSIU] -> [SSI]
-
-     DMA
-[MEM] <- [SSIU] <- [SSI]
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 5 -----
- 1 file changed, 5 deletions(-)
+ drivers/gpu/drm/i2c/adv7511.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 9c5fd4a..e49e5dc 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -142,12 +142,7 @@
- 	};
- };
- 
--&ssi0 {
--	no-busif;
--};
--
- &ssi1 {
--	no-busif;
- 	shared-pin;
- };
- 
+diff --git a/drivers/gpu/drm/i2c/adv7511.c b/drivers/gpu/drm/i2c/adv7511.c
+index 85e994796d96a4..50a861b12346c4 100644
+--- a/drivers/gpu/drm/i2c/adv7511.c
++++ b/drivers/gpu/drm/i2c/adv7511.c
+@@ -136,6 +136,7 @@ static bool adv7511_register_volatile(struct device *dev, unsigned int reg)
+ 	case ADV7511_REG_BKSV(3):
+ 	case ADV7511_REG_BKSV(4):
+ 	case ADV7511_REG_DDC_STATUS:
++	case ADV7511_REG_EDID_READ_CTRL:
+ 	case ADV7511_REG_BSTATUS(0):
+ 	case ADV7511_REG_BSTATUS(1):
+ 	case ADV7511_REG_CHIP_ID_HIGH:
 -- 
-1.9.1
+2.1.4
 
