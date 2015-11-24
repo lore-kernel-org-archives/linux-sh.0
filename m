@@ -1,80 +1,70 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:05:36 +0000
-Subject: [PATCH 29/29] ARM: shmobile: alt: add VIN0, ADV7180 DT support
-Message-Id: <d537543b3948bc3bc9dede248fa455493e055457.1447981420.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 24 Nov 2015 14:40:58 +0000
+Subject: [PATCH v3 2/4] sh_eth: Remove obsolete r8a779x-ether platform_device_id entries
+Message-Id: <1448376060-7803-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1447981420.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
+References: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "David S. Miller" <davem@davemloft.net>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Since commit a483dcbfa21f919c ("ARM: shmobile: lager: Remove legacy
+board support"), R-Car Gen2 SoCs are only supported in generic DT-only
+ARM multi-platform builds.  The driver doesn't need to match platform
+devices by name anymore, hence remove the corresponding
+platform_device_id entry.
 
-Adds the device board-dependent part of the VIN0 device and its ADV7180
-video decoder on I2C1, and the interconnection between them.
+Protect r8a779x_data by #ifdef CONFIG_OF as it's now referenced on DT
+platforms only.
 
-Based on silk patch by Sergei Shtylyov.
-
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7794-alt.dts | 34 ++++++++++++++++++++++++++++++++++
- 1 file changed, 34 insertions(+)
+v3:
+  - No changes,
 
-diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
-index 88ed017495e9..fd1cfcdd65ef 100644
---- a/arch/arm/boot/dts/r8a7794-alt.dts
-+++ b/arch/arm/boot/dts/r8a7794-alt.dts
-@@ -120,6 +120,11 @@
- 		renesas,groups = "i2c1";
- 		renesas,function = "i2c1";
- 	};
-+
-+	vin0_pins: vin0 {
-+		renesas,groups = "vin0_data8", "vin0_clk";
-+		renesas,function = "vin0";
-+	};
+v2:
+  - Add Acked-by,
+  - Protect r8a779x_data by #ifdef CONFIG_OF to silence a compiler
+    warning on SH.
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index fca688fbefc1c49d..1af07f9de243d613 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -531,6 +531,7 @@ static struct sh_eth_cpu_data r8a777x_data = {
+ 	.hw_swap	= 1,
  };
  
- &cmt0 {
-@@ -145,6 +150,35 @@
- 
- 	status = "okay";
- 	clock-frequency = <400000>;
-+
-+	composite-in@20 {
-+		compatible = "adi,adv7180";
-+		reg = <0x20>;
-+		remote = <&vin0>;
-+
-+		port {
-+			adv7180: endpoint {
-+				bus-width = <8>;
-+				remote-endpoint = <&vin0ep>;
-+			};
-+		};
-+	};
-+};
-+
-+&vin0 {
-+	status = "okay";
-+	pinctrl-0 = <&vin0_pins>;
-+	pinctrl-names = "default";
-+
-+	port {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		vin0ep: endpoint {
-+			remote-endpoint = <&adv7180>;
-+			bus-width = <8>;
-+		};
-+	};
++#ifdef CONFIG_OF
+ /* R8A7790/1 */
+ static struct sh_eth_cpu_data r8a779x_data = {
+ 	.set_duplex	= sh_eth_set_duplex,
+@@ -556,6 +557,7 @@ static struct sh_eth_cpu_data r8a779x_data = {
+ 	.hw_swap	= 1,
+ 	.rmiimode	= 1,
  };
++#endif /* CONFIG_OF */
  
- &scif2 {
+ static void sh_eth_set_rate_sh7724(struct net_device *ndev)
+ {
+@@ -3281,10 +3283,6 @@ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
+ 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
+ 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
+-	{ "r8a7790-ether", (kernel_ulong_t)&r8a779x_data },
+-	{ "r8a7791-ether", (kernel_ulong_t)&r8a779x_data },
+-	{ "r8a7793-ether", (kernel_ulong_t)&r8a779x_data },
+-	{ "r8a7794-ether", (kernel_ulong_t)&r8a779x_data },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
 -- 
-2.1.4
+1.9.1
 
