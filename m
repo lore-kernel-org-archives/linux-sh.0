@@ -1,31 +1,42 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 12 Nov 2015 05:45:27 +0000
-Subject: [PATCH 0/3] usb: renesas_usbhs: gadget: modifications for g_audio
-Message-Id: <1447307130-6072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 24 Nov 2015 02:16:04 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: alt: Correct scif2 pfc
+Message-Id: <1448331365-21388-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1448331365-21388-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1448331365-21388-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch is based on the latest Felipe's usb.git / testing/next branch.
-(The commit id = 81e9d14a53eb1abfbe6ac828a87a2deb4702b5f1)
+22b160713cb6 ("ARM: shmobile: alt: Add pfc pins to DT") introduced pfc pins
+to the alt device tree but did not reference them. This patch fixes scif2
+pfc by adding references to the scif2 pins.
 
-Yoshihiro Shimoda (3):
-  usb: renesas_usbhs: gadget: Fix NULL pointer dereference in
-    usbhsg_ep_dequeue()
-  usb: renesas_usbhs: Modify pipe configuration
-  usb: renesas_usbhs: Modify ep.caps.type_xxx and
-    usb_ep_maxpacket_limit()
+Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
- drivers/usb/renesas_usbhs/common.c     |  69 ++++++++++----------
- drivers/usb/renesas_usbhs/mod_gadget.c |  30 ++++++---
- drivers/usb/renesas_usbhs/mod_host.c   |  11 ++--
- drivers/usb/renesas_usbhs/pipe.c       | 112 ++++++++-------------------------
- drivers/usb/renesas_usbhs/pipe.h       |   1 -
- include/linux/usb/renesas_usbhs.h      |  18 +++++-
- 6 files changed, 103 insertions(+), 138 deletions(-)
+---
+v2
+* Corrected commit referenced in changelog
+---
+ arch/arm/boot/dts/r8a7794-alt.dts | 3 +++
+ 1 file changed, 3 insertions(+)
 
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index fd1cfcdd65ef..412eb7ad86db 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -182,5 +182,8 @@
+ };
+ 
+ &scif2 {
++	pinctrl-0 = <&scif2_pins>;
++	pinctrl-names = "default";
++
+ 	status = "okay";
+ };
 -- 
-1.9.1
+2.1.4
 
