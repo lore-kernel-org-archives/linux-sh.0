@@ -1,23 +1,52 @@
-From: David Miller <davem@davemloft.net>
-Date: Tue, 03 Nov 2015 20:03:23 +0000
-Subject: Re: [PATCH v2] sh_eth: use DMA barriers
-Message-Id: <20151103.150323.2050849842791800571.davem@davemloft.net>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 24 Nov 2015 14:40:56 +0000
+Subject: [PATCH v3 0/4] sh_eth: Remove obsolete platform_device_id entries
+Message-Id: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1753153.kv41W3qdJQ@wasted.cogentembedded.com>
-In-Reply-To: <1753153.kv41W3qdJQ@wasted.cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: "David S. Miller" <davem@davemloft.net>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 03 Nov 2015 22:36:04 +0300
+    Hi David,
 
-> Commit  7d7355f58ba4 ("sh_eth: Ensure proper ordering of descriptor active
-> bit write/read") did the right thing  but used too "heavy" barriers while
-> there were already "lighter" DMA barriers exactly  for this case...
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Since commit 3d7608e4c169af03 ("ARM: shmobile: bockw: remove legacy
+board file and config"), which is in v4.4-rc1, shmobile SoCs are only
+supported in generic DT-only ARM multi-platform builds.  The sh_eth
+driver doesn't need to match platform devices by name anymore, hence
+this series removes the corresponding platform_device_id entries.
 
-Applied, thanks.
+Changes since v2:
+  - More Acks,
+  - Platform dependency has entered mainline,
+
+Changes since v1:
+  - Protect some data and functions by #ifdef CONFIG_OF to silence
+    unused compiler warnings on SH,
+  - New patches 3 and 4.
+
+Thanks for applying!
+
+Geert Uytterhoeven (4):
+  sh_eth: Remove obsolete r7s72100-ether platform_device_id entry
+  sh_eth: Remove obsolete r8a779x-ether platform_device_id entries
+  sh_eth: Remove obsolete r8a7740-gether platform_device_id entry
+  sh_eth: Remove obsolete r8a777x-ether platform_device_id entry
+
+ drivers/net/ethernet/renesas/sh_eth.c | 213 +++++++++++++++++-----------------
+ 1 file changed, 104 insertions(+), 109 deletions(-)
+
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
