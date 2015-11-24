@@ -1,75 +1,98 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 19 Nov 2015 20:38:34 +0000
-Subject: Re: [PATCH 07/25] serial: sh-sci: Convert from clk_get() to devm_clk_get()
-Message-Id: <3399561.8ERHTtILhO@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 24 Nov 2015 15:05:28 +0000
+Subject: [PATCH] gpio: rcar: Improve clock error handling and reporting
+Message-Id: <1448377528-19307-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be> <1447958344-836-8-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958344-836-8-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Geert,
+If the Renesas R-Car GPIO driver cannot find a functional clock, it
+prints a warning, .e.g.
 
-Thank for the patch.
+	gpio_rcar ffc40000.gpio: unable to get clock
 
-On Thursday 19 November 2015 19:38:46 Geert Uytterhoeven wrote:
-> Transfer clock cleanup handling to the core device management code.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  drivers/tty/serial/sh-sci.c | 8 +++-----
->  1 file changed, 3 insertions(+), 5 deletions(-)
-> 
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index cba51da604253db6..9442961a198378c7 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -2216,7 +2216,7 @@ static struct uart_ops sci_uart_ops = {
->  static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
->  {
->  	/* Get the SCI functional clock. It's called "fck" on ARM. */
-> -	sci_port->fclk = clk_get(dev, "fck");
-> +	sci_port->fclk = devm_clk_get(dev, "fck");
+and continues, as the clock is optional, depending on the SoC type.
+This warning may confuse users.
 
-Have you tested what happens if you unbind the device from the driver while 
-userspace has the serial port open ?
+To fix this, add a flag to indicate that the clock is mandatory or
+optional:
+  - If the clock is mandatory (on R-Car Gen2), a missing clock is now
+    treated as a fatal error,
+  - If the clock is optional (on R-Car Gen1), the warning is no longer
+    printed.
 
->  	if (PTR_ERR(sci_port->fclk) = -EPROBE_DEFER)
->  		return -EPROBE_DEFER;
->  	if (!IS_ERR(sci_port->fclk))
-> @@ -2226,7 +2226,7 @@ static int sci_init_clocks(struct sci_port *sci_port,
-> struct device *dev) * But it used to be called "sci_ick", and we need to
-> maintain DT * backward compatibility.
->  	 */
-> -	sci_port->fclk = clk_get(dev, "sci_ick");
-> +	sci_port->fclk = devm_clk_get(dev, "sci_ick");
->  	if (PTR_ERR(sci_port->fclk) = -EPROBE_DEFER)
->  		return -EPROBE_DEFER;
->  	if (!IS_ERR(sci_port->fclk))
-> @@ -2236,7 +2236,7 @@ static int sci_init_clocks(struct sci_port *sci_port,
-> struct device *dev) * Not all SH platforms declare a clock lookup entry for
-> SCI devices, * in which case we need to get the global "peripheral_clk"
-> clock. */
-> -	sci_port->fclk = clk_get(dev, "peripheral_clk");
-> +	sci_port->fclk = devm_clk_get(dev, "peripheral_clk");
->  	if (!IS_ERR(sci_port->fclk))
->  		return 0;
-> 
-> @@ -2395,8 +2395,6 @@ static int sci_init_single(struct platform_device
-> *dev,
-> 
->  static void sci_cleanup_single(struct sci_port *port)
->  {
-> -	clk_put(port->fclk);
-> -
->  	pm_runtime_disable(port->port.dev);
->  }
+The new flag is merged with the existing has_both_edge_trigger boolean
+into a bitfield to save space.
 
+Suggested-by: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+This depends on "gpio: rcar: Remove obsolete platform data support".
+
+Tested on r8a7779/marzen (no functional clock) and r8a7791/koelsch (with
+and without mandatory functional clock).
+
+ drivers/gpio/gpio-rcar.c | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
+index bb6e363d5178634c..c890ac14b23a65ea 100644
+--- a/drivers/gpio/gpio-rcar.c
++++ b/drivers/gpio/gpio-rcar.c
+@@ -39,6 +39,7 @@ struct gpio_rcar_priv {
+ 	struct clk *clk;
+ 	unsigned int irq_parent;
+ 	unsigned has_both_edge_trigger:1;
++	unsigned needs_clk:1;
+ };
+ 
+ #define IOINTSEL 0x00	/* General IO/Interrupt Switching Register */
+@@ -316,15 +317,18 @@ static int gpio_rcar_direction_output(struct gpio_chip *chip, unsigned offset,
+ }
+ 
+ struct gpio_rcar_info {
+-	bool has_both_edge_trigger;
++	unsigned has_both_edge_trigger:1;
++	unsigned needs_clk:1;
+ };
+ 
+ static const struct gpio_rcar_info gpio_rcar_info_gen1 = {
+-	.has_both_edge_trigger = false,
++	.has_both_edge_trigger = 0,
++	.needs_clk = 0,
+ };
+ 
+ static const struct gpio_rcar_info gpio_rcar_info_gen2 = {
+-	.has_both_edge_trigger = true,
++	.has_both_edge_trigger = 1,
++	.needs_clk = 1,
+ };
+ 
+ static const struct of_device_id gpio_rcar_of_table[] = {
+@@ -371,6 +375,7 @@ static int gpio_rcar_parse_dt(struct gpio_rcar_priv *p, unsigned int *npins)
+ 	ret = of_parse_phandle_with_fixed_args(np, "gpio-ranges", 3, 0, &args);
+ 	*npins = ret = 0 ? args.args[2] : RCAR_MAX_GPIO_PER_BANK;
+ 	p->has_both_edge_trigger = info->has_both_edge_trigger;
++	p->needs_clk = info->needs_clk;
+ 
+ 	if (*npins = 0 || *npins > RCAR_MAX_GPIO_PER_BANK) {
+ 		dev_warn(&p->pdev->dev,
+@@ -409,7 +414,11 @@ static int gpio_rcar_probe(struct platform_device *pdev)
+ 
+ 	p->clk = devm_clk_get(dev, NULL);
+ 	if (IS_ERR(p->clk)) {
+-		dev_warn(dev, "unable to get clock\n");
++		if (p->needs_clk) {
++			dev_err(dev, "unable to get clock\n");
++			ret = PTR_ERR(p->clk);
++			goto err0;
++		}
+ 		p->clk = NULL;
+ 	}
+ 
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
