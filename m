@@ -1,36 +1,157 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 25 Nov 2015 06:39:32 +0000
-Subject: [PATCH 11/12] arm64: defconfig: add Renesas R-Car DMAC driver support
-Message-Id: <87mvu27fla.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 24 Nov 2015 14:40:57 +0000
+Subject: [PATCH v3 1/4] sh_eth: Remove obsolete r7s72100-ether platform_device_id entry
+Message-Id: <1448376060-7803-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
+References: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: "David S. Miller" <davem@davemloft.net>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
+Since commit 05104c266ae9a167 ("ARM: shmobile: r7s72100: genmai: Remove
+legacy board file"), r7s72100 is only supported in generic DT-only ARM
+multi-platform builds.  The driver doesn't need to match platform
+devices by name anymore, hence remove the corresponding
+platform_device_id entry.
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Protect r7s72100_data by #ifdef CONFIG_OF as it's now referenced on DT
+platforms only. Move it to a more logical position, in front of the
+r8a777x support, so we can have a single #ifdef covering all r7s* and
+r8a* support soon. This requires moving a helper function, too.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm64/configs/defconfig | 1 +
- 1 file changed, 1 insertion(+)
+v3:
+  - No changes,
 
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index 6b1e284..f97d740 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -179,6 +179,7 @@ CONFIG_RTC_CLASS=y
- CONFIG_RTC_DRV_EFI=y
- CONFIG_RTC_DRV_XGENE=y
- CONFIG_DMADEVICES=y
-+CONFIG_RCAR_DMAC=y
- CONFIG_QCOM_BAM_DMA=y
- CONFIG_VIRTIO_PCI=y
- CONFIG_VIRTIO_BALLOON=y
+v2:
+  - Add Acked-by,
+  - Protect r7s72100_data by #ifdef CONFIG_OF to silence a compiler
+    warning on SH,
+  - Move r7s72100_data.
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 83 ++++++++++++++++++-----------------
+ 1 file changed, 42 insertions(+), 41 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index e7bab7909ed9e186..fca688fbefc1c49d 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -449,6 +449,48 @@ static void sh_eth_set_duplex(struct net_device *ndev)
+ 		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_DM, ECMR);
+ }
+ 
++static void sh_eth_chip_reset(struct net_device *ndev)
++{
++	struct sh_eth_private *mdp = netdev_priv(ndev);
++
++	/* reset device */
++	sh_eth_tsu_write(mdp, ARSTR_ARSTR, ARSTR);
++	mdelay(1);
++}
++
++#ifdef CONFIG_OF
++/* R7S72100 */
++static struct sh_eth_cpu_data r7s72100_data = {
++	.chip_reset	= sh_eth_chip_reset,
++	.set_duplex	= sh_eth_set_duplex,
++
++	.register_type	= SH_ETH_REG_FAST_RZ,
++
++	.ecsr_value	= ECSR_ICD,
++	.ecsipr_value	= ECSIPR_ICDIP,
++	.eesipr_value	= 0xff7f009f,
++
++	.tx_check	= EESR_TC1 | EESR_FTC,
++	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT |
++			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
++			  EESR_TDE | EESR_ECI,
++	.fdr_value	= 0x0000070f,
++
++	.no_psr		= 1,
++	.apr		= 1,
++	.mpr		= 1,
++	.tpauser	= 1,
++	.hw_swap	= 1,
++	.rpadir		= 1,
++	.rpadir_value   = 2 << 16,
++	.no_trimd	= 1,
++	.no_ade		= 1,
++	.hw_crc		= 1,
++	.tsu		= 1,
++	.shift_rd0	= 1,
++};
++#endif /* CONFIG_OF */
++
+ /* There is CPU dependent code */
+ static void sh_eth_set_rate_r8a777x(struct net_device *ndev)
+ {
+@@ -671,15 +713,6 @@ static struct sh_eth_cpu_data sh7757_data_giga = {
+ 	.tsu		= 1,
+ };
+ 
+-static void sh_eth_chip_reset(struct net_device *ndev)
+-{
+-	struct sh_eth_private *mdp = netdev_priv(ndev);
+-
+-	/* reset device */
+-	sh_eth_tsu_write(mdp, ARSTR_ARSTR, ARSTR);
+-	mdelay(1);
+-}
+-
+ static void sh_eth_set_rate_gether(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+@@ -799,37 +832,6 @@ static struct sh_eth_cpu_data r8a7740_data = {
+ 	.shift_rd0	= 1,
+ };
+ 
+-/* R7S72100 */
+-static struct sh_eth_cpu_data r7s72100_data = {
+-	.chip_reset	= sh_eth_chip_reset,
+-	.set_duplex	= sh_eth_set_duplex,
+-
+-	.register_type	= SH_ETH_REG_FAST_RZ,
+-
+-	.ecsr_value	= ECSR_ICD,
+-	.ecsipr_value	= ECSIPR_ICDIP,
+-	.eesipr_value	= 0xff7f009f,
+-
+-	.tx_check	= EESR_TC1 | EESR_FTC,
+-	.eesr_err_check	= EESR_TWB1 | EESR_TWB | EESR_TABT | EESR_RABT |
+-			  EESR_RFE | EESR_RDE | EESR_RFRMER | EESR_TFE |
+-			  EESR_TDE | EESR_ECI,
+-	.fdr_value	= 0x0000070f,
+-
+-	.no_psr		= 1,
+-	.apr		= 1,
+-	.mpr		= 1,
+-	.tpauser	= 1,
+-	.hw_swap	= 1,
+-	.rpadir		= 1,
+-	.rpadir_value   = 2 << 16,
+-	.no_trimd	= 1,
+-	.no_ade		= 1,
+-	.hw_crc		= 1,
+-	.tsu		= 1,
+-	.shift_rd0	= 1,
+-};
+-
+ static struct sh_eth_cpu_data sh7619_data = {
+ 	.register_type	= SH_ETH_REG_FAST_SH3_SH2,
+ 
+@@ -3277,7 +3279,6 @@ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "sh7757-ether", (kernel_ulong_t)&sh7757_data },
+ 	{ "sh7757-gether", (kernel_ulong_t)&sh7757_data_giga },
+ 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
+-	{ "r7s72100-ether", (kernel_ulong_t)&r7s72100_data },
+ 	{ "r8a7740-gether", (kernel_ulong_t)&r8a7740_data },
+ 	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
+ 	{ "r8a7790-ether", (kernel_ulong_t)&r8a779x_data },
 -- 
 1.9.1
 
