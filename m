@@ -1,36 +1,65 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Mon, 16 Nov 2015 04:46:42 +0000
-Subject: [PATCH 1/4] v4l: vsp1: Fix LUT format setting
-Message-Id: <1447649205-1560-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 24 Nov 2015 14:41:00 +0000
+Subject: [PATCH v3 4/4] sh_eth: Remove obsolete r8a777x-ether platform_device_id entry
+Message-Id: <1448376060-7803-5-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447649205-1560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1447649205-1560-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: "David S. Miller" <davem@davemloft.net>
+Cc: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>, netdev@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The LUT set format handler overrides the requested format by mistake.
-Fix it.
+Since commit 3d7608e4c169af03 ("ARM: shmobile: bockw: remove legacy
+board file and config"), R-Car Gen1 SoCs are only supported in generic
+DT-only ARM multi-platform builds.  The driver doesn't need to match
+platform devices by name anymore, hence remove the corresponding
+platform_device_id entry.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Protect sh_eth_set_rate_r8a777x() and r8a777x_data by #ifdef CONFIG_OF,
+as they're now referenced on DT platforms only.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/media/platform/vsp1/vsp1_lut.c | 1 +
- 1 file changed, 1 insertion(+)
+v3:
+  - Add Acked-by,
 
-diff --git a/drivers/media/platform/vsp1/vsp1_lut.c b/drivers/media/platform/vsp1/vsp1_lut.c
-index 656ec272a414..e2c352a7dfd5 100644
---- a/drivers/media/platform/vsp1/vsp1_lut.c
-+++ b/drivers/media/platform/vsp1/vsp1_lut.c
-@@ -176,6 +176,7 @@ static int lut_set_format(struct v4l2_subdev *subdev, struct v4l2_subdev_pad_con
- 		return 0;
- 	}
+v2:
+  - New.
+---
+ drivers/net/ethernet/renesas/sh_eth.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 99618bf513b26184..7f3c6109d45ed874 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -551,7 +551,6 @@ static struct sh_eth_cpu_data r8a7740_data = {
+ 	.select_mii	= 1,
+ 	.shift_rd0	= 1,
+ };
+-#endif /* CONFIG_OF */
  
-+	format->code = fmt->format.code;
- 	format->width = clamp_t(unsigned int, fmt->format.width,
- 				LUT_MIN_SIZE, LUT_MAX_SIZE);
- 	format->height = clamp_t(unsigned int, fmt->format.height,
+ /* There is CPU dependent code */
+ static void sh_eth_set_rate_r8a777x(struct net_device *ndev)
+@@ -593,7 +592,6 @@ static struct sh_eth_cpu_data r8a777x_data = {
+ 	.hw_swap	= 1,
+ };
+ 
+-#ifdef CONFIG_OF
+ /* R8A7790/1 */
+ static struct sh_eth_cpu_data r8a779x_data = {
+ 	.set_duplex	= sh_eth_set_duplex,
+@@ -3281,7 +3279,6 @@ static struct platform_device_id sh_eth_id_table[] = {
+ 	{ "sh7757-ether", (kernel_ulong_t)&sh7757_data },
+ 	{ "sh7757-gether", (kernel_ulong_t)&sh7757_data_giga },
+ 	{ "sh7763-gether", (kernel_ulong_t)&sh7763_data },
+-	{ "r8a777x-ether", (kernel_ulong_t)&r8a777x_data },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(platform, sh_eth_id_table);
 -- 
-2.4.10
+1.9.1
 
