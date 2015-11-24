@@ -1,45 +1,48 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Mon, 30 Nov 2015 19:08:22 +0000
-Subject: Re: [PATCH] ravb: add R8A7791 support
-Message-Id: <565C9EA6.309@cogentembedded.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 24 Nov 2015 14:49:39 +0000
+Subject: [PATCH v2 0/2] irqchip/renesas-intc-irqpin: Remove obsolete platform data support
+Message-Id: <1448376581-9202-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <6051623.qN4lqSyZKg@wasted.cogentembedded.com>
- <CAMuHMdWE_G2WqsGZEaa4Ck3zziTLGVPfaVdU2gbnLA5zWpmR1w@mail.gmail.com>
- <565B6AAD.8080205@cogentembedded.com> <20151130004207.GD3501@verge.net.au>
-In-Reply-To: <20151130004207.GD3501@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+To: Thomas Gleixner <tglx@linutronix.de>, Jason Cooper <jason@lakedaemon.net>, Marc Zyngier <marc.zyngier@arm.com>
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hello.
+	Hi Thomas, Jason, Marc,
 
-On 11/30/2015 03:42 AM, Simon Horman wrote:
+Since commit 4baadb9e05c68962 ("ARM: shmobile: r8a7778: remove obsolete
+setup code"), which is now in v4.4-rc1, all Renesas SoCs with a
+renesas-intc-irqpin module are only supported in generic DT-only ARM
+multi-platform builds.  The driver doesn't need to use platform data anymore,
+hence this series removes platform data configuration, and does a small
+cleanup.
 
->>>> Add support  for yet another ARM member of the R-Car family, R-Car M2, also
->>
->>> R-Car M2-W?
->>
->>     Right, forgot about the postfixes.
->>
->>>> known as R8A7791.
->>>
->>> There's also R-Car M2-N, aka R8A7793, but you probably know that ;-)
->>
->>     Will fix.
->
-> I would prefer if we added generic gen2 and gen3 compat strings to the driver
-> and only documented new soc-specific compat strings.
+Changes since v1:
+  - Add Acked-by,
+  - Platform dependency has entered mainline.
 
-    That's a new policy it seems. Previously you preferred the SoC-specific 
-strings to be used, didn;t you?
+Thanks for applying!
 
-> Actually by chance I was planning to up patches to do that and add compat
-> strings for the missing Gen2 boards. But I won't complain if you beat me to
-> it.
+Geert Uytterhoeven (2):
+  irqchip/renesas-intc-irqpin: Remove obsolete platform data support
+  irqchip/renesas-intc-irqpin: Remove intc_irqpin_priv.number_of_irqs
 
-    No, I'm pretty busy as is. :-)
+ drivers/irqchip/irq-renesas-intc-irqpin.c          | 51 ++++++++--------------
+ .../linux/platform_data/irq-renesas-intc-irqpin.h  | 29 ------------
+ 2 files changed, 18 insertions(+), 62 deletions(-)
+ delete mode 100644 include/linux/platform_data/irq-renesas-intc-irqpin.h
 
-MBR, Sergei
+-- 
+1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
