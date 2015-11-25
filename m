@@ -1,72 +1,36 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 26 Nov 2015 22:59:09 +0000
-Subject: [RFC 1/9] i2c: document generic DT bindings for timing parameters
-Message-Id: <1448578757-12613-2-git-send-email-wsa@the-dreams.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 25 Nov 2015 06:39:32 +0000
+Subject: [PATCH 11/12] arm64: defconfig: add Renesas R-Car DMAC driver support
+Message-Id: <87mvu27fla.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
+References: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Also, sort the properties alphabetically and make indentation
-consistent. Wording largely taken from i2c-rk3x.txt, thanks guys!
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Only "i2c-scl-internal-delay-ns" is new, the rest is used by two drivers
-already and was documented in their driver binding documentation.
-
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- Documentation/devicetree/bindings/i2c/i2c.txt | 31 ++++++++++++++++++++++-----
- 1 file changed, 26 insertions(+), 5 deletions(-)
+ arch/arm64/configs/defconfig | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/Documentation/devicetree/bindings/i2c/i2c.txt b/Documentation/devicetree/bindings/i2c/i2c.txt
-index 8a99150ac3a7fd..a00219f5ee0733 100644
---- a/Documentation/devicetree/bindings/i2c/i2c.txt
-+++ b/Documentation/devicetree/bindings/i2c/i2c.txt
-@@ -29,12 +29,33 @@ Optional properties
- These properties may not be supported by all drivers. However, if a driver
- wants to support one of the below features, it should adapt the bindings below.
- 
--- clock-frequency	- frequency of bus clock in Hz.
--- wakeup-source		- device can be used as a wakeup source.
-+- clock-frequency
-+	frequency of bus clock in Hz.
- 
--- interrupts		- interrupts used by the device.
--- interrupt-names	- "irq" and "wakeup" names are recognized by I2C core,
--			  other names are left to individual drivers.
-+- i2c-scl-falling-time-ns
-+	Number of nanoseconds the SCL signal takes to fall; t(f) in the I2C
-+	specification.
-+
-+- i2c-scl-internal-delay-ns
-+	Number of nanoseconds the IP core additionally needs to setup SCL.
-+
-+- i2c-scl-rising-time-ns
-+	Number of nanoseconds the SCL signal takes to rise; t(r) in the I2C
-+	specification.
-+
-+- i2c-sda-falling-time-ns
-+	Number of nanoseconds the SDA signal takes to fall; t(f) in the I2C
-+	specification.
-+
-+- interrupts
-+	interrupts used by the device.
-+
-+- interrupt-names
-+	"irq" and "wakeup" names are recognized by I2C core, other names are
-+	left to individual drivers.
-+
-+- wakeup-source
-+	device can be used as a wakeup source.
- 
- Binding may contain optional "interrupts" property, describing interrupts
- used by the device. I2C core will assign "irq" interrupt (or the very first
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 6b1e284..f97d740 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -179,6 +179,7 @@ CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_EFI=y
+ CONFIG_RTC_DRV_XGENE=y
+ CONFIG_DMADEVICES=y
++CONFIG_RCAR_DMAC=y
+ CONFIG_QCOM_BAM_DMA=y
+ CONFIG_VIRTIO_PCI=y
+ CONFIG_VIRTIO_BALLOON=y
 -- 
-2.1.4
+1.9.1
 
