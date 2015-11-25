@@ -1,32 +1,127 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 24 Nov 2015 03:12:34 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7794: alt: Enable PFC DU for the VGA port
-Message-Id: <20151124031234.GM21853@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 25 Nov 2015 01:45:14 +0000
+Subject: [PATCH] thermal: rcar: enable to set tripN-temp via DT
+Message-Id: <87io4q97s7.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20151117032759.27590.11692.sendpatchset@little-apple>
-In-Reply-To: <20151117032759.27590.11692.sendpatchset@little-apple>
+References: <HK2PR04MB0804B55DC6CE36094AEF5162BC1C0@HK2PR04MB0804.apcprd04.prod.outlook.com>
+	<564D14A1.70806@renesas.com>
+	<87h9kiilbe.wl%kuninori.morimoto.gx@renesas.com>
+	<56545CE5.3040502@renesas.com>
+	<87mvu37wv2.wl%kuninori.morimoto.gx@renesas.com>
+	<5655059C.40509@renesas.com>
+In-Reply-To: <5655059C.40509@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>
+Cc: linux-pm@vger.kernel.org, devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, Ryusuke Sakato <ryusuke.sakato.bx@renesas.com>, "osd2@lm.renesas.com" <osd2@lm.renesas.com>, linux-sh@vger.kernel.org
 
-On Tue, Nov 17, 2015 at 12:27:59PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm+renesas@opensource.se>
-> 
-> Tie in r8a7794 PFC DU support to the VGA port on the
-> r8a7794 ALT board.
-> 
-> Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-> ---
-> 
->  Written on top of "renesas-devel-20151113-v4.3" with
->  "[PATCH v2 00/03] ARM: shmobile: r8a7794 ALT board DU VGA port enablement V2"
-> 
->  No other build time dependencies.
-> 
->  Run time dependency exists on
->  "[PATCH 00/04] pinctrl: sh-pfc: r8a7794: DU support"
 
-I have marked this patch as deferred pending acceptance of that series.
-Please repost or otherwise ping me once that has happened.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Current rcar thermal driver is using 90 degrees as trip temp, but it
+should be based on each SoC / platform.
+This patch enables to set trip temp via DT. (It uses db8500-thermal
+style for it)
+It will use 90 degrees as default trip temp if DT doesn't have it.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ .../devicetree/bindings/thermal/rcar-thermal.txt   |  2 ++
+ drivers/thermal/rcar_thermal.c                     | 34 ++++++++++++++++++++--
+ 2 files changed, 33 insertions(+), 3 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
+index 332e625..6c57f7e 100644
+--- a/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
++++ b/Documentation/devicetree/bindings/thermal/rcar-thermal.txt
+@@ -18,6 +18,8 @@ Required properties:
+ Option properties:
+ 
+ - interrupts		: use interrupt
++- tripN-temp		: temperature of trip point N. it will use 90000 as default
++			  if DT doesn't have tripN-temp
+ 
+ Example (non interrupt support):
+ 
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 5d4ae7d..d1d0b58 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -63,6 +63,7 @@ struct rcar_thermal_priv {
+ 	struct mutex lock;
+ 	struct list_head list;
+ 	int id;
++	int trip_temp;
+ 	u32 ctemp;
+ };
+ 
+@@ -222,7 +223,7 @@ static int rcar_thermal_get_trip_type(struct thermal_zone_device *zone,
+ 
+ 	/* see rcar_thermal_get_temp() */
+ 	switch (trip) {
+-	case 0: /* +90 <= temp */
++	case 0:
+ 		*type = THERMAL_TRIP_CRITICAL;
+ 		break;
+ 	default:
+@@ -241,8 +242,8 @@ static int rcar_thermal_get_trip_temp(struct thermal_zone_device *zone,
+ 
+ 	/* see rcar_thermal_get_temp() */
+ 	switch (trip) {
+-	case 0: /* +90 <= temp */
+-		*temp = MCELSIUS(90);
++	case 0:
++		*temp = priv->trip_temp;
+ 		break;
+ 	default:
+ 		dev_err(dev, "rcar driver trip error\n");
+@@ -361,6 +362,30 @@ static irqreturn_t rcar_thermal_irq(int irq, void *data)
+ /*
+  *		platform functions
+  */
++static void rcar_thermal_of_parse(struct rcar_thermal_priv *priv)
++{
++	struct device *dev = rcar_priv_to_dev(priv);
++	struct device_node *np = dev->of_node;
++	char prop_name[32];
++	s32 val;
++
++	/*
++	 * let's use db8500 thermal style
++	 */
++	sprintf(prop_name, "trip%d-temp", priv->id);
++	if (of_property_read_s32(np, prop_name, &val))
++		return;
++
++	if (val < -45000 ||
++	    val > 125000) {
++		dev_err(dev, "unsupported trip temp, use default\n");
++		return;
++	}
++
++	/* overwrite trip temp */
++	priv->trip_temp = val;
++}
++
+ static int rcar_thermal_probe(struct platform_device *pdev)
+ {
+ 	struct rcar_thermal_common *common;
+@@ -418,11 +443,14 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 
+ 		priv->common = common;
+ 		priv->id = i;
++		priv->trip_temp = MCELSIUS(90); /* default*/
+ 		mutex_init(&priv->lock);
+ 		INIT_LIST_HEAD(&priv->list);
+ 		INIT_DELAYED_WORK(&priv->work, rcar_thermal_work);
+ 		rcar_thermal_update_temp(priv);
+ 
++		rcar_thermal_of_parse(priv);
++
+ 		priv->zone = thermal_zone_device_register("rcar_thermal",
+ 						1, 0, priv,
+ 						&rcar_thermal_zone_ops, NULL, 0,
+-- 
+1.9.1
 
