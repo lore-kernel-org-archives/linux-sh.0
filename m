@@ -1,59 +1,87 @@
-From: Nicolas Pitre <nico@fluxnic.net>
-Date: Wed, 18 Nov 2015 21:36:16 +0000
-Subject: RE: [PATCH v3] ARM: xip: Use correct symbol for end of ROM marker
-Message-Id: <alpine.LFD.2.20.1511181635180.22569@knanqh.ubzr>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 25 Nov 2015 01:58:03 +0000
+Subject: [PATCH] ARM: shmobile: r8a7779: Add L2 cache-controller node
+Message-Id: <1448416683-1411-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447362108-4333-1-git-send-email-chris.brandt@renesas.com>
- <HK2PR06MB05619FACB3725B6F5B2299718A1E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <alpine.LFD.2.20.1511161605070.5826@knanqh.ubzr>
- <HK2PR06MB056142FFDA4E99A764DF9ECB8A1E0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <alpine.LFD.2.20.1511161730030.5826@knanqh.ubzr>
- <HK2PR06MB05614D47A9C35ECB4CA72D3F8A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <alpine.LFD.2.20.1511162127180.5826@knanqh.ubzr>
- <HK2PR06MB056175E6E4356DD8C3566D758A1D0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <alpine.LFD.2.20.1511172255410.22569@knanqh.ubzr>
- <CANqRtoTkHecGEsbi3EtM8dkHQ=V0RGm7iZcU_igMqLE7Od=xBA@mail.gmail.com>
- <alpine.LFD.2.20.1511180841000.22569@knanqh.ubzr>
- <alpine.LFD.2.20.1511181156250.22569@knanqh.ubzr>
- <HK2PR06MB0561CA7E856CEAA89D0752488A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
- <alpine.LFD.2.20.1511181445550.22569@knanqh.ubzr>
- <HK2PR06MB05610952B8DAE3C16E1ABC6E8A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
-In-Reply-To: <HK2PR06MB05610952B8DAE3C16E1ABC6E8A1C0@HK2PR06MB0561.apcprd06.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, 18 Nov 2015, Chris Brandt wrote:
+Add the missing L2 cache-controller node, and link the CPU nodes to it.
 
-> > Probably the best way to fix it would be something like:
-> >
-> > in asm/memory.h or similar:
-> >
-> > #ifdef CONFIG_XIP_KERNEL
-> > #define PHYS_OFFSET_FIXUP \
-> >	( XIP_VIRT_ADDR(CONFIG_XIP_PHYS_ADDR) - PAGE_OFFSET + \
-> >	  PLAT_PHYS_OFFSET - CONFIG_XIP_PHYS_ADDR ) #else #define
-> > PHYS_OFFSET_FIXUP 0 #endif
-> >
-> > And then, after my patch is applied, changing:
-> >
-> > __v7_setup_stack_ptr:
-> >        .word   __v7_setup_stack - .
-> >
-> > into:
-> >
-> > __v7_setup_stack_ptr:
-> >        .word   __v7_setup_stack - . + PHYS_OFFSET_FIXUP
-> >
-> > should do the trick. This way it'll work for all those places where
-> > the code is getting at the data area when the MMU is off with no XIP
-> > conditionals in the code.
-> 
-> 
-> Tested....it works!
+The L2 cache is an ARM L2C-310 (r3p2), of size 1 MB (64 KiB x 16 ways).
 
-Excellent.
+Based on work for the r8a7740 by Geert Uytterhoeven.
 
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Nicolas
+---
+
+* About the r8a7778 (M1A)
+
+  My reading of the documentation is that although a pl310 L2 cache
+  controller is present it is not available for use as there is no L2
+  cache memory present. For this reason I do not intend to follow up
+  with a similar patch for the r8a7798.
+
+* Lightly tested against renesas-devel-20151124-v4.4-rc2
+---
+ arch/arm/boot/dts/r8a7779.dtsi | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 6afa909865b5..f27fa2db16ee 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -28,24 +28,28 @@
+ 			compatible = "arm,cortex-a9";
+ 			reg = <0>;
+ 			clock-frequency = <1000000000>;
++			next-level-cache = <&L2>;
+ 		};
+ 		cpu@1 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <1>;
+ 			clock-frequency = <1000000000>;
++			next-level-cache = <&L2>;
+ 		};
+ 		cpu@2 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <2>;
+ 			clock-frequency = <1000000000>;
++			next-level-cache = <&L2>;
+ 		};
+ 		cpu@3 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+ 			reg = <3>;
+ 			clock-frequency = <1000000000>;
++			next-level-cache = <&L2>;
+ 		};
+ 	};
+ 
+@@ -63,6 +67,17 @@
+ 		      <0xf0000100 0x100>;
+ 	};
+ 
++	L2: cache-controller {
++		compatible = "arm,pl310-cache";
++		reg = <0xf0100000 0x1000>;
++		interrupts = <0 122 IRQ_TYPE_LEVEL_HIGH>;
++		arm,data-latency = <3 3 3>;
++		arm,tag-latency = <2 2 2>;
++		arm,shared-override;
++		cache-unified;
++		cache-level = <2>;
++	};
++
+ 	timer@f0000600 {
+ 		compatible = "arm,cortex-a9-twd-timer";
+ 		reg = <0xf0000600 0x20>;
+-- 
+2.1.4
+
