@@ -1,53 +1,107 @@
-From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-Date: Wed, 18 Nov 2015 12:51:06 +0000
-Subject: [PATCH 1/2] ARM: shmobile: alt: add I2C1 DT support
-Message-Id: <1447851067-8214-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 25 Nov 2015 06:37:08 +0000
+Subject: [PATCH 04/12] arm64: renesas: r8a7795: Sound SRC support
+Message-Id: <87wpt67fpa.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447851067-8214-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1447851067-8214-1-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Defines the board-dependent part of the I2C1 device.
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7794-alt.dts | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 61 ++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
-index e7c9455..88ed017 100644
---- a/arch/arm/boot/dts/r8a7794-alt.dts
-+++ b/arch/arm/boot/dts/r8a7794-alt.dts
-@@ -115,6 +115,11 @@
- 		renesas,groups = "eth_link_b", "eth_mdio_b", "eth_rmii_b";
- 		renesas,function = "eth";
- 	};
-+
-+	i2c1_pins: i2c1 {
-+		renesas,groups = "i2c1";
-+		renesas,function = "i2c1";
-+	};
- };
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 26ae5eb..17b8e82 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -525,6 +525,11 @@
+ 				 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
+ 				 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
+ 				 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
++				 <&cpg CPG_MOD 1022>, <&cpg CPG_MOD 1023>,
++				 <&cpg CPG_MOD 1024>, <&cpg CPG_MOD 1025>,
++				 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
++				 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
++				 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
+ 				 <&audio_clk_a>, <&audio_clk_b>,
+ 				 <&audio_clk_c>,
+ 				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
+@@ -532,10 +537,66 @@
+ 				      "ssi.9", "ssi.8", "ssi.7", "ssi.6",
+ 				      "ssi.5", "ssi.4", "ssi.3", "ssi.2",
+ 				      "ssi.1", "ssi.0",
++				      "src.9", "src.8", "src.7", "src.6",
++				      "src.5", "src.4", "src.3", "src.2",
++				      "src.1", "src.0",
+ 				      "clk_a", "clk_b", "clk_c", "clk_i";
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
  
- &cmt0 {
-@@ -134,6 +139,14 @@
- 	};
- };
- 
-+&i2c1 {
-+	pinctrl-0 = <&i2c1_pins>;
-+	pinctrl-names = "default";
++			rcar_sound,src {
++				src0: src@0 {
++					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x85>, <&audma1 0x9a>;
++					dma-names = "rx", "tx";
++				};
++				src1: src@1 {
++					interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x87>, <&audma1 0x9c>;
++					dma-names = "rx", "tx";
++				};
++				src2: src@2 {
++					interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x89>, <&audma1 0x9e>;
++					dma-names = "rx", "tx";
++				};
++				src3: src@3 {
++					interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x8b>, <&audma1 0xa0>;
++					dma-names = "rx", "tx";
++				};
++				src4: src@4 {
++					interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x8d>, <&audma1 0xb0>;
++					dma-names = "rx", "tx";
++				};
++				src5: src@5 {
++					interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x8f>, <&audma1 0xb2>;
++					dma-names = "rx", "tx";
++				};
++				src6: src@6 {
++					interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x91>, <&audma1 0xb4>;
++					dma-names = "rx", "tx";
++				};
++				src7: src@7 {
++					interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x93>, <&audma1 0xb6>;
++					dma-names = "rx", "tx";
++				};
++				src8: src@8 {
++					interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x95>, <&audma1 0xb8>;
++					dma-names = "rx", "tx";
++				};
++				src9: src@9 {
++					interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x97>, <&audma1 0xba>;
++					dma-names = "rx", "tx";
++				};
++			};
 +
-+	status = "okay";
-+	clock-frequency = <400000>;
-+};
-+
- &scif2 {
- 	status = "okay";
- };
+ 			rcar_sound,ssi {
+ 				ssi0: ssi@0 {
+ 					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
 -- 
-2.6.1
+1.9.1
 
