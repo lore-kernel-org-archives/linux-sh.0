@@ -1,87 +1,79 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 25 Nov 2015 01:58:03 +0000
-Subject: [PATCH] ARM: shmobile: r8a7779: Add L2 cache-controller node
-Message-Id: <1448416683-1411-1-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 25 Nov 2015 08:41:42 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7779: Add L2 cache-controller node
+Message-Id: <CAMuHMdVTdPocWCnzE8v-O_rpNJR=0mO23jeG8ejYzL0REtQb+g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1448416683-1411-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1448416683-1411-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add the missing L2 cache-controller node, and link the CPU nodes to it.
+Hi Simon,
 
-The L2 cache is an ARM L2C-310 (r3p2), of size 1 MB (64 KiB x 16 ways).
+On Wed, Nov 25, 2015 at 2:58 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> Add the missing L2 cache-controller node, and link the CPU nodes to it.
+>
+> The L2 cache is an ARM L2C-310 (r3p2), of size 1 MB (64 KiB x 16 ways).
+>
+> Based on work for the r8a7740 by Geert Uytterhoeven.
+>
+> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Based on work for the r8a7740 by Geert Uytterhoeven.
+Thanks for your patch!
 
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+>  arch/arm/boot/dts/r8a7779.dtsi | 15 +++++++++++++++
+>  1 file changed, 15 insertions(+)
+>
+> diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+> index 6afa909865b5..f27fa2db16ee 100644
+> --- a/arch/arm/boot/dts/r8a7779.dtsi
+> +++ b/arch/arm/boot/dts/r8a7779.dtsi
 
----
+> @@ -63,6 +67,17 @@
+>                       <0xf0000100 0x100>;
+>         };
+>
+> +       L2: cache-controller {
+> +               compatible = "arm,pl310-cache";
+> +               reg = <0xf0100000 0x1000>;
+> +               interrupts = <0 122 IRQ_TYPE_LEVEL_HIGH>;
 
-* About the r8a7778 (M1A)
+40?
 
-  My reading of the documentation is that although a pl310 L2 cache
-  controller is present it is not available for use as there is no L2
-  cache memory present. For this reason I do not intend to follow up
-  with a similar patch for the r8a7798.
+Comparing to other devices, you have to subtract 32 from 0x5a, not
+add 32?
 
-* Lightly tested against renesas-devel-20151124-v4.4-rc2
----
- arch/arm/boot/dts/r8a7779.dtsi | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+> +               arm,data-latency = <3 3 3>;
+> +               arm,tag-latency = <2 2 2>;
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 6afa909865b5..f27fa2db16ee 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -28,24 +28,28 @@
- 			compatible = "arm,cortex-a9";
- 			reg = <0>;
- 			clock-frequency = <1000000000>;
-+			next-level-cache = <&L2>;
- 		};
- 		cpu@1 {
- 			device_type = "cpu";
- 			compatible = "arm,cortex-a9";
- 			reg = <1>;
- 			clock-frequency = <1000000000>;
-+			next-level-cache = <&L2>;
- 		};
- 		cpu@2 {
- 			device_type = "cpu";
- 			compatible = "arm,cortex-a9";
- 			reg = <2>;
- 			clock-frequency = <1000000000>;
-+			next-level-cache = <&L2>;
- 		};
- 		cpu@3 {
- 			device_type = "cpu";
- 			compatible = "arm,cortex-a9";
- 			reg = <3>;
- 			clock-frequency = <1000000000>;
-+			next-level-cache = <&L2>;
- 		};
- 	};
- 
-@@ -63,6 +67,17 @@
- 		      <0xf0000100 0x100>;
- 	};
- 
-+	L2: cache-controller {
-+		compatible = "arm,pl310-cache";
-+		reg = <0xf0100000 0x1000>;
-+		interrupts = <0 122 IRQ_TYPE_LEVEL_HIGH>;
-+		arm,data-latency = <3 3 3>;
-+		arm,tag-latency = <2 2 2>;
-+		arm,shared-override;
-+		cache-unified;
-+		cache-level = <2>;
-+	};
-+
- 	timer@f0000600 {
- 		compatible = "arm,cortex-a9-twd-timer";
- 		reg = <0xf0000600 0x20>;
--- 
-2.1.4
+Table 9.5 says 2 resp. 1 instead of 3 resp. 2?
 
+However:
+
+"The TAG and data RAM latency can be set in the reg1_tag_ram_control and
+ reg1_data_ram_control registers. However, since values to be set are
+ hardware-dependent, the default values should not be modified."
+
+Perhaps we should just omit these values?
+
+> +               arm,shared-override;
+> +               cache-unified;
+> +               cache-level = <2>;
+> +       };
+> +
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
