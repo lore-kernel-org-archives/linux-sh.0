@@ -1,68 +1,39 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:47 +0000
-Subject: [PATCH 04/15] ARM: shmobile: r8a7793: Add DU node to device tree
-Message-Id: <ee94fc9b026dd14dd31d9975a62caebf70472a59.1448586938.git.horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 25 Nov 2015 06:38:52 +0000
+Subject: [PATCH 09/12] arm64: renesas: salvator-x: Sound SRC support
+Message-Id: <87poyy7fmf.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448586938.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448586938.git.horms+renesas@verge.net.au>
+References: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add the DU device with a disabled state. Boards that want to enable the
-DU need to specify the output topology.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index 2378df52aa32..cbcda80f4658 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -344,6 +344,36 @@
- 		status = "disabled";
- 	};
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index e49e5dc..47bf252 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -136,8 +136,8 @@
  
-+	du: display@feb00000 {
-+		compatible = "renesas,du-r8a7793";
-+		reg = <0 0xfeb00000 0 0x40000>,
-+		      <0 0xfeb90000 0 0x1c>;
-+		reg-names = "du", "lvds.0";
-+		interrupts = <0 256 IRQ_TYPE_LEVEL_HIGH>,
-+			     <0 268 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp7_clks R8A7793_CLK_DU0>,
-+			 <&mstp7_clks R8A7793_CLK_DU1>,
-+			 <&mstp7_clks R8A7793_CLK_LVDS0>;
-+		clock-names = "du.0", "du.1", "lvds.0";
-+		status = "disabled";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				du_out_rgb: endpoint {
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				du_out_lvds0: endpoint {
-+				};
-+			};
-+		};
-+	};
-+
- 	clocks {
- 		#address-cells = <2>;
- 		#size-cells = <2>;
+ 	rcar_sound,dai {
+ 		dai0 {
+-			playback = <&ssi0>;
+-			capture  = <&ssi1>;
++			playback = <&ssi0 &src0>;
++			capture  = <&ssi1 &src1>;
+ 		};
+ 	};
+ };
 -- 
-2.1.4
+1.9.1
 
