@@ -1,74 +1,138 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 18 Nov 2015 21:02:39 +0000
-Subject: [PATCH] staging/emxx_udc: fix 64-bit warnings
-Message-Id: <4127718.gSaDyyMLEa@wuerfel>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 25 Nov 2015 06:36:25 +0000
+Subject: [PATCH 02/12] arm64: renesas: r8a7795: Sound SSI PIO support
+Message-Id: <87ziy27fqk.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ARCH_SHMOBILE is coming to arm64, which creates new warnings in allmodconfig:
 
-drivers/staging/emxx_udc/emxx_udc.c: In function '_nbu2ss_out_dma':
-drivers/staging/emxx_udc/emxx_udc.c:843:45: warning: cast from pointer to integer of different size [-Wpointer-to-int-cast]
-  _nbu2ss_writel(&preg->EP_DCR[num].EP_TADR, (u32)pBuffer);
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This is clearly a mistake from confusing a dma_addr_t with a pointer,
-so the fix is to use the correct types in two places.
+This patch adds SSI for PIO sound support
 
-The third warning of this kind is a check for an unaligned pointer,
-which should be done by casting the pointer to uintptr_t, not int.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 95 ++++++++++++++++++++++++++++++++
+ 1 file changed, 95 insertions(+)
 
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-
-diff --git a/drivers/staging/emxx_udc/emxx_udc.c b/drivers/staging/emxx_udc/emxx_udc.c
-index 4e6c16af40fc..c168845cbb91 100644
---- a/drivers/staging/emxx_udc/emxx_udc.c
-+++ b/drivers/staging/emxx_udc/emxx_udc.c
-@@ -823,7 +823,7 @@ static int _nbu2ss_out_dma(
- 	u32		length
- )
- {
--	u8		*pBuffer;
-+	dma_addr_t	pBuffer;
- 	u32		mpkt;
- 	u32		lmpkt;
- 	u32		dmacnt;
-@@ -836,7 +836,7 @@ static int _nbu2ss_out_dma(
- 		return 1;		/* DMA is forwarded */
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 18d2221..6fff49c 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -52,6 +52,29 @@
+ 		clock-frequency = <0>;
+ 	};
  
- 	req->dma_flag = TRUE;
--	pBuffer = (u8 *)req->req.dma;
-+	pBuffer = req->req.dma;
- 	pBuffer += req->req.actual;
- 
- 	/* DMA Address */
-@@ -1034,7 +1034,7 @@ static int _nbu2ss_in_dma(
- 	u32		length
- )
- {
--	u8		*pBuffer;
-+	dma_addr_t	pBuffer;
- 	u32		mpkt;		/* MaxPacketSize */
- 	u32		lmpkt;		/* Last Packet Data Size */
- 	u32		dmacnt;		/* IN Data Size */
-@@ -1080,7 +1080,7 @@ static int _nbu2ss_in_dma(
- 	_nbu2ss_writel(&preg->EP_DCR[num].EP_DCR2, data);
- 
- 	/* Address setting */
--	pBuffer = (u8 *)req->req.dma;
-+	pBuffer = req->req.dma;
- 	pBuffer += req->req.actual;
- 	_nbu2ss_writel(&preg->EP_DCR[num].EP_TADR, (u32)pBuffer);
- 
-@@ -2728,7 +2728,7 @@ static int nbu2ss_ep_queue(
- 	spin_lock_irqsave(&udc->lock, flags);
- 
- #ifdef USE_DMA
--	if ((u32)req->req.buf & 0x3)
-+	if ((uintptr_t)req->req.buf & 0x3)
- 		req->unaligned = TRUE;
- 	else
- 		req->unaligned = FALSE;
++	/*
++	 * The external audio clocks are configured as 0 Hz fixed frequency
++	 * clocks by default.
++	 * Boards that provide audio clocks should override them.
++	 */
++	audio_clk_a: audio_clk_a {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <0>;
++	};
++
++	audio_clk_b: audio_clk_b {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <0>;
++	};
++
++	audio_clk_c: audio_clk_c {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <0>;
++	};
++
+ 	soc {
+ 		compatible = "simple-bus";
+ 		interrupt-parent = <&gic>;
+@@ -474,5 +497,77 @@
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
+ 		};
++
++		rcar_sound: sound@ec500000 {
++			/*
++			 * #sound-dai-cells is required
++			 *
++			 * Single DAI : #sound-dai-cells = <0>;	<&rcar_sound>;
++			 * Multi  DAI : #sound-dai-cells = <1>;	<&rcar_sound N>;
++			 */
++			/*
++			 * #clock-cells is required for audio_clkout0/1/2/3
++			 *
++			 * clkout	: #clock-cells = <0>;	<&rcar_sound>;
++			 * clkout0/1/2/3: #clock-cells = <1>;	<&rcar_sound N>;
++			 */
++			compatible =  "renesas,rcar_sound-r8a7795", "renesas,rcar_sound-gen3";
++			reg =	<0 0xec500000 0 0x1000>, /* SCU */
++				<0 0xec5a0000 0 0x100>,  /* ADG */
++				<0 0xec540000 0 0x1000>, /* SSIU */
++				<0 0xec541000 0 0x280>,  /* SSI */
++				<0 0xec740000 0 0x200>;  /* Audio DMAC peri peri*/
++			reg-names = "scu", "adg", "ssiu", "ssi", "audmapp";
++
++			clocks = <&cpg CPG_MOD 1005>,
++				 <&cpg CPG_MOD 1006>, <&cpg CPG_MOD 1007>,
++				 <&cpg CPG_MOD 1008>, <&cpg CPG_MOD 1009>,
++				 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
++				 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
++				 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
++				 <&audio_clk_a>, <&audio_clk_b>,
++				 <&audio_clk_c>,
++				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
++			clock-names = "ssi-all",
++				      "ssi.9", "ssi.8", "ssi.7", "ssi.6",
++				      "ssi.5", "ssi.4", "ssi.3", "ssi.2",
++				      "ssi.1", "ssi.0",
++				      "clk_a", "clk_b", "clk_c", "clk_i";
++			power-domains = <&cpg>;
++			status = "disabled";
++
++			rcar_sound,ssi {
++				ssi0: ssi@0 {
++					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi1: ssi@1 {
++					 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi2: ssi@2 {
++					interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi3: ssi@3 {
++					interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi4: ssi@4 {
++					interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi5: ssi@5 {
++					interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi6: ssi@6 {
++					interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi7: ssi@7 {
++					interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi8: ssi@8 {
++					interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi9: ssi@9 {
++					interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
++				};
++			};
++		};
+ 	};
+ };
+-- 
+1.9.1
 
