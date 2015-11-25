@@ -1,34 +1,44 @@
-From: David Miller <davem@davemloft.net>
-Date: Tue, 24 Nov 2015 21:48:57 +0000
-Subject: Re: [PATCH v3 0/4] sh_eth: Remove obsolete platform_device_id entries
-Message-Id: <20151124.164857.2104136950033442678.davem@davemloft.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 25 Nov 2015 06:35:17 +0000
+Subject: [PATCH 0/12] arm64: renesas: r8a7795: sound support
+Message-Id: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448376060-7803-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: geert+renesas@glider.be
-Cc: sergei.shtylyov@cogentembedded.com, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 24 Nov 2015 15:40:56 +0100
 
-> Since commit 3d7608e4c169af03 ("ARM: shmobile: bockw: remove legacy
-> board file and config"), which is in v4.4-rc1, shmobile SoCs are only
-> supported in generic DT-only ARM multi-platform builds.  The sh_eth
-> driver doesn't need to match platform devices by name anymore, hence
-> this series removes the corresponding platform_device_id entries.
-> 
-> Changes since v2:
->   - More Acks,
->   - Platform dependency has entered mainline,
-> 
-> Changes since v1:
->   - Protect some data and functions by #ifdef CONFIG_OF to silence
->     unused compiler warnings on SH,
->   - New patches 3 and 4.
-> 
-> Thanks for applying!
+Hi Simon
 
-Series applied to net-next, thanks!
+These are r8a7795/salvator-x sound support for latest branch.
+(These are posted few month ago and were queued on Simon's branch)
+
+I could have sound by this order
+
+	> git checkout renesas-devel-20151123-v4.4-rc2
+	> git merge  geert/topic/cpg-mssr-v6
+	> git am -3 ${THESE-PATCH-SET}
+
+These supports 44.1kHz sound only. 48kHz sound needs cs2000 driver
+which is posted to ML (clk maintainer accepted ?)
+I can send cs2000 support if it was accepted.
+
+Kuninori Morimoto (12):
+      arm64: renesas: r8a7795: add AUDIO_DMAC support
+      arm64: renesas: r8a7795: Sound SSI PIO support
+      arm64: renesas: r8a7795: Sound SSI DMA support
+      arm64: renesas: r8a7795: Sound SRC support
+      arm64: renesas: r8a7795: Sound DVC support
+      arm64: renesas: salvator-x: Sound SSI PIO support
+      arm64: renesas: salvator-x: Sound SSI DMA support
+      arm64: renesas: salvator-x: Sound SSI DMA support via BUSIF
+      arm64: renesas: salvator-x: Sound SRC support
+      arm64: renesas: salvator-x: Sound DVC support
+      arm64: defconfig: add Renesas R-Car DMAC driver support
+      arm64: defconfig: add Renesas sound and AK4613 support
+
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts |  94 +++++++++++++++++++++++++++++++++++++++++
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 253 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ arch/arm64/configs/defconfig                       |   6 +++
+ 3 files changed, 353 insertions(+)
