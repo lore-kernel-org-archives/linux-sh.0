@@ -1,58 +1,62 @@
-From: yalin wang <yalin.wang2010@gmail.com>
-Date: Mon, 30 Nov 2015 16:42:04 +0000
-Subject: Re: [PATCH v2 5/5] printk/nmi: Increase the size of the temporary buffer
-Message-Id: <81211733-2484-40A9-9D4A-644AA27FBC73@gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 25 Nov 2015 00:48:44 +0000
+Subject: Re: [PATCH/RFC 0/4] pinctrl: sh-pfc: Add PINMUX_SINGLE()
+Message-Id: <2326541.taAcxUkgxs@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448622572-16900-1-git-send-email-pmladek@suse.com>
- <1448622572-16900-6-git-send-email-pmladek@suse.com>
-In-Reply-To: <1448622572-16900-6-git-send-email-pmladek@suse.com>
+References: <1445369195-25117-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1445369195-25117-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
 
+Hi Geert,
 
-> On Nov 27, 2015, at 19:09, Petr Mladek <pmladek@suse.com> wrote:
-> 
-> Testing has shown that the backtrace sometimes does not fit
-> into the 4kB temporary buffer that is used in NMI context.
-> 
-> The warnings are gone when I double the temporary buffer size.
-> 
-> Note that this problem existed even in the x86-specific
-> implementation that was added by the commit a9edc8809328
-> ("x86/nmi: Perform a safe NMI stack trace on all CPUs").
-> Nobody noticed it because it did not print any warnings.
-> 
-> Signed-off-by: Petr Mladek <pmladek@suse.com>
-> ---
-> kernel/printk/nmi.c | 2 +-
-> 1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
-> index 8af1e4016719..6111644d5f01 100644
-> --- a/kernel/printk/nmi.c
-> +++ b/kernel/printk/nmi.c
-> @@ -42,7 +42,7 @@ atomic_t nmi_message_lost;
-> struct nmi_seq_buf {
-> 	atomic_t		len;	/* length of written data */
-> 	struct irq_work		work;	/* IRQ work that flushes the buffer */
-> -	unsigned char		buffer[PAGE_SIZE - sizeof(atomic_t) -
-> +	unsigned char		buffer[2 * PAGE_SIZE - sizeof(atomic_t) -
-> 				       sizeof(struct irq_work)];
-> };
-> 
+Thank you for the patches.
 
-why not define like this:
+On Tuesday 20 October 2015 21:26:31 Geert Uytterhoeven wrote:
+> 	Hi,
+> 
+> Currently single-function pins are described using the raw PINMUX_DATA()
+> macro.
+> 
+> Morimoto-san doesn't like that. He proposed to use the existing
+> PINMUX_IPSR_NOGP() macro instead (cfr. "[RFC] pinctrl: sh-pfc: r8a7795:
+> Add pinmux data for single-function pins",
+> http://www.spinics.net/lists/linux-sh/msg44823.html).
+> However, that macro is intended to describe a pinmux configuration
+> without GPIO function, which feels wrong to me.
+> 
+> This patch series proposes an alternative, introducing a new macro
+> PINMUX_SINGLE() to describe a pinmux configuration for a single-function
+> pin. It also converts the existing single-function pin descriptions.
+> 
+> Thanks for your comments!
 
-union {
-struct {atomic_t		len;	
-	struct irq_work		work;
-}
-unsigned char		buffer[PAGE_SIZE * 2] ;
-}
+For patches 2-4,
 
-we can make sure the union is 2 PAGE_SIZE .
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Thanks
+But why haven't you included the other SoCs ?
+
+> Geert Uytterhoeven (4):
+>   pinctrl: sh-pfc: Add PINMUX_SINGLE()
+>   pinctrl: sh-pfc: r8a7790: Use PINMUX_SINGLE() instead of raw
+>     PINMUX_DATA()
+>   pinctrl: sh-pfc: r8a7791: Use PINMUX_SINGLE() instead of raw
+>     PINMUX_DATA()
+>   pinctrl: sh-pfc: r8a7794: Use PINMUX_SINGLE() instead of raw
+>     PINMUX_DATA()
+> 
+>  drivers/pinctrl/sh-pfc/pfc-r8a7790.c | 18 +++++++--------
+>  drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 34 ++++++++++++++--------------
+>  drivers/pinctrl/sh-pfc/pfc-r8a7794.c | 44 +++++++++++++++++----------------
+>  drivers/pinctrl/sh-pfc/sh_pfc.h      |  7 ++++++
+>  4 files changed, 55 insertions(+), 48 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
 
