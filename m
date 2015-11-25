@@ -1,45 +1,112 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Tue, 03 Nov 2015 09:00:42 +0000
-Subject: RE: [PATCH 0/3] Fix rcar-pcie for arm64
-Message-Id: <PS1PR06MB118027E43C76740EC5F9F18CF52B0@PS1PR06MB1180.apcprd06.prod.outlook.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 25 Nov 2015 05:42:27 +0000
+Subject: [PATCH] thermal: rcar: add .set_trip_temp support
+Message-Id: <87a8q28wsv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446482175-26507-1-git-send-email-phil.edworthy@renesas.com>
- <20151102213305.GA1158@tetsubishi>
-In-Reply-To: <20151102213305.GA1158@tetsubishi>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wolfram Sang <wsa@the-dreams.de>
-Cc: Bjorn Helgaas <bhelgaas@google.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms@verge.net.au>, "linux-pci@vger.kernel.org" <linux-pci@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Zhang Rui <rui.zhang@intel.com>, Eduardo Valentin <edubezval@gmail.com>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>
+Cc: devicetree@vger.kernel.org, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, Ryusuke Sakato <ryusuke.sakato.bx@renesas.com>, linux-kernel@vger.kernel.org, "osd2@lm.renesas.com" <osd2@lm.renesas.com>
 
-Hi Wolfram,
 
-On 02 November 2015 21:33, Wolfram wrote:
-> > The first patches fixes the build problem, and the second patch reverts the
-> > patch that removed the driver from arm64 builds. The final patch add a compat
-> > string for the r8a7795 (arm64) device.
-> 
-> Thanks. I will test them next week when I have access to my board again.
-It's worth mentioning that I had some troubles on my Salvator-X board
-with some cards not being able to link up. Since my board has a socketed chip
-and the board was designed for it not to be via a socket, and this is such a low
-level functionality, I think this is HW related. My Intel Gigabit CT Desktop card
-always works.
-Also note that this PCIe controller only supports a 32-bit AXI address range,
-so you need to limit memory to within the 4GiB address space. As far as I am
-aware, there is no way to limit the dma mask that card drivers use via the
-controller. The plan is to add support this via IOMMU.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+You can set trip temp if your kernel has CONFIG_THERMAL_WRITABLE_TRIPS
+
+echo $temp > /sys/class/thermal/thermal_zone0/trip_point_0_temp
+
+-45000 < $temp < 125000 is supported
+Default is 90000
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+  This patch is v2 of "[PATCH] thermal: rcar: enable to set tripN-temp via DT"
+  I think it will be full-DT feature if it uses of-thermal, but this driver is used
+  from non-DT SoC too. We would like to keep non-DT support.
+  And we would like to do is only exchange trip temp.
+  .set_trip_temp is very enouth for it at this point.
+  But, it can use of-thermal feature in the future.
+
+ drivers/thermal/rcar_thermal.c | 27 +++++++++++++++++++++++----
+ 1 file changed, 23 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
+index 5d4ae7d..1eaa1be 100644
+--- a/drivers/thermal/rcar_thermal.c
++++ b/drivers/thermal/rcar_thermal.c
+@@ -63,6 +63,7 @@ struct rcar_thermal_priv {
+ 	struct mutex lock;
+ 	struct list_head list;
+ 	int id;
++	int trip_temp;
+ 	u32 ctemp;
+ };
  
-> > Apart from patches to add the PCIe clock and DT nodes, I had to revert these
-> > patches to get it to work on arm64:
-> >  f075915ac0b1 ("PCI/MSI: Drop domain field from msi_controller")
-> >  d8a1cb757550 ("PCI/MSI: Let pci_msi_get_domain use struct
-> device::msi_domain")
-> 
-> Does that solve the MSI problems you mentioned?
-It avoids the problem, but I have a proper fix in the pipeline which just needs
-more testing.
-
-Thanks
-Phil
+@@ -222,7 +223,7 @@ static int rcar_thermal_get_trip_type(struct thermal_zone_device *zone,
+ 
+ 	/* see rcar_thermal_get_temp() */
+ 	switch (trip) {
+-	case 0: /* +90 <= temp */
++	case 0:
+ 		*type = THERMAL_TRIP_CRITICAL;
+ 		break;
+ 	default:
+@@ -241,8 +242,8 @@ static int rcar_thermal_get_trip_temp(struct thermal_zone_device *zone,
+ 
+ 	/* see rcar_thermal_get_temp() */
+ 	switch (trip) {
+-	case 0: /* +90 <= temp */
+-		*temp = MCELSIUS(90);
++	case 0:
++		*temp = priv->trip_temp;
+ 		break;
+ 	default:
+ 		dev_err(dev, "rcar driver trip error\n");
+@@ -270,10 +271,27 @@ static int rcar_thermal_notify(struct thermal_zone_device *zone,
+ 	return 0;
+ }
+ 
++static int rcar_thermal_set_trip_temp(struct thermal_zone_device *zone,
++				    int trip, int temp)
++{
++	struct rcar_thermal_priv *priv = rcar_zone_to_priv(zone);
++
++	if (trip != 0)
++		return -EINVAL;
++
++	if (temp < -45000 || temp > 125000)
++		return -EINVAL;
++
++	priv->trip_temp = temp;
++
++	return 0;
++}
++
+ static struct thermal_zone_device_ops rcar_thermal_zone_ops = {
+ 	.get_temp	= rcar_thermal_get_temp,
+ 	.get_trip_type	= rcar_thermal_get_trip_type,
+ 	.get_trip_temp	= rcar_thermal_get_trip_temp,
++	.set_trip_temp	= rcar_thermal_set_trip_temp,
+ 	.notify		= rcar_thermal_notify,
+ };
+ 
+@@ -418,13 +436,14 @@ static int rcar_thermal_probe(struct platform_device *pdev)
+ 
+ 		priv->common = common;
+ 		priv->id = i;
++		priv->trip_temp = MCELSIUS(90); /* default*/
+ 		mutex_init(&priv->lock);
+ 		INIT_LIST_HEAD(&priv->list);
+ 		INIT_DELAYED_WORK(&priv->work, rcar_thermal_work);
+ 		rcar_thermal_update_temp(priv);
+ 
+ 		priv->zone = thermal_zone_device_register("rcar_thermal",
+-						1, 0, priv,
++						1, 1, priv,
+ 						&rcar_thermal_zone_ops, NULL, 0,
+ 						idle);
+ 		if (IS_ERR(priv->zone)) {
+-- 
+1.9.1
 
