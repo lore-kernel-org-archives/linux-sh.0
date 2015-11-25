@@ -1,68 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 17 Nov 2015 17:31:50 +0000
-Subject: Re: [PATCH v11 6/8] arm64: renesas: add Salvator-X board support on DTS
-Message-Id: <20151117173149.GG23979@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 25 Nov 2015 00:49:55 +0000
+Subject: Re: [PATCH/RFC 1/4] pinctrl: sh-pfc: Add PINMUX_SINGLE()
+Message-Id: <3546719.xIF05iocVT@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1444890243-6978-1-git-send-email-horms+renesas@verge.net.au>
- <1444890243-6978-7-git-send-email-horms+renesas@verge.net.au>
- <20151015110139.GG8825@leverpostej>
- <20151023070032.GA4502@verge.net.au>
- <CAMuHMdVzUPyhkfPy3s+jBK1gQ-kZqYfrQZ8Bww-iFxGOPVZn2w@mail.gmail.com>
- <CAMuHMdX=LS2sLqtgBUYeWjVkUVZE2WQwsWhbvK+wmdfZ0ycrjg@mail.gmail.com>
- <CAMuHMdV+7L9r-dHKj5x8JFFVYg0O-zAnE7R5QYZQPAOJwi5Sxw@mail.gmail.com>
-In-Reply-To: <CAMuHMdV+7L9r-dHKj5x8JFFVYg0O-zAnE7R5QYZQPAOJwi5Sxw@mail.gmail.com>
+References: <1445369195-25117-1-git-send-email-geert+renesas@glider.be> <1445369195-25117-2-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1445369195-25117-2-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org
 
-On Mon, Nov 16, 2015 at 10:53:39AM +0100, Geert Uytterhoeven wrote:
-> On Tue, Nov 3, 2015 at 3:24 PM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> > On Thu, Oct 29, 2015 at 8:52 AM, Geert Uytterhoeven
-> > <geert@linux-m68k.org> wrote:
-> >> On Fri, Oct 23, 2015 at 9:00 AM, Simon Horman <horms@verge.net.au> wrote:
-> >>> On Thu, Oct 15, 2015 at 12:01:40PM +0100, Mark Rutland wrote:
-> >>>> > +           stdout-path = &scif2;
-> >>>>
-> >>>> No rate? It would be better to be explicit here; you should be able to
-> >>>> have:
-> >>>>
-> >>>>       stdout-path = "serial0:115200n8"
-> >>>>
-> >>>> Where "115200n8" is replaced with whatever configuration this board
-> >>>> actually has.
-> >>>
-> >>> I think that we have had this discussion before in relation to
-> >>> a different board for a different Renesas SoC but I could be mistaken.
-> >>
-> >> IIRC, at that time the code to parse the options wasn't upstream yet, so
-> >> adding the options would have broken the serial console.
-> >>
-> >> I can confirm it works fine on Salvator-X with
-> >>
-> >>         stdout-path = "serial0:115200n8";
-> >
-> > Unfortunately this breaks earlycon support:
-> >
-> >         Malformed early option 'earlycon'
-> >
-> > The call to fdt_getprop() in early_init_dt_scan_chosen_serial() fails.
-> > I guess that unlike the standard console handling code, the fdt code can't
-> > handle aliases yet?
-> 
-> Apparently this issue was fixed in v4.4-rc1. For the backport team:
-> 
-> commit 6296ad9e3375c6c1ddbb371f589ba6a145bb31df
-> Author: Stefan Agner <stefan@agner.ch>
-> Date:   Sat Oct 10 01:29:30 2015 -0700
-> 
->     of/fdt: fix aliases with baudrate in earlycon
-> 
-> > P.S. SCIF earlycon support is not yet upstream, as it still doesn't work on
-> > arm32 (I discovered today it does on arm64 ;-): it pretends to work, but
-> > nothing is output to the serial port (until the normal serial console kicks
-> > in).
-> 
-> And this issue is mostly resolved, too. So v4.5 will be perfect ;-)
+Hi Geert,
 
-Excellent!
+Thank you for the patch.
+
+On Tuesday 20 October 2015 21:26:32 Geert Uytterhoeven wrote:
+> Add a macro to describe a pinmux configuration for a single-function
+> pin.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+>  drivers/pinctrl/sh-pfc/sh_pfc.h | 7 +++++++
+>  1 file changed, 7 insertions(+)
+> 
+> diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h
+> b/drivers/pinctrl/sh-pfc/sh_pfc.h index 63e6cd050d0fb7d2..932fbef8bad400dd
+> 100644
+> --- a/drivers/pinctrl/sh-pfc/sh_pfc.h
+> +++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+> @@ -277,6 +277,13 @@ struct sh_pfc_soc_info {
+>  	PINMUX_DATA(fn##_MARK, FN_##ms, FN_##ipsr, FN_##fn)
+> 
+>  /*
+> + * Describe a pinmux configuration for a single-function pin.
+
+I would say "single-function pin with GPIO capability".
+
+Apart from that,
+
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+
+> + *   - fn: Function name
+> + */
+> +#define PINMUX_SINGLE(fn)						\
+> +	PINMUX_DATA(fn##_MARK, FN_##fn)
+> +
+> +/*
+>   * GP port style (32 ports banks)
+>   */
+
+-- 
+Regards,
+
+Laurent Pinchart
+
