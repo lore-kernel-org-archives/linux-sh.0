@@ -1,41 +1,59 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 09 Nov 2015 00:42:25 +0000
-Subject: [PATCH] pwm: rcar: Improve accuracy of frequency division setting
-Message-Id: <1447029745-3648-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 25 Nov 2015 06:37:29 +0000
+Subject: [PATCH 05/12] arm64: renesas: r8a7795: Sound DVC support
+Message-Id: <87vb8q7foq.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: thierry.reding@gmail.com
-Cc: ryo.kodama.vz@renesas.com, linux-pwm@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Ryo Kodama <ryo.kodama.vz@renesas.com>
 
-From: Ryo Kodama <ryo.kodama.vz@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-When period_ns is set to the same value of RCAR_PWM_MAX_CYCLE in
-rcar_pwm_get_clock_division(), this function should allow such value
-for improving accuracy of frequency division setting.
-
-Signed-off-by: Ryo Kodama <ryo.kodama.vz@renesas.com>
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pwm/pwm-rcar.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-diff --git a/drivers/pwm/pwm-rcar.c b/drivers/pwm/pwm-rcar.c
-index 6e99a63..7b8ac06 100644
---- a/drivers/pwm/pwm-rcar.c
-+++ b/drivers/pwm/pwm-rcar.c
-@@ -81,7 +81,7 @@ static int rcar_pwm_get_clock_division(struct rcar_pwm_chip *rp, int period_ns)
- 		max = (unsigned long long)NSEC_PER_SEC * RCAR_PWM_MAX_CYCLE *
- 			(1 << div);
- 		do_div(max, clk_rate);
--		if (period_ns < max)
-+		if (period_ns <= max)
- 			break;
- 	}
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 17b8e82..9a1dabd 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -530,6 +530,7 @@
+ 				 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
+ 				 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
+ 				 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
++				 <&cpg CPG_MOD 1019>, <&cpg CPG_MOD 1018>,
+ 				 <&audio_clk_a>, <&audio_clk_b>,
+ 				 <&audio_clk_c>,
+ 				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
+@@ -540,10 +541,22 @@
+ 				      "src.9", "src.8", "src.7", "src.6",
+ 				      "src.5", "src.4", "src.3", "src.2",
+ 				      "src.1", "src.0",
++				      "dvc.0", "dvc.1",
+ 				      "clk_a", "clk_b", "clk_c", "clk_i";
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
  
++			rcar_sound,dvc {
++				dvc0: dvc@0 {
++					dmas = <&audma0 0xbc>;
++					dma-names = "tx";
++				};
++				dvc1: dvc@1 {
++					dmas = <&audma0 0xbe>;
++					dma-names = "tx";
++				};
++			};
++
+ 			rcar_sound,src {
+ 				src0: src@0 {
+ 					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
 -- 
 1.9.1
 
