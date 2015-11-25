@@ -1,153 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Nov 2015 10:10:21 +0000
-Subject: [PATCH v13 3/7] arm64: renesas: r8a7795 dtsi: Add all SCIF nodes
-Message-Id: <1447409425-14831-4-git-send-email-horms+renesas@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 25 Nov 2015 15:30:38 +0000
+Subject: [PATCH v2 2/3] Revert "PCI: rcar: Build pcie-rcar.c only on ARM"
+Message-Id: <1448465439-2132-3-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447409425-14831-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1447409425-14831-1-git-send-email-horms+renesas@verge.net.au>
+References: <1448465439-2132-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1448465439-2132-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms@verge.net.au>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Now that we can build on arm64, revert commit 7c537c67d2e4
+("PCI: rcar: Build pcie-rcar.c only on ARM").
 
-Add the device nodes for all R-Car H3 SCIF serial ports, incl. clocks,
-clock domain, and dma properties.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
-Changes since V11 (Simon Horman <horms+renesas@verge.net.au>)
-- Update for new CPG/MSSR bindings via Geert Uytterhoeven
-
-Changes since V10 (Simon Horman <horms+renesas@verge.net.au>)
-- As suggested by Geert Uyterhoven
-  + R8A7795_CLK_SCIF2  is 310 not 210
-
-Changes since V10 (Simon Horman <horms+renesas@verge.net.au>)
-- As suggested by Geert Uyterhoven
-  + R8A7795_CLK_SCIF2  is 310 not 210
-
-Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
-- Added SCIF2 DMA bits again
-- Converted DT nodes for MSTP to MSSR, adjusted r8a7795-clock.h
-- Include clock-output-names
-
-Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
-- Dropped SCIF2 DMA bits - thanks Laurent!
-- Changed name of mstp2 and mstp3 nodes - thanks Geert!
-- Added Acked-by from Laurent
-
-Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
-- Folded together above SCIF2 patches
-- Added SCIF2 DMA bits
-- Got rid of clock-output-names
-- Replaced renesas,clock-indices with clock-indices
-
-Based on:
- [PATCH 9/25] arm64: renesas: r8a7795: Add SCIF2 support
- [PATCH 1/6] arm64: renesas: r8a7795 dtsi: Mark scif2 disabled
- [PATCH 3/6] arm64: renesas: r8a7795 dtsi: Add all SCIF nodes
+v2: No changes
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 73 ++++++++++++++++++++++++++++++++
- 1 file changed, 73 insertions(+)
+ drivers/pci/host/Kconfig | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 9e1de4d6615c..002b828e8230 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -8,6 +8,7 @@
-  * kind, whether express or implied.
-  */
+diff --git a/drivers/pci/host/Kconfig b/drivers/pci/host/Kconfig
+index 7a31ebbc..e673d56 100644
+--- a/drivers/pci/host/Kconfig
++++ b/drivers/pci/host/Kconfig
+@@ -48,8 +48,7 @@ config PCI_RCAR_GEN2
  
-+#include <dt-bindings/clock/r8a7795-cpg-mssr.h>
- #include <dt-bindings/interrupt-controller/arm-gic.h>
+ config PCI_RCAR_GEN2_PCIE
+ 	bool "Renesas R-Car PCIe controller"
+-	depends on ARM
+-	depends on ARCH_SHMOBILE || COMPILE_TEST
++	depends on ARCH_SHMOBILE || (ARM && COMPILE_TEST)
+ 	help
+ 	  Say Y here if you want PCIe controller support on R-Car Gen2 SoCs.
  
- / {
-@@ -91,5 +92,77 @@
- 		dmac2: dma-controller@e7310000 {
- 			/* Empty node for now */
- 		};
-+
-+		scif0: serial@e6e60000 {
-+			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			reg = <0 0xe6e60000 0 64>;
-+			interrupts = <GIC_SPI 152 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 207>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac1 0x51>, <&dmac1 0x50>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg>;
-+			status = "disabled";
-+		};
-+
-+		scif1: serial@e6e68000 {
-+			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			reg = <0 0xe6e68000 0 64>;
-+			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 206>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac1 0x53>, <&dmac1 0x52>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg>;
-+			status = "disabled";
-+		};
-+
-+		scif2: serial@e6e88000 {
-+			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			reg = <0 0xe6e88000 0 64>;
-+			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 310>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac1 0x13>, <&dmac1 0x12>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg>;
-+			status = "disabled";
-+		};
-+
-+		scif3: serial@e6c50000 {
-+			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			reg = <0 0xe6c50000 0 64>;
-+			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 204>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac0 0x57>, <&dmac0 0x56>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg>;
-+			status = "disabled";
-+		};
-+
-+		scif4: serial@e6c40000 {
-+			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			reg = <0 0xe6c40000 0 64>;
-+			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 203>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac0 0x59>, <&dmac0 0x58>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg>;
-+			status = "disabled";
-+		};
-+
-+		scif5: serial@e6f30000 {
-+			compatible = "renesas,scif-r8a7795", "renesas,scif";
-+			reg = <0 0xe6f30000 0 64>;
-+			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&cpg CPG_MOD 202>;
-+			clock-names = "sci_ick";
-+			dmas = <&dmac1 0x5b>, <&dmac1 0x5a>;
-+			dma-names = "tx", "rx";
-+			power-domains = <&cpg>;
-+			status = "disabled";
-+		};
- 	};
- };
 -- 
-2.1.4
+2.5.0
 
