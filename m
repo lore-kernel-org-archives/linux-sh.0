@@ -1,367 +1,128 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 26 Nov 2015 18:29:52 +0000
-Subject: [PATCH v2] drm: rcar-du: Perform initialization/cleanup at probe/remove time
-Message-Id: <1448562592-7953-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 25 Nov 2015 06:37:49 +0000
+Subject: [PATCH 06/12] arm64: renesas: salvator-x: Sound SSI PIO support
+Message-Id: <87twoa7fo5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org
-Cc: Daniel Vetter <daniel.vetter@ffwll.ch>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The drm driver .load() operation is prone to race conditions as it
-initializes the driver after registering the device nodes. Its usage is
-deprecated, inline it in the probe function and call drm_dev_alloc() and
-drm_dev_register() explicitly.
 
-For consistency inline the .unload() handler in the remove function as
-well.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Daniel Vetter <daniel.vetter@ffwll.ch>
+This patch adds PIO sound support for Salvator-X board.
+It can use 44.1kHz base sound only at this point, since 48kHz base
+sound needs CS2000, but it is not yet upstreamed.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/gpu/drm/rcar-du/rcar_du_drv.c     | 187 ++++++++++++++++--------------
- drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c |  11 +-
- drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c |  11 +-
- drivers/gpu/drm/rcar-du/rcar_du_vgacon.c  |  11 +-
- 4 files changed, 106 insertions(+), 114 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 76 ++++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
 
-Changes since v1:
-
-- Remove set_busid callback
-- Set the device unique name using drm_dev_set_unique
-
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_drv.c b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-index 40422f6b645e..2958b87f0a0d 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_drv.c
-@@ -144,82 +144,6 @@ MODULE_DEVICE_TABLE(of, rcar_du_of_table);
-  * DRM operations
-  */
- 
--static int rcar_du_unload(struct drm_device *dev)
--{
--	struct rcar_du_device *rcdu = dev->dev_private;
--
--	if (rcdu->fbdev)
--		drm_fbdev_cma_fini(rcdu->fbdev);
--
--	drm_kms_helper_poll_fini(dev);
--	drm_mode_config_cleanup(dev);
--	drm_vblank_cleanup(dev);
--
--	dev->irq_enabled = 0;
--	dev->dev_private = NULL;
--
--	return 0;
--}
--
--static int rcar_du_load(struct drm_device *dev, unsigned long flags)
--{
--	struct platform_device *pdev = dev->platformdev;
--	struct device_node *np = pdev->dev.of_node;
--	struct rcar_du_device *rcdu;
--	struct resource *mem;
--	int ret;
--
--	if (np = NULL) {
--		dev_err(dev->dev, "no platform data\n");
--		return -ENODEV;
--	}
--
--	rcdu = devm_kzalloc(&pdev->dev, sizeof(*rcdu), GFP_KERNEL);
--	if (rcdu = NULL) {
--		dev_err(dev->dev, "failed to allocate private data\n");
--		return -ENOMEM;
--	}
--
--	init_waitqueue_head(&rcdu->commit.wait);
--
--	rcdu->dev = &pdev->dev;
--	rcdu->info = of_match_device(rcar_du_of_table, rcdu->dev)->data;
--	rcdu->ddev = dev;
--	dev->dev_private = rcdu;
--
--	/* I/O resources */
--	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	rcdu->mmio = devm_ioremap_resource(&pdev->dev, mem);
--	if (IS_ERR(rcdu->mmio))
--		return PTR_ERR(rcdu->mmio);
--
--	/* Initialize vertical blanking interrupts handling. Start with vblank
--	 * disabled for all CRTCs.
--	 */
--	ret = drm_vblank_init(dev, (1 << rcdu->info->num_crtcs) - 1);
--	if (ret < 0) {
--		dev_err(&pdev->dev, "failed to initialize vblank\n");
--		goto done;
--	}
--
--	/* DRM/KMS objects */
--	ret = rcar_du_modeset_init(rcdu);
--	if (ret < 0) {
--		dev_err(&pdev->dev, "failed to initialize DRM/KMS (%d)\n", ret);
--		goto done;
--	}
--
--	dev->irq_enabled = 1;
--
--	platform_set_drvdata(pdev, rcdu);
--
--done:
--	if (ret)
--		rcar_du_unload(dev);
--
--	return ret;
--}
--
- static void rcar_du_preclose(struct drm_device *dev, struct drm_file *file)
- {
- 	struct rcar_du_device *rcdu = dev->dev_private;
-@@ -269,11 +193,8 @@ static const struct file_operations rcar_du_fops = {
- static struct drm_driver rcar_du_driver = {
- 	.driver_features	= DRIVER_GEM | DRIVER_MODESET | DRIVER_PRIME
- 				| DRIVER_ATOMIC,
--	.load			= rcar_du_load,
--	.unload			= rcar_du_unload,
- 	.preclose		= rcar_du_preclose,
- 	.lastclose		= rcar_du_lastclose,
--	.set_busid		= drm_platform_set_busid,
- 	.get_vblank_counter	= drm_vblank_no_hw_counter,
- 	.enable_vblank		= rcar_du_enable_vblank,
- 	.disable_vblank		= rcar_du_disable_vblank,
-@@ -333,18 +254,116 @@ static const struct dev_pm_ops rcar_du_pm_ops = {
-  * Platform driver
-  */
- 
--static int rcar_du_probe(struct platform_device *pdev)
-+static int rcar_du_remove(struct platform_device *pdev)
- {
--	return drm_platform_init(&rcar_du_driver, pdev);
-+	struct rcar_du_device *rcdu = platform_get_drvdata(pdev);
-+	struct drm_device *ddev = rcdu->ddev;
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index d829fda..90ca7fa 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -31,6 +31,28 @@
+ 		/* first 128MB is reserved for secure area. */
+ 		reg = <0x0 0x48000000 0x0 0x38000000>;
+ 	};
 +
-+	mutex_lock(&ddev->mode_config.mutex);
-+	drm_connector_unplug_all(ddev);
-+	mutex_unlock(&ddev->mode_config.mutex);
++	x12_clk: x12_clk {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <24576000>;
++	};
 +
-+	drm_dev_unregister(ddev);
++	rsnd_ak4613: sound {
++		compatible = "simple-audio-card";
 +
-+	if (rcdu->fbdev)
-+		drm_fbdev_cma_fini(rcdu->fbdev);
++		simple-audio-card,format = "left_j";
++		simple-audio-card,bitclock-master = <&sndcpu>;
++		simple-audio-card,frame-master = <&sndcpu>;
 +
-+	drm_kms_helper_poll_fini(ddev);
-+	drm_mode_config_cleanup(ddev);
-+	drm_vblank_cleanup(ddev);
++		sndcpu: simple-audio-card,cpu {
++			sound-dai = <&rcar_sound>;
++		};
 +
-+	drm_dev_unref(ddev);
-+
-+	return 0;
- }
- 
--static int rcar_du_remove(struct platform_device *pdev)
-+static int rcar_du_probe(struct platform_device *pdev)
- {
--	struct rcar_du_device *rcdu = platform_get_drvdata(pdev);
-+	struct device_node *np = pdev->dev.of_node;
-+	struct rcar_du_device *rcdu;
-+	struct drm_connector *connector;
-+	struct drm_device *ddev;
-+	struct resource *mem;
-+	int ret;
-+
-+	if (np = NULL) {
-+		dev_err(&pdev->dev, "no device tree node\n");
-+		return -ENODEV;
-+	}
-+
-+	/* Allocate and initialize the DRM and R-Car device structures. */
-+	rcdu = devm_kzalloc(&pdev->dev, sizeof(*rcdu), GFP_KERNEL);
-+	if (rcdu = NULL)
-+		return -ENOMEM;
-+
-+	init_waitqueue_head(&rcdu->commit.wait);
-+
-+	rcdu->dev = &pdev->dev;
-+	rcdu->info = of_match_device(rcar_du_of_table, rcdu->dev)->data;
-+
-+	ddev = drm_dev_alloc(&rcar_du_driver, &pdev->dev);
-+	if (!ddev)
-+		return -ENOMEM;
-+
-+	drm_dev_set_unique(ddev, dev_name(&pdev->dev));
-+
-+	rcdu->ddev = ddev;
-+	ddev->dev_private = rcdu;
- 
--	drm_put_dev(rcdu->ddev);
-+	platform_set_drvdata(pdev, rcdu);
-+
-+	/* I/O resources */
-+	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	rcdu->mmio = devm_ioremap_resource(&pdev->dev, mem);
-+	if (IS_ERR(rcdu->mmio)) {
-+		ret = PTR_ERR(rcdu->mmio);
-+		goto error;
-+	}
-+
-+	/* Initialize vertical blanking interrupts handling. Start with vblank
-+	 * disabled for all CRTCs.
-+	 */
-+	ret = drm_vblank_init(ddev, (1 << rcdu->info->num_crtcs) - 1);
-+	if (ret < 0) {
-+		dev_err(&pdev->dev, "failed to initialize vblank\n");
-+		goto error;
-+	}
-+
-+	/* DRM/KMS objects */
-+	ret = rcar_du_modeset_init(rcdu);
-+	if (ret < 0) {
-+		dev_err(&pdev->dev, "failed to initialize DRM/KMS (%d)\n", ret);
-+		goto error;
-+	}
-+
-+	ddev->irq_enabled = 1;
-+
-+	/* Register the DRM device with the core and the connectors with
-+	 * sysfs.
-+	 */
-+	ret = drm_dev_register(ddev, 0);
-+	if (ret)
-+		goto error;
-+
-+	mutex_lock(&ddev->mode_config.mutex);
-+	drm_for_each_connector(connector, ddev) {
-+		ret = drm_connector_register(connector);
-+		if (ret < 0)
-+			break;
-+	}
-+	mutex_unlock(&ddev->mode_config.mutex);
-+
-+	if (ret < 0)
-+		goto error;
-+
-+	DRM_INFO("Device %s probed\n", dev_name(&pdev->dev));
- 
- 	return 0;
-+
-+error:
-+	rcar_du_remove(pdev);
-+
-+	return ret;
- }
- 
- static struct platform_driver rcar_du_platform_driver = {
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-index 96f2eb43713c..6038be93c58d 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_hdmicon.c
-@@ -55,12 +55,6 @@ static const struct drm_connector_helper_funcs connector_helper_funcs = {
- 	.best_encoder = rcar_du_connector_best_encoder,
++		sndcodec: simple-audio-card,codec {
++			sound-dai = <&ak4613>;
++		};
++	};
  };
  
--static void rcar_du_hdmi_connector_destroy(struct drm_connector *connector)
--{
--	drm_connector_unregister(connector);
--	drm_connector_cleanup(connector);
--}
--
- static enum drm_connector_status
- rcar_du_hdmi_connector_detect(struct drm_connector *connector, bool force)
- {
-@@ -79,7 +73,7 @@ static const struct drm_connector_funcs connector_funcs = {
- 	.reset = drm_atomic_helper_connector_reset,
- 	.detect = rcar_du_hdmi_connector_detect,
- 	.fill_modes = drm_helper_probe_single_connector_modes,
--	.destroy = rcar_du_hdmi_connector_destroy,
-+	.destroy = drm_connector_cleanup,
- 	.atomic_duplicate_state = drm_atomic_helper_connector_duplicate_state,
- 	.atomic_destroy_state = drm_atomic_helper_connector_destroy_state,
- };
-@@ -108,9 +102,6 @@ int rcar_du_hdmi_connector_init(struct rcar_du_device *rcdu,
- 		return ret;
- 
- 	drm_connector_helper_add(connector, &connector_helper_funcs);
--	ret = drm_connector_register(connector);
--	if (ret < 0)
--		return ret;
- 
- 	connector->dpms = DRM_MODE_DPMS_OFF;
- 	drm_object_property_set_value(&connector->base,
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-index 0c43032fc693..e905f5da7aaa 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_lvdscon.c
-@@ -62,12 +62,6 @@ static const struct drm_connector_helper_funcs connector_helper_funcs = {
- 	.best_encoder = rcar_du_connector_best_encoder,
+ &extal_clk {
+@@ -56,6 +78,17 @@
+ 		renesas,groups = "avb_mdc";
+ 		renesas,function = "avb";
+ 	};
++
++	sound_pins: sound {
++		renesas,groups = "ssi01239_ctrl", "ssi0_data", "ssi1_data_a";
++		renesas,function = "ssi";
++	};
++
++	sound_clk_pins: sound_clk {
++		renesas,groups = "audio_clk_a_a", "audio_clk_b_a", "audio_clk_c_a",
++				 "audio_clkout_a", "audio_clkout3_a";
++		renesas,function = "audio_clk";
++	};
  };
  
--static void rcar_du_lvds_connector_destroy(struct drm_connector *connector)
--{
--	drm_connector_unregister(connector);
--	drm_connector_cleanup(connector);
--}
--
- static enum drm_connector_status
- rcar_du_lvds_connector_detect(struct drm_connector *connector, bool force)
- {
-@@ -79,7 +73,7 @@ static const struct drm_connector_funcs connector_funcs = {
- 	.reset = drm_atomic_helper_connector_reset,
- 	.detect = rcar_du_lvds_connector_detect,
- 	.fill_modes = drm_helper_probe_single_connector_modes,
--	.destroy = rcar_du_lvds_connector_destroy,
-+	.destroy = drm_connector_cleanup,
- 	.atomic_duplicate_state = drm_atomic_helper_connector_duplicate_state,
- 	.atomic_destroy_state = drm_atomic_helper_connector_destroy_state,
+ &scif1 {
+@@ -77,6 +110,49 @@
+ 	pinctrl-names = "default";
+ 
+ 	status = "okay";
++
++	clock-frequency = <100000>;
++
++	ak4613: codec@10 {
++		compatible = "asahi-kasei,ak4613";
++		#sound-dai-cells = <0>;
++		reg = <0x10>;
++		clocks = <&rcar_sound 3>;
++	};
++};
++
++&rcar_sound {
++	pinctrl-0 = <&sound_pins &sound_clk_pins>;
++	pinctrl-names = "default";
++
++	/* Single DAI */
++	#sound-dai-cells = <0>;
++
++	/* audio_clkout0/1/2/3 */
++	#clock-cells = <1>;
++	clock-frequency = <11289600>;
++
++	status = "okay";
++
++	rcar_sound,dai {
++		dai0 {
++			playback = <&ssi0>;
++			capture  = <&ssi1>;
++		};
++	};
++};
++
++&ssi0 {
++	pio-transfer;
++};
++
++&ssi1 {
++	pio-transfer;
++	shared-pin;
++};
++
++&audio_clk_a {
++	clock-frequency = <22579200>;
  };
-@@ -117,9 +111,6 @@ int rcar_du_lvds_connector_init(struct rcar_du_device *rcdu,
- 		return ret;
  
- 	drm_connector_helper_add(connector, &connector_helper_funcs);
--	ret = drm_connector_register(connector);
--	if (ret < 0)
--		return ret;
- 
- 	connector->dpms = DRM_MODE_DPMS_OFF;
- 	drm_object_property_set_value(&connector->base,
-diff --git a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-index e0a5d8f93963..9d7e5c99caf6 100644
---- a/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-+++ b/drivers/gpu/drm/rcar-du/rcar_du_vgacon.c
-@@ -31,12 +31,6 @@ static const struct drm_connector_helper_funcs connector_helper_funcs = {
- 	.best_encoder = rcar_du_connector_best_encoder,
- };
- 
--static void rcar_du_vga_connector_destroy(struct drm_connector *connector)
--{
--	drm_connector_unregister(connector);
--	drm_connector_cleanup(connector);
--}
--
- static enum drm_connector_status
- rcar_du_vga_connector_detect(struct drm_connector *connector, bool force)
- {
-@@ -48,7 +42,7 @@ static const struct drm_connector_funcs connector_funcs = {
- 	.reset = drm_atomic_helper_connector_reset,
- 	.detect = rcar_du_vga_connector_detect,
- 	.fill_modes = drm_helper_probe_single_connector_modes,
--	.destroy = rcar_du_vga_connector_destroy,
-+	.destroy = drm_connector_cleanup,
- 	.atomic_duplicate_state = drm_atomic_helper_connector_duplicate_state,
- 	.atomic_destroy_state = drm_atomic_helper_connector_destroy_state,
- };
-@@ -76,9 +70,6 @@ int rcar_du_vga_connector_init(struct rcar_du_device *rcdu,
- 		return ret;
- 
- 	drm_connector_helper_add(connector, &connector_helper_funcs);
--	ret = drm_connector_register(connector);
--	if (ret < 0)
--		return ret;
- 
- 	connector->dpms = DRM_MODE_DPMS_OFF;
- 	drm_object_property_set_value(&connector->base,
+ &avb {
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
