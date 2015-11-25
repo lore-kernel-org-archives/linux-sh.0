@@ -1,219 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 19 Nov 2015 20:45:31 +0000
-Subject: Re: [PATCH 14/25] serial: sh-sci: Add BRG register definitions
-Message-Id: <1866546.6tqcoO3C0e@avalon>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 25 Nov 2015 15:30:36 +0000
+Subject: [Resend: PATCH v2 0/3] Fix rcar-pcie for arm64
+Message-Id: <1448465439-2132-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be> <1447958344-836-15-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1447958344-836-15-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Wolfram Sang <wsa@the-dreams.de>, Geert Uytterhoeven <geert@linux-m68k.org>, Simon Horman <horms@verge.net.au>, linux-pci@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Phil Edworthy <phil.edworthy@renesas.com>
 
-Hi Geert,
+The first patches fixes the build problem, and the second patch reverts the
+patch that removed the driver from arm64 builds. The final patch add a compat
+string for the r8a7795 (arm64) device.
 
-Thank you for the patch.
+Tested on arm Koelsch board, all ok.
 
-On Thursday 19 November 2015 19:38:53 Geert Uytterhoeven wrote:
-> Add register definitions for the Baud Rate Generator for External Clock
-> (BRG), as found in some SCIF and in HSCIF, including a new regtype for
-> the "SH-4(A)"-derived SCIF variant with BRG.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  drivers/tty/serial/sh-sci.c | 46 ++++++++++++++++++++++++++++++++++++++++++
->  drivers/tty/serial/sh-sci.h |  5 +++++
->  include/linux/serial_sci.h  |  1 +
->  3 files changed, 52 insertions(+)
-> 
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index d82735dd62ae38d8..76738c9918885764 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -161,6 +161,8 @@ static const struct plat_sci_reg
-> sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = { [HSSRR]		= 
-sci_reg_invalid,
->  		[SCPCR]		= sci_reg_invalid,
->  		[SCPDR]		= sci_reg_invalid,
-> +		[SCDL]		= sci_reg_invalid,
-> +		[SCCKS]		= sci_reg_invalid,
->  	},
-> 
->  	/*
-> @@ -183,6 +185,8 @@ static const struct plat_sci_reg
-> sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = { [HSSRR]		= 
-sci_reg_invalid,
->  		[SCPCR]		= sci_reg_invalid,
->  		[SCPDR]		= sci_reg_invalid,
-> +		[SCDL]		= sci_reg_invalid,
-> +		[SCCKS]		= sci_reg_invalid,
->  	},
-> 
->  	/*
-> @@ -204,6 +208,8 @@ static const struct plat_sci_reg
-> sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = { [HSSRR]		= 
-sci_reg_invalid,
->  		[SCPCR]		= { 0x30, 16 },
->  		[SCPDR]		= { 0x34, 16 },
-> +		[SCDL]		= sci_reg_invalid,
-> +		[SCCKS]		= sci_reg_invalid,
->  	},
-> 
->  	/*
-> @@ -225,6 +231,8 @@ static const struct plat_sci_reg
-> sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = { [HSSRR]		= 
-sci_reg_invalid,
->  		[SCPCR]		= { 0x30, 16 },
->  		[SCPDR]		= { 0x34, 16 },
-> +		[SCDL]		= sci_reg_invalid,
-> +		[SCCKS]		= sci_reg_invalid,
->  	},
-> 
->  	/*
-> @@ -247,6 +255,8 @@ static const struct plat_sci_reg
-> sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = { [HSSRR]		= 
-sci_reg_invalid,
->  		[SCPCR]		= sci_reg_invalid,
->  		[SCPDR]		= sci_reg_invalid,
-> +		[SCDL]		= sci_reg_invalid,
-> +		[SCCKS]		= sci_reg_invalid,
->  	},
-> 
->  	/*
-> @@ -268,6 +278,8 @@ static const struct plat_sci_reg
-> sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = { [HSSRR]		= 
-sci_reg_invalid,
->  		[SCPCR]		= sci_reg_invalid,
->  		[SCPDR]		= sci_reg_invalid,
-> +		[SCDL]		= sci_reg_invalid,
-> +		[SCCKS]		= sci_reg_invalid,
->  	},
-> 
->  	/*
-> @@ -289,6 +301,32 @@ static const struct plat_sci_reg
-> sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = { [HSSRR]		= 
-sci_reg_invalid,
->  		[SCPCR]		= sci_reg_invalid,
->  		[SCPDR]		= sci_reg_invalid,
-> +		[SCDL]		= sci_reg_invalid,
-> +		[SCCKS]		= sci_reg_invalid,
-> +	},
-> +
-> +	/*
-> +	 * Common SCIF definitions for ports with a Baud Rate Generator for
-> +	 * External Clock (BRG).
-> +	 */
-> +	[SCIx_SH4_SCIF_BRG_REGTYPE] = {
-> +		[SCSMR]		= { 0x00, 16 },
-> +		[SCBRR]		= { 0x04,  8 },
-> +		[SCSCR]		= { 0x08, 16 },
-> +		[SCxTDR]	= { 0x0c,  8 },
-> +		[SCxSR]		= { 0x10, 16 },
-> +		[SCxRDR]	= { 0x14,  8 },
-> +		[SCFCR]		= { 0x18, 16 },
-> +		[SCFDR]		= { 0x1c, 16 },
-> +		[SCTFDR]	= sci_reg_invalid,
-> +		[SCRFDR]	= sci_reg_invalid,
-> +		[SCSPTR]	= { 0x20, 16 },
-> +		[SCLSR]		= { 0x24, 16 },
-> +		[HSSRR]		= sci_reg_invalid,
-> +		[SCPCR]		= sci_reg_invalid,
-> +		[SCPDR]		= sci_reg_invalid,
-> +		[SCDL]		= { 0x30, 16 },
-> +		[SCCKS]		= { 0x34, 16 },
->  	},
-> 
->  	/*
-> @@ -310,6 +348,8 @@ static const struct plat_sci_reg
-> sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = { [HSSRR]		= { 0x40, 16 },
->  		[SCPCR]		= sci_reg_invalid,
->  		[SCPDR]		= sci_reg_invalid,
-> +		[SCDL]		= { 0x30, 16 },
-> +		[SCCKS]		= { 0x34, 16 },
->  	},
-> 
->  	/*
-> @@ -332,6 +372,8 @@ static const struct plat_sci_reg
-> sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = { [HSSRR]		= 
-sci_reg_invalid,
->  		[SCPCR]		= sci_reg_invalid,
->  		[SCPDR]		= sci_reg_invalid,
-> +		[SCDL]		= sci_reg_invalid,
-> +		[SCCKS]		= sci_reg_invalid,
->  	},
-> 
->  	/*
-> @@ -354,6 +396,8 @@ static const struct plat_sci_reg
-> sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = { [HSSRR]		= 
-sci_reg_invalid,
->  		[SCPCR]		= sci_reg_invalid,
->  		[SCPDR]		= sci_reg_invalid,
-> +		[SCDL]		= sci_reg_invalid,
-> +		[SCCKS]		= sci_reg_invalid,
->  	},
-> 
->  	/*
-> @@ -376,6 +420,8 @@ static const struct plat_sci_reg
-> sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = { [HSSRR]		= 
-sci_reg_invalid,
->  		[SCPCR]		= sci_reg_invalid,
->  		[SCPDR]		= sci_reg_invalid,
-> +		[SCDL]		= sci_reg_invalid,
-> +		[SCCKS]		= sci_reg_invalid,
->  	},
->  };
-> 
-> diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
-> index bf69bbdcc1f9aa39..54994f0bfafdbe12 100644
-> --- a/drivers/tty/serial/sh-sci.h
-> +++ b/drivers/tty/serial/sh-sci.h
-> @@ -27,6 +27,8 @@ enum {
->  	HSSRR,				/* Sampling Rate Register */
->  	SCPCR,				/* Serial Port Control Register */
->  	SCPDR,				/* Serial Port Data Register */
-> +	SCDL,				/* BRG Frequency Division Register */
-> +	SCCKS,				/* BRG Clock Select Register */
-> 
->  	SCIx_NR_REGS,
->  };
-> @@ -109,6 +111,9 @@ enum {
->  #define SCPDR_RTSD	BIT(4)	/* Serial Port RTS Output Pin Data */
->  #define SCPDR_CTSD	BIT(3)	/* Serial Port CTS Input Pin Data */
-> 
-> +/* BRG Clock Select Register (Some SCIF and HSCIF) */
-> +#define SCCKS_CKS	BIT(15)	/* Select SCK (1) or SC_CLK (0) */
+Tested on arm64 Salvator-X board using renesas-drivers-2015-10-27-v4.3-rc7 from
+git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git with PCI
+next merged. 
+Apart from patches to add the PCIe clock and DT nodes, it also needs this fix:
+("PCI: MSI: Only use the generic MSI layer when domain is hierarchical")
 
-This is slightly confusing. SC_CLK is defined as the external clock selectable 
-between the bus clock and SCIF_CLK. The CKS bit selects the output of the baud 
-rate generator for external clock as being the divided SC_CLK or the undivided 
-(H)SCK. The comment, and I know it comes from the datasheet, seems to imply 
-that the bit selects the input of the BRG-EC. Speaking of which it would be 
-good to have a comment somewhere in the code to explain that we have two 
-chained BRGs.
+Resent with whole series marked as v2 and acks, etc added.
 
-> +#define SCCKS_XIN	BIT(14)	/* SC_CLK uses bus clock (1) or SCIF_CLK (0) 
-*/
-> 
->  #define SCxSR_TEND(port)	(((port)->type = PORT_SCI) ? SCI_TEND   :
-> SCIF_TEND) #define SCxSR_RDxF(port)	(((port)->type = PORT_SCI) ? 
-SCI_RDRF 
->  : SCIF_RDF) diff --git a/include/linux/serial_sci.h
-> b/include/linux/serial_sci.h index 7c536ac5be05d3aa..9f2bfd0557429ac3
-> 100644
-> --- a/include/linux/serial_sci.h
-> +++ b/include/linux/serial_sci.h
-> @@ -32,6 +32,7 @@ enum {
->  	SCIx_SH2_SCIF_FIFODATA_REGTYPE,
->  	SCIx_SH3_SCIF_REGTYPE,
->  	SCIx_SH4_SCIF_REGTYPE,
-> +	SCIx_SH4_SCIF_BRG_REGTYPE,
->  	SCIx_SH4_SCIF_NO_SCSPTR_REGTYPE,
->  	SCIx_SH4_SCIF_FIFODATA_REGTYPE,
->  	SCIx_SH7705_SCIF_REGTYPE,
+Harunobu Kurokawa (1):
+  PCI: pcie-rcar: Add support for R-Car H3.
+
+Phil Edworthy (2):
+  PCI: rcar: Convert to DT resource parsing API
+  Revert "PCI: rcar: Build pcie-rcar.c only on ARM"
+
+ Documentation/devicetree/bindings/pci/rcar-pci.txt |   3 +-
+ drivers/pci/host/Kconfig                           |   3 +-
+ drivers/pci/host/pcie-rcar.c                       | 117 +++++++++++++--------
+ 3 files changed, 77 insertions(+), 46 deletions(-)
 
 -- 
-Regards,
-
-Laurent Pinchart
+2.5.0
 
