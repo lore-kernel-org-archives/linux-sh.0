@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 25 Nov 2015 06:27:05 +0000
+Date: Wed, 25 Nov 2015 06:27:30 +0000
 Subject: Re: [PATCH v6 00/12] arm64: renesas: add sound support
-Message-Id: <877fl68uqh.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87610q8upv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
  <20151109012943.GF4832@verge.net.au>
