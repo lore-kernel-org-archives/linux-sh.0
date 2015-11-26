@@ -1,187 +1,72 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 30 Nov 2015 01:44:31 +0000
-Subject: [PATCH v6 2/4] phy: rcar-gen3-usb2: change the mode to OTG on the combined channel
-Message-Id: <1448847873-7072-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 26 Nov 2015 22:59:09 +0000
+Subject: [RFC 1/9] i2c: document generic DT bindings for timing parameters
+Message-Id: <1448578757-12613-2-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448847873-7072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
-In-Reply-To: <1448847873-7072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+References: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: kishon@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
-Cc: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-To use the channel 0 of R-Car gen3 as periperal mode, This patch changes
-the mode to OTG instead of HOST. Then, this driver needs to set some
-registers to enable host mode and detects ID pin and VBUS pin at
-phy_init() timing.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-For now, the channel 0 can be used as host mode only.
+Also, sort the properties alphabetically and make indentation
+consistent. Wording largely taken from i2c-rk3x.txt, thanks guys!
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Only "i2c-scl-internal-delay-ns" is new, the rest is used by two drivers
+already and was documented in their driver binding documentation.
+
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- drivers/phy/phy-rcar-gen3-usb2.c | 124 ++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 122 insertions(+), 2 deletions(-)
+ Documentation/devicetree/bindings/i2c/i2c.txt | 31 ++++++++++++++++++++++-----
+ 1 file changed, 26 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/phy/phy-rcar-gen3-usb2.c b/drivers/phy/phy-rcar-gen3-usb2.c
-index 2696152..2b5d890 100644
---- a/drivers/phy/phy-rcar-gen3-usb2.c
-+++ b/drivers/phy/phy-rcar-gen3-usb2.c
-@@ -24,6 +24,10 @@
- #define USB2_USBCTR		0x00c
- #define USB2_SPD_RSM_TIMSET	0x10c
- #define USB2_OC_TIMSET		0x110
-+#define USB2_COMMCTRL		0x600
-+#define USB2_VBCTRL		0x60c
-+#define USB2_LINECTRL1		0x610
-+#define USB2_ADPCTRL		0x630
+diff --git a/Documentation/devicetree/bindings/i2c/i2c.txt b/Documentation/devicetree/bindings/i2c/i2c.txt
+index 8a99150ac3a7fd..a00219f5ee0733 100644
+--- a/Documentation/devicetree/bindings/i2c/i2c.txt
++++ b/Documentation/devicetree/bindings/i2c/i2c.txt
+@@ -29,12 +29,33 @@ Optional properties
+ These properties may not be supported by all drivers. However, if a driver
+ wants to support one of the below features, it should adapt the bindings below.
  
- /* INT_ENABLE */
- #define USB2_INT_ENABLE_USBH_INTB_EN	BIT(2)
-@@ -41,6 +45,24 @@
- /* OC_TIMSET */
- #define USB2_OC_TIMSET_INIT		0x000209ab
+-- clock-frequency	- frequency of bus clock in Hz.
+-- wakeup-source		- device can be used as a wakeup source.
++- clock-frequency
++	frequency of bus clock in Hz.
  
-+/* COMMCTRL */
-+#define USB2_COMMCTRL_OTG_PERI		BIT(31)	/* 1 = Peripheral mode */
+-- interrupts		- interrupts used by the device.
+-- interrupt-names	- "irq" and "wakeup" names are recognized by I2C core,
+-			  other names are left to individual drivers.
++- i2c-scl-falling-time-ns
++	Number of nanoseconds the SCL signal takes to fall; t(f) in the I2C
++	specification.
 +
-+/* VBCTRL */
-+#define USB2_VBCTRL_DRVVBUSSEL		BIT(8)
++- i2c-scl-internal-delay-ns
++	Number of nanoseconds the IP core additionally needs to setup SCL.
 +
-+/* LINECTRL1 */
-+#define USB2_LINECTRL1_DPRPD_EN		BIT(19)
-+#define USB2_LINECTRL1_DP_RPD		BIT(18)
-+#define USB2_LINECTRL1_DMRPD_EN		BIT(17)
-+#define USB2_LINECTRL1_DM_RPD		BIT(16)
++- i2c-scl-rising-time-ns
++	Number of nanoseconds the SCL signal takes to rise; t(r) in the I2C
++	specification.
 +
-+/* ADPCTRL */
-+#define USB2_ADPCTRL_OTGSESSVLD		BIT(20)
-+#define USB2_ADPCTRL_IDDIG		BIT(19)
-+#define USB2_ADPCTRL_IDPULLUP		BIT(5)	/* 1 = ID sampling is enabled */
-+#define USB2_ADPCTRL_DRVVBUS		BIT(4)
++- i2c-sda-falling-time-ns
++	Number of nanoseconds the SDA signal takes to fall; t(f) in the I2C
++	specification.
 +
- /******* HSUSB registers (original offset is +0x100) *******/
- #define HSUSB_LPSTS			0x02
- #define HSUSB_UGCTRL2			0x84
-@@ -66,6 +88,102 @@ struct rcar_gen3_chan {
- 	struct phy *phy;
- };
++- interrupts
++	interrupts used by the device.
++
++- interrupt-names
++	"irq" and "wakeup" names are recognized by I2C core, other names are
++	left to individual drivers.
++
++- wakeup-source
++	device can be used as a wakeup source.
  
-+static void rcar_gen3_set_host_mode(struct rcar_gen3_chan *ch, int host)
-+{
-+	void __iomem *usb2_base = ch->usb2.base;
-+	u32 val = readl(usb2_base + USB2_COMMCTRL);
-+
-+	dev_vdbg(&ch->phy->dev, "%s: %08x, %d\n", __func__, val, host);
-+	if (host)
-+		val &= ~USB2_COMMCTRL_OTG_PERI;
-+	else
-+		val |= USB2_COMMCTRL_OTG_PERI;
-+	writel(val, usb2_base + USB2_COMMCTRL);
-+}
-+
-+static void rcar_gen3_set_linectrl(struct rcar_gen3_chan *ch, int dp, int dm)
-+{
-+	void __iomem *usb2_base = ch->usb2.base;
-+	u32 val = readl(usb2_base + USB2_LINECTRL1);
-+
-+	dev_vdbg(&ch->phy->dev, "%s: %08x, %d, %d\n", __func__, val, dp, dm);
-+	val &= ~(USB2_LINECTRL1_DP_RPD | USB2_LINECTRL1_DM_RPD);
-+	if (dp)
-+		val |= USB2_LINECTRL1_DP_RPD;
-+	if (dm)
-+		val |= USB2_LINECTRL1_DM_RPD;
-+	writel(val, usb2_base + USB2_LINECTRL1);
-+}
-+
-+static void rcar_gen3_enable_vbus_ctrl(struct rcar_gen3_chan *ch, int vbus)
-+{
-+	void __iomem *usb2_base = ch->usb2.base;
-+	u32 val = readl(usb2_base + USB2_ADPCTRL);
-+
-+	dev_vdbg(&ch->phy->dev, "%s: %08x, %d\n", __func__, val, vbus);
-+	if (vbus)
-+		val |= USB2_ADPCTRL_DRVVBUS;
-+	else
-+		val &= ~USB2_ADPCTRL_DRVVBUS;
-+	writel(val, usb2_base + USB2_ADPCTRL);
-+}
-+
-+static void rcar_gen3_init_for_host(struct rcar_gen3_chan *ch)
-+{
-+	rcar_gen3_set_linectrl(ch, 1, 1);
-+	rcar_gen3_set_host_mode(ch, 1);
-+	rcar_gen3_enable_vbus_ctrl(ch, 1);
-+}
-+
-+static void rcar_gen3_init_for_peri(struct rcar_gen3_chan *ch)
-+{
-+	rcar_gen3_set_linectrl(ch, 0, 1);
-+	rcar_gen3_set_host_mode(ch, 0);
-+	rcar_gen3_enable_vbus_ctrl(ch, 0);
-+}
-+
-+static bool rcar_gen3_check_vbus(struct rcar_gen3_chan *ch)
-+{
-+	return !!(readl(ch->usb2.base + USB2_ADPCTRL) &
-+		  USB2_ADPCTRL_OTGSESSVLD);
-+}
-+
-+static bool rcar_gen3_check_id(struct rcar_gen3_chan *ch)
-+{
-+	return !!(readl(ch->usb2.base + USB2_ADPCTRL) & USB2_ADPCTRL_IDDIG);
-+}
-+
-+static void rcar_gen3_device_recognition(struct rcar_gen3_chan *ch)
-+{
-+	bool is_host = true;
-+
-+	/* B-device? */
-+	if (rcar_gen3_check_id(ch) && rcar_gen3_check_vbus(ch))
-+		is_host = false;
-+
-+	if (is_host)
-+		rcar_gen3_init_for_host(ch);
-+	else
-+		rcar_gen3_init_for_peri(ch);
-+}
-+
-+static void rcar_gen3_init_otg(struct rcar_gen3_chan *ch)
-+{
-+	void __iomem *usb2_base = ch->usb2.base;
-+	u32 val;
-+
-+	val = readl(usb2_base + USB2_VBCTRL);
-+	writel(val | USB2_VBCTRL_DRVVBUSSEL, usb2_base + USB2_VBCTRL);
-+	val = readl(usb2_base + USB2_ADPCTRL);
-+	writel(val | USB2_ADPCTRL_IDPULLUP, usb2_base + USB2_ADPCTRL);
-+	val = readl(usb2_base + USB2_LINECTRL1);
-+	rcar_gen3_set_linectrl(ch, 0, 0);
-+	writel(val | USB2_LINECTRL1_DPRPD_EN | USB2_LINECTRL1_DMRPD_EN,
-+	       usb2_base + USB2_LINECTRL1);
-+
-+	rcar_gen3_device_recognition(ch);
-+}
-+
- static int rcar_gen3_phy_usb2_init(struct phy *p)
- {
- 	struct rcar_gen3_chan *channel = phy_get_drvdata(p);
-@@ -80,11 +198,13 @@ static int rcar_gen3_phy_usb2_init(struct phy *p)
- 
- 	/* Initialize HSUSB part */
- 	if (hsusb_base) {
--		/* TODO: support "OTG" mode */
- 		val = readl(hsusb_base + HSUSB_UGCTRL2);
- 		val = (val & ~HSUSB_UGCTRL2_USB0SEL) |
--		      HSUSB_UGCTRL2_USB0SEL_HOST;
-+		      HSUSB_UGCTRL2_USB0SEL_OTG;
- 		writel(val & HSUSB_UGCTRL2_MASK, hsusb_base + HSUSB_UGCTRL2);
-+
-+		/* Initialize otg part */
-+		rcar_gen3_init_otg(channel);
- 	}
- 
- 	return 0;
+ Binding may contain optional "interrupts" property, describing interrupts
+ used by the device. I2C core will assign "irq" interrupt (or the very first
 -- 
-1.9.1
+2.1.4
 
