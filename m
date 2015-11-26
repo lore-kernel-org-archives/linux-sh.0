@@ -1,59 +1,98 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:05:19 +0000
-Subject: [PATCH 12/29] ARM: shmobile: r8a7793: Add thermal device to DT
-Message-Id: <0fddfb5b609f3b037006bcd467c540a7968a2dc7.1447981420.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 26 Nov 2015 22:59:11 +0000
+Subject: [RFC 3/9] i2c: rcar: refactor probe function a little
+Message-Id: <1448578757-12613-4-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1447981420.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
+References: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Instantiate the thermal sensor in the r8a7793 device tree.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Based on very similar work for the r8a7790 by Magnus Damm.
+The probe function is a little bit messy, something here, something
+there. Rework it so that there is some order: first init the private
+structure, then the adapter, then do HW init. This also allows us to
+remove the device argument of the clock calculation function, because it
+now can be deduced from the private structure. Also, shorten some lines
+where possible. This is a preparation for further refactoring.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7793.dtsi | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ drivers/i2c/busses/i2c-rcar.c | 40 +++++++++++++++++-----------------------
+ 1 file changed, 17 insertions(+), 23 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
-index fcafa87616fa..6c7bae4318c9 100644
---- a/arch/arm/boot/dts/r8a7793.dtsi
-+++ b/arch/arm/boot/dts/r8a7793.dtsi
-@@ -53,6 +53,14 @@
- 		interrupts = <1 9 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_HIGH)>;
- 	};
+diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
+index 3ed1f0aa5eeb16..d4322a9096786f 100644
+--- a/drivers/i2c/busses/i2c-rcar.c
++++ b/drivers/i2c/busses/i2c-rcar.c
+@@ -162,15 +162,11 @@ static int rcar_i2c_bus_barrier(struct rcar_i2c_priv *priv)
+ 	return -EBUSY;
+ }
  
-+	thermal@e61f0000 {
-+		compatible = "renesas,thermal-r8a7793", "renesas,rcar-thermal";
-+		reg = <0 0xe61f0000 0 0x14>, <0 0xe61f0100 0 0x38>;
-+		interrupts = <0 69 IRQ_TYPE_LEVEL_HIGH>;
-+		clocks = <&mstp5_clks R8A7793_CLK_THERMAL>;
-+		power-domains = <&cpg_clocks>;
-+	};
+-static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv,
+-				    u32 bus_speed,
+-				    struct device *dev)
++static int rcar_i2c_clock_calculate(struct rcar_i2c_priv *priv, u32 bus_speed)
+ {
+-	u32 scgd, cdf;
+-	u32 round, ick;
+-	u32 scl;
+-	u32 cdf_width;
++	u32 scgd, cdf, round, ick, scl, cdf_width;
+ 	unsigned long rate;
++	struct device *dev = rcar_i2c_priv_to_dev(priv);
+ 
+ 	switch (priv->devtype) {
+ 	case I2C_RCAR_GEN1:
+@@ -610,21 +606,7 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 	if (IS_ERR(priv->io))
+ 		return PTR_ERR(priv->io);
+ 
+-	bus_speed = 100000; /* default 100 kHz */
+-	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
+-
+ 	priv->devtype = (enum rcar_i2c_type)of_match_device(rcar_i2c_dt_ids, dev)->data;
+-
+-	pm_runtime_enable(dev);
+-	pm_runtime_get_sync(dev);
+-	ret = rcar_i2c_clock_calculate(priv, bus_speed, dev);
+-	if (ret < 0)
+-		goto out_pm_put;
+-
+-	rcar_i2c_init(priv);
+-	pm_runtime_put(dev);
+-
+-	irq = platform_get_irq(pdev, 0);
+ 	init_waitqueue_head(&priv->wait);
+ 
+ 	adap = &priv->adap;
+@@ -637,8 +619,20 @@ static int rcar_i2c_probe(struct platform_device *pdev)
+ 	i2c_set_adapdata(adap, priv);
+ 	strlcpy(adap->name, pdev->name, sizeof(adap->name));
+ 
+-	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0,
+-			       dev_name(dev), priv);
++	bus_speed = 100000; /* default 100 kHz */
++	of_property_read_u32(dev->of_node, "clock-frequency", &bus_speed);
 +
- 	timer {
- 		compatible = "arm,armv7-timer";
- 		interrupts = <1 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_LEVEL_LOW)>,
-@@ -329,6 +337,14 @@
- 			clock-indices = <R8A7793_CLK_IRQC>;
- 			clock-output-names = "irqc";
- 		};
-+		mstp5_clks: mstp5_clks@e6150144 {
-+			compatible = "renesas,r8a7793-mstp-clocks", "renesas,cpg-mstp-clocks";
-+			reg = <0 0xe6150144 0 4>, <0 0xe615003c 0 4>;
-+			clocks = <&extal_clk>;
-+			#clock-cells = <1>;
-+			clock-indices = <R8A7793_CLK_THERMAL>;
-+			clock-output-names = "thermal";
-+		};
- 		mstp7_clks: mstp7_clks@e615014c {
- 			compatible = "renesas,r8a7793-mstp-clocks",
- 				     "renesas,cpg-mstp-clocks";
++	pm_runtime_enable(dev);
++	pm_runtime_get_sync(dev);
++	ret = rcar_i2c_clock_calculate(priv, bus_speed);
++	if (ret < 0)
++		goto out_pm_put;
++
++	rcar_i2c_init(priv);
++	pm_runtime_put(dev);
++
++	irq = platform_get_irq(pdev, 0);
++	ret = devm_request_irq(dev, irq, rcar_i2c_irq, 0, dev_name(dev), priv);
+ 	if (ret < 0) {
+ 		dev_err(dev, "cannot get irq %d\n", irq);
+ 		goto out_pm_disable;
 -- 
 2.1.4
 
