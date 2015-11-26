@@ -1,83 +1,59 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 17 Nov 2015 10:11:58 +0000
-Subject: renesas-drivers-2015-11-17-v4.4-rc1
-Message-Id: <1447755118-5936-1-git-send-email-geert+renesas@glider.be>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 26 Nov 2015 22:59:14 +0000
+Subject: [RFC 6/9] ARM: shmobile: r8a7790: dtsi: add internal delay for i2c IPs
+Message-Id: <1448578757-12613-7-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-I've pushed renesas-drivers-2015-11-17-v4.4-rc1 to
-https://git.kernel.org/cgit/linux/kernel/git/geert/renesas-drivers.git
-This tree is meant to ease development of platform support and drivers for
-Renesas ARM ("shmobile") SoCs. It's created by merging (a) the for-next 
-branches of various subsystem trees and (b) branches with driver code
-submitted or planned for submission to maintainers into the development
-branch of Simon Horman's renesas.git tree.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Today's version is based on renesas-devel-20151113-v4.3.
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ arch/arm/boot/dts/r8a7790.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-Included branches with driver code:
-  - topic/rcar-dmac-residue-v1
-  - topic/rcar-dmac-hamza-v3
-  - topic/scif-iommu
-  - topic/cpg-mssr-v6
-  - topic/r8a7795-drivers-sh-v1
-  - topic/cs2000-v6
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/arm64-rcar-gen3-v13
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-gpio-v3
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-i2c-v4
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-sound-v6
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-ravb-v6
-  - git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git#topic/r8a7795-pcie
-  - git://linuxtv.org/pinchartl/media.git#vsp1-kms-20151112~4
+diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
+index 0612502b4a6d67..cdbebc329cff9a 100644
+--- a/arch/arm/boot/dts/r8a7790.dtsi
++++ b/arch/arm/boot/dts/r8a7790.dtsi
+@@ -418,6 +418,7 @@
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C0>;
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
++		i2c-scl-internal-delay-ns = <110>;
+ 	};
+ 
+ 	i2c1: i2c@e6518000 {
+@@ -429,6 +430,7 @@
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C1>;
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
++		i2c-scl-internal-delay-ns = <6>;
+ 	};
+ 
+ 	i2c2: i2c@e6530000 {
+@@ -440,6 +442,7 @@
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C2>;
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
++		i2c-scl-internal-delay-ns = <6>;
+ 	};
+ 
+ 	i2c3: i2c@e6540000 {
+@@ -451,6 +454,7 @@
+ 		clocks = <&mstp9_clks R8A7790_CLK_I2C3>;
+ 		power-domains = <&cpg_clocks>;
+ 		status = "disabled";
++		i2c-scl-internal-delay-ns = <110>;
+ 	};
+ 
+ 	iic0: i2c@e6500000 {
+-- 
+2.1.4
 
-Included subsystem trees:
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git#linux-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux.git#clk-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-pinctrl.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git#for-next
-  - git://git.infradead.org/users/dedekind/l2-mtd-2.6.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git#tty-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git#i2c/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/mkl/linux-can-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git#usb-next
-  - git://people.freedesktop.org/~airlied/linux#drm-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/joro/iommu.git#next
-  - git://linuxtv.org/mchehab/media-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/cjb/mmc.git#mmc-next
-  - git://git.linaro.org/people/ulf.hansson/mmc.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/thierry.reding/linux-pwm.git#for-next
-  - git://git.linaro.org/people/daniel.lezcano/linux.git#clockevents/next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/djbw/dmaengine.git#next
-  - git://git.infradead.org/users/vkoul/slave-dma.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git#staging-next
-  - git://ftp.arm.linux.org.uk/pub/linux/arm/kernel/git-cur/linux-arm.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/rzhang/linux.git#next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regmap.git#for-next
-  - git://git.infradead.org/users/jcooper/linux.git#irqchip/for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tomba/linux.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/tj/libata.git#for-next
-  - git://git.infradead.org/battery-2.6.git#master
-  - git://www.linux-watchdog.org/linux-watchdog-next.git#master
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git#for-next
-  - git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git#for-next/core
-  - git://anongit.freedesktop.org/drm-intel#topic/drm-misc
-  - git://git.kernel.org/pub/scm/linux/kernel/git/helgaas/pci.git#next
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
