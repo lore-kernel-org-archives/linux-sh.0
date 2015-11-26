@@ -1,58 +1,83 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:30 +0000
-Subject: [PATCH 13/18] arm64: renesas: r8a7795: Sound DVC support
-Message-Id: <b9dd9450ce0cfb60d8e4afd37191f86f3afba6c2.1448587800.git.horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 26 Nov 2015 22:59:17 +0000
+Subject: [RFC 9/9] arm64: renesas: r8a7795: add internal delay for i2c IPs
+Message-Id: <1448578757-12613-10-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448587800.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448587800.git.horms+renesas@verge.net.au>
+References: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
 diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index c3b2089de531..b1902ea1dae4 100644
+index e786343d97e709..08262402fe606f 100644
 --- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
 +++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -590,6 +590,7 @@
- 				 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
- 				 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
- 				 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
-+				 <&cpg CPG_MOD 1019>, <&cpg CPG_MOD 1018>,
- 				 <&audio_clk_a>, <&audio_clk_b>,
- 				 <&audio_clk_c>,
- 				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
-@@ -600,10 +601,22 @@
- 				      "src.9", "src.8", "src.7", "src.6",
- 				      "src.5", "src.4", "src.3", "src.2",
- 				      "src.1", "src.0",
-+				      "dvc.0", "dvc.1",
- 				      "clk_a", "clk_b", "clk_c", "clk_i";
+@@ -429,6 +429,7 @@
+ 			clocks = <&cpg CPG_MOD 931>;
  			power-domains = <&cpg>;
  			status = "disabled";
++			i2c-scl-internal-delay-ns = <110>;
+ 		};
  
-+			rcar_sound,dvc {
-+				dvc0: dvc@0 {
-+					dmas = <&audma0 0xbc>;
-+					dma-names = "tx";
-+				};
-+				dvc1: dvc@1 {
-+					dmas = <&audma0 0xbe>;
-+					dma-names = "tx";
-+				};
-+			};
-+
- 			rcar_sound,src {
- 				src0: src@0 {
- 					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
+ 		i2c1: i2c@e6508000 {
+@@ -440,6 +441,7 @@
+ 			clocks = <&cpg CPG_MOD 930>;
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
++			i2c-scl-internal-delay-ns = <6>;
+ 		};
+ 
+ 		i2c2: i2c@e6510000 {
+@@ -451,6 +453,7 @@
+ 			clocks = <&cpg CPG_MOD 929>;
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
++			i2c-scl-internal-delay-ns = <6>;
+ 		};
+ 
+ 		i2c3: i2c@e66d0000 {
+@@ -462,6 +465,7 @@
+ 			clocks = <&cpg CPG_MOD 928>;
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
++			i2c-scl-internal-delay-ns = <110>;
+ 		};
+ 
+ 		i2c4: i2c@e66d8000 {
+@@ -473,6 +477,7 @@
+ 			clocks = <&cpg CPG_MOD 927>;
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
++			i2c-scl-internal-delay-ns = <110>;
+ 		};
+ 
+ 		i2c5: i2c@e66e0000 {
+@@ -484,6 +489,7 @@
+ 			clocks = <&cpg CPG_MOD 919>;
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
++			i2c-scl-internal-delay-ns = <110>;
+ 		};
+ 
+ 		i2c6: i2c@e66e8000 {
+@@ -495,6 +501,7 @@
+ 			clocks = <&cpg CPG_MOD 918>;
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
++			i2c-scl-internal-delay-ns = <6>;
+ 		};
+ 
+ 		rcar_sound: sound@ec500000 {
 -- 
 2.1.4
 
