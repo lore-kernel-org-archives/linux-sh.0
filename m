@@ -1,40 +1,40 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 00:39:10 +0000
-Subject: [PATCH] drivers: sh: Get rid of CONFIG_ARCH_SHMOBILE_MULTI
-Message-Id: <0ba58de231066e47de87ccc4d61c5e396fe9bd27.1447979812.git.horms+renesas@verge.net.au>
+Date: Thu, 26 Nov 2015 04:26:20 +0000
+Subject: [PATCH] ARM: shmobile: r8a7793: remove deprecated #gpio-range-cells
+Message-Id: <1448511980-12173-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1447979812.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1447979812.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Geert Uytterhoeven <geert+renesas@glider.be>, Simon Horman <horms+renesas@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Geert Uytterhoeven <geert+renesas@glider.be>
+Commit a1bc260bb5f5d9 ("gpio: clean up gpio-ranges documentation")
+declares the above property deprecated. That was more than 2 years ago.
+Remove it, so it doesn't get copied around needlessly.
 
-Shmobile is all multiplatform these days, so get rid of the reference to
-CONFIG_ARCH_SHMOBILE_MULTI.
+Based on similar work for the r8a7791 and r8a7794 by Wolfram Sang.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Wolfram Sang <wsa+renesas@sang-engineering.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/sh/pm_runtime.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/sh/pm_runtime.c b/drivers/sh/pm_runtime.c
-index 25abd4eb7d10..91a003011acf 100644
---- a/drivers/sh/pm_runtime.c
-+++ b/drivers/sh/pm_runtime.c
-@@ -34,7 +34,7 @@ static struct pm_clk_notifier_block platform_bus_notifier = {
+---
+* Lightly tested on renesas-devel-20151126-v4.4-rc2
+---
+ arch/arm/boot/dts/r8a7793.dtsi | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7793.dtsi b/arch/arm/boot/dts/r8a7793.dtsi
+index cbcda80f4658..4c74a9229e71 100644
+--- a/arch/arm/boot/dts/r8a7793.dtsi
++++ b/arch/arm/boot/dts/r8a7793.dtsi
+@@ -233,7 +233,6 @@
+ 	pfc: pfc@e6060000 {
+ 		compatible = "renesas,pfc-r8a7793";
+ 		reg = <0 0xe6060000 0 0x250>;
+-		#gpio-range-cells = <3>;
+ 	};
  
- static int __init sh_pm_runtime_init(void)
- {
--	if (IS_ENABLED(CONFIG_ARCH_SHMOBILE_MULTI)) {
-+	if (IS_ENABLED(CONFIG_ARCH_SHMOBILE)) {
- 		if (!of_find_compatible_node(NULL, NULL,
- 					     "renesas,cpg-mstp-clocks"))
- 			return 0;
+ 	dmac0: dma-controller@e6700000 {
 -- 
 2.1.4
 
