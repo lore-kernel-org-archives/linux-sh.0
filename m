@@ -1,74 +1,113 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Nov 2015 02:23:49 +0000
-Subject: [PATCH 2/4] ARM: shmobile: r8a7791: Use SoC specific binding for rcar-dmac nodes
-Message-Id: <1447381431-2255-3-git-send-email-horms+renesas@verge.net.au>
+From: Wolfram Sang <wsa@the-dreams.de>
+Date: Thu, 26 Nov 2015 22:59:10 +0000
+Subject: [RFC 2/9] i2c: add generic routine to parse DT timing information
+Message-Id: <1448578757-12613-3-git-send-email-wsa@the-dreams.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447381431-2255-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1447381431-2255-1-git-send-email-horms+renesas@verge.net.au>
+References: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
+In-Reply-To: <1448578757-12613-1-git-send-email-wsa@the-dreams.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Use the new SoC specific binding for rcar-dmac and the generic
-binding as a fall-back in the r8a7791 device tree.
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-In general Renesas hardware is not documented to the extent where the
-relationship between IP blocks on different SoCs can be assumed although
-they may appear to operate the same way. Furthermore the documentation
-typically does not specify a version for individual IP blocks. For these
-reasons a convention of using the SoC name in place of a version and
-providing SoC-specific compat strings has been adopted.
+Inspired from the i2c-rk3x driver, thanks guys!
 
-Although not universally liked this convention is used in the bindings for
-most drivers for Renesas hardware. The purpose of this patch is to
-update the Renesas R-Car DMA Controller nodes to follow this convention.
+FIXME: add documentation
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 ---
- arch/arm/boot/dts/r8a7791.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ drivers/i2c/i2c-core.c | 34 ++++++++++++++++++++++++++++++++++
+ include/linux/i2c.h    | 15 +++++++++++++++
+ 2 files changed, 49 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
-index d79102c0e7d3..3776974e3273 100644
---- a/arch/arm/boot/dts/r8a7791.dtsi
-+++ b/arch/arm/boot/dts/r8a7791.dtsi
-@@ -255,7 +255,7 @@
- 	};
+diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
+index 040af5cc8143f1..7543fec4f65b61 100644
+--- a/drivers/i2c/i2c-core.c
++++ b/drivers/i2c/i2c-core.c
+@@ -1438,6 +1438,40 @@ static void of_i2c_register_devices(struct i2c_adapter *adap)
+ 	}
+ }
  
- 	dmac0: dma-controller@e6700000 {
--		compatible = "renesas,rcar-dmac";
-+		compatible = "renesas,dmac-r8a7791", "renesas,rcar-dmac";
- 		reg = <0 0xe6700000 0 0x20000>;
- 		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
- 			      0 200 IRQ_TYPE_LEVEL_HIGH
-@@ -286,7 +286,7 @@
- 	};
++void of_i2c_parse_timings(struct device_node *node, struct i2c_timings *t, bool use_defaults)
++{
++	memset(t, 0, sizeof(*t));
++
++	if (of_property_read_u32(node, "clock-frequency", &t->bus_freq) && use_defaults)
++		t->bus_freq = 100000;
++
++	/*
++	 * Read rise and fall time from device tree. If not available, use
++	 * the default maximum timing from the specification.
++	 */
++	if (of_property_read_u32(node, "i2c-scl-rising-time-ns", &t->scl_rise_ns) && use_defaults) {
++		if (t->bus_freq <= 100000)
++			t->scl_rise_ns = 1000;
++		else if (t->bus_freq <= 400000)
++			t->scl_rise_ns = 300;
++		else
++			t->scl_rise_ns = 120;
++	}
++
++	if (of_property_read_u32(node, "i2c-scl-falling-time-ns", &t->scl_fall_ns) && use_defaults) {
++		if (t->bus_freq <= 400000)
++			t->scl_fall_ns = 300;
++		else
++			t->scl_fall_ns = 120;
++	}
++
++	of_property_read_u32(node, "i2c-scl-internal-delay-ns", &t->scl_int_delay_ns);
++
++	if (of_property_read_u32(node, "i2c-sda-falling-time-ns", &t->sda_fall_ns) && use_defaults)
++		t->sda_fall_ns = t->scl_fall_ns;
++}
++EXPORT_SYMBOL_GPL(of_i2c_parse_timings);
++
+ static int of_dev_node_match(struct device *dev, void *data)
+ {
+ 	return dev->of_node = data;
+diff --git a/include/linux/i2c.h b/include/linux/i2c.h
+index 768063baafbf5e..ca28c104ac5fb6 100644
+--- a/include/linux/i2c.h
++++ b/include/linux/i2c.h
+@@ -413,6 +413,15 @@ struct i2c_algorithm {
+ #endif
+ };
  
- 	dmac1: dma-controller@e6720000 {
--		compatible = "renesas,rcar-dmac";
-+		compatible = "renesas,dmac-r8a7791", "renesas,rcar-dmac";
- 		reg = <0 0xe6720000 0 0x20000>;
- 		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
- 			      0 216 IRQ_TYPE_LEVEL_HIGH
-@@ -317,7 +317,7 @@
- 	};
++/* FIXME: Add docs */
++struct i2c_timings {
++	u32 bus_freq;
++	u32 scl_rise_ns;
++	u32 scl_fall_ns;
++	u32 scl_int_delay_ns;
++	u32 sda_fall_ns;
++};
++
+ /**
+  * struct i2c_bus_recovery_info - I2C bus recovery information
+  * @recover_bus: Recover routine. Either pass driver's recover_bus() routine, or
+@@ -644,6 +653,8 @@ extern struct i2c_adapter *of_find_i2c_adapter_by_node(struct device_node *node)
  
- 	audma0: dma-controller@ec700000 {
--		compatible = "renesas,rcar-dmac";
-+		compatible = "renesas,dmac-r8a7791", "renesas,rcar-dmac";
- 		reg = <0 0xec700000 0 0x10000>;
- 		interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH
- 				 0 320 IRQ_TYPE_LEVEL_HIGH
-@@ -346,7 +346,7 @@
- 	};
+ /* must call i2c_put_adapter() when done with returned i2c_adapter device */
+ struct i2c_adapter *of_get_i2c_adapter_by_node(struct device_node *node);
++
++void of_i2c_parse_timings(struct device_node *node, struct i2c_timings *t, bool use_defaults);
+ #else
  
- 	audma1: dma-controller@ec720000 {
--		compatible = "renesas,rcar-dmac";
-+		compatible = "renesas,dmac-r8a7791", "renesas,rcar-dmac";
- 		reg = <0 0xec720000 0 0x10000>;
- 		interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH
- 				 0 333 IRQ_TYPE_LEVEL_HIGH
+ static inline struct i2c_client *of_find_i2c_device_by_node(struct device_node *node)
+@@ -660,6 +671,10 @@ static inline struct i2c_adapter *of_get_i2c_adapter_by_node(struct device_node
+ {
+ 	return NULL;
+ }
++
++static inline void of_i2c_parse_timings(struct device_node *node, struct i2c_timings *t, bool use_defaults)
++{
++}
+ #endif /* CONFIG_OF */
+ 
+ #endif /* _LINUX_I2C_H */
 -- 
 2.1.4
 
