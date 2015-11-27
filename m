@@ -1,103 +1,59 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 30 Nov 2015 14:16:51 +0000
-Subject: [PATCH 1/2] ARM: shmobile: sh73a0: Add MSIOF clocks
-Message-Id: <1448893012-8465-2-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:51 +0000
+Subject: [PATCH 08/15] ARM: shmobile: bockw: Move SPI FLASH partition to subnode
+Message-Id: <a7d57eec21d06cae06f03bd5ae47080a3dc3e898.1448586938.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448893012-8465-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448893012-8465-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1448586938.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448586938.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-arm-kernel@lists.infradead.org
 
-The 4 MSIOF clocks are MSTP clocks, and children of the SUB clock.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+As of commits 5cfdedb7b9a0fe38 ("mtd: ofpart: move ofpart partitions to a
+dedicated dt node") and fe2585e9c29a650a ("doc: dt: mtd: support partitions
+in a special 'partitions' subnode"), having partitions as direct subnodes
+of an mtd device is discouraged. Hence move the SPI FLASH partition to a
+"partitions" subnode.
+
+Based on similar work for the koelsch board by Geert Uytterhoeven.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0.dtsi            | 28 ++++++++++++++++------------
- include/dt-bindings/clock/sh73a0-clock.h |  6 +++++-
- 2 files changed, 21 insertions(+), 13 deletions(-)
+ arch/arm/boot/dts/r8a7778-bockw.dts | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index f90ef9c93d3df3aa..c55b09e640f0b7d3 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -812,13 +812,13 @@
- 		mstp0_clks: mstp0_clks@e6150130 {
- 			compatible = "renesas,sh73a0-mstp-clocks", "renesas,cpg-mstp-clocks";
- 			reg = <0xe6150130 4>, <0xe6150030 4>;
--			clocks = <&cpg_clocks SH73A0_CLK_HP>;
-+			clocks = <&cpg_clocks SH73A0_CLK_HP>, <&sub_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
--				SH73A0_CLK_IIC2
-+				SH73A0_CLK_IIC2 SH73A0_CLK_MSIOF0
- 			>;
- 			clock-output-names -				"iic2";
-+				"iic2", "msiof0";
- 		};
- 		mstp1_clks: mstp1_clks@e6150134 {
- 			compatible = "renesas,sh73a0-mstp-clocks", "renesas,cpg-mstp-clocks";
-@@ -848,20 +848,24 @@
- 			reg = <0xe6150138 4>, <0xe6150040 4>;
- 			clocks = <&sub_clk>, <&cpg_clocks SH73A0_CLK_HP>,
- 				 <&cpg_clocks SH73A0_CLK_HP>, <&sub_clk>,
--				 <&sub_clk>, <&sub_clk>, <&sub_clk>, <&sub_clk>,
--				 <&sub_clk>, <&sub_clk>;
-+				 <&sub_clk>, <&sub_clk>, <&sub_clk>,
-+				 <&sub_clk>, <&sub_clk>, <&sub_clk>,
-+				 <&sub_clk>, <&sub_clk>, <&sub_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
- 				SH73A0_CLK_SCIFA7 SH73A0_CLK_SY_DMAC
--				SH73A0_CLK_MP_DMAC SH73A0_CLK_SCIFA5
--				SH73A0_CLK_SCIFB SH73A0_CLK_SCIFA0
--				SH73A0_CLK_SCIFA1 SH73A0_CLK_SCIFA2
--				SH73A0_CLK_SCIFA3 SH73A0_CLK_SCIFA4
-+				SH73A0_CLK_MP_DMAC SH73A0_CLK_MSIOF3
-+				SH73A0_CLK_MSIOF1 SH73A0_CLK_SCIFA5
-+				SH73A0_CLK_SCIFB SH73A0_CLK_MSIOF2
-+				SH73A0_CLK_SCIFA0 SH73A0_CLK_SCIFA1
-+				SH73A0_CLK_SCIFA2 SH73A0_CLK_SCIFA3
-+				SH73A0_CLK_SCIFA4
- 			>;
- 			clock-output-names -				"scifa7", "sy_dmac", "mp_dmac", "scifa5",
--				"scifb", "scifa0", "scifa1", "scifa2",
--				"scifa3", "scifa4";
-+				"scifa7", "sy_dmac", "mp_dmac", "msiof3",
-+				"msiof1", "scifa5", "scifb", "msiof2",
-+				"scifa0", "scifa1", "scifa2", "scifa3",
-+				"scifa4";
- 		};
- 		mstp3_clks: mstp3_clks@e615013c {
- 			compatible = "renesas,sh73a0-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/sh73a0-clock.h b/include/dt-bindings/clock/sh73a0-clock.h
-index 53369568c24c5dc6..2eca353a29d74bc6 100644
---- a/include/dt-bindings/clock/sh73a0-clock.h
-+++ b/include/dt-bindings/clock/sh73a0-clock.h
-@@ -28,7 +28,8 @@
- #define SH73A0_CLK_HP		14
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 8a5407678717..3c03e6b8261e 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -188,16 +188,19 @@
+ 	status = "okay";
  
- /* MSTP0 */
--#define SH73A0_CLK_IIC2	1
-+#define SH73A0_CLK_IIC2		1
-+#define SH73A0_CLK_MSIOF0	0
+ 	flash: flash@0 {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+ 		compatible = "spansion,s25fl008k", "jedec,spi-nor";
+ 		reg = <0>;
+ 		spi-max-frequency = <104000000>;
+ 		m25p,fast-read;
  
- /* MSTP1 */
- #define SH73A0_CLK_CEU1		29
-@@ -45,8 +46,11 @@
- #define SH73A0_CLK_SCIFA7	19
- #define SH73A0_CLK_SY_DMAC	18
- #define SH73A0_CLK_MP_DMAC	17
-+#define SH73A0_CLK_MSIOF3	15
-+#define SH73A0_CLK_MSIOF1	8
- #define SH73A0_CLK_SCIFA5	7
- #define SH73A0_CLK_SCIFB	6
-+#define SH73A0_CLK_MSIOF2	5
- #define SH73A0_CLK_SCIFA0	4
- #define SH73A0_CLK_SCIFA1	3
- #define SH73A0_CLK_SCIFA2	2
+-		partition@0 {
+-			label = "data(spi)";
+-			reg = <0x00000000 0x00100000>;
++		partitions {
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "data(spi)";
++				reg = <0x00000000 0x00100000>;
++			};
+ 		};
+ 	};
+ };
 -- 
-1.9.1
+2.1.4
 
