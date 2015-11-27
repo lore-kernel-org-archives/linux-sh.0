@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:46 +0000
-Subject: [PATCH 03/15] ARM: shmobile: r8a7794: alt: Enable PFC DU for the VGA port
-Message-Id: <13b8b8e8fae6bc38941bc5e5e847706beb004082.1448586938.git.horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:50 +0000
+Subject: [PATCH 07/15] ARM: shmobile: r8a7791: koelsch: Fix pinmux for HDMI
+Message-Id: <22a1ae361169d74e845fe91912d084191fa7b4a5.1448586938.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1448586938.git.horms+renesas@verge.net.au>
 In-Reply-To: <cover.1448586938.git.horms+renesas@verge.net.au>
@@ -10,42 +10,30 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Tie in r8a7794 PFC DU support to the VGA port on the
-r8a7794 ALT board.
+The signals output by the DU to the HDMI transmitter use full 24-bit
+RGB. Make sure all pins are properly muxed.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7794-alt.dts | 7 +++++++
- 1 file changed, 7 insertions(+)
+ arch/arm/boot/dts/r8a7791-koelsch.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
-index fd1cfcdd65ef..b255a8791841 100644
---- a/arch/arm/boot/dts/r8a7794-alt.dts
-+++ b/arch/arm/boot/dts/r8a7794-alt.dts
-@@ -80,6 +80,8 @@
- };
+diff --git a/arch/arm/boot/dts/r8a7791-koelsch.dts b/arch/arm/boot/dts/r8a7791-koelsch.dts
+index 4ec2d1fba7c9..50d7b17c6ebd 100644
+--- a/arch/arm/boot/dts/r8a7791-koelsch.dts
++++ b/arch/arm/boot/dts/r8a7791-koelsch.dts
+@@ -326,7 +326,7 @@
+ 	};
  
- &du {
-+	pinctrl-0 = <&du_pins>;
-+	pinctrl-names = "default";
- 	status = "okay";
+ 	du_pins: du {
+-		renesas,groups = "du_rgb666", "du_sync", "du_disp", "du_clk_out_0";
++		renesas,groups = "du_rgb888", "du_sync", "du_disp", "du_clk_out_0";
+ 		renesas,function = "du";
+ 	};
  
- 	clocks = <&mstp7_clks R8A7794_CLK_DU0>,
-@@ -101,6 +103,11 @@
- };
- 
- &pfc {
-+	du_pins: du {
-+		renesas,groups = "du1_rgb666", "du1_sync", "du1_disp", "du1_dotclkout0";
-+		renesas,function = "du";
-+	};
-+
- 	scif2_pins: serial2 {
- 		renesas,groups = "scif2_data";
- 		renesas,function = "scif2";
 -- 
 2.1.4
 
