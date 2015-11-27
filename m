@@ -1,101 +1,58 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 16 Nov 2015 08:57:29 +0000
-Subject: [PATCH v2 03/03] ARM: shmobile: r8a7794: alt: Enable VGA port
-Message-Id: <20151116085729.7119.93398.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:30 +0000
+Subject: [PATCH 13/18] arm64: renesas: r8a7795: Sound DVC support
+Message-Id: <b9dd9450ce0cfb60d8e4afd37191f86f3afba6c2.1448587800.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1448587800.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448587800.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Enable the DU device and the VGA port available on the r8a7794
-ALT board. The VGA portion of the ALT board is somewhat similar
-to the Lager board but in case of ALT the DU1 pins are used
-and the X2 clock has a reduced frequency.
-
-This patch does not include any pinctrl (PFC) settings due to lack
-of PFC DT integration on r8a7794. At this point the default state
-of the boot loader is enough to keep the VGA port working without
-changing any pinctrl settings.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
- Changes since V1:
- - Updated to fit on r8a7794 DU patches from Laurent
-
- arch/arm/boot/dts/r8a7794-alt.dts |   61 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 61 insertions(+)
-
---- 0001/arch/arm/boot/dts/r8a7794-alt.dts
-+++ work/arch/arm/boot/dts/r8a7794-alt.dts	2015-11-16 11:24:24.350513000 +0900
-@@ -33,6 +33,67 @@
- 		#address-cells = <1>;
- 		#size-cells = <1>;
- 	};
-+
-+	vga-encoder {
-+		compatible = "adi,adv7123";
-+
-+		ports {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
-+			port@0 {
-+				reg = <0>;
-+				adv7123_in: endpoint {
-+					remote-endpoint = <&du_out_rgb1>;
-+				};
-+			};
-+			port@1 {
-+				reg = <1>;
-+				adv7123_out: endpoint {
-+					remote-endpoint = <&vga_in>;
-+				};
-+			};
-+		};
-+	};
-+
-+	vga {
-+		compatible = "vga-connector";
-+
-+		port {
-+			vga_in: endpoint {
-+				remote-endpoint = <&adv7123_out>;
-+			};
-+		};
-+	};
-+
-+	x2_clk: x2-clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <74250000>;
-+	};
-+
-+	x13_clk: x13-clock {
-+		compatible = "fixed-clock";
-+		#clock-cells = <0>;
-+		clock-frequency = <148500000>;
-+	};
-+};
-+
-+&du {
-+	status = "okay";
-+
-+	clocks = <&mstp7_clks R8A7794_CLK_DU0>,
-+		 <&mstp7_clks R8A7794_CLK_DU0>,
-+		 <&x13_clk>, <&x2_clk>;
-+	clock-names = "du.0", "du.1", "dclkin.0", "dclkin.1";
-+
-+	ports {
-+		port@1 {
-+			endpoint {
-+				remote-endpoint = <&adv7123_in>;
-+			};
-+		};
-+	};
- };
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index c3b2089de531..b1902ea1dae4 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -590,6 +590,7 @@
+ 				 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
+ 				 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
+ 				 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
++				 <&cpg CPG_MOD 1019>, <&cpg CPG_MOD 1018>,
+ 				 <&audio_clk_a>, <&audio_clk_b>,
+ 				 <&audio_clk_c>,
+ 				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
+@@ -600,10 +601,22 @@
+ 				      "src.9", "src.8", "src.7", "src.6",
+ 				      "src.5", "src.4", "src.3", "src.2",
+ 				      "src.1", "src.0",
++				      "dvc.0", "dvc.1",
+ 				      "clk_a", "clk_b", "clk_c", "clk_i";
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
  
- &extal_clk {
++			rcar_sound,dvc {
++				dvc0: dvc@0 {
++					dmas = <&audma0 0xbc>;
++					dma-names = "tx";
++				};
++				dvc1: dvc@1 {
++					dmas = <&audma0 0xbe>;
++					dma-names = "tx";
++				};
++			};
++
+ 			rcar_sound,src {
+ 				src0: src@0 {
+ 					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
+-- 
+2.1.4
+
