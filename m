@@ -1,41 +1,137 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 19 Nov 2015 15:56:47 +0000
-Subject: [PATCH v3 07/11] i2c: rcar: don't issue stop when HW does it automatically
-Message-Id: <1447948611-2615-8-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:27 +0000
+Subject: [PATCH 10/18] arm64: renesas: r8a7795: Sound SSI PIO support
+Message-Id: <623197b90c7aa97c0626b0aec06f95d05666b3e0.1448587800.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
-In-Reply-To: <1447948611-2615-1-git-send-email-wsa@the-dreams.de>
+References: <cover.1448587800.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448587800.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The manual says (55.4.8.6) that HW does automatically send STOP after
-NACK was received. My measuerments confirm that.
+This patch adds SSI for PIO sound support
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/busses/i2c-rcar.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 95 ++++++++++++++++++++++++++++++++
+ 1 file changed, 95 insertions(+)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index d91acc11631554..87fccf20fc4c34 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -455,8 +455,8 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 2cc58114d1ef..15753f4dcf4e 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -52,6 +52,29 @@
+ 		clock-frequency = <0>;
+ 	};
  
- 	/* Nack */
- 	if (msr & MNR) {
--		/* go to stop phase */
--		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
-+		/* HW automatically sends STOP after received NACK */
-+		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_DATA);
- 		rcar_i2c_write(priv, ICMIER, RCAR_IRQ_STOP);
- 		rcar_i2c_flags_set(priv, ID_NACK);
- 		goto out;
++	/*
++	 * The external audio clocks are configured as 0 Hz fixed frequency
++	 * clocks by default.
++	 * Boards that provide audio clocks should override them.
++	 */
++	audio_clk_a: audio_clk_a {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <0>;
++	};
++
++	audio_clk_b: audio_clk_b {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <0>;
++	};
++
++	audio_clk_c: audio_clk_c {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <0>;
++	};
++
+ 	soc {
+ 		compatible = "simple-bus";
+ 		interrupt-parent = <&gic>;
+@@ -534,5 +557,77 @@
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
+ 		};
++
++		rcar_sound: sound@ec500000 {
++			/*
++			 * #sound-dai-cells is required
++			 *
++			 * Single DAI : #sound-dai-cells = <0>;	<&rcar_sound>;
++			 * Multi  DAI : #sound-dai-cells = <1>;	<&rcar_sound N>;
++			 */
++			/*
++			 * #clock-cells is required for audio_clkout0/1/2/3
++			 *
++			 * clkout	: #clock-cells = <0>;	<&rcar_sound>;
++			 * clkout0/1/2/3: #clock-cells = <1>;	<&rcar_sound N>;
++			 */
++			compatible =  "renesas,rcar_sound-r8a7795", "renesas,rcar_sound-gen3";
++			reg =	<0 0xec500000 0 0x1000>, /* SCU */
++				<0 0xec5a0000 0 0x100>,  /* ADG */
++				<0 0xec540000 0 0x1000>, /* SSIU */
++				<0 0xec541000 0 0x280>,  /* SSI */
++				<0 0xec740000 0 0x200>;  /* Audio DMAC peri peri*/
++			reg-names = "scu", "adg", "ssiu", "ssi", "audmapp";
++
++			clocks = <&cpg CPG_MOD 1005>,
++				 <&cpg CPG_MOD 1006>, <&cpg CPG_MOD 1007>,
++				 <&cpg CPG_MOD 1008>, <&cpg CPG_MOD 1009>,
++				 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
++				 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
++				 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
++				 <&audio_clk_a>, <&audio_clk_b>,
++				 <&audio_clk_c>,
++				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
++			clock-names = "ssi-all",
++				      "ssi.9", "ssi.8", "ssi.7", "ssi.6",
++				      "ssi.5", "ssi.4", "ssi.3", "ssi.2",
++				      "ssi.1", "ssi.0",
++				      "clk_a", "clk_b", "clk_c", "clk_i";
++			power-domains = <&cpg>;
++			status = "disabled";
++
++			rcar_sound,ssi {
++				ssi0: ssi@0 {
++					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi1: ssi@1 {
++					 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi2: ssi@2 {
++					interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi3: ssi@3 {
++					interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi4: ssi@4 {
++					interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi5: ssi@5 {
++					interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi6: ssi@6 {
++					interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi7: ssi@7 {
++					interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi8: ssi@8 {
++					interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
++				};
++				ssi9: ssi@9 {
++					interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
++				};
++			};
++		};
+ 	};
+ };
 -- 
 2.1.4
 
