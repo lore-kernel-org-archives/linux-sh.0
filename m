@@ -1,74 +1,68 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Nov 2015 02:23:48 +0000
-Subject: [PATCH 1/4] ARM: shmobile: r8a7790: Use SoC specific binding for rcar-dmac nodes
-Message-Id: <1447381431-2255-2-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:58 +0000
+Subject: [PATCH 15/15] ARM: shmobile: sh73a0 dtsi: Add L2 cache-controller node
+Message-Id: <c8d9fdbe2d648caaa510d45dc13eba2e9957140b.1448586938.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447381431-2255-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1447381431-2255-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1448586938.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448586938.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Use the new SoC specific binding for rcar-dmac and the generic
-binding as a fall-back in the r8a7790 device tree.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-In general Renesas hardware is not documented to the extent where the
-relationship between IP blocks on different SoCs can be assumed although
-they may appear to operate the same way. Furthermore the documentation
-typically does not specify a version for individual IP blocks. For these
-reasons a convention of using the SoC name in place of a version and
-providing SoC-specific compat strings has been adopted.
+Add the missing L2 cache-controller node, and link the CPU nodes to it.
+This will allow migration to the generic l2c OF initialization.
 
-Although not universally liked this convention is used in the bindings for
-most drivers for Renesas hardware. The purpose of this patch is to
-update the Renesas R-Car DMA Controller nodes to follow this convention.
+The L2 cache is an ARM L2C-310 (r3p1), of size 512 KiB (64 KiB x 8
+ways).
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/boot/dts/sh73a0.dtsi | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index 0612502b4a6d..9f3036b80c0e 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -266,7 +266,7 @@
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index ff7c8f298f30..319551f0fcdb 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -28,6 +28,7 @@
+ 			reg = <0>;
+ 			clock-frequency = <1196000000>;
+ 			power-domains = <&pd_a2sl>;
++			next-level-cache = <&L2>;
+ 		};
+ 		cpu@1 {
+ 			device_type = "cpu";
+@@ -35,6 +36,7 @@
+ 			reg = <1>;
+ 			clock-frequency = <1196000000>;
+ 			power-domains = <&pd_a2sl>;
++			next-level-cache = <&L2>;
+ 		};
  	};
  
- 	dmac0: dma-controller@e6700000 {
--		compatible = "renesas,rcar-dmac";
-+		compatible = "renesas,dmac-r8a7790", "renesas,rcar-dmac";
- 		reg = <0 0xe6700000 0 0x20000>;
- 		interrupts = <0 197 IRQ_TYPE_LEVEL_HIGH
- 			      0 200 IRQ_TYPE_LEVEL_HIGH
-@@ -297,7 +297,7 @@
+@@ -53,6 +55,18 @@
+ 		      <0xf0000100 0x100>;
  	};
  
- 	dmac1: dma-controller@e6720000 {
--		compatible = "renesas,rcar-dmac";
-+		compatible = "renesas,dmac-r8a7790", "renesas,rcar-dmac";
- 		reg = <0 0xe6720000 0 0x20000>;
- 		interrupts = <0 220 IRQ_TYPE_LEVEL_HIGH
- 			      0 216 IRQ_TYPE_LEVEL_HIGH
-@@ -328,7 +328,7 @@
- 	};
- 
- 	audma0: dma-controller@ec700000 {
--		compatible = "renesas,rcar-dmac";
-+		compatible = "renesas,dmac-r8a7790", "renesas,rcar-dmac";
- 		reg = <0 0xec700000 0 0x10000>;
- 		interrupts =	<0 346 IRQ_TYPE_LEVEL_HIGH
- 				 0 320 IRQ_TYPE_LEVEL_HIGH
-@@ -357,7 +357,7 @@
- 	};
- 
- 	audma1: dma-controller@ec720000 {
--		compatible = "renesas,rcar-dmac";
-+		compatible = "renesas,dmac-r8a7790", "renesas,rcar-dmac";
- 		reg = <0 0xec720000 0 0x10000>;
- 		interrupts =	<0 347 IRQ_TYPE_LEVEL_HIGH
- 				 0 333 IRQ_TYPE_LEVEL_HIGH
++	L2: cache-controller {
++		compatible = "arm,pl310-cache";
++		reg = <0xf0100000 0x1000>;
++		interrupts = <0 44 IRQ_TYPE_LEVEL_HIGH>;
++		power-domains = <&pd_a3sm>;
++		arm,data-latency = <3 3 3>;
++		arm,tag-latency = <2 2 2>;
++		arm,shared-override;
++		cache-unified;
++		cache-level = <2>;
++	};
++
+ 	sbsc2: memory-controller@fb400000 {
+ 		compatible = "renesas,sbsc-sh73a0";
+ 		reg = <0xfb400000 0x400>;
 -- 
 2.1.4
 
