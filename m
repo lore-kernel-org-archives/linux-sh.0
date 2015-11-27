@@ -1,27 +1,43 @@
-From: David Miller <davem@davemloft.net>
-Date: Fri, 20 Nov 2015 19:53:08 +0000
-Subject: Re: [PATCH v3 net-next] ravb: use clock rate as basis for GTI.TIV
-Message-Id: <20151120.145308.462101495816748076.davem@davemloft.net>
+From: Petr Mladek <pmladek@suse.com>
+Date: Fri, 27 Nov 2015 11:09:32 +0000
+Subject: [PATCH v2 5/5] printk/nmi: Increase the size of the temporary buffer
+Message-Id: <1448622572-16900-6-git-send-email-pmladek@suse.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448047779-21242-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1448047779-21242-1-git-send-email-horms+renesas@verge.net.au>
+References: <1448622572-16900-1-git-send-email-pmladek@suse.com>
+In-Reply-To: <1448622572-16900-1-git-send-email-pmladek@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms+renesas@verge.net.au
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, magnus.damm@gmail.com
+To: linux-arm-kernel@lists.infradead.org
 
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 11:29:39 -0800
+Testing has shown that the backtrace sometimes does not fit
+into the 4kB temporary buffer that is used in NMI context.
 
-> The GTI.TIV may be set to 2GHz^2 / rate, where rate is
-> that of the clock of the device. Rather than assuming a
-> rate of 130MHz use the actual rate of the clock.
-> 
-> The motivation for this is to use the correct rate on
-> the r8a7795/Salvator-X which is advertised as 133MHz but
-> may differ depending on the extal present on the Salvator-X.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The warnings are gone when I double the temporary buffer size.
 
-Applied, thanks Simon.
+Note that this problem existed even in the x86-specific
+implementation that was added by the commit a9edc8809328
+("x86/nmi: Perform a safe NMI stack trace on all CPUs").
+Nobody noticed it because it did not print any warnings.
+
+Signed-off-by: Petr Mladek <pmladek@suse.com>
+---
+ kernel/printk/nmi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
+index 8af1e4016719..6111644d5f01 100644
+--- a/kernel/printk/nmi.c
++++ b/kernel/printk/nmi.c
+@@ -42,7 +42,7 @@ atomic_t nmi_message_lost;
+ struct nmi_seq_buf {
+ 	atomic_t		len;	/* length of written data */
+ 	struct irq_work		work;	/* IRQ work that flushes the buffer */
+-	unsigned char		buffer[PAGE_SIZE - sizeof(atomic_t) -
++	unsigned char		buffer[2 * PAGE_SIZE - sizeof(atomic_t) -
+ 				       sizeof(struct irq_work)];
+ };
+ static DEFINE_PER_CPU(struct nmi_seq_buf, nmi_print_seq);
+-- 
+1.8.5.6
+
