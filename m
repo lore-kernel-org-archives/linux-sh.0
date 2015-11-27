@@ -1,106 +1,66 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 12 Nov 2015 14:43:19 +0000
-Subject: [PATCH v2 10/10] i2c: rcar: clean up after refactoring
-Message-Id: <1447339399-10125-1-git-send-email-wsa@the-dreams.de>
+From: Petr Mladek <pmladek@suse.com>
+Date: Fri, 27 Nov 2015 11:09:29 +0000
+Subject: [PATCH v2 2/5] printk/nmi: Use IRQ work only when ready
+Message-Id: <1448622572-16900-3-git-send-email-pmladek@suse.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1448622572-16900-1-git-send-email-pmladek@suse.com>
+In-Reply-To: <1448622572-16900-1-git-send-email-pmladek@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+NMIs could happen at any time. This patch makes sure that the safe
+printk() in NMI will schedule IRQ work only when the related
+structs are initialized.
 
-Update the comments to match current behaviour. Shorten some comments.
-Update copyrights.
+All pending messages are flushed when the IRQ work is being
+initialized.
 
-Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Signed-off-by: Petr Mladek <pmladek@suse.com>
 ---
- drivers/i2c/busses/i2c-rcar.c | 32 +++++++++-----------------------
- 1 file changed, 9 insertions(+), 23 deletions(-)
+ kernel/printk/nmi.c | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index 64a01c0177463a..ef963d195a4eb9 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -1,7 +1,8 @@
- /*
-  * Driver for the Renesas RCar I2C unit
-  *
-- * Copyright (C) 2014 Wolfram Sang <wsa@sang-engineering.com>
-+ * Copyright (C) 2014-15 Wolfram Sang <wsa@sang-engineering.com>
-+ * Copyright (C) 2011-2015 Renesas Electronics Corporation
-  *
-  * Copyright (C) 2012-14 Renesas Solutions Corp.
-  * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-@@ -9,9 +10,6 @@
-  * This file is based on the drivers/i2c/busses/i2c-sh7760.c
-  * (c) 2005-2008 MSC Vertriebsges.m.b.H, Manuel Lauss <mlau@msc-ge.com>
-  *
-- * This file used out-of-tree driver i2c-rcar.c
-- * Copyright (C) 2011-2012 Renesas Electronics Corporation
-- *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation; version 2 of the License.
-@@ -245,9 +243,7 @@ scgd_find:
- 	dev_dbg(dev, "clk %d/%d(%lu), round %u, CDF:0x%x, SCGD: 0x%x\n",
- 		scl, bus_speed, clk_get_rate(priv->clk), round, cdf, scgd);
+diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
+index 3989e13a0021..05b4c09110f9 100644
+--- a/kernel/printk/nmi.c
++++ b/kernel/printk/nmi.c
+@@ -36,6 +36,7 @@
+  * were handled or when IRQs are blocked.
+  */
+ DEFINE_PER_CPU(printk_func_t, printk_func) = vprintk_default;
++static int printk_nmi_irq_ready;
  
--	/*
--	 * keep icccr value
--	 */
-+	/* keep icccr value */
- 	priv->icccr = scgd << cdf_width | cdf;
+ struct nmi_seq_buf {
+ 	atomic_t		len;	/* length of written data */
+@@ -80,8 +81,11 @@ again:
+ 		goto again;
  
- 	return 0;
-@@ -282,11 +278,7 @@ static int rcar_i2c_irq_send(struct rcar_i2c_priv *priv, u32 msr)
- {
- 	struct i2c_msg *msg = priv->msg;
+ 	/* Get flushed in a more safe context. */
+-	if (add)
++	if (add && printk_nmi_irq_ready) {
++		/* Make sure that IRQ work is really initialized. */
++		smp_rmb();
+ 		irq_work_queue(&s->work);
++	}
  
--	/*
--	 * FIXME
--	 * sometimes, unknown interrupt happened.
--	 * Do nothing
--	 */
-+	/* FIXME: sometimes, unknown interrupt happened. Do nothing */
- 	if (!(msr & MDE))
- 		return 0;
+ 	return add;
+ }
+@@ -187,6 +191,13 @@ void __init printk_nmi_init(void)
  
-@@ -332,28 +324,22 @@ static int rcar_i2c_irq_recv(struct rcar_i2c_priv *priv, u32 msr)
- {
- 	struct i2c_msg *msg = priv->msg;
- 
--	/*
--	 * FIXME
--	 * sometimes, unknown interrupt happened.
--	 * Do nothing
--	 */
-+	/* FIXME: sometimes, unknown interrupt happened. Do nothing */
- 	if (!(msr & MDR))
- 		return 0;
- 
- 	if (msr & MAT) {
- 		/* Address transfer phase finished, but no data at this point. */
- 	} else if (priv->pos < msg->len) {
--		/*
--		 * get received data
--		 */
-+		/* get received data */
- 		msg->buf[priv->pos] = rcar_i2c_read(priv, ICRXTX);
- 		priv->pos++;
+ 		init_irq_work(&s->work, __printk_nmi_flush);
  	}
++
++	/* Make sure that IRQ works are initialized before enabling. */
++	smp_wmb();
++	printk_nmi_irq_ready = 1;
++
++	/* Flush pending messages that did not have scheduled IRQ works. */
++	printk_nmi_flush();
+ }
  
- 	/*
--	 * If next received data is the _LAST_,
--	 * go to STOP phase,
--	 * otherwise, go to DATA phase.
-+	 * If next received data is the _LAST_, go to STOP phase. Might be
-+	 * overwritten by REP START when setting up a new msg. Not elegant
-+	 * but the only stable sequence for REP START I have found so far.
- 	 */
- 	if (priv->pos + 1 >= msg->len)
- 		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_STOP);
+ void printk_nmi_enter(void)
 -- 
-2.1.4
+1.8.5.6
 
