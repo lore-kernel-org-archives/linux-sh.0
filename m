@@ -1,79 +1,106 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Nov 2015 04:30:56 +0000
-Subject: [PATCH 01/04] ARM: shmobile: r8a7790: IPMMU compat string SoC part number update
-Message-Id: <20151117043056.4521.91720.sendpatchset@little-apple>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:29 +0000
+Subject: [PATCH 12/18] arm64: renesas: r8a7795: Sound SRC support
+Message-Id: <b868ff51d5625a28a50ce8d40992d562535d3972.1448587800.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1448587800.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448587800.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Update IPMMU compat strings to include SoC part number.
-
-By specifying SoC part number in DT it becomes possible 
-to implement SoC specific features in the IPMMU driver.
-
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 61 ++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
 
- arch/arm/boot/dts/r8a7790.dtsi |   12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 5d684e961675..c3b2089de531 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -585,6 +585,11 @@
+ 				 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
+ 				 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
+ 				 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
++				 <&cpg CPG_MOD 1022>, <&cpg CPG_MOD 1023>,
++				 <&cpg CPG_MOD 1024>, <&cpg CPG_MOD 1025>,
++				 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
++				 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
++				 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
+ 				 <&audio_clk_a>, <&audio_clk_b>,
+ 				 <&audio_clk_c>,
+ 				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
+@@ -592,10 +597,66 @@
+ 				      "ssi.9", "ssi.8", "ssi.7", "ssi.6",
+ 				      "ssi.5", "ssi.4", "ssi.3", "ssi.2",
+ 				      "ssi.1", "ssi.0",
++				      "src.9", "src.8", "src.7", "src.6",
++				      "src.5", "src.4", "src.3", "src.2",
++				      "src.1", "src.0",
+ 				      "clk_a", "clk_b", "clk_c", "clk_i";
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
+ 
++			rcar_sound,src {
++				src0: src@0 {
++					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x85>, <&audma1 0x9a>;
++					dma-names = "rx", "tx";
++				};
++				src1: src@1 {
++					interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x87>, <&audma1 0x9c>;
++					dma-names = "rx", "tx";
++				};
++				src2: src@2 {
++					interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x89>, <&audma1 0x9e>;
++					dma-names = "rx", "tx";
++				};
++				src3: src@3 {
++					interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x8b>, <&audma1 0xa0>;
++					dma-names = "rx", "tx";
++				};
++				src4: src@4 {
++					interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x8d>, <&audma1 0xb0>;
++					dma-names = "rx", "tx";
++				};
++				src5: src@5 {
++					interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x8f>, <&audma1 0xb2>;
++					dma-names = "rx", "tx";
++				};
++				src6: src@6 {
++					interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x91>, <&audma1 0xb4>;
++					dma-names = "rx", "tx";
++				};
++				src7: src@7 {
++					interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x93>, <&audma1 0xb6>;
++					dma-names = "rx", "tx";
++				};
++				src8: src@8 {
++					interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x95>, <&audma1 0xb8>;
++					dma-names = "rx", "tx";
++				};
++				src9: src@9 {
++					interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>;
++					dmas = <&audma0 0x97>, <&audma1 0xba>;
++					dma-names = "rx", "tx";
++				};
++			};
++
+ 			rcar_sound,ssi {
+ 				ssi0: ssi@0 {
+ 					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
+-- 
+2.1.4
 
---- 0001/arch/arm/boot/dts/r8a7790.dtsi
-+++ work/arch/arm/boot/dts/r8a7790.dtsi	2015-11-17 12:58:17.800513000 +0900
-@@ -1766,7 +1766,7 @@
- 	};
- 
- 	ipmmu_sy0: mmu@e6280000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7790", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6280000 0 0x1000>;
- 		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1775,7 +1775,7 @@
- 	};
- 
- 	ipmmu_sy1: mmu@e6290000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7790", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6290000 0 0x1000>;
- 		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -1783,7 +1783,7 @@
- 	};
- 
- 	ipmmu_ds: mmu@e6740000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7790", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6740000 0 0x1000>;
- 		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1792,7 +1792,7 @@
- 	};
- 
- 	ipmmu_mp: mmu@ec680000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7790", "renesas,ipmmu-vmsa";
- 		reg = <0 0xec680000 0 0x1000>;
- 		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -1800,7 +1800,7 @@
- 	};
- 
- 	ipmmu_mx: mmu@fe951000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7790", "renesas,ipmmu-vmsa";
- 		reg = <0 0xfe951000 0 0x1000>;
- 		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1809,7 +1809,7 @@
- 	};
- 
- 	ipmmu_rt: mmu@ffc80000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7790", "renesas,ipmmu-vmsa";
- 		reg = <0 0xffc80000 0 0x1000>;
- 		interrupts = <0 307 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
