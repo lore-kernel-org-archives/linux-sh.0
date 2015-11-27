@@ -1,86 +1,79 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 06 Nov 2015 06:35:51 +0000
-Subject: [PATCH 03/12 v6] arm64: renesas: r8a7795: Sound SSI DMA support
-Message-Id: <87a8qrk5bp.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:48 +0000
+Subject: [PATCH 3/3] ARM: shmobile: Remove legacy mach/irqs.h
+Message-Id: <c8cd74a1468ffe20db3ddc6e6f408d5377f9be43.1448585673.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1448585673.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448585673.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The header isn't needed anymore now that all SoCs use multiplatform
+kernels. Remove it.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v5 -> v6
+ arch/arm/mach-shmobile/include/mach/irqs.h | 10 ----------
+ arch/arm/mach-shmobile/irqs.h              | 15 ---------------
+ arch/arm/mach-shmobile/setup-r8a7778.c     |  1 -
+ 3 files changed, 26 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/irqs.h
+ delete mode 100644 arch/arm/mach-shmobile/irqs.h
 
- - no change
-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index e5d3719..17ced05 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -538,33 +538,53 @@
- 			rcar_sound,ssi {
- 				ssi0: ssi@0 {
- 					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x01>, <&audma1 0x02>, <&audma0 0x15>, <&audma1 0x16>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi1: ssi@1 {
- 					 interrupts = <0 371 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x03>, <&audma1 0x04>, <&audma0 0x49>, <&audma1 0x4a>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi2: ssi@2 {
- 					interrupts = <0 372 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x05>, <&audma1 0x06>, <&audma0 0x63>, <&audma1 0x64>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi3: ssi@3 {
- 					interrupts = <0 373 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x07>, <&audma1 0x08>, <&audma0 0x6f>, <&audma1 0x70>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi4: ssi@4 {
- 					interrupts = <0 374 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x09>, <&audma1 0x0a>, <&audma0 0x71>, <&audma1 0x72>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi5: ssi@5 {
- 					interrupts = <0 375 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0b>, <&audma1 0x0c>, <&audma0 0x73>, <&audma1 0x74>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi6: ssi@6 {
- 					interrupts = <0 376 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0d>, <&audma1 0x0e>, <&audma0 0x75>, <&audma1 0x76>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi7: ssi@7 {
- 					interrupts = <0 377 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x0f>, <&audma1 0x10>, <&audma0 0x79>, <&audma1 0x7a>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi8: ssi@8 {
- 					interrupts = <0 378 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x11>, <&audma1 0x12>, <&audma0 0x7b>, <&audma1 0x7c>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 				ssi9: ssi@9 {
- 					interrupts = <0 379 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x13>, <&audma1 0x14>, <&audma0 0x7d>, <&audma1 0x7e>;
-+					dma-names = "rx", "tx", "rxu", "txu";
- 				};
- 			};
- 		};
+diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
+deleted file mode 100644
+index 5aee83f079e2..000000000000
+--- a/arch/arm/mach-shmobile/include/mach/irqs.h
++++ /dev/null
+@@ -1,10 +0,0 @@
+-#ifndef __ASM_MACH_IRQS_H
+-#define __ASM_MACH_IRQS_H
+-
+-/* Stuck here until drivers/pinctl/sh-pfc gets rid of legacy code */
+-
+-/* External IRQ pins */
+-#define IRQPIN_BASE		2000
+-#define irq_pin(nr)		((nr) + IRQPIN_BASE)
+-
+-#endif /* __ASM_MACH_IRQS_H */
+diff --git a/arch/arm/mach-shmobile/irqs.h b/arch/arm/mach-shmobile/irqs.h
+deleted file mode 100644
+index 3070f6d887eb..000000000000
+--- a/arch/arm/mach-shmobile/irqs.h
++++ /dev/null
+@@ -1,15 +0,0 @@
+-#ifndef __SHMOBILE_IRQS_H
+-#define __SHMOBILE_IRQS_H
+-
+-#include "include/mach/irqs.h"
+-
+-/* GIC */
+-#define gic_spi(nr)		((nr) + 32)
+-#define gic_iid(nr)		(nr) /* ICCIAR / interrupt ID */
+-
+-/* GPIO IRQ */
+-#define _GPIO_IRQ_BASE		2500
+-#define GPIO_IRQ_BASE(x)	(_GPIO_IRQ_BASE + (32 * x))
+-#define GPIO_IRQ(x, y)		(_GPIO_IRQ_BASE + (32 * x) + y)
+-
+-#endif /* __SHMOBILE_IRQS_H */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
+index 0ab9d3272875..fab95d1271bc 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7778.c
++++ b/arch/arm/mach-shmobile/setup-r8a7778.c
+@@ -22,7 +22,6 @@
+ #include <asm/mach/arch.h>
+ 
+ #include "common.h"
+-#include "irqs.h"
+ 
+ #define MODEMR 0xffcc0020
+ 
 -- 
-1.9.1
+2.1.4
 
