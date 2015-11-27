@@ -1,58 +1,50 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 19 Nov 2015 20:50:10 +0000
-Subject: Re: [PATCH 09/25] serial: sh-sci: Avoid overflow in sci_baud_calc_hscif()
-Message-Id: <CAMuHMdX5d4NinK7sK7bFtKFOj_JEp8NCnd-60dJ=UE+Sny77Pg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:20:24 +0000
+Subject: [PATCH] serial: sh-sci: Add device tree support for r8a779[23]
+Message-Id: <1448587224-8633-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
-	<1447958344-836-10-git-send-email-geert+renesas@glider.be>
-	<4295635.bqyeD1RN5z@avalon>
-In-Reply-To: <4295635.bqyeD1RN5z@avalon>
+References: <87h9nn7tnt.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87h9nn7tnt.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 19, 2015 at 9:37 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
->> --- a/drivers/tty/serial/sh-sci.c
->> +++ b/drivers/tty/serial/sh-sci.c
->> @@ -1870,7 +1870,7 @@ static unsigned int sci_scbrr_calc(struct sci_port *s,
->> unsigned int bps, static void sci_baud_calc_hscif(unsigned int bps,
->> unsigned long freq, int *brr, unsigned int *srr, unsigned int *cks)
->>  {
->> -     unsigned int sr, br, c;
->> +     unsigned int sr, br, a, b, c;
->>       int err, recv_margin;
->>       int min_err = 1000; /* 100% */
->>       int recv_max_margin = 0;
->> @@ -1880,12 +1880,14 @@ static void sci_baud_calc_hscif(unsigned int bps,
->> unsigned long freq, int *brr, for (sr = 8; sr <= 32; sr++) {
->>               for (c = 0; c <= 3; c++) {
->>                       /* integerized formulas from HSCIF documentation */
->> -                     br = DIV_ROUND_CLOSEST(freq, (sr *
->> -                                           (1 << (2 * c + 1)) * bps));
->> +                     a = sr * (1 << (2 * c + 1));
->> +                     if (bps > UINT_MAX / a)
->> +                             break;
->> +
->> +                     b = a * bps;
->
-> This is becoming unreadable. Could you please use proper variable names ? A
+Simply document new compat strings.
+There appears to be no need for a driver updates.
 
-Sometimes it's different to find good variable names ("t1" and "t2"?).
+Also update the name of the r8a7791 to M2-W: the name changed a while back.
 
-> comment that explains the calculation would also be useful.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ .../devicetree/bindings/serial/renesas,sci-serial.txt      | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
 
-Thanks, that would indeed help.
+diff --git a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+index e84b13a8eda3..38bb05223f47 100644
+--- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
+@@ -15,10 +15,16 @@ Required properties:
+     - "renesas,scifa-r8a7790" for R8A7790 (R-Car H2) SCIFA compatible UART.
+     - "renesas,scifb-r8a7790" for R8A7790 (R-Car H2) SCIFB compatible UART.
+     - "renesas,hscif-r8a7790" for R8A7790 (R-Car H2) HSCIF compatible UART.
+-    - "renesas,scif-r8a7791" for R8A7791 (R-Car M2) SCIF compatible UART.
+-    - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2) SCIFA compatible UART.
+-    - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2) SCIFB compatible UART.
+-    - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2) HSCIF compatible UART.
++    - "renesas,scif-r8a7791" for R8A7791 (R-Car M2-W) SCIF compatible UART.
++    - "renesas,scifa-r8a7791" for R8A7791 (R-Car M2-W) SCIFA compatible UART.
++    - "renesas,scifb-r8a7791" for R8A7791 (R-Car M2-W) SCIFB compatible UART.
++    - "renesas,hscif-r8a7791" for R8A7791 (R-Car M2-W) HSCIF compatible UART.
++    - "renesas,scif-r8a7792" for R8A7792 (R-Car V2H) SCIF compatible UART.
++    - "renesas,hscif-r8a7792" for R8A7792 (R-Car V2H) HSCIF compatible UART.
++    - "renesas,scif-r8a7793" for R8A7793 (R-Car M2-N) SCIF compatible UART.
++    - "renesas,scifa-r8a7793" for R8A7793 (R-Car M2-N) SCIFA compatible UART.
++    - "renesas,scifb-r8a7793" for R8A7793 (R-Car M2-N) SCIFB compatible UART.
++    - "renesas,hscif-r8a7793" for R8A7793 (R-Car M2-N) HSCIF compatible UART.
+     - "renesas,scif-r8a7794" for R8A7794 (R-Car E2) SCIF compatible UART.
+     - "renesas,scifa-r8a7794" for R8A7794 (R-Car E2) SCIFA compatible UART.
+     - "renesas,scifb-r8a7794" for R8A7794 (R-Car E2) SCIFB compatible UART.
+-- 
+2.1.4
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
