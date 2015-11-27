@@ -1,53 +1,84 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 17 Nov 2015 10:04:17 +0000
-Subject: Re: [PATCH v2 net-next] net/core: ensure features get disabled on new lower devs
-Message-Id: <CAMuHMdWZQfBM-KKUEHnz89D82pBsLtcFuabrqj504tFcnOz9yg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:56 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM Based SoC DT Updates for v4.5
+Message-Id: <cover.1448586938.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446583017-19021-1-git-send-email-jarod@redhat.com>
-	<1446610172-21420-1-git-send-email-jarod@redhat.com>
-	<20151104.215632.964832400121049446.davem@davemloft.net>
-	<56452E2A.9050501@gmail.com>
-	<CAMuHMdWHLmfB3hEfwOCkHMrHPOBt-xk2S95Tq1yyH1bwk29DNA@mail.gmail.com>
-In-Reply-To: <CAMuHMdWHLmfB3hEfwOCkHMrHPOBt-xk2S95Tq1yyH1bwk29DNA@mail.gmail.com>
+References: <cover.1381222967.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1381222967.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Florian Fainelli <f.fainelli@gmail.com>
-Cc: David Miller <davem@davemloft.net>, Jarod Wilson <jarod@redhat.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Eric Dumazet <edumazet@google.com>, Jay Vosburgh <j.vosburgh@gmail.com>, Veaceslav Falico <vfalico@gmail.com>, Andy Gospodarek <gospo@cumulusnetworks.com>, =?UTF-8?B?SmnFmcOtIFDDrXJrbw==?= <jiri@resnulli.us>, Nikolay Aleksandrov <razor@blackwall.org>, Michal Kubecek <mkubecek@suse.cz>, Alexander Duyck <alexander.duyck@gmail.com>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Andrew Lunn <andrew@lunn.ch>, Vivien Didelot <vivien.didelot@savoirfairelinux.com>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 17, 2015 at 10:02 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Fri, Nov 13, 2015 at 1:26 AM, Florian Fainelli <f.fainelli@gmail.com> wrote:
->> On 04/11/15 18:56, David Miller wrote:
->>>> Fixes: fd867d51f889 ("net/core: generic support for disabling netdev features down stack")
->>>  ...
->>>> Reported-by: Nikolay Aleksandrov <nikolay@cumulusnetworks.com>
->>>> Signed-off-by: Jarod Wilson <jarod@redhat.com>
->>>> ---
->>>> v2: Based on suggestions from Alex, and with not changing err to ret, this
->>>> patch actually becomes quite minimal and doesn't ugly up the code much.
->>>
->>> Applied, thanks.
->>
->> This causes some warnings to be displayed for DSA stacked devices:
->
-> And a few more:
->
-> sh-eth ee700000.ethernet eth0: set_features() failed (-1); wanted
-> 0x0000000000004000, left 0x0000000000004800
-> g_ether gadget usb0: set_features() failed (-1); wanted
-> 0x0000000000004000, left 0x0000000000004800
+Hi Olof, Hi Kevin, Hi Arnd,
 
-smsc911x 8000000.ethernet eth0: set_features() failed (-1); wanted
-0x0000000000004000, left 0x0000000000004800
+Please consider these second round of Renesas ARM based SoC DT updates for v4.5.
 
-Gr{oetje,eeting}s,
+This pull request extends support for Renesas ARM Based SoCs via DT
+and includes several minor fixes and cleanups.
 
-                        Geert
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+The following changes since commit 998f468f34f41905051556a9897dbc204b1b75b4:
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+  Merge tag 'v4.4-rc1' into HEAD (2015-11-24 12:00:02 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-dt2-for-v4.5
+
+for you to fetch changes up to c8d9fdbe2d648caaa510d45dc13eba2e9957140b:
+
+  ARM: shmobile: sh73a0 dtsi: Add L2 cache-controller node (2015-11-25 10:42:38 +0900)
+
+----------------------------------------------------------------
+Second Round of Renesas ARM Based SoC DT Updates for v4.5
+
+* sh73a0, r8a7740: Add L2 cache-controller node
+* r8a7791, r8a7794: remove deprecated #gpio-range-cells
+* r8a7793: Add DU support and enable for VGA port
+* r8a7790: switch console back to scif0
+* alt: Correct ether and scif2 pinmux
+* koelsch: Correct hdmi pinmux
+* silk, lager, porter, bockw: Move SPI FLASH partitions to subnode
+* bockw: Add schi0 pinmux
+
+----------------------------------------------------------------
+Geert Uytterhoeven (6):
+      ARM: shmobile: bockw: Move SPI FLASH partition to subnode
+      ARM: shmobile: porter: Move SPI FLASH partitions to subnode
+      ARM: shmobile: lager: Move SPI FLASH partitions to subnode
+      ARM: shmobile: silk: Move SPI FLASH partitions to subnode
+      ARM: shmobile: r8a7740 dtsi: Add L2 cache-controller node
+      ARM: shmobile: sh73a0 dtsi: Add L2 cache-controller node
+
+Laurent Pinchart (2):
+      ARM: shmobile: r8a7793: Add DU node to device tree
+      ARM: shmobile: r8a7791: koelsch: Fix pinmux for HDMI
+
+Magnus Damm (1):
+      ARM: shmobile: r8a7794: alt: Enable PFC DU for the VGA port
+
+Simon Horman (2):
+      ARM: shmobile: alt: Correct scif2 pfc
+      ARM: shmobile: alt: Correct ether pfc
+
+Ulrich Hecht (2):
+      ARM: shmobile: r8a7790: switch console back to scif0
+      ARM: shmobile: bockw dts: define sdhi0 pins with pull-ups
+
+Wolfram Sang (2):
+      ARM: shmobile: r8a7791: remove deprecated #gpio-range-cells from dtsi
+      ARM: shmobile: r8a7794: remove deprecated #gpio-range-cells from dtsi
+
+ arch/arm/boot/dts/r8a7740.dtsi        | 13 ++++++++++
+ arch/arm/boot/dts/r8a7778-bockw.dts   | 23 +++++++++++------
+ arch/arm/boot/dts/r8a7790-lager.dts   | 47 +++++++++++++++++++----------------
+ arch/arm/boot/dts/r8a7791-koelsch.dts |  2 +-
+ arch/arm/boot/dts/r8a7791-porter.dts  | 33 +++++++++++++-----------
+ arch/arm/boot/dts/r8a7791.dtsi        |  1 -
+ arch/arm/boot/dts/r8a7793.dtsi        | 30 ++++++++++++++++++++++
+ arch/arm/boot/dts/r8a7794-alt.dts     | 19 +++++++++++---
+ arch/arm/boot/dts/r8a7794-silk.dts    | 33 +++++++++++++-----------
+ arch/arm/boot/dts/r8a7794.dtsi        |  1 -
+ arch/arm/boot/dts/sh73a0.dtsi         | 14 +++++++++++
+ 11 files changed, 150 insertions(+), 66 deletions(-)
