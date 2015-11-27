@@ -1,104 +1,68 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 06 Nov 2015 06:29:20 +0000
-Subject: [PATCH 01/12 v6] arm64: renesas: r8a7795: add AUDIO_DMAC support
-Message-Id: <87d1vnk5dr.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:35 +0000
+Subject: [PATCH 18/18] arm64: renesas: salvator-x: Sound DVC support
+Message-Id: <672b79312c04016481a11d4b996b4512207ffbd3.1448587800.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
+References: <cover.1448587800.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448587800.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v5 -> v6
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 27 ++++++++++++++++++++--
+ 1 file changed, 25 insertions(+), 2 deletions(-)
 
- - no change
-
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 64 ++++++++++++++++++++++++++++++++
- 1 file changed, 64 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index fc76934..e419163 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -202,6 +202,70 @@
- 			#power-domain-cells = <0>;
- 		};
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index 47bf252774d7..c5f709e7c0ba 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -8,6 +8,29 @@
+  * kind, whether express or implied.
+  */
  
-+		audma0: dma-controller@ec700000 {
-+			compatible = "renesas,rcar-dmac";
-+			reg = <0 0xec700000 0 0x10000>;
-+			interrupts =	<0 350 IRQ_TYPE_LEVEL_HIGH
-+					 0 320 IRQ_TYPE_LEVEL_HIGH
-+					 0 321 IRQ_TYPE_LEVEL_HIGH
-+					 0 322 IRQ_TYPE_LEVEL_HIGH
-+					 0 323 IRQ_TYPE_LEVEL_HIGH
-+					 0 324 IRQ_TYPE_LEVEL_HIGH
-+					 0 325 IRQ_TYPE_LEVEL_HIGH
-+					 0 326 IRQ_TYPE_LEVEL_HIGH
-+					 0 327 IRQ_TYPE_LEVEL_HIGH
-+					 0 328 IRQ_TYPE_LEVEL_HIGH
-+					 0 329 IRQ_TYPE_LEVEL_HIGH
-+					 0 330 IRQ_TYPE_LEVEL_HIGH
-+					 0 331 IRQ_TYPE_LEVEL_HIGH
-+					 0 332 IRQ_TYPE_LEVEL_HIGH
-+					 0 333 IRQ_TYPE_LEVEL_HIGH
-+					 0 334 IRQ_TYPE_LEVEL_HIGH
-+					 0 335 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12", "ch13", "ch14", "ch15";
-+			clocks = <&cpg CPG_MOD 502>;
-+			clock-names = "fck";
-+			power-domains = <&cpg>;
-+			#dma-cells = <1>;
-+			dma-channels = <16>;
-+		};
++/*
++ * SSI-AK4613
++ *
++ * This command is required when Playback/Capture
++ *
++ *	amixer set "DVC Out" 100%
++ *	amixer set "DVC In" 100%
++ *
++ * You can use Mute
++ *
++ *	amixer set "DVC Out Mute" on
++ *	amixer set "DVC In Mute" on
++ *
++ * You can use Volume Ramp
++ *
++ *	amixer set "DVC Out Ramp Up Rate"   "0.125 dB/64 steps"
++ *	amixer set "DVC Out Ramp Down Rate" "0.125 dB/512 steps"
++ *	amixer set "DVC Out Ramp" on
++ *	aplay xxx.wav &
++ *	amixer set "DVC Out"  80%  // Volume Down
++ *	amixer set "DVC Out" 100%  // Volume Up
++ */
 +
-+		audma1: dma-controller@ec720000 {
-+			compatible = "renesas,rcar-dmac";
-+			reg = <0 0xec720000 0 0x10000>;
-+			interrupts =	<0 351 IRQ_TYPE_LEVEL_HIGH
-+					 0 336 IRQ_TYPE_LEVEL_HIGH
-+					 0 337 IRQ_TYPE_LEVEL_HIGH
-+					 0 338 IRQ_TYPE_LEVEL_HIGH
-+					 0 339 IRQ_TYPE_LEVEL_HIGH
-+					 0 340 IRQ_TYPE_LEVEL_HIGH
-+					 0 341 IRQ_TYPE_LEVEL_HIGH
-+					 0 342 IRQ_TYPE_LEVEL_HIGH
-+					 0 343 IRQ_TYPE_LEVEL_HIGH
-+					 0 344 IRQ_TYPE_LEVEL_HIGH
-+					 0 345 IRQ_TYPE_LEVEL_HIGH
-+					 0 346 IRQ_TYPE_LEVEL_HIGH
-+					 0 347 IRQ_TYPE_LEVEL_HIGH
-+					 0 348 IRQ_TYPE_LEVEL_HIGH
-+					 0 349 IRQ_TYPE_LEVEL_HIGH
-+					 0 382 IRQ_TYPE_LEVEL_HIGH
-+					 0 383 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "error",
-+					"ch0", "ch1", "ch2", "ch3",
-+					"ch4", "ch5", "ch6", "ch7",
-+					"ch8", "ch9", "ch10", "ch11",
-+					"ch12", "ch13", "ch14", "ch15";
-+			clocks = <&cpg CPG_MOD 501>;
-+			clock-names = "fck";
-+			power-domains = <&cpg>;
-+			#dma-cells = <1>;
-+			dma-channels = <16>;
-+		};
-+
- 		pfc: pfc@e6060000 {
- 			compatible = "renesas,pfc-r8a7795";
- 			reg = <0 0xe6060000 0 0x50c>;
+ /dts-v1/;
+ #include "r8a7795.dtsi"
+ 
+@@ -136,8 +159,8 @@
+ 
+ 	rcar_sound,dai {
+ 		dai0 {
+-			playback = <&ssi0 &src0>;
+-			capture  = <&ssi1 &src1>;
++			playback = <&ssi0 &src0 &dvc0>;
++			capture  = <&ssi1 &src1 &dvc1>;
+ 		};
+ 	};
+ };
 -- 
-1.9.1
+2.1.4
 
