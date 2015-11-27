@@ -1,111 +1,65 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 06 Nov 2015 06:36:25 +0000
-Subject: [PATCH 04/12 v6] arm64: renesas: r8a7795: Sound SRC support
-Message-Id: <878u6bk5ar.wl%kuninori.morimoto.gx@renesas.com>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 27 Nov 2015 05:53:26 +0000
+Subject: RE: [PATCH v5 1/4] phy: rcar-gen3-usb2: Add R-Car Gen3 USB2 PHY driver
+Message-Id: <SG2PR06MB09194141EF1D644C6C000805D8030@SG2PR06MB0919.apcprd06.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
+References: <1445331471-5028-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <1445331471-5028-2-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+ <5657E84C.5010800@ti.com>
+In-Reply-To: <5657E84C.5010800@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Kishon Vijay Abraham I <kishon@ti.com>, "robh+dt@kernel.org" <robh+dt@kernel.org>, "pawel.moll@arm.com" <pawel.moll@arm.com>, "mark.rutland@arm.com" <mark.rutland@arm.com>, "ijc+devicetree@hellion.org.uk" <ijc+devicetree@hellion.org.uk>, "galak@codeaurora.org" <galak@codeaurora.org>
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
+Hi,
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Thank you for the review!
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
-v5 -> v6
+> From: Kishon Vijay Abraham I [mailto:kishon@ti.com]
+> Sent: Friday, November 27, 2015 2:21 PM
+> 
+> Hi,
+> 
+> On Tuesday 20 October 2015 02:27 PM, Yoshihiro Shimoda wrote:
+> > This patch adds support for R-Car generation 3 USB2 PHY driver.
+> > This SoC has 3 EHCI/OHCI channels, and the channel 0 is shared
+> > with the HSUSB (USB2.0 peripheral) device. And each channel has
+> > independent registers about the PHYs.
+> >
+> > So, the purpose of this driver is:
+> >  1) initializes some registers of SoC specific to use the
+> >     {ehci,ohci}-platform driver.
+> >
+> >  2) detects id pin to select host or peripheral on the channel 0.
+> >
+> > For now, this driver only supports 1) above.
+> 
+> When you do 2), make sure to use the extcon framework.
 
- - no change
+Thank you for your proposal! I will use the extcon framework for it.
 
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 61 ++++++++++++++++++++++++++++++++
- 1 file changed, 61 insertions(+)
+> One minor comment below and then I can queue it for 4.5.
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 17ced05..4cceb93 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -524,6 +524,11 @@
- 				 <&cpg CPG_MOD 1010>, <&cpg CPG_MOD 1011>,
- 				 <&cpg CPG_MOD 1012>, <&cpg CPG_MOD 1013>,
- 				 <&cpg CPG_MOD 1014>, <&cpg CPG_MOD 1015>,
-+				 <&cpg CPG_MOD 1022>, <&cpg CPG_MOD 1023>,
-+				 <&cpg CPG_MOD 1024>, <&cpg CPG_MOD 1025>,
-+				 <&cpg CPG_MOD 1026>, <&cpg CPG_MOD 1027>,
-+				 <&cpg CPG_MOD 1028>, <&cpg CPG_MOD 1029>,
-+				 <&cpg CPG_MOD 1030>, <&cpg CPG_MOD 1031>,
- 				 <&audio_clk_a>, <&audio_clk_b>,
- 				 <&audio_clk_c>,
- 				 <&cpg CPG_CORE R8A7795_CLK_S0D4>;
-@@ -531,10 +536,66 @@
- 				      "ssi.9", "ssi.8", "ssi.7", "ssi.6",
- 				      "ssi.5", "ssi.4", "ssi.3", "ssi.2",
- 				      "ssi.1", "ssi.0",
-+				      "src.9", "src.8", "src.7", "src.6",
-+				      "src.5", "src.4", "src.3", "src.2",
-+				      "src.1", "src.0",
- 				      "clk_a", "clk_b", "clk_c", "clk_i";
- 			power-domains = <&cpg>;
- 			status = "disabled";
- 
-+			rcar_sound,src {
-+				src0: src@0 {
-+					interrupts = <0 352 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x85>, <&audma1 0x9a>;
-+					dma-names = "rx", "tx";
-+				};
-+				src1: src@1 {
-+					interrupts = <0 353 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x87>, <&audma1 0x9c>;
-+					dma-names = "rx", "tx";
-+				};
-+				src2: src@2 {
-+					interrupts = <0 354 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x89>, <&audma1 0x9e>;
-+					dma-names = "rx", "tx";
-+				};
-+				src3: src@3 {
-+					interrupts = <0 355 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x8b>, <&audma1 0xa0>;
-+					dma-names = "rx", "tx";
-+				};
-+				src4: src@4 {
-+					interrupts = <0 356 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x8d>, <&audma1 0xb0>;
-+					dma-names = "rx", "tx";
-+				};
-+				src5: src@5 {
-+					interrupts = <0 357 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x8f>, <&audma1 0xb2>;
-+					dma-names = "rx", "tx";
-+				};
-+				src6: src@6 {
-+					interrupts = <0 358 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x91>, <&audma1 0xb4>;
-+					dma-names = "rx", "tx";
-+				};
-+				src7: src@7 {
-+					interrupts = <0 359 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x93>, <&audma1 0xb6>;
-+					dma-names = "rx", "tx";
-+				};
-+				src8: src@8 {
-+					interrupts = <0 360 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x95>, <&audma1 0xb8>;
-+					dma-names = "rx", "tx";
-+				};
-+				src9: src@9 {
-+					interrupts = <0 361 IRQ_TYPE_LEVEL_HIGH>;
-+					dmas = <&audma0 0x97>, <&audma1 0xba>;
-+					dma-names = "rx", "tx";
-+				};
-+			};
-+
- 			rcar_sound,ssi {
- 				ssi0: ssi@0 {
- 					interrupts = <0 370 IRQ_TYPE_LEVEL_HIGH>;
--- 
-1.9.1
+Thank you!
 
+< snip >
+> > +	provider = devm_of_phy_provider_register(dev, of_phy_simple_xlate);
+> > +	if (IS_ERR(provider)) {
+> > +		dev_err(dev, "Failed to register PHY provider\n");
+> > +		return PTR_ERR(provider);
+> > +	}
+> > +
+> > +	return 0;
+> 
+> This can simply be replaced with return PTR_ERR_OR_ZERO(provider);
+
+Yes, I tested that this could simply be replaced with "return PTR_ERR_OR_ZERO(provider);".
+So, should I send v6 patch?
+
+Best regards,
+Yoshihiro Shimoda
+
+> Thanks
+> Kishon
