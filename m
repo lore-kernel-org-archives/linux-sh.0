@@ -1,21 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 24 Nov 2015 02:39:46 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7790: switch console back to scif0
-Message-Id: <20151124023945.GB21853@verge.net.au>
+From: Ben Dooks <ben.dooks@codethink.co.uk>
+Date: Fri, 27 Nov 2015 18:27:51 +0000
+Subject: [PATCH] arm: renesas: select PINCTRL for Renesas SoC
+Message-Id: <1448648871-15008-1-git-send-email-ben.dooks@codethink.co.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447431743-16376-3-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1447431743-16376-3-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Nov 13, 2015 at 05:22:23PM +0100, Ulrich Hecht wrote:
-> The boot loader uses scif0, and so must we if we want earlycon to work.
-> 
-> Partially reverts 7c0558941 ("ARM: shmobile: r8a7790: switch from scif
-> to scifa").
-> 
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+If Renesas SoCs are the only devices selected then the
+pinctrl core is not selected and the renesas pfc controller
+will not get included in the kernel.
 
-Thanks, I have queued this up for v4.5.
+Signed-off-by: Ben Dooks <ben.dooks@codethink.co.uk>
+---
+ arch/arm64/Kconfig.platforms | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
+index 25a9031..fc3d692 100644
+--- a/arch/arm64/Kconfig.platforms
++++ b/arch/arm64/Kconfig.platforms
+@@ -72,6 +72,7 @@ config ARCH_SHMOBILE
+ config ARCH_RENESAS
+ 	bool "Renesas SoC Platform"
+ 	select ARCH_SHMOBILE
++	select PINCTRL	
+ 	select PM_GENERIC_DOMAINS if PM
+ 	help
+ 	  This enables support for the ARMv8 based Renesas SoCs.
+-- 
+2.6.2
+
