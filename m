@@ -1,98 +1,81 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 24 Nov 2015 15:05:28 +0000
-Subject: [PATCH] gpio: rcar: Improve clock error handling and reporting
-Message-Id: <1448377528-19307-1-git-send-email-geert+renesas@glider.be>
+Date: Fri, 27 Nov 2015 10:13:48 +0000
+Subject: [PATCH] serial: earlycon: Add missing spinlock initialization
+Message-Id: <1448619228-28839-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>, Alexandre Courbot <gnurou@gmail.com>, Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Rob Herring <robh@kernel.org>, Peter Hurley <peter@hurleysoftware.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-If the Renesas R-Car GPIO driver cannot find a functional clock, it
-prints a warning, .e.g.
+If an earlycon console driver needs to acquire the uart_port.lock
+spinlock for serial console output, and CONFIG_DEBUG_SPINLOCK=y:
 
-	gpio_rcar ffc40000.gpio: unable to get clock
+    BUG: spinlock bad magic on CPU#0, swapper/0
+     lock: sci_ports+0x0/0x3480, .magic: 00000000, .owner: <none>/-1, .owner_cpu: 0
+    CPU: 0 PID: 0 Comm: swapper Not tainted 4.4.0-rc2-koelsch-g62ea5edf143bb1d0-dirty #2083
+    Hardware name: Generic R8A7791 (Flattened Device Tree)
+    [<c00173a0>] (unwind_backtrace) from [<c0013094>] (show_stack+0x10/0x14)
+    [<c0013094>] (show_stack) from [<c01f2338>] (dump_stack+0x70/0x8c)
+    [<c01f2338>] (dump_stack) from [<c00702d8>] (do_raw_spin_lock+0x20/0x190)
+    [<c00702d8>] (do_raw_spin_lock) from [<c0267590>] (serial_console_write+0x4c/0x130)
+    [<c0267590>] (serial_console_write) from [<c00734c4>] (call_console_drivers.constprop.13+0xc8/0xec)
+    [<c00734c4>] (call_console_drivers.constprop.13) from [<c0074ef0>] (console_unlock+0x354/0x440)
+    [<c0074ef0>] (console_unlock) from [<c0075bb4>] (register_console+0x2a0/0x394)
+    [<c0075bb4>] (register_console) from [<c06cb750>] (of_setup_earlycon+0x90/0xa4)
+    [<c06cb750>] (of_setup_earlycon) from [<c06cfb60>] (setup_of_earlycon+0x118/0x13c)
+    [<c06cfb60>] (setup_of_earlycon) from [<c06b34ac>] (do_early_param+0x64/0xb4)
+    [<c06b34ac>] (do_early_param) from [<c00472c0>] (parse_args+0x254/0x350)
+    [<c00472c0>] (parse_args) from [<c06b3860>] (parse_early_options+0x2c/0x3c)
+    [<c06b3860>] (parse_early_options) from [<c06b389c>] (parse_early_param+0x2c/0x40)
+    [<c06b389c>] (parse_early_param) from [<c06b5b08>] (setup_arch+0x520/0xaf0)
+    [<c06b5b08>] (setup_arch) from [<c06b3948>] (start_kernel+0x94/0x370)
+    [<c06b3948>] (start_kernel) from [<40008090>] (0x40008090)
 
-and continues, as the clock is optional, depending on the SoC type.
-This warning may confuse users.
+Initialize the spinlock in of_setup_earlycon() and register_earlycon(),
+to fix this for both DT-based and legacy earlycon.  If the driver would
+reinitialize the spinlock again, this is harmless, as it's allowed to
+reinitialize an unlocked spinlock.
 
-To fix this, add a flag to indicate that the clock is mandatory or
-optional:
-  - If the clock is mandatory (on R-Car Gen2), a missing clock is now
-    treated as a fatal error,
-  - If the clock is optional (on R-Car Gen1), the warning is no longer
-    printed.
+Alternatives are:
+  - Drivers having an early_serial_console_write() that only performs
+    the core functionality of serial_console_write(), without acquiring
+    the lock (which may be unsafe, depending on the hardware),
+  - Drivers initializing the spinlock in their private earlycon setup
+    functions.
 
-The new flag is merged with the existing has_both_edge_trigger boolean
-into a bitfield to save space.
+As uart_port is owned by generic serial_core, and uart_port.lock is
+initialized by uart_add_one_port() for the normal case, this can better
+be handled in the earlycon core.
 
-Suggested-by: Magnus Damm <magnus.damm@gmail.com>
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-This depends on "gpio: rcar: Remove obsolete platform data support".
+Tested on arm32 (r8a7791/koelsch) and arm64 (r8a7795/salvator-x).
 
-Tested on r8a7779/marzen (no functional clock) and r8a7791/koelsch (with
-and without mandatory functional clock).
+ drivers/tty/serial/earlycon.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
- drivers/gpio/gpio-rcar.c | 17 +++++++++++++----
- 1 file changed, 13 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/gpio/gpio-rcar.c b/drivers/gpio/gpio-rcar.c
-index bb6e363d5178634c..c890ac14b23a65ea 100644
---- a/drivers/gpio/gpio-rcar.c
-+++ b/drivers/gpio/gpio-rcar.c
-@@ -39,6 +39,7 @@ struct gpio_rcar_priv {
- 	struct clk *clk;
- 	unsigned int irq_parent;
- 	unsigned has_both_edge_trigger:1;
-+	unsigned needs_clk:1;
- };
+diff --git a/drivers/tty/serial/earlycon.c b/drivers/tty/serial/earlycon.c
+index f09636083426d5fc..b5b2f2be6be7c613 100644
+--- a/drivers/tty/serial/earlycon.c
++++ b/drivers/tty/serial/earlycon.c
+@@ -115,6 +115,7 @@ static int __init register_earlycon(char *buf, const struct earlycon_id *match)
+ 	if (buf && !parse_options(&early_console_dev, buf))
+ 		buf = NULL;
  
- #define IOINTSEL 0x00	/* General IO/Interrupt Switching Register */
-@@ -316,15 +317,18 @@ static int gpio_rcar_direction_output(struct gpio_chip *chip, unsigned offset,
- }
++	spin_lock_init(&port->lock);
+ 	port->uartclk = BASE_BAUD * 16;
+ 	if (port->mapbase)
+ 		port->membase = earlycon_map(port->mapbase, 64);
+@@ -202,6 +203,7 @@ int __init of_setup_earlycon(unsigned long addr,
+ 	int err;
+ 	struct uart_port *port = &early_console_dev.port;
  
- struct gpio_rcar_info {
--	bool has_both_edge_trigger;
-+	unsigned has_both_edge_trigger:1;
-+	unsigned needs_clk:1;
- };
- 
- static const struct gpio_rcar_info gpio_rcar_info_gen1 = {
--	.has_both_edge_trigger = false,
-+	.has_both_edge_trigger = 0,
-+	.needs_clk = 0,
- };
- 
- static const struct gpio_rcar_info gpio_rcar_info_gen2 = {
--	.has_both_edge_trigger = true,
-+	.has_both_edge_trigger = 1,
-+	.needs_clk = 1,
- };
- 
- static const struct of_device_id gpio_rcar_of_table[] = {
-@@ -371,6 +375,7 @@ static int gpio_rcar_parse_dt(struct gpio_rcar_priv *p, unsigned int *npins)
- 	ret = of_parse_phandle_with_fixed_args(np, "gpio-ranges", 3, 0, &args);
- 	*npins = ret = 0 ? args.args[2] : RCAR_MAX_GPIO_PER_BANK;
- 	p->has_both_edge_trigger = info->has_both_edge_trigger;
-+	p->needs_clk = info->needs_clk;
- 
- 	if (*npins = 0 || *npins > RCAR_MAX_GPIO_PER_BANK) {
- 		dev_warn(&p->pdev->dev,
-@@ -409,7 +414,11 @@ static int gpio_rcar_probe(struct platform_device *pdev)
- 
- 	p->clk = devm_clk_get(dev, NULL);
- 	if (IS_ERR(p->clk)) {
--		dev_warn(dev, "unable to get clock\n");
-+		if (p->needs_clk) {
-+			dev_err(dev, "unable to get clock\n");
-+			ret = PTR_ERR(p->clk);
-+			goto err0;
-+		}
- 		p->clk = NULL;
- 	}
- 
++	spin_lock_init(&port->lock);
+ 	port->iotype = UPIO_MEM;
+ 	port->mapbase = addr;
+ 	port->uartclk = BASE_BAUD * 16;
 -- 
 1.9.1
 
