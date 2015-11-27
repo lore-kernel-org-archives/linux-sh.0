@@ -1,60 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Nov 2015 10:10:22 +0000
-Subject: [PATCH v13 4/7] arm64: renesas: r8a7795: enable PFC
-Message-Id: <1447409425-14831-5-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:48 +0000
+Subject: [PATCH 05/15] ARM: shmobile: r8a7791: remove deprecated #gpio-range-cells from dtsi
+Message-Id: <d3b2385577317d8b51fc3b3b75106dd2de7e7439.1448586938.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447409425-14831-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1447409425-14831-1-git-send-email-horms+renesas@verge.net.au>
+References: <cover.1448586938.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448586938.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-Add a PFC node for the on-chip r8a7795 pin controller.
+Commit a1bc260bb5f5d9 ("gpio: clean up gpio-ranges documentation")
+declares the above property deprecated. That was more than 2 years ago.
+Remove it, so it doesn't get copied around needlessly.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since v10:
-- None
+ arch/arm/boot/dts/r8a7791.dtsi | 1 -
+ 1 file changed, 1 deletion(-)
 
-Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
-- None
-
-Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
-- Dropped Kconfig TODO - select PINCTRL happens in patch 1
-- Added Acked-by from Laurent
-
-Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
-- Added changelog
-
-Based on:
- [PATCH 10/25 v7][RFC] arm64: renesas: r8a7795: enable PFC
----
- arch/arm64/boot/dts/renesas/r8a7795.dtsi | 5 +++++
- 1 file changed, 5 insertions(+)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-index 002b828e8230..e26eecf1230f 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-+++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
-@@ -81,6 +81,11 @@
- 			#power-domain-cells = <0>;
- 		};
+diff --git a/arch/arm/boot/dts/r8a7791.dtsi b/arch/arm/boot/dts/r8a7791.dtsi
+index 3776974e3273..12b2b0f95806 100644
+--- a/arch/arm/boot/dts/r8a7791.dtsi
++++ b/arch/arm/boot/dts/r8a7791.dtsi
+@@ -509,7 +509,6 @@
+ 	pfc: pfc@e6060000 {
+ 		compatible = "renesas,pfc-r8a7791";
+ 		reg = <0 0xe6060000 0 0x250>;
+-		#gpio-range-cells = <3>;
+ 	};
  
-+		pfc: pfc@e6060000 {
-+			compatible = "renesas,pfc-r8a7795";
-+			reg = <0 0xe6060000 0 0x50c>;
-+		};
-+
- 		dmac0: dma-controller@e6700000 {
- 			/* Empty node for now */
- 		};
+ 	mmcif0: mmc@ee200000 {
 -- 
 2.1.4
 
