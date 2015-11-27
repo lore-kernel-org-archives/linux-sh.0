@@ -1,73 +1,97 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 02 Nov 2015 11:24:19 +0000
-Subject: Probe deferral and R-Car Gen2 regulator quirk (Re: [PATCH v4 5/5] [RFC] clk: shmobile: r8a7795: Add 
-Message-Id: <CAMuHMdVYaDzmoM5WfQEDC3qxPHngG9LWOiy3j4gRhAfut68Fiw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:25 +0000
+Subject: [PATCH 08/18] arm64: renesas: r8a7795 dtsi: Add all HSCIF nodes
+Message-Id: <4fa04299184604d5ae85a3ebe795e19eb564fc67.1448587800.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1448587800.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448587800.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-(reducing distribution list to linux-sh)
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Thu, Oct 29, 2015 at 3:03 PM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Thu, Oct 22, 2015 at 2:58 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
->>   - Calling platform_driver_probe() from arch_initcall() is too late, as the
->>     IRQC is initialized first (it's located before the CPG in .dtsi).
->>     Hence the IRQC can't find it's Clock Domain, and its probe is deferred.
->>     IRQC will be reprobed later, but in the mean time the Ethernet PHY can't
->>     find its IRQ, as the of_mdio code uses irq_of_parse_and_map(), which
->>     plainly ignores EPROBE_DEFER :-(
->>     Nevertheless, Ethernet works...
->
-> To correct myself: renesas-irqc is initialized first because it uses
-> postcore_initcall().
->
-> The of_mdio issue on R-Car Gen2 boards can be worked around by changing that
-> to device_initcall(). That would cause a few more probe deferrals on R-Mobile
-> APE6 (r8a73a4), where IRQC is not only the external interrupt controller,
-> but also the parent interrupt controller of the PFC/GPIO combo.
+Add the device nodes for all HSCIF serial ports, incl. clocks, clock
+domain, and dma properties.
 
-This also causes a probe deferral on R-Car Gen2:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 60 ++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
 
-     i2c-sh_mobile e60b0000.i2c: genpd_dev_pm_attach() failed to find
-PM domain: -2
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index c01a7e4f59a4..348baebffeac 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -262,6 +262,66 @@
+ 			#size-cells = <0>;
+ 		};
+ 
++		hscif0: serial@e6540000 {
++			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
++			reg = <0 0xe6540000 0 96>;
++			interrupts = <GIC_SPI 154 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 520>;
++			clock-names = "sci_ick";
++			dmas = <&dmac1 0x31>, <&dmac1 0x30>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		hscif1: serial@e6550000 {
++			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
++			reg = <0 0xe6550000 0 96>;
++			interrupts = <GIC_SPI 155 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 519>;
++			clock-names = "sci_ick";
++			dmas = <&dmac1 0x33>, <&dmac1 0x32>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		hscif2: serial@e6560000 {
++			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
++			reg = <0 0xe6560000 0 96>;
++			interrupts = <GIC_SPI 144 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 518>;
++			clock-names = "sci_ick";
++			dmas = <&dmac1 0x35>, <&dmac1 0x34>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		hscif3: serial@e66a0000 {
++			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
++			reg = <0 0xe66a0000 0 96>;
++			interrupts = <GIC_SPI 145 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 517>;
++			clock-names = "sci_ick";
++			dmas = <&dmac0 0x37>, <&dmac0 0x36>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		hscif4: serial@e66b0000 {
++			compatible = "renesas,hscif-r8a7795", "renesas,hscif";
++			reg = <0 0xe66b0000 0 96>;
++			interrupts = <GIC_SPI 146 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 516>;
++			clock-names = "sci_ick";
++			dmas = <&dmac0 0x39>, <&dmac0 0x38>;
++			dma-names = "tx", "rx";
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
+ 		scif0: serial@e6e60000 {
+ 			compatible = "renesas,scif-r8a7795", "renesas,scif";
+ 			reg = <0 0xe6e60000 0 64>;
+-- 
+2.1.4
 
-So far I assumed this was harmless, but I was wrong.
-
-The i2c bus of e60b0000.i2c contains the da9063 and da9210 regulator slaves,
-which may have their interrupt lines asserted after a cold boot.
-
-Before, regulator_quirk_notify() ran when the i2c slave devices were added,
-before their slave drivers were available:
-    1. i2c 6-0058: Masking da9063 interrupt sources,
-    2. i2c 6-0068: Masking da9210 interrupt sources.
-Later, their drivers are bound:
-    3. da9063 driver binding, enable interrupt,
-    4. da9210 driver binding.
-
-Now, due to the probe deferral of the i2c bus, adding the i2c slave devices
-is done after their drivers became available, and adding devices and binding
-these drivers are interleaved:
-  1. i2c 6-0058: Masking da9063 interrupt sources,
-  2. da9063 driver binding, enable interrupt,
-  3. i2c 6-0068: Masking da9210 interrupt sources,
-  4. da9210 driver binding.
-
-Hence an interrupt storm happens at step 2, until the irq subsystem decides
-to mask the interrupt, and the da9210 interrupt is masked. After that the
-system works again (incl. pressing the reset button), until a cold reboot
-or da9063-induced restart.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
