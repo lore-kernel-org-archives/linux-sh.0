@@ -1,80 +1,99 @@
-From: Wolfram Sang <wsa@the-dreams.de>
-Date: Thu, 12 Nov 2015 17:36:29 +0000
-Subject: [PATCH] i2c: rcar: handle difference in setting up non-first message
-Message-Id: <1447349789-24252-1-git-send-email-wsa@the-dreams.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:26 +0000
+Subject: [PATCH 09/18] arm64: renesas: r8a7795: add AUDIO_DMAC support
+Message-Id: <b281f4c8c198533d3e7dfb0f0302a2c3d96f6bc8.1448587800.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1448587800.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448587800.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Geert Uytterhoeven <geert@linux-m68k.org>, Wolfram Sang <wsa@the-dreams.de>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Ryo Kataoka <ryo.kataoka.wt@renesas.com>
-Signed-off-by: Hiromitsu Yamasaki <hiromitsu.yamasaki.ym@renesas.com>
-Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/i2c/busses/i2c-rcar.c | 21 ++++++++++++++++-----
- 1 file changed, 16 insertions(+), 5 deletions(-)
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 64 ++++++++++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
 
-diff --git a/drivers/i2c/busses/i2c-rcar.c b/drivers/i2c/busses/i2c-rcar.c
-index ef963d195a4eb9..b1aea21755f84d 100644
---- a/drivers/i2c/busses/i2c-rcar.c
-+++ b/drivers/i2c/busses/i2c-rcar.c
-@@ -92,6 +92,7 @@
- #define RCAR_IRQ_ACK_RECV	(~(MAT | MDR) & 0xFF)
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 348baebffeac..2cc58114d1ef 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -203,6 +203,70 @@
+ 			#power-domain-cells = <0>;
+ 		};
  
- #define ID_LAST_MSG	(1 << 0)
-+#define ID_FIRST_MSG	(1 << 1)
- #define ID_DONE		(1 << 2)
- #define ID_ARBLOST	(1 << 3)
- #define ID_NACK		(1 << 4)
-@@ -254,13 +255,22 @@ static void rcar_i2c_prepare_msg(struct rcar_i2c_priv *priv)
- 	int read = !!rcar_i2c_is_recv(priv);
- 
- 	priv->pos = 0;
--	priv->flags = 0;
- 	if (priv->msgs_left = 1)
- 		rcar_i2c_flags_set(priv, ID_LAST_MSG);
- 
- 	rcar_i2c_write(priv, ICMAR, (priv->msg->addr << 1) | read);
--	rcar_i2c_write(priv, ICMSR, 0);
--	rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
-+	/*
-+	 * We don't have a testcase but the HW engineers say that the write order
-+	 * of ICMSR and ICMCR depends on whether we issue START or REP_START. Since
-+	 * it didn't cause a drawback for me, let's rather be safe than sorry.
-+	 */
-+	if (rcar_i2c_flags_has(priv, ID_FIRST_MSG)) {
-+		rcar_i2c_write(priv, ICMSR, 0);
-+		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
-+	} else {
-+		rcar_i2c_write(priv, ICMCR, RCAR_BUS_PHASE_START);
-+		rcar_i2c_write(priv, ICMSR, 0);
-+	}
- 	rcar_i2c_write(priv, ICMIER, read ? RCAR_IRQ_RECV : RCAR_IRQ_SEND);
- }
- 
-@@ -268,6 +278,7 @@ static void rcar_i2c_next_msg(struct rcar_i2c_priv *priv)
- {
- 	priv->msg++;
- 	priv->msgs_left--;
-+	priv->flags = 0;
- 	rcar_i2c_prepare_msg(priv);
- }
- 
-@@ -486,10 +497,10 @@ static int rcar_i2c_master_xfer(struct i2c_adapter *adap,
- 		}
- 	}
- 
--	/* init data */
-+	/* init first message */
- 	priv->msg = msgs;
- 	priv->msgs_left = num;
--
-+	priv->flags = ID_FIRST_MSG;
- 	rcar_i2c_prepare_msg(priv);
- 
- 	time_left = wait_event_timeout(priv->wait,
++		audma0: dma-controller@ec700000 {
++			compatible = "renesas,rcar-dmac";
++			reg = <0 0xec700000 0 0x10000>;
++			interrupts =	<0 350 IRQ_TYPE_LEVEL_HIGH
++					 0 320 IRQ_TYPE_LEVEL_HIGH
++					 0 321 IRQ_TYPE_LEVEL_HIGH
++					 0 322 IRQ_TYPE_LEVEL_HIGH
++					 0 323 IRQ_TYPE_LEVEL_HIGH
++					 0 324 IRQ_TYPE_LEVEL_HIGH
++					 0 325 IRQ_TYPE_LEVEL_HIGH
++					 0 326 IRQ_TYPE_LEVEL_HIGH
++					 0 327 IRQ_TYPE_LEVEL_HIGH
++					 0 328 IRQ_TYPE_LEVEL_HIGH
++					 0 329 IRQ_TYPE_LEVEL_HIGH
++					 0 330 IRQ_TYPE_LEVEL_HIGH
++					 0 331 IRQ_TYPE_LEVEL_HIGH
++					 0 332 IRQ_TYPE_LEVEL_HIGH
++					 0 333 IRQ_TYPE_LEVEL_HIGH
++					 0 334 IRQ_TYPE_LEVEL_HIGH
++					 0 335 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12", "ch13", "ch14", "ch15";
++			clocks = <&cpg CPG_MOD 502>;
++			clock-names = "fck";
++			power-domains = <&cpg>;
++			#dma-cells = <1>;
++			dma-channels = <16>;
++		};
++
++		audma1: dma-controller@ec720000 {
++			compatible = "renesas,rcar-dmac";
++			reg = <0 0xec720000 0 0x10000>;
++			interrupts =	<0 351 IRQ_TYPE_LEVEL_HIGH
++					 0 336 IRQ_TYPE_LEVEL_HIGH
++					 0 337 IRQ_TYPE_LEVEL_HIGH
++					 0 338 IRQ_TYPE_LEVEL_HIGH
++					 0 339 IRQ_TYPE_LEVEL_HIGH
++					 0 340 IRQ_TYPE_LEVEL_HIGH
++					 0 341 IRQ_TYPE_LEVEL_HIGH
++					 0 342 IRQ_TYPE_LEVEL_HIGH
++					 0 343 IRQ_TYPE_LEVEL_HIGH
++					 0 344 IRQ_TYPE_LEVEL_HIGH
++					 0 345 IRQ_TYPE_LEVEL_HIGH
++					 0 346 IRQ_TYPE_LEVEL_HIGH
++					 0 347 IRQ_TYPE_LEVEL_HIGH
++					 0 348 IRQ_TYPE_LEVEL_HIGH
++					 0 349 IRQ_TYPE_LEVEL_HIGH
++					 0 382 IRQ_TYPE_LEVEL_HIGH
++					 0 383 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "error",
++					"ch0", "ch1", "ch2", "ch3",
++					"ch4", "ch5", "ch6", "ch7",
++					"ch8", "ch9", "ch10", "ch11",
++					"ch12", "ch13", "ch14", "ch15";
++			clocks = <&cpg CPG_MOD 501>;
++			clock-names = "fck";
++			power-domains = <&cpg>;
++			#dma-cells = <1>;
++			dma-channels = <16>;
++		};
++
+ 		pfc: pfc@e6060000 {
+ 			compatible = "renesas,pfc-r8a7795";
+ 			reg = <0 0xe6060000 0 0x50c>;
 -- 
 2.1.4
 
