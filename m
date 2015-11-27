@@ -1,45 +1,54 @@
-From: Ulf Hansson <ulf.hansson@linaro.org>
-Date: Thu, 19 Nov 2015 11:32:51 +0000
-Subject: Re: [PATCH] mmc: sh_mmcif: Document r8a7793 DT bindings
-Message-Id: <CAPDyKFqcxQtE=d=kGVgf5KLbCss7r9CuFv0d+GB-dR9Rgvm53Q@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:24 +0000
+Subject: [PATCH 07/18] arm64: renesas: salvator-x: enable I2C
+Message-Id: <637d801e0bb802dc18520ed6b7377acb2a9732ee.1448587800.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1445964991-7825-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1445964991-7825-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1448587800.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448587800.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: linux-mmc <linux-mmc@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On 27 October 2015 at 17:56, Geert Uytterhoeven <geert+renesas@glider.be> wrote:
-> From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
->
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-> Acked-by: Simon Horman <horms+renesas@verge.net.au>
-> [geert: Rebased]
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, applied for next!
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-Kind regards
-Uffe
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+index 35ebb063bff6..d829fdae3c56 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
++++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
+@@ -47,6 +47,11 @@
+ 		renesas,function = "scif2";
+ 	};
+ 
++	i2c2_pins: i2c2 {
++		renesas,groups = "i2c2_a";
++		renesas,function = "i2c2";
++	};
++
+ 	avb_pins: avb {
+ 		renesas,groups = "avb_mdc";
+ 		renesas,function = "avb";
+@@ -67,6 +72,13 @@
+ 	status = "okay";
+ };
+ 
++&i2c2 {
++	pinctrl-0 = <&i2c2_pins>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
+ &avb {
+ 	pinctrl-0 = <&avb_pins>;
+ 	pinctrl-names = "default";
+-- 
+2.1.4
 
-> ---
->  Documentation/devicetree/bindings/mmc/renesas,mmcif.txt | 1 +
->  1 file changed, 1 insertion(+)
->
-> diff --git a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> index cae29eb5733d8a52..ff611fa66871dec9 100644
-> --- a/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> +++ b/Documentation/devicetree/bindings/mmc/renesas,mmcif.txt
-> @@ -11,6 +11,7 @@ Required properties:
->         - "renesas,mmcif-r8a7740" for the MMCIF found in r8a7740 SoCs
->         - "renesas,mmcif-r8a7790" for the MMCIF found in r8a7790 SoCs
->         - "renesas,mmcif-r8a7791" for the MMCIF found in r8a7791 SoCs
-> +       - "renesas,mmcif-r8a7793" for the MMCIF found in r8a7793 SoCs
->         - "renesas,mmcif-r8a7794" for the MMCIF found in r8a7794 SoCs
->
->  - clocks: reference to the functional clock
-> --
-> 1.9.1
->
