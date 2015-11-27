@@ -1,48 +1,51 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 20 Nov 2015 01:05:13 +0000
-Subject: [PATCH 06/29] ARM: shmobile: r8a7790: fix "gpio-ranges" props
-Message-Id: <56a2182f6ada123759041bf28d066bb509fe358b.1447981420.git.horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:46 +0000
+Subject: [PATCH 03/15] ARM: shmobile: r8a7794: alt: Enable PFC DU for the VGA port
+Message-Id: <13b8b8e8fae6bc38941bc5e5e847706beb004082.1448586938.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1447981420.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1447981420.git.horms+renesas@verge.net.au>
+References: <cover.1448586938.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448586938.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Magnus Damm <damm+renesas@opensource.se>
 
-On R8A7790, GPIO banks 1 and 2 are missing  pins 30 and 31.  Correct the
-"gpio-ranges" properties of the corresponding device nodes.
+Tie in r8a7794 PFC DU support to the VGA port on the
+r8a7794 ALT board.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7790.dtsi | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/r8a7794-alt.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7790.dtsi b/arch/arm/boot/dts/r8a7790.dtsi
-index ae5eb281d43a..b545fef3f7db 100644
---- a/arch/arm/boot/dts/r8a7790.dtsi
-+++ b/arch/arm/boot/dts/r8a7790.dtsi
-@@ -143,7 +143,7 @@
- 		interrupts = <0 5 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
- 		gpio-controller;
--		gpio-ranges = <&pfc 0 32 32>;
-+		gpio-ranges = <&pfc 0 32 30>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		clocks = <&mstp9_clks R8A7790_CLK_GPIO1>;
-@@ -156,7 +156,7 @@
- 		interrupts = <0 6 IRQ_TYPE_LEVEL_HIGH>;
- 		#gpio-cells = <2>;
- 		gpio-controller;
--		gpio-ranges = <&pfc 0 64 32>;
-+		gpio-ranges = <&pfc 0 64 30>;
- 		#interrupt-cells = <2>;
- 		interrupt-controller;
- 		clocks = <&mstp9_clks R8A7790_CLK_GPIO2>;
+diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
+index fd1cfcdd65ef..b255a8791841 100644
+--- a/arch/arm/boot/dts/r8a7794-alt.dts
++++ b/arch/arm/boot/dts/r8a7794-alt.dts
+@@ -80,6 +80,8 @@
+ };
+ 
+ &du {
++	pinctrl-0 = <&du_pins>;
++	pinctrl-names = "default";
+ 	status = "okay";
+ 
+ 	clocks = <&mstp7_clks R8A7794_CLK_DU0>,
+@@ -101,6 +103,11 @@
+ };
+ 
+ &pfc {
++	du_pins: du {
++		renesas,groups = "du1_rgb666", "du1_sync", "du1_disp", "du1_dotclkout0";
++		renesas,function = "du";
++	};
++
+ 	scif2_pins: serial2 {
+ 		renesas,groups = "scif2_data";
+ 		renesas,function = "scif2";
 -- 
 2.1.4
 
