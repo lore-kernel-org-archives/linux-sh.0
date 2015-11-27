@@ -1,88 +1,82 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 17 Nov 2015 04:31:05 +0000
-Subject: [PATCH 02/04] ARM: shmobile: r8a7791: IPMMU compat string SoC part number update
-Message-Id: <20151117043105.4521.14142.sendpatchset@little-apple>
+From: Petr Mladek <pmladek@suse.com>
+Date: Fri, 27 Nov 2015 11:09:27 +0000
+Subject: [PATCH v2 0/5] Cleaning printk stuff in NMI context
+Message-Id: <1448622572-16900-1-git-send-email-pmladek@suse.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm+renesas@opensource.se>
+This patch set generalizes the already existing solution for
+printing NMI messages. The main idea comes from Peter Zijlstra.
 
-Update IPMMU compat strings to include SoC part number.
+This second version has only few changes in compare with v1, see
+below. Peter Zijlstra suggested to improve also handling of
+the serial console. I looked into tit and it seems to be
+a rather huge task. It might need to review all console
+implementations and avoid a deadlock in the locally used locks.
+It would be nice but I would move this to another season.
 
-By specifying SoC part number in DT it becomes possible 
-to implement SoC specific features in the IPMMU driver.
+I think that this patchset makes sense as is. It definitely
+improves the situation. It allows to put all messages into
+the ring buffer so that they are available in the crashdump.
+We have had a similar solution in SLE for years and customers
+stopped complaining about the deadlock.
 
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+Changes against v1:
 
- arch/arm/boot/dts/r8a7791.dtsi |   14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+  + rebased on top of 4.4-rc2; there the old implementation was
+    moved to lib/nmi_backtrace.c and used also on arm; I hope that
+    I got the arm side correctly; I was not able to test on arm :-(
 
---- 0001/arch/arm/boot/dts/r8a7791.dtsi
-+++ work/arch/arm/boot/dts/r8a7791.dtsi	2015-11-17 13:02:09.830513000 +0900
-@@ -1571,7 +1571,7 @@
- 	};
- 
- 	ipmmu_sy0: mmu@e6280000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7791", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6280000 0 0x1000>;
- 		interrupts = <0 223 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 224 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1580,7 +1580,7 @@
- 	};
- 
- 	ipmmu_sy1: mmu@e6290000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7791", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6290000 0 0x1000>;
- 		interrupts = <0 225 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -1588,7 +1588,7 @@
- 	};
- 
- 	ipmmu_ds: mmu@e6740000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7791", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe6740000 0 0x1000>;
- 		interrupts = <0 198 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 199 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1597,7 +1597,7 @@
- 	};
- 
- 	ipmmu_mp: mmu@ec680000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7791", "renesas,ipmmu-vmsa";
- 		reg = <0 0xec680000 0 0x1000>;
- 		interrupts = <0 226 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -1605,7 +1605,7 @@
- 	};
- 
- 	ipmmu_mx: mmu@fe951000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7791", "renesas,ipmmu-vmsa";
- 		reg = <0 0xfe951000 0 0x1000>;
- 		interrupts = <0 222 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 221 IRQ_TYPE_LEVEL_HIGH>;
-@@ -1614,7 +1614,7 @@
- 	};
- 
- 	ipmmu_rt: mmu@ffc80000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7791", "renesas,ipmmu-vmsa";
- 		reg = <0 0xffc80000 0 0x1000>;
- 		interrupts = <0 307 IRQ_TYPE_LEVEL_HIGH>;
- 		#iommu-cells = <1>;
-@@ -1622,7 +1622,7 @@
- 	};
- 
- 	ipmmu_gp: mmu@e62a0000 {
--		compatible = "renesas,ipmmu-vmsa";
-+		compatible = "renesas,ipmmu-r8a7791", "renesas,ipmmu-vmsa";
- 		reg = <0 0xe62a0000 0 0x1000>;
- 		interrupts = <0 260 IRQ_TYPE_LEVEL_HIGH>,
- 			     <0 261 IRQ_TYPE_LEVEL_HIGH>;
+  + defined HAVE_NMI on arm for !CPU_V7M instead of !CPU_V7;
+    handle_fiq_as_nmi() is called from entry-armv.S that
+    is compiled when !CPU_V7M
+
+  + defined HAVE_NMI also on mips; it calls nmi_enter() and
+    seems to have real NMIs (or am I wrong?)
+
+  + serialized backtraces when printing directly
+    (oops_in_progress)
+
+Petr Mladek (5):
+  printk/nmi: Generic solution for safe printk in NMI
+  printk/nmi: Use IRQ work only when ready
+  printk/nmi: Try hard to print Oops message in NMI context
+  printk/nmi: Warn when some message has been lost in NMI context
+  printk/nmi: Increase the size of the temporary buffer
+
+ arch/Kconfig                  |   7 ++
+ arch/arm/Kconfig              |   2 +
+ arch/arm/kernel/smp.c         |   2 +
+ arch/avr32/Kconfig            |   1 +
+ arch/blackfin/Kconfig         |   1 +
+ arch/cris/Kconfig             |   1 +
+ arch/mips/Kconfig             |   1 +
+ arch/powerpc/Kconfig          |   1 +
+ arch/s390/Kconfig             |   1 +
+ arch/s390/mm/fault.c          |   1 +
+ arch/sh/Kconfig               |   1 +
+ arch/sparc/Kconfig            |   1 +
+ arch/tile/Kconfig             |   1 +
+ arch/x86/Kconfig              |   1 +
+ arch/x86/kernel/apic/hw_nmi.c |   1 -
+ include/linux/hardirq.h       |   2 +
+ include/linux/percpu.h        |   3 -
+ include/linux/printk.h        |  12 ++-
+ init/Kconfig                  |   5 +
+ init/main.c                   |   1 +
+ kernel/printk/Makefile        |   1 +
+ kernel/printk/nmi.c           | 218 ++++++++++++++++++++++++++++++++++++++++++
+ kernel/printk/printk.c        |  36 +++----
+ kernel/printk/printk.h        |  55 +++++++++++
+ lib/bust_spinlocks.c          |   1 +
+ lib/nmi_backtrace.c           |  93 +++---------------
+ 26 files changed, 345 insertions(+), 105 deletions(-)
+ create mode 100644 kernel/printk/nmi.c
+ create mode 100644 kernel/printk/printk.h
+
+-- 
+1.8.5.6
+
