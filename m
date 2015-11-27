@@ -1,65 +1,81 @@
-From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 12 Nov 2015 05:45:30 +0000
-Subject: [PATCH 3/3] usb: renesas_usbhs: Modify ep.caps.type_xxx and usb_ep_maxpacket_limit()
-Message-Id: <1447307130-6072-4-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:53 +0000
+Subject: [PATCH 10/15] ARM: shmobile: lager: Move SPI FLASH partitions to subnode
+Message-Id: <f58bac70bf2d6cd9ff852d58199b598bfa6365c6.1448586938.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1448586938.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448586938.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch modifies the ep.caps.type_{iso,bulk,int} setting and
-the second argument of usb_ep_maxpacket_limit() using
-the dparam.pipe_configs.
+From: Geert Uytterhoeven <geert+renesas@glider.be>
 
-In the previous code, all the type_{iso,bulk,int} were set to true.
-However, to avoid waste time for finding suitable pipe in usb_ep_enable(),
-this driver should set correct type.
-Also the second argument of usb_ep_maxpacket_limit() was set to 512
-even if the pipe is isochronous or interrupt. So, this driver could
-not bind a gadget driver like the g_audio driver.
+As of commits 5cfdedb7b9a0fe38 ("mtd: ofpart: move ofpart partitions to a
+dedicated dt node") and fe2585e9c29a650a ("doc: dt: mtd: support partitions
+in a special 'partitions' subnode"), having partitions as direct subnodes
+of an mtd device is discouraged. Hence move the SPI FLASH partitions to a
+"partitions" subnode.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Based on similar work for the koelsch board by Geert Uytterhoeven.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/usb/renesas_usbhs/mod_gadget.c | 19 ++++++++++++-------
- 1 file changed, 12 insertions(+), 7 deletions(-)
+ arch/arm/boot/dts/r8a7790-lager.dts | 33 ++++++++++++++++++---------------
+ 1 file changed, 18 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
-index 8f7a78e..657f967 100644
---- a/drivers/usb/renesas_usbhs/mod_gadget.c
-+++ b/drivers/usb/renesas_usbhs/mod_gadget.c
-@@ -1042,6 +1042,8 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
- 	struct usbhsg_gpriv *gpriv;
- 	struct usbhsg_uep *uep;
- 	struct device *dev = usbhs_priv_to_dev(priv);
-+	struct renesas_usbhs_driver_pipe_config *pipe_configs +					usbhs_get_dparam(priv, pipe_configs);
- 	int pipe_size = usbhs_get_dparam(priv, pipe_size);
- 	int i;
- 	int ret;
-@@ -1111,13 +1113,16 @@ int usbhs_mod_gadget_probe(struct usbhs_priv *priv)
- 			gpriv->gadget.ep0 = &uep->ep;
- 			usb_ep_set_maxpacket_limit(&uep->ep, 64);
- 			uep->ep.caps.type_control = true;
--		}
--		/* init normal pipe */
--		else {
--			usb_ep_set_maxpacket_limit(&uep->ep, 512);
--			uep->ep.caps.type_iso = true;
--			uep->ep.caps.type_bulk = true;
--			uep->ep.caps.type_int = true;
-+		} else {
-+			/* init normal pipe */
-+			if (pipe_configs[i].type = USB_ENDPOINT_XFER_ISOC)
-+				uep->ep.caps.type_iso = true;
-+			if (pipe_configs[i].type = USB_ENDPOINT_XFER_BULK)
-+				uep->ep.caps.type_bulk = true;
-+			if (pipe_configs[i].type = USB_ENDPOINT_XFER_INT)
-+				uep->ep.caps.type_int = true;
-+			usb_ep_set_maxpacket_limit(&uep->ep,
-+						   pipe_configs[i].bufsize);
- 			list_add_tail(&uep->ep.ep_list, &gpriv->gadget.ep_list);
- 		}
- 		uep->ep.caps.dir_in = true;
+diff --git a/arch/arm/boot/dts/r8a7790-lager.dts b/arch/arm/boot/dts/r8a7790-lager.dts
+index 79f141188d99..c46295afb08a 100644
+--- a/arch/arm/boot/dts/r8a7790-lager.dts
++++ b/arch/arm/boot/dts/r8a7790-lager.dts
+@@ -439,8 +439,6 @@
+ 	status = "okay";
+ 
+ 	flash: flash@0 {
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+ 		compatible = "spansion,s25fl512s", "jedec,spi-nor";
+ 		reg = <0>;
+ 		spi-max-frequency = <30000000>;
+@@ -450,19 +448,24 @@
+ 		spi-cpol;
+ 		m25p,fast-read;
+ 
+-		partition@0 {
+-			label = "loader";
+-			reg = <0x00000000 0x00040000>;
+-			read-only;
+-		};
+-		partition@40000 {
+-			label = "user";
+-			reg = <0x00040000 0x00400000>;
+-			read-only;
+-		};
+-		partition@440000 {
+-			label = "flash";
+-			reg = <0x00440000 0x03bc0000>;
++		partitions {
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "loader";
++				reg = <0x00000000 0x00040000>;
++				read-only;
++			};
++			partition@40000 {
++				label = "user";
++				reg = <0x00040000 0x00400000>;
++				read-only;
++			};
++			partition@440000 {
++				label = "flash";
++				reg = <0x00440000 0x03bc0000>;
++			};
+ 		};
+ 	};
+ };
 -- 
-1.9.1
+2.1.4
 
