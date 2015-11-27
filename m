@@ -1,57 +1,130 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 16 Nov 2015 09:45:51 +0000
-Subject: Re: [PATCH 1/2] sh-sci: Add CONFIG_SERIAL_EARLYCON support
-Message-Id: <CAMuHMdWzxfztOG1E-knjxGePEnffRRBN3Xg-t-FmwTjcEV4E1g@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:23 +0000
+Subject: [PATCH 06/18] arm64: renesas: r8a7795: add I2C support
+Message-Id: <32bc0c51be7c9db3762cbb34af465676c769886b.1448587800.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447431743-16376-2-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1447431743-16376-2-git-send-email-ulrich.hecht+renesas@gmail.com>
+References: <cover.1448587800.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448587800.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Ulrich,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Fri, Nov 13, 2015 at 5:22 PM, Ulrich Hecht
-<ulrich.hecht+renesas@gmail.com> wrote:
-> "earlyprintk" is architecture specific option.
-> I think general "earlycon" option support more better.
->
-> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> [uli: preserve other SCSCR bits when asserting RE and TE]
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[geert: aAdd clock-output-names properties]
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi | 87 ++++++++++++++++++++++++++++++++
+ 1 file changed, 87 insertions(+)
 
-Thanks! That fixed it on Koelsch, too.
+diff --git a/arch/arm64/boot/dts/renesas/r8a7795.dtsi b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+index 2b22cbfb13f3..c01a7e4f59a4 100644
+--- a/arch/arm64/boot/dts/renesas/r8a7795.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a7795.dtsi
+@@ -16,6 +16,16 @@
+ 	#address-cells = <2>;
+ 	#size-cells = <2>;
+ 
++	aliases {
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2c2 = &i2c2;
++		i2c3 = &i2c3;
++		i2c4 = &i2c4;
++		i2c5 = &i2c5;
++		i2c6 = &i2c6;
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -323,5 +333,82 @@
+ 			power-domains = <&cpg>;
+ 			status = "disabled";
+ 		};
++
++		i2c0: i2c@e6500000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe6500000 0 0x40>;
++			interrupts = <GIC_SPI 287 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 931>;
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		i2c1: i2c@e6508000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe6508000 0 0x40>;
++			interrupts = <GIC_SPI 288 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 930>;
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		i2c2: i2c@e6510000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe6510000 0 0x40>;
++			interrupts = <GIC_SPI 286 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 929>;
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		i2c3: i2c@e66d0000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66d0000 0 0x40>;
++			interrupts = <GIC_SPI 290 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 928>;
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		i2c4: i2c@e66d8000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66d8000 0 0x40>;
++			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 927>;
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		i2c5: i2c@e66e0000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66e0000 0 0x40>;
++			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 919>;
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
++
++		i2c6: i2c@e66e8000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "renesas,i2c-r8a7795";
++			reg = <0 0xe66e8000 0 0x40>;
++			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 918>;
++			power-domains = <&cpg>;
++			status = "disabled";
++		};
+ 	};
+ };
+-- 
+2.1.4
 
-U-Boot uses the BRG and SCIF_CLK on Koelsch etc., while it doesn't on
-Salvator-X. That's why it worked on R-Car Gen3 but not on Gen2.
-
-> Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
-
-The spinlock issues is still there, though, cfr.
-http://lists.infradead.org/pipermail/linux-arm-kernel/2015-August/364178.html
-
-BUG: spinlock bad magic on CPU#0, swapper/0
- lock: sci_ports+0x0/0x3480, .magic: 00000000, .owner: <none>/-1, .owner_cpu: 0
-CPU: 0 PID: 0 Comm: swapper Not tainted
-4.3.0-koelsch-12027-g4b94677ed7f4a3de-dirty #1974
-Hardware name: Generic R8A7791 (Flattened Device Tree)
-[<c00173a0>] (unwind_backtrace) from [<c0013094>] (show_stack+0x10/0x14)
-[<c0013094>] (show_stack) from [<c01f1e38>] (dump_stack+0x70/0x8c)
-[<c01f1e38>] (dump_stack) from [<c0070160>] (do_raw_spin_lock+0x20/0x190)
-[<c0070160>] (do_raw_spin_lock) from [<c0266d28>]
-(serial_console_write+0x4c/0x120)
-[<c0266d28>] (serial_console_write) from [<c007334c>]
-(call_console_drivers.constprop.13+0xc8/0xec)
-[<c007334c>] (call_console_drivers.constprop.13) from [<c0074d78>]
-(console_unlock+0x354/0x440)
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
