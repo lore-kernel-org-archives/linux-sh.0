@@ -1,108 +1,60 @@
-From: Petr Mladek <pmladek@suse.com>
-Date: Fri, 27 Nov 2015 11:09:31 +0000
-Subject: [PATCH v2 4/5] printk/nmi: Warn when some message has been lost in NMI context
-Message-Id: <1448622572-16900-5-git-send-email-pmladek@suse.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:45 +0000
+Subject: [PATCH 02/15] ARM: shmobile: bockw dts: define sdhi0 pins with pull-ups
+Message-Id: <781f278a16fbd74ffa2acf3f14134953631f076d.1448586938.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448622572-16900-1-git-send-email-pmladek@suse.com>
-In-Reply-To: <1448622572-16900-1-git-send-email-pmladek@suse.com>
+References: <cover.1448586938.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448586938.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-We could not resize the temporary buffer in NMI context. Let's warn
-if a message is lost.
+From: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
 
-This is rather theoretical. printk() should not be used in NMI.
-The only sensible use is when we want to print backtrace from all
-CPUs. The current buffer should be enough for this purpose.
+Ensures that the pull-ups for pins SD0_CD and SD0_WP are enabled.
 
-Signed-off-by: Petr Mladek <pmladek@suse.com>
+This is one of two features from the DT reference platform that are
+still missing in MP.
+
+Signed-off-by: Ulrich Hecht <ulrich.hecht+renesas@gmail.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- kernel/printk/nmi.c    |  5 ++++-
- kernel/printk/printk.c | 10 ++++++++++
- kernel/printk/printk.h | 11 +++++++++++
- 3 files changed, 25 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/r8a7778-bockw.dts | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
-diff --git a/kernel/printk/nmi.c b/kernel/printk/nmi.c
-index 34ba760ae794..8af1e4016719 100644
---- a/kernel/printk/nmi.c
-+++ b/kernel/printk/nmi.c
-@@ -37,6 +37,7 @@
-  */
- DEFINE_PER_CPU(printk_func_t, printk_func) = vprintk_default;
- static int printk_nmi_irq_ready;
-+atomic_t nmi_message_lost;
+diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+index 90543b12d7e2..8a5407678717 100644
+--- a/arch/arm/boot/dts/r8a7778-bockw.dts
++++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+@@ -137,10 +137,14 @@
+ 	};
  
- struct nmi_seq_buf {
- 	atomic_t		len;	/* length of written data */
-@@ -60,8 +61,10 @@ static int vprintk_nmi(const char *fmt, va_list args)
- again:
- 	len = atomic_read(&s->len);
+ 	sdhi0_pins: sd0 {
+-		renesas,groups = "sdhi0_data4", "sdhi0_ctrl",
+-				  "sdhi0_cd";
++		renesas,groups = "sdhi0_data4", "sdhi0_ctrl";
+ 		renesas,function = "sdhi0";
+ 	};
++	sdhi0_pup_pins: sd0_pup {
++		renesas,groups = "sdhi0_cd", "sdhi0_wp";
++		renesas,function = "sdhi0";
++		bias-pull-up;
++	};
  
--	if (len >=  sizeof(s->buffer))
-+	if (len >=  sizeof(s->buffer)) {
-+		atomic_inc(&nmi_message_lost);
- 		return 0;
-+	}
+ 	hspi0_pins: hspi0 {
+ 		renesas,groups = "hspi0_a";
+@@ -169,7 +173,7 @@
+ };
  
- 	/*
- 	 * Make sure that all old data have been read before the buffer was
-diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index e970b623ae26..e924c6ac2e6d 100644
---- a/kernel/printk/printk.c
-+++ b/kernel/printk/printk.c
-@@ -1669,6 +1669,7 @@ asmlinkage int vprintk_emit(int facility, int level,
- 	unsigned long flags;
- 	int this_cpu;
- 	int printed_len = 0;
-+	int nmi_message_lost;
- 	bool in_sched = false;
- 	/* cpu currently holding logbuf_lock in this function */
- 	static unsigned int logbuf_cpu = UINT_MAX;
-@@ -1726,6 +1727,15 @@ asmlinkage int vprintk_emit(int facility, int level,
- 					 strlen(recursion_msg));
- 	}
+ &sdhi0 {
+-	pinctrl-0 = <&sdhi0_pins>;
++	pinctrl-0 = <&sdhi0_pins>, <&sdhi0_pup_pins>;
+ 	pinctrl-names = "default";
  
-+	nmi_message_lost = get_nmi_message_lost();
-+	if (unlikely(nmi_message_lost)) {
-+		text_len = scnprintf(textbuf, sizeof(textbuf),
-+				     "BAD LUCK: lost %d message(s) from NMI context!",
-+				     nmi_message_lost);
-+		printed_len += log_store(0, 2, LOG_PREFIX|LOG_NEWLINE, 0,
-+					 NULL, 0, textbuf, text_len);
-+	}
-+
- 	/*
- 	 * The printf needs to come first; we need the syslog
- 	 * prefix which might be passed-in as a parameter.
-diff --git a/kernel/printk/printk.h b/kernel/printk/printk.h
-index 3492f5def4ef..834830c93aad 100644
---- a/kernel/printk/printk.h
-+++ b/kernel/printk/printk.h
-@@ -34,6 +34,12 @@ static inline __printf(1, 0) int vprintk_func(const char *fmt, va_list args)
- 	return this_cpu_read(printk_func)(fmt, args);
- }
- 
-+extern atomic_t nmi_message_lost;
-+static inline int get_nmi_message_lost(void)
-+{
-+	return atomic_xchg(&nmi_message_lost, 0);
-+}
-+
- #else /* CONFIG_PRINTK_NMI */
- 
- static inline __printf(1, 0) int vprintk_func(const char *fmt, va_list args)
-@@ -41,4 +47,9 @@ static inline __printf(1, 0) int vprintk_func(const char *fmt, va_list args)
- 	return vprintk_default(fmt, args);
- }
- 
-+static inline int get_nmi_message_lost(void)
-+{
-+	return 0;
-+}
-+
- #endif /* CONFIG_PRINTK_NMI */
+ 	vmmc-supply = <&fixedregulator3v3>;
 -- 
-1.8.5.6
+2.1.4
 
