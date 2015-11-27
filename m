@@ -1,8 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:54:57 +0000
-Subject: [GIT PULL] Second Round of Renesas ARM64 Based SoC Defconfig Updates for v4.5
-Message-Id: <cover.1448588763.git.horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:32 +0000
+Subject: [GIT PULL] Second Round of Renesas ARM64 Based SoC DT Updates for v4.5
+Message-Id: <cover.1448587800.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1448588763.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448588763.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -10,46 +12,63 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Kevin, Hi Arnd,
 
-Please consider these second round of Renesas ARM64 based SoC defconfig
-updates for v4.5.
+Please consider these second round of Renesas ARM64 based SoC DT updates
+for v4.5.
 
-This pull request Enable Renesas sound, DMAC, I2C, EthernetAVB and GPIO for
-R-Car Gen3 r8a7795/salvator-x.
+This pull request enables GPIO, EthernetAVB, I2C and Sound on
+r8a7795/salvator-x.
 
 This pull request is based on the previous round of
-such requests, tagged as renesas-arm64-defconfig-for-v4.5,
+such requests, tagged as renesas-arm64-dt-for-v4.5,
 which I have already sent a pull-request for.
 
 
-The following changes since commit 727e8d0126e3ecafce3ebc43eaa5a7d61af3bef0:
+The following changes since commit b138e11931f2fe25cf188ed62b54bc36f59a25ce:
 
-  arm64: defconfig: renesas: Enable Renesas r8a7795 SoC (2015-11-17 02:50:29 +0900)
+  MAINTAINERS: Add entry for Renesas arm64 architecture (2015-11-17 02:55:03 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-arm64-defconfig2-for-v4.5
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-arm64-dt2-for-v4.5
 
-for you to fetch changes up to 05a64b3b8b41bf3c3ca9b7f9f8a0e81ffadb20e3:
+for you to fetch changes up to 672b79312c04016481a11d4b996b4512207ffbd3:
 
-  arm64: defconfig: add Renesas sound and AK4613 support (2015-11-26 11:35:21 +0900)
-
-----------------------------------------------------------------
-Second Round of Renesas ARM64 Based SoC Defconfig Updates for v4.5
-
-* Enable Renesas Sound, DMAC, I2C, EthernetAVB and GPIO for
-  R-Car Gen3 r8a7795/salvator-x
+  arm64: renesas: salvator-x: Sound DVC support (2015-11-26 11:31:43 +0900)
 
 ----------------------------------------------------------------
-Kuninori Morimoto (3):
-      arm64: defconfig: Enable Renesas R-Car I2C Controller
-      arm64: defconfig: add Renesas R-Car DMAC driver support
-      arm64: defconfig: add Renesas sound and AK4613 support
+Second Round of Renesas ARM64 Based SoC DT Updates for v4.5
+
+* Enable GPIO, EthernetAVB, I2C and Sound on r8a7795/salvator-x
+
+----------------------------------------------------------------
+Geert Uytterhoeven (2):
+      arm64: renesas: salvator-x: Setup ethernet0 alias for U-Boot
+      arm64: renesas: r8a7795 dtsi: Add all HSCIF nodes
+
+Kazuya Mizuguchi (2):
+      arm64: dts: r8a7795: add EthernetAVB device node
+      arm64: dts: r8a7795: enable EthernetAVB on Salvator-X
+
+Kuninori Morimoto (12):
+      arm64: renesas: r8a7795: add I2C support
+      arm64: renesas: salvator-x: enable I2C
+      arm64: renesas: r8a7795: add AUDIO_DMAC support
+      arm64: renesas: r8a7795: Sound SSI PIO support
+      arm64: renesas: r8a7795: Sound SSI DMA support
+      arm64: renesas: r8a7795: Sound SRC support
+      arm64: renesas: r8a7795: Sound DVC support
+      arm64: renesas: salvator-x: Sound SSI PIO support
+      arm64: renesas: salvator-x: Sound SSI DMA support
+      arm64: renesas: salvator-x: Sound SSI DMA support via BUSIF
+      arm64: renesas: salvator-x: Sound SRC support
+      arm64: renesas: salvator-x: Sound DVC support
 
 Simon Horman (1):
-      arm64: defconfig: enable EthernetAVB
+      arm64: dts: r8a7795: enable nfs root on Salvator-X board
 
 Takeshi Kihara (1):
-      arm64: defconfig: Enable GPIO of Renesas R-Car Gen3 SoC
+      arm64: dts: r8a7795: add GPIO nodes
 
- arch/arm64/configs/defconfig | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 140 +++++-
+ arch/arm64/boot/dts/renesas/r8a7795.dtsi           | 554 +++++++++++++++++++++
+ 2 files changed, 693 insertions(+), 1 deletion(-)
