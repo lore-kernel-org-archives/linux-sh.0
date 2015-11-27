@@ -1,46 +1,97 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 20 Nov 2015 12:36:53 +0000
-Subject: [PATCH 2/6] ARM: shmobile: r8a7740 dtsi: Use "arm,pl390" for GIC
-Message-Id: <1448023017-21816-3-git-send-email-geert+renesas@glider.be>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:47 +0000
+Subject: [PATCH 2/3] ARM: shmobile: Introduce ARCH_RENESAS
+Message-Id: <9b5ba0df4ea4f94072f3e0d6064ab59607112e53.1448585673.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448023017-21816-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448023017-21816-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1448585673.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1448585673.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Replace the "arm,cortex-a9-gic" compatible value for the GIC by
-"arm,pl390", as the documentation states it is a PL390.
-This has been confirmed by reading the GICD_IIDR register, which reports
-0x0000043b (PL390 = 0x00, ARM = 0x43b).
+The purpose of this patch is to start the process of replacing both
+ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI with ARCH_RENESAS.
 
-This has no effect on runtime behavior, as currently the GIC driver
-treats both compatible values the same.
+RENESAS seems to be a more appropriate name than SHMOBILE for the majority
+of Renesas 32-bit ARM based SoCs. The name is conveniently also (newer)
+ARM64 based SoCs.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+This patches only addresses 32-bit ARM based SoCs.  Proposed support for
+the ARM64 based r8a7795 SoC already uses ARCH_RENESAS which selects
+ARCH_SHMOBILE.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-You can read the GICD_IIDR register from Hermit using
+ arch/arm/configs/multi_v7_defconfig |  2 +-
+ arch/arm/configs/shmobile_defconfig |  2 +-
+ arch/arm/mach-shmobile/Kconfig      | 10 +++++++---
+ 3 files changed, 9 insertions(+), 5 deletions(-)
 
-    frob
-    peek 0xc2800008
----
- arch/arm/boot/dts/r8a7740.dtsi | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 4d58cdc3a026b2a4..08846c72cf1a64a3 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -39,7 +39,7 @@
- 	};
+diff --git a/arch/arm/configs/multi_v7_defconfig b/arch/arm/configs/multi_v7_defconfig
+index 69a22fdb52a5..2735bc73b285 100644
+--- a/arch/arm/configs/multi_v7_defconfig
++++ b/arch/arm/configs/multi_v7_defconfig
+@@ -75,7 +75,7 @@ CONFIG_MACH_SPEAR1340=y
+ CONFIG_ARCH_STI=y
+ CONFIG_ARCH_EXYNOS=y
+ CONFIG_EXYNOS5420_MCPM=y
+-CONFIG_ARCH_SHMOBILE_MULTI=y
++CONFIG_ARCH_RENESAS=y
+ CONFIG_ARCH_EMEV2=y
+ CONFIG_ARCH_R7S72100=y
+ CONFIG_ARCH_R8A73A4=y
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index 3aef019c0de7..cc8ece33a7e3 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -9,7 +9,7 @@ CONFIG_SYSCTL_SYSCALL=y
+ CONFIG_EMBEDDED=y
+ CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+-CONFIG_ARCH_SHMOBILE_MULTI=y
++CONFIG_ARCH_RENESAS=y
+ CONFIG_ARCH_EMEV2=y
+ CONFIG_ARCH_R7S72100=y
+ CONFIG_ARCH_R8A73A4=y
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 88734a5e10ca..4ed72b124235 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -1,6 +1,8 @@
+ config ARCH_SHMOBILE
+ 	bool
+-	select ZONE_DMA if ARM_LPAE
++
++config ARCH_SHMOBILE_MULTI
++	bool
  
- 	gic: interrupt-controller@c2800000 {
--		compatible = "arm,cortex-a9-gic";
-+		compatible = "arm,pl390";
- 		#interrupt-cells = <3>;
- 		interrupt-controller;
- 		reg = <0xc2800000 0x1000>,
+ config PM_RCAR
+ 	bool
+@@ -29,10 +31,11 @@ config ARCH_RMOBILE
+ 	select SYS_SUPPORTS_SH_CMT
+ 	select SYS_SUPPORTS_SH_TMU
+ 
+-menuconfig ARCH_SHMOBILE_MULTI
++menuconfig ARCH_RENESAS
+ 	bool "Renesas ARM SoCs" if ARCH_MULTI_V7
+ 	depends on MMU
+ 	select ARCH_SHMOBILE
++	select ARCH_SHMOBILE_MULTI
+ 	select HAVE_ARM_SCU if SMP
+ 	select HAVE_ARM_TWD if SMP
+ 	select ARM_GIC
+@@ -40,8 +43,9 @@ menuconfig ARCH_SHMOBILE_MULTI
+ 	select NO_IOPORT_MAP
+ 	select PINCTRL
+ 	select ARCH_REQUIRE_GPIOLIB
++	select ZONE_DMA if ARM_LPAE
+ 
+-if ARCH_SHMOBILE_MULTI
++if ARCH_RENESAS
+ 
+ #comment "Renesas ARM SoCs System Type"
+ 
 -- 
-1.9.1
+2.1.4
 
