@@ -1,96 +1,58 @@
-From: Peter Hurley <peter@hurleysoftware.com>
-Date: Sat, 28 Nov 2015 02:15:45 +0000
-Subject: Re: [PATCH] serial: earlycon: Add missing spinlock initialization
-Message-Id: <56590E51.5010704@hurleysoftware.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 27 Nov 2015 01:55:47 +0000
+Subject: [GIT PULL] Renesas ARM Based SoC Cleanup for v4.5
+Message-Id: <cover.1448585673.git.horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448619228-28839-1-git-send-email-geert+renesas@glider.be>
-In-Reply-To: <1448619228-28839-1-git-send-email-geert+renesas@glider.be>
+References: <cover.1398216284.git.horms+renesas@verge.net.au>
+In-Reply-To: <cover.1398216284.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, Rob Herring <robh@kernel.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Ulrich Hecht <ulrich.hecht+renesas@gmail.com>, linux-serial@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 11/27/2015 05:13 AM, Geert Uytterhoeven wrote:
-> If an earlycon console driver needs to acquire the uart_port.lock
-> spinlock for serial console output, and CONFIG_DEBUG_SPINLOCK=y:
-> 
->     BUG: spinlock bad magic on CPU#0, swapper/0
->      lock: sci_ports+0x0/0x3480, .magic: 00000000, .owner: <none>/-1, .owner_cpu: 0
->     CPU: 0 PID: 0 Comm: swapper Not tainted 4.4.0-rc2-koelsch-g62ea5edf143bb1d0-dirty #2083
->     Hardware name: Generic R8A7791 (Flattened Device Tree)
->     [<c00173a0>] (unwind_backtrace) from [<c0013094>] (show_stack+0x10/0x14)
->     [<c0013094>] (show_stack) from [<c01f2338>] (dump_stack+0x70/0x8c)
->     [<c01f2338>] (dump_stack) from [<c00702d8>] (do_raw_spin_lock+0x20/0x190)
->     [<c00702d8>] (do_raw_spin_lock) from [<c0267590>] (serial_console_write+0x4c/0x130)
->     [<c0267590>] (serial_console_write) from [<c00734c4>] (call_console_drivers.constprop.13+0xc8/0xec)
->     [<c00734c4>] (call_console_drivers.constprop.13) from [<c0074ef0>] (console_unlock+0x354/0x440)
->     [<c0074ef0>] (console_unlock) from [<c0075bb4>] (register_console+0x2a0/0x394)
->     [<c0075bb4>] (register_console) from [<c06cb750>] (of_setup_earlycon+0x90/0xa4)
->     [<c06cb750>] (of_setup_earlycon) from [<c06cfb60>] (setup_of_earlycon+0x118/0x13c)
->     [<c06cfb60>] (setup_of_earlycon) from [<c06b34ac>] (do_early_param+0x64/0xb4)
->     [<c06b34ac>] (do_early_param) from [<c00472c0>] (parse_args+0x254/0x350)
->     [<c00472c0>] (parse_args) from [<c06b3860>] (parse_early_options+0x2c/0x3c)
->     [<c06b3860>] (parse_early_options) from [<c06b389c>] (parse_early_param+0x2c/0x40)
->     [<c06b389c>] (parse_early_param) from [<c06b5b08>] (setup_arch+0x520/0xaf0)
->     [<c06b5b08>] (setup_arch) from [<c06b3948>] (start_kernel+0x94/0x370)
->     [<c06b3948>] (start_kernel) from [<40008090>] (0x40008090)
-> 
-> Initialize the spinlock in of_setup_earlycon() and register_earlycon(),
-> to fix this for both DT-based and legacy earlycon.  If the driver would
-> reinitialize the spinlock again, this is harmless, as it's allowed to
-> reinitialize an unlocked spinlock.
+Hi Olof, Hi Kevin, Hi Arnd,
 
-Reviewed-by: Peter Hurley <peter@hurleysoftware.com>
+Please consider these Renesas ARM based SoC cleanup for v4.5.
 
-> Alternatives are:
->   - Drivers having an early_serial_console_write() that only performs
->     the core functionality of serial_console_write(), without acquiring
->     the lock (which may be unsafe, depending on the hardware),
->   - Drivers initializing the spinlock in their private earlycon setup
->     functions.
-> 
-> As uart_port is owned by generic serial_core, and uart_port.lock is
-> initialized by uart_add_one_port() for the normal case, this can better
-> be handled in the earlycon core.
-
-Just to be clear here: the uart_port used by the earlycon is unrelated
-to the eventual uart_port instanced by the driver (which may provide
-the console that replaces the earlycon).
-
-That means the spinlocks won't prevent concurrent h/w programming between
-the earlycon and the driver.
-
-Regards,
-Peter Hurley
+This pull request includes some minor cleanups and
+introduces ARCH_RENESAS as a firs step to migrating away
+from ARCH_SHMOBILE and ARCH_SHMOBILE_MULTI.
 
 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Tested on arm32 (r8a7791/koelsch) and arm64 (r8a7795/salvator-x).
-> 
->  drivers/tty/serial/earlycon.c | 2 ++
->  1 file changed, 2 insertions(+)
-> 
-> diff --git a/drivers/tty/serial/earlycon.c b/drivers/tty/serial/earlycon.c
-> index f09636083426d5fc..b5b2f2be6be7c613 100644
-> --- a/drivers/tty/serial/earlycon.c
-> +++ b/drivers/tty/serial/earlycon.c
-> @@ -115,6 +115,7 @@ static int __init register_earlycon(char *buf, const struct earlycon_id *match)
->  	if (buf && !parse_options(&early_console_dev, buf))
->  		buf = NULL;
->  
-> +	spin_lock_init(&port->lock);
->  	port->uartclk = BASE_BAUD * 16;
->  	if (port->mapbase)
->  		port->membase = earlycon_map(port->mapbase, 64);
-> @@ -202,6 +203,7 @@ int __init of_setup_earlycon(unsigned long addr,
->  	int err;
->  	struct uart_port *port = &early_console_dev.port;
->  
-> +	spin_lock_init(&port->lock);
->  	port->iotype = UPIO_MEM;
->  	port->mapbase = addr;
->  	port->uartclk = BASE_BAUD * 16;
-> 
+The following changes since commit 8005c49d9aea74d382f474ce11afbbc7d7130bec:
 
+  Linux 4.4-rc1 (2015-11-15 17:00:27 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-cleanup-for-v4.5
+
+for you to fetch changes up to c8cd74a1468ffe20db3ddc6e6f408d5377f9be43:
+
+  ARM: shmobile: Remove legacy mach/irqs.h (2015-11-19 16:28:01 -0800)
+
+----------------------------------------------------------------
+Renesas ARM Based SoC Cleanup for v4.5
+
+* Remove now unnecessary header
+* Introduce ARCH_RENESAS
+* Remove unmaintened URL from MAINTAINERS
+
+----------------------------------------------------------------
+Laurent Pinchart (1):
+      ARM: shmobile: Remove legacy mach/irqs.h
+
+Simon Horman (2):
+      MAINTAINERS: Remove link to oss.renesas.com which is closed
+      ARM: shmobile: Introduce ARCH_RENESAS
+
+ MAINTAINERS                                |  1 -
+ arch/arm/configs/multi_v7_defconfig        |  2 +-
+ arch/arm/configs/shmobile_defconfig        |  2 +-
+ arch/arm/mach-shmobile/Kconfig             | 10 +++++++---
+ arch/arm/mach-shmobile/include/mach/irqs.h | 10 ----------
+ arch/arm/mach-shmobile/irqs.h              | 15 ---------------
+ arch/arm/mach-shmobile/setup-r8a7778.c     |  1 -
+ 7 files changed, 9 insertions(+), 32 deletions(-)
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/irqs.h
+ delete mode 100644 arch/arm/mach-shmobile/irqs.h
