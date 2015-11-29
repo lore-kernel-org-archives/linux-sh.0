@@ -1,47 +1,35 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 27 Nov 2015 22:06:24 +0000
-Subject: [PATCH] ravb: add R8A7791 support
-Message-Id: <6051623.qN4lqSyZKg@wasted.cogentembedded.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 29 Nov 2015 19:26:10 +0000
+Subject: Re: [PATCH] ravb: add R8A7791 support
+Message-Id: <CAMuHMdWE_G2WqsGZEaa4Ck3zziTLGVPfaVdU2gbnLA5zWpmR1w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <6051623.qN4lqSyZKg@wasted.cogentembedded.com>
+In-Reply-To: <6051623.qN4lqSyZKg-gHKXc3Y1Z8zGSmamagVegGFoWSdPRAKMAL8bYrjMMd8@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org
+To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
+Cc: "netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-Add support  for yet another ARM member of the R-Car family, R-Car M2, also
-known as R8A7791.
+Hi Sergei,
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+On Fri, Nov 27, 2015 at 11:06 PM, Sergei Shtylyov
+<sergei.shtylyov@cogentembedded.com> wrote:
+> Add support  for yet another ARM member of the R-Car family, R-Car M2, also
 
----
-The patch is against DaveM's 'net-next.git' repo but I wouldn't mind if it's
-applied to 'net.git' instead. :-)
+R-Car M2-W?
 
- Documentation/devicetree/bindings/net/renesas,ravb.txt |    1 +
- drivers/net/ethernet/renesas/ravb_main.c               |    1 +
- 2 files changed, 2 insertions(+)
+> known as R8A7791.
 
-Index: net-next/Documentation/devicetree/bindings/net/renesas,ravb.txt
-=================================--- net-next.orig/Documentation/devicetree/bindings/net/renesas,ravb.txt
-+++ net-next/Documentation/devicetree/bindings/net/renesas,ravb.txt
-@@ -5,6 +5,7 @@ interface contains.
- 
- Required properties:
- - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
-+	      "renesas,etheravb-r8a7791" if the device is a part of R8A7791 SoC.
- 	      "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
- 	      "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
- - reg: offset and length of (1) the register block and (2) the stream buffer.
-Index: net-next/drivers/net/ethernet/renesas/ravb_main.c
-=================================--- net-next.orig/drivers/net/ethernet/renesas/ravb_main.c
-+++ net-next/drivers/net/ethernet/renesas/ravb_main.c
-@@ -1655,6 +1655,7 @@ static int ravb_mdio_release(struct ravb
- 
- static const struct of_device_id ravb_match_table[] = {
- 	{ .compatible = "renesas,etheravb-r8a7790", .data = (void *)RCAR_GEN2 },
-+	{ .compatible = "renesas,etheravb-r8a7791", .data = (void *)RCAR_GEN2 },
- 	{ .compatible = "renesas,etheravb-r8a7794", .data = (void *)RCAR_GEN2 },
- 	{ .compatible = "renesas,etheravb-r8a7795", .data = (void *)RCAR_GEN3 },
- 	{ }
+There's also R-Car M2-N, aka R8A7793, but you probably know that ;-)
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
