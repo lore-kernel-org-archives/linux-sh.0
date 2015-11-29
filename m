@@ -1,35 +1,36 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 29 Nov 2015 19:26:10 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sun, 29 Nov 2015 21:14:21 +0000
 Subject: Re: [PATCH] ravb: add R8A7791 support
-Message-Id: <CAMuHMdWE_G2WqsGZEaa4Ck3zziTLGVPfaVdU2gbnLA5zWpmR1w@mail.gmail.com>
+Message-Id: <565B6AAD.8080205@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <6051623.qN4lqSyZKg@wasted.cogentembedded.com>
-In-Reply-To: <6051623.qN4lqSyZKg-gHKXc3Y1Z8zGSmamagVegGFoWSdPRAKMAL8bYrjMMd8@public.gmane.org>
+ <CAMuHMdWE_G2WqsGZEaa4Ck3zziTLGVPfaVdU2gbnLA5zWpmR1w@mail.gmail.com>
+In-Reply-To: <CAMuHMdWE_G2WqsGZEaa4Ck3zziTLGVPfaVdU2gbnLA5zWpmR1w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
-Cc: "netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-sh list <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Rob Herring <robh+dt-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Pawel Moll <pawel.moll-5wv7dgnIgG8@public.gmane.org>, Mark Rutland <mark.rutland-5wv7dgnIgG8@public.gmane.org>, Ian Campbell <ijc+devicetree-KcIKpvwj1kUDXYZnReoRVg@public.gmane.org>, Kumar Gala <galak-sgV2jX0FEOL9JmXXK+q4OQ@public.gmane.org>, "devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <devicetree-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Rob Herring <robh+dt@kernel.org>, Pawel Moll <pawel.moll@arm.com>, Mark Rutland <mark.rutland@arm.com>, Ian Campbell <ijc+devicetree@hellion.org.uk>, Kumar Gala <galak@codeaurora.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
 
-Hi Sergei,
+Hello.
 
-On Fri, Nov 27, 2015 at 11:06 PM, Sergei Shtylyov
-<sergei.shtylyov@cogentembedded.com> wrote:
-> Add support  for yet another ARM member of the R-Car family, R-Car M2, also
+On 11/29/2015 10:26 PM, Geert Uytterhoeven wrote:
 
-R-Car M2-W?
+>> Add support  for yet another ARM member of the R-Car family, R-Car M2, also
 
-> known as R8A7791.
+> R-Car M2-W?
 
-There's also R-Car M2-N, aka R8A7793, but you probably know that ;-)
+    Right, forgot about the postfixes.
 
-Gr{oetje,eeting}s,
+>> known as R8A7791.
+>
+> There's also R-Car M2-N, aka R8A7793, but you probably know that ;-)
 
-                        Geert
+    Will fix.
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> Gr{oetje,eeting}s,
+>
+>                          Geert
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+MBR, Sergei
+
