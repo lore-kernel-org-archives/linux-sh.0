@@ -1,38 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:54:58 +0000
-Subject: [PATCH 1/5] arm64: defconfig: Enable GPIO of Renesas R-Car Gen3 SoC
-Message-Id: <316d9df674e4373711943fa3de34c6d1397cac66.1448588763.git.horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 30 Nov 2015 13:59:55 +0000
+Subject: [PATCH 2/3] pinctrl: sh-pfc: r8a7740: Correct comment for LCD1 data pins
+Message-Id: <1448891996-5263-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448588763.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448588763.git.horms+renesas@verge.net.au>
+References: <1448891996-5263-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448891996-5263-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Takeshi Kihara <takeshi.kihara.df@renesas.com>
+The 12 data pins of LCD1 are numbered 0..11, not 0..12.
 
-Enable GPIO for  Renesas R-Car Gen3 SoC.
-
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm64/configs/defconfig | 1 +
- 1 file changed, 1 insertion(+)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
-index a260e3a46f01..206dfd99295c 100644
---- a/arch/arm64/configs/defconfig
-+++ b/arch/arm64/configs/defconfig
-@@ -135,6 +135,7 @@ CONFIG_SPI_PL022=y
- CONFIG_SPI_QUP=y
- CONFIG_PINCTRL_MSM8916=y
- CONFIG_GPIO_PL061=y
-+CONFIG_GPIO_RCAR=y
- CONFIG_GPIO_XGENE=y
- CONFIG_POWER_RESET_XGENE=y
- CONFIG_POWER_RESET_SYSCON=y
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 279e9dd442e44729..7f7c8a6e76e88f29 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -2214,7 +2214,7 @@ static const unsigned int lcd1_data9_mux[] = {
+ 	LCD1_D8_MARK,
+ };
+ static const unsigned int lcd1_data12_pins[] = {
+-	/* D[0:12] */
++	/* D[0:11] */
+ 	4, 3, 2, 1, 0, 91, 92, 23,
+ 	93, 94, 21, 201,
+ };
 -- 
-2.1.4
+1.9.1
 
