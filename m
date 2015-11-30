@@ -1,38 +1,27 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 19 Nov 2015 18:30:25 +0000
-Subject: [PATCH 0/2] pinctrl: sh-pfc: r8a7791/r8a7795: Add SCIF_CLK support
-Message-Id: <1447957827-32637-1-git-send-email-geert+renesas@glider.be>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Mon, 30 Nov 2015 08:48:34 +0000
+Subject: Re: [PATCH 0/2] pinctrl: sh-pfc: r8a7791/r8a7795: Add SCIF_CLK support
+Message-Id: <CACRpkdbZSJXVZrgyJZyoaVxarPbq0D4ezZdo53kQz+ANDFb9=g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1447957827-32637-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1447957827-32637-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
-Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-gpio@vger.kernel.org" <linux-gpio@vger.kernel.org>
 
-	Hi Linus, Laurent,
+On Thu, Nov 19, 2015 at 7:30 PM, Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
 
-This patch series add pins, groups, and a function for SCIF_CLK on R-Car
-M2 and R-Car H3. SCIF_CLK is the external clock source for the Baud Rate
-Generator for External Clock (BRG) on (H)SCIF.
+>         Hi Linus, Laurent,
+>
+> This patch series add pins, groups, and a function for SCIF_CLK on R-Car
+> M2 and R-Car H3. SCIF_CLK is the external clock source for the Baud Rate
+> Generator for External Clock (BRG) on (H)SCIF.
 
-Geert Uytterhoeven (2):
-  pinctrl: sh-pfc: r8a7791: Add SCIF_CLK support
-  pinctrl: sh-pfc: r8a7795: Add SCIF_CLK support
+Acked-by from my side, expect that you queue these and send me
+a pull request.
 
- drivers/pinctrl/sh-pfc/pfc-r8a7791.c | 25 +++++++++++++++++++++++++
- drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 24 ++++++++++++++++++++++++
- 2 files changed, 49 insertions(+)
-
--- 
-1.9.1
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+Yours,
+Linus Walleij
