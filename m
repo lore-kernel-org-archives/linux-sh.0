@@ -1,51 +1,50 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sun, 15 Nov 2015 14:05:49 +0000
-Subject: Re: [PATCH 0/2] fix Lager earlycon
-Message-Id: <87pozb2w8y.wl-ysato@users.sourceforge.jp>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 30 Nov 2015 22:01:18 +0000
+Subject: [PATCH v2] ravb: add R8A7791 support
+Message-Id: <1661514.u50jDu7LON@wasted.cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447431743-16376-1-git-send-email-ulrich.hecht+renesas@gmail.com>
-In-Reply-To: <1447431743-16376-1-git-send-email-ulrich.hecht+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org, devicetree@vger.kernel.org
 
-On Sat, 14 Nov 2015 01:22:21 +0900,
-Ulrich Hecht wrote:
-> 
-> Hi!
-> 
-> This makes earlycon work on the Lager board:
-> 
-> 1. It amends the SCI earlycon patch by Sato-san slightly to preserve the
-> other bits in SCSCR when asserting RE and TE.
-> 
-> 2. It switches the serial console back to SCIF0, because that's what the
-> boot loader uses, and we rely on it to set up the port for us...
-> 
-> I have yet to check to what extent other boards/SoCs are affected by this.
-> 
+Add support  for yet another ARM member of the R-Car family, R-Car M2-W,
+also known as R8A7791.
 
-Works fine on SCI.
-Thanks.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-> CU
-> Uli
-> 
-> 
-> Ulrich Hecht (2):
->   sh-sci: Add CONFIG_SERIAL_EARLYCON support
->   ARM: shmobile: r8a7790: switch console back to scif0
-> 
->  arch/arm/boot/dts/r8a7790-lager.dts | 14 ++++----
->  drivers/tty/serial/Kconfig          |  6 ++++
->  drivers/tty/serial/sh-sci.c         | 71 +++++++++++++++++++++++++++++++++++--
->  3 files changed, 81 insertions(+), 10 deletions(-)
-> 
-> -- 
-> 2.6.1
-> 
+---
+The patch is against DaveM's 'net-next.git' repo but I wouldn't mind if it's
+applied to 'net.git' instead. :-)
 
--- 
-Yoshinori Sato
-<ysato@users.sourceforge.jp>
+Changes in version 2:
+- fixed the SoC name in the changelog.
+
+ Documentation/devicetree/bindings/net/renesas,ravb.txt |    1 +
+ drivers/net/ethernet/renesas/ravb_main.c               |    1 +
+ 2 files changed, 2 insertions(+)
+
+Index: net-next/Documentation/devicetree/bindings/net/renesas,ravb.txt
+=================================--- net-next.orig/Documentation/devicetree/bindings/net/renesas,ravb.txt
++++ net-next/Documentation/devicetree/bindings/net/renesas,ravb.txt
+@@ -5,6 +5,7 @@ interface contains.
+ 
+ Required properties:
+ - compatible: "renesas,etheravb-r8a7790" if the device is a part of R8A7790 SoC.
++	      "renesas,etheravb-r8a7791" if the device is a part of R8A7791 SoC.
+ 	      "renesas,etheravb-r8a7794" if the device is a part of R8A7794 SoC.
+ 	      "renesas,etheravb-r8a7795" if the device is a part of R8A7795 SoC.
+ - reg: offset and length of (1) the register block and (2) the stream buffer.
+Index: net-next/drivers/net/ethernet/renesas/ravb_main.c
+=================================--- net-next.orig/drivers/net/ethernet/renesas/ravb_main.c
++++ net-next/drivers/net/ethernet/renesas/ravb_main.c
+@@ -1655,6 +1655,7 @@ static int ravb_mdio_release(struct ravb
+ 
+ static const struct of_device_id ravb_match_table[] = {
+ 	{ .compatible = "renesas,etheravb-r8a7790", .data = (void *)RCAR_GEN2 },
++	{ .compatible = "renesas,etheravb-r8a7791", .data = (void *)RCAR_GEN2 },
+ 	{ .compatible = "renesas,etheravb-r8a7794", .data = (void *)RCAR_GEN2 },
+ 	{ .compatible = "renesas,etheravb-r8a7795", .data = (void *)RCAR_GEN3 },
+ 	{ }
+
