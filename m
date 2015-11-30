@@ -1,69 +1,52 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 16 Nov 2015 08:57:11 +0000
-Subject: [PATCH v2 01/03] ARM: shmobile: r8a7794: Add DU0 clock
-Message-Id: <20151116085711.7119.45579.sendpatchset@little-apple>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 30 Nov 2015 13:32:10 +0000
+Subject: [PATCH v3 0/2] pinctrl: sh-pfc: Improve pinmux macros documentation
+Message-Id: <1448890332-773-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niklas.soderlund@ragnatech.se>, Magnus Damm <damm@opensource.se>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+	Hi Laurent, Linus,
 
-The DU0 clock is an MSTP clock, child of the CPG ZX clock.
+This patch series improves the documentation for the various macros used
+to decribe pinmux configuration on Renesas SoCs.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
----
+Apart from more improvements, v3 renames the PINMUX_IPSR_DATA() macro to
+PINMUX_IPSR_GPSR(). As this is a big changes in (LoD), I did that in a
+separate patch.
 
- Previously part of the following series:
- [PATCH 0/5] R-Car DU: Add support for R8A7793 and R8A7794
+You can find more detailed changelog information in the individual
+patches.
 
- Changes since V1:
- - None
+Thanks!
 
-arch/arm/boot/dts/r8a7794.dtsi            | 7 ++++---
- include/dt-bindings/clock/r8a7794-clock.h | 1 +
- 2 files changed, 5 insertions(+), 3 deletions(-)
+Geert Uytterhoeven (2):
+  pinctrl: sh-pfc: Improve pinmux macros documentation
+  pinctrl: sh-pfc: Rename PINMUX_IPSR_DATA() to PINMUX_IPSR_GPSR()
 
-diff --git a/arch/arm/boot/dts/r8a7794.dtsi b/arch/arm/boot/dts/r8a7794.dtsi
-index b73819423311..2a0d375e45b3 100644
---- a/arch/arm/boot/dts/r8a7794.dtsi
-+++ b/arch/arm/boot/dts/r8a7794.dtsi
-@@ -675,19 +675,20 @@
- 			reg = <0 0xe615014c 0 4>, <0 0xe61501c4 0 4>;
- 			clocks = <&mp_clk>, <&mp_clk>,
- 				 <&zs_clk>, <&p_clk>, <&p_clk>, <&zs_clk>,
--				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>;
-+				 <&zs_clk>, <&p_clk>, <&p_clk>, <&p_clk>, <&p_clk>,
-+				 <&zx_clk>;
- 			#clock-cells = <1>;
- 			clock-indices = <
- 				R8A7794_CLK_EHCI R8A7794_CLK_HSUSB
- 				R8A7794_CLK_HSCIF2 R8A7794_CLK_SCIF5
- 				R8A7794_CLK_SCIF4 R8A7794_CLK_HSCIF1 R8A7794_CLK_HSCIF0
- 				R8A7794_CLK_SCIF3 R8A7794_CLK_SCIF2 R8A7794_CLK_SCIF1
--				R8A7794_CLK_SCIF0
-+				R8A7794_CLK_SCIF0 R8A7794_CLK_DU0
- 			>;
- 			clock-output-names  				"ehci", "hsusb",
- 				"hscif2", "scif5", "scif4", "hscif1", "hscif0",
--				"scif3", "scif2", "scif1", "scif0";
-+				"scif3", "scif2", "scif1", "scif0", "du0";
- 		};
- 		mstp8_clks: mstp8_clks@e6150990 {
- 			compatible = "renesas,r8a7794-mstp-clocks", "renesas,cpg-mstp-clocks";
-diff --git a/include/dt-bindings/clock/r8a7794-clock.h b/include/dt-bindings/clock/r8a7794-clock.h
-index 09da38a58776..a7a7e0370968 100644
---- a/include/dt-bindings/clock/r8a7794-clock.h
-+++ b/include/dt-bindings/clock/r8a7794-clock.h
-@@ -79,6 +79,7 @@
- #define R8A7794_CLK_SCIF2		19
- #define R8A7794_CLK_SCIF1		20
- #define R8A7794_CLK_SCIF0		21
-+#define R8A7794_CLK_DU0			24
- 
- /* MSTP8 */
- #define R8A7794_CLK_VIN1		10
+ drivers/pinctrl/sh-pfc/pfc-r8a7778.c |  690 ++++++++++-----------
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 1136 +++++++++++++++++-----------------
+ drivers/pinctrl/sh-pfc/pfc-r8a7790.c |  774 +++++++++++------------
+ drivers/pinctrl/sh-pfc/pfc-r8a7791.c |  624 +++++++++----------
+ drivers/pinctrl/sh-pfc/pfc-r8a7794.c |  844 ++++++++++++-------------
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c |  554 ++++++++---------
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c  |  412 ++++++------
+ drivers/pinctrl/sh-pfc/sh_pfc.h      |   96 ++-
+ 8 files changed, 2604 insertions(+), 2526 deletions(-)
 
+-- 
+1.9.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
