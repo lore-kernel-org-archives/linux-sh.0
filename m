@@ -1,70 +1,28 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 20 Nov 2015 07:58:25 +0000
-Subject: Re: [PATCH 02/25] serial: sh-sci: Update DT binding documentation for BRG support
-Message-Id: <CAMuHMdXkJnPfjVBy_oj-4bTHCo0cTcA7ynHNBN63-5156eOQzg@mail.gmail.com>
+From: =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niklas.soderlund@ragnatech.se>
+Date: Mon, 30 Nov 2015 00:15:57 +0000
+Subject: [PATCH] i2c: emev2: add slave support
+Message-Id: <1448842558-18654-1-git-send-email-niklas.soderlund@ragnatech.se>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be>
-	<1577961.dn1fd8r35p@avalon>
-	<CAMuHMdWHbc1kK7MipyZ_M_C6gPyPqvC4H35eZLXQezjbQNK2Jw@mail.gmail.com>
-	<3455553.NW0SflpMPP@avalon>
-In-Reply-To: <3455553.NW0SflpMPP@avalon>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: wsa@the-dreams.de, linux-i2c@vger.kernel.org
+Cc: ian.molton@codethink.co.uk, laurent.pinchart@ideasonboard.com, magnus.damm@gmail.com, linux-sh@vger.kernel.org, =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niklas.soderlund@ragnatech.se>
 
-Hi Laurent,
+Add i2c slave support to EMEV2.
 
-On Thu, Nov 19, 2015 at 10:13 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Thursday 19 November 2015 21:44:27 Geert Uytterhoeven wrote:
->> On Thu, Nov 19, 2015 at 9:26 PM, Laurent Pinchart wrote:
->> > On Thursday 19 November 2015 19:38:41 Geert Uytterhoeven wrote:
->> >> Amend the DT bindings to include the optional clock sources for the Baud
->> >> Rate Generator for External Clock (BRG), as found on some SCIF variants
->> >> and on HSCIF.
->> >>
->> >> --- a/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
->> >> +++ b/Documentation/devicetree/bindings/serial/renesas,sci-serial.txt
->> >>
->> >> @@ -46,6 +46,12 @@ Required properties:
->> >>      On (H)SCI(F) and some SCIFA, an additional clock may be specified:
->> >>        - "hsck" for the optional external clock input (on HSCIF),
->> >>        - "sck" for the optional external clock input (on other variants).
->> >>
->> >> +    On UARTs equipped with a Baud Rate Generator for External Clock
->> >> (BRG)
->> >> +    (some SCIF and HSCIF), additional clocks may be specified:
->> >> +      - "int_clk" for the optional internal clock source for the
->> >> frequency
->> >> +     divider (typically the (AXI or SHwy) bus clock),
->> >
->> > Isn't this always the same clock as the SCIF functional clock ?
->>
->> (On R-Car Gen2/3)
->>
->> No, SCIF uses different parents for fck (p) and int_clk (zs).
->
-> Right, my bad.
->
-> Should we rename "int_clk" to something that makes it explicit that the clock
-> is used as the BRG-EC input ? Maybe brg_clk, int_brg, int_brg_clk ? We
-> probably don't need to keep the _clk suffix as it's quite evident that a clock
-> name refers to a clock.
+Tested using a EMEV2, BeagleBone Black and a 24c02 eeprom. While the
+EMEV2 provided a emulated eeprom on iic0 using slave-24c02 iic0 the Bone
+could talk to both the physical and the emulated eeprom. The EMEV2 could
+talk to the physical eeprom while still provide the emulated eeprom.
 
-The documentation always uses the SoC-specific explicit clock name (e.g. zs
-s3d1, or clks), or just "internal clock", so I used "int_clk".
+Niklas S=C3=B6derlund (1):
+  i2c: emev2: add slave support
 
-But I agree "int_brg" sounds better.
-
-Gr{oetje,eeting}s,
-
-                        Geert
+ drivers/i2c/busses/i2c-emev2.c | 110 +++++++++++++++++++++++++++++++++++++=
++++-
+ 1 file changed, 109 insertions(+), 1 deletion(-)
 
 --
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+2.6.2
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
