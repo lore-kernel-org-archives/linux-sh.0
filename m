@@ -1,42 +1,78 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 24 Nov 2015 02:16:04 +0000
-Subject: [PATCH v2 1/2] ARM: shmobile: alt: Correct scif2 pfc
-Message-Id: <1448331365-21388-2-git-send-email-horms+renesas@verge.net.au>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 30 Nov 2015 14:16:52 +0000
+Subject: [PATCH 2/2] ARM: shmobile: sh73a0: Add MSIOF device nodes
+Message-Id: <1448893012-8465-3-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448331365-21388-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1448331365-21388-1-git-send-email-horms+renesas@verge.net.au>
+References: <1448893012-8465-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448893012-8465-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-sh@vger.kernel.org, devicetree@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-22b160713cb6 ("ARM: shmobile: alt: Add pfc pins to DT") introduced pfc pins
-to the alt device tree but did not reference them. This patch fixes scif2
-pfc by adding references to the scif2 pins.
+The sh73a0 has 4 MSIOF devices, located in the A3SP power area.
 
-Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
-v2
-* Corrected commit referenced in changelog
----
- arch/arm/boot/dts/r8a7794-alt.dts | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/boot/dts/sh73a0.dtsi | 44 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
-index fd1cfcdd65ef..412eb7ad86db 100644
---- a/arch/arm/boot/dts/r8a7794-alt.dts
-+++ b/arch/arm/boot/dts/r8a7794-alt.dts
-@@ -182,5 +182,8 @@
- };
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index c55b09e640f0b7d3..866ee5de09454d14 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -273,6 +273,50 @@
+ 		status = "disabled";
+ 	};
  
- &scif2 {
-+	pinctrl-0 = <&scif2_pins>;
-+	pinctrl-names = "default";
++	msiof0: spi@e6e20000 {
++		compatible = "renesas,msiof-sh73a0", "renesas,sh-mobile-msiof";
++		reg = <0xe6e20000 0x0064>;
++		interrupts = <0 142 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp0_clks SH73A0_CLK_MSIOF0>;
++		power-domains = <&pd_a3sp>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
 +
- 	status = "okay";
- };
++	msiof1: spi@e6e10000 {
++		compatible = "renesas,msiof-sh73a0", "renesas,sh-mobile-msiof";
++		reg = <0xe6e10000 0x0064>;
++		interrupts = <0 77 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks SH73A0_CLK_MSIOF1>;
++		power-domains = <&pd_a3sp>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	msiof2: spi@e6e00000 {
++		compatible = "renesas,msiof-sh73a0", "renesas,sh-mobile-msiof";
++		reg = <0xe6e00000 0x0064>;
++		interrupts = <0 76 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks SH73A0_CLK_MSIOF2>;
++		power-domains = <&pd_a3sp>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
++	msiof3: spi@e6c90000 {
++		compatible = "renesas,msiof-sh73a0", "renesas,sh-mobile-msiof";
++		reg = <0xe6c90000 0x0064>;
++		interrupts = <0 59 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&mstp2_clks SH73A0_CLK_MSIOF3>;
++		power-domains = <&pd_a3sp>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		status = "disabled";
++	};
++
+ 	sdhi0: sd@ee100000 {
+ 		compatible = "renesas,sdhi-sh73a0";
+ 		reg = <0xee100000 0x100>;
 -- 
-2.1.4
+1.9.1
 
