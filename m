@@ -1,68 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 25 Nov 2015 06:39:13 +0000
-Subject: [PATCH 10/12] arm64: renesas: salvator-x: Sound DVC support
-Message-Id: <87oaei7flt.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 30 Nov 2015 13:59:54 +0000
+Subject: [PATCH 1/3] pinctrl: sh-pfc: emev2: Correct comment for CFI data pins
+Message-Id: <1448891996-5263-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8737vu8ucv.wl%kuninori.morimoto.gx@renesas.com>
+References: <1448891996-5263-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448891996-5263-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
+The 8 data pins of the Compact Flash Interface are numbered 0..7, not
+0..8.
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 27 ++++++++++++++++++++--
- 1 file changed, 25 insertions(+), 2 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-emev2.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index 47bf252..c5f709e 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -8,6 +8,29 @@
-  * kind, whether express or implied.
-  */
+diff --git a/drivers/pinctrl/sh-pfc/pfc-emev2.c b/drivers/pinctrl/sh-pfc/pfc-emev2.c
+index a3a4b67c5434163d..1cbbe04d7df657e8 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-emev2.c
++++ b/drivers/pinctrl/sh-pfc/pfc-emev2.c
+@@ -749,7 +749,7 @@ static const unsigned int cf_ctrl_mux[] = {
+ };
  
-+/*
-+ * SSI-AK4613
-+ *
-+ * This command is required when Playback/Capture
-+ *
-+ *	amixer set "DVC Out" 100%
-+ *	amixer set "DVC In" 100%
-+ *
-+ * You can use Mute
-+ *
-+ *	amixer set "DVC Out Mute" on
-+ *	amixer set "DVC In Mute" on
-+ *
-+ * You can use Volume Ramp
-+ *
-+ *	amixer set "DVC Out Ramp Up Rate"   "0.125 dB/64 steps"
-+ *	amixer set "DVC Out Ramp Down Rate" "0.125 dB/512 steps"
-+ *	amixer set "DVC Out Ramp" on
-+ *	aplay xxx.wav &
-+ *	amixer set "DVC Out"  80%  // Volume Down
-+ *	amixer set "DVC Out" 100%  // Volume Up
-+ */
-+
- /dts-v1/;
- #include "r8a7795.dtsi"
- 
-@@ -136,8 +159,8 @@
- 
- 	rcar_sound,dai {
- 		dai0 {
--			playback = <&ssi0 &src0>;
--			capture  = <&ssi1 &src1>;
-+			playback = <&ssi0 &src0 &dvc0>;
-+			capture  = <&ssi1 &src1 &dvc1>;
- 		};
- 	};
+ static const unsigned int cf_data8_pins[] = {
+-	/* CF_D[0:8] */
++	/* CF_D[0:7] */
+ 	77, 78, 79, 80,
+ 	81, 82, 83, 84,
  };
 -- 
 1.9.1
