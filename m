@@ -1,54 +1,46 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 06 Nov 2015 06:38:32 +0000
-Subject: [PATCH 07/12 v6] arm64: renesas: salvator-x: Sound SSI DMA support
-Message-Id: <874mgzk577.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 30 Nov 2015 13:49:37 +0000
+Subject: [PATCH v2 0/2] pinctrl: sh-pfc: r8a7795: Add MSIOF support
+Message-Id: <1448891379-2457-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87egg3k5g6.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
+	Hi Laurent, Linus,
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This patch series adds MSIOF pinctrl support for the Renesas R-Car H3
+(r8a7795) SoC.
 
-DMA transfer to/from SSI
+Please note that there's a timing issue when using the current
+spi-sh-msiof driver on r8a7795.  However, pinctrl functionality has been
+verified using MSIOF2.
 
-     DMA
-[MEM] -> [SSI]
+Changes since v1:
+  - Use PINMUX_SINGLE() instead of raw PINMUX_DATA(),
+  - Rebased.
 
-     DMA
-[MEM] <- [SSI]
+Thanks!
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
-v5 -> v6
+Geert Uytterhoeven (2):
+  pinctrl: sh-pfc: r8a7795: Add pinmux data for single-function pins
+  pinctrl: sh-pfc: r8a7795: Add MSIOF pins, groups, and functions
 
- - no change
+ drivers/pinctrl/sh-pfc/pfc-r8a7795.c | 877 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 877 insertions(+)
 
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-index da2d2d7..6f4217f 100644
---- a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -143,11 +143,11 @@
- };
- 
- &ssi0 {
--	pio-transfer;
-+	no-busif;
- };
- 
- &ssi1 {
--	pio-transfer;
-+	no-busif;
- 	shared-pin;
- };
- 
 -- 
 1.9.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
