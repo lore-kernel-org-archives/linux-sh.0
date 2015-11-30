@@ -1,55 +1,177 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 20 Nov 2015 15:33:03 +0000
-Subject: Re: [PATCH 17/25] serial: sh-sci: Correct SCIF type on R-Car for BRG
-Message-Id: <1865922.WzPYzesBTg@avalon>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 30 Nov 2015 13:32:11 +0000
+Subject: [PATCH v3 1/2] pinctrl: sh-pfc: Improve pinmux macros documentation
+Message-Id: <1448890332-773-2-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447958344-836-1-git-send-email-geert+renesas@glider.be> <2770504.I7SM1dx10G@avalon> <CAMuHMdWxEXnHGy6vkds8KKcPz4CFWHn8uK90aBQCw4B0ibQFJw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWxEXnHGy6vkds8KKcPz4CFWHn8uK90aBQCw4B0ibQFJw@mail.gmail.com>
+References: <1448890332-773-1-git-send-email-geert+renesas@glider.be>
+In-Reply-To: <1448890332-773-1-git-send-email-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, "linux-serial@vger.kernel.org" <linux-serial@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, =?UTF-8?q?Niklas=20S=C3=B6derlund?= <niklas.soderlund@ragnatech.se>, Magnus Damm <damm@opensource.se>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Hi Geert,
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+---
+v3:
+  - Add Acked-by,
+  - Document function names referring to IPSR fields,
+  - Replace "configuration register" by more specific terms,
+  - Rename "ms" to "msel" or "gsel",
+  - EMEV2 PINMUX_IPSR_NOFN() pinmux configurations have a GPIO function,
 
-On Friday 20 November 2015 16:30:22 Geert Uytterhoeven wrote:
-> On Fri, Nov 20, 2015 at 3:52 PM, Laurent Pinchart wrote:
-> > On Friday 20 November 2015 08:46:56 Geert Uytterhoeven wrote:
-> >> On Thu, Nov 19, 2015 at 9:55 PM, Laurent Pinchart wrote:
-> >>> On Thursday 19 November 2015 19:38:56 Geert Uytterhoeven wrote:
-> >>>> The "renesas,scif" compatible value is currently used for the SCIF
-> >>>> variant in all Renesas SoCs of the R-Car family.  However, the variant
-> >>>> used in the R-Car family is not the common "SH-4(A)" variant, but a
-> >>>> derivative with added "Baud Rate Generator for External Clock" (BRG),
-> >>>> which is also present in sh7734.
-> >>> 
-> >>> Time to introduce a "renesas,scif-rcar" compatible string ? ;-)
-> >>> 
-> >>> As the only DT-enabled platform to have a different SCIF type is
-> >>> r7s72100 we could also consider just switching the regtype to
-> >>> SCIx_SH4_SCIF_BRG_REGTYPE for the generic "renesas,scif" entry as it's
-> >>> listed after the "renesas,scif- r7s72100" entry. That might cause an
-> >>> issue if we want to enable DT on arch/sh though, but even if that
-> >>> happens due to the J-Core processors I'd be surprised to see the old
-> >>> Renesas SH platforms being moved to DT.
-> >> 
-> >> I thought about that, but you never know in which out-of-tree BSP it
-> >> ended up being used, too. So better safe than sorry.
-> > 
-> > Out-of-tree should be banned :-)
-> > 
-> > More seriously, I suppose you wouldn't be thrilled by the idea of a
-> > "renesas,scif-rcar-gen2" ?
-> 
-> Nope. Note that it's also used in R-Car Gen 1 and Gen 3, and sh7734.
+v2:
+  - Clarify same width vs. different widths,
+  - Mention GPSR for PINMUX_IPSR_DATA(),
+  - Document NOGM (= NOGP + MSEL),
+  - Fix s/ispr/ipsr/ typos.
+---
+ drivers/pinctrl/sh-pfc/sh_pfc.h | 94 +++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 86 insertions(+), 8 deletions(-)
 
-Yes, but it would at least cover the whole Gen2 family that behaves the same 
-way. And wouldn't preclude adding "renesas,scif-rcar-gen1". That's two compat 
-strings only.
-
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 6b8180fbdf86a637..d430ee9a652a4a03 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -100,10 +100,31 @@ struct pinmux_cfg_reg {
+ 	const u8 *var_field_width;
+ };
+ 
++/*
++ * Describe a config register consisting of several fields of the same width
++ *   - name: Register name (unused, for documentation purposes only)
++ *   - r: Physical register address
++ *   - r_width: Width of the register (in bits)
++ *   - f_width: Width of the fixed-width register fields (in bits)
++ * This macro must be followed by initialization data: For each register field
++ * (from left to right, i.e. MSB to LSB), 2^f_width enum IDs must be specified,
++ * one for each possible combination of the register field bit values.
++ */
+ #define PINMUX_CFG_REG(name, r, r_width, f_width) \
+ 	.reg = r, .reg_width = r_width, .field_width = f_width,		\
+ 	.enum_ids = (const u16 [(r_width / f_width) * (1 << f_width)])
+ 
++/*
++ * Describe a config register consisting of several fields of different widths
++ *   - name: Register name (unused, for documentation purposes only)
++ *   - r: Physical register address
++ *   - r_width: Width of the register (in bits)
++ *   - var_fw0, var_fwn...: List of widths of the register fields (in bits),
++ *                          From left to right (i.e. MSB to LSB)
++ * This macro must be followed by initialization data: For each register field
++ * (from left to right, i.e. MSB to LSB), 2^var_fwi enum IDs must be specified,
++ * one for each possible combination of the register field bit values.
++ */
+ #define PINMUX_CFG_REG_VAR(name, r, r_width, var_fw0, var_fwn...) \
+ 	.reg = r, .reg_width = r_width,	\
+ 	.var_field_width = (const u8 [r_width]) \
+@@ -116,6 +137,14 @@ struct pinmux_data_reg {
+ 	const u16 *enum_ids;
+ };
+ 
++/*
++ * Describe a data register
++ *   - name: Register name (unused, for documentation purposes only)
++ *   - r: Physical register address
++ *   - r_width: Width of the register (in bits)
++ * This macro must be followed by initialization data: For each register bit
++ * (from left to right, i.e. MSB to LSB), one enum ID must be specified.
++ */
+ #define PINMUX_DATA_REG(name, r, r_width) \
+ 	.reg = r, .reg_width = r_width,	\
+ 	.enum_ids = (const u16 [r_width]) \
+@@ -124,6 +153,10 @@ struct pinmux_irq {
+ 	const short *gpios;
+ };
+ 
++/*
++ * Describe the mapping from GPIOs to a single IRQ
++ *   - ids...: List of GPIOs that are mapped to the same IRQ
++ */
+ #define PINMUX_IRQ(ids...)			   \
+ 	{ .gpios = (const short []) { ids, -1 } }
+ 
+@@ -185,18 +218,63 @@ struct sh_pfc_soc_info {
+  * sh_pfc_soc_info pinmux_data array macros
+  */
+ 
++/*
++ * Describe generic pinmux data
++ *   - data_or_mark: *_DATA or *_MARK enum ID
++ *   - ids...: List of enum IDs to associate with data_or_mark
++ */
+ #define PINMUX_DATA(data_or_mark, ids...)	data_or_mark, ids, 0
+ 
+-#define PINMUX_IPSR_NOGP(ispr, fn)					\
++/*
++ * Describe a pinmux configuration without GPIO function that needs
++ * configuration in a Peripheral Function Select Register (IPSR)
++ *   - ipsr: IPSR field (unused, for documentation purposes only)
++ *   - fn: Function name, referring to a field in the IPSR
++ */
++#define PINMUX_IPSR_NOGP(ipsr, fn)					\
+ 	PINMUX_DATA(fn##_MARK, FN_##fn)
++
++/*
++ * Describe a pinmux configuration with GPIO function that needs configuration
++ * in both a Peripheral Function Select Register (IPSR) and in a
++ * GPIO/Peripheral Function Select Register 1 (GPSR)
++ *   - ipsr: IPSR field
++ *   - fn: Function name, also referring to the IPSR field
++ */
+ #define PINMUX_IPSR_DATA(ipsr, fn)					\
+ 	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ipsr)
+-#define PINMUX_IPSR_NOGM(ispr, fn, ms)					\
+-	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##ms)
+-#define PINMUX_IPSR_NOFN(ipsr, fn, ms)					\
+-	PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##ms)
+-#define PINMUX_IPSR_MSEL(ipsr, fn, ms)					\
+-	PINMUX_DATA(fn##_MARK, FN_##ms, FN_##ipsr, FN_##fn)
++
++/*
++ * Describe a pinmux configuration without GPIO function that needs
++ * configuration in a Peripheral Function Select Register (IPSR), and where the
++ * pinmux function has a representation in a Module Select Register (MOD_SEL).
++ *   - ipsr: IPSR field
++ *   - fn: Function name, also referring to the IPSR field
++ *   - msel: Module selector
++ */
++#define PINMUX_IPSR_NOGM(ipsr, fn, msel)				\
++	PINMUX_DATA(fn##_MARK, FN_##fn, FN_##msel)
++
++/*
++ * Describe a pinmux configuration with GPIO function where the pinmux function
++ * has no representation in a Peripheral Function Select Register (IPSR), but
++ * instead solely depends on a group selection.
++ *   - gpsr: GPSR field
++ *   - fn: Function name, also referring to the GPSR field
++ *   - gsel: Group selector
++ */
++#define PINMUX_IPSR_NOFN(gpsr, fn, gsel)				\
++	PINMUX_DATA(fn##_MARK, FN_##gpsr, FN_##gsel)
++
++/*
++ * Describe a pinmux configuration where the pinmux function has a
++ * representation in a Module Select Register (MOD_SEL).
++ *   - ipsr: IPSR field
++ *   - fn: Function name, also referring to the IPSR field
++ *   - msel: Module selector
++ */
++#define PINMUX_IPSR_MSEL(ipsr, fn, msel)				\
++	PINMUX_DATA(fn##_MARK, FN_##msel, FN_##ipsr, FN_##fn)
+ 
+ /*
+  * Describe a pinmux configuration for a single-function pin.
+@@ -334,7 +412,7 @@ struct sh_pfc_soc_info {
+ 	PINMUX_GPIO_FN(GPIO_FN_##str, PINMUX_FN_BASE, str##_MARK)
+ 
+ /*
+- * PORTnCR macro
++ * PORTnCR helper macro for SH-Mobile/R-Mobile
+  */
+ #define PORTCR(nr, reg)							\
+ 	{								\
 -- 
-Regards,
-
-Laurent Pinchart
+1.9.1
 
