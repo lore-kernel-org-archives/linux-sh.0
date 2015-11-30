@@ -1,144 +1,187 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 13 Nov 2015 10:10:23 +0000
-Subject: [PATCH v13 5/7] arm64: renesas: add Salvator-X board support on DTS
-Message-Id: <1447409425-14831-6-git-send-email-horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 30 Nov 2015 01:44:31 +0000
+Subject: [PATCH v6 2/4] phy: rcar-gen3-usb2: change the mode to OTG on the combined channel
+Message-Id: <1448847873-7072-3-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447409425-14831-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1447409425-14831-1-git-send-email-horms+renesas@verge.net.au>
+References: <1448847873-7072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1448847873-7072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: kishon@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To use the channel 0 of R-Car gen3 as periperal mode, This patch changes
+the mode to OTG instead of HOST. Then, this driver needs to set some
+registers to enable host mode and detects ID pin and VBUS pin at
+phy_init() timing.
 
-Add initial board support for r8a7795 Salvator-X. At this point
-only DEBUG0 and DEBUG1 serial ports are supported.
+For now, the channel 0 can be used as host mode only.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Gaku Inami <gaku.inami.xw@bp.renesas.com>
-Signed-off-by: Takeshi Kihara <takeshi.kihara.df@renesas.com>
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Signed-off-by: Magnus Damm <damm+renesas@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
-Changes since v12:
-- Include rate in stdout-path, as suggested by Mark Rutland.
+ drivers/phy/phy-rcar-gen3-usb2.c | 124 ++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 122 insertions(+), 2 deletions(-)
 
-Changes since v10:
-- None
-
-Changes since V9: (Magnus Damm <damm+renesas@opensource.se>)
- - Added board specific EXTAL information by folding in:
-  [PATCH][RFC] arm64: renesas: Add EXTAL configuration to Salvator-X
-
-Changes since V8: (Magnus Damm <damm+renesas@opensource.se>)
-- None
-
-Changes since V7: (Magnus Damm <damm+renesas@opensource.se>)
-- Added changelog
-
-Based on:
- [PATCH 15/25] arm64: renesas: add Salvator-X board support on DTS
- [PATCH 5/5] arm64: renesas: salvator-x: Update SCIF2 pin group
- [PATCH 5/6] arm64: renesas: salvator-x: Enable SCIF1 on serial1
----
- Documentation/devicetree/bindings/arm/shmobile.txt |  2 +
- arch/arm64/boot/dts/renesas/Makefile               |  2 +
- arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts | 62 ++++++++++++++++++++++
- 3 files changed, 66 insertions(+)
- create mode 100644 arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-
-diff --git a/Documentation/devicetree/bindings/arm/shmobile.txt b/Documentation/devicetree/bindings/arm/shmobile.txt
-index 8d696a0d62b3..95d0aea4c701 100644
---- a/Documentation/devicetree/bindings/arm/shmobile.txt
-+++ b/Documentation/devicetree/bindings/arm/shmobile.txt
-@@ -59,6 +59,8 @@ Boards:
-     compatible = "renesas,lager", "renesas,r8a7790"
-   - Marzen
-     compatible = "renesas,marzen", "renesas,r8a7779"
-+  - Salvator-X
-+    compatible = "renesas,salvator-x", "renesas,r8a7795";
+diff --git a/drivers/phy/phy-rcar-gen3-usb2.c b/drivers/phy/phy-rcar-gen3-usb2.c
+index 2696152..2b5d890 100644
+--- a/drivers/phy/phy-rcar-gen3-usb2.c
++++ b/drivers/phy/phy-rcar-gen3-usb2.c
+@@ -24,6 +24,10 @@
+ #define USB2_USBCTR		0x00c
+ #define USB2_SPD_RSM_TIMSET	0x10c
+ #define USB2_OC_TIMSET		0x110
++#define USB2_COMMCTRL		0x600
++#define USB2_VBCTRL		0x60c
++#define USB2_LINECTRL1		0x610
++#define USB2_ADPCTRL		0x630
  
- Note: Reference Device Tree Implementations are temporary implementations
-       to ease the migration from platform devices to Device Tree, and are
-diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
-index fec69f46d65b..9ce1890a650e 100644
---- a/arch/arm64/boot/dts/renesas/Makefile
-+++ b/arch/arm64/boot/dts/renesas/Makefile
-@@ -1,2 +1,4 @@
-+dtb-$(CONFIG_ARCH_R8A7795) += r8a7795-salvator-x.dtb
+ /* INT_ENABLE */
+ #define USB2_INT_ENABLE_USBH_INTB_EN	BIT(2)
+@@ -41,6 +45,24 @@
+ /* OC_TIMSET */
+ #define USB2_OC_TIMSET_INIT		0x000209ab
+ 
++/* COMMCTRL */
++#define USB2_COMMCTRL_OTG_PERI		BIT(31)	/* 1 = Peripheral mode */
 +
- always		:= $(dtb-y)
- clean-files	:= *.dtb
-diff --git a/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-new file mode 100644
-index 000000000000..a3db98384e53
---- /dev/null
-+++ b/arch/arm64/boot/dts/renesas/r8a7795-salvator-x.dts
-@@ -0,0 +1,62 @@
-+/*
-+ * Device Tree Source for the Salvator-X board
-+ *
-+ * Copyright (C) 2015 Renesas Electronics Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
++/* VBCTRL */
++#define USB2_VBCTRL_DRVVBUSSEL		BIT(8)
 +
-+/dts-v1/;
-+#include "r8a7795.dtsi"
++/* LINECTRL1 */
++#define USB2_LINECTRL1_DPRPD_EN		BIT(19)
++#define USB2_LINECTRL1_DP_RPD		BIT(18)
++#define USB2_LINECTRL1_DMRPD_EN		BIT(17)
++#define USB2_LINECTRL1_DM_RPD		BIT(16)
 +
-+/ {
-+	model = "Renesas Salvator-X board based on r8a7795";
-+	compatible = "renesas,salvator-x", "renesas,r8a7795";
++/* ADPCTRL */
++#define USB2_ADPCTRL_OTGSESSVLD		BIT(20)
++#define USB2_ADPCTRL_IDDIG		BIT(19)
++#define USB2_ADPCTRL_IDPULLUP		BIT(5)	/* 1 = ID sampling is enabled */
++#define USB2_ADPCTRL_DRVVBUS		BIT(4)
 +
-+	aliases {
-+		serial0 = &scif2;
-+		serial1 = &scif1;
-+	};
+ /******* HSUSB registers (original offset is +0x100) *******/
+ #define HSUSB_LPSTS			0x02
+ #define HSUSB_UGCTRL2			0x84
+@@ -66,6 +88,102 @@ struct rcar_gen3_chan {
+ 	struct phy *phy;
+ };
+ 
++static void rcar_gen3_set_host_mode(struct rcar_gen3_chan *ch, int host)
++{
++	void __iomem *usb2_base = ch->usb2.base;
++	u32 val = readl(usb2_base + USB2_COMMCTRL);
 +
-+	chosen {
-+		bootargs = "ignore_loglevel";
-+		stdout-path = "serial0:115200n8";
-+	};
++	dev_vdbg(&ch->phy->dev, "%s: %08x, %d\n", __func__, val, host);
++	if (host)
++		val &= ~USB2_COMMCTRL_OTG_PERI;
++	else
++		val |= USB2_COMMCTRL_OTG_PERI;
++	writel(val, usb2_base + USB2_COMMCTRL);
++}
 +
-+	memory@48000000 {
-+		device_type = "memory";
-+		/* first 128MB is reserved for secure area. */
-+		reg = <0x0 0x48000000 0x0 0x38000000>;
-+	};
-+};
++static void rcar_gen3_set_linectrl(struct rcar_gen3_chan *ch, int dp, int dm)
++{
++	void __iomem *usb2_base = ch->usb2.base;
++	u32 val = readl(usb2_base + USB2_LINECTRL1);
 +
-+&extal_clk {
-+	clock-frequency = <16666666>;
-+};
++	dev_vdbg(&ch->phy->dev, "%s: %08x, %d, %d\n", __func__, val, dp, dm);
++	val &= ~(USB2_LINECTRL1_DP_RPD | USB2_LINECTRL1_DM_RPD);
++	if (dp)
++		val |= USB2_LINECTRL1_DP_RPD;
++	if (dm)
++		val |= USB2_LINECTRL1_DM_RPD;
++	writel(val, usb2_base + USB2_LINECTRL1);
++}
 +
-+&pfc {
-+	scif1_pins: scif1 {
-+		renesas,groups = "scif1_data_a", "scif1_ctrl";
-+		renesas,function = "scif1";
-+	};
-+	scif2_pins: scif2 {
-+		renesas,groups = "scif2_data_a";
-+		renesas,function = "scif2";
-+	};
-+};
++static void rcar_gen3_enable_vbus_ctrl(struct rcar_gen3_chan *ch, int vbus)
++{
++	void __iomem *usb2_base = ch->usb2.base;
++	u32 val = readl(usb2_base + USB2_ADPCTRL);
 +
-+&scif1 {
-+	pinctrl-0 = <&scif1_pins>;
-+	pinctrl-names = "default";
++	dev_vdbg(&ch->phy->dev, "%s: %08x, %d\n", __func__, val, vbus);
++	if (vbus)
++		val |= USB2_ADPCTRL_DRVVBUS;
++	else
++		val &= ~USB2_ADPCTRL_DRVVBUS;
++	writel(val, usb2_base + USB2_ADPCTRL);
++}
 +
-+	status = "okay";
-+};
++static void rcar_gen3_init_for_host(struct rcar_gen3_chan *ch)
++{
++	rcar_gen3_set_linectrl(ch, 1, 1);
++	rcar_gen3_set_host_mode(ch, 1);
++	rcar_gen3_enable_vbus_ctrl(ch, 1);
++}
 +
-+&scif2 {
-+	pinctrl-0 = <&scif2_pins>;
-+	pinctrl-names = "default";
++static void rcar_gen3_init_for_peri(struct rcar_gen3_chan *ch)
++{
++	rcar_gen3_set_linectrl(ch, 0, 1);
++	rcar_gen3_set_host_mode(ch, 0);
++	rcar_gen3_enable_vbus_ctrl(ch, 0);
++}
 +
-+	status = "okay";
-+};
++static bool rcar_gen3_check_vbus(struct rcar_gen3_chan *ch)
++{
++	return !!(readl(ch->usb2.base + USB2_ADPCTRL) &
++		  USB2_ADPCTRL_OTGSESSVLD);
++}
++
++static bool rcar_gen3_check_id(struct rcar_gen3_chan *ch)
++{
++	return !!(readl(ch->usb2.base + USB2_ADPCTRL) & USB2_ADPCTRL_IDDIG);
++}
++
++static void rcar_gen3_device_recognition(struct rcar_gen3_chan *ch)
++{
++	bool is_host = true;
++
++	/* B-device? */
++	if (rcar_gen3_check_id(ch) && rcar_gen3_check_vbus(ch))
++		is_host = false;
++
++	if (is_host)
++		rcar_gen3_init_for_host(ch);
++	else
++		rcar_gen3_init_for_peri(ch);
++}
++
++static void rcar_gen3_init_otg(struct rcar_gen3_chan *ch)
++{
++	void __iomem *usb2_base = ch->usb2.base;
++	u32 val;
++
++	val = readl(usb2_base + USB2_VBCTRL);
++	writel(val | USB2_VBCTRL_DRVVBUSSEL, usb2_base + USB2_VBCTRL);
++	val = readl(usb2_base + USB2_ADPCTRL);
++	writel(val | USB2_ADPCTRL_IDPULLUP, usb2_base + USB2_ADPCTRL);
++	val = readl(usb2_base + USB2_LINECTRL1);
++	rcar_gen3_set_linectrl(ch, 0, 0);
++	writel(val | USB2_LINECTRL1_DPRPD_EN | USB2_LINECTRL1_DMRPD_EN,
++	       usb2_base + USB2_LINECTRL1);
++
++	rcar_gen3_device_recognition(ch);
++}
++
+ static int rcar_gen3_phy_usb2_init(struct phy *p)
+ {
+ 	struct rcar_gen3_chan *channel = phy_get_drvdata(p);
+@@ -80,11 +198,13 @@ static int rcar_gen3_phy_usb2_init(struct phy *p)
+ 
+ 	/* Initialize HSUSB part */
+ 	if (hsusb_base) {
+-		/* TODO: support "OTG" mode */
+ 		val = readl(hsusb_base + HSUSB_UGCTRL2);
+ 		val = (val & ~HSUSB_UGCTRL2_USB0SEL) |
+-		      HSUSB_UGCTRL2_USB0SEL_HOST;
++		      HSUSB_UGCTRL2_USB0SEL_OTG;
+ 		writel(val & HSUSB_UGCTRL2_MASK, hsusb_base + HSUSB_UGCTRL2);
++
++		/* Initialize otg part */
++		rcar_gen3_init_otg(channel);
+ 	}
+ 
+ 	return 0;
 -- 
-2.1.4
+1.9.1
 
