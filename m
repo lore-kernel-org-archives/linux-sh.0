@@ -1,23 +1,46 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 30 Nov 2015 09:01:31 +0000
-Subject: Re: [PATCH] ASoC: rsnd:  Add device tree support for r8a77{79,93,94}
-Message-Id: <87poyrsw1a.wl%kuninori.morimoto.gx@renesas.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 30 Nov 2015 13:35:34 +0000
+Subject: [PATCH] ARM: shmobile: defconfig: Enable CONFIG_PRINTK_TIME
+Message-Id: <1448890534-1430-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1448863372-14788-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1448863372-14788-1-git-send-email-horms+renesas@verge.net.au>
+References: <1407974835-11064-1-git-send-email-khilman@linaro.org>
+In-Reply-To: <1407974835-11064-1-git-send-email-khilman@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms+renesas@verge.net.au>
-Cc: Mark Brown <broonie@kernel.org>, Liam Girdwood <lgirdwood@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, alsa-devel@alsa-project.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+Enable timestamps for kernel log output to improve debugging.
+You can always use "dmesg -t" to strip the timestamps.
 
-Hi
+Don't specify CONFIG_LOG_BUF_SHIFT while we're at it.  There's a
+reason the default in Kconfig is higher ;-)
 
-> Simply document new compat strings.
-> There appears to be no need for a driver updates.
-> 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ arch/arm/configs/shmobile_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+diff --git a/arch/arm/configs/shmobile_defconfig b/arch/arm/configs/shmobile_defconfig
+index cc8ece33a7e38796..70d718e088a65fed 100644
+--- a/arch/arm/configs/shmobile_defconfig
++++ b/arch/arm/configs/shmobile_defconfig
+@@ -2,7 +2,6 @@ CONFIG_SYSVIPC=y
+ CONFIG_NO_HZ=y
+ CONFIG_IKCONFIG=y
+ CONFIG_IKCONFIG_PROC=y
+-CONFIG_LOG_BUF_SHIFT
+ CONFIG_BLK_DEV_INITRD=y
+ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+ CONFIG_SYSCTL_SYSCALL=y
+@@ -199,6 +198,7 @@ CONFIG_NFS_V4_1=y
+ CONFIG_ROOT_NFS=y
+ CONFIG_NLS_CODEPAGE_437=y
+ CONFIG_NLS_ISO8859_1=y
++CONFIG_PRINTK_TIME=y
+ # CONFIG_ENABLE_WARN_DEPRECATED is not set
+ # CONFIG_ENABLE_MUST_CHECK is not set
+ # CONFIG_ARM_UNWIND is not set
+-- 
+1.9.1
 
