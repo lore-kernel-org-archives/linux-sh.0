@@ -1,120 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 18 Nov 2015 22:20:34 +0000
-Subject: [PATCH 1/2] ARM: shmobile: gose: Add GPIO keys to DT
-Message-Id: <1447885235-17858-2-git-send-email-horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 30 Nov 2015 01:44:33 +0000
+Subject: [PATCH v6 4/4] MAINTAINERS: add Renesas usb2 phy driver
+Message-Id: <1448847873-7072-5-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1447885235-17858-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1447885235-17858-1-git-send-email-horms+renesas@verge.net.au>
+References: <1448847873-7072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
+In-Reply-To: <1448847873-7072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: kishon@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-Instantiate the GPIO keys in the gose device tree.
+Add Renesas usb2 phy driver to maintainer entry.
 
-Based on similar work for the koelsch board by Laurent Pinchart.
-
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
-* Compile Tested Only
----
- arch/arm/boot/dts/r8a7793-gose.dts | 82 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 82 insertions(+)
+ MAINTAINERS | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7793-gose.dts b/arch/arm/boot/dts/r8a7793-gose.dts
-index d842ce77b7c8..ff391d2fb767 100644
---- a/arch/arm/boot/dts/r8a7793-gose.dts
-+++ b/arch/arm/boot/dts/r8a7793-gose.dts
-@@ -31,6 +31,88 @@
- 		device_type = "memory";
- 		reg = <0 0x40000000 0 0x40000000>;
- 	};
-+
-+	gpio-keys {
-+		compatible = "gpio-keys";
-+
-+		key-1 {
-+		        gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
-+		        linux,code = <KEY_1>;
-+		        label = "SW2-1";
-+		        gpio-key,wakeup;
-+		        debounce-interval = <20>;
-+		};
-+		key-2 {
-+		        gpios = <&gpio5 1 GPIO_ACTIVE_LOW>;
-+		        linux,code = <KEY_2>;
-+		        label = "SW2-2";
-+		        gpio-key,wakeup;
-+		        debounce-interval = <20>;
-+		};
-+		key-3 {
-+		        gpios = <&gpio5 2 GPIO_ACTIVE_LOW>;
-+		        linux,code = <KEY_3>;
-+		        label = "SW2-3";
-+		        gpio-key,wakeup;
-+		        debounce-interval = <20>;
-+		};
-+		key-4 {
-+		        gpios = <&gpio5 3 GPIO_ACTIVE_LOW>;
-+		        linux,code = <KEY_4>;
-+		        label = "SW2-4";
-+		        gpio-key,wakeup;
-+		        debounce-interval = <20>;
-+		};
-+		key-a {
-+		        gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
-+		        linux,code = <KEY_A>;
-+		        label = "SW30";
-+		        gpio-key,wakeup;
-+		        debounce-interval = <20>;
-+		};
-+		key-b {
-+		        gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
-+		        linux,code = <KEY_B>;
-+		        label = "SW31";
-+		        gpio-key,wakeup;
-+		        debounce-interval = <20>;
-+		};
-+		key-c {
-+		        gpios = <&gpio7 2 GPIO_ACTIVE_LOW>;
-+		        linux,code = <KEY_C>;
-+		        label = "SW32";
-+		        gpio-key,wakeup;
-+		        debounce-interval = <20>;
-+		};
-+		key-d {
-+		        gpios = <&gpio7 3 GPIO_ACTIVE_LOW>;
-+		        linux,code = <KEY_D>;
-+		        label = "SW33";
-+		        gpio-key,wakeup;
-+		        debounce-interval = <20>;
-+		};
-+		key-e {
-+		        gpios = <&gpio7 4 GPIO_ACTIVE_LOW>;
-+		        linux,code = <KEY_E>;
-+		        label = "SW34";
-+		        gpio-key,wakeup;
-+		        debounce-interval = <20>;
-+		};
-+		key-f {
-+		        gpios = <&gpio7 5 GPIO_ACTIVE_LOW>;
-+		        linux,code = <KEY_F>;
-+		        label = "SW35";
-+		        gpio-key,wakeup;
-+		        debounce-interval = <20>;
-+		};
-+		key-g {
-+		        gpios = <&gpio7 6 GPIO_ACTIVE_LOW>;
-+		        linux,code = <KEY_G>;
-+		        label = "SW36";
-+		        gpio-key,wakeup;
-+		        debounce-interval = <20>;
-+		};
-+	};
- };
+diff --git a/MAINTAINERS b/MAINTAINERS
+index e9caa4b..ac1e301 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -8928,6 +8928,12 @@ F:	drivers/rpmsg/
+ F:	Documentation/rpmsg.txt
+ F:	include/linux/rpmsg.h
  
- &extal_clk {
++RENESAS USB2 PHY DRIVER
++M:	Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
++L:	linux-sh@vger.kernel.org
++S:	Maintained
++F:	drivers/phy/phy-rcar-gen3-usb2.c
++
+ RESET CONTROLLER FRAMEWORK
+ M:	Philipp Zabel <p.zabel@pengutronix.de>
+ S:	Maintained
 -- 
-2.1.4
+1.9.1
 
