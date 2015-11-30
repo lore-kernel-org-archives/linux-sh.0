@@ -1,58 +1,64 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 27 Nov 2015 01:55:56 +0000
-Subject: [PATCH 13/15] ARM: shmobile: alt: Correct ether pfc
-Message-Id: <c175e7abf75f174a781d1218aa6fb2bdf2ff3eae.1448586938.git.horms+renesas@verge.net.au>
+From: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 30 Nov 2015 01:44:29 +0000
+Subject: [PATCH v6 0/4] phy: rcar-gen3-usb2: Add R-Car Gen3 USB2 PHY driver
+Message-Id: <1448847873-7072-1-git-send-email-yoshihiro.shimoda.uh@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1448586938.git.horms+renesas@verge.net.au>
-In-Reply-To: <cover.1448586938.git.horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: kishon@ti.com, robh+dt@kernel.org, pawel.moll@arm.com, mark.rutland@arm.com, ijc+devicetree@hellion.org.uk, galak@codeaurora.org
+Cc: linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, linux-sh@vger.kernel.org, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-22b160713cb6 ("ARM: shmobile: alt: Add pfc pins to DT") introduced pfc pins
-to the alt device tree but did not reference them. This patch fixes ether
-pfc by:
+This patch is based on the latest linux-phy / next branch.
+(commit id = 8005c49d9aea74d382f474ce11afbbc7d7130bec)
 
-* Referencing ether pins
-* Adding and referencing phy1 pins
-* Removing ether b pins. These are not used in the configuration
-  of the alt board used for testing and empirically their presence
-  prevents ethernet from functioning correctly in that environment.
+ Changes from v5:
+ - Minor modify the rcar_gen3_phy_usb2_probe() in patch 1.
+ - Rebase the latest linux-phy / next branch.
 
-Reported-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7794-alt.dts | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+ Changes from v4:
+  - Modify Kconfig to "depends on OF && ARCH_SHMOBILE".
+  - Modify Kconfig to "select GENERIC_PHY" instead of "depends on GENERIC_PHY".
+  - Modify device tree documentation about "reg" of example.
+  - Remove spinlock handling because phy-core driver calls mutex_lock().
+  - Change valiable name to val instead of tmp.
+  - Remove dev_set_drvdata.
+  - Use dev_vdbg() instead of dev_dbg().
+  - Change rcar_gen3_device_recognition()'s condition as one line.
+  - Remove unnecessary value in rcar_gen3_phy_usb2_probe().
+  - Modify MAINTAINERS about this driver.
 
-diff --git a/arch/arm/boot/dts/r8a7794-alt.dts b/arch/arm/boot/dts/r8a7794-alt.dts
-index c8cafc1d55c3..767d9224d6cc 100644
---- a/arch/arm/boot/dts/r8a7794-alt.dts
-+++ b/arch/arm/boot/dts/r8a7794-alt.dts
-@@ -118,9 +118,9 @@
- 		renesas,function = "eth";
- 	};
- 
--	ether_b_pins: ether {
--		renesas,groups = "eth_link_b", "eth_mdio_b", "eth_rmii_b";
--		renesas,function = "eth";
-+	phy1_pins: phy1 {
-+		renesas,groups = "intc_irq8";
-+		renesas,function = "intc";
- 	};
- 
- 	i2c1_pins: i2c1 {
-@@ -139,6 +139,9 @@
- };
- 
- &ether {
-+	pinctrl-0 = <&ether_pins &phy1_pins>;
-+	pinctrl-names = "default";
-+
- 	phy-handle = <&phy1>;
- 	renesas,ether-link-active-low;
- 	status = "okay";
+ Changes from v3:
+  - Shorten structure names to avoid new line if we add a long function name.
+  - Add ID/VBUS pin detection for peripheral mode.
+
+ Changes from v2:
+  - Modify Kconfig to add "depends on OF" and "depends on ARCH_SHMOBILE".
+  - Add more information in the dt document.
+  - Change reg-names from "usb2" to "usb2_host".
+
+ Changes from v1:
+  - Revise some typos.
+  - Remove using clk API to enable/disable the clocks.
+    (In other words, this driver expects to enable/disable the clocks by
+     Runtime PM API by the phy-core driver.)
+  - Remove an unnecessary header file (asm/cmpxchg.h).
+
+Yoshihiro Shimoda (4):
+  phy: rcar-gen3-usb2: Add R-Car Gen3 USB2 PHY driver
+  phy: rcar-gen3-usb2: change the mode to OTG on the combined channel
+  phy: rcar-gen3-usb2: add runtime ID/VBUS pin detection
+  MAINTAINERS: add Renesas usb2 phy driver
+
+ .../devicetree/bindings/phy/rcar-gen3-phy-usb2.txt |  39 +++
+ MAINTAINERS                                        |   6 +
+ drivers/phy/Kconfig                                |   7 +
+ drivers/phy/Makefile                               |   1 +
+ drivers/phy/phy-rcar-gen3-usb2.c                   | 378 +++++++++++++++++++++
+ 5 files changed, 431 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/phy/rcar-gen3-phy-usb2.txt
+ create mode 100644 drivers/phy/phy-rcar-gen3-usb2.c
+
 -- 
-2.1.4
+1.9.1
 
