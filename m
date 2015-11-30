@@ -1,33 +1,41 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 02 Nov 2015 07:51:41 +0000
-Subject: Re: [PATCH/RFC net-next] ravb: use clock rate as basis for GTI.TIV
-Message-Id: <CAMuHMdVQWMc-giQb-J0JV9JXLCYLXHQJhStRgwHZX0qjgye0cw@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 30 Nov 2015 13:59:53 +0000
+Subject: [PATCH 0/3] pinctrl: sh-pfc: Correct pin range comments
+Message-Id: <1448891996-5263-1-git-send-email-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1446428439-10944-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1446428439-10944-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms+renesas@verge.net.au>
-Cc: David Miller <davem@davemloft.net>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org, linux-gpio@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Mon, Nov 2, 2015 at 2:40 AM, Simon Horman <horms+renesas@verge.net.au> wrote:
-> The motivation for this is to use the correct rate on
-> the r8a7795/Slavator-X which is advertised as 133MHz but
+	Hi Laurent, Linus,
 
-Salvator-X
+This patch series corrects a few pin range comments in the Renesas
+pinctrl data. No functional changes.
 
-> may differ depending on the extal present on the Slavator-X.
+Thanks!
 
-Salvator-X
+Geert Uytterhoeven (3):
+  pinctrl: sh-pfc: emev2: Correct comment for CFI data pins
+  pinctrl: sh-pfc: r8a7740: Correct comment for LCD1 data pins
+  pinctrl: sh-pfc: sh73a0: Correct comment for LCD2 data pins
+
+ drivers/pinctrl/sh-pfc/pfc-emev2.c   | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c  | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+-- 
+1.9.1
 
 Gr{oetje,eeting}s,
 
-                        Geert
+						Geert
 
 --
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+							    -- Linus Torvalds
